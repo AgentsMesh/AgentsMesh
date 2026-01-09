@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"log/slog"
 	"sync"
+	"unicode/utf8"
 
+	"github.com/anthropics/agentmesh/backend/internal/infra/terminal"
 	"github.com/gorilla/websocket"
 )
 
@@ -33,9 +35,13 @@ type TerminalRouter struct {
 	terminalClients   map[string]map[*TerminalClient]bool
 	terminalClientsMu sync.RWMutex
 
-	// Scrollback buffers for reconnection
+	// Scrollback buffers for reconnection (raw output for frontend)
 	scrollbackBuffers map[string]*ScrollbackBuffer
 	scrollbackMu      sync.RWMutex
+
+	// Virtual terminals for agent observation (processed output)
+	virtualTerminals map[string]*terminal.VirtualTerminal
+	virtualTermMu    sync.RWMutex
 
 	// Buffer size configuration
 	scrollbackSize int
@@ -67,7 +73,37 @@ func (sb *ScrollbackBuffer) Write(data []byte) {
 	if len(sb.data) > sb.maxSize {
 		// Keep only the last maxSize bytes
 		sb.data = sb.data[len(sb.data)-sb.maxSize:]
+		// Ensure we start at a valid UTF-8 boundary
+		sb.data = trimToValidUTF8Start(sb.data)
 	}
+}
+
+// trimToValidUTF8Start ensures data starts with a valid UTF-8 character.
+// If the data begins with continuation bytes (10xxxxxx pattern), it skips them
+// to find the start of a valid UTF-8 sequence.
+func trimToValidUTF8Start(data []byte) []byte {
+	if len(data) == 0 {
+		return data
+	}
+
+	// Check up to utf8.UTFMax (4) bytes for a valid start
+	for i := 0; i < len(data) && i < utf8.UTFMax; i++ {
+		// Check if remaining data is valid UTF-8
+		if utf8.Valid(data[i:]) {
+			return data[i:]
+		}
+		// Also check if this byte starts a valid UTF-8 sequence
+		// (not a continuation byte: 10xxxxxx)
+		if data[i]&0xC0 != 0x80 {
+			// This is a leading byte, check if the sequence starting here is valid
+			if r, _ := utf8.DecodeRune(data[i:]); r != utf8.RuneError {
+				return data[i:]
+			}
+		}
+	}
+
+	// Fallback: return original data (shouldn't normally reach here)
+	return data
 }
 
 // GetData returns a copy of the buffer data
@@ -114,17 +150,33 @@ func NewTerminalRouter(cm *ConnectionManager, logger *slog.Logger) *TerminalRout
 		sessionRunnerMap:  make(map[string]int64),
 		terminalClients:   make(map[string]map[*TerminalClient]bool),
 		scrollbackBuffers: make(map[string]*ScrollbackBuffer),
+		virtualTerminals:  make(map[string]*terminal.VirtualTerminal),
 		scrollbackSize:    DefaultScrollbackSize,
 	}
 
 	// Set up callbacks from connection manager
 	cm.SetTerminalOutputCallback(tr.handleTerminalOutput)
+	cm.SetPtyResizedCallback(tr.handlePtyResized)
 
 	return tr
 }
 
+// DefaultTerminalCols is the default terminal width
+const DefaultTerminalCols = 80
+
+// DefaultTerminalRows is the default terminal height
+const DefaultTerminalRows = 24
+
+// DefaultVirtualTerminalHistory is the default scrollback history lines
+const DefaultVirtualTerminalHistory = 10000
+
 // RegisterSession registers a session's runner mapping
 func (tr *TerminalRouter) RegisterSession(sessionID string, runnerID int64) {
+	tr.RegisterSessionWithSize(sessionID, runnerID, DefaultTerminalCols, DefaultTerminalRows)
+}
+
+// RegisterSessionWithSize registers a session with specific terminal size
+func (tr *TerminalRouter) RegisterSessionWithSize(sessionID string, runnerID int64, cols, rows int) {
 	tr.sessionRunnerMu.Lock()
 	tr.sessionRunnerMap[sessionID] = runnerID
 	tr.sessionRunnerMu.Unlock()
@@ -136,9 +188,20 @@ func (tr *TerminalRouter) RegisterSession(sessionID string, runnerID int64) {
 	}
 	tr.scrollbackMu.Unlock()
 
+	// Initialize virtual terminal for agent observation
+	tr.virtualTermMu.Lock()
+	if vt, exists := tr.virtualTerminals[sessionID]; !exists {
+		tr.virtualTerminals[sessionID] = terminal.NewVirtualTerminal(cols, rows, DefaultVirtualTerminalHistory)
+	} else {
+		vt.Resize(cols, rows)
+	}
+	tr.virtualTermMu.Unlock()
+
 	tr.logger.Debug("session registered",
 		"session_id", sessionID,
-		"runner_id", runnerID)
+		"runner_id", runnerID,
+		"cols", cols,
+		"rows", rows)
 }
 
 // UnregisterSession unregisters a session
@@ -151,6 +214,11 @@ func (tr *TerminalRouter) UnregisterSession(sessionID string) {
 	tr.scrollbackMu.Lock()
 	delete(tr.scrollbackBuffers, sessionID)
 	tr.scrollbackMu.Unlock()
+
+	// Clean up virtual terminal
+	tr.virtualTermMu.Lock()
+	delete(tr.virtualTerminals, sessionID)
+	tr.virtualTermMu.Unlock()
 
 	// Disconnect all clients
 	tr.terminalClientsMu.Lock()
@@ -225,13 +293,22 @@ func (tr *TerminalRouter) DisconnectClient(client *TerminalClient) {
 func (tr *TerminalRouter) handleTerminalOutput(runnerID int64, data *TerminalOutputData) {
 	sessionID := data.SessionID
 
-	// Store in scrollback buffer
+	// Store in scrollback buffer (raw data for frontend)
 	tr.scrollbackMu.RLock()
 	buffer := tr.scrollbackBuffers[sessionID]
 	tr.scrollbackMu.RUnlock()
 
 	if buffer != nil {
 		buffer.Write(data.Data)
+	}
+
+	// Feed to virtual terminal (processed data for agent observation)
+	tr.virtualTermMu.RLock()
+	vt := tr.virtualTerminals[sessionID]
+	tr.virtualTermMu.RUnlock()
+
+	if vt != nil {
+		vt.Feed(data.Data)
 	}
 
 	// Route to all connected clients
@@ -265,6 +342,22 @@ func (tr *TerminalRouter) handleTerminalOutput(runnerID int64, data *TerminalOut
 	}
 }
 
+// handlePtyResized handles PTY resize notifications from runner
+func (tr *TerminalRouter) handlePtyResized(runnerID int64, data *PtyResizedData) {
+	sessionID := data.SessionID
+
+	// Update virtual terminal size
+	tr.virtualTermMu.Lock()
+	if vt, exists := tr.virtualTerminals[sessionID]; exists {
+		vt.Resize(data.Cols, data.Rows)
+		tr.logger.Debug("virtual terminal resized",
+			"session_id", sessionID,
+			"cols", data.Cols,
+			"rows", data.Rows)
+	}
+	tr.virtualTermMu.Unlock()
+}
+
 // RouteInput routes terminal input from frontend to runner
 func (tr *TerminalRouter) RouteInput(sessionID string, data []byte) error {
 	tr.sessionRunnerMu.RLock()
@@ -294,7 +387,33 @@ func (tr *TerminalRouter) RouteResize(sessionID string, cols, rows int) error {
 }
 
 // GetRecentOutput returns recent terminal output for observation
-func (tr *TerminalRouter) GetRecentOutput(sessionID string, lines int) []byte {
+// If raw is true, returns raw scrollback data; otherwise returns processed output from virtual terminal
+func (tr *TerminalRouter) GetRecentOutput(sessionID string, lines int, raw bool) []byte {
+	if raw {
+		// Return raw scrollback data
+		tr.scrollbackMu.RLock()
+		buffer := tr.scrollbackBuffers[sessionID]
+		tr.scrollbackMu.RUnlock()
+
+		if buffer == nil {
+			return nil
+		}
+		return buffer.GetRecentLines(lines)
+	}
+
+	// Try to return processed output from virtual terminal
+	tr.virtualTermMu.RLock()
+	vt := tr.virtualTerminals[sessionID]
+	tr.virtualTermMu.RUnlock()
+
+	if vt != nil {
+		output := vt.GetOutput(lines)
+		if output != "" {
+			return []byte(output)
+		}
+	}
+
+	// Fallback: if virtual terminal has no data, strip ANSI from raw scrollback
 	tr.scrollbackMu.RLock()
 	buffer := tr.scrollbackBuffers[sessionID]
 	tr.scrollbackMu.RUnlock()
@@ -303,7 +422,56 @@ func (tr *TerminalRouter) GetRecentOutput(sessionID string, lines int) []byte {
 		return nil
 	}
 
-	return buffer.GetRecentLines(lines)
+	rawData := buffer.GetRecentLines(lines)
+	if rawData == nil {
+		return nil
+	}
+
+	// Strip ANSI escape sequences as fallback
+	return []byte(terminal.StripANSI(string(rawData)))
+}
+
+// GetScreenSnapshot returns the current screen snapshot for agent observation
+func (tr *TerminalRouter) GetScreenSnapshot(sessionID string) string {
+	tr.virtualTermMu.RLock()
+	vt := tr.virtualTerminals[sessionID]
+	tr.virtualTermMu.RUnlock()
+
+	if vt != nil {
+		display := vt.GetDisplay()
+		if display != "" {
+			return display
+		}
+	}
+
+	// Fallback: strip ANSI from raw scrollback and return last screen worth of lines
+	tr.scrollbackMu.RLock()
+	buffer := tr.scrollbackBuffers[sessionID]
+	tr.scrollbackMu.RUnlock()
+
+	if buffer == nil {
+		return ""
+	}
+
+	// Get approximately one screen worth of lines (default 24 lines)
+	rawData := buffer.GetRecentLines(24)
+	if rawData == nil {
+		return ""
+	}
+
+	return terminal.StripANSI(string(rawData))
+}
+
+// GetCursorPosition returns the current cursor position (row, col) for a session
+func (tr *TerminalRouter) GetCursorPosition(sessionID string) (row, col int) {
+	tr.virtualTermMu.RLock()
+	vt := tr.virtualTerminals[sessionID]
+	tr.virtualTermMu.RUnlock()
+
+	if vt == nil {
+		return 0, 0
+	}
+	return vt.CursorPosition()
 }
 
 // GetClientCount returns the number of clients connected to a session

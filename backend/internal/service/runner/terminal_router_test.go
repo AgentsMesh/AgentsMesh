@@ -149,7 +149,7 @@ func TestTerminalRouterGetRecentOutput(t *testing.T) {
 	tr := NewTerminalRouter(cm, newTestLogger())
 
 	// No buffer
-	output := tr.GetRecentOutput("nonexistent", 10)
+	output := tr.GetRecentOutput("nonexistent", 10, true)
 	if output != nil {
 		t.Error("should return nil for nonexistent session")
 	}
@@ -161,9 +161,75 @@ func TestTerminalRouterGetRecentOutput(t *testing.T) {
 	tr.scrollbackMu.RUnlock()
 	buffer.Write([]byte("line1\nline2\nline3\n"))
 
-	output = tr.GetRecentOutput("session-1", 2)
+	// Test raw output
+	output = tr.GetRecentOutput("session-1", 2, true)
 	if output == nil {
-		t.Error("should return output")
+		t.Error("should return raw output")
+	}
+
+	// Test processed output (feed to virtual terminal first)
+	tr.virtualTermMu.RLock()
+	vt := tr.virtualTerminals["session-1"]
+	tr.virtualTermMu.RUnlock()
+	vt.Feed([]byte("Hello, World!"))
+
+	processedOutput := tr.GetRecentOutput("session-1", 10, false)
+	if processedOutput == nil {
+		t.Error("should return processed output")
+	}
+}
+
+func TestTerminalRouterGetScreenSnapshot(t *testing.T) {
+	cm := NewConnectionManager(newTestLogger())
+	tr := NewTerminalRouter(cm, newTestLogger())
+
+	// No virtual terminal
+	snapshot := tr.GetScreenSnapshot("nonexistent")
+	if snapshot != "" {
+		t.Error("should return empty string for nonexistent session")
+	}
+
+	// Register session
+	tr.RegisterSession("session-1", 100)
+
+	// Feed some data
+	tr.virtualTermMu.RLock()
+	vt := tr.virtualTerminals["session-1"]
+	tr.virtualTermMu.RUnlock()
+	vt.Feed([]byte("Hello, World!"))
+
+	snapshot = tr.GetScreenSnapshot("session-1")
+	if snapshot != "Hello, World!" {
+		t.Errorf("snapshot = %q, want %q", snapshot, "Hello, World!")
+	}
+}
+
+func TestTerminalRouterPtyResized(t *testing.T) {
+	cm := NewConnectionManager(newTestLogger())
+	tr := NewTerminalRouter(cm, newTestLogger())
+
+	// Register session with default size (80x24)
+	tr.RegisterSession("session-1", 100)
+
+	tr.virtualTermMu.RLock()
+	vt := tr.virtualTerminals["session-1"]
+	tr.virtualTermMu.RUnlock()
+
+	// Verify initial size
+	if vt.Cols() != DefaultTerminalCols || vt.Rows() != DefaultTerminalRows {
+		t.Errorf("initial size = %dx%d, want %dx%d", vt.Cols(), vt.Rows(), DefaultTerminalCols, DefaultTerminalRows)
+	}
+
+	// Simulate pty_resized callback
+	tr.handlePtyResized(100, &PtyResizedData{
+		SessionID: "session-1",
+		Cols:      120,
+		Rows:      40,
+	})
+
+	// Verify resized
+	if vt.Cols() != 120 || vt.Rows() != 40 {
+		t.Errorf("resized size = %dx%d, want 120x40", vt.Cols(), vt.Rows())
 	}
 }
 

@@ -364,15 +364,30 @@ func (h *SessionHandler) SendPrompt(c *gin.Context) {
 
 // TerminalRouterInterface defines the interface for terminal router operations
 type TerminalRouterInterface interface {
-	GetRecentOutput(sessionID string, lines int) []byte
+	GetRecentOutput(sessionID string, lines int, raw bool) []byte
+	GetScreenSnapshot(sessionID string) string
+	GetCursorPosition(sessionID string) (row, col int)
 	GetAllScrollbackData(sessionID string) []byte
 	RouteInput(sessionID string, data []byte) error
 	RouteResize(sessionID string, cols, rows int) error
 }
 
+// TerminalOutputResponse matches Runner's tools.TerminalOutput structure
+type TerminalOutputResponse struct {
+	SessionKey string `json:"session_key"`
+	Output     string `json:"output"`
+	Screen     string `json:"screen,omitempty"`
+	CursorX    int    `json:"cursor_x"`
+	CursorY    int    `json:"cursor_y"`
+	TotalLines int    `json:"total_lines"`
+	HasMore    bool   `json:"has_more"`
+}
+
 // ObserveTerminalRequest represents terminal observation request
 type ObserveTerminalRequest struct {
-	Lines int `form:"lines"`
+	Lines         int  `form:"lines"`
+	Raw           bool `form:"raw"`            // If true, return raw output; otherwise return processed output
+	IncludeScreen bool `form:"include_screen"` // If true, include current screen snapshot
 }
 
 // ObserveTerminal returns recent terminal output for observation
@@ -419,17 +434,43 @@ func (h *SessionHandler) ObserveTerminal(c *gin.Context) {
 
 	var output []byte
 	if lines == -1 {
+		// Get all raw scrollback data
 		output = tr.GetAllScrollbackData(sessionKey)
 	} else {
-		output = tr.GetRecentOutput(sessionKey, lines)
+		// Get recent output (processed by default, raw if requested)
+		output = tr.GetRecentOutput(sessionKey, lines, req.Raw)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"session_key": sessionKey,
-		"output":      string(output),
-		"status":      sess.Status,
-		"agent_status": sess.AgentStatus,
-	})
+	// Get cursor position from virtual terminal
+	cursorRow, cursorCol := tr.GetCursorPosition(sessionKey)
+
+	// Calculate total lines (rough estimate from output)
+	totalLines := 0
+	for _, b := range output {
+		if b == '\n' {
+			totalLines++
+		}
+	}
+	if len(output) > 0 && output[len(output)-1] != '\n' {
+		totalLines++ // Count last line if not ending with newline
+	}
+
+	// Build response matching Runner's TerminalOutput structure
+	response := TerminalOutputResponse{
+		SessionKey: sessionKey,
+		Output:     string(output),
+		CursorX:    cursorCol,
+		CursorY:    cursorRow,
+		TotalLines: totalLines,
+		HasMore:    lines != -1 && totalLines >= lines,
+	}
+
+	// Include screen snapshot if requested
+	if req.IncludeScreen {
+		response.Screen = tr.GetScreenSnapshot(sessionKey)
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // TerminalInputRequest represents terminal input request

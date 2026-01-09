@@ -254,3 +254,118 @@ func BenchmarkRingLen(b *testing.B) {
 		_ = rb.Len()
 	}
 }
+
+// UTF-8 boundary tests
+
+func TestRingUTF8NoCorruption(t *testing.T) {
+	rb := NewRing(20)
+
+	// Write Chinese characters (3 bytes each)
+	rb.Write([]byte("你好世界"))
+	data := rb.Bytes()
+	if string(data) != "你好世界" {
+		t.Errorf("UTF-8 corruption: got %q, want '你好世界'", string(data))
+	}
+}
+
+func TestRingUTF8BoundaryTrim(t *testing.T) {
+	// Buffer size 10, Chinese chars are 3 bytes each
+	// "你好世界" = 12 bytes, so wrap will occur
+	rb := NewRing(10)
+
+	// Write "你好世界" (12 bytes) to a 10-byte buffer
+	// After wrap, we should have last 10 bytes, but trimmed to valid UTF-8 start
+	rb.Write([]byte("你好世界"))
+
+	data := rb.Bytes()
+	// The result should be valid UTF-8 (no leading continuation bytes)
+	if len(data) > 0 && (data[0]&0xC0) == 0x80 {
+		t.Errorf("UTF-8 boundary not properly trimmed: starts with continuation byte 0x%02x", data[0])
+	}
+
+	// Result should be valid UTF-8 string
+	s := string(data)
+	for i, r := range s {
+		if r == '\ufffd' {
+			t.Errorf("UTF-8 replacement character at position %d", i)
+		}
+	}
+}
+
+func TestRingUTF8BoxDrawingOverflow(t *testing.T) {
+	// Box drawing chars are 3 bytes each
+	// "─" = E2 94 80
+	rb := NewRing(8)
+
+	// Write "────" (12 bytes) to 8-byte buffer
+	rb.Write([]byte("────"))
+
+	data := rb.Bytes()
+	// Should not start with a continuation byte
+	if len(data) > 0 && (data[0]&0xC0) == 0x80 {
+		t.Errorf("UTF-8 boundary not properly trimmed: first byte is 0x%02x", data[0])
+	}
+}
+
+func TestRingUTF8EmojiOverflow(t *testing.T) {
+	// Emoji are 4 bytes each
+	// "🚀" = F0 9F 9A 80
+	rb := NewRing(6)
+
+	// Write "🚀🚀" (8 bytes) to 6-byte buffer
+	rb.Write([]byte("🚀🚀"))
+
+	data := rb.Bytes()
+	// Should not start with a continuation byte
+	if len(data) > 0 && (data[0]&0xC0) == 0x80 {
+		t.Errorf("UTF-8 boundary not properly trimmed: first byte is 0x%02x", data[0])
+	}
+}
+
+func TestTrimToValidUTF8Start(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []byte
+		expected []byte
+	}{
+		{
+			name:     "empty",
+			input:    []byte{},
+			expected: []byte{},
+		},
+		{
+			name:     "ascii",
+			input:    []byte("hello"),
+			expected: []byte("hello"),
+		},
+		{
+			name:     "valid utf8",
+			input:    []byte("你好"),
+			expected: []byte("你好"),
+		},
+		{
+			name:     "starts with continuation byte",
+			input:    []byte{0x80, 0x41, 0x42}, // continuation, A, B
+			expected: []byte{0x41, 0x42},       // A, B
+		},
+		{
+			name:     "two continuation bytes",
+			input:    []byte{0x80, 0x80, 0x41}, // two continuations, A
+			expected: []byte{0x41},             // A
+		},
+		{
+			name:     "partial Chinese char then valid",
+			input:    append([]byte{0x94, 0x80}, []byte("好")...), // continuation bytes of "你" + "好"
+			expected: []byte("好"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := trimToValidUTF8Start(tt.input)
+			if !bytes.Equal(result, tt.expected) {
+				t.Errorf("trimToValidUTF8Start(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
