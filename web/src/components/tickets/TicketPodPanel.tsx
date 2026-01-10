@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ticketApi, runnerApi } from "@/lib/api/client";
 import { getPodStatusInfo, getAgentStatusInfo } from "@/stores/devmesh";
+import { useWorkspaceStore } from "@/stores/workspace";
+import { useAuthStore } from "@/stores/auth";
+import { Play, ExternalLink, Terminal } from "lucide-react";
 
 interface TicketPod {
   pod_key: string;
@@ -252,7 +256,7 @@ export default function TicketPodPanel({
       <div className="divide-y divide-border">
         {/* Active Pods */}
         {activePods.map((pod) => (
-          <PodItem key={pod.pod_key} pod={pod} />
+          <PodItem key={pod.pod_key} pod={pod} ticketIdentifier={ticketIdentifier} />
         ))}
 
         {/* Inactive Pods (collapsed by default if there are active ones) */}
@@ -263,7 +267,7 @@ export default function TicketPodPanel({
             </summary>
             <div className="divide-y divide-border border-t border-border">
               {inactivePods.map((pod) => (
-                <PodItem key={pod.pod_key} pod={pod} />
+                <PodItem key={pod.pod_key} pod={pod} ticketIdentifier={ticketIdentifier} />
               ))}
             </div>
           </details>
@@ -288,13 +292,32 @@ export default function TicketPodPanel({
   );
 }
 
-function PodItem({ pod }: { pod: TicketPod }) {
+interface PodItemProps {
+  pod: TicketPod;
+  ticketIdentifier: string;
+}
+
+function PodItem({ pod, ticketIdentifier }: PodItemProps) {
+  const router = useRouter();
+  const { currentOrg } = useAuthStore();
+  const { addPane } = useWorkspaceStore();
   const statusInfo = getPodStatusInfo(pod.status);
   const agentInfo = getAgentStatusInfo(pod.agent_status);
   const isActive = pod.status === "running" || pod.status === "initializing";
 
+  const handleConnect = () => {
+    // Add to workspace and navigate
+    addPane(pod.pod_key, `${ticketIdentifier} Pod`);
+    router.push(`/${currentOrg?.slug}/workspace`);
+  };
+
+  const handleOpenInNewTab = () => {
+    // Open pod detail in new tab
+    window.open(`/${currentOrg?.slug}/workspace?pod=${pod.pod_key}`, "_blank");
+  };
+
   return (
-    <div className={`px-4 py-3 ${isActive ? "bg-green-50/50" : ""}`}>
+    <div className={`px-4 py-3 ${isActive ? "bg-green-50/50 dark:bg-green-900/10" : ""}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Status Indicator */}
@@ -334,12 +357,24 @@ function PodItem({ pod }: { pod: TicketPod }) {
         {/* Actions */}
         <div className="flex items-center gap-2">
           {pod.model && (
-            <span className="text-xs text-muted-foreground">{pod.model}</span>
+            <span className="text-xs text-muted-foreground hidden sm:inline">{pod.model}</span>
           )}
           {isActive && (
-            <Button size="sm" variant="outline">
-              Connect
-            </Button>
+            <>
+              <Button size="sm" variant="outline" onClick={handleConnect}>
+                <Terminal className="w-3.5 h-3.5 mr-1" />
+                Connect
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="hidden sm:flex"
+                onClick={handleOpenInNewTab}
+                title="Open in new tab"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Button>
+            </>
           )}
         </div>
       </div>

@@ -2,40 +2,9 @@
 
 import { useState, DragEvent } from "react";
 import { TicketCard } from "./TicketCard";
+import { Ticket, TicketStatus } from "@/stores/ticket";
 
-interface Label {
-  id: number;
-  name: string;
-  color: string;
-}
-
-interface User {
-  id: number;
-  username: string;
-  name?: string;
-  avatarUrl?: string;
-}
-
-interface Ticket {
-  id: number;
-  number: number;
-  identifier: string;
-  type: "task" | "bug" | "feature" | "epic";
-  title: string;
-  description?: string;
-  status: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "cancelled";
-  priority: "none" | "low" | "medium" | "high" | "urgent";
-  due_date?: string;
-  created_at: string;
-  assignees?: User[];
-  labels?: Label[];
-  repository?: {
-    id: number;
-    name: string;
-  };
-}
-
-type Status = Ticket["status"];
+type Status = TicketStatus;
 
 interface KanbanBoardProps {
   tickets: Ticket[];

@@ -24,12 +24,15 @@ interface TicketFilters {
   search?: string;
 }
 
+export type TicketViewMode = "list" | "board";
+
 interface TicketState {
   // State
   tickets: Ticket[];
   currentTicket: Ticket | null;
   labels: Label[];
   filters: TicketFilters;
+  viewMode: TicketViewMode;
   loading: boolean;
   error: string | null;
   totalCount: number;
@@ -67,6 +70,7 @@ interface TicketState {
   createLabel: (name: string, color: string, repositoryId?: number) => Promise<Label>;
   deleteLabel: (id: number) => Promise<void>;
   setFilters: (filters: TicketFilters) => void;
+  setViewMode: (mode: TicketViewMode) => void;
   setCurrentTicket: (ticket: Ticket | null) => void;
   clearError: () => void;
 }
@@ -76,6 +80,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   currentTicket: null,
   labels: [],
   filters: {},
+  viewMode: "board",
   loading: false,
   error: null,
   totalCount: 0,
@@ -220,6 +225,10 @@ export const useTicketStore = create<TicketState>((set, get) => ({
 
   setFilters: (filters) => {
     set({ filters });
+  },
+
+  setViewMode: (mode) => {
+    set({ viewMode: mode });
   },
 
   setCurrentTicket: (ticket) => {

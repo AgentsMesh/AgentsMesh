@@ -1,4 +1,4 @@
-export { Terminal, useTerminal, type TerminalHandle } from "./Terminal";
-export { PodCard } from "./PodCard";
-export { RunnerCard } from "./RunnerCard";
-export { PodDetail } from "./PodDetail";
+// Legacy agentpod components removed in IDE migration
+// New components are in:
+// - @/components/workspace (TerminalPane, TerminalGrid, etc.)
+// - @/stores/workspace (workspace state management)

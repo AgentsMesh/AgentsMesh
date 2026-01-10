@@ -2,30 +2,28 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { DevMeshTopology, DevMeshSidebar } from "@/components/devmesh";
+import { DevMeshTopology } from "@/components/devmesh";
+import { ChannelChatPanel, MobileChannelChat } from "@/components/mesh";
 import { useDevMeshStore } from "@/stores/devmesh";
+import { cn } from "@/lib/utils";
+import { useBreakpoint } from "@/components/layout/useBreakpoint";
 
 export default function MeshPage() {
   const {
     topology,
-    selectedNode,
     selectedChannel,
     loading,
     error,
-    selectNode,
-    selectChannel,
     fetchTopology,
+    selectChannel,
     clearError,
   } = useDevMeshStore();
+
+  const { isMobile } = useBreakpoint();
 
   useEffect(() => {
     fetchTopology();
   }, [fetchTopology]);
-
-  const handleCloseSidebar = () => {
-    selectNode(null);
-    selectChannel(null);
-  };
 
   const activePodCount = topology?.nodes.filter(
     (n) => n.status === "running" || n.status === "initializing"
@@ -33,10 +31,18 @@ export default function MeshPage() {
 
   const activeChannelCount = topology?.channels.filter((c) => !c.is_archived).length || 0;
 
+  // Handle closing the chat panel
+  const handleCloseChat = () => {
+    selectChannel(null);
+  };
+
   return (
     <div className="flex h-full">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Content - Topology */}
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0",
+        selectedChannel && "border-r border-border"
+      )}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between">
           <div>
@@ -115,7 +121,7 @@ export default function MeshPage() {
 
         {/* Legend */}
         <div className="px-6 py-3 border-t border-border">
-          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+          <div className="flex items-center gap-6 text-xs text-muted-foreground flex-wrap">
             <span className="font-medium">Legend:</span>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded bg-green-500" />
@@ -149,9 +155,22 @@ export default function MeshPage() {
         </div>
       </div>
 
-      {/* Sidebar for selected node/channel */}
-      {(selectedNode || selectedChannel) && (
-        <DevMeshSidebar onClose={handleCloseSidebar} />
+      {/* Right Panel - Channel Chat (Desktop: side panel, Mobile: full-screen overlay) */}
+      {selectedChannel && !isMobile && (
+        <div className="w-[400px] flex-shrink-0 hidden md:block">
+          <ChannelChatPanel
+            channelId={selectedChannel}
+            onClose={handleCloseChat}
+          />
+        </div>
+      )}
+
+      {/* Mobile: Full-screen chat overlay */}
+      {selectedChannel && isMobile && (
+        <MobileChannelChat
+          channelId={selectedChannel}
+          onClose={handleCloseChat}
+        />
       )}
     </div>
   );

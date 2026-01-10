@@ -1,28 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { KanbanBoard, TicketFilters, TicketFiltersValue, TicketCreateDialog } from "@/components/tickets";
-import { ticketApi } from "@/lib/api/client";
-import { Plus } from "lucide-react";
+import { useTicketStore, Ticket, TicketStatus } from "@/stores/ticket";
+import { KanbanBoard, TicketCreateDialog } from "@/components/tickets";
+import { Loader2 } from "lucide-react";
 
-interface Ticket {
-  id: number;
-  number: number;
-  identifier: string;
-  title: string;
-  description?: string;
-  status: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "cancelled";
-  priority: "none" | "low" | "medium" | "high" | "urgent";
-  type: "task" | "bug" | "feature" | "epic";
-  created_at: string;
-  assignees?: Array<{ id: number; username: string; name?: string; avatarUrl?: string }>;
-  labels?: Array<{ id: number; name: string; color: string }>;
-  repository?: { id: number; name: string };
-}
-
+// Status colors for list view
 const statusColors: Record<string, string> = {
   backlog: "bg-gray-100 text-gray-700",
   todo: "bg-blue-100 text-blue-700",
@@ -42,120 +27,50 @@ const priorityColors: Record<string, string> = {
 
 export default function TicketsPage() {
   const router = useRouter();
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<TicketFiltersValue>({});
-  const [viewMode, setViewMode] = useState<"list" | "board">("list");
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const {
+    tickets,
+    loading,
+    viewMode,
+    fetchTickets,
+    updateTicketStatus,
+  } = useTicketStore();
 
+  // Load tickets on mount
   useEffect(() => {
-    loadTickets();
-  }, []);
+    fetchTickets();
+  }, [fetchTickets]);
 
-  const loadTickets = async () => {
+  const handleStatusChange = useCallback(async (identifier: string, newStatus: TicketStatus) => {
     try {
-      const response = await ticketApi.list();
-      setTickets((response.tickets || []) as Ticket[]);
-    } catch (error) {
-      console.error("Failed to load tickets:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = useCallback(async (identifier: string, newStatus: Ticket["status"]) => {
-    try {
-      await ticketApi.updateStatus(identifier, newStatus);
-      setTickets(prev =>
-        prev.map(t => (t.identifier === identifier ? { ...t, status: newStatus } : t))
-      );
+      await updateTicketStatus(identifier, newStatus);
     } catch (error) {
       console.error("Failed to update ticket status:", error);
     }
-  }, []);
+  }, [updateTicketStatus]);
 
   const handleTicketClick = useCallback((ticket: Ticket) => {
     router.push(`tickets/${ticket.identifier}`);
   }, [router]);
 
-  const handleTicketCreated = useCallback((ticketId: number, identifier: string) => {
-    // Reload tickets to show the new one
-    loadTickets();
-    // Optionally navigate to the new ticket
-    // router.push(`tickets/${identifier}`);
-  }, []);
-
-  const filteredTickets = useMemo(() => {
-    return tickets.filter((ticket) => {
-      // Search filter
-      const searchTerm = filters.search?.toLowerCase() || "";
-      const matchesSearch =
-        !searchTerm ||
-        ticket.title.toLowerCase().includes(searchTerm) ||
-        ticket.identifier.toLowerCase().includes(searchTerm);
-
-      // Status filter
-      const matchesStatus = !filters.status || ticket.status === filters.status;
-
-      // Type filter
-      const matchesType = !filters.type || ticket.type === filters.type;
-
-      // Priority filter
-      const matchesPriority = !filters.priority || ticket.priority === filters.priority;
-
-      return matchesSearch && matchesStatus && matchesType && matchesPriority;
-    });
-  }, [tickets, filters]);
-
-  if (loading) {
+  if (loading && tickets.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Tickets</h1>
-          <p className="text-muted-foreground">
-            Track and manage your tasks and issues
-          </p>
-        </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Ticket
-        </Button>
-      </div>
-
-      {/* Create Ticket Dialog */}
-      <TicketCreateDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onCreated={handleTicketCreated}
-      />
-
-      {/* Filters */}
-      <div className="mb-6">
-        <TicketFilters
-          value={filters}
-          onChange={setFilters}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          showViewToggle
-        />
-      </div>
-
-      {/* Content */}
+    <div className="h-full flex flex-col">
+      {/* Content - filtered by sidebar */}
       {viewMode === "list" ? (
-        <ListView tickets={filteredTickets} />
+        <div className="flex-1 overflow-auto p-4">
+          <ListView tickets={tickets} />
+        </div>
       ) : (
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 p-4">
           <KanbanBoard
-            tickets={filteredTickets}
+            tickets={tickets}
             onStatusChange={handleStatusChange}
             onTicketClick={handleTicketClick}
           />
@@ -181,7 +96,7 @@ function ListView({ tickets }: { tickets: Ticket[] }) {
         </thead>
         <tbody className="divide-y divide-border">
           {tickets.map((ticket) => (
-            <tr key={ticket.id} className="hover:bg-muted/50">
+            <tr key={ticket.id} className="hover:bg-muted/50 cursor-pointer">
               <td className="px-4 py-3">
                 <code className="text-sm text-primary">{ticket.identifier}</code>
               </td>
@@ -211,7 +126,7 @@ function ListView({ tickets }: { tickets: Ticket[] }) {
                 {ticket.type}
               </td>
               <td className="px-4 py-3 text-muted-foreground">
-                {new Date(ticket.created_at).toLocaleDateString()}
+                {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : "-"}
               </td>
             </tr>
           ))}
@@ -221,7 +136,7 @@ function ListView({ tickets }: { tickets: Ticket[] }) {
                 colSpan={6}
                 className="px-4 py-8 text-center text-muted-foreground"
               >
-                No tickets found.
+                No tickets found. Use sidebar filters or create a new ticket.
               </td>
             </tr>
           )}

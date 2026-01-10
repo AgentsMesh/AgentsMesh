@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useSubscription } from "@apollo/client/react";
+import { useQuery, useMutation } from "@apollo/client/react";
 
 // Apollo Client v4 compatible option types - simplified interface for common use cases
 interface QueryOptions {
@@ -79,21 +79,6 @@ import {
   SET_AGENT_CREDENTIALS,
   DELETE_AGENT_CREDENTIALS,
 } from "./mutations";
-
-// Subscription imports
-import {
-  POD_UPDATED,
-  POD_OUTPUT,
-  POD_STATUS_CHANGED,
-  MESSAGE_RECEIVED,
-  CHANNEL_UPDATED,
-  POD_JOINED_CHANNEL,
-  POD_LEFT_CHANNEL,
-  RUNNER_STATUS_CHANGED,
-  RUNNER_HEARTBEAT,
-  TICKET_UPDATED,
-  ORGANIZATION_ACTIVITY,
-} from "./subscriptions";
 
 // ============ Query Hooks ============
 
@@ -384,77 +369,4 @@ export const useSetAgentCredentials = (options?: MutationOptions) => {
 
 export const useDeleteAgentCredentials = (options?: MutationOptions) => {
   return useMutation(DELETE_AGENT_CREDENTIALS, options);
-};
-
-// ============ Subscription Hooks ============
-
-export const usePodUpdated = (podKey: string) => {
-  return useSubscription(POD_UPDATED, {
-    variables: { podKey },
-    skip: !podKey,
-  });
-};
-
-export const usePodOutput = (podKey: string) => {
-  return useSubscription(POD_OUTPUT, {
-    variables: { podKey },
-    skip: !podKey,
-  });
-};
-
-export const usePodStatusChanged = (podKey: string) => {
-  return useSubscription(POD_STATUS_CHANGED, {
-    variables: { podKey },
-    skip: !podKey,
-  });
-};
-
-export const useMessageReceived = (channelId: string) => {
-  return useSubscription(MESSAGE_RECEIVED, {
-    variables: { channelId },
-    skip: !channelId,
-  });
-};
-
-export const useChannelUpdated = (channelId: string) => {
-  return useSubscription(CHANNEL_UPDATED, {
-    variables: { channelId },
-    skip: !channelId,
-  });
-};
-
-export const usePodJoinedChannel = (channelId: string) => {
-  return useSubscription(POD_JOINED_CHANNEL, {
-    variables: { channelId },
-    skip: !channelId,
-  });
-};
-
-export const usePodLeftChannel = (channelId: string) => {
-  return useSubscription(POD_LEFT_CHANNEL, {
-    variables: { channelId },
-    skip: !channelId,
-  });
-};
-
-export const useRunnerStatusChanged = () => {
-  return useSubscription(RUNNER_STATUS_CHANGED);
-};
-
-export const useRunnerHeartbeat = (runnerId: string) => {
-  return useSubscription(RUNNER_HEARTBEAT, {
-    variables: { runnerId },
-    skip: !runnerId,
-  });
-};
-
-export const useTicketUpdated = (identifier: string) => {
-  return useSubscription(TICKET_UPDATED, {
-    variables: { identifier },
-    skip: !identifier,
-  });
-};
-
-export const useOrganizationActivity = () => {
-  return useSubscription(ORGANIZATION_ACTIVITY);
 };

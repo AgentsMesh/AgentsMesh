@@ -7,8 +7,5 @@ export * from "./queries";
 // Mutations
 export * from "./mutations";
 
-// Subscriptions
-export * from "./subscriptions";
-
 // Hooks
 export * from "./hooks";

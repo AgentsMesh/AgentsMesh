@@ -1,38 +1,7 @@
 "use client";
 
 import Link from "next/link";
-
-interface Label {
-  id: number;
-  name: string;
-  color: string;
-}
-
-interface User {
-  id: number;
-  username: string;
-  name?: string;
-  avatarUrl?: string;
-}
-
-interface Ticket {
-  id: number;
-  number: number;
-  identifier: string;
-  type: "task" | "bug" | "feature" | "epic";
-  title: string;
-  description?: string;
-  status: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "cancelled";
-  priority: "none" | "low" | "medium" | "high" | "urgent";
-  due_date?: string;
-  created_at: string;
-  assignees?: User[];
-  labels?: Label[];
-  repository?: {
-    id: number;
-    name: string;
-  };
-}
+import { Ticket } from "@/stores/ticket";
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -44,7 +13,10 @@ const typeConfig: Record<string, { icon: string; color: string }> = {
   task: { icon: "✓", color: "text-blue-500" },
   bug: { icon: "🐛", color: "text-red-500" },
   feature: { icon: "✨", color: "text-green-500" },
+  improvement: { icon: "📈", color: "text-cyan-500" },
   epic: { icon: "⚡", color: "text-purple-500" },
+  subtask: { icon: "◦", color: "text-gray-500" },
+  story: { icon: "📖", color: "text-teal-500" },
 };
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -164,9 +136,9 @@ export function TicketCard({ ticket, onClick, showRepository = true }: TicketCar
               className="w-6 h-6 rounded-full border-2 border-background overflow-hidden"
               title={assignee.name || assignee.username}
             >
-              {assignee.avatarUrl ? (
+              {assignee.avatar_url ? (
                 <img
-                  src={assignee.avatarUrl}
+                  src={assignee.avatar_url}
                   alt={assignee.username}
                   className="w-full h-full object-cover"
                 />

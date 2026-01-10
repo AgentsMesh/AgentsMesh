@@ -2,18 +2,13 @@ import {
   ApolloClient,
   InMemoryCache,
   createHttpLink,
-  split,
   ApolloLink,
 } from "@apollo/client";
-import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
-import { getMainDefinition } from "@apollo/client/utilities";
 import { setContext } from "@apollo/client/link/context";
 import { ErrorLink } from "@apollo/client/link/error";
 import { CombinedGraphQLErrors } from "@apollo/client/errors";
-import { createClient } from "graphql-ws";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080";
 
 // Create HTTP link for queries and mutations
 const httpLink = createHttpLink({
@@ -58,53 +53,9 @@ const errorLink = new ErrorLink(({ error }) => {
   }
 });
 
-// Create WebSocket link for subscriptions (client-side only)
-let wsLink: GraphQLWsLink | null = null;
-
-if (typeof window !== "undefined") {
-  const wsClient = createClient({
-    url: `${WS_URL}/graphql`,
-    connectionParams: () => {
-      const token = localStorage.getItem("token");
-      const orgSlug = localStorage.getItem("currentOrg");
-      return {
-        authorization: token ? `Bearer ${token}` : "",
-        "X-Organization-Slug": orgSlug || "",
-      };
-    },
-    retryAttempts: 5,
-    shouldRetry: () => true,
-    on: {
-      connected: () => {
-        console.log("WebSocket connected");
-      },
-      error: (error) => {
-        console.error("WebSocket error:", error);
-      },
-    },
-  });
-
-  wsLink = new GraphQLWsLink(wsClient);
-}
-
-// Split link to use WebSocket for subscriptions, HTTP for everything else
-const splitLink = wsLink
-  ? split(
-      ({ query }) => {
-        const definition = getMainDefinition(query);
-        return (
-          definition.kind === "OperationDefinition" &&
-          definition.operation === "subscription"
-        );
-      },
-      wsLink,
-      ApolloLink.from([errorLink, authLink, httpLink])
-    )
-  : ApolloLink.from([errorLink, authLink, httpLink]);
-
-// Create Apollo Client instance
+// Create Apollo Client instance with HTTP link (no WebSocket subscriptions)
 export const apolloClient = new ApolloClient({
-  link: splitLink,
+  link: ApolloLink.from([errorLink, authLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Query: {

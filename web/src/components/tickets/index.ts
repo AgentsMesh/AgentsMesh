@@ -3,8 +3,6 @@ export { TicketList } from "./TicketList";
 export { KanbanBoard } from "./KanbanBoard";
 export { default as TicketPodPanel } from "./TicketPodPanel";
 export { TicketDetail } from "./TicketDetail";
-export { TicketFilters } from "./TicketFilters";
-export type { TicketFiltersValue } from "./TicketFilters";
 export { TicketCreateDialog } from "./TicketCreateDialog";
 export type { TicketCreateDialogProps } from "./TicketCreateDialog";
 export { TicketDetailPanel } from "./TicketDetailPanel";

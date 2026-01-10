@@ -212,7 +212,7 @@ describe('TicketCard Component', () => {
     it('should render avatar image when URL provided', () => {
       const ticketWithAssignees = {
         ...baseTicket,
-        assignees: [{ id: 1, username: 'john', avatarUrl: 'https://example.com/avatar.png' }],
+        assignees: [{ id: 1, username: 'john', avatar_url: 'https://example.com/avatar.png' }],
       }
       render(<TicketCard ticket={ticketWithAssignees} />)
       const img = screen.getByAltText('john')

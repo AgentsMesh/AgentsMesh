@@ -57,7 +57,7 @@ function OAuthCallbackContent() {
 
             // Redirect to first org's dashboard
             setTimeout(() => {
-              router.push(`/${orgsResponse.organizations[0].slug}/agentpod`);
+              router.push(`/${orgsResponse.organizations[0].slug}/workspace`);
             }, 1500);
           } else {
             // No organizations, redirect to onboarding

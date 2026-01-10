@@ -31,7 +31,7 @@ export default function LoginPage() {
         if (orgsResponse.organizations && orgsResponse.organizations.length > 0) {
           // Save organizations to store (this also sets currentOrg to the first one)
           setOrganizations(orgsResponse.organizations);
-          router.push(`/${orgsResponse.organizations[0].slug}/agentpod`);
+          router.push(`/${orgsResponse.organizations[0].slug}/workspace`);
         } else {
           // No organizations, redirect to onboarding
           router.push("/onboarding");

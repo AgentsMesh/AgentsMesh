@@ -1,61 +1,46 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
 import { organizationApi, agentApi, billingApi, BillingOverview, SubscriptionPlan, gitProviderApi, sshKeyApi, SSHKeyData } from "@/lib/api/client";
 import { useRunnerStore, Runner, RegistrationToken, getRunnerStatusInfo } from "@/stores/runner";
+import { NotificationSettings } from "@/components/settings";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("general");
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab") || "general";
   const { currentOrg } = useAuthStore();
 
-  const tabs = [
-    { id: "general", label: "General" },
-    { id: "members", label: "Members" },
-    { id: "agents", label: "Agents" },
-    { id: "runners", label: "Runners" },
-    { id: "git-providers", label: "Git Providers" },
-    { id: "billing", label: "Billing" },
-  ];
+  // Tab content mapping
+  const renderContent = () => {
+    switch (activeTab) {
+      case "general":
+        return <GeneralSettings org={currentOrg} />;
+      case "members":
+        return <MembersSettings />;
+      case "agents":
+        return <AgentsSettings />;
+      case "runners":
+        return <RunnersSettings />;
+      case "git-providers":
+        return <GitProvidersSettings />;
+      case "notifications":
+        return <NotificationsSettings />;
+      case "billing":
+        return <BillingSettings />;
+      default:
+        return <GeneralSettings org={currentOrg} />;
+    }
+  };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your organization settings
-        </p>
-      </div>
-
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <nav className="w-48 space-y-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full px-3 py-2 text-left text-sm rounded-md ${
-                activeTab === tab.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Content */}
-        <div className="flex-1">
-          {activeTab === "general" && <GeneralSettings org={currentOrg} />}
-          {activeTab === "members" && <MembersSettings />}
-          {activeTab === "agents" && <AgentsSettings />}
-          {activeTab === "runners" && <RunnersSettings />}
-          {activeTab === "git-providers" && <GitProvidersSettings />}
-          {activeTab === "billing" && <BillingSettings />}
-        </div>
+    <div className="h-full overflow-auto p-6">
+      {/* Content - navigation controlled by IDE Sidebar */}
+      <div className="max-w-4xl">
+        {renderContent()}
       </div>
     </div>
   );
@@ -2006,6 +1991,23 @@ function EditRunnerDialog({
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== Notifications Settings =====
+
+function NotificationsSettings() {
+  return (
+    <div className="space-y-6">
+      <div className="border border-border rounded-lg p-6">
+        <h2 className="text-lg font-semibold mb-4">Push Notifications</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Configure push notifications for important events like pod status changes,
+          ticket assignments, and runner alerts.
+        </p>
+        <NotificationSettings />
       </div>
     </div>
   );
