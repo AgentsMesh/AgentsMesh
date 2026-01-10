@@ -11,6 +11,7 @@ import (
 	"github.com/anthropics/agentmesh/backend/internal/service/binding"
 	"github.com/anthropics/agentmesh/backend/internal/service/channel"
 	"github.com/anthropics/agentmesh/backend/internal/service/devmesh"
+	fileservice "github.com/anthropics/agentmesh/backend/internal/service/file"
 	"github.com/anthropics/agentmesh/backend/internal/service/gitprovider"
 	"github.com/anthropics/agentmesh/backend/internal/service/invitation"
 	"github.com/anthropics/agentmesh/backend/internal/service/organization"
@@ -47,9 +48,10 @@ type Services struct {
 	Billing           *billing.Service
 	Message           *MessageService    // Agent-to-agent messaging
 	Hub               *websocket.Hub     // WebSocket hub for real-time communication
-	SSHKey            *sshkey.Service    // SSH key management
-	Email             email.Service      // Email service
-	Invitation        *invitation.Service // Organization invitations
+	SSHKey            *sshkey.Service      // SSH key management
+	Email             email.Service        // Email service
+	Invitation        *invitation.Service  // Organization invitations
+	File              *fileservice.Service // File storage service
 }
 
 // RegisterAllRoutes registers all API v1 routes with proper handlers
@@ -271,6 +273,16 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.Invitation != nil {
 		invitationHandler := NewInvitationHandler(svc.Invitation, svc.Org, svc.User)
 		invitationHandler.RegisterOrgRoutes(rg)
+	}
+
+	// Files (storage)
+	if svc.File != nil {
+		fileHandler := NewFileHandler(svc.File)
+		files := rg.Group("/files")
+		{
+			files.POST("/upload", fileHandler.UploadFile)
+			files.DELETE("/:id", fileHandler.DeleteFile)
+		}
 	}
 }
 

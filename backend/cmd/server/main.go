@@ -16,6 +16,7 @@ import (
 	"github.com/anthropics/agentmesh/backend/internal/infra/database"
 	"github.com/anthropics/agentmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentmesh/backend/internal/infra/logger"
+	"github.com/anthropics/agentmesh/backend/internal/infra/storage"
 	"github.com/anthropics/agentmesh/backend/internal/infra/websocket"
 	"github.com/anthropics/agentmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentmesh/backend/internal/service/auth"
@@ -28,6 +29,7 @@ import (
 	"github.com/anthropics/agentmesh/backend/internal/service/organization"
 	"github.com/anthropics/agentmesh/backend/internal/service/repository"
 	"github.com/anthropics/agentmesh/backend/internal/service/agentpod"
+	fileservice "github.com/anthropics/agentmesh/backend/internal/service/file"
 	"github.com/anthropics/agentmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentmesh/backend/internal/service/sshkey"
 	"github.com/anthropics/agentmesh/backend/internal/service/ticket"
@@ -97,6 +99,33 @@ func main() {
 	})
 	invitationSvc := invitation.NewService(db, emailSvc)
 
+	// Initialize storage (S3-compatible)
+	var fileSvc *fileservice.Service
+	if cfg.Storage.AccessKey != "" && cfg.Storage.SecretKey != "" {
+		s3Storage, err := storage.NewS3Storage(storage.S3Config{
+			Endpoint:       cfg.Storage.Endpoint,
+			PublicEndpoint: cfg.Storage.PublicEndpoint,
+			Region:         cfg.Storage.Region,
+			Bucket:         cfg.Storage.Bucket,
+			AccessKey:      cfg.Storage.AccessKey,
+			SecretKey:      cfg.Storage.SecretKey,
+			UseSSL:         cfg.Storage.UseSSL,
+			UsePathStyle:   cfg.Storage.UsePathStyle,
+		})
+		if err != nil {
+			slog.Error("Failed to initialize storage", "error", err)
+		} else {
+			// Ensure bucket exists
+			if err := s3Storage.EnsureBucket(context.Background()); err != nil {
+				slog.Warn("Failed to ensure bucket exists", "bucket", cfg.Storage.Bucket, "error", err)
+			}
+			fileSvc = fileservice.NewService(db, s3Storage, cfg.Storage)
+			slog.Info("Storage initialized", "endpoint", cfg.Storage.Endpoint, "bucket", cfg.Storage.Bucket)
+		}
+	} else {
+		slog.Warn("Storage not configured, file upload disabled")
+	}
+
 	// Initialize WebSocket hub
 	hub := websocket.NewHub()
 	go hub.Run()
@@ -131,6 +160,7 @@ func main() {
 		Billing:        billingSvc,
 		Hub:            hub,
 		Invitation:     invitationSvc,
+		File:           fileSvc,
 	}
 
 	// Initialize router

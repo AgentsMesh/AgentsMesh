@@ -17,6 +17,21 @@ type Config struct {
 	Webhook  WebhookConfig
 	Log      LogConfig
 	Email    EmailConfig
+	Storage  StorageConfig
+}
+
+// StorageConfig holds object storage configuration (S3-compatible)
+type StorageConfig struct {
+	Endpoint       string   // S3 endpoint (empty for AWS, set for MinIO/OSS)
+	PublicEndpoint string   // Public endpoint for browser access (if different from Endpoint)
+	Region         string   // AWS region or equivalent
+	Bucket         string   // Bucket name
+	AccessKey      string   // Access key ID
+	SecretKey      string   // Secret access key
+	UseSSL         bool     // Use HTTPS
+	UsePathStyle   bool     // Use path-style URLs (required for MinIO)
+	MaxFileSize    int64    // Max file size in MB
+	AllowedTypes   []string // Allowed MIME types
 }
 
 // EmailConfig holds email service configuration
@@ -167,6 +182,18 @@ func Load() (*Config, error) {
 			ResendKey:   getEnv("RESEND_API_KEY", ""),
 			FromAddress: getEnv("EMAIL_FROM_ADDRESS", "AgentMesh <noreply@agentmesh.dev>"),
 			BaseURL:     getEnv("FRONTEND_BASE_URL", "http://localhost:3000"),
+		},
+		Storage: StorageConfig{
+			Endpoint:       getEnv("STORAGE_ENDPOINT", ""),
+			PublicEndpoint: getEnv("STORAGE_PUBLIC_ENDPOINT", ""),
+			Region:         getEnv("STORAGE_REGION", "us-east-1"),
+			Bucket:         getEnv("STORAGE_BUCKET", "agentmesh"),
+			AccessKey:      getEnv("STORAGE_ACCESS_KEY", ""),
+			SecretKey:      getEnv("STORAGE_SECRET_KEY", ""),
+			UseSSL:         getEnvBool("STORAGE_USE_SSL", true),
+			UsePathStyle:   getEnvBool("STORAGE_USE_PATH_STYLE", false),
+			MaxFileSize:    int64(getEnvInt("STORAGE_MAX_FILE_SIZE", 10)),
+			AllowedTypes:   getEnvList("STORAGE_ALLOWED_TYPES", []string{"image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"}),
 		},
 	}, nil
 }

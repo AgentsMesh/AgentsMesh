@@ -36,6 +36,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # MinIO object storage (S3 compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: agentmesh-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Backend API server with hot reload
   backend:
     build:
@@ -71,6 +91,21 @@ services:
       # Email
       - EMAIL_PROVIDER=console
       - FRONTEND_BASE_URL=http://localhost:3000
+      # OAuth - GitHub
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-}
+      - GITHUB_REDIRECT_URL=http://localhost:8080/api/v1/auth/oauth/github/callback
+      # Storage (MinIO/S3)
+      - STORAGE_ENDPOINT=minio:9000
+      - STORAGE_PUBLIC_ENDPOINT=localhost:9000
+      - STORAGE_REGION=us-east-1
+      - STORAGE_BUCKET=agentmesh
+      - STORAGE_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - STORAGE_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - STORAGE_USE_SSL=false
+      - STORAGE_USE_PATH_STYLE=true
+      - STORAGE_MAX_FILE_SIZE=10
+      - STORAGE_ALLOWED_TYPES=image/jpeg,image/png,image/gif,image/webp,application/pdf
     volumes:
       # Mount source code for hot reload
       - ./backend:/app
@@ -92,6 +127,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  minio_data:
   go-mod-cache:
   go-build-cache:
 
