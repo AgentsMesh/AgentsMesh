@@ -22,6 +22,11 @@ func New(cfg *config.Config) *TrayApp {
 	return &TrayApp{cfg: cfg}
 }
 
+// NewWithVersion creates a new tray application with version info.
+func NewWithVersion(cfg *config.Config, version string) *TrayApp {
+	return &TrayApp{cfg: cfg}
+}
+
 // Run prints an error message since desktop mode is not available without CGO.
 func (t *TrayApp) Run() {
 	fmt.Println("Desktop mode is not available in this build.")

@@ -105,26 +105,29 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
-sboms:
-  - artifacts: archive
+# SBOM generation (requires syft, optional)
+# sboms:
+#   - artifacts: archive
 
-signs:
-  - cmd: cosign
-    env:
-      - COSIGN_EXPERIMENTAL=1
-    certificate: "${artifact}.pem"
-    args:
-      - sign-blob
-      - "--output-certificate=${certificate}"
-      - "--output-signature=${signature}"
-      - "${artifact}"
-      - "--yes"
-    artifacts: checksum
-    output: true
+# Signing with cosign (optional, enable in CI)
+# signs:
+#   - cmd: cosign
+#     env:
+#       - COSIGN_EXPERIMENTAL=1
+#     certificate: "${artifact}.pem"
+#     args:
+#       - sign-blob
+#       - "--output-certificate=${certificate}"
+#       - "--output-signature=${signature}"
+#       - "${artifact}"
+#       - "--yes"
+#     artifacts: checksum
+#     output: true
 
 changelog:
+  # Use local git log since release repo is separate from source
   sort: asc
-  use: github
+  use: git
   filters:
     exclude:
       - "^docs:"
@@ -215,40 +218,42 @@ release:
     - glob: ./build/darwin/Info.plist
 
 # Homebrew tap (optional - requires separate tap repo)
-brews:
-  - name: agentmesh-runner
-    repository:
-      owner: AgentsMesh
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    commit_author:
-      name: AgentMesh Bot
-      email: bot@agentmesh.dev
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
-    directory: Formula
-    homepage: https://agentmesh.dev
-    description: "AgentMesh Runner - AI Agent Task Executor"
-    license: MIT
-    install: |
-      bin.install "runner"
-    test: |
-      system "#{bin}/runner", "version"
-    skip_upload: auto
+# Uncomment when AgentsMesh/homebrew-tap is created
+# brews:
+#   - name: agentmesh-runner
+#     repository:
+#       owner: AgentsMesh
+#       name: homebrew-tap
+#       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+#     commit_author:
+#       name: AgentMesh Bot
+#       email: bot@agentmesh.dev
+#     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+#     directory: Formula
+#     homepage: https://agentmesh.dev
+#     description: "AgentMesh Runner - AI Agent Task Executor"
+#     license: MIT
+#     install: |
+#       bin.install "runner"
+#     test: |
+#       system "#{bin}/runner", "version"
+#     skip_upload: auto
 
 # Scoop bucket for Windows (optional)
-scoops:
-  - repository:
-      owner: AgentsMesh
-      name: scoop-bucket
-      token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
-    commit_author:
-      name: AgentMesh Bot
-      email: bot@agentmesh.dev
-    commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
-    homepage: https://agentmesh.dev
-    description: "AgentMesh Runner - AI Agent Task Executor"
-    license: MIT
-    skip_upload: auto
+# Uncomment when AgentsMesh/scoop-bucket is created
+# scoops:
+#   - repository:
+#       owner: AgentsMesh
+#       name: scoop-bucket
+#       token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
+#     commit_author:
+#       name: AgentMesh Bot
+#       email: bot@agentmesh.dev
+#     commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
+#     homepage: https://agentmesh.dev
+#     description: "AgentMesh Runner - AI Agent Task Executor"
+#     license: MIT
+#     skip_upload: auto
 
 # Announce release (optional)
 announce:
