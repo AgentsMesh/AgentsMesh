@@ -1,4 +1,4 @@
-// Package client provides communication with AgentMesh server.
+// Package client provides communication with AgentsMesh server.
 package client
 
 import (

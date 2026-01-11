@@ -1,16 +1,16 @@
 #!/bin/bash
-# Pre-removal script for AgentMesh Runner
+# Pre-removal script for AgentsMesh Runner
 
 set -e
 
 # Stop the service if running
-if systemctl is-active --quiet agentmesh-runner; then
-    systemctl stop agentmesh-runner
+if systemctl is-active --quiet agentsmesh-runner; then
+    systemctl stop agentsmesh-runner
 fi
 
 # Disable the service
-if systemctl is-enabled --quiet agentmesh-runner 2>/dev/null; then
-    systemctl disable agentmesh-runner
+if systemctl is-enabled --quiet agentsmesh-runner 2>/dev/null; then
+    systemctl disable agentsmesh-runner
 fi
 
-echo "AgentMesh Runner service stopped and disabled."
+echo "AgentsMesh Runner service stopped and disabled."

@@ -14,10 +14,10 @@ import (
 // runDesktop handles the "desktop" subcommand for system tray mode.
 func runDesktop(args []string) {
 	fs := flag.NewFlagSet("desktop", flag.ExitOnError)
-	configFile := fs.String("config", "", "Path to config file (default: ~/.agentmesh/config.yaml)")
+	configFile := fs.String("config", "", "Path to config file (default: ~/.agentsmesh/config.yaml)")
 
 	fs.Usage = func() {
-		fmt.Println(`Start AgentMesh Runner in desktop mode with system tray.
+		fmt.Println(`Start AgentsMesh Runner in desktop mode with system tray.
 
 Usage:
   runner desktop [options]
@@ -46,7 +46,7 @@ The runner must be registered first using 'runner register'.`)
 		if err != nil {
 			log.Fatalf("Failed to get home directory: %v", err)
 		}
-		cfgFile = filepath.Join(home, ".agentmesh", "config.yaml")
+		cfgFile = filepath.Join(home, ".agentsmesh", "config.yaml")
 	}
 
 	// Check if config exists
@@ -72,7 +72,7 @@ The runner must be registered first using 'runner register'.`)
 		log.Fatalf("Invalid config: %v", err)
 	}
 
-	log.Printf("Starting AgentMesh Runner %s in desktop mode", version)
+	log.Printf("Starting AgentsMesh Runner %s in desktop mode", version)
 
 	// Create and run tray app with version info
 	app := tray.NewWithVersion(cfg, version)

@@ -1,4 +1,4 @@
-# GoReleaser configuration for AgentMesh Runner
+# GoReleaser configuration for AgentsMesh Runner
 # https://goreleaser.com
 #
 # Release repository: https://github.com/AgentsMesh/AgentsMeshRunner
@@ -6,7 +6,7 @@
 
 version: 2
 
-project_name: agentmesh-runner
+project_name: agentsmesh-runner
 
 before:
   hooks:
@@ -56,16 +56,16 @@ universal_binaries:
 # Linux packages using nfpm
 nfpms:
   - id: runner-deb-rpm
-    package_name: agentmesh-runner
+    package_name: agentsmesh-runner
     builds:
       - runner-cli
-    vendor: AgentMesh
-    homepage: https://agentmesh.dev
-    maintainer: AgentMesh Team <support@agentmesh.dev>
+    vendor: AgentsMesh
+    homepage: https://agentsmesh.ai
+    maintainer: AgentsMesh Team <support@agentsmesh.ai>
     description: |
-      AgentMesh Runner - AI Agent Task Executor
+      AgentsMesh Runner - AI Agent Task Executor
 
-      Connects to AgentMesh server and executes AI agent tasks
+      Connects to AgentsMesh server and executes AI agent tasks
       in isolated terminal environments.
     license: MIT
     formats:
@@ -76,10 +76,10 @@ nfpms:
     contents:
       # Systemd service file
       - src: ./build/linux/runner.service
-        dst: /etc/systemd/system/agentmesh-runner.service
+        dst: /etc/systemd/system/agentsmesh-runner.service
         type: config
       # Config directory
-      - dst: /etc/agentmesh
+      - dst: /etc/agentsmesh
         type: dir
         file_info:
           mode: 0755
@@ -162,56 +162,98 @@ release:
   prerelease: auto
 
   # Release title
-  name_template: "AgentMesh Runner v{{.Version}}"
+  name_template: "AgentsMesh Runner v{{.Version}}"
 
   # Release notes header
   header: |
-    ## AgentMesh Runner v{{.Version}}
+    ## AgentsMesh Runner v{{.Version}}
+
+    AgentsMesh Runner is an AI Agent task executor that connects to the AgentsMesh server and executes AI agent tasks in isolated terminal environments.
 
     ### Installation
 
-    **macOS (Homebrew):**
+    **macOS (Homebrew) - Recommended:**
     ```bash
-    brew install agentsmesh/tap/agentmesh-runner
+    # Add tap
+    brew tap agentsmesh/tap https://github.com/AgentsMesh/BrewCask
+
+    # Install runner
+    brew install agentsmesh/tap/agentsmesh-runner
     ```
 
-    **macOS/Linux (Direct download):**
+    **macOS (Direct download):**
     ```bash
-    curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentmesh-runner_{{.Version}}_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m).tar.gz | tar xz
+    # Intel or Apple Silicon (Universal binary)
+    curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_darwin_all.tar.gz | tar xz
     sudo mv runner /usr/local/bin/
     ```
 
     **Linux (Debian/Ubuntu):**
     ```bash
-    wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentmesh-runner_{{.Version}}_amd64.deb
-    sudo dpkg -i agentmesh-runner_{{.Version}}_amd64.deb
+    # x86_64
+    wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_linux_amd64.deb
+    sudo dpkg -i agentsmesh-runner_{{.Version}}_linux_amd64.deb
+
+    # ARM64
+    wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_linux_arm64.deb
+    sudo dpkg -i agentsmesh-runner_{{.Version}}_linux_arm64.deb
     ```
 
     **Linux (RHEL/CentOS/Fedora):**
     ```bash
-    wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentmesh-runner_{{.Version}}_amd64.rpm
-    sudo rpm -i agentmesh-runner_{{.Version}}_amd64.rpm
+    # x86_64
+    wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_linux_amd64.rpm
+    sudo rpm -i agentsmesh-runner_{{.Version}}_linux_amd64.rpm
+
+    # ARM64
+    wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_linux_arm64.rpm
+    sudo rpm -i agentsmesh-runner_{{.Version}}_linux_arm64.rpm
+    ```
+
+    **Linux (Alpine):**
+    ```bash
+    # x86_64
+    wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_linux_amd64.apk
+    sudo apk add --allow-untrusted agentsmesh-runner_{{.Version}}_linux_amd64.apk
+    ```
+
+    **Linux (Direct download):**
+    ```bash
+    # x86_64
+    curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_linux_amd64.tar.gz | tar xz
+    sudo mv runner /usr/local/bin/
     ```
 
     **Windows:**
-    Download `agentmesh-runner_{{.Version}}_windows_amd64.zip` and extract to your PATH.
+    Download `agentsmesh-runner_{{.Version}}_windows_amd64.zip` and extract to a directory in your PATH.
 
     ### Quick Start
 
     ```bash
-    # Register runner with server
-    runner register --server https://api.agentmesh.dev --token YOUR_TOKEN
+    # Register runner with AgentsMesh server
+    runner register --server https://api.agentsmesh.ai --token YOUR_TOKEN
 
     # Start runner
     runner run
     ```
 
+    ### Run as System Service
+
+    ```bash
+    # Install service
+    sudo runner service install
+
+    # Start service
+    sudo runner service start
+
+    # Check status
+    sudo runner service status
+    ```
+
   footer: |
     ---
 
-    **Full Changelog**: https://github.com/AgentsMesh/AgentsMeshRunner/compare/v{{.PreviousTag}}...v{{.Tag}}
-
-    **Documentation**: https://agentmesh.dev/docs/runner
+    **Documentation**: https://agentsmesh.ai/docs/runner
 
   # Extra files to upload
   extra_files:
@@ -220,18 +262,18 @@ release:
 # Homebrew tap (optional - requires separate tap repo)
 # Uncomment when AgentsMesh/homebrew-tap is created
 # brews:
-#   - name: agentmesh-runner
+#   - name: agentsmesh-runner
 #     repository:
 #       owner: AgentsMesh
 #       name: homebrew-tap
 #       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
 #     commit_author:
-#       name: AgentMesh Bot
-#       email: bot@agentmesh.dev
+#       name: AgentsMesh Bot
+#       email: bot@agentsmesh.ai
 #     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
 #     directory: Formula
-#     homepage: https://agentmesh.dev
-#     description: "AgentMesh Runner - AI Agent Task Executor"
+#     homepage: https://agentsmesh.ai
+#     description: "AgentsMesh Runner - AI Agent Task Executor"
 #     license: MIT
 #     install: |
 #       bin.install "runner"
@@ -247,11 +289,11 @@ release:
 #       name: scoop-bucket
 #       token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
 #     commit_author:
-#       name: AgentMesh Bot
-#       email: bot@agentmesh.dev
+#       name: AgentsMesh Bot
+#       email: bot@agentsmesh.ai
 #     commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
-#     homepage: https://agentmesh.dev
-#     description: "AgentMesh Runner - AI Agent Task Executor"
+#     homepage: https://agentsmesh.ai
+#     description: "AgentsMesh Runner - AI Agent Task Executor"
 #     license: MIT
 #     skip_upload: auto
 

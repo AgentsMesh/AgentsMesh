@@ -1,14 +1,14 @@
 [Unit]
-Description=AgentMesh Runner - AI Agent Task Executor
-Documentation=https://agentmesh.dev/docs/runner
+Description=AgentsMesh Runner - AI Agent Task Executor
+Documentation=https://agentsmesh.ai/docs/runner
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=agentmesh
-Group=agentmesh
-ExecStart=/usr/local/bin/runner run --config /etc/agentmesh/config.yaml
+User=agentsmesh
+Group=agentsmesh
+ExecStart=/usr/local/bin/runner run --config /etc/agentsmesh/config.yaml
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartSec=10
@@ -18,7 +18,7 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
 PrivateTmp=true
-ReadWritePaths=/var/lib/agentmesh /var/log/agentmesh
+ReadWritePaths=/var/lib/agentsmesh /var/log/agentsmesh
 
 # Resource limits
 LimitNOFILE=65536
@@ -27,7 +27,7 @@ LimitNPROC=4096
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=agentmesh-runner
+SyslogIdentifier=agentsmesh-runner
 
 [Install]
 WantedBy=multi-user.target

@@ -43,7 +43,7 @@ func runService(args []string) {
 }
 
 func printServiceUsage() {
-	fmt.Println(`Manage AgentMesh Runner as a system service.
+	fmt.Println(`Manage AgentsMesh Runner as a system service.
 
 Usage:
   runner service <action> [options]
@@ -57,7 +57,7 @@ Actions:
   status      Show service status
 
 Options for 'install':
-  --config    Path to config file (default: ~/.agentmesh/config.yaml)
+  --config    Path to config file (default: ~/.agentsmesh/config.yaml)
 
 Examples:
   runner service install

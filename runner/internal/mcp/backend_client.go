@@ -14,7 +14,7 @@ import (
 	"github.com/anthropics/agentmesh/runner/internal/mcp/tools"
 )
 
-// BackendClient calls the AgentMesh Backend API for collaboration operations.
+// BackendClient calls the AgentsMesh Backend API for collaboration operations.
 type BackendClient struct {
 	baseURL    string
 	orgSlug    string // Organization slug for org-scoped API paths

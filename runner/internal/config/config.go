@@ -49,7 +49,7 @@ type Config struct {
 	AgentEnvVars map[string]string `mapstructure:"agent_env_vars"`
 
 	// Plugin settings
-	PluginsDir string `mapstructure:"plugins_dir"` // User custom plugins directory (default: ~/.agentmesh/plugins)
+	PluginsDir string `mapstructure:"plugins_dir"` // User custom plugins directory (default: ~/.agentsmesh/plugins)
 
 	// Health check
 	HealthCheckPort int `mapstructure:"health_check_port"`
@@ -64,7 +64,7 @@ func Load(configFile string) (*Config, error) {
 	v := viper.New()
 
 	// Set defaults
-	v.SetDefault("server_url", "https://api.agentmesh.dev")
+	v.SetDefault("server_url", "https://api.agentsmesh.ai")
 	v.SetDefault("max_concurrent_pods", 5)
 	v.SetDefault("workspace_root", "/workspace")
 	v.SetDefault("mcp_port", 19000)
@@ -84,8 +84,8 @@ func Load(configFile string) (*Config, error) {
 		v.SetConfigName("runner")
 		v.SetConfigType("yaml")
 		v.AddConfigPath(".")
-		v.AddConfigPath("$HOME/.agentmesh")
-		v.AddConfigPath("/etc/agentmesh")
+		v.AddConfigPath("$HOME/.agentsmesh")
+		v.AddConfigPath("/etc/agentsmesh")
 	}
 
 	if err := v.ReadInConfig(); err != nil {
@@ -151,7 +151,7 @@ func (c *Config) SaveAuthToken(token string) error {
 		return err
 	}
 
-	configDir := filepath.Join(home, ".agentmesh")
+	configDir := filepath.Join(home, ".agentsmesh")
 	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func (c *Config) SaveOrgSlug(orgSlug string) error {
 		return err
 	}
 
-	configDir := filepath.Join(home, ".agentmesh")
+	configDir := filepath.Join(home, ".agentsmesh")
 	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func (c *Config) LoadAuthToken() error {
 		return nil // Not an error, token might be in env
 	}
 
-	tokenFile := filepath.Join(home, ".agentmesh", "auth_token")
+	tokenFile := filepath.Join(home, ".agentsmesh", "auth_token")
 	data, err := os.ReadFile(tokenFile)
 	if err != nil {
 		return nil // Not an error
@@ -210,7 +210,7 @@ func (c *Config) LoadOrgSlug() error {
 		return nil // Not an error
 	}
 
-	orgSlugFile := filepath.Join(home, ".agentmesh", "org_slug")
+	orgSlugFile := filepath.Join(home, ".agentsmesh", "org_slug")
 	data, err := os.ReadFile(orgSlugFile)
 	if err != nil {
 		return nil // Not an error
@@ -232,9 +232,9 @@ func (c *Config) GetWorkspace() string {
 	// Default to user's home directory
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return "/tmp/agentmesh"
+		return "/tmp/agentsmesh"
 	}
-	return filepath.Join(home, ".agentmesh")
+	return filepath.Join(home, ".agentsmesh")
 }
 
 // GetSandboxesDir returns the sandboxes directory path.
@@ -261,12 +261,12 @@ func (c *Config) GetPluginsDir() string {
 	if c.PluginsDir != "" {
 		return os.ExpandEnv(c.PluginsDir)
 	}
-	// Default to ~/.agentmesh/plugins
+	// Default to ~/.agentsmesh/plugins
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(home, ".agentmesh", "plugins")
+	return filepath.Join(home, ".agentsmesh", "plugins")
 }
 
 // GetLogPath returns the log file path.
@@ -274,10 +274,10 @@ func (c *Config) GetLogPath() string {
 	if c.LogFile != "" {
 		return os.ExpandEnv(c.LogFile)
 	}
-	// Default to ~/.agentmesh/logs/runner.log
+	// Default to ~/.agentsmesh/logs/runner.log
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(home, ".agentmesh", "logs", "runner.log")
+	return filepath.Join(home, ".agentsmesh", "logs", "runner.log")
 }

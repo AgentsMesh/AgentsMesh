@@ -221,7 +221,7 @@ func (s *HTTPServer) handleInitialize(w http.ResponseWriter, req *MCPRequest) {
 			},
 		},
 		"serverInfo": map[string]interface{}{
-			"name":    "AgentMesh Collaboration Server",
+			"name":    "AgentsMesh Collaboration Server",
 			"version": "1.0.0",
 		},
 	}

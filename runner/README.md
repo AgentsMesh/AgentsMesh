@@ -1,10 +1,10 @@
-# AgentMesh Runner
+# AgentsMesh Runner
 
 [![Release](https://img.shields.io/github/v/release/AgentsMesh/AgentsMeshRunner?style=flat-square)](https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/anthropics/agentmesh/runner?style=flat-square)](https://goreportcard.com/report/github.com/anthropics/agentmesh/runner)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-AgentMesh Runner is a lightweight agent that connects to the AgentMesh server and executes AI agent tasks in isolated terminal environments.
+AgentsMesh Runner is a lightweight agent that connects to the AgentsMesh server and executes AI agent tasks in isolated terminal environments.
 
 ## Features
 
@@ -12,21 +12,22 @@ AgentMesh Runner is a lightweight agent that connects to the AgentMesh server an
 - 🔒 **Secure execution**: Isolated terminal environments for each task
 - 🌐 **Cross-platform**: macOS, Linux, Windows support
 - 📊 **Web console**: Built-in status monitoring and log viewer
-- 🔄 **Auto-reconnect**: Resilient connection to AgentMesh server
+- 🔄 **Auto-reconnect**: Resilient connection to AgentsMesh server
 
 ## Installation
 
 ### macOS (Homebrew)
 
 ```bash
-brew install agentsmesh/tap/agentmesh-runner
+brew tap agentsmesh/tap https://github.com/AgentsMesh/BrewCask
+brew install agentsmesh/tap/agentsmesh-runner
 ```
 
 ### macOS/Linux (Direct download)
 
 ```bash
 # Download and install
-curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentmesh-runner_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m).tar.gz | tar xz
+curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentsmesh-runner_darwin_all.tar.gz | tar xz
 sudo mv runner /usr/local/bin/
 ```
 
@@ -34,16 +35,16 @@ sudo mv runner /usr/local/bin/
 
 ```bash
 # Download the latest .deb package
-wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentmesh-runner_amd64.deb
-sudo dpkg -i agentmesh-runner_amd64.deb
+wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentsmesh-runner_linux_amd64.deb
+sudo dpkg -i agentsmesh-runner_linux_amd64.deb
 ```
 
 ### Linux (RHEL/CentOS/Fedora)
 
 ```bash
 # Download the latest .rpm package
-wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentmesh-runner_amd64.rpm
-sudo rpm -i agentmesh-runner_amd64.rpm
+wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentsmesh-runner_linux_amd64.rpm
+sudo rpm -i agentsmesh-runner_linux_amd64.rpm
 ```
 
 ### Windows
@@ -54,17 +55,17 @@ Or using Scoop:
 
 ```powershell
 scoop bucket add agentsmesh https://github.com/AgentsMesh/scoop-bucket
-scoop install agentmesh-runner
+scoop install agentsmesh-runner
 ```
 
 ## Quick Start
 
 ### 1. Register the runner
 
-Get a registration token from your AgentMesh dashboard, then:
+Get a registration token from your AgentsMesh dashboard, then:
 
 ```bash
-runner register --server https://api.agentmesh.dev --token YOUR_TOKEN
+runner register --server https://api.agentsmesh.ai --token YOUR_TOKEN
 ```
 
 ### 2. Start the runner
@@ -97,13 +98,13 @@ runner service status
 ## Usage
 
 ```
-AgentMesh Runner
+AgentsMesh Runner
 
 Usage:
   runner <command> [options]
 
 Commands:
-  register    Register this runner with the AgentMesh server
+  register    Register this runner with the AgentsMesh server
   run         Start the runner in CLI mode
   desktop     Start runner in desktop mode with system tray
   service     Manage runner as a system service
@@ -115,13 +116,13 @@ Use "runner <command> --help" for more information about a command.
 
 ## Configuration
 
-Configuration is stored in `~/.agentmesh/config.yaml` after registration:
+Configuration is stored in `~/.agentsmesh/config.yaml` after registration:
 
 ```yaml
-server_url: https://api.agentmesh.dev
+server_url: https://api.agentsmesh.ai
 node_id: my-runner
 max_concurrent_pods: 5
-workspace_root: /tmp/agentmesh-workspace
+workspace_root: /tmp/agentsmesh-workspace
 default_agent: claude-code
 log_level: info
 ```
@@ -177,6 +178,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Links
 
-- [AgentMesh](https://agentmesh.dev) - Main product website
-- [Documentation](https://agentmesh.dev/docs/runner) - Full documentation
+- [AgentsMesh](https://agentsmesh.ai) - Main product website
+- [Documentation](https://agentsmesh.ai/docs/runner) - Full documentation
 - [Releases](https://github.com/AgentsMesh/AgentsMeshRunner/releases) - Download binaries

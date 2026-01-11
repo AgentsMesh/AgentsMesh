@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	ServiceName        = "agentmesh-runner"
-	ServiceDisplayName = "AgentMesh Runner"
-	ServiceDescription = "AgentMesh Runner - executes AI agent tasks"
+	ServiceName        = "agentsmesh-runner"
+	ServiceDisplayName = "AgentsMesh Runner"
+	ServiceDescription = "AgentsMesh Runner - executes AI agent tasks"
 )
 
 // Program implements the service.Interface for running as a system service.
@@ -249,5 +249,5 @@ func GetDefaultConfigPath() string {
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(home, ".agentmesh", "config.yaml")
+	return filepath.Join(home, ".agentsmesh", "config.yaml")
 }

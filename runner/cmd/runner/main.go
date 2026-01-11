@@ -36,7 +36,7 @@ func main() {
 	case "desktop":
 		runDesktop(os.Args[2:])
 	case "version", "-v", "--version":
-		fmt.Printf("AgentMesh Runner %s (built %s)\n", version, buildTime)
+		fmt.Printf("AgentsMesh Runner %s (built %s)\n", version, buildTime)
 	case "help", "-h", "--help":
 		printUsage()
 	default:
@@ -46,13 +46,13 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Println(`AgentMesh Runner
+	fmt.Println(`AgentsMesh Runner
 
 Usage:
   runner <command> [options]
 
 Commands:
-  register    Register this runner with the AgentMesh server
+  register    Register this runner with the AgentsMesh server
   run         Start the runner in CLI mode (requires prior registration)
   service     Manage runner as a system service (install/start/stop)
   desktop     Start runner in desktop mode with system tray
@@ -64,14 +64,14 @@ Use "runner <command> --help" for more information about a command.`)
 
 func runRegister(args []string) {
 	fs := flag.NewFlagSet("register", flag.ExitOnError)
-	serverURL := fs.String("server", "", "AgentMesh server URL (e.g., http://localhost:8080)")
+	serverURL := fs.String("server", "", "AgentsMesh server URL (e.g., http://localhost:8080)")
 	token := fs.String("token", "", "Registration token from the server")
 	nodeID := fs.String("node-id", "", "Node ID for this runner (default: hostname)")
-	description := fs.String("description", "AgentMesh Runner", "Description for this runner")
+	description := fs.String("description", "AgentsMesh Runner", "Description for this runner")
 	maxPods := fs.Int("max-pods", 5, "Maximum concurrent pods")
 
 	fs.Usage = func() {
-		fmt.Println(`Register this runner with the AgentMesh server.
+		fmt.Println(`Register this runner with the AgentsMesh server.
 
 Usage:
   runner register [options]
@@ -82,7 +82,7 @@ Options:`)
 Example:
   runner register --server http://localhost:8080 --token abc123def456
 
-After successful registration, the auth token and config will be saved to ~/.agentmesh/`)
+After successful registration, the auth token and config will be saved to ~/.agentsmesh/`)
 	}
 
 	if err := fs.Parse(args); err != nil {
@@ -123,24 +123,24 @@ After successful registration, the auth token and config will be saved to ~/.age
 		log.Fatalf("Registration failed: %v", err)
 	}
 
-	// Save configuration to ~/.agentmesh/
+	// Save configuration to ~/.agentsmesh/
 	if err := saveConfig(nID, *serverURL, result.AuthToken, result.OrgSlug, *description, *maxPods); err != nil {
 		log.Fatalf("Failed to save configuration: %v", err)
 	}
 
 	fmt.Println("✓ Registration successful!")
 	fmt.Printf("✓ Organization: %s\n", result.OrgSlug)
-	fmt.Printf("✓ Configuration saved to ~/.agentmesh/\n")
+	fmt.Printf("✓ Configuration saved to ~/.agentsmesh/\n")
 	fmt.Println("\nYou can now start the runner with:")
 	fmt.Println("  runner run")
 }
 
 func runRunner(args []string) {
 	fs := flag.NewFlagSet("run", flag.ExitOnError)
-	configFile := fs.String("config", "", "Path to config file (default: ~/.agentmesh/config.yaml)")
+	configFile := fs.String("config", "", "Path to config file (default: ~/.agentsmesh/config.yaml)")
 
 	fs.Usage = func() {
-		fmt.Println(`Start the AgentMesh runner.
+		fmt.Println(`Start the AgentsMesh runner.
 
 Usage:
   runner run [options]
@@ -149,7 +149,7 @@ Options:`)
 		fs.PrintDefaults()
 		fmt.Println(`
 The runner must be registered first using 'runner register'.
-Configuration is loaded from ~/.agentmesh/config.yaml by default.`)
+Configuration is loaded from ~/.agentsmesh/config.yaml by default.`)
 	}
 
 	if err := fs.Parse(args); err != nil {
@@ -163,7 +163,7 @@ Configuration is loaded from ~/.agentmesh/config.yaml by default.`)
 		if err != nil {
 			log.Fatalf("Failed to get home directory: %v", err)
 		}
-		cfgFile = filepath.Join(home, ".agentmesh", "config.yaml")
+		cfgFile = filepath.Join(home, ".agentsmesh", "config.yaml")
 	}
 
 	// Check if config exists
@@ -202,7 +202,7 @@ func runRunnerLegacy(args []string) {
 	}
 
 	if *showVersion {
-		fmt.Printf("AgentMesh Runner %s (built %s)\n", version, buildTime)
+		fmt.Printf("AgentsMesh Runner %s (built %s)\n", version, buildTime)
 		os.Exit(0)
 	}
 
@@ -247,7 +247,7 @@ func startRunner(cfg *config.Config) {
 	}()
 
 	// Start runner
-	log.Printf("Starting AgentMesh Runner %s", version)
+	log.Printf("Starting AgentsMesh Runner %s", version)
 	if err := r.Run(ctx); err != nil {
 		log.Fatalf("Runner error: %v", err)
 	}

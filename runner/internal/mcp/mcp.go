@@ -185,7 +185,7 @@ func (s *Server) initialize(ctx context.Context) error {
 			},
 		},
 		"clientInfo": map[string]interface{}{
-			"name":    "AgentMesh Runner",
+			"name":    "AgentsMesh Runner",
 			"version": "1.0.0",
 		},
 	}

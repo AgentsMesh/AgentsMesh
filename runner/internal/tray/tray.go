@@ -74,8 +74,8 @@ func (t *TrayApp) Run() {
 func (t *TrayApp) onReady() {
 	// Set icon
 	systray.SetIcon(getIcon())
-	systray.SetTitle("AgentMesh Runner")
-	systray.SetTooltip("AgentMesh Runner")
+	systray.SetTitle("AgentsMesh Runner")
+	systray.SetTooltip("AgentsMesh Runner")
 
 	// Start web console
 	t.console = console.New(t.cfg, DefaultConsolePort, t.version)
@@ -92,7 +92,7 @@ func (t *TrayApp) onReady() {
 	systray.AddSeparator()
 
 	t.toggleItem = systray.AddMenuItem("Start Runner", "Start/Stop the runner")
-	t.webItem = systray.AddMenuItem("Open Web Console", "Open AgentMesh web console")
+	t.webItem = systray.AddMenuItem("Open Web Console", "Open AgentsMesh web console")
 	t.logsItem = systray.AddMenuItem("View Logs", "View runner logs")
 
 	systray.AddSeparator()
@@ -101,7 +101,7 @@ func (t *TrayApp) onReady() {
 
 	systray.AddSeparator()
 
-	t.quitItem = systray.AddMenuItem("Quit", "Quit AgentMesh Runner")
+	t.quitItem = systray.AddMenuItem("Quit", "Quit AgentsMesh Runner")
 
 	// Handle menu events
 	go t.handleEvents()

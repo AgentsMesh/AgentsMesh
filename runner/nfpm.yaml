@@ -1,20 +1,20 @@
 # nfpm configuration for Linux packages
 # https://nfpm.goreleaser.com/configuration/
 
-name: agentmesh-runner
+name: agentsmesh-runner
 arch: amd64
 platform: linux
 version: ${VERSION:-1.0.0}
 section: utils
 priority: optional
-maintainer: AgentMesh Team <support@agentmesh.dev>
+maintainer: AgentsMesh Team <support@agentsmesh.ai>
 description: |
-  AgentMesh Runner - AI Agent Task Executor
+  AgentsMesh Runner - AI Agent Task Executor
 
-  The AgentMesh Runner connects to the AgentMesh server and executes
+  The AgentsMesh Runner connects to the AgentsMesh server and executes
   AI agent tasks in isolated terminal environments.
-vendor: AgentMesh
-homepage: https://agentmesh.dev
+vendor: AgentsMesh
+homepage: https://agentsmesh.ai
 license: MIT
 
 contents:
@@ -26,30 +26,30 @@ contents:
 
   # Systemd service file
   - src: ./build/linux/runner.service
-    dst: /etc/systemd/system/agentmesh-runner.service
+    dst: /etc/systemd/system/agentsmesh-runner.service
     type: config
 
   # Config directory
-  - dst: /etc/agentmesh
+  - dst: /etc/agentsmesh
     type: dir
     file_info:
       mode: 0755
 
   # Data directory
-  - dst: /var/lib/agentmesh
+  - dst: /var/lib/agentsmesh
     type: dir
     file_info:
       mode: 0755
-      owner: agentmesh
-      group: agentmesh
+      owner: agentsmesh
+      group: agentsmesh
 
   # Log directory
-  - dst: /var/log/agentmesh
+  - dst: /var/log/agentsmesh
     type: dir
     file_info:
       mode: 0755
-      owner: agentmesh
-      group: agentmesh
+      owner: agentsmesh
+      group: agentsmesh
 
 scripts:
   postinstall: ./build/linux/postinst.sh
@@ -69,6 +69,6 @@ overrides:
 
 # Package relationships
 replaces:
-  - agentmesh-runner-cli
+  - agentsmesh-runner-cli
 provides:
-  - agentmesh-runner
+  - agentsmesh-runner
