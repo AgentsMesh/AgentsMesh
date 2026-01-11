@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
@@ -56,7 +56,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod }: WorkspaceSid
   const { runners, loading: runnersLoading, fetchRunners } = useRunnerStore();
   const { addPane, panes } = useWorkspaceStore();
 
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [filter, setFilter] = useState<FilterType>("running");
   const [searchQuery, setSearchQuery] = useState("");
   const [runnersExpanded, setRunnersExpanded] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -100,6 +100,23 @@ export function WorkspaceSidebarContent({ className, onCreatePod }: WorkspaceSid
 
     return true;
   });
+
+  // Sort pods: running/initializing first, then by creation time (newest first)
+  const sortedPods = useMemo(() => {
+    const statusPriority: Record<string, number> = {
+      running: 0,
+      initializing: 1,
+      paused: 2,
+      terminated: 3,
+      failed: 3,
+    };
+
+    return [...filteredPods].sort((a, b) => {
+      const priorityDiff = (statusPriority[a.status] ?? 4) - (statusPriority[b.status] ?? 4);
+      if (priorityDiff !== 0) return priorityDiff;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [filteredPods]);
 
   // Check if pod is already open in workspace
   const isPodOpen = useCallback(
@@ -184,7 +201,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod }: WorkspaceSid
 
       {/* Filter tabs */}
       <div className="flex items-center gap-1 px-2 py-1 border-y border-border">
-        {(["all", "running", "completed"] as const).map((f) => (
+        {(["running", "completed", "all"] as const).map((f) => (
           <button
             key={f}
             className={cn(
@@ -206,7 +223,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod }: WorkspaceSid
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
-        ) : filteredPods.length === 0 ? (
+        ) : sortedPods.length === 0 ? (
           <div className="px-3 py-8 text-center">
             <Terminal className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
@@ -229,7 +246,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod }: WorkspaceSid
           </div>
         ) : (
           <div className="py-1">
-            {filteredPods.map((pod) => {
+            {sortedPods.map((pod) => {
               const status = statusColors[pod.status] || statusColors.terminated;
               const isOpen = isPodOpen(pod.pod_key);
 

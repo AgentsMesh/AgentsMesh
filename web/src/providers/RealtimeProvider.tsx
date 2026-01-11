@@ -69,8 +69,14 @@ export function RealtimeProvider({
 
         case "pod:status_changed": {
           const data = event.data as PodStatusChangedData;
-          // Update pod status in store
-          if (podStore.updatePodStatus) {
+          // Check if pod exists in store - if not, refresh the list
+          const existingPod = podStore.pods.find(p => p.pod_key === data.pod_key);
+          if (!existingPod) {
+            // Pod not in list, might be newly created - refresh to get it
+            podStore.fetchPods?.();
+            console.log("[Realtime] Pod not found, refreshing list:", data.pod_key);
+          } else if (podStore.updatePodStatus) {
+            // Update existing pod status
             podStore.updatePodStatus(
               data.pod_key,
               data.status as "running" | "initializing" | "failed" | "paused" | "terminated",

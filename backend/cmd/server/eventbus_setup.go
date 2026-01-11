@@ -150,11 +150,15 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		}
 
 		// Determine event type
+		// Note: pod.Status is the previous status (before this callback updates it)
 		var eventType eventbus.EventType
 		if agentStatus != "" {
 			eventType = eventbus.EventPodAgentChanged
 		} else if status == "completed" || status == "terminated" {
 			eventType = eventbus.EventPodTerminated
+		} else if pod.Status == "initializing" && status == "running" {
+			// Pod transitioned from initializing to running - this is a newly created pod starting
+			eventType = eventbus.EventPodCreated
 		} else {
 			eventType = eventbus.EventPodStatusChanged
 		}
