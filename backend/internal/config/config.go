@@ -85,7 +85,16 @@ func (c DatabaseConfig) DSN() string {
 
 // RedisConfig holds Redis configuration
 type RedisConfig struct {
-	URL string
+	URL      string
+	Host     string
+	Port     int
+	Password string
+	DB       int
+}
+
+// IsConfigured returns true if Redis is configured
+func (c RedisConfig) IsConfigured() bool {
+	return c.URL != "" || c.Host != ""
 }
 
 // JWTConfig holds JWT configuration
@@ -135,7 +144,11 @@ func Load() (*Config, error) {
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		Redis: RedisConfig{
-			URL: getEnv("REDIS_URL", "redis://localhost:6379"),
+			URL:      getEnv("REDIS_URL", ""),
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnvInt("REDIS_PORT", 6379),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvInt("REDIS_DB", 0),
 		},
 		JWT: JWTConfig{
 			Secret:          getEnv("JWT_SECRET", "change-me-in-production"),

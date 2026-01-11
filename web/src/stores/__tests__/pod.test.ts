@@ -22,7 +22,8 @@ const mockPod: Pod = {
   created_at: "2024-01-01T00:00:00Z",
   runner: {
     id: 1,
-    name: "runner-1",
+    node_id: "runner-1",
+    status: "online",
   },
 };
 
@@ -34,7 +35,8 @@ const mockPod2: Pod = {
   created_at: "2024-01-02T00:00:00Z",
   runner: {
     id: 1,
-    name: "runner-1",
+    node_id: "runner-1",
+    status: "online",
   },
 };
 
@@ -65,6 +67,7 @@ describe("Pod Store", () => {
     it("should fetch pods successfully", async () => {
       vi.mocked(podApi.list).mockResolvedValue({
         pods: [mockPod, mockPod2],
+        total: 2,
       });
 
       await act(async () => {
@@ -79,7 +82,7 @@ describe("Pod Store", () => {
     });
 
     it("should pass filters to API", async () => {
-      vi.mocked(podApi.list).mockResolvedValue({ pods: [] });
+      vi.mocked(podApi.list).mockResolvedValue({ pods: [], total: 0 });
 
       await act(async () => {
         await usePodStore.getState().fetchPods({ status: "running", runnerId: 1 });
@@ -92,7 +95,7 @@ describe("Pod Store", () => {
     });
 
     it("should handle empty response", async () => {
-      vi.mocked(podApi.list).mockResolvedValue({ pods: undefined as any });
+      vi.mocked(podApi.list).mockResolvedValue({ pods: undefined as any, total: 0 });
 
       await act(async () => {
         await usePodStore.getState().fetchPods();
@@ -154,7 +157,7 @@ describe("Pod Store", () => {
 
   describe("createPod", () => {
     it("should create pod successfully", async () => {
-      vi.mocked(podApi.create).mockResolvedValue({ pod: mockPod });
+      vi.mocked(podApi.create).mockResolvedValue({ pod: mockPod, message: "success" });
 
       let result: Pod;
       await act(async () => {
@@ -172,7 +175,7 @@ describe("Pod Store", () => {
     });
 
     it("should convert camelCase to snake_case for API", async () => {
-      vi.mocked(podApi.create).mockResolvedValue({ pod: mockPod });
+      vi.mocked(podApi.create).mockResolvedValue({ pod: mockPod, message: "success" });
 
       await act(async () => {
         await usePodStore.getState().createPod({
@@ -196,7 +199,7 @@ describe("Pod Store", () => {
     });
 
     it("should use default agent_type_id when not provided", async () => {
-      vi.mocked(podApi.create).mockResolvedValue({ pod: mockPod });
+      vi.mocked(podApi.create).mockResolvedValue({ pod: mockPod, message: "success" });
 
       await act(async () => {
         await usePodStore.getState().createPod({
@@ -213,7 +216,7 @@ describe("Pod Store", () => {
 
     it("should add new pod to beginning of list", async () => {
       usePodStore.setState({ pods: [mockPod2] });
-      vi.mocked(podApi.create).mockResolvedValue({ pod: mockPod });
+      vi.mocked(podApi.create).mockResolvedValue({ pod: mockPod, message: "success" });
 
       await act(async () => {
         await usePodStore.getState().createPod({ runnerId: 1 });
@@ -247,7 +250,7 @@ describe("Pod Store", () => {
     });
 
     it("should terminate pod successfully", async () => {
-      vi.mocked(podApi.terminate).mockResolvedValue({});
+      vi.mocked(podApi.terminate).mockResolvedValue({ message: "success" });
 
       await act(async () => {
         await usePodStore.getState().terminatePod("pod-abc-123");
@@ -259,7 +262,7 @@ describe("Pod Store", () => {
     });
 
     it("should only update the terminated pod", async () => {
-      vi.mocked(podApi.terminate).mockResolvedValue({});
+      vi.mocked(podApi.terminate).mockResolvedValue({ message: "success" });
 
       await act(async () => {
         await usePodStore.getState().terminatePod("pod-abc-123");
@@ -270,7 +273,7 @@ describe("Pod Store", () => {
     });
 
     it("should not update currentPod if different key", async () => {
-      vi.mocked(podApi.terminate).mockResolvedValue({});
+      vi.mocked(podApi.terminate).mockResolvedValue({ message: "success" });
 
       await act(async () => {
         await usePodStore.getState().terminatePod("pod-def-456");

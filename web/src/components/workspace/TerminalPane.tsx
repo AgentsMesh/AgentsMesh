@@ -1,22 +1,16 @@
 "use client";
 
-import React, { useEffect, useRef, useCallback, useState } from "react";
-import { Terminal as XTerm } from "@xterm/xterm";
-import { FitAddon } from "@xterm/addon-fit";
-import { WebLinksAddon } from "@xterm/addon-web-links";
-import { SearchAddon } from "@xterm/addon-search";
+import React, { useCallback, useState } from "react";
 import "@xterm/xterm/css/xterm.css";
 import { cn } from "@/lib/utils";
-import { terminalPool, useWorkspaceStore } from "@/stores/workspace";
-import { podApi } from "@/lib/api/client";
+import { useWorkspaceStore } from "@/stores/workspace";
+import { usePodStatus, useTerminal, useTouchScroll } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import {
   X,
   Maximize2,
   Minimize2,
   ExternalLink,
-  RotateCcw,
-  Square,
   Circle,
   Loader2,
   AlertCircle,
@@ -46,246 +40,23 @@ export function TerminalPane({
   showHeader = true,
   className,
 }: TerminalPaneProps) {
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const xtermRef = useRef<XTerm | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
-  const connectionRef = useRef<{ send: (data: string) => void; disconnect: () => void } | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("connecting");
   const { terminalFontSize, setActivePane } = useWorkspaceStore();
 
-  // Pod readiness state
-  const [podStatus, setPodStatus] = useState<string>("unknown");
-  const [isPodReady, setIsPodReady] = useState(false);
-  const [podError, setPodError] = useState<string | null>(null);
+  // Pod status tracking
+  const { podStatus, isPodReady, podError } = usePodStatus(podKey);
 
-  // Check Pod readiness before connecting
-  useEffect(() => {
-    let mounted = true;
-    let pollInterval: ReturnType<typeof setInterval> | null = null;
-
-    const checkPodStatus = async () => {
-      try {
-        const { pod } = await podApi.get(podKey);
-        if (!mounted) return;
-
-        setPodStatus(pod.status);
-
-        if (pod.status === "running") {
-          setIsPodReady(true);
-          setPodError(null);
-          if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
-          }
-        } else if (pod.status === "failed" || pod.status === "terminated") {
-          setIsPodReady(false);
-          setPodError(`Pod ${pod.status}`);
-          if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
-          }
-        }
-        // For "initializing" or "paused", continue polling
-      } catch (error) {
-        console.error("Failed to check pod status:", error);
-        // Continue polling on error
-      }
-    };
-
-    // Initial check
-    checkPodStatus();
-
-    // Poll every 1 second until Pod is ready or failed
-    pollInterval = setInterval(checkPodStatus, 1000);
-
-    return () => {
-      mounted = false;
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
-    };
-  }, [podKey]);
-
-  // Initialize terminal (only when Pod is ready)
-  useEffect(() => {
-    if (!terminalRef.current || xtermRef.current || !isPodReady) return;
-
-    const term = new XTerm({
-      cursorBlink: true,
-      cursorStyle: "block",
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-      fontSize: terminalFontSize,
-      lineHeight: 1.2,
-      theme: {
-        background: "#1e1e1e",
-        foreground: "#d4d4d4",
-        cursor: "#d4d4d4",
-        cursorAccent: "#1e1e1e",
-        selectionBackground: "#264f78",
-        black: "#000000",
-        red: "#cd3131",
-        green: "#0dbc79",
-        yellow: "#e5e510",
-        blue: "#2472c8",
-        magenta: "#bc3fbc",
-        cyan: "#11a8cd",
-        white: "#e5e5e5",
-        brightBlack: "#666666",
-        brightRed: "#f14c4c",
-        brightGreen: "#23d18b",
-        brightYellow: "#f5f543",
-        brightBlue: "#3b8eea",
-        brightMagenta: "#d670d6",
-        brightCyan: "#29b8db",
-        brightWhite: "#e5e5e5",
-      },
-      allowProposedApi: true,
-    });
-
-    // Add addons
-    const fitAddon = new FitAddon();
-    const webLinksAddon = new WebLinksAddon();
-    const searchAddon = new SearchAddon();
-
-    term.loadAddon(fitAddon);
-    term.loadAddon(webLinksAddon);
-    term.loadAddon(searchAddon);
-
-    // Open terminal
-    term.open(terminalRef.current);
-
-    // Fit after a short delay to ensure container is sized
-    setTimeout(() => {
-      fitAddon.fit();
-    }, 50);
-
-    // Connect to WebSocket pool
-    const handleMessage = (data: Uint8Array | string) => {
-      if (data instanceof Uint8Array) {
-        term.write(data);
-      } else {
-        term.write(data);
-      }
-    };
-
-    connectionRef.current = terminalPool.connect(podKey, handleMessage);
-
-    // Update connection status
-    const checkStatus = () => {
-      const status = terminalPool.getStatus(podKey);
-      if (status !== "none") {
-        setConnectionStatus(status);
-      }
-    };
-    checkStatus();
-    const statusInterval = setInterval(checkStatus, 1000);
-
-    // Handle input
-    term.onData((data) => {
-      connectionRef.current?.send(data);
-    });
-
-    // Handle resize
-    term.onResize(({ rows, cols }) => {
-      terminalPool.sendResize(podKey, rows, cols);
-    });
-
-    xtermRef.current = term;
-    fitAddonRef.current = fitAddon;
-
-    // Cleanup
-    return () => {
-      clearInterval(statusInterval);
-      connectionRef.current?.disconnect();
-      term.dispose();
-      xtermRef.current = null;
-      fitAddonRef.current = null;
-    };
-  }, [podKey, terminalFontSize, isPodReady]);
-
-  // Handle resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (fitAddonRef.current) {
-        fitAddonRef.current.fit();
-      }
-    };
-
-    // Observe container size changes
-    const resizeObserver = new ResizeObserver(handleResize);
-    if (terminalRef.current?.parentElement) {
-      resizeObserver.observe(terminalRef.current.parentElement);
-    }
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  // Focus terminal when pane becomes active
-  useEffect(() => {
-    if (isActive && xtermRef.current) {
-      xtermRef.current.focus();
-      fitAddonRef.current?.fit();
-    }
-  }, [isActive]);
-
-  // Update font size
-  useEffect(() => {
-    if (xtermRef.current) {
-      xtermRef.current.options.fontSize = terminalFontSize;
-      fitAddonRef.current?.fit();
-    }
-  }, [terminalFontSize]);
+  // Terminal initialization and management
+  const {
+    terminalRef,
+    xtermRef,
+    fitAddonRef,
+    connectionStatus,
+    syncSize,
+  } = useTerminal(podKey, terminalFontSize, isPodReady, isActive);
 
   // Mobile touch scrolling support
-  // xterm.js doesn't natively support touch scrolling, so we implement it manually
-  // Reference: https://github.com/xtermjs/xterm.js/issues/5377
-  useEffect(() => {
-    if (!terminalRef.current || !xtermRef.current) return;
-
-    let lastTouchY: number | null = null;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        lastTouchY = e.touches[0].clientY;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      lastTouchY = null;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length !== 1 || lastTouchY === null || !xtermRef.current) return;
-
-      const currentY = e.touches[0].clientY;
-      const deltaY = lastTouchY - currentY;
-      lastTouchY = currentY;
-
-      // Calculate lines to scroll (divide by ~10 for smooth scrolling)
-      const linesToScroll = Math.round(deltaY / 10);
-      if (linesToScroll !== 0) {
-        xtermRef.current.scrollLines(linesToScroll);
-        e.preventDefault();
-      }
-    };
-
-    const container = terminalRef.current;
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [isPodReady]);
+  useTouchScroll(terminalRef, xtermRef, isPodReady);
 
   const handleFocus = useCallback(() => {
     setActivePane(paneId);
@@ -298,14 +69,7 @@ export function TerminalPane({
     setTimeout(() => {
       fitAddonRef.current?.fit();
     }, 100);
-  }, [isMaximized, onMaximize]);
-
-  // Sync terminal size to PTY
-  const handleSyncSize = useCallback(() => {
-    if (xtermRef.current) {
-      terminalPool.forceResize(podKey, xtermRef.current.rows, xtermRef.current.cols);
-    }
-  }, [podKey]);
+  }, [isMaximized, onMaximize, fitAddonRef]);
 
   const getStatusColor = () => {
     switch (connectionStatus) {
@@ -349,7 +113,7 @@ export function TerminalPane({
               className="h-5 w-5 p-0 hover:bg-[#3c3c3c] text-[#cccccc]"
               onClick={(e) => {
                 e.stopPropagation();
-                handleSyncSize();
+                syncSize();
               }}
               title="Sync terminal size"
             >

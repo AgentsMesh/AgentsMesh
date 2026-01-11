@@ -47,8 +47,6 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
     selectNode,
     selectChannel,
     getChannelsForNode,
-    startPolling,
-    stopPolling,
   } = useDevMeshStore();
   const { addPane } = useWorkspaceStore();
 
@@ -59,13 +57,12 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
   const [nodesExpanded, setNodesExpanded] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
 
-  // Load topology on mount and start polling
+  // Load topology on mount - realtime events handle subsequent updates
   useEffect(() => {
     if (currentOrg) {
-      startPolling(10000); // Poll every 10 seconds
+      fetchTopology();
     }
-    return () => stopPolling();
-  }, [currentOrg, startPolling, stopPolling]);
+  }, [currentOrg, fetchTopology]);
 
   // Refresh handler
   const handleRefresh = useCallback(async () => {

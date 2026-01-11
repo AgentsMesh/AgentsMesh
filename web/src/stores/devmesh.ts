@@ -23,14 +23,11 @@ interface DevMeshState {
   selectedChannel: number | null;
   loading: boolean;
   error: string | null;
-  pollInterval: number | null;
 
   // Actions
   fetchTopology: () => Promise<void>;
   selectNode: (podKey: string | null) => void;
   selectChannel: (channelId: number | null) => void;
-  startPolling: (interval?: number) => void;
-  stopPolling: () => void;
   clearError: () => void;
 
   // Node helpers
@@ -46,7 +43,6 @@ export const useDevMeshStore = create<DevMeshState>((set, get) => ({
   selectedChannel: null,
   loading: false,
   error: null,
-  pollInterval: null,
 
   fetchTopology: async () => {
     set({ loading: true, error: null });
@@ -67,33 +63,6 @@ export const useDevMeshStore = create<DevMeshState>((set, get) => ({
 
   selectChannel: (channelId) => {
     set({ selectedChannel: channelId, selectedNode: null });
-  },
-
-  startPolling: (interval = 5000) => {
-    const state = get();
-
-    // Clear existing interval if any
-    if (state.pollInterval !== null) {
-      clearInterval(state.pollInterval);
-    }
-
-    // Start new polling
-    const pollId = window.setInterval(() => {
-      get().fetchTopology();
-    }, interval);
-
-    set({ pollInterval: pollId as unknown as number });
-
-    // Fetch immediately
-    get().fetchTopology();
-  },
-
-  stopPolling: () => {
-    const state = get();
-    if (state.pollInterval !== null) {
-      clearInterval(state.pollInterval);
-      set({ pollInterval: null });
-    }
   },
 
   clearError: () => {

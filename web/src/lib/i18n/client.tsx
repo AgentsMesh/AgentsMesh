@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, ReactNode } from "rea
 import { Locale, defaultLocale, locales, LOCALE_COOKIE } from "./config";
 
 // Type for nested translation object
-type TranslationValue = string | { [key: string]: TranslationValue };
+type TranslationValue = string | string[] | { [key: string]: TranslationValue };
 type Translations = { [key: string]: TranslationValue };
 
 // I18n context type
@@ -22,7 +22,7 @@ function getNestedValue(obj: Translations, path: string): string | undefined {
   let current: TranslationValue | undefined = obj;
 
   for (const key of keys) {
-    if (current && typeof current === "object" && key in current) {
+    if (current && typeof current === "object" && !Array.isArray(current) && key in current) {
       current = current[key];
     } else {
       return undefined;

@@ -24,7 +24,14 @@ var (
 
 // PodService handles pod operations
 type PodService struct {
-	db *gorm.DB
+	db             *gorm.DB
+	eventPublisher EventPublisher
+}
+
+// SetEventPublisher sets the event publisher for the service
+// This is called during initialization to inject the EventBus publisher
+func (s *PodService) SetEventPublisher(publisher EventPublisher) {
+	s.eventPublisher = publisher
 }
 
 // NewPodService creates a new pod service
@@ -260,6 +267,19 @@ func (s *PodService) GetPodInfo(ctx context.Context, podKey string) (map[string]
 	}, nil
 }
 
+// GetPodOrganizationAndCreator returns the organization ID and creator ID for a pod
+// This implements the runner.PodInfoGetter interface for terminal notifications
+func (s *PodService) GetPodOrganizationAndCreator(ctx context.Context, podKey string) (orgID, creatorID int64, err error) {
+	var pod agentpod.Pod
+	if err := s.db.WithContext(ctx).
+		Select("organization_id", "created_by_id").
+		Where("pod_key = ?", podKey).
+		First(&pod).Error; err != nil {
+		return 0, 0, ErrPodNotFound
+	}
+	return pod.OrganizationID, pod.CreatedByID, nil
+}
+
 // ListPods returns pods for an organization
 // Note: teamID parameter is deprecated and ignored - all pods visible to org members
 func (s *PodService) ListPods(ctx context.Context, orgID int64, _ *int64, status string, limit, offset int) ([]*agentpod.Pod, int64, error) {
@@ -409,7 +429,25 @@ func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
 		return ErrPodTerminated
 	}
 
-	return s.UpdatePodStatus(ctx, podKey, agentpod.PodStatusTerminated)
+	previousStatus := pod.Status
+	if err := s.UpdatePodStatus(ctx, podKey, agentpod.PodStatusTerminated); err != nil {
+		return err
+	}
+
+	// Publish pod:terminated event (Information Expert: Service knows when state changes)
+	if s.eventPublisher != nil {
+		s.eventPublisher.PublishPodEvent(
+			ctx,
+			PodEventTerminated,
+			pod.OrganizationID,
+			podKey,
+			agentpod.PodStatusTerminated,
+			previousStatus,
+			"",
+		)
+	}
+
+	return nil
 }
 
 // MarkDisconnected marks a pod as disconnected (user closed browser)

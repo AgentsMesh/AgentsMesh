@@ -2,11 +2,14 @@ package runner
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log/slog"
+	"regexp"
 	"sync"
 	"unicode/utf8"
 
+	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentmesh/backend/internal/infra/terminal"
 	"github.com/gorilla/websocket"
 )
@@ -35,10 +38,27 @@ type PtySize struct {
 	Rows int
 }
 
+// OSC 777 notification pattern: ESC ] 777 ; notify ; <title> ; <body> BEL
+// Also matches: ESC ] 777 ; <title> ; <body> BEL (without "notify" keyword)
+var osc777Pattern = regexp.MustCompile(`\x1b\]777;(?:notify;)?([^;]*);([^\x07]*)\x07`)
+
+// OSC 9 notification pattern: ESC ] 9 ; <message> BEL (iTerm2/Windows Terminal style)
+// Used by Claude Code for notifications
+var osc9Pattern = regexp.MustCompile(`\x1b\]9;([^\x07]*)\x07`)
+
+// PodInfoGetter interface for getting pod information
+type PodInfoGetter interface {
+	GetPodOrganizationAndCreator(ctx context.Context, podKey string) (orgID, creatorID int64, err error)
+}
+
 // TerminalRouter routes terminal data between frontend clients and runners
 type TerminalRouter struct {
 	connectionManager *ConnectionManager
 	logger            *slog.Logger
+
+	// EventBus for publishing notifications
+	eventBus      *eventbus.EventBus
+	podInfoGetter PodInfoGetter
 
 	// Pod -> Runner mapping
 	podRunnerMap map[string]int64
@@ -177,6 +197,16 @@ func NewTerminalRouter(cm *ConnectionManager, logger *slog.Logger) *TerminalRout
 	cm.SetPtyResizedCallback(tr.handlePtyResized)
 
 	return tr
+}
+
+// SetEventBus sets the event bus for publishing terminal notifications
+func (tr *TerminalRouter) SetEventBus(eb *eventbus.EventBus) {
+	tr.eventBus = eb
+}
+
+// SetPodInfoGetter sets the pod info getter for retrieving pod organization and creator
+func (tr *TerminalRouter) SetPodInfoGetter(getter PodInfoGetter) {
+	tr.podInfoGetter = getter
 }
 
 // DefaultTerminalCols is the default terminal width
@@ -342,6 +372,9 @@ func (tr *TerminalRouter) handleTerminalOutput(runnerID int64, data *TerminalOut
 	if vt != nil {
 		vt.Feed(data.Data)
 	}
+
+	// Check for OSC 777 notifications and publish events
+	tr.detectAndPublishOSC777(podKey, data.Data)
 
 	// Route to all connected clients
 	tr.terminalClientsMu.RLock()
@@ -593,4 +626,103 @@ func (tr *TerminalRouter) ClearScrollback(podKey string) {
 	if buffer != nil {
 		buffer.Clear()
 	}
+}
+
+// detectAndPublishOSC777 detects OSC 777/OSC 9 notification sequences and publishes events
+// OSC 777 format: ESC ] 777 ; notify ; <title> ; <body> BEL
+// OSC 9 format: ESC ] 9 ; <message> BEL (used by Claude Code, iTerm2, Windows Terminal)
+func (tr *TerminalRouter) detectAndPublishOSC777(podKey string, data []byte) {
+	// Skip if EventBus or PodInfoGetter is not configured
+	if tr.eventBus == nil || tr.podInfoGetter == nil {
+		return
+	}
+
+	// Collect notifications from both OSC 777 and OSC 9
+	type notification struct {
+		title string
+		body  string
+	}
+	var notifications []notification
+
+	// Find OSC 777 matches (title ; body format)
+	matches777 := osc777Pattern.FindAllSubmatch(data, -1)
+	for _, match := range matches777 {
+		if len(match) >= 3 {
+			notifications = append(notifications, notification{
+				title: string(match[1]),
+				body:  string(match[2]),
+			})
+		}
+	}
+
+	// Find OSC 9 matches (single message format, used by Claude Code)
+	matches9 := osc9Pattern.FindAllSubmatch(data, -1)
+	for _, match := range matches9 {
+		if len(match) >= 2 {
+			msg := string(match[1])
+			notifications = append(notifications, notification{
+				title: "Terminal Notification",
+				body:  msg,
+			})
+		}
+	}
+
+	if len(notifications) == 0 {
+		return
+	}
+
+	// Get pod organization and creator info
+	ctx := context.Background()
+	orgID, creatorID, err := tr.podInfoGetter.GetPodOrganizationAndCreator(ctx, podKey)
+	if err != nil {
+		tr.logger.Warn("failed to get pod info for terminal notification",
+			"pod_key", podKey,
+			"error", err)
+		return
+	}
+
+	// Process each notification
+	for _, n := range notifications {
+		tr.logger.Info("detected terminal notification (OSC 777/9)",
+			"pod_key", podKey,
+			"title", n.title,
+			"body", n.body)
+
+		// Publish terminal notification event
+		tr.eventBus.Publish(ctx, &eventbus.Event{
+			Type:           eventbus.EventTerminalNotification,
+			Category:       eventbus.CategoryNotification,
+			OrganizationID: orgID,
+			TargetUserID:   &creatorID, // Send only to pod creator
+			EntityType:     "pod",
+			EntityID:       podKey,
+			Data: json.RawMessage(`{
+				"title": "` + escapeJSON(n.title) + `",
+				"body": "` + escapeJSON(n.body) + `",
+				"pod_key": "` + podKey + `"
+			}`),
+		})
+	}
+}
+
+// escapeJSON escapes special characters in JSON string values
+func escapeJSON(s string) string {
+	var result bytes.Buffer
+	for _, r := range s {
+		switch r {
+		case '"':
+			result.WriteString(`\"`)
+		case '\\':
+			result.WriteString(`\\`)
+		case '\n':
+			result.WriteString(`\n`)
+		case '\r':
+			result.WriteString(`\r`)
+		case '\t':
+			result.WriteString(`\t`)
+		default:
+			result.WriteRune(r)
+		}
+	}
+	return result.String()
 }

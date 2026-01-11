@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -14,26 +15,29 @@ import (
 	v1 "github.com/anthropics/agentmesh/backend/internal/api/rest/v1"
 	"github.com/anthropics/agentmesh/backend/internal/config"
 	"github.com/anthropics/agentmesh/backend/internal/infra/database"
+	"gorm.io/gorm"
 	"github.com/anthropics/agentmesh/backend/internal/infra/email"
+	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentmesh/backend/internal/infra/logger"
 	"github.com/anthropics/agentmesh/backend/internal/infra/storage"
 	"github.com/anthropics/agentmesh/backend/internal/infra/websocket"
 	"github.com/anthropics/agentmesh/backend/internal/service/agent"
+	"github.com/anthropics/agentmesh/backend/internal/service/agentpod"
 	"github.com/anthropics/agentmesh/backend/internal/service/auth"
 	"github.com/anthropics/agentmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentmesh/backend/internal/service/binding"
 	"github.com/anthropics/agentmesh/backend/internal/service/channel"
 	"github.com/anthropics/agentmesh/backend/internal/service/devmesh"
+	fileservice "github.com/anthropics/agentmesh/backend/internal/service/file"
 	"github.com/anthropics/agentmesh/backend/internal/service/gitprovider"
 	"github.com/anthropics/agentmesh/backend/internal/service/invitation"
 	"github.com/anthropics/agentmesh/backend/internal/service/organization"
 	"github.com/anthropics/agentmesh/backend/internal/service/repository"
-	"github.com/anthropics/agentmesh/backend/internal/service/agentpod"
-	fileservice "github.com/anthropics/agentmesh/backend/internal/service/file"
 	"github.com/anthropics/agentmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentmesh/backend/internal/service/sshkey"
 	"github.com/anthropics/agentmesh/backend/internal/service/ticket"
 	"github.com/anthropics/agentmesh/backend/internal/service/user"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -68,6 +72,95 @@ func main() {
 	}
 
 	// Initialize services
+	services := initializeServices(cfg, db)
+
+	// Initialize infrastructure
+	hub, eventBus, redisClient := initializeInfrastructure(cfg, appLogger)
+
+	// Setup EventBus → Hub integration (decoupled via subscriptions)
+	setupEventBusHub(eventBus, hub)
+
+	// Setup ticket service event publishing (Service layer - Information Expert principle)
+	ticketEventPublisher := ticket.NewEventBusPublisher(eventBus, appLogger.Logger)
+	services.ticket.SetEventPublisher(ticketEventPublisher)
+
+	// Setup pod service event publishing (Service layer - Information Expert principle)
+	podEventPublisher := agentpod.NewEventBusPublisher(eventBus, appLogger.Logger)
+	services.pod.SetEventPublisher(podEventPublisher)
+
+	// Start Redis subscriber for multi-instance sync (if Redis is available)
+	if redisClient != nil {
+		eventBus.StartRedisSubscriber(context.Background())
+	}
+
+	// Initialize Runner connection manager and Pod coordinator
+	runnerConnMgr, podCoordinator, terminalRouter := initializeRunnerComponents(db, appLogger)
+
+	// Setup terminal router event publishing for OSC 777 notifications
+	terminalRouter.SetEventBus(eventBus)
+	terminalRouter.SetPodInfoGetter(services.pod)
+
+	// Setup event callbacks for runner and pod status changes
+	setupRunnerEventCallbacks(db, runnerConnMgr, eventBus)
+	setupPodEventCallbacks(db, podCoordinator, eventBus)
+
+	// Create services container for HTTP handlers
+	svc := &v1.Services{
+		Auth:           services.auth,
+		User:           services.user,
+		Org:            services.org,
+		Agent:          services.agent,
+		GitProvider:    services.gitProvider,
+		Repository:     services.repository,
+		Runner:         services.runner,
+		RunnerConnMgr:  runnerConnMgr,
+		PodCoordinator: podCoordinator,
+		TerminalRouter: terminalRouter,
+		Pod:            services.pod,
+		Channel:        services.channel,
+		Binding:        services.binding,
+		Ticket:         services.ticket,
+		SSHKey:         services.sshKey,
+		DevMesh:        services.devmesh,
+		Billing:        services.billing,
+		Hub:            hub,
+		EventBus:       eventBus,
+		Invitation:     services.invitation,
+		File:           services.file,
+	}
+
+	// Initialize router
+	router := rest.NewRouter(cfg, svc, db, appLogger.Logger)
+
+	// Create and start HTTP server
+	srv := startHTTPServer(cfg, router)
+
+	// Graceful shutdown
+	waitForShutdown(srv, eventBus, redisClient)
+}
+
+// serviceContainer holds all initialized services
+type serviceContainer struct {
+	auth        *auth.Service
+	user        *user.Service
+	org         *organization.Service
+	agent       *agent.Service
+	gitProvider *gitprovider.Service
+	repository  *repository.Service
+	runner      *runner.Service
+	pod         *agentpod.PodService
+	channel     *channel.Service
+	ticket      *ticket.Service
+	sshKey      *sshkey.Service
+	billing     *billing.Service
+	binding     *binding.Service
+	devmesh     *devmesh.Service
+	invitation  *invitation.Service
+	file        *fileservice.Service
+}
+
+// initializeServices creates all business services
+func initializeServices(cfg *config.Config, db *gorm.DB) *serviceContainer {
 	// Use JWT secret as encryption key for token encryption (OAuth tokens, etc.)
 	userSvc := user.NewServiceWithEncryption(db, cfg.JWT.Secret)
 	authCfg := &auth.Config{
@@ -87,7 +180,7 @@ func main() {
 	ticketSvc := ticket.NewService(db)
 	sshKeySvc := sshkey.NewService(db)
 	billingSvc := billing.NewService(db, "") // Empty stripe key for now
-	bindingSvc := binding.NewService(db, podSvc) // podSvc implements PodQuerier for auto-approve
+	bindingSvc := binding.NewService(db, podSvc)
 	devmeshSvc := devmesh.NewService(db, podSvc, channelSvc, bindingSvc)
 
 	// Initialize email service for invitations
@@ -126,10 +219,69 @@ func main() {
 		slog.Warn("Storage not configured, file upload disabled")
 	}
 
+	return &serviceContainer{
+		auth:        authSvc,
+		user:        userSvc,
+		org:         orgSvc,
+		agent:       agentSvc,
+		gitProvider: gitProviderSvc,
+		repository:  repoSvc,
+		runner:      runnerSvc,
+		pod:         podSvc,
+		channel:     channelSvc,
+		ticket:      ticketSvc,
+		sshKey:      sshKeySvc,
+		billing:     billingSvc,
+		binding:     bindingSvc,
+		devmesh:     devmeshSvc,
+		invitation:  invitationSvc,
+		file:        fileSvc,
+	}
+}
+
+// initializeInfrastructure initializes WebSocket hub, EventBus, and Redis
+func initializeInfrastructure(cfg *config.Config, appLogger *logger.Logger) (*websocket.Hub, *eventbus.EventBus, *redis.Client) {
 	// Initialize WebSocket hub
 	hub := websocket.NewHub()
 	go hub.Run()
 
+	// Initialize Redis client (optional, for multi-instance event sync)
+	var redisClient *redis.Client
+	if cfg.Redis.URL != "" {
+		opt, err := redis.ParseURL(cfg.Redis.URL)
+		if err != nil {
+			slog.Warn("Failed to parse Redis URL, skipping Redis", "error", err)
+		} else {
+			redisClient = redis.NewClient(opt)
+			if err := redisClient.Ping(context.Background()).Err(); err != nil {
+				slog.Warn("Failed to connect to Redis, events will be local only", "error", err)
+				redisClient = nil
+			} else {
+				slog.Info("Redis connected", "url", cfg.Redis.URL)
+			}
+		}
+	} else if cfg.Redis.Host != "" {
+		redisClient = redis.NewClient(&redis.Options{
+			Addr:     fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
+			Password: cfg.Redis.Password,
+			DB:       cfg.Redis.DB,
+		})
+		if err := redisClient.Ping(context.Background()).Err(); err != nil {
+			slog.Warn("Failed to connect to Redis, events will be local only", "error", err)
+			redisClient = nil
+		} else {
+			slog.Info("Redis connected", "host", cfg.Redis.Host, "port", cfg.Redis.Port)
+		}
+	}
+
+	// Initialize EventBus for real-time events
+	eventBus := eventbus.NewEventBus(redisClient, appLogger.Logger)
+
+	return hub, eventBus, redisClient
+}
+
+// initializeRunnerComponents initializes runner-related components
+func initializeRunnerComponents(db *gorm.DB, appLogger *logger.Logger) (*runner.ConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter) {
 	// Initialize Runner connection manager
 	runnerConnMgr := runner.NewConnectionManager(appLogger.Logger)
 
@@ -139,43 +291,19 @@ func main() {
 	// Initialize Pod coordinator (manages pod lifecycle between backend and runner)
 	podCoordinator := runner.NewPodCoordinator(db, runnerConnMgr, terminalRouter, appLogger.Logger)
 
-	// Create services container
-	svc := &v1.Services{
-		Auth:           authSvc,
-		User:           userSvc,
-		Org:            orgSvc,
-		Agent:          agentSvc,
-		GitProvider:    gitProviderSvc,
-		Repository:     repoSvc,
-		Runner:         runnerSvc,
-		RunnerConnMgr:  runnerConnMgr,
-		PodCoordinator: podCoordinator,
-		TerminalRouter: terminalRouter,
-		Pod:            podSvc,
-		Channel:        channelSvc,
-		Binding:        bindingSvc,
-		Ticket:         ticketSvc,
-		SSHKey:         sshKeySvc,
-		DevMesh:        devmeshSvc,
-		Billing:        billingSvc,
-		Hub:            hub,
-		Invitation:     invitationSvc,
-		File:           fileSvc,
-	}
+	return runnerConnMgr, podCoordinator, terminalRouter
+}
 
-	// Initialize router
-	router := rest.NewRouter(cfg, svc, db, appLogger.Logger)
-
-	// Create HTTP server
+// startHTTPServer creates and starts the HTTP server
+func startHTTPServer(cfg *config.Config, handler http.Handler) *http.Server {
 	srv := &http.Server{
 		Addr:         cfg.Server.Address,
-		Handler:      router,
+		Handler:      handler,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Start server in goroutine
 	go func() {
 		slog.Info("Starting server", "address", cfg.Server.Address)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -184,7 +312,11 @@ func main() {
 		}
 	}()
 
-	// Graceful shutdown
+	return srv
+}
+
+// waitForShutdown handles graceful shutdown
+func waitForShutdown(srv *http.Server, eventBus *eventbus.EventBus, redisClient *redis.Client) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -197,6 +329,14 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("Server forced to shutdown", "error", err)
 		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	// Close EventBus
+	eventBus.Close()
+
+	// Close Redis connection
+	if redisClient != nil {
+		redisClient.Close()
 	}
 
 	slog.Info("Server exited")

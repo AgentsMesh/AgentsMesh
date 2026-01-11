@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/anthropics/agentmesh/backend/internal/domain/ticket"
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
 	"gorm.io/gorm"
 )
+
+// ========== Errors ==========
 
 var (
 	ErrTicketNotFound    = errors.New("ticket not found")
@@ -19,15 +20,32 @@ var (
 	ErrInvalidTransition = errors.New("invalid status transition")
 )
 
+// ========== Service ==========
+
 // Service handles ticket operations
 type Service struct {
-	db *gorm.DB
+	db             *gorm.DB
+	eventPublisher EventPublisher
 }
 
 // NewService creates a new ticket service
 func NewService(db *gorm.DB) *Service {
 	return &Service{db: db}
 }
+
+// SetEventPublisher sets the event publisher for real-time events
+func (s *Service) SetEventPublisher(ep EventPublisher) {
+	s.eventPublisher = ep
+}
+
+// publishEvent publishes a ticket event if EventPublisher is configured
+func (s *Service) publishEvent(ctx context.Context, eventType TicketEventType, orgID int64, identifier, status, previousStatus string) {
+	if s.eventPublisher != nil {
+		s.eventPublisher.PublishTicketEvent(ctx, eventType, orgID, identifier, status, previousStatus)
+	}
+}
+
+// ========== Request Types ==========
 
 // CreateTicketRequest represents a ticket creation request
 type CreateTicketRequest struct {
@@ -46,6 +64,25 @@ type CreateTicketRequest struct {
 	LabelIDs       []int64
 	Labels         []string // Label names for convenience
 }
+
+// ListTicketsFilter represents filters for listing tickets
+type ListTicketsFilter struct {
+	OrganizationID int64
+	RepositoryID   *int64
+	Status         string
+	Type           string
+	Priority       string
+	AssigneeID     *int64
+	ReporterID     *int64
+	LabelIDs       []int64
+	ParentTicketID *int64
+	Query          string
+	UserRole       string // Kept for future use
+	Limit          int
+	Offset         int
+}
+
+// ========== Ticket CRUD ==========
 
 // CreateTicket creates a new ticket
 func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*ticket.Ticket, error) {
@@ -151,7 +188,16 @@ func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*
 		return nil, err
 	}
 
-	return s.GetTicket(ctx, t.ID)
+	// Get the created ticket with full details
+	createdTicket, err := s.GetTicket(ctx, t.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Publish ticket created event (Service layer - Information Expert)
+	s.publishEvent(ctx, TicketEventCreated, req.OrganizationID, createdTicket.Identifier, createdTicket.Status, "")
+
+	return createdTicket, nil
 }
 
 // GetTicket returns a ticket by ID
@@ -181,23 +227,6 @@ func (s *Service) GetTicketByIdentifier(ctx context.Context, identifier string) 
 		return nil, ErrTicketNotFound
 	}
 	return &t, nil
-}
-
-// ListTicketsFilter represents filters for listing tickets
-type ListTicketsFilter struct {
-	OrganizationID int64
-	RepositoryID   *int64
-	Status         string
-	Type           string
-	Priority       string
-	AssigneeID     *int64
-	ReporterID     *int64
-	LabelIDs       []int64
-	ParentTicketID *int64
-	Query          string
-	UserRole       string // Kept for future use, all org members can access all resources
-	Limit          int
-	Offset         int
 }
 
 // ListTickets returns tickets based on filters
@@ -234,8 +263,6 @@ func (s *Service) ListTickets(ctx context.Context, filter *ListTicketsFilter) ([
 			Where("ticket_labels.label_id IN ?", filter.LabelIDs)
 	}
 
-	// Team-based access control removed: all organization members can access all resources
-
 	var total int64
 	query.Count(&total)
 
@@ -255,37 +282,43 @@ func (s *Service) ListTickets(ctx context.Context, filter *ListTicketsFilter) ([
 
 // UpdateTicket updates a ticket
 func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, updates map[string]interface{}) (*ticket.Ticket, error) {
+	// Get the ticket before update to capture previous status
+	oldTicket, err := s.GetTicket(ctx, ticketID)
+	if err != nil {
+		return nil, err
+	}
+	previousStatus := oldTicket.Status
+
 	if len(updates) > 0 {
 		if err := s.db.WithContext(ctx).Model(&ticket.Ticket{}).Where("id = ?", ticketID).Updates(updates).Error; err != nil {
 			return nil, err
 		}
 	}
-	return s.GetTicket(ctx, ticketID)
-}
 
-// UpdateAssignees updates ticket assignees
-func (s *Service) UpdateAssignees(ctx context.Context, ticketID int64, userIDs []int64) error {
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Remove existing assignees
-		if err := tx.Where("ticket_id = ?", ticketID).Delete(&ticket.Assignee{}).Error; err != nil {
-			return err
-		}
-		// Add new assignees
-		for _, userID := range userIDs {
-			assignee := &ticket.Assignee{
-				TicketID: ticketID,
-				UserID:   userID,
-			}
-			if err := tx.Create(assignee).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	updatedTicket, err := s.GetTicket(ctx, ticketID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Publish appropriate event based on what changed
+	if newStatus, ok := updates["status"].(string); ok && newStatus != previousStatus {
+		s.publishEvent(ctx, TicketEventStatusChanged, oldTicket.OrganizationID, updatedTicket.Identifier, updatedTicket.Status, previousStatus)
+	} else {
+		s.publishEvent(ctx, TicketEventUpdated, oldTicket.OrganizationID, updatedTicket.Identifier, updatedTicket.Status, previousStatus)
+	}
+
+	return updatedTicket, nil
 }
 
 // UpdateStatus updates a ticket's status
 func (s *Service) UpdateStatus(ctx context.Context, ticketID int64, status string) error {
+	// Get the ticket before update to capture previous status and org ID
+	oldTicket, err := s.GetTicket(ctx, ticketID)
+	if err != nil {
+		return err
+	}
+	previousStatus := oldTicket.Status
+
 	updates := map[string]interface{}{
 		"status": status,
 	}
@@ -298,526 +331,30 @@ func (s *Service) UpdateStatus(ctx context.Context, ticketID int64, status strin
 		updates["completed_at"] = now
 	}
 
-	return s.db.WithContext(ctx).Model(&ticket.Ticket{}).Where("id = ?", ticketID).Updates(updates).Error
+	if err := s.db.WithContext(ctx).Model(&ticket.Ticket{}).Where("id = ?", ticketID).Updates(updates).Error; err != nil {
+		return err
+	}
+
+	// Publish status changed event (for kanban board real-time updates)
+	s.publishEvent(ctx, TicketEventStatusChanged, oldTicket.OrganizationID, oldTicket.Identifier, status, previousStatus)
+
+	return nil
 }
 
 // DeleteTicket deletes a ticket
 func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
-	return s.db.WithContext(ctx).Delete(&ticket.Ticket{}, ticketID).Error
-}
-
-// Label operations
-
-// CreateLabel creates a new label
-func (s *Service) CreateLabel(ctx context.Context, orgID int64, repoID *int64, name, color string) (*ticket.Label, error) {
-	// Check for duplicate
-	var existing ticket.Label
-	query := s.db.WithContext(ctx).Where("organization_id = ? AND name = ?", orgID, name)
-	if repoID != nil {
-		query = query.Where("repository_id = ?", *repoID)
-	} else {
-		query = query.Where("repository_id IS NULL")
-	}
-	if err := query.First(&existing).Error; err == nil {
-		return nil, ErrDuplicateLabel
+	// Get the ticket before deletion to capture info for event
+	oldTicket, err := s.GetTicket(ctx, ticketID)
+	if err != nil {
+		return err
 	}
 
-	label := &ticket.Label{
-		OrganizationID: orgID,
-		RepositoryID:   repoID,
-		Name:           name,
-		Color:          color,
+	if err := s.db.WithContext(ctx).Delete(&ticket.Ticket{}, ticketID).Error; err != nil {
+		return err
 	}
 
-	if err := s.db.WithContext(ctx).Create(label).Error; err != nil {
-		return nil, err
-	}
+	// Publish ticket deleted event
+	s.publishEvent(ctx, TicketEventDeleted, oldTicket.OrganizationID, oldTicket.Identifier, "deleted", oldTicket.Status)
 
-	return label, nil
-}
-
-// GetLabel returns a label by ID
-func (s *Service) GetLabel(ctx context.Context, labelID int64) (*ticket.Label, error) {
-	var label ticket.Label
-	if err := s.db.WithContext(ctx).First(&label, labelID).Error; err != nil {
-		return nil, ErrLabelNotFound
-	}
-	return &label, nil
-}
-
-// ListLabels returns labels for an organization/repository
-func (s *Service) ListLabels(ctx context.Context, orgID int64, repoID *int64) ([]*ticket.Label, error) {
-	query := s.db.WithContext(ctx).Where("organization_id = ?", orgID)
-
-	if repoID != nil {
-		// Include both org-level and repo-level labels
-		query = query.Where("repository_id IS NULL OR repository_id = ?", *repoID)
-	} else {
-		// Only org-level labels
-		query = query.Where("repository_id IS NULL")
-	}
-
-	var labels []*ticket.Label
-	if err := query.Order("name ASC").Find(&labels).Error; err != nil {
-		return nil, err
-	}
-
-	return labels, nil
-}
-
-// UpdateLabel updates a label
-func (s *Service) UpdateLabel(ctx context.Context, orgID, labelID int64, updates map[string]interface{}) (*ticket.Label, error) {
-	if len(updates) > 0 {
-		if err := s.db.WithContext(ctx).Model(&ticket.Label{}).Where("id = ? AND organization_id = ?", labelID, orgID).Updates(updates).Error; err != nil {
-			return nil, err
-		}
-	}
-	return s.GetLabel(ctx, labelID)
-}
-
-// DeleteLabel deletes a label
-func (s *Service) DeleteLabel(ctx context.Context, orgID, labelID int64) error {
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Remove label from all tickets
-		if err := tx.Where("label_id = ?", labelID).Delete(&ticket.TicketLabel{}).Error; err != nil {
-			return err
-		}
-		return tx.Where("id = ? AND organization_id = ?", labelID, orgID).Delete(&ticket.Label{}).Error
-	})
-}
-
-// AddAssignee adds an assignee to a ticket
-func (s *Service) AddAssignee(ctx context.Context, ticketID, userID int64) error {
-	assignee := &ticket.Assignee{
-		TicketID: ticketID,
-		UserID:   userID,
-	}
-	return s.db.WithContext(ctx).Create(assignee).Error
-}
-
-// RemoveAssignee removes an assignee from a ticket
-func (s *Service) RemoveAssignee(ctx context.Context, ticketID, userID int64) error {
-	return s.db.WithContext(ctx).Where("ticket_id = ? AND user_id = ?", ticketID, userID).Delete(&ticket.Assignee{}).Error
-}
-
-// AddLabel adds a label to a ticket
-func (s *Service) AddLabel(ctx context.Context, ticketID, labelID int64) error {
-	ticketLabel := &ticket.TicketLabel{
-		TicketID: ticketID,
-		LabelID:  labelID,
-	}
-	return s.db.WithContext(ctx).Create(ticketLabel).Error
-}
-
-// RemoveLabel removes a label from a ticket
-func (s *Service) RemoveLabel(ctx context.Context, ticketID, labelID int64) error {
-	return s.db.WithContext(ctx).Where("ticket_id = ? AND label_id = ?", ticketID, labelID).Delete(&ticket.TicketLabel{}).Error
-}
-
-// Merge Request operations
-
-// LinkMergeRequest links a merge request to a ticket
-func (s *Service) LinkMergeRequest(ctx context.Context, orgID, ticketID int64, podID *int64, mrIID int, mrURL, sourceBranch, targetBranch, title, state string) (*ticket.MergeRequest, error) {
-	mr := &ticket.MergeRequest{
-		OrganizationID: orgID,
-		TicketID:       ticketID,
-		PodID:          podID,
-		MRIID:          mrIID,
-		MRURL:          mrURL,
-		SourceBranch:   sourceBranch,
-		TargetBranch:   targetBranch,
-		Title:          title,
-		State:          state,
-	}
-
-	if err := s.db.WithContext(ctx).Create(mr).Error; err != nil {
-		return nil, err
-	}
-
-	return mr, nil
-}
-
-// UpdateMergeRequestState updates a merge request state
-func (s *Service) UpdateMergeRequestState(ctx context.Context, mrID int64, state string) error {
-	return s.db.WithContext(ctx).Model(&ticket.MergeRequest{}).
-		Where("id = ?", mrID).
-		Update("state", state).Error
-}
-
-// GetMergeRequestByURL returns a merge request by URL
-func (s *Service) GetMergeRequestByURL(ctx context.Context, mrURL string) (*ticket.MergeRequest, error) {
-	var mr ticket.MergeRequest
-	if err := s.db.WithContext(ctx).Where("mr_url = ?", mrURL).First(&mr).Error; err != nil {
-		return nil, err
-	}
-	return &mr, nil
-}
-
-// ListMergeRequests returns merge requests for a ticket
-func (s *Service) ListMergeRequests(ctx context.Context, ticketID int64) ([]*ticket.MergeRequest, error) {
-	var mrs []*ticket.MergeRequest
-	if err := s.db.WithContext(ctx).Where("ticket_id = ?", ticketID).Find(&mrs).Error; err != nil {
-		return nil, err
-	}
-	return mrs, nil
-}
-
-// GetTicketStats returns ticket statistics for a repository
-func (s *Service) GetTicketStats(ctx context.Context, orgID int64, repoID *int64) (map[string]int64, error) {
-	stats := make(map[string]int64)
-
-	query := s.db.WithContext(ctx).Model(&ticket.Ticket{}).Where("organization_id = ?", orgID)
-	if repoID != nil {
-		query = query.Where("repository_id = ?", *repoID)
-	}
-
-	statuses := []string{
-		ticket.TicketStatusBacklog,
-		ticket.TicketStatusTodo,
-		ticket.TicketStatusInProgress,
-		ticket.TicketStatusInReview,
-		ticket.TicketStatusDone,
-		ticket.TicketStatusCancelled,
-	}
-
-	for _, status := range statuses {
-		var count int64
-		query.Where("status = ?", status).Count(&count)
-		stats[status] = count
-	}
-
-	return stats, nil
-}
-
-// GetAssignees returns assignees for a ticket
-func (s *Service) GetAssignees(ctx context.Context, ticketID int64) ([]*user.User, error) {
-	var assignees []ticket.Assignee
-	if err := s.db.WithContext(ctx).Where("ticket_id = ?", ticketID).Find(&assignees).Error; err != nil {
-		return nil, err
-	}
-
-	if len(assignees) == 0 {
-		return []*user.User{}, nil
-	}
-
-	userIDs := make([]int64, len(assignees))
-	for i, a := range assignees {
-		userIDs[i] = a.UserID
-	}
-
-	var users []*user.User
-	if err := s.db.WithContext(ctx).Where("id IN ?", userIDs).Find(&users).Error; err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// GetTicketLabels returns labels for a ticket
-func (s *Service) GetTicketLabels(ctx context.Context, ticketID int64) ([]*ticket.Label, error) {
-	var ticketLabels []ticket.TicketLabel
-	if err := s.db.WithContext(ctx).Where("ticket_id = ?", ticketID).Find(&ticketLabels).Error; err != nil {
-		return nil, err
-	}
-
-	if len(ticketLabels) == 0 {
-		return []*ticket.Label{}, nil
-	}
-
-	labelIDs := make([]int64, len(ticketLabels))
-	for i, tl := range ticketLabels {
-		labelIDs[i] = tl.LabelID
-	}
-
-	var labels []*ticket.Label
-	if err := s.db.WithContext(ctx).Where("id IN ?", labelIDs).Find(&labels).Error; err != nil {
-		return nil, err
-	}
-
-	return labels, nil
-}
-
-// GetChildTickets returns child tickets for a parent ticket
-func (s *Service) GetChildTickets(ctx context.Context, parentTicketID int64) ([]*ticket.Ticket, error) {
-	var tickets []*ticket.Ticket
-	if err := s.db.WithContext(ctx).
-		Preload("Assignees").
-		Preload("Labels").
-		Where("parent_ticket_id = ?", parentTicketID).
-		Order("created_at ASC").
-		Find(&tickets).Error; err != nil {
-		return nil, err
-	}
-	return tickets, nil
-}
-
-// ========== Board View (Kanban) ==========
-
-// GetBoard returns a kanban board view of tickets
-func (s *Service) GetBoard(ctx context.Context, filter *ListTicketsFilter) (*ticket.Board, error) {
-	// Define board columns (ordered)
-	columnStatuses := []string{
-		ticket.TicketStatusBacklog,
-		ticket.TicketStatusTodo,
-		ticket.TicketStatusInProgress,
-		ticket.TicketStatusInReview,
-		ticket.TicketStatusDone,
-	}
-
-	board := &ticket.Board{
-		Columns: make([]ticket.BoardColumn, len(columnStatuses)),
-	}
-
-	for i, status := range columnStatuses {
-		filter.Status = status
-		tickets, count, err := s.ListTickets(ctx, filter)
-		if err != nil {
-			return nil, err
-		}
-
-		column := ticket.BoardColumn{
-			Status:  status,
-			Count:   int(count),
-			Tickets: make([]ticket.Ticket, len(tickets)),
-		}
-		for j, t := range tickets {
-			column.Tickets[j] = *t
-		}
-		board.Columns[i] = column
-	}
-
-	return board, nil
-}
-
-// GetActiveTickets returns active (non-completed) tickets
-func (s *Service) GetActiveTickets(ctx context.Context, orgID int64, repoID *int64, limit int) ([]*ticket.Ticket, error) {
-	query := s.db.WithContext(ctx).
-		Where("organization_id = ?", orgID).
-		Where("status NOT IN ?", []string{ticket.TicketStatusDone, ticket.TicketStatusCancelled})
-
-	if repoID != nil {
-		query = query.Where("repository_id = ?", *repoID)
-	}
-
-	var tickets []*ticket.Ticket
-	if err := query.
-		Preload("Assignees").
-		Preload("Labels").
-		Order("updated_at DESC").
-		Limit(limit).
-		Find(&tickets).Error; err != nil {
-		return nil, err
-	}
-
-	return tickets, nil
-}
-
-// GetSubTicketCounts returns sub-ticket counts for multiple parent tickets
-func (s *Service) GetSubTicketCounts(ctx context.Context, parentTicketIDs []int64) (map[int64]map[string]int64, error) {
-	type countResult struct {
-		ParentTicketID int64
-		Status         string
-		Count          int64
-	}
-
-	var results []countResult
-	if err := s.db.WithContext(ctx).
-		Model(&ticket.Ticket{}).
-		Select("parent_ticket_id, status, COUNT(*) as count").
-		Where("parent_ticket_id IN ?", parentTicketIDs).
-		Group("parent_ticket_id, status").
-		Find(&results).Error; err != nil {
-		return nil, err
-	}
-
-	counts := make(map[int64]map[string]int64)
-	for _, r := range results {
-		if counts[r.ParentTicketID] == nil {
-			counts[r.ParentTicketID] = make(map[string]int64)
-		}
-		counts[r.ParentTicketID][r.Status] = r.Count
-	}
-
-	return counts, nil
-}
-
-// ========== Ticket Relations ==========
-
-var (
-	ErrRelationNotFound = errors.New("relation not found")
-	ErrSelfRelation     = errors.New("cannot create relation to self")
-)
-
-// GetReverseRelationType returns the reverse relation type
-func GetReverseRelationType(relationType string) string {
-	switch relationType {
-	case ticket.RelationTypeBlocks:
-		return ticket.RelationTypeBlockedBy
-	case ticket.RelationTypeBlockedBy:
-		return ticket.RelationTypeBlocks
-	case ticket.RelationTypeDuplicate:
-		return ticket.RelationTypeDuplicate
-	default:
-		return ticket.RelationTypeRelates
-	}
-}
-
-// CreateRelation creates a relation between two tickets
-func (s *Service) CreateRelation(ctx context.Context, orgID, sourceTicketID, targetTicketID int64, relationType string) (*ticket.Relation, error) {
-	if sourceTicketID == targetTicketID {
-		return nil, ErrSelfRelation
-	}
-
-	var result *ticket.Relation
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Create the primary relation
-		relation := &ticket.Relation{
-			OrganizationID: orgID,
-			SourceTicketID: sourceTicketID,
-			TargetTicketID: targetTicketID,
-			RelationType:   relationType,
-		}
-		if err := tx.Create(relation).Error; err != nil {
-			return err
-		}
-		result = relation
-
-		// Create the reverse relation
-		reverseType := GetReverseRelationType(relationType)
-		reverseRelation := &ticket.Relation{
-			OrganizationID: orgID,
-			SourceTicketID: targetTicketID,
-			TargetTicketID: sourceTicketID,
-			RelationType:   reverseType,
-		}
-		if err := tx.Create(reverseRelation).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	return result, err
-}
-
-// Transaction helper to return value
-func (s *Service) createRelationTx(ctx context.Context, orgID, sourceTicketID, targetTicketID int64, relationType string) (*ticket.Relation, error) {
-	var result *ticket.Relation
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Create the primary relation
-		relation := &ticket.Relation{
-			OrganizationID: orgID,
-			SourceTicketID: sourceTicketID,
-			TargetTicketID: targetTicketID,
-			RelationType:   relationType,
-		}
-		if err := tx.Create(relation).Error; err != nil {
-			return err
-		}
-
-		// Create the reverse relation
-		reverseType := GetReverseRelationType(relationType)
-		reverseRelation := &ticket.Relation{
-			OrganizationID: orgID,
-			SourceTicketID: targetTicketID,
-			TargetTicketID: sourceTicketID,
-			RelationType:   reverseType,
-		}
-		if err := tx.Create(reverseRelation).Error; err != nil {
-			return err
-		}
-
-		result = relation
-		return nil
-	})
-	return result, err
-}
-
-// DeleteRelation deletes a relation and its reverse
-func (s *Service) DeleteRelation(ctx context.Context, relationID int64) error {
-	// Get the relation first
-	var relation ticket.Relation
-	if err := s.db.WithContext(ctx).First(&relation, relationID).Error; err != nil {
-		return ErrRelationNotFound
-	}
-
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Delete the relation
-		if err := tx.Delete(&relation).Error; err != nil {
-			return err
-		}
-
-		// Delete the reverse relation
-		reverseType := GetReverseRelationType(relation.RelationType)
-		return tx.Where(
-			"source_ticket_id = ? AND target_ticket_id = ? AND relation_type = ?",
-			relation.TargetTicketID, relation.SourceTicketID, reverseType,
-		).Delete(&ticket.Relation{}).Error
-	})
-}
-
-// ListRelations returns relations for a ticket
-func (s *Service) ListRelations(ctx context.Context, ticketID int64) ([]*ticket.Relation, error) {
-	var relations []*ticket.Relation
-	if err := s.db.WithContext(ctx).
-		Preload("TargetTicket").
-		Where("source_ticket_id = ?", ticketID).
-		Find(&relations).Error; err != nil {
-		return nil, err
-	}
-	return relations, nil
-}
-
-// ========== Ticket Commits ==========
-
-var ErrCommitNotFound = errors.New("commit not found")
-
-// LinkCommit links a git commit to a ticket
-func (s *Service) LinkCommit(ctx context.Context, orgID, ticketID, repoID int64, podID *int64, commitSHA, commitMessage string, commitURL, authorName, authorEmail *string, committedAt *time.Time) (*ticket.Commit, error) {
-	commit := &ticket.Commit{
-		OrganizationID: orgID,
-		TicketID:       ticketID,
-		RepositoryID:   repoID,
-		PodID:          podID,
-		CommitSHA:      commitSHA,
-		CommitMessage:  commitMessage,
-		CommitURL:      commitURL,
-		AuthorName:     authorName,
-		AuthorEmail:    authorEmail,
-		CommittedAt:    committedAt,
-	}
-
-	if err := s.db.WithContext(ctx).Create(commit).Error; err != nil {
-		return nil, err
-	}
-
-	return commit, nil
-}
-
-// UnlinkCommit removes a commit link from a ticket
-func (s *Service) UnlinkCommit(ctx context.Context, commitID int64) error {
-	return s.db.WithContext(ctx).Delete(&ticket.Commit{}, commitID).Error
-}
-
-// ListCommits returns commits for a ticket
-func (s *Service) ListCommits(ctx context.Context, ticketID int64) ([]*ticket.Commit, error) {
-	var commits []*ticket.Commit
-	if err := s.db.WithContext(ctx).
-		Where("ticket_id = ?", ticketID).
-		Order("committed_at DESC, created_at DESC").
-		Find(&commits).Error; err != nil {
-		return nil, err
-	}
-	return commits, nil
-}
-
-// GetCommitBySHA returns a commit by SHA
-func (s *Service) GetCommitBySHA(ctx context.Context, repoID int64, commitSHA string) (*ticket.Commit, error) {
-	var commit ticket.Commit
-	if err := s.db.WithContext(ctx).
-		Where("repository_id = ? AND commit_sha = ?", repoID, commitSHA).
-		First(&commit).Error; err != nil {
-		return nil, ErrCommitNotFound
-	}
-	return &commit, nil
+	return nil
 }

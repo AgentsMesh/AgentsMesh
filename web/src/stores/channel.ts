@@ -6,6 +6,7 @@ export type Message = ChannelMessage;
 
 export interface Channel {
   id: number;
+  organization_id: number;
   name: string;
   description?: string;
   document?: string;

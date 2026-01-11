@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/anthropics/agentmesh/backend/internal/config"
 	"github.com/anthropics/agentmesh/backend/internal/infra/email"
+	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentmesh/backend/internal/infra/websocket"
 	"github.com/anthropics/agentmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentmesh/backend/internal/service/agentpod"
@@ -48,6 +49,7 @@ type Services struct {
 	Billing           *billing.Service
 	Message           *MessageService    // Agent-to-agent messaging
 	Hub               *websocket.Hub     // WebSocket hub for real-time communication
+	EventBus          *eventbus.EventBus // Event bus for real-time events
 	SSHKey            *sshkey.Service      // SSH key management
 	Email             email.Service        // Email service
 	Invitation        *invitation.Service  // Organization invitations
@@ -188,6 +190,7 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 	}
 
 	// Tickets
+	// Note: Event publishing is handled in ticket.Service layer (Information Expert principle)
 	ticketHandler := NewTicketHandler(svc.Ticket)
 	devmeshHandler := NewDevMeshHandler(svc.DevMesh, svc.Ticket)
 	tickets := rg.Group("/tickets")

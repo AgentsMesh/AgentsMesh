@@ -3,140 +3,12 @@ package runner
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
-
-var (
-	ErrRunnerNotConnected = errors.New("runner not connected")
-	ErrConnectionClosed   = errors.New("connection closed")
-)
-
-// RunnerConnection represents an active connection to a runner
-type RunnerConnection struct {
-	RunnerID int64
-	Conn     *websocket.Conn
-	Send     chan []byte
-	LastPing time.Time
-	mu       sync.Mutex
-}
-
-// RunnerMessage represents a message from/to a runner
-type RunnerMessage struct {
-	Type      string          `json:"type"`
-	PodKey    string          `json:"pod_key,omitempty"`
-	Data      json.RawMessage `json:"data,omitempty"`
-	Timestamp int64           `json:"timestamp"`
-}
-
-// Runner message types
-const (
-	// From runner
-	MsgTypeHeartbeat      = "heartbeat"
-	MsgTypePodCreated     = "pod_created"
-	MsgTypePodTerminated  = "pod_terminated"
-	MsgTypeTerminalOutput = "terminal_output"
-	MsgTypeAgentStatus    = "agent_status"
-	MsgTypePtyResized     = "pty_resized"
-	MsgTypeError          = "error"
-
-	// To runner
-	MsgTypeCreatePod      = "create_pod"
-	MsgTypeTerminatePod   = "terminate_pod"
-	MsgTypeTerminalInput  = "terminal_input"
-	MsgTypeTerminalResize = "terminal_resize"
-	MsgTypeSendPrompt     = "send_prompt"
-)
-
-// HeartbeatData represents heartbeat message data
-type HeartbeatData struct {
-	Pods          []HeartbeatPod `json:"pods"`
-	RunnerVersion string         `json:"runner_version,omitempty"`
-}
-
-// HeartbeatPod represents a pod in heartbeat data
-type HeartbeatPod struct {
-	PodKey      string `json:"pod_key"`
-	Status      string `json:"status,omitempty"`
-	AgentStatus string `json:"agent_status,omitempty"`
-}
-
-// PodCreatedData represents pod creation event data
-type PodCreatedData struct {
-	PodKey       string `json:"pod_key"`
-	Pid          int    `json:"pid"`
-	BranchName   string `json:"branch_name,omitempty"`
-	WorktreePath string `json:"worktree_path,omitempty"`
-	Cols         int    `json:"cols,omitempty"`
-	Rows         int    `json:"rows,omitempty"`
-}
-
-// PodTerminatedData represents pod termination event data
-type PodTerminatedData struct {
-	PodKey   string `json:"pod_key"`
-	ExitCode int    `json:"exit_code,omitempty"`
-}
-
-// TerminalOutputData represents terminal output data
-type TerminalOutputData struct {
-	PodKey string `json:"pod_key"`
-	Data   []byte `json:"data"`
-}
-
-// AgentStatusData represents agent status change data
-type AgentStatusData struct {
-	PodKey string `json:"pod_key"`
-	Status string `json:"status"`
-	Pid    int    `json:"pid,omitempty"`
-}
-
-// PtyResizedData represents PTY resize event data
-type PtyResizedData struct {
-	PodKey string `json:"pod_key"`
-	Cols   int    `json:"cols"`
-	Rows   int    `json:"rows"`
-}
-
-// PreparationConfig contains workspace preparation configuration
-type PreparationConfig struct {
-	Script         string `json:"script,omitempty"`          // Shell script to execute
-	TimeoutSeconds int    `json:"timeout_seconds,omitempty"` // Script execution timeout
-}
-
-// CreatePodRequest represents a request to create a pod
-// Fields match Runner's client.CreatePodRequest
-type CreatePodRequest struct {
-	PodKey            string             `json:"pod_key"`
-	InitialCommand    string             `json:"initial_command,omitempty"`    // Command to run (e.g., "claude")
-	InitialPrompt     string             `json:"initial_prompt,omitempty"`     // Prompt to send after command starts
-	PermissionMode    string             `json:"permission_mode,omitempty"`    // Permission mode (plan/default)
-	WorkingDir        string             `json:"working_dir,omitempty"`        // Working directory (deprecated, use PluginConfig)
-	TicketIdentifier  string             `json:"ticket_identifier,omitempty"`  // For worktree creation (deprecated, use PluginConfig)
-	WorktreeSuffix    string             `json:"worktree_suffix,omitempty"`    // Suffix for multiple worktrees per ticket
-	EnvVars           map[string]string  `json:"env_vars,omitempty"`           // Environment variables (deprecated, use PluginConfig)
-	PreparationConfig *PreparationConfig `json:"preparation_config,omitempty"` // Workspace preparation config (deprecated, use PluginConfig)
-
-	// PluginConfig is the unified configuration passed to Runner's Sandbox plugins
-	// Contains: repository_url, branch, ticket_identifier, git_token, init_script, init_timeout, env_vars
-	PluginConfig map[string]interface{} `json:"plugin_config,omitempty"`
-}
-
-// TerminalInputRequest represents terminal input to send
-type TerminalInputRequest struct {
-	PodKey string `json:"pod_key"`
-	Data   []byte `json:"data"`
-}
-
-// TerminalResizeRequest represents terminal resize request
-type TerminalResizeRequest struct {
-	PodKey string `json:"pod_key"`
-	Cols   int    `json:"cols"`
-	Rows   int    `json:"rows"`
-}
 
 // ConnectionManager manages runner WebSocket connections
 type ConnectionManager struct {
@@ -165,6 +37,8 @@ func NewConnectionManager(logger *slog.Logger) *ConnectionManager {
 		pingTimeout:  60 * time.Second,
 	}
 }
+
+// ========== Callback Setters ==========
 
 // SetHeartbeatCallback sets the heartbeat callback
 func (cm *ConnectionManager) SetHeartbeatCallback(fn func(runnerID int64, data *HeartbeatData)) {
@@ -200,6 +74,18 @@ func (cm *ConnectionManager) SetPtyResizedCallback(fn func(runnerID int64, data 
 func (cm *ConnectionManager) SetDisconnectCallback(fn func(runnerID int64)) {
 	cm.onDisconnect = fn
 }
+
+// GetHeartbeatCallback returns the current heartbeat callback
+func (cm *ConnectionManager) GetHeartbeatCallback() func(runnerID int64, data *HeartbeatData) {
+	return cm.onHeartbeat
+}
+
+// GetDisconnectCallback returns the current disconnect callback
+func (cm *ConnectionManager) GetDisconnectCallback() func(runnerID int64) {
+	return cm.onDisconnect
+}
+
+// ========== Connection Management ==========
 
 // AddConnection adds a runner connection
 func (cm *ConnectionManager) AddConnection(runnerID int64, conn *websocket.Conn) *RunnerConnection {
@@ -271,6 +157,31 @@ func (cm *ConnectionManager) UpdateHeartbeat(runnerID int64) {
 	}
 }
 
+// GetConnectedRunnerIDs returns IDs of all connected runners
+func (cm *ConnectionManager) GetConnectedRunnerIDs() []int64 {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	ids := make([]int64, 0, len(cm.connections))
+	for id := range cm.connections {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+// Close closes the connection manager and all connections
+func (cm *ConnectionManager) Close() {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	for _, conn := range cm.connections {
+		conn.Close()
+	}
+	cm.connections = make(map[int64]*RunnerConnection)
+}
+
+// ========== Message Handling ==========
+
 // HandleMessage handles an incoming message from a runner
 func (cm *ConnectionManager) HandleMessage(runnerID int64, msgType int, data []byte) {
 	if msgType != websocket.TextMessage && msgType != websocket.BinaryMessage {
@@ -341,6 +252,8 @@ func (cm *ConnectionManager) HandleMessage(runnerID int64, msgType int, data []b
 			"type", msg.Type)
 	}
 }
+
+// ========== Send Operations ==========
 
 // SendMessage sends a message to a runner
 func (cm *ConnectionManager) SendMessage(ctx context.Context, runnerID int64, msg *RunnerMessage) error {
@@ -443,113 +356,4 @@ func (cm *ConnectionManager) SendPrompt(ctx context.Context, runnerID int64, pod
 		Data:      promptData,
 		Timestamp: time.Now().UnixMilli(),
 	})
-}
-
-// GetConnectedRunnerIDs returns IDs of all connected runners
-func (cm *ConnectionManager) GetConnectedRunnerIDs() []int64 {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-
-	ids := make([]int64, 0, len(cm.connections))
-	for id := range cm.connections {
-		ids = append(ids, id)
-	}
-	return ids
-}
-
-// Close closes the connection manager and all connections
-func (cm *ConnectionManager) Close() {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	for _, conn := range cm.connections {
-		conn.Close()
-	}
-	cm.connections = make(map[int64]*RunnerConnection)
-}
-
-// SendMessage sends a message on the connection
-func (rc *RunnerConnection) SendMessage(msg *RunnerMessage) error {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
-
-	if rc.Conn == nil {
-		return ErrConnectionClosed
-	}
-
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-
-	select {
-	case rc.Send <- data:
-		return nil
-	default:
-		return errors.New("send buffer full")
-	}
-}
-
-// Close closes the connection
-func (rc *RunnerConnection) Close() {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
-
-	if rc.Conn != nil {
-		rc.Conn.Close()
-		rc.Conn = nil
-	}
-
-	// Close send channel safely
-	select {
-	case <-rc.Send:
-	default:
-		close(rc.Send)
-	}
-}
-
-// WritePump pumps messages from the send channel to the WebSocket
-func (rc *RunnerConnection) WritePump() {
-	ticker := time.NewTicker(30 * time.Second)
-	defer func() {
-		ticker.Stop()
-		rc.Close()
-	}()
-
-	for {
-		select {
-		case message, ok := <-rc.Send:
-			rc.mu.Lock()
-			conn := rc.Conn
-			rc.mu.Unlock()
-
-			if conn == nil {
-				return
-			}
-
-			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if !ok {
-				conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-
-			if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
-				return
-			}
-
-		case <-ticker.C:
-			rc.mu.Lock()
-			conn := rc.Conn
-			rc.mu.Unlock()
-
-			if conn == nil {
-				return
-			}
-
-			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
-		}
-	}
 }

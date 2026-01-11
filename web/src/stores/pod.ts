@@ -27,7 +27,7 @@ interface PodState {
   }) => Promise<Pod>;
   terminatePod: (podKey: string) => Promise<void>;
   setCurrentPod: (pod: Pod | null) => void;
-  updatePodStatus: (podKey: string, status: Pod["status"]) => void;
+  updatePodStatus: (podKey: string, status: Pod["status"], agentStatus?: string) => void;
   updateAgentStatus: (podKey: string, agentStatus: string) => void;
   clearError: () => void;
 }
@@ -114,14 +114,20 @@ export const usePodStore = create<PodState>((set, get) => ({
     set({ currentPod: pod });
   },
 
-  updatePodStatus: (podKey, status) => {
+  updatePodStatus: (podKey, status, agentStatus) => {
     set((state) => ({
       pods: state.pods.map((p) =>
-        p.pod_key === podKey ? { ...p, status } : p
+        p.pod_key === podKey
+          ? { ...p, status, ...(agentStatus && { agent_status: agentStatus }) }
+          : p
       ),
       currentPod:
         state.currentPod?.pod_key === podKey
-          ? { ...state.currentPod, status }
+          ? {
+              ...state.currentPod,
+              status,
+              ...(agentStatus && { agent_status: agentStatus }),
+            }
           : state.currentPod,
     }));
   },

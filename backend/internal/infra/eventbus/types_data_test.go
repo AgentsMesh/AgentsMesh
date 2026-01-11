@@ -1,0 +1,331 @@
+package eventbus
+
+import (
+	"encoding/json"
+	"testing"
+)
+
+func TestEventDataStructures(t *testing.T) {
+	t.Run("PodStatusChangedData serialization", func(t *testing.T) {
+		data := &PodStatusChangedData{
+			PodKey:         "pod-123",
+			Status:         "running",
+			PreviousStatus: "pending",
+			AgentStatus:    "active",
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded PodStatusChangedData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.PodKey != data.PodKey {
+			t.Errorf("PodKey mismatch: expected %s, got %s", data.PodKey, decoded.PodKey)
+		}
+		if decoded.Status != data.Status {
+			t.Errorf("Status mismatch: expected %s, got %s", data.Status, decoded.Status)
+		}
+		if decoded.PreviousStatus != data.PreviousStatus {
+			t.Errorf("PreviousStatus mismatch: expected %s, got %s", data.PreviousStatus, decoded.PreviousStatus)
+		}
+		if decoded.AgentStatus != data.AgentStatus {
+			t.Errorf("AgentStatus mismatch: expected %s, got %s", data.AgentStatus, decoded.AgentStatus)
+		}
+	})
+
+	t.Run("PodCreatedData serialization", func(t *testing.T) {
+		ticketID := int64(42)
+		data := &PodCreatedData{
+			PodKey:      "pod-new",
+			Status:      "initializing",
+			AgentStatus: "pending",
+			RunnerID:    10,
+			TicketID:    &ticketID,
+			CreatedByID: 5,
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded PodCreatedData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.PodKey != data.PodKey {
+			t.Errorf("PodKey mismatch")
+		}
+		if decoded.RunnerID != data.RunnerID {
+			t.Errorf("RunnerID mismatch: expected %d, got %d", data.RunnerID, decoded.RunnerID)
+		}
+		if decoded.TicketID == nil || *decoded.TicketID != 42 {
+			t.Error("TicketID mismatch")
+		}
+		if decoded.CreatedByID != 5 {
+			t.Errorf("CreatedByID mismatch: expected 5, got %d", decoded.CreatedByID)
+		}
+	})
+
+	t.Run("PodCreatedData with nil TicketID", func(t *testing.T) {
+		data := &PodCreatedData{
+			PodKey:      "pod-no-ticket",
+			Status:      "running",
+			RunnerID:    1,
+			TicketID:    nil,
+			CreatedByID: 1,
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded PodCreatedData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.TicketID != nil {
+			t.Error("expected nil TicketID")
+		}
+	})
+
+	t.Run("RunnerStatusData serialization", func(t *testing.T) {
+		data := &RunnerStatusData{
+			RunnerID:      99,
+			NodeID:        "node-xyz",
+			Status:        "offline",
+			CurrentPods:   0,
+			LastHeartbeat: "2024-12-01T12:00:00Z",
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded RunnerStatusData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.RunnerID != 99 {
+			t.Errorf("RunnerID mismatch")
+		}
+		if decoded.NodeID != "node-xyz" {
+			t.Errorf("NodeID mismatch")
+		}
+		if decoded.LastHeartbeat != "2024-12-01T12:00:00Z" {
+			t.Errorf("LastHeartbeat mismatch")
+		}
+	})
+
+	t.Run("TicketStatusChangedData serialization", func(t *testing.T) {
+		data := &TicketStatusChangedData{
+			Identifier:     "PRJ-123",
+			Status:         "done",
+			PreviousStatus: "in_progress",
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded TicketStatusChangedData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.Identifier != "PRJ-123" {
+			t.Errorf("Identifier mismatch")
+		}
+		if decoded.Status != "done" {
+			t.Errorf("Status mismatch")
+		}
+		if decoded.PreviousStatus != "in_progress" {
+			t.Errorf("PreviousStatus mismatch")
+		}
+	})
+
+	t.Run("TerminalNotificationData serialization", func(t *testing.T) {
+		data := &TerminalNotificationData{
+			PodKey: "pod-term",
+			Title:  "Alert",
+			Body:   "Something happened",
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded TerminalNotificationData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.PodKey != "pod-term" {
+			t.Errorf("PodKey mismatch")
+		}
+		if decoded.Title != "Alert" {
+			t.Errorf("Title mismatch")
+		}
+		if decoded.Body != "Something happened" {
+			t.Errorf("Body mismatch")
+		}
+	})
+
+	t.Run("TaskCompletedData serialization", func(t *testing.T) {
+		ticketID := int64(500)
+		data := &TaskCompletedData{
+			PodKey:      "pod-task",
+			AgentStatus: "error",
+			TicketID:    &ticketID,
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded TaskCompletedData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.PodKey != "pod-task" {
+			t.Errorf("PodKey mismatch")
+		}
+		if decoded.AgentStatus != "error" {
+			t.Errorf("AgentStatus mismatch")
+		}
+		if decoded.TicketID == nil || *decoded.TicketID != 500 {
+			t.Error("TicketID mismatch")
+		}
+	})
+
+	t.Run("TaskCompletedData with nil TicketID", func(t *testing.T) {
+		data := &TaskCompletedData{
+			PodKey:      "pod-no-ticket",
+			AgentStatus: "finished",
+			TicketID:    nil,
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded TaskCompletedData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.TicketID != nil {
+			t.Error("expected nil TicketID")
+		}
+	})
+}
+
+func TestEvent_Serialization(t *testing.T) {
+	t.Run("full event serialization", func(t *testing.T) {
+		userID := int64(42)
+		userIDs := []int64{1, 2, 3}
+		data, _ := json.Marshal(map[string]string{"key": "value"})
+
+		event := &Event{
+			Type:             EventPodCreated,
+			Category:         CategoryEntity,
+			OrganizationID:   100,
+			TargetUserID:     &userID,
+			TargetUserIDs:    userIDs,
+			EntityType:       "pod",
+			EntityID:         "pod-123",
+			Data:             data,
+			Timestamp:        1234567890,
+			SourceInstanceID: "server-1",
+		}
+
+		bytes, err := json.Marshal(event)
+		if err != nil {
+			t.Fatalf("failed to marshal event: %v", err)
+		}
+
+		var decoded Event
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal event: %v", err)
+		}
+
+		if decoded.Type != EventPodCreated {
+			t.Errorf("Type mismatch")
+		}
+		if decoded.Category != CategoryEntity {
+			t.Errorf("Category mismatch")
+		}
+		if decoded.OrganizationID != 100 {
+			t.Errorf("OrganizationID mismatch")
+		}
+		if decoded.TargetUserID == nil || *decoded.TargetUserID != 42 {
+			t.Error("TargetUserID mismatch")
+		}
+		if len(decoded.TargetUserIDs) != 3 {
+			t.Errorf("TargetUserIDs length mismatch")
+		}
+		if decoded.EntityType != "pod" {
+			t.Errorf("EntityType mismatch")
+		}
+		if decoded.EntityID != "pod-123" {
+			t.Errorf("EntityID mismatch")
+		}
+		if decoded.Timestamp != 1234567890 {
+			t.Errorf("Timestamp mismatch")
+		}
+		if decoded.SourceInstanceID != "server-1" {
+			t.Errorf("SourceInstanceID mismatch")
+		}
+	})
+
+	t.Run("event with omitted optional fields", func(t *testing.T) {
+		event := &Event{
+			Type:           EventTicketUpdated,
+			Category:       CategoryEntity,
+			OrganizationID: 1,
+			Timestamp:      1000,
+		}
+
+		bytes, err := json.Marshal(event)
+		if err != nil {
+			t.Fatalf("failed to marshal event: %v", err)
+		}
+
+		// Verify omitempty works
+		jsonStr := string(bytes)
+		if containsSubstr(jsonStr, "target_user_id") {
+			t.Error("expected target_user_id to be omitted")
+		}
+		if containsSubstr(jsonStr, "target_user_ids") {
+			t.Error("expected target_user_ids to be omitted")
+		}
+		if containsSubstr(jsonStr, "source_instance_id") {
+			t.Error("expected source_instance_id to be omitted")
+		}
+	})
+}
+
+// containsSubstr checks if string contains substring
+func containsSubstr(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

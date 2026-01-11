@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { useWorkspaceStore, terminalPool } from "../workspace";
 
@@ -415,7 +415,7 @@ describe("Terminal Connection Pool", () => {
       terminalPool.connect("pod-123", onMessage);
 
       // Simulate WebSocket open
-      lastMockWsInstance.onopen?.();
+      lastMockWsInstance!.onopen?.();
 
       const conn = terminalPool.getConnection("pod-123");
       expect(conn?.status).toBe("connected");
@@ -428,7 +428,7 @@ describe("Terminal Connection Pool", () => {
       // Simulate WebSocket message with ArrayBuffer
       const testData = new ArrayBuffer(3);
       new Uint8Array(testData).set([1, 2, 3]);
-      lastMockWsInstance.onmessage?.({ data: testData });
+      lastMockWsInstance!.onmessage?.({ data: testData });
 
       expect(onMessage).toHaveBeenCalled();
       const conn = terminalPool.getConnection("pod-123");
@@ -440,7 +440,7 @@ describe("Terminal Connection Pool", () => {
       terminalPool.connect("pod-123", onMessage);
 
       // Simulate WebSocket message with string
-      lastMockWsInstance.onmessage?.({ data: "test message" });
+      lastMockWsInstance!.onmessage?.({ data: "test message" });
 
       expect(onMessage).toHaveBeenCalledWith("test message");
       // String messages should not be buffered
@@ -456,7 +456,7 @@ describe("Terminal Connection Pool", () => {
       for (let i = 0; i < 150; i++) {
         const testData = new ArrayBuffer(1);
         new Uint8Array(testData).set([i]);
-        lastMockWsInstance.onmessage?.({ data: testData });
+        lastMockWsInstance!.onmessage?.({ data: testData });
       }
 
       const conn = terminalPool.getConnection("pod-123");
@@ -469,7 +469,7 @@ describe("Terminal Connection Pool", () => {
       terminalPool.connect("pod-123", onMessage);
 
       // Simulate WebSocket error
-      lastMockWsInstance.onerror?.(new Error("Connection failed"));
+      lastMockWsInstance!.onerror?.(new Error("Connection failed"));
 
       const conn = terminalPool.getConnection("pod-123");
       expect(conn?.status).toBe("error");
@@ -481,7 +481,7 @@ describe("Terminal Connection Pool", () => {
       terminalPool.connect("pod-123", onMessage);
 
       // Simulate WebSocket close
-      lastMockWsInstance.onclose?.();
+      lastMockWsInstance!.onclose?.();
 
       const conn = terminalPool.getConnection("pod-123");
       expect(conn?.status).toBe("disconnected");
@@ -513,7 +513,7 @@ describe("Terminal Connection Pool", () => {
 
       send("test input");
 
-      expect(lastMockWsInstance.send).toHaveBeenCalledWith(
+      expect(lastMockWsInstance!.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "input", data: "test input" })
       );
     });
@@ -522,10 +522,10 @@ describe("Terminal Connection Pool", () => {
       const onMessage = vi.fn();
       const { send } = terminalPool.connect("pod-123", onMessage);
 
-      lastMockWsInstance.readyState = MockWebSocket.CLOSED;
+      lastMockWsInstance!.readyState = MockWebSocket.CLOSED;
       send("test input");
 
-      expect(lastMockWsInstance.send).not.toHaveBeenCalled();
+      expect(lastMockWsInstance!.send).not.toHaveBeenCalled();
     });
   });
 
@@ -545,12 +545,12 @@ describe("Terminal Connection Pool", () => {
       terminalPool.sendResize("pod-123", 24, 80);
 
       // Should not be called immediately due to debounce
-      expect(lastMockWsInstance.send).not.toHaveBeenCalled();
+      expect(lastMockWsInstance!.send).not.toHaveBeenCalled();
 
       // Advance timers past debounce period (150ms)
       vi.advanceTimersByTime(150);
 
-      expect(lastMockWsInstance.send).toHaveBeenCalledWith(
+      expect(lastMockWsInstance!.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "resize", rows: 24, cols: 80 })
       );
     });
@@ -559,13 +559,13 @@ describe("Terminal Connection Pool", () => {
       const onMessage = vi.fn();
       terminalPool.connect("pod-123", onMessage);
 
-      lastMockWsInstance.readyState = MockWebSocket.CLOSED;
+      lastMockWsInstance!.readyState = MockWebSocket.CLOSED;
       terminalPool.sendResize("pod-123", 24, 80);
 
       // Advance timers past debounce period
       vi.advanceTimersByTime(150);
 
-      expect(lastMockWsInstance.send).not.toHaveBeenCalled();
+      expect(lastMockWsInstance!.send).not.toHaveBeenCalled();
     });
 
     it("should not send resize for non-existent connection", () => {
@@ -606,7 +606,7 @@ describe("Terminal Connection Pool", () => {
 
       terminalPool.disconnect("pod-123");
 
-      expect(lastMockWsInstance.close).toHaveBeenCalled();
+      expect(lastMockWsInstance!.close).toHaveBeenCalled();
       expect(terminalPool.getConnection("pod-123")).toBeUndefined();
     });
 
@@ -614,10 +614,10 @@ describe("Terminal Connection Pool", () => {
       const onMessage = vi.fn();
       terminalPool.connect("pod-123", onMessage);
 
-      lastMockWsInstance.readyState = MockWebSocket.CLOSED;
+      lastMockWsInstance!.readyState = MockWebSocket.CLOSED;
       terminalPool.disconnect("pod-123");
 
-      expect(lastMockWsInstance.close).not.toHaveBeenCalled();
+      expect(lastMockWsInstance!.close).not.toHaveBeenCalled();
     });
 
     it("should do nothing for non-existent connection", () => {
@@ -645,7 +645,7 @@ describe("Terminal Connection Pool", () => {
       terminalPool.connect("pod-123", onMessage);
 
       // Simulate open
-      lastMockWsInstance.onopen?.();
+      lastMockWsInstance!.onopen?.();
 
       expect(terminalPool.isConnected("pod-123")).toBe(true);
     });
@@ -653,9 +653,9 @@ describe("Terminal Connection Pool", () => {
     it("should return false when status is connected but WebSocket is not open", () => {
       const onMessage = vi.fn();
       terminalPool.connect("pod-123", onMessage);
-      lastMockWsInstance.onopen?.();
+      lastMockWsInstance!.onopen?.();
 
-      lastMockWsInstance.readyState = MockWebSocket.CLOSED;
+      lastMockWsInstance!.readyState = MockWebSocket.CLOSED;
 
       expect(terminalPool.isConnected("pod-123")).toBe(false);
     });
@@ -664,7 +664,7 @@ describe("Terminal Connection Pool", () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const onMessage = vi.fn();
       terminalPool.connect("pod-123", onMessage);
-      lastMockWsInstance.onerror?.(new Error("test"));
+      lastMockWsInstance!.onerror?.(new Error("test"));
 
       expect(terminalPool.isConnected("pod-123")).toBe(false);
       consoleSpy.mockRestore();

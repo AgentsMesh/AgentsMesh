@@ -101,17 +101,16 @@ function calculateLayout(
 }
 
 export default function DevMeshTopology() {
-  const { topology, selectedNode, selectedChannel, selectNode, selectChannel, startPolling, stopPolling } =
+  const { topology, selectedNode, selectedChannel, selectNode, selectChannel, fetchTopology } =
     useDevMeshStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  // Start polling on mount
+  // Fetch topology on mount - realtime events handle subsequent updates
   useEffect(() => {
-    startPolling(5000);
-    return () => stopPolling();
-  }, [startPolling, stopPolling]);
+    fetchTopology();
+  }, [fetchTopology]);
 
   // Update nodes and edges when topology changes
   useEffect(() => {

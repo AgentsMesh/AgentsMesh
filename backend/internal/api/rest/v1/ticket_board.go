@@ -1,0 +1,92 @@
+package v1
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/anthropics/agentmesh/backend/internal/middleware"
+	"github.com/anthropics/agentmesh/backend/internal/service/ticket"
+	"github.com/gin-gonic/gin"
+)
+
+// ========== Board and View Endpoints ==========
+
+// GetActiveTickets returns active (non-completed) tickets
+// GET /api/v1/organizations/:slug/tickets/active
+func (h *TicketHandler) GetActiveTickets(c *gin.Context) {
+	tenant := middleware.GetTenant(c)
+
+	limit := 20
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	var repoID *int64
+	if repoIDStr := c.Query("repository_id"); repoIDStr != "" {
+		if id, err := strconv.ParseInt(repoIDStr, 10, 64); err == nil {
+			repoID = &id
+		}
+	}
+
+	tickets, err := h.ticketService.GetActiveTickets(c.Request.Context(), tenant.OrganizationID, repoID, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get active tickets"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"tickets": tickets})
+}
+
+// GetBoard returns the kanban board view
+// GET /api/v1/organizations/:slug/tickets/board
+func (h *TicketHandler) GetBoard(c *gin.Context) {
+	tenant := middleware.GetTenant(c)
+
+	var repoID *int64
+	if repoIDStr := c.Query("repository_id"); repoIDStr != "" {
+		if id, err := strconv.ParseInt(repoIDStr, 10, 64); err == nil {
+			repoID = &id
+		}
+	}
+
+	board, err := h.ticketService.GetBoard(c.Request.Context(), &ticket.ListTicketsFilter{
+		OrganizationID: tenant.OrganizationID,
+		RepositoryID:   repoID,
+		UserRole:       tenant.UserRole,
+		Limit:          50,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get board"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"board": board})
+}
+
+// GetSubTickets returns sub-tickets of a parent ticket
+// GET /api/v1/organizations/:slug/tickets/:identifier/sub-tickets
+func (h *TicketHandler) GetSubTickets(c *gin.Context) {
+	identifier := c.Param("identifier")
+
+	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), identifier)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ticket not found"})
+		return
+	}
+
+	tenant := middleware.GetTenant(c)
+	if t.OrganizationID != tenant.OrganizationID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+
+	subTickets, err := h.ticketService.GetChildTickets(c.Request.Context(), t.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get sub-tickets"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"sub_tickets": subTickets})
+}

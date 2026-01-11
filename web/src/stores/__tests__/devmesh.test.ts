@@ -23,32 +23,38 @@ import { devmeshApi } from "@/lib/api/client";
 const mockNode1: DevMeshNode = {
   pod_key: "pod-abc",
   status: "running",
-  agent_type: "claude-code",
   agent_status: "coding",
-  created_at: "2024-01-01T00:00:00Z",
+  model: "claude-code",
+  created_by_id: 1,
+  runner_id: 1,
+  started_at: "2024-01-01T00:00:00Z",
 };
 
 const mockNode2: DevMeshNode = {
   pod_key: "pod-def",
   status: "running",
-  agent_type: "gpt-engineer",
   agent_status: "thinking",
-  created_at: "2024-01-02T00:00:00Z",
+  model: "gpt-engineer",
+  created_by_id: 1,
+  runner_id: 2,
+  started_at: "2024-01-02T00:00:00Z",
 };
 
 const mockNode3: DevMeshNode = {
   pod_key: "pod-ghi",
   status: "terminated",
-  agent_type: "claude-code",
   agent_status: "idle",
-  created_at: "2024-01-03T00:00:00Z",
+  model: "claude-code",
+  created_by_id: 1,
+  runner_id: 3,
+  started_at: "2024-01-03T00:00:00Z",
 };
 
 const mockEdge: DevMeshEdge = {
-  id: "edge-1",
+  id: 1,
   source: "pod-abc",
   target: "pod-def",
-  channel_id: 1,
+  granted_scopes: ["read", "write"],
   status: "active",
 };
 
@@ -56,6 +62,8 @@ const mockChannel: ChannelInfo = {
   id: 1,
   name: "general",
   pod_keys: ["pod-abc", "pod-def"],
+  message_count: 10,
+  is_archived: false,
 };
 
 const mockTopology: DevMeshTopology = {
@@ -211,115 +219,7 @@ describe("DevMesh Store", () => {
     });
   });
 
-  describe("startPolling", () => {
-    it("should start polling with default interval", async () => {
-      vi.mocked(devmeshApi.getTopology).mockResolvedValue({
-        topology: mockTopology,
-      });
-
-      act(() => {
-        useDevMeshStore.getState().startPolling();
-      });
-
-      // Should fetch immediately
-      expect(devmeshApi.getTopology).toHaveBeenCalledTimes(1);
-
-      // Advance timer by default interval (5000ms)
-      await act(async () => {
-        vi.advanceTimersByTime(5000);
-      });
-
-      expect(devmeshApi.getTopology).toHaveBeenCalledTimes(2);
-    });
-
-    it("should start polling with custom interval", async () => {
-      vi.mocked(devmeshApi.getTopology).mockResolvedValue({
-        topology: mockTopology,
-      });
-
-      act(() => {
-        useDevMeshStore.getState().startPolling(2000);
-      });
-
-      expect(devmeshApi.getTopology).toHaveBeenCalledTimes(1);
-
-      await act(async () => {
-        vi.advanceTimersByTime(2000);
-      });
-
-      expect(devmeshApi.getTopology).toHaveBeenCalledTimes(2);
-    });
-
-    it("should clear existing interval before starting new one", async () => {
-      vi.mocked(devmeshApi.getTopology).mockResolvedValue({
-        topology: mockTopology,
-      });
-
-      act(() => {
-        useDevMeshStore.getState().startPolling(5000);
-      });
-
-      act(() => {
-        useDevMeshStore.getState().startPolling(3000);
-      });
-
-      // After starting twice, the old interval should be cleared
-      // Advance by 3 seconds - should trigger once (new interval)
-      await act(async () => {
-        vi.advanceTimersByTime(3000);
-      });
-
-      // Initial fetch (2x) + one interval tick = 3 calls
-      expect(devmeshApi.getTopology).toHaveBeenCalledTimes(3);
-    });
-  });
-
-  describe("stopPolling", () => {
-    it("should stop polling", async () => {
-      vi.mocked(devmeshApi.getTopology).mockResolvedValue({
-        topology: mockTopology,
-      });
-
-      act(() => {
-        useDevMeshStore.getState().startPolling(1000);
-      });
-
-      act(() => {
-        useDevMeshStore.getState().stopPolling();
-      });
-
-      const initialCalls = vi.mocked(devmeshApi.getTopology).mock.calls.length;
-
-      await act(async () => {
-        vi.advanceTimersByTime(5000);
-      });
-
-      // Should not have made any more calls
-      expect(devmeshApi.getTopology).toHaveBeenCalledTimes(initialCalls);
-    });
-
-    it("should set pollInterval to null", () => {
-      act(() => {
-        useDevMeshStore.getState().startPolling();
-      });
-
-      expect(useDevMeshStore.getState().pollInterval).not.toBeNull();
-
-      act(() => {
-        useDevMeshStore.getState().stopPolling();
-      });
-
-      expect(useDevMeshStore.getState().pollInterval).toBeNull();
-    });
-
-    it("should do nothing if not polling", () => {
-      act(() => {
-        useDevMeshStore.getState().stopPolling();
-      });
-
-      expect(useDevMeshStore.getState().pollInterval).toBeNull();
-    });
-  });
+  // Note: Polling has been removed - realtime events handle updates now
 
   describe("clearError", () => {
     it("should clear error", () => {
@@ -424,9 +324,11 @@ describe("DevMesh Store", () => {
       const initializingNode: DevMeshNode = {
         pod_key: "pod-init",
         status: "initializing",
-        agent_type: "test",
         agent_status: "idle",
-        created_at: "2024-01-01T00:00:00Z",
+        model: "test",
+        created_by_id: 1,
+        runner_id: 4,
+        started_at: "2024-01-01T00:00:00Z",
       };
       useDevMeshStore.setState({
         topology: {

@@ -25,6 +25,7 @@ const mockChannel: Channel = {
   name: "general",
   description: "General discussion channel",
   is_archived: false,
+  organization_id: 1,
   created_at: "2024-01-01T00:00:00Z",
   updated_at: "2024-01-01T00:00:00Z",
 };
@@ -34,6 +35,7 @@ const mockChannel2: Channel = {
   name: "dev-chat",
   description: "Development discussion",
   is_archived: false,
+  organization_id: 1,
   created_at: "2024-01-02T00:00:00Z",
   updated_at: "2024-01-02T00:00:00Z",
 };
@@ -77,6 +79,7 @@ describe("Channel Store", () => {
     it("should fetch channels successfully", async () => {
       vi.mocked(channelApi.list).mockResolvedValue({
         channels: [mockChannel, mockChannel2],
+        total: 2,
       });
 
       await act(async () => {
@@ -91,7 +94,7 @@ describe("Channel Store", () => {
     });
 
     it("should pass filters to API", async () => {
-      vi.mocked(channelApi.list).mockResolvedValue({ channels: [] });
+      vi.mocked(channelApi.list).mockResolvedValue({ channels: [], total: 0 });
 
       await act(async () => {
         await useChannelStore.getState().fetchChannels({ includeArchived: true });
@@ -103,7 +106,7 @@ describe("Channel Store", () => {
     });
 
     it("should handle empty response", async () => {
-      vi.mocked(channelApi.list).mockResolvedValue({ channels: undefined as any });
+      vi.mocked(channelApi.list).mockResolvedValue({ channels: undefined as any, total: 0 });
 
       await act(async () => {
         await useChannelStore.getState().fetchChannels();
@@ -262,7 +265,7 @@ describe("Channel Store", () => {
     });
 
     it("should archive channel successfully", async () => {
-      vi.mocked(channelApi.archive).mockResolvedValue({});
+      vi.mocked(channelApi.archive).mockResolvedValue({ message: "Channel archived" });
 
       await act(async () => {
         await useChannelStore.getState().archiveChannel(1);
@@ -297,7 +300,7 @@ describe("Channel Store", () => {
     });
 
     it("should unarchive channel successfully", async () => {
-      vi.mocked(channelApi.unarchive).mockResolvedValue({});
+      vi.mocked(channelApi.unarchive).mockResolvedValue({ message: "Channel unarchived" });
 
       await act(async () => {
         await useChannelStore.getState().unarchiveChannel(1);
@@ -439,7 +442,7 @@ describe("Channel Store", () => {
         ...mockChannel,
         pods: [{ pod_key: "pod-123", status: "running" }],
       };
-      vi.mocked(channelApi.joinPod).mockResolvedValue({});
+      vi.mocked(channelApi.joinPod).mockResolvedValue({ message: "Pod joined" });
       vi.mocked(channelApi.get).mockResolvedValue({ channel: updatedChannel });
 
       await act(async () => {
@@ -479,7 +482,7 @@ describe("Channel Store", () => {
 
     it("should leave channel and refresh", async () => {
       const updatedChannel = { ...mockChannel, pods: [] };
-      vi.mocked(channelApi.leavePod).mockResolvedValue({});
+      vi.mocked(channelApi.leavePod).mockResolvedValue({ message: "Pod left" });
       vi.mocked(channelApi.get).mockResolvedValue({ channel: updatedChannel });
 
       await act(async () => {
