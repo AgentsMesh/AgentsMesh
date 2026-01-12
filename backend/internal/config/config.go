@@ -67,20 +67,26 @@ type ServerConfig struct {
 
 // DatabaseConfig holds database configuration
 type DatabaseConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
+	Host        string
+	Port        int
+	User        string
+	Password    string
+	DBName      string
+	SSLMode     string
+	ReplicaDSNs []string // Read replica DSNs for read-write separation
 }
 
-// DSN returns the PostgreSQL connection string
+// DSN returns the PostgreSQL connection string for the master database
 func (c DatabaseConfig) DSN() string {
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode,
 	)
+}
+
+// HasReplicas returns true if replica DSNs are configured
+func (c DatabaseConfig) HasReplicas() bool {
+	return len(c.ReplicaDSNs) > 0
 }
 
 // RedisConfig holds Redis configuration
@@ -136,12 +142,13 @@ func Load() (*Config, error) {
 			CORSAllowedOrigins: getEnvList("CORS_ALLOWED_ORIGINS", []string{"*"}),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnvInt("DB_PORT", 5432),
-			User:     getEnv("DB_USER", "agentmesh"),
-			Password: getEnv("DB_PASSWORD", ""),
-			DBName:   getEnv("DB_NAME", "agentmesh"),
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			Host:        getEnv("DB_HOST", "localhost"),
+			Port:        getEnvInt("DB_PORT", 5432),
+			User:        getEnv("DB_USER", "agentmesh"),
+			Password:    getEnv("DB_PASSWORD", ""),
+			DBName:      getEnv("DB_NAME", "agentmesh"),
+			SSLMode:     getEnv("DB_SSLMODE", "disable"),
+			ReplicaDSNs: getEnvList("DB_REPLICA_DSNS", nil),
 		},
 		Redis: RedisConfig{
 			URL:      getEnv("REDIS_URL", ""),

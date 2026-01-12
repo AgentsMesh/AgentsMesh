@@ -13,14 +13,17 @@ func TestNewConnectionManager(t *testing.T) {
 	if cm == nil {
 		t.Fatal("NewConnectionManager returned nil")
 	}
-	if cm.connections == nil {
-		t.Error("connections map should be initialized")
+	if cm.shards[0] == nil {
+		t.Error("shards should be initialized")
 	}
 	if cm.pingInterval != 30*time.Second {
 		t.Errorf("pingInterval = %v, want 30s", cm.pingInterval)
 	}
 	if cm.pingTimeout != 60*time.Second {
 		t.Errorf("pingTimeout = %v, want 60s", cm.pingTimeout)
+	}
+	if cm.ConnectionCount() != 0 {
+		t.Errorf("initial connection count should be 0, got %d", cm.ConnectionCount())
 	}
 }
 
@@ -97,10 +100,12 @@ func TestConnectionManagerIsConnected(t *testing.T) {
 		t.Error("runner 1 should not be connected")
 	}
 
-	// Add a mock connection
-	cm.mu.Lock()
-	cm.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
-	cm.mu.Unlock()
+	// Add a mock connection using shard directly for testing
+	shard := cm.getShard(1)
+	shard.mu.Lock()
+	shard.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
+	cm.connCount.Add(1)
+	shard.mu.Unlock()
 
 	if !cm.IsConnected(1) {
 		t.Error("runner 1 should be connected")
@@ -116,9 +121,11 @@ func TestConnectionManagerGetConnection(t *testing.T) {
 	}
 
 	mockConn := &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
-	cm.mu.Lock()
-	cm.connections[1] = mockConn
-	cm.mu.Unlock()
+	shard := cm.getShard(1)
+	shard.mu.Lock()
+	shard.connections[1] = mockConn
+	cm.connCount.Add(1)
+	shard.mu.Unlock()
 
 	conn = cm.GetConnection(1)
 	if conn != mockConn {
@@ -134,9 +141,11 @@ func TestConnectionManagerUpdateHeartbeat(t *testing.T) {
 
 	// Add connection and update
 	mockConn := &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
-	cm.mu.Lock()
-	cm.connections[1] = mockConn
-	cm.mu.Unlock()
+	shard := cm.getShard(1)
+	shard.mu.Lock()
+	shard.connections[1] = mockConn
+	cm.connCount.Add(1)
+	shard.mu.Unlock()
 
 	before := time.Now()
 	cm.UpdateHeartbeat(1)
@@ -155,10 +164,18 @@ func TestConnectionManagerGetConnectedRunnerIDs(t *testing.T) {
 		t.Errorf("expected 0 runners, got %d", len(ids))
 	}
 
-	cm.mu.Lock()
-	cm.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
-	cm.connections[2] = &RunnerConnection{RunnerID: 2, Send: make(chan []byte, 256)}
-	cm.mu.Unlock()
+	// Add connections to different shards
+	shard1 := cm.getShard(1)
+	shard1.mu.Lock()
+	shard1.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
+	cm.connCount.Add(1)
+	shard1.mu.Unlock()
+
+	shard2 := cm.getShard(2)
+	shard2.mu.Lock()
+	shard2.connections[2] = &RunnerConnection{RunnerID: 2, Send: make(chan []byte, 256)}
+	cm.connCount.Add(1)
+	shard2.mu.Unlock()
 
 	ids = cm.GetConnectedRunnerIDs()
 	if len(ids) != 2 {
@@ -169,15 +186,22 @@ func TestConnectionManagerGetConnectedRunnerIDs(t *testing.T) {
 func TestConnectionManagerClose(t *testing.T) {
 	cm := NewConnectionManager(newTestLogger())
 
-	cm.mu.Lock()
-	cm.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
-	cm.connections[2] = &RunnerConnection{RunnerID: 2, Send: make(chan []byte, 256)}
-	cm.mu.Unlock()
+	shard1 := cm.getShard(1)
+	shard1.mu.Lock()
+	shard1.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
+	cm.connCount.Add(1)
+	shard1.mu.Unlock()
+
+	shard2 := cm.getShard(2)
+	shard2.mu.Lock()
+	shard2.connections[2] = &RunnerConnection{RunnerID: 2, Send: make(chan []byte, 256)}
+	cm.connCount.Add(1)
+	shard2.mu.Unlock()
 
 	cm.Close()
 
-	if len(cm.connections) != 0 {
-		t.Errorf("connections should be empty after Close, got %d", len(cm.connections))
+	if cm.ConnectionCount() != 0 {
+		t.Errorf("connections should be empty after Close, got %d", cm.ConnectionCount())
 	}
 }
 
@@ -196,9 +220,11 @@ func TestConnectionManagerRemoveConnection(t *testing.T) {
 	}
 
 	// Add and remove
-	cm.mu.Lock()
-	cm.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
-	cm.mu.Unlock()
+	shard := cm.getShard(1)
+	shard.mu.Lock()
+	shard.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
+	cm.connCount.Add(1)
+	shard.mu.Unlock()
 
 	cm.RemoveConnection(1)
 	if !disconnectCalled {
@@ -232,9 +258,11 @@ func TestConnectionManagerHandleMessageHeartbeat(t *testing.T) {
 	})
 
 	// Add mock connection for heartbeat update
-	cm.mu.Lock()
-	cm.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
-	cm.mu.Unlock()
+	shard := cm.getShard(1)
+	shard.mu.Lock()
+	shard.connections[1] = &RunnerConnection{RunnerID: 1, Send: make(chan []byte, 256)}
+	cm.connCount.Add(1)
+	shard.mu.Unlock()
 
 	hbData := HeartbeatData{
 		RunnerVersion: "1.0.0",
@@ -403,7 +431,7 @@ func TestRunnerConnectionClose(t *testing.T) {
 func TestRunnerMessageStruct(t *testing.T) {
 	msg := RunnerMessage{
 		Type:      MsgTypeHeartbeat,
-		PodKey: "pod-1",
+		PodKey:    "pod-1",
 		Timestamp: time.Now().UnixMilli(),
 	}
 
@@ -509,7 +537,7 @@ func TestDataStructs(t *testing.T) {
 
 	t.Run("CreatePodRequest", func(t *testing.T) {
 		req := CreatePodRequest{
-			PodKey:      "s1",
+			PodKey:         "s1",
 			InitialCommand: "claude",
 			InitialPrompt:  "hello",
 			PermissionMode: "plan",
@@ -555,5 +583,42 @@ func TestErrorVariables(t *testing.T) {
 	}
 	if ErrConnectionClosed.Error() != "connection closed" {
 		t.Error("ErrConnectionClosed message incorrect")
+	}
+}
+
+func TestConnectionManagerSharding(t *testing.T) {
+	cm := NewConnectionManager(newTestLogger())
+
+	// Test that different runner IDs go to different shards
+	shard1 := cm.getShard(1)
+	shard2 := cm.getShard(257) // Should be in the same shard as 1 (1 % 256 == 257 % 256)
+	shard3 := cm.getShard(2)   // Should be in a different shard
+
+	if shard1 != shard2 {
+		t.Error("runner 1 and 257 should be in the same shard")
+	}
+	if shard1 == shard3 {
+		t.Error("runner 1 and 2 should be in different shards")
+	}
+}
+
+func TestConnectionCount(t *testing.T) {
+	cm := NewConnectionManager(newTestLogger())
+
+	if cm.ConnectionCount() != 0 {
+		t.Errorf("initial count should be 0, got %d", cm.ConnectionCount())
+	}
+
+	// Add some connections
+	for i := int64(1); i <= 5; i++ {
+		shard := cm.getShard(i)
+		shard.mu.Lock()
+		shard.connections[i] = &RunnerConnection{RunnerID: i, Send: make(chan []byte, 256)}
+		cm.connCount.Add(1)
+		shard.mu.Unlock()
+	}
+
+	if cm.ConnectionCount() != 5 {
+		t.Errorf("count should be 5, got %d", cm.ConnectionCount())
 	}
 }

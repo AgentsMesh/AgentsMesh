@@ -2,245 +2,133 @@ package websocket
 
 import (
 	"encoding/json"
+	"hash/fnv"
 	"sync"
-
-	"github.com/gorilla/websocket"
 )
 
-// Hub manages WebSocket connections
+// hubShards is the number of shards for Hub partitioning
+// 64 shards provide good parallelism for broadcast operations at scale (100K+ connections)
+const hubShards = 64
+
+// Hub manages WebSocket connections with sharded architecture for high concurrency
 type Hub struct {
-	// Registered clients
-	clients map[*Client]bool
-
-	// Clients by pod
-	podClients map[string]map[*Client]bool
-
-	// Clients by channel
-	channelClients map[int64]map[*Client]bool
-
-	// Clients by organization (for events channel)
-	orgClients map[int64]map[*Client]bool
-
-	// Clients by user (for targeted notifications)
-	userClients map[int64]map[*Client]bool
-
-	// Register requests from clients
-	register chan *Client
-
-	// Unregister requests from clients
-	unregister chan *Client
-
-	// Broadcast to pod
-	podBroadcast chan *PodMessage
-
-	// Broadcast to channel
-	channelBroadcast chan *ChannelMessage
-
-	// Broadcast to organization
-	orgBroadcast chan *OrgMessage
-
-	// Send to specific user
-	userSend chan *UserMessage
-
-	mu sync.RWMutex
+	shards [hubShards]*hubShard
+	stopCh chan struct{}
+	doneCh chan struct{}
 }
 
-// NewHub creates a new Hub
+// NewHub creates a new sharded hub with 64 parallel shards
 func NewHub() *Hub {
-	return &Hub{
-		clients:          make(map[*Client]bool),
-		podClients:       make(map[string]map[*Client]bool),
-		channelClients:   make(map[int64]map[*Client]bool),
-		orgClients:       make(map[int64]map[*Client]bool),
-		userClients:      make(map[int64]map[*Client]bool),
-		register:         make(chan *Client),
-		unregister:       make(chan *Client),
-		podBroadcast:     make(chan *PodMessage, 256),
-		channelBroadcast: make(chan *ChannelMessage, 256),
-		orgBroadcast:     make(chan *OrgMessage, 256),
-		userSend:         make(chan *UserMessage, 256),
+	h := &Hub{
+		stopCh: make(chan struct{}),
+		doneCh: make(chan struct{}),
+	}
+
+	for i := 0; i < hubShards; i++ {
+		h.shards[i] = newHubShard()
+		go h.shards[i].run()
+	}
+
+	return h
+}
+
+// getShardByClient returns the shard for a client based on user ID
+func (h *Hub) getShardByClient(client *Client) *hubShard {
+	// Use user ID for sharding to keep user's connections together
+	if client.userID != 0 {
+		return h.shards[uint64(client.userID)%hubShards]
+	}
+	// Fallback: use org ID or a hash of the connection
+	if client.orgID != 0 {
+		return h.shards[uint64(client.orgID)%hubShards]
+	}
+	// Final fallback: use first shard
+	return h.shards[0]
+}
+
+// getShardByPod returns the shard index for a pod key
+func (h *Hub) getShardByPod(podKey string) uint32 {
+	hash := fnv.New32a()
+	hash.Write([]byte(podKey))
+	return hash.Sum32() % hubShards
+}
+
+// getShardByOrg returns the shard index for an organization
+func (h *Hub) getShardByOrg(orgID int64) uint32 {
+	return uint32(uint64(orgID) % hubShards)
+}
+
+// getShardByChannel returns the shard index for a channel
+func (h *Hub) getShardByChannel(channelID int64) uint32 {
+	return uint32(uint64(channelID) % hubShards)
+}
+
+// getShardByUser returns the shard index for a user
+func (h *Hub) getShardByUser(userID int64) uint32 {
+	return uint32(uint64(userID) % hubShards)
+}
+
+// ========== Registration Methods ==========
+
+// Register registers a client with the appropriate shard
+func (h *Hub) Register(client *Client) {
+	shard := h.getShardByClient(client)
+	select {
+	case shard.register <- client:
+	case <-h.stopCh:
+		// Hub is closing, don't register
 	}
 }
 
-// Run starts the hub
-func (h *Hub) Run() {
-	for {
-		select {
-		case client := <-h.register:
-			h.handleRegister(client)
-
-		case client := <-h.unregister:
-			h.handleUnregister(client)
-
-		case msg := <-h.podBroadcast:
-			h.handlePodBroadcast(msg)
-
-		case msg := <-h.channelBroadcast:
-			h.handleChannelBroadcast(msg)
-
-		case msg := <-h.orgBroadcast:
-			h.handleOrgBroadcast(msg)
-
-		case msg := <-h.userSend:
-			h.handleUserSend(msg)
-		}
+// Unregister unregisters a client from its shard
+func (h *Hub) Unregister(client *Client) {
+	shard := h.getShardByClient(client)
+	select {
+	case shard.unregister <- client:
+	case <-h.stopCh:
+		// Hub is closing, client will be cleaned up
 	}
 }
 
-// handleRegister handles client registration
-func (h *Hub) handleRegister(client *Client) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	h.clients[client] = true
-
-	if client.podKey != "" {
-		if h.podClients[client.podKey] == nil {
-			h.podClients[client.podKey] = make(map[*Client]bool)
-		}
-		h.podClients[client.podKey][client] = true
-	}
-
-	if client.channelID != 0 {
-		if h.channelClients[client.channelID] == nil {
-			h.channelClients[client.channelID] = make(map[*Client]bool)
-		}
-		h.channelClients[client.channelID][client] = true
-	}
-
-	// Register to org clients (for events channel)
-	if client.isEvents && client.orgID != 0 {
-		if h.orgClients[client.orgID] == nil {
-			h.orgClients[client.orgID] = make(map[*Client]bool)
-		}
-		h.orgClients[client.orgID][client] = true
-	}
-
-	// Register to user clients (for targeted notifications)
-	if client.isEvents && client.userID != 0 {
-		if h.userClients[client.userID] == nil {
-			h.userClients[client.userID] = make(map[*Client]bool)
-		}
-		h.userClients[client.userID][client] = true
-	}
-}
-
-// handleUnregister handles client unregistration
-func (h *Hub) handleUnregister(client *Client) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	if _, ok := h.clients[client]; !ok {
-		return
-	}
-
-	delete(h.clients, client)
-	close(client.send)
-
-	if client.podKey != "" {
-		delete(h.podClients[client.podKey], client)
-		if len(h.podClients[client.podKey]) == 0 {
-			delete(h.podClients, client.podKey)
-		}
-	}
-
-	if client.channelID != 0 {
-		delete(h.channelClients[client.channelID], client)
-		if len(h.channelClients[client.channelID]) == 0 {
-			delete(h.channelClients, client.channelID)
-		}
-	}
-
-	// Unregister from org clients
-	if client.isEvents && client.orgID != 0 {
-		delete(h.orgClients[client.orgID], client)
-		if len(h.orgClients[client.orgID]) == 0 {
-			delete(h.orgClients, client.orgID)
-		}
-	}
-
-	// Unregister from user clients
-	if client.isEvents && client.userID != 0 {
-		delete(h.userClients[client.userID], client)
-		if len(h.userClients[client.userID]) == 0 {
-			delete(h.userClients, client.userID)
-		}
-	}
-}
-
-// handlePodBroadcast handles pod broadcast messages
-func (h *Hub) handlePodBroadcast(msg *PodMessage) {
-	h.mu.RLock()
-	clients := h.podClients[msg.PodKey]
-	h.mu.RUnlock()
-
-	for client := range clients {
-		select {
-		case client.send <- msg.Message:
-		default:
-			h.unregister <- client
-		}
-	}
-}
-
-// handleChannelBroadcast handles channel broadcast messages
-func (h *Hub) handleChannelBroadcast(msg *ChannelMessage) {
-	h.mu.RLock()
-	clients := h.channelClients[msg.ChannelID]
-	h.mu.RUnlock()
-
-	for client := range clients {
-		select {
-		case client.send <- msg.Message:
-		default:
-			h.unregister <- client
-		}
-	}
-}
-
-// handleOrgBroadcast handles organization broadcast messages
-func (h *Hub) handleOrgBroadcast(msg *OrgMessage) {
-	h.mu.RLock()
-	clients := h.orgClients[msg.OrgID]
-	h.mu.RUnlock()
-
-	for client := range clients {
-		select {
-		case client.send <- msg.Message:
-		default:
-			h.unregister <- client
-		}
-	}
-}
-
-// handleUserSend handles user-targeted messages
-func (h *Hub) handleUserSend(msg *UserMessage) {
-	h.mu.RLock()
-	clients := h.userClients[msg.UserID]
-	h.mu.RUnlock()
-
-	for client := range clients {
-		select {
-		case client.send <- msg.Message:
-		default:
-			h.unregister <- client
-		}
-	}
-}
-
-// ========== Public Broadcast Methods ==========
+// ========== Broadcast Methods ==========
 
 // BroadcastToPod sends a message to all clients connected to a pod
+// Note: Pod clients may be in different shards, so we check all shards
 func (h *Hub) BroadcastToPod(podKey string, msg *Message) {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return
 	}
 
-	h.podBroadcast <- &PodMessage{
-		PodKey:  podKey,
-		Message: data,
+	// Check all shards for pod clients (pod clients could be in any shard based on user)
+	var wg sync.WaitGroup
+	for i := 0; i < hubShards; i++ {
+		wg.Add(1)
+		go func(shard *hubShard) {
+			defer wg.Done()
+			shard.mu.RLock()
+			clients := shard.podClients[podKey]
+			clientList := make([]*Client, 0, len(clients))
+			for c := range clients {
+				clientList = append(clientList, c)
+			}
+			shard.mu.RUnlock()
+
+			for _, client := range clientList {
+				select {
+				case client.send <- data:
+				default:
+					// Channel full, schedule unregister
+					select {
+					case shard.unregister <- client:
+					default:
+						// Unregister channel also full, skip
+					}
+				}
+			}
+		}(h.shards[i])
 	}
+	wg.Wait()
 }
 
 // BroadcastToChannel sends a message to all clients subscribed to a channel
@@ -250,18 +138,64 @@ func (h *Hub) BroadcastToChannel(channelID int64, msg *Message) {
 		return
 	}
 
-	h.channelBroadcast <- &ChannelMessage{
-		ChannelID: channelID,
-		Message:   data,
+	// Check all shards for channel clients
+	var wg sync.WaitGroup
+	for i := 0; i < hubShards; i++ {
+		wg.Add(1)
+		go func(shard *hubShard) {
+			defer wg.Done()
+			shard.mu.RLock()
+			clients := shard.channelClients[channelID]
+			clientList := make([]*Client, 0, len(clients))
+			for c := range clients {
+				clientList = append(clientList, c)
+			}
+			shard.mu.RUnlock()
+
+			for _, client := range clientList {
+				select {
+				case client.send <- data:
+				default:
+					select {
+					case shard.unregister <- client:
+					default:
+					}
+				}
+			}
+		}(h.shards[i])
 	}
+	wg.Wait()
 }
 
 // BroadcastToOrg sends a message to all events channel clients in an organization
 func (h *Hub) BroadcastToOrg(orgID int64, data []byte) {
-	h.orgBroadcast <- &OrgMessage{
-		OrgID:   orgID,
-		Message: data,
+	// Check all shards for org clients
+	var wg sync.WaitGroup
+	for i := 0; i < hubShards; i++ {
+		wg.Add(1)
+		go func(shard *hubShard) {
+			defer wg.Done()
+			shard.mu.RLock()
+			clients := shard.orgClients[orgID]
+			clientList := make([]*Client, 0, len(clients))
+			for c := range clients {
+				clientList = append(clientList, c)
+			}
+			shard.mu.RUnlock()
+
+			for _, client := range clientList {
+				select {
+				case client.send <- data:
+				default:
+					select {
+					case shard.unregister <- client:
+					default:
+					}
+				}
+			}
+		}(h.shards[i])
 	}
+	wg.Wait()
 }
 
 // BroadcastToOrgJSON sends a JSON message to all events channel clients in an organization
@@ -276,9 +210,26 @@ func (h *Hub) BroadcastToOrgJSON(orgID int64, msg interface{}) error {
 
 // SendToUser sends a message to all clients of a specific user
 func (h *Hub) SendToUser(userID int64, data []byte) {
-	h.userSend <- &UserMessage{
-		UserID:  userID,
-		Message: data,
+	// User clients are in the shard determined by user ID
+	shard := h.shards[h.getShardByUser(userID)]
+
+	shard.mu.RLock()
+	clients := shard.userClients[userID]
+	clientList := make([]*Client, 0, len(clients))
+	for c := range clients {
+		clientList = append(clientList, c)
+	}
+	shard.mu.RUnlock()
+
+	for _, client := range clientList {
+		select {
+		case client.send <- data:
+		default:
+			select {
+			case shard.unregister <- client:
+			default:
+			}
+		}
 	}
 }
 
@@ -296,41 +247,69 @@ func (h *Hub) SendToUserJSON(userID int64, msg interface{}) error {
 
 // GetOrgClientCount returns the number of events channel clients in an organization
 func (h *Hub) GetOrgClientCount(orgID int64) int {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return len(h.orgClients[orgID])
+	total := 0
+	for i := 0; i < hubShards; i++ {
+		h.shards[i].mu.RLock()
+		total += len(h.shards[i].orgClients[orgID])
+		h.shards[i].mu.RUnlock()
+	}
+	return total
 }
 
 // GetUserClientCount returns the number of clients for a specific user
 func (h *Hub) GetUserClientCount(userID int64) int {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return len(h.userClients[userID])
+	shard := h.shards[h.getShardByUser(userID)]
+	shard.mu.RLock()
+	defer shard.mu.RUnlock()
+	return len(shard.userClients[userID])
 }
 
 // GetPodClientCount returns the number of clients connected to a pod
 func (h *Hub) GetPodClientCount(podKey string) int {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return len(h.podClients[podKey])
+	total := 0
+	for i := 0; i < hubShards; i++ {
+		h.shards[i].mu.RLock()
+		total += len(h.shards[i].podClients[podKey])
+		h.shards[i].mu.RUnlock()
+	}
+	return total
 }
 
-// ========== Registration Methods ==========
-
-// Register registers a client with the hub
-func (h *Hub) Register(client *Client) {
-	h.register <- client
+// GetTotalClientCount returns the total number of connected clients
+func (h *Hub) GetTotalClientCount() int {
+	total := 0
+	for i := 0; i < hubShards; i++ {
+		h.shards[i].mu.RLock()
+		total += len(h.shards[i].clients)
+		h.shards[i].mu.RUnlock()
+	}
+	return total
 }
 
-// Unregister unregisters a client from the hub
-func (h *Hub) Unregister(client *Client) {
-	h.unregister <- client
+// Run is a no-op for sharded Hub as each shard runs its own goroutine.
+//
+// Deprecated: This method is kept only for backward compatibility.
+// The sharded Hub automatically starts all shard goroutines in NewHub().
+// New code should not call this method.
+func (h *Hub) Run() {
+	// Each shard already has its own goroutine running in NewHub()
 }
 
-// ========== Deprecated: Use NewClient/NewEventsClient from client.go ==========
-// These are kept for backward compatibility but moved to client.go
+// Close gracefully shuts down the hub and all shards
+func (h *Hub) Close() {
+	// Signal all goroutines to stop
+	close(h.stopCh)
 
-// NewClientDeprecated creates a new client (use NewClient from client.go)
-func NewClientDeprecated(hub *Hub, conn *websocket.Conn, userID, orgID int64) *Client {
-	return NewClient(hub, conn, userID, orgID)
+	// Stop each shard
+	var wg sync.WaitGroup
+	for i := 0; i < hubShards; i++ {
+		wg.Add(1)
+		go func(shard *hubShard) {
+			defer wg.Done()
+			close(shard.stopCh)
+		}(h.shards[i])
+	}
+	wg.Wait()
+
+	close(h.doneCh)
 }

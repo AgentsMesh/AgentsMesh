@@ -64,7 +64,7 @@ func main() {
 	appLogger.SetDefault()
 	slog.Info("Logger initialized", "level", cfg.Log.Level, "file", cfg.Log.FilePath)
 
-	// Initialize database
+	// Initialize database (supports automatic read-write separation when replicas are configured)
 	db, err := database.New(cfg.Database)
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
@@ -94,7 +94,7 @@ func main() {
 	}
 
 	// Initialize Runner connection manager and Pod coordinator
-	runnerConnMgr, podCoordinator, terminalRouter := initializeRunnerComponents(db, appLogger)
+	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher := initializeRunnerComponents(db, redisClient, appLogger)
 
 	// Setup terminal router event publishing for OSC 777 notifications
 	terminalRouter.SetEventBus(eventBus)
@@ -136,7 +136,7 @@ func main() {
 	srv := startHTTPServer(cfg, router)
 
 	// Graceful shutdown
-	waitForShutdown(srv, eventBus, redisClient)
+	waitForShutdown(srv, eventBus, heartbeatBatcher, db, redisClient)
 }
 
 // serviceContainer holds all initialized services
@@ -281,17 +281,21 @@ func initializeInfrastructure(cfg *config.Config, appLogger *logger.Logger) (*we
 }
 
 // initializeRunnerComponents initializes runner-related components
-func initializeRunnerComponents(db *gorm.DB, appLogger *logger.Logger) (*runner.ConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter) {
+func initializeRunnerComponents(db *gorm.DB, redisClient *redis.Client, appLogger *logger.Logger) (*runner.ConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter, *runner.HeartbeatBatcher) {
 	// Initialize Runner connection manager
 	runnerConnMgr := runner.NewConnectionManager(appLogger.Logger)
 
 	// Initialize Terminal router (routes terminal data between frontend and runner)
 	terminalRouter := runner.NewTerminalRouter(runnerConnMgr, appLogger.Logger)
 
-	// Initialize Pod coordinator (manages pod lifecycle between backend and runner)
-	podCoordinator := runner.NewPodCoordinator(db, runnerConnMgr, terminalRouter, appLogger.Logger)
+	// Initialize Heartbeat batcher (batches heartbeat DB writes for high-scale performance)
+	heartbeatBatcher := runner.NewHeartbeatBatcher(redisClient, db, appLogger.Logger)
+	heartbeatBatcher.Start()
 
-	return runnerConnMgr, podCoordinator, terminalRouter
+	// Initialize Pod coordinator (manages pod lifecycle between backend and runner)
+	podCoordinator := runner.NewPodCoordinator(db, runnerConnMgr, terminalRouter, heartbeatBatcher, appLogger.Logger)
+
+	return runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher
 }
 
 // startHTTPServer creates and starts the HTTP server
@@ -316,7 +320,7 @@ func startHTTPServer(cfg *config.Config, handler http.Handler) *http.Server {
 }
 
 // waitForShutdown handles graceful shutdown
-func waitForShutdown(srv *http.Server, eventBus *eventbus.EventBus, redisClient *redis.Client) {
+func waitForShutdown(srv *http.Server, eventBus *eventbus.EventBus, heartbeatBatcher *runner.HeartbeatBatcher, db *gorm.DB, redisClient *redis.Client) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -331,8 +335,20 @@ func waitForShutdown(srv *http.Server, eventBus *eventbus.EventBus, redisClient 
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
+	// Stop heartbeat batcher (flush pending writes)
+	if heartbeatBatcher != nil {
+		heartbeatBatcher.Stop()
+	}
+
 	// Close EventBus
 	eventBus.Close()
+
+	// Close database connection
+	if db != nil {
+		if err := database.Close(db); err != nil {
+			slog.Error("Failed to close database connection", "error", err)
+		}
+	}
 
 	// Close Redis connection
 	if redisClient != nil {

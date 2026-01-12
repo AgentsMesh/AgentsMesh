@@ -6,10 +6,29 @@ import (
 	"time"
 
 	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
+
+// newTestHeartbeatBatcher creates a HeartbeatBatcher for testing with miniredis
+func newTestHeartbeatBatcher(t *testing.T, db *gorm.DB) *HeartbeatBatcher {
+	t.Helper()
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	t.Cleanup(func() { mr.Close() })
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: mr.Addr(),
+	})
+	t.Cleanup(func() { redisClient.Close() })
+
+	return NewHeartbeatBatcher(redisClient, db, newTestLogger())
+}
 
 func setupCoordinatorTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
@@ -62,8 +81,9 @@ func TestNewPodCoordinator(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
+	hb := newTestHeartbeatBatcher(t, db)
 
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, hb, newTestLogger())
 
 	if pc == nil {
 		t.Fatal("NewPodCoordinator returned nil")
@@ -77,13 +97,16 @@ func TestNewPodCoordinator(t *testing.T) {
 	if pc.terminalRouter != tr {
 		t.Error("terminalRouter not set correctly")
 	}
+	if pc.heartbeatBatcher != hb {
+		t.Error("heartbeatBatcher not set correctly")
+	}
 }
 
 func TestPodCoordinatorSetStatusChangeCallback(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 
 	pc.SetStatusChangeCallback(func(podID string, status string, agentStatus string) {
 		// callback for testing
@@ -98,7 +121,7 @@ func TestPodCoordinatorIncrementPods(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	// Create a runner
@@ -120,7 +143,7 @@ func TestPodCoordinatorDecrementPods(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	// Create a runner with 2 pods
@@ -136,7 +159,7 @@ func TestPodCoordinatorUpdateActivity(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	// Create a pod
@@ -160,7 +183,7 @@ func TestPodCoordinatorMarkDisconnected(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	// Create a running pod
@@ -182,7 +205,7 @@ func TestPodCoordinatorMarkReconnected(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	// Create a disconnected pod
@@ -204,7 +227,8 @@ func TestPodCoordinatorHandleHeartbeat(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	hb := newTestHeartbeatBatcher(t, db)
+	pc := NewPodCoordinator(db, cm, tr, hb, newTestLogger())
 
 	// Create a runner
 	db.Exec(`INSERT INTO runners (organization_id, node_id, auth_token_hash, status) VALUES (1, 'test', 'hash', 'offline')`)
@@ -215,6 +239,9 @@ func TestPodCoordinatorHandleHeartbeat(t *testing.T) {
 	}
 
 	pc.handleHeartbeat(1, hbData)
+
+	// Flush the heartbeat batcher to ensure DB is updated
+	hb.Flush()
 
 	var status string
 	db.Raw("SELECT status FROM runners WHERE id = 1").Scan(&status)
@@ -233,7 +260,7 @@ func TestPodCoordinatorHandlePodCreated(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 
 	callbackCalled := false
 	pc.SetStatusChangeCallback(func(podID string, status string, agentStatus string) {
@@ -275,7 +302,7 @@ func TestPodCoordinatorHandlePodTerminated(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 
 	callbackCalled := false
 	pc.SetStatusChangeCallback(func(podID string, status string, agentStatus string) {
@@ -319,7 +346,7 @@ func TestPodCoordinatorHandleAgentStatus(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 
 	callbackCalled := false
 	pc.SetStatusChangeCallback(func(podID string, status string, agentStatus string) {
@@ -355,7 +382,7 @@ func TestPodCoordinatorHandleRunnerDisconnect(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 
 	// Create a runner and pods
 	db.Exec(`INSERT INTO runners (organization_id, node_id, auth_token_hash, status) VALUES (1, 'test', 'hash', 'online')`)
@@ -397,7 +424,7 @@ func TestPodCoordinatorReconcileOrphansOnReconnect(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 
 	// Create a runner and pods
 	db.Exec(`INSERT INTO runners (organization_id, node_id, auth_token_hash, status) VALUES (1, 'test', 'hash', 'online')`)
@@ -433,7 +460,7 @@ func TestPodCoordinatorReconcilePods(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	// Create a runner and pods
@@ -467,7 +494,7 @@ func TestPodCoordinatorTerminatePod(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	// Create a runner and pod
@@ -490,7 +517,7 @@ func TestPodCoordinatorTerminatePodNotFound(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	err := pc.TerminatePod(ctx, "nonexistent")
@@ -503,7 +530,7 @@ func TestPodCoordinatorCreatePod(t *testing.T) {
 	db := setupCoordinatorTestDB(t)
 	cm := NewConnectionManager(newTestLogger())
 	tr := NewTerminalRouter(cm, newTestLogger())
-	pc := NewPodCoordinator(db, cm, tr, newTestLogger())
+	pc := NewPodCoordinator(db, cm, tr, newTestHeartbeatBatcher(t, db), newTestLogger())
 	ctx := context.Background()
 
 	// Create a runner

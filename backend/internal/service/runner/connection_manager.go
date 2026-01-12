@@ -2,21 +2,31 @@ package runner
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-// ConnectionManager manages runner WebSocket connections
+// numShards is the number of shards for connection partitioning
+// 256 shards reduce lock contention by ~256x for 100K runners
+const numShards = 256
+
+// connectionShard holds a subset of connections with its own lock
+type connectionShard struct {
+	connections map[int64]*RunnerConnection
+	mu          sync.RWMutex
+}
+
+// ConnectionManager manages runner WebSocket connections using sharded locks
 type ConnectionManager struct {
-	connections  map[int64]*RunnerConnection
-	mu           sync.RWMutex
+	shards       [numShards]*connectionShard
 	logger       *slog.Logger
 	pingInterval time.Duration
 	pingTimeout  time.Duration
+	connCount    atomic.Int64 // Total connection count for metrics
 
 	// Event callbacks
 	onHeartbeat      func(runnerID int64, data *HeartbeatData)
@@ -28,14 +38,29 @@ type ConnectionManager struct {
 	onDisconnect     func(runnerID int64)
 }
 
-// NewConnectionManager creates a new connection manager
+// NewConnectionManager creates a new connection manager with sharded locks
 func NewConnectionManager(logger *slog.Logger) *ConnectionManager {
-	return &ConnectionManager{
-		connections:  make(map[int64]*RunnerConnection),
+	cm := &ConnectionManager{
 		logger:       logger,
 		pingInterval: 30 * time.Second,
 		pingTimeout:  60 * time.Second,
 	}
+
+	// Initialize all shards
+	for i := 0; i < numShards; i++ {
+		cm.shards[i] = &connectionShard{
+			connections: make(map[int64]*RunnerConnection),
+		}
+	}
+
+	return cm
+}
+
+// getShard returns the shard for a given runner ID using modulo hashing
+func (cm *ConnectionManager) getShard(runnerID int64) *connectionShard {
+	// Use unsigned modulo to ensure positive index
+	idx := uint64(runnerID) % numShards
+	return cm.shards[idx]
 }
 
 // ========== Callback Setters ==========
@@ -89,12 +114,15 @@ func (cm *ConnectionManager) GetDisconnectCallback() func(runnerID int64) {
 
 // AddConnection adds a runner connection
 func (cm *ConnectionManager) AddConnection(runnerID int64, conn *websocket.Conn) *RunnerConnection {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
+	shard := cm.getShard(runnerID)
+
+	shard.mu.Lock()
+	defer shard.mu.Unlock()
 
 	// Close existing connection if any
-	if existing, ok := cm.connections[runnerID]; ok {
+	if existing, ok := shard.connections[runnerID]; ok {
 		existing.Close()
+		cm.connCount.Add(-1)
 	}
 
 	rc := &RunnerConnection{
@@ -104,24 +132,28 @@ func (cm *ConnectionManager) AddConnection(runnerID int64, conn *websocket.Conn)
 		LastPing: time.Now(),
 	}
 
-	cm.connections[runnerID] = rc
-	cm.logger.Info("runner connected", "runner_id", runnerID)
+	shard.connections[runnerID] = rc
+	cm.connCount.Add(1)
+	cm.logger.Info("runner connected", "runner_id", runnerID, "total_connections", cm.connCount.Load())
 
 	return rc
 }
 
 // RemoveConnection removes a runner connection
 func (cm *ConnectionManager) RemoveConnection(runnerID int64) {
-	cm.mu.Lock()
-	conn, ok := cm.connections[runnerID]
+	shard := cm.getShard(runnerID)
+
+	shard.mu.Lock()
+	conn, ok := shard.connections[runnerID]
 	if ok {
-		delete(cm.connections, runnerID)
+		delete(shard.connections, runnerID)
+		cm.connCount.Add(-1)
 	}
-	cm.mu.Unlock()
+	shard.mu.Unlock()
 
 	if ok {
 		conn.Close()
-		cm.logger.Info("runner disconnected", "runner_id", runnerID)
+		cm.logger.Info("runner disconnected", "runner_id", runnerID, "total_connections", cm.connCount.Load())
 
 		if cm.onDisconnect != nil {
 			cm.onDisconnect(runnerID)
@@ -131,24 +163,30 @@ func (cm *ConnectionManager) RemoveConnection(runnerID int64) {
 
 // GetConnection returns a runner connection
 func (cm *ConnectionManager) GetConnection(runnerID int64) *RunnerConnection {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	return cm.connections[runnerID]
+	shard := cm.getShard(runnerID)
+
+	shard.mu.RLock()
+	defer shard.mu.RUnlock()
+	return shard.connections[runnerID]
 }
 
 // IsConnected checks if a runner is connected
 func (cm *ConnectionManager) IsConnected(runnerID int64) bool {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	_, ok := cm.connections[runnerID]
+	shard := cm.getShard(runnerID)
+
+	shard.mu.RLock()
+	defer shard.mu.RUnlock()
+	_, ok := shard.connections[runnerID]
 	return ok
 }
 
 // UpdateHeartbeat updates the last ping time for a runner
 func (cm *ConnectionManager) UpdateHeartbeat(runnerID int64) {
-	cm.mu.RLock()
-	conn, ok := cm.connections[runnerID]
-	cm.mu.RUnlock()
+	shard := cm.getShard(runnerID)
+
+	shard.mu.RLock()
+	conn, ok := shard.connections[runnerID]
+	shard.mu.RUnlock()
 
 	if ok {
 		conn.mu.Lock()
@@ -158,211 +196,70 @@ func (cm *ConnectionManager) UpdateHeartbeat(runnerID int64) {
 }
 
 // GetConnectedRunnerIDs returns IDs of all connected runners
+// Note: This operation iterates all shards and should be used sparingly
 func (cm *ConnectionManager) GetConnectedRunnerIDs() []int64 {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
+	// Pre-allocate based on atomic counter for efficiency
+	ids := make([]int64, 0, cm.connCount.Load())
 
-	ids := make([]int64, 0, len(cm.connections))
-	for id := range cm.connections {
-		ids = append(ids, id)
+	for i := 0; i < numShards; i++ {
+		shard := cm.shards[i]
+		shard.mu.RLock()
+		for id := range shard.connections {
+			ids = append(ids, id)
+		}
+		shard.mu.RUnlock()
 	}
 	return ids
 }
 
-// Close closes the connection manager and all connections
-func (cm *ConnectionManager) Close() {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	for _, conn := range cm.connections {
-		conn.Close()
-	}
-	cm.connections = make(map[int64]*RunnerConnection)
+// ConnectionCount returns the total number of active connections
+func (cm *ConnectionManager) ConnectionCount() int64 {
+	return cm.connCount.Load()
 }
 
-// ========== Message Handling ==========
-
-// HandleMessage handles an incoming message from a runner
-func (cm *ConnectionManager) HandleMessage(runnerID int64, msgType int, data []byte) {
-	if msgType != websocket.TextMessage && msgType != websocket.BinaryMessage {
-		return
+// Close closes the connection manager and all connections
+func (cm *ConnectionManager) Close() {
+	for i := 0; i < numShards; i++ {
+		shard := cm.shards[i]
+		shard.mu.Lock()
+		for _, conn := range shard.connections {
+			conn.Close()
+		}
+		shard.connections = make(map[int64]*RunnerConnection)
+		shard.mu.Unlock()
 	}
-
-	var msg RunnerMessage
-	if err := json.Unmarshal(data, &msg); err != nil {
-		cm.logger.Warn("failed to parse runner message",
-			"runner_id", runnerID,
-			"error", err)
-		return
-	}
-
-	switch msg.Type {
-	case MsgTypeHeartbeat:
-		var hbData HeartbeatData
-		if err := json.Unmarshal(msg.Data, &hbData); err != nil {
-			cm.logger.Error("failed to unmarshal heartbeat data",
-				"runner_id", runnerID,
-				"error", err,
-				"data", string(msg.Data))
-		} else {
-			cm.logger.Debug("received heartbeat",
-				"runner_id", runnerID,
-				"pods", len(hbData.Pods),
-				"capabilities", len(hbData.Capabilities))
-			cm.UpdateHeartbeat(runnerID)
-			if cm.onHeartbeat != nil {
-				cm.onHeartbeat(runnerID, &hbData)
-			}
-		}
-
-	case MsgTypePodCreated:
-		var pcData PodCreatedData
-		if err := json.Unmarshal(msg.Data, &pcData); err == nil {
-			if cm.onPodCreated != nil {
-				cm.onPodCreated(runnerID, &pcData)
-			}
-		}
-
-	case MsgTypePodTerminated:
-		var ptData PodTerminatedData
-		if err := json.Unmarshal(msg.Data, &ptData); err == nil {
-			if cm.onPodTerminated != nil {
-				cm.onPodTerminated(runnerID, &ptData)
-			}
-		}
-
-	case MsgTypeTerminalOutput:
-		var toData TerminalOutputData
-		if err := json.Unmarshal(msg.Data, &toData); err == nil {
-			if cm.onTerminalOutput != nil {
-				cm.onTerminalOutput(runnerID, &toData)
-			}
-		}
-
-	case MsgTypeAgentStatus:
-		var asData AgentStatusData
-		if err := json.Unmarshal(msg.Data, &asData); err == nil {
-			if cm.onAgentStatus != nil {
-				cm.onAgentStatus(runnerID, &asData)
-			}
-		}
-
-	case MsgTypePtyResized:
-		var prData PtyResizedData
-		if err := json.Unmarshal(msg.Data, &prData); err == nil {
-			if cm.onPtyResized != nil {
-				cm.onPtyResized(runnerID, &prData)
-			}
-		}
-
-	default:
-		cm.logger.Debug("unknown message type",
-			"runner_id", runnerID,
-			"type", msg.Type)
-	}
+	cm.connCount.Store(0)
 }
 
 // ========== Send Operations ==========
+// These methods delegate to RunnerSender for actual implementation
 
 // SendMessage sends a message to a runner
 func (cm *ConnectionManager) SendMessage(ctx context.Context, runnerID int64, msg *RunnerMessage) error {
-	cm.mu.RLock()
-	conn, ok := cm.connections[runnerID]
-	cm.mu.RUnlock()
-
-	if !ok {
-		return ErrRunnerNotConnected
-	}
-
-	return conn.SendMessage(msg)
+	return NewRunnerSender(cm).SendMessage(ctx, runnerID, msg)
 }
 
 // SendCreatePod sends a create pod request to a runner
 func (cm *ConnectionManager) SendCreatePod(ctx context.Context, runnerID int64, req *CreatePodRequest) error {
-	cm.logger.Info("sending create_pod to runner",
-		"runner_id", runnerID,
-		"pod_key", req.PodKey,
-		"initial_command", req.InitialCommand,
-		"permission_mode", req.PermissionMode)
-
-	data, err := json.Marshal(req)
-	if err != nil {
-		cm.logger.Error("failed to marshal create_pod request", "error", err)
-		return err
-	}
-
-	err = cm.SendMessage(ctx, runnerID, &RunnerMessage{
-		Type:      MsgTypeCreatePod,
-		PodKey:    req.PodKey,
-		Data:      data,
-		Timestamp: time.Now().UnixMilli(),
-	})
-
-	if err != nil {
-		cm.logger.Error("failed to send create_pod to runner",
-			"runner_id", runnerID,
-			"pod_key", req.PodKey,
-			"error", err)
-	} else {
-		cm.logger.Info("create_pod sent successfully",
-			"runner_id", runnerID,
-			"pod_key", req.PodKey)
-	}
-
-	return err
+	return NewRunnerSender(cm).SendCreatePod(ctx, runnerID, req)
 }
 
 // SendTerminatePod sends a terminate pod request to a runner
 func (cm *ConnectionManager) SendTerminatePod(ctx context.Context, runnerID int64, podKey string) error {
-	return cm.SendMessage(ctx, runnerID, &RunnerMessage{
-		Type:      MsgTypeTerminatePod,
-		PodKey:    podKey,
-		Timestamp: time.Now().UnixMilli(),
-	})
+	return NewRunnerSender(cm).SendTerminatePod(ctx, runnerID, podKey)
 }
 
 // SendTerminalInput sends terminal input to a runner
 func (cm *ConnectionManager) SendTerminalInput(ctx context.Context, runnerID int64, podKey string, data []byte) error {
-	inputData, _ := json.Marshal(&TerminalInputRequest{
-		PodKey: podKey,
-		Data:   data,
-	})
-
-	return cm.SendMessage(ctx, runnerID, &RunnerMessage{
-		Type:      MsgTypeTerminalInput,
-		PodKey:    podKey,
-		Data:      inputData,
-		Timestamp: time.Now().UnixMilli(),
-	})
+	return NewRunnerSender(cm).SendTerminalInput(ctx, runnerID, podKey, data)
 }
 
 // SendTerminalResize sends terminal resize to a runner
 func (cm *ConnectionManager) SendTerminalResize(ctx context.Context, runnerID int64, podKey string, cols, rows int) error {
-	resizeData, _ := json.Marshal(&TerminalResizeRequest{
-		PodKey: podKey,
-		Cols:   cols,
-		Rows:   rows,
-	})
-
-	return cm.SendMessage(ctx, runnerID, &RunnerMessage{
-		Type:      MsgTypeTerminalResize,
-		PodKey:    podKey,
-		Data:      resizeData,
-		Timestamp: time.Now().UnixMilli(),
-	})
+	return NewRunnerSender(cm).SendTerminalResize(ctx, runnerID, podKey, cols, rows)
 }
 
 // SendPrompt sends a prompt to a pod
 func (cm *ConnectionManager) SendPrompt(ctx context.Context, runnerID int64, podKey, prompt string) error {
-	promptData, _ := json.Marshal(map[string]string{
-		"pod_key": podKey,
-		"prompt":  prompt,
-	})
-
-	return cm.SendMessage(ctx, runnerID, &RunnerMessage{
-		Type:      MsgTypeSendPrompt,
-		PodKey:    podKey,
-		Data:      promptData,
-		Timestamp: time.Now().UnixMilli(),
-	})
+	return NewRunnerSender(cm).SendPrompt(ctx, runnerID, podKey, prompt)
 }

@@ -20,14 +20,9 @@ func TestNewTerminalRouter(t *testing.T) {
 	if tr.connectionManager != cm {
 		t.Error("connectionManager not set correctly")
 	}
-	if tr.podRunnerMap == nil {
-		t.Error("podRunnerMap should be initialized")
-	}
-	if tr.terminalClients == nil {
-		t.Error("terminalClients should be initialized")
-	}
-	if tr.scrollbackBuffers == nil {
-		t.Error("scrollbackBuffers should be initialized")
+	// Check shards are initialized
+	if tr.shards[0] == nil {
+		t.Error("shards should be initialized")
 	}
 	if tr.scrollbackSize != DefaultScrollbackSize {
 		t.Errorf("scrollbackSize = %d, want %d", tr.scrollbackSize, DefaultScrollbackSize)
@@ -55,9 +50,10 @@ func TestTerminalRouterRegisterPod(t *testing.T) {
 	}
 
 	// Check scrollback buffer is created
-	tr.scrollbackMu.RLock()
-	buffer := tr.scrollbackBuffers["pod-1"]
-	tr.scrollbackMu.RUnlock()
+	shard := tr.getShard("pod-1")
+	shard.mu.RLock()
+	buffer := shard.scrollbackBuffers["pod-1"]
+	shard.mu.RUnlock()
 	if buffer == nil {
 		t.Error("scrollback buffer should be created")
 	}
@@ -78,9 +74,10 @@ func TestTerminalRouterUnregisterPod(t *testing.T) {
 	}
 
 	// Check scrollback buffer is removed
-	tr.scrollbackMu.RLock()
-	buffer := tr.scrollbackBuffers["pod-1"]
-	tr.scrollbackMu.RUnlock()
+	shard := tr.getShard("pod-1")
+	shard.mu.RLock()
+	buffer := shard.scrollbackBuffers["pod-1"]
+	shard.mu.RUnlock()
 	if buffer != nil {
 		t.Error("scrollback buffer should be removed")
 	}
@@ -130,13 +127,14 @@ func TestTerminalRouterGetClientCount(t *testing.T) {
 		t.Errorf("count = %d, want 0", count)
 	}
 
-	// Add some mock clients
-	tr.terminalClientsMu.Lock()
-	tr.terminalClients["pod-1"] = map[*TerminalClient]bool{
+	// Add some mock clients using shard
+	shard := tr.getShard("pod-1")
+	shard.mu.Lock()
+	shard.terminalClients["pod-1"] = map[*TerminalClient]bool{
 		{PodKey: "pod-1"}: true,
 		{PodKey: "pod-1"}: true,
 	}
-	tr.terminalClientsMu.Unlock()
+	shard.mu.Unlock()
 
 	count = tr.GetClientCount("pod-1")
 	if count != 2 {
@@ -156,9 +154,10 @@ func TestTerminalRouterGetRecentOutput(t *testing.T) {
 
 	// Register pod and add some output
 	tr.RegisterPod("pod-1", 100)
-	tr.scrollbackMu.RLock()
-	buffer := tr.scrollbackBuffers["pod-1"]
-	tr.scrollbackMu.RUnlock()
+	shard := tr.getShard("pod-1")
+	shard.mu.RLock()
+	buffer := shard.scrollbackBuffers["pod-1"]
+	shard.mu.RUnlock()
 	buffer.Write([]byte("line1\nline2\nline3\n"))
 
 	// Test raw output
@@ -168,9 +167,9 @@ func TestTerminalRouterGetRecentOutput(t *testing.T) {
 	}
 
 	// Test processed output (feed to virtual terminal first)
-	tr.virtualTermMu.RLock()
-	vt := tr.virtualTerminals["pod-1"]
-	tr.virtualTermMu.RUnlock()
+	shard.mu.RLock()
+	vt := shard.virtualTerminals["pod-1"]
+	shard.mu.RUnlock()
 	vt.Feed([]byte("Hello, World!"))
 
 	processedOutput := tr.GetRecentOutput("pod-1", 10, false)
@@ -193,9 +192,10 @@ func TestTerminalRouterGetScreenSnapshot(t *testing.T) {
 	tr.RegisterPod("pod-1", 100)
 
 	// Feed some data
-	tr.virtualTermMu.RLock()
-	vt := tr.virtualTerminals["pod-1"]
-	tr.virtualTermMu.RUnlock()
+	shard := tr.getShard("pod-1")
+	shard.mu.RLock()
+	vt := shard.virtualTerminals["pod-1"]
+	shard.mu.RUnlock()
 	vt.Feed([]byte("Hello, World!"))
 
 	snapshot = tr.GetScreenSnapshot("pod-1")
@@ -211,9 +211,10 @@ func TestTerminalRouterPtyResized(t *testing.T) {
 	// Register pod with default size (80x24)
 	tr.RegisterPod("pod-1", 100)
 
-	tr.virtualTermMu.RLock()
-	vt := tr.virtualTerminals["pod-1"]
-	tr.virtualTermMu.RUnlock()
+	shard := tr.getShard("pod-1")
+	shard.mu.RLock()
+	vt := shard.virtualTerminals["pod-1"]
+	shard.mu.RUnlock()
 
 	// Verify initial size
 	if vt.Cols() != DefaultTerminalCols || vt.Rows() != DefaultTerminalRows {
@@ -223,8 +224,8 @@ func TestTerminalRouterPtyResized(t *testing.T) {
 	// Simulate pty_resized callback
 	tr.handlePtyResized(100, &PtyResizedData{
 		PodKey: "pod-1",
-		Cols:      120,
-		Rows:      40,
+		Cols:   120,
+		Rows:   40,
 	})
 
 	// Verify resized
@@ -245,9 +246,10 @@ func TestTerminalRouterGetAllScrollbackData(t *testing.T) {
 
 	// Register pod and add some data
 	tr.RegisterPod("pod-1", 100)
-	tr.scrollbackMu.RLock()
-	buffer := tr.scrollbackBuffers["pod-1"]
-	tr.scrollbackMu.RUnlock()
+	shard := tr.getShard("pod-1")
+	shard.mu.RLock()
+	buffer := shard.scrollbackBuffers["pod-1"]
+	shard.mu.RUnlock()
 	buffer.Write([]byte("test data"))
 
 	data = tr.GetAllScrollbackData("pod-1")
@@ -265,9 +267,10 @@ func TestTerminalRouterClearScrollback(t *testing.T) {
 
 	// Register and clear
 	tr.RegisterPod("pod-1", 100)
-	tr.scrollbackMu.RLock()
-	buffer := tr.scrollbackBuffers["pod-1"]
-	tr.scrollbackMu.RUnlock()
+	shard := tr.getShard("pod-1")
+	shard.mu.RLock()
+	buffer := shard.scrollbackBuffers["pod-1"]
+	shard.mu.RUnlock()
 	buffer.Write([]byte("test data"))
 
 	tr.ClearScrollback("pod-1")
@@ -308,7 +311,7 @@ func TestTerminalRouterHandleTerminalOutput(t *testing.T) {
 	// Handle output with no clients
 	tr.handleTerminalOutput(100, &TerminalOutputData{
 		PodKey: "pod-1",
-		Data:      []byte("test output"),
+		Data:   []byte("test output"),
 	})
 
 	// Check scrollback buffer has the data
@@ -335,5 +338,57 @@ func TestTerminalClientStruct(t *testing.T) {
 func TestDefaultScrollbackSize(t *testing.T) {
 	if DefaultScrollbackSize != 100*1024 {
 		t.Errorf("DefaultScrollbackSize = %d, want %d", DefaultScrollbackSize, 100*1024)
+	}
+}
+
+func TestTerminalRouterSharding(t *testing.T) {
+	cm := NewConnectionManager(newTestLogger())
+	tr := NewTerminalRouter(cm, newTestLogger())
+
+	// Register pods with different keys
+	tr.RegisterPod("pod-1", 100)
+	tr.RegisterPod("pod-2", 200)
+	tr.RegisterPod("pod-3", 300)
+
+	// All should be registered
+	if !tr.IsPodRegistered("pod-1") || !tr.IsPodRegistered("pod-2") || !tr.IsPodRegistered("pod-3") {
+		t.Error("all pods should be registered")
+	}
+
+	// Different pods might be in different shards (depends on hash)
+	shard1 := tr.getShard("pod-1")
+	shard2 := tr.getShard("pod-2")
+
+	// At least verify that getShard returns valid shards
+	if shard1 == nil || shard2 == nil {
+		t.Error("getShard should return valid shards")
+	}
+}
+
+func TestTerminalRouterGetRegisteredPodCount(t *testing.T) {
+	cm := NewConnectionManager(newTestLogger())
+	tr := NewTerminalRouter(cm, newTestLogger())
+
+	// Initially zero
+	count := tr.GetRegisteredPodCount()
+	if count != 0 {
+		t.Errorf("initial count = %d, want 0", count)
+	}
+
+	// Register some pods
+	tr.RegisterPod("pod-1", 100)
+	tr.RegisterPod("pod-2", 200)
+	tr.RegisterPod("pod-3", 300)
+
+	count = tr.GetRegisteredPodCount()
+	if count != 3 {
+		t.Errorf("count after registration = %d, want 3", count)
+	}
+
+	// Unregister one
+	tr.UnregisterPod("pod-2")
+	count = tr.GetRegisteredPodCount()
+	if count != 2 {
+		t.Errorf("count after unregister = %d, want 2", count)
 	}
 }

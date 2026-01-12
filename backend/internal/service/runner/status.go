@@ -34,6 +34,9 @@ func (s *Service) MarkConnected(ctx context.Context, runnerID int64) error {
 		return err
 	}
 
+	// Update status in the Runner object before caching
+	r.Status = runner.RunnerStatusOnline
+
 	now := time.Now()
 	s.activeRunners.Store(runnerID, &ActiveRunner{
 		Runner:   r,

@@ -3,6 +3,7 @@ package runner
 import (
 	"bytes"
 	"testing"
+	"unicode/utf8"
 )
 
 func TestNewScrollbackBuffer(t *testing.T) {
@@ -163,5 +164,105 @@ func BenchmarkScrollbackBufferGetData(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = buffer.GetData()
+	}
+}
+
+func TestTrimToValidUTF8Start(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []byte
+		expected []byte
+	}{
+		{
+			name:     "empty slice",
+			input:    []byte{},
+			expected: []byte{},
+		},
+		{
+			name:     "valid ASCII",
+			input:    []byte("hello"),
+			expected: []byte("hello"),
+		},
+		{
+			name:     "valid UTF-8 Chinese",
+			input:    []byte("你好"),
+			expected: []byte("你好"),
+		},
+		{
+			name:     "valid UTF-8 mixed",
+			input:    []byte("hello你好world"),
+			expected: []byte("hello你好world"),
+		},
+		{
+			name:     "starts with continuation byte (1 byte)",
+			input:    append([]byte{0x80}, []byte("hello")...), // 10xxxxxx continuation byte
+			expected: []byte("hello"),
+		},
+		{
+			name:     "starts with 2 continuation bytes",
+			input:    append([]byte{0x80, 0x80}, []byte("test")...), // Two continuation bytes
+			expected: []byte("test"),
+		},
+		{
+			name:     "starts with 3 continuation bytes",
+			input:    append([]byte{0x80, 0x80, 0x80}, []byte("abc")...), // Three continuation bytes
+			expected: []byte("abc"),
+		},
+		{
+			name:     "truncated multi-byte sequence at start",
+			input:    append([]byte{0xE4, 0xBD}, []byte("hello")...), // Truncated 3-byte UTF-8 (missing last byte of 你)
+			expected: []byte("hello"),
+		},
+		{
+			name:     "valid 2-byte UTF-8 at start",
+			input:    []byte{0xC3, 0xA9, 'h', 'i'}, // é (2-byte UTF-8) + "hi"
+			expected: []byte{0xC3, 0xA9, 'h', 'i'},
+		},
+		{
+			name:     "valid 3-byte UTF-8 at start",
+			input:    []byte{0xE4, 0xBD, 0xA0, 'h', 'i'}, // 你 (3-byte UTF-8) + "hi"
+			expected: []byte{0xE4, 0xBD, 0xA0, 'h', 'i'},
+		},
+		{
+			name:     "valid 4-byte UTF-8 emoji at start",
+			input:    []byte{0xF0, 0x9F, 0x98, 0x80, 'h', 'i'}, // 😀 (4-byte UTF-8) + "hi"
+			expected: []byte{0xF0, 0x9F, 0x98, 0x80, 'h', 'i'},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := trimToValidUTF8Start(tt.input)
+			if !bytes.Equal(result, tt.expected) {
+				t.Errorf("trimToValidUTF8Start(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestScrollbackBufferWriteUTF8Boundary(t *testing.T) {
+	// Test that buffer correctly handles UTF-8 boundary when trimming
+	buffer := NewScrollbackBuffer(10)
+
+	// Write UTF-8 content that will overflow
+	// 你好 = 6 bytes (3 bytes each)
+	// Adding more will force trim
+	buffer.Write([]byte("你好")) // 6 bytes
+	buffer.Write([]byte("世界")) // 6 more bytes = 12 total, need to trim to 10
+
+	data := buffer.GetData()
+	// After trimming, should have valid UTF-8
+	if len(data) > 10 {
+		t.Errorf("buffer exceeded maxSize: got %d bytes", len(data))
+	}
+
+	// Check it's valid UTF-8
+	for i := 0; i < len(data); {
+		r, size := utf8.DecodeRune(data[i:])
+		if r == utf8.RuneError && size == 1 {
+			t.Errorf("invalid UTF-8 at position %d", i)
+			break
+		}
+		i += size
 	}
 }

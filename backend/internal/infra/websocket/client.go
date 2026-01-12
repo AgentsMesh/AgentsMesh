@@ -59,26 +59,29 @@ func (c *Client) SetPod(podKey string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Get the shard for this client
+	shard := c.hub.getShardByClient(c)
+
 	// Remove from old pod
 	if c.podKey != "" {
-		c.hub.mu.Lock()
-		delete(c.hub.podClients[c.podKey], c)
-		if len(c.hub.podClients[c.podKey]) == 0 {
-			delete(c.hub.podClients, c.podKey)
+		shard.mu.Lock()
+		delete(shard.podClients[c.podKey], c)
+		if len(shard.podClients[c.podKey]) == 0 {
+			delete(shard.podClients, c.podKey)
 		}
-		c.hub.mu.Unlock()
+		shard.mu.Unlock()
 	}
 
 	c.podKey = podKey
 
 	// Add to new pod
 	if podKey != "" {
-		c.hub.mu.Lock()
-		if c.hub.podClients[podKey] == nil {
-			c.hub.podClients[podKey] = make(map[*Client]bool)
+		shard.mu.Lock()
+		if shard.podClients[podKey] == nil {
+			shard.podClients[podKey] = make(map[*Client]bool)
 		}
-		c.hub.podClients[podKey][c] = true
-		c.hub.mu.Unlock()
+		shard.podClients[podKey][c] = true
+		shard.mu.Unlock()
 	}
 }
 
@@ -87,33 +90,36 @@ func (c *Client) SetChannel(channelID int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Get the shard for this client
+	shard := c.hub.getShardByClient(c)
+
 	// Remove from old channel
 	if c.channelID != 0 {
-		c.hub.mu.Lock()
-		delete(c.hub.channelClients[c.channelID], c)
-		if len(c.hub.channelClients[c.channelID]) == 0 {
-			delete(c.hub.channelClients, c.channelID)
+		shard.mu.Lock()
+		delete(shard.channelClients[c.channelID], c)
+		if len(shard.channelClients[c.channelID]) == 0 {
+			delete(shard.channelClients, c.channelID)
 		}
-		c.hub.mu.Unlock()
+		shard.mu.Unlock()
 	}
 
 	c.channelID = channelID
 
 	// Add to new channel
 	if channelID != 0 {
-		c.hub.mu.Lock()
-		if c.hub.channelClients[channelID] == nil {
-			c.hub.channelClients[channelID] = make(map[*Client]bool)
+		shard.mu.Lock()
+		if shard.channelClients[channelID] == nil {
+			shard.channelClients[channelID] = make(map[*Client]bool)
 		}
-		c.hub.channelClients[channelID][c] = true
-		c.hub.mu.Unlock()
+		shard.channelClients[channelID][c] = true
+		shard.mu.Unlock()
 	}
 }
 
 // ReadPump pumps messages from the WebSocket connection to the hub
 func (c *Client) ReadPump(onMessage func(*Client, *Message)) {
 	defer func() {
-		c.hub.unregister <- c
+		c.hub.Unregister(c)
 		c.conn.Close()
 	}()
 

@@ -2,12 +2,23 @@ package runner
 
 import (
 	"context"
+	"sort"
+	"time"
 
 	"github.com/anthropics/agentmesh/backend/internal/domain/runner"
 )
 
 // GetRunner returns a runner by ID
+// Tries to return from cache first, falls back to database
 func (s *Service) GetRunner(ctx context.Context, runnerID int64) (*runner.Runner, error) {
+	// Try cache first
+	if active, ok := s.activeRunners.Load(runnerID); ok {
+		if ar, ok := active.(*ActiveRunner); ok && ar.Runner != nil {
+			return ar.Runner, nil
+		}
+	}
+
+	// Fall back to database
 	var r runner.Runner
 	if err := s.db.WithContext(ctx).First(&r, runnerID).Error; err != nil {
 		return nil, ErrRunnerNotFound
@@ -36,7 +47,35 @@ func (s *Service) ListAvailableRunners(ctx context.Context, orgID int64) ([]*run
 }
 
 // SelectAvailableRunner selects an available runner using least-pods strategy
+// Prioritizes runners from activeRunners cache for better performance
 func (s *Service) SelectAvailableRunner(ctx context.Context, orgID int64) (*runner.Runner, error) {
+	// First, try to find available runners from cache
+	// This avoids DB round-trip for most cases when runners are actively connected
+	var cachedRunners []*ActiveRunner
+	s.activeRunners.Range(func(key, value interface{}) bool {
+		if ar, ok := value.(*ActiveRunner); ok && ar.Runner != nil {
+			r := ar.Runner
+			// Check if runner matches criteria
+			if r.OrganizationID == orgID &&
+				r.Status == runner.RunnerStatusOnline &&
+				r.IsEnabled &&
+				ar.PodCount < r.MaxConcurrentPods &&
+				time.Since(ar.LastPing) < 90*time.Second { // Still active
+				cachedRunners = append(cachedRunners, ar)
+			}
+		}
+		return true
+	})
+
+	if len(cachedRunners) > 0 {
+		// Sort by pod count (least loaded first)
+		sort.Slice(cachedRunners, func(i, j int) bool {
+			return cachedRunners[i].PodCount < cachedRunners[j].PodCount
+		})
+		return cachedRunners[0].Runner, nil
+	}
+
+	// Fall back to database query if cache miss
 	var runners []*runner.Runner
 	if err := s.db.WithContext(ctx).
 		Where("organization_id = ? AND status = ? AND is_enabled = ? AND current_pods < max_concurrent_pods", orgID, runner.RunnerStatusOnline, true).

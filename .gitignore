@@ -71,3 +71,4 @@ runner/*.out
 *.test
 *_coverage.out
 coverage.out
+runner/dist/

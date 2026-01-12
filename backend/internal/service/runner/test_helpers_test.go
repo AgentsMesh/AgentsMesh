@@ -1,11 +1,49 @@
 package runner
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/gorilla/websocket"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// newMockWebsocketConn creates a mock websocket connection for testing
+// It creates a real HTTP test server with WebSocket upgrade
+func newMockWebsocketConn() *websocket.Conn {
+	// Create a test server that accepts WebSocket connections
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		// Keep reading to avoid blocking
+		go func() {
+			for {
+				_, _, err := conn.ReadMessage()
+				if err != nil {
+					return
+				}
+			}
+		}()
+	}))
+
+	// Connect to the test server
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		panic("failed to connect to mock server: " + err.Error())
+	}
+
+	return conn
+}
 
 // setupTestDB creates an in-memory SQLite database for testing
 func setupTestDB(t *testing.T) *gorm.DB {
