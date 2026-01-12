@@ -27,18 +27,6 @@ export interface RunnerData {
   }>;
 }
 
-export interface RegistrationToken {
-  id: number;
-  organization_id: number;
-  description?: string;
-  created_by_id: number;
-  is_active: boolean;
-  max_uses?: number;
-  used_count: number;
-  expires_at?: string;
-  created_at: string;
-}
-
 // Plugin capability types for dynamic forms
 export interface UIOption {
   value: string;
@@ -99,19 +87,10 @@ export const runnerApi = {
       method: "POST",
     }),
 
-  // Registration token management
-  listTokens: () =>
-    request<{ tokens: RegistrationToken[] }>(orgPath("/runners/tokens")),
-
-  createToken: (description?: string, maxUses?: number, expiresAt?: string) =>
+  // Create one-time registration token
+  createToken: () =>
     request<{ token: string; message: string }>(orgPath("/runners/tokens"), {
       method: "POST",
-      body: { description, max_uses: maxUses, expires_at: expiresAt },
-    }),
-
-  revokeToken: (id: number) =>
-    request<{ message: string }>(`${orgPath("/runners/tokens")}/${id}`, {
-      method: "DELETE",
     }),
 
   // Get plugin options for a runner and agent type

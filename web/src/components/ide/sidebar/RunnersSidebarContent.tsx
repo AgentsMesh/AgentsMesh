@@ -9,22 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Server,
-  Cpu,
-  MemoryStick,
   Loader2,
   Plus,
   Search,
   RefreshCw,
-  ChevronDown,
-  ChevronRight,
-  Key,
   Activity,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { useTranslations } from "@/lib/i18n/client";
 
 interface RunnersSidebarContentProps {
@@ -40,10 +30,8 @@ export function RunnersSidebarContent({ className }: RunnersSidebarContentProps)
   const { currentOrg } = useAuthStore();
   const {
     runners,
-    tokens,
     loading,
     fetchRunners,
-    fetchTokens,
   } = useRunnerStore();
 
   // State
@@ -51,25 +39,23 @@ export function RunnersSidebarContent({ className }: RunnersSidebarContentProps)
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | RunnerStatus>("all");
   const [selectedRunnerId, setSelectedRunnerId] = useState<number | null>(null);
-  const [tokensExpanded, setTokensExpanded] = useState(false);
 
   // Load runners on mount
   useEffect(() => {
     if (currentOrg) {
       fetchRunners();
-      fetchTokens();
     }
-  }, [currentOrg, fetchRunners, fetchTokens]);
+  }, [currentOrg, fetchRunners]);
 
   // Refresh handler
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([fetchRunners(), fetchTokens()]);
+      await fetchRunners();
     } finally {
       setRefreshing(false);
     }
-  }, [fetchRunners, fetchTokens]);
+  }, [fetchRunners]);
 
   // Filter runners
   const filteredRunners = runners.filter((runner) => {
@@ -100,13 +86,10 @@ export function RunnersSidebarContent({ className }: RunnersSidebarContentProps)
     router.push(`/${currentOrg?.slug}/runners?selected=${runner.id}`);
   };
 
-  // Navigate to add runner page
+  // Navigate to runners page
   const handleAddRunner = () => {
-    router.push(`/${currentOrg?.slug}/settings?tab=runners`);
+    router.push(`/${currentOrg?.slug}/runners`);
   };
-
-  // Active tokens count
-  const activeTokens = tokens.filter(t => t.is_active).length;
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -272,72 +255,6 @@ export function RunnersSidebarContent({ className }: RunnersSidebarContentProps)
           </div>
         )}
       </div>
-
-      {/* Registration tokens section */}
-      <Collapsible open={tokensExpanded} onOpenChange={setTokensExpanded}>
-        <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between px-3 py-2 border-t border-border cursor-pointer hover:bg-muted/50">
-            <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{t("runners.registrationTokens")}</span>
-              <span className="text-xs text-muted-foreground">
-                ({activeTokens} {t("runners.token.active")})
-              </span>
-            </div>
-            {tokensExpanded ? (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            )}
-          </div>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="border-t border-border px-3 py-2">
-            {tokens.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-2">
-                {t("runners.token.noTokens")}
-              </p>
-            ) : (
-              <div className="space-y-1.5">
-                {tokens.slice(0, 3).map((token) => (
-                  <div
-                    key={token.id}
-                    className="flex items-center justify-between text-xs"
-                  >
-                    <span className={cn(
-                      "truncate",
-                      !token.is_active && "text-muted-foreground line-through"
-                    )}>
-                      {token.description || `Token #${token.id}`}
-                    </span>
-                    <span className="text-muted-foreground flex-shrink-0 ml-2">
-                      {token.used_count}/{token.max_uses || "∞"}
-                    </span>
-                  </div>
-                ))}
-                {tokens.length > 3 && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="w-full h-7 text-xs"
-                    onClick={() => router.push(`/${currentOrg?.slug}/settings?tab=runners`)}
-                  >
-                    {t("runners.token.viewAll")} →
-                  </Button>
-                )}
-              </div>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full mt-2 h-7 text-xs"
-              onClick={() => router.push(`/${currentOrg?.slug}/settings?tab=runners`)}
-            >
-              {t("runners.token.manage")}
-            </Button>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
     </div>
   );
 }

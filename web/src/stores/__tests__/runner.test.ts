@@ -10,9 +10,7 @@ vi.mock('@/lib/api/client', () => ({
     update: vi.fn(),
     delete: vi.fn(),
     regenerateAuthToken: vi.fn(),
-    listTokens: vi.fn(),
     createToken: vi.fn(),
-    revokeToken: vi.fn(),
   },
 }))
 
@@ -38,7 +36,6 @@ beforeEach(() => {
     runners: [],
     availableRunners: [],
     currentRunner: null,
-    tokens: [],
     loading: false,
     error: null,
   })
@@ -182,59 +179,21 @@ describe('Runner Store Actions', () => {
     })
   })
 
-  describe('Token operations', () => {
-    it('should fetch tokens successfully', async () => {
-      const mockTokens = [{
-        id: 1,
-        organization_id: 1,
-        description: 'Test',
-        created_by_id: 1,
-        is_active: true,
-        used_count: 0,
-        created_at: '2024-01-01T00:00:00Z',
-      }]
-      vi.mocked(runnerApi.listTokens).mockResolvedValue({ tokens: mockTokens })
-
-      await useRunnerStore.getState().fetchTokens()
-
-      expect(useRunnerStore.getState().tokens).toEqual(mockTokens)
-    })
-
+  describe('createToken', () => {
     it('should create token successfully', async () => {
       vi.mocked(runnerApi.createToken).mockResolvedValue({ token: 'new-token-123', message: 'Token created' })
-      vi.mocked(runnerApi.listTokens).mockResolvedValue({ tokens: [] })
 
-      const token = await useRunnerStore.getState().createToken('Test token', 5)
+      const token = await useRunnerStore.getState().createToken()
 
       expect(token).toBe('new-token-123')
-      expect(runnerApi.listTokens).toHaveBeenCalled() // Should refresh tokens
+      expect(runnerApi.createToken).toHaveBeenCalled()
     })
 
-    it('should revoke token successfully', async () => {
-      const token = {
-        id: 1,
-        organization_id: 1,
-        description: 'Test',
-        created_by_id: 1,
-        is_active: true,
-        used_count: 0,
-        created_at: '2024-01-01T00:00:00Z',
-      }
-      useRunnerStore.setState({ tokens: [token] })
-      vi.mocked(runnerApi.revokeToken).mockResolvedValue({ message: 'Token revoked' })
+    it('should handle create token error', async () => {
+      vi.mocked(runnerApi.createToken).mockRejectedValue(new Error('Failed to create token'))
 
-      await useRunnerStore.getState().revokeToken(1)
-
-      expect(useRunnerStore.getState().tokens[0].is_active).toBe(false)
-    })
-
-    it('should use createRegistrationToken as alias', async () => {
-      vi.mocked(runnerApi.createToken).mockResolvedValue({ token: 'new-token', message: 'Token created' })
-      vi.mocked(runnerApi.listTokens).mockResolvedValue({ tokens: [] })
-
-      const token = await useRunnerStore.getState().createRegistrationToken('Test')
-
-      expect(token).toBe('new-token')
+      await expect(useRunnerStore.getState().createToken()).rejects.toThrow()
+      expect(useRunnerStore.getState().error).toBe('Failed to create token')
     })
   })
 

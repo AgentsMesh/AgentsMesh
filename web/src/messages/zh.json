@@ -1121,33 +1121,6 @@
         "saveChanges": "保存更改"
       }
     },
-    "tokensSection": {
-      "title": "注册令牌",
-      "description": "创建令牌以注册新的 Runner",
-      "createToken": "创建令牌",
-      "loading": "加载中...",
-      "noTokens": "暂无注册令牌。创建一个以注册 Runner。",
-      "revoked": "已撤销",
-      "uses": "使用次数：",
-      "created": "创建时间：",
-      "expires": "过期时间：",
-      "revoke": "撤销",
-      "dialog": {
-        "createTitle": "创建注册令牌",
-        "createdTitle": "令牌已创建",
-        "createdHint": "请立即复制此令牌，你将无法再次查看。",
-        "descriptionLabel": "描述（可选）",
-        "descriptionPlaceholder": "例如：开发团队 Runner",
-        "maxUsesLabel": "最大使用次数（可选）",
-        "maxUsesPlaceholder": "留空表示不限",
-        "expiresLabel": "过期时间（可选）",
-        "cancel": "取消",
-        "creating": "创建中...",
-        "createToken": "创建令牌",
-        "copy": "复制",
-        "done": "完成"
-      }
-    },
     "gitSettings": {
       "title": "Git 设置",
       "description": "管理你的 Git 凭据和仓库提供商，用于导入和访问仓库。",
@@ -1559,18 +1532,6 @@
         "remove": "移除"
       }
     },
-    "token": {
-      "title": "注册令牌",
-      "description": "使用此令牌注册新的 Runner",
-      "generate": "生成令牌",
-      "copy": "复制",
-      "copied": "已复制！",
-      "expires": "过期时间",
-      "active": "活跃",
-      "noTokens": "暂无注册令牌",
-      "viewAll": "查看全部令牌",
-      "manage": "管理令牌"
-    },
     "page": {
       "title": "Runner",
       "subtitle": "管理计算资源",
@@ -1600,31 +1561,18 @@
       "mobileOsLabel": "系统：",
       "mobileVersionLabel": "版本："
     },
-    "registrationTokens": {
-      "title": "注册令牌",
-      "newToken": "新建令牌",
-      "descriptionColumn": "描述",
-      "usageColumn": "使用情况",
-      "statusColumn": "状态",
-      "createdColumn": "创建时间",
-      "actionsColumn": "操作",
-      "noDescription": "无描述",
-      "revoked": "已撤销",
-      "revoke": "撤销",
-      "noTokens": "暂无注册令牌。创建一个以添加 Runner。"
-    },
-    "createTokenModal": {
-      "title": "创建注册令牌",
-      "tokenCreated": "令牌已创建",
-      "tokenHint": "复制此令牌用于注册新的 Runner。此令牌只会显示一次。",
-      "descriptionLabel": "描述（可选）",
-      "descriptionPlaceholder": "例如：生产环境 Runner",
-      "maxUsesLabel": "最大使用次数（可选）",
-      "maxUsesPlaceholder": "不限",
+    "addRunnerModal": {
+      "title": "添加 Runner",
+      "subtitle": "生成注册令牌以连接新的 Runner",
+      "tokenWarning": "请妥善保管此令牌，它只会显示一次",
+      "tokenLabel": "注册令牌",
+      "usageTitle": "使用以下命令启动 Runner：",
+      "copyCommand": "复制命令",
+      "done": "完成",
       "cancel": "取消",
-      "creating": "创建中...",
-      "createToken": "创建令牌",
-      "done": "完成"
+      "generate": "生成令牌",
+      "generating": "生成中...",
+      "generateHint": "点击下方按钮生成一次性注册令牌，用于连接新的 Runner。"
     },
     "configModal": {
       "title": "配置 Runner",

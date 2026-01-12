@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { runnerApi, type RunnerData, type RegistrationToken } from "@/lib/api";
+import { runnerApi, type RunnerData } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Server,
@@ -18,6 +18,8 @@ import {
   Cpu,
   HardDrive,
   Activity,
+  Terminal,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n/client";
@@ -25,9 +27,8 @@ import { useTranslations } from "@/lib/i18n/client";
 export default function RunnersPage() {
   const t = useTranslations();
   const [runners, setRunners] = useState<RunnerData[]>([]);
-  const [tokens, setTokens] = useState<RegistrationToken[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [showAddRunnerModal, setShowAddRunnerModal] = useState(false);
   const [selectedRunner, setSelectedRunner] = useState<RunnerData | null>(null);
 
   useEffect(() => {
@@ -36,12 +37,8 @@ export default function RunnersPage() {
 
   const loadData = async () => {
     try {
-      const [runnersRes, tokensRes] = await Promise.all([
-        runnerApi.list(),
-        runnerApi.listTokens(),
-      ]);
+      const runnersRes = await runnerApi.list();
       setRunners(runnersRes.runners || []);
-      setTokens(tokensRes.tokens || []);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -127,7 +124,7 @@ export default function RunnersPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             {t("runners.page.refresh")}
           </Button>
-          <Button onClick={() => setShowTokenModal(true)}>
+          <Button onClick={() => setShowAddRunnerModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
             {t("runners.page.addRunner")}
           </Button>
@@ -338,84 +335,13 @@ export default function RunnersPage() {
         </div>
       </div>
 
-      {/* Registration Tokens Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t("runners.registrationTokens.title")}</h2>
-          <Button size="sm" variant="outline" onClick={() => setShowTokenModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            {t("runners.registrationTokens.newToken")}
-          </Button>
-        </div>
-
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium">{t("runners.registrationTokens.descriptionColumn")}</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">{t("runners.registrationTokens.usageColumn")}</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">{t("runners.registrationTokens.statusColumn")}</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">{t("runners.registrationTokens.createdColumn")}</th>
-                <th className="px-4 py-3 text-right text-sm font-medium">{t("runners.registrationTokens.actionsColumn")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {tokens.map((token) => (
-                <tr key={token.id} className="hover:bg-muted/50">
-                  <td className="px-4 py-3">{token.description || t("runners.registrationTokens.noDescription")}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {token.used_count} / {token.max_uses || "∞"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        "px-2 py-1 text-xs rounded-full",
-                        token.is_active
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                      )}
-                    >
-                      {token.is_active ? t("runners.token.active") : t("runners.registrationTokens.revoked")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(token.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {token.is_active && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={async () => {
-                          await runnerApi.revokeToken(token.id);
-                          loadData();
-                        }}
-                      >
-                        {t("runners.registrationTokens.revoke")}
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {tokens.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    {t("runners.registrationTokens.noTokens")}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Token Modal */}
-      {showTokenModal && (
-        <CreateTokenModal
+      {/* Add Runner Modal */}
+      {showAddRunnerModal && (
+        <AddRunnerModal
           t={t}
-          onClose={() => setShowTokenModal(false)}
+          onClose={() => setShowAddRunnerModal(false)}
           onCreated={() => {
-            setShowTokenModal(false);
+            setShowAddRunnerModal(false);
             loadData();
           }}
         />
@@ -474,7 +400,7 @@ function StatCard({
   );
 }
 
-function CreateTokenModal({
+function AddRunnerModal({
   t,
   onClose,
   onCreated,
@@ -483,18 +409,17 @@ function CreateTokenModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const [description, setDescription] = useState("");
-  const [maxUses, setMaxUses] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const handleCreate = async () => {
+  const handleGenerate = async () => {
     setLoading(true);
     try {
-      const res = await runnerApi.createToken(description || undefined, maxUses);
+      const res = await runnerApi.createToken();
       setGeneratedToken(res.token);
     } catch (error) {
-      console.error("Failed to create token:", error);
+      console.error("Failed to generate token:", error);
     } finally {
       setLoading(false);
     }
@@ -503,69 +428,95 @@ function CreateTokenModal({
   const copyToken = () => {
     if (generatedToken) {
       navigator.clipboard.writeText(generatedToken);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const copyCommand = () => {
+    if (generatedToken) {
+      const command = `agentmesh-runner --token ${generatedToken}`;
+      navigator.clipboard.writeText(command);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-background border border-border rounded-lg w-full max-w-md p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold mb-4">
-          {generatedToken ? t("runners.createTokenModal.tokenCreated") : t("runners.createTokenModal.title")}
+      <div className="bg-background border border-border rounded-lg w-full max-w-lg p-4 md:p-6">
+        <h2 className="text-lg md:text-xl font-semibold mb-2">
+          {t("runners.addRunnerModal.title")}
         </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          {t("runners.addRunnerModal.subtitle")}
+        </p>
 
         {generatedToken ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {t("runners.createTokenModal.tokenHint")}
-            </p>
-            <div className="flex gap-2">
-              <code className="flex-1 p-3 bg-muted rounded text-sm break-all">
-                {generatedToken}
-              </code>
-              <Button variant="outline" size="sm" onClick={copyToken}>
-                <Copy className="w-4 h-4" />
-              </Button>
+            {/* Warning */}
+            <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                {t("runners.addRunnerModal.tokenWarning")}
+              </p>
             </div>
-            <div className="flex justify-end">
-              <Button onClick={onCreated}>{t("runners.createTokenModal.done")}</Button>
+
+            {/* Token display */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {t("runners.addRunnerModal.tokenLabel")}
+              </label>
+              <div className="flex gap-2">
+                <code className="flex-1 p-3 bg-muted rounded text-sm break-all font-mono">
+                  {generatedToken}
+                </code>
+                <Button variant="outline" size="sm" onClick={copyToken} className="flex-shrink-0">
+                  {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+
+            {/* Usage instructions */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {t("runners.addRunnerModal.usageTitle")}
+              </label>
+              <div className="bg-zinc-900 dark:bg-zinc-950 rounded-lg p-4 relative">
+                <div className="flex items-center gap-2 text-zinc-400 text-xs mb-2">
+                  <Terminal className="w-4 h-4" />
+                  <span>Terminal</span>
+                </div>
+                <code className="text-green-400 text-sm font-mono block">
+                  agentmesh-runner --token {generatedToken.substring(0, 16)}...
+                </code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyCommand}
+                  className="absolute top-2 right-2 h-7 text-xs text-zinc-400 hover:text-white"
+                >
+                  {t("runners.addRunnerModal.copyCommand")}
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button onClick={onCreated}>{t("runners.addRunnerModal.done")}</Button>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                {t("runners.createTokenModal.descriptionLabel")}
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                placeholder={t("runners.createTokenModal.descriptionPlaceholder")}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                {t("runners.createTokenModal.maxUsesLabel")}
-              </label>
-              <input
-                type="number"
-                className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                placeholder={t("runners.createTokenModal.maxUsesPlaceholder")}
-                value={maxUses || ""}
-                onChange={(e) =>
-                  setMaxUses(e.target.value ? parseInt(e.target.value) : undefined)
-                }
-                min={1}
-              />
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {t("runners.addRunnerModal.generateHint")}
+            </p>
 
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
               <Button variant="outline" onClick={onClose}>
-                {t("runners.createTokenModal.cancel")}
+                {t("runners.addRunnerModal.cancel")}
               </Button>
-              <Button onClick={handleCreate} disabled={loading}>
-                {loading ? t("runners.createTokenModal.creating") : t("runners.createTokenModal.createToken")}
+              <Button onClick={handleGenerate} disabled={loading}>
+                {loading ? t("runners.addRunnerModal.generating") : t("runners.addRunnerModal.generate")}
               </Button>
             </div>
           </div>

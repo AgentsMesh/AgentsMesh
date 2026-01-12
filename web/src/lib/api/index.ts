@@ -36,7 +36,6 @@ export type {
 export { runnerApi } from "./runner";
 export type {
   RunnerData,
-  RegistrationToken,
   PluginCapability,
   UIConfig,
   UIField,

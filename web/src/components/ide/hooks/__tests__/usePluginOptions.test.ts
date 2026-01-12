@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { usePluginOptions } from "../usePluginOptions";
 import { runnerApi } from "@/lib/api/client";
+import type { PluginCapability } from "@/lib/api/runner";
 
 // Mock the client API
 vi.mock("@/lib/api/client", () => ({
@@ -35,10 +36,11 @@ describe("usePluginOptions", () => {
 
   describe("loading plugins", () => {
     it("should fetch plugins when runner and agent are provided", async () => {
-      const mockPlugins = [
+      const mockPlugins: PluginCapability[] = [
         {
           name: "claude-code",
           version: "1.0.0",
+          description: "Claude Code Plugin",
           supported_agents: ["claude-code"],
           ui: {
             configurable: true,
@@ -64,10 +66,11 @@ describe("usePluginOptions", () => {
     });
 
     it("should initialize config with default values", async () => {
-      const mockPlugins = [
+      const mockPlugins: PluginCapability[] = [
         {
           name: "test-plugin",
           version: "1.0.0",
+          description: "Test Plugin",
           supported_agents: ["test-agent"],
           ui: {
             configurable: true,
@@ -113,10 +116,11 @@ describe("usePluginOptions", () => {
 
   describe("updateConfig", () => {
     it("should update config value", async () => {
-      const mockPlugins = [
+      const mockPlugins: PluginCapability[] = [
         {
           name: "test-plugin",
           version: "1.0.0",
+          description: "Test Plugin",
           supported_agents: ["test-agent"],
           ui: {
             configurable: true,
@@ -148,10 +152,11 @@ describe("usePluginOptions", () => {
 
   describe("resetConfig", () => {
     it("should reset config and plugins to empty", async () => {
-      const mockPlugins = [
+      const mockPlugins: PluginCapability[] = [
         {
           name: "test-plugin",
           version: "1.0.0",
+          description: "Test Plugin",
           supported_agents: ["test-agent"],
           ui: {
             configurable: true,
@@ -184,10 +189,11 @@ describe("usePluginOptions", () => {
 
   describe("dependency changes", () => {
     it("should refetch when runner changes", async () => {
-      const mockPlugins = [
+      const mockPlugins: PluginCapability[] = [
         {
           name: "test-plugin",
           version: "1.0.0",
+          description: "Test Plugin",
           supported_agents: ["test-agent"],
           ui: { configurable: true, fields: [] },
         },

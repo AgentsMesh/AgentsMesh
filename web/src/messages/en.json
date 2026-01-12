@@ -1121,33 +1121,6 @@
         "saveChanges": "Save Changes"
       }
     },
-    "tokensSection": {
-      "title": "Registration Tokens",
-      "description": "Create tokens to register new runners",
-      "createToken": "Create Token",
-      "loading": "Loading...",
-      "noTokens": "No registration tokens. Create one to register runners.",
-      "revoked": "Revoked",
-      "uses": "Uses:",
-      "created": "Created:",
-      "expires": "Expires:",
-      "revoke": "Revoke",
-      "dialog": {
-        "createTitle": "Create Registration Token",
-        "createdTitle": "Token Created",
-        "createdHint": "Copy this token now. You won't be able to see it again.",
-        "descriptionLabel": "Description (optional)",
-        "descriptionPlaceholder": "e.g., Dev team runner",
-        "maxUsesLabel": "Max Uses (optional)",
-        "maxUsesPlaceholder": "Leave empty for unlimited",
-        "expiresLabel": "Expires At (optional)",
-        "cancel": "Cancel",
-        "creating": "Creating...",
-        "createToken": "Create Token",
-        "copy": "Copy",
-        "done": "Done"
-      }
-    },
     "gitSettings": {
       "title": "Git Settings",
       "description": "Manage your Git credentials and repository providers for importing and accessing repositories.",
@@ -1559,18 +1532,6 @@
         "remove": "Remove"
       }
     },
-    "token": {
-      "title": "Registration Token",
-      "description": "Use this token to register new runners",
-      "generate": "Generate Token",
-      "copy": "Copy",
-      "copied": "Copied!",
-      "expires": "Expires",
-      "active": "active",
-      "noTokens": "No registration tokens",
-      "viewAll": "View all tokens",
-      "manage": "Manage Tokens"
-    },
     "page": {
       "title": "Runners",
       "subtitle": "Manage your compute resources",
@@ -1600,31 +1561,18 @@
       "mobileCpuLabel": "CPU:",
       "mobileVersionLabel": "Version:"
     },
-    "registrationTokens": {
-      "title": "Registration Tokens",
-      "newToken": "New Token",
-      "descriptionColumn": "Description",
-      "usageColumn": "Usage",
-      "statusColumn": "Status",
-      "createdColumn": "Created",
-      "actionsColumn": "Actions",
-      "noDescription": "No description",
-      "revoked": "Revoked",
-      "revoke": "Revoke",
-      "noTokens": "No registration tokens. Create one to add runners."
-    },
-    "createTokenModal": {
-      "title": "Create Registration Token",
-      "tokenCreated": "Token Created",
-      "tokenHint": "Copy this token and use it to register a new runner. This token will only be shown once.",
-      "descriptionLabel": "Description (optional)",
-      "descriptionPlaceholder": "e.g., Production runner",
-      "maxUsesLabel": "Max Uses (optional)",
-      "maxUsesPlaceholder": "Unlimited",
+    "addRunnerModal": {
+      "title": "Add Runner",
+      "subtitle": "Generate a registration token to connect a new Runner",
+      "tokenWarning": "Keep this token safe - it will only be shown once",
+      "tokenLabel": "Registration Token",
+      "usageTitle": "Use the following command to start the Runner:",
+      "copyCommand": "Copy Command",
+      "done": "Done",
       "cancel": "Cancel",
-      "creating": "Creating...",
-      "createToken": "Create Token",
-      "done": "Done"
+      "generate": "Generate Token",
+      "generating": "Generating...",
+      "generateHint": "Click the button below to generate a one-time registration token for connecting a new Runner."
     },
     "configModal": {
       "title": "Configure Runner",

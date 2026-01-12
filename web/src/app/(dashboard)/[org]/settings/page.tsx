@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
 import { organizationApi, agentApi, billingApi, BillingOverview, SubscriptionPlan, RedeemPromoCodeResponse } from "@/lib/api/client";
 import { PromoCodeInput } from "@/components/promo-code/PromoCodeInput";
-import { useRunnerStore, Runner, RegistrationToken, getRunnerStatusInfo } from "@/stores/runner";
+import { useRunnerStore, Runner, getRunnerStatusInfo } from "@/stores/runner";
 import { LanguageSettings, NotificationSettings, AgentCredentialsSettings } from "@/components/settings";
 import { useTranslations } from "@/lib/i18n/client";
 import { GitSettingsContent } from "@/components/settings/GitSettingsContent";
@@ -1120,26 +1120,20 @@ function PlansDialog({
 function RunnersSettings({ t }: { t: TranslationFn }) {
   const {
     runners,
-    tokens,
     loading,
     error,
     fetchRunners,
-    fetchTokens,
     updateRunner,
     deleteRunner,
     regenerateAuthToken,
-    createToken,
-    revokeToken,
     clearError,
   } = useRunnerStore();
 
   const [editingRunner, setEditingRunner] = useState<Runner | null>(null);
-  const [showTokenDialog, setShowTokenDialog] = useState(false);
 
   useEffect(() => {
     fetchRunners();
-    fetchTokens();
-  }, [fetchRunners, fetchTokens]);
+  }, [fetchRunners]);
 
   return (
     <div className="space-y-6">
@@ -1151,17 +1145,6 @@ function RunnersSettings({ t }: { t: TranslationFn }) {
           </button>
         </div>
       )}
-
-      {/* Registration Tokens */}
-      <TokensPanel
-        tokens={tokens}
-        loading={loading}
-        onCreateToken={createToken}
-        onRevokeToken={revokeToken}
-        showDialog={showTokenDialog}
-        onShowDialog={setShowTokenDialog}
-        t={t}
-      />
 
       {/* Runners List */}
       <RunnersPanel
@@ -1184,200 +1167,6 @@ function RunnersSettings({ t }: { t: TranslationFn }) {
           }}
           t={t}
         />
-      )}
-    </div>
-  );
-}
-
-// TokensPanel Component
-function TokensPanel({
-  tokens,
-  loading,
-  onCreateToken,
-  onRevokeToken,
-  showDialog,
-  onShowDialog,
-  t,
-}: {
-  tokens: RegistrationToken[];
-  loading: boolean;
-  onCreateToken: (description?: string, maxUses?: number, expiresAt?: string) => Promise<string>;
-  onRevokeToken: (id: number) => Promise<void>;
-  showDialog: boolean;
-  onShowDialog: (show: boolean) => void;
-  t: TranslationFn;
-}) {
-  const [newTokenDescription, setNewTokenDescription] = useState("");
-  const [newTokenMaxUses, setNewTokenMaxUses] = useState<string>("");
-  const [newTokenExpires, setNewTokenExpires] = useState<string>("");
-  const [createdToken, setCreatedToken] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-
-  const handleCreateToken = async () => {
-    setCreating(true);
-    try {
-      const maxUses = newTokenMaxUses ? parseInt(newTokenMaxUses, 10) : undefined;
-      const expiresAt = newTokenExpires || undefined;
-      const token = await onCreateToken(newTokenDescription || undefined, maxUses, expiresAt);
-      setCreatedToken(token);
-      setNewTokenDescription("");
-      setNewTokenMaxUses("");
-      setNewTokenExpires("");
-    } catch (err) {
-      console.error("Failed to create token:", err);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const handleCloseDialog = () => {
-    onShowDialog(false);
-    setCreatedToken(null);
-    setNewTokenDescription("");
-    setNewTokenMaxUses("");
-    setNewTokenExpires("");
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString();
-  };
-
-  return (
-    <div className="border border-border rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-semibold">{t("settings.tokensSection.title")}</h2>
-          <p className="text-sm text-muted-foreground">
-            {t("settings.tokensSection.description")}
-          </p>
-        </div>
-        <Button onClick={() => onShowDialog(true)}>{t("settings.tokensSection.createToken")}</Button>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-4 text-muted-foreground">{t("settings.tokensSection.loading")}</div>
-      ) : tokens.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          {t("settings.tokensSection.noTokens")}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {tokens.map((token) => (
-            <div
-              key={token.id}
-              className={`flex items-center justify-between p-4 border rounded-lg ${
-                token.is_active ? "border-border" : "border-border bg-muted/50 opacity-60"
-              }`}
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">
-                    {token.description || `Token #${token.id}`}
-                  </span>
-                  {!token.is_active && (
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded">{t("settings.tokensSection.revoked")}</span>
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1 space-x-4">
-                  <span>{t("settings.tokensSection.uses")} {token.used_count}{token.max_uses ? ` / ${token.max_uses}` : ""}</span>
-                  <span>{t("settings.tokensSection.created")} {formatDate(token.created_at)}</span>
-                  {token.expires_at && (
-                    <span>{t("settings.tokensSection.expires")} {formatDate(token.expires_at)}</span>
-                  )}
-                </div>
-              </div>
-              {token.is_active && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => onRevokeToken(token.id)}
-                >
-                  {t("settings.tokensSection.revoke")}
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Create Token Dialog */}
-      {showDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background border border-border rounded-lg p-6 w-full max-w-md">
-            {createdToken ? (
-              <>
-                <h3 className="text-lg font-semibold mb-4">{t("settings.tokensSection.dialog.createdTitle")}</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {t("settings.tokensSection.dialog.createdHint")}
-                </p>
-                <div className="bg-muted p-3 rounded-lg mb-4 flex items-center justify-between">
-                  <code className="text-sm break-all">{createdToken}</code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(createdToken)}
-                  >
-                    {t("settings.tokensSection.dialog.copy")}
-                  </Button>
-                </div>
-                <Button className="w-full" onClick={handleCloseDialog}>
-                  {t("settings.tokensSection.dialog.done")}
-                </Button>
-              </>
-            ) : (
-              <>
-                <h3 className="text-lg font-semibold mb-4">{t("settings.tokensSection.dialog.createTitle")}</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      {t("settings.tokensSection.dialog.descriptionLabel")}
-                    </label>
-                    <Input
-                      value={newTokenDescription}
-                      onChange={(e) => setNewTokenDescription(e.target.value)}
-                      placeholder={t("settings.tokensSection.dialog.descriptionPlaceholder")}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      {t("settings.tokensSection.dialog.maxUsesLabel")}
-                    </label>
-                    <Input
-                      type="number"
-                      value={newTokenMaxUses}
-                      onChange={(e) => setNewTokenMaxUses(e.target.value)}
-                      placeholder={t("settings.tokensSection.dialog.maxUsesPlaceholder")}
-                      min="1"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      {t("settings.tokensSection.dialog.expiresLabel")}
-                    </label>
-                    <Input
-                      type="datetime-local"
-                      value={newTokenExpires}
-                      onChange={(e) => setNewTokenExpires(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-3 mt-6">
-                  <Button variant="outline" className="flex-1" onClick={handleCloseDialog}>
-                    {t("settings.tokensSection.dialog.cancel")}
-                  </Button>
-                  <Button className="flex-1" onClick={handleCreateToken} disabled={creating}>
-                    {creating ? t("settings.tokensSection.dialog.creating") : t("settings.tokensSection.dialog.createToken")}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
       )}
     </div>
   );

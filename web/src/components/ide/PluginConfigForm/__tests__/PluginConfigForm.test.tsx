@@ -154,6 +154,7 @@ describe("PluginConfigForm", () => {
         {
           name: "no-desc-plugin",
           version: "1.0.0",
+          description: "",
           supported_agents: [],
           ui: {
             configurable: true,
@@ -323,10 +324,11 @@ describe("PluginConfigForm", () => {
         {
           name: "unknown-field-plugin",
           version: "1.0.0",
+          description: "Unknown Field Plugin",
           supported_agents: [],
           ui: {
             configurable: true,
-            fields: [{ name: "unknown", type: "custom-type" as unknown as string, label: "Unknown" }],
+            fields: [{ name: "unknown", type: "custom-type" as "string", label: "Unknown" }],
           },
         },
       ];

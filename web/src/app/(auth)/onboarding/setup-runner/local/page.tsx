@@ -25,11 +25,7 @@ export default function LocalRunnerSetupPage() {
     const generateToken = async () => {
       try {
         setLoading(true);
-        const { token: newToken } = await runnerApi.createToken(
-          "Onboarding setup",
-          1, // max uses
-          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // expires in 24h
-        );
+        const { token: newToken } = await runnerApi.createToken();
         setToken(newToken);
       } catch {
         setError(t("auth.onboarding.localRunner.tokenGenerationFailed"));

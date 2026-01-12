@@ -1,18 +1,16 @@
 import { create } from "zustand";
-import { runnerApi, RunnerData, RegistrationToken } from "@/lib/api/client";
+import { runnerApi, RunnerData } from "@/lib/api/client";
 
 export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
 
 // Re-export types for backward compatibility
 export type Runner = RunnerData;
-export type { RegistrationToken };
 
 interface RunnerState {
   // State
   runners: Runner[];
   availableRunners: Runner[];
   currentRunner: Runner | null;
-  tokens: RegistrationToken[];
   loading: boolean;
   error: string | null;
 
@@ -23,12 +21,8 @@ interface RunnerState {
   updateRunner: (id: number, data: { description?: string; max_concurrent_pods?: number; is_enabled?: boolean }) => Promise<Runner>;
   deleteRunner: (id: number) => Promise<void>;
   regenerateAuthToken: (id: number) => Promise<string>;
-  // Token management
-  fetchTokens: () => Promise<void>;
-  createToken: (description?: string, maxUses?: number, expiresAt?: string) => Promise<string>;
-  revokeToken: (id: number) => Promise<void>;
-  // Deprecated - use createToken instead
-  createRegistrationToken: (description?: string, maxUses?: number, expiresAt?: string) => Promise<string>;
+  // Token management - simplified to one-time token generation
+  createToken: () => Promise<string>;
   setCurrentRunner: (runner: Runner | null) => void;
   updateRunnerStatus: (runnerId: number, status: RunnerStatus) => void;
   clearError: () => void;
@@ -38,7 +32,6 @@ export const useRunnerStore = create<RunnerState>((set, get) => ({
   runners: [],
   availableRunners: [],
   currentRunner: null,
-  tokens: [],
   loading: false,
   error: null,
 
@@ -124,46 +117,15 @@ export const useRunnerStore = create<RunnerState>((set, get) => ({
     }
   },
 
-  fetchTokens: async () => {
-    set({ loading: true, error: null });
+  createToken: async () => {
     try {
-      const response = await runnerApi.listTokens();
-      set({ tokens: response.tokens || [], loading: false });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to fetch tokens";
-      set({ error: message, loading: false });
-    }
-  },
-
-  createToken: async (description, maxUses, expiresAt) => {
-    try {
-      const response = await runnerApi.createToken(description, maxUses, expiresAt);
-      // Refresh token list
-      get().fetchTokens();
+      const response = await runnerApi.createToken();
       return response.token;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to create token";
       set({ error: message });
       throw error;
     }
-  },
-
-  revokeToken: async (id) => {
-    try {
-      await runnerApi.revokeToken(id);
-      set((state) => ({
-        tokens: state.tokens.map((t) => (t.id === id ? { ...t, is_active: false } : t)),
-      }));
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to revoke token";
-      set({ error: message });
-      throw error;
-    }
-  },
-
-  // Deprecated - use createToken instead
-  createRegistrationToken: async (description, maxUses, expiresAt) => {
-    return get().createToken(description, maxUses, expiresAt);
   },
 
   setCurrentRunner: (runner) => {
