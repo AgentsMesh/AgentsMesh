@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   runnerApi,
   agentApi,
@@ -14,10 +14,16 @@ export interface PodCreationData {
   repositories: RepositoryData[];
   loading: boolean;
   error: string | null;
+  // Runner selection state
+  selectedRunner: RunnerData | null;
+  setSelectedRunnerId: (id: number | null) => void;
+  // Agent types filtered by selected runner's capabilities
+  availableAgentTypes: AgentTypeData[];
 }
 
 /**
  * Hook to load data required for pod creation (runners, agents, repositories)
+ * Agent types are filtered based on the selected runner's capabilities
  * Only loads when enabled is true (e.g., when modal is open)
  */
 export function usePodCreationData(enabled: boolean): PodCreationData {
@@ -26,7 +32,9 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
   const [repositories, setRepositories] = useState<RepositoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRunnerId, setSelectedRunnerId] = useState<number | null>(null);
 
+  // Load runners, agents, and repositories
   useEffect(() => {
     if (!enabled) return;
 
@@ -48,7 +56,7 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
           // Only online runners
           const allRunners = runnersRes.value.runners || [];
           const onlineRunners = allRunners.filter(r => r.status === "online");
-          console.log("[usePodCreationData] Runners loaded:", allRunners.length, "total,", onlineRunners.length, "online", allRunners.map(r => ({ id: r.id, node_id: r.node_id, status: r.status })));
+          console.log("[usePodCreationData] Runners loaded:", allRunners.length, "total,", onlineRunners.length, "online");
           setRunners(onlineRunners);
         }
         if (agentsRes.status === "fulfilled") {
@@ -78,5 +86,46 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
     };
   }, [enabled]);
 
-  return { runners, agentTypes, repositories, loading, error };
+  // Reset selected runner when modal closes
+  useEffect(() => {
+    if (!enabled) {
+      setSelectedRunnerId(null);
+    }
+  }, [enabled]);
+
+  // Get selected runner object
+  const selectedRunner = useMemo(() => {
+    if (!selectedRunnerId) return null;
+    return runners.find(r => r.id === selectedRunnerId) || null;
+  }, [runners, selectedRunnerId]);
+
+  // Filter agent types based on selected runner's capabilities
+  const availableAgentTypes = useMemo((): AgentTypeData[] => {
+    if (!selectedRunner?.capabilities || selectedRunner.capabilities.length === 0) {
+      // If no runner selected or no capabilities, return empty list
+      return [];
+    }
+
+    // Collect unique agent slugs from all plugin capabilities
+    const supportedSlugs = new Set<string>();
+    for (const cap of selectedRunner.capabilities) {
+      for (const agent of cap.supported_agents || []) {
+        supportedSlugs.add(agent);
+      }
+    }
+
+    // Filter agent types by supported slugs
+    return agentTypes.filter(agent => supportedSlugs.has(agent.slug));
+  }, [selectedRunner, agentTypes]);
+
+  return {
+    runners,
+    agentTypes,
+    repositories,
+    loading,
+    error,
+    selectedRunner,
+    setSelectedRunnerId,
+    availableAgentTypes,
+  };
 }

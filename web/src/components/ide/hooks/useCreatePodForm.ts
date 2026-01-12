@@ -6,8 +6,8 @@ import { userAgentCredentialApi, CredentialProfileData } from "@/lib/api";
  * Validation errors for the form
  */
 export interface FormValidationErrors {
-  agent?: string;
   runner?: string;
+  agent?: string;
   repository?: string;
   branch?: string;
   prompt?: string;
@@ -17,9 +17,8 @@ export interface FormValidationErrors {
 export const RUNNER_HOST_PROFILE_ID = 0;
 
 export interface CreatePodFormState {
-  // Selection state
+  // Selection state (order: Runner -> Agent -> Others)
   selectedAgent: number | null;
-  selectedRunner: number | null;
   selectedRepository: number | null;
   selectedBranch: string;
   selectedCredentialProfile: number; // 0 = RunnerHost, >0 = custom profile ID
@@ -31,7 +30,6 @@ export interface CreatePodFormState {
 
   // Actions
   setSelectedAgent: (id: number | null) => void;
-  setSelectedRunner: (id: number | null) => void;
   setSelectedRepository: (id: number | null) => void;
   setSelectedBranch: (branch: string) => void;
   setSelectedCredentialProfile: (id: number) => void;
@@ -48,20 +46,21 @@ export interface CreatePodFormState {
 
   // Actions
   reset: () => void;
-  validate: () => boolean;
-  submit: (pluginConfig: Record<string, unknown>) => Promise<PodData | null>;
+  validate: (selectedRunnerId: number | null) => boolean;
+  submit: (selectedRunnerId: number | null, pluginConfig: Record<string, unknown>) => Promise<PodData | null>;
 }
 
 /**
  * Hook to manage Create Pod form state and submission
+ * Note: Runner selection is managed by usePodCreationData
+ * This hook manages agent selection and other form fields
  */
 export function useCreatePodForm(
-  agentTypes: AgentTypeData[],
+  availableAgentTypes: AgentTypeData[],
   repositories: RepositoryData[],
   onSuccess?: (pod: PodData) => void
 ): CreatePodFormState {
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
-  const [selectedRunner, setSelectedRunner] = useState<number | null>(null);
   const [selectedRepository, setSelectedRepository] = useState<number | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [selectedCredentialProfile, setSelectedCredentialProfile] = useState<number>(RUNNER_HOST_PROFILE_ID);
@@ -77,14 +76,24 @@ export function useCreatePodForm(
   // Compute agent slug from selected agent
   const selectedAgentSlug = useMemo(() => {
     if (!selectedAgent) return "";
-    const agent = agentTypes.find((a) => a.id === selectedAgent);
+    const agent = availableAgentTypes.find((a) => a.id === selectedAgent);
     return agent?.slug || "";
-  }, [selectedAgent, agentTypes]);
+  }, [selectedAgent, availableAgentTypes]);
 
-  // Compute form validity
+  // Compute form validity (runner validation is done externally)
   const isValid = useMemo(() => {
-    return selectedAgent !== null && selectedRunner !== null;
-  }, [selectedAgent, selectedRunner]);
+    return selectedAgent !== null;
+  }, [selectedAgent]);
+
+  // Reset agent selection when available agent types change (e.g., when runner changes)
+  useEffect(() => {
+    // If current selection is not in available types, reset it
+    if (selectedAgent && !availableAgentTypes.find(a => a.id === selectedAgent)) {
+      setSelectedAgent(null);
+      setCredentialProfiles([]);
+      setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
+    }
+  }, [availableAgentTypes, selectedAgent]);
 
   // Auto-select default branch when repository is selected
   useEffect(() => {
@@ -140,22 +149,16 @@ export function useCreatePodForm(
     }
   }, [selectedAgent, validationErrors.agent]);
 
-  useEffect(() => {
-    if (selectedRunner && validationErrors.runner) {
-      setValidationErrors((prev) => ({ ...prev, runner: undefined }));
-    }
-  }, [selectedRunner, validationErrors.runner]);
-
   // Validate form
-  const validate = useCallback((): boolean => {
+  const validate = useCallback((selectedRunnerId: number | null): boolean => {
     const errors: FormValidationErrors = {};
+
+    if (!selectedRunnerId) {
+      errors.runner = "Please select a runner";
+    }
 
     if (!selectedAgent) {
       errors.agent = "Please select an agent type";
-    }
-
-    if (!selectedRunner) {
-      errors.runner = "Please select a runner";
     }
 
     // Branch validation: if repository is selected but branch is empty, warn
@@ -173,12 +176,11 @@ export function useCreatePodForm(
 
     setValidationErrors(errors);
     return Object.keys(errors).filter(k => errors[k as keyof FormValidationErrors]).length === 0;
-  }, [selectedAgent, selectedRunner, selectedRepository, selectedBranch]);
+  }, [selectedAgent, selectedRepository, selectedBranch]);
 
   // Reset form
   const reset = useCallback(() => {
     setSelectedAgent(null);
-    setSelectedRunner(null);
     setSelectedRepository(null);
     setSelectedBranch("");
     setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
@@ -190,14 +192,14 @@ export function useCreatePodForm(
 
   // Submit form
   const submit = useCallback(
-    async (pluginConfig: Record<string, unknown>): Promise<PodData | null> => {
+    async (selectedRunnerId: number | null, pluginConfig: Record<string, unknown>): Promise<PodData | null> => {
       // Validate before submission
-      if (!validate()) {
+      if (!validate(selectedRunnerId)) {
         return null;
       }
 
-      if (!selectedAgent || !selectedRunner) {
-        setError("Please select an agent and runner");
+      if (!selectedRunnerId || !selectedAgent) {
+        setError("Please select a runner and agent");
         return null;
       }
 
@@ -206,22 +208,18 @@ export function useCreatePodForm(
 
       try {
         // Build plugin config for API
-        // Keep the full key format (plugin.field) to avoid name collisions
-        // between plugins that have fields with the same name
         const config: Record<string, unknown> = {
           agent_type: selectedAgentSlug,
-          // Spread plugin config directly - keys are already namespaced as "plugin.field"
           ...pluginConfig,
         };
 
         const response = await podApi.create({
           agent_type_id: selectedAgent,
-          runner_id: selectedRunner,
+          runner_id: selectedRunnerId,
           repository_id: selectedRepository || undefined,
           branch_name: selectedBranch || undefined,
           initial_prompt: prompt,
           plugin_config: config,
-          // Pass credential profile: 0 = RunnerHost, >0 = custom profile ID
           credential_profile_id: selectedCredentialProfile > 0 ? selectedCredentialProfile : undefined,
         });
 
@@ -239,12 +237,11 @@ export function useCreatePodForm(
         setLoading(false);
       }
     },
-    [selectedAgent, selectedRunner, selectedRepository, selectedBranch, selectedCredentialProfile, prompt, selectedAgentSlug, onSuccess, validate]
+    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, selectedCredentialProfile, prompt, onSuccess, validate]
   );
 
   return {
     selectedAgent,
-    selectedRunner,
     selectedRepository,
     selectedBranch,
     selectedCredentialProfile,
@@ -252,7 +249,6 @@ export function useCreatePodForm(
     credentialProfiles,
     loadingCredentials,
     setSelectedAgent,
-    setSelectedRunner,
     setSelectedRepository,
     setSelectedBranch,
     setSelectedCredentialProfile,

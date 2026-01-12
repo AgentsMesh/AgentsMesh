@@ -1,32 +1,5 @@
 import { request, orgPath } from "./base";
 
-// Runner interface matching the store
-export interface RunnerData {
-  id: number;
-  node_id: string;
-  description?: string;
-  status: "online" | "offline" | "maintenance" | "busy";
-  last_heartbeat?: string;
-  current_pods: number;
-  max_concurrent_pods: number;
-  runner_version?: string;
-  is_enabled: boolean;
-  host_info?: {
-    os?: string;
-    arch?: string;
-    memory?: number;
-    cpu_cores?: number;
-    hostname?: string;
-  };
-  created_at: string;
-  updated_at: string;
-  active_pods?: Array<{
-    pod_key: string;
-    status: string;
-    agent_status: string;
-  }>;
-}
-
 // Plugin capability types for dynamic forms
 export interface UIOption {
   value: string;
@@ -57,6 +30,34 @@ export interface PluginCapability {
   description: string;
   supported_agents: string[];
   ui?: UIConfig;
+}
+
+// Runner interface matching the store
+export interface RunnerData {
+  id: number;
+  node_id: string;
+  description?: string;
+  status: "online" | "offline" | "maintenance" | "busy";
+  last_heartbeat?: string;
+  current_pods: number;
+  max_concurrent_pods: number;
+  runner_version?: string;
+  is_enabled: boolean;
+  host_info?: {
+    os?: string;
+    arch?: string;
+    memory?: number;
+    cpu_cores?: number;
+    hostname?: string;
+  };
+  capabilities?: PluginCapability[];
+  created_at: string;
+  updated_at: string;
+  active_pods?: Array<{
+    pod_key: string;
+    status: string;
+    agent_status: string;
+  }>;
 }
 
 export const runnerApi = {
