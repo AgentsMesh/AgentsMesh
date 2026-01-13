@@ -103,17 +103,13 @@ export function TicketCreateDialog({
       setError(t("tickets.createDialog.titleRequired"));
       return;
     }
-    if (!form.repositoryId) {
-      setError(t("tickets.createDialog.repositoryRequired"));
-      return;
-    }
 
     setLoading(true);
     setError(null);
 
     try {
       const response = await ticketApi.create({
-        repositoryId: form.repositoryId,
+        repositoryId: form.repositoryId || undefined,
         title: form.title.trim(),
         description: form.description.trim() || undefined,
         content: form.content || undefined,
@@ -205,7 +201,7 @@ export function TicketCreateDialog({
             {/* Repository */}
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                {t("tickets.createDialog.repository")} <span className="text-destructive">*</span>
+                {t("tickets.createDialog.repository")}
               </label>
               <RepositorySelect
                 value={form.repositoryId}

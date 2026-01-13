@@ -87,7 +87,7 @@ export const ticketApi = {
   },
 
   create: (data: {
-    repositoryId: number;
+    repositoryId?: number;
     type: string;
     title: string;
     description?: string;
