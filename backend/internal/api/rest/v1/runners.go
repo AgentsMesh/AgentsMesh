@@ -114,10 +114,8 @@ type CreateTokenRequest struct {
 // POST /api/v1/organizations/:slug/runners/tokens
 func (h *RunnerHandler) CreateRegistrationToken(c *gin.Context) {
 	var req CreateTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// Allow empty body - all fields are optional
+	_ = c.ShouldBindJSON(&req)
 
 	tenant := middleware.GetTenant(c)
 

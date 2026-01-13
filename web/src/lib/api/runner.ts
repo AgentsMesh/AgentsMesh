@@ -92,6 +92,7 @@ export const runnerApi = {
   createToken: () =>
     request<{ token: string; message: string }>(orgPath("/runners/tokens"), {
       method: "POST",
+      body: JSON.stringify({}),
     }),
 
   // Get plugin options for a runner and agent type

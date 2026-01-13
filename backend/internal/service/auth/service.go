@@ -396,8 +396,9 @@ func getGitHubAuthURL(cfg OAuthConfig, state string) string {
 }
 
 func handleGitHubCallback(ctx context.Context, cfg OAuthConfig, code string) (*OAuthUserInfo, error) {
-	// Exchange code for access token
-	tokenResp, err := http.PostForm("https://github.com/login/oauth/access_token", url.Values{
+	// Exchange code for access token (use client with timeout)
+	client := &http.Client{Timeout: 30 * time.Second}
+	tokenResp, err := client.PostForm("https://github.com/login/oauth/access_token", url.Values{
 		"client_id":     {cfg.ClientID},
 		"client_secret": {cfg.ClientSecret},
 		"code":          {code},
