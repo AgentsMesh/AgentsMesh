@@ -235,7 +235,11 @@ export default function RegisterPage() {
           <Button
             variant="outline"
             type="button"
-            onClick={() => (window.location.href = "/api/auth/oauth/github")}
+            onClick={() => {
+              const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+              const redirectUrl = encodeURIComponent(window.location.origin + "/auth/callback");
+              window.location.href = `${apiUrl}/api/v1/oauth/github?redirect=${redirectUrl}`;
+            }}
           >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path
