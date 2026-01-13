@@ -7,6 +7,8 @@ export type EventType =
   | "pod:status_changed"
   | "pod:agent_status_changed"
   | "pod:terminated"
+  | "pod:title_changed"
+  | "channel:message"
   | "ticket:created"
   | "ticket:updated"
   | "ticket:status_changed"
@@ -104,6 +106,28 @@ export interface TaskCompletedData {
   pod_key: string;
   agent_status: string;
   ticket_id?: number;
+}
+
+/**
+ * Pod title changed event payload (OSC 0/2)
+ */
+export interface PodTitleChangedData {
+  pod_key: string;
+  title: string;
+}
+
+/**
+ * Channel message event payload
+ */
+export interface ChannelMessageData {
+  id: number;
+  channel_id: number;
+  sender_pod?: string;
+  sender_user_id?: number;
+  message_type: string;
+  content: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
 }
 
 /**

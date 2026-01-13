@@ -213,6 +213,8 @@ func (tr *TerminalRouter) handleTerminalOutput(runnerID int64, data *TerminalOut
 	// Check for OSC 777/9 notifications and publish events
 	if tr.oscDetector != nil {
 		tr.oscDetector.DetectAndPublish(context.Background(), podKey, data.Data)
+		// Check for OSC 0/2 title changes and publish events
+		tr.oscDetector.DetectAndPublishTitle(context.Background(), podKey, data.Data)
 	}
 
 	// Route to all connected clients

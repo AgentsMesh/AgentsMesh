@@ -88,6 +88,9 @@ func main() {
 	podEventPublisher := agentpod.NewEventBusPublisher(eventBus, appLogger.Logger)
 	services.pod.SetEventPublisher(podEventPublisher)
 
+	// Setup channel service event publishing for real-time message broadcast
+	services.channel.SetEventBus(eventBus)
+
 	// Start Redis subscriber for multi-instance sync (if Redis is available)
 	if redisClient != nil {
 		eventBus.StartRedisSubscriber(context.Background())

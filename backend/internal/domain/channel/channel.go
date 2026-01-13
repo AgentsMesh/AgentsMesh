@@ -6,6 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentmesh/backend/internal/domain/user"
 	"github.com/lib/pq"
 )
 
@@ -84,7 +86,9 @@ type Message struct {
 	CreatedAt time.Time `gorm:"not null;default:now();index" json:"created_at"`
 
 	// Associations
-	Channel *Channel `gorm:"foreignKey:ChannelID" json:"channel,omitempty"`
+	Channel       *Channel       `gorm:"foreignKey:ChannelID" json:"channel,omitempty"`
+	SenderUser    *user.User     `gorm:"foreignKey:SenderUserID" json:"sender_user,omitempty"`
+	SenderPodInfo *agentpod.Pod  `gorm:"foreignKey:SenderPod;references:PodKey" json:"sender_pod_info,omitempty"`
 }
 
 func (Message) TableName() string {

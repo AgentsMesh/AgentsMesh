@@ -45,9 +45,10 @@ type PtySize struct {
 	Rows int
 }
 
-// PodInfoGetter interface for getting pod information
+// PodInfoGetter interface for getting and updating pod information
 type PodInfoGetter interface {
 	GetPodOrganizationAndCreator(ctx context.Context, podKey string) (orgID, creatorID int64, err error)
+	UpdatePodTitle(ctx context.Context, podKey, title string) error
 }
 
 // terminalShard holds a subset of terminal data with its own lock

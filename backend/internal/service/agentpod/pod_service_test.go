@@ -36,6 +36,14 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		description TEXT
 	)`)
 
+	db.Exec(`CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY,
+		username TEXT,
+		name TEXT,
+		email TEXT
+	)`)
+	db.Exec("INSERT INTO users (id, username, name, email) VALUES (1, 'testuser', 'Test User', 'test@example.com')")
+
 	// GORM converts PtyPID -> pty_p_id, AgentPID -> agent_p_id
 	// But service uses raw column names (pty_pid, agent_pid) in Updates()
 	// We create columns for both to handle both cases
@@ -64,6 +72,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		model TEXT,
 		permission_mode TEXT,
 		think_level TEXT,
+		title TEXT,
 		config_overrides TEXT DEFAULT '{}',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -947,6 +956,129 @@ func TestErrors(t *testing.T) {
 		if tt.err.Error() != tt.expected {
 			t.Errorf("Error message = %s, want %s", tt.err.Error(), tt.expected)
 		}
+	}
+}
+
+func TestUpdatePodTitle(t *testing.T) {
+	db := setupTestDB(t)
+	svc := NewPodService(db)
+	ctx := context.Background()
+
+	// Create a pod first
+	req := &CreatePodRequest{
+		OrganizationID: 1,
+		RunnerID:       1,
+		CreatedByID:    1,
+	}
+	pod, err := svc.CreatePod(ctx, req)
+	if err != nil {
+		t.Fatalf("CreatePod failed: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		podKey  string
+		title   string
+		wantErr bool
+	}{
+		{
+			name:    "update title successfully",
+			podKey:  pod.PodKey,
+			title:   "My Custom Title",
+			wantErr: false,
+		},
+		{
+			name:    "update title with special characters",
+			podKey:  pod.PodKey,
+			title:   "Title with \"quotes\" and 'apostrophes'",
+			wantErr: false,
+		},
+		{
+			name:    "update title to empty",
+			podKey:  pod.PodKey,
+			title:   "",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := svc.UpdatePodTitle(ctx, tt.podKey, tt.title)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdatePodTitle() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr {
+				updated, _ := svc.GetPod(ctx, tt.podKey)
+				if tt.title == "" {
+					// Empty title should still work
+					if updated.Title != nil && *updated.Title != "" {
+						t.Errorf("Title = %v, want empty", *updated.Title)
+					}
+				} else {
+					if updated.Title == nil || *updated.Title != tt.title {
+						t.Errorf("Title = %v, want %v", updated.Title, tt.title)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestGetPodOrganizationAndCreator(t *testing.T) {
+	db := setupTestDB(t)
+	svc := NewPodService(db)
+	ctx := context.Background()
+
+	// Create a pod first
+	req := &CreatePodRequest{
+		OrganizationID: 42,
+		RunnerID:       1,
+		CreatedByID:    99,
+	}
+	pod, err := svc.CreatePod(ctx, req)
+	if err != nil {
+		t.Fatalf("CreatePod failed: %v", err)
+	}
+
+	tests := []struct {
+		name          string
+		podKey        string
+		wantOrgID     int64
+		wantCreatorID int64
+		wantErr       bool
+	}{
+		{
+			name:          "existing pod",
+			podKey:        pod.PodKey,
+			wantOrgID:     42,
+			wantCreatorID: 99,
+			wantErr:       false,
+		},
+		{
+			name:          "non-existent pod",
+			podKey:        "non-existent-pod-key",
+			wantOrgID:     0,
+			wantCreatorID: 0,
+			wantErr:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			orgID, creatorID, err := svc.GetPodOrganizationAndCreator(ctx, tt.podKey)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetPodOrganizationAndCreator() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if orgID != tt.wantOrgID {
+				t.Errorf("orgID = %v, want %v", orgID, tt.wantOrgID)
+			}
+			if creatorID != tt.wantCreatorID {
+				t.Errorf("creatorID = %v, want %v", creatorID, tt.wantCreatorID)
+			}
+		})
 	}
 }
 

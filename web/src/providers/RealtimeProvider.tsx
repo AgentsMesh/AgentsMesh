@@ -6,7 +6,9 @@ import { usePodStore } from "@/stores/pod";
 import { useRunnerStore } from "@/stores/runner";
 import { useTicketStore } from "@/stores/ticket";
 import { useDevMeshStore } from "@/stores/devmesh";
-import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData } from "@/lib/realtime";
+import { useWorkspaceStore } from "@/stores/workspace";
+import { useChannelStore } from "@/stores/channel";
+import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData, PodTitleChangedData, ChannelMessageData } from "@/lib/realtime";
 
 interface RealtimeContextValue {
   connectionState: ConnectionState;
@@ -51,6 +53,8 @@ export function RealtimeProvider({
   const runnerStore = useRunnerStore();
   const ticketStore = useTicketStore();
   const devMeshStore = useDevMeshStore();
+  const workspaceStore = useWorkspaceStore();
+  const channelStore = useChannelStore();
 
   // Handle all events and route to appropriate stores
   const handleEvent = useCallback(
@@ -117,6 +121,14 @@ export function RealtimeProvider({
           break;
         }
 
+        case "pod:title_changed": {
+          const data = event.data as PodTitleChangedData;
+          // Update terminal pane title in workspace store
+          workspaceStore.updatePaneTitle(data.pod_key, data.title);
+          console.log("[Realtime] Pod title changed:", data.pod_key, data.title);
+          break;
+        }
+
         // Runner events
         case "runner:online":
         case "runner:offline":
@@ -146,6 +158,27 @@ export function RealtimeProvider({
           break;
         }
 
+        // Channel events
+        case "channel:message": {
+          const data = event.data as ChannelMessageData;
+          // Only add message if it belongs to the current channel
+          const currentChannel = channelStore.currentChannel;
+          if (currentChannel && currentChannel.id === data.channel_id) {
+            channelStore.addMessage({
+              id: data.id,
+              channel_id: data.channel_id,
+              sender_pod: data.sender_pod,
+              sender_user_id: data.sender_user_id,
+              message_type: data.message_type as "text" | "system" | "code" | "command",
+              content: data.content,
+              metadata: data.metadata,
+              created_at: data.created_at,
+            });
+          }
+          console.log("[Realtime] Channel message:", data.channel_id, data.id);
+          break;
+        }
+
         // Notification events
         case "terminal:notification": {
           const data = event.data as TerminalNotificationData;
@@ -165,7 +198,7 @@ export function RealtimeProvider({
           console.log("[Realtime] Unknown event:", event.type);
       }
     },
-    [podStore, runnerStore, ticketStore, devMeshStore, onTerminalNotification, onTaskCompleted]
+    [podStore, runnerStore, ticketStore, devMeshStore, workspaceStore, channelStore, onTerminalNotification, onTaskCompleted]
   );
 
   // Subscribe to all events

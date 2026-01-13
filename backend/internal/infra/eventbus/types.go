@@ -26,6 +26,10 @@ const (
 	EventPodStatusChanged EventType = "pod:status_changed"
 	EventPodAgentChanged  EventType = "pod:agent_status_changed"
 	EventPodTerminated    EventType = "pod:terminated"
+	EventPodTitleChanged  EventType = "pod:title_changed"
+
+	// Channel events
+	EventChannelMessage EventType = "channel:message"
 
 	// Ticket events
 	EventTicketCreated       EventType = "ticket:created"
@@ -130,4 +134,22 @@ type TaskCompletedData struct {
 	PodKey      string `json:"pod_key"`
 	AgentStatus string `json:"agent_status"`
 	TicketID    *int64 `json:"ticket_id,omitempty"`
+}
+
+// PodTitleChangedData represents the payload for pod title change events
+type PodTitleChangedData struct {
+	PodKey string `json:"pod_key"`
+	Title  string `json:"title"`
+}
+
+// ChannelMessageData represents the payload for channel message events
+type ChannelMessageData struct {
+	ID           int64             `json:"id"`
+	ChannelID    int64             `json:"channel_id"`
+	SenderPod    *string           `json:"sender_pod,omitempty"`
+	SenderUserID *int64            `json:"sender_user_id,omitempty"`
+	MessageType  string            `json:"message_type"`
+	Content      string            `json:"content"`
+	Metadata     map[string]any    `json:"metadata,omitempty"`
+	CreatedAt    string            `json:"created_at"`
 }

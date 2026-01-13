@@ -90,6 +90,176 @@ func TestDetectNotifications_Mixed(t *testing.T) {
 	assert.Equal(t, "Claude says hi", result[1].Body)
 }
 
+func TestDetectTitle_OSC0(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     []byte
+		expected *OSCTitleUpdate
+	}{
+		{
+			name:     "no title sequence",
+			data:     []byte("hello world"),
+			expected: nil,
+		},
+		{
+			name:     "OSC 0 title",
+			data:     []byte("\x1b]0;My Terminal Title\x07"),
+			expected: &OSCTitleUpdate{Title: "My Terminal Title"},
+		},
+		{
+			name:     "OSC 0 with surrounding text",
+			data:     []byte("some output\x1b]0;Custom Title\x07more output"),
+			expected: &OSCTitleUpdate{Title: "Custom Title"},
+		},
+		{
+			name:     "multiple OSC 0 returns last",
+			data:     []byte("\x1b]0;First\x07\x1b]0;Second\x07"),
+			expected: &OSCTitleUpdate{Title: "Second"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DetectTitle(tt.data)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestDetectTitle_OSC2(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     []byte
+		expected *OSCTitleUpdate
+	}{
+		{
+			name:     "OSC 2 title",
+			data:     []byte("\x1b]2;Window Title\x07"),
+			expected: &OSCTitleUpdate{Title: "Window Title"},
+		},
+		{
+			name:     "OSC 2 takes precedence over OSC 0",
+			data:     []byte("\x1b]0;Icon Title\x07\x1b]2;Window Title\x07"),
+			expected: &OSCTitleUpdate{Title: "Window Title"},
+		},
+		{
+			name:     "last title wins when mixed",
+			data:     []byte("\x1b]2;Window\x07\x1b]0;Icon\x07"),
+			expected: &OSCTitleUpdate{Title: "Window"}, // OSC 2 processed after OSC 0 in code
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DetectTitle(tt.data)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestDetectTitle_Empty(t *testing.T) {
+	result := DetectTitle([]byte("\x1b]0;\x07"))
+	assert.Nil(t, result)
+}
+
+func TestOSCDetector_DetectAndPublishTitle_Success(t *testing.T) {
+	eb := eventbus.NewEventBus(nil, newTestLogger())
+	defer eb.Close()
+
+	getter := &mockPodInfoGetter{orgID: 100, creatorID: 1}
+	detector := NewOSCDetector(eb, getter)
+
+	// Subscribe to capture events
+	var receivedEvents []*eventbus.Event
+	var mu sync.Mutex
+	eb.Subscribe(eventbus.EventPodTitleChanged, func(event *eventbus.Event) {
+		mu.Lock()
+		receivedEvents = append(receivedEvents, event)
+		mu.Unlock()
+	})
+
+	// Detect and publish OSC 0 title
+	ctx := context.Background()
+	data := []byte("\x1b]0;My Custom Title\x07")
+	result := detector.DetectAndPublishTitle(ctx, "pod-test-123", data)
+
+	assert.True(t, result)
+	assert.Equal(t, "My Custom Title", getter.updatedTitle)
+}
+
+func TestOSCDetector_DetectAndPublishTitle_NoTitle(t *testing.T) {
+	eb := eventbus.NewEventBus(nil, newTestLogger())
+	defer eb.Close()
+
+	getter := &mockPodInfoGetter{orgID: 100, creatorID: 1}
+	detector := NewOSCDetector(eb, getter)
+
+	ctx := context.Background()
+	data := []byte("regular terminal output without title")
+	result := detector.DetectAndPublishTitle(ctx, "pod-test-123", data)
+
+	assert.False(t, result)
+}
+
+func TestOSCDetector_DetectAndPublishTitle_NilEventBus(t *testing.T) {
+	getter := &mockPodInfoGetter{orgID: 100, creatorID: 1}
+	detector := &OSCDetector{
+		eventBus:      nil,
+		podInfoGetter: getter,
+	}
+
+	ctx := context.Background()
+	data := []byte("\x1b]0;test\x07")
+	result := detector.DetectAndPublishTitle(ctx, "pod-123", data)
+
+	assert.False(t, result)
+}
+
+func TestOSCDetector_DetectAndPublishTitle_NilPodInfoGetter(t *testing.T) {
+	eb := eventbus.NewEventBus(nil, newTestLogger())
+	defer eb.Close()
+
+	detector := &OSCDetector{
+		eventBus:      eb,
+		podInfoGetter: nil,
+	}
+
+	ctx := context.Background()
+	data := []byte("\x1b]0;test\x07")
+	result := detector.DetectAndPublishTitle(ctx, "pod-123", data)
+
+	assert.False(t, result)
+}
+
+func TestOSCDetector_DetectAndPublishTitle_PodInfoError(t *testing.T) {
+	eb := eventbus.NewEventBus(nil, newTestLogger())
+	defer eb.Close()
+
+	getter := &mockPodInfoGetter{err: errors.New("pod not found")}
+	detector := NewOSCDetector(eb, getter)
+
+	ctx := context.Background()
+	data := []byte("\x1b]0;test title\x07")
+	result := detector.DetectAndPublishTitle(ctx, "pod-unknown", data)
+
+	assert.False(t, result)
+}
+
+func TestOSCDetector_DetectAndPublishTitle_UpdateTitleError(t *testing.T) {
+	eb := eventbus.NewEventBus(nil, newTestLogger())
+	defer eb.Close()
+
+	getter := &mockPodInfoGetter{orgID: 100, creatorID: 1, titleErr: errors.New("db error")}
+	detector := NewOSCDetector(eb, getter)
+
+	ctx := context.Background()
+	data := []byte("\x1b]0;test title\x07")
+	result := detector.DetectAndPublishTitle(ctx, "pod-123", data)
+
+	// Should return true because event is still published (best effort persistence)
+	assert.True(t, result)
+}
+
 func TestEscapeJSON(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -138,13 +308,20 @@ func TestNewOSCDetector(t *testing.T) {
 
 // mockPodInfoGetter implements PodInfoGetter for testing
 type mockPodInfoGetter struct {
-	orgID     int64
-	creatorID int64
-	err       error
+	orgID       int64
+	creatorID   int64
+	err         error
+	titleErr    error
+	updatedTitle string
 }
 
 func (m *mockPodInfoGetter) GetPodOrganizationAndCreator(ctx context.Context, podKey string) (orgID, creatorID int64, err error) {
 	return m.orgID, m.creatorID, m.err
+}
+
+func (m *mockPodInfoGetter) UpdatePodTitle(ctx context.Context, podKey, title string) error {
+	m.updatedTitle = title
+	return m.titleErr
 }
 
 func TestOSCDetector_DetectAndPublish_Success(t *testing.T) {

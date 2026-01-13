@@ -119,18 +119,48 @@ func (a *AgentTypeField) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// PodCreator represents the user who created a pod.
+type PodCreator struct {
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Name     string `json:"name,omitempty"`
+}
+
+// PodTicket represents the ticket associated with a pod.
+type PodTicket struct {
+	ID         int    `json:"id"`
+	Identifier string `json:"identifier,omitempty"`
+	Title      string `json:"title"`
+}
+
 // AvailablePod represents a pod available for collaboration.
 type AvailablePod struct {
+	ID          int            `json:"id"`
 	PodKey      string         `json:"pod_key"`
-	UserID      int            `json:"user_id"`
-	Username    string         `json:"username"`
+	Title       *string        `json:"title,omitempty"`
+	CreatedByID int            `json:"created_by_id"`
+	CreatedBy   *PodCreator    `json:"created_by,omitempty"`
 	Status      PodStatus      `json:"status"`
 	TicketID    *int           `json:"ticket_id,omitempty"`
-	TicketTitle string         `json:"ticket_title,omitempty"`
-	ProjectID   *int           `json:"project_id,omitempty"`
-	ProjectName string         `json:"project_name,omitempty"`
+	Ticket      *PodTicket     `json:"ticket,omitempty"`
 	AgentType   AgentTypeField `json:"agent_type,omitempty"`
 	CreatedAt   string         `json:"created_at"`
+}
+
+// GetUsername returns the username of the pod creator.
+func (p *AvailablePod) GetUsername() string {
+	if p.CreatedBy != nil {
+		return p.CreatedBy.Username
+	}
+	return ""
+}
+
+// GetTicketTitle returns the title of the associated ticket.
+func (p *AvailablePod) GetTicketTitle() string {
+	if p.Ticket != nil {
+		return p.Ticket.Title
+	}
+	return ""
 }
 
 // TerminalOutput represents terminal observation output.

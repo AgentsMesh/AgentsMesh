@@ -5,6 +5,8 @@ import (
 
 	"github.com/anthropics/agentmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentmesh/backend/internal/domain/ticket"
+	"github.com/anthropics/agentmesh/backend/internal/domain/user"
 )
 
 // Pod status constants
@@ -85,6 +87,9 @@ type Pod struct {
 	PermissionMode *string `gorm:"size:50" json:"permission_mode,omitempty"` // plan/default/bypassPermissions
 	ThinkLevel     *string `gorm:"size:50" json:"think_level,omitempty"`     // ultrathink/megathink
 
+	// Terminal title from OSC 0/2 escape sequences
+	Title *string `gorm:"size:255" json:"title,omitempty"`
+
 	// ConfigOverrides stores pod-level configuration overrides
 	// Merged with organization defaults during Pod creation
 	ConfigOverrides agent.ConfigValues `gorm:"type:jsonb;default:'{}'" json:"config_overrides,omitempty"`
@@ -96,6 +101,8 @@ type Pod struct {
 	Runner          *runner.Runner         `gorm:"foreignKey:RunnerID" json:"runner,omitempty"`
 	AgentType       *agent.AgentType       `gorm:"foreignKey:AgentTypeID" json:"agent_type,omitempty"`
 	CustomAgentType *agent.CustomAgentType `gorm:"foreignKey:CustomAgentTypeID" json:"custom_agent_type,omitempty"`
+	Ticket          *ticket.Ticket         `gorm:"foreignKey:TicketID" json:"ticket,omitempty"`
+	CreatedBy       *user.User             `gorm:"foreignKey:CreatedByID" json:"created_by,omitempty"`
 }
 
 func (Pod) TableName() string {
