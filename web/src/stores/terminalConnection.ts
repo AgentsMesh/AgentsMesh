@@ -28,15 +28,27 @@ export interface ConnectionHandle {
 }
 
 /**
+ * Serialized terminal state for restoration
+ */
+export interface SerializedTerminalState {
+  data: string;
+  cols: number;
+  rows: number;
+  timestamp: number;
+}
+
+/**
  * Terminal connection pool for managing WebSocket connections
  */
 class TerminalConnectionPool {
   private connections: Map<string, TerminalConnection> = new Map();
+  private serializedStates: Map<string, SerializedTerminalState> = new Map();
   private maxBufferSize = 100;
   private maxReconnectAttempts = 5;
   private baseReconnectDelay = 1000;
   private resizeDebounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private resizeDebounceMs = 150;
+  private maxSerializedStateAge = 30 * 60 * 1000; // 30 minutes
 
   getConnection(podKey: string): TerminalConnection | undefined {
     return this.connections.get(podKey);
@@ -47,9 +59,8 @@ class TerminalConnectionPool {
 
     if (conn) {
       conn.listeners.add(onMessage);
-      for (const data of conn.buffer) {
-        onMessage(data);
-      }
+      // Note: Don't replay buffer here - backend will send scrollback data on new WebSocket connection
+      // The buffer is only used for data continuity during brief disconnections within the same session
       return {
         send: (data: string) => this.send(podKey, data),
         disconnect: () => this.removeListener(podKey, onMessage),
@@ -288,7 +299,7 @@ class TerminalConnectionPool {
     console.log(`Reconnecting terminal for ${podKey}...`);
 
     const listeners = new Set(oldConn.listeners);
-    const buffer = [...oldConn.buffer];
+    // Note: Don't preserve buffer on reconnect - backend will send full scrollback data
     const reconnectAttempts = oldConn.reconnectAttempts;
 
     if (oldConn.ws.readyState === WebSocket.OPEN || oldConn.ws.readyState === WebSocket.CONNECTING) {
@@ -306,7 +317,7 @@ class TerminalConnectionPool {
           if (l !== firstListener) newConn.listeners.add(l);
         });
         newConn.reconnectAttempts = reconnectAttempts;
-        newConn.buffer = buffer;
+        // buffer starts fresh - backend sends scrollback on new connection
       }
     }
   }
@@ -324,6 +335,41 @@ class TerminalConnectionPool {
   isConnected(podKey: string): boolean {
     const conn = this.connections.get(podKey);
     return conn?.status === "connected" && conn.ws.readyState === WebSocket.OPEN;
+  }
+
+  /**
+   * Save serialized terminal state for later restoration
+   */
+  saveSerializedState(podKey: string, data: string, cols: number, rows: number): void {
+    this.serializedStates.set(podKey, {
+      data,
+      cols,
+      rows,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * Get serialized terminal state if available and not expired
+   */
+  getSerializedState(podKey: string): SerializedTerminalState | null {
+    const state = this.serializedStates.get(podKey);
+    if (!state) return null;
+
+    // Check if state is expired
+    if (Date.now() - state.timestamp > this.maxSerializedStateAge) {
+      this.serializedStates.delete(podKey);
+      return null;
+    }
+
+    return state;
+  }
+
+  /**
+   * Clear serialized state after successful restoration
+   */
+  clearSerializedState(podKey: string): void {
+    this.serializedStates.delete(podKey);
   }
 }
 

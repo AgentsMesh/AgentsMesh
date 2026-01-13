@@ -141,9 +141,8 @@ func (tr *TerminalRouter) ConnectClient(podKey string, conn *websocket.Conn) (*T
 	}
 	shard.terminalClients[podKey][client] = true
 
-	// Get current PTY size and scrollback while holding lock
+	// Get current PTY size while holding lock
 	currentSize := shard.ptySize[podKey]
-	buffer := shard.scrollbackBuffers[podKey]
 	shard.mu.Unlock()
 
 	tr.logger.Info("terminal client connected", "pod_key", podKey)
@@ -153,20 +152,10 @@ func (tr *TerminalRouter) ConnectClient(podKey string, conn *websocket.Conn) (*T
 		tr.sendPtyResizedToClient(client, currentSize.Cols, currentSize.Rows)
 	}
 
-	// Send scrollback data to the newly connected client
-	if buffer != nil {
-		data := buffer.GetData()
-		if len(data) > 0 {
-			select {
-			case client.Send <- TerminalMessage{Data: data, IsJSON: false}:
-				tr.logger.Debug("sent scrollback to client",
-					"pod_key", podKey,
-					"size", len(data))
-			default:
-				// Channel full, skip scrollback
-			}
-		}
-	}
+	// Note: We intentionally do NOT send scrollback/history data from backend.
+	// The frontend uses xterm-addon-serialize to save/restore terminal state locally.
+	// This avoids issues with raw scrollback (duplicate display from readline sequences)
+	// and processed VirtualTerminal output (layout issues without ANSI positioning).
 
 	return client, nil
 }
