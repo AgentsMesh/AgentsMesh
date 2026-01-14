@@ -41,6 +41,11 @@ type Scheduler struct {
 	wg        sync.WaitGroup
 	results   chan TaskResult
 	listeners []func(TaskResult)
+
+	// stopped protects results channel from being written after close
+	stopped     bool
+	stoppedMu   sync.RWMutex
+	closeOnce   sync.Once
 }
 
 // scheduledTask wraps a task with its control mechanisms
@@ -102,7 +107,11 @@ func (s *Scheduler) Start() {
 
 		// Run immediately if configured
 		if st.task.RunOnStart {
-			go s.executeTask(st.task)
+			s.wg.Add(1)
+			go func(task *Task) {
+				defer s.wg.Done()
+				s.executeTask(task)
+			}(st.task)
 		}
 	}
 }
@@ -110,6 +119,12 @@ func (s *Scheduler) Start() {
 // Stop gracefully stops all tasks
 func (s *Scheduler) Stop() {
 	s.logger.Info("stopping scheduler")
+
+	// Mark as stopped first to prevent new sends to results channel
+	s.stoppedMu.Lock()
+	s.stopped = true
+	s.stoppedMu.Unlock()
+
 	s.cancel()
 
 	s.mu.RLock()
@@ -135,7 +150,10 @@ func (s *Scheduler) Stop() {
 		s.logger.Warn("some tasks did not stop in time")
 	}
 
-	close(s.results)
+	// Close results channel only once
+	s.closeOnce.Do(func() {
+		close(s.results)
+	})
 }
 
 // OnResult registers a callback for task results
@@ -170,6 +188,23 @@ func (s *Scheduler) executeTask(task *Task) {
 		StartTime: start,
 	}
 
+	// sendResult safely sends result to channel, checking stopped flag first
+	sendResult := func(r TaskResult) {
+		s.stoppedMu.RLock()
+		stopped := s.stopped
+		s.stoppedMu.RUnlock()
+
+		if stopped {
+			return
+		}
+
+		select {
+		case s.results <- r:
+		case <-s.ctx.Done():
+			// Scheduler is stopping, don't block on closed channel
+		}
+	}
+
 	// Panic recovery
 	defer func() {
 		if r := recover(); r != nil {
@@ -183,7 +218,7 @@ func (s *Scheduler) executeTask(task *Task) {
 				"error", result.Error,
 				"duration", result.Duration)
 
-			s.results <- result
+			sendResult(result)
 		}
 	}()
 
@@ -210,7 +245,7 @@ func (s *Scheduler) executeTask(task *Task) {
 			"duration", result.Duration)
 	}
 
-	s.results <- result
+	sendResult(result)
 }
 
 // processResults processes task results and notifies listeners
