@@ -5,8 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/anthropics/agentmesh/backend/internal/domain/user"
 	userService "github.com/anthropics/agentmesh/backend/internal/service/user"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -260,12 +262,24 @@ func TestGenerateState(t *testing.T) {
 }
 
 func TestGenerateOAuthState(t *testing.T) {
+	// Start miniredis for testing
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: mr.Addr(),
+	})
+	defer redisClient.Close()
+
 	cfg := &Config{
 		JWTSecret:     "test-secret",
 		JWTExpiration: time.Hour,
 		Issuer:        "test-issuer",
 	}
-	svc := NewService(cfg, nil)
+	svc := NewServiceWithRedis(cfg, nil, redisClient)
 	ctx := context.Background()
 
 	state, err := svc.GenerateOAuthState(ctx, "github", "https://example.com/callback")
@@ -287,12 +301,24 @@ func TestGenerateOAuthState(t *testing.T) {
 }
 
 func TestValidateOAuthState(t *testing.T) {
+	// Start miniredis for testing
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: mr.Addr(),
+	})
+	defer redisClient.Close()
+
 	cfg := &Config{
 		JWTSecret:     "test-secret",
 		JWTExpiration: time.Hour,
 		Issuer:        "test-issuer",
 	}
-	svc := NewService(cfg, nil)
+	svc := NewServiceWithRedis(cfg, nil, redisClient)
 	ctx := context.Background()
 
 	t.Run("valid state", func(t *testing.T) {

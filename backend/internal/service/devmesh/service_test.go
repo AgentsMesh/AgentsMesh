@@ -41,6 +41,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		model TEXT,
 		permission_mode TEXT,
 		think_level TEXT,
+		title TEXT,
 		config_overrides TEXT DEFAULT '{}',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
