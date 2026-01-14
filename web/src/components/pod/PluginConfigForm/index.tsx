@@ -2,7 +2,7 @@
 
 import React, { memo, useCallback } from "react";
 import type { PluginCapability, UIField } from "@/lib/api/runner";
-import { FieldRenderer, getFieldRenderer } from "./field-renderers";
+import { getFieldRenderer } from "./field-renderers";
 
 interface PluginConfigFormProps {
   plugins: PluginCapability[];
@@ -28,6 +28,8 @@ const FieldWrapper = memo(function FieldWrapper({
   onChange,
 }: FieldWrapperProps) {
   const fieldKey = `${plugin.name}.${field.name}`;
+
+  // Get the renderer component - stable reference from the registry
   const Renderer = getFieldRenderer(field.type);
 
   const handleChange = useCallback(
@@ -37,14 +39,13 @@ const FieldWrapper = memo(function FieldWrapper({
     [plugin.name, field.name, onChange]
   );
 
-  return (
-    <Renderer
-      fieldKey={fieldKey}
-      field={field}
-      value={value}
-      onChange={handleChange}
-    />
-  );
+  // Use createElement to avoid React Compiler's component creation detection
+  return React.createElement(Renderer, {
+    fieldKey,
+    field,
+    value,
+    onChange: handleChange,
+  });
 });
 
 /**

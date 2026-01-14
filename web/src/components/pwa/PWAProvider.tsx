@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { ServiceWorkerRegistration } from "./ServiceWorkerRegistration";
 import { PushNotificationManager } from "./PushNotificationManager";
 
@@ -8,12 +8,22 @@ interface PWAProviderProps {
   children: React.ReactNode;
 }
 
-export function PWAProvider({ children }: PWAProviderProps) {
-  const [mounted, setMounted] = useState(false);
+// Detect client-side mount using useSyncExternalStore
+function subscribe() {
+  return () => {};
+}
+function getSnapshot() {
+  return true;
+}
+function getServerSnapshot() {
+  return false;
+}
+function useIsMounted() {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+export function PWAProvider({ children }: PWAProviderProps) {
+  const mounted = useIsMounted();
 
   // Don't render PWA components during SSR
   if (!mounted) {

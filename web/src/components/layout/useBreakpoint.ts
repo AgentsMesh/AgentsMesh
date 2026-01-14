@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useSyncExternalStore, useMemo } from "react";
 
 /**
  * Responsive breakpoints
@@ -32,6 +32,29 @@ function getBreakpoint(width: number, config: BreakpointConfig): Breakpoint {
   return "mobile";
 }
 
+// Get current window width
+function getWidthSnapshot(): number {
+  return typeof window !== "undefined" ? window.innerWidth : 1200;
+}
+
+// Server snapshot
+function getServerWidthSnapshot(): number {
+  return 1200; // Default to desktop width for SSR
+}
+
+// Subscribe to resize events
+function subscribeToResize(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  window.addEventListener("resize", callback);
+  window.addEventListener("orientationchange", callback);
+
+  return () => {
+    window.removeEventListener("resize", callback);
+    window.removeEventListener("orientationchange", callback);
+  };
+}
+
 /**
  * Hook to detect current responsive breakpoint
  * Returns the current breakpoint based on window width
@@ -45,48 +68,24 @@ export function useBreakpoint(
   isDesktop: boolean;
   width: number;
 } {
-  // SSR safe initial state - default to desktop for SSR
-  const [state, setState] = useState<{ breakpoint: Breakpoint; width: number }>(
-    () => ({
-      breakpoint: "desktop",
-      width: typeof window !== "undefined" ? window.innerWidth : 1200,
-    })
+  const width = useSyncExternalStore(
+    subscribeToResize,
+    getWidthSnapshot,
+    getServerWidthSnapshot
   );
 
-  const handleResize = useCallback(() => {
-    const width = window.innerWidth;
+  const result = useMemo(() => {
     const breakpoint = getBreakpoint(width, config);
-    setState((prev) => {
-      if (prev.breakpoint === breakpoint && prev.width === width) {
-        return prev;
-      }
-      return { breakpoint, width };
-    });
-  }, [config]);
-
-  useEffect(() => {
-    // Initialize on mount
-    handleResize();
-
-    // Listen for resize events
-    window.addEventListener("resize", handleResize);
-
-    // Optional: Listen for orientation change on mobile
-    window.addEventListener("orientationchange", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
+    return {
+      breakpoint,
+      isMobile: breakpoint === "mobile",
+      isTablet: breakpoint === "tablet",
+      isDesktop: breakpoint === "desktop",
+      width,
     };
-  }, [handleResize]);
+  }, [width, config]);
 
-  return {
-    breakpoint: state.breakpoint,
-    isMobile: state.breakpoint === "mobile",
-    isTablet: state.breakpoint === "tablet",
-    isDesktop: state.breakpoint === "desktop",
-    width: state.width,
-  };
+  return result;
 }
 
 /**

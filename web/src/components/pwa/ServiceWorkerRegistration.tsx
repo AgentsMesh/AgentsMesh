@@ -93,14 +93,22 @@ export function ServiceWorkerRegistration({
 // Hook to get service worker registration
 export function useServiceWorker() {
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const [isSupported, setIsSupported] = useState(false);
+
+  // Derive isSupported from environment - no state needed
+  const isSupported = typeof window !== "undefined" && "serviceWorker" in navigator;
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      setIsSupported(true);
-      navigator.serviceWorker.ready.then(setRegistration);
-    }
-  }, []);
+    if (!isSupported) return;
+
+    let mounted = true;
+    navigator.serviceWorker.ready.then((reg) => {
+      if (mounted) setRegistration(reg);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [isSupported]);
 
   return { registration, isSupported };
 }

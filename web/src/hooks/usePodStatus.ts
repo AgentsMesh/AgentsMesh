@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { usePodStore } from "@/stores/pod";
-import { podApi } from "@/lib/api/client";
 
 interface UsePodStatusResult {
   podStatus: string;
@@ -15,64 +14,30 @@ interface UsePodStatusResult {
  * Uses realtime events via store - only fetches once on mount for initial state
  */
 export function usePodStatus(podKey: string): UsePodStatusResult {
-  const [podStatus, setPodStatus] = useState<string>("unknown");
-  const [isPodReady, setIsPodReady] = useState(false);
-  const [podError, setPodError] = useState<string | null>(null);
   const initialFetchDone = useRef(false);
+  const { pods, fetchPod } = usePodStore();
 
   // Get pod from store (updated via realtime events)
-  const { pods } = usePodStore();
   const storePod = pods.find((p) => p.pod_key === podKey);
 
-  // Initial status fetch (once only)
+  // Derive status from store - no local state needed
+  const { podStatus, isPodReady, podError } = useMemo(() => {
+    const status = storePod?.status ?? "unknown";
+    const isReady = status === "running";
+    const error =
+      status === "failed" || status === "terminated" ? `Pod ${status}` : null;
+    return { podStatus: status, isPodReady: isReady, podError: error };
+  }, [storePod?.status]);
+
+  // Initial status fetch (once only) - updates store via fetchPod
   useEffect(() => {
-    if (initialFetchDone.current) return;
+    if (initialFetchDone.current || storePod) return;
     initialFetchDone.current = true;
 
-    let mounted = true;
-
-    const fetchInitialStatus = async () => {
-      try {
-        const { pod } = await podApi.get(podKey);
-        if (!mounted) return;
-
-        setPodStatus(pod.status);
-
-        if (pod.status === "running") {
-          setIsPodReady(true);
-          setPodError(null);
-        } else if (pod.status === "failed" || pod.status === "terminated") {
-          setIsPodReady(false);
-          setPodError(`Pod ${pod.status}`);
-        }
-        // For "initializing" or "paused", realtime events will update
-      } catch (error) {
-        console.error("Failed to fetch initial pod status:", error);
-      }
-    };
-
-    fetchInitialStatus();
-
-    return () => {
-      mounted = false;
-    };
-  }, [podKey]);
-
-  // React to store updates from realtime events
-  useEffect(() => {
-    if (!storePod) return;
-
-    const status = storePod.status;
-    setPodStatus(status);
-
-    if (status === "running") {
-      setIsPodReady(true);
-      setPodError(null);
-    } else if (status === "failed" || status === "terminated") {
-      setIsPodReady(false);
-      setPodError(`Pod ${status}`);
-    }
-  }, [storePod]);
+    fetchPod(podKey).catch((error) => {
+      console.error("Failed to fetch initial pod status:", error);
+    });
+  }, [podKey, fetchPod, storePod]);
 
   return { podStatus, isPodReady, podError };
 }

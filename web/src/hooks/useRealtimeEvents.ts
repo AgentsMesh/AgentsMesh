@@ -28,8 +28,8 @@ export function useRealtimeConnection() {
   // manager creation and state subscription
   useEffect(() => {
     if (!currentOrg || !token) {
+      // disconnect() will trigger onConnectionStateChange callback
       managerRef.current.disconnect();
-      setConnectionState("disconnected");
       return;
     }
 

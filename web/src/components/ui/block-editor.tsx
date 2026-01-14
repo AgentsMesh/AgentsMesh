@@ -3,7 +3,7 @@
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
 import { PartialBlock } from "@blocknote/core";
 import { useAuthStore } from "@/stores/auth";
 
@@ -15,41 +15,45 @@ interface BlockEditorProps {
   className?: string;
 }
 
-// Hook to detect current theme from document
+// Get current theme from document
+function getThemeSnapshot(): "light" | "dark" {
+  if (typeof document === "undefined") return "dark";
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
+// Server snapshot (used during SSR)
+function getServerThemeSnapshot(): "light" | "dark" {
+  return "dark";
+}
+
+// Subscribe to theme changes via MutationObserver
+function subscribeToTheme(callback: () => void): () => void {
+  if (typeof document === "undefined") return () => {};
+
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.attributeName === "class") {
+        callback();
+        break;
+      }
+    }
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+
+  return () => observer.disconnect();
+}
+
+// Hook to detect current theme from document using useSyncExternalStore
 function useThemeDetect(): "light" | "dark" {
-  // Start with undefined to handle SSR, then detect on client
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-
-    // Check initial theme
-    const checkTheme = () => {
-      const isDark = document.documentElement.classList.contains("dark");
-      setTheme(isDark ? "dark" : "light");
-    };
-
-    checkTheme();
-
-    // Observe class changes on html element
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === "class") {
-          checkTheme();
-        }
-      });
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  return theme;
+  return useSyncExternalStore(
+    subscribeToTheme,
+    getThemeSnapshot,
+    getServerThemeSnapshot
+  );
 }
 
 // Upload file to backend using organization-scoped API
