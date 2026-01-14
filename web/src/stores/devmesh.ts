@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devmeshApi, DevMeshNodeData, DevMeshEdgeData, ChannelInfoData, DevMeshTopologyData } from "@/lib/api/client";
+import { getErrorMessage } from "@/lib/utils";
 
 // Re-export API types for use in components
 export type DevMeshNode = DevMeshNodeData;
@@ -51,7 +52,7 @@ export const useDevMeshStore = create<DevMeshState>((set, get) => ({
       set({ topology: response.topology, loading: false });
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch topology",
+        error: getErrorMessage(error, "Failed to fetch topology"),
         loading: false,
       });
     }

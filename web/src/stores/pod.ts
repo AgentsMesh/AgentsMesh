@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { podApi, PodData } from "@/lib/api/client";
+import { getErrorMessage } from "@/lib/utils";
 
 // Re-export PodData as Pod for backward compatibility
 export type Pod = PodData;
@@ -45,7 +46,7 @@ export const usePodStore = create<PodState>((set) => ({
       set({ pods: response.pods || [], loading: false });
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch pods",
+        error: getErrorMessage(error, "Failed to fetch pods"),
         loading: false,
       });
     }
@@ -58,7 +59,7 @@ export const usePodStore = create<PodState>((set) => ({
       set({ currentPod: response.pod, loading: false });
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch pod",
+        error: getErrorMessage(error, "Failed to fetch pod"),
         loading: false,
       });
     }
@@ -85,7 +86,7 @@ export const usePodStore = create<PodState>((set) => ({
       return response.pod;
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to create pod",
+        error: getErrorMessage(error, "Failed to create pod"),
         loading: false,
       });
       throw error;
@@ -105,7 +106,7 @@ export const usePodStore = create<PodState>((set) => ({
             : state.currentPod,
       }));
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : "Failed to terminate pod" });
+      set({ error: getErrorMessage(error, "Failed to terminate pod") });
       throw error;
     }
   },

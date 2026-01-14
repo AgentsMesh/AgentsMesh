@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ticketApi, TicketData, TicketType, TicketStatus, TicketPriority } from "@/lib/api/client";
+import { getErrorMessage } from "@/lib/utils";
 
 // Re-export types from API for backward compatibility
 export type { TicketType, TicketStatus, TicketPriority };
@@ -97,7 +98,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       });
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch tickets",
+        error: getErrorMessage(error, "Failed to fetch tickets"),
         loading: false,
       });
     }
@@ -110,7 +111,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       set({ currentTicket: ticket, loading: false });
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch ticket",
+        error: getErrorMessage(error, "Failed to fetch ticket"),
         loading: false,
       });
     }
@@ -128,7 +129,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       return ticket;
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to create ticket",
+        error: getErrorMessage(error, "Failed to create ticket"),
         loading: false,
       });
       throw error;
@@ -149,7 +150,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       }));
       return ticket;
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : "Failed to update ticket" });
+      set({ error: getErrorMessage(error, "Failed to update ticket") });
       throw error;
     }
   },
@@ -166,7 +167,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
             : state.currentTicket,
       }));
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : "Failed to delete ticket" });
+      set({ error: getErrorMessage(error, "Failed to delete ticket") });
       throw error;
     }
   },
@@ -184,7 +185,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
             : state.currentTicket,
       }));
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : "Failed to update ticket status" });
+      set({ error: getErrorMessage(error, "Failed to update ticket status") });
       throw error;
     }
   },
@@ -194,7 +195,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       const response = await ticketApi.listLabels(repositoryId);
       set({ labels: response.labels || [] });
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : "Failed to fetch labels" });
+      set({ error: getErrorMessage(error, "Failed to fetch labels") });
     }
   },
 
@@ -206,7 +207,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       }));
       return label;
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : "Failed to create label" });
+      set({ error: getErrorMessage(error, "Failed to create label") });
       throw error;
     }
   },
@@ -218,7 +219,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
         labels: state.labels.filter((l) => l.id !== id),
       }));
     } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : "Failed to delete label" });
+      set({ error: getErrorMessage(error, "Failed to delete label") });
       throw error;
     }
   },

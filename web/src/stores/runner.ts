@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { runnerApi, RunnerData } from "@/lib/api/client";
+import { getErrorMessage } from "@/lib/utils";
 
 export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
 
@@ -42,7 +43,7 @@ export const useRunnerStore = create<RunnerState>((set) => ({
       set({ runners: response.runners || [], loading: false });
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch runners",
+        error: getErrorMessage(error, "Failed to fetch runners"),
         loading: false,
       });
     }
@@ -55,7 +56,7 @@ export const useRunnerStore = create<RunnerState>((set) => ({
       set({ availableRunners: response.runners || [], loading: false });
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch available runners",
+        error: getErrorMessage(error, "Failed to fetch available runners"),
         loading: false,
       });
     }
@@ -68,7 +69,7 @@ export const useRunnerStore = create<RunnerState>((set) => ({
       set({ currentRunner: response.runner, loading: false });
     } catch (error: unknown) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch runner",
+        error: getErrorMessage(error, "Failed to fetch runner"),
         loading: false,
       });
     }
@@ -84,7 +85,7 @@ export const useRunnerStore = create<RunnerState>((set) => ({
       }));
       return response.runner;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to update runner";
+      const message = getErrorMessage(error, "Failed to update runner");
       set({ error: message });
       throw error;
     }
@@ -100,7 +101,7 @@ export const useRunnerStore = create<RunnerState>((set) => ({
           state.currentRunner?.id === id ? null : state.currentRunner,
       }));
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to delete runner";
+      const message = getErrorMessage(error, "Failed to delete runner");
       set({ error: message });
       throw error;
     }
@@ -111,7 +112,7 @@ export const useRunnerStore = create<RunnerState>((set) => ({
       const response = await runnerApi.regenerateAuthToken(id);
       return response.auth_token;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to regenerate auth token";
+      const message = getErrorMessage(error, "Failed to regenerate auth token");
       set({ error: message });
       throw error;
     }
@@ -122,7 +123,7 @@ export const useRunnerStore = create<RunnerState>((set) => ({
       const response = await runnerApi.createToken();
       return response.token;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to create token";
+      const message = getErrorMessage(error, "Failed to create token");
       set({ error: message });
       throw error;
     }
