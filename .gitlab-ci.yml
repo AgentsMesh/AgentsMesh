@@ -5,7 +5,117 @@ variables:
   RUNNER_IMAGE: ${REGISTRY}/agentmesh/runner
 
 stages:
+  - test
   - build
+
+# =============================================================================
+# Test Stage - Run on MR pipelines
+# =============================================================================
+
+# Test backend (Go)
+test-backend:
+  stage: test
+  tags:
+    - amd64
+    - docker
+  image: golang:1.24-alpine
+  before_script:
+    - apk add --no-cache gcc musl-dev git
+    - go install gotest.tools/gotestsum@latest
+    - go install github.com/boumenot/gocover-cobertura@latest
+  script:
+    - cd backend
+    - gotestsum --junitfile report.xml -- -race -coverprofile=coverage.out -covermode=atomic ./...
+    - go tool cover -func=coverage.out
+    - gocover-cobertura < coverage.out > coverage.xml
+  coverage: '/total:\s+\(statements\)\s+(\d+\.\d+)%/'
+  artifacts:
+    when: always
+    reports:
+      junit: backend/report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: backend/coverage.xml
+    paths:
+      - backend/coverage.out
+      - backend/coverage.xml
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - backend/**/*
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+# Test web (Next.js/Vitest)
+test-web:
+  stage: test
+  tags:
+    - amd64
+    - docker
+  image: node:20-alpine
+  before_script:
+    - corepack enable
+    - cd web
+    - pnpm install --frozen-lockfile
+  script:
+    - cd web
+    - pnpm lint
+    - pnpm test:run --coverage
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    when: always
+    reports:
+      junit: web/report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: web/coverage/cobertura-coverage.xml
+    paths:
+      - web/coverage/
+      - web/report.xml
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - web/**/*
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+# Test runner (Go)
+test-runner:
+  stage: test
+  tags:
+    - amd64
+    - docker
+  image: golang:1.24-alpine
+  before_script:
+    - apk add --no-cache gcc musl-dev git
+    - go install gotest.tools/gotestsum@latest
+    - go install github.com/boumenot/gocover-cobertura@latest
+  script:
+    - cd runner
+    - CGO_ENABLED=0 gotestsum --junitfile report.xml -- -race -coverprofile=coverage.out -covermode=atomic ./...
+    - go tool cover -func=coverage.out
+    - gocover-cobertura < coverage.out > coverage.xml
+  coverage: '/total:\s+\(statements\)\s+(\d+\.\d+)%/'
+  artifacts:
+    when: always
+    reports:
+      junit: runner/report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: runner/coverage.xml
+    paths:
+      - runner/coverage.out
+      - runner/coverage.xml
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - runner/**/*
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+# =============================================================================
+# Build Stage - Run on main branch
+# =============================================================================
 
 # Build backend image
 build-backend:

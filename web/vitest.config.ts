@@ -11,7 +11,8 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'cobertura'],
+      reportsDirectory: './coverage',
       exclude: [
         'node_modules/',
         'src/test/',
@@ -19,6 +20,10 @@ export default defineConfig({
         '**/*.config.*',
         '**/types/**',
       ],
+    },
+    reporters: ['default', 'junit'],
+    outputFile: {
+      junit: './report.xml',
     },
   },
   resolve: {
