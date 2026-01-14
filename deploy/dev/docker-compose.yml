@@ -171,25 +171,38 @@ services:
       dockerfile: ../deploy/dev/runner.Dockerfile
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     user: "1000:1000"
     environment:
-      - BACKEND_URL=ws://backend:8080/api/v1/runner/ws
-      - RUNNER_TOKEN=${RUNNER_TOKEN:-dev-runner-token}
+      # Backend connection (entrypoint script will wait for backend)
+      - BACKEND_URL=ws://backend:8080
+      # Runner identification (matches seed data in deploy/dev/seed/seed.sql)
+      - RUNNER_NODE_ID=dev-runner
+      - RUNNER_AUTH_TOKEN=dev-runner-auth-token
+      - RUNNER_ORG_SLUG=dev-org
+      # Capacity
+      - MAX_CONCURRENT_PODS=10
+      # Workspace
       - WORKSPACE=/workspace
+      # Debug mode
       - DEBUG=true
       - HOME=/home/runner
     volumes:
       # Mount source code for hot reload
       - ../../runner:/app
+      # Mount entrypoint script
+      - ./runner-entrypoint.sh:/usr/local/bin/runner-entrypoint.sh:ro
       # Persist Go modules cache (for non-root user)
       - runner-go-mod-cache:/go/pkg/mod
       # Persist build cache (for non-root user)
       - runner-go-build-cache:/home/runner/.cache/go-build
       # Workspace for sandboxes
-      - runner_workspace:/tmp/agentmesh-workspace
-      # AgentMesh config directory
-      - runner_config:/home/runner/.agentmesh
+      - runner_workspace:/workspace
+      # AgentMesh config directory (note: .agentsmesh with 's')
+      - runner_config:/home/runner/.agentsmesh
+    # Use entrypoint script for auto-configuration
+    entrypoint: ["/usr/local/bin/runner-entrypoint.sh"]
     # Runner communicates with backend internally, no external port needed
 
   # Nginx reverse proxy (unified entry point)

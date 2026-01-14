@@ -63,9 +63,9 @@ RUN addgroup -g 1000 runner && \
     # Create workspace directory
     mkdir -p /tmp/agentmesh-workspace && \
     chown -R runner:runner /tmp/agentmesh-workspace && \
-    # Create .agentmesh config directory
-    mkdir -p /home/runner/.agentmesh && \
-    chown -R runner:runner /home/runner/.agentmesh && \
+    # Create .agentsmesh config directory (note: with 's')
+    mkdir -p /home/runner/.agentsmesh && \
+    chown -R runner:runner /home/runner/.agentsmesh && \
     # Create go build cache directory
     mkdir -p /home/runner/.cache/go-build && \
     chown -R runner:runner /home/runner/.cache && \
@@ -87,5 +87,6 @@ RUN go mod download
 # Expose port for WebSocket connections
 EXPOSE 9090
 
-# Use air for hot reload
+# Entrypoint script mounted via docker-compose volume
+# Default command (can be overridden)
 CMD ["air", "-c", ".air.toml"]
