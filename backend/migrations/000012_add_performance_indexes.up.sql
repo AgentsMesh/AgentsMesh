@@ -11,9 +11,9 @@ CREATE INDEX IF NOT EXISTS idx_pods_ticket_id ON pods(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_pods_runner_status ON pods(runner_id, status);
 
 -- Runner selection: find available runners for pod scheduling
--- Covers: WHERE org_id=? AND status=? AND is_enabled=? AND current_pods < max_concurrent_pods
+-- Covers: WHERE org_id=? AND status=? AND current_pods < max_concurrent_pods
 CREATE INDEX IF NOT EXISTS idx_runners_available
-  ON runners(organization_id, status, is_enabled, current_pods);
+  ON runners(organization_id, status, current_pods);
 
 -- Pod listing: query pods by organization and status
 CREATE INDEX IF NOT EXISTS idx_pods_org_status ON pods(organization_id, status);

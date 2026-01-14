@@ -42,3 +42,6 @@ CREATE TRIGGER update_user_git_connections_updated_at
 
 -- Add comment
 COMMENT ON TABLE user_git_connections IS 'User-owned Git provider connections (PAT/SSH). OAuth connections are in user_identities.';
+
+-- Add default git credential reference to users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS default_git_credential_id BIGINT REFERENCES user_git_connections(id) ON DELETE SET NULL;
