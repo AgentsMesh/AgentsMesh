@@ -17,7 +17,11 @@ import (
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+	// Use shared cache mode with unique database name per test
+	// This is necessary for WebSocket integration tests where goroutines may use different connections
+	// Each test gets its own unique database to avoid data collision between tests
+	dbName := "file:" + t.Name() + "?mode=memory&cache=shared"
+	db, err := gorm.Open(sqlite.Open(dbName), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 	if err != nil {
