@@ -1,0 +1,53 @@
+package git
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+// setupGitHubMockServer creates a mock HTTP server for GitHub API testing
+func setupGitHubMockServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *GitHubProvider) {
+	server := httptest.NewServer(handler)
+	provider, err := NewGitHubProvider(server.URL, "test-token")
+	if err != nil {
+		t.Fatalf("failed to create provider: %v", err)
+	}
+	return server, provider
+}
+
+func TestNewGitHubProvider(t *testing.T) {
+	tests := []struct {
+		name        string
+		baseURL     string
+		accessToken string
+	}{
+		{
+			name:        "with custom base URL",
+			baseURL:     "https://api.github.example.com",
+			accessToken: "test-token",
+		},
+		{
+			name:        "with empty base URL uses default",
+			baseURL:     "",
+			accessToken: "test-token",
+		},
+		{
+			name:        "with trailing slash",
+			baseURL:     "https://api.github.com/",
+			accessToken: "test-token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			provider, err := NewGitHubProvider(tt.baseURL, tt.accessToken)
+			if err != nil {
+				t.Fatalf("NewGitHubProvider failed: %v", err)
+			}
+			if provider == nil {
+				t.Fatal("provider is nil")
+			}
+		})
+	}
+}
