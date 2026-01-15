@@ -91,7 +91,7 @@ test-runner:
     - go install github.com/boumenot/gocover-cobertura@latest
   script:
     - cd runner
-    - CGO_ENABLED=0 gotestsum --junitfile report.xml -- -race -coverprofile=coverage.out -covermode=atomic ./...
+    - gotestsum --junitfile report.xml -- -race -coverprofile=coverage.out -covermode=atomic ./...
     - go tool cover -func=coverage.out
     - gocover-cobertura < coverage.out > coverage.xml
   coverage: '/total:\s+\(statements\)\s+(\d+\.\d+)%/'
