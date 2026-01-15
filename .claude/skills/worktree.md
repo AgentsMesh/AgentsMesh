@@ -40,9 +40,10 @@ git status
 git log --oneline -3
 ```
 
-### 3. 初始化开发环境
+### 3. 初始化开发环境 [必须执行]
 
-worktree 创建后，执行开发环境初始化脚本：
+> **⚠️ 重要**：此步骤为**必须执行**，不可跳过或询问用户是否执行。
+> Worktree 创建后必须立即初始化开发环境，确保环境可用。
 
 ```bash
 # 进入 deploy/dev 目录
@@ -88,15 +89,18 @@ cd deploy/dev
 
 用户说："创建一个 worktree 开发用户认证功能"
 
-执行：
+**必须完整执行以下所有步骤**（不可中断或询问用户）：
+
 ```bash
-# 创建 worktree
+# 步骤 1: 创建 worktree
 git fetch origin
 mkdir -p ../AgentMesh-Worktrees
 git worktree add -b feature/user-auth ../AgentMesh-Worktrees/feature-user-auth origin/main
 cd ../AgentMesh-Worktrees/feature-user-auth
+git status
+git log --oneline -3
 
-# 初始化开发环境
+# 步骤 2: 初始化开发环境 [必须执行，不可跳过]
 cd deploy/dev
 ./init-worktree.sh
 ```
