@@ -14,7 +14,20 @@ AgentMesh is a multi-tenant AI Code Agent collaboration platform supporting Clau
 
 **Always use `deploy/dev` Docker environment for development and debugging.** This setup includes Nginx reverse proxy and mirrors production architecture, helping catch issues early.
 
-### Start Development Environment
+### Quick Start (Recommended)
+
+```bash
+cd deploy/dev
+./init-worktree.sh               # One-click setup: generates .env, starts services, runs migrations, seeds data
+```
+
+This script automatically:
+1. Generates `.env` with worktree-isolated ports (supports multiple worktrees)
+2. Starts all Docker services
+3. Runs database migrations
+4. Initializes seed data (test account: dev@agentmesh.local / devpass123)
+
+### Manual Commands
 
 ```bash
 cd deploy/dev
@@ -22,6 +35,7 @@ docker compose up -d             # Start all services
 docker compose logs -f           # View logs
 docker compose down              # Stop all services
 docker compose down -v           # Stop and remove volumes
+./init-worktree.sh --clean       # Clean up environment (when things go wrong)
 ```
 
 ### Services & Ports
@@ -35,20 +49,14 @@ docker compose down -v           # Stop and remove volumes
 | Redis | localhost:6379 | Cache |
 | MinIO API | localhost:9000 | S3 API endpoint |
 
+> **Note**: Ports may vary if using multiple worktrees. Check `.env` for actual ports.
+
 ### Hot Reload
 
 All services support hot reload - source code is mounted into containers:
 - **Backend**: Go code changes auto-rebuild via Air
 - **Web**: Next.js fast refresh
 - **Runner**: Go code changes auto-rebuild
-
-### Environment Configuration
-
-Copy and customize environment variables:
-```bash
-cd deploy/dev
-cp .env.example .env             # Edit as needed
-```
 
 ## Build Commands (for CI/testing outside Docker)
 
@@ -86,10 +94,30 @@ make build-all                   # Cross-platform builds
 
 ### Database Migrations
 
+Migrations are located in `backend/migrations/` using golang-migrate format.
+
+**Development** (via Docker):
 ```bash
-./scripts/migrate.sh up          # Apply migrations
-./scripts/migrate.sh down 1      # Rollback last migration
-./scripts/migrate.sh create xxx  # Create new migration
+cd deploy/dev
+./init-worktree.sh               # Automatically runs all migrations
+```
+
+**Production** (via backend container):
+```bash
+# Inside the backend container, golang-migrate is pre-installed
+migrate -path /app/migrations -database "postgres://user:pass@host:5432/db?sslmode=disable" up
+migrate -path /app/migrations -database "postgres://user:pass@host:5432/db?sslmode=disable" down 1
+migrate -path /app/migrations -database "postgres://user:pass@host:5432/db?sslmode=disable" version
+```
+
+**Create new migration**:
+```bash
+# Install golang-migrate locally
+brew install golang-migrate
+
+# Create migration files
+migrate create -ext sql -dir backend/migrations -seq add_new_feature
+# This creates: 000024_add_new_feature.up.sql and 000024_add_new_feature.down.sql
 ```
 
 ## Architecture
@@ -208,9 +236,12 @@ runner/
 
 ## Configuration
 
-**Backend**: `backend/.env` (copy from `.env.example`)
-**Web**: `web/.env.local` (copy from `.env.example`)
-**Runner**: `~/.agentsmesh/config.yaml` (created after `runner register`)
+**Development** (Docker): Run `cd deploy/dev && ./init-worktree.sh` - auto-generates all configs
+
+**Local development** (without Docker):
+- **Backend**: `backend/.env` (copy from `.env.example`)
+- **Web**: `web/.env.local` (copy from `.env.example`)
+- **Runner**: `~/.agentsmesh/config.yaml` (created after `runner register`)
 
 ## GraphQL
 
