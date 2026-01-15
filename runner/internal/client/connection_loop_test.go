@@ -83,6 +83,19 @@ func (m *mockWebSocketConnWithControl) SetReadDeadline(t time.Time) error {
 	return nil
 }
 
+func (m *mockWebSocketConnWithControl) SetPingHandler(h func(appData string) error) {
+	// No-op for mock
+}
+
+func (m *mockWebSocketConnWithControl) WriteControl(messageType int, data []byte, deadline time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.writeError != nil {
+		return m.writeError
+	}
+	return nil
+}
+
 func (m *mockWebSocketConnWithControl) GetWrittenData() [][]byte {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -193,21 +206,23 @@ func TestServerConnectionConnectionLoopReconnectOnError(t *testing.T) {
 	conn.WithDialer(mockDialer)
 	conn.SetHeartbeatInterval(50 * time.Millisecond)
 	conn.reconnectStrategy = NewReconnectStrategy(10*time.Millisecond, 50*time.Millisecond)
+	// Use short init timeout for testing - initialization will timeout and trigger reconnect
+	conn.SetInitTimeout(50 * time.Millisecond)
 
 	conn.Start()
 
-	// Wait for first connection
-	time.Sleep(50 * time.Millisecond)
+	// Wait for first connection and init timeout
+	time.Sleep(100 * time.Millisecond)
 
 	// Close first connection to trigger reconnect
 	mockConn1.Close()
 
-	// Wait for reconnect
-	time.Sleep(100 * time.Millisecond)
+	// Wait for reconnect (after init timeout)
+	time.Sleep(200 * time.Millisecond)
 
 	conn.Stop()
 
-	// Should have connected twice
+	// Should have connected at least twice (first connect + reconnect after timeout)
 	if mockDialer.dialCalls.Load() < 2 {
 		t.Errorf("expected at least 2 dial calls, got %d", mockDialer.dialCalls.Load())
 	}
@@ -223,8 +238,8 @@ func TestServerConnectionReadLoop(t *testing.T) {
 
 	// Send a create pod message
 	reqData, _ := json.Marshal(CreatePodRequest{
-		PodKey:         "test-pod",
-		InitialCommand: "claude-code",
+		PodKey:        "test-pod",
+		LaunchCommand: "claude-code",
 	})
 	msg := ProtocolMessage{
 		Type: MsgTypeCreatePod,
@@ -551,6 +566,8 @@ func TestServerConnectionRunConnection(t *testing.T) {
 	conn.conn = mockConn
 	conn.SetHandler(handler)
 	conn.SetHeartbeatInterval(20 * time.Millisecond)
+	// Use short init timeout - runConnection will exit after init timeout or connection close
+	conn.SetInitTimeout(50 * time.Millisecond)
 
 	// Run connection in a goroutine
 	done := make(chan struct{})
@@ -559,10 +576,10 @@ func TestServerConnectionRunConnection(t *testing.T) {
 		close(done)
 	}()
 
-	// Wait for loops to start
-	time.Sleep(50 * time.Millisecond)
+	// Wait for init timeout to trigger exit
+	time.Sleep(100 * time.Millisecond)
 
-	// Close connection to trigger exit
+	// Close connection to ensure exit
 	mockConn.Close()
 
 	select {

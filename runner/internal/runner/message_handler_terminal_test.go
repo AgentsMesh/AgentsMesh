@@ -77,8 +77,7 @@ func TestOnTerminalInputSuccess(t *testing.T) {
 	// First create a pod
 	createReq := client.CreatePodRequest{
 		PodKey:      "input-success-pod",
-		InitialCommand: "cat",
-		WorkingDir:     tempDir,
+		LaunchCommand: "cat",
 	}
 
 	err := handler.OnCreatePod(createReq)
@@ -149,8 +148,7 @@ func TestOnTerminalResizeSuccess(t *testing.T) {
 	// First create a pod
 	createReq := client.CreatePodRequest{
 		PodKey:      "resize-pod",
-		InitialCommand: "cat",
-		WorkingDir:     tempDir,
+		LaunchCommand: "cat",
 	}
 
 	err := handler.OnCreatePod(createReq)

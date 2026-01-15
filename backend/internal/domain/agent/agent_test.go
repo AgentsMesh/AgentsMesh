@@ -228,40 +228,6 @@ func TestAgentTypeStruct(t *testing.T) {
 	}
 }
 
-// --- Test OrganizationAgent ---
-
-func TestOrganizationAgentTableName(t *testing.T) {
-	oa := OrganizationAgent{}
-	if oa.TableName() != "organization_agents" {
-		t.Errorf("expected 'organization_agents', got %s", oa.TableName())
-	}
-}
-
-func TestOrganizationAgentStruct(t *testing.T) {
-	now := time.Now()
-	args := "--custom"
-
-	oa := OrganizationAgent{
-		ID:               1,
-		OrganizationID:   100,
-		AgentTypeID:      10,
-		IsEnabled:        true,
-		IsDefault:        true,
-		CustomLaunchArgs: &args,
-		CreatedAt:        now,
-		UpdatedAt:        now,
-	}
-
-	if oa.ID != 1 {
-		t.Errorf("expected ID 1, got %d", oa.ID)
-	}
-	if oa.OrganizationID != 100 {
-		t.Errorf("expected OrganizationID 100, got %d", oa.OrganizationID)
-	}
-	if *oa.CustomLaunchArgs != "--custom" {
-		t.Errorf("expected CustomLaunchArgs '--custom', got %s", *oa.CustomLaunchArgs)
-	}
-}
 
 // --- Test UserAgentCredential ---
 

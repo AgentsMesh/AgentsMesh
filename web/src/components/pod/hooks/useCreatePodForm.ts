@@ -230,7 +230,7 @@ export function useCreatePodForm(
           repository_id: selectedRepository || undefined,
           branch_name: selectedBranch || undefined,
           initial_prompt: finalPrompt,
-          plugin_config: config,
+          config_overrides: config,
           credential_profile_id: selectedCredentialProfile > 0 ? selectedCredentialProfile : undefined,
           ticket_id: options?.ticketId,
         });

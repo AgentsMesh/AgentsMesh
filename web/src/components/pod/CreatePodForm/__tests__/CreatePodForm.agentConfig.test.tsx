@@ -3,11 +3,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { CreatePodForm } from "../index";
 import {
   mockSetPrompt,
-  mockSetSelectedAgent,
   mockResetPluginConfig,
   defaultPodCreationData,
   defaultFormState,
-  defaultPluginOptions,
+  defaultConfigOptions,
   mockRunner,
   mockAgentType,
   mockRepository,
@@ -17,19 +16,23 @@ import {
 vi.mock("../../hooks", () => ({
   usePodCreationData: vi.fn(() => defaultPodCreationData),
   useCreatePodForm: vi.fn(() => defaultFormState),
-  usePluginOptions: vi.fn(() => defaultPluginOptions),
   RUNNER_HOST_PROFILE_ID: 0,
+}));
+
+vi.mock("@/components/ide/hooks", () => ({
+  useConfigOptions: vi.fn(() => defaultConfigOptions),
 }));
 
 vi.mock("@/lib/i18n/client", () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-vi.mock("../../PluginConfigForm", () => ({
-  PluginConfigForm: () => <div data-testid="plugin-config-form">Plugin Config</div>,
+vi.mock("@/components/ide/ConfigForm", () => ({
+  ConfigForm: () => <div data-testid="config-form">Config Form</div>,
 }));
 
-import { usePodCreationData, useCreatePodForm, usePluginOptions } from "../../hooks";
+import { usePodCreationData, useCreatePodForm } from "../../hooks";
+import { useConfigOptions } from "@/components/ide/hooks";
 
 describe("CreatePodForm - Agent Configuration", () => {
   beforeEach(() => {
@@ -189,28 +192,28 @@ describe("CreatePodForm - Agent Configuration", () => {
     });
   });
 
-  describe("plugin configuration", () => {
-    it("should show loading state for plugins", () => {
+  describe("config options", () => {
+    it("should show loading state for config", () => {
       setupAgentSelectedState();
-      vi.mocked(usePluginOptions).mockReturnValue({ ...defaultPluginOptions, loading: true });
+      vi.mocked(useConfigOptions).mockReturnValue({ ...defaultConfigOptions, loading: true });
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
       expect(screen.getByText("ide.createPod.loadingPlugins")).toBeInTheDocument();
     });
 
-    it("should render plugin config form when plugins are available", () => {
+    it("should render config form when config fields are available", () => {
       setupAgentSelectedState();
-      vi.mocked(usePluginOptions).mockReturnValue({
-        ...defaultPluginOptions,
-        plugins: [{ name: "test-plugin", fields: [] }],
+      vi.mocked(useConfigOptions).mockReturnValue({
+        ...defaultConfigOptions,
+        fields: [{ name: "model", type: "select" }],
       });
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
       expect(screen.getByText("ide.createPod.pluginConfig")).toBeInTheDocument();
-      expect(screen.getByTestId("plugin-config-form")).toBeInTheDocument();
+      expect(screen.getByTestId("config-form")).toBeInTheDocument();
     });
 
-    it("should not render plugin config form when no plugins available", () => {
+    it("should not render config form when no config fields available", () => {
       setupAgentSelectedState();
-      vi.mocked(usePluginOptions).mockReturnValue(defaultPluginOptions);
+      vi.mocked(useConfigOptions).mockReturnValue(defaultConfigOptions);
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
       expect(screen.queryByText("ide.createPod.pluginConfig")).not.toBeInTheDocument();
     });

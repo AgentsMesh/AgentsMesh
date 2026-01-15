@@ -10,6 +10,7 @@ import {
   GitCredentialData,
   RunnerLocalCredentialData,
   CredentialType,
+  CredentialTypeValue,
   getCredentialTypeLabel,
 } from "@/lib/api/client";
 import { useTranslations } from "@/lib/i18n/client";
@@ -277,7 +278,7 @@ export function GitSettingsContent() {
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{cred.name}</span>
                   <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                    {getCredentialTypeLabel(cred.type as CredentialType)}
+                    {getCredentialTypeLabel(cred.type as CredentialTypeValue)}
                   </span>
                 </div>
                 {cred.type === CredentialType.RUNNER_LOCAL && (
@@ -410,7 +411,7 @@ export function GitSettingsContent() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{cred.name}</span>
                         <span className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded">
-                          {getCredentialTypeLabel(cred.credential_type as CredentialType)}
+                          {getCredentialTypeLabel(cred.credential_type as CredentialTypeValue)}
                         </span>
                       </div>
                       {cred.fingerprint && (

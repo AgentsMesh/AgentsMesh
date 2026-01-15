@@ -133,16 +133,22 @@ Organization-scoped endpoints require the organization slug in the URL path:
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/organizations/{slug}/agents/types` | List agent types |
-| GET | `/organizations/{slug}/agents/config` | Get org agent config |
-| POST | `/organizations/{slug}/agents/config` | Enable agent |
-| DELETE | `/organizations/{slug}/agents/config/{type_id}` | Disable agent |
-| PUT | `/organizations/{slug}/agents/config/{type_id}/credentials` | Set org credentials |
+| GET | `/organizations/{slug}/agents/{type_id}/config-schema` | Get agent config schema |
 | POST | `/organizations/{slug}/agents/custom` | Create custom agent |
 | PUT | `/organizations/{slug}/agents/custom/{id}` | Update custom agent |
 | DELETE | `/organizations/{slug}/agents/custom/{id}` | Delete custom agent |
-| GET | `/users/me/agents/credentials` | Get user credentials |
+
+### User Agent Configuration (Personal Settings)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/users/me/agents/credentials` | Get user credentials status |
 | PUT | `/users/me/agents/credentials/{type_id}` | Set user credentials |
 | DELETE | `/users/me/agents/credentials/{type_id}` | Delete user credentials |
+| GET | `/users/me/agent-configs` | List user agent configs |
+| GET | `/users/me/agent-configs/{type_id}` | Get user agent config |
+| PUT | `/users/me/agent-configs/{type_id}` | Set user agent config |
+| DELETE | `/users/me/agent-configs/{type_id}` | Delete user agent config |
 
 ### Git Providers
 

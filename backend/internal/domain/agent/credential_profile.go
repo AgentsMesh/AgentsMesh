@@ -98,26 +98,6 @@ func (p *UserAgentCredentialProfile) ToResponse() *CredentialProfileResponse {
 	return resp
 }
 
-// CreateCredentialProfileRequest is the request body for creating a credential profile
-type CreateCredentialProfileRequest struct {
-	AgentTypeID  int64             `json:"agent_type_id" binding:"required"`
-	Name         string            `json:"name" binding:"required,max=100"`
-	Description  *string           `json:"description,omitempty"`
-	IsRunnerHost bool              `json:"is_runner_host"`
-	Credentials  map[string]string `json:"credentials,omitempty"` // Plaintext credentials to be encrypted
-	IsDefault    bool              `json:"is_default"`
-}
-
-// UpdateCredentialProfileRequest is the request body for updating a credential profile
-type UpdateCredentialProfileRequest struct {
-	Name         *string           `json:"name,omitempty"`
-	Description  *string           `json:"description,omitempty"`
-	IsRunnerHost *bool             `json:"is_runner_host,omitempty"`
-	Credentials  map[string]string `json:"credentials,omitempty"` // If provided, will replace existing credentials
-	IsDefault    *bool             `json:"is_default,omitempty"`
-	IsActive     *bool             `json:"is_active,omitempty"`
-}
-
 // CredentialProfilesByAgentType groups profiles by agent type for list response
 type CredentialProfilesByAgentType struct {
 	AgentTypeID   int64                        `json:"agent_type_id"`

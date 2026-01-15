@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentsMesh - Pitch Deck</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/black.css">
+    <style>
+        :root {
+            --r-background-color: #0a0a0f;
+            --r-main-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --r-heading-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --r-main-color: #e0e0e0;
+            --r-heading-color: #ffffff;
+            --r-link-color: #6ee7b7;
+            --accent: #6ee7b7;
+            --accent-secondary: #818cf8;
+        }
+        .reveal {
+            font-size: 32px;
+        }
+        .reveal h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6ee7b7 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .reveal h2 {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .reveal h3 {
+            font-size: 1.3em;
+            color: #a0a0a0;
+            font-weight: 400;
+        }
+        .reveal .subtitle {
+            font-size: 1.4em;
+            color: #a0a0a0;
+            margin-top: -20px;
+        }
+        .reveal .highlight {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .reveal .highlight-purple {
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+        .reveal .big-number {
+            font-size: 4em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6ee7b7 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+        .reveal .stat-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 40px 0;
+        }
+        .reveal .stat-item {
+            text-align: center;
+        }
+        .reveal .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .reveal .stat-label {
+            font-size: 0.8em;
+            color: #808080;
+            margin-top: 5px;
+        }
+        .reveal .quote {
+            font-style: italic;
+            color: #a0a0a0;
+            border-left: 4px solid var(--accent);
+            padding-left: 30px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .reveal .quote-source {
+            font-size: 0.7em;
+            color: #606060;
+            margin-top: 10px;
+        }
+        .reveal .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.85em;
+        }
+        .reveal .comparison-table th {
+            background: rgba(110, 231, 183, 0.1);
+            color: var(--accent);
+            padding: 15px;
+            text-align: left;
+        }
+        .reveal .comparison-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+        }
+        .reveal .comparison-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        .reveal .check {
+            color: var(--accent);
+        }
+        .reveal .cross {
+            color: #ef4444;
+        }
+        .reveal .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .reveal .feature-item {
+            background: rgba(255,255,255,0.03);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+        .reveal .feature-item h4 {
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .reveal .feature-item p {
+            color: #909090;
+            font-size: 0.85em;
+            margin: 0;
+        }
+        .reveal .timeline {
+            position: relative;
+            margin: 40px 0;
+        }
+        .reveal .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .reveal .timeline-marker {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6ee7b7 0%, #818cf8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+        .reveal .timeline-content {
+            margin-left: 25px;
+            text-align: left;
+        }
+        .reveal .timeline-content h4 {
+            margin: 0;
+            color: #fff;
+        }
+        .reveal .timeline-content p {
+            margin: 5px 0 0;
+            color: #808080;
+            font-size: 0.85em;
+        }
+        .reveal .cta-box {
+            background: linear-gradient(135deg, rgba(110, 231, 183, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
+            border: 1px solid rgba(110, 231, 183, 0.3);
+            border-radius: 16px;
+            padding: 40px;
+            margin: 30px 0;
+        }
+        .reveal .logo {
+            font-size: 1.2em;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .reveal ul {
+            list-style: none;
+            padding: 0;
+        }
+        .reveal ul li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .reveal ul li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+        .reveal .slide-number {
+            color: #404040;
+        }
+        .reveal .progress {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Slide 1: Title -->
+            <section>
+                <h1>AgentsMesh</h1>
+                <p class="subtitle">Command Your AI Agents Fleet<br>Anywhere, Anytime</p>
+                <br><br>
+                <p style="color: #606060; font-size: 0.7em;">CLI Agent 编排与管理平台</p>
+            </section>
+
+            <!-- Slide 2: One Liner -->
+            <section>
+                <h2>一句话</h2>
+                <br>
+                <p style="font-size: 1.4em; line-height: 1.6;">
+                    当每个企业都在用 <span class="highlight">Claude Code</span> 时，<br>
+                    谁来管理这支 <span class="highlight-purple">AI Agent 舰队</span>？
+                </p>
+                <br><br>
+                <p style="color: #606060;">AgentsMesh = CLI Agent 的 Kubernetes</p>
+            </section>
+
+            <!-- Slide 3: Market Size -->
+            <section>
+                <h2>市场规模</h2>
+                <div class="stat-row">
+                    <div class="stat-item">
+                        <div class="stat-number">$52B</div>
+                        <div class="stat-label">2030 年市场规模</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">46%</div>
+                        <div class="stat-label">年复合增长率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">40%</div>
+                        <div class="stat-label">2026 企业渗透率</div>
+                    </div>
+                </div>
+                <p style="color: #606060; font-size: 0.7em;">Source: Gartner, Deloitte 2026</p>
+            </section>
+
+            <!-- Slide 4: The Gap -->
+            <section>
+                <h2>市场空白</h2>
+                <br>
+                <div class="quote">
+                    "63% 组织在实验 AI Agent，<br>
+                    但只有 <span class="highlight">&lt;25%</span> 成功规模化生产。<br><br>
+                    组织部署 Agent 的速度，<br>
+                    <span class="highlight-purple">快于管理它们的能力。</span>"
+                    <div class="quote-source">— Gartner 2026 Predictions</div>
+                </div>
+            </section>
+
+            <!-- Slide 5: Why CLI Agents -->
+            <section>
+                <h2>为什么是 CLI Agent？</h2>
+                <br>
+                <table class="comparison-table">
+                    <tr>
+                        <th></th>
+                        <th>IDE Agent (Cursor)</th>
+                        <th>CLI Agent (Claude Code)</th>
+                    </tr>
+                    <tr>
+                        <td>执行环境</td>
+                        <td>IDE 沙箱</td>
+                        <td><span class="highlight">完整系统权限</span></td>
+                    </tr>
+                    <tr>
+                        <td>能力边界</td>
+                        <td>代码补全</td>
+                        <td><span class="highlight">任意系统操作</span></td>
+                    </tr>
+                    <tr>
+                        <td>自主性</td>
+                        <td>辅助人类</td>
+                        <td><span class="highlight">完全自主执行</span></td>
+                    </tr>
+                    <tr>
+                        <td>天花板</td>
+                        <td>受限于 IDE</td>
+                        <td><span class="highlight">接近 AGI</span></td>
+                    </tr>
+                </table>
+                <br>
+                <p style="color: #808080; font-size: 0.8em;">CLI Agent 是真正的 Agentic AI，它们越强，管理需求越迫切</p>
+            </section>
+
+            <!-- Slide 6: Product -->
+            <section>
+                <h2>AgentsMesh 是什么</h2>
+                <br>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>🌐 远程指挥中心</h4>
+                        <p>随时随地通过 Web 访问和控制你的 AI Agent 舰队</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🤝 多 Agent 协作</h4>
+                        <p>Agent 之间可以相互观察、通信、协作完成复杂任务</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🔐 企业级管控</h4>
+                        <p>统一凭证管理、权限控制、多租户隔离</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🎯 任务全流程</h4>
+                        <p>Ticket → Agent → MR → Pipeline 完整闭环</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 7: How It Works -->
+            <section>
+                <h2>产品形态</h2>
+                <br>
+                <pre style="text-align: center; font-size: 0.7em; color: #808080; line-height: 1.8;">
+                        ┌─────────────────────────┐
+                        │     AgentsMesh Cloud     │
+                        │    (Web 控制中心)        │
+                        └───────────┬─────────────┘
+                                    │ WebSocket
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
+              ┌──────────┐   ┌──────────┐   ┌──────────┐
+              │  Runner  │   │  Runner  │   │  Runner  │
+              │ (自托管)  │   │ (自托管)  │   │ (自托管)  │
+              └────┬─────┘   └────┬─────┘   └────┬─────┘
+                   │              │              │
+              Claude Code    Gemini CLI      Aider
+                </pre>
+                <p style="color: #606060; font-size: 0.75em; margin-top: 30px;">
+                    代码在用户环境执行，数据不出境，满足企业合规
+                </p>
+            </section>
+
+            <!-- Slide 8: Key Differentiator -->
+            <section>
+                <h2>核心差异化</h2>
+                <br>
+                <p style="font-size: 1.3em; margin-bottom: 30px;">
+                    <span class="highlight">唯一</span>实现 CLI Agent 间<br>完整协作能力的平台
+                </p>
+                <table class="comparison-table" style="font-size: 0.75em;">
+                    <tr>
+                        <th></th>
+                        <th>终端共享</th>
+                        <th>权限控制</th>
+                        <th>消息通信</th>
+                        <th>任务集成</th>
+                    </tr>
+                    <tr>
+                        <td>AgentsMesh</td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Kiro (AWS)</td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>CrewAI / AutoGen</td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="cross">✗</span></td>
+                    </tr>
+                </table>
+            </section>
+
+            <!-- Slide 9: Business Model -->
+            <section>
+                <h2>商业模式</h2>
+                <br>
+                <p style="font-size: 1.3em; margin-bottom: 40px;">
+                    与 Agent <span class="highlight">共生</span>，而非竞争
+                </p>
+                <div style="font-size: 0.9em; color: #a0a0a0; line-height: 2;">
+                    <p>Anthropic / Google / OpenAI 让 Agent 更强</p>
+                    <p style="color: var(--accent);">↓</p>
+                    <p>企业更依赖 CLI Agent</p>
+                    <p style="color: var(--accent);">↓</p>
+                    <p>更需要 AgentsMesh 管理</p>
+                    <p style="color: var(--accent);">↓</p>
+                    <p><span class="highlight">Agent 越强，平台越有价值</span></p>
+                </div>
+            </section>
+
+            <!-- Slide 10: Timing -->
+            <section>
+                <h2>时机</h2>
+                <br>
+                <div class="big-number">12-18</div>
+                <p style="font-size: 1.1em; color: #a0a0a0;">个月窗口期</p>
+                <br>
+                <ul style="font-size: 0.85em; color: #909090;">
+                    <li>2026 年 Agent 渗透率从 5% 飙升至 40%</li>
+                    <li>大公司专注做 Agent，还没做管理层</li>
+                    <li>品类空白，先定义者即领导者</li>
+                </ul>
+            </section>
+
+            <!-- Slide 11: Roadmap -->
+            <section>
+                <h2>路线图</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker">Q1</div>
+                        <div class="timeline-content">
+                            <h4>可观测性</h4>
+                            <p>Agent 仪表板、审计日志、效率指标</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">Q2</div>
+                        <div class="timeline-content">
+                            <h4>工作流编排</h4>
+                            <p>YAML 定义 Agent 工作流、预设模板</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">Q3</div>
+                        <div class="timeline-content">
+                            <h4>生态市场</h4>
+                            <p>Agent 配置市场、API 开放</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 12: The Ask -->
+            <section>
+                <h2>融资</h2>
+                <br>
+                <div class="cta-box">
+                    <p style="font-size: 1.5em; margin-bottom: 30px;">
+                        种子轮 / Pre-A
+                    </p>
+                    <p style="color: #a0a0a0; font-size: 0.9em; line-height: 1.8;">
+                        用途：完成可观测性 + 工作流编排<br>
+                        获取 50 个付费客户，验证 PMF<br>
+                        建立品类领导地位
+                    </p>
+                </div>
+            </section>
+
+            <!-- Slide 13: Summary -->
+            <section>
+                <h2>总结</h2>
+                <br>
+                <ul style="font-size: 1em; line-height: 2;">
+                    <li><span class="highlight">$52B</span> 市场，<span class="highlight">46%</span> CAGR</li>
+                    <li>CLI Agent 编排 = <span class="highlight-purple">空白赛道</span></li>
+                    <li>产品已 Ready，<span class="highlight">领先市场 12 个月</span></li>
+                    <li>与 Agent 共生，<span class="highlight-purple">越强越有价值</span></li>
+                </ul>
+            </section>
+
+            <!-- Slide 14: End -->
+            <section>
+                <h1>AgentsMesh</h1>
+                <p class="subtitle">Command Your AI Agents Fleet</p>
+                <br><br>
+                <p style="color: #606060; font-size: 0.9em;">
+                    联系我们
+                </p>
+                <p style="color: var(--accent); font-size: 1em;">
+                    [邮箱 / 网站]
+                </p>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            slideNumber: 'c/t',
+            progress: true,
+            center: true,
+            transition: 'fade',
+            transitionSpeed: 'fast'
+        });
+    </script>
+</body>
+</html>

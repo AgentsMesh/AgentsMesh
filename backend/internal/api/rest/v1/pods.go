@@ -1,10 +1,12 @@
 package v1
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strconv"
 
+	agentDomain "github.com/anthropics/agentmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentmesh/backend/internal/middleware"
 	"github.com/anthropics/agentmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentmesh/backend/internal/service/agentpod"
@@ -80,13 +82,47 @@ func WithBillingService(bs BillingServiceForHandler) PodHandlerOption {
 	}
 }
 
+// compositeAgentProvider implements agent.AgentConfigProvider by combining three sub-services
+// This allows PodHandler to work with the split service architecture
+type compositeAgentProvider struct {
+	agentTypeSvc  *agent.AgentTypeService
+	credentialSvc *agent.CredentialProfileService
+	userConfigSvc *agent.UserConfigService
+}
+
+func (p *compositeAgentProvider) GetAgentType(ctx context.Context, id int64) (*agentDomain.AgentType, error) {
+	return p.agentTypeSvc.GetAgentType(ctx, id)
+}
+
+func (p *compositeAgentProvider) GetUserEffectiveConfig(ctx context.Context, userID, agentTypeID int64, overrides agentDomain.ConfigValues) agentDomain.ConfigValues {
+	return p.userConfigSvc.GetUserEffectiveConfig(ctx, userID, agentTypeID, overrides)
+}
+
+func (p *compositeAgentProvider) GetEffectiveCredentialsForPod(ctx context.Context, userID, agentTypeID int64, profileID *int64) (agentDomain.EncryptedCredentials, bool, error) {
+	return p.credentialSvc.GetEffectiveCredentialsForPod(ctx, userID, agentTypeID, profileID)
+}
+
 // NewPodHandler creates a new pod handler with required dependencies and optional configurations
-func NewPodHandler(podService *agentpod.PodService, runnerService *runner.Service, agentService *agent.Service, opts ...PodHandlerOption) *PodHandler {
+func NewPodHandler(
+	podService *agentpod.PodService,
+	runnerService *runner.Service,
+	agentTypeSvc *agent.AgentTypeService,
+	credentialSvc *agent.CredentialProfileService,
+	userConfigSvc *agent.UserConfigService,
+	opts ...PodHandlerOption,
+) *PodHandler {
+	// Create composite provider for ConfigBuilder
+	provider := &compositeAgentProvider{
+		agentTypeSvc:  agentTypeSvc,
+		credentialSvc: credentialSvc,
+		userConfigSvc: userConfigSvc,
+	}
+
 	h := &PodHandler{
 		podService:    podService,
 		runnerService: runnerService,
-		agentService:  agentService,
-		configBuilder: agent.NewConfigBuilder(agentService), // Initialize ConfigBuilder for new protocol
+		agentService:  provider,
+		configBuilder: agent.NewConfigBuilder(provider),
 	}
 	for _, opt := range opts {
 		opt(h)

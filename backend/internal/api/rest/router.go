@@ -81,7 +81,7 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		protected.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
 		{
 			// User-level routes (no tenant context required)
-			v1.RegisterUserRoutes(protected.Group("/users"), svc.User, svc.Org, svc.Agent, svc.AgentPodSettings, svc.AgentPodAIProvider)
+			v1.RegisterUserRoutes(protected.Group("/users"), svc.User, svc.Org, svc.AgentType, svc.CredentialProfile, svc.UserConfig, svc.AgentPodSettings, svc.AgentPodAIProvider)
 
 			// User Git connections routes (no tenant context required)
 			gitConnHandler := v1.NewUserGitConnectionHandler(svc.User)
@@ -165,7 +165,7 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 			if svc.Billing != nil {
 				mcpPodOpts = append(mcpPodOpts, v1.WithBillingService(svc.Billing))
 			}
-			podHandler := v1.NewPodHandler(svc.Pod, svc.Runner, svc.Agent, mcpPodOpts...)
+			podHandler := v1.NewPodHandler(svc.Pod, svc.Runner, svc.AgentType, svc.CredentialProfile, svc.UserConfig, mcpPodOpts...)
 			podOrgScoped.GET("/pods", podHandler.ListPods)
 			podOrgScoped.POST("/pods", podHandler.CreatePod)
 			podOrgScoped.GET("/pods/:key/terminal/observe", podHandler.ObserveTerminal)

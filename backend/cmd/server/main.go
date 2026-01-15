@@ -97,7 +97,7 @@ func main() {
 	}
 
 	// Initialize Runner connection manager and Pod coordinator
-	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher := initializeRunnerComponents(db, redisClient, appLogger, services.agent)
+	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher := initializeRunnerComponents(db, redisClient, appLogger, services.agentType)
 
 	// Setup terminal router event publishing for OSC 777 notifications
 	terminalRouter.SetEventBus(eventBus)
@@ -113,7 +113,9 @@ func main() {
 		Auth:              services.auth,
 		User:              services.user,
 		Org:               services.org,
-		Agent:             services.agent,
+		AgentType:         services.agentType,
+		CredentialProfile: services.credentialProfile,
+		UserConfig:        services.userConfig,
 		Repository:        services.repository,
 		Runner:            services.runner,
 		RunnerConnMgr:     runnerConnMgr,
@@ -149,7 +151,10 @@ type serviceContainer struct {
 	auth               *auth.Service
 	user               *user.Service
 	org                *organization.Service
-	agent              *agent.Service
+	// Agent services (split by responsibility per SRP)
+	agentType          *agent.AgentTypeService
+	credentialProfile  *agent.CredentialProfileService
+	userConfig         *agent.UserConfigService
 	repository         *repository.Service
 	runner             *runner.Service
 	pod                *agentpod.PodService
@@ -178,7 +183,10 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	}
 	authSvc := auth.NewServiceWithRedis(authCfg, userSvc, redisClient)
 	orgSvc := organization.NewService(db)
-	agentSvc := agent.NewService(db)
+	// Initialize agent sub-services (split by responsibility per SRP)
+	agentTypeSvc := agent.NewAgentTypeService(db)
+	credentialProfileSvc := agent.NewCredentialProfileService(db, agentTypeSvc)
+	userConfigSvc := agent.NewUserConfigService(db, agentTypeSvc)
 	repoSvc := repository.NewService(db)
 	billingSvc := billing.NewService(db, "") // Empty stripe key for now
 	runnerSvc := runner.NewService(db, billingSvc)
@@ -236,7 +244,9 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		auth:               authSvc,
 		user:               userSvc,
 		org:                orgSvc,
-		agent:              agentSvc,
+		agentType:          agentTypeSvc,
+		credentialProfile:  credentialProfileSvc,
+		userConfig:         userConfigSvc,
 		repository:         repoSvc,
 		runner:             runnerSvc,
 		pod:                podSvc,
@@ -295,12 +305,12 @@ func initializeInfrastructure(cfg *config.Config, appLogger *logger.Logger) (*we
 }
 
 // initializeRunnerComponents initializes runner-related components
-func initializeRunnerComponents(db *gorm.DB, redisClient *redis.Client, appLogger *logger.Logger, agentSvc *agent.Service) (*runner.ConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter, *runner.HeartbeatBatcher) {
+func initializeRunnerComponents(db *gorm.DB, redisClient *redis.Client, appLogger *logger.Logger, agentTypeSvc *agent.AgentTypeService) (*runner.ConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter, *runner.HeartbeatBatcher) {
 	// Initialize Runner connection manager
 	runnerConnMgr := runner.NewConnectionManager(appLogger.Logger)
 
 	// Setup AgentTypesProvider for initialization handshake
-	agentTypesAdapter := runner.NewAgentServiceAdapter(agentSvc)
+	agentTypesAdapter := runner.NewAgentTypeServiceAdapter(agentTypeSvc)
 	runnerConnMgr.SetAgentTypesProvider(agentTypesAdapter)
 	runnerConnMgr.SetServerVersion("1.0.0") // TODO: Get from build info
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentmesh/runner/internal/client"
 	"github.com/anthropics/agentmesh/runner/internal/config"
 	"github.com/anthropics/agentmesh/runner/internal/workspace"
 )
@@ -142,51 +143,68 @@ func TestPodBuilderTerminalSizeDefaults(t *testing.T) {
 	}
 }
 
-func TestPodBuilderResolveFallbackToConfigRoot(t *testing.T) {
+func TestPodBuilderWithLocalWorkDirConfig(t *testing.T) {
+	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
-			WorkspaceRoot: "/fallback/path",
+			WorkspaceRoot: tempDir,
 		},
 		workspace: nil,
 	}
 
 	builder := NewPodBuilder(runner).
-		WithPodKey("fallback-pod")
+		WithPodKey("local-workdir-pod").
+		WithLaunchCommand("echo", []string{"test"}).
+		WithWorkDirConfig(&client.WorkDirConfig{
+			Type:      "local",
+			LocalPath: tempDir,
+		})
 
-	workDir, worktreePath, branchName, err := builder.resolveWorkingDirectory(context.Background())
+	pod, err := builder.Build(context.Background())
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+		return
 	}
 
-	if workDir != "/fallback/path" {
-		t.Errorf("workDir = %s, want /fallback/path", workDir)
+	if pod.PodKey != "local-workdir-pod" {
+		t.Errorf("pod key = %s, want local-workdir-pod", pod.PodKey)
 	}
-	if worktreePath != "" {
-		t.Errorf("worktreePath should be empty, got %s", worktreePath)
-	}
-	if branchName != "" {
-		t.Errorf("branchName should be empty, got %s", branchName)
+	if pod.Terminal != nil {
+		pod.Terminal.Stop()
 	}
 }
 
-func TestPodBuilderRunPreparationWithEmptyScript(t *testing.T) {
+func TestPodBuilderWithFilesToCreate(t *testing.T) {
+	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
-			WorkspaceRoot: "/tmp",
+			WorkspaceRoot: tempDir,
 		},
 	}
 
 	builder := NewPodBuilder(runner).
-		WithPodKey("empty-prep-pod").
-		WithPreparationScript("", 0)
+		WithPodKey("files-pod").
+		WithLaunchCommand("echo", []string{"test"}).
+		WithFilesToCreate([]client.FileToCreate{
+			{
+				PathTemplate: "{{.sandbox.root_path}}/config.json",
+				Content:      `{"key": "value"}`,
+				Mode:         0644,
+			},
+		})
 
-	err := builder.runPreparation(context.Background(), "/tmp", "", "")
+	pod, err := builder.Build(context.Background())
 	if err != nil {
-		t.Errorf("unexpected error for empty prep script: %v", err)
+		t.Errorf("unexpected error: %v", err)
+		return
+	}
+
+	if pod.Terminal != nil {
+		pod.Terminal.Stop()
 	}
 }
 
-func TestPodBuilderRunPreparationWithEchoScript(t *testing.T) {
+func TestPodBuilderWithTempDirConfig(t *testing.T) {
 	tempDir := t.TempDir()
 
 	runner := &Runner{
@@ -196,12 +214,20 @@ func TestPodBuilderRunPreparationWithEchoScript(t *testing.T) {
 	}
 
 	builder := NewPodBuilder(runner).
-		WithPodKey("prep-script-pod").
-		WithPreparationScript("echo 'test preparation'", 10)
+		WithPodKey("tempdir-pod").
+		WithLaunchCommand("echo", []string{"test"}).
+		WithWorkDirConfig(&client.WorkDirConfig{
+			Type: "tempdir",
+		})
 
-	err := builder.runPreparation(context.Background(), tempDir, "", "")
+	pod, err := builder.Build(context.Background())
 	if err != nil {
-		t.Logf("Preparation script result: %v", err)
+		t.Errorf("unexpected error: %v", err)
+		return
+	}
+
+	if pod.Terminal != nil {
+		pod.Terminal.Stop()
 	}
 }
 
@@ -220,10 +246,14 @@ func TestPodBuilderFluentChaining(t *testing.T) {
 		WithEnvVar("VAR2", "val2").
 		WithTerminalSize(40, 120).
 		WithInitialPrompt("prompt").
-		WithRepository("https://example.com/repo", "develop").
-		WithWorktree("TICKET-789").
-		WithPreparationScript("echo test", 30).
-		WithMCP("server1")
+		WithWorkDirConfig(&client.WorkDirConfig{
+			Type:          "worktree",
+			RepositoryURL: "https://example.com/repo",
+			Branch:        "develop",
+		}).
+		WithFilesToCreate([]client.FileToCreate{
+			{PathTemplate: "{{.sandbox.root_path}}/test.txt", Content: "test"},
+		})
 
 	if builder.podKey != "chain-pod" {
 		t.Error("podKey not set")
@@ -246,16 +276,20 @@ func TestPodBuilderFluentChaining(t *testing.T) {
 	if builder.initialPrompt != "prompt" {
 		t.Error("initialPrompt not set")
 	}
-	if builder.repositoryURL != "https://example.com/repo" || builder.branch != "develop" {
-		t.Error("repository not set correctly")
+	if builder.workDirConfig == nil {
+		t.Error("workDirConfig not set")
+	} else {
+		if builder.workDirConfig.Type != "worktree" {
+			t.Error("workDirConfig type not set correctly")
+		}
+		if builder.workDirConfig.RepositoryURL != "https://example.com/repo" {
+			t.Error("workDirConfig repositoryURL not set correctly")
+		}
+		if builder.workDirConfig.Branch != "develop" {
+			t.Error("workDirConfig branch not set correctly")
+		}
 	}
-	if !builder.useWorktree || builder.ticketIdentifier != "TICKET-789" {
-		t.Error("worktree not set correctly")
-	}
-	if builder.prepScript != "echo test" || builder.prepTimeout != 30 {
-		t.Error("preparation script not set correctly")
-	}
-	if !builder.mcpEnabled || len(builder.mcpServers) != 1 {
-		t.Error("MCP not set correctly")
+	if len(builder.filesToCreate) != 1 {
+		t.Error("filesToCreate not set correctly")
 	}
 }

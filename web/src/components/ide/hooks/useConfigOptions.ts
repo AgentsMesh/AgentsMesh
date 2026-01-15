@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { agentApi, ConfigField } from "@/lib/api/client";
+import { agentApi, userAgentConfigApi, ConfigField } from "@/lib/api/client";
 
 export interface ConfigOptionsState {
   fields: ConfigField[];
@@ -15,7 +15,7 @@ export interface ConfigOptionsState {
  *
  * Configuration priority (high to low):
  * 1. User overrides in the form
- * 2. Organization default config
+ * 2. User personal config (from personal settings)
  * 3. Backend ConfigSchema defaults
  */
 export function useConfigOptions(
@@ -59,25 +59,25 @@ export function useConfigOptions(
           }
         }
 
-        // Step 2: Load organization default config and merge (higher priority)
+        // Step 2: Load user personal config and merge (higher priority)
         try {
-          const orgConfigResponse = await agentApi.getDefaultConfig(agentTypeId);
-          if (!cancelled && orgConfigResponse.config?.config_values) {
-            const orgConfig = orgConfigResponse.config.config_values;
-            console.log("[useConfigOptions] Organization default config:", orgConfig);
+          const userConfigResponse = await userAgentConfigApi.get(agentTypeId);
+          if (!cancelled && userConfigResponse.config?.config_values) {
+            const userConfig = userConfigResponse.config.config_values;
+            console.log("[useConfigOptions] User personal config:", userConfig);
 
-            // Merge organization config into mergedConfig
+            // Merge user config into mergedConfig
             for (const field of schema.fields || []) {
-              if (orgConfig[field.name] !== undefined) {
-                console.log("[useConfigOptions] Merging org config:", field.name, "=", orgConfig[field.name]);
-                mergedConfig[field.name] = orgConfig[field.name];
+              if (userConfig[field.name] !== undefined) {
+                console.log("[useConfigOptions] Merging user config:", field.name, "=", userConfig[field.name]);
+                mergedConfig[field.name] = userConfig[field.name];
               }
             }
             console.log("[useConfigOptions] Final merged config:", mergedConfig);
           }
         } catch (err) {
-          // Organization config not found or error - use ConfigSchema defaults only
-          console.log("[useConfigOptions] No organization default config found, using ConfigSchema defaults", err);
+          // User config not found or error - use ConfigSchema defaults only
+          console.log("[useConfigOptions] No user personal config found, using ConfigSchema defaults", err);
         }
 
         if (!cancelled) {

@@ -17,13 +17,13 @@ export interface PodCreationData {
   // Runner selection state
   selectedRunner: RunnerData | null;
   setSelectedRunnerId: (id: number | null) => void;
-  // Agent types filtered by selected runner's capabilities
+  // Agent types filtered by selected runner's available agents
   availableAgentTypes: AgentTypeData[];
 }
 
 /**
  * Hook to load data required for pod creation (runners, agents, repositories)
- * Agent types are filtered based on the selected runner's capabilities
+ * Agent types are filtered based on the selected runner's available agents
  * Only loads when enabled is true (e.g., when modal is open)
  */
 export function usePodCreationData(enabled: boolean): PodCreationData {
@@ -99,23 +99,15 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
     return runners.find(r => r.id === selectedRunnerId) || null;
   }, [runners, selectedRunnerId]);
 
-  // Filter agent types based on selected runner's capabilities
+  // Filter agent types based on selected runner's available agents
   const availableAgentTypes = useMemo((): AgentTypeData[] => {
-    if (!selectedRunner?.capabilities || selectedRunner.capabilities.length === 0) {
-      // If no runner selected or no capabilities, return empty list
+    if (!selectedRunner?.available_agents || selectedRunner.available_agents.length === 0) {
+      // If no runner selected or no available agents, return empty list
       return [];
     }
 
-    // Collect unique agent slugs from all plugin capabilities
-    const supportedSlugs = new Set<string>();
-    for (const cap of selectedRunner.capabilities) {
-      for (const agent of cap.supported_agents || []) {
-        supportedSlugs.add(agent);
-      }
-    }
-
-    // Filter agent types by supported slugs
-    return agentTypes.filter(agent => supportedSlugs.has(agent.slug));
+    // Filter agent types by available_agents slugs from Runner handshake
+    return agentTypes.filter(agent => selectedRunner.available_agents!.includes(agent.slug));
   }, [selectedRunner, agentTypes]);
 
   return {

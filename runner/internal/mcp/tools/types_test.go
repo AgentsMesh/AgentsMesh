@@ -185,17 +185,12 @@ func TestBindingStruct(t *testing.T) {
 
 func TestAvailablePodStruct(t *testing.T) {
 	ticketID := 123
-	projectID := 456
-
 	s := AvailablePod{
-		PodKey:  "test-pod",
-		UserID:      1,
-		Username:    "testuser",
+		ID:          1,
+		PodKey:      "test-pod",
+		CreatedByID: 1,
 		Status:      PodStatusRunning,
 		TicketID:    &ticketID,
-		TicketTitle: "Test Ticket",
-		ProjectID:   &projectID,
-		ProjectName: "Test Project",
 		AgentType:   "claude",
 		CreatedAt:   "2024-01-01T00:00:00Z",
 	}

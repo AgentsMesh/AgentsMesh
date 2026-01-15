@@ -37,10 +37,10 @@ export { runnerApi } from "./runner";
 export type { RunnerData } from "./runner";
 
 // Agent
-export { agentApi } from "./agent";
+export { agentApi, userAgentConfigApi } from "./agent";
 export type {
   AgentTypeData,
-  OrganizationAgentConfigData,
+  UserAgentConfigData,
   ConfigField,
   ConfigFieldOption,
   ConfigSchema,

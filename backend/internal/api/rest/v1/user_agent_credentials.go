@@ -12,13 +12,13 @@ import (
 
 // UserAgentCredentialHandler handles user agent credential profile requests
 type UserAgentCredentialHandler struct {
-	agentService *agentService.Service
+	credentialSvc *agentService.CredentialProfileService
 }
 
 // NewUserAgentCredentialHandler creates a new handler
-func NewUserAgentCredentialHandler(agentSvc *agentService.Service) *UserAgentCredentialHandler {
+func NewUserAgentCredentialHandler(credentialSvc *agentService.CredentialProfileService) *UserAgentCredentialHandler {
 	return &UserAgentCredentialHandler{
-		agentService: agentSvc,
+		credentialSvc: credentialSvc,
 	}
 }
 
@@ -47,7 +47,7 @@ func (h *UserAgentCredentialHandler) RegisterRoutes(rg *gin.RouterGroup) {
 func (h *UserAgentCredentialHandler) ListProfiles(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
-	profiles, err := h.agentService.ListCredentialProfiles(c.Request.Context(), userID)
+	profiles, err := h.credentialSvc.ListCredentialProfiles(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list credential profiles"})
 		return
@@ -67,7 +67,7 @@ func (h *UserAgentCredentialHandler) ListProfilesForAgentType(c *gin.Context) {
 		return
 	}
 
-	profiles, err := h.agentService.ListCredentialProfilesForAgentType(c.Request.Context(), userID, agentTypeID)
+	profiles, err := h.credentialSvc.ListCredentialProfilesForAgentType(c.Request.Context(), userID, agentTypeID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list credential profiles"})
 		return
@@ -117,7 +117,7 @@ func (h *UserAgentCredentialHandler) CreateProfile(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.agentService.CreateCredentialProfile(c.Request.Context(), userID, &agent.CreateCredentialProfileRequest{
+	profile, err := h.credentialSvc.CreateCredentialProfile(c.Request.Context(), userID, &agentService.CreateCredentialProfileParams{
 		AgentTypeID:  agentTypeID,
 		Name:         req.Name,
 		Description:  req.Description,
@@ -152,7 +152,7 @@ func (h *UserAgentCredentialHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.agentService.GetCredentialProfile(c.Request.Context(), userID, profileID)
+	profile, err := h.credentialSvc.GetCredentialProfile(c.Request.Context(), userID, profileID)
 	if err != nil {
 		if err == agentService.ErrCredentialProfileNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
@@ -192,7 +192,7 @@ func (h *UserAgentCredentialHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.agentService.UpdateCredentialProfile(c.Request.Context(), userID, profileID, &agent.UpdateCredentialProfileRequest{
+	profile, err := h.credentialSvc.UpdateCredentialProfile(c.Request.Context(), userID, profileID, &agentService.UpdateCredentialProfileParams{
 		Name:         req.Name,
 		Description:  req.Description,
 		IsRunnerHost: req.IsRunnerHost,
@@ -227,7 +227,7 @@ func (h *UserAgentCredentialHandler) DeleteProfile(c *gin.Context) {
 		return
 	}
 
-	err = h.agentService.DeleteCredentialProfile(c.Request.Context(), userID, profileID)
+	err = h.credentialSvc.DeleteCredentialProfile(c.Request.Context(), userID, profileID)
 	if err != nil {
 		if err == agentService.ErrCredentialProfileNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
@@ -251,7 +251,7 @@ func (h *UserAgentCredentialHandler) SetDefault(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.agentService.SetDefaultCredentialProfile(c.Request.Context(), userID, profileID)
+	profile, err := h.credentialSvc.SetDefaultCredentialProfile(c.Request.Context(), userID, profileID)
 	if err != nil {
 		if err == agentService.ErrCredentialProfileNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})

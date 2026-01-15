@@ -31,7 +31,10 @@ type Services struct {
 	Auth              *auth.Service
 	User              *user.Service
 	Org               *organization.Service
-	Agent             *agent.Service
+	// Agent services (split by responsibility)
+	AgentType         *agent.AgentTypeService
+	CredentialProfile *agent.CredentialProfileService
+	UserConfig        *agent.UserConfigService
 	Repository        *repository.Service
 	Runner            *runner.Service
 	RunnerConnMgr     *runner.ConnectionManager // Runner WebSocket connection manager
@@ -61,7 +64,7 @@ func RegisterAllRoutes(rg *gin.RouterGroup, cfg *config.Config, svc *Services) {
 	RegisterAuthRoutes(rg.Group("/auth"), cfg, svc.Auth, svc.User, svc.Email)
 
 	// User routes (authenticated, but not org-scoped)
-	RegisterUserRoutes(rg.Group("/users"), svc.User, svc.Org, svc.Agent, svc.AgentPodSettings, svc.AgentPodAIProvider)
+	RegisterUserRoutes(rg.Group("/users"), svc.User, svc.Org, svc.AgentType, svc.CredentialProfile, svc.UserConfig, svc.AgentPodSettings, svc.AgentPodAIProvider)
 
 	// Organization routes (authenticated, some require org context)
 	// Path changed: /organizations → /orgs
@@ -82,23 +85,14 @@ func RegisterAdminRoutes(rg *gin.RouterGroup, svc *Services) {
 // RegisterOrgScopedRoutes registers organization-scoped routes (require tenant context)
 func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 	// Agents
-	agentHandler := NewAgentHandler(svc.Agent)
+	agentHandler := NewAgentHandler(svc.AgentType, svc.CredentialProfile, svc.UserConfig)
 	agents := rg.Group("/agents")
 	{
 		agents.GET("/types", agentHandler.ListAgentTypes)
 		agents.GET("/types/:agent_type_id", agentHandler.GetAgentType)
-		agents.GET("/config", agentHandler.GetOrganizationAgentConfig)
-		agents.POST("/config", agentHandler.EnableAgent)
-		agents.DELETE("/config/:agent_type_id", agentHandler.DisableAgent)
-		agents.PUT("/config/:agent_type_id/credentials", agentHandler.SetOrganizationCredentials)
 		agents.POST("/custom", agentHandler.CreateCustomAgent)
 		agents.PUT("/custom/:id", agentHandler.UpdateCustomAgent)
 		agents.DELETE("/custom/:id", agentHandler.DeleteCustomAgent)
-		// Default configs (organization-level agent configuration)
-		agents.GET("/default-configs", agentHandler.ListDefaultConfigs)
-		agents.GET("/:agent_type_id/default-config", agentHandler.GetDefaultConfig)
-		agents.PUT("/:agent_type_id/default-config", agentHandler.SetDefaultConfig)
-		agents.DELETE("/:agent_type_id/default-config", agentHandler.DeleteDefaultConfig)
 		// Config schema (for frontend dynamic form rendering)
 		agents.GET("/:agent_type_id/config-schema", agentHandler.GetAgentTypeConfigSchema)
 	}
@@ -155,7 +149,7 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.Billing != nil {
 		podOpts = append(podOpts, WithBillingService(svc.Billing))
 	}
-	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.Agent, podOpts...)
+	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.AgentType, svc.CredentialProfile, svc.UserConfig, podOpts...)
 	pods := rg.Group("/pods")
 	{
 		pods.GET("", podHandler.ListPods)
@@ -294,9 +288,9 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 
 
 // RegisterUserRoutes registers user routes
-func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *organization.Service, agentSvc *agent.Service, agentpodSettingsSvc *agentpod.SettingsService, agentpodAIProviderSvc *agentpod.AIProviderService) {
+func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *organization.Service, agentTypeSvc *agent.AgentTypeService, credentialSvc *agent.CredentialProfileService, userConfigSvc *agent.UserConfigService, agentpodSettingsSvc *agentpod.SettingsService, agentpodAIProviderSvc *agentpod.AIProviderService) {
 	userHandler := NewUserHandler(userSvc, orgSvc)
-	agentHandler := NewAgentHandler(agentSvc)
+	agentHandler := NewAgentHandler(agentTypeSvc, credentialSvc, userConfigSvc)
 
 	// Profile routes
 	rg.GET("/me", userHandler.GetCurrentUser)
@@ -310,6 +304,12 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 	rg.GET("/me/agents/credentials", agentHandler.GetUserCredentials)
 	rg.PUT("/me/agents/credentials/:agent_type_id", agentHandler.SetUserCredentials)
 	rg.DELETE("/me/agents/credentials/:agent_type_id", agentHandler.DeleteUserCredentials)
+
+	// User agent configs (personal runtime configuration)
+	rg.GET("/me/agent-configs", agentHandler.ListUserAgentConfigs)
+	rg.GET("/me/agent-configs/:agent_type_id", agentHandler.GetUserAgentConfig)
+	rg.PUT("/me/agent-configs/:agent_type_id", agentHandler.SetUserAgentConfig)
+	rg.DELETE("/me/agent-configs/:agent_type_id", agentHandler.DeleteUserAgentConfig)
 
 	// AgentPod settings routes
 	if agentpodSettingsSvc != nil && agentpodAIProviderSvc != nil {
@@ -341,7 +341,7 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 	gitCredentialHandler.RegisterRoutes(rg)
 
 	// User Agent Credential Profiles (for agent API credentials)
-	agentCredentialHandler := NewUserAgentCredentialHandler(agentSvc)
+	agentCredentialHandler := NewUserAgentCredentialHandler(credentialSvc)
 	agentCredentialHandler.RegisterRoutes(rg)
 
 	// User Git Connections (legacy, for backward compatibility)

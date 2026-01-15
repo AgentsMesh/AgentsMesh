@@ -2,6 +2,7 @@
 
 import React, { memo } from "react";
 import type { ConfigField } from "@/lib/api/agent";
+import { useTranslations } from "@/lib/i18n/client";
 
 /**
  * Props for field renderer components
@@ -11,23 +12,45 @@ export interface FieldRendererProps {
   field: ConfigField;
   value: unknown;
   onChange: (value: unknown) => void;
+  /** Agent slug for i18n translation key construction */
+  agentSlug: string;
 }
 
 /**
- * Type for field renderer components
+ * Hook for getting translated field labels and descriptions
+ * Uses the pattern: agent.{agentSlug}.fields.{fieldName}.label/description
  */
-export type FieldRenderer = React.FC<FieldRendererProps>;
+function useFieldTranslation(agentSlug: string, fieldName: string) {
+  const t = useTranslations();
+  const basePath = `agent.${agentSlug}.fields.${fieldName}`;
+
+  return {
+    label: t(`${basePath}.label`),
+    description: t(`${basePath}.description`),
+    getOptionLabel: (optionValue: string) => {
+      // For empty string option values, use a special key
+      const key = optionValue === "" ? `${basePath}.options.` : `${basePath}.options.${optionValue}`;
+      return t(key);
+    },
+  };
+}
 
 /**
  * Boolean field renderer (checkbox)
- * Memoized to prevent unnecessary re-renders
  */
-const BooleanFieldRenderer: FieldRenderer = memo(function BooleanFieldRenderer({
+function BooleanField({
   fieldKey,
-  field,
+  label,
+  description,
   value,
   onChange,
-}: FieldRendererProps) {
+}: {
+  fieldKey: string;
+  label: string;
+  description: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
   return (
     <div className="flex items-center gap-2">
       <input
@@ -36,219 +59,291 @@ const BooleanFieldRenderer: FieldRenderer = memo(function BooleanFieldRenderer({
         checked={Boolean(value)}
         onChange={(e) => onChange(e.target.checked)}
         className="h-4 w-4 rounded border-border"
-        aria-describedby={field.description ? `${fieldKey}-desc` : undefined}
+        aria-describedby={description ? `${fieldKey}-desc` : undefined}
       />
       <label htmlFor={fieldKey} className="text-sm">
-        {field.label}
+        {label}
       </label>
-      {field.description && (
+      {description && (
         <span id={`${fieldKey}-desc`} className="text-xs text-muted-foreground ml-auto">
-          {field.description}
+          {description}
         </span>
       )}
     </div>
   );
-});
+}
 
 /**
  * String field renderer (text input)
- * Memoized to prevent unnecessary re-renders
  */
-const StringFieldRenderer: FieldRenderer = memo(function StringFieldRenderer({
+function StringField({
   fieldKey,
-  field,
+  label,
+  description,
   value,
   onChange,
-}: FieldRendererProps) {
+  required,
+}: {
+  fieldKey: string;
+  label: string;
+  description: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  required?: boolean;
+}) {
   return (
     <div>
       <label htmlFor={fieldKey} className="block text-sm font-medium mb-1">
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
       <input
         type="text"
         id={fieldKey}
         value={String(value ?? "")}
-        placeholder={field.placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
-        aria-describedby={field.description ? `${fieldKey}-desc` : undefined}
-        aria-required={field.required}
+        aria-describedby={description ? `${fieldKey}-desc` : undefined}
+        aria-required={required}
       />
-      {field.description && (
+      {description && (
         <p id={`${fieldKey}-desc`} className="text-xs text-muted-foreground mt-1">
-          {field.description}
+          {description}
         </p>
       )}
     </div>
   );
-});
+}
 
 /**
  * Secret field renderer (password input)
- * Memoized to prevent unnecessary re-renders
  */
-const SecretFieldRenderer: FieldRenderer = memo(function SecretFieldRenderer({
+function SecretField({
   fieldKey,
-  field,
+  label,
+  description,
   value,
   onChange,
-}: FieldRendererProps) {
+  required,
+}: {
+  fieldKey: string;
+  label: string;
+  description: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  required?: boolean;
+}) {
   return (
     <div>
       <label htmlFor={fieldKey} className="block text-sm font-medium mb-1">
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
       <input
         type="password"
         id={fieldKey}
         value={String(value ?? "")}
-        placeholder={field.placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
-        aria-describedby={field.description ? `${fieldKey}-desc` : undefined}
-        aria-required={field.required}
+        aria-describedby={description ? `${fieldKey}-desc` : undefined}
+        aria-required={required}
       />
-      {field.description && (
+      {description && (
         <p id={`${fieldKey}-desc`} className="text-xs text-muted-foreground mt-1">
-          {field.description}
+          {description}
         </p>
       )}
     </div>
   );
-});
+}
 
 /**
  * Number field renderer
- * Memoized to prevent unnecessary re-renders
  */
-const NumberFieldRenderer: FieldRenderer = memo(function NumberFieldRenderer({
+function NumberField({
   fieldKey,
-  field,
+  label,
+  description,
   value,
   onChange,
-}: FieldRendererProps) {
+  required,
+  min,
+  max,
+}: {
+  fieldKey: string;
+  label: string;
+  description: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  required?: boolean;
+  min?: number;
+  max?: number;
+}) {
   return (
     <div>
       <label htmlFor={fieldKey} className="block text-sm font-medium mb-1">
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
       <input
         type="number"
         id={fieldKey}
         value={value != null ? Number(value) : ""}
-        min={field.min}
-        max={field.max}
+        min={min}
+        max={max}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
         className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
-        aria-describedby={field.description ? `${fieldKey}-desc` : undefined}
-        aria-required={field.required}
+        aria-describedby={description ? `${fieldKey}-desc` : undefined}
+        aria-required={required}
       />
-      {field.description && (
+      {description && (
         <p id={`${fieldKey}-desc`} className="text-xs text-muted-foreground mt-1">
-          {field.description}
+          {description}
         </p>
       )}
     </div>
   );
-});
+}
 
 /**
  * Select field renderer (dropdown)
- * Memoized to prevent unnecessary re-renders
  */
-const SelectFieldRenderer: FieldRenderer = memo(function SelectFieldRenderer({
+function SelectField({
   fieldKey,
-  field,
+  label,
+  description,
   value,
   onChange,
-}: FieldRendererProps) {
+  required,
+  options,
+  getOptionLabel,
+}: {
+  fieldKey: string;
+  label: string;
+  description: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  required?: boolean;
+  options?: { value: string }[];
+  getOptionLabel: (value: string) => string;
+}) {
   return (
     <div>
       <label htmlFor={fieldKey} className="block text-sm font-medium mb-1">
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
       <select
         id={fieldKey}
         value={String(value ?? "")}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
-        aria-describedby={field.description ? `${fieldKey}-desc` : undefined}
-        aria-required={field.required}
+        aria-describedby={description ? `${fieldKey}-desc` : undefined}
+        aria-required={required}
       >
-        {!field.required && !value && (
+        {!required && !value && (
           <option value="" disabled>
-            Select {field.label.toLowerCase()}...
+            Select {label.toLowerCase()}...
           </option>
         )}
-        {field.options?.map((option) => (
+        {options?.map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {getOptionLabel(option.value)}
           </option>
         ))}
       </select>
-      {field.description && (
+      {description && (
         <p id={`${fieldKey}-desc`} className="text-xs text-muted-foreground mt-1">
-          {field.description}
+          {description}
         </p>
       )}
     </div>
   );
-});
+}
 
 /**
- * Fallback renderer for unknown field types
+ * Unified field renderer component
+ * Uses switch statement internally to select the appropriate field type rendering
+ * This pattern avoids dynamic component creation during render (react-compiler compliant)
  */
-const UnknownFieldRenderer: FieldRenderer = memo(function UnknownFieldRenderer({
+export const FieldRenderer = memo(function FieldRenderer({
   fieldKey,
   field,
+  value,
+  onChange,
+  agentSlug,
 }: FieldRendererProps) {
-  return (
-    <div className="text-sm text-muted-foreground">
-      Unknown field type: {field.type} ({fieldKey})
-    </div>
-  );
+  const { label, description, getOptionLabel } = useFieldTranslation(agentSlug, field.name);
+
+  switch (field.type) {
+    case "boolean":
+      return (
+        <BooleanField
+          fieldKey={fieldKey}
+          label={label}
+          description={description}
+          value={value}
+          onChange={onChange}
+        />
+      );
+
+    case "string":
+      return (
+        <StringField
+          fieldKey={fieldKey}
+          label={label}
+          description={description}
+          value={value}
+          onChange={onChange}
+          required={field.required}
+        />
+      );
+
+    case "secret":
+      return (
+        <SecretField
+          fieldKey={fieldKey}
+          label={label}
+          description={description}
+          value={value}
+          onChange={onChange}
+          required={field.required}
+        />
+      );
+
+    case "number":
+      return (
+        <NumberField
+          fieldKey={fieldKey}
+          label={label}
+          description={description}
+          value={value}
+          onChange={onChange}
+          required={field.required}
+          min={field.validation?.min}
+          max={field.validation?.max}
+        />
+      );
+
+    case "select":
+      return (
+        <SelectField
+          fieldKey={fieldKey}
+          label={label}
+          description={description}
+          value={value}
+          onChange={onChange}
+          required={field.required}
+          options={field.options}
+          getOptionLabel={getOptionLabel}
+        />
+      );
+
+    default:
+      return (
+        <div className="text-sm text-muted-foreground">
+          Unknown field type: {field.type} ({fieldKey})
+        </div>
+      );
+  }
 });
-
-/**
- * Field renderer registry - maps field types to their renderer components
- * This is an immutable registry. Use createFieldRendererRegistry() for custom registries.
- */
-const FIELD_RENDERERS: Readonly<Record<string, FieldRenderer>> = {
-  boolean: BooleanFieldRenderer,
-  string: StringFieldRenderer,
-  secret: SecretFieldRenderer,
-  number: NumberFieldRenderer,
-  select: SelectFieldRenderer,
-};
-
-/**
- * Get the appropriate renderer for a field type
- * Returns a fallback renderer if the type is unknown
- */
-export function getFieldRenderer(type: string): FieldRenderer {
-  return FIELD_RENDERERS[type] || UnknownFieldRenderer;
-}
-
-/**
- * Create a custom field renderer registry with additional field types
- * This allows extending the default renderers without modifying global state.
- *
- * @example
- * const customRegistry = createFieldRendererRegistry({
- *   textarea: MyTextareaRenderer,
- * });
- * const renderer = customRegistry.get('textarea');
- */
-export function createFieldRendererRegistry(
-  customRenderers: Record<string, FieldRenderer> = {}
-): { get: (type: string) => FieldRenderer } {
-  const registry = { ...FIELD_RENDERERS, ...customRenderers };
-  return {
-    get: (type: string) => registry[type] || UnknownFieldRenderer,
-  };
-}

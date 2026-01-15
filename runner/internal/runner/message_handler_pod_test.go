@@ -36,8 +36,7 @@ func TestOnCreatePodSuccess(t *testing.T) {
 
 	req := client.CreatePodRequest{
 		PodKey:      "test-pod-1",
-		InitialCommand: "echo",
-		WorkingDir:     tempDir,
+		LaunchCommand: "echo",
 	}
 
 	err = handler.OnCreatePod(req)
@@ -92,7 +91,7 @@ func TestOnCreatePodMaxCapacity(t *testing.T) {
 
 	req := client.CreatePodRequest{
 		PodKey:      "new-pod",
-		InitialCommand: "echo",
+		LaunchCommand: "echo",
 	}
 
 	err := handler.OnCreatePod(req)
@@ -126,8 +125,7 @@ func TestOnCreatePodInvalidCommand(t *testing.T) {
 
 	req := client.CreatePodRequest{
 		PodKey:      "invalid-cmd-pod",
-		InitialCommand: "/nonexistent/command/path",
-		WorkingDir:     tempDir,
+		LaunchCommand: "/nonexistent/command/path",
 	}
 
 	err = handler.OnCreatePod(req)
@@ -135,7 +133,7 @@ func TestOnCreatePodInvalidCommand(t *testing.T) {
 	t.Logf("OnCreatePod with invalid command: %v", err)
 }
 
-func TestOnCreatePodWithTicketIdentifier(t *testing.T) {
+func TestOnCreatePodWithWorkDirConfig(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -145,31 +143,31 @@ func TestOnCreatePodWithTicketIdentifier(t *testing.T) {
 			MaxConcurrentPods: 10,
 			WorkspaceRoot:         tempDir,
 		},
-		// No worktreeService - should use workDir
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	req := client.CreatePodRequest{
-		PodKey:        "ticket-pod",
-		InitialCommand:   "echo",
-		WorkingDir:       tempDir,
-		TicketIdentifier: "TICKET-123", // Has ticket but no worktree service
+		PodKey:        "workdir-pod",
+		LaunchCommand: "echo",
+		WorkDirConfig: &client.WorkDirConfig{
+			Type: "tempdir",
+		},
 	}
 
 	err := handler.OnCreatePod(req)
 	if err != nil {
-		t.Logf("OnCreatePod with ticket (no worktree service): %v", err)
+		t.Logf("OnCreatePod with work dir config: %v", err)
 	}
 
 	// Clean up
-	pod, ok := store.Get("ticket-pod")
+	pod, ok := store.Get("workdir-pod")
 	if ok && pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}
 }
 
-func TestOnCreatePodWithPreparationConfig(t *testing.T) {
+func TestOnCreatePodWithFilesToCreate(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -184,28 +182,30 @@ func TestOnCreatePodWithPreparationConfig(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	req := client.CreatePodRequest{
-		PodKey:      "prep-pod",
-		InitialCommand: "echo",
-		WorkingDir:     tempDir,
-		PreparationConfig: &client.PreparationConfig{
-			Script:         "echo prep",
-			TimeoutSeconds: 5,
+		PodKey:        "files-pod",
+		LaunchCommand: "echo",
+		FilesToCreate: []client.FileToCreate{
+			{
+				PathTemplate: "{{.sandbox.root_path}}/test.txt",
+				Content:      "test content",
+				Mode:         0644,
+			},
 		},
 	}
 
 	err := handler.OnCreatePod(req)
 	if err != nil {
-		t.Logf("OnCreatePod with preparation: %v", err)
+		t.Logf("OnCreatePod with files to create: %v", err)
 	}
 
 	// Clean up
-	pod, ok := store.Get("prep-pod")
+	pod, ok := store.Get("files-pod")
 	if ok && pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}
 }
 
-func TestOnCreatePodWithPreparationDefaultTimeout(t *testing.T) {
+func TestOnCreatePodWithLocalWorkDir(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -220,28 +220,27 @@ func TestOnCreatePodWithPreparationDefaultTimeout(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	req := client.CreatePodRequest{
-		PodKey:      "prep-default-pod",
-		InitialCommand: "echo",
-		WorkingDir:     tempDir,
-		PreparationConfig: &client.PreparationConfig{
-			Script:         "echo prep",
-			TimeoutSeconds: 0, // Should default to 300
+		PodKey:        "local-workdir-pod",
+		LaunchCommand: "echo",
+		WorkDirConfig: &client.WorkDirConfig{
+			Type:      "local",
+			LocalPath: tempDir,
 		},
 	}
 
 	err := handler.OnCreatePod(req)
 	if err != nil {
-		t.Logf("OnCreatePod with default timeout: %v", err)
+		t.Logf("OnCreatePod with local work dir: %v", err)
 	}
 
 	// Clean up
-	pod, ok := store.Get("prep-default-pod")
+	pod, ok := store.Get("local-workdir-pod")
 	if ok && pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}
 }
 
-func TestOnCreatePodWithPlanMode(t *testing.T) {
+func TestOnCreatePodWithLaunchArgs(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -256,23 +255,22 @@ func TestOnCreatePodWithPlanMode(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	req := client.CreatePodRequest{
-		PodKey:      "plan-mode-pod",
-		InitialCommand: "cat",
-		WorkingDir:     tempDir,
-		PermissionMode: "plan",
-		InitialPrompt:  "Test prompt",
+		PodKey:        "launch-args-pod",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"hello", "world"},
+		InitialPrompt: "Test prompt",
 	}
 
 	err := handler.OnCreatePod(req)
 	if err != nil {
-		t.Logf("OnCreatePod with plan mode: %v", err)
+		t.Logf("OnCreatePod with launch args: %v", err)
 	}
 
-	// Give time for Shift+Tab and prompt to be sent
+	// Give time for prompt to be sent
 	time.Sleep(100 * time.Millisecond)
 
 	// Clean up
-	pod, ok := store.Get("plan-mode-pod")
+	pod, ok := store.Get("launch-args-pod")
 	if ok && pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}
@@ -294,8 +292,7 @@ func TestOnCreatePodWithInitialPrompt(t *testing.T) {
 
 	req := client.CreatePodRequest{
 		PodKey:      "prompt-pod",
-		InitialCommand: "cat",
-		WorkingDir:     tempDir,
+		LaunchCommand: "cat",
 		InitialPrompt:  "Hello from test",
 	}
 
@@ -314,33 +311,37 @@ func TestOnCreatePodWithInitialPrompt(t *testing.T) {
 	}
 }
 
-func TestOnCreatePodWithWorktreeServiceError(t *testing.T) {
+func TestOnCreatePodWithWorktreeConfigError(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
-	// Create runner with worktreeService that will fail
+	// Create runner without workspace manager
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
-			RepositoryPath:        "/nonexistent/repo",
-			WorktreesDir:          tempDir,
+			WorkspaceRoot:     tempDir,
 		},
+		workspace: nil, // No workspace manager
 	}
-	runner.initEnhancedComponents(runner.cfg)
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	req := client.CreatePodRequest{
 		PodKey:        "worktree-error-pod",
-		InitialCommand:   "echo",
-		TicketIdentifier: "TICKET-999",
-		WorktreeSuffix:   "test",
+		LaunchCommand: "echo",
+		WorkDirConfig: &client.WorkDirConfig{
+			Type:          "worktree",
+			RepositoryURL: "https://github.com/test/repo",
+			Branch:        "main",
+		},
 	}
 
 	err := handler.OnCreatePod(req)
-	// Should fail because worktree can't be created from non-existent repo
+	// Should fail because workspace manager is not available
+	if err == nil {
+		t.Error("expected error for worktree without workspace manager")
+	}
 	t.Logf("OnCreatePod with worktree error: %v", err)
 }
 
@@ -361,8 +362,7 @@ func TestOnCreatePodWithSendEventError(t *testing.T) {
 
 	req := client.CreatePodRequest{
 		PodKey:      "send-error-pod",
-		InitialCommand: "echo",
-		WorkingDir:     tempDir,
+		LaunchCommand: "echo",
 	}
 
 	err := handler.OnCreatePod(req)
@@ -537,8 +537,7 @@ func TestOnListPodsWithTerminalPID(t *testing.T) {
 	// First create a pod with a real terminal
 	createReq := client.CreatePodRequest{
 		PodKey:      "list-pid-pod",
-		InitialCommand: "sleep",
-		WorkingDir:     tempDir,
+		LaunchCommand: "sleep",
 	}
 
 	err := handler.OnCreatePod(createReq)

@@ -4,20 +4,20 @@ import (
 	"github.com/anthropics/agentmesh/backend/internal/service/agent"
 )
 
-// AgentServiceAdapter adapts agent.Service to AgentTypesProvider interface
-type AgentServiceAdapter struct {
-	agentService *agent.Service
+// AgentTypeServiceAdapter adapts agent.AgentTypeService to AgentTypesProvider interface
+type AgentTypeServiceAdapter struct {
+	agentTypeSvc *agent.AgentTypeService
 }
 
-// NewAgentServiceAdapter creates a new adapter
-func NewAgentServiceAdapter(agentService *agent.Service) *AgentServiceAdapter {
-	return &AgentServiceAdapter{agentService: agentService}
+// NewAgentTypeServiceAdapter creates a new adapter
+func NewAgentTypeServiceAdapter(agentTypeSvc *agent.AgentTypeService) *AgentTypeServiceAdapter {
+	return &AgentTypeServiceAdapter{agentTypeSvc: agentTypeSvc}
 }
 
 // GetAgentTypesForRunner implements AgentTypesProvider interface
-func (a *AgentServiceAdapter) GetAgentTypesForRunner() []AgentTypeInfo {
+func (a *AgentTypeServiceAdapter) GetAgentTypesForRunner() []AgentTypeInfo {
 	// Get agent types from service
-	types := a.agentService.GetAgentTypesForRunner()
+	types := a.agentTypeSvc.GetAgentTypesForRunner()
 
 	// Convert to runner.AgentTypeInfo
 	result := make([]AgentTypeInfo, len(types))

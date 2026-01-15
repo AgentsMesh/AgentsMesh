@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentmesh/runner/internal/client"
 	"github.com/anthropics/agentmesh/runner/internal/config"
 )
 
@@ -135,62 +136,37 @@ func TestPodBuilderWithInitialPrompt(t *testing.T) {
 	}
 }
 
-func TestPodBuilderWithRepository(t *testing.T) {
+func TestPodBuilderWithWorkDirConfig(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithRepository(
-		"https://github.com/test/repo.git",
-		"feature/test",
-	)
+	builder := NewPodBuilder(runner).WithWorkDirConfig(&client.WorkDirConfig{
+		Type:          "worktree",
+		RepositoryURL: "https://github.com/test/repo.git",
+		Branch:        "feature/test",
+	})
 
-	if builder.repositoryURL != "https://github.com/test/repo.git" {
-		t.Errorf("repositoryURL = %v, want https://github.com/test/repo.git", builder.repositoryURL)
+	if builder.workDirConfig == nil {
+		t.Error("workDirConfig should not be nil")
 	}
-
-	if builder.branch != "feature/test" {
-		t.Errorf("branch = %v, want feature/test", builder.branch)
+	if builder.workDirConfig.RepositoryURL != "https://github.com/test/repo.git" {
+		t.Errorf("repositoryURL = %v, want https://github.com/test/repo.git", builder.workDirConfig.RepositoryURL)
+	}
+	if builder.workDirConfig.Branch != "feature/test" {
+		t.Errorf("branch = %v, want feature/test", builder.workDirConfig.Branch)
 	}
 }
 
-func TestPodBuilderWithWorktree(t *testing.T) {
+func TestPodBuilderWithFilesToCreateMultiple(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithWorktree("TICKET-123")
+	builder := NewPodBuilder(runner).WithFilesToCreate([]client.FileToCreate{
+		{PathTemplate: "{{.sandbox.root_path}}/config.json", Content: "{}", Mode: 0644},
+		{PathTemplate: "{{.sandbox.work_dir}}/data.txt", Content: "data"},
+	})
 
-	if builder.ticketIdentifier != "TICKET-123" {
-		t.Errorf("ticketIdentifier = %v, want TICKET-123", builder.ticketIdentifier)
+	if len(builder.filesToCreate) != 2 {
+		t.Errorf("filesToCreate length = %d, want 2", len(builder.filesToCreate))
 	}
-
-	if !builder.useWorktree {
-		t.Error("useWorktree should be true")
-	}
-}
-
-func TestPodBuilderWithPreparationScript(t *testing.T) {
-	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithPreparationScript("npm install", 300)
-
-	if builder.prepScript != "npm install" {
-		t.Errorf("prepScript = %v, want npm install", builder.prepScript)
-	}
-
-	if builder.prepTimeout != 300 {
-		t.Errorf("prepTimeout = %d, want 300", builder.prepTimeout)
-	}
-}
-
-func TestPodBuilderWithMCP(t *testing.T) {
-	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithMCP("server1", "server2")
-
-	if !builder.mcpEnabled {
-		t.Error("mcpEnabled should be true")
-	}
-
-	if len(builder.mcpServers) != 2 {
-		t.Errorf("mcpServers length = %d, want 2", len(builder.mcpServers))
-	}
-
-	if builder.mcpServers[0] != "server1" {
-		t.Errorf("mcpServers[0] = %v, want server1", builder.mcpServers[0])
+	if builder.filesToCreate[0].PathTemplate != "{{.sandbox.root_path}}/config.json" {
+		t.Errorf("filesToCreate[0].PathTemplate = %v, want {{.sandbox.root_path}}/config.json", builder.filesToCreate[0].PathTemplate)
 	}
 }
 
@@ -203,10 +179,14 @@ func TestPodBuilderChaining(t *testing.T) {
 		WithEnvVar("API_KEY", "secret").
 		WithTerminalSize(48, 160).
 		WithInitialPrompt("Hello!").
-		WithRepository("https://github.com/test/repo.git", "main").
-		WithWorktree("TICKET-123").
-		WithPreparationScript("npm install", 300).
-		WithMCP("server1")
+		WithWorkDirConfig(&client.WorkDirConfig{
+			Type:          "worktree",
+			RepositoryURL: "https://github.com/test/repo.git",
+			Branch:        "main",
+		}).
+		WithFilesToCreate([]client.FileToCreate{
+			{PathTemplate: "{{.sandbox.root_path}}/test.txt", Content: "test"},
+		})
 
 	if builder.podKey != "pod-1" {
 		t.Errorf("podKey = %v, want pod-1", builder.podKey)
@@ -228,16 +208,12 @@ func TestPodBuilderChaining(t *testing.T) {
 		t.Errorf("initialPrompt = %v, want Hello!", builder.initialPrompt)
 	}
 
-	if builder.ticketIdentifier != "TICKET-123" {
-		t.Errorf("ticketIdentifier = %v, want TICKET-123", builder.ticketIdentifier)
+	if builder.workDirConfig == nil {
+		t.Error("workDirConfig should not be nil")
 	}
 
-	if builder.prepScript != "npm install" {
-		t.Errorf("prepScript = %v, want npm install", builder.prepScript)
-	}
-
-	if !builder.mcpEnabled {
-		t.Error("mcpEnabled should be true")
+	if len(builder.filesToCreate) != 1 {
+		t.Error("filesToCreate not set correctly")
 	}
 }
 
@@ -257,6 +233,20 @@ func TestPodBuilderBuildEmptyPodKey(t *testing.T) {
 	}
 }
 
-// Note: TestPodBuilderMergeEnvVars, TestPodBuilderMergeEnvVarsNilConfig,
-// TestPodBuilderResolveWorkingDirectoryFallback, and TestExtendedPodStruct
-// are defined in pod_builder_test.go
+func TestPodBuilderBuildEmptyLaunchCommand(t *testing.T) {
+	runner := &Runner{cfg: &config.Config{}}
+	builder := NewPodBuilder(runner).WithPodKey("test-pod")
+
+	ctx := context.Background()
+	_, err := builder.Build(ctx)
+
+	if err == nil {
+		t.Error("expected error for empty launch command")
+	}
+
+	if !contains(err.Error(), "launch command is required") {
+		t.Errorf("error = %v, want containing 'launch command is required'", err)
+	}
+}
+
+// Note: Additional tests are in pod_builder_test.go and pod_builder_extended_test.go

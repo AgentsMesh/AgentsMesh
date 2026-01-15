@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -10,7 +9,7 @@ import (
 
 // --- Test Constants ---
 
-func TestPodStatusConstants(t *testing.T) {
+func TestPodStatusConstantsBase(t *testing.T) {
 	if PodStatusInitializing != "initializing" {
 		t.Errorf("PodStatusInitializing: got %v, want initializing", PodStatusInitializing)
 	}
@@ -31,9 +30,8 @@ func TestPodStruct(t *testing.T) {
 	now := time.Now()
 	pod := Pod{
 		ID:               "pod-1",
-		PodKey:       "key-123",
+		PodKey:           "key-123",
 		AgentType:        "claude-code",
-		RepositoryURL:    "https://github.com/test/repo.git",
 		Branch:           "main",
 		WorktreePath:     "/workspace/worktrees/pod-1",
 		InitialPrompt:    "Hello",
@@ -66,9 +64,8 @@ func TestPodAllFields(t *testing.T) {
 
 	pod := &Pod{
 		ID:               "id-1",
-		PodKey:       "key-1",
+		PodKey:           "key-1",
 		AgentType:        "claude-code",
-		RepositoryURL:    "https://github.com/test/repo.git",
 		Branch:           "feature/test",
 		WorktreePath:     "/workspace/worktrees/test",
 		InitialPrompt:    "Hello, Claude!",
@@ -122,263 +119,54 @@ func TestPodWithCallbacks(t *testing.T) {
 	}
 }
 
-// --- Test Payload Structs ---
-
-func TestPodStartPayload(t *testing.T) {
-	payload := PodStartPayload{
-		PodKey:       "pod-1",
-		AgentType:        "claude-code",
-		LaunchCommand:    "claude",
-		LaunchArgs:       []string{"--headless"},
-		EnvVars:          map[string]string{"API_KEY": "secret"},
-		RepositoryURL:    "https://github.com/test/repo.git",
-		Branch:           "main",
-		InitialPrompt:    "Hello",
-		Rows:             24,
-		Cols:             80,
-		TicketIdentifier: "TICKET-123",
-		PrepScript:       "npm install",
-		PrepTimeout:      300,
-	}
-
-	if payload.PodKey != "pod-1" {
-		t.Errorf("PodKey: got %v, want pod-1", payload.PodKey)
-	}
-	if payload.AgentType != "claude-code" {
-		t.Errorf("AgentType: got %v, want claude-code", payload.AgentType)
-	}
-	if len(payload.LaunchArgs) != 1 {
-		t.Errorf("LaunchArgs length: got %v, want 1", len(payload.LaunchArgs))
-	}
-	if payload.EnvVars["API_KEY"] != "secret" {
-		t.Errorf("EnvVars[API_KEY]: got %v, want secret", payload.EnvVars["API_KEY"])
-	}
-}
-
-func TestPodStartPayloadJSON(t *testing.T) {
-	jsonStr := `{
-		"pod_key": "pod-1",
-		"agent_type": "claude-code",
-		"launch_command": "claude",
-		"launch_args": ["--headless"],
-		"env_vars": {"API_KEY": "secret"},
-		"rows": 24,
-		"cols": 80,
-		"ticket_identifier": "TICKET-123"
-	}`
-
-	var payload PodStartPayload
-	if err := json.Unmarshal([]byte(jsonStr), &payload); err != nil {
-		t.Fatalf("failed to unmarshal: %v", err)
-	}
-
-	if payload.PodKey != "pod-1" {
-		t.Errorf("PodKey: got %v, want pod-1", payload.PodKey)
-	}
-	if payload.TicketIdentifier != "TICKET-123" {
-		t.Errorf("TicketIdentifier: got %v, want TICKET-123", payload.TicketIdentifier)
-	}
-}
-
-func TestPodStopPayload(t *testing.T) {
-	payload := PodStopPayload{PodKey: "pod-1"}
-
-	if payload.PodKey != "pod-1" {
-		t.Errorf("PodKey: got %v, want pod-1", payload.PodKey)
-	}
-}
-
-func TestPodStopPayloadJSON(t *testing.T) {
-	jsonStr := `{"pod_key": "pod-1"}`
-
-	var payload PodStopPayload
-	if err := json.Unmarshal([]byte(jsonStr), &payload); err != nil {
-		t.Fatalf("failed to unmarshal: %v", err)
-	}
-
-	if payload.PodKey != "pod-1" {
-		t.Errorf("PodKey: got %v, want pod-1", payload.PodKey)
-	}
-}
-
-func TestTerminalInputPayload(t *testing.T) {
-	payload := TerminalInputPayload{
-		PodKey: "pod-1",
-		Data:       []byte("hello"),
-	}
-
-	if payload.PodKey != "pod-1" {
-		t.Errorf("PodKey: got %v, want pod-1", payload.PodKey)
-	}
-	if string(payload.Data) != "hello" {
-		t.Errorf("Data: got %v, want hello", string(payload.Data))
-	}
-}
-
-func TestTerminalResizePayload(t *testing.T) {
-	payload := TerminalResizePayload{
-		PodKey: "pod-1",
-		Rows:       40,
-		Cols:       120,
-	}
-
-	if payload.PodKey != "pod-1" {
-		t.Errorf("PodKey: got %v, want pod-1", payload.PodKey)
-	}
-	if payload.Rows != 40 {
-		t.Errorf("Rows: got %v, want 40", payload.Rows)
-	}
-	if payload.Cols != 120 {
-		t.Errorf("Cols: got %v, want 120", payload.Cols)
-	}
-}
-
-func TestPodListPayloadJSON(t *testing.T) {
-	jsonStr := `{"request_id": "req-123"}`
-
-	var payload PodListPayload
-	if err := json.Unmarshal([]byte(jsonStr), &payload); err != nil {
-		t.Fatalf("failed to unmarshal: %v", err)
-	}
-
-	if payload.RequestID != "req-123" {
-		t.Errorf("RequestID: got %v, want req-123", payload.RequestID)
-	}
-}
-
 // --- Test Runner Struct ---
 
-func TestRunnerStruct(t *testing.T) {
-	r := &Runner{
-		pods: make(map[string]*Pod),
-		stopChan: make(chan struct{}),
+func TestNewRunner(t *testing.T) {
+	cfg := &config.Config{
+		WorkspaceRoot:     "/tmp/workspace",
+		MaxConcurrentPods: 10,
 	}
 
-	if r.pods == nil {
-		t.Error("pods should be initialized")
+	r, err := New(cfg)
+	if err != nil {
+		t.Logf("New returned error (expected in test): %v", err)
 	}
-	if r.stopChan == nil {
-		t.Error("stopChan should be initialized")
+
+	if r == nil {
+		t.Fatal("New returned nil runner")
+	}
+	if r.cfg != cfg {
+		t.Error("config should be set")
+	}
+	if r.podStore == nil {
+		t.Error("podStore should be initialized")
 	}
 }
 
-func TestRunnerStructFields(t *testing.T) {
-	r := &Runner{
-		cfg: &config.Config{
-			NodeID:                "node-1",
-			MaxConcurrentPods: 5,
+func TestRunnerConfig(t *testing.T) {
+	tempDir := t.TempDir()
+	cfg := &config.Config{
+		WorkspaceRoot:     tempDir,
+		MaxConcurrentPods: 5,
+		AgentEnvVars: map[string]string{
+			"API_KEY": "test-key",
 		},
-		pods: make(map[string]*Pod),
-		stopChan: make(chan struct{}),
 	}
 
-	if r.cfg == nil {
-		t.Error("cfg should not be nil")
-	}
-	if r.cfg.NodeID != "node-1" {
-		t.Errorf("cfg.NodeID = %v, want node-1", r.cfg.NodeID)
-	}
-	if r.pods == nil {
-		t.Error("pods should not be nil")
-	}
-}
-
-// --- Test Runner Methods ---
-
-func TestRunnerStopAllPodsEmpty(t *testing.T) {
-	store := NewInMemoryPodStore()
-	r := &Runner{
-		pods:     make(map[string]*Pod),
-		podStore: store,
+	r, err := New(cfg)
+	if err != nil {
+		t.Fatalf("Failed to create runner: %v", err)
 	}
 
-	// Should not panic with empty pods
-	r.stopAllPods()
-}
-
-func TestRunnerStopAllPodsWithNilTerminal(t *testing.T) {
-	store := NewInMemoryPodStore()
-	store.Put("pod-1", &Pod{ID: "pod-1", PodKey: "pod-1", Terminal: nil})
-	r := &Runner{
-		pods:     make(map[string]*Pod),
-		podStore: store,
+	if r.cfg.WorkspaceRoot != tempDir {
+		t.Errorf("WorkspaceRoot: got %v, want %v", r.cfg.WorkspaceRoot, tempDir)
 	}
-
-	// Should not panic
-	r.stopAllPods()
-
-	if store.Count() != 0 {
-		t.Errorf("pods should be empty after stopAllPods")
+	if r.cfg.MaxConcurrentPods != 5 {
+		t.Errorf("MaxConcurrentPods: got %v, want 5", r.cfg.MaxConcurrentPods)
+	}
+	if r.cfg.AgentEnvVars["API_KEY"] != "test-key" {
+		t.Errorf("AgentEnvVars[API_KEY]: got %v, want test-key", r.cfg.AgentEnvVars["API_KEY"])
 	}
 }
 
-// --- Test buildWebSocketBaseURL ---
-
-func TestBuildWebSocketBaseURLHTTP(t *testing.T) {
-	result := buildWebSocketBaseURL("http://localhost:8080")
-	expected := "ws://localhost:8080"
-	if result != expected {
-		t.Errorf("buildWebSocketBaseURL(http): got %v, want %v", result, expected)
-	}
-}
-
-func TestBuildWebSocketBaseURLHTTPS(t *testing.T) {
-	result := buildWebSocketBaseURL("https://api.example.com")
-	expected := "wss://api.example.com"
-	if result != expected {
-		t.Errorf("buildWebSocketBaseURL(https): got %v, want %v", result, expected)
-	}
-}
-
-// --- Test ExtendedPod ---
-
-func TestExtendedPodStruct(t *testing.T) {
-	pod := &Pod{ID: "pod-1", Status: PodStatusRunning}
-
-	extended := ExtendedPod{
-		Pod:                    pod,
-		OnOutput:               func([]byte) {},
-		OnExit:                 func(int) {},
-		TicketIdentifier:       "TICKET-123",
-		ManagedTerminalSession: nil,
-	}
-
-	if extended.ID != "pod-1" {
-		t.Errorf("ID: got %v, want pod-1", extended.ID)
-	}
-	if extended.TicketIdentifier != "TICKET-123" {
-		t.Errorf("TicketIdentifier: got %v, want TICKET-123", extended.TicketIdentifier)
-	}
-}
-
-// --- Benchmarks ---
-
-func BenchmarkPodStartPayloadUnmarshal(b *testing.B) {
-	jsonStr := []byte(`{
-		"pod_key": "pod-1",
-		"agent_type": "claude-code",
-		"launch_command": "claude",
-		"launch_args": ["--headless"],
-		"rows": 24,
-		"cols": 80
-	}`)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var payload PodStartPayload
-		json.Unmarshal(jsonStr, &payload)
-	}
-}
-
-func BenchmarkBuildWebSocketBaseURL(b *testing.B) {
-	urls := []string{
-		"http://localhost:8080",
-		"https://api.example.com",
-		"http://192.168.1.1:3000",
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		buildWebSocketBaseURL(urls[i%len(urls)])
-	}
-}
+// Note: InMemoryPodStore tests are in pod_store_test.go

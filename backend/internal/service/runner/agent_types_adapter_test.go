@@ -41,21 +41,21 @@ func setupAgentTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func TestNewAgentServiceAdapter(t *testing.T) {
+func TestNewAgentTypeServiceAdapter(t *testing.T) {
 	db := setupAgentTestDB(t)
-	agentService := agent.NewService(db)
+	agentTypeSvc := agent.NewAgentTypeService(db)
 
-	adapter := NewAgentServiceAdapter(agentService)
+	adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 	assert.NotNil(t, adapter)
-	assert.Equal(t, agentService, adapter.agentService)
+	assert.Equal(t, agentTypeSvc, adapter.agentTypeSvc)
 }
 
-func TestAgentServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
+func TestAgentTypeServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 	t.Run("returns empty list when no agent types", func(t *testing.T) {
 		db := setupAgentTestDB(t)
-		agentService := agent.NewService(db)
-		adapter := NewAgentServiceAdapter(agentService)
+		agentTypeSvc := agent.NewAgentTypeService(db)
+		adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 		result := adapter.GetAgentTypesForRunner()
 
@@ -71,8 +71,8 @@ func TestAgentServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 		db.Exec(`INSERT INTO agent_types (slug, name, launch_command, executable, is_active)
 			VALUES ('aider', 'Aider', 'aider', 'aider', TRUE)`)
 
-		agentService := agent.NewService(db)
-		adapter := NewAgentServiceAdapter(agentService)
+		agentTypeSvc := agent.NewAgentTypeService(db)
+		adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 		result := adapter.GetAgentTypesForRunner()
 
@@ -92,8 +92,8 @@ func TestAgentServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 		db.Exec(`INSERT INTO agent_types (slug, name, launch_command, executable, is_active)
 			VALUES ('disabled-agent', 'Disabled', 'disabled', 'disabled', FALSE)`)
 
-		agentService := agent.NewService(db)
-		adapter := NewAgentServiceAdapter(agentService)
+		agentTypeSvc := agent.NewAgentTypeService(db)
+		adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 		result := adapter.GetAgentTypesForRunner()
 
@@ -108,8 +108,8 @@ func TestAgentServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 		db.Exec(`INSERT INTO agent_types (slug, name, launch_command, is_active)
 			VALUES ('no-exec', 'No Executable', 'custom-cmd', TRUE)`)
 
-		agentService := agent.NewService(db)
-		adapter := NewAgentServiceAdapter(agentService)
+		agentTypeSvc := agent.NewAgentTypeService(db)
+		adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 		result := adapter.GetAgentTypesForRunner()
 
@@ -119,10 +119,10 @@ func TestAgentServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 	})
 }
 
-func TestAgentServiceAdapter_ImplementsInterface(t *testing.T) {
+func TestAgentTypeServiceAdapter_ImplementsInterface(t *testing.T) {
 	db := setupAgentTestDB(t)
-	agentService := agent.NewService(db)
-	adapter := NewAgentServiceAdapter(agentService)
+	agentTypeSvc := agent.NewAgentTypeService(db)
+	adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 	// Verify it implements AgentTypesProvider interface
 	var _ AgentTypesProvider = adapter

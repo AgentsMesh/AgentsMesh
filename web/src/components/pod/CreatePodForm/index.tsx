@@ -3,13 +3,13 @@
 import React, { useMemo, useEffect, useRef } from "react";
 import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
-import { PluginConfigForm } from "../PluginConfigForm";
+import { ConfigForm } from "@/components/ide/ConfigForm";
 import {
   usePodCreationData,
-  usePluginOptions,
   useCreatePodForm,
   RUNNER_HOST_PROFILE_ID,
 } from "../hooks";
+import { useConfigOptions } from "@/components/ide/hooks";
 import { CreatePodFormProps } from "./types";
 import { mergeConfig } from "./presets";
 
@@ -44,14 +44,14 @@ export function CreatePodForm({
   // 表单状态管理
   const form = useCreatePodForm(availableAgentTypes, repositories, onSuccess);
 
-  // Plugin 配置
+  // Config options management (loads from Backend ConfigSchema)
   const {
-    plugins: pluginOptions,
-    loading: loadingPlugins,
-    config: pluginConfig,
-    updateConfig: handlePluginConfigChange,
-    resetConfig: resetPluginConfig,
-  } = usePluginOptions(
+    fields: configFields,
+    loading: loadingConfig,
+    config: configValues,
+    updateConfig: handleConfigChange,
+    resetConfig: resetConfig,
+  } = useConfigOptions(
     selectedRunner?.id || null,
     form.selectedAgentSlug,
     form.selectedAgent
@@ -61,7 +61,7 @@ export function CreatePodForm({
   useEffect(() => {
     if (prevEnabledRef.current && !enabled) {
       form.reset();
-      resetPluginConfig();
+      resetConfig();
       setSelectedRunnerId(null);
       promptInitializedRef.current = false;
     }
@@ -95,7 +95,7 @@ export function CreatePodForm({
 
     try {
       // onSuccess 回调已在 useCreatePodForm.submit 中处理
-      await form.submit(selectedRunner.id, pluginConfig, {
+      await form.submit(selectedRunner.id, configValues, {
         ticketId: context?.ticket?.id,
         initialPrompt: form.prompt,
       });
@@ -347,8 +347,8 @@ export function CreatePodForm({
                 />
               </div>
 
-              {/* Plugin Configuration Section */}
-              {loadingPlugins ? (
+              {/* Agent Configuration Section */}
+              {loadingConfig ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mr-2"></div>
                   <span className="text-sm text-muted-foreground">
@@ -356,15 +356,16 @@ export function CreatePodForm({
                   </span>
                 </div>
               ) : (
-                pluginOptions.length > 0 && (
+                configFields.length > 0 && (
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       {t("ide.createPod.pluginConfig")}
                     </label>
-                    <PluginConfigForm
-                      plugins={pluginOptions}
-                      values={pluginConfig}
-                      onChange={handlePluginConfigChange}
+                    <ConfigForm
+                      fields={configFields}
+                      values={configValues}
+                      onChange={handleConfigChange}
+                      agentSlug={form.selectedAgentSlug}
                     />
                   </div>
                 )

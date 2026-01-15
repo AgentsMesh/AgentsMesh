@@ -41,7 +41,7 @@ type TicketServiceForHandler interface {
 
 // AgentServiceForHandler defines the agent service methods needed by PodHandler
 type AgentServiceForHandler interface {
-	GetEffectiveConfig(ctx context.Context, orgID, agentTypeID int64, overrides agent.ConfigValues) agent.ConfigValues
+	GetUserEffectiveConfig(ctx context.Context, userID, agentTypeID int64, overrides agent.ConfigValues) agent.ConfigValues
 	GetEffectiveCredentialsForPod(ctx context.Context, userID, agentTypeID int64, profileID *int64) (agent.EncryptedCredentials, bool, error)
 	GetAgentType(ctx context.Context, id int64) (*agent.AgentType, error)
 }

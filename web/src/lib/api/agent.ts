@@ -11,35 +11,44 @@ export interface AgentTypeData {
   is_active: boolean;
 }
 
-// Config field option for select type
+// Config field option for select type (value only, label from frontend i18n)
 export interface ConfigFieldOption {
   value: string;
-  label: string;
 }
 
-// Config field definition from Backend
+// Config field definition from Backend (raw, without i18n labels)
+// Frontend is responsible for i18n using: agent.{slug}.fields.{name}.label
 export interface ConfigField {
   name: string;
   type: "boolean" | "string" | "select" | "number" | "secret";
-  label: string;
   default?: unknown;
-  description?: string;
-  placeholder?: string;
   options?: ConfigFieldOption[];
-  min?: number;
-  max?: number;
   required?: boolean;
+  // Validation rules (optional)
+  validation?: {
+    min?: number;
+    max?: number;
+    pattern?: string;
+    min_length?: number;
+    max_length?: number;
+  };
+  // Conditional display
+  show_when?: {
+    field: string;
+    operator: string;
+    value?: unknown;
+  };
 }
 
-// Config schema returned by Backend
+// Config schema returned by Backend (raw, without i18n labels)
 export interface ConfigSchema {
   fields: ConfigField[];
 }
 
-// Organization agent default config interface
-export interface OrganizationAgentConfigData {
+// User agent config interface (personal runtime configuration)
+export interface UserAgentConfigData {
   id: number;
-  organization_id: number;
+  user_id: number;
   agent_type_id: number;
   agent_type_name?: string;
   agent_type_slug?: string;
@@ -61,45 +70,32 @@ export const agentApi = {
     };
   },
 
-  getConfig: () =>
-    request<{ config: unknown }>(orgPath("/agents/config")),
+  // Get config schema for an agent type (raw, frontend handles i18n)
+  getConfigSchema: (agentTypeId: number) => {
+    return request<{ schema: ConfigSchema }>(`${orgPath("/agents")}/${agentTypeId}/config-schema`);
+  },
+};
 
-  updateConfig: (data: unknown) =>
-    request<{ message: string }>(orgPath("/agents/config"), {
-      method: "PUT",
-      body: data,
-    }),
+// User Agent Config API (personal runtime configuration)
+export const userAgentConfigApi = {
+  // List all personal configs for the current user
+  list: () =>
+    request<{ configs: UserAgentConfigData[] }>("/api/v1/users/me/agent-configs"),
 
-  listCredentials: () =>
-    request<{ credentials: unknown[] }>(orgPath("/agents/credentials")),
+  // Get user's personal config for a specific agent type
+  get: (agentTypeId: number) =>
+    request<{ config: UserAgentConfigData }>(`/api/v1/users/me/agent-configs/${agentTypeId}`),
 
-  updateCredentials: (agentType: string, credentials: Record<string, string>) =>
-    request<{ message: string }>(`${orgPath("/agents/credentials")}/${agentType}`, {
-      method: "PUT",
-      body: { credentials },
-    }),
-
-  // Organization default config API
-  listDefaultConfigs: () =>
-    request<{ configs: OrganizationAgentConfigData[] }>(orgPath("/agents/default-configs")),
-
-  getDefaultConfig: (agentTypeId: number) =>
-    request<{ config: OrganizationAgentConfigData }>(`${orgPath("/agents")}/${agentTypeId}/default-config`),
-
-  setDefaultConfig: (agentTypeId: number, configValues: Record<string, unknown>) =>
-    request<{ config: OrganizationAgentConfigData }>(`${orgPath("/agents")}/${agentTypeId}/default-config`, {
+  // Set/update user's personal config for an agent type
+  set: (agentTypeId: number, configValues: Record<string, unknown>) =>
+    request<{ config: UserAgentConfigData }>(`/api/v1/users/me/agent-configs/${agentTypeId}`, {
       method: "PUT",
       body: { config_values: configValues },
     }),
 
-  deleteDefaultConfig: (agentTypeId: number) =>
-    request<{ message: string }>(`${orgPath("/agents")}/${agentTypeId}/default-config`, {
+  // Delete user's personal config for an agent type
+  delete: (agentTypeId: number) =>
+    request<{ message: string }>(`/api/v1/users/me/agent-configs/${agentTypeId}`, {
       method: "DELETE",
     }),
-
-  // Get config schema for an agent type (with i18n support)
-  getConfigSchema: (agentTypeId: number, locale?: string) => {
-    const params = locale ? `?locale=${encodeURIComponent(locale)}` : "";
-    return request<{ schema: ConfigSchema }>(`${orgPath("/agents")}/${agentTypeId}/config-schema${params}`);
-  },
 };

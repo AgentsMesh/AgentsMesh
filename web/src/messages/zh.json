@@ -3,6 +3,7 @@
     "loading": "加载中...",
     "allRightsReserved": "保留所有权利。",
     "save": "保存",
+    "saveChanges": "保存更改",
     "cancel": "取消",
     "delete": "删除",
     "edit": "编辑",
@@ -751,6 +752,8 @@
       "tabs": {
         "git": "Git 设置",
         "gitDesc": "仓库连接与凭据",
+        "agentConfig": "智能体配置",
+        "agentConfigDesc": "AI 智能体运行参数",
         "agentCredentials": "智能体凭据",
         "agentCredentialsDesc": "AI 智能体的 API 密钥",
         "notifications": "通知",
@@ -808,6 +811,8 @@
       "title": "智能体配置",
       "description": "配置 AI 智能体的默认运行参数。凭据在个人设置中管理。",
       "loading": "加载中...",
+      "loadFailed": "加载智能体配置失败",
+      "agentNotFound": "未找到该智能体",
       "configureDefault": "配置 {name} 设置",
       "configure": "配置",
       "configured": "已配置",
@@ -820,7 +825,17 @@
       "saveConfig": "保存配置",
       "configSaved": "配置保存成功",
       "configSaveFailed": "配置保存失败",
+      "loadSchemaFailed": "加载配置架构失败",
+      "noConfigFields": "该智能体暂无可配置选项",
       "invalidJson": "无效的 JSON 格式",
+      "credentials": {
+        "title": "API 凭据",
+        "description": "配置此智能体的 API 凭据。默认使用 RunnerHost 模式（使用 Runner 本地环境配置）。"
+      },
+      "runtime": {
+        "title": "运行时配置",
+        "description": "设置此智能体的默认运行参数。这些配置将在创建新 Pod 时使用。"
+      },
       "fields": {
         "model": {
           "label": "模型",
@@ -1798,6 +1813,97 @@
         "title": "为什么自托管 Runner 对企业 AI 开发至关重要",
         "excerpt": "对于有严格安全和合规要求的企业，自托管 Runner 提供了他们所需的控制力和数据主权。",
         "content": "在采用 AI 开发工具时，企业面临一个关键问题：代码去哪里了？\n\n使用 AgentMesh 的自托管 Runner，答案很简单：你的代码留在你的基础设施中。这很重要的原因是：\n\n• 数据主权：代码永远不会离开你的网络\n• 合规性：满足数据处理的监管要求\n• 安全性：完全控制访问和审计日志\n• 性能：针对你的特定环境进行优化\n\n部署 Runner 非常简单：\n\n1. 在 AgentMesh 控制台生成注册令牌\n2. 在你的基础设施上运行 Runner 二进制文件\n3. 开始创建在你环境中执行的 Pod\n\n无论你是在裸机、虚拟机还是 Kubernetes 上运行，AgentMesh Runner 都能适应你的基础设施。\n\n联系我们了解更多关于企业部署选项的信息。"
+      }
+    }
+  },
+  "agent": {
+    "claude-code": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "启用 MCP 集成",
+          "description": "允许 Agent 通过 MCP 协议与 AgentMesh 平台通信"
+        },
+        "model": {
+          "label": "模型",
+          "description": "选择要使用的 Claude 模型",
+          "options": {
+            "opus": "Claude Opus (最强大)",
+            "sonnet": "Claude Sonnet (均衡)"
+          }
+        },
+        "permission_mode": {
+          "label": "权限模式",
+          "description": "控制 Agent 处理权限请求的方式",
+          "options": {
+            "default": "默认",
+            "plan": "计划模式 (推荐)",
+            "bypassPermissions": "绕过权限"
+          }
+        },
+        "think_level": {
+          "label": "思考级别",
+          "description": "用于复杂推理的扩展思考能力",
+          "options": {
+            "": "默认",
+            "think": "思考",
+            "ultrathink": "深度思考"
+          }
+        }
+      }
+    },
+    "gemini-cli": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "启用 MCP 集成",
+          "description": "允许 Agent 通过 MCP 协议与 AgentMesh 平台通信"
+        },
+        "sandbox_mode": {
+          "label": "沙盒模式",
+          "description": "在沙盒模式下运行以提高安全性"
+        }
+      }
+    },
+    "codex-cli": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "启用 MCP 集成",
+          "description": "允许 Agent 通过 MCP 协议与 AgentMesh 平台通信"
+        },
+        "approval_mode": {
+          "label": "审批模式",
+          "description": "控制代码更改的审批方式",
+          "options": {
+            "suggest": "建议 (手动审批)",
+            "auto-edit": "自动编辑",
+            "full-auto": "完全自动"
+          }
+        }
+      }
+    },
+    "aider": {
+      "fields": {
+        "model": {
+          "label": "模型",
+          "description": "指定要使用的 AI 模型 (例如 gpt-4, claude-3-opus)"
+        },
+        "edit_format": {
+          "label": "编辑格式",
+          "description": "选择代码编辑的呈现方式",
+          "options": {
+            "": "默认",
+            "whole": "完整文件",
+            "diff": "差异",
+            "udiff": "统一差异"
+          }
+        }
+      }
+    },
+    "opencode": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "启用 MCP 集成",
+          "description": "允许 Agent 通过 MCP 协议与 AgentMesh 平台通信"
+        }
       }
     }
   }

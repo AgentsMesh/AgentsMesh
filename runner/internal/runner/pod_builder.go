@@ -129,13 +129,16 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		return nil, err
 	}
 
+	// Resolve template variables in launch args
+	resolvedArgs := b.resolveArgs(b.launchArgs, sandboxRoot, workingDir)
+
 	// Merge environment variables
 	envVars := b.mergeEnvVars()
 
 	// Create terminal
 	term, err := terminal.New(terminal.Options{
 		Command:  b.launchCommand,
-		Args:     b.launchArgs,
+		Args:     resolvedArgs,
 		WorkDir:  workingDir,
 		Env:      envVars,
 		Rows:     b.rows,
@@ -363,6 +366,15 @@ func (b *PodBuilder) resolvePath(pathTemplate, sandboxRoot, workDir string) stri
 	path = strings.ReplaceAll(path, "{{.sandbox.root_path}}", sandboxRoot)
 	path = strings.ReplaceAll(path, "{{.sandbox.work_dir}}", workDir)
 	return path
+}
+
+// resolveArgs resolves template variables in command line arguments.
+func (b *PodBuilder) resolveArgs(args []string, sandboxRoot, workDir string) []string {
+	resolved := make([]string, len(args))
+	for i, arg := range args {
+		resolved[i] = b.resolvePath(arg, sandboxRoot, workDir)
+	}
+	return resolved
 }
 
 // mergeEnvVars merges all environment variable sources.

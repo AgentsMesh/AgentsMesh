@@ -41,8 +41,8 @@ export const defaultFormState = {
   submit: mockFormSubmit,
 };
 
-export const defaultPluginOptions = {
-  plugins: [],
+export const defaultConfigOptions = {
+  fields: [],
   loading: false,
   config: {},
   updateConfig: vi.fn(),

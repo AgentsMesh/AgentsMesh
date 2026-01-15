@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect } from "react";
 import {
   ReactFlow,
   Controls,
@@ -10,6 +10,8 @@ import {
   useEdgesState,
   type Node,
   type Edge,
+  type NodeTypes,
+  type EdgeTypes,
   BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -19,15 +21,15 @@ import ChannelNode from "./ChannelNode";
 import BindingEdge from "./BindingEdge";
 import { useDevMeshStore, type DevMeshNode, type ChannelInfo, type DevMeshEdge } from "@/stores/devmesh";
 
-// Custom node types
-const nodeTypes = {
-  pod: PodNode as React.ComponentType<unknown>,
-  channel: ChannelNode as React.ComponentType<unknown>,
+// Custom node types - using proper types for ReactFlow
+const nodeTypes: NodeTypes = {
+  pod: PodNode,
+  channel: ChannelNode,
 };
 
-// Custom edge types
-const edgeTypes = {
-  binding: BindingEdge as React.ComponentType<unknown>,
+// Custom edge types - using proper types for ReactFlow
+const edgeTypes: EdgeTypes = {
+  binding: BindingEdge,
 };
 
 // Layout algorithm - simple force-directed-like placement

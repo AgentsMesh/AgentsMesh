@@ -35,8 +35,7 @@ func TestMessageHandlerIntegrationWithMockConnection(t *testing.T) {
 	// Test flow: create -> list -> terminate
 	createReq := client.CreatePodRequest{
 		PodKey:      "integration-pod",
-		InitialCommand: "echo",
-		WorkingDir:     tempDir,
+		LaunchCommand: "echo",
 	}
 
 	// Create pod via mock connection simulation
@@ -83,8 +82,7 @@ func TestMessageHandlerIntegrationPodLifecycle(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		req := client.CreatePodRequest{
 			PodKey:      "lifecycle-pod-" + string(rune('a'+i)),
-			InitialCommand: "sleep",
-			WorkingDir:     tempDir,
+			LaunchCommand: "sleep",
 		}
 		err := mockConn.SimulateCreatePod(req)
 		if err != nil {

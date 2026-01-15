@@ -2,18 +2,23 @@
 
 import React, { memo, useCallback } from "react";
 import type { ConfigField } from "@/lib/api/agent";
-import { FieldRenderer, getFieldRenderer } from "./field-renderers";
+import { FieldRenderer } from "./field-renderers";
+import type { FieldRendererProps } from "./field-renderers";
 
 interface ConfigFormProps {
   fields: ConfigField[];
   values: Record<string, unknown>;
   onChange: (fieldName: string, value: unknown) => void;
+  /** Agent slug for i18n translation key construction */
+  agentSlug: string;
 }
 
 interface FieldWrapperProps {
   field: ConfigField;
   value: unknown;
   onChange: (fieldName: string, value: unknown) => void;
+  /** Agent slug for i18n translation key construction */
+  agentSlug: string;
 }
 
 /**
@@ -24,9 +29,9 @@ const FieldWrapper = memo(function FieldWrapper({
   field,
   value,
   onChange,
+  agentSlug,
 }: FieldWrapperProps) {
   const fieldKey = field.name;
-  const Renderer = getFieldRenderer(field.type);
 
   const handleChange = useCallback(
     (newValue: unknown) => {
@@ -36,27 +41,34 @@ const FieldWrapper = memo(function FieldWrapper({
   );
 
   return (
-    <Renderer
+    <FieldRenderer
       fieldKey={fieldKey}
       field={field}
       value={value}
       onChange={handleChange}
+      agentSlug={agentSlug}
     />
   );
 });
 
 /**
  * Dynamic form renderer for agent configuration.
- * Uses strategy pattern for field rendering - each field type has its own renderer.
+ * Uses switch-based rendering for field types (react-compiler compliant).
+ *
+ * i18n: Labels and descriptions are translated on frontend using:
+ * - agent.{agentSlug}.fields.{field.name}.label
+ * - agent.{agentSlug}.fields.{field.name}.description
+ * - agent.{agentSlug}.fields.{field.name}.options.{optionValue}
  *
  * To add a new field type:
- * 1. Create a new renderer component in field-renderers.tsx
- * 2. Register it in the FIELD_RENDERERS map
+ * 1. Add a new case in the FieldRenderer switch statement in field-renderers.tsx
+ * 2. Create the corresponding field component if needed
  */
 export const ConfigForm = memo(function ConfigForm({
   fields,
   values,
   onChange,
+  agentSlug,
 }: ConfigFormProps) {
   if (!fields || fields.length === 0) {
     return null;
@@ -75,6 +87,7 @@ export const ConfigForm = memo(function ConfigForm({
                 field={field}
                 value={currentValue}
                 onChange={onChange}
+                agentSlug={agentSlug}
               />
             );
           })}
@@ -85,6 +98,6 @@ export const ConfigForm = memo(function ConfigForm({
 });
 
 // Re-export types for external use
-export type { FieldRenderer } from "./field-renderers";
+export type { FieldRendererProps } from "./field-renderers";
 
 export default ConfigForm;

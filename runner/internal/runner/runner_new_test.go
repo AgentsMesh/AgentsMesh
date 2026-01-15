@@ -376,9 +376,8 @@ func TestMockConnectionSimulateCreatePod(t *testing.T) {
 	mockConn.SetHandler(handler)
 
 	req := client.CreatePodRequest{
-		PodKey:      "mock-pod",
-		InitialCommand: "echo",
-		WorkingDir:     tempDir,
+		PodKey:        "mock-pod",
+		LaunchCommand: "echo",
 	}
 
 	err := mockConn.SimulateCreatePod(req)

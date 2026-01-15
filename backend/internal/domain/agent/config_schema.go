@@ -17,11 +17,16 @@ func (cs *ConfigSchema) Scan(value interface{}) error {
 		*cs = ConfigSchema{}
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return errors.New("type assertion to []byte or string failed")
 	}
-	return json.Unmarshal(bytes, cs)
+	return json.Unmarshal(data, cs)
 }
 
 // Value implements driver.Valuer for ConfigSchema
@@ -30,22 +35,21 @@ func (cs ConfigSchema) Value() (driver.Value, error) {
 }
 
 // ConfigField defines a single configuration field
+// Frontend is responsible for i18n using: agent.{slug}.fields.{name}.label
 type ConfigField struct {
-	Name        string        `json:"name"`                   // Field name (e.g., "model")
-	Type        string        `json:"type"`                   // boolean, string, select, number, secret
-	Default     interface{}   `json:"default,omitempty"`      // Default value
-	Required    bool          `json:"required,omitempty"`     // Whether the field is required
-	Options     []FieldOption `json:"options,omitempty"`      // Options for select type
-	Validation  *Validation   `json:"validation,omitempty"`   // Validation rules
-	LabelKey    string        `json:"label_key,omitempty"`    // i18n key for label
-	DescKey     string        `json:"desc_key,omitempty"`     // i18n key for description
-	ShowWhen    *Condition    `json:"show_when,omitempty"`    // Conditional display
+	Name       string        `json:"name"`                 // Field name (e.g., "model")
+	Type       string        `json:"type"`                 // boolean, string, select, number, secret
+	Default    interface{}   `json:"default,omitempty"`    // Default value
+	Required   bool          `json:"required,omitempty"`   // Whether the field is required
+	Options    []FieldOption `json:"options,omitempty"`    // Options for select type
+	Validation *Validation   `json:"validation,omitempty"` // Validation rules
+	ShowWhen   *Condition    `json:"show_when,omitempty"`  // Conditional display
 }
 
 // FieldOption defines an option for select type fields
+// Frontend is responsible for i18n using: agent.{slug}.fields.{fieldName}.options.{value}
 type FieldOption struct {
-	Value    string `json:"value"`
-	LabelKey string `json:"label_key,omitempty"` // i18n key for label
+	Value string `json:"value"`
 }
 
 // Validation defines validation rules for a field
@@ -75,11 +79,16 @@ func (ct *CommandTemplate) Scan(value interface{}) error {
 		*ct = CommandTemplate{}
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return errors.New("type assertion to []byte or string failed")
 	}
-	return json.Unmarshal(bytes, ct)
+	return json.Unmarshal(data, ct)
 }
 
 // Value implements driver.Valuer for CommandTemplate
@@ -102,11 +111,16 @@ func (ft *FilesTemplate) Scan(value interface{}) error {
 		*ft = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return errors.New("type assertion to []byte or string failed")
 	}
-	return json.Unmarshal(bytes, ft)
+	return json.Unmarshal(data, ft)
 }
 
 // Value implements driver.Valuer for FilesTemplate

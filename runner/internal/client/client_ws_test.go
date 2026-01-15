@@ -13,6 +13,80 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// --- Mock implementations for message router testing ---
+
+// mockHandler implements MessageHandler for testing
+type mockHandler struct {
+	mu sync.Mutex
+
+	createPodCalled     bool
+	terminatePodCalled  bool
+	terminalInputCalled bool
+	terminalResizeCalled bool
+
+	lastCreateReq    CreatePodRequest
+	lastTerminateReq TerminatePodRequest
+	lastInputReq     TerminalInputRequest
+	lastResizeReq    TerminalResizeRequest
+
+	pods []PodInfo
+}
+
+func (m *mockHandler) OnCreatePod(req CreatePodRequest) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.createPodCalled = true
+	m.lastCreateReq = req
+	return nil
+}
+
+func (m *mockHandler) OnTerminatePod(req TerminatePodRequest) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.terminatePodCalled = true
+	m.lastTerminateReq = req
+	return nil
+}
+
+func (m *mockHandler) OnListPods() []PodInfo {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.pods
+}
+
+func (m *mockHandler) OnTerminalInput(req TerminalInputRequest) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.terminalInputCalled = true
+	m.lastInputReq = req
+	return nil
+}
+
+func (m *mockHandler) OnTerminalResize(req TerminalResizeRequest) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.terminalResizeCalled = true
+	m.lastResizeReq = req
+	return nil
+}
+
+// mockEventSender implements EventSender for testing
+type mockEventSender struct {
+	mu     sync.Mutex
+	events []EventCall
+	err    error
+}
+
+func (m *mockEventSender) SendEvent(msgType MessageType, data interface{}) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.err != nil {
+		return m.err
+	}
+	m.events = append(m.events, EventCall{Type: msgType, Data: data})
+	return nil
+}
+
 // --- WebSocket test server ---
 
 type testWebSocketServer struct {
@@ -198,8 +272,8 @@ func TestClientReceiveMessages(t *testing.T) {
 
 	// Send a message from server
 	msg := Message{
-		Type:    MessageTypeHeartbeat,
-		Payload: json.RawMessage(`{"test": "data"}`),
+		Type: string(MsgTypeHeartbeat),
+		Data: json.RawMessage(`{"test": "data"}`),
 	}
 	ts.SendMessage(msg)
 
@@ -239,8 +313,8 @@ func TestClientSendWithConnection(t *testing.T) {
 
 	// Send message
 	err = client.Send(&Message{
-		Type:    MessageTypeHeartbeat,
-		Payload: json.RawMessage(`{"test": "value"}`),
+		Type: string(MsgTypeHeartbeat),
+		Data: json.RawMessage(`{"test": "value"}`),
 	})
 	if err != nil {
 		t.Fatalf("Send error: %v", err)

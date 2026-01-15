@@ -10,6 +10,20 @@ import (
 	"github.com/anthropics/agentmesh/backend/internal/domain/agent"
 )
 
+// AgentConfigProvider provides agent configuration data for ConfigBuilder
+// This interface allows for dependency injection and easier testing
+type AgentConfigProvider interface {
+	// GetAgentType returns an agent type by ID
+	GetAgentType(ctx context.Context, id int64) (*agent.AgentType, error)
+	// GetUserEffectiveConfig returns the effective config by merging defaults and user config
+	GetUserEffectiveConfig(ctx context.Context, userID, agentTypeID int64, overrides agent.ConfigValues) agent.ConfigValues
+	// GetEffectiveCredentialsForPod returns credentials for pod injection
+	GetEffectiveCredentialsForPod(ctx context.Context, userID, agentTypeID int64, profileID *int64) (agent.EncryptedCredentials, bool, error)
+}
+
+// Note: AgentConfigProvider is implemented by compositeProvider in API handlers
+// that combine the three sub-services (AgentTypeService, CredentialProfileService, UserConfigService)
+
 // PodConfig represents the computed configuration to send to Runner
 type PodConfig struct {
 	LaunchCommand string            `json:"launch_command"`
@@ -67,26 +81,26 @@ type ConfigBuildRequest struct {
 
 // ConfigBuilder builds pod configurations from agent type templates
 type ConfigBuilder struct {
-	agentService *Service
+	provider AgentConfigProvider
 }
 
 // NewConfigBuilder creates a new ConfigBuilder
-func NewConfigBuilder(agentService *Service) *ConfigBuilder {
+func NewConfigBuilder(provider AgentConfigProvider) *ConfigBuilder {
 	return &ConfigBuilder{
-		agentService: agentService,
+		provider: provider,
 	}
 }
 
 // BuildPodConfig builds the complete pod configuration
 func (b *ConfigBuilder) BuildPodConfig(ctx context.Context, req *ConfigBuildRequest) (*PodConfig, error) {
 	// 1. Get agent type
-	agentType, err := b.agentService.GetAgentType(ctx, req.AgentTypeID)
+	agentType, err := b.provider.GetAgentType(ctx, req.AgentTypeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get agent type: %w", err)
 	}
 
-	// 2. Merge configs: org defaults + user overrides
-	config := b.agentService.GetEffectiveConfig(ctx, req.OrganizationID, req.AgentTypeID, agent.ConfigValues(req.ConfigOverrides))
+	// 2. Merge configs: ConfigSchema defaults + user personal config + overrides
+	config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentTypeID, agent.ConfigValues(req.ConfigOverrides))
 
 	// 3. Get credentials and inject as env vars
 	envVars, err := b.buildEnvVars(ctx, req, agentType)
@@ -127,7 +141,7 @@ func (b *ConfigBuilder) buildEnvVars(ctx context.Context, req *ConfigBuildReques
 	envVars := make(map[string]string)
 
 	// Get credentials from profile
-	creds, isRunnerHost, err := b.agentService.GetEffectiveCredentialsForPod(ctx, req.UserID, req.AgentTypeID, req.CredentialProfileID)
+	creds, isRunnerHost, err := b.provider.GetEffectiveCredentialsForPod(ctx, req.UserID, req.AgentTypeID, req.CredentialProfileID)
 	if err != nil {
 		return nil, err
 	}
@@ -266,90 +280,67 @@ func (b *ConfigBuilder) renderTemplate(templateStr string, ctx map[string]interf
 	return buf.String(), nil
 }
 
-// GetConfigSchemaWithI18n returns the config schema with translated labels
-func (b *ConfigBuilder) GetConfigSchemaWithI18n(ctx context.Context, agentTypeID int64, locale string) (*TranslatedConfigSchema, error) {
-	agentType, err := b.agentService.GetAgentType(ctx, agentTypeID)
+// ConfigSchemaResponse is the config schema returned to frontend
+// Frontend is responsible for i18n translation using slug + field.name as key
+type ConfigSchemaResponse struct {
+	Fields []ConfigFieldResponse `json:"fields"`
+}
+
+// ConfigFieldResponse is a config field returned to frontend
+type ConfigFieldResponse struct {
+	Name       string                `json:"name"`
+	Type       string                `json:"type"`
+	Default    interface{}           `json:"default,omitempty"`
+	Required   bool                  `json:"required,omitempty"`
+	Options    []FieldOptionResponse `json:"options,omitempty"`
+	Validation *agent.Validation     `json:"validation,omitempty"`
+	ShowWhen   *agent.Condition      `json:"show_when,omitempty"`
+}
+
+// FieldOptionResponse is a field option returned to frontend
+type FieldOptionResponse struct {
+	Value string `json:"value"`
+}
+
+// GetConfigSchema returns the raw config schema for an agent type
+// Frontend is responsible for i18n translation using: agent.{slug}.fields.{field.name}.label
+func (b *ConfigBuilder) GetConfigSchema(ctx context.Context, agentTypeID int64) (*ConfigSchemaResponse, error) {
+	agentType, err := b.provider.GetAgentType(ctx, agentTypeID)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Implement i18n translation using locale
-	// For now, return the schema with keys as labels
-	return b.translateConfigSchema(&agentType.ConfigSchema, locale), nil
+	return b.buildConfigSchemaResponse(&agentType.ConfigSchema), nil
 }
 
-// TranslatedConfigSchema is the config schema with translated labels
-type TranslatedConfigSchema struct {
-	Fields []TranslatedConfigField `json:"fields"`
-}
-
-// TranslatedConfigField is a config field with translated labels
-type TranslatedConfigField struct {
-	Name        string                    `json:"name"`
-	Type        string                    `json:"type"`
-	Default     interface{}               `json:"default,omitempty"`
-	Required    bool                      `json:"required,omitempty"`
-	Label       string                    `json:"label"`
-	Description string                    `json:"description,omitempty"`
-	Options     []TranslatedFieldOption   `json:"options,omitempty"`
-	Validation  *agent.Validation         `json:"validation,omitempty"`
-	ShowWhen    *agent.Condition          `json:"show_when,omitempty"`
-}
-
-// TranslatedFieldOption is a field option with translated label
-type TranslatedFieldOption struct {
-	Value string `json:"value"`
-	Label string `json:"label"`
-}
-
-// translateConfigSchema translates the config schema labels
-func (b *ConfigBuilder) translateConfigSchema(schema *agent.ConfigSchema, locale string) *TranslatedConfigSchema {
-	result := &TranslatedConfigSchema{
-		Fields: make([]TranslatedConfigField, 0, len(schema.Fields)),
+// buildConfigSchemaResponse converts internal ConfigSchema to API response
+func (b *ConfigBuilder) buildConfigSchemaResponse(schema *agent.ConfigSchema) *ConfigSchemaResponse {
+	result := &ConfigSchemaResponse{
+		Fields: make([]ConfigFieldResponse, 0, len(schema.Fields)),
 	}
 
 	for _, field := range schema.Fields {
-		translatedField := TranslatedConfigField{
+		fieldResponse := ConfigFieldResponse{
 			Name:       field.Name,
 			Type:       field.Type,
 			Default:    field.Default,
 			Required:   field.Required,
-			Label:      b.translate(field.LabelKey, locale),
-			Description: b.translate(field.DescKey, locale),
 			Validation: field.Validation,
 			ShowWhen:   field.ShowWhen,
 		}
 
-		// Translate options
+		// Convert options (without label - frontend will translate)
 		if len(field.Options) > 0 {
-			translatedField.Options = make([]TranslatedFieldOption, 0, len(field.Options))
+			fieldResponse.Options = make([]FieldOptionResponse, 0, len(field.Options))
 			for _, opt := range field.Options {
-				translatedField.Options = append(translatedField.Options, TranslatedFieldOption{
+				fieldResponse.Options = append(fieldResponse.Options, FieldOptionResponse{
 					Value: opt.Value,
-					Label: b.translate(opt.LabelKey, locale),
 				})
 			}
 		}
 
-		result.Fields = append(result.Fields, translatedField)
+		result.Fields = append(result.Fields, fieldResponse)
 	}
 
 	return result
-}
-
-// translate translates an i18n key to the given locale
-// TODO: Implement actual i18n translation
-func (b *ConfigBuilder) translate(key string, locale string) string {
-	// For now, just return the key as a placeholder
-	// In the future, this should look up the translation from a translation service
-	if key == "" {
-		return ""
-	}
-
-	// Extract the last part of the key as a fallback label
-	parts := strings.Split(key, ".")
-	if len(parts) > 0 {
-		return parts[len(parts)-1]
-	}
-	return key
 }

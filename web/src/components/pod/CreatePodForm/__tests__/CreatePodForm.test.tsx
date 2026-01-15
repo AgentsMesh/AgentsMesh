@@ -11,7 +11,7 @@ import {
   mockResetPluginConfig,
   defaultPodCreationData,
   defaultFormState,
-  defaultPluginOptions,
+  defaultConfigOptions,
   mockRunner,
   mockAgentType,
   clearAllMocks,
@@ -21,19 +21,23 @@ import {
 vi.mock("../../hooks", () => ({
   usePodCreationData: vi.fn(() => defaultPodCreationData),
   useCreatePodForm: vi.fn(() => defaultFormState),
-  usePluginOptions: vi.fn(() => defaultPluginOptions),
   RUNNER_HOST_PROFILE_ID: 0,
+}));
+
+vi.mock("@/components/ide/hooks", () => ({
+  useConfigOptions: vi.fn(() => defaultConfigOptions),
 }));
 
 vi.mock("@/lib/i18n/client", () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-vi.mock("../../PluginConfigForm", () => ({
-  PluginConfigForm: () => <div data-testid="plugin-config-form">Plugin Config</div>,
+vi.mock("@/components/ide/ConfigForm", () => ({
+  ConfigForm: () => <div data-testid="config-form">Config Form</div>,
 }));
 
-import { usePodCreationData, useCreatePodForm, usePluginOptions } from "../../hooks";
+import { usePodCreationData, useCreatePodForm } from "../../hooks";
+import { useConfigOptions } from "@/components/ide/hooks";
 
 describe("CreatePodForm", () => {
   beforeEach(() => {

@@ -297,6 +297,7 @@ export function CreatePodModal({ open, onClose, onCreated }: CreatePodModalProps
                         fields={configFields}
                         values={configValues}
                         onChange={handleConfigChange}
+                        agentSlug={form.selectedAgentSlug}
                       />
                     </div>
                   )

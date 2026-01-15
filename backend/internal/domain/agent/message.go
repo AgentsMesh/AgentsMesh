@@ -57,11 +57,16 @@ func (mc *MessageContent) Scan(value interface{}) error {
 		*mc = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return errors.New("type assertion to []byte or string failed")
 	}
-	return json.Unmarshal(bytes, mc)
+	return json.Unmarshal(data, mc)
 }
 
 // Value implements driver.Valuer for MessageContent

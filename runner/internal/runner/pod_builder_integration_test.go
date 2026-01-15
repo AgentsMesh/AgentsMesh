@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentmesh/runner/internal/client"
 	"github.com/anthropics/agentmesh/runner/internal/config"
 	"github.com/anthropics/agentmesh/runner/internal/workspace"
 )
@@ -11,9 +12,10 @@ import (
 // --- Test Build method ---
 
 func TestPodBuilderBuildSuccess(t *testing.T) {
+	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
-			WorkspaceRoot: "/tmp/test-workspace",
+			WorkspaceRoot: tempDir,
 			AgentEnvVars:  map[string]string{"CONFIG_VAR": "value"},
 		},
 	}
@@ -54,9 +56,10 @@ func TestPodBuilderBuildSuccess(t *testing.T) {
 }
 
 func TestPodBuilderBuildWithMinimalConfig(t *testing.T) {
+	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
-			WorkspaceRoot: "/tmp",
+			WorkspaceRoot: tempDir,
 		},
 	}
 
@@ -79,9 +82,9 @@ func TestPodBuilderBuildWithMinimalConfig(t *testing.T) {
 	}
 }
 
-// --- Test resolveWorkingDirectory ---
+// --- Test setupWorkDir with WorkDirConfig ---
 
-func TestPodBuilderResolveWorkingDirectoryWithWorkspaceManager(t *testing.T) {
+func TestPodBuilderSetupWorkDirWithWorkspaceManager(t *testing.T) {
 	// Create a temporary workspace manager
 	tempDir := t.TempDir()
 	ws, err := workspace.NewManager(tempDir, "")
@@ -97,116 +100,93 @@ func TestPodBuilderResolveWorkingDirectoryWithWorkspaceManager(t *testing.T) {
 	}
 
 	builder := NewPodBuilder(runner).
-		WithPodKey("test-resolve")
+		WithPodKey("test-workdir").
+		WithLaunchCommand("echo", []string{"test"}).
+		WithWorkDirConfig(&client.WorkDirConfig{
+			Type: "tempdir",
+		})
 
-	workDir, worktreePath, branchName, err := builder.resolveWorkingDirectory(context.Background())
+	pod, err := builder.Build(context.Background())
 	if err != nil {
-		t.Fatalf("resolveWorkingDirectory failed: %v", err)
+		t.Fatalf("Build failed: %v", err)
 	}
 
-	// Without repository URL, should use temp workspace
-	if workDir == "" {
-		t.Error("workDir should not be empty")
-	}
-	if worktreePath != "" {
-		t.Errorf("worktreePath = %v, want empty (no repo)", worktreePath)
-	}
-	if branchName != "" {
-		t.Errorf("branchName = %v, want empty", branchName)
+	if pod.Terminal != nil {
+		pod.Terminal.Stop()
 	}
 }
 
-func TestPodBuilderResolveWorkingDirectoryFallbackToConfig(t *testing.T) {
+func TestPodBuilderSetupWorkDirLocalPath(t *testing.T) {
+	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
-			WorkspaceRoot: "/my/workspace",
+			WorkspaceRoot: tempDir,
 		},
 		workspace: nil, // No workspace manager
 	}
 
 	builder := NewPodBuilder(runner).
-		WithPodKey("test-fallback")
+		WithPodKey("test-local").
+		WithLaunchCommand("echo", []string{"test"}).
+		WithWorkDirConfig(&client.WorkDirConfig{
+			Type:      "local",
+			LocalPath: tempDir,
+		})
 
-	workDir, _, _, err := builder.resolveWorkingDirectory(context.Background())
+	pod, err := builder.Build(context.Background())
 	if err != nil {
-		t.Fatalf("resolveWorkingDirectory failed: %v", err)
+		t.Fatalf("Build failed: %v", err)
 	}
 
-	if workDir != "/my/workspace" {
-		t.Errorf("workDir = %v, want /my/workspace", workDir)
+	if pod.Terminal != nil {
+		pod.Terminal.Stop()
 	}
 }
 
-func TestPodBuilderResolveWorkingDirectoryWithTicket(t *testing.T) {
-	// Test that without repository URL, falls back to config workspace even with ticket
+func TestPodBuilderSetupWorkDirLocalPathNotExist(t *testing.T) {
+	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
-			WorkspaceRoot: "/tmp",
+			WorkspaceRoot: tempDir,
 		},
 	}
 
 	builder := NewPodBuilder(runner).
-		WithPodKey("test-ticket-no-repo").
-		WithWorktree("TICKET-123")
+		WithPodKey("test-local-notexist").
+		WithLaunchCommand("echo", []string{"test"}).
+		WithWorkDirConfig(&client.WorkDirConfig{
+			Type:      "local",
+			LocalPath: "/nonexistent/path/that/does/not/exist",
+		})
 
-	workDir, _, _, err := builder.resolveWorkingDirectory(context.Background())
-	if err != nil {
-		t.Fatalf("resolveWorkingDirectory failed: %v", err)
-	}
-
-	// Without repository URL, should fall back to config workspace
-	if workDir != "/tmp" {
-		t.Errorf("workDir = %v, want /tmp", workDir)
-	}
-}
-
-// --- Test runPreparation ---
-
-func TestPodBuilderRunPreparationWithScript(t *testing.T) {
-	runner := &Runner{
-		cfg: &config.Config{},
-	}
-
-	builder := NewPodBuilder(runner).
-		WithPodKey("test-prep").
-		WithPreparationScript("echo hello", 5)
-
-	// runPreparation will create a preparer and try to run it
-	// This may fail in test environment, but we test the path
-	err := builder.runPreparation(context.Background(), "/tmp", "/tmp/worktree", "main")
-
-	// We mainly want to test the code path executes without panic
-	// The actual script may fail depending on environment
-	_ = err
-}
-
-func TestPodBuilderRunPreparationEmptyScript(t *testing.T) {
-	runner := &Runner{
-		cfg: &config.Config{},
-	}
-
-	builder := NewPodBuilder(runner).
-		WithPodKey("test-no-prep")
-	// prepScript is empty
-
-	err := builder.runPreparation(context.Background(), "/tmp", "", "")
-	if err != nil {
-		t.Errorf("runPreparation with empty script should not error: %v", err)
+	_, err := builder.Build(context.Background())
+	if err == nil {
+		t.Error("expected error for non-existent local path")
 	}
 }
 
-func TestPodBuilderRunPreparationBasic(t *testing.T) {
+func TestPodBuilderSetupWorkDirWorktreeNoManager(t *testing.T) {
+	tempDir := t.TempDir()
 	runner := &Runner{
-		cfg: &config.Config{},
+		cfg: &config.Config{
+			WorkspaceRoot: tempDir,
+		},
+		workspace: nil, // No workspace manager
 	}
 
 	builder := NewPodBuilder(runner).
-		WithPodKey("test-prep-basic").
-		WithPreparationScript("echo test", 5)
+		WithPodKey("test-worktree-nomanager").
+		WithLaunchCommand("echo", []string{"test"}).
+		WithWorkDirConfig(&client.WorkDirConfig{
+			Type:          "worktree",
+			RepositoryURL: "https://github.com/test/repo",
+			Branch:        "main",
+		})
 
-	// Test basic preparation - should work
-	err := builder.runPreparation(context.Background(), "/tmp", "/tmp/worktree", "main")
-	_ = err // May fail but should not panic
+	_, err := builder.Build(context.Background())
+	if err == nil {
+		t.Error("expected error for worktree without workspace manager")
+	}
 }
 
 // --- Test mergeEnvVars edge cases ---
@@ -267,91 +247,45 @@ func TestPodBuilderMergeEnvVarsOnlyBuilder(t *testing.T) {
 	}
 }
 
-// --- Test ExtendedPod ---
+// --- Test Pod status ---
 
-func TestExtendedPodEmbedding(t *testing.T) {
-	pod := &Pod{
-		ID:            "pod-1",
-		PodKey:    "key-1",
-		AgentType:     "claude-code",
-		Status:        PodStatusRunning,
+func TestPodStatusConstants(t *testing.T) {
+	// Verify pod status constants exist
+	if PodStatusInitializing != "initializing" {
+		t.Errorf("PodStatusInitializing = %v, want initializing", PodStatusInitializing)
 	}
-
-	extended := &ExtendedPod{
-		Pod:              pod,
-		TicketIdentifier: "TICKET-999",
-		OnOutput:         func([]byte) {},
-		OnExit:           func(int) {},
-	}
-
-	// Test that embedded fields are accessible
-	if extended.ID != "pod-1" {
-		t.Errorf("ID = %v, want pod-1", extended.ID)
-	}
-	if extended.PodKey != "key-1" {
-		t.Errorf("PodKey = %v, want key-1", extended.PodKey)
-	}
-	if extended.TicketIdentifier != "TICKET-999" {
-		t.Errorf("TicketIdentifier = %v, want TICKET-999", extended.TicketIdentifier)
-	}
-	if extended.OnOutput == nil {
-		t.Error("OnOutput should not be nil")
-	}
-	if extended.OnExit == nil {
-		t.Error("OnExit should not be nil")
+	if PodStatusRunning != "running" {
+		t.Errorf("PodStatusRunning = %v, want running", PodStatusRunning)
 	}
 }
 
-// --- Test WithMCP ---
+// --- Test WithNewProtocol (no-op for compatibility) ---
 
-func TestPodBuilderWithMCPSingle(t *testing.T) {
-	runner := &Runner{}
+func TestPodBuilderWithNewProtocolNoOp(t *testing.T) {
+	runner := &Runner{
+		cfg: &config.Config{
+			WorkspaceRoot: "/tmp",
+		},
+	}
+
+	// WithNewProtocol should be a no-op but not cause errors
 	builder := NewPodBuilder(runner).
-		WithMCP("server1")
+		WithPodKey("test-newprotocol").
+		WithNewProtocol(true).
+		WithNewProtocol(false)
 
-	if !builder.mcpEnabled {
-		t.Error("mcpEnabled should be true")
-	}
-	if len(builder.mcpServers) != 1 {
-		t.Errorf("mcpServers length = %d, want 1", len(builder.mcpServers))
-	}
-	if builder.mcpServers[0] != "server1" {
-		t.Errorf("mcpServers[0] = %v, want server1", builder.mcpServers[0])
-	}
-}
-
-func TestPodBuilderWithMCPMultiple(t *testing.T) {
-	runner := &Runner{}
-	builder := NewPodBuilder(runner).
-		WithMCP("server1", "server2", "server3")
-
-	if !builder.mcpEnabled {
-		t.Error("mcpEnabled should be true")
-	}
-	if len(builder.mcpServers) != 3 {
-		t.Errorf("mcpServers length = %d, want 3", len(builder.mcpServers))
-	}
-}
-
-func TestPodBuilderWithMCPEmpty(t *testing.T) {
-	runner := &Runner{}
-	builder := NewPodBuilder(runner).
-		WithMCP()
-
-	if !builder.mcpEnabled {
-		t.Error("mcpEnabled should be true even with no servers")
-	}
-	if len(builder.mcpServers) != 0 {
-		t.Errorf("mcpServers length = %d, want 0", len(builder.mcpServers))
+	if builder.podKey != "test-newprotocol" {
+		t.Error("podKey should be set")
 	}
 }
 
 // --- Benchmark ---
 
 func BenchmarkPodBuilderBuild(b *testing.B) {
+	tempDir := b.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
-			WorkspaceRoot: "/tmp",
+			WorkspaceRoot: tempDir,
 		},
 	}
 

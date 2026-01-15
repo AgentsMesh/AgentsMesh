@@ -9,16 +9,6 @@ export type { User, UserProfile, UserIdentity } from "./user";
 export { useOrganizationStore } from "./organization";
 export type { Organization, OrganizationMember } from "./organization";
 
-// Agent store
-export { useAgentStore } from "./agent";
-export type {
-  AgentType,
-  CustomAgentType,
-  OrganizationAgent,
-  UserAgentCredentials,
-  CredentialField,
-} from "./agent";
-
 // Git Provider store
 export { useGitProviderStore } from "./gitProvider";
 export type { GitProvider, GitProviderProject } from "./gitProvider";

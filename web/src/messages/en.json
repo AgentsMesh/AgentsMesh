@@ -3,6 +3,7 @@
     "loading": "Loading...",
     "allRightsReserved": "All rights reserved.",
     "save": "Save",
+    "saveChanges": "Save Changes",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -751,6 +752,8 @@
       "tabs": {
         "git": "Git Settings",
         "gitDesc": "Repository providers and credentials",
+        "agentConfig": "Agent Config",
+        "agentConfigDesc": "AI agent runtime parameters",
         "agentCredentials": "Agent Credentials",
         "agentCredentialsDesc": "API keys for AI agents",
         "notifications": "Notifications",
@@ -808,6 +811,8 @@
       "title": "Agent Configuration",
       "description": "Configure default runtime settings for AI agents. Credentials are managed in personal settings.",
       "loading": "Loading...",
+      "loadFailed": "Failed to load agent configuration",
+      "agentNotFound": "Agent not found",
       "configureDefault": "Configure {name} settings",
       "configure": "Configure",
       "configured": "Configured",
@@ -820,7 +825,17 @@
       "saveConfig": "Save Configuration",
       "configSaved": "Configuration saved successfully",
       "configSaveFailed": "Failed to save configuration",
+      "loadSchemaFailed": "Failed to load configuration schema",
+      "noConfigFields": "No configuration options available for this agent",
       "invalidJson": "Invalid JSON format",
+      "credentials": {
+        "title": "API Credentials",
+        "description": "Configure API credentials for this agent. Defaults to RunnerHost mode (uses Runner's local environment configuration)."
+      },
+      "runtime": {
+        "title": "Runtime Configuration",
+        "description": "Set default runtime parameters for this agent. These settings will be used when creating new pods."
+      },
       "fields": {
         "model": {
           "label": "Model",
@@ -1798,6 +1813,97 @@
         "title": "Why Self-Hosted Runners Matter for Enterprise AI Development",
         "excerpt": "For enterprises with strict security and compliance requirements, self-hosted runners provide the control and data sovereignty they need.",
         "content": "When adopting AI development tools, enterprises face a critical question: where does the code go?\n\nWith AgentMesh's self-hosted runners, the answer is simple: your code stays in your infrastructure. Here's why this matters:\n\n• Data Sovereignty: Code never leaves your network\n• Compliance: Meet regulatory requirements for data handling\n• Security: Full control over access and audit logs\n• Performance: Optimized for your specific environment\n\nDeploying a runner is straightforward:\n\n1. Generate a registration token in your AgentMesh dashboard\n2. Run the runner binary on your infrastructure\n3. Start creating pods that execute in your environment\n\nWhether you're running on bare metal, VMs, or Kubernetes, AgentMesh runners adapt to your infrastructure.\n\nContact us to learn more about enterprise deployment options."
+      }
+    }
+  },
+  "agent": {
+    "claude-code": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "Enable MCP Integration",
+          "description": "Allow the agent to communicate with AgentMesh platform via MCP protocol"
+        },
+        "model": {
+          "label": "Model",
+          "description": "Select the Claude model to use",
+          "options": {
+            "opus": "Claude Opus (Most Capable)",
+            "sonnet": "Claude Sonnet (Balanced)"
+          }
+        },
+        "permission_mode": {
+          "label": "Permission Mode",
+          "description": "Control how the agent handles permission requests",
+          "options": {
+            "default": "Default",
+            "plan": "Plan Mode (Recommended)",
+            "bypassPermissions": "Bypass Permissions"
+          }
+        },
+        "think_level": {
+          "label": "Think Level",
+          "description": "Extended thinking capability for complex reasoning",
+          "options": {
+            "": "Default",
+            "think": "Think",
+            "ultrathink": "Ultra Think"
+          }
+        }
+      }
+    },
+    "gemini-cli": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "Enable MCP Integration",
+          "description": "Allow the agent to communicate with AgentMesh platform via MCP protocol"
+        },
+        "sandbox_mode": {
+          "label": "Sandbox Mode",
+          "description": "Run in sandbox mode for enhanced security"
+        }
+      }
+    },
+    "codex-cli": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "Enable MCP Integration",
+          "description": "Allow the agent to communicate with AgentMesh platform via MCP protocol"
+        },
+        "approval_mode": {
+          "label": "Approval Mode",
+          "description": "Control how code changes are approved",
+          "options": {
+            "suggest": "Suggest (Manual Approval)",
+            "auto-edit": "Auto Edit",
+            "full-auto": "Full Auto"
+          }
+        }
+      }
+    },
+    "aider": {
+      "fields": {
+        "model": {
+          "label": "Model",
+          "description": "Specify the AI model to use (e.g., gpt-4, claude-3-opus)"
+        },
+        "edit_format": {
+          "label": "Edit Format",
+          "description": "Select how code edits are presented",
+          "options": {
+            "": "Default",
+            "whole": "Whole File",
+            "diff": "Diff",
+            "udiff": "Unified Diff"
+          }
+        }
+      }
+    },
+    "opencode": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "Enable MCP Integration",
+          "description": "Allow the agent to communicate with AgentMesh platform via MCP protocol"
+        }
       }
     }
   }

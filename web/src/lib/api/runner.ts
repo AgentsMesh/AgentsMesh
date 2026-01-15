@@ -18,6 +18,8 @@ export interface RunnerData {
     cpu_cores?: number;
     hostname?: string;
   };
+  // New field from Runner handshake - list of available agent type slugs
+  available_agents?: string[];
   created_at: string;
   updated_at: string;
   active_pods?: Array<{

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -12,16 +13,47 @@ import (
 
 // AgentHandler handles agent-related requests
 type AgentHandler struct {
-	agentService  *agent.Service
-	configBuilder *agent.ConfigBuilder
+	agentTypeSvc      *agent.AgentTypeService
+	credentialSvc     *agent.CredentialProfileService
+	userConfigSvc     *agent.UserConfigService
+	configBuilder     *agent.ConfigBuilder
 }
 
 // NewAgentHandler creates a new agent handler
-func NewAgentHandler(agentService *agent.Service) *AgentHandler {
+func NewAgentHandler(
+	agentTypeSvc *agent.AgentTypeService,
+	credentialSvc *agent.CredentialProfileService,
+	userConfigSvc *agent.UserConfigService,
+) *AgentHandler {
 	return &AgentHandler{
-		agentService:  agentService,
-		configBuilder: agent.NewConfigBuilder(agentService),
+		agentTypeSvc:  agentTypeSvc,
+		credentialSvc: credentialSvc,
+		userConfigSvc: userConfigSvc,
+		configBuilder: agent.NewConfigBuilder(&compositeProvider{
+			agentTypeSvc:  agentTypeSvc,
+			credentialSvc: credentialSvc,
+			userConfigSvc: userConfigSvc,
+		}),
 	}
+}
+
+// compositeProvider implements AgentConfigProvider by combining sub-services
+type compositeProvider struct {
+	agentTypeSvc  *agent.AgentTypeService
+	credentialSvc *agent.CredentialProfileService
+	userConfigSvc *agent.UserConfigService
+}
+
+func (p *compositeProvider) GetAgentType(ctx context.Context, id int64) (*agentDomain.AgentType, error) {
+	return p.agentTypeSvc.GetAgentType(ctx, id)
+}
+
+func (p *compositeProvider) GetUserEffectiveConfig(ctx context.Context, userID, agentTypeID int64, overrides agentDomain.ConfigValues) agentDomain.ConfigValues {
+	return p.userConfigSvc.GetUserEffectiveConfig(ctx, userID, agentTypeID, overrides)
+}
+
+func (p *compositeProvider) GetEffectiveCredentialsForPod(ctx context.Context, userID, agentTypeID int64, profileID *int64) (agentDomain.EncryptedCredentials, bool, error) {
+	return p.credentialSvc.GetEffectiveCredentialsForPod(ctx, userID, agentTypeID, profileID)
 }
 
 // ListAgentTypes lists available agent types
@@ -30,14 +62,14 @@ func (h *AgentHandler) ListAgentTypes(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
 	// Get builtin types
-	builtinTypes, err := h.agentService.ListBuiltinAgentTypes(c.Request.Context())
+	builtinTypes, err := h.agentTypeSvc.ListBuiltinAgentTypes(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list builtin agent types"})
 		return
 	}
 
 	// Get custom types for organization
-	customTypes, err := h.agentService.ListCustomAgentTypes(c.Request.Context(), tenant.OrganizationID)
+	customTypes, err := h.agentTypeSvc.ListCustomAgentTypes(c.Request.Context(), tenant.OrganizationID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list custom agent types"})
 		return
@@ -49,128 +81,13 @@ func (h *AgentHandler) ListAgentTypes(c *gin.Context) {
 	})
 }
 
-// GetOrganizationAgentConfig returns organization's agent configuration
-// GET /api/v1/organizations/:slug/agents/config
-func (h *AgentHandler) GetOrganizationAgentConfig(c *gin.Context) {
-	tenant := middleware.GetTenant(c)
-
-	agents, err := h.agentService.ListOrganizationAgents(c.Request.Context(), tenant.OrganizationID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent configuration"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"agents": agents})
-}
-
-// EnableAgentRequest represents agent enable request
-type EnableAgentRequest struct {
-	AgentTypeID int64 `json:"agent_type_id" binding:"required"`
-	IsDefault   bool  `json:"is_default"`
-}
-
-// EnableAgent enables an agent type for organization
-// POST /api/v1/organizations/:slug/agents/config
-func (h *AgentHandler) EnableAgent(c *gin.Context) {
-	var req EnableAgentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin permission required"})
-		return
-	}
-
-	orgAgent, err := h.agentService.EnableAgentForOrganization(c.Request.Context(), tenant.OrganizationID, req.AgentTypeID, req.IsDefault)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enable agent"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"agent": orgAgent})
-}
-
-// DisableAgent disables an agent type for organization
-// DELETE /api/v1/organizations/:slug/agents/config/:agent_type_id
-func (h *AgentHandler) DisableAgent(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid agent type ID"})
-		return
-	}
-
-	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin permission required"})
-		return
-	}
-
-	if err := h.agentService.DisableAgentForOrganization(c.Request.Context(), tenant.OrganizationID, agentTypeID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to disable agent"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Agent disabled"})
-}
-
-// SetOrgCredentialsRequest represents organization credentials request
-type SetOrgCredentialsRequest struct {
-	Credentials map[string]interface{} `json:"credentials" binding:"required"`
-}
-
-// SetOrganizationCredentials sets organization-level credentials
-// PUT /api/v1/organizations/:slug/agents/config/:agent_type_id/credentials
-func (h *AgentHandler) SetOrganizationCredentials(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid agent type ID"})
-		return
-	}
-
-	var req SetOrgCredentialsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin permission required"})
-		return
-	}
-
-	// Convert map[string]interface{} to EncryptedCredentials
-	creds := make(agentDomain.EncryptedCredentials)
-	for k, v := range req.Credentials {
-		if s, ok := v.(string); ok {
-			creds[k] = s
-		}
-	}
-
-	if err := h.agentService.SetOrganizationCredentials(c.Request.Context(), tenant.OrganizationID, agentTypeID, creds); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set credentials"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Credentials updated"})
-}
-
 // GetUserCredentials returns user's agent credentials
 // GET /api/v1/users/me/agents/credentials
 func (h *AgentHandler) GetUserCredentials(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
 	// Get builtin types to list credentials for
-	builtinTypes, err := h.agentService.ListBuiltinAgentTypes(c.Request.Context())
+	builtinTypes, err := h.agentTypeSvc.ListBuiltinAgentTypes(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list agent types"})
 		return
@@ -178,7 +95,7 @@ func (h *AgentHandler) GetUserCredentials(c *gin.Context) {
 
 	credentials := make(map[string]bool)
 	for _, t := range builtinTypes {
-		creds, err := h.agentService.GetUserCredentials(c.Request.Context(), userID, t.ID)
+		creds, err := h.credentialSvc.GetUserCredentials(c.Request.Context(), userID, t.ID)
 		credentials[t.Slug] = err == nil && creds != nil
 	}
 
@@ -215,7 +132,7 @@ func (h *AgentHandler) SetUserCredentials(c *gin.Context) {
 		}
 	}
 
-	if err := h.agentService.SetUserCredentials(c.Request.Context(), userID, agentTypeID, creds); err != nil {
+	if err := h.credentialSvc.SetUserCredentials(c.Request.Context(), userID, agentTypeID, creds); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set credentials"})
 		return
 	}
@@ -234,7 +151,7 @@ func (h *AgentHandler) DeleteUserCredentials(c *gin.Context) {
 
 	userID := middleware.GetUserID(c)
 
-	if err := h.agentService.DeleteUserCredentials(c.Request.Context(), userID, agentTypeID); err != nil {
+	if err := h.credentialSvc.DeleteUserCredentials(c.Request.Context(), userID, agentTypeID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete credentials"})
 		return
 	}
@@ -295,7 +212,7 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 		}
 	}
 
-	customAgent, err := h.agentService.CreateCustomAgentType(c.Request.Context(), tenant.OrganizationID, &agent.CreateCustomAgentRequest{
+	customAgent, err := h.agentTypeSvc.CreateCustomAgentType(c.Request.Context(), tenant.OrganizationID, &agent.CreateCustomAgentRequest{
 		Slug:             req.Slug,
 		Name:             req.Name,
 		Description:      desc,
@@ -339,7 +256,7 @@ func (h *AgentHandler) UpdateCustomAgent(c *gin.Context) {
 		return
 	}
 
-	customAgent, err := h.agentService.UpdateCustomAgentType(c.Request.Context(), customAgentID, req)
+	customAgent, err := h.agentTypeSvc.UpdateCustomAgentType(c.Request.Context(), customAgentID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update custom agent"})
 		return
@@ -365,7 +282,7 @@ func (h *AgentHandler) DeleteCustomAgent(c *gin.Context) {
 		return
 	}
 
-	if err := h.agentService.DeleteCustomAgentType(c.Request.Context(), customAgentID); err != nil {
+	if err := h.agentTypeSvc.DeleteCustomAgentType(c.Request.Context(), customAgentID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete custom agent"})
 		return
 	}
@@ -373,117 +290,8 @@ func (h *AgentHandler) DeleteCustomAgent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Custom agent deleted"})
 }
 
-// Organization Default Config API
-
-// ListDefaultConfigs returns all default configs for the organization
-// GET /api/v1/organizations/:slug/agents/default-configs
-func (h *AgentHandler) ListDefaultConfigs(c *gin.Context) {
-	tenant := middleware.GetTenant(c)
-
-	configs, err := h.agentService.ListOrganizationDefaultConfigs(c.Request.Context(), tenant.OrganizationID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list default configs"})
-		return
-	}
-
-	// Convert to response format
-	responses := make([]*agentDomain.OrganizationAgentConfigResponse, len(configs))
-	for i, cfg := range configs {
-		responses[i] = cfg.ToResponse()
-	}
-
-	c.JSON(http.StatusOK, gin.H{"configs": responses})
-}
-
-// GetDefaultConfig returns the organization's default config for an agent type
-// GET /api/v1/organizations/:slug/agents/:agent_type_id/default-config
-func (h *AgentHandler) GetDefaultConfig(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid agent type ID"})
-		return
-	}
-
-	tenant := middleware.GetTenant(c)
-
-	config, err := h.agentService.GetOrganizationDefaultConfig(c.Request.Context(), tenant.OrganizationID, agentTypeID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get default config"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"config": config.ToResponse()})
-}
-
-// SetDefaultConfigRequest represents a request to set default config
-type SetDefaultConfigRequest struct {
-	ConfigValues map[string]interface{} `json:"config_values" binding:"required"`
-}
-
-// SetDefaultConfig sets the organization's default config for an agent type
-// PUT /api/v1/organizations/:slug/agents/:agent_type_id/default-config
-func (h *AgentHandler) SetDefaultConfig(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid agent type ID"})
-		return
-	}
-
-	var req SetDefaultConfigRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin permission required"})
-		return
-	}
-
-	// Convert to ConfigValues
-	configValues := make(agentDomain.ConfigValues)
-	for k, v := range req.ConfigValues {
-		configValues[k] = v
-	}
-
-	config, err := h.agentService.SetOrganizationDefaultConfig(c.Request.Context(), tenant.OrganizationID, agentTypeID, configValues)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set default config"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"config": config.ToResponse()})
-}
-
-// DeleteDefaultConfig deletes the organization's default config for an agent type
-// DELETE /api/v1/organizations/:slug/agents/:agent_type_id/default-config
-func (h *AgentHandler) DeleteDefaultConfig(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid agent type ID"})
-		return
-	}
-
-	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin permission required"})
-		return
-	}
-
-	if err := h.agentService.DeleteOrganizationDefaultConfig(c.Request.Context(), tenant.OrganizationID, agentTypeID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete default config"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Default config deleted"})
-}
-
-// GetAgentTypeConfigSchema returns the config schema for an agent type with i18n support
+// GetAgentTypeConfigSchema returns the raw config schema for an agent type
+// Frontend is responsible for i18n translation using: agent.{slug}.fields.{field.name}.label
 // GET /api/v1/organizations/:slug/agents/:agent_type_id/config-schema
 func (h *AgentHandler) GetAgentTypeConfigSchema(c *gin.Context) {
 	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
@@ -492,16 +300,7 @@ func (h *AgentHandler) GetAgentTypeConfigSchema(c *gin.Context) {
 		return
 	}
 
-	// Get locale from query param or Accept-Language header
-	locale := c.Query("locale")
-	if locale == "" {
-		locale = c.GetHeader("Accept-Language")
-	}
-	if locale == "" {
-		locale = "en"
-	}
-
-	schema, err := h.configBuilder.GetConfigSchemaWithI18n(c.Request.Context(), agentTypeID, locale)
+	schema, err := h.configBuilder.GetConfigSchema(c.Request.Context(), agentTypeID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get config schema"})
 		return
@@ -519,11 +318,111 @@ func (h *AgentHandler) GetAgentType(c *gin.Context) {
 		return
 	}
 
-	agentType, err := h.agentService.GetAgentType(c.Request.Context(), agentTypeID)
+	agentType, err := h.agentTypeSvc.GetAgentType(c.Request.Context(), agentTypeID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Agent type not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"agent_type": agentType})
+}
+
+// ============================================================================
+// User Agent Config API (Personal Runtime Configuration)
+// ============================================================================
+
+// ListUserAgentConfigs returns all personal configs for the current user
+// GET /api/v1/users/me/agent-configs
+func (h *AgentHandler) ListUserAgentConfigs(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	configs, err := h.userConfigSvc.ListUserAgentConfigs(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list user configs"})
+		return
+	}
+
+	// Convert to response format
+	responses := make([]*agentDomain.UserAgentConfigResponse, len(configs))
+	for i, cfg := range configs {
+		responses[i] = cfg.ToResponse()
+	}
+
+	c.JSON(http.StatusOK, gin.H{"configs": responses})
+}
+
+// GetUserAgentConfig returns the user's personal config for an agent type
+// GET /api/v1/users/me/agent-configs/:agent_type_id
+func (h *AgentHandler) GetUserAgentConfig(c *gin.Context) {
+	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid agent type ID"})
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+
+	config, err := h.userConfigSvc.GetUserAgentConfig(c.Request.Context(), userID, agentTypeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"config": config.ToResponse()})
+}
+
+// SetUserAgentConfigRequest represents a request to set user's personal config
+type SetUserAgentConfigRequest struct {
+	ConfigValues map[string]interface{} `json:"config_values" binding:"required"`
+}
+
+// SetUserAgentConfig sets the user's personal config for an agent type
+// PUT /api/v1/users/me/agent-configs/:agent_type_id
+func (h *AgentHandler) SetUserAgentConfig(c *gin.Context) {
+	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid agent type ID"})
+		return
+	}
+
+	var req SetUserAgentConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+
+	// Convert to ConfigValues
+	configValues := make(agentDomain.ConfigValues)
+	for k, v := range req.ConfigValues {
+		configValues[k] = v
+	}
+
+	config, err := h.userConfigSvc.SetUserAgentConfig(c.Request.Context(), userID, agentTypeID, configValues)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set user config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"config": config.ToResponse()})
+}
+
+// DeleteUserAgentConfig deletes the user's personal config for an agent type
+// DELETE /api/v1/users/me/agent-configs/:agent_type_id
+func (h *AgentHandler) DeleteUserAgentConfig(c *gin.Context) {
+	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid agent type ID"})
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+
+	if err := h.userConfigSvc.DeleteUserAgentConfig(c.Request.Context(), userID, agentTypeID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User config deleted"})
 }
