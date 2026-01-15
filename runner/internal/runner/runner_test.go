@@ -122,8 +122,13 @@ func TestPodWithCallbacks(t *testing.T) {
 // --- Test Runner Struct ---
 
 func TestNewRunner(t *testing.T) {
+	tempDir := t.TempDir()
 	cfg := &config.Config{
-		WorkspaceRoot:     "/tmp/workspace",
+		ServerURL:         "http://localhost:8080",
+		NodeID:            "test-runner",
+		AuthToken:         "test-token",
+		OrgSlug:           "test-org",
+		WorkspaceRoot:     tempDir,
 		MaxConcurrentPods: 10,
 	}
 
@@ -146,6 +151,10 @@ func TestNewRunner(t *testing.T) {
 func TestRunnerConfig(t *testing.T) {
 	tempDir := t.TempDir()
 	cfg := &config.Config{
+		ServerURL:         "http://localhost:8080",
+		NodeID:            "test-runner",
+		AuthToken:         "test-token",
+		OrgSlug:           "test-org",
 		WorkspaceRoot:     tempDir,
 		MaxConcurrentPods: 5,
 		AgentEnvVars: map[string]string{
