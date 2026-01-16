@@ -284,7 +284,7 @@ brews:
     repository:
       owner: AgentsMesh
       name: BrewCask
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+      token: "{{ .Env.GITHUB_RELEASE_TOKEN }}"
     commit_author:
       name: AgentsMesh Bot
       email: bot@agentsmesh.ai
