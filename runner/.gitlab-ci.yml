@@ -18,7 +18,7 @@ stages:
 
 variables:
   VERSION: ${CI_COMMIT_TAG:-dev}
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.24"
 
 # =============================================================================
 # CLI Build (GoReleaser - cross-compile all platforms)
