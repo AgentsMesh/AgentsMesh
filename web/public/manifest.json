@@ -1,6 +1,6 @@
 {
-  "name": "AgentMesh",
-  "short_name": "AgentMesh",
+  "name": "AgentsMesh",
+  "short_name": "AgentsMesh",
   "description": "AI Code Agent Platform - Multi-terminal workspace for Claude Code and other AI agents",
   "start_url": "/",
   "display": "standalone",

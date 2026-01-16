@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/anthropics/agentmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
 // TrayApp represents the system tray application.

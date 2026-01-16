@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/mcp/tools"
+	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 	"github.com/stretchr/testify/require"
 )
 

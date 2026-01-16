@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
             <p className="text-muted-foreground leading-relaxed">
-              AgentMesh, Inc. (&quot;AgentMesh,&quot; &quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our multi-agent AI code collaboration platform (the &quot;Service&quot;). Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the Service.
+              AgentsMesh, Inc. (&quot;AgentsMesh,&quot; &quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our multi-agent AI code collaboration platform (the &quot;Service&quot;). Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the Service.
             </p>
           </section>
 
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
               <li>Ticket descriptions and content</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              <strong>For self-hosted runner deployments, your code remains entirely within your infrastructure and is never transmitted to AgentMesh servers.</strong>
+              <strong>For self-hosted runner deployments, your code remains entirely within your infrastructure and is never transmitted to AgentsMesh servers.</strong>
             </p>
 
             <h3 className="text-xl font-medium mb-3 mt-6">2.4 Automatically Collected Information</h3>
@@ -222,7 +222,7 @@ export default function PrivacyPage() {
               If you have questions about this Privacy Policy or our data practices, please contact us at:
             </p>
             <div className="mt-4 p-4 bg-muted rounded-lg text-muted-foreground">
-              <p><strong>AgentMesh, Inc.</strong></p>
+              <p><strong>AgentsMesh, Inc.</strong></p>
               <p>Email:{" "}
                 <a href="mailto:privacy@agentsmesh.ai" className="text-primary hover:underline">
                   privacy@agentsmesh.ai
@@ -267,7 +267,7 @@ export default function PrivacyPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} AgentMesh, Inc. All rights reserved.
+              &copy; {new Date().getFullYear()} AgentsMesh, Inc. All rights reserved.
             </p>
             <div className="flex gap-6">
               <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">

@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/gin-gonic/gin"
 )
 

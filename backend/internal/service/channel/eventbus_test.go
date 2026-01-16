@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
 func TestSetEventBus(t *testing.T) {

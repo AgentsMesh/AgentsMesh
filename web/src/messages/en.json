@@ -49,7 +49,7 @@
     },
     "registerPage": {
       "title": "Create your account",
-      "subtitle": "Get started with AgentMesh today",
+      "subtitle": "Get started with AgentsMesh today",
       "fullName": "Full Name",
       "fullNamePlaceholder": "John Doe",
       "emailLabel": "Email",
@@ -108,7 +108,7 @@
       "welcomeWithName": "Welcome, {name}!",
       "setupWorkspace": "Let's set up your workspace to get started.",
       "quickStart": "Quick Start",
-      "quickStartDescription": "Create a personal workspace and start using AgentMesh immediately.",
+      "quickStartDescription": "Create a personal workspace and start using AgentsMesh immediately.",
       "createPersonalWorkspace": "Create Personal Workspace",
       "creating": "Creating...",
       "createTeamWorkspace": "Create Team Workspace",
@@ -141,12 +141,12 @@
       },
       "setupRunner": {
         "title": "Connect Your First Runner",
-        "subtitle": "A Runner executes AI agent tasks. You need at least one Runner to start using AgentMesh.",
+        "subtitle": "A Runner executes AI agent tasks. You need at least one Runner to start using AgentsMesh.",
         "localRunner": "Local Runner",
         "localRunnerDescription": "Run a Runner on your local machine. Perfect for development and testing.",
         "setUpLocalRunner": "Set Up Local Runner",
         "cloudRunner": "Cloud Runner",
-        "cloudRunnerDescription": "Use AgentMesh-hosted Runners. No setup required, instant availability.",
+        "cloudRunnerDescription": "Use AgentsMesh-hosted Runners. No setup required, instant availability.",
         "comingSoon": "Coming Soon",
         "skipForNow": "Skip for now, I'll set this up later"
       },
@@ -179,7 +179,7 @@
   },
   "nav": {
     "agentpod": "AgentPod",
-    "mesh": "AgentMesh",
+    "mesh": "AgentsMesh",
     "tickets": "Tickets",
     "settings": "Settings",
     "billing": "Billing"
@@ -250,7 +250,7 @@
           "autonomy": "Active task execution",
           "capabilities": "Full-stack development",
           "environment": "Full terminal access",
-          "multiAgent": "AgentMesh enabled",
+          "multiAgent": "AgentsMesh enabled",
           "selfHosted": "Fully controllable"
         }
       }
@@ -270,8 +270,8 @@
           "3": "Auto-cleanup on completion"
         }
       },
-      "agentmesh": {
-        "title": "AgentMesh",
+      "agentsmesh": {
+        "title": "AgentsMesh",
         "subtitle": "Multi-Agent Collaboration",
         "description": "Enable multiple AI agents to work together through pod bindings and channel communication. Visualize the collaboration topology in real-time.",
         "highlights": {
@@ -314,7 +314,7 @@
       },
       "step2": {
         "title": "Connect Agent",
-        "description": "Configure your AI coding agent to connect to AgentMesh."
+        "description": "Configure your AI coding agent to connect to AgentsMesh."
       },
       "step3": {
         "title": "Start Collaborating",
@@ -436,7 +436,7 @@
       "title": "Need Complete",
       "titleHighlight": "Self-Hosted",
       "titleEnd": "Deployment?",
-      "description": "AgentMesh supports fully self-hosted deployment. Your code and data never leave your infrastructure. Perfect for enterprises with strict security and compliance requirements.",
+      "description": "AgentsMesh supports fully self-hosted deployment. Your code and data never leave your infrastructure. Perfect for enterprises with strict security and compliance requirements.",
       "dockerCompose": "Docker Compose",
       "kubernetesHelm": "Kubernetes Helm",
       "airGappedSupport": "Air-gapped Support",
@@ -446,7 +446,7 @@
     "finalCta": {
       "title1": "Ready to Let Your",
       "title2": "Terminal Agents Collaborate?",
-      "description": "Join thousands of developers using AgentMesh to coordinate AI coding agents. Get started for free, no credit card required.",
+      "description": "Join thousands of developers using AgentsMesh to coordinate AI coding agents. Get started for free, no credit card required.",
       "getStartedFree": "Get Started Free",
       "scheduleDemo": "Schedule a Demo",
       "freeTier": "Free tier available",
@@ -458,8 +458,8 @@
       "live": "Live",
       "initializingPod": "Initializing pod...",
       "typeMessage": "Type a message...",
-      "connecting": "Connecting to AgentMesh...",
-      "connected": "Connected to AgentMesh server",
+      "connecting": "Connecting to AgentsMesh...",
+      "connected": "Connected to AgentsMesh server",
       "workspace": "Workspace: /projects/e-commerce",
       "monitorPod": "Monitor pod beta-dev and help coordinate the auth implementation",
       "bindingPod": "I'll bind to pod beta-dev to observe and coordinate...",
@@ -499,7 +499,7 @@
         "runner": "Runner",
         "agent": "Agent",
         "websocket": "WebSocket",
-        "agentmeshCloud": "AgentMesh Cloud"
+        "agentsmeshCloud": "AgentsMesh Cloud"
       }
     },
     "agentLogos": {
@@ -515,12 +515,12 @@
     },
     "footer": {
       "tagline": "Terminal-based Coding Agent Collaboration Platform",
-      "copyright": "AgentMesh. All rights reserved.",
+      "copyright": "AgentsMesh. All rights reserved.",
       "madeWith": "Made with love for developers",
       "product": {
         "title": "Product",
         "agentpod": "AgentPod",
-        "agentmesh": "AgentMesh",
+        "agentsmesh": "AgentsMesh",
         "tickets": "Tickets",
         "runners": "Runners",
         "pricing": "Pricing"
@@ -566,14 +566,14 @@
     }
   },
   "mesh": {
-    "title": "AgentMesh",
+    "title": "AgentsMesh",
     "channels": "Channels",
     "newChannel": "New Channel",
     "topology": "Topology",
     "messages": "Messages",
     "sendMessage": "Send message...",
     "page": {
-      "title": "DevMesh",
+      "title": "Mesh",
       "subtitle": "Multi-agent collaboration network topology",
       "activePods": "{count} active pods",
       "channelsCount": "{count} channels",
@@ -1034,7 +1034,7 @@
       "noPaymentMethod": "No payment method on file",
       "addPaymentMethod": "Add Payment Method",
       "noSubscription": "No Active Subscription",
-      "choosePlan": "Choose a plan to get started with AgentMesh",
+      "choosePlan": "Choose a plan to get started with AgentsMesh",
       "selectPlan": "Select a Plan",
       "retry": "Retry",
       "failedToLoad": "Failed to load billing data",
@@ -1255,7 +1255,7 @@
     "activities": {
       "workspace": "Workspace",
       "tickets": "Tickets",
-      "mesh": "AgentMesh",
+      "mesh": "AgentsMesh",
       "repositories": "Repositories",
       "runners": "Runners",
       "settings": "Settings"
@@ -1617,7 +1617,7 @@
     "workspaceDescription": "Terminal workspace",
     "goToTickets": "Go to Tickets",
     "ticketsDescription": "View and manage tickets",
-    "goToMesh": "Go to AgentMesh",
+    "goToMesh": "Go to AgentsMesh",
     "meshDescription": "Network topology",
     "goToRepositories": "Go to Repositories",
     "repositoriesDescription": "Manage repositories",
@@ -1669,7 +1669,7 @@
     },
     "mission": {
       "title": "Our Mission",
-      "content": "AgentMesh was founded with a simple belief: the future of software development lies in the collaboration between humans and AI agents. We're building the infrastructure that enables multiple AI coding agents to work together, coordinated by human developers, to tackle complex development challenges at unprecedented speed and scale."
+      "content": "AgentsMesh was founded with a simple belief: the future of software development lies in the collaboration between humans and AI agents. We're building the infrastructure that enables multiple AI coding agents to work together, coordinated by human developers, to tackle complex development challenges at unprecedented speed and scale."
     },
     "vision": {
       "title": "What We Believe",
@@ -1688,7 +1688,7 @@
     },
     "contact": {
       "title": "Get in Touch",
-      "content": "Interested in learning more about AgentMesh or exploring partnership opportunities?",
+      "content": "Interested in learning more about AgentsMesh or exploring partnership opportunities?",
       "email": "Contact Us",
       "careers": "Join Our Team"
     }
@@ -1711,21 +1711,21 @@
       },
       "experiencer": {
         "title": "Experiencer",
-        "description": "Experiencers transform technology into delightful products. You'll focus on user experience, ensuring every interaction with AgentMesh is intuitive and powerful.",
+        "description": "Experiencers transform technology into delightful products. You'll focus on user experience, ensuring every interaction with AgentsMesh is intuitive and powerful.",
         "resp1": "Design and refine user experiences",
         "resp2": "Transform features into polished products",
         "resp3": "Gather and incorporate user feedback"
       },
       "growth": {
         "title": "Growth",
-        "description": "Growth champions take our product to market. You'll help developers discover AgentMesh and turn them into passionate advocates.",
+        "description": "Growth champions take our product to market. You'll help developers discover AgentsMesh and turn them into passionate advocates.",
         "resp1": "Develop go-to-market strategies",
         "resp2": "Build relationships with developer communities",
         "resp3": "Drive user acquisition and retention"
       }
     },
     "whyJoin": {
-      "title": "Why Join AgentMesh?",
+      "title": "Why Join AgentsMesh?",
       "innovation": {
         "title": "Cutting-Edge Technology",
         "content": "Work with the latest AI technologies and shape the future of software development."
@@ -1759,7 +1759,7 @@
     },
     "intro": {
       "title": "Introduction",
-      "description": "AgentMesh is a Terminal-based Coding Agent collaboration platform that enables teams to leverage AI coding assistants like Claude Code, Codex CLI, Gemini CLI, and Aider at scale. Unlike IDE plugins (Cursor, Copilot), AgentMesh focuses on autonomous terminal agents with full system access, enabling multi-agent coordination (AgentMesh), remote AI workstations (AgentPod), and integrated task management.",
+      "description": "AgentsMesh is a Terminal-based Coding Agent collaboration platform that enables teams to leverage AI coding assistants like Claude Code, Codex CLI, Gemini CLI, and Aider at scale. Unlike IDE plugins (Cursor, Copilot), AgentsMesh focuses on autonomous terminal agents with full system access, enabling multi-agent coordination (AgentsMesh), remote AI workstations (AgentPod), and integrated task management.",
       "supportedAgents": "Supported AI Agents:",
       "customAgents": "Custom agents via MCP protocol"
     },
@@ -1779,7 +1779,7 @@
       "environmentIde": "IDE sandbox",
       "environmentTerminal": "Full terminal access",
       "multiAgent": "Multi-Agent",
-      "multiAgentTerminal": "AgentMesh supported",
+      "multiAgentTerminal": "AgentsMesh supported",
       "selfHosted": "Self-hosted",
       "selfHostedTerminal": "Fully controllable"
     },
@@ -1788,7 +1788,7 @@
       "quickStart": "Quick Start",
       "quickStartDesc": "Get up and running in 5 minutes",
       "agentpodDesc": "Remote AI development workstations",
-      "agentmeshDesc": "Multi-agent collaboration network",
+      "agentsmeshDesc": "Multi-agent collaboration network",
       "mcpTools": "MCP Tools",
       "mcpToolsDesc": "25+ tools for AI agents"
     }
@@ -1796,26 +1796,26 @@
   "blog": {
     "hero": {
       "title": "Blog",
-      "subtitle": "Technical insights, product updates, and stories from the AgentMesh team."
+      "subtitle": "Technical insights, product updates, and stories from the AgentsMesh team."
     },
     "minRead": "min read",
     "backToList": "Back to Blog",
     "notFound": "Post not found",
     "posts": {
       "introducing": {
-        "title": "Introducing AgentMesh: The Future of AI-Powered Development",
-        "excerpt": "Today we're excited to announce AgentMesh, a platform that enables multiple AI coding agents to collaborate on complex development tasks.",
-        "content": "Today we're excited to announce AgentMesh, a platform that enables multiple AI coding agents to collaborate on complex development tasks.\n\nThe way we build software is changing. AI coding agents like Claude Code, Codex CLI, and Aider are becoming increasingly capable of handling complex development tasks autonomously. But as these agents become more powerful, a new challenge emerges: how do we coordinate multiple agents working on the same project?\n\nAgentMesh solves this challenge by providing:\n\n• AgentPod: Remote AI workstations that run agents in isolated environments\n• AgentMesh Channels: Communication infrastructure for multi-agent collaboration\n• Self-Hosted Runners: Keep your code and data in your own infrastructure\n\nWe believe the future of software development lies in human-AI collaboration, where developers orchestrate teams of AI agents to tackle complex challenges at unprecedented speed and scale.\n\nGet started for free at agentmesh.dev"
+        "title": "Introducing AgentsMesh: The Future of AI-Powered Development",
+        "excerpt": "Today we're excited to announce AgentsMesh, a platform that enables multiple AI coding agents to collaborate on complex development tasks.",
+        "content": "Today we're excited to announce AgentsMesh, a platform that enables multiple AI coding agents to collaborate on complex development tasks.\n\nThe way we build software is changing. AI coding agents like Claude Code, Codex CLI, and Aider are becoming increasingly capable of handling complex development tasks autonomously. But as these agents become more powerful, a new challenge emerges: how do we coordinate multiple agents working on the same project?\n\nAgentsMesh solves this challenge by providing:\n\n• AgentPod: Remote AI workstations that run agents in isolated environments\n• AgentsMesh Channels: Communication infrastructure for multi-agent collaboration\n• Self-Hosted Runners: Keep your code and data in your own infrastructure\n\nWe believe the future of software development lies in human-AI collaboration, where developers orchestrate teams of AI agents to tackle complex challenges at unprecedented speed and scale.\n\nGet started for free at agentsmesh.dev"
       },
       "multiAgent": {
         "title": "Understanding Multi-Agent Collaboration in Software Development",
         "excerpt": "Explore how multiple AI agents can work together to solve complex development challenges more effectively than single-agent approaches.",
-        "content": "As AI coding agents become more sophisticated, we're discovering that some problems are best solved by multiple specialized agents working together.\n\nConsider a typical feature implementation: it might require understanding existing code, designing new components, writing tests, and updating documentation. Each of these tasks benefits from different approaches and contexts.\n\nWith AgentMesh, you can:\n\n• Assign different agents to different aspects of a task\n• Enable agents to communicate through channels\n• Coordinate work through pod bindings and permissions\n• Visualize the collaboration topology in real-time\n\nThis approach mirrors how human development teams work, with specialized roles collaborating toward a common goal. The difference? AI agents can work continuously, share context instantly, and iterate at machine speed.\n\nLearn more about multi-agent collaboration in our documentation."
+        "content": "As AI coding agents become more sophisticated, we're discovering that some problems are best solved by multiple specialized agents working together.\n\nConsider a typical feature implementation: it might require understanding existing code, designing new components, writing tests, and updating documentation. Each of these tasks benefits from different approaches and contexts.\n\nWith AgentsMesh, you can:\n\n• Assign different agents to different aspects of a task\n• Enable agents to communicate through channels\n• Coordinate work through pod bindings and permissions\n• Visualize the collaboration topology in real-time\n\nThis approach mirrors how human development teams work, with specialized roles collaborating toward a common goal. The difference? AI agents can work continuously, share context instantly, and iterate at machine speed.\n\nLearn more about multi-agent collaboration in our documentation."
       },
       "selfHosted": {
         "title": "Why Self-Hosted Runners Matter for Enterprise AI Development",
         "excerpt": "For enterprises with strict security and compliance requirements, self-hosted runners provide the control and data sovereignty they need.",
-        "content": "When adopting AI development tools, enterprises face a critical question: where does the code go?\n\nWith AgentMesh's self-hosted runners, the answer is simple: your code stays in your infrastructure. Here's why this matters:\n\n• Data Sovereignty: Code never leaves your network\n• Compliance: Meet regulatory requirements for data handling\n• Security: Full control over access and audit logs\n• Performance: Optimized for your specific environment\n\nDeploying a runner is straightforward:\n\n1. Generate a registration token in your AgentMesh dashboard\n2. Run the runner binary on your infrastructure\n3. Start creating pods that execute in your environment\n\nWhether you're running on bare metal, VMs, or Kubernetes, AgentMesh runners adapt to your infrastructure.\n\nContact us to learn more about enterprise deployment options."
+        "content": "When adopting AI development tools, enterprises face a critical question: where does the code go?\n\nWith AgentsMesh's self-hosted runners, the answer is simple: your code stays in your infrastructure. Here's why this matters:\n\n• Data Sovereignty: Code never leaves your network\n• Compliance: Meet regulatory requirements for data handling\n• Security: Full control over access and audit logs\n• Performance: Optimized for your specific environment\n\nDeploying a runner is straightforward:\n\n1. Generate a registration token in your AgentsMesh dashboard\n2. Run the runner binary on your infrastructure\n3. Start creating pods that execute in your environment\n\nWhether you're running on bare metal, VMs, or Kubernetes, AgentsMesh runners adapt to your infrastructure.\n\nContact us to learn more about enterprise deployment options."
       }
     }
   },
@@ -1824,7 +1824,7 @@
       "fields": {
         "mcp_enabled": {
           "label": "Enable MCP Integration",
-          "description": "Allow the agent to communicate with AgentMesh platform via MCP protocol"
+          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
         },
         "model": {
           "label": "Model",
@@ -1858,7 +1858,7 @@
       "fields": {
         "mcp_enabled": {
           "label": "Enable MCP Integration",
-          "description": "Allow the agent to communicate with AgentMesh platform via MCP protocol"
+          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
         },
         "sandbox_mode": {
           "label": "Sandbox Mode",
@@ -1870,7 +1870,7 @@
       "fields": {
         "mcp_enabled": {
           "label": "Enable MCP Integration",
-          "description": "Allow the agent to communicate with AgentMesh platform via MCP protocol"
+          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
         },
         "approval_mode": {
           "label": "Approval Mode",
@@ -1905,7 +1905,7 @@
       "fields": {
         "mcp_enabled": {
           "label": "Enable MCP Integration",
-          "description": "Allow the agent to communicate with AgentMesh platform via MCP protocol"
+          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
         }
       }
     }

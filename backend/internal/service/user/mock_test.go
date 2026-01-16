@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
 func TestNewMockService(t *testing.T) {

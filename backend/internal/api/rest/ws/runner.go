@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	runner "github.com/anthropics/agentmesh/backend/internal/service/runner"
+	runner "github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	gorillaws "github.com/gorilla/websocket"
 	"github.com/gin-gonic/gin"
 )

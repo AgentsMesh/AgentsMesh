@@ -1,12 +1,12 @@
 import { create } from "zustand";
-import { devmeshApi, DevMeshNodeData, DevMeshEdgeData, ChannelInfoData, DevMeshTopologyData } from "@/lib/api/client";
+import { meshApi, MeshNodeData, MeshEdgeData, ChannelInfoData, MeshTopologyData } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/utils";
 
 // Re-export API types for use in components
-export type DevMeshNode = DevMeshNodeData;
-export type DevMeshEdge = DevMeshEdgeData;
+export type MeshNode = MeshNodeData;
+export type MeshEdge = MeshEdgeData;
 export type ChannelInfo = ChannelInfoData;
-export type DevMeshTopology = DevMeshTopologyData;
+export type MeshTopology = MeshTopologyData;
 
 // Request to create a pod for a ticket
 export interface CreatePodForTicketRequest {
@@ -17,9 +17,9 @@ export interface CreatePodForTicketRequest {
   think_level?: string;
 }
 
-interface DevMeshState {
+interface MeshState {
   // State
-  topology: DevMeshTopology | null;
+  topology: MeshTopology | null;
   selectedNode: string | null;
   selectedChannel: number | null;
   loading: boolean;
@@ -32,13 +32,13 @@ interface DevMeshState {
   clearError: () => void;
 
   // Node helpers
-  getNodeByKey: (podKey: string) => DevMeshNode | undefined;
-  getEdgesForNode: (podKey: string) => DevMeshEdge[];
+  getNodeByKey: (podKey: string) => MeshNode | undefined;
+  getEdgesForNode: (podKey: string) => MeshEdge[];
   getChannelsForNode: (podKey: string) => ChannelInfo[];
-  getActiveNodes: () => DevMeshNode[];
+  getActiveNodes: () => MeshNode[];
 }
 
-export const useDevMeshStore = create<DevMeshState>((set, get) => ({
+export const useMeshStore = create<MeshState>((set, get) => ({
   topology: null,
   selectedNode: null,
   selectedChannel: null,
@@ -48,7 +48,7 @@ export const useDevMeshStore = create<DevMeshState>((set, get) => ({
   fetchTopology: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await devmeshApi.getTopology();
+      const response = await meshApi.getTopology();
       set({ topology: response.topology, loading: false });
     } catch (error: unknown) {
       set({

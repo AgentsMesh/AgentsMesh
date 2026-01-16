@@ -1,4 +1,4 @@
--- AgentMesh Database Schema
+-- AgentsMesh Database Schema
 -- Migration: 000001_init_schema
 
 -- ==========================================

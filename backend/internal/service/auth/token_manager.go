@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 )

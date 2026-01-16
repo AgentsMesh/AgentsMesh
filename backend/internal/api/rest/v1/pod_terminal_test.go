@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 

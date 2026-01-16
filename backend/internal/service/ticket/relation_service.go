@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"gorm.io/gorm"
 )
 

@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/anthropics/agentmesh/backend/internal/config"
-	"github.com/anthropics/agentmesh/backend/internal/infra/email"
-	"github.com/anthropics/agentmesh/backend/internal/service/auth"
-	"github.com/anthropics/agentmesh/backend/internal/service/user"
-	"github.com/anthropics/agentmesh/backend/pkg/auth/oauth"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
+	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
+	"github.com/anthropics/agentsmesh/backend/internal/service/user"
+	"github.com/anthropics/agentsmesh/backend/pkg/auth/oauth"
 	"github.com/gin-gonic/gin"
 )
 

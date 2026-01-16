@@ -55,7 +55,7 @@ export const usePushNotificationStore = create<PushNotificationState>()(
       setError: (error) => set({ error }),
     }),
     {
-      name: "agentmesh-push-notifications",
+      name: "agentsmesh-push-notifications",
       partialize: (state) => ({
         preferences: state.preferences,
       }),

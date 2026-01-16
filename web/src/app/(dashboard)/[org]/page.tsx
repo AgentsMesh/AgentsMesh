@@ -144,7 +144,7 @@ export default function OrganizationDashboard() {
             }
           />
           <QuickActionCard
-            title="View DevMesh"
+            title="View Mesh"
             description="Monitor your AI agent network"
             href={currentOrg ? `/${currentOrg.slug}/mesh` : "#"}
             icon={

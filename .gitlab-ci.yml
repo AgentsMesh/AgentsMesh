@@ -1,8 +1,8 @@
 variables:
   REGISTRY: registry.corp.agentsmesh.ai
-  BACKEND_IMAGE: ${REGISTRY}/agentmesh/backend
-  WEB_IMAGE: ${REGISTRY}/agentmesh/web
-  RUNNER_IMAGE: ${REGISTRY}/agentmesh/runner
+  BACKEND_IMAGE: ${REGISTRY}/agentsmesh/backend
+  WEB_IMAGE: ${REGISTRY}/agentsmesh/web
+  RUNNER_IMAGE: ${REGISTRY}/agentsmesh/runner
 
 stages:
   - test

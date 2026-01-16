@@ -1,20 +1,20 @@
-package devmesh
+package mesh
 
 import (
 	"testing"
 	"time"
 )
 
-// --- Test DevMeshNode ---
+// --- Test MeshNode ---
 
-func TestDevMeshNodeStruct(t *testing.T) {
+func TestMeshNodeStruct(t *testing.T) {
 	now := time.Now()
 	model := "opus"
 	ticketID := int64(20)
 	repoID := int64(5)
 	position := &NodePosition{X: 100.5, Y: 200.5}
 
-	node := DevMeshNode{
+	node := MeshNode{
 		PodKey:   "pod-123",
 		Status:       "running",
 		AgentStatus:  "working",
@@ -53,8 +53,8 @@ func TestDevMeshNodeStruct(t *testing.T) {
 	}
 }
 
-func TestDevMeshNodeWithNilOptionalFields(t *testing.T) {
-	node := DevMeshNode{
+func TestMeshNodeWithNilOptionalFields(t *testing.T) {
+	node := MeshNode{
 		PodKey:  "pod-456",
 		Status:      "initializing",
 		AgentStatus: "unknown",
@@ -106,10 +106,10 @@ func TestNodePositionZeroValues(t *testing.T) {
 	}
 }
 
-// --- Test DevMeshEdge ---
+// --- Test MeshEdge ---
 
-func TestDevMeshEdgeStruct(t *testing.T) {
-	edge := DevMeshEdge{
+func TestMeshEdgeStruct(t *testing.T) {
+	edge := MeshEdge{
 		ID:            1,
 		Source:        "pod-init",
 		Target:        "pod-target",
@@ -138,8 +138,8 @@ func TestDevMeshEdgeStruct(t *testing.T) {
 	}
 }
 
-func TestDevMeshEdgeWithEmptyScopes(t *testing.T) {
-	edge := DevMeshEdge{
+func TestMeshEdgeWithEmptyScopes(t *testing.T) {
+	edge := MeshEdge{
 		ID:            2,
 		Source:        "pod-a",
 		Target:        "pod-b",
@@ -189,15 +189,15 @@ func TestChannelInfoStruct(t *testing.T) {
 	}
 }
 
-// --- Test DevMeshTopology ---
+// --- Test MeshTopology ---
 
-func TestDevMeshTopologyStruct(t *testing.T) {
-	topology := DevMeshTopology{
-		Nodes: []DevMeshNode{
+func TestMeshTopologyStruct(t *testing.T) {
+	topology := MeshTopology{
+		Nodes: []MeshNode{
 			{PodKey: "pod-1", Status: "running"},
 			{PodKey: "pod-2", Status: "running"},
 		},
-		Edges: []DevMeshEdge{
+		Edges: []MeshEdge{
 			{ID: 1, Source: "pod-1", Target: "pod-2", Status: "active"},
 		},
 		Channels: []ChannelInfo{
@@ -216,10 +216,10 @@ func TestDevMeshTopologyStruct(t *testing.T) {
 	}
 }
 
-func TestDevMeshTopologyEmpty(t *testing.T) {
-	topology := DevMeshTopology{
-		Nodes:    []DevMeshNode{},
-		Edges:    []DevMeshEdge{},
+func TestMeshTopologyEmpty(t *testing.T) {
+	topology := MeshTopology{
+		Nodes:    []MeshNode{},
+		Edges:    []MeshEdge{},
 		Channels: []ChannelInfo{},
 	}
 
@@ -333,7 +333,7 @@ func TestCreatePodForTicketRequestStruct(t *testing.T) {
 func TestTicketPodInfoStruct(t *testing.T) {
 	info := TicketPodInfo{
 		TicketID: 20,
-		Pods: []DevMeshNode{
+		Pods: []MeshNode{
 			{PodKey: "pod-1", Status: "running"},
 			{PodKey: "pod-2", Status: "completed"},
 		},
@@ -351,7 +351,7 @@ func TestTicketPodInfoStruct(t *testing.T) {
 
 func TestBatchTicketPodsResponseStruct(t *testing.T) {
 	resp := BatchTicketPodsResponse{
-		TicketPods: map[int64][]DevMeshNode{
+		TicketPods: map[int64][]MeshNode{
 			1: {{PodKey: "pod-1", Status: "running"}},
 			2: {{PodKey: "pod-2", Status: "running"}, {PodKey: "pod-3", Status: "completed"}},
 		},
@@ -384,11 +384,11 @@ func BenchmarkChannelAccessTableName(b *testing.B) {
 	}
 }
 
-func BenchmarkDevMeshTopologyCreation(b *testing.B) {
+func BenchmarkMeshTopologyCreation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = DevMeshTopology{
-			Nodes:    []DevMeshNode{{PodKey: "pod-1", Status: "running"}},
-			Edges:    []DevMeshEdge{{ID: 1, Source: "pod-1", Target: "pod-2"}},
+		_ = MeshTopology{
+			Nodes:    []MeshNode{{PodKey: "pod-1", Status: "running"}},
+			Edges:    []MeshEdge{{ID: 1, Source: "pod-1", Target: "pod-2"}},
 			Channels: []ChannelInfo{{ID: 1, Name: "general"}},
 		}
 	}

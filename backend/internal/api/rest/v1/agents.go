@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	agentDomain "github.com/anthropics/agentmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	"github.com/anthropics/agentmesh/backend/internal/service/agent"
+	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/gin-gonic/gin"
 )
 

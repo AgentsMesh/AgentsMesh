@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AgentMesh is a multi-tenant AI Code Agent collaboration platform supporting Claude Code, Codex CLI, Gemini CLI, Aider, and more. It consists of three main components:
+AgentsMesh is a multi-tenant AI Code Agent collaboration platform supporting Claude Code, Codex CLI, Gemini CLI, Aider, and more. It consists of three main components:
 
 - **Backend**: Go API server (Gin + GORM)
 - **Web**: Next.js frontend (App Router + TypeScript + Tailwind CSS)
@@ -25,7 +25,7 @@ This script automatically:
 1. Generates `.env` with worktree-isolated ports (supports multiple worktrees)
 2. Starts all Docker services
 3. Runs database migrations
-4. Initializes seed data (test account: dev@agentmesh.local / devpass123)
+4. Initializes seed data (test account: dev@agentsmesh.local / devpass123)
 
 ### Manual Commands
 
@@ -45,7 +45,7 @@ docker compose down -v           # Stop and remove volumes
 | **App (Nginx)** | http://localhost | Unified entry point (proxies to web/backend) |
 | **Adminer** | http://localhost:8081 | Database management UI |
 | **MinIO Console** | http://localhost:9001 | S3-compatible storage UI |
-| PostgreSQL | localhost:5432 | Database (user: agentmesh, pass: agentmesh_dev) |
+| PostgreSQL | localhost:5432 | Database (user: agentsmesh, pass: agentsmesh_dev) |
 | Redis | localhost:6379 | Cache |
 | MinIO API | localhost:9000 | S3 API endpoint |
 
@@ -174,7 +174,7 @@ backend/
 │   │   ├── promocode/    # Promo code entity
 │   │   ├── gitprovider/  # Git provider (OAuth) entity
 │   │   ├── repository/   # Repository entity
-│   │   ├── devmesh/      # DevMesh session entity
+│   │   ├── mesh/         # Mesh topology entity
 │   │   └── file/         # File storage entity
 │   ├── service/          # Business logic layer
 │   ├── infra/            # Infrastructure (DB, cache)

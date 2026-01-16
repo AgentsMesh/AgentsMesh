@@ -1,26 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { act } from "@testing-library/react";
 import {
-  useDevMeshStore,
+  useMeshStore,
   getPodStatusInfo,
   getAgentStatusInfo,
   getBindingStatusInfo,
-  DevMeshTopology,
-  DevMeshNode,
-  DevMeshEdge,
+  MeshTopology,
+  MeshNode,
+  MeshEdge,
   ChannelInfo,
-} from "../devmesh";
+} from "../mesh";
 
-// Mock the devmesh API
+// Mock the mesh API
 vi.mock("@/lib/api/client", () => ({
-  devmeshApi: {
+  meshApi: {
     getTopology: vi.fn(),
   },
 }));
 
-import { devmeshApi } from "@/lib/api/client";
+import { meshApi } from "@/lib/api/client";
 
-const mockNode1: DevMeshNode = {
+const mockNode1: MeshNode = {
   pod_key: "pod-abc",
   status: "running",
   agent_status: "coding",
@@ -30,7 +30,7 @@ const mockNode1: DevMeshNode = {
   started_at: "2024-01-01T00:00:00Z",
 };
 
-const mockNode2: DevMeshNode = {
+const mockNode2: MeshNode = {
   pod_key: "pod-def",
   status: "running",
   agent_status: "thinking",
@@ -40,7 +40,7 @@ const mockNode2: DevMeshNode = {
   started_at: "2024-01-02T00:00:00Z",
 };
 
-const mockNode3: DevMeshNode = {
+const mockNode3: MeshNode = {
   pod_key: "pod-ghi",
   status: "terminated",
   agent_status: "idle",
@@ -50,7 +50,7 @@ const mockNode3: DevMeshNode = {
   started_at: "2024-01-03T00:00:00Z",
 };
 
-const mockEdge: DevMeshEdge = {
+const mockEdge: MeshEdge = {
   id: 1,
   source: "pod-abc",
   target: "pod-def",
@@ -66,17 +66,17 @@ const mockChannel: ChannelInfo = {
   is_archived: false,
 };
 
-const mockTopology: DevMeshTopology = {
+const mockTopology: MeshTopology = {
   nodes: [mockNode1, mockNode2, mockNode3],
   edges: [mockEdge],
   channels: [mockChannel],
 };
 
-describe("DevMesh Store", () => {
+describe("Mesh Store", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset store to initial state
-    useDevMeshStore.setState({
+    useMeshStore.setState({
       topology: null,
       selectedNode: null,
       selectedChannel: null,
@@ -87,7 +87,7 @@ describe("DevMesh Store", () => {
 
   describe("initial state", () => {
     it("should have default values", () => {
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
 
       expect(state.topology).toBeNull();
       expect(state.selectedNode).toBeNull();
@@ -99,42 +99,42 @@ describe("DevMesh Store", () => {
 
   describe("fetchTopology", () => {
     it("should fetch topology successfully", async () => {
-      vi.mocked(devmeshApi.getTopology).mockResolvedValue({
+      vi.mocked(meshApi.getTopology).mockResolvedValue({
         topology: mockTopology,
       });
 
       await act(async () => {
-        await useDevMeshStore.getState().fetchTopology();
+        await useMeshStore.getState().fetchTopology();
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.topology).toEqual(mockTopology);
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
     });
 
     it("should handle fetch error", async () => {
-      vi.mocked(devmeshApi.getTopology).mockRejectedValue(
+      vi.mocked(meshApi.getTopology).mockRejectedValue(
         new Error("Network error")
       );
 
       await act(async () => {
-        await useDevMeshStore.getState().fetchTopology();
+        await useMeshStore.getState().fetchTopology();
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.error).toBe("Network error");
       expect(state.loading).toBe(false);
     });
 
     it("should handle non-Error rejection", async () => {
-      vi.mocked(devmeshApi.getTopology).mockRejectedValue("Unknown error");
+      vi.mocked(meshApi.getTopology).mockRejectedValue("Unknown error");
 
       await act(async () => {
-        await useDevMeshStore.getState().fetchTopology();
+        await useMeshStore.getState().fetchTopology();
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.error).toBe("Failed to fetch topology");
     });
   });
@@ -142,33 +142,33 @@ describe("DevMesh Store", () => {
   describe("selectNode", () => {
     it("should select a node", () => {
       act(() => {
-        useDevMeshStore.getState().selectNode("pod-abc");
+        useMeshStore.getState().selectNode("pod-abc");
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.selectedNode).toBe("pod-abc");
     });
 
     it("should clear selectedChannel when selecting node", () => {
-      useDevMeshStore.setState({ selectedChannel: 1 });
+      useMeshStore.setState({ selectedChannel: 1 });
 
       act(() => {
-        useDevMeshStore.getState().selectNode("pod-abc");
+        useMeshStore.getState().selectNode("pod-abc");
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.selectedNode).toBe("pod-abc");
       expect(state.selectedChannel).toBeNull();
     });
 
     it("should set to null", () => {
-      useDevMeshStore.setState({ selectedNode: "pod-abc" });
+      useMeshStore.setState({ selectedNode: "pod-abc" });
 
       act(() => {
-        useDevMeshStore.getState().selectNode(null);
+        useMeshStore.getState().selectNode(null);
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.selectedNode).toBeNull();
     });
   });
@@ -176,33 +176,33 @@ describe("DevMesh Store", () => {
   describe("selectChannel", () => {
     it("should select a channel", () => {
       act(() => {
-        useDevMeshStore.getState().selectChannel(1);
+        useMeshStore.getState().selectChannel(1);
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.selectedChannel).toBe(1);
     });
 
     it("should clear selectedNode when selecting channel", () => {
-      useDevMeshStore.setState({ selectedNode: "pod-abc" });
+      useMeshStore.setState({ selectedNode: "pod-abc" });
 
       act(() => {
-        useDevMeshStore.getState().selectChannel(1);
+        useMeshStore.getState().selectChannel(1);
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.selectedChannel).toBe(1);
       expect(state.selectedNode).toBeNull();
     });
 
     it("should set to null", () => {
-      useDevMeshStore.setState({ selectedChannel: 1 });
+      useMeshStore.setState({ selectedChannel: 1 });
 
       act(() => {
-        useDevMeshStore.getState().selectChannel(null);
+        useMeshStore.getState().selectChannel(null);
       });
 
-      const state = useDevMeshStore.getState();
+      const state = useMeshStore.getState();
       expect(state.selectedChannel).toBeNull();
     });
   });
@@ -211,97 +211,97 @@ describe("DevMesh Store", () => {
 
   describe("clearError", () => {
     it("should clear error", () => {
-      useDevMeshStore.setState({ error: "Some error" });
+      useMeshStore.setState({ error: "Some error" });
 
       act(() => {
-        useDevMeshStore.getState().clearError();
+        useMeshStore.getState().clearError();
       });
 
-      expect(useDevMeshStore.getState().error).toBeNull();
+      expect(useMeshStore.getState().error).toBeNull();
     });
   });
 
   describe("getNodeByKey", () => {
     beforeEach(() => {
-      useDevMeshStore.setState({ topology: mockTopology });
+      useMeshStore.setState({ topology: mockTopology });
     });
 
     it("should find node by key", () => {
-      const node = useDevMeshStore.getState().getNodeByKey("pod-abc");
+      const node = useMeshStore.getState().getNodeByKey("pod-abc");
       expect(node).toEqual(mockNode1);
     });
 
     it("should return undefined for non-existent key", () => {
-      const node = useDevMeshStore.getState().getNodeByKey("non-existent");
+      const node = useMeshStore.getState().getNodeByKey("non-existent");
       expect(node).toBeUndefined();
     });
 
     it("should return undefined when topology is null", () => {
-      useDevMeshStore.setState({ topology: null });
-      const node = useDevMeshStore.getState().getNodeByKey("pod-abc");
+      useMeshStore.setState({ topology: null });
+      const node = useMeshStore.getState().getNodeByKey("pod-abc");
       expect(node).toBeUndefined();
     });
   });
 
   describe("getEdgesForNode", () => {
     beforeEach(() => {
-      useDevMeshStore.setState({ topology: mockTopology });
+      useMeshStore.setState({ topology: mockTopology });
     });
 
     it("should find edges for source node", () => {
-      const edges = useDevMeshStore.getState().getEdgesForNode("pod-abc");
+      const edges = useMeshStore.getState().getEdgesForNode("pod-abc");
       expect(edges).toHaveLength(1);
       expect(edges[0]).toEqual(mockEdge);
     });
 
     it("should find edges for target node", () => {
-      const edges = useDevMeshStore.getState().getEdgesForNode("pod-def");
+      const edges = useMeshStore.getState().getEdgesForNode("pod-def");
       expect(edges).toHaveLength(1);
       expect(edges[0]).toEqual(mockEdge);
     });
 
     it("should return empty array for node with no edges", () => {
-      const edges = useDevMeshStore.getState().getEdgesForNode("pod-ghi");
+      const edges = useMeshStore.getState().getEdgesForNode("pod-ghi");
       expect(edges).toEqual([]);
     });
 
     it("should return empty array when topology is null", () => {
-      useDevMeshStore.setState({ topology: null });
-      const edges = useDevMeshStore.getState().getEdgesForNode("pod-abc");
+      useMeshStore.setState({ topology: null });
+      const edges = useMeshStore.getState().getEdgesForNode("pod-abc");
       expect(edges).toEqual([]);
     });
   });
 
   describe("getChannelsForNode", () => {
     beforeEach(() => {
-      useDevMeshStore.setState({ topology: mockTopology });
+      useMeshStore.setState({ topology: mockTopology });
     });
 
     it("should find channels for node", () => {
-      const channels = useDevMeshStore.getState().getChannelsForNode("pod-abc");
+      const channels = useMeshStore.getState().getChannelsForNode("pod-abc");
       expect(channels).toHaveLength(1);
       expect(channels[0]).toEqual(mockChannel);
     });
 
     it("should return empty array for node with no channels", () => {
-      const channels = useDevMeshStore.getState().getChannelsForNode("pod-ghi");
+      const channels = useMeshStore.getState().getChannelsForNode("pod-ghi");
       expect(channels).toEqual([]);
     });
 
     it("should return empty array when topology is null", () => {
-      useDevMeshStore.setState({ topology: null });
-      const channels = useDevMeshStore.getState().getChannelsForNode("pod-abc");
+      useMeshStore.setState({ topology: null });
+      const channels = useMeshStore.getState().getChannelsForNode("pod-abc");
       expect(channels).toEqual([]);
     });
   });
 
   describe("getActiveNodes", () => {
     beforeEach(() => {
-      useDevMeshStore.setState({ topology: mockTopology });
+      useMeshStore.setState({ topology: mockTopology });
     });
 
     it("should return only running and initializing nodes", () => {
-      const activeNodes = useDevMeshStore.getState().getActiveNodes();
+      const activeNodes = useMeshStore.getState().getActiveNodes();
       expect(activeNodes).toHaveLength(2);
       expect(activeNodes.map((n) => n.pod_key)).toContain("pod-abc");
       expect(activeNodes.map((n) => n.pod_key)).toContain("pod-def");
@@ -309,7 +309,7 @@ describe("DevMesh Store", () => {
     });
 
     it("should include initializing nodes", () => {
-      const initializingNode: DevMeshNode = {
+      const initializingNode: MeshNode = {
         pod_key: "pod-init",
         status: "initializing",
         agent_status: "idle",
@@ -318,20 +318,20 @@ describe("DevMesh Store", () => {
         runner_id: 4,
         started_at: "2024-01-01T00:00:00Z",
       };
-      useDevMeshStore.setState({
+      useMeshStore.setState({
         topology: {
           ...mockTopology,
           nodes: [...mockTopology.nodes, initializingNode],
         },
       });
 
-      const activeNodes = useDevMeshStore.getState().getActiveNodes();
+      const activeNodes = useMeshStore.getState().getActiveNodes();
       expect(activeNodes.map((n) => n.pod_key)).toContain("pod-init");
     });
 
     it("should return empty array when topology is null", () => {
-      useDevMeshStore.setState({ topology: null });
-      const activeNodes = useDevMeshStore.getState().getActiveNodes();
+      useMeshStore.setState({ topology: null });
+      const activeNodes = useMeshStore.getState().getActiveNodes();
       expect(activeNodes).toEqual([]);
     });
   });

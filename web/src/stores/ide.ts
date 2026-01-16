@@ -91,7 +91,7 @@ export const useIDEStore = create<IDEState>()(
       setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
-      name: "agentmesh-ide",
+      name: "agentsmesh-ide",
       partialize: (state) => ({
         // Only persist these fields
         activeActivity: state.activeActivity,
@@ -136,7 +136,7 @@ export const ACTIVITIES: ActivityConfig[] = [
   },
   {
     id: "mesh",
-    label: "AgentMesh",
+    label: "AgentsMesh",
     icon: "network",
     mobileVisible: true,
     mobileOrder: 3,

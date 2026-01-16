@@ -12,7 +12,7 @@ export default function TicketsPage() {
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-4">Overview</h2>
         <p className="text-muted-foreground leading-relaxed mb-4">
-          AgentMesh Tickets provide a lightweight issue tracking system designed
+          AgentsMesh Tickets provide a lightweight issue tracking system designed
           for AI-driven development. Key features include:
         </p>
         <ul className="list-disc list-inside text-muted-foreground space-y-2">

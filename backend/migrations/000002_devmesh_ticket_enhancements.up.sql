@@ -1,6 +1,6 @@
--- AgentMesh Database Migration
+-- AgentsMesh Database Migration
 -- Migration: 000002_devmesh_ticket_enhancements
--- Description: Add DevMesh and Ticket enhancements for migration from Mainline
+-- Description: Add Mesh and Ticket enhancements for migration from Mainline
 
 -- ==========================================
 -- 1. Ticket Enhancements
@@ -91,7 +91,7 @@ CREATE INDEX IF NOT EXISTS idx_ticket_relations_source ON ticket_relations(sourc
 CREATE INDEX IF NOT EXISTS idx_ticket_relations_target ON ticket_relations(target_ticket_id);
 
 -- ==========================================
--- 7. Channel Pods Table (for DevMesh)
+-- 7. Channel Pods Table (for Mesh)
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS channel_pods (
@@ -106,7 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_channel_pods_channel ON channel_pods(channel_id);
 CREATE INDEX IF NOT EXISTS idx_channel_pods_pod ON channel_pods(pod_key);
 
 -- ==========================================
--- 8. Channel Access Tracking (for DevMesh)
+-- 8. Channel Access Tracking (for Mesh)
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS channel_access (

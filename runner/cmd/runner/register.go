@@ -137,7 +137,7 @@ func saveConfig(nodeID, serverURL, authToken, orgSlug, description string, maxPo
 		Description:       description,
 		MaxConcurrentPods: maxPods,
 		OrgSlug:           orgSlug,
-		WorkspaceRoot:     "/tmp/agentmesh-workspace",
+		WorkspaceRoot:     "/tmp/agentsmesh-workspace",
 		DefaultAgent:      "claude-code",
 		DefaultShell:      getDefaultShell(),
 		HealthCheckPort:   9090,

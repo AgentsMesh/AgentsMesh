@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/client"
-	"github.com/anthropics/agentmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
 // TestNewRunnerWithMockConnection tests Runner creation with new Connection interface

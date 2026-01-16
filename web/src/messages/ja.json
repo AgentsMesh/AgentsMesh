@@ -32,7 +32,7 @@
   },
   "nav": {
     "agentpod": "AgentPod",
-    "mesh": "AgentMesh",
+    "mesh": "AgentsMesh",
     "tickets": "チケット",
     "settings": "設定",
     "billing": "請求"
@@ -100,7 +100,7 @@
           "autonomy": "能動的タスク実行",
           "capabilities": "フルスタック開発",
           "environment": "完全なターミナルアクセス",
-          "multiAgent": "AgentMesh対応",
+          "multiAgent": "AgentsMesh対応",
           "selfHosted": "完全制御可能"
         }
       }
@@ -120,8 +120,8 @@
           "3": "完了時の自動クリーンアップ"
         }
       },
-      "agentmesh": {
-        "title": "AgentMesh",
+      "agentsmesh": {
+        "title": "AgentsMesh",
         "subtitle": "マルチエージェントコラボレーション",
         "description": "Podバインディングとチャンネル通信を通じて複数のAIエージェントが協力。コラボレーショントポロジーをリアルタイムで可視化。",
         "highlights": {
@@ -164,7 +164,7 @@
       },
       "step2": {
         "title": "エージェントを接続",
-        "description": "AIコーディングエージェントをAgentMeshに接続するよう設定。"
+        "description": "AIコーディングエージェントをAgentsMeshに接続するよう設定。"
       },
       "step3": {
         "title": "コラボレーション開始",
@@ -269,7 +269,7 @@
       "title": "完全な",
       "titleHighlight": "セルフホスト",
       "titleEnd": "デプロイが必要ですか？",
-      "description": "AgentMeshは完全なセルフホストデプロイをサポート。コードとデータはインフラを離れません。厳格なセキュリティとコンプライアンス要件を持つ企業に最適。",
+      "description": "AgentsMeshは完全なセルフホストデプロイをサポート。コードとデータはインフラを離れません。厳格なセキュリティとコンプライアンス要件を持つ企業に最適。",
       "dockerCompose": "Docker Compose",
       "kubernetesHelm": "Kubernetes Helm",
       "airGappedSupport": "エアギャップサポート",
@@ -279,7 +279,7 @@
     "finalCta": {
       "title1": "ターミナルエージェントを",
       "title2": "協力させる準備はできましたか？",
-      "description": "AgentMeshを使用してAIコーディングエージェントを調整する数千の開発者に参加しましょう。無料で始められ、クレジットカードは不要です。",
+      "description": "AgentsMeshを使用してAIコーディングエージェントを調整する数千の開発者に参加しましょう。無料で始められ、クレジットカードは不要です。",
       "getStartedFree": "無料で始める",
       "scheduleDemo": "デモを予約",
       "freeTier": "無料プランあり",
@@ -291,8 +291,8 @@
       "live": "ライブ",
       "initializingPod": "Pod を初期化中...",
       "typeMessage": "メッセージを入力...",
-      "connecting": "AgentMeshに接続中...",
-      "connected": "AgentMeshサーバーに接続しました",
+      "connecting": "AgentsMeshに接続中...",
+      "connected": "AgentsMeshサーバーに接続しました",
       "workspace": "ワークスペース：/projects/e-commerce",
       "monitorPod": "pod beta-devを監視し、認証実装の調整を支援",
       "bindingPod": "beta-devにバインドして観察・調整します...",
@@ -332,7 +332,7 @@
         "runner": "Runner",
         "agent": "エージェント",
         "websocket": "WebSocket",
-        "agentmeshCloud": "AgentMeshクラウド"
+        "agentsmeshCloud": "AgentsMeshクラウド"
       }
     },
     "agentLogos": {
@@ -348,12 +348,12 @@
     },
     "footer": {
       "tagline": "ターミナルベースコーディングエージェントコラボレーションプラットフォーム",
-      "copyright": "AgentMesh. All rights reserved.",
+      "copyright": "AgentsMesh. All rights reserved.",
       "madeWith": "開発者への愛を込めて作成",
       "product": {
         "title": "製品",
         "agentpod": "AgentPod",
-        "agentmesh": "AgentMesh",
+        "agentsmesh": "AgentsMesh",
         "tickets": "チケット",
         "runners": "ランナー",
         "pricing": "料金"
@@ -399,14 +399,14 @@
     }
   },
   "mesh": {
-    "title": "AgentMesh",
+    "title": "AgentsMesh",
     "channels": "チャンネル",
     "newChannel": "新規チャンネル",
     "topology": "トポロジー",
     "messages": "メッセージ",
     "sendMessage": "メッセージを送信...",
     "page": {
-      "title": "DevMesh",
+      "title": "Mesh",
       "subtitle": "マルチエージェント協調ネットワークトポロジー",
       "activePods": "{count}個のアクティブPod",
       "channelsCount": "{count}個のチャンネル",
@@ -530,7 +530,7 @@
     "activities": {
       "workspace": "ワークスペース",
       "tickets": "チケット",
-      "mesh": "AgentMesh",
+      "mesh": "AgentsMesh",
       "repositories": "リポジトリ",
       "runners": "Runner",
       "settings": "設定"
@@ -758,7 +758,7 @@
     "workspaceDescription": "ターミナルワークスペース",
     "goToTickets": "チケットへ移動",
     "ticketsDescription": "チケットの表示と管理",
-    "goToMesh": "AgentMeshへ移動",
+    "goToMesh": "AgentsMeshへ移動",
     "meshDescription": "ネットワークトポロジー",
     "goToRepositories": "リポジトリへ移動",
     "repositoriesDescription": "リポジトリの管理",

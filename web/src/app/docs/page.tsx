@@ -133,9 +133,9 @@ export default function DocsPage() {
             href="/docs/features/channels"
             className="border border-border rounded-lg p-4 hover:border-primary transition-colors"
           >
-            <h3 className="font-medium mb-1">AgentMesh →</h3>
+            <h3 className="font-medium mb-1">AgentsMesh →</h3>
             <p className="text-sm text-muted-foreground">
-              {t("docs.quickLinks.agentmeshDesc")}
+              {t("docs.quickLinks.agentsmeshDesc")}
             </p>
           </Link>
           <Link

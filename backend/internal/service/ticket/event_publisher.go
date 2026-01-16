@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
 // EventBusPublisher implements EventPublisher using EventBus

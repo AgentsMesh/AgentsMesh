@@ -36,14 +36,14 @@ export function CoreFeatures() {
     },
     {
       number: "02",
-      title: t("landing.coreFeatures.agentmesh.title"),
-      subtitle: t("landing.coreFeatures.agentmesh.subtitle"),
-      description: t("landing.coreFeatures.agentmesh.description"),
+      title: t("landing.coreFeatures.agentsmesh.title"),
+      subtitle: t("landing.coreFeatures.agentsmesh.subtitle"),
+      description: t("landing.coreFeatures.agentsmesh.description"),
       highlights: [
-        t("landing.coreFeatures.agentmesh.highlights.0"),
-        t("landing.coreFeatures.agentmesh.highlights.1"),
-        t("landing.coreFeatures.agentmesh.highlights.2"),
-        t("landing.coreFeatures.agentmesh.highlights.3"),
+        t("landing.coreFeatures.agentsmesh.highlights.0"),
+        t("landing.coreFeatures.agentsmesh.highlights.1"),
+        t("landing.coreFeatures.agentsmesh.highlights.2"),
+        t("landing.coreFeatures.agentsmesh.highlights.3"),
       ],
       diagram: {
         nodes: [
@@ -284,7 +284,7 @@ export function CoreFeatures() {
                         <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
                         </svg>
-                        <span className="text-sm">{t("landing.coreDemo.architecture.agentmeshCloud")}</span>
+                        <span className="text-sm">{t("landing.coreDemo.architecture.agentsmeshCloud")}</span>
                       </div>
                     </div>
                   </div>

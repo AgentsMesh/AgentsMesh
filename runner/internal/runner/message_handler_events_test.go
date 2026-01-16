@@ -3,8 +3,8 @@ package runner
 import (
 	"testing"
 
-	"github.com/anthropics/agentmesh/runner/internal/client"
-	"github.com/anthropics/agentmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
 // Tests for event sending methods and helper functions

@@ -1,8 +1,8 @@
-# AgentMesh Deployment Guide
+# AgentsMesh Deployment Guide
 
 ## Overview
 
-AgentMesh can be deployed using Docker Compose for development/staging or Kubernetes for production environments.
+AgentsMesh can be deployed using Docker Compose for development/staging or Kubernetes for production environments.
 
 ## Prerequisites
 
@@ -17,8 +17,8 @@ AgentMesh can be deployed using Docker Compose for development/staging or Kubern
 
 ```bash
 # Clone the repository
-git clone https://github.com/agentmesh/agentmesh.git
-cd agentmesh
+git clone https://github.com/agentsmesh/agentsmesh.git
+cd agentsmesh
 
 # Copy environment file
 cp .env.example .env
@@ -60,12 +60,12 @@ kubectl apply -k deploy/kubernetes/overlays/production
 
 ```bash
 # Add Helm repository
-helm repo add agentmesh https://charts.agentmesh.io
+helm repo add agentsmesh https://charts.agentsmesh.io
 helm repo update
 
 # Install
-helm install agentmesh agentmesh/agentmesh \
-  --namespace agentmesh \
+helm install agentsmesh agentsmesh/agentsmesh \
+  --namespace agentsmesh \
   --create-namespace \
   -f values.yaml
 ```
@@ -197,10 +197,10 @@ LOG_LEVEL=info  # debug, info, warn, error
 
 ```bash
 # Create backup
-pg_dump -h localhost -U agentmesh agentmesh > backup.sql
+pg_dump -h localhost -U agentsmesh agentsmesh > backup.sql
 
 # Restore backup
-psql -h localhost -U agentmesh agentmesh < backup.sql
+psql -h localhost -U agentsmesh agentsmesh < backup.sql
 ```
 
 ### Redis Backup
@@ -231,7 +231,7 @@ Use Kubernetes Secrets or external secret management (Vault, AWS Secrets Manager
 
 ```bash
 # Create secrets
-kubectl create secret generic agentmesh-secrets \
+kubectl create secret generic agentsmesh-secrets \
   --from-literal=jwt-secret=<secret> \
   --from-literal=database-url=<url>
 ```
@@ -271,5 +271,5 @@ LOG_LEVEL=debug
 docker compose logs -f backend
 
 # Kubernetes
-kubectl logs -f deployment/backend -n agentmesh
+kubectl logs -f deployment/backend -n agentsmesh
 ```

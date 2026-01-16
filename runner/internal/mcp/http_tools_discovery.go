@@ -3,7 +3,7 @@ package mcp
 import (
 	"context"
 
-	"github.com/anthropics/agentmesh/runner/internal/mcp/tools"
+	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
 // Discovery Tools

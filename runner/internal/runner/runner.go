@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/client"
-	"github.com/anthropics/agentmesh/runner/internal/config"
-	"github.com/anthropics/agentmesh/runner/internal/mcp"
-	"github.com/anthropics/agentmesh/runner/internal/monitor"
-	"github.com/anthropics/agentmesh/runner/internal/terminal"
-	"github.com/anthropics/agentmesh/runner/internal/workspace"
+	"github.com/anthropics/agentsmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/mcp"
+	"github.com/anthropics/agentsmesh/runner/internal/monitor"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal"
+	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
 
 // Runner is the main runner instance

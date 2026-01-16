@@ -1,4 +1,4 @@
-module github.com/anthropics/agentmesh/runner
+module github.com/anthropics/agentsmesh/runner
 
 go 1.24.0
 
@@ -9,7 +9,6 @@ require (
 	github.com/kardianos/service v1.2.4
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
-	github.com/yuin/gopher-lua v1.1.1
 	golang.org/x/term v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 )

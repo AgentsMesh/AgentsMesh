@@ -2,11 +2,11 @@
 
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { getPodStatusInfo, getAgentStatusInfo, type DevMeshNode } from "@/stores/devmesh";
+import { getPodStatusInfo, getAgentStatusInfo, type MeshNode } from "@/stores/mesh";
 
 interface PodNodeProps {
   data: {
-    node: DevMeshNode;
+    node: MeshNode;
     isSelected?: boolean;
   };
 }

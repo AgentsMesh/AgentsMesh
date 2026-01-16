@@ -77,7 +77,7 @@ export const useAuthStore = create<AuthState>()(
       setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
-      name: "agentmesh-auth",
+      name: "agentsmesh-auth",
       partialize: (state) => ({
         token: state.token,
         refreshToken: state.refreshToken,

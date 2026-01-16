@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentmesh/backend/internal/domain/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
 // BuildTicketPrompt builds an initial prompt from ticket context

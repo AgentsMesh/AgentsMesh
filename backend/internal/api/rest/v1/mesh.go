@@ -5,35 +5,35 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/devmesh"
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	devmeshService "github.com/anthropics/agentmesh/backend/internal/service/devmesh"
-	"github.com/anthropics/agentmesh/backend/internal/service/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/mesh"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	meshService "github.com/anthropics/agentsmesh/backend/internal/service/mesh"
+	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 	"github.com/gin-gonic/gin"
 )
 
-// DevMeshHandler handles DevMesh-related requests
-type DevMeshHandler struct {
-	devmeshService *devmeshService.Service
+// MeshHandler handles Mesh-related requests
+type MeshHandler struct {
+	meshService *meshService.Service
 	ticketService  *ticket.Service
 }
 
-// NewDevMeshHandler creates a new DevMesh handler
-func NewDevMeshHandler(ds *devmeshService.Service, ts *ticket.Service) *DevMeshHandler {
-	return &DevMeshHandler{
-		devmeshService: ds,
+// NewMeshHandler creates a new Mesh handler
+func NewMeshHandler(ds *meshService.Service, ts *ticket.Service) *MeshHandler {
+	return &MeshHandler{
+		meshService: ds,
 		ticketService:  ts,
 	}
 }
 
-// GetTopology returns the DevMesh topology for the organization
-// GET /api/v1/organizations/:slug/devmesh/topology
-func (h *DevMeshHandler) GetTopology(c *gin.Context) {
+// GetTopology returns the Mesh topology for the organization
+// GET /api/v1/organizations/:slug/mesh/topology
+func (h *MeshHandler) GetTopology(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
 	slog.Debug("GetTopology called", "org_id", tenant.OrganizationID)
 
-	topology, err := h.devmeshService.GetTopology(c.Request.Context(), tenant.OrganizationID)
+	topology, err := h.meshService.GetTopology(c.Request.Context(), tenant.OrganizationID)
 	if err != nil {
 		slog.Error("Failed to get topology", "error", err, "org_id", tenant.OrganizationID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get topology: " + err.Error()})
@@ -54,7 +54,7 @@ type CreatePodForTicketRequest struct {
 
 // CreatePodForTicket creates a new pod for a ticket
 // POST /api/v1/organizations/:slug/tickets/:identifier/pods
-func (h *DevMeshHandler) CreatePodForTicket(c *gin.Context) {
+func (h *MeshHandler) CreatePodForTicket(c *gin.Context) {
 	identifier := c.Param("identifier")
 	tenant := middleware.GetTenant(c)
 
@@ -72,7 +72,7 @@ func (h *DevMeshHandler) CreatePodForTicket(c *gin.Context) {
 	}
 
 	// Create pod
-	pod, err := h.devmeshService.CreatePodForTicket(c.Request.Context(), &devmesh.CreatePodForTicketRequest{
+	pod, err := h.meshService.CreatePodForTicket(c.Request.Context(), &mesh.CreatePodForTicketRequest{
 		OrganizationID: tenant.OrganizationID,
 		TicketID:       t.ID,
 		RunnerID:       req.RunnerID,
@@ -95,7 +95,7 @@ func (h *DevMeshHandler) CreatePodForTicket(c *gin.Context) {
 
 // GetTicketPods returns pods for a ticket
 // GET /api/v1/organizations/:slug/tickets/:identifier/pods
-func (h *DevMeshHandler) GetTicketPods(c *gin.Context) {
+func (h *MeshHandler) GetTicketPods(c *gin.Context) {
 	identifier := c.Param("identifier")
 
 	// Get the ticket
@@ -107,11 +107,11 @@ func (h *DevMeshHandler) GetTicketPods(c *gin.Context) {
 
 	// Get pods
 	activeOnly := c.Query("active") == "true"
-	var pods []devmesh.DevMeshNode
+	var pods []mesh.MeshNode
 	if activeOnly {
-		pods, err = h.devmeshService.GetActivePodsForTicket(c.Request.Context(), t.ID)
+		pods, err = h.meshService.GetActivePodsForTicket(c.Request.Context(), t.ID)
 	} else {
-		pods, err = h.devmeshService.GetPodsForTicket(c.Request.Context(), t.ID)
+		pods, err = h.meshService.GetPodsForTicket(c.Request.Context(), t.ID)
 	}
 
 	if err != nil {
@@ -129,7 +129,7 @@ type BatchGetTicketPodsRequest struct {
 
 // BatchGetTicketPods returns pods for multiple tickets
 // POST /api/v1/organizations/:slug/tickets/batch-pods
-func (h *DevMeshHandler) BatchGetTicketPods(c *gin.Context) {
+func (h *MeshHandler) BatchGetTicketPods(c *gin.Context) {
 	var req BatchGetTicketPodsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -146,7 +146,7 @@ func (h *DevMeshHandler) BatchGetTicketPods(c *gin.Context) {
 		return
 	}
 
-	result, err := h.devmeshService.BatchGetTicketPods(c.Request.Context(), req.TicketIDs)
+	result, err := h.meshService.BatchGetTicketPods(c.Request.Context(), req.TicketIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get pods"})
 		return
@@ -162,7 +162,7 @@ type JoinChannelRequest struct {
 
 // JoinChannel adds a pod to a channel
 // POST /api/v1/organizations/:slug/channels/:id/pods
-func (h *DevMeshHandler) JoinChannel(c *gin.Context) {
+func (h *MeshHandler) JoinChannel(c *gin.Context) {
 	channelIDStr := c.Param("id")
 	channelID, err := strconv.ParseInt(channelIDStr, 10, 64)
 	if err != nil {
@@ -176,7 +176,7 @@ func (h *DevMeshHandler) JoinChannel(c *gin.Context) {
 		return
 	}
 
-	if err := h.devmeshService.JoinChannel(c.Request.Context(), channelID, req.PodKey); err != nil {
+	if err := h.meshService.JoinChannel(c.Request.Context(), channelID, req.PodKey); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to join channel"})
 		return
 	}
@@ -186,7 +186,7 @@ func (h *DevMeshHandler) JoinChannel(c *gin.Context) {
 
 // LeaveChannel removes a pod from a channel
 // DELETE /api/v1/organizations/:slug/channels/:id/pods/:pod_key
-func (h *DevMeshHandler) LeaveChannel(c *gin.Context) {
+func (h *MeshHandler) LeaveChannel(c *gin.Context) {
 	channelIDStr := c.Param("id")
 	channelID, err := strconv.ParseInt(channelIDStr, 10, 64)
 	if err != nil {
@@ -196,7 +196,7 @@ func (h *DevMeshHandler) LeaveChannel(c *gin.Context) {
 
 	podKey := c.Param("pod_key")
 
-	if err := h.devmeshService.LeaveChannel(c.Request.Context(), channelID, podKey); err != nil {
+	if err := h.meshService.LeaveChannel(c.Request.Context(), channelID, podKey); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to leave channel"})
 		return
 	}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
 // mockCredentialProvider implements AgentConfigProvider for testing buildEnvVars paths

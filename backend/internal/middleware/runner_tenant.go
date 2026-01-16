@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/gin-gonic/gin"
 )
 

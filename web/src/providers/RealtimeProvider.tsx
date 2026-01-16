@@ -5,7 +5,7 @@ import { useRealtimeConnection, useAllEventsSubscription } from "@/hooks/useReal
 import { usePodStore } from "@/stores/pod";
 import { useRunnerStore } from "@/stores/runner";
 import { useTicketStore } from "@/stores/ticket";
-import { useDevMeshStore } from "@/stores/devmesh";
+import { useMeshStore } from "@/stores/mesh";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useChannelStore } from "@/stores/channel";
 import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData, PodTitleChangedData, ChannelMessageData } from "@/lib/realtime";
@@ -52,7 +52,7 @@ export function RealtimeProvider({
   const podStore = usePodStore();
   const runnerStore = useRunnerStore();
   const ticketStore = useTicketStore();
-  const devMeshStore = useDevMeshStore();
+  const meshStore = useMeshStore();
   const workspaceStore = useWorkspaceStore();
   const channelStore = useChannelStore();
 
@@ -65,8 +65,8 @@ export function RealtimeProvider({
           const data = event.data as PodCreatedData;
           // Refresh pods list to include the new pod
           podStore.fetchPods?.();
-          // Also refresh DevMesh topology since a new pod affects the mesh
-          devMeshStore.fetchTopology?.();
+          // Also refresh Mesh topology since a new pod affects the mesh
+          meshStore.fetchTopology?.();
           console.log("[Realtime] Pod created:", data.pod_key);
           break;
         }
@@ -87,8 +87,8 @@ export function RealtimeProvider({
               data.agent_status
             );
           }
-          // Also refresh DevMesh topology since pod status affects the mesh
-          devMeshStore.fetchTopology?.();
+          // Also refresh Mesh topology since pod status affects the mesh
+          meshStore.fetchTopology?.();
           console.log("[Realtime] Pod status changed:", data.pod_key, data.status);
           break;
         }
@@ -103,8 +103,8 @@ export function RealtimeProvider({
               data.agent_status
             );
           }
-          // Also refresh DevMesh topology since agent status affects the mesh display
-          devMeshStore.fetchTopology?.();
+          // Also refresh Mesh topology since agent status affects the mesh display
+          meshStore.fetchTopology?.();
           console.log("[Realtime] Pod agent status changed:", data.pod_key, data.agent_status);
           break;
         }
@@ -115,8 +115,8 @@ export function RealtimeProvider({
           if (podStore.updatePodStatus) {
             podStore.updatePodStatus(data.pod_key, "terminated");
           }
-          // Also refresh DevMesh topology since termination removes the pod from mesh
-          devMeshStore.fetchTopology?.();
+          // Also refresh Mesh topology since termination removes the pod from mesh
+          meshStore.fetchTopology?.();
           console.log("[Realtime] Pod terminated:", data.pod_key);
           break;
         }
@@ -198,7 +198,7 @@ export function RealtimeProvider({
           console.log("[Realtime] Unknown event:", event.type);
       }
     },
-    [podStore, runnerStore, ticketStore, devMeshStore, workspaceStore, channelStore, onTerminalNotification, onTaskCompleted]
+    [podStore, runnerStore, ticketStore, meshStore, workspaceStore, channelStore, onTerminalNotification, onTaskCompleted]
   );
 
   // Subscribe to all events
@@ -211,7 +211,7 @@ export function RealtimeProvider({
       podStore.fetchPods?.();
       runnerStore.fetchRunners?.();
       ticketStore.fetchTickets?.();
-      devMeshStore.fetchTopology?.();
+      meshStore.fetchTopology?.();
     }
   }, [connectionState]);
 

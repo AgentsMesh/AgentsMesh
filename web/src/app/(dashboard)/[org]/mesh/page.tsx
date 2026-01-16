@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { DevMeshTopology } from "@/components/devmesh";
+import { MeshTopology } from "@/components/mesh";
 import { ChannelChatPanel, MobileChannelChat } from "@/components/mesh";
-import { useDevMeshStore } from "@/stores/devmesh";
+import { useMeshStore } from "@/stores/mesh";
 import { cn } from "@/lib/utils";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
 import { useTranslations } from "@/lib/i18n/client";
@@ -19,7 +19,7 @@ export default function MeshPage() {
     fetchTopology,
     selectChannel,
     clearError,
-  } = useDevMeshStore();
+  } = useMeshStore();
 
   const { isMobile } = useBreakpoint();
 
@@ -110,7 +110,7 @@ export default function MeshPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           )}
-          <DevMeshTopology />
+          <MeshTopology />
 
           {/* Loading indicator for polling */}
           {loading && topology && (

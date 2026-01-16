@@ -32,7 +32,7 @@
   },
   "nav": {
     "agentpod": "AgentPod",
-    "mesh": "AgentMesh",
+    "mesh": "AgentsMesh",
     "tickets": "Tickets",
     "settings": "Configuración",
     "billing": "Facturación"
@@ -111,7 +111,7 @@
           "autonomy": "Ejecución activa de tareas",
           "capabilities": "Desarrollo full-stack",
           "environment": "Acceso completo al terminal",
-          "multiAgent": "Habilitado por AgentMesh",
+          "multiAgent": "Habilitado por AgentsMesh",
           "selfHosted": "Totalmente controlable"
         }
       }
@@ -131,8 +131,8 @@
           "3": "Limpieza automática al completar"
         }
       },
-      "agentmesh": {
-        "title": "AgentMesh",
+      "agentsmesh": {
+        "title": "AgentsMesh",
         "subtitle": "Colaboración Multi-Agente",
         "description": "Permite que múltiples agentes de IA trabajen juntos a través de enlaces de pods y comunicación por canales. Visualiza la topología de colaboración en tiempo real.",
         "highlights": {
@@ -175,7 +175,7 @@
       },
       "step2": {
         "title": "Conecta Agente",
-        "description": "Configura tu agente de código de IA para conectarse a AgentMesh."
+        "description": "Configura tu agente de código de IA para conectarse a AgentsMesh."
       },
       "step3": {
         "title": "Comienza a Colaborar",
@@ -280,7 +280,7 @@
       "title": "¿Necesitas un Despliegue",
       "titleHighlight": "Auto-alojado",
       "titleEnd": "Completo?",
-      "description": "AgentMesh soporta despliegue completamente auto-alojado. Tu código y datos nunca salen de tu infraestructura. Perfecto para empresas con requisitos estrictos de seguridad y cumplimiento.",
+      "description": "AgentsMesh soporta despliegue completamente auto-alojado. Tu código y datos nunca salen de tu infraestructura. Perfecto para empresas con requisitos estrictos de seguridad y cumplimiento.",
       "dockerCompose": "Docker Compose",
       "kubernetesHelm": "Kubernetes Helm",
       "airGappedSupport": "Soporte Air-gapped",
@@ -290,7 +290,7 @@
     "finalCta": {
       "title1": "¿Listo para que tus",
       "title2": "Agentes de Terminal Colaboren?",
-      "description": "Únete a miles de desarrolladores usando AgentMesh para coordinar agentes de código de IA. Comienza gratis, sin tarjeta de crédito requerida.",
+      "description": "Únete a miles de desarrolladores usando AgentsMesh para coordinar agentes de código de IA. Comienza gratis, sin tarjeta de crédito requerida.",
       "getStartedFree": "Comenzar Gratis",
       "scheduleDemo": "Programar una Demo",
       "freeTier": "Nivel gratuito disponible",
@@ -302,8 +302,8 @@
       "live": "En vivo",
       "initializingPod": "Inicializando pod...",
       "typeMessage": "Escribe un mensaje...",
-      "connecting": "Conectando a AgentMesh...",
-      "connected": "Conectado al servidor AgentMesh",
+      "connecting": "Conectando a AgentsMesh...",
+      "connected": "Conectado al servidor AgentsMesh",
       "workspace": "Espacio de trabajo: /projects/e-commerce",
       "monitorPod": "Monitorear pod beta-dev y ayudar a coordinar la implementación de autenticación",
       "bindingPod": "Me vincularé a pod beta-dev para observar y coordinar...",
@@ -343,17 +343,17 @@
         "runner": "Runner",
         "agent": "Agente",
         "websocket": "WebSocket",
-        "agentmeshCloud": "AgentMesh Cloud"
+        "agentsmeshCloud": "AgentsMesh Cloud"
       }
     },
     "footer": {
       "tagline": "Plataforma de Colaboración de Agentes de Código Basados en Terminal",
-      "copyright": "AgentMesh. Todos los derechos reservados.",
+      "copyright": "AgentsMesh. Todos los derechos reservados.",
       "madeWith": "Hecho con amor para desarrolladores",
       "product": {
         "title": "Producto",
         "agentpod": "AgentPod",
-        "agentmesh": "AgentMesh",
+        "agentsmesh": "AgentsMesh",
         "tickets": "Tickets",
         "runners": "Runners",
         "pricing": "Precios"
@@ -399,14 +399,14 @@
     }
   },
   "mesh": {
-    "title": "AgentMesh",
+    "title": "AgentsMesh",
     "channels": "Canales",
     "newChannel": "Nuevo Canal",
     "topology": "Topología",
     "messages": "Mensajes",
     "sendMessage": "Enviar mensaje...",
     "page": {
-      "title": "DevMesh",
+      "title": "Mesh",
       "subtitle": "Topología de red de colaboración multi-agente",
       "activePods": "{count} pods activos",
       "channelsCount": "{count} canales",
@@ -519,7 +519,7 @@
     "activities": {
       "workspace": "Espacio de Trabajo",
       "tickets": "Tickets",
-      "mesh": "AgentMesh",
+      "mesh": "AgentsMesh",
       "repositories": "Repositorios",
       "runners": "Runner",
       "settings": "Configuración"
@@ -757,7 +757,7 @@
     "workspaceDescription": "Espacio de trabajo de terminal",
     "goToTickets": "Ir a Tickets",
     "ticketsDescription": "Ver y gestionar tickets",
-    "goToMesh": "Ir a AgentMesh",
+    "goToMesh": "Ir a AgentsMesh",
     "meshDescription": "Topología de red",
     "goToRepositories": "Ir a Repositorios",
     "repositoriesDescription": "Gestionar repositorios",

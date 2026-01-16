@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
-	"github.com/anthropics/agentmesh/backend/internal/infra/websocket"
-	"github.com/anthropics/agentmesh/backend/internal/service/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
+	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"gorm.io/gorm"
 )
 

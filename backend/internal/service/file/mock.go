@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/file"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
 )
 
 // MockService implements a mock file service for testing

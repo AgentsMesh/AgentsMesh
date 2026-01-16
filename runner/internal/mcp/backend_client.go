@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/mcp/tools"
+	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
 // BackendClient calls the AgentsMesh Backend API for collaboration operations.

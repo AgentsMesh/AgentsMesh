@@ -109,7 +109,7 @@ export default function OnboardingPage() {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-foreground">AgentMesh</span>
+            <span className="text-2xl font-bold text-foreground">AgentsMesh</span>
           </Link>
           <h1 className="mt-6 text-2xl font-semibold text-foreground">
             {user?.name ? t("auth.onboarding.welcomeWithName", { name: user.name }) : t("auth.onboarding.welcome")}

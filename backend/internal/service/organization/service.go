@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"gorm.io/gorm"
 )
 

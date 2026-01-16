@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/anthropics/agentmesh/runner/internal/mcp/tools"
+	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
 // Binding Tools

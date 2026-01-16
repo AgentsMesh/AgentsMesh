@@ -3,7 +3,7 @@ package database
 import (
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 

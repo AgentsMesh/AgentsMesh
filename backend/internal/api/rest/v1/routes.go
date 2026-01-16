@@ -1,25 +1,25 @@
 package v1
 
 import (
-	"github.com/anthropics/agentmesh/backend/internal/config"
-	"github.com/anthropics/agentmesh/backend/internal/infra/email"
-	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
-	"github.com/anthropics/agentmesh/backend/internal/infra/websocket"
-	"github.com/anthropics/agentmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentmesh/backend/internal/service/auth"
-	"github.com/anthropics/agentmesh/backend/internal/service/billing"
-	"github.com/anthropics/agentmesh/backend/internal/service/binding"
-	"github.com/anthropics/agentmesh/backend/internal/service/channel"
-	"github.com/anthropics/agentmesh/backend/internal/service/devmesh"
-	fileservice "github.com/anthropics/agentmesh/backend/internal/service/file"
-	"github.com/anthropics/agentmesh/backend/internal/service/invitation"
-	"github.com/anthropics/agentmesh/backend/internal/service/organization"
-	"github.com/anthropics/agentmesh/backend/internal/service/promocode"
-	"github.com/anthropics/agentmesh/backend/internal/service/repository"
-	"github.com/anthropics/agentmesh/backend/internal/service/runner"
-	"github.com/anthropics/agentmesh/backend/internal/service/ticket"
-	"github.com/anthropics/agentmesh/backend/internal/service/user"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
+	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
+	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/service/mesh"
+	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
+	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
+	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
+	"github.com/anthropics/agentsmesh/backend/internal/service/promocode"
+	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
+	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,7 +44,7 @@ type Services struct {
 	Channel           *channel.Service
 	Binding           *binding.Service
 	Ticket            *ticket.Service
-	DevMesh           *devmesh.Service
+	Mesh              *mesh.Service
 	AgentPodSettings  *agentpod.SettingsService   // AgentPod user settings
 	AgentPodAIProvider *agentpod.AIProviderService // AgentPod AI provider management
 	Billing           *billing.Service
@@ -184,14 +184,14 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 	// Tickets
 	// Note: Event publishing is handled in ticket.Service layer (Information Expert principle)
 	ticketHandler := NewTicketHandler(svc.Ticket)
-	devmeshHandler := NewDevMeshHandler(svc.DevMesh, svc.Ticket)
+	meshHandler := NewMeshHandler(svc.Mesh, svc.Ticket)
 	tickets := rg.Group("/tickets")
 	{
 		tickets.GET("", ticketHandler.ListTickets)
 		tickets.POST("", ticketHandler.CreateTicket)
 		tickets.GET("/active", ticketHandler.GetActiveTickets)         // New: active tickets
 		tickets.GET("/board", ticketHandler.GetBoard)                  // New: kanban board
-		tickets.POST("/batch-pods", devmeshHandler.BatchGetTicketPods) // Batch get pods for tickets
+		tickets.POST("/batch-pods", meshHandler.BatchGetTicketPods) // Batch get pods for tickets
 		tickets.GET("/:identifier", ticketHandler.GetTicket)
 		tickets.PUT("/:identifier", ticketHandler.UpdateTicket)
 		tickets.DELETE("/:identifier", ticketHandler.DeleteTicket)
@@ -208,8 +208,8 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 		tickets.GET("/:identifier/commits", ticketHandler.ListCommits)         // New: commits
 		tickets.POST("/:identifier/commits", ticketHandler.LinkCommit)         // New: link commit
 		tickets.DELETE("/:identifier/commits/:commit_id", ticketHandler.UnlinkCommit) // New: unlink commit
-		tickets.GET("/:identifier/pods", devmeshHandler.GetTicketPods) // Get pods for ticket
-		tickets.POST("/:identifier/pods", devmeshHandler.CreatePodForTicket) // Create pod for ticket
+		tickets.GET("/:identifier/pods", meshHandler.GetTicketPods) // Get pods for ticket
+		tickets.POST("/:identifier/pods", meshHandler.CreatePodForTicket) // Create pod for ticket
 	}
 
 	// Labels (organization-level)
@@ -229,10 +229,10 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 		RegisterPromoCodeRoutes(rg.Group("/billing/promo-codes"), svc.PromoCode)
 	}
 
-	// DevMesh (topology visualization)
-	devmesh := rg.Group("/devmesh")
+	// Mesh (topology visualization)
+	meshGroup := rg.Group("/mesh")
 	{
-		devmesh.GET("/topology", devmeshHandler.GetTopology)
+		meshGroup.GET("/topology", meshHandler.GetTopology)
 	}
 
 	// Bindings (pod collaboration)

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/billing"
-	"github.com/anthropics/agentmesh/backend/internal/domain/promocode"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

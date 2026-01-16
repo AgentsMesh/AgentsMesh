@@ -1,6 +1,6 @@
-// AgentMesh Service Worker
-const CACHE_NAME = 'agentmesh-v1';
-const STATIC_CACHE_NAME = 'agentmesh-static-v1';
+// AgentsMesh Service Worker
+const CACHE_NAME = 'agentsmesh-v1';
+const STATIC_CACHE_NAME = 'agentsmesh-static-v1';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -105,14 +105,14 @@ self.addEventListener('push', (event) => {
     body,
     icon: icon || '/icons/icon.svg',
     badge: '/icons/icon.svg',
-    tag: tag || 'agentmesh-notification',
+    tag: tag || 'agentsmesh-notification',
     data: notificationData,
     vibrate: [100, 50, 100],
     actions: notificationData?.actions || [],
   };
 
   event.waitUntil(
-    self.registration.showNotification(title || 'AgentMesh', options)
+    self.registration.showNotification(title || 'AgentsMesh', options)
   );
 });
 

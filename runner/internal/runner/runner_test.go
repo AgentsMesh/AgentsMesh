@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
 // --- Test Constants ---

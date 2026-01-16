@@ -18,13 +18,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgentMesh - AI Code Agent Platform",
+  title: "AgentsMesh - AI Code Agent Platform",
   description: "Multi-tenant AI code agent collaboration platform supporting Claude Code, Codex, Gemini CLI, and more.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "AgentMesh",
+    title: "AgentsMesh",
   },
   formatDetection: {
     telephone: false,

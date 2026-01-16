@@ -26,7 +26,7 @@ export default function DocsLayout({
       title: t("docs.nav.features"),
       items: [
         { title: "AgentPod", href: "/docs/features/agentpod" },
-        { title: "AgentMesh", href: "/docs/features/channels" },
+        { title: "AgentsMesh", href: "/docs/features/channels" },
         { title: t("docs.nav.tickets"), href: "/docs/features/tickets" },
       ],
     },
@@ -60,7 +60,7 @@ export default function DocsLayout({
                 />
               </svg>
             </div>
-            <span className="text-xl font-bold">AgentMesh</span>
+            <span className="text-xl font-bold">AgentsMesh</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -114,7 +114,7 @@ export default function DocsLayout({
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} AgentMesh. {t("common.allRightsReserved")}
+              &copy; {new Date().getFullYear()} AgentsMesh. {t("common.allRightsReserved")}
             </p>
             <div className="flex gap-6">
               <Link

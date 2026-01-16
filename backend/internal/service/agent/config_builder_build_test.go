@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
 func TestConfigBuilder_BuildPodConfig(t *testing.T) {

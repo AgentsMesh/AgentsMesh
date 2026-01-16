@@ -16,7 +16,7 @@ export default function RunnerSetupPage() {
           <li>Linux, macOS, or Windows (WSL2 recommended)</li>
           <li>Git installed and configured</li>
           <li>Docker (optional, for containerized agents)</li>
-          <li>Network access to AgentMesh server</li>
+          <li>Network access to AgentsMesh server</li>
           <li>At least 4GB RAM (8GB+ recommended for multiple Pods)</li>
         </ul>
       </section>
@@ -26,7 +26,7 @@ export default function RunnerSetupPage() {
         <h2 className="text-2xl font-semibold mb-4">Quick Installation</h2>
         <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
           <pre className="text-green-400">{`# Download the runner binary
-curl -LO https://github.com/agentmesh/runner/releases/latest/download/runner
+curl -LO https://github.com/agentsmesh/runner/releases/latest/download/runner
 
 # Make executable
 chmod +x runner
@@ -39,7 +39,7 @@ chmod +x runner
         </div>
         <p className="text-sm text-muted-foreground mt-4">
           Get your registration token from{" "}
-          <strong>Settings → Runners → Create Token</strong> in the AgentMesh
+          <strong>Settings → Runners → Create Token</strong> in the AgentsMesh
           web interface.
         </p>
       </section>
@@ -50,12 +50,12 @@ chmod +x runner
         <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
           <pre className="text-green-400">{`# Run with Docker
 docker run -d \\
-  --name agentmesh-runner \\
-  -e AGENTMESH_TOKEN=<YOUR_TOKEN> \\
-  -e AGENTMESH_URL=https://api.agentmesh.dev \\
+  --name agentsmesh-runner \\
+  -e AGENTSMESH_TOKEN=<YOUR_TOKEN> \\
+  -e AGENTSMESH_URL=https://api.agentsmesh.dev \\
   -v /var/run/docker.sock:/var/run/docker.sock \\
   -v ~/.ssh:/root/.ssh:ro \\
-  agentmesh/runner:latest`}</pre>
+  agentsmesh/runner:latest`}</pre>
         </div>
       </section>
 
@@ -67,12 +67,12 @@ docker run -d \\
 version: '3.8'
 services:
   runner:
-    image: agentmesh/runner:latest
-    container_name: agentmesh-runner
+    image: agentsmesh/runner:latest
+    container_name: agentsmesh-runner
     restart: unless-stopped
     environment:
-      - AGENTMESH_TOKEN=\${AGENTMESH_TOKEN}
-      - AGENTMESH_URL=\${AGENTMESH_URL:-https://api.agentmesh.dev}
+      - AGENTSMESH_TOKEN=\${AGENTSMESH_TOKEN}
+      - AGENTSMESH_URL=\${AGENTSMESH_URL:-https://api.agentsmesh.dev}
       - MAX_CONCURRENT_PODS=5
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -104,7 +104,7 @@ volumes:
             <tbody className="text-muted-foreground">
               <tr>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  AGENTMESH_TOKEN
+                  AGENTSMESH_TOKEN
                 </td>
                 <td className="p-3 border-b border-border">
                   Registration token (required)
@@ -113,13 +113,13 @@ volumes:
               </tr>
               <tr>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  AGENTMESH_URL
+                  AGENTSMESH_URL
                 </td>
                 <td className="p-3 border-b border-border">
-                  AgentMesh server URL
+                  AgentsMesh server URL
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  https://api.agentmesh.dev
+                  https://api.agentsmesh.dev
                 </td>
               </tr>
               <tr>
@@ -207,7 +207,7 @@ volumes:
               Runner shows as Offline
             </h3>
             <p className="text-sm text-muted-foreground">
-              Check network connectivity to the AgentMesh server. Ensure
+              Check network connectivity to the AgentsMesh server. Ensure
               firewalls allow outbound WebSocket connections (port 443).
             </p>
           </div>

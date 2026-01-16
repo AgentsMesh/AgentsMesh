@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agent"
-	agentSvc "github.com/anthropics/agentmesh/backend/internal/service/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	agentSvc "github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/gin-gonic/gin"
 )
 

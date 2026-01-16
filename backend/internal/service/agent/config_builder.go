@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
 // AgentConfigProvider provides agent configuration data for ConfigBuilder

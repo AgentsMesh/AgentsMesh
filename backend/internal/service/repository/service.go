@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/gitprovider"
-	"github.com/anthropics/agentmesh/backend/internal/infra/git"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
 	"gorm.io/gorm"
 )
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { useChannelStore } from "@/stores/channel";
-import { useDevMeshStore } from "@/stores/devmesh";
+import { useMeshStore } from "@/stores/mesh";
 import { ChannelHeader } from "./ChannelHeader";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
@@ -25,7 +25,7 @@ export function ChannelChatPanel({ channelId, onClose }: ChannelChatPanelProps) 
     setCurrentChannel,
   } = useChannelStore();
 
-  const { topology } = useDevMeshStore();
+  const { topology } = useMeshStore();
 
   // Load channel and messages when channelId changes
   useEffect(() => {

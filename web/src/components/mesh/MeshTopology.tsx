@@ -19,7 +19,7 @@ import "@xyflow/react/dist/style.css";
 import PodNode from "./PodNode";
 import ChannelNode from "./ChannelNode";
 import BindingEdge from "./BindingEdge";
-import { useDevMeshStore, type DevMeshNode, type ChannelInfo, type DevMeshEdge } from "@/stores/devmesh";
+import { useMeshStore, type MeshNode, type ChannelInfo, type MeshEdge } from "@/stores/mesh";
 
 // Custom node types - using proper types for ReactFlow
 const nodeTypes: NodeTypes = {
@@ -34,9 +34,9 @@ const edgeTypes: EdgeTypes = {
 
 // Layout algorithm - simple force-directed-like placement
 function calculateLayout(
-  pods: DevMeshNode[],
+  pods: MeshNode[],
   channels: ChannelInfo[],
-  edges: DevMeshEdge[]
+  edges: MeshEdge[]
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
   const flowEdges: Edge[] = [];
@@ -102,9 +102,9 @@ function calculateLayout(
   return { nodes, edges: flowEdges };
 }
 
-export default function DevMeshTopology() {
+export default function MeshTopology() {
   const { topology, selectedNode, selectedChannel, selectNode, selectChannel, fetchTopology } =
-    useDevMeshStore();
+    useMeshStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -173,7 +173,7 @@ export default function DevMeshTopology() {
   // Node color for minimap
   const nodeColor = useCallback((node: Node) => {
     if (node.type === "pod") {
-      const data = node.data as { node: DevMeshNode };
+      const data = node.data as { node: MeshNode };
       switch (data.node?.status) {
         case "running":
           return "#22c55e";

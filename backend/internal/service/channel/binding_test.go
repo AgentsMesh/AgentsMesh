@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
 func TestPodBinding(t *testing.T) {

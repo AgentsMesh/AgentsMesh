@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# AgentMesh Runner Docker Entrypoint
+# AgentsMesh Runner Docker Entrypoint
 # =============================================================================
 #
 # 此脚本在 Runner 容器启动时执行：
@@ -29,7 +29,7 @@ CONFIG_DIR="${HOME}/.agentsmesh"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 
 echo "========================================"
-echo "  AgentMesh Runner Entrypoint"
+echo "  AgentsMesh Runner Entrypoint"
 echo "========================================"
 echo ""
 echo "配置信息："
@@ -72,7 +72,7 @@ create_config() {
     mkdir -p "$CONFIG_DIR"
 
     cat > "$CONFIG_FILE" << EOF
-# AgentMesh Runner Configuration
+# AgentsMesh Runner Configuration
 # Auto-generated for Docker development environment
 
 # Server connection

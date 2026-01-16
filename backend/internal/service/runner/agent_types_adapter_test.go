@@ -3,7 +3,7 @@ package runner
 import (
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/service/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

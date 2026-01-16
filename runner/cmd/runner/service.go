@@ -7,7 +7,7 @@ import (
 
 	"github.com/kardianos/service"
 
-	svc "github.com/anthropics/agentmesh/runner/internal/service"
+	svc "github.com/anthropics/agentsmesh/runner/internal/service"
 )
 
 // runService handles the "service" subcommand for system service management.
@@ -61,7 +61,7 @@ Options for 'install':
 
 Examples:
   runner service install
-  runner service install --config /etc/agentmesh/config.yaml
+  runner service install --config /etc/agentsmesh/config.yaml
   runner service start
   runner service status`)
 }

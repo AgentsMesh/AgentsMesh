@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

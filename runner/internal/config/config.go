@@ -73,7 +73,7 @@ func Load(configFile string) (*Config, error) {
 	v.SetDefault("default_agent", "claude-code")
 
 	// Read from environment
-	v.SetEnvPrefix("AGENTMESH")
+	v.SetEnvPrefix("AGENTSMESH")
 	v.AutomaticEnv()
 
 	// Read from config file if specified

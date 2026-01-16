@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/file"
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	fileservice "github.com/anthropics/agentmesh/backend/internal/service/file"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	"github.com/gin-gonic/gin"
 )
 

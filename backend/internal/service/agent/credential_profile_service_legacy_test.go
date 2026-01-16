@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

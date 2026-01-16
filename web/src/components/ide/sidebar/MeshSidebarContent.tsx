@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { useTranslations } from "@/lib/i18n/client";
-import { useDevMeshStore, DevMeshNode, ChannelInfo, getPodStatusInfo, getAgentStatusInfo } from "@/stores/devmesh";
+import { useMeshStore, MeshNode, ChannelInfo, getPodStatusInfo, getAgentStatusInfo } from "@/stores/mesh";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
     selectNode,
     selectChannel,
     getChannelsForNode,
-  } = useDevMeshStore();
+  } = useMeshStore();
   const { addPane } = useWorkspaceStore();
 
   // State
@@ -98,7 +98,7 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
   const totalBindings = topology?.edges.length || 0;
 
   // Handle node click
-  const handleNodeClick = (node: DevMeshNode) => {
+  const handleNodeClick = (node: MeshNode) => {
     selectNode(node.pod_key);
   };
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
 // --- Registration Token Tests ---

@@ -1,11 +1,11 @@
-# AgentMesh
+# AgentsMesh
 
 Multi-tenant AI Code Agent collaboration platform supporting Claude Code, Codex CLI, Gemini CLI, Aider, and more.
 
 ## Features
 
 - **AgentPod**: Remote AI development workstation with Terminal WebSocket support
-- **AgentMesh**: Multi-agent collaboration with channel communication and pod binding
+- **AgentsMesh**: Multi-agent collaboration with channel communication and pod binding
 - **Tickets**: Task management with kanban board and merge request integration
 - **Multi-tenant**: Organization > Teams > Users hierarchy with row-level isolation
 - **Multi-Agent Support**: Claude Code, Codex CLI, Gemini CLI, OpenCode, Aider, and custom agents
@@ -24,7 +24,7 @@ Multi-tenant AI Code Agent collaboration platform supporting Claude Code, Codex 
 ## Project Structure
 
 ```
-AgentMesh/
+AgentsMesh/
 ├── backend/               # Go backend
 │   ├── cmd/server/        # Application entry point
 │   ├── internal/
@@ -63,8 +63,8 @@ AgentMesh/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/anthropics/agentmesh.git
-   cd agentmesh
+   git clone https://github.com/anthropics/agentsmesh.git
+   cd agentsmesh
    ```
 
 2. **Start infrastructure**
@@ -130,7 +130,7 @@ AgentMesh/
 - `GET /api/v1/org/pods/:key` - Get pod
 - `POST /api/v1/org/pods/:key/terminate` - Terminate pod
 
-### Channels (AgentMesh)
+### Channels (AgentsMesh)
 - `GET /api/v1/org/channels` - List channels
 - `POST /api/v1/org/channels` - Create channel
 - `GET /api/v1/org/channels/:id/messages` - Get messages
@@ -165,9 +165,9 @@ DEBUG=true
 # Database
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=agentmesh
-DB_PASSWORD=agentmesh_dev
-DB_NAME=agentmesh
+DB_USER=agentsmesh
+DB_PASSWORD=agentsmesh_dev
+DB_NAME=agentsmesh
 DB_SSLMODE=disable
 
 # Redis

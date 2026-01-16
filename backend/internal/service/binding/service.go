@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 )

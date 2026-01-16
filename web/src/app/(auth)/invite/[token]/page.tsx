@@ -105,7 +105,7 @@ export default function InvitePage({ params }: { params: Promise<PageParams> }) 
                   />
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-foreground">AgentMesh</span>
+              <span className="text-2xl font-bold text-foreground">AgentsMesh</span>
             </Link>
           </div>
 
@@ -167,7 +167,7 @@ export default function InvitePage({ params }: { params: Promise<PageParams> }) 
                   />
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-foreground">AgentMesh</span>
+              <span className="text-2xl font-bold text-foreground">AgentsMesh</span>
             </Link>
           </div>
 
@@ -231,7 +231,7 @@ export default function InvitePage({ params }: { params: Promise<PageParams> }) 
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-foreground">AgentMesh</span>
+            <span className="text-2xl font-bold text-foreground">AgentsMesh</span>
           </Link>
         </div>
 

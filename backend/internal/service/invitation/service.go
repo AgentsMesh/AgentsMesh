@@ -7,10 +7,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/invitation"
-	"github.com/anthropics/agentmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentmesh/backend/internal/infra/email"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"gorm.io/gorm"
 )
 

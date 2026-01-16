@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# AgentMesh 开发环境一键初始化脚本
+# AgentsMesh 开发环境一键初始化脚本
 # =============================================================================
 #
 # 一键启动完整的开发环境，包括：
@@ -67,10 +67,10 @@ calculate_port_offset() {
 generate_env() {
     local worktree_name=$(get_worktree_name)
     local offset=$(calculate_port_offset "$worktree_name")
-    local project_name="agentmesh-${worktree_name}"
+    local project_name="agentsmesh-${worktree_name}"
 
     cat > "$ENV_FILE" << EOF
-# AgentMesh Dev Environment - Auto-generated
+# AgentsMesh Dev Environment - Auto-generated
 # Worktree: $worktree_name | Offset: $offset
 
 COMPOSE_PROJECT_NAME=$project_name
@@ -84,7 +84,7 @@ MINIO_CONSOLE_PORT=$((9001 + offset * 100))
 ADMINER_PORT=$((8081 + offset * 100))
 
 # Credentials
-POSTGRES_PASSWORD=agentmesh_dev
+POSTGRES_PASSWORD=agentsmesh_dev
 JWT_SECRET=dev-jwt-secret-change-in-production
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin
@@ -117,7 +117,7 @@ run_migrations() {
 
     # 检查是否已有表
     local table_count
-    table_count=$(docker exec "$pg_container" psql -U agentmesh -d agentmesh -t -c \
+    table_count=$(docker exec "$pg_container" psql -U agentsmesh -d agentsmesh -t -c \
         "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'" 2>/dev/null | tr -d ' ')
 
     if [[ "$table_count" -gt 0 ]]; then
@@ -127,7 +127,7 @@ run_migrations() {
 
     info "执行数据库迁移..."
     for f in "$MIGRATIONS_DIR"/*.up.sql; do
-        [[ -f "$f" ]] && docker exec -i "$pg_container" psql -U agentmesh -d agentmesh < "$f" &>/dev/null
+        [[ -f "$f" ]] && docker exec -i "$pg_container" psql -U agentsmesh -d agentsmesh < "$f" &>/dev/null
     done
     success "数据库迁移完成"
 }
@@ -138,8 +138,8 @@ init_seed() {
 
     # 检查是否已有 seed 数据
     local user_exists
-    user_exists=$(docker exec "$pg_container" psql -U agentmesh -d agentmesh -t -c \
-        "SELECT COUNT(*) FROM users WHERE email = 'dev@agentmesh.local'" 2>/dev/null | tr -d ' ')
+    user_exists=$(docker exec "$pg_container" psql -U agentsmesh -d agentsmesh -t -c \
+        "SELECT COUNT(*) FROM users WHERE email = 'dev@agentsmesh.local'" 2>/dev/null | tr -d ' ')
 
     if [[ "$user_exists" -gt 0 ]]; then
         info "Seed 数据已存在，跳过"
@@ -147,7 +147,7 @@ init_seed() {
     fi
 
     info "初始化 seed 数据..."
-    docker exec -i "$pg_container" psql -U agentmesh -d agentmesh < "$SEED_FILE" &>/dev/null
+    docker exec -i "$pg_container" psql -U agentsmesh -d agentsmesh < "$SEED_FILE" &>/dev/null
     success "Seed 数据初始化完成"
 }
 
@@ -155,7 +155,7 @@ init_seed() {
 clean() {
     if [[ -f "$ENV_FILE" ]]; then
         source "$ENV_FILE"
-        info "清理环境: ${COMPOSE_PROJECT_NAME:-agentmesh}..."
+        info "清理环境: ${COMPOSE_PROJECT_NAME:-agentsmesh}..."
         cd "$SCRIPT_DIR"
         docker compose down -v --remove-orphans 2>/dev/null || true
         rm -f "$ENV_FILE"
@@ -170,13 +170,13 @@ show_result() {
     source "$ENV_FILE"
     echo ""
     echo "=========================================="
-    echo "  AgentMesh 开发环境已就绪!"
+    echo "  AgentsMesh 开发环境已就绪!"
     echo "=========================================="
     echo ""
     echo "  访问地址:  http://localhost:$HTTP_PORT"
     echo ""
     echo "  测试账号:"
-    echo "    Email:    dev@agentmesh.local"
+    echo "    Email:    dev@agentsmesh.local"
     echo "    Password: devpass123"
     echo ""
     echo "  其他服务:"
@@ -209,7 +209,7 @@ main() {
 
     echo ""
     echo "=========================================="
-    echo "  AgentMesh 开发环境初始化"
+    echo "  AgentsMesh 开发环境初始化"
     echo "=========================================="
     echo ""
 
@@ -225,7 +225,7 @@ main() {
     # Step 3: 等待 PostgreSQL
     local pg_container="${COMPOSE_PROJECT_NAME}-postgres-1"
     info "等待 PostgreSQL 就绪..."
-    if ! wait_for_service "$pg_container" "pg_isready -U agentmesh"; then
+    if ! wait_for_service "$pg_container" "pg_isready -U agentsmesh"; then
         error "PostgreSQL 启动超时"
         exit 1
     fi

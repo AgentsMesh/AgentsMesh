@@ -12,7 +12,7 @@ import (
 
 	"github.com/creack/pty"
 
-	"github.com/anthropics/agentmesh/runner/internal/buffer"
+	"github.com/anthropics/agentsmesh/runner/internal/buffer"
 )
 
 // Session represents a PTY session.

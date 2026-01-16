@@ -8,8 +8,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentmesh/backend/pkg/crypto"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 )

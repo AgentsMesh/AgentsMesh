@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	"github.com/anthropics/agentmesh/backend/internal/service/organization"
-	runner "github.com/anthropics/agentmesh/backend/internal/service/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
+	runner "github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/gin-gonic/gin"
 )
 

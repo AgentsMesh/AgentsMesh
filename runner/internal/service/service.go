@@ -12,8 +12,8 @@ import (
 
 	"github.com/kardianos/service"
 
-	"github.com/anthropics/agentmesh/runner/internal/config"
-	"github.com/anthropics/agentmesh/runner/internal/runner"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/runner"
 )
 
 const (

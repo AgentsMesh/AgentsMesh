@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/agentmesh/runner/internal/mcp/tools"
+	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
 func TestNewBackendClient(t *testing.T) {

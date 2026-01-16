@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/redis/go-redis/v9"
 )
 

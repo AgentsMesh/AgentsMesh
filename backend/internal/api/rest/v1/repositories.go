@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	"github.com/anthropics/agentmesh/backend/internal/service/billing"
-	"github.com/anthropics/agentmesh/backend/internal/service/repository"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/gin-gonic/gin"
 )
 

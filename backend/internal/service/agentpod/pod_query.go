@@ -3,7 +3,7 @@ package agentpod
 import (
 	"context"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
 // GetPod returns a pod by key

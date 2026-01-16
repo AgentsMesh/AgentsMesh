@@ -29,11 +29,11 @@ export { useChannelStore } from "./channel";
 // Ticket store
 export { useTicketStore } from "./ticket";
 
-// DevMesh store
-export { useDevMeshStore } from "./devmesh";
+// Mesh store
+export { useMeshStore } from "./mesh";
 export type {
-  DevMeshNode,
-  DevMeshEdge,
+  MeshNode,
+  MeshEdge,
   ChannelInfo,
-  DevMeshTopology,
-} from "./devmesh";
+  MeshTopology,
+} from "./mesh";

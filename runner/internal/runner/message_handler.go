@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/client"
 )
 
 // RunnerMessageHandler implements client.MessageHandler interface.

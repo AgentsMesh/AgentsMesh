@@ -1,7 +1,7 @@
 import { request, orgPath } from "./base";
 
-// DevMesh types
-export interface DevMeshNodeData {
+// Mesh types
+export interface MeshNodeData {
   pod_key: string;
   status: string;
   agent_status: string;
@@ -14,7 +14,7 @@ export interface DevMeshNodeData {
   position?: { x: number; y: number };
 }
 
-export interface DevMeshEdgeData {
+export interface MeshEdgeData {
   id: number;
   source: string;
   target: string;
@@ -32,17 +32,17 @@ export interface ChannelInfoData {
   is_archived: boolean;
 }
 
-export interface DevMeshTopologyData {
-  nodes: DevMeshNodeData[];
-  edges: DevMeshEdgeData[];
+export interface MeshTopologyData {
+  nodes: MeshNodeData[];
+  edges: MeshEdgeData[];
   channels: ChannelInfoData[];
 }
 
-// DevMesh API
-export const devmeshApi = {
+// Mesh API
+export const meshApi = {
   // Get topology
   getTopology: () => {
-    return request<{ topology: DevMeshTopologyData }>(orgPath("/devmesh/topology"));
+    return request<{ topology: MeshTopologyData }>(orgPath("/mesh/topology"));
   },
 
   // For channel operations, use channelApi.joinPod() and channelApi.leavePod()

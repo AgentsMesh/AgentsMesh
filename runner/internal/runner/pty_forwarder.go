@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/buffer"
-	"github.com/anthropics/agentmesh/runner/internal/terminal"
+	"github.com/anthropics/agentsmesh/runner/internal/buffer"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal"
 )
 
 // OutputHandler defines the interface for handling PTY output.

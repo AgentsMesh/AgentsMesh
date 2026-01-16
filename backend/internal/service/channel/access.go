@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
 // ChannelAccess tracks pod access to a channel

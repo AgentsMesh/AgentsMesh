@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type Position } from "@xyflow/react";
-import { getBindingStatusInfo } from "@/stores/devmesh";
+import { getBindingStatusInfo } from "@/stores/mesh";
 
 interface BindingEdgeProps {
   id: string;

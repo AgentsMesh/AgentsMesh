@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"golang.org/x/crypto/bcrypt"
 )
 

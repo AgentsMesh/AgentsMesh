@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentmesh/runner/internal/client"
-	"github.com/anthropics/agentmesh/runner/internal/config"
-	"github.com/anthropics/agentmesh/runner/internal/workspace"
+	"github.com/anthropics/agentsmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
 
 // Note: Worktree functionality is now handled by PodBuilder.setupWorkDir

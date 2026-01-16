@@ -3,9 +3,9 @@ package v1
 import (
 	"net/http"
 
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	"github.com/anthropics/agentmesh/backend/internal/service/organization"
-	"github.com/anthropics/agentmesh/backend/internal/service/user"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
+	"github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
 

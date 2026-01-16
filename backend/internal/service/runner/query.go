@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
 // GetRunner returns a runner by ID

@@ -50,7 +50,7 @@ const changelog: ChangelogEntry[] = [
       {
         type: "added",
         items: [
-          "AgentMesh multi-agent collaboration channels",
+          "AgentsMesh multi-agent collaboration channels",
           "Pod binding with permission controls",
           "Real-time topology visualization",
           "Ticket-Pod integration",
@@ -72,7 +72,7 @@ const changelog: ChangelogEntry[] = [
       {
         type: "added",
         items: [
-          "Initial release of AgentMesh platform",
+          "Initial release of AgentsMesh platform",
           "AgentPod remote AI workstation",
           "Support for Claude Code, Codex CLI, Gemini CLI, Aider",
           "Self-hosted runner deployment",
@@ -101,7 +101,7 @@ export default function ChangelogPage() {
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         <h1 className="text-4xl font-bold mb-4">Changelog</h1>
         <p className="text-muted-foreground mb-12">
-          All notable changes to AgentMesh will be documented here.
+          All notable changes to AgentsMesh will be documented here.
         </p>
 
         <div className="space-y-12">
@@ -152,7 +152,7 @@ export default function ChangelogPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} AgentMesh. All rights reserved.
+              &copy; {new Date().getFullYear()} AgentsMesh. All rights reserved.
             </p>
             <div className="flex gap-6">
               <Link

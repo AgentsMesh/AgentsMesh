@@ -49,7 +49,7 @@
     },
     "registerPage": {
       "title": "创建您的账号",
-      "subtitle": "立即开始使用 AgentMesh",
+      "subtitle": "立即开始使用 AgentsMesh",
       "fullName": "姓名",
       "fullNamePlaceholder": "张三",
       "emailLabel": "邮箱",
@@ -108,7 +108,7 @@
       "welcomeWithName": "欢迎，{name}！",
       "setupWorkspace": "让我们设置您的工作区以开始使用。",
       "quickStart": "快速开始",
-      "quickStartDescription": "创建个人工作区，立即开始使用 AgentMesh。",
+      "quickStartDescription": "创建个人工作区，立即开始使用 AgentsMesh。",
       "createPersonalWorkspace": "创建个人工作区",
       "creating": "创建中...",
       "createTeamWorkspace": "创建团队工作区",
@@ -141,12 +141,12 @@
       },
       "setupRunner": {
         "title": "连接您的第一个 Runner",
-        "subtitle": "Runner 负责执行 AI 智能体任务。您需要至少一个 Runner 才能开始使用 AgentMesh。",
+        "subtitle": "Runner 负责执行 AI 智能体任务。您需要至少一个 Runner 才能开始使用 AgentsMesh。",
         "localRunner": "本地 Runner",
         "localRunnerDescription": "在本地机器上运行 Runner。非常适合开发和测试。",
         "setUpLocalRunner": "设置本地 Runner",
         "cloudRunner": "云端 Runner",
-        "cloudRunnerDescription": "使用 AgentMesh 托管的 Runner。无需设置，即时可用。",
+        "cloudRunnerDescription": "使用 AgentsMesh 托管的 Runner。无需设置，即时可用。",
         "comingSoon": "即将上线",
         "skipForNow": "暂时跳过，稍后再设置"
       },
@@ -250,7 +250,7 @@
           "autonomy": "主动执行任务",
           "capabilities": "全栈开发",
           "environment": "完整终端访问",
-          "multiAgent": "AgentMesh 支持",
+          "multiAgent": "AgentsMesh 支持",
           "selfHosted": "完全可控"
         }
       }
@@ -270,8 +270,8 @@
           "3": "完成后自动清理"
         }
       },
-      "agentmesh": {
-        "title": "AgentMesh",
+      "agentsmesh": {
+        "title": "AgentsMesh",
         "subtitle": "多智能体协作",
         "description": "让多个 AI 智能体通过 Pod 绑定和频道通信协同工作。实时可视化协作拓扑。",
         "highlights": {
@@ -314,7 +314,7 @@
       },
       "step2": {
         "title": "连接智能体",
-        "description": "配置你的 AI 编程智能体连接到 AgentMesh。"
+        "description": "配置你的 AI 编程智能体连接到 AgentsMesh。"
       },
       "step3": {
         "title": "开始协作",
@@ -436,7 +436,7 @@
       "title": "需要完整的",
       "titleHighlight": "自托管",
       "titleEnd": "部署？",
-      "description": "AgentMesh 支持完全自托管部署。代码和数据永远不会离开你的基础设施。非常适合有严格安全和合规要求的企业。",
+      "description": "AgentsMesh 支持完全自托管部署。代码和数据永远不会离开你的基础设施。非常适合有严格安全和合规要求的企业。",
       "dockerCompose": "Docker Compose",
       "kubernetesHelm": "Kubernetes Helm",
       "airGappedSupport": "离线环境支持",
@@ -446,7 +446,7 @@
     "finalCta": {
       "title1": "准备好让你的",
       "title2": "终端智能体协作了吗？",
-      "description": "加入数千名使用 AgentMesh 协调 AI 编程智能体的开发者。免费开始，无需信用卡。",
+      "description": "加入数千名使用 AgentsMesh 协调 AI 编程智能体的开发者。免费开始，无需信用卡。",
       "getStartedFree": "免费开始",
       "scheduleDemo": "预约演示",
       "freeTier": "提供免费版",
@@ -458,8 +458,8 @@
       "live": "实时",
       "initializingPod": "正在初始化 Pod...",
       "typeMessage": "输入消息...",
-      "connecting": "正在连接 AgentMesh...",
-      "connected": "已连接到 AgentMesh 服务器",
+      "connecting": "正在连接 AgentsMesh...",
+      "connected": "已连接到 AgentsMesh 服务器",
       "workspace": "工作区：/projects/e-commerce",
       "monitorPod": "监控 pod beta-dev 并协助协调身份验证实现",
       "bindingPod": "我将绑定到 pod beta-dev 进行观察和协调...",
@@ -499,7 +499,7 @@
         "runner": "Runner",
         "agent": "智能体",
         "websocket": "WebSocket",
-        "agentmeshCloud": "AgentMesh 云"
+        "agentsmeshCloud": "AgentsMesh 云"
       }
     },
     "agentLogos": {
@@ -515,12 +515,12 @@
     },
     "footer": {
       "tagline": "基于终端的编程智能体协作平台",
-      "copyright": "AgentMesh. 保留所有权利。",
+      "copyright": "AgentsMesh. 保留所有权利。",
       "madeWith": "为开发者用心打造",
       "product": {
         "title": "产品",
         "agentpod": "AgentPod",
-        "agentmesh": "AgentMesh",
+        "agentsmesh": "AgentsMesh",
         "tickets": "任务管理",
         "runners": "运行节点",
         "pricing": "定价"
@@ -573,7 +573,7 @@
     "messages": "消息",
     "sendMessage": "发送消息...",
     "page": {
-      "title": "DevMesh",
+      "title": "Mesh",
       "subtitle": "多智能体协作网络拓扑",
       "activePods": "{count} 个活跃 Pod",
       "channelsCount": "{count} 个频道",
@@ -1034,7 +1034,7 @@
       "noPaymentMethod": "暂无支付方式",
       "addPaymentMethod": "添加支付方式",
       "noSubscription": "暂无有效订阅",
-      "choosePlan": "选择一个方案开始使用 AgentMesh",
+      "choosePlan": "选择一个方案开始使用 AgentsMesh",
       "selectPlan": "选择方案",
       "retry": "重试",
       "failedToLoad": "加载账单数据失败",
@@ -1255,7 +1255,7 @@
     "activities": {
       "workspace": "工作区",
       "tickets": "任务",
-      "mesh": "AgentMesh",
+      "mesh": "AgentsMesh",
       "repositories": "仓库",
       "runners": "Runner",
       "settings": "设置"
@@ -1617,7 +1617,7 @@
     "workspaceDescription": "终端工作区",
     "goToTickets": "前往任务",
     "ticketsDescription": "查看和管理任务",
-    "goToMesh": "前往 AgentMesh",
+    "goToMesh": "前往 AgentsMesh",
     "meshDescription": "网络拓扑",
     "goToRepositories": "前往仓库",
     "repositoriesDescription": "管理仓库",
@@ -1669,7 +1669,7 @@
     },
     "mission": {
       "title": "我们的使命",
-      "content": "AgentMesh 源于一个简单的信念：软件开发的未来在于人类与 AI 智能体的协作。我们正在构建基础设施，使多个 AI 编程智能体能够协同工作，由人类开发者协调，以前所未有的速度和规模应对复杂的开发挑战。"
+      "content": "AgentsMesh 源于一个简单的信念：软件开发的未来在于人类与 AI 智能体的协作。我们正在构建基础设施，使多个 AI 编程智能体能够协同工作，由人类开发者协调，以前所未有的速度和规模应对复杂的开发挑战。"
     },
     "vision": {
       "title": "我们的理念",
@@ -1688,7 +1688,7 @@
     },
     "contact": {
       "title": "联系我们",
-      "content": "想了解更多关于 AgentMesh 的信息或探索合作机会？",
+      "content": "想了解更多关于 AgentsMesh 的信息或探索合作机会？",
       "email": "联系我们",
       "careers": "加入我们"
     }
@@ -1711,21 +1711,21 @@
       },
       "experiencer": {
         "title": "Experiencer（体验官）",
-        "description": "Experiencer 将技术转化为令人愉悦的产品。你将专注于用户体验，确保与 AgentMesh 的每次交互都是直观而强大的。",
+        "description": "Experiencer 将技术转化为令人愉悦的产品。你将专注于用户体验，确保与 AgentsMesh 的每次交互都是直观而强大的。",
         "resp1": "设计和优化用户体验",
         "resp2": "将功能打磨成精致的产品",
         "resp3": "收集并整合用户反馈"
       },
       "growth": {
         "title": "Growth（增长官）",
-        "description": "Growth 负责将产品推向市场。你将帮助开发者发现 AgentMesh，并将他们转化为热情的传播者。",
+        "description": "Growth 负责将产品推向市场。你将帮助开发者发现 AgentsMesh，并将他们转化为热情的传播者。",
         "resp1": "制定市场推广策略",
         "resp2": "与开发者社区建立联系",
         "resp3": "推动用户获取和留存"
       }
     },
     "whyJoin": {
-      "title": "为什么加入 AgentMesh？",
+      "title": "为什么加入 AgentsMesh？",
       "innovation": {
         "title": "前沿技术",
         "content": "使用最新的 AI 技术，塑造软件开发的未来。"
@@ -1759,7 +1759,7 @@
     },
     "intro": {
       "title": "简介",
-      "description": "AgentMesh 是一个基于终端的编程智能体协作平台，帮助团队大规模使用 Claude Code、Codex CLI、Gemini CLI 和 Aider 等 AI 编程助手。与 IDE 插件（Cursor、Copilot）不同，AgentMesh 专注于具有完整系统访问权限的自主终端智能体，支持多智能体协调（AgentMesh）、远程 AI 工作站（AgentPod）和集成任务管理。",
+      "description": "AgentsMesh 是一个基于终端的编程智能体协作平台，帮助团队大规模使用 Claude Code、Codex CLI、Gemini CLI 和 Aider 等 AI 编程助手。与 IDE 插件（Cursor、Copilot）不同，AgentsMesh 专注于具有完整系统访问权限的自主终端智能体，支持多智能体协调（AgentsMesh）、远程 AI 工作站（AgentPod）和集成任务管理。",
       "supportedAgents": "支持的 AI 智能体：",
       "customAgents": "通过 MCP 协议自定义智能体"
     },
@@ -1779,7 +1779,7 @@
       "environmentIde": "IDE 沙箱",
       "environmentTerminal": "完整终端访问",
       "multiAgent": "多智能体",
-      "multiAgentTerminal": "AgentMesh 支持",
+      "multiAgentTerminal": "AgentsMesh 支持",
       "selfHosted": "自托管",
       "selfHostedTerminal": "完全可控"
     },
@@ -1788,7 +1788,7 @@
       "quickStart": "快速上手",
       "quickStartDesc": "5 分钟内快速启动",
       "agentpodDesc": "远程 AI 开发工作站",
-      "agentmeshDesc": "多智能体协作网络",
+      "agentsmeshDesc": "多智能体协作网络",
       "mcpTools": "MCP 工具",
       "mcpToolsDesc": "25+ AI 智能体工具"
     }
@@ -1796,26 +1796,26 @@
   "blog": {
     "hero": {
       "title": "博客",
-      "subtitle": "来自 AgentMesh 团队的技术洞察、产品更新和故事。"
+      "subtitle": "来自 AgentsMesh 团队的技术洞察、产品更新和故事。"
     },
     "minRead": "分钟阅读",
     "backToList": "返回博客",
     "notFound": "文章未找到",
     "posts": {
       "introducing": {
-        "title": "AgentMesh 发布：AI 驱动开发的未来",
-        "excerpt": "今天我们很高兴地宣布 AgentMesh，一个让多个 AI 编程智能体协作完成复杂开发任务的平台。",
-        "content": "今天我们很高兴地宣布 AgentMesh，一个让多个 AI 编程智能体协作完成复杂开发任务的平台。\n\n软件开发的方式正在改变。像 Claude Code、Codex CLI 和 Aider 这样的 AI 编程智能体正变得越来越能够自主处理复杂的开发任务。但随着这些智能体变得更强大，一个新的挑战出现了：我们如何协调多个智能体在同一个项目上工作？\n\nAgentMesh 通过以下功能解决这个挑战：\n\n• AgentPod：在隔离环境中运行智能体的远程 AI 工作站\n• AgentMesh 频道：多智能体协作的通信基础设施\n• 自托管 Runner：将你的代码和数据保留在自己的基础设施中\n\n我们相信软件开发的未来在于人机协作，开发者协调 AI 智能体团队，以前所未有的速度和规模应对复杂挑战。\n\n在 agentmesh.dev 免费开始使用"
+        "title": "AgentsMesh 发布：AI 驱动开发的未来",
+        "excerpt": "今天我们很高兴地宣布 AgentsMesh，一个让多个 AI 编程智能体协作完成复杂开发任务的平台。",
+        "content": "今天我们很高兴地宣布 AgentsMesh，一个让多个 AI 编程智能体协作完成复杂开发任务的平台。\n\n软件开发的方式正在改变。像 Claude Code、Codex CLI 和 Aider 这样的 AI 编程智能体正变得越来越能够自主处理复杂的开发任务。但随着这些智能体变得更强大，一个新的挑战出现了：我们如何协调多个智能体在同一个项目上工作？\n\nAgentsMesh 通过以下功能解决这个挑战：\n\n• AgentPod：在隔离环境中运行智能体的远程 AI 工作站\n• AgentsMesh 频道：多智能体协作的通信基础设施\n• 自托管 Runner：将你的代码和数据保留在自己的基础设施中\n\n我们相信软件开发的未来在于人机协作，开发者协调 AI 智能体团队，以前所未有的速度和规模应对复杂挑战。\n\n在 agentsmesh.dev 免费开始使用"
       },
       "multiAgent": {
         "title": "理解软件开发中的多智能体协作",
         "excerpt": "探索多个 AI 智能体如何协同工作，比单智能体方法更有效地解决复杂的开发挑战。",
-        "content": "随着 AI 编程智能体变得更加复杂，我们发现一些问题最好由多个专业智能体协同解决。\n\n考虑一个典型的功能实现：它可能需要理解现有代码、设计新组件、编写测试和更新文档。每个任务都受益于不同的方法和上下文。\n\n使用 AgentMesh，你可以：\n\n• 将不同的智能体分配给任务的不同方面\n• 让智能体通过频道进行通信\n• 通过 Pod 绑定和权限协调工作\n• 实时可视化协作拓扑\n\n这种方法与人类开发团队的工作方式类似，专业角色协作实现共同目标。区别在于？AI 智能体可以持续工作，即时共享上下文，并以机器速度迭代。\n\n在我们的文档中了解更多关于多智能体协作的内容。"
+        "content": "随着 AI 编程智能体变得更加复杂，我们发现一些问题最好由多个专业智能体协同解决。\n\n考虑一个典型的功能实现：它可能需要理解现有代码、设计新组件、编写测试和更新文档。每个任务都受益于不同的方法和上下文。\n\n使用 AgentsMesh，你可以：\n\n• 将不同的智能体分配给任务的不同方面\n• 让智能体通过频道进行通信\n• 通过 Pod 绑定和权限协调工作\n• 实时可视化协作拓扑\n\n这种方法与人类开发团队的工作方式类似，专业角色协作实现共同目标。区别在于？AI 智能体可以持续工作，即时共享上下文，并以机器速度迭代。\n\n在我们的文档中了解更多关于多智能体协作的内容。"
       },
       "selfHosted": {
         "title": "为什么自托管 Runner 对企业 AI 开发至关重要",
         "excerpt": "对于有严格安全和合规要求的企业，自托管 Runner 提供了他们所需的控制力和数据主权。",
-        "content": "在采用 AI 开发工具时，企业面临一个关键问题：代码去哪里了？\n\n使用 AgentMesh 的自托管 Runner，答案很简单：你的代码留在你的基础设施中。这很重要的原因是：\n\n• 数据主权：代码永远不会离开你的网络\n• 合规性：满足数据处理的监管要求\n• 安全性：完全控制访问和审计日志\n• 性能：针对你的特定环境进行优化\n\n部署 Runner 非常简单：\n\n1. 在 AgentMesh 控制台生成注册令牌\n2. 在你的基础设施上运行 Runner 二进制文件\n3. 开始创建在你环境中执行的 Pod\n\n无论你是在裸机、虚拟机还是 Kubernetes 上运行，AgentMesh Runner 都能适应你的基础设施。\n\n联系我们了解更多关于企业部署选项的信息。"
+        "content": "在采用 AI 开发工具时，企业面临一个关键问题：代码去哪里了？\n\n使用 AgentsMesh 的自托管 Runner，答案很简单：你的代码留在你的基础设施中。这很重要的原因是：\n\n• 数据主权：代码永远不会离开你的网络\n• 合规性：满足数据处理的监管要求\n• 安全性：完全控制访问和审计日志\n• 性能：针对你的特定环境进行优化\n\n部署 Runner 非常简单：\n\n1. 在 AgentsMesh 控制台生成注册令牌\n2. 在你的基础设施上运行 Runner 二进制文件\n3. 开始创建在你环境中执行的 Pod\n\n无论你是在裸机、虚拟机还是 Kubernetes 上运行，AgentsMesh Runner 都能适应你的基础设施。\n\n联系我们了解更多关于企业部署选项的信息。"
       }
     }
   },
@@ -1824,7 +1824,7 @@
       "fields": {
         "mcp_enabled": {
           "label": "启用 MCP 集成",
-          "description": "允许 Agent 通过 MCP 协议与 AgentMesh 平台通信"
+          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
         },
         "model": {
           "label": "模型",
@@ -1858,7 +1858,7 @@
       "fields": {
         "mcp_enabled": {
           "label": "启用 MCP 集成",
-          "description": "允许 Agent 通过 MCP 协议与 AgentMesh 平台通信"
+          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
         },
         "sandbox_mode": {
           "label": "沙盒模式",
@@ -1870,7 +1870,7 @@
       "fields": {
         "mcp_enabled": {
           "label": "启用 MCP 集成",
-          "description": "允许 Agent 通过 MCP 协议与 AgentMesh 平台通信"
+          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
         },
         "approval_mode": {
           "label": "审批模式",
@@ -1905,7 +1905,7 @@
       "fields": {
         "mcp_enabled": {
           "label": "启用 MCP 集成",
-          "description": "允许 Agent 通过 MCP 协议与 AgentMesh 平台通信"
+          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
         }
       }
     }

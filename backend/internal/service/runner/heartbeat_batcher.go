@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )

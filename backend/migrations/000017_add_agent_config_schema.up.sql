@@ -83,7 +83,7 @@ UPDATE agent_types SET
         {
             "condition": {"field": "mcp_enabled", "operator": "eq", "value": true},
             "path_template": "{{.sandbox.root_path}}/mcp-config.json",
-            "content_template": "{\"mcpServers\":{\"agentmesh\":{\"type\":\"http\",\"url\":\"http://127.0.0.1:{{.mcp_port}}/mcp\",\"headers\":{\"X-Pod-Key\":\"{{.pod_key}}\"}}}}",
+            "content_template": "{\"mcpServers\":{\"agentsmesh\":{\"type\":\"http\",\"url\":\"http://127.0.0.1:{{.mcp_port}}/mcp\",\"headers\":{\"X-Pod-Key\":\"{{.pod_key}}\"}}}}",
             "mode": 384
         },
         {
@@ -92,7 +92,7 @@ UPDATE agent_types SET
         },
         {
             "path_template": "{{.sandbox.work_dir}}/.claude/skills/am-delegate/SKILL.md",
-            "content_template": "# AM Delegate Skill\n\nThis skill allows delegating tasks to other agents in the AgentMesh platform.\n\nUse the MCP tool `delegate_task` to delegate work to another agent.",
+            "content_template": "# AM Delegate Skill\n\nThis skill allows delegating tasks to other agents in the AgentsMesh platform.\n\nUse the MCP tool `delegate_task` to delegate work to another agent.",
             "mode": 420
         }
     ]'::jsonb
@@ -131,7 +131,7 @@ UPDATE agent_types SET
         {
             "condition": {"field": "mcp_enabled", "operator": "eq", "value": true},
             "path_template": "{{.sandbox.work_dir}}/.gemini/settings.json",
-            "content_template": "{\"mcpServers\":{\"agentmesh\":{\"httpUrl\":\"http://127.0.0.1:{{.mcp_port}}/mcp\",\"headers\":{\"X-Pod-Key\":\"{{.pod_key}}\"}}}}",
+            "content_template": "{\"mcpServers\":{\"agentsmesh\":{\"httpUrl\":\"http://127.0.0.1:{{.mcp_port}}/mcp\",\"headers\":{\"X-Pod-Key\":\"{{.pod_key}}\"}}}}",
             "mode": 384
         }
     ]'::jsonb
@@ -175,7 +175,7 @@ UPDATE agent_types SET
         {
             "condition": {"field": "mcp_enabled", "operator": "eq", "value": true},
             "path_template": "{{.sandbox.work_dir}}/.codex/mcp.json",
-            "content_template": "{\"mcpServers\":{\"agentmesh\":{\"type\":\"http\",\"url\":\"http://127.0.0.1:{{.mcp_port}}/mcp\",\"headers\":{\"X-Pod-Key\":\"{{.pod_key}}\"}}}}",
+            "content_template": "{\"mcpServers\":{\"agentsmesh\":{\"type\":\"http\",\"url\":\"http://127.0.0.1:{{.mcp_port}}/mcp\",\"headers\":{\"X-Pod-Key\":\"{{.pod_key}}\"}}}}",
             "mode": 384
         }
     ]'::jsonb
@@ -244,7 +244,7 @@ UPDATE agent_types SET
         {
             "condition": {"field": "mcp_enabled", "operator": "eq", "value": true},
             "path_template": "{{.sandbox.work_dir}}/.opencode/mcp.json",
-            "content_template": "{\"mcpServers\":{\"agentmesh\":{\"type\":\"http\",\"url\":\"http://127.0.0.1:{{.mcp_port}}/mcp\",\"headers\":{\"X-Pod-Key\":\"{{.pod_key}}\"}}}}",
+            "content_template": "{\"mcpServers\":{\"agentsmesh\":{\"type\":\"http\",\"url\":\"http://127.0.0.1:{{.mcp_port}}/mcp\",\"headers\":{\"X-Pod-Key\":\"{{.pod_key}}\"}}}}",
             "mode": 384
         }
     ]'::jsonb

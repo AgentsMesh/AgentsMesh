@@ -1,13 +1,13 @@
-# AgentMesh API Documentation
+# AgentsMesh API Documentation
 
 ## Overview
 
-AgentMesh provides a RESTful API for managing multi-agent AI development workspaces. The API supports multi-tenancy, OAuth authentication, and real-time WebSocket connections.
+AgentsMesh provides a RESTful API for managing multi-agent AI development workspaces. The API supports multi-tenancy, OAuth authentication, and real-time WebSocket connections.
 
 ## Base URL
 
-- Production: `https://api.agentmesh.io/api/v1`
-- Staging: `https://staging-api.agentmesh.example.com/api/v1`
+- Production: `https://api.agentsmesh.io/api/v1`
+- Staging: `https://staging-api.agentsmesh.example.com/api/v1`
 - Development: `http://localhost:8080/api/v1`
 
 ## Authentication

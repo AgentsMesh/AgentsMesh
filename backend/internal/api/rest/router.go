@@ -3,12 +3,12 @@ package rest
 import (
 	"log/slog"
 
-	"github.com/anthropics/agentmesh/backend/internal/api/rest/v1"
-	"github.com/anthropics/agentmesh/backend/internal/api/rest/v1/webhooks"
-	"github.com/anthropics/agentmesh/backend/internal/api/rest/ws"
-	"github.com/anthropics/agentmesh/backend/internal/config"
-	"github.com/anthropics/agentmesh/backend/internal/infra/email"
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
+	"github.com/anthropics/agentsmesh/backend/internal/api/rest/v1/webhooks"
+	"github.com/anthropics/agentsmesh/backend/internal/api/rest/ws"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -39,7 +39,7 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
-			"service": "agentmesh-api",
+			"service": "agentsmesh-api",
 		})
 	})
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { ticketApi } from "@/lib/api/client";
-import { getPodStatusInfo, getAgentStatusInfo } from "@/stores/devmesh";
+import { getPodStatusInfo, getAgentStatusInfo } from "@/stores/mesh";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAuthStore } from "@/stores/auth";
 import { Terminal, ExternalLink } from "lucide-react";

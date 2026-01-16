@@ -104,7 +104,7 @@ glab mr merge <mr-number>
 
 ```bash
 # 切回主仓库
-cd /path/to/AgentMesh
+cd /path/to/AgentsMesh
 
 # 删除远程分支（MR 合并时通常自动删除）
 git push origin --delete <branch-name>
@@ -113,7 +113,7 @@ git push origin --delete <branch-name>
 git branch -d <branch-name>
 
 # 如果是 worktree，删除 worktree
-git worktree remove ../AgentMesh-Worktrees/<dir-name>
+git worktree remove ../AgentsMesh-Worktrees/<dir-name>
 ```
 
 ## 完整示例
@@ -147,8 +147,8 @@ glab ci status --live
 glab mr merge 42 --squash
 
 # 7. 清理
-cd /path/to/AgentMesh
-git worktree remove ../AgentMesh-Worktrees/feature-user-auth
+cd /path/to/AgentsMesh
+git worktree remove ../AgentsMesh-Worktrees/feature-user-auth
 ```
 
 ## 完成后输出
@@ -163,7 +163,7 @@ git worktree remove ../AgentMesh-Worktrees/feature-user-auth
 
 已清理:
 - 远程分支: feature/user-auth (已删除)
-- Worktree: ../AgentMesh-Worktrees/feature-user-auth (已删除)
+- Worktree: ../AgentsMesh-Worktrees/feature-user-auth (已删除)
 ```
 
 ## 常用命令速查

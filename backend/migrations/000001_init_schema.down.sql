@@ -1,4 +1,4 @@
--- AgentMesh Database Schema Rollback
+-- AgentsMesh Database Schema Rollback
 -- Migration: 000001_init_schema
 
 -- Drop triggers first

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentmesh/backend/pkg/crypto"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 	"gorm.io/gorm"
 )
 

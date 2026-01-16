@@ -333,7 +333,7 @@ export function HeroSection() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">MCP</span>
-                  <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded">AgentMesh</span>
+                  <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded">AgentsMesh</span>
                 </div>
               </div>
 

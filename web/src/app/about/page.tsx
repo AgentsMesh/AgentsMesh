@@ -137,7 +137,7 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} AgentMesh. {t("common.allRightsReserved")}
+              &copy; {new Date().getFullYear()} AgentsMesh. {t("common.allRightsReserved")}
             </p>
             <div className="flex gap-6">
               <Link

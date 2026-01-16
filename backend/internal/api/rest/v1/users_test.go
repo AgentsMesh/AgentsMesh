@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
-	orgService "github.com/anthropics/agentmesh/backend/internal/service/organization"
-	userService "github.com/anthropics/agentmesh/backend/internal/service/user"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	orgService "github.com/anthropics/agentsmesh/backend/internal/service/organization"
+	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
 

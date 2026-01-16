@@ -3,8 +3,8 @@ package v1
 import (
 	"net/http"
 
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	"github.com/anthropics/agentmesh/backend/internal/service/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 	"github.com/gin-gonic/gin"
 )
 

@@ -106,7 +106,7 @@ class TerminalConnectionPool {
     let token = null;
     let orgSlug = null;
     try {
-      const authData = localStorage.getItem("agentmesh-auth");
+      const authData = localStorage.getItem("agentsmesh-auth");
       if (authData) {
         const parsed = JSON.parse(authData);
         token = parsed.state?.token;

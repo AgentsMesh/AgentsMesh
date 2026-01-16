@@ -1,6 +1,6 @@
--- AgentMesh Database Migration Rollback
+-- AgentsMesh Database Migration Rollback
 -- Migration: 000002_devmesh_ticket_enhancements
--- Description: Rollback DevMesh and Ticket enhancements
+-- Description: Rollback Mesh and Ticket enhancements
 
 -- ==========================================
 -- 8. Drop Channel Access Table

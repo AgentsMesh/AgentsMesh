@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
 //go:embed static/*

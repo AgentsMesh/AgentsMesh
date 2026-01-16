@@ -6,8 +6,8 @@ import (
 	"hash/fnv"
 	"log/slog"
 
-	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
-	"github.com/anthropics/agentmesh/backend/internal/infra/terminal"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/terminal"
 	"github.com/gorilla/websocket"
 )
 

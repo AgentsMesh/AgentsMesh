@@ -241,9 +241,9 @@ workspace_root: /tmp/test
 
 func TestConfigFromEnvironment(t *testing.T) {
 	// Set environment variables
-	os.Setenv("AGENTMESH_SERVER_URL", "http://env.example.com")
+	os.Setenv("AGENTSMESH_SERVER_URL", "http://env.example.com")
 	defer func() {
-		os.Unsetenv("AGENTMESH_SERVER_URL")
+		os.Unsetenv("AGENTSMESH_SERVER_URL")
 	}()
 
 	cfg, err := Load("")

@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { useChannelStore } from "@/stores/channel";
-import { useDevMeshStore } from "@/stores/devmesh";
+import { useMeshStore } from "@/stores/mesh";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
     setCurrentChannel,
   } = useChannelStore();
 
-  const { topology } = useDevMeshStore();
+  const { topology } = useMeshStore();
 
   // Load channel and messages when channelId changes
   useEffect(() => {

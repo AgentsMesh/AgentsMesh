@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/infra/websocket"
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 

@@ -11,32 +11,32 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/api/rest"
-	v1 "github.com/anthropics/agentmesh/backend/internal/api/rest/v1"
-	"github.com/anthropics/agentmesh/backend/internal/config"
-	"github.com/anthropics/agentmesh/backend/internal/infra/database"
+	"github.com/anthropics/agentsmesh/backend/internal/api/rest"
+	v1 "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	"gorm.io/gorm"
-	"github.com/anthropics/agentmesh/backend/internal/infra/email"
-	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
-	"github.com/anthropics/agentmesh/backend/internal/infra/logger"
-	"github.com/anthropics/agentmesh/backend/internal/infra/storage"
-	"github.com/anthropics/agentmesh/backend/internal/infra/websocket"
-	"github.com/anthropics/agentmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentmesh/backend/internal/service/auth"
-	"github.com/anthropics/agentmesh/backend/internal/service/billing"
-	"github.com/anthropics/agentmesh/backend/internal/service/binding"
-	"github.com/anthropics/agentmesh/backend/internal/service/channel"
-	"github.com/anthropics/agentmesh/backend/internal/service/devmesh"
-	fileservice "github.com/anthropics/agentmesh/backend/internal/service/file"
-	"github.com/anthropics/agentmesh/backend/internal/service/invitation"
-	"github.com/anthropics/agentmesh/backend/internal/service/organization"
-	"github.com/anthropics/agentmesh/backend/internal/service/promocode"
-	"github.com/anthropics/agentmesh/backend/internal/service/repository"
-	"github.com/anthropics/agentmesh/backend/internal/service/runner"
-	"github.com/anthropics/agentmesh/backend/internal/service/ticket"
-	"github.com/anthropics/agentmesh/backend/internal/service/user"
-	"github.com/anthropics/agentmesh/backend/pkg/crypto"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
+	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
+	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/service/mesh"
+	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
+	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
+	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
+	"github.com/anthropics/agentsmesh/backend/internal/service/promocode"
+	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
+	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/service/user"
+	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -125,7 +125,7 @@ func main() {
 		Channel:           services.channel,
 		Binding:           services.binding,
 		Ticket:            services.ticket,
-		DevMesh:           services.devmesh,
+		Mesh:              services.mesh,
 		Billing:           services.billing,
 		Hub:               hub,
 		EventBus:          eventBus,
@@ -162,7 +162,7 @@ type serviceContainer struct {
 	ticket             *ticket.Service
 	billing            *billing.Service
 	binding            *binding.Service
-	devmesh            *devmesh.Service
+	mesh               *mesh.Service
 	invitation         *invitation.Service
 	file               *fileservice.Service
 	promoCode          *promocode.Service
@@ -179,7 +179,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		JWTSecret:         cfg.JWT.Secret,
 		JWTExpiration:     time.Duration(cfg.JWT.ExpirationHours) * time.Hour,
 		RefreshExpiration: time.Duration(cfg.JWT.ExpirationHours*7) * time.Hour, // 7x access token
-		Issuer:            "agentmesh",
+		Issuer: "agentsmesh",
 	}
 	authSvc := auth.NewServiceWithRedis(authCfg, userSvc, redisClient)
 	orgSvc := organization.NewService(db)
@@ -194,7 +194,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	channelSvc := channel.NewService(db)
 	ticketSvc := ticket.NewService(db)
 	bindingSvc := binding.NewService(db, podSvc)
-	devmeshSvc := devmesh.NewService(db, podSvc, channelSvc, bindingSvc)
+	meshSvc := mesh.NewService(db, podSvc, channelSvc, bindingSvc)
 
 	// Initialize email service for invitations
 	emailSvc := email.NewService(email.Config{
@@ -254,7 +254,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		ticket:             ticketSvc,
 		billing:            billingSvc,
 		binding:            bindingSvc,
-		devmesh:            devmeshSvc,
+		mesh:               meshSvc,
 		invitation:         invitationSvc,
 		file:               fileSvc,
 		promoCode:          promoCodeSvc,

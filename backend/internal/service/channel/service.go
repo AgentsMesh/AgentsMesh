@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/channel"
-	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"gorm.io/gorm"
 )
 

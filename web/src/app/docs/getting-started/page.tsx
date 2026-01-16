@@ -6,7 +6,7 @@ export default function GettingStartedPage() {
       <h1 className="text-4xl font-bold mb-8">Quick Start</h1>
 
       <p className="text-muted-foreground leading-relaxed mb-8">
-        Get AgentMesh up and running in just a few minutes. This guide will walk
+        Get AgentsMesh up and running in just a few minutes. This guide will walk
         you through the essential setup steps.
       </p>
 
@@ -49,7 +49,7 @@ export default function GettingStartedPage() {
           </div>
           <p className="text-muted-foreground mb-4">
             Go to <strong>Settings → AgentPod → AI Providers</strong> to configure
-            your AI provider API keys. AgentMesh supports multiple providers:
+            your AI provider API keys. AgentsMesh supports multiple providers:
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-muted rounded-lg p-4">
@@ -116,12 +116,12 @@ export default function GettingStartedPage() {
           </div>
           <p className="text-muted-foreground mb-4">
             Runners are the execution environments where AI agent Pods run.
-            Download and configure the AgentMesh Runner on your development
+            Download and configure the AgentsMesh Runner on your development
             machine or server.
           </p>
           <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
             <pre className="text-green-400">{`# Download the runner binary
-curl -LO https://github.com/agentmesh/runner/releases/latest/download/runner
+curl -LO https://github.com/agentsmesh/runner/releases/latest/download/runner
 
 # Make executable
 chmod +x runner
@@ -190,10 +190,10 @@ chmod +x runner
             </p>
           </Link>
           <Link
-            href="/docs/features/devmesh"
+            href="/docs/features/mesh"
             className="border border-border rounded-lg p-4 hover:border-primary transition-colors"
           >
-            <h3 className="font-medium mb-1">Explore DevMesh →</h3>
+            <h3 className="font-medium mb-1">Explore Mesh →</h3>
             <p className="text-sm text-muted-foreground">
               Multi-agent collaboration features
             </p>

@@ -29,7 +29,7 @@ export function PageHeader() {
               />
             </svg>
           </div>
-          <span className="text-xl font-bold">AgentMesh</span>
+          <span className="text-xl font-bold">AgentsMesh</span>
         </Link>
         {isLoggedIn ? (
           <Link href="/mesh">

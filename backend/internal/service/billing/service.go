@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"github.com/stripe/stripe-go/v76"
 	"github.com/stripe/stripe-go/v76/customer"
 	"github.com/stripe/stripe-go/v76/subscription"

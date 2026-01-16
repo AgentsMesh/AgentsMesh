@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"regexp"
 
-	"github.com/anthropics/agentmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
 // OSC (Operating System Command) escape sequence patterns for terminal notifications

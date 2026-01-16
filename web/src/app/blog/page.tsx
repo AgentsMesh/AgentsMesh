@@ -17,11 +17,11 @@ interface BlogPost {
 
 const blogPosts: BlogPost[] = [
   {
-    slug: "introducing-agentmesh",
+    slug: "introducing-agentsmesh",
     titleKey: "blog.posts.introducing.title",
     excerptKey: "blog.posts.introducing.excerpt",
     date: "2025-01-08",
-    author: "AgentMesh Team",
+    author: "AgentsMesh Team",
     category: "Announcement",
     readTime: 5,
   },
@@ -30,7 +30,7 @@ const blogPosts: BlogPost[] = [
     titleKey: "blog.posts.multiAgent.title",
     excerptKey: "blog.posts.multiAgent.excerpt",
     date: "2024-12-20",
-    author: "AgentMesh Team",
+    author: "AgentsMesh Team",
     category: "Technical",
     readTime: 8,
   },
@@ -39,7 +39,7 @@ const blogPosts: BlogPost[] = [
     titleKey: "blog.posts.selfHosted.title",
     excerptKey: "blog.posts.selfHosted.excerpt",
     date: "2024-12-05",
-    author: "AgentMesh Team",
+    author: "AgentsMesh Team",
     category: "Guide",
     readTime: 6,
   },
@@ -120,7 +120,7 @@ export default function BlogPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} AgentMesh. {t("common.allRightsReserved")}
+              &copy; {new Date().getFullYear()} AgentsMesh. {t("common.allRightsReserved")}
             </p>
             <div className="flex gap-6">
               <Link

@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
-	userService "github.com/anthropics/agentmesh/backend/internal/service/user"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 )

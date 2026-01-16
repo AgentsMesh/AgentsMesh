@@ -32,7 +32,7 @@
   },
   "nav": {
     "agentpod": "AgentPod",
-    "mesh": "AgentMesh",
+    "mesh": "AgentsMesh",
     "tickets": "티켓",
     "settings": "설정",
     "billing": "결제"
@@ -100,7 +100,7 @@
           "autonomy": "능동적 작업 실행",
           "capabilities": "풀스택 개발",
           "environment": "전체 터미널 접근",
-          "multiAgent": "AgentMesh 지원",
+          "multiAgent": "AgentsMesh 지원",
           "selfHosted": "완전 제어 가능"
         }
       }
@@ -120,8 +120,8 @@
           "3": "완료 시 자동 정리"
         }
       },
-      "agentmesh": {
-        "title": "AgentMesh",
+      "agentsmesh": {
+        "title": "AgentsMesh",
         "subtitle": "멀티 에이전트 협업",
         "description": "Pod 바인딩과 채널 통신을 통해 여러 AI 에이전트가 함께 작업할 수 있습니다. 협업 토폴로지를 실시간으로 시각화합니다.",
         "highlights": {
@@ -164,7 +164,7 @@
       },
       "step2": {
         "title": "에이전트 연결",
-        "description": "AI 코딩 에이전트가 AgentMesh에 연결되도록 구성합니다."
+        "description": "AI 코딩 에이전트가 AgentsMesh에 연결되도록 구성합니다."
       },
       "step3": {
         "title": "협업 시작",
@@ -269,7 +269,7 @@
       "title": "완전한",
       "titleHighlight": "셀프 호스트",
       "titleEnd": "배포가 필요하신가요?",
-      "description": "AgentMesh는 완전한 셀프 호스트 배포를 지원합니다. 코드와 데이터가 인프라를 벗어나지 않습니다. 엄격한 보안 및 규정 준수 요구 사항이 있는 기업에 완벽합니다.",
+      "description": "AgentsMesh는 완전한 셀프 호스트 배포를 지원합니다. 코드와 데이터가 인프라를 벗어나지 않습니다. 엄격한 보안 및 규정 준수 요구 사항이 있는 기업에 완벽합니다.",
       "dockerCompose": "Docker Compose",
       "kubernetesHelm": "Kubernetes Helm",
       "airGappedSupport": "에어갭 지원",
@@ -279,7 +279,7 @@
     "finalCta": {
       "title1": "터미널 에이전트를",
       "title2": "협력시킬 준비가 되셨나요?",
-      "description": "AgentMesh를 사용하여 AI 코딩 에이전트를 조정하는 수천 명의 개발자와 함께하세요. 무료로 시작하며 신용카드가 필요 없습니다.",
+      "description": "AgentsMesh를 사용하여 AI 코딩 에이전트를 조정하는 수천 명의 개발자와 함께하세요. 무료로 시작하며 신용카드가 필요 없습니다.",
       "getStartedFree": "무료로 시작",
       "scheduleDemo": "데모 예약",
       "freeTier": "무료 등급 제공",
@@ -291,8 +291,8 @@
       "live": "실시간",
       "initializingPod": "Pod 초기화 중...",
       "typeMessage": "메시지 입력...",
-      "connecting": "AgentMesh에 연결 중...",
-      "connected": "AgentMesh 서버에 연결됨",
+      "connecting": "AgentsMesh에 연결 중...",
+      "connected": "AgentsMesh 서버에 연결됨",
       "workspace": "작업 공간: /projects/e-commerce",
       "monitorPod": "pod beta-dev를 모니터링하고 인증 구현 조정 지원",
       "bindingPod": "beta-dev에 바인딩하여 관찰 및 조정합니다...",
@@ -332,7 +332,7 @@
         "runner": "Runner",
         "agent": "에이전트",
         "websocket": "WebSocket",
-        "agentmeshCloud": "AgentMesh 클라우드"
+        "agentsmeshCloud": "AgentsMesh 클라우드"
       }
     },
     "agentLogos": {
@@ -348,12 +348,12 @@
     },
     "footer": {
       "tagline": "터미널 기반 코딩 에이전트 협업 플랫폼",
-      "copyright": "AgentMesh. All rights reserved.",
+      "copyright": "AgentsMesh. All rights reserved.",
       "madeWith": "개발자를 위한 사랑으로 제작",
       "product": {
         "title": "제품",
         "agentpod": "AgentPod",
-        "agentmesh": "AgentMesh",
+        "agentsmesh": "AgentsMesh",
         "tickets": "티켓",
         "runners": "러너",
         "pricing": "요금제"
@@ -399,14 +399,14 @@
     }
   },
   "mesh": {
-    "title": "AgentMesh",
+    "title": "AgentsMesh",
     "channels": "채널",
     "newChannel": "새 채널",
     "topology": "토폴로지",
     "messages": "메시지",
     "sendMessage": "메시지 보내기...",
     "page": {
-      "title": "DevMesh",
+      "title": "Mesh",
       "subtitle": "멀티 에이전트 협업 네트워크 토폴로지",
       "activePods": "{count}개의 활성 Pod",
       "channelsCount": "{count}개의 채널",
@@ -530,7 +530,7 @@
     "activities": {
       "workspace": "워크스페이스",
       "tickets": "티켓",
-      "mesh": "AgentMesh",
+      "mesh": "AgentsMesh",
       "repositories": "저장소",
       "runners": "Runner",
       "settings": "설정"
@@ -758,7 +758,7 @@
     "workspaceDescription": "터미널 워크스페이스",
     "goToTickets": "티켓으로 이동",
     "ticketsDescription": "티켓 보기 및 관리",
-    "goToMesh": "AgentMesh로 이동",
+    "goToMesh": "AgentsMesh로 이동",
     "meshDescription": "네트워크 토폴로지",
     "goToRepositories": "저장소로 이동",
     "repositoriesDescription": "저장소 관리",

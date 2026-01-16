@@ -97,7 +97,7 @@ export default function RegisterPage() {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-foreground">AgentMesh</span>
+            <span className="text-2xl font-bold text-foreground">AgentsMesh</span>
           </Link>
           <h1 className="mt-6 text-2xl font-semibold text-foreground">
             {t("auth.registerPage.title")}

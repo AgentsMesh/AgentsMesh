@@ -3,12 +3,12 @@ package v1
 import (
 	"context"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentmesh/backend/internal/domain/gitprovider"
-	"github.com/anthropics/agentmesh/backend/internal/domain/ticket"
-	agentpodService "github.com/anthropics/agentmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentmesh/backend/internal/service/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	agentpodService "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 )
 
 // Re-export errors for use in handlers without importing service packages

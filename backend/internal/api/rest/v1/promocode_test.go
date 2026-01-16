@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/promocode"
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	promocodeSvc "github.com/anthropics/agentmesh/backend/internal/service/promocode"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	promocodeSvc "github.com/anthropics/agentsmesh/backend/internal/service/promocode"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

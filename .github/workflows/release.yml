@@ -168,7 +168,7 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       - name: Package chart
-        run: helm package deploy/helm/agentmesh
+        run: helm package deploy/helm/agentsmesh
 
       - name: Push chart
-        run: helm push agentmesh-*.tgz oci://${{ env.REGISTRY }}/${{ github.repository }}/charts
+        run: helm push agentsmesh-*.tgz oci://${{ env.REGISTRY }}/${{ github.repository }}/charts

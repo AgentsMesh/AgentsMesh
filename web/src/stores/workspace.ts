@@ -159,7 +159,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
     }),
     {
-      name: "agentmesh-workspace",
+      name: "agentsmesh-workspace",
       partialize: (state) => ({
         panes: state.panes,
         activePane: state.activePane,

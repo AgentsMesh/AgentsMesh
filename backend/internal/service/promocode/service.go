@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/promocode"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
 	"gorm.io/gorm"
 )
 

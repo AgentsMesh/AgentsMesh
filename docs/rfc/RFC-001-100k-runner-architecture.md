@@ -3,7 +3,7 @@
 | 属性 | 值 |
 |------|-----|
 | **状态** | Draft |
-| **作者** | AgentMesh Team |
+| **作者** | AgentsMesh Team |
 | **创建日期** | 2026-01-09 |
 | **目标** | 支撑 100,000 个并发 Runner 连接 |
 
@@ -13,7 +13,7 @@
 
 ### 1.1 背景
 
-AgentMesh 平台需要支撑大规模用户自托管的 Runner 连接。Runner 是用户部署在自己机器上的运行节点，承载多个 AgentPod（AI Agent 运行实例）。随着用户规模增长，平台需要能够处理 10 万级别的并发 WebSocket 长连接。
+AgentsMesh 平台需要支撑大规模用户自托管的 Runner 连接。Runner 是用户部署在自己机器上的运行节点，承载多个 AgentPod（AI Agent 运行实例）。随着用户规模增长，平台需要能够处理 10 万级别的并发 WebSocket 长连接。
 
 ### 1.2 目标
 
@@ -256,7 +256,7 @@ nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 
 #### 4.4.1 设计原则
 
-AgentMesh 的资源模型以 Organization 为边界：
+AgentsMesh 的资源模型以 Organization 为边界：
 
 ```
 Organization
@@ -317,7 +317,7 @@ http {
 
     server {
         listen 443 ssl;
-        server_name api.agentmesh.io;
+        server_name api.agentsmesh.io;
 
         # WebSocket 支持
         location /ws/ {
@@ -349,7 +349,7 @@ http {
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: agentmesh-api
+  name: agentsmesh-api
   annotations:
     nginx.ingress.kubernetes.io/upstream-hash-by: "$http_x_organization_id"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
@@ -363,7 +363,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: api.agentmesh.io
+    - host: api.agentsmesh.io
       http:
         paths:
           - path: /
@@ -386,14 +386,14 @@ spec:
 **Runner 连接示例：**
 
 ```
-wss://api.agentmesh.io/ws/runner?node_id=xxx&token=xxx
+wss://api.agentsmesh.io/ws/runner?node_id=xxx&token=xxx
 Header: X-Organization-ID: 123
 ```
 
 **前端 WebSocket 连接示例：**
 
 ```
-wss://api.agentmesh.io/ws/terminal?org_id=123&pod_key=xxx
+wss://api.agentsmesh.io/ws/terminal?org_id=123&pod_key=xxx
 ```
 
 #### 4.4.6 Backend 验证
@@ -842,11 +842,11 @@ CREATE INDEX idx_pods_activity ON pods(last_activity_at) WHERE status = 'active'
 
 | 指标 | 告警阈值 | 说明 |
 |------|----------|------|
-| `agentmesh_runner_connections_total` | > 12,000/实例 | 连接数过高 |
-| `agentmesh_heartbeat_latency_p99` | > 500ms | 心跳延迟 |
-| `agentmesh_db_connections_used_ratio` | > 80% | 连接池饱和 |
-| `agentmesh_redis_memory_used_ratio` | > 80% | Redis 内存 |
-| `agentmesh_websocket_error_rate` | > 0.1% | WebSocket 错误 |
+| `agentsmesh_runner_connections_total` | > 12,000/实例 | 连接数过高 |
+| `agentsmesh_heartbeat_latency_p99` | > 500ms | 心跳延迟 |
+| `agentsmesh_db_connections_used_ratio` | > 80% | 连接池饱和 |
+| `agentsmesh_redis_memory_used_ratio` | > 80% | Redis 内存 |
+| `agentsmesh_websocket_error_rate` | > 0.1% | WebSocket 错误 |
 | `go_goroutines` | > 50,000/实例 | Goroutine 泄漏 |
 
 ### 8.2 Prometheus 指标
@@ -854,18 +854,18 @@ CREATE INDEX idx_pods_activity ON pods(last_activity_at) WHERE status = 'active'
 ```go
 var (
     runnerConnections = prometheus.NewGauge(prometheus.GaugeOpts{
-        Name: "agentmesh_runner_connections_total",
+        Name: "agentsmesh_runner_connections_total",
         Help: "Total number of connected runners",
     })
 
     heartbeatLatency = prometheus.NewHistogram(prometheus.HistogramOpts{
-        Name:    "agentmesh_heartbeat_latency_seconds",
+        Name:    "agentsmesh_heartbeat_latency_seconds",
         Help:    "Heartbeat processing latency",
         Buckets: prometheus.ExponentialBuckets(0.001, 2, 15),
     })
 
     dbQueryDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-        Name:    "agentmesh_db_query_duration_seconds",
+        Name:    "agentsmesh_db_query_duration_seconds",
         Help:    "Database query duration",
         Buckets: prometheus.ExponentialBuckets(0.001, 2, 12),
     }, []string{"operation"})

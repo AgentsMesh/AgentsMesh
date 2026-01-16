@@ -1,9 +1,9 @@
-package devmesh
+package mesh
 
 import "time"
 
-// DevMeshNode represents a pod node in the DevMesh topology
-type DevMeshNode struct {
+// MeshNode represents a pod node in the Mesh topology
+type MeshNode struct {
 	PodKey       string        `json:"pod_key"`
 	Status       string        `json:"status"`
 	AgentStatus  string        `json:"agent_status"`
@@ -22,8 +22,8 @@ type NodePosition struct {
 	Y float64 `json:"y"`
 }
 
-// DevMeshEdge represents a binding/connection between two pod nodes
-type DevMeshEdge struct {
+// MeshEdge represents a binding/connection between two pod nodes
+type MeshEdge struct {
 	ID            int64    `json:"id"`
 	Source        string   `json:"source"`         // Initiator pod key
 	Target        string   `json:"target"`         // Target pod key
@@ -32,7 +32,7 @@ type DevMeshEdge struct {
 	Status        string   `json:"status"`
 }
 
-// ChannelInfo represents channel information for DevMesh visualization
+// ChannelInfo represents channel information for Mesh visualization
 type ChannelInfo struct {
 	ID           int64    `json:"id"`
 	Name         string   `json:"name"`
@@ -42,10 +42,10 @@ type ChannelInfo struct {
 	IsArchived   bool     `json:"is_archived"`
 }
 
-// DevMeshTopology represents the complete topology of active pods and their connections
-type DevMeshTopology struct {
-	Nodes    []DevMeshNode `json:"nodes"`
-	Edges    []DevMeshEdge `json:"edges"`
+// MeshTopology represents the complete topology of active pods and their connections
+type MeshTopology struct {
+	Nodes    []MeshNode `json:"nodes"`
+	Edges    []MeshEdge `json:"edges"`
 	Channels []ChannelInfo `json:"channels"`
 }
 
@@ -89,10 +89,10 @@ type CreatePodForTicketRequest struct {
 // TicketPodInfo represents pod information for a ticket
 type TicketPodInfo struct {
 	TicketID int64         `json:"ticket_id"`
-	Pods     []DevMeshNode `json:"pods"`
+	Pods     []MeshNode `json:"pods"`
 }
 
 // BatchTicketPodsResponse represents the response for batch ticket pods query
 type BatchTicketPodsResponse struct {
-	TicketPods map[int64][]DevMeshNode `json:"ticket_pods"`
+	TicketPods map[int64][]MeshNode `json:"ticket_pods"`
 }

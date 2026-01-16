@@ -264,8 +264,8 @@ func TestLoad(t *testing.T) {
 		assert.False(t, cfg.Server.Debug)
 		assert.Equal(t, "localhost", cfg.Database.Host)
 		assert.Equal(t, 5432, cfg.Database.Port)
-		assert.Equal(t, "agentmesh", cfg.Database.User)
-		assert.Equal(t, "agentmesh", cfg.Database.DBName)
+		assert.Equal(t, "agentsmesh", cfg.Database.User)
+		assert.Equal(t, "agentsmesh", cfg.Database.DBName)
 	})
 
 	t.Run("should load config from environment", func(t *testing.T) {

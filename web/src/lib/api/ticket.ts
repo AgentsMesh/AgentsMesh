@@ -262,7 +262,7 @@ export const ticketApi = {
       method: "DELETE",
     }),
 
-  // Pods (DevMesh integration)
+  // Pods (Mesh integration)
   getPods: (identifier: string, activeOnly?: boolean) => {
     const params = activeOnly ? "?active=true" : "";
     return request<{

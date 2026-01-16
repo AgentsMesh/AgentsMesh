@@ -108,7 +108,7 @@ export default function CreateOrgPage() {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-foreground">AgentMesh</span>
+            <span className="text-2xl font-bold text-foreground">AgentsMesh</span>
           </Link>
           <h1 className="mt-6 text-2xl font-semibold text-foreground">
             {t("auth.onboarding.createOrg.title")}
@@ -147,7 +147,7 @@ export default function CreateOrgPage() {
               {t("auth.onboarding.createOrg.urlIdentifierLabel")}
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">agentmesh.dev/</span>
+              <span className="text-sm text-muted-foreground">agentsmesh.dev/</span>
               <Input
                 id="slug"
                 placeholder={t("auth.onboarding.createOrg.urlIdentifierPlaceholder")}

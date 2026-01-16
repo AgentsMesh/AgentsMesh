@@ -134,7 +134,7 @@ export default function LocalRunnerSetupPage() {
                   />
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-foreground">AgentMesh</span>
+              <span className="text-2xl font-bold text-foreground">AgentsMesh</span>
             </Link>
           </div>
 
@@ -218,7 +218,7 @@ export default function LocalRunnerSetupPage() {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-foreground">AgentMesh</span>
+            <span className="text-2xl font-bold text-foreground">AgentsMesh</span>
           </Link>
           <h1 className="mt-6 text-2xl font-semibold text-foreground">
             {t("auth.onboarding.localRunner.title")}
@@ -297,13 +297,13 @@ export default function LocalRunnerSetupPage() {
               <div className="p-4 bg-muted rounded-md">
                 <p className="text-xs text-muted-foreground mb-2"># macOS / Linux</p>
                 <code className="text-sm font-mono text-foreground block">
-                  curl -fsSL https://agentmesh.dev/install.sh | sh
+                  curl -fsSL https://agentsmesh.dev/install.sh | sh
                 </code>
               </div>
               <div className="p-4 bg-muted rounded-md">
                 <p className="text-xs text-muted-foreground mb-2"># {t("auth.onboarding.localRunner.startRunnerComment")}</p>
                 <code className="text-sm font-mono text-foreground block">
-                  agentmesh-runner start --token &lt;your-token&gt;
+                  agentsmesh-runner start --token &lt;your-token&gt;
                 </code>
               </div>
             </div>

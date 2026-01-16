@@ -6,9 +6,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/config"
-	"github.com/anthropics/agentmesh/backend/internal/domain/file"
-	"github.com/anthropics/agentmesh/backend/internal/infra/storage"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

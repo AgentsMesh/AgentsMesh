@@ -23,8 +23,8 @@ type Service interface {
 type Config struct {
 	Provider    string // "resend" or "console" (for development)
 	ResendKey   string
-	FromAddress string // e.g., "AgentMesh <noreply@agentmesh.dev>"
-	BaseURL     string // Frontend base URL for links, e.g., "https://agentmesh.dev"
+	FromAddress string // e.g., "AgentsMesh <noreply@agentsmesh.dev>"
+	BaseURL     string // Frontend base URL for links, e.g., "https://agentsmesh.dev"
 }
 
 // NewService creates a new email service based on configuration
@@ -60,7 +60,7 @@ func (s *ResendService) SendVerificationEmail(ctx context.Context, to, token str
     <title>Verify your email</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <h1 style="color: #333;">Welcome to AgentMesh!</h1>
+    <h1 style="color: #333;">Welcome to AgentsMesh!</h1>
     <p style="color: #666; font-size: 16px;">Please verify your email address by clicking the button below:</p>
     <p style="margin: 30px 0;">
         <a href="%s" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">Verify Email</a>
@@ -76,7 +76,7 @@ func (s *ResendService) SendVerificationEmail(ctx context.Context, to, token str
 	_, err := s.client.Emails.SendWithContext(ctx, &resend.SendEmailRequest{
 		From:    s.fromAddress,
 		To:      []string{to},
-		Subject: "Verify your email - AgentMesh",
+		Subject: "Verify your email - AgentsMesh",
 		Html:    html,
 	})
 	return err
@@ -110,7 +110,7 @@ func (s *ResendService) SendPasswordResetEmail(ctx context.Context, to, token st
 	_, err := s.client.Emails.SendWithContext(ctx, &resend.SendEmailRequest{
 		From:    s.fromAddress,
 		To:      []string{to},
-		Subject: "Reset your password - AgentMesh",
+		Subject: "Reset your password - AgentsMesh",
 		Html:    html,
 	})
 	return err
@@ -129,7 +129,7 @@ func (s *ResendService) SendOrgInvitationEmail(ctx context.Context, to, orgName,
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h1 style="color: #333;">You're invited!</h1>
-    <p style="color: #666; font-size: 16px;"><strong>%s</strong> has invited you to join <strong>%s</strong> on AgentMesh.</p>
+    <p style="color: #666; font-size: 16px;"><strong>%s</strong> has invited you to join <strong>%s</strong> on AgentsMesh.</p>
     <p style="margin: 30px 0;">
         <a href="%s" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">Accept Invitation</a>
     </p>
@@ -144,7 +144,7 @@ func (s *ResendService) SendOrgInvitationEmail(ctx context.Context, to, orgName,
 	_, err := s.client.Emails.SendWithContext(ctx, &resend.SendEmailRequest{
 		From:    s.fromAddress,
 		To:      []string{to},
-		Subject: fmt.Sprintf("You've been invited to join %s - AgentMesh", orgName),
+		Subject: fmt.Sprintf("You've been invited to join %s - AgentsMesh", orgName),
 		Html:    html,
 	})
 	return err

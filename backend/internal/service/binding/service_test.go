@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

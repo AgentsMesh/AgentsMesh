@@ -435,7 +435,7 @@ function AddRunnerModal({
 
   const copyCommand = () => {
     if (generatedToken) {
-      const command = `agentmesh-runner --token ${generatedToken}`;
+      const command = `agentsmesh-runner --token ${generatedToken}`;
       navigator.clipboard.writeText(command);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -488,7 +488,7 @@ function AddRunnerModal({
                   <span>Terminal</span>
                 </div>
                 <code className="text-green-400 text-sm font-mono block">
-                  agentmesh-runner --token {generatedToken.substring(0, 16)}...
+                  agentsmesh-runner --token {generatedToken.substring(0, 16)}...
                 </code>
                 <Button
                   variant="ghost"

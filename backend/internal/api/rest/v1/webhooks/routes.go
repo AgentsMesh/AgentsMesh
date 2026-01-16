@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/anthropics/agentmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

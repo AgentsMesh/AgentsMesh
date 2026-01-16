@@ -1,5 +1,5 @@
 -- =============================================================================
--- AgentMesh Development Seed Data
+-- AgentsMesh Development Seed Data
 -- =============================================================================
 --
 -- 此脚本创建开发环境所需的初始数据：
@@ -27,15 +27,15 @@ BEGIN
     -- bcrypt hash (cost=10)
 
     INSERT INTO users (email, username, name, password_hash, is_active, is_email_verified)
-    SELECT 'dev@agentmesh.local', 'devuser', 'Dev User',
+    SELECT 'dev@agentsmesh.local', 'devuser', 'Dev User',
            '$2a$10$/95Zk1f1HFGXACwCb.bOw.d3vTjclw5NdGwQuK1Eaji6cDq0PuXp2',
            TRUE, TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'dev@agentmesh.local')
+    WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'dev@agentsmesh.local')
     RETURNING id INTO v_user_id;
 
     -- 如果用户已存在，获取其 ID
     IF v_user_id IS NULL THEN
-        SELECT id INTO v_user_id FROM users WHERE email = 'dev@agentmesh.local';
+        SELECT id INTO v_user_id FROM users WHERE email = 'dev@agentsmesh.local';
     END IF;
 
     RAISE NOTICE 'User ID: %', v_user_id;
@@ -165,7 +165,7 @@ BEGIN
     );
 
     RAISE NOTICE 'Seed data created successfully!';
-    RAISE NOTICE '  - User: dev@agentmesh.local / devpass123';
+    RAISE NOTICE '  - User: dev@agentsmesh.local / devpass123';
     RAISE NOTICE '  - Organization: dev-org';
     RAISE NOTICE '  - Runner: dev-runner (node_id)';
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/anthropics/agentmesh/backend/internal/infra/terminal"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/terminal"
 	"github.com/gorilla/websocket"
 )
 

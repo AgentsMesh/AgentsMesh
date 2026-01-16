@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/anthropics/agentmesh/runner/internal/config"
-	"github.com/anthropics/agentmesh/runner/internal/tray"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/tray"
 )
 
 // runDesktop handles the "desktop" subcommand for system tray mode.

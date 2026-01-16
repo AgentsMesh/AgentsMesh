@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/mcp/tools"
+	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
 // HTTPServer provides an MCP server over HTTP for agent collaboration.
@@ -372,7 +372,7 @@ func (s *HTTPServer) Port() int {
 func (s *HTTPServer) GenerateMCPConfig(podKey string) map[string]interface{} {
 	return map[string]interface{}{
 		"mcpServers": map[string]interface{}{
-			"agentmesh-collaboration": map[string]interface{}{
+			"agentsmesh-collaboration": map[string]interface{}{
 				"command": "curl",
 				"args": []string{
 					"-X", "POST",

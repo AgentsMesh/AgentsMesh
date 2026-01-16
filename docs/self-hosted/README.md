@@ -1,10 +1,10 @@
-# AgentMesh Self-Hosted Deployment Guide
+# AgentsMesh Self-Hosted Deployment Guide
 
-This guide covers deploying AgentMesh on your own infrastructure for private/enterprise use.
+This guide covers deploying AgentsMesh on your own infrastructure for private/enterprise use.
 
 ## Overview
 
-AgentMesh can be fully self-hosted, giving you complete control over your data and infrastructure. The self-hosted version includes all features of the cloud version.
+AgentsMesh can be fully self-hosted, giving you complete control over your data and infrastructure. The self-hosted version includes all features of the cloud version.
 
 ## System Requirements
 
@@ -34,9 +34,9 @@ Best for small teams or evaluation.
 
 ```bash
 # Download docker-compose files
-curl -O https://raw.githubusercontent.com/agentmesh/agentmesh/main/deploy/docker-compose.yml
-curl -O https://raw.githubusercontent.com/agentmesh/agentmesh/main/deploy/docker-compose.prod.yml
-curl -O https://raw.githubusercontent.com/agentmesh/agentmesh/main/.env.example
+curl -O https://raw.githubusercontent.com/agentsmesh/agentsmesh/main/deploy/docker-compose.yml
+curl -O https://raw.githubusercontent.com/agentsmesh/agentsmesh/main/deploy/docker-compose.prod.yml
+curl -O https://raw.githubusercontent.com/agentsmesh/agentsmesh/main/.env.example
 
 # Configure environment
 cp .env.example .env
@@ -52,21 +52,21 @@ Best for larger deployments with high availability requirements.
 
 ```bash
 # Add Helm repository
-helm repo add agentmesh https://charts.agentmesh.io
+helm repo add agentsmesh https://charts.agentsmesh.io
 helm repo update
 
 # Create namespace
-kubectl create namespace agentmesh
+kubectl create namespace agentsmesh
 
 # Create secrets
-kubectl create secret generic agentmesh-secrets \
-  --namespace agentmesh \
+kubectl create secret generic agentsmesh-secrets \
+  --namespace agentsmesh \
   --from-literal=jwt-secret=$(openssl rand -hex 32) \
   --from-literal=database-password=$(openssl rand -hex 16)
 
 # Install with custom values
-helm install agentmesh agentmesh/agentmesh \
-  --namespace agentmesh \
+helm install agentsmesh agentsmesh/agentsmesh \
+  --namespace agentsmesh \
   -f values.yaml
 ```
 
@@ -75,10 +75,10 @@ helm install agentmesh agentmesh/agentmesh \
 ### values.yaml Example
 
 ```yaml
-# AgentMesh Helm Values
+# AgentsMesh Helm Values
 
 global:
-  domain: agentmesh.company.com
+  domain: agentsmesh.company.com
 
 backend:
   replicas: 3
@@ -108,8 +108,8 @@ postgresql:
   # external:
   #   host: your-db-host
   #   port: 5432
-  #   database: agentmesh
-  #   username: agentmesh
+  #   database: agentsmesh
+  #   username: agentsmesh
   #   existingSecret: db-credentials
 
 redis:
@@ -148,12 +148,12 @@ Runners are self-hosted agents that execute AI pods. Each organization deploys t
    ```bash
    # Docker
    docker run -d \
-     --name agentmesh-runner \
+     --name agentsmesh-runner \
      -e REGISTRATION_TOKEN=<token> \
-     -e BACKEND_URL=https://agentmesh.company.com \
+     -e BACKEND_URL=https://agentsmesh.company.com \
      -e NODE_ID=runner-01 \
      -v /var/run/docker.sock:/var/run/docker.sock \
-     agentmesh/runner:latest
+     agentsmesh/runner:latest
 
    # Or using docker-compose
    docker compose -f runner-compose.yml up -d
@@ -171,8 +171,8 @@ version: '3.8'
 
 services:
   runner:
-    image: agentmesh/runner:latest
-    container_name: agentmesh-runner
+    image: agentsmesh/runner:latest
+    container_name: agentsmesh-runner
     restart: unless-stopped
     environment:
       - REGISTRATION_TOKEN=${REGISTRATION_TOKEN}
@@ -203,8 +203,8 @@ oauth:
 
 1. Create GitLab Application:
    - Go to Admin → Applications
-   - Name: AgentMesh
-   - Redirect URI: `https://agentmesh.company.com/api/v1/auth/oauth/gitlab/callback`
+   - Name: AgentsMesh
+   - Redirect URI: `https://agentsmesh.company.com/api/v1/auth/oauth/gitlab/callback`
    - Scopes: `api`, `read_user`, `read_repository`
 
 ### GitHub Enterprise
@@ -228,7 +228,7 @@ ingress:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   tls:
     enabled: true
-    secretName: agentmesh-tls
+    secretName: agentsmesh-tls
 ```
 
 ### Using Custom Certificates
@@ -243,7 +243,7 @@ ingress:
 kubectl create secret tls custom-tls-secret \
   --cert=path/to/cert.pem \
   --key=path/to/key.pem \
-  -n agentmesh
+  -n agentsmesh
 ```
 
 ## LDAP/SSO Integration
@@ -254,7 +254,7 @@ kubectl create secret tls custom-tls-secret \
 auth:
   saml:
     enabled: true
-    entityId: https://agentmesh.company.com
+    entityId: https://agentsmesh.company.com
     ssoUrl: https://idp.company.com/saml/sso
     certificate: |
       -----BEGIN CERTIFICATE-----
@@ -276,7 +276,7 @@ auth:
     port: 636
     useTLS: true
     baseDN: dc=company,dc=com
-    bindDN: cn=agentmesh,ou=services,dc=company,dc=com
+    bindDN: cn=agentsmesh,ou=services,dc=company,dc=com
     userFilter: (uid={0})
     groupFilter: (member={0})
 ```
@@ -287,10 +287,10 @@ auth:
 
 ```bash
 # Automated backup with cron
-0 2 * * * pg_dump -h localhost -U agentmesh agentmesh | gzip > /backups/agentmesh-$(date +\%Y\%m\%d).sql.gz
+0 2 * * * pg_dump -h localhost -U agentsmesh agentsmesh | gzip > /backups/agentsmesh-$(date +\%Y\%m\%d).sql.gz
 
 # Restore
-gunzip -c backup.sql.gz | psql -h localhost -U agentmesh agentmesh
+gunzip -c backup.sql.gz | psql -h localhost -U agentsmesh agentsmesh
 ```
 
 ### Full System Backup
@@ -302,10 +302,10 @@ Using Velero for Kubernetes:
 velero install --provider aws --bucket <bucket> ...
 
 # Create backup
-velero backup create agentmesh-backup --include-namespaces agentmesh
+velero backup create agentsmesh-backup --include-namespaces agentsmesh
 
 # Restore
-velero restore create --from-backup agentmesh-backup
+velero restore create --from-backup agentsmesh-backup
 ```
 
 ## Monitoring & Observability
@@ -322,8 +322,8 @@ monitoring:
   grafana:
     enabled: true
     dashboards:
-      - agentmesh-overview
-      - agentmesh-pods
+      - agentsmesh-overview
+      - agentsmesh-pods
 ```
 
 ### Log Aggregation
@@ -378,7 +378,7 @@ securityContext:
 
 ```bash
 # Helm
-helm upgrade agentmesh agentmesh/agentmesh -n agentmesh -f values.yaml
+helm upgrade agentsmesh agentsmesh/agentsmesh -n agentsmesh -f values.yaml
 
 # Docker Compose
 docker compose pull
@@ -396,5 +396,5 @@ docker compose up -d
 ## Support
 
 For enterprise support and consulting:
-- Email: enterprise@agentmesh.io
-- Documentation: https://docs.agentmesh.io/self-hosted
+- Email: enterprise@agentsmesh.io
+- Documentation: https://docs.agentsmesh.io/self-hosted

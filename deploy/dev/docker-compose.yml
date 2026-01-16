@@ -1,4 +1,4 @@
-# Docker Compose for AgentMesh Development
+# Docker Compose for AgentsMesh Development
 #
 # 多 Worktree 支持：
 # 每个 worktree 可以独立运行，通过以下方式隔离：
@@ -19,15 +19,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: agentmesh
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentmesh_dev}
-      POSTGRES_DB: agentmesh
+      POSTGRES_USER: agentsmesh
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentsmesh_dev}
+      POSTGRES_DB: agentsmesh
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agentmesh"]
+      test: ["CMD-SHELL", "pg_isready -U agentsmesh"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -90,9 +90,9 @@ services:
       # Database
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=agentmesh
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-agentmesh_dev}
-      - DB_NAME=agentmesh
+      - DB_USER=agentsmesh
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-agentsmesh_dev}
+      - DB_NAME=agentsmesh
       - DB_SSLMODE=disable
       # Redis
       - REDIS_URL=redis://redis:6379
@@ -105,7 +105,7 @@ services:
       # Logging
       - LOG_LEVEL=debug
       - LOG_FORMAT=text
-      - LOG_FILE=/app/logs/agentmesh.log
+      - LOG_FILE=/app/logs/agentsmesh.log
       # Email
       - EMAIL_PROVIDER=console
       - FRONTEND_BASE_URL=http://localhost:${HTTP_PORT:-80}
@@ -117,7 +117,7 @@ services:
       - STORAGE_ENDPOINT=minio:9000
       - STORAGE_PUBLIC_ENDPOINT=localhost:${MINIO_API_PORT:-9000}
       - STORAGE_REGION=us-east-1
-      - STORAGE_BUCKET=agentmesh
+      - STORAGE_BUCKET=agentsmesh
       - STORAGE_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - STORAGE_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - STORAGE_USE_SSL=false
@@ -199,7 +199,7 @@ services:
       - runner-go-build-cache:/home/runner/.cache/go-build
       # Workspace for sandboxes
       - runner_workspace:/workspace
-      # AgentMesh config directory (note: .agentsmesh with 's')
+      # AgentsMesh config directory
       - runner_config:/home/runner/.agentsmesh
     # Use entrypoint script for auto-configuration
     entrypoint: ["/usr/local/bin/runner-entrypoint.sh"]

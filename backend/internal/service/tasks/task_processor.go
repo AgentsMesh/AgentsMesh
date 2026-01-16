@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	infraTasks "github.com/anthropics/agentmesh/backend/internal/infra/tasks"
+	infraTasks "github.com/anthropics/agentsmesh/backend/internal/infra/tasks"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )

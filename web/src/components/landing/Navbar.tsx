@@ -55,7 +55,7 @@ export function Navbar() {
                 />
               </svg>
             </div>
-            <span className="text-xl font-bold">AgentMesh</span>
+            <span className="text-xl font-bold">AgentsMesh</span>
           </Link>
 
           {/* Desktop Navigation */}

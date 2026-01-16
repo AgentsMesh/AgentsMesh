@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"gorm.io/gorm"
 )
 

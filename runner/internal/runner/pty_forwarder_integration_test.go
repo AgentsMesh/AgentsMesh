@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/terminal"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal"
 )
 
 // mockReadWriter implements a simple io.ReadWriter for testing readLoop

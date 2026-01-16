@@ -1,10 +1,10 @@
-package devmesh
+package mesh
 
 import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

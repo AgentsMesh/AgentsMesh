@@ -88,14 +88,14 @@ export type {
 export { bindingApi } from "./binding";
 export type { PodBinding } from "./binding";
 
-// DevMesh
-export { devmeshApi } from "./devmesh";
+// Mesh
+export { meshApi } from "./mesh";
 export type {
-  DevMeshNodeData,
-  DevMeshEdgeData,
+  MeshNodeData,
+  MeshEdgeData,
   ChannelInfoData,
-  DevMeshTopologyData,
-} from "./devmesh";
+  MeshTopologyData,
+} from "./mesh";
 
 // Message
 export { messageApi } from "./message";

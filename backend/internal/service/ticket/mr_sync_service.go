@@ -6,9 +6,9 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentmesh/backend/internal/domain/ticket"
-	"github.com/anthropics/agentmesh/backend/internal/infra/git"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
 	"gorm.io/gorm"
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/user"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
 // Interface defines the user service operations.

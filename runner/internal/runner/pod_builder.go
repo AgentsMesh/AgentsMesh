@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/client"
-	"github.com/anthropics/agentmesh/runner/internal/terminal"
-	"github.com/anthropics/agentmesh/runner/internal/workspace"
+	"github.com/anthropics/agentsmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal"
+	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
 
 // PodBuilder builds pods using the Builder pattern.

@@ -340,7 +340,7 @@ describe("Terminal Connection Pool", () => {
 
     // Set up auth data for WebSocket URL construction
     localStorage.setItem(
-      "agentmesh-auth",
+      "agentsmesh-auth",
       JSON.stringify({
         state: {
           token: "test-token",
@@ -498,7 +498,7 @@ describe("Terminal Connection Pool", () => {
     });
 
     it("should handle invalid auth data JSON", () => {
-      localStorage.setItem("agentmesh-auth", "invalid json");
+      localStorage.setItem("agentsmesh-auth", "invalid json");
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const onMessage = vi.fn();
 

@@ -31,7 +31,7 @@ function getActivityTitle(activity: ActivityType): string {
     case "tickets":
       return "Tickets";
     case "mesh":
-      return "AgentMesh";
+      return "AgentsMesh";
     case "repositories":
       return "Repositories";
     case "runners":
@@ -39,7 +39,7 @@ function getActivityTitle(activity: ActivityType): string {
     case "settings":
       return "Settings";
     default:
-      return "AgentMesh";
+      return "AgentsMesh";
   }
 }
 

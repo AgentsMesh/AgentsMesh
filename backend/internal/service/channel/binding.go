@@ -3,7 +3,7 @@ package channel
 import (
 	"context"
 
-	"github.com/anthropics/agentmesh/backend/internal/domain/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
 // CreateBinding creates a pod binding request

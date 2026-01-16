@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import type { ChannelInfo } from "@/stores/devmesh";
+import type { ChannelInfo } from "@/stores/mesh";
 
 interface ChannelNodeProps {
   data: {

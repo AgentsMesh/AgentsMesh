@@ -1,9 +1,9 @@
 package v1
 
 import (
-	"github.com/anthropics/agentmesh/backend/internal/middleware"
-	"github.com/anthropics/agentmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentmesh/backend/internal/service/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/gin-gonic/gin"
 )
 

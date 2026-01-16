@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentmesh/runner/internal/process"
+	"github.com/anthropics/agentsmesh/runner/internal/process"
 )
 
 // ClaudeStatus represents the status of claude process.
