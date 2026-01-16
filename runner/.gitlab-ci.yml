@@ -232,6 +232,21 @@ release:github:
     - |
       echo "Creating GitHub release for $CI_COMMIT_TAG..."
 
+      # Check if release already exists
+      EXISTING_RELEASE=$(curl -s \
+        -H "Authorization: token $GITHUB_RELEASE_TOKEN" \
+        "https://api.github.com/repos/AgentsMesh/AgentsMeshRunner/releases/tags/$CI_COMMIT_TAG")
+
+      EXISTING_ID=$(echo "$EXISTING_RELEASE" | jq -r '.id')
+
+      if [ "$EXISTING_ID" != "null" ] && [ -n "$EXISTING_ID" ]; then
+        echo "Release already exists (ID: $EXISTING_ID). Deleting and recreating..."
+        curl -s -X DELETE \
+          -H "Authorization: token $GITHUB_RELEASE_TOKEN" \
+          "https://api.github.com/repos/AgentsMesh/AgentsMeshRunner/releases/$EXISTING_ID"
+        sleep 2
+      fi
+
       # Create release
       RELEASE_RESPONSE=$(curl -s -X POST \
         -H "Authorization: token $GITHUB_RELEASE_TOKEN" \
