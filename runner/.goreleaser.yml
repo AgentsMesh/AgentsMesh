@@ -14,6 +14,7 @@ before:
 
 builds:
   # CLI build (headless mode for servers) - no CGO required
+  # Desktop mode is not available in CLI builds (use Desktop build for system tray)
   - id: runner-cli
     main: ./cmd/runner
     binary: runner
@@ -30,8 +31,7 @@ builds:
       - -s -w
       - -X main.version={{.Version}}
       - -X main.buildTime={{.Date}}
-    tags:
-      - nocgo
+    # No tags needed - CLI build uses default stub implementations
 
 archives:
   - id: cli-archive

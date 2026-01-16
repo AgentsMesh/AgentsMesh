@@ -1,0 +1,277 @@
+# GitLab CI/CD configuration for AgentsMesh Runner
+#
+# This pipeline builds CLI and Desktop versions, then releases to GitHub.
+#
+# Required CI/CD Variables:
+#   - GITHUB_RELEASE_TOKEN: GitHub PAT with repo access to AgentsMesh/AgentsMeshRunner
+#
+# Required Runners:
+#   - Docker runner (for CLI builds)
+#   - macOS runner with tags: [macos, amd64] and [macos, arm64]
+#   - Windows runner with tag: [windows]
+#   - Linux runner with tag: [linux] (for desktop build with GTK)
+
+stages:
+  - build
+  - package
+  - release
+
+variables:
+  VERSION: ${CI_COMMIT_TAG:-dev}
+  GO_VERSION: "1.23"
+
+# =============================================================================
+# CLI Build (GoReleaser - cross-compile all platforms)
+# =============================================================================
+
+build:cli:
+  stage: build
+  image: goreleaser/goreleaser:v2
+  script:
+    - goreleaser release --snapshot --clean
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_TAG
+
+# =============================================================================
+# Desktop Builds (require native runners with CGO)
+# =============================================================================
+
+build:desktop:macos-amd64:
+  stage: build
+  tags: [macos, amd64]
+  script:
+    - |
+      CGO_ENABLED=1 go build -tags desktop \
+        -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        -o runner-desktop-darwin-amd64 ./cmd/runner
+  artifacts:
+    paths:
+      - runner-desktop-darwin-amd64
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_TAG
+
+build:desktop:macos-arm64:
+  stage: build
+  tags: [macos, arm64]
+  script:
+    - |
+      CGO_ENABLED=1 go build -tags desktop \
+        -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        -o runner-desktop-darwin-arm64 ./cmd/runner
+  artifacts:
+    paths:
+      - runner-desktop-darwin-arm64
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_TAG
+
+build:desktop:linux:
+  stage: build
+  # Use Docker executor with GTK dependencies pre-installed
+  # If using shell executor, ensure libgtk-3-dev and libappindicator3-dev are installed
+  image: golang:${GO_VERSION}
+  before_script:
+    - apt-get update && apt-get install -y libgtk-3-dev libappindicator3-dev
+  script:
+    - |
+      CGO_ENABLED=1 go build -tags desktop \
+        -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        -o runner-desktop-linux-amd64 ./cmd/runner
+  artifacts:
+    paths:
+      - runner-desktop-linux-amd64
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_TAG
+
+build:desktop:windows:
+  stage: build
+  tags: [windows]
+  script:
+    - |
+      $env:CGO_ENABLED=1
+      go build -tags desktop `
+        -ldflags "-s -w -X main.version=$env:VERSION -X main.buildTime=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')" `
+        -o runner-desktop-windows-amd64.exe ./cmd/runner
+  artifacts:
+    paths:
+      - runner-desktop-windows-amd64.exe
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_TAG
+
+# =============================================================================
+# Package Desktop Applications
+# =============================================================================
+
+package:macos-dmg:
+  stage: package
+  tags: [macos, arm64]
+  needs:
+    - job: build:desktop:macos-amd64
+      artifacts: true
+    - job: build:desktop:macos-arm64
+      artifacts: true
+  before_script:
+    - brew install create-dmg || true
+  script:
+    - |
+      # Create universal binary
+      lipo -create -output runner-desktop \
+        runner-desktop-darwin-amd64 \
+        runner-desktop-darwin-arm64
+
+      # Create .app bundle
+      APP_NAME="AgentsMesh Runner.app"
+      mkdir -p "$APP_NAME/Contents/MacOS"
+      mkdir -p "$APP_NAME/Contents/Resources"
+
+      cp runner-desktop "$APP_NAME/Contents/MacOS/runner-desktop"
+      chmod +x "$APP_NAME/Contents/MacOS/runner-desktop"
+
+      # Update Info.plist with version
+      sed "s/1.0.0/${VERSION#v}/g" build/darwin/Info.plist > "$APP_NAME/Contents/Info.plist"
+
+      # Create DMG
+      create-dmg \
+        --volname "AgentsMesh Runner" \
+        --window-pos 200 120 \
+        --window-size 600 400 \
+        --icon-size 100 \
+        --icon "AgentsMesh Runner.app" 150 185 \
+        --hide-extension "AgentsMesh Runner.app" \
+        --app-drop-link 450 185 \
+        "AgentsMesh-Runner-${VERSION}.dmg" \
+        "AgentsMesh Runner.app" || true
+  artifacts:
+    paths:
+      - "*.dmg"
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_TAG
+
+package:linux-archive:
+  stage: package
+  tags: [linux]
+  image: alpine:latest
+  needs:
+    - job: build:desktop:linux
+      artifacts: true
+  script:
+    - |
+      tar -czvf "AgentsMesh-Runner-${VERSION}-linux-amd64.tar.gz" \
+        runner-desktop-linux-amd64
+  artifacts:
+    paths:
+      - "*.tar.gz"
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_TAG
+
+package:windows-archive:
+  stage: package
+  tags: [linux]
+  image: alpine:latest
+  needs:
+    - job: build:desktop:windows
+      artifacts: true
+  before_script:
+    - apk add --no-cache zip
+  script:
+    - |
+      zip "AgentsMesh-Runner-${VERSION}-windows-amd64.zip" \
+        runner-desktop-windows-amd64.exe
+  artifacts:
+    paths:
+      - "*.zip"
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_TAG
+
+# =============================================================================
+# Release to GitHub
+# =============================================================================
+
+release:github:
+  stage: release
+  image: alpine:latest
+  needs:
+    - job: build:cli
+      artifacts: true
+    - job: package:macos-dmg
+      artifacts: true
+    - job: package:linux-archive
+      artifacts: true
+    - job: package:windows-archive
+      artifacts: true
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - |
+      echo "Creating GitHub release for $CI_COMMIT_TAG..."
+
+      # Create release
+      RELEASE_RESPONSE=$(curl -s -X POST \
+        -H "Authorization: token $GITHUB_RELEASE_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{\"tag_name\":\"$CI_COMMIT_TAG\",\"name\":\"AgentsMesh Runner $CI_COMMIT_TAG\",\"draft\":false,\"prerelease\":false}" \
+        "https://api.github.com/repos/AgentsMesh/AgentsMeshRunner/releases")
+
+      UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | sed 's/{.*}//')
+
+      if [ "$UPLOAD_URL" = "null" ] || [ -z "$UPLOAD_URL" ]; then
+        echo "Failed to create release. Response:"
+        echo "$RELEASE_RESPONSE"
+        exit 1
+      fi
+
+      echo "Upload URL: $UPLOAD_URL"
+
+      # Upload CLI artifacts from GoReleaser dist/
+      echo "Uploading CLI artifacts..."
+      for file in dist/*.tar.gz dist/*.zip; do
+        if [ -f "$file" ]; then
+          filename=$(basename "$file")
+          echo "  Uploading $filename..."
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_RELEASE_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"$file" \
+            "$UPLOAD_URL?name=$filename" > /dev/null
+        fi
+      done
+
+      # Upload Linux packages
+      for file in dist/*.deb dist/*.rpm dist/*.apk; do
+        if [ -f "$file" ]; then
+          filename=$(basename "$file")
+          echo "  Uploading $filename..."
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_RELEASE_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"$file" \
+            "$UPLOAD_URL?name=$filename" > /dev/null
+        fi
+      done
+
+      # Upload Desktop artifacts
+      echo "Uploading Desktop artifacts..."
+      for file in *.dmg *.tar.gz *.zip; do
+        if [ -f "$file" ] && [[ "$file" == AgentsMesh* ]]; then
+          echo "  Uploading $file..."
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_RELEASE_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"$file" \
+            "$UPLOAD_URL?name=$file" > /dev/null
+        fi
+      done
+
+      echo "Release complete!"
+  rules:
+    - if: $CI_COMMIT_TAG

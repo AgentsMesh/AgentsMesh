@@ -1,4 +1,4 @@
-//go:build !nocgo
+//go:build desktop
 
 // Package tray provides system tray functionality for the desktop mode.
 package tray

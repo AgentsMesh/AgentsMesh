@@ -1,4 +1,4 @@
-//go:build !nocgo
+//go:build desktop
 
 package tray
 

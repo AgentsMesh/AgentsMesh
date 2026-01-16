@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/anthropics/agentmesh/runner/internal/config"
+	"github.com/anthropics/agentmesh/runner/internal/console"
 	"github.com/anthropics/agentmesh/runner/internal/runner"
 )
 
@@ -35,6 +36,8 @@ func main() {
 		runService(os.Args[2:])
 	case "desktop":
 		runDesktop(os.Args[2:])
+	case "webconsole", "console":
+		runWebConsole(os.Args[2:])
 	case "version", "-v", "--version":
 		fmt.Printf("AgentsMesh Runner %s (built %s)\n", version, buildTime)
 	case "help", "-h", "--help":
@@ -54,8 +57,9 @@ Usage:
 Commands:
   register    Register this runner with the AgentsMesh server
   run         Start the runner in CLI mode (requires prior registration)
+  webconsole  Open the web console in browser
   service     Manage runner as a system service (install/start/stop)
-  desktop     Start runner in desktop mode with system tray
+  desktop     Start runner in desktop mode with system tray (Desktop build only)
   version     Show version information
   help        Show this help message
 
@@ -225,11 +229,22 @@ func runRunnerLegacy(args []string) {
 	startRunner(cfg)
 }
 
+// DefaultConsolePort is the default port for the web console.
+const DefaultConsolePort = 19080
+
 func startRunner(cfg *config.Config) {
 	// Create runner instance
 	r, err := runner.New(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create runner: %v", err)
+	}
+
+	// Start web console
+	consoleServer := console.New(cfg, DefaultConsolePort, version)
+	if err := consoleServer.Start(); err != nil {
+		log.Printf("Warning: Failed to start web console: %v", err)
+	} else {
+		log.Printf("Web console available at %s", consoleServer.GetURL())
 	}
 
 	// Setup context with cancellation
@@ -248,9 +263,18 @@ func startRunner(cfg *config.Config) {
 
 	// Start runner
 	log.Printf("Starting AgentsMesh Runner %s", version)
+
+	// Update console status when runner state changes
+	consoleServer.UpdateStatus(true, false, 0, 0, "")
+	consoleServer.AddLog("info", "Runner starting...")
+
 	if err := r.Run(ctx); err != nil {
+		consoleServer.UpdateStatus(false, false, 0, 0, err.Error())
+		consoleServer.AddLog("error", fmt.Sprintf("Runner error: %v", err))
 		log.Fatalf("Runner error: %v", err)
 	}
 
+	// Stop web console
+	consoleServer.Stop()
 	log.Println("Runner shutdown complete")
 }
