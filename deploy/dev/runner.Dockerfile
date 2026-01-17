@@ -1,5 +1,6 @@
 # Development Dockerfile with hot reload using Air
 # Includes AI CLI tools: Claude Code, Codex, Gemini CLI, OpenCode
+# All AI CLI tools are pre-configured for headless/non-interactive mode
 FROM docker.1ms.run/library/golang:1.25-alpine
 
 WORKDIR /app
@@ -26,7 +27,9 @@ RUN apk add --no-cache \
     linux-headers \
     # For non-root user
     shadow \
-    sudo
+    sudo \
+    # For JSON processing in scripts
+    jq
 
 # ============================================
 # Install AI CLI Tools (as root, before user switch)
@@ -71,7 +74,30 @@ RUN addgroup -g 1000 runner && \
     mkdir -p /home/runner/.cache/go-build && \
     chown -R runner:runner /home/runner/.cache && \
     # Copy air binary to accessible location (installed via go install to /go/bin)
-    cp /go/bin/air /usr/local/bin/air
+    cp /go/bin/air /usr/local/bin/air && \
+    # ============================================
+    # Create AI CLI config directories
+    # ============================================
+    # Claude Code config directory
+    mkdir -p /home/runner/.claude && \
+    chown -R runner:runner /home/runner/.claude && \
+    # OpenAI Codex config directory
+    mkdir -p /home/runner/.codex && \
+    chown -R runner:runner /home/runner/.codex && \
+    # Gemini CLI config directory
+    mkdir -p /home/runner/.gemini && \
+    chown -R runner:runner /home/runner/.gemini && \
+    # OpenCode config directory
+    mkdir -p /home/runner/.opencode && \
+    chown -R runner:runner /home/runner/.opencode
+
+# ============================================
+# Copy AI CLI pre-configured settings
+# These settings enable headless/non-interactive mode
+# ============================================
+COPY --chown=runner:runner deploy/dev/ai-cli-configs/claude/settings.json /home/runner/.claude/settings.json
+COPY --chown=runner:runner deploy/dev/ai-cli-configs/codex/config.toml /home/runner/.codex/config.toml
+COPY --chown=runner:runner deploy/dev/ai-cli-configs/gemini/settings.json /home/runner/.gemini/settings.json
 
 # ============================================
 # Go module setup

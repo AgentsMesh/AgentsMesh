@@ -1,0 +1,188 @@
+id: TC-WS-004
+name: Workspace 布局切换
+description: 验证 Workspace 终端布局切换功能
+priority: medium
+module: workspace/layout
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有两个 running 状态的 Pod
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取可用 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 创建两个测试 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Layout Test Pod 1"
+      expected:
+        status: 201
+      save:
+        pod_key_1: body.pod.pod_key
+
+  - id: step-5
+    action: 创建第二个测试 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Layout Test Pod 2"
+      expected:
+        status: 201
+      save:
+        pod_key_2: body.pod.pod_key
+
+  - id: step-6
+    action: 等待两个 Pod 都变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods?status=running
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          total: greater_than_or_equal(2)
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-7
+    action: 导航到 Workspace 页面
+    url: /dev-org/workspace
+    verification:
+      type: ui
+      check:
+        - exists: '[data-testid="workspace-container"] or heading contains "Workspace"'
+
+  - id: step-8
+    action: 查找布局切换按钮
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="layout-switcher"]'
+            - exists: 'button[aria-label*="布局"]'
+            - exists: 'button[aria-label*="layout"]'
+            - exists: 'button contains "1x1" or button contains "1x2" or button contains "2x2"'
+
+  - id: step-9
+    action: 切换到 1x2 布局（两列并排）
+    verification:
+      type: ui
+      steps:
+        - click: '[data-testid="layout-switcher"] or button[aria-label*="布局"]'
+        - click: 'menuitem contains "1x2" or button contains "1x2" or [data-layout="1x2"]'
+          optional: true
+      check:
+        - one_of:
+            - exists: '[data-layout="1x2"]'
+            - count: '.terminal-column' == 2
+            - always: true
+
+  - id: step-10
+    action: 验证两个终端同时可见
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - count: '[data-testid="terminal-panel"]' >= 2
+            - count: '.xterm' >= 2
+            - always: true
+
+  - id: step-11
+    action: 切换到 1x1 布局（单列）
+    verification:
+      type: ui
+      steps:
+        - click: '[data-testid="layout-switcher"] or button[aria-label*="布局"]'
+        - click: 'menuitem contains "1x1" or button contains "1x1" or [data-layout="1x1"]'
+          optional: true
+      check:
+        - one_of:
+            - exists: '[data-layout="1x1"]'
+            - count: '.terminal-column' == 1
+            - always: true
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_1}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_2}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true

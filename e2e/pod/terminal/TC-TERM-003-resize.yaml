@@ -1,0 +1,210 @@
+id: TC-TERM-003
+name: 终端窗口调整
+description: 验证终端窗口大小调整功能
+priority: medium
+module: pod/terminal
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个 running 状态的 Pod
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取可用 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 创建 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Terminal Resize Test"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        pod_key: body.pod.pod_key
+
+  - id: step-5
+    action: 等待 Pod 状态变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-6
+    action: 调整终端窗口大小（正常尺寸）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/resize
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          cols: 120
+          rows: 40
+      expected:
+        status: 200
+        body:
+          message: contains(resized)
+
+  - id: step-7
+    action: 调整终端窗口大小（较小尺寸）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/resize
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          cols: 80
+          rows: 24
+      expected:
+        status: 200
+        body:
+          message: contains(resized)
+
+  - id: step-8
+    action: 调整终端窗口大小（较大尺寸）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/resize
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          cols: 200
+          rows: 60
+      expected:
+        status: 200
+        body:
+          message: contains(resized)
+
+  - id: step-9
+    action: 调整终端窗口大小（无效尺寸 - cols 为 0）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/resize
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          cols: 0
+          rows: 24
+      expected:
+        status: 400
+
+  - id: step-10
+    action: 调整终端窗口大小（无效尺寸 - rows 为 0）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/resize
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          cols: 80
+          rows: 0
+      expected:
+        status: 400
+
+  - id: step-11
+    action: 调整终端窗口大小（缺少参数）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/resize
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          cols: 80
+      expected:
+        status: 400
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key}/terminate
+      headers:
+        Authorization: Bearer {access_token}

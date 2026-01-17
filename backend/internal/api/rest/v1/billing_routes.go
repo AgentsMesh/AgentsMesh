@@ -31,6 +31,7 @@ func RegisterBillingHandlers(rg *gin.RouterGroup, billingService *billingsvc.Ser
 	rg.POST("/subscription/reactivate", handler.ReactivateSubscription)
 	rg.POST("/subscription/change-cycle", handler.ChangeBillingCycle)
 	rg.POST("/subscription/downgrade", handler.DowngradeSubscription)
+	rg.PUT("/subscription/auto-renew", handler.UpdateAutoRenew)
 
 	// Seat management
 	rg.GET("/seats", handler.GetSeatUsage)

@@ -82,10 +82,10 @@ steps:
     verification:
       type: database
       query: |
-        SELECT is_default FROM agent_credential_profiles WHERE name = 'Default Test Profile'
+        SELECT is_default FROM user_agent_credential_profiles WHERE name = 'Default Test Profile'
       expected:
         is_default: true
 
 cleanup:
   - sql: |
-      DELETE FROM agent_credential_profiles WHERE name = 'Default Test Profile';
+      DELETE FROM user_agent_credential_profiles WHERE name = 'Default Test Profile';

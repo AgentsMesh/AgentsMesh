@@ -1,0 +1,166 @@
+id: TC-RUNNER-002
+name: Runner 容量进度条显示
+description: 验证 Runner 容量进度条正确显示活跃 Pod 数量和最大容量
+priority: high
+module: runner
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取 Runner 列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+        initial_active_pods: body.runners[0].active_pods
+        max_concurrent_pods: body.runners[0].max_concurrent_pods
+
+  - id: step-3
+    action: 导航到 Runners 管理页面
+    url: /dev-org/runners
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'heading contains "Runner"'
+            - exists: '[data-testid="runners-page"]'
+
+  - id: step-4
+    action: 验证容量进度条显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="capacity-progress"]'
+            - exists: '[role="progressbar"]'
+            - exists: '.progress-bar'
+            - exists: 'text contains "/" and text contains "{max_concurrent_pods}"'
+
+  - id: step-5
+    action: 验证容量数值显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - contains: "{initial_active_pods}"
+            - contains: "{max_concurrent_pods}"
+            - exists: 'text contains "Pod"'
+
+  - id: step-6
+    action: 获取可用 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-7
+    action: 创建 Pod 增加 Runner 负载
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Capacity Progress Test"
+      expected:
+        status: 201
+      save:
+        pod_key: body.pod.pod_key
+
+  - id: step-8
+    action: 等待 Pod 状态变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-9
+    action: 验证 API 返回的 active_pods 增加
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runner:
+            active_pods: greater_than({initial_active_pods})
+      save:
+        updated_active_pods: body.runner.active_pods
+
+  - id: step-10
+    action: 刷新 Runners 页面
+    url: /dev-org/runners
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - contains: "{updated_active_pods}"
+            - exists: '[data-testid="capacity-progress"]'
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key}/terminate
+      headers:
+        Authorization: Bearer {access_token}

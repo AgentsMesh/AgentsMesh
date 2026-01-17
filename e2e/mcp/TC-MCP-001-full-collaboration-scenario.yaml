@@ -1,0 +1,600 @@
+id: TC-MCP-001
+name: MCP 全工具协作场景测试
+description: |
+  完整测试所有 24 个 MCP 工具的端到端场景。
+
+  **重要**: 本测试以 UI 界面验证为主，API 调用仅用于模拟 MCP 工具行为。
+  每个关键操作后都需要在相应的 UI 页面验证结果。
+
+  ## 验证原则
+  1. Pod 创建/终止 → 在 Workspace 页面和 Mesh 页面验证
+  2. Channel 操作 → 在 Mesh 页面验证频道节点
+  3. Binding 操作 → 在 Mesh 页面验证连接线
+  4. Ticket 操作 → 在 Tickets 页面验证
+  5. 终端操作 → 在 Workspace 终端面板验证
+
+  ## MCP Tools 覆盖 (24)
+  - Discovery (3): list_available_pods, list_runners, list_repositories
+  - Binding (6): bind_pod, accept_binding, reject_binding, get_bindings, get_bound_pods, unbind_pod
+  - Channel (7): create_channel, search_channels, get_channel, send_channel_message, get_channel_messages, get_channel_document, update_channel_document
+  - Terminal (3): observe_terminal, send_terminal_text, send_terminal_key
+  - Ticket (4): create_ticket, search_tickets, get_ticket, update_ticket
+  - Pod (1): create_pod
+
+priority: critical
+module: mcp
+type: scenario
+
+preconditions:
+  - 开发环境已启动 (docker compose up -d)
+  - 测试用户可登录 (dev@agentsmesh.local / devpass123)
+  - 至少有一个在线 Runner
+  - Chrome 浏览器已打开并可通过 DevTools MCP 控制
+
+test_data:
+  user_email: dev@agentsmesh.local
+  user_password: devpass123
+  org_slug: dev-org
+  base_url: http://localhost:8580
+
+setup:
+  sql: |
+    -- 清理测试数据
+    DELETE FROM channel_messages WHERE channel_id IN (SELECT id FROM channels WHERE name LIKE 'MCP-E2E%');
+    DELETE FROM channel_pods WHERE channel_id IN (SELECT id FROM channels WHERE name LIKE 'MCP-E2E%');
+    DELETE FROM channels WHERE name LIKE 'MCP-E2E%';
+    DELETE FROM pod_bindings WHERE initiator_pod LIKE '%-mcp-e2e-%' OR target_pod LIKE '%-mcp-e2e-%';
+    DELETE FROM pods WHERE initial_prompt LIKE 'MCP E2E%';
+    DELETE FROM tickets WHERE title LIKE 'MCP-E2E%';
+
+steps:
+  # ============================================================================
+  # Phase 1: UI 登录
+  # ============================================================================
+
+  - id: step-1
+    action: 通过 UI 登录系统
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/login"
+        - action: fill
+          selector: "input[name='email']"
+          value: "{user_email}"
+        - action: fill
+          selector: "input[name='password']"
+          value: "{user_password}"
+        - action: click
+          selector: "button[type='submit']"
+        - action: wait_for
+          text: "工作区"
+          timeout: 10000
+        - action: verify
+          description: 验证登录成功，显示 Workspace 页面
+
+  # ============================================================================
+  # Phase 2: UI 创建 Pod 并验证
+  # ============================================================================
+
+  - id: step-2
+    action: "[MCP: create_pod] 通过 UI 创建 Pod A (Claude Code)"
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/workspace"
+        - action: click
+          selector: "button:has-text('新建 Pod')"
+        - action: wait_for
+          text: "选择 Runner"
+        - action: select
+          selector: "select[name='runner']"
+          value: "dev-runner"
+        - action: select
+          selector: "select[name='agent']"
+          value: "Claude Code"
+        - action: click
+          selector: "button:has-text('创建 Pod')"
+        - action: wait_for
+          text: "Pod created"
+          timeout: 15000
+        - action: verify
+          description: |
+            验证:
+            1. 左侧 Pod 列表显示新 Pod
+            2. Runner 容量计数增加
+            3. 终端标签页显示新 Pod
+      save:
+        pod_key_a: 从 UI 或 API 获取新创建的 Pod key
+
+  - id: step-3
+    action: "[MCP: create_pod] 通过 UI 创建 Pod B (Claude Code)"
+    verification:
+      type: ui
+      steps:
+        - action: click
+          selector: "button:has-text('新建 Pod')"
+        - action: select
+          selector: "select[name='runner']"
+          value: "dev-runner"
+        - action: select
+          selector: "select[name='agent']"
+          value: "Claude Code"
+        - action: click
+          selector: "button:has-text('创建 Pod')"
+        - action: wait_for
+          text: "Pod created"
+          timeout: 15000
+        - action: verify
+          description: 验证 Pod B 创建成功，显示在列表中
+      save:
+        pod_key_b: 从 UI 或 API 获取新创建的 Pod key
+
+  - id: step-4
+    action: 在 Mesh 页面验证新 Pod 显示
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/mesh"
+        - action: wait_for
+          selector: "[data-testid='mesh-canvas']"
+          timeout: 5000
+        - action: verify
+          description: |
+            验证 Mesh 页面:
+            1. 网络统计显示正确的活跃 Pod 数量
+            2. Pod 列表显示新创建的两个 Pod
+            3. 拓扑图中显示 Pod 节点 (Running 状态)
+
+  # ============================================================================
+  # Phase 3: Binding 操作并在 Mesh 验证
+  # ============================================================================
+
+  - id: step-5
+    action: "[MCP: bind_pod] 通过 API 创建 Binding (Pod A -> Pod B)"
+    note: MCP 工具通过 API 调用，但结果需要在 UI 验证
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/{org_slug}/bindings
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+          X-Pod-Key: "{pod_key_a}"
+        body:
+          target_pod: "{pod_key_b}"
+          scopes:
+            - "terminal:read"
+            - "terminal:write"
+      expected:
+        status: 201
+      save:
+        binding_id: body.binding.id
+
+  - id: step-6
+    action: 在 Mesh 页面验证 Binding 连接线
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/mesh"
+        - action: wait_for
+          timeout: 3000
+        - action: take_snapshot
+        - action: verify
+          description: |
+            验证 Mesh 页面:
+            1. 网络统计显示 Binding 数量增加
+            2. 拓扑图中显示 Pod A 到 Pod B 的连接线
+            3. 连接线显示为 "活跃绑定" 状态
+
+  # ============================================================================
+  # Phase 4: Terminal 操作并在 Workspace 验证
+  # ============================================================================
+
+  - id: step-7
+    action: "[MCP: send_terminal_text] 通过 API 向 Pod B 终端发送命令"
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/{org_slug}/pods/{pod_key_b}/terminal/input
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+          X-Pod-Key: "{pod_key_a}"
+        body:
+          input: "echo 'Hello from MCP E2E Test'"
+      expected:
+        status: 200
+
+  - id: step-8
+    action: "[MCP: send_terminal_key] 发送 Enter 键执行命令"
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/{org_slug}/pods/{pod_key_b}/terminal/input
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+          X-Pod-Key: "{pod_key_a}"
+        body:
+          input: "\r"
+      expected:
+        status: 200
+
+  - id: step-9
+    action: 在 Workspace 页面验证终端输出
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/workspace"
+        - action: click
+          description: 点击 Pod B 的终端标签
+        - action: wait_for
+          timeout: 2000
+        - action: take_snapshot
+        - action: verify
+          description: |
+            验证终端输出:
+            1. 终端显示已发送的命令
+            2. 终端显示命令执行结果 "Hello from MCP E2E Test"
+
+  # ============================================================================
+  # Phase 5: Channel 操作并在 Mesh 验证
+  # ============================================================================
+
+  - id: step-10
+    action: "[MCP: create_channel] 通过 API 创建协作频道"
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/{org_slug}/channels
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+          X-Pod-Key: "{pod_key_a}"
+        body:
+          name: "MCP-E2E-Collab-Channel"
+          description: "E2E 测试协作频道"
+      expected:
+        status: 201
+      save:
+        channel_id: body.channel.id
+
+  - id: step-11
+    action: 在 Mesh 页面验证新频道显示
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/mesh"
+        - action: wait_for
+          timeout: 3000
+        - action: take_snapshot
+        - action: verify
+          description: |
+            验证 Mesh 页面:
+            1. 频道列表显示 "MCP-E2E-Collab-Channel"
+            2. 网络统计显示频道数量增加
+            3. 拓扑图中显示频道节点
+
+  - id: step-12
+    action: "[MCP: send_channel_message] 发送消息到频道"
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/{org_slug}/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+          X-Pod-Key: "{pod_key_a}"
+        body:
+          content: "Hello from Pod A via MCP!"
+      expected:
+        status: 201
+
+  - id: step-13
+    action: "[MCP: update_channel_document] 更新频道共享文档"
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/{org_slug}/channels/{channel_id}/document
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+          X-Pod-Key: "{pod_key_a}"
+        body:
+          document: "# MCP E2E Test Document\n\nThis is a shared document created via MCP."
+      expected:
+        status: 200
+
+  - id: step-14
+    action: "[MCP: get_channel_document] 获取频道共享文档"
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/{org_slug}/channels/{channel_id}/document
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_b}"
+      expected:
+        status: 200
+        body:
+          document: contains "MCP E2E Test Document"
+
+  # ============================================================================
+  # Phase 6: Ticket 操作并在 Tickets 页面验证
+  # ============================================================================
+
+  - id: step-15
+    action: "[MCP: create_ticket] 通过 API 创建工单"
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/{org_slug}/tickets
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+          X-Pod-Key: "{pod_key_a}"
+        body:
+          title: "MCP-E2E-Ticket: Test Task"
+          description: "This ticket was created via MCP for E2E testing."
+          type: "task"
+          priority: "medium"
+          status: "backlog"
+      expected:
+        status: 201
+      save:
+        ticket_id: body.ticket.id
+        ticket_identifier: body.ticket.identifier
+
+  - id: step-16
+    action: 在 Tickets 页面验证新工单显示
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/tickets"
+        - action: wait_for
+          text: "MCP-E2E-Ticket"
+          timeout: 5000
+        - action: take_snapshot
+        - action: verify
+          description: |
+            验证 Tickets 页面:
+            1. 工单列表显示 "MCP-E2E-Ticket: Test Task"
+            2. 工单状态显示为 "backlog"
+            3. 工单优先级显示为 "medium"
+
+  - id: step-17
+    action: "[MCP: update_ticket] 更新工单状态"
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/{org_slug}/tickets/{ticket_id}
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+          X-Pod-Key: "{pod_key_b}"
+        body:
+          status: "in_progress"
+      expected:
+        status: 200
+
+  - id: step-18
+    action: 在 Tickets 页面验证工单状态更新
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/tickets"
+        - action: wait_for
+          timeout: 2000
+        - action: take_snapshot
+        - action: verify
+          description: 验证工单状态已更新为 "in_progress"
+
+  # ============================================================================
+  # Phase 7: 解绑并验证权限撤销
+  # ============================================================================
+
+  - id: step-19
+    action: "[MCP: unbind_pod] 解除 Binding"
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/{org_slug}/bindings/{binding_id}
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+      expected:
+        status: 200
+
+  - id: step-20
+    action: 在 Mesh 页面验证 Binding 已解除
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/mesh"
+        - action: wait_for
+          timeout: 3000
+        - action: take_snapshot
+        - action: verify
+          description: |
+            验证 Mesh 页面:
+            1. 网络统计显示 Binding 数量减少
+            2. 拓扑图中 Pod A 到 Pod B 的连接线已消失或变为非活跃状态
+
+  - id: step-21
+    action: "[MCP: observe_terminal] 验证解绑后无权限访问终端"
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/{org_slug}/pods/{pod_key_b}/terminal/observe
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+      expected:
+        status: 403
+        description: 解绑后应该返回 403 无权限
+
+  # ============================================================================
+  # Phase 8: 清理并验证最终状态
+  # ============================================================================
+
+  - id: step-22
+    action: 终止 Pod A
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/{org_slug}/pods/{pod_key_a}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-23
+    action: 终止 Pod B
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/{org_slug}/pods/{pod_key_b}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-24
+    action: 在 Mesh 页面验证最终状态
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/mesh"
+        - action: wait_for
+          timeout: 3000
+        - action: take_snapshot
+        - action: verify
+          description: |
+            验证最终状态:
+            1. 网络统计显示活跃 Pod 数量减少 2
+            2. Pod 节点显示为 "已终止" 状态或从拓扑图消失
+            3. 频道仍然存在
+
+  - id: step-25
+    action: 在 Workspace 页面验证 Pod 已终止
+    verification:
+      type: ui
+      steps:
+        - action: navigate
+          url: "{base_url}/{org_slug}/workspace"
+        - action: wait_for
+          timeout: 2000
+        - action: take_snapshot
+        - action: verify
+          description: |
+            验证 Workspace 页面:
+            1. Pod 列表中测试 Pod 显示为已完成/终止状态
+            2. Runner 容量计数已恢复
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/{org_slug}/channels/{channel_id}/archive
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/{org_slug}/pods/{pod_key_a}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/{org_slug}/pods/{pod_key_b}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - sql: |
+      DELETE FROM channel_messages WHERE channel_id IN (SELECT id FROM channels WHERE name LIKE 'MCP-E2E%');
+      DELETE FROM channel_pods WHERE channel_id IN (SELECT id FROM channels WHERE name LIKE 'MCP-E2E%');
+      DELETE FROM channels WHERE name LIKE 'MCP-E2E%';
+      DELETE FROM tickets WHERE title LIKE 'MCP-E2E%';
+
+expected_results:
+  - 所有 UI 页面正确显示 MCP 操作的结果
+  - Pod 创建后在 Workspace 和 Mesh 页面可见
+  - Binding 在 Mesh 拓扑图中显示连接线
+  - Channel 在 Mesh 频道列表中可见
+  - Ticket 在 Tickets 页面可见
+  - 终端输入在 Workspace 终端中可见
+  - 解绑后权限正确撤销 (API 返回 403)
+  - Pod 终止后状态正确更新
+
+verification_priority:
+  primary: ui
+  secondary: api
+  description: |
+    本测试以 UI 验证为主：
+    1. MCP 工具调用通过 API 模拟（Agent 内部行为）
+    2. 每个关键操作后必须在对应 UI 页面验证结果
+    3. UI 验证使用 Chrome DevTools MCP 工具
+    4. 截图/快照用于记录验证证据
+
+ui_pages:
+  - path: /{org_slug}/workspace
+    verifies: Pod 列表、终端输出、Runner 容量
+  - path: /{org_slug}/mesh
+    verifies: Pod 节点、Channel 节点、Binding 连接线、网络统计
+  - path: /{org_slug}/tickets
+    verifies: 工单列表、工单状态、工单详情
+
+mcp_tools_coverage:
+  discovery:
+    - list_available_pods: step-2 (通过 UI 创建 Pod 后验证列表)
+    - list_runners: step-2 (通过 UI 选择 Runner)
+    - list_repositories: 可选测试
+  binding:
+    - bind_pod: step-5
+    - accept_binding: auto-accept
+    - reject_binding: 可选测试
+    - get_bindings: step-6 (Mesh UI 验证)
+    - get_bound_pods: step-6 (Mesh UI 验证)
+    - unbind_pod: step-19
+  channel:
+    - create_channel: step-10
+    - search_channels: step-11 (Mesh UI 验证)
+    - get_channel: step-11 (Mesh UI 验证)
+    - send_channel_message: step-12
+    - get_channel_messages: 可通过 UI 验证
+    - get_channel_document: step-14
+    - update_channel_document: step-13
+  terminal:
+    - observe_terminal: step-9 (Workspace UI 验证), step-21 (权限验证)
+    - send_terminal_text: step-7
+    - send_terminal_key: step-8
+  ticket:
+    - create_ticket: step-15
+    - search_tickets: step-16 (Tickets UI 验证)
+    - get_ticket: step-16 (Tickets UI 验证)
+    - update_ticket: step-17
+  pod:
+    - create_pod: step-2, step-3

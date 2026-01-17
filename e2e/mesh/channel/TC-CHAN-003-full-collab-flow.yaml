@@ -1,0 +1,361 @@
+id: TC-CHAN-003
+name: Channel 多 Agent 协作完整流程
+description: |
+  验证 Channel 多 Agent 协作完整流程：
+  1. 创建 Channel
+  2. 多个 Pod 加入 Channel
+  3. Pod 之间发送消息
+  4. Pod 离开 Channel
+  5. 归档 Channel
+priority: critical
+module: mesh/channel
+type: scenario
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+setup:
+  sql: |
+    -- 清理可能存在的测试数据
+    DELETE FROM channels WHERE name LIKE 'E2E Full Collab%';
+    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Full Collab%';
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 创建 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          name: "E2E Full Collab Channel"
+          description: "Channel for full collaboration testing"
+      expected:
+        status: 201
+      save:
+        channel_id: body.channel.id
+
+  - id: step-3
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-4
+    action: 获取 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-5
+    action: 创建 Pod A
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Full Collab Pod A"
+      expected:
+        status: 201
+      save:
+        pod_key_a: body.pod.pod_key
+
+  - id: step-6
+    action: 创建 Pod B
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Full Collab Pod B"
+      expected:
+        status: 201
+      save:
+        pod_key_b: body.pod.pod_key
+
+  - id: step-7
+    action: 等待两个 Pod 都变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key_a}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-8
+    action: 等待 Pod B 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key_b}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-9
+    action: Pod A 加入 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          pod_key: "{pod_key_a}"
+      expected:
+        status: 200
+
+  - id: step-10
+    action: Pod B 加入 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          pod_key: "{pod_key_b}"
+      expected:
+        status: 200
+
+  - id: step-11
+    action: 获取 Channel 成员列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/pods
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          total: 2
+
+  - id: step-12
+    action: Pod A 发送消息
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          content: "Hello from Pod A!"
+          pod_key: "{pod_key_a}"
+      expected:
+        status: 201
+      save:
+        message_a_id: body.message.id
+
+  - id: step-13
+    action: Pod B 发送消息
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          content: "Hello from Pod B!"
+          pod_key: "{pod_key_b}"
+      expected:
+        status: 201
+      save:
+        message_b_id: body.message.id
+
+  - id: step-14
+    action: 获取消息列表验证
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          messages: length >= 2
+
+  - id: step-15
+    action: Pod A 离开 Channel
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/pods/{pod_key_a}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-16
+    action: 验证 Channel 成员减少
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/pods
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          total: 1
+
+  - id: step-17
+    action: 归档 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/archive
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-18
+    action: 验证 Channel 已归档
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels/{channel_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          channel:
+            is_archived: true
+
+  - id: step-19
+    action: 取消归档 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/unarchive
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-20
+    action: 验证 Channel 已取消归档
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels/{channel_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          channel:
+            is_archived: false
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/channels/{channel_id}/archive
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_a}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_b}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true

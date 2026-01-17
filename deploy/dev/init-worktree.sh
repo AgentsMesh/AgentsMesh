@@ -106,6 +106,10 @@ MINIO_ROOT_PASSWORD=minioadmin
 # OAuth (optional)
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+
+# AI CLI - Claude Code (使用内网网关)
+ANTHROPIC_BASE_URL=http://192.168.100.133:3456
+ANTHROPIC_AUTH_TOKEN=sk-zcf-x-ccr
 EOF
     success "生成 .env 配置 (worktree: $worktree_name)"
 }

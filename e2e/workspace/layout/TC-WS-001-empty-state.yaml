@@ -1,0 +1,87 @@
+id: TC-WS-001
+name: Workspace 空状态显示
+description: 验证 Workspace 页面在没有活跃 Pod 时显示空状态
+priority: medium
+module: workspace/layout
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取当前活跃 Pod 列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods?status=running
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+      save:
+        active_pods_count: body.total
+
+  - id: step-3
+    action: 导航到 Workspace 页面
+    url: /dev-org/workspace
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'heading contains "Workspace"'
+            - exists: 'text contains "工作区"'
+            - exists: '[data-testid="workspace-container"]'
+
+  - id: step-4
+    action: 验证页面基本元素
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'button contains "创建" or button contains "Create" or button contains "新建"'
+            - exists: '[data-testid="create-pod-button"]'
+            - exists: 'button contains "Pod"'
+
+  - id: step-5
+    action: 如果没有活跃 Pod，验证空状态显示
+    condition: "{active_pods_count} == 0"
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'text contains "暂无" or text contains "No" or text contains "Empty"'
+            - exists: 'text contains "创建" or text contains "Create"'
+            - exists: '[data-testid="empty-state"]'
+
+  - id: step-6
+    action: 验证可以打开创建 Pod 对话框
+    verification:
+      type: ui
+      steps:
+        - click: 'button contains "创建" or button contains "Create" or button contains "新建" or button contains "Pod"'
+      check:
+        - one_of:
+            - exists: 'dialog or [role="dialog"]'
+            - exists: 'text contains "Runner"'
+            - exists: 'text contains "Agent"'

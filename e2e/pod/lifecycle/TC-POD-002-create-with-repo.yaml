@@ -1,0 +1,127 @@
+id: TC-POD-002
+name: 创建关联仓库的 Pod
+description: 验证创建 Pod 时可以关联 Repository
+priority: high
+module: pod/lifecycle
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个 Runner 在线
+  - 已配置 Repository
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner 列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取可用 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 获取仓库列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/repositories
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          repositories: not_empty
+      save:
+        repository_id: body.repositories[0].id
+
+  - id: step-5
+    action: 创建带仓库关联的 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          repository_id: "{repository_id}"
+          initial_prompt: "E2E Test Pod with Repository"
+          branch_name: "e2e-test-branch"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+            repository_id: "{repository_id}"
+      save:
+        pod_key: body.pod.pod_key
+
+  - id: step-6
+    action: 获取 Pod 详情验证仓库关联
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            pod_key: "{pod_key}"
+            repository_id: "{repository_id}"
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key}/terminate
+      headers:
+        Authorization: Bearer {access_token}

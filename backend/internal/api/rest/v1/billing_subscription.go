@@ -439,3 +439,44 @@ func (h *BillingHandler) GetCustomerPortal(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"url": resp.URL})
 }
+
+// UpdateAutoRenewRequest represents an auto-renew update request
+type UpdateAutoRenewRequest struct {
+	AutoRenew bool `json:"auto_renew"`
+}
+
+// UpdateAutoRenew updates the auto-renew setting for a subscription
+func (h *BillingHandler) UpdateAutoRenew(c *gin.Context) {
+	tenant := c.MustGet("tenant").(*middleware.TenantContext)
+
+	if tenant.UserRole != "owner" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+		return
+	}
+
+	var req UpdateAutoRenewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get current subscription to verify it exists
+	sub, err := h.billingService.GetSubscription(c.Request.Context(), tenant.OrganizationID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no active subscription"})
+		return
+	}
+
+	// Update auto_renew setting
+	if err := h.billingService.SetAutoRenew(c.Request.Context(), tenant.OrganizationID, req.AutoRenew); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return updated subscription
+	sub.AutoRenew = req.AutoRenew
+	c.JSON(http.StatusOK, gin.H{
+		"subscription": sub,
+		"auto_renew":   req.AutoRenew,
+	})
+}

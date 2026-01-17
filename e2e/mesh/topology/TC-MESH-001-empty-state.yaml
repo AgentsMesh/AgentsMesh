@@ -1,0 +1,108 @@
+id: TC-MESH-001
+name: Mesh 拓扑空状态显示
+description: 验证 Mesh 拓扑页面在没有活跃 Pod 时显示空状态
+priority: medium
+module: mesh/topology
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取 Mesh 拓扑 API 数据
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/mesh/topology
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          topology: not_empty
+      save:
+        active_pods_count: body.topology.stats.active_pods
+
+  - id: step-3
+    action: 验证拓扑数据结构
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/mesh/topology
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          topology:
+            nodes: is_array
+            edges: is_array
+            stats:
+              active_pods: is_number
+              channels: is_number
+              bindings: is_number
+
+  - id: step-4
+    action: 导航到 Mesh 页面
+    url: /dev-org/mesh
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'heading contains "Mesh"'
+            - exists: 'text contains "拓扑"'
+            - exists: '[data-testid="mesh-page"]'
+
+  - id: step-5
+    action: 验证页面基本元素
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="mesh-topology"]'
+            - exists: 'canvas'
+            - exists: 'svg'
+            - exists: '[data-testid="mesh-container"]'
+
+  - id: step-6
+    action: 如果没有活跃 Pod，验证空状态显示
+    condition: "{active_pods_count} == 0"
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'text contains "暂无" or text contains "No" or text contains "Empty"'
+            - exists: 'text contains "没有活跃"'
+            - exists: '[data-testid="empty-state"]'
+
+  - id: step-7
+    action: 验证统计信息区域显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="mesh-stats"]'
+            - exists: 'text contains "Pod" or text contains "Channel" or text contains "Binding"'
+            - exists: '.stats-card'

@@ -1,0 +1,155 @@
+id: TC-RUNNER-003
+name: Runner 状态实时更新
+description: 验证 Runner 在线/离线状态的正确显示和更新
+priority: high
+module: runner
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个已注册的 Runner
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取所有 Runner 列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+      save:
+        runners_count: body.runners.length
+
+  - id: step-3
+    action: 验证 Runner 状态字段存在
+    condition: "{runners_count} > 0"
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners[0]:
+            is_enabled: is_boolean
+            is_online: is_boolean
+
+  - id: step-4
+    action: 获取可用（在线且启用）的 Runner 列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+      save:
+        available_count: body.runners.length
+
+  - id: step-5
+    action: 导航到 Runners 管理页面
+    url: /dev-org/runners
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'heading contains "Runner"'
+            - exists: '[data-testid="runners-page"]'
+
+  - id: step-6
+    action: 验证状态标识显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="runner-status"]'
+            - exists: '.status-badge'
+            - exists: 'text contains "在线" or text contains "Online" or text contains "离线" or text contains "Offline"'
+
+  - id: step-7
+    action: 验证启用/禁用状态显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="runner-enabled"]'
+            - exists: 'switch or checkbox'
+            - exists: 'text contains "启用" or text contains "Enabled" or text contains "禁用" or text contains "Disabled"'
+
+  - id: step-8
+    action: 验证 Runner 详情信息
+    condition: "{runners_count} > 0"
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-9
+    action: 获取单个 Runner 详情
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runner:
+            id: "{runner_id}"
+            description: is_string
+            is_enabled: is_boolean
+            is_online: is_boolean
+            max_concurrent_pods: is_number
+            active_pods: is_number
+            created_at: not_empty
+
+  - id: step-10
+    action: 验证数据库中 Runner 状态
+    verification:
+      type: database
+      query: |
+        SELECT id, description, is_enabled, is_online, max_concurrent_pods, active_pods
+        FROM runners WHERE id = {runner_id}
+      expected:
+        id: "{runner_id}"

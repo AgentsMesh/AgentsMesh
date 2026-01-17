@@ -5,8 +5,8 @@ priority: high
 module: billing/subscription
 
 preconditions:
+  - 开发环境已启动
   - 组织有活跃的付费订阅
-  - 已获取有效的 access_token
 
 setup:
   sql: |
@@ -18,7 +18,27 @@ setup:
     WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
 
 steps:
-  - action: 查询当前自动续费状态
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 查询当前自动续费状态
     expected: 返回 auto_renew = true
     verification:
       type: api
@@ -30,15 +50,17 @@ steps:
       expected:
         status: 200
         body:
-          auto_renew: true
+          subscription:
+            auto_renew: true
 
-  - action: 关闭自动续费
+  - id: step-3
+    action: 关闭自动续费
     expected: 自动续费状态更新为 false
     verification:
       type: api
       request:
         method: PUT
-        url: /api/v1/orgs/dev-org/billing/subscription
+        url: /api/v1/orgs/dev-org/billing/subscription/auto-renew
         headers:
           Authorization: Bearer {access_token}
           Content-Type: application/json
@@ -49,7 +71,8 @@ steps:
         body:
           auto_renew: false
 
-  - action: 验证数据库状态
+  - id: step-4
+    action: 验证数据库状态
     expected: auto_renew 字段为 false
     verification:
       type: database
@@ -60,13 +83,14 @@ steps:
       expected:
         auto_renew: false
 
-  - action: 重新开启自动续费
+  - id: step-5
+    action: 重新开启自动续费
     expected: 自动续费状态更新为 true
     verification:
       type: api
       request:
         method: PUT
-        url: /api/v1/orgs/dev-org/billing/subscription
+        url: /api/v1/orgs/dev-org/billing/subscription/auto-renew
         headers:
           Authorization: Bearer {access_token}
           Content-Type: application/json
@@ -76,3 +100,21 @@ steps:
         status: 200
         body:
           auto_renew: true
+
+  - id: step-6
+    action: 验证数据库状态已恢复
+    expected: auto_renew 字段为 true
+    verification:
+      type: database
+      query: |
+        SELECT auto_renew
+        FROM subscriptions
+        WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org')
+      expected:
+        auto_renew: true
+
+cleanup:
+  - sql: |
+      UPDATE subscriptions
+      SET auto_renew = true
+      WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
