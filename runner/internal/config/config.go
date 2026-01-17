@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/spf13/viper"
@@ -60,6 +61,30 @@ type Config struct {
 	// Logging
 	LogLevel string `mapstructure:"log_level"`
 	LogFile  string `mapstructure:"log_file"`
+
+	// Auto-update settings
+	AutoUpdate AutoUpdateConfig `mapstructure:"auto_update"`
+}
+
+// AutoUpdateConfig holds auto-update configuration.
+type AutoUpdateConfig struct {
+	// Enabled controls whether auto-update is enabled (default: true)
+	Enabled bool `mapstructure:"enabled"`
+
+	// CheckInterval is how often to check for updates (default: 24h)
+	CheckInterval time.Duration `mapstructure:"check_interval"`
+
+	// Channel is the update channel: "stable" or "beta" (default: "stable")
+	// "stable" = only stable releases (v1.0.0)
+	// "beta" = includes prereleases (v1.1.0-beta.1, v1.1.0-rc.1)
+	Channel string `mapstructure:"channel"`
+
+	// MaxWaitTime is the maximum time to wait for pods to finish before postponing update (default: 30m)
+	MaxWaitTime time.Duration `mapstructure:"max_wait_time"`
+
+	// AutoApply controls whether to automatically apply updates (default: true)
+	// If false, only check and download, notify user but don't apply
+	AutoApply bool `mapstructure:"auto_apply"`
 }
 
 // Load loads configuration from file and environment
@@ -74,6 +99,13 @@ func Load(configFile string) (*Config, error) {
 	v.SetDefault("health_check_port", 9090)
 	v.SetDefault("log_level", "info")
 	v.SetDefault("default_agent", "claude-code")
+
+	// Auto-update defaults
+	v.SetDefault("auto_update.enabled", true)
+	v.SetDefault("auto_update.check_interval", 24*time.Hour)
+	v.SetDefault("auto_update.channel", "stable")
+	v.SetDefault("auto_update.max_wait_time", 30*time.Minute)
+	v.SetDefault("auto_update.auto_apply", true)
 
 	// Read from environment
 	v.SetEnvPrefix("AGENTSMESH")

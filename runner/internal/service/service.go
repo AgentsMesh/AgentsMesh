@@ -254,3 +254,45 @@ func GetDefaultConfigPath() string {
 	}
 	return filepath.Join(home, ".agentsmesh", "config.yaml")
 }
+
+// RestartForUpdate restarts the service after an update.
+// This should be called after the binary has been replaced.
+func RestartForUpdate() error {
+	prg := &Program{}
+	s, err := service.New(prg, ServiceConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create service: %w", err)
+	}
+
+	// Check if running as a service
+	if !service.Interactive() {
+		// Restart the service
+		err = s.Restart()
+		if err != nil {
+			return fmt.Errorf("failed to restart service: %w", err)
+		}
+		log.Info("Service restarted for update")
+		return nil
+	}
+
+	// If running interactively, just log and exit
+	log.Info("Update applied. Please restart the runner manually.")
+	return nil
+}
+
+// ScheduleRestartOnExit schedules a restart when the process exits.
+// This is useful for graceful updates where we want to restart after the update is applied.
+func ScheduleRestartOnExit() {
+	// In service mode, the service manager will automatically restart the process
+	// after it exits (if configured to do so).
+	// For interactive mode, we just exit and let the user restart manually.
+	log.Info("Update complete. Process will exit for restart.")
+}
+
+// RestartFunc returns a function that can be used to restart the service.
+// This is designed to be passed to the graceful updater.
+func RestartFunc() func() error {
+	return func() error {
+		return RestartForUpdate()
+	}
+}

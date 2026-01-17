@@ -33,6 +33,10 @@ type Runner struct {
 	claudeMonitor   *monitor.Monitor      // Claude CLI status monitoring
 	termManager     *terminal.Manager     // Enhanced terminal session management
 
+	// Update management
+	draining       bool                   // True when waiting for pods to finish before update
+	drainingMu     sync.RWMutex           // Protects draining flag
+
 	// Channels for coordination
 	stopChan chan struct{}
 }
@@ -226,4 +230,56 @@ func (r *Runner) stopAllPods() {
 		}
 		r.podStore.Delete(pod.PodKey)
 	}
+}
+
+// IsDraining returns true if the runner is waiting for pods to finish before update.
+func (r *Runner) IsDraining() bool {
+	r.drainingMu.RLock()
+	defer r.drainingMu.RUnlock()
+	return r.draining
+}
+
+// SetDraining sets the draining state.
+func (r *Runner) SetDraining(draining bool) {
+	r.drainingMu.Lock()
+	defer r.drainingMu.Unlock()
+	r.draining = draining
+	if draining {
+		logger.Runner().Info("Entering draining mode - no new pods will be accepted")
+	} else {
+		logger.Runner().Info("Exiting draining mode - accepting pods again")
+	}
+}
+
+// CanAcceptPod returns true if the runner can accept new pods.
+// Returns false if draining or at max capacity.
+func (r *Runner) CanAcceptPod() bool {
+	r.drainingMu.RLock()
+	draining := r.draining
+	r.drainingMu.RUnlock()
+
+	if draining {
+		return false
+	}
+
+	activePods := r.GetActivePodCount()
+	return activePods < r.cfg.MaxConcurrentPods
+}
+
+// GetActivePodCount returns the number of currently active pods.
+func (r *Runner) GetActivePodCount() int {
+	return r.podStore.Count()
+}
+
+// GetPodCounter returns a function that counts active pods.
+// This is used by the updater for graceful updates.
+func (r *Runner) GetPodCounter() func() int {
+	return func() int {
+		return r.GetActivePodCount()
+	}
+}
+
+// Config returns the runner configuration.
+func (r *Runner) Config() *config.Config {
+	return r.cfg
 }

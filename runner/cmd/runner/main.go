@@ -41,6 +41,8 @@ func main() {
 		runWebConsole(os.Args[2:])
 	case "reactivate":
 		runReactivate(os.Args[2:])
+	case "update":
+		runUpdate(os.Args[2:])
 	case "version", "-v", "--version":
 		fmt.Printf("AgentsMesh Runner %s (built %s)\n", version, buildTime)
 	case "help", "-h", "--help":
@@ -65,6 +67,7 @@ Commands:
   service     Manage runner as a system service (install/start/stop)
   desktop     Start runner in desktop mode with system tray
   reactivate  Reactivate runner with expired certificate
+  update      Check and install updates
   version     Show version information
   help        Show this help message
 
