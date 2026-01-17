@@ -832,7 +832,7 @@ func (c *GRPCConnection) handleTerminalInput(cmd *runnerv1.TerminalInputCommand)
 
 	req := TerminalInputRequest{
 		PodKey: cmd.PodKey,
-		Data:   string(cmd.Data), // Convert bytes to base64 string for existing handler
+		Data:   cmd.Data, // gRPC uses native bytes, no encoding needed
 	}
 	if err := c.handler.OnTerminalInput(req); err != nil {
 		log.Printf("[grpc] Failed to send terminal input to pod %s: %v", cmd.PodKey, err)

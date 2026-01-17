@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"encoding/base64"
 	"testing"
 	"time"
 
@@ -23,7 +22,7 @@ func TestOnTerminalInputPodNotFound(t *testing.T) {
 
 	req := client.TerminalInputRequest{
 		PodKey: "nonexistent",
-		Data:      base64.StdEncoding.EncodeToString([]byte("hello")),
+		Data:   []byte("hello"),
 	}
 
 	err := handler.OnTerminalInput(req)
@@ -35,7 +34,7 @@ func TestOnTerminalInputPodNotFound(t *testing.T) {
 	}
 }
 
-func TestOnTerminalInputInvalidBase64(t *testing.T) {
+func TestOnTerminalInputNilTerminal(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -43,7 +42,7 @@ func TestOnTerminalInputInvalidBase64(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	// Add pod with nil terminal (will fail on Write, not decode)
+	// Add pod with nil terminal (will fail on Write)
 	store.Put("input-pod", &Pod{
 		ID:       "input-pod",
 		Terminal: nil,
@@ -51,12 +50,12 @@ func TestOnTerminalInputInvalidBase64(t *testing.T) {
 
 	req := client.TerminalInputRequest{
 		PodKey: "input-pod",
-		Data:      "not-valid-base64!!!", // Invalid base64
+		Data:   []byte("some input"),
 	}
 
 	err := handler.OnTerminalInput(req)
 	if err == nil {
-		t.Error("expected error for invalid base64")
+		t.Error("expected error for nil terminal")
 	}
 }
 
@@ -91,7 +90,7 @@ func TestOnTerminalInputSuccess(t *testing.T) {
 	// Send input
 	inputReq := client.TerminalInputRequest{
 		PodKey: "input-success-pod",
-		Data:      base64.StdEncoding.EncodeToString([]byte("hello\n")),
+		Data:   []byte("hello\n"),
 	}
 
 	err = handler.OnTerminalInput(inputReq)

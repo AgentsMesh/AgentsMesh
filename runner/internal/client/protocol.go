@@ -63,7 +63,7 @@ type PodInfo struct {
 // TerminalInputRequest is sent to write to PTY.
 type TerminalInputRequest struct {
 	PodKey string `json:"pod_key"`
-	Data   string `json:"data"` // Base64 encoded binary data
+	Data   []byte `json:"data"` // Binary data (gRPC uses native bytes, no base64 needed)
 }
 
 // TerminalResizeRequest is sent to resize PTY.

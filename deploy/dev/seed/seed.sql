@@ -90,23 +90,19 @@ BEGIN
     RETURNING id INTO v_token_id;
 
     -- =========================================================================
-    -- 5. 预注册 Runner
+    -- 5. 预注册 Runner (使用证书认证)
     -- =========================================================================
-    -- Auth Token: dev-runner-auth-token
-    -- bcrypt hash (cost=10): $2a$10$YourHashHere...
-    --
-    -- 注意: Runner 会使用 RUNNER_TOKEN 环境变量连接，
-    -- 这里预注册的 runner 使用固定的 node_id: dev-runner
+    -- Runner 使用 mTLS 证书认证，不再使用 auth_token_hash
+    -- 证书在 init-worktree.sh 中生成并挂载到 runner 容器
+    -- cert_serial_number 在 runner 首次连接时由 backend 自动填充
 
     INSERT INTO runners (
-        organization_id, node_id, description, auth_token_hash,
+        organization_id, node_id, description,
         status, max_concurrent_pods
     )
     SELECT v_org_id,
            'dev-runner',
            'Development Docker Runner',
-           -- Auth token: dev-runner-auth-token (bcrypt hash)
-           '$2a$10$XdoTNeuXKRVuNf4QUxeBSOhLkCe5A2AdcLItEXbtGRjg4B8wGLuHG',
            'offline',
            10
     WHERE NOT EXISTS (

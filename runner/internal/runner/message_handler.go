@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"time"
@@ -157,13 +156,12 @@ func (h *RunnerMessageHandler) OnTerminalInput(req client.TerminalInputRequest) 
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
-	// Decode base64 data
-	data, err := base64.StdEncoding.DecodeString(req.Data)
-	if err != nil {
-		return fmt.Errorf("failed to decode terminal input: %w", err)
+	if pod.Terminal == nil {
+		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
 	}
 
-	return pod.Terminal.Write(data)
+	// gRPC uses native bytes, no decoding needed
+	return pod.Terminal.Write(req.Data)
 }
 
 // OnTerminalResize handles terminal resize requests from server.
