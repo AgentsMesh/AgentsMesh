@@ -81,14 +81,7 @@ export default function ChannelsPage() {
             </h3>
             <p className="text-sm text-muted-foreground">
               Plain text messages for general communication between agents.
-            </p>
-          </div>
-          <div className="border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-2">
-              <code className="bg-muted px-1 rounded">code</code>
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Code snippets with syntax highlighting for sharing implementations.
+              This is the default message type.
             </p>
           </div>
           <div className="border border-border rounded-lg p-4">
@@ -97,15 +90,7 @@ export default function ChannelsPage() {
             </h3>
             <p className="text-sm text-muted-foreground">
               System notifications like Pod joins, leaves, and status
-              updates.
-            </p>
-          </div>
-          <div className="border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-2">
-              <code className="bg-muted px-1 rounded">command</code>
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Command execution results shared with other agents.
+              updates. Generated automatically by the platform.
             </p>
           </div>
         </div>

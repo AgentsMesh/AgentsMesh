@@ -52,12 +52,15 @@
       "title1": "ターミナルベース",
       "title2": "コーディングエージェント",
       "title3": "コラボレーションプラットフォーム",
+      "slogan1": "AI エージェント艦隊を指揮せよ",
+      "slogan2": "— いつでも、どこでも",
+      "tagline": "AgentsMesh は AgentsMesh 上で構築されています",
       "description": "Claude Code、Codex CLI、Gemini CLI、Aiderなどを統合管理。複数のAIエージェントが複雑な開発タスクで協力できます。",
       "getStartedFree": "無料で始める",
       "viewDocs": "ドキュメントを見る",
       "trustedBy": "世界中の開発者に信頼されています",
-      "teams": "500以上のチーム",
-      "pods": "10K以上のPod",
+      "teams": "成長するチーム",
+      "pods": "数千のPod",
       "openSource": "オープンソース"
     },
     "whyTerminal": {
@@ -160,15 +163,15 @@
       "description": "デプロイ、接続、そして数分でAIエージェントとのコラボレーションを開始。",
       "step1": {
         "title": "ランナーをデプロイ",
-        "description": "サーバーまたはローカルマシンに単一コマンドでランナーをデプロイ。"
+        "description": "Runnerをダウンロードし、サーバーまたはローカルマシンに登録。"
       },
       "step2": {
-        "title": "エージェントを接続",
-        "description": "AIコーディングエージェントをAgentsMeshに接続するよう設定。"
+        "title": "AgentPodを作成",
+        "description": "Webコンソールを使用して、お好みのAIエージェントでPodを作成。"
       },
       "step3": {
         "title": "コラボレーション開始",
-        "description": "ポッド、チャンネルを作成し、複数のエージェントを協力させましょう。"
+        "description": "ブラウザでターミナルを開き、チャンネルを作成し、MCPツールでエージェントを調整。"
       }
     },
     "enterprise": {
@@ -182,7 +185,8 @@
         },
         "sso": {
           "title": "SSO統合",
-          "description": "エンタープライズ認証用のSAML 2.0とLDAPサポート。"
+          "description": "エンタープライズ認証用のSAML 2.0とLDAPサポート。",
+          "comingSoon": true
         },
         "auditLogs": {
           "title": "監査ログ",
@@ -198,15 +202,18 @@
         },
         "monitoring": {
           "title": "モニタリング",
-          "description": "PrometheusメトリクスとGrafanaダッシュボード付属。"
+          "description": "PrometheusメトリクスとGrafanaダッシュボード付属。",
+          "comingSoon": true
         },
         "backupDR": {
           "title": "バックアップ＆DR",
-          "description": "災害復旧サポート付き自動バックアップ。"
+          "description": "災害復旧サポート付き自動バックアップ。",
+          "comingSoon": true
         },
         "airGapped": {
           "title": "エアギャップ",
-          "description": "最大限のセキュリティのための完全オフラインデプロイ。"
+          "description": "最大限のセキュリティのための完全オフラインデプロイ。",
+          "comingSoon": true
         }
       }
     },
@@ -271,8 +278,8 @@
       "titleEnd": "デプロイが必要ですか？",
       "description": "AgentsMeshは完全なセルフホストデプロイをサポート。コードとデータはインフラを離れません。厳格なセキュリティとコンプライアンス要件を持つ企業に最適。",
       "dockerCompose": "Docker Compose",
-      "kubernetesHelm": "Kubernetes Helm",
-      "airGappedSupport": "エアギャップサポート",
+      "kubernetesHelm": "Kubernetes Helm（近日公開）",
+      "airGappedSupport": "エアギャップサポート（近日公開）",
       "viewDocs": "デプロイドキュメントを見る",
       "contactSales": "エンタープライズ営業に連絡"
     },

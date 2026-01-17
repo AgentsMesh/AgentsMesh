@@ -207,12 +207,15 @@
       "title1": "Terminal-based",
       "title2": "Coding Agent",
       "title3": "Collaboration Platform",
+      "slogan1": "Command Your AI Agent Fleet",
+      "slogan2": "— Anytime, Anywhere",
+      "tagline": "We are building AgentsMesh on AgentsMesh",
       "description": "Unified management for Claude Code, Codex CLI, Gemini CLI, Aider and more. Enable multiple AI agents to collaborate on complex development tasks.",
       "getStartedFree": "Get Started Free",
       "viewDocs": "View Documentation",
       "trustedBy": "Trusted by developers worldwide",
-      "teams": "500+ Teams",
-      "pods": "10K+ Pods",
+      "teams": "Growing Teams",
+      "pods": "Thousands of Pods",
       "openSource": "Open Source"
     },
     "agentLogos": {
@@ -318,15 +321,15 @@
       "description": "Deploy, connect, and start collaborating with AI agents in minutes.",
       "step1": {
         "title": "Deploy Runner",
-        "description": "Deploy a Runner on your server or local machine with a single command."
+        "description": "Download and register a Runner on your server or local machine."
       },
       "step2": {
-        "title": "Connect Agent",
-        "description": "Configure your AI coding agent to connect to AgentsMesh."
+        "title": "Create AgentPod",
+        "description": "Use the web console to create pods with your preferred AI agent."
       },
       "step3": {
         "title": "Start Collaborating",
-        "description": "Create pods, channels, and let multiple agents work together."
+        "description": "Open terminal in browser, create channels, and coordinate agents with MCP tools."
       }
     },
     "enterprise": {
@@ -340,7 +343,8 @@
         },
         "sso": {
           "title": "SSO Integration",
-          "description": "SAML 2.0 and LDAP support for enterprise authentication."
+          "description": "SAML 2.0 and LDAP support for enterprise authentication.",
+          "comingSoon": true
         },
         "auditLogs": {
           "title": "Audit Logs",
@@ -356,15 +360,18 @@
         },
         "monitoring": {
           "title": "Monitoring",
-          "description": "Prometheus metrics and Grafana dashboards included."
+          "description": "Prometheus metrics and Grafana dashboards included.",
+          "comingSoon": true
         },
         "backupDR": {
           "title": "Backup & DR",
-          "description": "Automated backups with disaster recovery support."
+          "description": "Automated backups with disaster recovery support.",
+          "comingSoon": true
         },
         "airGapped": {
           "title": "Air-Gapped",
-          "description": "Fully offline deployment for maximum security."
+          "description": "Fully offline deployment for maximum security.",
+          "comingSoon": true
         }
       }
     },
@@ -416,7 +423,7 @@
           "3": "Unlimited repositories",
           "4": "Priority support",
           "5": "SSO integration (coming soon)",
-          "6": "Audit logs (coming soon)"
+          "6": "Audit logs"
         },
         "cta": "Upgrade to Enterprise"
       },
@@ -446,8 +453,8 @@
       "titleEnd": "Deployment?",
       "description": "AgentsMesh supports fully self-hosted deployment. Your code and data never leave your infrastructure. Perfect for enterprises with strict security and compliance requirements.",
       "dockerCompose": "Docker Compose",
-      "kubernetesHelm": "Kubernetes Helm",
-      "airGappedSupport": "Air-gapped Support",
+      "kubernetesHelm": "Kubernetes Helm (Coming Soon)",
+      "airGappedSupport": "Air-gapped Support (Coming Soon)",
       "viewDocs": "View Deployment Docs",
       "contactSales": "Contact Enterprise Sales"
     },
@@ -1909,7 +1916,7 @@
       "agentpodDesc": "Remote AI development workstations",
       "agentsmeshDesc": "Multi-agent collaboration network",
       "mcpTools": "MCP Tools",
-      "mcpToolsDesc": "25+ tools for AI agents"
+      "mcpToolsDesc": "24 tools for AI agents"
     }
   },
   "blog": {
@@ -1967,8 +1974,8 @@
           "description": "Extended thinking capability for complex reasoning",
           "options": {
             "": "Default",
-            "think": "Think",
-            "ultrathink": "Ultra Think"
+            "megathink": "Megathink",
+            "ultrathink": "Ultrathink"
           }
         }
       }

@@ -276,13 +276,15 @@ export function HeroSection() {
               {t("landing.hero.badge")}
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-              <span className="text-foreground">{t("landing.hero.title1")}</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
+              <span className="text-foreground">{t("landing.hero.slogan1")}</span>
               <br />
-              <span className="text-primary">{t("landing.hero.title2")}</span>
-              <br />
-              <span className="text-foreground">{t("landing.hero.title3")}</span>
+              <span className="text-primary">{t("landing.hero.slogan2")}</span>
             </h1>
+
+            <p className="text-lg sm:text-xl text-muted-foreground/80 mb-6 font-medium italic">
+              {t("landing.hero.tagline")}
+            </p>
 
             <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
               {t("landing.hero.description")}

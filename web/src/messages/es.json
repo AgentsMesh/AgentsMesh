@@ -52,12 +52,15 @@
       "title1": "Plataforma de",
       "title2": "Agentes de Código",
       "title3": "Basados en Terminal",
+      "slogan1": "Comanda tu flota de agentes IA",
+      "slogan2": "— En cualquier momento, en cualquier lugar",
+      "tagline": "Estamos construyendo AgentsMesh sobre AgentsMesh",
       "description": "Gestión unificada para Claude Code, Codex CLI, Gemini CLI, Aider y más. Permite que múltiples agentes de IA colaboren en tareas de desarrollo complejas.",
       "getStartedFree": "Comenzar Gratis",
       "viewDocs": "Ver Documentación",
       "trustedBy": "Confiado por desarrolladores en todo el mundo",
-      "teams": "500+ Equipos",
-      "pods": "10K+ Pods",
+      "teams": "Equipos en Crecimiento",
+      "pods": "Miles de Pods",
       "openSource": "Código Abierto"
     },
     "agentLogos": {
@@ -171,15 +174,15 @@
       "description": "Despliega, conecta y comienza a colaborar con agentes de IA en minutos.",
       "step1": {
         "title": "Despliega Runner",
-        "description": "Despliega un Runner en tu servidor o máquina local con un solo comando."
+        "description": "Descarga y registra un Runner en tu servidor o máquina local."
       },
       "step2": {
-        "title": "Conecta Agente",
-        "description": "Configura tu agente de código de IA para conectarse a AgentsMesh."
+        "title": "Crea AgentPod",
+        "description": "Usa la consola web para crear pods con tu agente de IA preferido."
       },
       "step3": {
         "title": "Comienza a Colaborar",
-        "description": "Crea pods, canales y deja que múltiples agentes trabajen juntos."
+        "description": "Abre el terminal en el navegador, crea canales y coordina agentes con herramientas MCP."
       }
     },
     "enterprise": {
@@ -193,7 +196,8 @@
         },
         "sso": {
           "title": "Integración SSO",
-          "description": "Soporte SAML 2.0 y LDAP para autenticación empresarial."
+          "description": "Soporte SAML 2.0 y LDAP para autenticación empresarial.",
+          "comingSoon": true
         },
         "auditLogs": {
           "title": "Registros de Auditoría",
@@ -209,15 +213,18 @@
         },
         "monitoring": {
           "title": "Monitorización",
-          "description": "Métricas de Prometheus y dashboards de Grafana incluidos."
+          "description": "Métricas de Prometheus y dashboards de Grafana incluidos.",
+          "comingSoon": true
         },
         "backupDR": {
           "title": "Backup y DR",
-          "description": "Backups automatizados con soporte de recuperación ante desastres."
+          "description": "Backups automatizados con soporte de recuperación ante desastres.",
+          "comingSoon": true
         },
         "airGapped": {
           "title": "Air-Gapped",
-          "description": "Despliegue completamente offline para máxima seguridad."
+          "description": "Despliegue completamente offline para máxima seguridad.",
+          "comingSoon": true
         }
       }
     },
@@ -282,8 +289,8 @@
       "titleEnd": "Completo?",
       "description": "AgentsMesh soporta despliegue completamente auto-alojado. Tu código y datos nunca salen de tu infraestructura. Perfecto para empresas con requisitos estrictos de seguridad y cumplimiento.",
       "dockerCompose": "Docker Compose",
-      "kubernetesHelm": "Kubernetes Helm",
-      "airGappedSupport": "Soporte Air-gapped",
+      "kubernetesHelm": "Kubernetes Helm (Próximamente)",
+      "airGappedSupport": "Soporte Air-gapped (Próximamente)",
       "viewDocs": "Ver Documentación de Despliegue",
       "contactSales": "Contactar Ventas Empresariales"
     },

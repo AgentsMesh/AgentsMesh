@@ -29,7 +29,7 @@ export default function AgentPodPage() {
             <strong>AI Agent</strong> - Your chosen coding assistant
           </li>
           <li>
-            <strong>MCP Tools</strong> - 25+ tools for file operations,
+            <strong>MCP Tools</strong> - 24 tools for discovery, terminal control,
             collaboration, and more
           </li>
         </ul>
@@ -134,7 +134,23 @@ export default function AgentPodPage() {
               Terminated
             </div>
             <p className="text-muted-foreground">
-              Pod was manually stopped or encountered an error.
+              Pod was manually stopped.
+            </p>
+          </div>
+          <div className="flex items-start gap-4">
+            <div className="w-24 text-sm font-medium text-purple-400">
+              Orphaned
+            </div>
+            <p className="text-muted-foreground">
+              Pod lost its Runner connection and cannot recover.
+            </p>
+          </div>
+          <div className="flex items-start gap-4">
+            <div className="w-24 text-sm font-medium text-red-500">
+              Error
+            </div>
+            <p className="text-muted-foreground">
+              Pod encountered an error during execution.
             </p>
           </div>
         </div>

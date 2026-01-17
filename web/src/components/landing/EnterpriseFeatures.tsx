@@ -14,6 +14,7 @@ export function EnterpriseFeatures() {
       ),
       title: t("landing.enterprise.features.multiTenant.title"),
       description: t("landing.enterprise.features.multiTenant.description"),
+      comingSoon: false,
     },
     {
       icon: (
@@ -23,6 +24,7 @@ export function EnterpriseFeatures() {
       ),
       title: t("landing.enterprise.features.sso.title"),
       description: t("landing.enterprise.features.sso.description"),
+      comingSoon: true,
     },
     {
       icon: (
@@ -32,6 +34,7 @@ export function EnterpriseFeatures() {
       ),
       title: t("landing.enterprise.features.auditLogs.title"),
       description: t("landing.enterprise.features.auditLogs.description"),
+      comingSoon: false,
     },
     {
       icon: (
@@ -41,6 +44,7 @@ export function EnterpriseFeatures() {
       ),
       title: t("landing.enterprise.features.rbac.title"),
       description: t("landing.enterprise.features.rbac.description"),
+      comingSoon: false,
     },
     {
       icon: (
@@ -50,6 +54,7 @@ export function EnterpriseFeatures() {
       ),
       title: t("landing.enterprise.features.gitIntegration.title"),
       description: t("landing.enterprise.features.gitIntegration.description"),
+      comingSoon: false,
     },
     {
       icon: (
@@ -59,6 +64,7 @@ export function EnterpriseFeatures() {
       ),
       title: t("landing.enterprise.features.monitoring.title"),
       description: t("landing.enterprise.features.monitoring.description"),
+      comingSoon: true,
     },
     {
       icon: (
@@ -68,6 +74,7 @@ export function EnterpriseFeatures() {
       ),
       title: t("landing.enterprise.features.backupDR.title"),
       description: t("landing.enterprise.features.backupDR.description"),
+      comingSoon: true,
     },
     {
       icon: (
@@ -77,6 +84,7 @@ export function EnterpriseFeatures() {
       ),
       title: t("landing.enterprise.features.airGapped.title"),
       description: t("landing.enterprise.features.airGapped.description"),
+      comingSoon: true,
     },
   ];
 
@@ -103,7 +111,14 @@ export function EnterpriseFeatures() {
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:bg-primary/20 transition-colors">
                 {feature.icon}
               </div>
-              <h3 className="font-semibold mb-2">{feature.title}</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="font-semibold">{feature.title}</h3>
+                {feature.comingSoon && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    Coming Soon
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">{feature.description}</p>
             </div>
           ))}

@@ -207,12 +207,15 @@
       "title1": "基于终端的",
       "title2": "编程智能体",
       "title3": "协作平台",
+      "slogan1": "指挥你的 AI 智能体舰队",
+      "slogan2": "— 随时随地",
+      "tagline": "我们正在用 AgentsMesh 构建 AgentsMesh",
       "description": "统一管理 Claude Code、Codex CLI、Gemini CLI、Aider 等终端编程智能体。让多个 AI 智能体协作完成复杂的开发任务。",
       "getStartedFree": "免费开始",
       "viewDocs": "查看文档",
       "trustedBy": "受全球开发者信赖",
-      "teams": "500+ 团队",
-      "pods": "10K+ Pod",
+      "teams": "不断增长的团队",
+      "pods": "数千个 Pod",
       "openSource": "开源项目"
     },
     "agentLogos": {
@@ -318,15 +321,15 @@
       "description": "部署、连接、开始协作，几分钟内即可与 AI 智能体协同工作。",
       "step1": {
         "title": "部署运行节点",
-        "description": "使用单条命令在服务器或本地机器上部署运行节点。"
+        "description": "下载并注册 Runner 到服务器或本地机器。"
       },
       "step2": {
-        "title": "连接智能体",
-        "description": "配置你的 AI 编程智能体连接到 AgentsMesh。"
+        "title": "创建 AgentPod",
+        "description": "通过 Web 控制台使用你选择的 AI 智能体创建 Pod。"
       },
       "step3": {
         "title": "开始协作",
-        "description": "创建 Pod、频道，让多个智能体协同工作。"
+        "description": "在浏览器中打开终端，创建频道，使用 MCP 工具协调智能体。"
       }
     },
     "enterprise": {
@@ -340,7 +343,8 @@
         },
         "sso": {
           "title": "SSO 集成",
-          "description": "支持 SAML 2.0 和 LDAP 企业认证。"
+          "description": "支持 SAML 2.0 和 LDAP 企业认证。",
+          "comingSoon": true
         },
         "auditLogs": {
           "title": "审计日志",
@@ -356,15 +360,18 @@
         },
         "monitoring": {
           "title": "监控",
-          "description": "内置 Prometheus 指标和 Grafana 仪表板。"
+          "description": "内置 Prometheus 指标和 Grafana 仪表板。",
+          "comingSoon": true
         },
         "backupDR": {
           "title": "备份与灾备",
-          "description": "自动备份和灾难恢复支持。"
+          "description": "自动备份和灾难恢复支持。",
+          "comingSoon": true
         },
         "airGapped": {
           "title": "离线部署",
-          "description": "完全离线部署，实现最高安全性。"
+          "description": "完全离线部署，实现最高安全性。",
+          "comingSoon": true
         }
       }
     },
@@ -416,7 +423,7 @@
           "3": "无限仓库",
           "4": "优先支持",
           "5": "SSO 集成（即将推出）",
-          "6": "审计日志（即将推出）"
+          "6": "审计日志"
         },
         "cta": "升级企业版"
       },
@@ -446,8 +453,8 @@
       "titleEnd": "部署？",
       "description": "AgentsMesh 支持完全自托管部署。代码和数据永远不会离开你的基础设施。非常适合有严格安全和合规要求的企业。",
       "dockerCompose": "Docker Compose",
-      "kubernetesHelm": "Kubernetes Helm",
-      "airGappedSupport": "离线环境支持",
+      "kubernetesHelm": "Kubernetes Helm（即将推出）",
+      "airGappedSupport": "离线环境支持（即将推出）",
       "viewDocs": "查看部署文档",
       "contactSales": "联系企业销售"
     },
@@ -1909,7 +1916,7 @@
       "agentpodDesc": "远程 AI 开发工作站",
       "agentsmeshDesc": "多智能体协作网络",
       "mcpTools": "MCP 工具",
-      "mcpToolsDesc": "25+ AI 智能体工具"
+      "mcpToolsDesc": "24 个 AI 智能体工具"
     }
   },
   "blog": {
@@ -1967,7 +1974,7 @@
           "description": "用于复杂推理的扩展思考能力",
           "options": {
             "": "默认",
-            "think": "思考",
+            "megathink": "超级思考",
             "ultrathink": "深度思考"
           }
         }

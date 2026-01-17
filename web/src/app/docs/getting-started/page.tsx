@@ -120,17 +120,16 @@ export default function GettingStartedPage() {
             machine or server.
           </p>
           <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-            <pre className="text-green-400">{`# Download the runner binary
-curl -LO https://github.com/agentsmesh/runner/releases/latest/download/runner
+            <pre className="text-green-400">{`# Download and install the runner
+curl -fsSL https://get.agentsmesh.dev | sh
 
-# Make executable
-chmod +x runner
-
-# Configure with your registration token (from Settings → Runners)
-./runner configure --token <YOUR_TOKEN>
+# Register with your token (from Settings → Runners)
+runner register \\
+  --server https://api.agentsmesh.dev \\
+  --token <YOUR_TOKEN>
 
 # Start the runner
-./runner start`}</pre>
+runner run`}</pre>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
             See{" "}

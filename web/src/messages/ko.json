@@ -52,12 +52,15 @@
       "title1": "터미널 기반",
       "title2": "코딩 에이전트",
       "title3": "협업 플랫폼",
+      "slogan1": "AI 에이전트 함대를 지휘하세요",
+      "slogan2": "— 언제 어디서나",
+      "tagline": "AgentsMesh로 AgentsMesh를 만들고 있습니다",
       "description": "Claude Code, Codex CLI, Gemini CLI, Aider 등을 통합 관리합니다. 여러 AI 에이전트가 복잡한 개발 작업에서 협력할 수 있습니다.",
       "getStartedFree": "무료로 시작",
       "viewDocs": "문서 보기",
       "trustedBy": "전 세계 개발자들이 신뢰합니다",
-      "teams": "500+ 팀",
-      "pods": "10K+ Pod",
+      "teams": "성장하는 팀",
+      "pods": "수천 개의 Pod",
       "openSource": "오픈 소스"
     },
     "whyTerminal": {
@@ -160,15 +163,15 @@
       "description": "배포하고, 연결하고, 몇 분 안에 AI 에이전트와 협업을 시작하세요.",
       "step1": {
         "title": "러너 배포",
-        "description": "단일 명령으로 서버 또는 로컬 머신에 러너를 배포합니다."
+        "description": "Runner를 다운로드하고 서버 또는 로컬 머신에 등록합니다."
       },
       "step2": {
-        "title": "에이전트 연결",
-        "description": "AI 코딩 에이전트가 AgentsMesh에 연결되도록 구성합니다."
+        "title": "AgentPod 생성",
+        "description": "웹 콘솔을 사용하여 원하는 AI 에이전트로 Pod를 생성합니다."
       },
       "step3": {
         "title": "협업 시작",
-        "description": "Pod, 채널을 생성하고 여러 에이전트가 함께 작업하도록 합니다."
+        "description": "브라우저에서 터미널을 열고, 채널을 생성하고, MCP 도구로 에이전트를 조정합니다."
       }
     },
     "enterprise": {
@@ -182,7 +185,8 @@
         },
         "sso": {
           "title": "SSO 통합",
-          "description": "엔터프라이즈 인증을 위한 SAML 2.0 및 LDAP 지원."
+          "description": "엔터프라이즈 인증을 위한 SAML 2.0 및 LDAP 지원.",
+          "comingSoon": true
         },
         "auditLogs": {
           "title": "감사 로그",
@@ -198,15 +202,18 @@
         },
         "monitoring": {
           "title": "모니터링",
-          "description": "Prometheus 메트릭 및 Grafana 대시보드 포함."
+          "description": "Prometheus 메트릭 및 Grafana 대시보드 포함.",
+          "comingSoon": true
         },
         "backupDR": {
           "title": "백업 및 DR",
-          "description": "재해 복구 지원 자동 백업."
+          "description": "재해 복구 지원 자동 백업.",
+          "comingSoon": true
         },
         "airGapped": {
           "title": "에어갭",
-          "description": "최대 보안을 위한 완전 오프라인 배포."
+          "description": "최대 보안을 위한 완전 오프라인 배포.",
+          "comingSoon": true
         }
       }
     },
@@ -271,8 +278,8 @@
       "titleEnd": "배포가 필요하신가요?",
       "description": "AgentsMesh는 완전한 셀프 호스트 배포를 지원합니다. 코드와 데이터가 인프라를 벗어나지 않습니다. 엄격한 보안 및 규정 준수 요구 사항이 있는 기업에 완벽합니다.",
       "dockerCompose": "Docker Compose",
-      "kubernetesHelm": "Kubernetes Helm",
-      "airGappedSupport": "에어갭 지원",
+      "kubernetesHelm": "Kubernetes Helm (출시 예정)",
+      "airGappedSupport": "에어갭 지원 (출시 예정)",
       "viewDocs": "배포 문서 보기",
       "contactSales": "엔터프라이즈 영업팀 연락"
     },

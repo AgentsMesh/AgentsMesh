@@ -4,9 +4,9 @@ export default function MCPToolsPage() {
       <h1 className="text-4xl font-bold mb-8">MCP Tools</h1>
 
       <p className="text-muted-foreground leading-relaxed mb-8">
-        The Runner provides 25+ MCP (Model Context Protocol) tools for AI agents
-        to interact with the development environment and collaborate with other
-        agents.
+        The Runner provides 24 MCP (Model Context Protocol) tools for AI agents
+        to collaborate with other agents. Tools are organized into 6 categories:
+        Discovery, Terminal, Binding, Channel, Ticket, and Pod.
       </p>
 
       {/* Overview */}
@@ -26,9 +26,12 @@ export default function MCPToolsPage() {
         </div>
       </section>
 
-      {/* File System Tools */}
+      {/* Discovery Tools */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">File System Tools</h2>
+        <h2 className="text-2xl font-semibold mb-4">Discovery Tools</h2>
+        <p className="text-muted-foreground mb-4">
+          Tools for discovering available resources in the mesh.
+        </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-border rounded-lg">
             <thead>
@@ -37,109 +40,32 @@ export default function MCPToolsPage() {
                 <th className="text-left p-3 border-b border-border">
                   Description
                 </th>
-                <th className="text-left p-3 border-b border-border">
-                  Parameters
-                </th>
               </tr>
             </thead>
             <tbody className="text-muted-foreground">
               <tr>
                 <td className="p-3 border-b border-border font-medium">
-                  read_file
+                  list_available_pods
                 </td>
                 <td className="p-3 border-b border-border">
-                  Read file contents
-                </td>
-                <td className="p-3 border-b border-border font-mono text-xs">
-                  path
+                  List other Pods available for collaboration
                 </td>
               </tr>
               <tr>
                 <td className="p-3 border-b border-border font-medium">
-                  write_file
+                  list_runners
                 </td>
                 <td className="p-3 border-b border-border">
-                  Write content to file
-                </td>
-                <td className="p-3 border-b border-border font-mono text-xs">
-                  path, content
+                  List available Runners
                 </td>
               </tr>
               <tr>
-                <td className="p-3 border-b border-border font-medium">
-                  list_directory
+                <td className="p-3 font-medium">
+                  list_repositories
                 </td>
-                <td className="p-3 border-b border-border">
-                  List directory contents
+                <td className="p-3">
+                  List available repositories
                 </td>
-                <td className="p-3 border-b border-border font-mono text-xs">
-                  path
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3 border-b border-border font-medium">
-                  search_files
-                </td>
-                <td className="p-3 border-b border-border">
-                  Search files by pattern
-                </td>
-                <td className="p-3 border-b border-border font-mono text-xs">
-                  pattern, path?
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3 border-b border-border font-medium">
-                  execute_command
-                </td>
-                <td className="p-3 border-b border-border">
-                  Run shell command
-                </td>
-                <td className="p-3 border-b border-border font-mono text-xs">
-                  command, cwd?
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3 font-medium">get_working_directory</td>
-                <td className="p-3">Get current working directory</td>
-                <td className="p-3 font-mono text-xs">-</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Git Tools */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Git Tools</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border border-border rounded-lg">
-            <thead>
-              <tr className="bg-muted">
-                <th className="text-left p-3 border-b border-border">Tool</th>
-                <th className="text-left p-3 border-b border-border">
-                  Description
-                </th>
-                <th className="text-left p-3 border-b border-border">
-                  Parameters
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-muted-foreground">
-              <tr>
-                <td className="p-3 border-b border-border font-medium">
-                  git_status
-                </td>
-                <td className="p-3 border-b border-border">
-                  View current Git status
-                </td>
-                <td className="p-3 border-b border-border font-mono text-xs">
-                  -
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3 font-medium">git_diff</td>
-                <td className="p-3">View file differences</td>
-                <td className="p-3 font-mono text-xs">file?, staged?</td>
               </tr>
             </tbody>
           </table>
@@ -194,31 +120,6 @@ export default function MCPToolsPage() {
                   Send special keys (enter, ctrl+c, up, down, etc.)
                 </td>
                 <td className="p-3 font-mono text-xs">terminal:write</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Pod Discovery */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Pod Discovery</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border border-border rounded-lg">
-            <thead>
-              <tr className="bg-muted">
-                <th className="text-left p-3 border-b border-border">Tool</th>
-                <th className="text-left p-3 border-b border-border">
-                  Description
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-muted-foreground">
-              <tr>
-                <td className="p-3 font-medium">list_available_pods</td>
-                <td className="p-3">
-                  List other Pods available for collaboration
-                </td>
               </tr>
             </tbody>
           </table>
@@ -478,10 +379,10 @@ export default function MCPToolsPage() {
             </thead>
             <tbody className="text-muted-foreground">
               <tr>
-                <td className="p-3 font-medium">create_agentpod</td>
+                <td className="p-3 font-medium">create_pod</td>
                 <td className="p-3">Create a new AgentPod</td>
                 <td className="p-3 font-mono text-xs">
-                  runner_id?, ticket_id?, initial_prompt?, model?
+                  agent_type_id (required), runner_id?, ticket_id?, initial_prompt?, model?
                 </td>
               </tr>
             </tbody>
