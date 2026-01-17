@@ -68,6 +68,23 @@ BEGIN
     );
 
     -- =========================================================================
+    -- 3.1 创建 Pro 订阅 (plan_id = 2)
+    -- =========================================================================
+    -- Pro 计划：10 concurrent pods, 10 runners, 10 users
+
+    INSERT INTO subscriptions (
+        organization_id, plan_id, status, billing_cycle,
+        current_period_start, current_period_end,
+        auto_renew, seat_count
+    )
+    SELECT v_org_id, 2, 'active', 'monthly',
+           NOW(), NOW() + INTERVAL '30 days',
+           TRUE, 10
+    WHERE NOT EXISTS (
+        SELECT 1 FROM subscriptions WHERE organization_id = v_org_id
+    );
+
+    -- =========================================================================
     -- 4. 创建 Runner 注册令牌
     -- =========================================================================
     -- Token: dev-runner-token

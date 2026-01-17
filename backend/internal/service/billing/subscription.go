@@ -159,3 +159,10 @@ func (s *Service) RenewSubscription(ctx context.Context, orgID int64) error {
 
 	return s.db.WithContext(ctx).Save(sub).Error
 }
+
+// SetAutoRenew sets the auto_renew flag for a subscription
+func (s *Service) SetAutoRenew(ctx context.Context, orgID int64, autoRenew bool) error {
+	return s.db.WithContext(ctx).Model(&billing.Subscription{}).
+		Where("organization_id = ?", orgID).
+		Update("auto_renew", autoRenew).Error
+}

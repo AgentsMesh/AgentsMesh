@@ -1,0 +1,265 @@
+id: TC-BIND-002
+name: 接受和拒绝 Binding
+description: 验证 Binding 请求的接受和拒绝功能
+priority: high
+module: mesh/binding
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 创建三个 Pod（A、B、C）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Binding Accept/Reject Pod A"
+      expected:
+        status: 201
+      save:
+        pod_key_a: body.pod.pod_key
+
+  - id: step-5
+    action: 创建 Pod B
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Binding Accept/Reject Pod B"
+      expected:
+        status: 201
+      save:
+        pod_key_b: body.pod.pod_key
+
+  - id: step-6
+    action: 创建 Pod C
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Binding Accept/Reject Pod C"
+      expected:
+        status: 201
+      save:
+        pod_key_c: body.pod.pod_key
+
+  - id: step-7
+    action: 等待所有 Pod 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods?status=running
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+      retry:
+        max_attempts: 15
+        interval: 3000
+
+  - id: step-8
+    action: Pod A 请求 Binding 到 Pod B（将被接受）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/bindings
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+          Content-Type: application/json
+        body:
+          target_pod: "{pod_key_b}"
+          scopes:
+            - "terminal:read"
+      expected:
+        status: 201
+      save:
+        binding_id_accept: body.binding.id
+
+  - id: step-9
+    action: Pod B 接受 Binding
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/bindings/accept
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_b}"
+          Content-Type: application/json
+        body:
+          binding_id: "{binding_id_accept}"
+      expected:
+        status: 200
+        body:
+          binding:
+            id: "{binding_id_accept}"
+            status: active
+
+  - id: step-10
+    action: 验证 Binding 状态已更新为 active
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/bindings/check/{pod_key_b}
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+      expected:
+        status: 200
+        body:
+          is_bound: true
+
+  - id: step-11
+    action: Pod A 请求 Binding 到 Pod C（将被拒绝）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/bindings
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+          Content-Type: application/json
+        body:
+          target_pod: "{pod_key_c}"
+          scopes:
+            - "terminal:read"
+      expected:
+        status: 201
+      save:
+        binding_id_reject: body.binding.id
+
+  - id: step-12
+    action: Pod C 拒绝 Binding
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/bindings/reject
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_c}"
+          Content-Type: application/json
+        body:
+          binding_id: "{binding_id_reject}"
+          reason: "E2E Test Rejection"
+      expected:
+        status: 200
+        body:
+          binding:
+            id: "{binding_id_reject}"
+            status: rejected
+
+  - id: step-13
+    action: 验证 Binding 状态已更新为 rejected
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/bindings/check/{pod_key_c}
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+      expected:
+        status: 200
+        body:
+          is_bound: false
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_a}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_b}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_c}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true

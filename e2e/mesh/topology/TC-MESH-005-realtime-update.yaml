@@ -1,0 +1,316 @@
+id: TC-MESH-005
+name: Mesh 拓扑实时更新
+description: |
+  验证 Mesh 拓扑的实时更新功能：
+  1. 创建 Pod → 节点出现
+  2. 创建 Binding → 连接线出现
+  3. 终止 Pod → 节点状态更新
+priority: critical
+module: mesh/topology
+type: scenario
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+setup:
+  sql: |
+    -- 清理可能存在的测试数据
+    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Mesh Realtime%';
+    DELETE FROM channels WHERE name LIKE 'E2E Mesh Realtime%';
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取初始拓扑状态
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/mesh/topology
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+      save:
+        initial_pods: body.topology.stats.active_pods
+        initial_bindings: body.topology.stats.bindings
+
+  - id: step-3
+    action: 获取可用 Runner 和 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-4
+    action: 获取 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-5
+    action: 导航到 Mesh 页面，记录初始状态
+    url: /dev-org/mesh
+    verification:
+      type: ui
+      check:
+        - exists: '[data-testid="mesh-page"] or heading contains "Mesh"'
+
+  - id: step-6
+    action: 创建 Pod A
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Mesh Realtime Pod A"
+      expected:
+        status: 201
+      save:
+        pod_key_a: body.pod.pod_key
+
+  - id: step-7
+    action: 等待 Pod A 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key_a}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-8
+    action: 验证拓扑 API Pod 数增加
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/mesh/topology
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          topology:
+            stats:
+              active_pods: greater_than({initial_pods})
+
+  - id: step-9
+    action: 刷新 Mesh 页面验证新 Pod 节点出现
+    url: /dev-org/mesh
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="pod-node"]'
+            - exists: '.node-pod'
+            - exists: 'text contains "Pod"'
+
+  - id: step-10
+    action: 创建 Pod B
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Mesh Realtime Pod B"
+      expected:
+        status: 201
+      save:
+        pod_key_b: body.pod.pod_key
+
+  - id: step-11
+    action: 等待 Pod B 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key_b}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-12
+    action: Pod A 请求 Binding 到 Pod B
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/bindings
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+          Content-Type: application/json
+        body:
+          target_pod: "{pod_key_b}"
+          scopes:
+            - "terminal:read"
+      expected:
+        status: 201
+      save:
+        binding_id: body.binding.id
+
+  - id: step-13
+    action: Pod B 接受 Binding
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/bindings/accept
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_b}"
+          Content-Type: application/json
+        body:
+          binding_id: "{binding_id}"
+      expected:
+        status: 200
+        body:
+          binding:
+            status: active
+
+  - id: step-14
+    action: 验证拓扑 API Binding 数增加
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/mesh/topology
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          topology:
+            stats:
+              bindings: greater_than({initial_bindings})
+
+  - id: step-15
+    action: 刷新 Mesh 页面验证 Binding 连接线出现
+    url: /dev-org/mesh
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="binding-edge"]'
+            - exists: '.edge-binding'
+            - exists: 'line or path'
+
+  - id: step-16
+    action: 终止 Pod A
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key_a}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-17
+    action: 验证拓扑 API 更新 Pod 状态
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/mesh/topology
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+      retry:
+        max_attempts: 5
+        interval: 2000
+
+  - id: step-18
+    action: 刷新 Mesh 页面验证节点状态更新
+    url: /dev-org/mesh
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-status="terminated"]'
+            - exists: '.status-terminated'
+            - not_exists: '[data-pod-key="{pod_key_a}"][data-status="running"]'
+            - always: true
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_a}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_b}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true

@@ -125,6 +125,133 @@ EOF
     echo "✓ Runner 证书生成完成"
 }
 
+# 初始化 AI CLI 配置文件
+init_ai_cli_configs() {
+    echo "初始化 AI CLI 配置文件..."
+
+    # Claude Code 配置
+    # 注意: hasCompletedOnboarding 必须放在 ~/.claude.json 中才能跳过 onboarding
+    # 为了持久化，我们把实际文件存在 ~/.claude/claude.json，然后创建符号链接到 ~/.claude.json
+    CLAUDE_CONFIG_DIR="${HOME}/.claude"
+    CLAUDE_JSON_ACTUAL="${CLAUDE_CONFIG_DIR}/claude.json"
+    CLAUDE_JSON_LINK="${HOME}/.claude.json"
+    CLAUDE_SETTINGS="${CLAUDE_CONFIG_DIR}/settings.json"
+
+    mkdir -p "$CLAUDE_CONFIG_DIR"
+
+    # 创建 ~/.claude/claude.json (实际存储位置，会被 volume 持久化)
+    if [ ! -f "$CLAUDE_JSON_ACTUAL" ]; then
+        cat > "$CLAUDE_JSON_ACTUAL" << 'EOF'
+{
+  "hasCompletedOnboarding": true,
+  "theme": "dark",
+  "autoUpdaterStatus": "disabled",
+  "shiftEnterKeyBindingInstalled": true
+}
+EOF
+        echo "  ✓ Claude Code claude.json 已初始化"
+    else
+        echo "  - Claude Code claude.json 已存在"
+    fi
+
+    # 创建符号链接 ~/.claude.json -> ~/.claude/claude.json
+    if [ ! -L "$CLAUDE_JSON_LINK" ]; then
+        rm -f "$CLAUDE_JSON_LINK"  # 删除可能存在的普通文件
+        ln -s "$CLAUDE_JSON_ACTUAL" "$CLAUDE_JSON_LINK"
+        echo "  ✓ Claude Code ~/.claude.json 符号链接已创建"
+    else
+        echo "  - Claude Code ~/.claude.json 符号链接已存在"
+    fi
+
+    # 创建 ~/.claude/settings.json (工具权限配置)
+    if [ ! -f "$CLAUDE_SETTINGS" ]; then
+        cat > "$CLAUDE_SETTINGS" << 'EOF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)"
+    ],
+    "deny": []
+  },
+  "autoUpdaterStatus": "disabled",
+  "spinnerTipsEnabled": false
+}
+EOF
+        echo "  ✓ Claude Code settings.json 已初始化"
+    else
+        echo "  - Claude Code settings.json 已存在"
+    fi
+
+    # OpenAI Codex 配置
+    CODEX_CONFIG_DIR="${HOME}/.codex"
+    CODEX_CONFIG="${CODEX_CONFIG_DIR}/config.toml"
+    if [ ! -f "$CODEX_CONFIG" ]; then
+        mkdir -p "$CODEX_CONFIG_DIR"
+        cat > "$CODEX_CONFIG" << 'EOF'
+# Codex CLI Configuration
+# Reference: https://developers.openai.com/codex/config-reference/
+
+# Model settings
+model = "gpt-4.1"
+
+# Approval policy: "on-request", "on-failure", "never", "untrusted"
+# For automated/headless mode, use "never" to skip manual approvals
+approval_policy = "never"
+
+# Sandbox mode: "off", "workspace-read", "workspace-write", "danger-full-access"
+# For development, allow full workspace write access
+sandbox_mode = "workspace-write"
+
+# Disable interactive features for headless mode
+notify = false
+
+# Shell environment policy
+[shell_environment_policy]
+inherit = true
+EOF
+        echo "  ✓ OpenAI Codex 配置已初始化"
+    else
+        echo "  - OpenAI Codex 配置已存在"
+    fi
+
+    # Gemini CLI 配置
+    GEMINI_CONFIG_DIR="${HOME}/.gemini"
+    GEMINI_SETTINGS="${GEMINI_CONFIG_DIR}/settings.json"
+    if [ ! -f "$GEMINI_SETTINGS" ]; then
+        mkdir -p "$GEMINI_CONFIG_DIR"
+        cat > "$GEMINI_SETTINGS" << 'EOF'
+{
+  "coreTools": [
+    "read_file",
+    "edit_file",
+    "write_file",
+    "run_shell_command",
+    "search_files",
+    "list_directory",
+    "web_search"
+  ],
+  "excludeTools": [],
+  "theme": "Default (Dark)",
+  "checkForUpdates": false,
+  "sandbox": false,
+  "yolo": false
+}
+EOF
+        echo "  ✓ Gemini CLI 配置已初始化"
+    else
+        echo "  - Gemini CLI 配置已存在"
+    fi
+
+    echo "✓ AI CLI 配置初始化完成"
+}
+
 # 创建配置文件
 create_config() {
     echo "创建 Runner 配置文件..."
@@ -203,6 +330,7 @@ start_runner() {
 main() {
     wait_for_backend
     generate_runner_cert
+    init_ai_cli_configs
     create_config
 
     if [ "${DEBUG:-false}" = "true" ]; then

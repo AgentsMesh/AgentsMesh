@@ -227,6 +227,16 @@ export const billingApi = {
       body: { billing_cycle: billingCycle },
     }),
 
+  // Update auto-renew setting
+  updateAutoRenew: (autoRenew: boolean) =>
+    request<{ subscription: Subscription; auto_renew: boolean }>(
+      orgPath("/billing/subscription/auto-renew"),
+      {
+        method: "PUT",
+        body: { auto_renew: autoRenew },
+      }
+    ),
+
   // ===========================================
   // Seat Management APIs
   // ===========================================

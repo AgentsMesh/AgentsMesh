@@ -1,0 +1,236 @@
+id: TC-CHAN-002
+name: Channel 消息发送
+description: 验证在 Channel 中发送和获取消息的功能
+priority: high
+module: mesh/channel
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 创建 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          name: "E2E Message Test Channel"
+          description: "Channel for message testing"
+      expected:
+        status: 201
+      save:
+        channel_id: body.channel.id
+
+  - id: step-3
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-4
+    action: 获取 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-5
+    action: 创建测试 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Channel Message Pod"
+      expected:
+        status: 201
+      save:
+        pod_key: body.pod.pod_key
+
+  - id: step-6
+    action: 等待 Pod 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-7
+    action: Pod 加入 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          pod_key: "{pod_key}"
+      expected:
+        status: 200
+
+  - id: step-8
+    action: 发送消息到 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          content: "E2E Test Message from Pod"
+          pod_key: "{pod_key}"
+      expected:
+        status: 201
+        body:
+          message:
+            id: not_empty
+            content: "E2E Test Message from Pod"
+      save:
+        message_id: body.message.id
+
+  - id: step-9
+    action: 获取 Channel 消息列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          messages: contains_message({message_id})
+
+  - id: step-10
+    action: 发送第二条消息
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          content: "Second E2E Test Message"
+          pod_key: "{pod_key}"
+      expected:
+        status: 201
+
+  - id: step-11
+    action: 验证消息列表包含两条消息
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          messages: length >= 2
+
+  - id: step-12
+    action: 对已归档 Channel 发送消息应失败
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/archive
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-13
+    action: 验证对已归档 Channel 发送消息失败
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels/{channel_id}/messages
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          content: "Should fail"
+          pod_key: "{pod_key}"
+      expected:
+        status: 400
+        body:
+          error: contains(archived)
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true

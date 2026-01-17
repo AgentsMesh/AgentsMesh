@@ -193,6 +193,8 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 		channels.POST("/:id/unarchive", channelHandler.UnarchiveChannel)
 		channels.GET("/:id/messages", channelHandler.ListMessages)
 		channels.POST("/:id/messages", channelHandler.SendMessage)
+		channels.GET("/:id/document", channelHandler.GetDocument)
+		channels.PUT("/:id/document", channelHandler.UpdateDocument)
 		channels.GET("/:id/pods", channelHandler.ListChannelPods)
 		channels.POST("/:id/pods", channelHandler.JoinPod)
 		channels.DELETE("/:id/pods/:pod_key", channelHandler.LeavePod)

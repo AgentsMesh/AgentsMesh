@@ -1,0 +1,111 @@
+id: TC-RUNNER-001
+name: Runner 列表显示
+description: 验证 Runner 列表 API 和 UI 显示功能
+priority: high
+module: runner
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个已注册的 Runner
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取 Runner 列表
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+      save:
+        runners_count: body.runners.length
+
+  - id: step-3
+    action: 验证 Runner 数据结构
+    condition: "{runners_count} > 0"
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners[0]:
+            id: not_empty
+            description: is_string
+            is_enabled: is_boolean
+            max_concurrent_pods: is_number
+            active_pods: is_number
+
+  - id: step-4
+    action: 获取可用 Runner 列表（用于创建 Pod）
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+
+  - id: step-5
+    action: 导航到 Runners 管理页面
+    url: /dev-org/runners
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'heading contains "Runner"'
+            - exists: 'text contains "Runner"'
+            - exists: '[data-testid="runners-page"]'
+
+  - id: step-6
+    action: 验证 Runner 列表表格显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'table'
+            - exists: '[data-testid="runner-list"]'
+            - exists: '.runner-card'
+
+  - id: step-7
+    action: 验证 Runner 基本信息列显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'text contains "状态" or text contains "Status"'
+            - exists: 'text contains "容量" or text contains "Capacity"'
+            - exists: 'th or thead'

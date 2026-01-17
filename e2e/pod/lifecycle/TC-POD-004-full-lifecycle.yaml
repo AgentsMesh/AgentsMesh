@@ -1,0 +1,255 @@
+id: TC-POD-004
+name: Pod 完整生命周期流程
+description: |
+  验证 Pod 从创建到终止的完整生命周期：
+  1. 创建 Pod
+  2. 等待 Pod 状态变为 running
+  3. 在 Workspace 页面验证 Terminal 显示
+  4. 发送测试命令并验证输出
+  5. 验证 Runner 容量更新
+  6. 终止 Pod
+  7. 验证 Runner 容量恢复
+priority: critical
+module: pod/lifecycle
+type: scenario
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+setup:
+  sql: |
+    -- 清理可能存在的测试 Pod
+    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Full Lifecycle%';
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner 列表并记录当前容量
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+        runner_name: body.runners[0].description
+        initial_active_pods: body.runners[0].active_pods
+
+  - id: step-3
+    action: 获取可用 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 创建 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Full Lifecycle Test Pod"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        pod_key: body.pod.pod_key
+
+  - id: step-5
+    action: 等待 Pod 状态变为 running（最多 30 秒）
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-6
+    action: 导航到 Workspace 页面
+    url: /dev-org/workspace
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'heading contains "Workspace"'
+            - exists: 'text contains "工作区"'
+            - exists: '[data-testid="workspace-container"]'
+
+  - id: step-7
+    action: 验证 Terminal 区域显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="terminal-grid"]'
+            - exists: '.terminal-container'
+            - exists: '[role="terminal"]'
+
+  - id: step-8
+    action: 验证 Runner 活跃 Pod 数增加
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runner:
+            active_pods: greater_than({initial_active_pods})
+      save:
+        active_pods_with_pod: body.runner.active_pods
+
+  - id: step-9
+    action: 发送终端输入命令
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/input
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          input: "echo 'E2E Test Output'\n"
+      expected:
+        status: 200
+        body:
+          message: contains(sent)
+
+  - id: step-10
+    action: 获取终端输出验证命令执行
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/observe?lines=50
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod_key: "{pod_key}"
+          output: not_empty
+      retry:
+        max_attempts: 5
+        interval: 2000
+
+  - id: step-11
+    action: 终止 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          message: contains(terminated)
+
+  - id: step-12
+    action: 验证 Pod 状态为 terminated
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: terminated
+
+  - id: step-13
+    action: 验证 Runner 活跃 Pod 数恢复
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runner:
+            active_pods: "{initial_active_pods}"
+      retry:
+        max_attempts: 5
+        interval: 2000
+
+  - id: step-14
+    action: 验证数据库中 Pod 状态
+    verification:
+      type: database
+      query: |
+        SELECT pod_key, status, terminated_at FROM agent_pods
+        WHERE pod_key = '{pod_key}'
+      expected:
+        status: terminated
+        terminated_at: not_empty
+
+cleanup:
+  - sql: |
+      -- 确保测试 Pod 被清理
+      UPDATE agent_pods SET status = 'terminated', terminated_at = NOW()
+      WHERE pod_key = '{pod_key}' AND status != 'terminated';

@@ -1,0 +1,199 @@
+id: TC-BIND-001
+name: 请求 Binding
+description: 验证 Pod A 向 Pod B 发起 Binding 请求的功能
+priority: high
+module: mesh/binding
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有两个 running 状态的 Pod
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner 和 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 创建 Pod A
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Binding Request Pod A"
+      expected:
+        status: 201
+      save:
+        pod_key_a: body.pod.pod_key
+
+  - id: step-5
+    action: 创建 Pod B
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Binding Request Pod B"
+      expected:
+        status: 201
+      save:
+        pod_key_b: body.pod.pod_key
+
+  - id: step-6
+    action: 等待两个 Pod 都变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods?status=running
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-7
+    action: Pod A 请求 Binding 到 Pod B
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/bindings
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+          Content-Type: application/json
+        body:
+          target_pod: "{pod_key_b}"
+          scopes:
+            - "terminal:read"
+      expected:
+        status: 201
+        body:
+          binding:
+            id: not_empty
+            source_pod: "{pod_key_a}"
+            target_pod: "{pod_key_b}"
+            status: pending
+            scopes: contains("terminal:read")
+      save:
+        binding_id: body.binding.id
+
+  - id: step-8
+    action: 验证 Binding 出现在 Pod A 的绑定列表中
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/bindings
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_a}"
+      expected:
+        status: 200
+        body:
+          bindings: contains_binding({binding_id})
+
+  - id: step-9
+    action: 验证 Binding 出现在 Pod B 的待处理请求中
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/bindings/pending
+        headers:
+          Authorization: Bearer {access_token}
+          X-Pod-Key: "{pod_key_b}"
+      expected:
+        status: 200
+        body:
+          pending: contains_binding({binding_id})
+          count: greater_than(0)
+
+  - id: step-10
+    action: 验证数据库中 Binding 已创建
+    verification:
+      type: database
+      query: |
+        SELECT id, source_pod, target_pod, status FROM bindings
+        WHERE id = {binding_id}
+      expected:
+        source_pod: "{pod_key_a}"
+        target_pod: "{pod_key_b}"
+        status: pending
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_a}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_b}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true

@@ -12,9 +12,8 @@ RUN corepack enable
 # Expose port
 EXPOSE 3000
 
-# Install dependencies and start dev server
-# This ensures native modules are compiled for Linux
-# Use -H 0.0.0.0 to bind to all interfaces for Docker access
+# Use entrypoint script (mounted via docker-compose) for smart dependency management
+# This prevents unnecessary pnpm install runs
 # Use --webpack instead of Turbopack (Turbopack has issues in Docker)
 # See: https://github.com/vercel/next.js/discussions/77102
-CMD ["sh", "-c", "pnpm install && pnpm exec next dev -H 0.0.0.0 --webpack"]
+CMD ["sh", "/usr/local/bin/web-entrypoint.sh"]

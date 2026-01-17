@@ -1,0 +1,140 @@
+id: TC-CHAN-001
+name: 创建 Channel
+description: 验证创建 Channel 的功能
+priority: high
+module: mesh/channel
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 创建 Channel
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          name: "E2E Test Channel"
+          description: "Channel created for E2E testing"
+      expected:
+        status: 201
+        body:
+          channel:
+            id: not_empty
+            name: "E2E Test Channel"
+            description: "Channel created for E2E testing"
+            is_archived: false
+      save:
+        channel_id: body.channel.id
+
+  - id: step-3
+    action: 获取 Channel 详情
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels/{channel_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          channel:
+            id: "{channel_id}"
+            name: "E2E Test Channel"
+
+  - id: step-4
+    action: 验证 Channel 出现在列表中
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/channels
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          channels: contains_channel({channel_id})
+
+  - id: step-5
+    action: 创建重名 Channel 应失败
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/channels
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          name: "E2E Test Channel"
+          description: "Duplicate channel"
+      expected:
+        status: 409
+        body:
+          error: contains(exists)
+
+  - id: step-6
+    action: 更新 Channel
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/dev-org/channels/{channel_id}
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          name: "E2E Test Channel Updated"
+          description: "Updated description"
+      expected:
+        status: 200
+        body:
+          channel:
+            name: "E2E Test Channel Updated"
+
+  - id: step-7
+    action: 验证数据库中 Channel 已创建
+    verification:
+      type: database
+      query: |
+        SELECT id, name, description, is_archived FROM channels
+        WHERE id = {channel_id}
+      expected:
+        id: "{channel_id}"
+        name: "E2E Test Channel Updated"
+        is_archived: false
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/channels/{channel_id}/archive
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true

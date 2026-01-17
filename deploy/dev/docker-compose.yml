@@ -177,7 +177,7 @@ services:
       retries: 3
       start_period: 30s
 
-  # Next.js frontend with hot reload
+  # Next.js frontend with production build for stability
   web:
     build:
       context: ../../web
@@ -190,14 +190,21 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:${HTTP_PORT:-80}
       - NEXT_PUBLIC_WS_URL=ws://localhost:${HTTP_PORT:-80}
       - NEXT_PUBLIC_GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-}
-      # Optimize for Docker environment
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
+      # Disable file watching entirely for stability
+      # File changes will require container restart
+      - WATCHPACK_POLLING=false
+      - CHOKIDAR_USEPOLLING=false
+      - NEXT_MANUAL_SIG_HANDLE=true
     volumes:
       # Mount source code for hot reload
       - ../../web:/app
       # Use container's node_modules (compiled for Linux)
       - web_node_modules:/app/node_modules
+      # Use anonymous volume for .next to prevent host filesystem sync triggering restarts
+      # See: Next.js compiles to .next, which syncs to host and triggers watcher again
+      - /app/.next
+      # Entrypoint script for smart dependency management
+      - ./web-entrypoint.sh:/usr/local/bin/web-entrypoint.sh:ro
     # No external port - accessed via nginx
 
   # Runner with hot reload (runs as non-root user for Claude Code compatibility)
@@ -227,6 +234,19 @@ services:
       # Debug mode
       - DEBUG=true
       - HOME=/home/runner
+      # ============================================
+      # AI CLI API Keys (for headless/non-interactive mode)
+      # These allow AI CLI tools to authenticate without interactive login
+      # ============================================
+      # Claude Code - Anthropic API (supports custom gateway)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-http://192.168.100.133:3456}
+      - ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:-sk-zcf-x-ccr}
+      # OpenAI Codex CLI - OpenAI API Key
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # Gemini CLI - Google AI API Key (or use GOOGLE_API_KEY for Vertex AI)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
     volumes:
       # Mount source code for hot reload
       - ../../runner:/app
@@ -244,6 +264,13 @@ services:
       - runner_workspace:/workspace
       # AgentsMesh config directory (note: .agentsmesh with 's')
       - runner_config:/home/runner/.agentsmesh
+      # ============================================
+      # AI CLI config directories (persist across restarts)
+      # ============================================
+      # Claude Code: ~/.claude/ (settings + .claude.json will be created by entrypoint)
+      - runner_claude_config:/home/runner/.claude
+      - runner_codex_config:/home/runner/.codex
+      - runner_gemini_config:/home/runner/.gemini
     # Use entrypoint script for auto-configuration
     entrypoint: ["/usr/local/bin/runner-entrypoint.sh"]
     # Runner communicates with backend via gRPC through nginx
@@ -276,3 +303,7 @@ volumes:
   runner_workspace:
   runner_config:
   web_node_modules:
+  # AI CLI config volumes (persist authentication across restarts)
+  runner_claude_config:
+  runner_codex_config:
+  runner_gemini_config:

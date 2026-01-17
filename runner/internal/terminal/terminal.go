@@ -47,6 +47,11 @@ func New(opts Options) (*Terminal, error) {
 
 	// Build environment
 	env := os.Environ()
+
+	// Ensure terminal supports colors (critical for CLI tools like claude, ls, etc.)
+	env = append(env, "TERM=xterm-256color")
+	env = append(env, "COLORTERM=truecolor")
+
 	for k, v := range opts.Env {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}

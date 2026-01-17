@@ -1,0 +1,144 @@
+id: TC-TERM-001
+name: 终端连接
+description: 验证获取 Pod 终端连接信息的功能
+priority: high
+module: pod/terminal
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个 running 状态的 Pod
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 创建测试 Pod
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取可用 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 创建 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Terminal Connect Test"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        pod_key: body.pod.pod_key
+
+  - id: step-5
+    action: 等待 Pod 状态变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-6
+    action: 获取终端连接信息
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/connect
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod_key: "{pod_key}"
+          ws_url: contains(terminal)
+          status: running
+
+  - id: step-7
+    action: 对非活跃 Pod 获取连接信息应失败
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-8
+    action: 验证已终止的 Pod 无法获取连接
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/connect
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 400
+        body:
+          error: contains(not active)

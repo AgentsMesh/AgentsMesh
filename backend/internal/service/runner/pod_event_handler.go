@@ -40,30 +40,65 @@ func (pc *PodCoordinator) handleHeartbeat(runnerID int64, data *runnerv1.Heartbe
 func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, reportedPods map[string]bool) {
 	now := time.Now()
 
-	// First, ensure all reported pods are registered with terminal router
-	// and restore any orphaned pods that runner reports as active
+	// First, check reported pods against database status
+	// - Restore orphaned pods that runner reports as active
+	// - Terminate pods that should not be running (terminated/completed in DB)
 	for podKey := range reportedPods {
+		var pod agentpod.Pod
+		err := pc.db.WithContext(ctx).
+			Where("pod_key = ? AND runner_id = ?", podKey, runnerID).
+			First(&pod).Error
+
+		if err != nil {
+			// Pod not found in database, tell runner to terminate it
+			pc.logger.Warn("runner reported unknown pod, sending terminate",
+				"pod_key", podKey,
+				"runner_id", runnerID)
+			if sendErr := pc.commandSender.SendTerminatePod(ctx, runnerID, podKey); sendErr != nil {
+				pc.logger.Error("failed to send terminate for unknown pod",
+					"pod_key", podKey,
+					"error", sendErr)
+			}
+			continue
+		}
+
+		// Check if pod should be terminated (already completed/terminated in DB)
+		if pod.Status == agentpod.StatusCompleted || pod.Status == agentpod.StatusTerminated {
+			pc.logger.Warn("runner reported terminated pod, sending terminate",
+				"pod_key", podKey,
+				"runner_id", runnerID,
+				"db_status", pod.Status)
+			if sendErr := pc.commandSender.SendTerminatePod(ctx, runnerID, podKey); sendErr != nil {
+				pc.logger.Error("failed to send terminate for completed pod",
+					"pod_key", podKey,
+					"error", sendErr)
+			}
+			continue
+		}
+
 		// Always register pod with terminal router (idempotent operation)
 		// This ensures routing works even after backend restart
 		pc.terminalRouter.RegisterPod(podKey, runnerID)
 
 		// Try to restore if pod is orphaned
-		result := pc.db.WithContext(ctx).
-			Model(&agentpod.Pod{}).
-			Where("pod_key = ? AND runner_id = ? AND status = ?", podKey, runnerID, agentpod.StatusOrphaned).
-			Updates(map[string]interface{}{
-				"status":        agentpod.StatusRunning,
-				"finished_at":   nil,
-				"last_activity": now,
-			})
-		if result.Error != nil {
-			pc.logger.Error("failed to restore orphaned pod",
-				"pod_key", podKey,
-				"error", result.Error)
-		} else if result.RowsAffected > 0 {
-			pc.logger.Info("restored orphaned pod reported by runner",
-				"pod_key", podKey,
-				"runner_id", runnerID)
+		if pod.Status == agentpod.StatusOrphaned {
+			result := pc.db.WithContext(ctx).
+				Model(&agentpod.Pod{}).
+				Where("pod_key = ? AND runner_id = ? AND status = ?", podKey, runnerID, agentpod.StatusOrphaned).
+				Updates(map[string]interface{}{
+					"status":        agentpod.StatusRunning,
+					"finished_at":   nil,
+					"last_activity": now,
+				})
+			if result.Error != nil {
+				pc.logger.Error("failed to restore orphaned pod",
+					"pod_key", podKey,
+					"error", result.Error)
+			} else if result.RowsAffected > 0 {
+				pc.logger.Info("restored orphaned pod reported by runner",
+					"pod_key", podKey,
+					"runner_id", runnerID)
+			}
 		}
 	}
 
@@ -79,6 +114,7 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 	}
 
 	// Mark pods that are in DB but not reported by runner as orphaned
+	// This means the pod process has terminated on the runner side
 	for _, p := range pods {
 		if !reportedPods[p.PodKey] {
 			if err := pc.db.WithContext(ctx).
@@ -98,6 +134,31 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 				pc.terminalRouter.UnregisterPod(p.PodKey)
 			}
 		}
+	}
+
+	// Update current_pods count based on actual running pods reported by runner
+	// This ensures consistency between runner state and database
+	activePodCount := 0
+	for podKey := range reportedPods {
+		// Only count pods that are actually active (not terminated/completed in DB)
+		var pod agentpod.Pod
+		if err := pc.db.WithContext(ctx).
+			Where("pod_key = ? AND status IN ?", podKey, []string{agentpod.StatusRunning, agentpod.StatusInitializing}).
+			First(&pod).Error; err == nil {
+			activePodCount++
+		}
+	}
+
+	// Update runner's current_pods to reflect actual active pods
+	if err := pc.db.WithContext(ctx).
+		Model(&agentpod.Pod{}).
+		Table("runners").
+		Where("id = ?", runnerID).
+		Update("current_pods", activePodCount).Error; err != nil {
+		pc.logger.Error("failed to update runner current_pods",
+			"runner_id", runnerID,
+			"active_pods", activePodCount,
+			"error", err)
 	}
 }
 

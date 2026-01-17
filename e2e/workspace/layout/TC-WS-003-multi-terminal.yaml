@@ -1,0 +1,244 @@
+id: TC-WS-003
+name: 多终端 Workspace 管理
+description: |
+  验证 Workspace 多终端管理功能：
+  1. 创建多个 Pod
+  2. 打开多个终端
+  3. 切换布局
+  4. 管理 Tab
+  5. 关闭终端
+priority: high
+module: workspace/layout
+type: scenario
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+setup:
+  sql: |
+    -- 清理可能存在的测试 Pod
+    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Multi Terminal%';
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取可用 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 创建第一个 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Multi Terminal Test Pod 1"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        pod_key_1: body.pod.pod_key
+
+  - id: step-5
+    action: 创建第二个 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Multi Terminal Test Pod 2"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        pod_key_2: body.pod.pod_key
+
+  - id: step-6
+    action: 等待 Pod 1 状态变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key_1}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-7
+    action: 等待 Pod 2 状态变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key_2}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 10
+        interval: 3000
+
+  - id: step-8
+    action: 导航到 Workspace 页面
+    url: /dev-org/workspace
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: 'heading contains "Workspace"'
+            - exists: '[data-testid="workspace-container"]'
+
+  - id: step-9
+    action: 验证有多个 Pod Tab 显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - count: '[data-testid="pod-tab"]' >= 2
+            - count: 'button[role="tab"]' >= 2
+            - count: '.tab-item' >= 2
+
+  - id: step-10
+    action: 点击第一个 Pod Tab
+    verification:
+      type: ui
+      steps:
+        - click: '[data-testid="pod-tab"]:first-child or button[role="tab"]:first-child'
+      check:
+        - one_of:
+            - exists: '[data-testid="terminal-active"]'
+            - exists: '.xterm'
+
+  - id: step-11
+    action: 点击第二个 Pod Tab
+    verification:
+      type: ui
+      steps:
+        - click: '[data-testid="pod-tab"]:nth-child(2) or button[role="tab"]:nth-child(2)'
+      check:
+        - one_of:
+            - exists: '[data-testid="terminal-active"]'
+            - exists: '.xterm'
+
+  - id: step-12
+    action: 尝试切换布局（如果支持）
+    verification:
+      type: ui
+      steps:
+        - click: '[data-testid="layout-switcher"] or button[aria-label*="布局"] or button[aria-label*="layout"]'
+          optional: true
+      check:
+        - one_of:
+            - exists: '[data-testid="layout-menu"]'
+            - exists: 'menuitem'
+            - always: true
+
+  - id: step-13
+    action: 验证终端网格区域正确显示
+    verification:
+      type: ui
+      check:
+        - one_of:
+            - exists: '[data-testid="terminal-grid"]'
+            - exists: '.terminal-container'
+
+  - id: step-14
+    action: 关闭第一个终端 Tab
+    verification:
+      type: ui
+      steps:
+        - click: '[data-testid="pod-tab"]:first-child [data-testid="close-tab"] or [data-testid="pod-tab"]:first-child button[aria-label*="关闭"]'
+          optional: true
+      check:
+        - one_of:
+            - count: '[data-testid="pod-tab"]' >= 1
+            - always: true
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_1}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key_2}/terminate
+      headers:
+        Authorization: Bearer {access_token}
+      ignore_error: true
