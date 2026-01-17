@@ -15,6 +15,7 @@ RUN apk add --no-cache \
     bash \
     curl \
     openssh-client \
+    openssl \
     python3 \
     nodejs \
     npm \
@@ -76,15 +77,22 @@ RUN addgroup -g 1000 runner && \
 # Go module setup
 # ============================================
 
-# Copy go mod files first for better caching
-COPY --chown=runner:runner go.mod go.sum ./
+# Copy proto module first (required by go.mod replace directive)
+WORKDIR /proto
+COPY --chown=runner:runner proto/go.mod proto/go.sum ./
+RUN chown -R runner:runner /proto
+
+# Copy runner go mod files
+WORKDIR /app
+COPY --chown=runner:runner runner/go.mod runner/go.sum ./
 RUN chown -R runner:runner /go
 USER runner
 RUN go mod download
 
 # Source code will be mounted as volume
 
-# Expose port for WebSocket connections
+# Note: Runner connects outbound to Backend via gRPC+mTLS
+# No inbound port needed (port 9090 was for legacy WebSocket)
 EXPOSE 9090
 
 # Entrypoint script mounted via docker-compose volume

@@ -10,49 +10,29 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
-// TestNewRunnerWithMockConnection tests Runner creation with new Connection interface
-func TestNewRunnerWithMockConnection(t *testing.T) {
-	cfg := &config.Config{
-		ServerURL:         "http://localhost:8080",
-		NodeID:            "test-runner",
-		AuthToken:         "test-token",
-		OrgSlug:           "test-org",
-		WorkspaceRoot:     t.TempDir(),
-		MaxConcurrentPods: 5,
-	}
-
-	r, err := New(cfg)
-	if err != nil {
-		t.Fatalf("Failed to create runner: %v", err)
-	}
-
-	if r.conn == nil {
-		t.Error("Runner connection should not be nil")
-	}
-
-	if r.podStore == nil {
-		t.Error("Runner podStore should not be nil")
-	}
-
-	if r.messageHandler == nil {
-		t.Error("Runner messageHandler should not be nil")
-	}
-}
-
 // TestRunnerWithConnection tests WithConnection method
 func TestRunnerWithConnection(t *testing.T) {
+	tempDir := t.TempDir()
 	cfg := &config.Config{
-		ServerURL:         "http://localhost:8080",
+		ServerURL:         "https://localhost:8080",
 		NodeID:            "test-runner",
-		AuthToken:         "test-token",
 		OrgSlug:           "test-org",
-		WorkspaceRoot:     t.TempDir(),
+		WorkspaceRoot:     tempDir,
 		MaxConcurrentPods: 5,
+		// gRPC config will be loaded by the mock
+		GRPCEndpoint: "localhost:9443",
+		CertFile:     "/tmp/test.crt",
+		KeyFile:      "/tmp/test.key",
+		CAFile:       "/tmp/ca.crt",
 	}
 
-	r, err := New(cfg)
-	if err != nil {
-		t.Fatalf("Failed to create runner: %v", err)
+	// Create runner components manually since we're testing with mock
+	store := NewInMemoryPodStore()
+	r := &Runner{
+		cfg:      cfg,
+		podStore: store,
+		pods:     make(map[string]*Pod),
+		stopChan: make(chan struct{}),
 	}
 
 	mockConn := client.NewMockConnection()
@@ -61,53 +41,34 @@ func TestRunnerWithConnection(t *testing.T) {
 	if r.conn != mockConn {
 		t.Error("Connection should be replaced with mock")
 	}
-
-	// Verify handler is set on mock connection
-	// This is verified by simulating a message
 }
 
 // TestRunnerMessageHandlerOnListPods tests the MessageHandler interface
 func TestRunnerMessageHandlerOnListPods(t *testing.T) {
+	tempDir := t.TempDir()
 	cfg := &config.Config{
-		ServerURL:         "http://localhost:8080",
+		ServerURL:         "https://localhost:8080",
 		NodeID:            "test-runner",
-		AuthToken:         "test-token",
 		OrgSlug:           "test-org",
-		WorkspaceRoot:     t.TempDir(),
+		WorkspaceRoot:     tempDir,
 		MaxConcurrentPods: 5,
 	}
 
-	r, err := New(cfg)
-	if err != nil {
-		t.Fatalf("Failed to create runner: %v", err)
+	store := NewInMemoryPodStore()
+	r := &Runner{
+		cfg:      cfg,
+		podStore: store,
+		pods:     make(map[string]*Pod),
 	}
 
 	mockConn := client.NewMockConnection()
-	r.WithConnection(mockConn)
+	r.conn = mockConn
+	r.messageHandler = NewRunnerMessageHandler(r, store, mockConn)
 
 	// Get pods (should be empty initially)
 	pods := r.messageHandler.OnListPods()
 	if len(pods) != 0 {
 		t.Errorf("Expected 0 pods, got %d", len(pods))
-	}
-}
-
-// TestBuildWebSocketBaseURL tests URL conversion (base URL without path)
-func TestBuildWebSocketBaseURL(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"http://localhost:8080", "ws://localhost:8080"},
-		{"https://api.example.com", "wss://api.example.com"},
-		{"http://localhost:8080/", "ws://localhost:8080/"},
-	}
-
-	for _, tt := range tests {
-		result := buildWebSocketBaseURL(tt.input)
-		if result != tt.expected {
-			t.Errorf("buildWebSocketBaseURL(%q) = %q, want %q", tt.input, result, tt.expected)
-		}
 	}
 }
 
@@ -122,7 +83,7 @@ func TestRunnerMessageHandlerInterface(t *testing.T) {
 		WorkspaceRoot: t.TempDir(),
 	}
 	r := &Runner{
-		cfg:          cfg,
+		cfg:      cfg,
 		podStore: NewInMemoryPodStore(),
 	}
 	mockConn := client.NewMockConnection()
@@ -131,51 +92,30 @@ func TestRunnerMessageHandlerInterface(t *testing.T) {
 	var _ client.MessageHandler = handler
 }
 
-// --- Test Runner.Run ---
-
-func TestRunnerRunMissingTokens(t *testing.T) {
-	cfg := &config.Config{
-		WorkspaceRoot: t.TempDir(),
-		AuthToken:     "",
-		RegistrationToken: "",
-	}
-
-	r := &Runner{
-		cfg:          cfg,
-		podStore: NewInMemoryPodStore(),
-		stopChan:     make(chan struct{}),
-	}
-
-	mockConn := client.NewMockConnection()
-	r.conn = mockConn
-
-	ctx := context.Background()
-	err := r.Run(ctx)
-
-	if err == nil {
-		t.Error("expected error for missing tokens")
-	}
-	if !contains(err.Error(), "no auth_token or registration_token") {
-		t.Errorf("error = %v, want containing 'no auth_token or registration_token'", err)
-	}
-}
-
-func TestRunnerRunWithAuthToken(t *testing.T) {
+// TestRunnerRunWithGRPCConnection tests runner with gRPC connection
+func TestRunnerRunWithGRPCConnection(t *testing.T) {
 	tempDir := t.TempDir()
 	cfg := &config.Config{
 		WorkspaceRoot: tempDir,
 		NodeID:        "test-node",
-		AuthToken:     "test-token",
+		OrgSlug:       "test-org",
+		GRPCEndpoint:  "localhost:9443",
+		CertFile:      "/tmp/test.crt",
+		KeyFile:       "/tmp/test.key",
+		CAFile:        "/tmp/ca.crt",
 	}
 
+	store := NewInMemoryPodStore()
 	r := &Runner{
-		cfg:          cfg,
-		podStore: NewInMemoryPodStore(),
-		stopChan:     make(chan struct{}),
+		cfg:      cfg,
+		podStore: store,
+		pods:     make(map[string]*Pod),
+		stopChan: make(chan struct{}),
 	}
 
 	mockConn := client.NewMockConnection()
 	r.conn = mockConn
+	r.messageHandler = NewRunnerMessageHandler(r, store, mockConn)
 
 	// Run with short timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
@@ -193,57 +133,27 @@ func TestRunnerRunWithAuthToken(t *testing.T) {
 	}
 }
 
-func TestRunnerRunWithRegistrationTokenError(t *testing.T) {
-	tempDir := t.TempDir()
-	cfg := &config.Config{
-		WorkspaceRoot:     tempDir,
-		NodeID:            "test-node",
-		AuthToken:         "",
-		RegistrationToken: "test-reg-token",
-		ServerURL:         "http://localhost:9999", // Non-existent server
-	}
-
-	r := &Runner{
-		cfg:          cfg,
-		podStore: NewInMemoryPodStore(),
-		stopChan:     make(chan struct{}),
-	}
-
-	mockConn := client.NewMockConnection()
-	r.conn = mockConn
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	err := r.Run(ctx)
-	// Should fail due to registration error
-	if err == nil {
-		t.Error("expected error for registration failure")
-	}
-	if !contains(err.Error(), "registration failed") {
-		t.Errorf("error = %v, want containing 'registration failed'", err)
-	}
-}
-
 func TestRunnerRunStopAllPods(t *testing.T) {
 	tempDir := t.TempDir()
 	cfg := &config.Config{
 		WorkspaceRoot: tempDir,
 		NodeID:        "test-node",
-		AuthToken:     "test-token",
+		OrgSlug:       "test-org",
 	}
 
 	store := NewInMemoryPodStore()
 	store.Put("pod-1", &Pod{ID: "pod-1", PodKey: "pod-1"})
 
 	r := &Runner{
-		cfg:          cfg,
+		cfg:      cfg,
 		podStore: store,
-		stopChan:     make(chan struct{}),
+		pods:     make(map[string]*Pod),
+		stopChan: make(chan struct{}),
 	}
 
 	mockConn := client.NewMockConnection()
 	r.conn = mockConn
+	r.messageHandler = NewRunnerMessageHandler(r, store, mockConn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
@@ -258,9 +168,6 @@ func TestRunnerRunStopAllPods(t *testing.T) {
 
 // --- Test initEnhancedComponents ---
 
-// Note: TestInitEnhancedComponentsWithWorktree removed - worktree functionality
-// is now handled by PodBuilder.setupWorkDir based on WorkDirConfig from Backend.
-
 func TestInitEnhancedComponentsWithMCPConfig(t *testing.T) {
 	tempDir := t.TempDir()
 	cfg := &config.Config{
@@ -269,7 +176,7 @@ func TestInitEnhancedComponentsWithMCPConfig(t *testing.T) {
 	}
 
 	r := &Runner{
-		cfg:      cfg,
+		cfg:  cfg,
 		pods: make(map[string]*Pod),
 	}
 
@@ -290,7 +197,7 @@ func TestInitEnhancedComponentsDefaultShell(t *testing.T) {
 	}
 
 	r := &Runner{
-		cfg:      cfg,
+		cfg:  cfg,
 		pods: make(map[string]*Pod),
 	}
 
@@ -309,7 +216,7 @@ func TestInitEnhancedComponentsCustomShell(t *testing.T) {
 	}
 
 	r := &Runner{
-		cfg:      cfg,
+		cfg:  cfg,
 		pods: make(map[string]*Pod),
 	}
 
@@ -325,18 +232,18 @@ func TestInitEnhancedComponentsCustomShell(t *testing.T) {
 func TestStopAllPodsWithTerminals(t *testing.T) {
 	store := NewInMemoryPodStore()
 	store.Put("pod-1", &Pod{
-		ID:         "pod-1",
-		PodKey: "pod-1",
-		Terminal:   nil,
+		ID:       "pod-1",
+		PodKey:   "pod-1",
+		Terminal: nil,
 	})
 	store.Put("pod-2", &Pod{
-		ID:         "pod-2",
-		PodKey: "pod-2",
-		Terminal:   nil,
+		ID:       "pod-2",
+		PodKey:   "pod-2",
+		Terminal: nil,
 	})
 
 	r := &Runner{
-		cfg:          &config.Config{},
+		cfg:      &config.Config{},
 		podStore: store,
 	}
 
@@ -344,16 +251,6 @@ func TestStopAllPodsWithTerminals(t *testing.T) {
 
 	if store.Count() != 0 {
 		t.Errorf("pod count = %d, want 0", store.Count())
-	}
-}
-
-// --- Test buildWebSocketBaseURL edge cases ---
-
-func TestBuildWebSocketBaseURLPlainURL(t *testing.T) {
-	result := buildWebSocketBaseURL("localhost:8080")
-	expected := "localhost:8080"
-	if result != expected {
-		t.Errorf("buildWebSocketBaseURL(plain) = %s, want %s", result, expected)
 	}
 }
 
@@ -366,7 +263,7 @@ func TestMockConnectionSimulateCreatePod(t *testing.T) {
 	tempDir := t.TempDir()
 	r := &Runner{
 		cfg: &config.Config{
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 			MaxConcurrentPods: 10,
 		},
 		podStore: store,
@@ -401,9 +298,9 @@ func TestMockConnectionSimulateTerminatePod(t *testing.T) {
 	}
 
 	store.Put("terminate-mock", &Pod{
-		ID:         "terminate-mock",
-		PodKey: "terminate-mock",
-		Terminal:   nil,
+		ID:       "terminate-mock",
+		PodKey:   "terminate-mock",
+		Terminal: nil,
 	})
 
 	handler := NewRunnerMessageHandler(r, store, mockConn)
@@ -431,9 +328,9 @@ func TestMockConnectionGetPods(t *testing.T) {
 	r := &Runner{cfg: &config.Config{}}
 
 	store.Put("list-pod", &Pod{
-		ID:         "list-pod",
+		ID:     "list-pod",
 		PodKey: "list-pod",
-		Status:     PodStatusRunning,
+		Status: PodStatusRunning,
 	})
 
 	handler := NewRunnerMessageHandler(r, store, mockConn)
@@ -448,8 +345,8 @@ func TestMockConnectionGetPods(t *testing.T) {
 func TestMockConnectionReset(t *testing.T) {
 	mockConn := client.NewMockConnection()
 
-	// Send some events
-	mockConn.SendEvent(client.MsgTypePodCreated, map[string]string{"test": "data"})
+	// Send some events using new methods
+	mockConn.SendPodCreated("test-pod", 123)
 	mockConn.Start()
 
 	// Verify state
@@ -482,17 +379,6 @@ func TestMockConnectionConnectError(t *testing.T) {
 	}
 }
 
-func TestMockConnectionSendWithBackpressureWhenStopped(t *testing.T) {
-	mockConn := client.NewMockConnection()
-	mockConn.Stop()
-
-	msg := client.ProtocolMessage{Type: "test"}
-	ok := mockConn.SendWithBackpressure(msg)
-	if ok {
-		t.Error("SendWithBackpressure should return false when stopped")
-	}
-}
-
 func TestMockConnectionQueueLength(t *testing.T) {
 	mockConn := client.NewMockConnection()
 
@@ -500,8 +386,8 @@ func TestMockConnectionQueueLength(t *testing.T) {
 		t.Errorf("initial queue length = %d, want 0", mockConn.QueueLength())
 	}
 
-	mockConn.Send(client.ProtocolMessage{Type: "test1"})
-	mockConn.Send(client.ProtocolMessage{Type: "test2"})
+	mockConn.SendPodCreated("test1", 1)
+	mockConn.SendPodCreated("test2", 2)
 
 	if mockConn.QueueLength() != 2 {
 		t.Errorf("queue length = %d, want 2", mockConn.QueueLength())
@@ -515,3 +401,5 @@ func TestMockConnectionQueueCapacity(t *testing.T) {
 		t.Errorf("queue capacity = %d, want 100", mockConn.QueueCapacity())
 	}
 }
+
+// Note: contains helper is defined in mocks_test.go

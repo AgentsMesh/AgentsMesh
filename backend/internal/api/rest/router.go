@@ -115,19 +115,8 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 			// Note: /org alias route removed - all org-scoped requests must use /orgs/:slug/*
 		}
 
-		// Runner org-scoped routes (using RunnerTenantMiddleware, not JWT)
-		// Path: /api/v1/orgs/:slug/runners/heartbeat, /api/v1/orgs/:slug/ws/runners
-		if svc.Runner != nil && svc.RunnerConnMgr != nil {
-			runnerOrgScoped := apiV1.Group("/orgs/:slug")
-			runnerOrgScoped.Use(middleware.RunnerTenantMiddleware(svc.Runner, svc.Org))
-			{
-				runnerHandler := v1.NewRunnerHandler(svc.Runner)
-				runnerOrgScoped.POST("/runners/heartbeat", runnerHandler.Heartbeat)
-
-				runnerWsHandler := ws.NewRunnerHandler(svc.Runner, svc.RunnerConnMgr, logger)
-				runnerOrgScoped.GET("/ws/runners", runnerWsHandler.HandleRunnerWS)
-			}
-		}
+		// Note: Runner communication is now via gRPC/mTLS (see internal/api/grpc/)
+		// The WebSocket endpoint /api/v1/orgs/:slug/ws/runners has been removed.
 
 		// Pod-based API routes (for MCP tools) - moved under org-scoped
 		// Path changed: /api/v1/pod → /api/v1/orgs/:slug/pod

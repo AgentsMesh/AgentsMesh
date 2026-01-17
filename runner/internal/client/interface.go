@@ -1,7 +1,7 @@
 package client
 
 // Connection defines the interface for server communication.
-// This interface abstracts ServerConnection for testing and decoupling.
+// This interface abstracts GRPCConnection for testing and decoupling.
 type Connection interface {
 	// SetHandler sets the message handler for incoming messages.
 	SetHandler(handler MessageHandler)
@@ -15,16 +15,22 @@ type Connection interface {
 	// Stop stops the connection and releases resources.
 	Stop()
 
-	// Send sends a message to the server (non-blocking, may drop if buffer full).
-	Send(msg ProtocolMessage)
+	// gRPC send methods
 
-	// SendWithBackpressure sends a message with backpressure (blocking).
-	// Returns false if the connection is stopped.
-	SendWithBackpressure(msg ProtocolMessage) bool
+	// SendPodCreated sends a pod_created event to the server.
+	SendPodCreated(podKey string, pid int32) error
 
-	// SendEvent sends an event message to the server.
-	// This is a convenience method that marshals data and creates ProtocolMessage.
-	SendEvent(msgType MessageType, data interface{}) error
+	// SendPodTerminated sends a pod_terminated event to the server.
+	SendPodTerminated(podKey string, exitCode int32, errorMsg string) error
+
+	// SendTerminalOutput sends terminal output to the server with backpressure.
+	SendTerminalOutput(podKey string, data []byte) error
+
+	// SendPtyResized sends a PTY resize event to the server.
+	SendPtyResized(podKey string, cols, rows int32) error
+
+	// SendError sends an error event to the server.
+	SendError(podKey, code, message string) error
 
 	// QueueLength returns the current send queue length.
 	QueueLength() int
@@ -32,17 +38,12 @@ type Connection interface {
 	// QueueCapacity returns the send queue capacity.
 	QueueCapacity() int
 
-	// SetAuthToken sets the authentication token.
-	// This should be called after registration to update the token before connecting.
-	SetAuthToken(token string)
-
 	// SetOrgSlug sets the organization slug.
-	// This should be called after registration to update the org slug before connecting.
 	SetOrgSlug(orgSlug string)
 
 	// GetOrgSlug returns the organization slug.
 	GetOrgSlug() string
 }
 
-// Ensure ServerConnection implements Connection interface.
-var _ Connection = (*ServerConnection)(nil)
+// Ensure GRPCConnection implements Connection interface.
+var _ Connection = (*GRPCConnection)(nil)

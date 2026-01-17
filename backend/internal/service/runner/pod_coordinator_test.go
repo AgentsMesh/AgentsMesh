@@ -38,7 +38,7 @@ func setupPodCoordinatorTestDB(t *testing.T) *gorm.DB {
 }
 
 // setupPodCoordinatorDeps sets up dependencies for PodCoordinator testing
-func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *ConnectionManager, *TerminalRouter, *HeartbeatBatcher) {
+func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, *TerminalRouter, *HeartbeatBatcher) {
 	mr, err := miniredis.Run()
 	if err != nil {
 		t.Fatalf("failed to start miniredis: %v", err)
@@ -57,7 +57,7 @@ func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *ConnectionManager, *Termi
 	logger := newTestLogger()
 	db := setupPodCoordinatorTestDB(t)
 
-	cm := NewConnectionManager(logger)
+	cm := NewRunnerConnectionManager(logger)
 	tr := NewTerminalRouter(cm, logger)
 	hb := NewHeartbeatBatcher(redisClient, db, logger)
 
@@ -113,7 +113,6 @@ func TestPodCoordinatorIncrementPods(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "test-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 		CurrentPods:    0,
 	}
@@ -165,7 +164,6 @@ func TestPodCoordinatorDecrementPods(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "test-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 		CurrentPods:    5,
 	}
@@ -192,7 +190,6 @@ func TestPodCoordinatorDecrementPodsNotBelowZero(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "test-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 		CurrentPods:    0,
 	}
@@ -340,6 +337,8 @@ func TestPodCoordinatorMarkReconnectedOnlyDisconnected(t *testing.T) {
 }
 
 func TestPodCoordinatorCreatePod(t *testing.T) {
+	// Note: This test verifies the CreatePod flow when a proper command sender is available.
+	// We use a mock command sender to test the coordinator logic.
 	logger := newTestLogger()
 	db, cm, tr, hb := setupPodCoordinatorDeps(t)
 
@@ -347,7 +346,6 @@ func TestPodCoordinatorCreatePod(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "test-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 		CurrentPods:    0,
 	}
@@ -355,12 +353,15 @@ func TestPodCoordinatorCreatePod(t *testing.T) {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	// Add a mock connection and mark it as initialized
-	conn := newTestWebSocketConn(t)
-	rc := cm.AddConnection(r.ID, conn)
+	// Add a mock gRPC connection and mark it as initialized
+	stream := newMockRunnerStreamWithTesting(t)
+	rc := cm.AddConnection(r.ID, "test-node", "test-org", stream)
 	rc.SetInitialized(true, []string{"claude"})
 
+	// Create coordinator and set mock command sender that succeeds
 	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	mockSender := &MockCommandSender{}
+	pc.SetCommandSender(mockSender)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -382,9 +383,42 @@ func TestPodCoordinatorCreatePod(t *testing.T) {
 		t.Errorf("CurrentPods: got %d, want 1", updated.CurrentPods)
 	}
 
-	// Verify pod was registered with terminal router
-	if !tr.IsPodRegistered("new-pod-1") {
-		t.Error("pod should be registered with terminal router")
+	// Note: Pod is NOT registered with terminal router at this point.
+	// Registration happens when Runner confirms creation via handlePodCreated.
+	// This is by design - we don't want stale routes if pod creation fails.
+	if tr.IsPodRegistered("new-pod-1") {
+		t.Error("pod should NOT be registered yet (registration happens on PodCreated event)")
+	}
+}
+
+func TestPodCoordinatorCreatePodWithoutCommandSender(t *testing.T) {
+	// Test that CreatePod returns error when commandSender is not set
+	logger := newTestLogger()
+	db, cm, tr, hb := setupPodCoordinatorDeps(t)
+
+	// Create a runner
+	r := &runner.Runner{
+		OrganizationID: 1,
+		NodeID:         "test-node",
+		Status:         "online",
+		CurrentPods:    0,
+	}
+	if err := db.Create(r).Error; err != nil {
+		t.Fatalf("failed to create runner: %v", err)
+	}
+
+	// Create coordinator WITHOUT setting command sender
+	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	ctx := context.Background()
+
+	req := &CreatePodRequest{
+		PodKey:        "test-pod",
+		LaunchCommand: "claude",
+	}
+
+	err := pc.CreatePod(ctx, r.ID, req)
+	if err != ErrCommandSenderNotSet {
+		t.Errorf("CreatePod should return ErrCommandSenderNotSet, got: %v", err)
 	}
 }
 
@@ -399,7 +433,6 @@ func TestPodCoordinatorTerminatePod(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "test-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 		CurrentPods:    1,
 	}
@@ -414,12 +447,15 @@ func TestPodCoordinatorTerminatePod(t *testing.T) {
 	// Register pod with terminal router
 	tr.RegisterPod("terminate-pod-1", r.ID)
 
-	// Add mock connection and mark it as initialized
-	conn := newTestWebSocketConn(t)
-	rc := cm.AddConnection(r.ID, conn)
+	// Add mock gRPC connection and mark it as initialized
+	stream := newMockRunnerStreamWithTesting(t)
+	rc := cm.AddConnection(r.ID, "test-node", "test-org", stream)
 	rc.SetInitialized(true, []string{"claude"})
 
+	// Create coordinator with mock command sender
 	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	mockSender := &MockCommandSender{}
+	pc.SetCommandSender(mockSender)
 	ctx := context.Background()
 
 	// TerminatePod will fail due to GREATEST on SQLite, but we verify
@@ -429,6 +465,11 @@ func TestPodCoordinatorTerminatePod(t *testing.T) {
 	// Verify pod was unregistered from terminal router (happens before DB update)
 	if tr.IsPodRegistered("terminate-pod-1") {
 		t.Error("pod should be unregistered from terminal router")
+	}
+
+	// Verify terminate was called on mock
+	if mockSender.TerminatePodCalls != 1 {
+		t.Errorf("TerminatePodCalls: got %d, want 1", mockSender.TerminatePodCalls)
 	}
 }
 

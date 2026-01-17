@@ -7,7 +7,7 @@ import (
 )
 
 func TestTerminalRouter_GetRecentOutput_Raw(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -30,7 +30,7 @@ func TestTerminalRouter_GetRecentOutput_Raw(t *testing.T) {
 }
 
 func TestTerminalRouter_GetRecentOutput_Processed(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -52,7 +52,7 @@ func TestTerminalRouter_GetRecentOutput_Processed(t *testing.T) {
 }
 
 func TestTerminalRouter_GetRecentOutput_NilBuffer(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -65,7 +65,7 @@ func TestTerminalRouter_GetRecentOutput_NilBuffer(t *testing.T) {
 }
 
 func TestTerminalRouter_GetScreenSnapshot(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -87,7 +87,7 @@ func TestTerminalRouter_GetScreenSnapshot(t *testing.T) {
 }
 
 func TestTerminalRouter_GetScreenSnapshot_NilBuffer(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -97,7 +97,7 @@ func TestTerminalRouter_GetScreenSnapshot_NilBuffer(t *testing.T) {
 }
 
 func TestTerminalRouter_GetCursorPosition(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -112,7 +112,7 @@ func TestTerminalRouter_GetCursorPosition(t *testing.T) {
 }
 
 func TestTerminalRouter_GetCursorPosition_NilTerminal(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -123,7 +123,7 @@ func TestTerminalRouter_GetCursorPosition_NilTerminal(t *testing.T) {
 }
 
 func TestTerminalRouter_GetAllScrollbackData(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -145,7 +145,7 @@ func TestTerminalRouter_GetAllScrollbackData(t *testing.T) {
 }
 
 func TestTerminalRouter_GetAllScrollbackData_NilBuffer(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -155,7 +155,7 @@ func TestTerminalRouter_GetAllScrollbackData_NilBuffer(t *testing.T) {
 }
 
 func TestTerminalRouter_ClearScrollback(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -179,7 +179,7 @@ func TestTerminalRouter_ClearScrollback(t *testing.T) {
 }
 
 func TestTerminalRouter_ClearScrollback_NilBuffer(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -188,7 +188,7 @@ func TestTerminalRouter_ClearScrollback_NilBuffer(t *testing.T) {
 }
 
 func TestTerminalRouter_GetRecentOutput_EmptyBuffer(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 
@@ -201,7 +201,7 @@ func TestTerminalRouter_GetRecentOutput_EmptyBuffer(t *testing.T) {
 }
 
 func TestTerminalRouter_GetScreenSnapshot_EmptyBuffer(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 	tr := NewTerminalRouter(cm, newTestLogger())
 

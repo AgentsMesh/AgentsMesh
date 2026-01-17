@@ -141,7 +141,6 @@ func TestRunnerStruct(t *testing.T) {
 		OrganizationID:    100,
 		NodeID:            "node-001",
 		Description:       "Test runner",
-		AuthTokenHash:     "hash",
 		Status:            RunnerStatusOnline,
 		LastHeartbeat:     &now,
 		CurrentPods:       3,

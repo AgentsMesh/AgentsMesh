@@ -236,7 +236,7 @@ volumes:
             </h3>
             <p className="text-sm text-muted-foreground">
               Check network connectivity to the AgentsMesh server. Ensure
-              firewalls allow outbound WebSocket connections (port 443).
+              firewalls allow outbound gRPC connections (port 9443 for mTLS).
             </p>
           </div>
           <div className="border border-border rounded-lg p-4">

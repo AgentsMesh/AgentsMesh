@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"sync"
 )
 
@@ -13,8 +12,7 @@ type MockConnection struct {
 	handler MessageHandler
 
 	// Captured calls for verification
-	SentMessages []ProtocolMessage
-	Events       []EventCall
+	Events []EventCall
 
 	// Configurable responses
 	ConnectErr error
@@ -25,7 +23,7 @@ type MockConnection struct {
 	stopped bool
 }
 
-// EventCall represents a captured SendEvent call
+// EventCall represents a captured event call
 type EventCall struct {
 	Type MessageType
 	Data interface{}
@@ -67,59 +65,16 @@ func (m *MockConnection) Stop() {
 	m.stopped = true
 }
 
-// Send implements Connection.
-func (m *MockConnection) Send(msg ProtocolMessage) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.SendErr == nil {
-		m.SentMessages = append(m.SentMessages, msg)
-	}
-}
-
-// SendWithBackpressure implements Connection.
-func (m *MockConnection) SendWithBackpressure(msg ProtocolMessage) bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.stopped {
-		return false
-	}
-	m.SentMessages = append(m.SentMessages, msg)
-	return true
-}
-
-// SendEvent implements Connection.
-func (m *MockConnection) SendEvent(msgType MessageType, data interface{}) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.SendErr != nil {
-		return m.SendErr
-	}
-	m.Events = append(m.Events, EventCall{Type: msgType, Data: data})
-
-	// Also add to SentMessages for compatibility
-	dataBytes, _ := json.Marshal(data)
-	m.SentMessages = append(m.SentMessages, ProtocolMessage{
-		Type: msgType,
-		Data: dataBytes,
-	})
-	return nil
-}
-
 // QueueLength implements Connection.
 func (m *MockConnection) QueueLength() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return len(m.SentMessages)
+	return len(m.Events)
 }
 
 // QueueCapacity implements Connection.
 func (m *MockConnection) QueueCapacity() int {
 	return 100
-}
-
-// SetAuthToken implements Connection.
-func (m *MockConnection) SetAuthToken(token string) {
-	// No-op for mock
 }
 
 // SetOrgSlug implements Connection.
@@ -130,6 +85,61 @@ func (m *MockConnection) SetOrgSlug(orgSlug string) {
 // GetOrgSlug implements Connection.
 func (m *MockConnection) GetOrgSlug() string {
 	return ""
+}
+
+// SendPodCreated implements Connection.
+func (m *MockConnection) SendPodCreated(podKey string, pid int32) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: MsgTypePodCreated, Data: map[string]interface{}{"pod_key": podKey, "pid": pid}})
+	return nil
+}
+
+// SendPodTerminated implements Connection.
+func (m *MockConnection) SendPodTerminated(podKey string, exitCode int32, errorMsg string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: MsgTypePodTerminated, Data: map[string]interface{}{"pod_key": podKey, "exit_code": exitCode, "error": errorMsg}})
+	return nil
+}
+
+// SendTerminalOutput implements Connection.
+func (m *MockConnection) SendTerminalOutput(podKey string, data []byte) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: MsgTypeTerminalOutput, Data: map[string]interface{}{"pod_key": podKey, "data": data}})
+	return nil
+}
+
+// SendPtyResized implements Connection.
+func (m *MockConnection) SendPtyResized(podKey string, cols, rows int32) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: MsgTypePtyResized, Data: map[string]interface{}{"pod_key": podKey, "cols": cols, "rows": rows}})
+	return nil
+}
+
+// SendError implements Connection.
+func (m *MockConnection) SendError(podKey, code, message string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: MessageType("error"), Data: map[string]interface{}{"pod_key": podKey, "code": code, "message": message}})
+	return nil
 }
 
 // --- Test helper methods ---
@@ -198,14 +208,6 @@ func (m *MockConnection) GetEvents() []EventCall {
 	return result
 }
 
-// GetSentMessages returns captured messages (thread-safe).
-func (m *MockConnection) GetSentMessages() []ProtocolMessage {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	result := make([]ProtocolMessage, len(m.SentMessages))
-	copy(result, m.SentMessages)
-	return result
-}
 
 // IsStarted returns whether Start was called.
 func (m *MockConnection) IsStarted() bool {
@@ -225,7 +227,6 @@ func (m *MockConnection) IsStopped() bool {
 func (m *MockConnection) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.SentMessages = nil
 	m.Events = nil
 	m.started = false
 	m.stopped = false

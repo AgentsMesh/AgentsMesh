@@ -51,7 +51,8 @@ USER runner
 # Set workspace as working directory
 WORKDIR /workspace
 
-# Expose port for WebSocket connections
+# Note: Runner connects outbound to Backend via gRPC+mTLS
+# No inbound port needed (port 9090 was for legacy WebSocket)
 EXPOSE 9090
 
 # Health check

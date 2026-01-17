@@ -8,6 +8,28 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
+// GetByNodeID returns a runner by its node ID.
+// This is used by gRPC server for mTLS authentication.
+func (s *Service) GetByNodeID(ctx context.Context, nodeID string) (*runner.Runner, error) {
+	var r runner.Runner
+	if err := s.db.WithContext(ctx).Where("node_id = ?", nodeID).First(&r).Error; err != nil {
+		return nil, ErrRunnerNotFound
+	}
+	return &r, nil
+}
+
+// UpdateLastSeen updates the last heartbeat time for a runner.
+// This is called when gRPC server receives messages from a runner.
+func (s *Service) UpdateLastSeen(ctx context.Context, runnerID int64) error {
+	now := time.Now()
+	return s.db.WithContext(ctx).Model(&runner.Runner{}).
+		Where("id = ?", runnerID).
+		Updates(map[string]interface{}{
+			"last_heartbeat": now,
+			"status":         runner.RunnerStatusOnline,
+		}).Error
+}
+
 // GetRunner returns a runner by ID
 // Tries to return from cache first, falls back to database
 func (s *Service) GetRunner(ctx context.Context, runnerID int64) (*runner.Runner, error) {

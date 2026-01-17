@@ -167,7 +167,7 @@ func (h *RunnerHandler) RegisterRunner(c *gin.Context) {
 		maxPods = 5
 	}
 
-	r, authToken, err := h.runnerService.RegisterRunner(
+	r, err := h.runnerService.RegisterRunner(
 		c.Request.Context(),
 		req.RegistrationToken,
 		req.NodeID,
@@ -205,9 +205,9 @@ func (h *RunnerHandler) RegisterRunner(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"runner_id":  r.ID,
-		"auth_token": authToken,
-		"org_slug":   orgSlug,
+		"runner_id": r.ID,
+		"org_slug":  orgSlug,
+		"message":   "Runner registered. Use gRPC/mTLS registration to obtain certificates for secure communication.",
 	})
 }
 
@@ -267,47 +267,6 @@ func (h *RunnerHandler) UpdateRunner(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"runner": updated})
 }
 
-// RegenerateAuthToken regenerates runner authentication token
-// POST /api/v1/organizations/:slug/runners/:id/regenerate-token
-func (h *RunnerHandler) RegenerateAuthToken(c *gin.Context) {
-	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid runner ID"})
-		return
-	}
-
-	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin permission required"})
-		return
-	}
-
-	// Verify runner belongs to organization
-	r, err := h.runnerService.GetRunner(c.Request.Context(), runnerID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Runner not found"})
-		return
-	}
-
-	if r.OrganizationID != tenant.OrganizationID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
-		return
-	}
-
-	// Regenerate token
-	authToken, err := h.runnerService.RegenerateAuthToken(c.Request.Context(), runnerID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to regenerate token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"auth_token": authToken,
-		"message":    "Save this token securely. It will only be shown once. The runner will need to be reconfigured with the new token.",
-	})
-}
 
 // ListAvailableRunners lists available runners for pods
 // GET /api/v1/organizations/:slug/runners/available
@@ -368,38 +327,3 @@ func (h *RunnerHandler) RevokeRegistrationToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Token revoked"})
 }
 
-// HeartbeatRequest represents runner heartbeat request
-type HeartbeatRequest struct {
-	RunnerID      int64  `json:"runner_id" binding:"required"`
-	AuthToken     string `json:"auth_token" binding:"required"`
-	CurrentPods   int    `json:"current_pods"`
-	RunnerVersion string `json:"runner_version"`
-}
-
-// Heartbeat handles runner heartbeat
-// POST /api/v1/runners/heartbeat
-func (h *RunnerHandler) Heartbeat(c *gin.Context) {
-	var req HeartbeatRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err := h.runnerService.UpdateHeartbeat(
-		c.Request.Context(),
-		req.RunnerID,
-		req.AuthToken,
-		req.CurrentPods,
-		req.RunnerVersion,
-	)
-	if err != nil {
-		if err == runner.ErrInvalidAuth {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authentication"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update heartbeat"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
-}

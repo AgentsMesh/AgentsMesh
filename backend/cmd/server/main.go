@@ -11,14 +11,15 @@ import (
 	"syscall"
 	"time"
 
+	grpcserver "github.com/anthropics/agentsmesh/backend/internal/api/grpc"
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest"
 	v1 "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
-	"gorm.io/gorm"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/pki"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
 	"github.com/anthropics/agentsmesh/backend/internal/job"
@@ -27,11 +28,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
-	"github.com/anthropics/agentsmesh/backend/internal/service/license"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
-	"github.com/anthropics/agentsmesh/backend/internal/service/mesh"
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
+	"github.com/anthropics/agentsmesh/backend/internal/service/license"
+	"github.com/anthropics/agentsmesh/backend/internal/service/mesh"
 	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/service/promocode"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
@@ -40,6 +41,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -109,6 +111,25 @@ func main() {
 	setupRunnerEventCallbacks(db, runnerConnMgr, eventBus)
 	setupPodEventCallbacks(db, podCoordinator, eventBus)
 
+	// Initialize PKI service and gRPC Server for mTLS Runner communication
+	// Automatically enabled when PKI_CA_CERT_FILE and PKI_CA_KEY_FILE are configured
+	var grpcRunnerHandler *v1.GRPCRunnerHandler
+	var grpcServer *grpcserver.Server
+	if cfg.PKI.CACertFile != "" && cfg.PKI.CAKeyFile != "" {
+		grpcServer, grpcRunnerHandler = initializePKIAndGRPC(cfg, services.runner, services.org, services.agentType, runnerConnMgr, appLogger)
+
+		// Connect gRPC Server to PodCoordinator and TerminalRouter for sending commands to runners
+		if grpcServer != nil {
+			grpcCommandSender := grpcserver.NewGRPCCommandSender(grpcServer.RunnerAdapter())
+			podCoordinator.SetCommandSender(grpcCommandSender)
+			terminalRouter.SetCommandSender(grpcCommandSender)
+			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server for Runner commands")
+		}
+	} else {
+		slog.Warn("PKI CA files not configured, gRPC/mTLS Runner communication disabled",
+			"hint", "Set PKI_CA_CERT_FILE and PKI_CA_KEY_FILE to enable")
+	}
+
 	// Create services container for HTTP handlers
 	// NOTE: GitProvider and SSHKey services removed - now handled via user.Service
 	svc := &v1.Services{
@@ -133,10 +154,11 @@ func main() {
 		EventBus:          eventBus,
 		Invitation:        services.invitation,
 		File:              services.file,
-		PromoCode:         services.promoCode,
-		AgentPodSettings:  services.agentpodSettings,
+		PromoCode:          services.promoCode,
+		AgentPodSettings:   services.agentpodSettings,
 		AgentPodAIProvider: services.agentpodAIProvider,
-		License:           services.license,
+		License:            services.license,
+		GRPCRunnerHandler:  grpcRunnerHandler,
 	}
 
 	// Initialize router
@@ -149,7 +171,7 @@ func main() {
 	srv := startHTTPServer(cfg, router)
 
 	// Graceful shutdown
-	waitForShutdown(srv, eventBus, heartbeatBatcher, subscriptionScheduler, db, redisClient)
+	waitForShutdown(srv, grpcServer, eventBus, heartbeatBatcher, subscriptionScheduler, db, redisClient)
 }
 
 // serviceContainer holds all initialized services
@@ -327,9 +349,9 @@ func initializeInfrastructure(cfg *config.Config, appLogger *logger.Logger) (*we
 }
 
 // initializeRunnerComponents initializes runner-related components
-func initializeRunnerComponents(db *gorm.DB, redisClient *redis.Client, appLogger *logger.Logger, agentTypeSvc *agent.AgentTypeService) (*runner.ConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter, *runner.HeartbeatBatcher) {
+func initializeRunnerComponents(db *gorm.DB, redisClient *redis.Client, appLogger *logger.Logger, agentTypeSvc *agent.AgentTypeService) (*runner.RunnerConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter, *runner.HeartbeatBatcher) {
 	// Initialize Runner connection manager
-	runnerConnMgr := runner.NewConnectionManager(appLogger.Logger)
+	runnerConnMgr := runner.NewRunnerConnectionManager(appLogger.Logger)
 
 	// Setup AgentTypesProvider for initialization handshake
 	agentTypesAdapter := runner.NewAgentTypeServiceAdapter(agentTypeSvc)
@@ -382,7 +404,7 @@ func startSubscriptionJobs(db *gorm.DB, paymentCfg *config.PaymentConfig, emailS
 }
 
 // waitForShutdown handles graceful shutdown
-func waitForShutdown(srv *http.Server, eventBus *eventbus.EventBus, heartbeatBatcher *runner.HeartbeatBatcher, subscriptionScheduler *job.SubscriptionScheduler, db *gorm.DB, redisClient *redis.Client) {
+func waitForShutdown(srv *http.Server, grpcServer *grpcserver.Server, eventBus *eventbus.EventBus, heartbeatBatcher *runner.HeartbeatBatcher, subscriptionScheduler *job.SubscriptionScheduler, db *gorm.DB, redisClient *redis.Client) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -395,6 +417,11 @@ func waitForShutdown(srv *http.Server, eventBus *eventbus.EventBus, heartbeatBat
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("Server forced to shutdown", "error", err)
 		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	// Stop gRPC server
+	if grpcServer != nil {
+		grpcServer.Stop()
 	}
 
 	// Stop subscription scheduler
@@ -423,4 +450,137 @@ func waitForShutdown(srv *http.Server, eventBus *eventbus.EventBus, heartbeatBat
 	}
 
 	slog.Info("Server exited")
+}
+
+// initializePKIAndGRPC initializes PKI service, gRPC Server, and gRPC runner handler.
+// Returns nil values if initialization fails.
+// Requires: PKI_CA_CERT_FILE, PKI_CA_KEY_FILE (CA certificate and key files)
+// Optional: GRPC_ADDRESS (default :9090), GRPC_ENDPOINT (public endpoint for runners)
+func initializePKIAndGRPC(cfg *config.Config, runnerSvc *runner.Service, orgSvc *organization.Service, agentTypeSvc *agent.AgentTypeService, runnerConnMgr *runner.RunnerConnectionManager, appLogger *logger.Logger) (*grpcserver.Server, *v1.GRPCRunnerHandler) {
+
+	// Initialize PKI service
+	pkiService, err := pki.NewService(&pki.Config{
+		CACertFile:     cfg.PKI.CACertFile,
+		CAKeyFile:      cfg.PKI.CAKeyFile,
+		ServerCertFile: cfg.PKI.ServerCertFile,
+		ServerKeyFile:  cfg.PKI.ServerKeyFile,
+		ValidityDays:   cfg.PKI.ValidityDays,
+	})
+	if err != nil {
+		slog.Error("Failed to initialize PKI service", "error", err)
+		slog.Warn("Continuing without gRPC/mTLS support")
+		return nil, nil
+	}
+
+	slog.Info("PKI service initialized",
+		"ca_cert", cfg.PKI.CACertFile,
+		"validity_days", cfg.PKI.ValidityDays,
+	)
+
+	// Create gRPC runner handler for REST API (certificate issuance/renewal)
+	grpcRunnerHandler := v1.NewGRPCRunnerHandler(runnerSvc, pkiService, cfg)
+
+	// Create service adapters for gRPC server
+	runnerServiceAdapter := &grpcRunnerServiceAdapter{svc: runnerSvc}
+	orgServiceAdapter := &grpcOrgServiceAdapter{svc: orgSvc}
+	agentTypesAdapter := &grpcAgentTypesAdapter{svc: agentTypeSvc}
+
+	// Create and start gRPC server
+	grpcServerInst, err := grpcserver.NewServer(&grpcserver.ServerDependencies{
+		Logger:             appLogger.Logger,
+		Config:             &cfg.GRPC,
+		PKIService:         pkiService,
+		RunnerService:      runnerServiceAdapter,
+		OrgService:         orgServiceAdapter,
+		AgentTypesProvider: agentTypesAdapter,
+		ConnManager:        runnerConnMgr,
+	})
+	if err != nil {
+		slog.Error("Failed to create gRPC server", "error", err)
+		slog.Warn("Continuing without gRPC server")
+		return nil, grpcRunnerHandler
+	}
+
+	// Start gRPC server
+	if err := grpcServerInst.Start(); err != nil {
+		slog.Error("Failed to start gRPC server", "error", err)
+		slog.Warn("Continuing without gRPC server")
+		return nil, grpcRunnerHandler
+	}
+
+	slog.Info("gRPC/mTLS Runner communication enabled",
+		"grpc_address", cfg.GRPC.Address,
+	)
+
+	return grpcServerInst, grpcRunnerHandler
+}
+
+// grpcRunnerServiceAdapter adapts runner.Service to grpcserver.RunnerServiceInterface
+type grpcRunnerServiceAdapter struct {
+	svc *runner.Service
+}
+
+func (a *grpcRunnerServiceAdapter) GetByNodeID(ctx context.Context, nodeID string) (grpcserver.RunnerInfo, error) {
+	r, err := a.svc.GetByNodeID(ctx, nodeID)
+	if err != nil {
+		return grpcserver.RunnerInfo{}, err
+	}
+	certSerial := ""
+	if r.CertSerialNumber != nil {
+		certSerial = *r.CertSerialNumber
+	}
+	return grpcserver.RunnerInfo{
+		ID:               r.ID,
+		NodeID:           r.NodeID,
+		OrganizationID:   r.OrganizationID,
+		IsEnabled:        r.IsEnabled,
+		CertSerialNumber: certSerial,
+	}, nil
+}
+
+func (a *grpcRunnerServiceAdapter) UpdateLastSeen(ctx context.Context, runnerID int64) error {
+	return a.svc.UpdateLastSeen(ctx, runnerID)
+}
+
+func (a *grpcRunnerServiceAdapter) UpdateAvailableAgents(ctx context.Context, runnerID int64, agents []string) error {
+	return a.svc.UpdateAvailableAgents(ctx, runnerID, agents)
+}
+
+func (a *grpcRunnerServiceAdapter) IsCertificateRevoked(ctx context.Context, serialNumber string) (bool, error) {
+	return a.svc.IsCertificateRevoked(ctx, serialNumber)
+}
+
+// grpcOrgServiceAdapter adapts organization.Service to grpcserver.OrganizationServiceInterface
+type grpcOrgServiceAdapter struct {
+	svc *organization.Service
+}
+
+func (a *grpcOrgServiceAdapter) GetBySlug(ctx context.Context, slug string) (grpcserver.OrganizationInfo, error) {
+	org, err := a.svc.GetOrgBySlug(ctx, slug)
+	if err != nil {
+		return grpcserver.OrganizationInfo{}, err
+	}
+	return grpcserver.OrganizationInfo{
+		ID:   org.ID,
+		Slug: org.Slug,
+	}, nil
+}
+
+// grpcAgentTypesAdapter adapts agent.AgentTypeService to grpcserver.AgentTypesProvider
+type grpcAgentTypesAdapter struct {
+	svc *agent.AgentTypeService
+}
+
+func (a *grpcAgentTypesAdapter) GetAgentTypesForRunner() []grpcserver.AgentTypeInfo {
+	types := a.svc.GetAgentTypesForRunner()
+	result := make([]grpcserver.AgentTypeInfo, len(types))
+	for i, t := range types {
+		result[i] = grpcserver.AgentTypeInfo{
+			Slug:          t.Slug,
+			Name:          t.Name,
+			Executable:    t.Executable,
+			LaunchCommand: t.LaunchCommand,
+		}
+	}
+	return result
 }

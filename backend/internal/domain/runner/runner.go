@@ -88,7 +88,6 @@ type Runner struct {
 	OrganizationID int64  `gorm:"not null;index" json:"organization_id"`
 	NodeID         string `gorm:"size:100;not null" json:"node_id"`
 	Description    string `gorm:"type:text" json:"description,omitempty"`
-	AuthTokenHash  string `gorm:"size:255;not null" json:"-"`
 
 	Status            string     `gorm:"size:50;not null;default:'offline';index" json:"status"`
 	LastHeartbeat     *time.Time `json:"last_heartbeat,omitempty"`
@@ -102,6 +101,10 @@ type Runner struct {
 	AvailableAgents StringSlice `gorm:"type:jsonb" json:"available_agents,omitempty"`
 
 	HostInfo HostInfo `gorm:"type:jsonb" json:"host_info,omitempty"`
+
+	// mTLS certificate fields (added for gRPC migration)
+	CertSerialNumber *string    `gorm:"size:64" json:"cert_serial_number,omitempty"`
+	CertExpiresAt    *time.Time `json:"cert_expires_at,omitempty"`
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`

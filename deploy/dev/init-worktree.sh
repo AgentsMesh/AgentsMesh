@@ -63,6 +63,19 @@ calculate_port_offset() {
     fi
 }
 
+# 生成 SSL 证书 (gRPC + mTLS)
+generate_ssl_certs() {
+    local ssl_dir="$SCRIPT_DIR/ssl"
+    if [ -f "$ssl_dir/ca.crt" ] && [ -f "$ssl_dir/ca.key" ]; then
+        info "SSL 证书已存在"
+        return 0
+    fi
+
+    info "生成 SSL 证书 (gRPC + mTLS)..."
+    "$SCRIPT_DIR/generate-dev-certs.sh" > /dev/null 2>&1
+    success "SSL 证书生成完成"
+}
+
 # 生成 .env 配置
 generate_env() {
     local worktree_name=$(get_worktree_name)
@@ -77,6 +90,7 @@ COMPOSE_PROJECT_NAME=$project_name
 
 # Ports
 HTTP_PORT=$((80 + offset * 100))
+GRPC_PORT=$((9443 + offset * 100))
 POSTGRES_PORT=$((5432 + offset * 100))
 REDIS_PORT=$((6379 + offset * 100))
 MINIO_API_PORT=$((9000 + offset * 100))
@@ -182,6 +196,7 @@ show_result() {
     echo "  其他服务:"
     echo "    Adminer:  http://localhost:$ADMINER_PORT"
     echo "    MinIO:    http://localhost:$MINIO_CONSOLE_PORT"
+    echo "    gRPC:     grpcs://localhost:${GRPC_PORT:-9443} (mTLS)"
     echo ""
     echo "  停止: docker compose down"
     echo "  重建: ./init-worktree.sh --clean && ./init-worktree.sh"
@@ -213,16 +228,19 @@ main() {
     echo "=========================================="
     echo ""
 
-    # Step 1: 生成配置
+    # Step 1: 生成 SSL 证书
+    generate_ssl_certs
+
+    # Step 2: 生成配置
     generate_env
     source "$ENV_FILE"
 
-    # Step 2: 启动服务
+    # Step 3: 启动服务
     info "启动 Docker 服务 (首次可能需要几分钟)..."
     docker compose up -d --build --quiet-pull 2>&1 | grep -v "^#" | grep -v "^\[" | grep -v "^$" || true
     success "Docker 服务已启动"
 
-    # Step 3: 等待 PostgreSQL
+    # Step 4: 等待 PostgreSQL
     local pg_container="${COMPOSE_PROJECT_NAME}-postgres-1"
     info "等待 PostgreSQL 就绪..."
     if ! wait_for_service "$pg_container" "pg_isready -U agentsmesh"; then
@@ -231,13 +249,13 @@ main() {
     fi
     success "PostgreSQL 已就绪"
 
-    # Step 4: 执行迁移
+    # Step 5: 执行迁移
     run_migrations "$pg_container"
 
-    # Step 5: 初始化 seed
+    # Step 6: 初始化 seed
     init_seed "$pg_container"
 
-    # Step 6: 修复 workspace 权限 (runner 容器)
+    # Step 7: 修复 workspace 权限 (runner 容器)
     local runner_container="${COMPOSE_PROJECT_NAME}-runner-1"
     docker exec -u root "$runner_container" chown -R runner:runner /workspace 2>/dev/null || true
 

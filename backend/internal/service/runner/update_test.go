@@ -15,7 +15,7 @@ func TestUpdateRunner(t *testing.T) {
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	newDesc := "Updated Description"
 	newMax := 10
@@ -61,7 +61,7 @@ func TestUpdateHostInfo(t *testing.T) {
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	hostInfo := runner.HostInfo{
 		"os":       "linux",
@@ -81,7 +81,7 @@ func TestIncrementPods(t *testing.T) {
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	// Initial pods should be 0
 	runner, _ := service.GetRunner(ctx, r.ID)
@@ -107,7 +107,7 @@ func TestDecrementPods(t *testing.T) {
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	// Note: DecrementPods uses GREATEST which SQLite doesn't support
 	// This test just verifies the method signature exists

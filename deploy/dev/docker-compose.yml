@@ -78,8 +78,8 @@ services:
   # Backend API server with hot reload
   backend:
     build:
-      context: ../../backend
-      dockerfile: ../deploy/dev/backend.Dockerfile
+      context: ../..
+      dockerfile: deploy/dev/backend.Dockerfile
     restart: unless-stopped
     depends_on:
       postgres:
@@ -150,15 +150,25 @@ services:
       # License (OnPremise)
       - LICENSE_PUBLIC_KEY_PATH=${LICENSE_PUBLIC_KEY_PATH:-}
       - LICENSE_FILE_PATH=${LICENSE_FILE_PATH:-}
+      # PKI for gRPC + mTLS Runner communication
+      - PKI_CA_CERT_FILE=/app/ssl/ca.crt
+      - PKI_CA_KEY_FILE=/app/ssl/ca.key
+      - PKI_VALIDITY_DAYS=365
+      # gRPC server
+      - GRPC_ADDRESS=:9090
     volumes:
       # Mount source code for hot reload
       - ../../backend:/app
+      # Mount proto module (required by go.mod replace directive)
+      - ../../proto:/proto
       # Persist Go modules cache
       - go-mod-cache:/go/pkg/mod
       # Persist build cache
       - go-build-cache:/root/.cache/go-build
       # Persist logs
       - ../../backend/logs:/app/logs
+      # SSL certificates for PKI (CA cert/key for signing Runner certificates)
+      - ./ssl:/app/ssl:ro
     # No external port - accessed via nginx
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
@@ -193,43 +203,50 @@ services:
   # Runner with hot reload (runs as non-root user for Claude Code compatibility)
   runner:
     build:
-      context: ../../runner
-      dockerfile: ../deploy/dev/runner.Dockerfile
+      context: ../..
+      dockerfile: deploy/dev/runner.Dockerfile
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
     user: "1000:1000"
     environment:
-      # Backend connection (entrypoint script will wait for backend)
-      - BACKEND_URL=ws://backend:8080
+      # Backend connection (for REST API calls)
+      - BACKEND_URL=http://backend:8080
+      # gRPC + mTLS endpoint (nginx terminates TLS)
+      - GRPC_ENDPOINT=nginx:9443
       # Runner identification (matches seed data in deploy/dev/seed/seed.sql)
       - RUNNER_NODE_ID=dev-runner
-      - RUNNER_AUTH_TOKEN=dev-runner-auth-token
       - RUNNER_ORG_SLUG=dev-org
       # Capacity
       - MAX_CONCURRENT_PODS=10
       # Workspace
       - WORKSPACE=/workspace
+      # SSL certificates directory
+      - SSL_DIR=/app/ssl
       # Debug mode
       - DEBUG=true
       - HOME=/home/runner
     volumes:
       # Mount source code for hot reload
       - ../../runner:/app
+      # Mount proto module (required by go.mod replace directive)
+      - ../../proto:/proto
       # Mount entrypoint script
       - ./runner-entrypoint.sh:/usr/local/bin/runner-entrypoint.sh:ro
+      # SSL certificates for generating runner client cert
+      - ./ssl:/app/ssl:ro
       # Persist Go modules cache (for non-root user)
       - runner-go-mod-cache:/go/pkg/mod
       # Persist build cache (for non-root user)
       - runner-go-build-cache:/home/runner/.cache/go-build
       # Workspace for sandboxes
       - runner_workspace:/workspace
-      # AgentsMesh config directory
+      # AgentsMesh config directory (note: .agentsmesh with 's')
       - runner_config:/home/runner/.agentsmesh
     # Use entrypoint script for auto-configuration
     entrypoint: ["/usr/local/bin/runner-entrypoint.sh"]
-    # Runner communicates with backend internally, no external port needed
+    # Runner communicates with backend via gRPC through nginx
 
   # Nginx reverse proxy (unified entry point)
   nginx:
@@ -238,8 +255,12 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # SSL certificates for gRPC mTLS (optional, mount if using mTLS)
+      - ./ssl:/etc/nginx/ssl:ro
     ports:
       - "${HTTP_PORT:-80}:80"
+      # gRPC + mTLS port for Runner connections (optional, enable when using mTLS)
+      - "${GRPC_PORT:-9443}:9443"
     depends_on:
       - backend
       - web

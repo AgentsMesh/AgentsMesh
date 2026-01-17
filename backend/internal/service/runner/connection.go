@@ -1,114 +1,147 @@
 package runner
 
 import (
-	"encoding/json"
-	"errors"
-	"log/slog"
+	"context"
+	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// SendMessage sends a message on the connection
-func (rc *RunnerConnection) SendMessage(msg *RunnerMessage) error {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
+// RunnerStream defines a type-safe interface for gRPC bidirectional stream
+// between Backend and Runner.
+//
+// Send: Backend → Runner (*runnerv1.ServerMessage)
+// Recv: Runner → Backend (*runnerv1.RunnerMessage)
+type RunnerStream interface {
+	// Send sends a ServerMessage to the Runner
+	Send(msg *runnerv1.ServerMessage) error
+	// Recv receives a RunnerMessage from the Runner
+	Recv() (*runnerv1.RunnerMessage, error)
+	// Context returns the stream context
+	Context() context.Context
+}
 
-	if rc.Conn == nil {
-		return ErrConnectionClosed
-	}
+// GRPCConnection represents an active gRPC connection to a runner.
+type GRPCConnection struct {
+	RunnerID int64
+	NodeID   string
+	OrgSlug  string
+	Stream   RunnerStream
 
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
+	// Connection timestamps
+	ConnectedAt time.Time
+	LastPing    time.Time
 
-	select {
-	case rc.Send <- data:
-		return nil
-	default:
-		return errors.New("send buffer full")
+	// Initialization state
+	initialized     bool
+	availableAgents []string
+
+	// Send channel for outgoing messages (type-safe)
+	Send chan *runnerv1.ServerMessage
+
+	// Close handling
+	closeOnce sync.Once
+	closed    bool
+	closeChan chan struct{}
+
+	mu sync.RWMutex
+}
+
+// NewGRPCConnection creates a new gRPC connection wrapper.
+func NewGRPCConnection(runnerID int64, nodeID, orgSlug string, stream RunnerStream) *GRPCConnection {
+	return &GRPCConnection{
+		RunnerID:    runnerID,
+		NodeID:      nodeID,
+		OrgSlug:     orgSlug,
+		Stream:      stream,
+		ConnectedAt: time.Now(),
+		LastPing:    time.Now(),
+		Send:        make(chan *runnerv1.ServerMessage, 256),
+		closeChan:   make(chan struct{}),
 	}
 }
 
-// Close closes the connection safely (idempotent)
-func (rc *RunnerConnection) Close() {
-	rc.closeOnce.Do(func() {
-		rc.mu.Lock()
-		if rc.Conn != nil {
-			rc.Conn.Close()
-			rc.Conn = nil
-		}
-		rc.mu.Unlock()
+// IsInitialized returns whether the connection has completed initialization.
+func (c *GRPCConnection) IsInitialized() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.initialized
+}
 
-		// Close send channel safely
-		close(rc.Send)
+// SetInitialized sets the initialization state and available agents.
+func (c *GRPCConnection) SetInitialized(initialized bool, availableAgents []string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.initialized = initialized
+	c.availableAgents = availableAgents
+}
+
+// GetAvailableAgents returns a copy of the available agents list.
+// Returns a copy to prevent external modification of internal state.
+func (c *GRPCConnection) GetAvailableAgents() []string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.availableAgents == nil {
+		return nil
+	}
+	// Return a copy to prevent external modification
+	result := make([]string, len(c.availableAgents))
+	copy(result, c.availableAgents)
+	return result
+}
+
+// UpdateLastPing updates the last ping time.
+func (c *GRPCConnection) UpdateLastPing() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.LastPing = time.Now()
+}
+
+// GetLastPing returns the last ping time.
+func (c *GRPCConnection) GetLastPing() time.Time {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.LastPing
+}
+
+// IsClosed returns whether the connection is closed.
+func (c *GRPCConnection) IsClosed() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.closed
+}
+
+// Close closes the connection.
+func (c *GRPCConnection) Close() {
+	c.closeOnce.Do(func() {
+		c.mu.Lock()
+		c.closed = true
+		c.mu.Unlock()
+		close(c.closeChan)
+		close(c.Send)
 	})
 }
 
-// WritePump pumps messages from the send channel to the WebSocket
-func (rc *RunnerConnection) WritePump() {
-	pingInterval := rc.PingInterval
-	if pingInterval <= 0 {
-		pingInterval = 30 * time.Second // default fallback
+// CloseChan returns the close channel for select.
+func (c *GRPCConnection) CloseChan() <-chan struct{} {
+	return c.closeChan
+}
+
+// SendMessage sends a message through the gRPC stream.
+// This is non-blocking; message is queued to the Send channel.
+func (c *GRPCConnection) SendMessage(msg *runnerv1.ServerMessage) error {
+	if c.IsClosed() {
+		return ErrConnectionClosed
 	}
-	ticker := time.NewTicker(pingInterval)
-	defer func() {
-		ticker.Stop()
-		rc.Close()
-	}()
 
-	for {
-		select {
-		case message, ok := <-rc.Send:
-			rc.mu.Lock()
-			conn := rc.Conn
-			rc.mu.Unlock()
-
-			if conn == nil {
-				return
-			}
-
-			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if !ok {
-				slog.Debug("send channel closed, sending close message", "runner_id", rc.RunnerID)
-				conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-
-			// Parse message to log type and pod_key
-			var msg RunnerMessage
-			if err := json.Unmarshal(message, &msg); err == nil {
-				slog.Debug("writing message to runner websocket",
-					"runner_id", rc.RunnerID,
-					"type", msg.Type,
-					"pod_key", msg.PodKey,
-					"size", len(message))
-			}
-
-			if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
-				slog.Warn("failed to write message to runner websocket",
-					"runner_id", rc.RunnerID,
-					"error", err)
-				return
-			}
-
-		case <-ticker.C:
-			rc.mu.Lock()
-			conn := rc.Conn
-			rc.mu.Unlock()
-
-			if conn == nil {
-				return
-			}
-
-			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				slog.Warn("failed to send ping to runner",
-					"runner_id", rc.RunnerID,
-					"error", err)
-				return
-			}
-		}
+	select {
+	case c.Send <- msg:
+		return nil
+	default:
+		return ErrSendBufferFull
 	}
 }
+
+// Note: All connection errors are now defined in errors.go for consistency.
+// Use ErrConnectionClosed, ErrSendBufferFull, ErrRunnerNotConnected, ErrCommandSenderNotSet from there.

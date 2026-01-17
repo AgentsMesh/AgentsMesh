@@ -38,7 +38,7 @@ type Services struct {
 	UserConfig        *agent.UserConfigService
 	Repository        *repository.Service
 	Runner            *runner.Service
-	RunnerConnMgr     *runner.ConnectionManager // Runner WebSocket connection manager
+	RunnerConnMgr     *runner.RunnerConnectionManager // Runner gRPC connection manager
 	PodCoordinator    *runner.PodCoordinator    // Pod lifecycle coordinator
 	TerminalRouter    *runner.TerminalRouter    // Terminal data router
 	Pod               *agentpod.PodService
@@ -58,6 +58,9 @@ type Services struct {
 	PromoCode         *promocode.Service   // Promo code management
 	License           *license.Service     // License service for OnPremise
 	// NOTE: GitProvider and SSHKey services have been removed (moved to user-level settings)
+
+	// gRPC/mTLS Runner registration handler (optional, only when PKI is enabled)
+	GRPCRunnerHandler *GRPCRunnerHandler
 }
 
 // RegisterAllRoutes registers all API v1 routes with proper handlers
@@ -77,6 +80,11 @@ func RegisterAllRoutes(rg *gin.RouterGroup, cfg *config.Config, svc *Services) {
 
 	// License routes (for OnPremise deployments)
 	RegisterLicenseHandlers(rg.Group("/license"), svc.License)
+
+	// gRPC Runner routes (public, for Runner CLI registration)
+	if svc.GRPCRunnerHandler != nil {
+		RegisterGRPCRunnerRoutes(rg, svc.GRPCRunnerHandler)
+	}
 }
 
 // RegisterAdminRoutes registers admin-only routes
@@ -131,7 +139,11 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 		runners.GET("/:id", runnerHandler.GetRunner)
 		runners.PUT("/:id", runnerHandler.UpdateRunner)
 		runners.DELETE("/:id", runnerHandler.DeleteRunner)
-		runners.POST("/:id/regenerate-token", runnerHandler.RegenerateAuthToken)
+
+		// gRPC/mTLS routes (under /runners/grpc/)
+		if svc.GRPCRunnerHandler != nil {
+			RegisterOrgGRPCRunnerRoutes(runners, svc.GRPCRunnerHandler)
+		}
 	}
 
 	// Pods - using functional options for cleaner dependency injection

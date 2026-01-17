@@ -24,7 +24,7 @@ type PodHandler struct {
 	repositoryService RepositoryServiceForHandler // Repository lookup
 	ticketService     TicketServiceForHandler     // Ticket lookup
 	userService       UserServiceForPod           // User credential retrieval (权限跟人走)
-	runnerConnMgr     *runner.ConnectionManager   // Runner connections (not abstracted)
+	runnerConnMgr     *runner.RunnerConnectionManager   // Runner gRPC connections (not abstracted)
 	podCoordinator    *runner.PodCoordinator      // Pod coordination (not abstracted)
 	terminalRouter    interface{}                 // *runner.TerminalRouter, optional
 	configBuilder     *agent.ConfigBuilder        // New protocol: builds pod config from agent type templates
@@ -34,7 +34,7 @@ type PodHandler struct {
 type PodHandlerOption func(*PodHandler)
 
 // WithRunnerConnectionManager sets the runner connection manager
-func WithRunnerConnectionManager(cm *runner.ConnectionManager) PodHandlerOption {
+func WithRunnerConnectionManager(cm *runner.RunnerConnectionManager) PodHandlerOption {
 	return func(h *PodHandler) {
 		h.runnerConnMgr = cm
 	}
@@ -438,10 +438,10 @@ func (h *PodHandler) SendPrompt(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement WebSocket-based prompt sending to runner
+	// TODO: Implement prompt sending via gRPC to runner
 	// For now, return not implemented
 	_ = req.Prompt
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Prompt sending via REST not implemented. Use WebSocket terminal."})
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "Prompt sending via REST not implemented. Use terminal WebSocket."})
 }
 
 // NOTE: Terminal-related handlers (ObserveTerminal, SendTerminalInput, ResizeTerminal)

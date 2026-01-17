@@ -1,0 +1,194 @@
+syntax = "proto3";
+
+package runner.v1;
+
+option go_package = "github.com/anthropic/agentmesh/proto/runner/v1;runnerv1";
+
+// RunnerService 定义 Runner 与 Backend 的双向通信服务
+service RunnerService {
+  // Connect 建立双向流：Runner ↔ Backend 主通信通道
+  // Runner 通过 gRPC metadata 传递 x-org-slug 标识组织
+  // Nginx 通过 gRPC metadata 传递 x-client-cert-cn (node_id) 和 x-client-cert-serial
+  rpc Connect(stream RunnerMessage) returns (stream ServerMessage);
+}
+
+// ==================== Runner -> Backend 消息 ====================
+
+// RunnerMessage 是 Runner 发送给 Backend 的消息封装
+message RunnerMessage {
+  oneof payload {
+    InitializeRequest initialize = 1;
+    InitializedConfirm initialized = 2;
+    HeartbeatData heartbeat = 3;
+    PodCreatedEvent pod_created = 4;
+    PodTerminatedEvent pod_terminated = 5;
+    TerminalOutputEvent terminal_output = 6;
+    AgentStatusEvent agent_status = 7;
+    PtyResizedEvent pty_resized = 8;
+    ErrorEvent error = 9;
+  }
+  int64 timestamp = 15;
+}
+
+// InitializeRequest Runner 初始化请求
+message InitializeRequest {
+  int32 protocol_version = 1;
+  RunnerInfo runner_info = 2;
+}
+
+// RunnerInfo Runner 基本信息
+message RunnerInfo {
+  string version = 1;
+  string node_id = 2;
+  int32 mcp_port = 3;
+  string os = 4;
+  string arch = 5;
+  string hostname = 6;
+}
+
+// InitializedConfirm 初始化完成确认
+message InitializedConfirm {
+  repeated string available_agents = 1;
+}
+
+// HeartbeatData 心跳数据
+message HeartbeatData {
+  string node_id = 1;
+  repeated PodInfo pods = 2;
+}
+
+// PodInfo Pod 状态信息
+message PodInfo {
+  string pod_key = 1;
+  string status = 2;
+  string agent_status = 3;
+}
+
+// PodCreatedEvent Pod 创建完成事件
+message PodCreatedEvent {
+  string pod_key = 1;
+  int32 pid = 2;
+}
+
+// PodTerminatedEvent Pod 终止事件
+message PodTerminatedEvent {
+  string pod_key = 1;
+  int32 exit_code = 2;
+  string error_message = 3;
+}
+
+// TerminalOutputEvent 终端输出事件
+message TerminalOutputEvent {
+  string pod_key = 1;
+  bytes data = 2;  // 直接二进制，无需 Base64 编码
+}
+
+// AgentStatusEvent Agent 状态变更事件
+message AgentStatusEvent {
+  string pod_key = 1;
+  string status = 2;
+}
+
+// PtyResizedEvent PTY 窗口大小调整事件
+message PtyResizedEvent {
+  string pod_key = 1;
+  int32 cols = 2;
+  int32 rows = 3;
+}
+
+// ErrorEvent 错误事件
+message ErrorEvent {
+  string pod_key = 1;
+  string code = 2;
+  string message = 3;
+  map<string, string> details = 4;
+}
+
+// ==================== Backend -> Runner 消息 ====================
+
+// ServerMessage 是 Backend 发送给 Runner 的消息封装
+message ServerMessage {
+  oneof payload {
+    InitializeResult initialize_result = 1;
+    CreatePodCommand create_pod = 2;
+    TerminatePodCommand terminate_pod = 3;
+    TerminalInputCommand terminal_input = 4;
+    TerminalResizeCommand terminal_resize = 5;
+    SendPromptCommand send_prompt = 6;
+  }
+  int64 timestamp = 15;
+}
+
+// InitializeResult 初始化响应
+message InitializeResult {
+  int32 protocol_version = 1;
+  ServerInfo server_info = 2;
+  repeated AgentTypeInfo agent_types = 3;
+  repeated string features = 4;
+}
+
+// ServerInfo 服务端信息
+message ServerInfo {
+  string version = 1;
+}
+
+// AgentTypeInfo Agent 类型信息
+message AgentTypeInfo {
+  string slug = 1;
+  string name = 2;
+  string command = 3;
+  repeated string default_args = 4;
+}
+
+// CreatePodCommand 创建 Pod 命令
+message CreatePodCommand {
+  string pod_key = 1;
+  string launch_command = 2;
+  repeated string launch_args = 3;
+  map<string, string> env_vars = 4;
+  repeated FileToCreate files_to_create = 5;
+  WorkDirConfig work_dir_config = 6;
+  string initial_prompt = 7;
+}
+
+// FileToCreate 要创建的文件或目录
+message FileToCreate {
+  string path = 1;
+  string content = 2;
+  int32 mode = 3;
+  bool is_directory = 4;  // true 表示创建目录而非文件
+}
+
+// WorkDirConfig 工作目录配置
+message WorkDirConfig {
+  string type = 1;           // "worktree", "tempdir", "path"
+  string repo_path = 2;
+  string branch_name = 3;
+  string base_branch = 4;
+  string path = 5;
+}
+
+// TerminatePodCommand 终止 Pod 命令
+message TerminatePodCommand {
+  string pod_key = 1;
+  bool force = 2;
+}
+
+// TerminalInputCommand 终端输入命令
+message TerminalInputCommand {
+  string pod_key = 1;
+  bytes data = 2;
+}
+
+// TerminalResizeCommand 终端窗口调整命令
+message TerminalResizeCommand {
+  string pod_key = 1;
+  int32 cols = 2;
+  int32 rows = 3;
+}
+
+// SendPromptCommand 发送 Prompt 命令
+message SendPromptCommand {
+  string pod_key = 1;
+  string prompt = 2;
+}

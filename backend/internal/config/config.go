@@ -28,6 +28,12 @@ type Config struct {
 	Email    EmailConfig
 	Storage  StorageConfig
 	Payment  PaymentConfig
+	PKI      PKIConfig
+	GRPC     GRPCConfig
+
+	// Public URLs for client-facing links
+	ServerURL   string // Public server URL (e.g., https://api.example.com)
+	FrontendURL string // Frontend URL for authorization links (e.g., https://app.example.com)
 }
 
 // PaymentConfig holds payment and billing configuration
@@ -138,6 +144,22 @@ func (c PaymentConfig) GetAvailableProviders() []string {
 		providers = append(providers, "license")
 	}
 	return providers
+}
+
+// PKIConfig holds PKI (certificate) configuration for Runner mTLS authentication
+// Required for Runner communication via gRPC + mTLS
+type PKIConfig struct {
+	CACertFile     string // Path to CA certificate file (required)
+	CAKeyFile      string // Path to CA private key file (required)
+	ServerCertFile string // Path to server certificate file (optional, generated if not set)
+	ServerKeyFile  string // Path to server private key file (optional)
+	ValidityDays   int    // Certificate validity period in days (default: 365)
+}
+
+// GRPCConfig holds gRPC server configuration for Runner connections
+// gRPC server starts automatically when PKI CA files are configured
+type GRPCConfig struct {
+	Address string // gRPC server listen address (default: :9090)
 }
 
 // StorageConfig holds object storage configuration (S3-compatible)
@@ -368,6 +390,20 @@ func Load() (*Config, error) {
 				LicenseServerURL: getEnv("LICENSE_SERVER_URL", ""),
 			},
 		},
+		PKI: PKIConfig{
+			CACertFile:     getEnv("PKI_CA_CERT_FILE", ""),
+			CAKeyFile:      getEnv("PKI_CA_KEY_FILE", ""),
+			ServerCertFile: getEnv("PKI_SERVER_CERT_FILE", ""),
+			ServerKeyFile:  getEnv("PKI_SERVER_KEY_FILE", ""),
+			ValidityDays:   getEnvInt("PKI_VALIDITY_DAYS", 365),
+		},
+		GRPC: GRPCConfig{
+			Address: getEnv("GRPC_ADDRESS", ":9090"),
+		},
+
+		// Public URLs
+		ServerURL:   getEnv("SERVER_URL", "http://localhost:8080"),
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 	}, nil
 }
 

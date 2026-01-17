@@ -1,0 +1,151 @@
+package grpc
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+)
+
+func TestNewGRPCCommandSender(t *testing.T) {
+	logger := newTestLogger()
+	runnerSvc := newMockRunnerService()
+	orgSvc := newMockOrgService()
+	connMgr := runner.NewRunnerConnectionManager(logger)
+
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	sender := NewGRPCCommandSender(adapter)
+
+	assert.NotNil(t, sender)
+	assert.Equal(t, adapter, sender.adapter)
+}
+
+func TestGRPCCommandSender_SendCreatePod(t *testing.T) {
+	logger := newTestLogger()
+	runnerSvc := newMockRunnerService()
+	orgSvc := newMockOrgService()
+	connMgr := runner.NewRunnerConnectionManager(logger)
+
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	sender := NewGRPCCommandSender(adapter)
+
+	ctx := context.Background()
+
+	t.Run("returns error when runner not connected", func(t *testing.T) {
+		req := &runner.CreatePodRequest{
+			PodKey:        "test-pod",
+			LaunchCommand: "claude",
+		}
+		err := sender.SendCreatePod(ctx, 999, req)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "not connected")
+	})
+
+	t.Run("with files_to_create", func(t *testing.T) {
+		req := &runner.CreatePodRequest{
+			PodKey:        "test-pod",
+			LaunchCommand: "claude",
+			FilesToCreate: []runner.FileToCreate{
+				{
+					PathTemplate: "/tmp/test.txt",
+					Content:      "hello world",
+					Mode:         0644,
+				},
+			},
+		}
+		err := sender.SendCreatePod(ctx, 999, req)
+		require.Error(t, err) // Runner not connected
+		assert.Contains(t, err.Error(), "not connected")
+	})
+
+	t.Run("with work_dir_config", func(t *testing.T) {
+		req := &runner.CreatePodRequest{
+			PodKey:        "test-pod",
+			LaunchCommand: "claude",
+			WorkDirConfig: &runner.WorkDirConfig{
+				Type:      "worktree",
+				Branch:    "feature-branch",
+				LocalPath: "/tmp/workspace",
+			},
+		}
+		err := sender.SendCreatePod(ctx, 999, req)
+		require.Error(t, err) // Runner not connected
+		assert.Contains(t, err.Error(), "not connected")
+	})
+}
+
+func TestGRPCCommandSender_SendTerminatePod(t *testing.T) {
+	logger := newTestLogger()
+	runnerSvc := newMockRunnerService()
+	orgSvc := newMockOrgService()
+	connMgr := runner.NewRunnerConnectionManager(logger)
+
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	sender := NewGRPCCommandSender(adapter)
+
+	ctx := context.Background()
+	err := sender.SendTerminatePod(ctx, 999, "test-pod")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not connected")
+}
+
+func TestGRPCCommandSender_SendTerminalInput(t *testing.T) {
+	logger := newTestLogger()
+	runnerSvc := newMockRunnerService()
+	orgSvc := newMockOrgService()
+	connMgr := runner.NewRunnerConnectionManager(logger)
+
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	sender := NewGRPCCommandSender(adapter)
+
+	ctx := context.Background()
+	err := sender.SendTerminalInput(ctx, 999, "test-pod", []byte("hello"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not connected")
+}
+
+func TestGRPCCommandSender_SendTerminalResize(t *testing.T) {
+	logger := newTestLogger()
+	runnerSvc := newMockRunnerService()
+	orgSvc := newMockOrgService()
+	connMgr := runner.NewRunnerConnectionManager(logger)
+
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	sender := NewGRPCCommandSender(adapter)
+
+	ctx := context.Background()
+	err := sender.SendTerminalResize(ctx, 999, "test-pod", 120, 40)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not connected")
+}
+
+func TestGRPCCommandSender_SendPrompt(t *testing.T) {
+	logger := newTestLogger()
+	runnerSvc := newMockRunnerService()
+	orgSvc := newMockOrgService()
+	connMgr := runner.NewRunnerConnectionManager(logger)
+
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	sender := NewGRPCCommandSender(adapter)
+
+	ctx := context.Background()
+	err := sender.SendPrompt(ctx, 999, "test-pod", "Hello, Claude!")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not connected")
+}
+
+func TestGRPCCommandSender_ImplementsInterface(t *testing.T) {
+	logger := newTestLogger()
+	runnerSvc := newMockRunnerService()
+	orgSvc := newMockOrgService()
+	connMgr := runner.NewRunnerConnectionManager(logger)
+
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	sender := NewGRPCCommandSender(adapter)
+
+	// Verify it implements the interface
+	var _ runner.RunnerCommandSender = sender
+}

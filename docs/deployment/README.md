@@ -248,7 +248,7 @@ kubectl create secret generic agentsmesh-secrets \
 2. **Runner not connecting**
    - Verify registration token
    - Check firewall rules
-   - Ensure WebSocket connectivity
+   - Ensure gRPC connectivity (port 9443)
 
 3. **OAuth login failed**
    - Verify OAuth app credentials

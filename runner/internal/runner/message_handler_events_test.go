@@ -30,15 +30,16 @@ func TestSendPodCreated(t *testing.T) {
 		t.Errorf("event type = %s, want pod_created", events[0].Type)
 	}
 
-	event, ok := events[0].Data.(client.PodCreatedEvent)
+	// Mock stores data as map[string]interface{}
+	event, ok := events[0].Data.(map[string]interface{})
 	if !ok {
-		t.Fatalf("event data should be PodCreatedEvent")
+		t.Fatalf("event data should be map[string]interface{}")
 	}
-	if event.PodKey != "pod-1" {
-		t.Errorf("pod_key = %s, want pod-1", event.PodKey)
+	if event["pod_key"] != "pod-1" {
+		t.Errorf("pod_key = %v, want pod-1", event["pod_key"])
 	}
-	if event.Pid != 12345 {
-		t.Errorf("pid = %d, want 12345", event.Pid)
+	if event["pid"] != int32(12345) {
+		t.Errorf("pid = %v, want 12345", event["pid"])
 	}
 }
 
@@ -72,11 +73,11 @@ func TestSendTerminalOutput(t *testing.T) {
 
 	handler.sendTerminalOutput("pod-1", []byte("hello world"))
 
-	// Terminal output uses SendWithBackpressure, so check SentMessages
-	msgs := mockConn.GetSentMessages()
+	// Terminal output uses SendTerminalOutput, check Events
+	events := mockConn.GetEvents()
 	hasOutput := false
-	for _, m := range msgs {
-		if m.Type == client.MsgTypeTerminalOutput {
+	for _, e := range events {
+		if e.Type == client.MsgTypeTerminalOutput {
 			hasOutput = true
 			break
 		}
@@ -155,10 +156,10 @@ func TestCreateOutputHandler(t *testing.T) {
 	outputHandler([]byte("test output"))
 
 	// Verify output was sent
-	msgs := mockConn.GetSentMessages()
+	events := mockConn.GetEvents()
 	hasOutput := false
-	for _, m := range msgs {
-		if m.Type == client.MsgTypeTerminalOutput {
+	for _, e := range events {
+		if e.Type == client.MsgTypeTerminalOutput {
 			hasOutput = true
 			break
 		}

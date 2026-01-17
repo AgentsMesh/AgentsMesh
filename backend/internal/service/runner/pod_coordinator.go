@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -12,19 +13,25 @@ import (
 // PodCoordinator coordinates pod lifecycle events between backend and runners
 type PodCoordinator struct {
 	db                *gorm.DB
-	connectionManager *ConnectionManager
+	connectionManager *RunnerConnectionManager
 	terminalRouter    *TerminalRouter
 	heartbeatBatcher  *HeartbeatBatcher
 	logger            *slog.Logger
+
+	// Command sender for sending commands to runners (e.g., GRPCCommandSender).
+	// Defaults to NoOpCommandSender if not explicitly set via SetCommandSender.
+	commandSender RunnerCommandSender
 
 	// Callbacks
 	onStatusChange func(podKey string, status string, agentStatus string)
 }
 
-// NewPodCoordinator creates a new pod coordinator
+// NewPodCoordinator creates a new pod coordinator.
+// By default, uses NoOpCommandSender which logs warnings. Call SetCommandSender
+// to configure a real command sender (e.g., GRPCCommandSender).
 func NewPodCoordinator(
 	db *gorm.DB,
-	cm *ConnectionManager,
+	cm *RunnerConnectionManager,
 	tr *TerminalRouter,
 	hb *HeartbeatBatcher,
 	logger *slog.Logger,
@@ -35,6 +42,7 @@ func NewPodCoordinator(
 		terminalRouter:    tr,
 		heartbeatBatcher:  hb,
 		logger:            logger,
+		commandSender:     NewNoOpCommandSender(logger), // Default to no-op
 	}
 
 	// Set up callbacks from connection manager
@@ -45,6 +53,13 @@ func NewPodCoordinator(
 	cm.SetDisconnectCallback(pc.handleRunnerDisconnect)
 
 	return pc
+}
+
+// SetCommandSender sets the command sender for sending commands to runners.
+// This must be called before using CreatePod/TerminatePod methods.
+func (pc *PodCoordinator) SetCommandSender(sender RunnerCommandSender) {
+	pc.commandSender = sender
+	pc.logger.Info("command sender configured", "type", fmt.Sprintf("%T", sender))
 }
 
 // SetStatusChangeCallback sets the callback for status changes
@@ -75,11 +90,12 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, req *Cr
 		return err
 	}
 
-	// Register with terminal router
-	pc.terminalRouter.RegisterPod(req.PodKey, runnerID)
+	// Note: Pod is NOT registered with terminal router here.
+	// Registration happens in handlePodCreated when Runner confirms the pod is actually created.
+	// This ensures we don't have stale routes if pod creation fails on Runner side.
 
-	// Send create pod request to runner
-	return pc.connectionManager.SendCreatePod(ctx, runnerID, req)
+	// Send create pod request to runner via command sender
+	return pc.commandSender.SendCreatePod(ctx, runnerID, req)
 }
 
 // TerminatePod terminates a pod on a runner
@@ -92,8 +108,9 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 		return err
 	}
 
-	// Send terminate request to runner
-	if err := pc.connectionManager.SendTerminatePod(ctx, pod.RunnerID, podKey); err != nil {
+	// Send terminate request to runner via command sender
+	// NoOpCommandSender will log warning if not configured
+	if err := pc.commandSender.SendTerminatePod(ctx, pod.RunnerID, podKey); err != nil {
 		pc.logger.Warn("failed to send terminate to runner, marking as completed",
 			"pod_key", podKey,
 			"error", err)

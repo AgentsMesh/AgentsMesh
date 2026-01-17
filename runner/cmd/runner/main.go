@@ -38,13 +38,16 @@ func main() {
 		runDesktop(os.Args[2:])
 	case "webconsole", "console":
 		runWebConsole(os.Args[2:])
+	case "reactivate":
+		runReactivate(os.Args[2:])
 	case "version", "-v", "--version":
 		fmt.Printf("AgentsMesh Runner %s (built %s)\n", version, buildTime)
 	case "help", "-h", "--help":
 		printUsage()
 	default:
-		// Backward compatibility: if no subcommand, assume it's the old flag-based style
-		runRunnerLegacy(os.Args[1:])
+		fmt.Printf("Unknown command: %s\n", os.Args[1])
+		printUsage()
+		os.Exit(1)
 	}
 }
 
@@ -55,11 +58,12 @@ Usage:
   runner <command> [options]
 
 Commands:
-  register    Register this runner with the AgentsMesh server
+  register    Register this runner with the AgentsMesh server (gRPC/mTLS)
   run         Start the runner in CLI mode (requires prior registration)
   webconsole  Open the web console in browser
   service     Manage runner as a system service (install/start/stop)
-  desktop     Start runner in desktop mode with system tray (Desktop build only)
+  desktop     Start runner in desktop mode with system tray
+  reactivate  Reactivate runner with expired certificate
   version     Show version information
   help        Show this help message
 
@@ -68,14 +72,12 @@ Use "runner <command> --help" for more information about a command.`)
 
 func runRegister(args []string) {
 	fs := flag.NewFlagSet("register", flag.ExitOnError)
-	serverURL := fs.String("server", "", "AgentsMesh server URL (e.g., http://localhost:8080)")
-	token := fs.String("token", "", "Registration token from the server")
+	serverURL := fs.String("server", "", "AgentsMesh server URL (e.g., https://app.example.com)")
+	token := fs.String("token", "", "Registration token (for token-based registration)")
 	nodeID := fs.String("node-id", "", "Node ID for this runner (default: hostname)")
-	description := fs.String("description", "AgentsMesh Runner", "Description for this runner")
-	maxPods := fs.Int("max-pods", 5, "Maximum concurrent pods")
 
 	fs.Usage = func() {
-		fmt.Println(`Register this runner with the AgentsMesh server.
+		fmt.Println(`Register this runner with the AgentsMesh server using gRPC/mTLS.
 
 Usage:
   runner register [options]
@@ -83,10 +85,20 @@ Usage:
 Options:`)
 		fs.PrintDefaults()
 		fmt.Println(`
-Example:
-  runner register --server http://localhost:8080 --token abc123def456
+Registration Methods:
 
-After successful registration, the auth token and config will be saved to ~/.agentsmesh/`)
+1. Interactive (Tailscale-style, recommended for first-time setup):
+   runner register --server https://app.example.com
+
+   Opens a browser for authorization. The runner will poll until you
+   authorize it in the web UI.
+
+2. Token-based (for automated/scripted deployment):
+   runner register --server https://app.example.com --token <pre-generated-token>
+
+   Uses a pre-generated token from the web UI. No browser required.
+
+After successful registration, certificates and configuration will be saved to ~/.agentsmesh/`)
 	}
 
 	if err := fs.Parse(args); err != nil {
@@ -96,9 +108,6 @@ After successful registration, the auth token and config will be saved to ~/.age
 	// Validate required flags
 	if *serverURL == "" {
 		log.Fatal("Error: --server is required")
-	}
-	if *token == "" {
-		log.Fatal("Error: --token is required")
 	}
 
 	// Get node ID
@@ -111,32 +120,80 @@ After successful registration, the auth token and config will be saved to ~/.age
 		nID = hostname
 	}
 
-	// Create a temporary client for registration
-	client := &registrationClient{
-		serverURL: *serverURL,
-		nodeID:    nID,
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute) // Longer timeout for interactive
+	defer cancel()
+
+	fmt.Printf("Registering runner '%s' with server %s...\n", nID, *serverURL)
+
+	// gRPC/mTLS registration
+	if *token != "" {
+		// Token-based registration
+		if err := registerWithGRPCToken(ctx, *serverURL, *token, nID); err != nil {
+			log.Fatalf("Registration failed: %v", err)
+		}
+	} else {
+		// Interactive registration (Tailscale-style)
+		if err := registerInteractive(ctx, *serverURL, nID); err != nil {
+			log.Fatalf("Registration failed: %v", err)
+		}
+	}
+	fmt.Println("✓ gRPC/mTLS Registration successful!")
+}
+
+func runReactivate(args []string) {
+	fs := flag.NewFlagSet("reactivate", flag.ExitOnError)
+	serverURL := fs.String("server", "", "AgentsMesh server URL (default: from config)")
+	token := fs.String("token", "", "Reactivation token from the web UI")
+
+	fs.Usage = func() {
+		fmt.Println(`Reactivate a runner with an expired certificate.
+
+Usage:
+  runner reactivate --token <reactivation-token>
+
+Options:`)
+		fs.PrintDefaults()
+		fmt.Println(`
+When your runner's certificate expires (after long periods of inactivity),
+you can generate a reactivation token from the web UI:
+
+1. Go to Runner management page
+2. Find your runner and click "Reactivate"
+3. Copy the generated token
+4. Run: runner reactivate --token <token>
+
+The runner will receive new certificates and can reconnect.`)
+	}
+
+	if err := fs.Parse(args); err != nil {
+		os.Exit(1)
+	}
+
+	if *token == "" {
+		log.Fatal("Error: --token is required")
+	}
+
+	// Load server URL from config if not provided
+	sURL := *serverURL
+	if sURL == "" {
+		home, _ := os.UserHomeDir()
+		cfgFile := filepath.Join(home, ".agentsmesh", "config.yaml")
+		cfg, err := config.Load(cfgFile)
+		if err == nil && cfg.ServerURL != "" {
+			sURL = cfg.ServerURL
+		} else {
+			log.Fatal("Error: --server is required (no existing configuration found)")
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	fmt.Printf("Registering runner '%s' with server %s...\n", nID, *serverURL)
+	fmt.Printf("Reactivating runner with server %s...\n", sURL)
 
-	result, err := client.register(ctx, *token, *description, *maxPods)
-	if err != nil {
-		log.Fatalf("Registration failed: %v", err)
+	if err := reactivateRunner(ctx, sURL, *token); err != nil {
+		log.Fatalf("Reactivation failed: %v", err)
 	}
-
-	// Save configuration to ~/.agentsmesh/
-	if err := saveConfig(nID, *serverURL, result.AuthToken, result.OrgSlug, *description, *maxPods); err != nil {
-		log.Fatalf("Failed to save configuration: %v", err)
-	}
-
-	fmt.Println("✓ Registration successful!")
-	fmt.Printf("✓ Organization: %s\n", result.OrgSlug)
-	fmt.Printf("✓ Configuration saved to ~/.agentsmesh/\n")
-	fmt.Println("\nYou can now start the runner with:")
-	fmt.Println("  runner run")
 }
 
 func runRunner(args []string) {
@@ -153,7 +210,9 @@ Options:`)
 		fs.PrintDefaults()
 		fmt.Println(`
 The runner must be registered first using 'runner register'.
-Configuration is loaded from ~/.agentsmesh/config.yaml by default.`)
+Configuration is loaded from ~/.agentsmesh/config.yaml by default.
+
+The runner uses gRPC/mTLS for secure communication with the server.`)
 	}
 
 	if err := fs.Parse(args); err != nil {
@@ -181,9 +240,14 @@ Configuration is loaded from ~/.agentsmesh/config.yaml by default.`)
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Load auth token
-	if err := cfg.LoadAuthToken(); err != nil {
-		log.Printf("Warning: Failed to load auth token: %v", err)
+	// Load gRPC config (certificates)
+	if err := cfg.LoadGRPCConfig(); err != nil {
+		log.Fatalf("Failed to load gRPC config: %v - please re-register the runner", err)
+	}
+
+	// Load org slug
+	if err := cfg.LoadOrgSlug(); err != nil {
+		log.Printf("Warning: Failed to load org slug: %v", err)
 	}
 
 	// Validate config
@@ -191,40 +255,11 @@ Configuration is loaded from ~/.agentsmesh/config.yaml by default.`)
 		log.Fatalf("Invalid config: %v", err)
 	}
 
-	startRunner(cfg)
-}
-
-// runRunnerLegacy provides backward compatibility with old flag-based CLI
-func runRunnerLegacy(args []string) {
-	fs := flag.NewFlagSet("runner", flag.ExitOnError)
-	configFile := fs.String("config", "", "Path to config file")
-	showVersion := fs.Bool("version", false, "Show version")
-	registerToken := fs.String("token", "", "Registration token for initial registration")
-
-	if err := fs.Parse(args); err != nil {
-		os.Exit(1)
+	if !cfg.UsesGRPC() {
+		log.Fatal("Error: gRPC configuration is required. Please re-register the runner using 'runner register'")
 	}
 
-	if *showVersion {
-		fmt.Printf("AgentsMesh Runner %s (built %s)\n", version, buildTime)
-		os.Exit(0)
-	}
-
-	// Load configuration
-	cfg, err := config.Load(*configFile)
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
-	}
-
-	// Override with command line flags
-	if *registerToken != "" {
-		cfg.RegistrationToken = *registerToken
-	}
-
-	// Validate config
-	if err := cfg.Validate(); err != nil {
-		log.Fatalf("Invalid config: %v", err)
-	}
+	log.Printf("Using gRPC/mTLS connection mode (endpoint: %s)", cfg.GRPCEndpoint)
 
 	startRunner(cfg)
 }

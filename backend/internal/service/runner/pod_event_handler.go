@@ -5,20 +5,22 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// handleHeartbeat handles heartbeat from a runner
+// handleHeartbeat handles heartbeat from a runner (Proto type)
 // Heartbeats are batched via HeartbeatBatcher for high-scale performance
-func (pc *PodCoordinator) handleHeartbeat(runnerID int64, data *HeartbeatData) {
+func (pc *PodCoordinator) handleHeartbeat(runnerID int64, data *runnerv1.HeartbeatData) {
 	ctx := context.Background()
 
 	// Record heartbeat via batcher (batched DB writes + immediate Redis update)
+	// Note: RunnerVersion not available in Proto, using empty string
 	if err := pc.heartbeatBatcher.RecordHeartbeat(
 		ctx,
 		runnerID,
 		len(data.Pods),
 		"online",
-		data.RunnerVersion,
+		"", // RunnerVersion not in Proto HeartbeatData
 	); err != nil {
 		pc.logger.Error("failed to record heartbeat",
 			"runner_id", runnerID,
@@ -99,24 +101,19 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 	}
 }
 
-// handlePodCreated handles pod creation event from runner
-func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *PodCreatedData) {
+// handlePodCreated handles pod creation event from runner (Proto type)
+func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCreatedEvent) {
 	ctx := context.Background()
 
 	now := time.Now()
 	updates := map[string]interface{}{
-		"pty_pid":       data.Pid,
+		"pty_pid":       int(data.Pid),
 		"status":        agentpod.StatusRunning,
 		"started_at":    now,
 		"last_activity": now,
 	}
 
-	if data.BranchName != "" {
-		updates["branch_name"] = data.BranchName
-	}
-	if data.WorktreePath != "" {
-		updates["worktree_path"] = data.WorktreePath
-	}
+	// Note: BranchName and WorktreePath not available in Proto PodCreatedEvent
 
 	if err := pc.db.WithContext(ctx).
 		Model(&agentpod.Pod{}).
@@ -134,8 +131,7 @@ func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *PodCreatedData)
 	pc.logger.Info("pod created",
 		"pod_key", data.PodKey,
 		"runner_id", runnerID,
-		"pid", data.Pid,
-		"branch", data.BranchName)
+		"pid", data.Pid)
 
 	// Notify status change
 	if pc.onStatusChange != nil {
@@ -143,8 +139,8 @@ func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *PodCreatedData)
 	}
 }
 
-// handlePodTerminated handles pod termination event from runner
-func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *PodTerminatedData) {
+// handlePodTerminated handles pod termination event from runner (Proto type)
+func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.PodTerminatedEvent) {
 	ctx := context.Background()
 
 	now := time.Now()
@@ -182,16 +178,14 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *PodTerminate
 	}
 }
 
-// handleAgentStatus handles agent status change from runner
-func (pc *PodCoordinator) handleAgentStatus(runnerID int64, data *AgentStatusData) {
+// handleAgentStatus handles agent status change from runner (Proto type)
+func (pc *PodCoordinator) handleAgentStatus(runnerID int64, data *runnerv1.AgentStatusEvent) {
 	ctx := context.Background()
 
 	updates := map[string]interface{}{
 		"agent_status": data.Status,
 	}
-	if data.Pid > 0 {
-		updates["pty_pid"] = data.Pid
-	}
+	// Note: Pid not available in Proto AgentStatusEvent
 
 	if err := pc.db.WithContext(ctx).
 		Model(&agentpod.Pod{}).

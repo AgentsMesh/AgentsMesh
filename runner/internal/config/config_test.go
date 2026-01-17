@@ -52,7 +52,6 @@ func TestConfigNodeIDGeneration(t *testing.T) {
 func TestConfigValidateMissingServerURL(t *testing.T) {
 	cfg := &Config{
 		ServerURL: "",
-		AuthToken: "test-token",
 	}
 
 	err := cfg.Validate()
@@ -61,43 +60,38 @@ func TestConfigValidateMissingServerURL(t *testing.T) {
 	}
 }
 
-func TestConfigValidateMissingAuth(t *testing.T) {
+func TestConfigValidateMissingGRPCConfig(t *testing.T) {
 	cfg := &Config{
-		ServerURL:         "http://localhost",
-		AuthToken:         "",
-		RegistrationToken: "",
+		ServerURL: "https://localhost",
+		// No gRPC config
 	}
 
 	err := cfg.Validate()
 	if err == nil {
-		t.Error("expected error for missing auth token")
+		t.Error("expected error for missing gRPC config")
 	}
 }
 
-func TestConfigValidateWithAuthToken(t *testing.T) {
+func TestConfigValidateWithGRPCConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	cfg := &Config{
-		ServerURL:             "http://localhost",
-		AuthToken:             "test-token",
-		MaxConcurrentPods: 5,
-		WorkspaceRoot:         tmpDir,
-	}
+	// Create test certificate files
+	certFile := filepath.Join(tmpDir, "runner.crt")
+	keyFile := filepath.Join(tmpDir, "runner.key")
+	caFile := filepath.Join(tmpDir, "ca.crt")
 
-	err := cfg.Validate()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
-func TestConfigValidateWithRegistrationToken(t *testing.T) {
-	tmpDir := t.TempDir()
+	os.WriteFile(certFile, []byte("cert"), 0600)
+	os.WriteFile(keyFile, []byte("key"), 0600)
+	os.WriteFile(caFile, []byte("ca"), 0644)
 
 	cfg := &Config{
-		ServerURL:             "http://localhost",
-		RegistrationToken:     "reg-token",
+		ServerURL:         "https://localhost",
+		GRPCEndpoint:      "localhost:9443",
+		CertFile:          certFile,
+		KeyFile:           keyFile,
+		CAFile:            caFile,
 		MaxConcurrentPods: 5,
-		WorkspaceRoot:         tmpDir,
+		WorkspaceRoot:     tmpDir,
 	}
 
 	err := cfg.Validate()
@@ -107,9 +101,23 @@ func TestConfigValidateWithRegistrationToken(t *testing.T) {
 }
 
 func TestConfigValidateInvalidMaxPods(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create test certificate files
+	certFile := filepath.Join(tmpDir, "runner.crt")
+	keyFile := filepath.Join(tmpDir, "runner.key")
+	caFile := filepath.Join(tmpDir, "ca.crt")
+
+	os.WriteFile(certFile, []byte("cert"), 0600)
+	os.WriteFile(keyFile, []byte("key"), 0600)
+	os.WriteFile(caFile, []byte("ca"), 0644)
+
 	cfg := &Config{
-		ServerURL:             "http://localhost",
-		AuthToken:             "test-token",
+		ServerURL:         "https://localhost",
+		GRPCEndpoint:      "localhost:9443",
+		CertFile:          certFile,
+		KeyFile:           keyFile,
+		CAFile:            caFile,
 		MaxConcurrentPods: 0,
 	}
 
@@ -123,11 +131,23 @@ func TestConfigValidateCreatesWorkspaceDir(t *testing.T) {
 	tmpDir := t.TempDir()
 	workspaceDir := filepath.Join(tmpDir, "new_workspace")
 
+	// Create test certificate files
+	certFile := filepath.Join(tmpDir, "runner.crt")
+	keyFile := filepath.Join(tmpDir, "runner.key")
+	caFile := filepath.Join(tmpDir, "ca.crt")
+
+	os.WriteFile(certFile, []byte("cert"), 0600)
+	os.WriteFile(keyFile, []byte("key"), 0600)
+	os.WriteFile(caFile, []byte("ca"), 0644)
+
 	cfg := &Config{
-		ServerURL:             "http://localhost",
-		AuthToken:             "test-token",
+		ServerURL:         "https://localhost",
+		GRPCEndpoint:      "localhost:9443",
+		CertFile:          certFile,
+		KeyFile:           keyFile,
+		CAFile:            caFile,
 		MaxConcurrentPods: 5,
-		WorkspaceRoot:         workspaceDir,
+		WorkspaceRoot:     workspaceDir,
 	}
 
 	err := cfg.Validate()
@@ -141,7 +161,7 @@ func TestConfigValidateCreatesWorkspaceDir(t *testing.T) {
 	}
 }
 
-func TestConfigSaveAndLoadAuthToken(t *testing.T) {
+func TestConfigSaveAndLoadOrgSlug(t *testing.T) {
 	// Create temp home directory
 	tmpHome := t.TempDir()
 	originalHome := os.Getenv("HOME")
@@ -150,29 +170,29 @@ func TestConfigSaveAndLoadAuthToken(t *testing.T) {
 
 	cfg := &Config{}
 
-	// Save token
-	err := cfg.SaveAuthToken("saved-token")
+	// Save org slug
+	err := cfg.SaveOrgSlug("test-org")
 	if err != nil {
-		t.Fatalf("SaveAuthToken error: %v", err)
+		t.Fatalf("SaveOrgSlug error: %v", err)
 	}
 
-	if cfg.AuthToken != "saved-token" {
-		t.Errorf("AuthToken after save: got %v, want saved-token", cfg.AuthToken)
+	if cfg.OrgSlug != "test-org" {
+		t.Errorf("OrgSlug after save: got %v, want test-org", cfg.OrgSlug)
 	}
 
 	// Clear and reload
-	cfg.AuthToken = ""
-	err = cfg.LoadAuthToken()
+	cfg.OrgSlug = ""
+	err = cfg.LoadOrgSlug()
 	if err != nil {
-		t.Fatalf("LoadAuthToken error: %v", err)
+		t.Fatalf("LoadOrgSlug error: %v", err)
 	}
 
-	if cfg.AuthToken != "saved-token" {
-		t.Errorf("AuthToken after load: got %v, want saved-token", cfg.AuthToken)
+	if cfg.OrgSlug != "test-org" {
+		t.Errorf("OrgSlug after load: got %v, want test-org", cfg.OrgSlug)
 	}
 }
 
-func TestConfigLoadAuthTokenNotExists(t *testing.T) {
+func TestConfigLoadOrgSlugNotExists(t *testing.T) {
 	tmpHome := t.TempDir()
 	originalHome := os.Getenv("HOME")
 	os.Setenv("HOME", tmpHome)
@@ -181,24 +201,24 @@ func TestConfigLoadAuthTokenNotExists(t *testing.T) {
 	cfg := &Config{}
 
 	// Should not error when file doesn't exist
-	err := cfg.LoadAuthToken()
+	err := cfg.LoadOrgSlug()
 	if err != nil {
-		t.Errorf("LoadAuthToken should not error when file missing: %v", err)
+		t.Errorf("LoadOrgSlug should not error when file missing: %v", err)
 	}
 }
 
-func TestConfigLoadAuthTokenSkipsIfSet(t *testing.T) {
+func TestConfigLoadOrgSlugSkipsIfSet(t *testing.T) {
 	cfg := &Config{
-		AuthToken: "existing-token",
+		OrgSlug: "existing-org",
 	}
 
-	err := cfg.LoadAuthToken()
+	err := cfg.LoadOrgSlug()
 	if err != nil {
-		t.Fatalf("LoadAuthToken error: %v", err)
+		t.Fatalf("LoadOrgSlug error: %v", err)
 	}
 
-	if cfg.AuthToken != "existing-token" {
-		t.Errorf("AuthToken should remain: got %v, want existing-token", cfg.AuthToken)
+	if cfg.OrgSlug != "existing-org" {
+		t.Errorf("OrgSlug should remain: got %v, want existing-org", cfg.OrgSlug)
 	}
 }
 
@@ -207,9 +227,9 @@ func TestConfigFromFile(t *testing.T) {
 	configFile := filepath.Join(tmpDir, "runner.yaml")
 
 	content := `
-server_url: http://test.example.com
+server_url: https://test.example.com
 node_id: test-node
-auth_token: test-token
+grpc_endpoint: localhost:9443
 max_concurrent_pods: 10
 workspace_root: /tmp/test
 `
@@ -222,16 +242,16 @@ workspace_root: /tmp/test
 		t.Fatalf("Load error: %v", err)
 	}
 
-	if cfg.ServerURL != "http://test.example.com" {
-		t.Errorf("ServerURL: got %v, want http://test.example.com", cfg.ServerURL)
+	if cfg.ServerURL != "https://test.example.com" {
+		t.Errorf("ServerURL: got %v, want https://test.example.com", cfg.ServerURL)
 	}
 
 	if cfg.NodeID != "test-node" {
 		t.Errorf("NodeID: got %v, want test-node", cfg.NodeID)
 	}
 
-	if cfg.AuthToken != "test-token" {
-		t.Errorf("AuthToken: got %v, want test-token", cfg.AuthToken)
+	if cfg.GRPCEndpoint != "localhost:9443" {
+		t.Errorf("GRPCEndpoint: got %v, want localhost:9443", cfg.GRPCEndpoint)
 	}
 
 	if cfg.MaxConcurrentPods != 10 {
@@ -241,7 +261,7 @@ workspace_root: /tmp/test
 
 func TestConfigFromEnvironment(t *testing.T) {
 	// Set environment variables
-	os.Setenv("AGENTSMESH_SERVER_URL", "http://env.example.com")
+	os.Setenv("AGENTSMESH_SERVER_URL", "https://env.example.com")
 	defer func() {
 		os.Unsetenv("AGENTSMESH_SERVER_URL")
 	}()
@@ -251,8 +271,8 @@ func TestConfigFromEnvironment(t *testing.T) {
 		t.Fatalf("Load error: %v", err)
 	}
 
-	if cfg.ServerURL != "http://env.example.com" {
-		t.Errorf("ServerURL from env: got %v, want http://env.example.com", cfg.ServerURL)
+	if cfg.ServerURL != "https://env.example.com" {
+		t.Errorf("ServerURL from env: got %v, want https://env.example.com", cfg.ServerURL)
 	}
 }
 
@@ -264,8 +284,7 @@ func TestConfigWorkspaceRootExpansion(t *testing.T) {
 	configFile := filepath.Join(tmpDir, "runner.yaml")
 
 	content := `
-server_url: http://test.example.com
-auth_token: test-token
+server_url: https://test.example.com
 workspace_root: $TEST_WORKSPACE
 `
 	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
@@ -284,32 +303,39 @@ workspace_root: $TEST_WORKSPACE
 
 func TestConfigStruct(t *testing.T) {
 	cfg := Config{
-		ServerURL:             "http://localhost",
-		NodeID:                "test-node",
-		Description:           "Test runner",
-		AuthToken:             "token",
-		RegistrationToken:     "reg-token",
+		ServerURL:         "https://localhost",
+		NodeID:            "test-node",
+		Description:       "Test runner",
+		GRPCEndpoint:      "localhost:9443",
+		CertFile:          "/path/to/cert",
+		KeyFile:           "/path/to/key",
+		CAFile:            "/path/to/ca",
+		OrgSlug:           "test-org",
 		MaxConcurrentPods: 5,
-		WorkspaceRoot:         "/workspace",
-		GitConfigPath:         "/git/config",
-		RepositoryPath:        "/repo",
-		WorktreesDir:          "/worktrees",
-		BaseBranch:            "main",
-		MCPConfigPath:         "/mcp/config",
-		DefaultAgent:          "claude-code",
-		DefaultShell:          "/bin/bash",
-		AgentEnvVars:          map[string]string{"KEY": "VALUE"},
-		HealthCheckPort:       9090,
-		LogLevel:              "debug",
-		LogFile:               "/var/log/runner.log",
+		WorkspaceRoot:     "/workspace",
+		GitConfigPath:     "/git/config",
+		RepositoryPath:    "/repo",
+		WorktreesDir:      "/worktrees",
+		BaseBranch:        "main",
+		MCPConfigPath:     "/mcp/config",
+		DefaultAgent:      "claude-code",
+		DefaultShell:      "/bin/bash",
+		AgentEnvVars:      map[string]string{"KEY": "VALUE"},
+		HealthCheckPort:   9090,
+		LogLevel:          "debug",
+		LogFile:           "/var/log/runner.log",
 	}
 
-	if cfg.ServerURL != "http://localhost" {
-		t.Errorf("ServerURL: got %v, want http://localhost", cfg.ServerURL)
+	if cfg.ServerURL != "https://localhost" {
+		t.Errorf("ServerURL: got %v, want https://localhost", cfg.ServerURL)
 	}
 
 	if cfg.NodeID != "test-node" {
 		t.Errorf("NodeID: got %v, want test-node", cfg.NodeID)
+	}
+
+	if cfg.GRPCEndpoint != "localhost:9443" {
+		t.Errorf("GRPCEndpoint: got %v, want localhost:9443", cfg.GRPCEndpoint)
 	}
 
 	if cfg.AgentEnvVars["KEY"] != "VALUE" {
@@ -331,5 +357,112 @@ server_url: [invalid yaml
 	_, err := Load(configFile)
 	if err == nil {
 		t.Error("expected error for invalid YAML")
+	}
+}
+
+func TestConfigUsesGRPC(t *testing.T) {
+	tests := []struct {
+		name     string
+		cfg      Config
+		expected bool
+	}{
+		{
+			name: "all gRPC fields set",
+			cfg: Config{
+				GRPCEndpoint: "localhost:9443",
+				CertFile:     "/path/cert",
+				KeyFile:      "/path/key",
+				CAFile:       "/path/ca",
+			},
+			expected: true,
+		},
+		{
+			name: "missing endpoint",
+			cfg: Config{
+				CertFile: "/path/cert",
+				KeyFile:  "/path/key",
+				CAFile:   "/path/ca",
+			},
+			expected: false,
+		},
+		{
+			name: "missing cert",
+			cfg: Config{
+				GRPCEndpoint: "localhost:9443",
+				KeyFile:      "/path/key",
+				CAFile:       "/path/ca",
+			},
+			expected: false,
+		},
+		{
+			name:     "empty config",
+			cfg:      Config{},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cfg.UsesGRPC(); got != tt.expected {
+				t.Errorf("UsesGRPC() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestConfigSaveAndLoadGRPCConfig(t *testing.T) {
+	tmpHome := t.TempDir()
+	originalHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpHome)
+	defer os.Setenv("HOME", originalHome)
+
+	cfg := &Config{}
+
+	// Save gRPC endpoint
+	err := cfg.SaveGRPCEndpoint("grpc.example.com:9443")
+	if err != nil {
+		t.Fatalf("SaveGRPCEndpoint error: %v", err)
+	}
+
+	// Save certificates
+	err = cfg.SaveCertificates([]byte("cert-pem"), []byte("key-pem"), []byte("ca-pem"))
+	if err != nil {
+		t.Fatalf("SaveCertificates error: %v", err)
+	}
+
+	// Clear and reload
+	cfg2 := &Config{}
+	err = cfg2.LoadGRPCConfig()
+	if err != nil {
+		t.Fatalf("LoadGRPCConfig error: %v", err)
+	}
+
+	if cfg2.GRPCEndpoint != "grpc.example.com:9443" {
+		t.Errorf("GRPCEndpoint after load: got %v, want grpc.example.com:9443", cfg2.GRPCEndpoint)
+	}
+
+	if cfg2.CertFile == "" {
+		t.Error("CertFile should be set after load")
+	}
+	if cfg2.KeyFile == "" {
+		t.Error("KeyFile should be set after load")
+	}
+	if cfg2.CAFile == "" {
+		t.Error("CAFile should be set after load")
+	}
+}
+
+func TestConfigValidateGRPCMissingFiles(t *testing.T) {
+	cfg := &Config{
+		ServerURL:    "https://localhost",
+		GRPCEndpoint: "localhost:9443",
+		CertFile:     "/nonexistent/cert",
+		KeyFile:      "/nonexistent/key",
+		CAFile:       "/nonexistent/ca",
+	}
+
+	err := cfg.Validate()
+	if err == nil {
+		t.Error("expected error for missing certificate files")
 	}
 }

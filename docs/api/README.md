@@ -2,7 +2,12 @@
 
 ## Overview
 
-AgentsMesh provides a RESTful API for managing multi-agent AI development workspaces. The API supports multi-tenancy, OAuth authentication, and real-time WebSocket connections.
+AgentsMesh provides APIs for managing multi-agent AI development workspaces:
+
+- **REST API**: For web/mobile clients (authentication, resources, management)
+- **gRPC + mTLS**: For Runner connections (bidirectional streaming, certificate-based authentication)
+
+The platform supports multi-tenancy, OAuth authentication, and real-time terminal streaming.
 
 ## Base URL
 
@@ -253,19 +258,61 @@ Organization-scoped endpoints require the organization slug in the URL path:
 | POST | `/organizations/{slug}/billing/quota` | Set custom quota |
 | GET | `/organizations/{slug}/billing/quota/check` | Check quota |
 
-## WebSocket Endpoints
+## gRPC API (Runner Communication)
+
+Runners connect to the backend via gRPC with mTLS (mutual TLS) authentication.
+
+### Endpoint
+
+- Production: `grpcs://api.agentmesh.io:9443`
+- Development: `grpcs://localhost:9443`
+
+### Authentication
+
+Runners authenticate using client certificates issued by the AgentMesh PKI:
+
+1. **Registration**: Runner obtains a certificate via `RegisterWithToken` or browser-based authorization
+2. **Connection**: Runner presents certificate during TLS handshake
+3. **Validation**: Nginx validates certificate and passes CN to backend via gRPC metadata
+
+### Service Definition
+
+```protobuf
+service RunnerService {
+  // Bidirectional streaming for Runner ↔ Backend communication
+  rpc Connect(stream RunnerMessage) returns (stream ServerMessage);
+
+  // Certificate registration (before mTLS setup)
+  rpc RegisterWithToken(RegisterWithTokenRequest) returns (RegisterWithTokenResponse);
+  rpc GetAuthStatus(GetAuthStatusRequest) returns (GetAuthStatusResponse);
+}
+```
+
+### Message Types
+
+**Server → Runner:**
+- `CreatePodCommand`: Create a new pod with specified agent
+- `TerminatePodCommand`: Stop and cleanup a pod
+- `TerminalInputCommand`: Send input to pod's terminal
+- `TerminalResizeCommand`: Resize terminal dimensions
+- `PromptCommand`: Send prompt to agent
+
+**Runner → Server:**
+- `PodCreatedEvent`: Pod successfully created
+- `PodTerminatedEvent`: Pod terminated (with exit code)
+- `TerminalOutputEvent`: Terminal output data
+- `AgentStatusEvent`: Agent state change
+- `HeartbeatData`: Periodic health check
+
+## WebSocket Endpoints (Web Client)
 
 ### Terminal WebSocket
 
 ```
-ws://localhost:8080/ws/terminal/{pod_key}
-```
-
-Connect to a pod's terminal. Requires JWT authentication via query parameter:
-
-```
 ws://localhost:8080/ws/terminal/{pod_key}?token=<jwt>
 ```
+
+Connect to a pod's terminal for real-time input/output. The backend bridges WebSocket to gRPC stream.
 
 ### Events WebSocket
 

@@ -121,50 +121,56 @@ func TestPodWithCallbacks(t *testing.T) {
 
 // --- Test Runner Struct ---
 
-func TestNewRunner(t *testing.T) {
+// TestNewRunnerRequiresGRPC verifies that New() requires gRPC configuration.
+func TestNewRunnerRequiresGRPC(t *testing.T) {
 	tempDir := t.TempDir()
 	cfg := &config.Config{
 		ServerURL:         "http://localhost:8080",
 		NodeID:            "test-runner",
-		AuthToken:         "test-token",
 		OrgSlug:           "test-org",
 		WorkspaceRoot:     tempDir,
 		MaxConcurrentPods: 10,
+		// No gRPC config - should fail
 	}
 
 	r, err := New(cfg)
-	if err != nil {
-		t.Logf("New returned error (expected in test): %v", err)
+	if err == nil {
+		t.Error("New should return error when gRPC config is missing")
 	}
-
-	if r == nil {
-		t.Fatal("New returned nil runner")
+	if r != nil {
+		t.Error("Runner should be nil when gRPC config is missing")
 	}
-	if r.cfg != cfg {
-		t.Error("config should be set")
-	}
-	if r.podStore == nil {
-		t.Error("podStore should be initialized")
+	if !contains(err.Error(), "gRPC configuration is required") {
+		t.Errorf("Error should mention gRPC configuration, got: %v", err)
 	}
 }
 
-func TestRunnerConfig(t *testing.T) {
+// TestRunnerConfigFields tests runner configuration fields using direct struct creation.
+// Note: Full runner creation requires gRPC certificates, so we test config fields directly.
+func TestRunnerConfigFields(t *testing.T) {
 	tempDir := t.TempDir()
 	cfg := &config.Config{
-		ServerURL:         "http://localhost:8080",
+		ServerURL:         "https://localhost:8080",
 		NodeID:            "test-runner",
-		AuthToken:         "test-token",
 		OrgSlug:           "test-org",
 		WorkspaceRoot:     tempDir,
 		MaxConcurrentPods: 5,
+		GRPCEndpoint:      "localhost:9443",
+		CertFile:          "/tmp/test.crt",
+		KeyFile:           "/tmp/test.key",
+		CAFile:            "/tmp/ca.crt",
 		AgentEnvVars: map[string]string{
 			"API_KEY": "test-key",
 		},
 	}
 
-	r, err := New(cfg)
-	if err != nil {
-		t.Fatalf("Failed to create runner: %v", err)
+	// Create runner components directly for testing
+	store := NewInMemoryPodStore()
+	r := &Runner{
+		cfg:      cfg,
+		podStore: store,
+		pods:     make(map[string]*Pod),
+		stopChan: make(chan struct{}),
 	}
 
 	if r.cfg.WorkspaceRoot != tempDir {
@@ -175,6 +181,9 @@ func TestRunnerConfig(t *testing.T) {
 	}
 	if r.cfg.AgentEnvVars["API_KEY"] != "test-key" {
 		t.Errorf("AgentEnvVars[API_KEY]: got %v, want test-key", r.cfg.AgentEnvVars["API_KEY"])
+	}
+	if r.cfg.GRPCEndpoint != "localhost:9443" {
+		t.Errorf("GRPCEndpoint: got %v, want localhost:9443", r.cfg.GRPCEndpoint)
 	}
 }
 

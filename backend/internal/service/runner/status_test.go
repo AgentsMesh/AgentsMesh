@@ -15,7 +15,7 @@ func TestUpdateRunnerStatus(t *testing.T) {
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	err := service.UpdateRunnerStatus(ctx, r.ID, runner.RunnerStatusOnline)
 	if err != nil {
@@ -34,7 +34,7 @@ func TestSetRunnerStatus(t *testing.T) {
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	// Test SetRunnerStatus (alias for UpdateRunnerStatus)
 	err := service.SetRunnerStatus(ctx, r.ID, runner.RunnerStatusOnline)
@@ -82,7 +82,7 @@ func TestMarkConnectedDisconnected(t *testing.T) {
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	// Mark connected
 	err := service.MarkConnected(ctx, r.ID)
@@ -140,7 +140,7 @@ func TestUpdateAvailableAgents(t *testing.T) {
 
 	// Create a runner
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	t.Run("updates available agents", func(t *testing.T) {
 		agents := []string{"claude-code", "aider", "gemini-cli"}

@@ -1,0 +1,17 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/anthropic/agentmesh/proto
+plugins:
+  # Generate Go code
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+    opt:
+      - paths=source_relative
+  # Generate gRPC Go code
+  - remote: buf.build/grpc/go
+    out: gen/go
+    opt:
+      - paths=source_relative

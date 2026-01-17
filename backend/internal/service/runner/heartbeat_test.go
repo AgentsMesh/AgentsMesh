@@ -17,7 +17,7 @@ func TestHeartbeat(t *testing.T) {
 
 	// Create token and register runner
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	// Send heartbeat
 	err := service.Heartbeat(ctx, r.ID, 2)
@@ -38,52 +38,13 @@ func TestHeartbeat(t *testing.T) {
 	}
 }
 
-func TestUpdateHeartbeat(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db)
-	ctx := context.Background()
-
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, authToken, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
-
-	err := service.UpdateHeartbeat(ctx, r.ID, authToken, 2, "1.0.0")
-	if err != nil {
-		t.Fatalf("failed to update heartbeat: %v", err)
-	}
-
-	updated, _ := service.GetRunner(ctx, r.ID)
-	if updated.Status != runner.RunnerStatusOnline {
-		t.Errorf("expected status online, got %s", updated.Status)
-	}
-	if updated.CurrentPods != 2 {
-		t.Errorf("expected 2 pods, got %d", updated.CurrentPods)
-	}
-	if updated.RunnerVersion == nil || *updated.RunnerVersion != "1.0.0" {
-		t.Errorf("expected version 1.0.0, got %v", updated.RunnerVersion)
-	}
-}
-
-func TestUpdateHeartbeatInvalidAuth(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db)
-	ctx := context.Background()
-
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
-
-	err := service.UpdateHeartbeat(ctx, r.ID, "invalid-token", 2, "1.0.0")
-	if err != ErrInvalidAuth {
-		t.Errorf("expected ErrInvalidAuth, got %v", err)
-	}
-}
-
 func TestUpdateHeartbeatWithPods(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	pods := []HeartbeatPodInfo{
 		{PodKey: "pod-1", Status: "running"},
@@ -118,7 +79,7 @@ func TestMarkOfflineRunners(t *testing.T) {
 	ctx := context.Background()
 
 	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
 
 	// Mark as online with a recent heartbeat
 	now := time.Now()

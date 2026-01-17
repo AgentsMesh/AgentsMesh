@@ -1,10 +1,11 @@
 package runner
 
 import (
+	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 )
 
-// AgentTypeServiceAdapter adapts agent.AgentTypeService to AgentTypesProvider interface
+// AgentTypeServiceAdapter adapts agent.AgentTypeService to interfaces.AgentTypesProvider interface
 type AgentTypeServiceAdapter struct {
 	agentTypeSvc *agent.AgentTypeService
 }
@@ -14,15 +15,15 @@ func NewAgentTypeServiceAdapter(agentTypeSvc *agent.AgentTypeService) *AgentType
 	return &AgentTypeServiceAdapter{agentTypeSvc: agentTypeSvc}
 }
 
-// GetAgentTypesForRunner implements AgentTypesProvider interface
-func (a *AgentTypeServiceAdapter) GetAgentTypesForRunner() []AgentTypeInfo {
+// GetAgentTypesForRunner implements interfaces.AgentTypesProvider interface
+func (a *AgentTypeServiceAdapter) GetAgentTypesForRunner() []interfaces.AgentTypeInfo {
 	// Get agent types from service
 	types := a.agentTypeSvc.GetAgentTypesForRunner()
 
-	// Convert to runner.AgentTypeInfo
-	result := make([]AgentTypeInfo, len(types))
+	// Convert to interfaces.AgentTypeInfo
+	result := make([]interfaces.AgentTypeInfo, len(types))
 	for i, t := range types {
-		result[i] = AgentTypeInfo{
+		result[i] = interfaces.AgentTypeInfo{
 			Slug:          t.Slug,
 			Name:          t.Name,
 			Executable:    t.Executable,

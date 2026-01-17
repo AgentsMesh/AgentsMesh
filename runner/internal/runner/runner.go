@@ -18,7 +18,7 @@ import (
 // Runner is the main runner instance
 type Runner struct {
 	cfg       *config.Config
-	conn      client.Connection         // New unified connection interface
+	conn      client.Connection         // gRPC connection interface
 	workspace *workspace.Manager
 	pods      map[string]*Pod
 	mu        sync.RWMutex
@@ -80,9 +80,9 @@ const (
 
 // New creates a new runner instance
 func New(cfg *config.Config) (*Runner, error) {
-	// Load auth token from file if not in config
-	if err := cfg.LoadAuthToken(); err != nil {
-		log.Printf("Warning: failed to load auth token: %v", err)
+	// Load gRPC config (certificates)
+	if err := cfg.LoadGRPCConfig(); err != nil {
+		return nil, fmt.Errorf("failed to load gRPC config: %w - please register the runner first using 'runner register'", err)
 	}
 
 	// Load org slug from file if not in config
@@ -90,9 +90,13 @@ func New(cfg *config.Config) (*Runner, error) {
 		log.Printf("Warning: failed to load org slug: %v", err)
 	}
 
-	// Validate org slug is present
+	// Validate required configuration
 	if cfg.OrgSlug == "" {
 		return nil, fmt.Errorf("org_slug is required - please re-register the runner")
+	}
+
+	if !cfg.UsesGRPC() {
+		return nil, fmt.Errorf("gRPC configuration is required - please re-register the runner using 'runner register'")
 	}
 
 	// Create workspace manager
@@ -101,18 +105,40 @@ func New(cfg *config.Config) (*Runner, error) {
 		return nil, fmt.Errorf("failed to create workspace manager: %w", err)
 	}
 
-	// Build WebSocket base URL from server URL (just convert http to ws, no path)
-	wsURL := buildWebSocketBaseURL(cfg.ServerURL)
+	// Create gRPC/mTLS connection
+	log.Printf("[runner] Using gRPC/mTLS connection (endpoint: %s)", cfg.GRPCEndpoint)
 
-	// Create new ServerConnection with org slug
-	conn := client.NewServerConnection(wsURL, cfg.NodeID, cfg.AuthToken, cfg.OrgSlug)
+	grpcConn := client.NewGRPCConnection(
+		cfg.GRPCEndpoint,
+		cfg.NodeID,
+		cfg.OrgSlug,
+		cfg.CertFile,
+		cfg.KeyFile,
+		cfg.CAFile,
+		client.WithGRPCServerURL(cfg.ServerURL), // For certificate renewal API calls
+	)
+
+	// Check certificate validity before connecting
+	certInfo, err := grpcConn.GetCertificateExpiryInfo()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check certificate: %w", err)
+	}
+
+	if certInfo.IsExpired {
+		return nil, fmt.Errorf("certificate has expired on %s. Please reactivate the runner using:\n  runner reactivate --token <token>\nGet a reactivation token from the web UI", certInfo.ExpiresAt.Format("2006-01-02"))
+	}
+
+	if certInfo.NeedsRenewal {
+		log.Printf("[runner] Warning: Certificate expires in %.0f days on %s",
+			certInfo.DaysUntilExpiry, certInfo.ExpiresAt.Format("2006-01-02"))
+	}
 
 	// Create pod store
 	podStore := NewInMemoryPodStore()
 
 	r := &Runner{
 		cfg:       cfg,
-		conn:      conn,
+		conn:      grpcConn,
 		workspace: ws,
 		pods:      make(map[string]*Pod),
 		podStore:  podStore,
@@ -120,26 +146,13 @@ func New(cfg *config.Config) (*Runner, error) {
 	}
 
 	// Create message handler and set it on connection
-	r.messageHandler = NewRunnerMessageHandler(r, podStore, conn)
-	conn.SetHandler(r.messageHandler)
+	r.messageHandler = NewRunnerMessageHandler(r, podStore, grpcConn)
+	grpcConn.SetHandler(r.messageHandler)
 
 	// Initialize optional enhanced components
 	r.initEnhancedComponents(cfg)
 
 	return r, nil
-}
-
-// buildWebSocketBaseURL converts HTTP URL to WebSocket base URL (no path).
-// The ServerConnection will append the org-scoped path.
-func buildWebSocketBaseURL(serverURL string) string {
-	// Parse and convert http(s) to ws(s)
-	if len(serverURL) > 5 && serverURL[:5] == "https" {
-		return "wss" + serverURL[5:]
-	}
-	if len(serverURL) > 4 && serverURL[:4] == "http" {
-		return "ws" + serverURL[4:]
-	}
-	return serverURL
 }
 
 // WithConnection sets a custom connection implementation (useful for testing).
@@ -186,34 +199,6 @@ func (r *Runner) initEnhancedComponents(cfg *config.Config) {
 func (r *Runner) Run(ctx context.Context) error {
 	log.Printf("Runner starting with node_id: %s (org: %s)", r.cfg.NodeID, r.cfg.OrgSlug)
 
-	// Register with server if needed
-	if r.cfg.AuthToken == "" {
-		if r.cfg.RegistrationToken == "" {
-			return fmt.Errorf("no auth_token or registration_token provided")
-		}
-
-		log.Println("Registering runner with server...")
-		resp, err := r.register(ctx)
-		if err != nil {
-			return fmt.Errorf("registration failed: %w", err)
-		}
-
-		// Update connection with new auth token and org slug
-		r.conn.SetAuthToken(resp.AuthToken)
-		r.conn.SetOrgSlug(resp.OrgSlug)
-		r.cfg.AuthToken = resp.AuthToken
-		r.cfg.OrgSlug = resp.OrgSlug
-
-		if err := r.cfg.SaveAuthToken(resp.AuthToken); err != nil {
-			log.Printf("Warning: failed to save auth token: %v", err)
-		}
-		if err := r.cfg.SaveOrgSlug(resp.OrgSlug); err != nil {
-			log.Printf("Warning: failed to save org slug: %v", err)
-		}
-
-		log.Printf("Registration successful (org: %s)", resp.OrgSlug)
-	}
-
 	// Start connection (includes connect, heartbeat, reconnect loop)
 	r.conn.Start()
 	defer r.conn.Stop()
@@ -227,19 +212,6 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	return nil
 }
-
-// register registers this runner with the server
-func (r *Runner) register(ctx context.Context) (*client.RegistrationResponse, error) {
-	req := client.RegistrationRequest{
-		ServerURL:         r.cfg.ServerURL,
-		NodeID:            r.cfg.NodeID,
-		RegistrationToken: r.cfg.RegistrationToken,
-		Description:       r.cfg.Description,
-		MaxPods:           r.cfg.MaxConcurrentPods,
-	}
-	return client.Register(ctx, req)
-}
-
 
 // stopAllPods stops all active pods
 func (r *Runner) stopAllPods() {

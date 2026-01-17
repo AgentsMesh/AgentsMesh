@@ -3,7 +3,6 @@ package runner
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -205,21 +204,14 @@ func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 	}
 }
 
-// Event sending methods
+// Event sending methods - using gRPC-specific methods
 
 func (h *RunnerMessageHandler) sendPodCreated(podKey string, pid int, worktreePath, branchName string, cols, rows uint16) {
 	if h.conn == nil {
 		return
 	}
-	event := client.PodCreatedEvent{
-		PodKey:       podKey,
-		Pid:          pid,
-		WorktreePath: worktreePath,
-		BranchName:   branchName,
-		PtyCols:      cols,
-		PtyRows:      rows,
-	}
-	if err := h.conn.SendEvent(client.MsgTypePodCreated, event); err != nil {
+	// Use gRPC-specific method
+	if err := h.conn.SendPodCreated(podKey, int32(pid)); err != nil {
 		log.Printf("[message_handler] Failed to send pod created event: %v", err)
 	}
 }
@@ -228,10 +220,8 @@ func (h *RunnerMessageHandler) sendPodTerminated(podKey string) {
 	if h.conn == nil {
 		return
 	}
-	event := client.PodTerminatedEvent{
-		PodKey: podKey,
-	}
-	if err := h.conn.SendEvent(client.MsgTypePodTerminated, event); err != nil {
+	// Use gRPC-specific method with exit code 0 (normal termination)
+	if err := h.conn.SendPodTerminated(podKey, 0, ""); err != nil {
 		log.Printf("[message_handler] Failed to send pod terminated event: %v", err)
 	}
 }
@@ -240,29 +230,18 @@ func (h *RunnerMessageHandler) sendTerminalOutput(podKey string, data []byte) {
 	if h.conn == nil {
 		return
 	}
-	event := client.TerminalOutputEvent{
-		PodKey: podKey,
-		Data:   base64.StdEncoding.EncodeToString(data),
+	// Use gRPC-specific method for terminal output
+	if err := h.conn.SendTerminalOutput(podKey, data); err != nil {
+		log.Printf("[message_handler] Failed to send terminal output: %v", err)
 	}
-	// Use backpressure for terminal output to ensure no data loss
-	msg := client.ProtocolMessage{
-		Type: client.MsgTypeTerminalOutput,
-	}
-	msgData, _ := json.Marshal(event)
-	msg.Data = msgData
-	h.conn.SendWithBackpressure(msg)
 }
 
 func (h *RunnerMessageHandler) sendPtyResized(podKey string, cols, rows uint16) {
 	if h.conn == nil {
 		return
 	}
-	event := client.PtyResizedEvent{
-		PodKey: podKey,
-		Cols:   cols,
-		Rows:   rows,
-	}
-	if err := h.conn.SendEvent(client.MsgTypePtyResized, event); err != nil {
+	// Use gRPC-specific method
+	if err := h.conn.SendPtyResized(podKey, int32(cols), int32(rows)); err != nil {
 		log.Printf("[message_handler] Failed to send pty resized event: %v", err)
 	}
 }
@@ -271,11 +250,8 @@ func (h *RunnerMessageHandler) sendPodError(podKey, errorMsg string) {
 	if h.conn == nil {
 		return
 	}
-	event := map[string]interface{}{
-		"pod_key": podKey,
-		"error":   errorMsg,
-	}
-	if err := h.conn.SendEvent(client.MessageType("error"), event); err != nil {
+	// Use gRPC-specific method
+	if err := h.conn.SendError(podKey, "error", errorMsg); err != nil {
 		log.Printf("[message_handler] Failed to send error event: %v", err)
 	}
 }
@@ -284,13 +260,8 @@ func (h *RunnerMessageHandler) sendPodErrorWithCode(podKey string, podErr *clien
 	if h.conn == nil {
 		return
 	}
-	event := map[string]interface{}{
-		"pod_key": podKey,
-		"error":   podErr.Message,
-		"code":    podErr.Code,
-		"details": podErr.Details,
-	}
-	if err := h.conn.SendEvent(client.MessageType("error"), event); err != nil {
+	// Use gRPC-specific method with error code
+	if err := h.conn.SendError(podKey, podErr.Code, podErr.Message); err != nil {
 		log.Printf("[message_handler] Failed to send error event: %v", err)
 	}
 }

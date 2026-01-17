@@ -3,19 +3,25 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"hash/fnv"
 	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/terminal"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/gorilla/websocket"
 )
 
 // TerminalRouter routes terminal data between frontend clients and runners using sharded locks
 // Uses 64 shards to minimize lock contention for high-scale deployments (500K+ pods)
 type TerminalRouter struct {
-	connectionManager *ConnectionManager
+	connectionManager *RunnerConnectionManager
 	logger            *slog.Logger
+
+	// Command sender for sending terminal input/resize to runners.
+	// Must be set via SetCommandSender before use.
+	commandSender RunnerCommandSender
 
 	// OSC notification detector
 	oscDetector *OSCDetector
@@ -27,12 +33,15 @@ type TerminalRouter struct {
 	scrollbackSize int
 }
 
-// NewTerminalRouter creates a new terminal router with sharded locks
-func NewTerminalRouter(cm *ConnectionManager, logger *slog.Logger) *TerminalRouter {
+// NewTerminalRouter creates a new terminal router with sharded locks.
+// By default, uses NoOpCommandSender which logs warnings. Call SetCommandSender
+// to configure a real command sender (e.g., GRPCCommandSender).
+func NewTerminalRouter(cm *RunnerConnectionManager, logger *slog.Logger) *TerminalRouter {
 	tr := &TerminalRouter{
 		connectionManager: cm,
 		logger:            logger,
 		scrollbackSize:    DefaultScrollbackSize,
+		commandSender:     NewNoOpCommandSender(logger), // Default to no-op
 	}
 
 	// Initialize all shards
@@ -52,6 +61,13 @@ func (tr *TerminalRouter) getShard(podKey string) *terminalShard {
 	h := fnv.New32a()
 	h.Write([]byte(podKey))
 	return tr.shards[h.Sum32()%terminalShards]
+}
+
+// SetCommandSender sets the command sender for sending terminal input/resize to runners.
+// This should be called to configure a real command sender (e.g., GRPCCommandSender).
+func (tr *TerminalRouter) SetCommandSender(sender RunnerCommandSender) {
+	tr.commandSender = sender
+	tr.logger.Info("command sender configured", "type", fmt.Sprintf("%T", sender))
 }
 
 // SetEventBus sets the event bus for publishing terminal notifications
@@ -177,8 +193,8 @@ func (tr *TerminalRouter) DisconnectClient(client *TerminalClient) {
 	tr.logger.Info("terminal client disconnected", "pod_key", client.PodKey)
 }
 
-// handleTerminalOutput handles terminal output from a runner
-func (tr *TerminalRouter) handleTerminalOutput(runnerID int64, data *TerminalOutputData) {
+// handleTerminalOutput handles terminal output from a runner (Proto type)
+func (tr *TerminalRouter) handleTerminalOutput(runnerID int64, data *runnerv1.TerminalOutputEvent) {
 	podKey := data.PodKey
 	shard := tr.getShard(podKey)
 
@@ -233,22 +249,25 @@ func (tr *TerminalRouter) handleTerminalOutput(runnerID int64, data *TerminalOut
 	}
 }
 
-// handlePtyResized handles PTY resize notifications from runner
-func (tr *TerminalRouter) handlePtyResized(runnerID int64, data *PtyResizedData) {
+// handlePtyResized handles PTY resize notifications from runner (Proto type)
+func (tr *TerminalRouter) handlePtyResized(runnerID int64, data *runnerv1.PtyResizedEvent) {
 	podKey := data.PodKey
 	shard := tr.getShard(podKey)
 
+	cols := int(data.Cols)
+	rows := int(data.Rows)
+
 	shard.mu.Lock()
 	// Update local PTY size record
-	shard.ptySize[podKey] = &PtySize{Cols: data.Cols, Rows: data.Rows}
+	shard.ptySize[podKey] = &PtySize{Cols: cols, Rows: rows}
 
 	// Update virtual terminal size
 	if vt, exists := shard.virtualTerminals[podKey]; exists {
-		vt.Resize(data.Cols, data.Rows)
+		vt.Resize(cols, rows)
 		tr.logger.Debug("virtual terminal resized",
 			"pod_key", podKey,
-			"cols", data.Cols,
-			"rows", data.Rows)
+			"cols", cols,
+			"rows", rows)
 	}
 
 	// Get clients while holding lock
@@ -257,7 +276,7 @@ func (tr *TerminalRouter) handlePtyResized(runnerID int64, data *PtyResizedData)
 
 	// Broadcast pty_resized to all connected frontend clients
 	for client := range clients {
-		tr.sendPtyResizedToClient(client, data.Cols, data.Rows)
+		tr.sendPtyResizedToClient(client, cols, rows)
 	}
 }
 
@@ -297,7 +316,7 @@ func (tr *TerminalRouter) RouteInput(podKey string, data []byte) error {
 		return ErrRunnerNotConnected
 	}
 
-	return tr.connectionManager.SendTerminalInput(nil, runnerID, podKey, data)
+	return tr.commandSender.SendTerminalInput(context.Background(), runnerID, podKey, data)
 }
 
 // RouteResize routes terminal resize from frontend to runner
@@ -313,7 +332,7 @@ func (tr *TerminalRouter) RouteResize(podKey string, cols, rows int) error {
 		return ErrRunnerNotConnected
 	}
 
-	return tr.connectionManager.SendTerminalResize(nil, runnerID, podKey, cols, rows)
+	return tr.commandSender.SendTerminalResize(context.Background(), runnerID, podKey, cols, rows)
 }
 
 // GetClientCount returns the number of clients connected to a pod

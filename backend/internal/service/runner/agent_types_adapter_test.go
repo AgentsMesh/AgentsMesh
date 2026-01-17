@@ -3,6 +3,7 @@ package runner
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
@@ -125,5 +126,5 @@ func TestAgentTypeServiceAdapter_ImplementsInterface(t *testing.T) {
 	adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 	// Verify it implements AgentTypesProvider interface
-	var _ AgentTypesProvider = adapter
+	var _ interfaces.AgentTypesProvider = adapter
 }

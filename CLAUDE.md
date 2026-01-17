@@ -129,28 +129,32 @@ migrate create -ext sql -dir backend/migrations -seq add_new_feature
 └─────────────────────────────────────────────────────────────┘
                               │
                         REST / WebSocket
+                         (terminal/events)
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   Backend (Go + Gin)                        │
-│                 localhost:8080                              │
+│            REST: localhost:8080 | gRPC: localhost:9443      │
 │  - Auth (JWT + OAuth)                                       │
 │  - Organization/Team/User management                        │
 │  - Pod lifecycle management                                 │
 │  - Ticket/Channel management                                │
 │  - PostgreSQL + Redis                                       │
+│  - PKI: Runner certificate issuance & revocation            │
 └─────────────────────────────────────────────────────────────┘
                               │
-                         WebSocket
+                      gRPC + mTLS (port 9443)
+                   (bidirectional streaming)
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   Runner (Go daemon)                        │
 │              Self-hosted by users                           │
-│  - Receives tasks via WebSocket                             │
+│  - Connects via gRPC with mTLS client certificate           │
 │  - Creates isolated PTY terminals (Pods)                    │
 │  - Executes AI agents (Claude Code, Aider, etc.)            │
 │  - Streams terminal output back to server                   │
+│  - Auto certificate renewal before expiry                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -214,13 +218,12 @@ runner/
 │   │   ├── runner.go         # Main Runner struct
 │   │   ├── pod_builder.go    # Builder pattern for Pods
 │   │   ├── pod_store.go      # Pod storage
-│   │   ├── message_handler.go # WebSocket message routing
+│   │   ├── message_handler.go # gRPC message routing
 │   │   └── pty_forwarder.go  # Terminal output forwarding
-│   ├── client/           # WebSocket client
-│   │   ├── client.go     # Client implementation
-│   │   ├── connection.go # Auto-reconnect logic
-│   │   ├── message_router.go # Message routing
-│   │   └── protocol.go   # Message types
+│   ├── client/           # gRPC client (mTLS)
+│   │   ├── grpc_connection.go   # gRPC bidirectional stream
+│   │   ├── grpc_registration.go # Certificate registration
+│   │   └── protocol.go          # Message types
 │   ├── terminal/         # PTY management (creack/pty)
 │   ├── process/          # Process management
 │   ├── sandbox/          # Sandbox environment
@@ -235,7 +238,7 @@ runner/
 
 **Pod**: An isolated execution environment with PTY terminal, sandbox config, and output forwarder.
 
-**Runner**: Self-hosted daemon that connects to backend via WebSocket, receives tasks, and manages Pod lifecycle.
+**Runner**: Self-hosted daemon that connects to backend via gRPC+mTLS, receives tasks, and manages Pod lifecycle.
 
 **Sandbox**: Configurable environment created by plugins (worktree for Git isolation, tempdir for temporary workspace).
 
@@ -245,10 +248,13 @@ runner/
 
 ## Message Flow (Runner ↔ Backend)
 
-1. Backend sends `create_pod` → Runner creates Sandbox → Starts PTY
-2. Terminal output → PTYForwarder → `terminal_output` to backend → WebSocket to web
-3. User input from web → `terminal_input` → Runner writes to PTY stdin
-4. Backend sends `terminate_pod` → Runner stops PTY → Cleans up Sandbox
+1. Runner registers via gRPC, receives mTLS certificate from PKI
+2. Runner connects via gRPC bidirectional stream with mTLS
+3. Backend sends `create_pod` → Runner creates Sandbox → Starts PTY
+4. Terminal output → PTYForwarder → `terminal_output` via gRPC → WebSocket to web
+5. User input from web → WebSocket → `terminal_input` via gRPC → Runner writes to PTY stdin
+6. Backend sends `terminate_pod` → Runner stops PTY → Cleans up Sandbox
+7. Certificate auto-renewal before expiry (checked every hour)
 
 ## Configuration
 

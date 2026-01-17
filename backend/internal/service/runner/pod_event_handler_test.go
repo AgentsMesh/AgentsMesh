@@ -8,11 +8,12 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/redis/go-redis/v9"
 )
 
 // setupPodEventHandlerDeps sets up dependencies for pod event handler testing
-func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *ConnectionManager, *TerminalRouter) {
+func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *RunnerConnectionManager, *TerminalRouter) {
 	mr, err := miniredis.Run()
 	if err != nil {
 		t.Fatalf("failed to start miniredis: %v", err)
@@ -53,7 +54,7 @@ func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *ConnectionManager
 		t.Fatalf("failed to create pods table: %v", err)
 	}
 
-	cm := NewConnectionManager(logger)
+	cm := NewRunnerConnectionManager(logger)
 	tr := NewTerminalRouter(cm, logger)
 	hb := NewHeartbeatBatcher(redisClient, db, logger)
 	pc := NewPodCoordinator(db, cm, tr, hb, logger)
@@ -68,7 +69,6 @@ func TestHandleHeartbeat(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "heartbeat-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -79,10 +79,9 @@ func TestHandleHeartbeat(t *testing.T) {
 	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"heartbeat-pod-1", r.ID, agentpod.StatusRunning)
 
-	// Send heartbeat
-	data := &HeartbeatData{
-		RunnerVersion: "1.0.0",
-		Pods: []HeartbeatPod{
+	// Send heartbeat (using Proto type)
+	data := &runnerv1.HeartbeatData{
+		Pods: []*runnerv1.PodInfo{
 			{PodKey: "heartbeat-pod-1", Status: "running"},
 		},
 	}
@@ -102,7 +101,6 @@ func TestHandleHeartbeatReconcilePods(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "reconcile-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -115,9 +113,9 @@ func TestHandleHeartbeatReconcilePods(t *testing.T) {
 	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"reconcile-pod-2", r.ID, agentpod.StatusRunning)
 
-	// Send heartbeat with only pod-1
-	data := &HeartbeatData{
-		Pods: []HeartbeatPod{
+	// Send heartbeat with only pod-1 (using Proto type)
+	data := &runnerv1.HeartbeatData{
+		Pods: []*runnerv1.PodInfo{
 			{PodKey: "reconcile-pod-1", Status: "running"},
 		},
 	}
@@ -149,7 +147,6 @@ func TestHandleHeartbeatRestoreOrphanedPod(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "restore-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -160,9 +157,9 @@ func TestHandleHeartbeatRestoreOrphanedPod(t *testing.T) {
 	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"orphan-pod-1", r.ID, agentpod.StatusOrphaned)
 
-	// Send heartbeat reporting the orphaned pod as running
-	data := &HeartbeatData{
-		Pods: []HeartbeatPod{
+	// Send heartbeat reporting the orphaned pod as running (using Proto type)
+	data := &runnerv1.HeartbeatData{
+		Pods: []*runnerv1.PodInfo{
 			{PodKey: "orphan-pod-1", Status: "running"},
 		},
 	}
@@ -184,7 +181,6 @@ func TestHandlePodCreated(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "create-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -202,12 +198,11 @@ func TestHandlePodCreated(t *testing.T) {
 		callbackStatus = status
 	})
 
-	// Handle pod created event
-	data := &PodCreatedData{
-		PodKey:       "create-pod-1",
-		Pid:          12345,
-		BranchName:   "feature/test",
-		WorktreePath: "/tmp/worktree",
+	// Handle pod created event (using Proto type)
+	// Note: BranchName and WorktreePath not in Proto, testing basic fields only
+	data := &runnerv1.PodCreatedEvent{
+		PodKey: "create-pod-1",
+		Pid:    12345,
 	}
 
 	pc.handlePodCreated(r.ID, data)
@@ -215,9 +210,8 @@ func TestHandlePodCreated(t *testing.T) {
 	// Verify pod was updated
 	var status string
 	var pid int
-	var branch, worktree string
-	pc.db.Raw(`SELECT status, pty_pid, branch_name, worktree_path FROM pods WHERE pod_key = ?`, "create-pod-1").
-		Row().Scan(&status, &pid, &branch, &worktree)
+	pc.db.Raw(`SELECT status, pty_pid FROM pods WHERE pod_key = ?`, "create-pod-1").
+		Row().Scan(&status, &pid)
 
 	if status != agentpod.StatusRunning {
 		t.Errorf("status: got %q, want %q", status, agentpod.StatusRunning)
@@ -225,12 +219,7 @@ func TestHandlePodCreated(t *testing.T) {
 	if pid != 12345 {
 		t.Errorf("pid: got %d, want 12345", pid)
 	}
-	if branch != "feature/test" {
-		t.Errorf("branch: got %q, want %q", branch, "feature/test")
-	}
-	if worktree != "/tmp/worktree" {
-		t.Errorf("worktree: got %q, want %q", worktree, "/tmp/worktree")
-	}
+	// Note: BranchName and WorktreePath not in Proto PodCreatedEvent
 
 	// Verify pod was registered
 	if !tr.IsPodRegistered("create-pod-1") {
@@ -253,7 +242,6 @@ func TestHandlePodCreatedMinimalData(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "minimal-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -264,8 +252,8 @@ func TestHandlePodCreatedMinimalData(t *testing.T) {
 	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"minimal-pod-1", r.ID, agentpod.StatusInitializing)
 
-	// Handle pod created with minimal data (no branch/worktree)
-	data := &PodCreatedData{
+	// Handle pod created with minimal data (using Proto type)
+	data := &runnerv1.PodCreatedEvent{
 		PodKey: "minimal-pod-1",
 		Pid:    54321,
 	}
@@ -289,7 +277,6 @@ func TestHandlePodTerminated(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "terminate-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 		CurrentPods:    2,
 	}
@@ -309,8 +296,8 @@ func TestHandlePodTerminated(t *testing.T) {
 		callbackStatus = status
 	})
 
-	// Handle pod terminated
-	data := &PodTerminatedData{
+	// Handle pod terminated (using Proto type)
+	data := &runnerv1.PodTerminatedEvent{
 		PodKey:   "term-pod-1",
 		ExitCode: 0,
 	}
@@ -354,7 +341,6 @@ func TestHandleAgentStatus(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "agent-status-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -371,27 +357,24 @@ func TestHandleAgentStatus(t *testing.T) {
 		callbackAgentStatus = agentStatus
 	})
 
-	// Handle agent status change
-	data := &AgentStatusData{
+	// Handle agent status change (using Proto type)
+	// Note: Proto AgentStatusEvent doesn't have Pid field
+	data := &runnerv1.AgentStatusEvent{
 		PodKey: "agent-pod-1",
 		Status: "thinking",
-		Pid:    99999,
 	}
 
 	pc.handleAgentStatus(r.ID, data)
 
 	// Verify pod was updated
 	var agentStatus string
-	var pid int
-	pc.db.Raw(`SELECT agent_status, pty_pid FROM pods WHERE pod_key = ?`, "agent-pod-1").
-		Row().Scan(&agentStatus, &pid)
+	pc.db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "agent-pod-1").
+		Scan(&agentStatus)
 
 	if agentStatus != "thinking" {
 		t.Errorf("agent_status: got %q, want %q", agentStatus, "thinking")
 	}
-	if pid != 99999 {
-		t.Errorf("pty_pid: got %d, want 99999", pid)
-	}
+	// Note: Pid field not in Proto AgentStatusEvent, so pty_pid is not updated
 
 	// Verify callback was called
 	if callbackAgentStatus != "thinking" {
@@ -399,14 +382,13 @@ func TestHandleAgentStatus(t *testing.T) {
 	}
 }
 
-func TestHandleAgentStatusNoPid(t *testing.T) {
+func TestHandleAgentStatusPreservesPtyPid(t *testing.T) {
 	pc, _, _ := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "agent-nopid-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -417,11 +399,11 @@ func TestHandleAgentStatusNoPid(t *testing.T) {
 	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, pty_pid) VALUES (?, ?, ?, ?)`,
 		"agent-nopid-1", r.ID, agentpod.StatusRunning, 11111)
 
-	// Handle agent status change without pid
-	data := &AgentStatusData{
+	// Handle agent status change (using Proto type)
+	// Note: Proto AgentStatusEvent doesn't have Pid field, so pty_pid should not be affected
+	data := &runnerv1.AgentStatusEvent{
 		PodKey: "agent-nopid-1",
 		Status: "idle",
-		Pid:    0, // No pid
 	}
 
 	pc.handleAgentStatus(r.ID, data)
@@ -435,9 +417,9 @@ func TestHandleAgentStatusNoPid(t *testing.T) {
 	if agentStatus != "idle" {
 		t.Errorf("agent_status: got %q, want %q", agentStatus, "idle")
 	}
-	// pid should remain unchanged
+	// pid should remain unchanged (Proto AgentStatusEvent doesn't update pty_pid)
 	if pid != 11111 {
-		t.Errorf("pty_pid should not change when pid=0: got %d, want 11111", pid)
+		t.Errorf("pty_pid should not change: got %d, want 11111", pid)
 	}
 }
 
@@ -448,7 +430,6 @@ func TestHandleRunnerDisconnect(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "disconnect-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -484,7 +465,6 @@ func TestReconcilePods(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "reconcile-test-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {
@@ -532,7 +512,6 @@ func TestReconcilePodsCompletedNotAffected(t *testing.T) {
 	r := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "completed-node",
-		AuthTokenHash:  "hash",
 		Status:         "online",
 	}
 	if err := pc.db.Create(r).Error; err != nil {

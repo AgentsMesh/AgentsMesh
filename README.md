@@ -4,7 +4,7 @@ Multi-tenant AI Code Agent collaboration platform supporting Claude Code, Codex 
 
 ## Features
 
-- **AgentPod**: Remote AI development workstation with Terminal WebSocket support
+- **AgentPod**: Remote AI development workstation with real-time terminal streaming
 - **AgentsMesh**: Multi-agent collaboration with channel communication and pod binding
 - **Tickets**: Task management with kanban board and merge request integration
 - **Multi-tenant**: Organization > Teams > Users hierarchy with row-level isolation
@@ -18,8 +18,9 @@ Multi-tenant AI Code Agent collaboration platform supporting Claude Code, Codex 
 - **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
 - **Mobile**: Flutter (planned)
 - **Database**: PostgreSQL + Redis
-- **API**: REST
-- **Real-time**: WebSocket
+- **API**: REST + gRPC
+- **Real-time**: gRPC bidirectional streaming (Runner ↔ Backend)
+- **Security**: mTLS (mutual TLS) for Runner connections
 
 ## Project Structure
 
@@ -43,7 +44,7 @@ AgentsMesh/
 │   │   ├── lib/           # Utilities & API client
 │   │   ├── stores/        # Zustand stores
 │   │   └── messages/      # i18n translations
-├── runner/                # Runner daemon (planned)
+├── runner/                # Runner daemon (gRPC + mTLS client)
 ├── mobile/                # Flutter mobile app (planned)
 ├── deploy/                # Docker & Kubernetes configs
 └── scripts/               # Development scripts

@@ -43,6 +43,18 @@ const (
 	ActionRunnerOnline       = "runner.online"
 	ActionRunnerOffline      = "runner.offline"
 
+	// Runner certificate actions
+	ActionRunnerCertIssued   = "runner.certificate_issued"
+	ActionRunnerCertRenewed  = "runner.certificate_renewed"
+	ActionRunnerCertRevoked  = "runner.certificate_revoked"
+	ActionRunnerCertRejected = "runner.certificate_rejected" // Revoked cert attempted connection
+
+	// Runner auth actions
+	ActionRunnerAuthRequested = "runner.auth_requested"  // Requested authorization URL
+	ActionRunnerAuthApproved  = "runner.auth_approved"   // User approved authorization
+	ActionRunnerTokenUsed     = "runner.token_used"      // Token registration used
+	ActionRunnerReactivated   = "runner.reactivated"     // Reactivated
+
 	// Pod actions
 	ActionPodCreated    = "pod.created"
 	ActionPodStarted    = "pod.started"

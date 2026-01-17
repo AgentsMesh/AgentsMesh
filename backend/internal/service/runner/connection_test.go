@@ -4,249 +4,226 @@ import (
 	"testing"
 	"time"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRunnerConnectionSendMessage(t *testing.T) {
-	t.Run("sends message successfully", func(t *testing.T) {
-		conn := newTestWebSocketConn(t)
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     conn,
-			Send:     make(chan []byte, 256),
-			LastPing: time.Now(),
-		}
+func TestNewGRPCConnection(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
 
-		msg := &RunnerMessage{
-			Type:      MsgTypeHeartbeat,
-			Timestamp: time.Now().UnixMilli(),
-		}
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
 
-		err := rc.SendMessage(msg)
+	assert.Equal(t, int64(1), conn.RunnerID)
+	assert.Equal(t, "test-node", conn.NodeID)
+	assert.Equal(t, "test-org", conn.OrgSlug)
+	assert.Equal(t, stream, conn.Stream)
+	assert.NotNil(t, conn.Send)
+	assert.NotNil(t, conn.closeChan)
+	assert.False(t, conn.closed)
+	assert.False(t, conn.initialized)
+	assert.WithinDuration(t, time.Now(), conn.ConnectedAt, time.Second)
+	assert.WithinDuration(t, time.Now(), conn.LastPing, time.Second)
+}
+
+func TestGRPCConnection_IsInitialized(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	// Initially not initialized
+	assert.False(t, conn.IsInitialized())
+
+	// Set initialized
+	conn.SetInitialized(true, []string{"claude-code"})
+	assert.True(t, conn.IsInitialized())
+
+	// Set back to not initialized
+	conn.SetInitialized(false, nil)
+	assert.False(t, conn.IsInitialized())
+}
+
+func TestGRPCConnection_SetInitialized(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	agents := []string{"claude-code", "aider"}
+	conn.SetInitialized(true, agents)
+
+	assert.True(t, conn.IsInitialized())
+	assert.Equal(t, agents, conn.GetAvailableAgents())
+}
+
+func TestGRPCConnection_GetAvailableAgents(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	// Initially nil
+	assert.Nil(t, conn.GetAvailableAgents())
+
+	// Set agents
+	agents := []string{"claude-code", "aider", "gemini"}
+	conn.SetInitialized(true, agents)
+
+	result := conn.GetAvailableAgents()
+	assert.Equal(t, agents, result)
+
+	// Verify it's a copy (modify result should not affect internal state)
+	result[0] = "modified"
+	assert.NotEqual(t, result[0], conn.GetAvailableAgents()[0])
+}
+
+func TestGRPCConnection_UpdateLastPing(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	initialPing := conn.GetLastPing()
+
+	time.Sleep(10 * time.Millisecond)
+	conn.UpdateLastPing()
+
+	assert.True(t, conn.GetLastPing().After(initialPing))
+}
+
+func TestGRPCConnection_GetLastPing(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	ping := conn.GetLastPing()
+	assert.WithinDuration(t, time.Now(), ping, time.Second)
+}
+
+func TestGRPCConnection_IsClosed(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	assert.False(t, conn.IsClosed())
+
+	conn.Close()
+
+	assert.True(t, conn.IsClosed())
+}
+
+func TestGRPCConnection_Close(t *testing.T) {
+	stream := newMockRunnerStream()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	// Close should work
+	conn.Close()
+	assert.True(t, conn.IsClosed())
+
+	// Double close should not panic (idempotent)
+	conn.Close()
+	assert.True(t, conn.IsClosed())
+}
+
+func TestGRPCConnection_CloseChan(t *testing.T) {
+	stream := newMockRunnerStream()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	closeChan := conn.CloseChan()
+	assert.NotNil(t, closeChan)
+
+	// Channel should not be closed initially
+	select {
+	case <-closeChan:
+		t.Fatal("close channel should not be closed yet")
+	default:
+		// expected
+	}
+
+	// Close the connection
+	conn.Close()
+
+	// Channel should now be closed
+	select {
+	case <-closeChan:
+		// expected
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("close channel should be closed after conn.Close()")
+	}
+}
+
+func TestGRPCConnection_SendMessage(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	msg := &runnerv1.ServerMessage{
+		Payload: &runnerv1.ServerMessage_InitializeResult{
+			InitializeResult: &runnerv1.InitializeResult{
+				ProtocolVersion: 1,
+			},
+		},
+	}
+
+	// Send message should succeed
+	err := conn.SendMessage(msg)
+	require.NoError(t, err)
+
+	// Verify message was queued
+	select {
+	case received := <-conn.Send:
+		assert.Equal(t, msg, received)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("message should be in send channel")
+	}
+}
+
+func TestGRPCConnection_SendMessage_Closed(t *testing.T) {
+	stream := newMockRunnerStream()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn.Close()
+
+	msg := &runnerv1.ServerMessage{
+		Payload: &runnerv1.ServerMessage_InitializeResult{
+			InitializeResult: &runnerv1.InitializeResult{
+				ProtocolVersion: 1,
+			},
+		},
+	}
+
+	// Send message should fail when connection is closed
+	err := conn.SendMessage(msg)
+	assert.Equal(t, ErrConnectionClosed, err)
+}
+
+func TestGRPCConnection_SendMessage_BufferFull(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	// Fill up the send buffer (buffer size is 256)
+	msg := &runnerv1.ServerMessage{
+		Payload: &runnerv1.ServerMessage_InitializeResult{
+			InitializeResult: &runnerv1.InitializeResult{
+				ProtocolVersion: 1,
+			},
+		},
+	}
+
+	for i := 0; i < 256; i++ {
+		err := conn.SendMessage(msg)
 		require.NoError(t, err)
+	}
 
-		// Should receive message on send channel
-		select {
-		case data := <-rc.Send:
-			assert.NotEmpty(t, data)
-		case <-time.After(time.Second):
-			t.Fatal("expected message on send channel")
-		}
-	})
-
-	t.Run("returns error when connection is nil", func(t *testing.T) {
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     nil, // nil connection
-			Send:     make(chan []byte, 256),
-			LastPing: time.Now(),
-		}
-
-		msg := &RunnerMessage{
-			Type: MsgTypeHeartbeat,
-		}
-
-		err := rc.SendMessage(msg)
-		assert.Equal(t, ErrConnectionClosed, err)
-	})
-
-	t.Run("returns error when send buffer is full", func(t *testing.T) {
-		conn := newTestWebSocketConn(t)
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     conn,
-			Send:     make(chan []byte, 1), // Very small buffer
-			LastPing: time.Now(),
-		}
-
-		msg := &RunnerMessage{
-			Type: MsgTypeHeartbeat,
-		}
-
-		// Fill the buffer
-		rc.Send <- []byte("blocking message")
-
-		// Now try to send another - should fail
-		err := rc.SendMessage(msg)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "buffer full")
-	})
-}
-
-func TestRunnerConnectionWritePump(t *testing.T) {
-	t.Run("writes messages from send channel", func(t *testing.T) {
-		conn := newTestWebSocketConn(t)
-		rc := &RunnerConnection{
-			RunnerID:     1,
-			Conn:         conn,
-			Send:         make(chan []byte, 256),
-			LastPing:     time.Now(),
-			PingInterval: 100 * time.Millisecond,
-		}
-
-		// Start write pump in goroutine
-		done := make(chan struct{})
-		go func() {
-			rc.WritePump()
-			close(done)
-		}()
-
-		// Send a message
-		rc.Send <- []byte(`{"type":"heartbeat"}`)
-
-		// Give it time to process
-		time.Sleep(50 * time.Millisecond)
-
-		// Use Close() instead of close(rc.Send) - WritePump.defer calls Close() which handles channel
-		rc.mu.Lock()
-		rc.Conn = nil // Set conn to nil to trigger exit
-		rc.mu.Unlock()
-
-		// Wait for write pump to finish
-		select {
-		case <-done:
-			// Success
-		case <-time.After(time.Second):
-			t.Fatal("write pump did not finish")
-		}
-	})
-
-	t.Run("handles nil connection", func(t *testing.T) {
-		rc := &RunnerConnection{
-			RunnerID:     1,
-			Conn:         nil, // nil connection
-			Send:         make(chan []byte, 256),
-			LastPing:     time.Now(),
-			PingInterval: 50 * time.Millisecond,
-		}
-
-		done := make(chan struct{})
-		go func() {
-			rc.WritePump()
-			close(done)
-		}()
-
-		// Send a message - should exit because conn is nil
-		rc.Send <- []byte(`{"type":"test"}`)
-
-		select {
-		case <-done:
-			// Success - pump exited
-		case <-time.After(time.Second):
-			t.Fatal("write pump did not exit when connection is nil")
-		}
-	})
-
-	t.Run("uses default ping interval when not set", func(t *testing.T) {
-		conn := newTestWebSocketConn(t)
-		rc := &RunnerConnection{
-			RunnerID:     1,
-			Conn:         conn,
-			Send:         make(chan []byte, 256),
-			LastPing:     time.Now(),
-			PingInterval: 0, // Zero - should use default
-		}
-
-		done := make(chan struct{})
-		go func() {
-			rc.WritePump()
-			close(done)
-		}()
-
-		// Close immediately
-		rc.Close()
-
-		select {
-		case <-done:
-			// Success
-		case <-time.After(time.Second):
-			t.Fatal("write pump did not finish")
-		}
-	})
-}
-
-func TestRunnerConnectionClose(t *testing.T) {
-	t.Run("closes connection and channel", func(t *testing.T) {
-		conn := newTestWebSocketConn(t)
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     conn,
-			Send:     make(chan []byte, 10),
-			LastPing: time.Now(),
-		}
-
-		rc.Close()
-
-		// Verify connection is nil
-		rc.mu.Lock()
-		assert.Nil(t, rc.Conn)
-		rc.mu.Unlock()
-
-		// Verify channel is closed
-		_, ok := <-rc.Send
-		assert.False(t, ok, "send channel should be closed")
-	})
-
-	t.Run("is idempotent", func(t *testing.T) {
-		conn := newTestWebSocketConn(t)
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     conn,
-			Send:     make(chan []byte, 10),
-			LastPing: time.Now(),
-		}
-
-		// Multiple closes should not panic
-		rc.Close()
-		rc.Close()
-		rc.Close()
-	})
-}
-
-func TestRunnerConnectionState(t *testing.T) {
-	t.Run("IsInitialized returns false by default", func(t *testing.T) {
-		rc := &RunnerConnection{}
-		assert.False(t, rc.IsInitialized())
-	})
-
-	t.Run("SetInitialized updates state", func(t *testing.T) {
-		rc := &RunnerConnection{}
-		rc.SetInitialized(true, []string{"claude-code", "aider"})
-
-		assert.True(t, rc.IsInitialized())
-		assert.Equal(t, []string{"claude-code", "aider"}, rc.GetAvailableAgents())
-	})
-
-	t.Run("GetAvailableAgents returns empty slice by default", func(t *testing.T) {
-		rc := &RunnerConnection{}
-		assert.Empty(t, rc.GetAvailableAgents())
-	})
-
-	t.Run("state access is thread-safe", func(t *testing.T) {
-		rc := &RunnerConnection{}
-
-		done := make(chan struct{})
-
-		// Writer goroutine
-		go func() {
-			for i := 0; i < 100; i++ {
-				rc.SetInitialized(true, []string{"agent"})
-			}
-			done <- struct{}{}
-		}()
-
-		// Reader goroutine
-		go func() {
-			for i := 0; i < 100; i++ {
-				_ = rc.IsInitialized()
-				_ = rc.GetAvailableAgents()
-			}
-			done <- struct{}{}
-		}()
-
-		// Wait for both
-		<-done
-		<-done
-	})
+	// Next message should fail with buffer full
+	err := conn.SendMessage(msg)
+	assert.Equal(t, ErrSendBufferFull, err)
 }

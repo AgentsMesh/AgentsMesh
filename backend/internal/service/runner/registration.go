@@ -2,57 +2,43 @@ package runner
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-// RegisterRunner registers a new runner
-func (s *Service) RegisterRunner(ctx context.Context, token, nodeID, description string, maxPods int) (*runner.Runner, string, error) {
+// RegisterRunner registers a new runner.
+// Note: This creates the runner record only. For secure communication,
+// use gRPC/mTLS registration to obtain certificates.
+func (s *Service) RegisterRunner(ctx context.Context, token, nodeID, description string, maxPods int) (*runner.Runner, error) {
 	// Validate token
 	regToken, err := s.ValidateRegistrationToken(ctx, token)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	// Check runner quota before registration
 	if s.billingService != nil {
 		if err := s.billingService.CheckQuota(ctx, regToken.OrganizationID, "runners", 1); err != nil {
 			if err == billing.ErrQuotaExceeded {
-				return nil, "", ErrRunnerQuotaExceeded
+				return nil, ErrRunnerQuotaExceeded
 			}
-			return nil, "", err
+			return nil, err
 		}
 	}
 
 	// Check if runner already exists
 	var existing runner.Runner
 	if err := s.db.WithContext(ctx).Where("organization_id = ? AND node_id = ?", regToken.OrganizationID, nodeID).First(&existing).Error; err == nil {
-		return nil, "", ErrRunnerAlreadyExists
+		return nil, ErrRunnerAlreadyExists
 	}
 
-	// Generate auth token
-	authTokenBytes := make([]byte, 32)
-	if _, err := rand.Read(authTokenBytes); err != nil {
-		return nil, "", err
-	}
-	authToken := hex.EncodeToString(authTokenBytes)
-
-	authTokenHash, err := bcrypt.GenerateFromPassword([]byte(authToken), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, "", err
-	}
-
-	// Create runner
+	// Create runner (no auth_token - using mTLS certificates instead)
 	r := &runner.Runner{
 		OrganizationID:    regToken.OrganizationID,
 		NodeID:            nodeID,
 		Description:       description,
-		AuthTokenHash:     string(authTokenHash),
 		Status:            runner.RunnerStatusOffline,
 		MaxConcurrentPods: maxPods,
 	}
@@ -67,10 +53,10 @@ func (s *Service) RegisterRunner(ctx context.Context, token, nodeID, description
 	})
 
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return r, authToken, nil
+	return r, nil
 }
 
 // DeleteRunner deletes a runner

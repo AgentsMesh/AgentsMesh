@@ -2,8 +2,11 @@ module github.com/anthropics/agentsmesh/backend
 
 go 1.24.0
 
+replace github.com/anthropics/agentsmesh/proto => ../proto
+
 require (
 	github.com/alicebob/miniredis/v2 v2.35.0
+	github.com/anthropics/agentsmesh/proto v0.0.0
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.7
@@ -19,6 +22,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/stripe/stripe-go/v76 v76.14.0
 	golang.org/x/crypto v0.46.0
+	google.golang.org/grpc v1.78.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.30.0
@@ -80,6 +84,7 @@ require (
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

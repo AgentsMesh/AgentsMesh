@@ -176,16 +176,18 @@ type TerminalOutput struct {
 
 // Channel represents a collaboration channel.
 type Channel struct {
-	ID             int     `json:"id"`
-	Name           string  `json:"name"`
-	Description    string  `json:"description,omitempty"`
-	ProjectID      *int    `json:"project_id,omitempty"`
-	TicketID       *int    `json:"ticket_id,omitempty"`
-	Document       string  `json:"document,omitempty"`
-	MemberCount    int     `json:"member_count"`
-	IsArchived     bool    `json:"is_archived"`
-	CreatedAt      string  `json:"created_at"`
-	UpdatedAt      string  `json:"updated_at"`
+	ID              int     `json:"id"`
+	Name            string  `json:"name"`
+	Description     string  `json:"description,omitempty"`
+	ProjectID       *int    `json:"project_id,omitempty"`
+	TicketID        *int    `json:"ticket_id,omitempty"`
+	Document        string  `json:"document,omitempty"`
+	MemberCount     int     `json:"member_count"`
+	IsArchived      bool    `json:"is_archived"`
+	CreatedByPod    string  `json:"created_by_pod,omitempty"`
+	CreatedByUserID *int    `json:"created_by_user_id,omitempty"`
+	CreatedAt       string  `json:"created_at"`
+	UpdatedAt       string  `json:"updated_at"`
 }
 
 // ChannelMessage represents a message in a channel.
@@ -307,7 +309,7 @@ type BindingClient interface {
 	RejectBinding(ctx context.Context, bindingID int, reason string) (*Binding, error)
 	UnbindPod(ctx context.Context, targetPod string) error
 	GetBindings(ctx context.Context, status *BindingStatus) ([]Binding, error)
-	GetBoundPods(ctx context.Context) ([]AvailablePod, error)
+	GetBoundPods(ctx context.Context) ([]string, error)
 }
 
 // ChannelClient defines the interface for channel operations.

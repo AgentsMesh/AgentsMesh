@@ -323,10 +323,10 @@ func TestGetBindingsWithStatus(t *testing.T) {
 
 func TestGetBoundPods(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Backend returns pod keys as strings, not AvailablePod objects
 		resp := map[string]interface{}{
-			"pods": []tools.AvailablePod{
-				{PodKey: "bound-pod"},
-			},
+			"pods":  []string{"bound-pod-1", "bound-pod-2"},
+			"count": 2,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -341,8 +341,12 @@ func TestGetBoundPods(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(pods) != 1 {
-		t.Errorf("pods count: got %v, want 1", len(pods))
+	if len(pods) != 2 {
+		t.Errorf("pods count: got %v, want 2", len(pods))
+	}
+
+	if pods[0] != "bound-pod-1" {
+		t.Errorf("first pod: got %v, want bound-pod-1", pods[0])
 	}
 }
 

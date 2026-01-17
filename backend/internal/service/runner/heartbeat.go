@@ -17,32 +17,7 @@ func (s *Service) Heartbeat(ctx context.Context, runnerID int64, currentPods int
 	}).Error
 }
 
-// UpdateHeartbeat updates runner heartbeat with authentication
-func (s *Service) UpdateHeartbeat(ctx context.Context, runnerID int64, authToken string, currentPods int, version string) error {
-	// Verify runner authentication
-	r, err := s.AuthenticateRunner(ctx, runnerID, authToken)
-	if err != nil {
-		if err == ErrInvalidToken {
-			return ErrInvalidAuth
-		}
-		return err
-	}
-
-	now := time.Now()
-	updates := map[string]interface{}{
-		"last_heartbeat": now,
-		"current_pods":   currentPods,
-		"status":         runner.RunnerStatusOnline,
-	}
-	if version != "" {
-		updates["runner_version"] = version
-	}
-
-	return s.db.WithContext(ctx).Model(r).Updates(updates).Error
-}
-
 // HeartbeatPodInfo represents a pod reported in heartbeat
-// Note: This is a duplicate of HeartbeatPod in connection_manager.go for legacy API compatibility
 type HeartbeatPodInfo struct {
 	PodKey      string `json:"pod_key"`
 	Status      string `json:"status,omitempty"`

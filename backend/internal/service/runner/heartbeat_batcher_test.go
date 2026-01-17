@@ -242,7 +242,6 @@ func TestHeartbeatBatcherFlush(t *testing.T) {
 	runnerRecord := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "test-node",
-		AuthTokenHash:  "hash",
 		Status:         "offline",
 	}
 	if err := db.Create(runnerRecord).Error; err != nil {
@@ -304,7 +303,6 @@ func TestHeartbeatBatcherFlushLoop(t *testing.T) {
 	runnerRecord := &runner.Runner{
 		OrganizationID: 1,
 		NodeID:         "test-node-loop",
-		AuthTokenHash:  "hash",
 		Status:         "offline",
 	}
 	if err := db.Create(runnerRecord).Error; err != nil {
@@ -380,7 +378,6 @@ func TestHeartbeatBatcherFlushBatch(t *testing.T) {
 		r := &runner.Runner{
 			OrganizationID: 1,
 			NodeID:         "node-" + string(rune('A'+i)),
-			AuthTokenHash:  "hash",
 			Status:         "offline",
 		}
 		if err := db.Create(r).Error; err != nil {

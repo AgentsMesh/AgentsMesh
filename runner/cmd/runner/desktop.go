@@ -64,9 +64,14 @@ The runner must be registered first using 'runner register'.`)
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Load auth token
-	if err := cfg.LoadAuthToken(); err != nil {
-		log.Printf("Warning: Failed to load auth token: %v", err)
+	// Load gRPC config (certificates)
+	if err := cfg.LoadGRPCConfig(); err != nil {
+		log.Fatalf("Failed to load gRPC config: %v - please re-register the runner", err)
+	}
+
+	// Load org slug
+	if err := cfg.LoadOrgSlug(); err != nil {
+		log.Printf("Warning: Failed to load org slug: %v", err)
 	}
 
 	// Validate config

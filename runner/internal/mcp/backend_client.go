@@ -321,9 +321,10 @@ func (c *BackendClient) GetBindings(ctx context.Context, status *tools.BindingSt
 }
 
 // GetBoundPods gets pods that are bound to the current pod.
-func (c *BackendClient) GetBoundPods(ctx context.Context) ([]tools.AvailablePod, error) {
+// Returns a list of pod keys (strings) that this pod has active bindings with.
+func (c *BackendClient) GetBoundPods(ctx context.Context) ([]string, error) {
 	var result struct {
-		Pods []tools.AvailablePod `json:"pods"`
+		Pods []string `json:"pods"`
 	}
 	err := c.request(ctx, http.MethodGet, c.podAPIPath()+"/bindings/pods", nil, &result)
 	if err != nil {

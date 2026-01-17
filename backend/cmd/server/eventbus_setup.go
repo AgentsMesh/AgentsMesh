@@ -9,6 +9,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"gorm.io/gorm"
 )
 
@@ -67,10 +68,10 @@ func setupEventBusHub(eb *eventbus.EventBus, hub *websocket.Hub) {
 }
 
 // setupRunnerEventCallbacks sets up runner connection manager callbacks to publish events
-func setupRunnerEventCallbacks(db *gorm.DB, runnerConnMgr *runner.ConnectionManager, eventBus *eventbus.EventBus) {
-	// Wrap heartbeat callback to detect runner coming online
+func setupRunnerEventCallbacks(db *gorm.DB, runnerConnMgr *runner.RunnerConnectionManager, eventBus *eventbus.EventBus) {
+	// Wrap heartbeat callback to detect runner coming online (using Proto type)
 	originalHeartbeatCallback := runnerConnMgr.GetHeartbeatCallback()
-	runnerConnMgr.SetHeartbeatCallback(func(runnerID int64, data *runner.HeartbeatData) {
+	runnerConnMgr.SetHeartbeatCallback(func(runnerID int64, data *runnerv1.HeartbeatData) {
 		// Call original callback first
 		if originalHeartbeatCallback != nil {
 			originalHeartbeatCallback(runnerID, data)

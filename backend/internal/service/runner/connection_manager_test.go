@@ -1,24 +1,34 @@
 package runner
 
 import (
-	"context"
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewConnectionManager(t *testing.T) {
+// newTestLogger and newMockRunnerStream are defined in test_helper_test.go
+
+// mockAgentTypesProvider implements interfaces.AgentTypesProvider for testing
+type mockAgentTypesProvider struct{}
+
+func (m *mockAgentTypesProvider) GetAgentTypesForRunner() []interfaces.AgentTypeInfo {
+	return []interfaces.AgentTypeInfo{
+		{Slug: "claude-code", Name: "Claude Code", Executable: "claude", LaunchCommand: "claude --model sonnet"},
+	}
+}
+
+func TestNewRunnerConnectionManager(t *testing.T) {
 	logger := newTestLogger()
-	cm := NewConnectionManager(logger)
+	cm := NewRunnerConnectionManager(logger)
 	defer cm.Close()
 
 	assert.NotNil(t, cm)
 	assert.Equal(t, 30*time.Second, cm.pingInterval)
-	assert.Equal(t, 60*time.Second, cm.pingTimeout)
+	assert.Equal(t, DefaultInitTimeout, cm.initTimeout)
 	assert.Equal(t, int64(0), cm.ConnectionCount())
 
 	// Verify all shards are initialized
@@ -29,7 +39,7 @@ func TestNewConnectionManager(t *testing.T) {
 }
 
 func TestConnectionManager_GetShard(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
 	// Test that same runner ID always maps to same shard
@@ -49,23 +59,23 @@ func TestConnectionManager_GetShard(t *testing.T) {
 }
 
 func TestConnectionManager_CallbackSetters(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	// Test SetHeartbeatCallback
-	cm.SetHeartbeatCallback(func(runnerID int64, data *HeartbeatData) {})
+	// Test SetHeartbeatCallback (using Proto type)
+	cm.SetHeartbeatCallback(func(runnerID int64, data *runnerv1.HeartbeatData) {})
 	assert.NotNil(t, cm.GetHeartbeatCallback())
 
 	// Test SetDisconnectCallback
 	cm.SetDisconnectCallback(func(runnerID int64) {})
 	assert.NotNil(t, cm.GetDisconnectCallback())
 
-	// Test other callbacks (no getters, just verify they don't panic)
-	cm.SetPodCreatedCallback(func(runnerID int64, data *PodCreatedData) {})
-	cm.SetPodTerminatedCallback(func(runnerID int64, data *PodTerminatedData) {})
-	cm.SetTerminalOutputCallback(func(runnerID int64, data *TerminalOutputData) {})
-	cm.SetAgentStatusCallback(func(runnerID int64, data *AgentStatusData) {})
-	cm.SetPtyResizedCallback(func(runnerID int64, data *PtyResizedData) {})
+	// Test other callbacks (using Proto types)
+	cm.SetPodCreatedCallback(func(runnerID int64, data *runnerv1.PodCreatedEvent) {})
+	cm.SetPodTerminatedCallback(func(runnerID int64, data *runnerv1.PodTerminatedEvent) {})
+	cm.SetTerminalOutputCallback(func(runnerID int64, data *runnerv1.TerminalOutputEvent) {})
+	cm.SetAgentStatusCallback(func(runnerID int64, data *runnerv1.AgentStatusEvent) {})
+	cm.SetPtyResizedCallback(func(runnerID int64, data *runnerv1.PtyResizedEvent) {})
 	cm.SetInitializedCallback(func(runnerID int64, availableAgents []string) {})
 
 	// Test provider and version setters
@@ -75,810 +85,536 @@ func TestConnectionManager_CallbackSetters(t *testing.T) {
 }
 
 func TestConnectionManager_AddConnection(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	conn := newTestWebSocketConn(t)
+	stream := newMockRunnerStream()
+	defer stream.Close()
 
 	// Add connection
-	rc := cm.AddConnection(1, conn)
-	assert.NotNil(t, rc)
-	assert.Equal(t, int64(1), rc.RunnerID)
-	assert.NotNil(t, rc.Send)
+	conn := cm.AddConnection(1, "test-node", "test-org", stream)
+	assert.NotNil(t, conn)
+	assert.Equal(t, int64(1), conn.RunnerID)
+	assert.Equal(t, "test-node", conn.NodeID)
+	assert.Equal(t, "test-org", conn.OrgSlug)
+	assert.NotNil(t, conn.Send)
 	assert.Equal(t, int64(1), cm.ConnectionCount())
 
 	// Verify connection is stored
 	stored := cm.GetConnection(1)
-	assert.Same(t, rc, stored)
+	assert.Same(t, conn, stored)
 }
 
 func TestConnectionManager_AddConnection_ReplacesExisting(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	conn1 := newTestWebSocketConn(t)
-	conn2 := newTestWebSocketConn(t)
+	stream1 := newMockRunnerStream()
+	stream2 := newMockRunnerStream()
+	defer stream1.Close()
+	defer stream2.Close()
 
 	// Add first connection
-	rc1 := cm.AddConnection(1, conn1)
+	conn1 := cm.AddConnection(1, "node-1", "org-1", stream1)
 	assert.Equal(t, int64(1), cm.ConnectionCount())
 
-	// Drain the send channel to prevent blocking
-	go func() {
-		for range rc1.Send {
-		}
-	}()
-
-	// Add second connection with same ID - should replace first
-	rc2 := cm.AddConnection(1, conn2)
+	// Add second connection with same runner ID
+	conn2 := cm.AddConnection(1, "node-1", "org-1", stream2)
 	assert.Equal(t, int64(1), cm.ConnectionCount())
-	assert.NotSame(t, rc1, rc2)
 
-	// Verify new connection is stored
+	// Verify old connection was closed and new one is stored
+	assert.True(t, conn1.IsClosed())
 	stored := cm.GetConnection(1)
-	assert.Same(t, rc2, stored)
+	assert.Same(t, conn2, stored)
 }
 
 func TestConnectionManager_RemoveConnection(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	conn := newTestWebSocketConn(t)
+	stream := newMockRunnerStream()
+	defer stream.Close()
 
-	// Add and then remove connection
-	rc := cm.AddConnection(1, conn)
-	go func() {
-		for range rc.Send {
-		}
-	}()
-
-	assert.Equal(t, int64(1), cm.ConnectionCount())
-	cm.RemoveConnection(1)
-	assert.Equal(t, int64(0), cm.ConnectionCount())
-
-	// Verify connection is removed
-	stored := cm.GetConnection(1)
-	assert.Nil(t, stored)
-}
-
-func TestConnectionManager_RemoveConnection_CallsDisconnectCallback(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
-	defer cm.Close()
-
-	disconnectedRunnerID := int64(0)
+	disconnected := false
 	cm.SetDisconnectCallback(func(runnerID int64) {
-		disconnectedRunnerID = runnerID
+		disconnected = true
 	})
 
-	conn := newTestWebSocketConn(t)
-	rc := cm.AddConnection(1, conn)
-	go func() {
-		for range rc.Send {
-		}
-	}()
+	// Add and remove connection
+	cm.AddConnection(1, "test-node", "test-org", stream)
+	assert.Equal(t, int64(1), cm.ConnectionCount())
 
 	cm.RemoveConnection(1)
-	assert.Equal(t, int64(1), disconnectedRunnerID)
-}
-
-func TestConnectionManager_RemoveConnection_Nonexistent(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
-	defer cm.Close()
-
-	// Should not panic when removing nonexistent connection
-	cm.RemoveConnection(999)
 	assert.Equal(t, int64(0), cm.ConnectionCount())
+	assert.Nil(t, cm.GetConnection(1))
+	assert.True(t, disconnected)
 }
 
 func TestConnectionManager_IsConnected(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	// Not connected initially
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
 	assert.False(t, cm.IsConnected(1))
 
-	conn := newTestWebSocketConn(t)
-	rc := cm.AddConnection(1, conn)
-	go func() {
-		for range rc.Send {
-		}
-	}()
-
-	// Connected after adding
+	cm.AddConnection(1, "test-node", "test-org", stream)
 	assert.True(t, cm.IsConnected(1))
 
 	cm.RemoveConnection(1)
-
-	// Not connected after removing
 	assert.False(t, cm.IsConnected(1))
 }
 
-func TestConnectionManager_UpdateHeartbeat(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
-	defer cm.Close()
-
-	conn := newTestWebSocketConn(t)
-	rc := cm.AddConnection(1, conn)
-	go func() {
-		for range rc.Send {
-		}
-	}()
-
-	initialTime := rc.LastPing
-
-	// Wait a bit and update heartbeat
-	time.Sleep(10 * time.Millisecond)
-	cm.UpdateHeartbeat(1)
-
-	rc.mu.Lock()
-	updatedTime := rc.LastPing
-	rc.mu.Unlock()
-
-	assert.True(t, updatedTime.After(initialTime))
-}
-
-func TestConnectionManager_UpdateHeartbeat_Nonexistent(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
-	defer cm.Close()
-
-	// Should not panic when updating heartbeat for nonexistent connection
-	cm.UpdateHeartbeat(999)
-}
-
 func TestConnectionManager_GetConnectedRunnerIDs(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	// Empty initially
+	streams := make([]*MockRunnerStream, 3)
+	for i := range streams {
+		streams[i] = newMockRunnerStream()
+		defer streams[i].Close()
+	}
+
+	// Initially empty
 	ids := cm.GetConnectedRunnerIDs()
 	assert.Empty(t, ids)
 
-	// Add some connections
-	var rcs []*RunnerConnection
-	for i := int64(1); i <= 5; i++ {
-		conn := newTestWebSocketConn(t)
-		rc := cm.AddConnection(i, conn)
-		rcs = append(rcs, rc)
-		go func(rc *RunnerConnection) {
-			for range rc.Send {
-			}
-		}(rc)
-	}
+	// Add multiple connections
+	cm.AddConnection(1, "node-1", "org", streams[0])
+	cm.AddConnection(2, "node-2", "org", streams[1])
+	cm.AddConnection(3, "node-3", "org", streams[2])
 
-	// Get all IDs
 	ids = cm.GetConnectedRunnerIDs()
-	assert.Len(t, ids, 5)
-
-	// Verify all IDs are present
-	idMap := make(map[int64]bool)
-	for _, id := range ids {
-		idMap[id] = true
-	}
-	for i := int64(1); i <= 5; i++ {
-		assert.True(t, idMap[i], "ID %d should be present", i)
-	}
-}
-
-func TestConnectionManager_ConnectionCount(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
-	defer cm.Close()
-
-	assert.Equal(t, int64(0), cm.ConnectionCount())
-
-	// Add connections
-	var rcs []*RunnerConnection
-	for i := int64(1); i <= 3; i++ {
-		conn := newTestWebSocketConn(t)
-		rc := cm.AddConnection(i, conn)
-		rcs = append(rcs, rc)
-		go func(rc *RunnerConnection) {
-			for range rc.Send {
-			}
-		}(rc)
-	}
-
-	assert.Equal(t, int64(3), cm.ConnectionCount())
-
-	// Remove one
-	cm.RemoveConnection(2)
-	assert.Equal(t, int64(2), cm.ConnectionCount())
+	assert.Len(t, ids, 3)
+	assert.Contains(t, ids, int64(1))
+	assert.Contains(t, ids, int64(2))
+	assert.Contains(t, ids, int64(3))
 }
 
 func TestConnectionManager_Close(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 
-	// Add some connections
-	var rcs []*RunnerConnection
-	for i := int64(1); i <= 3; i++ {
-		conn := newTestWebSocketConn(t)
-		rc := cm.AddConnection(i, conn)
-		rcs = append(rcs, rc)
-		go func(rc *RunnerConnection) {
-			for range rc.Send {
-			}
-		}(rc)
+	streams := make([]*MockRunnerStream, 3)
+	for i := range streams {
+		streams[i] = newMockRunnerStream()
 	}
 
-	assert.Equal(t, int64(3), cm.ConnectionCount())
+	// Add connections
+	conns := make([]*GRPCConnection, 3)
+	for i, s := range streams {
+		conns[i] = cm.AddConnection(int64(i+1), "node", "org", s)
+	}
 
-	// Close all
+	// Close manager
 	cm.Close()
 
-	assert.Equal(t, int64(0), cm.ConnectionCount())
-
-	// Verify all connections are removed
-	for i := int64(1); i <= 3; i++ {
-		assert.Nil(t, cm.GetConnection(i))
+	// Verify all connections are closed
+	for _, conn := range conns {
+		assert.True(t, conn.IsClosed())
 	}
+	assert.Equal(t, int64(0), cm.ConnectionCount())
 }
 
-func TestConnectionManager_ConcurrentAccess(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+func TestConnectionManager_UpdateHeartbeat(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	const numGoroutines = 50
-	const numOps = 100
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := cm.AddConnection(1, "test-node", "test-org", stream)
+	initialPing := conn.GetLastPing()
+
+	time.Sleep(10 * time.Millisecond)
+	cm.UpdateHeartbeat(1)
+
+	assert.True(t, conn.GetLastPing().After(initialPing))
+}
+
+func TestConnectionManager_HandleInitialized(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	// Add connection first
+	conn := cm.AddConnection(1, "test-node", "test-org", stream)
+
+	// Track callback invocation
+	var callbackRunnerID int64
+	var callbackAgents []string
+	cm.SetInitializedCallback(func(runnerID int64, availableAgents []string) {
+		callbackRunnerID = runnerID
+		callbackAgents = availableAgents
+	})
+
+	// Handle initialized
+	cm.HandleInitialized(1, []string{"claude-code", "aider"})
+
+	// Verify connection is marked as initialized
+	assert.True(t, conn.IsInitialized())
+	assert.Equal(t, []string{"claude-code", "aider"}, conn.GetAvailableAgents())
+
+	// Verify callback was called
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, []string{"claude-code", "aider"}, callbackAgents)
+}
+
+func TestConnectionManager_ConcurrentOperations(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	const numGoroutines = 100
+	const numOperations = 100
 
 	var wg sync.WaitGroup
-	wg.Add(numGoroutines * 3)
+	wg.Add(numGoroutines)
 
-	// Concurrent adds
 	for i := 0; i < numGoroutines; i++ {
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < numOps; j++ {
-				conn := newTestWebSocketConn(t)
-				rc := cm.AddConnection(int64(id), conn)
-				go func(rc *RunnerConnection) {
-					for range rc.Send {
-					}
-				}(rc)
-			}
-		}(i)
-	}
+			runnerID := int64(id % 50) // Reuse runner IDs to test contention
 
-	// Concurrent reads
-	for i := 0; i < numGoroutines; i++ {
-		go func(id int) {
-			defer wg.Done()
-			for j := 0; j < numOps; j++ {
-				_ = cm.GetConnection(int64(id))
-				_ = cm.IsConnected(int64(id))
-				_ = cm.GetConnectedRunnerIDs()
-			}
-		}(i)
-	}
-
-	// Concurrent removes
-	for i := 0; i < numGoroutines; i++ {
-		go func(id int) {
-			defer wg.Done()
-			for j := 0; j < numOps; j++ {
-				cm.RemoveConnection(int64(id))
+			for j := 0; j < numOperations; j++ {
+				stream := newMockRunnerStream()
+				cm.AddConnection(runnerID, "node", "org", stream)
+				cm.IsConnected(runnerID)
+				cm.GetConnection(runnerID)
+				cm.UpdateHeartbeat(runnerID)
+				cm.RemoveConnection(runnerID)
+				stream.Close()
 			}
 		}(i)
 	}
 
 	wg.Wait()
+	// Verify no race conditions or deadlocks occurred
+	assert.Equal(t, int64(0), cm.ConnectionCount())
 }
 
-func TestConnectionManager_SendMethods(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+func TestConnectionManager_HandleHeartbeat(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	ctx := context.Background()
+	stream := newMockRunnerStream()
+	defer stream.Close()
 
-	// All send methods should return error when runner not connected
-	t.Run("SendMessage_NotConnected", func(t *testing.T) {
-		err := cm.SendMessage(ctx, 999, &RunnerMessage{Type: "test"})
-		assert.Equal(t, ErrRunnerNotConnected, err)
+	// Add connection
+	conn := cm.AddConnection(1, "test-node", "test-org", stream)
+	initialPing := conn.GetLastPing()
+
+	// Track callback invocation
+	var callbackRunnerID int64
+	var callbackData *runnerv1.HeartbeatData
+	cm.SetHeartbeatCallback(func(runnerID int64, data *runnerv1.HeartbeatData) {
+		callbackRunnerID = runnerID
+		callbackData = data
 	})
 
-	t.Run("SendCreatePod_NotConnected", func(t *testing.T) {
-		err := cm.SendCreatePod(ctx, 999, &CreatePodRequest{PodKey: "test"})
-		assert.Equal(t, ErrRunnerNotConnected, err)
-	})
+	time.Sleep(10 * time.Millisecond)
 
-	t.Run("SendTerminatePod_NotConnected", func(t *testing.T) {
-		err := cm.SendTerminatePod(ctx, 999, "test-pod")
-		assert.Equal(t, ErrRunnerNotConnected, err)
-	})
+	// Handle heartbeat
+	heartbeatData := &runnerv1.HeartbeatData{
+		NodeId: "test-node",
+	}
+	cm.HandleHeartbeat(1, heartbeatData)
 
-	t.Run("SendTerminalInput_NotConnected", func(t *testing.T) {
-		err := cm.SendTerminalInput(ctx, 999, "test-pod", []byte("input"))
-		assert.Equal(t, ErrRunnerNotConnected, err)
-	})
+	// Verify last ping was updated
+	assert.True(t, conn.GetLastPing().After(initialPing))
 
-	t.Run("SendTerminalResize_NotConnected", func(t *testing.T) {
-		err := cm.SendTerminalResize(ctx, 999, "test-pod", 80, 24)
-		assert.Equal(t, ErrRunnerNotConnected, err)
-	})
-
-	t.Run("SendPrompt_NotConnected", func(t *testing.T) {
-		err := cm.SendPrompt(ctx, 999, "test-pod", "prompt")
-		assert.Equal(t, ErrRunnerNotConnected, err)
-	})
-
-	// Test with connected runner
-	conn := newTestWebSocketConn(t)
-	rc := cm.AddConnection(1, conn)
-	// Mark connection as initialized (required for sending non-init messages)
-	rc.SetInitialized(true, []string{})
-	go func() {
-		for range rc.Send {
-		}
-	}()
-
-	t.Run("SendCreatePod_Success", func(t *testing.T) {
-		err := cm.SendCreatePod(ctx, 1, &CreatePodRequest{
-			PodKey:        "test-pod",
-			LaunchCommand: "claude",
-		})
-		assert.NoError(t, err)
-	})
-
-	t.Run("SendTerminatePod_Success", func(t *testing.T) {
-		err := cm.SendTerminatePod(ctx, 1, "test-pod")
-		assert.NoError(t, err)
-	})
-
-	t.Run("SendTerminalInput_Success", func(t *testing.T) {
-		err := cm.SendTerminalInput(ctx, 1, "test-pod", []byte("ls -la\n"))
-		assert.NoError(t, err)
-	})
-
-	t.Run("SendTerminalResize_Success", func(t *testing.T) {
-		err := cm.SendTerminalResize(ctx, 1, "test-pod", 120, 40)
-		assert.NoError(t, err)
-	})
-
-	t.Run("SendPrompt_Success", func(t *testing.T) {
-		err := cm.SendPrompt(ctx, 1, "test-pod", "Hello!")
-		assert.NoError(t, err)
-	})
+	// Verify callback was called
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, heartbeatData, callbackData)
 }
 
-func TestRunnerConnection_SendMessage(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     &websocket.Conn{}, // Non-nil to pass check
-			Send:     make(chan []byte, 256),
-		}
+func TestConnectionManager_HandleHeartbeat_NoCallback(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
 
-		msg := &RunnerMessage{Type: "test", PodKey: "pod-1"}
-		err := rc.SendMessage(msg)
-		assert.NoError(t, err)
+	stream := newMockRunnerStream()
+	defer stream.Close()
 
-		// Verify message was sent
-		select {
-		case data := <-rc.Send:
-			assert.Contains(t, string(data), "test")
-		default:
-			t.Fatal("expected message in send channel")
-		}
+	cm.AddConnection(1, "test-node", "test-org", stream)
+
+	// Should not panic when no callback is set
+	cm.HandleHeartbeat(1, &runnerv1.HeartbeatData{NodeId: "test-node"})
+}
+
+func TestConnectionManager_HandlePodCreated(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	cm.AddConnection(1, "test-node", "test-org", stream)
+
+	var callbackRunnerID int64
+	var callbackData *runnerv1.PodCreatedEvent
+	cm.SetPodCreatedCallback(func(runnerID int64, data *runnerv1.PodCreatedEvent) {
+		callbackRunnerID = runnerID
+		callbackData = data
 	})
 
-	t.Run("ConnectionClosed", func(t *testing.T) {
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     nil, // Closed connection
-			Send:     make(chan []byte, 256),
-		}
+	event := &runnerv1.PodCreatedEvent{
+		PodKey: "test-pod",
+	}
+	cm.HandlePodCreated(1, event)
 
-		msg := &RunnerMessage{Type: "test"}
-		err := rc.SendMessage(msg)
-		assert.Equal(t, ErrConnectionClosed, err)
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, event, callbackData)
+}
+
+func TestConnectionManager_HandlePodTerminated(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	cm.AddConnection(1, "test-node", "test-org", stream)
+
+	var callbackRunnerID int64
+	var callbackData *runnerv1.PodTerminatedEvent
+	cm.SetPodTerminatedCallback(func(runnerID int64, data *runnerv1.PodTerminatedEvent) {
+		callbackRunnerID = runnerID
+		callbackData = data
 	})
 
-	t.Run("BufferFull", func(t *testing.T) {
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     &websocket.Conn{},
-			Send:     make(chan []byte, 1), // Small buffer
-		}
+	event := &runnerv1.PodTerminatedEvent{
+		PodKey:   "test-pod",
+		ExitCode: 0,
+	}
+	cm.HandlePodTerminated(1, event)
 
-		// Fill the buffer
-		rc.Send <- []byte("first")
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, event, callbackData)
+}
 
-		msg := &RunnerMessage{Type: "test"}
-		err := rc.SendMessage(msg)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "buffer full")
+func TestConnectionManager_HandleTerminalOutput(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	cm.AddConnection(1, "test-node", "test-org", stream)
+
+	var callbackRunnerID int64
+	var callbackData *runnerv1.TerminalOutputEvent
+	cm.SetTerminalOutputCallback(func(runnerID int64, data *runnerv1.TerminalOutputEvent) {
+		callbackRunnerID = runnerID
+		callbackData = data
 	})
+
+	event := &runnerv1.TerminalOutputEvent{
+		PodKey: "test-pod",
+		Data:   []byte("hello world"),
+	}
+	cm.HandleTerminalOutput(1, event)
+
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, event, callbackData)
 }
 
-func TestRunnerConnection_Close_Idempotent(t *testing.T) {
-	conn := newTestWebSocketConn(t)
-	rc := &RunnerConnection{
-		RunnerID: 1,
-		Conn:     conn,
-		Send:     make(chan []byte, 10),
+func TestConnectionManager_HandleAgentStatus(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	cm.AddConnection(1, "test-node", "test-org", stream)
+
+	var callbackRunnerID int64
+	var callbackData *runnerv1.AgentStatusEvent
+	cm.SetAgentStatusCallback(func(runnerID int64, data *runnerv1.AgentStatusEvent) {
+		callbackRunnerID = runnerID
+		callbackData = data
+	})
+
+	event := &runnerv1.AgentStatusEvent{
+		PodKey: "test-pod",
+		Status: "running",
 	}
+	cm.HandleAgentStatus(1, event)
 
-	// Close multiple times should not panic
-	rc.Close()
-	rc.Close()
-	rc.Close()
-
-	// Verify channel is closed
-	_, ok := <-rc.Send
-	assert.False(t, ok, "send channel should be closed")
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, event, callbackData)
 }
 
-func TestRunnerConnection_Close_DrainedProperly(t *testing.T) {
-	conn := newTestWebSocketConn(t)
-	rc := &RunnerConnection{
-		RunnerID: 1,
-		Conn:     conn,
-		Send:     make(chan []byte, 10),
+func TestConnectionManager_HandlePtyResized(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	cm.AddConnection(1, "test-node", "test-org", stream)
+
+	var callbackRunnerID int64
+	var callbackData *runnerv1.PtyResizedEvent
+	cm.SetPtyResizedCallback(func(runnerID int64, data *runnerv1.PtyResizedEvent) {
+		callbackRunnerID = runnerID
+		callbackData = data
+	})
+
+	event := &runnerv1.PtyResizedEvent{
+		PodKey: "test-pod",
+		Cols:   120,
+		Rows:   40,
 	}
+	cm.HandlePtyResized(1, event)
 
-	// Add some messages before close
-	rc.Send <- []byte("msg1")
-	rc.Send <- []byte("msg2")
-
-	rc.Close()
-
-	// Should be able to read buffered messages
-	msg1, ok1 := <-rc.Send
-	msg2, ok2 := <-rc.Send
-	_, ok3 := <-rc.Send
-
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.False(t, ok3, "channel should be closed after draining")
-	assert.Equal(t, []byte("msg1"), msg1)
-	assert.Equal(t, []byte("msg2"), msg2)
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, event, callbackData)
 }
 
-func TestWritePump_ChannelClosed(t *testing.T) {
-	conn := newTestWebSocketConn(t)
-	rc := &RunnerConnection{
-		RunnerID: 1,
-		Conn:     conn,
-		Send:     make(chan []byte, 10),
-	}
+func TestConnectionManager_SetInitFailedCallback(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
 
-	// Start WritePump in background
-	done := make(chan struct{})
-	go func() {
-		rc.WritePump()
-		close(done)
-	}()
+	var callbackRunnerID int64
+	var callbackReason string
+	cm.SetInitFailedCallback(func(runnerID int64, reason string) {
+		callbackRunnerID = runnerID
+		callbackReason = reason
+	})
 
-	// Use proper Close() method which is idempotent
-	rc.Close()
+	// Verify the callback is set (internal field)
+	assert.NotNil(t, cm.onInitFailed)
 
-	// Wait for WritePump to exit
-	select {
-	case <-done:
-		// Success
-	case <-time.After(2 * time.Second):
-		t.Fatal("WritePump did not exit after channel closed")
-	}
+	// Call the callback directly to verify it works
+	cm.onInitFailed(1, "timeout")
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, "timeout", callbackReason)
 }
 
-func TestWritePump_SendsMessages(t *testing.T) {
-	conn := newTestWebSocketConn(t)
-	rc := &RunnerConnection{
-		RunnerID: 1,
-		Conn:     conn,
-		Send:     make(chan []byte, 10),
-	}
+func TestConnectionManager_SetInitTimeout(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
 
-	// Start WritePump in background
-	go rc.WritePump()
+	// Default timeout
+	assert.Equal(t, DefaultInitTimeout, cm.initTimeout)
 
-	// Send a message
-	msg := RunnerMessage{Type: "test", PodKey: "pod-1"}
-	data, _ := json.Marshal(msg)
-	rc.Send <- data
-
-	// Give it time to process
-	time.Sleep(50 * time.Millisecond)
-
-	// Close to stop the pump
-	rc.Close()
-}
-
-func TestWritePump_ConnectionNil(t *testing.T) {
-	rc := &RunnerConnection{
-		RunnerID: 1,
-		Conn:     nil, // Start with nil connection
-		Send:     make(chan []byte, 10),
-	}
-
-	// Start WritePump in background
-	done := make(chan struct{})
-	go func() {
-		rc.WritePump()
-		close(done)
-	}()
-
-	// Send a message - should cause exit due to nil conn
-	rc.Send <- []byte("test")
-
-	// Wait for WritePump to exit
-	select {
-	case <-done:
-		// Success
-	case <-time.After(2 * time.Second):
-		t.Fatal("WritePump did not exit with nil connection")
-	}
-}
-
-func TestWritePump_SendMultipleMessages(t *testing.T) {
-	conn := newTestWebSocketConn(t)
-	rc := &RunnerConnection{
-		RunnerID: 1,
-		Conn:     conn,
-		Send:     make(chan []byte, 10),
-	}
-
-	// Start WritePump in background
-	go rc.WritePump()
-
-	// Send multiple messages
-	for i := 0; i < 5; i++ {
-		msg := RunnerMessage{Type: "test", PodKey: "pod-1"}
-		data, _ := json.Marshal(msg)
-		rc.Send <- data
-	}
-
-	// Give it time to process all messages
-	time.Sleep(100 * time.Millisecond)
-
-	// Clean shutdown
-	rc.Close()
-}
-
-func TestWritePump_TickerPing(t *testing.T) {
-	// This test is for the ping ticker path - difficult to test directly
-	// as it requires waiting 30 seconds. Instead, we verify the WritePump
-	// handles connection properly.
-	conn := newTestWebSocketConn(t)
-	rc := &RunnerConnection{
-		RunnerID: 1,
-		Conn:     conn,
-		Send:     make(chan []byte, 10),
-	}
-
-	// Start WritePump
-	go rc.WritePump()
-
-	// Very short delay
-	time.Sleep(50 * time.Millisecond)
-
-	// Close should work cleanly
-	rc.Close()
-}
-
-func TestHandleInitializeMessage_SendFails(t *testing.T) {
-	// Test when SendMessage fails (no connection or buffer full)
-	logger := newTestLogger()
-	cm := NewConnectionManager(logger)
-	cm.SetServerVersion("1.0.0")
-	cm.SetAgentTypesProvider(&mockAgentTypesProvider{agentTypes: []AgentTypeInfo{}})
-
-	runnerID := int64(900)
-	// Don't add connection - SendMessage will fail
-
-	initParams := InitializeParams{
-		ProtocolVersion: CurrentProtocolVersion,
-		RunnerInfo:      RunnerInfo{Version: "1.0.0", NodeID: "test"},
-	}
-	data, _ := json.Marshal(initParams)
-
-	// Should not panic when send fails
-	cm.handleInitializeMessage(runnerID, data)
+	// Set custom timeout
+	cm.SetInitTimeout(60 * time.Second)
+	assert.Equal(t, 60*time.Second, cm.initTimeout)
 }
 
 func TestConnectionManager_SetPingInterval(t *testing.T) {
-	cm := NewConnectionManager(newTestLogger())
+	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()
 
-	// Default ping interval
+	// Default interval
 	assert.Equal(t, 30*time.Second, cm.pingInterval)
 
-	// Set custom ping interval
-	cm.SetPingInterval(15 * time.Second)
-	assert.Equal(t, 15*time.Second, cm.pingInterval)
-
-	// Verify new connections get the configured interval
-	conn := newTestWebSocketConn(t)
-	rc := cm.AddConnection(1, conn)
-	go func() {
-		for range rc.Send {
-		}
-	}()
-
-	assert.Equal(t, 15*time.Second, rc.PingInterval)
+	// Set custom interval
+	cm.SetPingInterval(10 * time.Second)
+	assert.Equal(t, 10*time.Second, cm.pingInterval)
 }
 
-func TestConnectionManager_InitTimeout(t *testing.T) {
-	t.Run("SetInitTimeout", func(t *testing.T) {
-		cm := NewConnectionManager(newTestLogger())
-		defer cm.Close()
+func TestConnectionManager_StartInitTimeoutChecker(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
 
-		// Default timeout
-		assert.Equal(t, DefaultInitTimeout, cm.initTimeout)
+	// Just verify it starts without error
+	cm.StartInitTimeoutChecker()
 
-		// Set custom timeout
-		cm.SetInitTimeout(10 * time.Second)
-		assert.Equal(t, 10*time.Second, cm.initTimeout)
-	})
-
-	t.Run("checkInitTimeouts_removes_uninitialized_connections", func(t *testing.T) {
-		cm := NewConnectionManager(newTestLogger())
-		defer cm.Close()
-
-		// Set a very short timeout for testing
-		cm.SetInitTimeout(50 * time.Millisecond)
-
-		// Add a connection
-		conn := newTestWebSocketConn(t)
-		rc := cm.AddConnection(1, conn)
-		go func() {
-			for range rc.Send {
-			}
-		}()
-
-		// Connection should exist
-		assert.True(t, cm.IsConnected(1))
-		assert.False(t, rc.IsInitialized())
-
-		// Wait for timeout
-		time.Sleep(100 * time.Millisecond)
-
-		// Manually trigger check
-		cm.checkInitTimeouts()
-
-		// Connection should be removed
-		assert.False(t, cm.IsConnected(1))
-	})
-
-	t.Run("checkInitTimeouts_keeps_initialized_connections", func(t *testing.T) {
-		cm := NewConnectionManager(newTestLogger())
-		defer cm.Close()
-
-		// Set a very short timeout
-		cm.SetInitTimeout(50 * time.Millisecond)
-
-		// Add a connection and mark it initialized
-		conn := newTestWebSocketConn(t)
-		rc := cm.AddConnection(1, conn)
-		go func() {
-			for range rc.Send {
-			}
-		}()
-		rc.SetInitialized(true, []string{"claude-code"})
-
-		// Wait for timeout period
-		time.Sleep(100 * time.Millisecond)
-
-		// Trigger check
-		cm.checkInitTimeouts()
-
-		// Connection should still exist (it's initialized)
-		assert.True(t, cm.IsConnected(1))
-	})
-
-	t.Run("StartInitTimeoutChecker_works", func(t *testing.T) {
-		cm := NewConnectionManager(newTestLogger())
-
-		// Set a very short timeout
-		cm.SetInitTimeout(50 * time.Millisecond)
-
-		// Add an uninitialized connection
-		conn := newTestWebSocketConn(t)
-		rc := cm.AddConnection(1, conn)
-		go func() {
-			for range rc.Send {
-			}
-		}()
-
-		// Start the checker
-		cm.StartInitTimeoutChecker()
-
-		// Wait for the checker to run (checks every 10 seconds, but we can close early)
-		// For this test, we'll just verify it doesn't panic and can be stopped
-		time.Sleep(10 * time.Millisecond)
-
-		// Close should stop the checker cleanly
-		cm.Close()
-	})
+	// Wait a bit and verify it's running (by closing and ensuring no panic)
+	time.Sleep(20 * time.Millisecond)
 }
 
-func TestRunnerConnection_InitializedState(t *testing.T) {
-	t.Run("IsInitialized_thread_safe", func(t *testing.T) {
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     &websocket.Conn{},
-			Send:     make(chan []byte, 256),
-		}
+func TestConnectionManager_CheckInitTimeouts(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
 
-		// Initially not initialized
-		assert.False(t, rc.IsInitialized())
-		assert.Empty(t, rc.GetAvailableAgents())
+	// Set a very short timeout for testing
+	cm.SetInitTimeout(1 * time.Millisecond)
 
-		// Set initialized
-		rc.SetInitialized(true, []string{"agent1", "agent2"})
+	stream := newMockRunnerStream()
+	defer stream.Close()
 
-		// Should be initialized now
-		assert.True(t, rc.IsInitialized())
-		assert.Equal(t, []string{"agent1", "agent2"}, rc.GetAvailableAgents())
+	// Track init failed callback
+	var failedRunnerID int64
+	var failedReason string
+	cm.SetInitFailedCallback(func(runnerID int64, reason string) {
+		failedRunnerID = runnerID
+		failedReason = reason
 	})
 
-	t.Run("concurrent_access", func(t *testing.T) {
-		rc := &RunnerConnection{
-			RunnerID: 1,
-			Conn:     &websocket.Conn{},
-			Send:     make(chan []byte, 256),
-		}
+	// Add connection (not initialized)
+	cm.AddConnection(1, "test-node", "test-org", stream)
+	assert.Equal(t, int64(1), cm.ConnectionCount())
 
-		var wg sync.WaitGroup
-		wg.Add(3)
+	// Wait for timeout to expire
+	time.Sleep(10 * time.Millisecond)
 
-		// Concurrent reads
-		go func() {
-			defer wg.Done()
-			for i := 0; i < 100; i++ {
-				_ = rc.IsInitialized()
-				_ = rc.GetAvailableAgents()
-			}
-		}()
+	// Manually trigger check
+	cm.checkInitTimeouts()
 
-		// Concurrent writes
-		go func() {
-			defer wg.Done()
-			for i := 0; i < 100; i++ {
-				rc.SetInitialized(i%2 == 0, []string{"agent"})
-			}
-		}()
-
-		// More concurrent reads
-		go func() {
-			defer wg.Done()
-			for i := 0; i < 100; i++ {
-				_ = rc.IsInitialized()
-				_ = rc.GetAvailableAgents()
-			}
-		}()
-
-		wg.Wait()
-	})
+	// Connection should be removed due to timeout
+	assert.Equal(t, int64(0), cm.ConnectionCount())
+	assert.Equal(t, int64(1), failedRunnerID)
+	assert.Contains(t, failedReason, "timeout")
 }
 
-func TestWritePump_UsesPingInterval(t *testing.T) {
-	t.Run("uses_default_when_zero", func(t *testing.T) {
-		conn := newTestWebSocketConn(t)
-		rc := &RunnerConnection{
-			RunnerID:     1,
-			Conn:         conn,
-			Send:         make(chan []byte, 10),
-			PingInterval: 0, // Zero means use default
-		}
+func TestConnectionManager_CheckInitTimeouts_InitializedConnection(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
 
-		// Start WritePump briefly
-		go rc.WritePump()
-		time.Sleep(10 * time.Millisecond)
-		rc.Close()
-	})
+	// Set a very short timeout
+	cm.SetInitTimeout(1 * time.Millisecond)
 
-	t.Run("uses_configured_interval", func(t *testing.T) {
-		conn := newTestWebSocketConn(t)
-		rc := &RunnerConnection{
-			RunnerID:     1,
-			Conn:         conn,
-			Send:         make(chan []byte, 10),
-			PingInterval: 5 * time.Second,
-		}
+	stream := newMockRunnerStream()
+	defer stream.Close()
 
-		// Start WritePump briefly
-		go rc.WritePump()
-		time.Sleep(10 * time.Millisecond)
-		rc.Close()
-	})
+	// Add and initialize connection
+	conn := cm.AddConnection(1, "test-node", "test-org", stream)
+	conn.SetInitialized(true, []string{"claude-code"})
+
+	// Wait for timeout
+	time.Sleep(10 * time.Millisecond)
+
+	// Trigger check
+	cm.checkInitTimeouts()
+
+	// Connection should NOT be removed (it's initialized)
+	assert.Equal(t, int64(1), cm.ConnectionCount())
 }
 
+func TestConnectionManager_InitTimeoutLoop(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+
+	// Set a very short timeout
+	cm.SetInitTimeout(5 * time.Millisecond)
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	// Track init failed callback
+	var failedRunnerID int64
+	cm.SetInitFailedCallback(func(runnerID int64, reason string) {
+		failedRunnerID = runnerID
+	})
+
+	// Add connection (not initialized)
+	cm.AddConnection(1, "test-node", "test-org", stream)
+
+	// Start the loop
+	cm.StartInitTimeoutChecker()
+
+	// Wait long enough for at least one check cycle (loop uses 10 second ticker normally)
+	// But we'll just manually verify the check works
+	time.Sleep(15 * time.Millisecond)
+	cm.checkInitTimeouts()
+
+	// Close should stop the loop
+	cm.Close()
+
+	// Connection should be removed
+	assert.Equal(t, int64(0), cm.ConnectionCount())
+	assert.Equal(t, int64(1), failedRunnerID)
+}

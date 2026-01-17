@@ -76,12 +76,21 @@ func (h *ChannelHandler) CreateChannel(c *gin.Context) {
 		desc = &req.Description
 	}
 
+	// Check if request is from a Pod (via Pod API path)
+	var createdByPod *string
+	if pk, exists := c.Get("pod_key"); exists {
+		if pkStr, ok := pk.(string); ok && pkStr != "" {
+			createdByPod = &pkStr
+		}
+	}
+
 	ch, err := h.channelService.CreateChannel(c.Request.Context(), &channel.CreateChannelRequest{
 		OrganizationID:  tenant.OrganizationID,
 		Name:            req.Name,
 		Description:     desc,
 		RepositoryID:    req.RepositoryID,
 		TicketID:        req.TicketID,
+		CreatedByPod:    createdByPod,
 		CreatedByUserID: &tenant.UserID,
 	})
 	if err != nil {
@@ -307,8 +316,17 @@ func (h *ChannelHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
+	// Determine sender pod key:
+	// 1. If called via Pod API (/api/v1/orgs/:slug/pod/channels/*), use pod_key from context
+	// 2. Otherwise, use pod_key from request body (for user-initiated messages)
 	var podKey *string
-	if req.PodKey != "" {
+	if pk, exists := c.Get("pod_key"); exists {
+		// Pod API path - use the authenticated pod's key
+		if pkStr, ok := pk.(string); ok && pkStr != "" {
+			podKey = &pkStr
+		}
+	} else if req.PodKey != "" {
+		// User API path with explicit pod_key in request
 		podKey = &req.PodKey
 	}
 
