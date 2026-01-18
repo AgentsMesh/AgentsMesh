@@ -119,8 +119,8 @@ export default function GettingStartedPage() {
             Download and configure the AgentsMesh Runner on your development
             machine or server.
           </p>
-          <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-            <pre className="text-green-400">{`# Download and install the runner
+          <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
+            <pre className="text-green-500 dark:text-green-400">{`# Download and install the runner
 curl -fsSL https://get.agentsmesh.dev | sh
 
 # Register with your token (from Settings → Runners)

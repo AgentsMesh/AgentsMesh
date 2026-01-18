@@ -126,11 +126,11 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
 
   if (panes.length === 0) {
     return (
-      <div className={cn("flex-1 flex items-center justify-center bg-[#1e1e1e]", className)}>
+      <div className={cn("flex-1 flex items-center justify-center bg-terminal-bg", className)}>
         <div className="text-center p-6">
-          <TerminalIcon className="w-16 h-16 mx-auto mb-4 text-[#3c3c3c]" />
-          <h3 className="text-lg font-medium text-[#cccccc] mb-2">No terminals</h3>
-          <p className="text-sm text-[#808080] mb-4">
+          <TerminalIcon className="w-16 h-16 mx-auto mb-4 text-terminal-border" />
+          <h3 className="text-lg font-medium text-terminal-text mb-2">No terminals</h3>
+          <p className="text-sm text-terminal-text-muted mb-4">
             Open a pod to start a terminal session
           </p>
           {onAddNew && (
@@ -147,11 +147,11 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Swipe indicator / pagination */}
-      <div className="h-10 flex items-center justify-between px-3 bg-[#252526] border-b border-[#3c3c3c]">
+      <div className="h-10 flex items-center justify-between px-3 bg-terminal-bg-secondary border-b border-terminal-border">
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 text-[#808080]"
+          className="h-7 w-7 p-0 text-terminal-text-muted"
           onClick={goToPrev}
           disabled={mobileActiveIndex === 0}
         >
@@ -159,10 +159,10 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
         </Button>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-[#cccccc] font-medium">
+          <span className="text-sm text-terminal-text font-medium">
             {currentPane?.title || "Terminal"}
           </span>
-          <span className="text-xs text-[#808080]">
+          <span className="text-xs text-terminal-text-muted">
             {mobileActiveIndex + 1} / {panes.length}
           </span>
         </div>
@@ -171,7 +171,7 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0 text-[#808080]"
+            className="h-7 w-7 p-0 text-terminal-text-muted"
             onClick={handleSyncSize}
             title="Sync terminal size"
           >
@@ -180,7 +180,7 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0 text-[#808080]"
+            className="h-7 w-7 p-0 text-terminal-text-muted"
             onClick={goToNext}
             disabled={mobileActiveIndex === panes.length - 1}
           >
@@ -191,7 +191,7 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
 
       {/* Dots indicator */}
       {panes.length > 1 && (
-        <div className="flex items-center justify-center gap-1.5 py-2 bg-[#252526]">
+        <div className="flex items-center justify-center gap-1.5 py-2 bg-terminal-bg-secondary">
           {panes.map((pane, index) => (
             <button
               key={pane.id}
@@ -199,7 +199,7 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
                 "w-1.5 h-1.5 rounded-full transition-colors",
                 index === mobileActiveIndex
                   ? "bg-primary"
-                  : "bg-[#3c3c3c] hover:bg-[#555555]"
+                  : "bg-terminal-border hover:bg-terminal-bg-active"
               )}
               onClick={() => setMobileActiveIndex(index)}
             />

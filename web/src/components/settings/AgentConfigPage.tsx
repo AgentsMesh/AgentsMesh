@@ -331,7 +331,7 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
         </div>
       )}
       {success && (
-        <div className="bg-green-500/15 text-green-600 text-sm p-3 rounded-md flex items-center justify-between">
+        <div className="bg-green-500/15 text-green-600 dark:text-green-400 text-sm p-3 rounded-md flex items-center justify-between">
           <span>{success}</span>
           <button onClick={() => setSuccess(null)} className="text-xs underline">
             {t("common.dismiss")}

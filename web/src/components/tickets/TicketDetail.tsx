@@ -111,7 +111,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-600 mb-4">{error}</div>
+        <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
         <Button onClick={() => fetchTicket(identifier)}>{t("tickets.detail.retry")}</Button>
       </div>
     );

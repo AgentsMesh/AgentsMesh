@@ -342,32 +342,32 @@ describe("Helper Functions", () => {
     it("should return correct info for initializing status", () => {
       const info = getPodStatusInfo("initializing");
       expect(info.label).toBe("Initializing");
-      expect(info.color).toBe("text-blue-600");
-      expect(info.bgColor).toBe("bg-blue-100");
+      expect(info.color).toBe("text-blue-600 dark:text-blue-400");
+      expect(info.bgColor).toBe("bg-blue-100 dark:bg-blue-900/30");
     });
 
     it("should return correct info for running status", () => {
       const info = getPodStatusInfo("running");
       expect(info.label).toBe("Running");
-      expect(info.color).toBe("text-green-600");
+      expect(info.color).toBe("text-green-600 dark:text-green-400");
     });
 
     it("should return correct info for paused status", () => {
       const info = getPodStatusInfo("paused");
       expect(info.label).toBe("Paused");
-      expect(info.color).toBe("text-yellow-600");
+      expect(info.color).toBe("text-yellow-600 dark:text-yellow-400");
     });
 
     it("should return correct info for terminated status", () => {
       const info = getPodStatusInfo("terminated");
       expect(info.label).toBe("Terminated");
-      expect(info.color).toBe("text-gray-600");
+      expect(info.color).toBe("text-gray-600 dark:text-gray-400");
     });
 
     it("should return correct info for failed status", () => {
       const info = getPodStatusInfo("failed");
       expect(info.label).toBe("Failed");
-      expect(info.color).toBe("text-red-600");
+      expect(info.color).toBe("text-red-600 dark:text-red-400");
     });
 
     it("should return terminated info for unknown status", () => {
@@ -380,21 +380,21 @@ describe("Helper Functions", () => {
     it("should return correct info for idle status", () => {
       const info = getAgentStatusInfo("idle");
       expect(info.label).toBe("Idle");
-      expect(info.color).toBe("text-gray-500");
+      expect(info.color).toBe("text-gray-500 dark:text-gray-400");
       expect(info.icon).toBe("⏸");
     });
 
     it("should return correct info for thinking status", () => {
       const info = getAgentStatusInfo("thinking");
       expect(info.label).toBe("Thinking");
-      expect(info.color).toBe("text-blue-500");
+      expect(info.color).toBe("text-blue-500 dark:text-blue-400");
       expect(info.icon).toBe("🤔");
     });
 
     it("should return correct info for coding status", () => {
       const info = getAgentStatusInfo("coding");
       expect(info.label).toBe("Coding");
-      expect(info.color).toBe("text-green-500");
+      expect(info.color).toBe("text-green-500 dark:text-green-400");
       expect(info.icon).toBe("💻");
     });
 
@@ -419,14 +419,14 @@ describe("Helper Functions", () => {
     it("should return correct info for error status", () => {
       const info = getAgentStatusInfo("error");
       expect(info.label).toBe("Error");
-      expect(info.color).toBe("text-red-500");
+      expect(info.color).toBe("text-red-500 dark:text-red-400");
       expect(info.icon).toBe("❌");
     });
 
     it("should return fallback for unknown status", () => {
       const info = getAgentStatusInfo("unknown-status");
       expect(info.label).toBe("unknown-status");
-      expect(info.color).toBe("text-gray-500");
+      expect(info.color).toBe("text-gray-500 dark:text-gray-400");
       expect(info.icon).toBe("•");
     });
   });

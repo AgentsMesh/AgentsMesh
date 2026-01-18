@@ -44,27 +44,27 @@ interface TicketListProps {
 }
 
 const typeConfig: Record<string, { icon: string; color: string; label: string }> = {
-  task: { icon: "✓", color: "text-blue-500", label: "Task" },
-  bug: { icon: "🐛", color: "text-red-500", label: "Bug" },
-  feature: { icon: "✨", color: "text-green-500", label: "Feature" },
-  epic: { icon: "⚡", color: "text-purple-500", label: "Epic" },
+  task: { icon: "✓", color: "text-blue-500 dark:text-blue-400", label: "Task" },
+  bug: { icon: "🐛", color: "text-red-500 dark:text-red-400", label: "Bug" },
+  feature: { icon: "✨", color: "text-green-500 dark:text-green-400", label: "Feature" },
+  epic: { icon: "⚡", color: "text-purple-500 dark:text-purple-400", label: "Epic" },
 };
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  backlog: { label: "Backlog", color: "text-gray-600", bg: "bg-gray-100" },
-  todo: { label: "To Do", color: "text-blue-600", bg: "bg-blue-100" },
-  in_progress: { label: "In Progress", color: "text-yellow-600", bg: "bg-yellow-100" },
-  in_review: { label: "In Review", color: "text-purple-600", bg: "bg-purple-100" },
-  done: { label: "Done", color: "text-green-600", bg: "bg-green-100" },
-  cancelled: { label: "Cancelled", color: "text-red-600", bg: "bg-red-100" },
+  backlog: { label: "Backlog", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-800" },
+  todo: { label: "To Do", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
+  in_progress: { label: "In Progress", color: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-100 dark:bg-yellow-900/30" },
+  in_review: { label: "In Review", color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
+  done: { label: "Done", color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-900/30" },
+  cancelled: { label: "Cancelled", color: "text-red-600 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30" },
 };
 
 const priorityConfig: Record<string, { icon: string; color: string; label: string }> = {
-  none: { icon: "—", color: "text-gray-400", label: "None" },
-  low: { icon: "↓", color: "text-green-500", label: "Low" },
-  medium: { icon: "→", color: "text-yellow-500", label: "Medium" },
-  high: { icon: "↑", color: "text-orange-500", label: "High" },
-  urgent: { icon: "⚡", color: "text-red-500", label: "Urgent" },
+  none: { icon: "—", color: "text-gray-400 dark:text-gray-500", label: "None" },
+  low: { icon: "↓", color: "text-green-500 dark:text-green-400", label: "Low" },
+  medium: { icon: "→", color: "text-yellow-500 dark:text-yellow-400", label: "Medium" },
+  high: { icon: "↑", color: "text-orange-500 dark:text-orange-400", label: "High" },
+  urgent: { icon: "⚡", color: "text-red-500 dark:text-red-400", label: "Urgent" },
 };
 
 export function TicketList({ tickets, loading, onTicketClick }: TicketListProps) {
@@ -227,7 +227,7 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                         new Date(ticket.dueDate) < new Date() &&
                         ticket.status !== "done" &&
                         ticket.status !== "cancelled"
-                          ? "text-red-600"
+                          ? "text-red-600 dark:text-red-400"
                           : "text-muted-foreground"
                       }
                     >

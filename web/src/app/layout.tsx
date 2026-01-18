@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/theme";
+import { ThemeProvider, ThemeColorMeta } from "@/components/theme";
 import { PWAProvider } from "@/components/pwa";
 import { I18nProviderWrapper } from "@/components/providers/I18nProviderWrapper";
 import { getLocale } from "@/lib/i18n/server";
@@ -59,12 +59,14 @@ export default async function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          themes={["light", "dark", "solarized-light", "solarized-dark"]}
         >
           <I18nProviderWrapper>
             <PWAProvider>
               {children}
             </PWAProvider>
           </I18nProviderWrapper>
+          <ThemeColorMeta />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>

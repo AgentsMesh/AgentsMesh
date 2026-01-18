@@ -12,30 +12,30 @@ interface TicketCardProps {
 }
 
 const typeConfig: Record<string, { icon: string; color: string }> = {
-  task: { icon: "✓", color: "text-blue-500" },
-  bug: { icon: "🐛", color: "text-red-500" },
-  feature: { icon: "✨", color: "text-green-500" },
-  improvement: { icon: "📈", color: "text-cyan-500" },
-  epic: { icon: "⚡", color: "text-purple-500" },
-  subtask: { icon: "◦", color: "text-gray-500" },
-  story: { icon: "📖", color: "text-teal-500" },
+  task: { icon: "✓", color: "text-blue-500 dark:text-blue-400" },
+  bug: { icon: "🐛", color: "text-red-500 dark:text-red-400" },
+  feature: { icon: "✨", color: "text-green-500 dark:text-green-400" },
+  improvement: { icon: "📈", color: "text-cyan-500 dark:text-cyan-400" },
+  epic: { icon: "⚡", color: "text-purple-500 dark:text-purple-400" },
+  subtask: { icon: "◦", color: "text-gray-500 dark:text-gray-400" },
+  story: { icon: "📖", color: "text-teal-500 dark:text-teal-400" },
 };
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  backlog: { label: "Backlog", color: "text-gray-600", bg: "bg-gray-100" },
-  todo: { label: "To Do", color: "text-blue-600", bg: "bg-blue-100" },
-  in_progress: { label: "In Progress", color: "text-yellow-600", bg: "bg-yellow-100" },
-  in_review: { label: "In Review", color: "text-purple-600", bg: "bg-purple-100" },
-  done: { label: "Done", color: "text-green-600", bg: "bg-green-100" },
-  cancelled: { label: "Cancelled", color: "text-red-600", bg: "bg-red-100" },
+  backlog: { label: "Backlog", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-800" },
+  todo: { label: "To Do", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
+  in_progress: { label: "In Progress", color: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-100 dark:bg-yellow-900/30" },
+  in_review: { label: "In Review", color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
+  done: { label: "Done", color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-900/30" },
+  cancelled: { label: "Cancelled", color: "text-red-600 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30" },
 };
 
 const priorityConfig: Record<string, { icon: string; color: string }> = {
-  none: { icon: "—", color: "text-gray-400" },
-  low: { icon: "↓", color: "text-green-500" },
-  medium: { icon: "→", color: "text-yellow-500" },
-  high: { icon: "↑", color: "text-orange-500" },
-  urgent: { icon: "⚡", color: "text-red-500" },
+  none: { icon: "—", color: "text-gray-400 dark:text-gray-500" },
+  low: { icon: "↓", color: "text-green-500 dark:text-green-400" },
+  medium: { icon: "→", color: "text-yellow-500 dark:text-yellow-400" },
+  high: { icon: "↑", color: "text-orange-500 dark:text-orange-400" },
+  urgent: { icon: "⚡", color: "text-red-500 dark:text-red-400" },
 };
 
 export function TicketCard({ ticket, onClick, showRepository = true }: TicketCardProps) {
@@ -121,9 +121,9 @@ export function TicketCard({ ticket, onClick, showRepository = true }: TicketCar
             <span
               className={`text-xs ${
                 isOverdue()
-                  ? "text-red-600"
+                  ? "text-red-600 dark:text-red-400"
                   : isDueSoon()
-                  ? "text-orange-600"
+                  ? "text-orange-600 dark:text-orange-400"
                   : "text-muted-foreground"
               }`}
             >

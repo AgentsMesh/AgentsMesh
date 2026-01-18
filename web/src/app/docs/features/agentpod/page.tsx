@@ -98,7 +98,7 @@ export default function AgentPodPage() {
             </p>
           </div>
           <div className="flex items-start gap-4">
-            <div className="w-24 text-sm font-medium text-green-400">
+            <div className="w-24 text-sm font-medium text-green-500 dark:text-green-400">
               Running
             </div>
             <p className="text-muted-foreground">
@@ -106,7 +106,7 @@ export default function AgentPodPage() {
             </p>
           </div>
           <div className="flex items-start gap-4">
-            <div className="w-24 text-sm font-medium text-yellow-400">
+            <div className="w-24 text-sm font-medium text-yellow-500 dark:text-yellow-400">
               Paused
             </div>
             <p className="text-muted-foreground">
@@ -114,7 +114,7 @@ export default function AgentPodPage() {
             </p>
           </div>
           <div className="flex items-start gap-4">
-            <div className="w-24 text-sm font-medium text-orange-400">
+            <div className="w-24 text-sm font-medium text-orange-500 dark:text-orange-400">
               Disconnected
             </div>
             <p className="text-muted-foreground">
@@ -130,7 +130,7 @@ export default function AgentPodPage() {
             </p>
           </div>
           <div className="flex items-start gap-4">
-            <div className="w-24 text-sm font-medium text-red-400">
+            <div className="w-24 text-sm font-medium text-red-500 dark:text-red-400">
               Terminated
             </div>
             <p className="text-muted-foreground">

@@ -60,7 +60,7 @@ export default function DocsPage() {
                 <td className="p-3 border-b border-border">
                   {t("docs.whyTerminal.autonomyIde")}
                 </td>
-                <td className="p-3 border-b border-border text-green-400">
+                <td className="p-3 border-b border-border text-green-500 dark:text-green-400">
                   ✓ {t("docs.whyTerminal.autonomyTerminal")}
                 </td>
               </tr>
@@ -71,7 +71,7 @@ export default function DocsPage() {
                 <td className="p-3 border-b border-border">
                   {t("docs.whyTerminal.capabilitiesIde")}
                 </td>
-                <td className="p-3 border-b border-border text-green-400">
+                <td className="p-3 border-b border-border text-green-500 dark:text-green-400">
                   ✓ {t("docs.whyTerminal.capabilitiesTerminal")}
                 </td>
               </tr>
@@ -82,7 +82,7 @@ export default function DocsPage() {
                 <td className="p-3 border-b border-border">
                   {t("docs.whyTerminal.environmentIde")}
                 </td>
-                <td className="p-3 border-b border-border text-green-400">
+                <td className="p-3 border-b border-border text-green-500 dark:text-green-400">
                   ✓ {t("docs.whyTerminal.environmentTerminal")}
                 </td>
               </tr>
@@ -91,14 +91,14 @@ export default function DocsPage() {
                   {t("docs.whyTerminal.multiAgent")}
                 </td>
                 <td className="p-3 border-b border-border">✗</td>
-                <td className="p-3 border-b border-border text-green-400">
+                <td className="p-3 border-b border-border text-green-500 dark:text-green-400">
                   ✓ {t("docs.whyTerminal.multiAgentTerminal")}
                 </td>
               </tr>
               <tr>
                 <td className="p-3">{t("docs.whyTerminal.selfHosted")}</td>
                 <td className="p-3">✗</td>
-                <td className="p-3 text-green-400">
+                <td className="p-3 text-green-500 dark:text-green-400">
                   ✓ {t("docs.whyTerminal.selfHostedTerminal")}
                 </td>
               </tr>

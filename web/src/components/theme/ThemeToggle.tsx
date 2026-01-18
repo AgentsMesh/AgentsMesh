@@ -2,137 +2,99 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Monitor } from "lucide-react";
+import { Moon, Sun, Monitor, Palette, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { themeConfigs, type Theme } from "@/lib/theme";
 
 interface ThemeToggleProps {
   className?: string;
-  variant?: "default" | "compact" | "dropdown";
 }
 
-export function ThemeToggle({ className, variant = "default" }: ThemeToggleProps) {
+const iconMap = {
+  sun: Sun,
+  moon: Moon,
+  monitor: Monitor,
+  palette: Palette,
+};
+
+export function ThemeToggle({ className }: ThemeToggleProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const t = useTranslations("mobile.menu");
   const [mounted, setMounted] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   // Avoid hydration mismatch
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return (
-      <Button variant="ghost" size="sm" className={cn("w-9 h-9 p-0", className)}>
-        <Monitor className="w-4 h-4" />
-      </Button>
-    );
-  }
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  if (variant === "compact") {
-    return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn("w-9 h-9 p-0", className)}
-        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-        title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
-      >
-        {resolvedTheme === "dark" ? (
-          <Sun className="w-4 h-4" />
-        ) : (
-          <Moon className="w-4 h-4" />
-        )}
-      </Button>
-    );
-  }
+  const currentIconName = React.useMemo(() => {
+    if (!mounted) return "monitor" as const;
+    if (theme === "system") return "monitor" as const;
 
-  if (variant === "dropdown") {
-    return (
-      <div className={cn("relative group", className)}>
-        <Button variant="ghost" size="sm" className="w-9 h-9 p-0">
-          {theme === "system" ? (
-            <Monitor className="w-4 h-4" />
-          ) : resolvedTheme === "dark" ? (
-            <Moon className="w-4 h-4" />
-          ) : (
-            <Sun className="w-4 h-4" />
-          )}
-        </Button>
-        <div className="absolute right-0 top-full mt-1 py-1 bg-popover border border-border rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-32">
-          <button
-            className={cn(
-              "w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted text-left",
-              theme === "light" && "bg-muted/50"
-            )}
-            onClick={() => setTheme("light")}
-          >
-            <Sun className="w-4 h-4" />
-            Light
-          </button>
-          <button
-            className={cn(
-              "w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted text-left",
-              theme === "dark" && "bg-muted/50"
-            )}
-            onClick={() => setTheme("dark")}
-          >
-            <Moon className="w-4 h-4" />
-            Dark
-          </button>
-          <button
-            className={cn(
-              "w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted text-left",
-              theme === "system" && "bg-muted/50"
-            )}
-            onClick={() => setTheme("system")}
-          >
-            <Monitor className="w-4 h-4" />
-            System
-          </button>
-        </div>
-      </div>
-    );
-  }
+    const config = themeConfigs.find((c) => c.id === theme);
+    if (config) return config.icon;
 
-  // Default: three-way toggle buttons
+    // Fallback based on resolved theme
+    return resolvedTheme === "dark" || resolvedTheme === "solarized-dark" ? "moon" as const : "sun" as const;
+  }, [mounted, theme, resolvedTheme]);
+
+  const CurrentIcon = iconMap[currentIconName];
+
   return (
-    <div className={cn("flex items-center gap-1 p-1 bg-muted rounded-lg", className)}>
+    <div className={cn("relative", className)} ref={dropdownRef}>
       <Button
         variant="ghost"
         size="sm"
-        className={cn(
-          "h-7 px-2",
-          theme === "light" && "bg-background shadow-sm"
-        )}
-        onClick={() => setTheme("light")}
-        title="Light mode"
+        className="w-9 h-9 p-0"
+        onClick={() => setOpen(!open)}
+        aria-label="Toggle theme"
       >
-        <Sun className="w-4 h-4" />
+        <CurrentIcon className="w-4 h-4" />
       </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "h-7 px-2",
-          theme === "dark" && "bg-background shadow-sm"
-        )}
-        onClick={() => setTheme("dark")}
-        title="Dark mode"
-      >
-        <Moon className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "h-7 px-2",
-          theme === "system" && "bg-background shadow-sm"
-        )}
-        onClick={() => setTheme("system")}
-        title="System preference"
-      >
-        <Monitor className="w-4 h-4" />
-      </Button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 py-1 bg-popover border border-border rounded-md shadow-lg z-50 min-w-40">
+          {themeConfigs.map((config) => {
+            const Icon = iconMap[config.icon];
+            const isActive = theme === config.id;
+
+            return (
+              <button
+                key={config.id}
+                className={cn(
+                  "w-full flex items-center justify-between gap-2 px-3 py-1.5 text-sm hover:bg-muted text-left",
+                  isActive && "bg-muted/50"
+                )}
+                onClick={() => {
+                  setTheme(config.id as Theme);
+                  setOpen(false);
+                }}
+              >
+                <span className="flex items-center gap-2">
+                  <Icon className="w-4 h-4" />
+                  {t(config.nameKey)}
+                </span>
+                {isActive && <Check className="w-4 h-4 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

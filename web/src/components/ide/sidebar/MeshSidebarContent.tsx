@@ -158,17 +158,17 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
         <div className="text-xs font-medium text-muted-foreground">{t("ide.sidebar.mesh.networkStats")}</div>
         <div className="grid grid-cols-3 gap-2">
           <div className="flex flex-col items-center text-xs">
-            <Activity className="w-3.5 h-3.5 text-green-500 mb-0.5" />
+            <Activity className="w-3.5 h-3.5 text-green-500 dark:text-green-400 mb-0.5" />
             <span className="font-medium">{activeNodes}</span>
             <span className="text-muted-foreground">{t("ide.sidebar.mesh.active")}</span>
           </div>
           <div className="flex flex-col items-center text-xs">
-            <Radio className="w-3.5 h-3.5 text-blue-500 mb-0.5" />
+            <Radio className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 mb-0.5" />
             <span className="font-medium">{totalChannels}</span>
             <span className="text-muted-foreground">{t("ide.sidebar.mesh.channels")}</span>
           </div>
           <div className="flex flex-col items-center text-xs">
-            <Link2 className="w-3.5 h-3.5 text-purple-500 mb-0.5" />
+            <Link2 className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 mb-0.5" />
             <span className="font-medium">{totalBindings}</span>
             <span className="text-muted-foreground">{t("ide.sidebar.mesh.bindings")}</span>
           </div>
@@ -216,7 +216,7 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
                       )}
                       onClick={() => handleChannelClick(channel)}
                     >
-                      <Radio className="w-3 h-3 text-blue-500" />
+                      <Radio className="w-3 h-3 text-blue-500 dark:text-blue-400" />
                       <span className="text-sm truncate flex-1">{channel.name}</span>
                       <span className="text-xs text-muted-foreground">
                         {t("ide.sidebar.mesh.podsCount", { count: channel.pod_keys.length })}

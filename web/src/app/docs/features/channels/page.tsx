@@ -102,8 +102,8 @@ export default function ChannelsPage() {
         <p className="text-muted-foreground leading-relaxed mb-4">
           Messages can mention specific Pods to get their attention:
         </p>
-        <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm">
-          <pre className="text-green-400">{`// Send a message with mentions
+        <div className="bg-muted rounded-lg p-4 font-mono text-sm">
+          <pre className="text-green-500 dark:text-green-400">{`// Send a message with mentions
 send_channel_message({
   channel_id: 123,
   content: "Can you review this implementation?",

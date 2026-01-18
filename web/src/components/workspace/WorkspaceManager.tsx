@@ -82,7 +82,7 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
 
   if (!_hasHydrated) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#1e1e1e]">
+      <div className="flex items-center justify-center h-full bg-terminal-bg">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
@@ -96,7 +96,7 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
   );
 
   return (
-    <div className={cn("flex flex-col h-full bg-[#1e1e1e]", className)}>
+    <div className={cn("flex flex-col h-full bg-terminal-bg", className)}>
       {/* Desktop layout */}
       {!isMobile && (
         <>
@@ -108,7 +108,7 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 text-[#808080] hover:text-[#cccccc]"
+              className="h-6 w-6 p-0 text-terminal-text-muted hover:text-terminal-text"
               onClick={toggleFullscreen}
             >
               {isFullscreen ? (
@@ -189,7 +189,7 @@ function PodSelectorModal({ pods, onSelect, onClose }: PodSelectorModalProps) {
                     <code className="text-sm font-mono bg-muted px-2 py-0.5 rounded">
                       {pod.pod_key.substring(0, 12)}...
                     </code>
-                    <span className="text-xs text-green-500">{pod.status}</span>
+                    <span className="text-xs text-green-500 dark:text-green-400">{pod.status}</span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     <span>Agent: {pod.agent_status}</span>

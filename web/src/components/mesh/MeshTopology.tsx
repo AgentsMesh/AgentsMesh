@@ -78,7 +78,7 @@ function calculateLayout(
         source: `channel-${channel.id}`,
         target: podKey,
         type: "smoothstep",
-        style: { stroke: "#3b82f6", strokeWidth: 1, strokeDasharray: "4 2" },
+        style: { stroke: "var(--primary)", strokeWidth: 1, strokeDasharray: "4 2" },
         animated: true,
       });
     });

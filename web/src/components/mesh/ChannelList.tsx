@@ -112,7 +112,7 @@ export function ChannelList({
 
                   {/* Active Pods Badge */}
                   {activePodCount(channel) > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-green-600">
+                    <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                       {activePodCount(channel)}
                     </div>

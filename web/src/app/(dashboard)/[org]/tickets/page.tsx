@@ -11,20 +11,20 @@ import { useTranslations } from "@/lib/i18n/client";
 
 // Status colors for list view
 const statusColors: Record<string, string> = {
-  backlog: "bg-gray-100 text-gray-700",
-  todo: "bg-blue-100 text-blue-700",
-  in_progress: "bg-yellow-100 text-yellow-700",
-  in_review: "bg-purple-100 text-purple-700",
-  done: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
+  backlog: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  todo: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  in_progress: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  in_review: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  done: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
 const priorityColors: Record<string, string> = {
-  none: "text-gray-400",
-  low: "text-blue-500",
-  medium: "text-yellow-500",
-  high: "text-orange-500",
-  urgent: "text-red-500",
+  none: "text-gray-400 dark:text-gray-500",
+  low: "text-blue-500 dark:text-blue-400",
+  medium: "text-yellow-500 dark:text-yellow-400",
+  high: "text-orange-500 dark:text-orange-400",
+  urgent: "text-red-500 dark:text-red-400",
 };
 
 export default function TicketsPage() {
@@ -115,7 +115,7 @@ function ListView({ tickets, t, orgSlug }: { tickets: Ticket[]; t: (key: string)
               <td className="px-4 py-3">
                 <span
                   className={`px-2 py-1 text-xs rounded-full ${
-                    statusColors[ticket.status] || "bg-gray-100"
+                    statusColors[ticket.status] || "bg-gray-100 dark:bg-gray-800"
                   }`}
                 >
                   {t(`tickets.status.${ticket.status}`)}

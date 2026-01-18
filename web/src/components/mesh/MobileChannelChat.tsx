@@ -121,7 +121,7 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-              <Radio className="w-4 h-4 text-blue-500" />
+              <Radio className="w-4 h-4 text-blue-500 dark:text-blue-400" />
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-sm truncate">#{channelName}</h3>

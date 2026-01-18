@@ -69,15 +69,15 @@ export default function TicketsPage() {
           <span className="text-muted-foreground">→</span>
           <span className="px-3 py-1 bg-muted rounded text-sm">Todo</span>
           <span className="text-muted-foreground">→</span>
-          <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded text-sm">
+          <span className="px-3 py-1 bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-sm">
             In Progress
           </span>
           <span className="text-muted-foreground">→</span>
-          <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded text-sm">
+          <span className="px-3 py-1 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded text-sm">
             In Review
           </span>
           <span className="text-muted-foreground">→</span>
-          <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded text-sm">
+          <span className="px-3 py-1 bg-green-500/20 text-green-600 dark:text-green-400 rounded text-sm">
             Done
           </span>
         </div>
@@ -104,7 +104,7 @@ export default function TicketsPage() {
             </thead>
             <tbody className="text-muted-foreground">
               <tr>
-                <td className="p-3 border-b border-border text-red-400 font-medium">
+                <td className="p-3 border-b border-border text-red-500 dark:text-red-400 font-medium">
                   Urgent
                 </td>
                 <td className="p-3 border-b border-border">
@@ -112,7 +112,7 @@ export default function TicketsPage() {
                 </td>
               </tr>
               <tr>
-                <td className="p-3 border-b border-border text-orange-400 font-medium">
+                <td className="p-3 border-b border-border text-orange-500 dark:text-orange-400 font-medium">
                   High
                 </td>
                 <td className="p-3 border-b border-border">
@@ -120,7 +120,7 @@ export default function TicketsPage() {
                 </td>
               </tr>
               <tr>
-                <td className="p-3 border-b border-border text-yellow-400 font-medium">
+                <td className="p-3 border-b border-border text-yellow-500 dark:text-yellow-400 font-medium">
                   Medium
                 </td>
                 <td className="p-3 border-b border-border">

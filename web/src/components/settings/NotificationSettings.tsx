@@ -59,7 +59,7 @@ export function NotificationSettings({ className }: NotificationSettingsProps) {
         <div className="flex items-center gap-3">
           {isEnabled ? (
             <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-green-500" />
+              <Bell className="w-5 h-5 text-green-500 dark:text-green-400" />
             </div>
           ) : (
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
@@ -152,7 +152,7 @@ export function NotificationSettings({ className }: NotificationSettingsProps) {
       {/* Status indicator */}
       {isEnabled && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Check className="w-4 h-4 text-green-500" />
+          <Check className="w-4 h-4 text-green-500 dark:text-green-400" />
           <span>{t("settings.notifications.active")}</span>
         </div>
       )}

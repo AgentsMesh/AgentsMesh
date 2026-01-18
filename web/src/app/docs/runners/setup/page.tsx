@@ -26,8 +26,8 @@ export default function RunnerSetupPage() {
         <h2 className="text-2xl font-semibold mb-4">Quick Installation</h2>
 
         <h3 className="text-lg font-medium mb-2 mt-6">One-Line Install (Recommended)</h3>
-        <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-          <pre className="text-green-400">{`# macOS / Linux
+        <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
+          <pre className="text-green-500 dark:text-green-400">{`# macOS / Linux
 curl -fsSL https://agentsmesh.ai/install.sh | sh
 
 # Windows (PowerShell)
@@ -35,8 +35,8 @@ irm https://agentsmesh.ai/install.ps1 | iex`}</pre>
         </div>
 
         <h3 className="text-lg font-medium mb-2 mt-6">macOS (Homebrew)</h3>
-        <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-          <pre className="text-green-400">{`# Add AgentsMesh tap
+        <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
+          <pre className="text-green-500 dark:text-green-400">{`# Add AgentsMesh tap
 brew tap agentsmesh/tap https://github.com/AgentsMesh/BrewCask
 
 # Install runner
@@ -44,8 +44,8 @@ brew install agentsmesh/tap/agentsmesh-runner`}</pre>
         </div>
 
         <h3 className="text-lg font-medium mb-2 mt-6">Linux (Package Manager)</h3>
-        <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-          <pre className="text-green-400">{`# Debian/Ubuntu
+        <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
+          <pre className="text-green-500 dark:text-green-400">{`# Debian/Ubuntu
 VERSION=$(curl -s https://api.github.com/repos/AgentsMesh/AgentsMeshRunner/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
 wget https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v\${VERSION}/agentsmesh-runner_\${VERSION}_linux_amd64.deb
 sudo dpkg -i agentsmesh-runner_\${VERSION}_linux_amd64.deb
@@ -57,8 +57,8 @@ sudo rpm -i agentsmesh-runner_\${VERSION}_linux_amd64.rpm`}</pre>
         </div>
 
         <h3 className="text-lg font-medium mb-2 mt-6">After Installation</h3>
-        <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-          <pre className="text-green-400">{`# Register with your server
+        <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
+          <pre className="text-green-500 dark:text-green-400">{`# Register with your server
 runner register --server https://api.agentsmesh.ai --token <YOUR_TOKEN>
 
 # Start the runner
@@ -75,8 +75,8 @@ runner run`}</pre>
       {/* Docker Installation */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-4">Docker Installation</h2>
-        <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-          <pre className="text-green-400">{`# Run with Docker
+        <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
+          <pre className="text-green-500 dark:text-green-400">{`# Run with Docker
 docker run -d \\
   --name agentsmesh-runner \\
   -e AGENTSMESH_TOKEN=<YOUR_TOKEN> \\
@@ -90,8 +90,8 @@ docker run -d \\
       {/* Docker Compose */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-4">Docker Compose</h2>
-        <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-sm overflow-x-auto">
-          <pre className="text-green-400">{`# docker-compose.yml
+        <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
+          <pre className="text-green-500 dark:text-green-400">{`# docker-compose.yml
 version: '3.8'
 services:
   runner:
@@ -218,7 +218,7 @@ volumes:
           </li>
           <li>
             Find your runner in the list - it should show{" "}
-            <span className="text-green-400">● Online</span>
+            <span className="text-green-500 dark:text-green-400">● Online</span>
           </li>
           <li>
             Try creating an AgentPod using this runner

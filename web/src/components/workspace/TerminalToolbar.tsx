@@ -88,13 +88,13 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
   return (
     <div
       className={cn(
-        "bg-[#252526] border-t border-[#3c3c3c] safe-area-pb",
+        "bg-terminal-bg-secondary border-t border-terminal-border safe-area-pb",
         className
       )}
     >
       {/* Extended toolbar (show/hide) */}
       {showExtended && (
-        <div className="p-2 border-b border-[#3c3c3c]">
+        <div className="p-2 border-b border-terminal-border">
           <div className="flex flex-wrap gap-1.5">
             {/* Common control sequences */}
             <ToolbarButton
@@ -134,23 +134,23 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
           </div>
 
           {/* Font size control */}
-          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#3c3c3c]">
-            <span className="text-xs text-[#808080]">{t("terminalToolbar.font")}:</span>
+          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-terminal-border">
+            <span className="text-xs text-terminal-text-muted">{t("terminalToolbar.font")}:</span>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-[#cccccc]"
+              className="h-6 px-2 text-terminal-text"
               onClick={() => adjustFontSize(-1)}
             >
               A-
             </Button>
-            <span className="text-xs text-[#cccccc] min-w-[2ch] text-center">
+            <span className="text-xs text-terminal-text min-w-[2ch] text-center">
               {terminalFontSize}
             </span>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-[#cccccc]"
+              className="h-6 px-2 text-terminal-text"
               onClick={() => adjustFontSize(1)}
             >
               A+
@@ -166,8 +166,8 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
           variant="ghost"
           size="sm"
           className={cn(
-            "h-9 w-9 p-0 text-[#808080]",
-            showExtended && "bg-[#3c3c3c] text-[#cccccc]"
+            "h-9 w-9 p-0 text-terminal-text-muted",
+            showExtended && "bg-terminal-bg-active text-terminal-text"
           )}
           onClick={() => setShowExtended(!showExtended)}
         >
@@ -194,7 +194,7 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
           onClick={() => setShiftActive(!shiftActive)}
         />
 
-        <div className="w-px h-6 bg-[#3c3c3c] mx-1" />
+        <div className="w-px h-6 bg-terminal-border mx-1" />
 
         {/* Common keys */}
         <ToolbarButton
@@ -257,9 +257,9 @@ function ToolbarButton({
       variant="ghost"
       size="sm"
       className={cn(
-        "h-9 text-[#cccccc] hover:bg-[#3c3c3c]",
+        "h-9 text-terminal-text hover:bg-terminal-bg-active",
         square ? "w-9 p-0" : "px-2.5",
-        variant === "destructive" && "text-red-400 hover:text-red-300"
+        variant === "destructive" && "text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300"
       )}
       onClick={onClick}
       title={title}
@@ -286,7 +286,7 @@ function ModifierButton({ label, icon, active, onClick }: ModifierButtonProps) {
         "h-9 px-2 text-xs",
         active
           ? "bg-primary text-primary-foreground hover:bg-primary/90"
-          : "text-[#808080] hover:text-[#cccccc] hover:bg-[#3c3c3c]"
+          : "text-terminal-text-muted hover:text-terminal-text hover:bg-terminal-bg-active"
       )}
       onClick={onClick}
     >

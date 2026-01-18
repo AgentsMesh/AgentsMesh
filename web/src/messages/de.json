@@ -810,6 +810,8 @@
       "theme": "Theme",
       "theme_light": "Hell",
       "theme_dark": "Dunkel",
+      "theme_solarized_light": "Solarized Hell",
+      "theme_solarized_dark": "Solarized Dunkel",
       "theme_system": "System"
     }
   }

@@ -73,7 +73,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="border-t border-border bg-[#0a0a0a]">
+    <footer className="border-t border-border bg-muted/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Main footer content */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">

@@ -49,15 +49,15 @@ export default function RunnersPage() {
   const getStatusIcon = (status: RunnerData["status"]) => {
     switch (status) {
       case "online":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400" />;
       case "offline":
-        return <PowerOff className="w-4 h-4 text-gray-500" />;
+        return <PowerOff className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
       case "busy":
-        return <Activity className="w-4 h-4 text-yellow-500" />;
+        return <Activity className="w-4 h-4 text-yellow-500 dark:text-yellow-400" />;
       case "maintenance":
-        return <AlertCircle className="w-4 h-4 text-orange-500" />;
+        return <AlertCircle className="w-4 h-4 text-orange-500 dark:text-orange-400" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-400" />;
+        return <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />;
     }
   };
 
@@ -385,11 +385,11 @@ function StatCard({
           className={cn(
             "w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center",
             variant === "success"
-              ? "bg-green-500/10 text-green-500"
+              ? "bg-green-500/10 text-green-500 dark:text-green-400"
               : variant === "warning"
-                ? "bg-yellow-500/10 text-yellow-500"
+                ? "bg-yellow-500/10 text-yellow-500 dark:text-yellow-400"
                 : variant === "error"
-                  ? "bg-red-500/10 text-red-500"
+                  ? "bg-red-500/10 text-red-500 dark:text-red-400"
                   : "bg-primary/10 text-primary"
           )}
         >
@@ -472,7 +472,7 @@ function AddRunnerModal({
                   {generatedToken}
                 </code>
                 <Button variant="outline" size="sm" onClick={copyToken} className="flex-shrink-0">
-                  {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  {copied ? <Check className="w-4 h-4 text-green-500 dark:text-green-400" /> : <Copy className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
@@ -482,19 +482,19 @@ function AddRunnerModal({
               <label className="block text-sm font-medium mb-2">
                 {t("runners.addRunnerModal.usageTitle")}
               </label>
-              <div className="bg-zinc-900 dark:bg-zinc-950 rounded-lg p-4 relative">
-                <div className="flex items-center gap-2 text-zinc-400 text-xs mb-2">
+              <div className="bg-muted rounded-lg p-4 relative">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
                   <Terminal className="w-4 h-4" />
                   <span>Terminal</span>
                 </div>
-                <code className="text-green-400 text-sm font-mono block">
+                <code className="text-green-600 dark:text-green-400 text-sm font-mono block">
                   agentsmesh-runner --token {generatedToken.substring(0, 16)}...
                 </code>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={copyCommand}
-                  className="absolute top-2 right-2 h-7 text-xs text-zinc-400 hover:text-white"
+                  className="absolute top-2 right-2 h-7 text-xs text-muted-foreground hover:text-foreground"
                 >
                   {t("runners.addRunnerModal.copyCommand")}
                 </Button>

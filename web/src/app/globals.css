@@ -1,6 +1,40 @@
 @import "tailwindcss";
 
+/* Light Theme (default) */
 :root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #0ea5e9;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #0ea5e9;
+
+  /* Terminal colors (VS Code style for light theme) */
+  --terminal-bg: #1e1e1e;
+  --terminal-bg-secondary: #252526;
+  --terminal-bg-hover: #2a2d2e;
+  --terminal-bg-active: #37373d;
+  --terminal-border: #3c3c3c;
+  --terminal-text: #cccccc;
+  --terminal-text-muted: #808080;
+  --terminal-text-active: #ffffff;
+}
+
+/* Dark Theme */
+.dark {
   --background: #0a0a0a;
   --foreground: #ededed;
   --card: #0a0a0a;
@@ -20,6 +54,82 @@
   --border: #262626;
   --input: #262626;
   --ring: #22d3ee;
+
+  /* Terminal colors (VS Code style) */
+  --terminal-bg: #1e1e1e;
+  --terminal-bg-secondary: #252526;
+  --terminal-bg-hover: #2a2d2e;
+  --terminal-bg-active: #37373d;
+  --terminal-border: #3c3c3c;
+  --terminal-text: #cccccc;
+  --terminal-text-muted: #808080;
+  --terminal-text-active: #ffffff;
+}
+
+/* Solarized Light Theme */
+.solarized-light {
+  --background: #fdf6e3;
+  --foreground: #657b83;
+  --card: #fdf6e3;
+  --card-foreground: #657b83;
+  --popover: #fdf6e3;
+  --popover-foreground: #657b83;
+  --primary: #268bd2;
+  --primary-foreground: #fdf6e3;
+  --secondary: #eee8d5;
+  --secondary-foreground: #657b83;
+  --muted: #eee8d5;
+  --muted-foreground: #93a1a1;
+  --accent: #eee8d5;
+  --accent-foreground: #657b83;
+  --destructive: #dc322f;
+  --destructive-foreground: #fdf6e3;
+  --border: #eee8d5;
+  --input: #eee8d5;
+  --ring: #268bd2;
+
+  /* Terminal colors (Solarized Dark style for terminal) */
+  --terminal-bg: #002b36;
+  --terminal-bg-secondary: #073642;
+  --terminal-bg-hover: #094858;
+  --terminal-bg-active: #0b5a6e;
+  --terminal-border: #586e75;
+  --terminal-text: #839496;
+  --terminal-text-muted: #586e75;
+  --terminal-text-active: #93a1a1;
+}
+
+/* Solarized Dark Theme */
+.solarized-dark {
+  --background: #002b36;
+  --foreground: #839496;
+  --card: #002b36;
+  --card-foreground: #839496;
+  --popover: #002b36;
+  --popover-foreground: #839496;
+  --primary: #268bd2;
+  --primary-foreground: #002b36;
+  --secondary: #073642;
+  --secondary-foreground: #839496;
+  --muted: #073642;
+  --muted-foreground: #586e75;
+  --accent: #073642;
+  --accent-foreground: #839496;
+  --destructive: #dc322f;
+  --destructive-foreground: #839496;
+  --border: #073642;
+  --input: #073642;
+  --ring: #268bd2;
+
+  /* Terminal colors (Solarized Dark style) */
+  --terminal-bg: #002b36;
+  --terminal-bg-secondary: #073642;
+  --terminal-bg-hover: #094858;
+  --terminal-bg-active: #0b5a6e;
+  --terminal-border: #586e75;
+  --terminal-text: #839496;
+  --terminal-text-muted: #586e75;
+  --terminal-text-active: #93a1a1;
 }
 
 @theme inline {
@@ -42,6 +152,15 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* Terminal colors */
+  --color-terminal-bg: var(--terminal-bg);
+  --color-terminal-bg-secondary: var(--terminal-bg-secondary);
+  --color-terminal-bg-hover: var(--terminal-bg-hover);
+  --color-terminal-bg-active: var(--terminal-bg-active);
+  --color-terminal-border: var(--terminal-border);
+  --color-terminal-text: var(--terminal-text);
+  --color-terminal-text-muted: var(--terminal-text-muted);
+  --color-terminal-text-active: var(--terminal-text-active);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --radius-lg: 0.5rem;

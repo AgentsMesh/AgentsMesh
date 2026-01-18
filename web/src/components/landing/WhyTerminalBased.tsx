@@ -77,9 +77,9 @@ export function WhyTerminalBased() {
 
         {/* Comparison table */}
         <div className="max-w-4xl mx-auto">
-          <div className="bg-[#0d0d0d] rounded-xl border border-border overflow-hidden">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
             {/* Table header */}
-            <div className="grid grid-cols-3 bg-[#1a1a1a] border-b border-border">
+            <div className="grid grid-cols-3 bg-muted border-b border-border">
               <div className="p-4 font-semibold text-sm"></div>
               <div className="p-4 font-semibold text-sm text-center text-muted-foreground">
                 {t("landing.whyTerminal.comparison.idePlugins")}
@@ -102,14 +102,14 @@ export function WhyTerminalBased() {
                 <div className="p-4 font-medium text-sm">{row.feature}</div>
                 <div className="p-4 text-sm text-center text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
-                    <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                     {row.ide}
                   </span>
                 </div>
                 <div className="p-4 text-sm text-center">
-                  <span className="inline-flex items-center gap-1 text-green-400">
+                  <span className="inline-flex items-center gap-1 text-green-500 dark:text-green-400">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>

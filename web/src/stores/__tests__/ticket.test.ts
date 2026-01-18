@@ -270,8 +270,8 @@ describe('Ticket Store Helper Functions', () => {
       const info = getStatusInfo('backlog')
       expect(info).toEqual({
         label: 'Backlog',
-        color: 'text-gray-600',
-        bgColor: 'bg-gray-100',
+        color: 'text-gray-600 dark:text-gray-400',
+        bgColor: 'bg-gray-100 dark:bg-gray-800',
       })
     })
 
@@ -279,8 +279,8 @@ describe('Ticket Store Helper Functions', () => {
       const info = getStatusInfo('todo')
       expect(info).toEqual({
         label: 'To Do',
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-100',
+        color: 'text-blue-600 dark:text-blue-400',
+        bgColor: 'bg-blue-100 dark:bg-blue-900/30',
       })
     })
 
@@ -288,8 +288,8 @@ describe('Ticket Store Helper Functions', () => {
       const info = getStatusInfo('in_progress')
       expect(info).toEqual({
         label: 'In Progress',
-        color: 'text-yellow-600',
-        bgColor: 'bg-yellow-100',
+        color: 'text-yellow-600 dark:text-yellow-400',
+        bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
       })
     })
 
@@ -297,8 +297,8 @@ describe('Ticket Store Helper Functions', () => {
       const info = getStatusInfo('in_review')
       expect(info).toEqual({
         label: 'In Review',
-        color: 'text-purple-600',
-        bgColor: 'bg-purple-100',
+        color: 'text-purple-600 dark:text-purple-400',
+        bgColor: 'bg-purple-100 dark:bg-purple-900/30',
       })
     })
 
@@ -306,8 +306,8 @@ describe('Ticket Store Helper Functions', () => {
       const info = getStatusInfo('done')
       expect(info).toEqual({
         label: 'Done',
-        color: 'text-green-600',
-        bgColor: 'bg-green-100',
+        color: 'text-green-600 dark:text-green-400',
+        bgColor: 'bg-green-100 dark:bg-green-900/30',
       })
     })
 
@@ -315,8 +315,8 @@ describe('Ticket Store Helper Functions', () => {
       const info = getStatusInfo('cancelled')
       expect(info).toEqual({
         label: 'Cancelled',
-        color: 'text-red-600',
-        bgColor: 'bg-red-100',
+        color: 'text-red-600 dark:text-red-400',
+        bgColor: 'bg-red-100 dark:bg-red-900/30',
       })
     })
   })
@@ -326,7 +326,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getPriorityInfo('none')
       expect(info).toEqual({
         label: 'None',
-        color: 'text-gray-400',
+        color: 'text-gray-400 dark:text-gray-500',
         icon: '—',
       })
     })
@@ -335,7 +335,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getPriorityInfo('low')
       expect(info).toEqual({
         label: 'Low',
-        color: 'text-green-500',
+        color: 'text-green-500 dark:text-green-400',
         icon: '↓',
       })
     })
@@ -344,7 +344,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getPriorityInfo('medium')
       expect(info).toEqual({
         label: 'Medium',
-        color: 'text-yellow-500',
+        color: 'text-yellow-500 dark:text-yellow-400',
         icon: '→',
       })
     })
@@ -353,7 +353,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getPriorityInfo('high')
       expect(info).toEqual({
         label: 'High',
-        color: 'text-orange-500',
+        color: 'text-orange-500 dark:text-orange-400',
         icon: '↑',
       })
     })
@@ -362,7 +362,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getPriorityInfo('urgent')
       expect(info).toEqual({
         label: 'Urgent',
-        color: 'text-red-500',
+        color: 'text-red-500 dark:text-red-400',
         icon: '⚡',
       })
     })
@@ -373,7 +373,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getTypeInfo('task')
       expect(info).toEqual({
         label: 'Task',
-        color: 'text-blue-500',
+        color: 'text-blue-500 dark:text-blue-400',
         icon: '✓',
       })
     })
@@ -382,7 +382,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getTypeInfo('bug')
       expect(info).toEqual({
         label: 'Bug',
-        color: 'text-red-500',
+        color: 'text-red-500 dark:text-red-400',
         icon: '🐛',
       })
     })
@@ -391,7 +391,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getTypeInfo('feature')
       expect(info).toEqual({
         label: 'Feature',
-        color: 'text-green-500',
+        color: 'text-green-500 dark:text-green-400',
         icon: '✨',
       })
     })
@@ -400,7 +400,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getTypeInfo('epic')
       expect(info).toEqual({
         label: 'Epic',
-        color: 'text-purple-500',
+        color: 'text-purple-500 dark:text-purple-400',
         icon: '⚡',
       })
     })
@@ -409,7 +409,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getTypeInfo('subtask')
       expect(info).toEqual({
         label: 'Subtask',
-        color: 'text-gray-500',
+        color: 'text-gray-500 dark:text-gray-400',
         icon: '◦',
       })
     })
@@ -418,7 +418,7 @@ describe('Ticket Store Helper Functions', () => {
       const info = getTypeInfo('story')
       expect(info).toEqual({
         label: 'Story',
-        color: 'text-teal-500',
+        color: 'text-teal-500 dark:text-teal-400',
         icon: '📖',
       })
     })

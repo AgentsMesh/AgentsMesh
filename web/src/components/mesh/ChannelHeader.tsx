@@ -27,7 +27,7 @@ export function ChannelHeader({
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-            <Radio className="w-4 h-4 text-blue-500" />
+            <Radio className="w-4 h-4 text-blue-500 dark:text-blue-400" />
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-sm truncate">#{name}</h3>

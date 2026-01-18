@@ -108,7 +108,7 @@ export function SeatManagement({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-medium text-green-600">
+            <div className="text-lg font-medium text-green-600 dark:text-green-400">
               {seatUsage.available_seats}
             </div>
             <div className="text-sm text-muted-foreground">

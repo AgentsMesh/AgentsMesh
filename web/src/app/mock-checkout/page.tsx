@@ -120,10 +120,10 @@ export default function MockCheckoutPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading checkout...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading checkout...</p>
         </div>
       </div>
     );
@@ -131,12 +131,12 @@ export default function MockCheckoutPage() {
 
   if (error && !session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="bg-card p-8 rounded-lg shadow-md max-w-md w-full border border-border">
           <div className="text-center">
-            <div className="text-red-500 text-5xl mb-4">⚠️</div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">Checkout Error</h1>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="text-destructive text-5xl mb-4">⚠️</div>
+            <h1 className="text-xl font-semibold text-foreground mb-2">Checkout Error</h1>
+            <p className="text-muted-foreground mb-6">{error}</p>
             <Button variant="outline" onClick={() => router.back()}>
               Go Back
             </Button>
@@ -148,12 +148,12 @@ export default function MockCheckoutPage() {
 
   if (session?.status === "succeeded") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="bg-card p-8 rounded-lg shadow-md max-w-md w-full border border-border">
           <div className="text-center">
-            <div className="text-green-500 text-5xl mb-4">✓</div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">Payment Successful!</h1>
-            <p className="text-gray-600 mb-6">Your payment has been processed successfully.</p>
+            <div className="text-green-500 dark:text-green-400 text-5xl mb-4">✓</div>
+            <h1 className="text-xl font-semibold text-foreground mb-2">Payment Successful!</h1>
+            <p className="text-muted-foreground mb-6">Your payment has been processed successfully.</p>
             {successUrl && (
               <Button onClick={() => router.push(successUrl)}>
                 Continue
@@ -166,41 +166,41 @@ export default function MockCheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="bg-card p-8 rounded-lg shadow-md max-w-md w-full border border-border">
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="bg-yellow-100 text-yellow-800 text-xs font-medium px-3 py-1 rounded-full inline-block mb-4">
+          <div className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-xs font-medium px-3 py-1 rounded-full inline-block mb-4">
             🧪 TEST MODE
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Mock Checkout</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Mock Checkout</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             This is a simulated payment page for testing
           </p>
         </div>
 
         {/* Order Details */}
         {session && (
-          <div className="border border-gray-200 rounded-lg p-4 mb-6">
-            <h2 className="font-semibold text-gray-900 mb-3">Order Details</h2>
+          <div className="border border-border rounded-lg p-4 mb-6">
+            <h2 className="font-semibold text-foreground mb-3">Order Details</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Type:</span>
+                <span className="text-muted-foreground">Type:</span>
                 <span className="font-medium">{session.order_type}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Amount:</span>
+                <span className="text-muted-foreground">Amount:</span>
                 <span className="font-medium">
                   {session.currency.toUpperCase()} {session.amount.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Session ID:</span>
+                <span className="text-muted-foreground">Session ID:</span>
                 <span className="font-mono text-xs">{session.session_id.slice(0, 20)}...</span>
               </div>
               {orderNo && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Order No:</span>
+                  <span className="text-muted-foreground">Order No:</span>
                   <span className="font-mono text-xs">{orderNo}</span>
                 </div>
               )}
@@ -210,16 +210,16 @@ export default function MockCheckoutPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm">
+          <div className="bg-destructive/10 text-destructive p-3 rounded-lg mb-4 text-sm">
             {error}
           </div>
         )}
 
         {/* Simulated Card Input */}
-        <div className="border border-gray-200 rounded-lg p-4 mb-6 bg-gray-50">
-          <p className="text-sm text-gray-500 mb-2">Test Card Number</p>
-          <div className="font-mono text-lg text-gray-900">4242 4242 4242 4242</div>
-          <p className="text-xs text-gray-400 mt-2">
+        <div className="border border-border rounded-lg p-4 mb-6 bg-muted">
+          <p className="text-sm text-muted-foreground mb-2">Test Card Number</p>
+          <div className="font-mono text-lg text-foreground">4242 4242 4242 4242</div>
+          <p className="text-xs text-muted-foreground/70 mt-2">
             Use any future date for expiry and any 3 digits for CVC
           </p>
         </div>
@@ -245,7 +245,7 @@ export default function MockCheckoutPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <p className="text-center text-xs text-muted-foreground mt-6">
           This is a mock checkout page. No real payment will be processed.
         </p>
       </div>

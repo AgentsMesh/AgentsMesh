@@ -19,11 +19,11 @@ interface TerminalGridProps {
  */
 function EmptyPaneSlot({ onAddNew }: { onAddNew?: () => void }) {
   return (
-    <div className="flex items-center justify-center h-full bg-[#252526] rounded-lg border border-dashed border-[#3c3c3c]">
+    <div className="flex items-center justify-center h-full bg-terminal-bg-secondary rounded-lg border border-dashed border-terminal-border">
       {onAddNew && (
         <Button
           variant="ghost"
-          className="text-[#808080] hover:text-[#cccccc] hover:bg-[#3c3c3c]"
+          className="text-terminal-text-muted hover:text-terminal-text hover:bg-terminal-bg-active"
           onClick={onAddNew}
         >
           <Plus className="w-5 h-5 mr-2" />
@@ -102,11 +102,11 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
   // 空状态
   if (panes.length === 0) {
     return (
-      <div className={cn("flex-1 flex items-center justify-center bg-[#1e1e1e]", className)}>
+      <div className={cn("flex-1 flex items-center justify-center bg-terminal-bg", className)}>
         <div className="text-center">
-          <TerminalIcon className="w-16 h-16 mx-auto mb-4 text-[#3c3c3c]" />
-          <h3 className="text-lg font-medium text-[#cccccc] mb-2">No terminals open</h3>
-          <p className="text-sm text-[#808080] mb-4">
+          <TerminalIcon className="w-16 h-16 mx-auto mb-4 text-terminal-border" />
+          <h3 className="text-lg font-medium text-terminal-text mb-2">No terminals open</h3>
+          <p className="text-sm text-terminal-text-muted mb-4">
             Open a pod to start a terminal session
           </p>
           {onAddNew && (
@@ -126,7 +126,7 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
   // 1x1 布局 - 单窗口
   if (gridLayout.type === "1x1") {
     return (
-      <div className={cn("flex-1 p-1 bg-[#1e1e1e]", className)}>
+      <div className={cn("flex-1 p-1 bg-terminal-bg", className)}>
         {renderPane(0)}
       </div>
     );
@@ -139,7 +139,7 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
       <Group
         key="layout-1x2"
         orientation="horizontal"
-        className={cn("flex-1 p-1 bg-[#1e1e1e]", className)}
+        className={cn("flex-1 p-1 bg-terminal-bg", className)}
       >
         <Panel defaultSize={50} minSize={20}>
           {renderPane(0)}
@@ -158,7 +158,7 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
       <Group
         key="layout-2x1"
         orientation="vertical"
-        className={cn("flex-1 p-1 bg-[#1e1e1e]", className)}
+        className={cn("flex-1 p-1 bg-terminal-bg", className)}
       >
         <Panel defaultSize={50} minSize={20}>
           {renderPane(0)}
@@ -177,7 +177,7 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
       <Group
         key="layout-2x2"
         orientation="vertical"
-        className={cn("flex-1 p-1 bg-[#1e1e1e]", className)}
+        className={cn("flex-1 p-1 bg-terminal-bg", className)}
       >
         <Panel defaultSize={50} minSize={20}>
           <Group orientation="horizontal" className="h-full">
@@ -208,7 +208,7 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
 
   // Fallback: 使用 1x1 布局
   return (
-    <div className={cn("flex-1 p-1 bg-[#1e1e1e]", className)}>
+    <div className={cn("flex-1 p-1 bg-terminal-bg", className)}>
       {renderPane(0)}
     </div>
   );

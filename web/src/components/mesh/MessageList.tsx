@@ -155,7 +155,7 @@ export function MessageList({
               <code>{message.content}</code>
             </pre>
           ) : isCommand ? (
-            <div className="mt-1 p-2 bg-black text-green-400 rounded-md text-sm font-mono">
+            <div className="mt-1 p-2 bg-muted rounded-md text-sm font-mono text-green-600 dark:text-green-400">
               $ {message.content}
             </div>
           ) : (

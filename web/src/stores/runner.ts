@@ -162,22 +162,22 @@ export const getRunnerStatusInfo = (status: RunnerStatus) => {
   > = {
     online: {
       label: "Online",
-      color: "text-green-600",
+      color: "text-green-600 dark:text-green-400",
       dotColor: "bg-green-500",
     },
     offline: {
       label: "Offline",
-      color: "text-gray-500",
+      color: "text-gray-500 dark:text-gray-400",
       dotColor: "bg-gray-400",
     },
     maintenance: {
       label: "Maintenance",
-      color: "text-yellow-600",
+      color: "text-yellow-600 dark:text-yellow-400",
       dotColor: "bg-yellow-500",
     },
     busy: {
       label: "Busy",
-      color: "text-orange-600",
+      color: "text-orange-600 dark:text-orange-400",
       dotColor: "bg-orange-500",
     },
   };

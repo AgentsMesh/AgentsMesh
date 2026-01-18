@@ -162,7 +162,7 @@ export function CheckoutFlow({
                     <div className="font-medium flex items-center gap-2">
                       {t("billing.checkout.yearly")}
                       {getAnnualSavings() > 0 && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                        <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded">
                           {t("billing.checkout.save", {
                             amount: getAnnualSavings().toFixed(0),
                           })}

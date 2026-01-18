@@ -280,7 +280,7 @@ export function AgentCredentialsSettings() {
         </div>
       )}
       {success && (
-        <div className="bg-green-500/15 text-green-600 text-sm p-3 rounded-md">
+        <div className="bg-green-500/15 text-green-600 dark:text-green-400 text-sm p-3 rounded-md">
           {success}
         </div>
       )}

@@ -15,11 +15,11 @@ interface KanbanBoardProps {
 }
 
 const statusConfig: { status: Status; labelKey: string; color: string }[] = [
-  { status: "backlog", labelKey: "tickets.status.backlog", color: "border-gray-300" },
-  { status: "todo", labelKey: "tickets.status.todo", color: "border-blue-300" },
-  { status: "in_progress", labelKey: "tickets.status.in_progress", color: "border-yellow-300" },
-  { status: "in_review", labelKey: "tickets.status.in_review", color: "border-purple-300" },
-  { status: "done", labelKey: "tickets.status.done", color: "border-green-300" },
+  { status: "backlog", labelKey: "tickets.status.backlog", color: "border-gray-300 dark:border-gray-600" },
+  { status: "todo", labelKey: "tickets.status.todo", color: "border-blue-300 dark:border-blue-600" },
+  { status: "in_progress", labelKey: "tickets.status.in_progress", color: "border-yellow-300 dark:border-yellow-600" },
+  { status: "in_review", labelKey: "tickets.status.in_review", color: "border-purple-300 dark:border-purple-600" },
+  { status: "done", labelKey: "tickets.status.done", color: "border-green-300 dark:border-green-600" },
 ];
 
 export function KanbanBoard({

@@ -63,7 +63,7 @@ export default function MeshPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-blue-500">#</span>
+                <span className="text-blue-500 dark:text-blue-400">#</span>
                 <span className="text-muted-foreground">
                   {t("mesh.page.channelsCount", { count: activeChannelCount })}
                 </span>

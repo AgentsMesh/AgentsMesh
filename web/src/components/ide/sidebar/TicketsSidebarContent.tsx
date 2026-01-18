@@ -37,12 +37,12 @@ interface TicketsSidebarContentProps {
 
 // Status icons
 const statusIcons: Record<TicketStatus, React.ReactNode> = {
-  backlog: <Circle className="w-3 h-3 text-gray-400" />,
-  todo: <Circle className="w-3 h-3 text-blue-500" />,
-  in_progress: <Clock className="w-3 h-3 text-yellow-500" />,
-  in_review: <AlertCircle className="w-3 h-3 text-purple-500" />,
-  done: <CheckCircle2 className="w-3 h-3 text-green-500" />,
-  cancelled: <XCircle className="w-3 h-3 text-gray-400" />,
+  backlog: <Circle className="w-3 h-3 text-gray-400 dark:text-gray-500" />,
+  todo: <Circle className="w-3 h-3 text-blue-500 dark:text-blue-400" />,
+  in_progress: <Clock className="w-3 h-3 text-yellow-500 dark:text-yellow-400" />,
+  in_review: <AlertCircle className="w-3 h-3 text-purple-500 dark:text-purple-400" />,
+  done: <CheckCircle2 className="w-3 h-3 text-green-500 dark:text-green-400" />,
+  cancelled: <XCircle className="w-3 h-3 text-gray-400 dark:text-gray-500" />,
 };
 
 // Filter options
@@ -426,10 +426,10 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
                       {ticket.identifier}
                     </span>
                     {ticket.priority === "urgent" && (
-                      <span className="text-red-500 text-xs">!</span>
+                      <span className="text-red-500 dark:text-red-400 text-xs">!</span>
                     )}
                     {ticket.priority === "high" && (
-                      <span className="text-orange-500 text-xs">!!</span>
+                      <span className="text-orange-500 dark:text-orange-400 text-xs">!!</span>
                     )}
                   </div>
                   <p className="text-sm truncate">{ticket.title}</p>

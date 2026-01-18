@@ -39,11 +39,11 @@ interface WorkspaceSidebarContentProps {
 
 // Status badge colors - matches PodData status type
 const statusColors: Record<string, { bg: string; text: string; dot: string }> = {
-  initializing: { bg: "bg-yellow-500/10", text: "text-yellow-600", dot: "bg-yellow-500" },
-  running: { bg: "bg-blue-500/10", text: "text-blue-600", dot: "bg-blue-500" },
-  paused: { bg: "bg-orange-500/10", text: "text-orange-600", dot: "bg-orange-500" },
-  terminated: { bg: "bg-gray-500/10", text: "text-gray-600", dot: "bg-gray-500" },
-  failed: { bg: "bg-red-500/10", text: "text-red-600", dot: "bg-red-500" },
+  initializing: { bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400", dot: "bg-yellow-500" },
+  running: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", dot: "bg-blue-500" },
+  paused: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", dot: "bg-orange-500" },
+  terminated: { bg: "bg-gray-500/10", text: "text-gray-600 dark:text-gray-400", dot: "bg-gray-500" },
+  failed: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", dot: "bg-red-500" },
 };
 
 type FilterType = "all" | "running" | "completed";

@@ -141,7 +141,7 @@ export function BillingCycleSwitch({
         >
           {t("billing.cycleSwitch.yearly")}
           {currentCycle === "monthly" && (
-            <span className="ml-2 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+            <span className="ml-2 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded">
               {t("billing.cycleSwitch.saveNote")}
             </span>
           )}

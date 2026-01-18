@@ -237,14 +237,14 @@ export function HeroSection() {
 
   const getLineStyle = (type: string) => {
     switch (type) {
-      case "user": return "text-blue-400";
+      case "user": return "text-blue-500 dark:text-blue-400";
       case "assistant": return "text-foreground";
       case "system": return "text-muted-foreground";
-      case "tool": return "text-yellow-400";
-      case "success": return "text-green-400";
+      case "tool": return "text-yellow-500 dark:text-yellow-400";
+      case "success": return "text-green-500 dark:text-green-400";
       case "observe-header": return "text-primary font-bold";
-      case "observe": return "text-cyan-300";
-      case "message-sent": return "text-purple-400";
+      case "observe": return "text-cyan-500 dark:text-cyan-300";
+      case "message-sent": return "text-purple-500 dark:text-purple-400";
       default: return "text-muted-foreground";
     }
   };
@@ -256,10 +256,10 @@ export function HeroSection() {
 
       {/* Grid pattern */}
       <div
-        className="absolute inset-0 opacity-[0.02]"
+        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]"
         style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px),
+                           linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
           backgroundSize: '50px 50px'
         }}
       />
@@ -322,9 +322,9 @@ export function HeroSection() {
             <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full opacity-20" />
 
             {/* Claude Code TUI Window */}
-            <div className="relative bg-[#0d0d0d] rounded-xl border border-border overflow-hidden shadow-2xl">
+            <div className="relative bg-card rounded-xl border border-border overflow-hidden shadow-2xl">
               {/* TUI Header */}
-              <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a1a] border-b border-border">
+              <div className="flex items-center justify-between px-4 py-2 bg-muted border-b border-border">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500/80" />
@@ -335,12 +335,12 @@ export function HeroSection() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">MCP</span>
-                  <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded">AgentsMesh</span>
+                  <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded">AgentsMesh</span>
                 </div>
               </div>
 
               {/* Pod Info Bar */}
-              <div className="px-4 py-1.5 bg-[#141414] border-b border-border text-xs font-mono text-muted-foreground">
+              <div className="px-4 py-1.5 bg-muted/70 border-b border-border text-xs font-mono text-muted-foreground">
                 {t(`landing.heroDemo.podInfo.${currentFrame.content.podInfoKey}`)}
               </div>
 
@@ -353,7 +353,7 @@ export function HeroSection() {
                       key={`${currentFrameIndex}-${index}`}
                       className={`${getLineStyle(line.type)} ${lineText ? '' : 'h-4'}`}
                     >
-                      {line.type === "user" && <span className="text-blue-500 mr-2">❯</span>}
+                      {line.type === "user" && <span className="text-blue-500 dark:text-blue-400 mr-2">❯</span>}
                       {line.type === "assistant" && <span className="text-primary mr-2">●</span>}
                       {lineText}
                     </div>
@@ -365,7 +365,7 @@ export function HeroSection() {
               </div>
 
               {/* Input Area */}
-              <div className="px-4 py-2 bg-[#141414] border-t border-border">
+              <div className="px-4 py-2 bg-muted/70 border-t border-border">
                 <div className="flex items-center gap-2 text-sm font-mono">
                   <span className="text-primary">❯</span>
                   <span className="text-muted-foreground">{t("landing.heroDemo.typeMessage")}</span>
@@ -375,11 +375,11 @@ export function HeroSection() {
             </div>
 
             {/* Topology visualization */}
-            <div className="relative bg-[#0d0d0d] rounded-xl border border-border overflow-hidden">
-              <div className="px-4 py-2 bg-[#1a1a1a] border-b border-border flex items-center justify-between">
+            <div className="relative bg-card rounded-xl border border-border overflow-hidden">
+              <div className="px-4 py-2 bg-muted border-b border-border flex items-center justify-between">
                 <span className="text-xs font-mono text-muted-foreground">{t("landing.heroDemo.podTopology")}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-green-400">● {t("landing.heroDemo.live")}</span>
+                  <span className="text-xs text-green-500 dark:text-green-400">● {t("landing.heroDemo.live")}</span>
                 </div>
               </div>
 
@@ -388,7 +388,7 @@ export function HeroSection() {
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
                   <defs>
                     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                      <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" opacity="0.8" />
+                      <polygon points="0 0, 10 3.5, 0 7" className="fill-primary" opacity="0.8" />
                     </marker>
                   </defs>
                   {topology.connections.map((conn, i) => {
@@ -406,20 +406,18 @@ export function HeroSection() {
                           y1={`${fromNode.y}%`}
                           x2={`${toNode.x - 8}%`}
                           y2={`${toNode.y}%`}
-                          stroke="#22d3ee"
+                          className={`stroke-primary ${conn.animated ? "animate-pulse" : ""}`}
                           strokeWidth="2"
                           strokeDasharray={conn.type === "message" ? "5,5" : "0"}
                           markerEnd="url(#arrowhead)"
                           opacity="0.6"
-                          className={conn.animated ? "animate-pulse" : ""}
                         />
                         <text
                           x={`${midX}%`}
                           y={`${midY - 8}%`}
-                          fill="#a1a1aa"
+                          className="fill-muted-foreground font-mono"
                           fontSize="10"
                           textAnchor="middle"
-                          className="font-mono"
                         >
                           {conn.label}
                         </text>
@@ -435,7 +433,7 @@ export function HeroSection() {
                     className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out"
                     style={{ left: `${node.x}%`, top: `${node.y}%`, zIndex: 2 }}
                   >
-                    <div className="px-3 py-2 bg-[#1a1a1a] border border-primary/40 rounded-lg shadow-lg shadow-primary/10 min-w-[110px]">
+                    <div className="px-3 py-2 bg-muted border border-primary/40 rounded-lg shadow-lg shadow-primary/10 min-w-[110px]">
                       <div className="flex items-center gap-2 mb-1">
                         <div className={`w-2 h-2 rounded-full ${node.status === "running" ? "bg-green-500 animate-pulse" : "bg-gray-500"}`} />
                         <span className="text-xs font-mono text-primary font-semibold">{node.label}</span>

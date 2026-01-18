@@ -16,8 +16,11 @@ import {
   Moon,
   Sun,
   Monitor,
+  Palette,
+  Check,
   type LucideIcon,
 } from "lucide-react";
+import { themeConfigs, type Theme } from "@/lib/theme";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   server: Server,
@@ -39,21 +42,22 @@ export function MobileMoreMenu({ className }: MobileMoreMenuProps) {
 
   const moreActivities = getMoreMenuActivities();
 
-  const getThemeIcon = () => {
-    switch (theme) {
-      case "light":
-        return <Sun className="w-5 h-5" />;
-      case "dark":
-        return <Moon className="w-5 h-5" />;
-      default:
-        return <Monitor className="w-5 h-5" />;
-    }
+  const [themeMenuOpen, setThemeMenuOpen] = React.useState(false);
+
+  const themeIconMap = {
+    sun: Sun,
+    moon: Moon,
+    monitor: Monitor,
+    palette: Palette,
   };
 
-  const cycleTheme = () => {
-    if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("system");
-    else setTheme("light");
+  const getThemeIcon = () => {
+    const config = themeConfigs.find((c) => c.id === theme);
+    if (config) {
+      const Icon = themeIconMap[config.icon];
+      return <Icon className="w-5 h-5" />;
+    }
+    return <Monitor className="w-5 h-5" />;
   };
 
   const getActivityRoute = (activity: ActivityType): string => {
@@ -161,20 +165,52 @@ export function MobileMoreMenu({ className }: MobileMoreMenuProps) {
             <div className="h-px bg-border my-2 mx-4" />
 
             {/* Theme toggle */}
-            <button
-              className="w-full flex items-center justify-between gap-4 px-4 py-3 rounded-lg hover:bg-muted active:bg-muted transition-colors"
-              onClick={cycleTheme}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  {getThemeIcon()}
+            <div className="relative">
+              <button
+                className="w-full flex items-center justify-between gap-4 px-4 py-3 rounded-lg hover:bg-muted active:bg-muted transition-colors"
+                onClick={() => setThemeMenuOpen(!themeMenuOpen)}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    {getThemeIcon()}
+                  </div>
+                  <span className="text-sm font-medium">{t("mobile.menu.theme")}</span>
                 </div>
-                <span className="text-sm font-medium">{t("mobile.menu.theme")}</span>
-              </div>
-              <span className="text-xs text-muted-foreground capitalize">
-                {t(`mobile.menu.theme_${theme || "system"}`)}
-              </span>
-            </button>
+                <span className="text-xs text-muted-foreground">
+                  {t(`mobile.menu.theme_${theme || "system"}`)}
+                </span>
+              </button>
+
+              {/* Theme submenu */}
+              {themeMenuOpen && (
+                <div className="ml-14 mr-4 mb-2 bg-secondary rounded-lg overflow-hidden">
+                  {themeConfigs.map((config) => {
+                    const Icon = themeIconMap[config.icon];
+                    const isActive = theme === config.id;
+
+                    return (
+                      <button
+                        key={config.id}
+                        className={cn(
+                          "w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors",
+                          isActive && "bg-muted/50"
+                        )}
+                        onClick={() => {
+                          setTheme(config.id as Theme);
+                          setThemeMenuOpen(false);
+                        }}
+                      >
+                        <span className="flex items-center gap-3">
+                          <Icon className="w-4 h-4" />
+                          {t(`mobile.menu.${config.nameKey}`)}
+                        </span>
+                        {isActive && <Check className="w-4 h-4 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Safe area padding */}

@@ -155,8 +155,8 @@ export function CoreFeatures() {
               {/* Visual */}
               <div className={feature.align === "right" ? "lg:order-1" : ""}>
                 {feature.terminal && (
-                  <div className="bg-[#0d0d0d] rounded-xl border border-border overflow-hidden">
-                    <div className="flex items-center gap-2 px-4 py-3 bg-[#1a1a1a] border-b border-border">
+                  <div className="bg-card rounded-xl border border-border overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-3 bg-muted border-b border-border">
                       <div className="flex gap-2">
                         <div className="w-3 h-3 rounded-full bg-red-500/80" />
                         <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
@@ -174,7 +174,7 @@ export function CoreFeatures() {
                             line.startsWith("$")
                               ? "text-primary"
                               : line.startsWith(">")
-                              ? "text-green-400"
+                              ? "text-green-500 dark:text-green-400"
                               : "text-muted-foreground"
                           }
                         >
@@ -186,7 +186,7 @@ export function CoreFeatures() {
                 )}
 
                 {feature.diagram && (
-                  <div className="bg-[#0d0d0d] rounded-xl border border-border p-8">
+                  <div className="bg-card rounded-xl border border-border p-8">
                     <div className="relative h-64">
                       {/* Agent nodes */}
                       <div className="absolute left-[10%] top-[20%] px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg">
@@ -204,16 +204,16 @@ export function CoreFeatures() {
                       </div>
                       {/* Connection lines */}
                       <svg className="absolute inset-0 w-full h-full" style={{ zIndex: -1 }}>
-                        <line x1="25%" y1="40%" x2="50%" y2="70%" stroke="#22d3ee" strokeWidth="2" strokeDasharray="4" opacity="0.5" />
-                        <line x1="75%" y1="40%" x2="50%" y2="70%" stroke="#22d3ee" strokeWidth="2" strokeDasharray="4" opacity="0.5" />
-                        <line x1="30%" y1="30%" x2="70%" y2="30%" stroke="#22d3ee" strokeWidth="1" strokeDasharray="8" opacity="0.3" />
+                        <line x1="25%" y1="40%" x2="50%" y2="70%" stroke="currentColor" strokeWidth="2" strokeDasharray="4" opacity="0.5" className="text-primary" />
+                        <line x1="75%" y1="40%" x2="50%" y2="70%" stroke="currentColor" strokeWidth="2" strokeDasharray="4" opacity="0.5" className="text-primary" />
+                        <line x1="30%" y1="30%" x2="70%" y2="30%" stroke="currentColor" strokeWidth="1" strokeDasharray="8" opacity="0.3" className="text-primary" />
                       </svg>
                     </div>
                   </div>
                 )}
 
                 {feature.kanban && (
-                  <div className="bg-[#0d0d0d] rounded-xl border border-border p-4">
+                  <div className="bg-card rounded-xl border border-border p-4">
                     <div className="grid grid-cols-4 gap-3">
                       {feature.kanban.columns.map((col, i) => (
                         <div key={i} className="bg-secondary/20 rounded-lg p-3">
@@ -224,7 +224,7 @@ export function CoreFeatures() {
                             {col.cards.map((card, j) => (
                               <div
                                 key={j}
-                                className="bg-[#1a1a1a] border border-border rounded p-2 text-xs"
+                                className="bg-muted border border-border rounded p-2 text-xs"
                               >
                                 <div className="font-mono text-primary">{card}</div>
                                 <div className="text-muted-foreground mt-1">{t("landing.coreDemo.kanban.authFeature")}</div>
@@ -243,7 +243,7 @@ export function CoreFeatures() {
                 )}
 
                 {feature.architecture && (
-                  <div className="bg-[#0d0d0d] rounded-xl border border-border p-8">
+                  <div className="bg-card rounded-xl border border-border p-8">
                     <div className="relative">
                       {/* Your Infrastructure box */}
                       <div className="border-2 border-dashed border-primary/30 rounded-xl p-6">

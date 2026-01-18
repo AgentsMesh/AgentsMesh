@@ -146,12 +146,12 @@ export default function RepositoryDetailPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-foreground">{repository.name}</h1>
               {!repository.is_active && (
-                <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 rounded">
                   {t("repositories.inactive")}
                 </span>
               )}
               {repository.visibility === "private" && (
-                <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded">
+                <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded">
                   {t("repositories.repository.private")}
                 </span>
               )}
@@ -237,8 +237,8 @@ export default function RepositoryDetailPage() {
                   <span
                     className={`inline-flex px-2 py-0.5 text-xs rounded ${
                       repository.is_active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-600"
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                     }`}
                   >
                     {repository.is_active ? t("repositories.detail.active") : t("repositories.inactive")}

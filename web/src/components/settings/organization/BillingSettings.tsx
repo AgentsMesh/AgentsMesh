@@ -220,7 +220,7 @@ export function BillingSettings({ t }: BillingSettingsProps) {
     <div className="space-y-6">
       {/* Error Message */}
       {error && (
-        <div className="p-4 rounded-lg bg-red-100 text-red-800 border border-red-200">
+        <div className="p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800">
           {error}
           <button
             className="ml-4 text-sm underline"
@@ -236,8 +236,8 @@ export function BillingSettings({ t }: BillingSettingsProps) {
         <div
           className={`p-4 rounded-lg ${
             paymentMessage.type === "success"
-              ? "bg-green-100 text-green-800 border border-green-200"
-              : "bg-red-100 text-red-800 border border-red-200"
+              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800"
+              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
           }`}
         >
           {paymentMessage.text}
@@ -560,19 +560,19 @@ function PlansDialog({
 
                   <ul className="space-y-2 mb-6 text-sm">
                     <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span>
+                      <span className="text-green-500 dark:text-green-400">✓</span>
                       {formatLimit(plan.included_pod_minutes)} {t("settings.billingPage.plansDialog.podMinutes")}
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span>
+                      <span className="text-green-500 dark:text-green-400">✓</span>
                       {formatLimit(plan.max_users)} {t("settings.billingPage.plansDialog.teamMembers")}
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span>
+                      <span className="text-green-500 dark:text-green-400">✓</span>
                       {formatLimit(plan.max_runners)} {t("settings.billingPage.plansDialog.runners")}
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span>
+                      <span className="text-green-500 dark:text-green-400">✓</span>
                       {formatLimit(plan.max_repositories)} {t("settings.billingPage.plansDialog.repositories")}
                     </li>
                   </ul>

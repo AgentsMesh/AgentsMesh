@@ -259,7 +259,7 @@ export default function GitSettingsPage() {
         </div>
       )}
       {success && (
-        <div className="mb-4 p-4 bg-green-500/10 text-green-600 rounded-lg flex items-center justify-between">
+        <div className="mb-4 p-4 bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg flex items-center justify-between">
           {success}
           <button onClick={() => setSuccess(null)} className="text-sm underline">
             {t("common.close")}
@@ -352,7 +352,7 @@ export default function GitSettingsPage() {
                         </span>
                       )}
                       {!provider.is_active && (
-                        <span className="px-2 py-0.5 text-xs bg-yellow-500/10 text-yellow-600 rounded-full">
+                        <span className="px-2 py-0.5 text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded-full">
                           {t("settings.gitSettings.providers.disabled")}
                         </span>
                       )}
@@ -753,7 +753,7 @@ function EditProviderDialog({
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-transparent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-background after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
           </div>
         </div>

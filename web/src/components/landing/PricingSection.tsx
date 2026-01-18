@@ -123,7 +123,7 @@ export function PricingSection() {
                   <li key={i} className="flex items-center gap-3 text-sm">
                     <svg
                       className={`w-5 h-5 flex-shrink-0 ${
-                        plan.highlighted ? "text-primary" : "text-green-500"
+                        plan.highlighted ? "text-primary" : "text-green-500 dark:text-green-400"
                       }`}
                       fill="none"
                       viewBox="0 0 24 24"

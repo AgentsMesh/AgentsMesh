@@ -807,6 +807,8 @@
       "theme": "테마",
       "theme_light": "라이트",
       "theme_dark": "다크",
+      "theme_solarized_light": "Solarized 라이트",
+      "theme_solarized_dark": "Solarized 다크",
       "theme_system": "시스템"
     }
   }

@@ -84,7 +84,7 @@ runner run`,
                 <div className="hidden lg:block absolute top-16 left-full w-full h-px bg-gradient-to-r from-primary/50 to-transparent z-0" />
               )}
 
-              <div className="relative bg-[#0d0d0d] rounded-xl border border-border p-6 h-full">
+              <div className="relative bg-card rounded-xl border border-border p-6 h-full">
                 {/* Step number */}
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
@@ -97,7 +97,7 @@ runner run`,
                 <p className="text-muted-foreground text-sm mb-4">{step.description}</p>
 
                 {/* Code block */}
-                <div className="bg-[#1a1a1a] rounded-lg p-4 font-mono text-xs overflow-x-auto">
+                <div className="bg-muted rounded-lg p-4 font-mono text-xs overflow-x-auto">
                   <pre className="text-muted-foreground whitespace-pre-wrap">{step.code}</pre>
                 </div>
               </div>

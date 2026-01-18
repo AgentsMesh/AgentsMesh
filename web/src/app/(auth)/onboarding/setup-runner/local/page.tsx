@@ -140,9 +140,9 @@ export default function LocalRunnerSetupPage() {
 
           {/* Success Icon */}
           <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <svg
-                className="w-8 h-8 text-green-600"
+                className="w-8 h-8 text-green-600 dark:text-green-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -184,7 +184,7 @@ export default function LocalRunnerSetupPage() {
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("auth.onboarding.localRunner.status")}:</span>
-                <span className="text-green-600 font-medium">{t("auth.onboarding.localRunner.online")}</span>
+                <span className="text-green-600 dark:text-green-400 font-medium">{t("auth.onboarding.localRunner.online")}</span>
               </div>
             </div>
           </div>
@@ -263,7 +263,7 @@ export default function LocalRunnerSetupPage() {
                       className="flex-shrink-0"
                     >
                       {tokenCopied ? (
-                        <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       ) : (
@@ -273,7 +273,7 @@ export default function LocalRunnerSetupPage() {
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
                     {t("auth.onboarding.localRunner.tokenWarning")}
                   </p>
                 </div>
@@ -337,8 +337,8 @@ runner run`}
                 </div>
               )}
               {connectionStatus === "timeout" && (
-                <div className="p-4 border border-amber-500/50 bg-amber-50 rounded-md">
-                  <p className="text-sm text-amber-800">
+                <div className="p-4 border border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 rounded-md">
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
                     {t("auth.onboarding.localRunner.connectionTimeout")}
                   </p>
                   <Button

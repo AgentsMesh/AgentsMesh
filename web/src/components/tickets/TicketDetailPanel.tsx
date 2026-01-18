@@ -44,28 +44,28 @@ export interface TicketDetailPanelProps {
 }
 
 const statusConfig: Record<TicketStatus, { label: string; color: string; bg: string }> = {
-  backlog: { label: "Backlog", color: "text-gray-600", bg: "bg-gray-100" },
-  todo: { label: "To Do", color: "text-blue-600", bg: "bg-blue-100" },
-  in_progress: { label: "In Progress", color: "text-yellow-600", bg: "bg-yellow-100" },
-  in_review: { label: "In Review", color: "text-purple-600", bg: "bg-purple-100" },
-  done: { label: "Done", color: "text-green-600", bg: "bg-green-100" },
-  cancelled: { label: "Cancelled", color: "text-red-600", bg: "bg-red-100" },
+  backlog: { label: "Backlog", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-800" },
+  todo: { label: "To Do", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
+  in_progress: { label: "In Progress", color: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-100 dark:bg-yellow-900/30" },
+  in_review: { label: "In Review", color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
+  done: { label: "Done", color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-900/30" },
+  cancelled: { label: "Cancelled", color: "text-red-600 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30" },
 };
 
 const priorityConfig: Record<TicketPriority, { label: string; color: string; icon: string }> = {
-  none: { label: "None", color: "text-gray-400", icon: "—" },
-  low: { label: "Low", color: "text-green-500", icon: "↓" },
-  medium: { label: "Medium", color: "text-yellow-500", icon: "→" },
-  high: { label: "High", color: "text-orange-500", icon: "↑" },
-  urgent: { label: "Urgent", color: "text-red-500", icon: "⚡" },
+  none: { label: "None", color: "text-gray-400 dark:text-gray-500", icon: "—" },
+  low: { label: "Low", color: "text-green-500 dark:text-green-400", icon: "↓" },
+  medium: { label: "Medium", color: "text-yellow-500 dark:text-yellow-400", icon: "→" },
+  high: { label: "High", color: "text-orange-500 dark:text-orange-400", icon: "↑" },
+  urgent: { label: "Urgent", color: "text-red-500 dark:text-red-400", icon: "⚡" },
 };
 
 const typeConfig: Record<string, { label: string; color: string; icon: string }> = {
-  task: { label: "Task", color: "text-blue-500", icon: "✓" },
-  bug: { label: "Bug", color: "text-red-500", icon: "🐛" },
-  feature: { label: "Feature", color: "text-green-500", icon: "✨" },
-  improvement: { label: "Improvement", color: "text-cyan-500", icon: "📈" },
-  epic: { label: "Epic", color: "text-purple-500", icon: "⚡" },
+  task: { label: "Task", color: "text-blue-500 dark:text-blue-400", icon: "✓" },
+  bug: { label: "Bug", color: "text-red-500 dark:text-red-400", icon: "🐛" },
+  feature: { label: "Feature", color: "text-green-500 dark:text-green-400", icon: "✨" },
+  improvement: { label: "Improvement", color: "text-cyan-500 dark:text-cyan-400", icon: "📈" },
+  epic: { label: "Epic", color: "text-purple-500 dark:text-purple-400", icon: "⚡" },
 };
 
 const statusOptions: { value: TicketStatus; label: string }[] = [

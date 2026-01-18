@@ -66,7 +66,7 @@ export function AgentLogos() {
   const t = useTranslations();
 
   return (
-    <section className="py-12 border-y border-border bg-[#0a0a0a]/50">
+    <section className="py-12 border-y border-border bg-muted/50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <p className="text-center text-sm text-muted-foreground mb-8">
           {t("landing.agentLogos.title")}

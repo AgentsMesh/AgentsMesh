@@ -806,6 +806,8 @@
       "theme": "Tema",
       "theme_light": "Claro",
       "theme_dark": "Oscuro",
+      "theme_solarized_light": "Solarized Claro",
+      "theme_solarized_dark": "Solarized Oscuro",
       "theme_system": "Sistema"
     }
   }

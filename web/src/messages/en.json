@@ -1785,6 +1785,8 @@
       "theme": "Theme",
       "theme_light": "Light",
       "theme_dark": "Dark",
+      "theme_solarized_light": "Solarized Light",
+      "theme_solarized_dark": "Solarized Dark",
       "theme_system": "System"
     }
   },

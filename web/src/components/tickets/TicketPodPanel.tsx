@@ -98,7 +98,7 @@ export default function TicketPodPanel({
           </svg>
           <h3 className="font-medium">AgentPods</h3>
           {activePods.length > 0 && (
-            <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">
+            <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
               {t("tickets.podPanel.activeCount", { count: activePods.length })}
             </span>
           )}

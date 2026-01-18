@@ -807,6 +807,8 @@
       "theme": "テーマ",
       "theme_light": "ライト",
       "theme_dark": "ダーク",
+      "theme_solarized_light": "Solarized ライト",
+      "theme_solarized_dark": "Solarized ダーク",
       "theme_system": "システム"
     }
   }

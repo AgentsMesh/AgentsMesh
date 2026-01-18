@@ -14,7 +14,7 @@ export function SelfHostedCTA() {
           <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full opacity-30" />
 
           {/* Content box */}
-          <div className="relative bg-[#0d0d0d] rounded-2xl border-2 border-primary/30 p-8 sm:p-12">
+          <div className="relative bg-card rounded-2xl border-2 border-primary/30 p-8 sm:p-12">
             <div className="flex flex-col lg:flex-row items-center gap-8">
               {/* Icon */}
               <div className="flex-shrink-0">

@@ -48,6 +48,7 @@ get_worktree_name() {
 }
 
 # 计算端口偏移量
+# 使用 6 位哈希，范围 1-500，降低冲突概率
 calculate_port_offset() {
     local name="$1"
     if [[ "$name" == "main" || "$name" == "master" ]]; then
@@ -55,11 +56,11 @@ calculate_port_offset() {
     else
         local hash
         if command -v md5sum &>/dev/null; then
-            hash=$(echo -n "$name" | md5sum | cut -c1-4)
+            hash=$(echo -n "$name" | md5sum | cut -c1-6)
         else
-            hash=$(echo -n "$name" | md5 | cut -c1-4)
+            hash=$(echo -n "$name" | md5 | cut -c1-6)
         fi
-        echo $(( (16#$hash % 99) + 1 ))
+        echo $(( (16#$hash % 500) + 1 ))
     fi
 }
 
@@ -88,14 +89,14 @@ generate_env() {
 
 COMPOSE_PROJECT_NAME=$project_name
 
-# Ports
-HTTP_PORT=$((80 + offset * 100))
-GRPC_PORT=$((9443 + offset * 100))
-POSTGRES_PORT=$((5432 + offset * 100))
-REDIS_PORT=$((6379 + offset * 100))
-MINIO_API_PORT=$((9000 + offset * 100))
-MINIO_CONSOLE_PORT=$((9001 + offset * 100))
-ADMINER_PORT=$((8081 + offset * 100))
+# Ports (步长 50，支持最多 500 个 worktree，端口范围 10000-35000)
+HTTP_PORT=$((10000 + offset * 50))
+GRPC_PORT=$((10001 + offset * 50))
+POSTGRES_PORT=$((10002 + offset * 50))
+REDIS_PORT=$((10003 + offset * 50))
+MINIO_API_PORT=$((10004 + offset * 50))
+MINIO_CONSOLE_PORT=$((10005 + offset * 50))
+ADMINER_PORT=$((10006 + offset * 50))
 
 # Credentials
 POSTGRES_PASSWORD=agentsmesh_dev

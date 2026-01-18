@@ -153,11 +153,11 @@ export function RunnersSidebarContent({ className }: RunnersSidebarContentProps)
         <div className="text-xs font-medium text-muted-foreground">{t("runners.overview.title")}</div>
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center gap-2 text-xs">
-            <Server className="w-3.5 h-3.5 text-green-500" />
+            <Server className="w-3.5 h-3.5 text-green-500 dark:text-green-400" />
             <span>{onlineCount} {t("runners.overview.online")}</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <Activity className="w-3.5 h-3.5 text-blue-500" />
+            <Activity className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
             <span>{totalPods}/{totalCapacity} pods</span>
           </div>
         </div>

@@ -74,22 +74,22 @@ export function TerminalPane({
   const getStatusColor = () => {
     switch (connectionStatus) {
       case "connected":
-        return "text-green-500";
+        return "text-green-500 dark:text-green-400";
       case "connecting":
-        return "text-yellow-500 animate-pulse";
+        return "text-yellow-500 dark:text-yellow-400 animate-pulse";
       case "disconnected":
-        return "text-gray-500";
+        return "text-gray-500 dark:text-gray-400";
       case "error":
-        return "text-red-500";
+        return "text-red-500 dark:text-red-400";
       default:
-        return "text-gray-500";
+        return "text-gray-500 dark:text-gray-400";
     }
   };
 
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-[#1e1e1e] rounded-lg overflow-hidden border",
+        "flex flex-col h-full bg-terminal-bg rounded-lg overflow-hidden border",
         isActive ? "border-primary" : "border-border",
         isMaximized && "fixed inset-4 z-50",
         className
@@ -98,11 +98,11 @@ export function TerminalPane({
     >
       {/* Header */}
       {showHeader && (
-        <div className="h-8 flex items-center justify-between px-2 bg-[#252526] border-b border-[#3c3c3c]">
+        <div className="h-8 flex items-center justify-between px-2 bg-terminal-bg-secondary border-b border-terminal-border">
           <div className="flex items-center gap-2 min-w-0">
             <Circle className={cn("w-2 h-2 flex-shrink-0", getStatusColor())} />
-            <span className="text-xs text-[#cccccc] truncate">{title}</span>
-            <code className="text-[10px] text-[#808080] truncate">
+            <span className="text-xs text-terminal-text truncate">{title}</span>
+            <code className="text-[10px] text-terminal-text-muted truncate">
               {podKey.substring(0, 8)}
             </code>
           </div>
@@ -110,7 +110,7 @@ export function TerminalPane({
             <Button
               variant="ghost"
               size="sm"
-              className="h-5 w-5 p-0 hover:bg-[#3c3c3c] text-[#cccccc]"
+              className="h-5 w-5 p-0 hover:bg-terminal-bg-active text-terminal-text"
               onClick={(e) => {
                 e.stopPropagation();
                 syncSize();
@@ -123,7 +123,7 @@ export function TerminalPane({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 w-5 p-0 hover:bg-[#3c3c3c] text-[#cccccc]"
+                className="h-5 w-5 p-0 hover:bg-terminal-bg-active text-terminal-text"
                 onClick={(e) => {
                   e.stopPropagation();
                   onPopout();
@@ -136,7 +136,7 @@ export function TerminalPane({
             <Button
               variant="ghost"
               size="sm"
-              className="h-5 w-5 p-0 hover:bg-[#3c3c3c] text-[#cccccc]"
+              className="h-5 w-5 p-0 hover:bg-terminal-bg-active text-terminal-text"
               onClick={(e) => {
                 e.stopPropagation();
                 handleMaximize();
@@ -153,7 +153,7 @@ export function TerminalPane({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 w-5 p-0 hover:bg-[#3c3c3c] text-[#cccccc] hover:text-red-400"
+                className="h-5 w-5 p-0 hover:bg-terminal-bg-active text-terminal-text hover:text-red-500 dark:hover:text-red-400"
                 onClick={(e) => {
                   e.stopPropagation();
                   onClose();
@@ -169,13 +169,13 @@ export function TerminalPane({
 
       {/* Terminal or Loading/Error State */}
       {!isPodReady ? (
-        <div className="flex-1 flex items-center justify-center bg-[#1e1e1e]">
+        <div className="flex-1 flex items-center justify-center bg-terminal-bg">
           {podError ? (
             // Error state
             <div className="text-center p-4">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
-              <p className="text-[#cccccc] font-medium mb-1">{podError}</p>
-              <p className="text-sm text-[#808080]">
+              <AlertCircle className="w-12 h-12 text-red-500 dark:text-red-400 mx-auto mb-3" />
+              <p className="text-terminal-text font-medium mb-1">{podError}</p>
+              <p className="text-sm text-terminal-text-muted">
                 The pod cannot be connected. Please check the pod status or create a new one.
               </p>
             </div>
@@ -183,9 +183,9 @@ export function TerminalPane({
             // Waiting state
             <div className="text-center p-4">
               <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-3" />
-              <p className="text-[#cccccc] font-medium mb-1">Waiting for Pod to be ready...</p>
-              <p className="text-sm text-[#808080]">
-                Status: <span className="text-yellow-500">{podStatus}</span>
+              <p className="text-terminal-text font-medium mb-1">Waiting for Pod to be ready...</p>
+              <p className="text-sm text-terminal-text-muted">
+                Status: <span className="text-yellow-500 dark:text-yellow-400">{podStatus}</span>
               </p>
             </div>
           )}

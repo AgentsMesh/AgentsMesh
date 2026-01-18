@@ -86,10 +86,10 @@ const changelog: ChangelogEntry[] = [
 ];
 
 const typeLabels = {
-  added: { label: "Added", color: "bg-green-500/20 text-green-400" },
-  changed: { label: "Changed", color: "bg-blue-500/20 text-blue-400" },
-  fixed: { label: "Fixed", color: "bg-yellow-500/20 text-yellow-400" },
-  removed: { label: "Removed", color: "bg-red-500/20 text-red-400" },
+  added: { label: "Added", color: "bg-green-500/20 text-green-600 dark:text-green-400" },
+  changed: { label: "Changed", color: "bg-blue-500/20 text-blue-600 dark:text-blue-400" },
+  fixed: { label: "Fixed", color: "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400" },
+  removed: { label: "Removed", color: "bg-red-500/20 text-red-600 dark:text-red-400" },
 };
 
 export default function ChangelogPage() {

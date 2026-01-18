@@ -20,8 +20,8 @@ function ChannelNode({ data }: ChannelNodeProps) {
         isSelected
           ? "border-blue-500 ring-2 ring-blue-500/20"
           : channel.is_archived
-          ? "border-gray-300 bg-gray-50"
-          : "border-blue-200 hover:border-blue-400"
+          ? "border-gray-300 dark:border-gray-600 bg-muted"
+          : "border-blue-200 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-500"
       }`}
     >
       {/* Multiple handles for connected pods */}
@@ -38,8 +38,8 @@ function ChannelNode({ data }: ChannelNodeProps) {
 
       {/* Channel Icon and Name */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg text-blue-500">#</span>
-        <span className={`font-medium ${channel.is_archived ? "text-gray-400" : "text-foreground"}`}>
+        <span className="text-lg text-blue-500 dark:text-blue-400">#</span>
+        <span className={`font-medium ${channel.is_archived ? "text-muted-foreground" : "text-foreground"}`}>
           {channel.name}
         </span>
       </div>
@@ -69,7 +69,7 @@ function ChannelNode({ data }: ChannelNodeProps) {
 
       {/* Archived Badge */}
       {channel.is_archived && (
-        <div className="mt-2 text-xs text-gray-400 flex items-center gap-1">
+        <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
           </svg>
