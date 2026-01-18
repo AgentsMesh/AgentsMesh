@@ -2,6 +2,8 @@ package v1
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -68,12 +70,33 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 		Reader:         file,
 	})
 	if err != nil {
-		switch err {
-		case fileservice.ErrFileTooLarge:
+		switch {
+		case errors.Is(err, fileservice.ErrFileTooLarge):
 			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": err.Error()})
-		case fileservice.ErrInvalidFileType:
+		case errors.Is(err, fileservice.ErrInvalidFileType):
+			slog.Warn("File upload rejected: invalid type",
+				"content_type", contentType,
+				"filename", fileHeader.Filename,
+				"org_id", tenant.OrganizationID,
+			)
 			c.JSON(http.StatusUnsupportedMediaType, gin.H{"error": err.Error()})
+		case errors.Is(err, fileservice.ErrStorageError):
+			slog.Error("File upload failed: storage error",
+				"error", err,
+				"filename", fileHeader.Filename,
+				"size", fileHeader.Size,
+				"content_type", contentType,
+				"org_id", tenant.OrganizationID,
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
 		default:
+			slog.Error("File upload failed",
+				"error", err,
+				"filename", fileHeader.Filename,
+				"size", fileHeader.Size,
+				"content_type", contentType,
+				"org_id", tenant.OrganizationID,
+			)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
 		}
 		return
