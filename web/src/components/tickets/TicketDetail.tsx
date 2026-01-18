@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
-import { useTicketStore, getStatusInfo, getPriorityInfo, getTypeInfo, Ticket, TicketStatus } from "@/stores/ticket";
+import { useTicketStore, Ticket, TicketStatus } from "@/stores/ticket";
+import { StatusIcon, PriorityIcon, TypeIcon, getStatusDisplayInfo, getPriorityDisplayInfo, getTypeDisplayInfo } from "./TicketIcons";
 import { ticketApi, TicketRelation, TicketCommit } from "@/lib/api/client";
 import TicketPodPanel from "./TicketPodPanel";
 
@@ -125,9 +126,9 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
     );
   }
 
-  const statusInfo = getStatusInfo(currentTicket.status);
-  const priorityInfo = getPriorityInfo(currentTicket.priority);
-  const typeInfo = getTypeInfo(currentTicket.type);
+  const statusInfo = getStatusDisplayInfo(currentTicket.status);
+  const priorityInfo = getPriorityDisplayInfo(currentTicket.priority);
+  const typeInfo = getTypeDisplayInfo(currentTicket.type);
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
@@ -136,13 +137,12 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <span className={typeInfo.color} title={typeInfo.label}>
-              {typeInfo.icon}
-            </span>
+            <TypeIcon type={currentTicket.type} size="md" />
             <span className="text-muted-foreground font-mono text-sm">
               {currentTicket.identifier}
             </span>
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}>
+            <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}>
+              <StatusIcon status={currentTicket.status} size="xs" />
               {statusInfo.label}
             </span>
           </div>
@@ -234,8 +234,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
             </h3>
             <div className="border border-border rounded-lg divide-y divide-border">
               {subTickets.map((subTicket) => {
-                const subStatus = getStatusInfo(subTicket.status);
-                const subType = getTypeInfo(subTicket.type);
+                const subStatusInfo = getStatusDisplayInfo(subTicket.status);
                 return (
                   <div
                     key={subTicket.id}
@@ -243,13 +242,14 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
                     onClick={() => router.push(`/${currentOrg?.slug}/tickets/${subTicket.identifier}`)}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={subType.color}>{subType.icon}</span>
+                      <TypeIcon type={subTicket.type} size="sm" />
                       <span className="font-mono text-xs text-muted-foreground">
                         {subTicket.identifier}
                       </span>
                       <span className="flex-1 truncate">{subTicket.title}</span>
-                      <span className={`px-2 py-0.5 rounded text-xs ${subStatus.bgColor} ${subStatus.color}`}>
-                        {subStatus.label}
+                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs ${subStatusInfo.bgColor} ${subStatusInfo.color}`}>
+                        <StatusIcon status={subTicket.status} size="xs" />
+                        {subStatusInfo.label}
                       </span>
                     </div>
                   </div>
@@ -380,14 +380,14 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
             <div className="flex justify-between">
               <dt className="text-muted-foreground">{t("tickets.filters.type")}</dt>
               <dd className={`flex items-center gap-1 ${typeInfo.color}`}>
-                <span>{typeInfo.icon}</span>
+                <TypeIcon type={currentTicket.type} size="sm" />
                 {t(`tickets.type.${currentTicket.type}`)}
               </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-muted-foreground">{t("tickets.filters.priority")}</dt>
               <dd className={`flex items-center gap-1 ${priorityInfo.color}`}>
-                <span>{priorityInfo.icon}</span>
+                <PriorityIcon priority={currentTicket.priority} size="sm" />
                 {t(`tickets.priority.${currentTicket.priority}`)}
               </dd>
             </div>

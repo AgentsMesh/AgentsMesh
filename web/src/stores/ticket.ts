@@ -31,6 +31,7 @@ interface TicketState {
   // State
   tickets: Ticket[];
   currentTicket: Ticket | null;
+  selectedTicketIdentifier: string | null; // For panel selection (without full fetch)
   labels: Label[];
   filters: TicketFilters;
   viewMode: TicketViewMode;
@@ -41,6 +42,7 @@ interface TicketState {
   // Actions
   fetchTickets: (filters?: TicketFilters) => Promise<void>;
   fetchTicket: (identifier: string) => Promise<void>;
+  setSelectedTicketIdentifier: (identifier: string | null) => void;
   createTicket: (data: {
     repositoryId: number;
     type: TicketType;
@@ -79,6 +81,7 @@ interface TicketState {
 export const useTicketStore = create<TicketState>((set, get) => ({
   tickets: [],
   currentTicket: null,
+  selectedTicketIdentifier: null,
   labels: [],
   filters: {},
   viewMode: "board",
@@ -234,6 +237,10 @@ export const useTicketStore = create<TicketState>((set, get) => ({
 
   setCurrentTicket: (ticket) => {
     set({ currentTicket: ticket });
+  },
+
+  setSelectedTicketIdentifier: (identifier) => {
+    set({ selectedTicketIdentifier: identifier });
   },
 
   clearError: () => {

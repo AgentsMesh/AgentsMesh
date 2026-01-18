@@ -786,7 +786,6 @@ func (c *GRPCConnection) handleCreatePod(cmd *runnerv1.CreatePodCommand) {
 		LaunchCommand: cmd.LaunchCommand,
 		LaunchArgs:    cmd.LaunchArgs,
 		EnvVars:       cmd.EnvVars,
-		InitialPrompt: cmd.InitialPrompt,
 	}
 
 	// Convert files_to_create

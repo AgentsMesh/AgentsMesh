@@ -122,6 +122,5 @@ func (h *PodHandler) convertPodConfigToRequest(podConfig *agent.PodConfig, podKe
 		EnvVars:       podConfig.EnvVars,
 		FilesToCreate: filesToCreate,
 		WorkDirConfig: workDirConfig,
-		InitialPrompt: podConfig.InitialPrompt,
 	}
 }

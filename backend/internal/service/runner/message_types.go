@@ -118,7 +118,6 @@ type CreatePodRequest struct {
 	EnvVars       map[string]string `json:"env_vars,omitempty"`
 	FilesToCreate []FileToCreate    `json:"files_to_create,omitempty"`
 	WorkDirConfig *WorkDirConfig    `json:"work_dir_config,omitempty"`
-	InitialPrompt string            `json:"initial_prompt,omitempty"`
 }
 
 // TerminalInputRequest represents terminal input to send
@@ -146,7 +145,6 @@ const (
 	// 协议特性标识
 	FeatureFilesToCreate = "files_to_create"
 	FeatureWorkDirConfig = "work_dir_config"
-	FeatureInitialPrompt = "initial_prompt"
 )
 
 // SupportedFeatures 返回当前 Backend 支持的特性列表
@@ -154,6 +152,5 @@ func SupportedFeatures() []string {
 	return []string{
 		FeatureFilesToCreate,
 		FeatureWorkDirConfig,
-		FeatureInitialPrompt,
 	}
 }

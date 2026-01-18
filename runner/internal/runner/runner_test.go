@@ -28,13 +28,13 @@ func TestPodStatusConstantsBase(t *testing.T) {
 
 func TestPodStruct(t *testing.T) {
 	now := time.Now()
+	// Note: InitialPrompt field has been removed - prompt is now passed via LaunchArgs by Backend
 	pod := Pod{
 		ID:               "pod-1",
 		PodKey:           "key-123",
 		AgentType:        "claude-code",
 		Branch:           "main",
 		WorktreePath:     "/workspace/worktrees/pod-1",
-		InitialPrompt:    "Hello",
 		Terminal:         nil,
 		StartedAt:        now,
 		Status:           PodStatusRunning,
@@ -62,13 +62,13 @@ func TestPodAllFields(t *testing.T) {
 	now := time.Now()
 	forwarder := &PTYForwarder{podKey: "test"}
 
+	// Note: InitialPrompt field has been removed - prompt is now passed via LaunchArgs by Backend
 	pod := &Pod{
 		ID:               "id-1",
 		PodKey:           "key-1",
 		AgentType:        "claude-code",
 		Branch:           "feature/test",
 		WorktreePath:     "/workspace/worktrees/test",
-		InitialPrompt:    "Hello, Claude!",
 		Terminal:         nil,
 		StartedAt:        now,
 		Status:           PodStatusRunning,

@@ -3,7 +3,6 @@ package runner
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
@@ -47,8 +46,7 @@ func (h *RunnerMessageHandler) OnCreatePod(req client.CreatePodRequest) error {
 		WithLaunchCommand(req.LaunchCommand, req.LaunchArgs).
 		WithEnvVars(req.EnvVars).
 		WithFilesToCreate(req.FilesToCreate).
-		WithWorkDirConfig(req.WorkDirConfig).
-		WithInitialPrompt(req.InitialPrompt)
+		WithWorkDirConfig(req.WorkDirConfig)
 
 	// Build pod
 	pod, err := builder.Build(ctx)
@@ -81,15 +79,6 @@ func (h *RunnerMessageHandler) OnCreatePod(req client.CreatePodRequest) error {
 		orgSlug := h.conn.GetOrgSlug()
 		h.runner.mcpServer.RegisterPod(req.PodKey, orgSlug, nil, nil, req.LaunchCommand)
 		log.Debug("Registered pod with MCP server", "pod_key", req.PodKey, "org", orgSlug)
-	}
-
-	// Send initial prompt if specified
-	if req.InitialPrompt != "" {
-		time.AfterFunc(1500*time.Millisecond, func() {
-			if err := pod.Terminal.Write([]byte(req.InitialPrompt + "\n")); err != nil {
-				logger.Pod().Warn("Failed to send initial prompt", "error", err)
-			}
-		})
 	}
 
 	// Notify server that pod is created

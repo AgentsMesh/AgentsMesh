@@ -20,12 +20,12 @@ func TestPodBuilderBuildSuccess(t *testing.T) {
 		},
 	}
 
+	// Note: InitialPrompt is now handled by Backend via LaunchArgs
 	builder := NewPodBuilder(runner).
 		WithPodKey("pod-build-test").
 		WithAgentType("claude-code").
 		WithLaunchCommand("echo", []string{"hello"}).
-		WithTerminalSize(30, 100).
-		WithInitialPrompt("Test prompt")
+		WithTerminalSize(30, 100)
 
 	pod, err := builder.Build(context.Background())
 	if err != nil {
@@ -41,9 +41,6 @@ func TestPodBuilderBuildSuccess(t *testing.T) {
 	}
 	if pod.AgentType != "claude-code" {
 		t.Errorf("AgentType = %v, want claude-code", pod.AgentType)
-	}
-	if pod.InitialPrompt != "Test prompt" {
-		t.Errorf("InitialPrompt = %v, want Test prompt", pod.InitialPrompt)
 	}
 	if pod.GetStatus() != PodStatusInitializing {
 		t.Errorf("Status = %v, want initializing", pod.GetStatus())

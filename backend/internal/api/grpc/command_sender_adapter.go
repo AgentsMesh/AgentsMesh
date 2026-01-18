@@ -26,7 +26,6 @@ func (s *GRPCCommandSender) SendCreatePod(ctx context.Context, runnerID int64, r
 		LaunchCommand: req.LaunchCommand,
 		LaunchArgs:    req.LaunchArgs,
 		EnvVars:       req.EnvVars,
-		InitialPrompt: req.InitialPrompt,
 	}
 
 	// Convert files_to_create

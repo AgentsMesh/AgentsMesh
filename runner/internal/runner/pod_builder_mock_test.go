@@ -127,14 +127,7 @@ func TestPodBuilderWithTerminalSizeZeroValues(t *testing.T) {
 	}
 }
 
-func TestPodBuilderWithInitialPrompt(t *testing.T) {
-	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithInitialPrompt("Hello, Claude!")
-
-	if builder.initialPrompt != "Hello, Claude!" {
-		t.Errorf("initialPrompt = %v, want Hello, Claude!", builder.initialPrompt)
-	}
-}
+// Note: WithInitialPrompt has been removed - InitialPrompt is now handled by Backend via LaunchArgs
 
 func TestPodBuilderWithWorkDirConfig(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
@@ -172,13 +165,13 @@ func TestPodBuilderWithFilesToCreateMultiple(t *testing.T) {
 
 func TestPodBuilderChaining(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
+	// Note: InitialPrompt is now handled by Backend via LaunchArgs
 	builder := NewPodBuilder(runner).
 		WithPodKey("pod-1").
 		WithAgentType("claude-code").
 		WithLaunchCommand("claude", []string{"--headless"}).
 		WithEnvVar("API_KEY", "secret").
 		WithTerminalSize(48, 160).
-		WithInitialPrompt("Hello!").
 		WithWorkDirConfig(&client.WorkDirConfig{
 			Type:          "worktree",
 			RepositoryURL: "https://github.com/test/repo.git",
@@ -202,10 +195,6 @@ func TestPodBuilderChaining(t *testing.T) {
 
 	if builder.rows != 48 {
 		t.Errorf("rows = %d, want 48", builder.rows)
-	}
-
-	if builder.initialPrompt != "Hello!" {
-		t.Errorf("initialPrompt = %v, want Hello!", builder.initialPrompt)
 	}
 
 	if builder.workDirConfig == nil {

@@ -18,12 +18,11 @@ func TestPodBuilderStruct(t *testing.T) {
 		envVars:       map[string]string{"KEY": "VALUE"},
 		rows:          24,
 		cols:          80,
-		initialPrompt: "Hello",
 		filesToCreate: []client.FileToCreate{
 			{PathTemplate: "{{.sandbox.root_path}}/test.txt", Content: "test"},
 		},
 		workDirConfig: &client.WorkDirConfig{
-			Type:   "local",
+			Type:      "local",
 			LocalPath: "/tmp",
 		},
 	}
@@ -42,6 +41,7 @@ func TestPodBuilderFluentAPI(t *testing.T) {
 	builder := NewPodBuilder(runner)
 
 	// Test fluent API chain
+	// Note: InitialPrompt is now handled by Backend via LaunchArgs
 	result := builder.
 		WithPodKey("pod-1").
 		WithAgentType("claude-code").
@@ -49,7 +49,6 @@ func TestPodBuilderFluentAPI(t *testing.T) {
 		WithEnvVars(map[string]string{"KEY1": "VALUE1"}).
 		WithEnvVar("KEY2", "VALUE2").
 		WithTerminalSize(40, 120).
-		WithInitialPrompt("Hello").
 		WithWorkDirConfig(&client.WorkDirConfig{
 			Type:          "worktree",
 			RepositoryURL: "https://github.com/test/repo.git",
@@ -88,9 +87,6 @@ func TestPodBuilderFluentAPI(t *testing.T) {
 	}
 	if builder.cols != 120 {
 		t.Errorf("cols: got %v, want 120", builder.cols)
-	}
-	if builder.initialPrompt != "Hello" {
-		t.Errorf("initialPrompt: got %v, want Hello", builder.initialPrompt)
 	}
 	if builder.workDirConfig == nil {
 		t.Error("workDirConfig should not be nil")
@@ -215,6 +211,7 @@ func TestPodBuilderWithAllOptions(t *testing.T) {
 		},
 	}
 
+	// Note: InitialPrompt is now handled by Backend via LaunchArgs
 	builder := NewPodBuilder(runner).
 		WithPodKey("pod-key").
 		WithAgentType("claude-code").
@@ -222,7 +219,6 @@ func TestPodBuilderWithAllOptions(t *testing.T) {
 		WithEnvVars(map[string]string{"ENV1": "value1"}).
 		WithEnvVar("ENV2", "value2").
 		WithTerminalSize(40, 120).
-		WithInitialPrompt("Hello").
 		WithWorkDirConfig(&client.WorkDirConfig{
 			Type:          "worktree",
 			RepositoryURL: "https://github.com/test/repo.git",
@@ -249,9 +245,6 @@ func TestPodBuilderWithAllOptions(t *testing.T) {
 	}
 	if builder.rows != 40 || builder.cols != 120 {
 		t.Errorf("terminal size = %dx%d, want 40x120", builder.rows, builder.cols)
-	}
-	if builder.initialPrompt != "Hello" {
-		t.Errorf("initialPrompt = %v, want Hello", builder.initialPrompt)
 	}
 	if builder.workDirConfig == nil {
 		t.Error("workDirConfig should not be nil")

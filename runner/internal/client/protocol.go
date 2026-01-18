@@ -42,7 +42,6 @@ type CreatePodRequest struct {
 	EnvVars       map[string]string `json:"env_vars,omitempty"`
 	FilesToCreate []FileToCreate    `json:"files_to_create,omitempty"`
 	WorkDirConfig *WorkDirConfig    `json:"work_dir_config,omitempty"`
-	InitialPrompt string            `json:"initial_prompt,omitempty"`
 }
 
 // TerminatePodRequest contains pod termination request data.

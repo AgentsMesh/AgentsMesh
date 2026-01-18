@@ -3,7 +3,6 @@ package runner
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
@@ -258,16 +257,12 @@ func TestOnCreatePodWithLaunchArgs(t *testing.T) {
 		PodKey:        "launch-args-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"hello", "world"},
-		InitialPrompt: "Test prompt",
 	}
 
 	err := handler.OnCreatePod(req)
 	if err != nil {
 		t.Logf("OnCreatePod with launch args: %v", err)
 	}
-
-	// Give time for prompt to be sent
-	time.Sleep(100 * time.Millisecond)
 
 	// Clean up
 	pod, ok := store.Get("launch-args-pod")
@@ -276,7 +271,7 @@ func TestOnCreatePodWithLaunchArgs(t *testing.T) {
 	}
 }
 
-func TestOnCreatePodWithInitialPrompt(t *testing.T) {
+func TestOnCreatePodWithPromptInArgs(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -290,19 +285,17 @@ func TestOnCreatePodWithInitialPrompt(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
+	// Prompt is now passed as first argument (handled by Backend)
 	req := client.CreatePodRequest{
-		PodKey:      "prompt-pod",
-		LaunchCommand: "cat",
-		InitialPrompt:  "Hello from test",
+		PodKey:        "prompt-pod",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"Hello from test"},
 	}
 
 	err := handler.OnCreatePod(req)
 	if err != nil {
-		t.Logf("OnCreatePod with initial prompt: %v", err)
+		t.Logf("OnCreatePod with prompt in args: %v", err)
 	}
-
-	// Give time for prompt to be sent
-	time.Sleep(100 * time.Millisecond)
 
 	// Clean up
 	pod, ok := store.Get("prompt-pod")

@@ -47,7 +47,11 @@ export interface CreatePodFormState {
   // Actions
   reset: () => void;
   validate: (selectedRunnerId: number | null) => boolean;
-  submit: (selectedRunnerId: number | null, pluginConfig: Record<string, unknown>) => Promise<PodData | null>;
+  submit: (
+    selectedRunnerId: number | null,
+    pluginConfig: Record<string, unknown>,
+    options?: { ticketId?: number }
+  ) => Promise<PodData | null>;
 }
 
 /**
@@ -190,9 +194,21 @@ export function useCreatePodForm(
     setValidationErrors({});
   }, []);
 
+  /**
+   * Submit options for pod creation
+   */
+  interface SubmitOptions {
+    /** Ticket ID to associate with the pod */
+    ticketId?: number;
+  }
+
   // Submit form
   const submit = useCallback(
-    async (selectedRunnerId: number | null, pluginConfig: Record<string, unknown>): Promise<PodData | null> => {
+    async (
+      selectedRunnerId: number | null,
+      pluginConfig: Record<string, unknown>,
+      options?: SubmitOptions
+    ): Promise<PodData | null> => {
       // Validate before submission
       if (!validate(selectedRunnerId)) {
         return null;
@@ -220,6 +236,7 @@ export function useCreatePodForm(
           initial_prompt: prompt,
           config_overrides: configOverrides,
           credential_profile_id: selectedCredentialProfile > 0 ? selectedCredentialProfile : undefined,
+          ticket_id: options?.ticketId,
         });
 
         if (response.pod) {
@@ -236,7 +253,7 @@ export function useCreatePodForm(
         setLoading(false);
       }
     },
-    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, selectedCredentialProfile, prompt, onSuccess, validate]
+    [selectedAgent, selectedRepository, selectedBranch, selectedCredentialProfile, prompt, onSuccess, validate]
   );
 
   return {

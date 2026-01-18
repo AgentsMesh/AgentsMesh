@@ -118,7 +118,7 @@ export const ticketApi = {
     return response.ticket;
   },
 
-  update: (identifier: string, data: {
+  update: async (identifier: string, data: {
     title?: string;
     description?: string;
     content?: string;
@@ -129,11 +129,13 @@ export const ticketApi = {
     estimate?: number;
     assigneeIds?: number[];
     labels?: string[];
-  }) =>
-    request<TicketData>(`${orgPath("/tickets")}/${identifier}`, {
+  }) => {
+    const response = await request<{ ticket: TicketData }>(`${orgPath("/tickets")}/${identifier}`, {
       method: "PUT",
       body: data,
-    }),
+    });
+    return response.ticket;
+  },
 
   delete: (identifier: string) =>
     request<{ message: string }>(`${orgPath("/tickets")}/${identifier}`, {

@@ -27,7 +27,6 @@ type PodBuilder struct {
 	envVars       map[string]string
 	rows          int
 	cols          int
-	initialPrompt string
 
 	// New protocol fields
 	filesToCreate []client.FileToCreate
@@ -85,12 +84,6 @@ func (b *PodBuilder) WithTerminalSize(rows, cols int) *PodBuilder {
 	if cols > 0 {
 		b.cols = cols
 	}
-	return b
-}
-
-// WithInitialPrompt sets the initial prompt to send.
-func (b *PodBuilder) WithInitialPrompt(prompt string) *PodBuilder {
-	b.initialPrompt = prompt
 	return b
 }
 
@@ -159,15 +152,14 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 
 	// Create pod
 	pod := &Pod{
-		ID:            b.podKey,
-		PodKey:        b.podKey,
-		AgentType:     b.agentType,
-		Branch:        branchName,
-		WorktreePath:  worktreePath,
-		InitialPrompt: b.initialPrompt,
-		Terminal:      term,
-		StartedAt:     time.Now(),
-		Status:        PodStatusInitializing,
+		ID:           b.podKey,
+		PodKey:       b.podKey,
+		AgentType:    b.agentType,
+		Branch:       branchName,
+		WorktreePath: worktreePath,
+		Terminal:     term,
+		StartedAt:    time.Now(),
+		Status:       PodStatusInitializing,
 	}
 
 	logger.Pod().Info("Pod built", "pod_key", b.podKey, "working_dir", workingDir)

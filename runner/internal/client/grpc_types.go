@@ -126,13 +126,12 @@ type GRPCWorkDirConfig struct {
 
 // GRPCCreatePodCommand represents a create pod command from server.
 type GRPCCreatePodCommand struct {
-	PodKey        string            `json:"pod_key"`
-	LaunchCommand string            `json:"launch_command"`
-	LaunchArgs    []string          `json:"launch_args"`
-	EnvVars       map[string]string `json:"env_vars"`
+	PodKey        string              `json:"pod_key"`
+	LaunchCommand string              `json:"launch_command"`
+	LaunchArgs    []string            `json:"launch_args"`
+	EnvVars       map[string]string   `json:"env_vars"`
 	FilesToCreate []*GRPCFileToCreate `json:"files_to_create"`
 	WorkDirConfig *GRPCWorkDirConfig  `json:"work_dir_config"`
-	InitialPrompt string              `json:"initial_prompt"`
 }
 
 // GRPCTerminatePodCommand represents a terminate pod command.

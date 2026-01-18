@@ -13,13 +13,25 @@ import {
   RUNNER_HOST_PROFILE_ID,
 } from "./hooks";
 
+/**
+ * Ticket context for pre-filling prompt and associating pod with ticket
+ */
+export interface TicketContext {
+  id: number;
+  identifier: string;
+  title: string;
+  description?: string;
+}
+
 interface CreatePodModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (pod?: PodData) => void;
+  /** Optional ticket context for creating pod from ticket */
+  ticketContext?: TicketContext;
 }
 
-export function CreatePodModal({ open, onClose, onCreated }: CreatePodModalProps) {
+export function CreatePodModal({ open, onClose, onCreated, ticketContext }: CreatePodModalProps) {
   const t = useTranslations();
 
   // Load base data (runners, agents, repositories)
@@ -62,6 +74,28 @@ export function CreatePodModal({ open, onClose, onCreated }: CreatePodModalProps
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   // Note: form.reset and resetConfig are intentionally excluded from deps
 
+  // Auto-fill prompt with ticket context when modal opens
+  // Track if we've already set the prompt for this modal session
+  const hasSetPromptRef = React.useRef(false);
+
+  useEffect(() => {
+    // Reset the ref when modal closes
+    if (!open) {
+      hasSetPromptRef.current = false;
+      return;
+    }
+
+    // Only set prompt once per modal open session
+    if (ticketContext && open && !hasSetPromptRef.current) {
+      const ticketPrompt = `Work on ticket ${ticketContext.identifier}: ${ticketContext.title}${
+        ticketContext.description ? `\n\n${ticketContext.description}` : ""
+      }`;
+      form.setPrompt(ticketPrompt);
+      hasSetPromptRef.current = true;
+    }
+  }, [ticketContext, open, form.setPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: form is excluded to avoid infinite loops, only setPrompt is needed
+
   // Handle runner selection change
   const handleRunnerChange = (runnerId: number | null) => {
     setSelectedRunnerId(runnerId);
@@ -71,7 +105,11 @@ export function CreatePodModal({ open, onClose, onCreated }: CreatePodModalProps
 
   // Handle form submission
   const handleCreate = async () => {
-    await form.submit(selectedRunner?.id || null, configValues);
+    await form.submit(
+      selectedRunner?.id || null,
+      configValues,
+      ticketContext ? { ticketId: ticketContext.id } : undefined
+    );
   };
 
   // Helper flags for conditional rendering

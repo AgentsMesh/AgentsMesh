@@ -103,10 +103,10 @@ func TestSupportedFeatures(t *testing.T) {
 	}
 
 	// Check expected features are present
+	// Note: FeatureInitialPrompt has been removed - prompt is now passed via LaunchArgs
 	expectedFeatures := []string{
 		FeatureFilesToCreate,
 		FeatureWorkDirConfig,
-		FeatureInitialPrompt,
 	}
 
 	for _, expected := range expectedFeatures {
@@ -125,13 +125,11 @@ func TestSupportedFeatures(t *testing.T) {
 
 func TestFeatureConstants(t *testing.T) {
 	// Verify feature constants have expected values
+	// Note: FeatureInitialPrompt has been removed - prompt is now passed via LaunchArgs
 	if FeatureFilesToCreate != "files_to_create" {
 		t.Errorf("FeatureFilesToCreate = %s, want files_to_create", FeatureFilesToCreate)
 	}
 	if FeatureWorkDirConfig != "work_dir_config" {
 		t.Errorf("FeatureWorkDirConfig = %s, want work_dir_config", FeatureWorkDirConfig)
-	}
-	if FeatureInitialPrompt != "initial_prompt" {
-		t.Errorf("FeatureInitialPrompt = %s, want initial_prompt", FeatureInitialPrompt)
 	}
 }

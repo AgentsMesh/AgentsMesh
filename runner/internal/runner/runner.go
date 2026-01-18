@@ -49,7 +49,6 @@ type Pod struct {
 	RepositoryURL    string
 	Branch           string
 	WorktreePath     string
-	InitialPrompt    string
 	Terminal         *terminal.Terminal
 	StartedAt        time.Time
 	Status           string              // Pod status - use statusMu for thread-safe access

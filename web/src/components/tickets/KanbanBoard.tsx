@@ -1,9 +1,33 @@
 "use client";
 
-import { useState, DragEvent } from "react";
+import { useState, useMemo } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  rectIntersection,
+  pointerWithin,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+  CollisionDetection,
+  getFirstCollision,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { TicketCard } from "./TicketCard";
 import { Ticket, TicketStatus } from "@/stores/ticket";
 import { useTranslations } from "@/lib/i18n/client";
+import { useTicketPrefetch } from "@/hooks/useTicketPrefetch";
+import { cn } from "@/lib/utils";
 
 type Status = TicketStatus;
 
@@ -22,6 +46,134 @@ const statusConfig: { status: Status; labelKey: string; color: string }[] = [
   { status: "done", labelKey: "tickets.status.done", color: "border-green-300 dark:border-green-600" },
 ];
 
+// Column IDs for collision detection
+const COLUMN_IDS = new Set(statusConfig.map(s => s.status));
+
+/**
+ * Sortable ticket item wrapper
+ */
+interface SortableTicketProps {
+  ticket: Ticket;
+  onTicketClick?: (ticket: Ticket) => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}
+
+function SortableTicket({ ticket, onTicketClick, onMouseEnter, onMouseLeave }: SortableTicketProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: ticket.identifier });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "transition-all duration-200 cursor-grab active:cursor-grabbing touch-none",
+        isDragging
+          ? "opacity-50 scale-95 rotate-1 z-50"
+          : "hover:scale-[1.02] hover:shadow-md"
+      )}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <TicketCard
+        ticket={ticket}
+        onClick={() => onTicketClick?.(ticket)}
+        showRepository={false}
+      />
+    </div>
+  );
+}
+
+/**
+ * Droppable column wrapper
+ */
+interface DroppableColumnProps {
+  status: Status;
+  labelKey: string;
+  color: string;
+  tickets: Ticket[];
+  isOver: boolean;
+  onTicketClick?: (ticket: Ticket) => void;
+  prefetchOnHover: (identifier: string) => void;
+  cancelPrefetch: () => void;
+  t: (key: string) => string;
+}
+
+function DroppableColumn({
+  status,
+  labelKey,
+  color,
+  tickets,
+  isOver,
+  onTicketClick,
+  prefetchOnHover,
+  cancelPrefetch,
+  t,
+}: DroppableColumnProps) {
+  const ticketIds = useMemo(() => tickets.map((t) => t.identifier), [tickets]);
+
+  // Register column as droppable area
+  const { setNodeRef, isOver: isDroppableOver } = useDroppable({
+    id: status,
+  });
+
+  const highlighted = isOver || isDroppableOver;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex-shrink-0 w-72 flex flex-col rounded-lg bg-muted/30 transition-all duration-200",
+        highlighted && "ring-2 ring-primary bg-primary/5 scale-[1.02]"
+      )}
+    >
+      {/* Column Header */}
+      <div className={`flex items-center justify-between p-3 border-b-2 ${color}`}>
+        <h3 className="font-medium text-sm">{t(labelKey)}</h3>
+        <span className="text-xs text-muted-foreground bg-background px-2 py-0.5 rounded-full">
+          {tickets.length}
+        </span>
+      </div>
+
+      {/* Column Content */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
+        <SortableContext items={ticketIds} strategy={verticalListSortingStrategy}>
+          {tickets.map((ticket) => (
+            <SortableTicket
+              key={ticket.identifier}
+              ticket={ticket}
+              onTicketClick={onTicketClick}
+              onMouseEnter={() => prefetchOnHover(ticket.identifier)}
+              onMouseLeave={cancelPrefetch}
+            />
+          ))}
+        </SortableContext>
+
+        {/* Empty State */}
+        {tickets.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            {t("tickets.kanban.noTickets")}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function KanbanBoard({
   tickets,
   onStatusChange,
@@ -29,102 +181,172 @@ export function KanbanBoard({
   excludeStatuses = ["cancelled"],
 }: KanbanBoardProps) {
   const t = useTranslations();
-  const [draggedTicket, setDraggedTicket] = useState<Ticket | null>(null);
-  const [dragOverStatus, setDragOverStatus] = useState<Status | null>(null);
+  const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
+  const [overColumn, setOverColumn] = useState<Status | null>(null);
+  const { prefetchOnHover, cancelPrefetch } = useTicketPrefetch();
 
   const columns = statusConfig.filter((s) => !excludeStatuses.includes(s.status));
+  const columnIds = useMemo(() => new Set<string>(columns.map(c => c.status)), [columns]);
+
+  // Configure sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
+
+  /**
+   * Custom collision detection that prioritizes columns over tickets.
+   * This ensures dropping on a column's empty area works correctly.
+   */
+  const collisionDetection: CollisionDetection = (args) => {
+    // First, check for collisions with columns using pointerWithin
+    const pointerCollisions = pointerWithin(args);
+
+    // Find if we're over a column
+    const columnCollision = pointerCollisions.find(
+      collision => columnIds.has(collision.id as string)
+    );
+
+    if (columnCollision) {
+      return [columnCollision];
+    }
+
+    // Fall back to rect intersection for tickets within same column
+    const rectCollisions = rectIntersection(args);
+
+    // If over a ticket, find its parent column
+    const ticketCollision = rectCollisions.find(
+      collision => !columnIds.has(collision.id as string)
+    );
+
+    if (ticketCollision) {
+      // Return both the ticket and find which column it belongs to
+      const ticketId = ticketCollision.id as string;
+      const ticket = findTicketByIdentifier(ticketId);
+      if (ticket && columnIds.has(ticket.status)) {
+        // Return the column as the collision target
+        return [{ id: ticket.status }];
+      }
+    }
+
+    return pointerCollisions.length > 0 ? pointerCollisions : rectCollisions;
+  };
 
   const getTicketsByStatus = (status: Status) =>
     tickets.filter((t) => t.status === status);
 
-  const handleDragStart = (e: DragEvent, ticket: Ticket) => {
-    setDraggedTicket(ticket);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", ticket.identifier);
+  const findTicketByIdentifier = (identifier: string): Ticket | undefined =>
+    tickets.find((t) => t.identifier === identifier);
+
+  const findContainerByTicketId = (ticketId: string): Status | undefined => {
+    const ticket = findTicketByIdentifier(ticketId);
+    return ticket?.status;
   };
 
-  const handleDragEnd = () => {
-    setDraggedTicket(null);
-    setDragOverStatus(null);
-  };
-
-  const handleDragOver = (e: DragEvent, status: Status) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDragOverStatus(status);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverStatus(null);
-  };
-
-  const handleDrop = (e: DragEvent, newStatus: Status) => {
-    e.preventDefault();
-    setDragOverStatus(null);
-
-    if (draggedTicket && draggedTicket.status !== newStatus) {
-      onStatusChange?.(draggedTicket.identifier, newStatus);
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const ticket = findTicketByIdentifier(active.id as string);
+    if (ticket) {
+      setActiveTicket(ticket);
     }
-    setDraggedTicket(null);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event;
+
+    if (!over) {
+      setOverColumn(null);
+      return;
+    }
+
+    // Check if over a column (status) or a ticket
+    const overId = over.id as string;
+
+    // If it's a column ID (status)
+    if (columns.some(c => c.status === overId)) {
+      setOverColumn(overId as Status);
+      return;
+    }
+
+    // If it's a ticket, find its container
+    const overTicketContainer = findContainerByTicketId(overId);
+    if (overTicketContainer) {
+      setOverColumn(overTicketContainer);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    setActiveTicket(null);
+    setOverColumn(null);
+
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeTicket = findTicketByIdentifier(activeId);
+    if (!activeTicket) return;
+
+    // Determine target status
+    let targetStatus: Status | undefined;
+
+    // Check if dropped on a column
+    if (columns.some(c => c.status === overId)) {
+      targetStatus = overId as Status;
+    } else {
+      // Dropped on a ticket, use that ticket's status
+      targetStatus = findContainerByTicketId(overId);
+    }
+
+    // Update status if changed
+    if (targetStatus && activeTicket.status !== targetStatus) {
+      onStatusChange?.(activeId, targetStatus);
+    }
   };
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 h-full">
-      {columns.map(({ status, labelKey, color }) => {
-        const columnTickets = getTicketsByStatus(status);
-        const isDropTarget = dragOverStatus === status;
-
-        return (
-          <div
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex gap-4 overflow-x-auto pb-4 h-full">
+        {columns.map(({ status, labelKey, color }) => (
+          <DroppableColumn
             key={status}
-            className={`flex-shrink-0 w-72 flex flex-col rounded-lg bg-muted/30 ${
-              isDropTarget ? "ring-2 ring-primary" : ""
-            }`}
-            onDragOver={(e) => handleDragOver(e, status)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, status)}
-          >
-            {/* Column Header */}
-            <div
-              className={`flex items-center justify-between p-3 border-b-2 ${color}`}
-            >
-              <h3 className="font-medium text-sm">{t(labelKey)}</h3>
-              <span className="text-xs text-muted-foreground bg-background px-2 py-0.5 rounded-full">
-                {columnTickets.length}
-              </span>
-            </div>
+            status={status}
+            labelKey={labelKey}
+            color={color}
+            tickets={getTicketsByStatus(status)}
+            isOver={overColumn === status}
+            onTicketClick={onTicketClick}
+            prefetchOnHover={prefetchOnHover}
+            cancelPrefetch={cancelPrefetch}
+            t={t}
+          />
+        ))}
+      </div>
 
-            {/* Column Content */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-2">
-              {columnTickets.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, ticket)}
-                  onDragEnd={handleDragEnd}
-                  className={`transition-opacity ${
-                    draggedTicket?.id === ticket.id ? "opacity-50" : ""
-                  }`}
-                >
-                  <TicketCard
-                    ticket={ticket}
-                    onClick={() => onTicketClick?.(ticket)}
-                    showRepository={false}
-                  />
-                </div>
-              ))}
-
-              {/* Empty State */}
-              {columnTickets.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  {t("tickets.kanban.noTickets")}
-                </div>
-              )}
-            </div>
+      {/* Drag Overlay - Shows the dragged item */}
+      <DragOverlay>
+        {activeTicket ? (
+          <div className="opacity-90 scale-105 rotate-2 shadow-xl">
+            <TicketCard
+              ticket={activeTicket}
+              showRepository={false}
+            />
           </div>
-        );
-      })}
-    </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
 

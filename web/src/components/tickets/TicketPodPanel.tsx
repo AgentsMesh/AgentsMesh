@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { ticketApi } from "@/lib/api/client";
-import { getPodStatusInfo, getAgentStatusInfo } from "@/stores/mesh";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAuthStore } from "@/stores/auth";
-import { Terminal, ExternalLink } from "lucide-react";
-import { CreatePodForm } from "@/components/pod/CreatePodForm";
+import { Terminal, ExternalLink, Plus } from "lucide-react";
+import { CreatePodModal } from "@/components/ide/CreatePodModal";
 
 interface TicketPod {
   pod_key: string;
@@ -71,6 +70,10 @@ export default function TicketPodPanel({
     onPodCreated?.();
   };
 
+  const handleCloseModal = () => {
+    setShowCreateForm(false);
+  };
+
   const activePods = pods.filter(
     (s) => s.status === "running" || s.status === "initializing"
   );
@@ -89,87 +92,80 @@ export default function TicketPodPanel({
   }
 
   return (
-    <div className="border border-border rounded-lg">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <h3 className="font-medium">AgentPods</h3>
-          {activePods.length > 0 && (
-            <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-              {t("tickets.podPanel.activeCount", { count: activePods.length })}
+    <>
+      {/* Create Pod Modal */}
+      <CreatePodModal
+        open={showCreateForm}
+        onClose={handleCloseModal}
+        onCreated={handlePodCreated}
+        ticketContext={
+          ticketId
+            ? {
+                id: ticketId,
+                identifier: ticketIdentifier,
+                title: ticketTitle,
+                description: ticketDescription,
+              }
+            : undefined
+        }
+      />
+
+      <div className="space-y-2">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-muted-foreground" />
+            <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">
+              AgentPods
             </span>
-          )}
+            {activePods.length > 0 && (
+              <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                {activePods.length} {t("tickets.podPanel.active")}
+              </span>
+            )}
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            onClick={() => setShowCreateForm(true)}
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            {t("tickets.podPanel.newPod")}
+          </Button>
         </div>
-        <Button
-          size="sm"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
-          <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          {t("tickets.podPanel.newPod")}
-        </Button>
-      </div>
 
-      {/* Create Form - 使用共享的 CreatePodForm */}
-      {showCreateForm && (
-        <div className="p-4 border-b border-border bg-muted/30">
-          <h4 className="text-sm font-medium mb-3">{t("tickets.podPanel.createNewPod")}</h4>
-          <CreatePodForm
-            enabled={showCreateForm}
-            config={{
-              scenario: "ticket",
-              context: {
-                ticket: ticketId ? {
-                  id: ticketId,
-                  identifier: ticketIdentifier,
-                  title: ticketTitle,
-                  description: ticketDescription,
-                } : undefined,
-              },
-              promptPlaceholder: t("tickets.podPanel.initialPromptPlaceholder", { title: ticketTitle }),
-              onSuccess: handlePodCreated,
-              onCancel: () => setShowCreateForm(false),
-            }}
-          />
-        </div>
-      )}
-
-      {/* Pods List */}
-      <div className="divide-y divide-border">
+        {/* Pods List */}
+        <div className="space-y-1">
         {/* Active Pods */}
         {activePods.map((pod) => (
           <PodItem key={pod.pod_key} pod={pod} ticketIdentifier={ticketIdentifier} />
         ))}
 
-        {/* Inactive Pods (collapsed by default if there are active ones) */}
-        {inactivePods.length > 0 && (
-          <details className="group">
-            <summary className="px-4 py-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50">
-              {t("tickets.podPanel.previousPods", { count: inactivePods.length })}
-            </summary>
-            <div className="divide-y divide-border border-t border-border">
-              {inactivePods.map((pod) => (
-                <PodItem key={pod.pod_key} pod={pod} ticketIdentifier={ticketIdentifier} />
-              ))}
-            </div>
-          </details>
-        )}
+          {/* Inactive Pods (collapsed by default if there are active ones) */}
+          {inactivePods.length > 0 && (
+            <details className="group">
+              <summary className="px-2.5 py-1.5 text-xs text-muted-foreground cursor-pointer hover:bg-muted/50 rounded-md">
+                {t("tickets.podPanel.previousPods", { count: inactivePods.length })}
+              </summary>
+              <div className="mt-1 space-y-1">
+                {inactivePods.map((pod) => (
+                  <PodItem key={pod.pod_key} pod={pod} ticketIdentifier={ticketIdentifier} />
+                ))}
+              </div>
+            </details>
+          )}
 
-        {/* Empty State */}
-        {pods.length === 0 && !showCreateForm && (
-          <div className="px-4 py-8 text-center text-muted-foreground">
-            <svg className="w-10 h-10 mx-auto mb-2 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <p className="text-sm">{t("tickets.podPanel.noPods")}</p>
-          </div>
-        )}
+          {/* Empty State */}
+          {pods.length === 0 && (
+            <div className="py-4 text-center text-muted-foreground">
+              <Terminal className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+              <p className="text-xs">{t("tickets.podPanel.noPods")}</p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -183,8 +179,6 @@ function PodItem({ pod, ticketIdentifier }: PodItemProps) {
   const router = useRouter();
   const { currentOrg } = useAuthStore();
   const { addPane } = useWorkspaceStore();
-  const statusInfo = getPodStatusInfo(pod.status);
-  const agentInfo = getAgentStatusInfo(pod.agent_status);
   const isActive = pod.status === "running" || pod.status === "initializing";
 
   const handleConnect = () => {
@@ -199,74 +193,54 @@ function PodItem({ pod, ticketIdentifier }: PodItemProps) {
   };
 
   return (
-    <div className={`px-4 py-3 ${isActive ? "bg-green-50/50 dark:bg-green-900/10" : ""}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Status Indicator */}
-          <div
-            className={`w-2 h-2 rounded-full ${
-              pod.status === "running"
-                ? "bg-green-500 animate-pulse"
-                : pod.status === "initializing"
-                ? "bg-yellow-500 animate-pulse"
-                : pod.status === "failed"
-                ? "bg-red-500"
-                : "bg-gray-400"
-            }`}
-          />
+    <div
+      className={`px-2.5 py-1.5 rounded-md flex items-center gap-2 group transition-colors ${
+        isActive ? "hover:bg-green-50/50 dark:hover:bg-green-900/10" : "hover:bg-muted/50"
+      }`}
+    >
+      {/* Status Indicator */}
+      <div
+        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+          pod.status === "running"
+            ? "bg-green-500 animate-pulse"
+            : pod.status === "initializing"
+            ? "bg-yellow-500 animate-pulse"
+            : pod.status === "failed"
+            ? "bg-red-500"
+            : "bg-gray-400"
+        }`}
+      />
 
-          {/* Pod Info */}
-          <div>
-            <code className="text-xs font-mono text-muted-foreground">
-              {pod.pod_key.substring(0, 12)}...
-            </code>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span
-                className={`px-1.5 py-0.5 text-xs rounded ${statusInfo.bgColor} ${statusInfo.color}`}
-              >
-                {statusInfo.label}
-              </span>
-              {isActive && (
-                <span className={`text-xs flex items-center gap-1 ${agentInfo.color}`}>
-                  <span>{agentInfo.icon}</span>
-                  {agentInfo.label}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Pod Key */}
+      <code className="text-xs font-mono text-muted-foreground flex-1 truncate">
+        {pod.pod_key.substring(0, 12)}...
+      </code>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {pod.model && (
-            <span className="text-xs text-muted-foreground hidden sm:inline">{pod.model}</span>
-          )}
-          {isActive && (
-            <>
-              <Button size="sm" variant="outline" onClick={handleConnect}>
-                <Terminal className="w-3.5 h-3.5 mr-1" />
-                {t("tickets.podPanel.connect")}
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="hidden sm:flex"
-                onClick={handleOpenInNewTab}
-                title={t("tickets.podPanel.openInNewTab")}
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-              </Button>
-            </>
-          )}
-        </div>
+      {/* Actions - show on hover */}
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {isActive && (
+          <>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-xs"
+              onClick={handleConnect}
+            >
+              <Terminal className="w-3 h-3 mr-1" />
+              {t("tickets.podPanel.connect")}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+              onClick={handleOpenInNewTab}
+              title={t("tickets.podPanel.openInNewTab")}
+            >
+              <ExternalLink className="w-3 h-3" />
+            </Button>
+          </>
+        )}
       </div>
-
-      {/* Started At */}
-      {pod.started_at && (
-        <div className="mt-1 text-xs text-muted-foreground ml-5">
-          {t("tickets.podPanel.started")}: {new Date(pod.started_at).toLocaleString()}
-        </div>
-      )}
     </div>
   );
 }

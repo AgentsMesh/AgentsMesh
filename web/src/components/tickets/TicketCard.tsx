@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/client";
 import { useAuthStore } from "@/stores/auth";
 import { Ticket } from "@/stores/ticket";
+import { StatusIcon, PriorityIcon, TypeIcon, getStatusDisplayInfo } from "./TicketIcons";
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -11,39 +12,10 @@ interface TicketCardProps {
   showRepository?: boolean;
 }
 
-const typeConfig: Record<string, { icon: string; color: string }> = {
-  task: { icon: "✓", color: "text-blue-500 dark:text-blue-400" },
-  bug: { icon: "🐛", color: "text-red-500 dark:text-red-400" },
-  feature: { icon: "✨", color: "text-green-500 dark:text-green-400" },
-  improvement: { icon: "📈", color: "text-cyan-500 dark:text-cyan-400" },
-  epic: { icon: "⚡", color: "text-purple-500 dark:text-purple-400" },
-  subtask: { icon: "◦", color: "text-gray-500 dark:text-gray-400" },
-  story: { icon: "📖", color: "text-teal-500 dark:text-teal-400" },
-};
-
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  backlog: { label: "Backlog", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-800" },
-  todo: { label: "To Do", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
-  in_progress: { label: "In Progress", color: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-100 dark:bg-yellow-900/30" },
-  in_review: { label: "In Review", color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" },
-  done: { label: "Done", color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-900/30" },
-  cancelled: { label: "Cancelled", color: "text-red-600 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30" },
-};
-
-const priorityConfig: Record<string, { icon: string; color: string }> = {
-  none: { icon: "—", color: "text-gray-400 dark:text-gray-500" },
-  low: { icon: "↓", color: "text-green-500 dark:text-green-400" },
-  medium: { icon: "→", color: "text-yellow-500 dark:text-yellow-400" },
-  high: { icon: "↑", color: "text-orange-500 dark:text-orange-400" },
-  urgent: { icon: "⚡", color: "text-red-500 dark:text-red-400" },
-};
-
 export function TicketCard({ ticket, onClick, showRepository = true }: TicketCardProps) {
   const t = useTranslations();
   const { currentOrg } = useAuthStore();
-  const typeStyle = typeConfig[ticket.type] || typeConfig.task;
-  const statusStyle = statusConfig[ticket.status] || statusConfig.backlog;
-  const priorityStyle = priorityConfig[ticket.priority] || priorityConfig.none;
+  const statusInfo = getStatusDisplayInfo(ticket.status);
 
   const isDueSoon = () => {
     if (!ticket.due_date) return false;
@@ -63,15 +35,13 @@ export function TicketCard({ ticket, onClick, showRepository = true }: TicketCar
 
   return (
     <div
-      className="border rounded-lg p-3 bg-card hover:shadow-md transition-shadow cursor-pointer"
+      className="border rounded-lg p-3 bg-card hover:shadow-md hover:border-primary/30 transition-all duration-150 cursor-pointer"
       onClick={onClick}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className={typeStyle.color} title={t(`tickets.type.${ticket.type}`)}>
-            {typeStyle.icon}
-          </span>
+          <TypeIcon type={ticket.type} size="sm" />
           <Link
             href={`/${currentOrg?.slug}/tickets/${ticket.identifier}`}
             className="text-xs text-muted-foreground hover:text-primary font-mono"
@@ -81,8 +51,9 @@ export function TicketCard({ ticket, onClick, showRepository = true }: TicketCar
           </Link>
         </div>
         <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusStyle.bg} ${statusStyle.color}`}
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}
         >
+          <StatusIcon status={ticket.status} size="xs" />
           {t(`tickets.status.${ticket.status}`)}
         </span>
       </div>
@@ -112,9 +83,7 @@ export function TicketCard({ ticket, onClick, showRepository = true }: TicketCar
       <div className="flex items-center justify-between mt-2">
         <div className="flex items-center gap-2">
           {/* Priority */}
-          <span className={`text-sm ${priorityStyle.color}`} title={t(`tickets.priority.${ticket.priority}`)}>
-            {priorityStyle.icon}
-          </span>
+          <PriorityIcon priority={ticket.priority} size="sm" />
 
           {/* Due Date */}
           {ticket.due_date && (

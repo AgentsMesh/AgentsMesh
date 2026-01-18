@@ -10,6 +10,8 @@ import (
 
 	"github.com/creack/pty"
 	"golang.org/x/term"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // Options for creating a new terminal (legacy API)
@@ -73,12 +75,17 @@ func (t *Terminal) Start() error {
 		return fmt.Errorf("terminal is closed")
 	}
 
+	log := logger.Terminal()
+	log.Debug("Starting command", "path", t.cmd.Path, "args", t.cmd.Args, "dir", t.cmd.Dir)
+
 	// Start with PTY
 	ptmx, err := pty.Start(t.cmd)
 	if err != nil {
 		return fmt.Errorf("failed to start pty: %w", err)
 	}
 	t.pty = ptmx
+
+	log.Debug("PTY started", "pid", t.cmd.Process.Pid)
 
 	// Start output reader
 	go t.readOutput()
@@ -171,7 +178,9 @@ func (t *Terminal) SetExitHandler(handler func(int)) {
 
 // readOutput reads output from the PTY and sends to handler
 func (t *Terminal) readOutput() {
+	log := logger.Terminal()
 	buf := make([]byte, 4096)
+	readCount := 0
 	for {
 		n, err := t.pty.Read(buf)
 		if err != nil {
@@ -181,13 +190,22 @@ func (t *Terminal) readOutput() {
 				closed := t.closed
 				t.mu.Unlock()
 				if !closed {
-					// Log error but don't break - might be temporary
+					log.Error("PTY read error", "error", err, "read_count", readCount)
 				}
+			} else {
+				log.Debug("PTY EOF received", "read_count", readCount)
 			}
 			break
 		}
 
+		readCount++
 		if n > 0 {
+			// Debug: Log first few reads
+			if readCount <= 5 {
+				preview := string(buf[:min(n, 100)])
+				log.Debug("PTY read", "read_num", readCount, "bytes", n, "preview", preview)
+			}
+
 			// Make a copy of the data
 			data := make([]byte, n)
 			copy(data, buf[:n])
@@ -199,6 +217,8 @@ func (t *Terminal) readOutput() {
 
 			if handler != nil {
 				handler(data)
+			} else {
+				log.Warn("No output handler set", "read_num", readCount)
 			}
 		}
 	}

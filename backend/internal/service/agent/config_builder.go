@@ -31,7 +31,6 @@ type PodConfig struct {
 	EnvVars       map[string]string `json:"env_vars"`
 	FilesToCreate []FileToCreate    `json:"files_to_create"`
 	WorkDirConfig WorkDirConfig     `json:"work_dir_config"`
-	InitialPrompt string            `json:"initial_prompt,omitempty"`
 }
 
 // FileToCreate represents a file to be created in the sandbox
@@ -71,7 +70,7 @@ type ConfigBuildRequest struct {
 	// User-provided config overrides
 	ConfigOverrides map[string]interface{}
 
-	// Initial prompt
+	// Initial prompt (appended to LaunchArgs)
 	InitialPrompt string
 
 	// Runtime info (provided by Runner during handshake)
@@ -117,6 +116,13 @@ func (b *ConfigBuilder) BuildPodConfig(ctx context.Context, req *ConfigBuildRequ
 		return nil, fmt.Errorf("failed to build launch args: %w", err)
 	}
 
+	// Prepend InitialPrompt to launch args if provided.
+	// Claude Code CLI syntax: claude [prompt] [options]
+	// The prompt must come BEFORE options, not after.
+	if req.InitialPrompt != "" {
+		launchArgs = append([]string{req.InitialPrompt}, launchArgs...)
+	}
+
 	// 6. Build files to create from FilesTemplate
 	filesToCreate, err := b.buildFilesToCreate(agentType.FilesTemplate, config, templateCtx)
 	if err != nil {
@@ -132,7 +138,6 @@ func (b *ConfigBuilder) BuildPodConfig(ctx context.Context, req *ConfigBuildRequ
 		EnvVars:       envVars,
 		FilesToCreate: filesToCreate,
 		WorkDirConfig: workDirConfig,
-		InitialPrompt: req.InitialPrompt,
 	}, nil
 }
 

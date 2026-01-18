@@ -165,8 +165,9 @@ func TestConfigBuilder_BuildPodConfig(t *testing.T) {
 			t.Fatalf("BuildPodConfig failed: %v", err)
 		}
 
-		if config.InitialPrompt != "Fix the bug in main.go" {
-			t.Errorf("InitialPrompt = %s, want Fix the bug in main.go", config.InitialPrompt)
+		// InitialPrompt is now prepended to LaunchArgs as the first argument
+		if len(config.LaunchArgs) == 0 || config.LaunchArgs[0] != "Fix the bug in main.go" {
+			t.Errorf("LaunchArgs[0] = %v, want Fix the bug in main.go (InitialPrompt should be first arg)", config.LaunchArgs)
 		}
 	})
 
@@ -359,8 +360,9 @@ func TestConfigBuilder_BuildPodConfig_FullFlow(t *testing.T) {
 			t.Errorf("FilesToCreate[0].Mode = %o, want 0600", config.FilesToCreate[0].Mode)
 		}
 
-		if config.InitialPrompt != "Hello" {
-			t.Errorf("InitialPrompt = %s, want Hello", config.InitialPrompt)
+		// InitialPrompt is now prepended to LaunchArgs as the first argument
+		if len(config.LaunchArgs) == 0 || config.LaunchArgs[0] != "Hello" {
+			t.Errorf("LaunchArgs[0] = %v, want Hello (InitialPrompt should be first arg)", config.LaunchArgs)
 		}
 	})
 }

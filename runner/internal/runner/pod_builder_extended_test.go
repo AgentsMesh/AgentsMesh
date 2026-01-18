@@ -48,14 +48,14 @@ func TestPodBuilderBuildWithAllOptions(t *testing.T) {
 		workspace: ws,
 	}
 
+	// Note: InitialPrompt is now handled by Backend via LaunchArgs
 	builder := NewPodBuilder(runner).
 		WithPodKey("all-options-pod").
 		WithAgentType("claude-code").
 		WithLaunchCommand("echo", []string{"hello", "world"}).
 		WithEnvVars(map[string]string{"VAR1": "value1"}).
 		WithEnvVar("VAR2", "value2").
-		WithTerminalSize(30, 100).
-		WithInitialPrompt("Hello!")
+		WithTerminalSize(30, 100)
 
 	pod, err := builder.Build(context.Background())
 	if err != nil {
@@ -68,9 +68,6 @@ func TestPodBuilderBuildWithAllOptions(t *testing.T) {
 	}
 	if pod.AgentType != "claude-code" {
 		t.Errorf("agent type = %s, want claude-code", pod.AgentType)
-	}
-	if pod.InitialPrompt != "Hello!" {
-		t.Errorf("initial prompt = %s, want Hello!", pod.InitialPrompt)
 	}
 	if pod.Terminal == nil {
 		t.Error("terminal should not be nil")
@@ -238,6 +235,7 @@ func TestPodBuilderFluentChaining(t *testing.T) {
 		},
 	}
 
+	// Note: InitialPrompt is now handled by Backend via LaunchArgs
 	builder := NewPodBuilder(runner).
 		WithPodKey("chain-pod").
 		WithAgentType("test-agent").
@@ -245,7 +243,6 @@ func TestPodBuilderFluentChaining(t *testing.T) {
 		WithEnvVars(map[string]string{"VAR1": "val1"}).
 		WithEnvVar("VAR2", "val2").
 		WithTerminalSize(40, 120).
-		WithInitialPrompt("prompt").
 		WithWorkDirConfig(&client.WorkDirConfig{
 			Type:          "worktree",
 			RepositoryURL: "https://example.com/repo",
@@ -272,9 +269,6 @@ func TestPodBuilderFluentChaining(t *testing.T) {
 	}
 	if builder.rows != 40 || builder.cols != 120 {
 		t.Error("terminal size not set correctly")
-	}
-	if builder.initialPrompt != "prompt" {
-		t.Error("initialPrompt not set")
 	}
 	if builder.workDirConfig == nil {
 		t.Error("workDirConfig not set")

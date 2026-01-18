@@ -4,7 +4,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
-import { useTicketStore, TicketStatus, TicketType, TicketPriority, getStatusInfo, getPriorityInfo, getTypeInfo } from "@/stores/ticket";
+import { useTicketStore, TicketStatus, TicketType, TicketPriority } from "@/stores/ticket";
+import { StatusIcon, TypeIcon, PriorityIcon, getStatusDisplayInfo, getTypeDisplayInfo, getPriorityDisplayInfo } from "@/components/tickets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -285,7 +286,7 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
           <CollapsibleContent>
             <div className="px-3 pb-2 space-y-1">
               {statusOptions.map((status) => {
-                const info = getStatusInfo(status);
+                const info = getStatusDisplayInfo(status);
                 return (
                   <label
                     key={status}
@@ -296,7 +297,7 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
                       onCheckedChange={() => toggleStatus(status)}
                       className="h-3.5 w-3.5"
                     />
-                    {statusIcons[status]}
+                    <StatusIcon status={status} size="xs" />
                     <span>{info.label}</span>
                   </label>
                 );
@@ -327,7 +328,7 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
           <CollapsibleContent>
             <div className="px-3 pb-2 space-y-1">
               {typeOptions.map((type) => {
-                const info = getTypeInfo(type);
+                const info = getTypeDisplayInfo(type);
                 return (
                   <label
                     key={type}
@@ -338,7 +339,7 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
                       onCheckedChange={() => toggleType(type)}
                       className="h-3.5 w-3.5"
                     />
-                    <span className={info.color}>{info.icon}</span>
+                    <TypeIcon type={type} size="xs" />
                     <span>{info.label}</span>
                   </label>
                 );
@@ -369,7 +370,7 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
           <CollapsibleContent>
             <div className="px-3 pb-2 space-y-1">
               {priorityOptions.map((priority) => {
-                const info = getPriorityInfo(priority);
+                const info = getPriorityDisplayInfo(priority);
                 return (
                   <label
                     key={priority}
@@ -380,7 +381,7 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
                       onCheckedChange={() => togglePriority(priority)}
                       className="h-3.5 w-3.5"
                     />
-                    <span className={info.color}>{info.icon}</span>
+                    <PriorityIcon priority={priority} size="xs" />
                     <span>{info.label}</span>
                   </label>
                 );
