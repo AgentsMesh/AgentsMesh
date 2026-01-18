@@ -10,6 +10,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// DefaultTokenExpirationDays is the default expiration time for registration tokens
+const DefaultTokenExpirationDays = 7
+
 // CreateRegistrationToken creates a new registration token
 func (s *Service) CreateRegistrationToken(ctx context.Context, orgID, userID int64, description string, maxUses *int, expiresAt *time.Time) (string, error) {
 	// Generate random token
@@ -23,6 +26,12 @@ func (s *Service) CreateRegistrationToken(ctx context.Context, orgID, userID int
 	tokenHash, err := bcrypt.GenerateFromPassword([]byte(token), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
+	}
+
+	// Set default expiration if not provided (7 days)
+	if expiresAt == nil {
+		defaultExpiry := time.Now().Add(DefaultTokenExpirationDays * 24 * time.Hour)
+		expiresAt = &defaultExpiry
 	}
 
 	regToken := &runner.RegistrationToken{
