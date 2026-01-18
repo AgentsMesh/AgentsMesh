@@ -181,7 +181,7 @@ reset_database() {
 -- 删除 seed 数据（按依赖顺序）
 DELETE FROM tickets WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'dev-org');
 DELETE FROM runners WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'dev-org');
-DELETE FROM runner_registration_tokens WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'dev-org');
+DELETE FROM runner_grpc_registration_tokens WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'dev-org');
 DELETE FROM organization_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug = 'dev-org');
 DELETE FROM organizations WHERE slug = 'dev-org';
 DELETE FROM users WHERE email = 'dev@agentsmesh.local';

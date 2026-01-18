@@ -15,9 +15,16 @@ func TestHeartbeat(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	// Create token and register runner
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	// Send heartbeat
 	err := service.Heartbeat(ctx, r.ID, 2)
@@ -43,8 +50,16 @@ func TestUpdateHeartbeatWithPods(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	pods := []HeartbeatPodInfo{
 		{PodKey: "pod-1", Status: "running"},
@@ -78,8 +93,16 @@ func TestMarkOfflineRunners(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	// Mark as online with a recent heartbeat
 	now := time.Now()

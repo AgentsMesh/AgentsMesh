@@ -1,17 +1,19 @@
 import { create } from "zustand";
-import { runnerApi, RunnerData } from "@/lib/api/client";
+import { runnerApi, RunnerData, GRPCRegistrationToken } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/utils";
 
 export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
 
 // Re-export types for backward compatibility
 export type Runner = RunnerData;
+export type RegistrationToken = GRPCRegistrationToken;
 
 interface RunnerState {
   // State
   runners: Runner[];
   availableRunners: Runner[];
   currentRunner: Runner | null;
+  tokens: RegistrationToken[];
   loading: boolean;
   error: string | null;
 
@@ -21,9 +23,10 @@ interface RunnerState {
   fetchRunner: (id: number) => Promise<void>;
   updateRunner: (id: number, data: { description?: string; max_concurrent_pods?: number; is_enabled?: boolean }) => Promise<Runner>;
   deleteRunner: (id: number) => Promise<void>;
-  regenerateAuthToken: (id: number) => Promise<string>;
-  // Token management - simplified to one-time token generation
-  createToken: () => Promise<string>;
+  // Token management (gRPC registration tokens)
+  createToken: (data?: { name?: string; labels?: string[]; max_uses?: number; expires_in_days?: number }) => Promise<string>;
+  fetchTokens: () => Promise<void>;
+  deleteToken: (id: number) => Promise<void>;
   setCurrentRunner: (runner: Runner | null) => void;
   updateRunnerStatus: (runnerId: number, status: RunnerStatus) => void;
   clearError: () => void;
@@ -33,6 +36,7 @@ export const useRunnerStore = create<RunnerState>((set) => ({
   runners: [],
   availableRunners: [],
   currentRunner: null,
+  tokens: [],
   loading: false,
   error: null,
 
@@ -107,23 +111,35 @@ export const useRunnerStore = create<RunnerState>((set) => ({
     }
   },
 
-  regenerateAuthToken: async (id) => {
+  createToken: async (data) => {
     try {
-      const response = await runnerApi.regenerateAuthToken(id);
-      return response.auth_token;
+      const response = await runnerApi.createToken(data);
+      return response.token;
     } catch (error: unknown) {
-      const message = getErrorMessage(error, "Failed to regenerate auth token");
+      const message = getErrorMessage(error, "Failed to create token");
       set({ error: message });
       throw error;
     }
   },
 
-  createToken: async () => {
+  fetchTokens: async () => {
     try {
-      const response = await runnerApi.createToken();
-      return response.token;
+      const response = await runnerApi.listTokens();
+      set({ tokens: response.tokens || [] });
     } catch (error: unknown) {
-      const message = getErrorMessage(error, "Failed to create token");
+      const message = getErrorMessage(error, "Failed to fetch tokens");
+      set({ error: message });
+    }
+  },
+
+  deleteToken: async (id) => {
+    try {
+      await runnerApi.deleteToken(id);
+      set((state) => ({
+        tokens: state.tokens.filter((t) => t.id !== id),
+      }));
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, "Failed to delete token");
       set({ error: message });
       throw error;
     }

@@ -69,9 +69,6 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		// Public config endpoints (deployment info for frontend)
 		v1.RegisterPublicConfigRoutes(apiV1.Group("/config"), svc.Billing)
 
-		// Runner registration (uses token-based auth, not JWT)
-		RegisterRunnerAuthRoutes(apiV1.Group("/runners"), svc)
-
 		// gRPC Runner routes (public, for Runner CLI registration with mTLS)
 		if svc.GRPCRunnerHandler != nil {
 			v1.RegisterGRPCRunnerRoutes(apiV1, svc.GRPCRunnerHandler)
@@ -205,14 +202,4 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 	}
 
 	return r
-}
-
-// RegisterRunnerAuthRoutes registers runner-specific authentication routes
-// Note: Only registration is here. Heartbeat and WebSocket are now org-scoped at:
-//   - POST /api/v1/orgs/:slug/runners/heartbeat
-//   - GET  /api/v1/orgs/:slug/ws/runners
-func RegisterRunnerAuthRoutes(rg *gin.RouterGroup, svc *v1.Services) {
-	runnerHandler := v1.NewRunnerHandler(svc.Runner)
-	runnerHandler.SetOrgService(svc.Org)
-	rg.POST("/register", runnerHandler.RegisterRunner)
 }

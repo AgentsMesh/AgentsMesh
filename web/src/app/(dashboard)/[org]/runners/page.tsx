@@ -22,6 +22,7 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getServerUrl } from "@/lib/env";
 import { useTranslations } from "@/lib/i18n/client";
 
 export default function RunnersPage() {
@@ -435,7 +436,7 @@ function AddRunnerModal({
 
   const copyCommand = () => {
     if (generatedToken) {
-      const command = `agentsmesh-runner --token ${generatedToken}`;
+      const command = `agentsmesh-runner register --server ${getServerUrl()} --token ${generatedToken}\nagentsmesh-runner run`;
       navigator.clipboard.writeText(command);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -487,8 +488,9 @@ function AddRunnerModal({
                   <Terminal className="w-4 h-4" />
                   <span>Terminal</span>
                 </div>
-                <code className="text-green-600 dark:text-green-400 text-sm font-mono block">
-                  agentsmesh-runner --token {generatedToken.substring(0, 16)}...
+                <code className="text-green-600 dark:text-green-400 text-sm font-mono block whitespace-pre-wrap">
+{`agentsmesh-runner register --server ${getServerUrl()} --token ${generatedToken.substring(0, 16)}...
+agentsmesh-runner run`}
                 </code>
                 <Button
                   variant="ghost"

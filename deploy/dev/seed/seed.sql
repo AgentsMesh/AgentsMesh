@@ -109,12 +109,12 @@ BEGIN
     );
 
     -- =========================================================================
-    -- 4. 创建 Runner 注册令牌
+    -- 4. 创建 Runner 注册令牌 (gRPC/mTLS)
     -- =========================================================================
     -- Token: dev-runner-token
     -- bcrypt hash (cost=10)
 
-    INSERT INTO runner_registration_tokens (
+    INSERT INTO runner_grpc_registration_tokens (
         organization_id, token_hash, description, created_by_id, is_active, max_uses
     )
     SELECT v_org_id,
@@ -124,7 +124,7 @@ BEGIN
            TRUE,
            NULL  -- Unlimited uses
     WHERE NOT EXISTS (
-        SELECT 1 FROM runner_registration_tokens
+        SELECT 1 FROM runner_grpc_registration_tokens
         WHERE organization_id = v_org_id
         AND description = 'Development Runner Token'
     )

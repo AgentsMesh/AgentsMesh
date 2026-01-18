@@ -132,25 +132,6 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to connect database: %v", err)
 	}
 
-	// Create runner_registration_tokens table
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS runner_registration_tokens (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
-			token_hash TEXT NOT NULL UNIQUE,
-			description TEXT,
-			created_by_id INTEGER NOT NULL,
-			is_active BOOLEAN NOT NULL DEFAULT TRUE,
-			max_uses INTEGER,
-			used_count INTEGER NOT NULL DEFAULT 0,
-			expires_at DATETIME,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`).Error
-	if err != nil {
-		t.Fatalf("failed to create runner_registration_tokens table: %v", err)
-	}
-
 	// Create runners table (auth_token_hash removed - using mTLS certificates)
 	err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS runners (
@@ -180,7 +161,6 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	// Create indexes
 	db.Exec(`CREATE INDEX IF NOT EXISTS idx_runners_organization_id ON runners(organization_id)`)
 	db.Exec(`CREATE INDEX IF NOT EXISTS idx_runners_status ON runners(status)`)
-	db.Exec(`CREATE INDEX IF NOT EXISTS idx_runner_registration_tokens_organization_id ON runner_registration_tokens(organization_id)`)
 
 	// Create organizations table for gRPC registration tests
 	err = db.Exec(`

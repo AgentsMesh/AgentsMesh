@@ -1243,7 +1243,7 @@
       "lastSeen": "最后在线：",
       "justNow": "刚刚",
       "edit": "编辑",
-      "regenerateToken": "重新生成令牌",
+      "generateToken": "生成令牌",
       "delete": "删除",
       "disabled": "已禁用",
       "deleteDialog": {
@@ -1253,8 +1253,8 @@
         "delete": "删除"
       },
       "tokenDialog": {
-        "title": "新认证令牌",
-        "description": "请立即复制此令牌，你将无法再次查看。Runner 需要更新为此新令牌。",
+        "title": "注册令牌",
+        "description": "请立即复制此令牌，你将无法再次查看。使用此令牌运行 'runner register' 命令。",
         "copy": "复制",
         "done": "完成"
       },

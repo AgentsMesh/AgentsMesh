@@ -1,4 +1,15 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getServerUrl } from "@/lib/env";
+
 export default function RunnerSetupPage() {
+  const [serverUrl, setServerUrl] = useState("https://api.agentsmesh.ai");
+
+  useEffect(() => {
+    setServerUrl(getServerUrl());
+  }, []);
+
   return (
     <div>
       <h1 className="text-4xl font-bold mb-8">Runner Setup</h1>
@@ -28,10 +39,10 @@ export default function RunnerSetupPage() {
         <h3 className="text-lg font-medium mb-2 mt-6">One-Line Install (Recommended)</h3>
         <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
           <pre className="text-green-500 dark:text-green-400">{`# macOS / Linux
-curl -fsSL https://agentsmesh.ai/install.sh | sh
+curl -fsSL ${serverUrl}/install.sh | sh
 
 # Windows (PowerShell)
-irm https://agentsmesh.ai/install.ps1 | iex`}</pre>
+irm ${serverUrl}/install.ps1 | iex`}</pre>
         </div>
 
         <h3 className="text-lg font-medium mb-2 mt-6">macOS (Homebrew)</h3>
@@ -59,10 +70,10 @@ sudo rpm -i agentsmesh-runner_\${VERSION}_linux_amd64.rpm`}</pre>
         <h3 className="text-lg font-medium mb-2 mt-6">After Installation</h3>
         <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
           <pre className="text-green-500 dark:text-green-400">{`# Register with your server
-runner register --server https://api.agentsmesh.ai --token <YOUR_TOKEN>
+agentsmesh-runner register --server ${serverUrl} --token <YOUR_TOKEN>
 
 # Start the runner
-runner run`}</pre>
+agentsmesh-runner run`}</pre>
         </div>
 
         <p className="text-sm text-muted-foreground mt-4">
@@ -80,7 +91,7 @@ runner run`}</pre>
 docker run -d \\
   --name agentsmesh-runner \\
   -e AGENTSMESH_TOKEN=<YOUR_TOKEN> \\
-  -e AGENTSMESH_URL=https://api.agentsmesh.dev \\
+  -e AGENTSMESH_URL=${serverUrl} \\
   -v /var/run/docker.sock:/var/run/docker.sock \\
   -v ~/.ssh:/root/.ssh:ro \\
   agentsmesh/runner:latest`}</pre>
@@ -100,7 +111,7 @@ services:
     restart: unless-stopped
     environment:
       - AGENTSMESH_TOKEN=\${AGENTSMESH_TOKEN}
-      - AGENTSMESH_URL=\${AGENTSMESH_URL:-https://api.agentsmesh.dev}
+      - AGENTSMESH_URL=\${AGENTSMESH_URL:-${serverUrl}}
       - MAX_CONCURRENT_PODS=5
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -147,7 +158,7 @@ volumes:
                   AgentsMesh server URL
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  https://api.agentsmesh.dev
+                  {serverUrl}
                 </td>
               </tr>
               <tr>
@@ -199,9 +210,9 @@ volumes:
         <div className="bg-muted rounded-lg p-4 mt-4">
           <p className="text-sm text-muted-foreground">
             <strong>Security Note:</strong> Registration tokens are one-time
-            use. Once a runner registers, it receives a permanent auth token.
-            You can regenerate the auth token from the runner settings if
-            needed.
+            use. Once a runner registers, it receives mTLS certificates for
+            secure communication. You can revoke certificates from the runner
+            settings if needed.
           </p>
         </div>
       </section>

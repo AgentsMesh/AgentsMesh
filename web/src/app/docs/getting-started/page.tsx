@@ -1,6 +1,16 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getServerUrl } from "@/lib/env";
 
 export default function GettingStartedPage() {
+  const [serverUrl, setServerUrl] = useState("https://api.agentsmesh.ai");
+
+  useEffect(() => {
+    setServerUrl(getServerUrl());
+  }, []);
+
   return (
     <div>
       <h1 className="text-4xl font-bold mb-8">Quick Start</h1>
@@ -121,15 +131,13 @@ export default function GettingStartedPage() {
           </p>
           <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
             <pre className="text-green-500 dark:text-green-400">{`# Download and install the runner
-curl -fsSL https://get.agentsmesh.dev | sh
+curl -fsSL ${serverUrl}/install.sh | sh
 
 # Register with your token (from Settings → Runners)
-runner register \\
-  --server https://api.agentsmesh.dev \\
-  --token <YOUR_TOKEN>
+agentsmesh-runner register --server ${serverUrl} --token <YOUR_TOKEN>
 
 # Start the runner
-runner run`}</pre>
+agentsmesh-runner run`}</pre>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
             See{" "}

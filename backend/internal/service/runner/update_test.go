@@ -14,8 +14,16 @@ func TestUpdateRunner(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	newDesc := "Updated Description"
 	newMax := 10
@@ -60,8 +68,16 @@ func TestUpdateHostInfo(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	hostInfo := runner.HostInfo{
 		"os":       "linux",
@@ -72,7 +88,6 @@ func TestUpdateHostInfo(t *testing.T) {
 	// Note: SQLite doesn't support JSONB type natively, so this may error
 	// The method itself is correct, just SQLite incompatible with the GORM model
 	_ = service.UpdateHostInfo(ctx, r.ID, hostInfo)
-	_ = r // used
 }
 
 func TestIncrementPods(t *testing.T) {
@@ -80,13 +95,21 @@ func TestIncrementPods(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	// Initial pods should be 0
-	runner, _ := service.GetRunner(ctx, r.ID)
-	if runner.CurrentPods != 0 {
-		t.Errorf("expected 0 pods, got %d", runner.CurrentPods)
+	runnerObj, _ := service.GetRunner(ctx, r.ID)
+	if runnerObj.CurrentPods != 0 {
+		t.Errorf("expected 0 pods, got %d", runnerObj.CurrentPods)
 	}
 
 	// Increment
@@ -95,9 +118,9 @@ func TestIncrementPods(t *testing.T) {
 		t.Errorf("IncrementPods error: %v", err)
 	}
 
-	runner, _ = service.GetRunner(ctx, r.ID)
-	if runner.CurrentPods != 1 {
-		t.Errorf("expected 1 pod after increment, got %d", runner.CurrentPods)
+	runnerObj, _ = service.GetRunner(ctx, r.ID)
+	if runnerObj.CurrentPods != 1 {
+		t.Errorf("expected 1 pod after increment, got %d", runnerObj.CurrentPods)
 	}
 }
 
@@ -106,8 +129,16 @@ func TestDecrementPods(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	// Note: DecrementPods uses GREATEST which SQLite doesn't support
 	// This test just verifies the method signature exists

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
 import { runnerApi, RunnerData } from "@/lib/api/runner";
+import { getServerUrl } from "@/lib/env";
 import { useTranslations } from "@/lib/i18n/client";
 
 export default function LocalRunnerSetupPage() {
@@ -297,20 +298,20 @@ export default function LocalRunnerSetupPage() {
               <div className="p-4 bg-muted rounded-md">
                 <p className="text-xs text-muted-foreground mb-2"># macOS / Linux</p>
                 <code className="text-sm font-mono text-foreground block">
-                  curl -fsSL https://agentsmesh.ai/install.sh | sh
+                  curl -fsSL {getServerUrl()}/install.sh | sh
                 </code>
               </div>
               <div className="p-4 bg-muted rounded-md">
                 <p className="text-xs text-muted-foreground mb-2"># Windows (PowerShell)</p>
                 <code className="text-sm font-mono text-foreground block">
-                  irm https://agentsmesh.ai/install.ps1 | iex
+                  irm {getServerUrl()}/install.ps1 | iex
                 </code>
               </div>
               <div className="p-4 bg-muted rounded-md">
                 <p className="text-xs text-muted-foreground mb-2"># {t("auth.onboarding.localRunner.startRunnerComment")}</p>
                 <code className="text-sm font-mono text-foreground block whitespace-pre-wrap">
-{`runner register --server ${typeof window !== 'undefined' ? window.location.origin : 'https://api.agentsmesh.ai'} --token <your-token>
-runner run`}
+{`agentsmesh-runner register --server ${getServerUrl()} --token <your-token>
+agentsmesh-runner run`}
                 </code>
               </div>
             </div>

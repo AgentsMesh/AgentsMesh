@@ -8,68 +8,52 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// --- Runner Registration Tests ---
+// --- Helper Functions ---
 
-func TestRegisterRunner(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db)
-	ctx := context.Background()
+// createTestRunner creates a runner directly in the database for testing
+func createTestRunner(t *testing.T, db interface{ Exec(string, ...any) interface{ Error() error } }, orgID int64, nodeID, description string, maxPods int) *runner.Runner {
+	t.Helper()
 
-	// Create a registration token first
-	plain, err := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	if err != nil {
-		t.Fatalf("failed to create registration token: %v", err)
-	}
-
-	// Register a runner
-	r, err := service.RegisterRunner(ctx, plain, "test-runner-1", "Test Runner", 5)
-	if err != nil {
-		t.Fatalf("failed to register runner: %v", err)
+	r := &runner.Runner{
+		OrganizationID:    orgID,
+		NodeID:            nodeID,
+		Description:       description,
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: maxPods,
+		IsEnabled:         true,
 	}
 
-	if r == nil {
-		t.Fatal("expected non-nil runner")
-	}
-	if r.NodeID != "test-runner-1" {
-		t.Errorf("expected NodeID 'test-runner-1', got %s", r.NodeID)
-	}
-	if r.OrganizationID != 1 {
-		t.Errorf("expected OrganizationID 1, got %d", r.OrganizationID)
-	}
-	if r.Status != runner.RunnerStatusOffline {
-		t.Errorf("expected Status '%s', got %s", runner.RunnerStatusOffline, r.Status)
-	}
-	if r.MaxConcurrentPods != 5 {
-		t.Errorf("expected MaxConcurrentPods 5, got %d", r.MaxConcurrentPods)
+	// Use the GORM db from test helper
+	if gormDB, ok := db.(interface {
+		Create(value any) interface{ Error() error }
+	}); ok {
+		if err := gormDB.Create(r).Error(); err != nil {
+			t.Fatalf("failed to create test runner: %v", err)
+		}
 	}
 
-	// Check that token usage count was incremented
-	var updatedToken runner.RegistrationToken
-	db.First(&updatedToken)
-	if updatedToken.UsedCount != 1 {
-		t.Errorf("expected UsedCount 1, got %d", updatedToken.UsedCount)
-	}
+	return r
 }
 
-func TestRegisterRunnerInvalidToken(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db)
-	ctx := context.Background()
-
-	_, err := service.RegisterRunner(ctx, "invalid-token", "test-runner", "Test", 5)
-	if err != ErrInvalidToken {
-		t.Errorf("expected ErrInvalidToken, got %v", err)
-	}
-}
+// --- Runner Tests ---
 
 func TestDeleteRunner(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 	ctx := context.Background()
 
-	// Create runner
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	if err := db.Create(r).Error; err != nil {
+		t.Fatalf("failed to create runner: %v", err)
+	}
 
 	// Delete runner
 	err := service.DeleteRunner(ctx, r.ID)
@@ -89,11 +73,20 @@ func TestListRunners(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	// Create multiple runners
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	service.RegisterRunner(ctx, plain, "runner-1", "Runner 1", 5)
-	service.RegisterRunner(ctx, plain, "runner-2", "Runner 2", 5)
-	service.RegisterRunner(ctx, plain, "runner-3", "Runner 3", 5)
+	// Create multiple runners directly
+	for i, nodeID := range []string{"runner-1", "runner-2", "runner-3"} {
+		r := &runner.Runner{
+			OrganizationID:    1,
+			NodeID:            nodeID,
+			Description:       "Runner " + string(rune('1'+i)),
+			Status:            runner.RunnerStatusOffline,
+			MaxConcurrentPods: 5,
+			IsEnabled:         true,
+		}
+		if err := db.Create(r).Error; err != nil {
+			t.Fatalf("failed to create runner: %v", err)
+		}
+	}
 
 	// List all runners
 	runners, err := service.ListRunners(ctx, 1)
@@ -110,11 +103,25 @@ func TestListAvailableRunners(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-
-	// Register multiple runners
-	r1, _ := service.RegisterRunner(ctx, plain, "runner-1", "Runner 1", 5)
-	r2, _ := service.RegisterRunner(ctx, plain, "runner-2", "Runner 2", 5)
+	// Create two runners
+	r1 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-1",
+		Description:       "Runner 1",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	r2 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-2",
+		Description:       "Runner 2",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r1)
+	db.Create(r2)
 
 	// Set one runner online
 	service.Heartbeat(ctx, r1.ID, 0)
@@ -128,7 +135,6 @@ func TestListAvailableRunners(t *testing.T) {
 	if len(runners) != 1 {
 		t.Errorf("expected 1 available runner, got %d", len(runners))
 	}
-	_ = r2
 }
 
 func TestSelectAvailableRunner(t *testing.T) {
@@ -136,11 +142,27 @@ func TestSelectAvailableRunner(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r1, _ := service.RegisterRunner(ctx, plain, "runner-1", "Runner 1", 5)
-	r2, _ := service.RegisterRunner(ctx, plain, "runner-2", "Runner 2", 5)
+	// Create two runners
+	r1 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-1",
+		Description:       "Runner 1",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	r2 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-2",
+		Description:       "Runner 2",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r1)
+	db.Create(r2)
 
-	// Make both online
+	// Make both online with different pod counts
 	service.Heartbeat(ctx, r1.ID, 3)
 	service.Heartbeat(ctx, r2.ID, 1)
 
@@ -171,9 +193,25 @@ func TestSelectAvailableRunnerFromCache(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r1, _ := service.RegisterRunner(ctx, plain, "runner-1", "Runner 1", 5)
-	r2, _ := service.RegisterRunner(ctx, plain, "runner-2", "Runner 2", 5)
+	// Create two runners
+	r1 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-1",
+		Description:       "Runner 1",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	r2 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-2",
+		Description:       "Runner 2",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r1)
+	db.Create(r2)
 
 	// Update runners status to online
 	service.SetRunnerStatus(ctx, r1.ID, "online")
@@ -210,8 +248,16 @@ func TestSelectAvailableRunnerSkipsInactiveInCache(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r1, _ := service.RegisterRunner(ctx, plain, "runner-1", "Runner 1", 5)
+	// Create runner
+	r1 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-1",
+		Description:       "Runner 1",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r1)
 
 	// Update runner status to online
 	service.SetRunnerStatus(ctx, r1.ID, "online")
@@ -239,8 +285,16 @@ func TestSelectAvailableRunnerSkipsDisabledInCache(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r1, _ := service.RegisterRunner(ctx, plain, "runner-1", "Runner 1", 5)
+	// Create runner
+	r1 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-1",
+		Description:       "Runner 1",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r1)
 
 	// Update runner to online but disabled
 	service.SetRunnerStatus(ctx, r1.ID, "online")
@@ -268,8 +322,16 @@ func TestSelectAvailableRunnerSkipsFullInCache(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r1, _ := service.RegisterRunner(ctx, plain, "runner-1", "Runner 1", 2) // max 2 pods
+	// Create runner with max 2 pods
+	r1 := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "runner-1",
+		Description:       "Runner 1",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 2, // max 2 pods
+		IsEnabled:         true,
+	}
+	db.Create(r1)
 
 	// Update runner status to online and update current_pods to max (so DB query also skips)
 	service.SetRunnerStatus(ctx, r1.ID, "online")
@@ -287,25 +349,5 @@ func TestSelectAvailableRunnerSkipsFullInCache(t *testing.T) {
 	_, err := service.SelectAvailableRunner(ctx, 1)
 	if err != ErrRunnerOffline {
 		t.Errorf("expected ErrRunnerOffline for full runner, got %v", err)
-	}
-}
-
-func TestRegisterRunnerDuplicate(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db)
-	ctx := context.Background()
-
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-
-	// Register first runner
-	_, err := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
-	if err != nil {
-		t.Fatalf("failed to register first runner: %v", err)
-	}
-
-	// Try to register with same node_id
-	_, err = service.RegisterRunner(ctx, plain, "test-runner", "Test Duplicate", 5)
-	if err != ErrRunnerAlreadyExists {
-		t.Errorf("expected ErrRunnerAlreadyExists, got %v", err)
 	}
 }

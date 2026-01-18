@@ -1243,7 +1243,7 @@
       "lastSeen": "Last seen:",
       "justNow": "Just now",
       "edit": "Edit",
-      "regenerateToken": "Regenerate Token",
+      "generateToken": "Generate Token",
       "delete": "Delete",
       "disabled": "Disabled",
       "deleteDialog": {
@@ -1253,8 +1253,8 @@
         "delete": "Delete"
       },
       "tokenDialog": {
-        "title": "New Auth Token",
-        "description": "Copy this token now. You won't be able to see it again. The runner will need to be updated with this new token.",
+        "title": "Registration Token",
+        "description": "Copy this token now. You won't be able to see it again. Use this token with 'runner register' command.",
         "copy": "Copy",
         "done": "Done"
       },

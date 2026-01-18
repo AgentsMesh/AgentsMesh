@@ -133,9 +133,6 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 	{
 		runners.GET("", runnerHandler.ListRunners)
 		runners.GET("/available", runnerHandler.ListAvailableRunners)
-		runners.GET("/tokens", runnerHandler.ListRegistrationTokens)
-		runners.POST("/tokens", runnerHandler.CreateRegistrationToken)
-		runners.DELETE("/tokens/:id", runnerHandler.RevokeRegistrationToken)
 		runners.GET("/:id", runnerHandler.GetRunner)
 		runners.PUT("/:id", runnerHandler.UpdateRunner)
 		runners.DELETE("/:id", runnerHandler.DeleteRunner)

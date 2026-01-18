@@ -1,9 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTranslations } from "@/lib/i18n/client";
+import { getServerUrl } from "@/lib/env";
 
 export function HowItWorks() {
   const t = useTranslations();
+  const [serverUrl, setServerUrl] = useState("https://api.agentsmesh.ai");
+
+  useEffect(() => {
+    setServerUrl(getServerUrl());
+  }, []);
 
   const steps = [
     {
@@ -11,15 +18,13 @@ export function HowItWorks() {
       title: t("landing.howItWorks.step1.title"),
       description: t("landing.howItWorks.step1.description"),
       code: `# Download and install
-curl -fsSL https://get.agentsmesh.dev | sh
+curl -fsSL ${serverUrl}/install.sh | sh
 
 # Register with your token
-runner register \\
-  --server https://api.agentsmesh.dev \\
-  --token <YOUR_TOKEN>
+agentsmesh-runner register --server ${serverUrl} --token <YOUR_TOKEN>
 
 # Start the runner
-runner run`,
+agentsmesh-runner run`,
       icon: (
         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" />

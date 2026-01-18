@@ -29,6 +29,20 @@ export interface RunnerData {
   }>;
 }
 
+// gRPC Registration Token interface
+export interface GRPCRegistrationToken {
+  id: number;
+  organization_id: number;
+  name?: string;
+  labels?: string[];
+  single_use: boolean;
+  max_uses: number;
+  used_count: number;
+  expires_at: string;
+  created_by?: number;
+  created_at: string;
+}
+
 export const runnerApi = {
   list: (status?: string) => {
     const params = status ? `?status=${status}` : "";
@@ -52,15 +66,18 @@ export const runnerApi = {
       method: "DELETE",
     }),
 
-  regenerateAuthToken: (id: number) =>
-    request<{ auth_token: string; message: string }>(`${orgPath("/runners")}/${id}/regenerate-token`, {
+  // gRPC Registration Token APIs (new unified system)
+  createToken: (data?: { name?: string; labels?: string[]; max_uses?: number; expires_in_days?: number }) =>
+    request<{ token: string; expires_at: string; message: string }>(orgPath("/runners/grpc/tokens"), {
       method: "POST",
+      body: data || {},
     }),
 
-  // Create one-time registration token
-  createToken: () =>
-    request<{ token: string; message: string }>(orgPath("/runners/tokens"), {
-      method: "POST",
-      body: JSON.stringify({}),
+  listTokens: () =>
+    request<{ tokens: GRPCRegistrationToken[] }>(orgPath("/runners/grpc/tokens")),
+
+  deleteToken: (id: number) =>
+    request<{ message: string }>(`${orgPath("/runners/grpc/tokens")}/${id}`, {
+      method: "DELETE",
     }),
 };

@@ -14,8 +14,16 @@ func TestUpdateRunnerStatus(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	err := service.UpdateRunnerStatus(ctx, r.ID, runner.RunnerStatusOnline)
 	if err != nil {
@@ -33,8 +41,16 @@ func TestSetRunnerStatus(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	// Test SetRunnerStatus (alias for UpdateRunnerStatus)
 	err := service.SetRunnerStatus(ctx, r.ID, runner.RunnerStatusOnline)
@@ -81,8 +97,16 @@ func TestMarkConnectedDisconnected(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	// Mark connected
 	err := service.MarkConnected(ctx, r.ID)
@@ -138,9 +162,16 @@ func TestUpdateAvailableAgents(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	// Create a runner
-	plain, _ := service.CreateRegistrationToken(ctx, 1, 1, "Test Token", nil, nil)
-	r, _ := service.RegisterRunner(ctx, plain, "test-runner", "Test", 5)
+	// Create runner directly
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "test-runner",
+		Description:       "Test",
+		Status:            runner.RunnerStatusOffline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
 
 	t.Run("updates available agents", func(t *testing.T) {
 		agents := []string{"claude-code", "aider", "gemini-cli"}

@@ -18,15 +18,25 @@ export function RunnersSettings({ t }: RunnersSettingsProps) {
     fetchRunners,
     updateRunner,
     deleteRunner,
-    regenerateAuthToken,
+    createToken,
     clearError,
   } = useRunnerStore();
 
   const [editingRunner, setEditingRunner] = useState<Runner | null>(null);
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRunners();
   }, [fetchRunners]);
+
+  const handleGenerateToken = async () => {
+    try {
+      const token = await createToken();
+      setGeneratedToken(token);
+    } catch (err) {
+      console.error("Failed to generate token:", err);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -44,7 +54,7 @@ export function RunnersSettings({ t }: RunnersSettingsProps) {
         loading={loading}
         onEdit={setEditingRunner}
         onDelete={deleteRunner}
-        onRegenerateToken={regenerateAuthToken}
+        onGenerateToken={handleGenerateToken}
         t={t}
       />
 
@@ -59,6 +69,15 @@ export function RunnersSettings({ t }: RunnersSettingsProps) {
           t={t}
         />
       )}
+
+      {generatedToken && (
+        <TokenDialog
+          token={generatedToken}
+          onClose={() => setGeneratedToken(null)}
+          onCopy={() => navigator.clipboard.writeText(generatedToken)}
+          t={t}
+        />
+      )}
     </div>
   );
 }
@@ -68,18 +87,17 @@ function RunnersPanel({
   loading,
   onEdit,
   onDelete,
-  onRegenerateToken,
+  onGenerateToken,
   t,
 }: {
   runners: Runner[];
   loading: boolean;
   onEdit: (runner: Runner) => void;
   onDelete: (id: number) => Promise<void>;
-  onRegenerateToken: (id: number) => Promise<string>;
+  onGenerateToken: () => void;
   t: TranslationFn;
 }) {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
-  const [regeneratedToken, setRegeneratedToken] = useState<{ id: number; token: string } | null>(null);
 
   const handleDelete = async (id: number) => {
     try {
@@ -88,19 +106,6 @@ function RunnersPanel({
     } catch (err) {
       console.error("Failed to delete runner:", err);
     }
-  };
-
-  const handleRegenerateToken = async (id: number) => {
-    try {
-      const token = await onRegenerateToken(id);
-      setRegeneratedToken({ id, token });
-    } catch (err) {
-      console.error("Failed to regenerate token:", err);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
   };
 
   const formatLastSeen = (dateString?: string) => {
@@ -118,11 +123,16 @@ function RunnersPanel({
 
   return (
     <div className="border border-border rounded-lg p-6">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold">{t("settings.runnersSection.title")}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t("settings.runnersSection.description")}
-        </p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">{t("settings.runnersSection.title")}</h2>
+          <p className="text-sm text-muted-foreground">
+            {t("settings.runnersSection.description")}
+          </p>
+        </div>
+        <Button variant="outline" onClick={onGenerateToken}>
+          {t("settings.runnersSection.generateToken")}
+        </Button>
       </div>
 
       {loading ? (
@@ -139,7 +149,6 @@ function RunnersPanel({
               runner={runner}
               onEdit={onEdit}
               onDelete={() => setConfirmDelete(runner.id)}
-              onRegenerateToken={() => handleRegenerateToken(runner.id)}
               formatLastSeen={formatLastSeen}
               t={t}
             />
@@ -155,16 +164,6 @@ function RunnersPanel({
           t={t}
         />
       )}
-
-      {/* Regenerated Token Dialog */}
-      {regeneratedToken && (
-        <TokenDialog
-          token={regeneratedToken.token}
-          onClose={() => setRegeneratedToken(null)}
-          onCopy={() => copyToClipboard(regeneratedToken.token)}
-          t={t}
-        />
-      )}
     </div>
   );
 }
@@ -173,14 +172,12 @@ function RunnerCard({
   runner,
   onEdit,
   onDelete,
-  onRegenerateToken,
   formatLastSeen,
   t,
 }: {
   runner: Runner;
   onEdit: (runner: Runner) => void;
   onDelete: () => void;
-  onRegenerateToken: () => void;
   formatLastSeen: (dateString?: string) => string;
   t: TranslationFn;
 }) {
@@ -224,9 +221,6 @@ function RunnerCard({
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => onEdit(runner)}>
             {t("settings.runnersSection.edit")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={onRegenerateToken}>
-            {t("settings.runnersSection.regenerateToken")}
           </Button>
           <Button
             variant="ghost"

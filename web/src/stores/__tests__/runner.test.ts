@@ -9,7 +9,6 @@ vi.mock('@/lib/api/client', () => ({
     get: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-    regenerateAuthToken: vi.fn(),
     createToken: vi.fn(),
   },
 }))
@@ -160,22 +159,6 @@ describe('Runner Store Actions', () => {
       vi.mocked(runnerApi.delete).mockRejectedValue(new Error('Delete failed'))
 
       await expect(useRunnerStore.getState().deleteRunner(1)).rejects.toThrow()
-    })
-  })
-
-  describe('regenerateAuthToken', () => {
-    it('should regenerate auth token successfully', async () => {
-      vi.mocked(runnerApi.regenerateAuthToken).mockResolvedValue({ auth_token: 'new-token', message: 'Token regenerated' })
-
-      const token = await useRunnerStore.getState().regenerateAuthToken(1)
-
-      expect(token).toBe('new-token')
-    })
-
-    it('should handle error', async () => {
-      vi.mocked(runnerApi.regenerateAuthToken).mockRejectedValue(new Error('Failed'))
-
-      await expect(useRunnerStore.getState().regenerateAuthToken(1)).rejects.toThrow()
     })
   })
 

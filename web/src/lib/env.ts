@@ -61,3 +61,24 @@ export function getWsBaseUrl(): string {
 
   return "ws://localhost:8080";
 }
+
+/**
+ * 获取服务器部署 URL（用于 Runner 注册等外部访问）
+ * - 客户端：使用当前页面的 origin
+ * - 服务端：使用 NEXT_PUBLIC_API_URL 或默认值
+ *
+ * @returns 完整的服务器 URL（如 https://api.agentsmesh.ai）
+ */
+export function getServerUrl(): string {
+  // 客户端：使用当前页面的 origin
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  // 服务端：使用环境变量或默认值
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  return "https://api.agentsmesh.ai";
+}
