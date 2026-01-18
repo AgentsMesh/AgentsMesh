@@ -72,6 +72,11 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		// Runner registration (uses token-based auth, not JWT)
 		RegisterRunnerAuthRoutes(apiV1.Group("/runners"), svc)
 
+		// gRPC Runner routes (public, for Runner CLI registration with mTLS)
+		if svc.GRPCRunnerHandler != nil {
+			v1.RegisterGRPCRunnerRoutes(apiV1, svc.GRPCRunnerHandler)
+		}
+
 		// Webhook endpoints (no auth required, use token verification)
 		// Use shared billing service to ensure mock provider sessions are shared
 		webhookRouter := webhooks.NewWebhookRouterWithBillingSvc(db, cfg, logger, svc.Billing)
