@@ -412,7 +412,7 @@ func Load() (*Config, error) {
 		},
 		GRPC: GRPCConfig{
 			Address:  getEnv("GRPC_ADDRESS", ":9090"),
-			Endpoint: getEnv("GRPC_ENDPOINT", ""), // e.g., grpcs://api.agentsmesh.cn:9443
+			Endpoint: getEnv("GRPC_PUBLIC_ENDPOINT", ""), // Public gRPC endpoint for Runners (e.g., grpcs://api.agentsmesh.cn:9443)
 		},
 		Admin: AdminConfig{
 			Enabled:     getEnvBool("ADMIN_ENABLED", true),
