@@ -23,7 +23,16 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Logger())
+	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		slog.Error("Panic recovered in handler",
+			"path", c.Request.URL.Path,
+			"method", c.Request.Method,
+			"error", recovered,
+		)
+		c.AbortWithStatusJSON(500, gin.H{"error": "Internal server error"})
+	}))
 
 	// CORS configuration
 	corsConfig := cors.Config{
