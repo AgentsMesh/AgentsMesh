@@ -1,0 +1,54 @@
+id: TC-GRPC-001
+name: 列出 gRPC 注册令牌
+description: 验证 GET /orgs/:slug/runners/grpc/tokens 返回 gRPC 注册令牌列表
+priority: high
+module: runner/grpc-tokens
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token（需要 admin/owner 权限）
+  - 组织 dev-org 存在
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 列出 gRPC 令牌
+    expected: 返回 200，包含 tokens 数组
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          tokens: is_array
+
+  - action: 不带 token 列出 gRPC 令牌
+    expected: 返回 401 未授权
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+      expected:
+        status: 401

@@ -1,0 +1,203 @@
+id: TC-ADMIN-005
+name: Admin Runner 完整管理流程
+description: 验证 Admin 端 Runner 管理的完整流程（列出、查看、禁用、启用、删除）
+priority: high
+module: runner/admin
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 admin access_token（is_system_admin = true）
+
+setup:
+  sql: |
+    -- 确保 admin 用户有 system_admin 权限
+    UPDATE users SET is_system_admin = true WHERE email = 'admin@agentsmesh.local';
+
+    -- 创建多个测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'admin-flow-runner-1', 'Admin Flow Runner 1', 'Admin 流程测试 Runner 1', 'online', 5, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO UPDATE SET disabled = false;
+
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'admin-flow-runner-2', 'Admin Flow Runner 2', 'Admin 流程测试 Runner 2', 'offline', 3, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO UPDATE SET disabled = false;
+
+steps:
+  - action: Admin 用户登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        admin_token: body.token
+
+  - action: 列出所有 Runners
+    expected: 返回 200，包含测试 Runners
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          runners:
+            contains:
+              node_id: admin-flow-runner-1
+
+  - action: 搜索特定 Runner
+    expected: 返回 200，只包含匹配的 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners?search=admin-flow-runner-1
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          runners:
+            contains:
+              node_id: admin-flow-runner-1
+
+  - action: 获取 Runner 1 ID
+    expected: 获取 Runner ID
+    verification:
+      type: database
+      query: |
+        SELECT id FROM runners
+        WHERE node_id = 'admin-flow-runner-1'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows: 1
+      save:
+        runner_id_1: rows[0].id
+
+  - action: 获取 Runner 2 ID
+    expected: 获取 Runner ID
+    verification:
+      type: database
+      query: |
+        SELECT id FROM runners
+        WHERE node_id = 'admin-flow-runner-2'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows: 1
+      save:
+        runner_id_2: rows[0].id
+
+  - action: 查看 Runner 1 详情
+    expected: 返回 200，包含完整信息
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners/{runner_id_1}
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          node_id: admin-flow-runner-1
+          status: online
+
+  - action: 禁用 Runner 1
+    expected: 返回 200，Runner 被禁用
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/admin/runners/{runner_id_1}/disable
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          disabled: true
+
+  - action: 验证 Runner 1 已禁用
+    expected: 返回 200，disabled 为 true
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners/{runner_id_1}
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          disabled: true
+
+  - action: 启用 Runner 1
+    expected: 返回 200，Runner 被启用
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/admin/runners/{runner_id_1}/enable
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          disabled: false
+
+  - action: 删除 Runner 2
+    expected: 返回 204 成功删除
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/admin/runners/{runner_id_2}
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 204
+
+  - action: 验证 Runner 2 已删除
+    expected: 返回 404 不存在
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners/{runner_id_2}
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 404
+
+  - action: 验证数据库最终状态
+    expected: Runner 1 存在且启用，Runner 2 不存在
+    verification:
+      type: database
+      query: |
+        SELECT node_id, disabled FROM runners
+        WHERE node_id IN ('admin-flow-runner-1', 'admin-flow-runner-2')
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - node_id: admin-flow-runner-1
+            disabled: false
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id LIKE 'admin-flow-runner-%';

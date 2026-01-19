@@ -1,0 +1,147 @@
+id: TC-CONFIG-002
+name: 禁用和启用 Runner
+description: 验证通过更新 disabled 字段来禁用和启用 Runner
+priority: high
+module: runner/config
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token（需要 admin/owner 权限）
+  - 组织 dev-org 存在
+
+setup:
+  sql: |
+    -- 确保有测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'test-runner-disable', 'Disable Test Runner', '禁用测试用 Runner', 'offline', 5, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO UPDATE SET
+      disabled = false;
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 获取测试 Runner ID
+    expected: 返回 200，获取 Runner ID
+    verification:
+      type: database
+      query: |
+        SELECT id FROM runners
+        WHERE node_id = 'test-runner-disable'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows: 1
+      save:
+        runner_id: rows[0].id
+
+  - action: 验证 Runner 初始状态为启用
+    expected: Runner disabled 为 false
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          disabled: false
+
+  - action: 禁用 Runner
+    expected: 返回 200，Runner 被禁用
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          disabled: true
+      expected:
+        status: 200
+        body:
+          disabled: true
+
+  - action: 验证 Runner 已禁用
+    expected: Runner disabled 为 true
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          disabled: true
+
+  - action: 验证禁用的 Runner 不在可用列表中
+    expected: 可用 Runner 列表不包含禁用的 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners:
+            not_contains:
+              node_id: test-runner-disable
+
+  - action: 重新启用 Runner
+    expected: 返回 200，Runner 被启用
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          disabled: false
+      expected:
+        status: 200
+        body:
+          disabled: false
+
+  - action: 验证数据库中状态已更新
+    expected: 数据库中 disabled 为 false
+    verification:
+      type: database
+      query: |
+        SELECT disabled FROM runners
+        WHERE node_id = 'test-runner-disable'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - disabled: false
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id = 'test-runner-disable';

@@ -1,0 +1,95 @@
+id: TC-TOKEN-003
+name: 吊销注册令牌
+description: 验证 DELETE /orgs/:slug/runners/tokens/:id 吊销注册令牌
+priority: high
+module: runner/tokens
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token（需要 admin/owner 权限）
+  - 组织 dev-org 存在
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 创建一个注册令牌用于测试删除
+    expected: 返回 201，获取令牌 ID
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/tokens
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: 待删除的测试令牌
+      expected:
+        status: 201
+        body:
+          id: not_empty
+      save:
+        token_id: body.id
+
+  - action: 吊销注册令牌
+    expected: 返回 204 成功删除
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/tokens/{token_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 204
+
+  - action: 再次吊销同一令牌
+    expected: 返回 404 令牌不存在
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/tokens/{token_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 404
+
+  - action: 吊销不存在的令牌
+    expected: 返回 404 令牌不存在
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/tokens/99999
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 404
+
+  - action: 不带 token 吊销注册令牌
+    expected: 返回 401 未授权
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/tokens/1
+      expected:
+        status: 401

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
@@ -169,7 +170,7 @@ func (s *Service) DeleteRunner(ctx context.Context, runnerID int64) (*runner.Run
 
 	// Check for active pods before deletion
 	var podCount int64
-	if err := s.db.Table("agent_pods").
+	if err := s.db.Model(&agentpod.Pod{}).
 		Where("runner_id = ? AND status IN ?", runnerID, []string{"pending", "starting", "running"}).
 		Count(&podCount); err != nil {
 		return nil, fmt.Errorf("failed to check pods: %w", err)

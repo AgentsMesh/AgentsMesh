@@ -1,0 +1,123 @@
+id: TC-ADMIN-001
+name: Admin 列出所有 Runners
+description: 验证 GET /api/v1/admin/runners 返回系统内所有 Runner（跨组织）
+priority: high
+module: runner/admin
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 admin access_token（is_system_admin = true）
+
+setup:
+  sql: |
+    -- 确保 admin 用户存在并有 system_admin 权限
+    UPDATE users SET is_system_admin = true WHERE email = 'admin@agentsmesh.local';
+
+    -- 创建测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'admin-test-runner', 'Admin Test Runner', 'Admin 测试 Runner', 'offline', 5, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO NOTHING;
+
+steps:
+  - action: Admin 用户登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        admin_token: body.token
+
+  - action: 列出所有 Runners（Admin API）
+    expected: 返回 200，包含 runners 数组和分页信息
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+          total: not_empty
+
+  - action: 分页查询 Runners
+    expected: 返回 200，支持分页参数
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners?page=1&limit=10
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+          page: 1
+          limit: 10
+
+  - action: 搜索 Runners
+    expected: 返回 200，支持搜索参数
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners?search=admin-test
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          runners:
+            contains:
+              node_id: admin-test-runner
+
+  - action: 非 Admin 用户尝试访问 Admin API
+    expected: 返回 403 禁止访问
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        user_token: body.token
+
+  - action: 使用普通用户 token 访问 Admin API
+    expected: 返回 403 禁止访问
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners
+        headers:
+          Authorization: Bearer {user_token}
+      expected:
+        status: 403
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id = 'admin-test-runner';

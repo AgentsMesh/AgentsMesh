@@ -1,0 +1,117 @@
+id: TC-UI-003
+name: Runner 配置对话框
+description: 验证 Runner 配置对话框正确显示和更新配置
+priority: critical
+must_execute: true  # 🚨 UI 测试禁止跳过，必须使用 MCP Chrome DevTools 执行
+module: runner/ui
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 组织 dev-org 存在
+  - 组织内至少有一个 Runner
+
+setup:
+  sql: |
+    -- 创建测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'ui-config-test-runner', 'Config Dialog Test Runner', '配置对话框测试 Runner', 'offline', 5, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO UPDATE SET
+      description = '配置对话框测试 Runner',
+      max_pods = 5;
+
+steps:
+  - action: 打开登录页面并登录
+    expected: 登录成功
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Runner
+
+  - action: 导航到 Runner 管理页面
+    expected: 显示 Runner 列表页面
+    verification:
+      type: ui
+      navigate: /dev-org/runners
+      wait_for: Config Dialog Test Runner
+
+  - action: 点击 Runner 配置按钮
+    expected: 打开配置对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Config Dialog Test Runner
+      wait_for: 配置
+
+  - action: 验证配置对话框内容
+    expected: 对话框显示 Runner 配置选项
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: 描述
+        - contains: 最大 Pod 数
+        - exists: 'input' # 输入框
+        - exists: 'button' # 保存按钮
+
+  - action: 修改 Runner 描述
+    expected: 描述输入框可编辑
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[name="description"]'
+            value: 更新后的描述 - E2E 测试
+      check:
+        - exists: 'input[value*="更新后的描述"]'
+
+  - action: 修改最大 Pod 数
+    expected: 最大 Pod 数输入框可编辑
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[name="max_pods"]'
+            value: 8
+
+  - action: 保存配置
+    expected: 配置保存成功
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 保存
+      wait_for: 成功
+
+  - action: 验证数据库中配置已更新
+    expected: 数据库中数据与更新一致
+    verification:
+      type: database
+      query: |
+        SELECT description, max_pods FROM runners
+        WHERE node_id = 'ui-config-test-runner'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - description_contains: 更新后的描述
+            max_pods: 8
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id = 'ui-config-test-runner';

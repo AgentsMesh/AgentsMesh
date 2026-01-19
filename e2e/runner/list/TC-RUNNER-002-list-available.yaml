@@ -1,0 +1,54 @@
+id: TC-RUNNER-002
+name: 列出可用 Runners
+description: 验证 GET /orgs/:slug/runners/available 返回在线且可用的 Runner 列表
+priority: high
+module: runner/list
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token
+  - 组织 dev-org 存在
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 列出可用 Runners
+    expected: 返回 200，包含 runners 数组（仅在线且未禁用的）
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+
+  - action: 不带 token 列出可用 Runners
+    expected: 返回 401 未授权
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+      expected:
+        status: 401

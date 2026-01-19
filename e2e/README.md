@@ -7,30 +7,66 @@
 ```
 e2e/
 ├── README.md                          # 本文件
-└── billing/                           # 账单模块
-    ├── subscription/                  # 订阅管理
-    │   ├── TC-SUB-001-status-display.yaml
-    │   ├── TC-SUB-002-plans-dialog.yaml
-    │   ├── TC-SUB-003-cancel-at-period-end.yaml
-    │   ├── TC-SUB-004-cancel-immediately.yaml
-    │   ├── TC-SUB-005-reactivate.yaml
-    │   └── TC-SUB-006-plan-upgrade.yaml
-    ├── seats/                         # 席位管理
-    │   ├── TC-SEAT-001-display.yaml
-    │   ├── TC-SEAT-002-add-dialog.yaml
-    │   └── TC-SEAT-003-free-plan-limit.yaml
-    ├── billing-cycle/                 # 计费周期
-    │   ├── TC-CYCLE-001-display.yaml
-    │   ├── TC-CYCLE-002-monthly-to-yearly.yaml
-    │   └── TC-CYCLE-003-yearly-to-monthly.yaml
-    ├── promo-code/                    # 优惠码
-    │   ├── TC-PROMO-001-display.yaml
-    │   ├── TC-PROMO-002-valid-code.yaml
-    │   └── TC-PROMO-003-invalid-code.yaml
-    └── quota/                         # 配额检查
-        ├── TC-QUOTA-001-users.yaml
-        ├── TC-QUOTA-002-runners.yaml
-        └── TC-QUOTA-003-repositories.yaml
+├── billing/                           # 账单模块
+│   ├── subscription/                  # 订阅管理
+│   │   ├── TC-SUB-001-status-display.yaml
+│   │   ├── TC-SUB-002-plans-dialog.yaml
+│   │   ├── TC-SUB-003-cancel-at-period-end.yaml
+│   │   ├── TC-SUB-004-cancel-immediately.yaml
+│   │   ├── TC-SUB-005-reactivate.yaml
+│   │   └── TC-SUB-006-plan-upgrade.yaml
+│   ├── seats/                         # 席位管理
+│   │   ├── TC-SEAT-001-display.yaml
+│   │   ├── TC-SEAT-002-add-dialog.yaml
+│   │   └── TC-SEAT-003-free-plan-limit.yaml
+│   ├── billing-cycle/                 # 计费周期
+│   │   ├── TC-CYCLE-001-display.yaml
+│   │   ├── TC-CYCLE-002-monthly-to-yearly.yaml
+│   │   └── TC-CYCLE-003-yearly-to-monthly.yaml
+│   ├── promo-code/                    # 优惠码
+│   │   ├── TC-PROMO-001-display.yaml
+│   │   ├── TC-PROMO-002-valid-code.yaml
+│   │   └── TC-PROMO-003-invalid-code.yaml
+│   └── quota/                         # 配额检查
+│       ├── TC-QUOTA-001-users.yaml
+│       ├── TC-QUOTA-002-runners.yaml
+│       └── TC-QUOTA-003-repositories.yaml
+└── runner/                            # Runner 管理模块
+    ├── list/                          # Runner 列表
+    │   ├── TC-RUNNER-001-list-all.yaml       # 列出所有 Runners
+    │   ├── TC-RUNNER-002-list-available.yaml # 列出可用 Runners
+    │   └── TC-RUNNER-003-get-single.yaml     # 获取单个 Runner
+    ├── tokens/                        # 注册令牌管理
+    │   ├── TC-TOKEN-001-list.yaml            # 列出注册令牌
+    │   ├── TC-TOKEN-002-create.yaml          # 创建注册令牌
+    │   ├── TC-TOKEN-003-revoke.yaml          # 吊销注册令牌
+    │   └── TC-TOKEN-004-full-crud-flow.yaml  # 完整 CRUD 流程
+    ├── config/                        # Runner 配置
+    │   ├── TC-CONFIG-001-update.yaml         # 更新 Runner 配置
+    │   └── TC-CONFIG-002-disable-enable.yaml # 禁用/启用 Runner
+    ├── delete/                        # Runner 删除
+    │   └── TC-DELETE-001-basic.yaml          # 删除 Runner
+    ├── grpc-tokens/                   # gRPC 注册令牌
+    │   ├── TC-GRPC-001-list.yaml             # 列出 gRPC 令牌
+    │   ├── TC-GRPC-002-generate.yaml         # 生成 gRPC 令牌
+    │   ├── TC-GRPC-003-delete.yaml           # 删除 gRPC 令牌
+    │   └── TC-GRPC-004-full-crud-flow.yaml   # 完整 CRUD 流程
+    ├── ui/                            # UI 页面测试
+    │   ├── TC-UI-001-list-page.yaml          # Runner 列表页面
+    │   ├── TC-UI-002-add-runner-dialog.yaml  # 添加 Runner 对话框
+    │   ├── TC-UI-003-runner-config-dialog.yaml # 配置对话框
+    │   ├── TC-UI-004-delete-confirmation.yaml  # 删除确认
+    │   └── TC-UI-005-full-management-flow.yaml # 完整管理流程
+    ├── admin/                         # Admin Runner 管理
+    │   ├── TC-ADMIN-001-list.yaml            # Admin 列出所有 Runners
+    │   ├── TC-ADMIN-002-get-single.yaml      # Admin 获取单个 Runner
+    │   ├── TC-ADMIN-003-disable-enable.yaml  # Admin 禁用/启用
+    │   ├── TC-ADMIN-004-delete.yaml          # Admin 删除
+    │   └── TC-ADMIN-005-full-management-flow.yaml # Admin 完整流程
+    └── registration/                  # Runner 注册与 Pod 创建
+        ├── TC-REG-001-multi-runner-registration.yaml  # 多 Runner 注册完整流程
+        ├── TC-REG-002-runner-online-status.yaml       # Runner 在线状态验证
+        └── TC-REG-003-pod-creation-flow.yaml          # Pod 创建完整流程
 ```
 
 ## 测试用例格式
@@ -39,8 +75,12 @@ e2e/
 id: TC-XXX-001
 name: 测试用例名称
 description: 测试用例描述
-priority: high | medium | low
+priority: critical | high | medium | low
+must_execute: true  # 🚨 UI 测试必须设置为 true
 module: billing/subscription
+tags:
+  - ui          # 标记为 UI 测试
+  - mcp-required  # 标记需要 MCP Chrome DevTools
 
 preconditions:
   - 前置条件
@@ -60,6 +100,19 @@ cleanup:
   - sql: |
       -- 清理 SQL
 ```
+
+### 🚨 UI 测试强制执行规则
+
+UI 测试（`verification.type: ui`）是 E2E 测试的核心，**禁止跳过**：
+
+- `priority: critical` - UI 测试必须设置为最高优先级
+- `must_execute: true` - 标记为必须执行
+- `tags: [ui, mcp-required]` - 标记需要 MCP Chrome DevTools
+
+**执行 UI 测试时：**
+1. 必须使用 MCP Chrome DevTools 工具
+2. 禁止用 API 调用代替浏览器验证
+3. 如果 MCP 不可用，报告问题而非跳过测试
 
 ## 执行测试
 
@@ -89,6 +142,72 @@ cleanup:
 |------|-----|
 | 测试用户邮箱 | dev@agentsmesh.local |
 | 测试用户密码 | devpass123 |
+| Admin 用户邮箱 | admin@agentsmesh.local |
+| Admin 用户密码 | adminpass123 |
 | 测试组织 slug | dev-org |
 | 默认订阅计划 | pro |
 | 账单页面路径 | /dev-org/settings?scope=organization&tab=billing |
+| Runner 管理页面路径 | /dev-org/runners |
+
+## Runner 模块测试覆盖
+
+Runner E2E 测试覆盖以下功能：
+
+### API 测试
+
+| 接口 | 测试用例 | 说明 |
+|------|----------|------|
+| `GET /orgs/:slug/runners` | TC-RUNNER-001 | 列出组织内所有 Runners |
+| `GET /orgs/:slug/runners/available` | TC-RUNNER-002 | 列出可用 Runners |
+| `GET /orgs/:slug/runners/:id` | TC-RUNNER-003 | 获取单个 Runner |
+| `PUT /orgs/:slug/runners/:id` | TC-CONFIG-001/002 | 更新 Runner 配置、禁用/启用 |
+| `DELETE /orgs/:slug/runners/:id` | TC-DELETE-001 | 删除 Runner |
+| `GET /orgs/:slug/runners/tokens` | TC-TOKEN-001 | 列出注册令牌 |
+| `POST /orgs/:slug/runners/tokens` | TC-TOKEN-002 | 创建注册令牌 |
+| `DELETE /orgs/:slug/runners/tokens/:id` | TC-TOKEN-003 | 吊销注册令牌 |
+| `GET /orgs/:slug/runners/grpc/tokens` | TC-GRPC-001 | 列出 gRPC 令牌 |
+| `POST /orgs/:slug/runners/grpc/tokens` | TC-GRPC-002 | 生成 gRPC 令牌 |
+| `DELETE /orgs/:slug/runners/grpc/tokens/:id` | TC-GRPC-003 | 删除 gRPC 令牌 |
+
+### Admin API 测试
+
+| 接口 | 测试用例 | 说明 |
+|------|----------|------|
+| `GET /api/v1/admin/runners` | TC-ADMIN-001 | Admin 列出所有 Runners |
+| `GET /api/v1/admin/runners/:id` | TC-ADMIN-002 | Admin 获取单个 Runner |
+| `POST /api/v1/admin/runners/:id/disable` | TC-ADMIN-003 | Admin 禁用 Runner |
+| `POST /api/v1/admin/runners/:id/enable` | TC-ADMIN-003 | Admin 启用 Runner |
+| `DELETE /api/v1/admin/runners/:id` | TC-ADMIN-004 | Admin 删除 Runner |
+
+### UI 测试
+
+| 页面/功能 | 测试用例 | 说明 |
+|----------|----------|------|
+| Runner 列表页面 | TC-UI-001 | 页面显示和状态统计 |
+| 添加 Runner 对话框 | TC-UI-002 | 注册命令和令牌生成 |
+| Runner 配置对话框 | TC-UI-003 | 配置编辑和保存 |
+| 删除确认对话框 | TC-UI-004 | 删除确认流程 |
+| 完整管理流程 | TC-UI-005 | 端到端管理操作 |
+
+### 多 Runner 注册与 Pod 创建测试
+
+| 测试用例 | 说明 | 验证类型 |
+|----------|------|----------|
+| TC-REG-001 | 多 Runner 注册完整流程 | UI + Docker + API + DB |
+| TC-REG-002 | Runner 在线状态验证 | API + DB |
+| TC-REG-003 | Pod 创建完整流程 | UI + API + DB |
+
+#### TC-REG-001 测试流程
+
+1. **通过 UI 生成注册令牌** - 在 Runner 管理页面生成多个 gRPC 注册令牌
+2. **启动 Docker Runner** - 使用令牌启动多个 Runner 容器并注册
+3. **验证 Runner 在线** - 确认多个 Runner 同时显示为 online 状态
+4. **创建 Pod** - 从一个 Runner 创建 Pod
+5. **验证 Pod 运行** - 确认 Pod 进入 running 状态，终端可用
+6. **清理资源** - 停止容器并清理数据库
+
+#### 执行要求
+
+- 需要 Docker 环境
+- 需要 MCP Chrome DevTools（UI 验证）
+- Runner 容器需要能访问 backend 和 nginx 服务（同一 Docker 网络）

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
@@ -182,6 +183,15 @@ func (m *mockHandlerDB) Updates(model interface{}, values interface{}) error {
 
 func (m *mockHandlerDB) Model(value interface{}) database.DB {
 	m.lastModel = value
+	// Set lastTable based on model type for proper Count behavior
+	switch value.(type) {
+	case *agentpod.Pod:
+		m.lastTable = "agent_pods"
+	case *runner.Runner:
+		m.lastTable = "runners"
+	default:
+		m.lastTable = ""
+	}
 	return m
 }
 

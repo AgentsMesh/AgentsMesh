@@ -1,0 +1,96 @@
+id: TC-UI-001
+name: Runner 列表页面显示
+description: 验证 Runner 管理页面正确显示 Runner 列表和状态统计
+priority: critical
+must_execute: true  # 🚨 UI 测试禁止跳过，必须使用 MCP Chrome DevTools 执行
+module: runner/ui
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 组织 dev-org 存在
+
+setup:
+  sql: |
+    -- 创建测试 Runners 用于 UI 测试
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'ui-test-runner-1', 'UI Test Runner 1', '在线测试 Runner', 'online', 5, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO NOTHING;
+
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'ui-test-runner-2', 'UI Test Runner 2', '离线测试 Runner', 'offline', 3, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO NOTHING;
+
+steps:
+  - action: 打开登录页面
+    expected: 显示登录表单
+    verification:
+      type: ui
+      navigate: /login
+      wait_for: 登录
+      check:
+        - exists: 'input[type="email"]'
+        - exists: 'input[type="password"]'
+        - exists: 'button[type="submit"]'
+
+  - action: 输入登录凭据并登录
+    expected: 登录成功，跳转到 dashboard
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Runner
+
+  - action: 导航到 Runner 管理页面
+    expected: 显示 Runner 列表页面
+    verification:
+      type: ui
+      navigate: /dev-org/runners
+      wait_for: Runner
+      check:
+        - exists: 'heading "Runners"'
+        - contains: Runner
+
+  - action: 验证页面包含状态统计
+    expected: 页面显示 Runner 状态统计信息
+    verification:
+      type: ui
+      check:
+        - contains: 在线
+        - contains: 离线
+
+  - action: 验证 Runner 列表显示
+    expected: 列表中显示测试 Runner
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: UI Test Runner 1
+        - contains: UI Test Runner 2
+
+  - action: 验证 Runner 状态标识
+    expected: 在线和离线状态正确显示
+    verification:
+      type: ui
+      check:
+        - contains: online
+        - contains: offline
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id LIKE 'ui-test-runner-%';

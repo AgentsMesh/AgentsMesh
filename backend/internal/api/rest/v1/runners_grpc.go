@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -248,6 +249,10 @@ func (h *GRPCRunnerHandler) DeleteGRPCToken(c *gin.Context) {
 	}
 
 	if err := h.runnerService.DeleteGRPCRegistrationToken(c.Request.Context(), tokenID); err != nil {
+		if errors.Is(err, runner.ErrGRPCTokenNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Token not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete token"})
 		return
 	}

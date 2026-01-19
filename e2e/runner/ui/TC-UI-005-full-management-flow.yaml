@@ -1,0 +1,144 @@
+id: TC-UI-005
+name: Runner 完整管理流程 UI 测试
+description: 验证通过 UI 完成 Runner 管理的完整流程（查看、配置、禁用、启用）
+priority: critical
+must_execute: true  # 🚨 UI 测试禁止跳过，必须使用 MCP Chrome DevTools 执行
+module: runner/ui
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 组织 dev-org 存在
+
+setup:
+  sql: |
+    -- 创建测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'ui-full-flow-runner', 'Full Flow Test Runner', '完整流程测试 Runner', 'offline', 5, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO UPDATE SET
+      description = '完整流程测试 Runner',
+      disabled = false;
+
+steps:
+  - action: 打开登录页面并登录
+    expected: 登录成功
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Runner
+
+  - action: 导航到 Runner 管理页面
+    expected: 显示 Runner 列表页面
+    verification:
+      type: ui
+      navigate: /dev-org/runners
+      wait_for: Full Flow Test Runner
+
+  - action: 查看 Runner 列表
+    expected: 页面显示 Runner 列表和统计信息
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Full Flow Test Runner
+        - contains: Runners
+
+  - action: 打开 Runner 配置
+    expected: 显示配置对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Full Flow Test Runner
+      wait_for: 配置
+
+  - action: 更新 Runner 描述
+    expected: 描述更新成功
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[name="description"]'
+            value: 更新后的描述 - Full Flow
+        - click:
+            text: 保存
+      wait_for: 成功
+
+  - action: 禁用 Runner
+    expected: Runner 被禁用
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Full Flow Test Runner
+        - click:
+            selector: 'button[aria-label*="禁用"]'
+      wait_for: 禁用成功
+
+  - action: 验证 Runner 显示为禁用状态
+    expected: Runner 状态标识显示为禁用
+    verification:
+      type: ui
+      check:
+        - contains: 禁用
+
+  - action: 验证数据库中 Runner 已禁用
+    expected: 数据库中 disabled 为 true
+    verification:
+      type: database
+      query: |
+        SELECT disabled FROM runners
+        WHERE node_id = 'ui-full-flow-runner'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - disabled: true
+
+  - action: 启用 Runner
+    expected: Runner 被启用
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Full Flow Test Runner
+        - click:
+            selector: 'button[aria-label*="启用"]'
+      wait_for: 启用成功
+
+  - action: 验证 Runner 显示为启用状态
+    expected: Runner 不再显示禁用标识
+    verification:
+      type: ui
+      check:
+        - not_contains: 已禁用
+
+  - action: 验证数据库中 Runner 已启用
+    expected: 数据库中 disabled 为 false
+    verification:
+      type: database
+      query: |
+        SELECT disabled FROM runners
+        WHERE node_id = 'ui-full-flow-runner'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - disabled: false
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id = 'ui-full-flow-runner';

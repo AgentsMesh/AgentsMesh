@@ -471,8 +471,16 @@ func (s *Service) ListGRPCRegistrationTokens(ctx context.Context, orgID int64) (
 }
 
 // DeleteGRPCRegistrationToken deletes a gRPC registration token.
+// Returns ErrGRPCTokenNotFound if the token doesn't exist.
 func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID int64) error {
-	return s.db.WithContext(ctx).Delete(&runner.GRPCRegistrationToken{}, tokenID).Error
+	result := s.db.WithContext(ctx).Delete(&runner.GRPCRegistrationToken{}, tokenID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrGRPCTokenNotFound
+	}
+	return nil
 }
 
 // CleanupExpiredPendingAuths removes expired pending auth records.

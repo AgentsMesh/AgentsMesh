@@ -1,0 +1,110 @@
+id: TC-UI-004
+name: Runner 删除确认对话框
+description: 验证删除 Runner 时显示确认对话框
+priority: critical
+must_execute: true  # 🚨 UI 测试禁止跳过，必须使用 MCP Chrome DevTools 执行
+module: runner/ui
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 组织 dev-org 存在
+
+setup:
+  sql: |
+    -- 创建测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'ui-delete-test-runner', 'Delete Test Runner', '删除确认测试 Runner', 'offline', 5, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO NOTHING;
+
+steps:
+  - action: 打开登录页面并登录
+    expected: 登录成功
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Runner
+
+  - action: 导航到 Runner 管理页面
+    expected: 显示 Runner 列表页面
+    verification:
+      type: ui
+      navigate: /dev-org/runners
+      wait_for: Delete Test Runner
+
+  - action: 点击 Runner 的删除按钮
+    expected: 显示删除确认对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: '[data-runner-id] button[aria-label*="删除"]'
+      wait_for: 确认删除
+
+  - action: 验证确认对话框内容
+    expected: 对话框显示警告信息和确认按钮
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: 确认
+        - contains: 删除
+        - exists: 'button' # 取消和确认按钮
+
+  - action: 取消删除
+    expected: 对话框关闭，Runner 仍存在
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 取消
+      check:
+        - contains: Delete Test Runner
+
+  - action: 再次点击删除并确认
+    expected: Runner 被删除
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: '[data-runner-id] button[aria-label*="删除"]'
+        - click:
+            text: 确认
+      wait_for: 删除成功
+
+  - action: 验证 Runner 已从列表中移除
+    expected: 列表中不再显示已删除的 Runner
+    verification:
+      type: ui
+      check:
+        - not_contains: Delete Test Runner
+
+  - action: 验证数据库中 Runner 已删除
+    expected: 数据库中不存在该 Runner
+    verification:
+      type: database
+      query: |
+        SELECT COUNT(*) as count FROM runners
+        WHERE node_id = 'ui-delete-test-runner'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        count: 0
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id = 'ui-delete-test-runner';

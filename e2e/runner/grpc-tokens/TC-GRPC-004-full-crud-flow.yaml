@@ -1,0 +1,161 @@
+id: TC-GRPC-004
+name: gRPC 令牌完整 CRUD 流程
+description: 验证 gRPC 注册令牌的生成、列出、删除完整流程
+priority: high
+module: runner/grpc-tokens
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token（需要 admin/owner 权限）
+  - 组织 dev-org 存在
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 获取初始令牌数量
+    expected: 返回 200，记录初始数量
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+      save:
+        initial_count: body.tokens.length
+
+  - action: 生成第一个 gRPC 令牌
+    expected: 返回 201，创建成功
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: gRPC CRUD 测试令牌 1
+      expected:
+        status: 201
+        body:
+          id: not_empty
+          token: not_empty
+      save:
+        grpc_token_id_1: body.id
+        grpc_token_value_1: body.token
+
+  - action: 生成第二个 gRPC 令牌
+    expected: 返回 201，创建成功
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: gRPC CRUD 测试令牌 2
+          expires_in_hours: 48
+      expected:
+        status: 201
+        body:
+          id: not_empty
+      save:
+        grpc_token_id_2: body.id
+
+  - action: 验证令牌数量增加
+    expected: 返回 200，令牌数量增加 2
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          tokens:
+            length: "{initial_count} + 2"
+
+  - action: 验证第一个令牌在列表中
+    expected: 列表中包含第一个令牌
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          tokens:
+            contains:
+              description: gRPC CRUD 测试令牌 1
+
+  - action: 删除第一个令牌
+    expected: 返回 204 成功删除
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens/{grpc_token_id_1}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 204
+
+  - action: 删除第二个令牌
+    expected: 返回 204 成功删除
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens/{grpc_token_id_2}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 204
+
+  - action: 验证令牌数量恢复
+    expected: 返回 200，令牌数量恢复到初始值
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          tokens:
+            length: "{initial_count}"
+
+cleanup:
+  - sql: |
+      DELETE FROM grpc_registration_tokens
+      WHERE description LIKE 'gRPC CRUD 测试令牌%'
+        AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');

@@ -1,0 +1,93 @@
+id: TC-GRPC-002
+name: 生成 gRPC 注册令牌
+description: 验证 POST /orgs/:slug/runners/grpc/tokens 生成新的 gRPC 注册令牌
+priority: high
+module: runner/grpc-tokens
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token（需要 admin/owner 权限）
+  - 组织 dev-org 存在
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 生成 gRPC 令牌（带描述）
+    expected: 返回 201，包含新创建的令牌
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: E2E gRPC 测试令牌
+      expected:
+        status: 201
+        body:
+          id: not_empty
+          token: not_empty
+          description: E2E gRPC 测试令牌
+      save:
+        grpc_token_id: body.id
+
+  - action: 生成 gRPC 令牌（带有效期）
+    expected: 返回 201，包含带有效期的令牌
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: 带有效期的令牌
+          expires_in_hours: 24
+      expected:
+        status: 201
+        body:
+          id: not_empty
+          token: not_empty
+          expires_at: not_empty
+      save:
+        grpc_token_id_2: body.id
+
+  - action: 不带 token 生成 gRPC 令牌
+    expected: 返回 401 未授权
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Content-Type: application/json
+        body:
+          description: 未授权测试
+      expected:
+        status: 401
+
+cleanup:
+  - sql: |
+      DELETE FROM grpc_registration_tokens
+      WHERE description LIKE 'E2E gRPC%' OR description = '带有效期的令牌'
+        AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');

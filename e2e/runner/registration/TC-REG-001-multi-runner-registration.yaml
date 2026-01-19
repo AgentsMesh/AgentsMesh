@@ -1,0 +1,345 @@
+id: TC-REG-001
+name: 多 Runner 注册与 Pod 创建完整流程
+description: |
+  验证通过 UI 注册多个 Runner，确保多个 Runner 同时在线，
+  并从一个 Runner 创建 Pod 完成完整的端到端流程。
+priority: critical
+must_execute: true
+module: runner/registration
+tags:
+  - ui
+  - api
+  - docker
+  - mcp-required
+  - integration
+
+preconditions:
+  - 开发环境已启动 (docker compose up)
+  - 浏览器可访问
+  - 组织 dev-org 存在
+  - Docker 环境可用于启动额外的 Runner 容器
+
+test_data:
+  user_email: dev@agentsmesh.local
+  user_password: devpass123
+  org_slug: dev-org
+  runners:
+    - node_id: e2e-runner-1
+      description: E2E Test Runner 1
+    - node_id: e2e-runner-2
+      description: E2E Test Runner 2
+    - node_id: e2e-runner-3
+      description: E2E Test Runner 3
+
+steps:
+  # ========== 第一部分: 登录并进入 Runner 管理页面 ==========
+  - action: 登录系统
+    expected: 登录成功，进入工作区
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: 工作区
+
+  - action: 导航到 Runner 管理页面
+    expected: 显示 Runner 列表页面
+    verification:
+      type: ui
+      navigate: /{org_slug}/runners
+      wait_for: Runner
+
+  # ========== 第二部分: 通过 UI 生成多个注册令牌 ==========
+  - action: 点击添加 Runner 按钮
+    expected: 显示添加 Runner 对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 添加 Runner
+      wait_for: 生成令牌
+
+  - action: 生成第一个注册令牌
+    expected: 显示注册令牌和命令
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 生成令牌
+      wait_for: runner register
+      snapshot: true
+      save:
+        token_1: 从页面提取令牌
+
+  - action: 关闭对话框并生成第二个令牌
+    expected: 生成第二个注册令牌
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 完成
+        - click:
+            text: 添加 Runner
+        - click:
+            text: 生成令牌
+      wait_for: runner register
+      save:
+        token_2: 从页面提取令牌
+
+  - action: 关闭对话框并生成第三个令牌
+    expected: 生成第三个注册令牌
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 完成
+        - click:
+            text: 添加 Runner
+        - click:
+            text: 生成令牌
+      wait_for: runner register
+      save:
+        token_3: 从页面提取令牌
+
+  # ========== 第三部分: 使用 Docker 启动多个 Runner ==========
+  - action: 启动第一个 Runner 容器
+    expected: Runner 1 容器启动成功
+    verification:
+      type: docker
+      command: |
+        docker run -d --name e2e-runner-1 \
+          --network agentsmesh-feature-runner-e2e-tests_default \
+          -e RUNNER_NODE_ID=e2e-runner-1 \
+          -e RUNNER_ORG_SLUG=dev-org \
+          -e BACKEND_URL=http://backend:8080 \
+          -e GRPC_ENDPOINT=nginx:9443 \
+          -e REGISTRATION_TOKEN={token_1} \
+          -v $(pwd)/ssl:/app/ssl:ro \
+          agentsmesh-feature-runner-e2e-tests-runner
+      expected:
+        container_running: true
+
+  - action: 启动第二个 Runner 容器
+    expected: Runner 2 容器启动成功
+    verification:
+      type: docker
+      command: |
+        docker run -d --name e2e-runner-2 \
+          --network agentsmesh-feature-runner-e2e-tests_default \
+          -e RUNNER_NODE_ID=e2e-runner-2 \
+          -e RUNNER_ORG_SLUG=dev-org \
+          -e BACKEND_URL=http://backend:8080 \
+          -e GRPC_ENDPOINT=nginx:9443 \
+          -e REGISTRATION_TOKEN={token_2} \
+          -v $(pwd)/ssl:/app/ssl:ro \
+          agentsmesh-feature-runner-e2e-tests-runner
+      expected:
+        container_running: true
+
+  - action: 启动第三个 Runner 容器
+    expected: Runner 3 容器启动成功
+    verification:
+      type: docker
+      command: |
+        docker run -d --name e2e-runner-3 \
+          --network agentsmesh-feature-runner-e2e-tests_default \
+          -e RUNNER_NODE_ID=e2e-runner-3 \
+          -e RUNNER_ORG_SLUG=dev-org \
+          -e BACKEND_URL=http://backend:8080 \
+          -e GRPC_ENDPOINT=nginx:9443 \
+          -e REGISTRATION_TOKEN={token_3} \
+          -v $(pwd)/ssl:/app/ssl:ro \
+          agentsmesh-feature-runner-e2e-tests-runner
+      expected:
+        container_running: true
+
+  # ========== 第四部分: 验证多个 Runner 同时在线 ==========
+  - action: 等待 Runner 注册完成
+    expected: 等待 30 秒让 Runner 完成注册
+    verification:
+      type: wait
+      seconds: 30
+
+  - action: 刷新页面查看 Runner 列表
+    expected: 显示所有注册的 Runner
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 刷新
+      wait_for: e2e-runner-1
+
+  - action: 验证 UI 显示多个 Runner 在线
+    expected: 至少 3 个 Runner 显示为 online 状态
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: e2e-runner-1
+        - contains: e2e-runner-2
+        - contains: e2e-runner-3
+        - contains: online
+
+  - action: 通过 API 验证 Runner 在线状态
+    expected: API 返回多个在线 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners_count_gte: 3
+          online_count_gte: 3
+
+  - action: 验证数据库中 Runner 状态
+    expected: 数据库中有多个 online 状态的 Runner
+    verification:
+      type: database
+      query: |
+        SELECT node_id, status, is_enabled
+        FROM runners
+        WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org')
+          AND node_id LIKE 'e2e-runner-%'
+        ORDER BY node_id;
+      expected:
+        rows_count: 3
+        all_status: online
+
+  # ========== 第五部分: 从 Runner 创建 Pod ==========
+  - action: 导航到工作区页面
+    expected: 显示工作区页面
+    verification:
+      type: ui
+      navigate: /{org_slug}/workspace
+      wait_for: 新建 Pod
+
+  - action: 点击新建 Pod 按钮
+    expected: 显示创建 Pod 对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 新建 Pod
+      wait_for: 选择 Runner
+
+  - action: 选择第一个 E2E Runner
+    expected: 选中 e2e-runner-1
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: e2e-runner-1
+      check:
+        - selected: e2e-runner-1
+
+  - action: 配置 Pod 并创建
+    expected: Pod 创建成功
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[name="name"]'
+            value: E2E Test Pod
+        - click:
+            text: 创建
+      wait_for: 终端
+
+  - action: 验证 Pod 运行中
+    expected: Pod 状态为 running，终端可用
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: E2E Test Pod
+        - exists: terminal
+
+  - action: 通过 API 验证 Pod 状态
+    expected: API 返回 Pod 为 running 状态
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pods:
+            - name: E2E Test Pod
+              status: running
+              runner_id: e2e-runner-1
+
+  - action: 验证数据库中 Pod 记录
+    expected: 数据库中存在 Pod 记录
+    verification:
+      type: database
+      query: |
+        SELECT p.name, p.status, r.node_id as runner_node_id
+        FROM pods p
+        JOIN runners r ON p.runner_id = r.id
+        WHERE p.name = 'E2E Test Pod';
+      expected:
+        rows:
+          - name: E2E Test Pod
+            status: running
+            runner_node_id: e2e-runner-1
+
+  # ========== 第六部分: 在 Pod 中执行命令验证 ==========
+  - action: 在 Pod 终端中执行命令
+    expected: 命令执行成功，显示输出
+    verification:
+      type: ui
+      actions:
+        - type_in_terminal: "echo 'Hello from E2E Test'"
+        - press: Enter
+      wait_for: Hello from E2E Test
+      check:
+        - contains: Hello from E2E Test
+
+  # ========== 第七部分: 清理 ==========
+  - action: 停止并删除 Pod
+    expected: Pod 删除成功
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: 'button[aria-label="停止 Pod"]'
+        - click:
+            text: 确认
+      wait_for: Pod 已停止
+
+cleanup:
+  - description: 停止并删除测试 Runner 容器
+    commands:
+      - docker stop e2e-runner-1 e2e-runner-2 e2e-runner-3 2>/dev/null || true
+      - docker rm e2e-runner-1 e2e-runner-2 e2e-runner-3 2>/dev/null || true
+
+  - description: 清理数据库中的测试数据
+    sql: |
+      -- 删除测试 Pod
+      DELETE FROM pods WHERE name = 'E2E Test Pod';
+
+      -- 删除测试 Runner
+      DELETE FROM runners WHERE node_id LIKE 'e2e-runner-%';
+
+      -- 删除测试注册令牌
+      DELETE FROM runner_grpc_registration_tokens
+      WHERE name LIKE 'E2E Runner%';
+
+notes:
+  - 此测试需要 Docker 环境支持
+  - Runner 容器需要能够访问 backend 和 nginx 服务
+  - 测试完成后会自动清理创建的资源
+  - 如果测试失败，请手动执行 cleanup 步骤

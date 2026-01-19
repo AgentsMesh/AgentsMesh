@@ -1,0 +1,95 @@
+id: TC-GRPC-003
+name: 删除 gRPC 注册令牌
+description: 验证 DELETE /orgs/:slug/runners/grpc/tokens/:id 删除 gRPC 注册令牌
+priority: high
+module: runner/grpc-tokens
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token（需要 admin/owner 权限）
+  - 组织 dev-org 存在
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 创建一个 gRPC 令牌用于测试删除
+    expected: 返回 201，获取令牌 ID
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: 待删除的 gRPC 测试令牌
+      expected:
+        status: 201
+        body:
+          id: not_empty
+      save:
+        grpc_token_id: body.id
+
+  - action: 删除 gRPC 令牌
+    expected: 返回 204 成功删除
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens/{grpc_token_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 204
+
+  - action: 再次删除同一令牌
+    expected: 返回 404 令牌不存在
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens/{grpc_token_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 404
+
+  - action: 删除不存在的令牌
+    expected: 返回 404 令牌不存在
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens/99999
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 404
+
+  - action: 不带 token 删除 gRPC 令牌
+    expected: 返回 401 未授权
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/orgs/dev-org/runners/grpc/tokens/1
+      expected:
+        status: 401

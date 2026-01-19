@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
@@ -203,7 +204,15 @@ func (m *mockDB) Updates(model interface{}, values interface{}) error {
 
 func (m *mockDB) Model(value interface{}) database.DB {
 	m.lastModel = value
-	m.lastTable = "" // Reset table when model is called
+	// Set lastTable based on model type for proper Count behavior
+	switch value.(type) {
+	case *agentpod.Pod:
+		m.lastTable = "agent_pods"
+	case *runner.Runner:
+		m.lastTable = "runners"
+	default:
+		m.lastTable = "" // Reset table for other models
+	}
 	return m
 }
 
@@ -720,7 +729,7 @@ func TestDeleteOrganization(t *testing.T) {
 	t.Run("should delete organization successfully when no runners", func(t *testing.T) {
 		db := newMockDB()
 		db.organizations[1] = &organization.Organization{ID: 1, Name: "Test Org"}
-		db.totalRunners = 0 // Use totalRunners since the mock uses lastModel
+		db.runnerCount = 0 // Use runnerCount for Model(&runner.Runner{}).Where("organization_id = ?", ...).Count()
 
 		svc := NewService(db)
 		err := svc.DeleteOrganization(context.Background(), 1)
@@ -731,7 +740,7 @@ func TestDeleteOrganization(t *testing.T) {
 	t.Run("should return error when organization has runners", func(t *testing.T) {
 		db := newMockDB()
 		db.organizations[1] = &organization.Organization{ID: 1, Name: "Test Org"}
-		db.totalRunners = 5 // Use totalRunners since the mock uses lastModel
+		db.runnerCount = 5 // Use runnerCount for Model(&runner.Runner{}).Where("organization_id = ?", ...).Count()
 
 		svc := NewService(db)
 		err := svc.DeleteOrganization(context.Background(), 1)
@@ -1384,7 +1393,7 @@ func TestDeleteOrganization_ErrorPaths(t *testing.T) {
 	t.Run("should return error when delete fails", func(t *testing.T) {
 		db := newMockDB()
 		db.organizations[1] = &organization.Organization{ID: 1, Name: "Test Org"}
-		db.totalRunners = 0
+		db.runnerCount = 0 // Use runnerCount for Model(&runner.Runner{}).Where("organization_id = ?", ...).Count()
 		db.deleteErr = errors.New("delete failed")
 
 		svc := NewService(db)

@@ -1,0 +1,155 @@
+id: TC-CONFIG-001
+name: 更新 Runner 配置
+description: 验证 PUT /orgs/:slug/runners/:id 更新 Runner 配置信息
+priority: high
+module: runner/config
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token（需要 admin/owner 权限）
+  - 组织 dev-org 存在
+  - 组织内至少有一个 Runner
+
+setup:
+  sql: |
+    -- 确保有测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, created_at, updated_at)
+    SELECT o.id, 'test-runner-config', 'Config Test Runner', '配置测试用 Runner', 'offline', 5, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO UPDATE SET
+      name = 'Config Test Runner',
+      description = '配置测试用 Runner',
+      max_pods = 5;
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 获取测试 Runner ID
+    expected: 返回 200，获取 Runner ID
+    verification:
+      type: database
+      query: |
+        SELECT id FROM runners
+        WHERE node_id = 'test-runner-config'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows: 1
+      save:
+        runner_id: rows[0].id
+
+  - action: 更新 Runner 描述
+    expected: 返回 200，描述更新成功
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: 更新后的描述
+      expected:
+        status: 200
+        body:
+          description: 更新后的描述
+
+  - action: 更新 Runner 最大 Pod 数
+    expected: 返回 200，最大 Pod 数更新成功
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          max_pods: 10
+      expected:
+        status: 200
+        body:
+          max_pods: 10
+
+  - action: 同时更新多个字段
+    expected: 返回 200，多个字段同时更新成功
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: 最终描述
+          max_pods: 8
+      expected:
+        status: 200
+        body:
+          description: 最终描述
+          max_pods: 8
+
+  - action: 验证数据库中数据已更新
+    expected: 数据库中数据与更新一致
+    verification:
+      type: database
+      query: |
+        SELECT description, max_pods FROM runners
+        WHERE node_id = 'test-runner-config'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - description: 最终描述
+            max_pods: 8
+
+  - action: 更新不存在的 Runner
+    expected: 返回 404 不存在
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/dev-org/runners/99999
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: 测试
+      expected:
+        status: 404
+
+  - action: 不带 token 更新 Runner
+    expected: 返回 401 未授权
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Content-Type: application/json
+        body:
+          description: 未授权测试
+      expected:
+        status: 401
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id = 'test-runner-config';

@@ -1,0 +1,136 @@
+id: TC-ADMIN-003
+name: Admin 禁用和启用 Runner
+description: 验证 POST /api/v1/admin/runners/:id/disable 和 /enable 接口
+priority: high
+module: runner/admin
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 admin access_token（is_system_admin = true）
+
+setup:
+  sql: |
+    -- 确保 admin 用户有 system_admin 权限
+    UPDATE users SET is_system_admin = true WHERE email = 'admin@agentsmesh.local';
+
+    -- 创建测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, disabled, created_at, updated_at)
+    SELECT o.id, 'admin-disable-test-runner', 'Admin Disable Test Runner', 'Admin 禁用测试 Runner', 'offline', 5, false, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO UPDATE SET disabled = false;
+
+steps:
+  - action: Admin 用户登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        admin_token: body.token
+
+  - action: 获取测试 Runner ID
+    expected: 获取 Runner ID
+    verification:
+      type: database
+      query: |
+        SELECT id FROM runners
+        WHERE node_id = 'admin-disable-test-runner'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows: 1
+      save:
+        runner_id: rows[0].id
+
+  - action: 验证 Runner 初始状态为启用
+    expected: Runner disabled 为 false
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/runners/{runner_id}
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          disabled: false
+
+  - action: 禁用 Runner
+    expected: 返回 200，Runner 被禁用
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/admin/runners/{runner_id}/disable
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          disabled: true
+
+  - action: 验证数据库中 Runner 已禁用
+    expected: 数据库中 disabled 为 true
+    verification:
+      type: database
+      query: |
+        SELECT disabled FROM runners
+        WHERE node_id = 'admin-disable-test-runner'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - disabled: true
+
+  - action: 启用 Runner
+    expected: 返回 200，Runner 被启用
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/admin/runners/{runner_id}/enable
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 200
+        body:
+          disabled: false
+
+  - action: 验证数据库中 Runner 已启用
+    expected: 数据库中 disabled 为 false
+    verification:
+      type: database
+      query: |
+        SELECT disabled FROM runners
+        WHERE node_id = 'admin-disable-test-runner'
+          AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - disabled: false
+
+  - action: 禁用不存在的 Runner
+    expected: 返回 404 不存在
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/admin/runners/99999/disable
+        headers:
+          Authorization: Bearer {admin_token}
+      expected:
+        status: 404
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id = 'admin-disable-test-runner';

@@ -1,0 +1,90 @@
+id: TC-TOKEN-002
+name: 创建注册令牌
+description: 验证 POST /orgs/:slug/runners/tokens 创建新的注册令牌
+priority: high
+module: runner/tokens
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token（需要 admin/owner 权限）
+  - 组织 dev-org 存在
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 创建注册令牌（带描述）
+    expected: 返回 201，包含新创建的令牌
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/tokens
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          description: E2E 测试令牌
+      expected:
+        status: 201
+        body:
+          id: not_empty
+          token: not_empty
+          description: E2E 测试令牌
+      save:
+        token_id: body.id
+
+  - action: 创建注册令牌（不带描述）
+    expected: 返回 201，包含新创建的令牌
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/tokens
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body: {}
+      expected:
+        status: 201
+        body:
+          id: not_empty
+          token: not_empty
+      save:
+        token_id_2: body.id
+
+  - action: 不带 token 创建注册令牌
+    expected: 返回 401 未授权
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/runners/tokens
+        headers:
+          Content-Type: application/json
+        body:
+          description: 未授权测试
+      expected:
+        status: 401
+
+cleanup:
+  - sql: |
+      DELETE FROM registration_tokens
+      WHERE description = 'E2E 测试令牌'
+        AND organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');

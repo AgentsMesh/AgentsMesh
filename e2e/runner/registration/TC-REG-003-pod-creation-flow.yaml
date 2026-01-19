@@ -1,0 +1,162 @@
+id: TC-REG-003
+name: Pod 创建完整流程测试
+description: |
+  验证从在线 Runner 创建 Pod 的完整流程，包括：
+  - 选择 Runner
+  - 创建 Pod
+  - Pod 启动并进入 running 状态
+  - 终端可用
+  - 清理 Pod
+priority: critical
+must_execute: true
+module: runner/registration
+tags:
+  - ui
+  - api
+  - database
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 至少有一个 Runner 在线且可用
+  - 组织 dev-org 存在
+  - 用户已登录
+
+test_data:
+  user_email: dev@agentsmesh.local
+  user_password: devpass123
+  org_slug: dev-org
+  pod_name: E2E-Test-Pod
+
+steps:
+  # ========== 登录 ==========
+  - action: 登录系统
+    expected: 登录成功
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: 工作区
+
+  # ========== 验证有可用 Runner ==========
+  - action: 通过 API 验证有可用 Runner
+    expected: 至少有一个在线 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners_length_gte: 1
+
+  # ========== 创建 Pod ==========
+  - action: 导航到工作区
+    expected: 显示工作区页面
+    verification:
+      type: ui
+      navigate: /dev-org/workspace
+      wait_for: Runner
+
+  - action: 点击新建 Pod 按钮
+    expected: 打开创建 Pod 对话框或面板
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: 新建 Pod
+      wait_for: 创建
+
+  - action: 选择一个在线 Runner 并创建 Pod
+    expected: Pod 创建请求发送
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: '[data-runner-status="online"]'
+        - click:
+            text: 创建
+      wait_for: 终端
+
+  # ========== 验证 Pod 状态 ==========
+  - action: 验证 UI 显示 Pod 运行中
+    expected: Pod 显示为运行状态
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - exists: terminal
+
+  - action: 通过 API 验证 Pod 状态
+    expected: Pod 状态为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pods:
+            - status_in: [running, initializing]
+
+  - action: 验证数据库中 Pod 记录
+    expected: Pod 记录存在且状态正确
+    verification:
+      type: database
+      query: |
+        SELECT p.id, p.status, p.runner_id, r.node_id as runner_node_id
+        FROM pods p
+        JOIN runners r ON p.runner_id = r.id
+        WHERE p.organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org')
+        ORDER BY p.created_at DESC
+        LIMIT 1;
+      expected:
+        rows_count: 1
+        rows:
+          - status_in: [running, initializing]
+
+  # ========== 验证 Runner 的 Pod 计数更新 ==========
+  - action: 验证 Runner 的 current_pods 计数增加
+    expected: Runner 的 current_pods >= 1
+    verification:
+      type: database
+      query: |
+        SELECT r.node_id, r.current_pods, r.max_concurrent_pods
+        FROM runners r
+        JOIN pods p ON p.runner_id = r.id
+        WHERE p.organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org')
+          AND p.status IN ('running', 'initializing')
+        ORDER BY p.created_at DESC
+        LIMIT 1;
+      expected:
+        rows:
+          - current_pods_gte: 1
+
+cleanup:
+  - description: 停止并删除测试创建的 Pod
+    sql: |
+      -- 将测试 Pod 标记为 terminated
+      UPDATE pods
+      SET status = 'terminated', updated_at = NOW()
+      WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org')
+        AND status IN ('running', 'initializing')
+        AND created_at > NOW() - INTERVAL '1 hour';
+
+notes:
+  - 此测试需要至少一个在线 Runner
+  - Pod 创建后需要等待几秒进入 running 状态
+  - 测试结束后会清理创建的 Pod

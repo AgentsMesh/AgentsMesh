@@ -1,0 +1,88 @@
+id: TC-RUNNER-003
+name: 获取单个 Runner 详情
+description: 验证 GET /orgs/:slug/runners/:id 返回指定 Runner 的详细信息
+priority: high
+module: runner/list
+
+preconditions:
+  - 开发环境已启动
+  - 已获取有效的 access_token
+  - 组织 dev-org 存在
+  - 组织内至少有一个 Runner
+
+setup:
+  sql: |
+    -- 确保有测试 Runner
+    INSERT INTO runners (organization_id, node_id, name, description, status, max_pods, created_at, updated_at)
+    SELECT o.id, 'test-runner-001', 'Test Runner', 'E2E 测试用 Runner', 'offline', 5, NOW(), NOW()
+    FROM organizations o
+    WHERE o.slug = 'dev-org'
+    ON CONFLICT (organization_id, node_id) DO NOTHING;
+
+steps:
+  - action: 登录获取 token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 获取 Runner 列表以获取 ID
+    expected: 返回 200，获取第一个 Runner 的 ID
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - action: 获取单个 Runner 详情
+    expected: 返回 200，包含 Runner 完整信息
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/{runner_id}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          id: not_empty
+          node_id: not_empty
+          status: not_empty
+
+  - action: 获取不存在的 Runner
+    expected: 返回 404 不存在
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/99999
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 404
+
+cleanup:
+  - sql: |
+      DELETE FROM runners WHERE node_id = 'test-runner-001';

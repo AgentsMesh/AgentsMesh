@@ -10,6 +10,24 @@ user-invocable: true
 
 执行 `e2e/` 目录下的端到端测试用例。
 
+## 🚨 强制要求：UI 测试必须执行
+
+**⚠️ 禁止跳过 UI 测试！UI 测试是 E2E 测试的核心，必须使用 MCP Chrome DevTools 执行真实的浏览器验证。**
+
+### UI 测试执行规则
+
+1. **不可跳过**：任何 `verification.type: ui` 的测试步骤都必须执行
+2. **不可替代**：禁止用 API 调用代替 UI 验证
+3. **必须使用浏览器**：使用 MCP Chrome DevTools 工具（`mcp__chrome-devtools__*`）
+4. **验证真实渲染**：确保页面元素真实渲染，而非仅验证数据存在
+
+### 为什么 UI 测试重要？
+
+- API 测试只验证数据，UI 测试验证用户体验
+- 前端渲染问题只能通过 UI 测试发现
+- 交互逻辑（点击、输入、导航）必须在浏览器中验证
+- 响应式布局和样式问题需要实际渲染才能发现
+
 ## ⚠️ 关键：使用当前 Worktree 的开发环境
 
 **每个 worktree 有独立的 Docker 环境和端口配置！**
@@ -116,11 +134,24 @@ docker exec ${POSTGRES_CONTAINER} psql -U agentsmesh -d agentsmesh -c "SELECT 1"
 
 ### ⚠️ 重要：根据 `verification.type` 选择正确的工具
 
-| 类型 | 说明 | 使用的工具 |
-|------|------|-----------|
-| `ui` | 浏览器页面验证 | **MCP Chrome DevTools** |
-| `api` | API 调用验证 | **Bash (curl)** |
-| `database` | 数据库查询验证 | **Bash (docker exec psql)** |
+| 类型 | 说明 | 使用的工具 | 优先级 |
+|------|------|-----------|--------|
+| `ui` | 浏览器页面验证 | **MCP Chrome DevTools** | 🔴 最高优先级，禁止跳过 |
+| `api` | API 调用验证 | **Bash (curl)** | 正常优先级 |
+| `database` | 数据库查询验证 | **Bash (docker exec psql)** | 正常优先级 |
+
+### 🚨 UI 测试不可跳过的原因
+
+```
+❌ 错误做法：
+   "UI 测试需要浏览器，我先跳过，只执行 API 测试"
+   "MCP 工具不可用，改用 curl 验证"
+
+✅ 正确做法：
+   1. 确认 Chrome 浏览器已打开并可通过 MCP 连接
+   2. 使用 mcp__chrome-devtools__* 工具执行所有 UI 验证
+   3. 如果 MCP 不可用，报告问题而非跳过测试
+```
 
 ---
 
@@ -379,7 +410,23 @@ Step 3: [操作描述] ❌ FAIL - 期望 "xxx"，实际 "yyy"
 
 ### Q: UI 测试用 API 模拟？
 
-**错误做法！** UI 测试必须使用 MCP Chrome DevTools 进行真实的浏览器验证。
+**🚨 错误做法！** UI 测试必须使用 MCP Chrome DevTools 进行真实的浏览器验证。
+
+### Q: 可以跳过 UI 测试吗？
+
+**🚨 绝对不可以！** UI 测试是 E2E 测试的核心：
+
+1. **不要因为 MCP 不可用就跳过**：先解决 MCP 连接问题
+2. **不要用 API 替代**：API 测试无法验证前端渲染
+3. **不要因为"太慢"就跳过**：UI 测试发现的问题往往是最关键的
+
+如果 MCP Chrome DevTools 无法连接：
+```
+1. 确认 Chrome 浏览器已打开
+2. 确认 MCP 服务已配置并运行
+3. 尝试 mcp__chrome-devtools__list_pages 检查连接
+4. 如仍无法连接，报告问题，不要跳过测试
+```
 
 ---
 
@@ -402,9 +449,10 @@ Step 3: [操作描述] ❌ FAIL - 期望 "xxx"，实际 "yyy"
 
 ## 注意事项
 
-1. **先确认环境**：执行前先 `source deploy/dev/.env` 获取正确端口
-2. **不要硬编码端口**：使用 `${WEB_PORT}` 变量
-3. **区分验证类型**：严格按 `verification.type` 选择工具
-4. **UI ≠ API**：不要用 API 调用代替 UI 验证
-5. **容器名包含 worktree 名**：不要使用通用容器名
-6. **执行 Cleanup**：测试后清理数据，避免影响其他测试
+1. **🚨 UI 测试禁止跳过**：所有 `verification.type: ui` 的测试必须使用 MCP Chrome DevTools 执行
+2. **UI ≠ API**：绝对不要用 API 调用代替 UI 验证
+3. **先确认环境**：执行前先 `source deploy/dev/.env` 获取正确端口
+4. **不要硬编码端口**：使用 `${WEB_PORT}` 变量
+5. **区分验证类型**：严格按 `verification.type` 选择工具
+6. **容器名包含 worktree 名**：不要使用通用容器名
+7. **执行 Cleanup**：测试后清理数据，避免影响其他测试

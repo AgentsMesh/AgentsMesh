@@ -1,0 +1,94 @@
+id: TC-REG-002
+name: 多 Runner 在线状态验证
+description: |
+  验证多个 Runner 同时在线时的状态显示和 API 响应。
+  此测试假设已有多个 Runner 通过 Docker 启动并注册。
+priority: high
+must_execute: true
+module: runner/registration
+tags:
+  - api
+  - database
+
+preconditions:
+  - 开发环境已启动
+  - 至少有 2 个 Runner 已注册并在线
+  - 组织 dev-org 存在
+
+steps:
+  - action: 登录获取 access_token
+    expected: 返回 200，获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - action: 获取所有 Runner 列表
+    expected: 返回 Runner 列表，包含多个 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+          runners_length_gte: 1
+
+  - action: 获取可用 Runner 列表
+    expected: 返回在线且启用的 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: is_array
+
+  - action: 验证数据库中 Runner 状态
+    expected: 数据库中存在多个 Runner 记录
+    verification:
+      type: database
+      query: |
+        SELECT node_id, status, is_enabled, current_pods, max_concurrent_pods
+        FROM runners
+        WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org')
+        ORDER BY created_at DESC
+        LIMIT 5;
+      expected:
+        rows_count_gte: 1
+
+  - action: 验证在线 Runner 数量统计
+    expected: 统计数据准确
+    verification:
+      type: database
+      query: |
+        SELECT
+          COUNT(*) as total_runners,
+          COUNT(CASE WHEN status = 'online' THEN 1 END) as online_runners,
+          COUNT(CASE WHEN is_enabled = true THEN 1 END) as enabled_runners,
+          SUM(max_concurrent_pods) as total_capacity
+        FROM runners
+        WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org');
+      expected:
+        rows:
+          - total_runners_gte: 1

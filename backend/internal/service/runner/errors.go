@@ -12,6 +12,7 @@ var (
 	ErrRunnerAlreadyExists = errors.New("runner already exists")
 	ErrRunnerDisabled      = errors.New("runner is disabled")
 	ErrRunnerQuotaExceeded = errors.New("runner quota exceeded")
+	ErrGRPCTokenNotFound   = errors.New("gRPC registration token not found")
 )
 
 // Connection errors - runner connection related errors
