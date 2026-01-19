@@ -213,6 +213,8 @@ export function RealtimeProvider({
       ticketStore.fetchTickets?.();
       meshStore.fetchTopology?.();
     }
+    // Store objects are stable, only connectionState changes trigger refresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionState]);
 
   const value: RealtimeContextValue = {

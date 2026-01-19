@@ -43,9 +43,6 @@ func TestTenantModelStruct(t *testing.T) {
 	}
 }
 
-// TestTeamScopedModel tests removed - TeamScopedModel has been deprecated
-// All resources are now visible to all organization members
-
 // --- Benchmark Tests ---
 
 func BenchmarkBaseModelCreation(b *testing.B) {

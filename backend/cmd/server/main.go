@@ -15,6 +15,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest"
 	v1 "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
@@ -309,9 +310,8 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 
 // initializeInfrastructure initializes WebSocket hub, EventBus, and Redis
 func initializeInfrastructure(cfg *config.Config, appLogger *logger.Logger) (*websocket.Hub, *eventbus.EventBus, *redis.Client) {
-	// Initialize WebSocket hub
+	// Initialize WebSocket hub (sharded hub auto-starts goroutines in NewHub)
 	hub := websocket.NewHub()
-	go hub.Run()
 
 	// Initialize Redis client (optional, for multi-instance event sync)
 	var redisClient *redis.Client
@@ -566,16 +566,16 @@ func (a *grpcOrgServiceAdapter) GetBySlug(ctx context.Context, slug string) (grp
 	}, nil
 }
 
-// grpcAgentTypesAdapter adapts agent.AgentTypeService to grpcserver.AgentTypesProvider
+// grpcAgentTypesAdapter adapts agent.AgentTypeService to interfaces.AgentTypesProvider
 type grpcAgentTypesAdapter struct {
 	svc *agent.AgentTypeService
 }
 
-func (a *grpcAgentTypesAdapter) GetAgentTypesForRunner() []grpcserver.AgentTypeInfo {
+func (a *grpcAgentTypesAdapter) GetAgentTypesForRunner() []interfaces.AgentTypeInfo {
 	types := a.svc.GetAgentTypesForRunner()
-	result := make([]grpcserver.AgentTypeInfo, len(types))
+	result := make([]interfaces.AgentTypeInfo, len(types))
 	for i, t := range types {
-		result[i] = grpcserver.AgentTypeInfo{
+		result[i] = interfaces.AgentTypeInfo{
 			Slug:          t.Slug,
 			Name:          t.Name,
 			Executable:    t.Executable,

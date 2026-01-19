@@ -78,7 +78,7 @@ func (s *PodService) GetPodsByTicket(ctx context.Context, ticketID int64) ([]*ag
 }
 
 // ListPods returns pods for an organization
-func (s *PodService) ListPods(ctx context.Context, orgID int64, _ *int64, status string, limit, offset int) ([]*agentpod.Pod, int64, error) {
+func (s *PodService) ListPods(ctx context.Context, orgID int64, status string, limit, offset int) ([]*agentpod.Pod, int64, error) {
 	query := s.db.WithContext(ctx).Model(&agentpod.Pod{}).Where("organization_id = ?", orgID)
 
 	if status != "" {
@@ -109,10 +109,10 @@ func (s *PodService) ListActivePods(ctx context.Context, runnerID int64) ([]*age
 	var pods []*agentpod.Pod
 	if err := s.db.WithContext(ctx).
 		Where("runner_id = ? AND status IN ?", runnerID, []string{
-			agentpod.PodStatusInitializing,
-			agentpod.PodStatusRunning,
-			agentpod.PodStatusPaused,
-			agentpod.PodStatusDisconnected,
+			agentpod.StatusInitializing,
+			agentpod.StatusRunning,
+			agentpod.StatusPaused,
+			agentpod.StatusDisconnected,
 		}).
 		Find(&pods).Error; err != nil {
 		return nil, err

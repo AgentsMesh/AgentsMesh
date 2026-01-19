@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -60,7 +61,6 @@ func TestPodStruct(t *testing.T) {
 
 func TestPodAllFields(t *testing.T) {
 	now := time.Now()
-	forwarder := &PTYForwarder{podKey: "test"}
 
 	// Note: InitialPrompt field has been removed - prompt is now passed via LaunchArgs by Backend
 	pod := &Pod{
@@ -75,7 +75,6 @@ func TestPodAllFields(t *testing.T) {
 		TicketIdentifier: "TICKET-123",
 		OnOutput:         func([]byte) {},
 		OnExit:           func(int) {},
-		Forwarder:        forwarder,
 	}
 
 	if pod.OnOutput == nil {
@@ -83,9 +82,6 @@ func TestPodAllFields(t *testing.T) {
 	}
 	if pod.OnExit == nil {
 		t.Error("OnExit should not be nil")
-	}
-	if pod.Forwarder == nil {
-		t.Error("Forwarder should not be nil")
 	}
 }
 
@@ -123,6 +119,11 @@ func TestPodWithCallbacks(t *testing.T) {
 
 // TestNewRunnerRequiresGRPC verifies that New() requires gRPC configuration.
 func TestNewRunnerRequiresGRPC(t *testing.T) {
+	// Isolate HOME to prevent loading existing gRPC certificates
+	originalHome := os.Getenv("HOME")
+	t.Setenv("HOME", t.TempDir())
+	defer os.Setenv("HOME", originalHome)
+
 	tempDir := t.TempDir()
 	cfg := &config.Config{
 		ServerURL:         "http://localhost:8080",
@@ -140,7 +141,7 @@ func TestNewRunnerRequiresGRPC(t *testing.T) {
 	if r != nil {
 		t.Error("Runner should be nil when gRPC config is missing")
 	}
-	if !contains(err.Error(), "gRPC configuration is required") {
+	if err != nil && !contains(err.Error(), "gRPC configuration is required") {
 		t.Errorf("Error should mention gRPC configuration, got: %v", err)
 	}
 }

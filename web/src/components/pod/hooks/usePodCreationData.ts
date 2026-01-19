@@ -6,7 +6,7 @@ import {
   RunnerData,
   AgentTypeData,
   RepositoryData,
-} from "@/lib/api/client";
+} from "@/lib/api";
 
 export interface PodCreationData {
   runners: RunnerData[];

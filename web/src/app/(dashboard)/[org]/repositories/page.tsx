@@ -46,7 +46,7 @@ export default function RepositoriesPage() {
     } catch (error) {
       console.error("Failed to delete repository:", error);
     }
-  }, []);
+  }, [t]);
 
   const filteredRepositories = repositories.filter((repo) => {
     const matchesSearch =
@@ -328,11 +328,7 @@ function ImportRepositoryModal({
   const [ticketPrefix, setTicketPrefix] = useState("");
   const [visibility, setVisibility] = useState("organization");
 
-  useEffect(() => {
-    loadProviders();
-  }, []);
-
-  const loadProviders = async () => {
+  const loadProviders = useCallback(async () => {
     try {
       setLoadingProviders(true);
       const response = await userRepositoryProviderApi.list();
@@ -347,7 +343,11 @@ function ImportRepositoryModal({
     } finally {
       setLoadingProviders(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    loadProviders();
+  }, [loadProviders]);
 
   const loadRepositories = useCallback(async () => {
     if (!selectedProvider) return;
@@ -366,7 +366,7 @@ function ImportRepositoryModal({
     } finally {
       setLoadingRepos(false);
     }
-  }, [selectedProvider, page, search]);
+  }, [selectedProvider, page, search, t]);
 
   useEffect(() => {
     if (step === "browse" && selectedProvider) {

@@ -19,7 +19,30 @@ var upgrader = gorillaws.Upgrader{
 	WriteBufferSize:   4096,
 	EnableCompression: true,
 	CheckOrigin: func(r *http.Request) bool {
-		// TODO: Implement proper origin checking
+		// TODO(security): Implement proper origin checking - HIGH PRIORITY
+		//
+		// Current Issue:
+		//   Returns true for all origins, allowing potential CSRF attacks and WebSocket hijacking.
+		//
+		// Implementation Plan:
+		//   1. Add AllowedOrigins []string to config.ServerConfig
+		//   2. Validate r.Header.Get("Origin") against the whitelist
+		//   3. Development: Allow localhost origins
+		//   4. Production: Require explicit domain configuration
+		//
+		// Example Implementation:
+		//   origin := r.Header.Get("Origin")
+		//   if origin == "" {
+		//       return true // Allow same-origin requests (no Origin header)
+		//   }
+		//   for _, allowed := range cfg.Server.AllowedOrigins {
+		//       if origin == allowed {
+		//           return true
+		//       }
+		//   }
+		//   return false
+		//
+		// See: https://owasp.org/www-community/attacks/Cross-Site_WebSocket_Hijacking
 		return true
 	},
 }

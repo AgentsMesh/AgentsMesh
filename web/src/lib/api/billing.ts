@@ -138,21 +138,21 @@ export const billingApi = {
   getSubscription: () =>
     request<{ subscription: Subscription }>(orgPath("/billing/subscription")),
 
-  // Create subscription (legacy - use createCheckout for payments)
+  // Create subscription (for free plans, use createCheckout for paid plans)
   createSubscription: (planName: string, billingCycle?: string) =>
     request<{ subscription: Subscription }>(orgPath("/billing/subscription"), {
       method: "POST",
       body: { plan_name: planName, billing_cycle: billingCycle || "monthly" },
     }),
 
-  // Update subscription (legacy - use createCheckout for upgrades)
+  // Update subscription (for free plans, use createCheckout for paid upgrades)
   updateSubscription: (planName: string) =>
     request<{ subscription: Subscription }>(orgPath("/billing/subscription"), {
       method: "PUT",
       body: { plan_name: planName },
     }),
 
-  // Cancel subscription (legacy)
+  // Cancel subscription
   cancelSubscription: () =>
     request<{ message: string }>(orgPath("/billing/subscription"), {
       method: "DELETE",

@@ -31,7 +31,6 @@ type Runner struct {
 	mcpManager      *mcp.Manager          // MCP server management
 	mcpServer       *mcp.HTTPServer       // MCP HTTP Server for Claude Code
 	claudeMonitor   *monitor.Monitor      // Claude CLI status monitoring
-	termManager     *terminal.Manager     // Enhanced terminal session management
 
 	// Update management
 	draining       bool                   // True when waiting for pods to finish before update
@@ -56,7 +55,6 @@ type Pod struct {
 	TicketIdentifier string              // Ticket ID for worktree-based pods
 	OnOutput         func([]byte)        // Output callback
 	OnExit           func(int)           // Exit callback
-	Forwarder        *PTYForwarder       // Output forwarder with backpressure
 }
 
 // SetStatus sets the pod status in a thread-safe manner
@@ -192,13 +190,6 @@ func (r *Runner) initEnhancedComponents(cfg *config.Config) {
 
 	// Initialize Claude monitor for status tracking
 	r.claudeMonitor = monitor.NewMonitor(5 * time.Second)
-
-	// Initialize enhanced terminal manager
-	defaultShell := cfg.DefaultShell
-	if defaultShell == "" {
-		defaultShell = "/bin/sh"
-	}
-	r.termManager = terminal.NewManager(defaultShell, cfg.WorkspaceRoot)
 }
 
 // Run starts the runner and blocks until context is cancelled

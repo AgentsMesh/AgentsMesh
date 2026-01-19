@@ -510,9 +510,3 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
 }
-
-// Backward compatible function
-func RegisterAuthRoutes(rg *gin.RouterGroup, cfg *config.Config, authSvc *auth.Service, userSvc *user.Service, emailSvc email.Service) {
-	handler := NewAuthHandler(authSvc, userSvc, emailSvc, cfg)
-	handler.RegisterRoutes(rg)
-}

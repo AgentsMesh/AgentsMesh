@@ -1,4 +1,4 @@
-import { PodData } from "@/lib/api/client";
+import { PodData } from "@/lib/api";
 
 /**
  * Pod 创建场景枚举

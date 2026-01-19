@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { podApi, PodData, AgentTypeData, RepositoryData } from "@/lib/api/client";
+import { podApi, PodData, AgentTypeData, RepositoryData } from "@/lib/api";
 import { userAgentCredentialApi, CredentialProfileData } from "@/lib/api";
 
 /**

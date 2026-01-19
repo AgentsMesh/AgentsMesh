@@ -265,6 +265,7 @@ function QRCodeCheckout({ response, t, onCancel }: QRCodeCheckoutProps) {
 
       {response.qr_code_url && (
         <div className="flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={response.qr_code_url}
             alt="Payment QR Code"

@@ -3,7 +3,7 @@ import { act } from "@testing-library/react";
 import { useChannelStore, Channel, Message } from "../channel";
 
 // Mock the channel API
-vi.mock("@/lib/api/client", () => ({
+vi.mock("@/lib/api", () => ({
   channelApi: {
     list: vi.fn(),
     get: vi.fn(),
@@ -18,7 +18,7 @@ vi.mock("@/lib/api/client", () => ({
   },
 }));
 
-import { channelApi } from "@/lib/api/client";
+import { channelApi } from "@/lib/api";
 
 const mockChannel: Channel = {
   id: 1,

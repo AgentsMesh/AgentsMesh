@@ -104,7 +104,7 @@ func TestObserveTerminal_Success(t *testing.T) {
 		ID:             1,
 		PodKey:         "test-pod-key",
 		OrganizationID: 100,
-		Status:         agentpod.PodStatusRunning,
+		Status:         agentpod.StatusRunning,
 	}
 
 	mockPodSvc := &mockPodService{pod: activePod}
@@ -165,7 +165,7 @@ func TestObserveTerminal_AccessDenied(t *testing.T) {
 		ID:             1,
 		PodKey:         "other-org-pod",
 		OrganizationID: 999, // Different org
-		Status:         agentpod.PodStatusRunning,
+		Status:         agentpod.StatusRunning,
 	}
 
 	c, w := createTerminalTestContext(http.MethodGet, "/pods/other-org-pod/terminal/observe", "other-org-pod", "")
@@ -282,7 +282,7 @@ func TestSendTerminalInput_Success(t *testing.T) {
 		ID:             1,
 		PodKey:         "test-pod-key",
 		OrganizationID: 100,
-		Status:         agentpod.PodStatusRunning,
+		Status:         agentpod.StatusRunning,
 	}
 
 	h := &PodHandler{
@@ -313,7 +313,7 @@ func TestSendTerminalInput_PodNotActive(t *testing.T) {
 		ID:             1,
 		PodKey:         "terminated-pod",
 		OrganizationID: 100,
-		Status:         agentpod.PodStatusTerminated,
+		Status:         agentpod.StatusTerminated,
 	}
 
 	c, w := createTerminalTestContext(http.MethodPost, "/pods/terminated-pod/terminal/input", "terminated-pod",
@@ -394,7 +394,7 @@ func TestResizeTerminal_Success(t *testing.T) {
 		ID:             1,
 		PodKey:         "test-pod-key",
 		OrganizationID: 100,
-		Status:         agentpod.PodStatusRunning,
+		Status:         agentpod.StatusRunning,
 	}
 
 	h := &PodHandler{
@@ -425,7 +425,7 @@ func TestResizeTerminal_PodNotActive(t *testing.T) {
 		ID:             1,
 		PodKey:         "terminated-pod",
 		OrganizationID: 100,
-		Status:         agentpod.PodStatusTerminated,
+		Status:         agentpod.StatusTerminated,
 	}
 
 	c, w := createTerminalTestContext(http.MethodPost, "/pods/terminated-pod/terminal/resize", "terminated-pod",
@@ -677,10 +677,10 @@ func TestPodIsActive_ForTerminal(t *testing.T) {
 		status   string
 		wantActive bool
 	}{
-		{"running", agentpod.PodStatusRunning, true},
-		{"initializing", agentpod.PodStatusInitializing, true},
-		{"terminated", agentpod.PodStatusTerminated, false},
-		{"error", agentpod.PodStatusError, false},
+		{"running", agentpod.StatusRunning, true},
+		{"initializing", agentpod.StatusInitializing, true},
+		{"terminated", agentpod.StatusTerminated, false},
+		{"error", agentpod.StatusError, false},
 	}
 
 	for _, tt := range tests {

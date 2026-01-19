@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@/test/test-utils'
 import { TicketDetail } from '../TicketDetail'
 import { useTicketStore } from '@/stores/ticket'
-import { ticketApi } from '@/lib/api/client'
+import { ticketApi } from '@/lib/api'
 
 // Mock next/navigation
 const mockRouterBack = vi.fn()
@@ -42,7 +42,7 @@ vi.mock('@/stores/ticket', () => ({
 }))
 
 // Mock ticket API
-vi.mock('@/lib/api/client', () => ({
+vi.mock('@/lib/api', () => ({
   ticketApi: {
     getSubTickets: vi.fn(),
     listRelations: vi.fn(),

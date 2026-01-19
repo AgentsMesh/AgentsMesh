@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
-import { repositoryApi, RepositoryData } from "@/lib/api/client";
+import { repositoryApi, RepositoryData } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,11 +20,7 @@ import {
   Github,
   Globe,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+// Collapsible imports reserved for future use
 import { useTranslations } from "@/lib/i18n/client";
 
 interface RepositoriesSidebarContentProps {

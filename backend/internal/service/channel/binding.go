@@ -59,7 +59,7 @@ func (s *Service) ApproveBinding(ctx context.Context, bindingID int64, scopes []
 	return s.db.WithContext(ctx).Model(&channel.PodBinding{}).
 		Where("id = ?", bindingID).
 		Updates(map[string]interface{}{
-			"status":         channel.BindingStatusApproved,
+			"status":         channel.BindingStatusActive,
 			"granted_scopes": scopes,
 		}).Error
 }
@@ -75,5 +75,5 @@ func (s *Service) RejectBinding(ctx context.Context, bindingID int64) error {
 func (s *Service) RevokeBinding(ctx context.Context, bindingID int64) error {
 	return s.db.WithContext(ctx).Model(&channel.PodBinding{}).
 		Where("id = ?", bindingID).
-		Update("status", channel.BindingStatusRevoked).Error
+		Update("status", channel.BindingStatusInactive).Error
 }

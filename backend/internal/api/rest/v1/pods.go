@@ -171,7 +171,6 @@ func (h *PodHandler) ListPods(c *gin.Context) {
 	pods, total, err := h.podService.ListPods(
 		c.Request.Context(),
 		tenant.OrganizationID,
-		nil, // TeamID is deprecated
 		req.Status,
 		limit,
 		req.Offset,

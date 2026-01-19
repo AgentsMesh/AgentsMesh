@@ -102,10 +102,6 @@ const (
 	BindingStatusRejected = "rejected"
 	BindingStatusInactive = "inactive"
 	BindingStatusExpired  = "expired"
-
-	// Legacy statuses for backward compatibility
-	BindingStatusApproved = "active"  // Alias
-	BindingStatusRevoked  = "inactive" // Alias
 )
 
 // Binding scope constants

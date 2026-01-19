@@ -148,7 +148,7 @@ export class EventSubscriptionManager {
       this.scheduleReconnect();
     };
 
-    this.ws.onerror = (event) => {
+    this.ws.onerror = () => {
       // WebSocket error events don't contain useful info, log connection details instead
       console.error("[EventSubscriptionManager] WebSocket error:", {
         url: url,

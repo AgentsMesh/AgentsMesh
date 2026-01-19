@@ -108,13 +108,6 @@ build-all-cli: build-darwin-cli build-linux-cli build-windows-cli
 build-desktop: build
 	@echo "Desktop build complete (native platform with CGO)"
 
-# Aliases for backward compatibility
-.PHONY: build-darwin build-linux build-windows build-all
-build-darwin: build-darwin-cli
-build-linux: build-linux-cli
-build-windows: build-windows-cli
-build-all: build-all-cli
-
 # =============================================================================
 # Packaging
 # =============================================================================

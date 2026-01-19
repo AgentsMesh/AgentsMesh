@@ -106,9 +106,10 @@ export function BlockEditor({
   initialContent,
   onChange,
   editable = true,
-  placeholder,
+  placeholder: _placeholder,
   className,
 }: BlockEditorProps) {
+  void _placeholder; // Reserved for future use
   const theme = useThemeDetect();
 
   // Parse content once on mount

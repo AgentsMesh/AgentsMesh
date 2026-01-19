@@ -174,8 +174,8 @@ func (s *MRSyncService) BatchCheckPods(ctx context.Context) ([]*ticket.MergeRequ
 		Where("ticket_id IS NOT NULL").
 		Where("id NOT IN (?)", subquery).
 		Where("status IN ?", []string{
-			agentpod.PodStatusRunning,
-			agentpod.PodStatusDisconnected,
+			agentpod.StatusRunning,
+			agentpod.StatusDisconnected,
 		}).
 		Find(&pods).Error
 

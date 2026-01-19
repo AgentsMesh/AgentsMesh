@@ -22,7 +22,7 @@ var (
 // PodServiceForHandler defines the pod service methods needed by PodHandler
 // This interface enables dependency inversion and easier testing
 type PodServiceForHandler interface {
-	ListPods(ctx context.Context, orgID int64, teamID *int64, status string, limit, offset int) ([]*agentpod.Pod, int64, error)
+	ListPods(ctx context.Context, orgID int64, status string, limit, offset int) ([]*agentpod.Pod, int64, error)
 	CreatePod(ctx context.Context, req *agentpodService.CreatePodRequest) (*agentpod.Pod, error)
 	GetPod(ctx context.Context, podKey string) (*agentpod.Pod, error)
 	TerminatePod(ctx context.Context, podKey string) error

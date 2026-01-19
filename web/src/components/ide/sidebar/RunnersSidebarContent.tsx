@@ -206,7 +206,8 @@ export function RunnersSidebarContent({ className }: RunnersSidebarContentProps)
             {filteredRunners.map((runner) => {
               const isSelected = selectedRunnerId === runner.id;
               const statusInfo = getRunnerStatusInfo(runner.status);
-              const hostInfo = formatHostInfo(runner.host_info);
+              // hostInfo reserved for tooltip display
+              void formatHostInfo(runner.host_info);
 
               return (
                 <div

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Terminal, Plus } from "lucide-react";
 import { useTranslations } from "@/lib/i18n/client";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
-import { PodData } from "@/lib/api/client";
+import { PodData } from "@/lib/api";
 
 export default function WorkspacePage() {
   const t = useTranslations();

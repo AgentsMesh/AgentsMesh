@@ -68,7 +68,8 @@ type Services struct {
 // RegisterAllRoutes registers all API v1 routes with proper handlers
 func RegisterAllRoutes(rg *gin.RouterGroup, cfg *config.Config, svc *Services) {
 	// Auth routes (public)
-	RegisterAuthRoutes(rg.Group("/auth"), cfg, svc.Auth, svc.User, svc.Email)
+	authHandler := NewAuthHandler(svc.Auth, svc.User, svc.Email, cfg)
+	authHandler.RegisterRoutes(rg.Group("/auth"))
 
 	// User routes (authenticated, but not org-scoped)
 	RegisterUserRoutes(rg.Group("/users"), svc.User, svc.Org, svc.AgentType, svc.CredentialProfile, svc.UserConfig, svc.AgentPodSettings, svc.AgentPodAIProvider)
@@ -322,11 +323,6 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 	rg.GET("/me/organizations", userHandler.ListUserOrganizations)
 	rg.GET("/me/identities", userHandler.ListIdentities)
 	rg.DELETE("/me/identities/:provider", userHandler.DeleteIdentity)
-
-	// User agent credentials (not org-scoped)
-	rg.GET("/me/agents/credentials", agentHandler.GetUserCredentials)
-	rg.PUT("/me/agents/credentials/:agent_type_id", agentHandler.SetUserCredentials)
-	rg.DELETE("/me/agents/credentials/:agent_type_id", agentHandler.DeleteUserCredentials)
 
 	// User agent configs (personal runtime configuration)
 	rg.GET("/me/agent-configs", agentHandler.ListUserAgentConfigs)

@@ -11,9 +11,9 @@ import (
 func (s *PodService) UpdatePodStatus(ctx context.Context, podKey, status string) error {
 	updates := map[string]interface{}{"status": status}
 
-	if status == agentpod.PodStatusRunning {
+	if status == agentpod.StatusRunning {
 		updates["started_at"] = time.Now()
-	} else if status == agentpod.PodStatusTerminated || status == agentpod.PodStatusOrphaned {
+	} else if status == agentpod.StatusTerminated || status == agentpod.StatusOrphaned {
 		updates["finished_at"] = time.Now()
 	}
 
@@ -22,7 +22,7 @@ func (s *PodService) UpdatePodStatus(ctx context.Context, podKey, status string)
 		return ErrPodNotFound
 	}
 
-	if status == agentpod.PodStatusTerminated || status == agentpod.PodStatusOrphaned {
+	if status == agentpod.StatusTerminated || status == agentpod.StatusOrphaned {
 		var pod agentpod.Pod
 		s.db.WithContext(ctx).Where("pod_key = ?", podKey).First(&pod)
 		s.db.WithContext(ctx).Exec("UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?", pod.RunnerID)

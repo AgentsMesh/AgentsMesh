@@ -91,7 +91,7 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 		RepositoryID:      req.RepositoryID,
 		TicketID:          req.TicketID,
 		CreatedByID:       req.CreatedByID,
-		Status:            agentpod.PodStatusInitializing,
+		Status:            agentpod.StatusInitializing,
 		AgentStatus:       agentpod.AgentStatusUnknown,
 		InitialPrompt:     req.InitialPrompt,
 		BranchName:        req.BranchName,

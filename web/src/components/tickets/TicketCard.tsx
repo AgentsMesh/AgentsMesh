@@ -110,6 +110,7 @@ export function TicketCard({ ticket, onClick, showRepository = true }: TicketCar
               title={assignee.name || assignee.username}
             >
               {assignee.avatar_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={assignee.avatar_url}
                   alt={assignee.username}

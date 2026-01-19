@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { getRunnerStatusInfo, canAcceptPods, formatHostInfo, Runner, useRunnerStore } from '../runner'
 
 // Mock the API client
-vi.mock('@/lib/api/client', () => ({
+vi.mock('@/lib/api', () => ({
   runnerApi: {
     list: vi.fn(),
     listAvailable: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('@/lib/api/client', () => ({
   },
 }))
 
-import { runnerApi } from '@/lib/api/client'
+import { runnerApi } from '@/lib/api'
 
 // Helper to create mock runner
 const createMockRunner = (overrides: Partial<Runner> = {}): Runner => ({

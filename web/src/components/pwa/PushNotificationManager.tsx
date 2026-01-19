@@ -288,7 +288,7 @@ export function PushNotificationManager({
   autoSubscribe = false,
   children,
 }: PushNotificationManagerProps) {
-  const { isSupported, permission, subscription, subscribe, requestPermission } =
+  const { isSupported, permission, subscribe } =
     usePushNotifications();
   const [initialized, setInitialized] = useState(false);
 

@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { PodData } from "@/lib/api/client";
+import { PodData } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { ConfigForm } from "./ConfigForm";
 import {
   usePodCreationData,
-  useConfigOptions,
   useFocusTrap,
   useCreatePodForm,
   RUNNER_HOST_PROFILE_ID,
-} from "./hooks";
+} from "@/components/pod/hooks";
+import { useConfigOptions } from "./hooks";
 
 /**
  * Ticket context for pre-filling prompt and associating pod with ticket

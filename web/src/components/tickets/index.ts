@@ -5,9 +5,6 @@ export { default as TicketPodPanel } from "./TicketPodPanel";
 export { TicketDetail } from "./TicketDetail";
 export { TicketCreateDialog } from "./TicketCreateDialog";
 export type { TicketCreateDialogProps } from "./TicketCreateDialog";
-// TicketDetailPanel (Sheet version) is deprecated - use TicketDetailPane instead
-// export { TicketDetailPanel } from "./TicketDetailPanel";
-// export type { TicketDetailPanelProps } from "./TicketDetailPanel";
 export { TicketDetailPane } from "./TicketDetailPane";
 export type { TicketDetailPaneProps } from "./TicketDetailPane";
 export { InlineEditableText } from "./InlineEditableText";

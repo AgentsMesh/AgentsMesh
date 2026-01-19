@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import { meshApi, MeshNodeData, MeshEdgeData, ChannelInfoData, MeshTopologyData } from "@/lib/api/client";
+import { meshApi, MeshNodeData, MeshEdgeData, ChannelInfoData, MeshTopologyData } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 
-// Re-export API types for use in components
+// Re-export API types with cleaner names for component use
 export type MeshNode = MeshNodeData;
 export type MeshEdge = MeshEdgeData;
 export type ChannelInfo = ChannelInfoData;

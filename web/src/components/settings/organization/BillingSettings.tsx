@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { billingApi, BillingOverview, SubscriptionPlan, DeploymentInfo, RedeemPromoCodeResponse } from "@/lib/api/client";
+import { billingApi, BillingOverview, SubscriptionPlan, DeploymentInfo } from "@/lib/api";
 import { ApiError } from "@/lib/api/base";
 import { PromoCodeInput } from "@/components/promo-code/PromoCodeInput";
 import { CheckoutFlow, CancelSubscriptionDialog, SeatManagement, BillingCycleSwitch } from "@/components/billing";
@@ -495,7 +495,7 @@ function PromoCodeCard({
         {t("settings.billingPage.promoCode.description")}
       </p>
       <PromoCodeInput
-        onRedeemSuccess={(response: RedeemPromoCodeResponse) => {
+        onRedeemSuccess={() => {
           onRedeemSuccess();
         }}
         t={(key: string) => t(`settings.billingPage.promoCode.${key}`)}

@@ -185,15 +185,6 @@ func TestBindingStatusConstants(t *testing.T) {
 	}
 }
 
-func TestBindingStatusAliases(t *testing.T) {
-	if BindingStatusApproved != BindingStatusActive {
-		t.Error("BindingStatusApproved should equal BindingStatusActive")
-	}
-	if BindingStatusRevoked != BindingStatusInactive {
-		t.Error("BindingStatusRevoked should equal BindingStatusInactive")
-	}
-}
-
 // --- Test Binding Scope Constants ---
 
 func TestBindingScopeConstants(t *testing.T) {

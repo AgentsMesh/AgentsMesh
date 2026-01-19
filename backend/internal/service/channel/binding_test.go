@@ -50,13 +50,13 @@ func TestPodBinding(t *testing.T) {
 		// Note: pq.StringArray doesn't work with SQLite, update status directly
 		err := svc.db.WithContext(ctx).Model(&channel.PodBinding{}).
 			Where("id = ?", created.ID).
-			Update("status", channel.BindingStatusApproved).Error
+			Update("status", channel.BindingStatusActive).Error
 		if err != nil {
 			t.Errorf("ApproveBinding failed: %v", err)
 		}
 		binding, _ := svc.GetBinding(ctx, created.ID)
-		if binding.Status != channel.BindingStatusApproved {
-			t.Errorf("Status = %s, want approved", binding.Status)
+		if binding.Status != channel.BindingStatusActive {
+			t.Errorf("Status = %s, want active", binding.Status)
 		}
 	})
 
@@ -75,13 +75,13 @@ func TestPodBinding(t *testing.T) {
 		created, _ := svc.CreateBinding(ctx, 1, "revoke-init", "revoke-target", nil)
 		svc.db.WithContext(ctx).Model(&channel.PodBinding{}).
 			Where("id = ?", created.ID).
-			Update("status", channel.BindingStatusApproved)
+			Update("status", channel.BindingStatusActive)
 		if err := svc.RevokeBinding(ctx, created.ID); err != nil {
 			t.Errorf("RevokeBinding failed: %v", err)
 		}
 		binding, _ := svc.GetBinding(ctx, created.ID)
-		if binding.Status != channel.BindingStatusRevoked {
-			t.Errorf("Status = %s, want revoked", binding.Status)
+		if binding.Status != channel.BindingStatusInactive {
+			t.Errorf("Status = %s, want inactive", binding.Status)
 		}
 	})
 }

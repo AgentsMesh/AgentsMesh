@@ -132,26 +132,6 @@ func (ec EncryptedCredentials) Value() (driver.Value, error) {
 	return json.Marshal(ec)
 }
 
-
-// UserAgentCredential represents user-level agent credentials (overrides org config)
-type UserAgentCredential struct {
-	ID          int64 `gorm:"primaryKey" json:"id"`
-	UserID      int64 `gorm:"not null;index" json:"user_id"`
-	AgentTypeID int64 `gorm:"not null" json:"agent_type_id"`
-
-	CredentialsEncrypted EncryptedCredentials `gorm:"type:jsonb;not null" json:"-"`
-
-	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
-	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
-
-	// Associations
-	AgentType *AgentType `gorm:"foreignKey:AgentTypeID" json:"agent_type,omitempty"`
-}
-
-func (UserAgentCredential) TableName() string {
-	return "user_agent_credentials"
-}
-
 // CustomAgentType represents organization-specific custom agent types
 type CustomAgentType struct {
 	ID             int64  `gorm:"primaryKey" json:"id"`

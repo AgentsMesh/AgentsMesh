@@ -12,7 +12,7 @@ import {
   CredentialType,
   CredentialTypeValue,
   getCredentialTypeLabel,
-} from "@/lib/api/client";
+} from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 import { ChevronLeft, Plus, Settings, Key, GitBranch, Check, Trash2, TestTube } from "lucide-react";
 
@@ -757,7 +757,7 @@ function EditProviderDialog({
 
 // Add Credential Dialog
 function AddCredentialDialog({
-  providers,
+  providers: _providers,
   onClose,
   onSuccess,
 }: {
@@ -765,6 +765,7 @@ function AddCredentialDialog({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  void _providers; // Reserved for provider-specific credential forms
   const t = useTranslations();
   const [credentialType, setCredentialType] = useState<"pat" | "ssh_key">("pat");
   const [name, setName] = useState("");

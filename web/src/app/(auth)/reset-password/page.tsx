@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { authApi } from "@/lib/api/client";
+import { authApi } from "@/lib/api";
 
 function ResetPasswordContent() {
   const router = useRouter();

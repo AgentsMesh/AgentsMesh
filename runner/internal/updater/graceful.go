@@ -114,16 +114,6 @@ func WithRestartFunc(f RestartFunc) GracefulOption {
 	}
 }
 
-// WithRestartFuncLegacy provides backward compatibility for old restart functions.
-// Use WithRestartFunc for new code that supports health checking.
-func WithRestartFuncLegacy(f func() error) GracefulOption {
-	return func(g *GracefulUpdater) {
-		g.restartFunc = func() (int, error) {
-			return 0, f()
-		}
-	}
-}
-
 // WithHealthChecker sets a health checker function.
 // The health checker validates that the new process is running correctly.
 func WithHealthChecker(hc HealthChecker) GracefulOption {

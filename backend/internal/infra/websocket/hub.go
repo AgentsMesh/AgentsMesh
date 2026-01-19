@@ -286,15 +286,6 @@ func (h *Hub) GetTotalClientCount() int {
 	return total
 }
 
-// Run is a no-op for sharded Hub as each shard runs its own goroutine.
-//
-// Deprecated: This method is kept only for backward compatibility.
-// The sharded Hub automatically starts all shard goroutines in NewHub().
-// New code should not call this method.
-func (h *Hub) Run() {
-	// Each shard already has its own goroutine running in NewHub()
-}
-
 // Close gracefully shuts down the hub and all shards
 func (h *Hub) Close() {
 	// Signal all goroutines to stop

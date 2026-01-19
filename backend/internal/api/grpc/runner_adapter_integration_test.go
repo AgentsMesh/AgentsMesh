@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
@@ -101,7 +102,7 @@ func TestGRPCRunnerAdapter_Connect_Integration(t *testing.T) {
 	orgSvc.AddOrg("test-org", OrganizationInfo{ID: 100, Slug: "test-org"})
 
 	agentProvider := &mockAgentTypesProvider{
-		agentTypes: []AgentTypeInfo{
+		agentTypes: []interfaces.AgentTypeInfo{
 			{Slug: "claude-code", Name: "Claude Code", Executable: "claude"},
 		},
 	}

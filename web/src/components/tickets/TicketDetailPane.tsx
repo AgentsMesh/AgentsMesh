@@ -7,7 +7,7 @@ import { useTranslations } from "@/lib/i18n/client";
 import { useAuthStore } from "@/stores/auth";
 import { useTicketStore, Ticket, TicketStatus, TicketPriority } from "@/stores/ticket";
 import { StatusIcon, TypeIcon, getTypeDisplayInfo } from "./TicketIcons";
-import { ticketApi, TicketRelation, TicketCommit } from "@/lib/api/client";
+import { ticketApi, TicketRelation, TicketCommit } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

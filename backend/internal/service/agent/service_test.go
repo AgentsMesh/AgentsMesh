@@ -38,16 +38,6 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)
 
-
-	db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_credentials (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
-		credentials_encrypted BLOB,
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
-
 	db.Exec(`CREATE TABLE IF NOT EXISTS custom_agent_types (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		organization_id INTEGER NOT NULL,

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
-import { ticketApi } from "@/lib/api/client";
+import { ticketApi } from "@/lib/api";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAuthStore } from "@/stores/auth";
 import { Terminal, ExternalLink, Plus } from "lucide-react";

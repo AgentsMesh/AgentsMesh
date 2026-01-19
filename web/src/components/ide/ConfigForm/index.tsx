@@ -3,7 +3,6 @@
 import React, { memo, useCallback } from "react";
 import type { ConfigField } from "@/lib/api/agent";
 import { FieldRenderer } from "./field-renderers";
-import type { FieldRendererProps } from "./field-renderers";
 
 interface ConfigFormProps {
   fields: ConfigField[];

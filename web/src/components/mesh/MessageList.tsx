@@ -102,6 +102,7 @@ export function MessageList({
         {/* Avatar */}
         <div className="flex-shrink-0">
           {message.user?.avatarUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={message.user.avatarUrl}
               alt={message.user.username}

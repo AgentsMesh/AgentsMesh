@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { ticketApi } from "@/lib/api/client";
+import { ticketApi } from "@/lib/api";
 
 // Cache for prefetched ticket data
 const prefetchCache = new Map<string, { data: unknown; timestamp: number }>();

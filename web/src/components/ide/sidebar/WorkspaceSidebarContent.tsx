@@ -6,18 +6,16 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore, Pod } from "@/stores/pod";
-import { useRunnerStore, Runner } from "@/stores/runner";
+import { useRunnerStore } from "@/stores/runner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Play,
   Square,
   Terminal,
   Clock,
   CheckCircle,
   XCircle,
   Loader2,
-  MoreHorizontal,
   Plus,
   RefreshCw,
   Search,
@@ -50,7 +48,7 @@ type FilterType = "all" | "running" | "completed";
 
 export function WorkspaceSidebarContent({ className, onCreatePod }: WorkspaceSidebarContentProps) {
   const t = useTranslations();
-  const router = useRouter();
+  useRouter(); // Reserved for navigation
   const { currentOrg } = useAuthStore();
   const { pods, loading, fetchPods, terminatePod } = usePodStore();
   const { runners, loading: runnersLoading, fetchRunners } = useRunnerStore();

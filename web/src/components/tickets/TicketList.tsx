@@ -196,6 +196,7 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                           title={assignee.name || assignee.username}
                         >
                           {assignee.avatarUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={assignee.avatarUrl}
                               alt={assignee.username}

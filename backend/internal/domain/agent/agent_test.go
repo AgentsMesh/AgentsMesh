@@ -228,36 +228,6 @@ func TestAgentTypeStruct(t *testing.T) {
 	}
 }
 
-
-// --- Test UserAgentCredential ---
-
-func TestUserAgentCredentialTableName(t *testing.T) {
-	uac := UserAgentCredential{}
-	if uac.TableName() != "user_agent_credentials" {
-		t.Errorf("expected 'user_agent_credentials', got %s", uac.TableName())
-	}
-}
-
-func TestUserAgentCredentialStruct(t *testing.T) {
-	now := time.Now()
-
-	uac := UserAgentCredential{
-		ID:                   1,
-		UserID:               50,
-		AgentTypeID:          10,
-		CredentialsEncrypted: EncryptedCredentials{"key": "value"},
-		CreatedAt:            now,
-		UpdatedAt:            now,
-	}
-
-	if uac.ID != 1 {
-		t.Errorf("expected ID 1, got %d", uac.ID)
-	}
-	if uac.UserID != 50 {
-		t.Errorf("expected UserID 50, got %d", uac.UserID)
-	}
-}
-
 // --- Test CustomAgentType ---
 
 func TestCustomAgentTypeTableName(t *testing.T) {

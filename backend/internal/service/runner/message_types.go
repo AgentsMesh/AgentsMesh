@@ -65,21 +65,16 @@ type RunnerInfo struct {
 
 // InitializeResult 是 Backend 返回的初始化结果
 type InitializeResult struct {
-	ProtocolVersion int             `json:"protocol_version"`
-	ServerInfo      ServerInfo      `json:"server_info"`
-	AgentTypes      []AgentTypeInfo `json:"agent_types"`
-	Features        []string        `json:"features"`
+	ProtocolVersion int                       `json:"protocol_version"`
+	ServerInfo      ServerInfo                `json:"server_info"`
+	AgentTypes      []interfaces.AgentTypeInfo `json:"agent_types"`
+	Features        []string                  `json:"features"`
 }
 
 // ServerInfo 描述服务端的基本信息
 type ServerInfo struct {
 	Version string `json:"version"`
 }
-
-// AgentTypeInfo 描述单个 Agent 类型的信息
-// 用于 Runner 检查本地是否可用
-// Type alias to interfaces.AgentTypeInfo for backward compatibility
-type AgentTypeInfo = interfaces.AgentTypeInfo
 
 // InitializedParams 是 Runner 发送的初始化完成通知
 type InitializedParams struct {

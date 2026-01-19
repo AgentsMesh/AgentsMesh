@@ -59,14 +59,6 @@ func TestRepoConstants(t *testing.T) {
 	assert.Equal(t, "AgentsMeshRunner", RepoName)
 }
 
-func TestUpdater_GetSource(t *testing.T) {
-	u := New("1.0.0")
-
-	source, err := u.getSource()
-	assert.NoError(t, err)
-	assert.NotNil(t, source)
-}
-
 func TestUpdater_GetDetector(t *testing.T) {
 	u := New("1.0.0")
 
@@ -78,14 +70,6 @@ func TestUpdater_GetDetector(t *testing.T) {
 	detector2, err := u.getDetector()
 	assert.NoError(t, err)
 	assert.Same(t, detector, detector2)
-}
-
-func TestUpdater_GetUpdater(t *testing.T) {
-	u := New("1.0.0")
-
-	updater, err := u.getUpdater()
-	assert.NoError(t, err)
-	assert.NotNil(t, updater)
 }
 
 func TestWithPrerelease(t *testing.T) {

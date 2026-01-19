@@ -156,7 +156,7 @@ func TestCreatePod(t *testing.T) {
 				if sess.PodKey == "" {
 					t.Error("PodKey should not be empty")
 				}
-				if sess.Status != agentpod.PodStatusInitializing {
+				if sess.Status != agentpod.StatusInitializing {
 					t.Errorf("Status = %s, want initializing", sess.Status)
 				}
 			}
@@ -276,7 +276,7 @@ func TestListPods(t *testing.T) {
 	}
 
 	t.Run("list all", func(t *testing.T) {
-		pods, total, err := svc.ListPods(ctx, 1, nil, "", 10, 0)
+		pods, total, err := svc.ListPods(ctx, 1, "", 10, 0)
 		if err != nil {
 			t.Fatalf("ListPods failed: %v", err)
 		}
@@ -289,7 +289,7 @@ func TestListPods(t *testing.T) {
 	})
 
 	t.Run("list with pagination", func(t *testing.T) {
-		pods, total, err := svc.ListPods(ctx, 1, nil, "", 2, 0)
+		pods, total, err := svc.ListPods(ctx, 1, "", 2, 0)
 		if err != nil {
 			t.Fatalf("ListPods failed: %v", err)
 		}
@@ -302,7 +302,7 @@ func TestListPods(t *testing.T) {
 	})
 
 	t.Run("list with status filter", func(t *testing.T) {
-		pods, _, err := svc.ListPods(ctx, 1, nil, agentpod.PodStatusInitializing, 10, 0)
+		pods, _, err := svc.ListPods(ctx, 1, agentpod.StatusInitializing, 10, 0)
 		if err != nil {
 			t.Fatalf("ListPods failed: %v", err)
 		}
@@ -330,8 +330,8 @@ func TestUpdatePodStatus(t *testing.T) {
 		status     string
 		checkField string
 	}{
-		{"to running", agentpod.PodStatusRunning, "started_at"},
-		{"to terminated", agentpod.PodStatusTerminated, "finished_at"},
+		{"to running", agentpod.StatusRunning, "started_at"},
+		{"to terminated", agentpod.StatusTerminated, "finished_at"},
 	}
 
 	for _, tt := range tests {
@@ -353,7 +353,7 @@ func TestUpdatePodStatus(t *testing.T) {
 	}
 
 	t.Run("non-existent pod", func(t *testing.T) {
-		err := svc.UpdatePodStatus(ctx, "non-existent", agentpod.PodStatusRunning)
+		err := svc.UpdatePodStatus(ctx, "non-existent", agentpod.StatusRunning)
 		if err == nil {
 			t.Error("Expected error for non-existent pod")
 		}
@@ -451,7 +451,7 @@ func TestHandlePodCreated(t *testing.T) {
 	}
 
 	updated, _ := svc.GetPod(ctx, sess.PodKey)
-	if updated.Status != agentpod.PodStatusRunning {
+	if updated.Status != agentpod.StatusRunning {
 		t.Errorf("Status = %s, want running", updated.Status)
 	}
 	// Note: PtyPID check skipped due to column naming mismatch in test setup
@@ -479,7 +479,7 @@ func TestHandlePodTerminated(t *testing.T) {
 	}
 
 	updated, _ := svc.GetPod(ctx, sess.PodKey)
-	if updated.Status != agentpod.PodStatusTerminated {
+	if updated.Status != agentpod.StatusTerminated {
 		t.Errorf("Status = %s, want terminated", updated.Status)
 	}
 	if updated.FinishedAt == nil {
@@ -535,7 +535,7 @@ func TestMarkDisconnected(t *testing.T) {
 		CreatedByID:    1,
 	}
 	sess, _ := svc.CreatePod(ctx, req)
-	svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.PodStatusRunning)
+	svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.StatusRunning)
 
 	err := svc.MarkDisconnected(ctx, sess.PodKey)
 	if err != nil {
@@ -543,7 +543,7 @@ func TestMarkDisconnected(t *testing.T) {
 	}
 
 	updated, _ := svc.GetPod(ctx, sess.PodKey)
-	if updated.Status != agentpod.PodStatusDisconnected {
+	if updated.Status != agentpod.StatusDisconnected {
 		t.Errorf("Status = %s, want disconnected", updated.Status)
 	}
 }
@@ -559,7 +559,7 @@ func TestMarkReconnected(t *testing.T) {
 		CreatedByID:    1,
 	}
 	sess, _ := svc.CreatePod(ctx, req)
-	svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.PodStatusRunning)
+	svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.StatusRunning)
 	svc.MarkDisconnected(ctx, sess.PodKey)
 
 	err := svc.MarkReconnected(ctx, sess.PodKey)
@@ -568,7 +568,7 @@ func TestMarkReconnected(t *testing.T) {
 	}
 
 	updated, _ := svc.GetPod(ctx, sess.PodKey)
-	if updated.Status != agentpod.PodStatusRunning {
+	if updated.Status != agentpod.StatusRunning {
 		t.Errorf("Status = %s, want running", updated.Status)
 	}
 }
@@ -612,9 +612,9 @@ func TestListActivePods(t *testing.T) {
 		}
 		sess, _ := svc.CreatePod(ctx, req)
 		if i == 0 {
-			svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.PodStatusRunning)
+			svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.StatusRunning)
 		} else if i == 1 {
-			svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.PodStatusTerminated)
+			svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.StatusTerminated)
 		}
 		// i == 2 remains initializing (active)
 	}
@@ -676,7 +676,7 @@ func TestCleanupStalePods(t *testing.T) {
 		CreatedByID:    1,
 	}
 	sess, _ := svc.CreatePod(ctx, req)
-	svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.PodStatusRunning)
+	svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.StatusRunning)
 	svc.MarkDisconnected(ctx, sess.PodKey)
 
 	// Update last_activity to be old
@@ -692,7 +692,7 @@ func TestCleanupStalePods(t *testing.T) {
 	}
 
 	updated, _ := svc.GetPod(ctx, sess.PodKey)
-	if updated.Status != agentpod.PodStatusTerminated {
+	if updated.Status != agentpod.StatusTerminated {
 		t.Errorf("Status = %s, want terminated", updated.Status)
 	}
 }
@@ -711,7 +711,7 @@ func TestReconcilePods(t *testing.T) {
 			CreatedByID:    1,
 		}
 		sess, _ := svc.CreatePod(ctx, req)
-		svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.PodStatusRunning)
+		svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.StatusRunning)
 		keys = append(keys, sess.PodKey)
 	}
 
@@ -723,7 +723,7 @@ func TestReconcilePods(t *testing.T) {
 
 	// Third pod should be marked as orphaned
 	orphaned, _ := svc.GetPod(ctx, keys[2])
-	if orphaned.Status != agentpod.PodStatusOrphaned {
+	if orphaned.Status != agentpod.StatusOrphaned {
 		t.Errorf("Status = %s, want orphaned", orphaned.Status)
 	}
 }
@@ -742,7 +742,7 @@ func TestListByRunner(t *testing.T) {
 		}
 		sess, _ := svc.CreatePod(ctx, req)
 		if i == 0 {
-			svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.PodStatusRunning)
+			svc.UpdatePodStatus(ctx, sess.PodKey, agentpod.StatusRunning)
 		}
 	}
 
@@ -757,7 +757,7 @@ func TestListByRunner(t *testing.T) {
 	})
 
 	t.Run("running pods only", func(t *testing.T) {
-		pods, err := svc.ListByRunner(ctx, 1, agentpod.PodStatusRunning)
+		pods, err := svc.ListByRunner(ctx, 1, agentpod.StatusRunning)
 		if err != nil {
 			t.Fatalf("ListByRunner failed: %v", err)
 		}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
-import { authApi } from "@/lib/api/client";
+import { authApi } from "@/lib/api";
 
 function VerifyEmailCallbackContent() {
   const router = useRouter();

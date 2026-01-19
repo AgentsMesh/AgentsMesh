@@ -1,9 +1,6 @@
 import { create } from "zustand";
-import { channelApi, ChannelMessage } from "@/lib/api/client";
+import { channelApi, ChannelMessage } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
-
-// Re-export ChannelMessage as Message for backward compatibility
-export type Message = ChannelMessage;
 
 export interface Channel {
   id: number;
@@ -36,7 +33,7 @@ interface ChannelState {
   // State
   channels: Channel[];
   currentChannel: Channel | null;
-  messages: Message[];
+  messages: ChannelMessage[];
   loading: boolean;
   messagesLoading: boolean;
   error: string | null;
@@ -68,11 +65,11 @@ interface ChannelState {
     channelId: number,
     content: string,
     podKey?: string
-  ) => Promise<Message>;
+  ) => Promise<ChannelMessage>;
   joinChannel: (channelId: number, podKey: string) => Promise<void>;
   leaveChannel: (channelId: number, podKey: string) => Promise<void>;
   setCurrentChannel: (channel: Channel | null) => void;
-  addMessage: (message: Message) => void;
+  addMessage: (message: ChannelMessage) => void;
   clearError: () => void;
 }
 

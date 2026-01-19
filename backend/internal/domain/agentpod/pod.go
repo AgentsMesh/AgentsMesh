@@ -19,15 +19,6 @@ const (
 	StatusCompleted    = "completed"
 	StatusTerminated   = "terminated"
 	StatusError        = "error"
-
-	// Legacy aliases (for backward compatibility during transition)
-	PodStatusInitializing = StatusInitializing
-	PodStatusRunning      = StatusRunning
-	PodStatusPaused       = StatusPaused
-	PodStatusDisconnected = StatusDisconnected
-	PodStatusOrphaned     = StatusOrphaned
-	PodStatusTerminated   = StatusTerminated
-	PodStatusError        = StatusError
 )
 
 // Agent status constants
@@ -111,22 +102,22 @@ func (Pod) TableName() string {
 
 // IsActive returns true if pod is active
 func (p *Pod) IsActive() bool {
-	return p.Status == PodStatusRunning ||
-		p.Status == PodStatusInitializing ||
-		p.Status == PodStatusPaused ||
-		p.Status == PodStatusDisconnected
+	return p.Status == StatusRunning ||
+		p.Status == StatusInitializing ||
+		p.Status == StatusPaused ||
+		p.Status == StatusDisconnected
 }
 
 // IsTerminal returns true if pod is in a terminal state
 func (p *Pod) IsTerminal() bool {
-	return p.Status == PodStatusTerminated ||
-		p.Status == PodStatusOrphaned ||
-		p.Status == PodStatusError
+	return p.Status == StatusTerminated ||
+		p.Status == StatusOrphaned ||
+		p.Status == StatusError
 }
 
 // CanReconnect returns true if pod can be reconnected
 func (p *Pod) CanReconnect() bool {
-	return p.Status == PodStatusDisconnected
+	return p.Status == StatusDisconnected
 }
 
 // GetOrganizationID returns the organization ID (implements middleware.PodGetter)

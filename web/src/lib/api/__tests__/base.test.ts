@@ -45,7 +45,6 @@ describe("request", () => {
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer test-token",
-          "X-Organization-Slug": "test-org",
         },
         body: undefined,
       }
@@ -72,7 +71,6 @@ describe("request", () => {
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer test-token",
-          "X-Organization-Slug": "test-org",
         },
         body: JSON.stringify(body),
       }
@@ -127,32 +125,6 @@ describe("request", () => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "X-Organization-Slug": "test-org",
-        },
-        body: undefined,
-      }
-    );
-  });
-
-  it("should not include X-Organization-Slug header when no currentOrg", async () => {
-    mockGetState.mockReturnValue({
-      token: "test-token",
-      currentOrg: null,
-    });
-    mockFetch.mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve(JSON.stringify({})),
-    });
-
-    await request("/api/v1/test");
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      `${EXPECTED_API_URL}/api/v1/test`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-token",
         },
         body: undefined,
       }

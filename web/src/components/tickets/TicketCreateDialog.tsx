@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TicketType, TicketPriority } from "@/lib/api/ticket";
-import { ticketApi } from "@/lib/api/client";
+import { ticketApi } from "@/lib/api";
 import { RepositorySelect } from "@/components/common/RepositorySelect";
 
 // Lazy load BlockEditor to avoid SSR issues

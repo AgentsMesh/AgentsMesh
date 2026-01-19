@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { getStatusInfo, getPriorityInfo, getTypeInfo, useTicketStore } from '../ticket'
 
 // Mock the API client
-vi.mock('@/lib/api/client', () => ({
+vi.mock('@/lib/api', () => ({
   ticketApi: {
     list: vi.fn(),
     get: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('@/lib/api/client', () => ({
   },
 }))
 
-import { ticketApi } from '@/lib/api/client'
+import { ticketApi } from '@/lib/api'
 
 // Reset store before each test
 beforeEach(() => {

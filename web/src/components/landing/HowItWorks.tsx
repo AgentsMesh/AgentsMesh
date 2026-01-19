@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "@/lib/i18n/client";
 import { getServerUrl } from "@/lib/env";
 
 export function HowItWorks() {
   const t = useTranslations();
-  const [serverUrl, setServerUrl] = useState("https://api.agentsmesh.ai");
-
-  useEffect(() => {
-    setServerUrl(getServerUrl());
-  }, []);
+  const serverUrl = useMemo(() => getServerUrl(), []);
 
   const steps = [
     {

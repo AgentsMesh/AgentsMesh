@@ -93,6 +93,8 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
       setFilters({ ...filters, search: searchQuery || undefined });
     }, 300);
     return () => clearTimeout(timer);
+    // Only trigger on searchQuery changes; filters is accessed but not a trigger dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   // Refresh handler

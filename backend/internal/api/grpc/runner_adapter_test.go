@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
@@ -845,7 +846,7 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 
 	t.Run("with agent types provider", func(t *testing.T) {
 		agentProvider := &mockAgentTypesProvider{
-			agentTypes: []AgentTypeInfo{
+			agentTypes: []interfaces.AgentTypeInfo{
 				{Slug: "claude-code", Name: "Claude Code", Executable: "claude"},
 				{Slug: "aider", Name: "Aider", Executable: "aider"},
 			},
@@ -896,10 +897,10 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 
 // mockAgentTypesProvider implements AgentTypesProvider for testing
 type mockAgentTypesProvider struct {
-	agentTypes []AgentTypeInfo
+	agentTypes []interfaces.AgentTypeInfo
 }
 
-func (m *mockAgentTypesProvider) GetAgentTypesForRunner() []AgentTypeInfo {
+func (m *mockAgentTypesProvider) GetAgentTypesForRunner() []interfaces.AgentTypeInfo {
 	return m.agentTypes
 }
 

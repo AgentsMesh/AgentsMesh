@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { authApi, organizationApi } from "@/lib/api/client";
+import { authApi, organizationApi } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 import { useAuthStore } from "@/stores/auth";
 

@@ -1,19 +1,18 @@
 import { create } from "zustand";
-import { runnerApi, RunnerData, GRPCRegistrationToken } from "@/lib/api/client";
+import { runnerApi, RunnerData, GRPCRegistrationToken } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 
 export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
 
-// Re-export types for backward compatibility
+// Re-export RunnerData as Runner for cleaner component API
 export type Runner = RunnerData;
-export type RegistrationToken = GRPCRegistrationToken;
 
 interface RunnerState {
   // State
   runners: Runner[];
   availableRunners: Runner[];
   currentRunner: Runner | null;
-  tokens: RegistrationToken[];
+  tokens: GRPCRegistrationToken[];
   loading: boolean;
   error: string | null;
 

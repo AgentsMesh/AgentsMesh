@@ -29,6 +29,7 @@ export function VirtualizedTicketList({
   const parentRef = useRef<HTMLDivElement>(null);
   const { prefetchOnHover, cancelPrefetch } = useTicketPrefetch();
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual uses dynamic return values by design
   const virtualizer = useVirtualizer({
     count: tickets.length,
     getScrollElement: () => parentRef.current,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth";
-import { ticketApi, podApi, runnerApi } from "@/lib/api/client";
+import { ticketApi, podApi, runnerApi } from "@/lib/api";
 
 interface DashboardStats {
   totalTickets: number;

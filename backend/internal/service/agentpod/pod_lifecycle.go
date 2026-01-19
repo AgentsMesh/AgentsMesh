@@ -12,7 +12,7 @@ func (s *PodService) HandlePodCreated(ctx context.Context, podKey string, ptyPID
 	now := time.Now()
 	updates := map[string]interface{}{
 		"pty_pid":       ptyPID,
-		"status":        agentpod.PodStatusRunning,
+		"status":        agentpod.StatusRunning,
 		"started_at":    now,
 		"last_activity": now,
 	}
@@ -33,7 +33,7 @@ func (s *PodService) HandlePodTerminated(ctx context.Context, podKey string, exi
 	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
 		Where("pod_key = ?", podKey).
 		Updates(map[string]interface{}{
-			"status":      agentpod.PodStatusTerminated,
+			"status":      agentpod.StatusTerminated,
 			"finished_at": now,
 			"pty_pid":     nil,
 		}).Error
@@ -51,7 +51,7 @@ func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
 	}
 
 	previousStatus := pod.Status
-	if err := s.UpdatePodStatus(ctx, podKey, agentpod.PodStatusTerminated); err != nil {
+	if err := s.UpdatePodStatus(ctx, podKey, agentpod.StatusTerminated); err != nil {
 		return err
 	}
 
@@ -61,7 +61,7 @@ func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
 			PodEventTerminated,
 			pod.OrganizationID,
 			podKey,
-			agentpod.PodStatusTerminated,
+			agentpod.StatusTerminated,
 			previousStatus,
 			"",
 		)
@@ -73,17 +73,17 @@ func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
 // MarkDisconnected marks a pod as disconnected (user closed browser)
 func (s *PodService) MarkDisconnected(ctx context.Context, podKey string) error {
 	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ? AND status = ?", podKey, agentpod.PodStatusRunning).
-		Update("status", agentpod.PodStatusDisconnected).Error
+		Where("pod_key = ? AND status = ?", podKey, agentpod.StatusRunning).
+		Update("status", agentpod.StatusDisconnected).Error
 }
 
 // MarkReconnected marks a pod as running again (user reconnected)
 func (s *PodService) MarkReconnected(ctx context.Context, podKey string) error {
 	now := time.Now()
 	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ? AND status = ?", podKey, agentpod.PodStatusDisconnected).
+		Where("pod_key = ? AND status = ?", podKey, agentpod.StatusDisconnected).
 		Updates(map[string]interface{}{
-			"status":        agentpod.PodStatusRunning,
+			"status":        agentpod.StatusRunning,
 			"last_activity": now,
 		}).Error
 }
@@ -101,8 +101,8 @@ func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reported
 	var dbPods []*agentpod.Pod
 	err := s.db.WithContext(ctx).
 		Where("runner_id = ? AND status IN ?", runnerID, []string{
-			agentpod.PodStatusRunning,
-			agentpod.PodStatusInitializing,
+			agentpod.StatusRunning,
+			agentpod.StatusInitializing,
 		}).
 		Find(&dbPods).Error
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reported
 	for _, pod := range dbPods {
 		if !reportedSet[pod.PodKey] {
 			s.db.WithContext(ctx).Model(pod).Updates(map[string]interface{}{
-				"status":      agentpod.PodStatusOrphaned,
+				"status":      agentpod.StatusOrphaned,
 				"finished_at": now,
 			})
 		}
@@ -134,10 +134,10 @@ func (s *PodService) CleanupStalePods(ctx context.Context, maxIdleHours int) (in
 
 	result := s.db.WithContext(ctx).Model(&agentpod.Pod{}).
 		Where("status IN ? AND last_activity < ?", []string{
-			agentpod.PodStatusDisconnected,
+			agentpod.StatusDisconnected,
 		}, threshold).
 		Updates(map[string]interface{}{
-			"status":      agentpod.PodStatusTerminated,
+			"status":      agentpod.StatusTerminated,
 			"finished_at": now,
 		})
 

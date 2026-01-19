@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { organizationApi } from "@/lib/api/client";
+import { organizationApi } from "@/lib/api";
 
 export type TranslationFn = (key: string, params?: Record<string, string | number>) => string;
 

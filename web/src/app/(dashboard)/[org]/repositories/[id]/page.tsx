@@ -65,7 +65,7 @@ export default function RepositoryDetailPage() {
     } catch (error) {
       console.error("Failed to delete repository:", error);
     }
-  }, [repository, repositoryId, router]);
+  }, [repository, repositoryId, router, t]);
 
   const handleSetupWebhook = useCallback(async () => {
     if (!repository) return;

@@ -27,7 +27,7 @@ export function ResponsiveShell({
   mobileHeaderActions,
   hideMobileTabBar = false,
 }: ResponsiveShellProps) {
-  const { isMobile, isTablet, isDesktop } = useBreakpoint();
+  const { isMobile } = useBreakpoint();
 
   // Mobile layout
   if (isMobile) {

@@ -12,13 +12,13 @@ import {
 } from "../mesh";
 
 // Mock the mesh API
-vi.mock("@/lib/api/client", () => ({
+vi.mock("@/lib/api", () => ({
   meshApi: {
     getTopology: vi.fn(),
   },
 }));
 
-import { meshApi } from "@/lib/api/client";
+import { meshApi } from "@/lib/api";
 
 const mockNode1: MeshNode = {
   pod_key: "pod-abc",

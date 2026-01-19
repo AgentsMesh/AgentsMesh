@@ -73,7 +73,8 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 	apiV1 := r.Group("/api/v1")
 	{
 		// Public routes (no auth required)
-		v1.RegisterAuthRoutes(apiV1.Group("/auth"), cfg, svc.Auth, svc.User, emailSvc)
+		authHandler := v1.NewAuthHandler(svc.Auth, svc.User, emailSvc, cfg)
+		authHandler.RegisterRoutes(apiV1.Group("/auth"))
 
 		// Public config endpoints (deployment info for frontend)
 		v1.RegisterPublicConfigRoutes(apiV1.Group("/config"), svc.Billing)

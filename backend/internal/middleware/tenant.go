@@ -72,17 +72,8 @@ func SetTenant(ctx context.Context, tc *TenantContext) context.Context {
 // and validates that the user is a member of the organization
 func TenantMiddleware(orgService OrganizationService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get org slug from URL path parameter (e.g., /organizations/:slug/...)
+		// Get org slug from URL path parameter (e.g., /orgs/:slug/...)
 		orgSlug := c.Param("slug")
-		if orgSlug == "" {
-			// Fall back to header for backward compatibility
-			orgSlug = c.GetHeader("X-Organization-Slug")
-		}
-		if orgSlug == "" {
-			// Fall back to query parameter for WebSocket connections
-			orgSlug = c.Query("org")
-		}
-
 		if orgSlug == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Organization slug is required",

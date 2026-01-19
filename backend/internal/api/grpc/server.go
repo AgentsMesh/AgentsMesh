@@ -48,10 +48,6 @@ type ServerDependencies struct {
 	ConnManager        *runner.RunnerConnectionManager // Connection manager with 256-shard locks
 }
 
-// AgentTypeInfo is an alias to interfaces.AgentTypeInfo for backward compatibility.
-// New code should use interfaces.AgentTypeInfo directly.
-type AgentTypeInfo = interfaces.AgentTypeInfo
-
 // RunnerServiceInterface defines the runner service methods needed by gRPC server.
 type RunnerServiceInterface interface {
 	GetByNodeID(ctx context.Context, nodeID string) (RunnerInfo, error)

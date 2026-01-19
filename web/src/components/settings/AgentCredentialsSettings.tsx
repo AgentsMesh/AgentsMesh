@@ -35,13 +35,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 // Agent type icon based on slug
-function AgentIcon({ slug }: { slug: string }) {
+function AgentIcon({ slug: _slug }: { slug: string }) {
+  void _slug; // Reserved for future per-agent icons
   // Return different icons based on agent type
   return <Bot className="w-5 h-5" />;
 }
-
-// Special constant for RunnerHost virtual profile
-const RUNNER_HOST_ID = -1;
 
 export function AgentCredentialsSettings() {
   const t = useTranslations();

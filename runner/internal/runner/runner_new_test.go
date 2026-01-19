@@ -203,27 +203,9 @@ func TestInitEnhancedComponentsDefaultShell(t *testing.T) {
 
 	r.initEnhancedComponents(cfg)
 
-	if r.termManager == nil {
-		t.Error("termManager should be initialized")
-	}
-}
-
-func TestInitEnhancedComponentsCustomShell(t *testing.T) {
-	tempDir := t.TempDir()
-	cfg := &config.Config{
-		WorkspaceRoot: tempDir,
-		DefaultShell:  "/bin/bash",
-	}
-
-	r := &Runner{
-		cfg:  cfg,
-		pods: make(map[string]*Pod),
-	}
-
-	r.initEnhancedComponents(cfg)
-
-	if r.termManager == nil {
-		t.Error("termManager should be initialized")
+	// Verify that enhanced components are initialized
+	if r.claudeMonitor == nil {
+		t.Error("claudeMonitor should be initialized")
 	}
 }
 

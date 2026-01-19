@@ -13,7 +13,7 @@ export function ServiceWorkerRegistration({
   onUpdateAvailable,
 }: ServiceWorkerRegistrationProps) {
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [, setUpdateAvailable] = useState(false);
 
   const handleUpdate = useCallback(() => {
     if (registration?.waiting) {

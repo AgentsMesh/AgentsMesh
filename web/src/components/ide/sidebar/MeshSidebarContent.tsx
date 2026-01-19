@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { useTranslations } from "@/lib/i18n/client";
-import { useMeshStore, MeshNode, ChannelInfo, getPodStatusInfo, getAgentStatusInfo } from "@/stores/mesh";
+import { useMeshStore, MeshNode, ChannelInfo, getPodStatusInfo } from "@/stores/mesh";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -263,7 +263,7 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
                 {filteredNodes.map((node) => {
                   const isSelected = selectedNode === node.pod_key;
                   const statusInfo = getPodStatusInfo(node.status);
-                  const agentInfo = getAgentStatusInfo(node.agent_status);
+                  // agentInfo reserved for future agent status display
                   return (
                     <div
                       key={node.pod_key}

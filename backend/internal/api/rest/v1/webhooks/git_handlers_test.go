@@ -485,7 +485,7 @@ func TestVerifyGitHubSignature_ValidHMAC(t *testing.T) {
 	}
 }
 
-func TestVerifyGitHubSignature_FallbackToken(t *testing.T) {
+func TestVerifyGitHubSignature_MissingSignature(t *testing.T) {
 	cfg := &config.Config{}
 	router, _ := createTestRouterForGit(cfg)
 
@@ -494,12 +494,11 @@ func TestVerifyGitHubSignature_FallbackToken(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 
 	c.Request = httptest.NewRequest("POST", "/", nil)
-	// No X-Hub-Signature-256, but has X-GitHub-Token
-	c.Request.Header.Set("X-GitHub-Token", "test-secret")
+	// No X-Hub-Signature-256 header
 
 	result := router.verifyGitHubSignature(c, "test-secret")
-	if !result {
-		t.Error("expected signature verification to pass with valid token")
+	if result {
+		t.Error("expected signature verification to fail without signature header")
 	}
 }
 

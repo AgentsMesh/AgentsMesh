@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { CreatePodForm } from "../index";
 import {
   mockSetPrompt,
-  mockResetPluginConfig,
   defaultPodCreationData,
   defaultFormState,
   defaultConfigOptions,

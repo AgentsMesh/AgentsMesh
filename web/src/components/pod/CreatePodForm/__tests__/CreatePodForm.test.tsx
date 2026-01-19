@@ -37,7 +37,6 @@ vi.mock("@/components/ide/ConfigForm", () => ({
 }));
 
 import { usePodCreationData, useCreatePodForm } from "../../hooks";
-import { useConfigOptions } from "@/components/ide/hooks";
 
 describe("CreatePodForm", () => {
   beforeEach(() => {

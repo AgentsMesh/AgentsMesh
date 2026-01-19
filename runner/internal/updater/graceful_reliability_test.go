@@ -245,42 +245,6 @@ func TestSetState_ConcurrentAccess(t *testing.T) {
 	assert.Equal(t, int32(1000), atomic.LoadInt32(&callbackCount))
 }
 
-// TestWithRestartFuncLegacy tests the legacy restart function adapter.
-func TestWithRestartFuncLegacy(t *testing.T) {
-	u := New("1.0.0")
-
-	called := false
-	legacyFunc := func() error {
-		called = true
-		return nil
-	}
-
-	g := NewGracefulUpdater(u, nil, WithRestartFuncLegacy(legacyFunc))
-	assert.NotNil(t, g.restartFunc)
-
-	pid, err := g.restartFunc()
-	assert.NoError(t, err)
-	assert.Equal(t, 0, pid) // Legacy adapter returns 0 for PID
-	assert.True(t, called)
-}
-
-// TestWithRestartFuncLegacy_Error tests the legacy restart function adapter with error.
-func TestWithRestartFuncLegacy_Error(t *testing.T) {
-	u := New("1.0.0")
-
-	expectedErr := errors.New("legacy restart failed")
-	legacyFunc := func() error {
-		return expectedErr
-	}
-
-	g := NewGracefulUpdater(u, nil, WithRestartFuncLegacy(legacyFunc))
-
-	pid, err := g.restartFunc()
-	assert.Error(t, err)
-	assert.Equal(t, expectedErr, err)
-	assert.Equal(t, 0, pid)
-}
-
 // TestWithHealthChecker tests the health checker option.
 func TestWithHealthChecker(t *testing.T) {
 	u := New("1.0.0")

@@ -3,7 +3,7 @@ import { act } from "@testing-library/react";
 import { usePodStore, Pod } from "../pod";
 
 // Mock the pod API
-vi.mock("@/lib/api/client", () => ({
+vi.mock("@/lib/api", () => ({
   podApi: {
     list: vi.fn(),
     get: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("@/lib/api/client", () => ({
   },
 }));
 
-import { podApi } from "@/lib/api/client";
+import { podApi } from "@/lib/api";
 
 const mockPod: Pod = {
   id: 1,

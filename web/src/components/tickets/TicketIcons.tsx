@@ -13,7 +13,6 @@ import {
   Minus,
   ChevronDown,
   ChevronUp,
-  ChevronsUp,
   AlertTriangle,
   // Type icons
   CheckSquare,
@@ -24,7 +23,7 @@ import {
   CircleDot as SubtaskIcon,
   BookOpen,
 } from "lucide-react";
-import { TicketStatus, TicketPriority, TicketType } from "@/lib/api/client";
+import { TicketStatus, TicketPriority, TicketType } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // Icon size presets

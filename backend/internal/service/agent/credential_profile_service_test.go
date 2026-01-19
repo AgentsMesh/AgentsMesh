@@ -56,17 +56,6 @@ func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
 	)`).Error
 	require.NoError(t, err)
 
-	// Create user_agent_credentials table (legacy)
-	err = db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_credentials (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
-		credentials_encrypted BLOB,
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`).Error
-	require.NoError(t, err)
-
 	// Seed agent types
 	db.Exec(`INSERT INTO agent_types (slug, name, executable, launch_command, is_builtin, is_active)
 		VALUES ('claude-code', 'Claude Code', 'claude', 'claude', 1, 1)`)

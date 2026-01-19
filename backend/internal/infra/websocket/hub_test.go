@@ -349,12 +349,13 @@ func TestHubSendToUserJSON(t *testing.T) {
 	}
 }
 
-func TestHubRunNoOp(t *testing.T) {
+func TestHubShardedArchitecture(t *testing.T) {
 	hub := NewHub()
 	defer hub.Close()
 
-	// Run should be a no-op for sharded hub
-	hub.Run() // Should not block
+	// Sharded hub automatically starts all shard goroutines in NewHub()
+	// No explicit Run() call needed - goroutines are already running
+	assert.NotNil(t, hub.shards[0], "shards should be initialized")
 }
 
 func TestHubCloseCleanup(t *testing.T) {

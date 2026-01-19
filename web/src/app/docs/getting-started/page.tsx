@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { getServerUrl } from "@/lib/env";
 
 export default function GettingStartedPage() {
-  const [serverUrl, setServerUrl] = useState("https://api.agentsmesh.ai");
-
-  useEffect(() => {
-    setServerUrl(getServerUrl());
-  }, []);
+  const serverUrl = useMemo(() => getServerUrl(), []);
 
   return (
     <div>

@@ -14,7 +14,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
-// Options for creating a new terminal (legacy API)
+// Options for creating a new terminal.
 type Options struct {
 	Command  string
 	Args     []string
@@ -26,8 +26,7 @@ type Options struct {
 	OnExit   func(int)
 }
 
-// Terminal represents a PTY terminal session (legacy API)
-// For new code, prefer using Session and Manager
+// Terminal represents a PTY terminal session.
 type Terminal struct {
 	cmd      *exec.Cmd
 	pty      *os.File
@@ -37,7 +36,7 @@ type Terminal struct {
 	onExit   func(int)
 }
 
-// New creates a new terminal instance (legacy API)
+// New creates a new terminal instance.
 func New(opts Options) (*Terminal, error) {
 	if opts.Command == "" {
 		return nil, fmt.Errorf("command is required")

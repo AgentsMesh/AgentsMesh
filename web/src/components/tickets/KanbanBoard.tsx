@@ -15,7 +15,6 @@ import {
   DragEndEvent,
   DragOverEvent,
   CollisionDetection,
-  getFirstCollision,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -45,9 +44,6 @@ const statusConfig: { status: Status; labelKey: string; color: string }[] = [
   { status: "in_review", labelKey: "tickets.status.in_review", color: "border-purple-300 dark:border-purple-600" },
   { status: "done", labelKey: "tickets.status.done", color: "border-green-300 dark:border-green-600" },
 ];
-
-// Column IDs for collision detection
-const COLUMN_IDS = new Set(statusConfig.map(s => s.status));
 
 /**
  * Sortable ticket item wrapper

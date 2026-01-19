@@ -76,7 +76,7 @@ export async function request<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const { method = "GET", body, headers = {}, skipAuthRefresh = false } = options;
-  const { token, currentOrg } = useAuthStore.getState();
+  const { token } = useAuthStore.getState();
 
   const requestHeaders: Record<string, string> = {
     "Content-Type": "application/json",
@@ -85,10 +85,6 @@ export async function request<T>(
 
   if (token) {
     requestHeaders["Authorization"] = `Bearer ${token}`;
-  }
-
-  if (currentOrg) {
-    requestHeaders["X-Organization-Slug"] = currentOrg.slug;
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {

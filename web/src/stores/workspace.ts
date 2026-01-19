@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// Re-export terminalPool for backward compatibility
+// Re-export terminalPool for component convenience
 export { terminalPool } from "./terminalConnection";
 
 /**

@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import { podApi, PodData } from "@/lib/api/client";
+import { podApi, PodData } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 
-// Re-export PodData as Pod for backward compatibility
+// Re-export PodData as Pod for cleaner component API
 export type Pod = PodData;
 
 interface PodState {

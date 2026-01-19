@@ -223,39 +223,6 @@ func TestTenantMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
-	t.Run("should use header fallback for org slug", func(t *testing.T) {
-		svc := &mockOrgService{org: mockOrg, isMember: true, role: "member"}
-		middleware := TenantMiddleware(svc)
-
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		req := httptest.NewRequest("GET", "/pods", nil)
-		req.Header.Set("X-Organization-Slug", "test-org")
-		c.Request = req
-		c.Set("user_id", int64(456))
-
-		middleware(c)
-
-		tc := GetTenant(c)
-		assert.NotNil(t, tc)
-		assert.Equal(t, "test-org", tc.OrganizationSlug)
-	})
-
-	t.Run("should use query param fallback for org slug", func(t *testing.T) {
-		svc := &mockOrgService{org: mockOrg, isMember: true, role: "member"}
-		middleware := TenantMiddleware(svc)
-
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest("GET", "/pods?org=test-org", nil)
-		c.Set("user_id", int64(456))
-
-		middleware(c)
-
-		tc := GetTenant(c)
-		assert.NotNil(t, tc)
-		assert.Equal(t, "test-org", tc.OrganizationSlug)
-	})
 }
 
 func TestRequireRole(t *testing.T) {

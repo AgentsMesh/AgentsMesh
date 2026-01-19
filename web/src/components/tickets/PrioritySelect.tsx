@@ -7,7 +7,6 @@ import {
   Minus,
   ChevronDown as ChevronDownIcon,
   ChevronUp,
-  ChevronsUp,
   AlertTriangle,
   Loader2,
   Check,

@@ -36,7 +36,8 @@ export default function LocalRunnerSetupPage() {
     };
 
     generateToken();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // t is stable, effect should only run on mount
 
   // Poll for runner connection
   const checkRunnerConnection = useCallback(async () => {

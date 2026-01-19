@@ -19,7 +19,6 @@ import {
   userAgentCredentialApi,
   ConfigField,
   AgentTypeData,
-  UserAgentConfigData,
   CredentialProfileData,
 } from "@/lib/api";
 import { ConfigForm } from "@/components/ide/ConfigForm";
@@ -40,9 +39,6 @@ import {
 interface AgentConfigPageProps {
   agentSlug: string;
 }
-
-// Special constant for RunnerHost virtual profile
-const RUNNER_HOST_ID = -1;
 
 /**
  * AgentConfigPage - Unified configuration page for a single agent type

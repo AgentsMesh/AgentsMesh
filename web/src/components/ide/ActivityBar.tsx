@@ -77,9 +77,6 @@ export function ActivityBar({ className }: ActivityBarProps) {
       setActiveActivity("runners");
     } else if (pathname.includes("/settings")) {
       setActiveActivity("settings");
-    } else if (pathname.includes("/agentpod")) {
-      // Legacy route support
-      setActiveActivity("workspace");
     }
   }, [pathname, setActiveActivity]);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { agentApi, userAgentConfigApi, ConfigField } from "@/lib/api/client";
+import { agentApi, userAgentConfigApi, ConfigField } from "@/lib/api";
 
 export interface ConfigOptionsState {
   fields: ConfigField[];

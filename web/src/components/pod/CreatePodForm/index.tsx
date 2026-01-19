@@ -82,6 +82,8 @@ export function CreatePodForm({
       form.setPrompt(defaultPrompt);
       promptInitializedRef.current = true;
     }
+    // form is a stable object from custom hook, only track specific values
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, defaultPrompt, form.prompt, form.setPrompt]);
 
   // 处理 Runner 选择变更

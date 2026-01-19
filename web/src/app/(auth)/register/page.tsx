@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
-import { authApi } from "@/lib/api/client";
+import { authApi } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 import { getOAuthBaseUrl } from "@/lib/env";
 

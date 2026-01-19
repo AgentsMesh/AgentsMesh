@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
 import { useTicketStore, Ticket, TicketStatus } from "@/stores/ticket";
 import { StatusIcon, PriorityIcon, TypeIcon, getStatusDisplayInfo, getPriorityDisplayInfo, getTypeDisplayInfo } from "./TicketIcons";
-import { ticketApi, TicketRelation, TicketCommit } from "@/lib/api/client";
+import { ticketApi, TicketRelation, TicketCommit } from "@/lib/api";
 import TicketPodPanel from "./TicketPodPanel";
 
 // Lazy load BlockEditor to avoid SSR issues
@@ -34,7 +34,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   const [editDescription, setEditDescription] = useState("");
   const [editContent, setEditContent] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [loadingExtra, setLoadingExtra] = useState(true);
+  const [, setLoadingExtra] = useState(true);
 
   // Fetch ticket data
   useEffect(() => {

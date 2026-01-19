@@ -22,12 +22,6 @@ type Factory struct {
 	licenseProvider *licenseprovider.Provider // Singleton license provider instance
 }
 
-// NewFactory creates a new payment provider factory
-// Deprecated: Use NewFactoryWithDB for full functionality
-func NewFactory(cfg *config.PaymentConfig) *Factory {
-	return NewFactoryWithDB(cfg, nil)
-}
-
 // NewFactoryWithDB creates a new payment provider factory with database support
 func NewFactoryWithDB(cfg *config.PaymentConfig, db *gorm.DB) *Factory {
 	f := &Factory{config: cfg, db: db}

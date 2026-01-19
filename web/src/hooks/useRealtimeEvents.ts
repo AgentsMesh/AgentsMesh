@@ -56,6 +56,8 @@ export function useRealtimeConnection() {
         }
       }, 100);
     };
+    // currentOrg object is stable from store, we only need to track currentOrg?.id
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrg?.id, token]);
 
   const reconnect = useCallback(() => {
@@ -87,6 +89,8 @@ export function useEventSubscription<T = unknown>(
   // Update handler ref when handler changes
   useEffect(() => {
     handlerRef.current = handler;
+    // Using spread in deps is intentional to allow caller-controlled dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handler, ...deps]);
 
   useEffect(() => {
@@ -124,6 +128,8 @@ export function useAllEventsSubscription(
 
   useEffect(() => {
     handlerRef.current = handler;
+    // Using spread in deps is intentional to allow caller-controlled dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handler, ...deps]);
 
   useEffect(() => {

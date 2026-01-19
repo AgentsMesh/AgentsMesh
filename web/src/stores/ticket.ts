@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import { ticketApi, TicketData, TicketType, TicketStatus, TicketPriority } from "@/lib/api/client";
+import { ticketApi, TicketData, TicketType, TicketStatus, TicketPriority } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 
-// Re-export types from API for backward compatibility
+// Re-export types from API for component convenience
 export type { TicketType, TicketStatus, TicketPriority };
 
 export interface Label {

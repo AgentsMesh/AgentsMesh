@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
-import { organizationApi } from "@/lib/api/client";
+import { organizationApi } from "@/lib/api";
 import type { TranslationFn } from "./GeneralSettings";
 
 interface Member {

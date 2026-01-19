@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/creativeprojects/go-selfupdate"
 )
 
 const (
@@ -287,31 +286,4 @@ func (u *Updater) CreateBackup() (string, error) {
 	}
 
 	return backupPath, nil
-}
-
-// Deprecated: getSource is kept for backward compatibility with tests.
-func (u *Updater) getSource() (selfupdate.Source, error) {
-	source, err := selfupdate.NewGitHubSource(selfupdate.GitHubConfig{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GitHub source: %w", err)
-	}
-	return source, nil
-}
-
-// Deprecated: getUpdater is kept for backward compatibility with tests.
-func (u *Updater) getUpdater() (*selfupdate.Updater, error) {
-	source, err := u.getSource()
-	if err != nil {
-		return nil, err
-	}
-
-	updater, err := selfupdate.NewUpdater(selfupdate.Config{
-		Source:    source,
-		Validator: &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create updater: %w", err)
-	}
-
-	return updater, nil
 }

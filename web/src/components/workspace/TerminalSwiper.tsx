@@ -16,10 +16,8 @@ interface TerminalSwiperProps {
 
 export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const terminalPaneRef = useRef<{ syncSize: () => void } | null>(null);
   const {
     panes,
-    activePane,
     mobileActiveIndex,
     setMobileActiveIndex,
     removePane,

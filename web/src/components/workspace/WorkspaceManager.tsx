@@ -10,7 +10,7 @@ import { TerminalGrid } from "./TerminalGrid";
 import { TerminalSwiper } from "./TerminalSwiper";
 import { TerminalToolbar } from "./TerminalToolbar";
 import { Button } from "@/components/ui/button";
-import { Plus, Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 interface WorkspaceManagerProps {
   className?: string;

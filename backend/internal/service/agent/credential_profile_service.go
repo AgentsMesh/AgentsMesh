@@ -62,7 +62,25 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 	if !params.IsRunnerHost && params.Credentials != nil {
 		encryptedCreds = make(agent.EncryptedCredentials)
 		for k, v := range params.Credentials {
-			// TODO: Actually encrypt the value using encryption service
+			// TODO(security): Encrypt credentials using crypto.Encryptor - HIGH PRIORITY
+			//
+			// Current Issue:
+			//   Credentials are stored in plaintext, risking exposure in case of data breach.
+			//
+			// Implementation Plan:
+			//   1. Add *crypto.Encryptor field to CredentialProfileService
+			//   2. Update NewCredentialProfileService to accept encryptor parameter
+			//   3. Use encryptor.Encrypt(v) for each credential value
+			//   4. Write data migration script to encrypt existing credentials
+			//   5. Requires ENCRYPTION_KEY environment variable configuration
+			//
+			// Reference Implementation:
+			//   See credential_service.go encryptCredentialsMap() for working example
+			//
+			// Migration Steps:
+			//   1. Deploy code with encryption support
+			//   2. Run migration script to encrypt existing data
+			//   3. Remove backward compatibility (raw value fallback)
 			encryptedCreds[k] = v
 		}
 	}
@@ -153,7 +171,7 @@ func (s *CredentialProfileService) UpdateCredentialProfile(ctx context.Context, 
 	if params.Credentials != nil {
 		encryptedCreds := make(agent.EncryptedCredentials)
 		for k, v := range params.Credentials {
-			// TODO: Actually encrypt the value using encryption service
+			// TODO(security): Encrypt credentials - see CreateCredentialProfile for implementation details
 			encryptedCreds[k] = v
 		}
 		updates["credentials_encrypted"] = encryptedCreds
@@ -297,36 +315,4 @@ func (s *CredentialProfileService) GetEffectiveCredentialsForPod(ctx context.Con
 	}
 
 	return profile.CredentialsEncrypted, false, nil
-}
-
-// SetUserCredentials sets user-level credentials for an agent (legacy method)
-func (s *CredentialProfileService) SetUserCredentials(ctx context.Context, userID, agentTypeID int64, credentials agent.EncryptedCredentials) error {
-	userCreds := &agent.UserAgentCredential{
-		UserID:               userID,
-		AgentTypeID:          agentTypeID,
-		CredentialsEncrypted: credentials,
-	}
-
-	return s.db.WithContext(ctx).
-		Where("user_id = ? AND agent_type_id = ?", userID, agentTypeID).
-		Assign(userCreds).
-		FirstOrCreate(userCreds).Error
-}
-
-// GetUserCredentials returns user-level credentials for an agent (legacy method)
-func (s *CredentialProfileService) GetUserCredentials(ctx context.Context, userID, agentTypeID int64) (*agent.UserAgentCredential, error) {
-	var userCreds agent.UserAgentCredential
-	if err := s.db.WithContext(ctx).
-		Where("user_id = ? AND agent_type_id = ?", userID, agentTypeID).
-		First(&userCreds).Error; err != nil {
-		return nil, err
-	}
-	return &userCreds, nil
-}
-
-// DeleteUserCredentials deletes user-level credentials for an agent (legacy method)
-func (s *CredentialProfileService) DeleteUserCredentials(ctx context.Context, userID, agentTypeID int64) error {
-	return s.db.WithContext(ctx).
-		Where("user_id = ? AND agent_type_id = ?", userID, agentTypeID).
-		Delete(&agent.UserAgentCredential{}).Error
 }

@@ -190,9 +190,7 @@ func (r *WebhookRouter) verifyGitHubSignature(c *gin.Context, secret string) boo
 	// Get the signature from header
 	signature := c.GetHeader("X-Hub-Signature-256")
 	if signature == "" {
-		// Fallback: check custom token header for backwards compatibility
-		token := c.GetHeader("X-GitHub-Token")
-		return token != "" && token == secret
+		return false
 	}
 
 	// Signature format: sha256=<hex_signature>

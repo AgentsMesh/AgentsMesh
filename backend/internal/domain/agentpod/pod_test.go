@@ -29,31 +29,6 @@ func TestPodStatusConstants(t *testing.T) {
 	}
 }
 
-func TestLegacyAliases(t *testing.T) {
-	// Test that legacy aliases match the new constants
-	if PodStatusInitializing != StatusInitializing {
-		t.Error("PodStatusInitializing should equal StatusInitializing")
-	}
-	if PodStatusRunning != StatusRunning {
-		t.Error("PodStatusRunning should equal StatusRunning")
-	}
-	if PodStatusPaused != StatusPaused {
-		t.Error("PodStatusPaused should equal StatusPaused")
-	}
-	if PodStatusDisconnected != StatusDisconnected {
-		t.Error("PodStatusDisconnected should equal StatusDisconnected")
-	}
-	if PodStatusOrphaned != StatusOrphaned {
-		t.Error("PodStatusOrphaned should equal StatusOrphaned")
-	}
-	if PodStatusTerminated != StatusTerminated {
-		t.Error("PodStatusTerminated should equal StatusTerminated")
-	}
-	if PodStatusError != StatusError {
-		t.Error("PodStatusError should equal StatusError")
-	}
-}
-
 func TestAgentStatusConstants(t *testing.T) {
 	tests := []struct {
 		constant string

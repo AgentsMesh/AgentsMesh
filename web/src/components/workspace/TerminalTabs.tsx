@@ -8,7 +8,6 @@ import {
   X,
   Plus,
   Grid2X2,
-  LayoutGrid,
   Rows,
   Columns,
   Square,
