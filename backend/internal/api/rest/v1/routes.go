@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"log/slog"
+
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
@@ -293,12 +295,15 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 
 	// Files (storage)
 	if svc.File != nil {
+		slog.Info("Registering file upload routes", "service", "file")
 		fileHandler := NewFileHandler(svc.File)
 		files := rg.Group("/files")
 		{
 			files.POST("/upload", fileHandler.UploadFile)
 			files.DELETE("/:id", fileHandler.DeleteFile)
 		}
+	} else {
+		slog.Warn("File service is nil, file upload routes not registered")
 	}
 }
 
