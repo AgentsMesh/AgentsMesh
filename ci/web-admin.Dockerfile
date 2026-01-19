@@ -62,9 +62,9 @@ USER root
 RUN apk add --no-cache curl
 USER nextjs
 
-# Health check - admin uses basePath /admin
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:3001/admin || exit 1
+    CMD curl -f http://localhost:3001/ || exit 1
 
 # Run the application
 CMD ["node", "server.js"]
