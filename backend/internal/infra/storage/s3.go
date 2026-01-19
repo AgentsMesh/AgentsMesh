@@ -74,8 +74,11 @@ func NewS3Storage(cfg S3Config) (*S3Storage, error) {
 	}
 
 	// Create S3 client with path-style option
+	// Disable automatic checksum calculation to avoid aws-chunked encoding
+	// which is not supported by Aliyun OSS
 	client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
 		o.UsePathStyle = cfg.UsePathStyle
+		o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
 	})
 
 	// Build public endpoint URL if specified
