@@ -24,8 +24,19 @@ export function usePodStatus(podKey: string): UsePodStatusResult {
   const { podStatus, isPodReady, podError } = useMemo(() => {
     const status = storePod?.status ?? "unknown";
     const isReady = status === "running";
-    const error =
-      status === "failed" || status === "terminated" ? `Pod ${status}` : null;
+
+    // Terminal states that indicate pod cannot be used
+    let error: string | null = null;
+    if (status === "failed") {
+      error = "Pod failed";
+    } else if (status === "terminated") {
+      error = "Pod terminated";
+    } else if (status === "orphaned") {
+      error = "Pod orphaned - Runner connection lost";
+    } else if (status === "error") {
+      error = "Pod error";
+    }
+
     return { podStatus: status, isPodReady: isReady, podError: error };
   }, [storePod?.status]);
 

@@ -178,9 +178,20 @@ export function TerminalPane({
             <div className="text-center p-4">
               <AlertCircle className="w-12 h-12 text-red-500 dark:text-red-400 mx-auto mb-3" />
               <p className="text-terminal-text font-medium mb-1">{podError}</p>
-              <p className="text-sm text-terminal-text-muted">
+              <p className="text-sm text-terminal-text-muted mb-4">
                 The pod cannot be connected. Please check the pod status or create a new one.
               </p>
+              {onClose && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-500 dark:text-red-400 border-red-500/50 hover:bg-red-500/10"
+                  onClick={onClose}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Close Terminal
+                </Button>
+              )}
             </div>
           ) : (
             // Waiting state with progress
