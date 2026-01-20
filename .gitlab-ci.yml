@@ -299,3 +299,37 @@ deploy:cn-prod:web-admin:
       changes:
         - web-admin/**/*
       when: manual
+
+# =============================================================================
+# Database Migration - Manual trigger only
+# =============================================================================
+# Run database migrations using golang-migrate inside the backend container.
+# This job requires manual trigger and should be run BEFORE deploying backend
+# when there are schema changes.
+#
+# Usage:
+#   - Click Play button to run all pending migrations (up)
+#   - Set MIGRATE_DIRECTION=down and MIGRATE_STEPS=1 to rollback last migration
+
+# Database Migration for China Production
+migrate:cn-prod:
+  stage: deploy
+  when: manual
+  tags:
+    - deploy
+    - linux
+  variables:
+    MIGRATE_DIRECTION: "up"      # up or down
+    MIGRATE_STEPS: ""            # empty for all, or number for specific steps
+  environment:
+    name: cn-production
+    url: https://agentsmesh.cn
+  script:
+    - echo "Running database migration (${MIGRATE_DIRECTION}) on China Production..."
+    - ssh root@aliyun-s001 "cd /opt/agentsmesh && git pull origin main"
+    - ssh root@aliyun-s001 "cd /opt/agentsmesh && ./migrate.sh cn-prod --direction ${MIGRATE_DIRECTION} ${MIGRATE_STEPS:+--steps $MIGRATE_STEPS}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - backend/migrations/**/*
+      when: manual
