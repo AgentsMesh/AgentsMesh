@@ -235,7 +235,6 @@ deploy:cn-prod:backend:
   stage: deploy
   needs:
     - job: build-backend
-  when: manual
   tags:
     - deploy
     - linux
@@ -253,13 +252,13 @@ deploy:cn-prod:backend:
       changes:
         - backend/**/*
         - proto/**/*
+      when: manual
 
 # Deploy Web to China Production
 deploy:cn-prod:web:
   stage: deploy
   needs:
     - job: build-web
-  when: manual
   tags:
     - deploy
     - linux
@@ -276,13 +275,13 @@ deploy:cn-prod:web:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:
         - web/**/*
+      when: manual
 
 # Deploy Web-Admin to China Production
 deploy:cn-prod:web-admin:
   stage: deploy
   needs:
     - job: build-web-admin
-  when: manual
   tags:
     - deploy
     - linux
@@ -299,3 +298,4 @@ deploy:cn-prod:web-admin:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:
         - web-admin/**/*
+      when: manual
