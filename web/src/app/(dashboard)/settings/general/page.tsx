@@ -73,9 +73,9 @@ export default function GeneralSettingsPage() {
         </p>
 
         <Button
-          variant="destructive"
+          variant="outline"
           onClick={handleLogout}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive/10"
         >
           <LogOut className="w-4 h-4" />
           {t("settings.personal.general.logout")}
