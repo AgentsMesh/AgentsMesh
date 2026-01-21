@@ -153,7 +153,7 @@ func NewGRPCConnection(endpoint, nodeID, orgSlug, certFile, keyFile, caFile stri
 		heartbeatInterval:        30 * time.Second,
 		initTimeout:              30 * time.Second,
 		reconnectStrategy:        NewReconnectStrategy(5*time.Second, 5*time.Minute),
-		sendCh:                   make(chan *runnerv1.RunnerMessage, 100),
+		sendCh:                   make(chan *runnerv1.RunnerMessage, 1000),
 		stopCh:                   make(chan struct{}),
 		reconnectCh:              make(chan struct{}, 1),
 		initResultCh:             make(chan *runnerv1.InitializeResult, 1),
@@ -402,6 +402,28 @@ func (c *GRPCConnection) send(msg *runnerv1.RunnerMessage) error {
 	}
 }
 
+// sendWithBackpressure queues a message with backpressure support.
+// Unlike send(), this method blocks until the message is queued or timeout expires.
+// Use this for critical messages (like terminal output) that should not be dropped.
+// Returns error if connection is closed, stopped, or timeout expires.
+func (c *GRPCConnection) sendWithBackpressure(msg *runnerv1.RunnerMessage, timeout time.Duration) error {
+	c.mu.Lock()
+	if c.stream == nil {
+		c.mu.Unlock()
+		return fmt.Errorf("stream not connected")
+	}
+	c.mu.Unlock()
+
+	select {
+	case c.sendCh <- msg:
+		return nil
+	case <-c.stopCh:
+		return fmt.Errorf("connection stopped")
+	case <-time.After(timeout):
+		return fmt.Errorf("send timeout after %v (buffer full, queue length: %d)", timeout, len(c.sendCh))
+	}
+}
+
 // SendPodCreated sends a pod_created event to the server.
 func (c *GRPCConnection) SendPodCreated(podKey string, pid int32) error {
 	msg := &runnerv1.RunnerMessage{
@@ -432,6 +454,8 @@ func (c *GRPCConnection) SendPodTerminated(podKey string, exitCode int32, errorM
 }
 
 // SendTerminalOutput sends terminal output to the server.
+// Uses backpressure with 5s timeout to avoid dropping terminal data when buffer is full.
+// This ensures terminal output is reliably delivered even under high throughput scenarios.
 func (c *GRPCConnection) SendTerminalOutput(podKey string, data []byte) error {
 	msg := &runnerv1.RunnerMessage{
 		Payload: &runnerv1.RunnerMessage_TerminalOutput{
@@ -442,7 +466,9 @@ func (c *GRPCConnection) SendTerminalOutput(podKey string, data []byte) error {
 		},
 		Timestamp: time.Now().UnixMilli(),
 	}
-	return c.send(msg)
+	// Use backpressure to avoid dropping terminal output
+	// 5 second timeout provides sufficient time for buffer to drain during high throughput
+	return c.sendWithBackpressure(msg, 5*time.Second)
 }
 
 // SendAgentStatus sends an agent status change event to the server.
