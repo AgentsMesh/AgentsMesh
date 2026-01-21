@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 )
 
@@ -35,43 +36,43 @@ func TestGRPCCommandSender_SendCreatePod(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("returns error when runner not connected", func(t *testing.T) {
-		req := &runner.CreatePodRequest{
+		cmd := &runnerv1.CreatePodCommand{
 			PodKey:        "test-pod",
 			LaunchCommand: "claude",
 		}
-		err := sender.SendCreatePod(ctx, 999, req)
+		err := sender.SendCreatePod(ctx, 999, cmd)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not connected")
 	})
 
 	t.Run("with files_to_create", func(t *testing.T) {
-		req := &runner.CreatePodRequest{
+		cmd := &runnerv1.CreatePodCommand{
 			PodKey:        "test-pod",
 			LaunchCommand: "claude",
-			FilesToCreate: []runner.FileToCreate{
+			FilesToCreate: []*runnerv1.FileToCreate{
 				{
-					PathTemplate: "/tmp/test.txt",
-					Content:      "hello world",
-					Mode:         0644,
+					Path:    "/tmp/test.txt",
+					Content: "hello world",
+					Mode:    0644,
 				},
 			},
 		}
-		err := sender.SendCreatePod(ctx, 999, req)
+		err := sender.SendCreatePod(ctx, 999, cmd)
 		require.Error(t, err) // Runner not connected
 		assert.Contains(t, err.Error(), "not connected")
 	})
 
-	t.Run("with work_dir_config", func(t *testing.T) {
-		req := &runner.CreatePodRequest{
+	t.Run("with sandbox_config", func(t *testing.T) {
+		cmd := &runnerv1.CreatePodCommand{
 			PodKey:        "test-pod",
 			LaunchCommand: "claude",
-			WorkDirConfig: &runner.WorkDirConfig{
-				Type:      "worktree",
-				Branch:    "feature-branch",
-				LocalPath: "/tmp/workspace",
+			SandboxConfig: &runnerv1.SandboxConfig{
+				RepositoryUrl:  "https://github.com/org/repo.git",
+				SourceBranch:   "feature-branch",
+				CredentialType: "runner_local",
 			},
 		}
-		err := sender.SendCreatePod(ctx, 999, req)
+		err := sender.SendCreatePod(ctx, 999, cmd)
 		require.Error(t, err) // Runner not connected
 		assert.Contains(t, err.Error(), "not connected")
 	})

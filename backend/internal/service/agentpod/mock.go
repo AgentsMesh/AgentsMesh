@@ -58,10 +58,9 @@ func (m *MockSettingsService) GetUserSettings(ctx context.Context, userID int64)
 	fontSize := 14
 	theme := "dark"
 	return &domain.UserAgentPodSettings{
-		UserID:             userID,
-		PreparationTimeout: 300,
-		TerminalFontSize:   &fontSize,
-		TerminalTheme:      &theme,
+		UserID:           userID,
+		TerminalFontSize: &fontSize,
+		TerminalTheme:    &theme,
 	}, nil
 }
 
@@ -79,12 +78,6 @@ func (m *MockSettingsService) UpdateUserSettings(ctx context.Context, userID int
 		settings = &domain.UserAgentPodSettings{UserID: userID}
 	}
 
-	if updates.PreparationScript != nil {
-		settings.PreparationScript = updates.PreparationScript
-	}
-	if updates.PreparationTimeout != nil {
-		settings.PreparationTimeout = *updates.PreparationTimeout
-	}
 	if updates.DefaultModel != nil {
 		settings.DefaultModel = updates.DefaultModel
 	}

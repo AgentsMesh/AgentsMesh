@@ -270,10 +270,10 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 			permissionMode = *pod.PermissionMode
 		}
 
-		// Build pod config using ConfigBuilder (new protocol only)
-		podConfig, err := h.buildPodConfigWithNewProtocol(c, &req, pod.PodKey, permissionMode)
+		// Build pod command using ConfigBuilder (returns Proto type directly)
+		podCmd, err := h.buildPodCommand(c, &req, pod.PodKey, permissionMode)
 		if err != nil {
-			log.Printf("[pods] Failed to build pod config: %v", err)
+			log.Printf("[pods] Failed to build pod command: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to build pod configuration: " + err.Error(),
 				"code":  "POD_CONFIG_BUILD_FAILED",
@@ -281,10 +281,9 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 			return
 		}
 
-		createReq := h.convertPodConfigToRequest(podConfig, pod.PodKey)
 		log.Printf("[pods] Sending create_pod to runner %d for pod %s", req.RunnerID, pod.PodKey)
 
-		if err := h.podCoordinator.CreatePod(c.Request.Context(), req.RunnerID, createReq); err != nil {
+		if err := h.podCoordinator.CreatePod(c.Request.Context(), req.RunnerID, podCmd); err != nil {
 			// Log the error but don't fail - pod is created, runner might be offline
 			log.Printf("[pods] Failed to send create_pod: %v", err)
 			c.JSON(http.StatusCreated, gin.H{

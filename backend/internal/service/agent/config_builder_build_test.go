@@ -9,10 +9,10 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
-func TestConfigBuilder_BuildPodConfig(t *testing.T) {
+func TestConfigBuilder_BuildPodCommand(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("basic pod config", func(t *testing.T) {
+	t.Run("basic pod command", func(t *testing.T) {
 		db := setupConfigBuilderTestDB(t)
 		provider := createTestProvider(db)
 		builder := NewConfigBuilder(provider)
@@ -30,16 +30,17 @@ func TestConfigBuilder_BuildPodConfig(t *testing.T) {
 			PodKey:         "test-pod-123",
 		}
 
-		config, err := builder.BuildPodConfig(ctx, req)
+		cmd, err := builder.BuildPodCommand(ctx, req)
 		if err != nil {
-			t.Fatalf("BuildPodConfig failed: %v", err)
+			t.Fatalf("BuildPodCommand failed: %v", err)
 		}
 
-		if config.LaunchCommand != "claude" {
-			t.Errorf("LaunchCommand = %s, want claude", config.LaunchCommand)
+		if cmd.LaunchCommand != "claude" {
+			t.Errorf("LaunchCommand = %s, want claude", cmd.LaunchCommand)
 		}
-		if config.WorkDirConfig.Type != "tempdir" {
-			t.Errorf("WorkDirConfig.Type = %s, want tempdir", config.WorkDirConfig.Type)
+		// No repository URL = no SandboxConfig
+		if cmd.SandboxConfig != nil {
+			t.Errorf("SandboxConfig should be nil without repository, got %+v", cmd.SandboxConfig)
 		}
 	})
 
@@ -56,24 +57,24 @@ func TestConfigBuilder_BuildPodConfig(t *testing.T) {
 			UserID:         1,
 			OrganizationID: 1,
 			RepositoryURL:  "https://github.com/test/repo.git",
-			Branch:         "main",
+			SourceBranch:   "main",
 			MCPPort:        19000,
 			PodKey:         "test-pod-456",
 		}
 
-		config, err := builder.BuildPodConfig(ctx, req)
+		cmd, err := builder.BuildPodCommand(ctx, req)
 		if err != nil {
-			t.Fatalf("BuildPodConfig failed: %v", err)
+			t.Fatalf("BuildPodCommand failed: %v", err)
 		}
 
-		if config.WorkDirConfig.Type != "worktree" {
-			t.Errorf("WorkDirConfig.Type = %s, want worktree", config.WorkDirConfig.Type)
+		if cmd.SandboxConfig == nil {
+			t.Fatal("SandboxConfig should not be nil with repository")
 		}
-		if config.WorkDirConfig.RepositoryURL != "https://github.com/test/repo.git" {
-			t.Errorf("RepositoryURL = %s, want https://github.com/test/repo.git", config.WorkDirConfig.RepositoryURL)
+		if cmd.SandboxConfig.RepositoryUrl != "https://github.com/test/repo.git" {
+			t.Errorf("RepositoryUrl = %s, want https://github.com/test/repo.git", cmd.SandboxConfig.RepositoryUrl)
 		}
-		if config.WorkDirConfig.Branch != "main" {
-			t.Errorf("Branch = %s, want main", config.WorkDirConfig.Branch)
+		if cmd.SandboxConfig.SourceBranch != "main" {
+			t.Errorf("SourceBranch = %s, want main", cmd.SandboxConfig.SourceBranch)
 		}
 	})
 
@@ -94,16 +95,16 @@ func TestConfigBuilder_BuildPodConfig(t *testing.T) {
 			PodKey:         "test-pod-789",
 		}
 
-		config, err := builder.BuildPodConfig(ctx, req)
+		cmd, err := builder.BuildPodCommand(ctx, req)
 		if err != nil {
-			t.Fatalf("BuildPodConfig failed: %v", err)
+			t.Fatalf("BuildPodCommand failed: %v", err)
 		}
 
-		if config.WorkDirConfig.Type != "local" {
-			t.Errorf("WorkDirConfig.Type = %s, want local", config.WorkDirConfig.Type)
+		if cmd.SandboxConfig == nil {
+			t.Fatal("SandboxConfig should not be nil with local path")
 		}
-		if config.WorkDirConfig.LocalPath != "/home/user/project" {
-			t.Errorf("LocalPath = %s, want /home/user/project", config.WorkDirConfig.LocalPath)
+		if cmd.SandboxConfig.LocalPath != "/home/user/project" {
+			t.Errorf("LocalPath = %s, want /home/user/project", cmd.SandboxConfig.LocalPath)
 		}
 	})
 
@@ -126,20 +127,20 @@ func TestConfigBuilder_BuildPodConfig(t *testing.T) {
 			PodKey:  "test-pod-override",
 		}
 
-		config, err := builder.BuildPodConfig(ctx, req)
+		cmd, err := builder.BuildPodCommand(ctx, req)
 		if err != nil {
-			t.Fatalf("BuildPodConfig failed: %v", err)
+			t.Fatalf("BuildPodCommand failed: %v", err)
 		}
 
 		found := false
-		for i, arg := range config.LaunchArgs {
-			if arg == "--model" && i+1 < len(config.LaunchArgs) && config.LaunchArgs[i+1] == "sonnet" {
+		for i, arg := range cmd.LaunchArgs {
+			if arg == "--model" && i+1 < len(cmd.LaunchArgs) && cmd.LaunchArgs[i+1] == "sonnet" {
 				found = true
 				break
 			}
 		}
 		if !found {
-			t.Errorf("LaunchArgs should contain --model sonnet, got %v", config.LaunchArgs)
+			t.Errorf("LaunchArgs should contain --model sonnet, got %v", cmd.LaunchArgs)
 		}
 	})
 
@@ -160,14 +161,14 @@ func TestConfigBuilder_BuildPodConfig(t *testing.T) {
 			PodKey:         "test-pod-prompt",
 		}
 
-		config, err := builder.BuildPodConfig(ctx, req)
+		cmd, err := builder.BuildPodCommand(ctx, req)
 		if err != nil {
-			t.Fatalf("BuildPodConfig failed: %v", err)
+			t.Fatalf("BuildPodCommand failed: %v", err)
 		}
 
 		// InitialPrompt is now prepended to LaunchArgs as the first argument
-		if len(config.LaunchArgs) == 0 || config.LaunchArgs[0] != "Fix the bug in main.go" {
-			t.Errorf("LaunchArgs[0] = %v, want Fix the bug in main.go (InitialPrompt should be first arg)", config.LaunchArgs)
+		if len(cmd.LaunchArgs) == 0 || cmd.LaunchArgs[0] != "Fix the bug in main.go" {
+			t.Errorf("LaunchArgs[0] = %v, want Fix the bug in main.go (InitialPrompt should be first arg)", cmd.LaunchArgs)
 		}
 	})
 
@@ -182,14 +183,14 @@ func TestConfigBuilder_BuildPodConfig(t *testing.T) {
 			OrganizationID: 1,
 		}
 
-		_, err := builder.BuildPodConfig(ctx, req)
+		_, err := builder.BuildPodCommand(ctx, req)
 		if err == nil {
 			t.Error("Expected error for invalid agent type")
 		}
 	})
 }
 
-func TestConfigBuilder_BuildPodConfig_ErrorPaths(t *testing.T) {
+func TestConfigBuilder_BuildPodCommand_ErrorPaths(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("returns error on buildEnvVars failure", func(t *testing.T) {
@@ -208,7 +209,7 @@ func TestConfigBuilder_BuildPodConfig_ErrorPaths(t *testing.T) {
 			UserID:      1,
 		}
 
-		_, err := builder.BuildPodConfig(ctx, req)
+		_, err := builder.BuildPodCommand(ctx, req)
 		if err == nil {
 			t.Error("Expected error for credential failure")
 		}
@@ -239,7 +240,7 @@ func TestConfigBuilder_BuildPodConfig_ErrorPaths(t *testing.T) {
 			UserID:      1,
 		}
 
-		_, err := builder.BuildPodConfig(ctx, req)
+		_, err := builder.BuildPodCommand(ctx, req)
 		if err == nil {
 			t.Error("Expected error for invalid template")
 		}
@@ -271,7 +272,7 @@ func TestConfigBuilder_BuildPodConfig_ErrorPaths(t *testing.T) {
 			UserID:      1,
 		}
 
-		_, err := builder.BuildPodConfig(ctx, req)
+		_, err := builder.BuildPodCommand(ctx, req)
 		if err == nil {
 			t.Error("Expected error for invalid file template")
 		}
@@ -281,7 +282,7 @@ func TestConfigBuilder_BuildPodConfig_ErrorPaths(t *testing.T) {
 	})
 }
 
-func TestConfigBuilder_BuildPodConfig_FullFlow(t *testing.T) {
+func TestConfigBuilder_BuildPodCommand_FullFlow(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("full flow with credentials and files", func(t *testing.T) {
@@ -329,40 +330,40 @@ func TestConfigBuilder_BuildPodConfig_FullFlow(t *testing.T) {
 			ConfigOverrides: map[string]interface{}{"model": "sonnet"},
 		}
 
-		config, err := builder.BuildPodConfig(ctx, req)
+		cmd, err := builder.BuildPodCommand(ctx, req)
 		if err != nil {
-			t.Fatalf("BuildPodConfig failed: %v", err)
+			t.Fatalf("BuildPodCommand failed: %v", err)
 		}
 
-		if config.LaunchCommand != "claude" {
-			t.Errorf("LaunchCommand = %s, want claude", config.LaunchCommand)
+		if cmd.LaunchCommand != "claude" {
+			t.Errorf("LaunchCommand = %s, want claude", cmd.LaunchCommand)
 		}
 
 		found := false
-		for i, arg := range config.LaunchArgs {
-			if arg == "--model" && i+1 < len(config.LaunchArgs) && config.LaunchArgs[i+1] == "sonnet" {
+		for i, arg := range cmd.LaunchArgs {
+			if arg == "--model" && i+1 < len(cmd.LaunchArgs) && cmd.LaunchArgs[i+1] == "sonnet" {
 				found = true
 				break
 			}
 		}
 		if !found {
-			t.Errorf("LaunchArgs should contain --model sonnet, got %v", config.LaunchArgs)
+			t.Errorf("LaunchArgs should contain --model sonnet, got %v", cmd.LaunchArgs)
 		}
 
-		if config.EnvVars["ANTHROPIC_API_KEY"] != "sk-ant-test-key" {
-			t.Errorf("EnvVars[ANTHROPIC_API_KEY] = %s, want sk-ant-test-key", config.EnvVars["ANTHROPIC_API_KEY"])
+		if cmd.EnvVars["ANTHROPIC_API_KEY"] != "sk-ant-test-key" {
+			t.Errorf("EnvVars[ANTHROPIC_API_KEY] = %s, want sk-ant-test-key", cmd.EnvVars["ANTHROPIC_API_KEY"])
 		}
 
-		if len(config.FilesToCreate) != 1 {
-			t.Fatalf("FilesToCreate count = %d, want 1", len(config.FilesToCreate))
+		if len(cmd.FilesToCreate) != 1 {
+			t.Fatalf("FilesToCreate count = %d, want 1", len(cmd.FilesToCreate))
 		}
-		if config.FilesToCreate[0].Mode != 0600 {
-			t.Errorf("FilesToCreate[0].Mode = %o, want 0600", config.FilesToCreate[0].Mode)
+		if cmd.FilesToCreate[0].Mode != 0600 {
+			t.Errorf("FilesToCreate[0].Mode = %o, want 0600", cmd.FilesToCreate[0].Mode)
 		}
 
 		// InitialPrompt is now prepended to LaunchArgs as the first argument
-		if len(config.LaunchArgs) == 0 || config.LaunchArgs[0] != "Hello" {
-			t.Errorf("LaunchArgs[0] = %v, want Hello (InitialPrompt should be first arg)", config.LaunchArgs)
+		if len(cmd.LaunchArgs) == 0 || cmd.LaunchArgs[0] != "Hello" {
+			t.Errorf("LaunchArgs[0] = %v, want Hello (InitialPrompt should be first arg)", cmd.LaunchArgs)
 		}
 	})
 }

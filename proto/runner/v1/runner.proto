@@ -157,7 +157,7 @@ message CreatePodCommand {
   repeated string launch_args = 3;
   map<string, string> env_vars = 4;
   repeated FileToCreate files_to_create = 5;
-  WorkDirConfig work_dir_config = 6;
+  SandboxConfig sandbox_config = 6;  // 替代原 work_dir_config
   string initial_prompt = 7;
 }
 
@@ -169,13 +169,32 @@ message FileToCreate {
   bool is_directory = 4;  // true 表示创建目录而非文件
 }
 
-// WorkDirConfig 工作目录配置
-message WorkDirConfig {
-  string type = 1;           // "worktree", "tempdir", "path"
-  string repo_path = 2;
-  string branch_name = 3;
-  string base_branch = 4;
-  string path = 5;
+// SandboxConfig 沙箱配置（替代原 WorkDirConfig）
+// Runner 始终为每个 Pod 创建隔离的 Sandbox 目录
+// 如果配置了 repository_url，则在 Sandbox 中创建 git worktree
+message SandboxConfig {
+  // Git 仓库配置（可选，为空则创建空 Sandbox）
+  string repository_url = 1;      // 仓库克隆 URL
+  string source_branch = 2;       // 要检出的源分支名称
+
+  // Git 认证配置
+  // credential_type 决定如何认证：
+  // - "runner_local": 使用 Runner 本机的 git 配置，无需其他字段
+  // - "oauth" 或 "pat": 使用 git_token
+  // - "ssh_key": 使用 ssh_private_key
+  string credential_type = 3;     // runner_local, oauth, pat, ssh_key
+  string git_token = 4;           // Git HTTPS 认证令牌（oauth/pat 类型使用）
+  string ssh_private_key = 5;     // SSH 私钥内容（ssh_key 类型使用，Runner 写入临时文件）
+
+  // 工单关联
+  string ticket_id = 6;           // 关联工单标识
+
+  // 初始化脚本
+  string preparation_script = 7;  // 工作区初始化脚本
+  int32 preparation_timeout = 8;  // 脚本超时秒数（默认 300）
+
+  // 本地路径模式（预留，未来实现）
+  string local_path = 9;          // 使用已存在的本地目录
 }
 
 // TerminatePodCommand 终止 Pod 命令

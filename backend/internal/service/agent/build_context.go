@@ -1,0 +1,49 @@
+package agent
+
+import (
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+)
+
+// BuildContext contains all data needed during the pod configuration build process.
+// It provides a unified context for AgentBuilder implementations.
+type BuildContext struct {
+	// Request contains the original build request
+	Request *ConfigBuildRequest
+
+	// AgentType contains the agent type definition from database
+	AgentType *agent.AgentType
+
+	// Config contains the merged configuration values
+	// (schema defaults + user config + request overrides)
+	Config agent.ConfigValues
+
+	// Credentials contains decrypted credential values
+	Credentials agent.EncryptedCredentials
+
+	// IsRunnerHost indicates if using Runner's local credentials
+	// When true, credentials should not be injected as env vars
+	IsRunnerHost bool
+
+	// TemplateCtx contains the template rendering context
+	// Includes: config, sandbox placeholders, mcp_port, pod_key
+	TemplateCtx map[string]interface{}
+}
+
+// NewBuildContext creates a new BuildContext with the given parameters
+func NewBuildContext(
+	req *ConfigBuildRequest,
+	agentType *agent.AgentType,
+	config agent.ConfigValues,
+	credentials agent.EncryptedCredentials,
+	isRunnerHost bool,
+	templateCtx map[string]interface{},
+) *BuildContext {
+	return &BuildContext{
+		Request:      req,
+		AgentType:    agentType,
+		Config:       config,
+		Credentials:  credentials,
+		IsRunnerHost: isRunnerHost,
+		TemplateCtx:  templateCtx,
+	}
+}

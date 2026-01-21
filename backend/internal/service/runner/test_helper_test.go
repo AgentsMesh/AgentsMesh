@@ -100,7 +100,7 @@ type MockCommandSender struct {
 	SendPromptCalls      int
 }
 
-func (m *MockCommandSender) SendCreatePod(ctx context.Context, runnerID int64, req *CreatePodRequest) error {
+func (m *MockCommandSender) SendCreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.CreatePodCalls++

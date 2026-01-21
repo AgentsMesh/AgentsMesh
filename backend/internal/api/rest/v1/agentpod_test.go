@@ -53,11 +53,9 @@ func TestUpdateSettingsRequest_Validation(t *testing.T) {
 		{
 			name: "valid request",
 			input: UpdateSettingsRequest{
-				PreparationScript:  strPtr("#!/bin/bash\necho hello"),
-				PreparationTimeout: intPtr(300),
-				DefaultModel:       strPtr("claude-3-sonnet"),
-				TerminalFontSize:   intPtr(14),
-				TerminalTheme:      strPtr("dark"),
+				DefaultModel:     strPtr("claude-3-sonnet"),
+				TerminalFontSize: intPtr(14),
+				TerminalTheme:    strPtr("dark"),
 			},
 			wantErr: false,
 		},

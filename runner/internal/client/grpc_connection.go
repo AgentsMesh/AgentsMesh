@@ -799,6 +799,7 @@ func (c *GRPCConnection) handleInitializeResult(result *runnerv1.InitializeResul
 }
 
 // handleCreatePod handles create_pod command from server.
+// Passes Proto type directly to handler for zero-copy message passing.
 func (c *GRPCConnection) handleCreatePod(cmd *runnerv1.CreatePodCommand) {
 	log := logger.GRPC()
 	log.Info("Received create_pod", "pod_key", cmd.PodKey)
@@ -807,36 +808,8 @@ func (c *GRPCConnection) handleCreatePod(cmd *runnerv1.CreatePodCommand) {
 		return
 	}
 
-	// Convert proto to internal type
-	req := CreatePodRequest{
-		PodKey:        cmd.PodKey,
-		LaunchCommand: cmd.LaunchCommand,
-		LaunchArgs:    cmd.LaunchArgs,
-		EnvVars:       cmd.EnvVars,
-	}
-
-	// Convert files_to_create
-	if len(cmd.FilesToCreate) > 0 {
-		for _, f := range cmd.FilesToCreate {
-			req.FilesToCreate = append(req.FilesToCreate, FileToCreate{
-				PathTemplate: f.Path,
-				Content:      f.Content,
-				Mode:         int(f.Mode),
-				IsDirectory:  f.IsDirectory,
-			})
-		}
-	}
-
-	// Convert work_dir_config
-	if cmd.WorkDirConfig != nil {
-		req.WorkDirConfig = &WorkDirConfig{
-			Type:       cmd.WorkDirConfig.Type,
-			Branch:     cmd.WorkDirConfig.BranchName,
-			LocalPath:  cmd.WorkDirConfig.Path,
-		}
-	}
-
-	if err := c.handler.OnCreatePod(req); err != nil {
+	// Pass Proto type directly - no conversion needed
+	if err := c.handler.OnCreatePod(cmd); err != nil {
 		log.Error("Failed to create pod", "pod_key", cmd.PodKey, "error", err)
 		c.sendError(cmd.PodKey, "create_pod_failed", err.Error())
 	}

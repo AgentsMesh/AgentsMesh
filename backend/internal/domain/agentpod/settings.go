@@ -9,10 +9,6 @@ type UserAgentPodSettings struct {
 	ID     int64 `gorm:"primaryKey" json:"id"`
 	UserID int64 `gorm:"not null;uniqueIndex" json:"user_id"`
 
-	// Workspace preparation
-	PreparationScript  *string `gorm:"type:text" json:"preparation_script,omitempty"`
-	PreparationTimeout int     `gorm:"not null;default:300" json:"preparation_timeout"` // seconds
-
 	// Default agent configuration
 	DefaultAgentTypeID *int64  `json:"default_agent_type_id,omitempty"`
 	DefaultModel       *string `gorm:"size:100" json:"default_model,omitempty"`

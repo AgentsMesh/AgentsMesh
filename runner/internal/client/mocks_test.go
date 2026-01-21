@@ -2,6 +2,8 @@ package client
 
 import (
 	"sync"
+
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
 // mockHandler is a mock implementation of MessageHandler for testing.
@@ -12,20 +14,22 @@ type mockHandler struct {
 	terminatePodCalled   bool
 	terminalInputCalled  bool
 	terminalResizeCalled bool
+	terminalRedrawCalled bool
 
-	lastCreateReq    CreatePodRequest
+	lastCreateCmd    *runnerv1.CreatePodCommand
 	lastTerminateReq TerminatePodRequest
 	lastInputReq     TerminalInputRequest
 	lastResizeReq    TerminalResizeRequest
+	lastRedrawReq    TerminalRedrawRequest
 
 	pods []PodInfo
 }
 
-func (h *mockHandler) OnCreatePod(req CreatePodRequest) error {
+func (h *mockHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.createPodCalled = true
-	h.lastCreateReq = req
+	h.lastCreateCmd = cmd
 	return nil
 }
 
@@ -53,6 +57,14 @@ func (h *mockHandler) OnTerminalResize(req TerminalResizeRequest) error {
 	return nil
 }
 
+func (h *mockHandler) OnTerminalRedraw(req TerminalRedrawRequest) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.terminalRedrawCalled = true
+	h.lastRedrawReq = req
+	return nil
+}
+
 func (h *mockHandler) OnListPods() []PodInfo {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -65,9 +77,10 @@ type mockHandlerWithError struct {
 	terminateError error
 	inputError     error
 	resizeError    error
+	redrawError    error
 }
 
-func (h *mockHandlerWithError) OnCreatePod(req CreatePodRequest) error {
+func (h *mockHandlerWithError) OnCreatePod(cmd *runnerv1.CreatePodCommand) error {
 	return h.createError
 }
 
@@ -81,6 +94,10 @@ func (h *mockHandlerWithError) OnTerminalInput(req TerminalInputRequest) error {
 
 func (h *mockHandlerWithError) OnTerminalResize(req TerminalResizeRequest) error {
 	return h.resizeError
+}
+
+func (h *mockHandlerWithError) OnTerminalRedraw(req TerminalRedrawRequest) error {
+	return h.redrawError
 }
 
 func (h *mockHandlerWithError) OnListPods() []PodInfo {

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
@@ -74,12 +75,12 @@ func TestOnTerminalInputSuccess(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// First create a pod
-	createReq := client.CreatePodRequest{
-		PodKey:      "input-success-pod",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "input-success-pod",
 		LaunchCommand: "cat",
 	}
 
-	err := handler.OnCreatePod(createReq)
+	err := handler.OnCreatePod(cmd)
 	if err != nil {
 		t.Skipf("Could not create pod: %v", err)
 	}
@@ -145,12 +146,12 @@ func TestOnTerminalResizeSuccess(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// First create a pod
-	createReq := client.CreatePodRequest{
-		PodKey:      "resize-pod",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "resize-pod",
 		LaunchCommand: "cat",
 	}
 
-	err := handler.OnCreatePod(createReq)
+	err := handler.OnCreatePod(cmd)
 	if err != nil {
 		t.Skipf("Could not create pod: %v", err)
 	}

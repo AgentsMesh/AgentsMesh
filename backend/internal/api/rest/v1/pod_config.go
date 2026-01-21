@@ -3,20 +3,22 @@ package v1
 import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/gin-gonic/gin"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// buildPodConfigWithNewProtocol uses ConfigBuilder to compute all pod configuration
-// Backend computes everything (launch command, args, env vars, files) and Runner just executes
-func (h *PodHandler) buildPodConfigWithNewProtocol(c *gin.Context, req *CreatePodRequest, podKey, permissionMode string) (*agent.PodConfig, error) {
+// buildPodCommand uses ConfigBuilder to compute all pod configuration
+// Returns Proto type directly for zero-copy message passing to Runner
+func (h *PodHandler) buildPodCommand(c *gin.Context, req *CreatePodRequest, podKey, permissionMode string) (*runnerv1.CreatePodCommand, error) {
 	ctx := c.Request.Context()
 	tenant := middleware.GetTenant(c)
 	userID := middleware.GetUserID(c)
 
-	// Resolve repository URL
+	// Resolve repository info
 	repositoryURL := ""
-	branch := ""
+	sourceBranch := ""
+	preparationScript := ""
+	preparationTimeout := 300
 	if req.RepositoryURL != nil && *req.RepositoryURL != "" {
 		repositoryURL = *req.RepositoryURL
 	} else if req.RepositoryID != nil && h.repositoryService != nil {
@@ -24,12 +26,20 @@ func (h *PodHandler) buildPodConfigWithNewProtocol(c *gin.Context, req *CreatePo
 		if err == nil && repo != nil {
 			repositoryURL = repo.CloneURL
 			if repo.DefaultBranch != "" {
-				branch = repo.DefaultBranch
+				sourceBranch = repo.DefaultBranch
+			}
+			// Get preparation script from repository
+			if repo.PreparationScript != nil {
+				preparationScript = *repo.PreparationScript
+			}
+			if repo.PreparationTimeout != nil {
+				preparationTimeout = *repo.PreparationTimeout
 			}
 		}
 	}
+	// Override branch if specified in request
 	if req.BranchName != nil && *req.BranchName != "" {
-		branch = *req.BranchName
+		sourceBranch = *req.BranchName
 	}
 
 	// Resolve ticket ID
@@ -44,16 +54,20 @@ func (h *PodHandler) buildPodConfigWithNewProtocol(c *gin.Context, req *CreatePo
 	}
 
 	// Get Git credentials
+	credentialType := ""
 	gitToken := ""
-	sshKeyPath := ""
+	sshPrivateKey := ""
 	if h.userService != nil {
 		gitCred := h.getUserGitCredential(c, userID)
 		if gitCred != nil {
+			credentialType = gitCred.Type
 			switch gitCred.Type {
 			case "oauth", "pat":
 				gitToken = gitCred.Token
 			case "ssh_key":
-				sshKeyPath = gitCred.SSHPrivateKey
+				sshPrivateKey = gitCred.SSHPrivateKey
+			case "runner_local":
+				// No credentials needed
 			}
 		}
 	}
@@ -75,52 +89,18 @@ func (h *PodHandler) buildPodConfigWithNewProtocol(c *gin.Context, req *CreatePo
 		UserID:              userID,
 		CredentialProfileID: req.CredentialProfileID,
 		RepositoryURL:       repositoryURL,
-		Branch:              branch,
-		TicketID:            ticketID,
+		SourceBranch:        sourceBranch,
+		CredentialType:      credentialType,
 		GitToken:            gitToken,
-		SSHKeyPath:          sshKeyPath,
+		SSHPrivateKey:       sshPrivateKey,
+		TicketID:            ticketID,
+		PreparationScript:   preparationScript,
+		PreparationTimeout:  preparationTimeout,
 		ConfigOverrides:     configOverrides,
 		InitialPrompt:       req.InitialPrompt,
 		PodKey:              podKey,
 		MCPPort:             19000, // Default MCP port, could be made configurable
 	}
 
-	return h.configBuilder.BuildPodConfig(ctx, buildReq)
-}
-
-// convertPodConfigToRequest converts agent.PodConfig to runner.CreatePodRequest
-func (h *PodHandler) convertPodConfigToRequest(podConfig *agent.PodConfig, podKey string) *runner.CreatePodRequest {
-	// Convert FilesToCreate
-	filesToCreate := make([]runner.FileToCreate, len(podConfig.FilesToCreate))
-	for i, f := range podConfig.FilesToCreate {
-		filesToCreate[i] = runner.FileToCreate{
-			PathTemplate: f.PathTemplate,
-			Content:      f.Content,
-			Mode:         f.Mode,
-			IsDirectory:  f.IsDirectory,
-		}
-	}
-
-	// Convert WorkDirConfig
-	var workDirConfig *runner.WorkDirConfig
-	if podConfig.WorkDirConfig.Type != "" {
-		workDirConfig = &runner.WorkDirConfig{
-			Type:          podConfig.WorkDirConfig.Type,
-			RepositoryURL: podConfig.WorkDirConfig.RepositoryURL,
-			Branch:        podConfig.WorkDirConfig.Branch,
-			TicketID:      podConfig.WorkDirConfig.TicketID,
-			GitToken:      podConfig.WorkDirConfig.GitToken,
-			SSHKeyPath:    podConfig.WorkDirConfig.SSHKeyPath,
-			LocalPath:     podConfig.WorkDirConfig.LocalPath,
-		}
-	}
-
-	return &runner.CreatePodRequest{
-		PodKey:        podKey,
-		LaunchCommand: podConfig.LaunchCommand,
-		LaunchArgs:    podConfig.LaunchArgs,
-		EnvVars:       podConfig.EnvVars,
-		FilesToCreate: filesToCreate,
-		WorkDirConfig: workDirConfig,
-	}
+	return h.configBuilder.BuildPodCommand(ctx, buildReq)
 }

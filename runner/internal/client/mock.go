@@ -2,6 +2,8 @@ package client
 
 import (
 	"sync"
+
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
 // MockConnection is a mock implementation of Connection for testing.
@@ -156,12 +158,13 @@ func (m *MockConnection) SendPodInitProgress(podKey, phase string, progress int3
 // --- Test helper methods ---
 
 // SimulateCreatePod simulates server sending a create_pod message.
-func (m *MockConnection) SimulateCreatePod(req CreatePodRequest) error {
+// Uses Proto type directly for consistency with actual implementation.
+func (m *MockConnection) SimulateCreatePod(cmd *runnerv1.CreatePodCommand) error {
 	m.mu.Lock()
 	handler := m.handler
 	m.mu.Unlock()
 	if handler != nil {
-		return handler.OnCreatePod(req)
+		return handler.OnCreatePod(cmd)
 	}
 	return nil
 }

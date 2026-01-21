@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
@@ -25,10 +25,6 @@ func TestNewPodBuilder(t *testing.T) {
 		t.Error("runner should be set")
 	}
 
-	if builder.envVars == nil {
-		t.Error("envVars should be initialized")
-	}
-
 	if builder.rows != 24 {
 		t.Errorf("rows default = %d, want 24", builder.rows)
 	}
@@ -38,65 +34,33 @@ func TestNewPodBuilder(t *testing.T) {
 	}
 }
 
-func TestPodBuilderWithPodKey(t *testing.T) {
+func TestPodBuilderWithCommand(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithPodKey("test-key")
-
-	if builder.podKey != "test-key" {
-		t.Errorf("podKey = %v, want test-key", builder.podKey)
-	}
-}
-
-func TestPodBuilderWithAgentType(t *testing.T) {
-	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithAgentType("claude-code")
-
-	if builder.agentType != "claude-code" {
-		t.Errorf("agentType = %v, want claude-code", builder.agentType)
-	}
-}
-
-func TestPodBuilderWithLaunchCommand(t *testing.T) {
-	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithLaunchCommand("claude", []string{"--headless"})
-
-	if builder.launchCommand != "claude" {
-		t.Errorf("launchCommand = %v, want claude", builder.launchCommand)
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-key",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"hello"},
+		EnvVars: map[string]string{
+			"VAR1": "value1",
+		},
 	}
 
-	if len(builder.launchArgs) != 1 || builder.launchArgs[0] != "--headless" {
-		t.Errorf("launchArgs = %v, want [--headless]", builder.launchArgs)
+	builder := NewPodBuilder(runner).WithCommand(cmd)
+
+	if builder.cmd == nil {
+		t.Fatal("cmd should not be nil")
 	}
-}
-
-func TestPodBuilderWithEnvVars(t *testing.T) {
-	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithEnvVars(map[string]string{
-		"VAR1": "value1",
-		"VAR2": "value2",
-	})
-
-	if builder.envVars["VAR1"] != "value1" {
-		t.Errorf("VAR1 = %v, want value1", builder.envVars["VAR1"])
+	if builder.cmd.PodKey != "test-key" {
+		t.Errorf("podKey = %v, want test-key", builder.cmd.PodKey)
 	}
-
-	if builder.envVars["VAR2"] != "value2" {
-		t.Errorf("VAR2 = %v, want value2", builder.envVars["VAR2"])
+	if builder.cmd.LaunchCommand != "echo" {
+		t.Errorf("launchCommand = %v, want echo", builder.cmd.LaunchCommand)
 	}
-}
-
-func TestPodBuilderWithEnvVar(t *testing.T) {
-	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).
-		WithEnvVar("KEY1", "VALUE1").
-		WithEnvVar("KEY2", "VALUE2")
-
-	if builder.envVars["KEY1"] != "VALUE1" {
-		t.Errorf("KEY1 = %v, want VALUE1", builder.envVars["KEY1"])
+	if len(builder.cmd.LaunchArgs) != 1 || builder.cmd.LaunchArgs[0] != "hello" {
+		t.Errorf("launchArgs = %v, want [hello]", builder.cmd.LaunchArgs)
 	}
-
-	if builder.envVars["KEY2"] != "VALUE2" {
-		t.Errorf("KEY2 = %v, want VALUE2", builder.envVars["KEY2"])
+	if builder.cmd.EnvVars["VAR1"] != "value1" {
+		t.Errorf("envVars[VAR1] = %v, want value1", builder.cmd.EnvVars["VAR1"])
 	}
 }
 
@@ -127,88 +91,124 @@ func TestPodBuilderWithTerminalSizeZeroValues(t *testing.T) {
 	}
 }
 
-// Note: WithInitialPrompt has been removed - InitialPrompt is now handled by Backend via LaunchArgs
-
-func TestPodBuilderWithWorkDirConfig(t *testing.T) {
+func TestPodBuilderWithSandboxConfig(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithWorkDirConfig(&client.WorkDirConfig{
-		Type:          "worktree",
-		RepositoryURL: "https://github.com/test/repo.git",
-		Branch:        "feature/test",
-	})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod",
+		LaunchCommand: "echo",
+		SandboxConfig: &runnerv1.SandboxConfig{
+			RepositoryUrl:  "https://github.com/test/repo.git",
+			SourceBranch:   "feature/test",
+			CredentialType: "runner_local",
+		},
+	}
 
-	if builder.workDirConfig == nil {
-		t.Error("workDirConfig should not be nil")
+	builder := NewPodBuilder(runner).WithCommand(cmd)
+
+	if builder.cmd.SandboxConfig == nil {
+		t.Error("sandboxConfig should not be nil")
 	}
-	if builder.workDirConfig.RepositoryURL != "https://github.com/test/repo.git" {
-		t.Errorf("repositoryURL = %v, want https://github.com/test/repo.git", builder.workDirConfig.RepositoryURL)
+	if builder.cmd.SandboxConfig.RepositoryUrl != "https://github.com/test/repo.git" {
+		t.Errorf("repositoryUrl = %v, want https://github.com/test/repo.git", builder.cmd.SandboxConfig.RepositoryUrl)
 	}
-	if builder.workDirConfig.Branch != "feature/test" {
-		t.Errorf("branch = %v, want feature/test", builder.workDirConfig.Branch)
+	if builder.cmd.SandboxConfig.SourceBranch != "feature/test" {
+		t.Errorf("sourceBranch = %v, want feature/test", builder.cmd.SandboxConfig.SourceBranch)
 	}
 }
 
 func TestPodBuilderWithFilesToCreateMultiple(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithFilesToCreate([]client.FileToCreate{
-		{PathTemplate: "{{.sandbox.root_path}}/config.json", Content: "{}", Mode: 0644},
-		{PathTemplate: "{{.sandbox.work_dir}}/data.txt", Content: "data"},
-	})
-
-	if len(builder.filesToCreate) != 2 {
-		t.Errorf("filesToCreate length = %d, want 2", len(builder.filesToCreate))
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod",
+		LaunchCommand: "echo",
+		FilesToCreate: []*runnerv1.FileToCreate{
+			{Path: "{{.sandbox.root_path}}/config.json", Content: "{}", Mode: 0644},
+			{Path: "{{.sandbox.work_dir}}/data.txt", Content: "data"},
+		},
 	}
-	if builder.filesToCreate[0].PathTemplate != "{{.sandbox.root_path}}/config.json" {
-		t.Errorf("filesToCreate[0].PathTemplate = %v, want {{.sandbox.root_path}}/config.json", builder.filesToCreate[0].PathTemplate)
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
+
+	if len(builder.cmd.FilesToCreate) != 2 {
+		t.Errorf("filesToCreate length = %d, want 2", len(builder.cmd.FilesToCreate))
+	}
+	if builder.cmd.FilesToCreate[0].Path != "{{.sandbox.root_path}}/config.json" {
+		t.Errorf("filesToCreate[0].Path = %v, want {{.sandbox.root_path}}/config.json", builder.cmd.FilesToCreate[0].Path)
 	}
 }
 
-func TestPodBuilderChaining(t *testing.T) {
+func TestPodBuilderCommandWithAllFields(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	// Note: InitialPrompt is now handled by Backend via LaunchArgs
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "pod-1",
+		LaunchCommand: "claude",
+		LaunchArgs:    []string{"--headless"},
+		EnvVars: map[string]string{
+			"API_KEY": "secret",
+		},
+		SandboxConfig: &runnerv1.SandboxConfig{
+			RepositoryUrl:  "https://github.com/test/repo.git",
+			SourceBranch:   "main",
+			CredentialType: "runner_local",
+		},
+		FilesToCreate: []*runnerv1.FileToCreate{
+			{Path: "{{.sandbox.root_path}}/test.txt", Content: "test"},
+		},
+	}
+
 	builder := NewPodBuilder(runner).
-		WithPodKey("pod-1").
-		WithAgentType("claude-code").
-		WithLaunchCommand("claude", []string{"--headless"}).
-		WithEnvVar("API_KEY", "secret").
-		WithTerminalSize(48, 160).
-		WithWorkDirConfig(&client.WorkDirConfig{
-			Type:          "worktree",
-			RepositoryURL: "https://github.com/test/repo.git",
-			Branch:        "main",
-		}).
-		WithFilesToCreate([]client.FileToCreate{
-			{PathTemplate: "{{.sandbox.root_path}}/test.txt", Content: "test"},
-		})
+		WithCommand(cmd).
+		WithTerminalSize(48, 160)
 
-	if builder.podKey != "pod-1" {
-		t.Errorf("podKey = %v, want pod-1", builder.podKey)
+	if builder.cmd.PodKey != "pod-1" {
+		t.Errorf("podKey = %v, want pod-1", builder.cmd.PodKey)
 	}
 
-	if builder.agentType != "claude-code" {
-		t.Errorf("agentType = %v, want claude-code", builder.agentType)
+	if builder.cmd.LaunchCommand != "claude" {
+		t.Errorf("launchCommand = %v, want claude", builder.cmd.LaunchCommand)
 	}
 
-	if builder.launchCommand != "claude" {
-		t.Errorf("launchCommand = %v, want claude", builder.launchCommand)
+	if len(builder.cmd.LaunchArgs) != 1 || builder.cmd.LaunchArgs[0] != "--headless" {
+		t.Errorf("launchArgs = %v, want [--headless]", builder.cmd.LaunchArgs)
 	}
 
 	if builder.rows != 48 {
 		t.Errorf("rows = %d, want 48", builder.rows)
 	}
 
-	if builder.workDirConfig == nil {
-		t.Error("workDirConfig should not be nil")
+	if builder.cmd.SandboxConfig == nil {
+		t.Error("sandboxConfig should not be nil")
 	}
 
-	if len(builder.filesToCreate) != 1 {
+	if len(builder.cmd.FilesToCreate) != 1 {
 		t.Error("filesToCreate not set correctly")
+	}
+}
+
+func TestPodBuilderBuildNilCommand(t *testing.T) {
+	runner := &Runner{cfg: &config.Config{}}
+	builder := NewPodBuilder(runner)
+	// Don't set command
+
+	ctx := context.Background()
+	_, err := builder.Build(ctx)
+
+	if err == nil {
+		t.Error("expected error for nil command")
+	}
+
+	if !contains(err.Error(), "command is required") {
+		t.Errorf("error = %v, want containing 'command is required'", err)
 	}
 }
 
 func TestPodBuilderBuildEmptyPodKey(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner)
+	cmd := &runnerv1.CreatePodCommand{
+		LaunchCommand: "echo",
+		// PodKey is empty
+	}
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	ctx := context.Background()
 	_, err := builder.Build(ctx)
@@ -224,7 +224,11 @@ func TestPodBuilderBuildEmptyPodKey(t *testing.T) {
 
 func TestPodBuilderBuildEmptyLaunchCommand(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilder(runner).WithPodKey("test-pod")
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey: "test-pod",
+		// LaunchCommand is empty
+	}
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	ctx := context.Background()
 	_, err := builder.Build(ctx)
@@ -238,4 +242,4 @@ func TestPodBuilderBuildEmptyLaunchCommand(t *testing.T) {
 	}
 }
 
-// Note: Additional tests are in pod_builder_test.go and pod_builder_extended_test.go
+// Note: Additional tests are in pod_builder_test.go, pod_builder_extended_test.go, and pod_builder_integration_test.go

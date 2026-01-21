@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
@@ -33,13 +34,13 @@ func TestMessageHandlerIntegrationWithMockConnection(t *testing.T) {
 	mockConn.SetHandler(handler)
 
 	// Test flow: create -> list -> terminate
-	createReq := client.CreatePodRequest{
-		PodKey:      "integration-pod",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "integration-pod",
 		LaunchCommand: "echo",
 	}
 
 	// Create pod via mock connection simulation
-	err = mockConn.SimulateCreatePod(createReq)
+	err = mockConn.SimulateCreatePod(cmd)
 	if err != nil {
 		t.Logf("Create pod: %v", err)
 	}
@@ -80,11 +81,11 @@ func TestMessageHandlerIntegrationPodLifecycle(t *testing.T) {
 
 	// Create multiple pods
 	for i := 0; i < 3; i++ {
-		req := client.CreatePodRequest{
-			PodKey:      "lifecycle-pod-" + string(rune('a'+i)),
+		cmd := &runnerv1.CreatePodCommand{
+			PodKey:        "lifecycle-pod-" + string(rune('a'+i)),
 			LaunchCommand: "sleep",
 		}
-		err := mockConn.SimulateCreatePod(req)
+		err := mockConn.SimulateCreatePod(cmd)
 		if err != nil {
 			t.Logf("Create pod %d: %v", i, err)
 		}

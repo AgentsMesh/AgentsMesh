@@ -155,9 +155,15 @@ func (m *Manager) ensureRepository(ctx context.Context, repoURL, path string) er
 
 // ensureRepositoryWithAuth clones or fetches a repository with authentication options
 func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path string, opts *WorktreeOptions) error {
-	// Check if repository exists
-	if _, err := os.Stat(filepath.Join(path, ".git")); err == nil {
-		// Repository exists, fetch updates
+	// Check if repository exists (bare repo has HEAD file directly in path, not in .git subdirectory)
+	if _, err := os.Stat(filepath.Join(path, "HEAD")); err == nil {
+		// Bare repository exists, update remote URL with auth and fetch updates
+		// Update remote URL with authentication (for fetch operations)
+		authURL := m.prepareAuthURL(repoURL, opts)
+		setURLCmd := exec.CommandContext(ctx, "git", "remote", "set-url", "origin", authURL)
+		setURLCmd.Dir = path
+		setURLCmd.Run() // Ignore errors, URL might already be set
+
 		fetchCmd := exec.CommandContext(ctx, "git", "fetch", "--all")
 		fetchCmd.Dir = path
 		m.setGitAuthEnv(fetchCmd, opts)
@@ -181,10 +187,24 @@ func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path st
 		return fmt.Errorf("failed to clone: %s, output: %s", err, output)
 	}
 
+	// For bare repos, configure fetch refspec to get all remote branches as origin/*
+	// This enables using origin/branch_name references in worktree commands
+	configCmd := exec.CommandContext(ctx, "git", "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*")
+	configCmd.Dir = path
+	configCmd.Run() // Ignore errors
+
+	// Fetch to populate origin/* references
+	fetchCmd := exec.CommandContext(ctx, "git", "fetch", "--all")
+	fetchCmd.Dir = path
+	m.setGitAuthEnv(fetchCmd, opts)
+	fetchCmd.Run() // Ignore errors
+
 	return nil
 }
 
 // prepareAuthURL prepares the repository URL with authentication if needed
+// For HTTPS URLs with token, embeds token in URL using standard format:
+// - Generic: https://x-access-token:TOKEN@host/path (works for GitHub, GitLab, etc.)
 func (m *Manager) prepareAuthURL(repoURL string, opts *WorktreeOptions) string {
 	if opts == nil || opts.GitToken == "" {
 		return repoURL
@@ -192,8 +212,12 @@ func (m *Manager) prepareAuthURL(repoURL string, opts *WorktreeOptions) string {
 
 	// Only modify HTTPS URLs
 	if strings.HasPrefix(repoURL, "https://") {
-		// Insert token into URL: https://token@github.com/...
-		return strings.Replace(repoURL, "https://", fmt.Sprintf("https://%s@", opts.GitToken), 1)
+		// Use x-access-token as username - this is a standard format that works with:
+		// - GitHub (accepts any username with PAT as password)
+		// - GitLab (accepts oauth2 or any username with PAT as password)
+		// - Azure DevOps (accepts any username with PAT as password)
+		// - Bitbucket (accepts x-token-auth with app password)
+		return strings.Replace(repoURL, "https://", fmt.Sprintf("https://x-access-token:%s@", opts.GitToken), 1)
 	}
 
 	return repoURL
@@ -201,15 +225,26 @@ func (m *Manager) prepareAuthURL(repoURL string, opts *WorktreeOptions) string {
 
 // setGitAuthEnv sets environment variables for git authentication
 func (m *Manager) setGitAuthEnv(cmd *exec.Cmd, opts *WorktreeOptions) {
+	// Start with current environment
+	env := os.Environ()
+
 	if opts == nil {
+		cmd.Env = env
 		return
 	}
 
 	// Set SSH key path if provided
 	if opts.SSHKeyPath != "" {
 		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no", opts.SSHKeyPath)
-		cmd.Env = append(os.Environ(), fmt.Sprintf("GIT_SSH_COMMAND=%s", sshCmd))
+		env = append(env, fmt.Sprintf("GIT_SSH_COMMAND=%s", sshCmd))
 	}
+
+	// Disable interactive prompts for HTTPS authentication
+	if opts.GitToken != "" {
+		env = append(env, "GIT_TERMINAL_PROMPT=0")
+	}
+
+	cmd.Env = env
 }
 
 // RemoveWorktree removes a worktree

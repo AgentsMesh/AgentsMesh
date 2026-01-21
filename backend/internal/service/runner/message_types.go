@@ -82,38 +82,9 @@ type InitializedParams struct {
 }
 
 // ========== Pod 操作请求结构 ==========
-// Note: Pod event data structures (HeartbeatData, PodCreatedData, etc.) have been
-// replaced by Proto types in runnerv1 package for zero-copy message passing.
-
-// FileToCreate represents a file to be created in the sandbox
-type FileToCreate struct {
-	PathTemplate string `json:"path_template"`
-	Content      string `json:"content"`
-	Mode         int    `json:"mode,omitempty"`
-	IsDirectory  bool   `json:"is_directory,omitempty"`
-}
-
-// WorkDirConfig represents the working directory configuration
-type WorkDirConfig struct {
-	Type          string `json:"type"` // "worktree", "tempdir", "local"
-	RepositoryURL string `json:"repository_url,omitempty"`
-	Branch        string `json:"branch,omitempty"`
-	TicketID      string `json:"ticket_id,omitempty"`
-	GitToken      string `json:"git_token,omitempty"`
-	SSHKeyPath    string `json:"ssh_key_path,omitempty"`
-	LocalPath     string `json:"local_path,omitempty"`
-}
-
-// CreatePodRequest represents a request to create a pod
-// Backend computes all config, Runner just executes
-type CreatePodRequest struct {
-	PodKey        string            `json:"pod_key"`
-	LaunchCommand string            `json:"launch_command"`
-	LaunchArgs    []string          `json:"launch_args,omitempty"`
-	EnvVars       map[string]string `json:"env_vars,omitempty"`
-	FilesToCreate []FileToCreate    `json:"files_to_create,omitempty"`
-	WorkDirConfig *WorkDirConfig    `json:"work_dir_config,omitempty"`
-}
+// Note: Pod command types (CreatePodCommand, FileToCreate, SandboxConfig) are now
+// defined in Proto (runnerv1 package) for zero-copy message passing.
+// Only terminal-related request types remain here for internal use.
 
 // TerminalInputRequest represents terminal input to send
 type TerminalInputRequest struct {

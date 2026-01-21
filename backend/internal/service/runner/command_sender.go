@@ -3,6 +3,8 @@ package runner
 import (
 	"context"
 	"log/slog"
+
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
 // RunnerCommandSender defines the interface for sending commands to runners.
@@ -14,7 +16,8 @@ import (
 // To check connection status, use RunnerConnectionManager.IsConnected directly.
 type RunnerCommandSender interface {
 	// SendCreatePod sends a create pod command to a runner.
-	SendCreatePod(ctx context.Context, runnerID int64, req *CreatePodRequest) error
+	// Uses Proto type directly for zero-copy message passing.
+	SendCreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error
 
 	// SendTerminatePod sends a terminate pod command to a runner.
 	SendTerminatePod(ctx context.Context, runnerID int64, podKey string) error
@@ -44,9 +47,9 @@ func NewNoOpCommandSender(logger *slog.Logger) *NoOpCommandSender {
 	return &NoOpCommandSender{logger: logger}
 }
 
-func (n *NoOpCommandSender) SendCreatePod(ctx context.Context, runnerID int64, req *CreatePodRequest) error {
+func (n *NoOpCommandSender) SendCreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error {
 	n.logger.Warn("command sender not configured, cannot create pod",
-		"runner_id", runnerID, "pod_key", req.PodKey)
+		"runner_id", runnerID, "pod_key", cmd.PodKey)
 	return ErrCommandSenderNotSet
 }
 

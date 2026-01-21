@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
@@ -20,14 +20,17 @@ func TestPodBuilderBuildSuccess(t *testing.T) {
 		},
 	}
 
-	// Note: InitialPrompt is now handled by Backend via LaunchArgs
-	builder := NewPodBuilder(runner).
-		WithPodKey("pod-build-test").
-		WithAgentType("claude-code").
-		WithLaunchCommand("echo", []string{"hello"}).
-		WithTerminalSize(30, 100)
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "pod-build-test",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"hello"},
+	}
 
-	pod, err := builder.Build(context.Background())
+	pod, err := NewPodBuilder(runner).
+		WithCommand(cmd).
+		WithTerminalSize(30, 100).
+		Build(context.Background())
+
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -38,9 +41,6 @@ func TestPodBuilderBuildSuccess(t *testing.T) {
 
 	if pod.PodKey != "pod-build-test" {
 		t.Errorf("PodKey = %v, want pod-build-test", pod.PodKey)
-	}
-	if pod.AgentType != "claude-code" {
-		t.Errorf("AgentType = %v, want claude-code", pod.AgentType)
 	}
 	if pod.GetStatus() != PodStatusInitializing {
 		t.Errorf("Status = %v, want initializing", pod.GetStatus())
@@ -60,11 +60,15 @@ func TestPodBuilderBuildWithMinimalConfig(t *testing.T) {
 		},
 	}
 
-	builder := NewPodBuilder(runner).
-		WithPodKey("minimal-pod").
-		WithLaunchCommand("echo", nil)
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "minimal-pod",
+		LaunchCommand: "echo",
+	}
 
-	pod, err := builder.Build(context.Background())
+	pod, err := NewPodBuilder(runner).
+		WithCommand(cmd).
+		Build(context.Background())
+
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -79,9 +83,9 @@ func TestPodBuilderBuildWithMinimalConfig(t *testing.T) {
 	}
 }
 
-// --- Test setupWorkDir with WorkDirConfig ---
+// --- Test setup with SandboxConfig ---
 
-func TestPodBuilderSetupWorkDirWithWorkspaceManager(t *testing.T) {
+func TestPodBuilderSetupWithWorkspaceManager(t *testing.T) {
 	// Create a temporary workspace manager
 	tempDir := t.TempDir()
 	ws, err := workspace.NewManager(tempDir, "")
@@ -96,14 +100,19 @@ func TestPodBuilderSetupWorkDirWithWorkspaceManager(t *testing.T) {
 		workspace: ws,
 	}
 
-	builder := NewPodBuilder(runner).
-		WithPodKey("test-workdir").
-		WithLaunchCommand("echo", []string{"test"}).
-		WithWorkDirConfig(&client.WorkDirConfig{
-			Type: "tempdir",
-		})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-sandbox",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"test"},
+		SandboxConfig: &runnerv1.SandboxConfig{
+			// Empty sandbox config - creates empty workspace
+		},
+	}
 
-	pod, err := builder.Build(context.Background())
+	pod, err := NewPodBuilder(runner).
+		WithCommand(cmd).
+		Build(context.Background())
+
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -113,7 +122,7 @@ func TestPodBuilderSetupWorkDirWithWorkspaceManager(t *testing.T) {
 	}
 }
 
-func TestPodBuilderSetupWorkDirLocalPath(t *testing.T) {
+func TestPodBuilderSetupLocalPath(t *testing.T) {
 	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
@@ -122,15 +131,19 @@ func TestPodBuilderSetupWorkDirLocalPath(t *testing.T) {
 		workspace: nil, // No workspace manager
 	}
 
-	builder := NewPodBuilder(runner).
-		WithPodKey("test-local").
-		WithLaunchCommand("echo", []string{"test"}).
-		WithWorkDirConfig(&client.WorkDirConfig{
-			Type:      "local",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-local",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"test"},
+		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: tempDir,
-		})
+		},
+	}
 
-	pod, err := builder.Build(context.Background())
+	pod, err := NewPodBuilder(runner).
+		WithCommand(cmd).
+		Build(context.Background())
+
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -140,7 +153,7 @@ func TestPodBuilderSetupWorkDirLocalPath(t *testing.T) {
 	}
 }
 
-func TestPodBuilderSetupWorkDirLocalPathNotExist(t *testing.T) {
+func TestPodBuilderSetupLocalPathNotExist(t *testing.T) {
 	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
@@ -148,21 +161,25 @@ func TestPodBuilderSetupWorkDirLocalPathNotExist(t *testing.T) {
 		},
 	}
 
-	builder := NewPodBuilder(runner).
-		WithPodKey("test-local-notexist").
-		WithLaunchCommand("echo", []string{"test"}).
-		WithWorkDirConfig(&client.WorkDirConfig{
-			Type:      "local",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-local-notexist",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"test"},
+		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: "/nonexistent/path/that/does/not/exist",
-		})
+		},
+	}
 
-	_, err := builder.Build(context.Background())
+	_, err := NewPodBuilder(runner).
+		WithCommand(cmd).
+		Build(context.Background())
+
 	if err == nil {
 		t.Error("expected error for non-existent local path")
 	}
 }
 
-func TestPodBuilderSetupWorkDirWorktreeNoManager(t *testing.T) {
+func TestPodBuilderSetupWorktreeNoManager(t *testing.T) {
 	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
@@ -171,16 +188,21 @@ func TestPodBuilderSetupWorkDirWorktreeNoManager(t *testing.T) {
 		workspace: nil, // No workspace manager
 	}
 
-	builder := NewPodBuilder(runner).
-		WithPodKey("test-worktree-nomanager").
-		WithLaunchCommand("echo", []string{"test"}).
-		WithWorkDirConfig(&client.WorkDirConfig{
-			Type:          "worktree",
-			RepositoryURL: "https://github.com/test/repo",
-			Branch:        "main",
-		})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-worktree-nomanager",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"test"},
+		SandboxConfig: &runnerv1.SandboxConfig{
+			RepositoryUrl:  "https://github.com/test/repo",
+			SourceBranch:   "main",
+			CredentialType: "runner_local",
+		},
+	}
 
-	_, err := builder.Build(context.Background())
+	_, err := NewPodBuilder(runner).
+		WithCommand(cmd).
+		Build(context.Background())
+
 	if err == nil {
 		t.Error("expected error for worktree without workspace manager")
 	}
@@ -195,8 +217,13 @@ func TestPodBuilderMergeEnvVarsEmptyBoth(t *testing.T) {
 		},
 	}
 
-	builder := NewPodBuilder(runner)
-	// Don't add any env vars
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod",
+		LaunchCommand: "echo",
+		// No EnvVars
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	result := builder.mergeEnvVars()
 
@@ -215,7 +242,13 @@ func TestPodBuilderMergeEnvVarsOnlyConfig(t *testing.T) {
 		},
 	}
 
-	builder := NewPodBuilder(runner)
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod",
+		LaunchCommand: "echo",
+		// No EnvVars
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	result := builder.mergeEnvVars()
 
@@ -227,20 +260,27 @@ func TestPodBuilderMergeEnvVarsOnlyConfig(t *testing.T) {
 	}
 }
 
-func TestPodBuilderMergeEnvVarsOnlyBuilder(t *testing.T) {
+func TestPodBuilderMergeEnvVarsOnlyCommand(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			AgentEnvVars: nil,
 		},
 	}
 
-	builder := NewPodBuilder(runner).
-		WithEnvVar("BUILDER_VAR", "builder_value")
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod",
+		LaunchCommand: "echo",
+		EnvVars: map[string]string{
+			"CMD_VAR": "cmd_value",
+		},
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	result := builder.mergeEnvVars()
 
-	if result["BUILDER_VAR"] != "builder_value" {
-		t.Errorf("BUILDER_VAR = %v, want builder_value", result["BUILDER_VAR"])
+	if result["CMD_VAR"] != "cmd_value" {
+		t.Errorf("CMD_VAR = %v, want cmd_value", result["CMD_VAR"])
 	}
 }
 
@@ -253,26 +293,6 @@ func TestPodStatusConstants(t *testing.T) {
 	}
 	if PodStatusRunning != "running" {
 		t.Errorf("PodStatusRunning = %v, want running", PodStatusRunning)
-	}
-}
-
-// --- Test WithNewProtocol (no-op for compatibility) ---
-
-func TestPodBuilderWithNewProtocolNoOp(t *testing.T) {
-	runner := &Runner{
-		cfg: &config.Config{
-			WorkspaceRoot: "/tmp",
-		},
-	}
-
-	// WithNewProtocol should be a no-op but not cause errors
-	builder := NewPodBuilder(runner).
-		WithPodKey("test-newprotocol").
-		WithNewProtocol(true).
-		WithNewProtocol(false)
-
-	if builder.podKey != "test-newprotocol" {
-		t.Error("podKey should be set")
 	}
 }
 
@@ -290,12 +310,16 @@ func BenchmarkPodBuilderBuild(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		builder := NewPodBuilder(runner).
-			WithPodKey("benchmark-pod").
-			WithAgentType("claude-code").
-			WithLaunchCommand("echo", []string{"test"})
+		cmd := &runnerv1.CreatePodCommand{
+			PodKey:        "benchmark-pod",
+			LaunchCommand: "echo",
+			LaunchArgs:    []string{"test"},
+		}
 
-		pod, _ := builder.Build(ctx)
+		pod, _ := NewPodBuilder(runner).
+			WithCommand(cmd).
+			Build(ctx)
+
 		if pod != nil && pod.Terminal != nil {
 			pod.Terminal.Stop()
 		}

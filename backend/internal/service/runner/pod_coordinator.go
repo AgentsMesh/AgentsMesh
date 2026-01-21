@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"gorm.io/gorm"
 )
 
@@ -91,7 +92,8 @@ func (pc *PodCoordinator) DecrementPods(ctx context.Context, runnerID int64) err
 }
 
 // CreatePod creates a new pod on a runner
-func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, req *CreatePodRequest) error {
+// Uses Proto type directly for zero-copy message passing.
+func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error {
 	// Increment pod count first
 	if err := pc.IncrementPods(ctx, runnerID); err != nil {
 		return err
@@ -101,8 +103,8 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, req *Cr
 	// Registration happens in handlePodCreated when Runner confirms the pod is actually created.
 	// This ensures we don't have stale routes if pod creation fails on Runner side.
 
-	// Send create pod request to runner via command sender
-	return pc.commandSender.SendCreatePod(ctx, runnerID, req)
+	// Send create pod command to runner via command sender
+	return pc.commandSender.SendCreatePod(ctx, runnerID, cmd)
 }
 
 // TerminatePod terminates a pod on a runner

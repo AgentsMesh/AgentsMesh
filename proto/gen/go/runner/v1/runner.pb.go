@@ -1318,7 +1318,7 @@ type CreatePodCommand struct {
 	LaunchArgs    []string               `protobuf:"bytes,3,rep,name=launch_args,json=launchArgs,proto3" json:"launch_args,omitempty"`
 	EnvVars       map[string]string      `protobuf:"bytes,4,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	FilesToCreate []*FileToCreate        `protobuf:"bytes,5,rep,name=files_to_create,json=filesToCreate,proto3" json:"files_to_create,omitempty"`
-	WorkDirConfig *WorkDirConfig         `protobuf:"bytes,6,opt,name=work_dir_config,json=workDirConfig,proto3" json:"work_dir_config,omitempty"`
+	SandboxConfig *SandboxConfig         `protobuf:"bytes,6,opt,name=sandbox_config,json=sandboxConfig,proto3" json:"sandbox_config,omitempty"` // 替代原 work_dir_config
 	InitialPrompt string                 `protobuf:"bytes,7,opt,name=initial_prompt,json=initialPrompt,proto3" json:"initial_prompt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1389,9 +1389,9 @@ func (x *CreatePodCommand) GetFilesToCreate() []*FileToCreate {
 	return nil
 }
 
-func (x *CreatePodCommand) GetWorkDirConfig() *WorkDirConfig {
+func (x *CreatePodCommand) GetSandboxConfig() *SandboxConfig {
 	if x != nil {
-		return x.WorkDirConfig
+		return x.SandboxConfig
 	}
 	return nil
 }
@@ -1472,32 +1472,47 @@ func (x *FileToCreate) GetIsDirectory() bool {
 	return false
 }
 
-// WorkDirConfig 工作目录配置
-type WorkDirConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"` // "worktree", "tempdir", "path"
-	RepoPath      string                 `protobuf:"bytes,2,opt,name=repo_path,json=repoPath,proto3" json:"repo_path,omitempty"`
-	BranchName    string                 `protobuf:"bytes,3,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
-	BaseBranch    string                 `protobuf:"bytes,4,opt,name=base_branch,json=baseBranch,proto3" json:"base_branch,omitempty"`
-	Path          string                 `protobuf:"bytes,5,opt,name=path,proto3" json:"path,omitempty"`
+// SandboxConfig 沙箱配置（替代原 WorkDirConfig）
+// Runner 始终为每个 Pod 创建隔离的 Sandbox 目录
+// 如果配置了 repository_url，则在 Sandbox 中创建 git worktree
+type SandboxConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Git 仓库配置（可选，为空则创建空 Sandbox）
+	RepositoryUrl string `protobuf:"bytes,1,opt,name=repository_url,json=repositoryUrl,proto3" json:"repository_url,omitempty"` // 仓库克隆 URL
+	SourceBranch  string `protobuf:"bytes,2,opt,name=source_branch,json=sourceBranch,proto3" json:"source_branch,omitempty"`    // 要检出的源分支名称
+	// Git 认证配置
+	// credential_type 决定如何认证：
+	// - "runner_local": 使用 Runner 本机的 git 配置，无需其他字段
+	// - "oauth" 或 "pat": 使用 git_token
+	// - "ssh_key": 使用 ssh_private_key
+	CredentialType string `protobuf:"bytes,3,opt,name=credential_type,json=credentialType,proto3" json:"credential_type,omitempty"` // runner_local, oauth, pat, ssh_key
+	GitToken       string `protobuf:"bytes,4,opt,name=git_token,json=gitToken,proto3" json:"git_token,omitempty"`                   // Git HTTPS 认证令牌（oauth/pat 类型使用）
+	SshPrivateKey  string `protobuf:"bytes,5,opt,name=ssh_private_key,json=sshPrivateKey,proto3" json:"ssh_private_key,omitempty"`  // SSH 私钥内容（ssh_key 类型使用，Runner 写入临时文件）
+	// 工单关联
+	TicketId string `protobuf:"bytes,6,opt,name=ticket_id,json=ticketId,proto3" json:"ticket_id,omitempty"` // 关联工单标识
+	// 初始化脚本
+	PreparationScript  string `protobuf:"bytes,7,opt,name=preparation_script,json=preparationScript,proto3" json:"preparation_script,omitempty"`     // 工作区初始化脚本
+	PreparationTimeout int32  `protobuf:"varint,8,opt,name=preparation_timeout,json=preparationTimeout,proto3" json:"preparation_timeout,omitempty"` // 脚本超时秒数（默认 300）
+	// 本地路径模式（预留，未来实现）
+	LocalPath     string `protobuf:"bytes,9,opt,name=local_path,json=localPath,proto3" json:"local_path,omitempty"` // 使用已存在的本地目录
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *WorkDirConfig) Reset() {
-	*x = WorkDirConfig{}
+func (x *SandboxConfig) Reset() {
+	*x = SandboxConfig{}
 	mi := &file_runner_v1_runner_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WorkDirConfig) String() string {
+func (x *SandboxConfig) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WorkDirConfig) ProtoMessage() {}
+func (*SandboxConfig) ProtoMessage() {}
 
-func (x *WorkDirConfig) ProtoReflect() protoreflect.Message {
+func (x *SandboxConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1509,42 +1524,70 @@ func (x *WorkDirConfig) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WorkDirConfig.ProtoReflect.Descriptor instead.
-func (*WorkDirConfig) Descriptor() ([]byte, []int) {
+// Deprecated: Use SandboxConfig.ProtoReflect.Descriptor instead.
+func (*SandboxConfig) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *WorkDirConfig) GetType() string {
+func (x *SandboxConfig) GetRepositoryUrl() string {
 	if x != nil {
-		return x.Type
+		return x.RepositoryUrl
 	}
 	return ""
 }
 
-func (x *WorkDirConfig) GetRepoPath() string {
+func (x *SandboxConfig) GetSourceBranch() string {
 	if x != nil {
-		return x.RepoPath
+		return x.SourceBranch
 	}
 	return ""
 }
 
-func (x *WorkDirConfig) GetBranchName() string {
+func (x *SandboxConfig) GetCredentialType() string {
 	if x != nil {
-		return x.BranchName
+		return x.CredentialType
 	}
 	return ""
 }
 
-func (x *WorkDirConfig) GetBaseBranch() string {
+func (x *SandboxConfig) GetGitToken() string {
 	if x != nil {
-		return x.BaseBranch
+		return x.GitToken
 	}
 	return ""
 }
 
-func (x *WorkDirConfig) GetPath() string {
+func (x *SandboxConfig) GetSshPrivateKey() string {
 	if x != nil {
-		return x.Path
+		return x.SshPrivateKey
+	}
+	return ""
+}
+
+func (x *SandboxConfig) GetTicketId() string {
+	if x != nil {
+		return x.TicketId
+	}
+	return ""
+}
+
+func (x *SandboxConfig) GetPreparationScript() string {
+	if x != nil {
+		return x.PreparationScript
+	}
+	return ""
+}
+
+func (x *SandboxConfig) GetPreparationTimeout() int32 {
+	if x != nil {
+		return x.PreparationTimeout
+	}
+	return 0
+}
+
+func (x *SandboxConfig) GetLocalPath() string {
+	if x != nil {
+		return x.LocalPath
 	}
 	return ""
 }
@@ -1770,8 +1813,9 @@ func (x *SendPromptCommand) GetPrompt() string {
 }
 
 // TerminalRedrawCommand 请求终端重绘命令
-// 用于服务器重启后恢复终端状态：发送 SIGWINCH 触发终端程序重绘
-// Runner 收到后只发送 SIGWINCH，不响应 pty_resized 事件（避免循环）
+// 用于服务器重启后恢复终端状态：使用 resize +1/-1 技巧触发终端程序重绘
+// （直接发送 SIGWINCH 对处于空闲状态的程序如 Claude Code 无效）
+// Runner 收到后执行 resize 技巧，不响应 pty_resized 事件（避免循环）
 type TerminalRedrawCommand struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
@@ -1917,15 +1961,15 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12!\n" +
-	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\x9e\x03\n" +
+	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\x9d\x03\n" +
 	"\x10CreatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12%\n" +
 	"\x0elaunch_command\x18\x02 \x01(\tR\rlaunchCommand\x12\x1f\n" +
 	"\vlaunch_args\x18\x03 \x03(\tR\n" +
 	"launchArgs\x12C\n" +
 	"\benv_vars\x18\x04 \x03(\v2(.runner.v1.CreatePodCommand.EnvVarsEntryR\aenvVars\x12?\n" +
-	"\x0ffiles_to_create\x18\x05 \x03(\v2\x17.runner.v1.FileToCreateR\rfilesToCreate\x12@\n" +
-	"\x0fwork_dir_config\x18\x06 \x01(\v2\x18.runner.v1.WorkDirConfigR\rworkDirConfig\x12%\n" +
+	"\x0ffiles_to_create\x18\x05 \x03(\v2\x17.runner.v1.FileToCreateR\rfilesToCreate\x12?\n" +
+	"\x0esandbox_config\x18\x06 \x01(\v2\x18.runner.v1.SandboxConfigR\rsandboxConfig\x12%\n" +
 	"\x0einitial_prompt\x18\a \x01(\tR\rinitialPrompt\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -1934,15 +1978,18 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12\x12\n" +
 	"\x04mode\x18\x03 \x01(\x05R\x04mode\x12!\n" +
-	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"\x96\x01\n" +
-	"\rWorkDirConfig\x12\x12\n" +
-	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1b\n" +
-	"\trepo_path\x18\x02 \x01(\tR\brepoPath\x12\x1f\n" +
-	"\vbranch_name\x18\x03 \x01(\tR\n" +
-	"branchName\x12\x1f\n" +
-	"\vbase_branch\x18\x04 \x01(\tR\n" +
-	"baseBranch\x12\x12\n" +
-	"\x04path\x18\x05 \x01(\tR\x04path\"D\n" +
+	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"\xe5\x02\n" +
+	"\rSandboxConfig\x12%\n" +
+	"\x0erepository_url\x18\x01 \x01(\tR\rrepositoryUrl\x12#\n" +
+	"\rsource_branch\x18\x02 \x01(\tR\fsourceBranch\x12'\n" +
+	"\x0fcredential_type\x18\x03 \x01(\tR\x0ecredentialType\x12\x1b\n" +
+	"\tgit_token\x18\x04 \x01(\tR\bgitToken\x12&\n" +
+	"\x0fssh_private_key\x18\x05 \x01(\tR\rsshPrivateKey\x12\x1b\n" +
+	"\tticket_id\x18\x06 \x01(\tR\bticketId\x12-\n" +
+	"\x12preparation_script\x18\a \x01(\tR\x11preparationScript\x12/\n" +
+	"\x13preparation_timeout\x18\b \x01(\x05R\x12preparationTimeout\x12\x1d\n" +
+	"\n" +
+	"local_path\x18\t \x01(\tR\tlocalPath\"D\n" +
 	"\x13TerminatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
 	"\x05force\x18\x02 \x01(\bR\x05force\"C\n" +
@@ -1996,7 +2043,7 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*AgentTypeInfo)(nil),         // 16: runner.v1.AgentTypeInfo
 	(*CreatePodCommand)(nil),      // 17: runner.v1.CreatePodCommand
 	(*FileToCreate)(nil),          // 18: runner.v1.FileToCreate
-	(*WorkDirConfig)(nil),         // 19: runner.v1.WorkDirConfig
+	(*SandboxConfig)(nil),         // 19: runner.v1.SandboxConfig
 	(*TerminatePodCommand)(nil),   // 20: runner.v1.TerminatePodCommand
 	(*TerminalInputCommand)(nil),  // 21: runner.v1.TerminalInputCommand
 	(*TerminalResizeCommand)(nil), // 22: runner.v1.TerminalResizeCommand
@@ -2030,7 +2077,7 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	16, // 21: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
 	26, // 22: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
 	18, // 23: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
-	19, // 24: runner.v1.CreatePodCommand.work_dir_config:type_name -> runner.v1.WorkDirConfig
+	19, // 24: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
 	0,  // 25: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
 	13, // 26: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
 	26, // [26:27] is the sub-list for method output_type

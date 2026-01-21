@@ -8,6 +8,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
@@ -364,12 +365,12 @@ func TestPodCoordinatorCreatePod(t *testing.T) {
 	pc.SetCommandSender(mockSender)
 	ctx := context.Background()
 
-	req := &CreatePodRequest{
+	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "new-pod-1",
 		LaunchCommand: "claude",
 	}
 
-	err := pc.CreatePod(ctx, r.ID, req)
+	err := pc.CreatePod(ctx, r.ID, cmd)
 	if err != nil {
 		t.Fatalf("CreatePod error: %v", err)
 	}
@@ -411,12 +412,12 @@ func TestPodCoordinatorCreatePodWithoutCommandSender(t *testing.T) {
 	pc := NewPodCoordinator(db, cm, tr, hb, logger)
 	ctx := context.Background()
 
-	req := &CreatePodRequest{
+	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-pod",
 		LaunchCommand: "claude",
 	}
 
-	err := pc.CreatePod(ctx, r.ID, req)
+	err := pc.CreatePod(ctx, r.ID, cmd)
 	if err != ErrCommandSenderNotSet {
 		t.Errorf("CreatePod should return ErrCommandSenderNotSet, got: %v", err)
 	}
