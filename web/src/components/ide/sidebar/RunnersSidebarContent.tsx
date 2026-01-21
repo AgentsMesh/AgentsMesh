@@ -19,12 +19,14 @@ import { useTranslations } from "@/lib/i18n/client";
 
 interface RunnersSidebarContentProps {
   className?: string;
+  /** Callback when "Add Runner" is clicked. If provided, opens modal; otherwise navigates to runners page */
+  onAddRunner?: () => void;
 }
 
 // Status filter options - labels will be translated
 const STATUS_FILTER_VALUES = ["all", "online", "offline"] as const;
 
-export function RunnersSidebarContent({ className }: RunnersSidebarContentProps) {
+export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebarContentProps) {
   const t = useTranslations();
   const router = useRouter();
   const { currentOrg } = useAuthStore();
@@ -86,9 +88,13 @@ export function RunnersSidebarContent({ className }: RunnersSidebarContentProps)
     router.push(`/${currentOrg?.slug}/runners?selected=${runner.id}`);
   };
 
-  // Navigate to runners page
+  // Handle add runner - use callback if provided, otherwise navigate
   const handleAddRunner = () => {
-    router.push(`/${currentOrg?.slug}/runners`);
+    if (onAddRunner) {
+      onAddRunner();
+    } else {
+      router.push(`/${currentOrg?.slug}/runners`);
+    }
   };
 
   return (

@@ -18,6 +18,8 @@ import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
 import { toast } from "sonner";
 import { getPodDisplayName } from "@/lib/pod-utils";
+import { AddRunnerModal } from "./modals/AddRunnerModal";
+import { ImportRepositoryModal } from "./modals/ImportRepositoryModal";
 
 interface IDEShellProps {
   children: React.ReactNode;
@@ -37,22 +39,28 @@ interface IDEShellProps {
  * │          │              │       Bottom Panel              │
  * └──────────┴──────────────┴─────────────────────────────────┘
  */
+interface SidebarCallbacks {
+  onCreatePod?: () => void;
+  onAddRunner?: () => void;
+  onImportRepo?: () => void;
+}
+
 // Get sidebar content based on current activity
 function getSidebarContent(
   activity: ActivityType,
-  onCreatePod?: () => void
+  callbacks: SidebarCallbacks
 ): React.ReactNode {
   switch (activity) {
     case "workspace":
-      return <WorkspaceSidebarContent onCreatePod={onCreatePod} />;
+      return <WorkspaceSidebarContent onCreatePod={callbacks.onCreatePod} />;
     case "tickets":
       return <TicketsSidebarContent />;
     case "mesh":
       return <MeshSidebarContent />;
     case "repositories":
-      return <RepositoriesSidebarContent />;
+      return <RepositoriesSidebarContent onImportRepo={callbacks.onImportRepo} />;
     case "runners":
-      return <RunnersSidebarContent />;
+      return <RunnersSidebarContent onAddRunner={callbacks.onAddRunner} />;
     case "settings":
       return <SettingsSidebarContent />;
     default:
@@ -70,6 +78,8 @@ export function IDEShell({
   const { fetchPods } = usePodStore();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [createPodModalOpen, setCreatePodModalOpen] = useState(false);
+  const [addRunnerModalOpen, setAddRunnerModalOpen] = useState(false);
+  const [importRepoModalOpen, setImportRepoModalOpen] = useState(false);
 
   // Handle pod creation
   const handleCreatePod = useCallback(() => {
@@ -88,8 +98,23 @@ export function IDEShell({
     }
   }, [addPane, fetchPods]);
 
+  // Handle add runner
+  const handleAddRunner = useCallback(() => {
+    setAddRunnerModalOpen(true);
+  }, []);
+
+  // Handle import repository
+  const handleImportRepo = useCallback(() => {
+    setImportRepoModalOpen(true);
+  }, []);
+
   // Use provided sidebar content or auto-generate based on activity
-  const effectiveSidebarContent = sidebarContent ?? getSidebarContent(activeActivity, handleCreatePod);
+  const sidebarCallbacks: SidebarCallbacks = {
+    onCreatePod: handleCreatePod,
+    onAddRunner: handleAddRunner,
+    onImportRepo: handleImportRepo,
+  };
+  const effectiveSidebarContent = sidebarContent ?? getSidebarContent(activeActivity, sidebarCallbacks);
 
   // Show loading state while hydrating to prevent flash
   if (!_hasHydrated) {
@@ -135,6 +160,20 @@ export function IDEShell({
         open={createPodModalOpen}
         onClose={() => setCreatePodModalOpen(false)}
         onCreated={handlePodCreated}
+      />
+
+      {/* Add Runner Modal */}
+      <AddRunnerModal
+        open={addRunnerModalOpen}
+        onClose={() => setAddRunnerModalOpen(false)}
+        onCreated={() => setAddRunnerModalOpen(false)}
+      />
+
+      {/* Import Repository Modal */}
+      <ImportRepositoryModal
+        open={importRepoModalOpen}
+        onClose={() => setImportRepoModalOpen(false)}
+        onImported={() => setImportRepoModalOpen(false)}
       />
     </div>
   );

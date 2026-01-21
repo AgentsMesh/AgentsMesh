@@ -164,7 +164,7 @@ describe('Runner Store Actions', () => {
 
   describe('createToken', () => {
     it('should create token successfully', async () => {
-      vi.mocked(runnerApi.createToken).mockResolvedValue({ token: 'new-token-123', message: 'Token created' })
+      vi.mocked(runnerApi.createToken).mockResolvedValue({ token: 'new-token-123', expires_at: '2024-12-31T23:59:59Z', message: 'Token created' })
 
       const token = await useRunnerStore.getState().createToken()
 

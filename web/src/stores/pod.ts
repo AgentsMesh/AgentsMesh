@@ -181,7 +181,8 @@ export const usePodStore = create<PodState>((set) => ({
 
   clearInitProgress: (podKey) => {
     set((state) => {
-      const { [podKey]: _, ...rest } = state.initProgress;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [podKey]: _removed, ...rest } = state.initProgress;
       return { initProgress: rest };
     });
   },

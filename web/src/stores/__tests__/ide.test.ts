@@ -17,7 +17,7 @@ describe("IDE Store", () => {
       sidebarWidth: 280,
       bottomPanelOpen: false,
       bottomPanelHeight: 200,
-      bottomPanelTab: "output",
+      bottomPanelTab: "channels",
       mobileDrawerOpen: false,
       mobileMoreMenuOpen: false,
       _hasHydrated: false,
@@ -33,7 +33,7 @@ describe("IDE Store", () => {
       expect(result.current.sidebarWidth).toBe(280);
       expect(result.current.bottomPanelOpen).toBe(false);
       expect(result.current.bottomPanelHeight).toBe(200);
-      expect(result.current.bottomPanelTab).toBe("output");
+      expect(result.current.bottomPanelTab).toBe("channels");
       expect(result.current.mobileDrawerOpen).toBe(false);
       expect(result.current.mobileMoreMenuOpen).toBe(false);
     });

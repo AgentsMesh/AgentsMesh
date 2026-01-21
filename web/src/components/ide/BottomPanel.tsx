@@ -59,7 +59,6 @@ export function BottomPanel({ className }: BottomPanelProps) {
     currentChannel,
     messages,
     messagesLoading,
-    loading: channelLoading,
     fetchChannel,
     fetchMessages,
     sendMessage,
@@ -98,15 +97,16 @@ export function BottomPanel({ className }: BottomPanelProps) {
   }, [activePane, panes]);
 
   // Get channels and bindings for selected pod
-  // Note: topology is included in deps to trigger recalculation when topology data changes
   const podChannels = useMemo(() => {
     if (!selectedPodKey) return [];
     return getChannelsForNode(selectedPodKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- topology triggers recalculation when data changes
   }, [selectedPodKey, getChannelsForNode, topology]);
 
   const podEdges = useMemo(() => {
     if (!selectedPodKey) return [];
     return getEdgesForNode(selectedPodKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- topology triggers recalculation when data changes
   }, [selectedPodKey, getEdgesForNode, topology]);
 
   // Separate incoming and outgoing bindings
