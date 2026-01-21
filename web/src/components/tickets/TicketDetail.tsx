@@ -329,6 +329,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
           ticketTitle={currentTicket.title}
           ticketDescription={currentTicket.description}
           ticketId={currentTicket.id}
+          repositoryId={currentTicket.repository_id}
         />
       </div>
 

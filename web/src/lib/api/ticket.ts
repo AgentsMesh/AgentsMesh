@@ -25,6 +25,7 @@ export interface TicketData {
   reporter?: { id: number; username: string; name?: string; avatar_url?: string };
   assignees?: Array<{ id: number; username: string; name?: string; avatar_url?: string }>;
   labels?: Array<{ id: number; name: string; color: string }>;
+  repository_id?: number;
   repository?: { id: number; name: string };
   parent_ticket?: { id: number; identifier: string; title: string };
 }

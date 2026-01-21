@@ -26,6 +26,7 @@ interface TicketPodPanelProps {
   ticketTitle: string;
   ticketDescription?: string;
   ticketId?: number;
+  repositoryId?: number;
   onPodCreated?: () => void;
 }
 
@@ -34,6 +35,7 @@ export default function TicketPodPanel({
   ticketTitle,
   ticketDescription,
   ticketId,
+  repositoryId,
   onPodCreated,
 }: TicketPodPanelProps) {
   const t = useTranslations();
@@ -106,6 +108,7 @@ export default function TicketPodPanel({
                 identifier: ticketIdentifier,
                 title: ticketTitle,
                 description: ticketDescription,
+                repositoryId: repositoryId,
               }
             : undefined
         }

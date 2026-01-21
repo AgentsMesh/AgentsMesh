@@ -21,6 +21,7 @@ export interface TicketContext {
   identifier: string;
   title: string;
   description?: string;
+  repositoryId?: number;
 }
 
 interface CreatePodModalProps {
@@ -95,6 +96,24 @@ export function CreatePodModal({ open, onClose, onCreated, ticketContext }: Crea
     }
   }, [ticketContext, open, form.setPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
   // Note: form is excluded to avoid infinite loops, only setPrompt is needed
+
+  // Auto-fill repository from ticket context when modal opens
+  const hasSetRepositoryRef = React.useRef(false);
+
+  useEffect(() => {
+    // Reset the ref when modal closes
+    if (!open) {
+      hasSetRepositoryRef.current = false;
+      return;
+    }
+
+    // Only set repository once per modal open session
+    if (ticketContext?.repositoryId && open && !hasSetRepositoryRef.current) {
+      form.setSelectedRepository(ticketContext.repositoryId);
+      hasSetRepositoryRef.current = true;
+    }
+  }, [ticketContext, open, form.setSelectedRepository]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: form is excluded to avoid infinite loops, only setSelectedRepository is needed
 
   // Handle runner selection change
   const handleRunnerChange = (runnerId: number | null) => {
