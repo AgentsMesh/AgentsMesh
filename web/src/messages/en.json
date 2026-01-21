@@ -2029,9 +2029,12 @@
           "description": "Control how the agent handles permission requests",
           "options": {
             "default": "Default",
-            "plan": "Plan Mode (Recommended)",
-            "bypassPermissions": "Bypass Permissions"
+            "plan": "Plan Mode (Recommended)"
           }
+        },
+        "dangerously_skip_permissions": {
+          "label": "Skip Permission Checks",
+          "description": "WARNING: Bypass all permission prompts. The agent will execute commands without asking for approval. Use with caution."
         },
         "think_level": {
           "label": "Think Level",

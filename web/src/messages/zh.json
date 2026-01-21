@@ -2029,9 +2029,12 @@
           "description": "控制 Agent 处理权限请求的方式",
           "options": {
             "default": "默认",
-            "plan": "计划模式 (推荐)",
-            "bypassPermissions": "绕过权限"
+            "plan": "计划模式 (推荐)"
           }
+        },
+        "dangerously_skip_permissions": {
+          "label": "跳过权限检查",
+          "description": "警告：绕过所有权限提示。Agent 将在不请求批准的情况下执行命令。请谨慎使用。"
         },
         "think_level": {
           "label": "思考级别",
