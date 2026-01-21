@@ -289,6 +289,7 @@ export default function RepositoriesPage() {
             setShowImportModal(false);
             loadData();
           }}
+          existingRepositories={repositories}
         />
       )}
     </div>
@@ -299,9 +300,11 @@ export default function RepositoriesPage() {
 function ImportRepositoryModal({
   onClose,
   onImported,
+  existingRepositories = [],
 }: {
   onClose: () => void;
   onImported: () => void;
+  existingRepositories?: RepositoryData[];
 }) {
   const t = useTranslations();
   const [step, setStep] = useState<"source" | "browse" | "manual" | "confirm">("source");
@@ -389,6 +392,13 @@ function ImportRepositoryModal({
       setManualProviderType(selectedProvider.provider_type);
       setManualBaseURL(selectedProvider.base_url);
     }
+
+    // Look up existing repository's ticket_prefix
+    const existingRepo = existingRepositories.find(
+      (r) => r.clone_url === repo.clone_url || r.full_path === repo.full_path
+    );
+    setTicketPrefix(existingRepo?.ticket_prefix || "");
+
     setStep("confirm");
   };
 

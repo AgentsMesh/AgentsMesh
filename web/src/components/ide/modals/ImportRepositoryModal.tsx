@@ -10,12 +10,14 @@ import {
   RepositoryProviderData,
   UserRemoteRepositoryData,
 } from "@/lib/api";
+import type { RepositoryData } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 
 interface ImportRepositoryModalProps {
   open: boolean;
   onClose: () => void;
   onImported?: () => void;
+  existingRepositories?: RepositoryData[];
 }
 
 /**
@@ -27,6 +29,7 @@ export function ImportRepositoryModal({
   open,
   onClose,
   onImported,
+  existingRepositories = [],
 }: ImportRepositoryModalProps) {
   const t = useTranslations();
   const [step, setStep] = useState<"source" | "browse" | "manual" | "confirm">("source");
@@ -139,6 +142,13 @@ export function ImportRepositoryModal({
       setManualProviderType(selectedProvider.provider_type);
       setManualBaseURL(selectedProvider.base_url);
     }
+
+    // Look up existing repository's ticket_prefix
+    const existingRepo = existingRepositories.find(
+      (r) => r.clone_url === repo.clone_url || r.full_path === repo.full_path
+    );
+    setTicketPrefix(existingRepo?.ticket_prefix || "");
+
     setStep("confirm");
   };
 
