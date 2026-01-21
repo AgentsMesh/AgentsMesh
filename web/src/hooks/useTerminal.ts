@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, MutableRefObject } from "react";
-import { Terminal as XTerm } from "@xterm/xterm";
+import { Terminal as XTerm, IDisposable } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
@@ -57,6 +57,7 @@ export function useTerminal(
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const connectionRef = useRef<TerminalConnection | null>(null);
+  const disposablesRef = useRef<IDisposable[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("connecting");
 
   // Initialize terminal (only when Pod is ready)
@@ -112,15 +113,18 @@ export function useTerminal(
     checkStatus();
     const statusInterval = setInterval(checkStatus, 1000);
 
-    // Handle input
-    term.onData((data) => {
+    // Handle input - save disposable for cleanup
+    const dataDisposable = term.onData((data) => {
       connectionRef.current?.send(data);
     });
 
-    // Handle resize
-    term.onResize(({ rows, cols }) => {
+    // Handle resize - save disposable for cleanup
+    const resizeDisposable = term.onResize(({ rows, cols }) => {
       terminalPool.sendResize(podKey, rows, cols);
     });
+
+    // Store disposables for explicit cleanup
+    disposablesRef.current = [dataDisposable, resizeDisposable];
 
     xtermRef.current = term;
     fitAddonRef.current = fitAddon;
@@ -128,12 +132,18 @@ export function useTerminal(
     // Cleanup
     return () => {
       clearInterval(statusInterval);
+      // Explicitly dispose event listeners before disposing terminal
+      disposablesRef.current.forEach(d => d.dispose());
+      disposablesRef.current = [];
       connectionRef.current?.disconnect();
       term.dispose();
       xtermRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [podKey, fontSize, isPodReady]);
+    // Note: fontSize is intentionally excluded from dependencies to prevent terminal recreation
+    // Font size changes are handled separately in another useEffect below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [podKey, isPodReady]);
 
   // Handle container resize
   useEffect(() => {

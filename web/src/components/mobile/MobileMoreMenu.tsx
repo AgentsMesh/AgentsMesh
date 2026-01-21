@@ -11,8 +11,6 @@ import { useTranslations } from "@/lib/i18n/client";
 import {
   Server,
   Settings,
-  User,
-  GitBranch,
   Moon,
   Sun,
   Monitor,
@@ -77,22 +75,6 @@ export function MobileMoreMenu({ className }: MobileMoreMenuProps) {
     router.push(getActivityRoute(activity));
   };
 
-  // Additional menu items
-  const additionalItems = [
-    {
-      id: "repository-providers",
-      labelKey: "mobile.menu.repositoryProviders",
-      icon: GitBranch,
-      route: "/settings/repository-providers",
-    },
-    {
-      id: "profile",
-      labelKey: "mobile.menu.profile",
-      icon: User,
-      route: "/settings/profile",
-    },
-  ];
-
   return (
     <Drawer.Root
       open={mobileMoreMenuOpen}
@@ -133,30 +115,6 @@ export function MobileMoreMenu({ className }: MobileMoreMenuProps) {
                     <Icon className="w-5 h-5" />
                   </div>
                   <span className="text-sm font-medium">{t(`ide.activities.${activity.id}`)}</span>
-                </button>
-              );
-            })}
-
-            {/* Divider */}
-            <div className="h-px bg-border my-2 mx-4" />
-
-            {/* Additional items */}
-            {additionalItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <button
-                  key={item.id}
-                  className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-muted active:bg-muted transition-colors"
-                  onClick={() => {
-                    setMobileMoreMenuOpen(false);
-                    router.push(item.route);
-                  }}
-                >
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <span className="text-sm font-medium">{t(item.labelKey)}</span>
                 </button>
               );
             })}

@@ -30,8 +30,17 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   // Uses "lock" axis mode to detect swipe direction first, then lock to that axis
   // This allows vertical scrolling in terminal while still supporting horizontal swipe to switch
   const bind = useDrag(
-    ({ movement: [mx, my], direction: [dx], velocity: [vx], last, cancel }) => {
+    ({ movement: [mx, my], direction: [dx], velocity: [vx], last, cancel, event }) => {
       if (panes.length <= 1) return;
+
+      // Exclude terminal input area from swipe gestures to prevent input conflicts
+      const target = event?.target as HTMLElement;
+      if (target?.closest('.xterm-helper-textarea') || target?.closest('.xterm-screen')) {
+        cancel();
+        setTranslateX(0);
+        setIsDragging(false);
+        return;
+      }
 
       // If vertical movement is greater than horizontal, cancel the gesture
       // This allows touch events to pass through to terminal for scrolling

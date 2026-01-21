@@ -39,7 +39,12 @@ export function useTouchScroll(
       const linesToScroll = Math.round(deltaY / 10);
       if (linesToScroll !== 0) {
         xtermRef.current.scrollLines(linesToScroll);
-        e.preventDefault();
+        // Only prevent default when terminal has scrollable content
+        // This allows input events to propagate when there's no scroll buffer
+        const viewport = containerRef.current?.querySelector('.xterm-viewport');
+        if (viewport && viewport.scrollHeight > viewport.clientHeight) {
+          e.preventDefault();
+        }
       }
     };
 

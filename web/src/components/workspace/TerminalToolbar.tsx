@@ -1,19 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore, terminalPool } from "@/stores/workspace";
-import { Button } from "@/components/ui/button";
 import {
   ChevronUp,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Keyboard,
-  Type,
-  Command,
-  Option,
-  ArrowBigUp,
+  X,
 } from "lucide-react";
 import { useTranslations } from "@/lib/i18n/client";
 
@@ -21,7 +17,7 @@ interface TerminalToolbarProps {
   className?: string;
 }
 
-// Special key codes
+// Special key codes - following Termux/Blink Shell conventions
 const KEYS = {
   TAB: "\t",
   ENTER: "\r",
@@ -44,252 +40,235 @@ const KEYS = {
 
 export function TerminalToolbar({ className }: TerminalToolbarProps) {
   const t = useTranslations();
-  const { panes, activePane, terminalFontSize, setTerminalFontSize } = useWorkspaceStore();
+  const { panes, activePane } = useWorkspaceStore();
+  const [isOpen, setIsOpen] = useState(false);
   const [ctrlActive, setCtrlActive] = useState(false);
   const [altActive, setAltActive] = useState(false);
-  const [shiftActive, setShiftActive] = useState(false);
-  const [showExtended, setShowExtended] = useState(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   const currentPane = panes.find((p) => p.id === activePane);
 
-  const sendKey = (key: string) => {
+  // Close toolbar when clicking outside (touch-friendly)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-terminal-toolbar]')) {
+        setIsOpen(false);
+      }
+    };
+
+    // Delay adding listener to avoid immediate close
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('touchend', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('touchend', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Send key with modifier support (Blink Shell style - modifiers stay active until key press)
+  const sendKey = useCallback((key: string) => {
     if (!currentPane) return;
 
     let finalKey = key;
 
-    // Apply modifiers
+    // Apply Ctrl modifier for single character keys
     if (ctrlActive && key.length === 1) {
-      // Convert to control character
       const charCode = key.toUpperCase().charCodeAt(0) - 64;
       if (charCode >= 1 && charCode <= 26) {
         finalKey = String.fromCharCode(charCode);
       }
     }
 
+    // Apply Alt modifier (ESC prefix for alt)
+    if (altActive && key.length === 1) {
+      finalKey = "\x1b" + key;
+    }
+
     terminalPool.send(currentPane.podKey, finalKey);
 
-    // Reset modifiers after sending (except if they're sticky)
+    // Reset modifiers after sending (like Blink Shell)
     setCtrlActive(false);
     setAltActive(false);
-    setShiftActive(false);
-  };
+  }, [currentPane, ctrlActive, altActive]);
 
-  const adjustFontSize = (delta: number) => {
-    setTerminalFontSize(terminalFontSize + delta);
-  };
+  // Direct key send without modifiers
+  const sendDirectKey = useCallback((key: string) => {
+    if (!currentPane) return;
+    terminalPool.send(currentPane.podKey, key);
+    // Reset modifiers
+    setCtrlActive(false);
+    setAltActive(false);
+  }, [currentPane]);
 
   if (!currentPane) {
     return null;
   }
 
+  // Check if any modifier is active
+  const hasActiveModifier = ctrlActive || altActive;
+
   return (
-    <div
-      className={cn(
-        "bg-terminal-bg-secondary border-t border-terminal-border safe-area-pb",
-        className
-      )}
-    >
-      {/* Extended toolbar (show/hide) */}
-      {showExtended && (
-        <div className="p-2 border-b border-terminal-border">
-          <div className="flex flex-wrap gap-1.5">
-            {/* Common control sequences */}
-            <ToolbarButton
-              label="Ctrl+C"
-              onClick={() => sendKey(KEYS.CTRL_C)}
-              variant="destructive"
-            />
-            <ToolbarButton
-              label="Ctrl+D"
-              onClick={() => sendKey(KEYS.CTRL_D)}
-            />
-            <ToolbarButton
-              label="Ctrl+Z"
-              onClick={() => sendKey(KEYS.CTRL_Z)}
-            />
-            <ToolbarButton
-              label="Ctrl+L"
-              onClick={() => sendKey(KEYS.CTRL_L)}
-              title={t("terminalToolbar.clearScreen")}
-            />
-            <ToolbarButton
-              label="Home"
-              onClick={() => sendKey(KEYS.HOME)}
-            />
-            <ToolbarButton
-              label="End"
-              onClick={() => sendKey(KEYS.END)}
-            />
-            <ToolbarButton
-              label="PgUp"
-              onClick={() => sendKey(KEYS.PAGE_UP)}
-            />
-            <ToolbarButton
-              label="PgDn"
-              onClick={() => sendKey(KEYS.PAGE_DOWN)}
-            />
-          </div>
-
-          {/* Font size control */}
-          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-terminal-border">
-            <span className="text-xs text-terminal-text-muted">{t("terminalToolbar.font")}:</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-terminal-text"
-              onClick={() => adjustFontSize(-1)}
-            >
-              A-
-            </Button>
-            <span className="text-xs text-terminal-text min-w-[2ch] text-center">
-              {terminalFontSize}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-terminal-text"
-              onClick={() => adjustFontSize(1)}
-            >
-              A+
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Main toolbar */}
-      <div className="flex items-center p-1.5 gap-1">
-        {/* Toggle extended */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-9 w-9 p-0 text-terminal-text-muted",
-            showExtended && "bg-terminal-bg-active text-terminal-text"
-          )}
-          onClick={() => setShowExtended(!showExtended)}
+    <div className={cn("relative", className)} data-terminal-toolbar ref={toolbarRef}>
+      {/* Floating trigger button - Blink Shell style */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="absolute bottom-4 right-4 w-11 h-11 rounded-full bg-terminal-bg-secondary/90 backdrop-blur-sm text-terminal-text border border-terminal-border shadow-lg flex items-center justify-center hover:bg-terminal-bg-active active:scale-95 transition-all z-50"
+          aria-label={t("terminalToolbar.open")}
         >
-          <Keyboard className="w-4 h-4" />
-        </Button>
+          <Keyboard className="w-5 h-5" />
+        </button>
+      )}
 
-        {/* Modifiers */}
-        <ModifierButton
-          label="Ctrl"
-          icon={<Command className="w-3 h-3" />}
-          active={ctrlActive}
-          onClick={() => setCtrlActive(!ctrlActive)}
-        />
-        <ModifierButton
-          label="Alt"
-          icon={<Option className="w-3 h-3" />}
-          active={altActive}
-          onClick={() => setAltActive(!altActive)}
-        />
-        <ModifierButton
-          label="Shift"
-          icon={<ArrowBigUp className="w-3 h-3" />}
-          active={shiftActive}
-          onClick={() => setShiftActive(!shiftActive)}
-        />
+      {/* Compact two-row toolbar - Termux style */}
+      {isOpen && (
+        <div className="absolute bottom-0 left-0 right-0 bg-terminal-bg-secondary/95 backdrop-blur-sm border-t border-terminal-border shadow-lg animate-in slide-in-from-bottom-2 duration-150 safe-area-pb z-50">
+          {/* Row 1: ESC, common shortcuts, navigation */}
+          <div className="flex items-center gap-0.5 px-1 py-1 border-b border-terminal-border/50">
+            <KeyButton label="ESC" onClick={() => sendDirectKey(KEYS.ESCAPE)} />
+            <KeyButton
+              label="^C"
+              onClick={() => sendDirectKey(KEYS.CTRL_C)}
+              variant="destructive"
+              title="Ctrl+C"
+            />
+            <KeyButton label="^D" onClick={() => sendDirectKey(KEYS.CTRL_D)} title="Ctrl+D" />
+            <KeyButton label="^Z" onClick={() => sendDirectKey(KEYS.CTRL_Z)} title="Ctrl+Z" />
+            <div className="w-px h-5 bg-terminal-border/50 mx-0.5" />
+            <KeyButton label="HOME" onClick={() => sendDirectKey(KEYS.HOME)} small />
+            <KeyButton
+              icon={<ChevronUp className="w-4 h-4" />}
+              onClick={() => sendDirectKey(KEYS.UP)}
+            />
+            <KeyButton label="END" onClick={() => sendDirectKey(KEYS.END)} small />
+            <KeyButton label="PGUP" onClick={() => sendDirectKey(KEYS.PAGE_UP)} small />
+            {/* Spacer */}
+            <div className="flex-1" />
+            {/* Close button */}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-7 h-7 flex items-center justify-center text-terminal-text-muted hover:text-terminal-text hover:bg-terminal-bg-active rounded transition-colors"
+              aria-label={t("terminalToolbar.close")}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-        <div className="w-px h-6 bg-terminal-border mx-1" />
-
-        {/* Common keys */}
-        <ToolbarButton
-          icon={<Type className="w-3.5 h-3.5" />}
-          label="Tab"
-          onClick={() => sendKey(KEYS.TAB)}
-        />
-        <ToolbarButton
-          label="Esc"
-          onClick={() => sendKey(KEYS.ESCAPE)}
-        />
-
-        {/* Arrow keys */}
-        <div className="flex items-center gap-0.5 ml-auto">
-          <ToolbarButton
-            icon={<ChevronUp className="w-4 h-4" />}
-            onClick={() => sendKey(KEYS.UP)}
-            square
-          />
-          <ToolbarButton
-            icon={<ChevronDown className="w-4 h-4" />}
-            onClick={() => sendKey(KEYS.DOWN)}
-            square
-          />
-          <ToolbarButton
-            icon={<ChevronLeft className="w-4 h-4" />}
-            onClick={() => sendKey(KEYS.LEFT)}
-            square
-          />
-          <ToolbarButton
-            icon={<ChevronRight className="w-4 h-4" />}
-            onClick={() => sendKey(KEYS.RIGHT)}
-            square
-          />
+          {/* Row 2: TAB, modifiers, arrows, navigation */}
+          <div className="flex items-center gap-0.5 px-1 py-1">
+            <KeyButton label="TAB" onClick={() => sendKey(KEYS.TAB)} />
+            <ModifierKey
+              label="CTRL"
+              active={ctrlActive}
+              onClick={() => setCtrlActive(!ctrlActive)}
+            />
+            <ModifierKey
+              label="ALT"
+              active={altActive}
+              onClick={() => setAltActive(!altActive)}
+            />
+            <div className="w-px h-5 bg-terminal-border/50 mx-0.5" />
+            <KeyButton
+              icon={<ChevronLeft className="w-4 h-4" />}
+              onClick={() => sendDirectKey(KEYS.LEFT)}
+            />
+            <KeyButton
+              icon={<ChevronDown className="w-4 h-4" />}
+              onClick={() => sendDirectKey(KEYS.DOWN)}
+            />
+            <KeyButton
+              icon={<ChevronRight className="w-4 h-4" />}
+              onClick={() => sendDirectKey(KEYS.RIGHT)}
+            />
+            <KeyButton label="PGDN" onClick={() => sendDirectKey(KEYS.PAGE_DOWN)} small />
+            {/* Spacer */}
+            <div className="flex-1" />
+            {/* Modifier indicator */}
+            {hasActiveModifier && (
+              <span className="text-[10px] text-primary font-medium px-1.5 py-0.5 bg-primary/10 rounded">
+                {ctrlActive && "^"}{altActive && "⌥"}
+              </span>
+            )}
+            {/* Common symbols for quick input */}
+            <KeyButton label="|" onClick={() => sendKey("|")} />
+            <KeyButton label="/" onClick={() => sendKey("/")} />
+            <KeyButton label="-" onClick={() => sendKey("-")} />
+            <KeyButton label="~" onClick={() => sendKey("~")} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-interface ToolbarButtonProps {
+// Compact key button - Termux style
+interface KeyButtonProps {
   label?: string;
   icon?: React.ReactNode;
   onClick: () => void;
   variant?: "default" | "destructive";
   title?: string;
-  square?: boolean;
+  small?: boolean;
 }
 
-function ToolbarButton({
+function KeyButton({
   label,
   icon,
   onClick,
   variant = "default",
   title,
-  square,
-}: ToolbarButtonProps) {
+  small,
+}: KeyButtonProps) {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
+    <button
       className={cn(
-        "h-9 text-terminal-text hover:bg-terminal-bg-active",
-        square ? "w-9 p-0" : "px-2.5",
-        variant === "destructive" && "text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300"
+        "h-8 min-w-[32px] px-1.5 rounded text-terminal-text font-mono",
+        "flex items-center justify-center",
+        "bg-terminal-bg-active/50 hover:bg-terminal-bg-active active:bg-terminal-bg-active/80",
+        "border border-terminal-border/30 shadow-sm",
+        "transition-colors duration-75",
+        small && "text-[9px]",
+        !small && "text-[11px]",
+        variant === "destructive" && "text-red-400 hover:text-red-300 hover:bg-red-500/20"
       )}
       onClick={onClick}
       title={title}
     >
       {icon}
-      {label && <span className="text-xs ml-1">{label}</span>}
-    </Button>
+      {label && !icon && label}
+    </button>
   );
 }
 
-interface ModifierButtonProps {
+// Modifier key with toggle state - Blink Shell style
+interface ModifierKeyProps {
   label: string;
-  icon: React.ReactNode;
   active: boolean;
   onClick: () => void;
 }
 
-function ModifierButton({ label, icon, active, onClick }: ModifierButtonProps) {
+function ModifierKey({ label, active, onClick }: ModifierKeyProps) {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
+    <button
       className={cn(
-        "h-9 px-2 text-xs",
+        "h-8 min-w-[40px] px-2 rounded font-mono text-[11px]",
+        "flex items-center justify-center",
+        "border shadow-sm transition-all duration-75",
         active
-          ? "bg-primary text-primary-foreground hover:bg-primary/90"
-          : "text-terminal-text-muted hover:text-terminal-text hover:bg-terminal-bg-active"
+          ? "bg-primary text-primary-foreground border-primary shadow-primary/30"
+          : "bg-terminal-bg-active/50 text-terminal-text-muted border-terminal-border/30 hover:bg-terminal-bg-active hover:text-terminal-text"
       )}
       onClick={onClick}
     >
-      {icon}
-      <span className="ml-1">{label}</span>
-    </Button>
+      {label}
+    </button>
   );
 }
 
