@@ -355,7 +355,7 @@ func Load() (*Config, error) {
 		Email: EmailConfig{
 			Provider:    getEnv("EMAIL_PROVIDER", "console"),
 			ResendKey:   getEnv("RESEND_API_KEY", ""),
-			FromAddress: getEnv("EMAIL_FROM_ADDRESS", "AgentsMesh <noreply@agentsmesh.dev>"),
+			FromAddress: getEnv("EMAIL_FROM_ADDRESS", "AgentsMesh <noreply@agentsmesh.ai>"),
 			BaseURL:     getEnv("FRONTEND_BASE_URL", "http://localhost:3000"),
 		},
 		Storage: StorageConfig{
