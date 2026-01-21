@@ -22,11 +22,15 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/tls/certprovider"
 	"google.golang.org/grpc/credentials/tls/certprovider/pemfile"
+	"google.golang.org/grpc/encoding/gzip" // Register gzip compressor
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/security/advancedtls"
 	"google.golang.org/grpc/status"
 )
+
+// Ensure gzip compressor is registered
+var _ = gzip.Name
 
 // GRPCProtocolVersion is the current gRPC protocol version.
 const GRPCProtocolVersion = 2
@@ -227,6 +231,9 @@ func (c *GRPCConnection) Connect() error {
 			Timeout:             10 * time.Second,
 			PermitWithoutStream: true,
 		}),
+		// Enable gzip compression for all calls to reduce bandwidth
+		// Especially effective for terminal output which is highly compressible text
+		grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
 	}
 
 	// Connect to server

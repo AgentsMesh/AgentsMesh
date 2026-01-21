@@ -6,6 +6,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
 import { terminalPool } from "@/stores/workspace";
+import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 
 interface TerminalConnection {
   send: (data: string) => void;
@@ -57,6 +58,7 @@ export function useTerminal(
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const connectionRef = useRef<TerminalConnection | null>(null);
+  const schedulerRef = useRef<TerminalWriteScheduler | null>(null);
   const disposablesRef = useRef<IDisposable[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("connecting");
 
@@ -92,12 +94,19 @@ export function useTerminal(
       fitAddon.fit();
     }, 50);
 
+    // Create write scheduler to aggregate high-frequency writes
+    // This reduces xterm.write() calls from 4000-6700/s to ~60/s
+    const scheduler = new TerminalWriteScheduler();
+    scheduler.attach(term);
+    schedulerRef.current = scheduler;
+
     // Connect to WebSocket pool
+    // Use scheduler to batch writes into animation frames
     const handleMessage = (data: Uint8Array | string) => {
       if (data instanceof Uint8Array) {
-        term.write(data);
+        scheduler.schedule(data);
       } else {
-        term.write(data);
+        scheduler.schedule(new TextEncoder().encode(data));
       }
     };
 
@@ -136,6 +145,9 @@ export function useTerminal(
       disposablesRef.current.forEach(d => d.dispose());
       disposablesRef.current = [];
       connectionRef.current?.disconnect();
+      // Dispose scheduler before terminal to ensure no pending writes
+      schedulerRef.current?.dispose();
+      schedulerRef.current = null;
       term.dispose();
       xtermRef.current = null;
       fitAddonRef.current = null;
