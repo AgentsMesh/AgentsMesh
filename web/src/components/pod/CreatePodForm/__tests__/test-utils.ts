@@ -16,6 +16,8 @@ export const defaultPodCreationData = {
   selectedRunner: null,
   setSelectedRunnerId: mockSetSelectedRunnerId,
   availableAgentTypes: [],
+  agentTypes: [],
+  error: null,
 };
 
 export const defaultFormState = {
@@ -55,26 +57,47 @@ export const mockRunner = {
   node_id: "runner-1",
   current_pods: 0,
   max_concurrent_pods: 5,
-  status: "online",
+  status: "online" as const,
   capabilities: [],
+  is_enabled: true,
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
 };
 
 export const mockAgentType = {
   id: 1,
   name: "Claude Code",
   slug: "claude-code",
+  is_builtin: true,
+  is_active: true,
 };
 
 export const mockRepository = {
   id: 1,
+  organization_id: 1,
+  provider_type: "github",
+  provider_base_url: "https://github.com",
+  clone_url: "https://github.com/org/repo1.git",
+  external_id: "org-repo1",
+  name: "repo1",
   full_path: "org/repo1",
   default_branch: "main",
+  visibility: "organization",
+  is_active: true,
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
 };
 
 export const mockCredentialProfile = {
   id: 1,
+  user_id: 1,
+  agent_type_id: 1,
   name: "My Credentials",
+  is_runner_host: false,
   is_default: false,
+  is_active: true,
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
 };
 
 export function clearAllMocks() {

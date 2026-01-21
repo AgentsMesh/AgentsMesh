@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { act } from "@testing-library/react";
-import { useChannelStore, Channel, Message } from "../channel";
+import { useChannelStore, Channel } from "../channel";
+import type { ChannelMessage } from "@/lib/api";
+
+// Alias for backward compatibility in tests
+type Message = ChannelMessage;
 
 // Mock the channel API
 vi.mock("@/lib/api", () => ({

@@ -1,13 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { Drawer } from "vaul";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn } from "@/lib/utils";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
 import { useAuthStore } from "@/stores/auth";
+import { useWorkspaceStore } from "@/stores/workspace";
+import { usePodStore } from "@/stores/pod";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { getPodDisplayName } from "@/lib/pod-utils";
 
 // Import sidebar content components
 import { WorkspaceSidebarContent } from "@/components/ide/sidebar/WorkspaceSidebarContent";
@@ -16,6 +20,11 @@ import { MeshSidebarContent } from "@/components/ide/sidebar/MeshSidebarContent"
 import { RepositoriesSidebarContent } from "@/components/ide/sidebar/RepositoriesSidebarContent";
 import { RunnersSidebarContent } from "@/components/ide/sidebar/RunnersSidebarContent";
 import { SettingsSidebarContent } from "@/components/ide/sidebar/SettingsSidebarContent";
+
+// Import modals
+import { CreatePodModal } from "@/components/ide/CreatePodModal";
+import { AddRunnerModal } from "@/components/ide/modals/AddRunnerModal";
+import { ImportRepositoryModal } from "@/components/ide/modals/ImportRepositoryModal";
 
 interface MobileSidebarProps {
   className?: string;
@@ -43,21 +52,30 @@ function getActivityTitle(activity: ActivityType): string {
   }
 }
 
+interface SidebarCallbacks {
+  onCreatePod?: () => void;
+  onAddRunner?: () => void;
+  onImportRepo?: () => void;
+}
+
 /**
  * Get sidebar content based on current activity
  */
-function getSidebarContent(activity: ActivityType): React.ReactNode {
+function getSidebarContent(
+  activity: ActivityType,
+  callbacks: SidebarCallbacks
+): React.ReactNode {
   switch (activity) {
     case "workspace":
-      return <WorkspaceSidebarContent />;
+      return <WorkspaceSidebarContent onCreatePod={callbacks.onCreatePod} />;
     case "tickets":
       return <TicketsSidebarContent />;
     case "mesh":
       return <MeshSidebarContent />;
     case "repositories":
-      return <RepositoriesSidebarContent />;
+      return <RepositoriesSidebarContent onImportRepo={callbacks.onImportRepo} />;
     case "runners":
-      return <RunnersSidebarContent />;
+      return <RunnersSidebarContent onAddRunner={callbacks.onAddRunner} />;
     case "settings":
       return <SettingsSidebarContent />;
     default:
@@ -74,9 +92,48 @@ function getSidebarContent(activity: ActivityType): React.ReactNode {
 export function MobileSidebar({ className }: MobileSidebarProps) {
   const { activeActivity, mobileSidebarOpen, setMobileSidebarOpen } = useIDEStore();
   const { currentOrg } = useAuthStore();
+  const { addPane } = useWorkspaceStore();
+  const { fetchPods } = usePodStore();
+
+  // Modal states
+  const [createPodModalOpen, setCreatePodModalOpen] = useState(false);
+  const [addRunnerModalOpen, setAddRunnerModalOpen] = useState(false);
+  const [importRepoModalOpen, setImportRepoModalOpen] = useState(false);
+
+  // Handle pod creation
+  const handleCreatePod = useCallback(() => {
+    setCreatePodModalOpen(true);
+  }, []);
+
+  const handlePodCreated = useCallback((pod?: { pod_key: string; title?: string }) => {
+    setCreatePodModalOpen(false);
+    if (pod?.pod_key) {
+      const displayName = getPodDisplayName(pod);
+      toast.info("Pod created! Waiting for it to start...", {
+        description: `Pod: ${displayName}`,
+      });
+      addPane(pod.pod_key, displayName);
+      fetchPods();
+    }
+  }, [addPane, fetchPods]);
+
+  // Handle add runner
+  const handleAddRunner = useCallback(() => {
+    setAddRunnerModalOpen(true);
+  }, []);
+
+  // Handle import repository
+  const handleImportRepo = useCallback(() => {
+    setImportRepoModalOpen(true);
+  }, []);
 
   const title = getActivityTitle(activeActivity);
-  const content = getSidebarContent(activeActivity);
+  const sidebarCallbacks: SidebarCallbacks = {
+    onCreatePod: handleCreatePod,
+    onAddRunner: handleAddRunner,
+    onImportRepo: handleImportRepo,
+  };
+  const content = getSidebarContent(activeActivity, sidebarCallbacks);
 
   return (
     <Drawer.Root
@@ -124,6 +181,25 @@ export function MobileSidebar({ className }: MobileSidebarProps) {
           </div>
         </Drawer.Content>
       </Drawer.Portal>
+
+      {/* Modals */}
+      <CreatePodModal
+        open={createPodModalOpen}
+        onClose={() => setCreatePodModalOpen(false)}
+        onCreated={handlePodCreated}
+      />
+
+      <AddRunnerModal
+        open={addRunnerModalOpen}
+        onClose={() => setAddRunnerModalOpen(false)}
+        onCreated={() => setAddRunnerModalOpen(false)}
+      />
+
+      <ImportRepositoryModal
+        open={importRepoModalOpen}
+        onClose={() => setImportRepoModalOpen(false)}
+        onImported={() => setImportRepoModalOpen(false)}
+      />
     </Drawer.Root>
   );
 }

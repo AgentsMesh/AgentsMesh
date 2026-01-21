@@ -9,6 +9,7 @@ import {
   mockRunner,
   mockAgentType,
   mockRepository,
+  mockCredentialProfile,
   clearAllMocks,
 } from "./test-utils";
 
@@ -56,8 +57,8 @@ describe("CreatePodForm - Agent Configuration", () => {
       ...defaultFormState,
       selectedAgent: 1,
       credentialProfiles: [
-        { id: 1, name: "My Credentials", is_default: false },
-        { id: 2, name: "Default Creds", is_default: true },
+        { ...mockCredentialProfile, id: 1, name: "My Credentials", is_default: false },
+        { ...mockCredentialProfile, id: 2, name: "Default Creds", is_default: true },
       ],
       setSelectedRepository: mockSetSelectedRepository,
       setSelectedBranch: mockSetSelectedBranch,

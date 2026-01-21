@@ -8,7 +8,6 @@ import { billingApi, publicBillingApi } from "../billing";
 import type {
   BillingOverview,
   Subscription,
-  SubscriptionPlan,
   PlanWithPrice,
   SeatUsage,
   CheckoutResponse,

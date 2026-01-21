@@ -25,6 +25,8 @@ import { useTranslations } from "@/lib/i18n/client";
 
 interface RepositoriesSidebarContentProps {
   className?: string;
+  /** Callback when "Import Repository" is clicked. If provided, opens modal; otherwise navigates to repositories page */
+  onImportRepo?: () => void;
 }
 
 // Provider icons
@@ -38,7 +40,7 @@ const providerIcons: Record<string, React.ReactNode> = {
 // Provider filter values - labels will be translated
 const PROVIDER_FILTER_VALUES = ["all", "github", "gitlab", "gitee"] as const;
 
-export function RepositoriesSidebarContent({ className }: RepositoriesSidebarContentProps) {
+export function RepositoriesSidebarContent({ className, onImportRepo }: RepositoriesSidebarContentProps) {
   const t = useTranslations();
   const router = useRouter();
   const { currentOrg } = useAuthStore();
@@ -118,9 +120,13 @@ export function RepositoriesSidebarContent({ className }: RepositoriesSidebarCon
     });
   };
 
-  // Navigate to import page
+  // Handle import repo - use callback if provided, otherwise navigate
   const handleImportRepo = () => {
-    router.push(`/${currentOrg?.slug}/repositories?import=true`);
+    if (onImportRepo) {
+      onImportRepo();
+    } else {
+      router.push(`/${currentOrg?.slug}/repositories?import=true`);
+    }
   };
 
   return (
