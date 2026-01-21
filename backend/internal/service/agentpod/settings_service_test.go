@@ -18,12 +18,11 @@ func setupSettingsTestDB(t *testing.T) *gorm.DB {
 	}
 
 	// Create tables manually for SQLite compatibility
+	// Note: PreparationScript and PreparationTimeout have been moved to Repository
 	err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS user_agentpod_settings (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER NOT NULL UNIQUE,
-			preparation_script TEXT,
-			preparation_timeout INTEGER NOT NULL DEFAULT 300,
 			default_agent_type_id INTEGER,
 			default_model TEXT,
 			default_perm_mode TEXT,
@@ -68,9 +67,6 @@ func TestGetUserSettings_NewUser(t *testing.T) {
 	if settings.UserID != 1 {
 		t.Errorf("expected UserID 1, got %d", settings.UserID)
 	}
-	if settings.PreparationTimeout != 300 {
-		t.Errorf("expected default PreparationTimeout 300, got %d", settings.PreparationTimeout)
-	}
 
 	// Verify settings were saved
 	var savedSettings agentpod.UserAgentPodSettings
@@ -88,11 +84,10 @@ func TestGetUserSettings_ExistingUser(t *testing.T) {
 	ctx := context.Background()
 
 	// Create existing settings
-	script := "echo hello"
+	model := "claude-3-opus"
 	existing := &agentpod.UserAgentPodSettings{
-		UserID:             2,
-		PreparationScript:  &script,
-		PreparationTimeout: 600,
+		UserID:       2,
+		DefaultModel: &model,
 	}
 	if err := db.Create(existing).Error; err != nil {
 		t.Fatalf("failed to create existing settings: %v", err)
@@ -103,11 +98,8 @@ func TestGetUserSettings_ExistingUser(t *testing.T) {
 		t.Fatalf("failed to get user settings: %v", err)
 	}
 
-	if settings.PreparationTimeout != 600 {
-		t.Errorf("expected PreparationTimeout 600, got %d", settings.PreparationTimeout)
-	}
-	if settings.PreparationScript == nil || *settings.PreparationScript != "echo hello" {
-		t.Errorf("expected PreparationScript 'echo hello'")
+	if settings.DefaultModel == nil || *settings.DefaultModel != "claude-3-opus" {
+		t.Errorf("expected DefaultModel 'claude-3-opus'")
 	}
 }
 
@@ -123,20 +115,16 @@ func TestUpdateUserSettings(t *testing.T) {
 	}
 
 	// Update settings
-	script := "npm install"
-	timeout := 900
 	fontSize := 14
 	theme := "dark"
 	permMode := "full-auto"
 	model := "claude-3-opus"
 
 	updates := &UserSettingsUpdate{
-		PreparationScript:  &script,
-		PreparationTimeout: &timeout,
-		TerminalFontSize:   &fontSize,
-		TerminalTheme:      &theme,
-		DefaultPermMode:    &permMode,
-		DefaultModel:       &model,
+		TerminalFontSize: &fontSize,
+		TerminalTheme:    &theme,
+		DefaultPermMode:  &permMode,
+		DefaultModel:     &model,
 	}
 
 	settings, err := service.UpdateUserSettings(ctx, 1, updates)
@@ -144,12 +132,6 @@ func TestUpdateUserSettings(t *testing.T) {
 		t.Fatalf("failed to update user settings: %v", err)
 	}
 
-	if settings.PreparationTimeout != 900 {
-		t.Errorf("expected PreparationTimeout 900, got %d", settings.PreparationTimeout)
-	}
-	if settings.PreparationScript == nil || *settings.PreparationScript != "npm install" {
-		t.Errorf("expected PreparationScript 'npm install'")
-	}
 	if settings.TerminalFontSize == nil || *settings.TerminalFontSize != 14 {
 		t.Errorf("expected TerminalFontSize 14")
 	}
@@ -170,20 +152,19 @@ func TestUpdateUserSettings_PartialUpdate(t *testing.T) {
 	ctx := context.Background()
 
 	// Create with initial values
-	script := "echo hello"
+	model := "claude-3-sonnet"
 	existing := &agentpod.UserAgentPodSettings{
-		UserID:             3,
-		PreparationScript:  &script,
-		PreparationTimeout: 600,
+		UserID:       3,
+		DefaultModel: &model,
 	}
 	if err := db.Create(existing).Error; err != nil {
 		t.Fatalf("failed to create existing settings: %v", err)
 	}
 
-	// Update only timeout
-	newTimeout := 1200
+	// Update only theme
+	newTheme := "monokai"
 	updates := &UserSettingsUpdate{
-		PreparationTimeout: &newTimeout,
+		TerminalTheme: &newTheme,
 	}
 
 	settings, err := service.UpdateUserSettings(ctx, 3, updates)
@@ -191,13 +172,13 @@ func TestUpdateUserSettings_PartialUpdate(t *testing.T) {
 		t.Fatalf("failed to update user settings: %v", err)
 	}
 
-	// Timeout should be updated
-	if settings.PreparationTimeout != 1200 {
-		t.Errorf("expected PreparationTimeout 1200, got %d", settings.PreparationTimeout)
+	// Theme should be updated
+	if settings.TerminalTheme == nil || *settings.TerminalTheme != "monokai" {
+		t.Errorf("expected TerminalTheme 'monokai'")
 	}
-	// Script should remain unchanged
-	if settings.PreparationScript == nil || *settings.PreparationScript != "echo hello" {
-		t.Errorf("expected PreparationScript 'echo hello' to remain unchanged")
+	// Model should remain unchanged
+	if settings.DefaultModel == nil || *settings.DefaultModel != "claude-3-sonnet" {
+		t.Errorf("expected DefaultModel 'claude-3-sonnet' to remain unchanged")
 	}
 }
 
@@ -224,50 +205,6 @@ func TestDeleteUserSettings(t *testing.T) {
 	if count != 0 {
 		t.Errorf("expected 0 settings after delete, got %d", count)
 	}
-}
-
-func TestGetPreparationScript(t *testing.T) {
-	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
-	ctx := context.Background()
-
-	t.Run("default values for new user", func(t *testing.T) {
-		script, timeout, err := service.GetPreparationScript(ctx, 10)
-		if err != nil {
-			t.Fatalf("failed to get preparation script: %v", err)
-		}
-
-		if script != "" {
-			t.Errorf("expected empty script for new user, got %s", script)
-		}
-		if timeout != 300 {
-			t.Errorf("expected default timeout 300, got %d", timeout)
-		}
-	})
-
-	t.Run("configured values", func(t *testing.T) {
-		script := "pip install -r requirements.txt"
-		existing := &agentpod.UserAgentPodSettings{
-			UserID:             11,
-			PreparationScript:  &script,
-			PreparationTimeout: 500,
-		}
-		if err := db.Create(existing).Error; err != nil {
-			t.Fatalf("failed to create settings: %v", err)
-		}
-
-		resultScript, timeout, err := service.GetPreparationScript(ctx, 11)
-		if err != nil {
-			t.Fatalf("failed to get preparation script: %v", err)
-		}
-
-		if resultScript != "pip install -r requirements.txt" {
-			t.Errorf("expected configured script, got %s", resultScript)
-		}
-		if timeout != 500 {
-			t.Errorf("expected timeout 500, got %d", timeout)
-		}
-	})
 }
 
 func TestGetDefaultAgentConfig(t *testing.T) {

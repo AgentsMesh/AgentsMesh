@@ -39,8 +39,6 @@ func (h *AgentPodHandler) GetSettings(c *gin.Context) {
 
 // UpdateSettingsRequest represents settings update request
 type UpdateSettingsRequest struct {
-	PreparationScript  *string `json:"preparation_script"`
-	PreparationTimeout *int    `json:"preparation_timeout" binding:"omitempty,min=30,max=3600"`
 	DefaultAgentTypeID *int64  `json:"default_agent_type_id"`
 	DefaultModel       *string `json:"default_model"`
 	DefaultPermMode    *string `json:"default_perm_mode" binding:"omitempty,oneof=default accept-edits full-auto"`
@@ -60,8 +58,6 @@ func (h *AgentPodHandler) UpdateSettings(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
 	updates := &agentpod.UserSettingsUpdate{
-		PreparationScript:  req.PreparationScript,
-		PreparationTimeout: req.PreparationTimeout,
 		DefaultAgentTypeID: req.DefaultAgentTypeID,
 		DefaultModel:       req.DefaultModel,
 		DefaultPermMode:    req.DefaultPermMode,

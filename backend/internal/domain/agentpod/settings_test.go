@@ -36,7 +36,6 @@ func TestUserAgentPodSettingsTableName(t *testing.T) {
 
 func TestUserAgentPodSettingsStruct(t *testing.T) {
 	now := time.Now()
-	script := "npm install && npm run build"
 	agentTypeID := int64(1)
 	model := "opus"
 	permMode := "bypassPermissions"
@@ -46,8 +45,6 @@ func TestUserAgentPodSettingsStruct(t *testing.T) {
 	s := UserAgentPodSettings{
 		ID:                 1,
 		UserID:             50,
-		PreparationScript:  &script,
-		PreparationTimeout: 300,
 		DefaultAgentTypeID: &agentTypeID,
 		DefaultModel:       &model,
 		DefaultPermMode:    &permMode,
@@ -63,12 +60,6 @@ func TestUserAgentPodSettingsStruct(t *testing.T) {
 	if s.UserID != 50 {
 		t.Errorf("expected UserID 50, got %d", s.UserID)
 	}
-	if *s.PreparationScript != "npm install && npm run build" {
-		t.Errorf("expected PreparationScript 'npm install && npm run build', got %s", *s.PreparationScript)
-	}
-	if s.PreparationTimeout != 300 {
-		t.Errorf("expected PreparationTimeout 300, got %d", s.PreparationTimeout)
-	}
 	if *s.DefaultModel != "opus" {
 		t.Errorf("expected DefaultModel 'opus', got %s", *s.DefaultModel)
 	}
@@ -82,14 +73,10 @@ func TestUserAgentPodSettingsStruct(t *testing.T) {
 
 func TestUserAgentPodSettingsWithNilOptionalFields(t *testing.T) {
 	s := UserAgentPodSettings{
-		ID:                 1,
-		UserID:             50,
-		PreparationTimeout: 300,
+		ID:     1,
+		UserID: 50,
 	}
 
-	if s.PreparationScript != nil {
-		t.Error("expected PreparationScript to be nil")
-	}
 	if s.DefaultAgentTypeID != nil {
 		t.Error("expected DefaultAgentTypeID to be nil")
 	}

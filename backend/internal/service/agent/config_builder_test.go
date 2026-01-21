@@ -173,50 +173,69 @@ func TestConfigBuilder_GetConfigSchema(t *testing.T) {
 	})
 }
 
-func TestConfigBuilder_buildWorkDirConfig(t *testing.T) {
+func TestConfigBuilder_buildSandboxConfig(t *testing.T) {
 	db := setupConfigBuilderTestDB(t)
 	provider := createTestProvider(db)
 	builder := NewConfigBuilder(provider)
 
 	tests := []struct {
-		name     string
-		req      *ConfigBuildRequest
-		wantType string
+		name          string
+		req           *ConfigBuildRequest
+		wantNil       bool
+		wantRepoURL   string
+		wantLocalPath string
 	}{
 		{
-			name:     "tempdir when no repo or local path",
-			req:      &ConfigBuildRequest{},
-			wantType: "tempdir",
+			name:    "nil when no repo or local path",
+			req:     &ConfigBuildRequest{},
+			wantNil: true,
 		},
 		{
-			name: "worktree when repo URL provided",
+			name: "has config when repo URL provided",
 			req: &ConfigBuildRequest{
 				RepositoryURL: "https://github.com/test/repo.git",
+				SourceBranch:  "main",
 			},
-			wantType: "worktree",
+			wantNil:     false,
+			wantRepoURL: "https://github.com/test/repo.git",
 		},
 		{
-			name: "local when local path provided",
+			name: "has config when local path provided",
 			req: &ConfigBuildRequest{
 				LocalPath: "/home/user/project",
 			},
-			wantType: "local",
+			wantNil:       false,
+			wantLocalPath: "/home/user/project",
 		},
 		{
-			name: "worktree takes priority over local",
+			name: "repo takes priority over local path",
 			req: &ConfigBuildRequest{
 				RepositoryURL: "https://github.com/test/repo.git",
 				LocalPath:     "/home/user/project",
 			},
-			wantType: "worktree",
+			wantNil:     false,
+			wantRepoURL: "https://github.com/test/repo.git",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := builder.buildWorkDirConfig(tt.req)
-			if config.Type != tt.wantType {
-				t.Errorf("buildWorkDirConfig() Type = %s, want %s", config.Type, tt.wantType)
+			config := builder.buildSandboxConfig(tt.req)
+			if tt.wantNil {
+				if config != nil {
+					t.Errorf("buildSandboxConfig() should be nil, got %+v", config)
+				}
+				return
+			}
+			if config == nil {
+				t.Error("buildSandboxConfig() should not be nil")
+				return
+			}
+			if tt.wantRepoURL != "" && config.RepositoryUrl != tt.wantRepoURL {
+				t.Errorf("buildSandboxConfig() RepositoryUrl = %s, want %s", config.RepositoryUrl, tt.wantRepoURL)
+			}
+			if tt.wantLocalPath != "" && config.LocalPath != tt.wantLocalPath {
+				t.Errorf("buildSandboxConfig() LocalPath = %s, want %s", config.LocalPath, tt.wantLocalPath)
 			}
 		})
 	}

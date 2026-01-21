@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,12 +20,12 @@ func TestNoOpCommandSender_SendCreatePod(t *testing.T) {
 	sender := NewNoOpCommandSender(newTestLogger())
 	ctx := context.Background()
 
-	req := &CreatePodRequest{
+	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-pod",
 		LaunchCommand: "claude",
 	}
 
-	err := sender.SendCreatePod(ctx, 1, req)
+	err := sender.SendCreatePod(ctx, 1, cmd)
 	assert.Equal(t, ErrCommandSenderNotSet, err)
 }
 

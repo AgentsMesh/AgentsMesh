@@ -111,7 +111,7 @@ func TestConfigBuilder_buildFilesToCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := builder.buildFilesToCreate(tt.filesTemplate, tt.config, tt.templateCtx)
+			got, err := builder.buildFilesToCreateProto(tt.filesTemplate, tt.config, tt.templateCtx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("buildFilesToCreate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -138,7 +138,7 @@ func TestConfigBuilder_buildFilesToCreate_ErrorPath(t *testing.T) {
 		config := agent.ConfigValues{}
 		templateCtx := map[string]interface{}{}
 
-		_, err := builder.buildFilesToCreate(filesTemplate, config, templateCtx)
+		_, err := builder.buildFilesToCreateProto(filesTemplate, config, templateCtx)
 		if err == nil {
 			t.Error("Expected error for invalid content template")
 		}
@@ -158,7 +158,7 @@ func TestConfigBuilder_buildFilesToCreate_ErrorPath(t *testing.T) {
 		config := agent.ConfigValues{}
 		templateCtx := map[string]interface{}{}
 
-		files, err := builder.buildFilesToCreate(filesTemplate, config, templateCtx)
+		files, err := builder.buildFilesToCreateProto(filesTemplate, config, templateCtx)
 		if err != nil {
 			t.Fatalf("buildFilesToCreate failed: %v", err)
 		}

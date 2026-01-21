@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
@@ -26,65 +27,61 @@ func NewRunnerMessageHandler(runner *Runner, store PodStore, conn client.Connect
 }
 
 // OnCreatePod handles create pod requests from server.
+// Uses Proto type directly for zero-copy message passing.
 // Implements client.MessageHandler interface.
-func (h *RunnerMessageHandler) OnCreatePod(req client.CreatePodRequest) error {
+func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error {
 	log := logger.Pod()
-	log.Info("Creating pod", "pod_key", req.PodKey, "command", req.LaunchCommand, "args", req.LaunchArgs)
+	log.Info("Creating pod", "pod_key", cmd.PodKey, "command", cmd.LaunchCommand, "args", cmd.LaunchArgs)
 
 	ctx := context.Background()
 
 	// Check capacity
 	if h.runner.cfg.MaxConcurrentPods > 0 && h.podStore.Count() >= h.runner.cfg.MaxConcurrentPods {
-		h.sendPodError(req.PodKey, "max concurrent pods reached")
+		h.sendPodError(cmd.PodKey, "max concurrent pods reached")
 		return fmt.Errorf("max concurrent pods reached")
 	}
 
-	// Build pod using new protocol
+	// Build pod using Proto command directly
 	builder := NewPodBuilder(h.runner).
-		WithPodKey(req.PodKey).
-		WithNewProtocol(true).
-		WithLaunchCommand(req.LaunchCommand, req.LaunchArgs).
-		WithEnvVars(req.EnvVars).
-		WithFilesToCreate(req.FilesToCreate).
-		WithWorkDirConfig(req.WorkDirConfig)
+		WithCommand(cmd)
 
 	// Build pod
 	pod, err := builder.Build(ctx)
 	if err != nil {
 		// Check if it's a PodError with error code
 		if podErr, ok := err.(*client.PodError); ok {
-			h.sendPodErrorWithCode(req.PodKey, podErr)
+			h.sendPodErrorWithCode(cmd.PodKey, podErr)
 		} else {
-			h.sendPodError(req.PodKey, fmt.Sprintf("failed to build pod: %v", err))
+			h.sendPodError(cmd.PodKey, fmt.Sprintf("failed to build pod: %v", err))
 		}
 		return fmt.Errorf("failed to build pod: %w", err)
 	}
 
 	// Set output/exit handlers
-	pod.Terminal.SetOutputHandler(h.createOutputHandler(req.PodKey))
-	pod.Terminal.SetExitHandler(h.createExitHandler(req.PodKey))
+	pod.Terminal.SetOutputHandler(h.createOutputHandler(cmd.PodKey))
+	pod.Terminal.SetExitHandler(h.createExitHandler(cmd.PodKey))
 
 	// Start terminal
 	if err := pod.Terminal.Start(); err != nil {
-		h.sendPodError(req.PodKey, fmt.Sprintf("failed to start terminal: %v", err))
+		h.sendPodError(cmd.PodKey, fmt.Sprintf("failed to start terminal: %v", err))
 		return fmt.Errorf("failed to start terminal: %w", err)
 	}
 
 	// Store pod
-	h.podStore.Put(req.PodKey, pod)
+	h.podStore.Put(cmd.PodKey, pod)
 	pod.SetStatus(PodStatusRunning)
 
 	// Register pod with MCP HTTP Server for tool access
 	if h.runner.mcpServer != nil {
 		orgSlug := h.conn.GetOrgSlug()
-		h.runner.mcpServer.RegisterPod(req.PodKey, orgSlug, nil, nil, req.LaunchCommand)
-		log.Debug("Registered pod with MCP server", "pod_key", req.PodKey, "org", orgSlug)
+		h.runner.mcpServer.RegisterPod(cmd.PodKey, orgSlug, nil, nil, cmd.LaunchCommand)
+		log.Debug("Registered pod with MCP server", "pod_key", cmd.PodKey, "org", orgSlug)
 	}
 
 	// Notify server that pod is created
-	h.sendPodCreated(req.PodKey, pod.Terminal.PID(), pod.WorktreePath, pod.Branch, 80, 24)
+	h.sendPodCreated(cmd.PodKey, pod.Terminal.PID(), pod.WorktreePath, pod.Branch, 80, 24)
 
-	log.Info("Pod created", "pod_key", req.PodKey, "pid", pod.Terminal.PID(), "worktree", pod.WorktreePath, "branch", pod.Branch)
+	log.Info("Pod created", "pod_key", cmd.PodKey, "pid", pod.Terminal.PID(), "worktree", pod.WorktreePath, "branch", pod.Branch)
 	return nil
 }
 

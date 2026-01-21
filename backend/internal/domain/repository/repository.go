@@ -25,6 +25,10 @@ type Repository struct {
 	Visibility       string `gorm:"size:20;not null;default:'organization'" json:"visibility"`
 	ImportedByUserID *int64 `gorm:"index" json:"imported_by_user_id,omitempty"` // User who imported this repo
 
+	// Workspace preparation
+	PreparationScript  *string `gorm:"type:text" json:"preparation_script,omitempty"`  // Script to run after worktree creation
+	PreparationTimeout *int    `gorm:"default:300" json:"preparation_timeout,omitempty"` // Script timeout in seconds (default 300)
+
 	IsActive bool `gorm:"not null;default:true" json:"is_active"`
 
 	CreatedAt time.Time  `gorm:"not null;default:now()" json:"created_at"`

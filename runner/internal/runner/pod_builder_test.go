@@ -4,31 +4,32 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
 
 func TestPodBuilderStruct(t *testing.T) {
-	builder := &PodBuilder{
-		podKey:        "pod-1",
-		agentType:     "claude-code",
-		launchCommand: "claude",
-		launchArgs:    []string{"--headless"},
-		envVars:       map[string]string{"KEY": "VALUE"},
-		rows:          24,
-		cols:          80,
-		filesToCreate: []client.FileToCreate{
-			{PathTemplate: "{{.sandbox.root_path}}/test.txt", Content: "test"},
+	runner := &Runner{cfg: &config.Config{}}
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "pod-1",
+		LaunchCommand: "claude",
+		LaunchArgs:    []string{"--headless"},
+		EnvVars:       map[string]string{"KEY": "VALUE"},
+		FilesToCreate: []*runnerv1.FileToCreate{
+			{Path: "{{.sandbox.root_path}}/test.txt", Content: "test"},
 		},
-		workDirConfig: &client.WorkDirConfig{
-			Type:      "local",
+		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: "/tmp",
 		},
 	}
 
-	if builder.podKey != "pod-1" {
-		t.Errorf("podKey: got %v, want pod-1", builder.podKey)
+	builder := NewPodBuilder(runner).
+		WithCommand(cmd).
+		WithTerminalSize(24, 80)
+
+	if builder.cmd.PodKey != "pod-1" {
+		t.Errorf("podKey: got %v, want pod-1", builder.cmd.PodKey)
 	}
 
 	if builder.rows != 24 {
@@ -38,25 +39,28 @@ func TestPodBuilderStruct(t *testing.T) {
 
 func TestPodBuilderFluentAPI(t *testing.T) {
 	runner := &Runner{}
-	builder := NewPodBuilder(runner)
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "pod-1",
+		LaunchCommand: "claude",
+		LaunchArgs:    []string{"--headless"},
+		EnvVars: map[string]string{
+			"KEY1": "VALUE1",
+			"KEY2": "VALUE2",
+		},
+		SandboxConfig: &runnerv1.SandboxConfig{
+			RepositoryUrl:  "https://github.com/test/repo.git",
+			SourceBranch:   "main",
+			CredentialType: "runner_local",
+		},
+		FilesToCreate: []*runnerv1.FileToCreate{
+			{Path: "{{.sandbox.root_path}}/config.json", Content: "{}"},
+		},
+	}
 
-	// Test fluent API chain
-	// Note: InitialPrompt is now handled by Backend via LaunchArgs
+	builder := NewPodBuilder(runner)
 	result := builder.
-		WithPodKey("pod-1").
-		WithAgentType("claude-code").
-		WithLaunchCommand("claude", []string{"--headless"}).
-		WithEnvVars(map[string]string{"KEY1": "VALUE1"}).
-		WithEnvVar("KEY2", "VALUE2").
-		WithTerminalSize(40, 120).
-		WithWorkDirConfig(&client.WorkDirConfig{
-			Type:          "worktree",
-			RepositoryURL: "https://github.com/test/repo.git",
-			Branch:        "main",
-		}).
-		WithFilesToCreate([]client.FileToCreate{
-			{PathTemplate: "{{.sandbox.root_path}}/config.json", Content: "{}"},
-		})
+		WithCommand(cmd).
+		WithTerminalSize(40, 120)
 
 	// Verify it returns the same builder
 	if result != builder {
@@ -64,23 +68,20 @@ func TestPodBuilderFluentAPI(t *testing.T) {
 	}
 
 	// Verify values
-	if builder.podKey != "pod-1" {
-		t.Errorf("podKey: got %v, want pod-1", builder.podKey)
+	if builder.cmd.PodKey != "pod-1" {
+		t.Errorf("podKey: got %v, want pod-1", builder.cmd.PodKey)
 	}
-	if builder.agentType != "claude-code" {
-		t.Errorf("agentType: got %v, want claude-code", builder.agentType)
+	if builder.cmd.LaunchCommand != "claude" {
+		t.Errorf("launchCommand: got %v, want claude", builder.cmd.LaunchCommand)
 	}
-	if builder.launchCommand != "claude" {
-		t.Errorf("launchCommand: got %v, want claude", builder.launchCommand)
+	if len(builder.cmd.LaunchArgs) != 1 {
+		t.Errorf("launchArgs length: got %v, want 1", len(builder.cmd.LaunchArgs))
 	}
-	if len(builder.launchArgs) != 1 {
-		t.Errorf("launchArgs length: got %v, want 1", len(builder.launchArgs))
+	if builder.cmd.EnvVars["KEY1"] != "VALUE1" {
+		t.Errorf("envVars[KEY1]: got %v, want VALUE1", builder.cmd.EnvVars["KEY1"])
 	}
-	if builder.envVars["KEY1"] != "VALUE1" {
-		t.Errorf("envVars[KEY1]: got %v, want VALUE1", builder.envVars["KEY1"])
-	}
-	if builder.envVars["KEY2"] != "VALUE2" {
-		t.Errorf("envVars[KEY2]: got %v, want VALUE2", builder.envVars["KEY2"])
+	if builder.cmd.EnvVars["KEY2"] != "VALUE2" {
+		t.Errorf("envVars[KEY2]: got %v, want VALUE2", builder.cmd.EnvVars["KEY2"])
 	}
 	if builder.rows != 40 {
 		t.Errorf("rows: got %v, want 40", builder.rows)
@@ -88,18 +89,18 @@ func TestPodBuilderFluentAPI(t *testing.T) {
 	if builder.cols != 120 {
 		t.Errorf("cols: got %v, want 120", builder.cols)
 	}
-	if builder.workDirConfig == nil {
-		t.Error("workDirConfig should not be nil")
+	if builder.cmd.SandboxConfig == nil {
+		t.Error("sandboxConfig should not be nil")
 	} else {
-		if builder.workDirConfig.RepositoryURL != "https://github.com/test/repo.git" {
-			t.Errorf("repositoryURL: got %v, want https://github.com/test/repo.git", builder.workDirConfig.RepositoryURL)
+		if builder.cmd.SandboxConfig.RepositoryUrl != "https://github.com/test/repo.git" {
+			t.Errorf("repositoryUrl: got %v, want https://github.com/test/repo.git", builder.cmd.SandboxConfig.RepositoryUrl)
 		}
-		if builder.workDirConfig.Branch != "main" {
-			t.Errorf("branch: got %v, want main", builder.workDirConfig.Branch)
+		if builder.cmd.SandboxConfig.SourceBranch != "main" {
+			t.Errorf("branch: got %v, want main", builder.cmd.SandboxConfig.SourceBranch)
 		}
 	}
-	if len(builder.filesToCreate) != 1 {
-		t.Errorf("filesToCreate length: got %v, want 1", len(builder.filesToCreate))
+	if len(builder.cmd.FilesToCreate) != 1 {
+		t.Errorf("filesToCreate length: got %v, want 1", len(builder.cmd.FilesToCreate))
 	}
 }
 
@@ -113,10 +114,6 @@ func TestPodBuilderDefaultValues(t *testing.T) {
 
 	if builder.cols != 80 {
 		t.Errorf("default cols: got %v, want 80", builder.cols)
-	}
-
-	if builder.envVars == nil {
-		t.Error("envVars should be initialized")
 	}
 }
 
@@ -143,13 +140,13 @@ func TestPodBuilderTerminalSizeValidation(t *testing.T) {
 	}
 }
 
-func TestPodBuilderBuildWithoutPodKey(t *testing.T) {
+func TestPodBuilderBuildWithoutCommand(t *testing.T) {
 	runner := &Runner{}
 	builder := NewPodBuilder(runner)
 
 	_, err := builder.Build(context.Background())
 	if err == nil {
-		t.Error("expected error for missing pod key")
+		t.Error("expected error for missing command")
 	}
 }
 
@@ -163,11 +160,16 @@ func TestPodBuilderMergeEnvVars(t *testing.T) {
 		},
 	}
 
-	builder := NewPodBuilder(runner)
-	builder.WithEnvVars(map[string]string{
-		"BUILDER_VAR": "builder_value",
-		"SHARED_VAR":  "builder_shared",
-	})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod",
+		LaunchCommand: "echo",
+		EnvVars: map[string]string{
+			"BUILDER_VAR": "builder_value",
+			"SHARED_VAR":  "builder_shared",
+		},
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	result := builder.mergeEnvVars()
 
@@ -180,7 +182,7 @@ func TestPodBuilderMergeEnvVars(t *testing.T) {
 	}
 
 	if result["SHARED_VAR"] != "builder_shared" {
-		t.Errorf("SHARED_VAR: got %v, want builder_shared (builder should override config)", result["SHARED_VAR"])
+		t.Errorf("SHARED_VAR: got %v, want builder_shared (command should override config)", result["SHARED_VAR"])
 	}
 }
 
@@ -189,10 +191,15 @@ func TestPodBuilderMergeEnvVarsNilConfig(t *testing.T) {
 		cfg: nil,
 	}
 
-	builder := NewPodBuilder(runner)
-	builder.WithEnvVars(map[string]string{
-		"BUILDER_VAR": "builder_value",
-	})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod",
+		LaunchCommand: "echo",
+		EnvVars: map[string]string{
+			"BUILDER_VAR": "builder_value",
+		},
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	result := builder.mergeEnvVars()
 
@@ -211,45 +218,47 @@ func TestPodBuilderWithAllOptions(t *testing.T) {
 		},
 	}
 
-	// Note: InitialPrompt is now handled by Backend via LaunchArgs
-	builder := NewPodBuilder(runner).
-		WithPodKey("pod-key").
-		WithAgentType("claude-code").
-		WithLaunchCommand("claude", []string{"--headless"}).
-		WithEnvVars(map[string]string{"ENV1": "value1"}).
-		WithEnvVar("ENV2", "value2").
-		WithTerminalSize(40, 120).
-		WithWorkDirConfig(&client.WorkDirConfig{
-			Type:          "worktree",
-			RepositoryURL: "https://github.com/test/repo.git",
-			Branch:        "main",
-		}).
-		WithFilesToCreate([]client.FileToCreate{
-			{PathTemplate: "{{.sandbox.root_path}}/test.txt", Content: "test"},
-		})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "pod-key",
+		LaunchCommand: "claude",
+		LaunchArgs:    []string{"--headless"},
+		EnvVars: map[string]string{
+			"ENV1": "value1",
+			"ENV2": "value2",
+		},
+		SandboxConfig: &runnerv1.SandboxConfig{
+			RepositoryUrl:  "https://github.com/test/repo.git",
+			SourceBranch:   "main",
+			CredentialType: "runner_local",
+		},
+		FilesToCreate: []*runnerv1.FileToCreate{
+			{Path: "{{.sandbox.root_path}}/test.txt", Content: "test"},
+		},
+	}
 
-	if builder.podKey != "pod-key" {
-		t.Errorf("podKey = %v, want pod-key", builder.podKey)
+	builder := NewPodBuilder(runner).
+		WithCommand(cmd).
+		WithTerminalSize(40, 120)
+
+	if builder.cmd.PodKey != "pod-key" {
+		t.Errorf("podKey = %v, want pod-key", builder.cmd.PodKey)
 	}
-	if builder.agentType != "claude-code" {
-		t.Errorf("agentType = %v, want claude-code", builder.agentType)
+	if len(builder.cmd.LaunchArgs) != 1 || builder.cmd.LaunchArgs[0] != "--headless" {
+		t.Errorf("launchArgs = %v, want [--headless]", builder.cmd.LaunchArgs)
 	}
-	if len(builder.launchArgs) != 1 || builder.launchArgs[0] != "--headless" {
-		t.Errorf("launchArgs = %v, want [--headless]", builder.launchArgs)
+	if builder.cmd.EnvVars["ENV1"] != "value1" {
+		t.Errorf("envVars[ENV1] = %v, want value1", builder.cmd.EnvVars["ENV1"])
 	}
-	if builder.envVars["ENV1"] != "value1" {
-		t.Errorf("envVars[ENV1] = %v, want value1", builder.envVars["ENV1"])
-	}
-	if builder.envVars["ENV2"] != "value2" {
-		t.Errorf("envVars[ENV2] = %v, want value2", builder.envVars["ENV2"])
+	if builder.cmd.EnvVars["ENV2"] != "value2" {
+		t.Errorf("envVars[ENV2] = %v, want value2", builder.cmd.EnvVars["ENV2"])
 	}
 	if builder.rows != 40 || builder.cols != 120 {
 		t.Errorf("terminal size = %dx%d, want 40x120", builder.rows, builder.cols)
 	}
-	if builder.workDirConfig == nil {
-		t.Error("workDirConfig should not be nil")
+	if builder.cmd.SandboxConfig == nil {
+		t.Error("sandboxConfig should not be nil")
 	}
-	if len(builder.filesToCreate) != 1 {
+	if len(builder.cmd.FilesToCreate) != 1 {
 		t.Error("filesToCreate not set correctly")
 	}
 }
@@ -270,11 +279,14 @@ func BenchmarkPodBuilderFluentAPI(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		cmd := &runnerv1.CreatePodCommand{
+			PodKey:        "pod-1",
+			LaunchCommand: "claude",
+			LaunchArgs:    []string{"--headless"},
+			EnvVars:       map[string]string{"KEY": "VALUE"},
+		}
 		NewPodBuilder(runner).
-			WithPodKey("pod-1").
-			WithAgentType("claude-code").
-			WithLaunchCommand("claude", []string{"--headless"}).
-			WithEnvVars(map[string]string{"KEY": "VALUE"}).
+			WithCommand(cmd).
 			WithTerminalSize(40, 120)
 	}
 }
@@ -289,10 +301,15 @@ func BenchmarkPodBuilderMergeEnvVars(b *testing.B) {
 		},
 	}
 
-	builder := NewPodBuilder(runner).
-		WithEnvVars(map[string]string{
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod",
+		LaunchCommand: "echo",
+		EnvVars: map[string]string{
 			"POD_VAR1": "pod_value1",
-		})
+		},
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -310,10 +327,13 @@ func TestPodBuilderBuildSuccessWithOptions(t *testing.T) {
 		},
 	}
 
-	builder := NewPodBuilder(runner).
-		WithPodKey("build-pod").
-		WithAgentType("claude-code").
-		WithLaunchCommand("echo", []string{"hello"})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "build-pod",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"hello"},
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	pod, err := builder.Build(context.Background())
 	if err != nil {
@@ -342,10 +362,12 @@ func TestPodBuilderBuildTerminalError(t *testing.T) {
 	}
 
 	// Use a command that doesn't exist
-	builder := NewPodBuilder(runner).
-		WithPodKey("error-pod").
-		WithAgentType("test").
-		WithLaunchCommand("/nonexistent/command/path/that/doesnt/exist/12345", nil)
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "error-pod",
+		LaunchCommand: "/nonexistent/command/path/that/doesnt/exist/12345",
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	pod, err := builder.Build(context.Background())
 	// May or may not fail depending on terminal implementation
@@ -357,9 +379,9 @@ func TestPodBuilderBuildTerminalError(t *testing.T) {
 	}
 }
 
-// --- Additional tests for setupWorkDir coverage ---
+// --- Additional tests for setup coverage ---
 
-func TestPodBuilderSetupWorkDirNoManager(t *testing.T) {
+func TestPodBuilderSetupNoManager(t *testing.T) {
 	tempDir := t.TempDir()
 	runner := &Runner{
 		cfg: &config.Config{
@@ -368,9 +390,13 @@ func TestPodBuilderSetupWorkDirNoManager(t *testing.T) {
 	}
 
 	// No workspace manager, but with config
-	builder := NewPodBuilder(runner).
-		WithPodKey("workspace-test").
-		WithLaunchCommand("echo", []string{"test"})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "workspace-test",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"test"},
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	pod, err := builder.Build(context.Background())
 	if err != nil {
@@ -382,9 +408,9 @@ func TestPodBuilderSetupWorkDirNoManager(t *testing.T) {
 	}
 }
 
-// --- Test setupWorkDir with TempWorkspace ---
+// --- Test setup with empty SandboxConfig ---
 
-func TestPodBuilderSetupWorkDirWithTempWorkspace(t *testing.T) {
+func TestPodBuilderSetupWithEmptySandbox(t *testing.T) {
 	tempDir := t.TempDir()
 
 	ws, err := workspace.NewManager(tempDir, "")
@@ -399,12 +425,16 @@ func TestPodBuilderSetupWorkDirWithTempWorkspace(t *testing.T) {
 		workspace: ws,
 	}
 
-	builder := NewPodBuilder(runner).
-		WithPodKey("temp-workspace-test").
-		WithLaunchCommand("echo", []string{"test"}).
-		WithWorkDirConfig(&client.WorkDirConfig{
-			Type: "tempdir",
-		})
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "temp-workspace-test",
+		LaunchCommand: "echo",
+		LaunchArgs:    []string{"test"},
+		SandboxConfig: &runnerv1.SandboxConfig{
+			// Empty sandbox config - creates empty workspace
+		},
+	}
+
+	builder := NewPodBuilder(runner).WithCommand(cmd)
 
 	pod, err := builder.Build(context.Background())
 	if err != nil {

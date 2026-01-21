@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
@@ -254,12 +255,12 @@ func TestMockConnectionSimulateCreatePod(t *testing.T) {
 	handler := NewRunnerMessageHandler(r, store, mockConn)
 	mockConn.SetHandler(handler)
 
-	req := client.CreatePodRequest{
+	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "mock-pod",
 		LaunchCommand: "echo",
 	}
 
-	err := mockConn.SimulateCreatePod(req)
+	err := mockConn.SimulateCreatePod(cmd)
 	if err != nil {
 		t.Logf("SimulateCreatePod: %v", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
 // AgentConfigProvider provides agent configuration data for ConfigBuilder
@@ -24,34 +25,6 @@ type AgentConfigProvider interface {
 // Note: AgentConfigProvider is implemented by compositeProvider in API handlers
 // that combine the three sub-services (AgentTypeService, CredentialProfileService, UserConfigService)
 
-// PodConfig represents the computed configuration to send to Runner
-type PodConfig struct {
-	LaunchCommand string            `json:"launch_command"`
-	LaunchArgs    []string          `json:"launch_args"`
-	EnvVars       map[string]string `json:"env_vars"`
-	FilesToCreate []FileToCreate    `json:"files_to_create"`
-	WorkDirConfig WorkDirConfig     `json:"work_dir_config"`
-}
-
-// FileToCreate represents a file to be created in the sandbox
-type FileToCreate struct {
-	PathTemplate string `json:"path_template"`
-	Content      string `json:"content"`
-	Mode         int    `json:"mode,omitempty"`
-	IsDirectory  bool   `json:"is_directory,omitempty"`
-}
-
-// WorkDirConfig represents the working directory configuration
-type WorkDirConfig struct {
-	Type          string `json:"type"` // "worktree", "tempdir", "local"
-	RepositoryURL string `json:"repository_url,omitempty"`
-	Branch        string `json:"branch,omitempty"`
-	TicketID      string `json:"ticket_id,omitempty"`
-	GitToken      string `json:"git_token,omitempty"`
-	SSHKeyPath    string `json:"ssh_key_path,omitempty"`
-	LocalPath     string `json:"local_path,omitempty"`
-}
-
 // ConfigBuildRequest contains all the information needed to build a pod config
 type ConfigBuildRequest struct {
 	AgentTypeID         int64
@@ -59,18 +32,33 @@ type ConfigBuildRequest struct {
 	UserID              int64
 	CredentialProfileID *int64
 
-	// Repository info
-	RepositoryURL string
-	Branch        string
-	TicketID      string
-	GitToken      string
-	SSHKeyPath    string
-	LocalPath     string
+	// Repository configuration
+	RepositoryURL string // Repository clone URL
+	SourceBranch  string // Branch to checkout
+
+	// Git authentication
+	// CredentialType determines how to authenticate:
+	// - "runner_local": Use Runner's local git config, no credentials needed
+	// - "oauth" or "pat": Use GitToken
+	// - "ssh_key": Use SSHPrivateKey
+	CredentialType string
+	GitToken       string // For oauth/pat types
+	SSHPrivateKey  string // For ssh_key type (private key content)
+
+	// Ticket association
+	TicketID string
+
+	// Preparation script (from Repository)
+	PreparationScript  string
+	PreparationTimeout int
+
+	// Local path mode (reserved for future)
+	LocalPath string
 
 	// User-provided config overrides
 	ConfigOverrides map[string]interface{}
 
-	// Initial prompt (appended to LaunchArgs)
+	// Initial prompt (prepended to LaunchArgs)
 	InitialPrompt string
 
 	// Runtime info (provided by Runner during handshake)
@@ -79,69 +67,105 @@ type ConfigBuildRequest struct {
 }
 
 // ConfigBuilder builds pod configurations from agent type templates
+// It uses the Strategy pattern to delegate agent-specific logic to AgentBuilder implementations
 type ConfigBuilder struct {
 	provider AgentConfigProvider
+	registry *AgentBuilderRegistry
 }
 
-// NewConfigBuilder creates a new ConfigBuilder
+// NewConfigBuilder creates a new ConfigBuilder with default builder registry
 func NewConfigBuilder(provider AgentConfigProvider) *ConfigBuilder {
 	return &ConfigBuilder{
 		provider: provider,
+		registry: NewAgentBuilderRegistry(),
 	}
 }
 
-// BuildPodConfig builds the complete pod configuration
-func (b *ConfigBuilder) BuildPodConfig(ctx context.Context, req *ConfigBuildRequest) (*PodConfig, error) {
+// NewConfigBuilderWithRegistry creates a ConfigBuilder with a custom registry
+// This is useful for testing or when custom builders need to be registered
+func NewConfigBuilderWithRegistry(provider AgentConfigProvider, registry *AgentBuilderRegistry) *ConfigBuilder {
+	return &ConfigBuilder{
+		provider: provider,
+		registry: registry,
+	}
+}
+
+// BuildPodCommand builds the complete pod command using the Strategy pattern.
+// It delegates agent-specific logic to the appropriate AgentBuilder.
+func (b *ConfigBuilder) BuildPodCommand(ctx context.Context, req *ConfigBuildRequest) (*runnerv1.CreatePodCommand, error) {
 	// 1. Get agent type
 	agentType, err := b.provider.GetAgentType(ctx, req.AgentTypeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get agent type: %w", err)
 	}
 
-	// 2. Merge configs: ConfigSchema defaults + user personal config + overrides
+	// 2. Get the appropriate builder strategy for this agent type
+	builder := b.registry.Get(agentType.Slug)
+
+	// 3. Merge configs: ConfigSchema defaults + user personal config + overrides
 	config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentTypeID, agent.ConfigValues(req.ConfigOverrides))
 
-	// 3. Get credentials and inject as env vars
-	envVars, err := b.buildEnvVars(ctx, req, agentType)
+	// 4. Get credentials
+	creds, isRunnerHost, err := b.provider.GetEffectiveCredentialsForPod(ctx, req.UserID, req.AgentTypeID, req.CredentialProfileID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build env vars: %w", err)
 	}
 
-	// 4. Build template context
+	// 5. Build template context
 	templateCtx := b.buildTemplateContext(req, config)
 
-	// 5. Build launch args from CommandTemplate
-	launchArgs, err := b.buildLaunchArgs(agentType.CommandTemplate, config, templateCtx)
+	// 6. Create build context for the strategy
+	buildCtx := NewBuildContext(req, agentType, config, creds, isRunnerHost, templateCtx)
+
+	// 7. Use builder strategy to build launch args
+	launchArgs, err := builder.BuildLaunchArgs(buildCtx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build launch args: %w", err)
 	}
 
-	// Prepend InitialPrompt to launch args if provided.
-	// Claude Code CLI syntax: claude [prompt] [options]
-	// The prompt must come BEFORE options, not after.
-	if req.InitialPrompt != "" {
-		launchArgs = append([]string{req.InitialPrompt}, launchArgs...)
-	}
+	// 8. Handle InitialPrompt using agent-specific strategy
+	// Different agents handle prompts differently:
+	// - Claude Code: prepend to args (claude [prompt] [options])
+	// - Gemini CLI: append to args (gemini [options] [prompt])
+	// - Aider: does not support command-line prompt
+	launchArgs = builder.HandleInitialPrompt(buildCtx, launchArgs)
 
-	// 6. Build files to create from FilesTemplate
-	filesToCreate, err := b.buildFilesToCreate(agentType.FilesTemplate, config, templateCtx)
+	// 9. Build files to create using strategy
+	filesToCreate, err := builder.BuildFilesToCreate(buildCtx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build files to create: %w", err)
 	}
 
-	// 7. Build work dir config
-	workDirConfig := b.buildWorkDirConfig(req)
+	// 10. Build env vars using strategy
+	envVars, err := builder.BuildEnvVars(buildCtx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build env vars: %w", err)
+	}
 
-	return &PodConfig{
+	// 11. Build sandbox config (common for all agents)
+	sandboxConfig := b.buildSandboxConfig(req)
+
+	// 12. Create the command
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        req.PodKey,
 		LaunchCommand: agentType.LaunchCommand,
 		LaunchArgs:    launchArgs,
 		EnvVars:       envVars,
 		FilesToCreate: filesToCreate,
-		WorkDirConfig: workDirConfig,
-	}, nil
+		SandboxConfig: sandboxConfig,
+		InitialPrompt: req.InitialPrompt,
+	}
+
+	// 13. Allow post-processing by the builder
+	if err := builder.PostProcess(buildCtx, cmd); err != nil {
+		return nil, fmt.Errorf("failed to post-process command: %w", err)
+	}
+
+	return cmd, nil
 }
 
 // buildEnvVars builds environment variables including credentials
+// Deprecated: Use AgentBuilder.BuildEnvVars instead. Kept for backward compatibility.
 func (b *ConfigBuilder) buildEnvVars(ctx context.Context, req *ConfigBuildRequest, agentType *agent.AgentType) (map[string]string, error) {
 	envVars := make(map[string]string)
 
@@ -180,6 +204,7 @@ func (b *ConfigBuilder) buildTemplateContext(req *ConfigBuildRequest, config age
 }
 
 // buildLaunchArgs builds launch arguments from CommandTemplate
+// Deprecated: Use AgentBuilder.BuildLaunchArgs instead. Kept for backward compatibility.
 func (b *ConfigBuilder) buildLaunchArgs(cmdTemplate agent.CommandTemplate, config agent.ConfigValues, templateCtx map[string]interface{}) ([]string, error) {
 	var args []string
 
@@ -204,9 +229,10 @@ func (b *ConfigBuilder) buildLaunchArgs(cmdTemplate agent.CommandTemplate, confi
 	return args, nil
 }
 
-// buildFilesToCreate builds the list of files to create from FilesTemplate
-func (b *ConfigBuilder) buildFilesToCreate(filesTemplate agent.FilesTemplate, config agent.ConfigValues, templateCtx map[string]interface{}) ([]FileToCreate, error) {
-	var files []FileToCreate
+// buildFilesToCreateProto builds the list of files to create directly as Proto type
+// Deprecated: Use AgentBuilder.BuildFilesToCreate instead. Kept for backward compatibility.
+func (b *ConfigBuilder) buildFilesToCreateProto(filesTemplate agent.FilesTemplate, config agent.ConfigValues, templateCtx map[string]interface{}) ([]*runnerv1.FileToCreate, error) {
+	var files []*runnerv1.FileToCreate
 
 	for _, ft := range filesTemplate {
 		// Check condition
@@ -216,9 +242,9 @@ func (b *ConfigBuilder) buildFilesToCreate(filesTemplate agent.FilesTemplate, co
 
 		// For directories, just add the path
 		if ft.IsDirectory {
-			files = append(files, FileToCreate{
-				PathTemplate: ft.PathTemplate,
-				IsDirectory:  true,
+			files = append(files, &runnerv1.FileToCreate{
+				Path:        ft.PathTemplate,
+				IsDirectory: true,
 			})
 			continue
 		}
@@ -234,34 +260,38 @@ func (b *ConfigBuilder) buildFilesToCreate(filesTemplate agent.FilesTemplate, co
 			mode = 0644 // Default permission
 		}
 
-		files = append(files, FileToCreate{
-			PathTemplate: ft.PathTemplate,
-			Content:      content,
-			Mode:         mode,
+		files = append(files, &runnerv1.FileToCreate{
+			Path:    ft.PathTemplate,
+			Content: content,
+			Mode:    int32(mode),
 		})
 	}
 
 	return files, nil
 }
 
-// buildWorkDirConfig builds the working directory configuration
-func (b *ConfigBuilder) buildWorkDirConfig(req *ConfigBuildRequest) WorkDirConfig {
-	// Determine work dir type
-	workDirType := "tempdir"
-	if req.RepositoryURL != "" {
-		workDirType = "worktree"
-	} else if req.LocalPath != "" {
-		workDirType = "local"
+// buildSandboxConfig builds the sandbox configuration directly as Proto type
+func (b *ConfigBuilder) buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.SandboxConfig {
+	// Only create SandboxConfig if there's repository or local path config
+	if req.RepositoryURL == "" && req.LocalPath == "" {
+		return nil
 	}
 
-	return WorkDirConfig{
-		Type:          workDirType,
-		RepositoryURL: req.RepositoryURL,
-		Branch:        req.Branch,
-		TicketID:      req.TicketID,
-		GitToken:      req.GitToken,
-		SSHKeyPath:    req.SSHKeyPath,
-		LocalPath:     req.LocalPath,
+	timeout := int32(req.PreparationTimeout)
+	if timeout <= 0 {
+		timeout = 300 // Default 5 minutes
+	}
+
+	return &runnerv1.SandboxConfig{
+		RepositoryUrl:      req.RepositoryURL,
+		SourceBranch:       req.SourceBranch,
+		CredentialType:     req.CredentialType,
+		GitToken:           req.GitToken,
+		SshPrivateKey:      req.SSHPrivateKey,
+		TicketId:           req.TicketID,
+		PreparationScript:  req.PreparationScript,
+		PreparationTimeout: timeout,
+		LocalPath:          req.LocalPath,
 	}
 }
 

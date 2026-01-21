@@ -161,6 +161,8 @@ func setupMRSyncTestDB(t *testing.T) *gorm.DB {
 			ticket_prefix TEXT,
 			visibility TEXT NOT NULL DEFAULT 'organization',
 			imported_by_user_id INTEGER,
+			preparation_script TEXT,
+			preparation_timeout INTEGER DEFAULT 300,
 			is_active INTEGER DEFAULT 1,
 			deleted_at DATETIME,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

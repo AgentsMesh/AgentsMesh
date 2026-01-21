@@ -14,6 +14,7 @@ const (
 	ErrCodeCommandStart    = "COMMAND_START_FAILED"
 	ErrCodeWorkDirNotExist = "WORK_DIR_NOT_EXIST"
 	ErrCodeDiskFull        = "DISK_FULL"
+	ErrCodePrepareScript   = "PREPARE_SCRIPT_FAILED"
 )
 
 // PodError represents an error that occurred during pod operations.

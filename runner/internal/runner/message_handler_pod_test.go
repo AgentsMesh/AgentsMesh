@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
@@ -33,12 +34,13 @@ func TestOnCreatePodSuccess(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	req := client.CreatePodRequest{
-		PodKey:      "test-pod-1",
-		LaunchCommand: "echo",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "test-pod-1",
+		LaunchCommand: "sleep",
+		LaunchArgs:    []string{"10"},
 	}
 
-	err = handler.OnCreatePod(req)
+	err = handler.OnCreatePod(cmd)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -88,12 +90,12 @@ func TestOnCreatePodMaxCapacity(t *testing.T) {
 	// Add pod
 	store.Put("existing-pod", &Pod{ID: "existing-pod"})
 
-	req := client.CreatePodRequest{
-		PodKey:      "new-pod",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "new-pod",
 		LaunchCommand: "echo",
 	}
 
-	err := handler.OnCreatePod(req)
+	err := handler.OnCreatePod(cmd)
 	if err == nil {
 		t.Error("expected error for max capacity")
 	}
@@ -122,17 +124,17 @@ func TestOnCreatePodInvalidCommand(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	req := client.CreatePodRequest{
-		PodKey:      "invalid-cmd-pod",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "invalid-cmd-pod",
 		LaunchCommand: "/nonexistent/command/path",
 	}
 
-	err = handler.OnCreatePod(req)
+	err = handler.OnCreatePod(cmd)
 	// Command may or may not fail depending on OS
 	t.Logf("OnCreatePod with invalid command: %v", err)
 }
 
-func TestOnCreatePodWithWorkDirConfig(t *testing.T) {
+func TestOnCreatePodWithSandboxConfig(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -140,27 +142,26 @@ func TestOnCreatePodWithWorkDirConfig(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	req := client.CreatePodRequest{
-		PodKey:        "workdir-pod",
+	// Empty sandbox config - just creates a sandbox directory
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "sandbox-pod",
 		LaunchCommand: "echo",
-		WorkDirConfig: &client.WorkDirConfig{
-			Type: "tempdir",
-		},
+		SandboxConfig: &runnerv1.SandboxConfig{},
 	}
 
-	err := handler.OnCreatePod(req)
+	err := handler.OnCreatePod(cmd)
 	if err != nil {
-		t.Logf("OnCreatePod with work dir config: %v", err)
+		t.Logf("OnCreatePod with sandbox config: %v", err)
 	}
 
 	// Clean up
-	pod, ok := store.Get("workdir-pod")
+	pod, ok := store.Get("sandbox-pod")
 	if ok && pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}
@@ -174,25 +175,25 @@ func TestOnCreatePodWithFilesToCreate(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	req := client.CreatePodRequest{
+	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "files-pod",
 		LaunchCommand: "echo",
-		FilesToCreate: []client.FileToCreate{
+		FilesToCreate: []*runnerv1.FileToCreate{
 			{
-				PathTemplate: "{{.sandbox.root_path}}/test.txt",
-				Content:      "test content",
-				Mode:         0644,
+				Path:    "{{.sandbox.root_path}}/test.txt",
+				Content: "test content",
+				Mode:    0644,
 			},
 		},
 	}
 
-	err := handler.OnCreatePod(req)
+	err := handler.OnCreatePod(cmd)
 	if err != nil {
 		t.Logf("OnCreatePod with files to create: %v", err)
 	}
@@ -204,7 +205,7 @@ func TestOnCreatePodWithFilesToCreate(t *testing.T) {
 	}
 }
 
-func TestOnCreatePodWithLocalWorkDir(t *testing.T) {
+func TestOnCreatePodWithLocalPath(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -212,28 +213,27 @@ func TestOnCreatePodWithLocalWorkDir(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	req := client.CreatePodRequest{
-		PodKey:        "local-workdir-pod",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "local-path-pod",
 		LaunchCommand: "echo",
-		WorkDirConfig: &client.WorkDirConfig{
-			Type:      "local",
+		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: tempDir,
 		},
 	}
 
-	err := handler.OnCreatePod(req)
+	err := handler.OnCreatePod(cmd)
 	if err != nil {
-		t.Logf("OnCreatePod with local work dir: %v", err)
+		t.Logf("OnCreatePod with local path: %v", err)
 	}
 
 	// Clean up
-	pod, ok := store.Get("local-workdir-pod")
+	pod, ok := store.Get("local-path-pod")
 	if ok && pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}
@@ -247,19 +247,19 @@ func TestOnCreatePodWithLaunchArgs(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	req := client.CreatePodRequest{
+	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "launch-args-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"hello", "world"},
 	}
 
-	err := handler.OnCreatePod(req)
+	err := handler.OnCreatePod(cmd)
 	if err != nil {
 		t.Logf("OnCreatePod with launch args: %v", err)
 	}
@@ -279,20 +279,20 @@ func TestOnCreatePodWithPromptInArgs(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Prompt is now passed as first argument (handled by Backend)
-	req := client.CreatePodRequest{
+	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "prompt-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"Hello from test"},
 	}
 
-	err := handler.OnCreatePod(req)
+	err := handler.OnCreatePod(cmd)
 	if err != nil {
 		t.Logf("OnCreatePod with prompt in args: %v", err)
 	}
@@ -320,17 +320,17 @@ func TestOnCreatePodWithWorktreeConfigError(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	req := client.CreatePodRequest{
+	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "worktree-error-pod",
 		LaunchCommand: "echo",
-		WorkDirConfig: &client.WorkDirConfig{
-			Type:          "worktree",
-			RepositoryURL: "https://github.com/test/repo",
-			Branch:        "main",
+		SandboxConfig: &runnerv1.SandboxConfig{
+			RepositoryUrl:  "https://github.com/test/repo",
+			SourceBranch:   "main",
+			CredentialType: "runner_local",
 		},
 	}
 
-	err := handler.OnCreatePod(req)
+	err := handler.OnCreatePod(cmd)
 	// Should fail because workspace manager is not available
 	if err == nil {
 		t.Error("expected error for worktree without workspace manager")
@@ -347,18 +347,18 @@ func TestOnCreatePodWithSendEventError(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	req := client.CreatePodRequest{
-		PodKey:      "send-error-pod",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "send-error-pod",
 		LaunchCommand: "echo",
 	}
 
-	err := handler.OnCreatePod(req)
+	err := handler.OnCreatePod(cmd)
 	// Pod should still be created even if send fails
 	if err != nil {
 		t.Logf("OnCreatePod with send error: %v", err)
@@ -528,12 +528,12 @@ func TestOnListPodsWithTerminalPID(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// First create a pod with a real terminal
-	createReq := client.CreatePodRequest{
-		PodKey:      "list-pid-pod",
+	cmd := &runnerv1.CreatePodCommand{
+		PodKey:        "list-pid-pod",
 		LaunchCommand: "sleep",
 	}
 
-	err := handler.OnCreatePod(createReq)
+	err := handler.OnCreatePod(cmd)
 	if err != nil {
 		t.Skipf("Could not create pod: %v", err)
 	}

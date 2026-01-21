@@ -19,34 +19,8 @@ func NewGRPCCommandSender(adapter *GRPCRunnerAdapter) *GRPCCommandSender {
 }
 
 // SendCreatePod sends a create pod command to a runner via gRPC.
-func (s *GRPCCommandSender) SendCreatePod(ctx context.Context, runnerID int64, req *runner.CreatePodRequest) error {
-	// Convert runner.CreatePodRequest to proto CreatePodCommand
-	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        req.PodKey,
-		LaunchCommand: req.LaunchCommand,
-		LaunchArgs:    req.LaunchArgs,
-		EnvVars:       req.EnvVars,
-	}
-
-	// Convert files_to_create
-	for _, f := range req.FilesToCreate {
-		cmd.FilesToCreate = append(cmd.FilesToCreate, &runnerv1.FileToCreate{
-			Path:        f.PathTemplate,
-			Content:     f.Content,
-			Mode:        int32(f.Mode),
-			IsDirectory: f.IsDirectory,
-		})
-	}
-
-	// Convert work_dir_config
-	if req.WorkDirConfig != nil {
-		cmd.WorkDirConfig = &runnerv1.WorkDirConfig{
-			Type:       req.WorkDirConfig.Type,
-			BranchName: req.WorkDirConfig.Branch,
-			Path:       req.WorkDirConfig.LocalPath,
-		}
-	}
-
+// Uses Proto type directly - no conversion needed.
+func (s *GRPCCommandSender) SendCreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error {
 	return s.adapter.SendCreatePod(runnerID, cmd)
 }
 
