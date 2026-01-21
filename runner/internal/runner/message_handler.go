@@ -7,6 +7,7 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal"
 )
 
 // RunnerMessageHandler implements client.MessageHandler interface.
@@ -57,8 +58,15 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 		return fmt.Errorf("failed to build pod: %w", err)
 	}
 
-	// Set output/exit handlers
-	pod.Terminal.SetOutputHandler(h.createOutputHandler(cmd.PodKey))
+	// Create output aggregator to reduce gRPC message frequency
+	// Aggregates PTY output with 16ms window / 16KB buffer before sending
+	aggregator := h.createOutputAggregator(cmd.PodKey)
+	pod.OutputAggregator = aggregator
+
+	// Set output handler to write to aggregator instead of directly sending
+	pod.Terminal.SetOutputHandler(func(data []byte) {
+		aggregator.Write(data)
+	})
 	pod.Terminal.SetExitHandler(h.createExitHandler(cmd.PodKey))
 
 	// Start terminal
@@ -94,6 +102,11 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 	pod := h.podStore.Delete(req.PodKey)
 	if pod == nil {
 		return fmt.Errorf("pod not found: %s", req.PodKey)
+	}
+
+	// Stop output aggregator first to flush any remaining data
+	if pod.OutputAggregator != nil {
+		pod.OutputAggregator.Stop()
 	}
 
 	// Stop terminal
@@ -186,6 +199,14 @@ func (h *RunnerMessageHandler) OnTerminalRedraw(req client.TerminalRedrawRequest
 
 // Helper methods
 
+// createOutputAggregator creates an OutputAggregator that aggregates PTY output
+// before sending to reduce gRPC message frequency from 4000-6700/s to ~60/s.
+func (h *RunnerMessageHandler) createOutputAggregator(podKey string) *terminal.OutputAggregator {
+	return terminal.NewOutputAggregator(func(data []byte) {
+		h.sendTerminalOutput(podKey, data)
+	})
+}
+
 func (h *RunnerMessageHandler) createOutputHandler(podKey string) func([]byte) {
 	return func(data []byte) {
 		h.sendTerminalOutput(podKey, data)
@@ -198,6 +219,10 @@ func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 
 		pod := h.podStore.Delete(podKey)
 		if pod != nil {
+			// Stop output aggregator to flush remaining data before notifying server
+			if pod.OutputAggregator != nil {
+				pod.OutputAggregator.Stop()
+			}
 			pod.SetStatus(PodStatusStopped)
 		}
 
