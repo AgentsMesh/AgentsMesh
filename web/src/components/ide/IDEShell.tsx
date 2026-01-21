@@ -73,9 +73,15 @@ export function IDEShell({
   sidebarContent,
   className,
 }: IDEShellProps) {
-  const { bottomPanelOpen, activeActivity, _hasHydrated } = useIDEStore();
-  const { addPane } = useWorkspaceStore();
-  const { fetchPods } = usePodStore();
+  // Use selectors to only subscribe to specific state slices
+  // This prevents unnecessary re-renders when unrelated state changes
+  const bottomPanelOpen = useIDEStore((state) => state.bottomPanelOpen);
+  const activeActivity = useIDEStore((state) => state.activeActivity);
+  const _hasHydrated = useIDEStore((state) => state._hasHydrated);
+  const addPane = useWorkspaceStore((state) => state.addPane);
+  // Use selector to only subscribe to fetchPods action, not the entire pods array
+  // This prevents re-renders when pod titles or statuses change
+  const fetchPods = usePodStore((state) => state.fetchPods);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [createPodModalOpen, setCreatePodModalOpen] = useState(false);
   const [addRunnerModalOpen, setAddRunnerModalOpen] = useState(false);
