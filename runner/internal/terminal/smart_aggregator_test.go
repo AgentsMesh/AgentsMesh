@@ -120,6 +120,118 @@ func TestSmartAggregator_DiscardOldFrames(t *testing.T) {
 	}
 }
 
+// TestSmartAggregator_SynchronizedOutputFrameBoundary tests frame boundary detection
+// using Synchronized Output sequences (ESC[?2026h / ESC[?2026l) which is used by
+// Claude Code and modern TUI frameworks.
+func TestSmartAggregator_SynchronizedOutputFrameBoundary(t *testing.T) {
+	var received []byte
+	var mu sync.Mutex
+	done := make(chan struct{}, 10)
+
+	agg := NewSmartAggregator(
+		func(data []byte) {
+			mu.Lock()
+			received = data
+			mu.Unlock()
+			done <- struct{}{}
+		},
+		func() float64 { return 0.3 }, // Moderate pressure - triggers frame discard
+		WithSmartBaseDelay(10*time.Millisecond),
+	)
+	defer agg.Stop()
+
+	// Simulate Claude Code output pattern:
+	// Frame 1: ESC[?2026h ... content1 ... ESC[?2026l
+	// Frame 2: ESC[?2026h ... content2 ... ESC[?2026l
+	// Only Frame 2 should be kept (from the last frame START onwards)
+
+	syncStart := "\x1b[?2026h"
+	syncEnd := "\x1b[?2026l"
+
+	// Write Frame 1 (old frame - should be discarded)
+	agg.Write([]byte(syncStart + "old frame content" + syncEnd))
+	// Write Frame 2 (new frame - should be kept)
+	agg.Write([]byte(syncStart + "new frame content" + syncEnd))
+
+	// Wait for flush
+	select {
+	case <-done:
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("Timeout waiting for flush")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	// Should contain the complete Frame 2 (from last ESC[?2026h onwards)
+	if !bytes.Contains(received, []byte(syncStart)) {
+		t.Errorf("Expected sync output start sequence in result, got '%s'", string(received))
+	}
+	if !bytes.Contains(received, []byte(syncEnd)) {
+		t.Errorf("Expected sync output end sequence in result, got '%s'", string(received))
+	}
+	if !bytes.Contains(received, []byte("new frame content")) {
+		t.Errorf("Expected 'new frame content' in result, got '%s'", string(received))
+	}
+	// Old frame should be discarded
+	if bytes.Contains(received, []byte("old frame content")) {
+		t.Errorf("Old frame should be discarded, but got '%s'", string(received))
+	}
+}
+
+// TestSmartAggregator_SyncOutputPriorityOverClearScreen tests that Synchronized Output
+// (ESC[?2026h) takes priority over Clear Screen (ESC[2J) for frame boundary detection.
+func TestSmartAggregator_SyncOutputPriorityOverClearScreen(t *testing.T) {
+	var received []byte
+	var mu sync.Mutex
+	done := make(chan struct{}, 10)
+
+	agg := NewSmartAggregator(
+		func(data []byte) {
+			mu.Lock()
+			received = data
+			mu.Unlock()
+			done <- struct{}{}
+		},
+		func() float64 { return 0.3 },
+		WithSmartBaseDelay(10*time.Millisecond),
+	)
+	defer agg.Stop()
+
+	// Mix of sync output and clear screen sequences
+	// Sync output start should take priority
+	syncStart := "\x1b[?2026h"
+	syncEnd := "\x1b[?2026l"
+	clearScreen := "\x1b[2J"
+
+	// Pattern: clear_screen -> old_content -> sync_start -> new_content -> sync_end
+	// Should keep from sync_start onwards (not from clear_screen)
+	agg.Write([]byte(clearScreen + "after clear"))
+	agg.Write([]byte(syncStart + "sync frame" + syncEnd))
+
+	// Wait for flush
+	select {
+	case <-done:
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("Timeout waiting for flush")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	// Should contain complete sync frame
+	if !bytes.Contains(received, []byte(syncStart)) {
+		t.Errorf("Expected sync output start sequence, got '%s'", string(received))
+	}
+	if !bytes.Contains(received, []byte("sync frame")) {
+		t.Errorf("Expected 'sync frame' in result, got '%s'", string(received))
+	}
+	// Content before sync start should be discarded (sync output takes priority)
+	if bytes.Contains(received, []byte("after clear")) {
+		t.Errorf("Content before sync start should be discarded, got '%s'", string(received))
+	}
+}
+
 func TestSmartAggregator_MaxSizeFlush(t *testing.T) {
 	var flushCount int32
 	done := make(chan struct{}, 10)

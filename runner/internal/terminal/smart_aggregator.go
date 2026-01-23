@@ -10,23 +10,41 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
-// ANSI clear screen sequence: ESC[2J
-var clearScreenSeq = []byte{0x1b, '[', '2', 'J'}
+// Frame boundary sequences for TUI applications
+var (
+	// Legacy: ANSI clear screen sequence: ESC[2J
+	// Used by traditional terminal apps like `clear` command
+	clearScreenSeq = []byte{0x1b, '[', '2', 'J'}
+
+	// Modern: Synchronized Output start sequence: ESC[?2026h
+	// Used by Claude Code and modern TUI frameworks (Ink, Bubbletea, etc.)
+	// Reference: https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036
+	//
+	// A complete frame looks like: ESC[?2026h <content> ESC[?2026l
+	// When discarding old frames, we find the last frame START (ESC[?2026h)
+	// and keep everything from that point onwards.
+	// Note: We only need to detect the START sequence for frame boundary detection.
+	// The END sequence (ESC[?2026l) is not needed because we keep from START onwards.
+	syncOutputStartSeq = []byte{0x1b, '[', '?', '2', '0', '2', '6', 'h'}
+)
 
 // SmartAggregator intelligently aggregates TUI output with adaptive frame rate.
 //
 // Key features:
-// - Time-window aggregation (base 16ms = 60 FPS)
-// - Clear screen detection for frame boundary identification
+// - Time-window aggregation (base 50ms = 20 FPS)
+// - Frame boundary detection for identifying complete frames:
+//   - Primary: Synchronized Output start (ESC[?2026h) - used by Claude Code
+//   - Fallback: Clear screen (ESC[2J) - used by traditional apps
 // - High load: only keep latest complete frame (discard old frames)
-// - Adaptive delay based on queue pressure (16ms → 200ms)
+// - Adaptive delay based on queue pressure (50ms → 500ms)
 // - Backpressure: pauses when consumer signals overload
 // - ttyd-style flow control: propagates backpressure to PTY layer
 // - Relay output: optional callback for sending output to Relay in addition to gRPC
 // - Serialize mode: use VirtualTerminal.Serialize() for bandwidth optimization
 //
-// Design principle: TUI apps (like Claude Code) use full-screen redraws,
-// so dropping intermediate frames doesn't affect final display.
+// Design principle: TUI apps (like Claude Code) use Synchronized Output mode
+// (ESC[?2026h to start, ESC[?2026l to end) for atomic frame updates.
+// We detect the START sequence to keep the latest complete frame and discard older ones.
 type SmartAggregator struct {
 	mu       sync.Mutex
 	buffer   bytes.Buffer
@@ -366,10 +384,33 @@ func findLastValidUTF8Boundary(data []byte) int {
 	return len(data)
 }
 
-// discardOldFrames keeps only the content after the last clear screen sequence.
+// discardOldFrames keeps only the latest complete frame.
 // This ensures we send complete frames, avoiding screen tearing.
+//
+// Frame boundary detection priority:
+// 1. Synchronized Output start (ESC[?2026h) - used by Claude Code and modern TUI apps
+//    A frame is: ESC[?2026h <content> ESC[?2026l
+//    We keep from the LAST frame start onwards to preserve the newest frame
+// 2. Clear screen (ESC[2J) - used by traditional terminal apps
 func (a *SmartAggregator) discardOldFrames() {
 	data := a.buffer.Bytes()
+
+	// Priority 1: Check for Synchronized Output START sequence
+	// Claude Code uses ESC[?2026h to begin a frame and ESC[?2026l to end it.
+	// We find the last frame start to keep the newest complete frame.
+	if idx := bytes.LastIndex(data, syncOutputStartSeq); idx > 0 {
+		// Keep only content from the last frame start onwards
+		discardLen := idx
+		newData := make([]byte, len(data)-idx)
+		copy(newData, data[idx:])
+		a.buffer.Reset()
+		a.buffer.Write(newData)
+		logger.Terminal().Debug("SmartAggregator discarded old frames (sync output start)",
+			"discarded_bytes", discardLen, "kept_bytes", len(newData))
+		return
+	}
+
+	// Priority 2: Fallback to clear screen sequence (legacy apps)
 	if idx := bytes.LastIndex(data, clearScreenSeq); idx > 0 {
 		// Keep only content from the last clear screen onwards
 		discardLen := idx
@@ -377,7 +418,7 @@ func (a *SmartAggregator) discardOldFrames() {
 		copy(newData, data[idx:])
 		a.buffer.Reset()
 		a.buffer.Write(newData)
-		logger.Terminal().Debug("SmartAggregator discarded old frames",
+		logger.Terminal().Debug("SmartAggregator discarded old frames (clear screen)",
 			"discarded_bytes", discardLen, "kept_bytes", len(newData))
 	}
 }
