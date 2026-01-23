@@ -17,6 +17,7 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
+  Square,
 } from "lucide-react";
 
 interface TerminalPaneProps {
@@ -43,8 +44,10 @@ export function TerminalPane({
   className,
 }: TerminalPaneProps) {
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isTerminating, setIsTerminating] = useState(false);
   const { terminalFontSize, setActivePane } = useWorkspaceStore();
   const initProgress = usePodStore((state) => state.initProgress[podKey]);
+  const terminatePod = usePodStore((state) => state.terminatePod);
 
   // Pod status tracking
   const { podStatus, isPodReady, podError } = usePodStatus(podKey);
@@ -73,6 +76,18 @@ export function TerminalPane({
       fitAddonRef.current?.fit();
     }, 100);
   }, [isMaximized, onMaximize, fitAddonRef]);
+
+  const handleTerminate = useCallback(async () => {
+    setIsTerminating(true);
+    try {
+      await terminatePod(podKey);
+      onClose?.();
+    } catch (error) {
+      console.error("Failed to terminate pod:", error);
+    } finally {
+      setIsTerminating(false);
+    }
+  }, [podKey, terminatePod, onClose]);
 
   const getStatusColor = () => {
     switch (connectionStatus) {
@@ -211,6 +226,23 @@ export function TerminalPane({
                 <p className="text-sm text-terminal-text-muted">
                   Status: <span className="text-yellow-500 dark:text-yellow-400">{podStatus}</span>
                 </p>
+              )}
+              {/* Show terminate button when status is unknown */}
+              {podStatus === "unknown" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 text-red-500 dark:text-red-400 border-red-500/50 hover:bg-red-500/10"
+                  onClick={handleTerminate}
+                  disabled={isTerminating}
+                >
+                  {isTerminating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Square className="w-4 h-4 mr-2" />
+                  )}
+                  Terminate Pod
+                </Button>
               )}
             </div>
           )}
