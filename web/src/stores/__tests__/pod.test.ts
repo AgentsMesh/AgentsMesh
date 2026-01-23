@@ -142,6 +142,38 @@ describe("Pod Store", () => {
       expect(state.loading).toBe(false);
     });
 
+    it("should add fetched pod to pods array when not present", async () => {
+      vi.mocked(podApi.get).mockResolvedValue({ pod: mockPod });
+
+      // Start with empty pods array
+      expect(usePodStore.getState().pods).toEqual([]);
+
+      await act(async () => {
+        await usePodStore.getState().fetchPod("pod-abc-123");
+      });
+
+      const state = usePodStore.getState();
+      expect(state.pods).toHaveLength(1);
+      expect(state.pods[0]).toEqual(mockPod);
+    });
+
+    it("should update existing pod in pods array when present", async () => {
+      const updatedPod = { ...mockPod, status: "terminated" as const };
+      vi.mocked(podApi.get).mockResolvedValue({ pod: updatedPod });
+
+      // Start with existing pod
+      usePodStore.setState({ pods: [mockPod, mockPod2] });
+
+      await act(async () => {
+        await usePodStore.getState().fetchPod("pod-abc-123");
+      });
+
+      const state = usePodStore.getState();
+      expect(state.pods).toHaveLength(2);
+      expect(state.pods.find(p => p.pod_key === "pod-abc-123")?.status).toBe("terminated");
+      expect(state.pods.find(p => p.pod_key === "pod-def-456")).toEqual(mockPod2);
+    });
+
     it("should handle fetch error", async () => {
       vi.mocked(podApi.get).mockRejectedValue({ message: "Pod not found" });
 

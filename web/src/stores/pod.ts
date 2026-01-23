@@ -69,7 +69,19 @@ export const usePodStore = create<PodState>((set) => ({
     set({ loading: true, error: null });
     try {
       const response = await podApi.get(podKey);
-      set({ currentPod: response.pod, loading: false });
+      const fetchedPod = response.pod;
+      set((state) => {
+        // Update or add to pods array
+        const existingIndex = state.pods.findIndex((p) => p.pod_key === podKey);
+        const updatedPods = existingIndex >= 0
+          ? state.pods.map((p) => (p.pod_key === podKey ? fetchedPod : p))
+          : [...state.pods, fetchedPod];
+        return {
+          pods: updatedPods,
+          currentPod: fetchedPod,
+          loading: false,
+        };
+      });
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to fetch pod"),
