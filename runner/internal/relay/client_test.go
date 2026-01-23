@@ -227,3 +227,116 @@ func TestSendSnapshot(t *testing.T) {
 
 	c.Stop()
 }
+
+func TestSetReconnectHandler(t *testing.T) {
+	c := NewClient("ws://localhost:8080", "pod-1", "session-1", "test-token", nil)
+
+	reconnectCalled := false
+	c.SetReconnectHandler(func() { reconnectCalled = true })
+	if c.onReconnect == nil {
+		t.Error("onReconnect not set")
+	}
+
+	// Trigger handler
+	c.onReconnect()
+	if !reconnectCalled {
+		t.Error("reconnect handler not called")
+	}
+}
+
+func TestReconnectOnDisconnect(t *testing.T) {
+	// Track connection attempts
+	connectionAttempts := 0
+	reconnected := make(chan struct{})
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		connectionAttempts++
+		conn, err := testUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+
+		if connectionAttempts == 1 {
+			// First connection: close immediately to trigger reconnect
+			conn.Close()
+			return
+		}
+
+		// Second connection: signal reconnect and keep open
+		defer conn.Close()
+		for {
+			if _, _, err := conn.ReadMessage(); err != nil {
+				return
+			}
+		}
+	}))
+	defer srv.Close()
+
+	url := "ws" + strings.TrimPrefix(srv.URL, "http")
+	c := NewClient(url, "pod-1", "session-1", "test-token", nil)
+
+	c.SetReconnectHandler(func() {
+		close(reconnected)
+	})
+
+	if err := c.Connect(); err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+	c.Start()
+
+	// Wait for reconnection
+	select {
+	case <-reconnected:
+		// Success
+	case <-time.After(5 * time.Second):
+		t.Error("timeout waiting for reconnect")
+	}
+
+	if connectionAttempts < 2 {
+		t.Errorf("expected at least 2 connection attempts, got %d", connectionAttempts)
+	}
+
+	c.Stop()
+}
+
+func TestNoReconnectOnGracefulClose(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := testUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		for {
+			if _, _, err := conn.ReadMessage(); err != nil {
+				return
+			}
+		}
+	}))
+	defer srv.Close()
+
+	url := "ws" + strings.TrimPrefix(srv.URL, "http")
+	c := NewClient(url, "pod-1", "session-1", "test-token", nil)
+
+	closeCalled := false
+	reconnectCalled := false
+
+	c.SetCloseHandler(func() { closeCalled = true })
+	c.SetReconnectHandler(func() { reconnectCalled = true })
+
+	if err := c.Connect(); err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+	c.Start()
+	time.Sleep(10 * time.Millisecond)
+
+	// Graceful stop
+	c.Stop()
+	time.Sleep(100 * time.Millisecond)
+
+	if !closeCalled {
+		t.Error("close handler should be called on graceful stop")
+	}
+	if reconnectCalled {
+		t.Error("reconnect handler should NOT be called on graceful stop")
+	}
+}

@@ -307,12 +307,59 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	})
 
 	// Set close handler - clean up relay client and aggregator relay output when connection closes
+	// NOTE: This is only called when connection is permanently closed (not during reconnect attempts)
 	relayClient.SetCloseHandler(func() {
-		log.Info("Relay connection closed", "pod_key", req.PodKey)
+		log.Info("Relay connection closed permanently", "pod_key", req.PodKey)
 		pod.SetRelayClient(nil)
 		// Clear aggregator relay output - will fall back to gRPC
 		if pod.Aggregator != nil {
 			pod.Aggregator.SetRelayOutput(nil)
+		}
+	})
+
+	// Set reconnect handler - restore relay output routing and resend snapshot after reconnection
+	relayClient.SetReconnectHandler(func() {
+		log.Info("Relay reconnected, restoring relay output", "pod_key", req.PodKey)
+
+		// Restore aggregator to route output through Relay
+		if pod.Aggregator != nil {
+			pod.Aggregator.SetRelayOutput(func(data []byte) {
+				if err := relayClient.SendOutput(data); err != nil {
+					log.Debug("Failed to send output to relay", "pod_key", req.PodKey, "error", err)
+				}
+			})
+		}
+
+		// Resend terminal snapshot to restore state
+		if pod.VirtualTerminal != nil {
+			termSnapshot := pod.VirtualTerminal.GetSnapshot()
+			relaySnapshot := &relay.TerminalSnapshot{
+				Cols:              uint16(termSnapshot.Cols),
+				Rows:              uint16(termSnapshot.Rows),
+				Lines:             termSnapshot.Lines,
+				SerializedContent: termSnapshot.SerializedContent,
+				CursorX:           termSnapshot.CursorX,
+				CursorY:           termSnapshot.CursorY,
+				CursorVisible:     termSnapshot.CursorVisible,
+				IsAltScreen:       termSnapshot.IsAltScreen,
+			}
+			if err := relayClient.SendSnapshot(relaySnapshot); err != nil {
+				log.Error("Failed to send snapshot after reconnect", "pod_key", req.PodKey, "error", err)
+			} else {
+				log.Info("Sent snapshot after reconnect", "pod_key", req.PodKey)
+			}
+		}
+
+		// For TUI apps, trigger redraw to refresh the display
+		if pod.VirtualTerminal != nil && pod.VirtualTerminal.IsAltScreen() && pod.Terminal != nil {
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				if err := pod.Terminal.Redraw(); err != nil {
+					log.Debug("Failed to trigger TUI redraw after reconnect", "pod_key", req.PodKey, "error", err)
+				} else {
+					log.Debug("Triggered TUI redraw after reconnect", "pod_key", req.PodKey)
+				}
+			}()
 		}
 	})
 

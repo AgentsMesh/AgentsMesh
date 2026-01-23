@@ -46,20 +46,23 @@ type Client struct {
 	connMu sync.RWMutex
 
 	// Handlers
-	onInput  InputHandler
-	onResize ResizeHandler
-	onClose  CloseHandler
+	onInput     InputHandler
+	onResize    ResizeHandler
+	onClose     CloseHandler
+	onReconnect func() // Called after successful reconnection
 
 	// State
-	connected   atomic.Bool
-	stopCh      chan struct{}
-	stopOnce    sync.Once
-	sendCh      chan []byte
-	logger      *slog.Logger
-	ctx         context.Context
-	cancel      context.CancelFunc
-	wg          sync.WaitGroup
-	reconnectMu sync.Mutex
+	connected    atomic.Bool
+	reconnecting atomic.Bool   // Prevents concurrent reconnect attempts
+	stopCh       chan struct{} // Signals client shutdown (permanent)
+	connDoneCh   chan struct{} // Signals current connection is done (closed on disconnect)
+	stopOnce     sync.Once
+	sendCh       chan []byte
+	logger       *slog.Logger
+	ctx          context.Context
+	cancel       context.CancelFunc
+	wg           sync.WaitGroup
+	reconnectMu  sync.Mutex
 }
 
 // NewClient creates a new Relay WebSocket client
@@ -70,12 +73,13 @@ func NewClient(relayURL, podKey, sessionID, token string, logger *slog.Logger) *
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Client{
-		relayURL:  relayURL,
-		podKey:    podKey,
-		sessionID: sessionID,
-		token:     token,
-		stopCh:    make(chan struct{}),
-		sendCh:    make(chan []byte, 256), // Buffered send channel
+		relayURL:   relayURL,
+		podKey:     podKey,
+		sessionID:  sessionID,
+		token:      token,
+		stopCh:     make(chan struct{}),
+		connDoneCh: make(chan struct{}),
+		sendCh:     make(chan []byte, 256), // Buffered send channel
 		logger: logger.With(
 			"component", "relay_client",
 			"pod_key", podKey,
@@ -99,6 +103,11 @@ func (c *Client) SetResizeHandler(handler ResizeHandler) {
 // SetCloseHandler sets the handler for connection close events
 func (c *Client) SetCloseHandler(handler CloseHandler) {
 	c.onClose = handler
+}
+
+// SetReconnectHandler sets the handler called after successful reconnection
+func (c *Client) SetReconnectHandler(handler func()) {
+	c.onReconnect = handler
 }
 
 // Connect establishes connection to the Relay server
@@ -254,8 +263,29 @@ func (c *Client) readLoop() {
 	defer c.wg.Done()
 	defer func() {
 		c.connected.Store(false)
-		if c.onClose != nil {
-			c.onClose()
+
+		// Signal writeLoop that this connection is done
+		// Safe to close multiple times via select
+		select {
+		case <-c.connDoneCh:
+			// Already closed
+		default:
+			close(c.connDoneCh)
+		}
+
+		// Check if this is a graceful shutdown (Stop() called) or unexpected disconnect
+		select {
+		case <-c.stopCh:
+			// Graceful shutdown - call onClose and don't reconnect
+			if c.onClose != nil {
+				c.onClose()
+			}
+		default:
+			// Unexpected disconnect - attempt reconnection
+			// Use atomic.Swap to prevent concurrent reconnect attempts
+			if !c.reconnecting.Swap(true) {
+				go c.reconnectLoop()
+			}
 		}
 	}()
 
@@ -304,6 +334,10 @@ func (c *Client) writeLoop() {
 	for {
 		select {
 		case <-c.stopCh:
+			return
+
+		case <-c.connDoneCh:
+			// Connection is done (readLoop exited), stop writeLoop
 			return
 
 		case data := <-c.sendCh:
@@ -375,5 +409,104 @@ func (c *Client) handleMessage(data []byte) {
 
 	default:
 		c.logger.Warn("Unknown message type", "type", msg.Type)
+	}
+}
+
+// reconnectLoop attempts to reconnect to the relay server with exponential backoff
+func (c *Client) reconnectLoop() {
+	defer c.reconnecting.Store(false)
+
+	// First, ensure the old connection is properly closed
+	// The connDoneCh is already closed by readLoop's defer, which signals writeLoop to exit
+	c.connMu.Lock()
+	if c.conn != nil {
+		c.conn.Close()
+		c.conn = nil
+	}
+	c.connMu.Unlock()
+
+	// Wait for the writeLoop to exit (readLoop already exited since we're in reconnectLoop)
+	// writeLoop should exit quickly since connDoneCh is closed
+	done := make(chan struct{})
+	go func() {
+		c.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Loops exited
+	case <-time.After(2 * time.Second):
+		c.logger.Warn("Timeout waiting for loops to exit before reconnect")
+	case <-c.stopCh:
+		c.logger.Info("Reconnect cancelled while waiting for loops, client stopped")
+		if c.onClose != nil {
+			c.onClose()
+		}
+		return
+	}
+
+	backoff := initialBackoff
+	const maxAttempts = 10
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		// Check if Stop() was called during reconnection
+		select {
+		case <-c.stopCh:
+			c.logger.Info("Reconnect cancelled, client stopped")
+			if c.onClose != nil {
+				c.onClose()
+			}
+			return
+		case <-c.ctx.Done():
+			c.logger.Info("Reconnect cancelled, context done")
+			if c.onClose != nil {
+				c.onClose()
+			}
+			return
+		case <-time.After(backoff):
+			// Wait before attempting reconnection
+		}
+
+		c.logger.Info("Attempting to reconnect to relay",
+			"attempt", attempt,
+			"max_attempts", maxAttempts,
+			"backoff", backoff)
+
+		c.reconnectMu.Lock()
+		err := c.connectInternal()
+		c.reconnectMu.Unlock()
+
+		if err != nil {
+			c.logger.Warn("Reconnect failed",
+				"error", err,
+				"attempt", attempt,
+				"next_backoff", min(backoff*2, maxReconnectDelay))
+			backoff = min(backoff*2, maxReconnectDelay)
+			continue
+		}
+
+		c.logger.Info("Reconnected to relay successfully")
+
+		// Create a new connDoneCh for the new connection
+		c.connDoneCh = make(chan struct{})
+
+		// Restart read/write loops
+		c.wg.Add(2)
+		go c.readLoop()
+		go c.writeLoop()
+
+		// Trigger reconnect callback (e.g., to resend snapshot)
+		if c.onReconnect != nil {
+			c.onReconnect()
+		}
+		return
+	}
+
+	// Failed to reconnect after max attempts - give up and call onClose
+	c.logger.Error("Failed to reconnect after max attempts",
+		"max_attempts", maxAttempts)
+	if c.onClose != nil {
+		c.onClose()
 	}
 }
