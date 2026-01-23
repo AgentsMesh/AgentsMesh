@@ -190,8 +190,19 @@ func (c *Client) Stop() {
 		}
 		c.connMu.Unlock()
 
-		// Wait for read/write loops to exit
-		c.wg.Wait()
+		// Wait for read/write loops to exit with timeout
+		done := make(chan struct{})
+		go func() {
+			c.wg.Wait()
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			// Normal exit
+		case <-time.After(5 * time.Second):
+			c.logger.Warn("Timeout waiting for relay loops to exit")
+		}
 
 		// Clean up connection reference
 		c.connMu.Lock()
