@@ -82,7 +82,7 @@ func (p *AliyunProvider) CreateRecord(ctx context.Context, subdomain, ip string)
 		"RR":         rr,
 		"Type":       "A",
 		"Value":      ip,
-		"TTL":        "300",
+		"TTL":        "600", // Aliyun minimum TTL is 600
 	}
 
 	resp, err := p.doRequest(ctx, params)
@@ -207,7 +207,7 @@ func (p *AliyunProvider) updateRecordByID(ctx context.Context, recordID, rr, ip 
 		"RR":       rr,
 		"Type":     "A",
 		"Value":    ip,
-		"TTL":      "300",
+		"TTL":      "600", // Aliyun minimum TTL is 600
 	}
 
 	resp, err := p.doRequest(ctx, params)
@@ -327,7 +327,7 @@ func (p *AliyunProvider) CreateTXTRecord(ctx context.Context, fqdn, value string
 		"RR":         rr,
 		"Type":       "TXT",
 		"Value":      value,
-		"TTL":        "120", // Short TTL for ACME challenge
+		"TTL":        "600", // Aliyun minimum TTL is 600
 	}
 
 	resp, err := p.doRequest(ctx, params)
@@ -411,7 +411,7 @@ func (p *AliyunProvider) updateTXTRecordByID(ctx context.Context, recordID, rr, 
 		"RR":       rr,
 		"Type":     "TXT",
 		"Value":    value,
-		"TTL":      "120",
+		"TTL":      "600", // Aliyun minimum TTL is 600
 	}
 
 	resp, err := p.doRequest(ctx, params)
