@@ -177,9 +177,12 @@ func (c *Client) Stop() {
 		close(c.stopCh)
 		c.cancel()
 
+		// Wait for read/write loops to exit first to avoid race on conn.WriteMessage
+		c.wg.Wait()
+
 		c.connMu.Lock()
 		if c.conn != nil {
-			// Send close message
+			// Send close message (safe now that loops have exited)
 			c.conn.WriteMessage(websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			c.conn.Close()
@@ -188,7 +191,6 @@ func (c *Client) Stop() {
 		c.connMu.Unlock()
 
 		c.connected.Store(false)
-		c.wg.Wait()
 	})
 }
 

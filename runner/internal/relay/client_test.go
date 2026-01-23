@@ -185,6 +185,7 @@ func TestHandleMessage(t *testing.T) {
 }
 
 func TestSendSnapshot(t *testing.T) {
+	received := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := testUpgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -196,7 +197,8 @@ func TestSendSnapshot(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if data[0] == MsgTypeSnapshot {
+			if len(data) > 0 && data[0] == MsgTypeSnapshot {
+				close(received)
 				return
 			}
 		}
@@ -210,10 +212,18 @@ func TestSendSnapshot(t *testing.T) {
 		t.Fatalf("Connect: %v", err)
 	}
 	c.Start()
-	defer c.Stop()
 
 	snapshot := &TerminalSnapshot{Cols: 80, Rows: 24}
 	if err := c.SendSnapshot(snapshot); err != nil {
 		t.Errorf("SendSnapshot: %v", err)
 	}
+
+	// Wait for snapshot to be received before stopping
+	select {
+	case <-received:
+	case <-time.After(time.Second):
+		t.Error("timeout waiting for snapshot")
+	}
+
+	c.Stop()
 }

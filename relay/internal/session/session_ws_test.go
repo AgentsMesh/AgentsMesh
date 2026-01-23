@@ -1,6 +1,7 @@
 package session
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -64,8 +65,8 @@ func TestRemoveBrowser(t *testing.T) {
 }
 
 func TestRemoveBrowser_LastBrowser(t *testing.T) {
-	called := false
-	s := NewTerminalSession("s1", "p1", 50*time.Millisecond, func(pk string) { called = true }, nil)
+	var called int32
+	s := NewTerminalSession("s1", "p1", 50*time.Millisecond, func(pk string) { atomic.StoreInt32(&called, 1) }, nil)
 	server, _, cleanup := newWSPair()
 	defer cleanup()
 	if server == nil { t.Skip("ws failed") }
@@ -74,7 +75,7 @@ func TestRemoveBrowser_LastBrowser(t *testing.T) {
 	s.browsersMu.Unlock()
 	s.RemoveBrowser("b1")
 	time.Sleep(100 * time.Millisecond)
-	if !called { t.Error("onAllBrowsersGone called") }
+	if atomic.LoadInt32(&called) == 0 { t.Error("onAllBrowsersGone called") }
 }
 
 func TestBroadcastToAllBrowsers(t *testing.T) {
@@ -105,10 +106,10 @@ func TestHandleRunnerDisconnect(t *testing.T) {
 }
 
 func TestHandleRunnerDisconnect_Timeout(t *testing.T) {
-	closed := false
+	var closed int32
 	cfg := DefaultSessionConfig()
 	cfg.RunnerReconnectTimeout = 30 * time.Millisecond
-	s := NewTerminalSessionWithConfig("s1", "p1", cfg, nil, func(id string) { closed = true })
+	s := NewTerminalSessionWithConfig("s1", "p1", cfg, nil, func(id string) { atomic.StoreInt32(&closed, 1) })
 	server, _, cleanup := newWSPair()
 	defer cleanup()
 	if server == nil { t.Skip("ws failed") }
@@ -117,7 +118,7 @@ func TestHandleRunnerDisconnect_Timeout(t *testing.T) {
 	s.runnerMu.Unlock()
 	s.handleRunnerDisconnect()
 	time.Sleep(80 * time.Millisecond)
-	if !closed { t.Error("session should close") }
+	if atomic.LoadInt32(&closed) == 0 { t.Error("session should close") }
 }
 
 func TestClose_WithConnections(t *testing.T) {

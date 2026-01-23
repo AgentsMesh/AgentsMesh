@@ -193,11 +193,12 @@ func TestSmartAggregator_RapidStartStop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond) // Wait for all async flushes
 
 	expectedBytes := int64(100 * len("quick data"))
-	if totalBytes != expectedBytes {
-		t.Errorf("Expected %d bytes, got %d (data loss: %d)", expectedBytes, totalBytes, expectedBytes-totalBytes)
+	finalBytes := atomic.LoadInt64(&totalBytes)
+	if finalBytes != expectedBytes {
+		t.Errorf("Expected %d bytes, got %d (data loss: %d)", expectedBytes, finalBytes, expectedBytes-finalBytes)
 	}
 
-	t.Logf("✅ Rapid start/stop test: %d bytes captured (no data loss)", totalBytes)
+	t.Logf("✅ Rapid start/stop test: %d bytes captured (no data loss)", finalBytes)
 }
 
 // TestSmartAggregator_ClearScreenDetection verifies ESC[2J detection accuracy.
