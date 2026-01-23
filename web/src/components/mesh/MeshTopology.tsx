@@ -17,14 +17,12 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import PodNode from "./PodNode";
-import ChannelNode from "./ChannelNode";
 import BindingEdge from "./BindingEdge";
-import { useMeshStore, type MeshNode, type ChannelInfo, type MeshEdge } from "@/stores/mesh";
+import { useMeshStore, type MeshNode, type MeshEdge } from "@/stores/mesh";
 
 // Custom node types - using proper types for ReactFlow
 const nodeTypes: NodeTypes = {
   pod: PodNode,
-  channel: ChannelNode,
 };
 
 // Custom edge types - using proper types for ReactFlow
@@ -35,7 +33,6 @@ const edgeTypes: EdgeTypes = {
 // Layout algorithm - simple force-directed-like placement
 function calculateLayout(
   pods: MeshNode[],
-  channels: ChannelInfo[],
   edges: MeshEdge[]
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
@@ -59,31 +56,6 @@ function calculateLayout(
     });
   });
 
-  // Create channel nodes (positioned in center area)
-  channels.forEach((channel, index) => {
-    const x = 400 + (index - channels.length / 2) * 200;
-    const y = 50;
-
-    nodes.push({
-      id: `channel-${channel.id}`,
-      type: "channel",
-      position: { x, y },
-      data: { channel },
-    });
-
-    // Create edges from channel to connected pods
-    channel.pod_keys.forEach((podKey) => {
-      flowEdges.push({
-        id: `channel-${channel.id}-${podKey}`,
-        source: `channel-${channel.id}`,
-        target: podKey,
-        type: "smoothstep",
-        style: { stroke: "var(--primary)", strokeWidth: 1, strokeDasharray: "4 2" },
-        animated: true,
-      });
-    });
-  });
-
   // Create binding edges between pods
   edges.forEach((edge) => {
     flowEdges.push({
@@ -103,7 +75,7 @@ function calculateLayout(
 }
 
 export default function MeshTopology() {
-  const { topology, selectedNode, selectedChannel, selectNode, selectChannel, fetchTopology } =
+  const { topology, selectedNode, selectNode, fetchTopology } =
     useMeshStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -117,7 +89,7 @@ export default function MeshTopology() {
   // Update nodes and edges when topology changes
   useEffect(() => {
     if (topology) {
-      const layout = calculateLayout(topology.nodes, topology.channels, topology.edges);
+      const layout = calculateLayout(topology.nodes, topology.edges);
       setNodes(layout.nodes);
       setEdges(layout.edges);
     }
@@ -136,56 +108,39 @@ export default function MeshTopology() {
             },
           };
         }
-        if (node.type === "channel") {
-          const channelId = parseInt(node.id.replace("channel-", ""), 10);
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              isSelected: channelId === selectedChannel,
-            },
-          };
-        }
         return node;
       })
     );
-  }, [selectedNode, selectedChannel, setNodes]);
+  }, [selectedNode, setNodes]);
 
   // Handle node click
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       if (node.type === "pod") {
         selectNode(node.id);
-      } else if (node.type === "channel") {
-        const channelId = parseInt(node.id.replace("channel-", ""), 10);
-        selectChannel(channelId);
       }
     },
-    [selectNode, selectChannel]
+    [selectNode]
   );
 
   // Handle pane click (deselect)
   const onPaneClick = useCallback(() => {
     selectNode(null);
-    selectChannel(null);
-  }, [selectNode, selectChannel]);
+  }, [selectNode]);
 
   // Node color for minimap
   const nodeColor = useCallback((node: Node) => {
-    if (node.type === "pod") {
-      const data = node.data as { node: MeshNode };
-      switch (data.node?.status) {
-        case "running":
-          return "#22c55e";
-        case "initializing":
-          return "#eab308";
-        case "failed":
-          return "#ef4444";
-        default:
-          return "#6b7280";
-      }
+    const data = node.data as { node: MeshNode };
+    switch (data.node?.status) {
+      case "running":
+        return "#22c55e";
+      case "initializing":
+        return "#eab308";
+      case "failed":
+        return "#ef4444";
+      default:
+        return "#6b7280";
     }
-    return "#3b82f6"; // Channel color
   }, []);
 
   if (!topology) {
@@ -196,7 +151,7 @@ export default function MeshTopology() {
     );
   }
 
-  if (topology.nodes.length === 0 && topology.channels.length === 0) {
+  if (topology.nodes.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">

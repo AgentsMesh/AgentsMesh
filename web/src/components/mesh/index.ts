@@ -1,7 +1,6 @@
 // Mesh topology components
 export { default as MeshTopology } from "./MeshTopology";
 export { default as PodNode } from "./PodNode";
-export { default as ChannelNode } from "./ChannelNode";
 export { default as BindingEdge } from "./BindingEdge";
 
 // Channel components
