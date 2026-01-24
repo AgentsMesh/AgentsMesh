@@ -3,6 +3,7 @@ package terminal
 import (
 	"bytes"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -169,14 +170,15 @@ func TestSmartAggregator_SerializeModeEmptyCallback(t *testing.T) {
 
 // TestSmartAggregator_SerializeModeCriticalLoad tests serialize mode under critical load
 func TestSmartAggregator_SerializeModeCriticalLoad(t *testing.T) {
-	usage := 0.6 // Critical load
-	var flushCount int32
+	var usage atomic.Int64
+	usage.Store(60) // 0.6 * 100 = 60, Critical load (stored as int to avoid float64 atomic issues)
+	var flushCount atomic.Int32
 
 	agg := NewSmartAggregator(
 		func(data []byte) {
-			flushCount++
+			flushCount.Add(1)
 		},
-		func() float64 { return usage },
+		func() float64 { return float64(usage.Load()) / 100.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithSmartMaxDelay(50*time.Millisecond),
 		WithSerializeCallback(func() []byte {
@@ -191,11 +193,11 @@ func TestSmartAggregator_SerializeModeCriticalLoad(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Lower usage
-	usage = 0.0
+	usage.Store(0)
 
 	// Wait for flush
 	time.Sleep(100 * time.Millisecond)
 
 	agg.Stop()
-	t.Logf("✅ Serialize mode critical load test completed, flushes: %d", flushCount)
+	t.Logf("✅ Serialize mode critical load test completed, flushes: %d", flushCount.Load())
 }

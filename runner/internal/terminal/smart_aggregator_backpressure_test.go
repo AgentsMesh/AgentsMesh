@@ -173,14 +173,15 @@ func TestSmartAggregator_TimerFlushPaused(t *testing.T) {
 
 // TestSmartAggregator_TimerFlushCriticalLoad tests timer flush under critical load
 func TestSmartAggregator_TimerFlushCriticalLoad(t *testing.T) {
-	usage := 0.6 // Critical load
+	var usage atomic.Int64
+	usage.Store(60) // 0.6 * 100 = 60, Critical load
 	var flushCount int32
 
 	agg := NewSmartAggregator(
 		func(data []byte) {
 			atomic.AddInt32(&flushCount, 1)
 		},
-		func() float64 { return usage },
+		func() float64 { return float64(usage.Load()) / 100.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithSmartMaxDelay(50*time.Millisecond),
 	)
@@ -192,7 +193,7 @@ func TestSmartAggregator_TimerFlushCriticalLoad(t *testing.T) {
 	time.Sleep(30 * time.Millisecond)
 
 	// Lower the usage
-	usage = 0.0
+	usage.Store(0)
 
 	// Wait for flush
 	time.Sleep(100 * time.Millisecond)
