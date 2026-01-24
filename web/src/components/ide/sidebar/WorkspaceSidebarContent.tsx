@@ -31,13 +31,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog";
 import { useTranslations } from "@/lib/i18n/client";
 
 interface WorkspaceSidebarContentProps {
@@ -383,27 +383,27 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
       </Collapsible>
 
       {/* Terminate Pod Confirmation Dialog */}
-      <Dialog open={terminateDialogOpen} onOpenChange={setTerminateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="text-center">
+      <ResponsiveDialog open={terminateDialogOpen} onOpenChange={setTerminateDialogOpen}>
+        <ResponsiveDialogContent className="sm:max-w-md" title={t("workspace.terminateDialog.title")}>
+          <ResponsiveDialogHeader className="text-center">
             <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-destructive" />
             </div>
-            <DialogTitle>{t("workspace.terminateDialog.title")}</DialogTitle>
-            <DialogDescription className="text-center">
+            <ResponsiveDialogTitle>{t("workspace.terminateDialog.title")}</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription className="text-center">
               {t("workspace.terminateDialog.description")}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setTerminateDialogOpen(false)}>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <ResponsiveDialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setTerminateDialogOpen(false)} className="w-full sm:w-auto">
               {t("workspace.terminateDialog.cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleConfirmTerminate}>
+            <Button variant="destructive" onClick={handleConfirmTerminate} className="w-full sm:w-auto">
               {t("workspace.terminateDialog.confirm")}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   );
 }

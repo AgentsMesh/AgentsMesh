@@ -4,13 +4,14 @@ import { useState } from "react";
 import { AlertTriangle, Calendar, Zap, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+  ResponsiveDialogBody,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog";
 import { billingApi } from "@/lib/api/billing";
 
 interface CancelSubscriptionDialogProps {
@@ -55,22 +56,24 @@ export function CancelSubscriptionDialog({
     day: "numeric",
   });
 
+  const dialogTitle = t("billing.cancel.title");
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader className="text-center pb-2">
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="sm:max-w-md" title={dialogTitle}>
+        <ResponsiveDialogHeader className="text-center pb-2">
           <div className="mx-auto w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4">
             <AlertTriangle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
           </div>
-          <DialogTitle className="text-xl">
-            {t("billing.cancel.title")}
-          </DialogTitle>
-          <DialogDescription className="text-center">
+          <ResponsiveDialogTitle className="text-xl">
+            {dialogTitle}
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription className="text-center">
             {t("billing.cancel.description")}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
-        <div className="space-y-3 py-4">
+        <ResponsiveDialogBody className="space-y-3">
           {/* Cancel Options */}
           <div className="space-y-3">
             {/* End of Period Option (Recommended) */}
@@ -172,9 +175,9 @@ export function CancelSubscriptionDialog({
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
-        </div>
+        </ResponsiveDialogBody>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+        <ResponsiveDialogFooter className="flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -193,8 +196,8 @@ export function CancelSubscriptionDialog({
               ? t("billing.cancel.cancelling")
               : t("billing.cancel.confirmCancel")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
