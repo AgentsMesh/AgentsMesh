@@ -5,13 +5,13 @@ import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogBody,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog";
 import {
   Select,
   SelectContent,
@@ -133,17 +133,19 @@ export function TicketCreateDialog({
     if (error) setError(null);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {parentTicketId ? t("tickets.createDialog.createSubTicket") : t("tickets.createDialog.title")}
-          </DialogTitle>
-        </DialogHeader>
+  const dialogTitle = parentTicketId
+    ? t("tickets.createDialog.createSubTicket")
+    : t("tickets.createDialog.title");
 
-        <form onSubmit={handleSubmit}>
-          <DialogBody className="space-y-4">
+  return (
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-lg" title={dialogTitle}>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>{dialogTitle}</ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
+
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <ResponsiveDialogBody className="space-y-4">
             {/* Title */}
             <div className="space-y-2">
               <label className="text-sm font-medium">
@@ -242,19 +244,25 @@ export function TicketCreateDialog({
                 {error}
               </div>
             )}
-          </DialogBody>
+          </ResponsiveDialogBody>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
+          <ResponsiveDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
               {t("common.cancel")}
             </Button>
-            <Button type="submit" loading={loading}>
+            <Button type="submit" loading={loading} className="w-full sm:w-auto">
               {t("tickets.createDialog.submit")}
             </Button>
-          </DialogFooter>
+          </ResponsiveDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 
