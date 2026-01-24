@@ -295,9 +295,15 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
-	// Check if already connected to a relay
-	if pod.HasRelayClient() {
-		log.Info("Already connected to relay, skipping", "pod_key", req.PodKey)
+	// Check if relay client exists (connected or reconnecting)
+	// If it exists, this is a token refresh response - deliver the new token
+	existingClient := pod.GetRelayClient()
+	if existingClient != nil {
+		log.Info("Delivering new token to existing relay client",
+			"pod_key", req.PodKey,
+			"is_connected", existingClient.IsConnected())
+		existingClient.UpdateToken(req.RunnerToken)
+		pod.DeliverNewToken(req.RunnerToken)
 		return nil
 	}
 
@@ -343,6 +349,27 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		if pod.Aggregator != nil {
 			pod.Aggregator.SetRelayOutput(nil)
 		}
+	})
+
+	// Set token expired handler - request new token from Backend when relay connection fails due to token expiration
+	relayClient.SetTokenExpiredHandler(func() string {
+		log.Info("Relay token expired, requesting new token from Backend", "pod_key", req.PodKey)
+
+		// Send request to Backend via gRPC
+		if err := h.conn.SendRequestRelayToken(req.PodKey, relayClient.GetSessionID(), relayClient.GetRelayURL()); err != nil {
+			log.Error("Failed to send token refresh request", "pod_key", req.PodKey, "error", err)
+			return ""
+		}
+
+		// Wait for Backend to respond with new token (via new SubscribeTerminalCommand)
+		// Backend will call OnSubscribeTerminal which will deliver the token
+		newToken := pod.WaitForNewToken(30 * time.Second)
+		if newToken == "" {
+			log.Warn("Timeout waiting for new token from Backend", "pod_key", req.PodKey)
+		} else {
+			log.Info("Received new token from Backend", "pod_key", req.PodKey)
+		}
+		return newToken
 	})
 
 	// Set reconnect handler - restore relay output routing and resend snapshot after reconnection

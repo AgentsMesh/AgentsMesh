@@ -27,6 +27,7 @@ message RunnerMessage {
     PtyResizedEvent pty_resized = 8;
     ErrorEvent error = 9;
     PodInitProgressEvent pod_init_progress = 10;
+    RequestRelayTokenEvent request_relay_token = 11;
   }
   int64 timestamp = 15;
 }
@@ -251,4 +252,13 @@ message SubscribeTerminalCommand {
 // Backend 通知 Runner 所有观察者已离开，Runner 应断开与 Relay 的连接
 message UnsubscribeTerminalCommand {
   string pod_key = 1;
+}
+
+// RequestRelayTokenEvent Runner 请求刷新 Relay Token
+// 当 Relay 连接因 token 过期而重连失败时，Runner 发送此消息请求新 token
+// Backend 收到后会重新发送 SubscribeTerminalCommand 带有新 token
+message RequestRelayTokenEvent {
+  string pod_key = 1;
+  string session_id = 2;     // 当前的 session ID
+  string relay_url = 3;      // 当前的 Relay URL
 }

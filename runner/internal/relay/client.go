@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -46,10 +47,11 @@ type Client struct {
 	connMu sync.RWMutex
 
 	// Handlers
-	onInput     InputHandler
-	onResize    ResizeHandler
-	onClose     CloseHandler
-	onReconnect func() // Called after successful reconnection
+	onInput        InputHandler
+	onResize       ResizeHandler
+	onClose        CloseHandler
+	onReconnect    func()                   // Called after successful reconnection
+	onTokenExpired func() (newToken string) // Called when token expires, should request new token from Backend
 
 	// State
 	connected    atomic.Bool
@@ -108,6 +110,32 @@ func (c *Client) SetCloseHandler(handler CloseHandler) {
 // SetReconnectHandler sets the handler called after successful reconnection
 func (c *Client) SetReconnectHandler(handler func()) {
 	c.onReconnect = handler
+}
+
+// SetTokenExpiredHandler sets the handler called when token expires during reconnection
+// The handler should request a new token from Backend and return it
+// If the handler returns an empty string, reconnection will continue with the old token
+func (c *Client) SetTokenExpiredHandler(handler func() string) {
+	c.onTokenExpired = handler
+}
+
+// UpdateToken updates the JWT token used for authentication
+// This is called after receiving a new token from Backend
+func (c *Client) UpdateToken(newToken string) {
+	c.connMu.Lock()
+	c.token = newToken
+	c.connMu.Unlock()
+	c.logger.Info("Token updated")
+}
+
+// GetSessionID returns the session ID
+func (c *Client) GetSessionID() string {
+	return c.sessionID
+}
+
+// GetRelayURL returns the relay URL
+func (c *Client) GetRelayURL() string {
+	return c.relayURL
 }
 
 // Connect establishes connection to the Relay server
@@ -412,6 +440,18 @@ func (c *Client) handleMessage(data []byte) {
 	}
 }
 
+// isHandshakeError checks if the error is a WebSocket handshake failure
+// which typically indicates token expiration or authentication issues
+func isHandshakeError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "bad handshake") ||
+		strings.Contains(errStr, "401") ||
+		strings.Contains(errStr, "403")
+}
+
 // reconnectLoop attempts to reconnect to the relay server with exponential backoff
 func (c *Client) reconnectLoop() {
 	defer c.reconnecting.Store(false)
@@ -448,6 +488,7 @@ func (c *Client) reconnectLoop() {
 
 	backoff := initialBackoff
 	const maxAttempts = 10
+	tokenRefreshAttempted := false
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		// Check if Stop() was called during reconnection
@@ -482,6 +523,25 @@ func (c *Client) reconnectLoop() {
 				"error", err,
 				"attempt", attempt,
 				"next_backoff", min(backoff*2, maxReconnectDelay))
+
+			// Check if this is a handshake error (likely token expired)
+			// Try to refresh token once
+			if isHandshakeError(err) && !tokenRefreshAttempted && c.onTokenExpired != nil {
+				tokenRefreshAttempted = true
+				c.logger.Info("Handshake failed, requesting new token from Backend")
+
+				// Request new token from Backend
+				// This is a blocking call that waits for Backend to respond
+				newToken := c.onTokenExpired()
+				if newToken != "" {
+					c.logger.Info("Received new token, retrying connection")
+					c.UpdateToken(newToken)
+					// Don't increment backoff, retry immediately with new token
+					continue
+				}
+				c.logger.Warn("Failed to get new token, continuing with exponential backoff")
+			}
+
 			backoff = min(backoff*2, maxReconnectDelay)
 			continue
 		}

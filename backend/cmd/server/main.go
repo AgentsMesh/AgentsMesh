@@ -177,6 +177,9 @@ func main() {
 			podCoordinator.SetCommandSender(grpcCommandSender)
 			terminalRouter.SetCommandSender(grpcCommandSender)
 			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server for Runner commands")
+
+			// Setup relay token refresh callback (for auto-reconnect when token expires)
+			setupRelayTokenRefreshCallback(db, runnerConnMgr, relayTokenGenerator, grpcCommandSender)
 		}
 	} else {
 		slog.Warn("PKI CA files not configured, gRPC/mTLS Runner communication disabled",

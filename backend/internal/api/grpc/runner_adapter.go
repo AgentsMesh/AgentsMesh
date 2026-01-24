@@ -299,6 +299,10 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 			"message", payload.Error.Message,
 		)
 
+	case *runnerv1.RunnerMessage_RequestRelayToken:
+		// Runner is requesting a new relay token (token expired during reconnection)
+		a.connManager.HandleRequestRelayToken(runnerID, payload.RequestRelayToken)
+
 	default:
 		a.logger.Warn("unknown message type", "runner_id", runnerID)
 	}

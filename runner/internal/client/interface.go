@@ -36,6 +36,10 @@ type Connection interface {
 	// SendPodInitProgress sends a pod initialization progress event to the server.
 	SendPodInitProgress(podKey, phase string, progress int32, message string) error
 
+	// SendRequestRelayToken sends a request for a new relay token to the server.
+	// This is called when the relay connection fails due to token expiration.
+	SendRequestRelayToken(podKey, sessionID, relayURL string) error
+
 	// QueueLength returns the current send queue length.
 	QueueLength() int
 

@@ -61,6 +61,12 @@ type Pod struct {
 	OnOutput         func([]byte)        // Output callback
 	OnExit           func(int)           // Exit callback
 	PTYLogger        *terminal.PTYLogger // PTY logger for debugging (optional)
+
+	// Token refresh channel - used when relay token expires and needs to be refreshed
+	// RelayClient sends token request via gRPC, Backend responds with new SubscribeTerminalCommand
+	// This channel delivers the new token to the waiting goroutine
+	tokenRefreshCh   chan string
+	tokenRefreshMu   sync.Mutex
 }
 
 // NewVirtualTerminal creates a new VirtualTerminal.
@@ -115,6 +121,45 @@ func (p *Pod) DisconnectRelay() {
 	// Clear aggregator relay output - will fall back to gRPC
 	if p.Aggregator != nil {
 		p.Aggregator.SetRelayOutput(nil)
+	}
+}
+
+// WaitForNewToken waits for a new token to be delivered via tokenRefreshCh.
+// Returns the new token or empty string if timeout occurs.
+// timeout is the maximum time to wait for the new token.
+func (p *Pod) WaitForNewToken(timeout time.Duration) string {
+	p.tokenRefreshMu.Lock()
+	// Create channel if not exists
+	if p.tokenRefreshCh == nil {
+		p.tokenRefreshCh = make(chan string, 1)
+	}
+	ch := p.tokenRefreshCh
+	p.tokenRefreshMu.Unlock()
+
+	select {
+	case token := <-ch:
+		return token
+	case <-time.After(timeout):
+		return ""
+	}
+}
+
+// DeliverNewToken delivers a new token to the waiting goroutine.
+// This is called when Backend responds with a new SubscribeTerminalCommand.
+func (p *Pod) DeliverNewToken(token string) {
+	p.tokenRefreshMu.Lock()
+	defer p.tokenRefreshMu.Unlock()
+
+	// Create channel if not exists
+	if p.tokenRefreshCh == nil {
+		p.tokenRefreshCh = make(chan string, 1)
+	}
+
+	// Non-blocking send - if no one is waiting, the token is dropped
+	select {
+	case p.tokenRefreshCh <- token:
+	default:
+		// Channel full or no receiver - token is dropped
 	}
 }
 

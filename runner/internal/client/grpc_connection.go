@@ -611,6 +611,22 @@ func (c *GRPCConnection) SendPodInitProgress(podKey, phase string, progress int3
 	return c.sendControl(msg)
 }
 
+// SendRequestRelayToken sends a request for a new relay token to the server.
+// This is called when the relay connection fails due to token expiration.
+func (c *GRPCConnection) SendRequestRelayToken(podKey, sessionID, relayURL string) error {
+	msg := &runnerv1.RunnerMessage{
+		Payload: &runnerv1.RunnerMessage_RequestRelayToken{
+			RequestRelayToken: &runnerv1.RequestRelayTokenEvent{
+				PodKey:    podKey,
+				SessionId: sessionID,
+				RelayUrl:  relayURL,
+			},
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return c.sendControl(msg)
+}
+
 // QueueLength returns the current terminal send queue length.
 func (c *GRPCConnection) QueueLength() int {
 	return len(c.terminalCh)

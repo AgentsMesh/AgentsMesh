@@ -36,6 +36,7 @@ type RunnerMessage struct {
 	//	*RunnerMessage_PtyResized
 	//	*RunnerMessage_Error
 	//	*RunnerMessage_PodInitProgress
+	//	*RunnerMessage_RequestRelayToken
 	Payload       isRunnerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -169,6 +170,15 @@ func (x *RunnerMessage) GetPodInitProgress() *PodInitProgressEvent {
 	return nil
 }
 
+func (x *RunnerMessage) GetRequestRelayToken() *RequestRelayTokenEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*RunnerMessage_RequestRelayToken); ok {
+			return x.RequestRelayToken
+		}
+	}
+	return nil
+}
+
 func (x *RunnerMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -220,6 +230,10 @@ type RunnerMessage_PodInitProgress struct {
 	PodInitProgress *PodInitProgressEvent `protobuf:"bytes,10,opt,name=pod_init_progress,json=podInitProgress,proto3,oneof"`
 }
 
+type RunnerMessage_RequestRelayToken struct {
+	RequestRelayToken *RequestRelayTokenEvent `protobuf:"bytes,11,opt,name=request_relay_token,json=requestRelayToken,proto3,oneof"`
+}
+
 func (*RunnerMessage_Initialize) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_Initialized) isRunnerMessage_Payload() {}
@@ -239,6 +253,8 @@ func (*RunnerMessage_PtyResized) isRunnerMessage_Payload() {}
 func (*RunnerMessage_Error) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_PodInitProgress) isRunnerMessage_Payload() {}
+
+func (*RunnerMessage_RequestRelayToken) isRunnerMessage_Payload() {}
 
 // InitializeRequest Runner 初始化请求
 type InitializeRequest struct {
@@ -2040,11 +2056,74 @@ func (x *UnsubscribeTerminalCommand) GetPodKey() string {
 	return ""
 }
 
+// RequestRelayTokenEvent Runner 请求刷新 Relay Token
+// 当 Relay 连接因 token 过期而重连失败时，Runner 发送此消息请求新 token
+// Backend 收到后会重新发送 SubscribeTerminalCommand 带有新 token
+type RequestRelayTokenEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
+	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // 当前的 session ID
+	RelayUrl      string                 `protobuf:"bytes,3,opt,name=relay_url,json=relayUrl,proto3" json:"relay_url,omitempty"`    // 当前的 Relay URL
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestRelayTokenEvent) Reset() {
+	*x = RequestRelayTokenEvent{}
+	mi := &file_runner_v1_runner_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestRelayTokenEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestRelayTokenEvent) ProtoMessage() {}
+
+func (x *RequestRelayTokenEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestRelayTokenEvent.ProtoReflect.Descriptor instead.
+func (*RequestRelayTokenEvent) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *RequestRelayTokenEvent) GetPodKey() string {
+	if x != nil {
+		return x.PodKey
+	}
+	return ""
+}
+
+func (x *RequestRelayTokenEvent) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *RequestRelayTokenEvent) GetRelayUrl() string {
+	if x != nil {
+		return x.RelayUrl
+	}
+	return ""
+}
+
 var File_runner_v1_runner_proto protoreflect.FileDescriptor
 
 const file_runner_v1_runner_proto_rawDesc = "" +
 	"\n" +
-	"\x16runner/v1/runner.proto\x12\trunner.v1\"\xc6\x05\n" +
+	"\x16runner/v1/runner.proto\x12\trunner.v1\"\x9b\x06\n" +
 	"\rRunnerMessage\x12>\n" +
 	"\n" +
 	"initialize\x18\x01 \x01(\v2\x1c.runner.v1.InitializeRequestH\x00R\n" +
@@ -2060,7 +2139,8 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"ptyResized\x12-\n" +
 	"\x05error\x18\t \x01(\v2\x15.runner.v1.ErrorEventH\x00R\x05error\x12M\n" +
 	"\x11pod_init_progress\x18\n" +
-	" \x01(\v2\x1f.runner.v1.PodInitProgressEventH\x00R\x0fpodInitProgress\x12\x1c\n" +
+	" \x01(\v2\x1f.runner.v1.PodInitProgressEventH\x00R\x0fpodInitProgress\x12S\n" +
+	"\x13request_relay_token\x18\v \x01(\v2!.runner.v1.RequestRelayTokenEventH\x00R\x11requestRelayToken\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"v\n" +
 	"\x11InitializeRequest\x12)\n" +
@@ -2198,7 +2278,12 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x10snapshot_history\x18\x05 \x01(\x05R\x0fsnapshotHistory\x12!\n" +
 	"\frunner_token\x18\x06 \x01(\tR\vrunnerToken\"5\n" +
 	"\x1aUnsubscribeTerminalCommand\x12\x17\n" +
-	"\apod_key\x18\x01 \x01(\tR\x06podKey2R\n" +
+	"\apod_key\x18\x01 \x01(\tR\x06podKey\"m\n" +
+	"\x16RequestRelayTokenEvent\x12\x17\n" +
+	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x1b\n" +
+	"\trelay_url\x18\x03 \x01(\tR\brelayUrl2R\n" +
 	"\rRunnerService\x12A\n" +
 	"\aConnect\x12\x18.runner.v1.RunnerMessage\x1a\x18.runner.v1.ServerMessage(\x010\x01B\x9a\x01\n" +
 	"\rcom.runner.v1B\vRunnerProtoP\x01Z7github.com/anthropic/agentmesh/proto/runner/v1;runnerv1\xa2\x02\x03RXX\xaa\x02\tRunner.V1\xca\x02\tRunner\\V1\xe2\x02\x15Runner\\V1\\GPBMetadata\xea\x02\n" +
@@ -2216,7 +2301,7 @@ func file_runner_v1_runner_proto_rawDescGZIP() []byte {
 	return file_runner_v1_runner_proto_rawDescData
 }
 
-var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_runner_v1_runner_proto_goTypes = []any{
 	(*RunnerMessage)(nil),              // 0: runner.v1.RunnerMessage
 	(*InitializeRequest)(nil),          // 1: runner.v1.InitializeRequest
@@ -2245,8 +2330,9 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*TerminalRedrawCommand)(nil),      // 24: runner.v1.TerminalRedrawCommand
 	(*SubscribeTerminalCommand)(nil),   // 25: runner.v1.SubscribeTerminalCommand
 	(*UnsubscribeTerminalCommand)(nil), // 26: runner.v1.UnsubscribeTerminalCommand
-	nil,                                // 27: runner.v1.ErrorEvent.DetailsEntry
-	nil,                                // 28: runner.v1.CreatePodCommand.EnvVarsEntry
+	(*RequestRelayTokenEvent)(nil),     // 27: runner.v1.RequestRelayTokenEvent
+	nil,                                // 28: runner.v1.ErrorEvent.DetailsEntry
+	nil,                                // 29: runner.v1.CreatePodCommand.EnvVarsEntry
 }
 var file_runner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: runner.v1.RunnerMessage.initialize:type_name -> runner.v1.InitializeRequest
@@ -2259,30 +2345,31 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	10, // 7: runner.v1.RunnerMessage.pty_resized:type_name -> runner.v1.PtyResizedEvent
 	11, // 8: runner.v1.RunnerMessage.error:type_name -> runner.v1.ErrorEvent
 	12, // 9: runner.v1.RunnerMessage.pod_init_progress:type_name -> runner.v1.PodInitProgressEvent
-	2,  // 10: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
-	5,  // 11: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
-	27, // 12: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
-	14, // 13: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
-	17, // 14: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
-	20, // 15: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
-	21, // 16: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
-	22, // 17: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
-	23, // 18: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
-	24, // 19: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
-	25, // 20: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
-	26, // 21: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
-	15, // 22: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
-	16, // 23: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
-	28, // 24: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
-	18, // 25: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
-	19, // 26: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
-	0,  // 27: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
-	13, // 28: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
-	28, // [28:29] is the sub-list for method output_type
-	27, // [27:28] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	27, // 10: runner.v1.RunnerMessage.request_relay_token:type_name -> runner.v1.RequestRelayTokenEvent
+	2,  // 11: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
+	5,  // 12: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
+	28, // 13: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
+	14, // 14: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
+	17, // 15: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
+	20, // 16: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
+	21, // 17: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
+	22, // 18: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
+	23, // 19: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
+	24, // 20: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
+	25, // 21: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
+	26, // 22: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
+	15, // 23: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
+	16, // 24: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
+	29, // 25: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
+	18, // 26: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
+	19, // 27: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
+	0,  // 28: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
+	13, // 29: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
+	29, // [29:30] is the sub-list for method output_type
+	28, // [28:29] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_runner_v1_runner_proto_init() }
@@ -2301,6 +2388,7 @@ func file_runner_v1_runner_proto_init() {
 		(*RunnerMessage_PtyResized)(nil),
 		(*RunnerMessage_Error)(nil),
 		(*RunnerMessage_PodInitProgress)(nil),
+		(*RunnerMessage_RequestRelayToken)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[13].OneofWrappers = []any{
 		(*ServerMessage_InitializeResult)(nil),
@@ -2319,7 +2407,7 @@ func file_runner_v1_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_v1_runner_proto_rawDesc), len(file_runner_v1_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   29,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

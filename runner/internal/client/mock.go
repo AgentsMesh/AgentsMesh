@@ -155,6 +155,17 @@ func (m *MockConnection) SendPodInitProgress(podKey, phase string, progress int3
 	return nil
 }
 
+// SendRequestRelayToken implements Connection.
+func (m *MockConnection) SendRequestRelayToken(podKey, sessionID, relayURL string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: MessageType("request_relay_token"), Data: map[string]interface{}{"pod_key": podKey, "session_id": sessionID, "relay_url": relayURL}})
+	return nil
+}
+
 // --- Test helper methods ---
 
 // SimulateCreatePod simulates server sending a create_pod message.
