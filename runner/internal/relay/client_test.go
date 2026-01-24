@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -245,18 +246,18 @@ func TestSetReconnectHandler(t *testing.T) {
 }
 
 func TestReconnectOnDisconnect(t *testing.T) {
-	// Track connection attempts
-	connectionAttempts := 0
+	// Track connection attempts with atomic to avoid race condition
+	var connectionAttempts atomic.Int32
 	reconnected := make(chan struct{})
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		connectionAttempts++
+		attempt := connectionAttempts.Add(1)
 		conn, err := testUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			return
 		}
 
-		if connectionAttempts == 1 {
+		if attempt == 1 {
 			// First connection: close immediately to trigger reconnect
 			conn.Close()
 			return
@@ -292,8 +293,8 @@ func TestReconnectOnDisconnect(t *testing.T) {
 		t.Error("timeout waiting for reconnect")
 	}
 
-	if connectionAttempts < 2 {
-		t.Errorf("expected at least 2 connection attempts, got %d", connectionAttempts)
+	if connectionAttempts.Load() < 2 {
+		t.Errorf("expected at least 2 connection attempts, got %d", connectionAttempts.Load())
 	}
 
 	c.Stop()
