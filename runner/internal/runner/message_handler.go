@@ -90,8 +90,12 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 		h.sendTerminalOutput(podKey, data)
 	}
 
-	// Create aggregator with gRPC as fallback
-	aggregator := terminal.NewSmartAggregator(grpcHandler, nil)
+	// Create aggregator with gRPC as fallback and full redraw throttling
+	// Full redraw throttling detects high-frequency screen refreshes (like `glab ci status --live`)
+	// and reduces transmission rate to save bandwidth while preserving latest state
+	aggregator := terminal.NewSmartAggregator(grpcHandler, nil,
+		terminal.WithFullRedrawThrottling(),
+	)
 	pod.Aggregator = aggregator
 
 	// Set up PTY logging if enabled

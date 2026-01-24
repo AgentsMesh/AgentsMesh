@@ -164,9 +164,18 @@ func (d *FrameDetector) DiscardOldFrames(buffer *bytes.Buffer) int {
 	return 0
 }
 
-// isFullRedrawFrame checks if a frame contains sequences that indicate a full screen redraw.
+// IsFullRedrawFrame checks if a frame contains sequences that indicate a full screen redraw.
 // Full redraw frames contain ESC[2J (clear screen) or ESC[H (cursor home at start).
-func (d *FrameDetector) isFullRedrawFrame(frameData []byte) bool {
+//
+// Detection criteria:
+//   - Contains ESC[2J (clear entire screen)
+//   - Starts with ESC[H or ESC[;H (cursor home at beginning of frame content)
+//   - Frame size > 1KB (large frames are typically full redraws)
+//
+// This is used by:
+//   - DiscardOldFrames: to determine which frames can be safely discarded
+//   - FullRedrawThrottler: to detect high-frequency redraw patterns
+func (d *FrameDetector) IsFullRedrawFrame(frameData []byte) bool {
 	// Check for clear screen
 	if bytes.Contains(frameData, eraseScreenSeq) {
 		return true
@@ -224,7 +233,7 @@ func (d *FrameDetector) discardWithSyncFramesContentAware(buffer *bytes.Buffer, 
 
 		// Check if this frame is a full redraw
 		frameData := data[startPos : endPos+len(syncOutputEndSeq)]
-		if d.isFullRedrawFrame(frameData) {
+		if d.IsFullRedrawFrame(frameData) {
 			lastFullRedrawStart = startPos
 			break
 		}

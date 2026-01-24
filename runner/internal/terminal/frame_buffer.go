@@ -177,6 +177,62 @@ func (b *FrameBuffer) SetMaxSize(size int) {
 	b.maxSize = size
 }
 
+// IsLastFrameFullRedraw checks if the last complete frame in the buffer is a full-screen redraw.
+// This is used by FullRedrawThrottler to detect high-frequency redraw patterns.
+//
+// Returns true if:
+//   - The buffer contains sync frames (ESC[?2026h ... ESC[?2026l)
+//   - The last complete frame is a full redraw (contains ESC[2J, starts with ESC[H, or is large)
+//
+// Returns false if:
+//   - Buffer is empty
+//   - No sync frames in buffer
+//   - Last frame is not a full redraw (e.g., incremental update)
+func (b *FrameBuffer) IsLastFrameFullRedraw() bool {
+	data := b.buffer.Bytes()
+	if len(data) == 0 {
+		return false
+	}
+
+	boundary := b.detector.AnalyzeFrameBoundaries(data)
+	if !boundary.HasSyncFrames {
+		return false
+	}
+
+	// Find all frame boundaries
+	startPositions := findAllPositions(data, syncOutputStartSeq)
+	endPositions := findAllPositions(data, syncOutputEndSeq)
+
+	if len(startPositions) == 0 {
+		return false
+	}
+
+	// Find the last complete frame (match starts with ends)
+	var lastCompleteFrameStart int = -1
+	var lastCompleteFrameEnd int = -1
+	usedEnds := make(map[int]bool)
+
+	for _, startPos := range startPositions {
+		for _, endPos := range endPositions {
+			if endPos > startPos && !usedEnds[endPos] {
+				usedEnds[endPos] = true
+				lastCompleteFrameStart = startPos
+				lastCompleteFrameEnd = endPos + len(syncOutputEndSeq)
+				break
+			}
+		}
+	}
+
+	if lastCompleteFrameStart < 0 || lastCompleteFrameEnd <= lastCompleteFrameStart {
+		// No complete frame found
+		return false
+	}
+
+	// Check if this frame is a full redraw
+	frameData := data[lastCompleteFrameStart:lastCompleteFrameEnd]
+	return b.detector.IsFullRedrawFrame(frameData)
+}
+
 // enforceLimit ensures buffer doesn't exceed maxSize after adding newDataLen bytes.
 func (b *FrameBuffer) enforceLimit(newDataLen int) {
 	targetLen := b.buffer.Len() + newDataLen

@@ -21,6 +21,7 @@ import (
 // - ttyd-style flow control: propagates backpressure to PTY layer
 // - Relay output: optional callback for sending output to Relay in addition to gRPC
 // - Serialize mode: use VirtualTerminal.Serialize() for bandwidth optimization
+// - Full redraw throttling: detects high-frequency redraws and reduces transmission rate
 //
 // Design principle: TUI apps (like Claude Code) use Synchronized Output mode
 // (ESC[?2026h to start, ESC[?2026l to end) for atomic frame updates.
@@ -40,6 +41,10 @@ type SmartAggregator struct {
 	// This enables bandwidth optimization by compressing spaces to CSI CUF sequences
 	serializeCallback func() []byte
 	hasPendingData    bool // True when there's data to serialize (set by Write, cleared by flush)
+
+	// Full redraw throttling (Legacy mode only, i.e., non-Serialize mode)
+	// Detects high-frequency full-screen redraws and reduces transmission rate
+	fullRedrawThrottler *FullRedrawThrottler
 
 	// PTY logging (for debugging)
 	ptyLogger *PTYLogger
@@ -90,6 +95,28 @@ func WithBackpressureCallbacks(onPause, onResume func()) SmartAggregatorOption {
 func WithSerializeCallback(fn func() []byte) SmartAggregatorOption {
 	return func(a *SmartAggregator) {
 		a.serializeCallback = fn
+	}
+}
+
+// WithFullRedrawThrottling enables throttling for high-frequency full-screen redraws.
+// When applications produce rapid full-screen refreshes (like `glab ci status --live`),
+// this option detects the pattern and reduces transmission frequency to save bandwidth.
+//
+// This only applies to Legacy mode (non-Serialize mode). In Serialize mode, the
+// VirtualTerminal already handles optimization.
+//
+// Default parameters:
+//   - Window size: 2 seconds
+//   - Threshold: 2.5 redraws/second (triggers throttling)
+//   - Min delay: 200ms (at threshold)
+//   - Max delay: 1000ms (at 10+ redraws/second)
+//
+// Example bandwidth savings:
+//   - 10 redraws/sec → ~80% reduction (only ~2 flushes/sec)
+//   - 20 redraws/sec → ~95% reduction (only ~1 flush/sec)
+func WithFullRedrawThrottling(opts ...FullRedrawThrottlerOption) SmartAggregatorOption {
+	return func(a *SmartAggregator) {
+		a.fullRedrawThrottler = NewFullRedrawThrottler(opts...)
 	}
 }
 
@@ -273,6 +300,27 @@ func (a *SmartAggregator) flushLocked() {
 	} else {
 		// Legacy mode: use frame-aware buffer flush
 		// FlushComplete ensures we don't break incomplete frames
+
+		// Full redraw throttling: detect high-frequency redraws and reduce transmission rate
+		if a.fullRedrawThrottler != nil && a.buffer.IsLastFrameFullRedraw() {
+			// Record redraw with frame size for bandwidth-aware throttling
+			a.fullRedrawThrottler.RecordRedraw(a.buffer.Len())
+
+			// Check if we should throttle (skip this flush)
+			if !a.fullRedrawThrottler.ShouldFlush() {
+				// Throttling: skip this flush, schedule next check
+				// Data stays in buffer until next allowed flush
+				delay := a.fullRedrawThrottler.GetNextCheckDelay()
+				a.timer = time.AfterFunc(delay, a.timerFlush)
+				logger.Terminal().Debug("SmartAggregator: throttling full redraw",
+					"next_check", delay,
+					"frequency", a.fullRedrawThrottler.GetFrequency(),
+					"bandwidth_kbps", a.fullRedrawThrottler.GetBandwidth()/1024,
+					"effective_window", a.fullRedrawThrottler.GetEffectiveWindowSize())
+				return
+			}
+		}
+
 		var remaining int
 		data, remaining = a.buffer.FlushComplete()
 
@@ -287,6 +335,11 @@ func (a *SmartAggregator) flushLocked() {
 
 		logger.Terminal().Debug("SmartAggregator flushing (legacy mode)",
 			"bytes", len(data), "remaining", remaining)
+	}
+
+	// Mark flush time for throttler (if active)
+	if a.fullRedrawThrottler != nil {
+		a.fullRedrawThrottler.MarkFlushed()
 	}
 
 	// Log aggregated output if logger is set
