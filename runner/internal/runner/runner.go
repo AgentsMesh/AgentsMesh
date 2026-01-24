@@ -60,6 +60,7 @@ type Pod struct {
 	TicketIdentifier string              // Ticket ID for worktree-based pods
 	OnOutput         func([]byte)        // Output callback
 	OnExit           func(int)           // Exit callback
+	PTYLogger        *terminal.PTYLogger // PTY logger for debugging (optional)
 }
 
 // NewVirtualTerminal creates a new VirtualTerminal.

@@ -210,6 +210,8 @@ func runRunner(args []string) {
 	fs := flag.NewFlagSet("run", flag.ExitOnError)
 	configFile := fs.String("config", "", "Path to config file (default: ~/.agentsmesh/config.yaml)")
 	logLevel := fs.String("log-level", "", "Log level: debug, info, warn, error (overrides config)")
+	logPTY := fs.Bool("logpty", false, "Log raw PTY and aggregator output to files for debugging")
+	logPTYDir := fs.String("logpty-dir", "", "Directory for PTY logs (default: $TMPDIR/agentsmesh/pty-logs)")
 
 	fs.Usage = func() {
 		fmt.Println(`Start the AgentsMesh runner.
@@ -258,6 +260,19 @@ The runner uses gRPC/mTLS for secure communication with the server.`)
 	// Override log level from command line if provided
 	if *logLevel != "" {
 		cfg.LogLevel = *logLevel
+	}
+
+	// Override PTY logging from command line
+	if *logPTY {
+		cfg.LogPTY = true
+	}
+	if *logPTYDir != "" {
+		cfg.LogPTYDir = *logPTYDir
+	}
+
+	// Print PTY log directory if enabled
+	if cfg.LogPTY {
+		fmt.Printf("PTY logging enabled, output directory: %s\n", cfg.GetLogPTYDir())
 	}
 
 	// Initialize logger

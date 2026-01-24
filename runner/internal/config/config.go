@@ -62,6 +62,10 @@ type Config struct {
 	LogLevel string `mapstructure:"log_level"`
 	LogFile  string `mapstructure:"log_file"`
 
+	// PTY logging (for debugging)
+	LogPTY    bool   `mapstructure:"log_pty"`     // Enable PTY output logging
+	LogPTYDir string `mapstructure:"log_pty_dir"` // PTY log directory (default: $TMPDIR/agentsmesh/pty-logs)
+
 	// Auto-update settings
 	AutoUpdate AutoUpdateConfig `mapstructure:"auto_update"`
 }
@@ -283,6 +287,15 @@ func (c *Config) GetLogConfig() logger.Config {
 		MaxFileSize: 10 * 1024 * 1024, // 10MB
 		MaxBackups:  3,                 // Keep 3 backup files
 	}
+}
+
+// GetLogPTYDir returns the PTY log directory path.
+// Falls back to $TMPDIR/agentsmesh/pty-logs if not set.
+func (c *Config) GetLogPTYDir() string {
+	if c.LogPTYDir != "" {
+		return os.ExpandEnv(c.LogPTYDir)
+	}
+	return filepath.Join(os.TempDir(), "agentsmesh", "pty-logs")
 }
 
 // ==================== gRPC/mTLS Configuration ====================
