@@ -32,15 +32,7 @@ func (m *mockEventSender) SendPodStatus(podKey, status string, data map[string]i
 	}{podKey, status, data})
 }
 
-func (m *mockEventSender) SendTerminalOutput(podKey string, data []byte) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.outputs = append(m.outputs, struct {
-		podKey string
-		data       []byte
-	}{podKey, data})
-	return nil
-}
+// NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay
 
 // mockOutputHandler is a mock for testing OutputHandler interface
 type mockOutputHandler struct {

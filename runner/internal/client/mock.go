@@ -116,16 +116,7 @@ func (m *MockConnection) SendPodTerminated(podKey string, exitCode int32, errorM
 	return nil
 }
 
-// SendTerminalOutput implements Connection.
-func (m *MockConnection) SendTerminalOutput(podKey string, data []byte) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.SendErr != nil {
-		return m.SendErr
-	}
-	m.Events = append(m.Events, EventCall{Type: MsgTypeTerminalOutput, Data: map[string]interface{}{"pod_key": podKey, "data": data}})
-	return nil
-}
+// NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay
 
 // SendPtyResized implements Connection.
 func (m *MockConnection) SendPtyResized(podKey string, cols, rows int32) error {
@@ -320,6 +311,35 @@ func (m *MockConnection) Reset() {
 // QueueUsage returns the mock queue usage (always 0 for testing).
 func (m *MockConnection) QueueUsage() float64 {
 	return 0.0
+}
+
+// SendOSCNotification records an OSC notification event.
+func (m *MockConnection) SendOSCNotification(podKey, title, body string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Events = append(m.Events, EventCall{
+		Type: "osc_notification",
+		Data: map[string]string{
+			"pod_key": podKey,
+			"title":   title,
+			"body":    body,
+		},
+	})
+	return nil
+}
+
+// SendOSCTitle records an OSC title change event.
+func (m *MockConnection) SendOSCTitle(podKey, title string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Events = append(m.Events, EventCall{
+		Type: "osc_title",
+		Data: map[string]string{
+			"pod_key": podKey,
+			"title":   title,
+		},
+	})
+	return nil
 }
 
 // Ensure MockConnection implements Connection interface

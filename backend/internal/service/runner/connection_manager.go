@@ -43,7 +43,6 @@ type RunnerConnectionManager struct {
 	onHeartbeat          func(runnerID int64, data *runnerv1.HeartbeatData)
 	onPodCreated         func(runnerID int64, data *runnerv1.PodCreatedEvent)
 	onPodTerminated      func(runnerID int64, data *runnerv1.PodTerminatedEvent)
-	onTerminalOutput     func(runnerID int64, data *runnerv1.TerminalOutputEvent)
 	onAgentStatus        func(runnerID int64, data *runnerv1.AgentStatusEvent)
 	onPtyResized         func(runnerID int64, data *runnerv1.PtyResizedEvent)
 	onPodInitProgress    func(runnerID int64, data *runnerv1.PodInitProgressEvent)
@@ -52,6 +51,8 @@ type RunnerConnectionManager struct {
 	onInitialized        func(runnerID int64, availableAgents []string)
 	onInitFailed         func(runnerID int64, reason string)
 	onSandboxesStatus    func(runnerID int64, data *runnerv1.SandboxesStatusEvent)
+	onOSCNotification    func(runnerID int64, data *runnerv1.OSCNotificationEvent)
+	onOSCTitle           func(runnerID int64, data *runnerv1.OSCTitleEvent)
 }
 
 // grpcConnectionShard holds a subset of gRPC connections with its own lock.
@@ -83,98 +84,6 @@ func NewRunnerConnectionManager(logger *slog.Logger) *RunnerConnectionManager {
 func (cm *RunnerConnectionManager) getShard(runnerID int64) *grpcConnectionShard {
 	idx := uint64(runnerID) % numShards
 	return cm.shards[idx]
-}
-
-// ==================== Callback Setters ====================
-
-// SetHeartbeatCallback sets the heartbeat callback (Proto type)
-func (cm *RunnerConnectionManager) SetHeartbeatCallback(fn func(runnerID int64, data *runnerv1.HeartbeatData)) {
-	cm.onHeartbeat = fn
-}
-
-// SetPodCreatedCallback sets the pod created callback (Proto type)
-func (cm *RunnerConnectionManager) SetPodCreatedCallback(fn func(runnerID int64, data *runnerv1.PodCreatedEvent)) {
-	cm.onPodCreated = fn
-}
-
-// SetPodTerminatedCallback sets the pod terminated callback (Proto type)
-func (cm *RunnerConnectionManager) SetPodTerminatedCallback(fn func(runnerID int64, data *runnerv1.PodTerminatedEvent)) {
-	cm.onPodTerminated = fn
-}
-
-// SetTerminalOutputCallback sets the terminal output callback (Proto type)
-func (cm *RunnerConnectionManager) SetTerminalOutputCallback(fn func(runnerID int64, data *runnerv1.TerminalOutputEvent)) {
-	cm.onTerminalOutput = fn
-}
-
-// SetAgentStatusCallback sets the agent status callback (Proto type)
-func (cm *RunnerConnectionManager) SetAgentStatusCallback(fn func(runnerID int64, data *runnerv1.AgentStatusEvent)) {
-	cm.onAgentStatus = fn
-}
-
-// SetPtyResizedCallback sets the PTY resized callback (Proto type)
-func (cm *RunnerConnectionManager) SetPtyResizedCallback(fn func(runnerID int64, data *runnerv1.PtyResizedEvent)) {
-	cm.onPtyResized = fn
-}
-
-// SetPodInitProgressCallback sets the pod init progress callback (Proto type)
-func (cm *RunnerConnectionManager) SetPodInitProgressCallback(fn func(runnerID int64, data *runnerv1.PodInitProgressEvent)) {
-	cm.onPodInitProgress = fn
-}
-
-// SetRequestRelayTokenCallback sets the request relay token callback (Proto type)
-func (cm *RunnerConnectionManager) SetRequestRelayTokenCallback(fn func(runnerID int64, data *runnerv1.RequestRelayTokenEvent)) {
-	cm.onRequestRelayToken = fn
-}
-
-// SetDisconnectCallback sets the disconnect callback
-func (cm *RunnerConnectionManager) SetDisconnectCallback(fn func(runnerID int64)) {
-	cm.onDisconnect = fn
-}
-
-// SetInitializedCallback sets the initialized callback
-func (cm *RunnerConnectionManager) SetInitializedCallback(fn func(runnerID int64, availableAgents []string)) {
-	cm.onInitialized = fn
-}
-
-// SetInitFailedCallback sets the initialization failure callback
-func (cm *RunnerConnectionManager) SetInitFailedCallback(fn func(runnerID int64, reason string)) {
-	cm.onInitFailed = fn
-}
-
-// SetSandboxesStatusCallback sets the sandbox status callback (Proto type)
-func (cm *RunnerConnectionManager) SetSandboxesStatusCallback(fn func(runnerID int64, data *runnerv1.SandboxesStatusEvent)) {
-	cm.onSandboxesStatus = fn
-}
-
-// SetInitTimeout sets the initialization timeout
-func (cm *RunnerConnectionManager) SetInitTimeout(timeout time.Duration) {
-	cm.initTimeout = timeout
-}
-
-// SetPingInterval sets the ping interval
-func (cm *RunnerConnectionManager) SetPingInterval(interval time.Duration) {
-	cm.pingInterval = interval
-}
-
-// SetAgentTypesProvider sets the agent types provider for initialization handshake
-func (cm *RunnerConnectionManager) SetAgentTypesProvider(provider interfaces.AgentTypesProvider) {
-	cm.agentTypesProvider = provider
-}
-
-// SetServerVersion sets the server version for initialization handshake
-func (cm *RunnerConnectionManager) SetServerVersion(version string) {
-	cm.serverVersion = version
-}
-
-// GetHeartbeatCallback returns the current heartbeat callback
-func (cm *RunnerConnectionManager) GetHeartbeatCallback() func(runnerID int64, data *runnerv1.HeartbeatData) {
-	return cm.onHeartbeat
-}
-
-// GetDisconnectCallback returns the current disconnect callback
-func (cm *RunnerConnectionManager) GetDisconnectCallback() func(runnerID int64) {
-	return cm.onDisconnect
 }
 
 // ==================== Connection Management ====================
@@ -338,93 +247,5 @@ func (cm *RunnerConnectionManager) checkInitTimeouts() {
 		}
 
 		cm.RemoveConnection(runnerID)
-	}
-}
-
-// ==================== Proto Message Handlers (called by GRPCRunnerAdapter) ====================
-
-// HandleHeartbeat handles heartbeat from a runner (Proto type)
-func (cm *RunnerConnectionManager) HandleHeartbeat(runnerID int64, data *runnerv1.HeartbeatData) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onHeartbeat != nil {
-		cm.onHeartbeat(runnerID, data)
-	}
-}
-
-// HandlePodCreated handles pod created event (Proto type)
-func (cm *RunnerConnectionManager) HandlePodCreated(runnerID int64, data *runnerv1.PodCreatedEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onPodCreated != nil {
-		cm.onPodCreated(runnerID, data)
-	}
-}
-
-// HandlePodTerminated handles pod terminated event (Proto type)
-func (cm *RunnerConnectionManager) HandlePodTerminated(runnerID int64, data *runnerv1.PodTerminatedEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onPodTerminated != nil {
-		cm.onPodTerminated(runnerID, data)
-	}
-}
-
-// HandleTerminalOutput handles terminal output event (Proto type)
-func (cm *RunnerConnectionManager) HandleTerminalOutput(runnerID int64, data *runnerv1.TerminalOutputEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onTerminalOutput != nil {
-		cm.onTerminalOutput(runnerID, data)
-	}
-}
-
-// HandleAgentStatus handles agent status event (Proto type)
-func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runnerv1.AgentStatusEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onAgentStatus != nil {
-		cm.onAgentStatus(runnerID, data)
-	}
-}
-
-// HandlePtyResized handles PTY resized event (Proto type)
-func (cm *RunnerConnectionManager) HandlePtyResized(runnerID int64, data *runnerv1.PtyResizedEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onPtyResized != nil {
-		cm.onPtyResized(runnerID, data)
-	}
-}
-
-// HandlePodInitProgress handles pod init progress event (Proto type)
-func (cm *RunnerConnectionManager) HandlePodInitProgress(runnerID int64, data *runnerv1.PodInitProgressEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onPodInitProgress != nil {
-		cm.onPodInitProgress(runnerID, data)
-	}
-}
-
-// HandleInitialized handles initialized confirmation (Proto type)
-func (cm *RunnerConnectionManager) HandleInitialized(runnerID int64, availableAgents []string) {
-	cm.UpdateHeartbeat(runnerID)
-
-	// Mark connection as initialized
-	if conn := cm.GetConnection(runnerID); conn != nil {
-		conn.SetInitialized(true, availableAgents)
-	}
-
-	if cm.onInitialized != nil {
-		cm.onInitialized(runnerID, availableAgents)
-	}
-}
-
-// HandleRequestRelayToken handles relay token refresh request (Proto type)
-func (cm *RunnerConnectionManager) HandleRequestRelayToken(runnerID int64, data *runnerv1.RequestRelayTokenEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onRequestRelayToken != nil {
-		cm.onRequestRelayToken(runnerID, data)
-	}
-}
-
-// HandleSandboxesStatus handles sandbox status response event (Proto type)
-func (cm *RunnerConnectionManager) HandleSandboxesStatus(runnerID int64, data *runnerv1.SandboxesStatusEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	if cm.onSandboxesStatus != nil {
-		cm.onSandboxesStatus(runnerID, data)
 	}
 }

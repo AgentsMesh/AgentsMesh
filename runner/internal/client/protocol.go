@@ -10,10 +10,10 @@ type MessageType string
 
 const (
 	// Event types (Runner -> Backend)
-	MsgTypePodCreated     MessageType = "pod_created"
-	MsgTypePodTerminated  MessageType = "pod_terminated"
-	MsgTypeTerminalOutput MessageType = "terminal_output"
-	MsgTypePtyResized     MessageType = "pty_resized"
+	MsgTypePodCreated    MessageType = "pod_created"
+	MsgTypePodTerminated MessageType = "pod_terminated"
+	MsgTypePtyResized    MessageType = "pty_resized"
+	// NOTE: MsgTypeTerminalOutput removed - terminal output is exclusively streamed via Relay
 )
 
 // ==================== Pod Operation Data Structures ====================

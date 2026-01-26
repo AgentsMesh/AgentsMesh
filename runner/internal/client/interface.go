@@ -24,9 +24,7 @@ type Connection interface {
 	// SendPodTerminated sends a pod_terminated event to the server.
 	SendPodTerminated(podKey string, exitCode int32, errorMsg string) error
 
-	// SendTerminalOutput sends terminal output to the server.
-	// Non-blocking: drops silently if buffer is full (TUI frames are expendable).
-	SendTerminalOutput(podKey string, data []byte) error
+	// NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay
 
 	// SendPtyResized sends a PTY resize event to the server.
 	SendPtyResized(podKey string, cols, rows int32) error
@@ -43,6 +41,14 @@ type Connection interface {
 
 	// SendSandboxesStatus sends sandbox status query response to the server.
 	SendSandboxesStatus(requestID string, sandboxes []*SandboxStatusInfo) error
+
+	// SendOSCNotification sends an OSC notification event to the server.
+	// This is triggered by OSC 777 (iTerm2/Kitty) or OSC 9 (ConEmu/Windows Terminal) sequences.
+	SendOSCNotification(podKey, title, body string) error
+
+	// SendOSCTitle sends an OSC title change event to the server.
+	// This is triggered by OSC 0/2 sequences for window/tab title changes.
+	SendOSCTitle(podKey, title string) error
 
 	// QueueLength returns the current send queue length.
 	QueueLength() int

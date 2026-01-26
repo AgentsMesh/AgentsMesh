@@ -29,6 +29,8 @@ message RunnerMessage {
     PodInitProgressEvent pod_init_progress = 10;
     RequestRelayTokenEvent request_relay_token = 11;
     SandboxesStatusEvent sandboxes_status = 12;
+    OSCNotificationEvent osc_notification = 13;
+    OSCTitleEvent osc_title = 14;
   }
   int64 timestamp = 15;
 }
@@ -300,4 +302,22 @@ message SandboxStatus {
   bool has_uncommitted_changes = 9; // 是否有未提交的更改
   bool can_resume = 10;            // 是否可以 resume（Sandbox 存在即可）
   string error = 11;               // 查询错误信息（如有）
+}
+
+// ==================== OSC 终端通知相关 ====================
+
+// OSCNotificationEvent OSC 通知事件（OSC 777/9）
+// 用于终端向浏览器发送桌面通知
+message OSCNotificationEvent {
+  string pod_key = 1;      // Pod 标识
+  string title = 2;        // 通知标题
+  string body = 3;         // 通知内容
+  int64 timestamp = 4;     // Unix 毫秒时间戳
+}
+
+// OSCTitleEvent OSC 标题变更事件（OSC 0/2）
+// 用于终端设置窗口/标签页标题
+message OSCTitleEvent {
+  string pod_key = 1;      // Pod 标识
+  string title = 2;        // 新标题
 }

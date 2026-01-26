@@ -48,9 +48,12 @@ func NewTerminalRouter(cm *RunnerConnectionManager, logger *slog.Logger) *Termin
 	}
 
 	// Set up callbacks from connection manager
-	// Note: Terminal output is now routed through Relay, not Backend
-	cm.SetTerminalOutputCallback(tr.handleTerminalOutput)
 	cm.SetPtyResizedCallback(tr.handlePtyResized)
+
+	// Set up OSC notification callbacks
+	// OSC events are sent directly by Runner (bypassing terminal output throttling)
+	cm.SetOSCNotificationCallback(tr.handleOSCNotification)
+	cm.SetOSCTitleCallback(tr.handleOSCTitle)
 
 	return tr
 }
@@ -131,20 +134,6 @@ func (tr *TerminalRouter) UnregisterPod(podKey string) {
 	tr.logger.Debug("pod unregistered", "pod_key", podKey)
 }
 
-// handleTerminalOutput handles terminal output from a runner.
-// Note: After Relay migration, this only handles OSC detection.
-// Actual terminal data is streamed through Relay, not Backend.
-func (tr *TerminalRouter) handleTerminalOutput(runnerID int64, data *runnerv1.TerminalOutputEvent) {
-	podKey := data.PodKey
-
-	// Check for OSC 777/9 notifications and publish events
-	if tr.oscDetector != nil {
-		tr.oscDetector.DetectAndPublish(context.Background(), podKey, data.Data)
-		// Check for OSC 0/2 title changes and publish events
-		tr.oscDetector.DetectAndPublishTitle(context.Background(), podKey, data.Data)
-	}
-}
-
 // handlePtyResized handles PTY resize notifications from runner
 func (tr *TerminalRouter) handlePtyResized(runnerID int64, data *runnerv1.PtyResizedEvent) {
 	podKey := data.PodKey
@@ -170,6 +159,46 @@ func (tr *TerminalRouter) handlePtyResized(runnerID int64, data *runnerv1.PtyRes
 		"pod_key", podKey,
 		"cols", cols,
 		"rows", rows)
+}
+
+// handleOSCNotification handles OSC notification events directly from Runner.
+// OSC data flow (high priority, bypasses terminal output):
+//
+//	PTY → VT.Feed() → OSCHandler → gRPC controlCh → Backend → EventBus → WebSocket → Browser
+//
+// OSC events are sent as discrete messages via controlCh, ensuring they are
+// never lost due to SmartAggregator throttling (terminal output uses separate Relay path).
+func (tr *TerminalRouter) handleOSCNotification(runnerID int64, data *runnerv1.OSCNotificationEvent) {
+	podKey := data.PodKey
+
+	tr.logger.Info("received OSC notification",
+		"pod_key", podKey,
+		"runner_id", runnerID,
+		"title", data.Title,
+		"body", data.Body,
+	)
+
+	// Publish to EventBus using OSCDetector
+	if tr.oscDetector != nil && tr.oscDetector.eventBus != nil {
+		tr.oscDetector.PublishNotification(context.Background(), podKey, data.Title, data.Body)
+	}
+}
+
+// handleOSCTitle handles OSC title change events directly from Runner.
+// This is the new OSC data flow that bypasses terminal output throttling.
+func (tr *TerminalRouter) handleOSCTitle(runnerID int64, data *runnerv1.OSCTitleEvent) {
+	podKey := data.PodKey
+
+	tr.logger.Debug("received OSC title change",
+		"pod_key", podKey,
+		"runner_id", runnerID,
+		"title", data.Title,
+	)
+
+	// Publish to EventBus using OSCDetector
+	if tr.oscDetector != nil && tr.oscDetector.eventBus != nil {
+		tr.oscDetector.PublishTitle(context.Background(), podKey, data.Title)
+	}
 }
 
 // RouteInput routes terminal input from frontend to runner

@@ -38,6 +38,8 @@ type RunnerMessage struct {
 	//	*RunnerMessage_PodInitProgress
 	//	*RunnerMessage_RequestRelayToken
 	//	*RunnerMessage_SandboxesStatus
+	//	*RunnerMessage_OscNotification
+	//	*RunnerMessage_OscTitle
 	Payload       isRunnerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -189,6 +191,24 @@ func (x *RunnerMessage) GetSandboxesStatus() *SandboxesStatusEvent {
 	return nil
 }
 
+func (x *RunnerMessage) GetOscNotification() *OSCNotificationEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*RunnerMessage_OscNotification); ok {
+			return x.OscNotification
+		}
+	}
+	return nil
+}
+
+func (x *RunnerMessage) GetOscTitle() *OSCTitleEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*RunnerMessage_OscTitle); ok {
+			return x.OscTitle
+		}
+	}
+	return nil
+}
+
 func (x *RunnerMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -248,6 +268,14 @@ type RunnerMessage_SandboxesStatus struct {
 	SandboxesStatus *SandboxesStatusEvent `protobuf:"bytes,12,opt,name=sandboxes_status,json=sandboxesStatus,proto3,oneof"`
 }
 
+type RunnerMessage_OscNotification struct {
+	OscNotification *OSCNotificationEvent `protobuf:"bytes,13,opt,name=osc_notification,json=oscNotification,proto3,oneof"`
+}
+
+type RunnerMessage_OscTitle struct {
+	OscTitle *OSCTitleEvent `protobuf:"bytes,14,opt,name=osc_title,json=oscTitle,proto3,oneof"`
+}
+
 func (*RunnerMessage_Initialize) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_Initialized) isRunnerMessage_Payload() {}
@@ -271,6 +299,10 @@ func (*RunnerMessage_PodInitProgress) isRunnerMessage_Payload() {}
 func (*RunnerMessage_RequestRelayToken) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_SandboxesStatus) isRunnerMessage_Payload() {}
+
+func (*RunnerMessage_OscNotification) isRunnerMessage_Payload() {}
+
+func (*RunnerMessage_OscTitle) isRunnerMessage_Payload() {}
 
 // InitializeRequest Runner 初始化请求
 type InitializeRequest struct {
@@ -2444,11 +2476,135 @@ func (x *SandboxStatus) GetError() string {
 	return ""
 }
 
+// OSCNotificationEvent OSC 通知事件（OSC 777/9）
+// 用于终端向浏览器发送桌面通知
+type OSCNotificationEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"` // Pod 标识
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                 // 通知标题
+	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`                   // 通知内容
+	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`        // Unix 毫秒时间戳
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OSCNotificationEvent) Reset() {
+	*x = OSCNotificationEvent{}
+	mi := &file_runner_v1_runner_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OSCNotificationEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OSCNotificationEvent) ProtoMessage() {}
+
+func (x *OSCNotificationEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OSCNotificationEvent.ProtoReflect.Descriptor instead.
+func (*OSCNotificationEvent) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *OSCNotificationEvent) GetPodKey() string {
+	if x != nil {
+		return x.PodKey
+	}
+	return ""
+}
+
+func (x *OSCNotificationEvent) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *OSCNotificationEvent) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *OSCNotificationEvent) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+// OSCTitleEvent OSC 标题变更事件（OSC 0/2）
+// 用于终端设置窗口/标签页标题
+type OSCTitleEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"` // Pod 标识
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                 // 新标题
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OSCTitleEvent) Reset() {
+	*x = OSCTitleEvent{}
+	mi := &file_runner_v1_runner_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OSCTitleEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OSCTitleEvent) ProtoMessage() {}
+
+func (x *OSCTitleEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OSCTitleEvent.ProtoReflect.Descriptor instead.
+func (*OSCTitleEvent) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *OSCTitleEvent) GetPodKey() string {
+	if x != nil {
+		return x.PodKey
+	}
+	return ""
+}
+
+func (x *OSCTitleEvent) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
 var File_runner_v1_runner_proto protoreflect.FileDescriptor
 
 const file_runner_v1_runner_proto_rawDesc = "" +
 	"\n" +
-	"\x16runner/v1/runner.proto\x12\trunner.v1\"\xe9\x06\n" +
+	"\x16runner/v1/runner.proto\x12\trunner.v1\"\xf0\a\n" +
 	"\rRunnerMessage\x12>\n" +
 	"\n" +
 	"initialize\x18\x01 \x01(\v2\x1c.runner.v1.InitializeRequestH\x00R\n" +
@@ -2466,7 +2622,9 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x11pod_init_progress\x18\n" +
 	" \x01(\v2\x1f.runner.v1.PodInitProgressEventH\x00R\x0fpodInitProgress\x12S\n" +
 	"\x13request_relay_token\x18\v \x01(\v2!.runner.v1.RequestRelayTokenEventH\x00R\x11requestRelayToken\x12L\n" +
-	"\x10sandboxes_status\x18\f \x01(\v2\x1f.runner.v1.SandboxesStatusEventH\x00R\x0fsandboxesStatus\x12\x1c\n" +
+	"\x10sandboxes_status\x18\f \x01(\v2\x1f.runner.v1.SandboxesStatusEventH\x00R\x0fsandboxesStatus\x12L\n" +
+	"\x10osc_notification\x18\r \x01(\v2\x1f.runner.v1.OSCNotificationEventH\x00R\x0foscNotification\x127\n" +
+	"\tosc_title\x18\x0e \x01(\v2\x18.runner.v1.OSCTitleEventH\x00R\boscTitle\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"v\n" +
 	"\x11InitializeRequest\x12)\n" +
@@ -2640,7 +2798,15 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\n" +
 	"can_resume\x18\n" +
 	" \x01(\bR\tcanResume\x12\x14\n" +
-	"\x05error\x18\v \x01(\tR\x05error2R\n" +
+	"\x05error\x18\v \x01(\tR\x05error\"w\n" +
+	"\x14OSCNotificationEvent\x12\x17\n" +
+	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\tR\x04body\x12\x1c\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\">\n" +
+	"\rOSCTitleEvent\x12\x17\n" +
+	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title2R\n" +
 	"\rRunnerService\x12A\n" +
 	"\aConnect\x12\x18.runner.v1.RunnerMessage\x1a\x18.runner.v1.ServerMessage(\x010\x01B\x9a\x01\n" +
 	"\rcom.runner.v1B\vRunnerProtoP\x01Z7github.com/anthropic/agentmesh/proto/runner/v1;runnerv1\xa2\x02\x03RXX\xaa\x02\tRunner.V1\xca\x02\tRunner\\V1\xe2\x02\x15Runner\\V1\\GPBMetadata\xea\x02\n" +
@@ -2658,7 +2824,7 @@ func file_runner_v1_runner_proto_rawDescGZIP() []byte {
 	return file_runner_v1_runner_proto_rawDescData
 }
 
-var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_runner_v1_runner_proto_goTypes = []any{
 	(*RunnerMessage)(nil),              // 0: runner.v1.RunnerMessage
 	(*InitializeRequest)(nil),          // 1: runner.v1.InitializeRequest
@@ -2692,8 +2858,10 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*SandboxQuery)(nil),               // 29: runner.v1.SandboxQuery
 	(*SandboxesStatusEvent)(nil),       // 30: runner.v1.SandboxesStatusEvent
 	(*SandboxStatus)(nil),              // 31: runner.v1.SandboxStatus
-	nil,                                // 32: runner.v1.ErrorEvent.DetailsEntry
-	nil,                                // 33: runner.v1.CreatePodCommand.EnvVarsEntry
+	(*OSCNotificationEvent)(nil),       // 32: runner.v1.OSCNotificationEvent
+	(*OSCTitleEvent)(nil),              // 33: runner.v1.OSCTitleEvent
+	nil,                                // 34: runner.v1.ErrorEvent.DetailsEntry
+	nil,                                // 35: runner.v1.CreatePodCommand.EnvVarsEntry
 }
 var file_runner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: runner.v1.RunnerMessage.initialize:type_name -> runner.v1.InitializeRequest
@@ -2708,33 +2876,35 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	12, // 9: runner.v1.RunnerMessage.pod_init_progress:type_name -> runner.v1.PodInitProgressEvent
 	27, // 10: runner.v1.RunnerMessage.request_relay_token:type_name -> runner.v1.RequestRelayTokenEvent
 	30, // 11: runner.v1.RunnerMessage.sandboxes_status:type_name -> runner.v1.SandboxesStatusEvent
-	2,  // 12: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
-	5,  // 13: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
-	32, // 14: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
-	14, // 15: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
-	17, // 16: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
-	20, // 17: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
-	21, // 18: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
-	22, // 19: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
-	23, // 20: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
-	24, // 21: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
-	25, // 22: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
-	26, // 23: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
-	28, // 24: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
-	15, // 25: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
-	16, // 26: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
-	33, // 27: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
-	18, // 28: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
-	19, // 29: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
-	29, // 30: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
-	31, // 31: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
-	0,  // 32: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
-	13, // 33: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
-	33, // [33:34] is the sub-list for method output_type
-	32, // [32:33] is the sub-list for method input_type
-	32, // [32:32] is the sub-list for extension type_name
-	32, // [32:32] is the sub-list for extension extendee
-	0,  // [0:32] is the sub-list for field type_name
+	32, // 12: runner.v1.RunnerMessage.osc_notification:type_name -> runner.v1.OSCNotificationEvent
+	33, // 13: runner.v1.RunnerMessage.osc_title:type_name -> runner.v1.OSCTitleEvent
+	2,  // 14: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
+	5,  // 15: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
+	34, // 16: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
+	14, // 17: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
+	17, // 18: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
+	20, // 19: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
+	21, // 20: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
+	22, // 21: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
+	23, // 22: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
+	24, // 23: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
+	25, // 24: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
+	26, // 25: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
+	28, // 26: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
+	15, // 27: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
+	16, // 28: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
+	35, // 29: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
+	18, // 30: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
+	19, // 31: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
+	29, // 32: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
+	31, // 33: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
+	0,  // 34: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
+	13, // 35: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
+	35, // [35:36] is the sub-list for method output_type
+	34, // [34:35] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_runner_v1_runner_proto_init() }
@@ -2755,6 +2925,8 @@ func file_runner_v1_runner_proto_init() {
 		(*RunnerMessage_PodInitProgress)(nil),
 		(*RunnerMessage_RequestRelayToken)(nil),
 		(*RunnerMessage_SandboxesStatus)(nil),
+		(*RunnerMessage_OscNotification)(nil),
+		(*RunnerMessage_OscTitle)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[13].OneofWrappers = []any{
 		(*ServerMessage_InitializeResult)(nil),
@@ -2774,7 +2946,7 @@ func file_runner_v1_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_v1_runner_proto_rawDesc), len(file_runner_v1_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   34,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

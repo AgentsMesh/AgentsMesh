@@ -78,9 +78,9 @@ type GRPCConnection struct {
 	mcpPort       int
 
 	// Lifecycle - Priority-based channels for message sending
-	// Control messages (heartbeat, pod events) have higher priority than terminal output
-	controlCh     chan *runnerv1.RunnerMessage // High priority: heartbeat, pod_created, pod_terminated, etc.
-	terminalCh    chan *runnerv1.RunnerMessage // Low priority: terminal_output, agent_status
+	// Control messages (heartbeat, pod events, OSC) have higher priority than agent status
+	controlCh     chan *runnerv1.RunnerMessage // High priority: heartbeat, pod_created, pod_terminated, OSC, etc.
+	terminalCh    chan *runnerv1.RunnerMessage // Low priority: agent_status (terminal output via Relay)
 	stopCh        chan struct{}
 	stopOnce      sync.Once
 	reconnectOnce sync.Once      // Ensures only one reconnection attempt
@@ -444,8 +444,9 @@ func (c *GRPCConnection) sendControl(msg *runnerv1.RunnerMessage) error {
 }
 
 // sendTerminal queues a terminal message (low priority).
-// Terminal messages include: terminal_output, agent_status.
-// These messages are dropped silently if buffer is full (TUI frames are expendable).
+// Terminal messages include: agent_status.
+// NOTE: terminal_output removed - terminal output is exclusively streamed via Relay.
+// These messages are dropped silently if buffer is full.
 // Returns nil even when dropped to avoid blocking callers.
 //
 // IMPORTANT: Messages are rejected before initialization completes.
@@ -517,41 +518,7 @@ func (c *GRPCConnection) SendPodTerminated(podKey string, exitCode int32, errorM
 	return c.sendControl(msg)
 }
 
-// SendTerminalOutput sends terminal output to the server (terminal message).
-// Non-blocking: drops silently if buffer is full (TUI frames are expendable).
-func (c *GRPCConnection) SendTerminalOutput(podKey string, data []byte) error {
-	// Apply rate limiting if enabled
-	// This prevents overwhelming servers with limited bandwidth
-	if c.terminalRateLimiter != nil {
-		// WaitN blocks until we have enough tokens for this message
-		// Use a context with timeout to avoid blocking forever
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		err := c.terminalRateLimiter.WaitN(ctx, len(data))
-		cancel()
-		if err != nil {
-			// Rate limit timeout - drop the message (TUI frames are expendable)
-			logger.Terminal().Debug("SendTerminalOutput: rate limit timeout, dropping",
-				"pod_key", podKey, "data_len", len(data))
-			return nil
-		}
-	}
-
-	msg := &runnerv1.RunnerMessage{
-		Payload: &runnerv1.RunnerMessage_TerminalOutput{
-			TerminalOutput: &runnerv1.TerminalOutputEvent{
-				PodKey: podKey,
-				Data:   data,
-			},
-		},
-		Timestamp: time.Now().UnixMilli(),
-	}
-
-	logger.Terminal().Debug("SendTerminalOutput called",
-		"pod_key", podKey, "data_len", len(data),
-		"queue_len", len(c.terminalCh), "queue_cap", cap(c.terminalCh))
-
-	return c.sendTerminal(msg)
-}
+// NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay
 
 // SendAgentStatus sends an agent status change event to the server (terminal message).
 func (c *GRPCConnection) SendAgentStatus(podKey string, status string) error {
@@ -622,6 +589,39 @@ func (c *GRPCConnection) SendRequestRelayToken(podKey, sessionID, relayURL strin
 				PodKey:    podKey,
 				SessionId: sessionID,
 				RelayUrl:  relayURL,
+			},
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return c.sendControl(msg)
+}
+
+// SendOSCNotification sends an OSC notification event to the server (control message).
+// This is triggered by OSC 777 (iTerm2/Kitty) or OSC 9 (ConEmu/Windows Terminal) sequences.
+// Uses controlCh for high priority delivery (not affected by terminal output throttling).
+func (c *GRPCConnection) SendOSCNotification(podKey, title, body string) error {
+	msg := &runnerv1.RunnerMessage{
+		Payload: &runnerv1.RunnerMessage_OscNotification{
+			OscNotification: &runnerv1.OSCNotificationEvent{
+				PodKey:    podKey,
+				Title:     title,
+				Body:      body,
+				Timestamp: time.Now().UnixMilli(),
+			},
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return c.sendControl(msg)
+}
+
+// SendOSCTitle sends an OSC title change event to the server (control message).
+// This is triggered by OSC 0/2 sequences for window/tab title changes.
+func (c *GRPCConnection) SendOSCTitle(podKey, title string) error {
+	msg := &runnerv1.RunnerMessage{
+		Payload: &runnerv1.RunnerMessage_OscTitle{
+			OscTitle: &runnerv1.OSCTitleEvent{
+				PodKey: podKey,
+				Title:  title,
 			},
 		},
 		Timestamp: time.Now().UnixMilli(),
