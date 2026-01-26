@@ -17,7 +17,7 @@ builds:
   # Desktop mode is not available in CLI builds (use Desktop build for system tray)
   - id: runner-cli
     main: ./cmd/runner
-    binary: runner
+    binary: agentsmesh-runner
     env:
       - CGO_ENABLED=0
     goos:
@@ -61,7 +61,7 @@ universal_binaries:
     # replace: false to keep individual darwin builds for the archive
     # The universal binary will be created as a separate artifact
     replace: false
-    name_template: "runner"
+    name_template: "agentsmesh-runner"
 
 # Linux packages using nfpm
 nfpms:
@@ -201,7 +201,7 @@ release:
     ```bash
     # Intel or Apple Silicon (Universal binary)
     curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_darwin_all.tar.gz | tar xz
-    sudo mv runner /usr/local/bin/
+    sudo mv agentsmesh-runner /usr/local/bin/
     ```
 
     **Linux (Debian/Ubuntu):**
@@ -237,7 +237,7 @@ release:
     ```bash
     # x86_64
     curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/download/v{{.Version}}/agentsmesh-runner_{{.Version}}_linux_amd64.tar.gz | tar xz
-    sudo mv runner /usr/local/bin/
+    sudo mv agentsmesh-runner /usr/local/bin/
     ```
 
     **Windows:**
@@ -247,23 +247,23 @@ release:
 
     ```bash
     # Register runner with AgentsMesh server
-    runner register --server https://api.agentsmesh.ai --token YOUR_TOKEN
+    agentsmesh-runner register --server https://api.agentsmesh.ai --token YOUR_TOKEN
 
     # Start runner
-    runner run
+    agentsmesh-runner run
     ```
 
     ### Run as System Service
 
     ```bash
     # Install service
-    sudo runner service install
+    sudo agentsmesh-runner service install
 
     # Start service
-    sudo runner service start
+    sudo agentsmesh-runner service start
 
     # Check status
-    sudo runner service status
+    sudo agentsmesh-runner service status
     ```
 
   footer: |
@@ -294,19 +294,19 @@ brews:
     description: "AgentsMesh Runner - AI Agent Task Executor"
     license: MIT
     install: |
-      bin.install "runner"
+      bin.install "agentsmesh-runner"
     caveats: |
       To get started with AgentsMesh Runner:
 
       1. Register the runner with your AgentsMesh server:
-         runner register --server https://api.agentsmesh.ai --token YOUR_TOKEN
+         agentsmesh-runner register --server https://api.agentsmesh.ai --token YOUR_TOKEN
 
       2. Start the runner:
-         runner run
+         agentsmesh-runner run
 
       For more information, visit: https://agentsmesh.ai/docs/runner
     test: |
-      system "#{bin}/runner", "version"
+      system "#{bin}/agentsmesh-runner", "version"
     # skip_upload: auto  # Uncomment to skip upload for pre-releases
 
 # Scoop bucket for Windows (optional)
