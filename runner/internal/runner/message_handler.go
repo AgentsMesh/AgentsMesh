@@ -85,15 +85,16 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	podKey := cmd.PodKey
 	vt := pod.VirtualTerminal
 
-	// gRPC fallback handler (when no Relay connected)
-	grpcHandler := func(data []byte) {
-		h.sendTerminalOutput(podKey, data)
-	}
+	// Set up OSC sequence handler for terminal notifications
+	// OSC sequences are detected in VT.Feed() and sent via high-priority controlCh
+	// to avoid being throttled/dropped by SmartAggregator
+	vt.SetOSCHandler(h.createOSCHandler(podKey))
 
-	// Create aggregator with gRPC as fallback and full redraw throttling
+	// Create aggregator with full redraw throttling
 	// Full redraw throttling detects high-frequency screen refreshes (like `glab ci status --live`)
 	// and reduces transmission rate to save bandwidth while preserving latest state
-	aggregator := terminal.NewSmartAggregator(grpcHandler, nil,
+	// NOTE: No gRPC fallback - terminal output is exclusively streamed via Relay
+	aggregator := terminal.NewSmartAggregator(nil, nil,
 		terminal.WithFullRedrawThrottling(),
 	)
 	pod.Aggregator = aggregator
@@ -152,16 +153,9 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	// Notify server that pod is created with actual terminal size
 	h.sendPodCreated(cmd.PodKey, pod.Terminal.PID(), pod.SandboxPath, pod.Branch, uint16(cols), uint16(rows))
 
-	// Send initial terminal setup sequence to ensure clean xterm.js state
-	// TUI apps like Claude Code (using Ink) assume the terminal is clean and use
-	// relative cursor positioning in their first frame. Without this init sequence,
-	// the first frame may overlay on xterm.js's initial cursor position.
-	//
-	// Sequence: ESC[2J (clear screen) + ESC[H (cursor home)
-	// This is sent OUTSIDE sync frames so StripRedundantSequencesInFrames won't filter it.
-	initSequence := []byte("\x1b[2J\x1b[H")
-	h.sendTerminalOutput(cmd.PodKey, initSequence)
-	log.Debug("Sent initial terminal setup sequence", "pod_key", cmd.PodKey)
+	// NOTE: Initial terminal setup sequence (clear screen + cursor home) is no longer sent via gRPC.
+	// Terminal output is exclusively streamed via Relay. When browser connects and subscribes,
+	// it receives a terminal snapshot that contains the complete terminal state.
 
 	log.Info("Pod created", "pod_key", cmd.PodKey, "pid", pod.Terminal.PID(), "sandbox", pod.SandboxPath, "branch", pod.Branch, "cols", cols, "rows", rows)
 	return nil
@@ -509,6 +503,51 @@ func (h *RunnerMessageHandler) OnQuerySandboxes(req client.QuerySandboxesRequest
 
 // Helper methods
 
+// createOSCHandler creates an OSC handler that sends terminal notifications to the server.
+// OSC sequences are used by terminal programs to trigger desktop notifications:
+//   - OSC 777: iTerm2/Kitty format "notify;title;body"
+//   - OSC 9: ConEmu/Windows Terminal format "message"
+//   - OSC 0/2: Window/tab title change
+func (h *RunnerMessageHandler) createOSCHandler(podKey string) terminal.OSCHandler {
+	return func(oscType int, params []string) {
+		log := logger.Terminal()
+
+		switch oscType {
+		case 777:
+			// OSC 777;notify;title;body - iTerm2/Kitty notification format
+			// params[0] = "notify", params[1] = title, params[2] = body
+			if len(params) >= 3 && params[0] == "notify" {
+				title := params[1]
+				body := params[2]
+				log.Debug("OSC 777 notification detected", "pod_key", podKey, "title", title, "body", body)
+				if err := h.conn.SendOSCNotification(podKey, title, body); err != nil {
+					log.Error("Failed to send OSC notification", "pod_key", podKey, "error", err)
+				}
+			}
+
+		case 9:
+			// OSC 9;message - ConEmu/Windows Terminal notification format
+			if len(params) >= 1 {
+				body := params[0]
+				log.Debug("OSC 9 notification detected", "pod_key", podKey, "body", body)
+				if err := h.conn.SendOSCNotification(podKey, "Notification", body); err != nil {
+					log.Error("Failed to send OSC notification", "pod_key", podKey, "error", err)
+				}
+			}
+
+		case 0, 2:
+			// OSC 0/2;title - Window/tab title
+			if len(params) >= 1 {
+				title := params[0]
+				log.Debug("OSC title change detected", "pod_key", podKey, "title", title)
+				if err := h.conn.SendOSCTitle(podKey, title); err != nil {
+					log.Error("Failed to send OSC title", "pod_key", podKey, "error", err)
+				}
+			}
+		}
+	}
+}
+
 // createExitHandler creates an exit handler that notifies server when pod exits.
 func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 	return func(exitCode int) {
@@ -558,21 +597,7 @@ func (h *RunnerMessageHandler) sendPodTerminated(podKey string) {
 	}
 }
 
-func (h *RunnerMessageHandler) sendTerminalOutput(podKey string, data []byte) {
-	logger.Terminal().Debug("sendTerminalOutput called",
-		"pod_key", podKey, "data_len", len(data))
-
-	if h.conn == nil {
-		logger.Terminal().Debug("sendTerminalOutput: conn is nil")
-		return
-	}
-	// Use gRPC-specific method for terminal output
-	if err := h.conn.SendTerminalOutput(podKey, data); err != nil {
-		logger.Terminal().Error("Failed to send terminal output", "error", err)
-	} else {
-		logger.Terminal().Debug("sendTerminalOutput: sent successfully")
-	}
-}
+// NOTE: sendTerminalOutput removed - terminal output is exclusively streamed via Relay
 
 func (h *RunnerMessageHandler) sendPtyResized(podKey string, cols, rows uint16) {
 	if h.conn == nil {

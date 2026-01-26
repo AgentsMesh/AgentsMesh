@@ -168,26 +168,6 @@ func TestTerminalRouterRouteResizeWithNoOpCommandSender(t *testing.T) {
 	}
 }
 
-func TestTerminalRouterHandleTerminalOutput(t *testing.T) {
-	cm := NewRunnerConnectionManager(newTestLogger())
-	tr := NewTerminalRouter(cm, newTestLogger())
-
-	// Register pod
-	tr.RegisterPod("pod-1", 100)
-
-	// Handle output with no clients (using Proto type)
-	// After Relay migration, this only triggers OSC detection
-	tr.handleTerminalOutput(100, &runnerv1.TerminalOutputEvent{
-		PodKey: "pod-1",
-		Data:   []byte("test output"),
-	})
-
-	// Pod should still be registered
-	if !tr.IsPodRegistered("pod-1") {
-		t.Error("pod should still be registered")
-	}
-}
-
 // TestTerminalRouterAutoRegisterOnResize tests that pod is auto-registered on PTY resize
 func TestTerminalRouterAutoRegisterOnResize(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())

@@ -4,12 +4,18 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
 )
+
+// OSCHandler is a callback for handling OSC (Operating System Command) sequences.
+// oscType is the OSC code (e.g., 777 for notify, 9 for message, 0/2 for title).
+// params are the semicolon-separated parameters after the OSC code.
+type OSCHandler func(oscType int, params []string)
 
 // runeWidthCond is configured for terminal use (East Asian Ambiguous = narrow)
 var runeWidthCond = func() *runewidth.Condition {
@@ -90,6 +96,9 @@ type VirtualTerminal struct {
 	useAltScreen    bool
 	savedMainScreen [][]rune
 	savedMainCells  [][]Cell
+
+	// OSC sequence handler callback
+	oscHandler OSCHandler
 }
 
 // escapeState represents the current state of escape sequence parsing
@@ -226,7 +235,18 @@ func (vt *VirtualTerminal) processByte(b byte) {
 	case stateOSC:
 		// OSC sequences end with BEL (0x07) or ST (ESC \)
 		if b == 0x07 {
+			vt.handleOSC(vt.escBuffer) // Parse and invoke OSC callback
 			vt.escState = stateNormal
+			vt.escBuffer = vt.escBuffer[:0]
+		} else if b == 0x1b {
+			// ST (ESC \) starts with ESC, need to track for next byte
+			vt.escBuffer = append(vt.escBuffer, b)
+		} else if len(vt.escBuffer) > 0 && vt.escBuffer[len(vt.escBuffer)-1] == 0x1b && b == '\\' {
+			// ST (ESC \) completes OSC sequence
+			vt.escBuffer = vt.escBuffer[:len(vt.escBuffer)-1] // Remove trailing ESC
+			vt.handleOSC(vt.escBuffer)
+			vt.escState = stateNormal
+			vt.escBuffer = vt.escBuffer[:0]
 		} else {
 			vt.escBuffer = append(vt.escBuffer, b)
 		}
@@ -292,6 +312,41 @@ func (vt *VirtualTerminal) processEscapeByte(b byte) {
 		// Unknown escape sequence, return to normal
 		vt.escState = stateNormal
 	}
+}
+
+// handleOSC processes an OSC (Operating System Command) sequence.
+// Format: OSC Ps ; Pt BEL or OSC Ps ; Pt ST
+// where Ps is the OSC code and Pt is the parameter text.
+func (vt *VirtualTerminal) handleOSC(data []byte) {
+	if vt.oscHandler == nil {
+		return
+	}
+
+	// Parse OSC content: "code;param1;param2..."
+	content := string(data)
+	if content == "" {
+		return
+	}
+
+	// Split into code and parameters
+	parts := strings.SplitN(content, ";", 2)
+	if len(parts) < 1 {
+		return
+	}
+
+	oscType, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return
+	}
+
+	var params []string
+	if len(parts) > 1 {
+		params = strings.Split(parts[1], ";")
+	}
+
+	// Call handler in a goroutine to avoid blocking PTY processing
+	handler := vt.oscHandler
+	go handler(oscType, params)
 }
 
 // processChar processes a single character
@@ -734,6 +789,18 @@ func (vt *VirtualTerminal) SetOnFirstData(callback func()) {
 	vt.onFirstDataMu.Lock()
 	defer vt.onFirstDataMu.Unlock()
 	vt.onFirstData = callback
+}
+
+// SetOSCHandler sets a callback to be called when OSC sequences are detected.
+// The callback is called synchronously during Feed() processing.
+// Supported OSC types:
+//   - OSC 777: Desktop notification (iTerm2/Kitty format: "notify;title;body")
+//   - OSC 9: Desktop notification (ConEmu/Windows Terminal format: "message")
+//   - OSC 0/2: Window/tab title
+func (vt *VirtualTerminal) SetOSCHandler(handler OSCHandler) {
+	vt.mu.Lock()
+	defer vt.mu.Unlock()
+	vt.oscHandler = handler
 }
 
 // CursorPosition returns the current cursor position

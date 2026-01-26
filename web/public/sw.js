@@ -124,6 +124,23 @@ self.addEventListener('notificationclick', (event) => {
   let targetUrl = '/';
 
   if (notificationData) {
+    // Handle terminal notifications (from useBrowserNotification)
+    if (notificationData.podKey) {
+      // Terminal notification - focus existing window
+      event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+          // Find and focus any existing window
+          for (const client of windowClients) {
+            if ('focus' in client) {
+              return client.focus();
+            }
+          }
+        })
+      );
+      return;
+    }
+
+    // Handle push notifications with type
     switch (notificationData.type) {
       case 'pod_status':
         targetUrl = `/${notificationData.orgSlug}/workspace`;

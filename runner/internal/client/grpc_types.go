@@ -58,11 +58,7 @@ type GRPCPodTerminatedEvent struct {
 	ErrorMessage string `json:"error_message"`
 }
 
-// GRPCTerminalOutputEvent represents terminal output from a Pod.
-type GRPCTerminalOutputEvent struct {
-	PodKey string `json:"pod_key"`
-	Data   []byte `json:"data"` // Binary data, no base64 encoding needed with protobuf
-}
+// NOTE: GRPCTerminalOutputEvent removed - terminal output is exclusively streamed via Relay
 
 // GRPCAgentStatusEvent represents an agent status change.
 type GRPCAgentStatusEvent struct {

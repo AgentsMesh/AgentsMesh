@@ -19,13 +19,15 @@ const (
 	MsgTypeInitialized = "initialized"
 
 	// ==================== 运行时消息: Runner -> Backend ====================
-	MsgTypeHeartbeat      = "heartbeat"
-	MsgTypePodCreated     = "pod_created"
-	MsgTypePodTerminated  = "pod_terminated"
-	MsgTypeTerminalOutput = "terminal_output"
-	MsgTypeAgentStatus    = "agent_status"
-	MsgTypePtyResized     = "pty_resized"
-	MsgTypeError          = "error"
+	// NOTE: These constants are for the legacy JSON protocol (protocol_version=1).
+	// Current implementation uses Proto (protocol_version=2), so these are rarely used.
+	MsgTypeHeartbeat     = "heartbeat"
+	MsgTypePodCreated    = "pod_created"
+	MsgTypePodTerminated = "pod_terminated"
+	MsgTypeAgentStatus   = "agent_status"
+	MsgTypePtyResized    = "pty_resized"
+	MsgTypeError         = "error"
+	// NOTE: terminal_output is NOT here - terminal output is streamed via Relay, not gRPC
 
 	// ==================== 运行时消息: Backend -> Runner ====================
 	MsgTypeCreatePod      = "create_pod"
