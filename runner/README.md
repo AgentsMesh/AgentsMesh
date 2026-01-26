@@ -28,15 +28,15 @@ brew install agentsmesh/tap/agentsmesh-runner
 ```bash
 # macOS (Universal binary - Intel & Apple Silicon)
 curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentsmesh-runner_0.2.1_darwin_all.tar.gz | tar xz
-sudo mv runner /usr/local/bin/
+sudo mv agentsmesh-runner /usr/local/bin/
 
 # Linux x86_64
 curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentsmesh-runner_0.2.1_linux_amd64.tar.gz | tar xz
-sudo mv runner /usr/local/bin/
+sudo mv agentsmesh-runner /usr/local/bin/
 
 # Linux ARM64
 curl -fsSL https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest/download/agentsmesh-runner_0.2.1_linux_arm64.tar.gz | tar xz
-sudo mv runner /usr/local/bin/
+sudo mv agentsmesh-runner /usr/local/bin/
 ```
 
 > **Note**: Replace `0.2.1` with the [latest version](https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest).
@@ -77,7 +77,8 @@ scoop install agentsmesh-runner
 Get a registration token from your AgentsMesh dashboard, then:
 
 ```bash
-runner register --server https://api.agentsmesh.ai --token YOUR_TOKEN
+# Global: https://api.agentsmesh.ai (or your own server address)
+agentsmesh-runner register --server <SERVER_URL> --token YOUR_TOKEN
 ```
 
 ### 2. Start the runner
@@ -85,26 +86,26 @@ runner register --server https://api.agentsmesh.ai --token YOUR_TOKEN
 **CLI mode (foreground):**
 
 ```bash
-runner run
+agentsmesh-runner run
 ```
 
 **Desktop mode (with system tray):**
 
 ```bash
-runner desktop
+agentsmesh-runner desktop
 ```
 
 **System service:**
 
 ```bash
 # Install as service
-sudo runner service install
+sudo agentsmesh-runner service install
 
 # Start service
-sudo runner service start
+sudo agentsmesh-runner service start
 
 # Check status
-runner service status
+agentsmesh-runner service status
 ```
 
 ## Usage
@@ -113,7 +114,7 @@ runner service status
 AgentsMesh Runner
 
 Usage:
-  runner <command> [options]
+  agentsmesh-runner <command> [options]
 
 Commands:
   register    Register this runner with the AgentsMesh server
@@ -123,7 +124,7 @@ Commands:
   version     Show version information
   help        Show this help message
 
-Use "runner <command> --help" for more information about a command.
+Use "agentsmesh-runner <command> --help" for more information about a command.
 ```
 
 ## Configuration
@@ -131,7 +132,7 @@ Use "runner <command> --help" for more information about a command.
 Configuration is stored in `~/.agentsmesh/config.yaml` after registration:
 
 ```yaml
-server_url: https://api.agentsmesh.ai
+server_url: <SERVER_URL>  # Your AgentsMesh server address
 node_id: my-runner
 max_concurrent_pods: 5
 workspace_root: /tmp/agentsmesh-workspace
