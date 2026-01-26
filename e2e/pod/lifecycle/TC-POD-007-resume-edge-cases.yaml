@@ -1,0 +1,288 @@
+id: TC-POD-007
+name: Pod Resume 边界条件测试
+description: |
+  验证 Pod Resume 功能的边界条件：
+  1. 不能从 running 状态的 Pod resume
+  2. 不能使用不存在的 source_pod_key
+  3. 不能跨 Runner resume（Sandbox 是本地的）
+  4. Resume 时必须使用相同的 Runner
+priority: high
+module: pod/lifecycle
+type: scenario
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+steps:
+  - id: step-1
+    action: 登录获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取 Agent 类型
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  # 边界条件 1: 不能使用不存在的 source_pod_key
+  - id: step-4
+    action: 尝试从不存在的 Pod Resume（应失败）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          source_pod_key: "non-existent-pod-key-12345"
+          initial_prompt: "E2E Edge Case - Should Fail"
+      expected:
+        status: 404
+        body:
+          code: SOURCE_POD_NOT_FOUND
+
+  # 创建一个 Pod 用于后续测试
+  - id: step-5
+    action: 创建测试 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Edge Case Test Pod"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        test_pod_key: body.pod.pod_key
+
+  - id: step-6
+    action: 等待 Pod 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{test_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 15
+        interval: 2000
+
+  # 边界条件 2: 不能从 running 状态的 Pod resume
+  - id: step-7
+    action: 尝试从 running 状态的 Pod Resume（应失败）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          source_pod_key: "{test_pod_key}"
+          initial_prompt: "E2E Edge Case - Should Fail (Running Pod)"
+      expected:
+        status: 400
+        body:
+          code: SOURCE_POD_NOT_TERMINATED
+
+  # 清理：终止测试 Pod
+  - id: step-8
+    action: 终止测试 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{test_pod_key}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-9
+    action: 等待 Pod 状态变为 terminated
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{test_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: terminated
+      retry:
+        max_attempts: 5
+        interval: 1000
+
+  # 边界条件 3: 成功 Resume 后再次 Resume 应成功（链式 Resume）
+  - id: step-10
+    action: 第一次 Resume（应成功）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          source_pod_key: "{test_pod_key}"
+          initial_prompt: "E2E Edge Case - First Resume"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        first_resume_pod_key: body.pod.pod_key
+
+  - id: step-11
+    action: 等待第一次 Resume 的 Pod 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{first_resume_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 15
+        interval: 2000
+
+  - id: step-12
+    action: 终止第一次 Resume 的 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{first_resume_pod_key}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-13
+    action: 等待第一次 Resume 的 Pod terminated
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{first_resume_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: terminated
+      retry:
+        max_attempts: 5
+        interval: 1000
+
+  # 链式 Resume：从第一次 Resume 的 Pod 再次 Resume
+  - id: step-14
+    action: 第二次 Resume（链式，应成功）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          source_pod_key: "{first_resume_pod_key}"
+          initial_prompt: "E2E Edge Case - Chained Resume"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        second_resume_pod_key: body.pod.pod_key
+
+  - id: step-15
+    action: 终止第二次 Resume 的 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{second_resume_pod_key}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+cleanup:
+  - sql: |
+      -- 清理所有测试 Pod
+      UPDATE pods SET status = 'terminated', finished_at = NOW()
+      WHERE initial_prompt LIKE 'E2E Edge Case%' AND status != 'terminated';

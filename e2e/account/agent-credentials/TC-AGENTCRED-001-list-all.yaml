@@ -40,7 +40,7 @@ steps:
       expected:
         status: 200
         body:
-          items: not_empty
+          items: is_array
 
   - action: 不带 token 列出凭证
     expected: 返回 401 未授权

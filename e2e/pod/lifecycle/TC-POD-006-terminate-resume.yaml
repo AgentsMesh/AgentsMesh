@@ -1,0 +1,297 @@
+id: TC-POD-006
+name: Pod 终止与恢复生命周期
+description: |
+  验证 Pod 从创建到终止再恢复的完整生命周期：
+  1. 创建 Pod 并等待运行
+  2. 终止 Pod
+  3. 验证 Pod 状态为 terminated
+  4. 使用 source_pod_key 恢复 Pod（Resume 模式）
+  5. 验证新 Pod 使用相同的 Sandbox 路径
+  6. 终止恢复的 Pod
+priority: critical
+module: pod/lifecycle
+type: scenario
+
+preconditions:
+  - 开发环境已启动
+  - 用户已登录
+  - 至少有一个在线 Runner
+
+setup:
+  sql: |
+    -- 清理可能存在的测试 Pod
+    DELETE FROM pods WHERE initial_prompt LIKE 'E2E Resume Test%';
+
+steps:
+  - id: step-1
+    action: 登录获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-3
+    action: 获取 Agent 类型（Claude Code）
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        agent_type_id: body.agent_types[0].id
+
+  - id: step-4
+    action: 创建原始 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          runner_id: "{runner_id}"
+          agent_type_id: "{agent_type_id}"
+          initial_prompt: "E2E Resume Test - Original Pod"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        original_pod_key: body.pod.pod_key
+
+  - id: step-5
+    action: 等待原始 Pod 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{original_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 15
+        interval: 2000
+
+  - id: step-6
+    action: 获取原始 Pod 详情（记录 sandbox_path）
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{original_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            sandbox_path: not_empty
+      save:
+        original_sandbox_path: body.pod.sandbox_path
+        original_session_id: body.pod.session_id
+
+  - id: step-7
+    action: 终止原始 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{original_pod_key}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          message: contains(terminated)
+
+  - id: step-8
+    action: 验证原始 Pod 状态为 terminated
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{original_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: terminated
+      retry:
+        max_attempts: 5
+        interval: 1000
+
+  - id: step-9
+    action: 使用 Resume 模式创建新 Pod（传入 source_pod_key）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          source_pod_key: "{original_pod_key}"
+          initial_prompt: "E2E Resume Test - Resumed Pod"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+            source_pod_key: "{original_pod_key}"
+      save:
+        resumed_pod_key: body.pod.pod_key
+
+  - id: step-10
+    action: 等待恢复的 Pod 变为 running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{resumed_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 15
+        interval: 2000
+
+  - id: step-11
+    action: 验证恢复的 Pod 使用相同的 Sandbox 路径
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{resumed_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            sandbox_path: "{original_sandbox_path}"
+            source_pod_key: "{original_pod_key}"
+
+  - id: step-12
+    action: 验证不能重复 Resume 同一个 Pod（已有活跃 Pod）
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          source_pod_key: "{original_pod_key}"
+          initial_prompt: "E2E Resume Test - Should Fail"
+      expected:
+        status: 409
+        body:
+          code: SOURCE_POD_ALREADY_RESUMED
+
+  - id: step-13
+    action: 终止恢复的 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{resumed_pod_key}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          message: contains(terminated)
+
+  - id: step-14
+    action: 验证恢复的 Pod 状态为 terminated
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{resumed_pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: terminated
+      retry:
+        max_attempts: 5
+        interval: 1000
+
+  - id: step-15
+    action: 验证数据库中两个 Pod 的关联关系
+    verification:
+      type: database
+      query: |
+        SELECT
+          p1.pod_key as original_key,
+          p1.status as original_status,
+          p2.pod_key as resumed_key,
+          p2.status as resumed_status,
+          p2.source_pod_key
+        FROM pods p1
+        JOIN pods p2 ON p2.source_pod_key = p1.pod_key
+        WHERE p1.pod_key = '{original_pod_key}'
+      expected:
+        original_status: terminated
+        resumed_status: terminated
+        source_pod_key: "{original_pod_key}"
+
+cleanup:
+  - sql: |
+      -- 确保测试 Pod 被清理
+      UPDATE pods SET status = 'terminated', finished_at = NOW()
+      WHERE (pod_key = '{original_pod_key}' OR pod_key = '{resumed_pod_key}')
+        AND status != 'terminated';

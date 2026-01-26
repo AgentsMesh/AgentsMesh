@@ -283,23 +283,85 @@ wait_for_service() {
 
 # 执行数据库迁移
 run_migrations() {
-    local pg_container="$1"
+    local backend_container="${COMPOSE_PROJECT_NAME}-backend-1"
+    local db_url="postgres://agentsmesh:agentsmesh_dev@postgres:5432/agentsmesh?sslmode=disable"
 
-    # 检查是否已有表
-    local table_count
-    table_count=$(docker exec "$pg_container" psql -U agentsmesh -d agentsmesh -t -c \
-        "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'" 2>/dev/null | tr -d ' ')
+    info "检查数据库迁移状态..."
 
-    if [[ "$table_count" -gt 0 ]]; then
-        info "数据库已初始化，跳过迁移"
-        return 0
+    # 等待 backend 容器就绪（migrate 工具在 backend 容器中）
+    local max_wait=30
+    for ((i=1; i<=max_wait; i++)); do
+        if docker exec "$backend_container" migrate -version &>/dev/null; then
+            break
+        fi
+        sleep 1
+    done
+
+    # 检查迁移状态
+    local migration_output
+    migration_output=$(docker exec "$backend_container" migrate \
+        -path /app/migrations \
+        -database "$db_url" \
+        version 2>&1) || true
+
+    # 检查是否有 dirty 状态
+    if echo "$migration_output" | grep -q "dirty"; then
+        warn "检测到迁移状态为 dirty，尝试修复..."
+        local dirty_version
+        dirty_version=$(echo "$migration_output" | grep -oE '[0-9]+' | head -1)
+        if [[ -n "$dirty_version" ]]; then
+            docker exec "$backend_container" migrate \
+                -path /app/migrations \
+                -database "$db_url" \
+                force "$dirty_version" 2>/dev/null || true
+            success "已修复 dirty 状态 (version: $dirty_version)"
+        fi
     fi
 
+    # 执行迁移
     info "执行数据库迁移..."
-    for f in "$MIGRATIONS_DIR"/*.up.sql; do
-        [[ -f "$f" ]] && docker exec -i "$pg_container" psql -U agentsmesh -d agentsmesh < "$f" &>/dev/null
-    done
-    success "数据库迁移完成"
+    local migrate_result
+    migrate_result=$(docker exec "$backend_container" migrate \
+        -path /app/migrations \
+        -database "$db_url" \
+        up 2>&1) || true
+
+    # 检查迁移结果
+    if echo "$migrate_result" | grep -q "no change"; then
+        info "数据库已是最新版本"
+    elif echo "$migrate_result" | grep -q "error"; then
+        # 如果迁移失败，可能是部分迁移已手动完成，尝试逐个跳过
+        warn "迁移遇到错误，尝试继续..."
+        local current_version
+        current_version=$(docker exec "$backend_container" migrate \
+            -path /app/migrations \
+            -database "$db_url" \
+            version 2>&1 | grep -oE '^[0-9]+' || echo "0")
+
+        # 获取最新迁移版本
+        local latest_version
+        latest_version=$(ls -1 "$MIGRATIONS_DIR"/*.up.sql 2>/dev/null | \
+            sed 's/.*\/\([0-9]*\)_.*/\1/' | sort -n | tail -1)
+
+        if [[ -n "$latest_version" && "$current_version" != "$latest_version" ]]; then
+            # 尝试强制设置到最新版本（仅在开发环境使用）
+            warn "跳过失败的迁移，强制设置版本为 $latest_version"
+            docker exec "$backend_container" migrate \
+                -path /app/migrations \
+                -database "$db_url" \
+                force "$latest_version" 2>/dev/null || true
+        fi
+    else
+        success "数据库迁移完成"
+    fi
+
+    # 显示最终版本
+    local final_version
+    final_version=$(docker exec "$backend_container" migrate \
+        -path /app/migrations \
+        -database "$db_url" \
+        version 2>&1 | head -1)
+    info "当前迁移版本: $final_version"
 }
 
 # 初始化 seed 数据
@@ -481,8 +543,8 @@ main() {
     fi
     success "PostgreSQL 已就绪"
 
-    # Step 8: 执行迁移
-    run_migrations "$pg_container"
+    # Step 8: 执行迁移（使用 backend 容器中的 migrate 工具）
+    run_migrations
 
     # Step 9: 初始化 seed
     init_seed "$pg_container"
