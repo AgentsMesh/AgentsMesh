@@ -219,3 +219,31 @@ body:has(.app-shell) {
 .xterm-screen {
   touch-action: pan-y pinch-zoom;
 }
+
+/* xterm.js mobile optimization */
+.xterm-helper-textarea {
+  /* Remove default mobile styling that can interfere with IME */
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent iOS zoom on input focus */
+  font-size: 16px !important;
+}
+
+@media (max-width: 768px) {
+  .xterm-viewport {
+    /* Prevent overscroll bounce that can conflict with terminal scrolling */
+    overscroll-behavior: contain;
+  }
+
+  .xterm-screen {
+    /* Allow vertical pan and pinch zoom, prevent horizontal scroll */
+    touch-action: pan-y;
+  }
+
+  /* Ensure helper textarea doesn't cause layout issues on mobile */
+  .xterm-helper-textarea {
+    /* Position is managed by JS, ensure it doesn't affect layout */
+    position: absolute !important;
+    z-index: -5;
+  }
+}

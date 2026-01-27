@@ -93,6 +93,11 @@ class TerminalConnectionPool {
   private resizeDebounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private resizeDebounceMs = 150;
 
+  // Input deduplication to prevent duplicate sends on mobile with network latency
+  // Tracks last input per pod to filter rapid duplicate sends
+  private lastInputs: Map<string, { data: string; time: number }> = new Map();
+  private deduplicateWindow = 50; // 50ms window for deduplication
+
   getConnection(podKey: string): TerminalConnection | undefined {
     return this.connections.get(podKey);
   }
@@ -276,12 +281,26 @@ class TerminalConnectionPool {
 
   send(podKey: string, data: string): void {
     const conn = this.connections.get(podKey);
-    if (conn && conn.ws.readyState === WebSocket.OPEN) {
-      // Relay binary protocol: MsgType.Input + raw data
-      const message = encodeMessage(MsgType.Input, data);
-      conn.ws.send(message);
-      conn.lastActivity = Date.now();
+    if (!conn || conn.ws.readyState !== WebSocket.OPEN) return;
+
+    // Input deduplication: skip if same data sent within deduplication window
+    // This prevents duplicate input on mobile devices with network latency
+    // Note: Single characters like space are allowed to repeat (for typing "   ")
+    // but IME composed strings are deduplicated to prevent "你好你好" issues
+    const now = Date.now();
+    if (data.length > 1) {
+      const lastInput = this.lastInputs.get(podKey);
+      if (lastInput && lastInput.data === data && (now - lastInput.time) < this.deduplicateWindow) {
+        console.log(`[Relay] Deduplicating input: "${data.substring(0, 20)}..." (within ${this.deduplicateWindow}ms)`);
+        return;
+      }
+      this.lastInputs.set(podKey, { data, time: now });
     }
+
+    // Relay binary protocol: MsgType.Input + raw data
+    const message = encodeMessage(MsgType.Input, data);
+    conn.ws.send(message);
+    conn.lastActivity = now;
   }
 
   sendResize(podKey: string, cols: number, rows: number): void {
@@ -372,6 +391,8 @@ class TerminalConnectionPool {
         conn.ws.close();
       }
       this.connections.delete(podKey);
+      // Clean up input deduplication state
+      this.lastInputs.delete(podKey);
     }
   }
 

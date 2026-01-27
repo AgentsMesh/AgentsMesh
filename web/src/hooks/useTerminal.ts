@@ -139,8 +139,66 @@ export function useTerminal(
     checkStatus();
     const statusInterval = setInterval(checkStatus, 1000);
 
+    // IME composition state tracking
+    // During composition (e.g., Chinese input), we should not send partial data
+    // to prevent duplicate input issues on mobile (especially Android + GBoard)
+    let isComposing = false;
+
+    const textarea = terminalRef.current.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement;
+    if (textarea) {
+      const handleCompositionStart = () => {
+        isComposing = true;
+      };
+
+      const handleCompositionEnd = () => {
+        isComposing = false;
+      };
+
+      textarea.addEventListener('compositionstart', handleCompositionStart);
+      textarea.addEventListener('compositionend', handleCompositionEnd);
+
+      // Store cleanup functions
+      const compositionCleanup = () => {
+        textarea.removeEventListener('compositionstart', handleCompositionStart);
+        textarea.removeEventListener('compositionend', handleCompositionEnd);
+      };
+      // Add to disposables for cleanup
+      disposablesRef.current.push({ dispose: compositionCleanup });
+
+      // Mobile cursor position sync
+      // On mobile, the hidden textarea needs to follow cursor position
+      // to help virtual keyboard and IME work correctly
+      // See: https://github.com/xtermjs/xterm.js/issues/2598
+      const syncTextareaPosition = () => {
+        const cursorX = term.buffer.active.cursorX;
+        const cursorY = term.buffer.active.cursorY - term.buffer.active.viewportY;
+
+        // Calculate pixel position based on font metrics
+        // Use actual cell dimensions from xterm's internal rendering
+        const cellWidth = term.options.fontSize! * 0.6; // Approximate monospace ratio
+        const cellHeight = term.options.fontSize! * (term.options.lineHeight || 1.2);
+
+        // Position textarea near cursor (helps mobile IME positioning)
+        textarea.style.left = `${Math.max(0, cursorX * cellWidth)}px`;
+        textarea.style.top = `${Math.max(0, cursorY * cellHeight)}px`;
+      };
+
+      // Sync on cursor move and after writes
+      const cursorDisposable = term.onCursorMove(syncTextareaPosition);
+      const writeDisposable = term.onWriteParsed(syncTextareaPosition);
+
+      // Initial sync after terminal is rendered
+      requestAnimationFrame(syncTextareaPosition);
+
+      disposablesRef.current.push(cursorDisposable, writeDisposable);
+    }
+
     // Handle input - save disposable for cleanup
+    // Note: xterm.js onData fires after compositionend, so checking isComposing
+    // helps filter out any edge cases where data might be sent during composition
     const dataDisposable = term.onData((data) => {
+      // Skip sending if still composing (edge case protection)
+      if (isComposing) return;
       connectionRef.current?.send(data);
     });
 
@@ -149,8 +207,8 @@ export function useTerminal(
       terminalPool.sendResize(podKey, cols, rows);
     });
 
-    // Store disposables for explicit cleanup
-    disposablesRef.current = [dataDisposable, resizeDisposable];
+    // Add remaining disposables (don't overwrite, push to existing array)
+    disposablesRef.current.push(dataDisposable, resizeDisposable);
 
     xtermRef.current = term;
     fitAddonRef.current = fitAddon;
