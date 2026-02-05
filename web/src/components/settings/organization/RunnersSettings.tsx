@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useRunnerStore, Runner, getRunnerStatusInfo } from "@/stores/runner";
 import type { TranslationFn } from "./GeneralSettings";
 
@@ -97,16 +98,25 @@ function RunnersPanel({
   onGenerateToken: () => void;
   t: TranslationFn;
 }) {
-  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  // Confirm dialog for delete
+  const { dialogProps, confirm } = useConfirmDialog();
 
-  const handleDelete = async (id: number) => {
-    try {
-      await onDelete(id);
-      setConfirmDelete(null);
-    } catch (err) {
-      console.error("Failed to delete runner:", err);
+  const handleDeleteWithConfirm = useCallback(async (id: number) => {
+    const confirmed = await confirm({
+      title: t("settings.runnersSection.deleteDialog.title"),
+      description: t("settings.runnersSection.deleteDialog.description"),
+      variant: "destructive",
+      confirmText: t("settings.runnersSection.deleteDialog.delete"),
+      cancelText: t("settings.runnersSection.deleteDialog.cancel"),
+    });
+    if (confirmed) {
+      try {
+        await onDelete(id);
+      } catch (err) {
+        console.error("Failed to delete runner:", err);
+      }
     }
-  };
+  }, [confirm, onDelete, t]);
 
   const formatLastSeen = (dateString?: string) => {
     if (!dateString) return "Never";
@@ -148,7 +158,7 @@ function RunnersPanel({
               key={runner.id}
               runner={runner}
               onEdit={onEdit}
-              onDelete={() => setConfirmDelete(runner.id)}
+              onDelete={() => handleDeleteWithConfirm(runner.id)}
               formatLastSeen={formatLastSeen}
               t={t}
             />
@@ -157,13 +167,7 @@ function RunnersPanel({
       )}
 
       {/* Confirm Delete Dialog */}
-      {confirmDelete !== null && (
-        <ConfirmDeleteDialog
-          onConfirm={() => handleDelete(confirmDelete)}
-          onCancel={() => setConfirmDelete(null)}
-          t={t}
-        />
-      )}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }
@@ -229,35 +233,6 @@ function RunnerCard({
             onClick={onDelete}
           >
             {t("settings.runnersSection.delete")}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConfirmDeleteDialog({
-  onConfirm,
-  onCancel,
-  t,
-}: {
-  onConfirm: () => void;
-  onCancel: () => void;
-  t: TranslationFn;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background border border-border rounded-lg p-6 w-full max-w-sm">
-        <h3 className="text-lg font-semibold mb-2">{t("settings.runnersSection.deleteDialog.title")}</h3>
-        <p className="text-muted-foreground mb-4">
-          {t("settings.runnersSection.deleteDialog.description")}
-        </p>
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onCancel}>
-            {t("settings.runnersSection.deleteDialog.cancel")}
-          </Button>
-          <Button variant="destructive" className="flex-1" onClick={onConfirm}>
-            {t("settings.runnersSection.deleteDialog.delete")}
           </Button>
         </div>
       </div>

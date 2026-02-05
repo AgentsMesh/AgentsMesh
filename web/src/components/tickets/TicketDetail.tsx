@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAuthStore } from "@/stores/auth";
 import { useTicketStore, TicketStatus } from "@/stores/ticket";
 import { StatusIcon, PriorityIcon, TypeIcon, getStatusDisplayInfo, getPriorityDisplayInfo, getTypeDisplayInfo } from "./TicketIcons";
@@ -31,7 +32,9 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editContent, setEditContent] = useState("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Confirm dialog for delete
+  const { dialogProps, confirm } = useConfirmDialog();
 
   // Use shared hook for extra data
   const { subTickets, relations, commits } = useTicketExtraData(identifier, !!currentTicket);
@@ -74,15 +77,24 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
     }
   };
 
-  // Handle delete
-  const handleDelete = async () => {
-    try {
-      await deleteTicket(identifier);
-      router.back();
-    } catch (err) {
-      console.error("Failed to delete ticket:", err);
+  // Handle delete with confirmation
+  const handleDelete = useCallback(async () => {
+    const confirmed = await confirm({
+      title: t("tickets.detail.deleteTicket"),
+      description: t("tickets.detail.deleteConfirmation", { identifier }),
+      variant: "destructive",
+      confirmText: t("common.delete"),
+      cancelText: t("common.cancel"),
+    });
+    if (confirmed) {
+      try {
+        await deleteTicket(identifier);
+        router.back();
+      } catch (err) {
+        console.error("Failed to delete ticket:", err);
+      }
     }
-  };
+  }, [confirm, deleteTicket, identifier, router, t]);
 
   // Handle ticket click for sub-tickets and relations
   const handleTicketClick = (ticketIdentifier: string) => {
@@ -236,7 +248,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
             <Button
               className="w-full"
               variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={handleDelete}
             >
               {t("common.delete")}
             </Button>
@@ -328,25 +340,8 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-2">{t("tickets.detail.deleteTicket")}</h3>
-            <p className="text-muted-foreground mb-4">
-              {t("tickets.detail.deleteConfirmation", { identifier: currentTicket.identifier })}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                {t("common.delete")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

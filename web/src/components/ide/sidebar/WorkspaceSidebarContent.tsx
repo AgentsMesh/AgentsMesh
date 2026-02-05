@@ -1,44 +1,25 @@
 "use client";
 
 import React, { useEffect, useCallback, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { getPodDisplayName } from "@/lib/pod-utils";
 import { useAuthStore } from "@/stores/auth";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore, Pod } from "@/stores/pod";
 import { useRunnerStore } from "@/stores/runner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
-  Square,
   Terminal,
-  Clock,
-  CheckCircle,
-  XCircle,
   Loader2,
   Plus,
   RefreshCw,
   Search,
-  Server,
-  ChevronDown,
-  ChevronRight,
-  AlertTriangle,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-  ResponsiveDialogDescription,
-  ResponsiveDialogFooter,
-} from "@/components/ui/responsive-dialog";
 import { useTranslations } from "@/lib/i18n/client";
+import { PodListItem } from "./PodListItem";
+import { RunnerSection } from "./RunnerSection";
+import { WorkspaceFilters, type FilterType } from "./WorkspaceFilters";
 
 interface WorkspaceSidebarContentProps {
   className?: string;
@@ -46,24 +27,8 @@ interface WorkspaceSidebarContentProps {
   onTerminatePod?: () => void;
 }
 
-// Status badge colors - matches PodData status type
-const statusColors: Record<string, { bg: string; text: string; dot: string }> = {
-  initializing: { bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400", dot: "bg-yellow-500" },
-  running: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", dot: "bg-blue-500" },
-  paused: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", dot: "bg-orange-500" },
-  disconnected: { bg: "bg-gray-500/10", text: "text-gray-600 dark:text-gray-400", dot: "bg-gray-500" },
-  orphaned: { bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", dot: "bg-purple-500" },
-  completed: { bg: "bg-green-500/10", text: "text-green-600 dark:text-green-400", dot: "bg-green-500" },
-  terminated: { bg: "bg-gray-500/10", text: "text-gray-600 dark:text-gray-400", dot: "bg-gray-500" },
-  error: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", dot: "bg-red-500" },
-  failed: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", dot: "bg-red-500" },
-};
-
-type FilterType = "all" | "running" | "completed";
-
 export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod }: WorkspaceSidebarContentProps) {
   const t = useTranslations();
-  const router = useRouter();
   const { currentOrg } = useAuthStore();
   const { pods, loading, fetchPods, terminatePod } = usePodStore();
   const { runners, loading: runnersLoading, fetchRunners } = useRunnerStore();
@@ -73,8 +38,9 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
   const [searchQuery, setSearchQuery] = useState("");
   const [runnersExpanded, setRunnersExpanded] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [terminateDialogOpen, setTerminateDialogOpen] = useState(false);
-  const [podToTerminate, setPodToTerminate] = useState<string | null>(null);
+
+  // Confirm dialog for terminate
+  const { dialogProps, confirm } = useConfirmDialog();
 
   // Load pods and runners on mount
   useEffect(() => {
@@ -149,44 +115,24 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
     [addPane, isPodOpen]
   );
 
-  // Handle terminate click - opens confirmation dialog
+  // Handle terminate with confirmation
   const handleTerminateClick = useCallback(
-    (podKey: string, e: React.MouseEvent) => {
+    async (podKey: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      setPodToTerminate(podKey);
-      setTerminateDialogOpen(true);
+      const confirmed = await confirm({
+        title: t("workspace.terminateDialog.title"),
+        description: t("workspace.terminateDialog.description"),
+        variant: "destructive",
+        confirmText: t("workspace.terminateDialog.confirm"),
+        cancelText: t("workspace.terminateDialog.cancel"),
+      });
+      if (confirmed) {
+        await terminatePod(podKey);
+        onTerminatePod?.();
+      }
     },
-    []
+    [confirm, t, terminatePod, onTerminatePod]
   );
-
-  // Handle confirm terminate
-  const handleConfirmTerminate = useCallback(async () => {
-    if (podToTerminate) {
-      await terminatePod(podToTerminate);
-      setTerminateDialogOpen(false);
-      setPodToTerminate(null);
-      onTerminatePod?.();
-    }
-  }, [podToTerminate, terminatePod, onTerminatePod]);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "initializing":
-        return <Clock className="w-3 h-3" />;
-      case "running":
-        return <Loader2 className="w-3 h-3 animate-spin" />;
-      case "paused":
-        return <Square className="w-3 h-3" />;
-      case "terminated":
-        return <CheckCircle className="w-3 h-3" />;
-      case "failed":
-        return <XCircle className="w-3 h-3" />;
-      default:
-        return <Square className="w-3 h-3" />;
-    }
-  };
-
-  const onlineRunners = runners.filter(r => r.status === "online");
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -226,22 +172,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-1 px-2 py-1 border-y border-border">
-        {(["running", "completed", "all"] as const).map((f) => (
-          <button
-            key={f}
-            className={cn(
-              "px-2 py-1 text-xs rounded transition-colors",
-              filter === f
-                ? "bg-muted text-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            )}
-            onClick={() => setFilter(f)}
-          >
-            {t(`workspace.filters.${f}`)}
-          </button>
-        ))}
-      </div>
+      <WorkspaceFilters filter={filter} onFilterChange={setFilter} t={t} />
 
       {/* Pod list */}
       <div className="flex-1 overflow-y-auto">
@@ -272,138 +203,31 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
           </div>
         ) : (
           <div className="py-1">
-            {sortedPods.map((pod) => {
-              const status = statusColors[pod.status] || statusColors.terminated;
-              const isOpen = isPodOpen(pod.pod_key);
-
-              return (
-                <div
-                  key={pod.pod_key}
-                  className={cn(
-                    "group flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer",
-                    isOpen && "bg-muted/30"
-                  )}
-                  onClick={() => handleOpenTerminal(pod)}
-                >
-                  {/* Status indicator */}
-                  <div className={cn("flex items-center justify-center", status.text)}>
-                    {getStatusIcon(pod.status)}
-                  </div>
-
-                  {/* Pod info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm truncate font-mono">
-                        {getPodDisplayName(pod)}
-                      </span>
-                      {isOpen && (
-                        <Terminal className="w-3 h-3 text-primary flex-shrink-0" />
-                      )}
-                    </div>
-                    {/* Show ticket if title is not from ticket */}
-                    {!pod.title && pod.ticket?.identifier && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {pod.ticket.identifier}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {pod.status === "running" && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                        onClick={(e) => handleTerminateClick(pod.pod_key, e)}
-                      >
-                        <Square className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {sortedPods.map((pod) => (
+              <PodListItem
+                key={pod.pod_key}
+                pod={pod}
+                isOpen={isPodOpen(pod.pod_key)}
+                onClick={() => handleOpenTerminal(pod)}
+                onTerminate={(e) => handleTerminateClick(pod.pod_key, e)}
+              />
+            ))}
           </div>
         )}
       </div>
 
       {/* Runners section */}
-      <Collapsible open={runnersExpanded} onOpenChange={setRunnersExpanded}>
-        <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between px-3 py-2 border-t border-border cursor-pointer hover:bg-muted/50">
-            <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{t("workspace.runners.title")}</span>
-              <span className="text-xs text-muted-foreground">
-                ({onlineRunners.length} {t("workspace.runners.online")})
-              </span>
-            </div>
-            {runnersExpanded ? (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            )}
-          </div>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="border-t border-border">
-            {runnersLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : runners.length === 0 ? (
-              <div className="px-3 py-4 text-center">
-                <p className="text-xs text-muted-foreground">{t("workspace.runners.noRunners")}</p>
-              </div>
-            ) : (
-              <div className="py-1 max-h-32 overflow-y-auto">
-                {runners.map((runner) => (
-                  <div
-                    key={runner.id}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-muted/50"
-                    onClick={() => router.push(`/${currentOrg?.slug}/runners/${runner.id}`)}
-                  >
-                    <span
-                      className={cn(
-                        "w-2 h-2 rounded-full flex-shrink-0",
-                        runner.status === "online" ? "bg-green-500" : "bg-gray-400"
-                      )}
-                    />
-                    <span className="truncate flex-1">{runner.node_id}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {runner.current_pods}/{runner.max_concurrent_pods}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      <RunnerSection
+        runners={runners}
+        loading={runnersLoading}
+        expanded={runnersExpanded}
+        onToggle={setRunnersExpanded}
+        currentOrgSlug={currentOrg?.slug}
+        t={t}
+      />
 
-      {/* Terminate Pod Confirmation Dialog */}
-      <ResponsiveDialog open={terminateDialogOpen} onOpenChange={setTerminateDialogOpen}>
-        <ResponsiveDialogContent className="sm:max-w-md" title={t("workspace.terminateDialog.title")}>
-          <ResponsiveDialogHeader className="text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-              <AlertTriangle className="w-6 h-6 text-destructive" />
-            </div>
-            <ResponsiveDialogTitle>{t("workspace.terminateDialog.title")}</ResponsiveDialogTitle>
-            <ResponsiveDialogDescription className="text-center">
-              {t("workspace.terminateDialog.description")}
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <ResponsiveDialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setTerminateDialogOpen(false)} className="w-full sm:w-auto">
-              {t("workspace.terminateDialog.cancel")}
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmTerminate} className="w-full sm:w-auto">
-              {t("workspace.terminateDialog.confirm")}
-            </Button>
-          </ResponsiveDialogFooter>
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

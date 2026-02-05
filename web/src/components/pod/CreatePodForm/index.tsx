@@ -5,18 +5,19 @@ import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Spinner, CenteredSpinner } from "@/components/ui/spinner";
 import { ConfigForm } from "@/components/ide/ConfigForm";
-import {
-  usePodCreationData,
-  useCreatePodForm,
-  RUNNER_HOST_PROFILE_ID,
-} from "../hooks";
+import { usePodCreationData, useCreatePodForm } from "../hooks";
 import { useConfigOptions } from "@/components/ide/hooks";
 import { CreatePodFormProps } from "./types";
 import { mergeConfig } from "./presets";
+import { RunnerSelect } from "./RunnerSelect";
+import { AgentSelect } from "./AgentSelect";
+import { CredentialSelect } from "./CredentialSelect";
+import { RepositorySelect, BranchInput } from "./RepositorySelect";
+import { PromptInput } from "./PromptInput";
 
 /**
- * 共享的 Pod 创建表单组件
- * 支持 workspace 和 ticket 两种场景
+ * Shared Pod creation form component
+ * Supports workspace and ticket scenarios
  */
 export function CreatePodForm({
   config,
@@ -27,12 +28,12 @@ export function CreatePodForm({
   const prevEnabledRef = useRef(enabled);
   const promptInitializedRef = useRef(false);
 
-  // 合并预设配置和用户配置
+  // Merge preset config with user config
   const mergedConfig = useMemo(() => mergeConfig(config), [config]);
 
   const { context, promptGenerator, onSuccess, onError, onCancel } = mergedConfig;
 
-  // 加载基础数据 (runners, agents, repositories)
+  // Load base data (runners, agents, repositories)
   const {
     runners,
     repositories,
@@ -42,7 +43,7 @@ export function CreatePodForm({
     availableAgentTypes,
   } = usePodCreationData(enabled);
 
-  // 表单状态管理
+  // Form state management
   const form = useCreatePodForm(availableAgentTypes, repositories, onSuccess);
 
   // Config options management (loads from Backend ConfigSchema)
@@ -58,7 +59,7 @@ export function CreatePodForm({
     form.selectedAgent
   );
 
-  // 当 enabled 从 true 变为 false 时重置表单（如 Modal 关闭）
+  // Reset form when enabled changes from true to false (e.g., modal closes)
   useEffect(() => {
     if (prevEnabledRef.current && !enabled) {
       form.reset();
@@ -69,7 +70,7 @@ export function CreatePodForm({
     prevEnabledRef.current = enabled;
   }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 计算默认 prompt
+  // Calculate default prompt
   const defaultPrompt = useMemo(() => {
     if (promptGenerator && context) {
       return promptGenerator(context);
@@ -77,7 +78,7 @@ export function CreatePodForm({
     return "";
   }, [promptGenerator, context]);
 
-  // 当有默认 prompt 且表单 prompt 为空时，初始化一次
+  // Initialize prompt once when default is available and form is empty
   useEffect(() => {
     if (enabled && defaultPrompt && !form.prompt && !promptInitializedRef.current) {
       form.setPrompt(defaultPrompt);
@@ -87,12 +88,7 @@ export function CreatePodForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, defaultPrompt, form.prompt, form.setPrompt]);
 
-  // 处理 Runner 选择变更
-  const handleRunnerChange = (runnerId: number | null) => {
-    setSelectedRunnerId(runnerId);
-  };
-
-  // 处理表单提交
+  // Handle form submission
   const handleCreate = async () => {
     if (!selectedRunner || !form.selectedAgent) return;
 
@@ -102,7 +98,7 @@ export function CreatePodForm({
       const defaultCols = 120;
       const defaultRows = 40;
 
-      // onSuccess 回调已在 useCreatePodForm.submit 中处理
+      // onSuccess callback is handled in useCreatePodForm.submit
       await form.submit(selectedRunner.id, configValues, {
         ticketId: context?.ticket?.id,
         initialPrompt: form.prompt,
@@ -116,7 +112,6 @@ export function CreatePodForm({
   };
 
   const hasSelectedRunner = selectedRunner !== null;
-  const hasAvailableAgents = availableAgentTypes.length > 0;
 
   return (
     <div className={className}>
@@ -125,235 +120,62 @@ export function CreatePodForm({
       ) : (
         <div className="space-y-4">
           {/* Step 1: Runner Select */}
-          <div>
-            <label
-              htmlFor="runner-select"
-              className="block text-sm font-medium mb-2"
-            >
-              {t("ide.createPod.selectRunner")}
-            </label>
-            <select
-              id="runner-select"
-              className={`w-full px-3 py-2 border rounded-md bg-background ${
-                form.validationErrors.runner
-                  ? "border-destructive"
-                  : "border-border"
-              }`}
-              value={selectedRunner?.id || ""}
-              onChange={(e) =>
-                handleRunnerChange(e.target.value ? Number(e.target.value) : null)
-              }
-              aria-required="true"
-              aria-invalid={!!form.validationErrors.runner}
-              aria-describedby={
-                form.validationErrors.runner
-                  ? "runner-error"
-                  : runners.length === 0
-                  ? "runner-help"
-                  : undefined
-              }
-            >
-              <option value="">{t("ide.createPod.selectRunnerPlaceholder")}</option>
-              {runners.map((runner) => (
-                <option key={runner.id} value={runner.id}>
-                  {runner.node_id} ({runner.current_pods}/{runner.max_concurrent_pods})
-                </option>
-              ))}
-            </select>
-            {form.validationErrors.runner && (
-              <p id="runner-error" className="text-xs text-destructive mt-1">
-                {form.validationErrors.runner}
-              </p>
-            )}
-            {!form.validationErrors.runner && runners.length === 0 && (
-              <p id="runner-help" className="text-xs text-muted-foreground mt-1">
-                {t("ide.createPod.noRunnersAvailable")}
-              </p>
-            )}
-          </div>
+          <RunnerSelect
+            runners={runners}
+            selectedRunnerId={selectedRunner?.id ?? null}
+            onSelect={setSelectedRunnerId}
+            error={form.validationErrors.runner}
+            t={t}
+          />
 
           {/* Step 2: Agent Type Select */}
           {hasSelectedRunner && (
-            <div>
-              <label
-                htmlFor="agent-type-select"
-                className="block text-sm font-medium mb-2"
-              >
-                {t("ide.createPod.selectAgent")}
-              </label>
-              {!hasAvailableAgents ? (
-                <p className="text-sm text-muted-foreground py-2">
-                  {t("ide.createPod.noAgentsForRunner")}
-                </p>
-              ) : (
-                <>
-                  <select
-                    id="agent-type-select"
-                    className={`w-full px-3 py-2 border rounded-md bg-background ${
-                      form.validationErrors.agent
-                        ? "border-destructive"
-                        : "border-border"
-                    }`}
-                    value={form.selectedAgent || ""}
-                    onChange={(e) =>
-                      form.setSelectedAgent(
-                        e.target.value ? Number(e.target.value) : null
-                      )
-                    }
-                    aria-required="true"
-                    aria-invalid={!!form.validationErrors.agent}
-                    aria-describedby={
-                      form.validationErrors.agent ? "agent-error" : undefined
-                    }
-                  >
-                    <option value="">
-                      {t("ide.createPod.selectAgentPlaceholder")}
-                    </option>
-                    {availableAgentTypes.map((agent) => (
-                      <option key={agent.id} value={agent.id}>
-                        {agent.name}
-                      </option>
-                    ))}
-                  </select>
-                  {form.validationErrors.agent && (
-                    <p id="agent-error" className="text-xs text-destructive mt-1">
-                      {form.validationErrors.agent}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
+            <AgentSelect
+              agents={availableAgentTypes}
+              selectedAgentId={form.selectedAgent}
+              onSelect={form.setSelectedAgent}
+              error={form.validationErrors.agent}
+              t={t}
+            />
           )}
 
           {/* Step 3: Agent-specific Configuration */}
           {form.selectedAgent && (
             <>
               {/* Credential Profile Select */}
-              <div>
-                <label
-                  htmlFor="credential-select"
-                  className="block text-sm font-medium mb-2"
-                >
-                  {t("ide.createPod.selectCredential")}
-                </label>
-                {form.loadingCredentials ? (
-                  <div className="flex items-center text-sm text-muted-foreground py-2">
-                    <Spinner size="sm" className="mr-2" />
-                    {t("common.loading")}
-                  </div>
-                ) : (
-                  <>
-                    <select
-                      id="credential-select"
-                      className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                      value={form.selectedCredentialProfile}
-                      onChange={(e) =>
-                        form.setSelectedCredentialProfile(Number(e.target.value))
-                      }
-                    >
-                      <option value={RUNNER_HOST_PROFILE_ID}>
-                        RunnerHost ({t("ide.createPod.runnerHostDescription")})
-                      </option>
-                      {form.credentialProfiles.map((profile) => (
-                        <option key={profile.id} value={profile.id}>
-                          {profile.name}
-                          {profile.is_default
-                            ? ` (${t("settings.agentCredentials.default")})`
-                            : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {form.selectedCredentialProfile === RUNNER_HOST_PROFILE_ID
-                        ? t("ide.createPod.runnerHostHint")
-                        : t("ide.createPod.customCredentialHint")}
-                    </p>
-                  </>
-                )}
-              </div>
+              <CredentialSelect
+                profiles={form.credentialProfiles}
+                selectedProfileId={form.selectedCredentialProfile}
+                onSelect={form.setSelectedCredentialProfile}
+                loading={form.loadingCredentials}
+                t={t}
+              />
 
               {/* Repository Select */}
-              <div>
-                <label
-                  htmlFor="repository-select"
-                  className="block text-sm font-medium mb-2"
-                >
-                  {t("ide.createPod.selectRepository")}
-                </label>
-                <select
-                  id="repository-select"
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                  value={form.selectedRepository || ""}
-                  onChange={(e) =>
-                    form.setSelectedRepository(
-                      e.target.value ? Number(e.target.value) : null
-                    )
-                  }
-                >
-                  <option value="">
-                    {t("ide.createPod.selectRepositoryPlaceholder")}
-                  </option>
-                  {repositories.map((repo) => (
-                    <option key={repo.id} value={repo.id}>
-                      {repo.full_path}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <RepositorySelect
+                repositories={repositories}
+                selectedRepositoryId={form.selectedRepository}
+                onSelect={form.setSelectedRepository}
+                t={t}
+              />
 
               {/* Branch Input */}
               {form.selectedRepository && (
-                <div>
-                  <label
-                    htmlFor="branch-input"
-                    className="block text-sm font-medium mb-2"
-                  >
-                    {t("ide.createPod.branch")}
-                  </label>
-                  <input
-                    id="branch-input"
-                    type="text"
-                    className={`w-full px-3 py-2 border rounded-md bg-background ${
-                      form.validationErrors.branch
-                        ? "border-destructive"
-                        : "border-border"
-                    }`}
-                    placeholder={t("ide.createPod.branchPlaceholder")}
-                    value={form.selectedBranch}
-                    onChange={(e) => form.setSelectedBranch(e.target.value)}
-                    aria-invalid={!!form.validationErrors.branch}
-                    aria-describedby={
-                      form.validationErrors.branch ? "branch-error" : undefined
-                    }
-                  />
-                  {form.validationErrors.branch && (
-                    <p id="branch-error" className="text-xs text-destructive mt-1">
-                      {form.validationErrors.branch}
-                    </p>
-                  )}
-                </div>
+                <BranchInput
+                  value={form.selectedBranch}
+                  onChange={form.setSelectedBranch}
+                  error={form.validationErrors.branch}
+                  t={t}
+                />
               )}
 
               {/* Initial Prompt */}
-              <div>
-                <label
-                  htmlFor="prompt-input"
-                  className="block text-sm font-medium mb-2"
-                >
-                  {t("ide.createPod.initialPrompt")}
-                </label>
-                <textarea
-                  id="prompt-input"
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background resize-none"
-                  rows={3}
-                  placeholder={
-                    mergedConfig.promptPlaceholder ||
-                    t("ide.createPod.initialPromptPlaceholder")
-                  }
-                  value={form.prompt}
-                  onChange={(e) => form.setPrompt(e.target.value)}
-                />
-              </div>
+              <PromptInput
+                value={form.prompt}
+                onChange={form.setPrompt}
+                placeholder={mergedConfig.promptPlaceholder}
+                t={t}
+              />
 
               {/* Agent Configuration Section */}
               {loadingConfig ? (
