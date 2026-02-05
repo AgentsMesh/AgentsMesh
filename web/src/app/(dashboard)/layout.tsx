@@ -4,6 +4,7 @@ import React, { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
 import { ResponsiveShell } from "@/components/layout";
+import { Spinner } from "@/components/ui/spinner";
 import { RealtimeProvider } from "@/providers/RealtimeProvider";
 import { useBrowserNotification } from "@/hooks";
 import type { TerminalNotificationData, TaskCompletedData } from "@/lib/realtime";
@@ -82,7 +83,7 @@ export default function DashboardLayout({
   if (!_hasHydrated) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Spinner />
       </div>
     );
   }

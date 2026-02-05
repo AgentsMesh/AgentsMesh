@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { WorkspaceManager } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import { Terminal, Plus } from "lucide-react";
 import { useTranslations } from "@/lib/i18n/client";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
@@ -45,11 +46,7 @@ export default function WorkspacePage() {
 
   // Show loading while hydrating
   if (!_hasHydrated) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <CenteredSpinner />;
   }
 
   // Empty state when no terminals are open

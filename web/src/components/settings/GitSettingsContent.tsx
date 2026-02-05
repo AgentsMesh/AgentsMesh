@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import {
   userRepositoryProviderApi,
   RepositoryProviderData,
@@ -179,9 +180,7 @@ export function GitSettingsContent() {
   if (loading) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <CenteredSpinner className="py-12" />
       </div>
     );
   }

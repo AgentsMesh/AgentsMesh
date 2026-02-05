@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react";
 import { PodData } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
+import { Spinner, CenteredSpinner } from "@/components/ui/spinner";
 import { ConfigForm } from "./ConfigForm";
 import {
   usePodCreationData,
@@ -162,9 +163,7 @@ export function CreatePodModal({ open, onClose, onCreated, ticketContext }: Crea
         </h2>
 
         {loadingData ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
+          <CenteredSpinner className="py-8" />
         ) : (
           <div className="space-y-4">
             {/* Step 1: Runner Select */}
@@ -258,7 +257,7 @@ export function CreatePodModal({ open, onClose, onCreated, ticketContext }: Crea
                   </label>
                   {form.loadingCredentials ? (
                     <div className="flex items-center text-sm text-muted-foreground py-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                      <Spinner size="sm" className="mr-2" />
                       {t("common.loading")}
                     </div>
                   ) : (
@@ -352,7 +351,7 @@ export function CreatePodModal({ open, onClose, onCreated, ticketContext }: Crea
                 {/* Agent Configuration Section */}
                 {loadingConfig ? (
                   <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mr-2"></div>
+                    <Spinner size="sm" className="mr-2" />
                     <span className="text-sm text-muted-foreground">{t("ide.createPod.loadingPlugins")}</span>
                   </div>
                 ) : (

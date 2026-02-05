@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -288,11 +289,7 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <CenteredSpinner className="py-12" />;
   }
 
   if (!agentType) {

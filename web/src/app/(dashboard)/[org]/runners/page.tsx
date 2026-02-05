@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { runnerApi, type RunnerData } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import {
   Server,
   Plus,
@@ -101,11 +102,7 @@ export default function RunnersPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <CenteredSpinner />;
   }
 
   const onlineCount = runners.filter((r) => r.status === "online").length;

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
@@ -82,8 +83,8 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
 
   if (!_hasHydrated) {
     return (
-      <div className="flex items-center justify-center h-full bg-terminal-bg">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="h-full bg-terminal-bg">
+        <CenteredSpinner />
       </div>
     );
   }

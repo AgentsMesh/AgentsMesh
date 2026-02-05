@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Organization-scoped layout
@@ -43,7 +44,7 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
   if (!orgExists && organizations.length > 0) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Spinner />
       </div>
     );
   }

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import {
   repositoryApi,
   userRepositoryProviderApi,
@@ -218,9 +219,7 @@ export function ImportRepositoryModal({
               </p>
 
               {loadingProviders ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
+                <CenteredSpinner className="py-8" />
               ) : (
                 <>
                   <div className="space-y-2">
@@ -353,9 +352,7 @@ export function ImportRepositoryModal({
               </form>
 
               {loadingRepos ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
+                <CenteredSpinner className="py-8" />
               ) : repositories.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   {t("repositories.modal.noReposFound")}

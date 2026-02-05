@@ -1582,9 +1582,19 @@
     "import": "导入仓库",
     "repoCount": "个仓库",
     "allProviders": "所有服务",
+    "active": "活跃",
     "inactive": "已禁用",
+    "delete": "删除",
     "view": "查看",
+    "search": "搜索仓库...",
     "confirmDelete": "确定要删除仓库「{name}」吗？",
+    "columns": {
+      "name": "名称",
+      "provider": "服务",
+      "branch": "分支",
+      "status": "状态",
+      "actions": "操作"
+    },
     "filters": {
       "all": "全部",
       "github": "GitHub",

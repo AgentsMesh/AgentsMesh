@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import { MeshTopology } from "@/components/mesh";
 import { ChannelChatPanel, MobileChannelChat } from "@/components/mesh";
 import { useMeshStore } from "@/stores/mesh";
@@ -106,8 +107,8 @@ export default function MeshPage() {
         {/* Topology Visualization */}
         <div className="flex-1 relative">
           {loading && !topology && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="absolute inset-0 bg-background/50 z-10">
+              <CenteredSpinner />
             </div>
           )}
           <MeshTopology />

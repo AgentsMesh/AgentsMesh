@@ -8,6 +8,7 @@ import { MobileDrawer } from "./MobileDrawer";
 import { MobileMoreMenu } from "./MobileMoreMenu";
 import { MobileSidebar } from "./MobileSidebar";
 import { useIDEStore } from "@/stores/ide";
+import { CenteredSpinner } from "@/components/ui/spinner";
 
 interface MobileShellProps {
   children: React.ReactNode;
@@ -43,9 +44,7 @@ export function MobileShell({
   // Show loading state while hydrating
   if (!_hasHydrated) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <CenteredSpinner className="h-screen bg-background" />
     );
   }
 

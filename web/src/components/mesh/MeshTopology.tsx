@@ -16,6 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
+import { CenteredSpinner } from "@/components/ui/spinner";
 import PodNode from "./PodNode";
 import BindingEdge from "./BindingEdge";
 import { useMeshStore, type MeshNode, type MeshEdge } from "@/stores/mesh";
@@ -144,11 +145,7 @@ export default function MeshTopology() {
   }, []);
 
   if (!topology) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <CenteredSpinner />;
   }
 
   if (topology.nodes.length === 0) {

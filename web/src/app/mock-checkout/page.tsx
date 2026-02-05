@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 interface MockSession {
   session_id: string;
@@ -122,7 +123,7 @@ export default function MockCheckoutPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <Spinner size="lg" className="mx-auto" />
           <p className="mt-4 text-muted-foreground">Loading checkout...</p>
         </div>
       </div>

@@ -4,15 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogBody,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import {
   runnerApi,
   podApi,
@@ -29,19 +21,12 @@ import {
   Power,
   PowerOff,
   CheckCircle,
-  XCircle,
-  Clock,
-  AlertCircle,
-  HardDrive,
-  Cpu,
   Activity,
-  Terminal,
-  GitBranch,
-  FolderOpen,
-  RotateCcw,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow, format } from "date-fns";
+import { RunnerOverviewTab, RunnerPodsTab, ResumeDialog } from "./components";
 
 export default function RunnerDetailPage() {
   const t = useTranslations();
@@ -107,8 +92,6 @@ export default function RunnerDetailPage() {
   const handleRefreshSandboxStatus = async () => {
     if (!runner || runner.status !== "online") return;
 
-    // Get all non-running pod keys that might have sandboxes
-    // Include: terminated, completed, orphaned, error, etc.
     const inactivePodKeys = pods
       .filter(p => p.status !== "running" && p.status !== "initializing")
       .map(p => p.pod_key);
@@ -130,13 +113,6 @@ export default function RunnerDetailPage() {
     }
   };
 
-  // Open resume confirmation dialog
-  const openResumeDialog = (pod: RunnerPodData) => {
-    setResumingPod(pod);
-    setResumeDialogOpen(true);
-  };
-
-  // Execute resume after confirmation
   const handleConfirmResume = async () => {
     if (!runner || !resumingPod) return;
 
@@ -152,12 +128,9 @@ export default function RunnerDetailPage() {
 
       setResumeDialogOpen(false);
       setResumingPod(null);
-      // Navigate to workspace with the new pod key as query param
-      // The workspace page will auto-open this pod
       router.push(`/${params.org}/workspace?pod=${res.pod.pod_key}`);
     } catch (error) {
       console.error("Failed to resume pod:", error);
-      // Keep dialog open on error so user can retry or cancel
     } finally {
       setResumeLoading(false);
     }
@@ -201,23 +174,8 @@ export default function RunnerDetailPage() {
     }
   };
 
-  const getPodStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      running: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-      initializing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-      terminated: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400",
-      error: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-      paused: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-    };
-    return statusColors[status] || "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
-  };
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
-      </div>
-    );
+    return <CenteredSpinner className="h-64" />;
   }
 
   if (!runner) {
@@ -319,368 +277,41 @@ export default function RunnerDetailPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Info */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              {t("runners.detail.basicInfo")}
-            </h3>
-            <dl className="space-y-4">
-              <div>
-                <dt className="text-sm text-gray-500 dark:text-gray-400">
-                  {t("runners.detail.nodeId")}
-                </dt>
-                <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                  {runner.node_id}
-                </dd>
-              </div>
-              {runner.description && (
-                <div>
-                  <dt className="text-sm text-gray-500 dark:text-gray-400">
-                    {t("runners.detail.description")}
-                  </dt>
-                  <dd className="text-sm text-gray-900 dark:text-white">
-                    {runner.description}
-                  </dd>
-                </div>
-              )}
-              <div>
-                <dt className="text-sm text-gray-500 dark:text-gray-400">
-                  {t("runners.detail.version")}
-                </dt>
-                <dd className="text-sm text-gray-900 dark:text-white">
-                  {runner.runner_version || "-"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-gray-500 dark:text-gray-400">
-                  {t("runners.detail.lastHeartbeat")}
-                </dt>
-                <dd className="text-sm text-gray-900 dark:text-white">
-                  {runner.last_heartbeat
-                    ? formatDistanceToNow(new Date(runner.last_heartbeat), { addSuffix: true })
-                    : "-"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-gray-500 dark:text-gray-400">
-                  {t("runners.detail.createdAt")}
-                </dt>
-                <dd className="text-sm text-gray-900 dark:text-white">
-                  {format(new Date(runner.created_at), "PPpp")}
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          {/* Capacity */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              {t("runners.detail.capacity")}
-            </h3>
-            <dl className="space-y-4">
-              <div>
-                <dt className="text-sm text-gray-500 dark:text-gray-400">
-                  {t("runners.detail.currentPods")}
-                </dt>
-                <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                  {runner.current_pods} / {runner.max_concurrent_pods}
-                </dd>
-              </div>
-              {runner.host_info && (
-                <>
-                  <div>
-                    <dt className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                      <Cpu className="w-4 h-4 mr-1" />
-                      {t("runners.detail.cpu")}
-                    </dt>
-                    <dd className="text-sm text-gray-900 dark:text-white">
-                      {runner.host_info.cpu_cores} cores ({runner.host_info.arch})
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                      <HardDrive className="w-4 h-4 mr-1" />
-                      {t("runners.detail.memory")}
-                    </dt>
-                    <dd className="text-sm text-gray-900 dark:text-white">
-                      {runner.host_info.memory
-                        ? `${(runner.host_info.memory / 1024 / 1024 / 1024).toFixed(1)} GB`
-                        : "-"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500 dark:text-gray-400">
-                      {t("runners.detail.os")}
-                    </dt>
-                    <dd className="text-sm text-gray-900 dark:text-white">
-                      {runner.host_info.os || "-"}
-                    </dd>
-                  </div>
-                </>
-              )}
-            </dl>
-          </div>
-
-          {/* Available Agents */}
-          {runner.available_agents && runner.available_agents.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 md:col-span-2">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                {t("runners.detail.availableAgents")}
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {runner.available_agents.map((agent) => (
-                  <span
-                    key={agent}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                  >
-                    <Terminal className="w-4 h-4 mr-1" />
-                    {agent}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {activeTab === "overview" && <RunnerOverviewTab runner={runner} />}
 
       {activeTab === "pods" && (
-        <div className="space-y-4">
-          {/* Filters and Actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <select
-                value={podFilter}
-                onChange={(e) => {
-                  setPodFilter(e.target.value);
-                  setOffset(0);
-                }}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
-              >
-                <option value="">{t("runners.detail.allStatus")}</option>
-                <option value="running">{t("pods.status.running")}</option>
-                <option value="terminated">{t("pods.status.terminated")}</option>
-                <option value="error">{t("pods.status.error")}</option>
-              </select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                onClick={handleRefreshSandboxStatus}
-                disabled={loadingSandbox || runner.status !== "online"}
-              >
-                {loadingSandbox ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                )}
-                {t("runners.detail.refreshSandbox")}
-              </Button>
-              <Button variant="outline" onClick={loadPods} disabled={loadingPods}>
-                {loadingPods ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                )}
-                {t("common.refresh")}
-              </Button>
-            </div>
-          </div>
-
-          {/* Pods Table */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t("runners.detail.podKey")}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t("runners.detail.status")}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t("runners.detail.sandbox")}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t("runners.detail.branch")}
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t("runners.detail.createdAt")}
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t("runners.detail.actions")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {pods.map((pod) => {
-                  const sandboxStatus = sandboxStatuses.get(pod.pod_key);
-                  const isInactive = pod.status !== "running" && pod.status !== "initializing";
-                  const canResume = isInactive && sandboxStatus?.can_resume;
-
-                  return (
-                    <tr key={pod.pod_key} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {pod.pod_key}
-                        </span>
-                        {pod.source_pod_key && (
-                          <span className="ml-2 text-xs text-gray-400">
-                            (resumed from {pod.source_pod_key.slice(0, 8)}...)
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-                            getPodStatusBadge(pod.status)
-                          )}
-                        >
-                          {pod.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {pod.status === "running" ? (
-                          <span className="flex items-center text-green-600 dark:text-green-400 text-sm">
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            {t("runners.detail.active")}
-                          </span>
-                        ) : isInactive ? (
-                          sandboxStatus === undefined ? (
-                            <span className="text-gray-400 text-sm">-</span>
-                          ) : sandboxStatus.exists ? (
-                            <span className="flex items-center text-green-600 dark:text-green-400 text-sm">
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              {sandboxStatus.can_resume ? t("runners.detail.canResume") : t("runners.detail.exists")}
-                            </span>
-                          ) : (
-                            <span className="flex items-center text-gray-400 text-sm">
-                              <XCircle className="w-4 h-4 mr-1" />
-                              {t("runners.detail.notExists")}
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                        {pod.branch_name ? (
-                          <span className="flex items-center">
-                            <GitBranch className="w-4 h-4 mr-1" />
-                            {pod.branch_name}
-                          </span>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                        {formatDistanceToNow(new Date(pod.created_at), { addSuffix: true })}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          {canResume && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openResumeDialog(pod)}
-                              title={t("runners.detail.resumeTooltip")}
-                            >
-                              <RotateCcw className="w-4 h-4 mr-1" />
-                              {t("runners.detail.resume")}
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {pods.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                      {t("runners.detail.noPods")}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {total > limit && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t("runners.detail.showing", {
-                  from: offset + 1,
-                  to: Math.min(offset + limit, total),
-                  total,
-                })}
-              </p>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={offset === 0}
-                  onClick={() => setOffset(Math.max(0, offset - limit))}
-                >
-                  {t("common.previous")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={offset + limit >= total}
-                  onClick={() => setOffset(offset + limit)}
-                >
-                  {t("common.next")}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        <RunnerPodsTab
+          runner={runner}
+          pods={pods}
+          sandboxStatuses={sandboxStatuses}
+          loadingPods={loadingPods}
+          loadingSandbox={loadingSandbox}
+          podFilter={podFilter}
+          total={total}
+          offset={offset}
+          limit={limit}
+          onFilterChange={setPodFilter}
+          onOffsetChange={setOffset}
+          onRefresh={loadPods}
+          onRefreshSandbox={handleRefreshSandboxStatus}
+          onResume={(pod) => {
+            setResumingPod(pod);
+            setResumeDialogOpen(true);
+          }}
+        />
       )}
 
       {/* Resume Confirmation Dialog */}
-      <Dialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("runners.detail.resumeDialogTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("runners.detail.resumeDialogDescription", {
-                podKey: resumingPod?.pod_key || "",
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t("runners.detail.resumeDialogInfo")}
-            </p>
-          </DialogBody>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setResumeDialogOpen(false);
-                setResumingPod(null);
-              }}
-              disabled={resumeLoading}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              onClick={handleConfirmResume}
-              disabled={resumeLoading}
-            >
-              {resumeLoading ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <RotateCcw className="w-4 h-4 mr-2" />
-              )}
-              {t("runners.detail.confirmResumeBtn")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ResumeDialog
+        open={resumeDialogOpen}
+        onOpenChange={(open) => {
+          setResumeDialogOpen(open);
+          if (!open) setResumingPod(null);
+        }}
+        pod={resumingPod}
+        loading={resumeLoading}
+        onConfirm={handleConfirmResume}
+      />
     </div>
   );
 }

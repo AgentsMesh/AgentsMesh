@@ -161,7 +161,8 @@ describe("RepositoriesPage", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Total Repositories")).toBeInTheDocument();
-        expect(screen.getByText("Active")).toBeInTheDocument();
+        // "Active" appears in stats card label and in status badges for repositories
+        expect(screen.getAllByText("Active").length).toBeGreaterThanOrEqual(1);
         expect(screen.getByText("Providers")).toBeInTheDocument();
       });
     });
@@ -205,19 +206,14 @@ describe("RepositoriesPage", () => {
       });
     });
 
-    it("should show private badge for private visibility repositories", async () => {
+    it("should show active/inactive status badges", async () => {
       render(<RepositoriesPage />);
 
       await waitFor(() => {
-        expect(screen.getByText("Private")).toBeInTheDocument();
-      });
-    });
-
-    it("should show ticket prefix badge when available", async () => {
-      render(<RepositoriesPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText("REPO")).toBeInTheDocument();
+        // Check for active and inactive status badges
+        const activeBadges = screen.getAllByText("Active");
+        expect(activeBadges.length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByText("Inactive")).toBeInTheDocument();
       });
     });
 
@@ -235,9 +231,13 @@ describe("RepositoriesPage", () => {
       render(<RepositoriesPage />);
 
       await waitFor(() => {
-        expect(screen.getAllByText("github").length).toBeGreaterThanOrEqual(1);
-        expect(screen.getByText("gitlab")).toBeInTheDocument();
+        expect(screen.getByText("repo-one")).toBeInTheDocument();
       });
+
+      // Provider types are shown with capitalize CSS class but inner text is lowercase
+      // They also appear in the filter dropdown, so use getAllByText
+      expect(screen.getAllByText("github").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("gitlab").length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -299,10 +299,8 @@ describe("RepositoriesPage", () => {
         expect(screen.getByText("repo-one")).toBeInTheDocument();
       });
 
-      // Find and click the first delete button (by looking for the svg path pattern)
-      const deleteButtons = screen.getAllByRole("button").filter(
-        (btn) => btn.querySelector("svg path[d*='M19 7l-.867 12.142']")
-      );
+      // Find and click the first delete button (text-based)
+      const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
       fireEvent.click(deleteButtons[0]);
 
       expect(window.confirm).toHaveBeenCalled();
@@ -320,9 +318,7 @@ describe("RepositoriesPage", () => {
         expect(screen.getByText("repo-one")).toBeInTheDocument();
       });
 
-      const deleteButtons = screen.getAllByRole("button").filter(
-        (btn) => btn.querySelector("svg path[d*='M19 7l-.867 12.142']")
-      );
+      const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
       fireEvent.click(deleteButtons[0]);
 
       expect(window.confirm).toHaveBeenCalled();
@@ -341,13 +337,13 @@ describe("RepositoriesPage", () => {
       });
     });
 
-    it("should show help text in empty state", async () => {
+    it("should still show import button in empty state", async () => {
       mockRepositoryApi.list.mockResolvedValue({ repositories: [] });
 
       render(<RepositoriesPage />);
 
       await waitFor(() => {
-        expect(screen.getByText("Import a repository to use Git-based workflows in AgentPod")).toBeInTheDocument();
+        expect(screen.getByText("Import Repository")).toBeInTheDocument();
       });
     });
   });
@@ -436,7 +432,7 @@ describe("RepositoriesPage", () => {
   });
 
   describe("links", () => {
-    it("should link to repository detail page", async () => {
+    it("should link to repository detail page via name click", async () => {
       render(<RepositoriesPage />);
 
       await waitFor(() => {
@@ -447,15 +443,21 @@ describe("RepositoriesPage", () => {
       expect(link).toHaveAttribute("href", "repositories/1");
     });
 
-    it("should have View button linking to detail page", async () => {
+    it("should have links to all repositories", async () => {
       render(<RepositoriesPage />);
 
       await waitFor(() => {
         expect(screen.getByText("repo-one")).toBeInTheDocument();
       });
 
-      const viewButtons = screen.getAllByRole("link", { name: "View" });
-      expect(viewButtons[0]).toHaveAttribute("href", "repositories/1");
+      // Verify all repository names are links
+      const repoOneLink = screen.getByRole("link", { name: "repo-one" });
+      const repoTwoLink = screen.getByRole("link", { name: "repo-two" });
+      const inactiveLink = screen.getByRole("link", { name: "inactive-repo" });
+
+      expect(repoOneLink).toHaveAttribute("href", "repositories/1");
+      expect(repoTwoLink).toHaveAttribute("href", "repositories/2");
+      expect(inactiveLink).toHaveAttribute("href", "repositories/3");
     });
   });
 

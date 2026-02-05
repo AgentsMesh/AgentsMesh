@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import {
   userAgentCredentialApi,
   CredentialProfileData,
@@ -254,11 +255,7 @@ export function AgentCredentialsSettings() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <CenteredSpinner className="py-12" />;
   }
 
   return (

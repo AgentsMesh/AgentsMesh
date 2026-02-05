@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import { useTranslations } from "@/lib/i18n/client";
 import { publicBillingApi, type PublicPricingResponse, type Currency } from "@/lib/api/billing";
 
@@ -182,9 +183,7 @@ export function PricingSection() {
 
         {/* Loading state */}
         {loading && (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
+          <CenteredSpinner className="py-20" />
         )}
 
         {/* Pricing cards */}

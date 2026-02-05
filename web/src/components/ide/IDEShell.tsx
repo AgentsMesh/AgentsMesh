@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import { ActivityBar } from "./ActivityBar";
 import { SideBar } from "./SideBar";
 import { BottomPanel } from "./BottomPanel";
@@ -125,8 +126,8 @@ export function IDEShell({
   // Show loading state while hydrating to prevent flash
   if (!_hasHydrated) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="h-screen bg-background">
+        <CenteredSpinner />
       </div>
     );
   }

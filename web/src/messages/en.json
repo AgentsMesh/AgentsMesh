@@ -1582,9 +1582,19 @@
     "import": "Import Repository",
     "repoCount": "repositories",
     "allProviders": "All Providers",
+    "active": "Active",
     "inactive": "Inactive",
+    "delete": "Delete",
     "view": "View",
+    "search": "Search repositories...",
     "confirmDelete": "Are you sure you want to delete repository \"{name}\"?",
+    "columns": {
+      "name": "Name",
+      "provider": "Provider",
+      "branch": "Branch",
+      "status": "Status",
+      "actions": "Actions"
+    },
     "filters": {
       "all": "All",
       "github": "GitHub",
