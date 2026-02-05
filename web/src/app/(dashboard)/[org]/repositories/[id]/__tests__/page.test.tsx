@@ -85,6 +85,17 @@ describe("RepositoryDetailPage", () => {
   });
 
   describe("not found state", () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      // Suppress expected console.error for not found tests
+      consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
+    });
+
     it("should show not found message when repository not found", async () => {
       mockRepositoryApi.get.mockRejectedValue(new Error("Not found"));
 

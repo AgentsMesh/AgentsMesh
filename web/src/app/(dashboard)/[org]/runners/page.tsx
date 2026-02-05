@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Server,
   Plus,
-  Copy,
   Trash2,
   RefreshCw,
   Settings2,
@@ -18,13 +17,15 @@ import {
   Cpu,
   HardDrive,
   Activity,
-  Terminal,
-  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useServerUrl } from "@/hooks/useServerUrl";
 import { useTranslations } from "@/lib/i18n/client";
+import { StatCard, AddRunnerModal, RunnerConfigModal } from "./components";
 
+/**
+ * RunnersPage - Displays a list of runners with their status and actions
+ */
 export default function RunnersPage() {
   const t = useTranslations();
   const [runners, setRunners] = useState<RunnerData[]>([]);
@@ -337,7 +338,7 @@ export default function RunnersPage() {
         </div>
       </div>
 
-      {/* Add Runner Modal */}
+      {/* Modals */}
       {showAddRunnerModal && (
         <AddRunnerModal
           t={t}
@@ -350,7 +351,6 @@ export default function RunnersPage() {
         />
       )}
 
-      {/* Runner Config Modal */}
       {selectedRunner && (
         <RunnerConfigModal
           t={t}
@@ -362,273 +362,6 @@ export default function RunnersPage() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  icon,
-  variant,
-}: {
-  title: string;
-  value: number;
-  icon: React.ReactNode;
-  variant?: "success" | "warning" | "error";
-}) {
-  return (
-    <div className="p-3 md:p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs md:text-sm text-muted-foreground">{title}</p>
-          <p className="text-xl md:text-2xl font-bold">{value}</p>
-        </div>
-        <div
-          className={cn(
-            "w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center",
-            variant === "success"
-              ? "bg-green-500/10 text-green-500 dark:text-green-400"
-              : variant === "warning"
-                ? "bg-yellow-500/10 text-yellow-500 dark:text-yellow-400"
-                : variant === "error"
-                  ? "bg-red-500/10 text-red-500 dark:text-red-400"
-                  : "bg-primary/10 text-primary"
-          )}
-        >
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AddRunnerModal({
-  t,
-  onClose,
-  onCreated,
-  serverUrl,
-}: {
-  t: (key: string, params?: Record<string, string | number>) => string;
-  onClose: () => void;
-  onCreated: () => void;
-  serverUrl: string;
-}) {
-  const [loading, setLoading] = useState(false);
-  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  const handleGenerate = async () => {
-    setLoading(true);
-    try {
-      const res = await runnerApi.createToken();
-      setGeneratedToken(res.token);
-    } catch (error) {
-      console.error("Failed to generate token:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToken = () => {
-    if (generatedToken) {
-      navigator.clipboard.writeText(generatedToken);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const copyCommand = () => {
-    if (generatedToken) {
-      const command = `agentsmesh-runner register --server ${serverUrl} --token ${generatedToken}\nagentsmesh-runner run`;
-      navigator.clipboard.writeText(command);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-background border border-border rounded-lg w-full max-w-lg p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold mb-2">
-          {t("runners.addRunnerModal.title")}
-        </h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          {t("runners.addRunnerModal.subtitle")}
-        </p>
-
-        {generatedToken ? (
-          <div className="space-y-4">
-            {/* Warning */}
-            <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                {t("runners.addRunnerModal.tokenWarning")}
-              </p>
-            </div>
-
-            {/* Token display */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                {t("runners.addRunnerModal.tokenLabel")}
-              </label>
-              <div className="flex gap-2">
-                <code className="flex-1 p-3 bg-muted rounded text-sm break-all font-mono">
-                  {generatedToken}
-                </code>
-                <Button variant="outline" size="sm" onClick={copyToken} className="flex-shrink-0">
-                  {copied ? <Check className="w-4 h-4 text-green-500 dark:text-green-400" /> : <Copy className="w-4 h-4" />}
-                </Button>
-              </div>
-            </div>
-
-            {/* Usage instructions */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                {t("runners.addRunnerModal.usageTitle")}
-              </label>
-              <div className="bg-muted rounded-lg p-4 relative">
-                <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
-                  <Terminal className="w-4 h-4" />
-                  <span>Terminal</span>
-                </div>
-                <code className="text-green-600 dark:text-green-400 text-sm font-mono block whitespace-pre-wrap">
-{`agentsmesh-runner register --server ${serverUrl} --token ${generatedToken.substring(0, 16)}...
-agentsmesh-runner run`}
-                </code>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={copyCommand}
-                  className="absolute top-2 right-2 h-7 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  {t("runners.addRunnerModal.copyCommand")}
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button onClick={onCreated}>{t("runners.addRunnerModal.done")}</Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {t("runners.addRunnerModal.generateHint")}
-            </p>
-
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
-              <Button variant="outline" onClick={onClose}>
-                {t("runners.addRunnerModal.cancel")}
-              </Button>
-              <Button onClick={handleGenerate} disabled={loading}>
-                {loading ? t("runners.addRunnerModal.generating") : t("runners.addRunnerModal.generate")}
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RunnerConfigModal({
-  t,
-  runner,
-  onClose,
-  onUpdated,
-}: {
-  t: (key: string, params?: Record<string, string | number>) => string;
-  runner: RunnerData;
-  onClose: () => void;
-  onUpdated: () => void;
-}) {
-  const [description, setDescription] = useState(runner.description || "");
-  const [maxPods, setMaxPods] = useState(runner.max_concurrent_pods);
-  const [loading, setLoading] = useState(false);
-
-  const handleUpdate = async () => {
-    setLoading(true);
-    try {
-      await runnerApi.update(runner.id, {
-        description: description || undefined,
-        max_concurrent_pods: maxPods,
-      });
-      onUpdated();
-    } catch (error) {
-      console.error("Failed to update runner:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-background border border-border rounded-lg w-full max-w-md p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold mb-4">
-          {t("runners.configModal.title")}
-        </h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">{t("runners.configModal.nodeIdLabel")}</label>
-            <code className="block w-full p-3 bg-muted rounded text-sm">
-              {runner.node_id}
-            </code>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">{t("runners.configModal.descriptionLabel")}</label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 border border-border rounded-md bg-background"
-              placeholder={t("runners.configModal.descriptionPlaceholder")}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              {t("runners.configModal.maxPodsLabel")}
-            </label>
-            <input
-              type="number"
-              className="w-full px-3 py-2 border border-border rounded-md bg-background"
-              value={maxPods}
-              onChange={(e) => setMaxPods(parseInt(e.target.value) || 1)}
-              min={1}
-              max={100}
-            />
-          </div>
-
-          {runner.active_pods && runner.active_pods.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                {t("runners.configModal.activePodsLabel", { count: runner.active_pods.length })}
-              </label>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {runner.active_pods.map((pod) => (
-                  <div
-                    key={pod.pod_key}
-                    className="flex items-center justify-between p-2 bg-muted rounded text-sm"
-                  >
-                    <code>{pod.pod_key.substring(0, 12)}...</code>
-                    <span className="text-muted-foreground">{pod.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={onClose}>
-              {t("runners.configModal.cancel")}
-            </Button>
-            <Button onClick={handleUpdate} disabled={loading}>
-              {loading ? t("runners.configModal.saving") : t("runners.configModal.save")}
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
 } from "@/lib/api";
 import type { RepositoryData } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
+import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
 
 interface ImportRepositoryModalProps {
   open: boolean;
@@ -185,40 +186,6 @@ export function ImportRepositoryModal({
     }
   };
 
-  const getProviderIcon = (providerType: string) => {
-    switch (providerType) {
-      case "github":
-        return (
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-          </svg>
-        );
-      case "gitlab":
-        return (
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0118.6 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51L23 13.45a.84.84 0 01-.35.94z" />
-          </svg>
-        );
-      case "gitee":
-        return (
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M11.984 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.016 0zm6.09 5.333c.328 0 .593.266.592.593v1.482a.594.594 0 01-.593.592H9.777c-.982 0-1.778.796-1.778 1.778v5.63c0 .327.266.592.593.592h5.63c.982 0 1.778-.796 1.778-1.778v-.296a.593.593 0 00-.592-.593h-4.15a.592.592 0 01-.592-.592v-1.482a.593.593 0 01.593-.592h6.815c.327 0 .593.265.593.592v3.408a4 4 0 01-4 4H5.926a.593.593 0 01-.593-.593V9.778a4.444 4.444 0 014.445-4.444h8.296z" />
-          </svg>
-        );
-      default:
-        return (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-            />
-          </svg>
-        );
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-background rounded-lg shadow-lg w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
@@ -278,7 +245,7 @@ export function ImportRepositoryModal({
                             className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-muted/50 text-left"
                           >
                             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                              {getProviderIcon(provider.provider_type)}
+                              <GitProviderIcon provider={provider.provider_type} />
                             </div>
                             <div>
                               <div className="font-medium">{provider.name}</div>
@@ -605,7 +572,7 @@ export function ImportRepositoryModal({
 
               <div className="p-4 border border-border rounded-lg bg-muted/50">
                 <div className="flex items-center gap-3 mb-3">
-                  {getProviderIcon(manualProviderType)}
+                  <GitProviderIcon provider={manualProviderType} />
                   <div>
                     <div className="font-medium">{manualName}</div>
                     <div className="text-sm text-muted-foreground">{manualFullPath}</div>
