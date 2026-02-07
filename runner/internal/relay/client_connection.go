@@ -3,6 +3,7 @@ package relay
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -35,9 +36,9 @@ func (c *Client) connectInternal() error {
 		return fmt.Errorf("unsupported scheme: %s", u.Scheme)
 	}
 
-	// Set path and query
-	// Use JWT token for authentication instead of raw pod_key/session_id
-	u.Path = "/runner/terminal"
+	// Append endpoint path to the base URL path (e.g., /relay -> /relay/runner/terminal)
+	// This preserves any path prefix from reverse proxy configuration
+	u.Path = path.Join(u.Path, "/runner/terminal")
 	q := u.Query()
 	q.Set("token", c.token)
 	u.RawQuery = q.Encode()
