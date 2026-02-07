@@ -37,7 +37,8 @@ type RunnerCommandSender interface {
 
 	// SendSubscribeTerminal sends a subscribe terminal command to a runner.
 	// This notifies the runner that a browser wants to observe the terminal via Relay.
-	SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, sessionID, runnerToken string, includeSnapshot bool, snapshotHistory int32) error
+	// Note: sessionID has been removed - channels are now identified by PodKey only
+	SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error
 
 	// SendUnsubscribeTerminal sends an unsubscribe terminal command to a runner.
 	// This notifies the runner that all browsers have disconnected and it should disconnect from Relay.
@@ -97,7 +98,7 @@ func (n *NoOpCommandSender) SendPrompt(ctx context.Context, runnerID int64, podK
 	return ErrCommandSenderNotSet
 }
 
-func (n *NoOpCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, sessionID, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
+func (n *NoOpCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
 	n.logger.Warn("command sender not configured, cannot send subscribe terminal",
 		"runner_id", runnerID, "pod_key", podKey)
 	return ErrCommandSenderNotSet

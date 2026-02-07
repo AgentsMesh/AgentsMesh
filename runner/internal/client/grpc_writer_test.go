@@ -82,7 +82,6 @@ func buildHeartbeatMessage(nodeID string, handler MessageHandler) *runnerv1.Runn
 			relayConnections = append(relayConnections, &runnerv1.RelayConnectionInfo{
 				PodKey:      rc.PodKey,
 				RelayUrl:    rc.RelayURL,
-				SessionId:   rc.SessionID,
 				Connected:   rc.Connected,
 				ConnectedAt: rc.ConnectedAt,
 			})
@@ -112,7 +111,6 @@ func TestBuildHeartbeatMessage_CollectsRelayConnections(t *testing.T) {
 			{
 				PodKey:      "pod-1",
 				RelayURL:    "wss://relay.example.com",
-				SessionID:   "session-1",
 				Connected:   true,
 				ConnectedAt: now,
 			},
@@ -143,9 +141,6 @@ func TestBuildHeartbeatMessage_CollectsRelayConnections(t *testing.T) {
 	}
 	if rc.RelayUrl != "wss://relay.example.com" {
 		t.Errorf("relay connection relay_url: expected wss://relay.example.com, got %s", rc.RelayUrl)
-	}
-	if rc.SessionId != "session-1" {
-		t.Errorf("relay connection session_id: expected session-1, got %s", rc.SessionId)
 	}
 	if !rc.Connected {
 		t.Error("relay connection should be connected")
@@ -203,9 +198,9 @@ func TestBuildHeartbeatMessage_MultipleRelayConnections(t *testing.T) {
 			{PodKey: "pod-3", Status: "running"},
 		},
 		relayConnections: []RelayConnectionInfo{
-			{PodKey: "pod-1", RelayURL: "wss://relay1.example.com", SessionID: "s1", Connected: true, ConnectedAt: now},
-			{PodKey: "pod-2", RelayURL: "wss://relay2.example.com", SessionID: "s2", Connected: true, ConnectedAt: now - 1000},
-			{PodKey: "pod-3", RelayURL: "wss://relay1.example.com", SessionID: "s3", Connected: false, ConnectedAt: 0},
+			{PodKey: "pod-1", RelayURL: "wss://relay1.example.com", Connected: true, ConnectedAt: now},
+			{PodKey: "pod-2", RelayURL: "wss://relay2.example.com", Connected: true, ConnectedAt: now - 1000},
+			{PodKey: "pod-3", RelayURL: "wss://relay1.example.com", Connected: false, ConnectedAt: 0},
 		},
 	}
 

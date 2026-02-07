@@ -34,10 +34,10 @@ type PodInfo struct {
 }
 
 // RelayConnectionInfo contains relay connection information for heartbeat messages.
+// Note: SessionID has been removed - channels are now identified by PodKey only
 type RelayConnectionInfo struct {
 	PodKey      string `json:"pod_key"`
 	RelayURL    string `json:"relay_url"`
-	SessionID   string `json:"session_id"`
 	Connected   bool   `json:"connected"`
 	ConnectedAt int64  `json:"connected_at"` // Unix milliseconds
 }
@@ -65,10 +65,10 @@ type TerminalRedrawRequest struct {
 
 // SubscribeTerminalRequest is sent when a browser wants to observe the terminal via Relay.
 // The Runner should connect to the specified Relay URL and start streaming terminal output.
+// Note: SessionID has been removed - channels are now identified by PodKey only
 type SubscribeTerminalRequest struct {
 	PodKey          string `json:"pod_key"`
 	RelayURL        string `json:"relay_url"`
-	SessionID       string `json:"session_id"`
 	RunnerToken     string `json:"runner_token"` // JWT token for Relay authentication
 	IncludeSnapshot bool   `json:"include_snapshot"`
 	SnapshotHistory int32  `json:"snapshot_history"`

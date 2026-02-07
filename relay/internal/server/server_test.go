@@ -45,8 +45,8 @@ func TestNew(t *testing.T) {
 	if server.cfg != cfg {
 		t.Error("cfg not set correctly")
 	}
-	if server.sessionManager == nil {
-		t.Error("sessionManager should not be nil")
+	if server.channelManager == nil {
+		t.Error("channelManager should not be nil")
 	}
 	if server.backendClient == nil {
 		t.Error("backendClient should not be nil")
@@ -93,16 +93,16 @@ func TestServer_Stats(t *testing.T) {
 	stats := server.Stats()
 
 	// Initial stats should be zero
-	if stats.ActiveSessions != 0 {
-		t.Errorf("ActiveSessions: expected 0, got %d", stats.ActiveSessions)
+	if stats.ActiveChannels != 0 {
+		t.Errorf("ActiveChannels: expected 0, got %d", stats.ActiveChannels)
 	}
-	if stats.TotalBrowsers != 0 {
-		t.Errorf("TotalBrowsers: expected 0, got %d", stats.TotalBrowsers)
+	if stats.TotalSubscribers != 0 {
+		t.Errorf("TotalSubscribers: expected 0, got %d", stats.TotalSubscribers)
 	}
-	if stats.PendingRunners != 0 {
-		t.Errorf("PendingRunners: expected 0, got %d", stats.PendingRunners)
+	if stats.PendingPublishers != 0 {
+		t.Errorf("PendingPublishers: expected 0, got %d", stats.PendingPublishers)
 	}
-	if stats.PendingBrowsers != 0 {
-		t.Errorf("PendingBrowsers: expected 0, got %d", stats.PendingBrowsers)
+	if stats.PendingSubscribers != 0 {
+		t.Errorf("PendingSubscribers: expected 0, got %d", stats.PendingSubscribers)
 	}
 }

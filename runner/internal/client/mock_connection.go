@@ -152,13 +152,14 @@ func (m *MockConnection) SendPodInitProgress(podKey, phase string, progress int3
 }
 
 // SendRequestRelayToken implements Connection.
-func (m *MockConnection) SendRequestRelayToken(podKey, sessionID, relayURL string) error {
+// Note: SessionID has been removed - channels are now identified by PodKey only
+func (m *MockConnection) SendRequestRelayToken(podKey, relayURL string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.SendErr != nil {
 		return m.SendErr
 	}
-	m.Events = append(m.Events, EventCall{Type: MessageType("request_relay_token"), Data: map[string]interface{}{"pod_key": podKey, "session_id": sessionID, "relay_url": relayURL}})
+	m.Events = append(m.Events, EventCall{Type: MessageType("request_relay_token"), Data: map[string]interface{}{"pod_key": podKey, "relay_url": relayURL}})
 	return nil
 }
 

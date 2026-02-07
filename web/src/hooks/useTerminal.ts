@@ -10,6 +10,7 @@ import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 
 interface TerminalConnection {
   send: (data: string) => void;
+  unsubscribe: () => void;
   disconnect: () => void;
 }
 
@@ -158,9 +159,10 @@ export function useTerminal(
 
     // Try initial fit - may fail if container has zero dimensions
     // ResizeObserver will handle fitting when dimensions become valid
+    // Note: Don't send resize here - connection doesn't exist yet
+    // We'll send resize after subscribe() completes
     const initialDims = safeFit(fitAddon);
     if (initialDims) {
-      terminalPool.forceResize(podKey, initialDims.cols, initialDims.rows);
       lastSyncedSizeRef.current = initialDims;
     }
 
@@ -180,16 +182,28 @@ export function useTerminal(
       }
     };
 
+    // Generate unique subscriptionId for each effect instance
+    // This prevents race condition: when component re-mounts quickly, old effect's cleanup
+    // might run AFTER new effect's setup, and if they share the same subscriptionId,
+    // the old cleanup would remove the new subscription.
+    // With unique IDs, each effect only manages its own subscription.
+    const subscriptionId = `terminal-${podKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
     // Async connection setup
     let isMounted = true;
     (async () => {
       try {
-        const handle = await terminalPool.connect(podKey, handleMessage);
+        const handle = await terminalPool.subscribe(podKey, subscriptionId, handleMessage);
         if (isMounted) {
           connectionRef.current = handle;
+          // Send initial resize after connection is established
+          // This ensures the resize is sent after WebSocket is connected
+          if (initialDims) {
+            terminalPool.forceResize(podKey, initialDims.cols, initialDims.rows);
+          }
         } else {
           // Component unmounted before connection completed
-          handle.disconnect();
+          handle.unsubscribe();
         }
       } catch (error) {
         console.error("Failed to connect terminal:", error);
@@ -300,7 +314,9 @@ export function useTerminal(
       // Explicitly dispose event listeners before disposing terminal
       disposablesRef.current.forEach(d => d.dispose());
       disposablesRef.current = [];
-      connectionRef.current?.disconnect();
+      // Unsubscribe from terminal data - connection stays open if other subscribers exist
+      // or for 30s delay allowing quick re-subscribe
+      connectionRef.current?.unsubscribe();
       // Dispose scheduler before terminal to ensure no pending writes
       schedulerRef.current?.dispose();
       schedulerRef.current = null;

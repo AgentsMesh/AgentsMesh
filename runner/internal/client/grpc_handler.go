@@ -175,9 +175,10 @@ func (c *GRPCConnection) handleSendPrompt(cmd *runnerv1.SendPromptCommand) {
 
 // handleSubscribeTerminal handles subscribe_terminal command from server.
 // This notifies the Runner that a browser wants to observe the terminal via Relay.
+// Channel is identified by PodKey (not session ID).
 func (c *GRPCConnection) handleSubscribeTerminal(cmd *runnerv1.SubscribeTerminalCommand) {
 	log := logger.GRPC()
-	log.Info("Received subscribe_terminal", "pod_key", cmd.PodKey, "relay_url", cmd.RelayUrl, "session_id", cmd.SessionId)
+	log.Info("Received subscribe_terminal", "pod_key", cmd.PodKey, "relay_url", cmd.RelayUrl)
 	if c.handler == nil {
 		log.Warn("No handler set, ignoring subscribe_terminal")
 		return
@@ -186,7 +187,6 @@ func (c *GRPCConnection) handleSubscribeTerminal(cmd *runnerv1.SubscribeTerminal
 	req := SubscribeTerminalRequest{
 		PodKey:          cmd.PodKey,
 		RelayURL:        cmd.RelayUrl,
-		SessionID:       cmd.SessionId,
 		RunnerToken:     cmd.RunnerToken,
 		IncludeSnapshot: cmd.IncludeSnapshot,
 		SnapshotHistory: cmd.SnapshotHistory,

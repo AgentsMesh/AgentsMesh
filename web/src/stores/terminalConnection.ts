@@ -32,27 +32,31 @@ const MsgType = {
 export interface TerminalConnection {
   ws: WebSocket;
   podKey: string;
-  buffer: Uint8Array[];
   status: "connecting" | "connected" | "disconnected" | "error";
   lastActivity: number;
-  listeners: Set<(data: Uint8Array | string) => void>;
+  /** Subscribers map: subscriptionId -> callback */
+  subscribers: Map<string, (data: Uint8Array | string) => void>;
   reconnectAttempts: number;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
+  /** Timer for delayed disconnect when all subscribers leave */
+  disconnectTimer: ReturnType<typeof setTimeout> | null;
   pendingResize?: { rows: number; cols: number };
   ptySize?: { rows: number; cols: number };
   // Relay connection info
   relayUrl: string;
-  sessionId: string;
   relayToken: string;
   // Runner status
   runnerDisconnected: boolean;
 }
 
 /**
- * Connection result with send and disconnect methods
+ * Connection result with send and unsubscribe methods
  */
 export interface ConnectionHandle {
   send: (data: string) => void;
+  /** Unsubscribe from terminal output. Connection stays open if other subscribers exist. */
+  unsubscribe: () => void;
+  /** @deprecated Use unsubscribe() instead. Kept for backward compatibility. */
   disconnect: () => void;
 }
 
@@ -84,14 +88,21 @@ function decodeMessage(data: Uint8Array): { type: number; payload: Uint8Array } 
 
 /**
  * Terminal connection pool for managing WebSocket connections to Relay
+ *
+ * Architecture:
+ * - Connections are keyed by podKey and shared across multiple subscribers
+ * - Each subscriber has a unique subscriptionId for idempotent add/remove
+ * - Connection stays open as long as at least one subscriber exists
+ * - Uses delayed disconnect (30s) when last subscriber leaves to handle rapid open/close
  */
 class TerminalConnectionPool {
   private connections: Map<string, TerminalConnection> = new Map();
-  private maxBufferSize = 100;
   private maxReconnectAttempts = 5;
   private baseReconnectDelay = 1000;
   private resizeDebounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private resizeDebounceMs = 150;
+  /** Delay before disconnecting when all subscribers leave (ms) */
+  private disconnectDelay = 30000;
 
   // Input deduplication to prevent duplicate sends on mobile with network latency
   // Tracks last input per pod to filter rapid duplicate sends
@@ -102,15 +113,44 @@ class TerminalConnectionPool {
     return this.connections.get(podKey);
   }
 
-  async connect(podKey: string, onMessage: (data: Uint8Array | string) => void): Promise<ConnectionHandle> {
+  /**
+   * Subscribe to terminal output for a pod.
+   *
+   * @param podKey - The pod identifier
+   * @param subscriptionId - Stable identifier for this subscriber (e.g., `terminal-${podKey}`)
+   *                         Same subscriptionId will replace previous subscription (idempotent)
+   * @param onMessage - Callback for terminal output
+   * @returns ConnectionHandle with send and unsubscribe methods
+   */
+  async subscribe(
+    podKey: string,
+    subscriptionId: string,
+    onMessage: (data: Uint8Array | string) => void
+  ): Promise<ConnectionHandle> {
     let conn = this.connections.get(podKey);
 
     if (conn) {
-      conn.listeners.add(onMessage);
-      return {
-        send: (data: string) => this.send(podKey, data),
-        disconnect: () => this.removeListener(podKey, onMessage),
-      };
+      // Check if this is a new subscriber (not just updating an existing one)
+      const hadPrevious = conn.subscribers.has(subscriptionId);
+
+      if (hadPrevious) {
+        // Same subscriptionId - just update the callback (idempotent)
+        conn.subscribers.set(subscriptionId, onMessage);
+        console.log(`[Relay] Updated subscriber ${subscriptionId} for ${podKey}, total: ${conn.subscribers.size}`);
+
+        return {
+          send: (data: string) => this.send(podKey, data),
+          unsubscribe: () => this.unsubscribe(podKey, subscriptionId),
+          disconnect: () => this.unsubscribe(podKey, subscriptionId),
+        };
+      }
+
+      // New subscriber joining existing connection
+      // Close the existing connection and create a new one so Relay sends buffered output
+      // This is cleaner than maintaining buffer on frontend
+      console.log(`[Relay] New subscriber ${subscriptionId} for ${podKey}, reconnecting to get buffered output`);
+      this.disconnect(podKey);
+      // Fall through to create new connection
     }
 
     // Get Relay connection info from Backend
@@ -122,25 +162,37 @@ class TerminalConnectionPool {
     conn = {
       ws,
       podKey,
-      buffer: [],
       status: "connecting",
       lastActivity: Date.now(),
-      listeners: new Set([onMessage]),
+      subscribers: new Map([[subscriptionId, onMessage]]),
       reconnectAttempts: 0,
       reconnectTimer: null,
+      disconnectTimer: null,
       relayUrl: relayInfo.relay_url,
-      sessionId: relayInfo.session_id,
       relayToken: relayInfo.token,
       runnerDisconnected: false,
     };
 
     this.connections.set(podKey, conn);
     this.setupWebSocketHandlers(podKey, ws);
+    console.log(`[Relay] Created connection for ${podKey}, subscriber: ${subscriptionId}`);
 
     return {
       send: (data: string) => this.send(podKey, data),
-      disconnect: () => this.removeListener(podKey, onMessage),
+      unsubscribe: () => this.unsubscribe(podKey, subscriptionId),
+      disconnect: () => this.unsubscribe(podKey, subscriptionId),
     };
+  }
+
+  /**
+   * @deprecated Use subscribe() instead. Kept for backward compatibility.
+   * Generates a random subscriptionId which may cause subscriber accumulation issues.
+   */
+  async connect(podKey: string, onMessage: (data: Uint8Array | string) => void): Promise<ConnectionHandle> {
+    // Generate unique ID for backward compatibility
+    const subscriptionId = `legacy-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    console.warn(`[Relay] Using deprecated connect() for ${podKey}. Consider using subscribe() with stable subscriptionId.`);
+    return this.subscribe(podKey, subscriptionId, onMessage);
   }
 
   /**
@@ -148,10 +200,11 @@ class TerminalConnectionPool {
    */
   private createRelayWebSocket(
     podKey: string,
-    relayInfo: { relay_url: string; token: string; session_id: string }
+    relayInfo: { relay_url: string; token: string }
   ): WebSocket {
     // Connect to Relay browser endpoint with token auth
-    const url = `${relayInfo.relay_url}/browser/terminal?token=${encodeURIComponent(relayInfo.token)}&session=${encodeURIComponent(relayInfo.session_id)}`;
+    // podKey is embedded in the token, no need to pass separately
+    const url = `${relayInfo.relay_url}/browser/terminal?token=${encodeURIComponent(relayInfo.token)}`;
     console.log(`Connecting to Relay: ${relayInfo.relay_url} for pod ${podKey}`);
     const ws = new WebSocket(url);
     ws.binaryType = "arraybuffer";
@@ -187,7 +240,7 @@ class TerminalConnectionPool {
       const c = this.connections.get(podKey);
       if (c) {
         c.status = "error";
-        if (c.listeners.size > 0 && !c.reconnectTimer) {
+        if (c.subscribers.size > 0 && !c.reconnectTimer) {
           this.scheduleReconnect(podKey);
         }
       }
@@ -198,7 +251,7 @@ class TerminalConnectionPool {
       if (c) {
         c.status = "disconnected";
         console.log(`Terminal WebSocket disconnected for ${podKey}`);
-        if (c.listeners.size > 0) {
+        if (c.subscribers.size > 0) {
           this.scheduleReconnect(podKey);
         }
       }
@@ -237,8 +290,8 @@ class TerminalConnectionPool {
           // Forward serialized content to xterm (includes ANSI escape sequences)
           if (snapshot.serialized_content) {
             const content = new TextEncoder().encode(snapshot.serialized_content);
-            for (const listener of conn.listeners) {
-              listener(content);
+            for (const callback of conn.subscribers.values()) {
+              callback(content);
             }
           }
         } catch (e) {
@@ -248,13 +301,11 @@ class TerminalConnectionPool {
       }
       case MsgType.Output: {
         // Raw terminal output - forward directly to xterm
-        conn.buffer.push(payload);
-        if (conn.buffer.length > this.maxBufferSize) {
-          conn.buffer.shift();
-        }
-        console.log(`[Relay] Forwarding to ${conn.listeners.size} listeners, payload_len=${payload.length}`);
-        for (const listener of conn.listeners) {
-          listener(payload);
+        // Note: Buffer is maintained by Relay, not frontend. When a new subscriber
+        // joins, we reconnect to Relay to receive buffered output.
+        console.log(`[Relay] Forwarding to ${conn.subscribers.size} subscribers, payload_len=${payload.length}`);
+        for (const callback of conn.subscribers.values()) {
+          callback(payload);
         }
         break;
       }
@@ -278,8 +329,8 @@ class TerminalConnectionPool {
         const disconnectMsg = new TextEncoder().encode(
           "\r\n\x1b[33m⚠ Runner disconnected. Waiting for reconnection...\x1b[0m\r\n"
         );
-        for (const listener of conn.listeners) {
-          listener(disconnectMsg);
+        for (const callback of conn.subscribers.values()) {
+          callback(disconnectMsg);
         }
         break;
       }
@@ -291,8 +342,8 @@ class TerminalConnectionPool {
         const reconnectMsg = new TextEncoder().encode(
           "\r\n\x1b[32m✓ Runner reconnected.\x1b[0m\r\n"
         );
-        for (const listener of conn.listeners) {
-          listener(reconnectMsg);
+        for (const callback of conn.subscribers.values()) {
+          callback(reconnectMsg);
         }
         break;
       }
@@ -373,7 +424,9 @@ class TerminalConnectionPool {
     }
 
     const conn = this.connections.get(podKey);
-    if (conn && conn.ws.readyState === WebSocket.OPEN) {
+    if (!conn) return;
+
+    if (conn.ws.readyState === WebSocket.OPEN) {
       // Relay binary protocol: MsgType.Resize + 4 bytes (cols: uint16 BE, rows: uint16 BE)
       const payload = new Uint8Array(4);
       payload[0] = (cols >> 8) & 0xff;
@@ -383,6 +436,10 @@ class TerminalConnectionPool {
       const message = encodeMessage(MsgType.Resize, payload);
       conn.ws.send(message);
       console.log(`[Relay] Sent forceResize: cols=${cols}, rows=${rows}`);
+    } else if (conn.ws.readyState === WebSocket.CONNECTING) {
+      // Save pending resize to send when connection opens
+      conn.pendingResize = { rows, cols };
+      console.log(`[Relay] Queued pendingResize: cols=${cols}, rows=${rows}`);
     }
   }
 
@@ -390,19 +447,45 @@ class TerminalConnectionPool {
     return this.connections.get(podKey)?.ptySize;
   }
 
-  removeListener(podKey: string, listener: (data: Uint8Array | string) => void): void {
+  /**
+   * Unsubscribe from terminal output.
+   * Connection is kept open for disconnectDelay (30s) if no other subscribers remain,
+   * allowing quick re-subscribe without reconnection overhead.
+   *
+   * @param podKey - The pod identifier
+   * @param subscriptionId - The subscriber's unique identifier
+   */
+  unsubscribe(podKey: string, subscriptionId: string): void {
     const conn = this.connections.get(podKey);
-    if (conn) {
-      conn.listeners.delete(listener);
-      if (conn.listeners.size === 0) {
-        setTimeout(() => {
-          const currentConn = this.connections.get(podKey);
-          if (currentConn && currentConn.listeners.size === 0) {
-            this.disconnect(podKey);
-          }
-        }, 100);
-      }
+    if (!conn) return;
+
+    const deleted = conn.subscribers.delete(subscriptionId);
+    if (deleted) {
+      console.log(`[Relay] Removed subscriber ${subscriptionId} from ${podKey}, remaining: ${conn.subscribers.size}`);
     }
+
+    if (conn.subscribers.size === 0 && !conn.disconnectTimer) {
+      // Schedule delayed disconnect to handle rapid open/close
+      console.log(`[Relay] No subscribers left for ${podKey}, scheduling disconnect in ${this.disconnectDelay}ms`);
+      conn.disconnectTimer = setTimeout(() => {
+        const currentConn = this.connections.get(podKey);
+        if (currentConn && currentConn.subscribers.size === 0) {
+          console.log(`[Relay] Disconnecting ${podKey} after timeout (no subscribers)`);
+          this.disconnect(podKey);
+        }
+      }, this.disconnectDelay);
+    }
+  }
+
+  /**
+   * @deprecated Use unsubscribe() instead. This method cannot reliably remove listeners
+   * because function references change on each component render.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  removeListener(_podKey: string, _listener: (data: Uint8Array | string) => void): void {
+    console.warn(`[Relay] removeListener() is deprecated and unreliable. Use subscribe()/unsubscribe() with stable subscriptionId.`);
+    // Cannot reliably remove by function reference - this is the bug we're fixing
+    // Just log warning, don't actually try to remove
   }
 
   disconnect(podKey: string): void {
@@ -412,12 +495,19 @@ class TerminalConnectionPool {
         clearTimeout(conn.reconnectTimer);
         conn.reconnectTimer = null;
       }
-      if (conn.ws.readyState === WebSocket.OPEN || conn.ws.readyState === WebSocket.CONNECTING) {
-        conn.ws.close();
+      if (conn.disconnectTimer) {
+        clearTimeout(conn.disconnectTimer);
+        conn.disconnectTimer = null;
       }
+      // IMPORTANT: Delete from map BEFORE closing WebSocket
+      // This prevents onclose handler from triggering reconnection
       this.connections.delete(podKey);
       // Clean up input deduplication state
       this.lastInputs.delete(podKey);
+      // Now close WebSocket - onclose won't find this connection in the map
+      if (conn.ws.readyState === WebSocket.OPEN || conn.ws.readyState === WebSocket.CONNECTING) {
+        conn.ws.close();
+      }
     }
   }
 
@@ -442,11 +532,12 @@ class TerminalConnectionPool {
 
   private async reconnect(podKey: string): Promise<void> {
     const oldConn = this.connections.get(podKey);
-    if (!oldConn || oldConn.listeners.size === 0) return;
+    if (!oldConn || oldConn.subscribers.size === 0) return;
 
     console.log(`Reconnecting terminal for ${podKey}...`);
 
-    const listeners = new Set(oldConn.listeners);
+    // Preserve subscribers and their IDs
+    const subscribersCopy = new Map(oldConn.subscribers);
     const reconnectAttempts = oldConn.reconnectAttempts;
 
     if (oldConn.ws.readyState === WebSocket.OPEN || oldConn.ws.readyState === WebSocket.CONNECTING) {
@@ -454,14 +545,19 @@ class TerminalConnectionPool {
     }
     this.connections.delete(podKey);
 
-    const firstListener = listeners.values().next().value;
-    if (firstListener) {
-      await this.connect(podKey, firstListener);
+    // Re-subscribe the first subscriber to create connection
+    const firstEntry = subscribersCopy.entries().next().value;
+    if (firstEntry) {
+      const [firstId, firstCallback] = firstEntry;
+      await this.subscribe(podKey, firstId, firstCallback);
 
       const newConn = this.connections.get(podKey);
       if (newConn) {
-        listeners.forEach((l) => {
-          if (l !== firstListener) newConn.listeners.add(l);
+        // Add remaining subscribers
+        subscribersCopy.forEach((callback, id) => {
+          if (id !== firstId) {
+            newConn.subscribers.set(id, callback);
+          }
         });
         newConn.reconnectAttempts = reconnectAttempts;
       }

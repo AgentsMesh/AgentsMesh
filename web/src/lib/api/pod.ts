@@ -91,11 +91,11 @@ export const podApi = {
 
   // Get terminal connection info via Relay
   // Returns Relay URL and token for WebSocket connection
+  // Note: podKey is embedded in the token for channel routing
   getTerminalConnection: (key: string) =>
     request<{
       relay_url: string;
       token: string;
-      session_id: string;
       pod_key: string;
     }>(`${orgPath("/pods")}/${key}/terminal/connect`),
 

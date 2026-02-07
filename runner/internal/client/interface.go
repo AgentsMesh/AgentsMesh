@@ -41,7 +41,8 @@ type Connection interface {
 
 	// SendRequestRelayToken sends a request for a new relay token to the server.
 	// This is called when the relay connection fails due to token expiration.
-	SendRequestRelayToken(podKey, sessionID, relayURL string) error
+	// Note: SessionID has been removed - channels are now identified by PodKey only
+	SendRequestRelayToken(podKey, relayURL string) error
 
 	// SendSandboxesStatus sends sandbox status query response to the server.
 	SendSandboxesStatus(requestID string, sandboxes []*SandboxStatusInfo) error

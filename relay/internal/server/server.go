@@ -13,15 +13,15 @@ import (
 
 	"github.com/anthropics/agentsmesh/relay/internal/auth"
 	"github.com/anthropics/agentsmesh/relay/internal/backend"
+	"github.com/anthropics/agentsmesh/relay/internal/channel"
 	"github.com/anthropics/agentsmesh/relay/internal/config"
-	"github.com/anthropics/agentsmesh/relay/internal/session"
 )
 
 // Server is the main relay server
 type Server struct {
 	cfg            *config.Config
 	httpServer     *http.Server
-	sessionManager *session.Manager
+	channelManager *channel.ChannelManager
 	backendClient  *backend.Client
 	handler        *Handler
 
@@ -56,40 +56,37 @@ func New(cfg *config.Config) *Server {
 		logger:               slog.With("component", "server"),
 	}
 
-	// Create callback for when all browsers leave a session
+	// Create callback for when all subscribers leave a channel
 	// Uses closure to capture server instance instead of global variable
-	onAllBrowsersGone := func(podKey string) {
+	onAllSubscribersGone := func(podKey string) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		// Find session ID for this pod using server's session manager
-		sessionID := ""
-		if sess := s.sessionManager.GetSessionByPodKey(podKey); sess != nil {
-			sessionID = sess.ID
-		}
-
-		if err := s.backendClient.NotifySessionClosed(ctx, podKey, sessionID); err != nil {
-			s.logger.Warn("Failed to notify backend of session closed", "pod_key", podKey, "error", err)
+		// Notify backend that all subscribers left this pod's channel
+		// Note: We no longer have sessionID, just use podKey
+		if err := s.backendClient.NotifySessionClosed(ctx, podKey, ""); err != nil {
+			s.logger.Warn("Failed to notify backend of channel closed", "pod_key", podKey, "error", err)
 		}
 	}
 
-	// Create session manager with full configuration
-	managerCfg := session.ManagerConfig{
-		KeepAliveDuration:        cfg.Session.KeepAliveDuration,
-		MaxBrowsersPerPod:        cfg.Session.MaxBrowsersPerPod,
-		RunnerReconnectTimeout:   cfg.Session.RunnerReconnectTimeout,
-		BrowserReconnectTimeout:  cfg.Session.BrowserReconnectTimeout,
-		PendingConnectionTimeout: cfg.Session.PendingConnectionTimeout,
-		OutputBufferSize:         cfg.Session.OutputBufferSize,
-		OutputBufferCount:        cfg.Session.OutputBufferCount,
+	// Create channel manager with full configuration
+	// Note: SessionConfig fields map to ChannelManagerConfig
+	managerCfg := channel.ChannelManagerConfig{
+		KeepAliveDuration:          cfg.Session.KeepAliveDuration,
+		MaxSubscribersPerPod:       cfg.Session.MaxBrowsersPerPod,
+		PublisherReconnectTimeout:  cfg.Session.RunnerReconnectTimeout,
+		SubscriberReconnectTimeout: cfg.Session.BrowserReconnectTimeout,
+		PendingConnectionTimeout:   cfg.Session.PendingConnectionTimeout,
+		OutputBufferSize:           cfg.Session.OutputBufferSize,
+		OutputBufferCount:          cfg.Session.OutputBufferCount,
 	}
-	s.sessionManager = session.NewManagerWithConfig(managerCfg, onAllBrowsersGone)
+	s.channelManager = channel.NewChannelManagerWithConfig(managerCfg, onAllSubscribersGone)
 
 	// Create token validator
 	tokenValidator := auth.NewTokenValidator(cfg.JWT.Secret, cfg.JWT.Issuer)
 
 	// Create handler
-	s.handler = NewHandler(s.sessionManager, tokenValidator)
+	s.handler = NewHandler(s.channelManager, tokenValidator)
 
 	return s
 }
@@ -103,8 +100,8 @@ func (s *Server) Start(ctx context.Context) error {
 
 	// Start heartbeat loop
 	go s.backendClient.StartHeartbeat(ctx, s.cfg.Backend.HeartbeatInterval, func() int {
-		stats := s.sessionManager.Stats()
-		return stats.ActiveSessions
+		stats := s.channelManager.Stats()
+		return stats.ActiveChannels
 	})
 
 	// Set up HTTP routes
@@ -203,18 +200,18 @@ func (s *Server) gracefulShutdown(reason string) error {
 	s.acceptingConnections = false
 	s.logger.Info("Stopped accepting new connections")
 
-	// 3. Wait for existing sessions to close (with timeout)
+	// 3. Wait for existing channels to close (with timeout)
 	gracePeriod := 30 * time.Second
 	deadline := time.Now().Add(gracePeriod)
 
 	for time.Now().Before(deadline) {
-		stats := s.sessionManager.Stats()
-		if stats.ActiveSessions == 0 {
-			s.logger.Info("All sessions closed")
+		stats := s.channelManager.Stats()
+		if stats.ActiveChannels == 0 {
+			s.logger.Info("All channels closed")
 			break
 		}
-		s.logger.Info("Waiting for sessions to close",
-			"remaining", stats.ActiveSessions,
+		s.logger.Info("Waiting for channels to close",
+			"remaining", stats.ActiveChannels,
 			"time_left", time.Until(deadline).Round(time.Second))
 		time.Sleep(1 * time.Second)
 	}
@@ -239,6 +236,6 @@ func (s *Server) IsAcceptingConnections() bool {
 }
 
 // Stats returns server statistics
-func (s *Server) Stats() session.SessionStats {
-	return s.sessionManager.Stats()
+func (s *Server) Stats() channel.ChannelStats {
+	return s.channelManager.Stats()
 }

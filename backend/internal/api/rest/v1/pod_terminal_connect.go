@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
@@ -36,15 +35,20 @@ func NewTerminalConnectHandler(
 }
 
 // TerminalConnectResponse is the response for terminal connect request
+// Note: SessionID has been removed - channels are now identified by PodKey only
 type TerminalConnectResponse struct {
-	RelayURL  string `json:"relay_url"`
-	Token     string `json:"token"`
-	SessionID string `json:"session_id"`
-	PodKey    string `json:"pod_key"`
+	RelayURL string `json:"relay_url"`
+	Token    string `json:"token"`
+	PodKey   string `json:"pod_key"`
 }
 
 // GetTerminalConnection returns Relay connection info for a pod
 // GET /api/v1/orgs/:slug/pods/:key/terminal/connect
+//
+// The channel is identified by PodKey (not session ID):
+// - Multiple browsers can subscribe to the same pod's channel
+// - Runner maintains a single connection per pod
+// - No new session ID is generated per request
 func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 	podKey := c.Param("key")
 
@@ -95,17 +99,14 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 		return
 	}
 
-	// Generate new session ID for each request
-	sessionID := uuid.New().String()
-
-	// Always notify runner to connect to relay (runner handles idempotency)
+	// Always notify runner to connect to relay
+	// Runner handles idempotency - if already connected to same relay, it just updates the token
 	// Use internal URL for runner (Docker network) if available
 	if h.commandSender != nil && pod.RunnerID > 0 {
 		// Generate runner token for authentication
 		// userID=0 indicates this is a runner token (not a browser token)
 		runnerToken, err := h.tokenGenerator.GenerateToken(
 			podKey,
-			sessionID,
 			pod.RunnerID,
 			0, // userID=0 for runner token
 			tenant.OrganizationID,
@@ -121,10 +122,9 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 			pod.RunnerID,
 			podKey,
 			relayInfo.GetRunnerURL(),
-			sessionID,
 			runnerToken,
-			true,  // include snapshot
-			1000,  // snapshot history lines
+			true, // include snapshot
+			1000, // snapshot history lines
 		); err != nil {
 			// Log but don't fail - runner might connect later
 			c.Error(err)
@@ -136,7 +136,6 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 
 	token, err := h.tokenGenerator.GenerateToken(
 		podKey,
-		sessionID,
 		runnerID,
 		userID,
 		tenant.OrganizationID,
@@ -148,10 +147,9 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, TerminalConnectResponse{
-		RelayURL:  relayInfo.URL,
-		Token:     token,
-		SessionID: sessionID,
-		PodKey:    podKey,
+		RelayURL: relayInfo.URL,
+		Token:    token,
+		PodKey:   podKey,
 	})
 }
 

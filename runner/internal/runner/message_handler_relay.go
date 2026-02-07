@@ -11,12 +11,14 @@ import (
 )
 
 // OnSubscribeTerminal handles subscribe terminal command from server.
+// The channel is identified by PodKey (not session ID):
+// - If already connected to the same Relay URL, just update the token
+// - If Relay URL changes, disconnect and reconnect
 func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalRequest) error {
 	log := logger.Pod()
 	log.Info("Subscribing to terminal via Relay",
 		"pod_key", req.PodKey,
-		"relay_url", req.RelayURL,
-		"session_id", req.SessionID)
+		"relay_url", req.RelayURL)
 
 	pod, ok := h.podStore.Get(req.PodKey)
 	if !ok {
@@ -26,7 +28,8 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	// Check if relay client exists
 	existingClient := pod.GetRelayClient()
 	if existingClient != nil {
-		// Check if connected to the same Relay
+		// Check if connected to the same Relay URL
+		// Note: We no longer check sessionID - channel is identified by podKey only
 		if existingClient.GetRelayURL() == req.RelayURL {
 			// Same Relay, only update token (idempotent)
 			log.Info("Already connected to same relay, updating token only",
@@ -35,19 +38,18 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 			pod.DeliverNewToken(req.RunnerToken)
 			return nil
 		}
-		// Different Relay, disconnect old connection
-		log.Info("Switching to different relay",
+		// Different Relay, disconnect and reconnect
+		log.Info("Switching relay connection",
 			"pod_key", req.PodKey,
 			"old_relay", existingClient.GetRelayURL(),
 			"new_relay", req.RelayURL)
 		pod.DisconnectRelay()
 	}
 
-	// Create new relay client
+	// Create new relay client (no sessionID needed)
 	relayClient := relay.NewClient(
 		req.RelayURL,
 		req.PodKey,
-		req.SessionID,
 		req.RunnerToken,
 		slog.Default().With("pod_key", req.PodKey),
 	)
@@ -114,7 +116,7 @@ func (h *RunnerMessageHandler) setupRelayClientHandlers(relayClient *relay.Clien
 
 	relayClient.SetTokenExpiredHandler(func() string {
 		log.Info("Relay token expired, requesting new token", "pod_key", podKey)
-		if err := h.conn.SendRequestRelayToken(podKey, relayClient.GetSessionID(), relayClient.GetRelayURL()); err != nil {
+		if err := h.conn.SendRequestRelayToken(podKey, relayClient.GetRelayURL()); err != nil {
 			log.Error("Failed to send token refresh request", "pod_key", podKey, "error", err)
 			return ""
 		}

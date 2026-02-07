@@ -170,7 +170,7 @@ export function RunnerOverviewTab({ runner, relayConnections }: RunnerOverviewTa
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {relayConnections.map((conn) => (
-                  <tr key={`${conn.pod_key}-${conn.session_id}`}>
+                  <tr key={conn.pod_key}>
                     <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-white">
                       {conn.pod_key}
                     </td>

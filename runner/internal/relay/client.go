@@ -32,12 +32,12 @@ type ResizeHandler func(cols, rows uint16)
 type CloseHandler func()
 
 // Client is a WebSocket client for connecting to the Relay service
+// Note: sessionID has been removed - channels are now identified by PodKey only
 type Client struct {
 	// Configuration
-	relayURL  string
-	podKey    string
-	sessionID string
-	token     string // JWT token for authentication
+	relayURL string
+	podKey   string
+	token    string // JWT token for authentication
 
 	// WebSocket connection
 	conn   *websocket.Conn
@@ -66,7 +66,8 @@ type Client struct {
 }
 
 // NewClient creates a new Relay WebSocket client
-func NewClient(relayURL, podKey, sessionID, token string, logger *slog.Logger) *Client {
+// Note: sessionID parameter has been removed - channels are identified by PodKey only
+func NewClient(relayURL, podKey, token string, logger *slog.Logger) *Client {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -75,7 +76,6 @@ func NewClient(relayURL, podKey, sessionID, token string, logger *slog.Logger) *
 	return &Client{
 		relayURL:   relayURL,
 		podKey:     podKey,
-		sessionID:  sessionID,
 		token:      token,
 		stopCh:     make(chan struct{}),
 		connDoneCh: make(chan struct{}),
@@ -83,7 +83,6 @@ func NewClient(relayURL, podKey, sessionID, token string, logger *slog.Logger) *
 		logger: logger.With(
 			"component", "relay_client",
 			"pod_key", podKey,
-			"session_id", sessionID,
 		),
 		ctx:    ctx,
 		cancel: cancel,
@@ -124,11 +123,6 @@ func (c *Client) UpdateToken(newToken string) {
 	c.token = newToken
 	c.connMu.Unlock()
 	c.logger.Info("Token updated")
-}
-
-// GetSessionID returns the session ID
-func (c *Client) GetSessionID() string {
-	return c.sessionID
 }
 
 // GetRelayURL returns the relay URL
