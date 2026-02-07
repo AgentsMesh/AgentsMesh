@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"math/rand"
 	"strings"
 	"time"
 )
@@ -107,7 +108,10 @@ func (c *Client) reconnectLoop() {
 				c.logger.Warn("Failed to get new token, continuing with exponential backoff")
 			}
 
-			backoff = min(backoff*2, maxReconnectDelay)
+			// Exponential backoff with jitter (±20%) to prevent thundering herd
+			baseBackoff := min(backoff*2, maxReconnectDelay)
+			jitter := time.Duration(float64(baseBackoff) * (rand.Float64()*0.4 - 0.2))
+			backoff = baseBackoff + jitter
 			continue
 		}
 

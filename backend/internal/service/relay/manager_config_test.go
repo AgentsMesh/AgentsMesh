@@ -80,29 +80,6 @@ func TestRegisterPersistenceFailure(t *testing.T) {
 	}
 }
 
-func TestCreateSessionPersistenceFailure(t *testing.T) {
-	// Create a mock store that fails on session save
-	failStore := &SessionFailingMockStore{}
-	m := NewManagerWithOptions(WithStore(failStore))
-
-	relay := &RelayInfo{ID: "relay-1", URL: "wss://r1.com"}
-	// Use manual registration to bypass store for relay
-	m.mu.Lock()
-	m.relays["relay-1"] = relay
-	m.mu.Unlock()
-
-	_, err := m.CreateSession("pod-1", "session-1", relay)
-
-	if err == nil {
-		t.Error("CreateSession should return error when persistence fails")
-	}
-
-	// Verify session was NOT added to memory (persistence-first pattern)
-	if m.GetSession("pod-1") != nil {
-		t.Error("session should not be in memory when persistence fails")
-	}
-}
-
 // FailingMockStore is a mock store that always fails on SaveRelay
 type FailingMockStore struct {
 	MockStore
@@ -110,17 +87,4 @@ type FailingMockStore struct {
 
 func (s *FailingMockStore) SaveRelay(ctx context.Context, relay *RelayInfo) error {
 	return fmt.Errorf("simulated persistence failure")
-}
-
-// SessionFailingMockStore is a mock store that fails on SaveSession
-type SessionFailingMockStore struct {
-	MockStore
-}
-
-func (s *SessionFailingMockStore) SaveRelay(ctx context.Context, relay *RelayInfo) error {
-	return nil // Relay save succeeds
-}
-
-func (s *SessionFailingMockStore) SaveSession(ctx context.Context, session *ActiveSession) error {
-	return fmt.Errorf("simulated session persistence failure")
 }

@@ -23,6 +23,9 @@ type PodCoordinator struct {
 	// Defaults to NoOpCommandSender if not explicitly set via SetCommandSender.
 	commandSender RunnerCommandSender
 
+	// Relay connection cache for tracking Runner's relay connections
+	relayConnectionCache *RelayConnectionCache
+
 	// Callbacks
 	onStatusChange   func(podKey string, status string, agentStatus string)
 	onInitProgress   func(podKey string, phase string, progress int, message string)
@@ -39,12 +42,13 @@ func NewPodCoordinator(
 	logger *slog.Logger,
 ) *PodCoordinator {
 	pc := &PodCoordinator{
-		db:                db,
-		connectionManager: cm,
-		terminalRouter:    tr,
-		heartbeatBatcher:  hb,
-		logger:            logger,
-		commandSender:     NewNoOpCommandSender(logger), // Default to no-op
+		db:                   db,
+		connectionManager:    cm,
+		terminalRouter:       tr,
+		heartbeatBatcher:     hb,
+		logger:               logger,
+		commandSender:        NewNoOpCommandSender(logger), // Default to no-op
+		relayConnectionCache: NewRelayConnectionCache(),
 	}
 
 	// Set up callbacks from connection manager
@@ -195,4 +199,11 @@ func (pc *PodCoordinator) SendCreateAutopilot(runnerID int64, cmd *runnerv1.Crea
 // Delegates to the underlying command sender.
 func (pc *PodCoordinator) SendAutopilotControl(runnerID int64, cmd *runnerv1.AutopilotControlCommand) error {
 	return pc.commandSender.SendAutopilotControl(runnerID, cmd)
+}
+
+// ==================== Relay Connection Queries ====================
+
+// GetRelayConnections returns relay connections for a runner
+func (pc *PodCoordinator) GetRelayConnections(runnerID int64) []RelayConnectionInfo {
+	return pc.relayConnectionCache.Get(runnerID)
 }

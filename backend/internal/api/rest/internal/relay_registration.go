@@ -125,44 +125,20 @@ func (h *RelayHandler) Unregister(c *gin.Context) {
 		return
 	}
 
-	// Gracefully unregister - mark as offline but don't remove
-	affectedSessions := h.relayManager.GracefulUnregister(req.RelayID, req.Reason)
+	// Gracefully unregister
+	h.relayManager.GracefulUnregister(req.RelayID, req.Reason)
 
 	h.logger.Info("Relay gracefully unregistered",
 		"relay_id", req.RelayID,
-		"reason", req.Reason,
-		"affected_sessions", len(affectedSessions))
-
-	// Notify runners to reconnect affected pods to other relays
-	if len(affectedSessions) > 0 && h.commandSender != nil && h.podService != nil {
-		migratedCount := 0
-		for _, session := range affectedSessions {
-			pod, err := h.podService.GetPod(c.Request.Context(), session.PodKey)
-			if err != nil || pod == nil || pod.RunnerID == 0 {
-				continue
-			}
-			// Send unsubscribe to trigger reconnection to new relay
-			if err := h.commandSender.SendUnsubscribeTerminal(c.Request.Context(), pod.RunnerID, session.PodKey); err != nil {
-				h.logger.Warn("Failed to send unsubscribe for session migration",
-					"pod_key", session.PodKey,
-					"error", err)
-			} else {
-				migratedCount++
-			}
-		}
-		h.logger.Info("Session migration triggered after graceful unregister",
-			"total", len(affectedSessions),
-			"migrated", migratedCount)
-	}
+		"reason", req.Reason)
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":            "unregistered",
-		"reason":            req.Reason,
-		"affected_sessions": len(affectedSessions),
+		"status": "unregistered",
+		"reason": req.Reason,
 	})
 }
 
-// ForceUnregister removes a relay and optionally migrates sessions
+// ForceUnregister removes a relay
 // DELETE /api/internal/relays/:relay_id
 func (h *RelayHandler) ForceUnregister(c *gin.Context) {
 	relayID := c.Param("relay_id")
@@ -178,42 +154,13 @@ func (h *RelayHandler) ForceUnregister(c *gin.Context) {
 		return
 	}
 
-	var req ForceUnregisterRequest
-	// Parse optional body, ignore errors for empty body
-	_ = c.ShouldBindJSON(&req)
+	// Force unregister
+	h.relayManager.ForceUnregister(relayID)
 
-	// Force unregister and get affected sessions
-	affectedSessions := h.relayManager.ForceUnregister(relayID)
-
-	h.logger.Info("Relay force unregistered",
-		"relay_id", relayID,
-		"affected_sessions", len(affectedSessions),
-		"migrate_sessions", req.MigrateSessions)
-
-	// Optionally notify runners to reconnect affected pods
-	if req.MigrateSessions && len(affectedSessions) > 0 && h.commandSender != nil && h.podService != nil {
-		migratedCount := 0
-		for _, session := range affectedSessions {
-			pod, err := h.podService.GetPod(c.Request.Context(), session.PodKey)
-			if err != nil || pod == nil || pod.RunnerID == 0 {
-				continue
-			}
-			// Send unsubscribe to trigger reconnection to new relay
-			if err := h.commandSender.SendUnsubscribeTerminal(c.Request.Context(), pod.RunnerID, session.PodKey); err != nil {
-				h.logger.Warn("Failed to send unsubscribe for session migration",
-					"pod_key", session.PodKey,
-					"error", err)
-			} else {
-				migratedCount++
-			}
-		}
-		h.logger.Info("Session migration triggered",
-			"total", len(affectedSessions),
-			"migrated", migratedCount)
-	}
+	h.logger.Info("Relay force unregistered", "relay_id", relayID)
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":            "unregistered",
-		"affected_sessions": len(affectedSessions),
+		"status":   "unregistered",
+		"relay_id": relayID,
 	})
 }

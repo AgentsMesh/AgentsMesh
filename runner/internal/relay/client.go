@@ -52,6 +52,7 @@ type Client struct {
 
 	// State
 	connected    atomic.Bool
+	connectedAt  atomic.Int64  // Unix milliseconds timestamp when connected
 	reconnecting atomic.Bool   // Prevents concurrent reconnect attempts
 	stopCh       chan struct{} // Signals client shutdown (permanent)
 	connDoneCh   chan struct{} // Signals current connection is done (closed on disconnect)
@@ -133,4 +134,9 @@ func (c *Client) GetSessionID() string {
 // GetRelayURL returns the relay URL
 func (c *Client) GetRelayURL() string {
 	return c.relayURL
+}
+
+// GetConnectedAt returns the timestamp (Unix milliseconds) when the connection was established
+func (c *Client) GetConnectedAt() int64 {
+	return c.connectedAt.Load()
 }

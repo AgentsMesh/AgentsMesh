@@ -23,13 +23,24 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
-	// Check if relay client exists - token refresh case
+	// Check if relay client exists
 	existingClient := pod.GetRelayClient()
 	if existingClient != nil {
-		log.Info("Delivering new token to existing relay client", "pod_key", req.PodKey)
-		existingClient.UpdateToken(req.RunnerToken)
-		pod.DeliverNewToken(req.RunnerToken)
-		return nil
+		// Check if connected to the same Relay
+		if existingClient.GetRelayURL() == req.RelayURL {
+			// Same Relay, only update token (idempotent)
+			log.Info("Already connected to same relay, updating token only",
+				"pod_key", req.PodKey, "relay_url", req.RelayURL)
+			existingClient.UpdateToken(req.RunnerToken)
+			pod.DeliverNewToken(req.RunnerToken)
+			return nil
+		}
+		// Different Relay, disconnect old connection
+		log.Info("Switching to different relay",
+			"pod_key", req.PodKey,
+			"old_relay", existingClient.GetRelayURL(),
+			"new_relay", req.RelayURL)
+		pod.DisconnectRelay()
 	}
 
 	// Create new relay client

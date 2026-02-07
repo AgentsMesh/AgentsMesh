@@ -3,10 +3,10 @@ package internal
 // RegisterRequest is the relay registration request
 type RegisterRequest struct {
 	RelayID     string `json:"relay_id" binding:"required"`
-	RelayName   string `json:"relay_name"`                      // Name for DNS auto-registration (e.g., "us-east-1")
-	IP          string `json:"ip"`                              // Public IP for DNS auto-registration
-	URL         string `json:"url"`                             // Public URL for browsers (optional if DNS auto)
-	InternalURL string `json:"internal_url"`                    // Internal URL for runners (Docker network)
+	RelayName   string `json:"relay_name"`   // Name for DNS auto-registration (e.g., "us-east-1")
+	IP          string `json:"ip"`           // Public IP for DNS auto-registration
+	URL         string `json:"url"`          // Public URL for browsers (optional if DNS auto)
+	InternalURL string `json:"internal_url"` // Internal URL for runners (Docker network)
 	Region      string `json:"region"`
 	Capacity    int    `json:"capacity"`
 }
@@ -44,31 +44,8 @@ type HeartbeatResponse struct {
 	TLSExpiry string `json:"tls_expiry,omitempty"`
 }
 
-// SessionClosedRequest is the session closed notification
-type SessionClosedRequest struct {
-	PodKey    string `json:"pod_key" binding:"required"`
-	SessionID string `json:"session_id"`
-}
-
 // UnregisterRequest is the relay unregistration request (graceful shutdown)
 type UnregisterRequest struct {
 	RelayID string `json:"relay_id" binding:"required"`
 	Reason  string `json:"reason,omitempty"` // shutdown, maintenance, etc.
-}
-
-// ForceUnregisterRequest is the request for force unregister
-type ForceUnregisterRequest struct {
-	MigrateSessions bool `json:"migrate_sessions"` // Whether to migrate affected sessions
-}
-
-// MigrateSessionRequest is the request for session migration
-type MigrateSessionRequest struct {
-	PodKey      string `json:"pod_key" binding:"required"`
-	TargetRelay string `json:"target_relay" binding:"required"` // Target relay ID
-}
-
-// BulkMigrateRequest is the request for bulk session migration
-type BulkMigrateRequest struct {
-	SourceRelay string `json:"source_relay" binding:"required"` // Source relay ID
-	TargetRelay string `json:"target_relay" binding:"required"` // Target relay ID
 }

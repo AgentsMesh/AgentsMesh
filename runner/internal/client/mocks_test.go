@@ -71,6 +71,30 @@ func (h *mockHandler) OnListPods() []PodInfo {
 	return h.pods
 }
 
+func (h *mockHandler) OnListRelayConnections() []RelayConnectionInfo {
+	return nil
+}
+
+func (h *mockHandler) OnSubscribeTerminal(req SubscribeTerminalRequest) error {
+	return nil
+}
+
+func (h *mockHandler) OnUnsubscribeTerminal(req UnsubscribeTerminalRequest) error {
+	return nil
+}
+
+func (h *mockHandler) OnQuerySandboxes(req QuerySandboxesRequest) error {
+	return nil
+}
+
+func (h *mockHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCommand) error {
+	return nil
+}
+
+func (h *mockHandler) OnAutopilotControl(cmd *runnerv1.AutopilotControlCommand) error {
+	return nil
+}
+
 // mockHandlerWithError is a mock handler that can return errors.
 type mockHandlerWithError struct {
 	createError    error
@@ -101,6 +125,30 @@ func (h *mockHandlerWithError) OnTerminalRedraw(req TerminalRedrawRequest) error
 }
 
 func (h *mockHandlerWithError) OnListPods() []PodInfo {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnListRelayConnections() []RelayConnectionInfo {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnSubscribeTerminal(req SubscribeTerminalRequest) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnUnsubscribeTerminal(req UnsubscribeTerminalRequest) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnQuerySandboxes(req QuerySandboxesRequest) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCommand) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnAutopilotControl(cmd *runnerv1.AutopilotControlCommand) error {
 	return nil
 }
 

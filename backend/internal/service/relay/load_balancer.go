@@ -1,6 +1,9 @@
 package relay
 
-import "time"
+import (
+	"hash/fnv"
+	"sort"
+)
 
 // SelectRelayOptions holds options for relay selection
 type SelectRelayOptions struct {
@@ -103,25 +106,85 @@ func (m *Manager) calculateRelayScore(relay *RelayInfo, region string, cfg LoadB
 	return score
 }
 
-// SelectRelayForPod selects relay for a pod, checking for existing active session
-// Returns copies to prevent data races
-func (m *Manager) SelectRelayForPod(podKey, runnerRegion string) (*RelayInfo, *ActiveSession) {
+// SelectRelayForPod selects relay for a pod using org-affinity based selection
+// Returns a copy to prevent data races
+func (m *Manager) SelectRelayForPod(orgSlug string) *RelayInfo {
+	return m.SelectRelayWithAffinity(orgSlug)
+}
+
+// SelectRelayWithAffinity selects relay using open addressing affinity algorithm
+// Same organization will consistently select the same healthy relay
+func (m *Manager) SelectRelayWithAffinity(orgSlug string) *RelayInfo {
 	m.mu.RLock()
-	// Check for existing active session
-	if session, ok := m.activeSessions[podKey]; ok {
-		if time.Now().Before(session.ExpireAt) {
-			if relay, exists := m.relays[session.RelayID]; exists && relay.Healthy {
-				// Return copies to prevent data races
-				relayCopy := *relay
-				sessionCopy := *session
-				m.mu.RUnlock()
-				return &relayCopy, &sessionCopy
-			}
+	defer m.mu.RUnlock()
+
+	if len(m.relays) == 0 {
+		return nil
+	}
+
+	// 1. Collect all relay IDs and sort them (as basis for probe sequence)
+	relayIDs := make([]string, 0, len(m.relays))
+	for id := range m.relays {
+		relayIDs = append(relayIDs, id)
+	}
+	sort.Strings(relayIDs)
+
+	// 2. Generate probe sequence based on orgSlug (open addressing)
+	// For each relay ID, compute hash(orgSlug + relayID) as priority
+	type relayPriority struct {
+		id       string
+		priority uint32
+	}
+	priorities := make([]relayPriority, len(relayIDs))
+	for i, id := range relayIDs {
+		// hash(orgSlug + relayID) ensures:
+		// - Same org has fixed priority for same relay
+		// - Different orgs have different priority orders (load distribution)
+		priorities[i] = relayPriority{
+			id:       id,
+			priority: hashString(orgSlug + id),
 		}
 	}
-	m.mu.RUnlock()
 
-	// No existing session, select new relay
-	relay := m.SelectRelay(runnerRegion)
-	return relay, nil
+	// Sort by priority to get probe sequence for this org
+	sort.Slice(priorities, func(i, j int) bool {
+		return priorities[i].priority < priorities[j].priority
+	})
+
+	// 3. Find first available relay in probe sequence
+	for _, p := range priorities {
+		relay := m.relays[p.id]
+
+		if !relay.Healthy {
+			continue
+		}
+		if relay.Capacity > 0 && relay.CurrentConnections >= relay.Capacity {
+			continue
+		}
+		// Skip overloaded relays (CPU > 80% or Memory > 80%)
+		if relay.CPUUsage > 80 || relay.MemoryUsage > 80 {
+			continue
+		}
+
+		m.logger.Debug("Selected relay with org affinity",
+			"relay_id", relay.ID,
+			"org_slug", orgSlug,
+			"connections", relay.CurrentConnections,
+			"capacity", relay.Capacity,
+			"cpu", relay.CPUUsage,
+			"memory", relay.MemoryUsage)
+
+		// Return copy to prevent data races
+		relayCopy := *relay
+		return &relayCopy
+	}
+
+	return nil
+}
+
+// hashString computes a 32-bit FNV-1a hash of the string
+func hashString(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
 }

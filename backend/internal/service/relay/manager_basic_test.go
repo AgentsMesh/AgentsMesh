@@ -9,8 +9,8 @@ func TestNewManager(t *testing.T) {
 	if m == nil {
 		t.Fatal("NewManager returned nil")
 	}
-	if m.relays == nil || m.activeSessions == nil {
-		t.Error("maps not initialized")
+	if m.relays == nil {
+		t.Error("relays map not initialized")
 	}
 }
 
@@ -203,10 +203,6 @@ func TestGetStats(t *testing.T) {
 	m.relays["relay-2"].Healthy = false
 	m.mu.Unlock()
 
-	if _, err := m.CreateSession("pod-1", "s1", &RelayInfo{ID: "relay-1", URL: "wss://r1.com"}); err != nil {
-		t.Fatalf("CreateSession failed: %v", err)
-	}
-
 	stats := m.GetStats()
 	if stats.TotalRelays != 2 {
 		t.Errorf("TotalRelays: got %d, want 2", stats.TotalRelays)
@@ -216,8 +212,5 @@ func TestGetStats(t *testing.T) {
 	}
 	if stats.TotalConnections != 15 {
 		t.Errorf("TotalConnections: got %d, want 15", stats.TotalConnections)
-	}
-	if stats.ActiveSessions != 1 {
-		t.Errorf("ActiveSessions: got %d, want 1", stats.ActiveSessions)
 	}
 }

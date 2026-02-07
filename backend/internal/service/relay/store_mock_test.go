@@ -8,14 +8,12 @@ import (
 
 // MockStore implements Store interface for testing
 type MockStore struct {
-	relays   map[string]*RelayInfo
-	sessions map[string]*ActiveSession
+	relays map[string]*RelayInfo
 }
 
 func NewMockStore() *MockStore {
 	return &MockStore{
-		relays:   make(map[string]*RelayInfo),
-		sessions: make(map[string]*ActiveSession),
+		relays: make(map[string]*RelayInfo),
 	}
 }
 
@@ -52,71 +50,11 @@ func (s *MockStore) UpdateRelayHeartbeat(ctx context.Context, relayID string, he
 	return nil
 }
 
-func (s *MockStore) SaveSession(ctx context.Context, session *ActiveSession) error {
-	s.sessions[session.PodKey] = session
-	return nil
-}
-
-func (s *MockStore) GetSession(ctx context.Context, podKey string) (*ActiveSession, error) {
-	if sess, ok := s.sessions[podKey]; ok {
-		return sess, nil
-	}
-	return nil, nil
-}
-
-func (s *MockStore) GetAllSessions(ctx context.Context) ([]*ActiveSession, error) {
-	result := make([]*ActiveSession, 0, len(s.sessions))
-	for _, sess := range s.sessions {
-		result = append(result, sess)
-	}
-	return result, nil
-}
-
-func (s *MockStore) GetSessionsByRelay(ctx context.Context, relayID string) ([]*ActiveSession, error) {
-	result := make([]*ActiveSession, 0)
-	for _, sess := range s.sessions {
-		if sess.RelayID == relayID {
-			result = append(result, sess)
-		}
-	}
-	return result, nil
-}
-
-func (s *MockStore) DeleteSession(ctx context.Context, podKey string) error {
-	delete(s.sessions, podKey)
-	return nil
-}
-
-func (s *MockStore) UpdateSessionExpiry(ctx context.Context, podKey string, expiry time.Time) error {
-	if sess, ok := s.sessions[podKey]; ok {
-		sess.ExpireAt = expiry
-	}
-	return nil
-}
-
 // === Tests for Store interface types ===
 
 func TestNewMemoryStore(t *testing.T) {
 	store := NewMemoryStore()
 	if store == nil {
 		t.Fatal("NewMemoryStore returned nil")
-	}
-}
-
-func TestActiveSessionStruct(t *testing.T) {
-	session := &ActiveSession{
-		PodKey:    "pod-1",
-		SessionID: "session-1",
-		RelayURL:  "wss://relay.com",
-		RelayID:   "relay-1",
-		CreatedAt: time.Now(),
-		ExpireAt:  time.Now().Add(24 * time.Hour),
-	}
-
-	if session.PodKey != "pod-1" {
-		t.Error("PodKey mismatch")
-	}
-	if session.SessionID != "session-1" {
-		t.Error("SessionID mismatch")
 	}
 }

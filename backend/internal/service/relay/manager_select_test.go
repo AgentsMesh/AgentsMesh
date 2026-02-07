@@ -90,32 +90,123 @@ func TestSelectRelayNoHealthy(t *testing.T) {
 
 func TestSelectRelayForPod(t *testing.T) {
 	m := NewManager()
-	relay := &RelayInfo{ID: "relay-1", URL: "wss://relay.example.com", Healthy: true}
-	if err := m.Register(relay); err != nil {
+	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://relay1.example.com", Healthy: true}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if err := m.Register(&RelayInfo{ID: "relay-2", URL: "wss://relay2.example.com", Healthy: true}); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
 
-	// First call - no existing session
-	r1, s1 := m.SelectRelayForPod("pod-1", "us")
+	// Same org should always get the same relay (affinity)
+	r1 := m.SelectRelayForPod("org-alpha")
 	if r1 == nil {
-		t.Fatal("first SelectRelayForPod returned nil relay")
-	}
-	if s1 != nil {
-		t.Error("first call should not have existing session")
+		t.Fatal("SelectRelayForPod returned nil relay")
 	}
 
-	// Create session
-	if _, err := m.CreateSession("pod-1", "session-1", relay); err != nil {
-		t.Fatalf("CreateSession failed: %v", err)
+	r2 := m.SelectRelayForPod("org-alpha")
+	if r2 == nil {
+		t.Fatal("SelectRelayForPod returned nil relay")
 	}
 
-	// Second call - should return existing session
-	r2, s2 := m.SelectRelayForPod("pod-1", "us")
-	if r2 == nil || s2 == nil {
-		t.Fatal("second SelectRelayForPod returned nil")
+	// Same org should select same relay (affinity)
+	if r1.ID != r2.ID {
+		t.Errorf("same org should select same relay: got %q and %q", r1.ID, r2.ID)
 	}
-	if s2.SessionID != "session-1" {
-		t.Error("should return existing session")
+}
+
+func TestSelectRelayWithAffinity(t *testing.T) {
+	m := NewManager()
+
+	// Register multiple relays
+	if err := m.Register(&RelayInfo{ID: "relay-a", URL: "wss://a.relay.com", Healthy: true, Capacity: 100}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if err := m.Register(&RelayInfo{ID: "relay-b", URL: "wss://b.relay.com", Healthy: true, Capacity: 100}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if err := m.Register(&RelayInfo{ID: "relay-c", URL: "wss://c.relay.com", Healthy: true, Capacity: 100}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	// Same org should consistently get the same relay
+	org1Relay1 := m.SelectRelayWithAffinity("org-one")
+	org1Relay2 := m.SelectRelayWithAffinity("org-one")
+	if org1Relay1.ID != org1Relay2.ID {
+		t.Errorf("same org should select same relay: got %q and %q", org1Relay1.ID, org1Relay2.ID)
+	}
+
+	// Different orgs may get different relays (load distribution)
+	// Note: due to hash distribution, they might still be the same,
+	// but the algorithm should provide stable selection
+	org2Relay := m.SelectRelayWithAffinity("org-two")
+	if org2Relay == nil {
+		t.Fatal("SelectRelayWithAffinity returned nil for org-two")
+	}
+}
+
+func TestSelectRelayWithAffinityFallback(t *testing.T) {
+	m := NewManager()
+
+	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://r1.com", Healthy: true, Capacity: 100}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if err := m.Register(&RelayInfo{ID: "relay-2", URL: "wss://r2.com", Healthy: true, Capacity: 100}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	// Get primary relay for org
+	primary := m.SelectRelayWithAffinity("test-org")
+	if primary == nil {
+		t.Fatal("SelectRelayWithAffinity returned nil")
+	}
+
+	// Mark primary as unhealthy
+	m.mu.Lock()
+	m.relays[primary.ID].Healthy = false
+	m.mu.Unlock()
+
+	// Should fallback to secondary
+	fallback := m.SelectRelayWithAffinity("test-org")
+	if fallback == nil {
+		t.Fatal("fallback SelectRelayWithAffinity returned nil")
+	}
+	if fallback.ID == primary.ID {
+		t.Error("should fallback to different relay when primary is unhealthy")
+	}
+
+	// Mark primary as healthy again
+	m.mu.Lock()
+	m.relays[primary.ID].Healthy = true
+	m.mu.Unlock()
+
+	// Should return to primary
+	restored := m.SelectRelayWithAffinity("test-org")
+	if restored == nil {
+		t.Fatal("restored SelectRelayWithAffinity returned nil")
+	}
+	if restored.ID != primary.ID {
+		t.Errorf("should return to primary when restored: got %q, want %q", restored.ID, primary.ID)
+	}
+}
+
+func TestSelectRelaySkipsOverloaded(t *testing.T) {
+	m := NewManager()
+
+	if err := m.Register(&RelayInfo{ID: "relay-overloaded", URL: "wss://r1.com", Healthy: true, Capacity: 100, CPUUsage: 90}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if err := m.Register(&RelayInfo{ID: "relay-ok", URL: "wss://r2.com", Healthy: true, Capacity: 100, CPUUsage: 50}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	// Find an org that would normally select the overloaded relay first
+	// but should skip it due to high CPU
+	relay := m.SelectRelayWithAffinity("any-org")
+	if relay == nil {
+		t.Fatal("SelectRelayWithAffinity returned nil")
+	}
+	if relay.ID == "relay-overloaded" {
+		t.Error("should skip relay with CPU > 80%")
 	}
 }
 

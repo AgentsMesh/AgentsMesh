@@ -66,6 +66,7 @@ message InitializedConfirm {
 message HeartbeatData {
   string node_id = 1;
   repeated PodInfo pods = 2;
+  repeated RelayConnectionInfo relay_connections = 3;  // Relay 连接状态
 }
 
 // PodInfo Pod 状态信息
@@ -73,6 +74,15 @@ message PodInfo {
   string pod_key = 1;
   string status = 2;
   string agent_status = 3;
+}
+
+// RelayConnectionInfo 单个 Pod 的 Relay 连接信息
+message RelayConnectionInfo {
+  string pod_key = 1;       // Pod 标识
+  string relay_url = 2;     // Relay 服务地址
+  string session_id = 3;    // 会话 ID
+  bool connected = 4;       // 是否已连接
+  int64 connected_at = 5;   // 连接时间（Unix 毫秒）
 }
 
 // PodCreatedEvent Pod 创建完成事件

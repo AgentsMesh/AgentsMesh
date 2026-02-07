@@ -44,7 +44,16 @@ func (h *RunnerHandler) GetRunner(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"runner": r})
+	// Get relay connections if pod coordinator is available
+	var relayConnections []runner.RelayConnectionInfo
+	if h.podCoordinator != nil {
+		relayConnections = h.podCoordinator.GetRelayConnections(runnerID)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"runner":            r,
+		"relay_connections": relayConnections,
+	})
 }
 
 // UpdateRunner updates a runner

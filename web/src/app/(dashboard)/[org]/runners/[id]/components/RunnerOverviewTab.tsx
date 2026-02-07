@@ -1,18 +1,19 @@
 "use client";
 
 import { format, formatDistanceToNow } from "date-fns";
-import { Cpu, HardDrive, Terminal } from "lucide-react";
-import type { RunnerData } from "@/lib/api";
+import { Cpu, HardDrive, Terminal, Radio } from "lucide-react";
+import type { RunnerData, RelayConnectionInfo } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 
 interface RunnerOverviewTabProps {
   runner: RunnerData;
+  relayConnections?: RelayConnectionInfo[];
 }
 
 /**
- * Overview tab content showing runner basic info, capacity, and available agents
+ * Overview tab content showing runner basic info, capacity, available agents, and relay connections
  */
-export function RunnerOverviewTab({ runner }: RunnerOverviewTabProps) {
+export function RunnerOverviewTab({ runner, relayConnections }: RunnerOverviewTabProps) {
   const t = useTranslations();
 
   return (
@@ -138,6 +139,77 @@ export function RunnerOverviewTab({ runner }: RunnerOverviewTabProps) {
           </div>
         </div>
       )}
+
+      {/* Relay Connections */}
+      {relayConnections && relayConnections.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 md:col-span-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+            <Radio className="w-5 h-5 mr-2 text-green-500" />
+            {t("runners.detail.relayConnections")}
+            <span className="ml-2 text-sm font-normal text-gray-500">
+              ({relayConnections.length})
+            </span>
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Pod
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Relay
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {t("runners.detail.status")}
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {t("runners.detail.connectedSince")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {relayConnections.map((conn) => (
+                  <tr key={`${conn.pod_key}-${conn.session_id}`}>
+                    <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-white">
+                      {conn.pod_key}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      {extractRelayHost(conn.relay_url)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        conn.connected
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                      }`}>
+                        {conn.connected ? t("common.connected") : t("common.disconnected")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      {conn.connected_at
+                        ? formatDistanceToNow(new Date(conn.connected_at), { addSuffix: true })
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+/**
+ * Extract host from relay URL for display
+ */
+function extractRelayHost(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.host;
+  } catch {
+    return url;
+  }
 }

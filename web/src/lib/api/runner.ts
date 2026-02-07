@@ -29,6 +29,15 @@ export interface RunnerData {
   }>;
 }
 
+// Relay connection info reported by Runner
+export interface RelayConnectionInfo {
+  pod_key: string;
+  relay_url: string;
+  session_id: string;
+  connected: boolean;
+  connected_at: string;
+}
+
 // gRPC Registration Token interface
 export interface GRPCRegistrationToken {
   id: number;
@@ -53,7 +62,7 @@ export const runnerApi = {
     request<{ runners: RunnerData[] }>(orgPath("/runners/available")),
 
   get: (id: number) =>
-    request<{ runner: RunnerData }>(`${orgPath("/runners")}/${id}`),
+    request<{ runner: RunnerData; relay_connections?: RelayConnectionInfo[] }>(`${orgPath("/runners")}/${id}`),
 
   update: (id: number, data: { description?: string; max_concurrent_pods?: number; is_enabled?: boolean }) =>
     request<{ runner: RunnerData }>(`${orgPath("/runners")}/${id}`, {

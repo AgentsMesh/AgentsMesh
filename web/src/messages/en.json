@@ -22,7 +22,9 @@
     "reset": "Reset",
     "optional": "optional",
     "saving": "Saving...",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
   },
   "auth": {
     "login": "Login",
@@ -1865,6 +1867,8 @@
       "memory": "Memory",
       "os": "Operating System",
       "availableAgents": "Available Agents",
+      "relayConnections": "Relay Connections",
+      "connectedSince": "Connected Since",
       "allStatus": "All Status",
       "refreshSandbox": "Refresh Sandbox Status",
       "podKey": "Pod Key",

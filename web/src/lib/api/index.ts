@@ -34,7 +34,7 @@ export type {
 
 // Runner
 export { runnerApi } from "./runner";
-export type { RunnerData, GRPCRegistrationToken, RunnerPodData, SandboxStatus } from "./runner";
+export type { RunnerData, GRPCRegistrationToken, RunnerPodData, SandboxStatus, RelayConnectionInfo } from "./runner";
 
 // Agent
 export { agentApi, userAgentConfigApi } from "./agent";

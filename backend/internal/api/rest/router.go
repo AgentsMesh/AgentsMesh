@@ -13,7 +13,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -223,31 +222,19 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 	if cfg.Admin.IsEnabled() {
 		dbWrapper := database.NewGormWrapper(db)
 		adminSvc := adminservice.NewService(dbWrapper)
-		var commandSender runner.RunnerCommandSender
-		if svc.PodCoordinator != nil {
-			commandSender = svc.PodCoordinator.GetCommandSender()
-		}
 		admin.RegisterRoutes(r, cfg, dbWrapper, &admin.Services{
-			Auth:          svc.Auth,
-			Admin:         adminSvc,
-			RelayManager:  svc.RelayManager,
-			CommandSender: commandSender,
-			PodService:    svc.Pod,
+			Auth:         svc.Auth,
+			Admin:        adminSvc,
+			RelayManager: svc.RelayManager,
 		})
 	}
 
 	// Internal API routes (Relay communication)
 	if svc.RelayManager != nil {
-		var commandSender runner.RunnerCommandSender
-		if svc.PodCoordinator != nil {
-			commandSender = svc.PodCoordinator.GetCommandSender()
-		}
 		internal.RegisterRelayRoutes(r.Group("/api/internal/relays"), &internal.RelayRouterDeps{
 			RelayManager:   svc.RelayManager,
 			DNSService:     svc.RelayDNSService,
 			ACMEManager:    svc.RelayACMEManager,
-			CommandSender:  commandSender,
-			PodService:     svc.Pod,
 			InternalSecret: cfg.Server.InternalAPISecret,
 		})
 	}

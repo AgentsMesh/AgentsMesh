@@ -5,7 +5,6 @@ type Stats struct {
 	TotalRelays      int `json:"total_relays"`
 	HealthyRelays    int `json:"healthy_relays"`
 	TotalConnections int `json:"total_connections"`
-	ActiveSessions   int `json:"active_sessions"`
 }
 
 // GetStats returns current statistics
@@ -14,8 +13,7 @@ func (m *Manager) GetStats() Stats {
 	defer m.mu.RUnlock()
 
 	stats := Stats{
-		TotalRelays:    len(m.relays),
-		ActiveSessions: len(m.activeSessions),
+		TotalRelays: len(m.relays),
 	}
 
 	for _, relay := range m.relays {

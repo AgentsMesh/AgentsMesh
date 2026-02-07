@@ -109,6 +109,9 @@ func (pc *PodCoordinator) handleRunnerDisconnect(runnerID int64) {
 			"error", err)
 	}
 
+	// Clear relay connection cache for this runner
+	pc.relayConnectionCache.Delete(runnerID)
+
 	pc.logger.Info("runner disconnected, pods will be reconciled on reconnect",
 		"runner_id", runnerID)
 

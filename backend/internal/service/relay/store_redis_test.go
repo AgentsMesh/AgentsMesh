@@ -126,50 +126,6 @@ func TestRedisStore_SaveAndGetRelay(t *testing.T) {
 	}
 }
 
-// TestRedisStore_SaveAndGetSession tests session save and get operations
-func TestRedisStore_SaveAndGetSession(t *testing.T) {
-	mr, tc := createTestCache(t)
-	defer mr.Close()
-
-	store := &RedisStore{prefix: ""}
-	client := tc.Client()
-	ctx := context.Background()
-
-	// Test saving session
-	session := &ActiveSession{
-		PodKey:    "pod-1",
-		SessionID: "session-1",
-		RelayURL:  "wss://relay.com",
-		RelayID:   "relay-1",
-		CreatedAt: time.Now(),
-		ExpireAt:  time.Now().Add(24 * time.Hour),
-	}
-
-	// Save session
-	data, _ := json.Marshal(session)
-	key := store.key(sessionKeyPrefix, session.PodKey)
-	ttl := time.Until(session.ExpireAt)
-	err := client.Set(ctx, key, data, ttl).Err()
-	if err != nil {
-		t.Fatalf("Set session failed: %v", err)
-	}
-
-	// Verify
-	stored, err := client.Get(ctx, key).Bytes()
-	if err != nil {
-		t.Fatalf("Get session failed: %v", err)
-	}
-
-	var retrieved ActiveSession
-	if err := json.Unmarshal(stored, &retrieved); err != nil {
-		t.Fatalf("Unmarshal failed: %v", err)
-	}
-
-	if retrieved.PodKey != "pod-1" || retrieved.SessionID != "session-1" {
-		t.Errorf("retrieved session mismatch: %+v", retrieved)
-	}
-}
-
 // TestRedisStore_DeleteRelay tests relay deletion
 func TestRedisStore_DeleteRelay(t *testing.T) {
 	mr, tc := createTestCache(t)
@@ -194,45 +150,6 @@ func TestRedisStore_DeleteRelay(t *testing.T) {
 	exists, _ := client.Exists(ctx, key).Result()
 	if exists > 0 {
 		t.Error("relay should be deleted")
-	}
-}
-
-// TestRedisStore_SessionsByRelay tests getting sessions by relay ID
-func TestRedisStore_SessionsByRelay(t *testing.T) {
-	mr, tc := createTestCache(t)
-	defer mr.Close()
-
-	store := &RedisStore{prefix: ""}
-	client := tc.Client()
-	ctx := context.Background()
-
-	// Create sessions for different relays
-	sessions := []*ActiveSession{
-		{PodKey: "pod-1", SessionID: "s1", RelayID: "relay-1"},
-		{PodKey: "pod-2", SessionID: "s2", RelayID: "relay-1"},
-		{PodKey: "pod-3", SessionID: "s3", RelayID: "relay-2"},
-	}
-
-	for _, s := range sessions {
-		data, _ := json.Marshal(s)
-		client.Set(ctx, store.key(sessionKeyPrefix, s.PodKey), data, time.Hour)
-		client.SAdd(ctx, store.key(sessionByRelayPrefix, s.RelayID), s.PodKey)
-	}
-
-	// Get sessions for relay-1
-	podKeys, err := client.SMembers(ctx, store.key(sessionByRelayPrefix, "relay-1")).Result()
-	if err != nil {
-		t.Fatalf("SMembers failed: %v", err)
-	}
-
-	if len(podKeys) != 2 {
-		t.Errorf("expected 2 sessions for relay-1, got %d", len(podKeys))
-	}
-
-	// Get sessions for relay-2
-	podKeys, _ = client.SMembers(ctx, store.key(sessionByRelayPrefix, "relay-2")).Result()
-	if len(podKeys) != 1 {
-		t.Errorf("expected 1 session for relay-2, got %d", len(podKeys))
 	}
 }
 

@@ -65,6 +65,7 @@ func (c *Client) connectInternal() error {
 	c.conn = conn
 	c.connMu.Unlock()
 	c.connected.Store(true)
+	c.connectedAt.Store(time.Now().UnixMilli())
 
 	c.logger.Info("Connected to relay successfully")
 	return nil

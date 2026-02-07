@@ -84,13 +84,9 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 		return
 	}
 
-	// Get runner info to determine region
-	// Note: Runner domain model doesn't have Region field currently
-	// Using "default" region until Region support is added
-	runnerRegion := "default"
-
-	// Select relay for this pod (checks for existing session)
-	relayInfo, existingSession := h.relayManager.SelectRelayForPod(podKey, runnerRegion)
+	// Select relay for this pod using org-affinity based selection
+	// The runner region is not used anymore, org affinity provides stable relay selection
+	relayInfo := h.relayManager.SelectRelayForPod(tenant.OrganizationSlug)
 	if relayInfo == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error":   "no_relay_available",
@@ -99,49 +95,39 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 		return
 	}
 
-	var sessionID string
-	if existingSession != nil {
-		// Use existing session
-		sessionID = existingSession.SessionID
-	} else {
-		// Create new session
-		sessionID = uuid.New().String()
-		if _, err := h.relayManager.CreateSession(podKey, sessionID, relayInfo); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
+	// Generate new session ID for each request
+	sessionID := uuid.New().String()
+
+	// Always notify runner to connect to relay (runner handles idempotency)
+	// Use internal URL for runner (Docker network) if available
+	if h.commandSender != nil && pod.RunnerID > 0 {
+		// Generate runner token for authentication
+		// userID=0 indicates this is a runner token (not a browser token)
+		runnerToken, err := h.tokenGenerator.GenerateToken(
+			podKey,
+			sessionID,
+			pod.RunnerID,
+			0, // userID=0 for runner token
+			tenant.OrganizationID,
+			time.Hour,
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate runner token"})
 			return
 		}
 
-		// Notify runner to connect to relay
-		// Use internal URL for runner (Docker network) if available
-		if h.commandSender != nil && pod.RunnerID > 0 {
-			// Generate runner token for authentication
-			// userID=0 indicates this is a runner token (not a browser token)
-			runnerToken, err := h.tokenGenerator.GenerateToken(
-				podKey,
-				sessionID,
-				pod.RunnerID,
-				0, // userID=0 for runner token
-				tenant.OrganizationID,
-				time.Hour,
-			)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate runner token"})
-				return
-			}
-
-			if err := h.commandSender.SendSubscribeTerminal(
-				c.Request.Context(),
-				pod.RunnerID,
-				podKey,
-				relayInfo.GetRunnerURL(),
-				sessionID,
-				runnerToken,
-				true,  // include snapshot
-				1000,  // snapshot history lines
-			); err != nil {
-				// Log but don't fail - runner might connect later
-				c.Error(err)
-			}
+		if err := h.commandSender.SendSubscribeTerminal(
+			c.Request.Context(),
+			pod.RunnerID,
+			podKey,
+			relayInfo.GetRunnerURL(),
+			sessionID,
+			runnerToken,
+			true,  // include snapshot
+			1000,  // snapshot history lines
+		); err != nil {
+			// Log but don't fail - runner might connect later
+			c.Error(err)
 		}
 	}
 

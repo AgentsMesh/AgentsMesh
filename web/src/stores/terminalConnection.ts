@@ -428,7 +428,10 @@ class TerminalConnectionPool {
       return;
     }
 
-    const delay = Math.min(this.baseReconnectDelay * Math.pow(2, conn.reconnectAttempts), 30000);
+    // Exponential backoff with jitter (±20%) to prevent thundering herd
+    const baseDelay = Math.min(this.baseReconnectDelay * Math.pow(2, conn.reconnectAttempts), 30000);
+    const jitter = baseDelay * (Math.random() * 0.4 - 0.2);
+    const delay = Math.round(baseDelay + jitter);
     console.log(`Scheduling reconnect for ${podKey} in ${delay}ms`);
 
     conn.reconnectTimer = setTimeout(() => {

@@ -27,6 +27,21 @@ func (pc *PodCoordinator) handleHeartbeat(runnerID int64, data *runnerv1.Heartbe
 			"error", err)
 	}
 
+	// Update relay connection cache
+	if data.RelayConnections != nil {
+		connections := make([]RelayConnectionInfo, 0, len(data.RelayConnections))
+		for _, rc := range data.RelayConnections {
+			connections = append(connections, RelayConnectionInfo{
+				PodKey:      rc.PodKey,
+				RelayURL:    rc.RelayUrl,
+				SessionID:   rc.SessionId,
+				Connected:   rc.Connected,
+				ConnectedAt: time.UnixMilli(rc.ConnectedAt),
+			})
+		}
+		pc.relayConnectionCache.Update(runnerID, connections)
+	}
+
 	// Reconcile pods
 	reportedPodKeys := make(map[string]bool)
 	for _, p := range data.Pods {

@@ -10,12 +10,10 @@ import (
 
 // Manager manages relay servers
 type Manager struct {
-	relays         map[string]*RelayInfo     // relayID -> info (in-memory cache)
-	activeSessions map[string]*ActiveSession // podKey -> session (in-memory cache)
-	mu             sync.RWMutex
+	relays map[string]*RelayInfo // relayID -> info (in-memory cache)
+	mu     sync.RWMutex
 
 	healthCheckInterval time.Duration
-	sessionExpiry       time.Duration
 	loadBalancingConfig LoadBalancingConfig
 
 	// Optional persistent store (Redis)
@@ -24,9 +22,6 @@ type Manager struct {
 	// Lifecycle management
 	stopCh  chan struct{}
 	stopped bool
-
-	// Auto-migration callback (optional)
-	onRelayUnhealthy func(relayID string, sessions []*ActiveSession)
 
 	logger *slog.Logger
 }
@@ -45,14 +40,6 @@ func WithStore(store Store) ManagerOption {
 func WithLoadBalancingConfig(cfg LoadBalancingConfig) ManagerOption {
 	return func(m *Manager) {
 		m.loadBalancingConfig = cfg
-	}
-}
-
-// WithOnRelayUnhealthy sets a callback for when a relay becomes unhealthy
-// The callback receives the relay ID and affected sessions for migration
-func WithOnRelayUnhealthy(fn func(relayID string, sessions []*ActiveSession)) ManagerOption {
-	return func(m *Manager) {
-		m.onRelayUnhealthy = fn
 	}
 }
 
@@ -78,9 +65,7 @@ func NewManagerWithConfig(lbConfig LoadBalancingConfig) *Manager {
 func NewManagerWithOptions(opts ...ManagerOption) *Manager {
 	m := &Manager{
 		relays:              make(map[string]*RelayInfo),
-		activeSessions:      make(map[string]*ActiveSession),
 		healthCheckInterval: 30 * time.Second,
-		sessionExpiry:       24 * time.Hour,
 		loadBalancingConfig: DefaultLoadBalancingConfig(),
 		stopCh:              make(chan struct{}),
 		logger:              slog.With("component", "relay_manager"),
@@ -123,7 +108,7 @@ func (m *Manager) IsStopped() bool {
 	return m.stopped
 }
 
-// loadFromStore loads relays and sessions from the persistent store
+// loadFromStore loads relays from the persistent store
 func (m *Manager) loadFromStore() {
 	if m.store == nil {
 		return
@@ -142,19 +127,6 @@ func (m *Manager) loadFromStore() {
 		}
 		m.mu.Unlock()
 		m.logger.Info("Loaded relays from store", "count", len(relays))
-	}
-
-	// Load sessions
-	sessions, err := m.store.GetAllSessions(ctx)
-	if err != nil {
-		m.logger.Warn("Failed to load sessions from store", "error", err)
-	} else {
-		m.mu.Lock()
-		for _, s := range sessions {
-			m.activeSessions[s.PodKey] = s
-		}
-		m.mu.Unlock()
-		m.logger.Info("Loaded sessions from store", "count", len(sessions))
 	}
 }
 
@@ -240,21 +212,37 @@ func (m *Manager) Unregister(relayID string) {
 	m.logger.Info("Relay unregistered", "relay_id", relayID)
 }
 
-// ForceUnregister removes a relay and returns affected sessions for migration
-func (m *Manager) ForceUnregister(relayID string) []*ActiveSession {
+// ForceUnregister removes a relay
+func (m *Manager) ForceUnregister(relayID string) {
 	m.mu.Lock()
+	delete(m.relays, relayID)
+	m.mu.Unlock()
 
-	// Find all sessions using this relay
-	affectedSessions := make([]*ActiveSession, 0)
-	affectedPodKeys := make([]string, 0)
-	for podKey, session := range m.activeSessions {
-		if session.RelayID == relayID {
-			sessionCopy := *session
-			affectedSessions = append(affectedSessions, &sessionCopy)
-			affectedPodKeys = append(affectedPodKeys, podKey)
-			delete(m.activeSessions, podKey)
+	// Remove from store
+	if m.store != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := m.store.DeleteRelay(ctx, relayID); err != nil {
+			m.logger.Warn("Failed to delete relay from store", "relay_id", relayID, "error", err)
 		}
 	}
+
+	m.logger.Info("Relay force unregistered", "relay_id", relayID)
+}
+
+// GracefulUnregister marks a relay as offline (graceful shutdown from relay itself)
+func (m *Manager) GracefulUnregister(relayID string, reason string) {
+	m.mu.Lock()
+
+	relay, ok := m.relays[relayID]
+	if !ok {
+		m.mu.Unlock()
+		return
+	}
+
+	// Mark as unhealthy so no new connections are assigned
+	relay.Healthy = false
 
 	// Remove the relay
 	delete(m.relays, relayID)
@@ -265,80 +253,12 @@ func (m *Manager) ForceUnregister(relayID string) []*ActiveSession {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		// Delete relay
 		if err := m.store.DeleteRelay(ctx, relayID); err != nil {
 			m.logger.Warn("Failed to delete relay from store", "relay_id", relayID, "error", err)
-		}
-
-		// Delete affected sessions
-		for _, podKey := range affectedPodKeys {
-			if err := m.store.DeleteSession(ctx, podKey); err != nil {
-				m.logger.Warn("Failed to delete session from store", "pod_key", podKey, "error", err)
-			}
-		}
-	}
-
-	m.logger.Info("Relay force unregistered",
-		"relay_id", relayID,
-		"affected_sessions", len(affectedSessions))
-
-	return affectedSessions
-}
-
-// GracefulUnregister marks a relay as offline (graceful shutdown from relay itself)
-// It doesn't immediately remove the relay record, allowing for session migration
-// Returns affected sessions that need to be migrated
-func (m *Manager) GracefulUnregister(relayID string, reason string) []*ActiveSession {
-	m.mu.Lock()
-
-	relay, ok := m.relays[relayID]
-	if !ok {
-		m.mu.Unlock()
-		return nil
-	}
-
-	// Mark as unhealthy so no new sessions are assigned
-	relay.Healthy = false
-
-	// Find all sessions using this relay
-	affectedSessions := make([]*ActiveSession, 0)
-	affectedPodKeys := make([]string, 0)
-	for podKey, session := range m.activeSessions {
-		if session.RelayID == relayID {
-			sessionCopy := *session
-			affectedSessions = append(affectedSessions, &sessionCopy)
-			affectedPodKeys = append(affectedPodKeys, podKey)
-			// Don't delete sessions immediately - let migration happen first
-			delete(m.activeSessions, podKey)
-		}
-	}
-
-	// Remove the relay after collecting sessions
-	delete(m.relays, relayID)
-	m.mu.Unlock()
-
-	// Remove from store
-	if m.store != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		// Delete relay
-		if err := m.store.DeleteRelay(ctx, relayID); err != nil {
-			m.logger.Warn("Failed to delete relay from store", "relay_id", relayID, "error", err)
-		}
-
-		// Delete affected sessions
-		for _, podKey := range affectedPodKeys {
-			if err := m.store.DeleteSession(ctx, podKey); err != nil {
-				m.logger.Warn("Failed to delete session from store", "pod_key", podKey, "error", err)
-			}
 		}
 	}
 
 	m.logger.Info("Relay gracefully unregistered",
 		"relay_id", relayID,
-		"reason", reason,
-		"affected_sessions", len(affectedSessions))
-
-	return affectedSessions
+		"reason", reason)
 }

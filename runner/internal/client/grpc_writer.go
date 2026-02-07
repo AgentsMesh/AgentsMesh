@@ -152,6 +152,7 @@ func (c *GRPCConnection) heartbeatLoop(ctx context.Context, done <-chan struct{}
 // sendHeartbeat sends a heartbeat message (control message - never blocked by terminal output).
 func (c *GRPCConnection) sendHeartbeat() {
 	var pods []*runnerv1.PodInfo
+	var relayConnections []*runnerv1.RelayConnectionInfo
 
 	if c.handler != nil {
 		// Convert from internal PodInfo to proto PodInfo
@@ -163,19 +164,32 @@ func (c *GRPCConnection) sendHeartbeat() {
 				AgentStatus: p.ClaudeStatus,
 			})
 		}
+
+		// Convert from internal RelayConnectionInfo to proto RelayConnectionInfo
+		internalRelayConns := c.handler.OnListRelayConnections()
+		for _, rc := range internalRelayConns {
+			relayConnections = append(relayConnections, &runnerv1.RelayConnectionInfo{
+				PodKey:      rc.PodKey,
+				RelayUrl:    rc.RelayURL,
+				SessionId:   rc.SessionID,
+				Connected:   rc.Connected,
+				ConnectedAt: rc.ConnectedAt,
+			})
+		}
 	}
 
 	msg := &runnerv1.RunnerMessage{
 		Payload: &runnerv1.RunnerMessage_Heartbeat{
 			Heartbeat: &runnerv1.HeartbeatData{
-				NodeId: c.nodeID,
-				Pods:   pods,
+				NodeId:           c.nodeID,
+				Pods:             pods,
+				RelayConnections: relayConnections,
 			},
 		},
 		Timestamp: time.Now().UnixMilli(),
 	}
 
-	logger.GRPC().Debug("Sending heartbeat", "pods", len(pods))
+	logger.GRPC().Debug("Sending heartbeat", "pods", len(pods), "relay_connections", len(relayConnections))
 
 	if err := c.sendControl(msg); err != nil {
 		logger.GRPC().Error("Failed to send heartbeat", "error", err)

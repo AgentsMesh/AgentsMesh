@@ -11,6 +11,7 @@ type RunnerHandler struct {
 	podService          *agentpod.PodService
 	sandboxQueryService *runner.SandboxQueryService
 	sandboxQuerySender  runner.SandboxQuerySender
+	podCoordinator      *runner.PodCoordinator
 }
 
 // NewRunnerHandler creates a new runner handler
@@ -45,6 +46,13 @@ func WithSandboxQueryService(sqs *runner.SandboxQueryService) RunnerHandlerOptio
 func WithSandboxQuerySender(sqs runner.SandboxQuerySender) RunnerHandlerOption {
 	return func(h *RunnerHandler) {
 		h.sandboxQuerySender = sqs
+	}
+}
+
+// WithPodCoordinatorForRunner sets the pod coordinator for runner handler
+func WithPodCoordinatorForRunner(pc *runner.PodCoordinator) RunnerHandlerOption {
+	return func(h *RunnerHandler) {
+		h.podCoordinator = pc
 	}
 }
 

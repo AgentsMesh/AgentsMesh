@@ -186,6 +186,27 @@ func (h *RunnerMessageHandler) OnListPods() []client.PodInfo {
 	return result
 }
 
+// OnListRelayConnections returns current relay connections.
+func (h *RunnerMessageHandler) OnListRelayConnections() []client.RelayConnectionInfo {
+	pods := h.podStore.All()
+	result := make([]client.RelayConnectionInfo, 0)
+
+	for _, pod := range pods {
+		relayClient := pod.GetRelayClient()
+		if relayClient != nil {
+			result = append(result, client.RelayConnectionInfo{
+				PodKey:      pod.PodKey,
+				RelayURL:    relayClient.GetRelayURL(),
+				SessionID:   relayClient.GetSessionID(),
+				Connected:   relayClient.IsConnected(),
+				ConnectedAt: relayClient.GetConnectedAt(),
+			})
+		}
+	}
+
+	return result
+}
+
 // OnTerminalInput handles terminal input from server.
 func (h *RunnerMessageHandler) OnTerminalInput(req client.TerminalInputRequest) error {
 	pod, ok := h.podStore.Get(req.PodKey)

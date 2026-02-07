@@ -12,52 +12,24 @@ func TestForceUnregister(t *testing.T) {
 		t.Fatalf("Register failed: %v", err)
 	}
 
-	// Create sessions on this relay
-	if _, err := m.CreateSession("pod-1", "s1", relay); err != nil {
-		t.Fatalf("CreateSession failed: %v", err)
-	}
-	if _, err := m.CreateSession("pod-2", "s2", relay); err != nil {
-		t.Fatalf("CreateSession failed: %v", err)
-	}
-
 	// Force unregister
-	affected := m.ForceUnregister("relay-1")
-
-	if len(affected) != 2 {
-		t.Errorf("affected sessions: got %d, want 2", len(affected))
-	}
+	m.ForceUnregister("relay-1")
 
 	// Verify relay is removed
 	if m.GetRelayByID("relay-1") != nil {
 		t.Error("relay should be removed")
-	}
-
-	// Verify sessions are removed
-	if m.GetSession("pod-1") != nil || m.GetSession("pod-2") != nil {
-		t.Error("sessions should be removed")
-	}
-}
-
-func TestForceUnregisterNoSessions(t *testing.T) {
-	m := NewManager()
-	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://relay.example.com"}); err != nil {
-		t.Fatalf("Register failed: %v", err)
-	}
-
-	affected := m.ForceUnregister("relay-1")
-
-	if len(affected) != 0 {
-		t.Errorf("should have no affected sessions, got %d", len(affected))
 	}
 }
 
 func TestForceUnregisterNotFound(t *testing.T) {
 	m := NewManager()
 
-	affected := m.ForceUnregister("unknown")
+	// Should not panic on unknown relay
+	m.ForceUnregister("unknown")
 
-	if len(affected) != 0 {
-		t.Errorf("should return empty for unknown relay, got %d", len(affected))
+	// Verify no side effects
+	if len(m.GetRelays()) != 0 {
+		t.Error("should have no relays")
 	}
 }
 
@@ -68,39 +40,24 @@ func TestGracefulUnregister(t *testing.T) {
 		t.Fatalf("Register failed: %v", err)
 	}
 
-	// Create sessions
-	if _, err := m.CreateSession("pod-1", "s1", relay); err != nil {
-		t.Fatalf("CreateSession failed: %v", err)
-	}
-	if _, err := m.CreateSession("pod-2", "s2", relay); err != nil {
-		t.Fatalf("CreateSession failed: %v", err)
-	}
-
 	// Graceful unregister
-	affected := m.GracefulUnregister("relay-1", "shutdown")
-
-	if len(affected) != 2 {
-		t.Errorf("affected sessions: got %d, want 2", len(affected))
-	}
+	m.GracefulUnregister("relay-1", "shutdown")
 
 	// Verify relay is removed
 	if m.GetRelayByID("relay-1") != nil {
 		t.Error("relay should be removed")
-	}
-
-	// Verify sessions are removed
-	if m.GetSession("pod-1") != nil || m.GetSession("pod-2") != nil {
-		t.Error("sessions should be removed")
 	}
 }
 
 func TestGracefulUnregisterNotFound(t *testing.T) {
 	m := NewManager()
 
-	affected := m.GracefulUnregister("unknown", "shutdown")
+	// Should not panic on unknown relay
+	m.GracefulUnregister("unknown", "shutdown")
 
-	if affected != nil {
-		t.Error("should return nil for unknown relay")
+	// Verify no side effects
+	if len(m.GetRelays()) != 0 {
+		t.Error("should have no relays")
 	}
 }
 
@@ -159,77 +116,56 @@ func TestManagerStopWithHealthCheck(t *testing.T) {
 	}
 }
 
-func TestOnRelayUnhealthyCallback(t *testing.T) {
-	callbackCalled := false
-	var callbackRelayID string
-	var callbackSessions []*ActiveSession
-	callbackDone := make(chan struct{})
+func TestMarkRelayUnhealthy(t *testing.T) {
+	m := NewManager()
 
-	m := NewManagerWithOptions(
-		WithOnRelayUnhealthy(func(relayID string, sessions []*ActiveSession) {
-			callbackCalled = true
-			callbackRelayID = relayID
-			callbackSessions = sessions
-			close(callbackDone)
-		}),
-	)
-
-	// Register relay and create session
+	// Register a healthy relay
 	relay := &RelayInfo{ID: "relay-1", URL: "wss://r1.com"}
 	if err := m.Register(relay); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
-	if _, err := m.CreateSession("pod-1", "session-1", relay); err != nil {
-		t.Fatalf("CreateSession failed: %v", err)
+
+	// Verify it's healthy
+	r := m.GetRelayByID("relay-1")
+	if !r.Healthy {
+		t.Error("relay should be healthy after registration")
 	}
 
-	// Call markRelayUnhealthy (relay is currently healthy)
-	// This will mark it unhealthy and trigger the callback
+	// Mark as unhealthy
 	m.markRelayUnhealthy("relay-1")
 
-	// Wait for async callback to complete
-	select {
-	case <-callbackDone:
-		// Callback completed
-	case <-time.After(500 * time.Millisecond):
-		t.Fatal("callback did not complete in time")
-	}
-
-	if !callbackCalled {
-		t.Error("onRelayUnhealthy callback should be called")
-	}
-	if callbackRelayID != "relay-1" {
-		t.Errorf("callback relayID: got %q, want %q", callbackRelayID, "relay-1")
-	}
-	if len(callbackSessions) != 1 {
-		t.Errorf("callback sessions: got %d, want 1", len(callbackSessions))
+	// Verify it's unhealthy
+	r = m.GetRelayByID("relay-1")
+	if r.Healthy {
+		t.Error("relay should be unhealthy after markRelayUnhealthy")
 	}
 }
 
-func TestOnRelayUnhealthyCallbackNoSessions(t *testing.T) {
-	callbackCalled := false
+func TestMarkRelayUnhealthyNotFound(t *testing.T) {
+	m := NewManager()
 
-	m := NewManagerWithOptions(
-		WithOnRelayUnhealthy(func(relayID string, sessions []*ActiveSession) {
-			callbackCalled = true
-		}),
-	)
+	// Should not panic on unknown relay
+	m.markRelayUnhealthy("unknown")
+}
 
-	// Register relay without sessions
+func TestMarkRelayUnhealthyAlreadyUnhealthy(t *testing.T) {
+	m := NewManager()
+
+	// Register and mark unhealthy
 	relay := &RelayInfo{ID: "relay-1", URL: "wss://r1.com"}
 	if err := m.Register(relay); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
 
-	// Mark unhealthy
 	m.mu.Lock()
 	m.relays["relay-1"].Healthy = false
 	m.mu.Unlock()
 
+	// Should be idempotent
 	m.markRelayUnhealthy("relay-1")
 
-	// Callback should not be called for relay with no sessions
-	if callbackCalled {
-		t.Error("callback should not be called for relay with no sessions")
+	r := m.GetRelayByID("relay-1")
+	if r.Healthy {
+		t.Error("relay should still be unhealthy")
 	}
 }

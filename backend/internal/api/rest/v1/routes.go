@@ -127,6 +127,9 @@ func registerRunnerRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.SandboxQuerySender != nil {
 		runnerOpts = append(runnerOpts, WithSandboxQuerySender(svc.SandboxQuerySender))
 	}
+	if svc.PodCoordinator != nil {
+		runnerOpts = append(runnerOpts, WithPodCoordinatorForRunner(svc.PodCoordinator))
+	}
 	runnerHandler := NewRunnerHandler(svc.Runner, runnerOpts...)
 	runners := rg.Group("/runners")
 	{

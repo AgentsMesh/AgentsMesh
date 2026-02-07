@@ -12,6 +12,7 @@ import {
   type RunnerData,
   type RunnerPodData,
   type SandboxStatus,
+  type RelayConnectionInfo,
 } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 import {
@@ -36,6 +37,7 @@ export default function RunnerDetailPage() {
   const runnerId = Number(params.id);
 
   const [runner, setRunner] = useState<RunnerData | null>(null);
+  const [relayConnections, setRelayConnections] = useState<RelayConnectionInfo[]>([]);
   const [pods, setPods] = useState<RunnerPodData[]>([]);
   const [sandboxStatuses, setSandboxStatuses] = useState<Map<string, SandboxStatus>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,7 @@ export default function RunnerDetailPage() {
     try {
       const res = await runnerApi.get(runnerId);
       setRunner(res.runner);
+      setRelayConnections(res.relay_connections || []);
     } catch (error) {
       console.error("Failed to load runner:", error);
     } finally {
@@ -284,7 +287,7 @@ export default function RunnerDetailPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === "overview" && <RunnerOverviewTab runner={runner} />}
+      {activeTab === "overview" && <RunnerOverviewTab runner={runner} relayConnections={relayConnections} />}
 
       {activeTab === "pods" && (
         <RunnerPodsTab

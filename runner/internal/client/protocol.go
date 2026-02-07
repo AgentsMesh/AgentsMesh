@@ -33,6 +33,15 @@ type PodInfo struct {
 	Pid          int    `json:"pid"`
 }
 
+// RelayConnectionInfo contains relay connection information for heartbeat messages.
+type RelayConnectionInfo struct {
+	PodKey      string `json:"pod_key"`
+	RelayURL    string `json:"relay_url"`
+	SessionID   string `json:"session_id"`
+	Connected   bool   `json:"connected"`
+	ConnectedAt int64  `json:"connected_at"` // Unix milliseconds
+}
+
 // ==================== Terminal Data Structures ====================
 
 // TerminalInputRequest is sent to write to PTY.
@@ -101,6 +110,7 @@ type MessageHandler interface {
 	OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	OnTerminatePod(req TerminatePodRequest) error
 	OnListPods() []PodInfo
+	OnListRelayConnections() []RelayConnectionInfo
 	OnTerminalInput(req TerminalInputRequest) error
 	OnTerminalResize(req TerminalResizeRequest) error
 	OnTerminalRedraw(req TerminalRedrawRequest) error

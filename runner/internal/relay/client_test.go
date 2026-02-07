@@ -341,3 +341,67 @@ func TestNoReconnectOnGracefulClose(t *testing.T) {
 		t.Error("reconnect handler should NOT be called on graceful stop")
 	}
 }
+
+func TestGetConnectedAtBeforeConnect(t *testing.T) {
+	c := NewClient("ws://localhost:8080", "pod-1", "session-1", "test-token", nil)
+
+	// Before connection, ConnectedAt should be 0
+	if c.GetConnectedAt() != 0 {
+		t.Errorf("expected 0 before connection, got %d", c.GetConnectedAt())
+	}
+}
+
+func TestGetConnectedAtAfterConnect(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := testUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		for {
+			if _, _, err := conn.ReadMessage(); err != nil {
+				return
+			}
+		}
+	}))
+	defer srv.Close()
+
+	url := "ws" + strings.TrimPrefix(srv.URL, "http")
+	c := NewClient(url, "pod-1", "session-1", "test-token", nil)
+
+	// Before connection
+	if c.GetConnectedAt() != 0 {
+		t.Errorf("expected 0 before connection, got %d", c.GetConnectedAt())
+	}
+
+	beforeConnect := time.Now().UnixMilli()
+	if err := c.Connect(); err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+	afterConnect := time.Now().UnixMilli()
+
+	// After connection, ConnectedAt should be set
+	connectedAt := c.GetConnectedAt()
+	if connectedAt == 0 {
+		t.Error("ConnectedAt should not be 0 after connection")
+	}
+
+	// ConnectedAt should be between beforeConnect and afterConnect
+	if connectedAt < beforeConnect || connectedAt > afterConnect {
+		t.Errorf("ConnectedAt (%d) should be between %d and %d", connectedAt, beforeConnect, afterConnect)
+	}
+
+	c.Stop()
+}
+
+func TestGetSessionIDAndRelayURL(t *testing.T) {
+	c := NewClient("wss://relay.example.com", "pod-1", "test-session-123", "test-token", nil)
+
+	if c.GetSessionID() != "test-session-123" {
+		t.Errorf("GetSessionID: expected test-session-123, got %s", c.GetSessionID())
+	}
+
+	if c.GetRelayURL() != "wss://relay.example.com" {
+		t.Errorf("GetRelayURL: expected wss://relay.example.com, got %s", c.GetRelayURL())
+	}
+}
