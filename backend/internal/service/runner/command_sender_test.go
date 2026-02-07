@@ -73,7 +73,7 @@ func TestNoOpCommandSender_SendSubscribeTerminal(t *testing.T) {
 	sender := NewNoOpCommandSender(newTestLogger())
 	ctx := context.Background()
 
-	err := sender.SendSubscribeTerminal(ctx, 1, "test-pod", "ws://relay.local", "session-1", "runner-token", true, 100)
+	err := sender.SendSubscribeTerminal(ctx, 1, "test-pod", "ws://relay.local", "runner-token", true, 100)
 	assert.Equal(t, ErrCommandSenderNotSet, err)
 }
 

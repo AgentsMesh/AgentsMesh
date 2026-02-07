@@ -125,7 +125,7 @@ func (a *GRPCRunnerAdapter) SendPrompt(runnerID int64, podKey, prompt string) er
 
 // SendSubscribeTerminal sends a subscribe terminal command to a pod.
 // This notifies the runner that a browser wants to observe the terminal via Relay.
-func (a *GRPCRunnerAdapter) SendSubscribeTerminal(runnerID int64, podKey, relayURL, sessionID, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
+func (a *GRPCRunnerAdapter) SendSubscribeTerminal(runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
 		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
@@ -136,7 +136,6 @@ func (a *GRPCRunnerAdapter) SendSubscribeTerminal(runnerID int64, podKey, relayU
 			SubscribeTerminal: &runnerv1.SubscribeTerminalCommand{
 				PodKey:          podKey,
 				RelayUrl:        relayURL,
-				SessionId:       sessionID,
 				RunnerToken:     runnerToken,
 				IncludeSnapshot: includeSnapshot,
 				SnapshotHistory: snapshotHistory,

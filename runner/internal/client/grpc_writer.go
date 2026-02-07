@@ -171,7 +171,6 @@ func (c *GRPCConnection) sendHeartbeat() {
 			relayConnections = append(relayConnections, &runnerv1.RelayConnectionInfo{
 				PodKey:      rc.PodKey,
 				RelayUrl:    rc.RelayURL,
-				SessionId:   rc.SessionID,
 				Connected:   rc.Connected,
 				ConnectedAt: rc.ConnectedAt,
 			})

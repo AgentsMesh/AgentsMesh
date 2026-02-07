@@ -13,12 +13,12 @@ var (
 )
 
 // RelayClaims represents JWT claims for relay token
+// Note: SessionID has been removed - channels are now identified by PodKey only
 type RelayClaims struct {
-	PodKey    string `json:"pod_key"`
-	SessionID string `json:"session_id"`
-	RunnerID  int64  `json:"runner_id"`
-	UserID    int64  `json:"user_id"`
-	OrgID     int64  `json:"org_id"`
+	PodKey   string `json:"pod_key"`
+	RunnerID int64  `json:"runner_id"`
+	UserID   int64  `json:"user_id"` // 0 for runner tokens
+	OrgID    int64  `json:"org_id"`
 	jwt.RegisteredClaims
 }
 
@@ -66,17 +66,16 @@ func (v *TokenValidator) ValidateToken(tokenString string) (*RelayClaims, error)
 }
 
 // GenerateToken generates a relay token (used by Backend)
-// This function is provided for completeness but should primarily be used by Backend
-func GenerateToken(secret, issuer, podKey, sessionID string, runnerID, userID, orgID int64, expiry time.Duration) (string, error) {
+// Note: SessionID parameter has been removed - channels are identified by PodKey only
+func GenerateToken(secret, issuer, podKey string, runnerID, userID, orgID int64, expiry time.Duration) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(expiry)
 
 	claims := &RelayClaims{
-		PodKey:    podKey,
-		SessionID: sessionID,
-		RunnerID:  runnerID,
-		UserID:    userID,
-		OrgID:     orgID,
+		PodKey:   podKey,
+		RunnerID: runnerID,
+		UserID:   userID,
+		OrgID:    orgID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(now),

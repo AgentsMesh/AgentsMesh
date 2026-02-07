@@ -20,7 +20,7 @@ func TestNewTokenValidator(t *testing.T) {
 }
 
 func TestGenerateToken(t *testing.T) {
-	token, err := GenerateToken(testSecret, testIssuer, "pod-1", "sess-1", 1, 2, 3, time.Hour)
+	token, err := GenerateToken(testSecret, testIssuer, "pod-1", 1, 2, 3, time.Hour)
 	if err != nil || token == "" {
 		t.Fatalf("GenerateToken failed: %v", err)
 	}
@@ -29,7 +29,7 @@ func TestGenerateToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ValidateToken failed: %v", err)
 	}
-	if claims.PodKey != "pod-1" || claims.SessionID != "sess-1" ||
+	if claims.PodKey != "pod-1" ||
 		claims.RunnerID != 1 || claims.UserID != 2 || claims.OrgID != 3 ||
 		claims.Issuer != testIssuer || claims.Subject != "pod-1" {
 		t.Error("claims mismatch")
@@ -38,7 +38,7 @@ func TestGenerateToken(t *testing.T) {
 
 func TestValidateToken_Valid(t *testing.T) {
 	v := NewTokenValidator(testSecret, testIssuer)
-	token, _ := GenerateToken(testSecret, testIssuer, "pod-1", "sess-1", 1, 2, 3, time.Hour)
+	token, _ := GenerateToken(testSecret, testIssuer, "pod-1", 1, 2, 3, time.Hour)
 	if claims, err := v.ValidateToken(token); err != nil || claims == nil {
 		t.Errorf("ValidateToken failed: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestValidateToken_Valid(t *testing.T) {
 
 func TestValidateToken_Expired(t *testing.T) {
 	v := NewTokenValidator(testSecret, testIssuer)
-	token, _ := GenerateToken(testSecret, testIssuer, "pod-1", "sess-1", 1, 2, 3, -time.Hour)
+	token, _ := GenerateToken(testSecret, testIssuer, "pod-1", 1, 2, 3, -time.Hour)
 	if _, err := v.ValidateToken(token); err != ErrTokenExpired {
 		t.Errorf("expected ErrTokenExpired, got %v", err)
 	}
@@ -54,7 +54,7 @@ func TestValidateToken_Expired(t *testing.T) {
 
 func TestValidateToken_InvalidSignature(t *testing.T) {
 	v := NewTokenValidator(testSecret, testIssuer)
-	token, _ := GenerateToken("wrong-secret", testIssuer, "pod-1", "sess-1", 1, 2, 3, time.Hour)
+	token, _ := GenerateToken("wrong-secret", testIssuer, "pod-1", 1, 2, 3, time.Hour)
 	if _, err := v.ValidateToken(token); err != ErrInvalidToken {
 		t.Errorf("expected ErrInvalidToken, got %v", err)
 	}
@@ -62,7 +62,7 @@ func TestValidateToken_InvalidSignature(t *testing.T) {
 
 func TestValidateToken_InvalidIssuer(t *testing.T) {
 	v := NewTokenValidator(testSecret, testIssuer)
-	token, _ := GenerateToken(testSecret, "wrong-issuer", "pod-1", "sess-1", 1, 2, 3, time.Hour)
+	token, _ := GenerateToken(testSecret, "wrong-issuer", "pod-1", 1, 2, 3, time.Hour)
 	if _, err := v.ValidateToken(token); err != ErrInvalidToken {
 		t.Errorf("expected ErrInvalidToken, got %v", err)
 	}
@@ -70,7 +70,7 @@ func TestValidateToken_InvalidIssuer(t *testing.T) {
 
 func TestValidateToken_NoIssuerCheck(t *testing.T) {
 	v := NewTokenValidator(testSecret, "")
-	token, _ := GenerateToken(testSecret, "any-issuer", "pod-1", "sess-1", 1, 2, 3, time.Hour)
+	token, _ := GenerateToken(testSecret, "any-issuer", "pod-1", 1, 2, 3, time.Hour)
 	claims, err := v.ValidateToken(token)
 	if err != nil || claims.Issuer != "any-issuer" {
 		t.Error("should succeed when issuer check disabled")
@@ -88,7 +88,7 @@ func TestValidateToken_MalformedToken(t *testing.T) {
 
 func TestValidateToken_WrongSigningMethod(t *testing.T) {
 	v := NewTokenValidator(testSecret, testIssuer)
-	claims := &RelayClaims{PodKey: "pod-1", SessionID: "sess-1",
+	claims := &RelayClaims{PodKey: "pod-1",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()), Issuer: testIssuer}}
@@ -101,7 +101,7 @@ func TestValidateToken_WrongSigningMethod(t *testing.T) {
 
 func TestRelayClaims_AllFields(t *testing.T) {
 	now := time.Now()
-	claims := &RelayClaims{PodKey: "p1", SessionID: "s1", RunnerID: 100, UserID: 200, OrgID: 300,
+	claims := &RelayClaims{PodKey: "p1", RunnerID: 100, UserID: 200, OrgID: 300,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour)), IssuedAt: jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now), Issuer: testIssuer, Subject: "p1"}}
@@ -112,7 +112,7 @@ func TestRelayClaims_AllFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ValidateToken failed: %v", err)
 	}
-	if decoded.PodKey != "p1" || decoded.SessionID != "s1" ||
+	if decoded.PodKey != "p1" ||
 		decoded.RunnerID != 100 || decoded.UserID != 200 || decoded.OrgID != 300 ||
 		decoded.Issuer != testIssuer || decoded.Subject != "p1" {
 		t.Error("decoded claims mismatch")

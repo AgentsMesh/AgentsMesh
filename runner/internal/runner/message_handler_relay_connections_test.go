@@ -62,8 +62,8 @@ func TestOnListRelayConnections_WithRelayClients(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create relay clients (not connected, just for testing the data retrieval)
-	relayClient1 := relay.NewClient("wss://relay1.example.com", "pod-1", "session-1", "token-1", nil)
-	relayClient2 := relay.NewClient("wss://relay2.example.com", "pod-2", "session-2", "token-2", nil)
+	relayClient1 := relay.NewClient("wss://relay1.example.com", "pod-1", "token-1", nil)
+	relayClient2 := relay.NewClient("wss://relay2.example.com", "pod-2", "token-2", nil)
 
 	// Create pods with relay clients
 	pod1 := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
@@ -90,9 +90,6 @@ func TestOnListRelayConnections_WithRelayClients(t *testing.T) {
 		if conn.RelayURL != "wss://relay1.example.com" {
 			t.Errorf("pod-1 relay URL: expected wss://relay1.example.com, got %s", conn.RelayURL)
 		}
-		if conn.SessionID != "session-1" {
-			t.Errorf("pod-1 session ID: expected session-1, got %s", conn.SessionID)
-		}
 		// Not connected since we didn't call Connect()
 		if conn.Connected {
 			t.Error("pod-1 should not be connected")
@@ -104,9 +101,6 @@ func TestOnListRelayConnections_WithRelayClients(t *testing.T) {
 	if conn, ok := connMap["pod-2"]; ok {
 		if conn.RelayURL != "wss://relay2.example.com" {
 			t.Errorf("pod-2 relay URL: expected wss://relay2.example.com, got %s", conn.RelayURL)
-		}
-		if conn.SessionID != "session-2" {
-			t.Errorf("pod-2 session ID: expected session-2, got %s", conn.SessionID)
 		}
 	} else {
 		t.Error("pod-2 connection not found")
@@ -125,7 +119,7 @@ func TestOnListRelayConnections_MixedPods(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Pod with relay client
-	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "session-1", "token-1", nil)
+	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "token-1", nil)
 	pod1 := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
 	pod1.SetRelayClient(relayClient)
 
@@ -162,7 +156,7 @@ func TestOnListRelayConnections_ConnectedAt(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create relay client (not connected)
-	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "session-1", "token-1", nil)
+	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "token-1", nil)
 
 	pod := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
 	pod.SetRelayClient(relayClient)
@@ -181,7 +175,7 @@ func TestOnListRelayConnections_ConnectedAt(t *testing.T) {
 
 // TestRelayClient_GetConnectedAt tests the relay client's GetConnectedAt method
 func TestRelayClient_GetConnectedAt(t *testing.T) {
-	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "session-1", "token-1", nil)
+	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "token-1", nil)
 
 	// Before connection, should be 0
 	if relayClient.GetConnectedAt() != 0 {
@@ -192,19 +186,9 @@ func TestRelayClient_GetConnectedAt(t *testing.T) {
 	// which is covered in client_test.go integration tests
 }
 
-// TestRelayClient_GetSessionID tests the relay client's GetSessionID method
-func TestRelayClient_GetSessionID(t *testing.T) {
-	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "test-session-id", "token-1", nil)
-
-	sessionID := relayClient.GetSessionID()
-	if sessionID != "test-session-id" {
-		t.Errorf("expected test-session-id, got %s", sessionID)
-	}
-}
-
 // TestRelayClient_GetRelayURL tests the relay client's GetRelayURL method
 func TestRelayClient_GetRelayURL(t *testing.T) {
-	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "session-1", "token-1", nil)
+	relayClient := relay.NewClient("wss://relay.example.com", "pod-1", "token-1", nil)
 
 	url := relayClient.GetRelayURL()
 	if url != "wss://relay.example.com" {
@@ -225,7 +209,7 @@ func TestOnListRelayConnections_ConcurrentAccess(t *testing.T) {
 
 	// Add some pods with relay clients
 	for i := 0; i < 10; i++ {
-		relayClient := relay.NewClient("wss://relay.example.com", "pod", "session", "token", nil)
+		relayClient := relay.NewClient("wss://relay.example.com", "pod", "token", nil)
 		pod := &Pod{PodKey: "pod-" + string(rune('0'+i)), Status: PodStatusRunning}
 		pod.SetRelayClient(relayClient)
 		store.Put(pod.PodKey, pod)

@@ -37,8 +37,8 @@ vi.mock("@/lib/api/pod", () => ({
   podApi: {
     getTerminalConnection: vi.fn().mockResolvedValue({
       relay_url: "wss://relay.example.com",
-      session_id: "test-session",
       token: "test-token",
+      pod_key: "pod-1",
     }),
   },
 }));
@@ -60,7 +60,54 @@ describe("terminalConnection", () => {
     vi.useRealTimers();
   });
 
-  describe("connect", () => {
+  describe("subscribe", () => {
+    it("should create connection and return handle", async () => {
+      const onMessage = vi.fn();
+      const handlePromise = terminalPool.subscribe("pod-1", "sub-1", onMessage);
+
+      await vi.runAllTimersAsync();
+      const handle = await handlePromise;
+
+      expect(handle).toHaveProperty("send");
+      expect(handle).toHaveProperty("unsubscribe");
+      expect(handle).toHaveProperty("disconnect");
+      expect(terminalPool.getStatus("pod-1")).toBe("connected");
+    });
+
+    it("should reconnect when new subscriber joins existing connection", async () => {
+      const onMessage1 = vi.fn();
+      const onMessage2 = vi.fn();
+
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
+      await vi.runAllTimersAsync();
+
+      // New subscriber causes reconnection to get buffered output from Relay
+      const handle2 = await terminalPool.subscribe("pod-1", "sub-2", onMessage2);
+      await vi.runAllTimersAsync();
+
+      expect(handle2).toHaveProperty("send");
+      // After reconnect, only the new subscriber should be registered
+      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(1);
+      expect(terminalPool.getConnection("pod-1")?.subscribers.has("sub-2")).toBe(true);
+    });
+
+    it("should be idempotent - same subscriptionId replaces previous callback", async () => {
+      const onMessage1 = vi.fn();
+      const onMessage2 = vi.fn();
+
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
+      await vi.runAllTimersAsync();
+
+      // Subscribe again with same subscriptionId
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage2);
+      await vi.runAllTimersAsync();
+
+      // Should still have only 1 subscriber (replaced, not added)
+      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(1);
+    });
+  });
+
+  describe("connect (deprecated)", () => {
     it("should create connection and return handle", async () => {
       const onMessage = vi.fn();
       const handlePromise = terminalPool.connect("pod-1", onMessage);
@@ -73,19 +120,80 @@ describe("terminalConnection", () => {
       expect(terminalPool.getStatus("pod-1")).toBe("connected");
     });
 
-    it("should reuse existing connection for same pod", async () => {
+    it("should reconnect when called again for same pod", async () => {
       const onMessage1 = vi.fn();
       const onMessage2 = vi.fn();
 
       await terminalPool.connect("pod-1", onMessage1);
       await vi.runAllTimersAsync();
 
+      // Second connect causes reconnection (legacy IDs are unique)
       const handle2 = await terminalPool.connect("pod-1", onMessage2);
       await vi.runAllTimersAsync();
 
       expect(handle2).toHaveProperty("send");
-      // Both listeners should be registered
+      // After reconnect, only 1 subscriber (the new one)
+      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(1);
     });
+  });
+
+  describe("unsubscribe", () => {
+    it("should remove subscriber by subscriptionId", async () => {
+      const onMessage = vi.fn();
+      const handle = await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await vi.runAllTimersAsync();
+
+      handle.unsubscribe();
+
+      // Subscriber should be removed
+      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(0);
+    });
+
+    it("should delay disconnect when last subscriber leaves", async () => {
+      const onMessage = vi.fn();
+      const handle = await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await vi.runAllTimersAsync();
+
+      handle.unsubscribe();
+
+      // Connection should still exist (delayed disconnect)
+      expect(terminalPool.getConnection("pod-1")).toBeDefined();
+
+      // Advance past disconnect delay (30s)
+      await vi.advanceTimersByTimeAsync(30000);
+
+      // Now connection should be gone
+      expect(terminalPool.getConnection("pod-1")).toBeUndefined();
+      expect(terminalPool.getStatus("pod-1")).toBe("none");
+    });
+
+    it("should cancel disconnect timer if new subscriber joins", async () => {
+      const onMessage1 = vi.fn();
+      const onMessage2 = vi.fn();
+
+      const handle1 = await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
+      await vi.runAllTimersAsync();
+
+      // Unsubscribe first subscriber
+      handle1.unsubscribe();
+
+      // Advance time partially (10s of 30s delay)
+      await vi.advanceTimersByTimeAsync(10000);
+
+      // New subscriber joins
+      await terminalPool.subscribe("pod-1", "sub-2", onMessage2);
+
+      // Advance past original disconnect time
+      await vi.advanceTimersByTimeAsync(25000);
+
+      // Connection should still exist (timer was cancelled)
+      expect(terminalPool.getConnection("pod-1")).toBeDefined();
+      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(1);
+    });
+
+    // Note: In the new architecture, multiple subscribers don't coexist on the same connection.
+    // When a new subscriber joins, the connection is closed and recreated to get buffered output from Relay.
+    // So "should not disconnect if other subscribers remain" scenario is no longer applicable.
   });
 
   describe("getStatus", () => {
@@ -109,7 +217,7 @@ describe("terminalConnection", () => {
   describe("disconnect", () => {
     it("should close connection and remove from pool", async () => {
       const onMessage = vi.fn();
-      await terminalPool.connect("pod-1", onMessage);
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       terminalPool.disconnect("pod-1");
@@ -125,8 +233,8 @@ describe("terminalConnection", () => {
   describe("disconnectAll", () => {
     it("should disconnect all connections", async () => {
       const onMessage = vi.fn();
-      await terminalPool.connect("pod-1", onMessage);
-      await terminalPool.connect("pod-2", onMessage);
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await terminalPool.subscribe("pod-2", "sub-2", onMessage);
       await vi.runAllTimersAsync();
 
       terminalPool.disconnectAll();
@@ -139,11 +247,157 @@ describe("terminalConnection", () => {
   describe("sendResize", () => {
     it("should not throw for invalid dimensions", async () => {
       const onMessage = vi.fn();
-      await terminalPool.connect("pod-1", onMessage);
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       expect(() => terminalPool.sendResize("pod-1", 0, 0)).not.toThrow();
       expect(() => terminalPool.sendResize("pod-1", -1, 24)).not.toThrow();
+    });
+
+    it("should send resize message when connection is open", async () => {
+      const onMessage = vi.fn();
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await vi.runAllTimersAsync();
+
+      const conn = terminalPool.getConnection("pod-1");
+      expect(conn).toBeDefined();
+      expect(conn!.ws.readyState).toBe(MockWebSocket.OPEN);
+
+      // sendResize is debounced, need to advance timer
+      terminalPool.sendResize("pod-1", 120, 40);
+      await vi.advanceTimersByTimeAsync(200); // debounce is 150ms
+
+      // Verify resize message was sent
+      expect(conn!.ws.send).toHaveBeenCalled();
+      const lastCall = conn!.ws.send.mock.calls[conn!.ws.send.mock.calls.length - 1];
+      const sentData = lastCall[0] as Uint8Array;
+
+      // Message format: [MsgType.Resize(0x04), cols_hi, cols_lo, rows_hi, rows_lo]
+      expect(sentData[0]).toBe(0x04); // MsgType.Resize
+      expect((sentData[1] << 8) | sentData[2]).toBe(120); // cols
+      expect((sentData[3] << 8) | sentData[4]).toBe(40);  // rows
+    });
+
+    it("should not send resize for non-existent connection", async () => {
+      // No connection exists for "unknown-pod"
+      terminalPool.sendResize("unknown-pod", 80, 24);
+      await vi.advanceTimersByTimeAsync(200);
+
+      // Should not throw, just silently do nothing
+      expect(terminalPool.getConnection("unknown-pod")).toBeUndefined();
+    });
+  });
+
+  describe("forceResize", () => {
+    it("should send resize immediately when connection is open", async () => {
+      const onMessage = vi.fn();
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await vi.runAllTimersAsync();
+
+      const conn = terminalPool.getConnection("pod-1");
+      expect(conn).toBeDefined();
+      const sendCallsBefore = conn!.ws.send.mock.calls.length;
+
+      // forceResize should send immediately (no debounce)
+      terminalPool.forceResize("pod-1", 100, 30);
+
+      // Verify resize message was sent immediately
+      expect(conn!.ws.send.mock.calls.length).toBe(sendCallsBefore + 1);
+      const lastCall = conn!.ws.send.mock.calls[conn!.ws.send.mock.calls.length - 1];
+      const sentData = lastCall[0] as Uint8Array;
+
+      // Message format: [MsgType.Resize(0x04), cols_hi, cols_lo, rows_hi, rows_lo]
+      expect(sentData[0]).toBe(0x04); // MsgType.Resize
+      expect((sentData[1] << 8) | sentData[2]).toBe(100); // cols
+      expect((sentData[3] << 8) | sentData[4]).toBe(30);  // rows
+    });
+
+    it("should queue pendingResize when connection is connecting", async () => {
+      const onMessage = vi.fn();
+
+      // Start subscribe - this creates connection synchronously, but WebSocket opens async
+      const subscribePromise = terminalPool.subscribe("pod-1", "sub-1", onMessage);
+
+      // Need to wait for the promise to start (microtask), but not for WebSocket to open
+      await Promise.resolve();
+
+      // At this point, connection exists but WebSocket is still CONNECTING
+      const conn = terminalPool.getConnection("pod-1");
+      expect(conn).toBeDefined();
+      expect(conn!.ws.readyState).toBe(MockWebSocket.CONNECTING);
+
+      // forceResize while connecting should queue pendingResize
+      terminalPool.forceResize("pod-1", 80, 24);
+
+      // Verify pendingResize was set
+      expect(conn!.pendingResize).toEqual({ rows: 24, cols: 80 });
+
+      // Now let connection open
+      await vi.runAllTimersAsync();
+      await subscribePromise;
+
+      // After connection opens, pendingResize should be sent and cleared
+      expect(conn!.pendingResize).toBeUndefined();
+
+      // Verify resize was actually sent
+      const sendCalls = conn!.ws.send.mock.calls;
+      const resizeCalls = sendCalls.filter((call) => {
+        const data = call[0] as Uint8Array;
+        return data[0] === 0x04; // MsgType.Resize
+      });
+      expect(resizeCalls.length).toBeGreaterThan(0);
+    });
+
+    it("should not throw for non-existent connection", () => {
+      // No connection exists for "unknown-pod"
+      expect(() => terminalPool.forceResize("unknown-pod", 80, 24)).not.toThrow();
+    });
+
+    it("should not send resize for invalid dimensions", async () => {
+      const onMessage = vi.fn();
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await vi.runAllTimersAsync();
+
+      const conn = terminalPool.getConnection("pod-1");
+      const sendCallsBefore = conn!.ws.send.mock.calls.length;
+
+      // Invalid dimensions should be ignored
+      terminalPool.forceResize("pod-1", 0, 24);
+      terminalPool.forceResize("pod-1", 80, 0);
+      terminalPool.forceResize("pod-1", -1, 24);
+      terminalPool.forceResize("pod-1", 80, -1);
+
+      // No resize messages should be sent
+      expect(conn!.ws.send.mock.calls.length).toBe(sendCallsBefore);
+    });
+
+    it("should send resize after reconnection", async () => {
+      const onMessage1 = vi.fn();
+      const onMessage2 = vi.fn();
+
+      // First subscriber connects
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
+      await vi.runAllTimersAsync();
+
+      // New subscriber causes reconnection
+      await terminalPool.subscribe("pod-1", "sub-2", onMessage2);
+      await vi.runAllTimersAsync();
+
+      // Get the new connection
+      const conn = terminalPool.getConnection("pod-1");
+      expect(conn).toBeDefined();
+      expect(conn!.ws.readyState).toBe(MockWebSocket.OPEN);
+
+      const sendCallsBefore = conn!.ws.send.mock.calls.length;
+
+      // forceResize on new connection should work
+      terminalPool.forceResize("pod-1", 120, 40);
+
+      // Verify resize was sent
+      expect(conn!.ws.send.mock.calls.length).toBe(sendCallsBefore + 1);
+      const lastCall = conn!.ws.send.mock.calls[conn!.ws.send.mock.calls.length - 1];
+      const sentData = lastCall[0] as Uint8Array;
+      expect(sentData[0]).toBe(0x04); // MsgType.Resize
     });
   });
 
@@ -151,5 +405,38 @@ describe("terminalConnection", () => {
     it("should return undefined for unknown pod", () => {
       expect(terminalPool.getPtySize("unknown")).toBeUndefined();
     });
+  });
+
+  describe("message handling", () => {
+    it("should forward output message to subscriber", async () => {
+      const onMessage = vi.fn();
+
+      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await vi.runAllTimersAsync();
+
+      // Simulate receiving a message
+      const conn = terminalPool.getConnection("pod-1");
+      expect(conn).toBeDefined();
+
+      // Create a mock output message (type 0x02 = Output)
+      const payload = new TextEncoder().encode("Hello, World!");
+      const message = new Uint8Array(1 + payload.length);
+      message[0] = 0x02; // MsgType.Output
+      message.set(payload, 1);
+
+      // Trigger onmessage
+      conn!.ws.onmessage?.({ data: message.buffer });
+
+      // Subscriber should be called
+      expect(onMessage).toHaveBeenCalledTimes(1);
+
+      // Verify it received the correct payload (Uint8Array comparison)
+      const received = onMessage.mock.calls[0][0] as Uint8Array;
+      expect(Array.from(received)).toEqual(Array.from(payload));
+    });
+
+    // Note: In the new architecture, multiple subscribers don't coexist on the same connection.
+    // When a new subscriber joins, the connection is closed and recreated to get buffered output from Relay.
+    // So "broadcast to all subscribers" test is no longer applicable - there's only ever 1 subscriber per connection.
   });
 });

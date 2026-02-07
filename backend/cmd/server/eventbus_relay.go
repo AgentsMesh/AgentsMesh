@@ -24,7 +24,6 @@ func setupRelayTokenRefreshCallback(
 		slog.Info("Received relay token refresh request",
 			"runner_id", runnerID,
 			"pod_key", data.PodKey,
-			"session_id", data.SessionId,
 		)
 
 		// Get pod info to find organization ID and verify status
@@ -64,7 +63,6 @@ func setupRelayTokenRefreshCallback(
 		// userID=0 indicates this is a runner token (not a browser token)
 		newToken, err := tokenGenerator.GenerateToken(
 			data.PodKey,
-			data.SessionId,
 			runnerID,
 			0, // userID=0 for runner token
 			pod.OrganizationID,
@@ -84,10 +82,9 @@ func setupRelayTokenRefreshCallback(
 			runnerID,
 			data.PodKey,
 			data.RelayUrl,
-			data.SessionId,
 			newToken,
-			true,  // include snapshot (runner will resend after reconnect)
-			1000,  // snapshot history lines
+			true, // include snapshot (runner will resend after reconnect)
+			1000, // snapshot history lines
 		); err != nil {
 			slog.Error("failed to send subscribe terminal with new token",
 				"runner_id", runnerID,
@@ -100,7 +97,6 @@ func setupRelayTokenRefreshCallback(
 		slog.Info("Sent new relay token to runner",
 			"runner_id", runnerID,
 			"pod_key", data.PodKey,
-			"session_id", data.SessionId,
 		)
 	})
 }

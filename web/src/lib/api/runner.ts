@@ -30,10 +30,10 @@ export interface RunnerData {
 }
 
 // Relay connection info reported by Runner
+// Note: session_id removed - channel routing now uses podKey directly
 export interface RelayConnectionInfo {
   pod_key: string;
   relay_url: string;
-  session_id: string;
   connected: boolean;
   connected_at: string;
 }

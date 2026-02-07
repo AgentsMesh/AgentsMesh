@@ -23,7 +23,7 @@ func TestNewTokenGenerator(t *testing.T) {
 func TestGenerateToken(t *testing.T) {
 	g := NewTokenGenerator("test-secret", "test-issuer")
 
-	token, err := g.GenerateToken("pod-1", "session-123", 1, 2, 3, time.Hour)
+	token, err := g.GenerateToken("pod-1", 1, 2, 3, time.Hour)
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}
@@ -46,9 +46,6 @@ func TestGenerateToken(t *testing.T) {
 	if claims.PodKey != "pod-1" {
 		t.Errorf("pod_key: got %q, want %q", claims.PodKey, "pod-1")
 	}
-	if claims.SessionID != "session-123" {
-		t.Errorf("session_id: got %q, want %q", claims.SessionID, "session-123")
-	}
 	if claims.RunnerID != 1 {
 		t.Errorf("runner_id: got %d, want 1", claims.RunnerID)
 	}
@@ -70,7 +67,7 @@ func TestGenerateTokenExpiry(t *testing.T) {
 	g := NewTokenGenerator("test-secret", "test-issuer")
 
 	// Short expiry - use 1 second to ensure proper testing
-	token, _ := g.GenerateToken("pod-1", "s1", 1, 2, 3, 1*time.Second)
+	token, _ := g.GenerateToken("pod-1", 1, 2, 3, 1*time.Second)
 
 	// Should be valid now
 	parsed, err := jwt.ParseWithClaims(token, &TokenClaims{}, func(t *jwt.Token) (interface{}, error) {
@@ -97,18 +94,14 @@ func TestGenerateTokenExpiry(t *testing.T) {
 
 func TestTokenClaimsFields(t *testing.T) {
 	claims := &TokenClaims{
-		PodKey:    "pod-1",
-		SessionID: "session-1",
-		RunnerID:  10,
-		UserID:    20,
-		OrgID:     30,
+		PodKey:   "pod-1",
+		RunnerID: 10,
+		UserID:   20,
+		OrgID:    30,
 	}
 
 	if claims.PodKey != "pod-1" {
 		t.Error("PodKey")
-	}
-	if claims.SessionID != "session-1" {
-		t.Error("SessionID")
 	}
 	if claims.RunnerID != 10 {
 		t.Error("RunnerID")

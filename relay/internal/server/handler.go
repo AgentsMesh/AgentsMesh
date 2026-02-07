@@ -8,12 +8,12 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/anthropics/agentsmesh/relay/internal/auth"
-	"github.com/anthropics/agentsmesh/relay/internal/session"
+	"github.com/anthropics/agentsmesh/relay/internal/channel"
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024 * 64,  // 64KB
-	WriteBufferSize: 1024 * 64,  // 64KB
+	ReadBufferSize:  1024 * 64, // 64KB
+	WriteBufferSize: 1024 * 64, // 64KB
 	CheckOrigin: func(r *http.Request) bool {
 		// Allow all origins in development, should be restricted in production
 		return true
@@ -22,23 +22,24 @@ var upgrader = websocket.Upgrader{
 
 // Handler handles WebSocket connections
 type Handler struct {
-	sessionManager *session.Manager
+	channelManager *channel.ChannelManager
 	tokenValidator *auth.TokenValidator
 	logger         *slog.Logger
 }
 
 // NewHandler creates a new WebSocket handler
-func NewHandler(sessionManager *session.Manager, tokenValidator *auth.TokenValidator) *Handler {
+func NewHandler(channelManager *channel.ChannelManager, tokenValidator *auth.TokenValidator) *Handler {
 	return &Handler{
-		sessionManager: sessionManager,
+		channelManager: channelManager,
 		tokenValidator: tokenValidator,
 		logger:         slog.With("component", "ws_handler"),
 	}
 }
 
-// HandleRunnerWS handles runner WebSocket connections
+// HandleRunnerWS handles runner WebSocket connections (Publisher)
 // Path: /runner/terminal?token=xxx
-// The token contains session_id, pod_key and runner_id for authentication
+// The token contains pod_key and runner_id for authentication
+// Channel is identified by pod_key (not session_id)
 func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
 	tokenStr := r.URL.Query().Get("token")
 
@@ -56,12 +57,11 @@ func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract session_id and pod_key from token claims
-	sessionID := claims.SessionID
+	// Extract pod_key from token claims (channel identifier)
 	podKey := claims.PodKey
 
-	if sessionID == "" || podKey == "" {
-		h.logger.Warn("Runner token missing session_id or pod_key")
+	if podKey == "" {
+		h.logger.Warn("Runner token missing pod_key")
 		http.Error(w, "invalid token claims", http.StatusBadRequest)
 		return
 	}
@@ -72,23 +72,22 @@ func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("Runner connecting (authenticated)",
-		"session_id", sessionID,
+	h.logger.Info("Publisher (runner) connecting",
 		"pod_key", podKey,
 		"runner_id", claims.RunnerID)
 
-	if err := h.sessionManager.HandleRunnerConnect(sessionID, podKey, conn); err != nil {
-		h.logger.Error("Failed to handle runner connect", "error", err, "session_id", sessionID)
+	if err := h.channelManager.HandlePublisherConnect(podKey, conn); err != nil {
+		h.logger.Error("Failed to handle publisher connect", "error", err, "pod_key", podKey)
 		conn.Close()
 		return
 	}
 }
 
-// HandleBrowserWS handles browser WebSocket connections
-// Path: /browser/terminal?token=xxx&session_id=xxx
+// HandleBrowserWS handles browser WebSocket connections (Subscriber)
+// Path: /browser/terminal?token=xxx
+// Channel is identified by pod_key from the token (not session_id)
 func (h *Handler) HandleBrowserWS(w http.ResponseWriter, r *http.Request) {
 	tokenStr := r.URL.Query().Get("token")
-	sessionID := r.URL.Query().Get("session_id")
 
 	if tokenStr == "" {
 		h.logger.Warn("Browser connection missing token")
@@ -104,21 +103,12 @@ func (h *Handler) HandleBrowserWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use session ID from token if not provided in query
-	if sessionID == "" {
-		sessionID = claims.SessionID
-	}
+	// Use pod_key from token as channel identifier
+	podKey := claims.PodKey
 
-	if sessionID == "" {
-		h.logger.Warn("Browser connection missing session_id")
-		http.Error(w, "session_id required", http.StatusBadRequest)
-		return
-	}
-
-	// Verify session ID matches token
-	if claims.SessionID != "" && claims.SessionID != sessionID {
-		h.logger.Warn("Session ID mismatch", "token_session", claims.SessionID, "query_session", sessionID)
-		http.Error(w, "session_id mismatch", http.StatusForbidden)
+	if podKey == "" {
+		h.logger.Warn("Browser token missing pod_key")
+		http.Error(w, "invalid token claims", http.StatusBadRequest)
 		return
 	}
 
@@ -128,22 +118,21 @@ func (h *Handler) HandleBrowserWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate browser ID
-	browserID := uuid.New().String()
+	// Generate subscriber ID for this browser connection
+	subscriberID := uuid.New().String()
 
-	h.logger.Info("Browser connecting",
-		"session_id", sessionID,
-		"pod_key", claims.PodKey,
-		"browser_id", browserID,
+	h.logger.Info("Subscriber (browser) connecting",
+		"pod_key", podKey,
+		"subscriber_id", subscriberID,
 		"user_id", claims.UserID)
 
-	if err := h.sessionManager.HandleBrowserConnect(sessionID, claims.PodKey, browserID, conn); err != nil {
-		h.logger.Error("Failed to handle browser connect", "error", err, "session_id", sessionID)
+	if err := h.channelManager.HandleSubscriberConnect(podKey, subscriberID, conn); err != nil {
+		h.logger.Error("Failed to handle subscriber connect", "error", err, "pod_key", podKey)
 
 		// Send error message before closing
-		if _, ok := err.(*session.MaxBrowsersError); ok {
+		if _, ok := err.(*channel.MaxSubscribersError); ok {
 			conn.WriteMessage(websocket.CloseMessage,
-				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "max browsers reached"))
+				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "max subscribers reached"))
 		}
 		conn.Close()
 		return
@@ -159,15 +148,15 @@ func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 
 // HandleStats handles stats requests
 func (h *Handler) HandleStats(w http.ResponseWriter, r *http.Request) {
-	stats := h.sessionManager.Stats()
+	stats := h.channelManager.Stats()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	// Simple JSON encoding without external dependency
-	w.Write([]byte(`{"active_sessions":` + itoa(stats.ActiveSessions) +
-		`,"total_browsers":` + itoa(stats.TotalBrowsers) +
-		`,"pending_runners":` + itoa(stats.PendingRunners) +
-		`,"pending_browsers":` + itoa(stats.PendingBrowsers) + `}`))
+	w.Write([]byte(`{"active_channels":` + itoa(stats.ActiveChannels) +
+		`,"total_subscribers":` + itoa(stats.TotalSubscribers) +
+		`,"pending_publishers":` + itoa(stats.PendingPublishers) +
+		`,"pending_subscribers":` + itoa(stats.PendingSubscribers) + `}`))
 }
 
 func itoa(i int) string {

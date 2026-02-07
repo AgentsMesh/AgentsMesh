@@ -24,13 +24,12 @@ func (c *GRPCConnection) SendError(podKey, code, message string) error {
 
 // SendRequestRelayToken sends a request for a new relay token to the server.
 // This is called when the relay connection fails due to token expiration.
-func (c *GRPCConnection) SendRequestRelayToken(podKey, sessionID, relayURL string) error {
+func (c *GRPCConnection) SendRequestRelayToken(podKey, relayURL string) error {
 	msg := &runnerv1.RunnerMessage{
 		Payload: &runnerv1.RunnerMessage_RequestRelayToken{
 			RequestRelayToken: &runnerv1.RequestRelayTokenEvent{
-				PodKey:    podKey,
-				SessionId: sessionID,
-				RelayUrl:  relayURL,
+				PodKey:   podKey,
+				RelayUrl: relayURL,
 			},
 		},
 		Timestamp: time.Now().UnixMilli(),

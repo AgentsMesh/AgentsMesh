@@ -197,7 +197,6 @@ func (h *RunnerMessageHandler) OnListRelayConnections() []client.RelayConnection
 			result = append(result, client.RelayConnectionInfo{
 				PodKey:      pod.PodKey,
 				RelayURL:    relayClient.GetRelayURL(),
-				SessionID:   relayClient.GetSessionID(),
 				Connected:   relayClient.IsConnected(),
 				ConnectedAt: relayClient.GetConnectedAt(),
 			})
