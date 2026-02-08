@@ -28,8 +28,9 @@ COPY . .
 # Build-time environment variables for Next.js
 # Use placeholders that will be replaced at runtime by docker-entrypoint.sh
 # This allows runtime configuration of PRIMARY_DOMAIN and USE_HTTPS
-ENV PRIMARY_DOMAIN=__PRIMARY_DOMAIN__
-ENV USE_HTTPS=__USE_HTTPS__
+# IMPORTANT: Must use NEXT_PUBLIC_ prefix for Next.js to inline them in client code
+ENV NEXT_PUBLIC_PRIMARY_DOMAIN=__PRIMARY_DOMAIN__
+ENV NEXT_PUBLIC_USE_HTTPS=__USE_HTTPS__
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED 1
