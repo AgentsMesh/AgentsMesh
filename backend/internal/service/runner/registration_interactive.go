@@ -70,7 +70,14 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 
 	// Check if authorized
 	if !pendingAuth.Authorized {
-		return &AuthStatusResponse{Status: "pending"}, nil
+		resp := &AuthStatusResponse{
+			Status:    "pending",
+			ExpiresAt: pendingAuth.ExpiresAt.Format(time.RFC3339),
+		}
+		if pendingAuth.NodeID != nil {
+			resp.NodeID = *pendingAuth.NodeID
+		}
+		return resp, nil
 	}
 
 	// Get the created runner

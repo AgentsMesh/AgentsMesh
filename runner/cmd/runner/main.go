@@ -18,7 +18,7 @@ func main() {
 	}
 
 	switch os.Args[1] {
-	case "register":
+	case "login", "register":
 		runRegister(os.Args[2:])
 	case "run", "start":
 		runRunner(os.Args[2:])
@@ -50,6 +50,7 @@ Usage:
   runner <command> [options]
 
 Commands:
+  login       Login to AgentsMesh server (alias for register)
   register    Register this runner with the AgentsMesh server (gRPC/mTLS)
   run         Start the runner in CLI mode (requires prior registration)
   webconsole  Open the web console in browser
@@ -59,6 +60,19 @@ Commands:
   update      Check and install updates
   version     Show version information
   help        Show this help message
+
+Login Examples:
+  runner login
+      Opens browser for authorization (uses https://agentsmesh.ai)
+
+  runner login --headless
+      Print URL only, don't open browser (for SSH/remote sessions)
+
+  runner login --token <token>
+      Login using a pre-generated token
+
+  runner login --server https://self-hosted.example.com
+      Login to a self-hosted AgentsMesh server
 
 Use "runner <command> --help" for more information about a command.`)
 }

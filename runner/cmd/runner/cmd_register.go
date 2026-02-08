@@ -10,9 +10,10 @@ import (
 
 func runRegister(args []string) {
 	fs := flag.NewFlagSet("register", flag.ExitOnError)
-	serverURL := fs.String("server", "", "AgentsMesh server URL (e.g., https://app.example.com)")
+	serverURL := fs.String("server", "https://agentsmesh.ai", "AgentsMesh server URL (default: https://agentsmesh.ai)")
 	token := fs.String("token", "", "Registration token (for token-based registration)")
 	nodeID := fs.String("node-id", "", "Node ID for this runner (default: hostname)")
+	headless := fs.Bool("headless", false, "Run without opening browser automatically (for SSH/remote sessions)")
 
 	fs.Usage = func() {
 		fmt.Println(`Register this runner with the AgentsMesh server using gRPC/mTLS.
@@ -20,32 +21,22 @@ func runRegister(args []string) {
 Usage:
   runner register [options]
 
-Options:`)
-		fs.PrintDefaults()
-		fmt.Println(`
-Registration Methods:
+Examples:
+  runner register                    # Interactive login (opens browser)
+  runner register --headless         # Interactive without browser (for SSH)
+  runner register --token <token>    # Token-based registration
+  runner register --server <url>     # Self-hosted server
 
-1. Interactive (Tailscale-style, recommended for first-time setup):
-   runner register --server https://app.example.com
-
-   Opens a browser for authorization. The runner will poll until you
-   authorize it in the web UI.
-
-2. Token-based (for automated/scripted deployment):
-   runner register --server https://app.example.com --token <pre-generated-token>
-
-   Uses a pre-generated token from the web UI. No browser required.
+Options:
+  --server <url>     Server URL (default: https://agentsmesh.ai)
+  --token <token>    Registration token for automated deployment
+  --node-id <id>     Runner node ID (default: hostname)
+  --headless         Don't open browser (for SSH/remote sessions)
 
 After successful registration, certificates and configuration will be saved to ~/.agentsmesh/`)
 	}
 
 	if err := fs.Parse(args); err != nil {
-		os.Exit(1)
-	}
-
-	// Validate required flags
-	if *serverURL == "" {
-		fmt.Fprintln(os.Stderr, "Error: --server is required")
 		os.Exit(1)
 	}
 
@@ -73,7 +64,7 @@ After successful registration, certificates and configuration will be saved to ~
 		}
 	} else {
 		// Interactive registration (Tailscale-style)
-		if err := registerInteractive(ctx, *serverURL, nID); err != nil {
+		if err := registerInteractive(ctx, *serverURL, nID, *headless); err != nil {
 			fmt.Fprintf(os.Stderr, "Registration failed: %v\n", err)
 			os.Exit(1)
 		}

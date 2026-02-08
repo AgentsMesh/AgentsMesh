@@ -26,6 +26,8 @@ type RequestAuthURLResponse struct {
 // AuthStatusResponse represents the status of a pending authorization.
 type AuthStatusResponse struct {
 	Status        string `json:"status"` // "pending", "authorized", "expired"
+	NodeID        string `json:"node_id,omitempty"`
+	ExpiresAt     string `json:"expires_at,omitempty"` // ISO 8601 format
 	RunnerID      int64  `json:"runner_id,omitempty"`
 	Certificate   string `json:"certificate,omitempty"`
 	PrivateKey    string `json:"private_key,omitempty"`

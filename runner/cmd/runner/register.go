@@ -27,13 +27,15 @@ func generateMachineKey() string {
 }
 
 // registerInteractive performs Tailscale-style interactive registration.
-func registerInteractive(ctx context.Context, serverURL, nodeID string) error {
+// If headless is true, the browser will not be opened automatically (for SSH/remote sessions).
+func registerInteractive(ctx context.Context, serverURL, nodeID string, headless bool) error {
 	machineKey := generateMachineKey()
 
 	result, err := client.InteractiveRegister(ctx, client.InteractiveRegistrationRequest{
 		ServerURL:  serverURL,
 		MachineKey: machineKey,
 		NodeID:     nodeID,
+		Headless:   headless,
 	})
 	if err != nil {
 		return fmt.Errorf("interactive registration failed: %w", err)

@@ -1,4 +1,4 @@
-import { request, orgPath } from "./base";
+import { request, publicRequest, orgPath } from "./base";
 
 // Runner interface matching the store
 export interface RunnerData {
@@ -147,3 +147,31 @@ export interface SandboxStatus {
   has_uncommitted_changes?: boolean;
   error?: string;
 }
+
+// Runner Authorization Status (for interactive registration)
+export interface RunnerAuthStatus {
+  status: "pending" | "authorized" | "expired";
+  node_id?: string;
+  expires_at?: string;
+}
+
+// Runner Authorization Response
+export interface RunnerAuthorizeResponse {
+  runner_id: number;
+  node_id: string;
+  message: string;
+}
+
+// Runner Authorization API (public, no auth required for status check)
+export const runnerAuthApi = {
+  // Get pending authorization status (public, no auth required)
+  getAuthStatus: (authKey: string) =>
+    publicRequest<RunnerAuthStatus>(`/api/v1/runners/grpc/auth-status?key=${authKey}`),
+
+  // Authorize a Runner (requires auth, org-scoped)
+  authorize: (orgSlug: string, authKey: string, nodeId?: string) =>
+    request<RunnerAuthorizeResponse>(`/api/v1/orgs/${orgSlug}/runners/grpc/authorize`, {
+      method: "POST",
+      body: { auth_key: authKey, node_id: nodeId },
+    }),
+};
