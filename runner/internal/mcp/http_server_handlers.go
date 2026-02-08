@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // MCPRequest represents an MCP JSON-RPC request.
@@ -128,6 +130,8 @@ func (s *HTTPServer) handleToolsCall(w http.ResponseWriter, req *MCPRequest, pod
 		return
 	}
 
+	logger.MCP().Debug("Tool call received", "tool", params.Name, "pod_key", pod.PodKey)
+
 	// Find tool
 	var tool *MCPTool
 	for _, t := range s.tools {
@@ -138,6 +142,7 @@ func (s *HTTPServer) handleToolsCall(w http.ResponseWriter, req *MCPRequest, pod
 	}
 
 	if tool == nil {
+		logger.MCP().Warn("Tool not found", "tool", params.Name)
 		s.sendError(w, req.ID, -32602, "Tool not found", params.Name)
 		return
 	}
@@ -146,6 +151,7 @@ func (s *HTTPServer) handleToolsCall(w http.ResponseWriter, req *MCPRequest, pod
 	ctx := context.Background()
 	result, err := tool.Handler(ctx, pod.Client, params.Arguments)
 	if err != nil {
+		logger.MCP().Debug("Tool call failed", "tool", params.Name, "error", err)
 		s.sendResult(w, req.ID, MCPToolResult{
 			Content: []MCPContent{{Type: "text", Text: err.Error()}},
 			IsError: true,

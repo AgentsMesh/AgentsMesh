@@ -2,6 +2,8 @@ package client
 
 import (
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // ReconnectStrategy manages reconnection with exponential backoff.
@@ -34,11 +36,19 @@ func (s *ReconnectStrategy) NextDelay() time.Duration {
 		s.currentInterval = s.maxInterval
 	}
 
+	logger.GRPC().Debug("Reconnect delay calculated",
+		"attempt", s.attemptCount,
+		"delay", delay,
+		"next_interval", s.currentInterval)
+
 	return delay
 }
 
 // Reset resets the strategy to initial values (call on successful connection).
 func (s *ReconnectStrategy) Reset() {
+	if s.attemptCount > 0 {
+		logger.GRPC().Debug("Reconnect strategy reset", "previous_attempts", s.attemptCount)
+	}
 	s.currentInterval = s.initialInterval
 	s.attemptCount = 0
 }

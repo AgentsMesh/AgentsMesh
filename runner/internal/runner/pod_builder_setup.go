@@ -25,11 +25,23 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 			Message: fmt.Sprintf("failed to create sandbox directory: %v", err),
 		}
 	}
+	logger.Pod().Debug("Sandbox root created", "pod_key", b.cmd.PodKey, "path", sandboxRoot)
 
 	cfg := b.cmd.SandboxConfig
 
 	// 2. Setup working directory based on SandboxConfig
 	b.sendProgress("preparing", 20, "Setting up working directory...")
+
+	// Determine setup mode
+	var setupMode string
+	if cfg != nil && cfg.RepositoryUrl != "" {
+		setupMode = "git_worktree"
+	} else if cfg != nil && cfg.LocalPath != "" {
+		setupMode = "local_path"
+	} else {
+		setupMode = "empty_sandbox"
+	}
+	logger.Pod().Debug("Working directory setup mode", "pod_key", b.cmd.PodKey, "mode", setupMode)
 
 	var workingDir, branchName string
 	var err error
@@ -86,6 +98,12 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 		return "", "", "", err
 	}
 
+	logger.Pod().Info("Sandbox setup completed",
+		"pod_key", b.cmd.PodKey,
+		"sandbox_root", sandboxRoot,
+		"working_dir", workingDir,
+		"branch", branchName)
+
 	return sandboxRoot, workingDir, branchName, nil
 }
 
@@ -111,6 +129,7 @@ func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, c
 
 	// Build worktree options based on credential type
 	opts := []workspace.WorktreeOption{}
+	logger.Pod().Debug("Setting up git credentials", "pod_key", b.cmd.PodKey, "credential_type", cfg.CredentialType)
 
 	switch cfg.CredentialType {
 	case "runner_local":
@@ -118,6 +137,7 @@ func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, c
 		logger.Pod().Debug("Using runner local git config", "pod_key", b.cmd.PodKey)
 	case "oauth", "pat":
 		// HTTPS + token authentication
+		logger.Pod().Debug("Using token authentication", "pod_key", b.cmd.PodKey, "type", cfg.CredentialType)
 		if cfg.GitToken != "" {
 			opts = append(opts, workspace.WithGitToken(cfg.GitToken))
 		}
@@ -178,6 +198,12 @@ func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, c
 	if branchName == "" {
 		branchName = "main"
 	}
+
+	logger.Pod().Info("Git worktree created",
+		"pod_key", b.cmd.PodKey,
+		"workspace", workspacePath,
+		"branch", branchName)
+
 	return workspacePath, branchName, nil
 }
 

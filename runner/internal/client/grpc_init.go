@@ -117,22 +117,21 @@ func (c *GRPCConnection) performInitialization(ctx context.Context) error {
 // checkAvailableAgents checks which agents are available on this runner.
 func (c *GRPCConnection) checkAvailableAgents(agentTypes []*runnerv1.AgentTypeInfo) []string {
 	var available []string
-	log := logger.GRPC()
 
 	for _, agent := range agentTypes {
 		if agent.Command == "" {
-			log.Debug("Agent has no command defined, skipping", "agent", agent.Slug)
+			logger.GRPCTrace().Trace("Agent has no command defined, skipping", "agent", agent.Slug)
 			continue
 		}
 
 		// Check if executable exists in PATH
 		path, err := exec.LookPath(agent.Command)
 		if err != nil {
-			log.Debug("Agent command not found in PATH", "agent", agent.Slug, "command", agent.Command)
+			logger.GRPCTrace().Trace("Agent command not found in PATH", "agent", agent.Slug, "command", agent.Command)
 			continue
 		}
 
-		log.Debug("Agent command found", "agent", agent.Slug, "path", path)
+		logger.GRPCTrace().Trace("Agent command found", "agent", agent.Slug, "path", path)
 		available = append(available, agent.Slug)
 	}
 

@@ -19,6 +19,7 @@ type RunnerMessageHandler struct {
 
 // NewRunnerMessageHandler creates a new message handler.
 func NewRunnerMessageHandler(runner *Runner, store PodStore, conn client.Connection) *RunnerMessageHandler {
+	logger.Runner().Debug("Creating message handler")
 	return &RunnerMessageHandler{
 		runner:   runner,
 		podStore: store,
@@ -140,6 +141,7 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 
 	pod := h.podStore.Delete(req.PodKey)
 	if pod == nil {
+		log.Warn("Pod not found for termination", "pod_key", req.PodKey)
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
@@ -208,42 +210,59 @@ func (h *RunnerMessageHandler) OnListRelayConnections() []client.RelayConnection
 
 // OnTerminalInput handles terminal input from server.
 func (h *RunnerMessageHandler) OnTerminalInput(req client.TerminalInputRequest) error {
+	log := logger.Pod()
 	pod, ok := h.podStore.Get(req.PodKey)
 	if !ok {
+		log.Warn("Pod not found for terminal input", "pod_key", req.PodKey)
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 	if pod.Terminal == nil {
+		log.Warn("Terminal not initialized for input", "pod_key", req.PodKey)
 		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
 	}
-	return pod.Terminal.Write(req.Data)
+	if err := pod.Terminal.Write(req.Data); err != nil {
+		log.Error("Failed to write terminal input", "pod_key", req.PodKey, "error", err)
+		return err
+	}
+	return nil
 }
 
 // OnTerminalResize handles terminal resize requests from server.
 func (h *RunnerMessageHandler) OnTerminalResize(req client.TerminalResizeRequest) error {
+	log := logger.Pod()
 	pod, ok := h.podStore.Get(req.PodKey)
 	if !ok {
+		log.Warn("Pod not found for terminal resize", "pod_key", req.PodKey)
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
 	if err := pod.Terminal.Resize(int(req.Cols), int(req.Rows)); err != nil {
+		log.Error("Failed to resize terminal", "pod_key", req.PodKey, "cols", req.Cols, "rows", req.Rows, "error", err)
 		return err
 	}
 	if pod.VirtualTerminal != nil {
 		pod.VirtualTerminal.Resize(int(req.Cols), int(req.Rows))
 	}
 
+	log.Debug("Terminal resized", "pod_key", req.PodKey, "cols", req.Cols, "rows", req.Rows)
 	h.sendPtyResized(req.PodKey, req.Cols, req.Rows)
 	return nil
 }
 
 // OnTerminalRedraw handles terminal redraw requests from server.
 func (h *RunnerMessageHandler) OnTerminalRedraw(req client.TerminalRedrawRequest) error {
+	log := logger.Pod()
 	pod, ok := h.podStore.Get(req.PodKey)
 	if !ok {
+		log.Warn("Pod not found for terminal redraw", "pod_key", req.PodKey)
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
-	logger.Pod().Info("Triggering terminal redraw", "pod_key", req.PodKey)
-	return pod.Terminal.Redraw()
+	log.Info("Triggering terminal redraw", "pod_key", req.PodKey)
+	if err := pod.Terminal.Redraw(); err != nil {
+		log.Error("Failed to redraw terminal", "pod_key", req.PodKey, "error", err)
+		return err
+	}
+	return nil
 }
 
 // Note: OnSubscribeTerminal, setupRelayClientHandlers, OnUnsubscribeTerminal are in message_handler_relay.go

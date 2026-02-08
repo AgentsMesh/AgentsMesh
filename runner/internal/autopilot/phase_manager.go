@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // PhaseManager manages AutopilotController lifecycle phase transitions.
@@ -53,8 +54,14 @@ func (pm *PhaseManager) SetPhase(phase Phase) bool {
 		pm.mu.Unlock()
 		return false
 	}
+	oldPhase := pm.phase
 	pm.phase = phase
 	pm.mu.Unlock()
+
+	logger.Autopilot().Debug("Phase transition",
+		"autopilot_key", pm.autopilotKey,
+		"from", oldPhase,
+		"to", phase)
 
 	pm.reportStatus()
 	return true

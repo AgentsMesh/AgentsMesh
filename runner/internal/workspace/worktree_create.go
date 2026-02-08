@@ -20,6 +20,9 @@ func (m *Manager) CreateWorktree(ctx context.Context, repoURL, branch, podKey st
 // CreateWorktreeWithOptions creates a git worktree with additional options.
 // worktreePath is the full path where the worktree should be created.
 func (m *Manager) CreateWorktreeWithOptions(ctx context.Context, repoURL, branch, worktreePath string, opts ...WorktreeOption) (string, error) {
+	log := logger.Workspace()
+	log.Info("Creating worktree", "repo", repoURL, "branch", branch, "path", worktreePath)
+
 	// Apply options
 	options := &WorktreeOptions{}
 	for _, opt := range opts {
@@ -34,6 +37,7 @@ func (m *Manager) CreateWorktreeWithOptions(ctx context.Context, repoURL, branch
 	if repoName == "" {
 		return "", fmt.Errorf("invalid repository URL: %s", repoURL)
 	}
+	log.Debug("Parsed repo name", "name", repoName)
 
 	// Main repository path (bare repo cache, shared across pods)
 	mainRepoPath := filepath.Join(m.root, "repos", repoName)
@@ -98,9 +102,10 @@ func (m *Manager) CreateWorktreeWithOptions(ctx context.Context, repoURL, branch
 	if m.gitConfigPath != "" {
 		if err := m.applyGitConfig(ctx, worktreePath); err != nil {
 			// Non-fatal error
-			logger.Workspace().Warn("Failed to apply git config", "error", err)
+			log.Warn("Failed to apply git config", "error", err)
 		}
 	}
 
+	log.Info("Worktree created successfully", "path", worktreePath, "branch", branch)
 	return worktreePath, nil
 }

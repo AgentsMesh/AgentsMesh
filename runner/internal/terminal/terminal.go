@@ -77,6 +77,12 @@ func New(opts Options) (*Terminal, error) {
 		cols = 80
 	}
 
+	logger.Terminal().Debug("Terminal instance created",
+		"command", opts.Command,
+		"work_dir", opts.WorkDir,
+		"cols", cols,
+		"rows", rows)
+
 	return &Terminal{
 		cmd:      cmd,
 		onOutput: opts.OnOutput,
@@ -120,11 +126,16 @@ func (t *Terminal) Start() error {
 	// Wait for process exit
 	go t.waitExit()
 
+	log.Info("Terminal started", "pid", t.cmd.Process.Pid, "cols", t.cols, "rows", t.rows)
+
 	return nil
 }
 
 // Stop stops the terminal
 func (t *Terminal) Stop() {
+	log := logger.Terminal()
+	log.Info("Terminal stopping")
+
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -142,6 +153,8 @@ func (t *Terminal) Stop() {
 	if t.pty != nil {
 		t.pty.Close()
 	}
+
+	log.Info("Terminal stopped")
 }
 
 // PID returns the process ID

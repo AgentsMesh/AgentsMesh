@@ -5,6 +5,7 @@ import (
 	"time"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // runSingleDecision executes a single decision cycle using the control process.
@@ -94,7 +95,7 @@ func (ac *AutopilotController) processSuccessfulDecision(decision *ControlDecisi
 	// Capture progress snapshot AFTER iteration to detect actual changes
 	if ac.progressTracker != nil {
 		snapshot := ac.progressTracker.CaptureSnapshot()
-		ac.log.Debug("Progress snapshot captured after iteration",
+		logger.AutopilotTrace().Trace("Progress snapshot captured after iteration",
 			"iteration", iteration,
 			"files_changed", len(snapshot.FilesModified),
 			"has_changes", snapshot.GitDiff.HasChanges)

@@ -26,6 +26,8 @@ func (c *GRPCConnection) sendControl(msg *runnerv1.RunnerMessage) error {
 	case <-c.stopCh:
 		return fmt.Errorf("connection stopped")
 	default:
+		logger.GRPC().Warn("Control buffer full, message dropped",
+			"queue_len", len(c.controlCh))
 		return fmt.Errorf("control buffer full")
 	}
 }

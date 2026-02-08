@@ -73,7 +73,7 @@ func NewClient(relayURL, podKey, token string, logger *slog.Logger) *Client {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 
-	return &Client{
+	client := &Client{
 		relayURL:   relayURL,
 		podKey:     podKey,
 		token:      token,
@@ -87,6 +87,9 @@ func NewClient(relayURL, podKey, token string, logger *slog.Logger) *Client {
 		ctx:    ctx,
 		cancel: cancel,
 	}
+
+	client.logger.Info("Relay client created", "relay_url", relayURL)
+	return client
 }
 
 // SetInputHandler sets the handler for user input from browsers

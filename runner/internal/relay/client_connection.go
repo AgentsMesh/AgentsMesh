@@ -53,6 +53,7 @@ func (c *Client) connectInternal() error {
 
 	conn, _, err := dialer.DialContext(c.ctx, u.String(), nil)
 	if err != nil {
+		c.logger.Error("WebSocket dial failed", "host", u.Host, "error", err)
 		return fmt.Errorf("websocket dial failed: %w", err)
 	}
 
@@ -74,6 +75,7 @@ func (c *Client) connectInternal() error {
 
 // Start starts the read and write loops
 func (c *Client) Start() {
+	c.logger.Info("Starting relay client loops")
 	c.wg.Add(2)
 	go c.readLoop()
 	go c.writeLoop()
@@ -117,6 +119,8 @@ func (c *Client) Stop() {
 		c.connMu.Lock()
 		c.conn = nil
 		c.connMu.Unlock()
+
+		c.logger.Info("Relay client stopped")
 	})
 }
 

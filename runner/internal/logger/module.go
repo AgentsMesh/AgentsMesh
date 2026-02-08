@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"log/slog"
 )
 
@@ -78,4 +79,53 @@ func Plugin() *slog.Logger {
 // Autopilot returns a logger for AutopilotController operations.
 func Autopilot() *slog.Logger {
 	return Module("autopilot")
+}
+
+// Trace logs a message at Trace level using the default logger.
+// Use for high-frequency, low-level debugging that would be too verbose for Debug.
+func Trace(msg string, args ...any) {
+	slog.Log(context.Background(), LevelTrace, msg, args...)
+}
+
+// LogTrace logs a message at Trace level using the given logger.
+// Use for high-frequency, low-level debugging that would be too verbose for Debug.
+func LogTrace(l *slog.Logger, msg string, args ...any) {
+	l.Log(context.Background(), LevelTrace, msg, args...)
+}
+
+// TraceLogger wraps a slog.Logger with a convenient Trace method.
+type TraceLogger struct {
+	*slog.Logger
+}
+
+// Trace logs a message at Trace level.
+func (l TraceLogger) Trace(msg string, args ...any) {
+	l.Log(context.Background(), LevelTrace, msg, args...)
+}
+
+// WithTrace wraps a slog.Logger to add the Trace convenience method.
+func WithTrace(l *slog.Logger) TraceLogger {
+	return TraceLogger{Logger: l}
+}
+
+// Module-specific loggers with Trace support
+
+// TerminalTrace returns a logger for terminal/PTY logging with Trace support.
+func TerminalTrace() TraceLogger {
+	return WithTrace(Module("terminal"))
+}
+
+// GRPCTrace returns a logger for gRPC-related logging with Trace support.
+func GRPCTrace() TraceLogger {
+	return WithTrace(Module("grpc"))
+}
+
+// RunnerTrace returns a logger for runner core logging with Trace support.
+func RunnerTrace() TraceLogger {
+	return WithTrace(Module("runner"))
+}
+
+// AutopilotTrace returns a logger for AutopilotController operations with Trace support.
+func AutopilotTrace() TraceLogger {
+	return WithTrace(Module("autopilot"))
 }

@@ -7,9 +7,11 @@ import (
 )
 
 func (c *Client) readLoop() {
+	c.logger.Debug("Read loop starting")
 	defer c.wg.Done()
 	defer func() {
 		c.connected.Store(false)
+		c.logger.Info("Read loop exited")
 
 		// Signal writeLoop that this connection is done
 		// Safe to close multiple times via select
@@ -73,7 +75,9 @@ func (c *Client) readLoop() {
 }
 
 func (c *Client) writeLoop() {
+	c.logger.Debug("Write loop starting")
 	defer c.wg.Done()
+	defer c.logger.Info("Write loop exited")
 
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()

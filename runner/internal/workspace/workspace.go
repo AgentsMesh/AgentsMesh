@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"sync"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // Manager manages workspace directories and git worktrees
@@ -42,6 +44,8 @@ func NewManager(root, gitConfigPath string) (*Manager, error) {
 	if err := os.MkdirAll(root, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create workspace root: %w", err)
 	}
+
+	logger.Runner().Info("Workspace manager created", "root", root)
 
 	return &Manager{
 		root:          root,

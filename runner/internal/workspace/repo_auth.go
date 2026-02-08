@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // ensureRepository clones or fetches a repository
@@ -16,9 +18,12 @@ func (m *Manager) ensureRepository(ctx context.Context, repoURL, path string) er
 
 // ensureRepositoryWithAuth clones or fetches a repository with authentication options
 func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path string, opts *WorktreeOptions) error {
+	log := logger.Workspace()
+
 	// Check if repository exists (bare repo has HEAD file directly in path, not in .git subdirectory)
 	if _, err := os.Stat(filepath.Join(path, "HEAD")); err == nil {
 		// Bare repository exists, update remote URL with auth and fetch updates
+		log.Debug("Repository exists, fetching updates", "path", path)
 		// Update remote URL with authentication (for fetch operations)
 		authURL := m.prepareAuthURL(repoURL, opts)
 		setURLCmd := exec.CommandContext(ctx, "git", "remote", "set-url", "origin", authURL)
@@ -31,10 +36,12 @@ func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path st
 		if output, err := fetchCmd.CombinedOutput(); err != nil {
 			return fmt.Errorf("failed to fetch: %s, output: %s", err, output)
 		}
+		log.Debug("Repository fetched successfully", "path", path)
 		return nil
 	}
 
 	// Clone the repository (bare clone for worktree support)
+	log.Debug("Cloning repository", "url", repoURL, "path", path)
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return fmt.Errorf("failed to create repo parent dir: %w", err)
 	}
@@ -47,6 +54,7 @@ func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path st
 	if output, err := cloneCmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to clone: %s, output: %s", err, output)
 	}
+	log.Debug("Repository cloned successfully", "path", path)
 
 	// For bare repos, configure fetch refspec to get all remote branches as origin/*
 	// This enables using origin/branch_name references in worktree commands

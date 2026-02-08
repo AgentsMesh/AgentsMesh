@@ -3,9 +3,10 @@ package terminal
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"log/slog"
 	"strings"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // OnScreenUpdate should be called when the terminal screen content changes.
@@ -50,8 +51,7 @@ func (d *MultiSignalDetector) OnScreenUpdate(lines []string) {
 		if len(nonEmptyLines) > 5 {
 			nonEmptyLines = nonEmptyLines[len(nonEmptyLines)-5:]
 		}
-		slog.Debug("MultiSignalDetector screen update",
-			"module", "terminal",
+		logger.TerminalTrace().Trace("MultiSignalDetector screen update",
 			"hash_changed", hashChanged,
 			"hash", hash[:8],
 			"non_empty_count", len(nonEmptyLines),

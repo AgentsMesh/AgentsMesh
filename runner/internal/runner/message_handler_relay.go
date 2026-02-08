@@ -55,7 +55,7 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	if pod.Aggregator != nil {
 		pod.Aggregator.SetRelayOutput(func(data []byte) {
 			if err := relayClient.SendOutput(data); err != nil {
-				log.Debug("Failed to send output to relay", "pod_key", req.PodKey, "error", err)
+				logger.RunnerTrace().Trace("Failed to send output to relay", "pod_key", req.PodKey, "error", err)
 			}
 		})
 	}

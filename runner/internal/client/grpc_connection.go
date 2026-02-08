@@ -221,12 +221,14 @@ func (c *GRPCConnection) Connect() error {
 
 // Start starts the connection management loop.
 func (c *GRPCConnection) Start() {
+	logger.GRPC().Info("gRPC connection manager starting", "endpoint", c.endpoint)
 	go c.connectionLoop()
 }
 
 // Stop stops the connection and releases resources.
 func (c *GRPCConnection) Stop() {
 	c.stopOnce.Do(func() {
+		logger.GRPC().Info("gRPC connection stopping")
 		close(c.stopCh)
 		c.mu.Lock()
 		if c.conn != nil {
@@ -243,6 +245,7 @@ func (c *GRPCConnection) Stop() {
 			c.rootProvider = nil
 		}
 		c.mu.Unlock()
+		logger.GRPC().Info("gRPC connection stopped")
 	})
 }
 
@@ -305,6 +308,6 @@ func parseGRPCEndpoint(endpoint string) (string, error) {
 		return "", fmt.Errorf("missing host in endpoint")
 	}
 
-	log.Debug("Parsed gRPC endpoint", "endpoint", endpoint, "dial_target", u.Host)
+	logger.GRPCTrace().Trace("Parsed gRPC endpoint", "endpoint", endpoint, "dial_target", u.Host)
 	return u.Host, nil
 }

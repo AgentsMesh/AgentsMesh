@@ -2,8 +2,9 @@ package terminal
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // TerminalSnapshot represents a complete terminal state for relay transmission
@@ -22,14 +23,15 @@ type TerminalSnapshot struct {
 // Returns nil if the lock cannot be acquired immediately (e.g., Feed is in progress).
 // This is useful for periodic polling where skipping a snapshot is acceptable.
 func (vt *VirtualTerminal) TryGetSnapshot() *TerminalSnapshot {
+	log := logger.TerminalTrace()
 	if !vt.mu.TryRLock() {
-		slog.Debug("VirtualTerminal.TryGetSnapshot: lock busy, skipping")
+		log.Trace("VirtualTerminal.TryGetSnapshot: lock busy, skipping")
 		return nil // Lock held by Feed(), skip this tick
 	}
-	slog.Debug("VirtualTerminal.TryGetSnapshot: got RLock")
+	log.Trace("VirtualTerminal.TryGetSnapshot: got RLock")
 	defer func() {
 		vt.mu.RUnlock()
-		slog.Debug("VirtualTerminal.TryGetSnapshot: released RLock")
+		log.Trace("VirtualTerminal.TryGetSnapshot: released RLock")
 	}()
 	return vt.getSnapshotLocked()
 }
@@ -67,25 +69,27 @@ func (vt *VirtualTerminal) TryGetLines() []string {
 // When in alternate screen mode (TUI apps like Claude Code), returns the alt screen content.
 // The snapshot includes SerializedContent with ANSI escape sequences for proper xterm.js rendering.
 func (vt *VirtualTerminal) GetSnapshot() *TerminalSnapshot {
-	slog.Debug("VirtualTerminal.GetSnapshot: acquiring RLock")
+	log := logger.TerminalTrace()
+	log.Trace("VirtualTerminal.GetSnapshot: acquiring RLock")
 	vt.mu.RLock()
-	slog.Debug("VirtualTerminal.GetSnapshot: got RLock")
+	log.Trace("VirtualTerminal.GetSnapshot: got RLock")
 	defer func() {
 		vt.mu.RUnlock()
-		slog.Debug("VirtualTerminal.GetSnapshot: released RLock")
+		log.Trace("VirtualTerminal.GetSnapshot: released RLock")
 	}()
 	return vt.getSnapshotLocked()
 }
 
 // getSnapshotLocked returns a terminal snapshot. Caller must hold vt.mu (read or write).
 func (vt *VirtualTerminal) getSnapshotLocked() *TerminalSnapshot {
-	slog.Debug("VirtualTerminal.getSnapshotLocked: ENTER", "rows", vt.rows, "cols", vt.cols, "hasData", vt.hasData)
+	log := logger.TerminalTrace()
+	log.Trace("VirtualTerminal.getSnapshotLocked: ENTER", "rows", vt.rows, "cols", vt.cols, "hasData", vt.hasData)
 
 	// Use the current screen buffer (which points to altScreen when in alt mode)
 	// This is already set correctly by enterAltScreen/exitAltScreen
 	screen := vt.screen
 
-	slog.Debug("VirtualTerminal.getSnapshotLocked: collecting lines", "screen_len", len(screen))
+	log.Trace("VirtualTerminal.getSnapshotLocked: collecting lines", "screen_len", len(screen))
 
 	// Collect all visible lines from the screen buffer (plain text for backward compatibility)
 	lines := make([]string, vt.rows)
@@ -103,7 +107,7 @@ func (vt *VirtualTerminal) getSnapshotLocked() *TerminalSnapshot {
 		lines[row] = strings.TrimRight(line.String(), " ")
 	}
 
-	slog.Debug("VirtualTerminal.getSnapshotLocked: lines collected, serializing", "hasData", vt.hasData)
+	log.Trace("VirtualTerminal.getSnapshotLocked: lines collected, serializing", "hasData", vt.hasData)
 
 	// Generate serialized content with ANSI sequences for proper xterm.js rendering.
 	// Use the existing Serialize() method which is well-tested.
@@ -111,16 +115,16 @@ func (vt *VirtualTerminal) getSnapshotLocked() *TerminalSnapshot {
 	// This handles cases like TUI apps that clear screen and set cursor position without visible text.
 	var serialized string
 	if vt.hasData {
-		slog.Debug("VirtualTerminal.getSnapshotLocked: calling serializeNoLock")
+		log.Trace("VirtualTerminal.getSnapshotLocked: calling serializeNoLock")
 		serialized = vt.serializeNoLock(SerializeOptions{
 			ScrollbackLines:  0,     // Don't include scrollback history
 			ExcludeAltBuffer: false, // Include alt buffer if in alt screen mode
 			ExcludeModes:     true,  // Don't include mode sequences (DECCKM, etc.)
 		})
-		slog.Debug("VirtualTerminal.getSnapshotLocked: serializeNoLock done", "serialized_len", len(serialized))
+		log.Trace("VirtualTerminal.getSnapshotLocked: serializeNoLock done", "serialized_len", len(serialized))
 	}
 
-	slog.Debug("VirtualTerminal.getSnapshotLocked: EXIT")
+	log.Trace("VirtualTerminal.getSnapshotLocked: EXIT")
 
 	return &TerminalSnapshot{
 		Cols:              vt.cols,

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // ProgressTracker monitors file changes and git status to track task progress.
@@ -79,7 +81,7 @@ func (pt *ProgressTracker) CaptureSnapshot() *ProgressSnapshot {
 	pt.snapshots = append(pt.snapshots, *snapshot)
 	pt.lastSnapshot = snapshot
 
-	pt.log.Debug("Captured progress snapshot",
+	logger.AutopilotTrace().Trace("Captured progress snapshot",
 		"files_changed", len(snapshot.FilesModified),
 		"has_changes", gitDiff.HasChanges,
 		"insertions", gitDiff.Insertions,

@@ -5,6 +5,8 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // AgentState represents the detected state of an AI agent.
@@ -119,6 +121,9 @@ func (sdc *StateDetectorCoordinator) Start() {
 // Stop stops the state detection loop.
 func (sdc *StateDetectorCoordinator) Stop() {
 	sdc.cancel()
+	if sdc.log != nil {
+		sdc.log.Info("StateDetectorCoordinator stopped", "autopilot_key", sdc.autopilotKey)
+	}
 }
 
 // runStateDetection runs the periodic state detection loop.
@@ -143,11 +148,9 @@ func (sdc *StateDetectorCoordinator) runStateDetection() {
 		case <-ticker.C:
 			if sdc.detector != nil {
 				state := sdc.detector.DetectState()
-				if sdc.log != nil {
-					sdc.log.Debug("StateDetectorCoordinator tick",
-						"autopilot_key", sdc.autopilotKey,
-						"detected_state", state)
-				}
+				logger.AutopilotTrace().Trace("StateDetectorCoordinator tick",
+					"autopilot_key", sdc.autopilotKey,
+					"detected_state", state)
 			}
 		}
 	}

@@ -31,7 +31,7 @@ func (r *Runner) GetSandboxStatus(podKey string) *client.SandboxStatusInfo {
 
 	info, err := os.Stat(sandboxPath)
 	if os.IsNotExist(err) {
-		log.Debug("Sandbox not found", "pod_key", podKey, "path", sandboxPath)
+		logger.RunnerTrace().Trace("Sandbox not found", "pod_key", podKey, "path", sandboxPath)
 		return &client.SandboxStatusInfo{
 			PodKey:    podKey,
 			Exists:    false,
@@ -72,7 +72,7 @@ func (r *Runner) GetSandboxStatus(podKey string) *client.SandboxStatusInfo {
 	// Skip for now to avoid blocking the query
 	// status.SizeBytes = r.getDirSize(sandboxPath)
 
-	log.Debug("Sandbox status retrieved",
+	logger.RunnerTrace().Trace("Sandbox status retrieved",
 		"pod_key", podKey,
 		"exists", status.Exists,
 		"sandbox_path", status.SandboxPath,
@@ -92,7 +92,6 @@ type gitInfo struct {
 
 // getGitInfo retrieves git information from a workspace directory
 func (r *Runner) getGitInfo(workspacePath string) gitInfo {
-	log := logger.Pod()
 	info := gitInfo{}
 
 	// Check if it's a git repository
@@ -125,7 +124,7 @@ func (r *Runner) getGitInfo(workspacePath string) gitInfo {
 		info.HasUncommittedChanges = len(strings.TrimSpace(out)) > 0
 	}
 
-	log.Debug("Git info retrieved",
+	logger.RunnerTrace().Trace("Git info retrieved",
 		"path", workspacePath,
 		"remote", info.RepositoryURL,
 		"branch", info.BranchName,

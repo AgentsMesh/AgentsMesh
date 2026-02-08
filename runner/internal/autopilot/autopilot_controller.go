@@ -174,6 +174,11 @@ func NewAutopilotController(cfg Config) *AutopilotController {
 	// Set up resume callback now that all components are initialized
 	ac.userHandler.SetOnResumeCallback(ac.onResumeFromUserInteraction)
 
+	log.Info("AutopilotController created",
+		"autopilot_key", cfg.AutopilotKey,
+		"pod_key", cfg.PodKey,
+		"max_iterations", cfg.ProtoConfig.MaxIterations)
+
 	return ac
 }
 
@@ -210,8 +215,11 @@ func (ac *AutopilotController) GetStatus() Status {
 // This is the main event-driven entry point triggered by StateDetectorCoordinator.
 // Includes deduplication to prevent rapid re-triggering.
 func (ac *AutopilotController) OnPodWaiting() {
+	ac.log.Debug("OnPodWaiting triggered", "autopilot_key", ac.key)
+
 	// Check trigger deduplication
 	if !ac.iterCtrl.CheckTriggerDedup() {
+		ac.log.Debug("Skipping iteration - deduplication", "autopilot_key", ac.key)
 		return
 	}
 
@@ -223,6 +231,7 @@ func (ac *AutopilotController) OnPodWaiting() {
 
 	// Check if phase allows iteration
 	if !ac.phaseMgr.CanProcessIteration() {
+		ac.log.Debug("Skipping iteration - phase not ready", "autopilot_key", ac.key, "phase", ac.phaseMgr.GetPhase())
 		return
 	}
 

@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal"
 )
@@ -55,8 +56,13 @@ func NewVirtualTerminal(cols, rows, historyLimit int) *terminal.VirtualTerminal 
 // SetStatus sets the pod status in a thread-safe manner
 func (p *Pod) SetStatus(status string) {
 	p.statusMu.Lock()
-	defer p.statusMu.Unlock()
+	oldStatus := p.Status
 	p.Status = status
+	p.statusMu.Unlock()
+
+	if oldStatus != status {
+		logger.Pod().Debug("Pod status changed", "pod_key", p.PodKey, "from", oldStatus, "to", status)
+	}
 }
 
 // GetStatus returns the pod status in a thread-safe manner
@@ -92,6 +98,7 @@ func (p *Pod) DisconnectRelay() {
 	p.relayMu.Lock()
 	defer p.relayMu.Unlock()
 	if p.RelayClient != nil {
+		logger.Pod().Debug("Disconnecting relay client", "pod_key", p.PodKey)
 		p.RelayClient.Stop()
 		p.RelayClient = nil
 	}

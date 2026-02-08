@@ -1,8 +1,9 @@
 package terminal
 
 import (
-	"log/slog"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // confidenceLogData holds data for logging confidence calculation results.
@@ -57,8 +58,7 @@ func (d *MultiSignalDetector) DetectState() AgentState {
 	d.mu.Unlock()
 
 	// Debug logging OUTSIDE lock to avoid blocking PTY output
-	slog.Debug("MultiSignalDetector confidence calculation",
-		"module", "terminal",
+	logger.TerminalTrace().Trace("MultiSignalDetector confidence calculation",
 		"activity_state", logData.activityState,
 		"activity_contrib", logData.activityContrib,
 		"screen_stable_time", logData.screenStableTime,

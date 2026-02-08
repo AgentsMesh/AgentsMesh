@@ -147,7 +147,7 @@ func (c *GRPCConnection) checkCertificateExpiry() {
 		return
 	}
 
-	log.Debug("Certificate expiry check", "days_until_expiry", daysUntilExpiry)
+	logger.GRPCTrace().Trace("Certificate expiry check", "days_until_expiry", daysUntilExpiry)
 
 	// Check if renewal is needed (30 days before expiry by default)
 	if daysUntilExpiry <= float64(c.certRenewalDays) {

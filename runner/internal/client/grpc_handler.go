@@ -16,6 +16,7 @@ import (
 func (c *GRPCConnection) readLoop(ctx context.Context, done chan<- struct{}) {
 	defer close(done) // Signal exit to other goroutines
 	log := logger.GRPC()
+	log.Info("Read loop starting")
 	for {
 		msg, err := c.stream.Recv()
 		if err != nil {
@@ -24,7 +25,7 @@ func (c *GRPCConnection) readLoop(ctx context.Context, done chan<- struct{}) {
 				return
 			}
 			if status.Code(err) == codes.Canceled {
-				log.Debug("Stream cancelled")
+				logger.GRPCTrace().Trace("Stream cancelled")
 			} else {
 				log.Error("Stream error", "error", err)
 			}

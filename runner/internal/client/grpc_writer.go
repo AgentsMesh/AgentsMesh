@@ -15,6 +15,9 @@ import (
 // Includes stuck detection: triggers reconnect if no successful send for 30 seconds.
 func (c *GRPCConnection) writeLoop(ctx context.Context, done <-chan struct{}) {
 	log := logger.GRPC()
+	log.Info("Write loop starting")
+	defer log.Info("Write loop exited")
+
 	stuckTicker := time.NewTicker(10 * time.Second)
 	defer stuckTicker.Stop()
 
@@ -57,7 +60,7 @@ func (c *GRPCConnection) writeLoop(ctx context.Context, done <-chan struct{}) {
 				c.sendAndRecord(msg)
 			case msg := <-c.terminalCh:
 				// Process terminal messages when no control messages pending
-				log.Debug("writeLoop: sending terminal message",
+				logger.GRPCTrace().Trace("writeLoop: sending terminal message",
 					"queue_len", len(c.terminalCh))
 				c.sendAndRecord(msg)
 			}

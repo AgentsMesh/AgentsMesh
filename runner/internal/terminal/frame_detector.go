@@ -141,7 +141,7 @@ func (d *FrameDetector) DiscardOldFrames(buffer *bytes.Buffer) int {
 		copy(newData, data[discardLen:])
 		buffer.Reset()
 		buffer.Write(newData)
-		logger.Terminal().Debug("FrameDetector: discarded old frames (clear screen)",
+		logger.TerminalTrace().Trace("FrameDetector: discarded old frames (clear screen)",
 			"discarded_bytes", discardLen, "kept_bytes", len(newData))
 		return discardLen
 	}
@@ -236,7 +236,7 @@ func (d *FrameDetector) discardWithSyncFramesContentAware(buffer *bytes.Buffer, 
 	buffer.Reset()
 	buffer.Write(newData)
 
-	logger.Terminal().Debug("FrameDetector: discarded old frames (content-aware)",
+	logger.TerminalTrace().Trace("FrameDetector: discarded old frames (content-aware)",
 		"discarded_bytes", discardLen, "kept_bytes", len(newData))
 
 	return discardLen

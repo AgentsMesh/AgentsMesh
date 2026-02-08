@@ -20,6 +20,8 @@ func (t *Terminal) Resize(cols, rows int) error {
 		return fmt.Errorf("terminal is not running")
 	}
 
+	logger.Terminal().Debug("Terminal resize", "cols", cols, "rows", rows)
+
 	return pty.Setsize(t.pty, &pty.Winsize{
 		Rows: uint16(rows),
 		Cols: uint16(cols),
@@ -77,7 +79,7 @@ func (t *Terminal) PauseRead() {
 	t.readPauseMu.Unlock()
 
 	if !wasPaused {
-		logger.Terminal().Debug("PTY read paused (backpressure)")
+		logger.TerminalTrace().Trace("PTY read paused (backpressure)")
 	}
 }
 
@@ -96,7 +98,7 @@ func (t *Terminal) ResumeRead() {
 		default:
 			// Channel already has a signal pending
 		}
-		logger.Terminal().Debug("PTY read resumed")
+		logger.TerminalTrace().Trace("PTY read resumed")
 	}
 }
 

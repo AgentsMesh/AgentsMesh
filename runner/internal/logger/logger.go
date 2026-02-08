@@ -2,8 +2,8 @@
 package logger
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -12,6 +12,10 @@ import (
 )
 
 const (
+	// LevelTrace is a custom log level lower than Debug for high-frequency logging.
+	// Use Trace for extremely verbose logs that are only useful during deep debugging.
+	LevelTrace = slog.Level(-8)
+
 	// DefaultMaxFileSize is the default maximum log file size (10MB)
 	DefaultMaxFileSize = 10 * 1024 * 1024
 	// DefaultMaxBackups is the default number of backup files to keep
@@ -20,11 +24,13 @@ const (
 
 // Config holds logger configuration.
 type Config struct {
-	Level       string // debug, info, warn, error
+	Level       string // trace, debug, info, warn, error
 	FilePath    string // path to log file, empty means stderr only
 	Format      string // json, text (default: text)
 	MaxFileSize int64  // max file size in bytes before rotation (default: 10MB)
 	MaxBackups  int    // max number of backup files to keep (default: 3)
+	// Note: File always logs Debug+ regardless of Level setting.
+	// Terminal (stderr) follows the Level setting.
 }
 
 // Logger wraps slog.Logger with additional functionality.
@@ -146,6 +152,64 @@ func (rw *rotatingWriter) Close() error {
 	return nil
 }
 
+// multiHandler dispatches log records to multiple handlers with different levels.
+// File handler always logs Debug+, stderr handler follows configured level.
+type multiHandler struct {
+	fileHandler   slog.Handler // File: Debug level (always)
+	stderrHandler slog.Handler // Stderr: configured level
+	fileLevel     slog.Level   // Debug
+	stderrLevel   slog.Level   // configured level
+}
+
+func (h *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	// Enabled if either handler accepts this level
+	return level >= h.fileLevel || level >= h.stderrLevel
+}
+
+func (h *multiHandler) Handle(ctx context.Context, r slog.Record) error {
+	// File always logs Debug+ (not Trace)
+	if h.fileHandler != nil && r.Level >= h.fileLevel {
+		if err := h.fileHandler.Handle(ctx, r); err != nil {
+			return err
+		}
+	}
+	// Stderr follows configured level
+	if h.stderrHandler != nil && r.Level >= h.stderrLevel {
+		if err := h.stderrHandler.Handle(ctx, r); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newHandler := &multiHandler{
+		fileLevel:   h.fileLevel,
+		stderrLevel: h.stderrLevel,
+	}
+	if h.fileHandler != nil {
+		newHandler.fileHandler = h.fileHandler.WithAttrs(attrs)
+	}
+	if h.stderrHandler != nil {
+		newHandler.stderrHandler = h.stderrHandler.WithAttrs(attrs)
+	}
+	return newHandler
+}
+
+func (h *multiHandler) WithGroup(name string) slog.Handler {
+	newHandler := &multiHandler{
+		fileLevel:   h.fileLevel,
+		stderrLevel: h.stderrLevel,
+	}
+	if h.fileHandler != nil {
+		newHandler.fileHandler = h.fileHandler.WithGroup(name)
+	}
+	if h.stderrHandler != nil {
+		newHandler.stderrHandler = h.stderrHandler.WithGroup(name)
+	}
+	return newHandler
+}
+
 var (
 	defaultLogger *Logger
 	mu            sync.RWMutex
@@ -172,15 +236,48 @@ func Init(cfg Config) error {
 }
 
 // New creates a new logger with the given configuration.
+// File always logs Debug+ regardless of Level setting.
+// Stderr follows the Level setting (default: Info).
 func New(cfg Config) (*Logger, error) {
-	var writers []io.Writer
-
-	// Always write to stderr (stdout reserved for user interaction)
-	writers = append(writers, os.Stderr)
-
 	var rotWriter *rotatingWriter
 
-	// Optionally write to file with rotation
+	// Parse configured log level (for stderr)
+	stderrLevel := parseLevel(cfg.Level)
+	// File always uses Debug level
+	fileLevel := slog.LevelDebug
+
+	// Common ReplaceAttr function for formatting
+	replaceAttr := func(groups []string, a slog.Attr) slog.Attr {
+		// Custom level name for Trace
+		if a.Key == slog.LevelKey {
+			if lvl, ok := a.Value.Any().(slog.Level); ok && lvl == LevelTrace {
+				return slog.String(slog.LevelKey, "TRACE")
+			}
+		}
+		// Format time as short format for text output
+		if a.Key == slog.TimeKey && cfg.Format != "json" {
+			if t, ok := a.Value.Any().(time.Time); ok {
+				return slog.String(slog.TimeKey, t.Format("15:04:05.000"))
+			}
+		}
+		return a
+	}
+
+	// Create stderr handler
+	stderrOpts := &slog.HandlerOptions{
+		Level:       stderrLevel,
+		AddSource:   stderrLevel <= slog.LevelDebug,
+		ReplaceAttr: replaceAttr,
+	}
+	var stderrHandler slog.Handler
+	if cfg.Format == "json" {
+		stderrHandler = slog.NewJSONHandler(os.Stderr, stderrOpts)
+	} else {
+		stderrHandler = slog.NewTextHandler(os.Stderr, stderrOpts)
+	}
+
+	// Create file handler if file path is configured
+	var fileHandler slog.Handler
 	if cfg.FilePath != "" {
 		maxSize := cfg.MaxFileSize
 		if maxSize <= 0 {
@@ -197,35 +294,25 @@ func New(cfg Config) (*Logger, error) {
 			return nil, err
 		}
 		rotWriter = rw
-		writers = append(writers, rw)
+
+		fileOpts := &slog.HandlerOptions{
+			Level:       fileLevel,
+			AddSource:   true, // Always include source in file logs
+			ReplaceAttr: replaceAttr,
+		}
+		if cfg.Format == "json" {
+			fileHandler = slog.NewJSONHandler(rw, fileOpts)
+		} else {
+			fileHandler = slog.NewTextHandler(rw, fileOpts)
+		}
 	}
 
-	// Create multi-writer
-	multiWriter := io.MultiWriter(writers...)
-
-	// Parse log level
-	level := parseLevel(cfg.Level)
-
-	// Create handler based on format
-	var handler slog.Handler
-	opts := &slog.HandlerOptions{
-		Level:     level,
-		AddSource: level == slog.LevelDebug,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// Format time as short format for text output
-			if a.Key == slog.TimeKey && cfg.Format != "json" {
-				if t, ok := a.Value.Any().(time.Time); ok {
-					return slog.String(slog.TimeKey, t.Format("15:04:05.000"))
-				}
-			}
-			return a
-		},
-	}
-
-	if cfg.Format == "json" {
-		handler = slog.NewJSONHandler(multiWriter, opts)
-	} else {
-		handler = slog.NewTextHandler(multiWriter, opts)
+	// Create multi-handler that dispatches to both
+	handler := &multiHandler{
+		fileHandler:   fileHandler,
+		stderrHandler: stderrHandler,
+		fileLevel:     fileLevel,
+		stderrLevel:   stderrLevel,
 	}
 
 	logger := slog.New(handler)
@@ -248,6 +335,8 @@ func (l *Logger) Close() error {
 // parseLevel converts string level to slog.Level.
 func parseLevel(level string) slog.Level {
 	switch level {
+	case "trace":
+		return LevelTrace
 	case "debug":
 		return slog.LevelDebug
 	case "info":

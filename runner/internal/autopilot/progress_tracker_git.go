@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // getGitDiffSummary retrieves git diff information for the working directory.
@@ -37,7 +39,7 @@ func (pt *ProgressTracker) getGitDiffSummary() *GitDiffSummary {
 	cmd.Dir = pt.workDir
 	output, err := cmd.Output()
 	if err != nil {
-		pt.log.Debug("Failed to get git status", "error", err)
+		logger.AutopilotTrace().Trace("Failed to get git status", "error", err)
 		return summary
 	}
 

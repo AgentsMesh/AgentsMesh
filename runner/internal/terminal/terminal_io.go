@@ -13,7 +13,7 @@ import (
 // Implements ttyd-style backpressure: when paused, blocks until resumed.
 // This prevents unbounded memory growth when consumer can't keep up.
 func (t *Terminal) readOutput() {
-	log := logger.Terminal()
+	log := logger.TerminalTrace()
 	buf := make([]byte, 4096)
 	readCount := 0
 	timeoutCount := 0            // Track consecutive timeouts
@@ -33,7 +33,7 @@ func (t *Terminal) readOutput() {
 			select {
 			case <-t.resumeCh:
 				// Resumed, continue reading
-				log.Debug("PTY read loop resumed from backpressure")
+				log.Trace("PTY read loop resumed from backpressure")
 			case <-time.After(100 * time.Millisecond):
 				// Periodic check - verify terminal isn't closed
 				t.mu.Lock()
@@ -95,8 +95,8 @@ func (t *Terminal) readOutput() {
 		timeoutCount = 0            // Reset timeout counter on successful read
 		lastOutputTime = time.Now() // Update last output time
 		if n > 0 {
-			// Log every read for debugging
-			log.Debug("PTY read SUCCESS",
+			// Log every read for debugging (Trace level - high frequency)
+			log.Trace("PTY read SUCCESS",
 				"read_num", readCount,
 				"bytes", n)
 
@@ -110,13 +110,13 @@ func (t *Terminal) readOutput() {
 			t.mu.Unlock()
 
 			if handler != nil {
-				log.Debug("PTY calling handler",
+				log.Trace("PTY calling handler",
 					"read_num", readCount,
 					"bytes", n)
 				startHandler := time.Now()
 				handler(data)
 				handlerTime := time.Since(startHandler)
-				log.Debug("PTY handler returned",
+				log.Trace("PTY handler returned",
 					"read_num", readCount,
 					"bytes", n,
 					"handler_time", handlerTime)
@@ -132,6 +132,7 @@ func (t *Terminal) readOutput() {
 
 // waitExit waits for the process to exit
 func (t *Terminal) waitExit() {
+	log := logger.Terminal()
 	exitCode := 0
 	if err := t.cmd.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -140,6 +141,8 @@ func (t *Terminal) waitExit() {
 			exitCode = -1
 		}
 	}
+
+	log.Info("Process exited", "pid", t.cmd.Process.Pid, "exit_code", exitCode)
 
 	t.mu.Lock()
 	t.closed = true

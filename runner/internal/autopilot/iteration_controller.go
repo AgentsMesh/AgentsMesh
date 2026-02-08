@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // IterationController manages iteration counting, trigger deduplication,
@@ -119,12 +120,10 @@ func (ic *IterationController) CheckTriggerDedup() bool {
 	defer ic.triggerMu.Unlock()
 
 	if time.Since(ic.lastTriggerTime) < ic.minTriggerGap {
-		if ic.log != nil {
-			ic.log.Debug("Skipping iteration - too soon since last trigger",
-				"autopilot_key", ic.autopilotKey,
-				"gap", time.Since(ic.lastTriggerTime),
-				"min_gap", ic.minTriggerGap)
-		}
+		logger.AutopilotTrace().Trace("Skipping iteration - too soon since last trigger",
+			"autopilot_key", ic.autopilotKey,
+			"gap", time.Since(ic.lastTriggerTime),
+			"min_gap", ic.minTriggerGap)
 		return false
 	}
 	ic.lastTriggerTime = time.Now()
@@ -253,11 +252,9 @@ func (ic *IterationController) ResetErrors() {
 	defer ic.mu.Unlock()
 
 	if ic.consecutiveErrors > 0 {
-		if ic.log != nil {
-			ic.log.Debug("Reset consecutive errors",
-				"autopilot_key", ic.autopilotKey,
-				"previous_count", ic.consecutiveErrors)
-		}
+		logger.AutopilotTrace().Trace("Reset consecutive errors",
+			"autopilot_key", ic.autopilotKey,
+			"previous_count", ic.consecutiveErrors)
 		ic.consecutiveErrors = 0
 	}
 }

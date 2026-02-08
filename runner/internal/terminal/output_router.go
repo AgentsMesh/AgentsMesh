@@ -44,16 +44,17 @@ func (r *OutputRouter) Route(data []byte) {
 	// Priority: Relay mode > Legacy gRPC mode
 	// When Relay is connected, send data ONLY through Relay (not gRPC)
 	// This avoids duplicate data transmission and reduces Backend load
+	log := logger.TerminalTrace()
 	if relayOutput != nil {
-		logger.Terminal().Debug("OutputRouter: sending to relay", "bytes", len(data))
+		log.Trace("OutputRouter: sending to relay", "bytes", len(data))
 		relayOutput(data)
 	} else if onFlush != nil {
 		// Legacy fallback: send through gRPC when no Relay connected
 		// This ensures backward compatibility during migration
-		logger.Terminal().Debug("OutputRouter: sending to gRPC (no relay)", "bytes", len(data))
+		log.Trace("OutputRouter: sending to gRPC (no relay)", "bytes", len(data))
 		onFlush(data)
 	} else {
-		logger.Terminal().Warn("OutputRouter: no output callback set", "bytes", len(data))
+		log.Warn("OutputRouter: no output callback set", "bytes", len(data))
 	}
 }
 

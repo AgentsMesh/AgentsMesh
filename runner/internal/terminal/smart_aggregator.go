@@ -59,9 +59,9 @@ type SmartAggregator struct {
 // - queueUsageFn: returns queue usage ratio (0.0 to 1.0), used for adaptive delay
 func NewSmartAggregator(onFlush func([]byte), queueUsageFn func() float64, opts ...SmartAggregatorOption) *SmartAggregator {
 	// Default configuration
-	baseDelay := 50 * time.Millisecond   // 20 FPS - more aggressive aggregation
-	maxDelay := 500 * time.Millisecond   // 2 FPS - allow more buffering under load
-	maxSize := 1024 * 1024               // 1MB - generous buffer to avoid any truncation issues
+	baseDelay := 50 * time.Millisecond  // 20 FPS - more aggressive aggregation
+	maxDelay := 500 * time.Millisecond  // 2 FPS - allow more buffering under load
+	maxSize := 1024 * 1024              // 1MB - generous buffer to avoid any truncation issues
 
 	a := &SmartAggregator{
 		buffer:       NewFrameBuffer(maxSize),
@@ -74,6 +74,11 @@ func NewSmartAggregator(onFlush func([]byte), queueUsageFn func() float64, opts 
 		opt(a)
 	}
 
+	logger.Terminal().Debug("SmartAggregator created",
+		"base_delay", baseDelay,
+		"max_delay", maxDelay,
+		"max_size", maxSize)
+
 	return a
 }
 
@@ -81,6 +86,7 @@ func NewSmartAggregator(onFlush func([]byte), queueUsageFn func() float64, opts 
 // The aggregator will continue buffering data but won't flush until Resume is called.
 // Also propagates backpressure to the PTY layer via onPause callback (ttyd-style).
 func (a *SmartAggregator) Pause() {
+	logger.Terminal().Debug("SmartAggregator pausing")
 	a.backpressure.Pause()
 }
 
@@ -88,6 +94,7 @@ func (a *SmartAggregator) Pause() {
 // This triggers an immediate flush attempt if there's buffered data.
 // Also releases backpressure on the PTY layer via onResume callback (ttyd-style).
 func (a *SmartAggregator) Resume() {
+	logger.Terminal().Debug("SmartAggregator resuming")
 	if a.backpressure.Resume() {
 		// Trigger immediate flush check
 		go a.timerFlush()
@@ -127,7 +134,7 @@ func (a *SmartAggregator) Write(data []byte) {
 	if a.serializeCallback != nil {
 		a.hasPendingData = true
 
-		logger.Terminal().Debug("SmartAggregator Write (serialize mode)",
+		logger.TerminalTrace().Trace("SmartAggregator Write (serialize mode)",
 			"usage", usage, "paused", paused, "has_timer", a.timer != nil)
 
 		// Critical load (>50%): skip immediate flush, just accumulate
@@ -149,7 +156,7 @@ func (a *SmartAggregator) Write(data []byte) {
 	// Legacy mode: buffer raw data with frame-aware management
 	a.buffer.Write(data)
 
-	logger.Terminal().Debug("SmartAggregator Write (legacy mode)",
+	logger.TerminalTrace().Trace("SmartAggregator Write (legacy mode)",
 		"data_len", len(data), "buffer_len", a.buffer.Len(),
 		"usage", usage, "paused", paused, "has_timer", a.timer != nil)
 
@@ -198,6 +205,7 @@ func (a *SmartAggregator) Stop() {
 		return
 	}
 	a.stopped = true
+	logger.Terminal().Info("SmartAggregator stopped")
 	a.forceFlushLocked()
 }
 

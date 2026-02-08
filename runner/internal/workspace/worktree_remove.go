@@ -13,6 +13,9 @@ import (
 
 // RemoveWorktree removes a worktree
 func (m *Manager) RemoveWorktree(ctx context.Context, worktreePath string) error {
+	log := logger.Workspace()
+	log.Info("Removing worktree", "path", worktreePath)
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -20,6 +23,7 @@ func (m *Manager) RemoveWorktree(ctx context.Context, worktreePath string) error
 	repoPath, err := m.findMainRepo(worktreePath)
 	if err != nil {
 		// If we can't find the main repo, just remove the directory
+		log.Debug("Main repo not found, removing directory directly", "path", worktreePath)
 		return os.RemoveAll(worktreePath)
 	}
 
@@ -80,6 +84,9 @@ func (m *Manager) findMainRepo(worktreePath string) (string, error) {
 // CleanupOldWorktrees removes invalid worktrees from sandboxes.
 // Worktrees are located at sandboxes/{podKey}/worktree
 func (m *Manager) CleanupOldWorktrees(ctx context.Context) error {
+	log := logger.Workspace()
+	log.Info("Starting worktree cleanup")
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -92,6 +99,7 @@ func (m *Manager) CleanupOldWorktrees(ctx context.Context) error {
 		return err
 	}
 
+	cleanedCount := 0
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			continue
@@ -105,9 +113,11 @@ func (m *Manager) CleanupOldWorktrees(ctx context.Context) error {
 			if _, err := os.Stat(filepath.Join(worktreePath, ".git")); os.IsNotExist(err) {
 				// Invalid worktree (no .git), remove it
 				os.RemoveAll(worktreePath)
+				cleanedCount++
 			}
 		}
 	}
 
+	log.Info("Worktree cleanup completed", "cleaned_count", cleanedCount)
 	return nil
 }

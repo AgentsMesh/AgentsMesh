@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // ==================== Certificate Reactivation ====================
@@ -32,6 +34,9 @@ type ReactivationResult struct {
 
 // Reactivate reactivates a runner with an expired certificate using a one-time token.
 func Reactivate(ctx context.Context, req ReactivationRequest) (*ReactivationResult, error) {
+	log := logger.GRPC()
+	log.Info("Starting runner reactivation", "server_url", req.ServerURL)
+
 	requestURL := fmt.Sprintf("%s/api/v1/runners/grpc/reactivate", req.ServerURL)
 
 	body := map[string]interface{}{
@@ -69,6 +74,7 @@ func Reactivate(ctx context.Context, req ReactivationRequest) (*ReactivationResu
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
+	log.Info("Runner reactivation successful")
 	return &result, nil
 }
 
@@ -92,6 +98,9 @@ type RenewalResult struct {
 // RenewCertificate renews the runner's certificate using mTLS authentication.
 // Note: This requires a valid (not expired) certificate for mTLS.
 func RenewCertificate(ctx context.Context, req RenewalRequest) (*RenewalResult, error) {
+	log := logger.GRPC()
+	log.Info("Starting certificate renewal", "server_url", req.ServerURL)
+
 	// Load client certificate for mTLS
 	cert, err := tls.LoadX509KeyPair(req.CertFile, req.KeyFile)
 	if err != nil {
@@ -146,5 +155,6 @@ func RenewCertificate(ctx context.Context, req RenewalRequest) (*RenewalResult, 
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
+	log.Info("Certificate renewal successful", "expires_at", time.Unix(result.ExpiresAt, 0).Format(time.RFC3339))
 	return &result, nil
 }

@@ -81,9 +81,11 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 
 	// Resolve template variables in launch args
 	resolvedArgs := b.resolveArgs(b.cmd.LaunchArgs, sandboxRoot, workingDir)
+	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
 
 	// Merge environment variables
 	envVars := b.mergeEnvVars()
+	logger.Pod().Debug("Merged environment variables", "pod_key", b.cmd.PodKey, "count", len(envVars))
 
 	// Report progress: starting PTY
 	b.sendProgress("starting_pty", 80, "Starting terminal...")
@@ -122,7 +124,7 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		Status:      PodStatusInitializing,
 	}
 
-	logger.Pod().Info("Pod built", "pod_key", b.cmd.PodKey, "working_dir", workingDir)
+	logger.Pod().Info("Pod built", "pod_key", b.cmd.PodKey, "working_dir", workingDir, "cols", b.cols, "rows", b.rows)
 
 	// Report progress: ready
 	b.sendProgress("ready", 100, "Pod is ready")

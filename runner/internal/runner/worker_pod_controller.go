@@ -127,9 +127,9 @@ func (a *multiSignalDetectorAdapter) OnScreenUpdate(lines []string) {
 // OnOutput should be called when terminal output is received.
 // This feeds the output activity detector signal.
 func (a *multiSignalDetectorAdapter) OnOutput(bytes int) {
-	logger.Terminal().Debug("multiSignalDetectorAdapter.OnOutput ENTER", "bytes", bytes)
+	logger.TerminalTrace().Trace("multiSignalDetectorAdapter.OnOutput ENTER", "bytes", bytes)
 	a.detector.OnOutput(bytes)
-	logger.Terminal().Debug("multiSignalDetectorAdapter.OnOutput EXIT", "bytes", bytes)
+	logger.TerminalTrace().Trace("multiSignalDetectorAdapter.OnOutput EXIT", "bytes", bytes)
 }
 
 // OnOSCTitle should be called when an OSC title update is received.

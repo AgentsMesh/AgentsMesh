@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"sync"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // Manager manages multiple MCP servers
@@ -54,6 +56,7 @@ func (m *Manager) AddServer(cfg *Config) {
 
 	server := NewServer(cfg)
 	m.servers[cfg.Name] = server
+	logger.MCP().Debug("MCP server added", "name", cfg.Name)
 }
 
 // StartServer starts a specific MCP server
@@ -66,7 +69,13 @@ func (m *Manager) StartServer(ctx context.Context, name string) error {
 		return fmt.Errorf("server not found: %s", name)
 	}
 
-	return server.Start(ctx)
+	logger.MCP().Info("Starting MCP server", "name", name)
+	if err := server.Start(ctx); err != nil {
+		logger.MCP().Error("Failed to start MCP server", "name", name, "error", err)
+		return err
+	}
+	logger.MCP().Info("MCP server started", "name", name)
+	return nil
 }
 
 // StopServer stops a specific MCP server
@@ -79,7 +88,13 @@ func (m *Manager) StopServer(name string) error {
 		return fmt.Errorf("server not found: %s", name)
 	}
 
-	return server.Stop()
+	logger.MCP().Info("Stopping MCP server", "name", name)
+	if err := server.Stop(); err != nil {
+		logger.MCP().Error("Failed to stop MCP server", "name", name, "error", err)
+		return err
+	}
+	logger.MCP().Info("MCP server stopped", "name", name)
+	return nil
 }
 
 // StartAll starts all configured MCP servers
@@ -91,9 +106,14 @@ func (m *Manager) StartAll(ctx context.Context) error {
 	}
 	m.mu.RUnlock()
 
+	if len(servers) > 0 {
+		logger.MCP().Info("Starting all MCP servers", "count", len(servers))
+	}
+
 	var firstErr error
 	for _, server := range servers {
 		if err := server.Start(ctx); err != nil {
+			logger.MCP().Error("Failed to start MCP server", "name", server.Name(), "error", err)
 			if firstErr == nil {
 				firstErr = fmt.Errorf("failed to start %s: %w", server.Name(), err)
 			}
@@ -111,6 +131,10 @@ func (m *Manager) StopAll() {
 		servers = append(servers, s)
 	}
 	m.mu.RUnlock()
+
+	if len(servers) > 0 {
+		logger.MCP().Info("Stopping all MCP servers", "count", len(servers))
+	}
 
 	for _, server := range servers {
 		server.Stop()

@@ -16,9 +16,11 @@ func (a *SmartAggregator) timerFlush() {
 		return
 	}
 
+	log := logger.TerminalTrace()
+
 	// Check if paused by consumer (backpressure)
 	if a.backpressure.IsPaused() {
-		logger.Terminal().Debug("SmartAggregator timerFlush: paused, rescheduling",
+		log.Trace("SmartAggregator timerFlush: paused, rescheduling",
 			"buffer_len", a.buffer.Len())
 		a.timer = time.AfterFunc(a.delay.MaxDelay(), a.timerFlush)
 		return
@@ -26,7 +28,7 @@ func (a *SmartAggregator) timerFlush() {
 
 	// If still in critical load, reschedule instead of flushing
 	if a.delay.IsCriticalLoad() {
-		logger.Terminal().Debug("SmartAggregator timerFlush: critical load, rescheduling",
+		log.Trace("SmartAggregator timerFlush: critical load, rescheduling",
 			"usage", a.delay.GetUsage(), "buffer_len", a.buffer.Len())
 		a.timer = time.AfterFunc(a.delay.MaxDelay(), a.timerFlush)
 		return
@@ -60,7 +62,7 @@ func (a *SmartAggregator) flushLocked() {
 			return
 		}
 
-		logger.Terminal().Debug("SmartAggregator flushing (serialize mode)", "bytes", len(data))
+		logger.TerminalTrace().Trace("SmartAggregator flushing (serialize mode)", "bytes", len(data))
 	} else {
 		// Legacy mode: use frame-aware buffer flush
 		// FlushComplete ensures we don't break incomplete frames
@@ -76,7 +78,7 @@ func (a *SmartAggregator) flushLocked() {
 				// Data stays in buffer until next allowed flush
 				delay := a.fullRedrawThrottler.GetNextCheckDelay()
 				a.timer = time.AfterFunc(delay, a.timerFlush)
-				logger.Terminal().Debug("SmartAggregator: throttling full redraw",
+				logger.TerminalTrace().Trace("SmartAggregator: throttling full redraw",
 					"next_check", delay,
 					"frequency", a.fullRedrawThrottler.GetFrequency(),
 					"bandwidth_kbps", a.fullRedrawThrottler.GetBandwidth()/1024,
@@ -97,7 +99,7 @@ func (a *SmartAggregator) flushLocked() {
 			return
 		}
 
-		logger.Terminal().Debug("SmartAggregator flushing (legacy mode)",
+		logger.TerminalTrace().Trace("SmartAggregator flushing (legacy mode)",
 			"bytes", len(data), "remaining", remaining)
 	}
 
@@ -148,7 +150,7 @@ func (a *SmartAggregator) forceFlushLocked() {
 		a.ptyLogger.WriteAggregated(data)
 	}
 
-	logger.Terminal().Debug("SmartAggregator force flushing", "bytes", len(data))
+	logger.TerminalTrace().Trace("SmartAggregator force flushing", "bytes", len(data))
 
 	// Route output (async to avoid holding lock)
 	dataCopy := data

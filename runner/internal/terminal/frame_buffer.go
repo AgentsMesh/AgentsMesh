@@ -99,7 +99,7 @@ func (b *FrameBuffer) FlushComplete() (data []byte, remaining int) {
 		copy(remainingData, allData[keepFrom:])
 		b.buffer.Reset()
 		b.buffer.Write(remainingData)
-		logger.Terminal().Debug("FrameBuffer: keeping incomplete data",
+		logger.TerminalTrace().Trace("FrameBuffer: keeping incomplete data",
 			"flushed", flushEnd, "remaining", len(remainingData))
 	} else {
 		b.buffer.Reset()
@@ -142,7 +142,7 @@ func (b *FrameBuffer) FlushAll() (data []byte, remaining int) {
 		copy(remainingData, allData[validLen:])
 		b.buffer.Reset()
 		b.buffer.Write(remainingData)
-		logger.Terminal().Debug("FrameBuffer: keeping incomplete UTF-8",
+		logger.TerminalTrace().Trace("FrameBuffer: keeping incomplete UTF-8",
 			"flushed", validLen, "remaining", len(remainingData))
 	} else {
 		b.buffer.Reset()

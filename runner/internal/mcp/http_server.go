@@ -67,6 +67,9 @@ type MCPToolHandler func(ctx context.Context, client tools.CollaborationClient, 
 
 // NewHTTPServer creates a new MCP HTTP server.
 func NewHTTPServer(backendURL string, port int) *HTTPServer {
+	log := logger.MCP()
+	log.Debug("Creating MCP HTTP server", "port", port, "backend_url", backendURL)
+
 	server := &HTTPServer{
 		backendURL: backendURL,
 		port:       port,
@@ -75,6 +78,7 @@ func NewHTTPServer(backendURL string, port int) *HTTPServer {
 
 	// Register all collaboration tools
 	server.registerTools()
+	log.Debug("MCP tools registered", "count", len(server.tools))
 
 	return server
 }
@@ -113,10 +117,18 @@ func (s *HTTPServer) Start() error {
 
 // Stop stops the HTTP server.
 func (s *HTTPServer) Stop() error {
+	log := logger.MCP()
+	log.Info("Stopping MCP HTTP server")
 	if s.httpServer != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		return s.httpServer.Shutdown(ctx)
+		err := s.httpServer.Shutdown(ctx)
+		if err != nil {
+			log.Error("Failed to stop MCP HTTP server", "error", err)
+		} else {
+			log.Info("MCP HTTP server stopped")
+		}
+		return err
 	}
 	return nil
 }

@@ -2,6 +2,8 @@ package runner
 
 import (
 	"sync"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // PodStore manages pod state.
@@ -39,6 +41,7 @@ func (s *InMemoryPodStore) Put(podKey string, pod *Pod) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.pods[podKey] = pod
+	logger.Pod().Debug("Pod stored", "pod_key", podKey, "total_pods", len(s.pods))
 }
 
 // Delete removes and returns a pod.
@@ -48,6 +51,7 @@ func (s *InMemoryPodStore) Delete(podKey string) *Pod {
 	pod, ok := s.pods[podKey]
 	if ok {
 		delete(s.pods, podKey)
+		logger.Pod().Debug("Pod removed from store", "pod_key", podKey, "remaining_pods", len(s.pods))
 	}
 	return pod
 }

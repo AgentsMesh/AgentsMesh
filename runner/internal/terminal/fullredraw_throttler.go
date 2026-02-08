@@ -109,7 +109,7 @@ func (t *FullRedrawThrottler) RecordRedraw(frameBytes int) {
 	t.adjustWindowLocked()
 
 	bandwidth := t.getBandwidthLocked()
-	logger.Terminal().Debug("FullRedrawThrottler: recorded redraw",
+	logger.TerminalTrace().Trace("FullRedrawThrottler: recorded redraw",
 		"frame_bytes", frameBytes,
 		"count_in_window", len(t.redrawRecords),
 		"frequency", t.getFrequencyLocked(),
@@ -140,7 +140,7 @@ func (t *FullRedrawThrottler) ShouldFlush() bool {
 	elapsed := time.Since(t.lastFlushTime)
 	shouldFlush := elapsed >= delay
 
-	logger.Terminal().Debug("FullRedrawThrottler: shouldFlush check",
+	logger.TerminalTrace().Trace("FullRedrawThrottler: shouldFlush check",
 		"delay", delay,
 		"elapsed", elapsed,
 		"should_flush", shouldFlush,

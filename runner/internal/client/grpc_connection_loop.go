@@ -11,6 +11,7 @@ import (
 
 // connectionLoop manages the connection lifecycle with auto-reconnection.
 func (c *GRPCConnection) connectionLoop() {
+	logger.GRPC().Info("Connection loop starting", "endpoint", c.endpoint)
 	for {
 		select {
 		case <-c.stopCh:
@@ -90,6 +91,8 @@ func (c *GRPCConnection) runConnection() {
 
 	done := make(chan struct{})
 	readLoopDone := make(chan struct{}) // Signal when readLoop exits
+
+	logger.GRPC().Debug("Starting read/write loops")
 
 	// Start write loop
 	go c.writeLoop(ctx, done)

@@ -46,6 +46,9 @@ type Runner struct {
 
 // New creates a new runner instance
 func New(cfg *config.Config) (*Runner, error) {
+	log := logger.Runner()
+	log.Info("Creating runner instance", "node_id", cfg.NodeID)
+
 	// Load gRPC config (certificates)
 	if err := cfg.LoadGRPCConfig(); err != nil {
 		return nil, fmt.Errorf("failed to load gRPC config: %w - please register the runner first using 'runner register'", err)
@@ -120,6 +123,7 @@ func New(cfg *config.Config) (*Runner, error) {
 	// Initialize optional enhanced components
 	r.initEnhancedComponents(cfg)
 
+	log.Info("Runner instance created successfully")
 	return r, nil
 }
 
@@ -134,12 +138,15 @@ func (r *Runner) WithConnection(conn client.Connection) *Runner {
 // initEnhancedComponents initializes optional enhanced components based on config.
 func (r *Runner) initEnhancedComponents(cfg *config.Config) {
 	log := logger.Runner()
+	log.Debug("Initializing enhanced components")
 
 	// Initialize MCP manager
 	r.mcpManager = mcp.NewManager()
 	if cfg.MCPConfigPath != "" {
 		if err := r.mcpManager.LoadConfig(cfg.MCPConfigPath); err != nil {
 			log.Warn("Failed to load MCP config", "error", err)
+		} else {
+			log.Debug("MCP config loaded", "path", cfg.MCPConfigPath)
 		}
 	}
 
@@ -158,6 +165,7 @@ func (r *Runner) initEnhancedComponents(cfg *config.Config) {
 	// Initialize and start Claude monitor
 	r.claudeMonitor = monitor.NewMonitor(5 * time.Second)
 	r.claudeMonitor.Start()
+	log.Debug("Enhanced components initialized")
 }
 
 // Run starts the runner and blocks until context is cancelled
@@ -178,8 +186,13 @@ func (r *Runner) Run(ctx context.Context) error {
 
 // stopAllPods stops all active pods
 func (r *Runner) stopAllPods() {
+	log := logger.Runner()
 	pods := r.podStore.All()
+	if len(pods) > 0 {
+		log.Info("Stopping all pods", "count", len(pods))
+	}
 	for _, pod := range pods {
+		log.Debug("Stopping pod", "pod_key", pod.PodKey)
 		pod.DisconnectRelay()
 		pod.StopStateDetector()
 		if pod.Aggregator != nil {
@@ -218,10 +231,18 @@ func (r *Runner) CanAcceptPod() bool {
 	r.drainingMu.RUnlock()
 
 	if draining {
+		logger.Runner().Debug("Cannot accept pod: runner is draining")
 		return false
 	}
 
-	return r.GetActivePodCount() < r.cfg.MaxConcurrentPods
+	currentCount := r.GetActivePodCount()
+	if currentCount >= r.cfg.MaxConcurrentPods {
+		logger.Runner().Debug("Cannot accept pod: max capacity reached",
+			"current", currentCount, "max", r.cfg.MaxConcurrentPods)
+		return false
+	}
+
+	return true
 }
 
 // GetActivePodCount returns the number of currently active pods.
@@ -260,6 +281,7 @@ func (r *Runner) AddAutopilot(ac *autopilot.AutopilotController) {
 	r.autopilotsMu.Lock()
 	defer r.autopilotsMu.Unlock()
 	r.autopilots[ac.Key()] = ac
+	logger.Runner().Debug("Autopilot added", "autopilot_key", ac.Key(), "pod_key", ac.PodKey())
 }
 
 // RemoveAutopilot removes an AutopilotController by key.
@@ -267,6 +289,7 @@ func (r *Runner) RemoveAutopilot(key string) {
 	r.autopilotsMu.Lock()
 	defer r.autopilotsMu.Unlock()
 	delete(r.autopilots, key)
+	logger.Runner().Debug("Autopilot removed", "autopilot_key", key)
 }
 
 // GetAutopilotByPodKey returns an AutopilotController by its associated pod key.

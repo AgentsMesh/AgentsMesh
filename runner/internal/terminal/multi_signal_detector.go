@@ -2,9 +2,10 @@
 package terminal
 
 import (
-	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // Note: AgentState, StateNotRunning, StateExecuting, StateWaiting, and StateChangeCallback
@@ -243,8 +244,7 @@ func (d *MultiSignalDetector) OnOutput(bytes int) {
 	d.mu.Unlock()
 
 	// Debug logging OUTSIDE lock to avoid blocking PTY output
-	slog.Debug("MultiSignalDetector OnOutput called",
-		"module", "terminal",
+	logger.TerminalTrace().Trace("MultiSignalDetector OnOutput called",
 		"bytes", bytes,
 		"current_state", currentState)
 }
