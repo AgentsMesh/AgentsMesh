@@ -110,11 +110,16 @@ func (p *Program) sendStatus(status Status) {
 }
 
 // ServiceConfig returns the service configuration.
+// Uses UserService option so the plist is installed to ~/Library/LaunchAgents/
+// instead of /Library/LaunchDaemons/ (which requires root on macOS).
 func ServiceConfig() *service.Config {
 	return &service.Config{
 		Name:        ServiceName,
 		DisplayName: ServiceDisplayName,
 		Description: ServiceDescription,
+		Option: service.KeyValue{
+			"UserService": true,
+		},
 	}
 }
 
