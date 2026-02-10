@@ -24,11 +24,9 @@ const (
 
 // Agent status constants
 const (
-	AgentStatusUnknown  = "unknown"
-	AgentStatusIdle     = "idle"
-	AgentStatusWorking  = "working"
-	AgentStatusWaiting  = "waiting"
-	AgentStatusFinished = "finished"
+	AgentStatusExecuting = "executing"
+	AgentStatusWaiting   = "waiting"
+	AgentStatusIdle      = "idle"
 )
 
 // Think level magic words for Claude
@@ -62,7 +60,7 @@ type Pod struct {
 
 	PtyPID      *int   `gorm:"column:pty_pid" json:"pty_pid,omitempty"`
 	Status      string `gorm:"size:50;not null;default:'initializing';index" json:"status"`
-	AgentStatus string `gorm:"size:50;not null;default:'unknown'" json:"agent_status"`
+	AgentStatus string `gorm:"size:50;not null;default:'idle'" json:"agent_status"`
 	AgentPID    *int   `gorm:"column:agent_pid" json:"agent_pid,omitempty"` // Claude/Agent process PID
 
 	StartedAt    *time.Time `json:"started_at,omitempty"`

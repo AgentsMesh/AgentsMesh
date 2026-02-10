@@ -2,8 +2,9 @@
 
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { getPodStatusInfo, getAgentStatusInfo, type MeshNode } from "@/stores/mesh";
+import { getPodStatusInfo, type MeshNode } from "@/stores/mesh";
 import { getPodDisplayName } from "@/lib/pod-utils";
+import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 
 interface PodNodeProps {
   data: {
@@ -15,7 +16,6 @@ interface PodNodeProps {
 function PodNode({ data }: PodNodeProps) {
   const { node, isSelected } = data;
   const statusInfo = getPodStatusInfo(node.status);
-  const agentInfo = getAgentStatusInfo(node.agent_status);
 
   return (
     <div
@@ -50,12 +50,11 @@ function PodNode({ data }: PodNodeProps) {
       </div>
 
       {/* Agent Status */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">{agentInfo.icon}</span>
-        <span className={`text-sm font-medium ${agentInfo.color}`}>
-          {agentInfo.label}
-        </span>
-      </div>
+      <AgentStatusBadge
+        agentStatus={node.agent_status}
+        podStatus={node.status}
+        variant="badge"
+      />
 
       {/* Model */}
       {node.model && (

@@ -34,7 +34,7 @@ func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *RunnerConnectionM
 			pod_key TEXT NOT NULL UNIQUE,
 			runner_id INTEGER NOT NULL,
 			status TEXT NOT NULL DEFAULT 'pending',
-			agent_status TEXT,
+			agent_status TEXT NOT NULL DEFAULT 'idle',
 			pty_pid INTEGER,
 			branch_name TEXT,
 			sandbox_path TEXT,

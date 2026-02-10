@@ -99,16 +99,9 @@ export function RealtimeProvider({
 
         case "pod:agent_status_changed": {
           const data = event.data as PodStatusChangedData;
-          // Update agent status in store
-          if (podStore.updatePodStatus) {
-            podStore.updatePodStatus(
-              data.pod_key,
-              data.status as "running" | "initializing" | "failed" | "paused" | "terminated",
-              data.agent_status
-            );
+          if (data.agent_status) {
+            podStore.updateAgentStatus(data.pod_key, data.agent_status);
           }
-          // Also refresh Mesh topology since agent status affects the mesh display
-          meshStore.fetchTopology?.();
           console.log("[Realtime] Pod agent status changed:", data.pod_key, data.agent_status);
           break;
         }

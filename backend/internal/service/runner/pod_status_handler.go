@@ -9,6 +9,16 @@ import (
 
 // handleAgentStatus handles agent status change from runner (Proto type)
 func (pc *PodCoordinator) handleAgentStatus(runnerID int64, data *runnerv1.AgentStatusEvent) {
+	// Validate agent status value
+	switch data.Status {
+	case agentpod.AgentStatusExecuting, agentpod.AgentStatusWaiting, agentpod.AgentStatusIdle:
+		// valid
+	default:
+		pc.logger.Warn("invalid agent status received, ignoring",
+			"runner_id", runnerID, "pod_key", data.PodKey, "status", data.Status)
+		return
+	}
+
 	ctx := context.Background()
 
 	updates := map[string]interface{}{

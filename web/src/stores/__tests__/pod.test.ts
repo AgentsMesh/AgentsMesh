@@ -32,7 +32,7 @@ const mockPod: Pod = {
   id: 1,
   pod_key: "pod-abc-123",
   status: "running",
-  agent_status: "coding",
+  agent_status: "executing",
   created_at: "2024-01-01T00:00:00Z",
   runner: {
     id: 1,
@@ -45,7 +45,7 @@ const mockPod2: Pod = {
   id: 2,
   pod_key: "pod-def-456",
   status: "running",
-  agent_status: "thinking",
+  agent_status: "waiting",
   created_at: "2024-01-02T00:00:00Z",
   runner: {
     id: 1,
@@ -489,20 +489,20 @@ describe("Pod Store", () => {
 
     it("should update agent status in list", () => {
       act(() => {
-        usePodStore.getState().updateAgentStatus("pod-abc-123", "testing");
+        usePodStore.getState().updateAgentStatus("pod-abc-123", "waiting");
       });
 
       const state = usePodStore.getState();
-      expect(state.pods[0].agent_status).toBe("testing");
+      expect(state.pods[0].agent_status).toBe("waiting");
     });
 
     it("should update currentPod agent status if matching", () => {
       act(() => {
-        usePodStore.getState().updateAgentStatus("pod-abc-123", "reviewing");
+        usePodStore.getState().updateAgentStatus("pod-abc-123", "idle");
       });
 
       const state = usePodStore.getState();
-      expect(state.currentPod?.agent_status).toBe("reviewing");
+      expect(state.currentPod?.agent_status).toBe("idle");
     });
 
     it("should not update currentPod if different key", () => {
@@ -511,7 +511,7 @@ describe("Pod Store", () => {
       });
 
       const state = usePodStore.getState();
-      expect(state.currentPod?.agent_status).toBe("coding");
+      expect(state.currentPod?.agent_status).toBe("executing");
     });
   });
 

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { getPodDisplayName } from "@/lib/pod-utils";
 import { Pod } from "@/stores/pod";
 import { Button } from "@/components/ui/button";
+import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import {
   Square,
   Terminal,
@@ -75,6 +76,11 @@ export function PodListItem({ pod, isOpen, onClick, onTerminate }: PodListItemPr
           <span className="text-sm truncate font-mono">
             {getPodDisplayName(pod)}
           </span>
+          <AgentStatusBadge
+            agentStatus={pod.agent_status}
+            podStatus={pod.status}
+            variant="dot"
+          />
           {isOpen && (
             <Terminal className="w-3 h-3 text-primary flex-shrink-0" />
           )}

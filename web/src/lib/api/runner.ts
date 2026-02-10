@@ -121,6 +121,7 @@ export interface RunnerPodData {
   repository_id?: number;
   ticket_id?: number;
   status: string;
+  agent_status: string;
   claude_status?: string;
   branch_name?: string;
   sandbox_path?: string;

@@ -251,7 +251,7 @@ func TestBuildHeartbeatMessage_NodeIdIncluded(t *testing.T) {
 func TestBuildHeartbeatMessage_PodFieldsMapping(t *testing.T) {
 	handler := &mockHandlerWithRelayConnections{
 		pods: []PodInfo{
-			{PodKey: "pod-1", Status: "running", AgentStatus: "thinking", Pid: 1234},
+			{PodKey: "pod-1", Status: "running", AgentStatus: "executing", Pid: 1234},
 		},
 		relayConnections: []RelayConnectionInfo{},
 	}
@@ -273,7 +273,7 @@ func TestBuildHeartbeatMessage_PodFieldsMapping(t *testing.T) {
 	if pod.Status != "running" {
 		t.Errorf("status: expected running, got %s", pod.Status)
 	}
-	if pod.AgentStatus != "thinking" {
-		t.Errorf("agent_status: expected thinking, got %s", pod.AgentStatus)
+	if pod.AgentStatus != "executing" {
+		t.Errorf("agent_status: expected executing, got %s", pod.AgentStatus)
 	}
 }

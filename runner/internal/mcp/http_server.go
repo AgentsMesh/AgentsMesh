@@ -15,7 +15,7 @@ import (
 // PodStatusProvider provides Pod status information.
 // This interface allows HTTPServer to query Pod status from the Runner.
 type PodStatusProvider interface {
-	// GetPodStatus returns the agent status (executing/waiting/not_running) for a given pod.
+	// GetPodStatus returns the agent status (executing/waiting/idle) for a given pod.
 	GetPodStatus(podKey string) (agentStatus string, podStatus string, shellPid int, found bool)
 }
 

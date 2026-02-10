@@ -63,9 +63,10 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 		Model(&agentpod.Pod{}).
 		Where("pod_key = ?", data.PodKey).
 		Updates(map[string]interface{}{
-			"status":      agentpod.StatusCompleted,
-			"finished_at": now,
-			"pty_pid":     nil,
+			"status":       agentpod.StatusCompleted,
+			"agent_status": agentpod.AgentStatusIdle,
+			"finished_at":  now,
+			"pty_pid":      nil,
 		}).Error; err != nil {
 		pc.logger.Error("failed to update pod on termination",
 			"pod_key", data.PodKey,

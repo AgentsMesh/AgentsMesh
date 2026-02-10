@@ -41,6 +41,79 @@ func TestHandleHeartbeat(t *testing.T) {
 	}
 }
 
+func TestHandleHeartbeatSyncsAgentStatus(t *testing.T) {
+	pc, _, _ := setupPodEventHandlerDeps(t)
+
+	// Create a runner
+	r := &runner.Runner{
+		OrganizationID: 1,
+		NodeID:         "hb-agent-sync-node",
+		Status:         "online",
+	}
+	if err := pc.db.Create(r).Error; err != nil {
+		t.Fatalf("failed to create runner: %v", err)
+	}
+
+	// Create a pod with idle agent_status
+	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, agent_status) VALUES (?, ?, ?, ?)`,
+		"hb-agent-pod-1", r.ID, agentpod.StatusRunning, agentpod.AgentStatusIdle)
+
+	// Send heartbeat with AgentStatus set to executing
+	data := &runnerv1.HeartbeatData{
+		Pods: []*runnerv1.PodInfo{
+			{PodKey: "hb-agent-pod-1", Status: "running", AgentStatus: "executing"},
+		},
+	}
+
+	pc.handleHeartbeat(r.ID, data)
+
+	// Verify agent_status was updated in DB
+	var agentStatus string
+	pc.db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "hb-agent-pod-1").
+		Scan(&agentStatus)
+
+	if agentStatus != agentpod.AgentStatusExecuting {
+		t.Errorf("agent_status: got %q, want %q", agentStatus, agentpod.AgentStatusExecuting)
+	}
+}
+
+func TestHandleHeartbeatSkipsEmptyAgentStatus(t *testing.T) {
+	pc, _, _ := setupPodEventHandlerDeps(t)
+
+	// Create a runner
+	r := &runner.Runner{
+		OrganizationID: 1,
+		NodeID:         "hb-empty-agent-node",
+		Status:         "online",
+	}
+	if err := pc.db.Create(r).Error; err != nil {
+		t.Fatalf("failed to create runner: %v", err)
+	}
+
+	// Create a pod with executing agent_status
+	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, agent_status) VALUES (?, ?, ?, ?)`,
+		"hb-empty-pod-1", r.ID, agentpod.StatusRunning, agentpod.AgentStatusExecuting)
+
+	// Send heartbeat with empty AgentStatus
+	data := &runnerv1.HeartbeatData{
+		Pods: []*runnerv1.PodInfo{
+			{PodKey: "hb-empty-pod-1", Status: "running", AgentStatus: ""},
+		},
+	}
+
+	pc.handleHeartbeat(r.ID, data)
+
+	// Verify agent_status was NOT modified (should still be executing)
+	var agentStatus string
+	pc.db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "hb-empty-pod-1").
+		Scan(&agentStatus)
+
+	if agentStatus != agentpod.AgentStatusExecuting {
+		t.Errorf("agent_status should not be modified when heartbeat AgentStatus is empty: got %q, want %q",
+			agentStatus, agentpod.AgentStatusExecuting)
+	}
+}
+
 func TestHandleHeartbeatReconcilePods(t *testing.T) {
 	pc, _, tr := setupPodEventHandlerDeps(t)
 

@@ -158,7 +158,7 @@ func (s *HTTPServer) createSendTerminalKeyTool() *MCPTool {
 // PodStatusResult represents the result of get_pod_status tool.
 type PodStatusResult struct {
 	PodKey      string `json:"pod_key"`
-	AgentStatus string `json:"agent_status"` // executing, waiting, not_running, unknown
+	AgentStatus string `json:"agent_status"` // executing, waiting, idle
 	PodStatus   string `json:"pod_status"`   // running, completed, error, etc.
 	Message     string `json:"message,omitempty"`
 }
@@ -166,7 +166,7 @@ type PodStatusResult struct {
 func (s *HTTPServer) createGetPodStatusTool() *MCPTool {
 	return &MCPTool{
 		Name:        "get_pod_status",
-		Description: "Get the agent execution status of a pod. Returns: executing (agent is running commands), waiting (agent is waiting for input), not_running (agent process not found), unknown (status cannot be determined).",
+		Description: "Get the agent execution status of a pod. Returns: executing (agent is actively running commands), waiting (agent is waiting for user input), idle (agent is not actively running).",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -187,7 +187,7 @@ func (s *HTTPServer) createGetPodStatusTool() *MCPTool {
 			if s.statusProvider == nil {
 				return PodStatusResult{
 					PodKey:      podKey,
-					AgentStatus: "unknown",
+					AgentStatus: "idle",
 					PodStatus:   "unknown",
 					Message:     "Status provider not configured",
 				}, nil
@@ -198,7 +198,7 @@ func (s *HTTPServer) createGetPodStatusTool() *MCPTool {
 			if !found {
 				return PodStatusResult{
 					PodKey:      podKey,
-					AgentStatus: "not_running",
+					AgentStatus: "idle",
 					PodStatus:   "not_found",
 					Message:     "Pod not found",
 				}, nil

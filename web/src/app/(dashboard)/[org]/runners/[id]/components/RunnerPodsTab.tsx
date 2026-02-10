@@ -13,6 +13,7 @@ import {
 import type { RunnerData, RunnerPodData, SandboxStatus } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 
 interface RunnerPodsTabProps {
   runner: RunnerData;
@@ -118,6 +119,9 @@ export function RunnerPodsTab({
                 {t("runners.detail.status")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Agent Status
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("runners.detail.sandbox")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -158,6 +162,13 @@ export function RunnerPodsTab({
                     >
                       {pod.status}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <AgentStatusBadge
+                      agentStatus={pod.agent_status}
+                      podStatus={pod.status}
+                      variant="badge"
+                    />
                   </td>
                   <td className="px-4 py-3">
                     {pod.status === "running" ? (
@@ -216,7 +227,7 @@ export function RunnerPodsTab({
             })}
             {pods.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                   {t("runners.detail.noPods")}
                 </td>
               </tr>

@@ -11,6 +11,7 @@ import { useAuthStore } from "@/stores/auth";
 import { Terminal, ExternalLink, Plus } from "lucide-react";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
 import { getPodDisplayName } from "@/lib/pod-utils";
+import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 
 interface TicketPod {
   pod_key: string;
@@ -220,6 +221,11 @@ function PodItem({ pod, ticketIdentifier }: PodItemProps) {
       <code className="text-xs font-mono text-muted-foreground flex-1 truncate">
         {getPodDisplayName(pod)}
       </code>
+      <AgentStatusBadge
+        agentStatus={pod.agent_status}
+        podStatus={pod.status}
+        variant="dot"
+      />
 
       {/* Actions - show on hover */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -148,12 +148,16 @@ func TestHandlePodTerminated(t *testing.T) {
 
 	// Verify pod was updated
 	var status string
+	var agentStatus string
 	var finishedAt time.Time
-	pc.db.Raw(`SELECT status, finished_at FROM pods WHERE pod_key = ?`, "term-pod-1").
-		Row().Scan(&status, &finishedAt)
+	pc.db.Raw(`SELECT status, agent_status, finished_at FROM pods WHERE pod_key = ?`, "term-pod-1").
+		Row().Scan(&status, &agentStatus, &finishedAt)
 
 	if status != agentpod.StatusCompleted {
 		t.Errorf("status: got %q, want %q", status, agentpod.StatusCompleted)
+	}
+	if agentStatus != agentpod.AgentStatusIdle {
+		t.Errorf("agent_status: got %q, want %q", agentStatus, agentpod.AgentStatusIdle)
 	}
 	if finishedAt.IsZero() {
 		t.Error("finished_at should be set")

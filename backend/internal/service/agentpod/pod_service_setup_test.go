@@ -56,7 +56,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		pty_p_id INTEGER,
 		pty_pid INTEGER,
 		status TEXT NOT NULL DEFAULT 'initializing',
-		agent_status TEXT NOT NULL DEFAULT 'unknown',
+		agent_status TEXT NOT NULL DEFAULT 'idle',
 		agent_p_id INTEGER,
 		agent_pid INTEGER,
 		started_at DATETIME,

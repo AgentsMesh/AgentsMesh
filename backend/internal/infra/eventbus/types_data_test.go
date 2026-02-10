@@ -12,7 +12,7 @@ func TestEventDataStructures(t *testing.T) {
 			PodKey:         "pod-123",
 			Status:         "running",
 			PreviousStatus: "pending",
-			AgentStatus:    "active",
+			AgentStatus:    "executing",
 		}
 
 		bytes, err := json.Marshal(data)
@@ -90,7 +90,7 @@ func TestEventDataStructures(t *testing.T) {
 		data := &PodCreatedData{
 			PodKey:      "pod-new",
 			Status:      "initializing",
-			AgentStatus: "pending",
+			AgentStatus: "idle",
 			RunnerID:    10,
 			TicketID:    &ticketID,
 			CreatedByID: 5,
@@ -234,7 +234,7 @@ func TestEventDataStructures(t *testing.T) {
 		ticketID := int64(500)
 		data := &TaskCompletedData{
 			PodKey:      "pod-task",
-			AgentStatus: "error",
+			AgentStatus: "failed",
 			TicketID:    &ticketID,
 		}
 
@@ -251,7 +251,7 @@ func TestEventDataStructures(t *testing.T) {
 		if decoded.PodKey != "pod-task" {
 			t.Errorf("PodKey mismatch")
 		}
-		if decoded.AgentStatus != "error" {
+		if decoded.AgentStatus != "failed" {
 			t.Errorf("AgentStatus mismatch")
 		}
 		if decoded.TicketID == nil || *decoded.TicketID != 500 {
@@ -262,7 +262,7 @@ func TestEventDataStructures(t *testing.T) {
 	t.Run("TaskCompletedData with nil TicketID", func(t *testing.T) {
 		data := &TaskCompletedData{
 			PodKey:      "pod-no-ticket",
-			AgentStatus: "finished",
+			AgentStatus: "completed",
 			TicketID:    nil,
 		}
 

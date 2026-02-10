@@ -19,7 +19,7 @@ func setupPodCoordinatorTestDB(t *testing.T) *gorm.DB {
 			pod_key TEXT NOT NULL UNIQUE,
 			runner_id INTEGER NOT NULL,
 			status TEXT NOT NULL DEFAULT 'pending',
-			agent_status TEXT,
+			agent_status TEXT NOT NULL DEFAULT 'idle',
 			error_code TEXT,
 			error_message TEXT,
 			last_activity DATETIME,

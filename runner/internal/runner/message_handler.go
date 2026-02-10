@@ -7,6 +7,7 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // RunnerMessageHandler implements client.MessageHandler interface.
@@ -91,6 +92,32 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 		h.runner.agentMonitor.RegisterPod(cmd.PodKey, pod.Terminal.PID())
 	}
 
+	// Subscribe to VT state detection events, bridge to gRPC
+	if pod.VirtualTerminal != nil {
+		lastSentStatus := ""
+		pod.SubscribeStateChange("grpc-agent-status", func(event detector.StateChangeEvent) {
+			var backendStatus string
+			switch event.NewState {
+			case detector.StateExecuting:
+				backendStatus = "executing"
+			case detector.StateWaiting:
+				backendStatus = "waiting"
+			case detector.StateNotRunning:
+				backendStatus = "idle"
+			default:
+				return
+			}
+			if backendStatus == lastSentStatus {
+				return // Deduplicate
+			}
+			lastSentStatus = backendStatus
+			if err := h.conn.SendAgentStatus(cmd.PodKey, backendStatus); err != nil {
+				logger.Pod().Error("Failed to send agent status",
+					"pod_key", cmd.PodKey, "status", backendStatus, "error", err)
+			}
+		})
+	}
+
 	h.sendPodCreated(cmd.PodKey, pod.Terminal.PID(), pod.SandboxPath, pod.Branch, uint16(cols), uint16(rows))
 
 	log.Info("Pod created", "pod_key", cmd.PodKey, "pid", pod.Terminal.PID(), "sandbox", pod.SandboxPath)
@@ -140,7 +167,7 @@ func (h *RunnerMessageHandler) OnListPods() []client.PodInfo {
 		info := client.PodInfo{
 			PodKey:      s.PodKey,
 			Status:      s.GetStatus(),
-			AgentStatus: "",
+			AgentStatus: h.getAgentStatusFromDetector(s),
 		}
 		if s.Terminal != nil {
 			info.Pid = s.Terminal.PID()
@@ -149,6 +176,27 @@ func (h *RunnerMessageHandler) OnListPods() []client.PodInfo {
 	}
 
 	return result
+}
+
+// getAgentStatusFromDetector maps the detector's AgentState to backend status string.
+func (h *RunnerMessageHandler) getAgentStatusFromDetector(pod *Pod) string {
+	if pod.VirtualTerminal == nil {
+		return "idle"
+	}
+	d := pod.GetOrCreateStateDetector()
+	if d == nil {
+		return "idle"
+	}
+	switch d.GetState() {
+	case detector.StateExecuting:
+		return "executing"
+	case detector.StateWaiting:
+		return "waiting"
+	case detector.StateNotRunning:
+		return "idle"
+	default:
+		return "idle"
+	}
 }
 
 // OnListRelayConnections returns current relay connections.

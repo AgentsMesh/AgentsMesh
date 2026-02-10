@@ -5,6 +5,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/monitor"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // GetPodStatus returns the agent status for a given pod key.
@@ -12,7 +13,7 @@ import (
 func (r *Runner) GetPodStatus(podKey string) (agentStatus string, podStatus string, shellPid int, found bool) {
 	pod, exists := r.podStore.Get(podKey)
 	if !exists || pod == nil {
-		return "not_running", "not_found", 0, false
+		return "idle", "not_found", 0, false
 	}
 
 	podStatus = pod.GetStatus()
@@ -21,20 +22,26 @@ func (r *Runner) GetPodStatus(podKey string) (agentStatus string, podStatus stri
 		shellPid = pod.Terminal.PID()
 	}
 
-	// Get agent status from process monitor
-	if r.agentMonitor != nil && shellPid > 0 {
-		status, exists := r.agentMonitor.GetStatus(podKey)
-		if exists {
-			agentStatus = string(status.AgentStatus)
-			return agentStatus, podStatus, shellPid, true
+	// Get agent status from StateDetector (preferred, unified 3-value: executing/waiting/idle)
+	if pod.VirtualTerminal != nil {
+		d := pod.GetOrCreateStateDetector()
+		if d != nil {
+			switch d.GetState() {
+			case detector.StateExecuting:
+				return "executing", podStatus, shellPid, true
+			case detector.StateWaiting:
+				return "waiting", podStatus, shellPid, true
+			default:
+				return "idle", podStatus, shellPid, true
+			}
 		}
 	}
 
-	// If monitor doesn't have status, check if terminal is running
+	// Fallback: check if terminal is running
 	if pod.Terminal != nil && !pod.Terminal.IsClosed() {
-		agentStatus = "unknown"
+		agentStatus = "idle"
 	} else {
-		agentStatus = "not_running"
+		agentStatus = "idle"
 	}
 
 	return agentStatus, podStatus, shellPid, true

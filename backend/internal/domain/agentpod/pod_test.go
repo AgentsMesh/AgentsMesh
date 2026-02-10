@@ -34,11 +34,9 @@ func TestAgentStatusConstants(t *testing.T) {
 		constant string
 		expected string
 	}{
-		{AgentStatusUnknown, "unknown"},
-		{AgentStatusIdle, "idle"},
-		{AgentStatusWorking, "working"},
+		{AgentStatusExecuting, "executing"},
 		{AgentStatusWaiting, "waiting"},
-		{AgentStatusFinished, "finished"},
+		{AgentStatusIdle, "idle"},
 	}
 
 	for _, tt := range tests {
@@ -171,7 +169,7 @@ func TestPodStruct(t *testing.T) {
 		RunnerID:       5,
 		CreatedByID:    50,
 		Status:         StatusRunning,
-		AgentStatus:    AgentStatusWorking,
+		AgentStatus:    AgentStatusExecuting,
 		InitialPrompt:  "Test prompt",
 		BranchName:     &branch,
 		Model:          &model,

@@ -64,11 +64,11 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			slog.Error("failed to publish pod event", "error", err)
 		}
 
-		// Also publish task:completed notification for finished agents
-		if agentStatus == "finished" || agentStatus == "error" {
+		// Also publish task:completed notification when pod terminates
+		if status == "completed" || status == "terminated" || status == "failed" {
 			notifData := &eventbus.TaskCompletedData{
 				PodKey:      podKey,
-				AgentStatus: agentStatus,
+				AgentStatus: status, // pod status (completed/terminated/failed)
 			}
 			notifEvent, err := eventbus.NewNotificationEvent(
 				eventbus.EventTaskCompleted,

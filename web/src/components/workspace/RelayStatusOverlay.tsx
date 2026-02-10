@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "@/lib/i18n/client";
 import { Wifi, WifiOff, Loader2, AlertTriangle } from "lucide-react";
 
 type ConnectionStatus = "connected" | "connecting" | "disconnected" | "error";
@@ -21,7 +21,7 @@ export function RelayStatusOverlay({
   isRunnerDisconnected,
   className,
 }: RelayStatusOverlayProps) {
-  const t = useTranslations("relayStatus");
+  const t = useTranslations();
 
   // Determine display state: runner disconnect takes priority over relay connected
   const isWarning = isRunnerDisconnected || connectionStatus === "disconnected" || connectionStatus === "error";
@@ -29,18 +29,18 @@ export function RelayStatusOverlay({
   const isConnected = connectionStatus === "connected" && !isRunnerDisconnected;
 
   const getLabel = () => {
-    if (isRunnerDisconnected) return t("runnerDisconnected");
+    if (isRunnerDisconnected) return t("relayStatus.runnerDisconnected");
     switch (connectionStatus) {
       case "connected":
-        return t("connected");
+        return t("relayStatus.connected");
       case "connecting":
-        return t("connecting");
+        return t("relayStatus.connecting");
       case "disconnected":
-        return t("disconnected");
+        return t("relayStatus.disconnected");
       case "error":
-        return t("error");
+        return t("relayStatus.error");
       default:
-        return t("disconnected");
+        return t("relayStatus.disconnected");
     }
   };
 

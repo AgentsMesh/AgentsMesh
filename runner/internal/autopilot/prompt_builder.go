@@ -104,7 +104,7 @@ const initialPromptTemplate = `你是任务编排代理（Control Agent）。你
 - keys: 键名数组，如 ["enter"], ["ctrl+c"], ["escape"]
 
 ### 4. get_pod_status - 获取 Pod 状态
-获取 Pod 的当前状态（executing/waiting/not_running）。
+获取 Pod 的当前状态（executing/waiting/idle）。
 参数：
 - pod_key: "%s" (固定值)
 

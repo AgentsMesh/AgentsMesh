@@ -68,14 +68,14 @@ func TestUpdateAgentStatus(t *testing.T) {
 	sess, _ := svc.CreatePod(ctx, req)
 
 	// Test without PID
-	err := svc.UpdateAgentStatus(ctx, sess.PodKey, "coding", nil)
+	err := svc.UpdateAgentStatus(ctx, sess.PodKey, "executing", nil)
 	if err != nil {
 		t.Fatalf("UpdateAgentStatus failed: %v", err)
 	}
 
 	updated, _ := svc.GetPod(ctx, sess.PodKey)
-	if updated.AgentStatus != "coding" {
-		t.Errorf("AgentStatus = %s, want coding", updated.AgentStatus)
+	if updated.AgentStatus != "executing" {
+		t.Errorf("AgentStatus = %s, want executing", updated.AgentStatus)
 	}
 	if updated.LastActivity == nil {
 		t.Error("LastActivity should be set")

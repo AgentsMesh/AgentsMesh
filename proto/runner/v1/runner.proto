@@ -367,7 +367,7 @@ message AutopilotStatus {
   string circuit_breaker_reason = 5;
 
   // Pod 状态
-  string pod_status = 6;                 // executing, waiting, exited
+  string pod_status = 6;                 // executing, waiting, idle
 
   // 时间
   int64 started_at = 7;

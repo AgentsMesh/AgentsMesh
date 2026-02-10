@@ -53,7 +53,7 @@ type TargetPodController interface {
 	GetWorkDir() string
 	// GetPodKey returns the pod's key.
 	GetPodKey() string
-	// GetAgentStatus returns the pod's agent status (executing/waiting/not_running).
+	// GetAgentStatus returns the pod's agent status (executing/waiting/idle).
 	GetAgentStatus() string
 	// GetStateDetector returns a StateDetector for the pod.
 	// Returns nil if state detection is not available.

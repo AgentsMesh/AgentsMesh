@@ -6,6 +6,7 @@ import type { PodData } from "@/lib/api/pod";
 import { getPodDisplayName } from "@/lib/pod-utils";
 import { getPodStatusInfo } from "@/stores/mesh";
 import { usePodStore } from "@/stores/pod";
+import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import {
   Terminal,
   Server,
@@ -98,11 +99,17 @@ export function InfoTabContent({
         )}
 
         {/* Agent Status */}
-        {pod.agent_status && (
+        {pod.agent_status && pod.status === "running" && (
           <InfoRow
             icon={<Bot className="w-3 h-3" />}
             label={t("ide.bottomPanel.infoTab.agentStatus")}
-            value={pod.agent_status}
+            value={
+              <AgentStatusBadge
+                agentStatus={pod.agent_status}
+                podStatus={pod.status}
+                variant="inline"
+              />
+            }
           />
         )}
 
@@ -252,7 +259,7 @@ function InfoRow({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   mono?: boolean;
   className?: string;
   valueClassName?: string;
@@ -269,7 +276,7 @@ function InfoRow({
           mono && "font-mono",
           valueClassName
         )}
-        title={value}
+        title={typeof value === "string" ? value : undefined}
       >
         {value}
       </span>

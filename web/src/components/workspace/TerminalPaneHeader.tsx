@@ -2,6 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
+import { usePodStore } from "@/stores/pod";
 import {
   X,
   Maximize2,
@@ -68,6 +70,7 @@ export function TerminalPaneHeader({
         <code className="text-[10px] text-terminal-text-muted truncate">
           {podKey.substring(0, 8)}
         </code>
+        <TerminalAgentStatus podKey={podKey} />
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
         <Button
@@ -143,6 +146,21 @@ export function TerminalPaneHeader({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Internal component that reads agent status from the pod store
+ */
+function TerminalAgentStatus({ podKey }: { podKey: string }) {
+  const pod = usePodStore((state) => state.pods.find((p) => p.pod_key === podKey));
+  if (!pod) return null;
+  return (
+    <AgentStatusBadge
+      agentStatus={pod.agent_status}
+      podStatus={pod.status}
+      variant="inline"
+    />
   );
 }
 

@@ -2,15 +2,15 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { RelayStatusOverlay } from "../RelayStatusOverlay";
 
-// Mock next-intl
-vi.mock("next-intl", () => ({
+// Mock i18n client
+vi.mock("@/lib/i18n/client", () => ({
   useTranslations: () => (key: string) => {
     const translations: Record<string, string> = {
-      connected: "Relay Connected",
-      connecting: "Connecting to Relay...",
-      disconnected: "Relay Disconnected",
-      error: "Relay Connection Error",
-      runnerDisconnected: "Runner Disconnected",
+      "relayStatus.connected": "Relay Connected",
+      "relayStatus.connecting": "Connecting to Relay...",
+      "relayStatus.disconnected": "Relay Disconnected",
+      "relayStatus.error": "Relay Connection Error",
+      "relayStatus.runnerDisconnected": "Runner Disconnected",
     };
     return translations[key] || key;
   },

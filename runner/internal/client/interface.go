@@ -57,6 +57,10 @@ type ConnectionSender interface {
 	// SendMessage sends a raw RunnerMessage to the server.
 	// Used for Autopilot events and other custom messages.
 	SendMessage(msg *runnerv1.RunnerMessage) error
+
+	// SendAgentStatus sends an agent status change event to the server.
+	// Status values: "executing", "waiting", "idle".
+	SendAgentStatus(podKey string, status string) error
 }
 
 // ConnectionMonitor defines methods for monitoring connection health.

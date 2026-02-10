@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { meshApi, MeshNodeData, MeshEdgeData, ChannelInfoData, MeshTopologyData } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
+import { Play, Hourglass, Pause, type LucideIcon } from "lucide-react";
 
 // Re-export API types with cleaner names for component use
 export type MeshNode = MeshNodeData;
@@ -150,20 +151,43 @@ export const getPodStatusInfo = (status: string) => {
 };
 
 // Helper function to get agent status display info
-export const getAgentStatusInfo = (agentStatus: string) => {
-  const statusMap: Record<
-    string,
-    { label: string; color: string; icon: string }
-  > = {
-    idle: { label: "Idle", color: "text-gray-500 dark:text-gray-400", icon: "⏸" },
-    thinking: { label: "Thinking", color: "text-blue-500 dark:text-blue-400", icon: "🤔" },
-    coding: { label: "Coding", color: "text-green-500 dark:text-green-400", icon: "💻" },
-    testing: { label: "Testing", color: "text-yellow-500 dark:text-yellow-400", icon: "🧪" },
-    reviewing: { label: "Reviewing", color: "text-purple-500 dark:text-purple-400", icon: "📝" },
-    waiting: { label: "Waiting", color: "text-orange-500 dark:text-orange-400", icon: "⏳" },
-    error: { label: "Error", color: "text-red-500 dark:text-red-400", icon: "❌" },
+export const getAgentStatusInfo = (agentStatus: string): {
+  label: string;
+  color: string;
+  dotColor: string;
+  bgColor: string;
+  icon: LucideIcon;
+} => {
+  const statusMap: Record<string, {
+    label: string;
+    color: string;
+    dotColor: string;
+    bgColor: string;
+    icon: LucideIcon;
+  }> = {
+    executing: {
+      label: "Executing",
+      color: "text-green-600 dark:text-green-400",
+      dotColor: "bg-green-500",
+      bgColor: "bg-green-500/10",
+      icon: Play,
+    },
+    waiting: {
+      label: "Waiting for Input",
+      color: "text-amber-600 dark:text-amber-400",
+      dotColor: "bg-amber-500",
+      bgColor: "bg-amber-500/10",
+      icon: Hourglass,
+    },
+    idle: {
+      label: "Idle",
+      color: "text-gray-500 dark:text-gray-400",
+      dotColor: "bg-gray-400",
+      bgColor: "bg-gray-400/10",
+      icon: Pause,
+    },
   };
-  return statusMap[agentStatus] || { label: agentStatus, color: "text-gray-500 dark:text-gray-400", icon: "•" };
+  return statusMap[agentStatus] || statusMap.idle;
 };
 
 // Helper function to get binding status display info

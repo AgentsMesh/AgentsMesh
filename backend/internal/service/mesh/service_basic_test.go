@@ -28,7 +28,7 @@ func TestPodToNode(t *testing.T) {
 	pod := &agentpod.Pod{
 		PodKey:       "test-pod-key",
 		Status:       "running",
-		AgentStatus:  "working",
+		AgentStatus:  "executing",
 		Model:        &model,
 		TicketID:     &ticketID,
 		RepositoryID: &repoID,
@@ -44,8 +44,8 @@ func TestPodToNode(t *testing.T) {
 	if node.Status != "running" {
 		t.Errorf("Status = %s, want running", node.Status)
 	}
-	if node.AgentStatus != "working" {
-		t.Errorf("AgentStatus = %s, want working", node.AgentStatus)
+	if node.AgentStatus != "executing" {
+		t.Errorf("AgentStatus = %s, want executing", node.AgentStatus)
 	}
 	if node.Model == nil || *node.Model != "claude-3-sonnet" {
 		t.Errorf("Model mismatch")
@@ -66,7 +66,7 @@ func TestPodToNode_NilValues(t *testing.T) {
 	pod := &agentpod.Pod{
 		PodKey:      "minimal-pod",
 		Status:      "pending",
-		AgentStatus: "unknown",
+		AgentStatus: "idle",
 		CreatedByID: 1,
 	}
 

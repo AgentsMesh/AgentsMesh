@@ -343,6 +343,23 @@ func (m *MockConnection) SendOSCTitle(podKey, title string) error {
 	return nil
 }
 
+// SendAgentStatus records an agent status change event.
+func (m *MockConnection) SendAgentStatus(podKey string, status string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{
+		Type: MessageType("agent_status"),
+		Data: map[string]string{
+			"pod_key": podKey,
+			"status":  status,
+		},
+	})
+	return nil
+}
+
 // SendMessage records a raw RunnerMessage.
 func (m *MockConnection) SendMessage(msg *runnerv1.RunnerMessage) error {
 	m.mu.Lock()

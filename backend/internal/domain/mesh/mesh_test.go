@@ -17,7 +17,7 @@ func TestMeshNodeStruct(t *testing.T) {
 	node := MeshNode{
 		PodKey:   "pod-123",
 		Status:       "running",
-		AgentStatus:  "working",
+		AgentStatus:  "executing",
 		Model:        &model,
 		TicketID:     &ticketID,
 		RepositoryID: &repoID,
@@ -33,8 +33,8 @@ func TestMeshNodeStruct(t *testing.T) {
 	if node.Status != "running" {
 		t.Errorf("expected Status 'running', got %s", node.Status)
 	}
-	if node.AgentStatus != "working" {
-		t.Errorf("expected AgentStatus 'working', got %s", node.AgentStatus)
+	if node.AgentStatus != "executing" {
+		t.Errorf("expected AgentStatus 'executing', got %s", node.AgentStatus)
 	}
 	if *node.Model != "opus" {
 		t.Errorf("expected Model 'opus', got %s", *node.Model)
@@ -57,7 +57,7 @@ func TestMeshNodeWithNilOptionalFields(t *testing.T) {
 	node := MeshNode{
 		PodKey:  "pod-456",
 		Status:      "initializing",
-		AgentStatus: "unknown",
+		AgentStatus: "idle",
 		CreatedByID: 50,
 		RunnerID:    10,
 	}

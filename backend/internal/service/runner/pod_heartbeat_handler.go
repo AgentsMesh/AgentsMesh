@@ -46,6 +46,12 @@ func (pc *PodCoordinator) handleHeartbeat(runnerID int64, data *runnerv1.Heartbe
 	reportedPodKeys := make(map[string]bool)
 	for _, p := range data.Pods {
 		reportedPodKeys[p.PodKey] = true
+		// Silently sync agent_status from heartbeat (no WebSocket event)
+		if p.AgentStatus != "" {
+			pc.db.WithContext(ctx).Model(&agentpod.Pod{}).
+				Where("pod_key = ?", p.PodKey).
+				Update("agent_status", p.AgentStatus)
+		}
 	}
 
 	pc.reconcilePods(ctx, runnerID, reportedPodKeys)

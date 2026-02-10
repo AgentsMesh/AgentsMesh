@@ -29,7 +29,7 @@ function createMockPod(overrides: Partial<PodData> = {}): PodData {
     id: 1,
     pod_key: "pod-abc12345-def6-7890",
     status: "running",
-    agent_status: "coding",
+    agent_status: "executing",
     created_at: "2026-01-15T10:00:00Z",
     ...overrides,
   };
@@ -124,7 +124,7 @@ describe("InfoTabContent", () => {
     });
 
     it("should display agent status when available", () => {
-      const pod = createMockPod({ agent_status: "thinking" });
+      const pod = createMockPod({ agent_status: "executing", status: "running" });
       render(
         <InfoTabContent
           selectedPodKey={pod.pod_key}
@@ -132,7 +132,7 @@ describe("InfoTabContent", () => {
           t={mockT}
         />
       );
-      expect(screen.getByText("thinking")).toBeInTheDocument();
+      expect(screen.getByText("Executing")).toBeInTheDocument();
     });
 
     it("should display runner info when available", () => {

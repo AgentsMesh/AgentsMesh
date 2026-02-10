@@ -28,7 +28,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		created_by_id INTEGER NOT NULL,
 		pty_pid INTEGER,
 		status TEXT NOT NULL DEFAULT 'pending',
-		agent_status TEXT NOT NULL DEFAULT 'unknown',
+		agent_status TEXT NOT NULL DEFAULT 'idle',
 		agent_pid INTEGER,
 		started_at DATETIME,
 		finished_at DATETIME,

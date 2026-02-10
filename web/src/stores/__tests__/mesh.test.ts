@@ -23,7 +23,7 @@ import { meshApi } from "@/lib/api";
 const mockNode1: MeshNode = {
   pod_key: "pod-abc",
   status: "running",
-  agent_status: "coding",
+  agent_status: "executing",
   model: "claude-code",
   created_by_id: 1,
   runner_id: 1,
@@ -33,7 +33,7 @@ const mockNode1: MeshNode = {
 const mockNode2: MeshNode = {
   pod_key: "pod-def",
   status: "running",
-  agent_status: "thinking",
+  agent_status: "waiting",
   model: "gpt-engineer",
   created_by_id: 1,
   runner_id: 2,
@@ -377,57 +377,37 @@ describe("Helper Functions", () => {
   });
 
   describe("getAgentStatusInfo", () => {
-    it("should return correct info for idle status", () => {
-      const info = getAgentStatusInfo("idle");
-      expect(info.label).toBe("Idle");
-      expect(info.color).toBe("text-gray-500 dark:text-gray-400");
-      expect(info.icon).toBe("⏸");
-    });
-
-    it("should return correct info for thinking status", () => {
-      const info = getAgentStatusInfo("thinking");
-      expect(info.label).toBe("Thinking");
-      expect(info.color).toBe("text-blue-500 dark:text-blue-400");
-      expect(info.icon).toBe("🤔");
-    });
-
-    it("should return correct info for coding status", () => {
-      const info = getAgentStatusInfo("coding");
-      expect(info.label).toBe("Coding");
-      expect(info.color).toBe("text-green-500 dark:text-green-400");
-      expect(info.icon).toBe("💻");
-    });
-
-    it("should return correct info for testing status", () => {
-      const info = getAgentStatusInfo("testing");
-      expect(info.label).toBe("Testing");
-      expect(info.icon).toBe("🧪");
-    });
-
-    it("should return correct info for reviewing status", () => {
-      const info = getAgentStatusInfo("reviewing");
-      expect(info.label).toBe("Reviewing");
-      expect(info.icon).toBe("📝");
+    it("should return correct info for executing status", () => {
+      const info = getAgentStatusInfo("executing");
+      expect(info.label).toBe("Executing");
+      expect(info.color).toBe("text-green-600 dark:text-green-400");
+      expect(info.dotColor).toBe("bg-green-500");
+      expect(info.bgColor).toBe("bg-green-500/10");
+      expect(info.icon).toBeDefined();
     });
 
     it("should return correct info for waiting status", () => {
       const info = getAgentStatusInfo("waiting");
-      expect(info.label).toBe("Waiting");
-      expect(info.icon).toBe("⏳");
+      expect(info.label).toBe("Waiting for Input");
+      expect(info.color).toBe("text-amber-600 dark:text-amber-400");
+      expect(info.dotColor).toBe("bg-amber-500");
+      expect(info.bgColor).toBe("bg-amber-500/10");
+      expect(info.icon).toBeDefined();
     });
 
-    it("should return correct info for error status", () => {
-      const info = getAgentStatusInfo("error");
-      expect(info.label).toBe("Error");
-      expect(info.color).toBe("text-red-500 dark:text-red-400");
-      expect(info.icon).toBe("❌");
-    });
-
-    it("should return fallback for unknown status", () => {
-      const info = getAgentStatusInfo("unknown-status");
-      expect(info.label).toBe("unknown-status");
+    it("should return correct info for idle status", () => {
+      const info = getAgentStatusInfo("idle");
+      expect(info.label).toBe("Idle");
       expect(info.color).toBe("text-gray-500 dark:text-gray-400");
-      expect(info.icon).toBe("•");
+      expect(info.dotColor).toBe("bg-gray-400");
+      expect(info.bgColor).toBe("bg-gray-400/10");
+      expect(info.icon).toBeDefined();
+    });
+
+    it("should return idle info as fallback for unknown status", () => {
+      const info = getAgentStatusInfo("unknown-status");
+      const idleInfo = getAgentStatusInfo("idle");
+      expect(info).toEqual(idleInfo);
     });
   });
 

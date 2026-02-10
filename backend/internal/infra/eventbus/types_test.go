@@ -222,7 +222,7 @@ func TestNewNotificationEvent(t *testing.T) {
 		ticketID := int64(999)
 		data := &TaskCompletedData{
 			PodKey:      "pod-abc",
-			AgentStatus: "finished",
+			AgentStatus: "completed",
 			TicketID:    &ticketID,
 		}
 
@@ -236,8 +236,8 @@ func TestNewNotificationEvent(t *testing.T) {
 		if err := json.Unmarshal(event.Data, &decoded); err != nil {
 			t.Fatalf("failed to unmarshal data: %v", err)
 		}
-		if decoded.AgentStatus != "finished" {
-			t.Errorf("expected AgentStatus 'finished', got '%s'", decoded.AgentStatus)
+		if decoded.AgentStatus != "completed" {
+			t.Errorf("expected AgentStatus 'completed', got '%s'", decoded.AgentStatus)
 		}
 		if decoded.TicketID == nil || *decoded.TicketID != 999 {
 			t.Errorf("expected TicketID 999")
