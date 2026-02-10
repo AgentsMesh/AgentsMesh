@@ -6,7 +6,7 @@ import {
   X,
   Loader2,
   AlertCircle,
-  Square,
+  CheckCircle2,
 } from "lucide-react";
 
 interface InitProgress {
@@ -33,12 +33,20 @@ export function TerminalLoadingState({
   onTerminate,
   onClose,
 }: TerminalLoadingStateProps) {
+  const isCompleted = podStatus === "completed";
+
   return (
     <div className="flex-1 flex items-center justify-center bg-terminal-bg">
       <div className="text-center p-4 max-w-sm">
-        <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-3" />
+        {isCompleted ? (
+          <CheckCircle2 className="w-12 h-12 text-green-500 dark:text-green-400 mx-auto mb-3" />
+        ) : (
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-3" />
+        )}
         <p className="text-terminal-text font-medium mb-1">
-          {initProgress?.message || "Waiting for Pod to be ready..."}
+          {isCompleted
+            ? "Pod completed"
+            : initProgress?.message || "Waiting for Pod to be ready..."}
         </p>
         {initProgress ? (
           <div className="mt-3 space-y-2">
@@ -49,11 +57,15 @@ export function TerminalLoadingState({
           </div>
         ) : (
           <p className="text-sm text-terminal-text-muted">
-            Status: <span className="text-yellow-500 dark:text-yellow-400">{podStatus}</span>
+            {isCompleted ? (
+              <>Status: <span className="text-green-500 dark:text-green-400">{podStatus}</span></>
+            ) : (
+              <>Status: <span className="text-yellow-500 dark:text-yellow-400">{podStatus}</span></>
+            )}
           </p>
         )}
-        {/* Show close button when status is unknown */}
-        {podStatus === "unknown" && onClose && (
+        {/* Show close button when status is unknown or completed */}
+        {(podStatus === "unknown" || isCompleted) && onClose && (
           <Button
             variant="outline"
             size="sm"
