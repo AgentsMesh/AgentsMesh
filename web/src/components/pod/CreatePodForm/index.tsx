@@ -28,6 +28,7 @@ export function CreatePodForm({
   const t = useTranslations();
   const prevEnabledRef = useRef(enabled);
   const promptInitializedRef = useRef(false);
+  const repoInitializedRef = useRef(false);
 
   // Merge preset config with user config
   const mergedConfig = useMemo(() => mergeConfig(config), [config]);
@@ -67,6 +68,7 @@ export function CreatePodForm({
       resetConfig();
       setSelectedRunnerId(null);
       promptInitializedRef.current = false;
+      repoInitializedRef.current = false;
     }
     prevEnabledRef.current = enabled;
   }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -78,6 +80,21 @@ export function CreatePodForm({
     }
     return "";
   }, [promptGenerator, context]);
+
+  // Initialize repository from ticket context when available
+  useEffect(() => {
+    if (
+      enabled &&
+      context?.ticket?.repositoryId &&
+      !form.selectedRepository &&
+      !repoInitializedRef.current &&
+      repositories.length > 0
+    ) {
+      form.setSelectedRepository(context.ticket.repositoryId);
+      repoInitializedRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, context?.ticket?.repositoryId, form.selectedRepository, form.setSelectedRepository, repositories]);
 
   // Initialize prompt once when default is available and form is empty
   useEffect(() => {

@@ -344,6 +344,7 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
             ticketTitle={ticket.title}
             ticketDescription={ticket.description}
             ticketId={ticket.id}
+            repositoryId={ticket.repository_id}
           />
         </div>
       </div>
