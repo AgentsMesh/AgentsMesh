@@ -52,6 +52,7 @@ type RunnerConnectionManager struct {
 	onInitFailed         func(runnerID int64, reason string)
 	onSandboxesStatus    func(runnerID int64, data *runnerv1.SandboxesStatusEvent)
 	onOSCNotification    func(runnerID int64, data *runnerv1.OSCNotificationEvent)
+	onPodError           func(runnerID int64, data *runnerv1.ErrorEvent)
 	onOSCTitle           func(runnerID int64, data *runnerv1.OSCTitleEvent)
 
 	// AutopilotController event callbacks

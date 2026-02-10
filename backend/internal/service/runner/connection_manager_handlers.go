@@ -30,6 +30,14 @@ func (cm *RunnerConnectionManager) HandlePodTerminated(runnerID int64, data *run
 	}
 }
 
+// HandlePodError handles pod error event (Proto type)
+func (cm *RunnerConnectionManager) HandlePodError(runnerID int64, data *runnerv1.ErrorEvent) {
+	cm.UpdateHeartbeat(runnerID)
+	if cm.onPodError != nil {
+		cm.onPodError(runnerID, data)
+	}
+}
+
 // NOTE: HandleTerminalOutput removed - terminal output is exclusively streamed via Relay
 
 // HandleAgentStatus handles agent status event (Proto type)

@@ -424,6 +424,59 @@ describe("Pod Store", () => {
       const state = usePodStore.getState();
       expect(state.pods[1].status).toBe("running");
     });
+
+    it("should update error fields when provided", () => {
+      act(() => {
+        usePodStore
+          .getState()
+          .updatePodStatus(
+            "pod-abc-123",
+            "error",
+            undefined,
+            "GIT_AUTH_FAILED",
+            "authentication failed for repository"
+          );
+      });
+
+      const state = usePodStore.getState();
+      expect(state.pods[0].status).toBe("error");
+      expect(state.pods[0].error_code).toBe("GIT_AUTH_FAILED");
+      expect(state.pods[0].error_message).toBe(
+        "authentication failed for repository"
+      );
+    });
+
+    it("should update error fields on currentPod when matching", () => {
+      act(() => {
+        usePodStore
+          .getState()
+          .updatePodStatus(
+            "pod-abc-123",
+            "error",
+            undefined,
+            "SANDBOX_FAILED",
+            "sandbox creation failed"
+          );
+      });
+
+      const state = usePodStore.getState();
+      expect(state.currentPod?.status).toBe("error");
+      expect(state.currentPod?.error_code).toBe("SANDBOX_FAILED");
+      expect(state.currentPod?.error_message).toBe(
+        "sandbox creation failed"
+      );
+    });
+
+    it("should not set error fields when not provided", () => {
+      act(() => {
+        usePodStore.getState().updatePodStatus("pod-abc-123", "running");
+      });
+
+      const state = usePodStore.getState();
+      expect(state.pods[0].status).toBe("running");
+      expect(state.pods[0].error_code).toBeUndefined();
+      expect(state.pods[0].error_message).toBeUndefined();
+    });
   });
 
   describe("updateAgentStatus", () => {

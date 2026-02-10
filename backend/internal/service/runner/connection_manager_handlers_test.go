@@ -308,3 +308,57 @@ func TestConnectionManager_HandleRequestRelayToken_NoCallback(t *testing.T) {
 	}
 	cm.HandleRequestRelayToken(1, event)
 }
+
+func TestConnectionManager_HandlePodError(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := cm.AddConnection(1, "test-node", "test-org", stream)
+	initialPing := conn.GetLastPing()
+
+	var callbackRunnerID int64
+	var callbackData *runnerv1.ErrorEvent
+	cm.SetPodErrorCallback(func(runnerID int64, data *runnerv1.ErrorEvent) {
+		callbackRunnerID = runnerID
+		callbackData = data
+	})
+
+	time.Sleep(10 * time.Millisecond)
+
+	event := &runnerv1.ErrorEvent{
+		PodKey:  "test-pod",
+		Code:    "GIT_AUTH_FAILED",
+		Message: "authentication failed for repository",
+	}
+	cm.HandlePodError(1, event)
+
+	// Verify last ping was updated (heartbeat)
+	assert.True(t, conn.GetLastPing().After(initialPing))
+
+	// Verify callback was called with correct data
+	assert.Equal(t, int64(1), callbackRunnerID)
+	assert.Equal(t, "test-pod", callbackData.PodKey)
+	assert.Equal(t, "GIT_AUTH_FAILED", callbackData.Code)
+	assert.Equal(t, "authentication failed for repository", callbackData.Message)
+}
+
+func TestConnectionManager_HandlePodError_NoCallback(t *testing.T) {
+	cm := NewRunnerConnectionManager(newTestLogger())
+	defer cm.Close()
+
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	cm.AddConnection(1, "test-node", "test-org", stream)
+
+	// No callback set - should not panic
+	event := &runnerv1.ErrorEvent{
+		PodKey:  "test-pod",
+		Code:    "UNKNOWN",
+		Message: "something went wrong",
+	}
+	cm.HandlePodError(1, event)
+}

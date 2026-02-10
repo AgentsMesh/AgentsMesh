@@ -34,11 +34,11 @@ export function usePodStatus(podKey: string): UsePodStatusResult {
     } else if (status === "orphaned") {
       error = "Pod orphaned - Runner connection lost";
     } else if (status === "error") {
-      error = "Pod error";
+      error = storePod?.error_message || "Pod error";
     }
 
     return { podStatus: status, isPodReady: isReady, podError: error };
-  }, [storePod?.status]);
+  }, [storePod?.status, storePod?.error_message]);
 
   // Initial status fetch (once only) - updates store via fetchPod
   useEffect(() => {

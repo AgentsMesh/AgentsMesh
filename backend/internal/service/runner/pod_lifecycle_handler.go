@@ -93,6 +93,60 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 	}
 }
 
+// handlePodError handles pod creation error event from runner (Proto type)
+func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEvent) {
+	if data.PodKey == "" {
+		pc.logger.Warn("received pod error without pod_key, ignoring",
+			"runner_id", runnerID,
+			"code", data.Code,
+			"message", data.Message)
+		return
+	}
+
+	ctx := context.Background()
+
+	now := time.Now()
+	result := pc.db.WithContext(ctx).
+		Model(&agentpod.Pod{}).
+		Where("pod_key = ? AND status = ?", data.PodKey, agentpod.StatusInitializing).
+		Updates(map[string]interface{}{
+			"status":        agentpod.StatusError,
+			"error_code":    data.Code,
+			"error_message": data.Message,
+			"finished_at":   now,
+		})
+	if result.Error != nil {
+		pc.logger.Error("failed to update pod on error",
+			"pod_key", data.PodKey,
+			"error", result.Error)
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		pc.logger.Warn("pod error ignored: pod not in initializing state",
+			"pod_key", data.PodKey,
+			"runner_id", runnerID)
+		return
+	}
+
+	// Decrement runner pod count (counterpart to IncrementPods in CreatePod)
+	pc.db.WithContext(ctx).Exec(
+		"UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?",
+		runnerID,
+	)
+
+	pc.logger.Error("pod creation failed",
+		"pod_key", data.PodKey,
+		"runner_id", runnerID,
+		"error_code", data.Code,
+		"error_message", data.Message)
+
+	// Notify status change (triggers EventBus → WebSocket → frontend)
+	if pc.onStatusChange != nil {
+		pc.onStatusChange(data.PodKey, agentpod.StatusError, "")
+	}
+}
+
 // handleRunnerDisconnect handles runner disconnection
 func (pc *PodCoordinator) handleRunnerDisconnect(runnerID int64) {
 	ctx := context.Background()

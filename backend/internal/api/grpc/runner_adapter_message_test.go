@@ -117,19 +117,27 @@ func TestGRPCRunnerAdapter_HandleProtoMessage(t *testing.T) {
 		assert.True(t, ptyResizedReceived)
 	})
 
-	t.Run("error message", func(t *testing.T) {
-		// Error messages are just logged, no callback
+	t.Run("error message routes to HandlePodError callback", func(t *testing.T) {
+		var podErrorReceived bool
+		connMgr.SetPodErrorCallback(func(runnerID int64, data *runnerv1.ErrorEvent) {
+			podErrorReceived = true
+			assert.Equal(t, int64(1), runnerID)
+			assert.Equal(t, "test-pod", data.PodKey)
+			assert.Equal(t, "GIT_AUTH_FAILED", data.Code)
+			assert.Equal(t, "authentication failed", data.Message)
+		})
+
 		msg := &runnerv1.RunnerMessage{
 			Payload: &runnerv1.RunnerMessage_Error{
 				Error: &runnerv1.ErrorEvent{
 					PodKey:  "test-pod",
-					Code:    "ERR001",
-					Message: "test error",
+					Code:    "GIT_AUTH_FAILED",
+					Message: "authentication failed",
 				},
 			},
 		}
-		// Should not panic
 		adapter.handleProtoMessage(context.Background(), 1, conn, msg)
+		assert.True(t, podErrorReceived, "HandlePodError callback should be invoked")
 	})
 
 	t.Run("initialize message", func(t *testing.T) {

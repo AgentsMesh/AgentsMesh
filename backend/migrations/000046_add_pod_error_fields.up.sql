@@ -1,0 +1,2 @@
+ALTER TABLE pods ADD COLUMN error_code VARCHAR(100);
+ALTER TABLE pods ADD COLUMN error_message TEXT;

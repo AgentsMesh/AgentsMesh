@@ -38,6 +38,8 @@ func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *RunnerConnectionM
 			pty_pid INTEGER,
 			branch_name TEXT,
 			sandbox_path TEXT,
+			error_code TEXT,
+			error_message TEXT,
 			started_at DATETIME,
 			finished_at DATETIME,
 			last_activity DATETIME,

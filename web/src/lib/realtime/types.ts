@@ -70,6 +70,8 @@ export interface PodStatusChangedData {
   status: string;
   previous_status?: string;
   agent_status?: string;
+  error_code?: string;
+  error_message?: string;
 }
 
 /**

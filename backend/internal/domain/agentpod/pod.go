@@ -79,6 +79,10 @@ type Pod struct {
 	PermissionMode *string `gorm:"size:50" json:"permission_mode,omitempty"` // plan/default/bypassPermissions
 	ThinkLevel     *string `gorm:"size:50" json:"think_level,omitempty"`     // ultrathink/megathink
 
+	// Error details from Runner (e.g., git clone auth failure)
+	ErrorCode    *string `gorm:"size:100" json:"error_code,omitempty"`
+	ErrorMessage *string `gorm:"type:text" json:"error_message,omitempty"`
+
 	// Terminal title from OSC 0/2 escape sequences
 	Title *string `gorm:"size:255" json:"title,omitempty"`
 

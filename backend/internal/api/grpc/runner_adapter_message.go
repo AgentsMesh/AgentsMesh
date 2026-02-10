@@ -52,6 +52,8 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 			"code", payload.Error.Code,
 			"message", payload.Error.Message,
 		)
+		// Route to callback chain for business processing (DB update, EventBus, WebSocket)
+		a.connManager.HandlePodError(runnerID, payload.Error)
 
 	case *runnerv1.RunnerMessage_RequestRelayToken:
 		// Runner is requesting a new relay token (token expired during reconnection)

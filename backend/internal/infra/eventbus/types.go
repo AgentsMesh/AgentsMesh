@@ -111,6 +111,8 @@ type PodStatusChangedData struct {
 	Status         string `json:"status"`
 	PreviousStatus string `json:"previous_status,omitempty"`
 	AgentStatus    string `json:"agent_status,omitempty"`
+	ErrorCode      string `json:"error_code,omitempty"`
+	ErrorMessage   string `json:"error_message,omitempty"`
 }
 
 // PodCreatedData represents the payload for pod created events

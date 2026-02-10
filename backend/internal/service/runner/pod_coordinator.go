@@ -56,6 +56,7 @@ func NewPodCoordinator(
 	cm.SetPodCreatedCallback(pc.handlePodCreated)
 	cm.SetPodTerminatedCallback(pc.handlePodTerminated)
 	cm.SetAgentStatusCallback(pc.handleAgentStatus)
+	cm.SetPodErrorCallback(pc.handlePodError)
 	cm.SetDisconnectCallback(pc.handleRunnerDisconnect)
 	cm.SetPodInitProgressCallback(pc.handlePodInitProgress)
 

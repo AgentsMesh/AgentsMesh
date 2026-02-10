@@ -82,11 +82,13 @@ export function RealtimeProvider({
             podStore.fetchPods?.();
             console.log("[Realtime] Pod not found, refreshing list:", data.pod_key);
           } else if (podStore.updatePodStatus) {
-            // Update existing pod status
+            // Update existing pod status (including error details if present)
             podStore.updatePodStatus(
               data.pod_key,
-              data.status as "running" | "initializing" | "failed" | "paused" | "terminated",
-              data.agent_status
+              data.status as "running" | "initializing" | "failed" | "paused" | "terminated" | "error",
+              data.agent_status,
+              data.error_code,
+              data.error_message
             );
           }
           // Also refresh Mesh topology since pod status affects the mesh

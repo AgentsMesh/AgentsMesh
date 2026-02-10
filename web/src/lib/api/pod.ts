@@ -35,6 +35,8 @@ export interface PodData {
     identifier: string;
     title: string;
   };
+  error_code?: string;
+  error_message?: string;
   created_by?: {
     id: number;
     username: string;

@@ -2,6 +2,7 @@ package eventbus
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -35,6 +36,52 @@ func TestEventDataStructures(t *testing.T) {
 		}
 		if decoded.AgentStatus != data.AgentStatus {
 			t.Errorf("AgentStatus mismatch: expected %s, got %s", data.AgentStatus, decoded.AgentStatus)
+		}
+	})
+
+	t.Run("PodStatusChangedData with error fields serialization", func(t *testing.T) {
+		data := &PodStatusChangedData{
+			PodKey:       "pod-err-1",
+			Status:       "error",
+			ErrorCode:    "GIT_AUTH_FAILED",
+			ErrorMessage: "authentication failed for repository",
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var decoded PodStatusChangedData
+		if err := json.Unmarshal(bytes, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		if decoded.ErrorCode != "GIT_AUTH_FAILED" {
+			t.Errorf("ErrorCode mismatch: expected %s, got %s", "GIT_AUTH_FAILED", decoded.ErrorCode)
+		}
+		if decoded.ErrorMessage != "authentication failed for repository" {
+			t.Errorf("ErrorMessage mismatch: expected %s, got %s", "authentication failed for repository", decoded.ErrorMessage)
+		}
+	})
+
+	t.Run("PodStatusChangedData error fields omitted when empty", func(t *testing.T) {
+		data := &PodStatusChangedData{
+			PodKey: "pod-ok-1",
+			Status: "running",
+		}
+
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		jsonStr := string(bytes)
+		if strings.Contains(jsonStr, "error_code") {
+			t.Errorf("error_code should be omitted when empty, got: %s", jsonStr)
+		}
+		if strings.Contains(jsonStr, "error_message") {
+			t.Errorf("error_message should be omitted when empty, got: %s", jsonStr)
 		}
 	})
 

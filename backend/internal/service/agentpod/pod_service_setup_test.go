@@ -68,6 +68,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		model TEXT,
 		permission_mode TEXT,
 		think_level TEXT,
+		error_code TEXT,
+		error_message TEXT,
 		title TEXT,
 		session_id TEXT,
 		source_pod_key TEXT,

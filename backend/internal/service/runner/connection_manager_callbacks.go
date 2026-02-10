@@ -24,6 +24,11 @@ func (cm *RunnerConnectionManager) SetPodTerminatedCallback(fn func(runnerID int
 	cm.onPodTerminated = fn
 }
 
+// SetPodErrorCallback sets the pod error callback (Proto type)
+func (cm *RunnerConnectionManager) SetPodErrorCallback(fn func(runnerID int64, data *runnerv1.ErrorEvent)) {
+	cm.onPodError = fn
+}
+
 // SetAgentStatusCallback sets the agent status callback (Proto type)
 func (cm *RunnerConnectionManager) SetAgentStatusCallback(fn func(runnerID int64, data *runnerv1.AgentStatusEvent)) {
 	cm.onAgentStatus = fn

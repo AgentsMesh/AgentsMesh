@@ -1,7 +1,8 @@
 import { vi } from "vitest";
+import { getApiBaseUrl } from "@/lib/env";
 
-// Get the expected API URL
-export const EXPECTED_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:10000";
+// Get the expected API URL - must match getApiBaseUrl() logic
+export const EXPECTED_API_URL = getApiBaseUrl();
 
 // Mock global fetch
 export const mockFetch = vi.fn();

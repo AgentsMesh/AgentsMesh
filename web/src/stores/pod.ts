@@ -37,7 +37,7 @@ interface PodState {
   }) => Promise<Pod>;
   terminatePod: (podKey: string) => Promise<void>;
   setCurrentPod: (pod: Pod | null) => void;
-  updatePodStatus: (podKey: string, status: Pod["status"], agentStatus?: string) => void;
+  updatePodStatus: (podKey: string, status: Pod["status"], agentStatus?: string, errorCode?: string, errorMessage?: string) => void;
   updateAgentStatus: (podKey: string, agentStatus: string) => void;
   updatePodTitle: (podKey: string, title: string) => void;
   updatePodInitProgress: (podKey: string, phase: string, progress: number, message: string) => void;
@@ -147,11 +147,17 @@ export const usePodStore = create<PodState>((set) => ({
     set({ currentPod: pod });
   },
 
-  updatePodStatus: (podKey, status, agentStatus) => {
+  updatePodStatus: (podKey, status, agentStatus, errorCode, errorMessage) => {
     set((state) => ({
       pods: state.pods.map((p) =>
         p.pod_key === podKey
-          ? { ...p, status, ...(agentStatus && { agent_status: agentStatus }) }
+          ? {
+              ...p,
+              status,
+              ...(agentStatus && { agent_status: agentStatus }),
+              ...(errorCode !== undefined && { error_code: errorCode }),
+              ...(errorMessage !== undefined && { error_message: errorMessage }),
+            }
           : p
       ),
       currentPod:
@@ -160,6 +166,8 @@ export const usePodStore = create<PodState>((set) => ({
               ...state.currentPod,
               status,
               ...(agentStatus && { agent_status: agentStatus }),
+              ...(errorCode !== undefined && { error_code: errorCode }),
+              ...(errorMessage !== undefined && { error_message: errorMessage }),
             }
           : state.currentPod,
     }));

@@ -15,10 +15,12 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 	podCoordinator.SetStatusChangeCallback(func(podKey string, status string, agentStatus string) {
 		// Query pod to get organization ID and other metadata
 		var pod struct {
-			OrganizationID int64  `gorm:"column:organization_id"`
-			CreatedByID    int64  `gorm:"column:created_by_id"`
-			Status         string `gorm:"column:status"`
-			AgentStatus    string `gorm:"column:agent_status"`
+			OrganizationID int64   `gorm:"column:organization_id"`
+			CreatedByID    int64   `gorm:"column:created_by_id"`
+			Status         string  `gorm:"column:status"`
+			AgentStatus    string  `gorm:"column:agent_status"`
+			ErrorCode      *string `gorm:"column:error_code"`
+			ErrorMessage   *string `gorm:"column:error_message"`
 		}
 		if err := db.Table("pods").Where("pod_key = ?", podKey).First(&pod).Error; err != nil {
 			slog.Error("failed to get pod for event", "pod_key", podKey, "error", err)
@@ -45,6 +47,13 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			Status:         status,
 			PreviousStatus: "",
 			AgentStatus:    agentStatus,
+		}
+		// Include error details if present
+		if pod.ErrorCode != nil {
+			data.ErrorCode = *pod.ErrorCode
+		}
+		if pod.ErrorMessage != nil {
+			data.ErrorMessage = *pod.ErrorMessage
 		}
 		event, err := eventbus.NewEntityEvent(eventType, pod.OrganizationID, "pod", podKey, data)
 		if err != nil {
