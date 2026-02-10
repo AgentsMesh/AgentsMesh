@@ -47,6 +47,7 @@ type ServerDependencies struct {
 	OrgService         OrganizationServiceInterface
 	AgentTypesProvider interfaces.AgentTypesProvider
 	ConnManager        *runner.RunnerConnectionManager // Connection manager with 256-shard locks
+	MCPDeps            *MCPDependencies                // Optional MCP service dependencies
 }
 
 // RunnerServiceInterface defines the runner service methods needed by gRPC server.
@@ -145,6 +146,7 @@ func NewServer(deps *ServerDependencies) (*Server, error) {
 		deps.PKIService,
 		deps.AgentTypesProvider,
 		deps.ConnManager,
+		deps.MCPDeps,
 	)
 
 	// Register RunnerService with gRPC server

@@ -16,7 +16,7 @@ func TestGRPCRunnerAdapter_SendTerminalRedraw(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	t.Run("runner not connected", func(t *testing.T) {
 		err := adapter.SendTerminalRedraw(999, "pod-1")
@@ -38,7 +38,7 @@ func TestGRPCRunnerAdapter_SendSubscribeTerminal(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	t.Run("runner not connected", func(t *testing.T) {
 		err := adapter.SendSubscribeTerminal(999, "pod-1", "ws://relay", "token", true, 100)
@@ -60,7 +60,7 @@ func TestGRPCRunnerAdapter_SendUnsubscribeTerminal(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	t.Run("runner not connected", func(t *testing.T) {
 		err := adapter.SendUnsubscribeTerminal(999, "pod-1")
@@ -82,7 +82,7 @@ func TestGRPCRunnerAdapter_SendQuerySandboxes(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	t.Run("runner not connected", func(t *testing.T) {
 		err := adapter.SendQuerySandboxes(999, "req-1", []string{"pod-1", "pod-2"})

@@ -37,6 +37,8 @@ message RunnerMessage {
     AutopilotCreatedEvent autopilot_created = 18;
     AutopilotTerminatedEvent autopilot_terminated = 19;
     AutopilotThinkingEvent autopilot_thinking = 20;
+    // MCP 请求（Runner -> Backend，复用 gRPC 双向流）
+    McpRequest mcp_request = 21;
   }
   int64 timestamp = 15;
 }
@@ -153,6 +155,8 @@ message ServerMessage {
     // Autopilot 相关命令
     CreateAutopilotCommand create_autopilot = 11;
     AutopilotControlCommand autopilot_control = 12;
+    // MCP 响应（Backend -> Runner，复用 gRPC 双向流）
+    McpResponse mcp_response = 13;
   }
   int64 timestamp = 15;
 }
@@ -511,4 +515,30 @@ message AutopilotHelpRequest {
 message AutopilotHelpSuggestion {
   string action = 1;                     // approve, skip, custom 等
   string label = 2;                      // 显示标签
+}
+
+// ==================== MCP over gRPC 消息 ====================
+// 将 MCP 工具调用统一复用 gRPC 双向流，避免额外的 HTTP REST 通道
+
+// McpRequest Runner 发起的 MCP 请求（Runner -> Backend）
+// 使用通用 JSON payload 避免为每个方法定义独立 message
+message McpRequest {
+  string request_id = 1;  // UUID，关联请求和响应
+  string pod_key = 2;     // 发起请求的 Pod 身份
+  string method = 3;      // 操作方法名，如 "search_channels"
+  bytes payload = 4;      // JSON 编码的请求参数
+}
+
+// McpResponse Backend 返回的 MCP 响应（Backend -> Runner）
+message McpResponse {
+  string request_id = 1;  // 对应 McpRequest.request_id
+  bool success = 2;       // 请求是否成功
+  bytes payload = 3;      // JSON 编码的响应数据
+  McpError error = 4;     // 错误信息（当 success=false 时）
+}
+
+// McpError MCP 请求错误详情
+message McpError {
+  int32 code = 1;         // HTTP 状态码风格的错误码
+  string message = 2;     // 错误描述
 }

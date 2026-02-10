@@ -25,6 +25,7 @@ func initializePKIAndGRPC(
 	agentTypeSvc *agent.AgentTypeService,
 	runnerConnMgr *runner.RunnerConnectionManager,
 	appLogger *logger.Logger,
+	mcpDeps *grpcserver.MCPDependencies,
 ) (*grpcserver.Server, *v1.GRPCRunnerHandler) {
 	// Initialize PKI service
 	pkiService, err := pki.NewService(&pki.Config{
@@ -49,7 +50,7 @@ func initializePKIAndGRPC(
 	grpcRunnerHandler := v1.NewGRPCRunnerHandler(runnerSvc, pkiService, cfg)
 
 	// Create and start gRPC server
-	grpcServerInst := createGRPCServer(cfg, pkiService, runnerSvc, orgSvc, agentTypeSvc, runnerConnMgr, appLogger)
+	grpcServerInst := createGRPCServer(cfg, pkiService, runnerSvc, orgSvc, agentTypeSvc, runnerConnMgr, appLogger, mcpDeps)
 	if grpcServerInst == nil {
 		return nil, grpcRunnerHandler
 	}
@@ -67,6 +68,7 @@ func createGRPCServer(
 	agentTypeSvc *agent.AgentTypeService,
 	runnerConnMgr *runner.RunnerConnectionManager,
 	appLogger *logger.Logger,
+	mcpDeps *grpcserver.MCPDependencies,
 ) *grpcserver.Server {
 	// Create service adapters
 	runnerServiceAdapter := &grpcRunnerServiceAdapter{svc: runnerSvc}
@@ -82,6 +84,7 @@ func createGRPCServer(
 		OrgService:         orgServiceAdapter,
 		AgentTypesProvider: agentTypesAdapter,
 		ConnManager:        runnerConnMgr,
+		MCPDeps:            mcpDeps,
 	})
 	if err != nil {
 		slog.Error("Failed to create gRPC server", "error", err)

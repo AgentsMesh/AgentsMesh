@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerMCPToolsCallListRunners(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -34,7 +34,7 @@ func TestHTTPServerMCPToolsCallListRunners(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallListRepositories(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

@@ -83,17 +83,9 @@ func (h *ChannelHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	// Determine sender pod key:
-	// 1. If called via Pod API (/api/v1/orgs/:slug/pod/channels/*), use pod_key from context
-	// 2. Otherwise, use pod_key from request body (for user-initiated messages)
+	// Determine sender pod key from request body (for user-initiated messages)
 	var podKey *string
-	if pk, exists := c.Get("pod_key"); exists {
-		// Pod API path - use the authenticated pod's key
-		if pkStr, ok := pk.(string); ok && pkStr != "" {
-			podKey = &pkStr
-		}
-	} else if req.PodKey != "" {
-		// User API path with explicit pod_key in request
+	if req.PodKey != "" {
 		podKey = &req.PodKey
 	}
 

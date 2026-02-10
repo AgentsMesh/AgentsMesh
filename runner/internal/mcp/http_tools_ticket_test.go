@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerMCPToolsCallUpdateTicket(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -37,7 +37,7 @@ func TestHTTPServerMCPToolsCallUpdateTicket(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSearchTicketsWithAllParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -69,7 +69,7 @@ func TestHTTPServerMCPToolsCallSearchTicketsWithAllParams(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallUpdateTicketWithAllParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -101,7 +101,7 @@ func TestHTTPServerMCPToolsCallUpdateTicketWithAllParams(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallUpdateTicketMissingID(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -131,7 +131,7 @@ func TestHTTPServerMCPToolsCallUpdateTicketMissingID(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallGetTicketMissingID(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -159,7 +159,7 @@ func TestHTTPServerMCPToolsCallGetTicketMissingID(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreateTicketMissingTitle(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -189,7 +189,7 @@ func TestHTTPServerMCPToolsCallCreateTicketMissingTitle(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreateTicketWithAllParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

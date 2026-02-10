@@ -11,17 +11,17 @@ import (
 func (s *HTTPServer) createCreatePodTool() *MCPTool {
 	return &MCPTool{
 		Name:        "create_pod",
-		Description: "Create a new agent pod. The new pod will automatically have terminal:read and terminal:write permissions to the creator via binding.",
+		Description: "Create a new agent pod. IMPORTANT: Before calling this tool, you MUST first call list_runners to get the runner_id and agent_type_id. The new pod will automatically have terminal:read and terminal:write permissions to the creator via binding.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
 				"runner_id": map[string]interface{}{
 					"type":        "integer",
-					"description": "ID of the runner to create the pod on (optional, uses available runner)",
+					"description": "ID of the runner to create the pod on (required). Call list_runners first to get available runner IDs.",
 				},
 				"agent_type_id": map[string]interface{}{
 					"type":        "integer",
-					"description": "ID of the agent type to use for the pod (required). Use list_runners to see available agent types.",
+					"description": "ID of the agent type to use for the pod (required). Call list_runners first to see available agent types and their IDs.",
 				},
 				"ticket_id": map[string]interface{}{
 					"type":        "integer",
@@ -61,7 +61,7 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 					"description": "Permission mode for the pod: 'plan' (default, requires approval), 'default' (normal permissions), or 'bypassPermissions' (auto-approve all).",
 				},
 			},
-			"required": []string{"agent_type_id"},
+			"required": []string{"runner_id", "agent_type_id"},
 		},
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
 			req := &tools.PodCreateRequest{

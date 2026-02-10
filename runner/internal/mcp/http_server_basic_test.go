@@ -5,14 +5,10 @@ import (
 )
 
 func TestNewHTTPServer(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	if server == nil {
 		t.Fatal("NewHTTPServer returned nil")
-	}
-
-	if server.backendURL != "http://localhost:8080" {
-		t.Errorf("backendURL: got %v, want %v", server.backendURL, "http://localhost:8080")
 	}
 
 	if server.port != 9090 {
@@ -25,7 +21,7 @@ func TestNewHTTPServer(t *testing.T) {
 }
 
 func TestHTTPServerRegisterPod(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	ticketID := 123
 	projectID := 456
@@ -51,7 +47,7 @@ func TestHTTPServerRegisterPod(t *testing.T) {
 }
 
 func TestHTTPServerUnregisterPod(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -69,7 +65,7 @@ func TestHTTPServerUnregisterPod(t *testing.T) {
 }
 
 func TestHTTPServerPodCount(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	if server.PodCount() != 0 {
 		t.Errorf("initial count should be 0, got %v", server.PodCount())
@@ -92,14 +88,14 @@ func TestHTTPServerPodCount(t *testing.T) {
 }
 
 func TestHTTPServerPort(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	if server.Port() != 9090 {
 		t.Errorf("Port: got %v, want %v", server.Port(), 9090)
 	}
 }
 
 func TestHTTPServerGenerateMCPConfig(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	config := server.GenerateMCPConfig("test-pod")
 
 	if config == nil {

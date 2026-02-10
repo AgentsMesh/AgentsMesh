@@ -12,7 +12,13 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra/pki"
 	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
+	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 	"github.com/anthropics/agentsmesh/backend/pkg/audit" // used by logAuditEvent in Connect
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
@@ -47,6 +53,33 @@ type GRPCRunnerAdapter struct {
 
 	// Delegate connection management to RunnerConnectionManager
 	connManager *runner.RunnerConnectionManager
+
+	// MCP service dependencies (for handling MCP requests from Runner)
+	podService        *agentpod.PodService
+	mcpPodService     *agentpod.PodService // alias for podService, used by discovery/create
+	podOrchestrator   *agentpod.PodOrchestrator // Unified Pod creation logic
+	channelService    *channel.Service
+	bindingService    *binding.Service
+	ticketService     *ticket.Service
+	repositoryService repository.RepositoryServiceInterface
+	runnerMcpService  *runner.Service
+	agentTypeSvc      *agent.AgentTypeService
+	userConfigSvc     *agent.UserConfigService
+	terminalRouter    interface{} // implements TerminalRouterForMCP at runtime, optional
+}
+
+// MCPDependencies holds optional MCP service dependencies for the gRPC adapter.
+type MCPDependencies struct {
+	PodService        *agentpod.PodService
+	PodOrchestrator   *agentpod.PodOrchestrator // Unified Pod creation logic
+	ChannelService    *channel.Service
+	BindingService    *binding.Service
+	TicketService     *ticket.Service
+	RepositoryService repository.RepositoryServiceInterface
+	RunnerService     *runner.Service
+	AgentTypeSvc      *agent.AgentTypeService
+	UserConfigSvc     *agent.UserConfigService
+	TerminalRouter    interface{} // implements TerminalRouterForMCP at runtime, optional
 }
 
 // NewGRPCRunnerAdapter creates a new gRPC Runner adapter.
@@ -58,8 +91,9 @@ func NewGRPCRunnerAdapter(
 	pkiService *pki.Service,
 	agentTypesProvider interfaces.AgentTypesProvider,
 	connManager *runner.RunnerConnectionManager,
+	mcpDeps *MCPDependencies,
 ) *GRPCRunnerAdapter {
-	return &GRPCRunnerAdapter{
+	adapter := &GRPCRunnerAdapter{
 		logger:             logger,
 		db:                 db,
 		runnerService:      runnerService,
@@ -68,6 +102,23 @@ func NewGRPCRunnerAdapter(
 		agentTypesProvider: agentTypesProvider,
 		connManager:        connManager,
 	}
+
+	// Wire MCP dependencies if provided
+	if mcpDeps != nil {
+		adapter.podService = mcpDeps.PodService
+		adapter.mcpPodService = mcpDeps.PodService
+		adapter.podOrchestrator = mcpDeps.PodOrchestrator
+		adapter.channelService = mcpDeps.ChannelService
+		adapter.bindingService = mcpDeps.BindingService
+		adapter.ticketService = mcpDeps.TicketService
+		adapter.repositoryService = mcpDeps.RepositoryService
+		adapter.runnerMcpService = mcpDeps.RunnerService
+		adapter.agentTypeSvc = mcpDeps.AgentTypeSvc
+		adapter.userConfigSvc = mcpDeps.UserConfigSvc
+		adapter.terminalRouter = mcpDeps.TerminalRouter
+	}
+
+	return adapter
 }
 
 // Connect handles the bidirectional streaming RPC for Runner communication.

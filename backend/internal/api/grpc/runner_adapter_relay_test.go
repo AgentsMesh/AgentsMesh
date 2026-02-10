@@ -20,7 +20,7 @@ func TestGRPCRunnerAdapter_HandleProtoMessage_RequestRelayToken(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Add a connection
 	mockStream := &mockRunnerStream{}

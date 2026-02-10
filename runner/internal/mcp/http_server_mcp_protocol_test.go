@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerMCPInitialize(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`)
@@ -43,7 +43,7 @@ func TestHTTPServerMCPInitialize(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsList(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
@@ -79,7 +79,7 @@ func TestHTTPServerMCPToolsList(t *testing.T) {
 }
 
 func TestHTTPServerMCPNotificationsInitialized(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

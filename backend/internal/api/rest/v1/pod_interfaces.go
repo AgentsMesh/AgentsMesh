@@ -3,10 +3,7 @@ package v1
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	agentpodService "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 )
@@ -36,24 +33,7 @@ type PodServiceForHandler interface {
 	GetActivePodBySourcePodKey(ctx context.Context, sourcePodKey string) (*agentpod.Pod, error)
 }
 
-// RepositoryServiceForHandler defines the repository service methods needed by PodHandler
-type RepositoryServiceForHandler interface {
-	GetByID(ctx context.Context, id int64) (*gitprovider.Repository, error)
-}
-
-// TicketServiceForHandler defines the ticket service methods needed by PodHandler
-type TicketServiceForHandler interface {
-	GetTicket(ctx context.Context, ticketID int64) (*ticket.Ticket, error)
-}
-
-// AgentServiceForHandler defines the agent service methods needed by PodHandler
-type AgentServiceForHandler interface {
-	GetUserEffectiveConfig(ctx context.Context, userID, agentTypeID int64, overrides agent.ConfigValues) agent.ConfigValues
-	GetEffectiveCredentialsForPod(ctx context.Context, userID, agentTypeID int64, profileID *int64) (agent.EncryptedCredentials, bool, error)
-	GetAgentType(ctx context.Context, id int64) (*agent.AgentType, error)
-}
-
-// BillingServiceForHandler defines the billing service methods needed by PodHandler
-type BillingServiceForHandler interface {
-	CheckQuota(ctx context.Context, orgID int64, quotaType string, amount int) error
-}
+// NOTE: BillingServiceForHandler, RepositoryServiceForHandler, TicketServiceForHandler,
+// AgentServiceForHandler, and UserServiceForPod interfaces have been moved to
+// PodOrchestrator's narrower interface definitions in service/agentpod/pod_orchestrator.go.
+// They are no longer needed at the handler level since Pod creation is delegated to PodOrchestrator.

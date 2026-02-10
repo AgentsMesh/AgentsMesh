@@ -14,6 +14,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/acme"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
+	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
@@ -85,12 +86,38 @@ func main() {
 	setupRunnerEventCallbacks(db, runnerConnMgr, eventBus)
 	setupPodEventCallbacks(db, podCoordinator, eventBus)
 
+	// Create PodOrchestrator (unified Pod creation logic for REST + MCP paths)
+	compositeProvider := agent.NewCompositeProvider(services.agentType, services.credentialProfile, services.userConfig)
+	configBuilder := agent.NewConfigBuilder(compositeProvider)
+	podOrchestrator := agentpod.NewPodOrchestrator(&agentpod.PodOrchestratorDeps{
+		PodService:     services.pod,
+		ConfigBuilder:  configBuilder,
+		PodCoordinator: podCoordinator,
+		BillingService: services.billing,
+		UserService:    services.user,
+		RepoService:    services.repository,
+		TicketService:  services.ticket,
+	})
+	slog.Info("PodOrchestrator created")
+
 	// Initialize PKI and gRPC
 	var grpcRunnerHandler *v1.GRPCRunnerHandler
 	var grpcServer *grpcserver.Server
 	var sandboxQuerySender runner.SandboxQuerySender
 	if cfg.PKI.CACertFile != "" && cfg.PKI.CAKeyFile != "" {
-		grpcServer, grpcRunnerHandler = initializePKIAndGRPC(cfg, services.runner, services.org, services.agentType, runnerConnMgr, appLogger)
+		mcpDeps := &grpcserver.MCPDependencies{
+			PodService:        services.pod,
+			PodOrchestrator:   podOrchestrator,
+			ChannelService:    services.channel,
+			BindingService:    services.binding,
+			TicketService:     services.ticket,
+			RepositoryService: services.repository,
+			RunnerService:     services.runner,
+			AgentTypeSvc:      services.agentType,
+			UserConfigSvc:     services.userConfig,
+			TerminalRouter:    terminalRouter,
+		}
+		grpcServer, grpcRunnerHandler = initializePKIAndGRPC(cfg, services.runner, services.org, services.agentType, runnerConnMgr, appLogger, mcpDeps)
 		if grpcServer != nil {
 			grpcCommandSender := grpcserver.NewGRPCCommandSender(grpcServer.RunnerAdapter())
 			podCoordinator.SetCommandSender(grpcCommandSender)
@@ -118,6 +145,7 @@ func main() {
 		PodCoordinator:     podCoordinator,
 		TerminalRouter:     terminalRouter,
 		Pod:                services.pod,
+		PodOrchestrator:    podOrchestrator,
 		Autopilot:          services.autopilot,
 		Channel:            services.channel,
 		Binding:            services.binding,

@@ -19,7 +19,7 @@ func TestGRPCRunnerAdapter_Connect_InvalidIdentity(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Create mock stream with no metadata
 	mockStream := &mockConnectServer{
@@ -37,7 +37,7 @@ func TestGRPCRunnerAdapter_Connect_MissingNodeID(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Create mock stream with metadata missing node_id
 	md := metadata.New(map[string]string{
@@ -60,7 +60,7 @@ func TestGRPCRunnerAdapter_Connect_RunnerNotFound(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	md := metadata.New(map[string]string{
 		MetadataKeyClientCertDN: "CN=non-existent-node",

@@ -30,7 +30,7 @@ func (h *BindingHandler) RequestBinding(c *gin.Context) {
 		return
 	}
 
-	// Get org ID from tenant context (set by PodAuthMiddleware or TenantMiddleware)
+	// Get org ID from tenant context (set by TenantMiddleware)
 	tenant := middleware.GetTenant(c)
 	if tenant == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid organization context"})

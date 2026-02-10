@@ -89,6 +89,9 @@ type GRPCConnection struct {
 	certExpiryWarningDays    int
 	certRenewalDays          int // Days before expiry to trigger renewal (default 30)
 	certUrgentDays           int // Days before expiry for urgent reconnection (default 7)
+
+	// RPCClient for MCP request-response over gRPC stream
+	rpcClient *RPCClient
 }
 
 // NewGRPCConnection creates a new gRPC connection with mTLS.

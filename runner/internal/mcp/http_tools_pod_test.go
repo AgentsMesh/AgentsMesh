@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerMCPToolsCallCreatePod(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -37,7 +37,7 @@ func TestHTTPServerMCPToolsCallCreatePod(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreatePodWithAllParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -76,7 +76,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithAllParams(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreatePodWithRepositoryURL(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -105,7 +105,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithRepositoryURL(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreatePodWithBypassPermissions(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -133,7 +133,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithBypassPermissions(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreatePodWithEmptyConfigOverrides(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -161,7 +161,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithEmptyConfigOverrides(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreatePodMissingAgentTypeID(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

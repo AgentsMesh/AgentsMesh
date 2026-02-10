@@ -76,21 +76,12 @@ func (h *ChannelHandler) CreateChannel(c *gin.Context) {
 		desc = &req.Description
 	}
 
-	// Check if request is from a Pod (via Pod API path)
-	var createdByPod *string
-	if pk, exists := c.Get("pod_key"); exists {
-		if pkStr, ok := pk.(string); ok && pkStr != "" {
-			createdByPod = &pkStr
-		}
-	}
-
 	ch, err := h.channelService.CreateChannel(c.Request.Context(), &channel.CreateChannelRequest{
 		OrganizationID:  tenant.OrganizationID,
 		Name:            req.Name,
 		Description:     desc,
 		RepositoryID:    req.RepositoryID,
 		TicketID:        req.TicketID,
-		CreatedByPod:    createdByPod,
 		CreatedByUserID: &tenant.UserID,
 	})
 	if err != nil {

@@ -16,7 +16,7 @@ func TestPodInfoStruct(t *testing.T) {
 		ProjectID:    &projectID,
 		AgentType:    "claude",
 		RegisteredAt: time.Now(),
-		Client:       NewBackendClient("http://localhost:8080", "test-org", "test-pod"),
+		// Client is a tools.CollaborationClient interface; nil is valid for struct test
 	}
 
 	if info.PodKey != "test-pod" {
@@ -25,10 +25,6 @@ func TestPodInfoStruct(t *testing.T) {
 
 	if info.TicketID == nil || *info.TicketID != 123 {
 		t.Errorf("TicketID: got %v, want 123", info.TicketID)
-	}
-
-	if info.Client == nil {
-		t.Error("Client should not be nil")
 	}
 }
 

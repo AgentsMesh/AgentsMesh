@@ -155,19 +155,7 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.TerminalRouter != nil {
 		podOpts = append(podOpts, WithTerminalRouter(svc.TerminalRouter))
 	}
-	if svc.Repository != nil {
-		podOpts = append(podOpts, WithRepositoryService(svc.Repository))
-	}
-	if svc.Ticket != nil {
-		podOpts = append(podOpts, WithTicketService(svc.Ticket))
-	}
-	if svc.User != nil {
-		podOpts = append(podOpts, WithUserService(svc.User))
-	}
-	if svc.Billing != nil {
-		podOpts = append(podOpts, WithBillingService(svc.Billing))
-	}
-	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.AgentType, svc.CredentialProfile, svc.UserConfig, podOpts...)
+	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.PodOrchestrator, podOpts...)
 	pods := rg.Group("/pods")
 	{
 		pods.GET("", podHandler.ListPods)

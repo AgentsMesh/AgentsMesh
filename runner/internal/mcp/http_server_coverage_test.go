@@ -11,7 +11,7 @@ import (
 // Additional tests for coverage
 
 func TestHTTPServerMCPToolsCallInvalidParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -42,7 +42,7 @@ func TestHTTPServerMCPToolsCallInvalidParams(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallToolNotFound(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

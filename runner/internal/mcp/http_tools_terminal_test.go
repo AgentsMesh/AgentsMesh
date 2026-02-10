@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerMCPToolsCallSendTerminalKey(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -43,7 +43,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKey(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSendTerminalKeyMissingArgs(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -70,7 +70,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyMissingArgs(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSendTerminalKeyWithValidKeys(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -98,7 +98,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyWithValidKeys(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSendTerminalKeyMissingPodKey(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -128,7 +128,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyMissingPodKey(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSendTerminalKeyEmptyKeys(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -159,7 +159,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyEmptyKeys(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallObserveTerminalWithDefaultLines(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -185,7 +185,7 @@ func TestHTTPServerMCPToolsCallObserveTerminalWithDefaultLines(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallObserveTerminalMissingPodKey(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -213,7 +213,7 @@ func TestHTTPServerMCPToolsCallObserveTerminalMissingPodKey(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSendTerminalTextMissingArgs(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

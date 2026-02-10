@@ -11,7 +11,7 @@ import (
 // Tests for channel tools with various parameters
 
 func TestHTTPServerMCPToolsCallSearchChannelsWithAllParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -40,7 +40,7 @@ func TestHTTPServerMCPToolsCallSearchChannelsWithAllParams(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreateChannelWithAllParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -68,7 +68,7 @@ func TestHTTPServerMCPToolsCallCreateChannelWithAllParams(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallGetChannelMessagesWithAllParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -96,7 +96,7 @@ func TestHTTPServerMCPToolsCallGetChannelMessagesWithAllParams(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSendChannelMessageWithAllParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

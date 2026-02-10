@@ -18,7 +18,7 @@ func TestNewGRPCRunnerAdapter(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	assert.NotNil(t, adapter)
 	assert.Equal(t, connMgr, adapter.connManager)
@@ -30,7 +30,7 @@ func TestGRPCRunnerAdapter_SendCreatePod(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Test sending to non-existent runner
 	cmd := &runnerv1.CreatePodCommand{
@@ -48,7 +48,7 @@ func TestGRPCRunnerAdapter_SendTerminatePod(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Test sending to non-existent runner
 	err := adapter.SendTerminatePod(999, "test-pod", true)
@@ -62,7 +62,7 @@ func TestGRPCRunnerAdapter_SendTerminalInput(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Test sending to non-existent runner
 	err := adapter.SendTerminalInput(999, "test-pod", []byte("hello"))
@@ -76,7 +76,7 @@ func TestGRPCRunnerAdapter_SendTerminalResize(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Test sending to non-existent runner
 	err := adapter.SendTerminalResize(999, "test-pod", 120, 40)
@@ -90,7 +90,7 @@ func TestGRPCRunnerAdapter_SendPrompt(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Test sending to non-existent runner
 	err := adapter.SendPrompt(999, "test-pod", "Hello, Claude!")
@@ -104,7 +104,7 @@ func TestGRPCRunnerAdapter_IsConnected(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Initially not connected
 	assert.False(t, adapter.IsConnected(1))

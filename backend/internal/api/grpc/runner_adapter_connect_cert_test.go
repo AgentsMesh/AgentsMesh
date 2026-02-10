@@ -38,7 +38,7 @@ func TestGRPCRunnerAdapter_Connect_CertificateRevoked(t *testing.T) {
 	// Mark certificate as revoked
 	runnerSvc.SetCertificateRevoked("SERIAL123", true)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	md := metadata.New(map[string]string{
 		MetadataKeyClientCertDN:     "CN=test-node",
@@ -79,7 +79,7 @@ func TestGRPCRunnerAdapter_Connect_CertificateRevocationCheckError(t *testing.T)
 	// Set error only for revocation check (not for GetByNodeID)
 	runnerSvc.SetRevocationCheckError(context.DeadlineExceeded)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	md := metadata.New(map[string]string{
 		MetadataKeyClientCertDN:     "CN=test-node",
@@ -119,7 +119,7 @@ func TestGRPCRunnerAdapter_Connect_CertificateValid(t *testing.T) {
 
 	// Certificate is NOT revoked (default)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	md := metadata.New(map[string]string{
 		MetadataKeyClientCertDN:     "CN=test-node",

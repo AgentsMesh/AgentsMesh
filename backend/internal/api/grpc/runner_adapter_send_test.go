@@ -20,7 +20,7 @@ func TestGRPCRunnerAdapter_SendOperations_WithConnection(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Add a connection
 	mockStream := &mockRunnerStream{}
@@ -111,7 +111,7 @@ func TestGRPCRunnerAdapter_Register(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Create a mock gRPC server to test registration
 	grpcServer := grpc.NewServer()

@@ -22,7 +22,7 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 	defer connMgr.Close()
 
 	t.Run("without agent types provider", func(t *testing.T) {
-		adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+		adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 		// Add a connection
 		mockStream := &mockRunnerStream{}
@@ -56,7 +56,7 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 				{Slug: "aider", Name: "Aider", Executable: "aider"},
 			},
 		}
-		adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, agentProvider, connMgr)
+		adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, agentProvider, connMgr, nil)
 
 		// Clear previous messages and add new connection
 		mockStream := &mockRunnerStream{}
@@ -82,7 +82,7 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 	})
 
 	t.Run("send message failure", func(t *testing.T) {
-		adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+		adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 		// Add a connection
 		mockStream := &mockRunnerStream{}
@@ -118,7 +118,7 @@ func TestGRPCRunnerAdapter_HandleInitialized(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Add a connection
 	mockStream := &mockRunnerStream{}
@@ -152,7 +152,7 @@ func TestGRPCRunnerAdapter_HandleInitialized_NilRunnerService(t *testing.T) {
 	defer connMgr.Close()
 
 	// Create adapter with nil runnerService
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	// Add a connection
 	mockStream := &mockRunnerStream{}
@@ -177,7 +177,7 @@ func TestGRPCRunnerAdapter_HandleInitialized_UpdateAgentsError(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, nil, nil, nil, connMgr, nil)
 
 	// Add a connection
 	mockStream := &mockRunnerStream{}

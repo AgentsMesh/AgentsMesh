@@ -19,7 +19,7 @@ func TestGRPCRunnerAdapter_SendLoop_DoneSignal(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	// Create connection
 	mockStream := &mockRunnerStream{}
@@ -57,7 +57,7 @@ func TestGRPCRunnerAdapter_SendLoop_ChannelClosed(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	// Create connection
 	mockStream := &mockRunnerStream{}
@@ -95,7 +95,7 @@ func TestGRPCRunnerAdapter_SendLoop_SendError(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	// Create connection
 	mockStream := &mockRunnerStream{}
@@ -139,7 +139,7 @@ func TestGRPCRunnerAdapter_SendLoop_SuccessfulSend(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	// Create connection
 	mockStream := &mockRunnerStream{}

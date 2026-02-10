@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
@@ -33,7 +34,7 @@ type LocalTerminalProvider interface {
 // HTTPServer provides an MCP server over HTTP for agent collaboration.
 // This server exposes collaboration tools to Claude Code via the MCP protocol.
 type HTTPServer struct {
-	backendURL       string
+	rpcClient        *client.RPCClient
 	port             int
 	pods             map[string]*PodInfo
 	mu               sync.RWMutex
@@ -51,7 +52,7 @@ type PodInfo struct {
 	ProjectID    *int
 	AgentType    string
 	RegisteredAt time.Time
-	Client       *BackendClient
+	Client       tools.CollaborationClient
 }
 
 // MCPTool represents a tool exposed via MCP.
@@ -66,14 +67,15 @@ type MCPTool struct {
 type MCPToolHandler func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error)
 
 // NewHTTPServer creates a new MCP HTTP server.
-func NewHTTPServer(backendURL string, port int) *HTTPServer {
+// rpcClient is used for MCP tool calls over the gRPC bidirectional stream.
+func NewHTTPServer(rpcClient *client.RPCClient, port int) *HTTPServer {
 	log := logger.MCP()
-	log.Debug("Creating MCP HTTP server", "port", port, "backend_url", backendURL)
+	log.Debug("Creating MCP HTTP server", "port", port)
 
 	server := &HTTPServer{
-		backendURL: backendURL,
-		port:       port,
-		pods:       make(map[string]*PodInfo),
+		rpcClient: rpcClient,
+		port:      port,
+		pods:      make(map[string]*PodInfo),
 	}
 
 	// Register all collaboration tools
@@ -145,7 +147,7 @@ func (s *HTTPServer) RegisterPod(podKey, orgSlug string, ticketID, projectID *in
 		ProjectID:    projectID,
 		AgentType:    agentType,
 		RegisteredAt: time.Now(),
-		Client:       NewBackendClient(s.backendURL, orgSlug, podKey),
+		Client:       NewGRPCCollaborationClient(s.rpcClient, podKey),
 	}
 
 	logger.MCP().Debug("Registered pod", "pod_key", podKey, "org", orgSlug)

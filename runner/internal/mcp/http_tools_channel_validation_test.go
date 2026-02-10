@@ -11,7 +11,7 @@ import (
 // Tests for channel tools validation (missing arguments)
 
 func TestHTTPServerMCPToolsCallGetChannelMissingID(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -39,7 +39,7 @@ func TestHTTPServerMCPToolsCallGetChannelMissingID(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallGetChannelDocumentMissingID(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -67,7 +67,7 @@ func TestHTTPServerMCPToolsCallGetChannelDocumentMissingID(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallUpdateChannelDocumentMissingArgs(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -97,7 +97,7 @@ func TestHTTPServerMCPToolsCallUpdateChannelDocumentMissingArgs(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSendChannelMessageMissingArgs(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -127,7 +127,7 @@ func TestHTTPServerMCPToolsCallSendChannelMessageMissingArgs(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallGetChannelMessagesMissingID(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -155,7 +155,7 @@ func TestHTTPServerMCPToolsCallGetChannelMessagesMissingID(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreateChannelMissingName(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

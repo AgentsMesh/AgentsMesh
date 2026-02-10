@@ -32,7 +32,7 @@ func TestGRPCRunnerAdapter_Connect_Integration(t *testing.T) {
 			{Slug: "claude-code", Name: "Claude Code", Executable: "claude"},
 		},
 	}
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, agentProvider, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, agentProvider, connMgr, nil)
 
 	addr, cleanup := setupTestServer(t, adapter)
 	defer cleanup()
@@ -72,7 +72,7 @@ func TestGRPCRunnerAdapter_SendCommands_Integration(t *testing.T) {
 	})
 	orgSvc.AddOrg("test-org", OrganizationInfo{ID: 100, Slug: "test-org"})
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	addr, cleanup := setupTestServer(t, adapter)
 	defer cleanup()

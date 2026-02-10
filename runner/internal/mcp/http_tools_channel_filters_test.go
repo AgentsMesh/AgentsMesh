@@ -11,7 +11,7 @@ import (
 // Tests for channel tools with filter parameters
 
 func TestHTTPServerMCPToolsCallGetChannelMessagesWithTimeParams(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -41,7 +41,7 @@ func TestHTTPServerMCPToolsCallGetChannelMessagesWithTimeParams(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreateChannelWithProjectAndTicket(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -71,7 +71,7 @@ func TestHTTPServerMCPToolsCallCreateChannelWithProjectAndTicket(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSearchChannelsWithFilters(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

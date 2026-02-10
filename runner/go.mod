@@ -10,6 +10,7 @@ require (
 	github.com/creack/pty v1.1.21
 	github.com/creativeprojects/go-selfupdate v1.5.2
 	github.com/getlantern/systray v1.2.2
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/kardianos/service v1.2.4
 	github.com/mattn/go-runewidth v0.0.16

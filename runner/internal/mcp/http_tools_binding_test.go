@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerMCPToolsCallAcceptBinding(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -36,7 +36,7 @@ func TestHTTPServerMCPToolsCallAcceptBinding(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallRejectBinding(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -64,7 +64,7 @@ func TestHTTPServerMCPToolsCallRejectBinding(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallUnbindPod(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -91,7 +91,7 @@ func TestHTTPServerMCPToolsCallUnbindPod(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallGetBindings(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -116,7 +116,7 @@ func TestHTTPServerMCPToolsCallGetBindings(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallGetBoundPods(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -141,7 +141,7 @@ func TestHTTPServerMCPToolsCallGetBoundPods(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallBindPodMissingArgs(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -171,7 +171,7 @@ func TestHTTPServerMCPToolsCallBindPodMissingArgs(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallBindPodEmptyTarget(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -202,7 +202,7 @@ func TestHTTPServerMCPToolsCallBindPodEmptyTarget(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallAcceptBindingMissingID(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -230,7 +230,7 @@ func TestHTTPServerMCPToolsCallAcceptBindingMissingID(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallRejectBindingMissingID(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -260,7 +260,7 @@ func TestHTTPServerMCPToolsCallRejectBindingMissingID(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallUnbindPodMissingTarget(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -288,7 +288,7 @@ func TestHTTPServerMCPToolsCallUnbindPodMissingTarget(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallGetBindingsWithStatus(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

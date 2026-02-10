@@ -43,6 +43,7 @@ type Services struct {
 	PodCoordinator    *runner.PodCoordinator          // Pod lifecycle coordinator
 	TerminalRouter    *runner.TerminalRouter          // Terminal data router
 	Pod               *agentpod.PodService
+	PodOrchestrator   *agentpod.PodOrchestrator            // Unified Pod creation orchestrator
 	Autopilot         *agentpod.AutopilotControllerService // AutopilotController automation service
 	Channel           *channel.Service
 	Binding           *binding.Service

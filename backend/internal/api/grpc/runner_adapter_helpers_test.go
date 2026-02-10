@@ -22,7 +22,7 @@ func TestGRPCRunnerAdapter_StartRevocationChecker(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, nil, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, nil, nil, nil, connMgr, nil)
 
 	t.Run("context canceled", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -101,7 +101,7 @@ func TestGRPCRunnerAdapter_LogAuditEvent(t *testing.T) {
 	defer connMgr.Close()
 
 	t.Run("nil db does nothing", func(t *testing.T) {
-		adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr)
+		adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 		// Should not panic
 		adapter.logAuditEvent(1, 100, audit.ActionRunnerOnline, "SERIAL123")
@@ -134,7 +134,7 @@ func TestGRPCRunnerAdapter_LogAuditEvent(t *testing.T) {
 			t.Skip("Failed to create table")
 		}
 
-		adapter := NewGRPCRunnerAdapter(logger, db, nil, nil, nil, nil, connMgr)
+		adapter := NewGRPCRunnerAdapter(logger, db, nil, nil, nil, nil, connMgr, nil)
 
 		adapter.logAuditEvent(1, 100, audit.ActionRunnerOnline, "SERIAL123")
 
@@ -157,7 +157,7 @@ func TestGRPCRunnerAdapter_LogAuditEvent(t *testing.T) {
 		}
 		// Don't create the table - writes will fail
 
-		adapter := NewGRPCRunnerAdapter(logger, db, nil, nil, nil, nil, connMgr)
+		adapter := NewGRPCRunnerAdapter(logger, db, nil, nil, nil, nil, connMgr, nil)
 
 		// Should not panic even with db error
 		adapter.logAuditEvent(1, 100, audit.ActionRunnerOnline, "SERIAL123")

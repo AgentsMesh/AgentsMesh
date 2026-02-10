@@ -8,7 +8,7 @@ import (
 )
 
 func BenchmarkHTTPServerHandleMCP(b *testing.B) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	bodyStr := `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`
@@ -25,7 +25,7 @@ func BenchmarkHTTPServerHandleMCP(b *testing.B) {
 }
 
 func BenchmarkHTTPServerRegisterPod(b *testing.B) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

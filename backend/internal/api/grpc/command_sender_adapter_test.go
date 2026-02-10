@@ -17,7 +17,7 @@ func TestNewGRPCCommandSender(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 	sender := NewGRPCCommandSender(adapter)
 
 	assert.NotNil(t, sender)
@@ -30,7 +30,7 @@ func TestGRPCCommandSender_SendCreatePod(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 	sender := NewGRPCCommandSender(adapter)
 
 	ctx := context.Background()
@@ -84,7 +84,7 @@ func TestGRPCCommandSender_SendTerminatePod(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 	sender := NewGRPCCommandSender(adapter)
 
 	ctx := context.Background()
@@ -99,7 +99,7 @@ func TestGRPCCommandSender_SendTerminalInput(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 	sender := NewGRPCCommandSender(adapter)
 
 	ctx := context.Background()
@@ -114,7 +114,7 @@ func TestGRPCCommandSender_SendTerminalResize(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 	sender := NewGRPCCommandSender(adapter)
 
 	ctx := context.Background()
@@ -129,7 +129,7 @@ func TestGRPCCommandSender_SendPrompt(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 	sender := NewGRPCCommandSender(adapter)
 
 	ctx := context.Background()
@@ -144,7 +144,7 @@ func TestGRPCCommandSender_ImplementsInterface(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 	sender := NewGRPCCommandSender(adapter)
 
 	// Verify it implements the interface

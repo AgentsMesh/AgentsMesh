@@ -45,6 +45,7 @@ type RunnerMessage struct {
 	//	*RunnerMessage_AutopilotCreated
 	//	*RunnerMessage_AutopilotTerminated
 	//	*RunnerMessage_AutopilotThinking
+	//	*RunnerMessage_McpRequest
 	Payload       isRunnerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -259,6 +260,15 @@ func (x *RunnerMessage) GetAutopilotThinking() *AutopilotThinkingEvent {
 	return nil
 }
 
+func (x *RunnerMessage) GetMcpRequest() *McpRequest {
+	if x != nil {
+		if x, ok := x.Payload.(*RunnerMessage_McpRequest); ok {
+			return x.McpRequest
+		}
+	}
+	return nil
+}
+
 func (x *RunnerMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -347,6 +357,11 @@ type RunnerMessage_AutopilotThinking struct {
 	AutopilotThinking *AutopilotThinkingEvent `protobuf:"bytes,20,opt,name=autopilot_thinking,json=autopilotThinking,proto3,oneof"`
 }
 
+type RunnerMessage_McpRequest struct {
+	// MCP 请求（Runner -> Backend，复用 gRPC 双向流）
+	McpRequest *McpRequest `protobuf:"bytes,21,opt,name=mcp_request,json=mcpRequest,proto3,oneof"`
+}
+
 func (*RunnerMessage_Initialize) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_Initialized) isRunnerMessage_Payload() {}
@@ -384,6 +399,8 @@ func (*RunnerMessage_AutopilotCreated) isRunnerMessage_Payload() {}
 func (*RunnerMessage_AutopilotTerminated) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_AutopilotThinking) isRunnerMessage_Payload() {}
+
+func (*RunnerMessage_McpRequest) isRunnerMessage_Payload() {}
 
 // InitializeRequest Runner 初始化请求
 type InitializeRequest struct {
@@ -1219,6 +1236,7 @@ type ServerMessage struct {
 	//	*ServerMessage_QuerySandboxes
 	//	*ServerMessage_CreateAutopilot
 	//	*ServerMessage_AutopilotControl
+	//	*ServerMessage_McpResponse
 	Payload       isServerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1370,6 +1388,15 @@ func (x *ServerMessage) GetAutopilotControl() *AutopilotControlCommand {
 	return nil
 }
 
+func (x *ServerMessage) GetMcpResponse() *McpResponse {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerMessage_McpResponse); ok {
+			return x.McpResponse
+		}
+	}
+	return nil
+}
+
 func (x *ServerMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -1430,6 +1457,11 @@ type ServerMessage_AutopilotControl struct {
 	AutopilotControl *AutopilotControlCommand `protobuf:"bytes,12,opt,name=autopilot_control,json=autopilotControl,proto3,oneof"`
 }
 
+type ServerMessage_McpResponse struct {
+	// MCP 响应（Backend -> Runner，复用 gRPC 双向流）
+	McpResponse *McpResponse `protobuf:"bytes,13,opt,name=mcp_response,json=mcpResponse,proto3,oneof"`
+}
+
 func (*ServerMessage_InitializeResult) isServerMessage_Payload() {}
 
 func (*ServerMessage_CreatePod) isServerMessage_Payload() {}
@@ -1453,6 +1485,8 @@ func (*ServerMessage_QuerySandboxes) isServerMessage_Payload() {}
 func (*ServerMessage_CreateAutopilot) isServerMessage_Payload() {}
 
 func (*ServerMessage_AutopilotControl) isServerMessage_Payload() {}
+
+func (*ServerMessage_McpResponse) isServerMessage_Payload() {}
 
 // InitializeResult 初始化响应
 type InitializeResult struct {
@@ -4095,11 +4129,203 @@ func (x *AutopilotHelpSuggestion) GetLabel() string {
 	return ""
 }
 
+// McpRequest Runner 发起的 MCP 请求（Runner -> Backend）
+// 使用通用 JSON payload 避免为每个方法定义独立 message
+type McpRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // UUID，关联请求和响应
+	PodKey        string                 `protobuf:"bytes,2,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`          // 发起请求的 Pod 身份
+	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`                        // 操作方法名，如 "search_channels"
+	Payload       []byte                 `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`                      // JSON 编码的请求参数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *McpRequest) Reset() {
+	*x = McpRequest{}
+	mi := &file_runner_v1_runner_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *McpRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*McpRequest) ProtoMessage() {}
+
+func (x *McpRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use McpRequest.ProtoReflect.Descriptor instead.
+func (*McpRequest) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *McpRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *McpRequest) GetPodKey() string {
+	if x != nil {
+		return x.PodKey
+	}
+	return ""
+}
+
+func (x *McpRequest) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+func (x *McpRequest) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+// McpResponse Backend 返回的 MCP 响应（Backend -> Runner）
+type McpResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 对应 McpRequest.request_id
+	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`                     // 请求是否成功
+	Payload       []byte                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`                      // JSON 编码的响应数据
+	Error         *McpError              `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`                          // 错误信息（当 success=false 时）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *McpResponse) Reset() {
+	*x = McpResponse{}
+	mi := &file_runner_v1_runner_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *McpResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*McpResponse) ProtoMessage() {}
+
+func (x *McpResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use McpResponse.ProtoReflect.Descriptor instead.
+func (*McpResponse) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *McpResponse) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *McpResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *McpResponse) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *McpResponse) GetError() *McpError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+// McpError MCP 请求错误详情
+type McpError struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`      // HTTP 状态码风格的错误码
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"` // 错误描述
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *McpError) Reset() {
+	*x = McpError{}
+	mi := &file_runner_v1_runner_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *McpError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*McpError) ProtoMessage() {}
+
+func (x *McpError) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use McpError.ProtoReflect.Descriptor instead.
+func (*McpError) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *McpError) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *McpError) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_runner_v1_runner_proto protoreflect.FileDescriptor
 
 const file_runner_v1_runner_proto_rawDesc = "" +
 	"\n" +
-	"\x16runner/v1/runner.proto\x12\trunner.v1\"\x94\v\n" +
+	"\x16runner/v1/runner.proto\x12\trunner.v1\"\xce\v\n" +
 	"\rRunnerMessage\x12>\n" +
 	"\n" +
 	"initialize\x18\x01 \x01(\v2\x1c.runner.v1.InitializeRequestH\x00R\n" +
@@ -4124,7 +4350,9 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x13autopilot_iteration\x18\x11 \x01(\v2\".runner.v1.AutopilotIterationEventH\x00R\x12autopilotIteration\x12O\n" +
 	"\x11autopilot_created\x18\x12 \x01(\v2 .runner.v1.AutopilotCreatedEventH\x00R\x10autopilotCreated\x12X\n" +
 	"\x14autopilot_terminated\x18\x13 \x01(\v2#.runner.v1.AutopilotTerminatedEventH\x00R\x13autopilotTerminated\x12R\n" +
-	"\x12autopilot_thinking\x18\x14 \x01(\v2!.runner.v1.AutopilotThinkingEventH\x00R\x11autopilotThinking\x12\x1c\n" +
+	"\x12autopilot_thinking\x18\x14 \x01(\v2!.runner.v1.AutopilotThinkingEventH\x00R\x11autopilotThinking\x128\n" +
+	"\vmcp_request\x18\x15 \x01(\v2\x15.runner.v1.McpRequestH\x00R\n" +
+	"mcpRequest\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"v\n" +
 	"\x11InitializeRequest\x12)\n" +
@@ -4189,7 +4417,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12\x1a\n" +
 	"\bprogress\x18\x03 \x01(\x05R\bprogress\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\xd0\a\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"\x8d\b\n" +
 	"\rServerMessage\x12J\n" +
 	"\x11initialize_result\x18\x01 \x01(\v2\x1b.runner.v1.InitializeResultH\x00R\x10initializeResult\x12<\n" +
 	"\n" +
@@ -4205,7 +4433,8 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x0fquery_sandboxes\x18\n" +
 	" \x01(\v2 .runner.v1.QuerySandboxesCommandH\x00R\x0equerySandboxes\x12N\n" +
 	"\x10create_autopilot\x18\v \x01(\v2!.runner.v1.CreateAutopilotCommandH\x00R\x0fcreateAutopilot\x12Q\n" +
-	"\x11autopilot_control\x18\f \x01(\v2\".runner.v1.AutopilotControlCommandH\x00R\x10autopilotControl\x12\x1c\n" +
+	"\x11autopilot_control\x18\f \x01(\v2\".runner.v1.AutopilotControlCommandH\x00R\x10autopilotControl\x12;\n" +
+	"\fmcp_response\x18\r \x01(\v2\x16.runner.v1.McpResponseH\x00R\vmcpResponse\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"\xcc\x01\n" +
 	"\x10InitializeResult\x12)\n" +
@@ -4406,7 +4635,23 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\vsuggestions\x18\x04 \x03(\v2\".runner.v1.AutopilotHelpSuggestionR\vsuggestions\"G\n" +
 	"\x17AutopilotHelpSuggestion\x12\x16\n" +
 	"\x06action\x18\x01 \x01(\tR\x06action\x12\x14\n" +
-	"\x05label\x18\x02 \x01(\tR\x05label2R\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\"v\n" +
+	"\n" +
+	"McpRequest\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12\x17\n" +
+	"\apod_key\x18\x02 \x01(\tR\x06podKey\x12\x16\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\x12\x18\n" +
+	"\apayload\x18\x04 \x01(\fR\apayload\"\x8b\x01\n" +
+	"\vMcpResponse\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12\x18\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x18\n" +
+	"\apayload\x18\x03 \x01(\fR\apayload\x12)\n" +
+	"\x05error\x18\x04 \x01(\v2\x13.runner.v1.McpErrorR\x05error\"8\n" +
+	"\bMcpError\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2R\n" +
 	"\rRunnerService\x12A\n" +
 	"\aConnect\x12\x18.runner.v1.RunnerMessage\x1a\x18.runner.v1.ServerMessage(\x010\x01B\x9a\x01\n" +
 	"\rcom.runner.v1B\vRunnerProtoP\x01Z7github.com/anthropic/agentmesh/proto/runner/v1;runnerv1\xa2\x02\x03RXX\xaa\x02\tRunner.V1\xca\x02\tRunner\\V1\xe2\x02\x15Runner\\V1\\GPBMetadata\xea\x02\n" +
@@ -4424,7 +4669,7 @@ func file_runner_v1_runner_proto_rawDescGZIP() []byte {
 	return file_runner_v1_runner_proto_rawDescData
 }
 
-var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 56)
+var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
 var file_runner_v1_runner_proto_goTypes = []any{
 	(*RunnerMessage)(nil),              // 0: runner.v1.RunnerMessage
 	(*InitializeRequest)(nil),          // 1: runner.v1.InitializeRequest
@@ -4480,8 +4725,11 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*AutopilotProgress)(nil),          // 51: runner.v1.AutopilotProgress
 	(*AutopilotHelpRequest)(nil),       // 52: runner.v1.AutopilotHelpRequest
 	(*AutopilotHelpSuggestion)(nil),    // 53: runner.v1.AutopilotHelpSuggestion
-	nil,                                // 54: runner.v1.ErrorEvent.DetailsEntry
-	nil,                                // 55: runner.v1.CreatePodCommand.EnvVarsEntry
+	(*McpRequest)(nil),                 // 54: runner.v1.McpRequest
+	(*McpResponse)(nil),                // 55: runner.v1.McpResponse
+	(*McpError)(nil),                   // 56: runner.v1.McpError
+	nil,                                // 57: runner.v1.ErrorEvent.DetailsEntry
+	nil,                                // 58: runner.v1.CreatePodCommand.EnvVarsEntry
 }
 var file_runner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: runner.v1.RunnerMessage.initialize:type_name -> runner.v1.InitializeRequest
@@ -4503,49 +4751,52 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	47, // 16: runner.v1.RunnerMessage.autopilot_created:type_name -> runner.v1.AutopilotCreatedEvent
 	48, // 17: runner.v1.RunnerMessage.autopilot_terminated:type_name -> runner.v1.AutopilotTerminatedEvent
 	49, // 18: runner.v1.RunnerMessage.autopilot_thinking:type_name -> runner.v1.AutopilotThinkingEvent
-	2,  // 19: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
-	5,  // 20: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
-	6,  // 21: runner.v1.HeartbeatData.relay_connections:type_name -> runner.v1.RelayConnectionInfo
-	54, // 22: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
-	15, // 23: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
-	18, // 24: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
-	21, // 25: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
-	22, // 26: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
-	23, // 27: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
-	24, // 28: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
-	25, // 29: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
-	26, // 30: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
-	27, // 31: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
-	29, // 32: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
-	45, // 33: runner.v1.ServerMessage.create_autopilot:type_name -> runner.v1.CreateAutopilotCommand
-	38, // 34: runner.v1.ServerMessage.autopilot_control:type_name -> runner.v1.AutopilotControlCommand
-	16, // 35: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
-	17, // 36: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
-	55, // 37: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
-	19, // 38: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
-	20, // 39: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
-	30, // 40: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
-	32, // 41: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
-	36, // 42: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
-	42, // 43: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
-	43, // 44: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
-	44, // 45: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
-	39, // 46: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
-	40, // 47: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
-	41, // 48: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
-	18, // 49: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
-	46, // 50: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
-	50, // 51: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
-	51, // 52: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
-	52, // 53: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
-	53, // 54: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
-	0,  // 55: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
-	14, // 56: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
-	56, // [56:57] is the sub-list for method output_type
-	55, // [55:56] is the sub-list for method input_type
-	55, // [55:55] is the sub-list for extension type_name
-	55, // [55:55] is the sub-list for extension extendee
-	0,  // [0:55] is the sub-list for field type_name
+	54, // 19: runner.v1.RunnerMessage.mcp_request:type_name -> runner.v1.McpRequest
+	2,  // 20: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
+	5,  // 21: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
+	6,  // 22: runner.v1.HeartbeatData.relay_connections:type_name -> runner.v1.RelayConnectionInfo
+	57, // 23: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
+	15, // 24: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
+	18, // 25: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
+	21, // 26: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
+	22, // 27: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
+	23, // 28: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
+	24, // 29: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
+	25, // 30: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
+	26, // 31: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
+	27, // 32: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
+	29, // 33: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
+	45, // 34: runner.v1.ServerMessage.create_autopilot:type_name -> runner.v1.CreateAutopilotCommand
+	38, // 35: runner.v1.ServerMessage.autopilot_control:type_name -> runner.v1.AutopilotControlCommand
+	55, // 36: runner.v1.ServerMessage.mcp_response:type_name -> runner.v1.McpResponse
+	16, // 37: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
+	17, // 38: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
+	58, // 39: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
+	19, // 40: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
+	20, // 41: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
+	30, // 42: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
+	32, // 43: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
+	36, // 44: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
+	42, // 45: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
+	43, // 46: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
+	44, // 47: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
+	39, // 48: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
+	40, // 49: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
+	41, // 50: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
+	18, // 51: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
+	46, // 52: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
+	50, // 53: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
+	51, // 54: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
+	52, // 55: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
+	53, // 56: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
+	56, // 57: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
+	0,  // 58: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
+	14, // 59: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
+	59, // [59:60] is the sub-list for method output_type
+	58, // [58:59] is the sub-list for method input_type
+	58, // [58:58] is the sub-list for extension type_name
+	58, // [58:58] is the sub-list for extension extendee
+	0,  // [0:58] is the sub-list for field type_name
 }
 
 func init() { file_runner_v1_runner_proto_init() }
@@ -4573,6 +4824,7 @@ func file_runner_v1_runner_proto_init() {
 		(*RunnerMessage_AutopilotCreated)(nil),
 		(*RunnerMessage_AutopilotTerminated)(nil),
 		(*RunnerMessage_AutopilotThinking)(nil),
+		(*RunnerMessage_McpRequest)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[14].OneofWrappers = []any{
 		(*ServerMessage_InitializeResult)(nil),
@@ -4587,6 +4839,7 @@ func file_runner_v1_runner_proto_init() {
 		(*ServerMessage_QuerySandboxes)(nil),
 		(*ServerMessage_CreateAutopilot)(nil),
 		(*ServerMessage_AutopilotControl)(nil),
+		(*ServerMessage_McpResponse)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[38].OneofWrappers = []any{
 		(*AutopilotControlCommand_Pause)(nil),
@@ -4602,7 +4855,7 @@ func file_runner_v1_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_v1_runner_proto_rawDesc), len(file_runner_v1_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   56,
+			NumMessages:   59,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

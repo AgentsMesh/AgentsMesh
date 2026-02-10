@@ -74,6 +74,9 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 	case *runnerv1.ServerMessage_AutopilotControl:
 		c.handleAutopilotControl(payload.AutopilotControl)
 
+	case *runnerv1.ServerMessage_McpResponse:
+		c.handleMcpResponse(payload.McpResponse)
+
 	default:
 		logger.GRPC().Warn("Unknown server message type")
 	}
@@ -260,4 +263,24 @@ func (c *GRPCConnection) handleAutopilotControl(cmd *runnerv1.AutopilotControlCo
 	if err := c.handler.OnAutopilotControl(cmd); err != nil {
 		log.Error("Failed to handle Autopilot control", "autopilot_key", cmd.AutopilotKey, "error", err)
 	}
+}
+
+// handleMcpResponse handles MCP response from server.
+// Routes the response to RPCClient for request-response correlation.
+func (c *GRPCConnection) handleMcpResponse(resp *runnerv1.McpResponse) {
+	if c.rpcClient == nil {
+		logger.GRPC().Warn("Received MCP response but no RPCClient set", "request_id", resp.RequestId)
+		return
+	}
+	c.rpcClient.HandleResponse(resp)
+}
+
+// SetRPCClient sets the RPCClient for handling MCP request-response over gRPC stream.
+func (c *GRPCConnection) SetRPCClient(rpc *RPCClient) {
+	c.rpcClient = rpc
+}
+
+// GetRPCClient returns the RPCClient instance.
+func (c *GRPCConnection) GetRPCClient() *RPCClient {
+	return c.rpcClient
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerMCPToolsCallCreateChannel(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -43,7 +43,7 @@ func TestHTTPServerMCPToolsCallCreateChannel(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallGetTicket(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -76,7 +76,7 @@ func TestHTTPServerMCPToolsCallGetTicket(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreateTicket(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -111,7 +111,7 @@ func TestHTTPServerMCPToolsCallCreateTicket(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallCreateTicketWithPriority(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -141,7 +141,7 @@ func TestHTTPServerMCPToolsCallCreateTicketWithPriority(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallWithIntArgs(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	// Test with int argument to cover getIntArg path

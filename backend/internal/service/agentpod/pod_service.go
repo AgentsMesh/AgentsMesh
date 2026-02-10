@@ -129,7 +129,9 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 		return nil, err
 	}
 
-	s.db.WithContext(ctx).Exec("UPDATE runners SET current_pods = current_pods + 1 WHERE id = ?", req.RunnerID)
+	// NOTE: current_pods increment is handled by PodCoordinator.CreatePod(),
+	// which runs only when a command is actually sent to Runner.
+	// Do NOT increment here to avoid double-counting.
 
 	return pod, nil
 }

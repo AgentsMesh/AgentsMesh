@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerMCPToolsCallObserveTerminal(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -44,7 +44,7 @@ func TestHTTPServerMCPToolsCallObserveTerminal(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSendTerminalText(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -78,7 +78,7 @@ func TestHTTPServerMCPToolsCallSendTerminalText(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallMissingArgs(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -114,7 +114,7 @@ func TestHTTPServerMCPToolsCallMissingArgs(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallListAvailablePods(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -145,7 +145,7 @@ func TestHTTPServerMCPToolsCallListAvailablePods(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallBindPod(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -179,7 +179,7 @@ func TestHTTPServerMCPToolsCallBindPod(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSearchChannels(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{
@@ -212,7 +212,7 @@ func TestHTTPServerMCPToolsCallSearchChannels(t *testing.T) {
 }
 
 func TestHTTPServerMCPToolsCallSearchTickets(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{

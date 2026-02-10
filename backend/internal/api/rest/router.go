@@ -148,74 +148,8 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		}
 
 		// Note: Runner communication is now via gRPC/mTLS (see internal/api/grpc/)
-		// The WebSocket endpoint /api/v1/orgs/:slug/ws/runners has been removed.
-
-		// Pod-based API routes (for MCP tools) - moved under org-scoped
-		// Path changed: /api/v1/pod → /api/v1/orgs/:slug/pod
-		podOrgScoped := apiV1.Group("/orgs/:slug/pod")
-		podOrgScoped.Use(middleware.PodAuthMiddleware(svc.Pod, svc.Org))
-		{
-			// Channel routes for MCP tools
-			channelHandler := v1.NewChannelHandler(svc.Channel)
-			podOrgScoped.GET("/channels", channelHandler.ListChannels)
-			podOrgScoped.POST("/channels", channelHandler.CreateChannel)
-			podOrgScoped.GET("/channels/:id", channelHandler.GetChannel)
-			podOrgScoped.GET("/channels/:id/messages", channelHandler.ListMessages)
-			podOrgScoped.POST("/channels/:id/messages", channelHandler.SendMessage)
-			podOrgScoped.POST("/channels/:id/pods", channelHandler.JoinPod)
-			podOrgScoped.GET("/channels/:id/document", channelHandler.GetDocument)
-			podOrgScoped.PUT("/channels/:id/document", channelHandler.UpdateDocument)
-
-			// Pod routes for MCP tools - using functional options
-			var mcpPodOpts []v1.PodHandlerOption
-			if svc.PodCoordinator != nil {
-				mcpPodOpts = append(mcpPodOpts, v1.WithPodCoordinator(svc.PodCoordinator))
-			}
-			if svc.TerminalRouter != nil {
-				mcpPodOpts = append(mcpPodOpts, v1.WithTerminalRouter(svc.TerminalRouter))
-			}
-			if svc.Repository != nil {
-				mcpPodOpts = append(mcpPodOpts, v1.WithRepositoryService(svc.Repository))
-			}
-			if svc.Ticket != nil {
-				mcpPodOpts = append(mcpPodOpts, v1.WithTicketService(svc.Ticket))
-			}
-			if svc.User != nil {
-				mcpPodOpts = append(mcpPodOpts, v1.WithUserService(svc.User))
-			}
-			if svc.Billing != nil {
-				mcpPodOpts = append(mcpPodOpts, v1.WithBillingService(svc.Billing))
-			}
-			podHandler := v1.NewPodHandler(svc.Pod, svc.Runner, svc.AgentType, svc.CredentialProfile, svc.UserConfig, mcpPodOpts...)
-			podOrgScoped.GET("/pods", podHandler.ListPods)
-			podOrgScoped.POST("/pods", podHandler.CreatePod)
-			podOrgScoped.GET("/pods/:key/terminal/observe", podHandler.ObserveTerminal)
-			podOrgScoped.POST("/pods/:key/terminal/input", podHandler.SendTerminalInput)
-
-			// Ticket routes for MCP tools
-			ticketHandler := v1.NewTicketHandler(svc.Ticket)
-			podOrgScoped.GET("/tickets", ticketHandler.ListTickets)
-			podOrgScoped.GET("/tickets/:identifier", ticketHandler.GetTicket)
-			podOrgScoped.POST("/tickets", ticketHandler.CreateTicket)
-			podOrgScoped.PUT("/tickets/:identifier", ticketHandler.UpdateTicket)
-
-			// Binding routes for MCP tools
-			bindingHandler := v1.NewBindingHandler(svc.Binding)
-			podOrgScoped.POST("/bindings", bindingHandler.RequestBinding)
-			podOrgScoped.GET("/bindings", bindingHandler.ListBindings)
-			podOrgScoped.POST("/bindings/accept", bindingHandler.AcceptBinding)
-			podOrgScoped.POST("/bindings/reject", bindingHandler.RejectBinding)
-			podOrgScoped.POST("/bindings/unbind", bindingHandler.Unbind)
-			podOrgScoped.GET("/bindings/pods", bindingHandler.GetBoundPods)
-
-			// MCP Discovery routes (runners with nested agent info)
-			mcpDiscoveryHandler := v1.NewMCPDiscoveryHandler(svc.Runner, svc.AgentType, svc.UserConfig)
-			podOrgScoped.GET("/runners", mcpDiscoveryHandler.ListRunnersForMCP)
-
-			// Repository routes for MCP tools (discovery)
-			repositoryHandler := v1.NewRepositoryHandler(svc.Repository, svc.Billing)
-			podOrgScoped.GET("/repositories", repositoryHandler.ListRepositories)
-		}
+		// MCP tool communication has been migrated to gRPC bidirectional stream.
+		// The Pod REST API (/api/v1/orgs/:slug/pod/*) has been removed.
 	}
 
 	// Admin Console routes

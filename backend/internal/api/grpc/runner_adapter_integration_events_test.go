@@ -26,7 +26,7 @@ func TestGRPCRunnerAdapter_RunnerEvents_Integration(t *testing.T) {
 	})
 	orgSvc.AddOrg("test-org", OrganizationInfo{ID: 100, Slug: "test-org"})
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Track events
 	var podCreatedKey string
@@ -73,7 +73,7 @@ func TestGRPCRunnerAdapter_Disconnect_Integration(t *testing.T) {
 	})
 	orgSvc.AddOrg("test-org", OrganizationInfo{ID: 100, Slug: "test-org"})
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	var disconnectCalled bool
 	connMgr.SetDisconnectCallback(func(runnerID int64) {

@@ -316,11 +316,10 @@ func TestNoReconnectOnGracefulClose(t *testing.T) {
 	url := "ws" + strings.TrimPrefix(srv.URL, "http")
 	c := NewClient(url, "pod-1", "test-token", nil)
 
-	closeCalled := false
-	reconnectCalled := false
+	var closeCalled, reconnectCalled atomic.Bool
 
-	c.SetCloseHandler(func() { closeCalled = true })
-	c.SetReconnectHandler(func() { reconnectCalled = true })
+	c.SetCloseHandler(func() { closeCalled.Store(true) })
+	c.SetReconnectHandler(func() { reconnectCalled.Store(true) })
 
 	if err := c.Connect(); err != nil {
 		t.Fatalf("Connect: %v", err)
@@ -332,10 +331,10 @@ func TestNoReconnectOnGracefulClose(t *testing.T) {
 	c.Stop()
 	time.Sleep(100 * time.Millisecond)
 
-	if !closeCalled {
+	if !closeCalled.Load() {
 		t.Error("close handler should be called on graceful stop")
 	}
-	if reconnectCalled {
+	if reconnectCalled.Load() {
 		t.Error("reconnect handler should NOT be called on graceful stop")
 	}
 }

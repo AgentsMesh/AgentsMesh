@@ -87,6 +87,9 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 	case *runnerv1.RunnerMessage_AutopilotThinking:
 		a.connManager.HandleAutopilotThinking(runnerID, payload.AutopilotThinking)
 
+	case *runnerv1.RunnerMessage_McpRequest:
+		a.handleMcpRequest(ctx, runnerID, conn, payload.McpRequest)
+
 	default:
 		a.logger.Warn("unknown message type", "runner_id", runnerID)
 	}

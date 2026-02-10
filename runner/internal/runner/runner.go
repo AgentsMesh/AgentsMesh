@@ -147,9 +147,15 @@ func (r *Runner) initEnhancedComponents(cfg *config.Config) {
 		}
 	}
 
+	// Initialize RPCClient for MCP over gRPC
+	rpcClient := client.NewRPCClient(r.conn)
+	if grpcConn, ok := r.conn.(*client.GRPCConnection); ok {
+		grpcConn.SetRPCClient(rpcClient)
+	}
+
 	// Initialize and start MCP HTTP Server
 	mcpPort := cfg.GetMCPPort()
-	r.mcpServer = mcp.NewHTTPServer(cfg.ServerURL, mcpPort)
+	r.mcpServer = mcp.NewHTTPServer(rpcClient, mcpPort)
 	r.mcpServer.SetStatusProvider(r)
 	r.mcpServer.SetTerminalProvider(r)
 	go func() {

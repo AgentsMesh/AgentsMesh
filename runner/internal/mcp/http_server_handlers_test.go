@@ -9,7 +9,7 @@ import (
 )
 
 func TestHTTPServerHealth(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	// Create test request
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -32,7 +32,7 @@ func TestHTTPServerHealth(t *testing.T) {
 }
 
 func TestHTTPServerPods(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("pod-1", "test-org", nil, nil, "claude")
 
 	req := httptest.NewRequest(http.MethodGet, "/pods", nil)
@@ -56,7 +56,7 @@ func TestHTTPServerPods(t *testing.T) {
 }
 
 func TestHTTPServerMCPMissingPodKey(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	req := httptest.NewRequest(http.MethodPost, "/mcp", nil)
 	rec := httptest.NewRecorder()
@@ -78,7 +78,7 @@ func TestHTTPServerMCPMissingPodKey(t *testing.T) {
 }
 
 func TestHTTPServerMCPUnregisteredPod(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	body := bytes.NewBufferString(`{"jsonrpc":"2.0","id":1,"method":"initialize"}`)
 	req := httptest.NewRequest(http.MethodPost, "/mcp", body)
@@ -98,7 +98,7 @@ func TestHTTPServerMCPUnregisteredPod(t *testing.T) {
 }
 
 func TestHTTPServerMCPMethodNotFound(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`{"jsonrpc":"2.0","id":1,"method":"unknown/method"}`)
@@ -123,7 +123,7 @@ func TestHTTPServerMCPMethodNotFound(t *testing.T) {
 }
 
 func TestHTTPServerMCPInvalidJSON(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
 	body := bytes.NewBufferString(`invalid json`)
@@ -148,7 +148,7 @@ func TestHTTPServerMCPInvalidJSON(t *testing.T) {
 }
 
 func TestHTTPServerMCPMethodNotAllowed(t *testing.T) {
-	server := NewHTTPServer("http://localhost:8080", 9090)
+	server := NewHTTPServer(nil, 9090)
 
 	req := httptest.NewRequest(http.MethodGet, "/mcp", nil)
 	rec := httptest.NewRecorder()

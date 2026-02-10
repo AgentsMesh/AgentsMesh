@@ -30,7 +30,7 @@ func TestGRPCRunnerAdapter_ValidateRunner(t *testing.T) {
 		Slug: "test-org",
 	})
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Test valid runner
 	identity := &ClientIdentity{
@@ -50,7 +50,7 @@ func TestGRPCRunnerAdapter_ValidateRunner_NotFound(t *testing.T) {
 	orgSvc := newMockOrgService()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	identity := &ClientIdentity{
 		NodeID:  "non-existent",
@@ -75,7 +75,7 @@ func TestGRPCRunnerAdapter_ValidateRunner_Disabled(t *testing.T) {
 		IsEnabled:      false, // Disabled
 	})
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	identity := &ClientIdentity{
 		NodeID:  "disabled-node",
@@ -104,7 +104,7 @@ func TestGRPCRunnerAdapter_ValidateRunner_WrongOrg(t *testing.T) {
 		Slug: "other-org",
 	})
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	identity := &ClientIdentity{
 		NodeID:  "test-node",
@@ -130,7 +130,7 @@ func TestGRPCRunnerAdapter_ValidateRunner_OrgNotFound(t *testing.T) {
 	})
 	// No org added
 
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr)
+	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	identity := &ClientIdentity{
 		NodeID:  "test-node",
