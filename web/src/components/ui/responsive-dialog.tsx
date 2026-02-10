@@ -151,7 +151,7 @@ export function ResponsiveDialogContent({
     return (
       <Drawer.Content
         className={cn(
-          "fixed bottom-0 left-0 right-0 bg-background rounded-t-2xl z-50 max-h-[90vh] flex flex-col",
+          "fixed bottom-0 left-0 right-0 bg-background rounded-t-2xl z-50 max-h-[85dvh] flex flex-col",
           className
         )}
         aria-describedby={undefined}
@@ -162,7 +162,7 @@ export function ResponsiveDialogContent({
         </div>
         {/* Hidden title for accessibility */}
         {title && <Drawer.Title className="sr-only">{title}</Drawer.Title>}
-        <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {children}
         </div>
         {/* Safe area padding */}
@@ -234,7 +234,7 @@ export function ResponsiveDialogBody({
     <div
       className={cn(
         "px-6 py-4 flex-1 overflow-y-auto",
-        isMobile && "px-4",
+        isMobile && "px-4 overscroll-contain",
         className
       )}
     >

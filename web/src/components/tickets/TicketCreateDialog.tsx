@@ -23,6 +23,8 @@ import {
 import { TicketType, TicketPriority } from "@/lib/api/ticket";
 import { ticketApi } from "@/lib/api";
 import { RepositorySelect } from "@/components/common/RepositorySelect";
+import { useBreakpoint } from "@/components/layout/useBreakpoint";
+import { cn } from "@/lib/utils";
 
 // Lazy load BlockEditor to avoid SSR issues
 const BlockEditor = lazy(() => import("@/components/ui/block-editor"));
@@ -68,6 +70,7 @@ export function TicketCreateDialog({
   parentTicketId,
 }: TicketCreateDialogProps) {
   const t = useTranslations();
+  const { isMobile } = useBreakpoint();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>({
@@ -224,8 +227,11 @@ export function TicketCreateDialog({
 
             {/* Content - Rich Text Editor */}
             <FormField label={t("tickets.createDialog.content")}>
-              <div className="border border-input rounded-md overflow-hidden min-h-[150px] bg-card">
-                <Suspense fallback={<div className="h-[150px] animate-pulse bg-muted" />}>
+              <div className={cn(
+                "border border-input rounded-md overflow-hidden bg-card",
+                isMobile ? "min-h-[100px]" : "min-h-[150px]"
+              )}>
+                <Suspense fallback={<div className={cn("animate-pulse bg-muted", isMobile ? "h-[100px]" : "h-[150px]")} />}>
                   <BlockEditor
                     initialContent={form.content}
                     onChange={(content) => updateField("content", content)}
