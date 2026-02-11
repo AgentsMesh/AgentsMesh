@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import ArchitectureDiagram from "@/components/docs/ArchitectureDiagram";
 
 export default function DocsPage() {
   const t = useTranslations();
@@ -47,6 +48,17 @@ export default function DocsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Architecture Diagram */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.architecture.title")}
+        </h2>
+        <p className="text-muted-foreground leading-relaxed mb-2">
+          {t("docs.architecture.description")}
+        </p>
+        <ArchitectureDiagram />
       </section>
 
       {/* Quick Links */}

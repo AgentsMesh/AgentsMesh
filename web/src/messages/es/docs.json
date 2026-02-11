@@ -34,6 +34,35 @@
       "supportedAgents": "Supported AI Agents:",
       "customAgents": "Custom agents via MCP protocol"
     },
+    "architecture": {
+      "title": "Cómo Funciona",
+      "description": "AgentsMesh separa el plano de control del plano de datos. Los comandos de orquestación viajan a través de gRPC con TLS mutuo (mTLS), mientras que las E/S del terminal se transmiten a través de un clúster Relay distribuido globalmente — para que puedas operar agentes en cualquier máquina, desde cualquier dispositivo, de forma segura.",
+      "clientLayer": "Capa de Cliente",
+      "clientSubtitle": "Accede desde cualquier lugar — navegador, móvil o tablet",
+      "cloudLayer": "Nube",
+      "cloudDesc": "Orquestación, monitoreo, colaboración y seguridad",
+      "cloud": {
+        "orchestration": "Orquestación",
+        "monitoring": "Monitoreo",
+        "collaboration": "Colaboración",
+        "security": "Seguridad"
+      },
+      "controlPlane": "Plano de Control",
+      "controlPlaneDesc": "Ciclo de vida de Pods, comandos de agentes, sincronización de estado",
+      "dataPlane": "Plano de Datos",
+      "dataPlaneDesc": "E/S de terminal, streaming en tiempo real",
+      "cluster": "Clúster",
+      "runnerLayer": "Capa de Ejecución",
+      "selfHostedRunners": "Runners Autoalojados",
+      "runnerDesc": "Despliega en tu propia infraestructura — tu código nunca sale de tu entorno",
+      "runnerMac": "macOS",
+      "runnerLinux": "Linux",
+      "runnerCloud": "VM en la Nube",
+      "agentLayer": "Capa de Agentes",
+      "agentSubtitle": "Agentes de codificación IA ejecutándose en Pods aislados",
+      "securityTitle": "Arquitectura de Seguridad — Diseño de Doble Ruta",
+      "securityDesc": "Las señales de control (creación de Pods, comandos de agentes, actualizaciones de estado) viajan a través de gRPC protegido con TLS mutuo (mTLS) — cada Runner posee un certificado X.509 único emitido por la PKI de la plataforma. Los flujos de datos del terminal (pulsaciones de teclas, salida) pasan por el clúster Relay, manteniendo las E/S sensibles a la latencia en una ruta separada y optimizada. Este diseño de doble ruta garantiza que puedas operar agentes de IA de forma segura en cualquier máquina, desde cualquier dispositivo, en cualquier parte del mundo."
+    },
     "whatYouCanDo": {
       "title": "Qué Puedes Hacer",
       "description": "AgentsMesh otorga superpoderes a tu equipo para el desarrollo impulsado por IA.",

@@ -34,6 +34,35 @@
       "supportedAgents": "Supported AI Agents:",
       "customAgents": "Custom agents via MCP protocol"
     },
+    "architecture": {
+      "title": "仕組み",
+      "description": "AgentsMesh はコントロールプレーンとデータプレーンを分離しています。オーケストレーションコマンドは gRPC + 相互 TLS (mTLS) で送信され、ターミナル I/O はグローバル分散の Relay クラスターを経由します。これにより、どのデバイスからでも、どのマシン上のエージェントでも安全に操作できます。",
+      "clientLayer": "クライアント層",
+      "clientSubtitle": "いつでもどこからでもアクセス——ブラウザ、スマートフォン、タブレット",
+      "cloudLayer": "クラウド",
+      "cloudDesc": "オーケストレーション、監視、コラボレーション、セキュリティ",
+      "cloud": {
+        "orchestration": "オーケストレーション",
+        "monitoring": "モニタリング",
+        "collaboration": "コラボレーション",
+        "security": "セキュリティ"
+      },
+      "controlPlane": "コントロールプレーン",
+      "controlPlaneDesc": "Pod ライフサイクル、エージェントコマンド、状態同期",
+      "dataPlane": "データプレーン",
+      "dataPlaneDesc": "ターミナル I/O、リアルタイムストリーミング",
+      "cluster": "クラスター",
+      "runnerLayer": "実行層",
+      "selfHostedRunners": "セルフホスト Runner",
+      "runnerDesc": "独自のインフラにデプロイ——コードは環境の外に出ません",
+      "runnerMac": "macOS",
+      "runnerLinux": "Linux",
+      "runnerCloud": "クラウド VM",
+      "agentLayer": "エージェント層",
+      "agentSubtitle": "隔離された Pod 内で動作する AI コーディングエージェント",
+      "securityTitle": "セキュリティアーキテクチャ——デュアルパス設計",
+      "securityDesc": "制御信号（Pod 作成、エージェントコマンド、状態更新）は gRPC + 相互 TLS (mTLS) で保護されます。各 Runner はプラットフォーム PKI が発行する固有の X.509 証明書を保持します。ターミナルデータストリーム（キー入力、出力）は Relay クラスターを経由し、レイテンシに敏感な I/O を最適化された別パスで処理します。このデュアルパス設計により、世界中どこからでも、どのデバイスからでも、あらゆるマシン上の AI エージェントを安全に操作できます。"
+    },
     "whatYouCanDo": {
       "title": "できること",
       "description": "AgentsMesh はチームに AI 駆動開発の超能力を与えます。",

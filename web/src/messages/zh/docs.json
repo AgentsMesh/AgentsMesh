@@ -34,6 +34,35 @@
       "supportedAgents": "支持的 AI 智能体：",
       "customAgents": "通过 MCP 协议自定义智能体"
     },
+    "architecture": {
+      "title": "工作原理",
+      "description": "AgentsMesh 将控制面与数据面分离。编排指令通过 gRPC + 双向 TLS (mTLS) 传输，终端 I/O 数据流则通过全球分布的 Relay 集群转发——让你可以在任何设备上，安全地操控任何机器上的 AI 智能体。",
+      "clientLayer": "客户端层",
+      "clientSubtitle": "随时随地访问——浏览器、手机或平板",
+      "cloudLayer": "云端",
+      "cloudDesc": "编排、监控、协作与安全",
+      "cloud": {
+        "orchestration": "编排调度",
+        "monitoring": "实时监控",
+        "collaboration": "多端协作",
+        "security": "安全保障"
+      },
+      "controlPlane": "控制面",
+      "controlPlaneDesc": "Pod 生命周期、智能体指令、状态同步",
+      "dataPlane": "数据面",
+      "dataPlaneDesc": "终端 I/O、实时数据流",
+      "cluster": "集群",
+      "runnerLayer": "执行层",
+      "selfHostedRunners": "自托管 Runner 节点",
+      "runnerDesc": "部署在你自己的基础设施上——代码永不离开你的环境",
+      "runnerMac": "macOS",
+      "runnerLinux": "Linux",
+      "runnerCloud": "云服务器",
+      "agentLayer": "智能体层",
+      "agentSubtitle": "AI 编程智能体在隔离的 Pod 中运行",
+      "securityTitle": "安全架构——双通道设计",
+      "securityDesc": "控制信号（Pod 创建、智能体指令、状态更新）通过 gRPC + 双向 TLS (mTLS) 传输——每个 Runner 持有平台 PKI 颁发的唯一 X.509 证书。终端数据流（按键、输出）通过 Relay 集群转发，将延迟敏感的 I/O 放在独立的优化通道上。这种双通道设计确保你可以在世界任何地方、通过任何设备，安全地操控任意机器上的 AI 智能体。"
+    },
     "whatYouCanDo": {
       "title": "你可以做什么",
       "description": "AgentsMesh 为你的团队赋予 AI 驱动开发的超能力。",

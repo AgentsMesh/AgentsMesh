@@ -34,6 +34,35 @@
       "supportedAgents": "Supported AI Agents:",
       "customAgents": "Custom agents via MCP protocol"
     },
+    "architecture": {
+      "title": "작동 원리",
+      "description": "AgentsMesh는 컨트롤 플레인과 데이터 플레인을 분리합니다. 오케스트레이션 명령은 gRPC + 상호 TLS (mTLS)를 통해 전송되고, 터미널 I/O는 글로벌 분산 Relay 클러스터를 통해 스트리밍됩니다. 어떤 기기에서든, 어떤 머신의 에이전트든 안전하게 조작할 수 있습니다.",
+      "clientLayer": "클라이언트 계층",
+      "clientSubtitle": "언제 어디서나 접근 — 브라우저, 모바일, 태블릿",
+      "cloudLayer": "클라우드",
+      "cloudDesc": "오케스트레이션, 모니터링, 협업 및 보안",
+      "cloud": {
+        "orchestration": "오케스트레이션",
+        "monitoring": "모니터링",
+        "collaboration": "협업",
+        "security": "보안"
+      },
+      "controlPlane": "컨트롤 플레인",
+      "controlPlaneDesc": "Pod 라이프사이클, 에이전트 명령, 상태 동기화",
+      "dataPlane": "데이터 플레인",
+      "dataPlaneDesc": "터미널 I/O, 실시간 스트리밍",
+      "cluster": "클러스터",
+      "runnerLayer": "실행 계층",
+      "selfHostedRunners": "셀프호스팅 Runner",
+      "runnerDesc": "자체 인프라에 배포 — 코드가 환경을 벗어나지 않습니다",
+      "runnerMac": "macOS",
+      "runnerLinux": "Linux",
+      "runnerCloud": "클라우드 VM",
+      "agentLayer": "에이전트 계층",
+      "agentSubtitle": "격리된 Pod에서 실행되는 AI 코딩 에이전트",
+      "securityTitle": "보안 아키텍처 — 듀얼 패스 설계",
+      "securityDesc": "제어 신호(Pod 생성, 에이전트 명령, 상태 업데이트)는 gRPC + 상호 TLS (mTLS)로 보호됩니다. 각 Runner는 플랫폼 PKI가 발급한 고유 X.509 인증서를 보유합니다. 터미널 데이터 스트림(키 입력, 출력)은 Relay 클러스터를 통해 전달되어 지연에 민감한 I/O를 별도의 최적화된 경로에서 처리합니다. 이 듀얼 패스 설계 덕분에 전 세계 어디서든, 어떤 기기로든, 어떤 머신의 AI 에이전트도 안전하게 조작할 수 있습니다."
+    },
     "whatYouCanDo": {
       "title": "할 수 있는 것",
       "description": "AgentsMesh는 팀에게 AI 기반 개발의 초능력을 부여합니다.",
