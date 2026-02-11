@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { GitBranch, Bell, User, Settings } from "lucide-react";
 
 interface PersonalSettingsSidebarProps {

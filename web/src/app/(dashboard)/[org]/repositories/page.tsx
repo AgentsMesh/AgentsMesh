@@ -9,7 +9,7 @@ import { CenteredSpinner } from "@/components/ui/spinner";
 import { useConfirmDialog, ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { repositoryApi } from "@/lib/api";
 import type { RepositoryData } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
 import { ImportRepositoryModal } from "@/components/ide/modals/ImportRepositoryModal";
 

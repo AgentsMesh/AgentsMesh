@@ -1,17 +1,37 @@
 import { ReactElement, ReactNode } from "react";
 import { render, RenderOptions } from "@testing-library/react";
-import { I18nProvider } from "@/lib/i18n/client";
-import enMessages from "@/messages/en.json";
+import { NextIntlClientProvider } from "next-intl";
+import commonMessages from "@/messages/en/common.json";
+import authMessages from "@/messages/en/auth.json";
+import landingMessages from "@/messages/en/landing.json";
+import appMessages from "@/messages/en/app.json";
+import settingsMessages from "@/messages/en/settings.json";
+import ideMessages from "@/messages/en/ide.json";
+import repositoriesMessages from "@/messages/en/repositories.json";
+import runnersMessages from "@/messages/en/runners.json";
+import docsMessages from "@/messages/en/docs.json";
+import contentMessages from "@/messages/en/content.json";
 
 // Mock translations for testing
-const mockTranslations = enMessages;
+const mockTranslations = {
+  ...commonMessages,
+  ...authMessages,
+  ...landingMessages,
+  ...appMessages,
+  ...settingsMessages,
+  ...ideMessages,
+  ...repositoriesMessages,
+  ...runnersMessages,
+  ...docsMessages,
+  ...contentMessages,
+};
 
 // Wrapper component that provides all necessary providers for testing
 function AllProviders({ children }: { children: ReactNode }) {
   return (
-    <I18nProvider initialLocale="en" initialTranslations={mockTranslations}>
+    <NextIntlClientProvider locale="en" messages={mockTranslations}>
       {children}
-    </I18nProvider>
+    </NextIntlClientProvider>
   );
 }
 

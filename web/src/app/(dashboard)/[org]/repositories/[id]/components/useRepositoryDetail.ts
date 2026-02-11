@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { repositoryApi, RepositoryData } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export type RepositoryTab = "info" | "branches";

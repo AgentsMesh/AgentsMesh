@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 export function FinalCTA() {
   const t = useTranslations();

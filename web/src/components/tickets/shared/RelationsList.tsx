@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { TicketRelation } from "@/lib/api";
 import { ChevronRight, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";

@@ -1,0 +1,358 @@
+{
+  "agentpod": {
+    "title": "AgentPod",
+    "pods": "Pods",
+    "newPod": "Novo Pod",
+    "runners": "Runners",
+    "noRunnersOnline": "Nenhum runner online",
+    "selectAgent": "Selecionar Agente",
+    "selectRepository": "Selecionar Repositório",
+    "initialPrompt": "Prompt Inicial",
+    "status": {
+      "initializing": "Inicializando",
+      "running": "Executando",
+      "paused": "Pausado",
+      "terminated": "Encerrado",
+      "error": "Erro"
+    }
+  },
+  "pods": {
+    "status": {
+      "initializing": "Initializing",
+      "running": "Running",
+      "paused": "Paused",
+      "disconnected": "Disconnected",
+      "orphaned": "Orphaned",
+      "completed": "Completed",
+      "terminated": "Terminated",
+      "error": "Error",
+      "failed": "Failed"
+    }
+  },
+  "mesh": {
+    "title": "AgentsMesh",
+    "channels": "Canais",
+    "newChannel": "Novo Canal",
+    "topology": "Topologia",
+    "messages": "Mensagens",
+    "sendMessage": "Enviar mensagem...",
+    "page": {
+      "title": "Mesh",
+      "subtitle": "Topologia da rede de colaboração multi-agente",
+      "activePods": "{count} pods ativos",
+      "channelsCount": "{count} canais",
+      "bindingsCount": "{count} vínculos",
+      "refresh": "Atualizar",
+      "dismiss": "Fechar",
+      "updating": "Atualizando..."
+    },
+    "legend": {
+      "title": "Legenda",
+      "running": "Executando",
+      "initializing": "Inicializando",
+      "terminated": "Encerrado",
+      "failed": "Falhou",
+      "channel": "Canal",
+      "activeBinding": "Vínculo Ativo",
+      "pendingBinding": "Vínculo Pendente"
+    },
+    "channelList": {
+      "title": "Canais",
+      "showArchived": "Mostrar Arquivados",
+      "hideArchived": "Ocultar Arquivados",
+      "noChannels": "Nenhum canal encontrado",
+      "archived": "Arquivado",
+      "archive": "Arquivar",
+      "unarchive": "Desarquivar"
+    },
+    "messageInput": {
+      "placeholder": "Digite uma mensagem...",
+      "hint": "Pressione Enter para enviar, Shift+Enter para nova linha"
+    }
+  },
+  "tickets": {
+    "title": "Tickets",
+    "newTicket": "Novo Ticket",
+    "board": "Quadro",
+    "list": "Lista",
+    "backlog": "Backlog",
+    "todo": "A Fazer",
+    "inProgress": "Em Progresso",
+    "inReview": "Em Revisão",
+    "done": "Concluído",
+    "searchPlaceholder": "Pesquisar tickets...",
+    "ticketCount": "tickets",
+    "clear": "Limpar",
+    "view": "Visualizar",
+    "filters": {
+      "status": "Status",
+      "type": "Tipo",
+      "priority": "Prioridade"
+    },
+    "emptyState": {
+      "title": "Nenhum ticket",
+      "noMatch": "Nenhum ticket corresponde aos filtros",
+      "createFirst": "Crie seu primeiro ticket para começar"
+    },
+    "moreTickets": "+{count} mais",
+    "listView": {
+      "id": "ID",
+      "titleColumn": "Título",
+      "status": "Status",
+      "type": "Tipo",
+      "priority": "Prioridade",
+      "assignee": "Responsável",
+      "created": "Criado",
+      "noTickets": "Nenhum ticket encontrado. Use os filtros da barra lateral ou crie um novo ticket."
+    },
+    "kanban": {
+      "noTickets": "Sem tickets"
+    },
+    "priority": {
+      "none": "Sem Prioridade",
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta",
+      "urgent": "Urgente",
+      "unknown": "Desconhecido"
+    },
+    "type": {
+      "task": "Tarefa",
+      "bug": "Bug",
+      "feature": "Recurso",
+      "improvement": "Improvement",
+      "epic": "Epic",
+      "unknown": "Unknown"
+    },
+    "status": {
+      "backlog": "Backlog",
+      "todo": "A Fazer",
+      "in_progress": "Em Progresso",
+      "in_review": "Em Revisão",
+      "done": "Concluído",
+      "cancelled": "Cancelado",
+      "unknown": "Desconhecido"
+    },
+    "createDialog": {
+      "title": "Create Ticket",
+      "createSubTicket": "Create Sub-ticket",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Enter ticket title",
+      "titleRequired": "Title is required",
+      "repositoryRequired": "Repository is required",
+      "createFailed": "Failed to create ticket",
+      "repository": "Repository",
+      "selectRepository": "Select a repository...",
+      "summary": "Summary",
+      "summaryPlaceholder": "Brief summary...",
+      "content": "Content",
+      "submit": "Create Ticket"
+    },
+    "detail": {
+      "retry": "Retry",
+      "notFound": "Ticket not found",
+      "summary": "Summary",
+      "content": "Content",
+      "subTickets": "Sub-tickets",
+      "related": "Related",
+      "commits": "Commits",
+      "actions": "Actions",
+      "details": "Details",
+      "dueDate": "Due Date",
+      "repository": "Repository",
+      "assignees": "Assignees",
+      "noAssignees": "No assignees",
+      "timestamps": "Timestamps",
+      "created": "Created",
+      "updated": "Updated",
+      "deleteTicket": "Delete Ticket",
+      "deleteConfirmation": "Are you sure you want to delete ticket {identifier}? This action cannot be undone.",
+      "labels": "Labels",
+      "timeline": "Timeline",
+      "started": "Started",
+      "completed": "Completed",
+      "viewFullDetails": "View Full Details"
+    },
+    "podPanel": {
+      "activeCount": "{count} active",
+      "newPod": "New Pod",
+      "createNewPod": "Create New Pod",
+      "runner": "Runner",
+      "selectRunner": "Select a runner...",
+      "selectRunnerRequired": "Please select a runner",
+      "model": "Model",
+      "permissionMode": "Permission Mode",
+      "permissionDefault": "Default",
+      "permissionPlan": "Plan Mode",
+      "permissionAutoApprove": "Auto-approve (Dangerous)",
+      "initialPrompt": "Initial Prompt (optional)",
+      "initialPromptPlaceholder": "Work on ticket: {title}",
+      "creating": "Creating...",
+      "createPod": "Create Pod",
+      "createFailed": "Failed to create pod",
+      "previousPods": "{count} previous pod(s)",
+      "noPods": "No pods for this ticket yet",
+      "noRunners": "No online runners available",
+      "connect": "Connect",
+      "openInNewTab": "Open in new tab",
+      "started": "Started"
+    }
+  },
+  "workspace": {
+    "title": "Área de Trabalho",
+    "searchPlaceholder": "Pesquisar pods...",
+    "newPod": "Novo Pod",
+    "noTerminalsOpen": "No terminals open",
+    "noTerminalsDescription": "Click on a pod in the sidebar to open its terminal, or create a new pod to get started.",
+    "createNewPod": "Create New Pod",
+    "podCreated": "Pod created! Waiting for it to start...",
+    "podOpened": "Pod opened",
+    "filters": {
+      "all": "Todos",
+      "running": "Em Execução",
+      "completed": "Concluídos",
+      "error": "Erro"
+    },
+    "emptyState": {
+      "title": "Nenhum pod ainda",
+      "description": "Crie seu primeiro pod para começar",
+      "createFirst": "Criar Pod",
+      "noMatch": "Nenhum pod corresponde à sua pesquisa",
+      "noFiltered": "Nenhum pod {filter}"
+    },
+    "runners": {
+      "title": "Runners",
+      "online": "online",
+      "noRunners": "Nenhum runner registrado"
+    },
+    "terminateDialog": {
+      "title": "Encerrar Pod",
+      "description": "Tem certeza de que deseja encerrar este pod? Esta ação não pode ser desfeita e todos os processos em execução serão interrompidos.",
+      "cancel": "Cancelar",
+      "confirm": "Encerrar"
+    },
+    "pod": {
+      "status": "Status",
+      "agent": "Agente",
+      "repository": "Repositório",
+      "branch": "Branch",
+      "created": "Criado",
+      "duration": "Duração",
+      "actions": {
+        "open": "Abrir",
+        "terminate": "Terminar",
+        "restart": "Reiniciar",
+        "logs": "Ver Logs"
+      }
+    },
+    "modal": {
+      "title": "Create New Pod",
+      "agentType": "Agent Type",
+      "selectAgent": "Select an agent...",
+      "selectRunner": "Select a runner...",
+      "repositoryOptional": "Repository (optional)",
+      "selectRepository": "Select a repository...",
+      "branch": "Branch",
+      "branchPlaceholder": "Enter branch name (e.g., main)",
+      "initialPromptOptional": "Initial Prompt (optional)",
+      "initialPromptPlaceholder": "Enter an initial prompt for the agent...",
+      "creating": "Creating...",
+      "createPod": "Create Pod"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "welcomeWithOrg": "Welcome to {orgName}",
+    "overview": "Here's an overview of your workspace",
+    "stats": {
+      "totalTickets": "Total Tickets",
+      "openTickets": "Open",
+      "activePods": "Active Pods",
+      "onlineRunners": "Online Runners"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "createTicket": "Create Ticket",
+      "createTicketDesc": "Create a new task or issue for your team",
+      "viewMesh": "View Mesh",
+      "viewMeshDesc": "Monitor your AI agent network topology",
+      "manageRepos": "Manage Repositories",
+      "manageReposDesc": "Connect and manage your code repositories"
+    },
+    "noRunners": {
+      "title": "No Runners Connected",
+      "description": "You need at least one online Runner to execute AI agent tasks. Set up a Runner to get started.",
+      "setup": "Set up a Runner"
+    }
+  },
+  "commandPalette": {
+    "placeholder": "Digite um comando ou pesquise...",
+    "searching": "Pesquisando...",
+    "noResults": "Nenhum resultado encontrado.",
+    "navigation": "Navegação",
+    "actions": "Ações",
+    "goToWorkspace": "Ir para Workspace",
+    "workspaceDescription": "Workspace de terminal",
+    "goToTickets": "Ir para Tickets",
+    "ticketsDescription": "Ver e gerenciar tickets",
+    "goToMesh": "Ir para AgentsMesh",
+    "meshDescription": "Topologia de rede",
+    "goToRepositories": "Ir para Repositórios",
+    "repositoriesDescription": "Gerenciar repositórios",
+    "goToRunners": "Ir para Runners",
+    "runnersDescription": "Gerenciar recursos de computação",
+    "goToSettings": "Ir para Configurações",
+    "settingsDescription": "Configurações da organização",
+    "createNewPod": "Criar Novo Pod",
+    "createPodDescription": "Iniciar um novo pod de agente",
+    "createNewTicket": "Criar Novo Ticket",
+    "createTicketDescription": "Criar uma nova tarefa ou problema",
+    "signOut": "Sair",
+    "signOutDescription": "Sair da sua conta",
+    "navigate": "Navegar",
+    "select": "Selecionar",
+    "toOpen": "para abrir"
+  },
+  "relayStatus": {
+    "connected": "Relay Conectado",
+    "connecting": "Conectando ao Relay...",
+    "disconnected": "Relay Desconectado",
+    "error": "Erro de Conexão Relay",
+    "runnerDisconnected": "Runner Desconectado"
+  },
+  "terminalTabs": {
+    "singleView": "Visualização única",
+    "twoColumns": "Duas colunas",
+    "twoRows": "Duas linhas",
+    "grid2x2": "Grade 2x2",
+    "fullscreen": "Tela cheia"
+  },
+  "terminalToolbar": {
+    "clearScreen": "Limpar tela",
+    "font": "Fonte",
+    "open": "Open keyboard toolbar",
+    "close": "Close",
+    "fontDecrease": "Decrease font size",
+    "fontIncrease": "Increase font size",
+    "scrollToBottom": "Rolar para o final"
+  },
+  "mobile": {
+    "more": "Mais",
+    "drawer": {
+      "navigationMenu": "Menu de navegação",
+      "organization": "Organização",
+      "navigation": "Navegação",
+      "signOut": "Sair"
+    },
+    "menu": {
+      "gitConnections": "Conexões Git",
+      "profile": "Perfil",
+      "theme": "Tema",
+      "theme_light": "Claro",
+      "theme_dark": "Escuro",
+      "theme_solarized_light": "Solarized Claro",
+      "theme_solarized_dark": "Solarized Escuro",
+      "theme_system": "Sistema"
+    }
+  }
+}

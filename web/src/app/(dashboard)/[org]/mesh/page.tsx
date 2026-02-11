@@ -8,7 +8,7 @@ import { ChannelChatPanel, MobileChannelChat } from "@/components/mesh";
 import { useMeshStore } from "@/stores/mesh";
 import { cn } from "@/lib/utils";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 export default function MeshPage() {
   const t = useTranslations();

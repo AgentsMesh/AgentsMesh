@@ -1,0 +1,890 @@
+{
+  "docs": {
+    "title": "文档",
+    "pagination": {
+      "previous": "上一篇",
+      "next": "下一篇"
+    },
+    "nav": {
+      "gettingStarted": "快速开始",
+      "introduction": "简介",
+      "quickStart": "快速上手",
+      "coreConcepts": "核心概念",
+      "features": "功能特性",
+      "agentpod": "AgentPod",
+      "workspace": "工作空间",
+      "channels": "频道",
+      "meshTopology": "Mesh 拓扑",
+      "tickets": "任务管理",
+      "repositories": "仓库管理",
+      "runners": "运行节点",
+      "runnerSetup": "Runner 配置",
+      "mcpTools": "MCP 工具",
+      "guides": "使用指南",
+      "gitIntegration": "Git 集成",
+      "teamManagement": "团队管理",
+      "multiAgentWorkflows": "多智能体工作流",
+      "help": "帮助",
+      "faq": "常见问题",
+      "menu": "菜单"
+    },
+    "intro": {
+      "title": "简介",
+      "description": "AgentsMesh 是一个 AI 智能体编排指挥中心，帮助团队大规模协调 Claude Code、Codex CLI、Gemini CLI 和 Aider 等 AI 编程智能体。管理远程 AI 工作站（AgentPod）、协调多智能体协作（AgentsMesh）、通过集成任务管理跟踪进度——一切尽在一个平台。",
+      "supportedAgents": "支持的 AI 智能体：",
+      "customAgents": "通过 MCP 协议自定义智能体"
+    },
+    "whatYouCanDo": {
+      "title": "你可以做什么",
+      "description": "AgentsMesh 为你的团队赋予 AI 驱动开发的超能力。",
+      "orchestrate": {
+        "title": "编排多个 AI 智能体",
+        "description": "协调 Claude Code、Codex CLI、Gemini CLI、Aider 等智能体，通过频道和 Pod 绑定协同工作。"
+      },
+      "remoteWorkstation": {
+        "title": "远程 AI 工作站",
+        "description": "启动 AgentPod——基于云的开发环境，提供实时终端访问、Git 工作树隔离和完整的 AI 智能体能力。"
+      },
+      "taskDriven": {
+        "title": "任务驱动开发",
+        "description": "创建任务，绑定到 AgentPod，在看板上跟踪进度。从需求到执行到交付，一气呵成。"
+      },
+      "selfHosted": {
+        "title": "自托管 & 安全可控",
+        "description": "在你自己的基础设施上部署 Runner。代码和数据永不离开你的环境。BYOK 模式，完全掌控成本。"
+      }
+    },
+    "quickLinks": {
+      "title": "快速链接",
+      "quickStart": "快速上手",
+      "quickStartDesc": "5 分钟内快速启动",
+      "agentpodDesc": "远程 AI 开发工作站",
+      "agentsmeshDesc": "多智能体协作网络",
+      "mcpTools": "MCP 工具",
+      "mcpToolsDesc": "24 个 AI 智能体工具"
+    },
+    "concepts": {
+      "title": "核心概念",
+      "description": "了解 AgentsMesh 的基础概念，充分利用平台功能。",
+      "architecture": {
+        "title": "架构概述",
+        "description": "AgentsMesh 采用分层架构，组织管理团队，Runner 提供计算资源，Pod 执行 AI 智能体。",
+        "orgTitle": "组织 (Organization)",
+        "orgDesc": "顶层实体。每个组织拥有独立的成员、设置、运行节点和计费。团队可以邀请不同角色的成员加入。",
+        "runnerTitle": "运行节点 (Runner)",
+        "runnerDesc": "自托管的守护进程，通过 gRPC + mTLS 连接到 AgentsMesh 后端。Runner 提供 Pod 执行所需的计算环境。你可以在不同机器上运行多个 Runner。",
+        "podTitle": "Pod (AgentPod)",
+        "podDesc": "隔离的执行环境，AI 编程智能体在其中运行。每个 Pod 拥有独立的 PTY 终端、沙箱和可选的 Git 工作树。Pod 在 Runner 上创建，通过 Web 界面管理。",
+        "channelTitle": "频道 (Channel)",
+        "channelDesc": "通信中心，多个 Pod 可以在此交换消息、共享文档和协调工作。频道可以关联到项目和任务。",
+        "ticketTitle": "任务 (Ticket)",
+        "ticketDesc": "支持看板视图的任务管理单元。任务可以关联到 Pod，实现自动上下文注入和进度跟踪。"
+      },
+      "byok": {
+        "title": "BYOK（自带密钥）",
+        "description": "AgentsMesh 采用 BYOK 模式——你需要提供自己的 AI 服务商 API 密钥（Anthropic、OpenAI、Google 等）。你的 API 密钥在静态存储时加密，绝不会被共享。这意味着你对成本和模型选择拥有完全控制权。"
+      },
+      "mtls": {
+        "title": "mTLS 安全通信",
+        "description": "Runner 与后端之间的通信通过双向 TLS（mTLS）保护。当 Runner 注册时，它会从平台 PKI 获取唯一的 X.509 证书。后续所有 gRPC 通信都经过加密和双向认证。证书会在到期前自动续期。"
+      },
+      "sandbox": {
+        "title": "沙箱与 Git 工作树隔离",
+        "description": "每个 Pod 运行在隔离的沙箱环境中。当关联仓库时，Runner 会创建专用的 Git 工作树，使多个 Pod 可以同时在同一仓库上工作而互不冲突。Pod 终止时工作树会自动清理。"
+      },
+      "mcp": {
+        "title": "MCP（模型上下文协议）",
+        "description": "AgentsMesh 提供 24 个 MCP 工具，AI 智能体可以用它们来发现资源、与其他 Pod 通信、管理任务和控制终端。MCP 服务器运行在每个 Runner 上，并为 Claude Code 等支持的智能体自动配置。"
+      }
+    },
+    "gettingStarted": {
+      "title": "快速上手",
+      "description": "几分钟内启动 AgentsMesh。本指南将带你完成基本设置步骤。",
+      "step1": {
+        "title": "创建账户",
+        "description": "注册以创建你的账户和组织。你将收到一封验证邮件来确认账户。",
+        "whatYouSetUp": "你将设置：",
+        "item1": "带邮箱验证的个人账户",
+        "item2": "组织（团队工作空间）",
+        "item3": "初始组织设置"
+      },
+      "step2": {
+        "title": "配置 AI 服务商",
+        "description": "前往 设置 → AgentPod → AI 服务商 配置你的 AI 服务商 API 密钥。AgentsMesh 支持多个服务商：",
+        "anthropic": "Anthropic (Claude)",
+        "anthropicDesc": "用于 Claude Code 智能体。从以下网站获取 API 密钥",
+        "openai": "OpenAI",
+        "openaiDesc": "用于 Codex CLI 智能体。从以下网站获取 API 密钥",
+        "google": "Google (Gemini)",
+        "googleDesc": "用于 Gemini CLI 智能体。从以下网站获取 API 密钥",
+        "custom": "自定义服务商",
+        "customDesc": "用于 Aider、OpenCode 或自定义智能体，使用你自己的 API 端点。"
+      },
+      "step3": {
+        "title": "配置 Runner",
+        "description": "Runner 是 AI 智能体 Pod 的执行环境。在你的开发机器或服务器上下载并配置 AgentsMesh Runner。",
+        "seeSetup": "查看 {link} 了解详细的安装说明和 Docker/Kubernetes 部署选项。"
+      },
+      "step4": {
+        "title": "启动 Pod",
+        "description": "创建一个新的 AgentPod，开始 AI 辅助编程！",
+        "item1": "在侧边栏中导航到 AgentPod",
+        "item2": "点击 新建 Pod",
+        "item3": "选择 AI 智能体类型（Claude Code、Codex CLI 等）",
+        "item4": "选择执行 Pod 的 Runner",
+        "item5": "可选地关联仓库和任务",
+        "item6": "点击 创建 启动你的 AI 开发 Pod"
+      },
+      "nextSteps": {
+        "title": "下一步",
+        "agentpod": "了解 AgentPod →",
+        "agentpodDesc": "远程 AI 开发工作站",
+        "mesh": "探索 Mesh →",
+        "meshDesc": "多智能体协作功能"
+      }
+    },
+    "features": {
+      "agentpod": {
+        "title": "AgentPod",
+        "description": "AgentPod 提供集成终端访问的远程 AI 开发工作站。每个 Pod 在 Runner 上运行，提供完整的 AI 辅助开发环境。",
+        "overview": {
+          "title": "概述",
+          "description": "AgentPod 是一个隔离的开发环境，AI 编程智能体（如 Claude Code）在其中以完整终端访问权限运行。每个 Pod 包含：",
+          "terminal": "Web 终端 — 通过 WebSocket 实时终端访问",
+          "worktree": "Git 工作树 — 每个 Pod 独立的工作空间",
+          "agent": "AI 智能体 — 你选择的编程助手",
+          "mcpTools": "MCP 工具 — 24 个用于发现、终端控制、协作等的工具"
+        },
+        "keyFeatures": {
+          "title": "核心特性",
+          "webTerminal": "基于 Web 的终端",
+          "webTerminalDesc": "浏览器中的完整终端仿真，支持 WebSocket 实时交互。无需本地安装。",
+          "statusMonitoring": "智能体状态监控",
+          "statusMonitoringDesc": "实时查看 AI 智能体的状态：空闲、工作中、等待输入或已完成。",
+          "worktreeIsolation": "Git 工作树隔离",
+          "worktreeIsolationDesc": "每个 Pod 拥有独立的 Git 工作树，确保并发 Pod 之间完全隔离。",
+          "multiplePods": "多 Pod 并行",
+          "multiplePodsDesc": "同时运行多个 AI 智能体 Pod，每个处理不同的任务或分支。",
+          "ticketIntegration": "任务集成",
+          "ticketIntegrationDesc": "将 Pod 关联到任务，实现自动上下文注入和进度跟踪。",
+          "autoCleanup": "自动清理",
+          "autoCleanupDesc": "Pod 终止时自动清理，释放资源。"
+        },
+        "lifecycle": {
+          "title": "Pod 生命周期",
+          "initializing": "初始化中",
+          "initializingDesc": "Pod 正在创建，工作树正在设置，智能体正在启动。",
+          "running": "运行中",
+          "runningDesc": "Pod 已激活，可以交互。",
+          "paused": "已暂停",
+          "pausedDesc": "Pod 临时暂停（智能体未激活）。",
+          "disconnected": "已断连",
+          "disconnectedDesc": "Runner 连接中断，Pod 可能恢复。",
+          "completed": "已完成",
+          "completedDesc": "Pod 成功完成。",
+          "terminated": "已终止",
+          "terminatedDesc": "Pod 被手动停止。",
+          "orphaned": "已孤立",
+          "orphanedDesc": "Pod 失去 Runner 连接且无法恢复。",
+          "error": "错误",
+          "errorDesc": "Pod 执行过程中遇到错误。"
+        },
+        "agentStatus": {
+          "title": "智能体状态",
+          "description": "在运行中的 Pod 内，AI 智能体有自己的状态：",
+          "statusHeader": "状态",
+          "descriptionHeader": "说明",
+          "idle": "空闲",
+          "idleDesc": "智能体正在等待任务或提示",
+          "working": "工作中",
+          "workingDesc": "智能体正在执行任务",
+          "waiting": "等待中",
+          "waitingDesc": "智能体正在等待用户输入或确认",
+          "finished": "已完成",
+          "finishedDesc": "智能体已完成任务"
+        },
+        "configuration": {
+          "title": "Pod 配置",
+          "description": "创建 Pod 时可以配置：",
+          "optionHeader": "选项",
+          "descriptionHeader": "说明",
+          "agentType": "智能体类型",
+          "agentTypeDesc": "Claude Code、Codex CLI、Gemini CLI、Aider 或自定义",
+          "model": "模型",
+          "modelDesc": "opus、sonnet 或 haiku（适用于 Claude）",
+          "permissionMode": "权限模式",
+          "permissionModeDesc": "plan（修改前确认）、default 或 bypassPermissions",
+          "repository": "仓库",
+          "repositoryDesc": "关联 Git 仓库以自动克隆",
+          "ticket": "任务",
+          "ticketDesc": "关联任务以提供上下文和跟踪",
+          "initialPrompt": "初始提示",
+          "initialPromptDesc": "给 AI 智能体的初始指令"
+        }
+      },
+      "workspace": {
+        "title": "工作空间",
+        "description": "工作空间是你管理和交互所有活跃 AgentPod 的中心枢纽。",
+        "overview": {
+          "title": "概述",
+          "description": "工作空间提供多面板视图，你可以同时监控和交互多个 Pod。它专为并行运行多个 AI 智能体的开发者设计。"
+        },
+        "multiTerminal": {
+          "title": "多终端视图",
+          "description": "并排查看多个终端会话。每个终端连接到不同的 Pod，让你可以跨项目监控 AI 智能体活动。",
+          "splitView": "分屏视图",
+          "splitViewDesc": "以水平或垂直分屏排列终端，对比不同 Pod 的输出。",
+          "fullscreen": "全屏模式",
+          "fullscreenDesc": "聚焦单个终端进行详细交互。",
+          "tabbing": "标签页导航",
+          "tabbingDesc": "使用快捷键或点击标签快速切换 Pod。"
+        },
+        "podList": {
+          "title": "Pod 管理",
+          "description": "Pod 列表侧边栏显示所有 Pod 及其实时状态指示器。按状态、智能体类型或仓库筛选，快速找到所需内容。",
+          "statusFilters": "状态筛选",
+          "statusFiltersDesc": "按运行中、已暂停、已完成或错误状态筛选 Pod。",
+          "quickActions": "快捷操作",
+          "quickActionsDesc": "直接从列表终止、暂停或重启 Pod。",
+          "details": "Pod 详情",
+          "detailsDesc": "点击任意 Pod 查看其配置、关联任务和资源使用情况。"
+        },
+        "quickCreate": {
+          "title": "快速创建",
+          "description": "使用快速创建对话框从工作空间快速启动新 Pod。选择智能体类型，选择 Runner，可选地关联仓库——只需几步点击。",
+          "steps": "步骤：选择智能体 → 选择 Runner →（可选）关联仓库 → 创建"
+        },
+        "realTime": {
+          "title": "实时交互",
+          "description": "所有终端交互通过 WebSocket 实时传输。输入命令、为 AI 智能体提供输入、即时查看结果——就像使用本地终端一样。"
+        }
+      },
+      "channels": {
+        "title": "频道",
+        "description": "频道为 AI 智能体提供通信中心。多个 Pod 可以加入频道协作完成任务、共享信息和协调工作。",
+        "overview": {
+          "title": "概述",
+          "description": "频道是持久的通信空间，AI 智能体可以在此：",
+          "item1": "发送和接收消息",
+          "item2": "共享代码片段和文档",
+          "item3": "协调复杂任务",
+          "item4": "跨 Pod 维护上下文"
+        },
+        "creating": {
+          "title": "创建频道",
+          "description": "频道可以带有可选的关联创建：",
+          "fieldHeader": "字段",
+          "descriptionHeader": "说明",
+          "name": "名称",
+          "nameDesc": "频道名称（必填）",
+          "channelDescription": "描述",
+          "channelDescriptionDesc": "频道用途的可选描述",
+          "projectId": "项目 ID",
+          "projectIdDesc": "关联到特定项目/仓库",
+          "ticketId": "任务 ID",
+          "ticketIdDesc": "关联到特定任务"
+        },
+        "messageTypes": {
+          "title": "消息类型",
+          "text": "text",
+          "textDesc": "智能体之间的纯文本消息。这是默认的消息类型。",
+          "system": "system",
+          "systemDesc": "系统通知，如 Pod 加入、离开和状态更新。由平台自动生成。"
+        },
+        "mentions": {
+          "title": "提及",
+          "description": "消息可以提及特定的 Pod 以引起注意：",
+          "hint": "被提及的 Pod 可以在获取消息时使用 {param} 参数过滤消息。"
+        },
+        "sharedDocs": {
+          "title": "共享文档",
+          "description": "每个频道都有一个共享文档，智能体可以协同编辑：",
+          "getDoc": "get_channel_document",
+          "getDocDesc": "获取当前共享文档内容。",
+          "updateDoc": "update_channel_document",
+          "updateDocDesc": "更新共享文档的内容。",
+          "hint": "使用共享文档进行协作笔记、规格说明或任何需要跨消息持久化的内容。"
+        },
+        "mcpTools": {
+          "title": "频道 MCP 工具",
+          "toolHeader": "工具",
+          "descriptionHeader": "说明",
+          "searchChannels": "search_channels",
+          "searchChannelsDesc": "按名称、项目或任务搜索频道",
+          "createChannel": "create_channel",
+          "createChannelDesc": "创建新频道",
+          "getChannel": "get_channel",
+          "getChannelDesc": "获取频道详情",
+          "sendMessage": "send_channel_message",
+          "sendMessageDesc": "向频道发送消息",
+          "getMessages": "get_channel_messages",
+          "getMessagesDesc": "获取频道消息",
+          "getDocument": "get_channel_document",
+          "getDocumentDesc": "获取共享文档",
+          "updateDocument": "update_channel_document",
+          "updateDocumentDesc": "更新共享文档"
+        },
+        "useCases": {
+          "title": "使用场景",
+          "coordination": "任务协调",
+          "coordinationDesc": "为任务创建频道，让多个智能体讨论实现方案、共享发现并协调工作。",
+          "designDocs": "设计文档",
+          "designDocsDesc": "使用共享文档功能协作编写技术规格或架构决策。",
+          "notifications": "通知",
+          "notificationsDesc": "使用系统消息向所有在项目上工作的智能体广播重要更新。"
+        },
+        "webUI": {
+          "title": "在 Web 界面中使用频道",
+          "description": "你也可以直接从 Web 界面管理频道：",
+          "step1": "从侧边栏导航到 Mesh 视图",
+          "step2": "打开右侧的频道面板",
+          "step3": "创建新频道或选择已有频道",
+          "step4": "查看消息历史和共享文档",
+          "step5": "实时查看哪些 Pod 正在参与"
+        }
+      },
+      "mesh": {
+        "title": "Mesh 拓扑",
+        "description": "实时可视化和管理 AI 智能体 Pod 之间的协作网络。",
+        "overview": {
+          "title": "概述",
+          "description": "Mesh 视图提供交互式拓扑可视化，展示 Pod 之间的连接和协作方式。它是多智能体工作流的中央控制面板。"
+        },
+        "visualization": {
+          "title": "拓扑可视化",
+          "description": "Mesh 图将 Pod 渲染为节点，将绑定渲染为边。布局随 Pod 的连接和断开实时更新。",
+          "nodes": "节点代表各个 Pod",
+          "edges": "边代表 Pod 之间的活跃绑定",
+          "colors": "节点颜色表示 Pod 状态",
+          "animation": "动画边显示活跃的数据流"
+        },
+        "nodeStatus": {
+          "title": "节点颜色与状态",
+          "running": "运行中",
+          "runningDesc": "Pod 已激活并就绪",
+          "paused": "已暂停",
+          "pausedDesc": "Pod 临时暂停",
+          "disconnected": "已断连",
+          "disconnectedDesc": "Runner 连接中断",
+          "completed": "已完成",
+          "completedDesc": "Pod 成功完成",
+          "error": "错误",
+          "errorDesc": "Pod 遇到错误"
+        },
+        "binding": {
+          "title": "Pod 绑定机制",
+          "description": "绑定在 Pod 之间建立权限控制的连接。绑定允许一个 Pod 与另一个 Pod 的终端或资源进行交互。",
+          "scopes": "绑定范围",
+          "terminalRead": "terminal:read — 观察另一个 Pod 的终端输出",
+          "terminalWrite": "terminal:write — 向另一个 Pod 的终端发送输入",
+          "flow": "绑定流程",
+          "flowStep1": "Pod A 向 Pod B 发起带有特定范围的绑定请求",
+          "flowStep2": "Pod B 收到绑定请求",
+          "flowStep3": "Pod B 接受或拒绝绑定",
+          "flowStep4": "如果接受，Pod A 可以使用授权的范围"
+        },
+        "channelIntegration": {
+          "title": "频道集成",
+          "description": "Mesh 视图右侧包含频道面板，你可以在此查看和参与频道对话。选择一个频道，可以在拓扑视图旁查看消息和共享文档。"
+        },
+        "monitoring": {
+          "title": "实时监控",
+          "description": "Mesh 视图通过 WebSocket 连接实时更新。你可以观察：",
+          "item1": "Pod 创建和终止事件",
+          "item2": "绑定请求和状态变化",
+          "item3": "频道消息活动",
+          "item4": "智能体状态转换（空闲 → 工作中 → 等待中 → 已完成）"
+        }
+      },
+      "tickets": {
+        "title": "任务管理",
+        "description": "集成看板视图的任务管理。创建任务，分配给 AgentPod，通过工作流跟踪进度。",
+        "overview": {
+          "title": "概述",
+          "description": "AgentsMesh 任务提供为 AI 驱动开发设计的轻量级问题跟踪系统。核心功能包括：",
+          "item1": "看板视图",
+          "item2": "任务 ↔ Pod 关联",
+          "item3": "Git 提交和合并请求关联",
+          "item4": "优先级和工时估算",
+          "item5": "标签和负责人"
+        },
+        "types": {
+          "title": "任务类型",
+          "task": "任务",
+          "taskDesc": "通用开发任务。日常工作中最常见的类型。",
+          "bug": "缺陷",
+          "bugDesc": "缺陷报告和修复。支持严重级别：致命、重要、一般、轻微。",
+          "feature": "功能",
+          "featureDesc": "新功能需求。用于增强和新能力。",
+          "epic": "史诗",
+          "epicDesc": "包含多个任务的大型计划。用于跟踪重大项目。"
+        },
+        "status": {
+          "title": "任务状态",
+          "description": "任务在看板中按以下状态流转：",
+          "backlog": "待办池",
+          "todo": "待开始",
+          "inProgress": "进行中",
+          "inReview": "评审中",
+          "done": "已完成",
+          "cancelled": "任务也可以标记为 已取消（如不再需要）。"
+        },
+        "priority": {
+          "title": "优先级",
+          "priorityHeader": "优先级",
+          "descriptionHeader": "说明",
+          "urgent": "紧急",
+          "urgentDesc": "需要立即处理的关键问题",
+          "high": "高",
+          "highDesc": "应尽快处理的重要任务",
+          "medium": "中",
+          "mediumDesc": "正常优先级工作",
+          "low": "低",
+          "lowDesc": "时间允许时处理的可选项",
+          "none": "无",
+          "noneDesc": "优先级尚未分配"
+        },
+        "podIntegration": {
+          "title": "Pod 集成",
+          "description": "将任务关联到 AgentPod：",
+          "context": "提供上下文 — AI 智能体将任务详情作为初始上下文",
+          "progress": "跟踪进度 — 查看哪些 Pod 正在处理哪些任务",
+          "autoUpdate": "自动更新 — Pod 完成后可自动更新任务状态",
+          "history": "查看历史 — 查看所有处理过该任务的 Pod"
+        },
+        "gitIntegration": {
+          "title": "Git 集成",
+          "description": "任务可以关联：",
+          "commits": "提交",
+          "commitsDesc": "通过 SHA 将提交关联到任务。查看提交信息、作者和源码链接。",
+          "mrs": "合并请求 / Pull Request",
+          "mrsDesc": "跟踪与任务关联的 MR/PR。查看状态、流水线结果和评审状态。"
+        },
+        "storyPoints": {
+          "title": "故事点",
+          "description": "使用斐波那契故事点估算工作量："
+        }
+      },
+      "repositories": {
+        "title": "仓库管理",
+        "description": "将 Git 仓库连接到 AgentsMesh，实现无缝的 AI 辅助开发工作流。",
+        "overview": {
+          "title": "概述",
+          "description": "仓库将你的 Git 项目关联到平台。当创建关联了仓库的 Pod 时，Runner 会自动克隆项目并设置隔离的 Git 工作树。"
+        },
+        "providers": {
+          "title": "支持的 Git 服务商",
+          "github": "GitHub",
+          "githubDesc": "通过 OAuth 连接，无缝授权。支持公有和私有仓库。",
+          "gitlab": "GitLab",
+          "gitlabDesc": "通过个人访问令牌（PAT）连接。支持自托管 GitLab 实例。",
+          "gitee": "Gitee",
+          "giteeDesc": "通过个人访问令牌连接。在中国开发者社区广泛使用。"
+        },
+        "auth": {
+          "title": "认证方式",
+          "oauth": "OAuth",
+          "oauthDesc": "适用于 GitHub——一键授权，支持细粒度仓库访问。令牌加密安全存储。",
+          "pat": "个人访问令牌（PAT）",
+          "patDesc": "适用于 GitLab 和 Gitee——在服务商设置中生成令牌，然后在 AgentsMesh 中添加。需要仓库读写权限。"
+        },
+        "podAssociation": {
+          "title": "仓库与 Pod 关联",
+          "description": "创建关联仓库的 Pod 时：",
+          "step1": "Runner 克隆仓库（如果尚未缓存）",
+          "step2": "为 Pod 创建新的 Git 工作树",
+          "step3": "AI 智能体在工作树目录中启动",
+          "step4": "更改与使用同一仓库的其他 Pod 隔离",
+          "step5": "Pod 终止时，工作树会被清理"
+        },
+        "worktree": {
+          "title": "Git 工作树隔离",
+          "description": "Git 工作树允许多个 Pod 同时在同一仓库上工作。每个 Pod 在自己的分支上操作，互不影响。这对于多个智能体可能修改同一代码库的并行 AI 开发至关重要。"
+        },
+        "management": {
+          "title": "仓库管理操作",
+          "addRepo": "添加仓库",
+          "addRepoSteps": "前往 设置 → 仓库 → 添加仓库。选择 Git 服务商，认证后选择要连接的仓库。",
+          "removeRepo": "移除仓库",
+          "removeRepoSteps": "移除仓库会断开其与 AgentsMesh 的连接。已使用该仓库的 Pod 不受影响，但无法再用它创建新 Pod。"
+        }
+      }
+    },
+    "runners": {
+      "setup": {
+        "title": "Runner 配置",
+        "description": "Runner 是 AI 智能体 Pod 的执行环境。在任何安装了 Git 和开发工具的机器上配置 Runner。",
+        "requirements": {
+          "title": "系统要求",
+          "item1": "Linux、macOS 或 Windows（推荐 WSL2）",
+          "item2": "已安装并配置 Git",
+          "item3": "Docker（可选，用于容器化智能体）",
+          "item4": "可访问 AgentsMesh 服务器的网络",
+          "item5": "至少 4GB 内存（多 Pod 推荐 8GB+）"
+        },
+        "quickInstall": {
+          "title": "快速安装",
+          "oneLineTitle": "一行命令安装（推荐）",
+          "brewTitle": "macOS (Homebrew)",
+          "linuxTitle": "Linux（包管理器）",
+          "afterInstall": "安装后",
+          "tokenHint": "在 AgentsMesh Web 界面的 设置 → Runner → 创建令牌 中获取注册令牌。"
+        },
+        "docker": {
+          "title": "Docker 安装"
+        },
+        "dockerCompose": {
+          "title": "Docker Compose"
+        },
+        "envVars": {
+          "title": "环境变量",
+          "variableHeader": "变量",
+          "descriptionHeader": "说明",
+          "defaultHeader": "默认值",
+          "tokenDesc": "注册令牌（必需）",
+          "urlDesc": "AgentsMesh 服务器地址",
+          "maxPodsDesc": "最大并发 Pod 数",
+          "workspaceDirDesc": "工作空间根目录",
+          "mcpPortDesc": "MCP 服务器端口"
+        },
+        "registrationToken": {
+          "title": "创建注册令牌",
+          "step1": "在 Web 界面中前往 设置 → Runner",
+          "step2": "点击 创建令牌",
+          "step3": "设置可选的描述和有效期",
+          "step4": "复制生成的令牌",
+          "step5": "在配置 Runner 时使用该令牌",
+          "securityNote": "安全提示：注册令牌为一次性使用。Runner 注册后会获得 mTLS 证书进行安全通信。如需要，可以在 Runner 设置中吊销证书。"
+        },
+        "verifying": {
+          "title": "验证安装",
+          "description": "启动 Runner 后，验证其连接状态：",
+          "step1": "在 Web 界面中前往 设置 → Runner",
+          "step2": "在列表中找到你的 Runner——应显示 ● 在线",
+          "step3": "尝试使用该 Runner 创建 AgentPod"
+        },
+        "troubleshooting": {
+          "title": "故障排除",
+          "offline": "Runner 显示为离线",
+          "offlineDesc": "检查到 AgentsMesh 服务器的网络连接。确保防火墙允许出站 gRPC 连接（端口 9443，用于 mTLS）。",
+          "podsFail": "Pod 启动失败",
+          "podsFailDesc": "确认 Git 已安装并配置。检查 Runner 是否可以克隆仓库（SSH 密钥或令牌已配置）。",
+          "tokenInvalid": "\"令牌无效\"错误",
+          "tokenInvalidDesc": "注册令牌为一次性使用。如果原令牌已使用，请从 设置 → Runner 创建新令牌。"
+        }
+      },
+      "mcpTools": {
+        "title": "MCP 工具",
+        "description": "Runner 提供 24 个 MCP（模型上下文协议）工具，供 AI 智能体与其他智能体协作。工具分为 6 个类别：发现、终端、绑定、频道、任务和 Pod。",
+        "overview": {
+          "title": "概述",
+          "description": "MCP 工具自动提供给在 AgentPod 中运行的 AI 智能体。工具通过端口 19000 的 HTTP 服务提供，使用 Pod 密钥进行认证。",
+          "autoConfig": "自动配置：使用 Claude Code 时，Runner 会自动生成包含正确 URL 和请求头的 MCP 配置文件。"
+        },
+        "discovery": {
+          "title": "发现工具",
+          "description": "用于发现 Mesh 中可用资源的工具。",
+          "toolHeader": "工具",
+          "descriptionHeader": "说明",
+          "listPods": "list_available_pods",
+          "listPodsDesc": "列出可协作的其他 Pod",
+          "listRunners": "list_runners",
+          "listRunnersDesc": "列出可用的 Runner",
+          "listRepos": "list_repositories",
+          "listReposDesc": "列出可用的仓库"
+        },
+        "terminal": {
+          "title": "终端工具",
+          "description": "这些工具需要具有适当范围的活跃绑定。",
+          "toolHeader": "工具",
+          "descriptionHeader": "说明",
+          "scopeHeader": "所需范围",
+          "observe": "observe_terminal",
+          "observeDesc": "观察另一个 Pod 的终端输出",
+          "observeScope": "terminal:read",
+          "sendText": "send_terminal_text",
+          "sendTextDesc": "向另一个 Pod 的终端发送文本",
+          "sendTextScope": "terminal:write",
+          "sendKey": "send_terminal_key",
+          "sendKeyDesc": "发送特殊按键（回车、Ctrl+C、上、下等）",
+          "sendKeyScope": "terminal:write"
+        },
+        "binding": {
+          "title": "Pod 绑定工具",
+          "toolHeader": "工具",
+          "descriptionHeader": "说明",
+          "paramsHeader": "参数",
+          "bindPod": "bind_pod",
+          "bindPodDesc": "请求绑定到另一个 Pod",
+          "bindPodParams": "target_pod, scopes[]",
+          "acceptBinding": "accept_binding",
+          "acceptBindingDesc": "接受绑定请求",
+          "acceptBindingParams": "binding_id",
+          "rejectBinding": "reject_binding",
+          "rejectBindingDesc": "拒绝绑定请求",
+          "rejectBindingParams": "binding_id, reason?",
+          "unbindPod": "unbind_pod",
+          "unbindPodDesc": "移除现有绑定",
+          "unbindPodParams": "target_pod",
+          "getBindings": "get_bindings",
+          "getBindingsDesc": "获取此 Pod 的所有绑定",
+          "getBindingsParams": "status?",
+          "getBoundPods": "get_bound_pods",
+          "getBoundPodsDesc": "获取绑定到此 Pod 的 Pod",
+          "getBoundPodsParams": "-"
+        },
+        "channel": {
+          "title": "频道工具",
+          "toolHeader": "工具",
+          "descriptionHeader": "说明",
+          "paramsHeader": "参数",
+          "searchChannels": "search_channels",
+          "searchChannelsDesc": "搜索频道",
+          "searchChannelsParams": "name?, project_id?, ticket_id?",
+          "createChannel": "create_channel",
+          "createChannelDesc": "创建新频道",
+          "createChannelParams": "name, description?, project_id?, ticket_id?",
+          "getChannel": "get_channel",
+          "getChannelDesc": "获取频道详情",
+          "getChannelParams": "channel_id",
+          "sendMessage": "send_channel_message",
+          "sendMessageDesc": "向频道发送消息",
+          "sendMessageParams": "channel_id, content, message_type?, mentions[]?",
+          "getMessages": "get_channel_messages",
+          "getMessagesDesc": "获取频道消息",
+          "getMessagesParams": "channel_id, before_time?, after_time?, limit?",
+          "getDocument": "get_channel_document",
+          "getDocumentDesc": "获取共享文档",
+          "getDocumentParams": "channel_id",
+          "updateDocument": "update_channel_document",
+          "updateDocumentDesc": "更新共享文档",
+          "updateDocumentParams": "channel_id, document"
+        },
+        "ticket": {
+          "title": "任务工具",
+          "toolHeader": "工具",
+          "descriptionHeader": "说明",
+          "paramsHeader": "参数",
+          "searchTickets": "search_tickets",
+          "searchTicketsDesc": "搜索任务",
+          "searchTicketsParams": "product_id?, status?, type?, priority?, query?",
+          "getTicket": "get_ticket",
+          "getTicketDesc": "获取任务详情",
+          "getTicketParams": "ticket_id（数字或 \"AM-123\"）",
+          "createTicket": "create_ticket",
+          "createTicketDesc": "创建新任务",
+          "createTicketParams": "product_id, title, description?, type?, priority?",
+          "updateTicket": "update_ticket",
+          "updateTicketDesc": "更新任务",
+          "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
+        },
+        "pod": {
+          "title": "Pod 工具",
+          "toolHeader": "工具",
+          "descriptionHeader": "说明",
+          "paramsHeader": "参数",
+          "createPod": "create_pod",
+          "createPodDesc": "创建新的 AgentPod",
+          "createPodParams": "agent_type_id（必需）, runner_id?, ticket_id?, initial_prompt?, model?"
+        }
+      }
+    },
+    "guides": {
+      "gitIntegration": {
+        "title": "Git 集成",
+        "description": "连接 Git 服务商并在 AgentsMesh 中使用仓库的完整指南。",
+        "overview": {
+          "title": "概述",
+          "description": "AgentsMesh 集成了主流 Git 托管平台，为 AI 智能体提供无缝的仓库访问。本指南涵盖端到端的设置流程。"
+        },
+        "github": {
+          "title": "GitHub (OAuth)",
+          "description": "使用 OAuth 连接你的 GitHub 账户，实现一键授权：",
+          "step1": "前往 设置 → Git 服务商",
+          "step2": "点击 连接 GitHub",
+          "step3": "在 GitHub 弹窗中授权 AgentsMesh",
+          "step4": "选择要授权访问的仓库",
+          "step5": "你的仓库将出现在 设置 → 仓库 中"
+        },
+        "gitlab": {
+          "title": "GitLab（个人访问令牌）",
+          "description": "使用个人访问令牌连接 GitLab：",
+          "step1": "在 GitLab 中，前往 设置 → 访问令牌",
+          "step2": "创建具有 api 和 read_repository 权限的新令牌",
+          "step3": "在 AgentsMesh 中，前往 设置 → Git 服务商",
+          "step4": "点击 添加 GitLab 服务商 并粘贴令牌",
+          "step5": "输入你的 GitLab 实例 URL（适用于自托管）",
+          "selfHosted": "自托管 GitLab：输入 GitLab 实例的完整 URL（例如 https://gitlab.yourcompany.com）。"
+        },
+        "gitee": {
+          "title": "Gitee（个人访问令牌）",
+          "description": "使用个人访问令牌连接 Gitee：",
+          "step1": "在 Gitee 中，前往 设置 → 私人令牌",
+          "step2": "创建具有 projects 权限的新令牌",
+          "step3": "在 AgentsMesh 中，前往 设置 → Git 服务商",
+          "step4": "点击 添加 Gitee 服务商 并粘贴令牌"
+        },
+        "sshKeys": {
+          "title": "SSH 密钥管理",
+          "description": "对于通过 SSH 访问的仓库，确保 Runner 配置了正确的 SSH 密钥：",
+          "step1": "在 Runner 机器上生成 SSH 密钥对",
+          "step2": "将公钥添加到 Git 服务商（GitHub/GitLab/Gitee）",
+          "step3": "Runner 将在克隆仓库时使用 SSH 密钥",
+          "dockerNote": "Docker Runner：将 SSH 密钥挂载为只读卷：-v ~/.ssh:/root/.ssh:ro"
+        },
+        "podUsage": {
+          "title": "在 Pod 中使用仓库",
+          "description": "仓库连接后，你可以将其关联到 Pod：",
+          "step1": "创建新 Pod 时，从下拉列表中选择仓库",
+          "step2": "Runner 克隆仓库并创建隔离的 Git 工作树",
+          "step3": "AI 智能体在仓库工作目录中启动",
+          "step4": "所有更改都隔离在 Pod 的工作树中"
+        }
+      },
+      "teamManagement": {
+        "title": "团队管理",
+        "description": "了解如何在 AgentsMesh 中设置和管理你的团队。",
+        "overview": {
+          "title": "概述",
+          "description": "AgentsMesh 使用组织作为团队协作的基本单位。每个组织拥有独立的成员、Runner、仓库和设置。"
+        },
+        "createOrg": {
+          "title": "创建组织",
+          "description": "首次注册时，系统会提示你创建组织。你也可以稍后创建更多组织：",
+          "step1": "点击个人菜单 → 创建组织",
+          "step2": "输入组织名称和显示名称",
+          "step3": "配置初始设置（时区、默认语言）",
+          "step4": "组织已准备就绪"
+        },
+        "inviteMembers": {
+          "title": "邀请成员",
+          "description": "邀请团队成员加入你的组织协作：",
+          "step1": "前往 设置 → 成员",
+          "step2": "点击 邀请成员",
+          "step3": "输入被邀请者的邮箱地址",
+          "step4": "选择角色（管理员或成员）",
+          "step5": "被邀请者将收到包含加入链接的邮件",
+          "note": "没有 AgentsMesh 账户的被邀请者将被提示先注册。"
+        },
+        "roles": {
+          "title": "角色与权限",
+          "description": "AgentsMesh 支持基于角色的访问控制（RBAC）：",
+          "ownerTitle": "所有者",
+          "ownerDesc": "对所有设置、计费和成员管理拥有完全访问权限。可以删除组织。",
+          "adminTitle": "管理员",
+          "adminDesc": "可以管理成员、Runner、仓库和设置。不能删除组织或管理计费。",
+          "memberTitle": "成员",
+          "memberDesc": "可以创建 Pod、使用 Runner、访问仓库和管理任务。不能更改组织设置。"
+        },
+        "orgSettings": {
+          "title": "组织设置",
+          "description": "从设置页面配置你的组织：",
+          "general": "通用 — 组织名称、显示名称和头像",
+          "members": "成员 — 邀请、移除和管理成员角色",
+          "runners": "Runner — 查看和管理已连接的 Runner",
+          "repositories": "仓库 — 已连接的 Git 仓库",
+          "providers": "AI 服务商 — AI 服务的 API 密钥",
+          "billing": "计费 — 订阅计划和使用情况"
+        }
+      },
+      "multiAgent": {
+        "title": "多智能体工作流",
+        "description": "了解如何编排多个 AI 智能体协作完成复杂的开发任务。",
+        "overview": {
+          "title": "概述",
+          "description": "多智能体工作流允许你将复杂任务拆分给多个 AI 智能体。每个智能体运行在自己的 Pod 中，通过频道和 Pod 绑定进行通信。"
+        },
+        "setup": {
+          "title": "设置多智能体工作流",
+          "step1": "为任务创建频道（如 'feature-auth-implementation'）",
+          "step2": "启动多个 Pod，每个具有不同的角色或专注领域",
+          "step3": "将所有 Pod 关联到同一频道",
+          "step4": "每个 Pod 使用 MCP 工具进行通信和协调",
+          "step5": "通过 Mesh 拓扑视图监控进度"
+        },
+        "scenario1": {
+          "title": "场景：代码审查工作流",
+          "description": "使用两个智能体——一个写代码，另一个审查：",
+          "developer": "开发 Pod — 根据任务需求编写代码",
+          "reviewer": "审查 Pod — 通过绑定观察开发者的终端输出，审查变更并通过频道提供反馈",
+          "flow": "审查者可以使用 observe_terminal 观察开发者工作，然后通过频道发送反馈。开发者阅读反馈并迭代改进。"
+        },
+        "scenario2": {
+          "title": "场景：前后端拆分",
+          "description": "使用两个专业化智能体并行全栈开发：",
+          "frontend": "前端 Pod — 开发 UI 组件、样式和客户端逻辑",
+          "backend": "后端 Pod — 实现 API 端点、数据库模型和业务逻辑",
+          "coordination": "两个 Pod 共享一个频道来协调 API 契约、数据结构和集成点。它们可以使用共享文档维护 API 规范。"
+        },
+        "scenario3": {
+          "title": "场景：测试与开发并行",
+          "description": "开发的同时运行测试，加速迭代：",
+          "devPod": "开发 Pod — 实现功能",
+          "testPod": "测试 Pod — 为新代码编写和运行测试",
+          "process": "测试 Pod 通过频道消息监控开发 Pod 的进度。当开发者完成一个模块时，测试者编写并执行测试，通过频道反馈结果。"
+        },
+        "bestPractices": {
+          "title": "最佳实践",
+          "tip1": "明确任务分配——给每个 Pod 一个聚焦的初始提示",
+          "tip2": "使用频道协调——优先使用频道消息而非直接终端访问",
+          "tip3": "关联任务——将 Pod 与任务关联以获得自动上下文",
+          "tip4": "通过 Mesh 监控——使用拓扑视图跟踪协作状态",
+          "tip5": "及时清理——任务完成后终止 Pod 以释放资源"
+        }
+      }
+    },
+    "faq": {
+      "title": "常见问题",
+      "description": "查找关于使用 AgentsMesh 的常见问题解答。",
+      "categories": {
+        "runner": "Runner 问题",
+        "pod": "Pod 问题",
+        "apiKey": "API 密钥配置",
+        "git": "Git 集成",
+        "billing": "计费与套餐"
+      },
+      "items": {
+        "runnerConnection": {
+          "question": "我的 Runner 显示为「离线」，如何修复？",
+          "answer": "请检查以下内容：1) 确认 Runner 进程正在运行（agentsmesh-runner run）。2) 验证到 AgentsMesh 服务器的网络连接。3) 确保防火墙允许端口 9443 的出站 gRPC 连接。4) 检查 Runner 日志是否有证书错误——如果证书已过期，可能需要重新注册。"
+        },
+        "runnerMultiple": {
+          "question": "可以在同一台机器上运行多个 Runner 吗？",
+          "answer": "可以，但每个 Runner 需要独立的注册令牌和配置目录。使用 --config 参数指定不同的配置路径。每个 Runner 可以同时处理多个 Pod。"
+        },
+        "podCreationFail": {
+          "question": "创建 Pod 失败，提示「没有可用的 Runner」，怎么办？",
+          "answer": "这意味着你的组织中没有在线的 Runner。确保至少有一个 Runner 正在运行，并在 设置 → Runner 中显示为「在线」。如果 Runner 正在运行但显示离线，请检查网络连接。"
+        },
+        "podStuck": {
+          "question": "Pod 卡在「初始化中」状态，怎么回事？",
+          "answer": "这通常意味着仓库克隆耗时较长，或 Runner 在创建 Git 工作树时遇到问题。查看 Runner 日志了解详情。对于大型仓库，首次克隆可能需要几分钟。"
+        },
+        "apiKeyFormat": {
+          "question": "API 密钥应该是什么格式？",
+          "answer": "Anthropic 密钥以 'sk-ant-' 开头，OpenAI 密钥以 'sk-' 开头，Google 密钥通常是较长的字母数字字符串。请完全按照 AI 服务商提供的格式输入密钥。密钥在静态存储时加密。"
+        },
+        "apiKeyMultiple": {
+          "question": "可以为不同的 Pod 使用不同的 API 密钥吗？",
+          "answer": "目前，API 密钥在组织级别配置。组织中的所有 Pod 共享相同的 API 密钥。这可能在未来版本中改变。"
+        },
+        "gitCloneFail": {
+          "question": "创建 Pod 时 Git 克隆失败，应该检查什么？",
+          "answer": "请验证：1) Git 服务商已在 设置 → Git 服务商 中连接。2) 仓库 URL 正确。3) 如果使用 SSH 访问，确保 Runner 机器有正确的 SSH 密钥。4) 如果使用 HTTPS，确保令牌有仓库读取权限。"
+        },
+        "gitWorktreeConflict": {
+          "question": "多个 Pod 可以同时在同一仓库上工作吗？",
+          "answer": "可以！每个 Pod 获得独立的 Git 工作树，所以多个 Pod 可以在同一仓库上同时工作而不会冲突。每个工作树在自己的分支上操作，更改相互隔离。"
+        },
+        "billingBYOK": {
+          "question": "BYOK（自带密钥）计费模式如何运作？",
+          "answer": "你提供自己的 AI 服务商 API 密钥（Anthropic、OpenAI、Google 等）。你根据使用量直接向 AI 服务商付费。AgentsMesh 仅对平台使用（Runner、存储等）收费。"
+        },
+        "billingFree": {
+          "question": "有免费套餐吗？",
+          "answer": "是的，AgentsMesh 提供免费套餐，包含有限的并发 Pod 和存储空间。查看定价页面了解当前套餐详情和限制。"
+        }
+      }
+    }
+  }
+}

@@ -7,7 +7,7 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn } from "@/lib/utils";
 import { useIDEStore, ACTIVITIES, type ActivityType } from "@/stores/ide";
 import { useAuthStore } from "@/stores/auth";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import {
   Terminal,
   Ticket,

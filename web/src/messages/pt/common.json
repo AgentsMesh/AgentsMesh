@@ -1,0 +1,36 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "allRightsReserved": "Todos os direitos reservados.",
+    "save": "Salvar",
+    "saveChanges": "Save Changes",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "create": "Criar",
+    "search": "Pesquisar",
+    "noResults": "Nenhum resultado encontrado",
+    "error": "Ocorreu um erro",
+    "success": "Sucesso",
+    "confirm": "Confirmar",
+    "close": "Fechar",
+    "dismiss": "Dismiss",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Previous",
+    "submit": "Enviar",
+    "reset": "Redefinir",
+    "optional": "optional",
+    "saving": "Saving...",
+    "refresh": "Refresh",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  },
+  "nav": {
+    "agentpod": "AgentPod",
+    "mesh": "AgentsMesh",
+    "tickets": "Tickets",
+    "settings": "Configurações",
+    "billing": "Faturamento"
+  }
+}

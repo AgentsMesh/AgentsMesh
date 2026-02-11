@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authApi } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations();

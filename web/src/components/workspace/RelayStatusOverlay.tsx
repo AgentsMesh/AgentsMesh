@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Wifi, WifiOff, Loader2, AlertTriangle } from "lucide-react";
 
 type ConnectionStatus = "connected" | "connecting" | "disconnected" | "error";

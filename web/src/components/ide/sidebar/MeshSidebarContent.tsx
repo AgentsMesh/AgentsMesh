@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useMeshStore, MeshNode, ChannelInfo } from "@/stores/mesh";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { Button } from "@/components/ui/button";

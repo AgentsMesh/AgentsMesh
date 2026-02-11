@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import {
   EditRepositoryModal,
   useRepositoryDetail,

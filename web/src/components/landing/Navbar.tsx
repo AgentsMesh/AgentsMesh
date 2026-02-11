@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
 import { LanguageSwitcher } from "@/components/i18n";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);

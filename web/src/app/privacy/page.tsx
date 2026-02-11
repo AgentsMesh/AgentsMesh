@@ -13,6 +13,10 @@ export default function PrivacyPage() {
         <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
         <p className="text-muted-foreground mb-8">Last updated: January 2025</p>
 
+        <div className="bg-muted border border-border rounded-lg p-4 mb-8 text-sm text-muted-foreground">
+          This page is currently available in English only. / 此页面目前仅提供英文版本。
+        </div>
+
         <div className="prose prose-neutral dark:prose-invert max-w-none space-y-8">
           <section>
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>

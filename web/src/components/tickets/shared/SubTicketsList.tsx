@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Ticket } from "@/stores/ticket";
 import { StatusIcon, TypeIcon, getStatusDisplayInfo } from "../TicketIcons";
 import { ChevronRight } from "lucide-react";

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common";
-import { useTranslations, useLocale } from "@/lib/i18n/client";
+import { useTranslations, useLocale } from "next-intl";
 
 interface BlogPost {
   slug: string;
@@ -50,7 +50,7 @@ export default function BlogPostPage() {
   const params = useParams();
   const slug = params.slug as string;
   const t = useTranslations();
-  const { locale } = useLocale();
+  const locale = useLocale();
 
   const post = blogPosts[slug];
 

@@ -1,0 +1,505 @@
+{
+  "settings": {
+    "title": "Configurações",
+    "general": "Geral",
+    "team": "Equipe",
+    "gitProviders": "Provedores Git",
+    "agents": "Agentes",
+    "billing": "Faturamento",
+    "personal": {
+      "title": "Personal Settings",
+      "description": "Manage your personal preferences",
+      "userSettings": "Your personal settings",
+      "tabs": {
+        "general": "General",
+        "generalDesc": "Account and session management",
+        "git": "Git Settings",
+        "gitDesc": "Repository providers and credentials",
+        "agentConfig": "Agent Config",
+        "agentConfigDesc": "AI agent runtime parameters",
+        "agentCredentials": "Agent Credentials",
+        "agentCredentialsDesc": "API keys for AI agents",
+        "notifications": "Notifications",
+        "notificationsDesc": "Push notification preferences"
+      },
+      "general": {
+        "title": "General Settings",
+        "description": "Manage your account and session",
+        "accountInfo": "Account Information",
+        "username": "Username",
+        "email": "Email",
+        "session": "Session",
+        "sessionDescription": "Sign out from your current session on this device.",
+        "logout": "Sign Out"
+      }
+    },
+    "language": {
+      "title": "Idioma",
+      "description": "Escolha seu idioma preferido para a interface.",
+      "selectLabel": "Idioma de Exibição",
+      "selectHint": "Isso mudará o idioma em toda a aplicação."
+    },
+    "theme": {
+      "title": "Theme",
+      "description": "Choose your preferred appearance theme."
+    },
+    "organizationDetails": {
+      "title": "Organization Details",
+      "nameLabel": "Organization Name",
+      "namePlaceholder": "My Organization",
+      "slugLabel": "Organization Slug",
+      "slugHint": "The slug cannot be changed after creation",
+      "saving": "Saving...",
+      "saveChanges": "Save Changes"
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Once you delete an organization, there is no going back. Please be certain.",
+      "deleteOrg": "Delete Organization"
+    },
+    "members": {
+      "title": "Members",
+      "description": "Manage who has access to this organization",
+      "inviteMember": "Invite Member",
+      "loading": "Loading members...",
+      "noMembers": "No members found. Invite someone to get started.",
+      "you": "(You)",
+      "roleOwner": "owner",
+      "roleAdmin": "admin",
+      "roleMember": "member",
+      "remove": "Remove",
+      "confirmRemove": "Are you sure you want to remove this member?",
+      "removeDialog": {
+        "title": "Remove Member",
+        "description": "Are you sure you want to remove this member from the organization? They will lose access to all organization resources."
+      },
+      "dismiss": "Dismiss",
+      "failedToLoad": "Failed to load members",
+      "failedToRemove": "Failed to remove member",
+      "failedToUpdate": "Failed to update member role",
+      "failedToInvite": "Failed to invite member. Please check the email and try again.",
+      "inviteDialog": {
+        "title": "Invite Member",
+        "emailLabel": "Email Address",
+        "emailPlaceholder": "colleague@example.com",
+        "roleLabel": "Role",
+        "cancel": "Cancel",
+        "inviting": "Inviting...",
+        "sendInvite": "Send Invite"
+      }
+    },
+    "agentConfig": {
+      "title": "Agent Configuration",
+      "description": "Configure default runtime settings for AI agents. Credentials are managed in personal settings.",
+      "loading": "Loading...",
+      "loadFailed": "Failed to load agent configuration",
+      "agentNotFound": "Agent not found",
+      "configureDefault": "Configure {name} settings",
+      "configure": "Configure",
+      "configured": "Configured",
+      "configureTitle": "Configure {name}",
+      "configureHint": "Set default configuration values for this agent. These values will be used when creating new pods.",
+      "configureHintGraphical": "Set default runtime parameters for this agent. These values will be used when creating new pods.",
+      "credentialsMovedNotice": "API credentials have been moved to Personal Settings > Agent Credentials. Each user manages their own credentials.",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "saveConfig": "Save Configuration",
+      "configSaved": "Configuration saved successfully",
+      "configSaveFailed": "Failed to save configuration",
+      "loadSchemaFailed": "Failed to load configuration schema",
+      "noConfigFields": "No configuration options available for this agent",
+      "invalidJson": "Invalid JSON format",
+      "credentials": {
+        "title": "API Credentials",
+        "description": "Configure API credentials for this agent. Defaults to RunnerHost mode (uses Runner's local environment configuration)."
+      },
+      "runtime": {
+        "title": "Runtime Configuration",
+        "description": "Set default runtime parameters for this agent. These settings will be used when creating new pods."
+      },
+      "fields": {
+        "model": {
+          "label": "Model",
+          "description": "Default model to use"
+        },
+        "permissionMode": {
+          "label": "Permission Mode",
+          "description": "Default permission mode for new pods"
+        },
+        "mcpEnabled": {
+          "label": "Enable MCP",
+          "description": "Enable Model Context Protocol for enhanced collaboration"
+        },
+        "skillsEnabled": {
+          "label": "Enable Skills",
+          "description": "Enable collaboration skills injection"
+        },
+        "skipPermissions": {
+          "label": "Skip Permissions",
+          "description": "Skip permission confirmation prompts (dangerous)"
+        },
+        "thinkLevel": {
+          "label": "Think Level",
+          "description": "Thinking depth level for responses"
+        },
+        "customConfig": {
+          "label": "Custom Configuration",
+          "description": "Enter custom configuration (advanced)"
+        }
+      },
+      "modelOptions": {
+        "claude": {
+          "opus": "Claude Opus",
+          "sonnet": "Claude Sonnet"
+        },
+        "openai": {
+          "gpt4": "GPT-4",
+          "gpt4Turbo": "GPT-4 Turbo",
+          "gpt35Turbo": "GPT-3.5 Turbo"
+        },
+        "gemini": {
+          "pro": "Gemini Pro",
+          "ultra": "Gemini Ultra"
+        }
+      },
+      "permissionOptions": {
+        "plan": "Plan Mode",
+        "default": "Default Mode"
+      },
+      "thinkLevelOptions": {
+        "ultrathink": "Ultrathink",
+        "megathink": "Megathink",
+        "default": "Default"
+      }
+    },
+    "credentials": {
+      "title": "Your Credentials",
+      "description": "Set your personal API keys for AI providers. Keys are encrypted before storage.",
+      "dismiss": "Dismiss",
+      "enterAtLeastOne": "Please enter at least one API key to save",
+      "savedSuccess": "Credentials saved successfully",
+      "failedToSave": "Failed to save credentials. Please try again.",
+      "anthropicLabel": "Anthropic API Key (Claude)",
+      "anthropicPlaceholder": "sk-ant-...",
+      "anthropicHint": "Get your key from",
+      "openaiLabel": "OpenAI API Key",
+      "openaiPlaceholder": "sk-...",
+      "openaiHint": "Get your key from",
+      "googleLabel": "Google AI API Key (Gemini)",
+      "googlePlaceholder": "AIza...",
+      "googleHint": "Get your key from",
+      "saving": "Saving...",
+      "saveCredentials": "Save Credentials"
+    },
+    "agentCredentials": {
+      "title": "Agent Credentials",
+      "description": "Manage API credentials for each agent type. By default, RunnerHost mode is used (credentials from Runner's local environment). Add custom profiles to use your own API keys.",
+      "failedToLoad": "Failed to load agent credentials",
+      "profiles": "profiles",
+      "runnerHostHint": "Use Runner machine's local environment configuration (no credentials injected)",
+      "noAgentTypes": "No agent types available",
+      "default": "Default",
+      "configured": "Configured",
+      "notConfigured": "Not configured",
+      "setAsDefault": "Set as default",
+      "addProfile": "Add Custom Credentials",
+      "editProfile": "Edit Credentials",
+      "customProfileDescription": "Add your own API credentials for this agent type. These will override the Runner's local environment configuration.",
+      "name": "Profile Name",
+      "namePlaceholder": "e.g., Work Config, Personal",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description for this profile",
+      "baseUrl": "Base URL",
+      "apiKey": "API Key",
+      "apiKeyPlaceholder": "Leave empty to keep existing",
+      "apiKeyEditHint": "Leave empty to keep the existing API key",
+      "profileCreated": "Profile created successfully",
+      "profileUpdated": "Profile updated successfully",
+      "profileDeleted": "Profile deleted successfully",
+      "defaultSet": "Default profile set successfully",
+      "failedToSave": "Failed to save profile",
+      "failedToDelete": "Failed to delete profile",
+      "failedToSetDefault": "Failed to set default profile",
+      "confirmDelete": "Are you sure you want to delete this profile?"
+    },
+    "sshKeys": {
+      "title": "SSH Keys",
+      "description": "Manage SSH keys for Git authentication",
+      "addSSHKey": "Add SSH Key",
+      "noKeys": "No SSH keys configured. Add one to use SSH Git providers.",
+      "copyPublicKey": "Copy Public Key",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete this SSH key?",
+      "createdSuccess": "SSH key created successfully",
+      "deletedSuccess": "SSH key deleted",
+      "failedToCreate": "Failed to create SSH key",
+      "failedToDelete": "Failed to delete SSH key",
+      "nameRequired": "SSH key name is required",
+      "dialog": {
+        "addTitle": "Add SSH Key",
+        "createdTitle": "SSH Key Created",
+        "createdHint": "Add this public key to your Git server:",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g., Production Server Key",
+        "privateKeyLabel": "Private Key (optional)",
+        "privateKeyPlaceholder": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----",
+        "privateKeyHint": "Leave empty to generate a new Ed25519 key pair automatically.",
+        "cancel": "Cancel",
+        "creating": "Creating...",
+        "importKey": "Import Key",
+        "generateKey": "Generate Key",
+        "done": "Done"
+      }
+    },
+    "billingPage": {
+      "currentPlan": "Current Plan",
+      "yearly": "Yearly",
+      "monthly": "Monthly",
+      "renews": "Renews",
+      "endsOn": "Ends on",
+      "upgrade": "Upgrade",
+      "changePlan": "Change Plan",
+      "cancelPlan": "Cancel Plan",
+      "manageBilling": "Manage Billing",
+      "cancellingAtPeriodEnd": "Cancelling at period end",
+      "reactivate": "Reactivate",
+      "reactivating": "Reactivating...",
+      "reactivateSuccess": "Subscription reactivated successfully",
+      "frozen": "Frozen",
+      "expiredOn": "Expired on",
+      "frozenMessage": "Your subscription has expired. Please renew to restore full access.",
+      "renewNow": "Renew Now",
+      "canceled": "Canceled",
+      "canceledOn": "Canceled on",
+      "canceledMessage": "Your subscription has been canceled. Resubscribe to restore access.",
+      "resubscribe": "Resubscribe",
+      "usage": "Usage",
+      "podMinutes": "Pod Minutes",
+      "teamMembers": "Team Members",
+      "repositories": "Repositories",
+      "unlimited": "Unlimited",
+      "paymentMethod": "Payment Method",
+      "noPaymentMethod": "No payment method on file",
+      "addPaymentMethod": "Add Payment Method",
+      "noSubscription": "No Active Subscription",
+      "choosePlan": "Choose a plan to get started with AgentsMesh",
+      "selectPlan": "Select a Plan",
+      "retry": "Retry",
+      "failedToLoad": "Failed to load billing data",
+      "failedToUpgrade": "Failed to upgrade plan",
+      "paymentSuccess": "Payment successful! Your subscription has been updated.",
+      "paymentCancelled": "Payment was cancelled. Please try again.",
+      "dismiss": "Dismiss",
+      "plansDialog": {
+        "title": "Choose a Plan",
+        "noPlans": "No plans available",
+        "podMinutes": "pod minutes",
+        "teamMembers": "team members",
+        "runners": "runners",
+        "repositories": "repositories",
+        "processing": "Processing...",
+        "currentPlan": "Current Plan",
+        "select": "Select",
+        "free": "Free"
+      },
+      "promoCode": {
+        "title": "Promo Code",
+        "description": "Enter a promo code to get extra subscription time",
+        "placeholder": "Enter promo code",
+        "validate": "Validate",
+        "redeem": "Redeem",
+        "validating": "Validating...",
+        "redeeming": "Redeeming...",
+        "invalid": "Invalid promo code",
+        "expired": "Promo code has expired",
+        "used": "Promo code has already been used",
+        "success": "Successfully redeemed",
+        "valid": "Promo code is valid",
+        "plan": "Plan",
+        "duration": "Duration",
+        "months": "months",
+        "enterCode": "Please enter a promo code",
+        "validateError": "Validation failed, please try again",
+        "redeemError": "Redemption failed, please try again",
+        "confirmRedeem": "Click \"Redeem\" to confirm",
+        "errors": {
+          "promo_code_not_found": "Promo code not found",
+          "promo_code_expired": "Promo code has expired",
+          "promo_code_disabled": "Promo code is disabled",
+          "promo_code_max_used": "Promo code has reached maximum uses",
+          "promo_code_invalid": "Invalid promo code",
+          "promo_code_already_used": "You have already used this promo code",
+          "promo_code_not_owner": "Only organization owner can redeem promo codes"
+        }
+      }
+    },
+    "notifications": {
+      "title": "Push Notifications",
+      "description": "Configure push notifications for important events like pod status changes, ticket assignments, and runner alerts.",
+      "notSupported": "Push notifications are not supported in this browser.",
+      "enabled": "You will receive notifications for important events",
+      "disabled": "Enable to receive notifications about pods, tickets, and more",
+      "enable": "Enable",
+      "disable": "Disable",
+      "blocked": "Blocked",
+      "blockedTitle": "Notifications are blocked",
+      "blockedHint": "Please enable notifications in your browser settings to receive alerts.",
+      "types": "Notification Types",
+      "podStatus": "Pod Status Changes",
+      "podStatusDesc": "When a pod completes, fails, or changes status",
+      "ticketAssigned": "Ticket Assignments",
+      "ticketAssignedDesc": "When a ticket is assigned to you",
+      "ticketUpdated": "Ticket Updates",
+      "ticketUpdatedDesc": "When tickets you're watching are updated",
+      "runnerOffline": "Runner Alerts",
+      "runnerOfflineDesc": "When a runner goes offline or has issues",
+      "active": "Notifications are active"
+    },
+    "runnersSection": {
+      "title": "Runners",
+      "description": "Manage your self-hosted runners",
+      "loading": "Loading...",
+      "noRunners": "No runners registered. Use a registration token to add runners.",
+      "pods": "Pods:",
+      "lastSeen": "Last seen:",
+      "justNow": "Just now",
+      "edit": "Edit",
+      "generateToken": "Generate Token",
+      "delete": "Delete",
+      "disabled": "Disabled",
+      "deleteDialog": {
+        "title": "Delete Runner",
+        "description": "Are you sure you want to delete this runner? This action cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete"
+      },
+      "tokenDialog": {
+        "title": "Registration Token",
+        "description": "Copy this token now. You won't be able to see it again. Use this token with 'runner register' command.",
+        "copy": "Copy",
+        "done": "Done"
+      },
+      "editDialog": {
+        "title": "Edit Runner",
+        "nodeIdLabel": "Node ID",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Runner description",
+        "maxPodsLabel": "Max Concurrent Pods",
+        "enabledLabel": "Enabled",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "saveChanges": "Save Changes"
+      }
+    },
+    "gitSettings": {
+      "title": "Git Settings",
+      "description": "Manage your Git credentials and repository providers for importing and accessing repositories.",
+      "failedToLoad": "Failed to load Git settings",
+      "defaultSet": "Default credential updated",
+      "failedToSetDefault": "Failed to set default credential",
+      "confirmDeleteProvider": "Are you sure you want to delete this repository provider?",
+      "failedToDeleteProvider": "Failed to delete provider",
+      "confirmDeleteCredential": "Are you sure you want to delete this credential?",
+      "failedToDeleteCredential": "Failed to delete credential",
+      "connectionSuccess": "Connection successful",
+      "connectionFailed": "Connection failed",
+      "defaultCredential": {
+        "title": "Default Git Credential",
+        "description": "Choose the default credential to use for Git operations. This will be used when creating new pods.",
+        "runnerLocalHint": "Uses the Git configuration on the Runner machine"
+      },
+      "providers": {
+        "title": "Repository Providers",
+        "description": "Connect to GitHub, GitLab, or Gitee to import repositories.",
+        "add": "Add Provider",
+        "empty": "No repository providers configured. Add one to import repositories.",
+        "default": "Default",
+        "disabled": "Disabled",
+        "test": "Test Connection",
+        "dialog": {
+          "title": "Add Repository Provider",
+          "editTitle": "Edit Provider",
+          "selectType": "Select a Git provider to connect:",
+          "name": "Name",
+          "baseUrl": "Base URL",
+          "baseUrlHint": "For self-hosted instances, enter the full URL",
+          "token": "Personal Access Token",
+          "tokenHint": "Token requires repo access permissions",
+          "tokenUpdateHint": "Leave empty to keep current token",
+          "active": "Active",
+          "fillAll": "Please fill in all required fields",
+          "failed": "Failed to save provider"
+        }
+      },
+      "credentials": {
+        "title": "Git Credentials",
+        "description": "Add Personal Access Tokens or SSH keys for Git authentication.",
+        "add": "Add Credential",
+        "empty": "No credentials configured. Add a PAT or SSH key for Git authentication.",
+        "hostPattern": "Host pattern",
+        "dialog": {
+          "title": "Add Git Credential",
+          "type": "Credential Type",
+          "name": "Name",
+          "namePlaceholder": "e.g., Work GitHub Token",
+          "nameRequired": "Name is required",
+          "patRequired": "Personal Access Token is required",
+          "sshRequired": "SSH private key is required",
+          "privateKey": "SSH Private Key",
+          "patHint": "Token requires repo access permissions",
+          "hostPattern": "Host Pattern (optional)",
+          "hostPatternHint": "Restrict this credential to specific hosts (e.g., github.com)",
+          "failed": "Failed to create credential"
+        }
+      }
+    },
+    "gitConnections": {
+      "title": "Git Connections",
+      "description": "Manage your Git provider connections. OAuth connections are automatically created when you sign in with GitHub, GitLab, or Gitee.",
+      "failedToLoad": "Failed to load Git connections",
+      "failedToDelete": "Failed to delete connection",
+      "oauthCannotDelete": "OAuth connections cannot be deleted. Please manage them from your account settings.",
+      "confirmDelete": "Are you sure you want to delete \"{name}\"?",
+      "oauthConnections": "OAuth Connections",
+      "oauthDescription": "Connections created through OAuth sign-in",
+      "noOauthConnections": "No OAuth connections. Sign in with GitHub, GitLab, or Gitee to automatically connect.",
+      "personalConnections": "Personal Connections",
+      "personalDescription": "Connections using Personal Access Tokens or SSH keys",
+      "addConnection": "Add Connection",
+      "noPersonalConnections": "No personal connections. Add a connection to access private Git providers.",
+      "active": "Active",
+      "inactive": "Inactive",
+      "browseRepos": "Browse Repos",
+      "dialog": {
+        "title": "Add Git Connection",
+        "selectProvider": "Select a Git provider to connect:",
+        "githubDescription": "Connect to GitHub.com or GitHub Enterprise",
+        "gitlabDescription": "Connect to GitLab.com or self-hosted GitLab",
+        "giteeDescription": "Connect to Gitee",
+        "fillAllFields": "Please fill in all required fields",
+        "enterPat": "Please enter your Personal Access Token",
+        "enterSshKey": "Please enter your SSH private key",
+        "failedToCreate": "Failed to create connection. Please check your credentials.",
+        "connectionName": "Connection Name",
+        "connectionNamePlaceholder": "e.g., Company GitLab",
+        "baseUrl": "Base URL",
+        "baseUrlHint": "For self-hosted instances, enter the full URL",
+        "authType": "Authentication Type",
+        "patHint": "Token requires repo access permissions",
+        "sshPrivateKey": "SSH Private Key",
+        "connect": "Connect"
+      },
+      "repoBrowser": {
+        "title": "Browse Repositories",
+        "searchPlaceholder": "Search repositories...",
+        "failedToLoad": "Failed to load repositories",
+        "noRepos": "No repositories found",
+        "noDescription": "No description",
+        "branch": "Branch",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {page}"
+      }
+    }
+  }
+}

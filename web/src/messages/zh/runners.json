@@ -1,0 +1,271 @@
+{
+  "runners": {
+    "title": "Runner",
+    "searchPlaceholder": "搜索 Runner...",
+    "addRunner": "添加 Runner",
+    "registrationTokens": "注册令牌",
+    "runnerCount": "个 Runner",
+    "disabled": "已禁用",
+    "filters": {
+      "all": "全部",
+      "online": "在线",
+      "offline": "离线",
+      "busy": "忙碌"
+    },
+    "overview": {
+      "title": "概览",
+      "online": "在线"
+    },
+    "emptyState": {
+      "title": "暂无 Runner",
+      "description": "部署一个 Runner 以开始创建 Pod",
+      "deployRunner": "部署 Runner",
+      "noMatch": "没有匹配的 Runner"
+    },
+    "runner": {
+      "status": "状态",
+      "version": "版本",
+      "os": "操作系统",
+      "arch": "架构",
+      "pods": "活跃 Pod",
+      "lastSeen": "最后在线",
+      "uptime": "运行时间",
+      "actions": {
+        "configure": "配置",
+        "restart": "重启",
+        "remove": "移除"
+      }
+    },
+    "page": {
+      "title": "Runner",
+      "subtitle": "管理计算资源",
+      "refresh": "刷新",
+      "addRunner": "添加 Runner",
+      "totalRunners": "Runner 总数",
+      "online": "在线",
+      "activePods": "活跃 Pod",
+      "totalCapacity": "总容量",
+      "activeRunners": "活跃 Runner",
+      "noRunners": "暂无注册的 Runner。",
+      "noRunnersHint": "添加一个 Runner 以开始部署 Pod。",
+      "runnerColumn": "Runner",
+      "statusColumn": "状态",
+      "podsColumn": "Pod",
+      "hostInfoColumn": "主机信息",
+      "versionColumn": "版本",
+      "actionsColumn": "操作",
+      "configure": "配置",
+      "enable": "启用",
+      "disable": "禁用",
+      "delete": "删除",
+      "confirmDelete": "确定要删除 Runner「{nodeId}」吗？",
+      "deleteDialog": {
+        "title": "删除 Runner",
+        "description": "确定要删除此 Runner 吗？此操作无法撤销。"
+      },
+      "cores": "核心",
+      "mobilePodsLabel": "Pod：",
+      "mobileCpuLabel": "CPU：",
+      "mobileOsLabel": "系统：",
+      "mobileVersionLabel": "版本："
+    },
+    "addRunnerModal": {
+      "title": "添加 Runner",
+      "subtitle": "生成注册令牌以连接新的 Runner",
+      "tokenWarning": "请妥善保管此令牌，它只会显示一次",
+      "tokenLabel": "注册令牌",
+      "usageTitle": "使用以下命令启动 Runner：",
+      "copyCommand": "复制命令",
+      "done": "完成",
+      "cancel": "取消",
+      "generate": "生成令牌",
+      "generating": "生成中...",
+      "generateHint": "点击下方按钮生成一次性注册令牌，用于连接新的 Runner。"
+    },
+    "configModal": {
+      "title": "配置 Runner",
+      "nodeIdLabel": "节点 ID",
+      "descriptionLabel": "描述",
+      "descriptionPlaceholder": "添加描述...",
+      "maxPodsLabel": "最大并发 Pod 数",
+      "activePodsLabel": "活跃 Pod ({count})",
+      "cancel": "取消",
+      "saving": "保存中...",
+      "save": "保存更改"
+    },
+    "detail": {
+      "notFound": "Runner 未找到",
+      "disabled": "已禁用",
+      "disable": "禁用",
+      "enable": "启用",
+      "confirmDelete": "确定要删除 Runner「{nodeId}」吗？此操作无法撤销。",
+      "deleteDialog": {
+        "title": "删除 Runner",
+        "description": "确定要删除此 Runner 吗？此操作无法撤销。"
+      },
+      "confirmResume": "要从「{podKey}」的 Sandbox 恢复一个新 Pod 吗？这将使用现有工作区创建新 Pod。",
+      "resumeFailed": "恢复 Pod 失败，请重试。",
+      "tabs": {
+        "overview": "概览",
+        "pods": "Pod 列表"
+      },
+      "basicInfo": "基本信息",
+      "nodeId": "节点 ID",
+      "description": "描述",
+      "version": "版本",
+      "lastHeartbeat": "最后心跳",
+      "createdAt": "创建时间",
+      "capacity": "容量",
+      "currentPods": "当前 Pod 数",
+      "cpu": "CPU",
+      "memory": "内存",
+      "os": "操作系统",
+      "availableAgents": "可用智能体",
+      "relayConnections": "Relay 连接",
+      "connectedSince": "连接时长",
+      "allStatus": "全部状态",
+      "refreshSandbox": "刷新 Sandbox 状态",
+      "podKey": "Pod Key",
+      "status": "状态",
+      "sandbox": "Sandbox",
+      "branch": "分支",
+      "actions": "操作",
+      "canResume": "可恢复",
+      "exists": "存在",
+      "notExists": "不存在",
+      "active": "活跃",
+      "noPods": "此 Runner 暂无 Pod",
+      "showing": "显示 {from} 到 {to}，共 {total} 个 Pod",
+      "resume": "恢复",
+      "resumeTooltip": "使用现有 Sandbox 工作区创建新 Pod",
+      "resumeDialogTitle": "恢复 Pod",
+      "resumeDialogDescription": "即将从「{podKey}」的 Sandbox 恢复。",
+      "resumeDialogInfo": "这将使用现有工作区创建新 Pod，让 AI 智能体可以从上次中断的地方继续工作。",
+      "confirmResumeBtn": "确认恢复"
+    },
+    "authorize": {
+      "title": "授权 Runner",
+      "description": "一个 Runner 正在请求连接到您的组织。授权后即可执行 AI 智能体任务。",
+      "missingAuthKey": "缺少授权密钥。请使用 runner login 命令生成的完整链接。",
+      "invalidAuthKey": "此授权链接无效或已过期。",
+      "invalidTitle": "授权无效",
+      "goToLogin": "前往登录",
+      "expiredTitle": "授权已过期",
+      "expiredDescription": "此授权链接已过期。授权链接有效期为 15 分钟。",
+      "rerunCommand": "请重新运行 login 命令以获取新的授权链接。",
+      "successTitle": "Runner 已授权！",
+      "successDescription": "Runner 已成功授权，证书将很快下发。",
+      "closeWindow": "您可以关闭此窗口并返回终端。",
+      "signInRequired": "请登录以授权此 Runner",
+      "signInToAuthorize": "登录并授权",
+      "noAccount": "还没有账号？",
+      "signUp": "立即注册",
+      "signedInAs": "当前登录账号：",
+      "selectOrganization": "选择组织",
+      "selectOrgPlaceholder": "请选择一个组织...",
+      "noOrganizations": "您还没有任何组织，请先创建一个。",
+      "nodeIdLabel": "Runner 节点 ID",
+      "nodeIdPlaceholder": "例如：my-runner-01",
+      "nodeIdHint": "此 Runner 的唯一标识符。留空将自动生成。",
+      "authorizeButton": "授权 Runner",
+      "authorizing": "授权中...",
+      "authorizeFailed": "授权失败，请重试。",
+      "quotaExceeded": "Runner 配额已满。请升级您的套餐或移除不再使用的 Runner。",
+      "expiresAt": "此链接将于 {time} 过期"
+    }
+  },
+  "agent": {
+    "claude-code": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "启用 MCP 集成",
+          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
+        },
+        "model": {
+          "label": "模型",
+          "description": "选择要使用的 Claude 模型",
+          "options": {
+            "opus": "Claude Opus (最强大)",
+            "sonnet": "Claude Sonnet (均衡)"
+          }
+        },
+        "permission_mode": {
+          "label": "权限模式",
+          "description": "控制 Agent 处理权限请求的方式",
+          "options": {
+            "default": "默认",
+            "plan": "计划模式 (推荐)"
+          }
+        },
+        "dangerously_skip_permissions": {
+          "label": "跳过权限检查",
+          "description": "警告：绕过所有权限提示。Agent 将在不请求批准的情况下执行命令。请谨慎使用。"
+        },
+        "think_level": {
+          "label": "思考级别",
+          "description": "用于复杂推理的扩展思考能力",
+          "options": {
+            "": "默认",
+            "megathink": "超级思考",
+            "ultrathink": "深度思考"
+          }
+        }
+      }
+    },
+    "gemini-cli": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "启用 MCP 集成",
+          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
+        },
+        "sandbox_mode": {
+          "label": "沙盒模式",
+          "description": "在沙盒模式下运行以提高安全性"
+        }
+      }
+    },
+    "codex-cli": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "启用 MCP 集成",
+          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
+        },
+        "approval_mode": {
+          "label": "审批模式",
+          "description": "控制代码更改的审批方式",
+          "options": {
+            "suggest": "建议 (手动审批)",
+            "auto-edit": "自动编辑",
+            "full-auto": "完全自动"
+          }
+        }
+      }
+    },
+    "aider": {
+      "fields": {
+        "model": {
+          "label": "模型",
+          "description": "指定要使用的 AI 模型 (例如 gpt-4, claude-3-opus)"
+        },
+        "edit_format": {
+          "label": "编辑格式",
+          "description": "选择代码编辑的呈现方式",
+          "options": {
+            "": "默认",
+            "whole": "完整文件",
+            "diff": "差异",
+            "udiff": "统一差异"
+          }
+        }
+      }
+    },
+    "opencode": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "启用 MCP 集成",
+          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
+        }
+      }
+    }
+  }
+}

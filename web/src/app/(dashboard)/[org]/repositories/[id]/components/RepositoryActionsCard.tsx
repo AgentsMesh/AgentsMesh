@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 interface RepositoryActionsCardProps {
   onSetupWebhook: () => void;

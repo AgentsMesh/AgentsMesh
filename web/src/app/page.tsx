@@ -7,8 +7,8 @@ import { useAuthStore } from "@/stores/auth";
 import {
   Navbar,
   HeroSection,
+  DemoVideo,
   AgentLogos,
-  WhyTerminalBased,
   CoreFeatures,
   HowItWorks,
   EnterpriseFeatures,
@@ -58,8 +58,8 @@ export default function Home() {
       <Navbar />
       <main>
         <HeroSection />
+        <DemoVideo />
         <AgentLogos />
-        <WhyTerminalBased />
         <CoreFeatures />
         <HowItWorks />
         <EnterpriseFeatures />

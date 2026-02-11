@@ -8,18 +8,5 @@ export {
   type Locale,
 } from "./config";
 
-// Client-side hooks and provider
-export {
-  I18nProvider,
-  useI18n,
-  useTranslations,
-  useLocale,
-} from "./client";
-
-// Server-side utilities
-export {
-  getLocale,
-  getTranslations,
-  createTranslator,
-  t,
-} from "./server";
+// Locale switcher hook
+export { useSetLocale } from "./locale-switcher";

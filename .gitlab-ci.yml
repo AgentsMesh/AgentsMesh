@@ -515,3 +515,123 @@ migrate:cn-prod:
       changes:
         - backend/migrations/**/*
       when: manual
+
+# =============================================================================
+# Deploy Stage - US West Production
+# =============================================================================
+
+# Deploy Backend to US West Production
+deploy:uswest-prod:backend:
+  stage: deploy
+  needs:
+    - job: build-backend
+  tags:
+    - deploy
+    - linux
+  variables:
+    DEPLOY_VERSION: "${CI_COMMIT_SHORT_SHA}"
+  environment:
+    name: uswest-production
+    url: https://agentsmesh.ai
+  script:
+    - echo "Deploying Backend ${DEPLOY_VERSION} to US West Production..."
+    - ssh aliyun-us-west-001 "cd /opt/agentsmesh && git pull origin main"
+    - ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service backend --version ${DEPLOY_VERSION}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - backend/**/*
+        - proto/**/*
+      when: manual
+
+# Deploy Web to US West Production
+deploy:uswest-prod:web:
+  stage: deploy
+  needs:
+    - job: build-web
+  tags:
+    - deploy
+    - linux
+  variables:
+    DEPLOY_VERSION: "${CI_COMMIT_SHORT_SHA}"
+  environment:
+    name: uswest-production
+    url: https://agentsmesh.ai
+  script:
+    - echo "Deploying Web ${DEPLOY_VERSION} to US West Production..."
+    - ssh aliyun-us-west-001 "cd /opt/agentsmesh && git pull origin main"
+    - ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service web --version ${DEPLOY_VERSION}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - web/**/*
+      when: manual
+
+# Deploy Web-Admin to US West Production
+deploy:uswest-prod:web-admin:
+  stage: deploy
+  needs:
+    - job: build-web-admin
+  tags:
+    - deploy
+    - linux
+  variables:
+    DEPLOY_VERSION: "${CI_COMMIT_SHORT_SHA}"
+  environment:
+    name: uswest-production
+    url: https://admin.agentsmesh.ai
+  script:
+    - echo "Deploying Web-Admin ${DEPLOY_VERSION} to US West Production..."
+    - ssh aliyun-us-west-001 "cd /opt/agentsmesh && git pull origin main"
+    - ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service web-admin --version ${DEPLOY_VERSION}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - web-admin/**/*
+      when: manual
+
+# Deploy Relay to US West Production
+# Note: Relay runs on uswest-relay-01, not aliyun-us-west-001
+deploy:uswest-prod:relay:
+  stage: deploy
+  needs:
+    - job: build-relay
+  tags:
+    - deploy
+    - linux
+  variables:
+    DEPLOY_VERSION: "${CI_COMMIT_SHORT_SHA}"
+  environment:
+    name: uswest-production
+    url: https://01.relay.agentsmesh.ai:8443
+  script:
+    - echo "Deploying Relay ${DEPLOY_VERSION} to US West Production..."
+    - ssh uswest-relay-01 "cd /opt/relay && docker compose pull && docker compose up -d"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - relay/**/*
+      when: manual
+
+# Database Migration for US West Production
+migrate:uswest-prod:
+  stage: deploy
+  when: manual
+  tags:
+    - deploy
+    - linux
+  variables:
+    MIGRATE_DIRECTION: "up"      # up or down
+    MIGRATE_STEPS: ""            # empty for all, or number for specific steps
+  environment:
+    name: uswest-production
+    url: https://agentsmesh.ai
+  script:
+    - echo "Running database migration (${MIGRATE_DIRECTION}) on US West Production..."
+    - ssh aliyun-us-west-001 "cd /opt/agentsmesh && git pull origin main"
+    - ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./migrate.sh uswest-prod --direction ${MIGRATE_DIRECTION} ${MIGRATE_STEPS:+--steps $MIGRATE_STEPS}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - backend/migrations/**/*
+      when: manual

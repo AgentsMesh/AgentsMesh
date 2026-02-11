@@ -13,7 +13,7 @@ import {
   ChevronsDown,
   CornerDownLeft,
 } from "lucide-react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 interface TerminalToolbarProps {
   className?: string;

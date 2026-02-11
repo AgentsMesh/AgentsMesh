@@ -85,6 +85,11 @@ deploy/dev/runner-ssh/id_*
 deploy/dev/runner-ssh/known_hosts
 
 # =========================
+# Creative assets (demo videos, screenshots, etc.)
+# =========================
+creative/
+
+# =========================
 # Test artifacts
 # =========================
 *.out

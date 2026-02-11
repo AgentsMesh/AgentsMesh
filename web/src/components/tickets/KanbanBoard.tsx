@@ -25,7 +25,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { TicketCard } from "./TicketCard";
 import { Ticket, TicketStatus } from "@/stores/ticket";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useTicketPrefetch } from "@/hooks/useTicketPrefetch";
 import { cn } from "@/lib/utils";
 

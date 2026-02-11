@@ -14,6 +14,58 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "0.5.0",
+    date: "2025-03-15",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Quick Create Pod from Workspace",
+          "DNS-based relay URL generation for Runners",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Separated DNS record management from URL generation",
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          "Terminal message deduplication in React StrictMode",
+          "Non-standard port handling in relay WebSocket URLs",
+        ],
+      },
+    ],
+  },
+  {
+    version: "0.4.0",
+    date: "2025-02-10",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Mesh topology real-time visualization",
+          "Pod binding with permission scopes (terminal:read, terminal:write)",
+          "Multi-language support (8 languages)",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Improved Runner registration flow with mTLS certificates",
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          "Git worktree cleanup on Pod termination",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.3.0",
     date: "2025-01-10",
     changes: [

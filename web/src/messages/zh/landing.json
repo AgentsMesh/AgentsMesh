@@ -1,0 +1,381 @@
+{
+  "landing": {
+    "nav": {
+      "features": "功能特性",
+      "pricing": "定价",
+      "docs": "文档",
+      "signIn": "登录",
+      "getStarted": "立即开始",
+      "console": "控制台",
+      "language": "语言"
+    },
+    "hero": {
+      "badge": "AI 智能体舰队指挥中心",
+      "title1": "基于终端的",
+      "title2": "编程智能体",
+      "title3": "协作平台",
+      "slogan1": "编排 AI 智能体。",
+      "slogan2": "更快交付代码。",
+      "tagline": "AI 编程智能体时代的新一代开发平台",
+      "description": "不仅是 IDE — 更是智能体舰队指挥中心。编排 Claude Code、Codex CLI、Gemini CLI、Aider 等。从需求到执行到交付，一站式完成。",
+      "getStartedFree": "免费开始",
+      "viewDocs": "查看文档",
+      "trustedBy": "受全球开发者信赖",
+      "teams": "不断增长的团队",
+      "pods": "数千个 Pod",
+      "openSource": "开源项目"
+    },
+    "agentLogos": {
+      "title": "支持所有主流终端编程智能体",
+      "descriptions": {
+        "anthropic": "Anthropic",
+        "openai": "OpenAI",
+        "google": "Google",
+        "openSource": "开源",
+        "community": "社区",
+        "yourOwn": "自定义"
+      }
+    },
+    "whyTerminal": {
+      "title": "为什么选择",
+      "titleHighlight": "终端智能体",
+      "titleEnd": "？",
+      "description": "与 Cursor 或 Copilot 等 IDE 插件不同，终端智能体具备自主执行和完整的开发能力。",
+      "benefits": {
+        "autonomous": {
+          "title": "自主执行",
+          "description": "不仅是代码补全。终端智能体可以独立完成从开始到结束的复杂开发任务。"
+        },
+        "fullCapabilities": {
+          "title": "完整能力",
+          "description": "读写文件、执行命令、Git 操作、运行测试——具备完整的全栈开发能力。"
+        },
+        "dataControl": {
+          "title": "数据可控",
+          "description": "自托管运行节点意味着代码永远不会离开你的基础设施，满足安全和合规要求。"
+        }
+      },
+      "comparison": {
+        "idePlugins": "IDE 插件",
+        "idePluginsSubtitle": "Copilot / Cursor",
+        "terminalBased": "终端智能体 ✓",
+        "terminalBasedSubtitle": "Claude Code / Aider",
+        "autonomy": "自主性",
+        "capabilities": "能力",
+        "environment": "环境",
+        "multiAgent": "多智能体",
+        "selfHosted": "自托管",
+        "ide": {
+          "autonomy": "被动响应",
+          "capabilities": "代码补全",
+          "environment": "IDE 沙箱",
+          "multiAgent": "不支持",
+          "selfHosted": "仅限云端"
+        },
+        "terminal": {
+          "autonomy": "主动执行任务",
+          "capabilities": "全栈开发",
+          "environment": "完整终端访问",
+          "multiAgent": "AgentsMesh 支持",
+          "selfHosted": "完全可控"
+        }
+      }
+    },
+    "coreFeatures": {
+      "title": "核心",
+      "titleHighlight": "功能",
+      "description": "管理和协调终端 AI 编程智能体所需的一切。",
+      "agentpod": {
+        "title": "AgentPod",
+        "subtitle": "远程 AI 工作站",
+        "description": "在云端运行 AI 智能体，通过浏览器访问完整的开发环境。每个 AgentPod 运行在隔离的 Git Worktree 上，支持实时终端访问。",
+        "highlights": {
+          "0": "实时交互的 Web 终端",
+          "1": "每个 AgentPod 独立 Git Worktree",
+          "2": "支持多个并发 AgentPod",
+          "3": "完成后自动清理"
+        }
+      },
+      "agentsmesh": {
+        "title": "AgentsMesh",
+        "subtitle": "多智能体协作",
+        "description": "让多个 AI 智能体通过 Pod 绑定和频道通信协同工作。实时可视化协作拓扑。",
+        "highlights": {
+          "0": "带权限控制的 Pod 绑定",
+          "1": "基于频道的消息广播",
+          "2": "实时拓扑可视化",
+          "3": "跨智能体任务协调"
+        }
+      },
+      "tickets": {
+        "title": "任务管理",
+        "subtitle": "任务驱动开发",
+        "description": "将 AI Pod 与任务管理工作流集成。创建任务，绑定到 Pod，通过看板追踪进度。",
+        "highlights": {
+          "0": "看板可视化",
+          "1": "任务与 Pod 绑定",
+          "2": "进度追踪",
+          "3": "MR/PR 集成"
+        }
+      },
+      "runners": {
+        "title": "自托管运行节点",
+        "subtitle": "你的基础设施，你的数据",
+        "description": "在自己的基础设施上部署运行节点。代码和数据永远不会离开你的环境，满足最严格的安全和合规要求。",
+        "highlights": {
+          "0": "Docker/Kubernetes 部署",
+          "1": "数据完全本地化",
+          "2": "支持离线环境",
+          "3": "完整审计日志"
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "只需",
+      "titleHighlight": "3 步",
+      "description": "部署、连接、开始协作，几分钟内即可与 AI 智能体协同工作。",
+      "step1": {
+        "title": "部署运行节点",
+        "description": "下载并注册 Runner 到服务器或本地机器。"
+      },
+      "step2": {
+        "title": "创建 AgentPod",
+        "description": "通过 Web 控制台使用你选择的 AI 智能体创建 Pod。"
+      },
+      "step3": {
+        "title": "开始协作",
+        "description": "在浏览器中打开终端，创建频道，使用 MCP 工具协调智能体。"
+      }
+    },
+    "enterprise": {
+      "title": "为",
+      "titleHighlight": "企业",
+      "description": "企业团队所需的安全、合规和可扩展性功能。",
+      "features": {
+        "multiTenant": {
+          "title": "多租户",
+          "description": "组织和团队层级结构，隔离的工作空间。"
+        },
+        "sso": {
+          "title": "SSO 集成",
+          "description": "支持 SAML 2.0 和 LDAP 企业认证。",
+          "comingSoon": true
+        },
+        "auditLogs": {
+          "title": "审计日志",
+          "description": "完整的活动追踪，满足合规和安全要求。"
+        },
+        "rbac": {
+          "title": "RBAC",
+          "description": "细粒度的团队角色访问控制。"
+        },
+        "gitIntegration": {
+          "title": "Git 集成",
+          "description": "开箱即用支持 GitLab、GitHub 和 Gitee。"
+        },
+        "monitoring": {
+          "title": "监控",
+          "description": "内置 Prometheus 指标和 Grafana 仪表板。",
+          "comingSoon": true
+        },
+        "backupDR": {
+          "title": "备份与灾备",
+          "description": "自动备份和灾难恢复支持。",
+          "comingSoon": true
+        },
+        "airGapped": {
+          "title": "离线部署",
+          "description": "完全离线部署，实现最高安全性。",
+          "comingSoon": true
+        }
+      }
+    },
+    "pricing": {
+      "title": "简单透明的",
+      "titleHighlight": "定价",
+      "description": "BYOK 模式 - 使用您自己的 AI API Key，无使用量限制。",
+      "mostPopular": "最受欢迎",
+      "annualDiscount": "年付省20%",
+      "perSeat": "/席位",
+      "monthly": "月付",
+      "yearly": "年付",
+      "yearlyDiscount": "省17%",
+      "month": "月",
+      "year": "年",
+      "seatMonth": "席位/月",
+      "seatYear": "席位/年",
+      "based": {
+        "name": "基础版",
+        "badge": "30天免费试用",
+        "description": "适合个人开发者探索 AI 编程智能体。",
+        "features": {
+          "0": "1 个席位（单人模式）",
+          "1": "5 个并发 Pod",
+          "2": "1 个 Runner",
+          "3": "5 个仓库",
+          "4": "社区支持"
+        },
+        "cta": "开始免费试用"
+      },
+      "pro": {
+        "name": "专业版",
+        "description": "适合想要扩展 AI 协作的小型团队。",
+        "features": {
+          "0": "最多 5 个席位",
+          "1": "10 个并发 Pod",
+          "2": "10 个 Runner",
+          "3": "10 个仓库",
+          "4": "优先邮件支持",
+          "5": "多 Git 平台支持"
+        },
+        "cta": "升级专业版"
+      },
+      "enterprise": {
+        "name": "企业版",
+        "description": "适合需要高级规模和安全性的组织。",
+        "features": {
+          "0": "最多 50 个席位",
+          "1": "50 个并发 Pod",
+          "2": "100 个 Runner",
+          "3": "无限仓库",
+          "4": "优先支持",
+          "5": "SSO 集成（即将推出）",
+          "6": "审计日志"
+        },
+        "cta": "升级企业版"
+      },
+      "onpremise": {
+        "name": "私有部署版",
+        "price": "商务报价",
+        "period": "联系我们",
+        "description": "完全私有部署，数据完全可控。",
+        "features": {
+          "0": "无限席位",
+          "1": "无限 Pod",
+          "2": "无限 Runner",
+          "3": "离线环境支持",
+          "4": "专属支持",
+          "5": "定制 SLA",
+          "6": "白手套上门服务"
+        },
+        "cta": "联系销售"
+      },
+      "footer": "所有方案均支持 BYOK（自带 API Key）- 使用您自己的 AI API Key，无使用量限制。",
+      "customPlan": "需要私有部署？",
+      "contactUs": "联系我们"
+    },
+    "selfHosted": {
+      "title": "需要完整的",
+      "titleHighlight": "自托管",
+      "titleEnd": "部署？",
+      "description": "AgentsMesh 支持完全自托管部署。代码和数据永远不会离开你的基础设施。非常适合有严格安全和合规要求的企业。",
+      "dockerCompose": "Docker Compose",
+      "kubernetesHelm": "Kubernetes Helm（即将推出）",
+      "airGappedSupport": "离线环境支持（即将推出）",
+      "viewDocs": "查看部署文档",
+      "contactSales": "联系企业销售"
+    },
+    "finalCta": {
+      "title1": "准备好编排你的",
+      "title2": "AI 智能体舰队了吗？",
+      "description": "加入正在通过 AI 智能体编排更快交付代码的开发者。免费开始，无需信用卡。",
+      "getStartedFree": "免费开始",
+      "scheduleDemo": "预约演示",
+      "freeTier": "提供免费版",
+      "noCreditCard": "无需信用卡",
+      "selfHostedOption": "可自托管部署"
+    },
+    "heroDemo": {
+      "podTopology": "Pod 拓扑",
+      "live": "实时",
+      "initializingPod": "正在初始化 Pod...",
+      "typeMessage": "输入消息...",
+      "connecting": "正在连接 AgentsMesh...",
+      "connected": "已连接到 AgentsMesh 服务器",
+      "workspace": "工作区：/projects/e-commerce",
+      "monitorPod": "监控 pod beta-dev 并协助协调身份验证实现",
+      "bindingPod": "我将绑定到 pod beta-dev 进行观察和协调...",
+      "boundToPod": "已绑定到 beta-dev (Codex CLI)",
+      "observingHeader": "正在观察 beta-dev",
+      "analyzing": "正在分析 src/auth/handlers.ts...",
+      "creatingOAuth": "正在创建 OAuth2 提供商集成",
+      "writingOAuth": "正在写入：src/auth/oauth.ts",
+      "noticedOAuth": "我注意到 beta-dev 正在实现 OAuth。我建议添加速率限制...",
+      "messageSent": "「建议在 /auth/* 端点添加速率限制」",
+      "receivedSuggestion": "beta-dev：收到建议，正在实现速率限制器...",
+      "writingRateLimit": "beta-dev：正在写入 src/middleware/rateLimit.ts",
+      "rateLimitAdded": "beta-dev：已为认证路由添加速率限制",
+      "reviewChanges": "很好！beta-dev 已实现速率限制。现在我来审查更改...",
+      "podInfo": {
+        "initializing": "Pod: alpha-dev │ 智能体: Claude Code │ 状态: 初始化中",
+        "running": "Pod: alpha-dev │ 智能体: Claude Code │ 状态: 运行中",
+        "observing": "Pod: alpha-dev │ 智能体: Claude Code │ 观察中: beta-dev"
+      }
+    },
+    "coreDemo": {
+      "terminalTitle": "AgentPod 终端",
+      "podA": "Pod A",
+      "podB": "Pod B",
+      "devChannel": "#dev-channel",
+      "members": "{count} 个成员",
+      "kanban": {
+        "backlog": "待办池",
+        "inProgress": "进行中",
+        "review": "待审核",
+        "done": "已完成",
+        "authFeature": "认证功能",
+        "empty": "空"
+      },
+      "architecture": {
+        "yourInfrastructure": "你的基础设施",
+        "runner": "Runner",
+        "agent": "智能体",
+        "websocket": "WebSocket",
+        "agentsmeshCloud": "AgentsMesh 云"
+      }
+    },
+    "demoVideo": {
+      "title": "实际",
+      "titleHighlight": "效果演示",
+      "description": "观看 AgentsMesh 如何编排 AI 智能体，从需求到交付 — 不到 2 分钟。",
+      "iframeTitle": "AgentsMesh 产品演示",
+      "highlight1": "完整生命周期演示",
+      "highlight2": "多智能体编排",
+      "highlight3": "实时舰队控制"
+    },
+    "footer": {
+      "tagline": "AI 智能体舰队指挥中心 — 编排 AI 智能体，更快交付代码。",
+      "copyright": "AgentsMesh. 保留所有权利。",
+      "madeWith": "为开发者用心打造",
+      "product": {
+        "title": "产品",
+        "agentpod": "AgentPod",
+        "agentsmesh": "AgentsMesh",
+        "tickets": "任务管理",
+        "runners": "运行节点",
+        "pricing": "定价"
+      },
+      "resources": {
+        "title": "资源",
+        "documentation": "文档",
+        "apiReference": "API 参考",
+        "tutorials": "教程",
+        "changelog": "更新日志",
+        "status": "服务状态"
+      },
+      "company": {
+        "title": "公司",
+        "about": "关于我们",
+        "blog": "博客",
+        "careers": "加入我们",
+        "contact": "联系我们"
+      },
+      "legal": {
+        "title": "法律",
+        "privacy": "隐私政策",
+        "terms": "服务条款",
+        "security": "安全"
+      }
+    }
+  }
+}

@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { AlertMessage } from "@/components/ui/alert-message";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Bot, AlertCircle } from "lucide-react";
 import type { CredentialProfileData } from "@/lib/api";
 import { useAgentConfig } from "./useAgentConfig";

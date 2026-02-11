@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 export default function DocsPage() {
   const t = useTranslations();
@@ -29,81 +29,23 @@ export default function DocsPage() {
         </div>
       </section>
 
-      {/* Why Terminal-based Agents */}
+      {/* What You Can Do */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-4">
-          {t("docs.whyTerminal.title")}
+          {t("docs.whatYouCanDo.title")}
         </h2>
         <p className="text-muted-foreground leading-relaxed mb-4">
-          {t("docs.whyTerminal.description")}
+          {t("docs.whatYouCanDo.description")}
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border border-border rounded-lg">
-            <thead>
-              <tr className="bg-muted">
-                <th className="text-left p-3 border-b border-border">
-                  {t("docs.whyTerminal.feature")}
-                </th>
-                <th className="text-left p-3 border-b border-border">
-                  {t("docs.whyTerminal.idePlugins")}
-                </th>
-                <th className="text-left p-3 border-b border-border">
-                  {t("docs.whyTerminal.terminalAgents")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-muted-foreground">
-              <tr>
-                <td className="p-3 border-b border-border">
-                  {t("docs.whyTerminal.autonomy")}
-                </td>
-                <td className="p-3 border-b border-border">
-                  {t("docs.whyTerminal.autonomyIde")}
-                </td>
-                <td className="p-3 border-b border-border text-green-500 dark:text-green-400">
-                  ✓ {t("docs.whyTerminal.autonomyTerminal")}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3 border-b border-border">
-                  {t("docs.whyTerminal.capabilities")}
-                </td>
-                <td className="p-3 border-b border-border">
-                  {t("docs.whyTerminal.capabilitiesIde")}
-                </td>
-                <td className="p-3 border-b border-border text-green-500 dark:text-green-400">
-                  ✓ {t("docs.whyTerminal.capabilitiesTerminal")}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3 border-b border-border">
-                  {t("docs.whyTerminal.environment")}
-                </td>
-                <td className="p-3 border-b border-border">
-                  {t("docs.whyTerminal.environmentIde")}
-                </td>
-                <td className="p-3 border-b border-border text-green-500 dark:text-green-400">
-                  ✓ {t("docs.whyTerminal.environmentTerminal")}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3 border-b border-border">
-                  {t("docs.whyTerminal.multiAgent")}
-                </td>
-                <td className="p-3 border-b border-border">✗</td>
-                <td className="p-3 border-b border-border text-green-500 dark:text-green-400">
-                  ✓ {t("docs.whyTerminal.multiAgentTerminal")}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3">{t("docs.whyTerminal.selfHosted")}</td>
-                <td className="p-3">✗</td>
-                <td className="p-3 text-green-500 dark:text-green-400">
-                  ✓ {t("docs.whyTerminal.selfHostedTerminal")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {(["orchestrate", "remoteWorkstation", "taskDriven", "selfHosted"] as const).map((key) => (
+            <div key={key} className="border border-border rounded-lg p-4">
+              <h3 className="font-medium mb-1">{t(`docs.whatYouCanDo.${key}.title`)}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t(`docs.whatYouCanDo.${key}.description`)}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 

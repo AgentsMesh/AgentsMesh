@@ -3,7 +3,7 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { Cpu, HardDrive, Terminal, Radio } from "lucide-react";
 import type { RunnerData, RelayConnectionInfo } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 interface RunnerOverviewTabProps {
   runner: RunnerData;

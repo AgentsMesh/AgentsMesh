@@ -28,7 +28,7 @@ vi.mock("@/components/ide/hooks", () => ({
   useConfigOptions: vi.fn(() => defaultConfigOptions),
 }));
 
-vi.mock("@/lib/i18n/client", () => ({
+vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));
 

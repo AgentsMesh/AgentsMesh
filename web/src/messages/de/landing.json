@@ -1,0 +1,400 @@
+{
+  "landing": {
+    "nav": {
+      "features": "Funktionen",
+      "pricing": "Preise",
+      "docs": "Dokumentation",
+      "signIn": "Anmelden",
+      "getStarted": "Loslegen",
+      "console": "Konsole",
+      "language": "Sprache"
+    },
+    "hero": {
+      "badge": "KI-Agenten-Flotten-Kommandozentrale",
+      "title1": "Terminal-basierte",
+      "title2": "Coding-Agent",
+      "title3": "Kollaborationsplattform",
+      "slogan1": "KI-Agenten orchestrieren.",
+      "slogan2": "Code schneller ausliefern.",
+      "tagline": "Die neue Entwicklungsplattform für das Zeitalter der KI-Coding-Agenten",
+      "description": "Nicht nur eine IDE — eine Agenten-Flotten-Kommandozentrale. Orchestrieren Sie Claude Code, Codex CLI, Gemini CLI, Aider und mehr. Von Anforderungen über Ausführung bis zur Auslieferung.",
+      "getStartedFree": "Kostenlos starten",
+      "viewDocs": "Dokumentation ansehen",
+      "trustedBy": "Vertraut von Entwicklern weltweit",
+      "teams": "Wachsende Teams",
+      "pods": "Tausende von Pods",
+      "openSource": "Open Source"
+    },
+    "agentLogos": {
+      "title": "Unterstützt alle wichtigen Terminal-Coding-Agenten",
+      "descriptions": {
+        "anthropic": "Anthropic",
+        "openai": "OpenAI",
+        "google": "Google",
+        "openSource": "Open Source",
+        "community": "Community",
+        "yourOwn": "Eigene"
+      }
+    },
+    "whyTerminal": {
+      "title": "Warum",
+      "titleHighlight": "Terminal-basierte",
+      "titleEnd": "Agenten?",
+      "description": "Anders als IDE-Plugins wie Cursor oder Copilot bieten Terminal-basierte Agenten autonome Ausführung und vollständige Entwicklungsfähigkeiten.",
+      "benefits": {
+        "autonomous": {
+          "title": "Autonome Ausführung",
+          "description": "Nicht nur Code-Vervollständigung. Terminal-Agenten können komplexe Entwicklungsaufgaben unabhängig von Anfang bis Ende erledigen."
+        },
+        "fullCapabilities": {
+          "title": "Vollständige Fähigkeiten",
+          "description": "Dateien lesen/schreiben, Befehle ausführen, Git-Operationen, Tests ausführen - vollständige Full-Stack-Entwicklungsfähigkeiten."
+        },
+        "dataControl": {
+          "title": "Datenkontrolle",
+          "description": "Selbst gehostete Runner bedeuten, dass Ihr Code Ihre Infrastruktur nie verlässt. Erfüllen Sie Sicherheits- und Compliance-Anforderungen."
+        }
+      },
+      "comparison": {
+        "idePlugins": "IDE-Plugins",
+        "idePluginsSubtitle": "Copilot / Cursor",
+        "terminalBased": "Terminal-basiert",
+        "terminalBasedSubtitle": "Claude Code / Aider",
+        "autonomy": "Autonomie",
+        "capabilities": "Fähigkeiten",
+        "environment": "Umgebung",
+        "multiAgent": "Multi-Agent",
+        "selfHosted": "Selbst gehostet",
+        "ide": {
+          "autonomy": "Passive Antwort",
+          "capabilities": "Code-Vervollständigung",
+          "environment": "IDE-Sandbox",
+          "multiAgent": "Nicht unterstützt",
+          "selfHosted": "Nur Cloud"
+        },
+        "terminal": {
+          "autonomy": "Aktive Aufgabenausführung",
+          "capabilities": "Full-Stack-Entwicklung",
+          "environment": "Voller Terminal-Zugang",
+          "multiAgent": "AgentsMesh aktiviert",
+          "selfHosted": "Vollständig kontrollierbar"
+        }
+      }
+    },
+    "coreFeatures": {
+      "title": "Kern",
+      "titleHighlight": "Funktionen",
+      "description": "Alles, was Sie brauchen, um Terminal-basierte KI-Coding-Agenten im großen Maßstab zu verwalten und zu koordinieren.",
+      "agentpod": {
+        "title": "AgentPod",
+        "subtitle": "Remote-KI-Workstation",
+        "description": "Führen Sie KI-Agenten in der Cloud aus, greifen Sie über Ihren Browser auf eine vollständige Entwicklungsumgebung zu. Jeder AgentPod läuft auf isolierten Git-Worktrees mit Echtzeit-Terminal-Zugang.",
+        "highlights": {
+          "0": "Web-Terminal mit Echtzeit-Interaktion",
+          "1": "Git Worktree-Isolation pro AgentPod",
+          "2": "Mehrere gleichzeitige AgentPods",
+          "3": "Automatische Bereinigung nach Abschluss"
+        }
+      },
+      "agentsmesh": {
+        "title": "AgentsMesh",
+        "subtitle": "Multi-Agent-Kollaboration",
+        "description": "Ermöglichen Sie mehreren KI-Agenten die Zusammenarbeit durch Pod-Bindungen und Kanal-Kommunikation. Visualisieren Sie die Kollaborations-Topologie in Echtzeit.",
+        "highlights": {
+          "0": "Pod-Bindung mit Berechtigungskontrolle",
+          "1": "Kanal-basierte Nachrichtenübertragung",
+          "2": "Echtzeit-Topologie-Visualisierung",
+          "3": "Agenten-übergreifende Aufgabenkoordination"
+        }
+      },
+      "tickets": {
+        "title": "Tickets",
+        "subtitle": "Aufgabengesteuerte Entwicklung",
+        "description": "Integrieren Sie KI-Pods in Ihren Aufgabenmanagement-Workflow. Erstellen Sie Tickets, binden Sie sie an Pods und verfolgen Sie den Fortschritt über ein Kanban-Board.",
+        "highlights": {
+          "0": "Kanban-Board-Visualisierung",
+          "1": "Ticket-Pod-Bindung",
+          "2": "Fortschrittsverfolgung",
+          "3": "MR/PR-Integration"
+        }
+      },
+      "runners": {
+        "title": "Selbst gehostete Runner",
+        "subtitle": "Ihre Infrastruktur, Ihre Daten",
+        "description": "Stellen Sie Runner auf Ihrer eigenen Infrastruktur bereit. Ihr Code und Ihre Daten verlassen Ihre Umgebung nie und erfüllen die strengsten Sicherheits- und Compliance-Anforderungen.",
+        "highlights": {
+          "0": "Docker/Kubernetes-Bereitstellung",
+          "1": "Vollständige Datenlokalisierung",
+          "2": "Air-Gapped-Umgebungsunterstützung",
+          "3": "Vollständiger Audit-Trail"
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "Starten Sie in",
+      "titleHighlight": "3 Schritten",
+      "description": "Bereitstellen, verbinden und in Minuten mit KI-Agenten zusammenarbeiten.",
+      "step1": {
+        "title": "Runner bereitstellen",
+        "description": "Laden Sie einen Runner herunter und registrieren Sie ihn auf Ihrem Server oder lokalen Rechner."
+      },
+      "step2": {
+        "title": "AgentPod erstellen",
+        "description": "Verwenden Sie die Web-Konsole, um Pods mit Ihrem bevorzugten KI-Agenten zu erstellen."
+      },
+      "step3": {
+        "title": "Zusammenarbeit starten",
+        "description": "Öffnen Sie das Terminal im Browser, erstellen Sie Kanäle und koordinieren Sie Agenten mit MCP-Tools."
+      }
+    },
+    "enterprise": {
+      "title": "Gebaut für",
+      "titleHighlight": "Unternehmen",
+      "description": "Sicherheits-, Compliance- und Skalierungsfunktionen, die Enterprise-Teams benötigen.",
+      "features": {
+        "multiTenant": {
+          "title": "Multi-Tenant",
+          "description": "Organisations- und Team-Hierarchie mit isolierten Arbeitsbereichen."
+        },
+        "sso": {
+          "title": "SSO-Integration",
+          "description": "SAML 2.0- und LDAP-Unterstützung für Enterprise-Authentifizierung.",
+          "comingSoon": true
+        },
+        "auditLogs": {
+          "title": "Audit-Logs",
+          "description": "Vollständige Aktivitätsverfolgung für Compliance und Sicherheit."
+        },
+        "rbac": {
+          "title": "RBAC",
+          "description": "Fein granulare rollenbasierte Zugriffskontrolle für Teams."
+        },
+        "gitIntegration": {
+          "title": "Git-Integration",
+          "description": "GitLab, GitHub und Gitee standardmäßig unterstützt."
+        },
+        "monitoring": {
+          "title": "Überwachung",
+          "description": "Prometheus-Metriken und Grafana-Dashboards enthalten.",
+          "comingSoon": true
+        },
+        "backupDR": {
+          "title": "Backup & DR",
+          "description": "Automatisierte Backups mit Disaster-Recovery-Unterstützung.",
+          "comingSoon": true
+        },
+        "airGapped": {
+          "title": "Air-Gapped",
+          "description": "Vollständig offline Bereitstellung für maximale Sicherheit.",
+          "comingSoon": true
+        }
+      }
+    },
+    "pricing": {
+      "title": "Einfache, Transparente",
+      "titleHighlight": "Preise",
+      "description": "Starten Sie kostenlos und skalieren Sie mit Ihrem Wachstum. Keine versteckten Gebühren.",
+      "mostPopular": "Am Beliebtesten",
+      "annualDiscount": "Save 20%",
+      "perSeat": "/seat",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "yearlyDiscount": "Save 17%",
+      "month": "month",
+      "year": "year",
+      "seatMonth": "seat/month",
+      "seatYear": "seat/year",
+      "based": {
+        "name": "Based",
+        "badge": "30-Day Free Trial",
+        "description": "Perfect for individual developers exploring AI coding agents.",
+        "features": {
+          "0": "1 seat (solo mode)",
+          "1": "5 concurrent pods",
+          "2": "1 Runner",
+          "3": "5 repositories",
+          "4": "Community support"
+        },
+        "cta": "Start Free Trial"
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Für Teams, die mehr Leistung und Zusammenarbeit brauchen.",
+        "features": {
+          "0": "Unbegrenzte Runner",
+          "1": "Unbegrenzte Pods",
+          "2": "Bis zu 10 Teammitglieder",
+          "3": "Prioritäts-E-Mail-Support",
+          "4": "API-Zugang",
+          "5": "Erweiterte Analysen",
+          "6": "Benutzerdefinierte Integrationen"
+        },
+        "cta": "Pro-Testversion starten",
+        "price": "29$",
+        "period": "pro Benutzer/Monat"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "Für Organisationen mit erweiterten Sicherheitsanforderungen.",
+        "features": {
+          "0": "Alles in Pro",
+          "1": "SAML/LDAP SSO",
+          "2": "Audit-Logs",
+          "3": "Dedizierter Support",
+          "4": "Private Bereitstellung",
+          "5": "SLA-Garantie",
+          "6": "Individuelle Verträge"
+        },
+        "cta": "Vertrieb kontaktieren",
+        "price": "Individuell",
+        "period": "kontaktieren Sie uns"
+      },
+      "onpremise": {
+        "name": "OnPremise",
+        "price": "Custom",
+        "period": "contact us",
+        "description": "Full private deployment with complete data control.",
+        "features": {
+          "0": "Unlimited seats",
+          "1": "Unlimited pods",
+          "2": "Unlimited Runners",
+          "3": "Air-gapped support",
+          "4": "Dedicated support",
+          "5": "Custom SLA",
+          "6": "White-glove onboarding"
+        },
+        "cta": "Contact Sales"
+      },
+      "footer": "Alle Pläne beinhalten SSL-Verschlüsselung, 99,9% Verfügbarkeits-SLA und regelmäßige Backups.",
+      "customPlan": "Brauchen Sie einen individuellen Plan?",
+      "contactUs": "Kontaktieren Sie uns",
+      "free": {
+        "name": "Kostenlos",
+        "price": "0$",
+        "period": "für immer",
+        "description": "Perfekt für einzelne Entwickler, die gerade anfangen.",
+        "features": {
+          "0": "1 Runner",
+          "1": "3 gleichzeitige Pods",
+          "2": "1 Organisationsmitglied",
+          "3": "Community-Support",
+          "4": "Basis-Integrationen"
+        },
+        "cta": "Loslegen"
+      }
+    },
+    "selfHosted": {
+      "title": "Benötigen Sie eine vollständige",
+      "titleHighlight": "Selbst gehostete",
+      "titleEnd": "Bereitstellung?",
+      "description": "AgentsMesh unterstützt vollständig selbst gehostete Bereitstellung. Ihr Code und Ihre Daten verlassen Ihre Infrastruktur nie. Perfekt für Unternehmen mit strengen Sicherheits- und Compliance-Anforderungen.",
+      "dockerCompose": "Docker Compose",
+      "kubernetesHelm": "Kubernetes Helm (Demnächst)",
+      "airGappedSupport": "Air-Gapped-Unterstützung (Demnächst)",
+      "viewDocs": "Bereitstellungsdokumentation ansehen",
+      "contactSales": "Enterprise-Vertrieb kontaktieren"
+    },
+    "finalCta": {
+      "title1": "Bereit, Ihre KI-Agenten-Flotte",
+      "title2": "zu orchestrieren?",
+      "description": "Schließen Sie sich Entwicklern an, die mit KI-Agenten-Orchestrierung schneller Code ausliefern. Starten Sie kostenlos, keine Kreditkarte erforderlich.",
+      "getStartedFree": "Kostenlos starten",
+      "scheduleDemo": "Demo planen",
+      "freeTier": "Kostenlose Stufe verfügbar",
+      "noCreditCard": "Keine Kreditkarte erforderlich",
+      "selfHostedOption": "Selbst gehostete Option"
+    },
+    "heroDemo": {
+      "podTopology": "Pod-Topologie",
+      "live": "Live",
+      "initializingPod": "Pod wird initialisiert...",
+      "typeMessage": "Nachricht eingeben...",
+      "connecting": "Verbindung zu AgentsMesh...",
+      "connected": "Mit AgentsMesh-Server verbunden",
+      "workspace": "Arbeitsbereich: /projects/e-commerce",
+      "monitorPod": "Pod beta-dev überwachen und bei der Koordination der Auth-Implementierung helfen",
+      "bindingPod": "Ich binde mich an pod beta-dev zur Beobachtung und Koordination...",
+      "boundToPod": "An beta-dev (Codex CLI) gebunden",
+      "observingHeader": "Beobachte beta-dev",
+      "analyzing": "Analysiere src/auth/handlers.ts...",
+      "creatingOAuth": "Erstelle OAuth2-Provider-Integration",
+      "writingOAuth": "Schreibe: src/auth/oauth.ts",
+      "noticedOAuth": "Ich bemerke, dass beta-dev OAuth implementiert. Ich schlage vor, Rate-Limiting hinzuzufügen...",
+      "messageSent": "\"Rate-Limiting für /auth/* Endpoints in Betracht ziehen\"",
+      "receivedSuggestion": "beta-dev: Vorschlag erhalten, implementiere Rate-Limiter...",
+      "writingRateLimit": "beta-dev: Schreibe src/middleware/rateLimit.ts",
+      "rateLimitAdded": "beta-dev: Rate-Limiting zu Auth-Routen hinzugefügt",
+      "reviewChanges": "Großartig! beta-dev hat Rate-Limiting implementiert. Ich werde die Änderungen überprüfen...",
+      "podInfo": {
+        "initializing": "Pod: alpha-dev │ Agent: Claude Code │ Status: Initialisierung",
+        "running": "Pod: alpha-dev │ Agent: Claude Code │ Status: Läuft",
+        "observing": "Pod: alpha-dev │ Agent: Claude Code │ Beobachtet: beta-dev"
+      }
+    },
+    "coreDemo": {
+      "terminalTitle": "AgentPod-Terminal",
+      "podA": "Pod A",
+      "podB": "Pod B",
+      "devChannel": "#dev-channel",
+      "members": "{count} Mitglieder",
+      "kanban": {
+        "backlog": "Backlog",
+        "inProgress": "In Bearbeitung",
+        "review": "Überprüfung",
+        "done": "Erledigt",
+        "authFeature": "Auth-Feature",
+        "empty": "Leer"
+      },
+      "architecture": {
+        "yourInfrastructure": "Ihre Infrastruktur",
+        "runner": "Runner",
+        "agent": "Agent",
+        "websocket": "WebSocket",
+        "agentsmeshCloud": "AgentsMesh Cloud"
+      }
+    },
+    "demoVideo": {
+      "title": "Sehen Sie es",
+      "titleHighlight": "In Aktion",
+      "description": "Sehen Sie, wie AgentsMesh KI-Agenten von Anforderungen bis zur Auslieferung orchestriert — in unter 2 Minuten.",
+      "iframeTitle": "AgentsMesh Produktdemo",
+      "highlight1": "Vollständige Lifecycle-Demo",
+      "highlight2": "Multi-Agenten-Orchestrierung",
+      "highlight3": "Echtzeit-Flottensteuerung"
+    },
+    "footer": {
+      "tagline": "KI-Agenten-Flotten-Kommandozentrale — KI-Agenten orchestrieren. Code schneller ausliefern.",
+      "copyright": "AgentsMesh. Alle Rechte vorbehalten.",
+      "madeWith": "Mit Liebe für Entwickler gemacht",
+      "product": {
+        "title": "Produkt",
+        "agentpod": "AgentPod",
+        "agentsmesh": "AgentsMesh",
+        "tickets": "Tickets",
+        "runners": "Runner",
+        "pricing": "Preise"
+      },
+      "resources": {
+        "title": "Ressourcen",
+        "documentation": "Dokumentation",
+        "apiReference": "API-Referenz",
+        "tutorials": "Tutorials",
+        "changelog": "Änderungsprotokoll",
+        "status": "Status"
+      },
+      "company": {
+        "title": "Unternehmen",
+        "about": "Über uns",
+        "blog": "Blog",
+        "careers": "Karriere",
+        "contact": "Kontakt"
+      },
+      "legal": {
+        "title": "Rechtliches",
+        "privacy": "Datenschutzrichtlinie",
+        "terms": "Nutzungsbedingungen",
+        "security": "Sicherheit"
+      }
+    }
+  }
+}

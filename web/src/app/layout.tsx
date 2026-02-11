@@ -4,8 +4,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider, ThemeColorMeta } from "@/components/theme";
 import { PWAProvider } from "@/components/pwa";
-import { I18nProviderWrapper } from "@/components/providers/I18nProviderWrapper";
-import { getLocale } from "@/lib/i18n/server";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -20,8 +20,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgentsMesh - AI Code Agent Platform",
-  description: "Multi-tenant AI code agent collaboration platform supporting Claude Code, Codex, Gemini CLI, and more.",
+  title: "AgentsMesh - AI Agent Fleet Command Center",
+  description: "Orchestrate AI agents. Ship code faster. The development platform for Claude Code, Codex CLI, Gemini CLI, Aider and more.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -50,6 +50,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -63,11 +64,11 @@ export default async function RootLayout({
           disableTransitionOnChange
           themes={["light", "dark", "solarized-light", "solarized-dark"]}
         >
-          <I18nProviderWrapper>
+          <NextIntlClientProvider locale={locale} messages={messages}>
             <PWAProvider>
               {children}
             </PWAProvider>
-          </I18nProviderWrapper>
+          </NextIntlClientProvider>
           <ThemeColorMeta />
           <Toaster richColors position="top-right" />
         </ThemeProvider>

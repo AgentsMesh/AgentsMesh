@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { RepositoryProviderData, CredentialType } from "@/lib/api";
 import { AlertMessage } from "@/components/ui/alert-message";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { useConfirmDialog, ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {

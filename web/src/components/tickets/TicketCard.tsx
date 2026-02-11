@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth";
 import { Ticket } from "@/stores/ticket";
 import { StatusIcon, PriorityIcon, TypeIcon, getStatusDisplayInfo } from "./TicketIcons";

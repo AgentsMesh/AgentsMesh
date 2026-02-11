@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { themeConfigs, type Theme } from "@/lib/theme";
 import { Moon, Sun, Monitor, Palette, Check } from "lucide-react";

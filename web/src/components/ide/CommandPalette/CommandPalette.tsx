@@ -6,7 +6,7 @@ import { Command } from "cmdk";
 import { useAuthStore } from "@/stores/auth";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { Search, Command as CommandIcon } from "lucide-react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { getPodDisplayName } from "@/lib/pod-utils";
 import { useCommandPaletteSearch } from "./useCommandPaletteSearch";
 import { useCommands } from "./useCommands";

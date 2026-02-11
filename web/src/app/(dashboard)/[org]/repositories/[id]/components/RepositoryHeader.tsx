@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { RepositoryData } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
 
 interface RepositoryHeaderProps {

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
 import { runnerAuthApi, RunnerAuthStatus } from "@/lib/api/runner";
 import { organizationApi, OrganizationData } from "@/lib/api/organization";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 export default function RunnerAuthorizePage() {
   const rawT = useTranslations();

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
 import { runnerApi, RunnerData } from "@/lib/api/runner";
 import { useServerUrl } from "@/hooks/useServerUrl";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 export default function LocalRunnerSetupPage() {
   const router = useRouter();
@@ -16,6 +16,7 @@ export default function LocalRunnerSetupPage() {
   const serverUrl = useServerUrl();
   const [token, setToken] = useState<string | null>(null);
   const [tokenCopied, setTokenCopied] = useState(false);
+  const [registerMethod, setRegisterMethod] = useState<"token" | "login">("token");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [connectionStatus, setConnectionStatus] = useState<"waiting" | "connected" | "timeout">("waiting");
@@ -309,12 +310,51 @@ export default function LocalRunnerSetupPage() {
                   irm {serverUrl}/install.ps1 | iex
                 </code>
               </div>
-              <div className="p-4 bg-muted rounded-md">
-                <p className="text-xs text-muted-foreground mb-2"># {t("auth.onboarding.localRunner.startRunnerComment")}</p>
-                <code className="text-sm font-mono text-foreground block whitespace-pre-wrap">
-{`agentsmesh-runner register --server ${serverUrl} --token <your-token>
+              {/* Register method tabs */}
+              <div className="border border-border rounded-md overflow-hidden">
+                <div className="flex border-b border-border">
+                  <button
+                    type="button"
+                    className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                      registerMethod === "token"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setRegisterMethod("token")}
+                  >
+                    {t("auth.onboarding.localRunner.methodToken")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                      registerMethod === "login"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setRegisterMethod("login")}
+                  >
+                    {t("auth.onboarding.localRunner.methodLogin")}
+                  </button>
+                </div>
+                <div className="p-4 bg-muted">
+                  {registerMethod === "token" ? (
+                    <>
+                      <p className="text-xs text-muted-foreground mb-2"># {t("auth.onboarding.localRunner.startRunnerComment")}</p>
+                      <code className="text-sm font-mono text-foreground block whitespace-pre-wrap">
+{`agentsmesh-runner register --server ${serverUrl} --token ${token || "<your-token>"}
 agentsmesh-runner run`}
-                </code>
+                      </code>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs text-muted-foreground mb-2"># {t("auth.onboarding.localRunner.loginRunnerComment")}</p>
+                      <code className="text-sm font-mono text-foreground block whitespace-pre-wrap">
+{`agentsmesh-runner login
+agentsmesh-runner run`}
+                      </code>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

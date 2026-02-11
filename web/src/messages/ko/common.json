@@ -1,0 +1,36 @@
+{
+  "common": {
+    "loading": "로딩 중...",
+    "allRightsReserved": "모든 권리 보유.",
+    "save": "저장",
+    "saveChanges": "Save Changes",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "편집",
+    "create": "생성",
+    "search": "검색",
+    "noResults": "결과를 찾을 수 없습니다",
+    "error": "오류가 발생했습니다",
+    "success": "성공",
+    "confirm": "확인",
+    "close": "닫기",
+    "dismiss": "Dismiss",
+    "back": "뒤로",
+    "next": "다음",
+    "previous": "Previous",
+    "submit": "제출",
+    "reset": "재설정",
+    "optional": "optional",
+    "saving": "Saving...",
+    "refresh": "Refresh",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  },
+  "nav": {
+    "agentpod": "AgentPod",
+    "mesh": "AgentsMesh",
+    "tickets": "티켓",
+    "settings": "설정",
+    "billing": "결제"
+  }
+}

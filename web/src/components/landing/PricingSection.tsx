@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CenteredSpinner } from "@/components/ui/spinner";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { publicBillingApi, type PublicPricingResponse, type Currency } from "@/lib/api/billing";
 
 type BillingCycle = "monthly" | "yearly";

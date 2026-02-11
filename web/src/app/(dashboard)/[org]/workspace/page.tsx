@@ -8,7 +8,7 @@ import { WorkspaceManager } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { Terminal, Plus } from "lucide-react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
 import type { PodData } from "@/lib/api";
 

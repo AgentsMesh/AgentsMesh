@@ -2,7 +2,7 @@
 
 import { useState, useRef, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 interface MessageInputProps {
   onSend: (content: string) => void;

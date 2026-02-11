@@ -11,7 +11,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import type { RunnerData, RunnerPodData, SandboxStatus } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 

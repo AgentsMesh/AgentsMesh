@@ -1,7 +1,7 @@
 export { Navbar } from "./Navbar";
 export { HeroSection } from "./HeroSection";
+export { DemoVideo } from "./DemoVideo";
 export { AgentLogos } from "./AgentLogos";
-export { WhyTerminalBased } from "./WhyTerminalBased";
 export { CoreFeatures } from "./CoreFeatures";
 export { HowItWorks } from "./HowItWorks";
 export { EnterpriseFeatures } from "./EnterpriseFeatures";

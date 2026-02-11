@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useEffect, useRef } from "react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Spinner, CenteredSpinner } from "@/components/ui/spinner";
 import { ConfigForm } from "@/components/ide/ConfigForm";

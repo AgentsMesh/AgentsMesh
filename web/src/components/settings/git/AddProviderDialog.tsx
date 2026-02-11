@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { userRepositoryProviderApi } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { ChevronLeft } from "lucide-react";
 import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
 

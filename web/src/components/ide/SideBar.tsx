@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
 import { useAuthStore } from "@/stores/auth";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   ChevronDown,

@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Menu, Network, PanelRight } from "lucide-react";
 

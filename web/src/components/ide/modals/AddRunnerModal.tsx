@@ -5,7 +5,7 @@ import { runnerApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Check, Copy, Terminal } from "lucide-react";
 import { useServerUrl } from "@/hooks/useServerUrl";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 interface AddRunnerModalProps {
   open: boolean;

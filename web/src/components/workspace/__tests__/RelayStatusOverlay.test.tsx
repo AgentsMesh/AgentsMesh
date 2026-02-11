@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { RelayStatusOverlay } from "../RelayStatusOverlay";
 
 // Mock i18n client
-vi.mock("@/lib/i18n/client", () => ({
+vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => {
     const translations: Record<string, string> = {
       "relayStatus.connected": "Relay Connected",

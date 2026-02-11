@@ -1,6 +1,7 @@
 "use client";
 
-import { useLocale } from "@/lib/i18n/client";
+import { useLocale } from "next-intl";
+import { useSetLocale } from "@/lib/i18n/locale-switcher";
 import { locales, localeNames, type Locale } from "@/lib/i18n/config";
 import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,8 @@ interface LanguageSwitcherProps {
 }
 
 export function LanguageSwitcher({ variant = "icon", className }: LanguageSwitcherProps) {
-  const { locale, setLocale } = useLocale();
+  const locale = useLocale() as Locale;
+  const setLocale = useSetLocale();
   const [open, setOpen] = useState(false);
 
   const handleLocaleChange = (newLocale: Locale) => {

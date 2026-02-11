@@ -1,7 +1,7 @@
 "use client";
 
 import { RepositoryData } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 interface RepositoryInfoCardProps {
   repository: RepositoryData;

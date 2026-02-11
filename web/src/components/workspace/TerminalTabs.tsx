@@ -15,7 +15,7 @@ import {
   Maximize2,
   Minimize2,
 } from "lucide-react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { terminalPool } from "@/stores/workspace";
 
 interface TerminalTabsProps {

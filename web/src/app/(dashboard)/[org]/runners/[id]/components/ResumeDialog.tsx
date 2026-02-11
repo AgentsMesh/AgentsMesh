@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { RefreshCw, RotateCcw } from "lucide-react";
 import type { RunnerPodData } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 interface ResumeDialogProps {
   open: boolean;

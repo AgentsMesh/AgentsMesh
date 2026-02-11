@@ -1,0 +1,326 @@
+{
+  "runners": {
+    "title": "Runner",
+    "searchPlaceholder": "Rechercher des runners...",
+    "addRunner": "Ajouter Runner",
+    "registrationTokens": {
+      "title": "Tokens d'Inscription",
+      "createToken": "Créer Token",
+      "noTokens": "Aucun token d'inscription. Créez un token pour enregistrer de nouveaux Runners.",
+      "description": "Description",
+      "noDescription": "Aucune description",
+      "created": "Créé",
+      "expires": "Expire",
+      "noExpiry": "Pas d'expiration",
+      "uses": "Utilisations",
+      "unlimited": "Illimité",
+      "revoke": "Révoquer",
+      "revoked": "Révoqué"
+    },
+    "runnerCount": "runners",
+    "disabled": "Désactivé",
+    "filters": {
+      "all": "Tous",
+      "online": "En ligne",
+      "offline": "Hors ligne",
+      "busy": "Occupé"
+    },
+    "overview": {
+      "title": "Aperçu",
+      "online": "en ligne"
+    },
+    "emptyState": {
+      "title": "Aucun runner encore",
+      "description": "Déployez un runner pour commencer à créer des pods",
+      "deployRunner": "Déployer Runner",
+      "noMatch": "Aucun runner ne correspond aux filtres"
+    },
+    "runner": {
+      "status": "Statut",
+      "version": "Version",
+      "os": "SE",
+      "arch": "Architecture",
+      "pods": "Pods Actifs",
+      "lastSeen": "Dernière vue",
+      "uptime": "Temps de fonctionnement",
+      "actions": {
+        "configure": "Configurer",
+        "restart": "Redémarrer",
+        "remove": "Supprimer"
+      }
+    },
+    "page": {
+      "title": "Runners",
+      "subtitle": "Manage your compute resources",
+      "refresh": "Refresh",
+      "addRunner": "Add Runner",
+      "totalRunners": "Total Runners",
+      "online": "Online",
+      "activePods": "Active Pods",
+      "totalCapacity": "Total Capacity",
+      "activeRunners": "Active Runners",
+      "noRunners": "No runners registered.",
+      "noRunnersHint": "Add a runner to start deploying pods.",
+      "runnerColumn": "Runner",
+      "statusColumn": "Status",
+      "podsColumn": "Pods",
+      "hostInfoColumn": "Host Info",
+      "versionColumn": "Version",
+      "actionsColumn": "Actions",
+      "configure": "Configurer",
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete runner \"{nodeId}\"?",
+      "deleteDialog": {
+        "title": "Delete Runner",
+        "description": "Are you sure you want to delete this runner? This action cannot be undone."
+      },
+      "cores": "cœurs",
+      "mobilePodsLabel": "Pods :",
+      "mobileOsLabel": "SE :",
+      "mobileCpuLabel": "CPU :",
+      "mobileVersionLabel": "Version :",
+      "stats": {
+        "online": "En ligne",
+        "offline": "Hors ligne",
+        "busy": "Occupé",
+        "activePods": "Pods Actifs"
+      },
+      "table": {
+        "nodeId": "ID du Nœud",
+        "status": "Statut",
+        "pods": "Pods",
+        "version": "Version",
+        "os": "SE",
+        "cpu": "CPU",
+        "lastSeen": "Dernière vue",
+        "actions": "Actions"
+      },
+      "noDescription": "Aucune description",
+      "justNow": "À l'instant",
+      "ago": "il y a"
+    },
+    "addRunnerModal": {
+      "title": "Add Runner",
+      "subtitle": "Generate a registration token to connect a new Runner",
+      "tokenWarning": "Keep this token safe - it will only be shown once",
+      "tokenLabel": "Registration Token",
+      "usageTitle": "Use the following command to start the Runner:",
+      "copyCommand": "Copy Command",
+      "done": "Done",
+      "cancel": "Cancel",
+      "generate": "Generate Token",
+      "generating": "Generating...",
+      "generateHint": "Click the button below to generate a one-time registration token for connecting a new Runner."
+    },
+    "configModal": {
+      "title": "Configurer Runner",
+      "nodeIdLabel": "ID du Nœud",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Ajouter une description...",
+      "maxPodsLabel": "Pods Concurrents Max",
+      "activePodsLabel": "Pods Actifs ({count})",
+      "cancel": "Annuler",
+      "saving": "Enregistrement...",
+      "save": "Enregistrer les Modifications"
+    },
+    "detail": {
+      "notFound": "Runner not found",
+      "disabled": "Disabled",
+      "disable": "Disable",
+      "enable": "Enable",
+      "confirmDelete": "Are you sure you want to delete runner \"{nodeId}\"? This action cannot be undone.",
+      "deleteDialog": {
+        "title": "Delete Runner",
+        "description": "Are you sure you want to delete this runner? This action cannot be undone."
+      },
+      "confirmResume": "Resume a new pod from sandbox of \"{podKey}\"? This will create a new pod using the existing workspace.",
+      "resumeFailed": "Failed to resume pod. Please try again.",
+      "tabs": {
+        "overview": "Overview",
+        "pods": "Pods"
+      },
+      "basicInfo": "Basic Information",
+      "nodeId": "Node ID",
+      "description": "Description",
+      "version": "Version",
+      "lastHeartbeat": "Last Heartbeat",
+      "createdAt": "Created At",
+      "capacity": "Capacity",
+      "currentPods": "Current Pods",
+      "cpu": "CPU",
+      "memory": "Memory",
+      "os": "Operating System",
+      "availableAgents": "Available Agents",
+      "relayConnections": "Relay Connections",
+      "connectedSince": "Connected Since",
+      "allStatus": "All Status",
+      "refreshSandbox": "Refresh Sandbox Status",
+      "podKey": "Pod Key",
+      "status": "Status",
+      "sandbox": "Sandbox",
+      "branch": "Branch",
+      "actions": "Actions",
+      "canResume": "Can Resume",
+      "exists": "Exists",
+      "notExists": "Not Exists",
+      "active": "Active",
+      "noPods": "No pods found for this runner",
+      "showing": "Showing {from} to {to} of {total} pods",
+      "resume": "Resume",
+      "resumeTooltip": "Create a new pod using the existing sandbox workspace",
+      "resumeDialogTitle": "Resume Pod",
+      "resumeDialogDescription": "You are about to resume from the sandbox of \"{podKey}\".",
+      "resumeDialogInfo": "This will create a new Pod using the existing workspace, allowing the AI agent to continue from where it left off.",
+      "confirmResumeBtn": "Resume"
+    },
+    "authorize": {
+      "title": "Authorize Runner",
+      "description": "A Runner is requesting to connect to your organization. Authorize it to enable AI agent task execution.",
+      "missingAuthKey": "Authorization key is missing. Please use the full URL from the runner login command.",
+      "invalidAuthKey": "This authorization link is invalid or has expired.",
+      "invalidTitle": "Invalid Authorization",
+      "goToLogin": "Go to Sign In",
+      "expiredTitle": "Authorization Expired",
+      "expiredDescription": "This authorization link has expired. Authorization links are valid for 15 minutes.",
+      "rerunCommand": "Please run the login command again to get a new authorization link.",
+      "successTitle": "Runner Authorized!",
+      "successDescription": "The Runner has been successfully authorized and will receive its certificate shortly.",
+      "closeWindow": "You can close this window and return to your terminal.",
+      "signInRequired": "Sign in to authorize this Runner",
+      "signInToAuthorize": "Sign In to Authorize",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "signedInAs": "Signed in as",
+      "selectOrganization": "Select Organization",
+      "selectOrgPlaceholder": "Choose an organization...",
+      "noOrganizations": "You don't have any organizations. Please create one first.",
+      "nodeIdLabel": "Runner Node ID",
+      "nodeIdPlaceholder": "e.g., my-runner-01",
+      "nodeIdHint": "A unique identifier for this runner. Leave empty to auto-generate.",
+      "authorizeButton": "Authorize Runner",
+      "authorizing": "Authorizing...",
+      "authorizeFailed": "Failed to authorize runner. Please try again.",
+      "quotaExceeded": "Runner quota exceeded. Please upgrade your plan or remove unused runners.",
+      "expiresAt": "This link expires at {time}"
+    },
+    "token": {
+      "title": "Token d'Inscription",
+      "description": "Utilisez ce token pour enregistrer de nouveaux runners",
+      "generate": "Générer Token",
+      "copy": "Copier",
+      "copied": "Copié !",
+      "expires": "Expire",
+      "active": "actif",
+      "noTokens": "Aucun token d'inscription",
+      "viewAll": "Voir tous les tokens",
+      "manage": "Gérer les Tokens"
+    },
+    "createTokenModal": {
+      "title": "Créer Token d'Inscription",
+      "descriptionLabel": "Description (optionnel)",
+      "descriptionPlaceholder": "ex., Runner équipe de développement",
+      "maxUsesLabel": "Utilisations Max (optionnel)",
+      "maxUsesPlaceholder": "Laisser vide pour illimité",
+      "expiresLabel": "Expire Le (optionnel)",
+      "cancel": "Annuler",
+      "creating": "Création...",
+      "create": "Créer"
+    }
+  },
+  "agent": {
+    "claude-code": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "Enable MCP Integration",
+          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
+        },
+        "model": {
+          "label": "Model",
+          "description": "Select the Claude model to use",
+          "options": {
+            "opus": "Claude Opus (Most Capable)",
+            "sonnet": "Claude Sonnet (Balanced)"
+          }
+        },
+        "permission_mode": {
+          "label": "Permission Mode",
+          "description": "Control how the agent handles permission requests",
+          "options": {
+            "default": "Default",
+            "plan": "Plan Mode (Recommended)"
+          }
+        },
+        "dangerously_skip_permissions": {
+          "label": "Skip Permission Checks",
+          "description": "WARNING: Bypass all permission prompts. The agent will execute commands without asking for approval. Use with caution."
+        },
+        "think_level": {
+          "label": "Think Level",
+          "description": "Extended thinking capability for complex reasoning",
+          "options": {
+            "": "Default",
+            "megathink": "Megathink",
+            "ultrathink": "Ultrathink"
+          }
+        }
+      }
+    },
+    "gemini-cli": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "Enable MCP Integration",
+          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
+        },
+        "sandbox_mode": {
+          "label": "Sandbox Mode",
+          "description": "Run in sandbox mode for enhanced security"
+        }
+      }
+    },
+    "codex-cli": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "Enable MCP Integration",
+          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
+        },
+        "approval_mode": {
+          "label": "Approval Mode",
+          "description": "Control how code changes are approved",
+          "options": {
+            "suggest": "Suggest (Manual Approval)",
+            "auto-edit": "Auto Edit",
+            "full-auto": "Full Auto"
+          }
+        }
+      }
+    },
+    "aider": {
+      "fields": {
+        "model": {
+          "label": "Model",
+          "description": "Specify the AI model to use (e.g., gpt-4, claude-3-opus)"
+        },
+        "edit_format": {
+          "label": "Edit Format",
+          "description": "Select how code edits are presented",
+          "options": {
+            "": "Default",
+            "whole": "Whole File",
+            "diff": "Diff",
+            "udiff": "Unified Diff"
+          }
+        }
+      }
+    },
+    "opencode": {
+      "fields": {
+        "mcp_enabled": {
+          "label": "Enable MCP Integration",
+          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
+        }
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 
 export default function PersonalNotificationsPage() {

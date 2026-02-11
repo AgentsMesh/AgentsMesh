@@ -1,10 +1,12 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
+import { Button } from "@/components/ui/button";
 import { LanguageSettings, ThemeSettings, NotificationSettings, AgentCredentialsSettings, AgentConfigPage, GitSettingsContent } from "@/components/settings";
 import { GeneralSettings, MembersSettings, BillingSettings, RunnersSettings } from "@/components/settings/organization";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
+import { LogOut, User, Mail } from "lucide-react";
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -63,10 +65,68 @@ export default function SettingsPage() {
 // ===== Personal Settings Components =====
 
 function PersonalGeneralSettings() {
+  const router = useRouter();
+  const t = useTranslations();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
   return (
     <div className="space-y-6">
+      {/* Account Information */}
+      <div className="border border-border rounded-lg p-6">
+        <h2 className="text-lg font-semibold mb-4">
+          {t("settings.personal.general.accountInfo")}
+        </h2>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+              <User className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {t("settings.personal.general.username")}
+              </p>
+              <p className="font-medium">{user?.username || "-"}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+              <Mail className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {t("settings.personal.general.email")}
+              </p>
+              <p className="font-medium">{user?.email || "-"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <LanguageSettings />
       <ThemeSettings />
+
+      {/* Session / Logout */}
+      <div className="border border-border rounded-lg p-6">
+        <h2 className="text-lg font-semibold mb-2">
+          {t("settings.personal.general.session")}
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          {t("settings.personal.general.sessionDescription")}
+        </p>
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="flex items-center gap-2 text-destructive hover:text-destructive"
+        >
+          <LogOut className="w-4 h-4" />
+          {t("settings.personal.general.logout")}
+        </Button>
+      </div>
     </div>
   );
 }

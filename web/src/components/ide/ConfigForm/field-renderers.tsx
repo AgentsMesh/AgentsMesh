@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import type { ConfigField } from "@/lib/api/agent";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 /**
  * Props for field renderer components

@@ -7,7 +7,7 @@ import { Drawer } from "vaul";
 import { cn } from "@/lib/utils";
 import { useIDEStore, getMoreMenuActivities, type ActivityType } from "@/stores/ide";
 import { useAuthStore } from "@/stores/auth";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import {
   Server,
   Settings,

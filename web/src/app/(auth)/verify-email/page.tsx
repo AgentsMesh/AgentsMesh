@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { authApi, organizationApi } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth";
 
 type VerifyState = "idle" | "verifying" | "success" | "error";

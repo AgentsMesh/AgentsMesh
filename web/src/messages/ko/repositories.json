@@ -1,0 +1,156 @@
+{
+  "repositories": {
+    "title": "저장소",
+    "subtitle": "Manage your Git repositories for AgentPod",
+    "searchPlaceholder": "저장소 검색...",
+    "import": "저장소 가져오기",
+    "repoCount": "개의 저장소",
+    "allProviders": "All Providers",
+    "active": "Active",
+    "inactive": "Inactive",
+    "delete": "Delete",
+    "view": "View",
+    "search": "Search repositories...",
+    "confirmDelete": "Are you sure you want to delete repository \"{name}\"?",
+    "deleteDialog": {
+      "title": "Delete Repository",
+      "description": "Are you sure you want to delete this repository? This action cannot be undone."
+    },
+    "columns": {
+      "name": "Name",
+      "provider": "Provider",
+      "branch": "Branch",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "filters": {
+      "all": "전체",
+      "github": "GitHub",
+      "gitlab": "GitLab",
+      "gitee": "Gitee"
+    },
+    "stats": {
+      "total": "Total Repositories",
+      "active": "Active",
+      "providers": "Providers"
+    },
+    "emptyState": {
+      "title": "저장소가 없습니다",
+      "description": "Git 제공자를 연결하여 저장소를 가져오세요",
+      "connectProvider": "제공자 연결",
+      "noMatch": "필터와 일치하는 저장소가 없습니다",
+      "importHint": "Import a repository to use Git-based workflows in AgentPod"
+    },
+    "repository": {
+      "lastUpdated": "최종 업데이트",
+      "defaultBranch": "기본 브랜치",
+      "default": "기본",
+      "ticketPrefix": "티켓 접두사",
+      "viewOnProvider": "{provider}에서 보기",
+      "visibility": "가시성",
+      "public": "공개",
+      "private": "비공개",
+      "actions": {
+        "createPod": "Pod 생성",
+        "refresh": "새로고침",
+        "remove": "제거"
+      }
+    },
+    "modal": {
+      "title": "Import Repository",
+      "selectSourceHint": "Select a Git connection to browse repositories, or enter repository details manually.",
+      "yourConnections": "Your Git Connections",
+      "noConnections": "No Git connections configured.",
+      "addOne": "Add one",
+      "toBrowse": "to browse your repositories.",
+      "or": "or",
+      "enterManually": "Enter Manually",
+      "enterManuallyHint": "Enter repository URL without a Git connection",
+      "noReposFound": "No repositories found",
+      "noDescription": "No description",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}",
+      "manualEntry": "Manual Entry",
+      "providerType": "Provider Type",
+      "genericGit": "Generic Git",
+      "baseUrl": "Base URL",
+      "cloneUrl": "Clone URL",
+      "repoName": "Repository Name",
+      "fullPath": "Full Path",
+      "defaultBranch": "Default Branch",
+      "confirmImport": "Confirm Import",
+      "branch": "Branch",
+      "provider": "Provider",
+      "ticketPrefixOptional": "Ticket Prefix (optional)",
+      "ticketPrefixHint": "Used for ticket identifiers (e.g., PROJ-123)",
+      "visibility": "Visibility",
+      "organization": "Organization",
+      "privateOnly": "Private (only you)",
+      "continue": "Continue",
+      "importRepository": "Import Repository",
+      "fillRequiredFields": "Please fill in all required fields",
+      "failedToLoadConnections": "Failed to load Git connections",
+      "failedToLoadRepos": "Failed to load repositories",
+      "failedToImport": "Failed to import repository. Please check your inputs."
+    },
+    "detail": {
+      "notFound": "Repository not found",
+      "backToList": "Back to Repositories",
+      "information": "Information",
+      "branches": "Branches",
+      "repoDetails": "Repository Details",
+      "name": "Name",
+      "fullPath": "Full Path",
+      "cloneUrl": "Clone URL",
+      "defaultBranch": "Default Branch",
+      "ticketPrefix": "Ticket Prefix",
+      "status": "Status",
+      "active": "Active",
+      "created": "Created",
+      "gitProvider": "Git Provider",
+      "type": "Type",
+      "baseUrl": "Base URL",
+      "visibility": "Visibility",
+      "actions": "Actions",
+      "setupWebhook": "Setup Webhook",
+      "webhookFailed": "Failed to setup webhook. Please try again.",
+      "confirmDelete": "Are you sure you want to delete repository \"{name}\"? This action cannot be undone.",
+      "deleteDialog": {
+        "title": "Delete Repository",
+        "description": "Are you sure you want to delete this repository? This action cannot be undone."
+      },
+      "branchesRequireCredentials": "Branch listing requires Git credentials",
+      "configureGitConnection": "Configure a Git connection in your settings to browse branches"
+    },
+    "edit": {
+      "title": "Edit Repository",
+      "name": "Name",
+      "defaultBranch": "Default Branch",
+      "ticketPrefixOptional": "Ticket Prefix (optional)",
+      "active": "Active",
+      "nameRequired": "Name is required",
+      "updateFailed": "Failed to update repository. Please try again.",
+      "saving": "Saving...",
+      "saveChanges": "Save Changes"
+    },
+    "webhook": {
+      "title": "Webhook Settings",
+      "loading": "Loading webhook status...",
+      "status": {
+        "registered": "Registered",
+        "needsManualSetup": "Needs Manual Setup",
+        "notRegistered": "Not Registered"
+      },
+      "events": "Events",
+      "reregister": "Re-register",
+      "delete": "Delete Webhook",
+      "manualSetupInstructions": "Automatic webhook registration is not available. Please configure the webhook manually in your Git provider settings using the information below.",
+      "markConfigured": "I've configured it",
+      "tryAgain": "Try Again",
+      "notRegisteredDescription": "Webhook is not registered. Register to receive PR/MR and Pipeline status updates.",
+      "register": "Register Webhook",
+      "retry": "Retry"
+    }
+  }
+}

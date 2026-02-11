@@ -1,0 +1,36 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "allRightsReserved": "保留所有权利。",
+    "save": "保存",
+    "saveChanges": "保存更改",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "noResults": "未找到结果",
+    "error": "发生错误",
+    "success": "成功",
+    "confirm": "确认",
+    "close": "关闭",
+    "dismiss": "关闭",
+    "back": "返回",
+    "next": "下一页",
+    "previous": "上一页",
+    "submit": "提交",
+    "reset": "重置",
+    "optional": "可选",
+    "saving": "保存中...",
+    "refresh": "刷新",
+    "connected": "已连接",
+    "disconnected": "已断开"
+  },
+  "nav": {
+    "agentpod": "AgentPod",
+    "mesh": "智能体网络",
+    "tickets": "任务管理",
+    "settings": "设置",
+    "billing": "账单"
+  }
+}

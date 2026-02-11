@@ -14,7 +14,7 @@ import {
   type SandboxStatus,
   type RelayConnectionInfo,
 } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import {
   Server,
   ArrowLeft,

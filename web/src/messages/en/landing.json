@@ -1,0 +1,381 @@
+{
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "docs": "Docs",
+      "signIn": "Sign In",
+      "getStarted": "Get Started",
+      "console": "Console",
+      "language": "Language"
+    },
+    "hero": {
+      "badge": "AI Agent Fleet Command Center",
+      "title1": "Terminal-based",
+      "title2": "Coding Agent",
+      "title3": "Collaboration Platform",
+      "slogan1": "Orchestrate AI Agents.",
+      "slogan2": "Ship Code Faster.",
+      "tagline": "The new development platform for the age of AI coding agents",
+      "description": "Not just an IDE — an Agent Fleet command center. Orchestrate Claude Code, Codex CLI, Gemini CLI, Aider and more. From requirements to execution to delivery.",
+      "getStartedFree": "Get Started Free",
+      "viewDocs": "View Documentation",
+      "trustedBy": "Trusted by developers worldwide",
+      "teams": "Growing Teams",
+      "pods": "Thousands of Pods",
+      "openSource": "Open Source"
+    },
+    "agentLogos": {
+      "title": "Supports all major Terminal-based Coding Agents",
+      "descriptions": {
+        "anthropic": "Anthropic",
+        "openai": "OpenAI",
+        "google": "Google",
+        "openSource": "Open Source",
+        "community": "Community",
+        "yourOwn": "Your Own"
+      }
+    },
+    "whyTerminal": {
+      "title": "Why",
+      "titleHighlight": "Terminal-based",
+      "titleEnd": "Agent?",
+      "description": "Unlike IDE plugins like Cursor or Copilot, terminal-based agents offer autonomous execution and complete development capabilities.",
+      "benefits": {
+        "autonomous": {
+          "title": "Autonomous Execution",
+          "description": "Not just code completion. Terminal agents can independently complete complex development tasks from start to finish."
+        },
+        "fullCapabilities": {
+          "title": "Full Capabilities",
+          "description": "Read/write files, execute commands, Git operations, run tests - complete full-stack development capabilities."
+        },
+        "dataControl": {
+          "title": "Data Control",
+          "description": "Self-hosted runners mean your code never leaves your infrastructure. Meet security and compliance requirements."
+        }
+      },
+      "comparison": {
+        "idePlugins": "IDE Plugins",
+        "idePluginsSubtitle": "Copilot / Cursor",
+        "terminalBased": "Terminal-based",
+        "terminalBasedSubtitle": "Claude Code / Aider",
+        "autonomy": "Autonomy",
+        "capabilities": "Capabilities",
+        "environment": "Environment",
+        "multiAgent": "Multi-Agent",
+        "selfHosted": "Self-hosted",
+        "ide": {
+          "autonomy": "Passive response",
+          "capabilities": "Code completion",
+          "environment": "IDE sandbox",
+          "multiAgent": "Not supported",
+          "selfHosted": "Cloud only"
+        },
+        "terminal": {
+          "autonomy": "Active task execution",
+          "capabilities": "Full-stack development",
+          "environment": "Full terminal access",
+          "multiAgent": "AgentsMesh enabled",
+          "selfHosted": "Fully controllable"
+        }
+      }
+    },
+    "coreFeatures": {
+      "title": "Core",
+      "titleHighlight": "Features",
+      "description": "Everything you need to manage and coordinate terminal-based AI coding agents at scale.",
+      "agentpod": {
+        "title": "AgentPod",
+        "subtitle": "Remote AI Workstation",
+        "description": "Run AI agents in the cloud, access a complete development environment through your browser. Each AgentPod runs on isolated Git worktrees with real-time terminal access.",
+        "highlights": {
+          "0": "Web Terminal with real-time interaction",
+          "1": "Git Worktree isolation per AgentPod",
+          "2": "Multiple concurrent AgentPods",
+          "3": "Auto-cleanup on completion"
+        }
+      },
+      "agentsmesh": {
+        "title": "AgentsMesh",
+        "subtitle": "Multi-Agent Collaboration",
+        "description": "Enable multiple AI agents to work together through pod bindings and channel communication. Visualize the collaboration topology in real-time.",
+        "highlights": {
+          "0": "Pod Binding with permission control",
+          "1": "Channel-based message broadcasting",
+          "2": "Real-time topology visualization",
+          "3": "Cross-agent task coordination"
+        }
+      },
+      "tickets": {
+        "title": "Tickets",
+        "subtitle": "Task-Driven Development",
+        "description": "Integrate AI pods with your task management workflow. Create tickets, bind them to pods, and track progress through a Kanban board.",
+        "highlights": {
+          "0": "Kanban board visualization",
+          "1": "Ticket - Pod binding",
+          "2": "Progress tracking",
+          "3": "MR/PR integration"
+        }
+      },
+      "runners": {
+        "title": "Self-hosted Runners",
+        "subtitle": "Your Infrastructure, Your Data",
+        "description": "Deploy runners on your own infrastructure. Your code and data never leave your environment, meeting the strictest security and compliance requirements.",
+        "highlights": {
+          "0": "Docker/Kubernetes deployment",
+          "1": "Complete data localization",
+          "2": "Air-gapped environment support",
+          "3": "Full audit trail"
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "Get Started in",
+      "titleHighlight": "3 Steps",
+      "description": "Deploy, connect, and start collaborating with AI agents in minutes.",
+      "step1": {
+        "title": "Deploy Runner",
+        "description": "Download and register a Runner on your server or local machine."
+      },
+      "step2": {
+        "title": "Create AgentPod",
+        "description": "Use the web console to create pods with your preferred AI agent."
+      },
+      "step3": {
+        "title": "Start Collaborating",
+        "description": "Open terminal in browser, create channels, and coordinate agents with MCP tools."
+      }
+    },
+    "enterprise": {
+      "title": "Built for",
+      "titleHighlight": "Enterprise",
+      "description": "Security, compliance, and scalability features that enterprise teams require.",
+      "features": {
+        "multiTenant": {
+          "title": "Multi-Tenant",
+          "description": "Organization and team hierarchy with isolated workspaces."
+        },
+        "sso": {
+          "title": "SSO Integration",
+          "description": "SAML 2.0 and LDAP support for enterprise authentication.",
+          "comingSoon": true
+        },
+        "auditLogs": {
+          "title": "Audit Logs",
+          "description": "Complete activity tracking for compliance and security."
+        },
+        "rbac": {
+          "title": "RBAC",
+          "description": "Fine-grained role-based access control for teams."
+        },
+        "gitIntegration": {
+          "title": "Git Integration",
+          "description": "GitLab, GitHub, and Gitee support out of the box."
+        },
+        "monitoring": {
+          "title": "Monitoring",
+          "description": "Prometheus metrics and Grafana dashboards included.",
+          "comingSoon": true
+        },
+        "backupDR": {
+          "title": "Backup & DR",
+          "description": "Automated backups with disaster recovery support.",
+          "comingSoon": true
+        },
+        "airGapped": {
+          "title": "Air-Gapped",
+          "description": "Fully offline deployment for maximum security.",
+          "comingSoon": true
+        }
+      }
+    },
+    "pricing": {
+      "title": "Simple, Transparent",
+      "titleHighlight": "Pricing",
+      "description": "BYOK model - Bring Your Own API Key. AI costs on your side, no usage caps.",
+      "mostPopular": "Most Popular",
+      "annualDiscount": "Save 20%",
+      "perSeat": "/seat",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "yearlyDiscount": "Save 17%",
+      "month": "month",
+      "year": "year",
+      "seatMonth": "seat/month",
+      "seatYear": "seat/year",
+      "based": {
+        "name": "Based",
+        "badge": "30-Day Free Trial",
+        "description": "Perfect for individual developers exploring AI coding agents.",
+        "features": {
+          "0": "1 seat (solo mode)",
+          "1": "5 concurrent pods",
+          "2": "1 Runner",
+          "3": "5 repositories",
+          "4": "Community support"
+        },
+        "cta": "Start Free Trial"
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "For small teams that want to scale AI collaboration.",
+        "features": {
+          "0": "Up to 5 seats",
+          "1": "10 concurrent pods",
+          "2": "10 Runners",
+          "3": "10 repositories",
+          "4": "Priority email support",
+          "5": "Multi-Git provider support"
+        },
+        "cta": "Upgrade to Pro"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "For organizations requiring advanced scale and security.",
+        "features": {
+          "0": "Up to 50 seats",
+          "1": "50 concurrent pods",
+          "2": "100 Runners",
+          "3": "Unlimited repositories",
+          "4": "Priority support",
+          "5": "SSO integration (coming soon)",
+          "6": "Audit logs"
+        },
+        "cta": "Upgrade to Enterprise"
+      },
+      "onpremise": {
+        "name": "OnPremise",
+        "price": "Custom",
+        "period": "contact us",
+        "description": "Full private deployment with complete data control.",
+        "features": {
+          "0": "Unlimited seats",
+          "1": "Unlimited pods",
+          "2": "Unlimited Runners",
+          "3": "Air-gapped support",
+          "4": "Dedicated support",
+          "5": "Custom SLA",
+          "6": "White-glove onboarding"
+        },
+        "cta": "Contact Sales"
+      },
+      "footer": "All plans include BYOK (Bring Your Own Key) - use your own AI API keys with no usage limits.",
+      "customPlan": "Need enterprise deployment?",
+      "contactUs": "Contact us"
+    },
+    "selfHosted": {
+      "title": "Need Complete",
+      "titleHighlight": "Self-Hosted",
+      "titleEnd": "Deployment?",
+      "description": "AgentsMesh supports fully self-hosted deployment. Your code and data never leave your infrastructure. Perfect for enterprises with strict security and compliance requirements.",
+      "dockerCompose": "Docker Compose",
+      "kubernetesHelm": "Kubernetes Helm (Coming Soon)",
+      "airGappedSupport": "Air-gapped Support (Coming Soon)",
+      "viewDocs": "View Deployment Docs",
+      "contactSales": "Contact Enterprise Sales"
+    },
+    "finalCta": {
+      "title1": "Ready to Orchestrate Your",
+      "title2": "AI Agent Fleet?",
+      "description": "Join developers shipping code faster with AI agent orchestration. Get started for free, no credit card required.",
+      "getStartedFree": "Get Started Free",
+      "scheduleDemo": "Schedule a Demo",
+      "freeTier": "Free tier available",
+      "noCreditCard": "No credit card required",
+      "selfHostedOption": "Self-hosted option"
+    },
+    "heroDemo": {
+      "podTopology": "Pod Topology",
+      "live": "Live",
+      "initializingPod": "Initializing pod...",
+      "typeMessage": "Type a message...",
+      "connecting": "Connecting to AgentsMesh...",
+      "connected": "Connected to AgentsMesh server",
+      "workspace": "Workspace: /projects/e-commerce",
+      "monitorPod": "Monitor pod beta-dev and help coordinate the auth implementation",
+      "bindingPod": "I'll bind to pod beta-dev to observe and coordinate...",
+      "boundToPod": "Bound to beta-dev (Codex CLI)",
+      "observingHeader": "Observing beta-dev",
+      "analyzing": "Analyzing src/auth/handlers.ts...",
+      "creatingOAuth": "Creating OAuth2 provider integration",
+      "writingOAuth": "Writing: src/auth/oauth.ts",
+      "noticedOAuth": "I notice beta-dev is implementing OAuth. I'll suggest adding rate limiting...",
+      "messageSent": "\"Consider adding rate limiting to /auth/* endpoints\"",
+      "receivedSuggestion": "beta-dev: Received suggestion, implementing rate limiter...",
+      "writingRateLimit": "beta-dev: Writing src/middleware/rateLimit.ts",
+      "rateLimitAdded": "beta-dev: Rate limiting added to auth routes",
+      "reviewChanges": "Great! beta-dev implemented rate limiting. Now I'll review the changes...",
+      "podInfo": {
+        "initializing": "Pod: alpha-dev │ Agent: Claude Code │ Status: Initializing",
+        "running": "Pod: alpha-dev │ Agent: Claude Code │ Status: Running",
+        "observing": "Pod: alpha-dev │ Agent: Claude Code │ Observing: beta-dev"
+      }
+    },
+    "coreDemo": {
+      "terminalTitle": "AgentPod Terminal",
+      "podA": "Pod A",
+      "podB": "Pod B",
+      "devChannel": "#dev-channel",
+      "members": "{count} members",
+      "kanban": {
+        "backlog": "Backlog",
+        "inProgress": "In Progress",
+        "review": "Review",
+        "done": "Done",
+        "authFeature": "Auth feature",
+        "empty": "Empty"
+      },
+      "architecture": {
+        "yourInfrastructure": "Your Infrastructure",
+        "runner": "Runner",
+        "agent": "Agent",
+        "websocket": "WebSocket",
+        "agentsmeshCloud": "AgentsMesh Cloud"
+      }
+    },
+    "demoVideo": {
+      "title": "See It",
+      "titleHighlight": "In Action",
+      "description": "Watch how AgentsMesh orchestrates AI agents from requirements to delivery — in under 2 minutes.",
+      "iframeTitle": "AgentsMesh Product Demo",
+      "highlight1": "Full lifecycle demo",
+      "highlight2": "Multi-agent orchestration",
+      "highlight3": "Real-time fleet control"
+    },
+    "footer": {
+      "tagline": "AI Agent Fleet Command Center — Orchestrate AI agents. Ship code faster.",
+      "copyright": "AgentsMesh. All rights reserved.",
+      "madeWith": "Made with love for developers",
+      "product": {
+        "title": "Product",
+        "agentpod": "AgentPod",
+        "agentsmesh": "AgentsMesh",
+        "tickets": "Tickets",
+        "runners": "Runners",
+        "pricing": "Pricing"
+      },
+      "resources": {
+        "title": "Resources",
+        "documentation": "Documentation",
+        "apiReference": "API Reference",
+        "tutorials": "Tutorials",
+        "changelog": "Changelog",
+        "status": "Status"
+      },
+      "company": {
+        "title": "Company",
+        "about": "About",
+        "blog": "Blog",
+        "careers": "Careers",
+        "contact": "Contact"
+      },
+      "legal": {
+        "title": "Legal",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "security": "Security"
+      }
+    }
+  }
+}

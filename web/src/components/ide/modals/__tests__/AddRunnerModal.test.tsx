@@ -15,7 +15,7 @@ vi.mock("@/hooks/useServerUrl", () => ({
 }));
 
 // Mock translations
-vi.mock("@/lib/i18n/client", () => ({
+vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));
 

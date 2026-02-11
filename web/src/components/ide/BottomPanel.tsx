@@ -6,7 +6,7 @@ import { useIDEStore, type BottomPanelTab } from "@/stores/ide";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useMeshStore, type MeshEdge } from "@/stores/mesh";
 import { useChannelStore } from "@/stores/channel";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   ChevronDown,

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth";
 import { useTicketStore, Ticket, TicketStatus, TicketPriority } from "@/stores/ticket";
 import { TypeIcon, getTypeDisplayInfo } from "./TicketIcons";

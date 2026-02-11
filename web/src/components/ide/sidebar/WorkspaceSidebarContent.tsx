@@ -16,7 +16,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { PodListItem } from "./PodListItem";
 import { RunnerSection } from "./RunnerSection";
 import { WorkspaceFilters, type FilterType } from "./WorkspaceFilters";

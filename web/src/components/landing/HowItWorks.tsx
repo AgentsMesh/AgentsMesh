@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useServerUrl } from "@/hooks/useServerUrl";
 
 export function HowItWorks() {

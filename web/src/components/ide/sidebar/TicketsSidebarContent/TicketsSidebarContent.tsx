@@ -16,7 +16,7 @@ import {
   LayoutGrid,
   RefreshCw,
 } from "lucide-react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useTicketFilters } from "./useTicketFilters";
 import { TicketFilterSection } from "./TicketFilterSection";
 import { TicketListItem } from "./TicketListItem";

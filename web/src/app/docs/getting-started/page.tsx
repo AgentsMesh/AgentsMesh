@@ -2,17 +2,21 @@
 
 import Link from "next/link";
 import { useServerUrl } from "@/hooks/useServerUrl";
+import { useTranslations } from "next-intl";
+import { DocNavigation } from "@/components/docs/DocNavigation";
 
 export default function GettingStartedPage() {
   const serverUrl = useServerUrl();
+  const t = useTranslations();
 
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-8">Quick Start</h1>
+      <h1 className="text-4xl font-bold mb-8">
+        {t("docs.gettingStarted.title")}
+      </h1>
 
       <p className="text-muted-foreground leading-relaxed mb-8">
-        Get AgentsMesh up and running in just a few minutes. This guide will walk
-        you through the essential setup steps.
+        {t("docs.gettingStarted.description")}
       </p>
 
       {/* Step 1 */}
@@ -22,22 +26,21 @@ export default function GettingStartedPage() {
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
               1
             </div>
-            <h2 className="text-xl font-semibold">Create an Account</h2>
+            <h2 className="text-xl font-semibold">
+              {t("docs.gettingStarted.step1.title")}
+            </h2>
           </div>
           <p className="text-muted-foreground mb-4">
-            Sign up at{" "}
-            <Link href="/register" className="text-primary hover:underline">
-              /register
-            </Link>{" "}
-            to create your account and organization. You&apos;ll receive a
-            verification email to confirm your account.
+            {t("docs.gettingStarted.step1.description")}
           </p>
           <div className="bg-muted rounded-lg p-4 text-sm">
-            <p className="font-medium mb-2">What you&apos;ll set up:</p>
+            <p className="font-medium mb-2">
+              {t("docs.gettingStarted.step1.whatYouSetUp")}
+            </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-1">
-              <li>Personal account with email verification</li>
-              <li>Organization (team workspace)</li>
-              <li>Initial organization settings</li>
+              <li>{t("docs.gettingStarted.step1.item1")}</li>
+              <li>{t("docs.gettingStarted.step1.item2")}</li>
+              <li>{t("docs.gettingStarted.step1.item3")}</li>
             </ul>
           </div>
         </div>
@@ -50,17 +53,20 @@ export default function GettingStartedPage() {
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
               2
             </div>
-            <h2 className="text-xl font-semibold">Configure AI Providers</h2>
+            <h2 className="text-xl font-semibold">
+              {t("docs.gettingStarted.step2.title")}
+            </h2>
           </div>
           <p className="text-muted-foreground mb-4">
-            Go to <strong>Settings → AgentPod → AI Providers</strong> to configure
-            your AI provider API keys. AgentsMesh supports multiple providers:
+            {t("docs.gettingStarted.step2.description")}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-muted rounded-lg p-4">
-              <h4 className="font-medium mb-2">Anthropic (Claude)</h4>
+              <h4 className="font-medium mb-2">
+                {t("docs.gettingStarted.step2.anthropic")}
+              </h4>
               <p className="text-sm text-muted-foreground">
-                For Claude Code agent. Get your API key from{" "}
+                {t("docs.gettingStarted.step2.anthropicDesc")}{" "}
                 <a
                   href="https://console.anthropic.com"
                   className="text-primary hover:underline"
@@ -72,9 +78,11 @@ export default function GettingStartedPage() {
               </p>
             </div>
             <div className="bg-muted rounded-lg p-4">
-              <h4 className="font-medium mb-2">OpenAI</h4>
+              <h4 className="font-medium mb-2">
+                {t("docs.gettingStarted.step2.openai")}
+              </h4>
               <p className="text-sm text-muted-foreground">
-                For Codex CLI agent. Get your API key from{" "}
+                {t("docs.gettingStarted.step2.openaiDesc")}{" "}
                 <a
                   href="https://platform.openai.com"
                   className="text-primary hover:underline"
@@ -86,9 +94,11 @@ export default function GettingStartedPage() {
               </p>
             </div>
             <div className="bg-muted rounded-lg p-4">
-              <h4 className="font-medium mb-2">Google (Gemini)</h4>
+              <h4 className="font-medium mb-2">
+                {t("docs.gettingStarted.step2.google")}
+              </h4>
               <p className="text-sm text-muted-foreground">
-                For Gemini CLI agent. Get your API key from{" "}
+                {t("docs.gettingStarted.step2.googleDesc")}{" "}
                 <a
                   href="https://aistudio.google.com"
                   className="text-primary hover:underline"
@@ -100,10 +110,11 @@ export default function GettingStartedPage() {
               </p>
             </div>
             <div className="bg-muted rounded-lg p-4">
-              <h4 className="font-medium mb-2">Custom Provider</h4>
+              <h4 className="font-medium mb-2">
+                {t("docs.gettingStarted.step2.custom")}
+              </h4>
               <p className="text-sm text-muted-foreground">
-                For Aider, OpenCode, or custom agents with your own API
-                endpoints.
+                {t("docs.gettingStarted.step2.customDesc")}
               </p>
             </div>
           </div>
@@ -117,12 +128,12 @@ export default function GettingStartedPage() {
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
               3
             </div>
-            <h2 className="text-xl font-semibold">Setup a Runner</h2>
+            <h2 className="text-xl font-semibold">
+              {t("docs.gettingStarted.step3.title")}
+            </h2>
           </div>
           <p className="text-muted-foreground mb-4">
-            Runners are the execution environments where AI agent Pods run.
-            Download and configure the AgentsMesh Runner on your development
-            machine or server.
+            {t("docs.gettingStarted.step3.description")}
           </p>
           <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
             <pre className="text-green-500 dark:text-green-400">{`# Download and install the runner
@@ -135,15 +146,23 @@ agentsmesh-runner register --server ${serverUrl} --token <YOUR_TOKEN>
 agentsmesh-runner run`}</pre>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            See{" "}
-            <Link
-              href="/docs/runners/setup"
-              className="text-primary hover:underline"
-            >
-              Runner Setup
-            </Link>{" "}
-            for detailed installation instructions and Docker/Kubernetes
-            deployment options.
+            {(() => {
+              const raw = t("docs.gettingStarted.step3.seeSetup");
+              const parts = raw.split("{link}");
+              if (parts.length < 2) return raw;
+              return (
+                <>
+                  {parts[0]}
+                  <Link
+                    href="/docs/runners/setup"
+                    className="text-primary hover:underline"
+                  >
+                    {t("docs.nav.runnerSetup")}
+                  </Link>
+                  {parts[1]}
+                </>
+              );
+            })()}
           </p>
         </div>
       </section>
@@ -155,53 +174,56 @@ agentsmesh-runner run`}</pre>
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
               4
             </div>
-            <h2 className="text-xl font-semibold">Start a Pod</h2>
+            <h2 className="text-xl font-semibold">
+              {t("docs.gettingStarted.step4.title")}
+            </h2>
           </div>
           <p className="text-muted-foreground mb-4">
-            Create a new AgentPod and start coding with AI assistance!
+            {t("docs.gettingStarted.step4.description")}
           </p>
           <ol className="list-decimal list-inside text-muted-foreground space-y-2">
-            <li>
-              Navigate to <strong>AgentPod</strong> in the sidebar
-            </li>
-            <li>
-              Click <strong>New Pod</strong>
-            </li>
-            <li>Select an AI agent type (Claude Code, Codex CLI, etc.)</li>
-            <li>Choose a Runner to execute the Pod</li>
-            <li>Optionally link to a repository and ticket</li>
-            <li>
-              Click <strong>Create</strong> to start your AI-powered development
-              Pod
-            </li>
+            <li>{t("docs.gettingStarted.step4.item1")}</li>
+            <li>{t("docs.gettingStarted.step4.item2")}</li>
+            <li>{t("docs.gettingStarted.step4.item3")}</li>
+            <li>{t("docs.gettingStarted.step4.item4")}</li>
+            <li>{t("docs.gettingStarted.step4.item5")}</li>
+            <li>{t("docs.gettingStarted.step4.item6")}</li>
           </ol>
         </div>
       </section>
 
       {/* Next Steps */}
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Next Steps</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.gettingStarted.nextSteps.title")}
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             href="/docs/features/agentpod"
             className="border border-border rounded-lg p-4 hover:border-primary transition-colors"
           >
-            <h3 className="font-medium mb-1">Learn about AgentPod →</h3>
+            <h3 className="font-medium mb-1">
+              {t("docs.gettingStarted.nextSteps.agentpod")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Remote AI development workstations
+              {t("docs.gettingStarted.nextSteps.agentpodDesc")}
             </p>
           </Link>
           <Link
             href="/docs/features/mesh"
             className="border border-border rounded-lg p-4 hover:border-primary transition-colors"
           >
-            <h3 className="font-medium mb-1">Explore Mesh →</h3>
+            <h3 className="font-medium mb-1">
+              {t("docs.gettingStarted.nextSteps.mesh")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Multi-agent collaboration features
+              {t("docs.gettingStarted.nextSteps.meshDesc")}
             </p>
           </Link>
         </div>
       </section>
+
+      <DocNavigation />
     </div>
   );
 }

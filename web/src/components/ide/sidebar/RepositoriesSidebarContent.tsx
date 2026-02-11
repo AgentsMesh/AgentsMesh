@@ -14,7 +14,7 @@ import {
   Search,
   RefreshCw,
 } from "lucide-react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { RepositoryItem } from "./RepositoryItem";
 
 interface RepositoriesSidebarContentProps {

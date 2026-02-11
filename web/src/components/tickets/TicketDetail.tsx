@@ -2,7 +2,7 @@
 
 import { useEffect, useState, lazy, Suspense, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAuthStore } from "@/stores/auth";

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { repositoryApi, type WebhookStatus, type RepositoryData } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { RefreshCw, Loader2 } from "lucide-react";

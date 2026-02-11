@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 
 const socialLinks = [
   {
@@ -40,11 +40,11 @@ export function Footer() {
     product: {
       title: t("landing.footer.product.title"),
       links: [
-        { label: t("landing.footer.product.agentpod"), href: "/docs#agentpod" },
-        { label: t("landing.footer.product.agentsmesh"), href: "/docs#mesh" },
-        { label: t("landing.footer.product.tickets"), href: "/docs#tickets" },
-        { label: t("landing.footer.product.runners"), href: "/docs#runner-setup" },
-        { label: t("landing.footer.product.pricing"), href: "#pricing" },
+        { label: t("landing.footer.product.agentpod"), href: "/docs/features/agentpod" },
+        { label: t("landing.footer.product.agentsmesh"), href: "/docs/features/channels" },
+        { label: t("landing.footer.product.tickets"), href: "/docs/features/tickets" },
+        { label: t("landing.footer.product.runners"), href: "/docs/runners/setup" },
+        { label: t("landing.footer.product.pricing"), href: "/#pricing" },
       ],
     },
     resources: {

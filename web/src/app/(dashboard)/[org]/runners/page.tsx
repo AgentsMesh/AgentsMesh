@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useServerUrl } from "@/hooks/useServerUrl";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { StatCard, AddRunnerModal, RunnerConfigModal } from "./components";
 
 /**

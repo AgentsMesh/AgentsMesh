@@ -1,0 +1,156 @@
+{
+  "repositories": {
+    "title": "仓库",
+    "subtitle": "管理 AgentPod 的 Git 仓库",
+    "searchPlaceholder": "搜索仓库...",
+    "import": "导入仓库",
+    "repoCount": "个仓库",
+    "allProviders": "所有服务",
+    "active": "活跃",
+    "inactive": "已禁用",
+    "delete": "删除",
+    "view": "查看",
+    "search": "搜索仓库...",
+    "confirmDelete": "确定要删除仓库「{name}」吗？",
+    "deleteDialog": {
+      "title": "删除仓库",
+      "description": "确定要删除此仓库吗？此操作无法撤销。"
+    },
+    "columns": {
+      "name": "名称",
+      "provider": "服务",
+      "branch": "分支",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "filters": {
+      "all": "全部",
+      "github": "GitHub",
+      "gitlab": "GitLab",
+      "gitee": "Gitee"
+    },
+    "stats": {
+      "total": "仓库总数",
+      "active": "活跃",
+      "providers": "服务数"
+    },
+    "emptyState": {
+      "title": "暂无仓库",
+      "description": "连接你的 Git 服务以导入仓库",
+      "connectProvider": "连接服务",
+      "noMatch": "没有匹配的仓库",
+      "importHint": "导入仓库以在 AgentPod 中使用 Git 工作流"
+    },
+    "repository": {
+      "lastUpdated": "最后更新",
+      "defaultBranch": "默认分支",
+      "default": "默认",
+      "ticketPrefix": "任务前缀",
+      "viewOnProvider": "在 {provider} 查看",
+      "visibility": "可见性",
+      "public": "公开",
+      "private": "私有",
+      "actions": {
+        "createPod": "创建 Pod",
+        "refresh": "刷新",
+        "remove": "移除"
+      }
+    },
+    "modal": {
+      "title": "导入仓库",
+      "selectSourceHint": "选择 Git 连接以浏览仓库，或手动输入仓库详情。",
+      "yourConnections": "你的 Git 连接",
+      "noConnections": "暂无 Git 连接配置。",
+      "addOne": "添加一个",
+      "toBrowse": "以浏览你的仓库。",
+      "or": "或",
+      "enterManually": "手动输入",
+      "enterManuallyHint": "无需 Git 连接，直接输入仓库 URL",
+      "noReposFound": "未找到仓库",
+      "noDescription": "暂无描述",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {page} 页",
+      "manualEntry": "手动输入",
+      "providerType": "服务类型",
+      "genericGit": "通用 Git",
+      "baseUrl": "基础 URL",
+      "cloneUrl": "克隆 URL",
+      "repoName": "仓库名称",
+      "fullPath": "完整路径",
+      "defaultBranch": "默认分支",
+      "confirmImport": "确认导入",
+      "branch": "分支",
+      "provider": "服务",
+      "ticketPrefixOptional": "任务前缀（可选）",
+      "ticketPrefixHint": "用于任务标识（例如：PROJ-123）",
+      "visibility": "可见性",
+      "organization": "组织可见",
+      "privateOnly": "仅自己可见",
+      "continue": "继续",
+      "importRepository": "导入仓库",
+      "fillRequiredFields": "请填写所有必填字段",
+      "failedToLoadConnections": "加载 Git 连接失败",
+      "failedToLoadRepos": "加载仓库失败",
+      "failedToImport": "导入仓库失败，请检查输入内容。"
+    },
+    "detail": {
+      "notFound": "仓库不存在",
+      "backToList": "返回仓库列表",
+      "information": "基本信息",
+      "branches": "分支",
+      "repoDetails": "仓库详情",
+      "name": "名称",
+      "fullPath": "完整路径",
+      "cloneUrl": "克隆 URL",
+      "defaultBranch": "默认分支",
+      "ticketPrefix": "任务前缀",
+      "status": "状态",
+      "active": "活跃",
+      "created": "创建时间",
+      "gitProvider": "Git 服务",
+      "type": "类型",
+      "baseUrl": "基础 URL",
+      "visibility": "可见性",
+      "actions": "操作",
+      "setupWebhook": "配置 Webhook",
+      "webhookFailed": "配置 Webhook 失败，请重试。",
+      "confirmDelete": "确定要删除仓库「{name}」吗？此操作无法撤销。",
+      "deleteDialog": {
+        "title": "删除仓库",
+        "description": "确定要删除此仓库吗？此操作无法撤销。"
+      },
+      "branchesRequireCredentials": "分支列表需要 Git 凭据",
+      "configureGitConnection": "在设置中配置 Git 连接以浏览分支"
+    },
+    "edit": {
+      "title": "编辑仓库",
+      "name": "名称",
+      "defaultBranch": "默认分支",
+      "ticketPrefixOptional": "任务前缀（可选）",
+      "active": "活跃",
+      "nameRequired": "名称为必填项",
+      "updateFailed": "更新仓库失败，请重试。",
+      "saving": "保存中...",
+      "saveChanges": "保存更改"
+    },
+    "webhook": {
+      "title": "Webhook 设置",
+      "loading": "正在加载 Webhook 状态...",
+      "status": {
+        "registered": "已注册",
+        "needsManualSetup": "需要手动配置",
+        "notRegistered": "未注册"
+      },
+      "events": "事件",
+      "reregister": "重新注册",
+      "delete": "删除 Webhook",
+      "manualSetupInstructions": "无法自动注册 Webhook。请使用以下信息在 Git 服务设置中手动配置 Webhook。",
+      "markConfigured": "已完成配置",
+      "tryAgain": "重试",
+      "notRegisteredDescription": "Webhook 未注册。注册 Webhook 以接收 PR/MR 和 Pipeline 状态更新。",
+      "register": "注册 Webhook",
+      "retry": "重试"
+    }
+  }
+}

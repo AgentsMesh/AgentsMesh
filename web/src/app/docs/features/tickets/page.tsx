@@ -1,58 +1,74 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+import { DocNavigation } from "@/components/docs/DocNavigation";
+
 export default function TicketsPage() {
+  const t = useTranslations();
+
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-8">Tickets</h1>
+      <h1 className="text-4xl font-bold mb-8">
+        {t("docs.features.tickets.title")}
+      </h1>
 
       <p className="text-muted-foreground leading-relaxed mb-8">
-        Integrated task management with Kanban board view. Create tickets,
-        assign them to AgentPods, and track progress through your workflow.
+        {t("docs.features.tickets.description")}
       </p>
 
       {/* Overview */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Overview</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.features.tickets.overview.title")}
+        </h2>
         <p className="text-muted-foreground leading-relaxed mb-4">
-          AgentsMesh Tickets provide a lightweight issue tracking system designed
-          for AI-driven development. Key features include:
+          {t("docs.features.tickets.overview.description")}
         </p>
         <ul className="list-disc list-inside text-muted-foreground space-y-2">
-          <li>Kanban board visualization</li>
-          <li>Ticket ↔ Pod linking for context</li>
-          <li>Git commit and merge request associations</li>
-          <li>Priority and estimation tracking</li>
-          <li>Labels and assignees</li>
+          <li>{t("docs.features.tickets.overview.item1")}</li>
+          <li>{t("docs.features.tickets.overview.item2")}</li>
+          <li>{t("docs.features.tickets.overview.item3")}</li>
+          <li>{t("docs.features.tickets.overview.item4")}</li>
+          <li>{t("docs.features.tickets.overview.item5")}</li>
         </ul>
       </section>
 
       {/* Ticket Types */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Ticket Types</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.features.tickets.types.title")}
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-2">📋 Task</h3>
+            <h3 className="font-medium mb-2">
+              {t("docs.features.tickets.types.task")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              General development tasks. The most common ticket type for
-              day-to-day work.
+              {t("docs.features.tickets.types.taskDesc")}
             </p>
           </div>
           <div className="border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-2">🐛 Bug</h3>
+            <h3 className="font-medium mb-2">
+              {t("docs.features.tickets.types.bug")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Bug reports and fixes. Supports severity levels: critical, major,
-              minor, trivial.
+              {t("docs.features.tickets.types.bugDesc")}
             </p>
           </div>
           <div className="border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-2">✨ Feature</h3>
+            <h3 className="font-medium mb-2">
+              {t("docs.features.tickets.types.feature")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              New feature requests. Use for enhancements and new capabilities.
+              {t("docs.features.tickets.types.featureDesc")}
             </p>
           </div>
           <div className="border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-2">🎯 Epic</h3>
+            <h3 className="font-medium mb-2">
+              {t("docs.features.tickets.types.epic")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Large initiatives that contain multiple tasks. Use for tracking
-              major projects.
+              {t("docs.features.tickets.types.epicDesc")}
             </p>
           </div>
         </div>
@@ -60,84 +76,95 @@ export default function TicketsPage() {
 
       {/* Ticket Status */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Ticket Status</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.features.tickets.status.title")}
+        </h2>
         <p className="text-muted-foreground mb-4">
-          Tickets flow through these statuses in the Kanban board:
+          {t("docs.features.tickets.status.description")}
         </p>
         <div className="flex flex-wrap gap-2">
-          <span className="px-3 py-1 bg-muted rounded text-sm">Backlog</span>
-          <span className="text-muted-foreground">→</span>
-          <span className="px-3 py-1 bg-muted rounded text-sm">Todo</span>
-          <span className="text-muted-foreground">→</span>
+          <span className="px-3 py-1 bg-muted rounded text-sm">
+            {t("docs.features.tickets.status.backlog")}
+          </span>
+          <span className="text-muted-foreground">&rarr;</span>
+          <span className="px-3 py-1 bg-muted rounded text-sm">
+            {t("docs.features.tickets.status.todo")}
+          </span>
+          <span className="text-muted-foreground">&rarr;</span>
           <span className="px-3 py-1 bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-sm">
-            In Progress
+            {t("docs.features.tickets.status.inProgress")}
           </span>
-          <span className="text-muted-foreground">→</span>
+          <span className="text-muted-foreground">&rarr;</span>
           <span className="px-3 py-1 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded text-sm">
-            In Review
+            {t("docs.features.tickets.status.inReview")}
           </span>
-          <span className="text-muted-foreground">→</span>
+          <span className="text-muted-foreground">&rarr;</span>
           <span className="px-3 py-1 bg-green-500/20 text-green-600 dark:text-green-400 rounded text-sm">
-            Done
+            {t("docs.features.tickets.status.done")}
           </span>
         </div>
         <p className="text-sm text-muted-foreground mt-4">
-          Tickets can also be marked as <strong>Cancelled</strong> if no longer
-          needed.
+          {t("docs.features.tickets.status.cancelled")}
         </p>
       </section>
 
       {/* Priority */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Priority Levels</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.features.tickets.priority.title")}
+        </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-border rounded-lg">
             <thead>
               <tr className="bg-muted">
                 <th className="text-left p-3 border-b border-border">
-                  Priority
+                  {t("docs.features.tickets.priority.priorityHeader")}
                 </th>
                 <th className="text-left p-3 border-b border-border">
-                  Description
+                  {t("docs.features.tickets.priority.descriptionHeader")}
                 </th>
               </tr>
             </thead>
             <tbody className="text-muted-foreground">
               <tr>
                 <td className="p-3 border-b border-border text-red-500 dark:text-red-400 font-medium">
-                  Urgent
+                  {t("docs.features.tickets.priority.urgent")}
                 </td>
                 <td className="p-3 border-b border-border">
-                  Critical issues requiring immediate attention
+                  {t("docs.features.tickets.priority.urgentDesc")}
                 </td>
               </tr>
               <tr>
                 <td className="p-3 border-b border-border text-orange-500 dark:text-orange-400 font-medium">
-                  High
+                  {t("docs.features.tickets.priority.high")}
                 </td>
                 <td className="p-3 border-b border-border">
-                  Important tasks that should be addressed soon
+                  {t("docs.features.tickets.priority.highDesc")}
                 </td>
               </tr>
               <tr>
                 <td className="p-3 border-b border-border text-yellow-500 dark:text-yellow-400 font-medium">
-                  Medium
+                  {t("docs.features.tickets.priority.medium")}
                 </td>
                 <td className="p-3 border-b border-border">
-                  Normal priority work
+                  {t("docs.features.tickets.priority.mediumDesc")}
                 </td>
               </tr>
               <tr>
                 <td className="p-3 border-b border-border text-muted-foreground font-medium">
-                  Low
+                  {t("docs.features.tickets.priority.low")}
                 </td>
                 <td className="p-3 border-b border-border">
-                  Nice-to-have items when time permits
+                  {t("docs.features.tickets.priority.lowDesc")}
                 </td>
               </tr>
               <tr>
-                <td className="p-3 font-medium">None</td>
-                <td className="p-3">Priority not yet assigned</td>
+                <td className="p-3 font-medium">
+                  {t("docs.features.tickets.priority.none")}
+                </td>
+                <td className="p-3">
+                  {t("docs.features.tickets.priority.noneDesc")}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -146,49 +173,59 @@ export default function TicketsPage() {
 
       {/* Pod Integration */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Pod Integration</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.features.tickets.podIntegration.title")}
+        </h2>
         <p className="text-muted-foreground leading-relaxed mb-4">
-          Link tickets to AgentPods to:
+          {t("docs.features.tickets.podIntegration.description")}
         </p>
         <ul className="list-disc list-inside text-muted-foreground space-y-2">
           <li>
-            <strong>Provide context</strong> - The AI agent receives ticket
-            details as initial context
+            <strong>{t("docs.features.tickets.podIntegration.context").split(" — ")[0]}</strong>
+            {" — "}
+            {t("docs.features.tickets.podIntegration.context").split(" — ")[1]}
           </li>
           <li>
-            <strong>Track progress</strong> - See which Pods are working on
-            which tickets
+            <strong>{t("docs.features.tickets.podIntegration.progress").split(" — ")[0]}</strong>
+            {" — "}
+            {t("docs.features.tickets.podIntegration.progress").split(" — ")[1]}
           </li>
           <li>
-            <strong>Auto-update</strong> - Pod completion can update ticket
-            status
+            <strong>{t("docs.features.tickets.podIntegration.autoUpdate").split(" — ")[0]}</strong>
+            {" — "}
+            {t("docs.features.tickets.podIntegration.autoUpdate").split(" — ")[1]}
           </li>
           <li>
-            <strong>View history</strong> - See all Pods that worked on a
-            ticket
+            <strong>{t("docs.features.tickets.podIntegration.history").split(" — ")[0]}</strong>
+            {" — "}
+            {t("docs.features.tickets.podIntegration.history").split(" — ")[1]}
           </li>
         </ul>
       </section>
 
       {/* Git Integration */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Git Integration</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.features.tickets.gitIntegration.title")}
+        </h2>
         <p className="text-muted-foreground leading-relaxed mb-4">
-          Tickets can be associated with:
+          {t("docs.features.tickets.gitIntegration.description")}
         </p>
         <div className="space-y-4">
           <div className="border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-2">Commits</h3>
+            <h3 className="font-medium mb-2">
+              {t("docs.features.tickets.gitIntegration.commits")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Link commits to tickets by SHA. View commit messages, authors, and
-              links to the source.
+              {t("docs.features.tickets.gitIntegration.commitsDesc")}
             </p>
           </div>
           <div className="border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-2">Merge Requests / Pull Requests</h3>
+            <h3 className="font-medium mb-2">
+              {t("docs.features.tickets.gitIntegration.mrs")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Track MRs/PRs associated with tickets. See status, pipeline
-              results, and review state.
+              {t("docs.features.tickets.gitIntegration.mrsDesc")}
             </p>
           </div>
         </div>
@@ -196,9 +233,11 @@ export default function TicketsPage() {
 
       {/* Estimation */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Story Points</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.features.tickets.storyPoints.title")}
+        </h2>
         <p className="text-muted-foreground leading-relaxed mb-4">
-          Estimate effort using Fibonacci story points:
+          {t("docs.features.tickets.storyPoints.description")}
         </p>
         <div className="flex flex-wrap gap-2">
           {[1, 2, 3, 5, 8, 13, 21].map((point) => (
@@ -211,6 +250,8 @@ export default function TicketsPage() {
           ))}
         </div>
       </section>
+
+      <DocNavigation />
     </div>
   );
 }

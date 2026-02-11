@@ -1,0 +1,358 @@
+{
+  "agentpod": {
+    "title": "AgentPod",
+    "pods": "Pod",
+    "newPod": "새 Pod",
+    "runners": "러너",
+    "noRunnersOnline": "온라인 러너 없음",
+    "selectAgent": "에이전트 선택",
+    "selectRepository": "저장소 선택",
+    "initialPrompt": "초기 프롬프트",
+    "status": {
+      "initializing": "초기화 중",
+      "running": "실행 중",
+      "paused": "일시 중지",
+      "terminated": "종료됨",
+      "error": "오류"
+    }
+  },
+  "pods": {
+    "status": {
+      "initializing": "Initializing",
+      "running": "Running",
+      "paused": "Paused",
+      "disconnected": "Disconnected",
+      "orphaned": "Orphaned",
+      "completed": "Completed",
+      "terminated": "Terminated",
+      "error": "Error",
+      "failed": "Failed"
+    }
+  },
+  "mesh": {
+    "title": "AgentsMesh",
+    "channels": "채널",
+    "newChannel": "새 채널",
+    "topology": "토폴로지",
+    "messages": "메시지",
+    "sendMessage": "메시지 보내기...",
+    "page": {
+      "title": "Mesh",
+      "subtitle": "멀티 에이전트 협업 네트워크 토폴로지",
+      "activePods": "{count}개의 활성 Pod",
+      "channelsCount": "{count}개의 채널",
+      "bindingsCount": "{count}개의 바인딩",
+      "refresh": "새로고침",
+      "dismiss": "닫기",
+      "updating": "업데이트 중..."
+    },
+    "legend": {
+      "title": "범례",
+      "running": "실행 중",
+      "initializing": "초기화 중",
+      "terminated": "종료됨",
+      "failed": "실패",
+      "channel": "채널",
+      "activeBinding": "활성 바인딩",
+      "pendingBinding": "대기 중 바인딩"
+    },
+    "channelList": {
+      "title": "채널",
+      "showArchived": "보관된 항목 표시",
+      "hideArchived": "보관된 항목 숨기기",
+      "noChannels": "채널을 찾을 수 없습니다",
+      "archived": "보관됨",
+      "archive": "보관",
+      "unarchive": "보관 취소"
+    },
+    "messageInput": {
+      "placeholder": "메시지 입력...",
+      "hint": "Enter로 전송, Shift+Enter로 줄바꿈"
+    }
+  },
+  "tickets": {
+    "title": "티켓",
+    "newTicket": "새 티켓",
+    "board": "보드",
+    "list": "목록",
+    "backlog": "백로그",
+    "todo": "할 일",
+    "inProgress": "진행 중",
+    "inReview": "검토 중",
+    "done": "완료",
+    "searchPlaceholder": "티켓 검색...",
+    "ticketCount": "개의 티켓",
+    "clear": "지우기",
+    "view": "보기",
+    "filters": {
+      "status": "상태",
+      "type": "유형",
+      "priority": "우선순위"
+    },
+    "emptyState": {
+      "title": "티켓이 없습니다",
+      "noMatch": "필터와 일치하는 티켓이 없습니다",
+      "createFirst": "첫 번째 티켓을 만들어 시작하세요"
+    },
+    "moreTickets": "+{count}개",
+    "listView": {
+      "id": "ID",
+      "titleColumn": "제목",
+      "status": "상태",
+      "type": "유형",
+      "priority": "우선순위",
+      "assignee": "담당자",
+      "created": "생성일",
+      "noTickets": "티켓을 찾을 수 없습니다. 사이드바 필터를 사용하거나 새 티켓을 만드세요."
+    },
+    "kanban": {
+      "noTickets": "티켓 없음"
+    },
+    "priority": {
+      "none": "우선순위 없음",
+      "low": "낮음",
+      "medium": "중간",
+      "high": "높음",
+      "urgent": "긴급",
+      "unknown": "알 수 없음"
+    },
+    "type": {
+      "task": "작업",
+      "bug": "버그",
+      "feature": "기능",
+      "improvement": "Improvement",
+      "epic": "에픽",
+      "unknown": "알 수 없음"
+    },
+    "status": {
+      "backlog": "백로그",
+      "todo": "할 일",
+      "in_progress": "진행 중",
+      "in_review": "검토 중",
+      "done": "완료",
+      "cancelled": "취소됨",
+      "unknown": "알 수 없음"
+    },
+    "createDialog": {
+      "title": "Create Ticket",
+      "createSubTicket": "Create Sub-ticket",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Enter ticket title",
+      "titleRequired": "Title is required",
+      "repositoryRequired": "Repository is required",
+      "createFailed": "Failed to create ticket",
+      "repository": "Repository",
+      "selectRepository": "Select a repository...",
+      "summary": "Summary",
+      "summaryPlaceholder": "Brief summary...",
+      "content": "Content",
+      "submit": "Create Ticket"
+    },
+    "detail": {
+      "retry": "Retry",
+      "notFound": "Ticket not found",
+      "summary": "Summary",
+      "content": "Content",
+      "subTickets": "Sub-tickets",
+      "related": "Related",
+      "commits": "Commits",
+      "actions": "Actions",
+      "details": "Details",
+      "dueDate": "Due Date",
+      "repository": "Repository",
+      "assignees": "Assignees",
+      "noAssignees": "No assignees",
+      "timestamps": "Timestamps",
+      "created": "Created",
+      "updated": "Updated",
+      "deleteTicket": "Delete Ticket",
+      "deleteConfirmation": "Are you sure you want to delete ticket {identifier}? This action cannot be undone.",
+      "labels": "Labels",
+      "timeline": "Timeline",
+      "started": "Started",
+      "completed": "Completed",
+      "viewFullDetails": "View Full Details"
+    },
+    "podPanel": {
+      "activeCount": "{count} active",
+      "newPod": "New Pod",
+      "createNewPod": "Create New Pod",
+      "runner": "Runner",
+      "selectRunner": "Select a runner...",
+      "selectRunnerRequired": "Please select a runner",
+      "model": "Model",
+      "permissionMode": "Permission Mode",
+      "permissionDefault": "Default",
+      "permissionPlan": "Plan Mode",
+      "permissionAutoApprove": "Auto-approve (Dangerous)",
+      "initialPrompt": "Initial Prompt (optional)",
+      "initialPromptPlaceholder": "Work on ticket: {title}",
+      "creating": "Creating...",
+      "createPod": "Create Pod",
+      "createFailed": "Failed to create pod",
+      "previousPods": "{count} previous pod(s)",
+      "noPods": "No pods for this ticket yet",
+      "noRunners": "No online runners available",
+      "connect": "Connect",
+      "openInNewTab": "Open in new tab",
+      "started": "Started"
+    }
+  },
+  "workspace": {
+    "title": "워크스페이스",
+    "searchPlaceholder": "Pod 검색...",
+    "newPod": "새 Pod",
+    "noTerminalsOpen": "No terminals open",
+    "noTerminalsDescription": "Click on a pod in the sidebar to open its terminal, or create a new pod to get started.",
+    "createNewPod": "Create New Pod",
+    "podCreated": "Pod created! Waiting for it to start...",
+    "podOpened": "Pod opened",
+    "filters": {
+      "all": "전체",
+      "running": "실행 중",
+      "completed": "완료",
+      "error": "오류"
+    },
+    "emptyState": {
+      "title": "Pod가 없습니다",
+      "description": "첫 번째 Pod를 생성하여 시작하세요",
+      "createFirst": "Pod 생성",
+      "noMatch": "검색과 일치하는 Pod가 없습니다",
+      "noFiltered": "{filter} Pod가 없습니다"
+    },
+    "runners": {
+      "title": "Runner",
+      "online": "온라인",
+      "noRunners": "등록된 Runner가 없습니다"
+    },
+    "terminateDialog": {
+      "title": "Pod 종료",
+      "description": "이 Pod를 종료하시겠습니까? 이 작업은 취소할 수 없으며 실행 중인 모든 프로세스가 중지됩니다.",
+      "cancel": "취소",
+      "confirm": "종료"
+    },
+    "pod": {
+      "status": "상태",
+      "agent": "에이전트",
+      "repository": "저장소",
+      "branch": "브랜치",
+      "created": "생성일",
+      "duration": "기간",
+      "actions": {
+        "open": "열기",
+        "terminate": "종료",
+        "restart": "재시작",
+        "logs": "로그 보기"
+      }
+    },
+    "modal": {
+      "title": "Create New Pod",
+      "agentType": "Agent Type",
+      "selectAgent": "Select an agent...",
+      "selectRunner": "Select a runner...",
+      "repositoryOptional": "Repository (optional)",
+      "selectRepository": "Select a repository...",
+      "branch": "Branch",
+      "branchPlaceholder": "Enter branch name (e.g., main)",
+      "initialPromptOptional": "Initial Prompt (optional)",
+      "initialPromptPlaceholder": "Enter an initial prompt for the agent...",
+      "creating": "Creating...",
+      "createPod": "Create Pod"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "welcomeWithOrg": "Welcome to {orgName}",
+    "overview": "Here's an overview of your workspace",
+    "stats": {
+      "totalTickets": "Total Tickets",
+      "openTickets": "Open",
+      "activePods": "Active Pods",
+      "onlineRunners": "Online Runners"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "createTicket": "Create Ticket",
+      "createTicketDesc": "Create a new task or issue for your team",
+      "viewMesh": "View Mesh",
+      "viewMeshDesc": "Monitor your AI agent network topology",
+      "manageRepos": "Manage Repositories",
+      "manageReposDesc": "Connect and manage your code repositories"
+    },
+    "noRunners": {
+      "title": "No Runners Connected",
+      "description": "You need at least one online Runner to execute AI agent tasks. Set up a Runner to get started.",
+      "setup": "Set up a Runner"
+    }
+  },
+  "commandPalette": {
+    "placeholder": "명령어 또는 검색...",
+    "searching": "검색 중...",
+    "noResults": "결과를 찾을 수 없습니다.",
+    "navigation": "탐색",
+    "actions": "작업",
+    "goToWorkspace": "워크스페이스로 이동",
+    "workspaceDescription": "터미널 워크스페이스",
+    "goToTickets": "티켓으로 이동",
+    "ticketsDescription": "티켓 보기 및 관리",
+    "goToMesh": "AgentsMesh로 이동",
+    "meshDescription": "네트워크 토폴로지",
+    "goToRepositories": "저장소로 이동",
+    "repositoriesDescription": "저장소 관리",
+    "goToRunners": "Runner로 이동",
+    "runnersDescription": "컴퓨팅 리소스 관리",
+    "goToSettings": "설정으로 이동",
+    "settingsDescription": "조직 설정",
+    "createNewPod": "새 Pod 만들기",
+    "createPodDescription": "새 에이전트 Pod 시작",
+    "createNewTicket": "새 티켓 만들기",
+    "createTicketDescription": "새 작업 또는 이슈 생성",
+    "signOut": "로그아웃",
+    "signOutDescription": "계정에서 로그아웃",
+    "navigate": "탐색",
+    "select": "선택",
+    "toOpen": "열기"
+  },
+  "relayStatus": {
+    "connected": "Relay 연결됨",
+    "connecting": "Relay 연결 중...",
+    "disconnected": "Relay 연결 끊김",
+    "error": "Relay 연결 오류",
+    "runnerDisconnected": "Runner 연결 끊김"
+  },
+  "terminalTabs": {
+    "singleView": "단일 보기",
+    "twoColumns": "2열",
+    "twoRows": "2행",
+    "grid2x2": "2x2 그리드",
+    "fullscreen": "전체 화면"
+  },
+  "terminalToolbar": {
+    "clearScreen": "화면 지우기",
+    "font": "글꼴",
+    "open": "Open keyboard toolbar",
+    "close": "Close",
+    "fontDecrease": "Decrease font size",
+    "fontIncrease": "Increase font size",
+    "scrollToBottom": "맨 아래로 스크롤"
+  },
+  "mobile": {
+    "more": "더보기",
+    "drawer": {
+      "navigationMenu": "탐색 메뉴",
+      "organization": "조직",
+      "navigation": "탐색",
+      "signOut": "로그아웃"
+    },
+    "menu": {
+      "gitConnections": "Git 연결",
+      "profile": "프로필",
+      "theme": "테마",
+      "theme_light": "라이트",
+      "theme_dark": "다크",
+      "theme_solarized_light": "Solarized 라이트",
+      "theme_solarized_dark": "Solarized 다크",
+      "theme_system": "시스템"
+    }
+  }
+}

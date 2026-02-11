@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { PageHeader } from "@/components/common";
-import { useTranslations } from "@/lib/i18n/client";
-import { useLocale } from "@/lib/i18n/client";
+import { useTranslations, useLocale } from "next-intl";
 
 interface BlogPost {
   slug: string;
@@ -47,7 +46,7 @@ const blogPosts: BlogPost[] = [
 
 export default function BlogPage() {
   const t = useTranslations();
-  const { locale } = useLocale();
+  const locale = useLocale();
 
   return (
     <div className="min-h-screen bg-background">

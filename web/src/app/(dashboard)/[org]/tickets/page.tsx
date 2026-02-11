@@ -7,7 +7,7 @@ import { useAuthStore } from "@/stores/auth";
 import { TicketKeyboardHandler } from "@/components/tickets";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { ListViewLayout, BoardViewLayout } from "./components";
 
 // Breakpoint for responsive layout

@@ -1,0 +1,36 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "allRightsReserved": "全著作権所有。",
+    "save": "保存",
+    "saveChanges": "Save Changes",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "search": "検索",
+    "noResults": "結果が見つかりません",
+    "error": "エラーが発生しました",
+    "success": "成功",
+    "confirm": "確認",
+    "close": "閉じる",
+    "dismiss": "Dismiss",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "Previous",
+    "submit": "送信",
+    "reset": "リセット",
+    "optional": "optional",
+    "saving": "Saving...",
+    "refresh": "Refresh",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  },
+  "nav": {
+    "agentpod": "AgentPod",
+    "mesh": "AgentsMesh",
+    "tickets": "チケット",
+    "settings": "設定",
+    "billing": "請求"
+  }
+}

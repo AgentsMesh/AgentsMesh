@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { ChevronLeft } from "lucide-react";
 import { GitSettingsContent } from "@/components/settings";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { RepositoryTab } from "./useRepositoryDetail";
 
 interface RepositoryTabsProps {

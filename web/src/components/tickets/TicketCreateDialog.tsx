@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, lazy, Suspense } from "react";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField, FormRow } from "@/components/ui/form-field";

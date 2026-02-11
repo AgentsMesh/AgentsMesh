@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { PodData } from "@/lib/api";
-import { useTranslations } from "@/lib/i18n/client";
+import { useTranslations } from "next-intl";
 import { useFocusTrap } from "@/components/pod/hooks";
 import { CreatePodForm, CreatePodFormConfig, TicketContext } from "@/components/pod/CreatePodForm";
 
