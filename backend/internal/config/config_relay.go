@@ -5,6 +5,7 @@ type RelayConfig struct {
 	// Domain configuration for auto-generated Relay URLs
 	BaseDomain string // Base domain for relay subdomains (e.g., "relay.agentsmesh.cn")
 	UseHTTPS   bool   // Use wss:// instead of ws://
+	Port       string // Non-standard port for relay URLs (e.g., "8443"), empty for default
 
 	// DNS provider configuration
 	DNS DNSConfig
