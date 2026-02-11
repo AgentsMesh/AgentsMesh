@@ -566,7 +566,14 @@ class TerminalConnectionPool {
       this.lastInputs.delete(podKey);
       // Notify listeners that connection is gone
       this.notifyStatusChange(podKey);
-      // Now close WebSocket - onclose won't find this connection in the map
+      // Clear all event handlers to prevent stale onclose/onerror from
+      // interfering with a new connection created for the same podKey
+      // (e.g., during React StrictMode remount or rapid reconnection).
+      conn.ws.onopen = null;
+      conn.ws.onmessage = null;
+      conn.ws.onerror = null;
+      conn.ws.onclose = null;
+      // Now close WebSocket - handlers are already nulled so no side effects
       if (conn.ws.readyState === WebSocket.OPEN || conn.ws.readyState === WebSocket.CONNECTING) {
         conn.ws.close();
       }

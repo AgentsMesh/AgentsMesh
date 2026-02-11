@@ -184,34 +184,36 @@ export function useTerminal(
       }
     };
 
-    // Generate unique subscriptionId for each effect instance
-    // This prevents race condition: when component re-mounts quickly, old effect's cleanup
-    // might run AFTER new effect's setup, and if they share the same subscriptionId,
-    // the old cleanup would remove the new subscription.
-    // With unique IDs, each effect only manages its own subscription.
-    const subscriptionId = `terminal-${podKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    // Use stable subscriptionId so that StrictMode remount hits the idempotent
+    // `hadPrevious` branch in subscribe(), updating the callback without
+    // tearing down and recreating the WebSocket connection.
+    const subscriptionId = `terminal-${podKey}`;
 
-    // Async connection setup
-    let isMounted = true;
+    // Async connection setup with AbortController for cleanup coordination.
+    // When StrictMode unmounts during the async subscribe(), the abort signal
+    // tells the resolved promise to skip storing the handle (but NOT to
+    // unsubscribe), so the subscriber entry stays in the Map and the
+    // remount's subscribe() hits the idempotent `hadPrevious` branch.
+    const abortController = new AbortController();
     (async () => {
       try {
         const handle = await terminalPool.subscribe(podKey, subscriptionId, handleMessage);
-        if (isMounted) {
-          connectionRef.current = handle;
-          // Send initial resize after connection is established
-          // This ensures the resize is sent after WebSocket is connected
-          if (initialDims) {
-            terminalPool.forceResize(podKey, initialDims.cols, initialDims.rows);
-          }
-        } else {
-          // Component unmounted before connection completed
-          handle.unsubscribe();
+        if (abortController.signal.aborted) {
+          // Effect was cleaned up while subscribe was in flight.
+          // Don't unsubscribe — the remount's subscribe will reuse the
+          // same subscriptionId and update the callback idempotently.
+          return;
+        }
+        connectionRef.current = handle;
+        // Send initial resize after connection is established
+        // This ensures the resize is sent after WebSocket is connected
+        if (initialDims) {
+          terminalPool.forceResize(podKey, initialDims.cols, initialDims.rows);
         }
       } catch (error) {
+        if (abortController.signal.aborted) return;
         console.error("Failed to connect terminal:", error);
-        if (isMounted) {
-          setConnectionStatus("error");
-        }
+        setConnectionStatus("error");
       }
     })();
 
@@ -302,7 +304,7 @@ export function useTerminal(
 
     // Cleanup
     return () => {
-      isMounted = false;  // Prevent late connection from being stored
+      abortController.abort();  // Prevent late async subscribe from storing handle
       unsubscribeStatus();
       // Clear any pending size sync timer
       if (sizeSyncTimerRef.current) {
