@@ -34,6 +34,35 @@
       "supportedAgents": "Supported AI Agents:",
       "customAgents": "Custom agents via MCP protocol"
     },
+    "architecture": {
+      "title": "How It Works",
+      "description": "AgentsMesh separates the control plane from the data plane. Orchestration commands travel through gRPC with mutual TLS, while terminal I/O streams through a globally distributed Relay cluster — so you can operate agents on any machine, from any device, securely.",
+      "clientLayer": "Client Layer",
+      "clientSubtitle": "Access from anywhere — browser, phone, or tablet",
+      "cloudLayer": "Cloud",
+      "cloudDesc": "Orchestration, monitoring, collaboration & security",
+      "cloud": {
+        "orchestration": "Orchestration",
+        "monitoring": "Monitoring",
+        "collaboration": "Collaboration",
+        "security": "Security"
+      },
+      "controlPlane": "Control Plane",
+      "controlPlaneDesc": "Pod lifecycle, agent commands, status sync",
+      "dataPlane": "Data Plane",
+      "dataPlaneDesc": "Terminal I/O, real-time streaming",
+      "cluster": "Cluster",
+      "runnerLayer": "Execution Layer",
+      "selfHostedRunners": "Self-Hosted Runners",
+      "runnerDesc": "Deploy on your own infrastructure — your code never leaves your environment",
+      "runnerMac": "macOS",
+      "runnerLinux": "Linux",
+      "runnerCloud": "Cloud VM",
+      "agentLayer": "Agent Layer",
+      "agentSubtitle": "AI coding agents running in isolated Pods",
+      "securityTitle": "Security Architecture — Dual-Path Design",
+      "securityDesc": "Control signals (pod creation, agent commands, status updates) travel through gRPC secured with mutual TLS (mTLS) — each Runner holds a unique X.509 certificate issued by the platform PKI. Terminal data streams (keystrokes, output) flow through the Relay cluster, keeping latency-sensitive I/O on a separate, optimized path. This dual-path design ensures you can securely operate AI agents on any machine, from any device, anywhere in the world."
+    },
     "whatYouCanDo": {
       "title": "What You Can Do",
       "description": "AgentsMesh gives your team superpowers for AI-driven development.",

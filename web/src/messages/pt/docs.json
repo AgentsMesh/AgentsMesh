@@ -34,6 +34,35 @@
       "supportedAgents": "Supported AI Agents:",
       "customAgents": "Custom agents via MCP protocol"
     },
+    "architecture": {
+      "title": "Como Funciona",
+      "description": "O AgentsMesh separa o plano de controle do plano de dados. Comandos de orquestração trafegam via gRPC com TLS mútuo (mTLS), enquanto o I/O do terminal é transmitido através de um cluster Relay distribuído globalmente — para que você possa operar agentes em qualquer máquina, de qualquer dispositivo, com segurança.",
+      "clientLayer": "Camada do Cliente",
+      "clientSubtitle": "Acesse de qualquer lugar — navegador, celular ou tablet",
+      "cloudLayer": "Nuvem",
+      "cloudDesc": "Orquestração, monitoramento, colaboração e segurança",
+      "cloud": {
+        "orchestration": "Orquestração",
+        "monitoring": "Monitoramento",
+        "collaboration": "Colaboração",
+        "security": "Segurança"
+      },
+      "controlPlane": "Plano de Controle",
+      "controlPlaneDesc": "Ciclo de vida de Pods, comandos de agentes, sincronização de estado",
+      "dataPlane": "Plano de Dados",
+      "dataPlaneDesc": "I/O de terminal, streaming em tempo real",
+      "cluster": "Cluster",
+      "runnerLayer": "Camada de Execução",
+      "selfHostedRunners": "Runners Auto-hospedados",
+      "runnerDesc": "Implante na sua própria infraestrutura — seu código nunca sai do seu ambiente",
+      "runnerMac": "macOS",
+      "runnerLinux": "Linux",
+      "runnerCloud": "VM na Nuvem",
+      "agentLayer": "Camada de Agentes",
+      "agentSubtitle": "Agentes de codificação IA executando em Pods isolados",
+      "securityTitle": "Arquitetura de Segurança — Design de Duplo Caminho",
+      "securityDesc": "Sinais de controle (criação de Pods, comandos de agentes, atualizações de status) trafegam via gRPC protegido com TLS mútuo (mTLS) — cada Runner possui um certificado X.509 único emitido pela PKI da plataforma. Fluxos de dados do terminal (teclas digitadas, saída) passam pelo cluster Relay, mantendo o I/O sensível à latência em um caminho separado e otimizado. Este design de duplo caminho garante que você possa operar agentes de IA com segurança em qualquer máquina, de qualquer dispositivo, em qualquer lugar do mundo."
+    },
     "whatYouCanDo": {
       "title": "O Que Você Pode Fazer",
       "description": "O AgentsMesh dá superpoderes à sua equipe para desenvolvimento impulsionado por IA.",

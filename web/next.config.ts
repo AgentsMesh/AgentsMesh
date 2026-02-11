@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
   allowedDevOrigins: ["192.168.100.189"],
 
+  // Required for next-intl plugin to resolve config in Turbopack dev mode
+  // See: https://github.com/amannn/next-intl/issues/1779
+  turbopack: {},
+
   // =============================================================================
   // Unified Domain Configuration
   // 将 PRIMARY_DOMAIN / USE_HTTPS 映射为 NEXT_PUBLIC_* 变量

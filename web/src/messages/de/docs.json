@@ -34,6 +34,35 @@
       "supportedAgents": "Supported AI Agents:",
       "customAgents": "Custom agents via MCP protocol"
     },
+    "architecture": {
+      "title": "Funktionsweise",
+      "description": "AgentsMesh trennt die Steuerungsebene von der Datenebene. Orchestrierungsbefehle werden über gRPC mit gegenseitigem TLS (mTLS) übertragen, während Terminal-E/A über ein global verteiltes Relay-Cluster gestreamt wird — so können Sie Agenten auf jedem Rechner, von jedem Gerät aus, sicher bedienen.",
+      "clientLayer": "Client-Schicht",
+      "clientSubtitle": "Zugriff von überall — Browser, Mobilgerät oder Tablet",
+      "cloudLayer": "Cloud",
+      "cloudDesc": "Orchestrierung, Überwachung, Zusammenarbeit und Sicherheit",
+      "cloud": {
+        "orchestration": "Orchestrierung",
+        "monitoring": "Überwachung",
+        "collaboration": "Zusammenarbeit",
+        "security": "Sicherheit"
+      },
+      "controlPlane": "Steuerungsebene",
+      "controlPlaneDesc": "Pod-Lebenszyklus, Agentenbefehle, Statussynchronisation",
+      "dataPlane": "Datenebene",
+      "dataPlaneDesc": "Terminal-E/A, Echtzeit-Streaming",
+      "cluster": "Cluster",
+      "runnerLayer": "Ausführungsschicht",
+      "selfHostedRunners": "Selbst gehostete Runner",
+      "runnerDesc": "Bereitstellung auf Ihrer eigenen Infrastruktur — Ihr Code verlässt nie Ihre Umgebung",
+      "runnerMac": "macOS",
+      "runnerLinux": "Linux",
+      "runnerCloud": "Cloud-VM",
+      "agentLayer": "Agenten-Schicht",
+      "agentSubtitle": "KI-Coding-Agenten laufen in isolierten Pods",
+      "securityTitle": "Sicherheitsarchitektur — Dual-Pfad-Design",
+      "securityDesc": "Steuersignale (Pod-Erstellung, Agentenbefehle, Status-Updates) werden über gRPC mit gegenseitigem TLS (mTLS) gesichert — jeder Runner besitzt ein einzigartiges X.509-Zertifikat, das von der Plattform-PKI ausgestellt wurde. Terminal-Datenströme (Tastatureingaben, Ausgabe) fließen über das Relay-Cluster und halten latenzempfindliche E/A auf einem separaten, optimierten Pfad. Dieses Dual-Pfad-Design stellt sicher, dass Sie KI-Agenten auf jedem Rechner, von jedem Gerät aus, überall auf der Welt sicher bedienen können."
+    },
     "whatYouCanDo": {
       "title": "Was Sie tun können",
       "description": "AgentsMesh verleiht Ihrem Team Superkräfte für KI-gesteuerte Entwicklung.",
