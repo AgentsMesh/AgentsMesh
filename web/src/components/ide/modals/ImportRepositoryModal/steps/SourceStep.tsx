@@ -27,7 +27,7 @@ export function SourceStep({ state, actions, t }: StepProps) {
               <p className="text-sm text-muted-foreground py-4">
                 {t("repositories.modal.noConnections")}{" "}
                 <Link
-                  href="/settings/repository-providers"
+                  href="/settings/git"
                   className="text-primary hover:underline"
                 >
                   {t("repositories.modal.addOne")}
