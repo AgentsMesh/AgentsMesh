@@ -18,6 +18,12 @@ export default function CreateOrgPage() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [siteHost, setSiteHost] = useState("agentsmesh.dev");
+
+  // Derive site host from window.location at runtime
+  useEffect(() => {
+    setSiteHost(window.location.host);
+  }, []);
 
   // Auto-generate slug from name
   useEffect(() => {
@@ -147,7 +153,7 @@ export default function CreateOrgPage() {
               {t("auth.onboarding.createOrg.urlIdentifierLabel")}
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">agentsmesh.dev/</span>
+              <span className="text-sm text-muted-foreground">{siteHost}/</span>
               <Input
                 id="slug"
                 placeholder={t("auth.onboarding.createOrg.urlIdentifierPlaceholder")}
