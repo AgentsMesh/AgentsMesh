@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 # GitHub release repository
 $GITHUB_REPO = "AgentsMesh/AgentsMeshRunner"
-$BINARY_NAME = "runner.exe"
+$BINARY_NAME = "agentsmesh-runner.exe"
 
 # Colors
 function Write-Info { Write-Host "==> " -ForegroundColor Blue -NoNewline; Write-Host $args }
@@ -118,7 +118,7 @@ function Install-Runner {
         Expand-Archive -Path $zipPath -DestinationPath $tempDir -Force
 
         # Find binary
-        $binaryPath = Get-ChildItem -Path $tempDir -Filter "runner.exe" -Recurse | Select-Object -First 1
+        $binaryPath = Get-ChildItem -Path $tempDir -Filter "agentsmesh-runner.exe" -Recurse | Select-Object -First 1
         if (-not $binaryPath) {
             throw "Binary not found in archive"
         }
@@ -173,15 +173,15 @@ function Show-NextSteps {
     Write-Success "Next steps:"
     Write-Host ""
     Write-Host "  1. Register your runner:" -ForegroundColor White
-    Write-Host "     runner register --server https://api.agentsmesh.ai --token <YOUR_TOKEN>" -ForegroundColor Blue
+    Write-Host "     agentsmesh-runner register --server https://api.agentsmesh.ai --token <YOUR_TOKEN>" -ForegroundColor Blue
     Write-Host ""
     Write-Host "  2. Start the runner:" -ForegroundColor White
-    Write-Host "     runner run" -ForegroundColor Blue
+    Write-Host "     agentsmesh-runner run" -ForegroundColor Blue
     Write-Host ""
     Write-Host "  Get your registration token from: Settings → Runners → Create Token" -ForegroundColor Gray
     Write-Host ""
     Write-Host "  For more options, run: " -ForegroundColor White -NoNewline
-    Write-Host "runner --help" -ForegroundColor Blue
+    Write-Host "agentsmesh-runner --help" -ForegroundColor Blue
     Write-Host ""
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
 }

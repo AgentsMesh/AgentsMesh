@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 
 # GitHub release repository
 GITHUB_REPO="AgentsMesh/AgentsMeshRunner"
-BINARY_NAME="runner"
+BINARY_NAME="agentsmesh-runner"
 INSTALL_DIR="/usr/local/bin"
 
 # Print colored message
@@ -112,9 +112,7 @@ install() {
     tar -xzf "$TMP_DIR/runner.tar.gz" -C "$TMP_DIR"
 
     # Find the binary
-    if [ -f "$TMP_DIR/runner" ]; then
-        BINARY_PATH="$TMP_DIR/runner"
-    elif [ -f "$TMP_DIR/$BINARY_NAME" ]; then
+    if [ -f "$TMP_DIR/$BINARY_NAME" ]; then
         BINARY_PATH="$TMP_DIR/$BINARY_NAME"
     else
         error "Binary not found in archive"
@@ -137,12 +135,12 @@ install() {
 
 # Verify installation
 verify() {
-    if command -v runner >/dev/null 2>&1; then
+    if command -v "$BINARY_NAME" >/dev/null 2>&1; then
         echo ""
         success "Installation verified:"
-        runner version
+        "$BINARY_NAME" version
     else
-        warn "runner not found in PATH. You may need to add $INSTALL_DIR to your PATH."
+        warn "$BINARY_NAME not found in PATH. You may need to add $INSTALL_DIR to your PATH."
     fi
 }
 
@@ -154,14 +152,14 @@ print_next_steps() {
     success "Next steps:"
     echo ""
     echo "  1. Register your runner:"
-    echo "     ${BLUE}runner register --server https://api.agentsmesh.ai --token <YOUR_TOKEN>${NC}"
+    echo "     ${BLUE}agentsmesh-runner register --server https://api.agentsmesh.ai --token <YOUR_TOKEN>${NC}"
     echo ""
     echo "  2. Start the runner:"
-    echo "     ${BLUE}runner run${NC}"
+    echo "     ${BLUE}agentsmesh-runner run${NC}"
     echo ""
     echo "  Get your registration token from: Settings → Runners → Create Token"
     echo ""
-    echo "  For more options, run: ${BLUE}runner --help${NC}"
+    echo "  For more options, run: ${BLUE}agentsmesh-runner --help${NC}"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
