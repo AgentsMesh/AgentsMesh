@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider, ThemeColorMeta } from "@/components/theme";
 import { PWAProvider } from "@/components/pwa";
+import { PostHogProvider } from "@/providers/PostHogProvider";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { Toaster } from "sonner";
@@ -64,11 +65,13 @@ export default async function RootLayout({
           disableTransitionOnChange
           themes={["light", "dark", "solarized-light", "solarized-dark"]}
         >
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            <PWAProvider>
-              {children}
-            </PWAProvider>
-          </NextIntlClientProvider>
+          <PostHogProvider>
+            <NextIntlClientProvider locale={locale} messages={messages}>
+              <PWAProvider>
+                {children}
+              </PWAProvider>
+            </NextIntlClientProvider>
+          </PostHogProvider>
           <ThemeColorMeta />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
