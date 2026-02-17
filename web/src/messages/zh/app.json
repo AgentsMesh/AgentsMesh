@@ -68,6 +68,20 @@
     "messageInput": {
       "placeholder": "输入消息...",
       "hint": "按 Enter 发送，Shift+Enter 换行"
+    },
+    "ticket": "任务",
+    "contextMenu": {
+      "openTerminal": "打开终端",
+      "viewTicket": "查看任务 {identifier}",
+      "terminatePod": "终止 Pod",
+      "terminateTitle": "终止 Pod",
+      "terminateDescription": "确定要终止此 Pod 吗？此操作不可撤销。",
+      "terminateConfirm": "终止"
+    },
+    "runnerGroup": {
+      "online": "在线",
+      "offline": "离线",
+      "podCount": "{count} 个 Pod"
     }
   },
   "tickets": {

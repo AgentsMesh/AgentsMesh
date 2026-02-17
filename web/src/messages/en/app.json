@@ -68,6 +68,20 @@
     "messageInput": {
       "placeholder": "Type a message...",
       "hint": "Press Enter to send, Shift+Enter for new line"
+    },
+    "ticket": "Ticket",
+    "contextMenu": {
+      "openTerminal": "Open Terminal",
+      "viewTicket": "View Ticket {identifier}",
+      "terminatePod": "Terminate Pod",
+      "terminateTitle": "Terminate Pod",
+      "terminateDescription": "Are you sure you want to terminate this pod? This action cannot be undone.",
+      "terminateConfirm": "Terminate"
+    },
+    "runnerGroup": {
+      "online": "Online",
+      "offline": "Offline",
+      "podCount": "{count} pods"
     }
   },
   "tickets": {

@@ -97,6 +97,7 @@ export type {
   MeshNodeData,
   MeshEdgeData,
   ChannelInfoData,
+  RunnerInfoData,
   MeshTopologyData,
 } from "./mesh";
 

@@ -7,6 +7,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/mesh"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	bindingService "github.com/anthropics/agentsmesh/backend/internal/service/binding"
 	channelService "github.com/anthropics/agentsmesh/backend/internal/service/channel"
 	podService "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
@@ -114,26 +115,61 @@ func (s *Service) GetTopology(ctx context.Context, orgID int64) (*mesh.MeshTopol
 		})
 	}
 
+	// 4. Get enabled runners for the organization
+	var runners []*runner.Runner
+	if err := s.db.WithContext(ctx).
+		Where("organization_id = ? AND is_enabled = ?", orgID, true).
+		Find(&runners).Error; err != nil {
+		return nil, err
+	}
+
+	runnerInfos := make([]mesh.RunnerInfo, 0, len(runners))
+	for _, r := range runners {
+		runnerInfos = append(runnerInfos, mesh.RunnerInfo{
+			ID:                r.ID,
+			NodeID:            r.NodeID,
+			Status:            r.Status,
+			MaxConcurrentPods: r.MaxConcurrentPods,
+			CurrentPods:       r.CurrentPods,
+		})
+	}
+
 	return &mesh.MeshTopology{
 		Nodes:    nodes,
 		Edges:    edges,
 		Channels: channelInfos,
+		Runners:  runnerInfos,
 	}, nil
 }
 
 // podToNode converts a pod to a Mesh node
 func (s *Service) podToNode(pod *agentpod.Pod) mesh.MeshNode {
-	return mesh.MeshNode{
+	node := mesh.MeshNode{
 		PodKey:       pod.PodKey,
 		Status:       pod.Status,
 		AgentStatus:  pod.AgentStatus,
 		Model:        pod.Model,
+		Title:        pod.Title,
 		TicketID:     pod.TicketID,
 		RepositoryID: pod.RepositoryID,
 		CreatedByID:  pod.CreatedByID,
 		RunnerID:     pod.RunnerID,
 		StartedAt:    pod.StartedAt,
 	}
+
+	// Populate runner info if preloaded
+	if pod.Runner != nil {
+		node.RunnerNodeID = pod.Runner.NodeID
+		node.RunnerStatus = pod.Runner.Status
+	}
+
+	// Populate ticket info if preloaded
+	if pod.Ticket != nil {
+		node.TicketIdentifier = &pod.Ticket.Identifier
+		node.TicketTitle = &pod.Ticket.Title
+	}
+
+	return node
 }
 
 // getChannelPods returns pod keys in a channel

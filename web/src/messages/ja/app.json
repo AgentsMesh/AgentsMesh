@@ -68,6 +68,20 @@
     "messageInput": {
       "placeholder": "メッセージを入力...",
       "hint": "Enterで送信、Shift+Enterで改行"
+    },
+    "ticket": "チケット",
+    "contextMenu": {
+      "openTerminal": "ターミナルを開く",
+      "viewTicket": "チケット {identifier} を表示",
+      "terminatePod": "Pod を終了",
+      "terminateTitle": "Pod を終了",
+      "terminateDescription": "この Pod を終了してもよろしいですか？この操作は取り消せません。",
+      "terminateConfirm": "終了"
+    },
+    "runnerGroup": {
+      "online": "オンライン",
+      "offline": "オフライン",
+      "podCount": "{count} Pod"
     }
   },
   "tickets": {

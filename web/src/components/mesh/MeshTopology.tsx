@@ -19,43 +19,106 @@ import "@xyflow/react/dist/style.css";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import PodNode from "./PodNode";
 import BindingEdge from "./BindingEdge";
+import RunnerGroupNode from "./RunnerGroupNode";
 import { useMeshStore, type MeshNode, type MeshEdge } from "@/stores/mesh";
+import type { RunnerInfoData } from "@/lib/api";
 
-// Custom node types - using proper types for ReactFlow
+// Custom node types
 const nodeTypes: NodeTypes = {
   pod: PodNode,
+  runnerGroup: RunnerGroupNode,
 };
 
-// Custom edge types - using proper types for ReactFlow
+// Custom edge types
 const edgeTypes: EdgeTypes = {
   binding: BindingEdge,
 };
 
-// Layout algorithm - simple force-directed-like placement
-function calculateLayout(
+// Layout constants
+const POD_WIDTH = 200;
+const POD_HEIGHT = 140;
+const POD_GAP_X = 20;
+const POD_GAP_Y = 20;
+const PODS_PER_ROW = 2;
+const GROUP_PADDING_X = 20;
+const GROUP_PADDING_TOP = 50; // space for header
+const GROUP_PADDING_BOTTOM = 20;
+const GROUP_GAP = 40;
+
+// Grouped layout algorithm - arranges pods into Runner "workstation" groups
+function calculateGroupedLayout(
   pods: MeshNode[],
-  edges: MeshEdge[]
+  edges: MeshEdge[],
+  runners?: RunnerInfoData[]
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
   const flowEdges: Edge[] = [];
 
-  // Create pod nodes
-  const podCount = pods.length;
-  const radius = Math.max(200, podCount * 40);
+  // Group pods by runner_id
+  const podsByRunner = new Map<number, MeshNode[]>();
+  for (const pod of pods) {
+    const runnerId = pod.runner_id;
+    if (!podsByRunner.has(runnerId)) {
+      podsByRunner.set(runnerId, []);
+    }
+    podsByRunner.get(runnerId)!.push(pod);
+  }
 
-  pods.forEach((pod, index) => {
-    // Circular layout for pods
-    const angle = (2 * Math.PI * index) / podCount;
-    const x = pod.position?.x ?? 400 + radius * Math.cos(angle);
-    const y = pod.position?.y ?? 300 + radius * Math.sin(angle);
+  // Build runner info lookup
+  const runnerInfoMap = new Map<number, RunnerInfoData>();
+  if (runners) {
+    for (const r of runners) {
+      runnerInfoMap.set(r.id, r);
+    }
+  }
 
+  // Create group nodes and place pods inside
+  let groupX = 0;
+
+  for (const [runnerId, runnerPods] of podsByRunner) {
+    const runnerInfo = runnerInfoMap.get(runnerId);
+    const runnerNodeId = runnerPods[0]?.runner_node_id || `runner-${runnerId}`;
+    const runnerStatus = runnerPods[0]?.runner_status || runnerInfo?.status || "offline";
+    const groupId = `runner-group-${runnerId}`;
+
+    // Calculate group dimensions based on pod count
+    const rows = Math.ceil(runnerPods.length / PODS_PER_ROW);
+    const cols = Math.min(runnerPods.length, PODS_PER_ROW);
+    const groupWidth = GROUP_PADDING_X * 2 + cols * POD_WIDTH + (cols - 1) * POD_GAP_X;
+    const groupHeight = GROUP_PADDING_TOP + GROUP_PADDING_BOTTOM + rows * POD_HEIGHT + (rows - 1) * POD_GAP_Y;
+
+    // Create the runner group node
     nodes.push({
-      id: pod.pod_key,
-      type: "pod",
-      position: { x, y },
-      data: { node: pod },
+      id: groupId,
+      type: "runnerGroup",
+      position: { x: groupX, y: 0 },
+      data: {
+        runnerNodeId,
+        runnerStatus,
+        podCount: runnerPods.length,
+      },
+      style: { width: groupWidth, height: groupHeight },
     });
-  });
+
+    // Place pods inside the group using grid layout (positions relative to parent)
+    runnerPods.forEach((pod, index) => {
+      const col = index % PODS_PER_ROW;
+      const row = Math.floor(index / PODS_PER_ROW);
+      const x = GROUP_PADDING_X + col * (POD_WIDTH + POD_GAP_X);
+      const y = GROUP_PADDING_TOP + row * (POD_HEIGHT + POD_GAP_Y);
+
+      nodes.push({
+        id: pod.pod_key,
+        type: "pod",
+        position: { x, y },
+        parentId: groupId,
+        extent: "parent" as const,
+        data: { node: pod },
+      });
+    });
+
+    groupX += groupWidth + GROUP_GAP;
+  }
 
   // Create binding edges between pods
   edges.forEach((edge) => {
@@ -90,7 +153,11 @@ export default function MeshTopology() {
   // Update nodes and edges when topology changes
   useEffect(() => {
     if (topology) {
-      const layout = calculateLayout(topology.nodes, topology.edges);
+      const layout = calculateGroupedLayout(
+        topology.nodes,
+        topology.edges,
+        topology.runners
+      );
       setNodes(layout.nodes);
       setEdges(layout.edges);
     }
@@ -131,6 +198,9 @@ export default function MeshTopology() {
 
   // Node color for minimap
   const nodeColor = useCallback((node: Node) => {
+    if (node.type === "runnerGroup") {
+      return "#e5e7eb"; // gray for group containers
+    }
     const data = node.data as { node: MeshNode };
     switch (data.node?.status) {
       case "running":

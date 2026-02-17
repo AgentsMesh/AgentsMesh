@@ -27,6 +27,8 @@ const mockNode1: MeshNode = {
   model: "claude-code",
   created_by_id: 1,
   runner_id: 1,
+  runner_node_id: "runner-alpha",
+  runner_status: "online",
   started_at: "2024-01-01T00:00:00Z",
 };
 
@@ -37,6 +39,8 @@ const mockNode2: MeshNode = {
   model: "gpt-engineer",
   created_by_id: 1,
   runner_id: 2,
+  runner_node_id: "runner-beta",
+  runner_status: "online",
   started_at: "2024-01-02T00:00:00Z",
 };
 
@@ -47,6 +51,8 @@ const mockNode3: MeshNode = {
   model: "claude-code",
   created_by_id: 1,
   runner_id: 3,
+  runner_node_id: "runner-gamma",
+  runner_status: "offline",
   started_at: "2024-01-03T00:00:00Z",
 };
 
@@ -316,6 +322,8 @@ describe("Mesh Store", () => {
         model: "test",
         created_by_id: 1,
         runner_id: 4,
+        runner_node_id: "runner-delta",
+        runner_status: "online",
         started_at: "2024-01-01T00:00:00Z",
       };
       useMeshStore.setState({

@@ -11,6 +11,10 @@ export interface MeshNodeData {
   repository_id?: number;
   created_by_id: number;
   runner_id: number;
+  runner_node_id: string;
+  runner_status: string;
+  ticket_identifier?: string;
+  ticket_title?: string;
   started_at?: string;
   position?: { x: number; y: number };
 }
@@ -33,10 +37,19 @@ export interface ChannelInfoData {
   is_archived: boolean;
 }
 
+export interface RunnerInfoData {
+  id: number;
+  node_id: string;
+  status: string;
+  max_concurrent_pods: number;
+  current_pods: number;
+}
+
 export interface MeshTopologyData {
   nodes: MeshNodeData[];
   edges: MeshEdgeData[];
   channels: ChannelInfoData[];
+  runners?: RunnerInfoData[];
 }
 
 // Mesh API

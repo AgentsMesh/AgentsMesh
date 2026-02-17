@@ -68,6 +68,20 @@
     "messageInput": {
       "placeholder": "메시지 입력...",
       "hint": "Enter로 전송, Shift+Enter로 줄바꿈"
+    },
+    "ticket": "티켓",
+    "contextMenu": {
+      "openTerminal": "터미널 열기",
+      "viewTicket": "티켓 {identifier} 보기",
+      "terminatePod": "Pod 종료",
+      "terminateTitle": "Pod 종료",
+      "terminateDescription": "이 Pod를 종료하시겠습니까? 이 작업은 취소할 수 없습니다.",
+      "terminateConfirm": "종료"
+    },
+    "runnerGroup": {
+      "online": "온라인",
+      "offline": "오프라인",
+      "podCount": "{count}개 Pod"
     }
   },
   "tickets": {

@@ -68,6 +68,20 @@
     "messageInput": {
       "placeholder": "Nachricht eingeben...",
       "hint": "Enter zum Senden, Shift+Enter für neue Zeile"
+    },
+    "ticket": "Ticket",
+    "contextMenu": {
+      "openTerminal": "Terminal öffnen",
+      "viewTicket": "Ticket {identifier} anzeigen",
+      "terminatePod": "Pod beenden",
+      "terminateTitle": "Pod beenden",
+      "terminateDescription": "Möchten Sie diesen Pod wirklich beenden? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "terminateConfirm": "Beenden"
+    },
+    "runnerGroup": {
+      "online": "Online",
+      "offline": "Offline",
+      "podCount": "{count} Pods"
     }
   },
   "tickets": {

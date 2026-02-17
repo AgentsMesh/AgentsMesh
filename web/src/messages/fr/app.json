@@ -68,6 +68,20 @@
     "messageInput": {
       "placeholder": "Tapez un message...",
       "hint": "Appuyez sur Entrée pour envoyer, Shift+Entrée pour nouvelle ligne"
+    },
+    "ticket": "Ticket",
+    "contextMenu": {
+      "openTerminal": "Ouvrir le Terminal",
+      "viewTicket": "Voir le Ticket {identifier}",
+      "terminatePod": "Arrêter le Pod",
+      "terminateTitle": "Arrêter le Pod",
+      "terminateDescription": "Êtes-vous sûr de vouloir arrêter ce pod ? Cette action est irréversible.",
+      "terminateConfirm": "Arrêter"
+    },
+    "runnerGroup": {
+      "online": "En ligne",
+      "offline": "Hors ligne",
+      "podCount": "{count} pods"
     }
   },
   "tickets": {

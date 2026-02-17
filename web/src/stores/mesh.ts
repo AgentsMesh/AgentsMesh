@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { meshApi, MeshNodeData, MeshEdgeData, ChannelInfoData, MeshTopologyData } from "@/lib/api";
+import { meshApi, MeshNodeData, MeshEdgeData, ChannelInfoData, MeshTopologyData, RunnerInfoData } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 import { Play, Hourglass, Pause, type LucideIcon } from "lucide-react";
 
@@ -8,6 +8,7 @@ export type MeshNode = MeshNodeData;
 export type MeshEdge = MeshEdgeData;
 export type ChannelInfo = ChannelInfoData;
 export type MeshTopology = MeshTopologyData;
+export type RunnerInfo = RunnerInfoData;
 
 // Request to create a pod for a ticket
 export interface CreatePodForTicketRequest {
@@ -38,6 +39,8 @@ interface MeshState {
   getEdgesForNode: (podKey: string) => MeshEdge[];
   getChannelsForNode: (podKey: string) => ChannelInfo[];
   getActiveNodes: () => MeshNode[];
+  getNodesByRunner: (runnerId: number) => MeshNode[];
+  getRunnerInfo: (runnerId: number) => RunnerInfo | undefined;
 }
 
 export const useMeshStore = create<MeshState>((set, get) => ({
@@ -112,6 +115,17 @@ export const useMeshStore = create<MeshState>((set, get) => ({
     return topology.nodes.filter(
       (n) => n.status === "running" || n.status === "initializing"
     );
+  },
+
+  getNodesByRunner: (runnerId) => {
+    const { topology } = get();
+    if (!topology) return [];
+    return topology.nodes.filter((n) => n.runner_id === runnerId);
+  },
+
+  getRunnerInfo: (runnerId) => {
+    const { topology } = get();
+    return topology?.runners?.find((r) => r.id === runnerId);
   },
 }));
 
