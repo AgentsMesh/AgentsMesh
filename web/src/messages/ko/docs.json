@@ -24,6 +24,14 @@
       "gitIntegration": "Git 연동",
       "teamManagement": "팀 관리",
       "multiAgentWorkflows": "멀티 에이전트 워크플로",
+      "api": "API",
+      "apiOverview": "개요",
+      "apiAuthentication": "인증",
+      "apiPods": "Pods API",
+      "apiTickets": "Tickets API",
+      "apiChannels": "Channels API",
+      "apiRunners": "Runners API",
+      "apiRepositories": "Repositories API",
       "help": "도움말",
       "faq": "자주 묻는 질문",
       "menu": "메뉴"
@@ -859,6 +867,422 @@
           "tip3": "Link to tickets — Associate Pods with tickets for automatic context",
           "tip4": "Monitor via Mesh — Use the topology view to track collaboration status",
           "tip5": "Clean up — Terminate Pods when tasks are complete to free resources"
+        }
+      }
+    },
+    "api": {
+      "common": {
+        "methodHeader": "메서드",
+        "pathHeader": "경로",
+        "scopeHeader": "스코프",
+        "descriptionHeader": "설명",
+        "endpointDetails": "엔드포인트 상세",
+        "pathParams": "경로 매개변수",
+        "queryParams": "쿼리 매개변수",
+        "requestBody": "요청 본문",
+        "responseExample": "응답 예시",
+        "paramHeader": "매개변수",
+        "typeHeader": "타입",
+        "requiredHeader": "필수",
+        "defaultHeader": "기본값",
+        "fieldHeader": "필드",
+        "optionalBadge": "선택",
+        "requiredBadge": "필수"
+      },
+      "overview": {
+        "title": "API 개요",
+        "description": "조직 수준의 API Key를 사용하여 서드파티 서비스를 AgentsMesh와 통합합니다. REST API를 통해 Pod 관리, 티켓 추적 등을 자동화할 수 있습니다.",
+        "overview": {
+          "title": "개요",
+          "description": "AgentsMesh는 서드파티 통합, CI/CD 파이프라인 및 자동화 워크플로를 위한 조직 수준의 API Key를 제공합니다. API Key를 사용하면:",
+          "item1": "프로그래밍 방식으로 AgentPod 관리 (생성, 목록, 종료)",
+          "item2": "티켓 생성 및 상태 업데이트 자동화",
+          "item3": "채널 조회 및 메시지 전송",
+          "item4": "Runner 및 저장소 상태 모니터링"
+        },
+        "gettingKey": {
+          "title": "API Key 받기",
+          "description": "API Key는 조직 소유자 또는 관리자가 웹 인터페이스에서 생성합니다.",
+          "step1": "설정 → 조직 → API Keys로 이동",
+          "step2": "API Key 만들기 클릭",
+          "step3": "이름, 선택적 만료일을 입력하고 필요한 스코프를 선택",
+          "step4": "생성된 키를 복사 (amk_로 시작)",
+          "warning": "중요: API Key는 생성 시 한 번만 표시됩니다. 안전하게 보관하세요 — 나중에 다시 확인할 수 없습니다."
+        },
+        "basePath": {
+          "title": "기본 URL 및 경로",
+          "description": "모든 외부 API 엔드포인트는 다음 패턴을 따릅니다:",
+          "slugNote": "'{'slug'}'를 조직의 슬러그로 교체하세요 (설정 → 조직에서 확인 가능)."
+        }
+      },
+      "authentication": {
+        "title": "인증",
+        "description": "API Key를 사용하여 API 요청을 인증하는 방법을 알아보세요.",
+        "methods": {
+          "title": "인증 방식",
+          "description": "모든 요청에 다음 방법 중 하나로 API Key를 포함하세요:",
+          "headerMethod": "X-API-Key 헤더",
+          "headerMethodDesc": "X-API-Key 헤더에 키를 직접 전달합니다. 이것이 권장 방식입니다.",
+          "bearerMethod": "Authorization Bearer",
+          "bearerMethodDesc": "Authorization 헤더에 Bearer 토큰으로 키를 전달할 수도 있습니다."
+        },
+        "scopes": {
+          "title": "스코프",
+          "description": "각 API Key에는 접근 가능한 엔드포인트를 결정하는 하나 이상의 스코프가 할당됩니다. 쓰기 스코프는 동일 리소스의 읽기 접근을 암묵적으로 포함합니다.",
+          "scopeHeader": "스코프",
+          "descriptionHeader": "설명",
+          "endpointsHeader": "접근 가능한 엔드포인트",
+          "podsRead": "pods:read",
+          "podsReadDesc": "Pod 읽기 전용 접근",
+          "podsReadEndpoints": "Pod 목록, Pod 상세 조회",
+          "podsWrite": "pods:write",
+          "podsWriteDesc": "전체 Pod 관리 (읽기 포함)",
+          "podsWriteEndpoints": "Pod 생성, Pod 종료 + 모든 읽기 엔드포인트",
+          "ticketsRead": "tickets:read",
+          "ticketsReadDesc": "티켓 읽기 전용 접근",
+          "ticketsReadEndpoints": "티켓 목록, 티켓 조회, 보드 조회",
+          "ticketsWrite": "tickets:write",
+          "ticketsWriteDesc": "전체 티켓 관리 (읽기 포함)",
+          "ticketsWriteEndpoints": "티켓 생성, 업데이트, 삭제 + 모든 읽기 엔드포인트",
+          "channelsRead": "channels:read",
+          "channelsReadDesc": "채널 읽기 전용 접근",
+          "channelsReadEndpoints": "채널 목록, 채널 조회, 메시지 목록",
+          "channelsWrite": "channels:write",
+          "channelsWriteDesc": "전체 채널 관리 (읽기 포함)",
+          "channelsWriteEndpoints": "채널 생성/업데이트, 메시지 전송 + 모든 읽기 엔드포인트",
+          "runnersRead": "runners:read",
+          "runnersReadDesc": "Runner 읽기 전용 접근",
+          "runnersReadEndpoints": "Runner 목록, Runner 조회, 가용 Runner, Runner Pod 목록",
+          "reposRead": "repos:read",
+          "reposReadDesc": "저장소 읽기 전용 접근",
+          "reposReadEndpoints": "저장소 목록, 저장소 조회, 브랜치 목록, 머지 리퀘스트 목록"
+        },
+        "errors": {
+          "title": "오류 처리",
+          "description": "API는 표준 HTTP 상태 코드를 반환합니다. 일반적인 오류 응답:",
+          "codeHeader": "상태 코드",
+          "descriptionHeader": "설명",
+          "badRequest": "Bad Request — 잘못된 매개변수 또는 요청 본문",
+          "unauthorized": "Unauthorized — API Key 누락 또는 유효하지 않음",
+          "forbidden": "Forbidden — API Key에 이 엔드포인트에 필요한 스코프가 없음",
+          "notFound": "Not Found — 리소스가 존재하지 않거나 조직 슬러그가 유효하지 않음"
+        }
+      },
+      "pods": {
+        "title": "Pods API",
+        "description": "프로그래밍 방식으로 AgentPod를 관리합니다. REST API를 통해 Pod를 생성, 목록 조회, 종료할 수 있습니다.",
+        "endpoints": {
+          "title": "엔드포인트",
+          "list": "모든 Pod 목록 조회",
+          "get": "키로 Pod 상세 조회",
+          "create": "새 Pod 생성",
+          "terminate": "Pod 종료"
+        },
+        "examples": {
+          "title": "코드 예제",
+          "listPods": "실행 중인 모든 Pod 목록 조회",
+          "createPod": "새 Pod 생성"
+        },
+        "details": {
+          "title": "엔드포인트 상세",
+          "listPods": {
+            "title": "GET /pods",
+            "description": "조직 내 Pod의 페이지네이션된 목록을 조회합니다. 상태별 필터링을 지원합니다.",
+            "params": {
+              "status": "Pod 상태로 필터링 (예: running, terminated)",
+              "limit": "반환할 최대 결과 수",
+              "offset": "페이지네이션을 위해 건너뛸 결과 수"
+            }
+          },
+          "getPod": {
+            "title": "GET /pods/:key",
+            "description": "고유 키로 특정 Pod의 상세 정보를 조회합니다.",
+            "params": {
+              "key": "Pod의 고유 키 식별자"
+            }
+          },
+          "createPod": {
+            "title": "POST /pods",
+            "description": "지정된 Runner에 새 AgentPod를 생성합니다. Pod는 주어진 구성으로 초기화되어 실행을 시작합니다.",
+            "fields": {
+              "runner_id": "Pod를 생성할 Runner ID",
+              "agent_type_id": "에이전트 타입 식별자 (예: claude-code, aider)",
+              "initial_prompt": "에이전트에 대한 초기 프롬프트 또는 태스크",
+              "repository_id": "Pod에 연결할 저장소",
+              "branch": "작업할 Git 브랜치",
+              "ticket_identifier": "연결할 티켓 식별자 (예: AM-123)",
+              "channel_id": "Pod에 연결할 채널",
+              "sandbox_type": "샌드박스 유형: worktree 또는 tempdir",
+              "environment_variables": "환경 변수의 키-값 쌍",
+              "custom_agent_command": "에이전트를 실행할 사용자 정의 명령어",
+              "custom_agent_args": "사용자 정의 에이전트 명령어의 인수",
+              "custom_mcp_config": "사용자 정의 MCP 서버 구성 (JSON)",
+              "auto_close": "태스크 완료 후 Pod를 자동 종료할지 여부",
+              "auto_close_delay_seconds": "자동 종료 전 지연 시간 (초)",
+              "pod_timeout_minutes": "Pod의 최대 수명 (분)",
+              "max_turns": "에이전트의 최대 턴 수"
+            }
+          },
+          "terminatePod": {
+            "title": "POST /pods/:key/terminate",
+            "description": "실행 중인 Pod를 종료합니다. Pod 프로세스가 중지되고 리소스가 해제됩니다.",
+            "params": {
+              "key": "종료할 Pod의 고유 키 식별자"
+            }
+          }
+        }
+      },
+      "tickets": {
+        "title": "Tickets API",
+        "description": "티켓 관리를 자동화합니다. REST API를 통해 티켓을 생성, 업데이트, 추적할 수 있습니다.",
+        "endpoints": {
+          "title": "엔드포인트",
+          "list": "티켓 목록 조회",
+          "board": "칸반 보드 뷰 조회",
+          "get": "식별자로 티켓 조회",
+          "create": "새 티켓 생성",
+          "update": "티켓 업데이트",
+          "updateStatus": "티켓 상태 업데이트",
+          "delete": "티켓 삭제"
+        },
+        "examples": {
+          "title": "코드 예제",
+          "listTickets": "모든 티켓 목록 조회",
+          "createTicket": "새 티켓 생성"
+        },
+        "details": {
+          "title": "엔드포인트 상세",
+          "listTickets": {
+            "title": "GET /tickets",
+            "description": "티켓의 페이지네이션된 목록을 조회합니다. 저장소, 상태, 유형, 담당자, 라벨별 필터링을 지원합니다.",
+            "params": {
+              "repository_id": "저장소 ID로 필터링",
+              "status": "상태로 필터링 (open, in_progress, resolved, closed)",
+              "type": "유형으로 필터링 (bug, feature, task, improvement)",
+              "assignee_id": "담당자 사용자 ID로 필터링",
+              "labels": "라벨로 필터링 (쉼표 구분)",
+              "limit": "반환할 최대 결과 수",
+              "offset": "페이지네이션을 위해 건너뛸 결과 수"
+            }
+          },
+          "getBoard": {
+            "title": "GET /tickets/board",
+            "description": "상태별 컬럼으로 정리된 칸반 보드 뷰를 조회합니다.",
+            "params": {
+              "repository_id": "저장소 ID로 보드 필터링"
+            }
+          },
+          "getTicket": {
+            "title": "GET /tickets/:identifier",
+            "description": "사람이 읽을 수 있는 식별자로 특정 티켓의 상세 정보를 조회합니다.",
+            "params": {
+              "identifier": "티켓 식별자 (예: AM-123)"
+            }
+          },
+          "createTicket": {
+            "title": "POST /tickets",
+            "description": "새 티켓을 생성합니다. 최소한 유형과 제목이 필요합니다.",
+            "fields": {
+              "type": "티켓 유형: bug, feature, task 또는 improvement",
+              "title": "티켓 제목 (1-500자)",
+              "description": "티켓의 상세 설명 (Markdown 지원)",
+              "priority": "우선순위: low, medium, high 또는 critical",
+              "status": "초기 상태 (기본값: open)",
+              "assignee_id": "티켓을 할당할 사용자 ID",
+              "repository_id": "연결할 저장소",
+              "labels": "라벨 문자열 배열",
+              "parent_identifier": "하위 태스크의 상위 티켓 식별자"
+            }
+          },
+          "updateTicket": {
+            "title": "PUT /tickets/:identifier",
+            "description": "기존 티켓을 업데이트합니다. 모든 필드는 선택 사항이며 — 제공된 필드만 업데이트됩니다.",
+            "params": {
+              "identifier": "티켓 식별자 (예: AM-123)"
+            },
+            "fields": {
+              "title": "업데이트된 티켓 제목",
+              "description": "업데이트된 설명",
+              "type": "업데이트된 티켓 유형",
+              "priority": "업데이트된 우선순위",
+              "status": "업데이트된 상태",
+              "assignee_id": "업데이트된 담당자 사용자 ID",
+              "labels": "업데이트된 라벨 문자열 배열",
+              "parent_identifier": "업데이트된 상위 티켓 식별자"
+            }
+          },
+          "updateStatus": {
+            "title": "PATCH /tickets/:identifier/status",
+            "description": "티켓의 상태만 업데이트합니다. 상태 전환을 위한 편의 엔드포인트입니다.",
+            "params": {
+              "identifier": "티켓 식별자 (예: AM-123)"
+            },
+            "fields": {
+              "status": "새 상태: open, in_progress, resolved 또는 closed"
+            }
+          },
+          "deleteTicket": {
+            "title": "DELETE /tickets/:identifier",
+            "description": "티켓을 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+            "params": {
+              "identifier": "티켓 식별자 (예: AM-123)"
+            }
+          }
+        }
+      },
+      "channels": {
+        "title": "Channels API",
+        "description": "채널 조회 및 메시지 관리. REST API를 통해 채널 목록 조회, 메시지 검색, 메시지 전송이 가능합니다.",
+        "endpoints": {
+          "title": "엔드포인트",
+          "list": "채널 목록 조회",
+          "get": "채널 상세 조회",
+          "messages": "채널 메시지 목록 조회",
+          "create": "새 채널 생성",
+          "update": "채널 업데이트",
+          "sendMessage": "채널에 메시지 전송"
+        },
+        "details": {
+          "title": "엔드포인트 상세",
+          "listChannels": {
+            "title": "GET /channels",
+            "description": "채널 목록을 조회합니다. 저장소, 티켓, 아카이브 상태별 필터링을 지원합니다.",
+            "params": {
+              "repository_id": "저장소 ID로 필터링",
+              "ticket_id": "연결된 티켓 ID로 필터링",
+              "include_archived": "아카이브된 채널 포함 여부 (true/false)"
+            }
+          },
+          "getChannel": {
+            "title": "GET /channels/:id",
+            "description": "특정 채널의 상세 정보를 조회합니다.",
+            "params": {
+              "id": "채널의 숫자 ID"
+            }
+          },
+          "getMessages": {
+            "title": "GET /channels/:id/messages",
+            "description": "채널의 메시지를 최신순으로 조회합니다.",
+            "params": {
+              "id": "채널의 숫자 ID",
+              "limit": "반환할 최대 메시지 수 (최대 100)"
+            }
+          },
+          "createChannel": {
+            "title": "POST /channels",
+            "description": "에이전트 협업을 위한 새 채널을 생성합니다.",
+            "fields": {
+              "name": "채널 이름 (2-100자)",
+              "description": "채널 설명",
+              "repository_id": "연결할 저장소",
+              "ticket_identifier": "연결할 티켓 식별자 (예: AM-123)",
+              "document": "채널의 초기 문서 또는 컨텍스트"
+            }
+          },
+          "updateChannel": {
+            "title": "PUT /channels/:id",
+            "description": "기존 채널을 업데이트합니다. 제공된 필드만 업데이트됩니다.",
+            "params": {
+              "id": "채널의 숫자 ID"
+            },
+            "fields": {
+              "name": "업데이트된 채널 이름",
+              "description": "업데이트된 채널 설명",
+              "document": "업데이트된 채널 문서"
+            }
+          },
+          "sendMessage": {
+            "title": "POST /channels/:id/messages",
+            "description": "채널에 새 메시지를 전송합니다.",
+            "params": {
+              "id": "채널의 숫자 ID"
+            },
+            "fields": {
+              "content": "메시지 내용 텍스트",
+              "pod_key": "이 메시지에 연결할 Pod 키 (선택)"
+            }
+          }
+        }
+      },
+      "runners": {
+        "title": "Runners API",
+        "description": "Runner 상태 및 가용성 모니터링. REST API를 통해 Runner 목록 조회 및 연결된 Pod 확인이 가능합니다.",
+        "endpoints": {
+          "title": "엔드포인트",
+          "list": "모든 Runner 목록 조회",
+          "get": "Runner 상세 조회",
+          "available": "가용 (온라인) Runner 목록 조회",
+          "pods": "Runner의 Pod 목록 조회"
+        },
+        "details": {
+          "title": "엔드포인트 상세",
+          "listRunners": {
+            "title": "GET /runners",
+            "description": "조직에 등록된 모든 Runner의 목록을 조회합니다."
+          },
+          "getRunner": {
+            "title": "GET /runners/:id",
+            "description": "특정 Runner의 상세 정보를 조회합니다.",
+            "params": {
+              "id": "Runner의 숫자 ID"
+            }
+          },
+          "availableRunners": {
+            "title": "GET /runners/available",
+            "description": "현재 온라인이며 새 Pod를 수용할 수 있는 Runner 목록을 조회합니다."
+          },
+          "runnerPods": {
+            "title": "GET /runners/:id/pods",
+            "description": "특정 Runner에서 실행 중인 Pod의 페이지네이션된 목록을 조회합니다.",
+            "params": {
+              "id": "Runner의 숫자 ID",
+              "status": "Pod 상태로 필터링 (예: running, terminated)",
+              "limit": "반환할 최대 결과 수",
+              "offset": "페이지네이션을 위해 건너뛸 결과 수"
+            }
+          }
+        }
+      },
+      "repositories": {
+        "title": "Repositories API",
+        "description": "저장소 정보 액세스. REST API를 통해 저장소, 브랜치, 머지 리퀘스트 목록 조회가 가능합니다.",
+        "endpoints": {
+          "title": "엔드포인트",
+          "list": "저장소 목록 조회",
+          "get": "저장소 상세 조회",
+          "branches": "브랜치 목록 조회",
+          "mergeRequests": "머지 리퀘스트 목록 조회"
+        },
+        "details": {
+          "title": "엔드포인트 상세",
+          "listRepos": {
+            "title": "GET /repositories",
+            "description": "조직에 연결된 모든 저장소의 목록을 조회합니다."
+          },
+          "getRepo": {
+            "title": "GET /repositories/:id",
+            "description": "특정 저장소의 상세 정보를 조회합니다.",
+            "params": {
+              "id": "저장소의 숫자 ID"
+            }
+          },
+          "listBranches": {
+            "title": "GET /repositories/:id/branches",
+            "description": "특정 저장소의 브랜치 목록을 조회합니다. 액세스 토큰이 필요합니다.",
+            "params": {
+              "id": "저장소의 숫자 ID",
+              "access_token": "인증을 위한 Git 제공자 액세스 토큰"
+            }
+          },
+          "listMergeRequests": {
+            "title": "GET /repositories/:id/merge-requests",
+            "description": "특정 저장소의 머지 리퀘스트 (또는 풀 리퀘스트)를 조회합니다.",
+            "params": {
+              "id": "저장소의 숫자 ID",
+              "branch": "소스 브랜치 이름으로 필터링",
+              "state": "상태로 필터링: opened, merged, closed 또는 all"
+            }
+          }
         }
       }
     },

@@ -24,6 +24,14 @@
       "gitIntegration": "Git 連携",
       "teamManagement": "チーム管理",
       "multiAgentWorkflows": "マルチエージェントワークフロー",
+      "api": "API",
+      "apiOverview": "概要",
+      "apiAuthentication": "認証",
+      "apiPods": "Pods API",
+      "apiTickets": "Tickets API",
+      "apiChannels": "Channels API",
+      "apiRunners": "Runners API",
+      "apiRepositories": "Repositories API",
       "help": "ヘルプ",
       "faq": "よくある質問",
       "menu": "メニュー"
@@ -859,6 +867,422 @@
           "tip3": "Link to tickets — Associate Pods with tickets for automatic context",
           "tip4": "Monitor via Mesh — Use the topology view to track collaboration status",
           "tip5": "Clean up — Terminate Pods when tasks are complete to free resources"
+        }
+      }
+    },
+    "api": {
+      "common": {
+        "methodHeader": "メソッド",
+        "pathHeader": "パス",
+        "scopeHeader": "スコープ",
+        "descriptionHeader": "説明",
+        "endpointDetails": "エンドポイント詳細",
+        "pathParams": "パスパラメータ",
+        "queryParams": "クエリパラメータ",
+        "requestBody": "リクエストボディ",
+        "responseExample": "レスポンス例",
+        "paramHeader": "パラメータ",
+        "typeHeader": "型",
+        "requiredHeader": "必須",
+        "defaultHeader": "デフォルト",
+        "fieldHeader": "フィールド",
+        "optionalBadge": "任意",
+        "requiredBadge": "必須"
+      },
+      "overview": {
+        "title": "API概要",
+        "description": "組織レベルのAPI Keyを使用して、サードパーティサービスをAgentsMeshと統合します。REST APIを通じてPod管理、チケット追跡などを自動化できます。",
+        "overview": {
+          "title": "概要",
+          "description": "AgentsMeshは、サードパーティ統合、CI/CDパイプライン、自動化ワークフロー向けに組織レベルのAPI Keyを提供します。API Keyを使用すると：",
+          "item1": "プログラムでAgentPodを管理（作成、一覧、終了）",
+          "item2": "チケットの作成とステータス更新を自動化",
+          "item3": "チャンネルの照会とメッセージの送信",
+          "item4": "Runnerとリポジトリのステータスを監視"
+        },
+        "gettingKey": {
+          "title": "API Keyの取得",
+          "description": "API Keyは、組織のオーナーまたは管理者がWebインターフェースから作成します。",
+          "step1": "設定 → 組織 → API Keysに移動",
+          "step2": "API Keyの作成をクリック",
+          "step3": "名前、オプションの有効期限、必要なスコープを選択",
+          "step4": "生成されたキーをコピー（amk_で始まります）",
+          "warning": "重要：API Keyは作成時に一度だけ表示されます。安全に保管してください——後から取得することはできません。"
+        },
+        "basePath": {
+          "title": "ベースURL＆パス",
+          "description": "すべての外部APIエンドポイントは次のパターンに従います：",
+          "slugNote": "'{'slug'}'を組織のスラッグに置き換えてください（設定 → 組織で確認できます）。"
+        }
+      },
+      "authentication": {
+        "title": "認証",
+        "description": "API Keyを使用してAPIリクエストを認証する方法を学びます。",
+        "methods": {
+          "title": "認証方式",
+          "description": "すべてのリクエストで、以下のいずれかの方法でAPI Keyを含めてください：",
+          "headerMethod": "X-API-Keyヘッダー",
+          "headerMethodDesc": "X-API-Keyヘッダーにキーを直接渡します。これが推奨される方法です。",
+          "bearerMethod": "Authorization Bearer",
+          "bearerMethodDesc": "AuthorizationヘッダーにBearerトークンとしてキーを渡すこともできます。"
+        },
+        "scopes": {
+          "title": "スコープ",
+          "description": "各API Keyには、アクセスできるエンドポイントを決定する1つ以上のスコープが割り当てられます。書き込みスコープには、同じリソースの読み取りアクセスが暗黙的に含まれます。",
+          "scopeHeader": "スコープ",
+          "descriptionHeader": "説明",
+          "endpointsHeader": "アクセス可能なエンドポイント",
+          "podsRead": "pods:read",
+          "podsReadDesc": "Podの読み取り専用アクセス",
+          "podsReadEndpoints": "Pod一覧、Pod詳細の取得",
+          "podsWrite": "pods:write",
+          "podsWriteDesc": "完全なPod管理（読み取りを含む）",
+          "podsWriteEndpoints": "Podの作成、Podの終了 + 全読み取りエンドポイント",
+          "ticketsRead": "tickets:read",
+          "ticketsReadDesc": "チケットの読み取り専用アクセス",
+          "ticketsReadEndpoints": "チケット一覧、チケット取得、ボード取得",
+          "ticketsWrite": "tickets:write",
+          "ticketsWriteDesc": "完全なチケット管理（読み取りを含む）",
+          "ticketsWriteEndpoints": "チケットの作成、更新、削除 + 全読み取りエンドポイント",
+          "channelsRead": "channels:read",
+          "channelsReadDesc": "チャンネルの読み取り専用アクセス",
+          "channelsReadEndpoints": "チャンネル一覧、チャンネル取得、メッセージ一覧",
+          "channelsWrite": "channels:write",
+          "channelsWriteDesc": "完全なチャンネル管理（読み取りを含む）",
+          "channelsWriteEndpoints": "チャンネルの作成/更新、メッセージ送信 + 全読み取りエンドポイント",
+          "runnersRead": "runners:read",
+          "runnersReadDesc": "Runnerの読み取り専用アクセス",
+          "runnersReadEndpoints": "Runner一覧、Runner取得、利用可能Runner、Runner Pod一覧",
+          "reposRead": "repos:read",
+          "reposReadDesc": "リポジトリの読み取り専用アクセス",
+          "reposReadEndpoints": "リポジトリ一覧、リポジトリ取得、ブランチ一覧、マージリクエスト一覧"
+        },
+        "errors": {
+          "title": "エラーハンドリング",
+          "description": "APIは標準的なHTTPステータスコードを返します。一般的なエラーレスポンス：",
+          "codeHeader": "ステータスコード",
+          "descriptionHeader": "説明",
+          "badRequest": "Bad Request — 無効なパラメータまたはリクエストボディ",
+          "unauthorized": "Unauthorized — API Keyが不足または無効",
+          "forbidden": "Forbidden — API Keyにこのエンドポイントに必要なスコープがない",
+          "notFound": "Not Found — リソースが存在しないか、組織スラッグが無効"
+        }
+      },
+      "pods": {
+        "title": "Pods API",
+        "description": "プログラムでAgentPodを管理します。REST APIを通じてPodの作成、一覧表示、終了ができます。",
+        "endpoints": {
+          "title": "エンドポイント",
+          "list": "全Podを一覧表示",
+          "get": "キーでPod詳細を取得",
+          "create": "新しいPodを作成",
+          "terminate": "Podを終了"
+        },
+        "examples": {
+          "title": "コード例",
+          "listPods": "実行中の全Podを一覧表示",
+          "createPod": "新しいPodを作成"
+        },
+        "details": {
+          "title": "エンドポイント詳細",
+          "listPods": {
+            "title": "GET /pods",
+            "description": "組織内のPodのページネーション付きリストを取得します。ステータスによるフィルタリングをサポートしています。",
+            "params": {
+              "status": "Podステータスでフィルタリング（例：running、terminated）",
+              "limit": "返される結果の最大数",
+              "offset": "ページネーション用にスキップする結果数"
+            }
+          },
+          "getPod": {
+            "title": "GET /pods/:key",
+            "description": "一意のキーで特定のPodの詳細情報を取得します。",
+            "params": {
+              "key": "Podの一意のキー識別子"
+            }
+          },
+          "createPod": {
+            "title": "POST /pods",
+            "description": "指定されたRunner上に新しいAgentPodを作成します。Podは指定された設定で初期化され、実行を開始します。",
+            "fields": {
+              "runner_id": "Podを作成するRunnerのID",
+              "agent_type_id": "エージェントタイプ識別子（例：claude-code、aider）",
+              "initial_prompt": "エージェントへの初期プロンプトまたはタスク",
+              "repository_id": "Podに関連付けるリポジトリ",
+              "branch": "作業するGitブランチ",
+              "ticket_identifier": "リンクするチケット識別子（例：AM-123）",
+              "channel_id": "Podに関連付けるチャンネル",
+              "sandbox_type": "サンドボックスタイプ：worktreeまたはtempdir",
+              "environment_variables": "環境変数のキーバリューペア",
+              "custom_agent_command": "エージェントを起動するカスタムコマンド",
+              "custom_agent_args": "カスタムエージェントコマンドの引数",
+              "custom_mcp_config": "カスタムMCPサーバー設定（JSON）",
+              "auto_close": "タスク完了後にPodを自動クローズするかどうか",
+              "auto_close_delay_seconds": "自動クローズまでの遅延秒数",
+              "pod_timeout_minutes": "Podの最大ライフタイム（分）",
+              "max_turns": "エージェントの最大ターン数"
+            }
+          },
+          "terminatePod": {
+            "title": "POST /pods/:key/terminate",
+            "description": "実行中のPodを終了します。Podプロセスが停止され、リソースが解放されます。",
+            "params": {
+              "key": "終了するPodの一意のキー識別子"
+            }
+          }
+        }
+      },
+      "tickets": {
+        "title": "Tickets API",
+        "description": "チケット管理を自動化します。REST APIを通じてチケットの作成、更新、追跡ができます。",
+        "endpoints": {
+          "title": "エンドポイント",
+          "list": "チケットを一覧表示",
+          "board": "カンバンボードビューを取得",
+          "get": "識別子でチケットを取得",
+          "create": "新しいチケットを作成",
+          "update": "チケットを更新",
+          "updateStatus": "チケットステータスを更新",
+          "delete": "チケットを削除"
+        },
+        "examples": {
+          "title": "コード例",
+          "listTickets": "全チケットを一覧表示",
+          "createTicket": "新しいチケットを作成"
+        },
+        "details": {
+          "title": "エンドポイント詳細",
+          "listTickets": {
+            "title": "GET /tickets",
+            "description": "チケットのページネーション付きリストを取得します。リポジトリ、ステータス、タイプ、担当者、ラベルによるフィルタリングをサポートしています。",
+            "params": {
+              "repository_id": "リポジトリIDでフィルタリング",
+              "status": "ステータスでフィルタリング（open、in_progress、resolved、closed）",
+              "type": "タイプでフィルタリング（bug、feature、task、improvement）",
+              "assignee_id": "担当者ユーザーIDでフィルタリング",
+              "labels": "ラベルでフィルタリング（カンマ区切り）",
+              "limit": "返される結果の最大数",
+              "offset": "ページネーション用にスキップする結果数"
+            }
+          },
+          "getBoard": {
+            "title": "GET /tickets/board",
+            "description": "ステータス別にカラムに整理されたカンバンボードビューを取得します。",
+            "params": {
+              "repository_id": "リポジトリIDでボードをフィルタリング"
+            }
+          },
+          "getTicket": {
+            "title": "GET /tickets/:identifier",
+            "description": "人間が読める識別子で特定のチケットの詳細情報を取得します。",
+            "params": {
+              "identifier": "チケット識別子（例：AM-123）"
+            }
+          },
+          "createTicket": {
+            "title": "POST /tickets",
+            "description": "新しいチケットを作成します。最低限タイプとタイトルが必要です。",
+            "fields": {
+              "type": "チケットタイプ：bug、feature、task、またはimprovement",
+              "title": "チケットタイトル（1〜500文字）",
+              "description": "チケットの詳細説明（Markdownサポート）",
+              "priority": "優先度：low、medium、high、またはcritical",
+              "status": "初期ステータス（デフォルトはopen）",
+              "assignee_id": "チケットを割り当てるユーザーID",
+              "repository_id": "関連付けるリポジトリ",
+              "labels": "ラベル文字列の配列",
+              "parent_identifier": "サブタスクの親チケット識別子"
+            }
+          },
+          "updateTicket": {
+            "title": "PUT /tickets/:identifier",
+            "description": "既存のチケットを更新します。すべてのフィールドは任意です——提供されたフィールドのみ更新されます。",
+            "params": {
+              "identifier": "チケット識別子（例：AM-123）"
+            },
+            "fields": {
+              "title": "更新後のチケットタイトル",
+              "description": "更新後の説明",
+              "type": "更新後のチケットタイプ",
+              "priority": "更新後の優先度",
+              "status": "更新後のステータス",
+              "assignee_id": "更新後の担当者ユーザーID",
+              "labels": "更新後のラベル文字列の配列",
+              "parent_identifier": "更新後の親チケット識別子"
+            }
+          },
+          "updateStatus": {
+            "title": "PATCH /tickets/:identifier/status",
+            "description": "チケットのステータスのみを更新します。ステータス遷移のための便利なエンドポイントです。",
+            "params": {
+              "identifier": "チケット識別子（例：AM-123）"
+            },
+            "fields": {
+              "status": "新しいステータス：open、in_progress、resolved、またはclosed"
+            }
+          },
+          "deleteTicket": {
+            "title": "DELETE /tickets/:identifier",
+            "description": "チケットを完全に削除します。この操作は元に戻せません。",
+            "params": {
+              "identifier": "チケット識別子（例：AM-123）"
+            }
+          }
+        }
+      },
+      "channels": {
+        "title": "Channels API",
+        "description": "チャンネルの照会とメッセージの管理。REST APIを通じてチャンネルの一覧表示、メッセージの取得、メッセージの送信ができます。",
+        "endpoints": {
+          "title": "エンドポイント",
+          "list": "チャンネルを一覧表示",
+          "get": "チャンネル詳細を取得",
+          "messages": "チャンネルメッセージを一覧表示",
+          "create": "新しいチャンネルを作成",
+          "update": "チャンネルを更新",
+          "sendMessage": "チャンネルにメッセージを送信"
+        },
+        "details": {
+          "title": "エンドポイント詳細",
+          "listChannels": {
+            "title": "GET /channels",
+            "description": "チャンネルのリストを取得します。リポジトリ、チケット、アーカイブ状態によるフィルタリングをサポートしています。",
+            "params": {
+              "repository_id": "リポジトリIDでフィルタリング",
+              "ticket_id": "関連チケットIDでフィルタリング",
+              "include_archived": "アーカイブ済みチャンネルを含める（true/false）"
+            }
+          },
+          "getChannel": {
+            "title": "GET /channels/:id",
+            "description": "特定のチャンネルの詳細情報を取得します。",
+            "params": {
+              "id": "チャンネルの数値ID"
+            }
+          },
+          "getMessages": {
+            "title": "GET /channels/:id/messages",
+            "description": "チャンネルからメッセージを取得します（最新順）。",
+            "params": {
+              "id": "チャンネルの数値ID",
+              "limit": "返されるメッセージの最大数（最大100）"
+            }
+          },
+          "createChannel": {
+            "title": "POST /channels",
+            "description": "エージェント間のコラボレーション用に新しいチャンネルを作成します。",
+            "fields": {
+              "name": "チャンネル名（2〜100文字）",
+              "description": "チャンネルの説明",
+              "repository_id": "関連付けるリポジトリ",
+              "ticket_identifier": "リンクするチケット識別子（例：AM-123）",
+              "document": "チャンネルの初期ドキュメントまたはコンテキスト"
+            }
+          },
+          "updateChannel": {
+            "title": "PUT /channels/:id",
+            "description": "既存のチャンネルを更新します。提供されたフィールドのみ更新されます。",
+            "params": {
+              "id": "チャンネルの数値ID"
+            },
+            "fields": {
+              "name": "更新後のチャンネル名",
+              "description": "更新後のチャンネル説明",
+              "document": "更新後のチャンネルドキュメント"
+            }
+          },
+          "sendMessage": {
+            "title": "POST /channels/:id/messages",
+            "description": "チャンネルに新しいメッセージを送信します。",
+            "params": {
+              "id": "チャンネルの数値ID"
+            },
+            "fields": {
+              "content": "メッセージのコンテンツテキスト",
+              "pod_key": "このメッセージに関連付けるPodキー（任意）"
+            }
+          }
+        }
+      },
+      "runners": {
+        "title": "Runners API",
+        "description": "Runnerのステータスと可用性を監視します。REST APIを通じてRunnerの一覧表示と接続されたPodの確認ができます。",
+        "endpoints": {
+          "title": "エンドポイント",
+          "list": "全Runnerを一覧表示",
+          "get": "Runner詳細を取得",
+          "available": "利用可能（オンライン）Runnerを一覧表示",
+          "pods": "Runner上のPodを一覧表示"
+        },
+        "details": {
+          "title": "エンドポイント詳細",
+          "listRunners": {
+            "title": "GET /runners",
+            "description": "組織に登録されている全Runnerのリストを取得します。"
+          },
+          "getRunner": {
+            "title": "GET /runners/:id",
+            "description": "特定のRunnerの詳細情報を取得します。",
+            "params": {
+              "id": "Runnerの数値ID"
+            }
+          },
+          "availableRunners": {
+            "title": "GET /runners/available",
+            "description": "現在オンラインで新しいPodを受け入れ可能なRunnerのリストを取得します。"
+          },
+          "runnerPods": {
+            "title": "GET /runners/:id/pods",
+            "description": "特定のRunner上で動作しているPodのページネーション付きリストを取得します。",
+            "params": {
+              "id": "Runnerの数値ID",
+              "status": "Podステータスでフィルタリング（例：running、terminated）",
+              "limit": "返される結果の最大数",
+              "offset": "ページネーション用にスキップする結果数"
+            }
+          }
+        }
+      },
+      "repositories": {
+        "title": "Repositories API",
+        "description": "リポジトリ情報にアクセスします。REST APIを通じてリポジトリ、ブランチ、マージリクエストの一覧表示ができます。",
+        "endpoints": {
+          "title": "エンドポイント",
+          "list": "リポジトリを一覧表示",
+          "get": "リポジトリ詳細を取得",
+          "branches": "ブランチを一覧表示",
+          "mergeRequests": "マージリクエストを一覧表示"
+        },
+        "details": {
+          "title": "エンドポイント詳細",
+          "listRepos": {
+            "title": "GET /repositories",
+            "description": "組織に接続されている全リポジトリのリストを取得します。"
+          },
+          "getRepo": {
+            "title": "GET /repositories/:id",
+            "description": "特定のリポジトリの詳細情報を取得します。",
+            "params": {
+              "id": "リポジトリの数値ID"
+            }
+          },
+          "listBranches": {
+            "title": "GET /repositories/:id/branches",
+            "description": "特定のリポジトリのブランチリストを取得します。アクセストークンが必要です。",
+            "params": {
+              "id": "リポジトリの数値ID",
+              "access_token": "認証用のGitプロバイダーアクセストークン"
+            }
+          },
+          "listMergeRequests": {
+            "title": "GET /repositories/:id/merge-requests",
+            "description": "特定のリポジトリのマージリクエスト（またはプルリクエスト）を取得します。",
+            "params": {
+              "id": "リポジトリの数値ID",
+              "branch": "ソースブランチ名でフィルタリング",
+              "state": "状態でフィルタリング：opened、merged、closed、またはall"
+            }
+          }
         }
       }
     },

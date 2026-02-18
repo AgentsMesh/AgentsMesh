@@ -24,6 +24,14 @@
       "gitIntegration": "Git Integration",
       "teamManagement": "Team Management",
       "multiAgentWorkflows": "Multi-Agent Workflows",
+      "api": "API",
+      "apiOverview": "Overview",
+      "apiAuthentication": "Authentication",
+      "apiPods": "Pods API",
+      "apiTickets": "Tickets API",
+      "apiChannels": "Channels API",
+      "apiRunners": "Runners API",
+      "apiRepositories": "Repositories API",
       "help": "Help",
       "faq": "FAQ",
       "menu": "Menu"
@@ -859,6 +867,422 @@
           "tip3": "Link to tickets — Associate Pods with tickets for automatic context",
           "tip4": "Monitor via Mesh — Use the topology view to track collaboration status",
           "tip5": "Clean up — Terminate Pods when tasks are complete to free resources"
+        }
+      }
+    },
+    "api": {
+      "common": {
+        "methodHeader": "Method",
+        "pathHeader": "Path",
+        "scopeHeader": "Scope",
+        "descriptionHeader": "Description",
+        "endpointDetails": "Endpoint Details",
+        "pathParams": "Path Parameters",
+        "queryParams": "Query Parameters",
+        "requestBody": "Request Body",
+        "responseExample": "Response Example",
+        "paramHeader": "Parameter",
+        "typeHeader": "Type",
+        "requiredHeader": "Required",
+        "defaultHeader": "Default",
+        "fieldHeader": "Field",
+        "optionalBadge": "Optional",
+        "requiredBadge": "Required"
+      },
+      "overview": {
+        "title": "API Overview",
+        "description": "Integrate third-party services with AgentsMesh using organization-level API Keys. Automate pod management, ticket tracking, and more through the REST API.",
+        "overview": {
+          "title": "Overview",
+          "description": "AgentsMesh provides organization-level API Keys for third-party integrations, CI/CD pipelines, and automation workflows. With API Keys you can:",
+          "item1": "Manage AgentPods programmatically (create, list, terminate)",
+          "item2": "Automate ticket creation and status updates",
+          "item3": "Query channels and send messages",
+          "item4": "Monitor runners and repository status"
+        },
+        "gettingKey": {
+          "title": "Getting an API Key",
+          "description": "API Keys are created by organization Owners or Admins from the web interface.",
+          "step1": "Navigate to Settings → Organization → API Keys",
+          "step2": "Click Create API Key",
+          "step3": "Enter a name, optional expiration date, and select the scopes you need",
+          "step4": "Copy the generated key (starts with amk_)",
+          "warning": "Important: The API Key is only displayed once at creation time. Store it securely — you cannot retrieve it later."
+        },
+        "basePath": {
+          "title": "Base URL & Path",
+          "description": "All external API endpoints follow this pattern:",
+          "slugNote": "Replace '{'slug'}' with your organization's slug (found in Settings → Organization)."
+        }
+      },
+      "authentication": {
+        "title": "Authentication",
+        "description": "Learn how to authenticate your API requests using API Keys.",
+        "methods": {
+          "title": "Authentication Methods",
+          "description": "Include your API Key in every request using one of the following methods:",
+          "headerMethod": "X-API-Key Header",
+          "headerMethodDesc": "Pass the key directly in the X-API-Key header. This is the recommended method.",
+          "bearerMethod": "Authorization Bearer",
+          "bearerMethodDesc": "Alternatively, pass the key as a Bearer token in the Authorization header."
+        },
+        "scopes": {
+          "title": "Scopes",
+          "description": "Each API Key is assigned one or more scopes that determine which endpoints it can access. Write scopes implicitly include read access for the same resource.",
+          "scopeHeader": "Scope",
+          "descriptionHeader": "Description",
+          "endpointsHeader": "Accessible Endpoints",
+          "podsRead": "pods:read",
+          "podsReadDesc": "Read-only access to pods",
+          "podsReadEndpoints": "List pods, get pod details",
+          "podsWrite": "pods:write",
+          "podsWriteDesc": "Full pod management (includes read)",
+          "podsWriteEndpoints": "Create pods, terminate pods + all read endpoints",
+          "ticketsRead": "tickets:read",
+          "ticketsReadDesc": "Read-only access to tickets",
+          "ticketsReadEndpoints": "List tickets, get ticket, get board",
+          "ticketsWrite": "tickets:write",
+          "ticketsWriteDesc": "Full ticket management (includes read)",
+          "ticketsWriteEndpoints": "Create, update, delete tickets + all read endpoints",
+          "channelsRead": "channels:read",
+          "channelsReadDesc": "Read-only access to channels",
+          "channelsReadEndpoints": "List channels, get channel, list messages",
+          "channelsWrite": "channels:write",
+          "channelsWriteDesc": "Full channel management (includes read)",
+          "channelsWriteEndpoints": "Create/update channels, send messages + all read endpoints",
+          "runnersRead": "runners:read",
+          "runnersReadDesc": "Read-only access to runners",
+          "runnersReadEndpoints": "List runners, get runner, list available runners, list runner pods",
+          "reposRead": "repos:read",
+          "reposReadDesc": "Read-only access to repositories",
+          "reposReadEndpoints": "List repositories, get repository, list branches, list merge requests"
+        },
+        "errors": {
+          "title": "Error Handling",
+          "description": "The API returns standard HTTP status codes. Common error responses:",
+          "codeHeader": "Status Code",
+          "descriptionHeader": "Description",
+          "badRequest": "Bad Request — Invalid parameters or request body",
+          "unauthorized": "Unauthorized — Missing or invalid API Key",
+          "forbidden": "Forbidden — API Key lacks required scope for this endpoint",
+          "notFound": "Not Found — Resource does not exist or organization slug is invalid"
+        }
+      },
+      "pods": {
+        "title": "Pods API",
+        "description": "Manage AgentPods programmatically. Create, list, and terminate Pods through the REST API.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "List all pods",
+          "get": "Get pod details by key",
+          "create": "Create a new pod",
+          "terminate": "Terminate a pod"
+        },
+        "examples": {
+          "title": "Code Examples",
+          "listPods": "List all running pods",
+          "createPod": "Create a new pod"
+        },
+        "details": {
+          "title": "Endpoint Details",
+          "listPods": {
+            "title": "GET /pods",
+            "description": "Retrieve a paginated list of pods in the organization. Supports filtering by status.",
+            "params": {
+              "status": "Filter by pod status (e.g., running, terminated)",
+              "limit": "Maximum number of results to return",
+              "offset": "Number of results to skip for pagination"
+            }
+          },
+          "getPod": {
+            "title": "GET /pods/:key",
+            "description": "Retrieve detailed information about a specific pod by its unique key.",
+            "params": {
+              "key": "The unique key identifier of the pod"
+            }
+          },
+          "createPod": {
+            "title": "POST /pods",
+            "description": "Create a new AgentPod on a specified runner. The pod will be initialized with the given configuration and start executing.",
+            "fields": {
+              "runner_id": "ID of the runner to create the pod on",
+              "agent_type_id": "Agent type identifier (e.g., claude-code, aider)",
+              "initial_prompt": "Initial prompt or task for the agent",
+              "repository_id": "Repository to associate with the pod",
+              "branch": "Git branch to work on",
+              "ticket_identifier": "Ticket identifier to link (e.g., AM-123)",
+              "channel_id": "Channel to associate with the pod",
+              "sandbox_type": "Sandbox type: worktree or tempdir",
+              "environment_variables": "Key-value pairs of environment variables",
+              "custom_agent_command": "Custom command to launch the agent",
+              "custom_agent_args": "Arguments for the custom agent command",
+              "custom_mcp_config": "Custom MCP server configuration (JSON)",
+              "auto_close": "Whether the pod should auto-close after task completion",
+              "auto_close_delay_seconds": "Delay in seconds before auto-closing",
+              "pod_timeout_minutes": "Maximum lifetime of the pod in minutes",
+              "max_turns": "Maximum number of agent turns"
+            }
+          },
+          "terminatePod": {
+            "title": "POST /pods/:key/terminate",
+            "description": "Terminate a running pod. The pod process will be stopped and resources released.",
+            "params": {
+              "key": "The unique key identifier of the pod to terminate"
+            }
+          }
+        }
+      },
+      "tickets": {
+        "title": "Tickets API",
+        "description": "Automate ticket management. Create, update, and track tickets through the REST API.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "List tickets",
+          "board": "Get Kanban board view",
+          "get": "Get ticket by identifier",
+          "create": "Create a new ticket",
+          "update": "Update a ticket",
+          "updateStatus": "Update ticket status",
+          "delete": "Delete a ticket"
+        },
+        "examples": {
+          "title": "Code Examples",
+          "listTickets": "List all tickets",
+          "createTicket": "Create a new ticket"
+        },
+        "details": {
+          "title": "Endpoint Details",
+          "listTickets": {
+            "title": "GET /tickets",
+            "description": "Retrieve a paginated list of tickets. Supports filtering by repository, status, type, assignee, and labels.",
+            "params": {
+              "repository_id": "Filter by repository ID",
+              "status": "Filter by status (open, in_progress, resolved, closed)",
+              "type": "Filter by type (bug, feature, task, improvement)",
+              "assignee_id": "Filter by assignee user ID",
+              "labels": "Filter by labels (comma-separated)",
+              "limit": "Maximum number of results to return",
+              "offset": "Number of results to skip for pagination"
+            }
+          },
+          "getBoard": {
+            "title": "GET /tickets/board",
+            "description": "Retrieve the Kanban board view with tickets organized into columns by status.",
+            "params": {
+              "repository_id": "Filter board by repository ID"
+            }
+          },
+          "getTicket": {
+            "title": "GET /tickets/:identifier",
+            "description": "Retrieve detailed information about a specific ticket by its human-readable identifier.",
+            "params": {
+              "identifier": "Ticket identifier (e.g., AM-123)"
+            }
+          },
+          "createTicket": {
+            "title": "POST /tickets",
+            "description": "Create a new ticket. Requires a type and title at minimum.",
+            "fields": {
+              "type": "Ticket type: bug, feature, task, or improvement",
+              "title": "Ticket title (1-500 characters)",
+              "description": "Detailed description of the ticket (Markdown supported)",
+              "priority": "Priority level: low, medium, high, or critical",
+              "status": "Initial status (defaults to open)",
+              "assignee_id": "User ID to assign the ticket to",
+              "repository_id": "Repository to associate with",
+              "labels": "Array of label strings",
+              "parent_identifier": "Parent ticket identifier for sub-tasks"
+            }
+          },
+          "updateTicket": {
+            "title": "PUT /tickets/:identifier",
+            "description": "Update an existing ticket. All fields are optional — only provided fields will be updated.",
+            "params": {
+              "identifier": "Ticket identifier (e.g., AM-123)"
+            },
+            "fields": {
+              "title": "Updated ticket title",
+              "description": "Updated description",
+              "type": "Updated ticket type",
+              "priority": "Updated priority level",
+              "status": "Updated status",
+              "assignee_id": "Updated assignee user ID",
+              "labels": "Updated array of label strings",
+              "parent_identifier": "Updated parent ticket identifier"
+            }
+          },
+          "updateStatus": {
+            "title": "PATCH /tickets/:identifier/status",
+            "description": "Update only the status of a ticket. This is a convenience endpoint for status transitions.",
+            "params": {
+              "identifier": "Ticket identifier (e.g., AM-123)"
+            },
+            "fields": {
+              "status": "New status: open, in_progress, resolved, or closed"
+            }
+          },
+          "deleteTicket": {
+            "title": "DELETE /tickets/:identifier",
+            "description": "Permanently delete a ticket. This action cannot be undone.",
+            "params": {
+              "identifier": "Ticket identifier (e.g., AM-123)"
+            }
+          }
+        }
+      },
+      "channels": {
+        "title": "Channels API",
+        "description": "Query channels and manage messages. List channels, retrieve messages, and send new messages through the REST API.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "List channels",
+          "get": "Get channel details",
+          "messages": "List channel messages",
+          "create": "Create a new channel",
+          "update": "Update a channel",
+          "sendMessage": "Send a message to a channel"
+        },
+        "details": {
+          "title": "Endpoint Details",
+          "listChannels": {
+            "title": "GET /channels",
+            "description": "Retrieve a list of channels. Supports filtering by repository, ticket, and archive status.",
+            "params": {
+              "repository_id": "Filter by repository ID",
+              "ticket_id": "Filter by associated ticket ID",
+              "include_archived": "Include archived channels (true/false)"
+            }
+          },
+          "getChannel": {
+            "title": "GET /channels/:id",
+            "description": "Retrieve detailed information about a specific channel.",
+            "params": {
+              "id": "The numeric ID of the channel"
+            }
+          },
+          "getMessages": {
+            "title": "GET /channels/:id/messages",
+            "description": "Retrieve messages from a channel, ordered by most recent first.",
+            "params": {
+              "id": "The numeric ID of the channel",
+              "limit": "Maximum number of messages to return (max 100)"
+            }
+          },
+          "createChannel": {
+            "title": "POST /channels",
+            "description": "Create a new channel for agent collaboration.",
+            "fields": {
+              "name": "Channel name (2-100 characters)",
+              "description": "Channel description",
+              "repository_id": "Repository to associate with",
+              "ticket_identifier": "Ticket identifier to link (e.g., AM-123)",
+              "document": "Initial document or context for the channel"
+            }
+          },
+          "updateChannel": {
+            "title": "PUT /channels/:id",
+            "description": "Update an existing channel. Only provided fields will be updated.",
+            "params": {
+              "id": "The numeric ID of the channel"
+            },
+            "fields": {
+              "name": "Updated channel name",
+              "description": "Updated channel description",
+              "document": "Updated channel document"
+            }
+          },
+          "sendMessage": {
+            "title": "POST /channels/:id/messages",
+            "description": "Send a new message to a channel.",
+            "params": {
+              "id": "The numeric ID of the channel"
+            },
+            "fields": {
+              "content": "Message content text",
+              "pod_key": "Pod key to associate with this message (optional)"
+            }
+          }
+        }
+      },
+      "runners": {
+        "title": "Runners API",
+        "description": "Monitor runner status and availability. List runners and check their connected Pods through the REST API.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "List all runners",
+          "get": "Get runner details",
+          "available": "List available (online) runners",
+          "pods": "List pods on a runner"
+        },
+        "details": {
+          "title": "Endpoint Details",
+          "listRunners": {
+            "title": "GET /runners",
+            "description": "Retrieve a list of all runners registered in the organization."
+          },
+          "getRunner": {
+            "title": "GET /runners/:id",
+            "description": "Retrieve detailed information about a specific runner.",
+            "params": {
+              "id": "The numeric ID of the runner"
+            }
+          },
+          "availableRunners": {
+            "title": "GET /runners/available",
+            "description": "Retrieve a list of runners that are currently online and available to accept new pods."
+          },
+          "runnerPods": {
+            "title": "GET /runners/:id/pods",
+            "description": "Retrieve a paginated list of pods running on a specific runner.",
+            "params": {
+              "id": "The numeric ID of the runner",
+              "status": "Filter by pod status (e.g., running, terminated)",
+              "limit": "Maximum number of results to return",
+              "offset": "Number of results to skip for pagination"
+            }
+          }
+        }
+      },
+      "repositories": {
+        "title": "Repositories API",
+        "description": "Access repository information. List repositories, branches, and merge requests through the REST API.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "List repositories",
+          "get": "Get repository details",
+          "branches": "List branches",
+          "mergeRequests": "List merge requests"
+        },
+        "details": {
+          "title": "Endpoint Details",
+          "listRepos": {
+            "title": "GET /repositories",
+            "description": "Retrieve a list of all repositories connected to the organization."
+          },
+          "getRepo": {
+            "title": "GET /repositories/:id",
+            "description": "Retrieve detailed information about a specific repository.",
+            "params": {
+              "id": "The numeric ID of the repository"
+            }
+          },
+          "listBranches": {
+            "title": "GET /repositories/:id/branches",
+            "description": "Retrieve a list of branches for a specific repository. Requires an access token.",
+            "params": {
+              "id": "The numeric ID of the repository",
+              "access_token": "Git provider access token for authentication"
+            }
+          },
+          "listMergeRequests": {
+            "title": "GET /repositories/:id/merge-requests",
+            "description": "Retrieve merge requests (or pull requests) for a specific repository.",
+            "params": {
+              "id": "The numeric ID of the repository",
+              "branch": "Filter by source branch name",
+              "state": "Filter by state: opened, merged, closed, or all"
+            }
+          }
         }
       }
     },

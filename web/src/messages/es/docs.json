@@ -24,6 +24,14 @@
       "gitIntegration": "Integración con Git",
       "teamManagement": "Gestión de equipos",
       "multiAgentWorkflows": "Flujos multi-agente",
+      "api": "API",
+      "apiOverview": "Descripción general",
+      "apiAuthentication": "Autenticación",
+      "apiPods": "Pods API",
+      "apiTickets": "Tickets API",
+      "apiChannels": "Channels API",
+      "apiRunners": "Runners API",
+      "apiRepositories": "Repositories API",
       "help": "Ayuda",
       "faq": "Preguntas frecuentes",
       "menu": "Menú"
@@ -859,6 +867,422 @@
           "tip3": "Link to tickets — Associate Pods with tickets for automatic context",
           "tip4": "Monitor via Mesh — Use the topology view to track collaboration status",
           "tip5": "Clean up — Terminate Pods when tasks are complete to free resources"
+        }
+      }
+    },
+    "api": {
+      "common": {
+        "methodHeader": "Método",
+        "pathHeader": "Ruta",
+        "scopeHeader": "Alcance",
+        "descriptionHeader": "Descripción",
+        "endpointDetails": "Detalles de endpoints",
+        "pathParams": "Parámetros de ruta",
+        "queryParams": "Parámetros de consulta",
+        "requestBody": "Cuerpo de la solicitud",
+        "responseExample": "Ejemplo de respuesta",
+        "paramHeader": "Parámetro",
+        "typeHeader": "Tipo",
+        "requiredHeader": "Requerido",
+        "defaultHeader": "Por defecto",
+        "fieldHeader": "Campo",
+        "optionalBadge": "Opcional",
+        "requiredBadge": "Requerido"
+      },
+      "overview": {
+        "title": "Descripción general de la API",
+        "description": "Integre servicios de terceros con AgentsMesh utilizando claves API a nivel de organización. Automatice la gestión de Pods, el seguimiento de tickets y más a través de la API REST.",
+        "overview": {
+          "title": "Descripción general",
+          "description": "AgentsMesh proporciona claves API a nivel de organización para integraciones de terceros, pipelines CI/CD y flujos de trabajo de automatización. Con las claves API puede:",
+          "item1": "Gestionar AgentPods programáticamente (crear, listar, terminar)",
+          "item2": "Automatizar la creación de tickets y actualizaciones de estado",
+          "item3": "Consultar canales y enviar mensajes",
+          "item4": "Monitorear runners y estado de repositorios"
+        },
+        "gettingKey": {
+          "title": "Obtener una clave API",
+          "description": "Las claves API son creadas por los propietarios o administradores de la organización desde la interfaz web.",
+          "step1": "Vaya a Configuración → Organización → Claves API",
+          "step2": "Haga clic en Crear clave API",
+          "step3": "Ingrese un nombre, fecha de expiración opcional y seleccione los alcances necesarios",
+          "step4": "Copie la clave generada (comienza con amk_)",
+          "warning": "Importante: La clave API solo se muestra una vez en el momento de la creación. Guárdela de forma segura — no podrá recuperarla después."
+        },
+        "basePath": {
+          "title": "URL base y ruta",
+          "description": "Todos los endpoints de la API externa siguen este patrón:",
+          "slugNote": "Reemplace '{'slug'}' con el slug de su organización (visible en Configuración → Organización)."
+        }
+      },
+      "authentication": {
+        "title": "Autenticación",
+        "description": "Aprenda cómo autenticar sus solicitudes API usando claves API.",
+        "methods": {
+          "title": "Métodos de autenticación",
+          "description": "Incluya su clave API en cada solicitud utilizando uno de los siguientes métodos:",
+          "headerMethod": "Encabezado X-API-Key",
+          "headerMethodDesc": "Pase la clave directamente en el encabezado X-API-Key. Este es el método recomendado.",
+          "bearerMethod": "Authorization Bearer",
+          "bearerMethodDesc": "Alternativamente, pase la clave como token Bearer en el encabezado Authorization."
+        },
+        "scopes": {
+          "title": "Alcances",
+          "description": "A cada clave API se le asignan uno o más alcances que determinan a qué endpoints puede acceder. Los alcances de escritura incluyen implícitamente el acceso de lectura para el mismo recurso.",
+          "scopeHeader": "Alcance",
+          "descriptionHeader": "Descripción",
+          "endpointsHeader": "Endpoints accesibles",
+          "podsRead": "pods:read",
+          "podsReadDesc": "Acceso de solo lectura a Pods",
+          "podsReadEndpoints": "Listar Pods, obtener detalles del Pod",
+          "podsWrite": "pods:write",
+          "podsWriteDesc": "Gestión completa de Pods (incluye lectura)",
+          "podsWriteEndpoints": "Crear Pods, terminar Pods + todos los endpoints de lectura",
+          "ticketsRead": "tickets:read",
+          "ticketsReadDesc": "Acceso de solo lectura a tickets",
+          "ticketsReadEndpoints": "Listar tickets, obtener ticket, obtener tablero",
+          "ticketsWrite": "tickets:write",
+          "ticketsWriteDesc": "Gestión completa de tickets (incluye lectura)",
+          "ticketsWriteEndpoints": "Crear, actualizar, eliminar tickets + todos los endpoints de lectura",
+          "channelsRead": "channels:read",
+          "channelsReadDesc": "Acceso de solo lectura a canales",
+          "channelsReadEndpoints": "Listar canales, obtener canal, listar mensajes",
+          "channelsWrite": "channels:write",
+          "channelsWriteDesc": "Gestión completa de canales (incluye lectura)",
+          "channelsWriteEndpoints": "Crear/actualizar canales, enviar mensajes + todos los endpoints de lectura",
+          "runnersRead": "runners:read",
+          "runnersReadDesc": "Acceso de solo lectura a runners",
+          "runnersReadEndpoints": "Listar runners, obtener runner, runners disponibles, Pods del runner",
+          "reposRead": "repos:read",
+          "reposReadDesc": "Acceso de solo lectura a repositorios",
+          "reposReadEndpoints": "Listar repositorios, obtener repositorio, listar ramas, listar merge requests"
+        },
+        "errors": {
+          "title": "Manejo de errores",
+          "description": "La API devuelve códigos de estado HTTP estándar. Respuestas de error comunes:",
+          "codeHeader": "Código de estado",
+          "descriptionHeader": "Descripción",
+          "badRequest": "Bad Request — Parámetros o cuerpo de solicitud inválidos",
+          "unauthorized": "Unauthorized — Clave API faltante o inválida",
+          "forbidden": "Forbidden — La clave API no tiene el alcance requerido para este endpoint",
+          "notFound": "Not Found — El recurso no existe o el slug de la organización es inválido"
+        }
+      },
+      "pods": {
+        "title": "Pods API",
+        "description": "Gestione AgentPods programáticamente. Cree, liste y termine Pods a través de la API REST.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "Listar todos los Pods",
+          "get": "Obtener detalles del Pod por clave",
+          "create": "Crear un nuevo Pod",
+          "terminate": "Terminar un Pod"
+        },
+        "examples": {
+          "title": "Ejemplos de código",
+          "listPods": "Listar todos los Pods en ejecución",
+          "createPod": "Crear un nuevo Pod"
+        },
+        "details": {
+          "title": "Detalles de endpoints",
+          "listPods": {
+            "title": "GET /pods",
+            "description": "Recuperar una lista paginada de Pods en la organización. Soporta filtrado por estado.",
+            "params": {
+              "status": "Filtrar por estado del Pod (ej. running, terminated)",
+              "limit": "Número máximo de resultados a devolver",
+              "offset": "Número de resultados a omitir para la paginación"
+            }
+          },
+          "getPod": {
+            "title": "GET /pods/:key",
+            "description": "Recuperar información detallada de un Pod específico por su clave única.",
+            "params": {
+              "key": "El identificador de clave único del Pod"
+            }
+          },
+          "createPod": {
+            "title": "POST /pods",
+            "description": "Crear un nuevo AgentPod en un runner especificado. El Pod se inicializará con la configuración dada y comenzará a ejecutarse.",
+            "fields": {
+              "runner_id": "ID del runner donde crear el Pod",
+              "agent_type_id": "Identificador del tipo de agente (ej. claude-code, aider)",
+              "initial_prompt": "Prompt o tarea inicial para el agente",
+              "repository_id": "Repositorio a asociar con el Pod",
+              "branch": "Rama de Git en la que trabajar",
+              "ticket_identifier": "Identificador del ticket a vincular (ej. AM-123)",
+              "channel_id": "Canal a asociar con el Pod",
+              "sandbox_type": "Tipo de sandbox: worktree o tempdir",
+              "environment_variables": "Pares clave-valor de variables de entorno",
+              "custom_agent_command": "Comando personalizado para iniciar el agente",
+              "custom_agent_args": "Argumentos para el comando de agente personalizado",
+              "custom_mcp_config": "Configuración personalizada del servidor MCP (JSON)",
+              "auto_close": "Si el Pod debe cerrarse automáticamente después de completar la tarea",
+              "auto_close_delay_seconds": "Retraso en segundos antes del cierre automático",
+              "pod_timeout_minutes": "Tiempo de vida máximo del Pod en minutos",
+              "max_turns": "Número máximo de turnos del agente"
+            }
+          },
+          "terminatePod": {
+            "title": "POST /pods/:key/terminate",
+            "description": "Terminar un Pod en ejecución. El proceso del Pod será detenido y los recursos liberados.",
+            "params": {
+              "key": "El identificador de clave único del Pod a terminar"
+            }
+          }
+        }
+      },
+      "tickets": {
+        "title": "Tickets API",
+        "description": "Automatice la gestión de tickets. Cree, actualice y rastree tickets a través de la API REST.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "Listar tickets",
+          "board": "Obtener vista de tablero Kanban",
+          "get": "Obtener ticket por identificador",
+          "create": "Crear un nuevo ticket",
+          "update": "Actualizar un ticket",
+          "updateStatus": "Actualizar estado del ticket",
+          "delete": "Eliminar un ticket"
+        },
+        "examples": {
+          "title": "Ejemplos de código",
+          "listTickets": "Listar todos los tickets",
+          "createTicket": "Crear un nuevo ticket"
+        },
+        "details": {
+          "title": "Detalles de endpoints",
+          "listTickets": {
+            "title": "GET /tickets",
+            "description": "Recuperar una lista paginada de tickets. Soporta filtrado por repositorio, estado, tipo, asignado y etiquetas.",
+            "params": {
+              "repository_id": "Filtrar por ID de repositorio",
+              "status": "Filtrar por estado (open, in_progress, resolved, closed)",
+              "type": "Filtrar por tipo (bug, feature, task, improvement)",
+              "assignee_id": "Filtrar por ID de usuario asignado",
+              "labels": "Filtrar por etiquetas (separadas por comas)",
+              "limit": "Número máximo de resultados a devolver",
+              "offset": "Número de resultados a omitir para la paginación"
+            }
+          },
+          "getBoard": {
+            "title": "GET /tickets/board",
+            "description": "Recuperar la vista de tablero Kanban con los tickets organizados en columnas por estado.",
+            "params": {
+              "repository_id": "Filtrar el tablero por ID de repositorio"
+            }
+          },
+          "getTicket": {
+            "title": "GET /tickets/:identifier",
+            "description": "Recuperar información detallada de un ticket específico por su identificador legible.",
+            "params": {
+              "identifier": "Identificador del ticket (ej. AM-123)"
+            }
+          },
+          "createTicket": {
+            "title": "POST /tickets",
+            "description": "Crear un nuevo ticket. Requiere como mínimo un tipo y un título.",
+            "fields": {
+              "type": "Tipo de ticket: bug, feature, task o improvement",
+              "title": "Título del ticket (1-500 caracteres)",
+              "description": "Descripción detallada del ticket (Markdown soportado)",
+              "priority": "Nivel de prioridad: low, medium, high o critical",
+              "status": "Estado inicial (por defecto: open)",
+              "assignee_id": "ID del usuario al que asignar el ticket",
+              "repository_id": "Repositorio a asociar",
+              "labels": "Array de cadenas de etiquetas",
+              "parent_identifier": "Identificador del ticket padre para sub-tareas"
+            }
+          },
+          "updateTicket": {
+            "title": "PUT /tickets/:identifier",
+            "description": "Actualizar un ticket existente. Todos los campos son opcionales — solo se actualizarán los campos proporcionados.",
+            "params": {
+              "identifier": "Identificador del ticket (ej. AM-123)"
+            },
+            "fields": {
+              "title": "Título del ticket actualizado",
+              "description": "Descripción actualizada",
+              "type": "Tipo de ticket actualizado",
+              "priority": "Nivel de prioridad actualizado",
+              "status": "Estado actualizado",
+              "assignee_id": "ID de usuario asignado actualizado",
+              "labels": "Array de cadenas de etiquetas actualizado",
+              "parent_identifier": "Identificador del ticket padre actualizado"
+            }
+          },
+          "updateStatus": {
+            "title": "PATCH /tickets/:identifier/status",
+            "description": "Actualizar solo el estado de un ticket. Este es un endpoint simplificado para transiciones de estado.",
+            "params": {
+              "identifier": "Identificador del ticket (ej. AM-123)"
+            },
+            "fields": {
+              "status": "Nuevo estado: open, in_progress, resolved o closed"
+            }
+          },
+          "deleteTicket": {
+            "title": "DELETE /tickets/:identifier",
+            "description": "Eliminar permanentemente un ticket. Esta acción no se puede deshacer.",
+            "params": {
+              "identifier": "Identificador del ticket (ej. AM-123)"
+            }
+          }
+        }
+      },
+      "channels": {
+        "title": "Channels API",
+        "description": "Consulte canales y gestione mensajes. Liste canales, recupere mensajes y envíe nuevos mensajes a través de la API REST.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "Listar canales",
+          "get": "Obtener detalles del canal",
+          "messages": "Listar mensajes del canal",
+          "create": "Crear un nuevo canal",
+          "update": "Actualizar un canal",
+          "sendMessage": "Enviar un mensaje al canal"
+        },
+        "details": {
+          "title": "Detalles de endpoints",
+          "listChannels": {
+            "title": "GET /channels",
+            "description": "Recuperar una lista de canales. Soporta filtrado por repositorio, ticket y estado de archivado.",
+            "params": {
+              "repository_id": "Filtrar por ID de repositorio",
+              "ticket_id": "Filtrar por ID de ticket asociado",
+              "include_archived": "Incluir canales archivados (true/false)"
+            }
+          },
+          "getChannel": {
+            "title": "GET /channels/:id",
+            "description": "Recuperar información detallada de un canal específico.",
+            "params": {
+              "id": "El ID numérico del canal"
+            }
+          },
+          "getMessages": {
+            "title": "GET /channels/:id/messages",
+            "description": "Recuperar mensajes de un canal, ordenados del más reciente al más antiguo.",
+            "params": {
+              "id": "El ID numérico del canal",
+              "limit": "Número máximo de mensajes a devolver (máx. 100)"
+            }
+          },
+          "createChannel": {
+            "title": "POST /channels",
+            "description": "Crear un nuevo canal para la colaboración entre agentes.",
+            "fields": {
+              "name": "Nombre del canal (2-100 caracteres)",
+              "description": "Descripción del canal",
+              "repository_id": "Repositorio a asociar",
+              "ticket_identifier": "Identificador del ticket a vincular (ej. AM-123)",
+              "document": "Documento o contexto inicial para el canal"
+            }
+          },
+          "updateChannel": {
+            "title": "PUT /channels/:id",
+            "description": "Actualizar un canal existente. Solo se actualizarán los campos proporcionados.",
+            "params": {
+              "id": "El ID numérico del canal"
+            },
+            "fields": {
+              "name": "Nombre del canal actualizado",
+              "description": "Descripción del canal actualizada",
+              "document": "Documento del canal actualizado"
+            }
+          },
+          "sendMessage": {
+            "title": "POST /channels/:id/messages",
+            "description": "Enviar un nuevo mensaje a un canal.",
+            "params": {
+              "id": "El ID numérico del canal"
+            },
+            "fields": {
+              "content": "Contenido de texto del mensaje",
+              "pod_key": "Clave del Pod a asociar con este mensaje (opcional)"
+            }
+          }
+        }
+      },
+      "runners": {
+        "title": "Runners API",
+        "description": "Monitoree el estado y disponibilidad de los runners. Liste runners y verifique sus Pods conectados a través de la API REST.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "Listar todos los runners",
+          "get": "Obtener detalles del runner",
+          "available": "Listar runners disponibles (en línea)",
+          "pods": "Listar Pods del runner"
+        },
+        "details": {
+          "title": "Detalles de endpoints",
+          "listRunners": {
+            "title": "GET /runners",
+            "description": "Recuperar una lista de todos los runners registrados en la organización."
+          },
+          "getRunner": {
+            "title": "GET /runners/:id",
+            "description": "Recuperar información detallada de un runner específico.",
+            "params": {
+              "id": "El ID numérico del runner"
+            }
+          },
+          "availableRunners": {
+            "title": "GET /runners/available",
+            "description": "Recuperar una lista de runners que están actualmente en línea y disponibles para aceptar nuevos Pods."
+          },
+          "runnerPods": {
+            "title": "GET /runners/:id/pods",
+            "description": "Recuperar una lista paginada de Pods ejecutándose en un runner específico.",
+            "params": {
+              "id": "El ID numérico del runner",
+              "status": "Filtrar por estado del Pod (ej. running, terminated)",
+              "limit": "Número máximo de resultados a devolver",
+              "offset": "Número de resultados a omitir para la paginación"
+            }
+          }
+        }
+      },
+      "repositories": {
+        "title": "Repositories API",
+        "description": "Acceda a información de repositorios. Liste repositorios, ramas y merge requests a través de la API REST.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "Listar repositorios",
+          "get": "Obtener detalles del repositorio",
+          "branches": "Listar ramas",
+          "mergeRequests": "Listar merge requests"
+        },
+        "details": {
+          "title": "Detalles de endpoints",
+          "listRepos": {
+            "title": "GET /repositories",
+            "description": "Recuperar una lista de todos los repositorios conectados a la organización."
+          },
+          "getRepo": {
+            "title": "GET /repositories/:id",
+            "description": "Recuperar información detallada de un repositorio específico.",
+            "params": {
+              "id": "El ID numérico del repositorio"
+            }
+          },
+          "listBranches": {
+            "title": "GET /repositories/:id/branches",
+            "description": "Recuperar una lista de ramas de un repositorio específico. Requiere un token de acceso.",
+            "params": {
+              "id": "El ID numérico del repositorio",
+              "access_token": "Token de acceso del proveedor Git para autenticación"
+            }
+          },
+          "listMergeRequests": {
+            "title": "GET /repositories/:id/merge-requests",
+            "description": "Recuperar merge requests (o pull requests) de un repositorio específico.",
+            "params": {
+              "id": "El ID numérico del repositorio",
+              "branch": "Filtrar por nombre de rama de origen",
+              "state": "Filtrar por estado: opened, merged, closed o all"
+            }
+          }
         }
       }
     },

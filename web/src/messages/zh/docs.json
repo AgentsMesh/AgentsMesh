@@ -24,6 +24,14 @@
       "gitIntegration": "Git 集成",
       "teamManagement": "团队管理",
       "multiAgentWorkflows": "多智能体工作流",
+      "api": "API",
+      "apiOverview": "概述",
+      "apiAuthentication": "认证",
+      "apiPods": "Pods API",
+      "apiTickets": "Tickets API",
+      "apiChannels": "Channels API",
+      "apiRunners": "Runners API",
+      "apiRepositories": "Repositories API",
       "help": "帮助",
       "faq": "常见问题",
       "menu": "菜单"
@@ -859,6 +867,422 @@
           "tip3": "关联任务——将 Pod 与任务关联以获得自动上下文",
           "tip4": "通过 Mesh 监控——使用拓扑视图跟踪协作状态",
           "tip5": "及时清理——任务完成后终止 Pod 以释放资源"
+        }
+      }
+    },
+    "api": {
+      "common": {
+        "methodHeader": "方法",
+        "pathHeader": "路径",
+        "scopeHeader": "权限",
+        "descriptionHeader": "说明",
+        "endpointDetails": "端点详情",
+        "pathParams": "路径参数",
+        "queryParams": "查询参数",
+        "requestBody": "请求体",
+        "responseExample": "响应示例",
+        "paramHeader": "参数",
+        "typeHeader": "类型",
+        "requiredHeader": "必填",
+        "defaultHeader": "默认值",
+        "fieldHeader": "字段",
+        "optionalBadge": "可选",
+        "requiredBadge": "必填"
+      },
+      "overview": {
+        "title": "API 概述",
+        "description": "使用组织级 API Key 将第三方服务与 AgentsMesh 集成。通过 REST API 自动化 Pod 管理、任务跟踪等操作。",
+        "overview": {
+          "title": "概述",
+          "description": "AgentsMesh 提供组织级 API Key，用于第三方集成、CI/CD 流水线和自动化工作流。通过 API Key 你可以：",
+          "item1": "以编程方式管理 AgentPod（创建、列表、终止）",
+          "item2": "自动创建任务和更新状态",
+          "item3": "查询频道和发送消息",
+          "item4": "监控 Runner 和仓库状态"
+        },
+        "gettingKey": {
+          "title": "获取 API Key",
+          "description": "API Key 由组织所有者或管理员在 Web 界面中创建。",
+          "step1": "前往 设置 → 组织 → API Keys",
+          "step2": "点击 创建 API Key",
+          "step3": "输入名称、可选的过期日期，并选择所需的权限范围",
+          "step4": "复制生成的密钥（以 amk_ 开头）",
+          "warning": "重要提示：API Key 仅在创建时展示一次。请安全保存——之后无法再次查看。"
+        },
+        "basePath": {
+          "title": "基础 URL 与路径",
+          "description": "所有外部 API 端点遵循以下模式：",
+          "slugNote": "将 '{'slug'}' 替换为你的组织标识（可在 设置 → 组织 中查看）。"
+        }
+      },
+      "authentication": {
+        "title": "认证",
+        "description": "了解如何使用 API Key 对 API 请求进行认证。",
+        "methods": {
+          "title": "认证方式",
+          "description": "在每个请求中通过以下方式之一携带你的 API Key：",
+          "headerMethod": "X-API-Key 请求头",
+          "headerMethodDesc": "直接在 X-API-Key 请求头中传递密钥。这是推荐的方式。",
+          "bearerMethod": "Authorization Bearer",
+          "bearerMethodDesc": "也可以在 Authorization 请求头中作为 Bearer 令牌传递。"
+        },
+        "scopes": {
+          "title": "权限范围",
+          "description": "每个 API Key 被分配一个或多个权限范围，决定其可访问的端点。写入权限隐含包含同一资源的读取权限。",
+          "scopeHeader": "权限范围",
+          "descriptionHeader": "说明",
+          "endpointsHeader": "可访问的端点",
+          "podsRead": "pods:read",
+          "podsReadDesc": "Pod 只读访问",
+          "podsReadEndpoints": "列表 Pod、获取 Pod 详情",
+          "podsWrite": "pods:write",
+          "podsWriteDesc": "完整 Pod 管理（包含读取）",
+          "podsWriteEndpoints": "创建 Pod、终止 Pod + 所有读取端点",
+          "ticketsRead": "tickets:read",
+          "ticketsReadDesc": "任务只读访问",
+          "ticketsReadEndpoints": "列表任务、获取任务、获取看板",
+          "ticketsWrite": "tickets:write",
+          "ticketsWriteDesc": "完整任务管理（包含读取）",
+          "ticketsWriteEndpoints": "创建、更新、删除任务 + 所有读取端点",
+          "channelsRead": "channels:read",
+          "channelsReadDesc": "频道只读访问",
+          "channelsReadEndpoints": "列表频道、获取频道、列表消息",
+          "channelsWrite": "channels:write",
+          "channelsWriteDesc": "完整频道管理（包含读取）",
+          "channelsWriteEndpoints": "创建/更新频道、发送消息 + 所有读取端点",
+          "runnersRead": "runners:read",
+          "runnersReadDesc": "Runner 只读访问",
+          "runnersReadEndpoints": "列表 Runner、获取 Runner、可用 Runner、Runner Pod 列表",
+          "reposRead": "repos:read",
+          "reposReadDesc": "仓库只读访问",
+          "reposReadEndpoints": "列表仓库、获取仓库、列表分支、列表合并请求"
+        },
+        "errors": {
+          "title": "错误处理",
+          "description": "API 返回标准 HTTP 状态码。常见错误响应：",
+          "codeHeader": "状态码",
+          "descriptionHeader": "说明",
+          "badRequest": "Bad Request — 无效的参数或请求体",
+          "unauthorized": "Unauthorized — API Key 缺失或无效",
+          "forbidden": "Forbidden — API Key 缺少此端点所需的权限范围",
+          "notFound": "Not Found — 资源不存在或组织标识无效"
+        }
+      },
+      "pods": {
+        "title": "Pods API",
+        "description": "以编程方式管理 AgentPod。通过 REST API 创建、列表和终止 Pod。",
+        "endpoints": {
+          "title": "端点",
+          "list": "列出所有 Pod",
+          "get": "按 key 获取 Pod 详情",
+          "create": "创建新 Pod",
+          "terminate": "终止 Pod"
+        },
+        "examples": {
+          "title": "代码示例",
+          "listPods": "列出所有运行中的 Pod",
+          "createPod": "创建新 Pod"
+        },
+        "details": {
+          "title": "端点详情",
+          "listPods": {
+            "title": "GET /pods",
+            "description": "获取组织中 Pod 的分页列表。支持按状态筛选。",
+            "params": {
+              "status": "按 Pod 状态筛选（如 running、terminated）",
+              "limit": "返回的最大结果数",
+              "offset": "分页跳过的结果数"
+            }
+          },
+          "getPod": {
+            "title": "GET /pods/:key",
+            "description": "通过唯一 key 获取特定 Pod 的详细信息。",
+            "params": {
+              "key": "Pod 的唯一 key 标识符"
+            }
+          },
+          "createPod": {
+            "title": "POST /pods",
+            "description": "在指定 Runner 上创建新的 AgentPod。Pod 将使用给定配置初始化并开始执行。",
+            "fields": {
+              "runner_id": "创建 Pod 的 Runner ID",
+              "agent_type_id": "智能体类型标识符（如 claude-code、aider）",
+              "initial_prompt": "给智能体的初始提示或任务",
+              "repository_id": "关联到 Pod 的仓库",
+              "branch": "要操作的 Git 分支",
+              "ticket_identifier": "要关联的任务标识符（如 AM-123）",
+              "channel_id": "关联到 Pod 的频道",
+              "sandbox_type": "沙箱类型：worktree 或 tempdir",
+              "environment_variables": "环境变量的键值对",
+              "custom_agent_command": "启动智能体的自定义命令",
+              "custom_agent_args": "自定义智能体命令的参数",
+              "custom_mcp_config": "自定义 MCP 服务器配置（JSON）",
+              "auto_close": "任务完成后是否自动关闭 Pod",
+              "auto_close_delay_seconds": "自动关闭前的延迟秒数",
+              "pod_timeout_minutes": "Pod 的最大存活时间（分钟）",
+              "max_turns": "智能体的最大轮次数"
+            }
+          },
+          "terminatePod": {
+            "title": "POST /pods/:key/terminate",
+            "description": "终止运行中的 Pod。Pod 进程将被停止并释放资源。",
+            "params": {
+              "key": "要终止的 Pod 的唯一 key 标识符"
+            }
+          }
+        }
+      },
+      "tickets": {
+        "title": "Tickets API",
+        "description": "自动化任务管理。通过 REST API 创建、更新和跟踪任务。",
+        "endpoints": {
+          "title": "端点",
+          "list": "列出任务",
+          "board": "获取看板视图",
+          "get": "按标识获取任务",
+          "create": "创建新任务",
+          "update": "更新任务",
+          "updateStatus": "更新任务状态",
+          "delete": "删除任务"
+        },
+        "examples": {
+          "title": "代码示例",
+          "listTickets": "列出所有任务",
+          "createTicket": "创建新任务"
+        },
+        "details": {
+          "title": "端点详情",
+          "listTickets": {
+            "title": "GET /tickets",
+            "description": "获取任务的分页列表。支持按仓库、状态、类型、负责人和标签筛选。",
+            "params": {
+              "repository_id": "按仓库 ID 筛选",
+              "status": "按状态筛选（open、in_progress、resolved、closed）",
+              "type": "按类型筛选（bug、feature、task、improvement）",
+              "assignee_id": "按负责人用户 ID 筛选",
+              "labels": "按标签筛选（逗号分隔）",
+              "limit": "返回的最大结果数",
+              "offset": "分页跳过的结果数"
+            }
+          },
+          "getBoard": {
+            "title": "GET /tickets/board",
+            "description": "获取看板视图，任务按状态分列展示。",
+            "params": {
+              "repository_id": "按仓库 ID 筛选看板"
+            }
+          },
+          "getTicket": {
+            "title": "GET /tickets/:identifier",
+            "description": "通过可读标识符获取特定任务的详细信息。",
+            "params": {
+              "identifier": "任务标识符（如 AM-123）"
+            }
+          },
+          "createTicket": {
+            "title": "POST /tickets",
+            "description": "创建新任务。至少需要提供类型和标题。",
+            "fields": {
+              "type": "任务类型：bug、feature、task 或 improvement",
+              "title": "任务标题（1-500 个字符）",
+              "description": "任务的详细描述（支持 Markdown）",
+              "priority": "优先级：low、medium、high 或 critical",
+              "status": "初始状态（默认为 open）",
+              "assignee_id": "要分配的用户 ID",
+              "repository_id": "关联的仓库",
+              "labels": "标签字符串数组",
+              "parent_identifier": "父任务标识符（用于子任务）"
+            }
+          },
+          "updateTicket": {
+            "title": "PUT /tickets/:identifier",
+            "description": "更新现有任务。所有字段均为可选——仅更新提供的字段。",
+            "params": {
+              "identifier": "任务标识符（如 AM-123）"
+            },
+            "fields": {
+              "title": "更新后的任务标题",
+              "description": "更新后的描述",
+              "type": "更新后的任务类型",
+              "priority": "更新后的优先级",
+              "status": "更新后的状态",
+              "assignee_id": "更新后的负责人用户 ID",
+              "labels": "更新后的标签字符串数组",
+              "parent_identifier": "更新后的父任务标识符"
+            }
+          },
+          "updateStatus": {
+            "title": "PATCH /tickets/:identifier/status",
+            "description": "仅更新任务的状态。这是一个便捷的状态转换端点。",
+            "params": {
+              "identifier": "任务标识符（如 AM-123）"
+            },
+            "fields": {
+              "status": "新状态：open、in_progress、resolved 或 closed"
+            }
+          },
+          "deleteTicket": {
+            "title": "DELETE /tickets/:identifier",
+            "description": "永久删除任务。此操作不可撤销。",
+            "params": {
+              "identifier": "任务标识符（如 AM-123）"
+            }
+          }
+        }
+      },
+      "channels": {
+        "title": "Channels API",
+        "description": "查询频道和管理消息。通过 REST API 列出频道、获取消息和发送消息。",
+        "endpoints": {
+          "title": "端点",
+          "list": "列出频道",
+          "get": "获取频道详情",
+          "messages": "列出频道消息",
+          "create": "创建新频道",
+          "update": "更新频道",
+          "sendMessage": "向频道发送消息"
+        },
+        "details": {
+          "title": "端点详情",
+          "listChannels": {
+            "title": "GET /channels",
+            "description": "获取频道列表。支持按仓库、任务和归档状态筛选。",
+            "params": {
+              "repository_id": "按仓库 ID 筛选",
+              "ticket_id": "按关联任务 ID 筛选",
+              "include_archived": "是否包含已归档频道（true/false）"
+            }
+          },
+          "getChannel": {
+            "title": "GET /channels/:id",
+            "description": "获取特定频道的详细信息。",
+            "params": {
+              "id": "频道的数字 ID"
+            }
+          },
+          "getMessages": {
+            "title": "GET /channels/:id/messages",
+            "description": "获取频道的消息，按最新排序。",
+            "params": {
+              "id": "频道的数字 ID",
+              "limit": "返回的最大消息数（最多 100）"
+            }
+          },
+          "createChannel": {
+            "title": "POST /channels",
+            "description": "创建新的智能体协作频道。",
+            "fields": {
+              "name": "频道名称（2-100 个字符）",
+              "description": "频道描述",
+              "repository_id": "关联的仓库",
+              "ticket_identifier": "要关联的任务标识符（如 AM-123）",
+              "document": "频道的初始文档或上下文"
+            }
+          },
+          "updateChannel": {
+            "title": "PUT /channels/:id",
+            "description": "更新现有频道。仅更新提供的字段。",
+            "params": {
+              "id": "频道的数字 ID"
+            },
+            "fields": {
+              "name": "更新后的频道名称",
+              "description": "更新后的频道描述",
+              "document": "更新后的频道文档"
+            }
+          },
+          "sendMessage": {
+            "title": "POST /channels/:id/messages",
+            "description": "向频道发送新消息。",
+            "params": {
+              "id": "频道的数字 ID"
+            },
+            "fields": {
+              "content": "消息内容文本",
+              "pod_key": "关联到此消息的 Pod key（可选）"
+            }
+          }
+        }
+      },
+      "runners": {
+        "title": "Runners API",
+        "description": "监控 Runner 状态和可用性。通过 REST API 列出 Runner 并查看其连接的 Pod。",
+        "endpoints": {
+          "title": "端点",
+          "list": "列出所有 Runner",
+          "get": "获取 Runner 详情",
+          "available": "列出可用（在线）Runner",
+          "pods": "列出 Runner 上的 Pod"
+        },
+        "details": {
+          "title": "端点详情",
+          "listRunners": {
+            "title": "GET /runners",
+            "description": "获取组织中所有已注册 Runner 的列表。"
+          },
+          "getRunner": {
+            "title": "GET /runners/:id",
+            "description": "获取特定 Runner 的详细信息。",
+            "params": {
+              "id": "Runner 的数字 ID"
+            }
+          },
+          "availableRunners": {
+            "title": "GET /runners/available",
+            "description": "获取当前在线且可接受新 Pod 的 Runner 列表。"
+          },
+          "runnerPods": {
+            "title": "GET /runners/:id/pods",
+            "description": "获取特定 Runner 上运行的 Pod 分页列表。",
+            "params": {
+              "id": "Runner 的数字 ID",
+              "status": "按 Pod 状态筛选（如 running、terminated）",
+              "limit": "返回的最大结果数",
+              "offset": "分页跳过的结果数"
+            }
+          }
+        }
+      },
+      "repositories": {
+        "title": "Repositories API",
+        "description": "访问仓库信息。通过 REST API 列出仓库、分支和合并请求。",
+        "endpoints": {
+          "title": "端点",
+          "list": "列出仓库",
+          "get": "获取仓库详情",
+          "branches": "列出分支",
+          "mergeRequests": "列出合并请求"
+        },
+        "details": {
+          "title": "端点详情",
+          "listRepos": {
+            "title": "GET /repositories",
+            "description": "获取组织中所有已连接仓库的列表。"
+          },
+          "getRepo": {
+            "title": "GET /repositories/:id",
+            "description": "获取特定仓库的详细信息。",
+            "params": {
+              "id": "仓库的数字 ID"
+            }
+          },
+          "listBranches": {
+            "title": "GET /repositories/:id/branches",
+            "description": "获取特定仓库的分支列表。需要访问令牌。",
+            "params": {
+              "id": "仓库的数字 ID",
+              "access_token": "用于认证的 Git 服务商访问令牌"
+            }
+          },
+          "listMergeRequests": {
+            "title": "GET /repositories/:id/merge-requests",
+            "description": "获取特定仓库的合并请求（或 Pull Request）。",
+            "params": {
+              "id": "仓库的数字 ID",
+              "branch": "按源分支名称筛选",
+              "state": "按状态筛选：opened、merged、closed 或 all"
+            }
+          }
         }
       }
     },

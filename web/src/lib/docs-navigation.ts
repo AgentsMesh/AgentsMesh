@@ -67,6 +67,24 @@ export const docsNavSections: DocNavSection[] = [
     ],
   },
   {
+    titleKey: "docs.nav.api",
+    items: [
+      { titleKey: "docs.nav.apiOverview", href: "/docs/api" },
+      {
+        titleKey: "docs.nav.apiAuthentication",
+        href: "/docs/api/authentication",
+      },
+      { titleKey: "docs.nav.apiPods", href: "/docs/api/pods" },
+      { titleKey: "docs.nav.apiTickets", href: "/docs/api/tickets" },
+      { titleKey: "docs.nav.apiChannels", href: "/docs/api/channels" },
+      { titleKey: "docs.nav.apiRunners", href: "/docs/api/runners" },
+      {
+        titleKey: "docs.nav.apiRepositories",
+        href: "/docs/api/repositories",
+      },
+    ],
+  },
+  {
     titleKey: "docs.nav.help",
     items: [{ titleKey: "docs.nav.faq", href: "/docs/faq" }],
   },
