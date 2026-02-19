@@ -118,7 +118,7 @@ function RepositoryExpandedContent({
       )}
       <div className="flex items-center gap-2 mt-2">
         <a
-          href={repo.clone_url}
+          href={`${repo.provider_base_url.replace(/\/$/, "")}/${repo.full_path}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-primary hover:underline flex items-center gap-1"
