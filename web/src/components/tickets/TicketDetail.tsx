@@ -90,12 +90,14 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
     if (confirmed) {
       try {
         await deleteTicket(identifier);
-        router.back();
+        // Navigate to clean tickets list instead of router.back(),
+        // which may return to a page that tries to reload the deleted ticket
+        router.push(`/${currentOrg?.slug}/tickets`);
       } catch (err) {
         console.error("Failed to delete ticket:", err);
       }
     }
-  }, [confirm, deleteTicket, identifier, router, t]);
+  }, [confirm, deleteTicket, identifier, router, currentOrg, t]);
 
   // Handle ticket click for sub-tickets and relations
   const handleTicketClick = (ticketIdentifier: string) => {

@@ -18,24 +18,52 @@ func setupGitHubMockServer(t *testing.T, handler http.HandlerFunc) (*httptest.Se
 
 func TestNewGitHubProvider(t *testing.T) {
 	tests := []struct {
-		name        string
-		baseURL     string
-		accessToken string
+		name            string
+		baseURL         string
+		accessToken     string
+		expectedBaseURL string
 	}{
 		{
-			name:        "with custom base URL",
-			baseURL:     "https://api.github.example.com",
-			accessToken: "test-token",
+			name:            "with custom base URL",
+			baseURL:         "https://api.github.example.com",
+			accessToken:     "test-token",
+			expectedBaseURL: "https://api.github.example.com",
 		},
 		{
-			name:        "with empty base URL uses default",
-			baseURL:     "",
-			accessToken: "test-token",
+			name:            "with empty base URL uses default",
+			baseURL:         "",
+			accessToken:     "test-token",
+			expectedBaseURL: "https://api.github.com",
 		},
 		{
-			name:        "with trailing slash",
-			baseURL:     "https://api.github.com/",
-			accessToken: "test-token",
+			name:            "with trailing slash",
+			baseURL:         "https://api.github.com/",
+			accessToken:     "test-token",
+			expectedBaseURL: "https://api.github.com",
+		},
+		{
+			name:            "normalizes github.com to api.github.com",
+			baseURL:         "https://github.com",
+			accessToken:     "test-token",
+			expectedBaseURL: "https://api.github.com",
+		},
+		{
+			name:            "normalizes github.com with trailing slash",
+			baseURL:         "https://github.com/",
+			accessToken:     "test-token",
+			expectedBaseURL: "https://api.github.com",
+		},
+		{
+			name:            "normalizes http github.com to https api.github.com",
+			baseURL:         "http://github.com",
+			accessToken:     "test-token",
+			expectedBaseURL: "https://api.github.com",
+		},
+		{
+			name:            "preserves GitHub Enterprise base URL",
+			baseURL:         "https://github.mycompany.com",
+			accessToken:     "test-token",
+			expectedBaseURL: "https://github.mycompany.com",
 		},
 	}
 
@@ -47,6 +75,9 @@ func TestNewGitHubProvider(t *testing.T) {
 			}
 			if provider == nil {
 				t.Fatal("provider is nil")
+			}
+			if provider.baseURL != tt.expectedBaseURL {
+				t.Errorf("baseURL = %q, want %q", provider.baseURL, tt.expectedBaseURL)
 			}
 		})
 	}

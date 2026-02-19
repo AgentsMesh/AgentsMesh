@@ -23,6 +23,13 @@ func NewGitHubProvider(baseURL, accessToken string) (*GitHubProvider, error) {
 	}
 	baseURL = strings.TrimSuffix(baseURL, "/")
 
+	// Normalize github.com to api.github.com
+	// Users commonly configure "https://github.com" as the base URL,
+	// but the GitHub REST API lives at "https://api.github.com"
+	if baseURL == "https://github.com" || baseURL == "http://github.com" {
+		baseURL = "https://api.github.com"
+	}
+
 	return &GitHubProvider{
 		baseURL:     baseURL,
 		accessToken: accessToken,

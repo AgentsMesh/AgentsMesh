@@ -59,6 +59,12 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
       setTicket(cachedTicket);
     }
 
+    // If ticket was removed from store (e.g., deleted), skip the API call
+    // to avoid a 404 request for a ticket that no longer exists
+    if (tickets.length > 0 && !cachedTicket) {
+      return;
+    }
+
     const loadTicket = async () => {
       setLoading(true);
       setError(null);

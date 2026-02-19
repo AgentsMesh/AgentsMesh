@@ -560,7 +560,7 @@ describe('TicketDetail Component', () => {
       expect(screen.getByText(/Are you sure you want to delete ticket/)).toBeInTheDocument()
     })
 
-    it('should call deleteTicket and navigate back when confirmed', async () => {
+    it('should call deleteTicket and navigate to tickets list when confirmed', async () => {
       mockDeleteTicket.mockResolvedValue({})
 
       render(<TicketDetail identifier="PROJ-42" />)
@@ -576,7 +576,7 @@ describe('TicketDetail Component', () => {
 
       await waitFor(() => {
         expect(mockDeleteTicket).toHaveBeenCalledWith('PROJ-42')
-        expect(mockRouterBack).toHaveBeenCalled()
+        expect(mockRouterPush).toHaveBeenCalledWith('/test-org/tickets')
       })
     })
 
