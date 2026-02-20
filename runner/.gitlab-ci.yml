@@ -17,7 +17,7 @@ stages:
 
 variables:
   VERSION: ${CI_COMMIT_TAG:-dev}
-  GO_VERSION: "1.25"
+  GO_VERSION: "1.24.11"
   # Private registry to avoid Docker Hub pull failures
   REGISTRY: registry.corp.agentsmesh.ai
 
