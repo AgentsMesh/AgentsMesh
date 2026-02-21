@@ -19,7 +19,7 @@ func RegisterAllRoutes(rg *gin.RouterGroup, cfg *config.Config, svc *Services) {
 
 	// Organization routes (authenticated, some require org context)
 	// Path changed: /organizations -> /orgs
-	RegisterOrganizationRoutes(rg.Group("/orgs"), svc.Org)
+	RegisterOrganizationRoutes(rg.Group("/orgs"), svc.Org, svc.User)
 
 	// Admin routes (require admin role)
 	RegisterAdminRoutes(rg.Group("/admin"), svc)

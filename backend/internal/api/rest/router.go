@@ -123,7 +123,7 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 
 			// Organization routes (authenticated, some require org context)
 			// Path changed: /organizations → /orgs
-			v1.RegisterOrganizationRoutes(protected.Group("/orgs"), svc.Org)
+			v1.RegisterOrganizationRoutes(protected.Group("/orgs"), svc.Org, svc.User)
 
 			// Organization-scoped routes (require tenant context)
 			// Path changed: /organizations/:slug → /orgs/:slug

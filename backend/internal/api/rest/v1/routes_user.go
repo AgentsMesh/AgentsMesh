@@ -65,8 +65,8 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 }
 
 // RegisterOrganizationRoutes registers organization routes
-func RegisterOrganizationRoutes(rg *gin.RouterGroup, orgSvc *organization.Service) {
-	handler := NewOrganizationHandler(orgSvc)
+func RegisterOrganizationRoutes(rg *gin.RouterGroup, orgSvc *organization.Service, userSvc *user.Service) {
+	handler := NewOrganizationHandler(orgSvc, userSvc)
 
 	// Organization CRUD
 	rg.GET("", handler.ListOrganizations)

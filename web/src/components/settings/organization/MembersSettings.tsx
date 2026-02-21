@@ -7,6 +7,7 @@ import { useConfirmDialog, ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { FormField } from "@/components/ui/form-field";
 import { useAuthStore } from "@/stores/auth";
 import { organizationApi } from "@/lib/api";
+import { invitationApi, type Invitation } from "@/lib/api/invitation";
 import type { TranslationFn } from "./GeneralSettings";
 
 interface Member {
@@ -27,14 +28,27 @@ export function MembersSettings({ t }: MembersSettingsProps) {
   const [loading, setLoading] = useState(true);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("member");
+  const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Pending invitations state
+  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
+  const [loadingInvitations, setLoadingInvitations] = useState(false);
+  const [resendingId, setResendingId] = useState<number | null>(null);
 
   const removeMemberDialog = useConfirmDialog({
     title: t("settings.members.removeDialog.title"),
     description: t("settings.members.removeDialog.description"),
     confirmText: t("settings.members.remove"),
+    variant: "destructive",
+  });
+
+  const revokeInvitationDialog = useConfirmDialog({
+    title: t("settings.members.revokeDialog.title"),
+    description: t("settings.members.revokeDialog.description"),
+    confirmText: t("settings.members.revoke"),
     variant: "destructive",
   });
 
@@ -46,31 +60,88 @@ export function MembersSettings({ t }: MembersSettingsProps) {
       setMembers(response.members || []);
     } catch (err) {
       console.error("Failed to load members:", err);
-      setError("Failed to load members");
+      setError(t("settings.members.failedToLoad"));
     } finally {
       setLoading(false);
+    }
+  }, [currentOrg, t]);
+
+  const loadInvitations = useCallback(async () => {
+    if (!currentOrg) return;
+    try {
+      setLoadingInvitations(true);
+      const response = await invitationApi.list();
+      setPendingInvitations(response.invitations || []);
+    } catch (err) {
+      console.error("Failed to load invitations:", err);
+    } finally {
+      setLoadingInvitations(false);
     }
   }, [currentOrg]);
 
   useEffect(() => {
     loadMembers();
-  }, [loadMembers]);
+    loadInvitations();
+  }, [loadMembers, loadInvitations]);
+
+  // Auto-dismiss success message
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => setSuccessMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
 
   const handleInvite = async () => {
     if (!currentOrg || !inviteEmail) return;
     setInviting(true);
     setError(null);
     try {
-      await organizationApi.inviteMember(currentOrg.slug, inviteEmail, inviteRole);
+      await invitationApi.create(inviteEmail, inviteRole);
       setShowInviteDialog(false);
       setInviteEmail("");
       setInviteRole("member");
-      await loadMembers();
+      setSuccessMessage(t("settings.members.inviteSent", { email: inviteEmail }));
+      await loadInvitations();
     } catch (err) {
       console.error("Failed to invite member:", err);
-      setError("Failed to invite member. Please check the email and try again.");
+      const errorMessage = err instanceof Error ? err.message : "";
+      if (errorMessage.includes("already a member")) {
+        setError(t("settings.members.alreadyMember"));
+      } else if (errorMessage.includes("pending invitation already exists")) {
+        setError(t("settings.members.pendingExists"));
+      } else if (errorMessage.includes("No available seats") || errorMessage.includes("NO_AVAILABLE_SEATS")) {
+        setError(t("settings.members.noSeats"));
+      } else {
+        setError(t("settings.members.failedToInvite"));
+      }
     } finally {
       setInviting(false);
+    }
+  };
+
+  const handleRevoke = async (invitationId: number) => {
+    const confirmed = await revokeInvitationDialog.confirm();
+    if (!confirmed) return;
+    try {
+      await invitationApi.revoke(invitationId);
+      setSuccessMessage(t("settings.members.invitationRevoked"));
+      await loadInvitations();
+    } catch (err) {
+      console.error("Failed to revoke invitation:", err);
+      setError(t("settings.members.failedToRevoke"));
+    }
+  };
+
+  const handleResend = async (invitationId: number) => {
+    setResendingId(invitationId);
+    try {
+      await invitationApi.resend(invitationId);
+      setSuccessMessage(t("settings.members.invitationResent"));
+    } catch (err) {
+      console.error("Failed to resend invitation:", err);
+      setError(t("settings.members.failedToResend"));
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -83,7 +154,7 @@ export function MembersSettings({ t }: MembersSettingsProps) {
       await loadMembers();
     } catch (err) {
       console.error("Failed to remove member:", err);
-      setError("Failed to remove member");
+      setError(t("settings.members.failedToRemove"));
     }
   };
 
@@ -94,7 +165,7 @@ export function MembersSettings({ t }: MembersSettingsProps) {
       await loadMembers();
     } catch (err) {
       console.error("Failed to update role:", err);
-      setError("Failed to update member role");
+      setError(t("settings.members.failedToUpdate"));
     }
   };
 
@@ -104,6 +175,15 @@ export function MembersSettings({ t }: MembersSettingsProps) {
       case "admin": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       default: return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
+  };
+
+  const formatExpiryDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   return (
@@ -127,6 +207,16 @@ export function MembersSettings({ t }: MembersSettingsProps) {
         </div>
       )}
 
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 px-4 py-3 rounded-lg mb-4">
+          {successMessage}
+          <button onClick={() => setSuccessMessage(null)} className="ml-4 underline text-sm">
+            {t("settings.members.dismiss")}
+          </button>
+        </div>
+      )}
+
+      {/* Members List */}
       {loading ? (
         <div className="text-center py-8 text-muted-foreground">{t("settings.members.loading")}</div>
       ) : members.length === 0 ? (
@@ -186,6 +276,63 @@ export function MembersSettings({ t }: MembersSettingsProps) {
         </div>
       )}
 
+      {/* Pending Invitations */}
+      {!loadingInvitations && pendingInvitations.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+            {t("settings.members.pendingInvitations")}
+          </h3>
+          <div className="space-y-3">
+            {pendingInvitations.map((invitation) => (
+              <div
+                key={invitation.id}
+                className="flex items-center justify-between p-4 border border-dashed border-border rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-sm font-medium text-muted-foreground">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="20" height="16" x="2" y="4" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{invitation.email}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${getRoleBadgeColor(invitation.role)}`}>
+                        {invitation.role}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("settings.members.pendingExpires", { date: formatExpiryDate(invitation.expires_at) })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleResend(invitation.id)}
+                    disabled={resendingId === invitation.id}
+                  >
+                    {resendingId === invitation.id
+                      ? t("settings.members.resending")
+                      : t("settings.members.resend")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleRevoke(invitation.id)}
+                  >
+                    {t("settings.members.revoke")}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Invite Dialog */}
       {showInviteDialog && (
         <InviteDialog
@@ -199,6 +346,7 @@ export function MembersSettings({ t }: MembersSettingsProps) {
             setShowInviteDialog(false);
             setInviteEmail("");
             setInviteRole("member");
+            setError(null);
           }}
           t={t}
         />
@@ -206,6 +354,9 @@ export function MembersSettings({ t }: MembersSettingsProps) {
 
       {/* Remove Member Confirmation Dialog */}
       <ConfirmDialog {...removeMemberDialog.dialogProps} />
+
+      {/* Revoke Invitation Confirmation Dialog */}
+      <ConfirmDialog {...revokeInvitationDialog.dialogProps} />
     </div>
   );
 }
@@ -222,8 +373,8 @@ function InviteDialog({
 }: {
   inviteEmail: string;
   setInviteEmail: (email: string) => void;
-  inviteRole: string;
-  setInviteRole: (role: string) => void;
+  inviteRole: "admin" | "member";
+  setInviteRole: (role: "admin" | "member") => void;
   inviting: boolean;
   onInvite: () => void;
   onClose: () => void;
@@ -247,7 +398,7 @@ function InviteDialog({
             <select
               id="invite-role"
               value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value)}
+              onChange={(e) => setInviteRole(e.target.value as "admin" | "member")}
               className="w-full border border-border rounded px-3 py-2 bg-background"
             >
               <option value="member">{t("settings.members.roleMember")}</option>

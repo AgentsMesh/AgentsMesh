@@ -39,12 +39,29 @@ func (h *OrganizationHandler) ListMembers(c *gin.Context) {
 
 // InviteMember invites a member to organization
 // POST /api/v1/organizations/:slug/members
+// Supports both email-based invitation and direct user_id addition
 func (h *OrganizationHandler) InviteMember(c *gin.Context) {
 	slug := c.Param("slug")
 
 	var req InviteMemberRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Resolve target user ID: either from email or direct user_id
+	targetUserID := req.UserID
+	if req.Email != "" {
+		u, err := h.userService.GetByEmail(c.Request.Context(), req.Email)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found with this email"})
+			return
+		}
+		targetUserID = u.ID
+	}
+
+	if targetUserID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Either email or user_id is required"})
 		return
 	}
 
@@ -62,7 +79,14 @@ func (h *OrganizationHandler) InviteMember(c *gin.Context) {
 		return
 	}
 
-	if err := h.orgService.AddMember(c.Request.Context(), org.ID, req.UserID, req.Role); err != nil {
+	// Check if already a member
+	isMember, _ := h.orgService.IsMember(c.Request.Context(), org.ID, targetUserID)
+	if isMember {
+		c.JSON(http.StatusConflict, gin.H{"error": "User is already a member of this organization"})
+		return
+	}
+
+	if err := h.orgService.AddMember(c.Request.Context(), org.ID, targetUserID, req.Role); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add member"})
 		return
 	}
