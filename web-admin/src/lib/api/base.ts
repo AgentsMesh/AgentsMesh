@@ -11,8 +11,9 @@ function getApiUrl(): string {
   }
 
   // Try deriving from PRIMARY_DOMAIN
+  // Skip unreplaced placeholders from docker-entrypoint.sh (e.g., "__PRIMARY_DOMAIN__")
   const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN;
-  if (primaryDomain) {
+  if (primaryDomain && !primaryDomain.startsWith("__")) {
     const useHttps = process.env.NEXT_PUBLIC_USE_HTTPS === "true";
     const protocol = useHttps ? "https" : "http";
     return `${protocol}://${primaryDomain}`;

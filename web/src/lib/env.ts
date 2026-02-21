@@ -41,16 +41,22 @@
 
 /**
  * 获取主域名配置
+ * 过滤未被 docker-entrypoint.sh 替换的占位符（如 "__PRIMARY_DOMAIN__"）
  */
 function getPrimaryDomain(): string | undefined {
-  return process.env.NEXT_PUBLIC_PRIMARY_DOMAIN;
+  const domain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN;
+  if (domain && domain.startsWith("__")) return undefined;
+  return domain;
 }
 
 /**
  * 是否使用 HTTPS
+ * 过滤未被 docker-entrypoint.sh 替换的占位符（如 "__USE_HTTPS__"）
  */
 function isHttpsEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_USE_HTTPS === "true";
+  const val = process.env.NEXT_PUBLIC_USE_HTTPS;
+  if (!val || val.startsWith("__")) return false;
+  return val === "true";
 }
 
 /**
