@@ -5,6 +5,7 @@ import { useChannelStore } from "@/stores/channel";
 import { useMeshStore } from "@/stores/mesh";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
+import { ChannelDocument } from "./ChannelDocument";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Radio, Users, RefreshCw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -156,6 +157,11 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
           </div>
         </div>
       </div>
+
+      {/* Document section - collapsible markdown preview */}
+      {currentChannel?.document && (
+        <ChannelDocument document={currentChannel.document} />
+      )}
 
       {/* Messages */}
       <MessageList

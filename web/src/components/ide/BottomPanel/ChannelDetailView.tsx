@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { ChannelHeader } from "@/components/mesh/ChannelHeader";
+import { ChannelDocument } from "@/components/mesh/ChannelDocument";
 import { MessageList } from "@/components/mesh/MessageList";
 import { MessageInput } from "@/components/mesh/MessageInput";
-import { Markdown } from "@/components/ui/markdown";
 import { ChevronLeft } from "lucide-react";
 import type { ChannelInfo, MeshTopology } from "@/stores/mesh";
 import type { TransformedMessage } from "./types";
@@ -70,18 +70,9 @@ export function ChannelDetailView({
         </div>
       </div>
 
-      {/* Document section - collapsible if exists */}
+      {/* Document section - collapsible markdown preview */}
       {currentChannel?.document && (
-        <div className="px-3 py-2 bg-muted/20">
-          <details className="text-xs">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-1">
-              <span>{t("ide.bottomPanel.channelDocument")}</span>
-            </summary>
-            <div className="mt-2 text-muted-foreground">
-              <Markdown content={currentChannel.document} compact />
-            </div>
-          </details>
-        </div>
+        <ChannelDocument document={currentChannel.document} />
       )}
 
       {/* Messages */}

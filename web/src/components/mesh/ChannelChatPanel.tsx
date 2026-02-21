@@ -4,6 +4,7 @@ import { useEffect, useCallback } from "react";
 import { useChannelStore } from "@/stores/channel";
 import { useMeshStore } from "@/stores/mesh";
 import { ChannelHeader } from "./ChannelHeader";
+import { ChannelDocument } from "./ChannelDocument";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { Loader2 } from "lucide-react";
@@ -116,6 +117,11 @@ export function ChannelChatPanel({ channelId, onClose }: ChannelChatPanelProps) 
         onRefresh={handleRefresh}
         loading={messagesLoading}
       />
+
+      {/* Document section - collapsible markdown preview */}
+      {currentChannel?.document && (
+        <ChannelDocument document={currentChannel.document} />
+      )}
 
       {/* Messages */}
       <MessageList
