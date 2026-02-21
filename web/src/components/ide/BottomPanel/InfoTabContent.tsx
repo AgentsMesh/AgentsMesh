@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { PodData } from "@/lib/api/pod";
 import { getPodDisplayName } from "@/lib/pod-utils";
@@ -30,12 +31,14 @@ function getRelatedPods(pods: PodData[], pod: PodData | null): PodData[] {
 interface InfoTabContentProps {
   selectedPodKey: string | null;
   pod: PodData | null;
+  orgSlug: string;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export function InfoTabContent({
   selectedPodKey,
   pod,
+  orgSlug,
   t,
 }: InfoTabContentProps) {
   const { pods } = usePodStore();
@@ -129,6 +132,7 @@ export function InfoTabContent({
             icon={<FolderGit2 className="w-3 h-3" />}
             label={t("ide.bottomPanel.infoTab.repository")}
             value={pod.repository.full_path}
+            href={orgSlug ? `/${orgSlug}/repositories/${pod.repository.id}` : undefined}
           />
         )}
 
@@ -158,6 +162,7 @@ export function InfoTabContent({
             icon={<Ticket className="w-3 h-3" />}
             label={t("ide.bottomPanel.infoTab.ticket")}
             value={`${pod.ticket.identifier} - ${pod.ticket.title}`}
+            href={orgSlug ? `/${orgSlug}/tickets/${pod.ticket.identifier}` : undefined}
           />
         )}
 
@@ -254,6 +259,7 @@ function InfoRow({
   label,
   value,
   mono,
+  href,
   className,
   valueClassName,
 }: {
@@ -261,25 +267,42 @@ function InfoRow({
   label: string;
   value: React.ReactNode;
   mono?: boolean;
+  href?: string;
   className?: string;
   valueClassName?: string;
 }) {
+  const valueContent = href ? (
+    <Link
+      href={href}
+      className={cn(
+        "text-xs truncate hover:underline text-primary",
+        mono && "font-mono",
+        valueClassName
+      )}
+      title={typeof value === "string" ? value : undefined}
+    >
+      {value}
+    </Link>
+  ) : (
+    <span
+      className={cn(
+        "text-xs truncate",
+        mono && "font-mono",
+        valueClassName
+      )}
+      title={typeof value === "string" ? value : undefined}
+    >
+      {value}
+    </span>
+  );
+
   return (
     <div className={cn("flex items-start gap-1.5 min-w-0", className)}>
       <span className="text-muted-foreground mt-0.5 flex-shrink-0">{icon}</span>
       <span className="text-[10px] text-muted-foreground whitespace-nowrap flex-shrink-0">
         {label}:
       </span>
-      <span
-        className={cn(
-          "text-xs truncate",
-          mono && "font-mono",
-          valueClassName
-        )}
-        title={typeof value === "string" ? value : undefined}
-      >
-        {value}
-      </span>
+      {valueContent}
     </div>
   );
 }

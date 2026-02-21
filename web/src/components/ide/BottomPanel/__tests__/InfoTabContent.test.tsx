@@ -44,7 +44,7 @@ describe("InfoTabContent", () => {
   describe("empty states", () => {
     it("should show select pod message when no pod is selected", () => {
       render(
-        <InfoTabContent selectedPodKey={null} pod={null} t={mockT} />
+        <InfoTabContent selectedPodKey={null} pod={null} orgSlug="test-org" t={mockT} />
       );
       expect(
         screen.getByText("ide.bottomPanel.selectPodFirst")
@@ -56,6 +56,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey="pod-123"
           pod={null}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -72,6 +73,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -84,6 +86,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -98,6 +101,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -117,6 +121,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -129,6 +134,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -143,6 +149,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -162,6 +169,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -174,6 +182,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -188,6 +197,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -204,12 +214,56 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
       expect(
         screen.getByText("PROJ-42 - Fix login bug")
       ).toBeInTheDocument();
+    });
+
+    it("should render repository as a clickable link", () => {
+      const pod = createMockPod({
+        repository: {
+          id: 5,
+          name: "my-repo",
+          full_path: "org/my-repo",
+          provider_type: "github",
+        },
+      });
+      render(
+        <InfoTabContent
+          selectedPodKey={pod.pod_key}
+          pod={pod}
+          orgSlug="test-org"
+          t={mockT}
+        />
+      );
+      const repoLink = screen.getByText("org/my-repo");
+      expect(repoLink.closest("a")).toHaveAttribute(
+        "href",
+        "/test-org/repositories/5"
+      );
+    });
+
+    it("should render ticket as a clickable link", () => {
+      const pod = createMockPod({
+        ticket: { id: 1, identifier: "PROJ-42", title: "Fix login bug" },
+      });
+      render(
+        <InfoTabContent
+          selectedPodKey={pod.pod_key}
+          pod={pod}
+          orgSlug="test-org"
+          t={mockT}
+        />
+      );
+      const ticketLink = screen.getByText("PROJ-42 - Fix login bug");
+      expect(ticketLink.closest("a")).toHaveAttribute(
+        "href",
+        "/test-org/tickets/PROJ-42"
+      );
     });
 
     it("should display created by when available", () => {
@@ -220,6 +274,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -234,6 +289,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -248,6 +304,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -271,6 +328,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -311,6 +369,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -327,6 +386,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -341,6 +401,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -378,6 +439,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -400,6 +462,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -419,6 +482,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -448,6 +512,7 @@ describe("InfoTabContent", () => {
         <InfoTabContent
           selectedPodKey={pod.pod_key}
           pod={pod}
+          orgSlug="test-org"
           t={mockT}
         />
       );
@@ -475,6 +540,7 @@ describe("InfoTabContent", () => {
           <InfoTabContent
             selectedPodKey={pod.pod_key}
             pod={pod}
+            orgSlug="test-org"
             t={mockT}
           />
         );

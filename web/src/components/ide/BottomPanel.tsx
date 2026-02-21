@@ -21,6 +21,7 @@ import {
 import { AutopilotPanelContent } from "@/components/autopilot";
 import { useAutopilotStore } from "@/stores/autopilot";
 import { usePodStore } from "@/stores/pod";
+import { useAuthStore } from "@/stores/auth";
 import { ChannelsTabContent, ActivityTabContent, DeliveryTabContent, InfoTabContent } from "./BottomPanel/index";
 
 interface BottomPanelProps {
@@ -48,6 +49,9 @@ export function BottomPanel({ className }: BottomPanelProps) {
     setBottomPanelTab,
     toggleBottomPanel,
   } = useIDEStore();
+
+  const { currentOrg } = useAuthStore();
+  const orgSlug = currentOrg?.slug || "";
 
   const { panes, activePane } = useWorkspaceStore();
   const { topology, getChannelsForNode, getEdgesForNode, fetchTopology } = useMeshStore();
@@ -338,6 +342,7 @@ export function BottomPanel({ className }: BottomPanelProps) {
           <InfoTabContent
             selectedPodKey={selectedPodKey}
             pod={currentPod}
+            orgSlug={orgSlug}
             t={t}
           />
         )}
