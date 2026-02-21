@@ -233,7 +233,10 @@
       },
       "alreadyMember": "This user is already a member of the organization",
       "pendingExists": "A pending invitation already exists for this email",
-      "noSeats": "No available seats. Please purchase more seats to invite members.",
+      "noSeats": "No available seats in your current plan. Please add more seats or upgrade your plan to invite new members.",
+      "subscriptionFrozen": "Your subscription has expired. Please renew your subscription to invite members.",
+      "manageSeats": "Manage Seats",
+      "renewSubscription": "Renew Subscription",
       "inviteDialog": {
         "title": "Invite Member",
         "emailLabel": "Email Address",

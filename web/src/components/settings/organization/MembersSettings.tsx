@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConfirmDialog, ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormField } from "@/components/ui/form-field";
 import { useAuthStore } from "@/stores/auth";
 import { organizationApi } from "@/lib/api";
+import { ApiError } from "@/lib/api/base";
 import { invitationApi, type Invitation } from "@/lib/api/invitation";
 import type { TranslationFn } from "./GeneralSettings";
 
@@ -23,6 +25,7 @@ interface MembersSettingsProps {
 }
 
 export function MembersSettings({ t }: MembersSettingsProps) {
+  const router = useRouter();
   const { currentOrg, user } = useAuthStore();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +34,7 @@ export function MembersSettings({ t }: MembersSettingsProps) {
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<"generic" | "no_seats" | "subscription_frozen">("generic");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Pending invitations state
@@ -104,13 +108,26 @@ export function MembersSettings({ t }: MembersSettingsProps) {
       await loadInvitations();
     } catch (err) {
       console.error("Failed to invite member:", err);
-      const errorMessage = err instanceof Error ? err.message : "";
-      if (errorMessage.includes("already a member")) {
-        setError(t("settings.members.alreadyMember"));
-      } else if (errorMessage.includes("pending invitation already exists")) {
-        setError(t("settings.members.pendingExists"));
-      } else if (errorMessage.includes("No available seats") || errorMessage.includes("NO_AVAILABLE_SEATS")) {
-        setError(t("settings.members.noSeats"));
+      setErrorType("generic");
+
+      if (err instanceof ApiError && err.data) {
+        const data = err.data as { code?: string; error?: string };
+        const code = data.code || "";
+        const errorStr = data.error || "";
+
+        if (code === "NO_AVAILABLE_SEATS") {
+          setError(t("settings.members.noSeats"));
+          setErrorType("no_seats");
+        } else if (code === "SUBSCRIPTION_FROZEN") {
+          setError(t("settings.members.subscriptionFrozen"));
+          setErrorType("subscription_frozen");
+        } else if (errorStr.includes("already a member")) {
+          setError(t("settings.members.alreadyMember"));
+        } else if (errorStr.includes("pending invitation already exists")) {
+          setError(t("settings.members.pendingExists"));
+        } else {
+          setError(t("settings.members.failedToInvite"));
+        }
       } else {
         setError(t("settings.members.failedToInvite"));
       }
@@ -200,8 +217,24 @@ export function MembersSettings({ t }: MembersSettingsProps) {
 
       {error && (
         <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg mb-4">
-          {error}
-          <button onClick={() => setError(null)} className="ml-4 underline text-sm">
+          <span>{error}</span>
+          {errorType === "no_seats" && currentOrg && (
+            <button
+              onClick={() => router.push(`/${currentOrg.slug}/settings?scope=organization&tab=billing`)}
+              className="ml-2 underline text-sm font-medium"
+            >
+              {t("settings.members.manageSeats")}
+            </button>
+          )}
+          {errorType === "subscription_frozen" && currentOrg && (
+            <button
+              onClick={() => router.push(`/${currentOrg.slug}/settings?scope=organization&tab=billing`)}
+              className="ml-2 underline text-sm font-medium"
+            >
+              {t("settings.members.renewSubscription")}
+            </button>
+          )}
+          <button onClick={() => { setError(null); setErrorType("generic"); }} className="ml-4 underline text-sm">
             {t("settings.members.dismiss")}
           </button>
         </div>

@@ -233,7 +233,10 @@
       },
       "alreadyMember": "该用户已是组织成员",
       "pendingExists": "该邮箱已存在待处理的邀请",
-      "noSeats": "没有可用席位。请购买更多席位以邀请成员。",
+      "noSeats": "当前方案没有可用席位。请添加席位或升级方案以邀请新成员。",
+      "subscriptionFrozen": "您的订阅已过期，请续费后再邀请成员。",
+      "manageSeats": "管理席位",
+      "renewSubscription": "续费订阅",
       "inviteDialog": {
         "title": "邀请成员",
         "emailLabel": "邮箱地址",
