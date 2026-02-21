@@ -6,7 +6,7 @@ import {
   CircleDashed,
   Circle,
   CircleDot,
-  Loader2,
+  Timer,
   CheckCircle2,
   XCircle,
   // Priority icons
@@ -49,7 +49,7 @@ interface StatusIconProps {
 const statusIconMap: Record<TicketStatus, React.ComponentType<{ className?: string }>> = {
   backlog: CircleDashed,
   todo: Circle,
-  in_progress: Loader2,
+  in_progress: Timer,
   in_review: CircleDot,
   done: CheckCircle2,
   cancelled: XCircle,
@@ -67,14 +67,12 @@ const statusColorMap: Record<TicketStatus, string> = {
 export function StatusIcon({ status, size = "sm", className }: StatusIconProps) {
   const IconComponent = statusIconMap[status] || CircleDashed;
   const colorClass = statusColorMap[status] || statusColorMap.backlog;
-  const isAnimated = status === "in_progress";
 
   return (
     <IconComponent
       className={cn(
         sizeClasses[size],
         colorClass,
-        isAnimated && "animate-spin",
         className
       )}
     />
