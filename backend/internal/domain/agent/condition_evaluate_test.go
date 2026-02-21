@@ -134,6 +134,24 @@ func TestCondition_Evaluate(t *testing.T) {
 			want:   false,
 		},
 		{
+			name: "not_empty - is empty string",
+			condition: &Condition{
+				Field:    "model",
+				Operator: "not_empty",
+			},
+			config: map[string]interface{}{"model": ""},
+			want:   false,
+		},
+		{
+			name: "not_empty - is nil",
+			condition: &Condition{
+				Field:    "model",
+				Operator: "not_empty",
+			},
+			config: map[string]interface{}{"model": nil},
+			want:   false,
+		},
+		{
 			name: "in - match",
 			condition: &Condition{
 				Field:    "model",

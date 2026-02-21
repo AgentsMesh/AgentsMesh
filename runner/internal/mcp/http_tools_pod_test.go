@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
 func TestHTTPServerMCPToolsCallCreatePod(t *testing.T) {
@@ -158,6 +160,58 @@ func TestHTTPServerMCPToolsCallCreatePodWithEmptyConfigOverrides(t *testing.T) {
 	var resp MCPResponse
 	json.NewDecoder(rec.Body).Decode(&resp)
 	// Tool should be found
+}
+
+func TestMergeModelIntoConfigOverrides(t *testing.T) {
+	t.Run("merges model into nil config_overrides", func(t *testing.T) {
+		req := &tools.PodCreateRequest{}
+		mergeModelIntoConfigOverrides(req, "sonnet")
+
+		if req.ConfigOverrides == nil {
+			t.Fatal("ConfigOverrides should not be nil")
+		}
+		if req.ConfigOverrides["model"] != "sonnet" {
+			t.Errorf("model = %v, want sonnet", req.ConfigOverrides["model"])
+		}
+	})
+
+	t.Run("merges model into existing config_overrides without model", func(t *testing.T) {
+		req := &tools.PodCreateRequest{
+			ConfigOverrides: map[string]interface{}{
+				"timeout": 300,
+			},
+		}
+		mergeModelIntoConfigOverrides(req, "opus")
+
+		if req.ConfigOverrides["model"] != "opus" {
+			t.Errorf("model = %v, want opus", req.ConfigOverrides["model"])
+		}
+		if req.ConfigOverrides["timeout"] != 300 {
+			t.Errorf("timeout = %v, want 300 (should be preserved)", req.ConfigOverrides["timeout"])
+		}
+	})
+
+	t.Run("does not override model already in config_overrides", func(t *testing.T) {
+		req := &tools.PodCreateRequest{
+			ConfigOverrides: map[string]interface{}{
+				"model": "haiku",
+			},
+		}
+		mergeModelIntoConfigOverrides(req, "opus")
+
+		if req.ConfigOverrides["model"] != "haiku" {
+			t.Errorf("model = %v, want haiku (should not be overridden)", req.ConfigOverrides["model"])
+		}
+	})
+
+	t.Run("skips merge when model is empty string", func(t *testing.T) {
+		req := &tools.PodCreateRequest{}
+		mergeModelIntoConfigOverrides(req, "")
+
+		if req.ConfigOverrides != nil {
+			t.Errorf("ConfigOverrides should remain nil when model is empty, got %v", req.ConfigOverrides)
+		}
+	})
 }
 
 func TestHTTPServerMCPToolsCallCreatePodMissingAgentTypeID(t *testing.T) {

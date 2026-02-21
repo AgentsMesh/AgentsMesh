@@ -241,7 +241,7 @@ function SelectField({
         aria-describedby={description ? `${fieldKey}-desc` : undefined}
         aria-required={required}
       >
-        {!required && !value && (
+        {!required && !value && !options?.some((o) => o.value === "") && (
           <option value="" disabled>
             Select {label.toLowerCase()}...
           </option>

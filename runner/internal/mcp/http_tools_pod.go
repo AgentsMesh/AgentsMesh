@@ -6,6 +6,21 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
+// mergeModelIntoConfigOverrides ensures the top-level "model" parameter is passed to the backend
+// via config_overrides, since the backend only processes model through that field.
+// If config_overrides already contains "model", the existing value takes precedence.
+func mergeModelIntoConfigOverrides(req *tools.PodCreateRequest, model string) {
+	if model == "" {
+		return
+	}
+	if req.ConfigOverrides == nil {
+		req.ConfigOverrides = make(map[string]interface{})
+	}
+	if _, exists := req.ConfigOverrides["model"]; !exists {
+		req.ConfigOverrides["model"] = model
+	}
+}
+
 // Pod Tools
 
 func (s *HTTPServer) createCreatePodTool() *MCPTool {
@@ -66,7 +81,6 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
 			req := &tools.PodCreateRequest{
 				InitialPrompt: getStringArg(args, "initial_prompt"),
-				Model:         getStringArg(args, "model"),
 			}
 
 			if v := getIntArg(args, "runner_id"); v != 0 {
@@ -96,6 +110,9 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 			if v := getStringArg(args, "permission_mode"); v != "" {
 				req.PermissionMode = &v
 			}
+
+			// Merge top-level "model" into config_overrides so it reaches the backend
+			mergeModelIntoConfigOverrides(req, getStringArg(args, "model"))
 
 			// Create the pod
 			resp, err := client.CreatePod(ctx, req)

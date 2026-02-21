@@ -243,8 +243,9 @@
           "label": "Model",
           "description": "Select the Claude model to use",
           "options": {
-            "opus": "Claude Opus (Most Capable)",
-            "sonnet": "Claude Sonnet (Balanced)"
+            "": "Follow Runner (Default)",
+            "sonnet": "Claude Sonnet (Balanced)",
+            "opus": "Claude Opus (Most Capable)"
           }
         },
         "permission_mode": {

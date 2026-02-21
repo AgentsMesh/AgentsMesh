@@ -188,8 +188,9 @@
           "label": "模型",
           "description": "选择要使用的 Claude 模型",
           "options": {
-            "opus": "Claude Opus (最强大)",
-            "sonnet": "Claude Sonnet (均衡)"
+            "": "跟随 Runner (默认)",
+            "sonnet": "Claude Sonnet (均衡)",
+            "opus": "Claude Opus (最强大)"
           }
         },
         "permission_mode": {

@@ -123,10 +123,11 @@ export function useAgentConfig(
       setSavingConfig(true);
       setError(null);
 
-      // Filter out undefined/empty values, but keep false for booleans
+      // Filter out undefined values, but keep empty strings (e.g., "Follow Runner" model option)
+      // and false for booleans
       const cleanedConfig: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(configValues)) {
-        if (value !== undefined && value !== "") {
+        if (value !== undefined) {
           cleanedConfig[key] = value;
         }
       }
