@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
@@ -34,6 +35,32 @@ func (s *Service) GetTicketByIdentifier(ctx context.Context, organizationID int6
 		return nil, ErrTicketNotFound
 	}
 	return &t, nil
+}
+
+// GetTicketByIDOrIdentifier returns a ticket by numeric ID or string identifier,
+// scoped to an organization. It first tries identifier lookup; if the input is
+// a pure numeric string, it falls back to primary-key lookup with org validation.
+func (s *Service) GetTicketByIDOrIdentifier(ctx context.Context, organizationID int64, idOrIdentifier string) (*ticket.Ticket, error) {
+	// Try identifier lookup first (covers both "AM-123" and numeric strings that happen to match an identifier)
+	t, err := s.GetTicketByIdentifier(ctx, organizationID, idOrIdentifier)
+	if err == nil {
+		return t, nil
+	}
+
+	// If the input is a numeric string, fall back to primary-key lookup
+	if numericID, parseErr := strconv.ParseInt(idOrIdentifier, 10, 64); parseErr == nil {
+		t, err = s.GetTicket(ctx, numericID)
+		if err != nil {
+			return nil, ErrTicketNotFound
+		}
+		// Verify organization ownership
+		if t.OrganizationID != organizationID {
+			return nil, ErrTicketNotFound
+		}
+		return t, nil
+	}
+
+	return nil, ErrTicketNotFound
 }
 
 // ListTickets returns tickets based on filters
