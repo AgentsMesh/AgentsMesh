@@ -26,7 +26,6 @@ export class TerminalWriteScheduler {
    * Data is accumulated and written in the next animation frame.
    */
   schedule(data: Uint8Array): void {
-    console.log(`[Scheduler] schedule called, data_len=${data.length}, terminal=${!!this.terminal}`);
     this.pendingData.push(data);
 
     // Only request one animation frame at a time
@@ -43,7 +42,6 @@ export class TerminalWriteScheduler {
     this.rafId = null;
 
     if (!this.terminal || this.pendingData.length === 0) {
-      console.log(`[Scheduler] flush skipped: terminal=${!!this.terminal}, pendingData=${this.pendingData.length}`);
       return;
     }
 
@@ -57,13 +55,6 @@ export class TerminalWriteScheduler {
     }
 
     // Write combined data to terminal in one call
-    // Debug: print first 100 bytes as hex and string
-    const preview = combined.slice(0, 100);
-    const hexStr = Array.from(preview).map(b => b.toString(16).padStart(2, '0')).join(' ');
-    const textStr = new TextDecoder().decode(preview);
-    console.log(`[Scheduler] flush: writing ${totalLength} bytes to terminal`);
-    console.log(`[Scheduler] first 100 bytes (hex): ${hexStr}`);
-    console.log(`[Scheduler] first 100 bytes (text): ${textStr}`);
     this.terminal.write(combined);
 
     // Clear pending data

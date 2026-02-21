@@ -34,11 +34,33 @@ func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path st
 		fetchCmd.Dir = path
 		m.setGitAuthEnv(fetchCmd, opts)
 		if output, err := fetchCmd.CombinedOutput(); err != nil {
-			return fmt.Errorf("failed to fetch: %s, output: %s", err, output)
+			// Fetch failed — the bare repo may be corrupted. Remove and re-clone.
+			log.Warn("Fetch failed on existing repo, removing corrupted repo and re-cloning",
+				"path", path, "error", err, "output", string(output))
+			if removeErr := os.RemoveAll(path); removeErr != nil {
+				return fmt.Errorf("failed to fetch and failed to remove corrupted repo: fetch error: %s, remove error: %w", output, removeErr)
+			}
+			return m.cloneBareRepository(ctx, repoURL, path, opts)
 		}
 		log.Debug("Repository fetched successfully", "path", path)
 		return nil
 	}
+
+	// Directory may exist but is not a valid bare repo (e.g., previous clone was interrupted).
+	// Clean it up before cloning.
+	if info, err := os.Stat(path); err == nil && info.IsDir() {
+		log.Warn("Directory exists but is not a valid bare repo, removing before clone", "path", path)
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("failed to remove invalid repo directory: %w", err)
+		}
+	}
+
+	return m.cloneBareRepository(ctx, repoURL, path, opts)
+}
+
+// cloneBareRepository performs a bare clone and configures the repository for worktree usage.
+func (m *Manager) cloneBareRepository(ctx context.Context, repoURL, path string, opts *WorktreeOptions) error {
+	log := logger.Workspace()
 
 	// Clone the repository (bare clone for worktree support)
 	log.Debug("Cloning repository", "url", repoURL, "path", path)
@@ -52,6 +74,8 @@ func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path st
 	cloneCmd := exec.CommandContext(ctx, "git", "clone", "--bare", cloneURL, path)
 	m.setGitAuthEnv(cloneCmd, opts)
 	if output, err := cloneCmd.CombinedOutput(); err != nil {
+		// Clean up any partial clone artifacts to avoid blocking future retries
+		os.RemoveAll(path)
 		return fmt.Errorf("failed to clone: %s, output: %s", err, output)
 	}
 	log.Debug("Repository cloned successfully", "path", path)

@@ -1,16 +1,14 @@
 # Build stage
 # Build context should be project root (not runner/)
 ARG REGISTRY=registry.corp.agentsmesh.ai
-FROM ${REGISTRY}/library/golang:1.24-alpine AS builder
+ARG GO_VERSION=1.25
+FROM ${REGISTRY}/library/golang:${GO_VERSION} AS builder
 
 WORKDIR /app
 
 # Use China Go proxy for faster module downloads
 ENV GOPROXY=https://goproxy.cn,https://goproxy.io,direct
 ENV GOSUMDB=sum.golang.google.cn
-
-# Install dependencies
-RUN apk add --no-cache git ca-certificates
 
 # Copy proto module first (required by replace directive in go.mod)
 COPY proto /proto

@@ -34,9 +34,9 @@ test-backend:
   tags:
     - x86
     - docker
-  image: golang:1.24-alpine
+  image: ${REGISTRY}/library/golang:${GO_VERSION}
   before_script:
-    - apk add --no-cache gcc musl-dev git
+    - apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
     - go install gotest.tools/gotestsum@latest
     - go install github.com/boumenot/gocover-cobertura@latest
   script:
@@ -100,9 +100,9 @@ test-runner:
   tags:
     - x86
     - docker
-  image: golang:1.24-alpine
+  image: ${REGISTRY}/library/golang:${GO_VERSION}
   before_script:
-    - apk add --no-cache gcc musl-dev git
+    - apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
     - go install gotest.tools/gotestsum@latest
     - go install github.com/boumenot/gocover-cobertura@latest
   script:
@@ -136,9 +136,9 @@ test-relay:
   tags:
     - x86
     - docker
-  image: golang:1.24-alpine
+  image: ${REGISTRY}/library/golang:${GO_VERSION}
   before_script:
-    - apk add --no-cache gcc musl-dev git
+    - apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
     - go install gotest.tools/gotestsum@latest
     - go install github.com/boumenot/gocover-cobertura@latest
   script:
@@ -181,7 +181,7 @@ verify-build-backend:
     - name: ${REGISTRY}/library/docker:dind
       alias: docker
   script:
-    - docker build --build-arg REGISTRY=${REGISTRY} -f ci/backend.Dockerfile -t backend-verify:${CI_COMMIT_SHORT_SHA} .
+    - docker build --build-arg REGISTRY=${REGISTRY} --build-arg GO_VERSION=${GO_VERSION} -f ci/backend.Dockerfile -t backend-verify:${CI_COMMIT_SHORT_SHA} .
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
@@ -238,7 +238,7 @@ verify-build-runner:
     - name: ${REGISTRY}/library/docker:dind
       alias: docker
   script:
-    - docker build --build-arg REGISTRY=${REGISTRY} -f ci/runner.Dockerfile -t runner-verify:${CI_COMMIT_SHORT_SHA} .
+    - docker build --build-arg REGISTRY=${REGISTRY} --build-arg GO_VERSION=${GO_VERSION} -f ci/runner.Dockerfile -t runner-verify:${CI_COMMIT_SHORT_SHA} .
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
@@ -257,7 +257,7 @@ verify-build-relay:
     - name: ${REGISTRY}/library/docker:dind
       alias: docker
   script:
-    - docker build --build-arg REGISTRY=${REGISTRY} -f ci/relay.Dockerfile -t relay-verify:${CI_COMMIT_SHORT_SHA} .
+    - docker build --build-arg REGISTRY=${REGISTRY} --build-arg GO_VERSION=${GO_VERSION} -f ci/relay.Dockerfile -t relay-verify:${CI_COMMIT_SHORT_SHA} .
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
@@ -280,7 +280,7 @@ build-backend:
       alias: docker
   script:
     # Build from project root to include proto/ directory
-    - docker build --build-arg REGISTRY=${REGISTRY} -f ci/backend.Dockerfile -t ${BACKEND_IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${BACKEND_IMAGE}:latest .
+    - docker build --build-arg REGISTRY=${REGISTRY} --build-arg GO_VERSION=${GO_VERSION} -f ci/backend.Dockerfile -t ${BACKEND_IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${BACKEND_IMAGE}:latest .
     - docker push ${BACKEND_IMAGE}:${CI_COMMIT_SHORT_SHA}
     - docker push ${BACKEND_IMAGE}:latest
   rules:
@@ -347,7 +347,7 @@ build-runner:
       alias: docker
   script:
     # Build from project root to include proto/ directory
-    - docker build --build-arg REGISTRY=${REGISTRY} -f ci/runner.Dockerfile -t ${RUNNER_IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${RUNNER_IMAGE}:latest .
+    - docker build --build-arg REGISTRY=${REGISTRY} --build-arg GO_VERSION=${GO_VERSION} -f ci/runner.Dockerfile -t ${RUNNER_IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${RUNNER_IMAGE}:latest .
     - docker push ${RUNNER_IMAGE}:${CI_COMMIT_SHORT_SHA}
     - docker push ${RUNNER_IMAGE}:latest
   rules:
@@ -369,7 +369,7 @@ build-relay:
     - name: ${REGISTRY}/library/docker:dind
       alias: docker
   script:
-    - docker build --build-arg REGISTRY=${REGISTRY} -f ci/relay.Dockerfile -t ${RELAY_IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${RELAY_IMAGE}:latest .
+    - docker build --build-arg REGISTRY=${REGISTRY} --build-arg GO_VERSION=${GO_VERSION} -f ci/relay.Dockerfile -t ${RELAY_IMAGE}:${CI_COMMIT_SHORT_SHA} -t ${RELAY_IMAGE}:latest .
     - docker push ${RELAY_IMAGE}:${CI_COMMIT_SHORT_SHA}
     - docker push ${RELAY_IMAGE}:latest
   rules:
