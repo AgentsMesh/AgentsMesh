@@ -10,20 +10,20 @@ function getApiUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // Try deriving from PRIMARY_DOMAIN
-  // Skip unreplaced placeholders from docker-entrypoint.sh (e.g., "__PRIMARY_DOMAIN__")
-  const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN;
-  if (primaryDomain && !primaryDomain.startsWith("__")) {
-    const useHttps = process.env.NEXT_PUBLIC_USE_HTTPS === "true";
-    const protocol = useHttps ? "https" : "http";
-    return `${protocol}://${primaryDomain}`;
+  // Browser: always use current page origin to inherit correct protocol (http/https)
+  // This avoids Next.js build-time constant folding issues with USE_HTTPS env var,
+  // and works naturally with Traefik routing (admin.agentsmesh.ai/api → backend)
+  if (typeof window !== "undefined") {
+    return window.location.origin;
   }
 
-  // In browser: use current origin (supports IP-based access)
-  if (typeof window !== "undefined") {
-    // For admin console running on separate port, API is on port 80
-    const { protocol, hostname } = window.location;
-    return `${protocol}//${hostname}`;
+  // Server-side: derive from PRIMARY_DOMAIN (for SSR fetch calls)
+  const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN;
+  if (primaryDomain && !primaryDomain.startsWith("__")) {
+    // Runtime check: avoid build-time constant folding by comparing at runtime
+    const useHttpsVal = process.env.NEXT_PUBLIC_USE_HTTPS;
+    const protocol = useHttpsVal && useHttpsVal === "true" ? "https" : "http";
+    return `${protocol}://${primaryDomain}`;
   }
 
   // Server-side fallback

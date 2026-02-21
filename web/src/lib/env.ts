@@ -100,14 +100,15 @@ export function getApiBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // 从 PRIMARY_DOMAIN 派生
-  const derived = deriveHttpUrl();
-  if (derived) return derived;
-
-  // 客户端 fallback：使用当前页面 origin（支持 IP 访问和 on-premise 部署）
+  // 浏览器端：优先使用当前页面 origin，自动继承正确协议（http/https）
+  // 这样可避免 Next.js 构建时常量折叠导致 USE_HTTPS 被错误求值的问题
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
+
+  // 服务端：从 PRIMARY_DOMAIN 派生（用于 SSR fetch 调用）
+  const derived = deriveHttpUrl();
+  if (derived) return derived;
 
   return "http://localhost:10000";
 }
@@ -125,14 +126,14 @@ export function getOAuthBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // Try deriving from PRIMARY_DOMAIN
-  const derived = deriveHttpUrl();
-  if (derived) return derived;
-
-  // Client-side: use current origin (supports IP-based access)
+  // 浏览器端：优先使用当前页面 origin
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
+
+  // 服务端：从 PRIMARY_DOMAIN 派生
+  const derived = deriveHttpUrl();
+  if (derived) return derived;
 
   return "http://localhost:10000";
 }
@@ -147,22 +148,22 @@ export function getWsBaseUrl(): string {
     return process.env.NEXT_PUBLIC_WS_URL;
   }
 
-  // Try deriving from PRIMARY_DOMAIN
-  const derived = deriveWsUrl();
-  if (derived) return derived;
-
   // Derive from API URL
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (apiUrl) {
     return apiUrl.replace(/^http/, "ws");
   }
 
-  // Client-side: derive from current page
+  // 浏览器端：优先从当前页面派生，自动继承正确协议
   if (typeof window !== "undefined") {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
     return `${protocol}//${host}`;
   }
+
+  // 服务端：从 PRIMARY_DOMAIN 派生
+  const derived = deriveWsUrl();
+  if (derived) return derived;
 
   return "ws://localhost:10000";
 }
