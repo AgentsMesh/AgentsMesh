@@ -4,18 +4,9 @@ import { use } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Building2,
-  Users,
-  Calendar,
-  CreditCard,
-  Trash2,
-  Server,
-} from "lucide-react";
+import { ArrowLeft, Users, Calendar, Server, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   getOrganization,
@@ -24,6 +15,9 @@ import {
   listRunners,
 } from "@/lib/api/admin";
 import { formatDate } from "@/lib/utils";
+import { SubscriptionSection } from "./_components/subscription-section";
+import { MembersSection } from "./_components/members-section";
+import { RunnersSection } from "./_components/runners-section";
 
 export default function OrganizationDetailPage({
   params,
@@ -77,8 +71,8 @@ export default function OrganizationDetailPage({
     return (
       <div className="space-y-6">
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="pb-2">
                 <div className="h-4 w-24 rounded bg-muted" />
@@ -149,7 +143,7 @@ export default function OrganizationDetailPage({
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -178,30 +172,6 @@ export default function OrganizationDetailPage({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Subscription
-            </CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold capitalize">
-                {org.subscription_plan || "Free"}
-              </span>
-              <Badge
-                variant={
-                  org.subscription_status === "active"
-                    ? "success"
-                    : "secondary"
-                }
-              >
-                {org.subscription_status || "inactive"}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
               Created
             </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -212,119 +182,14 @@ export default function OrganizationDetailPage({
         </Card>
       </div>
 
+      {/* Subscription */}
+      <SubscriptionSection orgId={orgId} />
+
       {/* Members */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Members ({members.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {membersLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-14 animate-pulse rounded-lg bg-muted" />
-              ))}
-            </div>
-          ) : members.length === 0 ? (
-            <p className="py-4 text-center text-muted-foreground">No members found</p>
-          ) : (
-            <div className="space-y-2">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between rounded-lg border border-border p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    {member.user?.avatar_url ? (
-                      <img
-                        src={member.user.avatar_url}
-                        alt={member.user.username}
-                        className="h-8 w-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
-                        {(member.user?.name || member.user?.username || "?")[0].toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {member.user?.name || member.user?.username}
-                        </span>
-                        <Badge
-                          variant={
-                            member.role === "owner"
-                              ? "default"
-                              : member.role === "admin"
-                              ? "secondary"
-                              : "outline"
-                          }
-                        >
-                          {member.role}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{member.user?.email}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Joined {formatDate(member.joined_at || member.created_at)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <MembersSection members={members} isLoading={membersLoading} />
 
       {/* Runners */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            Runners ({runners.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {runners.length === 0 ? (
-            <p className="py-4 text-center text-muted-foreground">No runners found</p>
-          ) : (
-            <div className="space-y-2">
-              {runners.map((runner) => (
-                <div
-                  key={runner.id}
-                  className="flex items-center justify-between rounded-lg border border-border p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary">
-                      <Server className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{runner.node_id}</span>
-                        <Badge variant={runner.status === "online" ? "success" : "secondary"}>
-                          {runner.status}
-                        </Badge>
-                        {!runner.is_enabled && <Badge variant="destructive">Disabled</Badge>}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {runner.current_pods}/{runner.max_concurrent_pods} pods
-                        {runner.runner_version && ` · v${runner.runner_version}`}
-                      </p>
-                    </div>
-                  </div>
-                  <Link href={`/runners?search=${runner.node_id}`}>
-                    <Button variant="ghost" size="sm">
-                      View
-                    </Button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <RunnersSection runners={runners} />
     </div>
   );
 }

@@ -318,6 +318,105 @@ export async function listPromoCodeRedemptions(id: number, params?: { page?: num
   return apiClient.get<PaginatedResponse<PromoCodeRedemption>>(`/promo-codes/${id}/redemptions`, params as Record<string, string | number | undefined>);
 }
 
+// Subscriptions
+export interface SubscriptionPlan {
+  id: number;
+  name: string;
+  display_name: string;
+  price_per_seat_monthly: number;
+  price_per_seat_yearly: number;
+  included_pod_minutes: number;
+  max_users: number;
+  max_runners: number;
+  max_concurrent_pods: number;
+  max_repositories: number;
+  features: Record<string, unknown>;
+  is_active: boolean;
+}
+
+export interface SeatUsage {
+  total_seats: number;
+  used_seats: number;
+  available_seats: number;
+  max_seats: number;
+  can_add_seats: boolean;
+}
+
+export interface Subscription {
+  id: number;
+  organization_id: number;
+  plan_id: number;
+  status: string;
+  billing_cycle: string;
+  current_period_start: string;
+  current_period_end: string;
+  auto_renew: boolean;
+  seat_count: number;
+  cancel_at_period_end: boolean;
+  custom_quotas: Record<string, number> | null;
+  created_at: string;
+  updated_at: string;
+  // Payment info (reference only)
+  payment_provider?: string;
+  payment_method?: string;
+  has_stripe: boolean;
+  has_alipay: boolean;
+  has_wechat: boolean;
+  has_lemonsqueezy: boolean;
+  // Optional fields
+  canceled_at?: string;
+  frozen_at?: string;
+  downgrade_to_plan?: string;
+  next_billing_cycle?: string;
+  // Nested
+  plan?: SubscriptionPlan;
+  seat_usage?: SeatUsage;
+}
+
+export async function getOrganizationSubscription(orgId: number): Promise<Subscription> {
+  return apiClient.get<Subscription>(`/organizations/${orgId}/subscription`);
+}
+
+export async function getSubscriptionPlans(orgId: number): Promise<{ data: SubscriptionPlan[] }> {
+  return apiClient.get<{ data: SubscriptionPlan[] }>(`/organizations/${orgId}/subscription/plans`);
+}
+
+export async function updateSubscriptionPlan(orgId: number, planName: string): Promise<Subscription> {
+  return apiClient.put<Subscription>(`/organizations/${orgId}/subscription/plan`, { plan_name: planName });
+}
+
+export async function updateSubscriptionSeats(orgId: number, seatCount: number): Promise<Subscription> {
+  return apiClient.put<Subscription>(`/organizations/${orgId}/subscription/seats`, { seat_count: seatCount });
+}
+
+export async function updateSubscriptionCycle(orgId: number, billingCycle: string): Promise<Subscription> {
+  return apiClient.put<Subscription>(`/organizations/${orgId}/subscription/cycle`, { billing_cycle: billingCycle });
+}
+
+export async function freezeSubscription(orgId: number): Promise<Subscription> {
+  return apiClient.post<Subscription>(`/organizations/${orgId}/subscription/freeze`);
+}
+
+export async function unfreezeSubscription(orgId: number): Promise<Subscription> {
+  return apiClient.post<Subscription>(`/organizations/${orgId}/subscription/unfreeze`);
+}
+
+export async function cancelSubscription(orgId: number): Promise<Subscription> {
+  return apiClient.post<Subscription>(`/organizations/${orgId}/subscription/cancel`);
+}
+
+export async function renewSubscription(orgId: number, months: number): Promise<Subscription> {
+  return apiClient.post<Subscription>(`/organizations/${orgId}/subscription/renew`, { months });
+}
+
+export async function setSubscriptionAutoRenew(orgId: number, autoRenew: boolean): Promise<Subscription> {
+  return apiClient.put<Subscription>(`/organizations/${orgId}/subscription/auto-renew`, { auto_renew: autoRenew });
+}
+
+export async function setSubscriptionQuota(orgId: number, resource: string, limit: number): Promise<Subscription> {
+  return apiClient.put<Subscription>(`/organizations/${orgId}/subscription/quotas`, { resource, limit });
+}
+
 // Relays
 export interface RelayInfo {
   id: string;

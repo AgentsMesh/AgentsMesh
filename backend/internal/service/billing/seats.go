@@ -33,6 +33,13 @@ func (s *Service) GetSeatUsage(ctx context.Context, orgID int64) (*SeatUsage, er
 	}, nil
 }
 
+// AdminSetSeatCount directly sets the seat count for a subscription without payment validation.
+func (s *Service) AdminSetSeatCount(ctx context.Context, orgID int64, seatCount int) error {
+	return s.db.WithContext(ctx).Model(&billingdomain.Subscription{}).
+		Where("organization_id = ?", orgID).
+		Update("seat_count", seatCount).Error
+}
+
 // SeatUsage represents seat usage information
 type SeatUsage struct {
 	TotalSeats     int  `json:"total_seats"`

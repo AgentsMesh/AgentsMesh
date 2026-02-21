@@ -168,6 +168,7 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		admin.RegisterRoutes(r, cfg, dbWrapper, &admin.Services{
 			Auth:         svc.Auth,
 			Admin:        adminSvc,
+			Billing:      svc.Billing,
 			RelayManager: svc.RelayManager,
 		})
 	}

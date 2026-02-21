@@ -6,6 +6,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/admin"
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
+	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ import (
 type Services struct {
 	Auth         *auth.Service
 	Admin        *admin.Service
+	Billing      *billing.Service
 	RelayManager *relay.Manager
 }
 
@@ -58,6 +60,12 @@ func RegisterRoutes(router *gin.Engine, cfg *config.Config, db database.DB, svc 
 	// Promo Codes
 	promoCodeHandler := NewPromoCodeHandler(svc.Admin)
 	promoCodeHandler.RegisterRoutes(protected)
+
+	// Subscriptions (optional - only if billing service is available)
+	if svc.Billing != nil {
+		subscriptionHandler := NewSubscriptionHandler(svc.Admin, svc.Billing)
+		subscriptionHandler.RegisterRoutes(protected)
+	}
 
 	// Relays (optional - only if relay manager is available)
 	if svc.RelayManager != nil {

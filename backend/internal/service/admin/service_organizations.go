@@ -85,6 +85,16 @@ func (s *Service) GetOrganizationWithMembers(ctx context.Context, orgID int64) (
 	return &org, members, nil
 }
 
+// UpdateOrganizationSubscriptionStatus updates the subscription_status redundant field on the organizations table
+func (s *Service) UpdateOrganizationSubscriptionStatus(ctx context.Context, orgID int64, status string) error {
+	var org organization.Organization
+	if err := s.db.First(&org, orgID); err != nil {
+		return err
+	}
+	org.SubscriptionStatus = status
+	return s.db.Save(&org)
+}
+
 // DeleteOrganization deletes an organization after checking for active runners
 func (s *Service) DeleteOrganization(ctx context.Context, orgID int64) error {
 	var org organization.Organization

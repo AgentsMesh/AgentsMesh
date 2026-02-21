@@ -26,10 +26,14 @@ const (
 	AuditActionOrgDelete AuditAction = "organization.delete"
 
 	// Subscription actions
-	AuditActionSubView   AuditAction = "subscription.view"
-	AuditActionSubUpdate AuditAction = "subscription.update"
-	AuditActionSubExtend AuditAction = "subscription.extend"
-	AuditActionSubCancel AuditAction = "subscription.cancel"
+	AuditActionSubView     AuditAction = "subscription.view"
+	AuditActionSubUpdate   AuditAction = "subscription.update"
+	AuditActionSubExtend   AuditAction = "subscription.extend"
+	AuditActionSubCancel   AuditAction = "subscription.cancel"
+	AuditActionSubFreeze   AuditAction = "subscription.freeze"
+	AuditActionSubUnfreeze AuditAction = "subscription.unfreeze"
+	AuditActionSubRenew    AuditAction = "subscription.renew"
+	AuditActionSubQuota    AuditAction = "subscription.set_quota"
 
 	// Runner actions
 	AuditActionRunnerView    AuditAction = "runner.view"
