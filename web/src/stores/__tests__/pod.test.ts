@@ -228,7 +228,7 @@ describe("Pod Store", () => {
           runnerId: 1,
           agentTypeId: 2,
           repositoryId: 3,
-          ticketId: 4,
+          ticketSlug: "PROJ-4",
           initialPrompt: "Hello",
           branchName: "feature/test",
         });
@@ -238,7 +238,7 @@ describe("Pod Store", () => {
         runner_id: 1,
         agent_type_id: 2,
         repository_id: 3,
-        ticket_id: 4,
+        ticket_slug: "PROJ-4",
         initial_prompt: "Hello",
         branch_name: "feature/test",
       });

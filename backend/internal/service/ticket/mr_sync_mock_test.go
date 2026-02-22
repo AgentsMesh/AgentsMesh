@@ -147,7 +147,7 @@ func setupMRSyncTestDB(t *testing.T) *gorm.DB {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL,
 			number INTEGER NOT NULL DEFAULT 0,
-			identifier TEXT NOT NULL,
+			slug TEXT NOT NULL,
 			type TEXT NOT NULL DEFAULT 'task',
 			title TEXT NOT NULL,
 			content TEXT,

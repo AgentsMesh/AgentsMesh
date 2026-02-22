@@ -44,7 +44,7 @@ type OrchestrateCreatePodRequest struct {
 	RepositoryID      *int64
 	RepositoryURL     *string
 	TicketID          *int64
-	TicketIdentifier  *string
+	TicketSlug        *string
 	InitialPrompt     string
 	BranchName        *string
 	PermissionMode    *string
@@ -90,6 +90,7 @@ type RepositoryServiceForOrchestrator interface {
 // TicketServiceForOrchestrator resolves ticket info.
 type TicketServiceForOrchestrator interface {
 	GetTicket(ctx context.Context, ticketID int64) (*ticket.Ticket, error)
+	GetTicketBySlug(ctx context.Context, organizationID int64, slug string) (*ticket.Ticket, error)
 }
 
 // RunnerSelectorForOrchestrator selects a runner compatible with a given agent.
@@ -198,6 +199,14 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	if o.billingService != nil {
 		if err := o.billingService.CheckQuota(ctx, req.OrganizationID, "concurrent_pods", 1); err != nil {
 			return nil, err // Caller maps billing.ErrQuotaExceeded / billing.ErrSubscriptionFrozen
+		}
+	}
+
+	// === 3.5 Resolve TicketSlug → TicketID for DB foreign key ===
+	if req.TicketID == nil && req.TicketSlug != nil && *req.TicketSlug != "" && o.ticketService != nil {
+		t, err := o.ticketService.GetTicketBySlug(ctx, req.OrganizationID, *req.TicketSlug)
+		if err == nil && t != nil {
+			req.TicketID = &t.ID
 		}
 	}
 
@@ -365,14 +374,14 @@ func (o *PodOrchestrator) buildPodCommand(
 		sourceBranch = *req.BranchName
 	}
 
-	// Resolve ticket ID
-	ticketID := ""
-	if req.TicketIdentifier != nil && *req.TicketIdentifier != "" {
-		ticketID = *req.TicketIdentifier
+	// Resolve ticket slug
+	ticketSlug := ""
+	if req.TicketSlug != nil && *req.TicketSlug != "" {
+		ticketSlug = *req.TicketSlug
 	} else if req.TicketID != nil && o.ticketService != nil {
 		t, err := o.ticketService.GetTicket(ctx, *req.TicketID)
 		if err == nil && t != nil {
-			ticketID = t.Identifier
+			ticketSlug = t.Slug
 		}
 	}
 
@@ -423,7 +432,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		CredentialType:      credentialType,
 		GitToken:            gitToken,
 		SSHPrivateKey:       sshPrivateKey,
-		TicketID:            ticketID,
+		TicketSlug:          ticketSlug,
 		PreparationScript:   preparationScript,
 		PreparationTimeout:  preparationTimeout,
 		LocalPath:           localPath,

@@ -84,6 +84,9 @@ func (c *Channel) FormatText() string {
 		fmt.Fprintf(&b, "Description: %s\n", c.Description)
 	}
 	fmt.Fprintf(&b, "Members: %d | Archived: %t\n", c.MemberCount, c.IsArchived)
+	if c.TicketSlug != "" {
+		fmt.Fprintf(&b, "Ticket: %s\n", c.TicketSlug)
+	}
 	if c.CreatedByPod != "" {
 		fmt.Fprintf(&b, "Created By: %s\n", c.CreatedByPod)
 	}
@@ -114,8 +117,18 @@ func (m *ChannelMessage) FormatText() string {
 // FormatText formats a Ticket as key-value text.
 func (t *Ticket) FormatText() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Ticket: %s - %s\n", t.Identifier, t.Title)
+	fmt.Fprintf(&b, "Ticket: %s - %s\n", t.Slug, t.Title)
 	fmt.Fprintf(&b, "Type: %s | Status: %s | Priority: %s\n", t.Type, t.Status, t.Priority)
+	if t.ParentTicketSlug != "" {
+		fmt.Fprintf(&b, "Parent: %s\n", t.ParentTicketSlug)
+	}
+	if t.Content != "" {
+		content := t.Content
+		if len(content) > 500 {
+			content = content[:500] + "..."
+		}
+		fmt.Fprintf(&b, "Content: %s\n", content)
+	}
 	if t.ReporterName != "" {
 		fmt.Fprintf(&b, "Reporter: %s\n", t.ReporterName)
 	}
@@ -282,11 +295,11 @@ func (l TicketList) FormatText() string {
 		return "No tickets found."
 	}
 	var b strings.Builder
-	b.WriteString("| Identifier | Title | Type | Status | Priority |\n")
-	b.WriteString("|------------|-------|------|--------|----------|\n")
+	b.WriteString("| Slug | Title | Type | Status | Priority |\n")
+	b.WriteString("|------|-------|------|--------|----------|\n")
 	for _, t := range l {
 		b.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s |\n",
-			escapeTableCell(t.Identifier),
+			escapeTableCell(t.Slug),
 			escapeTableCell(truncate(t.Title, 60)),
 			t.Type,
 			t.Status,

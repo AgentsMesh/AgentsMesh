@@ -36,7 +36,7 @@ beforeEach(() => {
 const createMockTicket = (overrides: Partial<{
   id: number;
   number: number;
-  identifier: string;
+  slug: string;
   title: string;
   status: 'backlog' | 'todo' | 'in_progress' | 'in_review' | 'done' | 'cancelled';
   type: 'task' | 'bug' | 'feature' | 'improvement' | 'epic' | 'subtask' | 'story';
@@ -46,7 +46,7 @@ const createMockTicket = (overrides: Partial<{
 }> = {}) => ({
   id: 1,
   number: 1,
-  identifier: 'TKT-1',
+  slug: 'TKT-1',
   title: 'Test Ticket',
   status: 'todo' as const,
   type: 'task' as const,
@@ -60,8 +60,8 @@ describe('Ticket Store Actions', () => {
   describe('fetchTickets', () => {
     it('should fetch tickets successfully', async () => {
       const mockTickets = [
-        createMockTicket({ id: 1, identifier: 'TKT-1', title: 'Ticket 1', status: 'todo' }),
-        createMockTicket({ id: 2, number: 2, identifier: 'TKT-2', title: 'Ticket 2', status: 'in_progress' }),
+        createMockTicket({ id: 1, slug: 'TKT-1', title: 'Ticket 1', status: 'todo' }),
+        createMockTicket({ id: 2, number: 2, slug: 'TKT-2', title: 'Ticket 2', status: 'in_progress' }),
       ]
       vi.mocked(ticketApi.list).mockResolvedValue({ tickets: mockTickets, total: 2 })
 
@@ -94,7 +94,7 @@ describe('Ticket Store Actions', () => {
 
   describe('fetchTicket', () => {
     it('should fetch single ticket successfully', async () => {
-      const mockTicket = createMockTicket({ id: 1, identifier: 'TKT-1', title: 'Ticket 1', status: 'todo' })
+      const mockTicket = createMockTicket({ id: 1, slug: 'TKT-1', title: 'Ticket 1', status: 'todo' })
       vi.mocked(ticketApi.get).mockResolvedValue(mockTicket)
 
       await useTicketStore.getState().fetchTicket('TKT-1')
@@ -114,7 +114,7 @@ describe('Ticket Store Actions', () => {
 
   describe('createTicket', () => {
     it('should create ticket successfully', async () => {
-      const mockTicket = createMockTicket({ id: 1, identifier: 'TKT-1', title: 'New Ticket', status: 'todo' })
+      const mockTicket = createMockTicket({ id: 1, slug: 'TKT-1', title: 'New Ticket', status: 'todo' })
       vi.mocked(ticketApi.create).mockResolvedValue(mockTicket)
 
       const result = await useTicketStore.getState().createTicket({
@@ -141,7 +141,7 @@ describe('Ticket Store Actions', () => {
 
   describe('updateTicket', () => {
     it('should update ticket successfully', async () => {
-      const existingTicket = createMockTicket({ id: 1, identifier: 'TKT-1', title: 'Original', status: 'todo' })
+      const existingTicket = createMockTicket({ id: 1, slug: 'TKT-1', title: 'Original', status: 'todo' })
       const updatedTicket = { ...existingTicket, title: 'Updated' }
 
       useTicketStore.setState({ tickets: [existingTicket], currentTicket: existingTicket })
@@ -163,7 +163,7 @@ describe('Ticket Store Actions', () => {
 
   describe('deleteTicket', () => {
     it('should delete ticket successfully', async () => {
-      const ticket = createMockTicket({ id: 1, identifier: 'TKT-1', title: 'Ticket', status: 'todo' })
+      const ticket = createMockTicket({ id: 1, slug: 'TKT-1', title: 'Ticket', status: 'todo' })
       useTicketStore.setState({ tickets: [ticket], totalCount: 1, currentTicket: ticket })
       vi.mocked(ticketApi.delete).mockResolvedValue({ message: 'Deleted' })
 
@@ -183,9 +183,9 @@ describe('Ticket Store Actions', () => {
 
   describe('updateTicketStatus', () => {
     it('should update ticket status successfully', async () => {
-      const ticket = createMockTicket({ id: 1, identifier: 'TKT-1', title: 'Ticket', status: 'todo' })
+      const ticket = createMockTicket({ id: 1, slug: 'TKT-1', title: 'Ticket', status: 'todo' })
       useTicketStore.setState({ tickets: [ticket], currentTicket: ticket })
-      vi.mocked(ticketApi.updateStatus).mockResolvedValue({ ...ticket, status: 'done' })
+      vi.mocked(ticketApi.updateStatus).mockResolvedValue({ message: 'Status updated' })
 
       await useTicketStore.getState().updateTicketStatus('TKT-1', 'done')
 
@@ -239,14 +239,14 @@ describe('Ticket Store Actions', () => {
     })
 
     it('should set current ticket', () => {
-      const ticket = createMockTicket({ id: 1, identifier: 'TKT-1', title: 'Test', status: 'todo' })
+      const ticket = createMockTicket({ id: 1, slug: 'TKT-1', title: 'Test', status: 'todo' })
       useTicketStore.getState().setCurrentTicket(ticket)
 
       expect(useTicketStore.getState().currentTicket).toEqual(ticket)
     })
 
     it('should clear current ticket', () => {
-      const ticket = createMockTicket({ id: 1, identifier: 'TKT-1', title: 'Test', status: 'todo' })
+      const ticket = createMockTicket({ id: 1, slug: 'TKT-1', title: 'Test', status: 'todo' })
       useTicketStore.setState({ currentTicket: ticket })
       useTicketStore.getState().setCurrentTicket(null)
 

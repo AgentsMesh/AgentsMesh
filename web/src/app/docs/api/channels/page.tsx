@@ -199,9 +199,9 @@ export default function ApiChannelsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        ticket_id
+                        ticket_slug
                       </td>
-                      <td className="p-3 border-b border-border">integer</td>
+                      <td className="p-3 border-b border-border">string</td>
                       <td className="p-3 border-b border-border">
                         <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
                           {t("docs.api.common.optionalBadge")}
@@ -209,7 +209,7 @@ export default function ApiChannelsPage() {
                       </td>
                       <td className="p-3 border-b border-border">
                         {t(
-                          "docs.api.channels.details.listChannels.params.ticket_id"
+                          "docs.api.channels.details.listChannels.params.ticket_slug"
                         )}
                       </td>
                     </tr>
@@ -247,7 +247,7 @@ export default function ApiChannelsPage() {
       "name": "feature-auth",
       "description": "Authentication implementation channel",
       "repository_id": 1,
-      "ticket_identifier": "AM-42",
+      "ticket_slug": "AM-42",
       "archived": false,
       "created_at": "2025-01-10T08:00:00Z",
       "updated_at": "2025-01-15T14:20:00Z"
@@ -326,7 +326,7 @@ export default function ApiChannelsPage() {
     "name": "feature-auth",
     "description": "Authentication implementation channel",
     "repository_id": 1,
-    "ticket_identifier": "AM-42",
+    "ticket_slug": "AM-42",
     "document": "## Context\\nImplement JWT auth...",
     "archived": false,
     "created_at": "2025-01-10T08:00:00Z",
@@ -547,7 +547,7 @@ export default function ApiChannelsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        ticket_identifier
+                        ticket_slug
                       </td>
                       <td className="p-3 border-b border-border">string</td>
                       <td className="p-3 border-b border-border">
@@ -557,7 +557,7 @@ export default function ApiChannelsPage() {
                       </td>
                       <td className="p-3 border-b border-border">
                         {t(
-                          "docs.api.channels.details.createChannel.fields.ticket_identifier"
+                          "docs.api.channels.details.createChannel.fields.ticket_slug"
                         )}
                       </td>
                     </tr>
@@ -592,7 +592,7 @@ export default function ApiChannelsPage() {
     "name": "feature-auth",
     "description": "Authentication implementation channel",
     "repository_id": 1,
-    "ticket_identifier": "AM-42",
+    "ticket_slug": "AM-42",
     "document": "## Context\\nImplement JWT auth...",
     "archived": false,
     "created_at": "2025-01-10T08:00:00Z",
@@ -745,7 +745,7 @@ export default function ApiChannelsPage() {
     "name": "feature-auth",
     "description": "Authentication implementation channel",
     "repository_id": 1,
-    "ticket_identifier": "AM-42",
+    "ticket_slug": "AM-42",
     "document": "## Context\\nImplement JWT auth...",
     "archived": false,
     "created_at": "2025-01-10T08:00:00Z",

@@ -318,8 +318,8 @@
           "channelDescriptionDesc": "Optional description of the channel's purpose",
           "projectId": "Project ID",
           "projectIdDesc": "Link to a specific project/repository",
-          "ticketId": "Ticket ID",
-          "ticketIdDesc": "Link to a specific ticket"
+          "ticketSlug": "チケットスラッグ",
+          "ticketSlugDesc": "特定のチケットにリンク"
         },
         "messageTypes": {
           "title": "Message Types",
@@ -677,10 +677,10 @@
           "paramsHeader": "Parameters",
           "searchChannels": "search_channels",
           "searchChannelsDesc": "Search for channels",
-          "searchChannelsParams": "name?, project_id?, ticket_id?",
+          "searchChannelsParams": "name?, project_id?, ticket_slug?",
           "createChannel": "create_channel",
           "createChannelDesc": "Create a new channel",
-          "createChannelParams": "name, description?, project_id?, ticket_id?",
+          "createChannelParams": "name, description?, project_id?, ticket_slug?",
           "getChannel": "get_channel",
           "getChannelDesc": "Get channel details",
           "getChannelParams": "channel_id",
@@ -722,7 +722,7 @@
           "paramsHeader": "Parameters",
           "createPod": "create_pod",
           "createPodDesc": "Create a new AgentPod",
-          "createPodParams": "agent_type_id (required), runner_id?, ticket_id?, initial_prompt?, model?"
+          "createPodParams": "agent_type_id (required), runner_id?, ticket_slug?, initial_prompt?, model?"
         }
       }
     },
@@ -1010,7 +1010,7 @@
               "initial_prompt": "エージェントへの初期プロンプトまたはタスク",
               "repository_id": "Podに関連付けるリポジトリ",
               "branch": "作業するGitブランチ",
-              "ticket_identifier": "リンクするチケット識別子（例：AM-123）",
+              "ticket_slug": "リンクするチケット識別子（例：AM-123）",
               "channel_id": "Podに関連付けるチャンネル",
               "sandbox_type": "サンドボックスタイプ：worktreeまたはtempdir",
               "environment_variables": "環境変数のキーバリューペア",
@@ -1073,10 +1073,10 @@
             }
           },
           "getTicket": {
-            "title": "GET /tickets/:identifier",
+            "title": "GET /tickets/:slug",
             "description": "人間が読める識別子で特定のチケットの詳細情報を取得します。",
             "params": {
-              "identifier": "チケット識別子（例：AM-123）"
+              "slug": "チケット識別子（例：AM-123）"
             }
           },
           "createTicket": {
@@ -1090,14 +1090,14 @@
               "assignee_id": "チケットを割り当てるユーザーID",
               "repository_id": "関連付けるリポジトリ",
               "labels": "ラベル文字列の配列",
-              "parent_identifier": "サブタスクの親チケット識別子"
+              "parent_slug": "サブタスクの親チケット識別子"
             }
           },
           "updateTicket": {
-            "title": "PUT /tickets/:identifier",
+            "title": "PUT /tickets/:slug",
             "description": "既存のチケットを更新します。すべてのフィールドは任意です——提供されたフィールドのみ更新されます。",
             "params": {
-              "identifier": "チケット識別子（例：AM-123）"
+              "slug": "チケット識別子（例：AM-123）"
             },
             "fields": {
               "title": "更新後のチケットタイトル",
@@ -1106,24 +1106,24 @@
               "status": "更新後のステータス",
               "assignee_id": "更新後の担当者ユーザーID",
               "labels": "更新後のラベル文字列の配列",
-              "parent_identifier": "更新後の親チケット識別子"
+              "parent_slug": "更新後の親チケット識別子"
             }
           },
           "updateStatus": {
-            "title": "PATCH /tickets/:identifier/status",
+            "title": "PATCH /tickets/:slug/status",
             "description": "チケットのステータスのみを更新します。ステータス遷移のための便利なエンドポイントです。",
             "params": {
-              "identifier": "チケット識別子（例：AM-123）"
+              "slug": "チケット識別子（例：AM-123）"
             },
             "fields": {
               "status": "新しいステータス：open、in_progress、resolved、またはclosed"
             }
           },
           "deleteTicket": {
-            "title": "DELETE /tickets/:identifier",
+            "title": "DELETE /tickets/:slug",
             "description": "チケットを完全に削除します。この操作は元に戻せません。",
             "params": {
-              "identifier": "チケット識別子（例：AM-123）"
+              "slug": "チケット識別子（例：AM-123）"
             }
           }
         }
@@ -1147,7 +1147,7 @@
             "description": "チャンネルのリストを取得します。リポジトリ、チケット、アーカイブ状態によるフィルタリングをサポートしています。",
             "params": {
               "repository_id": "リポジトリIDでフィルタリング",
-              "ticket_id": "関連チケットIDでフィルタリング",
+              "ticket_slug": "関連チケットスラッグでフィルタリング",
               "include_archived": "アーカイブ済みチャンネルを含める（true/false）"
             }
           },
@@ -1173,7 +1173,7 @@
               "name": "チャンネル名（2〜100文字）",
               "description": "チャンネルの説明",
               "repository_id": "関連付けるリポジトリ",
-              "ticket_identifier": "リンクするチケット識別子（例：AM-123）",
+              "ticket_slug": "リンクするチケット識別子（例：AM-123）",
               "document": "チャンネルの初期ドキュメントまたはコンテキスト"
             }
           },

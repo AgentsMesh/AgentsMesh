@@ -187,10 +187,10 @@ func (b *PodBuilder) runPreparationScript(ctx context.Context, cfg *runnerv1.San
 	}
 
 	prepCtx := &workspace.PreparationContext{
-		PodID:            b.cmd.PodKey,
-		TicketIdentifier: cfg.TicketId,
-		BranchName:       branchName,
-		WorkspaceDir:     workspacePath,
+		PodID:        b.cmd.PodKey,
+		TicketSlug:   cfg.GetTicketSlug(),
+		BranchName:   branchName,
+		WorkspaceDir: workspacePath,
 	}
 
 	if err := preparer.Prepare(ctx, prepCtx); err != nil {

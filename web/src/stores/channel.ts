@@ -17,7 +17,7 @@ export interface Channel {
   };
   ticket?: {
     id: number;
-    identifier: string;
+    slug: string;
     title: string;
   };
   pods?: Array<{
@@ -48,7 +48,7 @@ interface ChannelState {
     description?: string;
     document?: string;
     repositoryId?: number;
-    ticketId?: number;
+    ticketSlug?: string;
   }) => Promise<Channel>;
   updateChannel: (
     id: number,
@@ -120,7 +120,7 @@ export const useChannelStore = create<ChannelState>((set) => ({
         description: data.description,
         document: data.document,
         repository_id: data.repositoryId,
-        ticket_id: data.ticketId,
+        ticket_slug: data.ticketSlug,
       };
       const response = await channelApi.create(apiData);
       set((state) => ({

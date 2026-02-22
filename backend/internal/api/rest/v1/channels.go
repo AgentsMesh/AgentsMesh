@@ -6,6 +6,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
@@ -13,20 +14,22 @@ import (
 // ChannelHandler handles channel-related requests
 type ChannelHandler struct {
 	channelService *channel.Service
+	ticketService  *ticket.Service
 }
 
 // NewChannelHandler creates a new channel handler
-func NewChannelHandler(channelService *channel.Service) *ChannelHandler {
+func NewChannelHandler(channelService *channel.Service, ticketService *ticket.Service) *ChannelHandler {
 	return &ChannelHandler{
 		channelService: channelService,
+		ticketService:  ticketService,
 	}
 }
 
 // ListChannelsRequest represents channel list request
 type ListChannelsRequest struct {
-	RepositoryID    *int64 `form:"repository_id"`
-	TicketID        *int64 `form:"ticket_id"`
-	IncludeArchived bool   `form:"include_archived"`
+	RepositoryID    *int64  `form:"repository_id"`
+	TicketSlug      *string `form:"ticket_slug"`
+	IncludeArchived bool    `form:"include_archived"`
 }
 
 // ListChannels lists channels
@@ -39,11 +42,27 @@ func (h *ChannelHandler) ListChannels(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
+	ctx := c.Request.Context()
 
-	limit := 50
-	offset := 0
+	// Resolve ticket slug to ID for filtering
+	var ticketID *int64
+	if req.TicketSlug != nil && *req.TicketSlug != "" {
+		t, err := h.ticketService.GetTicketByIDOrSlug(ctx, tenant.OrganizationID, *req.TicketSlug)
+		if err != nil {
+			// If ticket not found, return empty results
+			c.JSON(http.StatusOK, gin.H{"channels": []interface{}{}, "total": 0})
+			return
+		}
+		ticketID = &t.ID
+	}
 
-	channels, total, err := h.channelService.ListChannels(c.Request.Context(), tenant.OrganizationID, req.IncludeArchived, limit, offset)
+	channels, total, err := h.channelService.ListChannels(ctx, tenant.OrganizationID, &channel.ListChannelsFilter{
+		IncludeArchived: req.IncludeArchived,
+		RepositoryID:    req.RepositoryID,
+		TicketID:        ticketID,
+		Limit:           50,
+		Offset:          0,
+	})
 	if err != nil {
 		apierr.InternalError(c, "Failed to list channels")
 		return
@@ -54,11 +73,11 @@ func (h *ChannelHandler) ListChannels(c *gin.Context) {
 
 // CreateChannelRequest represents channel creation request
 type CreateChannelRequest struct {
-	Name         string `json:"name" binding:"required,min=2,max=100"`
-	Description  string `json:"description"`
-	Document     string `json:"document"`
-	RepositoryID *int64 `json:"repository_id"`
-	TicketID     *int64 `json:"ticket_id"`
+	Name         string  `json:"name" binding:"required,min=2,max=100"`
+	Description  string  `json:"description"`
+	Document     string  `json:"document"`
+	RepositoryID *int64  `json:"repository_id"`
+	TicketSlug   *string `json:"ticket_slug"`
 }
 
 // CreateChannel creates a new channel
@@ -77,12 +96,23 @@ func (h *ChannelHandler) CreateChannel(c *gin.Context) {
 		desc = &req.Description
 	}
 
+	// Resolve ticket slug to ID
+	var ticketID *int64
+	if req.TicketSlug != nil && *req.TicketSlug != "" {
+		t, err := h.ticketService.GetTicketByIDOrSlug(c.Request.Context(), tenant.OrganizationID, *req.TicketSlug)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Ticket not found"})
+			return
+		}
+		ticketID = &t.ID
+	}
+
 	ch, err := h.channelService.CreateChannel(c.Request.Context(), &channel.CreateChannelRequest{
 		OrganizationID:  tenant.OrganizationID,
 		Name:            req.Name,
 		Description:     desc,
 		RepositoryID:    req.RepositoryID,
-		TicketID:        req.TicketID,
+		TicketID:        ticketID,
 		CreatedByUserID: &tenant.UserID,
 	})
 	if err != nil {

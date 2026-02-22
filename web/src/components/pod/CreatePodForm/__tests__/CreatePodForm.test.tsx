@@ -245,7 +245,7 @@ describe("CreatePodForm", () => {
 
       await waitFor(() => {
         // When runner is manually selected, it passes selectedRunner.id
-        expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketId: undefined, initialPrompt: "test prompt", cols: 80, rows: 24 });
+        expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketSlug: undefined, initialPrompt: "test prompt", cols: 80, rows: 24 });
       });
     });
 
@@ -270,24 +270,24 @@ describe("CreatePodForm", () => {
 
       await waitFor(() => {
         // When no runner selected, passes null (backend auto-selects)
-        expect(mockFormSubmit).toHaveBeenCalledWith(null, {}, { ticketId: undefined, initialPrompt: "test prompt", cols: 80, rows: 24 });
+        expect(mockFormSubmit).toHaveBeenCalledWith(null, {}, { ticketSlug: undefined, initialPrompt: "test prompt", cols: 80, rows: 24 });
       });
     });
 
-    it("should pass ticketId when in ticket scenario", async () => {
+    it("should pass ticketSlug when in ticket scenario", async () => {
       setupSubmitState();
       mockFormSubmit.mockResolvedValue({ pod_key: "test-pod" });
 
       const config: CreatePodFormConfig = {
         scenario: "ticket",
-        context: { ticket: { id: 123, identifier: "PROJ-123", title: "Test" } },
+        context: { ticket: { id: 123, slug: "PROJ-123", title: "Test" } },
       };
 
       render(<CreatePodForm config={config} />);
       fireEvent.click(screen.getByText("ide.createPod.create"));
 
       await waitFor(() => {
-        expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketId: 123, initialPrompt: "test prompt", cols: 80, rows: 24 });
+        expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketSlug: "PROJ-123", initialPrompt: "test prompt", cols: 80, rows: 24 });
       });
     });
 
@@ -419,7 +419,7 @@ describe("CreatePodForm", () => {
           enabled={true}
           config={{
             scenario: "ticket",
-            context: { ticket: { id: 1, identifier: "PROJ-123", title: "Test ticket" } },
+            context: { ticket: { id: 1, slug: "PROJ-123", title: "Test ticket" } },
           }}
         />
       );

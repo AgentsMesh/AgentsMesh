@@ -60,11 +60,17 @@ vi.mock('@/components/common/RepositorySelect', () => ({
   ),
 }))
 
+// Mock BlockViewer (lazy-loaded in TicketDetail via lazy(() => import(...).then(mod => ({ default: mod.BlockViewer }))))
+vi.mock('@/components/ui/block-editor', () => ({
+  BlockViewer: ({ content }: { content: string }) => <div data-testid="block-viewer">{content}</div>,
+  default: ({ content }: { content: string }) => <div data-testid="block-viewer">{content}</div>,
+}))
+
 // Mock TicketPodPanel
 vi.mock('../TicketPodPanel', () => ({
-  default: ({ ticketIdentifier, ticketTitle }: { ticketIdentifier: string; ticketTitle: string }) => (
+  default: ({ ticketSlug, ticketTitle }: { ticketSlug: string; ticketTitle: string }) => (
     <div data-testid="pod-panel">
-      Pod Panel for {ticketIdentifier}: {ticketTitle}
+      Pod Panel for {ticketSlug}: {ticketTitle}
     </div>
   ),
 }))
@@ -73,15 +79,16 @@ describe('TicketDetail Component', () => {
   const mockTicket = {
     id: 1,
     number: 42,
-    identifier: 'PROJ-42',
+    slug: 'PROJ-42',
     type: 'task' as const,
     title: 'Implement new feature',
+    content: 'This is the ticket description',
     status: 'in_progress' as const,
     priority: 'high' as const,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-15T12:00:00Z',
     assignees: [
-      { id: 1, username: 'john', name: 'John Doe' },
+      { ticket_id: 1, user_id: 1, user: { id: 1, username: 'john', name: 'John Doe' } },
     ],
     labels: [
       { id: 1, name: 'frontend', color: '#3b82f6' },
@@ -111,28 +118,36 @@ describe('TicketDetail Component', () => {
     })
 
     // Setup API mocks
-    ;(ticketApi.getSubTickets as ReturnType<typeof vi.fn>).mockResolvedValue({ tickets: [] })
+    ;(ticketApi.getSubTickets as ReturnType<typeof vi.fn>).mockResolvedValue({ sub_tickets: [] })
     ;(ticketApi.listRelations as ReturnType<typeof vi.fn>).mockResolvedValue({ relations: [] })
     ;(ticketApi.listCommits as ReturnType<typeof vi.fn>).mockResolvedValue({ commits: [] })
   })
 
   describe('rendering', () => {
-    it('should render ticket identifier', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+    it('should render ticket slug', async () => {
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('PROJ-42')).toBeInTheDocument()
       })
     })
 
     it('should render ticket title', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Implement new feature')).toBeInTheDocument()
       })
     })
 
+    it('should render ticket description', async () => {
+      render(<TicketDetail slug="PROJ-42" />)
+      await waitFor(() => {
+        expect(screen.getByText('This is the ticket description')).toBeInTheDocument()
+      })
+    })
+
+
     it('should render status badge', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         // Status badge should be in the header section with specific styling
         const statusBadge = screen.getByText('In Progress', { selector: 'span.rounded.text-xs' })
@@ -141,7 +156,7 @@ describe('TicketDetail Component', () => {
     })
 
     it('should call fetchTicket on mount', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(mockFetchTicket).toHaveBeenCalledWith('PROJ-42')
       })
@@ -160,7 +175,7 @@ describe('TicketDetail Component', () => {
         error: null,
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       expect(screen.getByTestId('ticket-detail-skeleton')).toBeInTheDocument()
     })
   })
@@ -177,7 +192,7 @@ describe('TicketDetail Component', () => {
         error: 'Failed to load ticket',
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       expect(screen.getByText('Failed to load ticket')).toBeInTheDocument()
     })
 
@@ -192,7 +207,7 @@ describe('TicketDetail Component', () => {
         error: 'Failed to load ticket',
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       const retryButton = screen.getByText('Retry')
       expect(retryButton).toBeInTheDocument()
     })
@@ -208,7 +223,7 @@ describe('TicketDetail Component', () => {
         error: 'Failed to load ticket',
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       const retryButton = screen.getByText('Retry')
       fireEvent.click(retryButton)
 
@@ -229,21 +244,21 @@ describe('TicketDetail Component', () => {
         error: null,
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       expect(screen.getByText('Ticket not found')).toBeInTheDocument()
     })
   })
 
   describe('labels', () => {
     it('should render labels when provided', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('frontend')).toBeInTheDocument()
       })
     })
 
     it('should apply label colors', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const label = screen.getByText('frontend')
         expect(label).toHaveStyle({ color: '#3b82f6' })
@@ -253,7 +268,7 @@ describe('TicketDetail Component', () => {
 
   describe('assignees', () => {
     it('should render assignees', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('John Doe')).toBeInTheDocument()
       })
@@ -270,7 +285,7 @@ describe('TicketDetail Component', () => {
         error: null,
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('No assignees')).toBeInTheDocument()
       })
@@ -279,28 +294,28 @@ describe('TicketDetail Component', () => {
 
   describe('metadata sidebar', () => {
     it('should display ticket type', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Type')).toBeInTheDocument()
       })
     })
 
     it('should display ticket priority', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Priority')).toBeInTheDocument()
       })
     })
 
     it('should display due date when provided', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Due Date')).toBeInTheDocument()
       })
     })
 
     it('should display repository selector', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Repository')).toBeInTheDocument()
         expect(screen.getByTestId('repository-select')).toBeInTheDocument()
@@ -308,7 +323,7 @@ describe('TicketDetail Component', () => {
     })
 
     it('should display timestamps', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Created')).toBeInTheDocument()
         expect(screen.getByText('Updated')).toBeInTheDocument()
@@ -319,10 +334,10 @@ describe('TicketDetail Component', () => {
   describe('sub-tickets', () => {
     it('should display sub-tickets when available', async () => {
       ;(ticketApi.getSubTickets as ReturnType<typeof vi.fn>).mockResolvedValue({
-        tickets: [
+        sub_tickets: [
           {
             id: 2,
-            identifier: 'PROJ-43',
+            slug: 'PROJ-43',
             title: 'Sub-task 1',
             status: 'todo',
             type: 'task',
@@ -330,7 +345,7 @@ describe('TicketDetail Component', () => {
         ],
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Sub-tickets (1)')).toBeInTheDocument()
         expect(screen.getByText('PROJ-43')).toBeInTheDocument()
@@ -339,7 +354,7 @@ describe('TicketDetail Component', () => {
     })
 
     it('should not render sub-tickets section when empty', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.queryByText(/Sub-tickets/)).not.toBeInTheDocument()
       })
@@ -347,10 +362,10 @@ describe('TicketDetail Component', () => {
 
     it('should navigate to sub-ticket on click', async () => {
       ;(ticketApi.getSubTickets as ReturnType<typeof vi.fn>).mockResolvedValue({
-        tickets: [
+        sub_tickets: [
           {
             id: 2,
-            identifier: 'PROJ-43',
+            slug: 'PROJ-43',
             title: 'Sub-task 1',
             status: 'todo',
             type: 'task',
@@ -358,7 +373,7 @@ describe('TicketDetail Component', () => {
         ],
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const subTicket = screen.getByText('Sub-task 1')
         fireEvent.click(subTicket)
@@ -378,7 +393,7 @@ describe('TicketDetail Component', () => {
             relation_type: 'blocks',
             target_ticket: {
               id: 3,
-              identifier: 'PROJ-44',
+              slug: 'PROJ-44',
               title: 'Related ticket',
             },
             created_at: '2024-01-10T10:00:00Z',
@@ -386,7 +401,7 @@ describe('TicketDetail Component', () => {
         ],
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Related (1)')).toBeInTheDocument()
         expect(screen.getByText('PROJ-44')).toBeInTheDocument()
@@ -404,7 +419,7 @@ describe('TicketDetail Component', () => {
             relation_type: 'blocks',
             target_ticket: {
               id: 3,
-              identifier: 'PROJ-44',
+              slug: 'PROJ-44',
               title: 'Related ticket',
             },
             created_at: '2024-01-10T10:00:00Z',
@@ -412,7 +427,7 @@ describe('TicketDetail Component', () => {
         ],
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const relatedTicket = screen.getByText('Related ticket')
         fireEvent.click(relatedTicket)
@@ -437,7 +452,7 @@ describe('TicketDetail Component', () => {
         ],
       })
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Commits (1)')).toBeInTheDocument()
         expect(screen.getByText('abc123d')).toBeInTheDocument() // Short SHA
@@ -448,7 +463,7 @@ describe('TicketDetail Component', () => {
 
   describe('pod panel', () => {
     it('should render TicketPodPanel', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByTestId('pod-panel')).toBeInTheDocument()
         expect(screen.getByText(/Pod Panel for PROJ-42/)).toBeInTheDocument()
@@ -458,14 +473,14 @@ describe('TicketDetail Component', () => {
 
   describe('editing', () => {
     it('should show edit button', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Edit')).toBeInTheDocument()
       })
     })
 
     it('should enter edit mode when edit button is clicked', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const editButton = screen.getByText('Edit')
         fireEvent.click(editButton)
@@ -481,7 +496,7 @@ describe('TicketDetail Component', () => {
     it('should call updateTicket when save is clicked', async () => {
       mockUpdateTicket.mockResolvedValue({})
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const editButton = screen.getByText('Edit')
         fireEvent.click(editButton)
@@ -496,13 +511,13 @@ describe('TicketDetail Component', () => {
       await waitFor(() => {
         expect(mockUpdateTicket).toHaveBeenCalledWith('PROJ-42', {
           title: 'Updated title',
-          content: '',
+          content: 'This is the ticket description',
         })
       })
     })
 
     it('should exit edit mode when cancel is clicked', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const editButton = screen.getByText('Edit')
         fireEvent.click(editButton)
@@ -520,7 +535,7 @@ describe('TicketDetail Component', () => {
 
   describe('status change', () => {
     it('should show status dropdown', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const comboboxes = screen.getAllByRole('combobox')
         const statusDropdown = comboboxes.find(el => (el as HTMLSelectElement).value === 'in_progress')
@@ -531,7 +546,7 @@ describe('TicketDetail Component', () => {
     it('should call updateTicketStatus when status is changed', async () => {
       mockUpdateTicketStatus.mockResolvedValue({})
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const comboboxes = screen.getAllByRole('combobox')
         const statusDropdown = comboboxes.find(el => (el as HTMLSelectElement).value === 'in_progress')!
@@ -546,14 +561,14 @@ describe('TicketDetail Component', () => {
 
   describe('delete action', () => {
     it('should show delete button', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Delete')).toBeInTheDocument()
       })
     })
 
     it('should show confirmation modal when delete is clicked', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const deleteButton = screen.getByText('Delete')
         fireEvent.click(deleteButton)
@@ -566,7 +581,7 @@ describe('TicketDetail Component', () => {
     it('should call deleteTicket and navigate to tickets list when confirmed', async () => {
       mockDeleteTicket.mockResolvedValue({})
 
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const deleteButton = screen.getByText('Delete')
         fireEvent.click(deleteButton)
@@ -584,7 +599,7 @@ describe('TicketDetail Component', () => {
     })
 
     it('should close modal when cancel is clicked', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
+      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         const deleteButton = screen.getByText('Delete')
         fireEvent.click(deleteButton)

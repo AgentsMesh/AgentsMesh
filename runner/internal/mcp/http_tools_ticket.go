@@ -39,9 +39,9 @@ func (s *HTTPServer) createSearchTicketsTool() *MCPTool {
 					"type":        "integer",
 					"description": "Filter by assignee user ID",
 				},
-				"parent_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "Filter by parent ticket ID (for subtasks)",
+				"parent_ticket_slug": map[string]interface{}{
+					"type":        "string",
+					"description": "Filter by parent ticket slug (e.g., 'AM-123') for subtasks",
 				},
 				"query": map[string]interface{}{
 					"type":        "string",
@@ -60,7 +60,7 @@ func (s *HTTPServer) createSearchTicketsTool() *MCPTool {
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
 			repositoryID := getIntPtrArg(args, "repository_id")
 			assigneeID := getIntPtrArg(args, "assignee_id")
-			parentID := getIntPtrArg(args, "parent_id")
+			parentTicketSlug := getStringPtrArg(args, "parent_ticket_slug")
 			query := getStringArg(args, "query")
 
 			var status *tools.TicketStatus
@@ -91,7 +91,7 @@ func (s *HTTPServer) createSearchTicketsTool() *MCPTool {
 				page = 1
 			}
 
-			result, err := client.SearchTickets(ctx, repositoryID, status, ticketType, priority, assigneeID, parentID, query, limit, page)
+			result, err := client.SearchTickets(ctx, repositoryID, status, ticketType, priority, assigneeID, parentTicketSlug, query, limit, page)
 			if err != nil {
 				return nil, err
 			}
@@ -103,23 +103,23 @@ func (s *HTTPServer) createSearchTicketsTool() *MCPTool {
 func (s *HTTPServer) createGetTicketTool() *MCPTool {
 	return &MCPTool{
 		Name:        "get_ticket",
-		Description: "Get details of a specific ticket by ID or identifier (e.g., 'AM-123').",
+		Description: "Get details of a specific ticket by its slug (e.g., 'AM-123').",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"ticket_id": map[string]interface{}{
+				"ticket_slug": map[string]interface{}{
 					"type":        "string",
-					"description": "Ticket ID (numeric) or identifier (e.g., 'AM-123')",
+					"description": "Ticket slug (e.g., 'AM-123'). Use search_tickets to find available tickets.",
 				},
 			},
-			"required": []string{"ticket_id"},
+			"required": []string{"ticket_slug"},
 		},
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
-			ticketID := getStringArg(args, "ticket_id")
-			if ticketID == "" {
-				return nil, fmt.Errorf("ticket_id is required")
+			ticketSlug := getStringArg(args, "ticket_slug")
+			if ticketSlug == "" {
+				return nil, fmt.Errorf("ticket_slug is required")
 			}
-			return client.GetTicket(ctx, ticketID)
+			return client.GetTicket(ctx, ticketSlug)
 		},
 	}
 }
@@ -139,6 +139,10 @@ func (s *HTTPServer) createCreateTicketTool() *MCPTool {
 					"type":        "string",
 					"description": "Title of the ticket",
 				},
+				"content": map[string]interface{}{
+					"type":        "string",
+					"description": "Content of the ticket (optional)",
+				},
 				"type": map[string]interface{}{
 					"type":        "string",
 					"enum":        []string{"task", "bug", "feature", "improvement", "epic", "subtask", "story"},
@@ -149,9 +153,9 @@ func (s *HTTPServer) createCreateTicketTool() *MCPTool {
 					"enum":        []string{"urgent", "high", "medium", "low", "none"},
 					"description": "Priority level (default: medium)",
 				},
-				"parent_ticket_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "Parent ticket ID for creating subtasks",
+				"parent_ticket_slug": map[string]interface{}{
+					"type":        "string",
+					"description": "Parent ticket slug (e.g., 'AM-123') for creating subtasks",
 				},
 			},
 			"required": []string{"title"},
@@ -161,7 +165,7 @@ func (s *HTTPServer) createCreateTicketTool() *MCPTool {
 			title := getStringArg(args, "title")
 			ticketType := getStringArg(args, "type")
 			priority := getStringArg(args, "priority")
-			parentTicketID := getInt64PtrArg(args, "parent_ticket_id")
+			parentTicketSlug := getStringPtrArg(args, "parent_ticket_slug")
 
 			if title == "" {
 				return nil, fmt.Errorf("title is required")
@@ -174,7 +178,8 @@ func (s *HTTPServer) createCreateTicketTool() *MCPTool {
 				priority = "medium"
 			}
 
-			return client.CreateTicket(ctx, repositoryID, title, tools.TicketType(ticketType), tools.TicketPriority(priority), parentTicketID)
+			content := getStringArg(args, "content")
+			return client.CreateTicket(ctx, repositoryID, title, content, tools.TicketType(ticketType), tools.TicketPriority(priority), parentTicketSlug)
 		},
 	}
 }
@@ -186,13 +191,17 @@ func (s *HTTPServer) createUpdateTicketTool() *MCPTool {
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"ticket_id": map[string]interface{}{
+				"ticket_slug": map[string]interface{}{
 					"type":        "string",
-					"description": "Ticket ID or identifier to update",
+					"description": "Ticket slug to update (e.g., 'AM-123')",
 				},
 				"title": map[string]interface{}{
 					"type":        "string",
 					"description": "New title (optional)",
+				},
+				"content": map[string]interface{}{
+					"type":        "string",
+					"description": "New content (optional)",
 				},
 				"status": map[string]interface{}{
 					"type":        "string",
@@ -210,12 +219,12 @@ func (s *HTTPServer) createUpdateTicketTool() *MCPTool {
 					"description": "New type (optional)",
 				},
 			},
-			"required": []string{"ticket_id"},
+			"required": []string{"ticket_slug"},
 		},
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
-			ticketID := getStringArg(args, "ticket_id")
-			if ticketID == "" {
-				return nil, fmt.Errorf("ticket_id is required")
+			ticketSlug := getStringArg(args, "ticket_slug")
+			if ticketSlug == "" {
+				return nil, fmt.Errorf("ticket_slug is required")
 			}
 
 			var title *string
@@ -241,7 +250,12 @@ func (s *HTTPServer) createUpdateTicketTool() *MCPTool {
 				ticketType = &tt
 			}
 
-			return client.UpdateTicket(ctx, ticketID, title, status, priority, ticketType)
+			var content *string
+			if d := getStringArg(args, "content"); d != "" {
+				content = &d
+			}
+
+			return client.UpdateTicket(ctx, ticketSlug, title, content, status, priority, ticketType)
 		},
 	}
 }

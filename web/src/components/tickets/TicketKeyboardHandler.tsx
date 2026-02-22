@@ -5,8 +5,8 @@ import { Ticket } from "@/stores/ticket";
 
 interface TicketKeyboardHandlerProps {
   tickets: Ticket[];
-  selectedIdentifier: string | null;
-  onSelectTicket: (identifier: string | null) => void;
+  selectedSlug: string | null;
+  onSelectTicket: (slug: string | null) => void;
   onOpenDetail: (ticket: Ticket) => void;
   onCloseDetail: () => void;
   onCreateNew?: () => void;
@@ -26,7 +26,7 @@ interface TicketKeyboardHandlerProps {
  */
 export function TicketKeyboardHandler({
   tickets,
-  selectedIdentifier,
+  selectedSlug,
   onSelectTicket,
   onOpenDetail,
   onCloseDetail,
@@ -50,8 +50,8 @@ export function TicketKeyboardHandler({
     }
 
     // Find current index
-    const currentIndex = selectedIdentifier
-      ? tickets.findIndex((t) => t.identifier === selectedIdentifier)
+    const currentIndex = selectedSlug
+      ? tickets.findIndex((t) => t.slug === selectedSlug)
       : -1;
 
     switch (e.key) {
@@ -62,10 +62,10 @@ export function TicketKeyboardHandler({
 
         if (currentIndex === -1) {
           // Select first ticket
-          onSelectTicket(tickets[0].identifier);
+          onSelectTicket(tickets[0].slug);
         } else if (currentIndex < tickets.length - 1) {
           // Select next ticket
-          onSelectTicket(tickets[currentIndex + 1].identifier);
+          onSelectTicket(tickets[currentIndex + 1].slug);
         }
         break;
       }
@@ -77,16 +77,16 @@ export function TicketKeyboardHandler({
 
         if (currentIndex === -1) {
           // Select last ticket
-          onSelectTicket(tickets[tickets.length - 1].identifier);
+          onSelectTicket(tickets[tickets.length - 1].slug);
         } else if (currentIndex > 0) {
           // Select previous ticket
-          onSelectTicket(tickets[currentIndex - 1].identifier);
+          onSelectTicket(tickets[currentIndex - 1].slug);
         }
         break;
       }
 
       case "Enter": {
-        if (selectedIdentifier && currentIndex !== -1) {
+        if (selectedSlug && currentIndex !== -1) {
           e.preventDefault();
           onOpenDetail(tickets[currentIndex]);
         }
@@ -111,7 +111,7 @@ export function TicketKeyboardHandler({
       case "Home": {
         e.preventDefault();
         if (tickets.length > 0) {
-          onSelectTicket(tickets[0].identifier);
+          onSelectTicket(tickets[0].slug);
         }
         break;
       }
@@ -119,12 +119,12 @@ export function TicketKeyboardHandler({
       case "End": {
         e.preventDefault();
         if (tickets.length > 0) {
-          onSelectTicket(tickets[tickets.length - 1].identifier);
+          onSelectTicket(tickets[tickets.length - 1].slug);
         }
         break;
       }
     }
-  }, [enabled, tickets, selectedIdentifier, onSelectTicket, onOpenDetail, onCloseDetail, onCreateNew]);
+  }, [enabled, tickets, selectedSlug, onSelectTicket, onOpenDetail, onCloseDetail, onCreateNew]);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);

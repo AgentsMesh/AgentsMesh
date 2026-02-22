@@ -86,9 +86,9 @@ export function PodListItem({ pod, isOpen, onClick, onTerminate }: PodListItemPr
           )}
         </div>
         {/* Show ticket if title is not from ticket */}
-        {!pod.title && pod.ticket?.identifier && (
+        {!pod.title && pod.ticket?.slug && (
           <p className="text-xs text-muted-foreground truncate">
-            {pod.ticket.identifier}
+            {pod.ticket.slug}
           </p>
         )}
       </div>

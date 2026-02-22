@@ -53,9 +53,9 @@ type CreatePodForTicketRequest struct {
 }
 
 // CreatePodForTicket creates a new pod for a ticket
-// POST /api/v1/organizations/:slug/tickets/:identifier/pods
+// POST /api/v1/organizations/:slug/tickets/:ticket_slug/pods
 func (h *MeshHandler) CreatePodForTicket(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
 
 	var req CreatePodForTicketRequest
@@ -65,7 +65,7 @@ func (h *MeshHandler) CreatePodForTicket(c *gin.Context) {
 	}
 
 	// Get the ticket
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -93,13 +93,13 @@ func (h *MeshHandler) CreatePodForTicket(c *gin.Context) {
 }
 
 // GetTicketPods returns pods for a ticket
-// GET /api/v1/organizations/:slug/tickets/:identifier/pods
+// GET /api/v1/organizations/:slug/tickets/:ticket_slug/pods
 func (h *MeshHandler) GetTicketPods(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
 
 	// Get the ticket
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return

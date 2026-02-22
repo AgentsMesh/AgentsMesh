@@ -349,7 +349,7 @@ steps:
           X-Pod-Key: "{pod_key_a}"
         body:
           title: "MCP-E2E-Ticket: Test Task"
-          description: "This ticket was created via MCP for E2E testing."
+          content: "This ticket was created via MCP for E2E testing."
           type: "task"
           priority: "medium"
           status: "backlog"
@@ -357,7 +357,7 @@ steps:
         status: 201
       save:
         ticket_id: body.ticket.id
-        ticket_identifier: body.ticket.identifier
+        ticket_slug: body.ticket.slug
 
   - id: step-16
     action: 在 Tickets 页面验证新工单显示

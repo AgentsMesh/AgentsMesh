@@ -15,5 +15,5 @@ const (
 
 // EventPublisher defines the interface for publishing events (dependency inversion)
 type EventPublisher interface {
-	PublishTicketEvent(ctx context.Context, eventType TicketEventType, orgID int64, identifier, status, previousStatus string)
+	PublishTicketEvent(ctx context.Context, eventType TicketEventType, orgID int64, slug, status, previousStatus string)
 }

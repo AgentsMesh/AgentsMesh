@@ -6,7 +6,7 @@ interface PodDisplayInfo {
   pod_key: string;
   title?: string | null;
   ticket?: {
-    identifier?: string;
+    slug?: string;
   };
   agent_type?: {
     name?: string;
@@ -18,7 +18,7 @@ interface PodDisplayInfo {
  *
  * Priority:
  * 1. OSC title (set by terminal applications like Claude Code)
- * 2. Ticket identifier (if associated with a ticket)
+ * 2. Ticket slug (if associated with a ticket)
  * 3. Agent type name + truncated pod_key
  *
  * @param pod - Pod data with optional title and ticket
@@ -37,9 +37,9 @@ export function getPodDisplayName(
     return pod.title;
   }
 
-  // Priority 2: Ticket identifier
-  if (pod.ticket?.identifier) {
-    return pod.ticket.identifier;
+  // Priority 2: Ticket slug
+  if (pod.ticket?.slug) {
+    return pod.ticket.slug;
   }
 
   // Priority 3: Agent type + truncated pod_key
@@ -70,11 +70,11 @@ export function getPodShortName(
     return pod.title;
   }
 
-  if (pod.ticket?.identifier) {
-    if (pod.ticket.identifier.length > maxLength) {
-      return pod.ticket.identifier.substring(0, maxLength - 1) + "…";
+  if (pod.ticket?.slug) {
+    if (pod.ticket.slug.length > maxLength) {
+      return pod.ticket.slug.substring(0, maxLength - 1) + "…";
     }
-    return pod.ticket.identifier;
+    return pod.ticket.slug;
   }
 
   return pod.pod_key.substring(0, Math.min(8, maxLength));

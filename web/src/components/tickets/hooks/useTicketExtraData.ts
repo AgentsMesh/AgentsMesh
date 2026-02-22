@@ -16,27 +16,27 @@ export interface TicketExtraData {
 /**
  * Hook for fetching extra ticket data (sub-tickets, relations, commits)
  *
- * @param identifier - Ticket identifier
+ * @param slug - Ticket slug
  * @param enabled - Whether to enable fetching (e.g., when ticket is loaded)
  */
-export function useTicketExtraData(identifier: string, enabled: boolean) {
+export function useTicketExtraData(slug: string, enabled: boolean) {
   const [subTickets, setSubTickets] = useState<Ticket[]>([]);
   const [relations, setRelations] = useState<TicketRelation[]>([]);
   const [commits, setCommits] = useState<TicketCommit[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchExtraData = useCallback(async () => {
-    if (!enabled || !identifier) return;
+    if (!enabled || !slug) return;
 
     setLoading(true);
     try {
       const [subTicketsRes, relationsRes, commitsRes] = await Promise.all([
-        ticketApi.getSubTickets(identifier).catch(() => ({ tickets: [] })),
-        ticketApi.listRelations(identifier).catch(() => ({ relations: [] })),
-        ticketApi.listCommits(identifier).catch(() => ({ commits: [] })),
+        ticketApi.getSubTickets(slug).catch(() => ({ sub_tickets: [] })),
+        ticketApi.listRelations(slug).catch(() => ({ relations: [] })),
+        ticketApi.listCommits(slug).catch(() => ({ commits: [] })),
       ]);
 
-      setSubTickets(subTicketsRes.tickets || []);
+      setSubTickets(subTicketsRes.sub_tickets || []);
       setRelations(relationsRes.relations || []);
       setCommits(commitsRes.commits || []);
     } catch (err) {
@@ -44,7 +44,7 @@ export function useTicketExtraData(identifier: string, enabled: boolean) {
     } finally {
       setLoading(false);
     }
-  }, [identifier, enabled]);
+  }, [slug, enabled]);
 
   useEffect(() => {
     fetchExtraData();

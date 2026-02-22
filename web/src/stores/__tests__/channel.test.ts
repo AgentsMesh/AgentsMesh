@@ -184,7 +184,7 @@ describe("Channel Store", () => {
         await useChannelStore.getState().createChannel({
           name: "test",
           repositoryId: 1,
-          ticketId: 2,
+          ticketSlug: "PROJ-2",
         });
       });
 
@@ -193,7 +193,7 @@ describe("Channel Store", () => {
         description: undefined,
         document: undefined,
         repository_id: 1,
-        ticket_id: 2,
+        ticket_slug: "PROJ-2",
       });
     });
 

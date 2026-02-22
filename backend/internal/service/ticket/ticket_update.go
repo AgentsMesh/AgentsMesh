@@ -29,9 +29,9 @@ func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, updates map[
 
 	// Publish appropriate event based on what changed
 	if newStatus, ok := updates["status"].(string); ok && newStatus != previousStatus {
-		s.publishEvent(ctx, TicketEventStatusChanged, oldTicket.OrganizationID, updatedTicket.Identifier, updatedTicket.Status, previousStatus)
+		s.publishEvent(ctx, TicketEventStatusChanged, oldTicket.OrganizationID, updatedTicket.Slug, updatedTicket.Status, previousStatus)
 	} else {
-		s.publishEvent(ctx, TicketEventUpdated, oldTicket.OrganizationID, updatedTicket.Identifier, updatedTicket.Status, previousStatus)
+		s.publishEvent(ctx, TicketEventUpdated, oldTicket.OrganizationID, updatedTicket.Slug, updatedTicket.Status, previousStatus)
 	}
 
 	return updatedTicket, nil
@@ -63,7 +63,7 @@ func (s *Service) UpdateStatus(ctx context.Context, ticketID int64, status strin
 	}
 
 	// Publish status changed event (for kanban board real-time updates)
-	s.publishEvent(ctx, TicketEventStatusChanged, oldTicket.OrganizationID, oldTicket.Identifier, status, previousStatus)
+	s.publishEvent(ctx, TicketEventStatusChanged, oldTicket.OrganizationID, oldTicket.Slug, status, previousStatus)
 
 	return nil
 }
@@ -81,7 +81,7 @@ func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 	}
 
 	// Publish ticket deleted event
-	s.publishEvent(ctx, TicketEventDeleted, oldTicket.OrganizationID, oldTicket.Identifier, "deleted", oldTicket.Status)
+	s.publishEvent(ctx, TicketEventDeleted, oldTicket.OrganizationID, oldTicket.Slug, "deleted", oldTicket.Status)
 
 	return nil
 }

@@ -3,26 +3,47 @@ package grpc
 import (
 	"context"
 	"errors"
+	"strconv"
 
+	ticketDomain "github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 )
+
+// mcpTicketResponse wraps ticket.Ticket to add resolved slug fields for MCP responses.
+// The runner expects parent_ticket_slug (string) instead of parent_ticket_id (int64).
+type mcpTicketResponse struct {
+	*ticketDomain.Ticket
+	ParentTicketSlug string `json:"parent_ticket_slug,omitempty"`
+}
+
+// enrichTicketForMCP resolves the parent ticket's numeric ID to its slug.
+func (a *GRPCRunnerAdapter) enrichTicketForMCP(ctx context.Context, orgID int64, t *ticketDomain.Ticket) *mcpTicketResponse {
+	resp := &mcpTicketResponse{Ticket: t}
+	if t.ParentTicketID != nil {
+		parent, err := a.ticketService.GetTicketByIDOrSlug(ctx, orgID, strconv.FormatInt(*t.ParentTicketID, 10))
+		if err == nil {
+			resp.ParentTicketSlug = parent.Slug
+		}
+	}
+	return resp
+}
 
 // ==================== Ticket MCP Methods ====================
 
 // mcpSearchTickets handles the "search_tickets" MCP method.
 func (a *GRPCRunnerAdapter) mcpSearchTickets(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		RepositoryID *int64  `json:"repository_id"`
-		Status       string  `json:"status"`
-		Type         string  `json:"type"`
-		Priority     string  `json:"priority"`
-		AssigneeID   *int64  `json:"assignee_id"`
-		ParentID     *int64  `json:"parent_id"`
-		Query        string  `json:"query"`
-		Limit        int     `json:"limit"`
-		Page         int     `json:"page"`
+		RepositoryID      *int64  `json:"repository_id"`
+		Status            string  `json:"status"`
+		Type              string  `json:"type"`
+		Priority          string  `json:"priority"`
+		AssigneeID        *int64  `json:"assignee_id"`
+		ParentTicketSlug  *string `json:"parent_ticket_slug"`
+		Query             string  `json:"query"`
+		Limit             int     `json:"limit"`
+		Page              int     `json:"page"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
@@ -38,12 +59,25 @@ func (a *GRPCRunnerAdapter) mcpSearchTickets(ctx context.Context, tc *middleware
 		offset = (params.Page - 1) * limit
 	}
 
+	// Resolve parent ticket slug to ID
+	var parentTicketID *int64
+	if params.ParentTicketSlug != nil && *params.ParentTicketSlug != "" {
+		parentTicket, err := a.ticketService.GetTicketByIDOrSlug(ctx, tc.OrganizationID, *params.ParentTicketSlug)
+		if err != nil {
+			return nil, newMcpError(404, "parent ticket not found")
+		}
+		parentTicketID = &parentTicket.ID
+	}
+
 	tickets, _, err := a.ticketService.ListTickets(ctx, &ticket.ListTicketsFilter{
 		OrganizationID: tc.OrganizationID,
 		RepositoryID:   params.RepositoryID,
 		Status:         params.Status,
 		Type:           params.Type,
+		Priority:       params.Priority,
 		AssigneeID:     params.AssigneeID,
+		ParentTicketID: parentTicketID,
+		Query:          params.Query,
 		UserRole:       tc.UserRole,
 		Limit:          limit,
 		Offset:         offset,
@@ -52,38 +86,43 @@ func (a *GRPCRunnerAdapter) mcpSearchTickets(ctx context.Context, tc *middleware
 		return nil, newMcpError(500, "failed to search tickets")
 	}
 
-	return map[string]interface{}{"tickets": tickets}, nil
+	enriched := make([]*mcpTicketResponse, len(tickets))
+	for i, t := range tickets {
+		enriched[i] = a.enrichTicketForMCP(ctx, tc.OrganizationID, t)
+	}
+	return map[string]interface{}{"tickets": enriched}, nil
 }
 
 // mcpGetTicket handles the "get_ticket" MCP method.
 func (a *GRPCRunnerAdapter) mcpGetTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		TicketID string `json:"ticket_id"`
+		TicketSlug string `json:"ticket_slug"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
 	}
 
-	if params.TicketID == "" {
-		return nil, newMcpError(400, "ticket_id is required")
+	if params.TicketSlug == "" {
+		return nil, newMcpError(400, "ticket_slug is required")
 	}
 
-	t, err := a.ticketService.GetTicketByIDOrIdentifier(ctx, tc.OrganizationID, params.TicketID)
+	t, err := a.ticketService.GetTicketByIDOrSlug(ctx, tc.OrganizationID, params.TicketSlug)
 	if err != nil {
 		return nil, newMcpError(404, "ticket not found")
 	}
 
-	return map[string]interface{}{"ticket": t}, nil
+	return map[string]interface{}{"ticket": a.enrichTicketForMCP(ctx, tc.OrganizationID, t)}, nil
 }
 
 // mcpCreateTicket handles the "create_ticket" MCP method.
 func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		RepositoryID   *int64 `json:"repository_id"`
-		Title          string `json:"title"`
-		Type           string `json:"type"`
-		Priority       string `json:"priority"`
-		ParentTicketID *int64 `json:"parent_ticket_id"`
+		RepositoryID     *int64  `json:"repository_id"`
+		Title            string  `json:"title"`
+		Content          string  `json:"content"`
+		Type             string  `json:"type"`
+		Priority         string  `json:"priority"`
+		ParentTicketSlug *string `json:"parent_ticket_slug"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
@@ -99,40 +138,57 @@ func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.
 		params.Priority = "medium"
 	}
 
+	var content *string
+	if params.Content != "" {
+		content = &params.Content
+	}
+
+	// Resolve parent ticket slug to ID
+	var parentTicketID *int64
+	if params.ParentTicketSlug != nil && *params.ParentTicketSlug != "" {
+		parentTicket, err := a.ticketService.GetTicketByIDOrSlug(ctx, tc.OrganizationID, *params.ParentTicketSlug)
+		if err != nil {
+			return nil, newMcpError(404, "parent ticket not found")
+		}
+		parentTicketID = &parentTicket.ID
+	}
+
 	t, err := a.ticketService.CreateTicket(ctx, &ticket.CreateTicketRequest{
 		OrganizationID: tc.OrganizationID,
 		RepositoryID:   params.RepositoryID,
 		ReporterID:     tc.UserID,
 		Type:           params.Type,
 		Title:          params.Title,
+		Content:        content,
 		Priority:       params.Priority,
-		ParentTicketID: params.ParentTicketID,
+		ParentTicketID: parentTicketID,
 	})
 	if err != nil {
 		return nil, newMcpError(500, "failed to create ticket")
 	}
 
-	return map[string]interface{}{"ticket": t}, nil
+	return map[string]interface{}{"ticket": a.enrichTicketForMCP(ctx, tc.OrganizationID, t)}, nil
 }
 
 // mcpUpdateTicket handles the "update_ticket" MCP method.
 func (a *GRPCRunnerAdapter) mcpUpdateTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		TicketID string  `json:"ticket_id"`
-		Title    *string `json:"title"`
-		Status   *string `json:"status"`
-		Priority *string `json:"priority"`
-		Type     *string `json:"type"`
+		TicketSlug string  `json:"ticket_slug"`
+		Title      *string `json:"title"`
+		Content    *string `json:"content"`
+		Status     *string `json:"status"`
+		Priority   *string `json:"priority"`
+		Type       *string `json:"type"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
 	}
 
-	if params.TicketID == "" {
-		return nil, newMcpError(400, "ticket_id is required")
+	if params.TicketSlug == "" {
+		return nil, newMcpError(400, "ticket_slug is required")
 	}
 
-	t, err := a.ticketService.GetTicketByIDOrIdentifier(ctx, tc.OrganizationID, params.TicketID)
+	t, err := a.ticketService.GetTicketByIDOrSlug(ctx, tc.OrganizationID, params.TicketSlug)
 	if err != nil {
 		return nil, newMcpError(404, "ticket not found")
 	}
@@ -140,6 +196,9 @@ func (a *GRPCRunnerAdapter) mcpUpdateTicket(ctx context.Context, tc *middleware.
 	updates := make(map[string]interface{})
 	if params.Title != nil {
 		updates["title"] = *params.Title
+	}
+	if params.Content != nil {
+		updates["content"] = *params.Content
 	}
 	if params.Status != nil {
 		updates["status"] = *params.Status
@@ -156,7 +215,7 @@ func (a *GRPCRunnerAdapter) mcpUpdateTicket(ctx context.Context, tc *middleware.
 		return nil, newMcpError(500, "failed to update ticket")
 	}
 
-	return map[string]interface{}{"ticket": t}, nil
+	return map[string]interface{}{"ticket": a.enrichTicketForMCP(ctx, tc.OrganizationID, t)}, nil
 }
 
 // ==================== Pod MCP Methods ====================
@@ -170,8 +229,7 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		CustomAgentTypeID *int64                 `json:"custom_agent_type_id"`
 		RepositoryID      *int64                 `json:"repository_id"`
 		RepositoryURL     *string                `json:"repository_url"`
-		TicketID          *int64                 `json:"ticket_id"`
-		TicketIdentifier  *string                `json:"ticket_identifier"`
+		TicketSlug        *string                `json:"ticket_slug"`
 		InitialPrompt     string                 `json:"initial_prompt"`
 		BranchName        *string                `json:"branch_name"`
 		PermissionMode    *string                `json:"permission_mode"`
@@ -195,8 +253,7 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		CustomAgentTypeID:   params.CustomAgentTypeID,
 		RepositoryID:        params.RepositoryID,
 		RepositoryURL:       params.RepositoryURL,
-		TicketID:            params.TicketID,
-		TicketIdentifier:    params.TicketIdentifier,
+		TicketSlug:          params.TicketSlug,
 		InitialPrompt:       params.InitialPrompt,
 		BranchName:          params.BranchName,
 		PermissionMode:      params.PermissionMode,

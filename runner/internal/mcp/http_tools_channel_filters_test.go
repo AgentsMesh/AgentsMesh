@@ -54,7 +54,7 @@ func TestHTTPServerMCPToolsCallCreateChannelWithProjectAndTicket(t *testing.T) {
 				"name": "test-channel",
 				"description": "A test channel",
 				"project_id": 123,
-				"ticket_id": 456
+				"ticket_slug": "AM-456"
 			}
 		}
 	}`)
@@ -83,7 +83,7 @@ func TestHTTPServerMCPToolsCallSearchChannelsWithFilters(t *testing.T) {
 			"arguments": {
 				"name": "test",
 				"project_id": 123,
-				"ticket_id": 456,
+				"ticket_slug": "AM-456",
 				"is_archived": false,
 				"offset": 10,
 				"limit": 20

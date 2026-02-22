@@ -8,9 +8,9 @@ import { ResizeHandle } from "./ResizeHandle";
 
 interface BoardViewLayoutProps {
   tickets: Ticket[];
-  selectedTicketIdentifier: string | null;
+  selectedTicketSlug: string | null;
   hasSelectedTicket: boolean;
-  onStatusChange: (identifier: string, newStatus: TicketStatus) => Promise<void>;
+  onStatusChange: (slug: string, newStatus: TicketStatus) => Promise<void>;
   onTicketClick: (ticket: Ticket) => void;
   onClosePanel: () => void;
   onCreatePodRequest?: (ticket: Ticket) => void;
@@ -21,7 +21,7 @@ interface BoardViewLayoutProps {
  */
 export function BoardViewLayout({
   tickets,
-  selectedTicketIdentifier,
+  selectedTicketSlug,
   hasSelectedTicket,
   onStatusChange,
   onTicketClick,
@@ -60,9 +60,9 @@ export function BoardViewLayout({
       <ResizeHandle direction="vertical" />
       <Panel defaultSize={40} minSize={20}>
         <AnimatePresence mode="wait">
-          {selectedTicketIdentifier && (
+          {selectedTicketSlug && (
             <motion.div
-              key={selectedTicketIdentifier}
+              key={selectedTicketSlug}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
@@ -70,7 +70,7 @@ export function BoardViewLayout({
               className="h-full border-t"
             >
               <TicketDetailPane
-                identifier={selectedTicketIdentifier}
+                slug={selectedTicketSlug}
                 onClose={onClosePanel}
               />
             </motion.div>

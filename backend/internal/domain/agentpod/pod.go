@@ -145,7 +145,7 @@ type CreatePodCommand struct {
 	InitialCommand    string             `json:"initial_command,omitempty"`
 	InitialPrompt     string             `json:"initial_prompt,omitempty"`
 	PermissionMode    string             `json:"permission_mode,omitempty"`
-	TicketIdentifier  string             `json:"ticket_identifier,omitempty"`
+	TicketSlug        string             `json:"ticket_slug,omitempty"`
 	PodSuffix         string             `json:"pod_suffix,omitempty"`
 	EnvVars           map[string]string  `json:"env_vars,omitempty"`
 	PreparationConfig *PreparationConfig `json:"preparation_config,omitempty"`

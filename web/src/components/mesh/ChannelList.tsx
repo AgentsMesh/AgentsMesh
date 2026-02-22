@@ -19,7 +19,7 @@ interface Channel {
   };
   ticket?: {
     id: number;
-    identifier: string;
+    slug: string;
     title: string;
   };
   pods?: Array<{
@@ -123,11 +123,11 @@ export function ChannelList({
                 {channel.ticket && (
                   <div className="mt-2 text-xs text-muted-foreground">
                     <Link
-                      href={`/${currentOrg?.slug}/tickets/${channel.ticket.identifier}`}
+                      href={`/${currentOrg?.slug}/tickets/${channel.ticket.slug}`}
                       className="hover:text-primary hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {channel.ticket.identifier}
+                      {channel.ticket.slug}
                     </Link>
                   </div>
                 )}

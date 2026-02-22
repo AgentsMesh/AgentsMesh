@@ -140,7 +140,7 @@ func TestMRSyncServiceIntegration(t *testing.T) {
 		// Create ticket
 		tkt := &ticket.Ticket{
 			OrganizationID: 1,
-			Identifier:     "INT-1",
+			Slug:     "INT-1",
 			Title:          "Integration Test Ticket",
 			Type:           ticket.TicketTypeTask,
 			Status:         ticket.TicketStatusInProgress,
@@ -197,7 +197,7 @@ func TestMRSyncServiceIntegration(t *testing.T) {
 		// Create ticket
 		tkt := &ticket.Ticket{
 			OrganizationID: 1,
-			Identifier:     "ERR-1",
+			Slug:     "ERR-1",
 			Title:          "Error Test Ticket",
 			Type:           ticket.TicketTypeTask,
 			Status:         ticket.TicketStatusInProgress,

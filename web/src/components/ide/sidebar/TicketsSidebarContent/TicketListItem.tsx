@@ -5,7 +5,7 @@ import { statusIcons } from "./types";
 
 interface TicketListItemProps {
   ticket: Ticket;
-  onClick: (identifier: string) => void;
+  onClick: (slug: string) => void;
 }
 
 /**
@@ -15,7 +15,7 @@ export function TicketListItem({ ticket, onClick }: TicketListItemProps) {
   return (
     <div
       className="group flex items-start gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer"
-      onClick={() => onClick(ticket.identifier)}
+      onClick={() => onClick(ticket.slug)}
     >
       {/* Status icon */}
       <div className="mt-0.5">
@@ -26,7 +26,7 @@ export function TicketListItem({ ticket, onClick }: TicketListItemProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-muted-foreground font-mono">
-            {ticket.identifier}
+            {ticket.slug}
           </span>
           {ticket.priority === "urgent" && (
             <span className="text-red-500 dark:text-red-400 text-xs">!</span>

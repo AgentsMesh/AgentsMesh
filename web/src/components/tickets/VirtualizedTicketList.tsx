@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 interface VirtualizedTicketListProps {
   tickets: Ticket[];
-  selectedIdentifier: string | null;
+  selectedSlug: string | null;
   onTicketClick: (ticket: Ticket) => void;
   t: (key: string) => string;
   estimatedRowHeight?: number;
@@ -21,7 +21,7 @@ interface VirtualizedTicketListProps {
  */
 export function VirtualizedTicketList({
   tickets,
-  selectedIdentifier,
+  selectedSlug,
   onTicketClick,
   t,
   estimatedRowHeight = 48,
@@ -90,7 +90,7 @@ export function VirtualizedTicketList({
         >
           {virtualItems.map((virtualRow) => {
             const ticket = tickets[virtualRow.index];
-            const isSelected = ticket.identifier === selectedIdentifier;
+            const isSelected = ticket.slug === selectedSlug;
             const statusInfo = getStatusDisplayInfo(ticket.status);
 
             return (
@@ -108,7 +108,7 @@ export function VirtualizedTicketList({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
                 onClick={() => onTicketClick(ticket)}
-                onMouseEnter={() => prefetchOnHover(ticket.identifier)}
+                onMouseEnter={() => prefetchOnHover(ticket.slug)}
                 onMouseLeave={cancelPrefetch}
               >
                 <div className="grid grid-cols-[1fr_2fr_120px_100px_100px_100px] gap-2 px-4 py-2.5 items-center">
@@ -121,7 +121,7 @@ export function VirtualizedTicketList({
                         isSelected ? "text-primary font-medium" : "text-primary"
                       )}
                     >
-                      {ticket.identifier}
+                      {ticket.slug}
                     </code>
                   </div>
 

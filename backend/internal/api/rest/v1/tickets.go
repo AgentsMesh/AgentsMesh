@@ -30,24 +30,26 @@ type ListTicketsRequest struct {
 	RepositoryID *int64   `form:"repository_id"`
 	Status       string   `form:"status"`
 	Type         string   `form:"type"`
+	Priority     string   `form:"priority"`
 	AssigneeID   *int64   `form:"assignee_id"`
 	Labels       []string `form:"labels"`
+	Query        string   `form:"query"`
 	Limit        int      `form:"limit"`
 	Offset       int      `form:"offset"`
 }
 
 // CreateTicketRequest represents ticket creation request
 type CreateTicketRequest struct {
-	RepositoryID   *int64   `json:"repository_id"`
-	Type           string   `json:"type" binding:"required,oneof=task bug feature improvement epic subtask story"`
-	Title          string   `json:"title" binding:"required,min=1,max=500"`
-	Content        string   `json:"content"`
-	Status         string   `json:"status"`
-	Priority       string   `json:"priority"`
-	AssigneeIDs    []int64  `json:"assignee_ids"`
-	Labels         []string `json:"labels"`
-	ParentTicketID *int64   `json:"parent_ticket_id"`
-	DueDate        *string  `json:"due_date"`
+	RepositoryID     *int64   `json:"repository_id"`
+	Type             string   `json:"type" binding:"required,oneof=task bug feature improvement epic subtask story"`
+	Title            string   `json:"title" binding:"required,min=1,max=500"`
+	Content          string   `json:"content"`
+	Status           string   `json:"status"`
+	Priority         string   `json:"priority"`
+	AssigneeIDs      []int64  `json:"assignee_ids"`
+	Labels           []string `json:"labels"`
+	ParentTicketSlug *string  `json:"parent_ticket_slug"`
+	DueDate          *string  `json:"due_date"`
 }
 
 // UpdateTicketRequest represents ticket update request
@@ -91,7 +93,9 @@ func (h *TicketHandler) ListTickets(c *gin.Context) {
 		RepositoryID:   req.RepositoryID,
 		Status:         req.Status,
 		Type:           req.Type,
+		Priority:       req.Priority,
 		AssigneeID:     req.AssigneeID,
+		Query:          req.Query,
 		UserRole:       tenant.UserRole,
 		Limit:          limit,
 		Offset:         req.Offset,
@@ -125,6 +129,17 @@ func (h *TicketHandler) CreateTicket(c *gin.Context) {
 		content = &req.Content
 	}
 
+	// Resolve parent ticket slug to ID
+	var parentTicketID *int64
+	if req.ParentTicketSlug != nil && *req.ParentTicketSlug != "" {
+		parent, err := h.ticketService.GetTicketByIDOrSlug(c.Request.Context(), tenant.OrganizationID, *req.ParentTicketSlug)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Parent ticket not found"})
+			return
+		}
+		parentTicketID = &parent.ID
+	}
+
 	t, err := h.ticketService.CreateTicket(c.Request.Context(), &ticket.CreateTicketRequest{
 		OrganizationID: tenant.OrganizationID,
 		RepositoryID:   req.RepositoryID,
@@ -136,7 +151,7 @@ func (h *TicketHandler) CreateTicket(c *gin.Context) {
 		Priority:       req.Priority,
 		AssigneeIDs:    req.AssigneeIDs,
 		Labels:         req.Labels,
-		ParentTicketID: req.ParentTicketID,
+		ParentTicketID: parentTicketID,
 	})
 	if err != nil {
 		apierr.InternalError(c, "Failed to create ticket")
@@ -148,13 +163,13 @@ func (h *TicketHandler) CreateTicket(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"ticket": t})
 }
 
-// GetTicket returns ticket by identifier
-// GET /api/v1/organizations/:slug/tickets/:identifier
+// GetTicket returns ticket by slug
+// GET /api/v1/organizations/:slug/tickets/:ticket_slug
 func (h *TicketHandler) GetTicket(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -164,9 +179,9 @@ func (h *TicketHandler) GetTicket(c *gin.Context) {
 }
 
 // UpdateTicket updates a ticket
-// PUT /api/v1/organizations/:slug/tickets/:identifier
+// PUT /api/v1/organizations/:slug/tickets/:ticket_slug
 func (h *TicketHandler) UpdateTicket(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
 
 	var req UpdateTicketRequest
@@ -175,7 +190,7 @@ func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 		return
 	}
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -205,6 +220,13 @@ func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 			updates["repository_id"] = *req.RepositoryID
 		}
 	}
+	if req.DueDate != nil {
+		if *req.DueDate == "" {
+			updates["due_date"] = nil
+		} else {
+			updates["due_date"] = *req.DueDate
+		}
+	}
 
 	t, err = h.ticketService.UpdateTicket(c.Request.Context(), t.ID, updates)
 	if err != nil {
@@ -226,12 +248,12 @@ func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 }
 
 // DeleteTicket deletes a ticket
-// DELETE /api/v1/organizations/:slug/tickets/:identifier
+// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug
 func (h *TicketHandler) DeleteTicket(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -248,9 +270,9 @@ func (h *TicketHandler) DeleteTicket(c *gin.Context) {
 }
 
 // UpdateTicketStatus updates ticket status (convenience endpoint)
-// PATCH /api/v1/organizations/:slug/tickets/:identifier/status
+// PATCH /api/v1/organizations/:slug/tickets/:ticket_slug/status
 func (h *TicketHandler) UpdateTicketStatus(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 
 	var req UpdateTicketStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -260,7 +282,7 @@ func (h *TicketHandler) UpdateTicketStatus(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return

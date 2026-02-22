@@ -24,9 +24,9 @@ func (s *HTTPServer) createSearchChannelsTool() *MCPTool {
 					"type":        "integer",
 					"description": "Filter by repository ID. Use list_repositories to see available repositories.",
 				},
-				"ticket_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "Filter by ticket ID",
+				"ticket_slug": map[string]interface{}{
+					"type":        "string",
+					"description": "Filter by ticket slug (e.g., 'AM-123')",
 				},
 				"is_archived": map[string]interface{}{
 					"type":        "boolean",
@@ -45,7 +45,7 @@ func (s *HTTPServer) createSearchChannelsTool() *MCPTool {
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
 			name := getStringArg(args, "name")
 			repositoryID := getIntPtrArg(args, "repository_id")
-			ticketID := getIntPtrArg(args, "ticket_id")
+			ticketSlug := getStringPtrArg(args, "ticket_slug")
 
 			var isArchived *bool
 			if v, ok := args["is_archived"].(bool); ok {
@@ -58,7 +58,7 @@ func (s *HTTPServer) createSearchChannelsTool() *MCPTool {
 				limit = 20
 			}
 
-			result, err := client.SearchChannels(ctx, name, repositoryID, ticketID, isArchived, offset, limit)
+			result, err := client.SearchChannels(ctx, name, repositoryID, ticketSlug, isArchived, offset, limit)
 			if err != nil {
 				return nil, err
 			}
@@ -86,9 +86,9 @@ func (s *HTTPServer) createCreateChannelTool() *MCPTool {
 					"type":        "integer",
 					"description": "Associated repository ID (optional). Use list_repositories to see available repositories.",
 				},
-				"ticket_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "Associated ticket ID (optional)",
+				"ticket_slug": map[string]interface{}{
+					"type":        "string",
+					"description": "Associated ticket slug (e.g., 'AM-123', optional)",
 				},
 			},
 			"required": []string{"name"},
@@ -97,13 +97,13 @@ func (s *HTTPServer) createCreateChannelTool() *MCPTool {
 			name := getStringArg(args, "name")
 			description := getStringArg(args, "description")
 			repositoryID := getIntPtrArg(args, "repository_id")
-			ticketID := getIntPtrArg(args, "ticket_id")
+			ticketSlug := getStringPtrArg(args, "ticket_slug")
 
 			if name == "" {
 				return nil, fmt.Errorf("name is required")
 			}
 
-			return client.CreateChannel(ctx, name, description, repositoryID, ticketID)
+			return client.CreateChannel(ctx, name, description, repositoryID, ticketSlug)
 		},
 	}
 }

@@ -25,7 +25,7 @@ func NewEventBusPublisher(eventBus *eventbus.EventBus, logger *slog.Logger) *Eve
 }
 
 // PublishTicketEvent publishes a ticket event
-func (p *EventBusPublisher) PublishTicketEvent(ctx context.Context, eventType TicketEventType, orgID int64, identifier, status, previousStatus string) {
+func (p *EventBusPublisher) PublishTicketEvent(ctx context.Context, eventType TicketEventType, orgID int64, slug, status, previousStatus string) {
 	if p.eventBus == nil {
 		return
 	}
@@ -49,17 +49,17 @@ func (p *EventBusPublisher) PublishTicketEvent(ctx context.Context, eventType Ti
 	}
 
 	data := &eventbus.TicketStatusChangedData{
-		Identifier:     identifier,
+		Slug:            slug,
 		Status:         status,
 		PreviousStatus: previousStatus,
 	}
 
-	event, err := eventbus.NewEntityEvent(et, orgID, "ticket", identifier, data)
+	event, err := eventbus.NewEntityEvent(et, orgID, "ticket", slug, data)
 	if err != nil {
 		p.logger.Error("failed to create ticket event",
 			"error", err,
 			"type", eventType,
-			"identifier", identifier,
+			"slug", slug,
 		)
 		return
 	}
@@ -68,7 +68,7 @@ func (p *EventBusPublisher) PublishTicketEvent(ctx context.Context, eventType Ti
 		p.logger.Error("failed to publish ticket event",
 			"error", err,
 			"type", eventType,
-			"identifier", identifier,
+			"slug", slug,
 		)
 	}
 }

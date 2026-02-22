@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTicketStore, Ticket, TicketStatus } from "@/stores/ticket";
+import { useTicketStore, useFilteredTickets, Ticket, TicketStatus } from "@/stores/ticket";
 import { useAuthStore } from "@/stores/auth";
 import { TicketKeyboardHandler } from "@/components/tickets";
 import { CenteredSpinner } from "@/components/ui/spinner";
@@ -19,14 +19,15 @@ export default function TicketsPage() {
   const searchParams = useSearchParams();
   const { currentOrg } = useAuthStore();
   const {
-    tickets,
     loading,
     viewMode,
-    selectedTicketIdentifier,
+    selectedTicketSlug,
     fetchTickets,
     updateTicketStatus,
-    setSelectedTicketIdentifier,
+    setSelectedTicketSlug,
   } = useTicketStore();
+
+  const tickets = useFilteredTickets();
 
   // Track screen size for responsive layout
   const [isDesktop, setIsDesktop] = useState(true);
@@ -39,10 +40,10 @@ export default function TicketsPage() {
 
   // Sync URL with store
   useEffect(() => {
-    if (selectedTicketFromUrl !== selectedTicketIdentifier) {
-      setSelectedTicketIdentifier(selectedTicketFromUrl);
+    if (selectedTicketFromUrl !== selectedTicketSlug) {
+      setSelectedTicketSlug(selectedTicketFromUrl);
     }
-  }, [selectedTicketFromUrl, selectedTicketIdentifier, setSelectedTicketIdentifier]);
+  }, [selectedTicketFromUrl, selectedTicketSlug, setSelectedTicketSlug]);
 
   // Handle window resize
   useEffect(() => {
@@ -60,9 +61,9 @@ export default function TicketsPage() {
     fetchTickets();
   }, [fetchTickets]);
 
-  const handleStatusChange = useCallback(async (identifier: string, newStatus: TicketStatus) => {
+  const handleStatusChange = useCallback(async (slug: string, newStatus: TicketStatus) => {
     try {
-      await updateTicketStatus(identifier, newStatus);
+      await updateTicketStatus(slug, newStatus);
     } catch (error) {
       console.error("Failed to update ticket status:", error);
     }
@@ -71,10 +72,10 @@ export default function TicketsPage() {
   const handleTicketClick = useCallback((ticket: Ticket) => {
     if (!isDesktop) {
       // On mobile, navigate to full page
-      router.push(`/${currentOrg?.slug}/tickets/${ticket.identifier}`);
+      router.push(`/${currentOrg?.slug}/tickets/${ticket.slug}`);
     } else {
       // On desktop, update URL with query param to show panel
-      const newUrl = `/${currentOrg?.slug}/tickets?ticket=${ticket.identifier}`;
+      const newUrl = `/${currentOrg?.slug}/tickets?ticket=${ticket.slug}`;
       router.push(newUrl, { scroll: false });
     }
   }, [router, currentOrg, isDesktop]);
@@ -88,9 +89,9 @@ export default function TicketsPage() {
   }, []);
 
   const handleClosePanel = useCallback(() => {
-    setSelectedTicketIdentifier(null);
+    setSelectedTicketSlug(null);
     router.push(`/${currentOrg?.slug}/tickets`, { scroll: false });
-  }, [router, currentOrg, setSelectedTicketIdentifier]);
+  }, [router, currentOrg, setSelectedTicketSlug]);
 
   const handleSelectTicket = useCallback((id: string | null) => {
     if (id) {
@@ -101,7 +102,7 @@ export default function TicketsPage() {
   }, [router, currentOrg]);
 
   // Check if we have a selected ticket
-  const hasSelectedTicket = !!selectedTicketIdentifier;
+  const hasSelectedTicket = !!selectedTicketSlug;
 
   if (loading && tickets.length === 0) {
     return <CenteredSpinner className="h-full" />;
@@ -110,7 +111,7 @@ export default function TicketsPage() {
   // Common keyboard handler props
   const keyboardHandlerProps = {
     tickets,
-    selectedIdentifier: selectedTicketIdentifier,
+    selectedSlug: selectedTicketSlug,
     onSelectTicket: handleSelectTicket,
     onOpenDetail: handleTicketClick,
     onCloseDetail: handleClosePanel,
@@ -124,7 +125,7 @@ export default function TicketsPage() {
         <TicketKeyboardHandler {...keyboardHandlerProps} />
         <ListViewLayout
           tickets={tickets}
-          selectedTicketIdentifier={selectedTicketIdentifier}
+          selectedTicketSlug={selectedTicketSlug}
           hasSelectedTicket={hasSelectedTicket && isDesktop}
           onTicketClick={handleTicketClick}
           onClosePanel={handleClosePanel}
@@ -140,7 +141,7 @@ export default function TicketsPage() {
       <TicketKeyboardHandler {...keyboardHandlerProps} />
       <BoardViewLayout
         tickets={tickets}
-        selectedTicketIdentifier={selectedTicketIdentifier}
+        selectedTicketSlug={selectedTicketSlug}
         hasSelectedTicket={hasSelectedTicket && isDesktop}
         onStatusChange={handleStatusChange}
         onTicketClick={handleTicketClick}
@@ -155,7 +156,7 @@ export default function TicketsPage() {
           createPodTicket
             ? {
                 id: createPodTicket.id,
-                identifier: createPodTicket.identifier,
+                slug: createPodTicket.slug,
                 title: createPodTicket.title,
                 repositoryId: createPodTicket.repository_id,
               }

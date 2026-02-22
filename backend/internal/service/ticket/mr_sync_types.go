@@ -15,8 +15,8 @@ var (
 	ErrNoRepositoryLink = errors.New("ticket has no repository linked")
 )
 
-// ticketIdentifierRegex matches patterns like "AM-123" in branch names
-var ticketIdentifierRegex = regexp.MustCompile(`([A-Z]+-\d+)`)
+// ticketSlugRegex matches patterns like "AM-123" in branch names
+var ticketSlugRegex = regexp.MustCompile(`([A-Z]+-\d+)`)
 
 // MRSyncService handles MR synchronization with git providers
 type MRSyncService struct {

@@ -72,7 +72,7 @@
     "ticket": "チケット",
     "contextMenu": {
       "openTerminal": "ターミナルを開く",
-      "viewTicket": "チケット {identifier} を表示",
+      "viewTicket": "チケット {slug} を表示",
       "terminatePod": "Pod を終了",
       "terminateTitle": "Pod を終了",
       "terminateDescription": "この Pod を終了してもよろしいですか？この操作は取り消せません。",
@@ -178,7 +178,7 @@
       "created": "Created",
       "updated": "Updated",
       "deleteTicket": "Delete Ticket",
-      "deleteConfirmation": "Are you sure you want to delete ticket {identifier}? This action cannot be undone.",
+      "deleteConfirmation": "Are you sure you want to delete ticket {slug}? This action cannot be undone.",
       "labels": "Labels",
       "timeline": "Timeline",
       "started": "Started",

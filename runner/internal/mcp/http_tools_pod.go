@@ -39,9 +39,9 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 					"type":        "integer",
 					"description": "ID of the agent type to use for the pod (required). Call list_runners first to see available agent types and their IDs.",
 				},
-				"ticket_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "ID of the ticket to associate with the pod",
+				"ticket_slug": map[string]interface{}{
+					"type":        "string",
+					"description": "Ticket slug to associate with the pod (e.g., 'AM-123'). Use search_tickets to find tickets.",
 				},
 				"initial_prompt": map[string]interface{}{
 					"type":        "string",
@@ -90,8 +90,8 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 			if v := getInt64PtrArg(args, "agent_type_id"); v != nil {
 				req.AgentTypeID = v
 			}
-			if v := getIntPtrArg(args, "ticket_id"); v != nil {
-				req.TicketID = v
+			if v := getStringArg(args, "ticket_slug"); v != "" {
+				req.TicketSlug = &v
 			}
 			if v := getInt64PtrArg(args, "repository_id"); v != nil {
 				req.RepositoryID = v

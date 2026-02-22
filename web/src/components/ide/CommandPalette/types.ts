@@ -35,7 +35,7 @@ export interface PodSearchResult {
 }
 
 export interface TicketSearchResult {
-  identifier: string;
+  slug: string;
   title: string;
 }
 

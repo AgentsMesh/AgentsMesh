@@ -11,7 +11,7 @@ import (
 func TestPreparationContextGetEnvVars(t *testing.T) {
 	ctx := &PreparationContext{
 		PodID:            "pod-1",
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 		BranchName:       "feature/test",
 		WorkspaceDir:     "/workspace/sandboxes/pod-1/workspace",
 		MainRepoDir:      "/workspace/repos/main",
@@ -28,8 +28,8 @@ func TestPreparationContextGetEnvVars(t *testing.T) {
 		t.Errorf("MAIN_REPO_DIR: got %v, want /workspace/repos/main", envVars["MAIN_REPO_DIR"])
 	}
 
-	if envVars["TICKET_IDENTIFIER"] != "TICKET-123" {
-		t.Errorf("TICKET_IDENTIFIER: got %v, want TICKET-123", envVars["TICKET_IDENTIFIER"])
+	if envVars["TICKET_SLUG"] != "TICKET-123" {
+		t.Errorf("TICKET_SLUG: got %v, want TICKET-123", envVars["TICKET_SLUG"])
 	}
 
 	if envVars["BRANCH_NAME"] != "feature/test" {
@@ -44,7 +44,7 @@ func TestPreparationContextGetEnvVars(t *testing.T) {
 func TestPreparationContextString(t *testing.T) {
 	ctx := &PreparationContext{
 		PodID:            "pod-1",
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 		WorkspaceDir:       "/workspace/test",
 	}
 
@@ -67,15 +67,15 @@ func TestPreparationContextGetEnvVarsEmpty(t *testing.T) {
 		t.Errorf("WORKSPACE_DIR: got %v, want /workspace", envVars["WORKSPACE_DIR"])
 	}
 
-	if _, ok := envVars["TICKET_IDENTIFIER"]; ok {
-		t.Error("TICKET_IDENTIFIER should not be set when empty")
+	if _, ok := envVars["TICKET_SLUG"]; ok {
+		t.Error("TICKET_SLUG should not be set when empty")
 	}
 }
 
 func TestPreparationContextStringFormat(t *testing.T) {
 	ctx := &PreparationContext{
 		PodID:            "pod-1",
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 		BranchName:       "feature/test",
 		WorkspaceDir:       "/workspace",
 	}
@@ -86,7 +86,7 @@ func TestPreparationContextStringFormat(t *testing.T) {
 		t.Error("String() should contain pod ID")
 	}
 	if !strings.Contains(str, "TICKET-123") {
-		t.Error("String() should contain ticket identifier")
+		t.Error("String() should contain ticket slug")
 	}
 }
 
@@ -122,7 +122,7 @@ func TestPreparationErrorNoOutput(t *testing.T) {
 func BenchmarkPreparationContextGetEnvVars(b *testing.B) {
 	ctx := &PreparationContext{
 		PodID:            "pod-1",
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 		BranchName:       "feature/test",
 		WorkspaceDir:     "/workspace/sandboxes/pod-1/workspace",
 		MainRepoDir:      "/workspace/repos/main",

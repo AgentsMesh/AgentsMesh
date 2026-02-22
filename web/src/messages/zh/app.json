@@ -72,7 +72,7 @@
     "ticket": "任务",
     "contextMenu": {
       "openTerminal": "打开终端",
-      "viewTicket": "查看任务 {identifier}",
+      "viewTicket": "查看任务 {slug}",
       "terminatePod": "终止 Pod",
       "terminateTitle": "终止 Pod",
       "terminateDescription": "确定要终止此 Pod 吗？此操作不可撤销。",
@@ -184,7 +184,7 @@
       "created": "创建时间",
       "updated": "更新时间",
       "deleteTicket": "删除 Ticket",
-      "deleteConfirmation": "确定要删除 Ticket {identifier} 吗？此操作无法撤销。",
+      "deleteConfirmation": "确定要删除 Ticket {slug} 吗？此操作无法撤销。",
       "labels": "标签",
       "timeline": "时间线",
       "started": "开始时间",

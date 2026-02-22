@@ -142,8 +142,8 @@ AgentsMesh/
 ### Tickets
 - `GET /api/v1/org/tickets` - List tickets
 - `POST /api/v1/org/tickets` - Create ticket
-- `GET /api/v1/org/tickets/:identifier` - Get ticket
-- `PUT /api/v1/org/tickets/:identifier` - Update ticket
+- `GET /api/v1/org/tickets/:slug` - Get ticket
+- `PUT /api/v1/org/tickets/:slug` - Update ticket
 
 ## Supported Code Agents
 

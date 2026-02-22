@@ -7,11 +7,11 @@ import (
 // Tests for Pod-related types and methods
 
 func TestPodCreateRequest(t *testing.T) {
-	ticketID := 123
+	ticketSlug := "AM-123"
 
 	req := PodCreateRequest{
 		RunnerID:      1,
-		TicketID:      &ticketID,
+		TicketSlug:    &ticketSlug,
 		InitialPrompt: "Hello",
 		Model:         "claude-sonnet",
 	}
@@ -19,13 +19,13 @@ func TestPodCreateRequest(t *testing.T) {
 	if req.RunnerID != 1 {
 		t.Errorf("RunnerID: got %v, want %v", req.RunnerID, 1)
 	}
-	if req.TicketID == nil || *req.TicketID != 123 {
-		t.Errorf("TicketID: got %v, want 123", req.TicketID)
+	if req.TicketSlug == nil || *req.TicketSlug != "AM-123" {
+		t.Errorf("TicketSlug: got %v, want AM-123", req.TicketSlug)
 	}
 }
 
 func TestPodCreateRequestWithAllFields(t *testing.T) {
-	ticketID := 123
+	ticketSlug := "AM-123"
 	agentTypeID := int64(456)
 	repositoryID := int64(789)
 	repositoryURL := "https://github.com/example/repo.git"
@@ -36,7 +36,7 @@ func TestPodCreateRequestWithAllFields(t *testing.T) {
 	req := PodCreateRequest{
 		RunnerID:            1,
 		AgentTypeID:         &agentTypeID,
-		TicketID:            &ticketID,
+		TicketSlug:          &ticketSlug,
 		InitialPrompt:       "Hello",
 		Model:               "claude-sonnet",
 		RepositoryID:        &repositoryID,
@@ -155,9 +155,9 @@ func TestAvailablePodGetTicketTitle(t *testing.T) {
 		PodKey:   "test-pod",
 		TicketID: &ticketID,
 		Ticket: &PodTicket{
-			ID:         123,
-			Identifier: "AM-123",
-			Title:      "Test Ticket Title",
+			ID:    123,
+			Slug:  "AM-123",
+			Title: "Test Ticket Title",
 		},
 	}
 	if pod.GetTicketTitle() != "Test Ticket Title" {

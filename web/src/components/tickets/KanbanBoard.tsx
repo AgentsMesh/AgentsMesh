@@ -33,7 +33,7 @@ type Status = TicketStatus;
 
 interface KanbanBoardProps {
   tickets: Ticket[];
-  onStatusChange?: (identifier: string, newStatus: Status) => void;
+  onStatusChange?: (slug: string, newStatus: Status) => void;
   onTicketClick?: (ticket: Ticket) => void;
   onCreatePodRequest?: (ticket: Ticket) => void;
   excludeStatuses?: Status[];
@@ -65,7 +65,7 @@ function SortableTicket({ ticket, onTicketClick, onMouseEnter, onMouseLeave }: S
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: ticket.identifier });
+  } = useSortable({ id: ticket.slug });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -106,7 +106,7 @@ interface DroppableColumnProps {
   tickets: Ticket[];
   isOver: boolean;
   onTicketClick?: (ticket: Ticket) => void;
-  prefetchOnHover: (identifier: string) => void;
+  prefetchOnHover: (slug: string) => void;
   cancelPrefetch: () => void;
   t: (key: string) => string;
 }
@@ -122,7 +122,7 @@ function DroppableColumn({
   cancelPrefetch,
   t,
 }: DroppableColumnProps) {
-  const ticketIds = useMemo(() => tickets.map((t) => t.identifier), [tickets]);
+  const ticketIds = useMemo(() => tickets.map((t) => t.slug), [tickets]);
 
   // Register column as droppable area
   const { setNodeRef, isOver: isDroppableOver } = useDroppable({
@@ -152,10 +152,10 @@ function DroppableColumn({
         <SortableContext items={ticketIds} strategy={verticalListSortingStrategy}>
           {tickets.map((ticket) => (
             <SortableTicket
-              key={ticket.identifier}
+              key={ticket.slug}
               ticket={ticket}
               onTicketClick={onTicketClick}
-              onMouseEnter={() => prefetchOnHover(ticket.identifier)}
+              onMouseEnter={() => prefetchOnHover(ticket.slug)}
               onMouseLeave={cancelPrefetch}
             />
           ))}
@@ -233,7 +233,7 @@ export function KanbanBoard({
     if (ticketCollision) {
       // Return both the ticket and find which column it belongs to
       const ticketId = ticketCollision.id as string;
-      const ticket = findTicketByIdentifier(ticketId);
+      const ticket = findTicketBySlug(ticketId);
       if (ticket && columnIds.has(ticket.status)) {
         // Return the column as the collision target
         return [{ id: ticket.status }];
@@ -246,17 +246,17 @@ export function KanbanBoard({
   const getTicketsByStatus = (status: Status) =>
     tickets.filter((t) => t.status === status);
 
-  const findTicketByIdentifier = (identifier: string): Ticket | undefined =>
-    tickets.find((t) => t.identifier === identifier);
+  const findTicketBySlug = (slug: string): Ticket | undefined =>
+    tickets.find((t) => t.slug === slug);
 
   const findContainerByTicketId = (ticketId: string): Status | undefined => {
-    const ticket = findTicketByIdentifier(ticketId);
+    const ticket = findTicketBySlug(ticketId);
     return ticket?.status;
   };
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const ticket = findTicketByIdentifier(active.id as string);
+    const ticket = findTicketBySlug(active.id as string);
     if (ticket) {
       setActiveTicket(ticket);
     }
@@ -297,7 +297,7 @@ export function KanbanBoard({
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeTicket = findTicketByIdentifier(activeId);
+    const activeTicket = findTicketBySlug(activeId);
     if (!activeTicket) return;
 
     // Determine target status

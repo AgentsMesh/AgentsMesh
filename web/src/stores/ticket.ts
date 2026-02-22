@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 import { ticketApi, TicketData, TicketType, TicketStatus, TicketPriority } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
@@ -25,15 +26,23 @@ interface TicketFilters {
   search?: string;
 }
 
+// Local UI filter selections (multi-select checkboxes in sidebar)
+interface TicketUIFilters {
+  selectedStatuses: TicketStatus[];
+  selectedTypes: TicketType[];
+  selectedPriorities: TicketPriority[];
+}
+
 export type TicketViewMode = "list" | "board";
 
 interface TicketState {
   // State
   tickets: Ticket[];
   currentTicket: Ticket | null;
-  selectedTicketIdentifier: string | null; // For panel selection (without full fetch)
+  selectedTicketSlug: string | null; // For panel selection (without full fetch)
   labels: Label[];
   filters: TicketFilters;
+  uiFilters: TicketUIFilters;
   viewMode: TicketViewMode;
   loading: boolean;
   error: string | null;
@@ -41,8 +50,8 @@ interface TicketState {
 
   // Actions
   fetchTickets: (filters?: TicketFilters) => Promise<void>;
-  fetchTicket: (identifier: string) => Promise<void>;
-  setSelectedTicketIdentifier: (identifier: string | null) => void;
+  fetchTicket: (slug: string) => Promise<void>;
+  setSelectedTicketSlug: (slug: string | null) => void;
   createTicket: (data: {
     repositoryId: number;
     type: TicketType;
@@ -54,7 +63,7 @@ interface TicketState {
     parentId?: number;
   }) => Promise<Ticket>;
   updateTicket: (
-    identifier: string,
+    slug: string,
     data: Partial<{
       title: string;
       content: string;
@@ -66,12 +75,17 @@ interface TicketState {
       labels: string[];
     }>
   ) => Promise<Ticket>;
-  deleteTicket: (identifier: string) => Promise<void>;
-  updateTicketStatus: (identifier: string, status: TicketStatus) => Promise<void>;
+  deleteTicket: (slug: string) => Promise<void>;
+  updateTicketStatus: (slug: string, status: TicketStatus) => Promise<void>;
   fetchLabels: (repositoryId?: number) => Promise<void>;
   createLabel: (name: string, color: string, repositoryId?: number) => Promise<Label>;
   deleteLabel: (id: number) => Promise<void>;
   setFilters: (filters: TicketFilters) => void;
+  setUIFilters: (uiFilters: Partial<TicketUIFilters>) => void;
+  toggleStatus: (status: TicketStatus) => void;
+  toggleType: (type: TicketType) => void;
+  togglePriority: (priority: TicketPriority) => void;
+  clearUIFilters: () => void;
   setViewMode: (mode: TicketViewMode) => void;
   setCurrentTicket: (ticket: Ticket | null) => void;
   clearError: () => void;
@@ -80,9 +94,10 @@ interface TicketState {
 export const useTicketStore = create<TicketState>((set, get) => ({
   tickets: [],
   currentTicket: null,
-  selectedTicketIdentifier: null,
+  selectedTicketSlug: null,
   labels: [],
   filters: {},
+  uiFilters: { selectedStatuses: [], selectedTypes: [], selectedPriorities: [] },
   viewMode: "board",
   loading: false,
   error: null,
@@ -106,10 +121,10 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     }
   },
 
-  fetchTicket: async (identifier) => {
+  fetchTicket: async (slug) => {
     set({ loading: true, error: null });
     try {
-      const ticket = await ticketApi.get(identifier);
+      const ticket = await ticketApi.get(slug);
       set({ currentTicket: ticket, loading: false });
     } catch (error: unknown) {
       set({
@@ -138,15 +153,15 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     }
   },
 
-  updateTicket: async (identifier, data) => {
+  updateTicket: async (slug, data) => {
     try {
-      const ticket = await ticketApi.update(identifier, data);
+      const ticket = await ticketApi.update(slug, data);
       set((state) => ({
         tickets: state.tickets.map((t) =>
-          t.identifier === identifier ? ticket : t
+          t.slug === slug ? ticket : t
         ),
         currentTicket:
-          state.currentTicket?.identifier === identifier
+          state.currentTicket?.slug === slug
             ? ticket
             : state.currentTicket,
       }));
@@ -157,14 +172,14 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     }
   },
 
-  deleteTicket: async (identifier) => {
+  deleteTicket: async (slug) => {
     try {
-      await ticketApi.delete(identifier);
+      await ticketApi.delete(slug);
       set((state) => ({
-        tickets: state.tickets.filter((t) => t.identifier !== identifier),
+        tickets: state.tickets.filter((t) => t.slug !== slug),
         totalCount: state.totalCount - 1,
         currentTicket:
-          state.currentTicket?.identifier === identifier
+          state.currentTicket?.slug === slug
             ? null
             : state.currentTicket,
       }));
@@ -174,15 +189,15 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     }
   },
 
-  updateTicketStatus: async (identifier, status) => {
+  updateTicketStatus: async (slug, status) => {
     try {
-      await ticketApi.updateStatus(identifier, status);
+      await ticketApi.updateStatus(slug, status);
       set((state) => ({
         tickets: state.tickets.map((t) =>
-          t.identifier === identifier ? { ...t, status } : t
+          t.slug === slug ? { ...t, status } : t
         ),
         currentTicket:
-          state.currentTicket?.identifier === identifier
+          state.currentTicket?.slug === slug
             ? { ...state.currentTicket, status }
             : state.currentTicket,
       }));
@@ -230,6 +245,58 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     set({ filters });
   },
 
+  setUIFilters: (partial) => {
+    set((state) => ({ uiFilters: { ...state.uiFilters, ...partial } }));
+  },
+
+  toggleStatus: (status) => {
+    set((state) => {
+      const prev = state.uiFilters.selectedStatuses;
+      return {
+        uiFilters: {
+          ...state.uiFilters,
+          selectedStatuses: prev.includes(status)
+            ? prev.filter((s) => s !== status)
+            : [...prev, status],
+        },
+      };
+    });
+  },
+
+  toggleType: (type) => {
+    set((state) => {
+      const prev = state.uiFilters.selectedTypes;
+      return {
+        uiFilters: {
+          ...state.uiFilters,
+          selectedTypes: prev.includes(type)
+            ? prev.filter((t) => t !== type)
+            : [...prev, type],
+        },
+      };
+    });
+  },
+
+  togglePriority: (priority) => {
+    set((state) => {
+      const prev = state.uiFilters.selectedPriorities;
+      return {
+        uiFilters: {
+          ...state.uiFilters,
+          selectedPriorities: prev.includes(priority)
+            ? prev.filter((p) => p !== priority)
+            : [...prev, priority],
+        },
+      };
+    });
+  },
+
+  clearUIFilters: () => {
+    set({
+      uiFilters: { selectedStatuses: [], selectedTypes: [], selectedPriorities: [] },
+    });
+  },
+
   setViewMode: (mode) => {
     set({ viewMode: mode });
   },
@@ -238,14 +305,42 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     set({ currentTicket: ticket });
   },
 
-  setSelectedTicketIdentifier: (identifier) => {
-    set({ selectedTicketIdentifier: identifier });
+  setSelectedTicketSlug: (slug) => {
+    set({ selectedTicketSlug: slug });
   },
 
   clearError: () => {
     set({ error: null });
   },
 }));
+
+/**
+ * Selector hook: returns tickets filtered by current UI filters (search, status, type, priority).
+ * Uses Zustand selectors + useMemo for efficient re-renders.
+ * Single source of truth for filtered tickets — used by both sidebar and main content.
+ */
+export function useFilteredTickets(): Ticket[] {
+  const tickets = useTicketStore((s) => s.tickets);
+  const search = useTicketStore((s) => s.filters.search);
+  const selectedStatuses = useTicketStore((s) => s.uiFilters.selectedStatuses);
+  const selectedTypes = useTicketStore((s) => s.uiFilters.selectedTypes);
+  const selectedPriorities = useTicketStore((s) => s.uiFilters.selectedPriorities);
+
+  return useMemo(() => {
+    return tickets.filter((ticket) => {
+      if (search) {
+        const q = search.toLowerCase();
+        if (!ticket.title.toLowerCase().includes(q) && !ticket.slug.toLowerCase().includes(q)) {
+          return false;
+        }
+      }
+      if (selectedStatuses.length > 0 && !selectedStatuses.includes(ticket.status)) return false;
+      if (selectedTypes.length > 0 && !selectedTypes.includes(ticket.type)) return false;
+      if (selectedPriorities.length > 0 && !selectedPriorities.includes(ticket.priority)) return false;
+      return true;
+    });
+  }, [tickets, search, selectedStatuses, selectedTypes, selectedPriorities]);
+}
 
 // Helper function to get status display info
 export const getStatusInfo = (status: TicketStatus) => {

@@ -74,7 +74,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesPodKey = pod.pod_key.toLowerCase().includes(query);
-      const matchesTicket = pod.ticket?.identifier?.toLowerCase().includes(query);
+      const matchesTicket = pod.ticket?.slug?.toLowerCase().includes(query);
       const matchesRunner = pod.runner?.node_id?.toLowerCase().includes(query);
       return matchesPodKey || matchesTicket || matchesRunner;
     }

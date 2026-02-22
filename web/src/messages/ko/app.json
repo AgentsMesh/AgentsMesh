@@ -72,7 +72,7 @@
     "ticket": "티켓",
     "contextMenu": {
       "openTerminal": "터미널 열기",
-      "viewTicket": "티켓 {identifier} 보기",
+      "viewTicket": "티켓 {slug} 보기",
       "terminatePod": "Pod 종료",
       "terminateTitle": "Pod 종료",
       "terminateDescription": "이 Pod를 종료하시겠습니까? 이 작업은 취소할 수 없습니다.",
@@ -178,7 +178,7 @@
       "created": "Created",
       "updated": "Updated",
       "deleteTicket": "Delete Ticket",
-      "deleteConfirmation": "Are you sure you want to delete ticket {identifier}? This action cannot be undone.",
+      "deleteConfirmation": "Are you sure you want to delete ticket {slug}? This action cannot be undone.",
       "labels": "Labels",
       "timeline": "Timeline",
       "started": "Started",

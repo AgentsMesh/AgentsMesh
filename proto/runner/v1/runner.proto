@@ -221,7 +221,7 @@ message SandboxConfig {
   string ssh_private_key = 5;     // SSH 私钥内容（ssh_key 类型使用，Runner 写入临时文件）
 
   // 工单关联
-  string ticket_id = 6;           // 关联工单标识
+  string ticket_slug = 6;           // 关联工单 Slug
 
   // 初始化脚本
   string preparation_script = 7;  // 工作区初始化脚本

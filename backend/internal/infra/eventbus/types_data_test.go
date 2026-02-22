@@ -176,7 +176,7 @@ func TestEventDataStructures(t *testing.T) {
 
 	t.Run("TicketStatusChangedData serialization", func(t *testing.T) {
 		data := &TicketStatusChangedData{
-			Identifier:     "PRJ-123",
+			Slug:     "PRJ-123",
 			Status:         "done",
 			PreviousStatus: "in_progress",
 		}
@@ -191,8 +191,8 @@ func TestEventDataStructures(t *testing.T) {
 			t.Fatalf("failed to unmarshal: %v", err)
 		}
 
-		if decoded.Identifier != "PRJ-123" {
-			t.Errorf("Identifier mismatch")
+		if decoded.Slug != "PRJ-123" {
+			t.Errorf("Slug mismatch")
 		}
 		if decoded.Status != "done" {
 			t.Errorf("Status mismatch")

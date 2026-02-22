@@ -27,7 +27,7 @@ func TestFindOrCreateMR(t *testing.T) {
 	// Create a ticket
 	tkt := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "MR-1",
+		Slug:     "MR-1",
 		Title:          "Test Ticket",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusInProgress,

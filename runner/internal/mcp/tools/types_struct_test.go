@@ -81,20 +81,16 @@ func TestTerminalOutputStruct(t *testing.T) {
 }
 
 func TestChannelStruct(t *testing.T) {
-	repositoryID := 1
-	ticketID := 2
-
 	ch := Channel{
-		ID:           1,
-		Name:         "test-channel",
-		Description:  "Test description",
-		RepositoryID: &repositoryID,
-		TicketID:     &ticketID,
-		Document:     "test document",
-		MemberCount:  5,
-		IsArchived:   false,
-		CreatedAt:    "2024-01-01T00:00:00Z",
-		UpdatedAt:    "2024-01-01T00:00:00Z",
+		ID:          1,
+		Name:        "test-channel",
+		Description: "Test description",
+		TicketSlug:  "AM-456",
+		Document:    "test document",
+		MemberCount: 5,
+		IsArchived:  false,
+		CreatedAt:   "2024-01-01T00:00:00Z",
+		UpdatedAt:   "2024-01-01T00:00:00Z",
 	}
 
 	if ch.Name != "test-channel" {
@@ -130,34 +126,30 @@ func TestChannelMessageStruct(t *testing.T) {
 }
 
 func TestTicketStruct(t *testing.T) {
-	parentID := 100
 	estimate := 5
 
 	ticket := Ticket{
-		ID:             1,
-		Identifier:     "AM-123",
-		Title:          "Test Ticket",
-		Content:        "Test content",
-		Type:           TicketTypeTask,
-		Status:         TicketStatusTodo,
-		Priority:       TicketPriorityMedium,
-		ProductID:      1,
-		ProductName:    "Test Product",
-		ReporterID:     1,
-		ReporterName:   "Test User",
-		ParentTicketID: &parentID,
-		Estimate:       &estimate,
-		CreatedAt:      "2024-01-01T00:00:00Z",
-		UpdatedAt:      "2024-01-01T00:00:00Z",
+		Slug:             "AM-123",
+		Title:            "Test Ticket",
+		Content:          "Test content",
+		Type:             TicketTypeTask,
+		Status:           TicketStatusTodo,
+		Priority:         TicketPriorityMedium,
+		ProductName:      "Test Product",
+		ReporterName:     "Test User",
+		ParentTicketSlug: "AM-100",
+		Estimate:         &estimate,
+		CreatedAt:        "2024-01-01T00:00:00Z",
+		UpdatedAt:        "2024-01-01T00:00:00Z",
 	}
 
-	if ticket.Identifier != "AM-123" {
-		t.Errorf("Identifier: got %v, want %v", ticket.Identifier, "AM-123")
+	if ticket.Slug != "AM-123" {
+		t.Errorf("Slug: got %v, want %v", ticket.Slug, "AM-123")
 	}
 	if ticket.Type != TicketTypeTask {
 		t.Errorf("Type: got %v, want %v", ticket.Type, TicketTypeTask)
 	}
-	if ticket.ParentTicketID == nil || *ticket.ParentTicketID != 100 {
-		t.Errorf("ParentTicketID: got %v, want 100", ticket.ParentTicketID)
+	if ticket.ParentTicketSlug != "AM-100" {
+		t.Errorf("ParentTicketSlug: got %v, want AM-100", ticket.ParentTicketSlug)
 	}
 }

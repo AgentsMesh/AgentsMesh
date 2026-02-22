@@ -7,7 +7,7 @@ import { TicketDetail } from "@/components/tickets";
 export default function TicketDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const identifier = params.identifier as string;
+  const slug = params.slug as string;
 
   return (
     <div className="p-6">
@@ -32,7 +32,7 @@ export default function TicketDetailPage() {
       </div>
 
       {/* Ticket Detail */}
-      <TicketDetail identifier={identifier} />
+      <TicketDetail slug={slug} />
     </div>
   );
 }

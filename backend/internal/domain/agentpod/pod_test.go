@@ -201,7 +201,7 @@ func TestCreatePodCommandStruct(t *testing.T) {
 		InitialCommand:   "bash",
 		InitialPrompt:    "Start working",
 		PermissionMode:   "bypassPermissions",
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 		PodSuffix:        "v1",
 		EnvVars:          map[string]string{"FOO": "bar"},
 		PreparationConfig: &PreparationConfig{
@@ -213,8 +213,8 @@ func TestCreatePodCommandStruct(t *testing.T) {
 	if cmd.PodKey != "pod-456" {
 		t.Errorf("expected PodKey 'pod-456', got %s", cmd.PodKey)
 	}
-	if cmd.TicketIdentifier != "TICKET-123" {
-		t.Errorf("expected TicketIdentifier 'TICKET-123', got %s", cmd.TicketIdentifier)
+	if cmd.TicketSlug != "TICKET-123" {
+		t.Errorf("expected TicketSlug 'TICKET-123', got %s", cmd.TicketSlug)
 	}
 	if cmd.EnvVars["FOO"] != "bar" {
 		t.Error("expected EnvVars['FOO'] = 'bar'")

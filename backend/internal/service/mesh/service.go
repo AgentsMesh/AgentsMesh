@@ -92,7 +92,11 @@ func (s *Service) GetTopology(ctx context.Context, orgID int64) (*mesh.MeshTopol
 	}
 
 	// 3. Get channels
-	channels, _, err := s.channelService.ListChannels(ctx, orgID, false, 50, 0)
+	channels, _, err := s.channelService.ListChannels(ctx, orgID, &channelService.ListChannelsFilter{
+		IncludeArchived: false,
+		Limit:           50,
+		Offset:          0,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +169,7 @@ func (s *Service) podToNode(pod *agentpod.Pod) mesh.MeshNode {
 
 	// Populate ticket info if preloaded
 	if pod.Ticket != nil {
-		node.TicketIdentifier = &pod.Ticket.Identifier
+		node.TicketSlug = &pod.Ticket.Slug
 		node.TicketTitle = &pod.Ticket.Title
 	}
 

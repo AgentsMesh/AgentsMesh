@@ -72,7 +72,7 @@
     "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "Ouvrir le Terminal",
-      "viewTicket": "Voir le Ticket {identifier}",
+      "viewTicket": "Voir le Ticket {slug}",
       "terminatePod": "Arrêter le Pod",
       "terminateTitle": "Arrêter le Pod",
       "terminateDescription": "Êtes-vous sûr de vouloir arrêter ce pod ? Cette action est irréversible.",
@@ -178,7 +178,7 @@
       "created": "Created",
       "updated": "Updated",
       "deleteTicket": "Delete Ticket",
-      "deleteConfirmation": "Are you sure you want to delete ticket {identifier}? This action cannot be undone.",
+      "deleteConfirmation": "Are you sure you want to delete ticket {slug}? This action cannot be undone.",
       "labels": "Labels",
       "timeline": "Timeline",
       "started": "Started",

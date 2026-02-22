@@ -318,8 +318,8 @@
           "channelDescriptionDesc": "频道用途的可选描述",
           "projectId": "项目 ID",
           "projectIdDesc": "关联到特定项目/仓库",
-          "ticketId": "任务 ID",
-          "ticketIdDesc": "关联到特定任务"
+          "ticketSlug": "任务 Slug",
+          "ticketSlugDesc": "关联到特定任务"
         },
         "messageTypes": {
           "title": "消息类型",
@@ -677,10 +677,10 @@
           "paramsHeader": "参数",
           "searchChannels": "search_channels",
           "searchChannelsDesc": "搜索频道",
-          "searchChannelsParams": "name?, project_id?, ticket_id?",
+          "searchChannelsParams": "name?, project_id?, ticket_slug?",
           "createChannel": "create_channel",
           "createChannelDesc": "创建新频道",
-          "createChannelParams": "name, description?, project_id?, ticket_id?",
+          "createChannelParams": "name, description?, project_id?, ticket_slug?",
           "getChannel": "get_channel",
           "getChannelDesc": "获取频道详情",
           "getChannelParams": "channel_id",
@@ -722,7 +722,7 @@
           "paramsHeader": "参数",
           "createPod": "create_pod",
           "createPodDesc": "创建新的 AgentPod",
-          "createPodParams": "agent_type_id（必需）, runner_id?, ticket_id?, initial_prompt?, model?"
+          "createPodParams": "agent_type_id（必需）, runner_id?, ticket_slug?, initial_prompt?, model?"
         }
       }
     },
@@ -1010,7 +1010,7 @@
               "initial_prompt": "给智能体的初始提示或任务",
               "repository_id": "关联到 Pod 的仓库",
               "branch": "要操作的 Git 分支",
-              "ticket_identifier": "要关联的任务标识符（如 AM-123）",
+              "ticket_slug": "要关联的任务标识符（如 AM-123）",
               "channel_id": "关联到 Pod 的频道",
               "sandbox_type": "沙箱类型：worktree 或 tempdir",
               "environment_variables": "环境变量的键值对",
@@ -1073,10 +1073,10 @@
             }
           },
           "getTicket": {
-            "title": "GET /tickets/:identifier",
+            "title": "GET /tickets/:slug",
             "description": "通过可读标识符获取特定任务的详细信息。",
             "params": {
-              "identifier": "任务标识符（如 AM-123）"
+              "slug": "任务标识符（如 AM-123）"
             }
           },
           "createTicket": {
@@ -1090,14 +1090,14 @@
               "assignee_id": "要分配的用户 ID",
               "repository_id": "关联的仓库",
               "labels": "标签字符串数组",
-              "parent_identifier": "父任务标识符（用于子任务）"
+              "parent_slug": "父任务标识符（用于子任务）"
             }
           },
           "updateTicket": {
-            "title": "PUT /tickets/:identifier",
+            "title": "PUT /tickets/:slug",
             "description": "更新现有任务。所有字段均为可选——仅更新提供的字段。",
             "params": {
-              "identifier": "任务标识符（如 AM-123）"
+              "slug": "任务标识符（如 AM-123）"
             },
             "fields": {
               "title": "更新后的任务标题",
@@ -1106,24 +1106,24 @@
               "status": "更新后的状态",
               "assignee_id": "更新后的负责人用户 ID",
               "labels": "更新后的标签字符串数组",
-              "parent_identifier": "更新后的父任务标识符"
+              "parent_slug": "更新后的父任务标识符"
             }
           },
           "updateStatus": {
-            "title": "PATCH /tickets/:identifier/status",
+            "title": "PATCH /tickets/:slug/status",
             "description": "仅更新任务的状态。这是一个便捷的状态转换端点。",
             "params": {
-              "identifier": "任务标识符（如 AM-123）"
+              "slug": "任务标识符（如 AM-123）"
             },
             "fields": {
               "status": "新状态：open、in_progress、resolved 或 closed"
             }
           },
           "deleteTicket": {
-            "title": "DELETE /tickets/:identifier",
+            "title": "DELETE /tickets/:slug",
             "description": "永久删除任务。此操作不可撤销。",
             "params": {
-              "identifier": "任务标识符（如 AM-123）"
+              "slug": "任务标识符（如 AM-123）"
             }
           }
         }
@@ -1147,7 +1147,7 @@
             "description": "获取频道列表。支持按仓库、任务和归档状态筛选。",
             "params": {
               "repository_id": "按仓库 ID 筛选",
-              "ticket_id": "按关联任务 ID 筛选",
+              "ticket_slug": "按关联任务 Slug 筛选",
               "include_archived": "是否包含已归档频道（true/false）"
             }
           },
@@ -1173,7 +1173,7 @@
               "name": "频道名称（2-100 个字符）",
               "description": "频道描述",
               "repository_id": "关联的仓库",
-              "ticket_identifier": "要关联的任务标识符（如 AM-123）",
+              "ticket_slug": "要关联的任务标识符（如 AM-123）",
               "document": "频道的初始文档或上下文"
             }
           },

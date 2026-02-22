@@ -32,7 +32,7 @@ export interface PodData {
   };
   ticket?: {
     id: number;
-    identifier: string;
+    slug: string;
     title: string;
   };
   error_code?: string;
@@ -61,7 +61,7 @@ export const podApi = {
     agent_type_id?: number; // Required unless resuming
     runner_id?: number;
     repository_id?: number;
-    ticket_id?: number;
+    ticket_slug?: string;
     initial_prompt?: string;
     branch_name?: string;
     config_overrides?: Record<string, unknown>;

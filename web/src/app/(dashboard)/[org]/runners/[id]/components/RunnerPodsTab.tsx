@@ -214,7 +214,7 @@ export function RunnerPodsTab({
                         <Ticket className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
                         <div className="min-w-0">
                           <span className="text-xs font-medium text-foreground">
-                            {pod.ticket.identifier}
+                            {pod.ticket.slug}
                           </span>
                           <p className="text-xs text-muted-foreground truncate" title={pod.ticket.title}>
                             {pod.ticket.title}

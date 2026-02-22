@@ -23,7 +23,7 @@ func setupRelationsTestDB(t *testing.T) *gorm.DB {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL,
 			number INTEGER NOT NULL,
-			identifier TEXT NOT NULL,
+			slug TEXT NOT NULL,
 			type TEXT NOT NULL DEFAULT 'task',
 			title TEXT NOT NULL,
 			content TEXT,
@@ -66,7 +66,7 @@ func TestCreateRelation(t *testing.T) {
 	// Create two tickets
 	ticket1 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "REL-1",
+		Slug:     "REL-1",
 		Title:          "Ticket 1",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusTodo,
@@ -74,7 +74,7 @@ func TestCreateRelation(t *testing.T) {
 	}
 	ticket2 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "REL-2",
+		Slug:     "REL-2",
 		Title:          "Ticket 2",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusTodo,
@@ -107,7 +107,7 @@ func TestCreateRelation(t *testing.T) {
 	t.Run("creates relates relation", func(t *testing.T) {
 		ticket3 := &ticket.Ticket{
 			OrganizationID: 1,
-			Identifier:     "REL-3",
+			Slug:     "REL-3",
 			Title:          "Ticket 3",
 			Type:           ticket.TicketTypeTask,
 			Status:         ticket.TicketStatusTodo,
@@ -129,7 +129,7 @@ func TestCreateRelation(t *testing.T) {
 	t.Run("creates blocked_by relation", func(t *testing.T) {
 		ticket4 := &ticket.Ticket{
 			OrganizationID: 1,
-			Identifier:     "REL-4",
+			Slug:     "REL-4",
 			Title:          "Ticket 4",
 			Type:           ticket.TicketTypeTask,
 			Status:         ticket.TicketStatusTodo,
@@ -151,7 +151,7 @@ func TestCreateRelation(t *testing.T) {
 	t.Run("creates duplicate relation", func(t *testing.T) {
 		ticket5 := &ticket.Ticket{
 			OrganizationID: 1,
-			Identifier:     "REL-5",
+			Slug:     "REL-5",
 			Title:          "Ticket 5",
 			Type:           ticket.TicketTypeTask,
 			Status:         ticket.TicketStatusTodo,
@@ -179,7 +179,7 @@ func TestDeleteRelation(t *testing.T) {
 	// Create two tickets
 	ticket1 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "DEL-1",
+		Slug:     "DEL-1",
 		Title:          "Ticket 1",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusTodo,
@@ -187,7 +187,7 @@ func TestDeleteRelation(t *testing.T) {
 	}
 	ticket2 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "DEL-2",
+		Slug:     "DEL-2",
 		Title:          "Ticket 2",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusTodo,
@@ -226,7 +226,7 @@ func TestListRelations(t *testing.T) {
 	// Create tickets
 	ticket1 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "LST-1",
+		Slug:     "LST-1",
 		Title:          "Ticket 1",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusTodo,
@@ -234,7 +234,7 @@ func TestListRelations(t *testing.T) {
 	}
 	ticket2 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "LST-2",
+		Slug:     "LST-2",
 		Title:          "Ticket 2",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusTodo,
@@ -242,7 +242,7 @@ func TestListRelations(t *testing.T) {
 	}
 	ticket3 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "LST-3",
+		Slug:     "LST-3",
 		Title:          "Ticket 3",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusTodo,
@@ -268,7 +268,7 @@ func TestListRelations(t *testing.T) {
 	t.Run("returns empty list for ticket without relations", func(t *testing.T) {
 		ticket4 := &ticket.Ticket{
 			OrganizationID: 1,
-			Identifier:     "LST-4",
+			Slug:     "LST-4",
 			Title:          "Ticket 4",
 			Type:           ticket.TicketTypeTask,
 			Status:         ticket.TicketStatusTodo,

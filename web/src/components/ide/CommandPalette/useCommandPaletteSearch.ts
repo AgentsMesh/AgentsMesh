@@ -40,8 +40,8 @@ export function useCommandPaletteSearch(search: string): SearchResults {
         setTickets(
           (ticketsRes.tickets || [])
             .filter(
-              (ticket: { identifier: string; title: string }) =>
-                ticket.identifier.toLowerCase().includes(searchLower) ||
+              (ticket: { slug: string; title: string }) =>
+                ticket.slug.toLowerCase().includes(searchLower) ||
                 ticket.title.toLowerCase().includes(searchLower)
             )
             .slice(0, 5)

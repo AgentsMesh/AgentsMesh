@@ -34,20 +34,20 @@ func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*
 
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Generate next number within transaction to prevent race conditions.
-		// Scoped to (organization_id, prefix) since identifier uniqueness is per-org.
+		// Scoped to (organization_id, prefix) since slug uniqueness is per-org.
 		var maxNumber int
 		likePattern := fmt.Sprintf("%s-%%", ticketPrefix)
 		tx.Model(&ticket.Ticket{}).
-			Where("organization_id = ? AND identifier LIKE ?", req.OrganizationID, likePattern).
+			Where("organization_id = ? AND slug LIKE ?", req.OrganizationID, likePattern).
 			Select("COALESCE(MAX(number), 0)").
 			Scan(&maxNumber)
 		number := maxNumber + 1
-		identifier := fmt.Sprintf("%s-%d", ticketPrefix, number)
+		slug := fmt.Sprintf("%s-%d", ticketPrefix, number)
 
 		t = &ticket.Ticket{
 			OrganizationID: req.OrganizationID,
 			Number:         number,
-			Identifier:     identifier,
+			Slug:            slug,
 			Type:           req.Type,
 			Title:          req.Title,
 			Content:        req.Content,
@@ -114,7 +114,7 @@ func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*
 	}
 
 	// Publish ticket created event (Service layer - Information Expert)
-	s.publishEvent(ctx, TicketEventCreated, req.OrganizationID, createdTicket.Identifier, createdTicket.Status, "")
+	s.publishEvent(ctx, TicketEventCreated, req.OrganizationID, createdTicket.Slug, createdTicket.Status, "")
 
 	return createdTicket, nil
 }

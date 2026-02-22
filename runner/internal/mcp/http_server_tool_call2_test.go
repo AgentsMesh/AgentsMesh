@@ -53,7 +53,7 @@ func TestHTTPServerMCPToolsCallGetTicket(t *testing.T) {
 		"params": {
 			"name": "get_ticket",
 			"arguments": {
-				"ticket_id": "AM-123"
+				"ticket_slug": "AM-123"
 			}
 		}
 	}`)

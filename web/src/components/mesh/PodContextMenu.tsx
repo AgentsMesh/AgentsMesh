@@ -39,10 +39,10 @@ export default function PodContextMenu({ node, children }: PodContextMenuProps) 
   }, [router, orgSlug, node.pod_key]);
 
   const handleViewTicket = useCallback(() => {
-    if (node.ticket_identifier) {
-      router.push(`/${orgSlug}/tickets/${node.ticket_identifier}`);
+    if (node.ticket_slug) {
+      router.push(`/${orgSlug}/tickets/${node.ticket_slug}`);
     }
-  }, [router, orgSlug, node.ticket_identifier]);
+  }, [router, orgSlug, node.ticket_slug]);
 
   const handleTerminate = useCallback(async () => {
     const confirmed = await confirm({
@@ -70,11 +70,11 @@ export default function PodContextMenu({ node, children }: PodContextMenuProps) 
             {t("contextMenu.openTerminal")}
           </ContextMenuItem>
 
-          {node.ticket_identifier && (
+          {node.ticket_slug && (
             <ContextMenuItem onClick={handleViewTicket}>
               <ExternalLink className="mr-2 h-4 w-4" />
               {t("contextMenu.viewTicket", {
-                identifier: node.ticket_identifier,
+                slug: node.ticket_slug,
               })}
             </ContextMenuItem>
           )}

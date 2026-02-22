@@ -31,8 +31,8 @@ type BindingClient interface {
 
 // ChannelClient defines the interface for channel operations.
 type ChannelClient interface {
-	SearchChannels(ctx context.Context, name string, repositoryID, ticketID *int, isArchived *bool, offset, limit int) ([]Channel, error)
-	CreateChannel(ctx context.Context, name, description string, repositoryID, ticketID *int) (*Channel, error)
+	SearchChannels(ctx context.Context, name string, repositoryID *int, ticketSlug *string, isArchived *bool, offset, limit int) ([]Channel, error)
+	CreateChannel(ctx context.Context, name, description string, repositoryID *int, ticketSlug *string) (*Channel, error)
 	GetChannel(ctx context.Context, channelID int) (*Channel, error)
 	SendMessage(ctx context.Context, channelID int, content string, msgType ChannelMessageType, mentions []string, replyTo *int) (*ChannelMessage, error)
 	GetMessages(ctx context.Context, channelID int, beforeTime, afterTime *string, mentionedPod *string, limit int) ([]ChannelMessage, error)
@@ -42,10 +42,10 @@ type ChannelClient interface {
 
 // TicketClient defines the interface for ticket operations.
 type TicketClient interface {
-	SearchTickets(ctx context.Context, repositoryID *int, status *TicketStatus, ticketType *TicketType, priority *TicketPriority, assigneeID, parentID *int, query string, limit, page int) ([]Ticket, error)
-	GetTicket(ctx context.Context, ticketID string) (*Ticket, error)
-	CreateTicket(ctx context.Context, repositoryID *int64, title string, ticketType TicketType, priority TicketPriority, parentTicketID *int64) (*Ticket, error)
-	UpdateTicket(ctx context.Context, ticketID string, title *string, status *TicketStatus, priority *TicketPriority, ticketType *TicketType) (*Ticket, error)
+	SearchTickets(ctx context.Context, repositoryID *int, status *TicketStatus, ticketType *TicketType, priority *TicketPriority, assigneeID *int, parentTicketSlug *string, query string, limit, page int) ([]Ticket, error)
+	GetTicket(ctx context.Context, ticketSlug string) (*Ticket, error)
+	CreateTicket(ctx context.Context, repositoryID *int64, title, content string, ticketType TicketType, priority TicketPriority, parentTicketSlug *string) (*Ticket, error)
+	UpdateTicket(ctx context.Context, ticketSlug string, title, content *string, status *TicketStatus, priority *TicketPriority, ticketType *TicketType) (*Ticket, error)
 }
 
 // PodClient defines the interface for pod creation.

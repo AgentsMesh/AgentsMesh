@@ -13,7 +13,7 @@ export interface MeshNodeData {
   runner_id: number;
   runner_node_id: string;
   runner_status: string;
-  ticket_identifier?: string;
+  ticket_slug?: string;
   ticket_title?: string;
   started_at?: string;
   position?: { x: number; y: number };

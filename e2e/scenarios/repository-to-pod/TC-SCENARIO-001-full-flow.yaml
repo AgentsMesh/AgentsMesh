@@ -169,14 +169,14 @@ steps:
             repository_id: "{repository_id}"
       save:
         ticket_id: body.ticket.id
-        ticket_identifier: body.ticket.identifier
+        ticket_slug: body.ticket.slug
 
   - id: step-4a
     action: 验证 Ticket 已创建并关联 Repository
     verification:
       type: database
       query: |
-        SELECT id, title, type, repository_id, identifier
+        SELECT id, title, type, repository_id, slug
         FROM tickets WHERE id = {ticket_id}
       expected:
         title: E2E Test Ticket - Repository Pod Flow
@@ -235,7 +235,7 @@ steps:
           repository_id: "{repository_id}"
           ticket_id: "{ticket_id}"
           branch_name: main
-          initial_prompt: "E2E Scenario Test - Repository Pod Flow - Ticket: {ticket_identifier}"
+          initial_prompt: "E2E Scenario Test - Repository Pod Flow - Ticket: {ticket_slug}"
       expected:
         status: 201
         body:

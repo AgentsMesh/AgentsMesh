@@ -127,14 +127,8 @@ func TestGetAssignees(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	// Create users table
-	db.Exec(`CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL,
-		email TEXT NOT NULL,
-		avatar_url TEXT
-	)`)
-	db.Exec(`INSERT INTO users (id, name, email) VALUES (1, 'Alice', 'alice@test.com'), (2, 'Bob', 'bob@test.com')`)
+	// Insert test users (users table is created by setupTestDB)
+	db.Exec(`INSERT INTO users (id, username, name, email) VALUES (1, 'alice', 'Alice', 'alice@test.com'), (2, 'bob', 'Bob', 'bob@test.com')`)
 
 	tkt, _ := service.CreateTicket(ctx, &CreateTicketRequest{
 		OrganizationID: 1,

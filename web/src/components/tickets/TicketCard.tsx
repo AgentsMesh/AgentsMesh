@@ -43,11 +43,11 @@ export function TicketCard({ ticket, onClick, showRepository = true }: TicketCar
         <div className="flex items-center gap-2 min-w-0">
           <TypeIcon type={ticket.type} size="sm" />
           <Link
-            href={`/${currentOrg?.slug}/tickets/${ticket.identifier}`}
+            href={`/${currentOrg?.slug}/tickets/${ticket.slug}`}
             className="text-xs text-muted-foreground hover:text-primary font-mono"
             onClick={(e) => e.stopPropagation()}
           >
-            {ticket.identifier}
+            {ticket.slug}
           </Link>
         </div>
         <span
@@ -105,20 +105,20 @@ export function TicketCard({ ticket, onClick, showRepository = true }: TicketCar
         <div className="flex -space-x-1">
           {ticket.assignees?.slice(0, 3).map((assignee) => (
             <div
-              key={assignee.id}
+              key={assignee.user_id}
               className="w-6 h-6 rounded-full border-2 border-background overflow-hidden"
-              title={assignee.name || assignee.username}
+              title={assignee.user?.name || assignee.user?.username}
             >
-              {assignee.avatar_url ? (
+              {assignee.user?.avatar_url ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={assignee.avatar_url}
-                  alt={assignee.username}
+                  src={assignee.user.avatar_url}
+                  alt={assignee.user?.username}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-muted flex items-center justify-center text-xs">
-                  {(assignee.name || assignee.username)[0].toUpperCase()}
+                  {(assignee.user?.name || assignee.user?.username || "?")[0].toUpperCase()}
                 </div>
               )}
             </div>
