@@ -50,6 +50,16 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
+// Mock RepositorySelect
+vi.mock('@/components/common/RepositorySelect', () => ({
+  RepositorySelect: ({ value, onChange, placeholder }: { value: number | null; onChange: (v: number | null) => void; placeholder?: string }) => (
+    <select data-testid="repository-select" value={value ?? ''} onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}>
+      <option value="">{placeholder || 'Select...'}</option>
+      <option value="1">my-repo</option>
+    </select>
+  ),
+}))
+
 // Mock TicketPodPanel
 vi.mock('../TicketPodPanel', () => ({
   default: ({ ticketIdentifier, ticketTitle }: { ticketIdentifier: string; ticketTitle: string }) => (
@@ -78,6 +88,7 @@ describe('TicketDetail Component', () => {
       { id: 1, name: 'frontend', color: '#3b82f6' },
     ],
     due_date: '2024-02-01T00:00:00Z',
+    repository_id: 1,
     repository: { id: 1, name: 'my-repo' },
   }
 
@@ -296,11 +307,11 @@ describe('TicketDetail Component', () => {
       })
     })
 
-    it('should display repository when provided', async () => {
+    it('should display repository selector', async () => {
       render(<TicketDetail identifier="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Repository')).toBeInTheDocument()
-        expect(screen.getByText('my-repo')).toBeInTheDocument()
+        expect(screen.getByTestId('repository-select')).toBeInTheDocument()
       })
     })
 
@@ -520,9 +531,9 @@ describe('TicketDetail Component', () => {
     it('should show status dropdown', async () => {
       render(<TicketDetail identifier="PROJ-42" />)
       await waitFor(() => {
-        const statusDropdown = screen.getByRole('combobox')
+        const comboboxes = screen.getAllByRole('combobox')
+        const statusDropdown = comboboxes.find(el => (el as HTMLSelectElement).value === 'in_progress')
         expect(statusDropdown).toBeInTheDocument()
-        expect(statusDropdown).toHaveValue('in_progress')
       })
     })
 
@@ -531,7 +542,8 @@ describe('TicketDetail Component', () => {
 
       render(<TicketDetail identifier="PROJ-42" />)
       await waitFor(() => {
-        const statusDropdown = screen.getByRole('combobox')
+        const comboboxes = screen.getAllByRole('combobox')
+        const statusDropdown = comboboxes.find(el => (el as HTMLSelectElement).value === 'in_progress')!
         fireEvent.change(statusDropdown, { target: { value: 'done' } })
       })
 

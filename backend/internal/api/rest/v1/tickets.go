@@ -52,15 +52,16 @@ type CreateTicketRequest struct {
 
 // UpdateTicketRequest represents ticket update request
 type UpdateTicketRequest struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Content     string   `json:"content"`
-	Status      string   `json:"status"`
-	Priority    string   `json:"priority"`
-	Type        string   `json:"type"`
-	AssigneeIDs []int64  `json:"assignee_ids"`
-	Labels      []string `json:"labels"`
-	DueDate     *string  `json:"due_date"`
+	Title        string   `json:"title"`
+	Description  string   `json:"description"`
+	Content      string   `json:"content"`
+	Status       string   `json:"status"`
+	Priority     string   `json:"priority"`
+	Type         string   `json:"type"`
+	RepositoryID *int64   `json:"repository_id"`
+	AssigneeIDs  []int64  `json:"assignee_ids"`
+	Labels       []string `json:"labels"`
+	DueDate      *string  `json:"due_date"`
 }
 
 // UpdateTicketStatusRequest represents status update request
@@ -203,6 +204,14 @@ func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 	}
 	if req.Type != "" {
 		updates["type"] = req.Type
+	}
+	if req.RepositoryID != nil {
+		if *req.RepositoryID == 0 {
+			// Explicitly clear the repository association
+			updates["repository_id"] = nil
+		} else {
+			updates["repository_id"] = *req.RepositoryID
+		}
 	}
 
 	t, err = h.ticketService.UpdateTicket(c.Request.Context(), t.ID, updates)

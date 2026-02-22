@@ -63,6 +63,7 @@ interface TicketState {
       type: TicketType;
       status: TicketStatus;
       priority: TicketPriority;
+      repositoryId: number | null;
       assigneeIds: number[];
       labels: string[];
     }>

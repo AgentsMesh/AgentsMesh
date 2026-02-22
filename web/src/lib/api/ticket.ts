@@ -128,12 +128,19 @@ export const ticketApi = {
     priority?: string;
     severity?: string;
     estimate?: number;
+    repositoryId?: number | null;
     assigneeIds?: number[];
     labels?: string[];
   }) => {
+    const body: Record<string, unknown> = { ...data };
+    // Handle repositoryId: convert null → 0 (clear) for backend, number → as-is
+    if ("repositoryId" in data) {
+      delete body.repositoryId;
+      body.repository_id = data.repositoryId === null ? 0 : data.repositoryId;
+    }
     const response = await request<{ ticket: TicketData }>(`${orgPath("/tickets")}/${identifier}`, {
       method: "PUT",
-      body: data,
+      body,
     });
     return response.ticket;
   },

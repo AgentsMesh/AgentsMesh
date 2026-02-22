@@ -180,6 +180,7 @@
       "details": "Details",
       "dueDate": "Due Date",
       "repository": "Repository",
+      "noRepository": "No repository",
       "assignees": "Assignees",
       "noAssignees": "No assignees",
       "timestamps": "Timestamps",
