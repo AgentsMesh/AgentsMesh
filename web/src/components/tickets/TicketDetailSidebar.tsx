@@ -1,22 +1,12 @@
 "use client";
 
-import { TicketStatus, TicketType, TicketPriority } from "@/stores/ticket";
+import { Ticket, TicketStatus } from "@/stores/ticket";
 import { Button } from "@/components/ui/button";
 import { PriorityIcon, TypeIcon, getPriorityDisplayInfo, getTypeDisplayInfo } from "./TicketIcons";
 import { RepositorySelect } from "@/components/common/RepositorySelect";
 
 interface TicketDetailSidebarProps {
-  ticket: {
-    status: TicketStatus;
-    type: TicketType;
-    priority: TicketPriority;
-    due_date?: string;
-    created_at: string;
-    updated_at: string;
-    assignees?: Array<{ id: number; name?: string; username: string }>;
-    repository_id?: number;
-    repository?: { name: string };
-  };
+  ticket: Ticket;
   isEditing: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -140,7 +130,7 @@ function AssigneesCard({
   assignees,
   t,
 }: {
-  assignees?: Array<{ id: number; name?: string; username: string }>;
+  assignees?: Ticket["assignees"];
   t: (key: string) => string;
 }) {
   return (
@@ -149,11 +139,11 @@ function AssigneesCard({
       {assignees && assignees.length > 0 ? (
         <div className="space-y-2">
           {assignees.map((assignee) => (
-            <div key={assignee.id} className="flex items-center gap-2">
+            <div key={assignee.user_id} className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                {(assignee.name || assignee.username)[0].toUpperCase()}
+                {(assignee.user?.name || assignee.user?.username || "?")[0].toUpperCase()}
               </div>
-              <span className="text-sm">{assignee.name || assignee.username}</span>
+              <span className="text-sm">{assignee.user?.name || assignee.user?.username}</span>
             </div>
           ))}
         </div>

@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-// TestCreateTicket_IdentifierScopedToOrg verifies that identifier generation
-// is scoped to organization_id, allowing different orgs to have the same identifier.
+// TestCreateTicket_SlugScopedToOrg verifies that slug generation
+// is scoped to organization_id, allowing different orgs to have the same slug.
 // This was the root cause of a production 500 bug: the old code had a global unique
-// constraint on identifier but generated numbers per-org, causing conflicts.
-func TestCreateTicket_IdentifierScopedToOrg(t *testing.T) {
+// constraint on slug but generated numbers per-org, causing conflicts.
+func TestCreateTicket_SlugScopedToOrg(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 	ctx := context.Background()
@@ -25,8 +25,8 @@ func TestCreateTicket_IdentifierScopedToOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create ticket in org 1: %v", err)
 	}
-	if tkt1.Identifier != "TICKET-1" {
-		t.Errorf("org 1 first ticket: expected Identifier 'TICKET-1', got %s", tkt1.Identifier)
+	if tkt1.Slug != "TICKET-1" {
+		t.Errorf("org 1 first ticket: expected Slug 'TICKET-1', got %s", tkt1.Slug)
 	}
 
 	// Create ticket in org 2 — should also get TICKET-1, not conflict
@@ -40,8 +40,8 @@ func TestCreateTicket_IdentifierScopedToOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create ticket in org 2: %v", err)
 	}
-	if tkt2.Identifier != "TICKET-1" {
-		t.Errorf("org 2 first ticket: expected Identifier 'TICKET-1', got %s", tkt2.Identifier)
+	if tkt2.Slug != "TICKET-1" {
+		t.Errorf("org 2 first ticket: expected Slug 'TICKET-1', got %s", tkt2.Slug)
 	}
 
 	// Create second ticket in org 1 — should get TICKET-2
@@ -55,15 +55,15 @@ func TestCreateTicket_IdentifierScopedToOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create second ticket in org 1: %v", err)
 	}
-	if tkt3.Identifier != "TICKET-2" {
-		t.Errorf("org 1 second ticket: expected Identifier 'TICKET-2', got %s", tkt3.Identifier)
+	if tkt3.Slug != "TICKET-2" {
+		t.Errorf("org 1 second ticket: expected Slug 'TICKET-2', got %s", tkt3.Slug)
 	}
 	if tkt3.Number != 2 {
 		t.Errorf("org 1 second ticket: expected Number 2, got %d", tkt3.Number)
 	}
 }
 
-// TestCreateTicket_PrefixScopedToOrg verifies that repository-prefix identifier
+// TestCreateTicket_PrefixScopedToOrg verifies that repository-prefix slug
 // generation is also scoped to organization, not globally.
 func TestCreateTicket_PrefixScopedToOrg(t *testing.T) {
 	db := setupTestDB(t)
@@ -90,8 +90,8 @@ func TestCreateTicket_PrefixScopedToOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create ticket for org1/repo1: %v", err)
 	}
-	if tkt1.Identifier != "PROJ-1" {
-		t.Errorf("expected 'PROJ-1', got %s", tkt1.Identifier)
+	if tkt1.Slug != "PROJ-1" {
+		t.Errorf("expected 'PROJ-1', got %s", tkt1.Slug)
 	}
 
 	// Org 2, repo 2, same prefix PROJ — should also get PROJ-1
@@ -106,8 +106,8 @@ func TestCreateTicket_PrefixScopedToOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create ticket for org2/repo2: %v", err)
 	}
-	if tkt2.Identifier != "PROJ-1" {
-		t.Errorf("expected 'PROJ-1', got %s", tkt2.Identifier)
+	if tkt2.Slug != "PROJ-1" {
+		t.Errorf("expected 'PROJ-1', got %s", tkt2.Slug)
 	}
 
 	// Org 1, repo 1 again — should get PROJ-2
@@ -122,8 +122,8 @@ func TestCreateTicket_PrefixScopedToOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create second ticket for org1/repo1: %v", err)
 	}
-	if tkt3.Identifier != "PROJ-2" {
-		t.Errorf("expected 'PROJ-2', got %s", tkt3.Identifier)
+	if tkt3.Slug != "PROJ-2" {
+		t.Errorf("expected 'PROJ-2', got %s", tkt3.Slug)
 	}
 }
 
@@ -153,8 +153,8 @@ func TestCreateTicket_MixedPrefixesInSameOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create PROJ ticket: %v", err)
 	}
-	if tkt1.Identifier != "PROJ-1" {
-		t.Errorf("expected 'PROJ-1', got %s", tkt1.Identifier)
+	if tkt1.Slug != "PROJ-1" {
+		t.Errorf("expected 'PROJ-1', got %s", tkt1.Slug)
 	}
 
 	// Create BUG-1 (different prefix, same org, independent numbering)
@@ -169,8 +169,8 @@ func TestCreateTicket_MixedPrefixesInSameOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create BUG ticket: %v", err)
 	}
-	if tkt2.Identifier != "BUG-1" {
-		t.Errorf("expected 'BUG-1', got %s", tkt2.Identifier)
+	if tkt2.Slug != "BUG-1" {
+		t.Errorf("expected 'BUG-1', got %s", tkt2.Slug)
 	}
 
 	// Create TICKET-1 (no repo, default prefix, independent numbering)
@@ -184,8 +184,8 @@ func TestCreateTicket_MixedPrefixesInSameOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create TICKET ticket: %v", err)
 	}
-	if tkt3.Identifier != "TICKET-1" {
-		t.Errorf("expected 'TICKET-1', got %s", tkt3.Identifier)
+	if tkt3.Slug != "TICKET-1" {
+		t.Errorf("expected 'TICKET-1', got %s", tkt3.Slug)
 	}
 
 	// Create PROJ-2
@@ -200,7 +200,7 @@ func TestCreateTicket_MixedPrefixesInSameOrg(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create second PROJ ticket: %v", err)
 	}
-	if tkt4.Identifier != "PROJ-2" {
-		t.Errorf("expected 'PROJ-2', got %s", tkt4.Identifier)
+	if tkt4.Slug != "PROJ-2" {
+		t.Errorf("expected 'PROJ-2', got %s", tkt4.Slug)
 	}
 }

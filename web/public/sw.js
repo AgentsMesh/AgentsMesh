@@ -147,7 +147,7 @@ self.addEventListener('notificationclick', (event) => {
         break;
       case 'ticket_assigned':
       case 'ticket_updated':
-        targetUrl = `/${notificationData.orgSlug}/tickets/${notificationData.ticketIdentifier}`;
+        targetUrl = `/${notificationData.orgSlug}/tickets/${notificationData.ticketSlug}`;
         break;
       case 'runner_offline':
         targetUrl = `/${notificationData.orgSlug}/runners`;

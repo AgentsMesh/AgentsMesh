@@ -56,7 +56,7 @@ func (s *Service) GetActiveTickets(ctx context.Context, orgID int64, repoID *int
 
 	var tickets []*ticket.Ticket
 	if err := query.
-		Preload("Assignees").
+		Preload("Assignees.User").
 		Preload("Labels").
 		Order("updated_at DESC").
 		Limit(limit).
@@ -71,7 +71,7 @@ func (s *Service) GetActiveTickets(ctx context.Context, orgID int64, repoID *int
 func (s *Service) GetChildTickets(ctx context.Context, parentTicketID int64) ([]*ticket.Ticket, error) {
 	var tickets []*ticket.Ticket
 	if err := s.db.WithContext(ctx).
-		Preload("Assignees").
+		Preload("Assignees.User").
 		Preload("Labels").
 		Where("parent_ticket_id = ?", parentTicketID).
 		Order("created_at ASC").

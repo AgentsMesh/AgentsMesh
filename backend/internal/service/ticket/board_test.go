@@ -30,7 +30,7 @@ func TestGetBoard(t *testing.T) {
 		for j := 0; j < 2; j++ {
 			tkt := &ticket.Ticket{
 				OrganizationID: 1,
-				Identifier:     fmt.Sprintf("BRD-%d", i*10+j+1),
+				Slug:     fmt.Sprintf("BRD-%d", i*10+j+1),
 				Title:          "Ticket " + status,
 				Type:           ticket.TicketTypeTask,
 				Status:         status,
@@ -85,7 +85,7 @@ func TestGetSubTicketCounts(t *testing.T) {
 	// Create parent tickets
 	parent1 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "CNT-1",
+		Slug:     "CNT-1",
 		Title:          "Parent 1",
 		Type:           ticket.TicketTypeFeature,
 		Status:         ticket.TicketStatusInProgress,
@@ -93,7 +93,7 @@ func TestGetSubTicketCounts(t *testing.T) {
 	}
 	parent2 := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "CNT-2",
+		Slug:     "CNT-2",
 		Title:          "Parent 2",
 		Type:           ticket.TicketTypeFeature,
 		Status:         ticket.TicketStatusTodo,
@@ -118,7 +118,7 @@ func TestGetSubTicketCounts(t *testing.T) {
 		child := &ticket.Ticket{
 			OrganizationID: 1,
 			ParentTicketID: &c.parentID,
-			Identifier:     fmt.Sprintf("CNT-%d", 100+i),
+			Slug:     fmt.Sprintf("CNT-%d", 100+i),
 			Title:          "Child",
 			Type:           ticket.TicketTypeTask,
 			Status:         c.status,

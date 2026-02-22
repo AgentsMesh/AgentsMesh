@@ -9,6 +9,7 @@ export interface ChannelData {
   document?: string;
   repository_id?: number;
   ticket_id?: number;
+  ticket_slug?: string;
   created_by_pod?: string;
   created_by_user_id?: number;
   is_archived: boolean;
@@ -45,12 +46,12 @@ export const channelApi = {
   // List channels with optional filters
   list: (filters?: {
     repository_id?: number;
-    ticket_id?: number;
+    ticket_slug?: string;
     include_archived?: boolean;
   }) => {
     const params = new URLSearchParams();
     if (filters?.repository_id) params.append("repository_id", String(filters.repository_id));
-    if (filters?.ticket_id) params.append("ticket_id", String(filters.ticket_id));
+    if (filters?.ticket_slug) params.append("ticket_slug", filters.ticket_slug);
     if (filters?.include_archived) params.append("include_archived", "true");
     const query = params.toString() ? `?${params.toString()}` : "";
     return request<{ channels: ChannelData[]; total: number }>(`${orgPath("/channels")}${query}`);
@@ -66,7 +67,7 @@ export const channelApi = {
     description?: string;
     document?: string;
     repository_id?: number;
-    ticket_id?: number;
+    ticket_slug?: string;
   }) =>
     request<{ channel: ChannelData }>(orgPath("/channels"), {
       method: "POST",

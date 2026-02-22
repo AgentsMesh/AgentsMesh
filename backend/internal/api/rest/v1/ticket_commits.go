@@ -21,12 +21,12 @@ type LinkCommitRequest struct {
 }
 
 // ListCommits lists commits for a ticket
-// GET /api/v1/organizations/:slug/tickets/:identifier/commits
+// GET /api/v1/organizations/:slug/tickets/:ticket_slug/commits
 func (h *TicketHandler) ListCommits(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -42,9 +42,9 @@ func (h *TicketHandler) ListCommits(c *gin.Context) {
 }
 
 // LinkCommit links a commit to a ticket
-// POST /api/v1/organizations/:slug/tickets/:identifier/commits
+// POST /api/v1/organizations/:slug/tickets/:ticket_slug/commits
 func (h *TicketHandler) LinkCommit(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 
 	var req LinkCommitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -54,7 +54,7 @@ func (h *TicketHandler) LinkCommit(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -98,9 +98,9 @@ func (h *TicketHandler) LinkCommit(c *gin.Context) {
 }
 
 // UnlinkCommit unlinks a commit from a ticket
-// DELETE /api/v1/organizations/:slug/tickets/:identifier/commits/:commit_id
+// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug/commits/:commit_id
 func (h *TicketHandler) UnlinkCommit(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	commitID, err := strconv.ParseInt(c.Param("commit_id"), 10, 64)
 	if err != nil {
 		apierr.InvalidInput(c, "Invalid commit ID")
@@ -109,7 +109,7 @@ func (h *TicketHandler) UnlinkCommit(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return

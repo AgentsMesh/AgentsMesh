@@ -22,9 +22,9 @@ type PodCreator struct {
 
 // PodTicket represents the ticket associated with a pod.
 type PodTicket struct {
-	ID         int    `json:"id"`
-	Identifier string `json:"identifier,omitempty"`
-	Title      string `json:"title"`
+	ID    int    `json:"id"`
+	Slug  string `json:"slug,omitempty"`
+	Title string `json:"title"`
 }
 
 // AvailablePod represents a pod available for collaboration.
@@ -70,18 +70,16 @@ type TerminalOutput struct {
 
 // Channel represents a collaboration channel.
 type Channel struct {
-	ID              int     `json:"id"`
-	Name            string  `json:"name"`
-	Description     string  `json:"description,omitempty"`
-	RepositoryID    *int    `json:"repository_id,omitempty"`
-	TicketID        *int    `json:"ticket_id,omitempty"`
-	Document        string  `json:"document,omitempty"`
-	MemberCount     int     `json:"member_count"`
-	IsArchived      bool    `json:"is_archived"`
-	CreatedByPod    string  `json:"created_by_pod,omitempty"`
-	CreatedByUserID *int    `json:"created_by_user_id,omitempty"`
-	CreatedAt       string  `json:"created_at"`
-	UpdatedAt       string  `json:"updated_at"`
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Description  string `json:"description,omitempty"`
+	TicketSlug   string `json:"ticket_slug,omitempty"`
+	Document     string `json:"document,omitempty"`
+	MemberCount  int    `json:"member_count"`
+	IsArchived   bool   `json:"is_archived"`
+	CreatedByPod string `json:"created_by_pod,omitempty"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
 }
 
 // ChannelMessage represents a message in a channel.
@@ -99,21 +97,18 @@ type ChannelMessage struct {
 
 // Ticket represents a ticket in the system.
 type Ticket struct {
-	ID             int            `json:"id"`
-	Identifier     string         `json:"identifier"`
-	Title          string         `json:"title"`
-	Content        string         `json:"content,omitempty"`
-	Type           TicketType     `json:"type"`
-	Status         TicketStatus   `json:"status"`
-	Priority       TicketPriority `json:"priority"`
-	ProductID      int            `json:"product_id"`
-	ProductName    string         `json:"product_name,omitempty"`
-	ReporterID     int            `json:"reporter_id"`
-	ReporterName   string         `json:"reporter_name,omitempty"`
-	ParentTicketID *int           `json:"parent_ticket_id,omitempty"`
-	Estimate       *int           `json:"estimate,omitempty"`
-	CreatedAt      string         `json:"created_at"`
-	UpdatedAt      string         `json:"updated_at"`
+	Slug             string         `json:"slug"`
+	Title            string         `json:"title"`
+	Content          string         `json:"content,omitempty"`
+	Type             TicketType     `json:"type"`
+	Status           TicketStatus   `json:"status"`
+	Priority         TicketPriority `json:"priority"`
+	ProductName      string         `json:"product_name,omitempty"`
+	ReporterName     string         `json:"reporter_name,omitempty"`
+	ParentTicketSlug string         `json:"parent_ticket_slug,omitempty"`
+	Estimate         *int           `json:"estimate,omitempty"`
+	CreatedAt        string         `json:"created_at"`
+	UpdatedAt        string         `json:"updated_at"`
 }
 
 // ConfigFieldSummary is a simplified config field for LLM consumption.
@@ -169,7 +164,7 @@ type Repository struct {
 type PodCreateRequest struct {
 	RunnerID            int                    `json:"runner_id,omitempty"`
 	AgentTypeID         *int64                 `json:"agent_type_id,omitempty"` // Required by backend API
-	TicketID            *int                   `json:"ticket_id,omitempty"`
+	TicketSlug          *string                `json:"ticket_slug,omitempty"`
 	InitialPrompt       string                 `json:"initial_prompt,omitempty"`
 	Model               string                 `json:"model,omitempty"`
 	RepositoryID        *int64                 `json:"repository_id,omitempty"`        // Repository ID (mutually exclusive with repository_url)

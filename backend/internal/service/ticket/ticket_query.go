@@ -11,7 +11,7 @@ import (
 func (s *Service) GetTicket(ctx context.Context, ticketID int64) (*ticket.Ticket, error) {
 	var t ticket.Ticket
 	if err := s.db.WithContext(ctx).
-		Preload("Assignees").
+		Preload("Assignees.User").
 		Preload("Labels").
 		Preload("MergeRequests").
 		Preload("SubTickets").
@@ -21,34 +21,34 @@ func (s *Service) GetTicket(ctx context.Context, ticketID int64) (*ticket.Ticket
 	return &t, nil
 }
 
-// GetTicketByIdentifier returns a ticket by identifier scoped to an organization.
-// Since identifier uniqueness is per-organization, organizationID is required.
-func (s *Service) GetTicketByIdentifier(ctx context.Context, organizationID int64, identifier string) (*ticket.Ticket, error) {
+// GetTicketBySlug returns a ticket by slug scoped to an organization.
+// Since slug uniqueness is per-organization, organizationID is required.
+func (s *Service) GetTicketBySlug(ctx context.Context, organizationID int64, slug string) (*ticket.Ticket, error) {
 	var t ticket.Ticket
 	if err := s.db.WithContext(ctx).
-		Preload("Assignees").
+		Preload("Assignees.User").
 		Preload("Labels").
 		Preload("MergeRequests").
 		Preload("SubTickets").
-		Where("organization_id = ? AND identifier = ?", organizationID, identifier).
+		Where("organization_id = ? AND slug = ?", organizationID, slug).
 		First(&t).Error; err != nil {
 		return nil, ErrTicketNotFound
 	}
 	return &t, nil
 }
 
-// GetTicketByIDOrIdentifier returns a ticket by numeric ID or string identifier,
-// scoped to an organization. It first tries identifier lookup; if the input is
+// GetTicketByIDOrSlug returns a ticket by numeric ID or string slug,
+// scoped to an organization. It first tries slug lookup; if the input is
 // a pure numeric string, it falls back to primary-key lookup with org validation.
-func (s *Service) GetTicketByIDOrIdentifier(ctx context.Context, organizationID int64, idOrIdentifier string) (*ticket.Ticket, error) {
-	// Try identifier lookup first (covers both "AM-123" and numeric strings that happen to match an identifier)
-	t, err := s.GetTicketByIdentifier(ctx, organizationID, idOrIdentifier)
+func (s *Service) GetTicketByIDOrSlug(ctx context.Context, organizationID int64, idOrSlug string) (*ticket.Ticket, error) {
+	// Try slug lookup first (covers both "AM-123" and numeric strings that happen to match a slug)
+	t, err := s.GetTicketBySlug(ctx, organizationID, idOrSlug)
 	if err == nil {
 		return t, nil
 	}
 
 	// If the input is a numeric string, fall back to primary-key lookup
-	if numericID, parseErr := strconv.ParseInt(idOrIdentifier, 10, 64); parseErr == nil {
+	if numericID, parseErr := strconv.ParseInt(idOrSlug, 10, 64); parseErr == nil {
 		t, err = s.GetTicket(ctx, numericID)
 		if err != nil {
 			return nil, ErrTicketNotFound
@@ -86,7 +86,7 @@ func (s *Service) ListTickets(ctx context.Context, filter *ListTicketsFilter) ([
 		query = query.Where("parent_ticket_id = ?", *filter.ParentTicketID)
 	}
 	if filter.Query != "" {
-		query = query.Where("title ILIKE ? OR identifier ILIKE ?", "%"+filter.Query+"%", "%"+filter.Query+"%")
+		query = query.Where("title ILIKE ? OR slug ILIKE ?", "%"+filter.Query+"%", "%"+filter.Query+"%")
 	}
 	if filter.AssigneeID != nil {
 		query = query.Joins("JOIN ticket_assignees ON ticket_assignees.ticket_id = tickets.id").
@@ -102,7 +102,7 @@ func (s *Service) ListTickets(ctx context.Context, filter *ListTicketsFilter) ([
 
 	var tickets []*ticket.Ticket
 	if err := query.
-		Preload("Assignees").
+		Preload("Assignees.User").
 		Preload("Labels").
 		Order("created_at DESC").
 		Limit(filter.Limit).

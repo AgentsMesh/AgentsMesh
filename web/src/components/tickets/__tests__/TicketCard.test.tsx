@@ -22,7 +22,7 @@ describe('TicketCard Component', () => {
   const baseTicket = {
     id: 1,
     number: 42,
-    identifier: 'PROJ-42',
+    slug: 'PROJ-42',
     type: 'task' as const,
     title: 'Implement new feature',
     status: 'todo' as const,
@@ -32,7 +32,7 @@ describe('TicketCard Component', () => {
   }
 
   describe('rendering', () => {
-    it('should render ticket identifier', () => {
+    it('should render ticket slug', () => {
       render(<TicketCard ticket={baseTicket} />)
       expect(screen.getByText('PROJ-42')).toBeInTheDocument()
     })
@@ -42,7 +42,7 @@ describe('TicketCard Component', () => {
       expect(screen.getByText('Implement new feature')).toBeInTheDocument()
     })
 
-    it('should render ticket identifier as link', () => {
+    it('should render ticket slug as link', () => {
       render(<TicketCard ticket={baseTicket} />)
       const link = screen.getByRole('link', { name: 'PROJ-42' })
       expect(link).toHaveAttribute('href', '/test-org/tickets/PROJ-42')
@@ -200,8 +200,8 @@ describe('TicketCard Component', () => {
       const ticketWithAssignees = {
         ...baseTicket,
         assignees: [
-          { id: 1, username: 'john', name: 'John Doe' },
-          { id: 2, username: 'jane', name: 'Jane Doe' },
+          { ticket_id: 1, user_id: 1, user: { id: 1, username: 'john', name: 'John Doe' } },
+          { ticket_id: 1, user_id: 2, user: { id: 2, username: 'jane', name: 'Jane Doe' } },
         ],
       }
       render(<TicketCard ticket={ticketWithAssignees} />)
@@ -214,11 +214,11 @@ describe('TicketCard Component', () => {
       const ticketWithManyAssignees = {
         ...baseTicket,
         assignees: [
-          { id: 1, username: 'user1' },
-          { id: 2, username: 'user2' },
-          { id: 3, username: 'user3' },
-          { id: 4, username: 'user4' },
-          { id: 5, username: 'user5' },
+          { ticket_id: 1, user_id: 1, user: { id: 1, username: 'user1' } },
+          { ticket_id: 1, user_id: 2, user: { id: 2, username: 'user2' } },
+          { ticket_id: 1, user_id: 3, user: { id: 3, username: 'user3' } },
+          { ticket_id: 1, user_id: 4, user: { id: 4, username: 'user4' } },
+          { ticket_id: 1, user_id: 5, user: { id: 5, username: 'user5' } },
         ],
       }
       render(<TicketCard ticket={ticketWithManyAssignees} />)
@@ -228,7 +228,7 @@ describe('TicketCard Component', () => {
     it('should show initials when no avatar URL', () => {
       const ticketWithAssignees = {
         ...baseTicket,
-        assignees: [{ id: 1, username: 'john', name: 'John Doe' }],
+        assignees: [{ ticket_id: 1, user_id: 1, user: { id: 1, username: 'john', name: 'John Doe' } }],
       }
       render(<TicketCard ticket={ticketWithAssignees} />)
       expect(screen.getByText('J')).toBeInTheDocument()
@@ -237,7 +237,7 @@ describe('TicketCard Component', () => {
     it('should render avatar image when URL provided', () => {
       const ticketWithAssignees = {
         ...baseTicket,
-        assignees: [{ id: 1, username: 'john', avatar_url: 'https://example.com/avatar.png' }],
+        assignees: [{ ticket_id: 1, user_id: 1, user: { id: 1, username: 'john', avatar_url: 'https://example.com/avatar.png' } }],
       }
       render(<TicketCard ticket={ticketWithAssignees} />)
       const img = screen.getByAltText('john')
@@ -285,7 +285,7 @@ describe('TicketCard Component', () => {
       expect(handleClick).toHaveBeenCalledTimes(1)
     })
 
-    it('should not propagate click from identifier link', () => {
+    it('should not propagate click from slug link', () => {
       const handleClick = vi.fn()
       render(<TicketCard ticket={baseTicket} onClick={handleClick} />)
 

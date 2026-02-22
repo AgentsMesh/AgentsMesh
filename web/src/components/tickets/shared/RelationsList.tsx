@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface RelationsListProps {
   relations: TicketRelation[];
-  onTicketClick: (identifier: string) => void;
+  onTicketClick: (slug: string) => void;
   /** Compact style for panel view */
   compact?: boolean;
   className?: string;
@@ -41,13 +41,13 @@ export function RelationsList({
               <button
                 key={relation.id}
                 className="w-full px-2.5 py-1.5 flex items-center gap-2 hover:bg-muted/50 rounded-md transition-colors text-left group"
-                onClick={() => onTicketClick(targetTicket.identifier)}
+                onClick={() => onTicketClick(targetTicket.slug)}
               >
                 <span className="text-[10px] text-muted-foreground capitalize bg-muted/70 px-1.5 py-0.5 rounded">
                   {relation.relation_type}
                 </span>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {targetTicket.identifier}
+                  {targetTicket.slug}
                 </span>
                 <span className="flex-1 truncate text-sm">{targetTicket.title}</span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -75,14 +75,14 @@ export function RelationsList({
             <div
               key={relation.id}
               className="px-4 py-3 hover:bg-muted/50 cursor-pointer"
-              onClick={() => onTicketClick(targetTicket.identifier)}
+              onClick={() => onTicketClick(targetTicket.slug)}
             >
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground capitalize">
                   {relation.relation_type}
                 </span>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {targetTicket.identifier}
+                  {targetTicket.slug}
                 </span>
                 <span className="flex-1 truncate">{targetTicket.title}</span>
               </div>

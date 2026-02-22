@@ -318,8 +318,8 @@
           "channelDescriptionDesc": "Optional description of the channel's purpose",
           "projectId": "Project ID",
           "projectIdDesc": "Link to a specific project/repository",
-          "ticketId": "Ticket ID",
-          "ticketIdDesc": "Link to a specific ticket"
+          "ticketSlug": "Ticket-Slug",
+          "ticketSlugDesc": "Verknüpfung mit einem bestimmten Ticket"
         },
         "messageTypes": {
           "title": "Message Types",
@@ -677,10 +677,10 @@
           "paramsHeader": "Parameters",
           "searchChannels": "search_channels",
           "searchChannelsDesc": "Search for channels",
-          "searchChannelsParams": "name?, project_id?, ticket_id?",
+          "searchChannelsParams": "name?, project_id?, ticket_slug?",
           "createChannel": "create_channel",
           "createChannelDesc": "Create a new channel",
-          "createChannelParams": "name, description?, project_id?, ticket_id?",
+          "createChannelParams": "name, description?, project_id?, ticket_slug?",
           "getChannel": "get_channel",
           "getChannelDesc": "Get channel details",
           "getChannelParams": "channel_id",
@@ -722,7 +722,7 @@
           "paramsHeader": "Parameters",
           "createPod": "create_pod",
           "createPodDesc": "Create a new AgentPod",
-          "createPodParams": "agent_type_id (required), runner_id?, ticket_id?, initial_prompt?, model?"
+          "createPodParams": "agent_type_id (required), runner_id?, ticket_slug?, initial_prompt?, model?"
         }
       }
     },
@@ -1010,7 +1010,7 @@
               "initial_prompt": "Initialer Prompt oder Aufgabe für den Agenten",
               "repository_id": "Repository, das mit dem Pod verknüpft werden soll",
               "branch": "Git-Branch, auf dem gearbeitet werden soll",
-              "ticket_identifier": "Ticket-Identifikator zum Verknüpfen (z. B. AM-123)",
+              "ticket_slug": "Ticket-Identifikator zum Verknüpfen (z. B. AM-123)",
               "channel_id": "Kanal, der mit dem Pod verknüpft werden soll",
               "sandbox_type": "Sandbox-Typ: worktree oder tempdir",
               "environment_variables": "Schlüssel-Wert-Paare von Umgebungsvariablen",
@@ -1073,10 +1073,10 @@
             }
           },
           "getTicket": {
-            "title": "GET /tickets/:identifier",
+            "title": "GET /tickets/:slug",
             "description": "Detaillierte Informationen über ein bestimmtes Ticket anhand seines lesbaren Bezeichners abrufen.",
             "params": {
-              "identifier": "Ticket-Bezeichner (z. B. AM-123)"
+              "slug": "Ticket-Bezeichner (z. B. AM-123)"
             }
           },
           "createTicket": {
@@ -1090,14 +1090,14 @@
               "assignee_id": "Benutzer-ID, der das Ticket zugewiesen werden soll",
               "repository_id": "Zu verknüpfendes Repository",
               "labels": "Array von Label-Zeichenketten",
-              "parent_identifier": "Übergeordneter Ticket-Bezeichner für Unteraufgaben"
+              "parent_slug": "Übergeordneter Ticket-Bezeichner für Unteraufgaben"
             }
           },
           "updateTicket": {
-            "title": "PUT /tickets/:identifier",
+            "title": "PUT /tickets/:slug",
             "description": "Ein bestehendes Ticket aktualisieren. Alle Felder sind optional — nur bereitgestellte Felder werden aktualisiert.",
             "params": {
-              "identifier": "Ticket-Bezeichner (z. B. AM-123)"
+              "slug": "Ticket-Bezeichner (z. B. AM-123)"
             },
             "fields": {
               "title": "Aktualisierter Ticket-Titel",
@@ -1106,24 +1106,24 @@
               "status": "Aktualisierter Status",
               "assignee_id": "Aktualisierte zugewiesene Benutzer-ID",
               "labels": "Aktualisiertes Array von Label-Zeichenketten",
-              "parent_identifier": "Aktualisierter übergeordneter Ticket-Bezeichner"
+              "parent_slug": "Aktualisierter übergeordneter Ticket-Bezeichner"
             }
           },
           "updateStatus": {
-            "title": "PATCH /tickets/:identifier/status",
+            "title": "PATCH /tickets/:slug/status",
             "description": "Nur den Status eines Tickets aktualisieren. Dies ist ein vereinfachter Endpunkt für Statusübergänge.",
             "params": {
-              "identifier": "Ticket-Bezeichner (z. B. AM-123)"
+              "slug": "Ticket-Bezeichner (z. B. AM-123)"
             },
             "fields": {
               "status": "Neuer Status: open, in_progress, resolved oder closed"
             }
           },
           "deleteTicket": {
-            "title": "DELETE /tickets/:identifier",
+            "title": "DELETE /tickets/:slug",
             "description": "Ein Ticket dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
             "params": {
-              "identifier": "Ticket-Bezeichner (z. B. AM-123)"
+              "slug": "Ticket-Bezeichner (z. B. AM-123)"
             }
           }
         }
@@ -1147,7 +1147,7 @@
             "description": "Eine Liste von Kanälen abrufen. Unterstützt Filterung nach Repository, Ticket und Archivierungsstatus.",
             "params": {
               "repository_id": "Nach Repository-ID filtern",
-              "ticket_id": "Nach zugehöriger Ticket-ID filtern",
+              "ticket_slug": "Nach zugehörigem Ticket-Slug filtern",
               "include_archived": "Archivierte Kanäle einschließen (true/false)"
             }
           },
@@ -1173,7 +1173,7 @@
               "name": "Kanalname (2-100 Zeichen)",
               "description": "Kanalbeschreibung",
               "repository_id": "Zu verknüpfendes Repository",
-              "ticket_identifier": "Ticket-Bezeichner zum Verknüpfen (z. B. AM-123)",
+              "ticket_slug": "Ticket-Bezeichner zum Verknüpfen (z. B. AM-123)",
               "document": "Initiales Dokument oder Kontext für den Kanal"
             }
           },

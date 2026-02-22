@@ -31,7 +31,7 @@ interface PodState {
     runnerId: number;
     agentTypeId?: number;
     repositoryId?: number;
-    ticketId?: number;
+    ticketSlug?: string;
     initialPrompt?: string;
     branchName?: string;
   }) => Promise<Pod>;
@@ -99,7 +99,7 @@ export const usePodStore = create<PodState>((set) => ({
         agent_type_id: data.agentTypeId ?? 0,
         runner_id: data.runnerId,
         repository_id: data.repositoryId,
-        ticket_id: data.ticketId,
+        ticket_slug: data.ticketSlug,
         initial_prompt: data.initialPrompt,
         branch_name: data.branchName,
       };

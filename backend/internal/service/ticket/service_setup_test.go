@@ -22,7 +22,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL,
 			number INTEGER NOT NULL,
-			identifier TEXT NOT NULL,
+			slug TEXT NOT NULL,
 			type TEXT NOT NULL DEFAULT 'task',
 			title TEXT NOT NULL,
 			content TEXT,
@@ -67,6 +67,25 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	`).Error
 	if err != nil {
 		t.Fatalf("failed to create ticket_labels table: %v", err)
+	}
+
+	err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			email TEXT NOT NULL,
+			username TEXT NOT NULL,
+			name TEXT,
+			avatar_url TEXT,
+			password_hash TEXT,
+			is_active INTEGER NOT NULL DEFAULT 1,
+			is_system_admin INTEGER NOT NULL DEFAULT 0,
+			is_email_verified INTEGER NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)
+	`).Error
+	if err != nil {
+		t.Fatalf("failed to create users table: %v", err)
 	}
 
 	err = db.Exec(`

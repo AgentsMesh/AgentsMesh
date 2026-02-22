@@ -162,11 +162,11 @@ BEGIN
     -- =========================================================================
     -- 6. 创建示例 Ticket
     -- =========================================================================
-    -- identifier 格式: DEV-{number}
+    -- slug 格式: DEV-{number}
     -- number 是组织内自增的
 
     INSERT INTO tickets (
-        organization_id, number, identifier, title, description,
+        organization_id, number, slug, title, description,
         status, type, priority, reporter_id
     )
     SELECT v_org_id,
@@ -180,11 +180,11 @@ BEGIN
            v_user_id
     WHERE NOT EXISTS (
         SELECT 1 FROM tickets
-        WHERE identifier = 'DEV-1'
+        WHERE slug = 'DEV-1'
     );
 
     INSERT INTO tickets (
-        organization_id, number, identifier, title, description,
+        organization_id, number, slug, title, description,
         status, type, priority, reporter_id
     )
     SELECT v_org_id,
@@ -198,7 +198,7 @@ BEGIN
            v_user_id
     WHERE NOT EXISTS (
         SELECT 1 FROM tickets
-        WHERE identifier = 'DEV-2'
+        WHERE slug = 'DEV-2'
     );
 
     -- =========================================================================

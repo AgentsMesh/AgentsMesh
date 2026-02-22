@@ -58,7 +58,7 @@ func (m *mockFormatClient) GetBoundPods(_ context.Context) ([]string, error) {
 	return []string{"pod-x", "pod-y"}, nil
 }
 
-func (m *mockFormatClient) SearchChannels(_ context.Context, _ string, _, _ *int, _ *bool, _, _ int) ([]tools.Channel, error) {
+func (m *mockFormatClient) SearchChannels(_ context.Context, _ string, _ *int, _ *string, _ *bool, _, _ int) ([]tools.Channel, error) {
 	return []tools.Channel{
 		{ID: 1, Name: "general", MemberCount: 3, Description: "General chat"},
 	}, nil
@@ -71,32 +71,32 @@ func (m *mockFormatClient) GetMessages(_ context.Context, _ int, _, _, _ *string
 	}, nil
 }
 
-func (m *mockFormatClient) SearchTickets(_ context.Context, _ *int, _ *tools.TicketStatus, _ *tools.TicketType, _ *tools.TicketPriority, _, _ *int, _ string, _, _ int) ([]tools.Ticket, error) {
+func (m *mockFormatClient) SearchTickets(_ context.Context, _ *int, _ *tools.TicketStatus, _ *tools.TicketType, _ *tools.TicketPriority, _ *int, _ *string, _ string, _, _ int) ([]tools.Ticket, error) {
 	return []tools.Ticket{
-		{Identifier: "AM-123", Title: "Fix auth bug", Type: tools.TicketTypeBug, Status: tools.TicketStatusInProgress, Priority: tools.TicketPriorityHigh},
+		{Slug: "AM-123", Title: "Fix auth bug", Type: tools.TicketTypeBug, Status: tools.TicketStatusInProgress, Priority: tools.TicketPriorityHigh},
 	}, nil
 }
 
 func (m *mockFormatClient) GetTicket(_ context.Context, _ string) (*tools.Ticket, error) {
 	return &tools.Ticket{
-		Identifier: "AM-123", Title: "Fix auth bug",
+		Slug: "AM-123", Title: "Fix auth bug",
 		Type: tools.TicketTypeBug, Status: tools.TicketStatusInProgress, Priority: tools.TicketPriorityHigh,
 		ReporterName: "john",
 		CreatedAt: "2026-02-19T08:00:00Z", UpdatedAt: "2026-02-20T15:00:00Z",
 	}, nil
 }
 
-func (m *mockFormatClient) CreateTicket(_ context.Context, _ *int64, _ string, _ tools.TicketType, _ tools.TicketPriority, _ *int64) (*tools.Ticket, error) {
+func (m *mockFormatClient) CreateTicket(_ context.Context, _ *int64, _, _ string, _ tools.TicketType, _ tools.TicketPriority, _ *string) (*tools.Ticket, error) {
 	return &tools.Ticket{
-		Identifier: "AM-200", Title: "New ticket",
+		Slug: "AM-200", Title: "New ticket",
 		Type: tools.TicketTypeTask, Status: tools.TicketStatusTodo, Priority: tools.TicketPriorityMedium,
 		CreatedAt: "2026-02-21T10:00:00Z",
 	}, nil
 }
 
-func (m *mockFormatClient) UpdateTicket(_ context.Context, _ string, _ *string, _ *tools.TicketStatus, _ *tools.TicketPriority, _ *tools.TicketType) (*tools.Ticket, error) {
+func (m *mockFormatClient) UpdateTicket(_ context.Context, _ string, _, _ *string, _ *tools.TicketStatus, _ *tools.TicketPriority, _ *tools.TicketType) (*tools.Ticket, error) {
 	return &tools.Ticket{
-		Identifier: "AM-123", Title: "Fix auth bug (updated)",
+		Slug: "AM-123", Title: "Fix auth bug (updated)",
 		Type: tools.TicketTypeBug, Status: tools.TicketStatusDone, Priority: tools.TicketPriorityHigh,
 		CreatedAt: "2026-02-19T08:00:00Z", UpdatedAt: "2026-02-21T10:00:00Z",
 	}, nil
@@ -132,7 +132,7 @@ func (m *mockFormatClient) GetChannel(_ context.Context, _ int) (*tools.Channel,
 	}, nil
 }
 
-func (m *mockFormatClient) CreateChannel(_ context.Context, _, _ string, _, _ *int) (*tools.Channel, error) {
+func (m *mockFormatClient) CreateChannel(_ context.Context, _, _ string, _ *int, _ *string) (*tools.Channel, error) {
 	return &tools.Channel{
 		ID: 2, Name: "new-channel", MemberCount: 1, CreatedAt: "2026-02-21T10:00:00Z",
 	}, nil
@@ -310,18 +310,18 @@ func TestFormatIntegration_SearchTickets(t *testing.T) {
 	server := setupServerWithMockClient(t)
 	text := callTool(t, server, "search_tickets", `{}`)
 
-	assertContains(t, text, "| Identifier |")
+	assertContains(t, text, "| Slug |")
 	assertContains(t, text, "| AM-123 |")
 	assertContains(t, text, "| bug |")
 	assertContains(t, text, "| in_progress |")
-	assertNotContains(t, text, `"identifier"`)
+	assertNotContains(t, text, `"slug"`)
 }
 
 // --- Single entity tools: verify key-value text format (not JSON) ---
 
 func TestFormatIntegration_GetTicket(t *testing.T) {
 	server := setupServerWithMockClient(t)
-	text := callTool(t, server, "get_ticket", `{"ticket_id":"AM-123"}`)
+	text := callTool(t, server, "get_ticket", `{"ticket_slug":"AM-123"}`)
 
 	assertContains(t, text, "Ticket: AM-123 - Fix auth bug")
 	assertContains(t, text, "Type: bug | Status: in_progress | Priority: high")
@@ -341,7 +341,7 @@ func TestFormatIntegration_CreateTicket(t *testing.T) {
 
 func TestFormatIntegration_UpdateTicket(t *testing.T) {
 	server := setupServerWithMockClient(t)
-	text := callTool(t, server, "update_ticket", `{"ticket_id":"AM-123","status":"done"}`)
+	text := callTool(t, server, "update_ticket", `{"ticket_slug":"AM-123","status":"done"}`)
 
 	assertContains(t, text, "Ticket: AM-123 - Fix auth bug (updated)")
 	assertContains(t, text, "Status: done")

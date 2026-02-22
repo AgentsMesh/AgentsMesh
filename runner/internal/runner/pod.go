@@ -28,7 +28,7 @@ type Pod struct {
 	StartedAt        time.Time
 	Status           string              // Pod status - use statusMu for thread-safe access
 	statusMu         sync.RWMutex        // Protects Status field
-	TicketIdentifier string              // Ticket ID for worktree-based pods
+	TicketSlug       string              // Ticket slug for worktree-based pods (e.g., "TBD-123")
 	PTYLogger        *aggregator.PTYLogger // PTY logger for debugging (optional)
 
 	// StateDetector for multi-signal state detection.

@@ -225,14 +225,14 @@ Organization-scoped endpoints require the organization slug in the URL path:
 |--------|----------|-------------|
 | GET | `/organizations/{slug}/tickets` | List tickets |
 | POST | `/organizations/{slug}/tickets` | Create ticket |
-| GET | `/organizations/{slug}/tickets/{identifier}` | Get ticket |
-| PUT | `/organizations/{slug}/tickets/{identifier}` | Update ticket |
-| DELETE | `/organizations/{slug}/tickets/{identifier}` | Delete ticket |
-| POST | `/organizations/{slug}/tickets/{identifier}/assignees` | Add assignee |
-| DELETE | `/organizations/{slug}/tickets/{identifier}/assignees/{user_id}` | Remove assignee |
-| POST | `/organizations/{slug}/tickets/{identifier}/labels` | Add label |
-| DELETE | `/organizations/{slug}/tickets/{identifier}/labels/{label_id}` | Remove label |
-| GET | `/organizations/{slug}/tickets/{identifier}/merge-requests` | List MRs |
+| GET | `/organizations/{slug}/tickets/{slug}` | Get ticket |
+| PUT | `/organizations/{slug}/tickets/{slug}` | Update ticket |
+| DELETE | `/organizations/{slug}/tickets/{slug}` | Delete ticket |
+| POST | `/organizations/{slug}/tickets/{slug}/assignees` | Add assignee |
+| DELETE | `/organizations/{slug}/tickets/{slug}/assignees/{user_id}` | Remove assignee |
+| POST | `/organizations/{slug}/tickets/{slug}/labels` | Add label |
+| DELETE | `/organizations/{slug}/tickets/{slug}/labels/{label_id}` | Remove label |
+| GET | `/organizations/{slug}/tickets/{slug}/merge-requests` | List MRs |
 
 ### Labels
 

@@ -21,7 +21,7 @@ func TestHTTPServerMCPToolsCallCreatePod(t *testing.T) {
 		"params": {
 			"name": "create_pod",
 			"arguments": {
-				"ticket_id": 123,
+				"ticket_slug": "AM-123",
 				"command": "echo hello"
 			}
 		}
@@ -51,7 +51,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithAllParams(t *testing.T) {
 			"arguments": {
 				"agent_type_id": 1,
 				"runner_id": 2,
-				"ticket_id": 123,
+				"ticket_slug": "AM-123",
 				"initial_prompt": "Hello, start working on this task",
 				"model": "claude-opus-4",
 				"repository_id": 456,

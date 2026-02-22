@@ -31,12 +31,12 @@ const BlockViewer = lazy(() =>
 );
 
 export interface TicketDetailPaneProps {
-  identifier: string;
+  slug: string;
   onClose: () => void;
   className?: string;
 }
 
-export function TicketDetailPane({ identifier, onClose, className }: TicketDetailPaneProps) {
+export function TicketDetailPane({ slug, onClose, className }: TicketDetailPaneProps) {
   const t = useTranslations();
   const router = useRouter();
   const { currentOrg } = useAuthStore();
@@ -47,14 +47,14 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
   const [error, setError] = useState<string | null>(null);
 
   // Use shared hook for extra data
-  const { subTickets, relations, commits } = useTicketExtraData(identifier, !!ticket);
+  const { subTickets, relations, commits } = useTicketExtraData(slug, !!ticket);
 
   // Load ticket data
   useEffect(() => {
-    if (!identifier) return;
+    if (!slug) return;
 
     // First try to find ticket from store (for instant display)
-    const cachedTicket = tickets.find(t => t.identifier === identifier);
+    const cachedTicket = tickets.find(t => t.slug === slug);
     if (cachedTicket) {
       setTicket(cachedTicket);
     }
@@ -69,7 +69,7 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
       setLoading(true);
       setError(null);
       try {
-        const data = await ticketApi.get(identifier);
+        const data = await ticketApi.get(slug);
         setTicket(data);
       } catch (err: unknown) {
         console.error("Failed to load ticket:", err);
@@ -80,7 +80,7 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
     };
 
     loadTicket();
-  }, [identifier, tickets]);
+  }, [slug, tickets]);
 
   // Handle status change with optimistic update
   const handleStatusChange = useCallback(
@@ -91,14 +91,14 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
       setTicket({ ...ticket, status: newStatus });
 
       try {
-        await updateTicketStatus(identifier, newStatus);
+        await updateTicketStatus(slug, newStatus);
       } catch (err: unknown) {
         console.error("Failed to update status:", err);
         setTicket({ ...ticket, status: oldStatus });
         throw err;
       }
     },
-    [ticket, identifier, updateTicketStatus]
+    [ticket, slug, updateTicketStatus]
   );
 
   // Handle priority change with optimistic update
@@ -110,14 +110,14 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
       setTicket({ ...ticket, priority: newPriority });
 
       try {
-        await updateTicket(identifier, { priority: newPriority });
+        await updateTicket(slug, { priority: newPriority });
       } catch (err: unknown) {
         console.error("Failed to update priority:", err);
         setTicket({ ...ticket, priority: oldPriority });
         throw err;
       }
     },
-    [ticket, identifier, updateTicket]
+    [ticket, slug, updateTicket]
   );
 
   // Handle title change with optimistic update
@@ -129,14 +129,14 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
       setTicket({ ...ticket, title: newTitle });
 
       try {
-        await updateTicket(identifier, { title: newTitle });
+        await updateTicket(slug, { title: newTitle });
       } catch (err: unknown) {
         console.error("Failed to update title:", err);
         setTicket({ ...ticket, title: oldTitle });
         throw err;
       }
     },
-    [ticket, identifier, updateTicket]
+    [ticket, slug, updateTicket]
   );
 
   // Handle repository change with optimistic update
@@ -149,7 +149,7 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
       setTicket({ ...ticket, repository_id: newRepositoryId ?? undefined, repository: undefined });
 
       try {
-        const updated = await updateTicket(identifier, { repositoryId: newRepositoryId });
+        const updated = await updateTicket(slug, { repositoryId: newRepositoryId });
         setTicket(updated);
       } catch (err: unknown) {
         console.error("Failed to update repository:", err);
@@ -157,7 +157,7 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
         throw err;
       }
     },
-    [ticket, identifier, updateTicket]
+    [ticket, slug, updateTicket]
   );
 
   const formatDate = (dateString: string) => {
@@ -169,8 +169,8 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
   };
 
   // Navigate to sub-ticket or related ticket
-  const handleTicketClick = (ticketIdentifier: string) => {
-    router.push(`/${currentOrg?.slug}/tickets?ticket=${ticketIdentifier}`);
+  const handleTicketClick = (ticketSlug: string) => {
+    router.push(`/${currentOrg?.slug}/tickets?ticket=${ticketSlug}`);
   };
 
   if (loading && !ticket) {
@@ -205,11 +205,11 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
       {/* Header - Clean minimal style */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/50 shrink-0 bg-muted/30">
         <div className="flex items-center gap-2 min-w-0">
-          <code className="text-sm text-muted-foreground font-mono">{ticket.identifier}</code>
+          <code className="text-sm text-muted-foreground font-mono">{ticket.slug}</code>
         </div>
         <div className="flex items-center gap-0.5">
           <Link
-            href={`/${currentOrg?.slug}/tickets/${ticket.identifier}`}
+            href={`/${currentOrg?.slug}/tickets/${ticket.slug}`}
             className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             title={t("tickets.detail.viewFullDetails")}
           >
@@ -280,11 +280,11 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
               <div className="flex items-center -space-x-1">
                 {ticket.assignees.map((assignee) => (
                   <div
-                    key={assignee.id}
+                    key={assignee.user_id}
                     className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs border-2 border-background"
-                    title={assignee.name || assignee.username}
+                    title={assignee.user?.name || assignee.user?.username}
                   >
-                    {(assignee.name || assignee.username)[0].toUpperCase()}
+                    {(assignee.user?.name || assignee.user?.username || "?")[0].toUpperCase()}
                   </div>
                 ))}
               </div>
@@ -334,13 +334,13 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
           {/* Commits (using shared component) */}
           <CommitsList
             commits={commits}
-            viewAllLink={`/${currentOrg?.slug}/tickets/${ticket.identifier}`}
+            viewAllLink={`/${currentOrg?.slug}/tickets/${ticket.slug}`}
             compact
           />
 
           {/* AgentPods */}
           <TicketPodPanel
-            ticketIdentifier={identifier}
+            ticketSlug={slug}
             ticketTitle={ticket.title}
             ticketId={ticket.id}
             repositoryId={ticket.repository_id}
@@ -350,7 +350,7 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
 
       {/* Footer Actions */}
       <div className="shrink-0 px-4 py-2.5 border-t border-border/50 bg-muted/20">
-        <Link href={`/${currentOrg?.slug}/tickets/${ticket.identifier}`}>
+        <Link href={`/${currentOrg?.slug}/tickets/${ticket.slug}`}>
           <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground">
             <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
             {t("tickets.detail.viewFullDetails")}

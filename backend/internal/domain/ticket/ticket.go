@@ -49,7 +49,7 @@ type Ticket struct {
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`
 
 	Number     int    `gorm:"not null" json:"number"`
-	Identifier string `gorm:"size:50;not null;uniqueIndex:idx_tickets_org_identifier" json:"identifier"` // e.g., "AM-123"
+	Slug string `gorm:"size:50;not null;uniqueIndex:idx_tickets_org_slug" json:"slug"` // e.g., "AM-123"
 
 	Type    string  `gorm:"size:50;not null;default:'task'" json:"type"`
 	Title   string  `gorm:"size:500;not null" json:"title"`
@@ -117,10 +117,21 @@ func IsValidEstimate(estimate int) bool {
 	return false
 }
 
+// AssigneeUser is a lightweight projection of the users table for assignee display.
+type AssigneeUser struct {
+	ID        int64   `gorm:"primaryKey" json:"id"`
+	Username  string  `json:"username"`
+	Name      *string `json:"name,omitempty"`
+	AvatarURL *string `json:"avatar_url,omitempty"`
+}
+
+func (AssigneeUser) TableName() string { return "users" }
+
 // Assignee represents a ticket assignee
 type Assignee struct {
-	TicketID int64 `gorm:"primaryKey" json:"ticket_id"`
-	UserID   int64 `gorm:"primaryKey" json:"user_id"`
+	TicketID int64         `gorm:"primaryKey" json:"ticket_id"`
+	UserID   int64         `gorm:"primaryKey" json:"user_id"`
+	User     *AssigneeUser `gorm:"foreignKey:UserID;references:ID" json:"user,omitempty"`
 }
 
 func (Assignee) TableName() string {

@@ -10,8 +10,9 @@ export type PodCreationScenario = "workspace" | "ticket";
  */
 export interface TicketContext {
   id: number;
-  identifier: string;
+  slug: string;
   title: string;
+  description?: string;
   repositoryId?: number;
 }
 

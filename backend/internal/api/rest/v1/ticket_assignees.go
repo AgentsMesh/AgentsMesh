@@ -17,9 +17,9 @@ type AddAssigneeRequest struct {
 }
 
 // AddAssignee adds an assignee to a ticket
-// POST /api/v1/organizations/:slug/tickets/:identifier/assignees
+// POST /api/v1/organizations/:slug/tickets/:ticket_slug/assignees
 func (h *TicketHandler) AddAssignee(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 
 	var req AddAssigneeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -29,7 +29,7 @@ func (h *TicketHandler) AddAssignee(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -44,9 +44,9 @@ func (h *TicketHandler) AddAssignee(c *gin.Context) {
 }
 
 // RemoveAssignee removes an assignee from a ticket
-// DELETE /api/v1/organizations/:slug/tickets/:identifier/assignees/:user_id
+// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug/assignees/:user_id
 func (h *TicketHandler) RemoveAssignee(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	userID, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
 	if err != nil {
 		apierr.InvalidInput(c, "Invalid user ID")
@@ -55,7 +55,7 @@ func (h *TicketHandler) RemoveAssignee(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return

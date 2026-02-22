@@ -27,8 +27,8 @@ function PodNode({ data }: PodNodeProps) {
     {
       pod_key: node.pod_key,
       title: node.title,
-      ticket: node.ticket_identifier
-        ? { identifier: node.ticket_identifier }
+      ticket: node.ticket_slug
+        ? { slug: node.ticket_slug }
         : undefined,
     },
     16
@@ -36,9 +36,8 @@ function PodNode({ data }: PodNodeProps) {
 
   const handleTicketClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const identifier = node.ticket_identifier || (node.ticket_id ? `${node.ticket_id}` : null);
-    if (identifier) {
-      router.push(`/${orgSlug}/tickets/${identifier}`);
+    if (node.ticket_slug) {
+      router.push(`/${orgSlug}/tickets/${node.ticket_slug}`);
     }
   };
 
@@ -90,7 +89,7 @@ function PodNode({ data }: PodNodeProps) {
         )}
 
         {/* Ticket - clickable */}
-        {(node.ticket_identifier || node.ticket_id) && (
+        {node.ticket_slug && (
           <div className="text-xs text-muted-foreground">
             Ticket:{" "}
             <button
@@ -98,7 +97,7 @@ function PodNode({ data }: PodNodeProps) {
               onClick={handleTicketClick}
               className="nodrag nopan font-medium text-primary hover:underline cursor-pointer"
             >
-              {node.ticket_identifier || `#${node.ticket_id}`}
+              {node.ticket_slug}
             </button>
           </div>
         )}

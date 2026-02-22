@@ -174,8 +174,7 @@ func TestChannelMessage_FormatText(t *testing.T) {
 func TestTicket_FormatText(t *testing.T) {
 	t.Run("full ticket", func(t *testing.T) {
 		tk := &Ticket{
-			ID:           1,
-			Identifier:   "AM-123",
+			Slug:         "AM-123",
 			Title:        "Fix authentication bug",
 			Type:         TicketTypeBug,
 			Status:       TicketStatusInProgress,
@@ -189,6 +188,37 @@ func TestTicket_FormatText(t *testing.T) {
 			if !strings.Contains(result, s) {
 				t.Errorf("expected %q in:\n%s", s, result)
 			}
+		}
+	})
+
+	t.Run("with parent ticket", func(t *testing.T) {
+		tk := &Ticket{
+			Slug:             "AM-125",
+			Title:            "Sub-task",
+			Type:             TicketTypeTask,
+			Status:           TicketStatusTodo,
+			Priority:         TicketPriorityMedium,
+			ParentTicketSlug: "AM-100",
+		}
+		result := tk.FormatText()
+		if !strings.Contains(result, "Parent: AM-100") {
+			t.Errorf("expected parent ticket slug in:\n%s", result)
+		}
+	})
+
+	t.Run("long content truncated", func(t *testing.T) {
+		longContent := strings.Repeat("a", 600)
+		tk := &Ticket{
+			Slug:     "AM-124",
+			Title:    "Test",
+			Content:  longContent,
+			Type:     TicketTypeTask,
+			Status:   TicketStatusTodo,
+			Priority: TicketPriorityMedium,
+		}
+		result := tk.FormatText()
+		if !strings.Contains(result, "...") {
+			t.Errorf("expected truncation with '...' in content:\n%s", result)
 		}
 	})
 }
@@ -431,8 +461,8 @@ func TestTicketList_FormatText(t *testing.T) {
 
 	t.Run("with tickets", func(t *testing.T) {
 		tickets := TicketList{
-			{Identifier: "AM-123", Title: "Fix authentication bug", Type: TicketTypeBug, Status: TicketStatusInProgress, Priority: TicketPriorityHigh},
-			{Identifier: "AM-124", Title: "Add dark mode support", Type: TicketTypeFeature, Status: TicketStatusTodo, Priority: TicketPriorityMedium},
+			{Slug: "AM-123", Title: "Fix authentication bug", Type: TicketTypeBug, Status: TicketStatusInProgress, Priority: TicketPriorityHigh},
+			{Slug: "AM-124", Title: "Add dark mode support", Type: TicketTypeFeature, Status: TicketStatusTodo, Priority: TicketPriorityMedium},
 		}
 		result := tickets.FormatText()
 		if !strings.Contains(result, "| AM-123 |") {

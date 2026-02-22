@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface TicketListViewProps {
   tickets: Ticket[];
-  selectedIdentifier: string | null;
+  selectedSlug: string | null;
   onTicketClick: (ticket: Ticket) => void;
   t: (key: string) => string;
 }
@@ -15,7 +15,7 @@ interface TicketListViewProps {
 /**
  * List view table component for tickets
  */
-export function TicketListView({ tickets, selectedIdentifier, onTicketClick, t }: TicketListViewProps) {
+export function TicketListView({ tickets, selectedSlug, onTicketClick, t }: TicketListViewProps) {
   const { prefetchOnHover, cancelPrefetch } = useTicketPrefetch();
 
   return (
@@ -33,7 +33,7 @@ export function TicketListView({ tickets, selectedIdentifier, onTicketClick, t }
         </thead>
         <tbody className="divide-y divide-border">
           {tickets.map((ticket) => {
-            const isSelected = ticket.identifier === selectedIdentifier;
+            const isSelected = ticket.slug === selectedSlug;
             const statusInfo = getStatusDisplayInfo(ticket.status);
             return (
               <tr
@@ -45,7 +45,7 @@ export function TicketListView({ tickets, selectedIdentifier, onTicketClick, t }
                     : "hover:bg-muted/50"
                 )}
                 onClick={() => onTicketClick(ticket)}
-                onMouseEnter={() => prefetchOnHover(ticket.identifier)}
+                onMouseEnter={() => prefetchOnHover(ticket.slug)}
                 onMouseLeave={cancelPrefetch}
               >
                 <td className="px-4 py-2.5">
@@ -55,7 +55,7 @@ export function TicketListView({ tickets, selectedIdentifier, onTicketClick, t }
                       "text-sm font-mono",
                       isSelected ? "text-primary font-medium" : "text-primary"
                     )}>
-                      {ticket.identifier}
+                      {ticket.slug}
                     </code>
                   </div>
                 </td>

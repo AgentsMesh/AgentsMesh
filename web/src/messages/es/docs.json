@@ -318,8 +318,8 @@
           "channelDescriptionDesc": "Optional description of the channel's purpose",
           "projectId": "Project ID",
           "projectIdDesc": "Link to a specific project/repository",
-          "ticketId": "Ticket ID",
-          "ticketIdDesc": "Link to a specific ticket"
+          "ticketSlug": "Slug del Ticket",
+          "ticketSlugDesc": "Vincular a un ticket específico"
         },
         "messageTypes": {
           "title": "Message Types",
@@ -677,10 +677,10 @@
           "paramsHeader": "Parameters",
           "searchChannels": "search_channels",
           "searchChannelsDesc": "Search for channels",
-          "searchChannelsParams": "name?, project_id?, ticket_id?",
+          "searchChannelsParams": "name?, project_id?, ticket_slug?",
           "createChannel": "create_channel",
           "createChannelDesc": "Create a new channel",
-          "createChannelParams": "name, description?, project_id?, ticket_id?",
+          "createChannelParams": "name, description?, project_id?, ticket_slug?",
           "getChannel": "get_channel",
           "getChannelDesc": "Get channel details",
           "getChannelParams": "channel_id",
@@ -722,7 +722,7 @@
           "paramsHeader": "Parameters",
           "createPod": "create_pod",
           "createPodDesc": "Create a new AgentPod",
-          "createPodParams": "agent_type_id (required), runner_id?, ticket_id?, initial_prompt?, model?"
+          "createPodParams": "agent_type_id (required), runner_id?, ticket_slug?, initial_prompt?, model?"
         }
       }
     },
@@ -1010,7 +1010,7 @@
               "initial_prompt": "Prompt o tarea inicial para el agente",
               "repository_id": "Repositorio a asociar con el Pod",
               "branch": "Rama de Git en la que trabajar",
-              "ticket_identifier": "Identificador del ticket a vincular (ej. AM-123)",
+              "ticket_slug": "Identificador del ticket a vincular (ej. AM-123)",
               "channel_id": "Canal a asociar con el Pod",
               "sandbox_type": "Tipo de sandbox: worktree o tempdir",
               "environment_variables": "Pares clave-valor de variables de entorno",
@@ -1073,10 +1073,10 @@
             }
           },
           "getTicket": {
-            "title": "GET /tickets/:identifier",
+            "title": "GET /tickets/:slug",
             "description": "Recuperar información detallada de un ticket específico por su identificador legible.",
             "params": {
-              "identifier": "Identificador del ticket (ej. AM-123)"
+              "slug": "Identificador del ticket (ej. AM-123)"
             }
           },
           "createTicket": {
@@ -1090,14 +1090,14 @@
               "assignee_id": "ID del usuario al que asignar el ticket",
               "repository_id": "Repositorio a asociar",
               "labels": "Array de cadenas de etiquetas",
-              "parent_identifier": "Identificador del ticket padre para sub-tareas"
+              "parent_slug": "Identificador del ticket padre para sub-tareas"
             }
           },
           "updateTicket": {
-            "title": "PUT /tickets/:identifier",
+            "title": "PUT /tickets/:slug",
             "description": "Actualizar un ticket existente. Todos los campos son opcionales — solo se actualizarán los campos proporcionados.",
             "params": {
-              "identifier": "Identificador del ticket (ej. AM-123)"
+              "slug": "Identificador del ticket (ej. AM-123)"
             },
             "fields": {
               "title": "Título del ticket actualizado",
@@ -1106,24 +1106,24 @@
               "status": "Estado actualizado",
               "assignee_id": "ID de usuario asignado actualizado",
               "labels": "Array de cadenas de etiquetas actualizado",
-              "parent_identifier": "Identificador del ticket padre actualizado"
+              "parent_slug": "Identificador del ticket padre actualizado"
             }
           },
           "updateStatus": {
-            "title": "PATCH /tickets/:identifier/status",
+            "title": "PATCH /tickets/:slug/status",
             "description": "Actualizar solo el estado de un ticket. Este es un endpoint simplificado para transiciones de estado.",
             "params": {
-              "identifier": "Identificador del ticket (ej. AM-123)"
+              "slug": "Identificador del ticket (ej. AM-123)"
             },
             "fields": {
               "status": "Nuevo estado: open, in_progress, resolved o closed"
             }
           },
           "deleteTicket": {
-            "title": "DELETE /tickets/:identifier",
+            "title": "DELETE /tickets/:slug",
             "description": "Eliminar permanentemente un ticket. Esta acción no se puede deshacer.",
             "params": {
-              "identifier": "Identificador del ticket (ej. AM-123)"
+              "slug": "Identificador del ticket (ej. AM-123)"
             }
           }
         }
@@ -1147,7 +1147,7 @@
             "description": "Recuperar una lista de canales. Soporta filtrado por repositorio, ticket y estado de archivado.",
             "params": {
               "repository_id": "Filtrar por ID de repositorio",
-              "ticket_id": "Filtrar por ID de ticket asociado",
+              "ticket_slug": "Filtrar por slug de ticket asociado",
               "include_archived": "Incluir canales archivados (true/false)"
             }
           },
@@ -1173,7 +1173,7 @@
               "name": "Nombre del canal (2-100 caracteres)",
               "description": "Descripción del canal",
               "repository_id": "Repositorio a asociar",
-              "ticket_identifier": "Identificador del ticket a vincular (ej. AM-123)",
+              "ticket_slug": "Identificador del ticket a vincular (ej. AM-123)",
               "document": "Documento o contexto inicial para el canal"
             }
           },

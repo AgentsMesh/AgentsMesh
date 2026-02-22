@@ -24,7 +24,7 @@ interface TicketPod {
 }
 
 interface TicketPodPanelProps {
-  ticketIdentifier: string;
+  ticketSlug: string;
   ticketTitle: string;
   ticketId?: number;
   repositoryId?: number;
@@ -32,7 +32,7 @@ interface TicketPodPanelProps {
 }
 
 export default function TicketPodPanel({
-  ticketIdentifier,
+  ticketSlug,
   ticketTitle,
   ticketId,
   repositoryId,
@@ -45,12 +45,12 @@ export default function TicketPodPanel({
 
   const fetchPods = useCallback(async () => {
     try {
-      const response = await ticketApi.getPods(ticketIdentifier);
+      const response = await ticketApi.getPods(ticketSlug);
       setPods(response.pods || []);
     } catch (err: unknown) {
       console.error("Failed to fetch pods:", err);
     }
-  }, [ticketIdentifier]);
+  }, [ticketSlug]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -105,7 +105,7 @@ export default function TicketPodPanel({
           ticketId
             ? {
                 id: ticketId,
-                identifier: ticketIdentifier,
+                slug: ticketSlug,
                 title: ticketTitle,
                 repositoryId: repositoryId,
               }
@@ -142,7 +142,7 @@ export default function TicketPodPanel({
         <div className="space-y-1">
         {/* Active Pods */}
         {activePods.map((pod) => (
-          <PodItem key={pod.pod_key} pod={pod} ticketIdentifier={ticketIdentifier} />
+          <PodItem key={pod.pod_key} pod={pod} ticketSlug={ticketSlug} />
         ))}
 
           {/* Inactive Pods (collapsed by default if there are active ones) */}
@@ -153,7 +153,7 @@ export default function TicketPodPanel({
               </summary>
               <div className="mt-1 space-y-1">
                 {inactivePods.map((pod) => (
-                  <PodItem key={pod.pod_key} pod={pod} ticketIdentifier={ticketIdentifier} />
+                  <PodItem key={pod.pod_key} pod={pod} ticketSlug={ticketSlug} />
                 ))}
               </div>
             </details>
@@ -174,10 +174,10 @@ export default function TicketPodPanel({
 
 interface PodItemProps {
   pod: TicketPod;
-  ticketIdentifier: string;
+  ticketSlug: string;
 }
 
-function PodItem({ pod, ticketIdentifier }: PodItemProps) {
+function PodItem({ pod, ticketSlug }: PodItemProps) {
   const t = useTranslations();
   const router = useRouter();
   const { currentOrg } = useAuthStore();
@@ -186,7 +186,7 @@ function PodItem({ pod, ticketIdentifier }: PodItemProps) {
 
   const handleConnect = () => {
     // Add to workspace and navigate
-    addPane(pod.pod_key, `${ticketIdentifier} Pod`);
+    addPane(pod.pod_key, `${ticketSlug} Pod`);
     router.push(`/${currentOrg?.slug}/workspace`);
   };
 

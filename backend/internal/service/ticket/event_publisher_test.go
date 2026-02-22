@@ -229,7 +229,7 @@ func TestEventBusPublisher_EventDataPayload(t *testing.T) {
 		// Check that it's valid JSON containing expected fields
 		dataStr := string(received.Data)
 		if !containsStr(dataStr, "PRJ-100") {
-			t.Errorf("data should contain identifier 'PRJ-100', got: %s", dataStr)
+			t.Errorf("data should contain slug 'PRJ-100', got: %s", dataStr)
 		}
 		if !containsStr(dataStr, "done") {
 			t.Errorf("data should contain status 'done', got: %s", dataStr)

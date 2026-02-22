@@ -208,7 +208,7 @@ describe("InfoTabContent", () => {
 
     it("should display ticket when available", () => {
       const pod = createMockPod({
-        ticket: { id: 1, identifier: "PROJ-42", title: "Fix login bug" },
+        ticket: { id: 1, slug: "PROJ-42", title: "Fix login bug" },
       });
       render(
         <InfoTabContent
@@ -249,7 +249,7 @@ describe("InfoTabContent", () => {
 
     it("should render ticket as a clickable link", () => {
       const pod = createMockPod({
-        ticket: { id: 1, identifier: "PROJ-42", title: "Fix login bug" },
+        ticket: { id: 1, slug: "PROJ-42", title: "Fix login bug" },
       });
       render(
         <InfoTabContent
@@ -413,7 +413,7 @@ describe("InfoTabContent", () => {
 
   describe("related pods", () => {
     it("should display related pods sharing the same ticket", () => {
-      const ticket = { id: 10, identifier: "PROJ-10", title: "Shared task" };
+      const ticket = { id: 10, slug: "PROJ-10", title: "Shared task" };
       const pod = createMockPod({
         pod_key: "pod-main",
         ticket,
@@ -474,7 +474,7 @@ describe("InfoTabContent", () => {
 
     it("should not display related pods section when no other pods share the ticket", () => {
       const pod = createMockPod({
-        ticket: { id: 10, identifier: "PROJ-10", title: "Solo task" },
+        ticket: { id: 10, slug: "PROJ-10", title: "Solo task" },
       });
       mockPods = [pod];
 
@@ -493,7 +493,7 @@ describe("InfoTabContent", () => {
     });
 
     it("should not include the current pod in related pods list", () => {
-      const ticket = { id: 10, identifier: "PROJ-10", title: "Task" };
+      const ticket = { id: 10, slug: "PROJ-10", title: "Task" };
       const pod = createMockPod({
         pod_key: "pod-current",
         ticket,

@@ -68,6 +68,7 @@ func TestOnListPodsWithTerminalPID(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "list-pid-pod",
 		LaunchCommand: "sleep",
+		LaunchArgs:    []string{"60"},
 	}
 
 	err := handler.OnCreatePod(cmd)
@@ -78,12 +79,12 @@ func TestOnListPodsWithTerminalPID(t *testing.T) {
 	// List pods
 	pods := handler.OnListPods()
 	if len(pods) != 1 {
-		t.Errorf("pods count = %d, want 1", len(pods))
+		t.Fatalf("pods count = %d, want 1", len(pods))
 	}
 
 	// Check PID is set
 	if pods[0].Pid == 0 {
-		t.Log("Pod PID should be non-zero")
+		t.Error("Pod PID should be non-zero")
 	}
 
 	// Clean up

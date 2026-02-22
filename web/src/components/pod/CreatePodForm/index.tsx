@@ -118,7 +118,7 @@ export function CreatePodForm({
 
       // Pass runner as null/undefined when not manually selected (backend auto-selects)
       await form.submit(selectedRunner?.id ?? null, configValues, {
-        ticketId: context?.ticket?.id,
+        ticketSlug: context?.ticket?.slug,
         initialPrompt: form.prompt,
         cols,
         rows,

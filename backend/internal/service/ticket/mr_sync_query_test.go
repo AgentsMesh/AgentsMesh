@@ -19,7 +19,7 @@ func TestGetTicketMRs(t *testing.T) {
 	// Create a ticket
 	tkt := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "TMR-1",
+		Slug:     "TMR-1",
 		Title:          "Test Ticket",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusInProgress,
@@ -104,7 +104,7 @@ func TestFindTicketByBranch(t *testing.T) {
 	// Create a ticket
 	tkt := &ticket.Ticket{
 		OrganizationID: 1,
-		Identifier:     "PRJ-123",
+		Slug:     "PRJ-123",
 		Title:          "Test Ticket",
 		Type:           ticket.TicketTypeTask,
 		Status:         ticket.TicketStatusTodo,
@@ -112,21 +112,21 @@ func TestFindTicketByBranch(t *testing.T) {
 	}
 	db.Create(tkt)
 
-	t.Run("finds ticket by branch with identifier", func(t *testing.T) {
+	t.Run("finds ticket by branch with slug", func(t *testing.T) {
 		result, err := service.FindTicketByBranch(ctx, int64(1), "feature/PRJ-123-new-feature")
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, tkt.ID, result.ID)
 	})
 
-	t.Run("finds ticket by exact identifier branch", func(t *testing.T) {
+	t.Run("finds ticket by exact slug branch", func(t *testing.T) {
 		result, err := service.FindTicketByBranch(ctx, int64(1), "PRJ-123")
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, tkt.ID, result.ID)
 	})
 
-	t.Run("returns nil for branch without identifier", func(t *testing.T) {
+	t.Run("returns nil for branch without slug", func(t *testing.T) {
 		result, err := service.FindTicketByBranch(ctx, int64(1), "feature/some-branch")
 		require.NoError(t, err)
 		assert.Nil(t, result)
@@ -181,7 +181,7 @@ func TestSyncMRByURL(t *testing.T) {
 		// Create ticket with repository
 		tkt := &ticket.Ticket{
 			OrganizationID: 1,
-			Identifier:     "SYNC-1",
+			Slug:     "SYNC-1",
 			Title:          "Test Ticket",
 			Type:           ticket.TicketTypeTask,
 			Status:         ticket.TicketStatusInProgress,
@@ -216,7 +216,7 @@ func TestSyncMRByURL(t *testing.T) {
 		// Create ticket without repository
 		tkt := &ticket.Ticket{
 			OrganizationID: 1,
-			Identifier:     "NOREPO-1",
+			Slug:     "NOREPO-1",
 			Title:          "Test Ticket",
 			Type:           ticket.TicketTypeTask,
 			Status:         ticket.TicketStatusInProgress,

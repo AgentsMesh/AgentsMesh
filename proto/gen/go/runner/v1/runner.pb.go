@@ -1866,7 +1866,7 @@ type SandboxConfig struct {
 	GitToken       string `protobuf:"bytes,4,opt,name=git_token,json=gitToken,proto3" json:"git_token,omitempty"`                   // Git HTTPS 认证令牌（oauth/pat 类型使用）
 	SshPrivateKey  string `protobuf:"bytes,5,opt,name=ssh_private_key,json=sshPrivateKey,proto3" json:"ssh_private_key,omitempty"`  // SSH 私钥内容（ssh_key 类型使用，Runner 写入临时文件）
 	// 工单关联
-	TicketId string `protobuf:"bytes,6,opt,name=ticket_id,json=ticketId,proto3" json:"ticket_id,omitempty"` // 关联工单标识
+	TicketSlug string `protobuf:"bytes,6,opt,name=ticket_slug,json=ticketSlug,proto3" json:"ticket_slug,omitempty"` // 关联工单 Slug
 	// 初始化脚本
 	PreparationScript  string `protobuf:"bytes,7,opt,name=preparation_script,json=preparationScript,proto3" json:"preparation_script,omitempty"`     // 工作区初始化脚本
 	PreparationTimeout int32  `protobuf:"varint,8,opt,name=preparation_timeout,json=preparationTimeout,proto3" json:"preparation_timeout,omitempty"` // 脚本超时秒数（默认 300）
@@ -1941,9 +1941,9 @@ func (x *SandboxConfig) GetSshPrivateKey() string {
 	return ""
 }
 
-func (x *SandboxConfig) GetTicketId() string {
+func (x *SandboxConfig) GetTicketSlug() string {
 	if x != nil {
-		return x.TicketId
+		return x.TicketSlug
 	}
 	return ""
 }
@@ -2906,7 +2906,7 @@ type AutopilotStatus struct {
 	CircuitBreakerState  string `protobuf:"bytes,4,opt,name=circuit_breaker_state,json=circuitBreakerState,proto3" json:"circuit_breaker_state,omitempty"` // closed, half_open, open
 	CircuitBreakerReason string `protobuf:"bytes,5,opt,name=circuit_breaker_reason,json=circuitBreakerReason,proto3" json:"circuit_breaker_reason,omitempty"`
 	// Pod 状态
-	PodStatus string `protobuf:"bytes,6,opt,name=pod_status,json=podStatus,proto3" json:"pod_status,omitempty"` // executing, waiting, exited
+	PodStatus string `protobuf:"bytes,6,opt,name=pod_status,json=podStatus,proto3" json:"pod_status,omitempty"` // executing, waiting, idle
 	// 时间
 	StartedAt       int64 `protobuf:"varint,7,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
 	LastIterationAt int64 `protobuf:"varint,8,opt,name=last_iteration_at,json=lastIterationAt,proto3" json:"last_iteration_at,omitempty"`
@@ -4470,14 +4470,15 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12\x12\n" +
 	"\x04mode\x18\x03 \x01(\x05R\x04mode\x12!\n" +
-	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"\xe5\x02\n" +
+	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"\xe9\x02\n" +
 	"\rSandboxConfig\x12%\n" +
 	"\x0erepository_url\x18\x01 \x01(\tR\rrepositoryUrl\x12#\n" +
 	"\rsource_branch\x18\x02 \x01(\tR\fsourceBranch\x12'\n" +
 	"\x0fcredential_type\x18\x03 \x01(\tR\x0ecredentialType\x12\x1b\n" +
 	"\tgit_token\x18\x04 \x01(\tR\bgitToken\x12&\n" +
-	"\x0fssh_private_key\x18\x05 \x01(\tR\rsshPrivateKey\x12\x1b\n" +
-	"\tticket_id\x18\x06 \x01(\tR\bticketId\x12-\n" +
+	"\x0fssh_private_key\x18\x05 \x01(\tR\rsshPrivateKey\x12\x1f\n" +
+	"\vticket_slug\x18\x06 \x01(\tR\n" +
+	"ticketSlug\x12-\n" +
 	"\x12preparation_script\x18\a \x01(\tR\x11preparationScript\x12/\n" +
 	"\x13preparation_timeout\x18\b \x01(\x05R\x12preparationTimeout\x12\x1d\n" +
 	"\n" +

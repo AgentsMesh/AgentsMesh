@@ -32,9 +32,9 @@ const BlockEditor = lazy(() => import("@/components/ui/block-editor"));
 export interface TicketCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated?: (ticketId: number, identifier: string) => void;
+  onCreated?: (ticketId: number, slug: string) => void;
   defaultRepositoryId?: number;
-  parentTicketId?: number;
+  parentTicketSlug?: string;
 }
 
 const typeOptions: { value: TicketType; label: string }[] = [
@@ -66,7 +66,7 @@ export function TicketCreateDialog({
   onOpenChange,
   onCreated,
   defaultRepositoryId,
-  parentTicketId,
+  parentTicketSlug,
 }: TicketCreateDialogProps) {
   const t = useTranslations();
   const { isMobile } = useBreakpoint();
@@ -115,10 +115,10 @@ export function TicketCreateDialog({
         content: form.content || undefined,
         type: form.type,
         priority: form.priority,
-        parentId: parentTicketId,
+        parentSlug: parentTicketSlug,
       });
 
-      onCreated?.(response.id, response.identifier);
+      onCreated?.(response.id, response.slug);
       handleClose();
     } catch (err: unknown) {
       console.error("Failed to create ticket:", err);
@@ -133,7 +133,7 @@ export function TicketCreateDialog({
     if (error) setError(null);
   };
 
-  const dialogTitle = parentTicketId
+  const dialogTitle = parentTicketSlug
     ? t("tickets.createDialog.createSubTicket")
     : t("tickets.createDialog.title");
 

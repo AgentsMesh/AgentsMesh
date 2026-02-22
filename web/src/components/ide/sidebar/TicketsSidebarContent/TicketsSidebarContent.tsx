@@ -70,15 +70,15 @@ export function TicketsSidebarContent({ className }: TicketsSidebarContentProps)
     }
   }, [fetchTickets]);
 
-  const handleTicketClick = useCallback((identifier: string) => {
-    router.push(`/${currentOrg?.slug}/tickets/${identifier}`);
+  const handleTicketClick = useCallback((slug: string) => {
+    router.push(`/${currentOrg?.slug}/tickets/${slug}`);
   }, [router, currentOrg]);
 
   // Handle ticket created
-  const handleTicketCreated = useCallback((ticketId: number, identifier: string) => {
+  const handleTicketCreated = useCallback((ticketId: number, slug: string) => {
     fetchTickets();
     if (currentOrg?.slug) {
-      router.push(`/${currentOrg.slug}/tickets/${identifier}`);
+      router.push(`/${currentOrg.slug}/tickets/${slug}`);
     }
   }, [fetchTickets, currentOrg, router]);
 

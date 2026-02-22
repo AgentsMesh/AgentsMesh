@@ -105,7 +105,7 @@ describe("TicketCreateDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setDesktop();
-    mockCreate.mockResolvedValue({ id: 1, identifier: "TICKET-1" });
+    mockCreate.mockResolvedValue({ id: 1, slug: "TICKET-1" });
   });
 
   describe("Rendering", () => {
@@ -140,8 +140,8 @@ describe("TicketCreateDialog", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders sub-ticket title when parentTicketId is provided", () => {
-      render(<TicketCreateDialog {...defaultProps} parentTicketId={42} />);
+    it("renders sub-ticket title when parentTicketSlug is provided", () => {
+      render(<TicketCreateDialog {...defaultProps} parentTicketSlug="PROJ-42" />);
 
       expect(screen.getByText("Create Sub-ticket")).toBeInTheDocument();
     });
@@ -223,8 +223,8 @@ describe("TicketCreateDialog", () => {
       });
     });
 
-    it("includes parentId in API call for sub-tickets", async () => {
-      render(<TicketCreateDialog {...defaultProps} parentTicketId={42} />);
+    it("includes parentSlug in API call for sub-tickets", async () => {
+      render(<TicketCreateDialog {...defaultProps} parentTicketSlug="PROJ-42" />);
 
       const titleInput = screen.getByPlaceholderText("Enter ticket title");
       fireEvent.change(titleInput, { target: { value: "Sub-task" } });
@@ -238,7 +238,7 @@ describe("TicketCreateDialog", () => {
         expect(mockCreate).toHaveBeenCalledWith(
           expect.objectContaining({
             title: "Sub-task",
-            parentId: 42,
+            parentSlug: "PROJ-42",
           })
         );
       });

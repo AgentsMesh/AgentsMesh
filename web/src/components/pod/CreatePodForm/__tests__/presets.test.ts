@@ -14,23 +14,83 @@ describe("presets", () => {
       expect(ticketPromptGenerator(context)).toBe("");
     });
 
-    it("should generate prompt with ticket identifier and title", () => {
+    it("should generate prompt with ticket slug and title", () => {
       const context: ScenarioContext = {
         ticket: {
           id: 1,
-          identifier: "PROJ-123",
+          slug: "PROJ-123",
           title: "Fix login bug",
         },
       };
       const result = ticketPromptGenerator(context);
       expect(result).toBe("Work on ticket PROJ-123: Fix login bug");
     });
+
+    it("should include description when provided", () => {
+      const context: ScenarioContext = {
+        ticket: {
+          id: 1,
+          slug: "PROJ-123",
+          title: "Fix login bug",
+          description: "Users cannot login with valid credentials",
+        },
+      };
+      const result = ticketPromptGenerator(context);
+      expect(result).toContain("Work on ticket PROJ-123: Fix login bug");
+      expect(result).toContain("Ticket Description:");
+      expect(result).toContain("Users cannot login with valid credentials");
+    });
+
+    it("should truncate long descriptions to 500 characters", () => {
+      const longDescription = "A".repeat(600);
+      const context: ScenarioContext = {
+        ticket: {
+          id: 1,
+          slug: "PROJ-123",
+          title: "Fix bug",
+          description: longDescription,
+        },
+      };
+      const result = ticketPromptGenerator(context);
+      expect(result).toContain("A".repeat(500) + "...");
+      expect(result).not.toContain("A".repeat(501));
+    });
+
+    it("should not truncate descriptions under 500 characters", () => {
+      const shortDescription = "A".repeat(400);
+      const context: ScenarioContext = {
+        ticket: {
+          id: 1,
+          slug: "PROJ-123",
+          title: "Fix bug",
+          description: shortDescription,
+        },
+      };
+      const result = ticketPromptGenerator(context);
+      expect(result).toContain(shortDescription);
+      expect(result).not.toContain("...");
+    });
+
+    it("should handle exactly 500 character descriptions", () => {
+      const exactDescription = "A".repeat(500);
+      const context: ScenarioContext = {
+        ticket: {
+          id: 1,
+          slug: "PROJ-123",
+          title: "Fix bug",
+          description: exactDescription,
+        },
+      };
+      const result = ticketPromptGenerator(context);
+      expect(result).toContain(exactDescription);
+      expect(result).not.toContain("...");
+    });
   });
 
   describe("workspacePromptGenerator", () => {
     it("should always return empty string", () => {
       expect(workspacePromptGenerator({})).toBe("");
-      expect(workspacePromptGenerator({ ticket: { id: 1, identifier: "X", title: "Y" } })).toBe("");
+      expect(workspacePromptGenerator({ ticket: { id: 1, slug: "X", title: "Y" } })).toBe("");
     });
   });
 
@@ -91,7 +151,7 @@ describe("presets", () => {
       const onCancel = () => {};
       const config: CreatePodFormConfig = {
         scenario: "ticket",
-        context: { ticket: { id: 1, identifier: "X", title: "Y" } },
+        context: { ticket: { id: 1, slug: "X", title: "Y" } },
         promptPlaceholder: "Custom placeholder",
         onSuccess,
         onError,

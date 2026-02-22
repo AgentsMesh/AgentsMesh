@@ -117,12 +117,13 @@ type PodStatusChangedData struct {
 
 // PodCreatedData represents the payload for pod created events
 type PodCreatedData struct {
-	PodKey      string `json:"pod_key"`
-	Status      string `json:"status"`
-	AgentStatus string `json:"agent_status,omitempty"`
-	RunnerID    int64  `json:"runner_id"`
-	TicketID    *int64 `json:"ticket_id,omitempty"`
-	CreatedByID int64  `json:"created_by_id"`
+	PodKey      string  `json:"pod_key"`
+	Status      string  `json:"status"`
+	AgentStatus string  `json:"agent_status,omitempty"`
+	RunnerID    int64   `json:"runner_id"`
+	TicketID    *int64  `json:"ticket_id,omitempty"`
+	TicketSlug  string  `json:"ticket_slug,omitempty"`
+	CreatedByID int64   `json:"created_by_id"`
 }
 
 // RunnerStatusData represents the payload for runner status events
@@ -136,7 +137,7 @@ type RunnerStatusData struct {
 
 // TicketStatusChangedData represents the payload for ticket status change events
 type TicketStatusChangedData struct {
-	Identifier     string `json:"identifier"`
+	Slug           string `json:"slug"`
 	Status         string `json:"status"`
 	PreviousStatus string `json:"previous_status,omitempty"`
 }
@@ -153,6 +154,7 @@ type TaskCompletedData struct {
 	PodKey      string `json:"pod_key"`
 	AgentStatus string `json:"agent_status"`
 	TicketID    *int64 `json:"ticket_id,omitempty"`
+	TicketSlug  string `json:"ticket_slug,omitempty"`
 }
 
 // PodTitleChangedData represents the payload for pod title change events
@@ -268,6 +270,7 @@ type MREventData struct {
 	State          string `json:"state"`
 	Action         string `json:"action,omitempty"` // opened, updated, merged, closed
 	TicketID       *int64 `json:"ticket_id,omitempty"`
+	TicketSlug     string `json:"ticket_slug,omitempty"`
 	PodID          *int64 `json:"pod_id,omitempty"`
 	RepositoryID   int64  `json:"repository_id"`
 	PipelineStatus string `json:"pipeline_status,omitempty"`
@@ -281,6 +284,7 @@ type PipelineEventData struct {
 	PipelineURL    string `json:"pipeline_url,omitempty"`
 	SourceBranch   string `json:"source_branch,omitempty"`
 	TicketID       *int64 `json:"ticket_id,omitempty"`
+	TicketSlug     string `json:"ticket_slug,omitempty"`
 	PodID          *int64 `json:"pod_id,omitempty"`
 	RepositoryID   int64  `json:"repository_id"`
 }

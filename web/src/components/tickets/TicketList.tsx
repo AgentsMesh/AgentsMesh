@@ -3,38 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth";
-
-interface Label {
-  id: number;
-  name: string;
-  color: string;
-}
-
-interface User {
-  id: number;
-  username: string;
-  name?: string;
-  avatarUrl?: string;
-}
-
-interface Ticket {
-  id: number;
-  number: number;
-  identifier: string;
-  type: "task" | "bug" | "feature" | "epic";
-  title: string;
-  status: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "cancelled";
-  priority: "none" | "low" | "medium" | "high" | "urgent";
-  dueDate?: string;
-  createdAt: string;
-  updatedAt: string;
-  assignees?: User[];
-  labels?: Label[];
-  repository?: {
-    id: number;
-    name: string;
-  };
-}
+import { Ticket } from "@/stores/ticket";
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -140,11 +109,11 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                     <div>
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/${currentOrg?.slug}/tickets/${ticket.identifier}`}
+                          href={`/${currentOrg?.slug}/tickets/${ticket.slug}`}
                           className="text-xs text-muted-foreground hover:text-primary font-mono"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {ticket.identifier}
+                          {ticket.slug}
                         </Link>
                         {ticket.labels?.map((label) => (
                           <span
@@ -190,20 +159,20 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                     <div className="flex -space-x-1">
                       {ticket.assignees.slice(0, 3).map((assignee) => (
                         <div
-                          key={assignee.id}
+                          key={assignee.user_id}
                           className="w-6 h-6 rounded-full border-2 border-background overflow-hidden"
-                          title={assignee.name || assignee.username}
+                          title={assignee.user?.name || assignee.user?.username}
                         >
-                          {assignee.avatarUrl ? (
+                          {assignee.user?.avatar_url ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
-                              src={assignee.avatarUrl}
-                              alt={assignee.username}
+                              src={assignee.user.avatar_url}
+                              alt={assignee.user?.username}
                               className="w-full h-full object-cover"
                             />
                           ) : (
                             <div className="w-full h-full bg-muted flex items-center justify-center text-xs">
-                              {(assignee.name || assignee.username)[0].toUpperCase()}
+                              {(assignee.user?.name || assignee.user?.username || "?")[0].toUpperCase()}
                             </div>
                           )}
                         </div>
@@ -221,17 +190,17 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
 
                 {/* Due Date */}
                 <td className="py-3">
-                  {ticket.dueDate ? (
+                  {ticket.due_date ? (
                     <span
                       className={
-                        new Date(ticket.dueDate) < new Date() &&
+                        new Date(ticket.due_date) < new Date() &&
                         ticket.status !== "done" &&
                         ticket.status !== "cancelled"
                           ? "text-red-600 dark:text-red-400"
                           : "text-muted-foreground"
                       }
                     >
-                      {formatDate(ticket.dueDate)}
+                      {formatDate(ticket.due_date)}
                     </span>
                   ) : (
                     <span className="text-muted-foreground">—</span>
@@ -240,7 +209,7 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
 
                 {/* Updated */}
                 <td className="py-3 text-muted-foreground">
-                  {formatDate(ticket.updatedAt)}
+                  {formatDate(ticket.updated_at)}
                 </td>
               </tr>
             );

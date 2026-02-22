@@ -68,7 +68,7 @@ test-web:
   tags:
     - x86
     - docker
-  image: node:20-alpine
+  image: ${REGISTRY}/library/node:20-alpine
   before_script:
     - corepack enable
   script:

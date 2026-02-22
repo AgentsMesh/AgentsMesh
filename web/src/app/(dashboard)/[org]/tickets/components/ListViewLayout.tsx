@@ -13,7 +13,7 @@ const VIRTUALIZATION_THRESHOLD = 50;
 
 interface ListViewLayoutProps {
   tickets: Ticket[];
-  selectedTicketIdentifier: string | null;
+  selectedTicketSlug: string | null;
   hasSelectedTicket: boolean;
   onTicketClick: (ticket: Ticket) => void;
   onClosePanel: () => void;
@@ -25,7 +25,7 @@ interface ListViewLayoutProps {
  */
 export function ListViewLayout({
   tickets,
-  selectedTicketIdentifier,
+  selectedTicketSlug,
   hasSelectedTicket,
   onTicketClick,
   onClosePanel,
@@ -37,14 +37,14 @@ export function ListViewLayout({
   const ListComponent = useVirtualization ? (
     <VirtualizedTicketList
       tickets={tickets}
-      selectedIdentifier={hasSelectedTicket ? selectedTicketIdentifier : null}
+      selectedSlug={hasSelectedTicket ? selectedTicketSlug : null}
       onTicketClick={onTicketClick}
       t={t}
     />
   ) : (
     <TicketListView
       tickets={tickets}
-      selectedIdentifier={hasSelectedTicket ? selectedTicketIdentifier : null}
+      selectedSlug={hasSelectedTicket ? selectedTicketSlug : null}
       onTicketClick={onTicketClick}
       t={t}
     />
@@ -72,9 +72,9 @@ export function ListViewLayout({
       <ResizeHandle direction="horizontal" />
       <Panel defaultSize={40} minSize={25}>
         <AnimatePresence mode="wait">
-          {selectedTicketIdentifier && (
+          {selectedTicketSlug && (
             <motion.div
-              key={selectedTicketIdentifier}
+              key={selectedTicketSlug}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
@@ -82,7 +82,7 @@ export function ListViewLayout({
               className="h-full border-l"
             >
               <TicketDetailPane
-                identifier={selectedTicketIdentifier}
+                slug={selectedTicketSlug}
                 onClose={onClosePanel}
               />
             </motion.div>

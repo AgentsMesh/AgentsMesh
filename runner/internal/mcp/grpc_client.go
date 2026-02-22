@@ -200,7 +200,7 @@ func (c *GRPCCollaborationClient) GetBoundPods(ctx context.Context) ([]string, e
 // ==================== ChannelClient ====================
 
 // SearchChannels searches for collaboration channels.
-func (c *GRPCCollaborationClient) SearchChannels(ctx context.Context, name string, repositoryID, ticketID *int, isArchived *bool, offset, limit int) ([]tools.Channel, error) {
+func (c *GRPCCollaborationClient) SearchChannels(ctx context.Context, name string, repositoryID *int, ticketSlug *string, isArchived *bool, offset, limit int) ([]tools.Channel, error) {
 	params := map[string]interface{}{
 		"offset": offset,
 		"limit":  limit,
@@ -211,8 +211,8 @@ func (c *GRPCCollaborationClient) SearchChannels(ctx context.Context, name strin
 	if repositoryID != nil {
 		params["repository_id"] = *repositoryID
 	}
-	if ticketID != nil {
-		params["ticket_id"] = *ticketID
+	if ticketSlug != nil {
+		params["ticket_slug"] = *ticketSlug
 	}
 	if isArchived != nil {
 		params["is_archived"] = *isArchived
@@ -227,7 +227,7 @@ func (c *GRPCCollaborationClient) SearchChannels(ctx context.Context, name strin
 }
 
 // CreateChannel creates a new collaboration channel.
-func (c *GRPCCollaborationClient) CreateChannel(ctx context.Context, name, description string, repositoryID, ticketID *int) (*tools.Channel, error) {
+func (c *GRPCCollaborationClient) CreateChannel(ctx context.Context, name, description string, repositoryID *int, ticketSlug *string) (*tools.Channel, error) {
 	params := map[string]interface{}{
 		"name":        name,
 		"description": description,
@@ -235,8 +235,8 @@ func (c *GRPCCollaborationClient) CreateChannel(ctx context.Context, name, descr
 	if repositoryID != nil {
 		params["repository_id"] = *repositoryID
 	}
-	if ticketID != nil {
-		params["ticket_id"] = *ticketID
+	if ticketSlug != nil {
+		params["ticket_slug"] = *ticketSlug
 	}
 	var result struct {
 		Channel tools.Channel `json:"channel"`
@@ -333,7 +333,7 @@ func (c *GRPCCollaborationClient) UpdateDocument(ctx context.Context, channelID 
 // ==================== TicketClient ====================
 
 // SearchTickets searches for tickets.
-func (c *GRPCCollaborationClient) SearchTickets(ctx context.Context, repositoryID *int, status *tools.TicketStatus, ticketType *tools.TicketType, priority *tools.TicketPriority, assigneeID, parentID *int, query string, limit, page int) ([]tools.Ticket, error) {
+func (c *GRPCCollaborationClient) SearchTickets(ctx context.Context, repositoryID *int, status *tools.TicketStatus, ticketType *tools.TicketType, priority *tools.TicketPriority, assigneeID *int, parentTicketSlug *string, query string, limit, page int) ([]tools.Ticket, error) {
 	params := map[string]interface{}{
 		"limit": limit,
 		"page":  page,
@@ -353,8 +353,8 @@ func (c *GRPCCollaborationClient) SearchTickets(ctx context.Context, repositoryI
 	if assigneeID != nil {
 		params["assignee_id"] = *assigneeID
 	}
-	if parentID != nil {
-		params["parent_id"] = *parentID
+	if parentTicketSlug != nil {
+		params["parent_ticket_slug"] = *parentTicketSlug
 	}
 	if query != "" {
 		params["query"] = query
@@ -368,10 +368,10 @@ func (c *GRPCCollaborationClient) SearchTickets(ctx context.Context, repositoryI
 	return result.Tickets, nil
 }
 
-// GetTicket gets a ticket by ID or identifier.
-func (c *GRPCCollaborationClient) GetTicket(ctx context.Context, ticketID string) (*tools.Ticket, error) {
+// GetTicket gets a ticket by slug.
+func (c *GRPCCollaborationClient) GetTicket(ctx context.Context, ticketSlug string) (*tools.Ticket, error) {
 	params := map[string]interface{}{
-		"ticket_id": ticketID,
+		"ticket_slug": ticketSlug,
 	}
 	var result struct {
 		Ticket tools.Ticket `json:"ticket"`
@@ -383,17 +383,20 @@ func (c *GRPCCollaborationClient) GetTicket(ctx context.Context, ticketID string
 }
 
 // CreateTicket creates a new ticket.
-func (c *GRPCCollaborationClient) CreateTicket(ctx context.Context, repositoryID *int64, title string, ticketType tools.TicketType, priority tools.TicketPriority, parentTicketID *int64) (*tools.Ticket, error) {
+func (c *GRPCCollaborationClient) CreateTicket(ctx context.Context, repositoryID *int64, title, content string, ticketType tools.TicketType, priority tools.TicketPriority, parentTicketSlug *string) (*tools.Ticket, error) {
 	params := map[string]interface{}{
 		"title":    title,
 		"type":     ticketType,
 		"priority": priority,
 	}
+	if content != "" {
+		params["content"] = content
+	}
 	if repositoryID != nil {
 		params["repository_id"] = *repositoryID
 	}
-	if parentTicketID != nil {
-		params["parent_ticket_id"] = *parentTicketID
+	if parentTicketSlug != nil {
+		params["parent_ticket_slug"] = *parentTicketSlug
 	}
 	var result struct {
 		Ticket tools.Ticket `json:"ticket"`
@@ -405,12 +408,15 @@ func (c *GRPCCollaborationClient) CreateTicket(ctx context.Context, repositoryID
 }
 
 // UpdateTicket updates a ticket.
-func (c *GRPCCollaborationClient) UpdateTicket(ctx context.Context, ticketID string, title *string, status *tools.TicketStatus, priority *tools.TicketPriority, ticketType *tools.TicketType) (*tools.Ticket, error) {
+func (c *GRPCCollaborationClient) UpdateTicket(ctx context.Context, ticketSlug string, title, content *string, status *tools.TicketStatus, priority *tools.TicketPriority, ticketType *tools.TicketType) (*tools.Ticket, error) {
 	params := map[string]interface{}{
-		"ticket_id": ticketID,
+		"ticket_slug": ticketSlug,
 	}
 	if title != nil {
 		params["title"] = *title
+	}
+	if content != nil {
+		params["content"] = *content
 	}
 	if status != nil {
 		params["status"] = *status

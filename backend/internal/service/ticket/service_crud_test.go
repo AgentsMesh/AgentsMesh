@@ -38,8 +38,8 @@ func TestCreateTicket(t *testing.T) {
 	if tkt.Number != 1 {
 		t.Errorf("expected Number 1, got %d", tkt.Number)
 	}
-	if tkt.Identifier != "TICKET-1" {
-		t.Errorf("expected Identifier 'TICKET-1', got %s", tkt.Identifier)
+	if tkt.Slug != "TICKET-1" {
+		t.Errorf("expected Slug 'TICKET-1', got %s", tkt.Slug)
 	}
 }
 
@@ -79,7 +79,7 @@ func TestGetTicketNotFound(t *testing.T) {
 	}
 }
 
-func TestGetTicketByIdentifier(t *testing.T) {
+func TestGetTicketBySlug(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 	ctx := context.Background()
@@ -94,22 +94,22 @@ func TestGetTicketByIdentifier(t *testing.T) {
 	}
 	created, _ := service.CreateTicket(ctx, req)
 
-	// Get by identifier
-	tkt, err := service.GetTicketByIdentifier(ctx, int64(1), created.Identifier)
+	// Get by slug
+	tkt, err := service.GetTicketBySlug(ctx, int64(1), created.Slug)
 	if err != nil {
-		t.Fatalf("failed to get ticket by identifier: %v", err)
+		t.Fatalf("failed to get ticket by slug: %v", err)
 	}
-	if tkt.Identifier != created.Identifier {
-		t.Errorf("expected Identifier %s, got %s", created.Identifier, tkt.Identifier)
+	if tkt.Slug != created.Slug {
+		t.Errorf("expected Slug %s, got %s", created.Slug, tkt.Slug)
 	}
 }
 
-func TestGetTicketByIdentifier_NotFound(t *testing.T) {
+func TestGetTicketBySlug_NotFound(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(db)
 	ctx := context.Background()
 
-	_, err := service.GetTicketByIdentifier(ctx, int64(1), "NONEXISTENT-999")
+	_, err := service.GetTicketBySlug(ctx, int64(1), "NONEXISTENT-999")
 	if err != ErrTicketNotFound {
 		t.Errorf("expected ErrTicketNotFound, got %v", err)
 	}
@@ -204,7 +204,7 @@ func TestCreateTicket_TableDriven(t *testing.T) {
 		name           string
 		setupDB        func(*gorm.DB) // Additional DB setup
 		req            *CreateTicketRequest
-		wantIdentifier string
+		wantSlug string
 		wantStatus     string
 		wantErr        bool
 	}{
@@ -218,7 +218,7 @@ func TestCreateTicket_TableDriven(t *testing.T) {
 				Priority:       "medium",
 				Status:         ticket.TicketStatusTodo,
 			},
-			wantIdentifier: "TICKET-1",
+			wantSlug: "TICKET-1",
 			wantStatus:     ticket.TicketStatusTodo,
 		},
 		{
@@ -235,7 +235,7 @@ func TestCreateTicket_TableDriven(t *testing.T) {
 				Priority:       "medium",
 				RepositoryID:   func() *int64 { v := int64(1); return &v }(),
 			},
-			wantIdentifier: "PROJ-1",
+			wantSlug: "PROJ-1",
 			wantStatus:     ticket.TicketStatusBacklog,
 		},
 		{
@@ -251,7 +251,7 @@ func TestCreateTicket_TableDriven(t *testing.T) {
 				Priority:       "medium",
 				Labels:         []string{"bug"},
 			},
-			wantIdentifier: "TICKET-1",
+			wantSlug: "TICKET-1",
 			wantStatus:     ticket.TicketStatusBacklog,
 		},
 	}
@@ -274,8 +274,8 @@ func TestCreateTicket_TableDriven(t *testing.T) {
 				return
 			}
 
-			if tkt.Identifier != tt.wantIdentifier {
-				t.Errorf("Identifier = %s, want %s", tkt.Identifier, tt.wantIdentifier)
+			if tkt.Slug != tt.wantSlug {
+				t.Errorf("Slug = %s, want %s", tkt.Slug, tt.wantSlug)
 			}
 			if tkt.Status != tt.wantStatus {
 				t.Errorf("Status = %s, want %s", tkt.Status, tt.wantStatus)

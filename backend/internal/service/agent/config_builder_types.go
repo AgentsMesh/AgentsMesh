@@ -41,7 +41,7 @@ type ConfigBuildRequest struct {
 	SSHPrivateKey  string // For ssh_key type (private key content)
 
 	// Ticket association
-	TicketID string
+	TicketSlug string
 
 	// Preparation script (from Repository)
 	PreparationScript  string

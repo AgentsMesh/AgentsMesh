@@ -31,7 +31,7 @@ type PreparationStep interface {
 // PreparationContext contains all the context needed for workspace preparation.
 type PreparationContext struct {
 	PodID            string            // Pod identifier
-	TicketIdentifier string            // Ticket identifier (e.g., "TBD-123")
+	TicketSlug       string            // Ticket slug (e.g., "TBD-123")
 	BranchName       string            // Git branch name
 	WorkspaceDir     string            // Workspace directory path
 	MainRepoDir      string            // Path to the main git repository (for bare repo operations)
@@ -53,8 +53,8 @@ func (c *PreparationContext) GetEnvVars() map[string]string {
 	if c.MainRepoDir != "" {
 		result["MAIN_REPO_DIR"] = c.MainRepoDir
 	}
-	if c.TicketIdentifier != "" {
-		result["TICKET_IDENTIFIER"] = c.TicketIdentifier
+	if c.TicketSlug != "" {
+		result["TICKET_SLUG"] = c.TicketSlug
 	}
 	if c.BranchName != "" {
 		result["BRANCH_NAME"] = c.BranchName
@@ -67,7 +67,7 @@ func (c *PreparationContext) GetEnvVars() map[string]string {
 func (c *PreparationContext) String() string {
 	return fmt.Sprintf(
 		"PreparationContext{PodID: %s, Ticket: %s, WorkspaceDir: %s}",
-		c.PodID, c.TicketIdentifier, c.WorkspaceDir,
+		c.PodID, c.TicketSlug, c.WorkspaceDir,
 	)
 }
 

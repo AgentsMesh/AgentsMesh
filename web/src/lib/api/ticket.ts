@@ -8,7 +8,7 @@ export type TicketPriority = "none" | "low" | "medium" | "high" | "urgent";
 export interface TicketData {
   id: number;
   number: number;
-  identifier: string;
+  slug: string;
   type: TicketType;
   title: string;
   content?: string;
@@ -22,11 +22,15 @@ export interface TicketData {
   created_at: string;
   updated_at: string;
   reporter?: { id: number; username: string; name?: string; avatar_url?: string };
-  assignees?: Array<{ id: number; username: string; name?: string; avatar_url?: string }>;
+  assignees?: Array<{
+    ticket_id: number;
+    user_id: number;
+    user?: { id: number; username: string; name?: string; avatar_url?: string };
+  }>;
   labels?: Array<{ id: number; name: string; color: string }>;
   repository_id?: number;
   repository?: { id: number; name: string };
-  parent_ticket?: { id: number; identifier: string; title: string };
+  parent_ticket?: { id: number; slug: string; title: string };
 }
 
 export interface TicketRelation {
@@ -34,8 +38,8 @@ export interface TicketRelation {
   source_ticket_id: number;
   target_ticket_id: number;
   relation_type: string;
-  source_ticket?: { id: number; identifier: string; title: string };
-  target_ticket?: { id: number; identifier: string; title: string };
+  source_ticket?: { id: number; slug: string; title: string };
+  target_ticket?: { id: number; slug: string; title: string };
   created_at: string;
 }
 
@@ -71,9 +75,14 @@ export const ticketApi = {
   }) => {
     const params = new URLSearchParams();
     if (filters) {
+      const keyMap: Record<string, string> = {
+        assigneeId: "assignee_id",
+        repositoryId: "repository_id",
+        search: "query",
+      };
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          params.append(key, String(value));
+          params.append(keyMap[key] || key, String(value));
         }
       });
     }
@@ -81,8 +90,8 @@ export const ticketApi = {
     return request<{ tickets: TicketData[]; total: number }>(`${orgPath("/tickets")}${query}`);
   },
 
-  get: async (identifier: string) => {
-    const response = await request<{ ticket: TicketData }>(`${orgPath("/tickets")}/${identifier}`);
+  get: async (slug: string) => {
+    const response = await request<{ ticket: TicketData }>(`${orgPath("/tickets")}/${slug}`);
     return response.ticket;
   },
 
@@ -96,7 +105,7 @@ export const ticketApi = {
     estimate?: number;
     assigneeIds?: number[];
     labels?: string[];
-    parentId?: number;
+    parentSlug?: string;
   }) => {
     const response = await request<{ ticket: TicketData }>(orgPath("/tickets"), {
       method: "POST",
@@ -110,13 +119,13 @@ export const ticketApi = {
         estimate: data.estimate,
         assignee_ids: data.assigneeIds,
         labels: data.labels,
-        parent_ticket_id: data.parentId,
+        parent_ticket_slug: data.parentSlug,
       },
     });
     return response.ticket;
   },
 
-  update: async (identifier: string, data: {
+  update: async (slug: string, data: {
     title?: string;
     content?: string;
     type?: string;
@@ -127,27 +136,38 @@ export const ticketApi = {
     repositoryId?: number | null;
     assigneeIds?: number[];
     labels?: string[];
+    dueDate?: string;
   }) => {
-    const body: Record<string, unknown> = { ...data };
-    // Handle repositoryId: convert null → 0 (clear) for backend, number → as-is
+    const body: Record<string, unknown> = {
+      title: data.title,
+      content: data.content,
+      type: data.type,
+      status: data.status,
+      priority: data.priority,
+      severity: data.severity,
+      estimate: data.estimate,
+      assignee_ids: data.assigneeIds,
+      labels: data.labels,
+      due_date: data.dueDate,
+    };
+    // Handle repositoryId: convert null -> 0 (clear) for backend, number -> as-is
     if ("repositoryId" in data) {
-      delete body.repositoryId;
       body.repository_id = data.repositoryId === null ? 0 : data.repositoryId;
     }
-    const response = await request<{ ticket: TicketData }>(`${orgPath("/tickets")}/${identifier}`, {
+    const response = await request<{ ticket: TicketData }>(`${orgPath("/tickets")}/${slug}`, {
       method: "PUT",
       body,
     });
     return response.ticket;
   },
 
-  delete: (identifier: string) =>
-    request<{ message: string }>(`${orgPath("/tickets")}/${identifier}`, {
+  delete: (slug: string) =>
+    request<{ message: string }>(`${orgPath("/tickets")}/${slug}`, {
       method: "DELETE",
     }),
 
-  updateStatus: (identifier: string, status: string) =>
-    request<TicketData>(`${orgPath("/tickets")}/${identifier}/status`, {
+  updateStatus: (slug: string, status: string) =>
+    request<{ message: string }>(`${orgPath("/tickets")}/${slug}/status`, {
       method: "PATCH",
       body: { status },
     }),
@@ -161,33 +181,33 @@ export const ticketApi = {
   // Board view
   getBoard: (repositoryId?: number) => {
     const params = repositoryId ? `?repository_id=${repositoryId}` : "";
-    return request<{ columns: BoardColumn[] }>(`${orgPath("/tickets/board")}${params}`);
+    return request<{ board: { columns: BoardColumn[] } }>(`${orgPath("/tickets/board")}${params}`);
   },
 
   // Sub-tickets
-  getSubTickets: (identifier: string) =>
-    request<{ tickets: TicketData[] }>(`${orgPath("/tickets")}/${identifier}/sub-tickets`),
+  getSubTickets: (slug: string) =>
+    request<{ sub_tickets: TicketData[] }>(`${orgPath("/tickets")}/${slug}/sub-tickets`),
 
   // Relations
-  listRelations: (identifier: string) =>
-    request<{ relations: TicketRelation[] }>(`${orgPath("/tickets")}/${identifier}/relations`),
+  listRelations: (slug: string) =>
+    request<{ relations: TicketRelation[] }>(`${orgPath("/tickets")}/${slug}/relations`),
 
-  createRelation: (identifier: string, data: { target_ticket_id: number; relation_type: string }) =>
-    request<{ relation: TicketRelation }>(`${orgPath("/tickets")}/${identifier}/relations`, {
+  createRelation: (slug: string, data: { target_slug: string; relation_type: string }) =>
+    request<{ relation: TicketRelation }>(`${orgPath("/tickets")}/${slug}/relations`, {
       method: "POST",
       body: data,
     }),
 
-  deleteRelation: (identifier: string, relationId: number) =>
-    request<{ message: string }>(`${orgPath("/tickets")}/${identifier}/relations/${relationId}`, {
+  deleteRelation: (slug: string, relationId: number) =>
+    request<{ message: string }>(`${orgPath("/tickets")}/${slug}/relations/${relationId}`, {
       method: "DELETE",
     }),
 
   // Commits
-  listCommits: (identifier: string) =>
-    request<{ commits: TicketCommit[] }>(`${orgPath("/tickets")}/${identifier}/commits`),
+  listCommits: (slug: string) =>
+    request<{ commits: TicketCommit[] }>(`${orgPath("/tickets")}/${slug}/commits`),
 
-  linkCommit: (identifier: string, data: {
+  linkCommit: (slug: string, data: {
     commit_sha: string;
     commit_message?: string;
     commit_url?: string;
@@ -195,18 +215,18 @@ export const ticketApi = {
     author_email?: string;
     committed_at?: string;
   }) =>
-    request<{ commit: TicketCommit }>(`${orgPath("/tickets")}/${identifier}/commits`, {
+    request<{ commit: TicketCommit }>(`${orgPath("/tickets")}/${slug}/commits`, {
       method: "POST",
       body: data,
     }),
 
-  unlinkCommit: (identifier: string, commitId: number) =>
-    request<{ message: string }>(`${orgPath("/tickets")}/${identifier}/commits/${commitId}`, {
+  unlinkCommit: (slug: string, commitId: number) =>
+    request<{ message: string }>(`${orgPath("/tickets")}/${slug}/commits/${commitId}`, {
       method: "DELETE",
     }),
 
   // Merge Requests
-  listMergeRequests: (identifier: string) =>
+  listMergeRequests: (slug: string) =>
     request<{
       merge_requests: Array<{
         id: number;
@@ -224,7 +244,7 @@ export const ticketApi = {
         // Pod association
         pod_id?: number;
       }>;
-    }>(`${orgPath("/tickets")}/${identifier}/merge-requests`),
+    }>(`${orgPath("/tickets")}/${slug}/merge-requests`),
 
   // Labels
   listLabels: (repositoryId?: number) => {
@@ -252,31 +272,31 @@ export const ticketApi = {
     }),
 
   // Assignees
-  addAssignee: (identifier: string, userId: number) =>
-    request<{ message: string }>(`${orgPath("/tickets")}/${identifier}/assignees`, {
+  addAssignee: (slug: string, userId: number) =>
+    request<{ message: string }>(`${orgPath("/tickets")}/${slug}/assignees`, {
       method: "POST",
       body: { user_id: userId },
     }),
 
-  removeAssignee: (identifier: string, userId: number) =>
-    request<{ message: string }>(`${orgPath("/tickets")}/${identifier}/assignees/${userId}`, {
+  removeAssignee: (slug: string, userId: number) =>
+    request<{ message: string }>(`${orgPath("/tickets")}/${slug}/assignees/${userId}`, {
       method: "DELETE",
     }),
 
   // Ticket labels
-  addLabel: (identifier: string, labelId: number) =>
-    request<{ message: string }>(`${orgPath("/tickets")}/${identifier}/labels`, {
+  addLabel: (slug: string, labelId: number) =>
+    request<{ message: string }>(`${orgPath("/tickets")}/${slug}/labels`, {
       method: "POST",
       body: { label_id: labelId },
     }),
 
-  removeLabel: (identifier: string, labelId: number) =>
-    request<{ message: string }>(`${orgPath("/tickets")}/${identifier}/labels/${labelId}`, {
+  removeLabel: (slug: string, labelId: number) =>
+    request<{ message: string }>(`${orgPath("/tickets")}/${slug}/labels/${labelId}`, {
       method: "DELETE",
     }),
 
   // Pods (Mesh integration)
-  getPods: (identifier: string, activeOnly?: boolean) => {
+  getPods: (slug: string, activeOnly?: boolean) => {
     const params = activeOnly ? "?active=true" : "";
     return request<{
       pods: Array<{
@@ -288,10 +308,10 @@ export const ticketApi = {
         runner_id: number;
         created_by_id: number;
       }>;
-    }>(`${orgPath("/tickets")}/${identifier}/pods${params}`);
+    }>(`${orgPath("/tickets")}/${slug}/pods${params}`);
   },
 
-  createPod: (identifier: string, data: {
+  createPod: (slug: string, data: {
     runner_id: number;
     initial_prompt?: string;
     model?: string;
@@ -303,7 +323,7 @@ export const ticketApi = {
         pod_key: string;
         status: string;
       };
-    }>(`${orgPath("/tickets")}/${identifier}/pods`, {
+    }>(`${orgPath("/tickets")}/${slug}/pods`, {
       method: "POST",
       body: data,
     }),

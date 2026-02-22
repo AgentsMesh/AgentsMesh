@@ -20,10 +20,10 @@ const BlockViewer = lazy(() =>
 );
 
 interface TicketDetailProps {
-  identifier: string;
+  slug: string;
 }
 
-export function TicketDetail({ identifier }: TicketDetailProps) {
+export function TicketDetail({ slug }: TicketDetailProps) {
   const router = useRouter();
   const t = useTranslations();
   const { currentOrg } = useAuthStore();
@@ -37,12 +37,12 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   const { dialogProps, confirm } = useConfirmDialog();
 
   // Use shared hook for extra data
-  const { subTickets, relations, commits } = useTicketExtraData(identifier, !!currentTicket);
+  const { subTickets, relations, commits } = useTicketExtraData(slug, !!currentTicket);
 
   // Fetch ticket data
   useEffect(() => {
-    fetchTicket(identifier);
-  }, [identifier, fetchTicket]);
+    fetchTicket(slug);
+  }, [slug, fetchTicket]);
 
   // Start editing - initialize edit fields from current ticket data
   const startEditing = () => {
@@ -56,7 +56,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   // Handle status change
   const handleStatusChange = async (newStatus: TicketStatus) => {
     try {
-      await updateTicketStatus(identifier, newStatus);
+      await updateTicketStatus(slug, newStatus);
     } catch (err) {
       console.error("Failed to update status:", err);
     }
@@ -65,7 +65,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   // Handle repository change
   const handleRepositoryChange = async (repositoryId: number | null) => {
     try {
-      await updateTicket(identifier, { repositoryId });
+      await updateTicket(slug, { repositoryId });
     } catch (err) {
       console.error("Failed to update repository:", err);
     }
@@ -74,7 +74,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   // Handle save edit
   const handleSaveEdit = async () => {
     try {
-      await updateTicket(identifier, {
+      await updateTicket(slug, {
         title: editTitle,
         content: editContent,
       });
@@ -88,14 +88,14 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   const handleDelete = useCallback(async () => {
     const confirmed = await confirm({
       title: t("tickets.detail.deleteTicket"),
-      description: t("tickets.detail.deleteConfirmation", { identifier }),
+      description: t("tickets.detail.deleteConfirmation", { slug }),
       variant: "destructive",
       confirmText: t("common.delete"),
       cancelText: t("common.cancel"),
     });
     if (confirmed) {
       try {
-        await deleteTicket(identifier);
+        await deleteTicket(slug);
         // Navigate to clean tickets list instead of router.back(),
         // which may return to a page that tries to reload the deleted ticket
         router.push(`/${currentOrg?.slug}/tickets`);
@@ -103,11 +103,11 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
         console.error("Failed to delete ticket:", err);
       }
     }
-  }, [confirm, deleteTicket, identifier, router, currentOrg, t]);
+  }, [confirm, deleteTicket, slug, router, currentOrg, t]);
 
   // Handle ticket click for sub-tickets and relations
-  const handleTicketClick = (ticketIdentifier: string) => {
-    router.push(`/${currentOrg?.slug}/tickets/${ticketIdentifier}`);
+  const handleTicketClick = (ticketSlug: string) => {
+    router.push(`/${currentOrg?.slug}/tickets/${ticketSlug}`);
   };
 
   if (loading && !currentTicket) {
@@ -118,7 +118,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
     return (
       <div className="text-center py-12">
         <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
-        <Button onClick={() => fetchTicket(identifier)}>{t("tickets.detail.retry")}</Button>
+        <Button onClick={() => fetchTicket(slug)}>{t("tickets.detail.retry")}</Button>
       </div>
     );
   }
@@ -142,7 +142,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
           <div className="flex items-center gap-2 mb-2">
             <TypeIcon type={currentTicket.type} size="md" />
             <span className="text-muted-foreground font-mono text-sm">
-              {currentTicket.identifier}
+              {currentTicket.slug}
             </span>
             <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}>
               <StatusIcon status={currentTicket.status} size="xs" />
@@ -194,7 +194,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
 
         {/* AgentPods */}
         <TicketPodPanel
-          ticketIdentifier={identifier}
+          ticketSlug={slug}
           ticketTitle={currentTicket.title}
           ticketId={currentTicket.id}
           repositoryId={currentTicket.repository_id}

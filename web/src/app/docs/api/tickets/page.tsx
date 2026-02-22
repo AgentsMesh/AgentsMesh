@@ -79,7 +79,7 @@ export default function ApiTicketsPage() {
                   </code>
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  /tickets/:identifier
+                  /tickets/:slug
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
                   tickets:read
@@ -111,7 +111,7 @@ export default function ApiTicketsPage() {
                   </code>
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  /tickets/:identifier
+                  /tickets/:slug
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
                   tickets:write
@@ -127,7 +127,7 @@ export default function ApiTicketsPage() {
                   </code>
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  /tickets/:identifier/status
+                  /tickets/:slug/status
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
                   tickets:write
@@ -143,7 +143,7 @@ export default function ApiTicketsPage() {
                   </code>
                 </td>
                 <td className="p-3 font-mono text-xs">
-                  /tickets/:identifier
+                  /tickets/:slug
                 </td>
                 <td className="p-3 font-mono text-xs">tickets:write</td>
                 <td className="p-3">
@@ -367,7 +367,7 @@ export default function ApiTicketsPage() {
   "tickets": [
     {
       "id": 1,
-      "identifier": "AM-42",
+      "slug": "AM-42",
       "type": "feature",
       "title": "Implement user authentication",
       "status": "in_progress",
@@ -456,7 +456,7 @@ export default function ApiTicketsPage() {
         "tickets": [
           {
             "id": 2,
-            "identifier": "AM-43",
+            "slug": "AM-43",
             "title": "Fix CSS layout issue",
             "type": "bug",
             "priority": "medium",
@@ -475,14 +475,14 @@ export default function ApiTicketsPage() {
             </div>
           </div>
 
-          {/* GET /tickets/:identifier */}
+          {/* GET /tickets/:slug */}
           <div className="border border-border rounded-lg p-6 space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-2">
                 <code className="bg-muted px-2 py-1 rounded text-blue-600 dark:text-blue-400">
                   GET
                 </code>{" "}
-                <code className="text-sm">/tickets/:identifier</code>
+                <code className="text-sm">/tickets/:slug</code>
               </h3>
               <p className="text-muted-foreground text-sm">
                 {t("docs.api.tickets.details.getTicket.description")}
@@ -513,7 +513,7 @@ export default function ApiTicketsPage() {
                   </thead>
                   <tbody className="text-muted-foreground">
                     <tr>
-                      <td className="p-3 font-mono text-xs">identifier</td>
+                      <td className="p-3 font-mono text-xs">slug</td>
                       <td className="p-3">string</td>
                       <td className="p-3">
                         <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded">
@@ -522,7 +522,7 @@ export default function ApiTicketsPage() {
                       </td>
                       <td className="p-3">
                         {t(
-                          "docs.api.tickets.details.getTicket.params.identifier"
+                          "docs.api.tickets.details.getTicket.params.slug"
                         )}
                       </td>
                     </tr>
@@ -539,7 +539,7 @@ export default function ApiTicketsPage() {
                 <pre className="text-green-500 dark:text-green-400">{`{
   "ticket": {
     "id": 1,
-    "identifier": "AM-42",
+    "slug": "AM-42",
     "type": "feature",
     "title": "Implement user authentication",
     "status": "in_progress",
@@ -547,7 +547,7 @@ export default function ApiTicketsPage() {
     "assignee_id": 10,
     "repository_id": 1,
     "labels": ["backend", "auth"],
-    "parent_identifier": null,
+    "parent_slug": null,
     "created_at": "2025-01-10T08:00:00Z",
     "updated_at": "2025-01-15T14:20:00Z"
   }
@@ -707,7 +707,7 @@ export default function ApiTicketsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 font-mono text-xs">
-                        parent_identifier
+                        parent_slug
                       </td>
                       <td className="p-3">string</td>
                       <td className="p-3">
@@ -717,7 +717,7 @@ export default function ApiTicketsPage() {
                       </td>
                       <td className="p-3">
                         {t(
-                          "docs.api.tickets.details.createTicket.fields.parent_identifier"
+                          "docs.api.tickets.details.createTicket.fields.parent_slug"
                         )}
                       </td>
                     </tr>
@@ -734,7 +734,7 @@ export default function ApiTicketsPage() {
                 <pre className="text-green-500 dark:text-green-400">{`{
   "ticket": {
     "id": 1,
-    "identifier": "AM-42",
+    "slug": "AM-42",
     "type": "feature",
     "title": "Implement user authentication",
     "status": "in_progress",
@@ -742,7 +742,7 @@ export default function ApiTicketsPage() {
     "assignee_id": 10,
     "repository_id": 1,
     "labels": ["backend", "auth"],
-    "parent_identifier": null,
+    "parent_slug": null,
     "created_at": "2025-01-10T08:00:00Z",
     "updated_at": "2025-01-15T14:20:00Z"
   }
@@ -751,14 +751,14 @@ export default function ApiTicketsPage() {
             </div>
           </div>
 
-          {/* PUT /tickets/:identifier */}
+          {/* PUT /tickets/:slug */}
           <div className="border border-border rounded-lg p-6 space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-2">
                 <code className="bg-muted px-2 py-1 rounded text-orange-600 dark:text-orange-400">
                   PUT
                 </code>{" "}
-                <code className="text-sm">/tickets/:identifier</code>
+                <code className="text-sm">/tickets/:slug</code>
               </h3>
               <p className="text-muted-foreground text-sm">
                 {t("docs.api.tickets.details.updateTicket.description")}
@@ -789,7 +789,7 @@ export default function ApiTicketsPage() {
                   </thead>
                   <tbody className="text-muted-foreground">
                     <tr>
-                      <td className="p-3 font-mono text-xs">identifier</td>
+                      <td className="p-3 font-mono text-xs">slug</td>
                       <td className="p-3">string</td>
                       <td className="p-3">
                         <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded">
@@ -798,7 +798,7 @@ export default function ApiTicketsPage() {
                       </td>
                       <td className="p-3">
                         {t(
-                          "docs.api.tickets.details.updateTicket.params.identifier"
+                          "docs.api.tickets.details.updateTicket.params.slug"
                         )}
                       </td>
                     </tr>
@@ -928,7 +928,7 @@ export default function ApiTicketsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 font-mono text-xs">
-                        parent_identifier
+                        parent_slug
                       </td>
                       <td className="p-3">string</td>
                       <td className="p-3">
@@ -938,7 +938,7 @@ export default function ApiTicketsPage() {
                       </td>
                       <td className="p-3">
                         {t(
-                          "docs.api.tickets.details.updateTicket.fields.parent_identifier"
+                          "docs.api.tickets.details.updateTicket.fields.parent_slug"
                         )}
                       </td>
                     </tr>
@@ -955,7 +955,7 @@ export default function ApiTicketsPage() {
                 <pre className="text-green-500 dark:text-green-400">{`{
   "ticket": {
     "id": 1,
-    "identifier": "AM-42",
+    "slug": "AM-42",
     "type": "feature",
     "title": "Implement user authentication",
     "status": "in_progress",
@@ -963,7 +963,7 @@ export default function ApiTicketsPage() {
     "assignee_id": 10,
     "repository_id": 1,
     "labels": ["backend", "auth"],
-    "parent_identifier": null,
+    "parent_slug": null,
     "created_at": "2025-01-10T08:00:00Z",
     "updated_at": "2025-01-15T14:20:00Z"
   }
@@ -972,14 +972,14 @@ export default function ApiTicketsPage() {
             </div>
           </div>
 
-          {/* PATCH /tickets/:identifier/status */}
+          {/* PATCH /tickets/:slug/status */}
           <div className="border border-border rounded-lg p-6 space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-2">
                 <code className="bg-muted px-2 py-1 rounded text-orange-600 dark:text-orange-400">
                   PATCH
                 </code>{" "}
-                <code className="text-sm">/tickets/:identifier/status</code>
+                <code className="text-sm">/tickets/:slug/status</code>
               </h3>
               <p className="text-muted-foreground text-sm">
                 {t("docs.api.tickets.details.updateStatus.description")}
@@ -1010,7 +1010,7 @@ export default function ApiTicketsPage() {
                   </thead>
                   <tbody className="text-muted-foreground">
                     <tr>
-                      <td className="p-3 font-mono text-xs">identifier</td>
+                      <td className="p-3 font-mono text-xs">slug</td>
                       <td className="p-3">string</td>
                       <td className="p-3">
                         <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded">
@@ -1019,7 +1019,7 @@ export default function ApiTicketsPage() {
                       </td>
                       <td className="p-3">
                         {t(
-                          "docs.api.tickets.details.updateStatus.params.identifier"
+                          "docs.api.tickets.details.updateStatus.params.slug"
                         )}
                       </td>
                     </tr>
@@ -1082,14 +1082,14 @@ export default function ApiTicketsPage() {
             </div>
           </div>
 
-          {/* DELETE /tickets/:identifier */}
+          {/* DELETE /tickets/:slug */}
           <div className="border border-border rounded-lg p-6 space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-2">
                 <code className="bg-muted px-2 py-1 rounded text-red-600 dark:text-red-400">
                   DELETE
                 </code>{" "}
-                <code className="text-sm">/tickets/:identifier</code>
+                <code className="text-sm">/tickets/:slug</code>
               </h3>
               <p className="text-muted-foreground text-sm">
                 {t("docs.api.tickets.details.deleteTicket.description")}
@@ -1120,7 +1120,7 @@ export default function ApiTicketsPage() {
                   </thead>
                   <tbody className="text-muted-foreground">
                     <tr>
-                      <td className="p-3 font-mono text-xs">identifier</td>
+                      <td className="p-3 font-mono text-xs">slug</td>
                       <td className="p-3">string</td>
                       <td className="p-3">
                         <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded">
@@ -1129,7 +1129,7 @@ export default function ApiTicketsPage() {
                       </td>
                       <td className="p-3">
                         {t(
-                          "docs.api.tickets.details.deleteTicket.params.identifier"
+                          "docs.api.tickets.details.deleteTicket.params.slug"
                         )}
                       </td>
                     </tr>

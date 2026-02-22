@@ -8,6 +8,14 @@ func getStringArg(args map[string]interface{}, key string) string {
 	return ""
 }
 
+// Helper to extract string pointer from args (nil if absent or empty)
+func getStringPtrArg(args map[string]interface{}, key string) *string {
+	if v, ok := args[key].(string); ok && v != "" {
+		return &v
+	}
+	return nil
+}
+
 // Helper to extract int from args
 func getIntArg(args map[string]interface{}, key string) int {
 	switch v := args[key].(type) {

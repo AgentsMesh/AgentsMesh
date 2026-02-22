@@ -81,7 +81,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const handleSelectTicket = useCallback(
     (ticket: TicketSearchResult) => {
-      router.push(`/${orgSlug}/tickets/${ticket.identifier}`);
+      router.push(`/${orgSlug}/tickets/${ticket.slug}`);
       handleOpenChange(false);
     },
     [router, orgSlug, handleOpenChange]

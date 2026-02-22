@@ -83,6 +83,7 @@ export interface PodCreatedData {
   agent_status?: string;
   runner_id: number;
   ticket_id?: number;
+  ticket_slug?: string;
   created_by_id: number;
 }
 
@@ -101,7 +102,7 @@ export interface RunnerStatusData {
  * Ticket status changed event payload
  */
 export interface TicketStatusChangedData {
-  identifier: string;
+  slug: string;
   status: string;
   previous_status?: string;
 }
@@ -122,6 +123,7 @@ export interface TaskCompletedData {
   pod_key: string;
   agent_status: string;
   ticket_id?: number;
+  ticket_slug?: string;
 }
 
 /**
@@ -246,6 +248,7 @@ export interface MREventData {
   state: string;
   action?: string; // opened, updated, merged, closed
   ticket_id?: number;
+  ticket_slug?: string;
   pod_id?: number;
   repository_id: number;
   pipeline_status?: string;
@@ -261,6 +264,7 @@ export interface PipelineEventData {
   pipeline_url?: string;
   source_branch?: string;
   ticket_id?: number;
+  ticket_slug?: string;
   pod_id?: number;
   repository_id: number;
 }

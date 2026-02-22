@@ -331,7 +331,7 @@ export default function ApiPodsPage() {
     "initial_prompt": "Fix the login bug",
     "repository_id": 1,
     "branch": "main",
-    "ticket_identifier": "AM-42",
+    "ticket_slug": "AM-42",
     "channel_id": 5,
     "sandbox_type": "worktree",
     "auto_close": false,
@@ -460,7 +460,7 @@ export default function ApiPodsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        ticket_identifier
+                        ticket_slug
                       </td>
                       <td className="p-3 border-b border-border">string</td>
                       <td className="p-3 border-b border-border">
@@ -470,7 +470,7 @@ export default function ApiPodsPage() {
                       </td>
                       <td className="p-3 border-b border-border">
                         {t(
-                          "docs.api.pods.details.createPod.fields.ticket_identifier"
+                          "docs.api.pods.details.createPod.fields.ticket_slug"
                         )}
                       </td>
                     </tr>

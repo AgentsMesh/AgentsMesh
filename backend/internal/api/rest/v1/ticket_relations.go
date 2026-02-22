@@ -13,17 +13,17 @@ import (
 
 // CreateRelationRequest represents relation creation request
 type CreateRelationRequest struct {
-	TargetIdentifier string `json:"target_identifier" binding:"required"`
+	TargetSlug       string `json:"target_slug" binding:"required"`
 	RelationType     string `json:"relation_type" binding:"required,oneof=blocks blocked_by relates_to duplicates"`
 }
 
 // ListRelations lists relations for a ticket
-// GET /api/v1/organizations/:slug/tickets/:identifier/relations
+// GET /api/v1/organizations/:slug/tickets/:ticket_slug/relations
 func (h *TicketHandler) ListRelations(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -39,9 +39,9 @@ func (h *TicketHandler) ListRelations(c *gin.Context) {
 }
 
 // CreateRelation creates a relation between tickets
-// POST /api/v1/organizations/:slug/tickets/:identifier/relations
+// POST /api/v1/organizations/:slug/tickets/:ticket_slug/relations
 func (h *TicketHandler) CreateRelation(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 
 	var req CreateRelationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -52,14 +52,14 @@ func (h *TicketHandler) CreateRelation(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
 	// Get source ticket
-	sourceTicket, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	sourceTicket, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Source ticket not found")
 		return
 	}
 
 	// Get target ticket (same org)
-	targetTicket, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, req.TargetIdentifier)
+	targetTicket, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, req.TargetSlug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Target ticket not found")
 		return
@@ -81,9 +81,9 @@ func (h *TicketHandler) CreateRelation(c *gin.Context) {
 }
 
 // DeleteRelation deletes a relation
-// DELETE /api/v1/organizations/:slug/tickets/:identifier/relations/:relation_id
+// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug/relations/:relation_id
 func (h *TicketHandler) DeleteRelation(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	relationID, err := strconv.ParseInt(c.Param("relation_id"), 10, 64)
 	if err != nil {
 		apierr.InvalidInput(c, "Invalid relation ID")
@@ -92,7 +92,7 @@ func (h *TicketHandler) DeleteRelation(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -108,13 +108,13 @@ func (h *TicketHandler) DeleteRelation(c *gin.Context) {
 }
 
 // ListMergeRequests lists merge requests for a ticket
-// GET /api/v1/organizations/:slug/tickets/:identifier/merge-requests
+// GET /api/v1/organizations/:slug/tickets/:ticket_slug/merge-requests
 func (h *TicketHandler) ListMergeRequests(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return

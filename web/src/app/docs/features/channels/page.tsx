@@ -79,10 +79,10 @@ export default function ChannelsPage() {
               </tr>
               <tr>
                 <td className="p-3 font-medium">
-                  {t("docs.features.channels.creating.ticketId")}
+                  {t("docs.features.channels.creating.ticketSlug")}
                 </td>
                 <td className="p-3">
-                  {t("docs.features.channels.creating.ticketIdDesc")}
+                  {t("docs.features.channels.creating.ticketSlugDesc")}
                 </td>
               </tr>
             </tbody>

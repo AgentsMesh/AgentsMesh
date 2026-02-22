@@ -67,13 +67,13 @@ func (h *TicketHandler) GetBoard(c *gin.Context) {
 }
 
 // GetSubTickets returns sub-tickets of a parent ticket
-// GET /api/v1/organizations/:slug/tickets/:identifier/sub-tickets
+// GET /api/v1/organizations/:slug/tickets/:ticket_slug/sub-tickets
 func (h *TicketHandler) GetSubTickets(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return

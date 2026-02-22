@@ -130,7 +130,7 @@ func TestGetNextTicketNumber(t *testing.T) {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			repository_id INTEGER NOT NULL,
 			number INTEGER NOT NULL,
-			identifier TEXT NOT NULL,
+			slug TEXT NOT NULL,
 			title TEXT NOT NULL,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)
@@ -163,9 +163,9 @@ func TestGetNextTicketNumber(t *testing.T) {
 
 	t.Run("after existing tickets", func(t *testing.T) {
 		// Insert some tickets
-		db.Exec("INSERT INTO tickets (repository_id, number, identifier, title) VALUES (?, 1, 'TKT-1', 'First')", created.ID)
-		db.Exec("INSERT INTO tickets (repository_id, number, identifier, title) VALUES (?, 5, 'TKT-5', 'Fifth')", created.ID)
-		db.Exec("INSERT INTO tickets (repository_id, number, identifier, title) VALUES (?, 3, 'TKT-3', 'Third')", created.ID)
+		db.Exec("INSERT INTO tickets (repository_id, number, slug, title) VALUES (?, 1, 'TKT-1', 'First')", created.ID)
+		db.Exec("INSERT INTO tickets (repository_id, number, slug, title) VALUES (?, 5, 'TKT-5', 'Fifth')", created.ID)
+		db.Exec("INSERT INTO tickets (repository_id, number, slug, title) VALUES (?, 3, 'TKT-3', 'Third')", created.ID)
 
 		num, err := service.GetNextTicketNumber(ctx, created.ID)
 		if err != nil {

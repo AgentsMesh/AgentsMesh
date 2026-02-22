@@ -161,8 +161,8 @@ export function InfoTabContent({
           <InfoRow
             icon={<Ticket className="w-3 h-3" />}
             label={t("ide.bottomPanel.infoTab.ticket")}
-            value={`${pod.ticket.identifier} - ${pod.ticket.title}`}
-            href={orgSlug ? `/${orgSlug}/tickets/${pod.ticket.identifier}` : undefined}
+            value={`${pod.ticket.slug} - ${pod.ticket.title}`}
+            href={orgSlug ? `/${orgSlug}/tickets/${pod.ticket.slug}` : undefined}
           />
         )}
 

@@ -16,9 +16,8 @@ type CreatePodRequest struct {
 	AgentTypeID       *int64  `json:"agent_type_id"` // Required unless resuming (then inherited from source pod)
 	CustomAgentTypeID *int64  `json:"custom_agent_type_id"`
 	RepositoryID      *int64  `json:"repository_id"`
-	RepositoryURL     *string `json:"repository_url"` // Direct repository URL (takes precedence over repository_id)
-	TicketID          *int64  `json:"ticket_id"`
-	TicketIdentifier  *string `json:"ticket_identifier"` // Direct ticket identifier (takes precedence over ticket_id)
+	RepositoryURL     *string `json:"repository_url"`    // Direct repository URL (takes precedence over repository_id)
+	TicketSlug        *string `json:"ticket_slug"`       // Ticket slug (e.g., "AM-123")
 	InitialPrompt     string  `json:"initial_prompt"`
 	BranchName        *string `json:"branch_name"`
 	PermissionMode    *string `json:"permission_mode"` // "plan", "default", or "bypassPermissions"
@@ -61,8 +60,7 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 		CustomAgentTypeID:   req.CustomAgentTypeID,
 		RepositoryID:        req.RepositoryID,
 		RepositoryURL:       req.RepositoryURL,
-		TicketID:            req.TicketID,
-		TicketIdentifier:    req.TicketIdentifier,
+		TicketSlug:          req.TicketSlug,
 		InitialPrompt:       req.InitialPrompt,
 		BranchName:          req.BranchName,
 		PermissionMode:      req.PermissionMode,

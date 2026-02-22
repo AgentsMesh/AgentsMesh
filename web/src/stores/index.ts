@@ -27,7 +27,7 @@ export { usePodStore } from "./pod";
 export { useChannelStore } from "./channel";
 
 // Ticket store
-export { useTicketStore } from "./ticket";
+export { useTicketStore, useFilteredTickets } from "./ticket";
 
 // Mesh store
 export { useMeshStore } from "./mesh";

@@ -163,7 +163,7 @@ export function RealtimeProvider({
           const data = event.data as TicketStatusChangedData;
           // Refresh tickets list
           ticketStore.fetchTickets?.();
-          console.log("[Realtime] Ticket event:", event.type, data.identifier);
+          console.log("[Realtime] Ticket event:", event.type, data.slug);
           break;
         }
 
@@ -263,7 +263,7 @@ export function RealtimeProvider({
         case "mr:closed": {
           const data = event.data as MREventData;
           // Refresh tickets if this MR is associated with a ticket
-          if (data.ticket_id) {
+          if (data.ticket_slug || data.ticket_id) {
             ticketStore.fetchTickets?.();
           }
           // Refresh pods if this MR is associated with a pod
@@ -278,7 +278,7 @@ export function RealtimeProvider({
         case "pipeline:updated": {
           const data = event.data as PipelineEventData;
           // Refresh tickets if this pipeline is associated with a ticket
-          if (data.ticket_id) {
+          if (data.ticket_slug || data.ticket_id) {
             ticketStore.fetchTickets?.();
           }
           // Refresh pods if this pipeline is associated with a pod

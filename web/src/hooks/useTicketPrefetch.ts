@@ -20,13 +20,13 @@ export function useTicketPrefetch() {
   /**
    * Check if data is cached and still valid
    */
-  const isCached = useCallback((identifier: string): boolean => {
-    const cached = prefetchCache.get(identifier);
+  const isCached = useCallback((slug: string): boolean => {
+    const cached = prefetchCache.get(slug);
     if (!cached) return false;
 
     const isExpired = Date.now() - cached.timestamp > CACHE_TTL;
     if (isExpired) {
-      prefetchCache.delete(identifier);
+      prefetchCache.delete(slug);
       return false;
     }
     return true;
@@ -35,72 +35,72 @@ export function useTicketPrefetch() {
   /**
    * Get cached data if available
    */
-  const getCached = useCallback(<T>(identifier: string): T | null => {
-    if (!isCached(identifier)) return null;
-    return prefetchCache.get(identifier)?.data as T;
+  const getCached = useCallback(<T>(slug: string): T | null => {
+    if (!isCached(slug)) return null;
+    return prefetchCache.get(slug)?.data as T;
   }, [isCached]);
 
   /**
    * Prefetch ticket details after a short delay (to avoid prefetching on quick hovers)
    */
-  const prefetchOnHover = useCallback((identifier: string) => {
+  const prefetchOnHover = useCallback((slug: string) => {
     // Clear any existing timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
 
     // Skip if already cached or pending
-    if (isCached(identifier) || pendingRequests.has(identifier)) {
+    if (isCached(slug) || pendingRequests.has(slug)) {
       return;
     }
 
     // Delay prefetch by 150ms to avoid unnecessary requests on quick hovers
     hoverTimeoutRef.current = setTimeout(async () => {
-      if (isCached(identifier) || pendingRequests.has(identifier)) {
+      if (isCached(slug) || pendingRequests.has(slug)) {
         return;
       }
 
-      pendingRequests.add(identifier);
+      pendingRequests.add(slug);
 
       try {
         // Prefetch main ticket data
-        const ticketData = await ticketApi.get(identifier);
-        prefetchCache.set(identifier, {
+        const ticketData = await ticketApi.get(slug);
+        prefetchCache.set(slug, {
           data: ticketData,
           timestamp: Date.now(),
         });
 
         // Also prefetch related data in parallel
         const [subTickets, relations, commits] = await Promise.allSettled([
-          ticketApi.getSubTickets(identifier),
-          ticketApi.listRelations(identifier),
-          ticketApi.listCommits(identifier),
+          ticketApi.getSubTickets(slug),
+          ticketApi.listRelations(slug),
+          ticketApi.listCommits(slug),
         ]);
 
         // Cache related data
         if (subTickets.status === "fulfilled") {
-          prefetchCache.set(`${identifier}:subTickets`, {
+          prefetchCache.set(`${slug}:subTickets`, {
             data: subTickets.value,
             timestamp: Date.now(),
           });
         }
         if (relations.status === "fulfilled") {
-          prefetchCache.set(`${identifier}:relations`, {
+          prefetchCache.set(`${slug}:relations`, {
             data: relations.value,
             timestamp: Date.now(),
           });
         }
         if (commits.status === "fulfilled") {
-          prefetchCache.set(`${identifier}:commits`, {
+          prefetchCache.set(`${slug}:commits`, {
             data: commits.value,
             timestamp: Date.now(),
           });
         }
       } catch (error) {
         // Silently fail - prefetch is best-effort
-        console.debug("Prefetch failed for:", identifier, error);
+        console.debug("Prefetch failed for:", slug, error);
       } finally {
-        pendingRequests.delete(identifier);
+        pendingRequests.delete(slug);
       }
     }, 150);
   }, [isCached]);

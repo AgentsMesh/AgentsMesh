@@ -142,7 +142,7 @@ func (b *ConfigBuilder) buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.Sa
 		CredentialType:     req.CredentialType,
 		GitToken:           req.GitToken,
 		SshPrivateKey:      req.SSHPrivateKey,
-		TicketId:           req.TicketID,
+		TicketSlug:         req.TicketSlug,
 		PreparationScript:  req.PreparationScript,
 		PreparationTimeout: timeout,
 		LocalPath:          req.LocalPath,

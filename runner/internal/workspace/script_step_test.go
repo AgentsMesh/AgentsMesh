@@ -36,12 +36,12 @@ func TestScriptPreparationStepExecuteWithEnvVars(t *testing.T) {
 	tmpDir := t.TempDir()
 	outputFile := filepath.Join(tmpDir, "output.txt")
 
-	script := `echo "$TICKET_IDENTIFIER" > "` + outputFile + `"`
+	script := `echo "$TICKET_SLUG" > "` + outputFile + `"`
 	step := NewScriptPreparationStep(script, time.Minute)
 
 	ctx := &PreparationContext{
 		PodID:            "pod-1",
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 		WorkspaceDir:       tmpDir,
 	}
 
@@ -138,27 +138,27 @@ func TestBuildEnv(t *testing.T) {
 
 	prepCtx := &PreparationContext{
 		PodID:            "test-pod",
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 		WorkspaceDir:     "/workspace",
 	}
 
 	env := step.buildEnv(prepCtx)
 
 	hasWorkspaceDir := false
-	hasTicketID := false
+	hasTicketSlug := false
 	for _, e := range env {
 		if e == "WORKSPACE_DIR=/workspace" {
 			hasWorkspaceDir = true
 		}
-		if e == "TICKET_IDENTIFIER=TICKET-123" {
-			hasTicketID = true
+		if e == "TICKET_SLUG=TICKET-123" {
+			hasTicketSlug = true
 		}
 	}
 
 	if !hasWorkspaceDir {
 		t.Error("env should contain WORKSPACE_DIR")
 	}
-	if !hasTicketID {
-		t.Error("env should contain TICKET_IDENTIFIER")
+	if !hasTicketSlug {
+		t.Error("env should contain TICKET_SLUG")
 	}
 }

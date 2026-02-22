@@ -137,7 +137,7 @@ export interface RunnerPodData {
   ticket_id?: number;
   ticket?: {
     id: number;
-    identifier: string;
+    slug: string;
     title: string;
   };
   status: string;

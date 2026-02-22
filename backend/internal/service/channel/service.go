@@ -89,12 +89,27 @@ func (s *Service) GetChannelByName(ctx context.Context, orgID int64, name string
 	return &ch, nil
 }
 
-// ListChannels returns channels for an organization
-func (s *Service) ListChannels(ctx context.Context, orgID int64, includeArchived bool, limit, offset int) ([]*channel.Channel, int64, error) {
+// ListChannelsFilter contains optional filters for listing channels.
+type ListChannelsFilter struct {
+	IncludeArchived bool
+	RepositoryID    *int64
+	TicketID        *int64
+	Limit           int
+	Offset          int
+}
+
+// ListChannels returns channels for an organization with optional filters.
+func (s *Service) ListChannels(ctx context.Context, orgID int64, filter *ListChannelsFilter) ([]*channel.Channel, int64, error) {
 	query := s.db.WithContext(ctx).Model(&channel.Channel{}).Where("organization_id = ?", orgID)
 
-	if !includeArchived {
+	if !filter.IncludeArchived {
 		query = query.Where("is_archived = ?", false)
+	}
+	if filter.RepositoryID != nil {
+		query = query.Where("repository_id = ?", *filter.RepositoryID)
+	}
+	if filter.TicketID != nil {
+		query = query.Where("ticket_id = ?", *filter.TicketID)
 	}
 
 	var total int64
@@ -103,8 +118,8 @@ func (s *Service) ListChannels(ctx context.Context, orgID int64, includeArchived
 	var channels []*channel.Channel
 	if err := query.
 		Order("updated_at DESC").
-		Limit(limit).
-		Offset(offset).
+		Limit(filter.Limit).
+		Offset(filter.Offset).
 		Find(&channels).Error; err != nil {
 		return nil, 0, err
 	}

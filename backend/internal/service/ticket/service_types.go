@@ -36,9 +36,9 @@ func (s *Service) SetEventPublisher(ep EventPublisher) {
 }
 
 // publishEvent publishes a ticket event if EventPublisher is configured
-func (s *Service) publishEvent(ctx context.Context, eventType TicketEventType, orgID int64, identifier, status, previousStatus string) {
+func (s *Service) publishEvent(ctx context.Context, eventType TicketEventType, orgID int64, slug, status, previousStatus string) {
 	if s.eventPublisher != nil {
-		s.eventPublisher.PublishTicketEvent(ctx, eventType, orgID, identifier, status, previousStatus)
+		s.eventPublisher.PublishTicketEvent(ctx, eventType, orgID, slug, status, previousStatus)
 	}
 }
 

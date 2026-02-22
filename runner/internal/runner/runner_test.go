@@ -39,7 +39,7 @@ func TestPodStruct(t *testing.T) {
 		Terminal:         nil,
 		StartedAt:        now,
 		Status:           PodStatusRunning,
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 	}
 
 	if pod.ID != "pod-1" {
@@ -54,8 +54,8 @@ func TestPodStruct(t *testing.T) {
 	if pod.GetStatus() != PodStatusRunning {
 		t.Errorf("Status: got %v, want running", pod.GetStatus())
 	}
-	if pod.TicketIdentifier != "TICKET-123" {
-		t.Errorf("TicketIdentifier: got %v, want TICKET-123", pod.TicketIdentifier)
+	if pod.TicketSlug != "TICKET-123" {
+		t.Errorf("TicketSlug: got %v, want TICKET-123", pod.TicketSlug)
 	}
 }
 
@@ -73,7 +73,7 @@ func TestPodAllFields(t *testing.T) {
 		Terminal:         nil,
 		StartedAt:        now,
 		Status:           PodStatusRunning,
-		TicketIdentifier: "TICKET-123",
+		TicketSlug: "TICKET-123",
 	}
 
 	if pod.ID != "id-1" {

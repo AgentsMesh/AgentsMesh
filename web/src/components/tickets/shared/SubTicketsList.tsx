@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface SubTicketsListProps {
   subTickets: Ticket[];
-  onTicketClick: (identifier: string) => void;
+  onTicketClick: (slug: string) => void;
   /** Compact style for panel view */
   compact?: boolean;
   className?: string;
@@ -38,11 +38,11 @@ export function SubTicketsList({
             <button
               key={subTicket.id}
               className="w-full px-2.5 py-1.5 flex items-center gap-2 hover:bg-muted/50 rounded-md transition-colors text-left group"
-              onClick={() => onTicketClick(subTicket.identifier)}
+              onClick={() => onTicketClick(subTicket.slug)}
             >
               <StatusIcon status={subTicket.status} size="sm" />
               <span className="font-mono text-xs text-muted-foreground">
-                {subTicket.identifier}
+                {subTicket.slug}
               </span>
               <span className="flex-1 truncate text-sm">{subTicket.title}</span>
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -66,12 +66,12 @@ export function SubTicketsList({
             <div
               key={subTicket.id}
               className="px-4 py-3 hover:bg-muted/50 cursor-pointer"
-              onClick={() => onTicketClick(subTicket.identifier)}
+              onClick={() => onTicketClick(subTicket.slug)}
             >
               <div className="flex items-center gap-2">
                 <TypeIcon type={subTicket.type} size="sm" />
                 <span className="font-mono text-xs text-muted-foreground">
-                  {subTicket.identifier}
+                  {subTicket.slug}
                 </span>
                 <span className="flex-1 truncate">{subTicket.title}</span>
                 <span className={cn(

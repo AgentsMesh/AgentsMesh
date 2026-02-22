@@ -59,7 +59,7 @@ func TestNewEntityEvent(t *testing.T) {
 
 	t.Run("creates event with ticket data", func(t *testing.T) {
 		data := &TicketStatusChangedData{
-			Identifier:     "AM-001",
+			Slug:     "AM-001",
 			Status:         "in_progress",
 			PreviousStatus: "backlog",
 		}
@@ -74,8 +74,8 @@ func TestNewEntityEvent(t *testing.T) {
 		if err := json.Unmarshal(event.Data, &decoded); err != nil {
 			t.Fatalf("failed to unmarshal data: %v", err)
 		}
-		if decoded.Identifier != "AM-001" {
-			t.Errorf("expected Identifier 'AM-001', got '%s'", decoded.Identifier)
+		if decoded.Slug != "AM-001" {
+			t.Errorf("expected Slug 'AM-001', got '%s'", decoded.Slug)
 		}
 	})
 

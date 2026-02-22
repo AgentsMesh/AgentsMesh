@@ -126,9 +126,9 @@ type AddLabelRequest struct {
 }
 
 // AddLabel adds a label to a ticket
-// POST /api/v1/organizations/:slug/tickets/:identifier/labels
+// POST /api/v1/organizations/:slug/tickets/:ticket_slug/labels
 func (h *TicketHandler) AddLabel(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 
 	var req AddLabelRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -138,7 +138,7 @@ func (h *TicketHandler) AddLabel(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
@@ -153,9 +153,9 @@ func (h *TicketHandler) AddLabel(c *gin.Context) {
 }
 
 // RemoveLabel removes a label from a ticket
-// DELETE /api/v1/organizations/:slug/tickets/:identifier/labels/:label_id
+// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug/labels/:label_id
 func (h *TicketHandler) RemoveLabel(c *gin.Context) {
-	identifier := c.Param("identifier")
+	slug := c.Param("ticket_slug")
 	labelID, err := strconv.ParseInt(c.Param("label_id"), 10, 64)
 	if err != nil {
 		apierr.InvalidInput(c, "Invalid label ID")
@@ -164,7 +164,7 @@ func (h *TicketHandler) RemoveLabel(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	t, err := h.ticketService.GetTicketByIdentifier(c.Request.Context(), tenant.OrganizationID, identifier)
+	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
