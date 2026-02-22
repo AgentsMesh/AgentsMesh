@@ -180,6 +180,7 @@
       "details": "详情",
       "dueDate": "截止日期",
       "repository": "仓库",
+      "noRepository": "无仓库",
       "assignees": "负责人",
       "noAssignees": "暂无负责人",
       "timestamps": "时间信息",

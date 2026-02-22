@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
   X,
   ExternalLink,
-  GitBranch,
   Clock,
   Loader2,
   AlertCircle,
@@ -24,6 +23,7 @@ import { PrioritySelect } from "./PrioritySelect";
 import { InlineEditableText } from "./InlineEditableText";
 import { useTicketExtraData } from "./hooks";
 import { SubTicketsList, RelationsList, CommitsList, LabelsList } from "./shared";
+import { RepositorySelect } from "@/components/common/RepositorySelect";
 
 // Lazy load BlockViewer to avoid SSR issues
 const BlockViewer = lazy(() =>
@@ -133,6 +133,27 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
       } catch (err: unknown) {
         console.error("Failed to update title:", err);
         setTicket({ ...ticket, title: oldTitle });
+        throw err;
+      }
+    },
+    [ticket, identifier, updateTicket]
+  );
+
+  // Handle repository change with optimistic update
+  const handleRepositoryChange = useCallback(
+    async (newRepositoryId: number | null) => {
+      if (!ticket) return;
+
+      const oldRepositoryId = ticket.repository_id;
+      const oldRepository = ticket.repository;
+      setTicket({ ...ticket, repository_id: newRepositoryId ?? undefined, repository: undefined });
+
+      try {
+        const updated = await updateTicket(identifier, { repositoryId: newRepositoryId });
+        setTicket(updated);
+      } catch (err: unknown) {
+        console.error("Failed to update repository:", err);
+        setTicket({ ...ticket, repository_id: oldRepositoryId, repository: oldRepository });
         throw err;
       }
     },
@@ -304,14 +325,21 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
             </div>
           )}
 
+          {/* Repository selector */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">
+              {t("tickets.detail.repository")}
+            </label>
+            <RepositorySelect
+              value={ticket.repository_id ?? null}
+              onChange={handleRepositoryChange}
+              placeholder={t("tickets.detail.noRepository")}
+              className="text-sm"
+            />
+          </div>
+
           {/* Details - Compact metadata row */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            {ticket.repository && (
-              <span className="flex items-center gap-1">
-                <GitBranch className="h-3 w-3" />
-                {(ticket.repository as { name: string }).name}
-              </span>
-            )}
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {formatDate(ticket.created_at)}

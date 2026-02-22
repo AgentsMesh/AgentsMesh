@@ -64,6 +64,15 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
     }
   };
 
+  // Handle repository change
+  const handleRepositoryChange = async (repositoryId: number | null) => {
+    try {
+      await updateTicket(identifier, { repositoryId });
+    } catch (err) {
+      console.error("Failed to update repository:", err);
+    }
+  };
+
   // Handle save edit
   const handleSaveEdit = async () => {
     try {
@@ -210,6 +219,7 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
         onEdit={startEditing}
         onDelete={handleDelete}
         onStatusChange={handleStatusChange}
+        onRepositoryChange={handleRepositoryChange}
         t={t}
       />
 

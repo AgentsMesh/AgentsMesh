@@ -3,6 +3,7 @@
 import { TicketStatus, TicketType, TicketPriority } from "@/stores/ticket";
 import { Button } from "@/components/ui/button";
 import { PriorityIcon, TypeIcon, getPriorityDisplayInfo, getTypeDisplayInfo } from "./TicketIcons";
+import { RepositorySelect } from "@/components/common/RepositorySelect";
 
 interface TicketDetailSidebarProps {
   ticket: {
@@ -13,12 +14,14 @@ interface TicketDetailSidebarProps {
     created_at: string;
     updated_at: string;
     assignees?: Array<{ id: number; name?: string; username: string }>;
+    repository_id?: number;
     repository?: { name: string };
   };
   isEditing: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onStatusChange: (status: TicketStatus) => void;
+  onRepositoryChange: (repositoryId: number | null) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -32,6 +35,7 @@ export function TicketDetailSidebar({
   onEdit,
   onDelete,
   onStatusChange,
+  onRepositoryChange,
   t,
 }: TicketDetailSidebarProps) {
   const priorityInfo = getPriorityDisplayInfo(ticket.priority);
@@ -102,12 +106,17 @@ export function TicketDetailSidebar({
               <dd>{new Date(ticket.due_date).toLocaleDateString()}</dd>
             </div>
           )}
-          {ticket.repository && (
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">{t("tickets.detail.repository")}</dt>
-              <dd>{ticket.repository.name}</dd>
-            </div>
-          )}
+          <div>
+            <dt className="text-muted-foreground mb-1">{t("tickets.detail.repository")}</dt>
+            <dd>
+              <RepositorySelect
+                value={ticket.repository_id ?? null}
+                onChange={(value) => onRepositoryChange(value)}
+                placeholder={t("tickets.detail.noRepository")}
+                className="text-sm"
+              />
+            </dd>
+          </div>
         </dl>
       </div>
 
