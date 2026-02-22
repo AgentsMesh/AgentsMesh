@@ -12,7 +12,6 @@ export interface TicketContext {
   id: number;
   identifier: string;
   title: string;
-  description?: string;
   repositoryId?: number;
 }
 

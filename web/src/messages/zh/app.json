@@ -163,15 +163,12 @@
       "createFailed": "创建 Ticket 失败",
       "repository": "仓库",
       "selectRepository": "选择仓库...",
-      "summary": "摘要",
-      "summaryPlaceholder": "简要描述...",
       "content": "内容",
       "submit": "创建 Ticket"
     },
     "detail": {
       "retry": "重试",
       "notFound": "Ticket 未找到",
-      "summary": "摘要",
       "content": "内容",
       "subTickets": "子 Ticket",
       "related": "关联",

@@ -710,7 +710,7 @@
           "getTicketParams": "ticket_id (number or \"AM-123\")",
           "createTicket": "create_ticket",
           "createTicketDesc": "Create a new ticket",
-          "createTicketParams": "product_id, title, description?, type?, priority?",
+          "createTicketParams": "product_id, title, type?, priority?",
           "updateTicket": "update_ticket",
           "updateTicketDesc": "Update ticket",
           "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
@@ -1085,7 +1085,6 @@
             "fields": {
               "type": "티켓 유형: bug, feature, task 또는 improvement",
               "title": "티켓 제목 (1-500자)",
-              "description": "티켓의 상세 설명 (Markdown 지원)",
               "priority": "우선순위: low, medium, high 또는 critical",
               "status": "초기 상태 (기본값: open)",
               "assignee_id": "티켓을 할당할 사용자 ID",
@@ -1102,7 +1101,6 @@
             },
             "fields": {
               "title": "업데이트된 티켓 제목",
-              "description": "업데이트된 설명",
               "type": "업데이트된 티켓 유형",
               "priority": "업데이트된 우선순위",
               "status": "업데이트된 상태",

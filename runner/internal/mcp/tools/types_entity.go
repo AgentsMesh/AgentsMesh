@@ -102,7 +102,6 @@ type Ticket struct {
 	ID             int            `json:"id"`
 	Identifier     string         `json:"identifier"`
 	Title          string         `json:"title"`
-	Description    string         `json:"description,omitempty"`
 	Content        string         `json:"content,omitempty"`
 	Type           TicketType     `json:"type"`
 	Status         TicketStatus   `json:"status"`

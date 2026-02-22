@@ -1,4 +1,7 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach, type Mock } from "vitest";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MockSend = Mock<(...args: any[]) => any>;
 
 // Mock WebSocket
 class MockWebSocket {
@@ -269,7 +272,7 @@ describe("terminalConnection", () => {
 
       // Verify resize message was sent
       expect(conn!.ws.send).toHaveBeenCalled();
-      const lastCall = conn!.ws.send.mock.calls[conn!.ws.send.mock.calls.length - 1];
+      const lastCall = (conn!.ws.send as MockSend).mock.calls[(conn!.ws.send as MockSend).mock.calls.length - 1];
       const sentData = lastCall[0] as Uint8Array;
 
       // Message format: [MsgType.Resize(0x04), cols_hi, cols_lo, rows_hi, rows_lo]
@@ -296,14 +299,14 @@ describe("terminalConnection", () => {
 
       const conn = terminalPool.getConnection("pod-1");
       expect(conn).toBeDefined();
-      const sendCallsBefore = conn!.ws.send.mock.calls.length;
+      const sendCallsBefore = (conn!.ws.send as MockSend).mock.calls.length;
 
       // forceResize should send immediately (no debounce)
       terminalPool.forceResize("pod-1", 100, 30);
 
       // Verify resize message was sent immediately
-      expect(conn!.ws.send.mock.calls.length).toBe(sendCallsBefore + 1);
-      const lastCall = conn!.ws.send.mock.calls[conn!.ws.send.mock.calls.length - 1];
+      expect((conn!.ws.send as MockSend).mock.calls.length).toBe(sendCallsBefore + 1);
+      const lastCall = (conn!.ws.send as MockSend).mock.calls[(conn!.ws.send as MockSend).mock.calls.length - 1];
       const sentData = lastCall[0] as Uint8Array;
 
       // Message format: [MsgType.Resize(0x04), cols_hi, cols_lo, rows_hi, rows_lo]
@@ -340,8 +343,8 @@ describe("terminalConnection", () => {
       expect(conn!.pendingResize).toBeUndefined();
 
       // Verify resize was actually sent
-      const sendCalls = conn!.ws.send.mock.calls;
-      const resizeCalls = sendCalls.filter((call) => {
+      const sendCalls = (conn!.ws.send as MockSend).mock.calls;
+      const resizeCalls = sendCalls.filter((call: unknown[]) => {
         const data = call[0] as Uint8Array;
         return data[0] === 0x04; // MsgType.Resize
       });
@@ -359,7 +362,7 @@ describe("terminalConnection", () => {
       await vi.runAllTimersAsync();
 
       const conn = terminalPool.getConnection("pod-1");
-      const sendCallsBefore = conn!.ws.send.mock.calls.length;
+      const sendCallsBefore = (conn!.ws.send as MockSend).mock.calls.length;
 
       // Invalid dimensions should be ignored
       terminalPool.forceResize("pod-1", 0, 24);
@@ -368,7 +371,7 @@ describe("terminalConnection", () => {
       terminalPool.forceResize("pod-1", 80, -1);
 
       // No resize messages should be sent
-      expect(conn!.ws.send.mock.calls.length).toBe(sendCallsBefore);
+      expect((conn!.ws.send as MockSend).mock.calls.length).toBe(sendCallsBefore);
     });
 
     it("should send resize after reconnection", async () => {
@@ -388,14 +391,14 @@ describe("terminalConnection", () => {
       expect(conn).toBeDefined();
       expect(conn!.ws.readyState).toBe(MockWebSocket.OPEN);
 
-      const sendCallsBefore = conn!.ws.send.mock.calls.length;
+      const sendCallsBefore = (conn!.ws.send as MockSend).mock.calls.length;
 
       // forceResize on new connection should work
       terminalPool.forceResize("pod-1", 120, 40);
 
       // Verify resize was sent
-      expect(conn!.ws.send.mock.calls.length).toBe(sendCallsBefore + 1);
-      const lastCall = conn!.ws.send.mock.calls[conn!.ws.send.mock.calls.length - 1];
+      expect((conn!.ws.send as MockSend).mock.calls.length).toBe(sendCallsBefore + 1);
+      const lastCall = (conn!.ws.send as MockSend).mock.calls[(conn!.ws.send as MockSend).mock.calls.length - 1];
       const sentData = lastCall[0] as Uint8Array;
       expect(sentData[0]).toBe(0x04); // MsgType.Resize
     });
@@ -425,7 +428,7 @@ describe("terminalConnection", () => {
       message.set(payload, 1);
 
       // Trigger onmessage
-      conn!.ws.onmessage?.({ data: message.buffer });
+      conn!.ws.onmessage?.({ data: message.buffer } as MessageEvent);
 
       // Subscriber should be called
       expect(onMessage).toHaveBeenCalledTimes(1);

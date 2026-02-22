@@ -119,9 +119,6 @@ func (t *Ticket) FormatText() string {
 	if t.ReporterName != "" {
 		fmt.Fprintf(&b, "Reporter: %s\n", t.ReporterName)
 	}
-	if t.Description != "" {
-		fmt.Fprintf(&b, "Description: %s\n", truncate(t.Description, 500))
-	}
 	if t.CreatedAt != "" {
 		fmt.Fprintf(&b, "Created: %s", t.CreatedAt)
 		if t.UpdatedAt != "" {

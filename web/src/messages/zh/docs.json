@@ -710,7 +710,7 @@
           "getTicketParams": "ticket_id（数字或 \"AM-123\"）",
           "createTicket": "create_ticket",
           "createTicketDesc": "创建新任务",
-          "createTicketParams": "product_id, title, description?, type?, priority?",
+          "createTicketParams": "product_id, title, type?, priority?",
           "updateTicket": "update_ticket",
           "updateTicketDesc": "更新任务",
           "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
@@ -1085,7 +1085,6 @@
             "fields": {
               "type": "任务类型：bug、feature、task 或 improvement",
               "title": "任务标题（1-500 个字符）",
-              "description": "任务的详细描述（支持 Markdown）",
               "priority": "优先级：low、medium、high 或 critical",
               "status": "初始状态（默认为 open）",
               "assignee_id": "要分配的用户 ID",
@@ -1102,7 +1101,6 @@
             },
             "fields": {
               "title": "更新后的任务标题",
-              "description": "更新后的描述",
               "type": "更新后的任务类型",
               "priority": "更新后的优先级",
               "status": "更新后的状态",

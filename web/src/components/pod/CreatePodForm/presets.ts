@@ -7,20 +7,8 @@ import { ScenarioContext, PromptGenerator, CreatePodFormConfig } from "./types";
 export const ticketPromptGenerator: PromptGenerator = (context: ScenarioContext): string => {
   if (!context.ticket) return "";
 
-  const { identifier, title, description } = context.ticket;
-
-  let prompt = `Work on ticket ${identifier}: ${title}`;
-
-  if (description) {
-    // 截断过长的描述
-    const truncated =
-      description.length > 500
-        ? description.substring(0, 500) + "..."
-        : description;
-    prompt += `\n\nTicket Description:\n${truncated}`;
-  }
-
-  return prompt;
+  const { identifier, title } = context.ticket;
+  return `Work on ticket ${identifier}: ${title}`;
 };
 
 /**

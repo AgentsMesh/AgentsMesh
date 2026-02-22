@@ -55,7 +55,6 @@ const priorityOptions: { value: TicketPriority; label: string }[] = [
 
 interface FormData {
   title: string;
-  description: string;
   content: string;
   type: TicketType;
   priority: TicketPriority;
@@ -75,7 +74,6 @@ export function TicketCreateDialog({
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>({
     title: "",
-    description: "",
     content: "",
     type: "task",
     priority: "medium",
@@ -85,7 +83,6 @@ export function TicketCreateDialog({
   const resetForm = useCallback(() => {
     setForm({
       title: "",
-      description: "",
       content: "",
       type: "task",
       priority: "medium",
@@ -115,7 +112,6 @@ export function TicketCreateDialog({
       const response = await ticketApi.create({
         repositoryId: form.repositoryId || undefined,
         title: form.title.trim(),
-        description: form.description.trim() || undefined,
         content: form.content || undefined,
         type: form.type,
         priority: form.priority,
@@ -210,18 +206,6 @@ export function TicketCreateDialog({
                 value={form.repositoryId}
                 onChange={(value) => updateField("repositoryId", value)}
                 placeholder={t("tickets.createDialog.selectRepository")}
-              />
-            </FormField>
-
-            {/* Summary */}
-            <FormField label={t("tickets.createDialog.summary")} htmlFor="ticket-summary">
-              <textarea
-                id="ticket-summary"
-                className="w-full min-h-[60px] px-3 py-2 text-sm rounded-md border border-input bg-transparent shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-                placeholder={t("tickets.createDialog.summaryPlaceholder")}
-                value={form.description}
-                onChange={(e) => updateField("description", e.target.value)}
-                rows={2}
               />
             </FormField>
 

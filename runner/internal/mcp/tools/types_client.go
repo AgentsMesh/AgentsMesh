@@ -44,8 +44,8 @@ type ChannelClient interface {
 type TicketClient interface {
 	SearchTickets(ctx context.Context, repositoryID *int, status *TicketStatus, ticketType *TicketType, priority *TicketPriority, assigneeID, parentID *int, query string, limit, page int) ([]Ticket, error)
 	GetTicket(ctx context.Context, ticketID string) (*Ticket, error)
-	CreateTicket(ctx context.Context, repositoryID *int64, title, description string, ticketType TicketType, priority TicketPriority, parentTicketID *int64) (*Ticket, error)
-	UpdateTicket(ctx context.Context, ticketID string, title, description *string, status *TicketStatus, priority *TicketPriority, ticketType *TicketType) (*Ticket, error)
+	CreateTicket(ctx context.Context, repositoryID *int64, title string, ticketType TicketType, priority TicketPriority, parentTicketID *int64) (*Ticket, error)
+	UpdateTicket(ctx context.Context, ticketID string, title *string, status *TicketStatus, priority *TicketPriority, ticketType *TicketType) (*Ticket, error)
 }
 
 // PodClient defines the interface for pod creation.

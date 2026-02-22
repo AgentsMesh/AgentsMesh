@@ -21,13 +21,12 @@ func TestBuildTicketPrompt(t *testing.T) {
 			contains: []string{"PROJ-123", "Fix the bug"},
 		},
 		{
-			name: "ticket with description",
+			name: "ticket with title only",
 			ticket: &ticket.Ticket{
-				Identifier:  "PROJ-456",
-				Title:       "Add feature",
-				Description: strPtr("Detailed description here"),
+				Identifier: "PROJ-456",
+				Title:      "Add feature",
 			},
-			contains: []string{"PROJ-456", "Add feature", "Detailed description here"},
+			contains: []string{"PROJ-456", "Add feature"},
 		},
 	}
 

@@ -710,7 +710,7 @@
           "getTicketParams": "ticket_id (number or \"AM-123\")",
           "createTicket": "create_ticket",
           "createTicketDesc": "Create a new ticket",
-          "createTicketParams": "product_id, title, description?, type?, priority?",
+          "createTicketParams": "product_id, title, type?, priority?",
           "updateTicket": "update_ticket",
           "updateTicketDesc": "Update ticket",
           "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
@@ -1085,7 +1085,6 @@
             "fields": {
               "type": "Tipo de ticket: bug, feature, task o improvement",
               "title": "Título del ticket (1-500 caracteres)",
-              "description": "Descripción detallada del ticket (Markdown soportado)",
               "priority": "Nivel de prioridad: low, medium, high o critical",
               "status": "Estado inicial (por defecto: open)",
               "assignee_id": "ID del usuario al que asignar el ticket",
@@ -1102,7 +1101,6 @@
             },
             "fields": {
               "title": "Título del ticket actualizado",
-              "description": "Descripción actualizada",
               "type": "Tipo de ticket actualizado",
               "priority": "Nivel de prioridad actualizado",
               "status": "Estado actualizado",

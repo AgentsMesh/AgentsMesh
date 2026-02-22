@@ -177,7 +177,6 @@ func TestTicket_FormatText(t *testing.T) {
 			ID:           1,
 			Identifier:   "AM-123",
 			Title:        "Fix authentication bug",
-			Description:  "Users are unable to login when...",
 			Type:         TicketTypeBug,
 			Status:       TicketStatusInProgress,
 			Priority:     TicketPriorityHigh,
@@ -186,27 +185,10 @@ func TestTicket_FormatText(t *testing.T) {
 			UpdatedAt:    "2026-02-20T15:00:00Z",
 		}
 		result := tk.FormatText()
-		for _, s := range []string{"AM-123 - Fix authentication bug", "Type: bug", "Status: in_progress", "Priority: high", "Reporter: john", "Users are unable to login"} {
+		for _, s := range []string{"AM-123 - Fix authentication bug", "Type: bug", "Status: in_progress", "Priority: high", "Reporter: john"} {
 			if !strings.Contains(result, s) {
 				t.Errorf("expected %q in:\n%s", s, result)
 			}
-		}
-	})
-
-	t.Run("long description truncated", func(t *testing.T) {
-		longDesc := strings.Repeat("a", 600)
-		tk := &Ticket{
-			ID:          2,
-			Identifier:  "AM-124",
-			Title:       "Test",
-			Description: longDesc,
-			Type:        TicketTypeTask,
-			Status:      TicketStatusTodo,
-			Priority:    TicketPriorityMedium,
-		}
-		result := tk.FormatText()
-		if !strings.Contains(result, "...") {
-			t.Errorf("expected truncation with '...' in description:\n%s", result)
 		}
 	})
 }

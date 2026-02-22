@@ -13,13 +13,11 @@ func TestCreateTicket(t *testing.T) {
 	service := NewService(db)
 	ctx := context.Background()
 
-	description := "Test description"
 	req := &CreateTicketRequest{
 		OrganizationID: 1,
 		ReporterID:     1,
 		Type:           "task",
 		Title:          "Test Ticket",
-		Description:    &description,
 		Priority:       "medium",
 	}
 

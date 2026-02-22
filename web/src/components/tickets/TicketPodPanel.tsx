@@ -26,7 +26,6 @@ interface TicketPod {
 interface TicketPodPanelProps {
   ticketIdentifier: string;
   ticketTitle: string;
-  ticketDescription?: string;
   ticketId?: number;
   repositoryId?: number;
   onPodCreated?: () => void;
@@ -35,7 +34,6 @@ interface TicketPodPanelProps {
 export default function TicketPodPanel({
   ticketIdentifier,
   ticketTitle,
-  ticketDescription,
   ticketId,
   repositoryId,
   onPodCreated,
@@ -109,7 +107,6 @@ export default function TicketPodPanel({
                 id: ticketId,
                 identifier: ticketIdentifier,
                 title: ticketTitle,
-                description: ticketDescription,
                 repositoryId: repositoryId,
               }
             : undefined

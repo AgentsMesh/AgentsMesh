@@ -31,7 +31,6 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
   const [editContent, setEditContent] = useState("");
 
   // Confirm dialog for delete
@@ -49,7 +48,6 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
   const startEditing = () => {
     if (currentTicket) {
       setEditTitle(currentTicket.title);
-      setEditDescription(currentTicket.description || "");
       setEditContent(currentTicket.content || "");
     }
     setIsEditing(true);
@@ -78,7 +76,6 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
     try {
       await updateTicket(identifier, {
         title: editTitle,
-        description: editDescription,
         content: editContent,
       });
       setIsEditing(false);
@@ -156,10 +153,8 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
           {isEditing ? (
             <TicketEditForm
               title={editTitle}
-              description={editDescription}
               content={editContent}
               onTitleChange={setEditTitle}
-              onDescriptionChange={setEditDescription}
               onContentChange={setEditContent}
               onSave={handleSaveEdit}
               onCancel={() => setIsEditing(false)}
@@ -168,11 +163,6 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
           ) : (
             <>
               <h1 className="text-2xl font-semibold mb-2">{currentTicket.title}</h1>
-              {currentTicket.description && (
-                <p className="text-muted-foreground mb-4">
-                  {currentTicket.description}
-                </p>
-              )}
               {currentTicket.content && (
                 <div className="border border-border rounded-md overflow-hidden bg-card">
                   <Suspense fallback={<div className="h-[100px] animate-pulse bg-muted" />}>
@@ -206,7 +196,6 @@ export function TicketDetail({ identifier }: TicketDetailProps) {
         <TicketPodPanel
           ticketIdentifier={identifier}
           ticketTitle={currentTicket.title}
-          ticketDescription={currentTicket.description}
           ticketId={currentTicket.id}
           repositoryId={currentTicket.repository_id}
         />

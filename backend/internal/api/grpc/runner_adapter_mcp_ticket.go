@@ -81,7 +81,6 @@ func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.
 	var params struct {
 		RepositoryID   *int64 `json:"repository_id"`
 		Title          string `json:"title"`
-		Description    string `json:"description"`
 		Type           string `json:"type"`
 		Priority       string `json:"priority"`
 		ParentTicketID *int64 `json:"parent_ticket_id"`
@@ -100,18 +99,12 @@ func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.
 		params.Priority = "medium"
 	}
 
-	var description *string
-	if params.Description != "" {
-		description = &params.Description
-	}
-
 	t, err := a.ticketService.CreateTicket(ctx, &ticket.CreateTicketRequest{
 		OrganizationID: tc.OrganizationID,
 		RepositoryID:   params.RepositoryID,
 		ReporterID:     tc.UserID,
 		Type:           params.Type,
 		Title:          params.Title,
-		Description:    description,
 		Priority:       params.Priority,
 		ParentTicketID: params.ParentTicketID,
 	})
@@ -125,12 +118,11 @@ func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.
 // mcpUpdateTicket handles the "update_ticket" MCP method.
 func (a *GRPCRunnerAdapter) mcpUpdateTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		TicketID    string  `json:"ticket_id"`
-		Title       *string `json:"title"`
-		Description *string `json:"description"`
-		Status      *string `json:"status"`
-		Priority    *string `json:"priority"`
-		Type        *string `json:"type"`
+		TicketID string  `json:"ticket_id"`
+		Title    *string `json:"title"`
+		Status   *string `json:"status"`
+		Priority *string `json:"priority"`
+		Type     *string `json:"type"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
@@ -148,9 +140,6 @@ func (a *GRPCRunnerAdapter) mcpUpdateTicket(ctx context.Context, tc *middleware.
 	updates := make(map[string]interface{})
 	if params.Title != nil {
 		updates["title"] = *params.Title
-	}
-	if params.Description != nil {
-		updates["description"] = *params.Description
 	}
 	if params.Status != nil {
 		updates["status"] = *params.Status

@@ -81,7 +81,6 @@ func TestHTTPServerMCPToolsCallUpdateTicketWithAllParams(t *testing.T) {
 			"arguments": {
 				"ticket_id": "AM-123",
 				"title": "Updated Title",
-				"description": "Updated description",
 				"status": "in_progress",
 				"priority": "high",
 				"type": "bug"
@@ -169,7 +168,7 @@ func TestHTTPServerMCPToolsCallCreateTicketMissingTitle(t *testing.T) {
 		"params": {
 			"name": "create_ticket",
 			"arguments": {
-				"description": "A test ticket"
+				"type": "task"
 			}
 		}
 	}`)
@@ -200,7 +199,6 @@ func TestHTTPServerMCPToolsCallCreateTicketWithAllParams(t *testing.T) {
 			"name": "create_ticket",
 			"arguments": {
 				"title": "Test Ticket",
-				"description": "A test ticket",
 				"type": "task",
 				"priority": "high",
 				"repository_id": 123,

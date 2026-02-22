@@ -33,9 +33,7 @@ export function CreatePodModal({ open, onClose, onCreated, ticketContext }: Crea
     promptGenerator: ticketContext
       ? (ctx) => {
           if (!ctx.ticket) return "";
-          return `Work on ticket ${ctx.ticket.identifier}: ${ctx.ticket.title}${
-            ctx.ticket.description ? `\n\n${ctx.ticket.description}` : ""
-          }`;
+          return `Work on ticket ${ctx.ticket.identifier}: ${ctx.ticket.title}`;
         }
       : undefined,
     onSuccess: (pod) => {

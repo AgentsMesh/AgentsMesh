@@ -160,25 +160,6 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
     [ticket, identifier, updateTicket]
   );
 
-  // Handle description change with optimistic update
-  const handleDescriptionChange = useCallback(
-    async (newDescription: string) => {
-      if (!ticket) return;
-
-      const oldDescription = ticket.description;
-      setTicket({ ...ticket, description: newDescription });
-
-      try {
-        await updateTicket(identifier, { description: newDescription });
-      } catch (err: unknown) {
-        console.error("Failed to update description:", err);
-        setTicket({ ...ticket, description: oldDescription });
-        throw err;
-      }
-    },
-    [ticket, identifier, updateTicket]
-  );
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -273,21 +254,6 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
             </div>
           </div>
 
-          {/* Description / Summary - Inline Editable */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">
-              {t("tickets.detail.summary")}
-            </label>
-            <InlineEditableText
-              value={ticket.description || ""}
-              onSave={handleDescriptionChange}
-              placeholder={t("tickets.createDialog.summaryPlaceholder")}
-              className="text-sm text-muted-foreground"
-              multiline
-              debounceMs={1000}
-            />
-          </div>
-
           {/* Content - Rich Text (read-only in panel, edit on full page) */}
           {ticket.content && (
             <div className="space-y-1">
@@ -376,7 +342,6 @@ export function TicketDetailPane({ identifier, onClose, className }: TicketDetai
           <TicketPodPanel
             ticketIdentifier={identifier}
             ticketTitle={ticket.title}
-            ticketDescription={ticket.description}
             ticketId={ticket.id}
             repositoryId={ticket.repository_id}
           />

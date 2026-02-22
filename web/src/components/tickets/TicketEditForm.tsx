@@ -8,10 +8,8 @@ const BlockEditor = lazy(() => import("@/components/ui/block-editor"));
 
 interface TicketEditFormProps {
   title: string;
-  description: string;
   content: string;
   onTitleChange: (value: string) => void;
-  onDescriptionChange: (value: string) => void;
   onContentChange: (value: string) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -19,14 +17,12 @@ interface TicketEditFormProps {
 }
 
 /**
- * Inline edit form for ticket title, description and content
+ * Inline edit form for ticket title and content
  */
 export function TicketEditForm({
   title,
-  description,
   content,
   onTitleChange,
-  onDescriptionChange,
   onContentChange,
   onSave,
   onCancel,
@@ -41,20 +37,6 @@ export function TicketEditForm({
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
       />
-
-      {/* Description/Summary */}
-      <div>
-        <label className="text-sm font-medium text-muted-foreground mb-1 block">
-          {t("tickets.detail.summary")}
-        </label>
-        <textarea
-          className="w-full px-3 py-2 border border-border rounded-md resize-none"
-          rows={2}
-          placeholder={t("tickets.createDialog.summaryPlaceholder")}
-          value={description}
-          onChange={(e) => onDescriptionChange(e.target.value)}
-        />
-      </div>
 
       {/* Rich Content Editor */}
       <div>

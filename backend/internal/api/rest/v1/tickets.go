@@ -40,7 +40,6 @@ type CreateTicketRequest struct {
 	RepositoryID   *int64   `json:"repository_id"`
 	Type           string   `json:"type" binding:"required,oneof=task bug feature improvement epic subtask story"`
 	Title          string   `json:"title" binding:"required,min=1,max=500"`
-	Description    string   `json:"description"`
 	Content        string   `json:"content"`
 	Status         string   `json:"status"`
 	Priority       string   `json:"priority"`
@@ -53,7 +52,6 @@ type CreateTicketRequest struct {
 // UpdateTicketRequest represents ticket update request
 type UpdateTicketRequest struct {
 	Title        string   `json:"title"`
-	Description  string   `json:"description"`
 	Content      string   `json:"content"`
 	Status       string   `json:"status"`
 	Priority     string   `json:"priority"`
@@ -121,10 +119,7 @@ func (h *TicketHandler) CreateTicket(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	var description, content *string
-	if req.Description != "" {
-		description = &req.Description
-	}
+	var content *string
 	if req.Content != "" {
 		content = &req.Content
 	}
@@ -135,7 +130,6 @@ func (h *TicketHandler) CreateTicket(c *gin.Context) {
 		ReporterID:     tenant.UserID,
 		Type:           req.Type,
 		Title:          req.Title,
-		Description:    description,
 		Content:        content,
 		Status:         req.Status,
 		Priority:       req.Priority,
@@ -189,9 +183,6 @@ func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 	updates := make(map[string]interface{})
 	if req.Title != "" {
 		updates["title"] = req.Title
-	}
-	if req.Description != "" {
-		updates["description"] = req.Description
 	}
 	if req.Content != "" {
 		updates["content"] = req.Content

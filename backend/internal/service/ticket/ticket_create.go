@@ -50,7 +50,6 @@ func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*
 			Identifier:     identifier,
 			Type:           req.Type,
 			Title:          req.Title,
-			Description:    req.Description,
 			Content:        req.Content,
 			Status:         status,
 			Priority:       req.Priority,

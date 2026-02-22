@@ -163,15 +163,12 @@
       "createFailed": "Failed to create ticket",
       "repository": "Repository",
       "selectRepository": "Select a repository...",
-      "summary": "Summary",
-      "summaryPlaceholder": "Brief summary...",
       "content": "Content",
       "submit": "Create Ticket"
     },
     "detail": {
       "retry": "Retry",
       "notFound": "Ticket not found",
-      "summary": "Summary",
       "content": "Content",
       "subTickets": "Sub-tickets",
       "related": "Related",

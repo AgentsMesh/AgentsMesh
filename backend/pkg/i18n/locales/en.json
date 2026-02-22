@@ -149,7 +149,6 @@
     "edit_ticket": "Edit Ticket",
     "delete_ticket": "Delete Ticket",
     "ticket_title": "Title",
-    "ticket_description": "Description",
     "ticket_type": "Type",
     "type_task": "Task",
     "type_bug": "Bug",

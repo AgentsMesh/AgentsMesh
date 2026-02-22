@@ -710,7 +710,7 @@
           "getTicketParams": "ticket_id (number or \"AM-123\")",
           "createTicket": "create_ticket",
           "createTicketDesc": "Create a new ticket",
-          "createTicketParams": "product_id, title, description?, type?, priority?",
+          "createTicketParams": "product_id, title, type?, priority?",
           "updateTicket": "update_ticket",
           "updateTicketDesc": "Update ticket",
           "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
@@ -1085,7 +1085,6 @@
             "fields": {
               "type": "チケットタイプ：bug、feature、task、またはimprovement",
               "title": "チケットタイトル（1〜500文字）",
-              "description": "チケットの詳細説明（Markdownサポート）",
               "priority": "優先度：low、medium、high、またはcritical",
               "status": "初期ステータス（デフォルトはopen）",
               "assignee_id": "チケットを割り当てるユーザーID",
@@ -1102,7 +1101,6 @@
             },
             "fields": {
               "title": "更新後のチケットタイトル",
-              "description": "更新後の説明",
               "type": "更新後のチケットタイプ",
               "priority": "更新後の優先度",
               "status": "更新後のステータス",

@@ -149,7 +149,6 @@
     "edit_ticket": "编辑工单",
     "delete_ticket": "删除工单",
     "ticket_title": "标题",
-    "ticket_description": "描述",
     "ticket_type": "类型",
     "type_task": "任务",
     "type_bug": "缺陷",

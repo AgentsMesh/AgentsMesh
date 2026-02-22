@@ -51,10 +51,9 @@ type Ticket struct {
 	Number     int    `gorm:"not null" json:"number"`
 	Identifier string `gorm:"size:50;not null;uniqueIndex:idx_tickets_org_identifier" json:"identifier"` // e.g., "AM-123"
 
-	Type        string  `gorm:"size:50;not null;default:'task'" json:"type"`
-	Title       string  `gorm:"size:500;not null" json:"title"`
-	Description *string `gorm:"type:text" json:"description,omitempty"`
-	Content     *string `gorm:"type:text" json:"content,omitempty"` // Rich content (BlockNote JSON)
+	Type    string  `gorm:"size:50;not null;default:'task'" json:"type"`
+	Title   string  `gorm:"size:500;not null" json:"title"`
+	Content *string `gorm:"type:text" json:"content,omitempty"` // Rich content (BlockNote JSON)
 
 	Status   string `gorm:"size:50;not null;default:'backlog';index" json:"status"`
 	Priority string `gorm:"size:50;not null;default:'none'" json:"priority"`

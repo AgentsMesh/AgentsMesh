@@ -26,7 +26,6 @@ func setupRelationsTestDB(t *testing.T) *gorm.DB {
 			identifier TEXT NOT NULL,
 			type TEXT NOT NULL DEFAULT 'task',
 			title TEXT NOT NULL,
-			description TEXT,
 			content TEXT,
 			status TEXT NOT NULL DEFAULT 'backlog',
 			priority TEXT NOT NULL DEFAULT 'none',

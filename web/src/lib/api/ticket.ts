@@ -11,7 +11,6 @@ export interface TicketData {
   identifier: string;
   type: TicketType;
   title: string;
-  description?: string;
   content?: string;
   status: TicketStatus;
   priority: TicketPriority;
@@ -91,7 +90,6 @@ export const ticketApi = {
     repositoryId?: number;
     type: string;
     title: string;
-    description?: string;
     content?: string;
     priority?: string;
     severity?: string;
@@ -106,7 +104,6 @@ export const ticketApi = {
         repository_id: data.repositoryId,
         type: data.type,
         title: data.title,
-        description: data.description,
         content: data.content,
         priority: data.priority,
         severity: data.severity,
@@ -121,7 +118,6 @@ export const ticketApi = {
 
   update: async (identifier: string, data: {
     title?: string;
-    description?: string;
     content?: string;
     type?: string;
     status?: string;

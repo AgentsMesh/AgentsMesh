@@ -28,8 +28,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	db.Exec(`CREATE TABLE IF NOT EXISTS tickets (
 		id INTEGER PRIMARY KEY,
 		identifier TEXT,
-		title TEXT,
-		description TEXT
+		title TEXT
 	)`)
 
 	db.Exec(`CREATE TABLE IF NOT EXISTS users (

@@ -23,7 +23,6 @@ interface Ticket {
   identifier: string;
   type: "task" | "bug" | "feature" | "epic";
   title: string;
-  description?: string;
   status: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "cancelled";
   priority: "none" | "low" | "medium" | "high" | "urgent";
   dueDate?: string;

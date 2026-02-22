@@ -81,12 +81,12 @@ func (m *mockFormatClient) GetTicket(_ context.Context, _ string) (*tools.Ticket
 	return &tools.Ticket{
 		Identifier: "AM-123", Title: "Fix auth bug",
 		Type: tools.TicketTypeBug, Status: tools.TicketStatusInProgress, Priority: tools.TicketPriorityHigh,
-		ReporterName: "john", Description: "Users cannot login",
+		ReporterName: "john",
 		CreatedAt: "2026-02-19T08:00:00Z", UpdatedAt: "2026-02-20T15:00:00Z",
 	}, nil
 }
 
-func (m *mockFormatClient) CreateTicket(_ context.Context, _ *int64, _, _ string, _ tools.TicketType, _ tools.TicketPriority, _ *int64) (*tools.Ticket, error) {
+func (m *mockFormatClient) CreateTicket(_ context.Context, _ *int64, _ string, _ tools.TicketType, _ tools.TicketPriority, _ *int64) (*tools.Ticket, error) {
 	return &tools.Ticket{
 		Identifier: "AM-200", Title: "New ticket",
 		Type: tools.TicketTypeTask, Status: tools.TicketStatusTodo, Priority: tools.TicketPriorityMedium,
@@ -94,7 +94,7 @@ func (m *mockFormatClient) CreateTicket(_ context.Context, _ *int64, _, _ string
 	}, nil
 }
 
-func (m *mockFormatClient) UpdateTicket(_ context.Context, _ string, _, _ *string, _ *tools.TicketStatus, _ *tools.TicketPriority, _ *tools.TicketType) (*tools.Ticket, error) {
+func (m *mockFormatClient) UpdateTicket(_ context.Context, _ string, _ *string, _ *tools.TicketStatus, _ *tools.TicketPriority, _ *tools.TicketType) (*tools.Ticket, error) {
 	return &tools.Ticket{
 		Identifier: "AM-123", Title: "Fix auth bug (updated)",
 		Type: tools.TicketTypeBug, Status: tools.TicketStatusDone, Priority: tools.TicketPriorityHigh,
@@ -326,7 +326,7 @@ func TestFormatIntegration_GetTicket(t *testing.T) {
 	assertContains(t, text, "Ticket: AM-123 - Fix auth bug")
 	assertContains(t, text, "Type: bug | Status: in_progress | Priority: high")
 	assertContains(t, text, "Reporter: john")
-	assertContains(t, text, "Description: Users cannot login")
+	assertNotContains(t, text, "Description:")
 	assertNotContains(t, text, `"identifier"`)
 }
 

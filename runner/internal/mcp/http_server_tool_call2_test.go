@@ -87,8 +87,7 @@ func TestHTTPServerMCPToolsCallCreateTicket(t *testing.T) {
 			"name": "create_ticket",
 			"arguments": {
 				"product_id": 1,
-				"title": "Test Ticket",
-				"description": "Test description"
+				"title": "Test Ticket"
 			}
 		}
 	}`)
@@ -123,7 +122,6 @@ func TestHTTPServerMCPToolsCallCreateTicketWithPriority(t *testing.T) {
 			"arguments": {
 				"title": "Test Ticket",
 				"type": "task",
-				"description": "A test ticket",
 				"priority": "medium"
 			}
 		}

@@ -137,7 +137,6 @@ func TestTicketStruct(t *testing.T) {
 		ID:             1,
 		Identifier:     "AM-123",
 		Title:          "Test Ticket",
-		Description:    "Test description",
 		Content:        "Test content",
 		Type:           TicketTypeTask,
 		Status:         TicketStatusTodo,

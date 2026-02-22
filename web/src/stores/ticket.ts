@@ -47,7 +47,6 @@ interface TicketState {
     repositoryId: number;
     type: TicketType;
     title: string;
-    description?: string;
     content?: string;
     priority?: TicketPriority;
     assigneeIds?: number[];
@@ -58,7 +57,6 @@ interface TicketState {
     identifier: string,
     data: Partial<{
       title: string;
-      description: string;
       content: string;
       type: TicketType;
       status: TicketStatus;

@@ -76,7 +76,6 @@ describe('TicketDetail Component', () => {
     identifier: 'PROJ-42',
     type: 'task' as const,
     title: 'Implement new feature',
-    description: 'This is the ticket description',
     status: 'in_progress' as const,
     priority: 'high' as const,
     created_at: '2024-01-01T00:00:00Z',
@@ -129,13 +128,6 @@ describe('TicketDetail Component', () => {
       render(<TicketDetail identifier="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Implement new feature')).toBeInTheDocument()
-      })
-    })
-
-    it('should render ticket description', async () => {
-      render(<TicketDetail identifier="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('This is the ticket description')).toBeInTheDocument()
       })
     })
 
@@ -504,8 +496,7 @@ describe('TicketDetail Component', () => {
       await waitFor(() => {
         expect(mockUpdateTicket).toHaveBeenCalledWith('PROJ-42', {
           title: 'Updated title',
-          description: 'This is the ticket description',
-          content: '', // content field is now included
+          content: '',
         })
       })
     })

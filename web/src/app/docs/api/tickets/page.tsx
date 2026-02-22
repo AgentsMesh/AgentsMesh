@@ -182,7 +182,6 @@ export default function ApiTicketsPage() {
   -H "Content-Type: application/json" \\
   -d '{
     "title": "Implement user auth",
-    "description": "Add JWT authentication to the API",
     "type": "feature",
     "priority": "high"
   }'`}</pre>
@@ -371,7 +370,6 @@ export default function ApiTicketsPage() {
       "identifier": "AM-42",
       "type": "feature",
       "title": "Implement user authentication",
-      "description": "Add JWT authentication to the API",
       "status": "in_progress",
       "priority": "high",
       "assignee_id": 10,
@@ -544,7 +542,6 @@ export default function ApiTicketsPage() {
     "identifier": "AM-42",
     "type": "feature",
     "title": "Implement user authentication",
-    "description": "Add JWT authentication to the API",
     "status": "in_progress",
     "priority": "high",
     "assignee_id": 10,
@@ -625,22 +622,6 @@ export default function ApiTicketsPage() {
                       <td className="p-3 border-b border-border">
                         {t(
                           "docs.api.tickets.details.createTicket.fields.title"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        description
-                      </td>
-                      <td className="p-3 border-b border-border">string</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.tickets.details.createTicket.fields.description"
                         )}
                       </td>
                     </tr>
@@ -756,7 +737,6 @@ export default function ApiTicketsPage() {
     "identifier": "AM-42",
     "type": "feature",
     "title": "Implement user authentication",
-    "description": "Add JWT authentication to the API",
     "status": "in_progress",
     "priority": "high",
     "assignee_id": 10,
@@ -863,22 +843,6 @@ export default function ApiTicketsPage() {
                       <td className="p-3 border-b border-border">
                         {t(
                           "docs.api.tickets.details.updateTicket.fields.title"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        description
-                      </td>
-                      <td className="p-3 border-b border-border">string</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.tickets.details.updateTicket.fields.description"
                         )}
                       </td>
                     </tr>
@@ -994,7 +958,6 @@ export default function ApiTicketsPage() {
     "identifier": "AM-42",
     "type": "feature",
     "title": "Implement user authentication",
-    "description": "Add JWT authentication to the API",
     "status": "in_progress",
     "priority": "high",
     "assignee_id": 10,

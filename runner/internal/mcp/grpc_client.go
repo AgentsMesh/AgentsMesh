@@ -383,12 +383,11 @@ func (c *GRPCCollaborationClient) GetTicket(ctx context.Context, ticketID string
 }
 
 // CreateTicket creates a new ticket.
-func (c *GRPCCollaborationClient) CreateTicket(ctx context.Context, repositoryID *int64, title, description string, ticketType tools.TicketType, priority tools.TicketPriority, parentTicketID *int64) (*tools.Ticket, error) {
+func (c *GRPCCollaborationClient) CreateTicket(ctx context.Context, repositoryID *int64, title string, ticketType tools.TicketType, priority tools.TicketPriority, parentTicketID *int64) (*tools.Ticket, error) {
 	params := map[string]interface{}{
-		"title":       title,
-		"description": description,
-		"type":        ticketType,
-		"priority":    priority,
+		"title":    title,
+		"type":     ticketType,
+		"priority": priority,
 	}
 	if repositoryID != nil {
 		params["repository_id"] = *repositoryID
@@ -406,15 +405,12 @@ func (c *GRPCCollaborationClient) CreateTicket(ctx context.Context, repositoryID
 }
 
 // UpdateTicket updates a ticket.
-func (c *GRPCCollaborationClient) UpdateTicket(ctx context.Context, ticketID string, title, description *string, status *tools.TicketStatus, priority *tools.TicketPriority, ticketType *tools.TicketType) (*tools.Ticket, error) {
+func (c *GRPCCollaborationClient) UpdateTicket(ctx context.Context, ticketID string, title *string, status *tools.TicketStatus, priority *tools.TicketPriority, ticketType *tools.TicketType) (*tools.Ticket, error) {
 	params := map[string]interface{}{
 		"ticket_id": ticketID,
 	}
 	if title != nil {
 		params["title"] = *title
-	}
-	if description != nil {
-		params["description"] = *description
 	}
 	if status != nil {
 		params["status"] = *status

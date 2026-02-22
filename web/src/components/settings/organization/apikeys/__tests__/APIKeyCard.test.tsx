@@ -31,13 +31,13 @@ describe("APIKeyCard", () => {
     updated_at: "2024-06-01T12:00:00Z",
   };
 
-  let mockOnEdit: ReturnType<typeof vi.fn>;
-  let mockOnRevoke: ReturnType<typeof vi.fn>;
+  let mockOnEdit: ReturnType<typeof vi.fn<(apiKey: APIKeyData) => void>>;
+  let mockOnRevoke: ReturnType<typeof vi.fn<(id: number) => void>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockOnEdit = vi.fn();
-    mockOnRevoke = vi.fn();
+    mockOnEdit = vi.fn<(apiKey: APIKeyData) => void>();
+    mockOnRevoke = vi.fn<(id: number) => void>();
   });
 
   function renderCard(apiKey: APIKeyData = baseApiKey) {

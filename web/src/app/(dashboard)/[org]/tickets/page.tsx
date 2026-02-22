@@ -157,7 +157,6 @@ export default function TicketsPage() {
                 id: createPodTicket.id,
                 identifier: createPodTicket.identifier,
                 title: createPodTicket.title,
-                description: createPodTicket.description,
                 repositoryId: createPodTicket.repository_id,
               }
             : undefined

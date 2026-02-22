@@ -52,7 +52,6 @@ type CreateTicketRequest struct {
 	ParentTicketID *int64
 	Type           string
 	Title          string
-	Description    *string
 	Content        *string
 	Status         string
 	Priority       string
