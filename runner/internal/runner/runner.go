@@ -58,11 +58,6 @@ func New(cfg *config.Config) (*Runner, error) {
 		return nil, fmt.Errorf("failed to load gRPC config: %w - please register the runner first using 'runner register'", err)
 	}
 
-	// Load org slug from file if not in config
-	if err := cfg.LoadOrgSlug(); err != nil {
-		logger.Runner().Warn("Failed to load org slug", "error", err)
-	}
-
 	// Validate required configuration
 	if cfg.OrgSlug == "" {
 		return nil, fmt.Errorf("org_slug is required - please re-register the runner")

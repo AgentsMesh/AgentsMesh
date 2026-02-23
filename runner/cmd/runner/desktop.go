@@ -87,11 +87,6 @@ The runner must be registered first using 'runner register'.`)
 	}
 	defer logger.Close()
 
-	// Load org slug
-	if err := cfg.LoadOrgSlug(); err != nil {
-		slog.Warn("Failed to load org slug", "error", err)
-	}
-
 	// Validate config
 	if err := cfg.Validate(); err != nil {
 		fmt.Fprintf(os.Stderr, "Invalid config: %v\n", err)

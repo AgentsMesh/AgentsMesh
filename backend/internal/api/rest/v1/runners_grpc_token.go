@@ -157,12 +157,6 @@ func (h *GRPCRunnerHandler) RegisterWithToken(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"runner_id":      resp.RunnerID,
-		"certificate":    resp.Certificate,
-		"private_key":    resp.PrivateKey,
-		"ca_certificate": resp.CACertificate,
-		"org_slug":       resp.OrgSlug,
-		"grpc_endpoint":  h.config.GRPC.Endpoint,
-	})
+	resp.GRPCEndpoint = h.config.GRPC.Endpoint
+	c.JSON(http.StatusCreated, resp)
 }

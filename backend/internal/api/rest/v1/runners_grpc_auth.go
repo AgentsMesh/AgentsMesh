@@ -57,6 +57,11 @@ func (h *GRPCRunnerHandler) GetAuthStatus(c *gin.Context) {
 		return
 	}
 
+	// Inject gRPC endpoint for authorized responses
+	if resp.Status == "authorized" {
+		resp.GRPCEndpoint = h.config.GRPC.Endpoint
+	}
+
 	c.JSON(http.StatusOK, resp)
 }
 

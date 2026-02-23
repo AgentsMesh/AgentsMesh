@@ -84,37 +84,11 @@ func (c *Config) SaveCertificates(certPEM, keyPEM, caCertPEM []byte) error {
 	return nil
 }
 
-// SaveGRPCEndpoint saves the gRPC endpoint to config.
-func (c *Config) SaveGRPCEndpoint(endpoint string) error {
-	c.GRPCEndpoint = endpoint
-
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-
-	configDir := filepath.Join(home, ".agentsmesh")
-	if err := os.MkdirAll(configDir, 0700); err != nil {
-		return err
-	}
-
-	endpointFile := filepath.Join(configDir, "grpc_endpoint")
-	return os.WriteFile(endpointFile, []byte(endpoint), 0600)
-}
-
-// LoadGRPCConfig loads gRPC configuration from files if not already set.
+// LoadGRPCConfig auto-detects certificate paths if not already set in config.
 func (c *Config) LoadGRPCConfig() error {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil // Not an error
-	}
-
-	// Load gRPC endpoint
-	if c.GRPCEndpoint == "" {
-		endpointFile := filepath.Join(home, ".agentsmesh", "grpc_endpoint")
-		if data, err := os.ReadFile(endpointFile); err == nil {
-			c.GRPCEndpoint = string(data)
-		}
 	}
 
 	// Set certificate paths if files exist

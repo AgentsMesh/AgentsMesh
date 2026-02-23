@@ -105,11 +105,6 @@ The runner uses gRPC/mTLS for secure communication with the server.`)
 		os.Exit(1)
 	}
 
-	// Load org slug
-	if err := cfg.LoadOrgSlug(); err != nil {
-		log.Warn("Failed to load org slug", "error", err)
-	}
-
 	// Validate config
 	if err := cfg.Validate(); err != nil {
 		log.Error("Invalid config", "error", err)

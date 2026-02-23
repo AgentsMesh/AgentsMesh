@@ -65,27 +65,17 @@ func TestConfigSaveAndLoadGRPCConfig(t *testing.T) {
 
 	cfg := &Config{}
 
-	// Save gRPC endpoint
-	err := cfg.SaveGRPCEndpoint("grpc.example.com:9443")
-	if err != nil {
-		t.Fatalf("SaveGRPCEndpoint error: %v", err)
-	}
-
 	// Save certificates
-	err = cfg.SaveCertificates([]byte("cert-pem"), []byte("key-pem"), []byte("ca-pem"))
+	err := cfg.SaveCertificates([]byte("cert-pem"), []byte("key-pem"), []byte("ca-pem"))
 	if err != nil {
 		t.Fatalf("SaveCertificates error: %v", err)
 	}
 
-	// Clear and reload
+	// Clear cert paths and reload via LoadGRPCConfig (auto-detects cert files)
 	cfg2 := &Config{}
 	err = cfg2.LoadGRPCConfig()
 	if err != nil {
 		t.Fatalf("LoadGRPCConfig error: %v", err)
-	}
-
-	if cfg2.GRPCEndpoint != "grpc.example.com:9443" {
-		t.Errorf("GRPCEndpoint after load: got %v, want grpc.example.com:9443", cfg2.GRPCEndpoint)
 	}
 
 	if cfg2.CertFile == "" {

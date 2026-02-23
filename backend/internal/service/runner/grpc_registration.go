@@ -33,6 +33,7 @@ type AuthStatusResponse struct {
 	PrivateKey    string `json:"private_key,omitempty"`
 	CACertificate string `json:"ca_certificate,omitempty"`
 	OrgSlug       string `json:"org_slug,omitempty"`
+	GRPCEndpoint  string `json:"grpc_endpoint,omitempty"`
 }
 
 // GenerateGRPCRegistrationTokenRequest represents a request to generate a registration token.
@@ -64,6 +65,7 @@ type RegisterWithTokenResponse struct {
 	PrivateKey    string `json:"private_key"`
 	CACertificate string `json:"ca_certificate"`
 	OrgSlug       string `json:"org_slug"`
+	GRPCEndpoint  string `json:"grpc_endpoint,omitempty"`
 }
 
 // GetRunnerByNodeID returns a runner by node_id.

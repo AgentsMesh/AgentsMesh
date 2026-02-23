@@ -90,24 +90,15 @@ func reactivateRunner(ctx context.Context, serverURL, token string) error {
 		return fmt.Errorf("reactivation failed: %w", err)
 	}
 
-	// Load existing config to get node_id and org_slug
+	// Load existing config to get certificate paths
 	cfg := &config.Config{}
 	if err := cfg.LoadGRPCConfig(); err != nil {
 		return fmt.Errorf("failed to load existing config: %w", err)
-	}
-	if err := cfg.LoadOrgSlug(); err != nil {
-		return fmt.Errorf("failed to load org slug: %w", err)
 	}
 
 	// Save new certificates
 	if err := cfg.SaveCertificates([]byte(result.Certificate), []byte(result.PrivateKey), []byte(result.CACertificate)); err != nil {
 		return fmt.Errorf("failed to save certificates: %w", err)
-	}
-
-	if result.GRPCEndpoint != "" {
-		if err := cfg.SaveGRPCEndpoint(result.GRPCEndpoint); err != nil {
-			return fmt.Errorf("failed to save gRPC endpoint: %w", err)
-		}
 	}
 
 	fmt.Println("✓ Runner reactivated successfully!")
@@ -121,24 +112,15 @@ func reactivateRunner(ctx context.Context, serverURL, token string) error {
 // saveGRPCConfig saves gRPC registration result to ~/.agentsmesh/
 func saveGRPCConfig(nodeID, serverURL, orgSlug, certPEM, keyPEM, caCertPEM, grpcEndpoint string) error {
 	cfg := &config.Config{
-		NodeID:    nodeID,
-		ServerURL: serverURL,
-		OrgSlug:   orgSlug,
+		NodeID:       nodeID,
+		ServerURL:    serverURL,
+		OrgSlug:      orgSlug,
+		GRPCEndpoint: grpcEndpoint,
 	}
 
 	// Save certificates
 	if err := cfg.SaveCertificates([]byte(certPEM), []byte(keyPEM), []byte(caCertPEM)); err != nil {
 		return fmt.Errorf("failed to save certificates: %w", err)
-	}
-
-	// Save gRPC endpoint
-	if err := cfg.SaveGRPCEndpoint(grpcEndpoint); err != nil {
-		return fmt.Errorf("failed to save gRPC endpoint: %w", err)
-	}
-
-	// Save org slug
-	if err := cfg.SaveOrgSlug(orgSlug); err != nil {
-		return fmt.Errorf("failed to save org slug: %w", err)
 	}
 
 	// Save full config file
