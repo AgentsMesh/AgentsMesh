@@ -47,6 +47,8 @@ type MCPContent struct {
 
 // handleMCP handles MCP JSON-RPC requests.
 func (s *HTTPServer) handleMCP(w http.ResponseWriter, r *http.Request) {
+	log := logger.MCP()
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -55,12 +57,14 @@ func (s *HTTPServer) handleMCP(w http.ResponseWriter, r *http.Request) {
 	// Get pod key from header
 	podKey := r.Header.Get("X-Pod-Key")
 	if podKey == "" {
+		log.Warn("MCP request missing X-Pod-Key header")
 		s.sendError(w, nil, -32600, "Missing X-Pod-Key header", nil)
 		return
 	}
 
 	pod, ok := s.GetPod(podKey)
 	if !ok {
+		log.Warn("MCP request for unregistered pod", "pod_key", podKey)
 		s.sendError(w, nil, -32600, "Pod not registered", nil)
 		return
 	}
@@ -68,9 +72,12 @@ func (s *HTTPServer) handleMCP(w http.ResponseWriter, r *http.Request) {
 	// Parse request
 	var req MCPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Warn("MCP request parse error", "pod_key", podKey, "error", err)
 		s.sendError(w, nil, -32700, "Parse error", err.Error())
 		return
 	}
+
+	log.Debug("MCP request received", "method", req.Method, "id", req.ID, "pod_key", podKey)
 
 	// Route request
 	switch req.Method {
@@ -81,6 +88,7 @@ func (s *HTTPServer) handleMCP(w http.ResponseWriter, r *http.Request) {
 	case "tools/call":
 		s.handleToolsCall(w, &req, pod)
 	default:
+		log.Warn("MCP unknown method", "method", req.Method, "pod_key", podKey)
 		s.sendError(w, req.ID, -32601, "Method not found", nil)
 	}
 }
@@ -121,17 +129,20 @@ func (s *HTTPServer) handleToolsList(w http.ResponseWriter, req *MCPRequest) {
 
 // handleToolsCall handles the tools/call request.
 func (s *HTTPServer) handleToolsCall(w http.ResponseWriter, req *MCPRequest, pod *PodInfo) {
+	log := logger.MCP()
+
 	var params struct {
 		Name      string                 `json:"name"`
 		Arguments map[string]interface{} `json:"arguments"`
 	}
 
 	if err := json.Unmarshal(req.Params, &params); err != nil {
+		log.Warn("Tool call invalid params", "pod_key", pod.PodKey, "error", err)
 		s.sendError(w, req.ID, -32602, "Invalid params", err.Error())
 		return
 	}
 
-	logger.MCP().Debug("Tool call received", "tool", params.Name, "pod_key", pod.PodKey)
+	log.Info("Tool call received", "tool", params.Name, "pod_key", pod.PodKey, "args", params.Arguments)
 
 	// Find tool
 	var tool *MCPTool
@@ -143,16 +154,24 @@ func (s *HTTPServer) handleToolsCall(w http.ResponseWriter, req *MCPRequest, pod
 	}
 
 	if tool == nil {
-		logger.MCP().Warn("Tool not found", "tool", params.Name)
+		log.Warn("Tool not found", "tool", params.Name, "pod_key", pod.PodKey)
 		s.sendError(w, req.ID, -32602, "Tool not found", params.Name)
 		return
 	}
 
 	// Execute tool
 	ctx := context.Background()
+	start := time.Now()
 	result, err := tool.Handler(ctx, pod.Client, params.Arguments)
+	elapsed := time.Since(start)
+
 	if err != nil {
-		logger.MCP().Debug("Tool call failed", "tool", params.Name, "error", err)
+		log.Error("Tool call failed",
+			"tool", params.Name,
+			"pod_key", pod.PodKey,
+			"error", err,
+			"duration", elapsed,
+		)
 		s.sendResult(w, req.ID, MCPToolResult{
 			Content: []MCPContent{{Type: "text", Text: err.Error()}},
 			IsError: true,
@@ -171,6 +190,13 @@ func (s *HTTPServer) handleToolsCall(w http.ResponseWriter, req *MCPRequest, pod
 		data, _ := json.MarshalIndent(result, "", "  ")
 		text = string(data)
 	}
+
+	log.Info("Tool call succeeded",
+		"tool", params.Name,
+		"pod_key", pod.PodKey,
+		"duration", elapsed,
+		"result_len", len(text),
+	)
 
 	s.sendResult(w, req.ID, MCPToolResult{
 		Content: []MCPContent{{Type: "text", Text: text}},

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
@@ -32,15 +33,28 @@ func (c *GRPCCollaborationClient) GetPodKey() string {
 
 // call is a generic helper that sends an MCP request and unmarshals the response.
 func (c *GRPCCollaborationClient) call(ctx context.Context, method string, params interface{}, result interface{}) error {
+	log := logger.MCP()
+
 	if c.rpc == nil {
+		log.Error("RPC client not available", "method", method, "pod_key", c.podKey)
 		return fmt.Errorf("RPC client not available")
 	}
+
+	log.Debug("Calling backend via gRPC", "method", method, "pod_key", c.podKey)
+
 	respBytes, err := c.rpc.Call(ctx, c.podKey, method, params)
 	if err != nil {
+		// Already logged in rpc.Call, no need to duplicate
 		return err
 	}
 	if result != nil && len(respBytes) > 0 {
 		if err := json.Unmarshal(respBytes, result); err != nil {
+			log.Error("Failed to unmarshal MCP response",
+				"method", method,
+				"pod_key", c.podKey,
+				"response_len", len(respBytes),
+				"error", err,
+			)
 			return fmt.Errorf("failed to unmarshal MCP response for %s: %w", method, err)
 		}
 	}

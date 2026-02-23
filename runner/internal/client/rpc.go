@@ -48,12 +48,15 @@ func NewRPCClient(conn ConnectionSender) *RPCClient {
 // Call sends an MCP request over the gRPC stream and blocks until a response
 // is received or the context is cancelled.
 func (r *RPCClient) Call(ctx context.Context, podKey, method string, payload interface{}) ([]byte, error) {
+	log := logger.MCP()
+
 	// Serialize payload to JSON
 	var payloadBytes []byte
 	if payload != nil {
 		var err error
 		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
+			log.Error("Failed to marshal MCP request payload", "method", method, "pod_key", podKey, "error", err)
 			return nil, fmt.Errorf("failed to marshal MCP request payload: %w", err)
 		}
 	}
@@ -82,35 +85,79 @@ func (r *RPCClient) Call(ctx context.Context, podKey, method string, payload int
 		Timestamp: time.Now().UnixMilli(),
 	}
 
+	log.Debug("Sending MCP request via gRPC", "request_id", requestID, "method", method, "pod_key", podKey)
+
 	if err := r.conn.SendMessage(msg); err != nil {
 		r.pending.Delete(requestID)
+		log.Error("Failed to send MCP request via gRPC",
+			"request_id", requestID,
+			"method", method,
+			"pod_key", podKey,
+			"error", err,
+		)
 		return nil, fmt.Errorf("failed to send MCP request: %w", err)
 	}
 
-	logger.MCP().Debug("MCP request sent", "request_id", requestID, "method", method, "pod_key", podKey)
+	log.Debug("MCP request sent, waiting for response", "request_id", requestID, "method", method, "pod_key", podKey)
 
 	// Wait for response
+	start := time.Now()
 	select {
 	case resp := <-responseCh:
+		elapsed := time.Since(start)
 		if !resp.Success {
 			errMsg := "unknown error"
+			var errCode int32
 			if resp.Error != nil {
 				errMsg = resp.Error.Message
+				errCode = resp.Error.Code
 			}
-			return nil, fmt.Errorf("MCP error (code %d): %s", resp.Error.GetCode(), errMsg)
+			log.Warn("MCP request returned error",
+				"request_id", requestID,
+				"method", method,
+				"pod_key", podKey,
+				"error_code", errCode,
+				"error_message", errMsg,
+				"duration", elapsed,
+			)
+			return nil, fmt.Errorf("API error (%d): %s", errCode, errMsg)
 		}
+		log.Debug("MCP request succeeded",
+			"request_id", requestID,
+			"method", method,
+			"pod_key", podKey,
+			"duration", elapsed,
+			"response_len", len(resp.Payload),
+		)
 		return resp.Payload, nil
 
 	case <-ctx.Done():
 		r.pending.Delete(requestID)
+		log.Warn("MCP request context cancelled",
+			"request_id", requestID,
+			"method", method,
+			"pod_key", podKey,
+			"error", ctx.Err(),
+		)
 		return nil, ctx.Err()
 
 	case <-r.done:
 		r.pending.Delete(requestID)
+		log.Warn("MCP request aborted: RPCClient stopped",
+			"request_id", requestID,
+			"method", method,
+			"pod_key", podKey,
+		)
 		return nil, fmt.Errorf("RPCClient stopped")
 
 	case <-time.After(RPCCallTimeout):
 		r.pending.Delete(requestID)
+		log.Error("MCP request timeout",
+			"request_id", requestID,
+			"method", method,
+			"pod_key", podKey,
+			"timeout", RPCCallTimeout,
+		)
 		return nil, fmt.Errorf("MCP request timeout (method=%s, request_id=%s)", method, requestID)
 	}
 }
@@ -118,21 +165,33 @@ func (r *RPCClient) Call(ctx context.Context, podKey, method string, payload int
 // HandleResponse matches an incoming McpResponse to a pending request.
 // Called by GRPCConnection when it receives a McpResponse from the server.
 func (r *RPCClient) HandleResponse(resp *runnerv1.McpResponse) {
+	log := logger.MCP()
+
 	if resp == nil {
+		log.Warn("Received nil MCP response")
 		return
 	}
 
+	log.Debug("Received MCP response",
+		"request_id", resp.RequestId,
+		"success", resp.Success,
+	)
+
 	v, ok := r.pending.LoadAndDelete(resp.RequestId)
 	if !ok {
-		logger.MCP().Warn("Received MCP response for unknown request", "request_id", resp.RequestId)
+		log.Warn("Received MCP response for unknown request",
+			"request_id", resp.RequestId,
+			"success", resp.Success,
+		)
 		return
 	}
 
 	pr := v.(*pendingRequest)
 	select {
 	case pr.responseCh <- resp:
+		log.Debug("MCP response delivered to caller", "request_id", resp.RequestId)
 	default:
-		logger.MCP().Warn("MCP response channel full", "request_id", resp.RequestId)
+		log.Warn("MCP response channel full, response dropped", "request_id", resp.RequestId)
 	}
 }
 
