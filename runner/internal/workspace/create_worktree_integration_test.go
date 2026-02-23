@@ -61,8 +61,8 @@ func TestCreateWorktreeWithGitConfig(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := manager.CreateWorktree(ctx, sourceRepo, "main", "test-pod")
-	t.Logf("CreateWorktree with git config result: %v", err)
+	result, err := manager.CreateWorktree(ctx, sourceRepo, "main", "test-pod")
+	t.Logf("CreateWorktree with git config result: %v, err: %v", result, err)
 }
 
 func TestCreateWorktreeNonMainBranch(t *testing.T) {
@@ -112,6 +112,6 @@ func TestCreateWorktreeNonMainBranch(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := manager.CreateWorktree(ctx, sourceRepo, "feature/test", "test-pod")
-	t.Logf("CreateWorktree with feature branch result: %v", err)
+	result, err := manager.CreateWorktree(ctx, sourceRepo, "feature/test", "test-pod")
+	t.Logf("CreateWorktree with feature branch result: %v, err: %v", result, err)
 }

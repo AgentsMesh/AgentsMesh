@@ -15,9 +15,12 @@ func TestCreateWorktreeInvalidRepoURL(t *testing.T) {
 	tmpDir := t.TempDir()
 	manager, _ := NewManager(tmpDir, "")
 
-	_, err := manager.CreateWorktree(context.Background(), "", "main", "pod-1")
+	result, err := manager.CreateWorktree(context.Background(), "", "main", "pod-1")
 	if err == nil {
 		t.Error("expected error for empty repo URL")
+	}
+	if result != nil {
+		t.Error("expected nil result on error")
 	}
 }
 
@@ -25,9 +28,12 @@ func TestCreateWorktreeInvalidRepoURLFormat(t *testing.T) {
 	tmpDir := t.TempDir()
 	manager, _ := NewManager(tmpDir, "")
 
-	_, err := manager.CreateWorktree(context.Background(), "invalid", "main", "pod-1")
+	result, err := manager.CreateWorktree(context.Background(), "invalid", "main", "pod-1")
 	if err == nil {
 		t.Error("expected error for invalid repo URL")
+	}
+	if result != nil {
+		t.Error("expected nil result on error")
 	}
 }
 
@@ -49,9 +55,12 @@ func TestCreateWorktreeMkdirParentError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := manager.CreateWorktree(ctx, "https://github.com/test/repo.git", "main", "pod-1")
+	result, err := manager.CreateWorktree(ctx, "https://github.com/test/repo.git", "main", "pod-1")
 	if err == nil {
 		t.Error("expected error when parent directory is read-only")
+	}
+	if result != nil {
+		t.Error("expected nil result on error")
 	}
 }
 
@@ -111,12 +120,15 @@ func TestCreateWorktreeFullIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	worktreePath, err := manager.CreateWorktree(ctx, sourceRepo, "main", "test-pod")
+	result, err := manager.CreateWorktree(ctx, sourceRepo, "main", "test-pod")
 	if err != nil {
 		t.Logf("CreateWorktree error (expected for local paths): %v", err)
 	} else {
-		if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
+		if _, err := os.Stat(result.Path); os.IsNotExist(err) {
 			t.Error("worktree path should exist")
+		}
+		if result.Branch == "" {
+			t.Error("expected non-empty branch name")
 		}
 	}
 }
@@ -168,6 +180,6 @@ func TestCreateWorktreeExistingWorktree(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := manager.CreateWorktree(ctx, sourceRepo, "main", "test-pod")
-	t.Logf("CreateWorktree result: %v", err)
+	result, err := manager.CreateWorktree(ctx, sourceRepo, "main", "test-pod")
+	t.Logf("CreateWorktree result: %v, err: %v", result, err)
 }

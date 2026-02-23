@@ -8,12 +8,10 @@ import (
 // This interface abstracts Manager for testing and decoupling.
 type WorkspaceManagerInterface interface {
 	// CreateWorktree creates a git worktree for a pod.
-	// Returns the workspace path.
-	CreateWorktree(ctx context.Context, repoURL, branch, podKey string) (string, error)
+	CreateWorktree(ctx context.Context, repoURL, branch, podKey string) (*WorktreeResult, error)
 
 	// CreateWorktreeWithOptions creates a git worktree with custom options.
-	// Returns the workspace path.
-	CreateWorktreeWithOptions(ctx context.Context, repoURL, branch, worktreePath string, opts ...WorktreeOption) (string, error)
+	CreateWorktreeWithOptions(ctx context.Context, repoURL, branch, worktreePath string, opts ...WorktreeOption) (*WorktreeResult, error)
 
 	// RemoveWorktree removes a git worktree and cleans up associated resources.
 	RemoveWorktree(ctx context.Context, worktreePath string) error

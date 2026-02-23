@@ -130,7 +130,7 @@ func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, c
 
 	// Create git worktree inside sandbox directory: sandboxes/{podKey}/workspace
 	workspaceTarget := filepath.Join(sandboxRoot, "workspace")
-	workspacePath, err := b.deps.Workspace.CreateWorktreeWithOptions(
+	result, err := b.deps.Workspace.CreateWorktreeWithOptions(
 		ctx,
 		cfg.RepositoryUrl,
 		cfg.SourceBranch,
@@ -159,17 +159,18 @@ func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, c
 	// Report progress after successful clone
 	b.sendProgress("cloning", 60, "Repository cloned successfully")
 
-	branchName := cfg.SourceBranch
+	// Use the actual branch name detected from the worktree
+	branchName := result.Branch
 	if branchName == "" {
-		branchName = "main"
+		branchName = cfg.SourceBranch
 	}
 
 	logger.Pod().Info("Git worktree created",
 		"pod_key", b.cmd.PodKey,
-		"workspace", workspacePath,
+		"workspace", result.Path,
 		"branch", branchName)
 
-	return workspacePath, branchName, nil
+	return result.Path, branchName, nil
 }
 
 // runPreparationScript executes the preparation script in the workspace.
