@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Tooltip,
   TooltipContent,
+  TooltipPortal,
   TooltipProvider,
   TooltipTrigger,
 } from "@radix-ui/react-tooltip";
@@ -127,12 +128,14 @@ export function ActivityBar({ className }: ActivityBarProps) {
                     <Icon className="w-5 h-5" />
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="bg-popover text-popover-foreground px-2 py-1 text-sm rounded shadow-md border border-border"
-                >
-                  {t(`ide.activities.${activity.id}`)}
-                </TooltipContent>
+                <TooltipPortal>
+                  <TooltipContent
+                    side="right"
+                    className="z-50 bg-popover text-popover-foreground px-2 py-1 text-sm rounded shadow-md border border-border"
+                  >
+                    {t(`ide.activities.${activity.id}`)}
+                  </TooltipContent>
+                </TooltipPortal>
               </Tooltip>
             );
           })}
@@ -163,12 +166,14 @@ export function ActivityBar({ className }: ActivityBarProps) {
                     <Icon className="w-5 h-5" />
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="bg-popover text-popover-foreground px-2 py-1 text-sm rounded shadow-md border border-border"
-                >
-                  {t(`ide.activities.${activity.id}`)}
-                </TooltipContent>
+                <TooltipPortal>
+                  <TooltipContent
+                    side="right"
+                    className="z-50 bg-popover text-popover-foreground px-2 py-1 text-sm rounded shadow-md border border-border"
+                  >
+                    {t(`ide.activities.${activity.id}`)}
+                  </TooltipContent>
+                </TooltipPortal>
               </Tooltip>
             );
           })}

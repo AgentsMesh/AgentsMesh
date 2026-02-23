@@ -166,7 +166,7 @@ BEGIN
     -- number 是组织内自增的
 
     INSERT INTO tickets (
-        organization_id, number, slug, title, description,
+        organization_id, number, slug, title, content,
         status, type, priority, reporter_id
     )
     SELECT v_org_id,
@@ -184,7 +184,7 @@ BEGIN
     );
 
     INSERT INTO tickets (
-        organization_id, number, slug, title, description,
+        organization_id, number, slug, title, content,
         status, type, priority, reporter_id
     )
     SELECT v_org_id,
