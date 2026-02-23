@@ -111,6 +111,14 @@ func (s *HTTPServer) createGetTicketTool() *MCPTool {
 					"type":        "string",
 					"description": "Ticket slug (e.g., 'AM-123'). Use search_tickets to find available tickets.",
 				},
+				"content_offset": map[string]interface{}{
+					"type":        "integer",
+					"description": "Start line number (0-based) for reading ticket content. Default is 0.",
+				},
+				"content_limit": map[string]interface{}{
+					"type":        "integer",
+					"description": "Number of lines to read from ticket content. Default is 200.",
+				},
 			},
 			"required": []string{"ticket_slug"},
 		},
@@ -119,7 +127,9 @@ func (s *HTTPServer) createGetTicketTool() *MCPTool {
 			if ticketSlug == "" {
 				return nil, fmt.Errorf("ticket_slug is required")
 			}
-			return client.GetTicket(ctx, ticketSlug)
+			contentOffset := getIntPtrArg(args, "content_offset")
+			contentLimit := getIntPtrArg(args, "content_limit")
+			return client.GetTicket(ctx, ticketSlug, contentOffset, contentLimit)
 		},
 	}
 }

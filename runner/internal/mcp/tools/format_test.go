@@ -206,19 +206,60 @@ func TestTicket_FormatText(t *testing.T) {
 		}
 	})
 
-	t.Run("long content truncated", func(t *testing.T) {
-		longContent := strings.Repeat("a", 600)
+	t.Run("content with line range metadata", func(t *testing.T) {
 		tk := &Ticket{
-			Slug:     "AM-124",
-			Title:    "Test",
-			Content:  longContent,
+			Slug:              "AM-124",
+			Title:             "Test",
+			Content:           "Line one\nLine two\nLine three",
+			Type:              TicketTypeTask,
+			Status:            TicketStatusTodo,
+			Priority:          TicketPriorityMedium,
+			ContentTotalLines: 50,
+			ContentOffset:     0,
+			ContentLimit:      3,
+		}
+		result := tk.FormatText()
+		if !strings.Contains(result, "Content (lines 1-3 of 50):") {
+			t.Errorf("expected line range header in content:\n%s", result)
+		}
+		if !strings.Contains(result, "Line one") {
+			t.Errorf("expected content body:\n%s", result)
+		}
+	})
+
+	t.Run("content with offset", func(t *testing.T) {
+		tk := &Ticket{
+			Slug:              "AM-126",
+			Title:             "Paginated",
+			Content:           "Line 201\nLine 202",
+			Type:              TicketTypeTask,
+			Status:            TicketStatusTodo,
+			Priority:          TicketPriorityMedium,
+			ContentTotalLines: 500,
+			ContentOffset:     200,
+			ContentLimit:      2,
+		}
+		result := tk.FormatText()
+		if !strings.Contains(result, "Content (lines 201-202 of 500):") {
+			t.Errorf("expected offset line range in content:\n%s", result)
+		}
+	})
+
+	t.Run("content without metadata falls back to simple format", func(t *testing.T) {
+		tk := &Ticket{
+			Slug:     "AM-127",
+			Title:    "Simple",
+			Content:  "Just plain text",
 			Type:     TicketTypeTask,
 			Status:   TicketStatusTodo,
 			Priority: TicketPriorityMedium,
 		}
 		result := tk.FormatText()
-		if !strings.Contains(result, "...") {
-			t.Errorf("expected truncation with '...' in content:\n%s", result)
+		if !strings.Contains(result, "Content:\nJust plain text") {
+			t.Errorf("expected simple content format:\n%s", result)
+		}
+		if strings.Contains(result, "lines") {
+			t.Errorf("should not have line range when no metadata:\n%s", result)
 		}
 	})
 }

@@ -159,11 +159,9 @@ func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, c
 	// Report progress after successful clone
 	b.sendProgress("cloning", 60, "Repository cloned successfully")
 
-	// Use the actual branch name detected from the worktree
+	// WorktreeResult.Branch already falls back to the requested branch
+	// when detached HEAD is detected, so no additional fallback is needed.
 	branchName := result.Branch
-	if branchName == "" {
-		branchName = cfg.SourceBranch
-	}
 
 	logger.Pod().Info("Git worktree created",
 		"pod_key", b.cmd.PodKey,

@@ -43,7 +43,7 @@ type ChannelClient interface {
 // TicketClient defines the interface for ticket operations.
 type TicketClient interface {
 	SearchTickets(ctx context.Context, repositoryID *int, status *TicketStatus, ticketType *TicketType, priority *TicketPriority, assigneeID *int, parentTicketSlug *string, query string, limit, page int) ([]Ticket, error)
-	GetTicket(ctx context.Context, ticketSlug string) (*Ticket, error)
+	GetTicket(ctx context.Context, ticketSlug string, contentOffset, contentLimit *int) (*Ticket, error)
 	CreateTicket(ctx context.Context, repositoryID *int64, title, content string, ticketType TicketType, priority TicketPriority, parentTicketSlug *string) (*Ticket, error)
 	UpdateTicket(ctx context.Context, ticketSlug string, title, content *string, status *TicketStatus, priority *TicketPriority, ticketType *TicketType) (*Ticket, error)
 }

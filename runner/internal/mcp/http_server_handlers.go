@@ -142,7 +142,8 @@ func (s *HTTPServer) handleToolsCall(w http.ResponseWriter, req *MCPRequest, pod
 		return
 	}
 
-	log.Info("Tool call received", "tool", params.Name, "pod_key", pod.PodKey, "args", params.Arguments)
+	log.Info("Tool call received", "tool", params.Name, "pod_key", pod.PodKey)
+	log.Debug("Tool call arguments", "tool", params.Name, "pod_key", pod.PodKey, "args", params.Arguments)
 
 	// Find tool
 	var tool *MCPTool

@@ -120,7 +120,7 @@ func (r *RPCClient) Call(ctx context.Context, podKey, method string, payload int
 				"error_message", errMsg,
 				"duration", elapsed,
 			)
-			return nil, fmt.Errorf("API error (%d): %s", errCode, errMsg)
+			return nil, fmt.Errorf("MCP error (code %d): %s", errCode, errMsg)
 		}
 		log.Debug("MCP request succeeded",
 			"request_id", requestID,

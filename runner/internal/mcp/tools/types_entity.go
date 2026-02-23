@@ -97,18 +97,21 @@ type ChannelMessage struct {
 
 // Ticket represents a ticket in the system.
 type Ticket struct {
-	Slug             string         `json:"slug"`
-	Title            string         `json:"title"`
-	Content          string         `json:"content,omitempty"`
-	Type             TicketType     `json:"type"`
-	Status           TicketStatus   `json:"status"`
-	Priority         TicketPriority `json:"priority"`
-	ProductName      string         `json:"product_name,omitempty"`
-	ReporterName     string         `json:"reporter_name,omitempty"`
-	ParentTicketSlug string         `json:"parent_ticket_slug,omitempty"`
-	Estimate         *int           `json:"estimate,omitempty"`
-	CreatedAt        string         `json:"created_at"`
-	UpdatedAt        string         `json:"updated_at"`
+	Slug              string         `json:"slug"`
+	Title             string         `json:"title"`
+	Content           string         `json:"content,omitempty"`
+	Type              TicketType     `json:"type"`
+	Status            TicketStatus   `json:"status"`
+	Priority          TicketPriority `json:"priority"`
+	ProductName       string         `json:"product_name,omitempty"`
+	ReporterName      string         `json:"reporter_name,omitempty"`
+	ParentTicketSlug  string         `json:"parent_ticket_slug,omitempty"`
+	Estimate          *int           `json:"estimate,omitempty"`
+	ContentTotalLines int            `json:"content_total_lines,omitempty"` // Total lines of converted content
+	ContentOffset     int            `json:"content_offset,omitempty"`      // Start line of this response (0-based)
+	ContentLimit      int            `json:"content_limit,omitempty"`       // Number of lines returned
+	CreatedAt         string         `json:"created_at"`
+	UpdatedAt         string         `json:"updated_at"`
 }
 
 // ConfigFieldSummary is a simplified config field for LLM consumption.

@@ -115,6 +115,7 @@ func (m *ChannelMessage) FormatText() string {
 }
 
 // FormatText formats a Ticket as key-value text.
+// Content is server-side converted plain text with line-range metadata.
 func (t *Ticket) FormatText() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Ticket: %s - %s\n", t.Slug, t.Title)
@@ -123,11 +124,15 @@ func (t *Ticket) FormatText() string {
 		fmt.Fprintf(&b, "Parent: %s\n", t.ParentTicketSlug)
 	}
 	if t.Content != "" {
-		content := t.Content
-		if len(content) > 500 {
-			content = content[:500] + "..."
+		if t.ContentTotalLines > 0 {
+			fmt.Fprintf(&b, "\nContent (lines %d-%d of %d):\n%s\n",
+				t.ContentOffset+1,
+				t.ContentOffset+t.ContentLimit,
+				t.ContentTotalLines,
+				t.Content)
+		} else if strings.TrimSpace(t.Content) != "" {
+			fmt.Fprintf(&b, "\nContent:\n%s\n", t.Content)
 		}
-		fmt.Fprintf(&b, "Content: %s\n", content)
 	}
 	if t.ReporterName != "" {
 		fmt.Fprintf(&b, "Reporter: %s\n", t.ReporterName)

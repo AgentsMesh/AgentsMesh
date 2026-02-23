@@ -382,10 +382,16 @@ func (c *GRPCCollaborationClient) SearchTickets(ctx context.Context, repositoryI
 	return result.Tickets, nil
 }
 
-// GetTicket gets a ticket by slug.
-func (c *GRPCCollaborationClient) GetTicket(ctx context.Context, ticketSlug string) (*tools.Ticket, error) {
+// GetTicket gets a ticket by slug with optional content pagination.
+func (c *GRPCCollaborationClient) GetTicket(ctx context.Context, ticketSlug string, contentOffset, contentLimit *int) (*tools.Ticket, error) {
 	params := map[string]interface{}{
 		"ticket_slug": ticketSlug,
+	}
+	if contentOffset != nil {
+		params["content_offset"] = *contentOffset
+	}
+	if contentLimit != nil {
+		params["content_limit"] = *contentLimit
 	}
 	var result struct {
 		Ticket tools.Ticket `json:"ticket"`

@@ -77,11 +77,14 @@ func (m *mockFormatClient) SearchTickets(_ context.Context, _ *int, _ *tools.Tic
 	}, nil
 }
 
-func (m *mockFormatClient) GetTicket(_ context.Context, _ string) (*tools.Ticket, error) {
+func (m *mockFormatClient) GetTicket(_ context.Context, _ string, _ *int, _ *int) (*tools.Ticket, error) {
 	return &tools.Ticket{
 		Slug: "AM-123", Title: "Fix auth bug",
 		Type: tools.TicketTypeBug, Status: tools.TicketStatusInProgress, Priority: tools.TicketPriorityHigh,
-		ReporterName: "john",
+		ReporterName:      "john",
+		ContentTotalLines: 5,
+		ContentOffset:     0,
+		ContentLimit:      5,
 		CreatedAt: "2026-02-19T08:00:00Z", UpdatedAt: "2026-02-20T15:00:00Z",
 	}, nil
 }
@@ -328,6 +331,15 @@ func TestFormatIntegration_GetTicket(t *testing.T) {
 	assertContains(t, text, "Reporter: john")
 	assertNotContains(t, text, "Description:")
 	assertNotContains(t, text, `"identifier"`)
+}
+
+func TestFormatIntegration_GetTicketWithContentPagination(t *testing.T) {
+	server := setupServerWithMockClient(t)
+	text := callTool(t, server, "get_ticket", `{"ticket_slug":"AM-123","content_offset":0,"content_limit":100}`)
+
+	assertContains(t, text, "Ticket: AM-123 - Fix auth bug")
+	assertContains(t, text, "Type: bug | Status: in_progress | Priority: high")
+	assertContains(t, text, "Reporter: john")
 }
 
 func TestFormatIntegration_CreateTicket(t *testing.T) {

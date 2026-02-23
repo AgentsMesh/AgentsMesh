@@ -187,6 +187,38 @@ func TestHTTPServerMCPToolsCallCreateTicketMissingTitle(t *testing.T) {
 	}
 }
 
+func TestHTTPServerMCPToolsCallGetTicketWithPagination(t *testing.T) {
+	server := NewHTTPServer(nil, 9090)
+	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
+
+	body := bytes.NewBufferString(`{
+		"jsonrpc": "2.0",
+		"id": 1,
+		"method": "tools/call",
+		"params": {
+			"name": "get_ticket",
+			"arguments": {
+				"ticket_slug": "AM-123",
+				"content_offset": 200,
+				"content_limit": 100
+			}
+		}
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/mcp", body)
+	req.Header.Set("X-Pod-Key", "test-pod")
+	rec := httptest.NewRecorder()
+
+	server.handleMCP(rec, req)
+
+	var resp MCPResponse
+	json.NewDecoder(rec.Body).Decode(&resp)
+	// Tool should be found with content_offset and content_limit params
+	if resp.Error != nil && resp.Error.Code == -32601 {
+		t.Error("tool get_ticket should be found")
+	}
+}
+
 func TestHTTPServerMCPToolsCallCreateTicketWithAllParams(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
