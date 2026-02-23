@@ -17,7 +17,8 @@ NC='\033[0m' # No Color
 # GitHub release repository
 GITHUB_REPO="AgentsMesh/AgentsMeshRunner"
 BINARY_NAME="agentsmesh-runner"
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR=""
+USE_SUDO="no"
 
 # Print colored message
 info() {
@@ -35,6 +36,119 @@ warn() {
 error() {
     printf "${RED}==>${NC} %s\n" "$1" >&2
     exit 1
+}
+
+# Check if stdin is a TTY (interactive terminal)
+is_tty() {
+    [ -t 0 ]
+}
+
+# Detect install directory with three-level fallback:
+#   1. $INSTALL_DIR env var (user-specified)
+#   2. /usr/local/bin (writable directly, or via passwordless sudo)
+#   3. ~/.local/bin (user-space fallback, always writable)
+detect_install_dir() {
+    # Priority 1: user-specified INSTALL_DIR
+    if [ -n "$INSTALL_DIR" ]; then
+        if [ ! -d "$INSTALL_DIR" ]; then
+            mkdir -p "$INSTALL_DIR" 2>/dev/null || {
+                error "Cannot create directory: $INSTALL_DIR"
+            }
+        fi
+        if [ -w "$INSTALL_DIR" ]; then
+            info "Install directory (user-specified): $INSTALL_DIR"
+            return
+        fi
+        error "Cannot write to specified INSTALL_DIR: $INSTALL_DIR"
+    fi
+
+    # Priority 2: /usr/local/bin
+    if [ -d "/usr/local/bin" ] && [ -w "/usr/local/bin" ]; then
+        INSTALL_DIR="/usr/local/bin"
+        info "Install directory: $INSTALL_DIR"
+        return
+    fi
+
+    # Try passwordless sudo for /usr/local/bin
+    if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+        INSTALL_DIR="/usr/local/bin"
+        USE_SUDO="yes"
+        if [ ! -d "$INSTALL_DIR" ]; then
+            sudo mkdir -p "$INSTALL_DIR"
+        fi
+        info "Install directory: $INSTALL_DIR (via sudo)"
+        return
+    fi
+
+    # In TTY mode, prompt for sudo password
+    if is_tty && command -v sudo >/dev/null 2>&1; then
+        warn "/usr/local/bin is not writable, attempting sudo..."
+        if sudo -v 2>/dev/null; then
+            INSTALL_DIR="/usr/local/bin"
+            USE_SUDO="yes"
+            info "Install directory: $INSTALL_DIR (via sudo)"
+            return
+        fi
+    fi
+
+    # Priority 3: ~/.local/bin (user-space fallback)
+    INSTALL_DIR="$HOME/.local/bin"
+    if [ ! -d "$INSTALL_DIR" ]; then
+        mkdir -p "$INSTALL_DIR"
+    fi
+    info "Install directory: $INSTALL_DIR (user-space fallback)"
+}
+
+# Check if ~/.local/bin is in PATH and print configuration hints
+ensure_path() {
+    case ":$PATH:" in
+        *":$INSTALL_DIR:"*)
+            # Already in PATH, nothing to do
+            return
+            ;;
+    esac
+
+    # Only show hints for non-standard directories
+    case "$INSTALL_DIR" in
+        /usr/local/bin|/usr/bin|/bin)
+            return
+            ;;
+    esac
+
+    echo ""
+    warn "$INSTALL_DIR is not in your PATH."
+    echo ""
+
+    # Detect user's shell and provide specific instructions
+    CURRENT_SHELL=$(basename "${SHELL:-/bin/sh}")
+    case "$CURRENT_SHELL" in
+        zsh)
+            echo "  Add to your ${BLUE}~/.zshrc${NC}:"
+            echo "    ${BLUE}export PATH=\"$INSTALL_DIR:\$PATH\"${NC}"
+            echo ""
+            echo "  Then reload:"
+            echo "    ${BLUE}source ~/.zshrc${NC}"
+            ;;
+        bash)
+            echo "  Add to your ${BLUE}~/.bashrc${NC} (or ${BLUE}~/.bash_profile${NC} on macOS):"
+            echo "    ${BLUE}export PATH=\"$INSTALL_DIR:\$PATH\"${NC}"
+            echo ""
+            echo "  Then reload:"
+            echo "    ${BLUE}source ~/.bashrc${NC}"
+            ;;
+        fish)
+            echo "  Add to your ${BLUE}~/.config/fish/config.fish${NC}:"
+            echo "    ${BLUE}fish_add_path $INSTALL_DIR${NC}"
+            echo ""
+            echo "  Then reload:"
+            echo "    ${BLUE}source ~/.config/fish/config.fish${NC}"
+            ;;
+        *)
+            echo "  Add to your shell profile:"
+            echo "    ${BLUE}export PATH=\"$INSTALL_DIR:\$PATH\"${NC}"
+            ;;
+    esac
+    echo ""
 }
 
 # Detect OS and architecture
@@ -118,16 +232,17 @@ install() {
         error "Binary not found in archive"
     fi
 
-    # Install
+    # Install binary to detected directory
     info "Installing to $INSTALL_DIR..."
 
     if [ -w "$INSTALL_DIR" ]; then
         mv "$BINARY_PATH" "$INSTALL_DIR/$BINARY_NAME"
         chmod +x "$INSTALL_DIR/$BINARY_NAME"
-    else
-        warn "Need sudo permission to install to $INSTALL_DIR"
+    elif [ "$USE_SUDO" = "yes" ]; then
         sudo mv "$BINARY_PATH" "$INSTALL_DIR/$BINARY_NAME"
         sudo chmod +x "$INSTALL_DIR/$BINARY_NAME"
+    else
+        error "Cannot write to $INSTALL_DIR"
     fi
 
     success "AgentsMesh Runner v$VERSION installed successfully!"
@@ -172,8 +287,15 @@ check_homebrew() {
         echo "     ${BLUE}brew tap agentsmesh/tap https://github.com/AgentsMesh/BrewCask${NC}"
         echo "     ${BLUE}brew install agentsmesh/tap/agentsmesh-runner${NC}"
         echo ""
+
+        # In pipe mode, skip interactive prompt and continue with installation
+        if ! is_tty; then
+            info "Non-interactive mode detected, continuing with direct installation..."
+            return
+        fi
+
         printf "Continue with direct installation? [Y/n] "
-        read -r response
+        read -r response </dev/tty
         case "$response" in
             [nN][oO]|[nN])
                 info "Installation cancelled. Use Homebrew to install."
@@ -198,9 +320,11 @@ main() {
 
     detect_platform
     check_homebrew
+    detect_install_dir
     get_latest_version
     install
     verify
+    ensure_path
     print_next_steps
 }
 
