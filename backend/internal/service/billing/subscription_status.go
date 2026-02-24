@@ -84,7 +84,9 @@ func (s *Service) CancelSubscription(ctx context.Context, orgID int64) error {
 		return err
 	}
 
+	now := time.Now()
 	sub.Status = billing.SubscriptionStatusCanceled
+	sub.CanceledAt = &now
 
 	// Cancel Stripe subscription if enabled
 	if s.stripeEnabled && s.stripeClient != nil && sub.StripeSubscriptionID != nil {

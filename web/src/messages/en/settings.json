@@ -187,12 +187,17 @@
       "slugLabel": "Organization Slug",
       "slugHint": "The slug cannot be changed after creation",
       "saving": "Saving...",
-      "saveChanges": "Save Changes"
+      "saveChanges": "Save Changes",
+      "saveSuccess": "Organization settings saved",
+      "saveFailed": "Failed to save"
     },
     "dangerZone": {
       "title": "Danger Zone",
       "description": "Once you delete an organization, there is no going back. Please be certain.",
-      "deleteOrg": "Delete Organization"
+      "deleteOrg": "Delete Organization",
+      "deleting": "Deleting...",
+      "deleteSuccess": "Organization deleted",
+      "deleteFailed": "Failed to delete organization"
     },
     "members": {
       "title": "Members",

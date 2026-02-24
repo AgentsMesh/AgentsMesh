@@ -187,12 +187,17 @@
       "slugLabel": "组织标识",
       "slugHint": "创建后不可更改",
       "saving": "保存中...",
-      "saveChanges": "保存更改"
+      "saveChanges": "保存更改",
+      "saveSuccess": "组织设置已保存",
+      "saveFailed": "保存失败"
     },
     "dangerZone": {
       "title": "危险区域",
       "description": "删除组织后将无法恢复，请谨慎操作。",
-      "deleteOrg": "删除组织"
+      "deleteOrg": "删除组织",
+      "deleting": "删除中...",
+      "deleteSuccess": "组织已删除",
+      "deleteFailed": "删除组织失败"
     },
     "members": {
       "title": "成员",

@@ -51,6 +51,11 @@ export const organizationApi = {
       body: data,
     }),
 
+  delete: (slug: string) =>
+    request<{ message: string }>(`/api/v1/orgs/${slug}`, {
+      method: "DELETE",
+    }),
+
   // Member management
   listMembers: (slug: string) =>
     request<{ members: OrganizationMember[]; total: number }>(
