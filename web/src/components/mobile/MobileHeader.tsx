@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Menu, Network, PanelRight } from "lucide-react";
+import { Menu, PanelRight } from "lucide-react";
+import { Logo } from "@/components/common";
 
 interface MobileHeaderProps {
   className?: string;
@@ -59,8 +60,8 @@ export function MobileHeader({ className, title, actions }: MobileHeaderProps) {
 
       {/* Logo and title */}
       <Link href="/" className="flex items-center gap-2 flex-1 min-w-0">
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-          <Network className="w-4 h-4 text-primary-foreground" />
+        <div className="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0">
+          <Logo />
         </div>
         <span className="font-semibold truncate">{displayTitle}</span>
       </Link>

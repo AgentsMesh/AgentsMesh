@@ -23,6 +23,7 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
+import { Logo } from "@/components/common";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   terminal: Terminal,
@@ -97,8 +98,8 @@ export function ActivityBar({ className }: ActivityBarProps) {
         {/* Logo */}
         <div className="h-12 flex items-center justify-center border-b border-border">
           <Link href="/" className="flex items-center justify-center">
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-              <Network className="w-4 h-4 text-primary-foreground" />
+            <div className="w-7 h-7 rounded-lg overflow-hidden">
+              <Logo />
             </div>
           </Link>
         </div>

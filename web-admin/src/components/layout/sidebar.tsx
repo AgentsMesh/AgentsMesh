@@ -9,7 +9,6 @@ import {
   Server,
   ScrollText,
   LogOut,
-  Shield,
   Tag,
   Radio,
 } from "lucide-react";
@@ -63,7 +62,19 @@ export function Sidebar() {
     <aside className="flex h-screen w-64 flex-col border-r border-border bg-card">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-        <Shield className="h-6 w-6 text-primary" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 400 400"
+          className="h-7 w-7 rounded-md"
+        >
+          <rect x="0" y="0" width="400" height="400" rx="32" ry="32" fill="#3E7DC7" />
+          <rect x="110" y="60" width="180" height="80" rx="14" ry="14" fill="#FFFFFF" />
+          <rect x="120" y="90" width="160" height="10" rx="2" ry="2" fill="#3E7DC7" />
+          <rect x="140" y="126" width="120" height="34" fill="#FFFFFF" />
+          <rect x="65" y="142" width="270" height="20" rx="10" ry="10" fill="#FFFFFF" />
+          <polygon points="153,156 247,156 262,308 138,308" fill="#FFFFFF" />
+          <rect x="116" y="302" width="168" height="36" rx="8" ry="8" fill="#FFFFFF" />
+        </svg>
         <span className="text-lg font-semibold">Admin Console</span>
       </div>
 

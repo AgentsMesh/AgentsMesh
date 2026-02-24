@@ -1,0 +1,34 @@
+import { cn } from "@/lib/utils";
+
+interface LogoProps {
+  className?: string;
+}
+
+/**
+ * AgentsMesh Logo - Control Tower icon
+ * Reusable SVG component for consistent branding across the app.
+ */
+export function Logo({ className }: LogoProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 400 400"
+      className={cn("w-full h-full", className)}
+    >
+      {/* Background */}
+      <rect x="0" y="0" width="400" height="400" rx="32" ry="32" fill="#3E7DC7" />
+      {/* Observation Cab */}
+      <rect x="110" y="60" width="180" height="80" rx="14" ry="14" fill="#FFFFFF" />
+      {/* Window Band */}
+      <rect x="120" y="90" width="160" height="10" rx="2" ry="2" fill="#3E7DC7" />
+      {/* Neck */}
+      <rect x="140" y="126" width="120" height="34" fill="#FFFFFF" />
+      {/* Rim Overhang */}
+      <rect x="65" y="142" width="270" height="20" rx="10" ry="10" fill="#FFFFFF" />
+      {/* Shaft */}
+      <polygon points="153,156 247,156 262,308 138,308" fill="#FFFFFF" />
+      {/* Base */}
+      <rect x="116" y="302" width="168" height="36" rx="8" ry="8" fill="#FFFFFF" />
+    </svg>
+  );
+}
