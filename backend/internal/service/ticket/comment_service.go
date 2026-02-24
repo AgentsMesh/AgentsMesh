@@ -98,12 +98,12 @@ func (s *Service) UpdateComment(ctx context.Context, ticketID, commentID, userID
 		return nil, ErrUnauthorizedComment
 	}
 
-	updates := map[string]interface{}{
-		"content":  content,
-		"mentions": mentions,
-	}
+	// Update fields on the struct directly so GORM's serializer:json tag
+	// is respected for the Mentions JSONB column.
+	comment.Content = content
+	comment.Mentions = mentions
 
-	if err := s.db.WithContext(ctx).Model(&comment).Updates(updates).Error; err != nil {
+	if err := s.db.WithContext(ctx).Model(&comment).Select("Content", "Mentions").Updates(&comment).Error; err != nil {
 		return nil, err
 	}
 
