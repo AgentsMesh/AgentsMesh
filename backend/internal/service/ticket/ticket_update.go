@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"gorm.io/gorm"
 )
 
 // UpdateTicket updates a ticket
@@ -68,7 +69,7 @@ func (s *Service) UpdateStatus(ctx context.Context, ticketID int64, status strin
 	return nil
 }
 
-// DeleteTicket deletes a ticket
+// DeleteTicket deletes a ticket and its associated comments within a transaction.
 func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 	// Get the ticket before deletion to capture info for event
 	oldTicket, err := s.GetTicket(ctx, ticketID)
@@ -76,11 +77,17 @@ func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 		return err
 	}
 
-	if err := s.db.WithContext(ctx).Delete(&ticket.Ticket{}, ticketID).Error; err != nil {
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Clean up comments first (application-level cascade, no DB foreign keys)
+		if err := tx.Where("ticket_id = ?", ticketID).Delete(&ticket.Comment{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&ticket.Ticket{}, ticketID).Error
+	}); err != nil {
 		return err
 	}
 
-	// Publish ticket deleted event
+	// Publish ticket deleted event (outside transaction — fire-and-forget)
 	s.publishEvent(ctx, TicketEventDeleted, oldTicket.OrganizationID, oldTicket.Slug, "deleted", oldTicket.Status)
 
 	return nil

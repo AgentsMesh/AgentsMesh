@@ -101,6 +101,22 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 
 	err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS ticket_comments (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			ticket_id INTEGER NOT NULL,
+			user_id INTEGER NOT NULL,
+			content TEXT NOT NULL,
+			parent_id INTEGER,
+			mentions TEXT,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)
+	`).Error
+	if err != nil {
+		t.Fatalf("failed to create ticket_comments table: %v", err)
+	}
+
+	err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS ticket_merge_requests (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL,

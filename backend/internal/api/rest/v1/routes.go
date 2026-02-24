@@ -245,6 +245,10 @@ func registerTicketRoutes(rg *gin.RouterGroup, svc *Services) {
 		tickets.GET("/:ticket_slug/commits", ticketHandler.ListCommits)
 		tickets.POST("/:ticket_slug/commits", ticketHandler.LinkCommit)
 		tickets.DELETE("/:ticket_slug/commits/:commit_id", ticketHandler.UnlinkCommit)
+		tickets.GET("/:ticket_slug/comments", ticketHandler.ListComments)
+		tickets.POST("/:ticket_slug/comments", ticketHandler.CreateComment)
+		tickets.PUT("/:ticket_slug/comments/:id", ticketHandler.UpdateComment)
+		tickets.DELETE("/:ticket_slug/comments/:id", ticketHandler.DeleteComment)
 		tickets.GET("/:ticket_slug/pods", meshHandler.GetTicketPods)
 		tickets.POST("/:ticket_slug/pods", meshHandler.CreatePodForTicket)
 	}

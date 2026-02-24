@@ -55,6 +55,19 @@ export interface TicketCommit {
   created_at: string;
 }
 
+export interface TicketComment {
+  id: number;
+  ticket_id: number;
+  user_id: number;
+  content: string;
+  parent_id?: number;
+  mentions?: Array<{ user_id: number; username: string }>;
+  created_at: string;
+  updated_at: string;
+  user?: { id: number; username: string; name?: string; avatar_url?: string };
+  replies?: TicketComment[];
+}
+
 export interface BoardColumn {
   status: string;
   tickets: TicketData[];
@@ -340,4 +353,55 @@ export const ticketApi = {
       method: "POST",
       body: { ticket_ids: ticketIds },
     }),
+
+  // Comments
+  listComments: (slug: string, limit?: number, offset?: number) => {
+    const params = new URLSearchParams();
+    if (limit) params.append("limit", String(limit));
+    if (offset) params.append("offset", String(offset));
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return request<{ comments: TicketComment[]; total: number }>(
+      `${orgPath("/tickets")}/${slug}/comments${query}`
+    );
+  },
+
+  createComment: (
+    slug: string,
+    content: string,
+    parentId?: number,
+    mentions?: Array<{ user_id: number; username: string }>
+  ) =>
+    request<{ comment: TicketComment }>(
+      `${orgPath("/tickets")}/${slug}/comments`,
+      {
+        method: "POST",
+        body: {
+          content,
+          parent_id: parentId,
+          mentions,
+        },
+      }
+    ),
+
+  updateComment: (
+    slug: string,
+    commentId: number,
+    content: string,
+    mentions?: Array<{ user_id: number; username: string }>
+  ) =>
+    request<{ comment: TicketComment }>(
+      `${orgPath("/tickets")}/${slug}/comments/${commentId}`,
+      {
+        method: "PUT",
+        body: { content, mentions },
+      }
+    ),
+
+  deleteComment: (slug: string, commentId: number) =>
+    request<{ message: string }>(
+      `${orgPath("/tickets")}/${slug}/comments/${commentId}`,
+      {
+        method: "DELETE",
+      }
+    ),
 };

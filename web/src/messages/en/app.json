@@ -189,7 +189,18 @@
       "timeline": "Timeline",
       "started": "Started",
       "completed": "Completed",
-      "viewFullDetails": "View Full Details"
+      "viewFullDetails": "View Full Details",
+      "comments": "Comments",
+      "noComments": "No comments yet",
+      "addComment": "Add a comment...",
+      "reply": "Reply",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteCommentConfirm": "Are you sure you want to delete this comment?",
+      "replyTo": "Replying to @{username}",
+      "cancelReply": "Cancel",
+      "submit": "Comment",
+      "edited": "edited"
     },
     "podPanel": {
       "activeCount": "{count} active",

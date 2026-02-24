@@ -10,7 +10,7 @@ import { useTicketStore, TicketStatus } from "@/stores/ticket";
 import { StatusIcon, TypeIcon, getStatusDisplayInfo } from "./TicketIcons";
 import TicketPodPanel from "./TicketPodPanel";
 import { useTicketExtraData } from "./hooks";
-import { SubTicketsList, RelationsList, CommitsList, LabelsList } from "./shared";
+import { SubTicketsList, RelationsList, CommitsList, LabelsList, CommentsList } from "./shared";
 import { TicketDetailSidebar } from "./TicketDetailSidebar";
 import { TicketEditForm } from "./TicketEditForm";
 
@@ -37,7 +37,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   const { dialogProps, confirm } = useConfirmDialog();
 
   // Use shared hook for extra data
-  const { subTickets, relations, commits } = useTicketExtraData(slug, !!currentTicket);
+  const { subTickets, relations, commits, comments, addComment, updateComment, deleteComment } = useTicketExtraData(slug, !!currentTicket);
 
   // Fetch ticket data
   useEffect(() => {
@@ -191,6 +191,14 @@ export function TicketDetail({ slug }: TicketDetailProps) {
 
         {/* Commits (using shared component) */}
         <CommitsList commits={commits} />
+
+        {/* Comments */}
+        <CommentsList
+          comments={comments}
+          onAddComment={addComment}
+          onUpdateComment={updateComment}
+          onDeleteComment={deleteComment}
+        />
 
         {/* AgentPods */}
         <TicketPodPanel

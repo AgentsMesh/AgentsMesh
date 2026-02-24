@@ -47,6 +47,10 @@ vi.mock('@/lib/api', () => ({
     getSubTickets: vi.fn(),
     listRelations: vi.fn(),
     listCommits: vi.fn(),
+    listComments: vi.fn(),
+  },
+  organizationApi: {
+    listMembers: vi.fn().mockResolvedValue({ members: [] }),
   },
 }))
 
@@ -121,6 +125,7 @@ describe('TicketDetail Component', () => {
     ;(ticketApi.getSubTickets as ReturnType<typeof vi.fn>).mockResolvedValue({ sub_tickets: [] })
     ;(ticketApi.listRelations as ReturnType<typeof vi.fn>).mockResolvedValue({ relations: [] })
     ;(ticketApi.listCommits as ReturnType<typeof vi.fn>).mockResolvedValue({ commits: [] })
+    ;(ticketApi.listComments as ReturnType<typeof vi.fn>).mockResolvedValue({ comments: [], total: 0 })
   })
 
   describe('rendering', () => {

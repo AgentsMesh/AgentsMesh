@@ -32,6 +32,7 @@ export type {
   TicketData,
   TicketRelation,
   TicketCommit,
+  TicketComment,
   BoardColumn,
 } from "./ticket";
 
