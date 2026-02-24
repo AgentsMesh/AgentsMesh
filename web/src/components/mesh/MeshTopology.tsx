@@ -12,6 +12,7 @@ import {
   type Edge,
   type NodeTypes,
   type EdgeTypes,
+  type OnNodeDrag,
   BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -49,7 +50,8 @@ const GROUP_GAP = 40;
 function calculateGroupedLayout(
   pods: MeshNode[],
   edges: MeshEdge[],
-  runners?: RunnerInfoData[]
+  runners?: RunnerInfoData[],
+  savedPositions?: Record<string, { x: number; y: number }>
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
   const flowEdges: Edge[] = [];
@@ -72,9 +74,21 @@ function calculateGroupedLayout(
     }
   }
 
-  // Create group nodes and place pods inside
-  let groupX = 0;
+  // Calculate auto-layout start X: place new groups after saved ones to avoid overlap
+  let autoGroupX = 0;
+  if (savedPositions) {
+    for (const [runnerId, runnerPods] of podsByRunner) {
+      const gid = `runner-group-${runnerId}`;
+      const saved = savedPositions[gid];
+      if (saved) {
+        const cols = Math.min(runnerPods.length, PODS_PER_ROW);
+        const gw = GROUP_PADDING_X * 2 + cols * POD_WIDTH + (cols - 1) * POD_GAP_X;
+        autoGroupX = Math.max(autoGroupX, saved.x + gw + GROUP_GAP);
+      }
+    }
+  }
 
+  // Create group nodes and place pods inside
   for (const [runnerId, runnerPods] of podsByRunner) {
     const runnerInfo = runnerInfoMap.get(runnerId);
     const runnerNodeId = runnerPods[0]?.runner_node_id || `runner-${runnerId}`;
@@ -87,11 +101,15 @@ function calculateGroupedLayout(
     const groupWidth = GROUP_PADDING_X * 2 + cols * POD_WIDTH + (cols - 1) * POD_GAP_X;
     const groupHeight = GROUP_PADDING_TOP + GROUP_PADDING_BOTTOM + rows * POD_HEIGHT + (rows - 1) * POD_GAP_Y;
 
+    // Use saved position if available, otherwise auto-layout
+    const savedPos = savedPositions?.[groupId];
+    const position = savedPos ?? { x: autoGroupX, y: 0 };
+
     // Create the runner group node
     nodes.push({
       id: groupId,
       type: "runnerGroup",
-      position: { x: groupX, y: 0 },
+      position,
       data: {
         runnerNodeId,
         runnerStatus,
@@ -113,11 +131,15 @@ function calculateGroupedLayout(
         position: { x, y },
         parentId: groupId,
         extent: "parent" as const,
+        draggable: false, // Pods use grid layout within their Runner Group
         data: { node: pod },
       });
     });
 
-    groupX += groupWidth + GROUP_GAP;
+    // Advance auto-layout X only for groups without saved positions
+    if (!savedPos) {
+      autoGroupX += groupWidth + GROUP_GAP;
+    }
   }
 
   // Create binding edges between pods
@@ -139,7 +161,7 @@ function calculateGroupedLayout(
 }
 
 export default function MeshTopology() {
-  const { topology, selectedNode, selectNode, fetchTopology } =
+  const { topology, selectedNode, selectNode, fetchTopology, updateNodePosition } =
     useMeshStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -151,12 +173,14 @@ export default function MeshTopology() {
   }, [fetchTopology]);
 
   // Update nodes and edges when topology changes
+  // Uses saved positions from store to preserve drag state across topology refreshes
   useEffect(() => {
     if (topology) {
       const layout = calculateGroupedLayout(
         topology.nodes,
         topology.edges,
-        topology.runners
+        topology.runners,
+        useMeshStore.getState().nodePositions
       );
       setNodes(layout.nodes);
       setEdges(layout.edges);
@@ -189,6 +213,16 @@ export default function MeshTopology() {
       }
     },
     [selectNode]
+  );
+
+  // Save Runner Group position after drag
+  const onNodeDragStop: OnNodeDrag = useCallback(
+    (_event, node) => {
+      if (node.type === "runnerGroup") {
+        updateNodePosition(node.id, node.position);
+      }
+    },
+    [updateNodePosition]
   );
 
   // Handle pane click (deselect)
@@ -252,6 +286,7 @@ export default function MeshTopology() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
+        onNodeDragStop={onNodeDragStop}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}

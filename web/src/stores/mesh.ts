@@ -25,12 +25,14 @@ interface MeshState {
   selectedChannel: number | null;
   loading: boolean;
   error: string | null;
+  nodePositions: Record<string, { x: number; y: number }>; // Cached drag positions for Runner Group nodes
 
   // Actions
   fetchTopology: () => Promise<void>;
   selectNode: (podKey: string | null) => void;
   selectChannel: (channelId: number | null) => void;
   updateNodeTitle: (podKey: string, title: string) => void;
+  updateNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
   clearError: () => void;
 
   // Node helpers
@@ -48,6 +50,7 @@ export const useMeshStore = create<MeshState>((set, get) => ({
   selectedChannel: null,
   loading: false,
   error: null,
+  nodePositions: {},
 
   fetchTopology: async () => {
     set({ loading: true, error: null });
@@ -80,6 +83,15 @@ export const useMeshStore = create<MeshState>((set, get) => ({
             ),
           }
         : null,
+    }));
+  },
+
+  updateNodePosition: (nodeId, position) => {
+    set((state) => ({
+      nodePositions: {
+        ...state.nodePositions,
+        [nodeId]: position,
+      },
     }));
   },
 

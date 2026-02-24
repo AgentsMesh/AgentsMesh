@@ -88,6 +88,7 @@ describe("Mesh Store", () => {
       selectedChannel: null,
       loading: false,
       error: null,
+      nodePositions: {},
     });
   });
 
@@ -100,6 +101,7 @@ describe("Mesh Store", () => {
       expect(state.selectedChannel).toBeNull();
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
+      expect(state.nodePositions).toEqual({});
     });
   });
 
@@ -214,6 +216,44 @@ describe("Mesh Store", () => {
   });
 
   // Note: Polling has been removed - realtime events handle updates now
+
+  describe("updateNodePosition", () => {
+    it("should save position for a node", () => {
+      act(() => {
+        useMeshStore.getState().updateNodePosition("runner-group-1", { x: 100, y: 200 });
+      });
+
+      const state = useMeshStore.getState();
+      expect(state.nodePositions["runner-group-1"]).toEqual({ x: 100, y: 200 });
+    });
+
+    it("should update position for an existing node", () => {
+      useMeshStore.setState({
+        nodePositions: { "runner-group-1": { x: 50, y: 50 } },
+      });
+
+      act(() => {
+        useMeshStore.getState().updateNodePosition("runner-group-1", { x: 300, y: 400 });
+      });
+
+      const state = useMeshStore.getState();
+      expect(state.nodePositions["runner-group-1"]).toEqual({ x: 300, y: 400 });
+    });
+
+    it("should preserve positions of other nodes", () => {
+      useMeshStore.setState({
+        nodePositions: { "runner-group-1": { x: 10, y: 20 } },
+      });
+
+      act(() => {
+        useMeshStore.getState().updateNodePosition("runner-group-2", { x: 500, y: 0 });
+      });
+
+      const state = useMeshStore.getState();
+      expect(state.nodePositions["runner-group-1"]).toEqual({ x: 10, y: 20 });
+      expect(state.nodePositions["runner-group-2"]).toEqual({ x: 500, y: 0 });
+    });
+  });
 
   describe("clearError", () => {
     it("should clear error", () => {
