@@ -129,7 +129,7 @@ export default function DocsLayout({
         </aside>
 
         {/* Content */}
-        <main className="flex-1 p-4 md:p-8 max-w-4xl min-w-0">
+        <main className="flex-1 p-4 md:p-8 max-w-4xl mx-auto min-w-0">
           {/* Breadcrumbs */}
           {breadcrumbs.length > 1 && (
             <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6">
