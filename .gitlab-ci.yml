@@ -459,9 +459,8 @@ deploy:cn-prod:web-admin:
         - web-admin/**/*
       when: manual
 
-# Deploy Relay to China Production
-# Note: Relay runs on cn-relay-01, not aliyun-s001
-deploy:cn-prod:relay:
+# Deploy Relay: cn-relay-01
+deploy:cn-prod:cn-relay-01:
   stage: deploy
   needs:
     - job: build-relay
@@ -474,8 +473,9 @@ deploy:cn-prod:relay:
     name: cn-production
     url: https://01.relay.agentsmesh.cn:8443
   script:
-    - echo "Deploying Relay ${DEPLOY_VERSION} to China Production..."
-    - ssh cn-relay-01 "cd /opt/relay && docker compose pull && docker compose up -d"
+    - echo "Deploying cn-relay-01 ${DEPLOY_VERSION}..."
+    - ssh aliyun-cn-relay-01 "cd /opt/agentsmesh && git pull origin main"
+    - ssh aliyun-cn-relay-01 "cd /opt/agentsmesh/relay && ./deploy.sh cn-relay-01 --pull"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:
@@ -590,9 +590,8 @@ deploy:uswest-prod:web-admin:
         - web-admin/**/*
       when: manual
 
-# Deploy Relay to US West Production
-# Note: Relay runs on uswest-relay-01, not aliyun-us-west-001
-deploy:uswest-prod:relay:
+# Deploy Relay: uswest-relay-01
+deploy:uswest-prod:uswest-relay-01:
   stage: deploy
   needs:
     - job: build-relay
@@ -605,8 +604,9 @@ deploy:uswest-prod:relay:
     name: uswest-production
     url: https://01.relay.agentsmesh.ai:8443
   script:
-    - echo "Deploying Relay ${DEPLOY_VERSION} to US West Production..."
-    - ssh uswest-relay-01 "cd /opt/relay && docker compose pull && docker compose up -d"
+    - echo "Deploying uswest-relay-01 ${DEPLOY_VERSION}..."
+    - ssh aliyun-us-west-relay-001 "cd /opt/agentsmesh && git pull origin main"
+    - ssh aliyun-us-west-relay-001 "cd /opt/agentsmesh/relay && ./deploy.sh uswest-relay-01 --pull"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:
