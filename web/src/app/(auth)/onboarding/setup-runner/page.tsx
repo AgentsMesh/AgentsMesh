@@ -14,7 +14,7 @@ export default function SetupRunnerPage() {
 
   const handleSkip = () => {
     if (currentOrg) {
-      router.push(`/${currentOrg.slug}`);
+      router.push(`/${currentOrg.slug}/workspace`);
     } else {
       router.push("/");
     }

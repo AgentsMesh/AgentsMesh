@@ -58,7 +58,7 @@ export function MobileDrawer({ className }: MobileDrawerProps) {
       case "settings":
         return `/${orgSlug}/settings`;
       default:
-        return `/${orgSlug}`;
+        return `/${orgSlug}/workspace`;
     }
   };
 

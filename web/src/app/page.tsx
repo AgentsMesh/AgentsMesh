@@ -40,7 +40,7 @@ export default function Home() {
   // Handle redirect in effect
   useEffect(() => {
     if (shouldRedirect && currentOrg) {
-      router.replace(`/${currentOrg.slug}`);
+      router.replace(`/${currentOrg.slug}/workspace`);
     }
   }, [shouldRedirect, currentOrg, router]);
 

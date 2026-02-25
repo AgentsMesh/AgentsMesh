@@ -109,7 +109,7 @@ export default function LocalRunnerSetupPage() {
 
   const handleComplete = () => {
     if (currentOrg) {
-      router.push(`/${currentOrg.slug}`);
+      router.push(`/${currentOrg.slug}/workspace`);
     } else {
       router.push("/");
     }

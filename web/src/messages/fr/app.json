@@ -272,31 +272,6 @@
       "createPod": "Create Pod"
     }
   },
-  "dashboard": {
-    "welcome": "Welcome back",
-    "welcomeWithOrg": "Welcome to {orgName}",
-    "overview": "Here's an overview of your workspace",
-    "stats": {
-      "totalTickets": "Total Tickets",
-      "openTickets": "Open",
-      "activePods": "Active Pods",
-      "onlineRunners": "Online Runners"
-    },
-    "quickActions": {
-      "title": "Quick Actions",
-      "createTicket": "Create Ticket",
-      "createTicketDesc": "Create a new task or issue for your team",
-      "viewMesh": "View Mesh",
-      "viewMeshDesc": "Monitor your AI agent network topology",
-      "manageRepos": "Manage Repositories",
-      "manageReposDesc": "Connect and manage your code repositories"
-    },
-    "noRunners": {
-      "title": "No Runners Connected",
-      "description": "You need at least one online Runner to execute AI agent tasks. Set up a Runner to get started.",
-      "setup": "Set up a Runner"
-    }
-  },
   "commandPalette": {
     "placeholder": "Tapez une commande ou recherchez...",
     "searching": "Recherche...",

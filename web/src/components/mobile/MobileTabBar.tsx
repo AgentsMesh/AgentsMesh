@@ -53,7 +53,7 @@ export function MobileTabBar({ className }: MobileTabBarProps) {
       case "repositories":
         return `/${orgSlug}/repositories`;
       default:
-        return `/${orgSlug}`;
+        return `/${orgSlug}/workspace`;
     }
   };
 

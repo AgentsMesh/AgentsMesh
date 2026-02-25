@@ -29,7 +29,7 @@ export default function OnboardingPage() {
         if (organizations && organizations.length > 0) {
           setOrganizations(organizations);
           setCurrentOrg(organizations[0]);
-          router.push(`/${organizations[0].slug}`);
+          router.push(`/${organizations[0].slug}/workspace`);
         }
       } catch {
         // No organizations, stay on onboarding

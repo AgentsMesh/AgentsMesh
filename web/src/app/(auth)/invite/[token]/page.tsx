@@ -56,8 +56,8 @@ export default function InvitePage({ params }: { params: Promise<PageParams> }) 
         setCurrentOrg(newOrg);
       }
 
-      // Redirect to the organization dashboard
-      router.push(`/${organization.slug}`);
+      // Redirect to the organization workspace
+      router.push(`/${organization.slug}/workspace`);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "data" in err) {
         const apiErr = err as { data?: { error?: string } };

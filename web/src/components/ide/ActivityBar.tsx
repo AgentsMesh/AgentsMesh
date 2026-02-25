@@ -62,7 +62,7 @@ export function ActivityBar({ className }: ActivityBarProps) {
       case "settings":
         return `/${orgSlug}/settings`;
       default:
-        return `/${orgSlug}`;
+        return `/${orgSlug}/workspace`;
     }
   };
 
@@ -97,7 +97,7 @@ export function ActivityBar({ className }: ActivityBarProps) {
       >
         {/* Logo */}
         <div className="h-12 flex items-center justify-center border-b border-border">
-          <Link href="/" className="flex items-center justify-center">
+          <Link href={`/${orgSlug}/workspace`} className="flex items-center justify-center">
             <div className="w-7 h-7 rounded-lg overflow-hidden">
               <Logo />
             </div>

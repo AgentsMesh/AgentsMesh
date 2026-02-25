@@ -69,7 +69,7 @@ export function GeneralSettings({ org, t }: GeneralSettingsProps) {
       setOrganizations(remaining);
       if (remaining.length > 0) {
         setCurrentOrg(remaining[0]);
-        router.push(`/${remaining[0].slug}`);
+        router.push(`/${remaining[0].slug}/workspace`);
       } else {
         router.push("/");
       }

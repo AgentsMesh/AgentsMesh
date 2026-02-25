@@ -65,7 +65,7 @@ export function MobileMoreMenu({ className }: MobileMoreMenuProps) {
       case "settings":
         return `/${orgSlug}/settings`;
       default:
-        return `/${orgSlug}`;
+        return `/${orgSlug}/workspace`;
     }
   };
 
