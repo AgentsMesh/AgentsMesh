@@ -80,6 +80,66 @@ func (s *Service) UpdateAvailableAgents(ctx context.Context, runnerID int64, age
 		Update("available_agents", runner.StringSlice(agents)).Error
 }
 
+// UpdateAgentVersions updates the detected agent version info for a runner.
+// Called when runner completes initialization handshake (Runner >= 0.4.7).
+// Also refreshes the activeRunners cache to keep GetRunner consistent.
+func (s *Service) UpdateAgentVersions(ctx context.Context, runnerID int64, versions []runner.AgentVersion) error {
+	if err := s.db.WithContext(ctx).Model(&runner.Runner{}).
+		Where("id = ?", runnerID).
+		Update("agent_versions", runner.AgentVersionSlice(versions)).Error; err != nil {
+		return err
+	}
+
+	// Sync in-memory cache so GetRunner returns fresh data immediately
+	if active, ok := s.activeRunners.Load(runnerID); ok {
+		if ar, ok := active.(*ActiveRunner); ok && ar.Runner != nil {
+			ar.Runner.AgentVersions = runner.AgentVersionSlice(versions)
+		}
+	}
+	return nil
+}
+
+// MergeAgentVersions merges delta agent version updates into existing versions.
+// Entries where both Version and Path are empty are treated as removals (agent no longer available).
+// Called when runner reports version changes via heartbeat.
+//
+// NOTE: This method uses read-modify-write and is NOT safe for concurrent calls on the same runner.
+// Correctness relies on gRPC recvLoop serializing all heartbeat messages per runner.
+func (s *Service) MergeAgentVersions(ctx context.Context, runnerID int64, changes map[string]runner.AgentVersion) error {
+	if len(changes) == 0 {
+		return nil
+	}
+
+	r, err := s.GetRunner(ctx, runnerID)
+	if err != nil {
+		return err
+	}
+
+	// Build merged version map from existing data
+	merged := make(map[string]runner.AgentVersion)
+	for _, v := range r.AgentVersions {
+		merged[v.Slug] = v
+	}
+
+	// Apply changes
+	for slug, change := range changes {
+		if change.Version == "" && change.Path == "" {
+			// Removal: agent no longer available
+			delete(merged, slug)
+		} else {
+			merged[slug] = change
+		}
+	}
+
+	// Convert back to slice
+	result := make([]runner.AgentVersion, 0, len(merged))
+	for _, v := range merged {
+		result = append(result, v)
+	}
+
+	return s.UpdateAgentVersions(ctx, runnerID, result)
+}
+
 // IncrementPods increments the pod count for a runner
 func (s *Service) IncrementPods(ctx context.Context, runnerID int64) error {
 	return s.db.WithContext(ctx).Exec(

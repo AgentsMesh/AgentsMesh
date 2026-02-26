@@ -98,6 +98,11 @@ type RunnerSelectorForOrchestrator interface {
 	SelectAvailableRunnerForAgent(ctx context.Context, orgID int64, userID int64, agentSlug string) (*runnerDomain.Runner, error)
 }
 
+// RunnerQueryForOrchestrator queries runner info for version-aware command building.
+type RunnerQueryForOrchestrator interface {
+	GetRunner(ctx context.Context, runnerID int64) (*runnerDomain.Runner, error)
+}
+
 // AgentTypeResolverForOrchestrator resolves an agent type by ID.
 type AgentTypeResolverForOrchestrator interface {
 	GetAgentType(ctx context.Context, id int64) (*agentDomain.AgentType, error)
@@ -114,6 +119,7 @@ type PodOrchestratorDeps struct {
 	TicketService     TicketServiceForOrchestrator      // optional
 	RunnerSelector    RunnerSelectorForOrchestrator     // optional
 	AgentTypeResolver AgentTypeResolverForOrchestrator  // optional
+	RunnerQuery       RunnerQueryForOrchestrator        // optional: for version-aware command building
 }
 
 // PodOrchestrator encapsulates the complete Pod creation workflow.
@@ -128,6 +134,7 @@ type PodOrchestrator struct {
 	ticketService     TicketServiceForOrchestrator
 	runnerSelector    RunnerSelectorForOrchestrator
 	agentTypeResolver AgentTypeResolverForOrchestrator
+	runnerQuery       RunnerQueryForOrchestrator
 }
 
 // NewPodOrchestrator creates a new PodOrchestrator.
@@ -142,6 +149,7 @@ func NewPodOrchestrator(deps *PodOrchestratorDeps) *PodOrchestrator {
 		ticketService:     deps.TicketService,
 		runnerSelector:    deps.RunnerSelector,
 		agentTypeResolver: deps.AgentTypeResolver,
+		runnerQuery:       deps.RunnerQuery,
 	}
 }
 
@@ -427,6 +435,18 @@ func (o *PodOrchestrator) buildPodCommand(
 		delete(configOverrides, "sandbox_local_path")
 	}
 
+	// Query Runner's agent versions for version-aware command building
+	var runnerAgentVersions map[string]string
+	if o.runnerQuery != nil && req.RunnerID > 0 {
+		r, err := o.runnerQuery.GetRunner(ctx, req.RunnerID)
+		if err == nil && r != nil && len(r.AgentVersions) > 0 {
+			runnerAgentVersions = make(map[string]string, len(r.AgentVersions))
+			for _, v := range r.AgentVersions {
+				runnerAgentVersions[v.Slug] = v.Version
+			}
+		}
+	}
+
 	// Build the request for ConfigBuilder
 	buildReq := &agent.ConfigBuildRequest{
 		AgentTypeID:         *req.AgentTypeID,
@@ -450,6 +470,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		MCPPort:             19000,
 		Cols:                req.Cols,
 		Rows:                req.Rows,
+		RunnerAgentVersions: runnerAgentVersions,
 	}
 
 	return o.configBuilder.BuildPodCommand(ctx, buildReq)

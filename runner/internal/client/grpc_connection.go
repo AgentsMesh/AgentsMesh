@@ -94,6 +94,9 @@ type GRPCConnection struct {
 	// RPCClient for MCP request-response over gRPC stream
 	rpcClient *RPCClient
 
+	// Agent probe for version detection and change tracking
+	agentProbe *AgentProbe
+
 	// Fatal error tracking - when set, connectionLoop should stop retrying
 	fatalErr   error
 	fatalErrMu sync.Mutex
@@ -123,6 +126,7 @@ func NewGRPCConnection(endpoint, nodeID, orgSlug, certFile, keyFile, caFile stri
 		certRenewalDays:          30, // Renew 30 days before expiry
 		certUrgentDays:           7,  // Urgent reconnection 7 days before expiry
 		terminalRateLimit:        50 * 1024, // Default: 50KB/s (conservative for shared bandwidth)
+		agentProbe:               NewAgentProbe(),
 	}
 
 	for _, opt := range opts {

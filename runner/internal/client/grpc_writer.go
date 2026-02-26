@@ -180,18 +180,31 @@ func (c *GRPCConnection) sendHeartbeat() {
 		}
 	}
 
+	// Probe for agent version changes (only includes changed entries)
+	var agentVersions []*runnerv1.AgentVersionInfo
+	if c.agentProbe != nil {
+		agentVersions = c.agentProbe.ProbeAndDiff()
+		if len(agentVersions) > 0 {
+			// Also update cached available agents list
+			c.mu.Lock()
+			c.availableAgents = c.agentProbe.GetAvailableAgents()
+			c.mu.Unlock()
+		}
+	}
+
 	msg := &runnerv1.RunnerMessage{
 		Payload: &runnerv1.RunnerMessage_Heartbeat{
 			Heartbeat: &runnerv1.HeartbeatData{
 				NodeId:           c.nodeID,
 				Pods:             pods,
 				RelayConnections: relayConnections,
+				AgentVersions:    agentVersions,
 			},
 		},
 		Timestamp: time.Now().UnixMilli(),
 	}
 
-	logger.GRPC().Debug("Sending heartbeat", "pods", len(pods), "relay_connections", len(relayConnections))
+	logger.GRPC().Debug("Sending heartbeat", "pods", len(pods), "relay_connections", len(relayConnections), "version_changes", len(agentVersions))
 
 	if err := c.sendControl(msg); err != nil {
 		logger.GRPC().Error("Failed to send heartbeat", "error", err)

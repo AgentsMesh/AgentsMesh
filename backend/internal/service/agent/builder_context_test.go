@@ -19,7 +19,7 @@ func TestBuildContext(t *testing.T) {
 		creds := agent.EncryptedCredentials{"secret": "hidden"}
 		templateCtx := map[string]interface{}{"template": "data"}
 
-		ctx := NewBuildContext(req, agentType, config, creds, true, templateCtx)
+		ctx := NewBuildContext(req, agentType, config, creds, true, templateCtx, "1.2.3")
 
 		if ctx.Request != req {
 			t.Error("Request not set correctly")
@@ -38,6 +38,9 @@ func TestBuildContext(t *testing.T) {
 		}
 		if ctx.TemplateCtx["template"] != "data" {
 			t.Error("TemplateCtx not set correctly")
+		}
+		if ctx.AgentVersion != "1.2.3" {
+			t.Error("AgentVersion not set correctly")
 		}
 	})
 }

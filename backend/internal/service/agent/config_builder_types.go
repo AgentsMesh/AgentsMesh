@@ -65,6 +65,11 @@ type ConfigBuildRequest struct {
 	// Terminal size (from browser)
 	Cols int32
 	Rows int32
+
+	// RunnerAgentVersions maps agent slug to version string.
+	// Populated from Runner.AgentVersions during pod creation.
+	// Empty map or nil means Runner did not report version info (old Runner).
+	RunnerAgentVersions map[string]string
 }
 
 // ConfigSchemaResponse is the config schema returned to frontend

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime"
 	"time"
 
@@ -76,17 +75,19 @@ func (c *GRPCConnection) performInitialization(ctx context.Context) error {
 			"server_version", result.ServerInfo.Version,
 			"agent_types", len(result.AgentTypes))
 
-		// Phase 3: Check available agents and send initialized
-		availableAgents := c.checkAvailableAgents(result.AgentTypes)
+		// Phase 3: Check available agents (with version detection) and send initialized
+		availableAgents, agentVersions := c.agentProbe.ProbeAll(result.AgentTypes)
 		c.mu.Lock()
 		c.availableAgents = availableAgents
 		c.mu.Unlock()
 
 		// Send initialized confirmation via stream (with timeout)
+		// Includes both legacy available_agents (slug list) and new agent_versions (with version info)
 		confirmMsg := &runnerv1.RunnerMessage{
 			Payload: &runnerv1.RunnerMessage_Initialized{
 				Initialized: &runnerv1.InitializedConfirm{
 					AvailableAgents: availableAgents,
+					AgentVersions:   agentVersions,
 				},
 			},
 			Timestamp: time.Now().UnixMilli(),
@@ -94,7 +95,7 @@ func (c *GRPCConnection) performInitialization(ctx context.Context) error {
 		if err := c.sendWithTimeout(confirmMsg, initSendTimeout); err != nil {
 			return fmt.Errorf("failed to send initialized: %w", err)
 		}
-		logger.GRPC().Debug("Sent initialized", "available_agents", availableAgents)
+		logger.GRPC().Debug("Sent initialized", "available_agents", availableAgents, "agent_versions", len(agentVersions))
 
 		c.mu.Lock()
 		c.initialized = true
@@ -112,28 +113,4 @@ func (c *GRPCConnection) performInitialization(ctx context.Context) error {
 	case <-c.stopCh:
 		return fmt.Errorf("connection stopped during initialization")
 	}
-}
-
-// checkAvailableAgents checks which agents are available on this runner.
-func (c *GRPCConnection) checkAvailableAgents(agentTypes []*runnerv1.AgentTypeInfo) []string {
-	var available []string
-
-	for _, agent := range agentTypes {
-		if agent.Command == "" {
-			logger.GRPCTrace().Trace("Agent has no command defined, skipping", "agent", agent.Slug)
-			continue
-		}
-
-		// Check if executable exists in PATH
-		path, err := exec.LookPath(agent.Command)
-		if err != nil {
-			logger.GRPCTrace().Trace("Agent command not found in PATH", "agent", agent.Slug, "command", agent.Command)
-			continue
-		}
-
-		logger.GRPCTrace().Trace("Agent command found", "agent", agent.Slug, "path", path)
-		available = append(available, agent.Slug)
-	}
-
-	return available
 }
