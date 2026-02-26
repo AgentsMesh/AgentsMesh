@@ -258,7 +258,9 @@ export const useChannelStore = create<ChannelState>((set) => ({
 
   addMessage: (message) => {
     set((state) => ({
-      messages: [...state.messages, message],
+      messages: state.messages.some((m) => m.id === message.id)
+        ? state.messages
+        : [...state.messages, message],
     }));
   },
 
