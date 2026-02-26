@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
@@ -21,6 +22,11 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 	case *runnerv1.RunnerMessage_Heartbeat:
 		// Direct Proto type passing - no conversion
 		a.connManager.HandleHeartbeat(runnerID, payload.Heartbeat)
+
+		// Process agent version updates from heartbeat (only present when versions changed)
+		if len(payload.Heartbeat.AgentVersions) > 0 {
+			a.handleHeartbeatAgentVersions(ctx, runnerID, payload.Heartbeat.AgentVersions)
+		}
 
 	case *runnerv1.RunnerMessage_PodCreated:
 		// Direct Proto type passing - no conversion
@@ -164,6 +170,7 @@ func (a *GRPCRunnerAdapter) handleInitialized(ctx context.Context, runnerID int6
 	a.logger.Info("Runner initialized",
 		"runner_id", runnerID,
 		"available_agents", msg.AvailableAgents,
+		"agent_versions", len(msg.AgentVersions),
 	)
 
 	// Delegate to connManager for callback triggering (handles SetInitialized internally)
@@ -178,5 +185,79 @@ func (a *GRPCRunnerAdapter) handleInitialized(ctx context.Context, runnerID int6
 				"error", err,
 			)
 		}
+
+		// Save agent version info (backward compatible: old Runners won't send this)
+		if len(msg.AgentVersions) > 0 {
+			a.persistAgentVersions(ctx, runnerID, msg.AgentVersions, false)
+		}
+	}
+}
+
+// handleHeartbeatAgentVersions processes agent version changes reported in heartbeat.
+// This is a delta update: only changed entries are included.
+func (a *GRPCRunnerAdapter) handleHeartbeatAgentVersions(ctx context.Context, runnerID int64, versions []*runnerv1.AgentVersionInfo) {
+	a.logger.Info("Agent version change detected via heartbeat",
+		"runner_id", runnerID,
+		"changes", len(versions),
+	)
+	a.persistAgentVersions(ctx, runnerID, versions, true)
+}
+
+// persistAgentVersions saves agent version info to the database.
+// If isDelta is true, merges with existing versions (heartbeat delta update).
+// If isDelta is false, replaces all versions (initialization full report).
+func (a *GRPCRunnerAdapter) persistAgentVersions(ctx context.Context, runnerID int64, versions []*runnerv1.AgentVersionInfo, isDelta bool) {
+	if a.runnerService == nil {
+		return
+	}
+
+	var finalVersions []runnerDomain.AgentVersion
+
+	if isDelta {
+		// Delta update: merge with existing versions in DB
+		incoming := make(map[string]runnerDomain.AgentVersion, len(versions))
+		for _, v := range versions {
+			incoming[v.Slug] = runnerDomain.AgentVersion{
+				Slug:    v.Slug,
+				Version: v.Version,
+				Path:    v.Path,
+			}
+			a.logger.Info("Agent version updated",
+				"runner_id", runnerID,
+				"agent", v.Slug,
+				"version", v.Version,
+				"path", v.Path,
+			)
+		}
+
+		if err := a.runnerService.MergeAgentVersions(ctx, runnerID, incoming); err != nil {
+			a.logger.Error("failed to merge agent versions",
+				"runner_id", runnerID,
+				"error", err,
+			)
+		}
+		return
+	}
+
+	// Full update (initialization)
+	finalVersions = make([]runnerDomain.AgentVersion, 0, len(versions))
+	for _, v := range versions {
+		finalVersions = append(finalVersions, runnerDomain.AgentVersion{
+			Slug:    v.Slug,
+			Version: v.Version,
+			Path:    v.Path,
+		})
+		a.logger.Info("Agent version detected",
+			"runner_id", runnerID,
+			"agent", v.Slug,
+			"version", v.Version,
+			"path", v.Path,
+		)
+	}
+	if err := a.runnerService.UpdateAgentVersions(ctx, runnerID, finalVersions); err != nil {
+		a.logger.Error("failed to update agent versions",
+			"runner_id", runnerID,
+			"error", err,
+		)
 	}
 }

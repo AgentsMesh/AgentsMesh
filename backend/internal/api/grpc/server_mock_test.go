@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
 // newTestLogger creates a test logger
@@ -45,6 +47,10 @@ func (m *mockRunnerService) UpdateAvailableAgents(ctx context.Context, runnerID 
 	return m.err
 }
 
+func (m *mockRunnerService) UpdateAgentVersions(ctx context.Context, runnerID int64, versions []runnerDomain.AgentVersion) error {
+	return m.err
+}
+
 func (m *mockRunnerService) IsCertificateRevoked(ctx context.Context, serialNumber string) (bool, error) {
 	// Use separate error for revocation check to allow testing different error scenarios
 	if m.revocationCheckErr != nil {
@@ -58,6 +64,10 @@ func (m *mockRunnerService) IsCertificateRevoked(ctx context.Context, serialNumb
 }
 
 func (m *mockRunnerService) UpdateRunnerVersionAndHostInfo(ctx context.Context, runnerID int64, version string, hostInfo map[string]interface{}) error {
+	return m.err
+}
+
+func (m *mockRunnerService) MergeAgentVersions(ctx context.Context, runnerID int64, changes map[string]runnerDomain.AgentVersion) error {
 	return m.err
 }
 

@@ -55,6 +55,47 @@ func (s StringSlice) Value() (driver.Value, error) {
 	return json.Marshal(s)
 }
 
+// AgentVersion represents the version info of an installed agent on a runner.
+type AgentVersion struct {
+	Slug    string `json:"slug"`
+	Version string `json:"version"`
+	Path    string `json:"path,omitempty"`
+}
+
+// AgentVersionSlice is a custom type for []AgentVersion that implements sql.Scanner and driver.Valuer
+type AgentVersionSlice []AgentVersion
+
+// Scan implements sql.Scanner for AgentVersionSlice
+func (s *AgentVersionSlice) Scan(value interface{}) error {
+	if value == nil {
+		*s = nil
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(bytes, s)
+}
+
+// Value implements driver.Valuer for AgentVersionSlice
+func (s AgentVersionSlice) Value() (driver.Value, error) {
+	if s == nil {
+		return nil, nil
+	}
+	return json.Marshal(s)
+}
+
+// GetAgentVersion returns the version info for a specific agent slug, or nil if not found.
+func (s AgentVersionSlice) GetAgentVersion(slug string) *AgentVersion {
+	for _, v := range s {
+		if v.Slug == slug {
+			return &v
+		}
+	}
+	return nil
+}
+
 // Runner status constants
 const (
 	RunnerStatusOnline  = "online"
@@ -85,6 +126,10 @@ type Runner struct {
 	// AvailableAgents is the list of agent type slugs available on this runner
 	// Populated during initialization handshake
 	AvailableAgents StringSlice `gorm:"type:jsonb" json:"available_agents,omitempty"`
+
+	// AgentVersions stores detected version info for each available agent
+	// Populated during initialization handshake (requires Runner >= 0.4.7)
+	AgentVersions AgentVersionSlice `gorm:"type:jsonb" json:"agent_versions,omitempty"`
 
 	HostInfo HostInfo `gorm:"type:jsonb" json:"host_info,omitempty"`
 

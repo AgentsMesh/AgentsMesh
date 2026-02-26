@@ -99,6 +99,7 @@ func main() {
 		TicketService:     services.ticket,
 		RunnerSelector:    services.runner,
 		AgentTypeResolver: services.agentType,
+		RunnerQuery:       services.runner,
 	})
 	slog.Info("PodOrchestrator created")
 

@@ -235,3 +235,87 @@ func TestUpdateAvailableAgents(t *testing.T) {
 		}
 	})
 }
+
+func TestMergeAgentVersions(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewService(db)
+	ctx := context.Background()
+
+	r := &runner.Runner{
+		OrganizationID:    1,
+		NodeID:            "merge-test-runner",
+		Status:            runner.RunnerStatusOnline,
+		MaxConcurrentPods: 5,
+		IsEnabled:         true,
+	}
+	db.Create(r)
+
+	// Set initial versions
+	initial := []runner.AgentVersion{
+		{Slug: "claude-code", Version: "1.0.0", Path: "/usr/bin/claude"},
+		{Slug: "codex-cli", Version: "0.1.2025040100", Path: "/usr/bin/codex"},
+	}
+	err := service.UpdateAgentVersions(ctx, r.ID, initial)
+	if err != nil {
+		t.Fatalf("failed to set initial versions: %v", err)
+	}
+
+	t.Run("merge updates existing version", func(t *testing.T) {
+		changes := map[string]runner.AgentVersion{
+			"claude-code": {Slug: "claude-code", Version: "1.1.0", Path: "/usr/bin/claude"},
+		}
+		err := service.MergeAgentVersions(ctx, r.ID, changes)
+		if err != nil {
+			t.Fatalf("merge failed: %v", err)
+		}
+
+		updated, _ := service.GetRunner(ctx, r.ID)
+		v := updated.AgentVersions.GetAgentVersion("claude-code")
+		if v == nil || v.Version != "1.1.0" {
+			t.Errorf("expected claude-code v1.1.0, got %+v", v)
+		}
+		// codex should still be there
+		v2 := updated.AgentVersions.GetAgentVersion("codex-cli")
+		if v2 == nil || v2.Version != "0.1.2025040100" {
+			t.Errorf("expected codex-cli unchanged, got %+v", v2)
+		}
+	})
+
+	t.Run("merge adds new agent", func(t *testing.T) {
+		changes := map[string]runner.AgentVersion{
+			"aider": {Slug: "aider", Version: "0.50.1", Path: "/usr/bin/aider"},
+		}
+		err := service.MergeAgentVersions(ctx, r.ID, changes)
+		if err != nil {
+			t.Fatalf("merge failed: %v", err)
+		}
+
+		updated, _ := service.GetRunner(ctx, r.ID)
+		if len(updated.AgentVersions) != 3 {
+			t.Errorf("expected 3 agents, got %d", len(updated.AgentVersions))
+		}
+		v := updated.AgentVersions.GetAgentVersion("aider")
+		if v == nil || v.Version != "0.50.1" {
+			t.Errorf("expected aider v0.50.1, got %+v", v)
+		}
+	})
+
+	t.Run("merge removes agent with empty version", func(t *testing.T) {
+		changes := map[string]runner.AgentVersion{
+			"aider": {Slug: "aider", Version: "", Path: ""},
+		}
+		err := service.MergeAgentVersions(ctx, r.ID, changes)
+		if err != nil {
+			t.Fatalf("merge failed: %v", err)
+		}
+
+		updated, _ := service.GetRunner(ctx, r.ID)
+		v := updated.AgentVersions.GetAgentVersion("aider")
+		if v != nil {
+			t.Errorf("expected aider to be removed, got %+v", v)
+		}
+		if len(updated.AgentVersions) != 2 {
+			t.Errorf("expected 2 agents after removal, got %d", len(updated.AgentVersions))
+		}
+	})
+}

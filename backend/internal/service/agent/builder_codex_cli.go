@@ -6,6 +6,24 @@ import (
 
 const CodexCLISlug = "codex-cli"
 
+// codexVersionRules defines version-specific arg transformations for Codex CLI.
+// The DB command_template uses the LATEST syntax; these rules downgrade for older versions.
+//
+// Codex CLI breaking changes:
+//   - v0.1.2025042500: --approval-mode renamed to --ask-for-approval (-a)
+var codexVersionRules = []VersionArgRule{
+	{
+		VersionBelow: "0.1.2025042500",
+		Transforms: []ArgTransform{
+			{
+				OldFlag: "--approval-mode",
+				NewFlag: "--ask-for-approval",
+				// Values remain the same: suggest, auto-edit, full-auto
+			},
+		},
+	},
+}
+
 // CodexCLIBuilder is the builder for Codex CLI agent.
 // Codex CLI syntax: codex [prompt] [options]
 // Similar to Claude Code, the prompt comes before options.
@@ -34,9 +52,18 @@ func (b *CodexCLIBuilder) HandleInitialPrompt(ctx *BuildContext, args []string) 
 	return args
 }
 
-// BuildLaunchArgs uses the base implementation
+// BuildLaunchArgs builds launch arguments with version-specific adaptation.
+// Uses the base implementation to render from DB command_template (latest syntax),
+// then applies version-specific transformations for older Codex CLI versions.
 func (b *CodexCLIBuilder) BuildLaunchArgs(ctx *BuildContext) ([]string, error) {
-	return b.BaseAgentBuilder.BuildLaunchArgs(ctx)
+	args, err := b.BaseAgentBuilder.BuildLaunchArgs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Adapt args for the installed Codex CLI version
+	args = AdaptArgsForVersion(args, ctx.AgentVersion, codexVersionRules)
+	return args, nil
 }
 
 // BuildFilesToCreate uses the base implementation

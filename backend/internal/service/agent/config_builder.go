@@ -59,8 +59,14 @@ func (b *ConfigBuilder) BuildPodCommand(ctx context.Context, req *ConfigBuildReq
 	// 5. Build template context
 	templateCtx := b.buildTemplateContext(req, config)
 
+	// 5.5. Extract agent version from Runner-reported versions
+	agentVersion := ""
+	if req.RunnerAgentVersions != nil {
+		agentVersion = req.RunnerAgentVersions[agentType.Slug]
+	}
+
 	// 6. Create build context for the strategy
-	buildCtx := NewBuildContext(req, agentType, config, creds, isRunnerHost, templateCtx)
+	buildCtx := NewBuildContext(req, agentType, config, creds, isRunnerHost, templateCtx, agentVersion)
 
 	// 7. Use builder strategy to build launch args
 	launchArgs, err := builder.BuildLaunchArgs(buildCtx)

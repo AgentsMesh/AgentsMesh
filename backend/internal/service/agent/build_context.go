@@ -27,6 +27,11 @@ type BuildContext struct {
 	// TemplateCtx contains the template rendering context
 	// Includes: config, sandbox placeholders, mcp_port, pod_key
 	TemplateCtx map[string]interface{}
+
+	// AgentVersion is the version of the target agent on the Runner.
+	// Empty string means the Runner did not report version info (old Runner).
+	// Used by AgentBuilder to adapt CLI arguments for version compatibility.
+	AgentVersion string
 }
 
 // NewBuildContext creates a new BuildContext with the given parameters
@@ -37,6 +42,7 @@ func NewBuildContext(
 	credentials agent.EncryptedCredentials,
 	isRunnerHost bool,
 	templateCtx map[string]interface{},
+	agentVersion string,
 ) *BuildContext {
 	return &BuildContext{
 		Request:      req,
@@ -45,5 +51,6 @@ func NewBuildContext(
 		Credentials:  credentials,
 		IsRunnerHost: isRunnerHost,
 		TemplateCtx:  templateCtx,
+		AgentVersion: agentVersion,
 	}
 }

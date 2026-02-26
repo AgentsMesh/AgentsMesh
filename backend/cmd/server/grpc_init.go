@@ -7,6 +7,7 @@ import (
 	grpcserver "github.com/anthropics/agentsmesh/backend/internal/api/grpc"
 	v1 "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/dns"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/pki"
@@ -151,12 +152,20 @@ func (a *grpcRunnerServiceAdapter) UpdateAvailableAgents(ctx context.Context, ru
 	return a.svc.UpdateAvailableAgents(ctx, runnerID, agents)
 }
 
+func (a *grpcRunnerServiceAdapter) UpdateAgentVersions(ctx context.Context, runnerID int64, versions []runnerDomain.AgentVersion) error {
+	return a.svc.UpdateAgentVersions(ctx, runnerID, versions)
+}
+
 func (a *grpcRunnerServiceAdapter) IsCertificateRevoked(ctx context.Context, serialNumber string) (bool, error) {
 	return a.svc.IsCertificateRevoked(ctx, serialNumber)
 }
 
 func (a *grpcRunnerServiceAdapter) UpdateRunnerVersionAndHostInfo(ctx context.Context, runnerID int64, version string, hostInfo map[string]interface{}) error {
 	return a.svc.UpdateRunnerVersionAndHostInfo(ctx, runnerID, version, hostInfo)
+}
+
+func (a *grpcRunnerServiceAdapter) MergeAgentVersions(ctx context.Context, runnerID int64, changes map[string]runnerDomain.AgentVersion) error {
+	return a.svc.MergeAgentVersions(ctx, runnerID, changes)
 }
 
 // grpcOrgServiceAdapter adapts organization.Service to grpcserver.OrganizationServiceInterface
