@@ -139,10 +139,10 @@ describe("ConfirmDialog", () => {
   });
 
   it("shows icon by default", () => {
-    const { container } = render(<ConfirmDialog {...defaultProps} />);
+    render(<ConfirmDialog {...defaultProps} />);
 
-    // Check for the icon container
-    const iconContainer = container.querySelector(".w-12.h-12.rounded-full");
+    // Dialog is portaled to document.body, so query from there
+    const iconContainer = document.body.querySelector(".w-12.h-12.rounded-full");
     expect(iconContainer).toBeInTheDocument();
   });
 
@@ -156,11 +156,12 @@ describe("ConfirmDialog", () => {
   });
 
   it("renders destructive variant styling", () => {
-    const { container } = render(
+    render(
       <ConfirmDialog {...defaultProps} variant="destructive" />
     );
 
-    const iconContainer = container.querySelector(".w-12.h-12.rounded-full");
+    // Dialog is portaled to document.body, so query from there
+    const iconContainer = document.body.querySelector(".w-12.h-12.rounded-full");
     expect(iconContainer).toHaveClass("text-destructive");
   });
 

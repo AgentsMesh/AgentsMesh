@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,14 +55,15 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
       onClick={handleOverlayClick}
     >
       {children}
-    </div>
+    </div>,
+    document.body
   );
 }
 
