@@ -3,6 +3,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -26,6 +27,10 @@ func (c *GRPCConnection) readLoop(ctx context.Context, done chan<- struct{}) {
 			}
 			if status.Code(err) == codes.Canceled {
 				logger.GRPCTrace().Trace("Stream cancelled")
+			} else if fatal, hint := isFatalStreamError(err); fatal {
+				log.Error("Fatal stream error (will not retry)", "error", err)
+				log.Error(hint)
+				c.setFatalError(fmt.Errorf("%s", hint))
 			} else {
 				log.Error("Stream error", "error", err)
 			}

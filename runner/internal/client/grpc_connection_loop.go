@@ -50,6 +50,13 @@ func (c *GRPCConnection) connectionLoop() {
 		default:
 		}
 
+		// Check for fatal errors that should not be retried
+		if fatalErr := c.getFatalError(); fatalErr != nil {
+			logger.GRPC().Error("Connection terminated due to fatal error (will not reconnect)",
+				"error", fatalErr)
+			return
+		}
+
 		// Wait before reconnecting
 		logger.GRPC().Info("Connection closed, will attempt to reconnect")
 		select {

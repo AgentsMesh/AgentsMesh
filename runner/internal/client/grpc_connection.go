@@ -93,6 +93,10 @@ type GRPCConnection struct {
 
 	// RPCClient for MCP request-response over gRPC stream
 	rpcClient *RPCClient
+
+	// Fatal error tracking - when set, connectionLoop should stop retrying
+	fatalErr   error
+	fatalErrMu sync.Mutex
 }
 
 // NewGRPCConnection creates a new gRPC connection with mTLS.
@@ -257,6 +261,20 @@ func (c *GRPCConnection) Stop() {
 
 // ==================== gRPC Error Handling ====================
 
+// setFatalError records a fatal error that should stop reconnection attempts.
+func (c *GRPCConnection) setFatalError(err error) {
+	c.fatalErrMu.Lock()
+	c.fatalErr = err
+	c.fatalErrMu.Unlock()
+}
+
+// getFatalError returns the fatal error if one has been recorded.
+func (c *GRPCConnection) getFatalError() error {
+	c.fatalErrMu.Lock()
+	defer c.fatalErrMu.Unlock()
+	return c.fatalErr
+}
+
 // isRetryableError returns true if the gRPC error is retryable.
 func isRetryableError(err error) bool {
 	st, ok := status.FromError(err)
@@ -269,6 +287,34 @@ func isRetryableError(err error) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+// isFatalStreamError checks if a gRPC stream error is fatal (should not retry).
+// Returns true and a user-friendly message if the error is fatal.
+func isFatalStreamError(err error) (bool, string) {
+	st, ok := status.FromError(err)
+	if !ok {
+		return false, ""
+	}
+
+	switch st.Code() {
+	case codes.Unauthenticated:
+		msg := st.Message()
+		if strings.Contains(msg, "runner not found") {
+			return true, "This runner has been deleted from the server. Please re-register with: runner register --server <SERVER> --token <TOKEN> --force"
+		}
+		return true, "Authentication failed: " + msg + ". Please re-register with: runner register --server <SERVER> --token <TOKEN> --force"
+
+	case codes.PermissionDenied:
+		msg := st.Message()
+		if strings.Contains(msg, "runner is disabled") {
+			return true, "This runner has been disabled by an administrator. Please contact your organization admin to re-enable it."
+		}
+		return true, "Permission denied: " + msg
+
+	default:
+		return false, ""
 	}
 }
 
