@@ -218,10 +218,16 @@ export function useImportWizard({
     handleImport: async () => {
       setState(s => ({ ...s, importing: true, error: null }));
       try {
+        // When importing from a provider, pass both HTTP and SSH clone URLs if available
+        const httpCloneUrl = state.selectedRepo?.clone_url || undefined;
+        const sshCloneUrl = state.selectedRepo?.ssh_clone_url || undefined;
+
         await repositoryApi.create({
           provider_type: state.manualProviderType,
           provider_base_url: state.manualBaseURL,
           clone_url: state.manualCloneURL,
+          http_clone_url: httpCloneUrl,
+          ssh_clone_url: sshCloneUrl,
           external_id: state.selectedRepo?.id || state.manualFullPath.replace(/[^a-zA-Z0-9]/g, "-"),
           name: state.manualName,
           full_path: state.manualFullPath,
