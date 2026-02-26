@@ -127,7 +127,7 @@ func (b *ConfigBuilder) buildTemplateContext(req *ConfigBuildRequest, config age
 // buildSandboxConfig builds the sandbox configuration directly as Proto type
 func (b *ConfigBuilder) buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.SandboxConfig {
 	// Only create SandboxConfig if there's repository or local path config
-	if req.RepositoryURL == "" && req.LocalPath == "" {
+	if req.RepositoryURL == "" && req.HttpCloneURL == "" && req.SshCloneURL == "" && req.LocalPath == "" {
 		return nil
 	}
 
@@ -138,6 +138,8 @@ func (b *ConfigBuilder) buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.Sa
 
 	return &runnerv1.SandboxConfig{
 		RepositoryUrl:      req.RepositoryURL,
+		HttpCloneUrl:       req.HttpCloneURL,
+		SshCloneUrl:        req.SshCloneURL,
 		SourceBranch:       req.SourceBranch,
 		CredentialType:     req.CredentialType,
 		GitToken:           req.GitToken,

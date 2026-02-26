@@ -1871,7 +1871,10 @@ type SandboxConfig struct {
 	PreparationScript  string `protobuf:"bytes,7,opt,name=preparation_script,json=preparationScript,proto3" json:"preparation_script,omitempty"`     // 工作区初始化脚本
 	PreparationTimeout int32  `protobuf:"varint,8,opt,name=preparation_timeout,json=preparationTimeout,proto3" json:"preparation_timeout,omitempty"` // 脚本超时秒数（默认 300）
 	// 本地路径模式（预留，未来实现）
-	LocalPath     string `protobuf:"bytes,9,opt,name=local_path,json=localPath,proto3" json:"local_path,omitempty"` // 使用已存在的本地目录
+	LocalPath string `protobuf:"bytes,9,opt,name=local_path,json=localPath,proto3" json:"local_path,omitempty"` // 使用已存在的本地目录
+	// 分协议克隆 URL（新增，保留 repository_url 向后兼容）
+	HttpCloneUrl  string `protobuf:"bytes,10,opt,name=http_clone_url,json=httpCloneUrl,proto3" json:"http_clone_url,omitempty"` // HTTPS 克隆 URL
+	SshCloneUrl   string `protobuf:"bytes,11,opt,name=ssh_clone_url,json=sshCloneUrl,proto3" json:"ssh_clone_url,omitempty"`    // SSH 克隆 URL
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1965,6 +1968,20 @@ func (x *SandboxConfig) GetPreparationTimeout() int32 {
 func (x *SandboxConfig) GetLocalPath() string {
 	if x != nil {
 		return x.LocalPath
+	}
+	return ""
+}
+
+func (x *SandboxConfig) GetHttpCloneUrl() string {
+	if x != nil {
+		return x.HttpCloneUrl
+	}
+	return ""
+}
+
+func (x *SandboxConfig) GetSshCloneUrl() string {
+	if x != nil {
+		return x.SshCloneUrl
 	}
 	return ""
 }
@@ -4470,7 +4487,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12\x12\n" +
 	"\x04mode\x18\x03 \x01(\x05R\x04mode\x12!\n" +
-	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"\xe9\x02\n" +
+	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"\xb3\x03\n" +
 	"\rSandboxConfig\x12%\n" +
 	"\x0erepository_url\x18\x01 \x01(\tR\rrepositoryUrl\x12#\n" +
 	"\rsource_branch\x18\x02 \x01(\tR\fsourceBranch\x12'\n" +
@@ -4482,7 +4499,10 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x12preparation_script\x18\a \x01(\tR\x11preparationScript\x12/\n" +
 	"\x13preparation_timeout\x18\b \x01(\x05R\x12preparationTimeout\x12\x1d\n" +
 	"\n" +
-	"local_path\x18\t \x01(\tR\tlocalPath\"D\n" +
+	"local_path\x18\t \x01(\tR\tlocalPath\x12$\n" +
+	"\x0ehttp_clone_url\x18\n" +
+	" \x01(\tR\fhttpCloneUrl\x12\"\n" +
+	"\rssh_clone_url\x18\v \x01(\tR\vsshCloneUrl\"D\n" +
 	"\x13TerminatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
 	"\x05force\x18\x02 \x01(\bR\x05force\"C\n" +

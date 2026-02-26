@@ -229,6 +229,10 @@ message SandboxConfig {
 
   // 本地路径模式（预留，未来实现）
   string local_path = 9;          // 使用已存在的本地目录
+
+  // 分协议克隆 URL（新增，保留 repository_url 向后兼容）
+  string http_clone_url = 10;     // HTTPS 克隆 URL
+  string ssh_clone_url = 11;      // SSH 克隆 URL
 }
 
 // TerminatePodCommand 终止 Pod 命令

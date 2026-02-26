@@ -154,6 +154,8 @@ func setupOrchestratorTestDB(t *testing.T) *gorm.DB {
 		provider_type TEXT,
 		provider_base_url TEXT,
 		clone_url TEXT,
+		http_clone_url TEXT,
+		ssh_clone_url TEXT,
 		external_id TEXT,
 		name TEXT,
 		full_path TEXT,

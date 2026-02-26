@@ -17,8 +17,10 @@ type Manager struct {
 
 // WorktreeOptions contains options for creating a worktree
 type WorktreeOptions struct {
-	GitToken   string // Git token for HTTPS authentication
-	SSHKeyPath string // Path to SSH key for SSH authentication
+	GitToken     string // Git token for HTTPS authentication
+	SSHKeyPath   string // Path to SSH key for SSH authentication
+	HttpCloneURL string // HTTPS clone URL
+	SshCloneURL  string // SSH clone URL
 }
 
 // WorktreeOption is a function that modifies WorktreeOptions
@@ -35,6 +37,20 @@ func WithGitToken(token string) WorktreeOption {
 func WithSSHKeyPath(path string) WorktreeOption {
 	return func(opts *WorktreeOptions) {
 		opts.SSHKeyPath = path
+	}
+}
+
+// WithHttpCloneURL sets the HTTPS clone URL
+func WithHttpCloneURL(url string) WorktreeOption {
+	return func(opts *WorktreeOptions) {
+		opts.HttpCloneURL = url
+	}
+}
+
+// WithSshCloneURL sets the SSH clone URL
+func WithSshCloneURL(url string) WorktreeOption {
+	return func(opts *WorktreeOptions) {
+		opts.SshCloneURL = url
 	}
 }
 

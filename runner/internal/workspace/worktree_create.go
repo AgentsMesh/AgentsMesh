@@ -38,6 +38,19 @@ func (m *Manager) CreateWorktreeWithOptions(ctx context.Context, repoURL, branch
 		opt(options)
 	}
 
+	// If multiple clone URLs are available, probe to find the accessible one
+	if options.HttpCloneURL != "" || options.SshCloneURL != "" {
+		httpURL := options.HttpCloneURL
+		sshURL := options.SshCloneURL
+
+		probeURL, err := m.probeRepositoryAccess(ctx, httpURL, sshURL, options)
+		if err != nil {
+			return nil, fmt.Errorf("repository access probe failed: %w", err)
+		}
+		log.Info("Repository access probe selected URL", "url", probeURL)
+		repoURL = probeURL
+	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -76,12 +89,14 @@ func (m *Manager) CreateWorktreeWithOptions(ctx context.Context, repoURL, branch
 	// Fetch from remote
 	fetchCmd := exec.CommandContext(ctx, "git", "fetch", "origin", branch)
 	fetchCmd.Dir = mainRepoPath
+	m.setGitAuthEnv(fetchCmd, options)
 	if output, err := fetchCmd.CombinedOutput(); err != nil {
 		// Try 'master' if 'main' fails
 		if branch == "main" {
 			branch = "master"
 			fetchCmd = exec.CommandContext(ctx, "git", "fetch", "origin", branch)
 			fetchCmd.Dir = mainRepoPath
+			m.setGitAuthEnv(fetchCmd, options)
 			if output, err = fetchCmd.CombinedOutput(); err != nil {
 				return nil, fmt.Errorf("failed to fetch branch: %s, output: %s", err, output)
 			}

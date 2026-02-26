@@ -28,6 +28,8 @@ func setupTestDBForWithRepo(t *testing.T) *gorm.DB {
 		provider_type TEXT NOT NULL,
 		provider_base_url TEXT NOT NULL,
 		clone_url TEXT,
+		http_clone_url TEXT,
+		ssh_clone_url TEXT,
 		external_id TEXT NOT NULL,
 		name TEXT NOT NULL,
 		full_path TEXT NOT NULL,

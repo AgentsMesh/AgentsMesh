@@ -349,6 +349,8 @@ func (o *PodOrchestrator) buildPodCommand(
 
 	// Resolve repository info
 	repositoryURL := ""
+	httpCloneURL := ""
+	sshCloneURL := ""
 	sourceBranch := ""
 	preparationScript := ""
 	preparationTimeout := 300
@@ -358,6 +360,8 @@ func (o *PodOrchestrator) buildPodCommand(
 		repo, err := o.repoService.GetByID(ctx, *req.RepositoryID)
 		if err == nil && repo != nil {
 			repositoryURL = repo.CloneURL
+			httpCloneURL = repo.HttpCloneURL
+			sshCloneURL = repo.SshCloneURL
 			if repo.DefaultBranch != "" {
 				sourceBranch = repo.DefaultBranch
 			}
@@ -418,6 +422,8 @@ func (o *PodOrchestrator) buildPodCommand(
 	if path, ok := configOverrides["sandbox_local_path"].(string); ok && path != "" {
 		localPath = path
 		repositoryURL = "" // Resume mode: don't clone repository
+		httpCloneURL = ""
+		sshCloneURL = ""
 		delete(configOverrides, "sandbox_local_path")
 	}
 
@@ -428,6 +434,8 @@ func (o *PodOrchestrator) buildPodCommand(
 		UserID:              req.UserID,
 		CredentialProfileID: req.CredentialProfileID,
 		RepositoryURL:       repositoryURL,
+		HttpCloneURL:        httpCloneURL,
+		SshCloneURL:         sshCloneURL,
 		SourceBranch:        sourceBranch,
 		CredentialType:      credentialType,
 		GitToken:            gitToken,

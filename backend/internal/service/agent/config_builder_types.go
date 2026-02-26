@@ -28,7 +28,9 @@ type ConfigBuildRequest struct {
 	CredentialProfileID *int64
 
 	// Repository configuration
-	RepositoryURL string // Repository clone URL
+	RepositoryURL string // Repository clone URL (legacy, for backward compatibility)
+	HttpCloneURL  string // HTTPS clone URL
+	SshCloneURL   string // SSH clone URL
 	SourceBranch  string // Branch to checkout
 
 	// Git authentication

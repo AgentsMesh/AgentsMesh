@@ -28,6 +28,8 @@ type CreateRepositoryRequest struct {
 	ProviderType    string `json:"provider_type" binding:"required"`     // github, gitlab, gitee, generic
 	ProviderBaseURL string `json:"provider_base_url" binding:"required"` // https://github.com, https://gitlab.company.com
 	CloneURL        string `json:"clone_url"`                            // Full clone URL (optional, will be generated)
+	HttpCloneURL    string `json:"http_clone_url"`                       // HTTPS clone URL (optional, will be generated)
+	SshCloneURL     string `json:"ssh_clone_url"`                        // SSH clone URL (optional, will be generated)
 	ExternalID      string `json:"external_id" binding:"required"`
 	Name            string `json:"name" binding:"required"`
 	FullPath        string `json:"full_path" binding:"required"`
@@ -38,10 +40,12 @@ type CreateRepositoryRequest struct {
 
 // UpdateRepositoryRequest represents repository update request
 type UpdateRepositoryRequest struct {
-	Name          string `json:"name"`
-	DefaultBranch string `json:"default_branch"`
-	TicketPrefix  string `json:"ticket_prefix"`
-	IsActive      *bool  `json:"is_active"`
+	Name          string  `json:"name"`
+	DefaultBranch string  `json:"default_branch"`
+	TicketPrefix  string  `json:"ticket_prefix"`
+	IsActive      *bool   `json:"is_active"`
+	HttpCloneURL  *string `json:"http_clone_url"`
+	SshCloneURL   *string `json:"ssh_clone_url"`
 }
 
 // SyncBranchesRequest represents sync branches request

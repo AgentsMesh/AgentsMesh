@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
@@ -93,6 +94,76 @@ func (m *Manager) cloneBareRepository(ctx context.Context, repoURL, path string,
 	fetchCmd.Run() // Ignore errors
 
 	return nil
+}
+
+// probeRepositoryAccess tries to find an accessible clone URL using git ls-remote.
+// It tests candidate URLs based on available credentials and returns the first one that works.
+// This runs with a timeout to avoid blocking if authentication fails.
+func (m *Manager) probeRepositoryAccess(ctx context.Context, httpURL, sshURL string, opts *WorktreeOptions) (string, error) {
+	log := logger.Workspace()
+
+	type candidate struct {
+		url  string
+		desc string
+	}
+
+	var candidates []candidate
+
+	if opts == nil {
+		opts = &WorktreeOptions{}
+	}
+
+	// Build candidate list based on available credentials
+	if opts.GitToken != "" && httpURL != "" {
+		candidates = append(candidates, candidate{url: httpURL, desc: "HTTP+token"})
+	}
+	if opts.SSHKeyPath != "" && sshURL != "" {
+		candidates = append(candidates, candidate{url: sshURL, desc: "SSH+key"})
+	}
+
+	// If no credential-matched candidates were found, fall back to trying
+	// available URLs with local config (runner_local mode, or mismatched credential/URL)
+	if len(candidates) == 0 {
+		if sshURL != "" {
+			candidates = append(candidates, candidate{url: sshURL, desc: "SSH(local)"})
+		}
+		if httpURL != "" {
+			candidates = append(candidates, candidate{url: httpURL, desc: "HTTP(local)"})
+		}
+	}
+
+	if len(candidates) == 0 {
+		return "", fmt.Errorf("no clone URLs available to probe")
+	}
+
+	var errors []string
+	for _, c := range candidates {
+		log.Debug("Probing repository access", "url", c.url, "method", c.desc)
+
+		probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+
+		probeURL := c.url
+		// For HTTP URLs with token, embed credentials
+		if opts.GitToken != "" && strings.HasPrefix(c.url, "https://") {
+			probeURL = m.prepareAuthURL(c.url, opts)
+		}
+
+		cmd := exec.CommandContext(probeCtx, "git", "ls-remote", "--exit-code", probeURL, "HEAD")
+		m.setProbeEnv(cmd, opts)
+		output, err := cmd.CombinedOutput()
+		cancel()
+
+		if err == nil {
+			log.Info("Repository access probe succeeded", "url", c.url, "method", c.desc)
+			return c.url, nil
+		}
+
+		errMsg := fmt.Sprintf("%s (%s): %s", c.desc, c.url, strings.TrimSpace(string(output)))
+		errors = append(errors, errMsg)
+		log.Debug("Repository access probe failed", "url", c.url, "method", c.desc, "error", err)
+	}
+
+	return "", fmt.Errorf("all repository access methods failed:\n  %s", strings.Join(errors, "\n  "))
 }
 
 // applyGitConfig applies custom git configuration to a worktree.

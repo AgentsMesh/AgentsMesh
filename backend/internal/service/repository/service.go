@@ -50,6 +50,8 @@ type CreateRequest struct {
 	ProviderType     string // github, gitlab, gitee, generic
 	ProviderBaseURL  string // https://github.com, https://gitlab.company.com
 	CloneURL         string // Full clone URL
+	HttpCloneURL     string // HTTPS clone URL
+	SshCloneURL      string // SSH clone URL
 	ExternalID       string
 	Name             string
 	FullPath         string
@@ -75,6 +77,8 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*gitprovider.
 		ProviderType:     req.ProviderType,
 		ProviderBaseURL:  req.ProviderBaseURL,
 		CloneURL:         req.CloneURL,
+		HttpCloneURL:     req.HttpCloneURL,
+		SshCloneURL:      req.SshCloneURL,
 		ExternalID:       req.ExternalID,
 		Name:             req.Name,
 		FullPath:         req.FullPath,
@@ -92,9 +96,20 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*gitprovider.
 		repo.Visibility = "organization"
 	}
 
-	// Generate clone URL if not provided
+	// Generate clone URLs if not provided
+	if repo.HttpCloneURL == "" || repo.SshCloneURL == "" {
+		httpURL, sshURL := generateCloneURLs(repo.ProviderType, repo.ProviderBaseURL, repo.FullPath)
+		if repo.HttpCloneURL == "" {
+			repo.HttpCloneURL = httpURL
+		}
+		if repo.SshCloneURL == "" {
+			repo.SshCloneURL = sshURL
+		}
+	}
+
+	// Keep legacy clone_url populated for backwards compatibility
 	if repo.CloneURL == "" {
-		repo.CloneURL = generateCloneURL(repo.ProviderType, repo.ProviderBaseURL, repo.FullPath)
+		repo.CloneURL = repo.HttpCloneURL
 	}
 
 	if err := s.db.WithContext(ctx).Create(repo).Error; err != nil {
@@ -145,18 +160,48 @@ func (s *Service) CreateWithWebhook(ctx context.Context, req *CreateRequest, org
 	return repo, webhookResult, nil
 }
 
-// generateCloneURL generates clone URL based on provider type
-func generateCloneURL(providerType, baseURL, fullPath string) string {
+// generateCloneURLs generates both HTTP and SSH clone URLs based on provider type
+func generateCloneURLs(providerType, baseURL, fullPath string) (httpURL, sshURL string) {
 	switch providerType {
 	case "github":
-		return "https://github.com/" + fullPath + ".git"
+		httpURL = "https://github.com/" + fullPath + ".git"
+		sshURL = "git@github.com:" + fullPath + ".git"
 	case "gitlab":
-		return baseURL + "/" + fullPath + ".git"
+		httpURL = baseURL + "/" + fullPath + ".git"
+		host := extractHost(baseURL)
+		sshURL = "git@" + host + ":" + fullPath + ".git"
 	case "gitee":
-		return "https://gitee.com/" + fullPath + ".git"
+		httpURL = "https://gitee.com/" + fullPath + ".git"
+		sshURL = "git@gitee.com:" + fullPath + ".git"
 	default:
-		return baseURL + "/" + fullPath + ".git"
+		httpURL = baseURL + "/" + fullPath + ".git"
+		host := extractHost(baseURL)
+		sshURL = "git@" + host + ":" + fullPath + ".git"
 	}
+	return
+}
+
+// extractHost extracts the host from a URL (e.g., "https://gitlab.company.com" -> "gitlab.company.com")
+func extractHost(baseURL string) string {
+	host := baseURL
+	// Remove protocol prefix
+	for _, prefix := range []string{"https://", "http://"} {
+		if len(host) > len(prefix) && host[:len(prefix)] == prefix {
+			host = host[len(prefix):]
+			break
+		}
+	}
+	// Remove trailing slash
+	if len(host) > 0 && host[len(host)-1] == '/' {
+		host = host[:len(host)-1]
+	}
+	return host
+}
+
+// generateCloneURL generates clone URL based on provider type (kept for backward compatibility)
+func generateCloneURL(providerType, baseURL, fullPath string) string {
+	httpURL, _ := generateCloneURLs(providerType, baseURL, fullPath)
+	return httpURL
 }
 
 // GetByID returns a repository by ID
@@ -251,10 +296,14 @@ func (s *Service) GetByFullPath(ctx context.Context, orgID int64, providerType, 
 }
 
 // GetCloneURL returns the clone URL for a repository
+// Prefers http_clone_url, falls back to clone_url for backward compatibility
 func (s *Service) GetCloneURL(ctx context.Context, repoID int64) (string, error) {
 	repo, err := s.GetByID(ctx, repoID)
 	if err != nil {
 		return "", err
+	}
+	if repo.HttpCloneURL != "" {
+		return repo.HttpCloneURL, nil
 	}
 	return repo.CloneURL, nil
 }
@@ -281,6 +330,13 @@ func (s *Service) SyncFromProvider(ctx context.Context, repoID int64, accessToke
 		"name":           project.Name,
 		"full_path":      project.FullPath,
 		"default_branch": project.DefaultBranch,
+	}
+	if project.CloneURL != "" {
+		updates["clone_url"] = project.CloneURL
+		updates["http_clone_url"] = project.CloneURL
+	}
+	if project.SSHCloneURL != "" {
+		updates["ssh_clone_url"] = project.SSHCloneURL
 	}
 
 	return s.Update(ctx, repoID, updates)

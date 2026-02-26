@@ -29,25 +29,42 @@ func (m *Manager) prepareAuthURL(repoURL string, opts *WorktreeOptions) string {
 	return repoURL
 }
 
-// setGitAuthEnv sets environment variables for git authentication
+// setGitAuthEnv sets environment variables for git authentication.
+// Always disables interactive prompts to prevent blocking in daemon mode.
 func (m *Manager) setGitAuthEnv(cmd *exec.Cmd, opts *WorktreeOptions) {
 	// Start with current environment
 	env := os.Environ()
 
-	if opts == nil {
-		cmd.Env = env
-		return
-	}
+	// Always disable interactive prompts — Runner is a daemon and cannot handle interactive input
+	env = append(env, "GIT_TERMINAL_PROMPT=0")
+	env = append(env, "GIT_ASKPASS=")
 
-	// Set SSH key path if provided
-	if opts.SSHKeyPath != "" {
-		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no", opts.SSHKeyPath)
+	if opts != nil && opts.SSHKeyPath != "" {
+		// Set SSH key path with BatchMode to prevent SSH password prompts
+		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no -o BatchMode=yes", opts.SSHKeyPath)
 		env = append(env, fmt.Sprintf("GIT_SSH_COMMAND=%s", sshCmd))
 	}
 
-	// Disable interactive prompts for HTTPS authentication
-	if opts.GitToken != "" {
-		env = append(env, "GIT_TERMINAL_PROMPT=0")
+	cmd.Env = env
+}
+
+// setProbeEnv sets environment variables for probing repository access.
+// Similar to setGitAuthEnv but always forces BatchMode and ConnectTimeout for SSH
+// to ensure the probe never blocks.
+func (m *Manager) setProbeEnv(cmd *exec.Cmd, opts *WorktreeOptions) {
+	env := os.Environ()
+
+	// Disable interactive prompts
+	env = append(env, "GIT_TERMINAL_PROMPT=0")
+	env = append(env, "GIT_ASKPASS=")
+
+	// Always set SSH command with BatchMode and short timeout for probing
+	if opts != nil && opts.SSHKeyPath != "" {
+		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5", opts.SSHKeyPath)
+		env = append(env, fmt.Sprintf("GIT_SSH_COMMAND=%s", sshCmd))
+	} else {
+		// For runner_local mode, still enforce BatchMode and ConnectTimeout during probe
+		env = append(env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5")
 	}
 
 	cmd.Env = env

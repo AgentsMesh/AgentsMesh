@@ -79,6 +79,8 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 		ProviderType:     req.ProviderType,
 		ProviderBaseURL:  req.ProviderBaseURL,
 		CloneURL:         req.CloneURL,
+		HttpCloneURL:     req.HttpCloneURL,
+		SshCloneURL:      req.SshCloneURL,
 		ExternalID:       req.ExternalID,
 		Name:             req.Name,
 		FullPath:         req.FullPath,
@@ -169,6 +171,12 @@ func (h *RepositoryHandler) UpdateRepository(c *gin.Context) {
 	}
 	if req.IsActive != nil {
 		updates["is_active"] = *req.IsActive
+	}
+	if req.HttpCloneURL != nil {
+		updates["http_clone_url"] = *req.HttpCloneURL
+	}
+	if req.SshCloneURL != nil {
+		updates["ssh_clone_url"] = *req.SshCloneURL
 	}
 
 	repo, err = h.repositoryService.Update(c.Request.Context(), repoID, updates)

@@ -25,6 +25,8 @@ export function EditRepositoryModal({
   const [name, setName] = useState(repository.name);
   const [defaultBranch, setDefaultBranch] = useState(repository.default_branch);
   const [ticketPrefix, setTicketPrefix] = useState(repository.ticket_prefix || "");
+  const [httpCloneUrl, setHttpCloneUrl] = useState(repository.http_clone_url || "");
+  const [sshCloneUrl, setSshCloneUrl] = useState(repository.ssh_clone_url || "");
   const [isActive, setIsActive] = useState(repository.is_active);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -44,6 +46,8 @@ export function EditRepositoryModal({
         default_branch: defaultBranch,
         ticket_prefix: ticketPrefix || undefined,
         is_active: isActive,
+        http_clone_url: httpCloneUrl || undefined,
+        ssh_clone_url: sshCloneUrl || undefined,
       });
       onUpdated();
     } catch (err) {
@@ -86,6 +90,30 @@ export function EditRepositoryModal({
               id="repo-branch"
               value={defaultBranch}
               onChange={(e) => setDefaultBranch(e.target.value)}
+            />
+          </FormField>
+
+          <FormField
+            label={t("repositories.edit.httpCloneUrl")}
+            htmlFor="repo-http-url"
+          >
+            <Input
+              id="repo-http-url"
+              placeholder="https://github.com/org/repo.git"
+              value={httpCloneUrl}
+              onChange={(e) => setHttpCloneUrl(e.target.value)}
+            />
+          </FormField>
+
+          <FormField
+            label={t("repositories.edit.sshCloneUrl")}
+            htmlFor="repo-ssh-url"
+          >
+            <Input
+              id="repo-ssh-url"
+              placeholder="git@github.com:org/repo.git"
+              value={sshCloneUrl}
+              onChange={(e) => setSshCloneUrl(e.target.value)}
             />
           </FormField>
 

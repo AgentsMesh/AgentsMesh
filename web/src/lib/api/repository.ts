@@ -35,6 +35,8 @@ export interface RepositoryData {
   provider_type: string; // github, gitlab, gitee, generic
   provider_base_url: string; // https://github.com
   clone_url: string;
+  http_clone_url?: string;
+  ssh_clone_url?: string;
   external_id: string;
   name: string;
   full_path: string;
@@ -60,6 +62,8 @@ export interface CreateRepositoryRequest {
   provider_type: string;
   provider_base_url: string;
   clone_url?: string;
+  http_clone_url?: string;
+  ssh_clone_url?: string;
   external_id: string;
   name: string;
   full_path: string;
@@ -73,6 +77,8 @@ export interface UpdateRepositoryRequest {
   default_branch?: string;
   ticket_prefix?: string;
   is_active?: boolean;
+  http_clone_url?: string;
+  ssh_clone_url?: string;
 }
 
 // Repository API

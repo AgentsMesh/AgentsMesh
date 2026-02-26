@@ -74,7 +74,18 @@ func (b *PodBuilder) selectSetupStrategy(cfg *runnerv1.SandboxConfig) SetupStrat
 
 // setupGitWorktree creates a git worktree for the pod.
 func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, cfg *runnerv1.SandboxConfig) (string, string, error) {
-	if cfg.RepositoryUrl == "" {
+	// Determine repository URL: prefer new fields, fall back to legacy repository_url
+	repoURL := cfg.RepositoryUrl
+	if cfg.HttpCloneUrl != "" || cfg.SshCloneUrl != "" {
+		// New fields are available — use HTTP as primary, probe will select the right one
+		if cfg.HttpCloneUrl != "" {
+			repoURL = cfg.HttpCloneUrl
+		} else {
+			repoURL = cfg.SshCloneUrl
+		}
+	}
+
+	if repoURL == "" {
 		return "", "", &client.PodError{
 			Code:    client.ErrCodeGitClone,
 			Message: "repository_url is required for worktree creation",
@@ -128,11 +139,19 @@ func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, c
 		}
 	}
 
+	// Pass new clone URLs for smart probing
+	if cfg.HttpCloneUrl != "" {
+		opts = append(opts, workspace.WithHttpCloneURL(cfg.HttpCloneUrl))
+	}
+	if cfg.SshCloneUrl != "" {
+		opts = append(opts, workspace.WithSshCloneURL(cfg.SshCloneUrl))
+	}
+
 	// Create git worktree inside sandbox directory: sandboxes/{podKey}/workspace
 	workspaceTarget := filepath.Join(sandboxRoot, "workspace")
 	result, err := b.deps.Workspace.CreateWorktreeWithOptions(
 		ctx,
-		cfg.RepositoryUrl,
+		repoURL,
 		cfg.SourceBranch,
 		workspaceTarget,
 		opts...,
