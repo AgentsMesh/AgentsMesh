@@ -60,11 +60,11 @@ func (m *Manager) setProbeEnv(cmd *exec.Cmd, opts *WorktreeOptions) {
 
 	// Always set SSH command with BatchMode and short timeout for probing
 	if opts != nil && opts.SSHKeyPath != "" {
-		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5", opts.SSHKeyPath)
+		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=30", opts.SSHKeyPath)
 		env = append(env, fmt.Sprintf("GIT_SSH_COMMAND=%s", sshCmd))
 	} else {
 		// For runner_local mode, still enforce BatchMode and ConnectTimeout during probe
-		env = append(env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5")
+		env = append(env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=30")
 	}
 
 	cmd.Env = env

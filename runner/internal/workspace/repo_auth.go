@@ -140,7 +140,7 @@ func (m *Manager) probeRepositoryAccess(ctx context.Context, httpURL, sshURL str
 	for _, c := range candidates {
 		log.Debug("Probing repository access", "url", c.url, "method", c.desc)
 
-		probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		probeCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 
 		probeURL := c.url
 		// For HTTP URLs with token, embed credentials
@@ -158,9 +158,18 @@ func (m *Manager) probeRepositoryAccess(ctx context.Context, httpURL, sshURL str
 			return c.url, nil
 		}
 
-		errMsg := fmt.Sprintf("%s (%s): %s", c.desc, c.url, strings.TrimSpace(string(output)))
+		// Build detailed error message including both git output and Go error
+		outputStr := strings.TrimSpace(string(output))
+		errDetail := err.Error()
+		if probeCtx.Err() == context.DeadlineExceeded {
+			errDetail = "timeout (connection took too long)"
+		}
+		errMsg := fmt.Sprintf("%s (%s): %s", c.desc, c.url, errDetail)
+		if outputStr != "" {
+			errMsg = fmt.Sprintf("%s (%s): %s — %s", c.desc, c.url, errDetail, outputStr)
+		}
 		errors = append(errors, errMsg)
-		log.Debug("Repository access probe failed", "url", c.url, "method", c.desc, "error", err)
+		log.Warn("Repository access probe failed", "url", c.url, "method", c.desc, "error", errDetail, "output", outputStr)
 	}
 
 	return "", fmt.Errorf("all repository access methods failed:\n  %s", strings.Join(errors, "\n  "))
