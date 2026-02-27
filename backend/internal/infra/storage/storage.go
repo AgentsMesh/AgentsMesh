@@ -32,7 +32,13 @@ type Storage interface {
 	// GetURL returns a URL for accessing the file.
 	// For private buckets, returns a pre-signed URL valid for the specified duration.
 	// For public buckets, returns a direct URL (expiry is ignored).
+	// Uses public endpoint for browser/external access.
 	GetURL(ctx context.Context, key string, expiry time.Duration) (string, error)
+
+	// GetInternalURL returns a pre-signed URL using the internal endpoint.
+	// Use this for service-to-service communication (e.g., Runner downloading skill packages)
+	// where the caller is on the same network as the storage service.
+	GetInternalURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 
 	// Exists checks if a file exists in storage.
 	Exists(ctx context.Context, key string) (bool, error)

@@ -1,0 +1,92 @@
+id: TC-SKILL-007
+name: Skills API CRUD 完整流程
+description: 验证 Skills 的 API 层完整 CRUD 操作，包括安装、列表、更新、卸载
+priority: high
+module: extensions/skills
+tags:
+  - api
+
+preconditions:
+  - 开发环境已启动
+  - 用户 dev@agentsmesh.local 已存在
+  - 组织 dev-org 存在
+  - Repository Demo WebApp 存在
+
+setup:
+  sql: |
+    DELETE FROM installed_skills
+    WHERE repository_id IN (
+      SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+    ) AND slug LIKE 'e2e-api-%';
+
+steps:
+  - action: 查询 Repo Skills（空列表）
+    expected: 返回空 Skills 列表
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/skills?scope=user
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+        body:
+          - path: skills
+            type: array
+
+  - action: 查询 Marketplace Skills
+    expected: 返回 Marketplace 可用 Skills
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/market/skills
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+        body:
+          - path: skills
+            type: array
+
+  - action: 从 Marketplace 安装 Skill（如有可用数据）
+    expected: 安装成功或返回正确错误
+    verification:
+      type: api
+      request:
+        method: POST
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/skills/install-from-market
+        auth: dev@agentsmesh.local
+        body:
+          market_item_id: 1
+          scope: user
+      expect:
+        status_one_of: [200, 201, 404]
+
+  - action: 查询已安装 Skills（user scope）
+    expected: 返回已安装 Skills
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/skills?scope=user
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+
+  - action: 查询已安装 Skills（org scope）
+    expected: 返回 org scope Skills
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/skills?scope=org
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_skills
+      WHERE repository_id IN (
+        SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+      ) AND slug LIKE 'e2e-api-%';

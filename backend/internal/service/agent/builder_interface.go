@@ -33,4 +33,16 @@ type AgentBuilder interface {
 	// PostProcess allows final adjustments to the CreatePodCommand.
 	// Called after all other build steps are complete.
 	PostProcess(ctx *BuildContext, cmd *runnerv1.CreatePodCommand) error
+
+	// SupportsMcp returns whether this agent type supports MCP servers
+	SupportsMcp() bool
+
+	// SupportsSkills returns whether this agent type supports Skills
+	SupportsSkills() bool
+
+	// SupportsPlugin returns whether this agent type supports plugin directory mode
+	SupportsPlugin() bool
+
+	// BuildResourcesToDownload constructs resources that need to be downloaded for the pod
+	BuildResourcesToDownload(ctx *BuildContext) ([]*runnerv1.ResourceToDownload, error)
 }

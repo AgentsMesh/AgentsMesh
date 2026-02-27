@@ -3,6 +3,7 @@ package client
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
@@ -68,6 +69,7 @@ func (c *GRPCConnection) connectionLoop() {
 }
 
 // runConnection establishes the bidirectional stream and handles messages.
+// All child goroutines are tracked via WaitGroup to prevent goroutine leaks on reconnection.
 func (c *GRPCConnection) runConnection() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -100,30 +102,54 @@ func (c *GRPCConnection) runConnection() {
 	done := make(chan struct{})
 	readLoopDone := make(chan struct{}) // Signal when readLoop exits
 
+	// WaitGroup tracks all child goroutines spawned in this connection lifecycle.
+	// We must wait for them to exit before returning, otherwise reconnection
+	// spawns new goroutines while old ones are still running → goroutine leak.
+	var wg sync.WaitGroup
+
 	logger.GRPC().Debug("Starting read/write loops")
 
 	// Start write loop
-	safego.Go("grpc-write-loop", func() { c.writeLoop(ctx, done) })
+	wg.Add(1)
+	safego.Go("grpc-write-loop", func() {
+		defer wg.Done()
+		c.writeLoop(ctx, done)
+	})
 
 	// IMPORTANT: Start read loop BEFORE initialization
 	// The read loop must be running to receive the initialize_result response
-	safego.Go("grpc-read-loop", func() { c.readLoop(ctx, readLoopDone) })
+	wg.Add(1)
+	safego.Go("grpc-read-loop", func() {
+		defer wg.Done()
+		c.readLoop(ctx, readLoopDone)
+	})
 
 	// Perform initialization (blocks until handshake completes or times out)
 	if err := c.performInitialization(ctx); err != nil {
 		logger.GRPC().Error("Initialization failed", "error", err)
 		close(done)
+		wg.Wait()
 		return
 	}
 
 	// Start heartbeat loop (only after successful initialization)
-	safego.Go("grpc-heartbeat", func() { c.heartbeatLoop(ctx, done) })
+	wg.Add(1)
+	safego.Go("grpc-heartbeat", func() {
+		defer wg.Done()
+		c.heartbeatLoop(ctx, done)
+	})
 
 	// Start certificate renewal checker
-	safego.Go("grpc-cert-renewal", func() { c.certRenewalChecker(ctx, done) })
+	wg.Add(1)
+	safego.Go("grpc-cert-renewal", func() {
+		defer wg.Done()
+		c.certRenewalChecker(ctx, done)
+	})
 
 	// Monitor for reconnection signal (certificate renewal)
+	wg.Add(1)
 	safego.Go("grpc-reconnect-monitor", func() {
+		defer wg.Done()
 		select {
 		case <-c.reconnectCh:
 			logger.GRPC().Info("Reconnection requested for certificate renewal")
@@ -153,4 +179,9 @@ func (c *GRPCConnection) runConnection() {
 
 	// Signal other goroutines to stop
 	close(done)
+
+	// Wait for all child goroutines to exit before returning.
+	// This prevents goroutine accumulation across reconnections.
+	wg.Wait()
+	logger.GRPC().Debug("All child goroutines exited, runConnection returning")
 }

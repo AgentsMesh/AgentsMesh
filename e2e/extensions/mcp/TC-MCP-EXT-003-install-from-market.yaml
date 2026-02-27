@@ -1,0 +1,125 @@
+id: TC-MCP-EXT-003
+name: 从 Market 模板安装 MCP Server（含环境变量配置）
+description: 验证从 Market Templates 选择模板、填写环境变量并安装 MCP Server 的完整流程
+priority: critical
+must_execute: true
+module: extensions/mcp
+tags:
+  - ui
+  - api
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+  - mcp_market_items 表有 seed 数据
+
+setup:
+  sql: |
+    -- 清理可能残留的测试 MCP 安装
+    DELETE FROM installed_mcp_servers
+    WHERE repository_id IN (
+      SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+    ) AND slug = 'filesystem';
+
+steps:
+  - action: 登录并导航到 MCP Servers Tab
+    expected: 显示 MCP Servers Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository Extensions → MCP Servers
+    expected: 显示 MCP Servers 子标签
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 打开 Add MCP Server 对话框
+    expected: 对话框打开
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+      wait_for: Add MCP Server
+
+  - action: 选择 Filesystem 模板（无需环境变量）
+    expected: 显示 Filesystem 模板配置页面
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Filesystem
+      wait_for: Install
+      check:
+        - contains: Filesystem
+        - contains: Change
+
+  - action: 点击 Install 安装
+    expected: 安装成功
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Install
+      wait_for: Installed successfully
+
+  - action: 验证安装后列表更新
+    expected: Filesystem MCP Server 出现在 My Installations
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Filesystem
+        - contains: stdio
+        - contains: Market
+
+  - action: 验证 API 返回已安装的 MCP Server
+    expected: API 返回 user scope 的 MCP 安装
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/mcp-servers?scope=user
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+        body:
+          - path: mcp_servers
+            not_empty: true
+          - path: mcp_servers[?slug='filesystem']
+            exists: true
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_mcp_servers
+      WHERE repository_id IN (
+        SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+      ) AND slug = 'filesystem' AND scope = 'user';

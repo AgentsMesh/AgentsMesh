@@ -1,0 +1,117 @@
+id: TC-SKILL-003
+name: 从 Marketplace 安装 Skill
+description: 验证从 Marketplace 搜索并安装 Skill 的完整流程，包括安装后列表更新和已安装标记
+priority: critical
+must_execute: true
+module: extensions/skills
+tags:
+  - ui
+  - api
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+  - Marketplace 有可用的 Skill 数据（需 Skill Source 已同步）
+
+setup:
+  sql: |
+    -- 确保有测试用的 skill_market_items 数据
+    -- 如果平台 Marketplace 已同步则使用真实数据
+    -- 清理可能残留的测试安装
+    DELETE FROM installed_skills
+    WHERE repository_id IN (
+      SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+    ) AND slug LIKE 'e2e-%';
+
+steps:
+  - action: 登录并导航到 Repository Extensions Tab
+    expected: 显示 Extensions Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository Extensions Tab
+    expected: 显示 Skills 列表
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+
+  - action: 打开 Add Skill 对话框（user scope）
+    expected: 对话框打开，显示 Marketplace Tab
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+      wait_for: Add Skill
+      check:
+        - contains: Marketplace
+
+  - action: 验证 Marketplace 加载了 Skill 列表
+    expected: Marketplace 显示可用的 Skills
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Install
+
+  - action: 点击安装按钮安装一个 Skill
+    expected: 安装成功，弹出成功提示
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Install
+      wait_for: Installed successfully
+
+  - action: 验证安装后列表更新
+    expected: 已安装的 Skill 出现在 My Installations 列表中
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: My Installations
+
+  - action: 验证 API 返回已安装的 Skill
+    expected: API 返回 user scope 的已安装 Skill
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/skills?scope=user
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+        body:
+          - path: skills
+            not_empty: true
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_skills
+      WHERE repository_id IN (
+        SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+      ) AND scope = 'user';

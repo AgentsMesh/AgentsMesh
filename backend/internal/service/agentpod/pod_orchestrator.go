@@ -453,6 +453,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		OrganizationID:      req.OrganizationID,
 		UserID:              req.UserID,
 		CredentialProfileID: req.CredentialProfileID,
+		RepositoryID:        req.RepositoryID,
 		RepositoryURL:       repositoryURL,
 		HttpCloneURL:        httpCloneURL,
 		SshCloneURL:         sshCloneURL,

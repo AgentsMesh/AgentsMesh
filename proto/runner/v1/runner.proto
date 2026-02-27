@@ -202,6 +202,16 @@ message CreatePodCommand {
   string initial_prompt = 7;
   int32 cols = 8;  // 终端列数（由浏览器传入）
   int32 rows = 9;  // 终端行数（由浏览器传入）
+  repeated ResourceToDownload resources_to_download = 10;  // 需要下载的资源（Skills 等）
+}
+
+// ResourceToDownload 需要下载的资源描述
+message ResourceToDownload {
+  string sha = 1;              // 内容 SHA，用于缓存命中判断
+  string download_url = 2;     // 预签名下载 URL
+  string target_path = 3;      // 目标路径（支持模板变量如 {{.sandbox.root_path}}）
+  string resource_type = 4;    // 资源类型（如 "skill_package"）
+  int64 size_bytes = 5;        // 资源大小（字节）
 }
 
 // FileToCreate 要创建的文件或目录

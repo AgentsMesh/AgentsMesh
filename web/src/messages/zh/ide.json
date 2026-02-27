@@ -106,6 +106,8 @@
           "notificationsDesc": "通知偏好设置",
           "apiKeys": "API 密钥",
           "apiKeysDesc": "第三方服务集成",
+          "extensions": "扩展",
+          "extensionsDesc": "Skill 和 MCP 服务器市场",
           "billing": "账单",
           "billingDesc": "订阅和付款"
         }

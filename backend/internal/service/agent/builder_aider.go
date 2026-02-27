@@ -55,3 +55,12 @@ func (b *AiderBuilder) BuildEnvVars(ctx *BuildContext) (map[string]string, error
 func (b *AiderBuilder) PostProcess(ctx *BuildContext, cmd *runnerv1.CreatePodCommand) error {
 	return b.BaseAgentBuilder.PostProcess(ctx, cmd)
 }
+
+// SupportsMcp returns false - Aider does not support MCP
+func (b *AiderBuilder) SupportsMcp() bool { return false }
+
+// SupportsSkills returns false - Aider does not support Skills
+func (b *AiderBuilder) SupportsSkills() bool { return false }
+
+// SupportsPlugin returns false - Aider does not support plugin directory mode
+func (b *AiderBuilder) SupportsPlugin() bool { return false }

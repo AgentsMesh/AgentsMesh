@@ -106,6 +106,8 @@
           "notificationsDesc": "Notification preferences",
           "apiKeys": "APIキー",
           "apiKeysDesc": "サードパーティ連携",
+          "extensions": "Extensions",
+          "extensionsDesc": "Skills and MCP server marketplace",
           "billing": "Billing",
           "billingDesc": "Subscription and payments"
         }

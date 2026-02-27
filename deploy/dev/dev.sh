@@ -206,6 +206,8 @@ MINIO_CONSOLE_PORT=$((10005 + offset * 50))
 ADMINER_PORT=$((10006 + offset * 50))
 WEB_PORT=$((10007 + offset * 50))
 TRAEFIK_DASHBOARD_PORT=$((10008 + offset * 50))
+GITEA_HTTP_PORT=$((10009 + offset * 50))
+GITEA_SSH_PORT=$((10010 + offset * 50))
 
 # =============================================================================
 # Credentials
@@ -391,6 +393,31 @@ init_seed() {
     success "Seed 数据初始化完成"
 }
 
+# 初始化 Gitea Git 服务器
+init_gitea() {
+    local gitea_container="${COMPOSE_PROJECT_NAME}-gitea-1"
+    source "$ENV_FILE"
+    local gitea_port="${GITEA_HTTP_PORT:-3001}"
+
+    # Wait for Gitea healthcheck
+    info "等待 Gitea 就绪..."
+    local max_retries=30
+    for ((i=1; i<=max_retries; i++)); do
+        if curl -s "http://localhost:${gitea_port}/api/v1/version" &>/dev/null; then
+            break
+        fi
+        if [[ $i -eq $max_retries ]]; then
+            warn "Gitea 启动超时，跳过初始化"
+            return 0
+        fi
+        sleep 2
+    done
+    success "Gitea 已就绪"
+
+    # Run init script
+    "$SCRIPT_DIR/gitea/init-gitea.sh" "$gitea_container" "$gitea_port"
+}
+
 # 清理环境
 clean() {
     # 读取端口配置
@@ -437,6 +464,7 @@ show_result() {
     echo "  管理员:     admin@agentsmesh.local / adminpass123"
     echo ""
     echo "  其他服务:"
+    echo "    Gitea:    http://localhost:$GITEA_HTTP_PORT (gitea-admin / gitea-admin-123)"
     echo "    Traefik:  http://localhost:$TRAEFIK_DASHBOARD_PORT (Dashboard)"
     echo "    Adminer:  http://localhost:$ADMINER_PORT"
     echo "    MinIO:    http://localhost:$MINIO_CONSOLE_PORT"
@@ -556,6 +584,9 @@ main() {
 
     # Step 9: 初始化 seed
     init_seed "$pg_container"
+
+    # Step 9.5: 初始化 Gitea Git 服务器
+    init_gitea
 
     # Step 10: 修复 workspace 权限 (runner 容器)
     local runner_container="${COMPOSE_PROJECT_NAME}-runner-1"

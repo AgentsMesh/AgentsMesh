@@ -1,0 +1,65 @@
+id: TC-EXTSET-001
+name: 组织 Settings Extensions 页面显示
+description: 验证组织设置中的 Extensions 页面正确显示 Skill Registries 和 MCP Templates 两个子 Tab
+priority: critical
+must_execute: true
+module: extensions/settings
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - 用户为组织 dev-org 的 admin 或 owner
+
+steps:
+  - action: 登录
+    expected: 登录成功
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到组织 Settings Extensions 页面
+    expected: 显示 Extensions 设置页面
+    verification:
+      type: ui
+      navigate: /dev-org/settings?scope=organization&tab=extensions
+      wait_for: Extensions
+
+  - action: 验证页面标题和描述
+    expected: 页面显示 Extensions 标题和描述文字
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Extensions
+        - contains: Manage skill registries
+
+  - action: 验证两个子 Tab 显示
+    expected: 页面包含 Skill Registries 和 MCP Templates 两个 Tab
+    verification:
+      type: ui
+      check:
+        - contains: Skill Registries
+        - contains: MCP Templates
+
+  - action: 验证 Skill Registries Tab 默认选中
+    expected: Skill Registries Tab 内容显示
+    verification:
+      type: ui
+      check:
+        - contains: Skill Registries
+        - contains: Add Source

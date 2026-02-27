@@ -134,6 +134,20 @@ func (b *BaseAgentBuilder) PostProcess(ctx *BuildContext, cmd *runnerv1.CreatePo
 	return nil
 }
 
+// SupportsMcp returns true by default - most agents support MCP
+func (b *BaseAgentBuilder) SupportsMcp() bool { return true }
+
+// SupportsSkills returns true by default
+func (b *BaseAgentBuilder) SupportsSkills() bool { return true }
+
+// SupportsPlugin returns false by default - only Claude Code uses plugin dir
+func (b *BaseAgentBuilder) SupportsPlugin() bool { return false }
+
+// BuildResourcesToDownload returns nil by default - no resources to download
+func (b *BaseAgentBuilder) BuildResourcesToDownload(ctx *BuildContext) ([]*runnerv1.ResourceToDownload, error) {
+	return nil, nil
+}
+
 // renderTemplate renders a Go template string with the given context.
 // Returns the original string if no template markers are present.
 func (b *BaseAgentBuilder) renderTemplate(templateStr string, ctx map[string]interface{}) (string, error) {

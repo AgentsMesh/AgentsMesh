@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo WebApp</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Demo WebApp</h1>
+        <p>AgentsMesh Development Test Project</p>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>Task List</h2>
+            <form id="task-form">
+                <input type="text" id="task-input" placeholder="Add a new task..." required>
+                <button type="submit">Add</button>
+            </form>
+            <ul id="task-list">
+                <li>Set up development environment</li>
+                <li>Review project structure</li>
+                <li>Write unit tests</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>Project Info</h2>
+            <dl>
+                <dt>Version</dt>
+                <dd>1.0.0</dd>
+                <dt>License</dt>
+                <dd>MIT</dd>
+                <dt>Status</dt>
+                <dd id="status">Ready</dd>
+            </dl>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 AgentsMesh Demo</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -80,6 +80,9 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 
 	// Register API key management routes (owner/admin only)
 	registerAPIKeyManagementRoutes(rg, svc)
+
+	// Register extension routes (Skills marketplace, MCP servers)
+	registerExtensionRoutes(rg, svc)
 }
 
 func registerAgentRoutes(rg *gin.RouterGroup, svc *Services) {
@@ -330,4 +333,56 @@ func registerFileRoutes(rg *gin.RouterGroup, svc *Services) {
 	} else {
 		slog.Warn("File service is nil, file upload routes not registered")
 	}
+}
+
+func registerExtensionRoutes(rg *gin.RouterGroup, svc *Services) {
+	if svc.Extension == nil {
+		slog.Warn("Extension services not configured, extension routes not registered")
+		return
+	}
+
+	handler := NewExtensionHandler(svc.Extension)
+
+	// Skill Registries (org admin only)
+	skillRegistries := rg.Group("/skill-registries")
+	{
+		skillRegistries.GET("", handler.ListSkillRegistries)
+		skillRegistries.POST("", handler.CreateSkillRegistry)
+		skillRegistries.POST("/:id/sync", handler.SyncSkillRegistry)
+		skillRegistries.DELETE("/:id", handler.DeleteSkillRegistry)
+		skillRegistries.PUT("/:id/toggle", handler.TogglePlatformRegistry)
+	}
+
+	// Skill Registry Overrides
+	rg.GET("/skill-registry-overrides", handler.ListSkillRegistryOverrides)
+
+	// Marketplace
+	market := rg.Group("/market")
+	{
+		market.GET("/skills", handler.ListMarketSkills)
+		market.GET("/mcp-servers", handler.ListMarketMcpServers)
+	}
+
+	// Repository-scoped skills
+	repoSkills := rg.Group("/repositories/:id/skills")
+	{
+		repoSkills.GET("", handler.ListRepoSkills)
+		repoSkills.POST("/install-from-market", handler.InstallSkillFromMarket)
+		repoSkills.POST("/install-from-github", handler.InstallSkillFromGitHub)
+		repoSkills.POST("/install-from-upload", handler.InstallSkillFromUpload)
+		repoSkills.PUT("/:installId", handler.UpdateSkill)
+		repoSkills.DELETE("/:installId", handler.UninstallSkill)
+	}
+
+	// Repository-scoped MCP servers
+	repoMcp := rg.Group("/repositories/:id/mcp-servers")
+	{
+		repoMcp.GET("", handler.ListRepoMcpServers)
+		repoMcp.POST("/install-from-market", handler.InstallMcpFromMarket)
+		repoMcp.POST("/install-custom", handler.InstallCustomMcpServer)
+		repoMcp.PUT("/:installId", handler.UpdateMcpServer)
+		repoMcp.DELETE("/:installId", handler.UninstallMcpServer)
+	}
+
+	slog.Info("Extension routes registered")
 }

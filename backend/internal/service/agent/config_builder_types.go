@@ -27,6 +27,9 @@ type ConfigBuildRequest struct {
 	UserID              int64
 	CredentialProfileID *int64
 
+	// RepositoryID is the repository this pod belongs to (for loading installed extensions)
+	RepositoryID *int64
+
 	// Repository configuration
 	RepositoryURL string // Repository clone URL (legacy, for backward compatibility)
 	HttpCloneURL  string // HTTPS clone URL

@@ -1,0 +1,112 @@
+id: TC-EXTSET-002
+name: Skill Registries 管理
+description: 验证 Skill Registries 管理功能，包括平台 Registries 显示、组织 Registries 添加/同步/删除
+priority: critical
+must_execute: true
+module: extensions/settings
+tags:
+  - ui
+  - api
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录且为 admin
+  - 组织 dev-org 存在
+
+setup:
+  sql: |
+    -- 清理可能残留的测试 Skill Registry
+    DELETE FROM skill_sources
+    WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org')
+      AND repository_url LIKE '%e2e-test%';
+
+steps:
+  - action: 登录并导航到 Extensions Settings
+    expected: 显示 Extensions 设置
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Skill Registries Tab
+    expected: 显示 Skill Registries 页面
+    verification:
+      type: ui
+      navigate: /dev-org/settings?scope=organization&tab=extensions
+      wait_for: Extensions
+      check:
+        - contains: Skill Registries
+
+  - action: 验证 Platform Registries 区块
+    expected: 显示平台级 Skill Registries 列表和描述
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Platform Registries
+
+  - action: 验证 Organization Registries 区块
+    expected: 显示组织级 Registries 区块和添加按钮
+    verification:
+      type: ui
+      check:
+        - contains: Organization Registries
+        - contains: Add Source
+
+  - action: 点击 Add Source 按钮
+    expected: 打开添加 Skill Registry 对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add Source
+      wait_for: Repository URL
+
+  - action: 验证添加对话框包含必要字段
+    expected: 对话框包含 URL、Branch、Source Type、Authentication 等字段
+    verification:
+      type: ui
+      check:
+        - contains: Repository URL
+        - contains: Branch
+        - contains: Source Type
+        - contains: Authentication
+
+  - action: 验证 Authentication 选项
+    expected: 包含 None、GitHub PAT、GitLab PAT、SSH Key 四种认证方式
+    verification:
+      type: ui
+      check:
+        - contains: None
+
+  - action: 验证 Compatible Agents 选项
+    expected: 可选择兼容的 Agent 类型
+    verification:
+      type: ui
+      check:
+        - contains: Compatible Agents
+
+  - action: 关闭对话框
+    expected: 对话框关闭
+    verification:
+      type: ui
+      actions:
+        - press_key: Escape
+
+cleanup:
+  - sql: |
+      DELETE FROM skill_sources
+      WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'dev-org')
+        AND repository_url LIKE '%e2e-test%';

@@ -1,0 +1,82 @@
+id: TC-MCP-EXT-001
+name: Capabilities Tab MCP Servers 子标签页显示
+description: 验证 Repository Capabilities Tab 正确显示 MCP Servers 子标签页，包括 org/user scope 区块和空状态
+priority: critical
+must_execute: true
+module: extensions/mcp
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 组织 dev-org 存在
+  - Repository Demo WebApp 存在
+
+setup:
+  sql: |
+    DELETE FROM installed_mcp_servers WHERE slug LIKE 'e2e-test-%';
+
+steps:
+  - action: 登录
+    expected: 登录成功
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository Extensions Tab
+    expected: 显示 Extensions Tab
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+
+  - action: 切换到 MCP Servers 子标签
+    expected: 显示 MCP Servers 子标签内容
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 验证 MCP Servers 标签页布局
+    expected: 显示 org/user 两个区块
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Organization Installed
+        - contains: My Installations
+        - contains: Add
+
+  - action: 验证空状态提示
+    expected: 无 MCP Server 时显示空状态
+    verification:
+      type: ui
+      check:
+        - contains: No MCP servers installed
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_mcp_servers WHERE slug LIKE 'e2e-test-%';

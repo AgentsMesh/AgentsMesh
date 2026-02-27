@@ -169,3 +169,15 @@ export type {
   CreateAutopilotControllerRequest,
   ApproveRequest,
 } from "./autopilot";
+
+// Extension (Skills & MCP Marketplace)
+export { extensionApi } from "./extension";
+export type {
+  SkillRegistry,
+  SkillRegistryOverride,
+  SkillMarketItem,
+  McpMarketItem,
+  EnvVarSchemaEntry,
+  InstalledSkill,
+  InstalledMcpServer,
+} from "./extension";

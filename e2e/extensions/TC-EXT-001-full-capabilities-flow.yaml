@@ -1,0 +1,332 @@
+id: TC-EXT-001
+name: Extensions 完整能力管理流程
+description: |
+  端到端验证 Extensions 完整流程：
+  1. 组织 Settings 查看 Skill Registries 和 MCP Templates
+  2. 进入 Repository Extensions Tab
+  3. 安装 Skill（从 Marketplace）
+  4. 安装 MCP Server（从 Market + Custom）
+  5. 编辑 MCP Server 环境变量
+  6. 启用/禁用 Skill 和 MCP Server
+  7. 卸载 Skill 和 MCP Server
+priority: critical
+must_execute: true
+module: extensions
+tags:
+  - ui
+  - api
+  - browser
+  - mcp-required
+  - e2e-flow
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 组织 dev-org 存在
+  - Repository Demo WebApp 存在
+  - mcp_market_items 有 seed 数据
+  - Marketplace 有可用 Skill（或 Skill Source 已同步）
+
+setup:
+  sql: |
+    -- 清理所有测试数据
+    DELETE FROM installed_skills
+    WHERE repository_id IN (
+      SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+    ) AND slug LIKE 'e2e-%';
+
+    DELETE FROM installed_mcp_servers
+    WHERE repository_id IN (
+      SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+    ) AND slug LIKE 'e2e-%';
+
+steps:
+  # ═══════════════════════════════════════════════
+  # Phase 1: 登录
+  # ═══════════════════════════════════════════════
+
+  - action: 登录系统
+    expected: 登录成功
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  # ═══════════════════════════════════════════════
+  # Phase 2: 组织 Settings — Extensions 页面
+  # ═══════════════════════════════════════════════
+
+  - action: 导航到组织 Extensions Settings
+    expected: 显示 Extensions 设置页面
+    verification:
+      type: ui
+      navigate: /dev-org/settings?scope=organization&tab=extensions
+      wait_for: Extensions
+      check:
+        - contains: Skill Registries
+        - contains: MCP Templates
+
+  - action: 验证 Skill Registries 页面
+    expected: 显示平台和组织 Registry 区块
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Platform Registries
+        - contains: Organization Registries
+
+  - action: 切换到 MCP Templates Tab
+    expected: 显示 MCP Server 模板列表
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: MCP Templates
+      wait_for: MCP Server Templates
+      check:
+        - contains: Jira
+        - contains: PostgreSQL
+        - contains: Filesystem
+
+  # ═══════════════════════════════════════════════
+  # Phase 3: Repository Extensions Tab — Skills
+  # ═══════════════════════════════════════════════
+
+  - action: 导航到 Repository 详情页
+    expected: 显示 Repository 详情
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+
+  - action: 切换到 Extensions Tab
+    expected: 显示 Extensions Tab（Skills 子标签默认）
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+      check:
+        - contains: Organization Installed
+        - contains: My Installations
+
+  # ═══════════════════════════════════════════════
+  # Phase 4: Repository Extensions Tab — MCP Servers
+  # ═══════════════════════════════════════════════
+
+  - action: 切换到 MCP Servers 子标签
+    expected: 显示 MCP Servers 内容
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 打开 Add MCP Server 对话框
+    expected: 对话框打开
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+      wait_for: Add MCP Server
+
+  - action: 安装 Filesystem MCP（无需环境变量）
+    expected: 安装成功
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Filesystem
+      wait_for: Install
+      actions:
+        - click:
+            text: Install
+      wait_for: Installed successfully
+
+  - action: 验证 Filesystem 出现在列表
+    expected: MCP Server 列表包含 Filesystem
+    verification:
+      type: ui
+      check:
+        - contains: Filesystem
+        - contains: stdio
+        - contains: Market
+
+  # ═══════════════════════════════════════════════
+  # Phase 5: 安装自定义 MCP Server
+  # ═══════════════════════════════════════════════
+
+  - action: 打开 Add MCP Server 对话框 → Custom Tab
+    expected: 显示自定义表单
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+      wait_for: Add MCP Server
+      actions:
+        - click:
+            text: Custom
+      check:
+        - contains: Name
+        - contains: Slug
+
+  - action: 填写并安装自定义 MCP Server
+    expected: 安装成功
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder*="My MCP"]'
+            value: E2E Flow Server
+        - fill:
+            selector: 'input[placeholder*="my-mcp"]'
+            value: e2e-flow-server
+        - fill:
+            selector: 'input[placeholder="npx"]'
+            value: node
+        - fill:
+            selector: 'input[placeholder*="modelcontextprotocol"]'
+            value: server.js
+        - click:
+            text: Add Variable
+        - fill:
+            selector: 'input[placeholder="KEY"]'
+            value: TEST_KEY
+        - fill:
+            selector: 'input[placeholder="value"]'
+            value: test-value
+        - click:
+            text: Install
+      wait_for: Installed successfully
+
+  - action: 验证两个 MCP Server 都在列表中
+    expected: 列表包含 Filesystem 和 E2E Flow Server
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Filesystem
+        - contains: E2E Flow Server
+
+  # ═══════════════════════════════════════════════
+  # Phase 6: 编辑 MCP Server 环境变量
+  # ═══════════════════════════════════════════════
+
+  - action: 点击 E2E Flow Server 的 Settings 按钮
+    expected: 打开环境变量编辑对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: 'button[title="Edit Environment Variables"]'
+      wait_for: Edit Environment Variables
+      check:
+        - contains: TEST_KEY
+
+  - action: 修改环境变量值并保存
+    expected: 保存成功
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder="value"]'
+            value: updated-value
+        - click:
+            text: Save
+      wait_for: Environment variables updated
+
+  # ═══════════════════════════════════════════════
+  # Phase 7: 启用/禁用 MCP Server
+  # ═══════════════════════════════════════════════
+
+  - action: 禁用 E2E Flow Server
+    expected: MCP Server 被禁用
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: '[aria-label="Toggle enabled"]'
+      wait_for: 1000
+
+  - action: 重新启用 E2E Flow Server
+    expected: MCP Server 被重新启用
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: '[aria-label="Toggle enabled"]'
+      wait_for: 1000
+
+  # ═══════════════════════════════════════════════
+  # Phase 8: 卸载 MCP Server
+  # ═══════════════════════════════════════════════
+
+  - action: 卸载 E2E Flow Server
+    expected: 卸载确认对话框出现
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: 'button.text-destructive'
+      wait_for: Uninstall MCP Server
+      actions:
+        - click:
+            text: Uninstall
+      wait_for: Uninstalled successfully
+
+  - action: 验证 E2E Flow Server 已移除
+    expected: 列表不再包含 E2E Flow Server
+    verification:
+      type: ui
+      check:
+        - not_exists: 'text "E2E Flow Server"'
+        - contains: Filesystem
+
+  # ═══════════════════════════════════════════════
+  # Phase 9: API 级最终验证
+  # ═══════════════════════════════════════════════
+
+  - action: 验证 API 层最终状态
+    expected: 仅剩 Filesystem MCP Server
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/mcp-servers?scope=user
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+        body:
+          - path: mcp_servers
+            length: 1
+          - path: mcp_servers[0].slug
+            equals: filesystem
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_skills
+      WHERE repository_id IN (
+        SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+      ) AND slug LIKE 'e2e-%';
+
+      DELETE FROM installed_mcp_servers
+      WHERE repository_id IN (
+        SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+      ) AND slug IN ('filesystem', 'e2e-flow-server');

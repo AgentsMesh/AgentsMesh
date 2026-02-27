@@ -4,18 +4,28 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"text/template"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
+
+// ExtensionProvider provides installed extension capabilities for a repository
+type ExtensionProvider interface {
+	GetEffectiveMcpServers(ctx context.Context, orgID, userID, repoID int64, agentSlug string) ([]*extension.InstalledMcpServer, error)
+	GetEffectiveSkills(ctx context.Context, orgID, userID, repoID int64, agentSlug string) ([]*extensionservice.ResolvedSkill, error)
+}
 
 // ConfigBuilder builds pod configurations from agent type templates
 // It uses the Strategy pattern to delegate agent-specific logic to AgentBuilder implementations
 type ConfigBuilder struct {
-	provider AgentConfigProvider
-	registry *AgentBuilderRegistry
+	provider          AgentConfigProvider
+	registry          *AgentBuilderRegistry
+	extensionProvider ExtensionProvider
 }
 
 // NewConfigBuilder creates a new ConfigBuilder with default builder registry
@@ -33,6 +43,11 @@ func NewConfigBuilderWithRegistry(provider AgentConfigProvider, registry *AgentB
 		provider: provider,
 		registry: registry,
 	}
+}
+
+// SetExtensionProvider sets the extension provider for loading MCP servers and skills
+func (b *ConfigBuilder) SetExtensionProvider(ep ExtensionProvider) {
+	b.extensionProvider = ep
 }
 
 // BuildPodCommand builds the complete pod command using the Strategy pattern.
@@ -81,7 +96,10 @@ func (b *ConfigBuilder) BuildPodCommand(ctx context.Context, req *ConfigBuildReq
 	// - Aider: does not support command-line prompt
 	launchArgs = builder.HandleInitialPrompt(buildCtx, launchArgs)
 
-	// 9. Build files to create using strategy
+	// 9. Load extension capabilities (MCP servers, skills)
+	b.loadExtensions(ctx, req, builder, buildCtx)
+
+	// 10. Build files to create using strategy
 	filesToCreate, err := builder.BuildFilesToCreate(buildCtx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build files to create: %w", err)
@@ -109,10 +127,17 @@ func (b *ConfigBuilder) BuildPodCommand(ctx context.Context, req *ConfigBuildReq
 		Rows:          req.Rows,
 	}
 
-	// 13. Allow post-processing by the builder
+	// 14. Allow post-processing by the builder
 	if err := builder.PostProcess(buildCtx, cmd); err != nil {
 		return nil, fmt.Errorf("failed to post-process command: %w", err)
 	}
+
+	// 15. Build resources to download
+	resources, err := builder.BuildResourcesToDownload(buildCtx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build resources to download: %w", err)
+	}
+	cmd.ResourcesToDownload = resources
 
 	return cmd, nil
 }
@@ -154,6 +179,34 @@ func (b *ConfigBuilder) buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.Sa
 		PreparationScript:  req.PreparationScript,
 		PreparationTimeout: timeout,
 		LocalPath:          req.LocalPath,
+	}
+}
+
+func (b *ConfigBuilder) loadExtensions(ctx context.Context, req *ConfigBuildRequest, builder AgentBuilder, buildCtx *BuildContext) {
+	if b.extensionProvider == nil || req.RepositoryID == nil {
+		return
+	}
+
+	orgID := req.OrganizationID
+	userID := req.UserID
+	repoID := *req.RepositoryID
+
+	if builder.SupportsMcp() {
+		servers, err := b.extensionProvider.GetEffectiveMcpServers(ctx, orgID, userID, repoID, builder.Slug())
+		if err != nil {
+			slog.Warn("Failed to load effective MCP servers", "error", err, "org_id", orgID, "repo_id", repoID)
+		} else {
+			buildCtx.McpServers = servers
+		}
+	}
+
+	if builder.SupportsSkills() {
+		skills, err := b.extensionProvider.GetEffectiveSkills(ctx, orgID, userID, repoID, builder.Slug())
+		if err != nil {
+			slog.Warn("Failed to load effective skills", "error", err, "org_id", orgID, "repo_id", repoID)
+		} else {
+			buildCtx.ResolvedSkills = skills
+		}
 	}
 }
 

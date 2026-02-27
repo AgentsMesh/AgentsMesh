@@ -92,6 +92,11 @@ func (m *MockStorage) GetURL(ctx context.Context, key string, expiry time.Durati
 	return fmt.Sprintf("https://mock-storage.example.com/%s?expires=%d", key, time.Now().Add(expiry).Unix()), nil
 }
 
+// GetInternalURL returns a mock internal presigned URL (same as GetURL for mock)
+func (m *MockStorage) GetInternalURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
+	return m.GetURL(ctx, key, expiry)
+}
+
 // Exists checks if a file exists in memory
 func (m *MockStorage) Exists(ctx context.Context, key string) (bool, error) {
 	if m.ExistsErr != nil {

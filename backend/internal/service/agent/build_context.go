@@ -2,6 +2,8 @@ package agent
 
 import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 )
 
 // BuildContext contains all data needed during the pod configuration build process.
@@ -32,6 +34,12 @@ type BuildContext struct {
 	// Empty string means the Runner did not report version info (old Runner).
 	// Used by AgentBuilder to adapt CLI arguments for version compatibility.
 	AgentVersion string
+
+	// McpServers contains installed MCP servers for this repo
+	McpServers []*extension.InstalledMcpServer
+
+	// ResolvedSkills contains resolved skills with download URLs
+	ResolvedSkills []*extensionservice.ResolvedSkill
 }
 
 // NewBuildContext creates a new BuildContext with the given parameters
@@ -45,12 +53,14 @@ func NewBuildContext(
 	agentVersion string,
 ) *BuildContext {
 	return &BuildContext{
-		Request:      req,
-		AgentType:    agentType,
-		Config:       config,
-		Credentials:  credentials,
-		IsRunnerHost: isRunnerHost,
-		TemplateCtx:  templateCtx,
-		AgentVersion: agentVersion,
+		Request:        req,
+		AgentType:      agentType,
+		Config:         config,
+		Credentials:    credentials,
+		IsRunnerHost:   isRunnerHost,
+		TemplateCtx:    templateCtx,
+		AgentVersion:   agentVersion,
+		McpServers:     make([]*extension.InstalledMcpServer, 0),
+		ResolvedSkills: make([]*extensionservice.ResolvedSkill, 0),
 	}
 }

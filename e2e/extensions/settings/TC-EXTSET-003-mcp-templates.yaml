@@ -1,0 +1,95 @@
+id: TC-EXTSET-003
+name: MCP Templates 浏览页面
+description: 验证 MCP Templates Tab 正确显示预置的 MCP Server 模板列表，包括搜索和分类功能
+priority: high
+must_execute: true
+module: extensions/settings
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录且为 admin
+  - mcp_market_items 表有 seed 数据
+
+steps:
+  - action: 登录并导航到 Extensions Settings
+    expected: 显示 Extensions 设置
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 MCP Templates Tab
+    expected: 切换到 MCP Templates Tab
+    verification:
+      type: ui
+      navigate: /dev-org/settings?scope=organization&tab=extensions
+      wait_for: Extensions
+      actions:
+        - click:
+            text: MCP Templates
+      wait_for: MCP Server Templates
+
+  - action: 验证页面标题和描述
+    expected: 显示 MCP Server Templates 标题
+    verification:
+      type: ui
+      check:
+        - contains: MCP Server Templates
+        - contains: Browse available MCP server templates
+
+  - action: 验证预置 MCP 模板列表
+    expected: 列表包含 seed 数据中的模板
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Jira
+        - contains: PostgreSQL
+        - contains: Slack
+        - contains: GitHub
+        - contains: Filesystem
+        - contains: Memory
+
+  - action: 验证模板卡片信息
+    expected: 每个卡片显示名称、描述、transport 类型、分类
+    verification:
+      type: ui
+      check:
+        - contains: stdio
+        - contains: productivity
+        - contains: database
+        - contains: utility
+
+  - action: 验证模板数量显示
+    expected: 显示 servers found 数量信息
+    verification:
+      type: ui
+      check:
+        - contains: servers found
+
+  - action: 验证搜索功能
+    expected: 搜索框可过滤模板
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder*="Search"]'
+            value: slack
+        - click:
+            text: Search
+      check:
+        - contains: Slack

@@ -89,6 +89,10 @@ func main() {
 	// Create PodOrchestrator (unified Pod creation logic for REST + MCP paths)
 	compositeProvider := agent.NewCompositeProvider(services.agentType, services.credentialProfile, services.userConfig)
 	configBuilder := agent.NewConfigBuilder(compositeProvider)
+	if services.extension != nil {
+		configBuilder.SetExtensionProvider(services.extension)
+		slog.Info("ExtensionProvider connected to ConfigBuilder")
+	}
 	podOrchestrator := agentpod.NewPodOrchestrator(&agentpod.PodOrchestratorDeps{
 		PodService:        services.pod,
 		ConfigBuilder:     configBuilder,
@@ -180,10 +184,25 @@ func main() {
 		RelayDNSService:     relayDNSService,
 		RelayACMEManager:    relayACMEManager,
 		VersionChecker:      versionChecker,
+		Extension:           services.extension,
+		ExtensionRepo:       services.extensionRepo,
+		MarketplaceWorker:   services.marketplaceWorker,
 	}
 
 	// Initialize router
 	router := rest.NewRouter(cfg, svc, db, appLogger.Logger)
+
+	// Start MarketplaceWorker if configured
+	if services.marketplaceWorker != nil {
+		services.marketplaceWorker.Start(context.Background())
+		slog.Info("MarketplaceWorker started")
+	}
+	defer func() {
+		if services.marketplaceWorker != nil {
+			services.marketplaceWorker.Stop()
+			slog.Info("MarketplaceWorker stopped")
+		}
+	}()
 
 	// Start scheduled jobs
 	subscriptionScheduler := startSubscriptionJobs(db, cfg, services.email, appLogger.Logger)
@@ -244,3 +263,4 @@ func initializeRelayServices(cfg *config.Config) (*relay.DNSService, *acme.Manag
 }
 
 // Build trigger: 20260119003527
+// rebuild trigger

@@ -13,7 +13,7 @@ export function RepositoryTabs({ activeTab, onTabChange }: RepositoryTabsProps) 
 
   const tabs: { key: RepositoryTab; label: string }[] = [
     { key: "info", label: t("repositories.detail.information") },
-    { key: "branches", label: t("repositories.detail.branches") },
+    { key: "extensions", label: t("repositories.detail.extensions") },
   ];
 
   return (

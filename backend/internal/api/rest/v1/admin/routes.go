@@ -2,11 +2,13 @@ package admin
 
 import (
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/admin"
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 
 	"github.com/gin-gonic/gin"
@@ -14,10 +16,12 @@ import (
 
 // Services contains all admin-related services
 type Services struct {
-	Auth         *auth.Service
-	Admin        *admin.Service
-	Billing      *billing.Service
-	RelayManager *relay.Manager
+	Auth              *auth.Service
+	Admin             *admin.Service
+	Billing           *billing.Service
+	RelayManager      *relay.Manager
+	ExtensionRepo     extension.Repository
+	MarketplaceWorker *extensionservice.MarketplaceWorker
 }
 
 // RegisterRoutes registers all admin console routes
@@ -71,5 +75,11 @@ func RegisterRoutes(router *gin.Engine, cfg *config.Config, db database.DB, svc 
 	if svc.RelayManager != nil {
 		relayHandler := NewRelayHandler(svc.Admin, svc.RelayManager)
 		relayHandler.RegisterRoutes(protected)
+	}
+
+	// Skill Registries (optional - only if extension repo is available)
+	if svc.ExtensionRepo != nil {
+		skillRegistryHandler := NewSkillRegistryHandler(svc.ExtensionRepo, svc.MarketplaceWorker)
+		skillRegistryHandler.RegisterRoutes(protected)
 	}
 }

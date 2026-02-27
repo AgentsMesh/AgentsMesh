@@ -179,13 +179,23 @@ func (c *GRPCConnection) GetAvailableAgents() []string {
 
 // Connect establishes a gRPC connection with mTLS using advancedtls for certificate hot-reloading.
 func (c *GRPCConnection) Connect() error {
-	// Close existing connection if any (important for reconnection)
-	// This prevents resource leaks and TLS session conflicts
+	// Close existing connection and certificate providers (important for reconnection)
+	// This prevents resource leaks, TLS session conflicts, and goroutine leaks from pemfile providers
 	c.mu.Lock()
 	if c.conn != nil {
 		logger.GRPC().Debug("Closing existing gRPC connection before reconnect")
 		c.conn.Close()
 		c.conn = nil
+	}
+	// Close old certificate providers to prevent goroutine leaks
+	// Each pemfile.Provider runs background goroutines for file watching
+	if c.identityProvider != nil {
+		c.identityProvider.Close()
+		c.identityProvider = nil
+	}
+	if c.rootProvider != nil {
+		c.rootProvider.Close()
+		c.rootProvider = nil
 	}
 	c.mu.Unlock()
 

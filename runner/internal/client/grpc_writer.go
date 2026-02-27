@@ -69,11 +69,15 @@ func (c *GRPCConnection) writeLoop(ctx context.Context, done <-chan struct{}) {
 }
 
 // sendAndRecord sends a message with a hard timeout to prevent writeLoop from blocking forever.
-// If stream.Send() doesn't complete within sendTimeout, the message is abandoned and we continue.
-// This prevents a slow/stuck stream.Send() from blocking all message processing.
+// If stream.Send() doesn't complete within sendTimeout, the message is abandoned and reconnect
+// is triggered. The orphaned goroutine will exit when the stream is closed during reconnection.
 //
 // Key insight: gRPC stream.Send() can block indefinitely due to flow control.
-// We cannot cancel it, but we can stop waiting and move on.
+// We cannot cancel it, but closing the stream (during reconnection) unblocks it.
+//
+// Goroutine leak prevention: after timeout, we immediately close the stream reference.
+// This causes the blocked stream.Send() to return an error, allowing the goroutine to exit.
+// Without this, the goroutine stays alive until the next reconnection cycle clears the stream.
 func (c *GRPCConnection) sendAndRecord(msg *runnerv1.RunnerMessage) {
 	c.mu.Lock()
 	stream := c.stream
@@ -84,8 +88,6 @@ func (c *GRPCConnection) sendAndRecord(msg *runnerv1.RunnerMessage) {
 		return
 	}
 
-	// Use a goroutine with timeout to prevent blocking forever
-	// The send operation runs in a goroutine, and we wait with a timeout
 	const sendTimeout = 5 * time.Second
 
 	type sendResult struct {
@@ -119,13 +121,19 @@ func (c *GRPCConnection) sendAndRecord(msg *runnerv1.RunnerMessage) {
 		c.lastSendTime.Store(time.Now().UnixNano())
 
 	case <-time.After(sendTimeout):
-		// Send timed out - the goroutine is still running but we move on
-		// This prevents writeLoop from being blocked forever
-		logger.GRPC().Error("stream.Send() timed out, abandoning message and triggering reconnect",
+		// Send timed out — the goroutine is blocked on stream.Send().
+		// Clear the stream reference and trigger reconnect. This causes:
+		// 1. writeLoop to stop sending new messages (stream == nil check)
+		// 2. Reconnection flow to close the gRPC conn, which unblocks stream.Send()
+		// 3. The orphaned goroutine receives an error from Send() and exits
+		logger.GRPC().Error("stream.Send() timed out, clearing stream and triggering reconnect",
 			"timeout", sendTimeout, "terminal_queue", len(c.terminalCh))
 
+		c.mu.Lock()
+		c.stream = nil
+		c.mu.Unlock()
+
 		// Trigger reconnect to recover from degraded connection
-		// The stuck goroutine will eventually complete or error when stream is closed
 		c.triggerReconnect()
 	}
 }

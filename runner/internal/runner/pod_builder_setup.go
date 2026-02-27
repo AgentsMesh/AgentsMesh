@@ -3,11 +3,13 @@ package runner
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/anthropics/agentsmesh/runner/internal/cache"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
@@ -49,6 +51,12 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 	if err := b.createFiles(sandboxRoot, result.WorkingDir); err != nil {
 		os.RemoveAll(sandboxRoot)
 		return "", "", "", err
+	}
+
+	// Download skill packages
+	if err := b.downloadResources(ctx, sandboxRoot, result.WorkingDir); err != nil {
+		os.RemoveAll(sandboxRoot)
+		return "", "", "", fmt.Errorf("failed to download resources: %w", err)
 	}
 
 	logger.Pod().Info("Sandbox setup completed",
@@ -219,6 +227,33 @@ func (b *PodBuilder) runPreparationScript(ctx context.Context, cfg *runnerv1.San
 	}
 
 	b.sendProgress("preparing", 75, "Preparation script completed")
+	return nil
+}
+
+// downloadResources downloads skill packages and other resources into the sandbox.
+func (b *PodBuilder) downloadResources(ctx context.Context, sandboxRoot, workDir string) error {
+	if len(b.cmd.ResourcesToDownload) == 0 {
+		return nil
+	}
+
+	cacheDir := filepath.Join(b.deps.Config.WorkspaceRoot, "cache", "skills")
+	cacheManager, err := cache.NewSkillCacheManager(cacheDir)
+	if err != nil {
+		return fmt.Errorf("failed to create skill cache manager: %w", err)
+	}
+
+	downloader := cache.NewDownloader(cacheManager)
+	for _, res := range b.cmd.ResourcesToDownload {
+		result, err := downloader.DownloadAndExtract(ctx, res, sandboxRoot, workDir)
+		if err != nil {
+			return fmt.Errorf("failed to download resource %s: %w", res.Sha, err)
+		}
+		if result.CacheHit {
+			slog.Info("Resource cache hit", "sha", res.Sha)
+		} else {
+			slog.Info("Resource downloaded", "sha", res.Sha, "bytes", result.BytesRead)
+		}
+	}
 	return nil
 }
 

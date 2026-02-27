@@ -13,8 +13,8 @@ import {
   RepositoryInfoCard,
   GitProviderCard,
   WebhookSettingsCard,
-  BranchesTab,
   RepositoryTabs,
+  CapabilitiesTab,
 } from "./components";
 
 export default function RepositoryDetailPage() {
@@ -24,9 +24,7 @@ export default function RepositoryDetailPage() {
 
   const {
     repository,
-    branches,
     loading,
-    loadingBranches,
     activeTab,
     showEditModal,
     deleteDialog,
@@ -74,12 +72,8 @@ export default function RepositoryDetailPage() {
         </div>
       )}
 
-      {activeTab === "branches" && (
-        <BranchesTab
-          branches={branches}
-          defaultBranch={repository.default_branch}
-          loading={loadingBranches}
-        />
+      {activeTab === "extensions" && (
+        <CapabilitiesTab repositoryId={repositoryId} />
       )}
 
       {showEditModal && (

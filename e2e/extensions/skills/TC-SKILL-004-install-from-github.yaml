@@ -1,0 +1,120 @@
+id: TC-SKILL-004
+name: 从 GitHub URL 安装 Skill
+description: 验证通过 GitHub Repo URL + Branch + Path 导入 Skill 的流程
+priority: high
+must_execute: true
+module: extensions/skills
+tags:
+  - ui
+  - api
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+
+setup:
+  sql: |
+    DELETE FROM installed_skills
+    WHERE repository_id IN (
+      SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+    ) AND install_source = 'github' AND slug LIKE 'e2e-%';
+
+steps:
+  - action: 登录并导航到 Repository Extensions Tab
+    expected: 显示 Extensions Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository Extensions Tab
+    expected: 进入 Extensions Tab
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+
+  - action: 打开 Add Skill 对话框
+    expected: 对话框打开
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+      wait_for: Add Skill
+
+  - action: 切换到 GitHub Repo Tab
+    expected: 显示 GitHub Repo 表单
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: GitHub Repo
+      check:
+        - contains: Repository URL
+        - contains: Branch
+        - contains: Path
+
+  - action: 填写 GitHub URL
+    expected: URL 输入框已填写
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder="https://github.com/owner/repo"]'
+            value: https://github.com/anthropics/skills
+
+  - action: 填写 Branch 和 Path
+    expected: Branch 和 Path 字段已填写
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder="main"]'
+            value: main
+
+  - action: 验证 Install 按钮可用
+    expected: Install 按钮处于可点击状态
+    verification:
+      type: ui
+      check:
+        - exists: 'button:not([disabled])'
+        - contains: Install
+
+  - action: 点击 Install 安装
+    expected: 安装请求发出（可能成功或因网络原因失败）
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Install
+      # 等待安装完成或报错
+      wait_for: 3000
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_skills
+      WHERE repository_id IN (
+        SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+      ) AND install_source = 'github';

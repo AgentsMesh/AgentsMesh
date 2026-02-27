@@ -1,0 +1,201 @@
+id: TC-MCP-EXT-006
+name: 编辑已安装 MCP Server 环境变量
+description: 验证已安装的 MCP Server 可通过 Settings 齿轮按钮编辑环境变量，包括 schema 模式和自由编辑模式
+priority: critical
+must_execute: true
+module: extensions/mcp
+tags:
+  - ui
+  - api
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+
+setup:
+  sql: |
+    -- 创建带环境变量的测试 MCP Server (Market 来源，有 schema)
+    INSERT INTO installed_mcp_servers (organization_id, repository_id, market_item_id, scope, installed_by, name, slug, transport_type, command, args, env_vars, is_enabled, created_at, updated_at)
+    SELECT
+      r.organization_id,
+      r.id,
+      m.id,
+      'user',
+      u.id,
+      'Jira',
+      'e2e-test-jira-edit',
+      'stdio',
+      'npx',
+      '["-y", "@modelcontextprotocol/server-jira"]'::jsonb,
+      '{"JIRA_URL": "https://old.atlassian.net", "JIRA_EMAIL": "old@example.com", "JIRA_API_TOKEN": "old-token"}'::jsonb,
+      true,
+      NOW(),
+      NOW()
+    FROM repositories r
+    CROSS JOIN users u
+    CROSS JOIN mcp_market_items m
+    WHERE r.full_path = 'dev-org/demo-webapp'
+      AND u.email = 'dev@agentsmesh.local'
+      AND m.slug = 'jira'
+    ON CONFLICT DO NOTHING;
+
+    -- 创建自定义 MCP Server（无 schema，自由编辑模式）
+    INSERT INTO installed_mcp_servers (organization_id, repository_id, scope, installed_by, name, slug, transport_type, command, env_vars, is_enabled, created_at, updated_at)
+    SELECT
+      r.organization_id,
+      r.id,
+      'user',
+      u.id,
+      'E2E Custom Server',
+      'e2e-test-custom-edit',
+      'stdio',
+      'node',
+      '{"API_KEY": "original-key", "API_SECRET": "original-secret"}'::jsonb,
+      true,
+      NOW(),
+      NOW()
+    FROM repositories r
+    CROSS JOIN users u
+    WHERE r.full_path = 'dev-org/demo-webapp'
+      AND u.email = 'dev@agentsmesh.local'
+    ON CONFLICT DO NOTHING;
+
+steps:
+  - action: 登录并导航到 MCP Servers Tab
+    expected: 显示 MCP Servers Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 MCP Servers Tab
+    expected: 显示已安装 MCP Servers
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 验证两个测试 MCP Server 显示
+    expected: 列表包含 Jira 和 Custom Server
+    verification:
+      type: ui
+      check:
+        - contains: Jira
+        - contains: E2E Custom Server
+
+  - action: 验证 Jira 卡片有 Settings 齿轮按钮
+    expected: 因为有环境变量，显示 Settings 按钮
+    verification:
+      type: ui
+      check:
+        - exists: 'button[title="Edit Environment Variables"]'
+
+  - action: 点击 Jira 的 Settings 按钮
+    expected: 打开 Edit Environment Variables 对话框（schema 模式）
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: 'button[title="Edit Environment Variables"]'
+      wait_for: Edit Environment Variables
+
+  - action: 验证 Schema 模式表单
+    expected: 显示 Jira URL, Email, API Token 字段，带标签和必填标记
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Jira URL
+        - contains: Email
+        - contains: API Token
+        - exists: 'span.text-destructive'
+        - contains: Save
+        - contains: Cancel
+
+  - action: 修改 Jira URL 值
+    expected: 输入框值已更新
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder*="atlassian"]'
+            value: https://new.atlassian.net
+
+  - action: 点击 Save 保存
+    expected: 保存成功
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Save
+      wait_for: Environment variables updated
+
+  - action: 验证环境变量已通过 API 更新
+    expected: API 返回更新后的环境变量
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/mcp-servers?scope=user
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+        body:
+          - path: mcp_servers[?slug='e2e-test-jira-edit'].env_vars.JIRA_URL
+            equals: https://new.atlassian.net
+
+  - action: 点击 Custom Server 的 Settings 按钮
+    expected: 打开自由编辑模式的环境变量对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: 'button[title="Edit Environment Variables"]'
+      wait_for: Edit Environment Variables
+
+  - action: 验证自由编辑模式
+    expected: 显示 KEY-VALUE 对，带添加/删除按钮
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: API_KEY
+        - contains: API_SECRET
+        - contains: Add Variable
+
+  - action: 关闭对话框
+    expected: 对话框关闭
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Cancel
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_mcp_servers WHERE slug IN ('e2e-test-jira-edit', 'e2e-test-custom-edit');

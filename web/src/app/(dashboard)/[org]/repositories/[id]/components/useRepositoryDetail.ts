@@ -8,13 +8,11 @@ import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 
-export type RepositoryTab = "info" | "branches";
+export type RepositoryTab = "info" | "extensions";
 
 export interface UseRepositoryDetailResult {
   repository: RepositoryData | null;
-  branches: string[];
   loading: boolean;
-  loadingBranches: boolean;
   activeTab: RepositoryTab;
   showEditModal: boolean;
   deleteDialog: ReturnType<typeof useConfirmDialog>;
@@ -29,9 +27,7 @@ export function useRepositoryDetail(repositoryId: number): UseRepositoryDetailRe
   const router = useRouter();
 
   const [repository, setRepository] = useState<RepositoryData | null>(null);
-  const [branches, setBranches] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingBranches, setLoadingBranches] = useState(false);
   const [activeTab, setActiveTab] = useState<RepositoryTab>("info");
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -57,19 +53,6 @@ export function useRepositoryDetail(repositoryId: number): UseRepositoryDetailRe
     loadRepository();
   }, [loadRepository]);
 
-  const loadBranches = useCallback(async () => {
-    if (!repository) return;
-    setLoadingBranches(true);
-    try {
-      // Note: Branch listing requires access token which should come from user's Git connection
-      setBranches([]);
-    } catch (error) {
-      console.error("Failed to load branches:", error);
-    } finally {
-      setLoadingBranches(false);
-    }
-  }, [repository]);
-
   const handleDelete = useCallback(async () => {
     if (!repository) return;
     const confirmed = await deleteDialog.confirm();
@@ -83,17 +66,9 @@ export function useRepositoryDetail(repositoryId: number): UseRepositoryDetailRe
     }
   }, [repository, repositoryId, router, deleteDialog, t]);
 
-  useEffect(() => {
-    if (activeTab === "branches" && branches.length === 0 && repository) {
-      loadBranches();
-    }
-  }, [activeTab, branches.length, repository, loadBranches]);
-
   return {
     repository,
-    branches,
     loading,
-    loadingBranches,
     activeTab,
     showEditModal,
     deleteDialog,

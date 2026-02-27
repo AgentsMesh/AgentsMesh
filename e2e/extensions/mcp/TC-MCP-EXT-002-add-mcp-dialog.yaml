@@ -1,0 +1,143 @@
+id: TC-MCP-EXT-002
+name: 添加 MCP Server 对话框显示与交互
+description: 验证 Add MCP Server 对话框正确显示两种安装方式（Market Templates / Custom）及其交互
+priority: critical
+must_execute: true
+module: extensions/mcp
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+  - mcp_market_items 表有 seed 数据（jira, postgres, slack, github, filesystem, memory）
+
+steps:
+  - action: 登录并导航到 Repository Extensions Tab → MCP Servers
+    expected: 显示 MCP Servers 子标签
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository Extensions Tab
+    expected: 进入 Extensions Tab
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 点击 My Installations 区块的 Add 按钮
+    expected: 打开 Add MCP Server 对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+      wait_for: Add MCP Server
+
+  - action: 验证对话框标题和 Tab 列表
+    expected: 对话框显示两种安装方式
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Add MCP Server
+        - contains: Market Templates
+        - contains: Custom
+
+  - action: 验证 Market Templates Tab 显示预置模板
+    expected: 模板列表包含 seed 数据中的 MCP 服务器
+    verification:
+      type: ui
+      check:
+        - contains: Jira
+        - contains: PostgreSQL
+        - contains: Slack
+        - contains: GitHub
+        - contains: Filesystem
+        - contains: Memory
+
+  - action: 验证模板卡片信息
+    expected: 模板卡片显示名称、transport 类型、描述和 Select 按钮
+    verification:
+      type: ui
+      check:
+        - contains: stdio
+        - contains: Select
+        - contains: Connect to Jira
+
+  - action: 验证搜索功能
+    expected: 搜索框可过滤模板列表
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder*="Search"]'
+            value: postgres
+      actions:
+        - click:
+            text: Search
+      check:
+        - contains: PostgreSQL
+        - not_exists: 'text "Jira"'
+
+  - action: 清除搜索并切换到 Custom Tab
+    expected: 显示自定义 MCP Server 表单
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Custom
+      check:
+        - contains: Name
+        - contains: Slug
+        - contains: Transport Type
+        - contains: stdio
+        - contains: sse
+        - contains: http
+        - contains: Command
+        - contains: Arguments
+        - contains: Environment Variables
+
+  - action: 验证 Custom Tab 必填字段提示
+    expected: Install 按钮在必填字段为空时禁用
+    verification:
+      type: ui
+      check:
+        - exists: 'button[disabled]'
+
+  - action: 关闭对话框
+    expected: 对话框关闭
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Cancel
+      check:
+        - not_exists: 'dialog[open]'

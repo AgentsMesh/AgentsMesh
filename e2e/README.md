@@ -31,6 +31,30 @@ e2e/
 │       ├── TC-QUOTA-001-users.yaml
 │       ├── TC-QUOTA-002-runners.yaml
 │       └── TC-QUOTA-003-repositories.yaml
+├── extensions/                        # Extensions 模块（Skills + MCP Servers）
+│   ├── TC-EXT-001-full-capabilities-flow.yaml  # 完整能力管理端到端流程
+│   ├── skills/                        # Skills 测试
+│   │   ├── TC-SKILL-001-capabilities-tab-display.yaml  # Capabilities Tab Skills 显示
+│   │   ├── TC-SKILL-002-add-skill-dialog.yaml          # 添加 Skill 对话框
+│   │   ├── TC-SKILL-003-install-from-market.yaml       # 从 Marketplace 安装
+│   │   ├── TC-SKILL-004-install-from-github.yaml       # 从 GitHub URL 安装
+│   │   ├── TC-SKILL-005-toggle-and-uninstall.yaml      # 启用/禁用和卸载
+│   │   ├── TC-SKILL-006-source-link.yaml               # 来源链接显示
+│   │   └── TC-SKILL-007-api-crud.yaml                  # API CRUD 流程
+│   ├── mcp/                           # MCP Servers 测试
+│   │   ├── TC-MCP-EXT-001-mcp-tab-display.yaml         # MCP Tab 显示
+│   │   ├── TC-MCP-EXT-002-add-mcp-dialog.yaml          # 添加 MCP 对话框
+│   │   ├── TC-MCP-EXT-003-install-from-market.yaml     # 从 Market 安装（无环境变量）
+│   │   ├── TC-MCP-EXT-004-install-from-market-with-env.yaml # 从 Market 安装（需环境变量）
+│   │   ├── TC-MCP-EXT-005-install-custom.yaml          # 安装自定义 MCP Server
+│   │   ├── TC-MCP-EXT-006-edit-env-vars.yaml           # 编辑环境变量
+│   │   ├── TC-MCP-EXT-007-toggle-and-uninstall.yaml    # 启用/禁用和卸载
+│   │   ├── TC-MCP-EXT-008-source-link.yaml             # 来源链接显示
+│   │   └── TC-MCP-EXT-009-api-crud.yaml                # API CRUD 流程
+│   └── settings/                      # 组织 Settings Extensions 管理
+│       ├── TC-EXTSET-001-extensions-page.yaml           # Extensions 页面显示
+│       ├── TC-EXTSET-002-skill-registries.yaml          # Skill Registries 管理
+│       └── TC-EXTSET-003-mcp-templates.yaml             # MCP Templates 浏览
 └── runner/                            # Runner 管理模块
     ├── list/                          # Runner 列表
     │   ├── TC-RUNNER-001-list-all.yaml       # 列出所有 Runners
@@ -211,3 +235,55 @@ Runner E2E 测试覆盖以下功能：
 - 需要 Docker 环境
 - 需要 MCP Chrome DevTools（UI 验证）
 - Runner 容器需要能访问 backend 和 nginx 服务（同一 Docker 网络）
+
+## Extensions 模块测试覆盖
+
+Extensions E2E 测试覆盖 Skills 和 MCP Servers 的完整能力管理功能。
+
+### 测试数据
+
+| 数据 | 值 |
+|------|-----|
+| Extensions 设置页面路径 | /dev-org/settings?scope=organization&tab=extensions |
+| Repository 页面路径 | /dev-org/repositories → 点击 Demo WebApp → Extensions Tab |
+| MCP Market Seed 数据 | jira, postgres, slack, github, filesystem, memory |
+
+### Skills UI 测试
+
+| 页面/功能 | 测试用例 | 说明 |
+|----------|----------|------|
+| Capabilities Tab 显示 | TC-SKILL-001 | Skills 子标签页、org/user scope 区块、空状态 |
+| 添加 Skill 对话框 | TC-SKILL-002 | 三种安装方式 Tab（Marketplace/GitHub/Upload）|
+| Marketplace 安装 | TC-SKILL-003 | 搜索、安装、列表更新、已安装标记 |
+| GitHub URL 安装 | TC-SKILL-004 | 填写 URL/Branch/Path 导入 |
+| 启用/禁用和卸载 | TC-SKILL-005 | Switch 切换、确认对话框、卸载流程 |
+| 来源链接 | TC-SKILL-006 | 外部链接图标、source_url 链接 |
+| API CRUD | TC-SKILL-007 | Skills API 完整 CRUD 流程 |
+
+### MCP Servers UI 测试
+
+| 页面/功能 | 测试用例 | 说明 |
+|----------|----------|------|
+| MCP Tab 显示 | TC-MCP-EXT-001 | MCP 子标签页、org/user scope 区块、空状态 |
+| 添加 MCP 对话框 | TC-MCP-EXT-002 | Market Templates/Custom Tab、模板列表、搜索 |
+| Market 安装（无 env） | TC-MCP-EXT-003 | 选择 Filesystem 模板直接安装 |
+| Market 安装（有 env） | TC-MCP-EXT-004 | 选择 Jira 模板、填写必填环境变量、Change 切换 |
+| 自定义安装 | TC-MCP-EXT-005 | stdio 类型自定义配置、环境变量添加 |
+| 编辑环境变量 | TC-MCP-EXT-006 | Settings 齿轮按钮、schema 模式、自由编辑模式 |
+| 启用/禁用和卸载 | TC-MCP-EXT-007 | Switch 切换、确认对话框、卸载流程 |
+| 来源链接 | TC-MCP-EXT-008 | Market 标签、repository_url 外部链接 |
+| API CRUD | TC-MCP-EXT-009 | MCP Server API 完整 CRUD 流程 |
+
+### 组织 Settings 测试
+
+| 页面/功能 | 测试用例 | 说明 |
+|----------|----------|------|
+| Extensions 页面 | TC-EXTSET-001 | 页面标题、双 Tab 显示 |
+| Skill Registries | TC-EXTSET-002 | 平台/组织 Registry、添加对话框、认证选项 |
+| MCP Templates | TC-EXTSET-003 | 模板列表、搜索、分类、数量统计 |
+
+### 端到端流程测试
+
+| 测试用例 | 说明 | 验证类型 |
+|----------|------|----------|
+| TC-EXT-001 | 完整能力管理流程（Settings → Repo → Install → Edit → Toggle → Uninstall）| UI + API |

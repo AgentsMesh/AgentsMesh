@@ -1,0 +1,103 @@
+id: TC-SKILL-001
+name: Capabilities Tab Skills 子标签页显示
+description: 验证 Repository Capabilities Tab 正确显示 Skills 子标签页，包括 org/user scope 区块和空状态
+priority: critical
+must_execute: true
+module: extensions/skills
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 组织 dev-org 存在
+  - Repository Demo WebApp 存在
+
+setup:
+  sql: |
+    -- 清理可能残留的测试数据
+    DELETE FROM installed_skills WHERE slug LIKE 'e2e-test-%';
+
+steps:
+  - action: 打开登录页面
+    expected: 显示登录表单
+    verification:
+      type: ui
+      navigate: /login
+      wait_for: 登录
+      check:
+        - exists: 'input[type="email"]'
+        - exists: 'input[type="password"]'
+
+  - action: 登录
+    expected: 登录成功
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository 详情页面
+    expected: 显示 Repository 详情
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+
+  - action: 点击 Extensions Tab
+    expected: 切换到 Extensions/Capabilities 页面
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+
+  - action: 验证 Skills 子标签页默认选中
+    expected: Skills 子标签页处于激活状态
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Skills
+        - contains: MCP Servers
+
+  - action: 验证 Org Installed 区块显示
+    expected: 显示 Organization Installed 标题和添加按钮
+    verification:
+      type: ui
+      check:
+        - contains: Organization Installed
+        - contains: Add
+
+  - action: 验证 My Installations 区块显示
+    expected: 显示 My Installations 标题和添加按钮
+    verification:
+      type: ui
+      check:
+        - contains: My Installations
+        - contains: Add
+
+  - action: 验证空状态提示
+    expected: 两个区块在无数据时显示空状态消息
+    verification:
+      type: ui
+      check:
+        - contains: No skills installed
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_skills WHERE slug LIKE 'e2e-test-%';

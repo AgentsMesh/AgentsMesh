@@ -202,40 +202,36 @@ BEGIN
     );
 
     -- =========================================================================
-    -- 7. 创建 User Repository Provider (GitLab PAT)
+    -- 7. 创建 User Repository Provider (Local Gitea)
     -- =========================================================================
-    -- 为 dev user 创建 GitLab Provider，用于 Webhook 自动注册
-    -- PAT 使用 JWT_SECRET 加密存储
-    -- 注意：PAT 需要有 api 权限才能注册 webhook
-    --
-    -- 重新生成加密 token 的命令：
-    -- go run /tmp/encrypt_token.go "dev-jwt-secret-change-in-production" "$GITLAB_TOKEN"
+    -- 为 dev user 创建本地 Gitea Provider
+    -- Runner 使用 runner_local 模式 (容器内 ~/.ssh/ 的 deploy key)
+    -- 不需要 Bot Token (Gitea API 由 init 脚本管理)
 
     INSERT INTO user_repository_providers (
         user_id, provider_type, name, base_url,
-        bot_token_encrypted, is_default, is_active
+        is_default, is_active
     )
     SELECT v_user_id,
            'gitlab',
-           'GitLab Corp',
-           'https://gitlab.corp.signalrender.com',
-           'E698mVPE1A06nBVQf5LzH9UmQwO6azfMci6MqROZOklROCYPm0mzxsUDdgdk5/dn85xBS1iReqDgP3OOWXJNdHWQbQ1v2BXxR6LhvHYfEg==',
+           'Local Gitea',
+           'http://gitea:3000',
            TRUE,
            TRUE
     WHERE NOT EXISTS (
         SELECT 1 FROM user_repository_providers
         WHERE user_id = v_user_id
-          AND provider_type = 'gitlab'
-          AND base_url = 'https://gitlab.corp.signalrender.com'
+          AND name = 'Local Gitea'
     );
 
     -- =========================================================================
-    -- 8. 创建示例 Repository
+    -- 8. 创建示例 Repositories (Local Gitea)
     -- =========================================================================
-    -- 使用 GitLab 企业版上的测试仓库
-    -- SSH Key (deploy key) 已配置在 deploy/dev/runner-ssh/ 目录
-    -- 并在 GitLab 项目上注册为 deploy key
+    -- 使用本地 Gitea Git 服务器上的测试仓库
+    -- SSH Deploy Key 配置在 deploy/dev/runner-ssh/ 目录
+    -- 并由 gitea/init-gitea.sh 自动注册到 Gitea
 
+    -- 8.1 Demo WebApp (静态 Web 应用)
     INSERT INTO repositories (
         organization_id, provider_type, provider_base_url,
         external_id, name, full_path, clone_url,
@@ -244,19 +240,43 @@ BEGIN
     )
     SELECT v_org_id,
            'gitlab',
-           'https://gitlab.corp.signalrender.com',
-           '12',  -- GitLab project ID for aio/agents/mockrepo
-           'MockRepo',
-           'aio/agents/mockrepo',
-           'ssh://git@gitlab.corp.signalrender.com:2222/aio/agents/mockrepo.git',
+           'http://gitea:3000',
+           '1',
+           'Demo WebApp',
+           'dev-org/demo-webapp',
+           'git@gitea:dev-org/demo-webapp.git',
            'main',
-           'MOCK',
+           'WEB',
            'organization',
            v_user_id,
            TRUE
     WHERE NOT EXISTS (
         SELECT 1 FROM repositories
-        WHERE organization_id = v_org_id AND full_path = 'aio/agents/mockrepo'
+        WHERE organization_id = v_org_id AND full_path = 'dev-org/demo-webapp'
+    );
+
+    -- 8.2 Demo API (Go API 项目)
+    INSERT INTO repositories (
+        organization_id, provider_type, provider_base_url,
+        external_id, name, full_path, clone_url,
+        default_branch, ticket_prefix, visibility, imported_by_user_id,
+        is_active
+    )
+    SELECT v_org_id,
+           'gitlab',
+           'http://gitea:3000',
+           '2',
+           'Demo API',
+           'dev-org/demo-api',
+           'git@gitea:dev-org/demo-api.git',
+           'main',
+           'API',
+           'organization',
+           v_user_id,
+           TRUE
+    WHERE NOT EXISTS (
+        SELECT 1 FROM repositories
+        WHERE organization_id = v_org_id AND full_path = 'dev-org/demo-api'
     );
 
     RAISE NOTICE 'Seed data created successfully!';
@@ -264,7 +284,8 @@ BEGIN
     RAISE NOTICE '  - Admin: admin@agentsmesh.local / adminpass123';
     RAISE NOTICE '  - Organization: dev-org';
     RAISE NOTICE '  - Runner: dev-runner (node_id)';
-    RAISE NOTICE '  - GitLab Provider: gitlab.corp.signalrender.com (with PAT)';
-    RAISE NOTICE '  - Repository: aio/agents/mockrepo (GitLab)';
+    RAISE NOTICE '  - Git Provider: Local Gitea (http://gitea:3000)';
+    RAISE NOTICE '  - Repository: dev-org/demo-webapp (Gitea)';
+    RAISE NOTICE '  - Repository: dev-org/demo-api (Gitea)';
 
 END $$;

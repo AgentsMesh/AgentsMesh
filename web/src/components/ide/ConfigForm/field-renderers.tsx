@@ -19,18 +19,21 @@ export interface FieldRendererProps {
 /**
  * Hook for getting translated field labels and descriptions
  * Uses the pattern: agent.{agentSlug}.fields.{fieldName}.label/description
+ * Falls back to humanized field name if translation key is missing.
  */
 function useFieldTranslation(agentSlug: string, fieldName: string) {
   const t = useTranslations();
   const basePath = `agent.${agentSlug}.fields.${fieldName}`;
 
+  // Humanize field name as fallback (e.g. "sandbox_mode" → "Sandbox Mode")
+  const humanized = fieldName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
   return {
-    label: t(`${basePath}.label`),
-    description: t(`${basePath}.description`),
+    label: t.has(`${basePath}.label`) ? t(`${basePath}.label`) : humanized,
+    description: t.has(`${basePath}.description`) ? t(`${basePath}.description`) : "",
     getOptionLabel: (optionValue: string) => {
-      // For empty string option values, use a special key
       const key = optionValue === "" ? `${basePath}.options.` : `${basePath}.options.${optionValue}`;
-      return t(key);
+      return t.has(key) ? t(key) : optionValue || humanized;
     },
   };
 }

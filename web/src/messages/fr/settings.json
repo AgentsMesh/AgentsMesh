@@ -432,6 +432,10 @@
         "default": "Default",
         "disabled": "Disabled",
         "test": "Test Connection",
+        "deleteDialog": {
+          "title": "Delete Provider",
+          "description": "Are you sure you want to delete this repository provider? This action cannot be undone."
+        },
         "dialog": {
           "title": "Add Repository Provider",
           "editTitle": "Edit Provider",
@@ -453,6 +457,10 @@
         "add": "Add Credential",
         "empty": "No credentials configured. Add a PAT or SSH key for Git authentication.",
         "hostPattern": "Host pattern",
+        "deleteDialog": {
+          "title": "Delete Credential",
+          "description": "Are you sure you want to delete this credential? This action cannot be undone."
+        },
         "dialog": {
           "title": "Add Git Credential",
           "type": "Credential Type",

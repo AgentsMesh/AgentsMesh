@@ -22,8 +22,6 @@ vi.mock("@/lib/api", () => ({
     get: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-    listBranches: vi.fn(),
-    syncBranches: vi.fn(),
     registerWebhook: vi.fn(),
     getWebhookStatus: vi.fn(),
     getWebhookSecret: vi.fn(),
@@ -54,15 +52,9 @@ describe("RepositoryDetailPage", () => {
     updated_at: "2024-01-01T00:00:00Z",
   };
 
-  const mockBranches = ["main", "develop", "feature/new-feature"];
-
   beforeEach(() => {
     vi.clearAllMocks();
     mockRepositoryApi.get.mockResolvedValue({ repository: mockRepository });
-    mockRepositoryApi.listBranches.mockResolvedValue({ branches: mockBranches });
-    mockRepositoryApi.syncBranches.mockResolvedValue({
-      branches: mockBranches,
-    });
     mockRepositoryApi.registerWebhook.mockResolvedValue({
       result: {
         repo_id: 123,
@@ -170,7 +162,7 @@ describe("RepositoryDetailPage", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Information")).toBeInTheDocument();
-        expect(screen.getByText("Branches")).toBeInTheDocument();
+        expect(screen.getByText("Extensions")).toBeInTheDocument();
       });
     });
   });
@@ -249,34 +241,12 @@ describe("RepositoryDetailPage", () => {
     });
   });
 
-  describe("branches tab", () => {
-    it("should switch to branches tab", async () => {
+  describe("extensions tab", () => {
+    it("should show extensions tab button", async () => {
       render(<RepositoryDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText("Branches")).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByText("Branches"));
-
-      // The branches tab should now be active
-      await waitFor(() => {
-        // Branch listing requires Git credentials message should appear
-        expect(screen.getByText(/Branch listing requires Git credentials/)).toBeInTheDocument();
-      });
-    });
-
-    it("should show message about Git credentials for branch listing", async () => {
-      render(<RepositoryDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Branches")).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByText("Branches"));
-
-      await waitFor(() => {
-        expect(screen.getByText(/Configure a Git connection in your settings/)).toBeInTheDocument();
+        expect(screen.getByText("Extensions")).toBeInTheDocument();
       });
     });
   });

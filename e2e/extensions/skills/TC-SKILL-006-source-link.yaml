@@ -1,0 +1,91 @@
+id: TC-SKILL-006
+name: Skill 来源链接显示
+description: 验证已安装 Skill 的来源链接正确显示，包括 Market 来源和 GitHub 来源的外部链接
+priority: high
+must_execute: true
+module: extensions/skills
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+
+setup:
+  sql: |
+    -- 创建带 source_url 的测试 Skill (GitHub 来源)
+    INSERT INTO installed_skills (organization_id, repository_id, scope, installed_by, slug, install_source, source_url, is_enabled, created_at, updated_at)
+    SELECT
+      r.organization_id,
+      r.id,
+      'user',
+      u.id,
+      'e2e-test-skill-link',
+      'github',
+      'https://github.com/anthropics/skills/tree/main/test-skill',
+      true,
+      NOW(),
+      NOW()
+    FROM repositories r
+    CROSS JOIN users u
+    WHERE r.full_path = 'dev-org/demo-webapp'
+      AND u.email = 'dev@agentsmesh.local'
+    ON CONFLICT DO NOTHING;
+
+steps:
+  - action: 登录并导航到 Repository Extensions Tab
+    expected: 显示 Extensions Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository Extensions Tab
+    expected: 显示已安装 Skills 列表
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+
+  - action: 验证 GitHub 来源的 Skill 显示来源链接
+    expected: Skill 卡片中有可点击的来源 URL 和外部链接图标
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: e2e-test-skill-link
+        - contains: GitHub
+        - exists: 'a[href*="github.com"]'
+
+  - action: 验证来源链接文本可点击
+    expected: 来源 URL 文本作为链接可见
+    verification:
+      type: ui
+      check:
+        - exists: 'a[target="_blank"]'
+        - contains: https://github.com/anthropics/skills
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_skills WHERE slug = 'e2e-test-skill-link';

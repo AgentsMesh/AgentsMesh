@@ -1,0 +1,112 @@
+id: TC-SKILL-002
+name: 添加 Skill 对话框显示与交互
+description: 验证 Add Skill 对话框正确显示三种安装方式（Marketplace / GitHub Repo / Upload）及其交互
+priority: critical
+must_execute: true
+module: extensions/skills
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+
+steps:
+  - action: 登录并导航到 Repository Extensions Tab
+    expected: 显示 Extensions Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository 详情页
+    expected: 显示 Repository 详情
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+
+  - action: 点击 My Installations 区块的添加按钮
+    expected: 打开 Add Skill 对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+            # 点击 My Installations 区块的 Add 按钮（第二个 Add）
+      wait_for: Add Skill
+
+  - action: 验证对话框标题和 Tab 列表
+    expected: 对话框显示三种安装方式 Tab
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Add Skill
+        - contains: Marketplace
+        - contains: GitHub Repo
+        - contains: Upload
+
+  - action: 验证 Marketplace Tab 默认选中
+    expected: Marketplace Tab 内容显示搜索框和搜索按钮
+    verification:
+      type: ui
+      check:
+        - exists: 'input[placeholder]'
+        - contains: Search
+
+  - action: 切换到 GitHub Repo Tab
+    expected: 显示 GitHub Repo 表单
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: GitHub Repo
+      check:
+        - contains: Repository URL
+        - contains: Branch
+        - contains: Path
+        - contains: Install
+
+  - action: 切换到 Upload Tab
+    expected: 显示上传区域
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Upload
+      check:
+        - contains: Upload
+        - contains: .tar.gz
+        - contains: Select File
+
+  - action: 关闭对话框
+    expected: 对话框关闭
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Cancel
+      check:
+        - not_exists: 'dialog[open]'

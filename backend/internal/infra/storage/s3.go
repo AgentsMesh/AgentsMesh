@@ -185,6 +185,21 @@ func (s *S3Storage) GetURL(ctx context.Context, key string, expiry time.Duration
 	return request.URL, nil
 }
 
+// GetInternalURL returns a pre-signed URL using the internal endpoint.
+// This bypasses publicEndpoint and always generates a presigned URL with the internal endpoint,
+// suitable for service-to-service downloads (e.g., Runner downloading skill packages within Docker network).
+func (s *S3Storage) GetInternalURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
+	request, err := s.presign.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(expiry))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate internal presigned URL: %w", err)
+	}
+
+	return request.URL, nil
+}
+
 // Exists checks if a file exists in S3.
 func (s *S3Storage) Exists(ctx context.Context, key string) (bool, error) {
 	_, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{

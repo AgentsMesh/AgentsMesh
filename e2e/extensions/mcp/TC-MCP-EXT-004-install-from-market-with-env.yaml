@@ -1,0 +1,164 @@
+id: TC-MCP-EXT-004
+name: 从 Market 安装 MCP Server（需填写环境变量）
+description: 验证选择需要环境变量的 Market 模板（如 Jira），填写必填环境变量后安装成功
+priority: critical
+must_execute: true
+module: extensions/mcp
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+  - mcp_market_items 表有 Jira seed 数据（含 3 个必填 env var）
+
+setup:
+  sql: |
+    DELETE FROM installed_mcp_servers
+    WHERE repository_id IN (
+      SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+    ) AND slug = 'jira';
+
+steps:
+  - action: 登录并导航到 MCP Servers Tab
+    expected: 显示 MCP Servers Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 Repository Extensions → MCP Servers
+    expected: 进入 MCP Servers
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 打开 Add MCP Server 对话框并选择 Jira
+    expected: 显示 Jira 环境变量配置表单
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+      wait_for: Add MCP Server
+      actions:
+        - click:
+            text: Jira
+      wait_for: Environment Variables
+
+  - action: 验证必填环境变量表单
+    expected: 显示 Jira URL, Email, API Token 三个必填字段
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: Jira URL
+        - contains: Email
+        - contains: API Token
+        - exists: 'span.text-destructive'
+
+  - action: 验证未填写必填字段时 Install 按钮禁用
+    expected: Install 按钮处于禁用状态
+    verification:
+      type: ui
+      check:
+        - exists: 'button[disabled]'
+
+  - action: 填写所有必填环境变量
+    expected: 所有字段已填写
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder*="atlassian"]'
+            value: https://test.atlassian.net
+        - fill:
+            selector: 'input[placeholder="Email"]'
+            value: test@example.com
+        - fill:
+            selector: 'input[type="password"]'
+            value: test-api-token-12345
+
+  - action: 验证 Install 按钮变为可用
+    expected: Install 按钮可点击
+    verification:
+      type: ui
+      check:
+        - exists: 'button:not([disabled])'
+        - contains: Install
+
+  - action: 验证 Change 按钮可回到模板列表
+    expected: 点击 Change 回到模板列表
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Change
+      check:
+        - contains: Jira
+        - contains: PostgreSQL
+        - contains: Select
+
+  - action: 重新选择 Jira 并安装
+    expected: 安装成功
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Jira
+      wait_for: Environment Variables
+      actions:
+        - fill:
+            selector: 'input[placeholder*="atlassian"]'
+            value: https://test.atlassian.net
+        - fill:
+            selector: 'input[placeholder="Email"]'
+            value: test@example.com
+        - fill:
+            selector: 'input[type="password"]'
+            value: test-api-token-12345
+        - click:
+            text: Install
+      wait_for: Installed successfully
+
+  - action: 验证安装后列表显示 Jira
+    expected: Jira MCP Server 出现在列表中，带 Market 标签
+    verification:
+      type: ui
+      check:
+        - contains: Jira
+        - contains: Market
+        - contains: stdio
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_mcp_servers
+      WHERE repository_id IN (
+        SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+      ) AND slug = 'jira';

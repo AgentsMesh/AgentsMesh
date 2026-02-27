@@ -98,7 +98,7 @@
       "notFound": "仓库不存在",
       "backToList": "返回仓库列表",
       "information": "基本信息",
-      "branches": "分支",
+      "extensions": "扩展",
       "repoDetails": "仓库详情",
       "name": "名称",
       "fullPath": "完整路径",
@@ -122,8 +122,7 @@
         "title": "删除仓库",
         "description": "确定要删除此仓库吗？此操作无法撤销。"
       },
-      "branchesRequireCredentials": "分支列表需要 Git 凭据",
-      "configureGitConnection": "在设置中配置 Git 连接以浏览分支"
+      "branchesRequireCredentials": "分支列表需要 Git 凭据"
     },
     "edit": {
       "title": "编辑仓库",

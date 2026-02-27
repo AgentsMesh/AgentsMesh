@@ -295,8 +295,8 @@
           "description": "启用模型上下文协议以增强协作能力"
         },
         "skillsEnabled": {
-          "label": "启用技能",
-          "description": "启用协作技能注入"
+          "label": "启用 Skill",
+          "description": "启用协作 Skill 注入"
         },
         "skipPermissions": {
           "label": "跳过权限确认",
@@ -572,6 +572,10 @@
         "default": "默认",
         "disabled": "已禁用",
         "test": "测试连接",
+        "deleteDialog": {
+          "title": "删除提供商",
+          "description": "确定要删除此仓库提供商吗？此操作无法撤销。"
+        },
         "dialog": {
           "title": "添加仓库提供商",
           "editTitle": "编辑提供商",
@@ -593,6 +597,10 @@
         "add": "添加凭据",
         "empty": "暂无凭据配置。添加 PAT 或 SSH 密钥用于 Git 认证。",
         "hostPattern": "主机模式",
+        "deleteDialog": {
+          "title": "删除凭据",
+          "description": "确定要删除此凭据吗？此操作无法撤销。"
+        },
         "dialog": {
           "title": "添加 Git 凭据",
           "type": "凭据类型",

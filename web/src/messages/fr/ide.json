@@ -106,6 +106,8 @@
           "notificationsDesc": "Notification preferences",
           "apiKeys": "Clés API",
           "apiKeysDesc": "Intégrations tierces",
+          "extensions": "Extensions",
+          "extensionsDesc": "Skills and MCP server marketplace",
           "billing": "Billing",
           "billingDesc": "Subscription and payments"
         }

@@ -1,0 +1,104 @@
+id: TC-MCP-EXT-008
+name: MCP Server 来源链接显示
+description: 验证从 Market 安装的 MCP Server 显示来源链接（外部链接图标），可跳转到源仓库
+priority: high
+must_execute: true
+module: extensions/mcp
+tags:
+  - ui
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+  - mcp_market_items 中有带 repository_url 的数据
+
+setup:
+  sql: |
+    -- 确保 mcp_market_items 有 repository_url
+    UPDATE mcp_market_items
+    SET repository_url = 'https://github.com/modelcontextprotocol/servers'
+    WHERE slug = 'filesystem' AND (repository_url IS NULL OR repository_url = '');
+
+    -- 创建已安装的 Filesystem MCP（关联 Market Item）
+    INSERT INTO installed_mcp_servers (organization_id, repository_id, market_item_id, scope, installed_by, name, slug, transport_type, command, args, is_enabled, created_at, updated_at)
+    SELECT
+      r.organization_id,
+      r.id,
+      m.id,
+      'user',
+      u.id,
+      'Filesystem',
+      'e2e-test-fs-link',
+      'stdio',
+      'npx',
+      '["-y", "@modelcontextprotocol/server-filesystem"]'::jsonb,
+      true,
+      NOW(),
+      NOW()
+    FROM repositories r
+    CROSS JOIN users u
+    CROSS JOIN mcp_market_items m
+    WHERE r.full_path = 'dev-org/demo-webapp'
+      AND u.email = 'dev@agentsmesh.local'
+      AND m.slug = 'filesystem'
+    ON CONFLICT DO NOTHING;
+
+steps:
+  - action: 登录并导航到 MCP Servers Tab
+    expected: 显示 MCP Servers Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 MCP Servers Tab
+    expected: 显示已安装的 MCP Servers
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 验证 Market 来源标签显示
+    expected: Filesystem MCP Server 卡片显示 Market 标签
+    verification:
+      type: ui
+      check:
+        - contains: Filesystem
+        - contains: Market
+
+  - action: 验证外部链接图标存在
+    expected: 有指向 repository_url 的外部链接
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - exists: 'a[href*="github.com"][target="_blank"]'
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_mcp_servers WHERE slug = 'e2e-test-fs-link';

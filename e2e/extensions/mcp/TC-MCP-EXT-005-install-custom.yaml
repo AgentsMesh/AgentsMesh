@@ -1,0 +1,149 @@
+id: TC-MCP-EXT-005
+name: 安装自定义 MCP Server
+description: 验证通过 Custom Tab 手动配置并安装 stdio 和 http 类型 MCP Server
+priority: high
+must_execute: true
+module: extensions/mcp
+tags:
+  - ui
+  - api
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+
+setup:
+  sql: |
+    DELETE FROM installed_mcp_servers
+    WHERE repository_id IN (
+      SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+    ) AND slug IN ('e2e-custom-stdio', 'e2e-custom-http');
+
+steps:
+  - action: 登录并导航到 MCP Servers Tab
+    expected: 显示 MCP Servers Tab
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 MCP Servers Tab
+    expected: 进入 MCP Servers
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 打开 Add MCP Server 对话框并切换到 Custom Tab
+    expected: 显示自定义 MCP Server 表单
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add
+      wait_for: Add MCP Server
+      actions:
+        - click:
+            text: Custom
+      check:
+        - contains: Name
+        - contains: Slug
+
+  - action: 填写 stdio 类型 MCP Server 信息
+    expected: 表单已填写
+    verification:
+      type: ui
+      actions:
+        - fill:
+            selector: 'input[placeholder*="My MCP"]'
+            value: E2E Custom Stdio
+        - fill:
+            selector: 'input[placeholder*="my-mcp"]'
+            value: e2e-custom-stdio
+        - fill:
+            selector: 'input[placeholder="npx"]'
+            value: npx
+        - fill:
+            selector: 'input[placeholder*="modelcontextprotocol"]'
+            value: -y @modelcontextprotocol/server-test
+
+  - action: 添加环境变量
+    expected: 环境变量行已添加
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Add Variable
+      actions:
+        - fill:
+            selector: 'input[placeholder="KEY"]'
+            value: TEST_API_KEY
+        - fill:
+            selector: 'input[placeholder="value"]'
+            value: test-value-123
+
+  - action: 安装 stdio MCP Server
+    expected: 安装成功
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Install
+      wait_for: Installed successfully
+
+  - action: 验证 stdio MCP Server 出现在列表
+    expected: 列表显示新安装的 MCP Server
+    verification:
+      type: ui
+      snapshot: true
+      check:
+        - contains: E2E Custom Stdio
+        - contains: stdio
+
+  - action: 验证 API 返回已安装的自定义 MCP Server
+    expected: API 返回自定义 MCP Server 数据
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/mcp-servers?scope=user
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+        body:
+          - path: mcp_servers[?slug='e2e-custom-stdio']
+            exists: true
+          - path: mcp_servers[?slug='e2e-custom-stdio'].command
+            equals: npx
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_mcp_servers
+      WHERE repository_id IN (
+        SELECT id FROM repositories WHERE full_path = 'dev-org/demo-webapp'
+      ) AND slug IN ('e2e-custom-stdio', 'e2e-custom-http');

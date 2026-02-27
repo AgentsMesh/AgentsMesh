@@ -106,6 +106,8 @@
           "notificationsDesc": "Notification preferences",
           "apiKeys": "Chaves API",
           "apiKeysDesc": "Integrações externas",
+          "extensions": "Extensions",
+          "extensionsDesc": "Skills and MCP server marketplace",
           "billing": "Billing",
           "billingDesc": "Subscription and payments"
         }

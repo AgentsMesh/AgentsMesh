@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/acme"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
@@ -12,6 +13,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/service/license"
@@ -81,4 +83,9 @@ type Services struct {
 
 	// Runner version checker (optional, checks GitHub Releases for latest version)
 	VersionChecker *runner.VersionChecker
+
+	// Extension services (Skills marketplace, MCP servers)
+	Extension         *extensionservice.Service
+	ExtensionRepo     extension.Repository
+	MarketplaceWorker *extensionservice.MarketplaceWorker
 }

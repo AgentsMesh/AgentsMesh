@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Config holds all configuration for the application
@@ -21,12 +22,22 @@ type Config struct {
 	PKI      PKIConfig
 	GRPC     GRPCConfig
 	Admin    AdminConfig
-	Relay    RelayConfig
-	Runner   RunnerConfig
+	Relay       RelayConfig
+	Runner      RunnerConfig
+	Marketplace MarketplaceConfig
 
 	// Unified domain configuration - all URLs are derived from these two values
 	PrimaryDomain string // Primary domain (e.g., "localhost:10000" or "agentsmesh.com")
 	UseHTTPS      bool   // Use HTTPS/WSS protocols
+}
+
+// MarketplaceConfig configures the platform-level Marketplace for Skills and MCP servers.
+// Platform-level Skill Registries are managed via Admin API (stored in DB).
+// MCP servers are synced from the official MCP Registry.
+type MarketplaceConfig struct {
+	SyncInterval    time.Duration // Interval between marketplace sync cycles (e.g., "1h", "30m")
+	RegistryEnabled bool          // Enable MCP Registry sync (default: true)
+	RegistryURL     string        // MCP Registry API URL (default: https://registry.modelcontextprotocol.io)
 }
 
 // RunnerConfig holds runner-related configuration
@@ -194,6 +205,13 @@ func Load() (*Config, error) {
 		// Runner Configuration
 		Runner: RunnerConfig{},
 
+		// Marketplace Configuration
+		Marketplace: MarketplaceConfig{
+			SyncInterval:    getEnvDuration("MARKETPLACE_SYNC_INTERVAL", 1*time.Hour),
+			RegistryEnabled: getEnvBool("MCP_REGISTRY_ENABLED", true),
+			RegistryURL:     getEnv("MCP_REGISTRY_URL", "https://registry.modelcontextprotocol.io"),
+		},
+
 		// Relay Management Configuration
 		Relay: RelayConfig{
 			BaseDomain: getEnv("RELAY_BASE_DOMAIN", ""),
@@ -239,6 +257,15 @@ func getEnvBool(key string, defaultValue bool) bool {
 	if value := os.Getenv(key); value != "" {
 		if boolVal, err := strconv.ParseBool(value); err == nil {
 			return boolVal
+		}
+	}
+	return defaultValue
+}
+
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if d, err := time.ParseDuration(value); err == nil {
+			return d
 		}
 	}
 	return defaultValue

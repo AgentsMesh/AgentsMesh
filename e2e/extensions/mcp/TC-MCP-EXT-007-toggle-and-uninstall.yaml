@@ -1,0 +1,147 @@
+id: TC-MCP-EXT-007
+name: MCP Server 启用/禁用和卸载
+description: 验证已安装 MCP Server 的启用/禁用切换和卸载功能，包括确认对话框
+priority: critical
+must_execute: true
+module: extensions/mcp
+tags:
+  - ui
+  - api
+  - browser
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 浏览器可访问
+  - 用户已登录
+  - Repository Demo WebApp 存在
+
+setup:
+  sql: |
+    INSERT INTO installed_mcp_servers (organization_id, repository_id, scope, installed_by, name, slug, transport_type, command, is_enabled, created_at, updated_at)
+    SELECT
+      r.organization_id,
+      r.id,
+      'user',
+      u.id,
+      'E2E Toggle Test',
+      'e2e-test-mcp-toggle',
+      'stdio',
+      'npx',
+      true,
+      NOW(),
+      NOW()
+    FROM repositories r
+    CROSS JOIN users u
+    WHERE r.full_path = 'dev-org/demo-webapp'
+      AND u.email = 'dev@agentsmesh.local'
+    ON CONFLICT DO NOTHING;
+
+steps:
+  - action: 登录并导航到 MCP Servers Tab
+    expected: 显示已安装的测试 MCP Server
+    verification:
+      type: ui
+      navigate: /login
+      actions:
+        - fill:
+            selector: 'input[type="email"]'
+            value: dev@agentsmesh.local
+        - fill:
+            selector: 'input[type="password"]'
+            value: devpass123
+        - click:
+            selector: 'button[type="submit"]'
+      wait_for: Dashboard
+
+  - action: 导航到 MCP Servers Tab
+    expected: 显示 MCP Servers
+    verification:
+      type: ui
+      navigate: /dev-org/repositories
+      wait_for: Demo WebApp
+      actions:
+        - click:
+            text: Demo WebApp
+      wait_for: Information
+      actions:
+        - click:
+            text: Extensions
+      wait_for: Skills
+      actions:
+        - click:
+            text: MCP Servers
+      wait_for: Organization Installed
+
+  - action: 验证测试 MCP Server 显示
+    expected: 列表中包含测试 MCP Server
+    verification:
+      type: ui
+      check:
+        - contains: E2E Toggle Test
+
+  - action: 禁用 MCP Server（点击 Switch）
+    expected: MCP Server 被禁用
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: '[aria-label="Toggle enabled"]'
+      wait_for: 1000
+
+  - action: 验证 MCP Server 已禁用（API 验证）
+    expected: is_enabled = false
+    verification:
+      type: api
+      request:
+        method: GET
+        path: /api/v1/organizations/dev-org/repositories/{repo_id}/mcp-servers?scope=user
+        auth: dev@agentsmesh.local
+      expect:
+        status: 200
+        body:
+          - path: mcp_servers[?slug='e2e-test-mcp-toggle'].is_enabled
+            equals: false
+
+  - action: 重新启用 MCP Server
+    expected: MCP Server 被重新启用
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: '[aria-label="Toggle enabled"]'
+      wait_for: 1000
+
+  - action: 点击删除按钮
+    expected: 弹出卸载确认对话框
+    verification:
+      type: ui
+      actions:
+        - click:
+            selector: 'button.text-destructive'
+      wait_for: Uninstall MCP Server
+      check:
+        - contains: Are you sure
+        - contains: E2E Toggle Test
+        - contains: Uninstall
+        - contains: Cancel
+
+  - action: 确认卸载
+    expected: MCP Server 被成功卸载
+    verification:
+      type: ui
+      actions:
+        - click:
+            text: Uninstall
+      wait_for: Uninstalled successfully
+
+  - action: 验证 MCP Server 已从列表移除
+    expected: 列表中不再包含该 MCP Server
+    verification:
+      type: ui
+      check:
+        - not_exists: 'text "E2E Toggle Test"'
+
+cleanup:
+  - sql: |
+      DELETE FROM installed_mcp_servers WHERE slug = 'e2e-test-mcp-toggle';

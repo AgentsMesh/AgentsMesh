@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
@@ -15,6 +17,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/service/license"
@@ -59,6 +62,10 @@ type serviceContainer struct {
 	apikey            *apikeyservice.Service
 	apikeyAdapter     *apikeyservice.MiddlewareAdapter
 	email             email.Service
+	extension         *extensionservice.Service
+	extensionRepo     extension.Repository
+	skillImporter     *extensionservice.SkillImporter
+	marketplaceWorker *extensionservice.MarketplaceWorker
 }
 
 // initializeServices creates all business services
@@ -124,6 +131,9 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	// Initialize license service (for OnPremise deployments)
 	licenseSvc := initializeLicenseService(cfg, db)
 
+	// Initialize extension services (Skills marketplace, MCP servers)
+	extSvc, extRepo, skillImp, mktWorker := initializeExtensionServices(cfg, db)
+
 	return &serviceContainer{
 		auth:               authSvc,
 		user:               userSvc,
@@ -151,6 +161,10 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		apikey:             apikeySvc,
 		apikeyAdapter:      apikeyAdapterSvc,
 		email:              emailSvc,
+		extension:          extSvc,
+		extensionRepo:      extRepo,
+		skillImporter:      skillImp,
+		marketplaceWorker:  mktWorker,
 	}
 }
 
@@ -199,4 +213,55 @@ func initializeLicenseService(cfg *config.Config, db *gorm.DB) *license.Service 
 
 	slog.Info("License service initialized")
 	return licenseSvc
+}
+
+// initializeExtensionServices initializes extension services (Skills, MCP servers, Marketplace)
+func initializeExtensionServices(cfg *config.Config, db *gorm.DB) (*extensionservice.Service, extension.Repository, *extensionservice.SkillImporter, *extensionservice.MarketplaceWorker) {
+	if cfg.Storage.AccessKey == "" || cfg.Storage.SecretKey == "" {
+		slog.Warn("Storage not configured, extension services disabled")
+		return nil, nil, nil, nil
+	}
+
+	s3Storage, err := storage.NewS3Storage(storage.S3Config{
+		Endpoint:       cfg.Storage.Endpoint,
+		PublicEndpoint: cfg.Storage.PublicEndpoint,
+		Region:         cfg.Storage.Region,
+		Bucket:         cfg.Storage.Bucket,
+		AccessKey:      cfg.Storage.AccessKey,
+		SecretKey:      cfg.Storage.SecretKey,
+		UseSSL:         cfg.Storage.UseSSL,
+		UsePathStyle:   cfg.Storage.UsePathStyle,
+	})
+	if err != nil {
+		slog.Error("Failed to initialize storage for extensions", "error", err)
+		return nil, nil, nil, nil
+	}
+
+	extRepo := infra.NewExtensionRepository(db)
+	encryptor := crypto.NewEncryptor(cfg.JWT.Secret)
+	extSvc := extensionservice.NewService(extRepo, s3Storage, encryptor)
+	skillPkg := extensionservice.NewSkillPackager(extRepo, s3Storage)
+	extSvc.SetSkillPackager(skillPkg)
+	skillImp := extensionservice.NewSkillImporter(extRepo, s3Storage)
+	extSvc.SetSkillImporter(skillImp)
+	skillImp.SetCredentialDecryptor(extSvc.DecryptCredential)
+
+	// Initialize MCP Registry syncer (optional, enabled by default)
+	var mcpRegistrySyncer *extensionservice.McpRegistrySyncer
+	if cfg.Marketplace.RegistryEnabled {
+		mcpRegistryClient := extensionservice.NewMcpRegistryClient(cfg.Marketplace.RegistryURL)
+		mcpRegistrySyncer = extensionservice.NewMcpRegistrySyncer(mcpRegistryClient, extRepo)
+		slog.Info("MCP Registry syncer enabled", "url", cfg.Marketplace.RegistryURL)
+	}
+
+	// Always create MarketplaceWorker — sources are now managed via Admin API (DB)
+	syncInterval := cfg.Marketplace.SyncInterval
+	if syncInterval == 0 {
+		syncInterval = 1 * time.Hour
+	}
+	mktWorker := extensionservice.NewMarketplaceWorker(extRepo, skillImp, mcpRegistrySyncer, syncInterval)
+	slog.Info("MarketplaceWorker configured", "interval", syncInterval)
+
+	slog.Info("Extension services initialized")
+	return extSvc, extRepo, skillImp, mktWorker
 }
