@@ -30,7 +30,7 @@ FROM ${REGISTRY}/library/alpine:3.19
 WORKDIR /app
 
 # Install ca-certificates, tzdata, and golang-migrate
-RUN apk --no-cache add ca-certificates tzdata curl && \
+RUN apk --no-cache add ca-certificates tzdata curl git && \
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz && \
     mv migrate /usr/local/bin/migrate && \
     chmod +x /usr/local/bin/migrate
