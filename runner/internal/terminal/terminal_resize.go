@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/creack/pty"
-
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
@@ -16,16 +14,13 @@ func (t *Terminal) Resize(cols, rows int) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.closed || t.pty == nil {
+	if t.closed || t.proc == nil {
 		return fmt.Errorf("terminal is not running")
 	}
 
 	logger.Terminal().Debug("Terminal resize", "cols", cols, "rows", rows)
 
-	return pty.Setsize(t.pty, &pty.Winsize{
-		Rows: uint16(rows),
-		Cols: uint16(cols),
-	})
+	return t.proc.Resize(cols, rows)
 }
 
 // Redraw triggers a terminal redraw by temporarily changing the terminal size.
@@ -36,21 +31,18 @@ func (t *Terminal) Redraw() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.closed || t.pty == nil {
+	if t.closed || t.proc == nil {
 		return fmt.Errorf("terminal is not running")
 	}
 
 	// Get current size
-	size, err := pty.GetsizeFull(t.pty)
+	cols, rows, err := t.proc.GetSize()
 	if err != nil {
 		return fmt.Errorf("failed to get terminal size: %w", err)
 	}
 
 	// Resize to cols+1 to trigger redraw
-	if err := pty.Setsize(t.pty, &pty.Winsize{
-		Rows: size.Rows,
-		Cols: size.Cols + 1,
-	}); err != nil {
+	if err := t.proc.Resize(cols+1, rows); err != nil {
 		return fmt.Errorf("failed to expand terminal: %w", err)
 	}
 
@@ -58,10 +50,7 @@ func (t *Terminal) Redraw() error {
 	time.Sleep(50 * time.Millisecond)
 
 	// Resize back to original size
-	if err := pty.Setsize(t.pty, &pty.Winsize{
-		Rows: size.Rows,
-		Cols: size.Cols,
-	}); err != nil {
+	if err := t.proc.Resize(cols, rows); err != nil {
 		return fmt.Errorf("failed to restore terminal size: %w", err)
 	}
 

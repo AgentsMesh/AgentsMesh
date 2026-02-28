@@ -47,8 +47,8 @@ func TestNewTerminal(t *testing.T) {
 		t.Fatal("New returned nil")
 	}
 
-	if term.cmd == nil {
-		t.Error("cmd should not be nil")
+	if term.command != "echo" {
+		t.Errorf("command should be echo, got %s", term.command)
 	}
 }
 
@@ -76,7 +76,7 @@ func TestNewTerminalWithEnv(t *testing.T) {
 
 	// Check that environment is set
 	envFound := false
-	for _, e := range term.cmd.Env {
+	for _, e := range term.env {
 		if e == "TEST_VAR=test_value" {
 			envFound = true
 			break
@@ -147,7 +147,9 @@ func TestTerminalStartClosed(t *testing.T) {
 	}
 
 	term, _ := New(opts)
+	term.mu.Lock()
 	term.closed = true
+	term.mu.Unlock()
 
 	err := term.Start()
 	if err == nil {
@@ -175,12 +177,6 @@ func TestMakeRawInvalidFd(t *testing.T) {
 }
 
 func TestRestoreInvalidFd(t *testing.T) {
-	// Create a dummy state by attempting MakeRaw on a valid-ish fd first
-	// Since we can't get a real terminal state in tests, we just verify
-	// the function handles invalid fd gracefully
-	// Note: We don't test nil state as it causes panic in the underlying term package
-	// which is expected behavior (caller's responsibility to pass valid state)
-
 	// Just verify the function exists and is callable
 	// Testing with actual terminal state would require a real terminal
 }

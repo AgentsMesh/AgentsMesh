@@ -3,13 +3,10 @@ package terminal
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
-	"github.com/creack/pty"
 	"golang.org/x/term"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
@@ -36,8 +33,15 @@ type Options struct {
 
 // Terminal represents a PTY terminal session.
 type Terminal struct {
-	cmd      *exec.Cmd
-	pty      *os.File
+	// Command configuration (set in New, consumed in Start)
+	command string
+	args    []string
+	workDir string
+	env     []string
+
+	// PTY process handle (set in Start)
+	proc ptyProcess
+
 	mu       sync.Mutex
 	closed   bool
 	onOutput func([]byte)
@@ -69,10 +73,6 @@ func New(opts Options) (*Terminal, error) {
 		return nil, fmt.Errorf("command is required")
 	}
 
-	// Build command
-	cmd := exec.Command(opts.Command, opts.Args...)
-	cmd.Dir = opts.WorkDir
-
 	// Build environment with proper deduplication.
 	// Using a map prevents duplicate keys (e.g., TERM appearing twice)
 	// which can confuse some programs.
@@ -82,6 +82,9 @@ func New(opts Options) (*Terminal, error) {
 			envMap[e[:idx]] = e[idx+1:]
 		}
 	}
+	// Remove CLAUDECODE to prevent nested session detection when running
+	// Claude Code inside a pod - the runner intentionally spawns claude sessions.
+	delete(envMap, "CLAUDECODE")
 	// Ensure terminal supports colors (critical for CLI tools like claude, ls, etc.)
 	envMap["TERM"] = "xterm-256color"
 	envMap["COLORTERM"] = "truecolor"
@@ -93,7 +96,6 @@ func New(opts Options) (*Terminal, error) {
 	for k, v := range envMap {
 		env = append(env, k+"="+v)
 	}
-	cmd.Env = env
 
 	// Default terminal size if not specified
 	rows := opts.Rows
@@ -112,7 +114,10 @@ func New(opts Options) (*Terminal, error) {
 		"rows", rows)
 
 	return &Terminal{
-		cmd:      cmd,
+		command:  opts.Command,
+		args:     opts.Args,
+		workDir:  opts.WorkDir,
+		env:      env,
 		onOutput: opts.OnOutput,
 		onExit:   opts.OnExit,
 		rows:     rows,
@@ -132,22 +137,16 @@ func (t *Terminal) Start() error {
 	}
 
 	log := logger.Terminal()
-	log.Debug("Starting command", "path", t.cmd.Path, "args", t.cmd.Args, "dir", t.cmd.Dir, "cols", t.cols, "rows", t.rows)
+	log.Debug("Starting command", "command", t.command, "args", t.args, "dir", t.workDir, "cols", t.cols, "rows", t.rows)
 
-	// Start with PTY and initial size
-	// Use StartWithSize to set correct terminal dimensions from the beginning
-	// This is critical for TUI applications like Claude Code that render based on terminal size
-	winSize := &pty.Winsize{
-		Rows: uint16(t.rows),
-		Cols: uint16(t.cols),
-	}
-	ptmx, err := pty.StartWithSize(t.cmd, winSize)
+	// Start with PTY and initial size (platform-specific)
+	proc, err := startPTY(t.command, t.args, t.workDir, t.env, t.cols, t.rows)
 	if err != nil {
 		return fmt.Errorf("failed to start pty: %w", err)
 	}
-	t.pty = ptmx
+	t.proc = proc
 
-	log.Debug("PTY started", "pid", t.cmd.Process.Pid, "cols", t.cols, "rows", t.rows)
+	log.Debug("PTY started", "pid", t.proc.Pid(), "cols", t.cols, "rows", t.rows)
 
 	// Start output reader
 	safego.Go("pty-read", t.readOutput)
@@ -155,14 +154,14 @@ func (t *Terminal) Start() error {
 	// Wait for process exit
 	safego.Go("pty-wait", t.waitExit)
 
-	log.Info("Terminal started", "pid", t.cmd.Process.Pid, "cols", t.cols, "rows", t.rows)
+	log.Info("Terminal started", "pid", t.proc.Pid(), "cols", t.cols, "rows", t.rows)
 
 	return nil
 }
 
 // Stop stops the terminal with graceful shutdown.
-// It sends SIGTERM first and waits up to gracefulStopTimeout for the process to exit.
-// If the process doesn't exit in time, SIGKILL is sent as a last resort.
+// It sends a graceful stop signal first and waits up to gracefulStopTimeout
+// for the process to exit. If the process doesn't exit in time, it is killed.
 // This ensures AI agents (Claude Code, Aider, etc.) have time to perform cleanup
 // operations like saving state and releasing git locks.
 func (t *Terminal) Stop() {
@@ -175,31 +174,32 @@ func (t *Terminal) Stop() {
 		return
 	}
 	t.closed = true
-	proc := t.cmd.Process // nil if not started
+	proc := t.proc
 	t.mu.Unlock()
 
 	if proc != nil {
-		// Graceful shutdown: SIGTERM → wait → SIGKILL
-		log.Debug("Sending SIGTERM for graceful shutdown", "pid", proc.Pid)
-		if err := proc.Signal(syscall.SIGTERM); err != nil {
-			log.Debug("SIGTERM failed (process may have already exited)", "error", err)
+		// Graceful shutdown: signal → wait → kill
+		pid := proc.Pid()
+		log.Debug("Sending graceful stop signal", "pid", pid)
+		if err := proc.GracefulStop(); err != nil {
+			log.Debug("Graceful stop failed (process may have already exited)", "error", err)
 		}
 
 		// Wait for process to exit or timeout
 		select {
 		case <-t.doneCh:
-			log.Debug("Process exited gracefully after SIGTERM")
+			log.Debug("Process exited gracefully")
 		case <-time.After(gracefulStopTimeout):
-			log.Warn("Process did not exit after SIGTERM, sending SIGKILL",
-				"pid", proc.Pid, "timeout", gracefulStopTimeout)
+			log.Warn("Process did not exit after graceful stop, killing",
+				"pid", pid, "timeout", gracefulStopTimeout)
 			if err := proc.Kill(); err != nil {
-				log.Debug("SIGKILL failed (process may have already exited)", "error", err)
+				log.Debug("Kill failed (process may have already exited)", "error", err)
 			}
 			// Wait briefly for waitExit to detect the kill
 			select {
 			case <-t.doneCh:
 			case <-time.After(1 * time.Second):
-				log.Warn("Process did not exit after SIGKILL", "pid", proc.Pid)
+				log.Warn("Process did not exit after kill", "pid", pid)
 			}
 		}
 	}
@@ -210,20 +210,20 @@ func (t *Terminal) Stop() {
 	log.Info("Terminal stopped")
 }
 
-// closePTY closes the PTY file descriptor exactly once.
+// closePTY closes the PTY exactly once.
 // Safe to call from multiple goroutines (Stop and waitExit).
 func (t *Terminal) closePTY() {
 	t.ptyCloseOnce.Do(func() {
-		if t.pty != nil {
-			t.pty.Close()
+		if t.proc != nil {
+			t.proc.Close()
 		}
 	})
 }
 
 // PID returns the process ID
 func (t *Terminal) PID() int {
-	if t.cmd != nil && t.cmd.Process != nil {
-		return t.cmd.Process.Pid
+	if t.proc != nil {
+		return t.proc.Pid()
 	}
 	return 0
 }
@@ -265,11 +265,11 @@ func (t *Terminal) Write(data []byte) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.closed || t.pty == nil {
+	if t.closed || t.proc == nil {
 		return fmt.Errorf("terminal is not running")
 	}
 
-	_, err := t.pty.Write(data)
+	_, err := t.proc.Write(data)
 	return err
 }
 
