@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"gorm.io/gorm"
@@ -34,28 +35,10 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 	// Encrypt credentials if provided
 	var encryptedCreds agent.EncryptedCredentials
 	if !params.IsRunnerHost && params.Credentials != nil {
-		encryptedCreds = make(agent.EncryptedCredentials)
-		for k, v := range params.Credentials {
-			// TODO(security): Encrypt credentials using crypto.Encryptor - HIGH PRIORITY
-			//
-			// Current Issue:
-			//   Credentials are stored in plaintext, risking exposure in case of data breach.
-			//
-			// Implementation Plan:
-			//   1. Add *crypto.Encryptor field to CredentialProfileService
-			//   2. Update NewCredentialProfileService to accept encryptor parameter
-			//   3. Use encryptor.Encrypt(v) for each credential value
-			//   4. Write data migration script to encrypt existing credentials
-			//   5. Requires ENCRYPTION_KEY environment variable configuration
-			//
-			// Reference Implementation:
-			//   See credential_service.go encryptCredentialsMap() for working example
-			//
-			// Migration Steps:
-			//   1. Deploy code with encryption support
-			//   2. Run migration script to encrypt existing data
-			//   3. Remove backward compatibility (raw value fallback)
-			encryptedCreds[k] = v
+		var err error
+		encryptedCreds, err = s.encryptCredentials(params.Credentials)
+		if err != nil {
+			return nil, fmt.Errorf("encrypt credentials: %w", err)
 		}
 	}
 

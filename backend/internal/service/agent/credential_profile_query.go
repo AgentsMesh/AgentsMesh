@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"gorm.io/gorm"
@@ -102,5 +103,10 @@ func (s *CredentialProfileService) GetEffectiveCredentialsForPod(ctx context.Con
 		return nil, true, nil
 	}
 
-	return profile.CredentialsEncrypted, false, nil
+	// Decrypt credentials before returning to caller
+	decrypted, err := s.decryptCredentials(profile.CredentialsEncrypted)
+	if err != nil {
+		return nil, false, fmt.Errorf("decrypt credentials: %w", err)
+	}
+	return decrypted, false, nil
 }
