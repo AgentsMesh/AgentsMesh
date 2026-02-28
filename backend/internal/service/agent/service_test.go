@@ -53,6 +53,15 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)
 
+	// Create loops table (referenced by DeleteCustomAgentType for application-level RESTRICT check)
+	db.Exec(`CREATE TABLE IF NOT EXISTS loops (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		organization_id INTEGER NOT NULL,
+		repository_id INTEGER,
+		runner_id INTEGER,
+		custom_agent_type_id INTEGER
+	)`)
+
 	// Seed builtin agent types using BLOB for credential_schema
 	db.Exec(`INSERT INTO agent_types (slug, name, description, executable, launch_command, credential_schema, is_builtin, is_active)
 		VALUES ('claude-code', 'Claude Code', 'Claude Code agent', 'claude', 'claude', X'5B5D', 1, 1)`)

@@ -8,12 +8,13 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// AutopilotControllerCommandSender defines the interface for sending AutopilotController commands to runners
+// AutopilotControllerCommandSender defines the interface for sending AutopilotController control commands to runners.
+// Note: CreateAutopilot is now handled by AutopilotControllerService.CreateAndStart.
 type AutopilotControllerCommandSender interface {
-	SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error
 	SendAutopilotControl(runnerID int64, cmd *runnerv1.AutopilotControlCommand) error
 }
 
@@ -21,7 +22,7 @@ type AutopilotControllerCommandSender interface {
 type AutopilotControllerServiceInterface interface {
 	GetAutopilotController(orgID int64, autopilotPodKey string) (*agentpod.AutopilotController, error)
 	ListAutopilotControllers(orgID int64) ([]*agentpod.AutopilotController, error)
-	CreateAutopilotController(pod *agentpod.AutopilotController) error
+	CreateAndStart(req *agentpodSvc.CreateAndStartRequest) (*agentpod.AutopilotController, error)
 	UpdateAutopilotController(pod *agentpod.AutopilotController) error
 	GetIterations(autopilotPodID int64) ([]*agentpod.AutopilotIteration, error)
 }

@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import {
   Server,
   Settings,
+  Repeat,
   Moon,
   Sun,
   Monitor,
@@ -23,6 +24,7 @@ import { themeConfigs, type Theme } from "@/lib/theme";
 const ICON_MAP: Record<string, LucideIcon> = {
   server: Server,
   settings: Settings,
+  repeat: Repeat,
 };
 
 interface MobileMoreMenuProps {
@@ -60,6 +62,8 @@ export function MobileMoreMenu({ className }: MobileMoreMenuProps) {
 
   const getActivityRoute = (activity: ActivityType): string => {
     switch (activity) {
+      case "loops":
+        return `/${orgSlug}/loops`;
       case "runners":
         return `/${orgSlug}/runners`;
       case "settings":

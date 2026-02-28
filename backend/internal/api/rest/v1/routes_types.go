@@ -17,6 +17,7 @@ import (
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/service/license"
+	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/service/mesh"
 	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/service/promocode"
@@ -88,4 +89,10 @@ type Services struct {
 	Extension         *extensionservice.Service
 	ExtensionRepo     extension.Repository
 	MarketplaceWorker *extensionservice.MarketplaceWorker
+
+	// Loop services
+	Loop             *loop.LoopService
+	LoopRun          *loop.LoopRunService
+	LoopOrchestrator *loop.LoopOrchestrator
+	LoopScheduler    *loop.LoopScheduler
 }

@@ -19,6 +19,8 @@ const (
 	ScopeChannelWrite Scope = "channels:write"
 	ScopeRunnerRead   Scope = "runners:read"
 	ScopeRepoRead     Scope = "repos:read"
+	ScopeLoopRead     Scope = "loops:read"
+	ScopeLoopWrite    Scope = "loops:write"
 )
 
 // AllScopes contains all valid scopes
@@ -31,6 +33,8 @@ var AllScopes = map[Scope]bool{
 	ScopeChannelWrite: true,
 	ScopeRunnerRead:   true,
 	ScopeRepoRead:     true,
+	ScopeLoopRead:     true,
+	ScopeLoopWrite:    true,
 }
 
 // ValidateScope checks if a scope string is valid

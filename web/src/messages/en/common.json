@@ -24,7 +24,15 @@
     "saving": "Saving...",
     "refresh": "Refresh",
     "connected": "Connected",
-    "disconnected": "Disconnected"
+    "disconnected": "Disconnected",
+    "justNow": "just now",
+    "overdue": "overdue",
+    "timeAgoMinutes": "{count}m ago",
+    "timeAgoHours": "{count}h ago",
+    "timeAgoDays": "{count}d ago",
+    "timeInMinutes": "in {count}m",
+    "timeInHours": "in {count}h",
+    "timeInDays": "in {count}d"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",

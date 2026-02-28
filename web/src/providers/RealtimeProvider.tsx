@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useCallback, useRef } from "react";
 import { useRealtimeConnection, useAllEventsSubscription } from "@/hooks/useRealtimeEvents";
 import { usePodStore } from "@/stores/pod";
 import { useRunnerStore } from "@/stores/runner";
@@ -9,7 +9,10 @@ import { useMeshStore } from "@/stores/mesh";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useChannelStore } from "@/stores/channel";
 import { useAutopilotStore } from "@/stores/autopilot";
-import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData, PodTitleChangedData, PodInitProgressData, ChannelMessageData, AutopilotStatusChangedData, AutopilotIterationData, AutopilotCreatedData, AutopilotTerminatedData, AutopilotThinkingData, MREventData, PipelineEventData } from "@/lib/realtime";
+import { useLoopStore } from "@/stores/loop";
+import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData, PodTitleChangedData, PodInitProgressData, ChannelMessageData, AutopilotStatusChangedData, AutopilotIterationData, AutopilotCreatedData, AutopilotTerminatedData, AutopilotThinkingData, MREventData, PipelineEventData, LoopRunEventData, LoopRunWarningData } from "@/lib/realtime";
 
 interface RealtimeContextValue {
   connectionState: ConnectionState;
@@ -48,6 +51,11 @@ export function RealtimeProvider({
   onTaskCompleted,
 }: RealtimeProviderProps) {
   const { connectionState, reconnect } = useRealtimeConnection();
+  const t = useTranslations();
+
+  // Debounce timer for loop events — rapid events (e.g. multiple runs completing
+  // within seconds) are coalesced into a single API refresh cycle.
+  const loopDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Get store actions
   const podStore = usePodStore();
@@ -57,6 +65,7 @@ export function RealtimeProvider({
   const workspaceStore = useWorkspaceStore();
   const channelStore = useChannelStore();
   const autopilotStore = useAutopilotStore();
+  const loopStore = useLoopStore();
 
   // Handle all events and route to appropriate stores
   const handleEvent = useCallback(
@@ -289,15 +298,60 @@ export function RealtimeProvider({
           break;
         }
 
+        // Loop run events — debounced to coalesce rapid events into a single refresh
+        case "loop_run:started":
+        case "loop_run:completed":
+        case "loop_run:failed": {
+          const data = event.data as LoopRunEventData;
+          // Clear any pending debounce timer and set a new one
+          if (loopDebounceRef.current) {
+            clearTimeout(loopDebounceRef.current);
+          }
+          loopDebounceRef.current = setTimeout(() => {
+            loopDebounceRef.current = null;
+            const currentLoopState = useLoopStore.getState();
+            currentLoopState.fetchLoops?.();
+            if (currentLoopState.currentLoop?.id === data.loop_id) {
+              currentLoopState.fetchLoop?.(currentLoopState.currentLoop.slug);
+              useLoopStore.setState({ runsOffset: 0 });
+              currentLoopState.fetchRuns?.(currentLoopState.currentLoop.slug, { limit: 20, offset: 0 });
+            }
+          }, 500);
+          console.log("[Realtime] Loop run event (debounced):", event.type, data.run_id, data.status);
+          break;
+        }
+
+        // Loop run warning events (e.g., sandbox resume degradation)
+        case "loop_run:warning": {
+          const data = event.data as LoopRunWarningData;
+          toast.warning(t("loops.runWarningTitle", { runNumber: data.run_number }), {
+            description: data.detail || data.warning,
+            duration: 8000,
+          });
+          console.log("[Realtime] Loop run warning:", data.warning, data.detail);
+          break;
+        }
+
         default:
           console.log("[Realtime] Unknown event:", event.type);
       }
     },
-    [podStore, runnerStore, ticketStore, meshStore, workspaceStore, channelStore, autopilotStore, onTerminalNotification, onTaskCompleted]
+    // loopStore is accessed via useLoopStore.getState() to avoid stale closures
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [podStore, runnerStore, ticketStore, meshStore, workspaceStore, channelStore, autopilotStore, onTerminalNotification, onTaskCompleted, t]
   );
 
   // Subscribe to all events
   useAllEventsSubscription(handleEvent, [handleEvent]);
+
+  // Cleanup debounce timer on unmount to prevent stale state updates
+  useEffect(() => {
+    return () => {
+      if (loopDebounceRef.current) {
+        clearTimeout(loopDebounceRef.current);
+      }
+    };
+  }, []);
 
   // Refresh data when reconnected
   useEffect(() => {
@@ -308,6 +362,7 @@ export function RealtimeProvider({
       ticketStore.fetchTickets?.();
       meshStore.fetchTopology?.();
       autopilotStore.fetchAutopilotControllers?.();
+      loopStore.fetchLoops?.();
     }
     // Store objects are stable, only connectionState changes trigger refresh
     // eslint-disable-next-line react-hooks/exhaustive-deps

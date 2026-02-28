@@ -13,6 +13,7 @@ import { TicketsSidebarContent } from "./sidebar/TicketsSidebarContent";
 import { RepositoriesSidebarContent } from "./sidebar/RepositoriesSidebarContent";
 import { RunnersSidebarContent } from "./sidebar/RunnersSidebarContent";
 import { MeshSidebarContent } from "./sidebar/MeshSidebarContent";
+import { LoopsSidebarContent } from "./sidebar/LoopsSidebarContent";
 import { SettingsSidebarContent } from "./sidebar/SettingsSidebarContent";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -58,6 +59,8 @@ function getSidebarContent(
       return <TicketsSidebarContent />;
     case "mesh":
       return <MeshSidebarContent />;
+    case "loops":
+      return <LoopsSidebarContent />;
     case "repositories":
       return <RepositoriesSidebarContent onImportRepo={callbacks.onImportRepo} />;
     case "runners":

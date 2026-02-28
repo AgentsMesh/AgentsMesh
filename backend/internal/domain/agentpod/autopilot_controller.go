@@ -24,6 +24,58 @@ const (
 	CircuitBreakerOpen     = "open"
 )
 
+// Default configuration values for AutopilotController.
+// Centralized here so that all callers (REST handler, LoopOrchestrator, etc.)
+// share the same defaults instead of duplicating magic numbers.
+const (
+	DefaultMaxIterations       int32 = 10
+	DefaultIterationTimeoutSec int32 = 300
+	DefaultNoProgressThreshold int32 = 3
+	DefaultSameErrorThreshold  int32 = 5
+	DefaultApprovalTimeoutMin  int32 = 30
+)
+
+// IsAutopilotPhaseTerminal returns true if the given phase string represents a terminal state.
+func IsAutopilotPhaseTerminal(phase string) bool {
+	return phase == AutopilotPhaseCompleted ||
+		phase == AutopilotPhaseFailed ||
+		phase == AutopilotPhaseStopped
+}
+
+// IsAutopilotPhaseActive returns true if the given phase string represents an active state.
+func IsAutopilotPhaseActive(phase string) bool {
+	return phase == AutopilotPhaseRunning ||
+		phase == AutopilotPhaseInitializing ||
+		phase == AutopilotPhasePaused ||
+		phase == AutopilotPhaseWaitingApproval ||
+		phase == AutopilotPhaseMaxIterations
+}
+
+// TerminalPhases returns the list of terminal autopilot phases.
+func TerminalPhases() []string {
+	return []string{AutopilotPhaseCompleted, AutopilotPhaseFailed, AutopilotPhaseStopped}
+}
+
+// ApplyDefaults fills zero-valued configuration fields with domain defaults.
+func ApplyDefaults(maxIter, iterTimeout, noProg, sameErr, approvalTimeout int32) (int32, int32, int32, int32, int32) {
+	if maxIter == 0 {
+		maxIter = DefaultMaxIterations
+	}
+	if iterTimeout == 0 {
+		iterTimeout = DefaultIterationTimeoutSec
+	}
+	if noProg == 0 {
+		noProg = DefaultNoProgressThreshold
+	}
+	if sameErr == 0 {
+		sameErr = DefaultSameErrorThreshold
+	}
+	if approvalTimeout == 0 {
+		approvalTimeout = DefaultApprovalTimeoutMin
+	}
+	return maxIter, iterTimeout, noProg, sameErr, approvalTimeout
+}
+
 // AutopilotController represents an event-driven automation controller for Pod
 type AutopilotController struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
@@ -78,18 +130,12 @@ func (AutopilotController) TableName() string {
 
 // IsActive returns true if AutopilotController is actively running
 func (r *AutopilotController) IsActive() bool {
-	return r.Phase == AutopilotPhaseRunning ||
-		r.Phase == AutopilotPhaseInitializing ||
-		r.Phase == AutopilotPhasePaused ||
-		r.Phase == AutopilotPhaseWaitingApproval ||
-		r.Phase == AutopilotPhaseMaxIterations
+	return IsAutopilotPhaseActive(r.Phase)
 }
 
 // IsTerminal returns true if AutopilotController is in a terminal state
 func (r *AutopilotController) IsTerminal() bool {
-	return r.Phase == AutopilotPhaseCompleted ||
-		r.Phase == AutopilotPhaseFailed ||
-		r.Phase == AutopilotPhaseStopped
+	return IsAutopilotPhaseTerminal(r.Phase)
 }
 
 // CanResume returns true if AutopilotController can be resumed

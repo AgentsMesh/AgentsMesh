@@ -65,6 +65,20 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to create repositories table: %v", err)
 	}
 
+	// Create loops table (referenced by Delete/HardDelete for application-level RESTRICT check)
+	err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS loops (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL,
+			repository_id INTEGER,
+			runner_id INTEGER,
+			custom_agent_type_id INTEGER
+		)
+	`).Error
+	if err != nil {
+		t.Fatalf("failed to create loops table: %v", err)
+	}
+
 	return db
 }
 

@@ -10,7 +10,9 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // mockDB implements database.DB interface for testing
@@ -314,7 +316,14 @@ func (m *mockDB) Scan(dest interface{}) error {
 }
 
 func (m *mockDB) GormDB() *gorm.DB {
-	return nil
+	// Return a real SQLite DB with loops/loop_runs tables
+	// so that DeleteOrganization's cleanup Exec calls don't panic.
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	db.Exec(`CREATE TABLE IF NOT EXISTS loops (id INTEGER PRIMARY KEY, organization_id INTEGER, runner_id INTEGER)`)
+	db.Exec(`CREATE TABLE IF NOT EXISTS loop_runs (id INTEGER PRIMARY KEY, organization_id INTEGER)`)
+	return db
 }
 
 // Ensure mockDB implements database.DB

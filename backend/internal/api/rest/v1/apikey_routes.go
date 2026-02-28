@@ -123,4 +123,24 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 		reposRead.GET("/:id/branches", repositoryHandler.ListBranches)
 		reposRead.GET("/:id/merge-requests", repositoryHandler.ListRepositoryMergeRequests)
 	}
+
+	// Loop routes
+	if svc.Loop != nil && svc.LoopOrchestrator != nil {
+		loopHandler := NewLoopHandler(svc.Loop, svc.LoopRun, svc.LoopOrchestrator, svc.PodCoordinator)
+
+		loopsRead := rg.Group("/loops")
+		loopsRead.Use(middleware.RequireScope("loops:read", "loops:write"))
+		{
+			loopsRead.GET("", loopHandler.ListLoops)
+			loopsRead.GET("/:loop_slug", loopHandler.GetLoop)
+			loopsRead.GET("/:loop_slug/runs", loopHandler.ListRuns)
+			loopsRead.GET("/:loop_slug/runs/:run_id", loopHandler.GetRun)
+		}
+		loopsWrite := rg.Group("/loops")
+		loopsWrite.Use(middleware.RequireScope("loops:write"))
+		{
+			loopsWrite.POST("/:loop_slug/trigger", loopHandler.TriggerLoop)
+			loopsWrite.POST("/:loop_slug/runs/:run_id/cancel", loopHandler.CancelRun)
+		}
+	}
 }
