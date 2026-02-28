@@ -70,7 +70,9 @@ func (c *GRPCConnection) createAdvancedTLSCredentials() (credentials.TransportCr
 			return nil, err
 		}
 		if c.tlsServerName != "" {
-			creds.OverrideServerName(c.tlsServerName)
+			if err := creds.OverrideServerName(c.tlsServerName); err != nil {
+				return nil, fmt.Errorf("failed to override server name: %w", err)
+			}
 		}
 		return creds, nil
 	}
@@ -98,7 +100,9 @@ func (c *GRPCConnection) createAdvancedTLSCredentials() (credentials.TransportCr
 		return nil, err
 	}
 	if c.tlsServerName != "" {
-		creds.OverrideServerName(c.tlsServerName)
+		if err := creds.OverrideServerName(c.tlsServerName); err != nil {
+			return nil, fmt.Errorf("failed to override server name: %w", err)
+		}
 	}
 	return creds, nil
 }
