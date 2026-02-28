@@ -24,7 +24,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/smartwalle/alipay/v3 v3.2.28
 	github.com/stretchr/testify v1.11.1
-	github.com/stripe/stripe-go/v76 v76.14.0
+	github.com/stripe/stripe-go/v76 v76.25.0
 	github.com/wechatpay-apiv3/wechatpay-go v0.2.21
 	golang.org/x/crypto v0.46.0
 	google.golang.org/grpc v1.78.0
