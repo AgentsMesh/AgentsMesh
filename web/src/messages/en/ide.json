@@ -4,6 +4,7 @@
       "workspace": "Workspace",
       "tickets": "Tickets",
       "mesh": "AgentsMesh",
+      "loops": "Loops",
       "repositories": "Repositories",
       "runners": "Runners",
       "settings": "Settings"

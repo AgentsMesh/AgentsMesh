@@ -21,6 +21,7 @@ import (
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/service/license"
+	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/service/mesh"
 	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/service/promocode"
@@ -66,6 +67,8 @@ type serviceContainer struct {
 	extensionRepo     extension.Repository
 	skillImporter     *extensionservice.SkillImporter
 	marketplaceWorker *extensionservice.MarketplaceWorker
+	loop              *loop.LoopService
+	loopRun           *loop.LoopRunService
 }
 
 // initializeServices creates all business services
@@ -128,6 +131,10 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	apikeySvc := apikeyservice.NewService(db, redisClient)
 	apikeyAdapterSvc := apikeyservice.NewMiddlewareAdapter(apikeySvc)
 
+	// Initialize loop services
+	loopSvc := loop.NewLoopService(db)
+	loopRunSvc := loop.NewLoopRunService(db)
+
 	// Initialize license service (for OnPremise deployments)
 	licenseSvc := initializeLicenseService(cfg, db)
 
@@ -165,6 +172,8 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		extensionRepo:      extRepo,
 		skillImporter:      skillImp,
 		marketplaceWorker:  mktWorker,
+		loop:               loopSvc,
+		loopRun:            loopRunSvc,
 	}
 }
 

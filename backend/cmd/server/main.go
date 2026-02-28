@@ -16,6 +16,8 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
+	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
@@ -107,6 +109,24 @@ func main() {
 	})
 	slog.Info("PodOrchestrator created")
 
+	// Initialize OrgAwarenessService (tracks which orgs this instance serves)
+	orgAwareness := instance.NewOrgAwarenessService(db, runnerConnMgr, redisClient, cfg.Server.Address, appLogger.Logger)
+	orgAwareness.Start()
+	setupOrgAwarenessRefresh(eventBus, orgAwareness)
+	slog.Info("OrgAwarenessService started")
+
+	// Wire AutopilotControllerService with PodCoordinator for gRPC command sending.
+	// PodCoordinator implements AutopilotCommandSender (SendCreateAutopilot).
+	services.autopilot.SetCommandSender(podCoordinator)
+
+	// Initialize Loop orchestrator and scheduler
+	loopOrchestrator := loop.NewLoopOrchestrator(services.loop, services.loopRun, eventBus, appLogger.Logger)
+	loopOrchestrator.SetPodDependencies(podOrchestrator, services.autopilot, podCoordinator, services.ticket)
+	loopScheduler := loop.NewLoopScheduler(services.loop, loopOrchestrator, orgAwareness, appLogger.Logger)
+	loopScheduler.Start()
+	setupLoopEventSubscriptions(eventBus, loopOrchestrator)
+	slog.Info("Loop orchestrator and scheduler created")
+
 	// Initialize PKI and gRPC
 	var grpcRunnerHandler *v1.GRPCRunnerHandler
 	var grpcServer *grpcserver.Server
@@ -187,6 +207,10 @@ func main() {
 		Extension:           services.extension,
 		ExtensionRepo:       services.extensionRepo,
 		MarketplaceWorker:   services.marketplaceWorker,
+		Loop:                services.loop,
+		LoopRun:             services.loopRun,
+		LoopOrchestrator:    loopOrchestrator,
+		LoopScheduler:       loopScheduler,
 	}
 
 	// Initialize router
@@ -211,7 +235,7 @@ func main() {
 	srv := startHTTPServer(cfg, router)
 
 	// Graceful shutdown
-	waitForShutdown(srv, grpcServer, eventBus, heartbeatBatcher, subscriptionScheduler, db, redisClient)
+	waitForShutdown(srv, grpcServer, eventBus, heartbeatBatcher, subscriptionScheduler, loopScheduler, orgAwareness, db, redisClient)
 }
 
 // initializeRelayServices initializes Relay DNS and ACME services

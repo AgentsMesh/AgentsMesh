@@ -74,6 +74,12 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		})
 	}
 
+	// Send terminal snapshot so late subscribers see existing content
+	if pod.VirtualTerminal != nil {
+		snapshot := pod.VirtualTerminal.GetSnapshot()
+		relayClient.SendSnapshot(snapshot)
+	}
+
 	// Trigger TUI redraw if needed
 	if pod.VirtualTerminal != nil && pod.VirtualTerminal.IsAltScreen() && pod.Terminal != nil {
 		go func() {

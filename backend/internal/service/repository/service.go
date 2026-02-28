@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	ErrRepositoryNotFound = errors.New("repository not found")
-	ErrRepositoryExists   = errors.New("repository already exists")
-	ErrNoPermission       = errors.New("no permission to access this repository")
+	ErrRepositoryNotFound    = errors.New("repository not found")
+	ErrRepositoryExists      = errors.New("repository already exists")
+	ErrNoPermission          = errors.New("no permission to access this repository")
+	ErrRepositoryHasLoopRefs = errors.New("cannot delete: repository is referenced by one or more loops")
 )
 
 // Service handles repository operations
@@ -240,15 +241,31 @@ func (s *Service) Update(ctx context.Context, id int64, updates map[string]inter
 	return s.GetByID(ctx, id)
 }
 
-// Delete soft deletes a repository
+// Delete soft deletes a repository.
+// Blocks deletion if any loops reference this repository (application-level RESTRICT).
 func (s *Service) Delete(ctx context.Context, id int64) error {
+	var loopCount int64
+	if err := s.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM loops WHERE repository_id = ?", id).Scan(&loopCount).Error; err != nil {
+		return err
+	}
+	if loopCount > 0 {
+		return ErrRepositoryHasLoopRefs
+	}
 	return s.db.WithContext(ctx).Model(&gitprovider.Repository{}).
 		Where("id = ?", id).
 		Update("deleted_at", time.Now()).Error
 }
 
-// HardDelete permanently deletes a repository
+// HardDelete permanently deletes a repository.
+// Blocks deletion if any loops reference this repository (application-level RESTRICT).
 func (s *Service) HardDelete(ctx context.Context, id int64) error {
+	var loopCount int64
+	if err := s.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM loops WHERE repository_id = ?", id).Scan(&loopCount).Error; err != nil {
+		return err
+	}
+	if loopCount > 0 {
+		return ErrRepositoryHasLoopRefs
+	}
 	return s.db.WithContext(ctx).Unscoped().Delete(&gitprovider.Repository{}, id).Error
 }
 

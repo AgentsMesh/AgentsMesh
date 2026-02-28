@@ -8,6 +8,7 @@ export type ActivityType =
   | "workspace"
   | "tickets"
   | "mesh"
+  | "loops"
   | "repositories"
   | "runners"
   | "settings";
@@ -140,6 +141,12 @@ export const ACTIVITIES: ActivityConfig[] = [
     icon: "network",
     mobileVisible: true,
     mobileOrder: 3,
+  },
+  {
+    id: "loops",
+    label: "Loops",
+    icon: "repeat",
+    mobileVisible: false,
   },
   {
     id: "repositories",

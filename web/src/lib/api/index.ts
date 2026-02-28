@@ -155,6 +155,20 @@ export type {
   PromoCodeRedemption,
 } from "./promocode";
 
+// Loop
+export { loopApi } from "./loop";
+export type {
+  LoopData,
+  LoopRunData,
+  LoopStatus,
+  ExecutionMode,
+  SandboxStrategy,
+  ConcurrencyPolicy,
+  RunStatus,
+  CreateLoopRequest,
+  UpdateLoopRequest,
+} from "./loop";
+
 // AutopilotController
 export { autopilotApi } from "./autopilot";
 

@@ -83,6 +83,9 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 
 	// Register extension routes (Skills marketplace, MCP servers)
 	registerExtensionRoutes(rg, svc)
+
+	// Register loop routes
+	registerLoopRoutes(rg, svc)
 }
 
 func registerAgentRoutes(rg *gin.RouterGroup, svc *Services) {
@@ -385,4 +388,25 @@ func registerExtensionRoutes(rg *gin.RouterGroup, svc *Services) {
 	}
 
 	slog.Info("Extension routes registered")
+}
+
+func registerLoopRoutes(rg *gin.RouterGroup, svc *Services) {
+	if svc.Loop == nil {
+		return
+	}
+	loopHandler := NewLoopHandler(svc.Loop, svc.LoopRun, svc.LoopOrchestrator, svc.PodCoordinator)
+	loops := rg.Group("/loops")
+	{
+		loops.GET("", loopHandler.ListLoops)
+		loops.POST("", loopHandler.CreateLoop)
+		loops.GET("/:loop_slug", loopHandler.GetLoop)
+		loops.PUT("/:loop_slug", loopHandler.UpdateLoop)
+		loops.DELETE("/:loop_slug", loopHandler.DeleteLoop)
+		loops.POST("/:loop_slug/enable", loopHandler.EnableLoop)
+		loops.POST("/:loop_slug/disable", loopHandler.DisableLoop)
+		loops.POST("/:loop_slug/trigger", loopHandler.TriggerLoop)
+		loops.GET("/:loop_slug/runs", loopHandler.ListRuns)
+		loops.GET("/:loop_slug/runs/:run_id", loopHandler.GetRun)
+		loops.POST("/:loop_slug/runs/:run_id/cancel", loopHandler.CancelRun)
+	}
 }
