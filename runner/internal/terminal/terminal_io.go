@@ -3,7 +3,6 @@ package terminal
 import (
 	"io"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
@@ -49,18 +48,18 @@ func (t *Terminal) readOutput() {
 		// Check if terminal is closed before reading
 		t.mu.Lock()
 		closed := t.closed
-		ptyFile := t.pty
+		proc := t.proc
 		t.mu.Unlock()
 
-		if closed || ptyFile == nil {
-			log.Debug("PTY read loop exiting", "closed", closed, "ptyFile_nil", ptyFile == nil, "read_count", readCount)
+		if closed || proc == nil {
+			log.Debug("PTY read loop exiting", "closed", closed, "proc_nil", proc == nil, "read_count", readCount)
 			return
 		}
 
 		// Read from PTY with timeout to allow periodic backpressure checks
 		// This ensures we can respond to pause signals even during slow output
-		ptyFile.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-		n, err := ptyFile.Read(buf)
+		proc.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+		n, err := proc.Read(buf)
 
 		if err != nil {
 			// Check if it's just a timeout (expected during backpressure checks)
@@ -95,9 +94,10 @@ func (t *Terminal) readOutput() {
 					// Kill the process to trigger clean exit through waitExit/exitHandler.
 					// Without a working PTY, the user cannot interact with the process,
 					// so keeping it alive would only cause a frozen terminal.
-					if t.cmd != nil && t.cmd.Process != nil {
-						log.Info("Killing process after PTY read error", "pid", t.cmd.Process.Pid)
-						t.cmd.Process.Kill()
+					if proc != nil {
+						pid := proc.Pid()
+						log.Info("Killing process after PTY read error", "pid", pid)
+						proc.Kill()
 					}
 				}
 			} else {
@@ -148,16 +148,14 @@ func (t *Terminal) readOutput() {
 // waitExit waits for the process to exit
 func (t *Terminal) waitExit() {
 	log := logger.Terminal()
-	exitCode := 0
-	if err := t.cmd.Wait(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
-		} else {
-			exitCode = -1
-		}
+
+	exitCode, err := t.proc.Wait()
+	if err != nil {
+		log.Error("Process wait error", "error", err)
 	}
 
-	log.Info("Process exited", "pid", t.cmd.Process.Pid, "exit_code", exitCode)
+	pid := t.proc.Pid()
+	log.Info("Process exited", "pid", pid, "exit_code", exitCode)
 
 	// Signal that the process has exited (unblocks Stop() if waiting)
 	close(t.doneCh)
