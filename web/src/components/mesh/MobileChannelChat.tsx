@@ -3,8 +3,10 @@
 import { useEffect, useCallback } from "react";
 import { useChannelStore } from "@/stores/channel";
 import { useMeshStore } from "@/stores/mesh";
+import { podApi } from "@/lib/api/pod";
 import { MessageList } from "./MessageList";
-import { MessageInput } from "./MessageInput";
+import { MessageInput, extractPromptFromMention, buildChannelPrompt } from "./MessageInput";
+import type { MentionedPod } from "./MessageInput";
 import { ChannelDocument } from "./ChannelDocument";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Radio, Users, RefreshCw, Loader2 } from "lucide-react";
@@ -48,16 +50,30 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
   const channelInfo = topology?.channels.find((c) => c.id === channelId);
   const podCount = channelInfo?.pod_keys.length || currentChannel?.pods?.length || 0;
 
-  // Handle send message
+  // Resolve channel name for prompt context (extracted for React Compiler compatibility)
+  const channelName = currentChannel?.name || channelInfo?.name || "Channel";
+
+  // Handle send message — also forward prompt to @mentioned pods
   const handleSendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, mentionedPods?: MentionedPod[]) => {
       try {
         await sendMessage(channelId, content);
+
+        // Forward prompt to each mentioned pod's terminal
+        if (mentionedPods && mentionedPods.length > 0) {
+          const rawPrompt = extractPromptFromMention(content, mentionedPods);
+          if (rawPrompt) {
+            const prompt = buildChannelPrompt(rawPrompt, channelName);
+            await Promise.allSettled(
+              mentionedPods.map((pod) => podApi.sendPrompt(pod.podKey, prompt))
+            );
+          }
+        }
       } catch (error) {
         console.error("Failed to send message:", error);
       }
     },
-    [channelId, sendMessage]
+    [channelId, sendMessage, channelName]
   );
 
   // Handle load more messages
@@ -112,8 +128,6 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
       </div>
     );
   }
-
-  const channelName = currentChannel?.name || channelInfo?.name || "Channel";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -175,6 +189,7 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
       <MessageInput
         onSend={handleSendMessage}
         placeholder="Send a message..."
+        channelId={channelId}
       />
     </div>
   );

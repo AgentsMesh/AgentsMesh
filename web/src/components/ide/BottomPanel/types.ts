@@ -1,5 +1,6 @@
 import type { ChannelInfo, MeshEdge, MeshTopology } from "@/stores/mesh";
 import type { ChannelMessage } from "@/lib/api";
+import type { MentionedPod } from "@/components/mesh/MessageInput";
 
 /**
  * Common props for tab content components
@@ -27,7 +28,7 @@ export interface ChannelsTabContentProps extends TabContentProps {
   } | null;
   messages: ChannelMessage[];
   messagesLoading: boolean;
-  onSendMessage: (content: string) => Promise<void>;
+  onSendMessage: (content: string, mentionedPods?: MentionedPod[]) => Promise<void>;
   onLoadMore: () => void;
   onRefresh: () => void;
 }

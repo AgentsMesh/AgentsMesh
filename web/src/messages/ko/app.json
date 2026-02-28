@@ -69,6 +69,10 @@
       "placeholder": "메시지 입력...",
       "hint": "Enter로 전송, Shift+Enter로 줄바꿈"
     },
+    "mention": {
+      "members": "멤버",
+      "pods": "Pods"
+    },
     "ticket": "티켓",
     "contextMenu": {
       "openTerminal": "터미널 열기",

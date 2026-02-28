@@ -69,6 +69,10 @@
       "placeholder": "メッセージを入力...",
       "hint": "Enterで送信、Shift+Enterで改行"
     },
+    "mention": {
+      "members": "メンバー",
+      "pods": "Pods"
+    },
     "ticket": "チケット",
     "contextMenu": {
       "openTerminal": "ターミナルを開く",

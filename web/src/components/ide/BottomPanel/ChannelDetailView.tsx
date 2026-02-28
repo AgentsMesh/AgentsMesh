@@ -8,6 +8,7 @@ import { MessageInput } from "@/components/mesh/MessageInput";
 import { ChevronLeft } from "lucide-react";
 import type { ChannelInfo, MeshTopology } from "@/stores/mesh";
 import type { TransformedMessage } from "./types";
+import type { MentionedPod } from "@/components/mesh/MessageInput";
 
 interface ChannelDetailViewProps {
   channelId: number;
@@ -21,7 +22,7 @@ interface ChannelDetailViewProps {
   messages: TransformedMessage[];
   messagesLoading: boolean;
   onBack: () => void;
-  onSendMessage: (content: string) => Promise<void>;
+  onSendMessage: (content: string, mentionedPods?: MentionedPod[]) => Promise<void>;
   onLoadMore: () => void;
   onRefresh: () => void;
   t: (key: string, params?: Record<string, string | number>) => string;
@@ -90,6 +91,7 @@ export function ChannelDetailView({
         <MessageInput
           onSend={onSendMessage}
           placeholder={t("ide.bottomPanel.sendMessagePlaceholder")}
+          channelId={channelId}
         />
       </div>
     </div>

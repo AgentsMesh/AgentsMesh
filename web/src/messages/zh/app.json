@@ -69,6 +69,10 @@
       "placeholder": "输入消息...",
       "hint": "按 Enter 发送，Shift+Enter 换行"
     },
+    "mention": {
+      "members": "成员",
+      "pods": "Pods"
+    },
     "ticket": "任务",
     "contextMenu": {
       "openTerminal": "打开终端",

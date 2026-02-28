@@ -69,6 +69,10 @@
       "placeholder": "Nachricht eingeben...",
       "hint": "Enter zum Senden, Shift+Enter für neue Zeile"
     },
+    "mention": {
+      "members": "Mitglieder",
+      "pods": "Pods"
+    },
     "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "Terminal öffnen",

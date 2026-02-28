@@ -22,6 +22,9 @@ import { AutopilotPanelContent } from "@/components/autopilot";
 import { useAutopilotStore } from "@/stores/autopilot";
 import { usePodStore } from "@/stores/pod";
 import { useAuthStore } from "@/stores/auth";
+import { podApi } from "@/lib/api/pod";
+import { extractPromptFromMention, buildChannelPrompt } from "@/components/mesh/MessageInput";
+import type { MentionedPod } from "@/components/mesh/MessageInput";
 import { ChannelsTabContent, ActivityTabContent, DeliveryTabContent, InfoTabContent } from "./BottomPanel/index";
 
 interface BottomPanelProps {
@@ -179,16 +182,30 @@ export function BottomPanel({ className }: BottomPanelProps) {
     setCurrentChannel(null);
   }, [setCurrentChannel]);
 
+  // Resolve channel name for prompt context (extracted for React Compiler compatibility)
+  const selectedChannelName = currentChannel?.name || "unknown";
+
   const handleSendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, mentionedPods?: MentionedPod[]) => {
       if (!selectedChannelId) return;
       try {
         await sendMessage(selectedChannelId, content);
+
+        // Forward prompt to each mentioned pod's terminal
+        if (mentionedPods && mentionedPods.length > 0) {
+          const rawPrompt = extractPromptFromMention(content, mentionedPods);
+          if (rawPrompt) {
+            const prompt = buildChannelPrompt(rawPrompt, selectedChannelName);
+            await Promise.allSettled(
+              mentionedPods.map((pod) => podApi.sendPrompt(pod.podKey, prompt))
+            );
+          }
+        }
       } catch (error) {
         console.error("Failed to send message:", error);
       }
     },
-    [selectedChannelId, sendMessage]
+    [selectedChannelId, sendMessage, selectedChannelName]
   );
 
   const handleLoadMoreMessages = useCallback(() => {

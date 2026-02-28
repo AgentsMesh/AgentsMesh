@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 
 interface Message {
   id: number;
@@ -77,6 +77,36 @@ export function MessageList({
       groupedMessages[groupedMessages.length - 1].messages.push(msg);
     }
   });
+
+  /**
+   * Render text content with @mention highlighting.
+   * Parses @word patterns and renders them with distinct styling.
+   */
+  const renderTextContent = useMemo(() => {
+    return (text: string) => {
+      // Match @username patterns (word characters, dots, hyphens)
+      const mentionRegex = /(@[\w.\-]+)/g;
+      const parts = text.split(mentionRegex);
+
+      return parts.map((part, i) => {
+        if (mentionRegex.test(part)) {
+          // Reset lastIndex after test
+          mentionRegex.lastIndex = 0;
+          return (
+            <span
+              key={i}
+              className="text-primary font-medium bg-primary/10 rounded px-0.5"
+            >
+              {part}
+            </span>
+          );
+        }
+        // Reset lastIndex
+        mentionRegex.lastIndex = 0;
+        return part;
+      });
+    };
+  }, []);
 
   const renderMessage = (message: Message) => {
     const isAgent = !!message.pod;
@@ -161,7 +191,7 @@ export function MessageList({
             </div>
           ) : (
             <p className="mt-1 text-sm whitespace-pre-wrap break-words">
-              {message.content}
+              {renderTextContent(message.content)}
             </p>
           )}
 

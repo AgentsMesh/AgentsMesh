@@ -278,8 +278,8 @@ services:
       # ============================================
       # Claude Code - Anthropic API (supports custom gateway)
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-http://192.168.100.133:3456}
-      - ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:-sk-zcf-x-ccr}
+      - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-https://www.88code.ai/api}
+      - ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:-88_93e37b41b1d2799cdba75406a10afcdd965e77a96809823b774fea5e87a1c448}
       # OpenAI Codex CLI - OpenAI API Key
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       # Gemini CLI - Google AI API Key (or use GOOGLE_API_KEY for Vertex AI)

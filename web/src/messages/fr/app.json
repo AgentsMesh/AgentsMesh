@@ -69,6 +69,10 @@
       "placeholder": "Tapez un message...",
       "hint": "Appuyez sur Entrée pour envoyer, Shift+Entrée pour nouvelle ligne"
     },
+    "mention": {
+      "members": "Membres",
+      "pods": "Pods"
+    },
     "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "Ouvrir le Terminal",
