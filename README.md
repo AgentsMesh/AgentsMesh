@@ -51,67 +51,45 @@ The fastest way to use AgentsMesh is through our hosted service at **[agentsmesh
 
 The Runner is a lightweight daemon that runs on your machine and executes AI agents locally. Your code stays on your infrastructure.
 
-**macOS (Homebrew):**
-
 ```bash
-brew tap AgentsMesh/homebrew-tap
-brew install agentsmesh-runner
+curl -fsSL https://agentsmesh.ai/install.sh | sh
 ```
 
-**Linux / macOS (direct download):**
+Or via Homebrew:
 
 ```bash
-# macOS (Apple Silicon / Intel universal binary)
-curl -fsSL https://github.com/AgentsMesh/AgentsMesh/releases/latest/download/agentsmesh-runner_darwin_all.tar.gz | tar xz
-sudo mv agentsmesh-runner /usr/local/bin/
-
-# Linux x86_64
-curl -fsSL https://github.com/AgentsMesh/AgentsMesh/releases/latest/download/agentsmesh-runner_linux_amd64.tar.gz | tar xz
-sudo mv agentsmesh-runner /usr/local/bin/
-
-# Linux ARM64
-curl -fsSL https://github.com/AgentsMesh/AgentsMesh/releases/latest/download/agentsmesh-runner_linux_arm64.tar.gz | tar xz
-sudo mv agentsmesh-runner /usr/local/bin/
+brew install agentsmesh/tap/agentsmesh-runner
 ```
 
-**Linux packages:**
+> See the [Runner README](runner/) for more installation options (deb, rpm, Windows, etc.)
+
+### 2. Login
 
 ```bash
-# Debian / Ubuntu
-wget https://github.com/AgentsMesh/AgentsMesh/releases/latest/download/agentsmesh-runner_linux_amd64.deb
-sudo dpkg -i agentsmesh-runner_linux_amd64.deb
-
-# RHEL / Fedora
-wget https://github.com/AgentsMesh/AgentsMesh/releases/latest/download/agentsmesh-runner_linux_amd64.rpm
-sudo rpm -i agentsmesh-runner_linux_amd64.rpm
+agentsmesh-runner login
 ```
 
-### 2. Register
+This opens your browser to authenticate. For headless environments (SSH, remote server):
 
 ```bash
-# Interactive — opens browser for authentication
-agentsmesh-runner register
-
-# Headless (SSH / remote server) — prints a URL to visit manually
-agentsmesh-runner register --headless
-
-# Token-based (CI / automation)
-agentsmesh-runner register --token <REGISTRATION_TOKEN>
+agentsmesh-runner login --headless
 ```
 
 For self-hosted deployments, add `--server`:
 
 ```bash
-agentsmesh-runner register --server https://your-server.com
+agentsmesh-runner login --server https://your-server.com
 ```
 
 ### 3. Run
 
 ```bash
-# Start the runner
 agentsmesh-runner run
+```
 
-# Or install as a system service
+Or install as a system service for always-on operation:
+
+```bash
 agentsmesh-runner service install
 agentsmesh-runner service start
 ```
@@ -122,35 +100,9 @@ Once the runner is online, create an **AgentPod** from the web console and start
 
 AgentsMesh separates **control plane** from **data plane** — orchestration commands travel through gRPC with mTLS, while terminal I/O streams through a Relay cluster.
 
-```mermaid
-graph TB
-    subgraph Client["🖥️ Client Layer"]
-        Browser["Browser / Mobile"]
-    end
-
-    subgraph Cloud["☁️ Cloud Layer"]
-        Backend["Backend<br/><small>Go · Gin · GORM</small>"]
-        Relay["Relay Cluster<br/><small>Terminal Streaming</small>"]
-        DB[("PostgreSQL<br/>Redis · MinIO")]
-    end
-
-    subgraph Execution["🏠 Execution Layer — Self-Hosted"]
-        Runner["Runner<br/><small>Go Daemon</small>"]
-        subgraph Pods["Isolated Pods"]
-            A1["Claude Code"]
-            A2["Codex CLI"]
-            A3["Gemini CLI"]
-            A4["Aider / Custom"]
-        end
-    end
-
-    Browser -- "REST API" --> Backend
-    Browser -. "WebSocket<br/>(Terminal I/O)" .-> Relay
-    Backend --- DB
-    Backend -- "gRPC + mTLS<br/>Control Plane" --> Runner
-    Runner -. "WebSocket<br/>Data Plane" .-> Relay
-    Runner --> Pods
-```
+<p align="center">
+  <img src="docs/images/architecture.svg" alt="AgentsMesh Architecture" width="680" />
+</p>
 
 | Component | Description |
 |-----------|-------------|

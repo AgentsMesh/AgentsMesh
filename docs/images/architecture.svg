@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 800" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.06"/>
+    </filter>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fafbfc"/>
+      <stop offset="100%" stop-color="#f0f2f5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="720" height="800" rx="16" fill="url(#bgGrad)"/>
+
+  <!-- ═══════════ CLIENT LAYER ═══════════ y=28, h=78 -->
+  <g transform="translate(60, 28)">
+    <rect width="600" height="78" rx="12" fill="white" stroke="#93c5fd" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="600" height="26" rx="12" fill="#dbeafe"/>
+    <rect y="14" width="600" height="12" fill="#dbeafe"/>
+    <text x="16" y="18" font-size="10" font-weight="700" fill="#2563eb" letter-spacing="0.8">CLIENT LAYER</text>
+    <g transform="translate(110, 40)">
+      <rect width="100" height="26" rx="6" fill="#eff6ff"/>
+      <text x="50" y="17" text-anchor="middle" font-size="11" font-weight="500" fill="#2563eb">Web</text>
+    </g>
+    <g transform="translate(224, 40)">
+      <rect width="100" height="26" rx="6" fill="#eff6ff"/>
+      <text x="50" y="17" text-anchor="middle" font-size="11" font-weight="500" fill="#2563eb">Mobile</text>
+    </g>
+    <g transform="translate(338, 40)">
+      <rect width="100" height="26" rx="6" fill="#eff6ff"/>
+      <text x="50" y="17" text-anchor="middle" font-size="11" font-weight="500" fill="#2563eb">API</text>
+    </g>
+  </g>
+
+  <!-- ──── Arrow 1: Client → Cloud ──── -->
+  <line x1="360" y1="106" x2="360" y2="119" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="278" y="119" width="164" height="20" rx="10" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="360" y="133" text-anchor="middle" font-size="9.5" font-weight="500" fill="#64748b">HTTPS / WebSocket</text>
+  <line x1="360" y1="139" x2="360" y2="154" stroke="#cbd5e1" stroke-width="1.5"/>
+  <polygon points="354,152 360,160 366,152" fill="#cbd5e1"/>
+
+  <!-- ═══════════ CLOUD LAYER ═══════════ y=160, h=154 -->
+  <g transform="translate(60, 160)">
+    <rect width="600" height="154" rx="12" fill="white" stroke="#6ee7b7" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="600" height="26" rx="12" fill="#d1fae5"/>
+    <rect y="14" width="600" height="12" fill="#d1fae5"/>
+    <text x="16" y="18" font-size="10" font-weight="700" fill="#059669" letter-spacing="0.8">CLOUD LAYER</text>
+
+    <!-- Backend (left) -->
+    <g transform="translate(14, 34)">
+      <rect width="344" height="106" rx="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1"/>
+      <text x="172" y="20" text-anchor="middle" font-size="12" font-weight="600" fill="#047857">Backend</text>
+      <text x="172" y="36" text-anchor="middle" font-size="10" fill="#64748b">API, auth, pod orchestration</text>
+      <g transform="translate(14, 48)">
+        <rect width="98" height="22" rx="5" fill="#d1fae5"/>
+        <text x="49" y="15" text-anchor="middle" font-size="9.5" font-weight="500" fill="#047857">Orchestration</text>
+      </g>
+      <g transform="translate(122, 48)">
+        <rect width="98" height="22" rx="5" fill="#d1fae5"/>
+        <text x="49" y="15" text-anchor="middle" font-size="9.5" font-weight="500" fill="#047857">Monitoring</text>
+      </g>
+      <g transform="translate(230, 48)">
+        <rect width="98" height="22" rx="5" fill="#d1fae5"/>
+        <text x="49" y="15" text-anchor="middle" font-size="9.5" font-weight="500" fill="#047857">Security</text>
+      </g>
+      <g transform="translate(50, 78)">
+        <rect width="244" height="20" rx="5" fill="#d1fae5"/>
+        <text x="122" y="14" text-anchor="middle" font-size="9.5" font-weight="500" fill="#047857">PostgreSQL  ·  Redis  ·  MinIO</text>
+      </g>
+    </g>
+
+    <!-- Relay (right) -->
+    <g transform="translate(372, 34)">
+      <rect width="214" height="106" rx="10" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
+      <text x="107" y="20" text-anchor="middle" font-size="12" font-weight="600" fill="#6d28d9">Relay Cluster</text>
+      <text x="107" y="36" text-anchor="middle" font-size="10" fill="#64748b">Terminal I/O streaming</text>
+      <g transform="translate(22, 48)">
+        <rect width="170" height="22" rx="5" fill="#ede9fe"/>
+        <text x="85" y="15" text-anchor="middle" font-size="9.5" font-weight="500" fill="#6d28d9">WebSocket Pub/Sub</text>
+      </g>
+      <g transform="translate(22, 78)">
+        <rect width="170" height="20" rx="5" fill="#ede9fe"/>
+        <text x="85" y="14" text-anchor="middle" font-size="9.5" font-weight="500" fill="#6d28d9">Low-latency Streaming</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ──── Dual Path: Cloud → Runner ──── -->
+  <!-- Backend center: 60+14+172 = 246;  Relay center: 60+372+107 = 539 -->
+
+  <!-- Left path (Control Plane) -->
+  <line x1="246" y1="314" x2="246" y2="330" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <g transform="translate(108, 332)">
+    <rect width="276" height="62" rx="8" fill="white" stroke="#fbbf24" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="138" y="19" text-anchor="middle" font-size="9.5" font-weight="700" fill="#b45309" letter-spacing="0.8">CONTROL PLANE</text>
+    <text x="138" y="35" text-anchor="middle" font-size="10" fill="#64748b">Pod lifecycle &amp; task commands</text>
+    <rect x="80" y="42" width="116" height="16" rx="8" fill="#fef3c7"/>
+    <text x="138" y="54" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">gRPC + mTLS</text>
+  </g>
+  <line x1="246" y1="394" x2="246" y2="418" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Right path (Data Plane) -->
+  <line x1="539" y1="314" x2="539" y2="330" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <g transform="translate(401, 332)">
+    <rect width="276" height="62" rx="8" fill="white" stroke="#a78bfa" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="138" y="19" text-anchor="middle" font-size="9.5" font-weight="700" fill="#6d28d9" letter-spacing="0.8">DATA PLANE</text>
+    <text x="138" y="35" text-anchor="middle" font-size="10" fill="#64748b">Real-time terminal streaming</text>
+    <rect x="80" y="42" width="116" height="16" rx="8" fill="#ede9fe"/>
+    <text x="138" y="54" text-anchor="middle" font-size="9" font-weight="600" fill="#6d28d9">WebSocket</text>
+  </g>
+  <line x1="539" y1="394" x2="539" y2="418" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Merge two paths -->
+  <path d="M 246,418 L 246,426 Q 246,432 252,432 L 354,432 Q 360,432 360,438 L 360,448" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>
+  <path d="M 539,418 L 539,426 Q 539,432 533,432 L 366,432 Q 360,432 360,438 L 360,448" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>
+  <polygon points="354,446 360,454 366,446" fill="#cbd5e1"/>
+
+  <!-- ═══════════ RUNNER LAYER ═══════════ y=456, h=110 -->
+  <g transform="translate(60, 456)">
+    <rect width="600" height="110" rx="12" fill="white" stroke="#7dd3fc" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="600" height="26" rx="12" fill="#e0f2fe"/>
+    <rect y="14" width="600" height="12" fill="#e0f2fe"/>
+    <text x="16" y="18" font-size="10" font-weight="700" fill="#0284c7" letter-spacing="0.8">EXECUTION LAYER — SELF-HOSTED</text>
+
+    <text x="300" y="46" text-anchor="middle" font-size="12" font-weight="600" fill="#0369a1">AgentsMesh Runner</text>
+    <text x="300" y="62" text-anchor="middle" font-size="10" fill="#64748b">Lightweight daemon on your infrastructure</text>
+
+    <g transform="translate(62, 72)">
+      <rect width="150" height="26" rx="6" fill="#f0f9ff"/>
+      <text x="75" y="17" text-anchor="middle" font-size="10.5" font-weight="500" fill="#0369a1">macOS</text>
+    </g>
+    <g transform="translate(224, 72)">
+      <rect width="150" height="26" rx="6" fill="#f0f9ff"/>
+      <text x="75" y="17" text-anchor="middle" font-size="10.5" font-weight="500" fill="#0369a1">Linux</text>
+    </g>
+    <g transform="translate(386, 72)">
+      <rect width="150" height="26" rx="6" fill="#f0f9ff"/>
+      <text x="75" y="17" text-anchor="middle" font-size="10.5" font-weight="500" fill="#0369a1">Cloud VM</text>
+    </g>
+  </g>
+
+  <!-- ──── Arrow 2: Runner → Agent ──── -->
+  <line x1="360" y1="566" x2="360" y2="579" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="245" y="579" width="230" height="20" rx="10" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="360" y="593" text-anchor="middle" font-size="9.5" font-weight="500" fill="#64748b">PTY + Sandbox + Git Worktree</text>
+  <line x1="360" y1="599" x2="360" y2="614" stroke="#cbd5e1" stroke-width="1.5"/>
+  <polygon points="354,612 360,620 366,612" fill="#cbd5e1"/>
+
+  <!-- ═══════════ AGENT LAYER ═══════════ y=620, h=92 -->
+  <g transform="translate(60, 620)">
+    <rect width="600" height="92" rx="12" fill="white" stroke="#fda4af" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="600" height="26" rx="12" fill="#ffe4e6"/>
+    <rect y="14" width="600" height="12" fill="#ffe4e6"/>
+    <text x="16" y="18" font-size="10" font-weight="700" fill="#e11d48" letter-spacing="0.8">AGENT LAYER</text>
+
+    <text x="300" y="46" text-anchor="middle" font-size="10" fill="#64748b">BYOK — Bring Your Own API Key</text>
+
+    <g transform="translate(16, 56)">
+      <rect width="112" height="26" rx="6" fill="#fff1f2"/>
+      <text x="56" y="17" text-anchor="middle" font-size="10.5" font-weight="500" fill="#be123c">Claude Code</text>
+    </g>
+    <g transform="translate(138, 56)">
+      <rect width="100" height="26" rx="6" fill="#fff1f2"/>
+      <text x="50" y="17" text-anchor="middle" font-size="10.5" font-weight="500" fill="#be123c">Codex CLI</text>
+    </g>
+    <g transform="translate(248, 56)">
+      <rect width="104" height="26" rx="6" fill="#fff1f2"/>
+      <text x="52" y="17" text-anchor="middle" font-size="10.5" font-weight="500" fill="#be123c">Gemini CLI</text>
+    </g>
+    <g transform="translate(362, 56)">
+      <rect width="80" height="26" rx="6" fill="#fff1f2"/>
+      <text x="40" y="17" text-anchor="middle" font-size="10.5" font-weight="500" fill="#be123c">Aider</text>
+    </g>
+    <g transform="translate(452, 56)">
+      <rect width="96" height="26" rx="6" fill="#fff1f2"/>
+      <text x="48" y="17" text-anchor="middle" font-size="10.5" font-weight="500" fill="#be123c">OpenCode</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ SECURITY CALLOUT ═══════════ -->
+  <g transform="translate(60, 730)">
+    <rect width="600" height="46" rx="10" fill="#fffbeb" stroke="#fcd34d" stroke-width="1"/>
+    <text x="20" y="20" font-size="13">&#x1F512;</text>
+    <text x="42" y="20" font-size="10.5" font-weight="600" fill="#92400e">Your code never leaves your infrastructure</text>
+    <text x="42" y="36" font-size="10" fill="#78716c">Runners are self-hosted. Only orchestration metadata flows through AgentsMesh Cloud.</text>
+  </g>
+</svg>
