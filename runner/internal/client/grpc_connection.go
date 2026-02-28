@@ -225,6 +225,12 @@ func (c *GRPCConnection) Connect() error {
 		}),
 	}
 
+	// Override the authority (and TLS SNI) when server cert SANs don't include the public hostname.
+	// This replaces the deprecated creds.OverrideServerName().
+	if c.tlsServerName != "" {
+		dialOpts = append(dialOpts, grpc.WithAuthority(c.tlsServerName))
+	}
+
 	// Connect to server
 	conn, err := grpc.Dial(dialTarget, dialOpts...)
 	if err != nil {
