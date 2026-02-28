@@ -64,7 +64,7 @@ func setupCompositeTestDB(t *testing.T) *gorm.DB {
 func TestNewCompositeProvider(t *testing.T) {
 	db := setupCompositeTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	credSvc := NewCredentialProfileService(db, agentTypeSvc)
+	credSvc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	configSvc := NewUserConfigService(db, agentTypeSvc)
 
 	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
@@ -77,7 +77,7 @@ func TestNewCompositeProvider(t *testing.T) {
 func TestCompositeProvider_GetAgentType_Found(t *testing.T) {
 	db := setupCompositeTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	credSvc := NewCredentialProfileService(db, agentTypeSvc)
+	credSvc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	configSvc := NewUserConfigService(db, agentTypeSvc)
 
 	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
@@ -91,7 +91,7 @@ func TestCompositeProvider_GetAgentType_Found(t *testing.T) {
 func TestCompositeProvider_GetAgentType_NotFound(t *testing.T) {
 	db := setupCompositeTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	credSvc := NewCredentialProfileService(db, agentTypeSvc)
+	credSvc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	configSvc := NewUserConfigService(db, agentTypeSvc)
 
 	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
@@ -104,7 +104,7 @@ func TestCompositeProvider_GetAgentType_NotFound(t *testing.T) {
 func TestCompositeProvider_GetUserEffectiveConfig(t *testing.T) {
 	db := setupCompositeTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	credSvc := NewCredentialProfileService(db, agentTypeSvc)
+	credSvc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	configSvc := NewUserConfigService(db, agentTypeSvc)
 
 	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
@@ -118,7 +118,7 @@ func TestCompositeProvider_GetUserEffectiveConfig(t *testing.T) {
 func TestCompositeProvider_GetEffectiveCredentialsForPod_RunnerHost(t *testing.T) {
 	db := setupCompositeTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	credSvc := NewCredentialProfileService(db, agentTypeSvc)
+	credSvc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	configSvc := NewUserConfigService(db, agentTypeSvc)
 
 	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
@@ -133,7 +133,7 @@ func TestCompositeProvider_GetEffectiveCredentialsForPod_RunnerHost(t *testing.T
 func TestCompositeProvider_GetEffectiveCredentialsForPod_ProfileNotFound(t *testing.T) {
 	db := setupCompositeTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	credSvc := NewCredentialProfileService(db, agentTypeSvc)
+	credSvc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	configSvc := NewUserConfigService(db, agentTypeSvc)
 
 	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)

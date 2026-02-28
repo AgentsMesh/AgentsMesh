@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
@@ -55,10 +56,9 @@ func (s *CredentialProfileService) UpdateCredentialProfile(ctx context.Context, 
 
 	// Update credentials if provided
 	if params.Credentials != nil {
-		encryptedCreds := make(agent.EncryptedCredentials)
-		for k, v := range params.Credentials {
-			// TODO(security): Encrypt credentials - see CreateCredentialProfile for implementation details
-			encryptedCreds[k] = v
+		encryptedCreds, err := s.encryptCredentials(params.Credentials)
+		if err != nil {
+			return nil, fmt.Errorf("encrypt credentials: %w", err)
 		}
 		updates["credentials_encrypted"] = encryptedCreds
 	}

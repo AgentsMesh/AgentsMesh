@@ -83,9 +83,12 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	}
 	authSvc := auth.NewServiceWithRedis(authCfg, userSvc, redisClient)
 
+	// Initialize encryptor for credential encryption (shared across services)
+	encryptor := crypto.NewEncryptor(cfg.JWT.Secret)
+
 	// Initialize agent sub-services (split by responsibility per SRP)
 	agentTypeSvc := agent.NewAgentTypeService(db)
-	credentialProfileSvc := agent.NewCredentialProfileService(db, agentTypeSvc)
+	credentialProfileSvc := agent.NewCredentialProfileService(db, agentTypeSvc, encryptor)
 	userConfigSvc := agent.NewUserConfigService(db, agentTypeSvc)
 
 	repoSvc := repository.NewService(db)
@@ -121,7 +124,6 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 
 	// Initialize AgentPod settings and AI provider services
 	agentpodSettingsSvc := agentpod.NewSettingsService(db)
-	encryptor := crypto.NewEncryptor(cfg.JWT.Secret)
 	agentpodAIProviderSvc := agentpod.NewAIProviderService(db, encryptor)
 
 	// Initialize storage (S3-compatible)

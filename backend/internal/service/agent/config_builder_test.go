@@ -114,7 +114,7 @@ func (p *testCompositeProvider) GetEffectiveCredentialsForPod(ctx context.Contex
 
 func createTestProvider(db *gorm.DB) AgentConfigProvider {
 	agentTypeSvc := NewAgentTypeService(db)
-	credentialSvc := NewCredentialProfileService(db, agentTypeSvc)
+	credentialSvc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	userConfigSvc := NewUserConfigService(db, agentTypeSvc)
 	return &testCompositeProvider{
 		agentTypeSvc:  agentTypeSvc,

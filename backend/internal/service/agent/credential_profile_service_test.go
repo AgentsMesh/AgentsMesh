@@ -5,12 +5,21 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
+
+// testEncryptionKey is a fixed key used for test encryption/decryption
+const testEncryptionKey = "test-encryption-key-for-unit-tests"
+
+// testEncryptor returns a crypto.Encryptor for testing
+func testEncryptor() *crypto.Encryptor {
+	return crypto.NewEncryptor(testEncryptionKey)
+}
 
 // setupCredentialProfileTestDB creates a test database with credential profile tables
 func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
@@ -68,7 +77,7 @@ func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
 func TestNewCredentialProfileService(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc)
+	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 
 	assert.NotNil(t, svc)
 	assert.Equal(t, db, svc.db)
@@ -78,7 +87,7 @@ func TestNewCredentialProfileService(t *testing.T) {
 func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc)
+	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -108,7 +117,9 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 		assert.False(t, profile.IsRunnerHost)
 		assert.True(t, profile.IsDefault)
 		assert.True(t, profile.IsActive)
-		assert.Equal(t, "sk-test-key-123", profile.CredentialsEncrypted["api_key"])
+		// Stored value should be encrypted (not plaintext)
+		assert.NotEqual(t, "sk-test-key-123", profile.CredentialsEncrypted["api_key"])
+		assert.NotEmpty(t, profile.CredentialsEncrypted["api_key"])
 	})
 
 	t.Run("create runner host profile", func(t *testing.T) {
@@ -180,7 +191,7 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc)
+	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -227,7 +238,7 @@ func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
 func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc)
+	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -268,7 +279,9 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 			Credentials: map[string]string{"key": "new-value"},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, "new-value", updated.CredentialsEncrypted["key"])
+		// Stored value should be encrypted (not plaintext)
+		assert.NotEqual(t, "new-value", updated.CredentialsEncrypted["key"])
+		assert.NotEmpty(t, updated.CredentialsEncrypted["key"])
 	})
 
 	t.Run("switch to runner host clears credentials", func(t *testing.T) {
@@ -355,7 +368,7 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 func TestCredentialProfileService_DeleteCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
 	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc)
+	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
