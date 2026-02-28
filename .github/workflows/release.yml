@@ -12,8 +12,9 @@ env:
 
 jobs:
   # ===========================================================================
-  # Build and push Docker images
-  # Triggered on: main push (latest tag) + version tags (semver tags)
+  # Build and push Docker images (server-side services)
+  # main push: backend, web, web-admin, relay (short sha tag)
+  # v* tag:    backend, web, web-admin, relay (semver tags)
   # ===========================================================================
 
   build-images:
@@ -32,9 +33,6 @@ jobs:
           - service: web-admin
             dockerfile: ci/web-admin.Dockerfile
             context: ./web-admin
-          - service: runner
-            dockerfile: ci/runner.Dockerfile
-            context: .
           - service: relay
             dockerfile: ci/relay.Dockerfile
             context: .
@@ -78,6 +76,7 @@ jobs:
 
   # ===========================================================================
   # Build Runner CLI + Create GitHub Release (tag only)
+  # Runner is a client-side binary distributed via GitHub Release, not Docker.
   # ===========================================================================
 
   release:
