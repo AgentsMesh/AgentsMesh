@@ -5,6 +5,7 @@ go 1.24.0
 replace github.com/anthropics/agentsmesh/proto => ../proto
 
 require (
+	github.com/NdoleStudio/lemonsqueezy-go v1.3.1
 	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/anthropics/agentsmesh/proto v0.0.0
 	github.com/aws/aws-sdk-go-v2 v1.41.1
@@ -20,6 +21,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/resend/resend-go/v2 v2.28.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/smartwalle/alipay/v3 v3.2.28
 	github.com/stretchr/testify v1.11.1
 	github.com/stripe/stripe-go/v76 v76.14.0
@@ -33,7 +35,6 @@ require (
 )
 
 require (
-	github.com/NdoleStudio/lemonsqueezy-go v1.3.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.4 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.17 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.17 // indirect

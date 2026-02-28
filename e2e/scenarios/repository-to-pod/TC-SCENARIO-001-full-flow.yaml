@@ -19,7 +19,7 @@ preconditions:
 # 测试数据
 test_data:
   gitlab_base_url: https://gitlab.corp.signalrender.com
-  gitlab_pat: glpat-qasmIhU2n5rI3NvJRCU5eW86MQp1OjIH.01.0w1w6bx2j
+  gitlab_pat: glpat-example-token-replace-with-real-pat
   repository_url: https://gitlab.corp.signalrender.com/aio/agents/mockrepo.git
   repository_external_id: aio/agents/mockrepo
   repository_name: mockrepo
@@ -71,7 +71,7 @@ steps:
         body:
           name: E2E GitLab PAT
           credential_type: pat
-          pat: glpat-qasmIhU2n5rI3NvJRCU5eW86MQp1OjIH.01.0w1w6bx2j
+          pat: glpat-example-token-replace-with-real-pat
           host_pattern: gitlab.corp.signalrender.com
       expected:
         status: 201

@@ -21,6 +21,7 @@ import {
   FolderGit2,
   Server,
   Settings,
+  Repeat,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/common";
@@ -29,6 +30,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   terminal: Terminal,
   ticket: Ticket,
   network: Network,
+  repeat: Repeat,
   repository: FolderGit2,
   server: Server,
   settings: Settings,
@@ -55,6 +57,8 @@ export function ActivityBar({ className }: ActivityBarProps) {
         return `/${orgSlug}/tickets`;
       case "mesh":
         return `/${orgSlug}/mesh`;
+      case "loops":
+        return `/${orgSlug}/loops`;
       case "repositories":
         return `/${orgSlug}/repositories`;
       case "runners":
@@ -74,6 +78,8 @@ export function ActivityBar({ className }: ActivityBarProps) {
       setActiveActivity("tickets");
     } else if (pathname.includes("/mesh")) {
       setActiveActivity("mesh");
+    } else if (pathname.includes("/loops")) {
+      setActiveActivity("loops");
     } else if (pathname.includes("/repositories")) {
       setActiveActivity("repositories");
     } else if (pathname.includes("/runners")) {

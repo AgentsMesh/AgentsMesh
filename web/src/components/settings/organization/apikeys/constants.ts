@@ -7,6 +7,8 @@ export const ALL_SCOPES = [
   "channels:write",
   "runners:read",
   "repos:read",
+  "loops:read",
+  "loops:write",
 ];
 
 export const SCOPE_GROUPS = [
@@ -30,6 +32,10 @@ export const SCOPE_GROUPS = [
     groupKey: "settings.apiKeys.scopeGroupRepositories",
     scopes: ["repos:read"],
   },
+  {
+    groupKey: "settings.apiKeys.scopeGroupLoops",
+    scopes: ["loops:read", "loops:write"],
+  },
 ];
 
 export const SCOPE_LABEL_KEYS: Record<string, string> = {
@@ -41,6 +47,8 @@ export const SCOPE_LABEL_KEYS: Record<string, string> = {
   "channels:write": "settings.apiKeys.createDialog.scopeChannelsWrite",
   "runners:read": "settings.apiKeys.createDialog.scopeRunnersRead",
   "repos:read": "settings.apiKeys.createDialog.scopeReposRead",
+  "loops:read": "settings.apiKeys.createDialog.scopeLoopsRead",
+  "loops:write": "settings.apiKeys.createDialog.scopeLoopsWrite",
 };
 
 export const SCOPE_DESCRIPTION_KEYS: Record<string, string> = {
@@ -52,4 +60,6 @@ export const SCOPE_DESCRIPTION_KEYS: Record<string, string> = {
   "channels:write": "settings.apiKeys.createDialog.scopeChannelsWriteDesc",
   "runners:read": "settings.apiKeys.createDialog.scopeRunnersReadDesc",
   "repos:read": "settings.apiKeys.createDialog.scopeReposReadDesc",
+  "loops:read": "settings.apiKeys.createDialog.scopeLoopsReadDesc",
+  "loops:write": "settings.apiKeys.createDialog.scopeLoopsWriteDesc",
 };

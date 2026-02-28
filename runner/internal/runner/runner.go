@@ -43,6 +43,9 @@ type Runner struct {
 	draining   bool
 	drainingMu sync.RWMutex
 
+	// Run lifecycle context (set by Run, used by message handlers)
+	runCtx context.Context
+
 	// Supervisor services (registered before Run)
 	additionalServices []suture.Service
 
@@ -186,6 +189,10 @@ func (r *Runner) Run(ctx context.Context) error {
 	log := logger.Runner()
 	log.Info("Runner starting", "node_id", r.cfg.NodeID, "org", r.cfg.OrgSlug)
 
+	// Store lifecycle context so message handlers can derive cancellable contexts
+	// for long-running operations (e.g., git clone in OnCreatePod).
+	r.runCtx = ctx
+
 	// Create top-level Supervisor
 	supervisor := suture.New("runner", suture.Spec{
 		EventHook: func(e suture.Event) {
@@ -230,9 +237,23 @@ func (r *Runner) Run(ctx context.Context) error {
 	return err
 }
 
-// stopAllPods stops all active pods
+// stopAllPods stops all active autopilots and pods during shutdown.
 func (r *Runner) stopAllPods() {
 	log := logger.Runner()
+
+	// Stop all autopilot controllers first (they depend on pods)
+	r.autopilotsMu.Lock()
+	if len(r.autopilots) > 0 {
+		log.Info("Stopping all autopilots", "count", len(r.autopilots))
+	}
+	for key, ac := range r.autopilots {
+		log.Debug("Stopping autopilot", "autopilot_key", key)
+		ac.Stop()
+	}
+	r.autopilots = make(map[string]*autopilot.AutopilotController)
+	r.autopilotsMu.Unlock()
+
+	// Stop all pods
 	pods := r.podStore.All()
 	if len(pods) > 0 {
 		log.Info("Stopping all pods", "count", len(pods))
@@ -301,6 +322,15 @@ func (r *Runner) GetPodCounter() func() int {
 	return func() int {
 		return r.GetActivePodCount()
 	}
+}
+
+// GetRunContext returns the runner's lifecycle context.
+// Returns context.Background() if Run() has not been called yet.
+func (r *Runner) GetRunContext() context.Context {
+	if r.runCtx != nil {
+		return r.runCtx
+	}
+	return context.Background()
 }
 
 // Config returns the runner configuration.

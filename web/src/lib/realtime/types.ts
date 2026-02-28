@@ -31,6 +31,11 @@ export type EventType =
   | "mr:closed"
   // Pipeline events
   | "pipeline:updated"
+  // Loop events
+  | "loop_run:started"
+  | "loop_run:completed"
+  | "loop_run:failed"
+  | "loop_run:warning"
   // Notification events (targeted to specific users)
   | "terminal:notification"
   | "task:completed"
@@ -267,6 +272,29 @@ export interface PipelineEventData {
   ticket_slug?: string;
   pod_id?: number;
   repository_id: number;
+}
+
+/**
+ * Loop run event payload
+ */
+export interface LoopRunEventData {
+  loop_id: number;
+  run_id: number;
+  run_number: number;
+  status: string;
+  pod_key?: string;
+}
+
+/**
+ * Loop run warning event payload
+ * (e.g., sandbox resume degradation)
+ */
+export interface LoopRunWarningData {
+  loop_id: number;
+  run_id: number;
+  run_number: number;
+  warning: string;
+  detail?: string;
 }
 
 /**

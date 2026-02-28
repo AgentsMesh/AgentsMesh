@@ -1,28 +1,35 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { X, Radio, Users, RefreshCw } from "lucide-react";
+import { X, Radio, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChannelPodManager } from "./ChannelPodManager";
 
 interface ChannelHeaderProps {
   name: string;
   description?: string;
   podCount: number;
+  /** Channel ID for pod management */
+  channelId: number;
   onClose: () => void;
   onRefresh?: () => void;
   loading?: boolean;
   /** Compact mode for embedded use (e.g., bottom panel) */
   compact?: boolean;
+  /** Callback when pod membership changes */
+  onPodsChanged?: () => void;
 }
 
 export function ChannelHeader({
   name,
   description,
   podCount,
+  channelId,
   onClose,
   onRefresh,
   loading,
   compact = false,
+  onPodsChanged,
 }: ChannelHeaderProps) {
   // Compact mode for bottom panel
   if (compact) {
@@ -31,10 +38,12 @@ export function ChannelHeader({
         <div className="flex items-center gap-2 min-w-0">
           <Radio className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 flex-shrink-0" />
           <span className="font-medium text-xs truncate">#{name}</span>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-            <Users className="w-3 h-3" />
-            <span>{podCount}</span>
-          </div>
+          <ChannelPodManager
+            channelId={channelId}
+            podCount={podCount}
+            compact
+            onPodsChanged={onPodsChanged}
+          />
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {onRefresh && (
@@ -73,11 +82,12 @@ export function ChannelHeader({
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Pod count badge */}
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-md">
-            <Users className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium">{podCount}</span>
-          </div>
+          {/* Pod manager popover */}
+          <ChannelPodManager
+            channelId={channelId}
+            podCount={podCount}
+            onPodsChanged={onPodsChanged}
+          />
 
           {/* Refresh button */}
           {onRefresh && (

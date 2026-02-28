@@ -265,6 +265,25 @@ func (tr *TerminalRouter) GetRegisteredPodCount() int {
 	return total
 }
 
+// GetRecentOutput returns recent terminal output for a pod.
+// After Relay migration, terminal output is streamed directly via Relay,
+// so this returns empty. Retained for TerminalRouterInterface compatibility.
+func (tr *TerminalRouter) GetRecentOutput(podKey string, lines int) []byte {
+	return nil
+}
+
+// GetScreenSnapshot returns a text snapshot of the terminal screen.
+// After Relay migration, this is not available server-side.
+func (tr *TerminalRouter) GetScreenSnapshot(podKey string) string {
+	return ""
+}
+
+// GetCursorPosition returns the cursor position in the terminal.
+// After Relay migration, this is not available server-side.
+func (tr *TerminalRouter) GetCursorPosition(podKey string) (row, col int) {
+	return 0, 0
+}
+
 // GetPtySize returns the PTY size for a pod
 func (tr *TerminalRouter) GetPtySize(podKey string) (cols, rows int, ok bool) {
 	shard := tr.getShard(podKey)

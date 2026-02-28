@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
@@ -59,15 +61,32 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 	ctx := context.Background()
 
 	now := time.Now()
+
+	// Determine status: if the process exited with an error and provided early output,
+	// mark as error so the user can see why the process failed.
+	status := agentpod.StatusCompleted
+	updates := map[string]interface{}{
+		"agent_status": agentpod.AgentStatusIdle,
+		"finished_at":  now,
+		"pty_pid":      nil,
+	}
+
+	if data.ErrorMessage != "" {
+		// Process exited with early output (e.g., invalid CLI arguments, PTY error).
+		// Store the error message so the frontend can display why the pod failed.
+		status = agentpod.StatusError
+		updates["error_message"] = data.ErrorMessage
+		// Preserve existing error_code if already set by a prior error event
+		// (e.g., PTY_READ_ERROR from handlePodError). Only set the default
+		// "process_exit" code when no specific error code exists yet.
+		updates["error_code"] = gorm.Expr("COALESCE(NULLIF(error_code, ''), ?)", "process_exit")
+	}
+	updates["status"] = status
+
 	if err := pc.db.WithContext(ctx).
 		Model(&agentpod.Pod{}).
 		Where("pod_key = ?", data.PodKey).
-		Updates(map[string]interface{}{
-			"status":       agentpod.StatusCompleted,
-			"agent_status": agentpod.AgentStatusIdle,
-			"finished_at":  now,
-			"pty_pid":      nil,
-		}).Error; err != nil {
+		Updates(updates).Error; err != nil {
 		pc.logger.Error("failed to update pod on termination",
 			"pod_key", data.PodKey,
 			"error", err)
@@ -86,11 +105,12 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 	pc.logger.Info("pod terminated",
 		"pod_key", data.PodKey,
 		"runner_id", runnerID,
-		"exit_code", data.ExitCode)
+		"exit_code", data.ExitCode,
+		"has_early_output", data.ErrorMessage != "")
 
 	// Notify status change
 	if pc.onStatusChange != nil {
-		pc.onStatusChange(data.PodKey, agentpod.StatusCompleted, "")
+		pc.onStatusChange(data.PodKey, status, "")
 	}
 }
 
@@ -107,6 +127,8 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 	ctx := context.Background()
 
 	now := time.Now()
+
+	// Handle errors during initialization (pod creation failed)
 	result := pc.db.WithContext(ctx).
 		Model(&agentpod.Pod{}).
 		Where("pod_key = ? AND status = ?", data.PodKey, agentpod.StatusInitializing).
@@ -123,29 +145,54 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 		return
 	}
 
-	if result.RowsAffected == 0 {
-		pc.logger.Warn("pod error ignored: pod not in initializing state",
+	if result.RowsAffected > 0 {
+		// Initialization error — decrement runner pod count
+		pc.db.WithContext(ctx).Exec(
+			"UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?",
+			runnerID,
+		)
+
+		pc.logger.Error("pod creation failed",
 			"pod_key", data.PodKey,
-			"runner_id", runnerID)
+			"runner_id", runnerID,
+			"error_code", data.Code,
+			"error_message", data.Message)
+
+		if pc.onStatusChange != nil {
+			pc.onStatusChange(data.PodKey, agentpod.StatusError, "")
+		}
 		return
 	}
 
-	// Decrement runner pod count (counterpart to IncrementPods in CreatePod)
-	pc.db.WithContext(ctx).Exec(
-		"UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?",
-		runnerID,
-	)
-
-	pc.logger.Error("pod creation failed",
-		"pod_key", data.PodKey,
-		"runner_id", runnerID,
-		"error_code", data.Code,
-		"error_message", data.Message)
-
-	// Notify status change (triggers EventBus → WebSocket → frontend)
-	if pc.onStatusChange != nil {
-		pc.onStatusChange(data.PodKey, agentpod.StatusError, "")
+	// Handle errors during runtime (e.g., PTY read failure due to disk full).
+	// Only store the error info; don't change status or finished_at here because
+	// a pod_terminated event will follow shortly to finalize the pod lifecycle.
+	result = pc.db.WithContext(ctx).
+		Model(&agentpod.Pod{}).
+		Where("pod_key = ? AND status = ?", data.PodKey, agentpod.StatusRunning).
+		Updates(map[string]interface{}{
+			"error_code":    data.Code,
+			"error_message": data.Message,
+		})
+	if result.Error != nil {
+		pc.logger.Error("failed to store runtime error on pod",
+			"pod_key", data.PodKey,
+			"error", result.Error)
+		return
 	}
+
+	if result.RowsAffected > 0 {
+		pc.logger.Error("pod runtime error recorded",
+			"pod_key", data.PodKey,
+			"runner_id", runnerID,
+			"error_code", data.Code,
+			"error_message", data.Message)
+		return
+	}
+
+	pc.logger.Warn("pod error ignored: pod not in initializing or running state",
+		"pod_key", data.PodKey,
+		"runner_id", runnerID)
 }
 
 // handleRunnerDisconnect handles runner disconnection

@@ -4,14 +4,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/creack/pty"
 	"golang.org/x/term"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/safego"
+)
+
+const (
+	// gracefulStopTimeout is the maximum time to wait for the process to exit
+	// after sending SIGTERM before escalating to SIGKILL.
+	gracefulStopTimeout = 5 * time.Second
 )
 
 // Options for creating a new terminal.
@@ -35,9 +43,18 @@ type Terminal struct {
 	onOutput func([]byte)
 	onExit   func(int)
 
+	// onPTYError is called when readOutput encounters a fatal I/O error
+	// (not timeout, not EOF, not normal close). This allows the runner to
+	// send an error message to the frontend before the process is killed.
+	onPTYError func(error)
+
 	// Terminal size (set at creation, used when starting PTY)
 	rows int
 	cols int
+
+	// Lifecycle synchronization
+	doneCh       chan struct{} // Closed when process exits (signaled by waitExit)
+	ptyCloseOnce sync.Once    // Ensures PTY file descriptor is closed exactly once
 
 	// Backpressure control (ttyd-style flow control)
 	// When paused, readOutput() blocks to prevent unbounded memory growth
@@ -56,15 +73,25 @@ func New(opts Options) (*Terminal, error) {
 	cmd := exec.Command(opts.Command, opts.Args...)
 	cmd.Dir = opts.WorkDir
 
-	// Build environment
-	env := os.Environ()
-
+	// Build environment with proper deduplication.
+	// Using a map prevents duplicate keys (e.g., TERM appearing twice)
+	// which can confuse some programs.
+	envMap := make(map[string]string)
+	for _, e := range os.Environ() {
+		if idx := strings.Index(e, "="); idx >= 0 {
+			envMap[e[:idx]] = e[idx+1:]
+		}
+	}
 	// Ensure terminal supports colors (critical for CLI tools like claude, ls, etc.)
-	env = append(env, "TERM=xterm-256color")
-	env = append(env, "COLORTERM=truecolor")
-
+	envMap["TERM"] = "xterm-256color"
+	envMap["COLORTERM"] = "truecolor"
+	// Apply user-specified env vars (highest priority)
 	for k, v := range opts.Env {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
+		envMap[k] = v
+	}
+	env := make([]string, 0, len(envMap))
+	for k, v := range envMap {
+		env = append(env, k+"="+v)
 	}
 	cmd.Env = env
 
@@ -90,6 +117,7 @@ func New(opts Options) (*Terminal, error) {
 		onExit:   opts.OnExit,
 		rows:     rows,
 		cols:     cols,
+		doneCh:   make(chan struct{}),
 		resumeCh: make(chan struct{}, 1), // Buffered to avoid blocking
 	}, nil
 }
@@ -132,30 +160,64 @@ func (t *Terminal) Start() error {
 	return nil
 }
 
-// Stop stops the terminal
+// Stop stops the terminal with graceful shutdown.
+// It sends SIGTERM first and waits up to gracefulStopTimeout for the process to exit.
+// If the process doesn't exit in time, SIGKILL is sent as a last resort.
+// This ensures AI agents (Claude Code, Aider, etc.) have time to perform cleanup
+// operations like saving state and releasing git locks.
 func (t *Terminal) Stop() {
 	log := logger.Terminal()
 	log.Info("Terminal stopping")
 
 	t.mu.Lock()
-	defer t.mu.Unlock()
-
 	if t.closed {
+		t.mu.Unlock()
 		return
 	}
 	t.closed = true
+	proc := t.cmd.Process // nil if not started
+	t.mu.Unlock()
 
-	// Try graceful shutdown first
-	if t.cmd != nil && t.cmd.Process != nil {
-		t.cmd.Process.Signal(syscall.SIGTERM)
+	if proc != nil {
+		// Graceful shutdown: SIGTERM → wait → SIGKILL
+		log.Debug("Sending SIGTERM for graceful shutdown", "pid", proc.Pid)
+		if err := proc.Signal(syscall.SIGTERM); err != nil {
+			log.Debug("SIGTERM failed (process may have already exited)", "error", err)
+		}
+
+		// Wait for process to exit or timeout
+		select {
+		case <-t.doneCh:
+			log.Debug("Process exited gracefully after SIGTERM")
+		case <-time.After(gracefulStopTimeout):
+			log.Warn("Process did not exit after SIGTERM, sending SIGKILL",
+				"pid", proc.Pid, "timeout", gracefulStopTimeout)
+			if err := proc.Kill(); err != nil {
+				log.Debug("SIGKILL failed (process may have already exited)", "error", err)
+			}
+			// Wait briefly for waitExit to detect the kill
+			select {
+			case <-t.doneCh:
+			case <-time.After(1 * time.Second):
+				log.Warn("Process did not exit after SIGKILL", "pid", proc.Pid)
+			}
+		}
 	}
 
-	// Close PTY
-	if t.pty != nil {
-		t.pty.Close()
-	}
+	// Close PTY (safe to call concurrently via sync.Once)
+	t.closePTY()
 
 	log.Info("Terminal stopped")
+}
+
+// closePTY closes the PTY file descriptor exactly once.
+// Safe to call from multiple goroutines (Stop and waitExit).
+func (t *Terminal) closePTY() {
+	t.ptyCloseOnce.Do(func() {
+		if t.pty != nil {
+			t.pty.Close()
+		}
+	})
 }
 
 // PID returns the process ID
@@ -187,6 +249,15 @@ func (t *Terminal) SetExitHandler(handler func(int)) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.onExit = handler
+}
+
+// SetPTYErrorHandler sets the callback for fatal PTY read errors.
+// When set, this is called when readOutput encounters a non-recoverable I/O error,
+// giving the caller a chance to notify the frontend before the process is killed.
+func (t *Terminal) SetPTYErrorHandler(handler func(error)) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.onPTYError = handler
 }
 
 // Write writes data to the terminal

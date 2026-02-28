@@ -176,3 +176,58 @@ func TestHandlePodTerminated(t *testing.T) {
 		t.Errorf("callback status: got %q, want %q", callbackStatus, agentpod.StatusCompleted)
 	}
 }
+
+func TestHandlePodTerminated_WithEarlyOutput(t *testing.T) {
+	// When a process exits quickly and the relay was never connected,
+	// the Runner captures early output and includes it in the termination event.
+	pc, _, tr := setupPodEventHandlerDeps(t)
+
+	r := &runner.Runner{
+		OrganizationID: 1,
+		NodeID:         "early-output-node",
+		Status:         "online",
+		CurrentPods:    1,
+	}
+	if err := pc.db.Create(r).Error; err != nil {
+		t.Fatalf("failed to create runner: %v", err)
+	}
+
+	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, pty_pid) VALUES (?, ?, ?, ?)`,
+		"early-pod-1", r.ID, agentpod.StatusRunning, 99999)
+	tr.RegisterPod("early-pod-1", r.ID)
+
+	var callbackStatus string
+	pc.SetStatusChangeCallback(func(podKey string, status string, agentStatus string) {
+		callbackStatus = status
+	})
+
+	// Simulate process that exits immediately with error output
+	data := &runnerv1.PodTerminatedEvent{
+		PodKey:       "early-pod-1",
+		ExitCode:     2,
+		ErrorMessage: "error: invalid value 'suggest' for '--ask-for-approval'\n",
+	}
+
+	pc.handlePodTerminated(r.ID, data)
+
+	// Verify pod was set to error status with error message
+	var status string
+	var errorCode, errorMessage *string
+	pc.db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "early-pod-1").
+		Row().Scan(&status, &errorCode, &errorMessage)
+
+	if status != agentpod.StatusError {
+		t.Errorf("status: got %q, want %q", status, agentpod.StatusError)
+	}
+	if errorCode == nil || *errorCode != "process_exit" {
+		t.Errorf("error_code: got %v, want 'process_exit'", errorCode)
+	}
+	if errorMessage == nil || *errorMessage != "error: invalid value 'suggest' for '--ask-for-approval'\n" {
+		t.Errorf("error_message: got %v, want error output", errorMessage)
+	}
+
+	// Verify callback reports error status
+	if callbackStatus != agentpod.StatusError {
+		t.Errorf("callback status: got %q, want %q", callbackStatus, agentpod.StatusError)
+	}
+}

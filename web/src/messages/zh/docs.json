@@ -16,6 +16,7 @@
       "channels": "频道",
       "meshTopology": "Mesh 拓扑",
       "tickets": "任务管理",
+      "loops": "循环任务",
       "repositories": "仓库管理",
       "runners": "运行节点",
       "runnerSetup": "Runner 配置",
@@ -30,6 +31,7 @@
       "apiPods": "Pods API",
       "apiTickets": "Tickets API",
       "apiChannels": "Channels API",
+      "apiLoops": "Loops API",
       "apiRunners": "Runners API",
       "apiRepositories": "Repositories API",
       "help": "帮助",
@@ -500,6 +502,74 @@
         "storyPoints": {
           "title": "故事点",
           "description": "使用斐波那契故事点估算工作量："
+        }
+      },
+      "loops": {
+        "title": "循环任务",
+        "description": "AI Agent 任务的 CI/CD。定义可重复的自动化任务，按计划或通过 API 触发执行 — 为你的 AI Agent 提供定时任务能力。",
+        "overview": {
+          "title": "概述",
+          "description": "Loops 允许你一次定义任务，反复执行。每个 Loop 封装了一个 Pod 配置、Prompt 模板、触发器设置和执行策略。核心功能包括：",
+          "item1": "Cron 定时调度或 API 触发执行",
+          "item2": "Autopilot（受监督）或 Direct（自主）执行模式",
+          "item3": "持久化沙箱跨运行复用，支持增量工作",
+          "item4": "Prompt 模板中的变量替换",
+          "item5": "运行完成后的 Webhook 回调通知",
+          "item6": "并发策略（跳过、排队或替换）"
+        },
+        "executionModes": {
+          "title": "执行模式",
+          "autopilot": "Autopilot（自动驾驶）",
+          "autopilotDesc": "Control Agent 监督执行过程。它监控进度、处理错误，并决定任务何时完成。适合复杂的多步骤工作流。",
+          "direct": "Direct（直接执行）",
+          "directDesc": "Agent 自主执行 Prompt。Pod 在 Agent 完成后自动终止。适合简单、定义明确的任务。"
+        },
+        "triggerTypes": {
+          "title": "触发类型",
+          "description": "Loops 支持两种触发机制：",
+          "cron": "Cron 定时调度",
+          "cronDesc": "使用标准 cron 表达式按周期运行（例如 '0 9 * * *' 表示每天上午 9 点 UTC）。调度器每 30 秒检查一次到期的 Loop。",
+          "api": "API 触发",
+          "apiDesc": "通过 HTTP POST 以编程方式触发运行。传递运行时变量来定制每次执行。适用于 CI/CD 流水线、Webhook 和事件驱动自动化。"
+        },
+        "sandboxStrategies": {
+          "title": "沙箱策略",
+          "description": "控制执行环境在多次运行间如何管理：",
+          "persistent": "持久化",
+          "persistentDesc": "跨运行复用同一沙箱。文件变更、Git 状态和已安装的包都会保留。使用 Pod Resume 恢复之前的环境。",
+          "fresh": "全新",
+          "freshDesc": "每次运行创建新沙箱。保证每次都有干净的初始状态。适合需要可复现环境的任务。"
+        },
+        "sessionPersistence": {
+          "title": "会话持久化",
+          "description": "启用后，Agent 会跨运行保留对话历史。复用相同的 SessionID，让 Agent 记住之前执行的上下文。禁用此选项可实现独立运行，不带历史上下文。"
+        },
+        "concurrency": {
+          "title": "并发策略",
+          "description": "控制当前运行尚未完成时触发新运行的行为：",
+          "skip": "跳过",
+          "skipDesc": "达到最大并发运行数时，新运行会被跳过。",
+          "queue": "排队",
+          "queueDesc": "新运行加入队列，有空闲槽位时自动开始。",
+          "replace": "替换",
+          "replaceDesc": "取消当前活跃的运行，替换为新运行。"
+        },
+        "promptTemplates": {
+          "title": "Prompt 模板",
+          "description": "在 Prompt 中使用 {{variable}} 占位符。创建 Loop 时定义默认值，触发时可以覆盖。示例：",
+          "example": "审查 {{branch}} 分支自上次审查以来的所有变更文件。重点关注 {{focus_area}} 方面的问题。"
+        },
+        "webhookCallbacks": {
+          "title": "Webhook 回调",
+          "description": "配置回调 URL，在运行完成时接收 HTTP POST 通知。负载包含运行状态、耗时、退出摘要和错误详情。用于集成 Slack、PagerDuty 或自定义监控。"
+        },
+        "useCases": {
+          "title": "使用场景",
+          "item1": "自动化每日代码审查",
+          "item2": "每晚依赖更新和安全扫描",
+          "item3": "PR 触发的测试生成",
+          "item4": "定期文档更新",
+          "item5": "事件驱动的 Bug 分类和复现"
         }
       },
       "repositories": {
@@ -1124,6 +1194,118 @@
             "description": "永久删除任务。此操作不可撤销。",
             "params": {
               "slug": "任务标识符（如 AM-123）"
+            }
+          }
+        }
+      },
+      "loops": {
+        "title": "Loops API",
+        "description": "管理自动化循环任务及其运行记录。通过 REST API 创建 Loop、配置触发器和监控执行。",
+        "endpoints": {
+          "title": "端点",
+          "list": "列出所有循环任务",
+          "create": "创建循环任务",
+          "get": "按 slug 获取循环任务",
+          "update": "更新循环任务",
+          "delete": "删除循环任务",
+          "enable": "启用循环任务",
+          "disable": "禁用循环任务",
+          "trigger": "手动触发运行",
+          "listRuns": "列出运行历史",
+          "getRun": "获取运行详情",
+          "cancelRun": "取消运行中的任务"
+        },
+        "examples": {
+          "title": "代码示例",
+          "createLoop": "创建定时循环任务",
+          "triggerRun": "带变量触发运行"
+        },
+        "details": {
+          "title": "端点详情",
+          "listLoops": {
+            "title": "GET /loops",
+            "description": "获取组织内的所有循环任务。按创建时间排序返回。"
+          },
+          "createLoop": {
+            "title": "POST /loops",
+            "description": "使用指定配置创建新的循环任务。",
+            "fields": {
+              "name": "循环任务名称（必填，1-255 字符）",
+              "description": "可选描述",
+              "agent_type_id": "使用的内置 Agent 类型 ID",
+              "custom_agent_type_id": "自定义 Agent 类型 ID（与 agent_type_id 二选一）",
+              "prompt_template": "任务 Prompt，支持 {{variable}} 占位符（必填）",
+              "prompt_variables": "Prompt 变量的默认值（JSON 对象）",
+              "repository_id": "要克隆到沙箱的仓库",
+              "runner_id": "首选运行节点",
+              "branch_name": "要检出的 Git 分支",
+              "execution_mode": "autopilot 或 direct（默认：autopilot）",
+              "cron_expression": "Cron 调度表达式（如 '0 9 * * *'）。设置后按计划触发",
+              "sandbox_strategy": "persistent 或 fresh（默认：persistent）",
+              "session_persistence": "跨运行保持 Agent 会话（默认：true）",
+              "concurrency_policy": "skip、queue 或 replace（默认：skip）",
+              "max_concurrent_runs": "最大并发运行数（默认：1）",
+              "timeout_minutes": "运行超时分钟数（默认：60）",
+              "callback_url": "运行完成通知的 Webhook URL",
+              "autopilot_config": "Autopilot 参数（max_iterations、iteration_timeout_sec）"
+            }
+          },
+          "getLoop": {
+            "title": "GET /loops/:slug",
+            "description": "按 slug 获取循环任务的详细信息。",
+            "params": {
+              "slug": "Loop slug（从名称自动生成）"
+            }
+          },
+          "updateLoop": {
+            "title": "PUT /loops/:slug",
+            "description": "更新现有循环任务。所有字段可选 — 仅更新提供的字段。",
+            "params": {
+              "slug": "Loop slug"
+            }
+          },
+          "deleteLoop": {
+            "title": "DELETE /loops/:slug",
+            "description": "永久删除循环任务及其所有运行历史。此操作不可撤销。",
+            "params": {
+              "slug": "Loop slug"
+            }
+          },
+          "enableLoop": {
+            "title": "POST /loops/:slug/enable",
+            "description": "启用已禁用的循环任务。如果已配置 Cron 调度，将恢复定时触发。"
+          },
+          "disableLoop": {
+            "title": "POST /loops/:slug/disable",
+            "description": "禁用循环任务。Cron 调度暂停，手动触发也会被阻止。"
+          },
+          "triggerLoop": {
+            "title": "POST /loops/:slug/trigger",
+            "description": "手动触发一次运行。可传递变量覆盖 Prompt 模板默认值。",
+            "fields": {
+              "variables": "Prompt 模板的变量覆盖（JSON 对象）"
+            }
+          },
+          "listRuns": {
+            "title": "GET /loops/:slug/runs",
+            "description": "获取循环任务的运行历史，按最近优先排序。",
+            "params": {
+              "limit": "返回的最大结果数",
+              "offset": "跳过的结果数（分页用）"
+            }
+          },
+          "getRun": {
+            "title": "GET /loops/:slug/runs/:run_id",
+            "description": "获取指定运行的详细信息。",
+            "params": {
+              "run_id": "运行 ID"
+            }
+          },
+          "cancelRun": {
+            "title": "POST /loops/:slug/runs/:run_id/cancel",
+            "description": "取消正在运行的任务。终止关联的 Pod 并将运行标记为已取消。",
+            "params": {
+              "run_id": "运行 ID"
             }
           }
         }

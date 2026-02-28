@@ -14,6 +14,7 @@ var (
 	ErrRunnerQuotaExceeded = errors.New("runner quota exceeded")
 	ErrGRPCTokenNotFound   = errors.New("gRPC registration token not found")
 	ErrNoRunnerForAgent    = errors.New("no available runner supports the requested agent")
+	ErrRunnerHasLoopRefs   = errors.New("cannot delete: runner is referenced by one or more loops")
 )
 
 // Connection errors - runner connection related errors

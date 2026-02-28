@@ -16,6 +16,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/job"
+	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -50,6 +51,11 @@ func startSubscriptionJobs(db *gorm.DB, appConfig *config.Config, emailSvc email
 	return scheduler
 }
 
+// LoopSchedulerStopper is an interface for stopping the loop scheduler
+type LoopSchedulerStopper interface {
+	Stop()
+}
+
 // waitForShutdown handles graceful shutdown
 func waitForShutdown(
 	srv *http.Server,
@@ -57,6 +63,8 @@ func waitForShutdown(
 	eventBus *eventbus.EventBus,
 	heartbeatBatcher *runner.HeartbeatBatcher,
 	subscriptionScheduler *job.SubscriptionScheduler,
+	loopScheduler LoopSchedulerStopper,
+	orgAwareness *instance.OrgAwarenessService,
 	db *gorm.DB,
 	redisClient *redis.Client,
 ) {
@@ -82,6 +90,16 @@ func waitForShutdown(
 	// Stop subscription scheduler
 	if subscriptionScheduler != nil {
 		subscriptionScheduler.Stop()
+	}
+
+	// Stop loop scheduler
+	if loopScheduler != nil {
+		loopScheduler.Stop()
+	}
+
+	// Stop org awareness service
+	if orgAwareness != nil {
+		orgAwareness.Stop()
 	}
 
 	// Stop heartbeat batcher (flush pending writes)

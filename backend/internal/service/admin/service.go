@@ -18,6 +18,7 @@ var (
 	ErrCannotDisableSelf           = errors.New("cannot disable your own account")
 	ErrOrganizationHasActiveRunner = errors.New("cannot delete organization with active runners")
 	ErrRunnerHasActivePods         = errors.New("cannot delete runner with active pods")
+	ErrRunnerHasLoopRefs           = errors.New("cannot delete runner referenced by one or more loops")
 )
 
 // Service provides admin management functionality

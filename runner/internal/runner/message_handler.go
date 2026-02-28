@@ -1,8 +1,9 @@
 package runner
 
 import (
-	"context"
 	"fmt"
+	"os"
+	"sync"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
@@ -32,13 +33,23 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	log := logger.Pod()
 	log.Info("Creating pod", "pod_key", cmd.PodKey, "command", cmd.LaunchCommand, "args", cmd.LaunchArgs)
 
-	ctx := context.Background()
+	// Use runner's lifecycle context so long operations (git clone) can be
+	// cancelled on shutdown, instead of blocking with context.Background().
+	ctx := h.runner.GetRunContext()
 
 	// Check capacity
 	if h.runner.cfg.MaxConcurrentPods > 0 && h.podStore.Count() >= h.runner.cfg.MaxConcurrentPods {
 		h.sendPodError(cmd.PodKey, "max concurrent pods reached")
 		return fmt.Errorf("max concurrent pods reached")
 	}
+
+	// Register a pending pod placeholder to prevent race conditions:
+	// - TerminatePod arriving during Build can find and remove the placeholder
+	// - Exit handler after Start can find the pod in store
+	h.podStore.Put(cmd.PodKey, &Pod{
+		PodKey: cmd.PodKey,
+		Status: PodStatusInitializing,
+	})
 
 	// Build pod with all components (SRP: PodBuilder handles all component creation)
 	cols := int(cmd.Cols)
@@ -62,6 +73,7 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 
 	pod, err := builder.Build(ctx)
 	if err != nil {
+		h.podStore.Delete(cmd.PodKey) // Remove pending placeholder
 		if podErr, ok := err.(*client.PodError); ok {
 			h.sendPodErrorWithCode(cmd.PodKey, podErr)
 		} else {
@@ -70,17 +82,38 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 		return fmt.Errorf("failed to build pod: %w", err)
 	}
 
+	// Check if pod was terminated during Build (TerminatePod removed the placeholder)
+	if _, ok := h.podStore.Get(cmd.PodKey); !ok {
+		log.Info("Pod was terminated during build, cleaning up", "pod_key", cmd.PodKey)
+		if pod.SandboxPath != "" {
+			os.RemoveAll(pod.SandboxPath)
+		}
+		return fmt.Errorf("pod %s was terminated during build", cmd.PodKey)
+	}
+
 	// Set exit handler (callback to MessageHandler for lifecycle events)
 	pod.Terminal.SetExitHandler(h.createExitHandler(cmd.PodKey))
 
+	// Set PTY error handler to notify frontend when terminal I/O fails.
+	// Without this, a PTY read error (e.g., disk full) causes a frozen terminal
+	// because the relay stays connected but no data flows through it.
+	pod.Terminal.SetPTYErrorHandler(h.createPTYErrorHandler(cmd.PodKey, pod))
+
+	// Replace pending placeholder with fully built pod BEFORE starting terminal.
+	// This ensures the exit handler can find the pod if the process exits immediately.
+	h.podStore.Put(cmd.PodKey, pod)
+
 	// Start terminal
 	if err := pod.Terminal.Start(); err != nil {
+		h.podStore.Delete(cmd.PodKey) // Remove from store on failure
+		// Clean up sandbox that Build() created
+		if pod.SandboxPath != "" {
+			os.RemoveAll(pod.SandboxPath)
+		}
 		h.sendPodError(cmd.PodKey, fmt.Sprintf("failed to start terminal: %v", err))
 		return fmt.Errorf("failed to start terminal: %w", err)
 	}
 
-	// Store pod
-	h.podStore.Put(cmd.PodKey, pod)
 	pod.SetStatus(PodStatusRunning)
 
 	// Register with MCP server and Claude monitor
@@ -92,8 +125,11 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 		h.runner.agentMonitor.RegisterPod(cmd.PodKey, pod.Terminal.PID())
 	}
 
-	// Subscribe to VT state detection events, bridge to gRPC
+	// Subscribe to VT state detection events, bridge to gRPC.
+	// Use mutex to protect lastSentStatus since notifySubscribers invokes
+	// each callback in a separate goroutine (via safego.Go).
 	if pod.VirtualTerminal != nil {
+		var statusMu sync.Mutex
 		lastSentStatus := ""
 		pod.SubscribeStateChange("grpc-agent-status", func(event detector.StateChangeEvent) {
 			var backendStatus string
@@ -107,10 +143,13 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 			default:
 				return
 			}
+			statusMu.Lock()
 			if backendStatus == lastSentStatus {
+				statusMu.Unlock()
 				return // Deduplicate
 			}
 			lastSentStatus = backendStatus
+			statusMu.Unlock()
 			if err := h.conn.SendAgentStatus(cmd.PodKey, backendStatus); err != nil {
 				logger.Pod().Error("Failed to send agent status",
 					"pod_key", cmd.PodKey, "status", backendStatus, "error", err)

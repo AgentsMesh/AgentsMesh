@@ -98,13 +98,13 @@ func TestHandlePodError_EmptyPodKey(t *testing.T) {
 	}
 }
 
-func TestHandlePodError_NonInitializingPod(t *testing.T) {
+func TestHandlePodError_RunningPod(t *testing.T) {
 	pc, _, _ := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
 		OrganizationID: 1,
-		NodeID:         "skip-node",
+		NodeID:         "runtime-node",
 		Status:         "online",
 		CurrentPods:    1,
 	}
@@ -112,36 +112,93 @@ func TestHandlePodError_NonInitializingPod(t *testing.T) {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	// Create a running pod (NOT initializing)
+	// Create a running pod
 	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"running-pod-1", r.ID, agentpod.StatusRunning)
 
-	// Track callback
-	callbackCalled := false
-	pc.SetStatusChangeCallback(func(podKey string, status string, agentStatus string) {
-		callbackCalled = true
-	})
-
-	// Handle pod error event for a running pod
+	// Handle runtime error (e.g., PTY read failure)
 	data := &runnerv1.ErrorEvent{
 		PodKey:  "running-pod-1",
-		Code:    "PROCESS_CRASH",
-		Message: "agent process crashed",
+		Code:    "PTY_READ_ERROR",
+		Message: "PTY read error: read /dev/ptmx: input/output error",
 	}
 
 	pc.handlePodError(r.ID, data)
 
-	// Verify pod status was NOT changed (WHERE clause restricts to initializing)
+	// Verify error info was recorded but status remains running
+	// (status will be updated by the subsequent pod_terminated event)
 	var status string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "running-pod-1").Scan(&status)
+	var errorCode, errorMessage *string
+	pc.db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "running-pod-1").
+		Row().Scan(&status, &errorCode, &errorMessage)
 
 	if status != agentpod.StatusRunning {
-		t.Errorf("status should remain %q, got %q", agentpod.StatusRunning, status)
+		t.Errorf("status should remain %q (terminated event handles final status), got %q",
+			agentpod.StatusRunning, status)
+	}
+	if errorCode == nil || *errorCode != "PTY_READ_ERROR" {
+		t.Errorf("error_code: got %v, want %q", errorCode, "PTY_READ_ERROR")
+	}
+	if errorMessage == nil || *errorMessage != "PTY read error: read /dev/ptmx: input/output error" {
+		t.Errorf("error_message: got %v, want expected message", errorMessage)
 	}
 
-	// Callback should NOT be called because RowsAffected == 0
-	if callbackCalled {
-		t.Error("callback should not be called for non-initializing pods")
+	// Verify runner pod count was NOT decremented (only terminated event does that)
+	var currentPods int
+	pc.db.Raw(`SELECT current_pods FROM runners WHERE id = ?`, r.ID).Scan(&currentPods)
+	if currentPods != 1 {
+		t.Errorf("current_pods should remain 1 (terminated event decrements), got %d", currentPods)
+	}
+}
+
+func TestHandlePodError_ThenTerminated_PreservesErrorCode(t *testing.T) {
+	pc, _, _ := setupPodEventHandlerDeps(t)
+
+	// Create a runner
+	r := &runner.Runner{
+		OrganizationID: 1,
+		NodeID:         "pty-error-node",
+		Status:         "online",
+		CurrentPods:    1,
+	}
+	if err := pc.db.Create(r).Error; err != nil {
+		t.Fatalf("failed to create runner: %v", err)
+	}
+
+	// Create a running pod
+	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+		"pty-seq-pod", r.ID, agentpod.StatusRunning)
+
+	// Step 1: handlePodError records the PTY error (error_code = PTY_READ_ERROR)
+	errorData := &runnerv1.ErrorEvent{
+		PodKey:  "pty-seq-pod",
+		Code:    "PTY_READ_ERROR",
+		Message: "PTY read error: read /dev/ptmx: input/output error",
+	}
+	pc.handlePodError(r.ID, errorData)
+
+	// Step 2: handlePodTerminated follows (process was killed)
+	terminatedData := &runnerv1.PodTerminatedEvent{
+		PodKey:       "pty-seq-pod",
+		ExitCode:     -1,
+		ErrorMessage: "PTY read error: read /dev/ptmx: input/output error",
+	}
+	pc.handlePodTerminated(r.ID, terminatedData)
+
+	// Verify: error_code should be preserved as PTY_READ_ERROR (not overwritten to "process_exit")
+	var status string
+	var errorCode, errorMessage *string
+	pc.db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "pty-seq-pod").
+		Row().Scan(&status, &errorCode, &errorMessage)
+
+	if status != agentpod.StatusError {
+		t.Errorf("status: got %q, want %q", status, agentpod.StatusError)
+	}
+	if errorCode == nil || *errorCode != "PTY_READ_ERROR" {
+		t.Errorf("error_code should be preserved as 'PTY_READ_ERROR', got %v", errorCode)
+	}
+	if errorMessage == nil || *errorMessage != "PTY read error: read /dev/ptmx: input/output error" {
+		t.Errorf("error_message: got %v", errorMessage)
 	}
 }
 

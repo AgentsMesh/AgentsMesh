@@ -15,6 +15,7 @@ const (
 	ErrCodeWorkDirNotExist = "WORK_DIR_NOT_EXIST"
 	ErrCodeDiskFull        = "DISK_FULL"
 	ErrCodePrepareScript   = "PREPARE_SCRIPT_FAILED"
+	ErrCodePTYError        = "PTY_READ_ERROR"
 )
 
 // PodError represents an error that occurred during pod operations.

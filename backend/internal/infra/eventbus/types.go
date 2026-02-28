@@ -59,6 +59,12 @@ const (
 
 	// Pipeline events
 	EventPipelineUpdated EventType = "pipeline:updated"
+
+	// Loop events
+	EventLoopRunStarted   EventType = "loop_run:started"
+	EventLoopRunCompleted EventType = "loop_run:completed"
+	EventLoopRunFailed    EventType = "loop_run:failed"
+	EventLoopRunWarning   EventType = "loop_run:warning"
 )
 
 // ===== Notification Events (Category: notification) =====
@@ -211,9 +217,13 @@ type AutopilotCreatedData struct {
 	PodKey                 string `json:"pod_key"`
 }
 
-// AutopilotTerminatedData represents the payload for AutopilotController terminated events
+// AutopilotTerminatedData represents the payload for AutopilotController terminated events.
+//
+// Phase is the resolved domain phase (e.g. "completed", "failed", "stopped").
+// Reason is the raw termination reason from the Runner (may differ from Phase).
 type AutopilotTerminatedData struct {
 	AutopilotControllerKey string `json:"autopilot_controller_key"`
+	Phase                  string `json:"phase,omitempty"`
 	Reason                 string `json:"reason,omitempty"`
 }
 
@@ -274,6 +284,16 @@ type MREventData struct {
 	PodID          *int64 `json:"pod_id,omitempty"`
 	RepositoryID   int64  `json:"repository_id"`
 	PipelineStatus string `json:"pipeline_status,omitempty"`
+}
+
+// LoopRunWarningData represents the payload for loop run warning events
+// (e.g., sandbox resume degradation to fresh mode)
+type LoopRunWarningData struct {
+	LoopID    int64  `json:"loop_id"`
+	RunID     int64  `json:"run_id"`
+	RunNumber int    `json:"run_number"`
+	Warning   string `json:"warning"`
+	Detail    string `json:"detail,omitempty"`
 }
 
 // PipelineEventData represents the payload for pipeline events

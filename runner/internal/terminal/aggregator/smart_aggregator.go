@@ -239,6 +239,13 @@ func (a *SmartAggregator) SetPTYLogger(logger *PTYLogger) {
 	a.ptyLogger = logger
 }
 
+// DrainEarlyBuffer returns any buffered early output from the router.
+// This is used by the exit handler to retrieve output that was generated
+// before the relay connected (e.g., fast-exiting processes).
+func (a *SmartAggregator) DrainEarlyBuffer() []byte {
+	return a.router.DrainEarlyBuffer()
+}
+
 // calculateDelay is kept for backward compatibility with tests.
 // Delegates to AdaptiveDelay component.
 func (a *SmartAggregator) calculateDelay(usage float64) time.Duration {

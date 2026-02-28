@@ -4,6 +4,7 @@
       "workspace": "工作区",
       "tickets": "任务",
       "mesh": "AgentsMesh",
+      "loops": "Loop",
       "repositories": "仓库",
       "runners": "Runner",
       "settings": "设置"

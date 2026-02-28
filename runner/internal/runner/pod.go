@@ -41,6 +41,11 @@ type Pod struct {
 	// Token refresh channel - used when relay token expires and needs to be refreshed
 	tokenRefreshCh   chan string
 	tokenRefreshMu   sync.Mutex
+
+	// PTY error message stored when a fatal PTY read error occurs.
+	// Used by the exit handler to include the error reason in the termination event.
+	ptyErrorMsg   string
+	ptyErrorMu    sync.Mutex
 }
 
 // PodStatus constants
@@ -50,6 +55,20 @@ const (
 	PodStatusStopped      = "stopped"
 	PodStatusFailed       = "failed"
 )
+
+// SetPTYError stores a PTY error message for the exit handler to pick up.
+func (p *Pod) SetPTYError(msg string) {
+	p.ptyErrorMu.Lock()
+	defer p.ptyErrorMu.Unlock()
+	p.ptyErrorMsg = msg
+}
+
+// GetPTYError returns the stored PTY error message, if any.
+func (p *Pod) GetPTYError() string {
+	p.ptyErrorMu.Lock()
+	defer p.ptyErrorMu.Unlock()
+	return p.ptyErrorMsg
+}
 
 // SetStatus sets the pod status in a thread-safe manner
 func (p *Pod) SetStatus(status string) {
@@ -108,28 +127,13 @@ func (p *Pod) DisconnectRelay() {
 
 // GetOrCreateStateDetector returns the state detector for this pod, creating one if needed.
 // Returns the detector.StateDetector interface for use by any component.
+// Delegates to getOrCreateStateDetectorInternal to avoid duplicating DCL logic.
 func (p *Pod) GetOrCreateStateDetector() detector.StateDetector {
-	p.stateDetectorMu.RLock()
-	if p.stateDetector != nil {
-		defer p.stateDetectorMu.RUnlock()
-		return p.stateDetector
+	d := p.getOrCreateStateDetectorInternal()
+	if d == nil {
+		return nil // Explicit nil to avoid non-nil interface wrapping nil pointer
 	}
-	p.stateDetectorMu.RUnlock()
-
-	// Need to create - acquire write lock
-	p.stateDetectorMu.Lock()
-	defer p.stateDetectorMu.Unlock()
-
-	// Double check after acquiring write lock
-	if p.stateDetector != nil {
-		return p.stateDetector
-	}
-
-	// Create new detector if VirtualTerminal is available
-	if p.VirtualTerminal != nil {
-		p.stateDetector = NewManagedStateDetector(p.VirtualTerminal)
-	}
-	return p.stateDetector
+	return d
 }
 
 // SubscribeStateChange subscribes to state change events.

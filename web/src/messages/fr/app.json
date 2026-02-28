@@ -69,6 +69,10 @@
       "placeholder": "Tapez un message...",
       "hint": "Appuyez sur Entrée pour envoyer, Shift+Entrée pour nouvelle ligne"
     },
+    "mention": {
+      "members": "Membres",
+      "pods": "Pods"
+    },
     "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "Ouvrir le Terminal",
@@ -82,6 +86,13 @@
       "online": "En ligne",
       "offline": "Hors ligne",
       "podCount": "{count} pods"
+    },
+    "channelPodManager": {
+      "title": "Pods du Canal",
+      "description": "Gérer les pods de ce canal",
+      "joined": "Rejoint",
+      "available": "Disponible",
+      "empty": "Aucun pod actif disponible"
     }
   },
   "tickets": {

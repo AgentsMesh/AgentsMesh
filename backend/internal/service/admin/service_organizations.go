@@ -6,6 +6,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 )
 
 // OrganizationListQuery represents query parameters for organization listing
@@ -95,7 +96,10 @@ func (s *Service) UpdateOrganizationSubscriptionStatus(ctx context.Context, orgI
 	return s.db.Save(&org)
 }
 
-// DeleteOrganization deletes an organization after checking for active runners
+// DeleteOrganization deletes an organization after checking for active runners.
+//
+// Tables with FK ON DELETE CASCADE are cleaned up automatically by PostgreSQL.
+// Tables without FK (loops, loop_runs) require explicit application-level cleanup.
 func (s *Service) DeleteOrganization(ctx context.Context, orgID int64) error {
 	var org organization.Organization
 	if err := s.db.First(&org, orgID); err != nil {
@@ -111,5 +115,13 @@ func (s *Service) DeleteOrganization(ctx context.Context, orgID int64) error {
 		return ErrOrganizationHasActiveRunner
 	}
 
-	return s.db.Delete(&org)
+	return s.db.Transaction(func(tx database.DB) error {
+		// Application-level cleanup for tables without FK CASCADE
+		gormTx := tx.GormDB()
+		gormTx.Exec("DELETE FROM loop_runs WHERE organization_id = ?", orgID)
+		gormTx.Exec("DELETE FROM loops WHERE organization_id = ?", orgID)
+
+		// Delete the org — FK CASCADE handles all other dependent tables
+		return tx.Delete(&org)
+	})
 }

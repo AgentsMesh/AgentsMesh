@@ -161,7 +161,7 @@ func (s *Service) EnableRunner(ctx context.Context, runnerID int64) (*runner.Run
 	return &r, nil
 }
 
-// DeleteRunner deletes a runner after checking for active pods
+// DeleteRunner deletes a runner after checking for active pods and loop references.
 func (s *Service) DeleteRunner(ctx context.Context, runnerID int64) (*runner.Runner, error) {
 	var r runner.Runner
 	if err := s.db.First(&r, runnerID); err != nil {
@@ -177,6 +177,13 @@ func (s *Service) DeleteRunner(ctx context.Context, runnerID int64) (*runner.Run
 	}
 	if podCount > 0 {
 		return nil, ErrRunnerHasActivePods
+	}
+
+	// Check for loop references before deletion (application-level RESTRICT)
+	var loopCount int64
+	s.db.GormDB().Raw("SELECT COUNT(*) FROM loops WHERE runner_id = ?", runnerID).Scan(&loopCount)
+	if loopCount > 0 {
+		return nil, ErrRunnerHasLoopRefs
 	}
 
 	if err := s.db.Delete(&r); err != nil {

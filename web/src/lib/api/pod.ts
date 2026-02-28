@@ -126,10 +126,24 @@ export const podApi = {
       body: { cols, rows },
     }),
 
-  // Send prompt to pod
-  sendPrompt: (key: string, prompt: string) =>
-    request<{ message: string }>(`${orgPath("/pods")}/${key}/send-prompt`, {
+  /**
+   * Send a prompt to a pod's terminal.
+   * Simulates typing the prompt text then pressing Enter:
+   *   1. Send prompt text (raw characters)
+   *   2. Send carriage return (\r) to submit
+   *
+   * This mirrors what happens when a user types a prompt in the terminal and presses Enter.
+   */
+  sendPrompt: async (key: string, prompt: string): Promise<{ message: string }> => {
+    // Send prompt text first
+    await request<{ message: string }>(`${orgPath("/pods")}/${key}/terminal/input`, {
       method: "POST",
-      body: { prompt },
-    }),
+      body: { input: prompt },
+    });
+    // Then send Enter (carriage return) to submit
+    return request<{ message: string }>(`${orgPath("/pods")}/${key}/terminal/input`, {
+      method: "POST",
+      body: { input: "\r" },
+    });
+  },
 };

@@ -16,6 +16,7 @@
       "channels": "Channels",
       "meshTopology": "Mesh Topology",
       "tickets": "Tickets",
+      "loops": "Loops",
       "repositories": "Repositories",
       "runners": "Runners",
       "runnerSetup": "Runner Setup",
@@ -30,6 +31,7 @@
       "apiPods": "Pods API",
       "apiTickets": "Tickets API",
       "apiChannels": "Channels API",
+      "apiLoops": "Loops API",
       "apiRunners": "Runners API",
       "apiRepositories": "Repositories API",
       "help": "Help",
@@ -500,6 +502,74 @@
         "storyPoints": {
           "title": "Story Points",
           "description": "Estimate effort using Fibonacci story points:"
+        }
+      },
+      "loops": {
+        "title": "Loops",
+        "description": "CI/CD for AI Agent tasks. Define repeatable automated tasks and trigger them on a schedule or via API — like cron jobs for your AI agents.",
+        "overview": {
+          "title": "Overview",
+          "description": "Loops let you define a task once and run it repeatedly. Each Loop wraps a Pod with a prompt template, trigger configuration, and execution policy. Key features include:",
+          "item1": "Cron scheduling or API-triggered execution",
+          "item2": "Autopilot (supervised) or Direct (autonomous) execution modes",
+          "item3": "Persistent sandbox reuse across runs for incremental work",
+          "item4": "Variable substitution in prompt templates",
+          "item5": "Webhook callbacks for run completion notifications",
+          "item6": "Concurrency policies (skip, queue, or replace)"
+        },
+        "executionModes": {
+          "title": "Execution Modes",
+          "autopilot": "Autopilot",
+          "autopilotDesc": "A Control Agent supervises the execution. It monitors progress, handles errors, and decides when the task is complete. Best for complex, multi-step workflows.",
+          "direct": "Direct",
+          "directDesc": "The agent runs the prompt autonomously. The Pod terminates automatically when the agent finishes. Best for simple, well-defined tasks."
+        },
+        "triggerTypes": {
+          "title": "Trigger Types",
+          "description": "Loops support two trigger mechanisms:",
+          "cron": "Cron Schedule",
+          "cronDesc": "Run on a recurring schedule using standard cron expressions (e.g., '0 9 * * *' for daily at 9 AM UTC). The scheduler checks every 30 seconds for due Loops.",
+          "api": "API Trigger",
+          "apiDesc": "Trigger runs programmatically via HTTP POST. Pass runtime variables to customize each run. Ideal for CI/CD pipelines, webhooks, and event-driven automation."
+        },
+        "sandboxStrategies": {
+          "title": "Sandbox Strategies",
+          "description": "Control how the execution environment is managed across runs:",
+          "persistent": "Persistent",
+          "persistentDesc": "Reuse the same sandbox across runs. File changes, git state, and installed packages carry over. Uses Pod Resume to restore the previous environment.",
+          "fresh": "Fresh",
+          "freshDesc": "Create a new sandbox for each run. Guarantees a clean starting state every time. Best for tasks that need reproducible environments."
+        },
+        "sessionPersistence": {
+          "title": "Session Persistence",
+          "description": "When enabled, the agent retains conversation history across runs. The same SessionID is reused, so the agent remembers context from previous executions. Disable this for independent runs without historical context."
+        },
+        "concurrency": {
+          "title": "Concurrency Policies",
+          "description": "Control what happens when a new run is triggered while another is still active:",
+          "skip": "Skip",
+          "skipDesc": "The new run is skipped if the maximum concurrent runs is reached.",
+          "queue": "Queue",
+          "queueDesc": "The new run is queued and starts when a slot becomes available.",
+          "replace": "Replace",
+          "replaceDesc": "The active run is cancelled and replaced by the new one."
+        },
+        "promptTemplates": {
+          "title": "Prompt Templates",
+          "description": "Use {{variable}} placeholders in your prompt. Define default values when creating the Loop, and override them at trigger time. Example:",
+          "example": "Review all changed files in {{branch}} branch since last review. Focus on {{focus_area}} issues."
+        },
+        "webhookCallbacks": {
+          "title": "Webhook Callbacks",
+          "description": "Configure a callback URL to receive HTTP POST notifications when a run completes. The payload includes run status, duration, exit summary, and error details. Use this to integrate with Slack, PagerDuty, or custom monitoring."
+        },
+        "useCases": {
+          "title": "Use Cases",
+          "item1": "Automated daily code reviews",
+          "item2": "Nightly dependency updates and security scanning",
+          "item3": "PR-triggered test generation",
+          "item4": "Scheduled documentation updates",
+          "item5": "Event-driven bug triage and reproduction"
         }
       },
       "repositories": {
@@ -1124,6 +1194,118 @@
             "description": "Permanently delete a ticket. This action cannot be undone.",
             "params": {
               "slug": "Ticket slug (e.g., AM-123)"
+            }
+          }
+        }
+      },
+      "loops": {
+        "title": "Loops API",
+        "description": "Manage automated Loop tasks and their runs. Create Loops, configure triggers, and monitor execution through the REST API.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "List all loops",
+          "create": "Create a new loop",
+          "get": "Get loop by slug",
+          "update": "Update a loop",
+          "delete": "Delete a loop",
+          "enable": "Enable a loop",
+          "disable": "Disable a loop",
+          "trigger": "Manually trigger a run",
+          "listRuns": "List runs for a loop",
+          "getRun": "Get run details",
+          "cancelRun": "Cancel an active run"
+        },
+        "examples": {
+          "title": "Code Examples",
+          "createLoop": "Create a scheduled loop",
+          "triggerRun": "Trigger a run with variables"
+        },
+        "details": {
+          "title": "Endpoint Details",
+          "listLoops": {
+            "title": "GET /loops",
+            "description": "Retrieve all loops in the organization. Returns loops sorted by creation date."
+          },
+          "createLoop": {
+            "title": "POST /loops",
+            "description": "Create a new loop with the specified configuration.",
+            "fields": {
+              "name": "Loop name (required, 1-255 characters)",
+              "description": "Optional description",
+              "agent_type_id": "Built-in agent type ID to use",
+              "custom_agent_type_id": "Custom agent type ID (alternative to agent_type_id)",
+              "prompt_template": "Task prompt with {{variable}} placeholders (required)",
+              "prompt_variables": "Default values for prompt variables (JSON object)",
+              "repository_id": "Repository to clone into the sandbox",
+              "runner_id": "Preferred runner for execution",
+              "branch_name": "Git branch to check out",
+              "execution_mode": "autopilot or direct (default: autopilot)",
+              "cron_expression": "Cron schedule (e.g., '0 9 * * *'). If set, loop triggers on schedule",
+              "sandbox_strategy": "persistent or fresh (default: persistent)",
+              "session_persistence": "Keep agent session across runs (default: true)",
+              "concurrency_policy": "skip, queue, or replace (default: skip)",
+              "max_concurrent_runs": "Maximum concurrent runs (default: 1)",
+              "timeout_minutes": "Run timeout in minutes (default: 60)",
+              "callback_url": "Webhook URL for run completion notifications",
+              "autopilot_config": "Autopilot parameters (max_iterations, iteration_timeout_sec)"
+            }
+          },
+          "getLoop": {
+            "title": "GET /loops/:slug",
+            "description": "Retrieve detailed information about a specific loop by its slug.",
+            "params": {
+              "slug": "Loop slug (auto-generated from name)"
+            }
+          },
+          "updateLoop": {
+            "title": "PUT /loops/:slug",
+            "description": "Update an existing loop. All fields are optional — only provided fields will be updated.",
+            "params": {
+              "slug": "Loop slug"
+            }
+          },
+          "deleteLoop": {
+            "title": "DELETE /loops/:slug",
+            "description": "Permanently delete a loop and all its run history. This action cannot be undone.",
+            "params": {
+              "slug": "Loop slug"
+            }
+          },
+          "enableLoop": {
+            "title": "POST /loops/:slug/enable",
+            "description": "Enable a disabled loop. Re-enables cron scheduling if configured."
+          },
+          "disableLoop": {
+            "title": "POST /loops/:slug/disable",
+            "description": "Disable a loop. Cron scheduling is paused and manual triggers are blocked."
+          },
+          "triggerLoop": {
+            "title": "POST /loops/:slug/trigger",
+            "description": "Manually trigger a new run. Optionally pass variables to override prompt template defaults.",
+            "fields": {
+              "variables": "Variable overrides for the prompt template (JSON object)"
+            }
+          },
+          "listRuns": {
+            "title": "GET /loops/:slug/runs",
+            "description": "Retrieve the run history for a loop, sorted by most recent first.",
+            "params": {
+              "limit": "Maximum number of results to return",
+              "offset": "Number of results to skip for pagination"
+            }
+          },
+          "getRun": {
+            "title": "GET /loops/:slug/runs/:run_id",
+            "description": "Retrieve detailed information about a specific run.",
+            "params": {
+              "run_id": "Run ID"
+            }
+          },
+          "cancelRun": {
+            "title": "POST /loops/:slug/runs/:run_id/cancel",
+            "description": "Cancel an active run. Terminates the associated Pod and marks the run as cancelled.",
+            "params": {
+              "run_id": "Run ID"
             }
           }
         }

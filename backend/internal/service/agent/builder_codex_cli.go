@@ -24,6 +24,20 @@ var codexVersionRules = []VersionArgRule{
 	},
 }
 
+// codexApprovalValueMap maps internal approval mode names to Codex CLI 0.100+ policy values.
+// Codex CLI 0.100.0 (Rust rewrite) renamed the approval policy values:
+//   - suggest   → on-request  (agent proposes, user approves)
+//   - auto-edit → on-failure  (auto-proceed, stop only on failure)
+//   - full-auto → never       (fully autonomous)
+var codexApprovalValueMap = map[string]string{
+	"suggest":   "on-request",
+	"auto-edit": "on-failure",
+	"full-auto": "never",
+}
+
+// codexNewApprovalVersion is the first Codex CLI version that uses the new approval policy values.
+const codexNewApprovalVersion = "0.100.0"
+
 // CodexCLIBuilder is the builder for Codex CLI agent.
 // Codex CLI syntax: codex [prompt] [options]
 // Similar to Claude Code, the prompt comes before options.
@@ -63,7 +77,29 @@ func (b *CodexCLIBuilder) BuildLaunchArgs(ctx *BuildContext) ([]string, error) {
 
 	// Adapt args for the installed Codex CLI version
 	args = AdaptArgsForVersion(args, ctx.AgentVersion, codexVersionRules)
+
+	// Codex CLI >= 0.100.0 (Rust rewrite) renamed approval policy values.
+	// Map internal names (suggest/auto-edit/full-auto) to new CLI values.
+	if ctx.AgentVersion != "" && CompareVersions(ctx.AgentVersion, codexNewApprovalVersion) >= 0 {
+		args = mapCodexApprovalValues(args)
+	}
+
 	return args, nil
+}
+
+// mapCodexApprovalValues replaces internal approval mode names with Codex CLI 0.100+ values.
+func mapCodexApprovalValues(args []string) []string {
+	for i := 0; i < len(args)-1; i++ {
+		if args[i] == "--ask-for-approval" {
+			if mapped, ok := codexApprovalValueMap[args[i+1]]; ok {
+				result := make([]string, len(args))
+				copy(result, args)
+				result[i+1] = mapped
+				return result
+			}
+		}
+	}
+	return args
 }
 
 // BuildFilesToCreate uses the base implementation

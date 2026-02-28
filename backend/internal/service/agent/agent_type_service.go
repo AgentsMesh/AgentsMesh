@@ -10,8 +10,9 @@ import (
 
 // Errors for AgentTypeService
 var (
-	ErrAgentTypeNotFound = errors.New("agent type not found")
-	ErrAgentSlugExists   = errors.New("agent type slug already exists")
+	ErrAgentTypeNotFound      = errors.New("agent type not found")
+	ErrAgentSlugExists        = errors.New("agent type slug already exists")
+	ErrAgentTypeHasLoopRefs   = errors.New("cannot delete: agent type is referenced by one or more loops")
 )
 
 // AgentTypeInfo is a simplified agent type for Runner initialization
@@ -128,8 +129,16 @@ func (s *AgentTypeService) UpdateCustomAgentType(ctx context.Context, id int64, 
 	return &customAgent, nil
 }
 
-// DeleteCustomAgentType deletes a custom agent type
+// DeleteCustomAgentType deletes a custom agent type.
+// Blocks deletion if any loops reference this agent type (application-level RESTRICT).
 func (s *AgentTypeService) DeleteCustomAgentType(ctx context.Context, id int64) error {
+	var loopCount int64
+	if err := s.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM loops WHERE custom_agent_type_id = ?", id).Scan(&loopCount).Error; err != nil {
+		return err
+	}
+	if loopCount > 0 {
+		return ErrAgentTypeHasLoopRefs
+	}
 	return s.db.WithContext(ctx).Delete(&agent.CustomAgentType{}, id).Error
 }
 

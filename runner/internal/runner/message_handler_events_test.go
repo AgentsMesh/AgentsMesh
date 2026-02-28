@@ -1,10 +1,12 @@
 package runner
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
 )
 
 // Tests for event sending methods and helper functions
@@ -158,6 +160,160 @@ func TestCreateExitHandler(t *testing.T) {
 		t.Error("exit handler should send pod_terminated")
 	}
 }
+
+func TestCreatePTYErrorHandler(t *testing.T) {
+	store := NewInMemoryPodStore()
+	mockConn := client.NewMockConnection()
+
+	runner := &Runner{cfg: &config.Config{}}
+	handler := NewRunnerMessageHandler(runner, store, mockConn)
+
+	// Create pod with aggregator to capture the error message
+	pod := &Pod{
+		ID:         "pty-error-pod",
+		Status:     PodStatusRunning,
+		Aggregator: aggregator.NewSmartAggregator(nil, nil),
+	}
+
+	ptyErrorHandler := handler.createPTYErrorHandler("pty-error-pod", pod)
+
+	// Simulate a PTY I/O error
+	testErr := fmt.Errorf("read /dev/ptmx: input/output error")
+	ptyErrorHandler(testErr)
+
+	// Verify error event was sent via gRPC
+	events := mockConn.GetEvents()
+	hasError := false
+	for _, e := range events {
+		if e.Type == "error" {
+			hasError = true
+			data, ok := e.Data.(map[string]interface{})
+			if !ok {
+				t.Fatalf("error event data should be map[string]interface{}")
+			}
+			if data["code"] != client.ErrCodePTYError {
+				t.Errorf("error code = %v, want %s", data["code"], client.ErrCodePTYError)
+			}
+			if data["pod_key"] != "pty-error-pod" {
+				t.Errorf("pod_key = %v, want pty-error-pod", data["pod_key"])
+			}
+			break
+		}
+	}
+	if !hasError {
+		t.Error("PTY error handler should send error event via gRPC")
+	}
+
+	// Verify error message was buffered in aggregator (will be flushed to terminal via relay)
+	if pod.Aggregator.BufferLen() == 0 {
+		t.Error("PTY error handler should write visible error message to aggregator buffer")
+	}
+}
+
+func TestCreatePTYErrorHandler_NilAggregator(t *testing.T) {
+	store := NewInMemoryPodStore()
+	mockConn := client.NewMockConnection()
+
+	runner := &Runner{cfg: &config.Config{}}
+	handler := NewRunnerMessageHandler(runner, store, mockConn)
+
+	// Pod without aggregator — should not panic
+	pod := &Pod{
+		ID:     "no-agg-pod",
+		Status: PodStatusRunning,
+	}
+
+	ptyErrorHandler := handler.createPTYErrorHandler("no-agg-pod", pod)
+	ptyErrorHandler(fmt.Errorf("some error"))
+
+	// Should still send gRPC error event
+	events := mockConn.GetEvents()
+	if len(events) == 0 {
+		t.Error("should send gRPC error event even without aggregator")
+	}
+}
+
+func TestCreateExitHandler_WithPTYError(t *testing.T) {
+	store := NewInMemoryPodStore()
+	mockConn := client.NewMockConnection()
+
+	runner := &Runner{cfg: &config.Config{}}
+	handler := NewRunnerMessageHandler(runner, store, mockConn)
+
+	// Create pod with a stored PTY error (simulating onPTYError having been called)
+	pod := &Pod{
+		ID:     "pty-exit-pod",
+		Status: PodStatusRunning,
+	}
+	pod.SetPTYError("PTY read error: read /dev/ptmx: input/output error")
+	store.Put("pty-exit-pod", pod)
+
+	exitHandler := handler.createExitHandler("pty-exit-pod")
+
+	// Simulate process killed after PTY error (exit code -1 from SIGKILL)
+	exitHandler(-1)
+
+	// Verify terminated event includes the PTY error message
+	events := mockConn.GetEvents()
+	hasTerminated := false
+	for _, e := range events {
+		if e.Type == client.MsgTypePodTerminated {
+			hasTerminated = true
+			data, ok := e.Data.(map[string]interface{})
+			if !ok {
+				t.Fatalf("terminated event data should be map[string]interface{}")
+			}
+			errorMsg, _ := data["error"].(string)
+			if errorMsg == "" {
+				t.Error("terminated event should include PTY error message")
+			}
+			if !contains(errorMsg, "PTY read error") {
+				t.Errorf("error message should contain 'PTY read error', got: %s", errorMsg)
+			}
+			break
+		}
+	}
+	if !hasTerminated {
+		t.Error("exit handler should send pod_terminated event")
+	}
+}
+
+func TestCreateExitHandler_EarlyOutputTakesPriority(t *testing.T) {
+	store := NewInMemoryPodStore()
+	mockConn := client.NewMockConnection()
+
+	runner := &Runner{cfg: &config.Config{}}
+	handler := NewRunnerMessageHandler(runner, store, mockConn)
+
+	// Create pod with both a PTY error and an aggregator with early output
+	pod := &Pod{
+		ID:         "priority-pod",
+		Status:     PodStatusRunning,
+		Aggregator: aggregator.NewSmartAggregator(nil, nil),
+	}
+	pod.SetPTYError("PTY read error: something")
+	store.Put("priority-pod", pod)
+
+	exitHandler := handler.createExitHandler("priority-pod")
+	exitHandler(1)
+
+	// When early output is empty (relay was connected), PTY error should be used.
+	// The aggregator's DrainEarlyBuffer returns empty because relay was "connected"
+	// (no early buffer data), so PTY error should be the fallback.
+	events := mockConn.GetEvents()
+	for _, e := range events {
+		if e.Type == client.MsgTypePodTerminated {
+			data := e.Data.(map[string]interface{})
+			errorMsg, _ := data["error"].(string)
+			if !contains(errorMsg, "PTY read error") {
+				t.Errorf("when no early output, PTY error should be used, got: %s", errorMsg)
+			}
+			break
+		}
+	}
+}
+
+// Note: contains() is defined in mocks_test.go
 
 // Note: runPreparationScript and mergeEnvVars have been moved to PodBuilder.
 // Tests for these functions are in pod_builder_test.go.

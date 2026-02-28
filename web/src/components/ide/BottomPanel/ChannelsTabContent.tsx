@@ -21,6 +21,7 @@ export function ChannelsTabContent({
   onSendMessage,
   onLoadMore,
   onRefresh,
+  onPodsChanged,
   t,
 }: ChannelsTabContentProps) {
   // Transform messages for MessageList component
@@ -61,6 +62,7 @@ export function ChannelsTabContent({
         onSendMessage={onSendMessage}
         onLoadMore={onLoadMore}
         onRefresh={onRefresh}
+        onPodsChanged={onPodsChanged}
         t={t}
       />
     );

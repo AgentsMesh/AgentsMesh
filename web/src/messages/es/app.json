@@ -69,6 +69,10 @@
       "placeholder": "Escribe un mensaje...",
       "hint": "Presiona Enter para enviar, Shift+Enter para nueva línea"
     },
+    "mention": {
+      "members": "Miembros",
+      "pods": "Pods"
+    },
     "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "Abrir Terminal",
@@ -82,6 +86,13 @@
       "online": "En línea",
       "offline": "Desconectado",
       "podCount": "{count} pods"
+    },
+    "channelPodManager": {
+      "title": "Pods del Canal",
+      "description": "Gestionar pods en este canal",
+      "joined": "Unido",
+      "available": "Disponible",
+      "empty": "No hay pods activos disponibles"
     }
   },
   "tickets": {

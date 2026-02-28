@@ -137,9 +137,19 @@ func (s *Service) Update(ctx context.Context, id int64, updates map[string]inter
 	return s.GetByID(ctx, id)
 }
 
-// Delete deletes an organization
+// Delete deletes an organization.
+//
+// Tables with FK ON DELETE CASCADE are cleaned up automatically by PostgreSQL.
+// Tables without FK (loops, loop_runs) require explicit application-level cleanup.
 func (s *Service) Delete(ctx context.Context, id int64) error {
-	return s.db.WithContext(ctx).Delete(&organization.Organization{}, id).Error
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Application-level cleanup for tables without FK CASCADE
+		tx.Exec("DELETE FROM loop_runs WHERE organization_id = ?", id)
+		tx.Exec("DELETE FROM loops WHERE organization_id = ?", id)
+
+		// Delete the org — FK CASCADE handles all other dependent tables
+		return tx.Delete(&organization.Organization{}, id).Error
+	})
 }
 
 // ListByUser returns organizations for a user

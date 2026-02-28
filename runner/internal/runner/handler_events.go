@@ -1,6 +1,8 @@
 package runner
 
 import (
+	"fmt"
+
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
@@ -46,10 +48,43 @@ func (h *RunnerMessageHandler) createOSCHandler(podKey string) vt.OSCHandler {
 	}
 }
 
+// createPTYErrorHandler creates a handler for fatal PTY read errors.
+// When PTY I/O fails (e.g., disk full), this sends an error message through
+// the relay (visible in the frontend terminal) and a gRPC error event so the
+// backend can update pod status. The process is then killed by the Terminal,
+// which triggers the normal exit flow via createExitHandler.
+func (h *RunnerMessageHandler) createPTYErrorHandler(podKey string, pod *Pod) func(error) {
+	return func(err error) {
+		log := logger.Pod()
+		log.Error("PTY fatal error", "pod_key", podKey, "error", err)
+
+		// Store the error on the pod so the exit handler can include it
+		// in the termination event sent to the backend.
+		errMsg := fmt.Sprintf("PTY read error: %v", err)
+		pod.SetPTYError(errMsg)
+
+		// Write a visible error message to the aggregator so it appears
+		// in the frontend terminal via relay. Use ANSI red color for visibility.
+		if pod.Aggregator != nil {
+			visibleMsg := fmt.Sprintf("\r\n\x1b[1;31m[Terminal Error] PTY read failed: %v\x1b[0m\r\n", err)
+			pod.Aggregator.Write([]byte(visibleMsg))
+		}
+
+		// Send error event via gRPC so backend can update pod status.
+		h.sendPodErrorWithCode(podKey, &client.PodError{
+			Code:    client.ErrCodePTYError,
+			Message: errMsg,
+		})
+	}
+}
+
 // createExitHandler creates an exit handler that notifies server when pod exits.
 func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 	return func(exitCode int) {
-		logger.Pod().Info("Pod exited", "pod_key", podKey, "exit_code", exitCode)
+		log := logger.Pod()
+		log.Info("Pod exited", "pod_key", podKey, "exit_code", exitCode)
+
+		var earlyOutput string
 
 		pod := h.podStore.Delete(podKey)
 		if pod != nil {
@@ -60,14 +95,37 @@ func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 			}
 
 			pod.StopStateDetector()
-			pod.DisconnectRelay()
 
+			// Stop aggregator BEFORE disconnecting relay, so the final flush
+			// can still be sent through the relay if it's connected.
 			if pod.Aggregator != nil {
 				pod.Aggregator.Stop()
+
+				// Retrieve any early output that was buffered before the relay connected.
+				// This captures error messages from fast-exiting processes.
+				if buf := pod.Aggregator.DrainEarlyBuffer(); len(buf) > 0 {
+					earlyOutput = string(buf)
+					log.Info("Captured early output from fast-exiting process",
+						"pod_key", podKey, "bytes", len(buf))
+				}
 			}
+
+			// If a PTY error was recorded (e.g., disk full causing I/O error),
+			// use it as the error message so the backend sets error status.
+			if ptyErr := pod.GetPTYError(); ptyErr != "" && earlyOutput == "" {
+				earlyOutput = ptyErr
+				log.Info("Using stored PTY error as termination reason",
+					"pod_key", podKey, "error", ptyErr)
+			}
+
+			pod.DisconnectRelay()
 		}
 
-		h.sendPodTerminated(podKey)
+		// Include early output or PTY error in the termination event so the
+		// backend can display why the process failed and set error status.
+		if err := h.conn.SendPodTerminated(podKey, int32(exitCode), earlyOutput); err != nil {
+			log.Error("Failed to send pod terminated event", "error", err)
+		}
 	}
 }
 

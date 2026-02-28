@@ -3,11 +3,14 @@
 import { useEffect, useCallback } from "react";
 import { useChannelStore } from "@/stores/channel";
 import { useMeshStore } from "@/stores/mesh";
+import { podApi } from "@/lib/api/pod";
 import { MessageList } from "./MessageList";
-import { MessageInput } from "./MessageInput";
+import { MessageInput, extractPromptFromMention, buildChannelPrompt } from "./MessageInput";
+import type { MentionedPod } from "./MessageInput";
 import { ChannelDocument } from "./ChannelDocument";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Radio, Users, RefreshCw, Loader2 } from "lucide-react";
+import { ArrowLeft, Radio, RefreshCw, Loader2 } from "lucide-react";
+import { ChannelPodManager } from "./ChannelPodManager";
 import { cn } from "@/lib/utils";
 
 interface MobileChannelChatProps {
@@ -30,7 +33,7 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
     setCurrentChannel,
   } = useChannelStore();
 
-  const { topology } = useMeshStore();
+  const { topology, fetchTopology } = useMeshStore();
 
   // Load channel and messages when channelId changes
   useEffect(() => {
@@ -48,16 +51,36 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
   const channelInfo = topology?.channels.find((c) => c.id === channelId);
   const podCount = channelInfo?.pod_keys.length || currentChannel?.pods?.length || 0;
 
-  // Handle send message
+  // Resolve channel name for prompt context (extracted for React Compiler compatibility)
+  const channelName = currentChannel?.name || channelInfo?.name || "Channel";
+
+  // Refresh topology and channel data when pod membership changes
+  const handlePodsChanged = useCallback(() => {
+    fetchTopology();
+    fetchChannel(channelId);
+  }, [fetchTopology, fetchChannel, channelId]);
+
+  // Handle send message — also forward prompt to @mentioned pods
   const handleSendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, mentionedPods?: MentionedPod[]) => {
       try {
         await sendMessage(channelId, content);
+
+        // Forward prompt to each mentioned pod's terminal
+        if (mentionedPods && mentionedPods.length > 0) {
+          const rawPrompt = extractPromptFromMention(content, mentionedPods);
+          if (rawPrompt) {
+            const prompt = buildChannelPrompt(rawPrompt, channelName);
+            await Promise.allSettled(
+              mentionedPods.map((pod) => podApi.sendPrompt(pod.podKey, prompt))
+            );
+          }
+        }
       } catch (error) {
         console.error("Failed to send message:", error);
       }
     },
-    [channelId, sendMessage]
+    [channelId, sendMessage, channelName]
   );
 
   // Handle load more messages
@@ -113,8 +136,6 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
     );
   }
 
-  const channelName = currentChannel?.name || channelInfo?.name || "Channel";
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       {/* Header with back button */}
@@ -138,11 +159,12 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
           </div>
 
           <div className="flex items-center gap-2 mr-2 flex-shrink-0">
-            {/* Pod count badge */}
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-md">
-              <Users className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium">{podCount}</span>
-            </div>
+            {/* Pod manager popover */}
+            <ChannelPodManager
+              channelId={channelId}
+              podCount={podCount}
+              onPodsChanged={handlePodsChanged}
+            />
 
             {/* Refresh button */}
             <Button
@@ -175,6 +197,7 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
       <MessageInput
         onSend={handleSendMessage}
         placeholder="Send a message..."
+        channelId={channelId}
       />
     </div>
   );

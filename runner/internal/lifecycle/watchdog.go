@@ -119,12 +119,15 @@ func (w *WatchdogService) runChecks() error {
 		return fmt.Errorf("goroutine count %d exceeds threshold %d (possible leak)", numGoroutines, w.cfg.MaxGoroutines)
 	}
 
-	// Check memory usage
+	// Check memory usage using HeapInuse instead of Alloc.
+	// HeapInuse reflects actual heap memory held by the runtime and is stable
+	// across GC cycles, whereas Alloc fluctuates significantly and causes
+	// false positives/negatives.
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
-	allocMB := int(memStats.Alloc / 1024 / 1024)
-	if allocMB > w.cfg.MaxMemoryMB {
-		return fmt.Errorf("memory usage %dMB exceeds threshold %dMB (possible leak)", allocMB, w.cfg.MaxMemoryMB)
+	heapInuseMB := int(memStats.HeapInuse / 1024 / 1024)
+	if heapInuseMB > w.cfg.MaxMemoryMB {
+		return fmt.Errorf("heap memory %dMB exceeds threshold %dMB (possible leak)", heapInuseMB, w.cfg.MaxMemoryMB)
 	}
 
 	// Check connection activity (if monitor is available)

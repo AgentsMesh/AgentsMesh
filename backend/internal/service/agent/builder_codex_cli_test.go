@@ -75,6 +75,31 @@ func TestCodexCLIBuilder_BuildLaunchArgs_VersionAdaptation(t *testing.T) {
 			agentVersion: "0.1.2025030100",
 			wantArgs:     []string{"--approval-mode", "full-auto"},
 		},
+		// Codex CLI >= 0.100.0 (Rust rewrite) - approval value mapping
+		{
+			name:         "rust codex maps suggest to on-request",
+			approvalMode: "suggest",
+			agentVersion: "0.101.0",
+			wantArgs:     []string{"--ask-for-approval", "on-request"},
+		},
+		{
+			name:         "rust codex maps auto-edit to on-failure",
+			approvalMode: "auto-edit",
+			agentVersion: "0.101.0",
+			wantArgs:     []string{"--ask-for-approval", "on-failure"},
+		},
+		{
+			name:         "rust codex maps full-auto to never",
+			approvalMode: "full-auto",
+			agentVersion: "0.100.0",
+			wantArgs:     []string{"--ask-for-approval", "never"},
+		},
+		{
+			name:         "rust codex passes through unknown values",
+			approvalMode: "on-request",
+			agentVersion: "0.101.0",
+			wantArgs:     []string{"--ask-for-approval", "on-request"},
+		},
 	}
 
 	for _, tt := range tests {

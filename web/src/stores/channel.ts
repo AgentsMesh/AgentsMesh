@@ -210,8 +210,11 @@ export const useChannelStore = create<ChannelState>((set) => ({
   sendMessage: async (channelId, content, podKey) => {
     try {
       const response = await channelApi.sendMessage(channelId, content, podKey);
+      // Deduplicate: WebSocket event may have already added this message
       set((state) => ({
-        messages: [...state.messages, response.message],
+        messages: state.messages.some((m) => m.id === response.message.id)
+          ? state.messages
+          : [...state.messages, response.message],
       }));
       return response.message;
     } catch (error: unknown) {

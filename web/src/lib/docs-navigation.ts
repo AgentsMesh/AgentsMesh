@@ -36,6 +36,7 @@ export const docsNavSections: DocNavSection[] = [
       { titleKey: "docs.nav.channels", href: "/docs/features/channels" },
       { titleKey: "docs.nav.meshTopology", href: "/docs/features/mesh" },
       { titleKey: "docs.nav.tickets", href: "/docs/features/tickets" },
+      { titleKey: "docs.nav.loops", href: "/docs/features/loops" },
       {
         titleKey: "docs.nav.repositories",
         href: "/docs/features/repositories",
@@ -77,6 +78,7 @@ export const docsNavSections: DocNavSection[] = [
       { titleKey: "docs.nav.apiPods", href: "/docs/api/pods" },
       { titleKey: "docs.nav.apiTickets", href: "/docs/api/tickets" },
       { titleKey: "docs.nav.apiChannels", href: "/docs/api/channels" },
+      { titleKey: "docs.nav.apiLoops", href: "/docs/api/loops" },
       { titleKey: "docs.nav.apiRunners", href: "/docs/api/runners" },
       {
         titleKey: "docs.nav.apiRepositories",

@@ -11,7 +11,9 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func init() {
@@ -253,7 +255,14 @@ func (m *mockHandlerDB) Scan(dest interface{}) error {
 }
 
 func (m *mockHandlerDB) GormDB() *gorm.DB {
-	return nil
+	// Return a real SQLite DB with loops/loop_runs tables
+	// so that DeleteOrganization's cleanup Exec calls don't panic.
+	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	db.Exec(`CREATE TABLE IF NOT EXISTS loops (id INTEGER PRIMARY KEY, organization_id INTEGER, runner_id INTEGER)`)
+	db.Exec(`CREATE TABLE IF NOT EXISTS loop_runs (id INTEGER PRIMARY KEY, organization_id INTEGER)`)
+	return db
 }
 
 var _ database.DB = (*mockHandlerDB)(nil)

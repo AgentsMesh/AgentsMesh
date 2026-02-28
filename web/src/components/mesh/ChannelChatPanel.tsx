@@ -3,10 +3,12 @@
 import { useEffect, useCallback } from "react";
 import { useChannelStore } from "@/stores/channel";
 import { useMeshStore } from "@/stores/mesh";
+import { podApi } from "@/lib/api/pod";
 import { ChannelHeader } from "./ChannelHeader";
 import { ChannelDocument } from "./ChannelDocument";
 import { MessageList } from "./MessageList";
-import { MessageInput } from "./MessageInput";
+import { MessageInput, extractPromptFromMention, buildChannelPrompt } from "./MessageInput";
+import type { MentionedPod } from "./MessageInput";
 import { Loader2 } from "lucide-react";
 
 interface ChannelChatPanelProps {
@@ -26,7 +28,7 @@ export function ChannelChatPanel({ channelId, onClose }: ChannelChatPanelProps) 
     setCurrentChannel,
   } = useChannelStore();
 
-  const { topology } = useMeshStore();
+  const { topology, fetchTopology } = useMeshStore();
 
   // Load channel and messages when channelId changes
   useEffect(() => {
@@ -44,16 +46,36 @@ export function ChannelChatPanel({ channelId, onClose }: ChannelChatPanelProps) 
   const channelInfo = topology?.channels.find((c) => c.id === channelId);
   const podCount = channelInfo?.pod_keys.length || currentChannel?.pods?.length || 0;
 
-  // Handle send message
+  // Resolve channel name for prompt context (extracted for React Compiler compatibility)
+  const channelName = currentChannel?.name || channelInfo?.name || "Channel";
+
+  // Refresh topology and channel data when pod membership changes
+  const handlePodsChanged = useCallback(() => {
+    fetchTopology();
+    fetchChannel(channelId);
+  }, [fetchTopology, fetchChannel, channelId]);
+
+  // Handle send message — also forward prompt to @mentioned pods
   const handleSendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, mentionedPods?: MentionedPod[]) => {
       try {
         await sendMessage(channelId, content);
+
+        // Forward prompt to each mentioned pod's terminal
+        if (mentionedPods && mentionedPods.length > 0) {
+          const rawPrompt = extractPromptFromMention(content, mentionedPods);
+          if (rawPrompt) {
+            const prompt = buildChannelPrompt(rawPrompt, channelName);
+            await Promise.allSettled(
+              mentionedPods.map((pod) => podApi.sendPrompt(pod.podKey, prompt))
+            );
+          }
+        }
       } catch (error) {
         console.error("Failed to send message:", error);
       }
     },
-    [channelId, sendMessage]
+    [channelId, sendMessage, channelName]
   );
 
   // Handle load more messages
@@ -110,12 +132,14 @@ export function ChannelChatPanel({ channelId, onClose }: ChannelChatPanelProps) 
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <ChannelHeader
-        name={currentChannel?.name || channelInfo?.name || "Channel"}
+        name={channelName}
         description={currentChannel?.description}
         podCount={podCount}
+        channelId={channelId}
         onClose={onClose}
         onRefresh={handleRefresh}
         loading={messagesLoading}
+        onPodsChanged={handlePodsChanged}
       />
 
       {/* Document section - collapsible markdown preview */}
@@ -135,6 +159,7 @@ export function ChannelChatPanel({ channelId, onClose }: ChannelChatPanelProps) 
       <MessageInput
         onSend={handleSendMessage}
         placeholder="Send a message to this channel..."
+        channelId={channelId}
       />
     </div>
   );

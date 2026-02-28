@@ -140,11 +140,103 @@ func TestOutputRouter_SetOnFlush(t *testing.T) {
 	}
 }
 
-func TestOutputRouter_NoCallbacks(t *testing.T) {
+func TestOutputRouter_NoCallbacks_BuffersEarlyOutput(t *testing.T) {
 	or := NewOutputRouter(nil)
 
-	// Should not panic with no callbacks
-	or.Route([]byte("test"))
+	// Should buffer data when no callbacks are set
+	or.Route([]byte("error: invalid argument\n"))
+
+	buf := or.DrainEarlyBuffer()
+	if string(buf) != "error: invalid argument\n" {
+		t.Errorf("Expected buffered early output, got '%s'", buf)
+	}
+
+	// After drain, buffer should be empty and done
+	buf2 := or.DrainEarlyBuffer()
+	if buf2 != nil {
+		t.Errorf("Expected nil after second drain, got '%s'", buf2)
+	}
+
+	// Further routes should not buffer (earlyDone=true)
+	or.Route([]byte("more data"))
+	buf3 := or.DrainEarlyBuffer()
+	if buf3 != nil {
+		t.Errorf("Expected nil for post-drain route, got '%s'", buf3)
+	}
+}
+
+func TestOutputRouter_EarlyBuffer_ReplayOnRelayConnect(t *testing.T) {
+	or := NewOutputRouter(nil)
+
+	// Buffer some early output
+	or.Route([]byte("startup "))
+	or.Route([]byte("output"))
+
+	// When relay connects, buffered data should be replayed
+	var relayReceived []byte
+	or.SetRelayOutput(func(data []byte) {
+		relayReceived = append(relayReceived, data...)
+	})
+
+	if string(relayReceived) != "startup output" {
+		t.Errorf("Expected replayed 'startup output', got '%s'", relayReceived)
+	}
+
+	// Subsequent routes go directly through relay
+	or.Route([]byte(" live"))
+	if string(relayReceived) != "startup output live" {
+		t.Errorf("Expected 'startup output live', got '%s'", relayReceived)
+	}
+}
+
+func TestOutputRouter_EarlyBuffer_ReplayOnFlushSet(t *testing.T) {
+	or := NewOutputRouter(nil)
+
+	// Buffer some early output
+	or.Route([]byte("buffered data"))
+
+	// When onFlush is set, buffered data should be replayed
+	var flushReceived []byte
+	or.SetOnFlush(func(data []byte) {
+		flushReceived = append(flushReceived, data...)
+	})
+
+	if string(flushReceived) != "buffered data" {
+		t.Errorf("Expected replayed 'buffered data', got '%s'", flushReceived)
+	}
+}
+
+func TestOutputRouter_EarlyBuffer_MaxSize(t *testing.T) {
+	or := NewOutputRouter(nil)
+
+	// Fill beyond max buffer size
+	bigData := bytes.Repeat([]byte("x"), earlyBufferMaxSize+1000)
+	or.Route(bigData)
+
+	buf := or.DrainEarlyBuffer()
+	if len(buf) != earlyBufferMaxSize {
+		t.Errorf("Expected buffer capped at %d, got %d", earlyBufferMaxSize, len(buf))
+	}
+}
+
+func TestOutputRouter_EarlyBuffer_NotUsedWhenCallbackSet(t *testing.T) {
+	var received []byte
+	or := NewOutputRouter(func(data []byte) {
+		received = append(received, data...)
+	})
+
+	// With onFlush set, data should go directly, not buffer
+	or.Route([]byte("direct"))
+
+	if string(received) != "direct" {
+		t.Errorf("Expected 'direct', got '%s'", received)
+	}
+
+	// Early buffer should be empty
+	buf := or.DrainEarlyBuffer()
+	if buf != nil {
+		t.Errorf("Expected nil early buffer when callback is set, got '%s'", buf)
+	}
 }
 
 func TestOutputRouter_Concurrent(t *testing.T) {

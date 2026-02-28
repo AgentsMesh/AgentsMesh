@@ -78,12 +78,27 @@ func (t *Terminal) readOutput() {
 			}
 
 			if err != io.EOF {
-				// Only log if not a normal close
+				// Fatal PTY I/O error (not a normal close)
 				t.mu.Lock()
 				closed := t.closed
+				ptyErrorHandler := t.onPTYError
 				t.mu.Unlock()
 				if !closed {
 					log.Error("PTY read error", "error", err, "read_count", readCount)
+
+					// Notify the runner about the fatal PTY error so it can
+					// send a visible error message to the frontend via relay.
+					if ptyErrorHandler != nil {
+						ptyErrorHandler(err)
+					}
+
+					// Kill the process to trigger clean exit through waitExit/exitHandler.
+					// Without a working PTY, the user cannot interact with the process,
+					// so keeping it alive would only cause a frozen terminal.
+					if t.cmd != nil && t.cmd.Process != nil {
+						log.Info("Killing process after PTY read error", "pid", t.cmd.Process.Pid)
+						t.cmd.Process.Kill()
+					}
 				}
 			} else {
 				log.Debug("PTY EOF received", "read_count", readCount)
@@ -144,13 +159,15 @@ func (t *Terminal) waitExit() {
 
 	log.Info("Process exited", "pid", t.cmd.Process.Pid, "exit_code", exitCode)
 
+	// Signal that the process has exited (unblocks Stop() if waiting)
+	close(t.doneCh)
+
 	t.mu.Lock()
 	t.closed = true
 	t.mu.Unlock()
 
-	if t.pty != nil {
-		t.pty.Close()
-	}
+	// Close PTY via sync.Once (safe if Stop() also calls closePTY)
+	t.closePTY()
 
 	// Get handler with lock to prevent race condition
 	t.mu.Lock()
