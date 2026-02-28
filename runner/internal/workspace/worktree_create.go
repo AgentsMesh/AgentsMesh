@@ -113,12 +113,12 @@ func (m *Manager) CreateWorktreeWithOptions(ctx context.Context, repoURL, branch
 
 	worktreeCmd := exec.CommandContext(ctx, "git", "worktree", "add", "-b", worktreeBranch, worktreePath, fmt.Sprintf("origin/%s", branch))
 	worktreeCmd.Dir = mainRepoPath
-	if output, err := worktreeCmd.CombinedOutput(); err != nil {
+	if _, err := worktreeCmd.CombinedOutput(); err != nil {
 		// If branch already exists, try without -b
 		worktreeCmd = exec.CommandContext(ctx, "git", "worktree", "add", worktreePath, fmt.Sprintf("origin/%s", branch))
 		worktreeCmd.Dir = mainRepoPath
-		if output, err = worktreeCmd.CombinedOutput(); err != nil {
-			return nil, fmt.Errorf("failed to create worktree: %s, output: %s", err, output)
+		if output, retryErr := worktreeCmd.CombinedOutput(); retryErr != nil {
+			return nil, fmt.Errorf("failed to create worktree: %s, output: %s", retryErr, output)
 		}
 	}
 

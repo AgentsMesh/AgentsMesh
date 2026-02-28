@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -73,7 +74,7 @@ func TestManagerListServersEmpty(t *testing.T) {
 func TestManagerStartServerNotFound(t *testing.T) {
 	manager := NewManager()
 
-	err := manager.StartServer(nil, "nonexistent")
+	err := manager.StartServer(context.TODO(), "nonexistent")
 	if err == nil {
 		t.Error("expected error for nonexistent server")
 	}
@@ -119,7 +120,7 @@ func TestManagerGetAllResourcesEmpty(t *testing.T) {
 func TestManagerCallToolServerNotFound(t *testing.T) {
 	manager := NewManager()
 
-	_, err := manager.CallTool(nil, "nonexistent", "tool", nil)
+	_, err := manager.CallTool(context.TODO(), "nonexistent", "tool", nil)
 	if err == nil {
 		t.Error("expected error for nonexistent server")
 	}
@@ -129,7 +130,7 @@ func TestManagerCallToolServerNotRunning(t *testing.T) {
 	manager := NewManager()
 	manager.AddServer(&Config{Name: "test-server", Command: "/usr/bin/echo"})
 
-	_, err := manager.CallTool(nil, "test-server", "tool", nil)
+	_, err := manager.CallTool(context.TODO(), "test-server", "tool", nil)
 	if err == nil {
 		t.Error("expected error for server not running")
 	}
@@ -138,7 +139,7 @@ func TestManagerCallToolServerNotRunning(t *testing.T) {
 func TestManagerReadResourceServerNotFound(t *testing.T) {
 	manager := NewManager()
 
-	_, _, err := manager.ReadResource(nil, "nonexistent", "file://test")
+	_, _, err := manager.ReadResource(context.TODO(), "nonexistent", "file://test")
 	if err == nil {
 		t.Error("expected error for nonexistent server")
 	}
@@ -148,7 +149,7 @@ func TestManagerReadResourceServerNotRunning(t *testing.T) {
 	manager := NewManager()
 	manager.AddServer(&Config{Name: "test-server", Command: "/usr/bin/echo"})
 
-	_, _, err := manager.ReadResource(nil, "test-server", "file://test")
+	_, _, err := manager.ReadResource(context.TODO(), "test-server", "file://test")
 	if err == nil {
 		t.Error("expected error for server not running")
 	}

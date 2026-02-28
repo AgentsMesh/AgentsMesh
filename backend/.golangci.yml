@@ -1,0 +1,62 @@
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+
+issues:
+  exclude-rules:
+    # Test files: exclude noisy linters for test setup/teardown
+    - path: "_test\\.go"
+      linters:
+        - errcheck
+        - unused
+
+    # Cleanup/best-effort operations
+    - text: "Error return value of .*(Close|Remove|Rename)"
+      linters:
+        - errcheck
+
+    # Event publishing - fire-and-forget pattern
+    - text: "Error return value of .*Publish"
+      linters:
+        - errcheck
+
+    # JSON/format scanning - best-effort parsing
+    - text: "Error return value of .*(Scan|Decode|Read)"
+      linters:
+        - errcheck
+
+    # OAuth token update - best-effort
+    - text: "Error return value of .*UpdateIdentityTokens"
+      linters:
+        - errcheck
+
+    # Intentionally empty branches with explanatory comments
+    - text: "SA9003: empty branch"
+      linters:
+        - staticcheck
+
+    # Deprecated AWS SDK v1 endpoint resolver - migration tracked separately
+    - text: "SA1019:.*aws\\.(Endpoint|EndpointResolver)"
+      linters:
+        - staticcheck
+
+    # Deprecated AWS config option
+    - text: "SA1019:.*config\\.WithEndpointResolver"
+      linters:
+        - staticcheck
+
+    # Deprecated ACME DNS provider
+    - text: "SA1019:.*dns01\\.GetRecord"
+      linters:
+        - staticcheck
+
+    # Deprecated internal package import (split into smaller files)
+    - text: "SA1019:.*infra/tasks"
+      linters:
+        - staticcheck
+
+    # time.Until simplification - low priority
+    - text: "S1024:"
+      linters:
+        - gosimple

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -256,6 +257,7 @@ func TestControlChannelNeverStarved(t *testing.T) {
 					return
 				case conn.terminalCh <- &runnerv1.RunnerMessage{}:
 				default:
+					runtime.Gosched()
 				}
 			}
 		}()

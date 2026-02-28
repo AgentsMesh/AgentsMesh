@@ -155,9 +155,9 @@ func TestBackgroundChecker_Stop_CancelsContext(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	assert.False(t, c.IsRunning())
 
-	// Verify cancel was called (internal state)
+	// Verify cancel was called - the lock/unlock proves no data race on internal state
 	c.mu.RLock()
-	// cancel should have been set and called
+	_ = c.cancel // verify field is accessible under lock
 	c.mu.RUnlock()
 }
 

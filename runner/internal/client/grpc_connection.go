@@ -73,9 +73,8 @@ type GRPCConnection struct {
 	controlCh     chan *runnerv1.RunnerMessage // High priority: heartbeat, pod_created, pod_terminated, OSC, etc.
 	terminalCh    chan *runnerv1.RunnerMessage // Low priority: agent_status (terminal output via Relay)
 	stopCh        chan struct{}
-	stopOnce      sync.Once
-	reconnectOnce sync.Once     // Ensures only one reconnection attempt
-	reconnectCh   chan struct{} // Signal to trigger reconnection
+	stopOnce    sync.Once
+	reconnectCh chan struct{} // Signal to trigger reconnection
 
 	// Stuck detection for writeLoop
 	lastSendTime atomic.Int64
@@ -287,21 +286,6 @@ func (c *GRPCConnection) getFatalError() error {
 	c.fatalErrMu.Lock()
 	defer c.fatalErrMu.Unlock()
 	return c.fatalErr
-}
-
-// isRetryableError returns true if the gRPC error is retryable.
-func isRetryableError(err error) bool {
-	st, ok := status.FromError(err)
-	if !ok {
-		return false
-	}
-
-	switch st.Code() {
-	case codes.Unavailable, codes.ResourceExhausted, codes.Aborted:
-		return true
-	default:
-		return false
-	}
 }
 
 // isFatalStreamError checks if a gRPC stream error is fatal (should not retry).
