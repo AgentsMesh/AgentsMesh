@@ -1,29 +1,29 @@
 # Runner SSH Keys
 
-此目录包含 dev runner 用于访问 Git 仓库的 SSH 密钥。
+This directory contains SSH keys used by the dev runner to access Git repositories.
 
-## 文件说明
+## Files
 
-- `id_ed25519` - 私钥（**不要提交到 Git**）
-- `id_ed25519.pub` - 公钥（可以提交，用于参考）
-- `config` - SSH 客户端配置
-- `known_hosts` - 已知主机列表
+- `id_ed25519` - Private key (**do not commit to Git**)
+- `id_ed25519.pub` - Public key (can be committed, for reference)
+- `config` - SSH client configuration
+- `known_hosts` - Known hosts list
 
-## 生成新密钥
+## Generate New Keys
 
-如果私钥丢失或需要重新生成：
+If the private key is lost or needs to be regenerated:
 
 ```bash
-# 生成新的 ED25519 密钥
+# Generate a new ED25519 key
 ssh-keygen -t ed25519 -C "agentsmesh-dev-runner@local" -f ./id_ed25519 -N ""
 
-# 生成 known_hosts
+# Generate known_hosts
 ssh-keyscan -p 2222 gitlab.corp.signalrender.com > known_hosts
 ```
 
-## 在 GitLab 上配置
+## Configure on GitLab
 
-将公钥添加为项目的 Deploy Key：
+Add the public key as a Deploy Key for the project:
 
 ```bash
 PUBKEY=$(cat id_ed25519.pub)
@@ -33,14 +33,14 @@ GITLAB_HOST=gitlab.corp.signalrender.com glab api -X POST projects/12/deploy_key
   -f can_push=true
 ```
 
-或者在 GitLab Web UI 中：
-1. 进入项目 Settings > Repository > Deploy Keys
-2. 添加公钥内容
-3. 勾选 "Grant write permissions to this key"
+Or via the GitLab Web UI:
+1. Go to project Settings > Repository > Deploy Keys
+2. Add the public key content
+3. Check "Grant write permissions to this key"
 
-## 测试连接
+## Test Connection
 
 ```bash
-# 在 runner 容器中测试
+# Test inside the runner container
 docker compose exec runner ssh -T git@gitlab.corp.signalrender.com
 ```
