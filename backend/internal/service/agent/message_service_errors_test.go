@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"gorm.io/driver/sqlite"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

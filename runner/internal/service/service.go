@@ -12,9 +12,9 @@ import (
 
 	"github.com/kardianos/service"
 
-	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/runner"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/runner"
 )
 
 // Module logger for service

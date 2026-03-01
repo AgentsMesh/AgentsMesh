@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 	"gorm.io/gorm"
 )
 

@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/safego"
 )
 
 // UserInteractionHandler manages user takeover, handback, and approval interactions.

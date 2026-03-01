@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // restartDelay is the delay between panic-triggered restarts in GoLoop.

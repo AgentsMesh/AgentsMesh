@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
 )
 
 // Message types for Relay protocol

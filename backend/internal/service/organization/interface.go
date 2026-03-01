@@ -3,8 +3,8 @@ package organization
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
 )
 
 // Interface defines the organization service operations.

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/promocode"
 )
 
 // CreateRequest represents a create promo code request

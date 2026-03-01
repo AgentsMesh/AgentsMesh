@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/channel"
 )
 
 func TestValidateScopes(t *testing.T) {

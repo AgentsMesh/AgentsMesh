@@ -3,7 +3,7 @@ package agentpod
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
 )
 
 func TestBuildTicketPrompt(t *testing.T) {

@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
+	userService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 )
 
 // ==================== buildPodCommand Tests ====================

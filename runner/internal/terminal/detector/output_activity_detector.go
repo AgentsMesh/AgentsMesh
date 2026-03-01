@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/safego"
 )
 
 // OutputActivityDetector detects agent state based on terminal output activity.

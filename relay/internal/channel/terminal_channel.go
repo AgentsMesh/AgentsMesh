@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/anthropics/agentsmesh/relay/internal/protocol"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/protocol"
 )
 
 // Subscriber represents a browser WebSocket connection (observer)

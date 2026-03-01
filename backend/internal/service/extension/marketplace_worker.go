@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
 )
 
 // MarketplaceWorker runs background sync for platform-level Skill Registries

@@ -3,9 +3,9 @@ package admin
 import (
 	"net/http"
 
-	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
+	adminservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/admin"
 
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

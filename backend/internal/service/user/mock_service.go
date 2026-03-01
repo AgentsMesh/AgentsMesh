@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 )
 
 // MockService is a mock implementation of Interface for testing.

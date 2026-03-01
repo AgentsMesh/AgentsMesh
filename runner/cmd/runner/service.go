@@ -7,7 +7,7 @@ import (
 
 	"github.com/kardianos/service"
 
-	svc "github.com/anthropics/agentsmesh/runner/internal/service"
+	svc "github.com/AgentsMesh/AgentsMesh/runner/internal/service"
 )
 
 // runService handles the "service" subcommand for system service management.

@@ -3,8 +3,8 @@ package v1
 import (
 	"context"
 
-	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	agentDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
 )
 
 // AgentHandler handles agent-related requests

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
 )
 
 // GetPendingRetries returns messages that need retry

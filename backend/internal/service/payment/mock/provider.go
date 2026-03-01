@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/types"
 )
 
 // Provider implements payment.SubscriptionProvider for testing/mocking

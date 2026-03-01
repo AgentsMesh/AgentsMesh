@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // GetWorkspace returns the workspace directory path.

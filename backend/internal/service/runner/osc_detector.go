@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
 )
 
 // OSCDetector publishes OSC terminal notification and title events to EventBus.

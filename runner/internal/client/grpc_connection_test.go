@@ -16,8 +16,8 @@ func TestParseGRPCEndpoint(t *testing.T) {
 	}{
 		{
 			name:     "grpcs scheme with port",
-			endpoint: "grpcs://api.agentsmesh.cn:9443",
-			expected: "api.agentsmesh.cn:9443",
+			endpoint: "grpcs://api.example.com:9443",
+			expected: "api.example.com:9443",
 		},
 		{
 			name:     "grpc scheme with port",
@@ -36,7 +36,7 @@ func TestParseGRPCEndpoint(t *testing.T) {
 		},
 		{
 			name:        "unsupported scheme",
-			endpoint:    "https://api.agentsmesh.cn:9443",
+			endpoint:    "https://api.example.com:9443",
 			expectError: true,
 		},
 		{

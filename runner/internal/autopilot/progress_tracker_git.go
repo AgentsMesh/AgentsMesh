@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // getGitDiffSummary retrieves git diff information for the working directory.

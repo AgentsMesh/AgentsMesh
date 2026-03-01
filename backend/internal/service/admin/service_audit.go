@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/admin"
 )
 
 // LogAction records an admin action in the audit log

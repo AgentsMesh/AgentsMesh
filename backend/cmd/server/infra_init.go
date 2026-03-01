@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/logger"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/websocket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )

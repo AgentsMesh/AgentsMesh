@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
 )
 
 // decryptCredentials decrypts stored credentials

@@ -3,9 +3,9 @@ package runner
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 func TestHandleAgentStatus(t *testing.T) {

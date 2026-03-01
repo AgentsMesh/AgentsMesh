@@ -2,7 +2,7 @@
 package client
 
 import (
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // MessageType defines the type of message (used for mock testing).

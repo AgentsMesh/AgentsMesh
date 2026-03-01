@@ -1,10 +1,10 @@
 package v1
 
 import (
-	billingSvc "github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	invitationSvc "github.com/anthropics/agentsmesh/backend/internal/service/invitation"
-	orgSvc "github.com/anthropics/agentsmesh/backend/internal/service/organization"
-	userSvc "github.com/anthropics/agentsmesh/backend/internal/service/user"
+	billingSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
+	invitationSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/invitation"
+	orgSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/organization"
+	userSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
 

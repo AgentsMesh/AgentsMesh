@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	billingService "github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
-	"gorm.io/driver/sqlite"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	billingService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

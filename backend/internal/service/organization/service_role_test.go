@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
 )
 
 func TestIsAdmin(t *testing.T) {

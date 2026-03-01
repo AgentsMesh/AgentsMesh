@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 

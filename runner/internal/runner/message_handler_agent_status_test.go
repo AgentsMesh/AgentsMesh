@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/client"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/detector"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
 )
 
 // =============================================================================

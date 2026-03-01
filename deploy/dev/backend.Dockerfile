@@ -1,5 +1,5 @@
 # Development Dockerfile with hot reload using Air
-FROM docker.1ms.run/library/golang:1.25-alpine
+FROM golang:1.25-alpine
 
 # Install air for hot reload
 RUN go install github.com/air-verse/air@latest

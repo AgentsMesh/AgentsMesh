@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
 )
 
 // ===========================================================================

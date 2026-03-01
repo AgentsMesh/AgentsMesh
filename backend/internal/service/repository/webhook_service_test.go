@@ -3,7 +3,7 @@ package repository
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
 )
 
 // ===========================================

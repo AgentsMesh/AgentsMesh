@@ -4,7 +4,7 @@ package aggregator
 import (
 	"bytes"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // FrameDetector detects Synchronized Output frame boundaries.

@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/relay"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 )
 
 // TerminalConnectHandler handles terminal connection requests via Relay

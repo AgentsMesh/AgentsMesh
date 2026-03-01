@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"gorm.io/driver/sqlite"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

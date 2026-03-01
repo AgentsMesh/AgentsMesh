@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
 )
 
 // CheckoutRequest represents a request to create a checkout session

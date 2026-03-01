@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	userService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 )

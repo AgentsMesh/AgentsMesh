@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

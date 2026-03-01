@@ -1,8 +1,8 @@
 package v1
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/repository"
 )
 
 // RepositoryHandler handles repository-related requests

@@ -11,10 +11,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/anthropics/agentsmesh/relay/internal/auth"
-	"github.com/anthropics/agentsmesh/relay/internal/backend"
-	"github.com/anthropics/agentsmesh/relay/internal/channel"
-	"github.com/anthropics/agentsmesh/relay/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/auth"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/backend"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/channel"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/config"
 )
 
 // Server is the main relay server

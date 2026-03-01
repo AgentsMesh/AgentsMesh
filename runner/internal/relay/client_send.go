@@ -3,7 +3,7 @@ package relay
 import (
 	"fmt"
 
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
 )
 
 // SendSnapshot sends a terminal snapshot to the relay

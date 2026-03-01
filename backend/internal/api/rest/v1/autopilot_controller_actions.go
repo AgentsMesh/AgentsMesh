@@ -3,11 +3,11 @@ package v1
 import (
 	"net/http"
 
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // AutopilotControlRequest represents control action request

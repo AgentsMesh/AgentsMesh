@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/database"
 )
 
 // OrganizationListQuery represents query parameters for organization listing

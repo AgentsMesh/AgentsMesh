@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/promocode"
 )
 
 func TestService_Deactivate(t *testing.T) {

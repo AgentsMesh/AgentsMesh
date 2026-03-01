@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	billingdomain "github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	billingdomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
 	"github.com/gin-gonic/gin"
 )
 

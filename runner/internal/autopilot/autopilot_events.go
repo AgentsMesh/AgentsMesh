@@ -1,7 +1,7 @@
 package autopilot
 
 import (
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // reportThinkingEvent sends an AutopilotThinkingEvent to expose the Control Agent's decision process.

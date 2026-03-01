@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/repository"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/repository"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/git"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

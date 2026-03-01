@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	orgService "github.com/anthropics/agentsmesh/backend/internal/service/organization"
-	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	orgService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/organization"
+	userService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
 

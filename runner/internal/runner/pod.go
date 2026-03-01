@@ -4,13 +4,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/clipboard"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/relay"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/clipboard"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/relay"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/aggregator"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/detector"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
 )
 
 // Pod represents an active terminal pod

@@ -3,7 +3,7 @@ package runner
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
 )
 
 // --- Types and Error Tests ---

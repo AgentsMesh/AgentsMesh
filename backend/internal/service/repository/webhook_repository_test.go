@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
 )
 
 // ===========================================

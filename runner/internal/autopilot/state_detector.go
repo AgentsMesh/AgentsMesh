@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/detector"
 )
 
 // StateDetectorCoordinator coordinates state detection and triggers callbacks.

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 )
 
 // =============================================================================

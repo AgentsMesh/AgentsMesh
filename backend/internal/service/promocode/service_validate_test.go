@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/promocode"
 )
 
 func TestService_Validate(t *testing.T) {

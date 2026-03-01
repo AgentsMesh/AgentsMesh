@@ -3,7 +3,7 @@ package grpc
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
 )
 
 // ==================== Binding MCP Methods ====================

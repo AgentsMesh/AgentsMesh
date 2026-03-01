@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/channel"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
 )
 
 // SendMessage sends a message to a channel

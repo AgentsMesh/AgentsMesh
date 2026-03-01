@@ -3,9 +3,9 @@ package file
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
-	"gorm.io/driver/sqlite"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/storage"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

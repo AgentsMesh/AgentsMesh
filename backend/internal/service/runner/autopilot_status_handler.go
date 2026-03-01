@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // handleAutopilotControllerStatus handles AutopilotController status events from runner

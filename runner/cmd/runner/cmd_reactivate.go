@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
 )
 
 func runReactivate(args []string) {

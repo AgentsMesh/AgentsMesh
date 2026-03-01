@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	ticketDomain "github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
-	"github.com/anthropics/agentsmesh/backend/pkg/blocknote"
+	ticketDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/blocknote"
 )
 
 // mcpTicketResponse wraps ticket.Ticket to add resolved slug fields and content pagination

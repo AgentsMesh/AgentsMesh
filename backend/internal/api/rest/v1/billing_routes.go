@@ -1,7 +1,7 @@
 package v1
 
 import (
-	billingsvc "github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	billingsvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
 	"github.com/gin-gonic/gin"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/crypto"
 )
 
 // GetOrCreateByOAuth gets or creates a user from OAuth identity

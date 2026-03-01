@@ -3,8 +3,8 @@ package invitation
 import (
 	"errors"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/invitation"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/email"
 	"gorm.io/gorm"
 )
 

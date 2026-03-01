@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

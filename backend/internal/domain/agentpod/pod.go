@@ -3,11 +3,11 @@ package agentpod
 import (
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/repository"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/repository"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 )
 
 // Pod status constants

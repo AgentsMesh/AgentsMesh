@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package runner.v1;
 
-option go_package = "github.com/anthropic/agentmesh/proto/runner/v1;runnerv1";
+option go_package = "github.com/AgentsMesh/AgentsMesh/proto/runner/v1;runnerv1";
 
 // RunnerService 定义 Runner 与 Backend 的双向通信服务
 service RunnerService {

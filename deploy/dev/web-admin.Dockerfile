@@ -1,5 +1,5 @@
 # Development Dockerfile for Admin Console with hot reload
-FROM docker.1ms.run/library/node:20-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 

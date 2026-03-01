@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
 )
 
 // Provider is the interface for DNS management

@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
 )
 
 // CalculateUpgradePrice calculates the prorated price for upgrading to a new plan

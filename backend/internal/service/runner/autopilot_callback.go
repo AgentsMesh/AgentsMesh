@@ -1,7 +1,7 @@
 package runner
 
 import (
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // AutopilotController event callbacks

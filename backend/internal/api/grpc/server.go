@@ -21,11 +21,11 @@ import (
 	"google.golang.org/grpc/reflection"
 	"gorm.io/gorm"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/pki"
-	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	runnerDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/pki"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/interfaces"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
 )
 
 // Server wraps the gRPC server with Runner-specific configuration.

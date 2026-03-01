@@ -3,7 +3,7 @@ package relay
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
 )
 
 func TestEncodeDecodeMessage(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // AgentProbeEntry represents cached probe result for a single agent.

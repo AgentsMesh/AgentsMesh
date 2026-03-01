@@ -7,8 +7,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // IterationController manages iteration counting, trigger deduplication,

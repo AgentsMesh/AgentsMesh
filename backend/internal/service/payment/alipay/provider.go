@@ -9,9 +9,9 @@ import (
 
 	"github.com/smartwalle/alipay/v3"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/types"
 )
 
 // Provider implements payment.AgreementProvider for Alipay

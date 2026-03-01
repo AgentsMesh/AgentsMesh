@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // Manager manages workspace directories and git worktrees

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
 )
 
 // RunnerListQuery represents query parameters for runner listing

@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
-	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	loopService "github.com/anthropics/agentsmesh/backend/internal/service/loop"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	loopDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/loop"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	loopService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/loop"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

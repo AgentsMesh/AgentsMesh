@@ -14,7 +14,7 @@ type PKIConfig struct {
 // gRPC server starts automatically when PKI CA files are configured
 type GRPCConfig struct {
 	Address  string // gRPC server listen address (default: :9090)
-	Endpoint string // Public gRPC endpoint URL for Runners (e.g., grpcs://api.agentsmesh.cn:9443)
+	Endpoint string // Public gRPC endpoint URL for Runners (e.g., grpcs://api.example.com:9443)
 }
 
 // AdminConfig holds admin console configuration

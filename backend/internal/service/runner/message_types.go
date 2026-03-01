@@ -3,7 +3,7 @@ package runner
 import (
 	"encoding/json"
 
-	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/interfaces"
 )
 
 // ========== Message Types ==========

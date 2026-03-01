@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/relay"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/client"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/relay"
 )
 
 const maxImagePasteSize = 2 * 1024 * 1024 // 2MB, matches frontend limit

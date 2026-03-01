@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/invitation"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 )
 
 // GetByToken retrieves an invitation by its token

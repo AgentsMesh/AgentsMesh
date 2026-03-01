@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // notifySystemHealthy sends a WATCHDOG=1 notification to systemd via sd_notify.

@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
 	"github.com/gin-gonic/gin"
 )
 

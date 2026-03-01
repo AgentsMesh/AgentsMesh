@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/relay/internal/auth"
-	"github.com/anthropics/agentsmesh/relay/internal/channel"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/auth"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/channel"
 	"github.com/gorilla/websocket"
 )
 

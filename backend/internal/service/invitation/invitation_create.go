@@ -6,8 +6,8 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/invitation"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
 )
 
 // CreateRequest represents an invitation creation request

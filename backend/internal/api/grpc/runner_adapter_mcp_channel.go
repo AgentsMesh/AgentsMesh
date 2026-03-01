@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"strconv"
 
-	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	channelDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/channel"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/channel"
 )
 
 // mcpChannelResponse wraps channel.Channel to add resolved slug fields for MCP responses.

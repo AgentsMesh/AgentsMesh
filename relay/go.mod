@@ -1,4 +1,4 @@
-module github.com/anthropics/agentsmesh/relay
+module github.com/AgentsMesh/AgentsMesh/relay
 
 go 1.24.11
 

@@ -8,15 +8,15 @@ import (
 
 	"github.com/thejerf/suture/v4"
 
-	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
-	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/clipboard"
-	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/lifecycle"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/mcp"
-	"github.com/anthropics/agentsmesh/runner/internal/monitor"
-	"github.com/anthropics/agentsmesh/runner/internal/workspace"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/autopilot"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/client"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/clipboard"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/lifecycle"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/mcp"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/monitor"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/workspace"
 )
 
 // Runner is the main runner instance

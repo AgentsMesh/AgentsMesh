@@ -3,10 +3,10 @@ package v1
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	promocodeSvc "github.com/anthropics/agentsmesh/backend/internal/service/promocode"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	promocodeSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/promocode"
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

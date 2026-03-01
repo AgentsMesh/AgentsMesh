@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 	"github.com/lib/pq"
 )
 

@@ -3,7 +3,7 @@ package mesh
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
 )
 
 func TestNewService(t *testing.T) {

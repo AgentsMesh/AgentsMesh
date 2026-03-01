@@ -9,7 +9,7 @@ import (
 	"github.com/stripe/stripe-go/v76"
 	"gorm.io/gorm"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
 )
 
 // ===========================================

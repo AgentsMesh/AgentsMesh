@@ -3,7 +3,7 @@ package detector
 import (
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // confidenceLogData holds data for logging confidence calculation results.

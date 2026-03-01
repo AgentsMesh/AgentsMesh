@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/updater"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/updater"
 )
 
 func runUpdate(args []string) {

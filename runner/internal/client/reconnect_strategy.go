@@ -3,7 +3,7 @@ package client
 import (
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // ReconnectStrategy manages reconnection with exponential backoff.

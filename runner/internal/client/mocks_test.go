@@ -3,7 +3,7 @@ package client
 import (
 	"sync"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // mockHandler is a mock implementation of MessageHandler for testing.

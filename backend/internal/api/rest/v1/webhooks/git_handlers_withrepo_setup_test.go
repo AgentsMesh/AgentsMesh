@@ -3,9 +3,9 @@ package webhooks
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
-	"gorm.io/driver/sqlite"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/repository"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

@@ -3,8 +3,8 @@ package auth
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	"gorm.io/driver/sqlite"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

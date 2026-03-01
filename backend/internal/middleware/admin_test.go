@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/database"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"

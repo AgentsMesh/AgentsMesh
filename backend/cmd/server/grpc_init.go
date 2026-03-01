@@ -4,17 +4,17 @@ import (
 	"context"
 	"log/slog"
 
-	grpcserver "github.com/anthropics/agentsmesh/backend/internal/api/grpc"
-	v1 "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/dns"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/pki"
-	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	grpcserver "github.com/AgentsMesh/AgentsMesh/backend/internal/api/grpc"
+	v1 "github.com/AgentsMesh/AgentsMesh/backend/internal/api/rest/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	runnerDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/dns"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/logger"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/pki"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/interfaces"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
 )
 
 // initializePKIAndGRPC initializes PKI service, gRPC Server, and gRPC runner handler.

@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	agentpodSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 )
 
 // CreateAutopilotController handles POST /autopilot-controllers

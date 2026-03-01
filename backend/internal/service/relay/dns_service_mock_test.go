@@ -63,7 +63,7 @@ func (m *MockDNSProvider) GetRecord(ctx context.Context, subdomain string) (stri
 func newTestDNSService(provider *MockDNSProvider, enabled bool) *DNSService {
 	return &DNSService{
 		provider:   provider,
-		baseDomain: "relay.agentsmesh.cn",
+		baseDomain: "relay.example.com",
 		enabled:    enabled,
 		logger:     slog.Default(),
 	}

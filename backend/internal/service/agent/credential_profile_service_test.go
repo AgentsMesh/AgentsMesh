@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

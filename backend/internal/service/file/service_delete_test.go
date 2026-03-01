@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/file"
 )
 
 func TestDelete_Success(t *testing.T) {

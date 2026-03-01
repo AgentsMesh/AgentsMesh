@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/client"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/aggregator"
 )
 
 // Tests for event sending methods and helper functions

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/file"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/storage"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

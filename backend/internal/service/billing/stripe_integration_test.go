@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/stripe/stripe-go/v76"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
 )
 
 // Stripe Integration Tests - Run with: go test -tags=integration -v ./internal/service/billing/...

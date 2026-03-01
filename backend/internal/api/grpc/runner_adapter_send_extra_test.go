@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
 )
 
 // ==================== Additional Send Tests ====================

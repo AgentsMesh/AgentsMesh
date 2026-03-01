@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/admin"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/promocode"
 )
 
 // GetPromoCode gets a promo code by ID

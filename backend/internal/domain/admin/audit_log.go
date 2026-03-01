@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 )
 
 // AuditAction represents types of admin actions

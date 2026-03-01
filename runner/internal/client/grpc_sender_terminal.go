@@ -3,8 +3,8 @@ package client
 import (
 	"time"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay

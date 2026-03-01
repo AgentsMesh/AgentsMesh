@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 )
 
 // oauthStateKeyPrefix is the Redis key prefix for OAuth states

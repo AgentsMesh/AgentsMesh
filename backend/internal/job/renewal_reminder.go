@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/email"
 	"gorm.io/gorm"
 )
 

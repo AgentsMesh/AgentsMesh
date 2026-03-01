@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"github.com/anthropics/agentsmesh/runner/internal/config"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
 )
 
 // Tests for basic PodBuilder functionality

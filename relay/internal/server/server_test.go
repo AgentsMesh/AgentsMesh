@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/relay/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/config"
 )
 
 func TestNew(t *testing.T) {

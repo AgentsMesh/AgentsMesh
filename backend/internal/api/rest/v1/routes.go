@@ -3,8 +3,8 @@ package v1
 import (
 	"log/slog"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
 	"github.com/gin-gonic/gin"
 )
 

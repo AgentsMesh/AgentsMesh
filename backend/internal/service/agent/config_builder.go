@@ -8,10 +8,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
-	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
+	extensionservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/extension"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // ExtensionProvider provides installed extension capabilities for a repository

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // RunnerCommandSender defines the interface for sending commands to runners.

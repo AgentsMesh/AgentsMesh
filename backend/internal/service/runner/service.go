@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
 	"gorm.io/gorm"
 )
 

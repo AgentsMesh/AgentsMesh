@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/websocket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 	gorillaWs "github.com/gorilla/websocket"
 )

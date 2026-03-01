@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
 )
 
 // GetWebhookStatus returns the webhook status for a repository

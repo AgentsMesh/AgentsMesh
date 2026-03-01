@@ -3,8 +3,8 @@ package runner
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/client"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
 )
 
 // Tests for OnTerminatePod operations

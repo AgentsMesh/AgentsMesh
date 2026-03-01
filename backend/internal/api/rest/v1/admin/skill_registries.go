@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
-	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
+	extensionservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

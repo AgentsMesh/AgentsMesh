@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/service/license"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/license"
 	"github.com/gin-gonic/gin"
 )
 

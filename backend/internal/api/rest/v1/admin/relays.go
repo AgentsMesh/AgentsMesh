@@ -3,11 +3,11 @@ package admin
 import (
 	"net/http"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
-	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
-	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/admin"
+	adminservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/admin"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/relay"
 
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

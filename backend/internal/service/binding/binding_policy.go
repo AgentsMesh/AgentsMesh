@@ -3,7 +3,7 @@ package binding
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/channel"
 )
 
 // evaluatePolicy evaluates the binding policy to determine if auto-approve

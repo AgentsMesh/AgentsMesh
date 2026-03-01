@@ -5,14 +5,14 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
-	alipayprovider "github.com/anthropics/agentsmesh/backend/internal/service/payment/alipay"
-	lemonsqueezyprovider "github.com/anthropics/agentsmesh/backend/internal/service/payment/lemonsqueezy"
-	licenseprovider "github.com/anthropics/agentsmesh/backend/internal/service/payment/license"
-	mockprovider "github.com/anthropics/agentsmesh/backend/internal/service/payment/mock"
-	stripeprovider "github.com/anthropics/agentsmesh/backend/internal/service/payment/stripe"
-	wechatprovider "github.com/anthropics/agentsmesh/backend/internal/service/payment/wechat"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
+	alipayprovider "github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/alipay"
+	lemonsqueezyprovider "github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/lemonsqueezy"
+	licenseprovider "github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/license"
+	mockprovider "github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/mock"
+	stripeprovider "github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/stripe"
+	wechatprovider "github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/wechat"
 )
 
 // Factory creates payment providers based on configuration

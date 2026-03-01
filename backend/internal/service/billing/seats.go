@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 
-	billingdomain "github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	billingdomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
 )
 
 // GetSeatUsage returns seat usage information for an organization

@@ -12,7 +12,7 @@ import (
 	"github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/registration"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/dns"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/dns"
 )
 
 // Config holds ACME manager configuration
@@ -25,8 +25,8 @@ type Config struct {
 	// Email for Let's Encrypt account registration
 	Email string
 
-	// Domain for wildcard certificate (e.g., "relay.agentsmesh.cn")
-	// Will request certificate for "*.relay.agentsmesh.cn"
+	// Domain for wildcard certificate (e.g., "relay.example.com")
+	// Will request certificate for "*.relay.example.com"
 	Domain string
 
 	// Storage directory for certificates and account data

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	apikeyDomain "github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
+	apikeyDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/apikey"
 	"gorm.io/gorm"
 )
 

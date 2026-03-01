@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"gorm.io/driver/sqlite"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

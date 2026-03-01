@@ -3,8 +3,8 @@ package v1
 import (
 	"regexp"
 
-	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/service/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 )
 
 // slugRegex validates organization slug: lowercase letters, numbers, and hyphens

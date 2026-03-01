@@ -4,14 +4,14 @@ import (
 	"context"
 	"testing"
 
-	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
-	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	agentDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
+	runnerDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
+	userService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 	"gorm.io/gorm"
 )
 

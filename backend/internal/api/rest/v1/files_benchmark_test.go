@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/file"
 	"github.com/gin-gonic/gin"
 )
 

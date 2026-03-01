@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/database"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 
 	"github.com/gin-gonic/gin"
 )

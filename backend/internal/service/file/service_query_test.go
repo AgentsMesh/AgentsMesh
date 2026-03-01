@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/file"
 )
 
 func TestGetByID_Success(t *testing.T) {

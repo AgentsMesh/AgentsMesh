@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/safego"
 )
 
 // isHandshakeError checks if the error is a WebSocket handshake failure

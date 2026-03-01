@@ -11,11 +11,11 @@ import (
 	"runtime/debug"
 	"syscall"
 
-	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/console"
-	"github.com/anthropics/agentsmesh/runner/internal/lifecycle"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/runner"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/console"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/lifecycle"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/runner"
 )
 
 // DefaultConsolePort is the default port for the web console.

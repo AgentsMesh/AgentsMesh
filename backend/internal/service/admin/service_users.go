@@ -3,7 +3,7 @@ package admin
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 )
 
 // UserListQuery represents query parameters for user listing

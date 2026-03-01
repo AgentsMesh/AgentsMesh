@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
-	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/types"
 )
 
 // executeAlipayAgreementPay executes Alipay agreement payment (代扣)

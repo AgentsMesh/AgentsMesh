@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 )
 
 func TestMockServiceGetIdentity(t *testing.T) {

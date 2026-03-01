@@ -1,11 +1,11 @@
 package v1
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
-	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
-	"github.com/anthropics/agentsmesh/backend/internal/service/user"
-	"github.com/anthropics/agentsmesh/backend/pkg/auth/oauth"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/email"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/auth"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/auth/oauth"
 	"github.com/gin-gonic/gin"
 )
 

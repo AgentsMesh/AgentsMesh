@@ -3,7 +3,7 @@ package ticket
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
 	"gorm.io/gorm"
 )
 

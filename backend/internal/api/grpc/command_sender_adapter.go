@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // GRPCCommandSender adapts GRPCRunnerAdapter to runner.RunnerCommandSender interface.

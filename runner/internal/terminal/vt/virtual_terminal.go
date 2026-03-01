@@ -5,7 +5,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/safego"
 )
 
 // OSCHandler is a callback for handling OSC (Operating System Command) sequences.

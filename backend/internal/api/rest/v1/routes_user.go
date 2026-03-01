@@ -1,10 +1,10 @@
 package v1
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/service/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
 

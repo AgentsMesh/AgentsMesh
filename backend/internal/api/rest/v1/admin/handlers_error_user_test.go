@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	adminservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/admin"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
 )
 
 func TestNewMockService(t *testing.T) {

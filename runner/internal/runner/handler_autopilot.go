@@ -3,11 +3,11 @@ package runner
 import (
 	"fmt"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/monitor"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/autopilot"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/monitor"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/detector"
 )
 
 // OnCreateAutopilot handles Autopilot creation command from server.

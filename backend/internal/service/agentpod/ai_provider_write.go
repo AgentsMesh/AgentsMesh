@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
 	"gorm.io/gorm"
 )
 

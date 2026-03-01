@@ -6,7 +6,7 @@ package lifecycle
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // ConnectionStarter defines the lifecycle interface for the gRPC connection.

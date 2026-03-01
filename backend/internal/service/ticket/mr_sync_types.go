@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/git"
 	"gorm.io/gorm"
 )
 

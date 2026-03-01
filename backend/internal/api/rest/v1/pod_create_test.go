@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
 )
 
 func TestMapOrchestratorErrorToHTTP(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
 	"github.com/stretchr/testify/assert"
 )
 

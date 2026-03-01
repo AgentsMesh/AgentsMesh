@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // Resize resizes the terminal.

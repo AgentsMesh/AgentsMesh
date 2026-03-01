@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	podDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	agentDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	podDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	runnerDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
 )
 
 func TestNewPodOrchestrator(t *testing.T) {

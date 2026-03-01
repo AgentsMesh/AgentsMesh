@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/apikey"
 )
 
 // Sentinel errors

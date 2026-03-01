@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1" // used by SendCreatePod test
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/interfaces"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1" // used by SendCreatePod test
 )
 
 // TestGRPCRunnerAdapter_Connect_Integration tests the full Connect flow.

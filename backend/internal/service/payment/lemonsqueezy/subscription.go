@@ -7,7 +7,7 @@ import (
 
 	lemonsqueezy "github.com/NdoleStudio/lemonsqueezy-go"
 
-	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment/types"
 )
 
 // CancelSubscription cancels a LemonSqueezy subscription

@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
-	"github.com/anthropics/agentsmesh/backend/pkg/audit"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/audit"
 )
 
 // ==================== Helper Function Tests ====================

@@ -2,8 +2,8 @@ package config
 
 // RelayConfig holds Relay server management configuration
 type RelayConfig struct {
-	// Base domain for relay subdomains (e.g., "relay.agentsmesh.cn")
-	// Used by DNSService to generate A records like "01.relay.agentsmesh.cn → IP"
+	// Base domain for relay subdomains (e.g., "relay.example.com")
+	// Used by DNSService to generate A records like "01.relay.example.com → IP"
 	BaseDomain string
 
 	// DNS provider configuration

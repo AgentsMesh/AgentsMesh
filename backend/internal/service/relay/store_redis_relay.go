@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/cache"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/cache"
 )
 
 // RedisStore implements Store interface using Redis

@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
+	fileservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/file"
 	"github.com/gin-gonic/gin"
 )
 

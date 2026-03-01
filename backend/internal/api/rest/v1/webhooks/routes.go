@@ -3,13 +3,13 @@ package webhooks
 import (
 	"log/slog"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
-	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
-	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/payment"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/repository"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/ticket"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

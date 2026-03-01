@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
-	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	ticketSvc "github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	loopDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/loop"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
+	agentpodSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
+	ticketSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/ticket"
 )
 
 // PodTerminator defines the minimal interface needed by LoopOrchestrator

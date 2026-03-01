@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/anthropics/agentsmesh/backend/pkg/audit"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/audit"
 )
 
 // validateRunner validates the Runner exists and belongs to the organization.

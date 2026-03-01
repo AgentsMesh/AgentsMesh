@@ -3,7 +3,7 @@ package agentpod
 import (
 	"errors"
 
-	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/crypto"
 	"gorm.io/gorm"
 )
 

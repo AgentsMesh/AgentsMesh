@@ -59,13 +59,13 @@ type aliyunRecord struct {
 	Status   string `json:"Status"` // Record status
 }
 
-// parseSubdomain splits "us-east-1.relay.agentsmesh.cn" into ("us-east-1.relay", "agentsmesh.cn")
+// parseSubdomain splits "us-east-1.relay.example.com" into ("us-east-1.relay", "example.com")
 func (p *AliyunProvider) parseSubdomain(fullDomain string) (rr string, domainName string) {
 	parts := strings.Split(fullDomain, ".")
 	if len(parts) < 3 {
 		return fullDomain, ""
 	}
-	// Assume last 2 parts are the domain (e.g., "agentsmesh.cn")
+	// Assume last 2 parts are the domain (e.g., "example.com")
 	domainName = strings.Join(parts[len(parts)-2:], ".")
 	rr = strings.Join(parts[:len(parts)-2], ".")
 	return rr, domainName

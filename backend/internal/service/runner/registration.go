@@ -3,7 +3,7 @@ package runner
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
 )
 
 // DeleteRunner deletes a runner.

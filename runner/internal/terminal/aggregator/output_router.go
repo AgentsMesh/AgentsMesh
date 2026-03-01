@@ -4,7 +4,7 @@ package aggregator
 import (
 	"sync"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // earlyBufferMaxSize is the maximum size for buffering output before any callback is set.

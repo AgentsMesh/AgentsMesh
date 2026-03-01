@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
-	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
+	loopDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/loop"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/instance"
 	"github.com/robfig/cron/v3"
 )
 

@@ -3,7 +3,7 @@ package agent
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

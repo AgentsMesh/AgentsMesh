@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
-	ticketsvc "github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
+	ticketsvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/ticket"
 )
 
 // processMROrPipelineEvent processes merge request or pipeline webhook events

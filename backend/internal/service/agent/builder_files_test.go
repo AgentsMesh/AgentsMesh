@@ -3,8 +3,8 @@ package agent
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 func TestBaseAgentBuilder_BuildFilesToCreate(t *testing.T) {

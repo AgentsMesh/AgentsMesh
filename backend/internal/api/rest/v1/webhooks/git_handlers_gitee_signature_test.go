@@ -4,7 +4,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
 	"github.com/gin-gonic/gin"
 )
 

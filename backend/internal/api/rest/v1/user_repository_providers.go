@@ -1,8 +1,8 @@
 package v1
 
 import (
-	domainUser "github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentsmesh/backend/internal/service/user"
+	domainUser "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
 

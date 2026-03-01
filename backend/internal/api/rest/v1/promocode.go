@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	promocodeSvc "github.com/anthropics/agentsmesh/backend/internal/service/promocode"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/promocode"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	promocodeSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/promocode"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

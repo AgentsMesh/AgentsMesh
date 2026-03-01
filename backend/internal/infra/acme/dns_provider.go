@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-acme/lego/v4/challenge/dns01"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/dns"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/dns"
 )
 
 // dnsProviderAdapter adapts our dns.Provider to lego's challenge.Provider interface
@@ -18,7 +18,7 @@ type dnsProviderAdapter struct {
 }
 
 // Present creates a TXT record for DNS-01 challenge
-// domain: the domain being validated (e.g., "*.relay.agentsmesh.cn")
+// domain: the domain being validated (e.g., "*.relay.example.com")
 // token: unused for DNS-01
 // keyAuth: the key authorization that needs to be placed in the TXT record
 func (d *dnsProviderAdapter) Present(domain, token, keyAuth string) error {
@@ -31,7 +31,7 @@ func (d *dnsProviderAdapter) Present(domain, token, keyAuth string) error {
 		"value_preview", value[:min(10, len(value))]+"...")
 
 	// Create TXT record
-	// fqdn is like "_acme-challenge.relay.agentsmesh.cn."
+	// fqdn is like "_acme-challenge.relay.example.com."
 	// We need to strip the trailing dot and create a TXT record
 	recordName := fqdn
 	if len(recordName) > 0 && recordName[len(recordName)-1] == '.' {

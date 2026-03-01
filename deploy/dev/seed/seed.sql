@@ -167,7 +167,7 @@ BEGIN
 
     INSERT INTO tickets (
         organization_id, number, slug, title, content,
-        status, type, priority, reporter_id
+        status, priority, reporter_id
     )
     SELECT v_org_id,
            1,
@@ -175,7 +175,6 @@ BEGIN
            'Implement JWT-based user authentication',
            E'## Objective\nBuild a secure JWT-based authentication system for the platform.\n\n## Tasks\n- [ ] Login API endpoint\n- [ ] Registration API endpoint\n- [ ] Token refresh mechanism\n- [ ] Password reset flow',
            'backlog',
-           'feature',
            'medium',
            v_user_id
     WHERE NOT EXISTS (
@@ -185,7 +184,7 @@ BEGIN
 
     INSERT INTO tickets (
         organization_id, number, slug, title, content,
-        status, type, priority, reporter_id
+        status, priority, reporter_id
     )
     SELECT v_org_id,
            2,
@@ -193,7 +192,6 @@ BEGIN
            'Fix slow page load time on dashboard',
            E'## Problem\nThe dashboard page takes over 3 seconds to load, causing poor user experience.\n\n## Steps to Reproduce\n1. Navigate to the dashboard\n2. Observe the loading time with DevTools Network tab\n\n## Expected Behavior\nPage should load within 1 second.',
            'backlog',
-           'bug',
            'high',
            v_user_id
     WHERE NOT EXISTS (

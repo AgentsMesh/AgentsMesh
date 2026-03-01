@@ -6,7 +6,7 @@ import (
 )
 
 // CreateRecord creates an A record
-// subdomain should be the full domain name (e.g., "us-east-1.relay.agentsmesh.cn")
+// subdomain should be the full domain name (e.g., "us-east-1.relay.example.com")
 func (p *AliyunProvider) CreateRecord(ctx context.Context, subdomain, ip string) error {
 	// Parse subdomain and domain
 	rr, domainName := p.parseSubdomain(subdomain)

@@ -1,7 +1,7 @@
 package v1
 
 import (
-	agentSvc "github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	agentSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
 )
 
 // MessageHandler handles agent message API endpoints

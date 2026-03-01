@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/binding"
 	"github.com/gin-gonic/gin"
 )
 

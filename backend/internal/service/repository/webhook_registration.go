@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/git"
 )
 
 // RegisterWebhookForRepository registers a webhook for a repository.

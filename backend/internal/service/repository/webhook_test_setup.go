@@ -3,9 +3,9 @@ package repository
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
-	"gorm.io/driver/sqlite"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

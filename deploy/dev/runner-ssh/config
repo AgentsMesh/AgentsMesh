@@ -10,9 +10,9 @@ Host gitea
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
 
-# GitLab corporate server (uses non-standard SSH port)
-Host gitlab.corp.signalrender.com
-    HostName gitlab.corp.signalrender.com
+# Example: External GitLab server (uses non-standard SSH port)
+Host gitlab.example.com
+    HostName gitlab.example.com
     Port 2222
     User git
     IdentityFile ~/.ssh/id_ed25519

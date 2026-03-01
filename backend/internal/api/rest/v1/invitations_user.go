@@ -3,9 +3,9 @@ package v1
 import (
 	"net/http"
 
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	invitationSvc "github.com/anthropics/agentsmesh/backend/internal/service/invitation"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	invitationSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/invitation"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

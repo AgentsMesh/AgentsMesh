@@ -4,7 +4,7 @@ package aggregator
 import (
 	"bytes"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // FrameBuffer manages terminal output buffering with frame-aware operations.

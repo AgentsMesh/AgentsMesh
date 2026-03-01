@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	podDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	podDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
 )
 
 func TestCreatePod_ResumeMode_Success(t *testing.T) {

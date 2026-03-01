@@ -1,8 +1,8 @@
 package v1
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	runner "github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
+	runner "github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
 )
 
 // RunnerHandler handles runner-related requests

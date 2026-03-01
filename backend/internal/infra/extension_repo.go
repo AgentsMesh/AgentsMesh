@@ -9,7 +9,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
 )
 
 // isDuplicateKeyError checks whether the given error is a database unique constraint violation.

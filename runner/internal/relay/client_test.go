@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
 	"github.com/gorilla/websocket"
 )
 

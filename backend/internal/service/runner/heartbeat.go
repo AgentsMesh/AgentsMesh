@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
 )
 
 // Heartbeat updates runner heartbeat

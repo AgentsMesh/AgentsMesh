@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
 )
 
 // RepositoryServiceInterface defines the interface for repository operations

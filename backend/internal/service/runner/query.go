@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
 )
 
 // GetByNodeID returns a runner by its node ID.

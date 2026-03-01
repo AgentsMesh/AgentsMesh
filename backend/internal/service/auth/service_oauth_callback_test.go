@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
+	userService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 )
 
 func TestHandleOAuthCallback(t *testing.T) {

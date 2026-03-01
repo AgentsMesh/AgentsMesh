@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
 )
 
 // GetTicket returns a ticket by ID

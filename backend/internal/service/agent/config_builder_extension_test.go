@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
-	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
+	extensionservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/extension"
 )
 
 // ---------------------------------------------------------------------------

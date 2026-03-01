@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/anthropics/agentsmesh/relay/internal/config"
-	"github.com/anthropics/agentsmesh/relay/internal/server"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/server"
 )
 
 func main() {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/safego"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/detector"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
 )
 
 // ManagedStateDetector wraps detector.MultiSignalDetector and adds:

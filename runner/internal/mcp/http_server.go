@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
-	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/client"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/safego"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/mcp/tools"
 )
 
 // PodStatusProvider provides Pod status information.

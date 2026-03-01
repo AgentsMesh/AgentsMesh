@@ -6,8 +6,8 @@ import (
 	"hash/fnv"
 	"log/slog"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // TerminalRouter routes terminal commands between frontend and runners using sharded locks.

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	userService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 )
 
 func TestRefreshTokensWithUserService(t *testing.T) {

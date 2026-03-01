@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // ActivityMonitor provides connection activity information for health checking.

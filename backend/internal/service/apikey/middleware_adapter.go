@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
 )
 
 // Compile-time check that MiddlewareAdapter implements APIKeyValidator

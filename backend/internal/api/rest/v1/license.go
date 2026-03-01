@@ -3,7 +3,7 @@ package v1
 import (
 	"encoding/json"
 
-	"github.com/anthropics/agentsmesh/backend/internal/service/license"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/license"
 )
 
 // LicenseHandler handles license-related HTTP requests

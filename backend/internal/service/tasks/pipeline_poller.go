@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
-	infraTasks "github.com/anthropics/agentsmesh/backend/internal/infra/tasks"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/git"
+	infraTasks "github.com/AgentsMesh/AgentsMesh/backend/internal/infra/tasks"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )

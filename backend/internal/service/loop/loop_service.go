@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
+	loopDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/loop"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/interfaces"
 )
 
 // ==================== Reactivation (Expired Certificate Recovery) ====================

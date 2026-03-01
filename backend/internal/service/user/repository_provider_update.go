@@ -3,8 +3,8 @@ package user
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
-	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/crypto"
 	"gorm.io/gorm"
 )
 

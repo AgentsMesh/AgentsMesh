@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/user"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )

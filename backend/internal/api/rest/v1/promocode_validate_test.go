@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
-	promocodeSvc "github.com/anthropics/agentsmesh/backend/internal/service/promocode"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/promocode"
+	promocodeSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/promocode"
 	"github.com/gin-gonic/gin"
 )
 

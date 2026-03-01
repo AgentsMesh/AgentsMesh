@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
+	adminservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/admin"
 	"github.com/stretchr/testify/assert"
 )
 

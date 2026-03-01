@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // Module logger for workspace

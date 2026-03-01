@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // RunnerStream defines a type-safe interface for gRPC bidirectional stream

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // BaseAgentBuilder provides default implementations for AgentBuilder interface.

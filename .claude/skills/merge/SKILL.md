@@ -1,187 +1,175 @@
 ---
 name: merge
 description: |
-  将当前分支合并到目标分支（通常是 main）。
-  自动处理代码提交、创建 MR、监控 Pipeline、处理错误直到合并成功。
+  Merge the current branch into the target branch (usually main).
+  Automatically handles code commit, PR creation, CI monitoring, and error resolution until merge succeeds.
 user-invocable: true
 ---
 
-# 合并代码流程
+# Merge Code Flow
 
-将当前分支的代码通过 Merge Request 合并到目标分支。
+Merge the current branch into the target branch via a Pull Request.
 
-## 使用流程
+## Workflow
 
-### 1. 确认状态
+### 1. Check Status
 
 ```bash
-# 检查当前分支和未提交的更改
 git status
 git branch --show-current
 
-# 确认目标分支（默认 main）
+# Confirm target branch (default: main)
 ```
 
-### 2. 提交代码
+### 2. Commit Code
 
-如有未提交的更改，先提交：
+If there are uncommitted changes, commit them first:
 
 ```bash
-# 添加所有更改
 git add .
-
-# 提交（使用有意义的 commit message）
-git commit -m "feat/fix/refactor: 描述更改内容"
-
-# 推送到远程
+git commit -m "feat/fix/refactor: describe the change"
 git push -u origin <current-branch>
 ```
 
-### 3. 创建 Merge Request
+### 3. Create Pull Request
 
-使用 `glab` 创建 MR：
+Use `gh` to create a PR:
 
 ```bash
-# 创建 MR 到 main 分支
-glab mr create --target-branch main --title "MR标题" --description "描述" --fill
+gh pr create --base main --title "PR title" --body "Description" --fill
 
-# 或者使用简化命令（自动填充信息）
-glab mr create -f
+# Or use the simplified command (auto-fills info)
+gh pr create --fill
 ```
 
-记录返回的 MR 编号（如 `!123`）。
+Note the returned PR number (e.g., `#42`).
 
-### 4. 监控 Pipeline
+### 4. Monitor CI
 
-创建 MR 后，监控 Pipeline 执行状态：
+After creating the PR, monitor CI status:
 
 ```bash
-# 查看 Pipeline 状态
-glab ci status
+gh pr checks <pr-number> --watch
 
-# 或查看 MR 状态
-glab mr view <mr-number>
+# Or view PR status
+gh pr view <pr-number>
 ```
 
-### 5. 处理 Pipeline 失败
+### 5. Handle CI Failures
 
-如果 Pipeline 失败：
+If CI fails:
 
 ```bash
-# 1. 查看失败原因
-glab ci status
-glab ci view  # 查看详细日志
+# 1. View failure details
+gh run list --branch <current-branch> --limit 5
+gh run view <run-id> --log-failed
 
-# 2. 根据错误修复代码
-# ... 修复代码 ...
+# 2. Fix the code based on the error
+# ... fix code ...
 
-# 3. 提交修复
+# 3. Commit the fix
 git add .
-git commit -m "fix: 修复 CI 错误"
+git commit -m "fix: resolve CI error"
 git push
 
-# 4. 重新检查 Pipeline
-glab ci status
+# 4. Re-check CI
+gh pr checks <pr-number> --watch
 ```
 
-重复此过程直到 Pipeline 通过。
+Repeat until CI passes.
 
-### 6. 合并 MR
+### 6. Merge PR
 
-Pipeline 通过后，合并 MR：
+Once CI passes, merge the PR:
 
 ```bash
-# 合并（squash commits）
-glab mr merge <mr-number> --squash
+# Squash merge (recommended)
+gh pr merge <pr-number> --squash --delete-branch
 
-# 或直接合并
-glab mr merge <mr-number>
+# Or regular merge
+gh pr merge <pr-number> --merge --delete-branch
 ```
 
-### 7. 清理（可选）
+### 7. Cleanup (Optional)
 
-合并成功后，清理本地分支和 worktree：
+After a successful merge, clean up local branch and worktree:
 
 ```bash
-# 切回主仓库
+# Switch back to main repo
 cd /path/to/AgentsMesh
 
-# 删除远程分支（MR 合并时通常自动删除）
-git push origin --delete <branch-name>
-
-# 删除本地分支
+# Delete local branch
 git branch -d <branch-name>
 
-# 如果是 worktree，删除 worktree
+# If using a worktree, remove it
 git worktree remove ../AgentsMesh-Worktrees/<dir-name>
 ```
 
-## 完整示例
+## Full Example
 
-用户说："把当前分支合并到 main"
+User says: "Merge the current branch into main"
 
-执行：
 ```bash
-# 1. 检查状态
+# 1. Check status
 git status
 git branch --show-current
-# 假设当前分支是 feature/user-auth
+# Assume current branch is feature/user-auth
 
-# 2. 提交并推送
+# 2. Commit and push
 git add .
 git commit -m "feat: add user authentication"
 git push -u origin feature/user-auth
 
-# 3. 创建 MR
-glab mr create --target-branch main --fill
-# 返回: !42
+# 3. Create PR
+gh pr create --base main --fill
+# Returns: #42
 
-# 4. 监控 Pipeline
-glab ci status --live
-# 等待 Pipeline 完成...
+# 4. Monitor CI
+gh pr checks 42 --watch
+# Wait for CI to complete...
 
-# 5. 如果失败，修复后重新推送
+# 5. If failed, fix and re-push
 # git add . && git commit -m "fix: ..." && git push
 
-# 6. Pipeline 通过后合并
-glab mr merge 42 --squash
+# 6. Merge when CI passes
+gh pr merge 42 --squash --delete-branch
 
-# 7. 清理
+# 7. Cleanup
 cd /path/to/AgentsMesh
 git worktree remove ../AgentsMesh-Worktrees/feature-user-auth
 ```
 
-## 完成后输出
+## Completion Output
 
 ```
-✅ MR !42 已成功合并到 main
+PR #42 has been successfully merged into main
 
-合并详情:
-- 分支: feature/user-auth → main
-- Pipeline: passed
-- 合并方式: squash
+Merge details:
+- Branch: feature/user-auth -> main
+- CI: passed
+- Merge method: squash
 
-已清理:
-- 远程分支: feature/user-auth (已删除)
-- Worktree: ../AgentsMesh-Worktrees/feature-user-auth (已删除)
+Cleaned up:
+- Remote branch: feature/user-auth (deleted)
+- Worktree: ../AgentsMesh-Worktrees/feature-user-auth (removed)
 ```
 
-## 常用命令速查
+## Quick Reference
 
-| 操作 | 命令 |
-|------|------|
-| 查看 MR 列表 | `glab mr list` |
-| 查看 MR 详情 | `glab mr view <number>` |
-| 查看 Pipeline | `glab ci status` |
-| 查看 CI 日志 | `glab ci view` |
-| 合并 MR | `glab mr merge <number>` |
-| 关闭 MR | `glab mr close <number>` |
+| Action | Command |
+|--------|---------|
+| List PRs | `gh pr list` |
+| View PR details | `gh pr view <number>` |
+| Check CI status | `gh pr checks <number>` |
+| View CI logs | `gh run view <run-id> --log-failed` |
+| Merge PR | `gh pr merge <number>` |
+| Close PR | `gh pr close <number>` |
 
-## 注意事项
+## Notes
 
-- 提交前确保代码已通过本地测试
-- MR 标题应清晰描述更改内容
-- Pipeline 失败时仔细阅读错误日志
-- 合并前确认没有冲突
-- 使用 `--squash` 可将多个 commit 合并为一个
-- 合并后及时清理分支和 worktree
+- Ensure code passes local tests before committing
+- PR titles should clearly describe the changes
+- Read CI error logs carefully when pipeline fails
+- Confirm no conflicts before merging
+- Use `--squash` to combine multiple commits into one
+- Clean up branches and worktrees after merging

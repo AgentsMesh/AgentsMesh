@@ -3,9 +3,9 @@ package runner
 import (
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/relay"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/client"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/relay"
 )
 
 // TestOnSubscribeTerminal_PodNotFound tests that OnSubscribeTerminal returns error when pod not found

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/mcp/tools"
 )
 
 // --- Mock collaboration client that returns real data ---

@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/relay"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

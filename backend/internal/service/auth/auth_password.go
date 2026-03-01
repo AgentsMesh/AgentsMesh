@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
+	userService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/user"
 )
 
 // Login authenticates user and returns tokens

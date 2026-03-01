@@ -3,7 +3,7 @@ package relay
 import (
 	"sync"
 
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
 )
 
 // MockClient is a mock implementation of RelayClient for testing.

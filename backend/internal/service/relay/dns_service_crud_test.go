@@ -19,7 +19,7 @@ func TestDNSService_CreateRecord(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, mockProvider.createCalled)
-	assert.Equal(t, "192.168.1.1", mockProvider.records["us-east-1.relay.agentsmesh.cn"])
+	assert.Equal(t, "192.168.1.1", mockProvider.records["us-east-1.relay.example.com"])
 }
 
 func TestDNSService_CreateRecord_Disabled(t *testing.T) {
@@ -46,7 +46,7 @@ func TestDNSService_CreateRecord_ProviderError(t *testing.T) {
 
 func TestDNSService_DeleteRecord(t *testing.T) {
 	mockProvider := NewMockDNSProvider()
-	mockProvider.records["us-east-1.relay.agentsmesh.cn"] = "192.168.1.1"
+	mockProvider.records["us-east-1.relay.example.com"] = "192.168.1.1"
 	svc := newTestDNSService(mockProvider, true)
 
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func TestDNSService_DeleteRecord(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, mockProvider.deleteCalled)
-	assert.Empty(t, mockProvider.records["us-east-1.relay.agentsmesh.cn"])
+	assert.Empty(t, mockProvider.records["us-east-1.relay.example.com"])
 }
 
 func TestDNSService_DeleteRecord_Disabled(t *testing.T) {
@@ -81,7 +81,7 @@ func TestDNSService_DeleteRecord_ProviderError(t *testing.T) {
 
 func TestDNSService_UpdateRecord(t *testing.T) {
 	mockProvider := NewMockDNSProvider()
-	mockProvider.records["us-east-1.relay.agentsmesh.cn"] = "192.168.1.1"
+	mockProvider.records["us-east-1.relay.example.com"] = "192.168.1.1"
 	svc := newTestDNSService(mockProvider, true)
 
 	ctx := context.Background()
@@ -89,7 +89,7 @@ func TestDNSService_UpdateRecord(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, mockProvider.updateCalled)
-	assert.Equal(t, "192.168.1.2", mockProvider.records["us-east-1.relay.agentsmesh.cn"])
+	assert.Equal(t, "192.168.1.2", mockProvider.records["us-east-1.relay.example.com"])
 }
 
 func TestDNSService_UpdateRecord_Disabled(t *testing.T) {
@@ -116,7 +116,7 @@ func TestDNSService_UpdateRecord_ProviderError(t *testing.T) {
 
 func TestDNSService_GetRecord(t *testing.T) {
 	mockProvider := NewMockDNSProvider()
-	mockProvider.records["us-east-1.relay.agentsmesh.cn"] = "192.168.1.1"
+	mockProvider.records["us-east-1.relay.example.com"] = "192.168.1.1"
 	svc := newTestDNSService(mockProvider, true)
 
 	ctx := context.Background()

@@ -6,7 +6,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/safego"
 	"github.com/gorilla/websocket"
 )
 

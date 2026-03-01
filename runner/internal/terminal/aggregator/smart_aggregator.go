@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 )
 
 // SmartAggregator intelligently aggregates TUI output with adaptive frame rate.

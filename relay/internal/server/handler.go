@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
-	"github.com/anthropics/agentsmesh/relay/internal/auth"
-	"github.com/anthropics/agentsmesh/relay/internal/channel"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/auth"
+	"github.com/AgentsMesh/AgentsMesh/relay/internal/channel"
 )
 
 var upgrader = websocket.Upgrader{

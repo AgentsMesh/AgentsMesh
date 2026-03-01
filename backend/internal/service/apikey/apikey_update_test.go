@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/apikey"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

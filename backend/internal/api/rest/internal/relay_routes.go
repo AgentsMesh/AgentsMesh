@@ -3,9 +3,9 @@ package internal
 import (
 	"log/slog"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/acme"
-	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/acme"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/relay"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

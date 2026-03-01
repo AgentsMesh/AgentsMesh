@@ -1,7 +1,7 @@
 # Development Dockerfile with hot reload using Air
 # Includes AI CLI tools: Claude Code, Codex, Gemini CLI, OpenCode
 # All AI CLI tools are pre-configured for headless/non-interactive mode
-FROM docker.1ms.run/library/golang:1.25-alpine
+FROM golang:1.25-alpine
 
 WORKDIR /app
 

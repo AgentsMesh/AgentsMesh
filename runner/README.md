@@ -1,7 +1,7 @@
 # AgentsMesh Runner
 
 [![Release](https://img.shields.io/github/v/release/AgentsMesh/AgentsMeshRunner?style=flat-square)](https://github.com/AgentsMesh/AgentsMeshRunner/releases/latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/anthropics/agentsmesh/runner?style=flat-square)](https://goreportcard.com/report/github.com/anthropics/agentsmesh/runner)
+[![Go Report Card](https://goreportcard.com/badge/github.com/AgentsMesh/AgentsMesh/runner?style=flat-square)](https://goreportcard.com/report/github.com/AgentsMesh/AgentsMesh/runner)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
 AgentsMesh Runner is a lightweight agent that connects to the AgentsMesh server and executes AI agent tasks in isolated terminal environments.
@@ -152,7 +152,7 @@ Features:
 
 ```bash
 # Clone the repository
-git clone https://github.com/anthropics/agentsmesh.git
+git clone https://github.com/AgentsMesh/AgentsMesh.git
 cd agentsmesh/runner
 
 # Build (no CGO required)

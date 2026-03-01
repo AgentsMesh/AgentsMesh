@@ -3,7 +3,7 @@ package agent
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
 )
 
 // CompositeAgentProvider implements AgentConfigProvider by combining three sub-services.

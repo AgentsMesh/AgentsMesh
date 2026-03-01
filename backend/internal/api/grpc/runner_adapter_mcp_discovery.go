@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 
-	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	agentDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
 )
 
 // ==================== Discovery MCP Methods ====================

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
-	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/file"
+	fileservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/file"
 	"github.com/gin-gonic/gin"
 )
 

@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/dns"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/dns"
 )
 
 // DNSService manages DNS A records for relay servers.
@@ -53,7 +53,7 @@ func (s *DNSService) IsEnabled() bool {
 }
 
 // GenerateRelayDomain generates the full domain name for a relay
-// e.g., "us-east-1" -> "us-east-1.relay.agentsmesh.cn"
+// e.g., "us-east-1" -> "us-east-1.relay.example.com"
 func (s *DNSService) GenerateRelayDomain(relayName string) string {
 	// Sanitize relay name (lowercase, alphanumeric and hyphens only)
 	name := strings.ToLower(relayName)

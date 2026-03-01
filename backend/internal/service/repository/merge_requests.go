@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/ticket"
 )
 
 // MergeRequestInfo represents merge request information returned by the service

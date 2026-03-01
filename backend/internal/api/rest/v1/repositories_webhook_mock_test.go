@@ -3,8 +3,8 @@ package v1
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
-	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/gitprovider"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/repository"
 )
 
 // ===========================================

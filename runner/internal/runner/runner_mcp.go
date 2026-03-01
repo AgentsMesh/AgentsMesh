@@ -3,9 +3,9 @@ package runner
 import (
 	"fmt"
 
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/monitor"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/monitor"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/detector"
 )
 
 // GetPodStatus returns the agent status for a given pod key.

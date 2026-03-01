@@ -1,8 +1,8 @@
 package runner
 
 import (
-	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/autopilot"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/detector"
 )
 
 // PodControllerImpl implements autopilot.TargetPodController interface.

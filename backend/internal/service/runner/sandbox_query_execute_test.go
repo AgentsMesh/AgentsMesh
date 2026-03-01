@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 func TestSandboxQueryService_QuerySandboxes_Success(t *testing.T) {

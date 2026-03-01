@@ -159,13 +159,13 @@ for tagged releases where possible.
 - Desktop mode with system tray for Runner
 - Real-time terminal streaming via WebSocket
 
-[Unreleased]: https://github.com/anthropics/agentsmesh/compare/v0.5.0...HEAD
-[0.5.0]: https://github.com/anthropics/agentsmesh/compare/v0.4.7...v0.5.0
-[0.4.7]: https://github.com/anthropics/agentsmesh/compare/v0.4.6...v0.4.7
-[0.4.6]: https://github.com/anthropics/agentsmesh/compare/v0.4.5...v0.4.6
-[0.4.5]: https://github.com/anthropics/agentsmesh/compare/v0.4.4...v0.4.5
-[0.4.4]: https://github.com/anthropics/agentsmesh/compare/v0.4.0...v0.4.4
-[0.4.0]: https://github.com/anthropics/agentsmesh/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/anthropics/agentsmesh/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/anthropics/agentsmesh/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/anthropics/agentsmesh/releases/tag/v0.1.0
+[Unreleased]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.4.7...v0.5.0
+[0.4.7]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.4.6...v0.4.7
+[0.4.6]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.4.5...v0.4.6
+[0.4.5]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.4.0...v0.4.4
+[0.4.0]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/AgentsMesh/AgentsMesh/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/AgentsMesh/AgentsMesh/releases/tag/v0.1.0

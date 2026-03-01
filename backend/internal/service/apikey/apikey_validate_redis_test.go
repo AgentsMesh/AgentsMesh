@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	apikeyDomain "github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
+	apikeyDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/apikey"
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"

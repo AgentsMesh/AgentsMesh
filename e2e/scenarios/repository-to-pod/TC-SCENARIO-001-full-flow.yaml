@@ -14,26 +14,26 @@ type: scenario
 preconditions:
   - 开发环境已启动
   - 至少有一个 Runner 在线
-  - GitLab 仓库可访问：https://gitlab.corp.signalrender.com/aio/agents/mockrepo
+  - GitLab 仓库可访问：https://gitlab.example.com/example-org/example-repo
 
 # 测试数据
 test_data:
-  gitlab_base_url: https://gitlab.corp.signalrender.com
+  gitlab_base_url: https://gitlab.example.com
   gitlab_pat: glpat-example-token-replace-with-real-pat
-  repository_url: https://gitlab.corp.signalrender.com/aio/agents/mockrepo.git
-  repository_external_id: aio/agents/mockrepo
+  repository_url: https://gitlab.example.com/example-org/example-repo.git
+  repository_external_id: example-org/example-repo
   repository_name: mockrepo
-  repository_full_path: aio/agents/mockrepo
+  repository_full_path: example-org/example-repo
   default_branch: main
   credential_name: E2E GitLab PAT
-  host_pattern: gitlab.corp.signalrender.com
+  host_pattern: gitlab.example.com
 
 setup:
   sql: |
     -- 清理可能存在的测试数据
     DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Scenario Test%';
     DELETE FROM tickets WHERE title LIKE 'E2E Test Ticket%';
-    DELETE FROM repositories WHERE name = 'mockrepo' AND full_path = 'aio/agents/mockrepo';
+    DELETE FROM repositories WHERE name = 'mockrepo' AND full_path = 'example-org/example-repo';
     DELETE FROM user_git_credentials WHERE name = 'E2E GitLab PAT';
 
 steps:
@@ -72,14 +72,14 @@ steps:
           name: E2E GitLab PAT
           credential_type: pat
           pat: glpat-example-token-replace-with-real-pat
-          host_pattern: gitlab.corp.signalrender.com
+          host_pattern: gitlab.example.com
       expected:
         status: 201
         body:
           credential:
             name: E2E GitLab PAT
             credential_type: pat
-            host_pattern: gitlab.corp.signalrender.com
+            host_pattern: gitlab.example.com
       save:
         git_credential_id: body.credential.id
 
@@ -93,7 +93,7 @@ steps:
       expected:
         name: E2E GitLab PAT
         credential_type: pat
-        host_pattern: gitlab.corp.signalrender.com
+        host_pattern: gitlab.example.com
 
   # ========== Step 3: 导入 Repository ==========
   - id: step-3
@@ -108,11 +108,11 @@ steps:
           Content-Type: application/json
         body:
           provider_type: gitlab
-          provider_base_url: https://gitlab.corp.signalrender.com
-          clone_url: https://gitlab.corp.signalrender.com/aio/agents/mockrepo.git
-          external_id: aio/agents/mockrepo
+          provider_base_url: https://gitlab.example.com
+          clone_url: https://gitlab.example.com/example-org/example-repo.git
+          external_id: example-org/example-repo
           name: mockrepo
-          full_path: aio/agents/mockrepo
+          full_path: example-org/example-repo
           default_branch: main
           visibility: organization
       expected:
@@ -120,7 +120,7 @@ steps:
         body:
           repository:
             name: mockrepo
-            full_path: aio/agents/mockrepo
+            full_path: example-org/example-repo
             provider_type: gitlab
             default_branch: main
       save:
@@ -409,5 +409,5 @@ cleanup:
       WHERE pod_key = '{pod_key}' AND status != 'terminated';
 
       DELETE FROM tickets WHERE title LIKE 'E2E Test Ticket%';
-      DELETE FROM repositories WHERE name = 'mockrepo' AND full_path = 'aio/agents/mockrepo';
+      DELETE FROM repositories WHERE name = 'mockrepo' AND full_path = 'example-org/example-repo';
       DELETE FROM user_git_credentials WHERE name = 'E2E GitLab PAT';

@@ -1,7 +1,7 @@
 # Build stage
 # Build context should be project root (not relay/)
-# REGISTRY_PREFIX: Use internal mirror for GitLab CI (e.g., registry.corp.agentsmesh.ai/library/)
-#                  Leave empty for Docker Hub (GitHub Actions)
+# REGISTRY_PREFIX: Optional registry mirror prefix (e.g., "myregistry.example.com/library/")
+#                  Leave empty for Docker Hub (default)
 ARG REGISTRY_PREFIX=
 ARG GO_VERSION=1.25
 FROM ${REGISTRY_PREFIX}golang:${GO_VERSION} AS builder

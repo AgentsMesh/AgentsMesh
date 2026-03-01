@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/detector"
 )
 
 // Tests for pod registration and status retrieval

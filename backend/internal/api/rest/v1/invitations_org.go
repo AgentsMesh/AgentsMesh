@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	billingSvc "github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	invitationSvc "github.com/anthropics/agentsmesh/backend/internal/service/invitation"
-	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/organization"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	billingSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
+	invitationSvc "github.com/AgentsMesh/AgentsMesh/backend/internal/service/invitation"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 

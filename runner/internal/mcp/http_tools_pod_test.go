@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/mcp/tools"
 )
 
 func TestHTTPServerMCPToolsCallCreatePod(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
-	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
+	loopDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/loop"
 	"gorm.io/gorm"
 )
 

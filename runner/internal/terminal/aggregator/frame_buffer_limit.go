@@ -1,7 +1,7 @@
 // Package terminal provides terminal management for PTY sessions.
 package aggregator
 
-import "github.com/anthropics/agentsmesh/runner/internal/logger"
+import "github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
 
 // enforceLimit ensures buffer doesn't exceed maxSize after adding newDataLen bytes.
 func (b *FrameBuffer) enforceLimit(newDataLen int) {

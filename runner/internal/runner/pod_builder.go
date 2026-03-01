@@ -7,15 +7,15 @@ import (
 	"strings"
 	"time"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/clipboard"
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
-	"github.com/anthropics/agentsmesh/runner/internal/workspace"
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/client"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/clipboard"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/logger"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/aggregator"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/terminal/vt"
+	"github.com/AgentsMesh/AgentsMesh/runner/internal/workspace"
 )
 
 // PodBuilderDeps defines the dependencies for PodBuilder.

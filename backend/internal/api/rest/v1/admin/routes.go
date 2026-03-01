@@ -1,15 +1,15 @@
 package admin
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/backend/internal/service/admin"
-	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
-	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
-	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/config"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/database"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/admin"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/auth"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/billing"
+	extensionservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/relay"
 
 	"github.com/gin-gonic/gin"
 )

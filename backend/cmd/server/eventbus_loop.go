@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
-	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
-	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/eventbus"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/instance"
+	loop "github.com/AgentsMesh/AgentsMesh/backend/internal/service/loop"
 )
 
 // setupLoopEventSubscriptions subscribes to Pod and Autopilot terminal events

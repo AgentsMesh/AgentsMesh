@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/storage"
 )
 
 // SkillPackager handles packaging skills from GitHub URLs and file uploads

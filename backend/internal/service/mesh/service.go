@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/mesh"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	bindingService "github.com/anthropics/agentsmesh/backend/internal/service/binding"
-	channelService "github.com/anthropics/agentsmesh/backend/internal/service/channel"
-	podService "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/channel"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/mesh"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
+	bindingService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/binding"
+	channelService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/channel"
+	podService "github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
 	"gorm.io/gorm"
 )
 

@@ -79,7 +79,7 @@ func TestSanitizeRelayName(t *testing.T) {
 
 func TestDNSServiceGenerateRelayDomain(t *testing.T) {
 	svc := &DNSService{
-		baseDomain: "relay.agentsmesh.cn",
+		baseDomain: "relay.example.com",
 		enabled:    true,
 	}
 
@@ -91,17 +91,17 @@ func TestDNSServiceGenerateRelayDomain(t *testing.T) {
 		{
 			name:      "simple name",
 			relayName: "us-east-1",
-			expected:  "us-east-1.relay.agentsmesh.cn",
+			expected:  "us-east-1.relay.example.com",
 		},
 		{
 			name:      "uppercase converted",
 			relayName: "US-West-2",
-			expected:  "us-west-2.relay.agentsmesh.cn",
+			expected:  "us-west-2.relay.example.com",
 		},
 		{
 			name:      "with underscores",
 			relayName: "ap_south_1",
-			expected:  "ap-south-1.relay.agentsmesh.cn",
+			expected:  "ap-south-1.relay.example.com",
 		},
 	}
 

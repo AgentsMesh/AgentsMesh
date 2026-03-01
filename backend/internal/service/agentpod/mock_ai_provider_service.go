@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	domain "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	domain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/agentpod"
 )
 
 var (

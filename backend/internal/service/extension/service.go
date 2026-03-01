@@ -8,9 +8,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
-	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/storage"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/crypto"
 )
 
 // Standard service-level errors for typed error handling in API layer

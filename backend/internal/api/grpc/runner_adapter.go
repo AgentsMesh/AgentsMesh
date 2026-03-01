@@ -10,17 +10,17 @@ import (
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
-	"github.com/anthropics/agentsmesh/backend/internal/infra/pki"
-	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
-	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
-	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
-	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
-	"github.com/anthropics/agentsmesh/backend/pkg/audit" // used by logAuditEvent in Connect
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/infra/pki"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/interfaces"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agentpod"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/binding"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/channel"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/repository"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/runner"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/ticket"
+	"github.com/AgentsMesh/AgentsMesh/backend/pkg/audit" // used by logAuditEvent in Connect
+	runnerv1 "github.com/AgentsMesh/AgentsMesh/proto/gen/go/runner/v1"
 )
 
 // Certificate revocation check interval

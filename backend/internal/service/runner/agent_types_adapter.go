@@ -1,8 +1,8 @@
 package runner
 
 import (
-	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
-	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/interfaces"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/service/agent"
 )
 
 // AgentTypeServiceAdapter adapts agent.AgentTypeService to interfaces.AgentTypesProvider interface

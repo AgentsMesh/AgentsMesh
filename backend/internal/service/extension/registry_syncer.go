@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
 )
 
 // McpRegistrySyncer synchronizes the official MCP Registry data into the local

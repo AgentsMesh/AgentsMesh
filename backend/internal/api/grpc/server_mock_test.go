@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"os"
 
-	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	runnerDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/runner"
 )
 
 // newTestLogger creates a test logger

@@ -3,9 +3,9 @@ package admin
 import (
 	"log"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/admin"
+	"github.com/AgentsMesh/AgentsMesh/backend/internal/middleware"
+	adminservice "github.com/AgentsMesh/AgentsMesh/backend/internal/service/admin"
 	"github.com/gin-gonic/gin"
 )
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
+	loopDomain "github.com/AgentsMesh/AgentsMesh/backend/internal/domain/loop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 )
