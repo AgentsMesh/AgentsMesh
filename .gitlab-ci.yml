@@ -413,14 +413,10 @@ build-relay:
     - if: $CI_PIPELINE_SOURCE == "web"
 
 # =============================================================================
-# Deploy Stage - Per-service manual deployment to production
+# Deploy Stage - China Production (auto-deploy on main)
 # =============================================================================
-# Each service has its own deploy job with manual trigger (Play button).
+# China production deploys automatically after build succeeds on main branch.
 # DEPLOY_VERSION defaults to CI_COMMIT_SHORT_SHA but can be overridden for rollback.
-#
-# Usage:
-#   - Normal deploy: Click Play button, uses current commit SHA
-#   - Rollback: Click Play ▼, modify DEPLOY_VERSION to target SHA, run
 
 # Deploy Backend to China Production
 deploy:cn-prod:backend:
@@ -445,7 +441,7 @@ deploy:cn-prod:backend:
         - backend/**/*
         - proto/**/*
         - ci/backend.Dockerfile
-      when: manual
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 # Deploy Web to China Production
 deploy:cn-prod:web:
@@ -469,7 +465,7 @@ deploy:cn-prod:web:
       changes:
         - web/**/*
         - ci/web.Dockerfile
-      when: manual
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 # Deploy Web-Admin to China Production
 deploy:cn-prod:web-admin:
@@ -493,7 +489,7 @@ deploy:cn-prod:web-admin:
       changes:
         - web-admin/**/*
         - ci/web-admin.Dockerfile
-      when: manual
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 # Deploy Relay: cn-relay-01
 deploy:cn-prod:cn-relay-01:
@@ -517,29 +513,25 @@ deploy:cn-prod:cn-relay-01:
       changes:
         - relay/**/*
         - ci/relay.Dockerfile
-      when: manual
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 # =============================================================================
-# Database Migration - Manual trigger only
+# Database Migration - China Production (auto after backend deploy)
 # =============================================================================
-# Run database migrations using golang-migrate inside the backend container.
-# This job requires manual trigger and should be run BEFORE deploying backend
-# when there are schema changes.
-#
-# Usage:
-#   - Click Play button to run all pending migrations (up)
-#   - Set MIGRATE_DIRECTION=down and MIGRATE_STEPS=1 to rollback last migration
+# Runs automatically after backend deployment when migration files change.
+# Migration runs AFTER backend deploy to ensure the new binary is in place.
 
 # Database Migration for China Production
 migrate:cn-prod:
   stage: deploy
-  when: manual
+  needs:
+    - job: deploy:cn-prod:backend
   tags:
     - deploy
     - linux
   variables:
-    MIGRATE_DIRECTION: "up"      # up or down
-    MIGRATE_STEPS: ""            # empty for all, or number for specific steps
+    MIGRATE_DIRECTION: "up"
+    MIGRATE_STEPS: ""
   environment:
     name: cn-production
     url: https://agentsmesh.cn
@@ -551,7 +543,7 @@ migrate:cn-prod:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:
         - backend/migrations/**/*
-      when: manual
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 # =============================================================================
 # Deploy Stage - US West Production
