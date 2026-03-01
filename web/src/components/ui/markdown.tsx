@@ -1,6 +1,7 @@
 "use client";
 
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 
 interface MarkdownProps {
@@ -8,12 +9,87 @@ interface MarkdownProps {
   className?: string;
   /** Compact mode with smaller text for embedded use */
   compact?: boolean;
+  /** Enable @mention highlighting in text nodes */
+  highlightMentions?: boolean;
+}
+
+const remarkPlugins = [remarkGfm];
+
+/**
+ * Render text with @mention highlighting.
+ * Splits text on @word patterns and wraps matches in styled spans.
+ */
+function TextWithMentions({ children }: { children: string }) {
+  const mentionRegex = /(@[\w.\-]+)/g;
+  const parts = children.split(mentionRegex);
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (mentionRegex.test(part)) {
+          mentionRegex.lastIndex = 0;
+          return (
+            <span
+              key={i}
+              className="text-primary font-medium bg-primary/10 rounded px-0.5"
+            >
+              {part}
+            </span>
+          );
+        }
+        mentionRegex.lastIndex = 0;
+        return part;
+      })}
+    </>
+  );
 }
 
 /**
- * Markdown renderer component using react-markdown
+ * Custom components for react-markdown that highlight @mentions in text nodes.
  */
-export function Markdown({ content, className, compact = false }: MarkdownProps) {
+const mentionComponents: Components = {
+  p({ children }) {
+    return <p>{processMentions(children)}</p>;
+  },
+  li({ children }) {
+    return <li>{processMentions(children)}</li>;
+  },
+  td({ children }) {
+    return <td>{processMentions(children)}</td>;
+  },
+  th({ children }) {
+    return <th>{processMentions(children)}</th>;
+  },
+};
+
+/**
+ * Process children to replace plain string nodes with mention-highlighted versions.
+ */
+function processMentions(children: React.ReactNode): React.ReactNode {
+  if (!children) return children;
+  if (typeof children === "string") {
+    return <TextWithMentions>{children}</TextWithMentions>;
+  }
+  if (Array.isArray(children)) {
+    return children.map((child, i) => {
+      if (typeof child === "string") {
+        return <TextWithMentions key={i}>{child}</TextWithMentions>;
+      }
+      return child;
+    });
+  }
+  return children;
+}
+
+/**
+ * Markdown renderer component using react-markdown with GFM support
+ */
+export function Markdown({
+  content,
+  className,
+  compact = false,
+  highlightMentions = false,
+}: MarkdownProps) {
   return (
     <div
       className={cn(
@@ -24,7 +100,12 @@ export function Markdown({ content, className, compact = false }: MarkdownProps)
         className
       )}
     >
-      <ReactMarkdown>{content}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={remarkPlugins}
+        components={highlightMentions ? mentionComponents : undefined}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 }

@@ -53,6 +53,7 @@
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.3.3",
     "recharts": "^3.6.0",
+    "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2",
