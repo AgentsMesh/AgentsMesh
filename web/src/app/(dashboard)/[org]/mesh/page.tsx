@@ -159,7 +159,7 @@ export default function MeshPage() {
   );
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full w-full">
       {showDesktopChat ? (
         /* Resizable layout when chat panel is open on desktop */
         <Group
