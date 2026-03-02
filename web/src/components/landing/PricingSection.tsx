@@ -97,7 +97,7 @@ export function PricingSection() {
         ctaKey: "landing.pricing.enterprise.cta",
         href: "/register?plan=enterprise",
         highlighted: false,
-        featureCount: 7,
+        featureCount: 5,
       },
     };
 
@@ -122,22 +122,7 @@ export function PricingSection() {
       });
   };
 
-  // OnPremise plan (static, not from API)
-  const onPremisePlan: PricingPlan = {
-    key: "onpremise",
-    name: t("landing.pricing.onpremise.name"),
-    price: t("landing.pricing.onpremise.price"),
-    period: t("landing.pricing.onpremise.period"),
-    description: t("landing.pricing.onpremise.description"),
-    features: Array.from({ length: 7 }, (_, i) =>
-      t(`landing.pricing.onpremise.features.${i}`)
-    ),
-    cta: t("landing.pricing.onpremise.cta"),
-    href: "/contact",
-    highlighted: false,
-  };
-
-  const plans = [...buildPlans(), onPremisePlan];
+  const plans = buildPlans();
 
   return (
     <section className="py-24" id="pricing">
@@ -188,87 +173,90 @@ export function PricingSection() {
 
         {/* Pricing cards */}
         {!loading && (
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {plans.map((plan, index) => (
-              <div
-                key={index}
-                className={`relative rounded-2xl border ${
-                  plan.highlighted
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-secondary/10"
-                } p-8 flex flex-col`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary text-primary-foreground text-sm font-medium rounded-full">
-                    {t("landing.pricing.mostPopular")}
-                  </div>
-                )}
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {plans.map((plan, index) => (
+                <div
+                  key={index}
+                  className={`relative rounded-2xl border ${
+                    plan.highlighted
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-secondary/10"
+                  } p-8 flex flex-col`}
+                >
+                  {plan.highlighted && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary text-primary-foreground text-sm font-medium rounded-full">
+                      {t("landing.pricing.mostPopular")}
+                    </div>
+                  )}
 
-                {plan.badge && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-green-500 text-white text-sm font-medium rounded-full">
-                    {plan.badge}
-                  </div>
-                )}
+                  {plan.badge && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-green-500 text-white text-sm font-medium rounded-full">
+                      {plan.badge}
+                    </div>
+                  )}
 
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">/{plan.period}</span>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold">{plan.price}</span>
+                      <span className="text-muted-foreground">/{plan.period}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
+
+                  <ul className="space-y-3 mb-8 flex-grow">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-center gap-3 text-sm">
+                        <svg
+                          className={`w-5 h-5 flex-shrink-0 ${
+                            plan.highlighted ? "text-primary" : "text-green-500 dark:text-green-400"
+                          }`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link href={plan.href}>
+                    <Button
+                      className={`w-full ${
+                        plan.highlighted
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : ""
+                      }`}
+                      variant={plan.highlighted ? "default" : "outline"}
+                    >
+                      {plan.cta}
+                    </Button>
+                  </Link>
                 </div>
+              ))}
+            </div>
 
-                <ul className="space-y-3 mb-8 flex-grow">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm">
-                      <svg
-                        className={`w-5 h-5 flex-shrink-0 ${
-                          plan.highlighted ? "text-primary" : "text-green-500 dark:text-green-400"
-                        }`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link href={plan.href}>
-                  <Button
-                    className={`w-full ${
-                      plan.highlighted
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : ""
-                    }`}
-                    variant={plan.highlighted ? "default" : "outline"}
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
-              </div>
-            ))}
-          </div>
+            <p className="mt-8 text-center text-muted-foreground">
+              {t("landing.pricing.onpremise.name")}:{" "}
+              <Link href="/contact" className="text-primary hover:underline">
+                {t("landing.pricing.contactUs")}
+              </Link>
+            </p>
+          </>
         )}
 
         {/* FAQ or additional info */}
         <div className="mt-16 text-center">
           <p className="text-muted-foreground">
             {t("landing.pricing.footer")}
-          </p>
-          <p className="text-muted-foreground mt-2">
-            {t("landing.pricing.customPlan")}{" "}
-            <a href="mailto:bd@agentsmesh.ai" className="text-primary hover:underline">
-              {t("landing.pricing.contactUs")}
-            </a>
           </p>
         </div>
       </div>

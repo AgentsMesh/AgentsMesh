@@ -237,16 +237,14 @@
         "period": "사용자/월"
       },
       "enterprise": {
-        "name": "Enterprise",
+        "name": "Business",
         "description": "고급 보안이 필요한 조직을 위해.",
         "features": {
           "0": "Pro의 모든 기능",
-          "1": "SAML/LDAP SSO",
-          "2": "감사 로그",
-          "3": "전담 지원",
-          "4": "프라이빗 배포",
-          "5": "SLA 보장",
-          "6": "맞춤 계약"
+          "1": "전담 지원",
+          "2": "프라이빗 배포",
+          "3": "SLA 보장",
+          "4": "맞춤 계약"
         },
         "cta": "영업팀 연락",
         "price": "맞춤",
@@ -270,7 +268,7 @@
       },
       "footer": "모든 요금제에 SSL 암호화, 99.9% 가동 시간 SLA 및 정기 백업이 포함됩니다.",
       "customPlan": "맞춤 요금제가 필요하신가요?",
-      "contactUs": "문의하기",
+      "contactUs": "Contact Us",
       "free": {
         "name": "무료",
         "price": "$0",

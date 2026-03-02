@@ -234,18 +234,16 @@
         "cta": "Upgrade to Pro"
       },
       "enterprise": {
-        "name": "Enterprise",
+        "name": "Business",
         "description": "For organizations requiring advanced scale and security.",
         "features": {
           "0": "Up to 50 seats",
           "1": "50 concurrent pods",
           "2": "100 Runners",
           "3": "Unlimited repositories",
-          "4": "Priority support",
-          "5": "SSO integration (coming soon)",
-          "6": "Audit logs"
+          "4": "Priority support"
         },
-        "cta": "Upgrade to Enterprise"
+        "cta": "Upgrade to Business"
       },
       "onpremise": {
         "name": "OnPremise",
@@ -265,7 +263,7 @@
       },
       "footer": "All plans include BYOK (Bring Your Own Key) - use your own AI API keys with no usage limits.",
       "customPlan": "Need enterprise deployment?",
-      "contactUs": "Contact us"
+      "contactUs": "Contact Us"
     },
     "selfHosted": {
       "title": "Need Complete",
