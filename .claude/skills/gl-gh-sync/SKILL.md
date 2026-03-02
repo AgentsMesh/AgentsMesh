@@ -139,11 +139,15 @@ glab mr view <MR编号>
 glab ci status
 
 # Pipeline 通过后合并 MR
-glab mr merge <MR编号> --merge-commit-message "sync: GitHub → GitLab"
+glab mr merge <MR编号> --yes --remove-source-branch
 
 # 拉回本地，确认 GitLab main 已更新
 git fetch origin main
 git log --oneline origin/main -3
+
+# ⚠️ 重要：GitLab MR 合并会产生 merge commit，需同步回 GitHub
+# 这个 push 是安全的——代码内容完全一致，仅同步 merge commit
+git push github origin/main:main
 ```
 
 ### 第四步：验证同步结果
