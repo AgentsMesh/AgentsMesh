@@ -140,16 +140,28 @@ export function useAgentCredentials(
   }, [loadData, t]);
 
   // Save credential profile (create or update)
+  // Sends only the active credential method's value; the other is excluded.
+  // Backend replaces the entire credentials object, clearing stale fields.
   const handleSaveProfile = useCallback(async (
     agentTypeId: number,
     data: CredentialFormData,
     editingProfile: CredentialProfileData | null
   ) => {
     const credentials: Record<string, string> = {};
+
+    // base_url is shared across both methods
     if (data.baseUrl) credentials.base_url = data.baseUrl;
-    if (data.apiKey) credentials.api_key = data.apiKey;
+
+    // Only include the active credential method
+    if (data.credentialMethod === "api_key") {
+      if (data.apiKey) credentials.api_key = data.apiKey;
+    } else {
+      if (data.authToken) credentials.auth_token = data.authToken;
+    }
 
     if (editingProfile) {
+      // When updating, always send credentials object to ensure stale fields
+      // from the other method are cleared (backend replaces entire object)
       await userAgentCredentialApi.update(editingProfile.id, {
         name: data.name,
         description: data.description || undefined,

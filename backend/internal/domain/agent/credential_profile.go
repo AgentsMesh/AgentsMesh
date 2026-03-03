@@ -57,6 +57,9 @@ type CredentialProfileResponse struct {
 	// Show which fields have been configured (without exposing actual values)
 	ConfiguredFields []string `json:"configured_fields,omitempty"`
 
+	// Non-secret field values that can be echoed back for editing (e.g. base_url)
+	ConfiguredValues map[string]string `json:"configured_values,omitempty"`
+
 	// AgentType info
 	AgentTypeName string `json:"agent_type_name,omitempty"`
 	AgentTypeSlug string `json:"agent_type_slug,omitempty"`
@@ -65,7 +68,10 @@ type CredentialProfileResponse struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-// ToResponse converts UserAgentCredentialProfile to API response
+// ToResponse converts UserAgentCredentialProfile to API response.
+// Non-secret credential values (type: "text") are included in ConfiguredValues
+// so the frontend can echo them back during editing. Secret values are only
+// listed in ConfiguredFields (name only, no value).
 func (p *UserAgentCredentialProfile) ToResponse() *CredentialProfileResponse {
 	resp := &CredentialProfileResponse{
 		ID:           p.ID,
@@ -80,13 +86,31 @@ func (p *UserAgentCredentialProfile) ToResponse() *CredentialProfileResponse {
 		UpdatedAt:    p.UpdatedAt.Format(time.RFC3339),
 	}
 
-	// Extract configured field names (without exposing values)
+	// Build a lookup of field type from CredentialSchema (requires AgentType preloaded)
+	fieldTypes := make(map[string]string)
+	if p.AgentType != nil {
+		for _, f := range p.AgentType.CredentialSchema {
+			fieldTypes[f.Name] = f.Type
+		}
+	}
+
+	// Separate credentials into ConfiguredFields (names only) and ConfiguredValues (non-secret values)
 	if p.CredentialsEncrypted != nil {
 		fields := make([]string, 0, len(p.CredentialsEncrypted))
-		for k := range p.CredentialsEncrypted {
+		values := make(map[string]string)
+
+		for k, v := range p.CredentialsEncrypted {
 			fields = append(fields, k)
+			// Only expose non-secret values (type: "text") for edit echoing
+			if fieldTypes[k] == "text" && v != "" {
+				values[k] = v
+			}
 		}
+
 		resp.ConfiguredFields = fields
+		if len(values) > 0 {
+			resp.ConfiguredValues = values
+		}
 	}
 
 	// AgentType info

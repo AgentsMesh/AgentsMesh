@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -13,13 +14,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { CredentialDialogProps, CredentialFormData } from "./types";
+import type { CredentialDialogProps, CredentialFormData, CredentialMethod } from "./types";
 
 /**
  * CredentialDialog - Dialog for adding or editing credential profiles
  *
- * Displays a form with name, description, base URL, and API key fields.
- * Handles both create and edit modes based on editingProfile prop.
+ * Supports two mutually exclusive authentication methods:
+ * - API Key (ANTHROPIC_API_KEY)
+ * - Auth Token (ANTHROPIC_AUTH_TOKEN)
+ *
+ * base_url is optional and works with either method.
+ * In edit mode, base_url (type: "text") is echoed back from configured_values;
+ * api_key/auth_token (type: "secret") are never echoed.
  */
 export function CredentialDialog({
   open,
@@ -32,6 +38,8 @@ export function CredentialDialog({
   const [formDescription, setFormDescription] = useState("");
   const [formBaseUrl, setFormBaseUrl] = useState("");
   const [formApiKey, setFormApiKey] = useState("");
+  const [formAuthToken, setFormAuthToken] = useState("");
+  const [credentialMethod, setCredentialMethod] = useState<CredentialMethod>("api_key");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,13 +49,23 @@ export function CredentialDialog({
       if (editingProfile) {
         setFormName(editingProfile.name);
         setFormDescription(editingProfile.description || "");
-        setFormBaseUrl("");
+        // Echo back non-secret values (base_url is type: "text")
+        setFormBaseUrl(editingProfile.configured_values?.base_url || "");
         setFormApiKey("");
+        setFormAuthToken("");
+        // Determine current method from configured_fields
+        if (editingProfile.configured_fields?.includes("auth_token")) {
+          setCredentialMethod("auth_token");
+        } else {
+          setCredentialMethod("api_key");
+        }
       } else {
         setFormName("");
         setFormDescription("");
         setFormBaseUrl("");
         setFormApiKey("");
+        setFormAuthToken("");
+        setCredentialMethod("api_key");
       }
       setError(null);
     }
@@ -65,6 +83,8 @@ export function CredentialDialog({
         description: formDescription,
         baseUrl: formBaseUrl,
         apiKey: formApiKey,
+        authToken: formAuthToken,
+        credentialMethod,
       };
 
       await onSubmit(formData, editingProfile);
@@ -132,21 +152,61 @@ export function CredentialDialog({
             />
           </div>
 
+          {/* Credential method toggle */}
           <div className="grid gap-2">
-            <Label htmlFor="api_key">{t("settings.agentCredentials.apiKey")}</Label>
-            <Input
-              id="api_key"
-              type="password"
-              value={formApiKey}
-              onChange={(e) => setFormApiKey(e.target.value)}
-              placeholder={editingProfile ? t("settings.agentCredentials.apiKeyPlaceholder") : "sk-..."}
-            />
-            {editingProfile && (
-              <p className="text-xs text-muted-foreground">
-                {t("settings.agentCredentials.apiKeyEditHint")}
-              </p>
-            )}
+            <Label>{t("settings.agentCredentials.credentialMethod")}</Label>
+            <Tabs
+              value={credentialMethod}
+              onValueChange={(v) => setCredentialMethod(v as CredentialMethod)}
+            >
+              <TabsList className="w-full">
+                <TabsTrigger value="api_key" className="flex-1">
+                  {t("settings.agentCredentials.credentialMethodApiKey")}
+                </TabsTrigger>
+                <TabsTrigger value="auth_token" className="flex-1">
+                  {t("settings.agentCredentials.credentialMethodAuthToken")}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
+
+          {/* API Key input (shown when api_key method selected) */}
+          {credentialMethod === "api_key" && (
+            <div className="grid gap-2">
+              <Label htmlFor="api_key">{t("settings.agentCredentials.apiKey")}</Label>
+              <Input
+                id="api_key"
+                type="password"
+                value={formApiKey}
+                onChange={(e) => setFormApiKey(e.target.value)}
+                placeholder={editingProfile ? t("settings.agentCredentials.apiKeyPlaceholder") : "sk-..."}
+              />
+              {editingProfile && (
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.agentCredentials.apiKeyEditHint")}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Auth Token input (shown when auth_token method selected) */}
+          {credentialMethod === "auth_token" && (
+            <div className="grid gap-2">
+              <Label htmlFor="auth_token">{t("settings.agentCredentials.authToken")}</Label>
+              <Input
+                id="auth_token"
+                type="password"
+                value={formAuthToken}
+                onChange={(e) => setFormAuthToken(e.target.value)}
+                placeholder={editingProfile ? t("settings.agentCredentials.authTokenPlaceholder") : ""}
+              />
+              {editingProfile && (
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.agentCredentials.authTokenEditHint")}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>

@@ -62,3 +62,22 @@ func (s *CredentialProfileService) decryptCredentials(creds agent.EncryptedCrede
 	}
 	return decrypted, nil
 }
+
+// ProfileToResponse converts a profile to API response, decrypting text field values
+// in ConfiguredValues. Secret field values remain hidden (only field names in ConfiguredFields).
+func (s *CredentialProfileService) ProfileToResponse(p *agent.UserAgentCredentialProfile) *agent.CredentialProfileResponse {
+	resp := p.ToResponse()
+
+	// Decrypt text field values in ConfiguredValues (they are stored encrypted)
+	if resp.ConfiguredValues != nil {
+		for k, v := range resp.ConfiguredValues {
+			dec, err := s.encryptor.Decrypt(v)
+			if err == nil {
+				resp.ConfiguredValues[k] = dec
+			}
+			// If decryption fails (e.g., value was not encrypted), keep original
+		}
+	}
+
+	return resp
+}

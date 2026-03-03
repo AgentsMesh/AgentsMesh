@@ -36,7 +36,7 @@ func (s *CredentialProfileService) ListCredentialProfiles(ctx context.Context, u
 			}
 			groupedMap[p.AgentTypeID] = group
 		}
-		group.Profiles = append(group.Profiles, p.ToResponse())
+		group.Profiles = append(group.Profiles, s.ProfileToResponse(p))
 	}
 
 	// Convert map to slice

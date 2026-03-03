@@ -144,6 +144,47 @@ func TestConfigBuilder_buildEnvVars_WithCredentials(t *testing.T) {
 		}
 	})
 
+	t.Run("injects auth_token as env var", func(t *testing.T) {
+		provider := &mockCredentialProvider{
+			agentType: &agent.AgentType{
+				ID:            1,
+				Slug:          "claude-code",
+				LaunchCommand: "claude",
+				CredentialSchema: agent.CredentialSchema{
+					{Name: "api_key", Type: "secret", EnvVar: "ANTHROPIC_API_KEY", Required: false},
+					{Name: "auth_token", Type: "secret", EnvVar: "ANTHROPIC_AUTH_TOKEN", Required: false},
+					{Name: "base_url", Type: "text", EnvVar: "ANTHROPIC_BASE_URL", Required: false},
+				},
+			},
+			credentials: agent.EncryptedCredentials{
+				"auth_token": "token-test-123",
+				"base_url":   "https://custom.proxy.example.com",
+			},
+			isRunner: false,
+		}
+
+		builder := NewConfigBuilder(provider)
+		req := &ConfigBuildRequest{
+			AgentTypeID: 1,
+			UserID:      1,
+		}
+
+		envVars, err := builder.buildEnvVars(ctx, req, provider.agentType)
+		if err != nil {
+			t.Fatalf("buildEnvVars failed: %v", err)
+		}
+
+		if envVars["ANTHROPIC_AUTH_TOKEN"] != "token-test-123" {
+			t.Errorf("ANTHROPIC_AUTH_TOKEN = %s, want token-test-123", envVars["ANTHROPIC_AUTH_TOKEN"])
+		}
+		if envVars["ANTHROPIC_BASE_URL"] != "https://custom.proxy.example.com" {
+			t.Errorf("ANTHROPIC_BASE_URL = %s, want https://custom.proxy.example.com", envVars["ANTHROPIC_BASE_URL"])
+		}
+		if _, exists := envVars["ANTHROPIC_API_KEY"]; exists {
+			t.Error("ANTHROPIC_API_KEY should not be set when only auth_token is provided")
+		}
+	})
+
 	t.Run("returns error on credential fetch failure", func(t *testing.T) {
 		provider := &mockCredentialProvider{
 			agentType: &agent.AgentType{

@@ -11,6 +11,7 @@ export interface CredentialProfileData {
   is_default: boolean;
   is_active: boolean;
   configured_fields?: string[];
+  configured_values?: Record<string, string>;
   agent_type_name?: string;
   agent_type_slug?: string;
   created_at: string;

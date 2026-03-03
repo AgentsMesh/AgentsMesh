@@ -235,7 +235,13 @@
       "failedToSave": "Failed to save profile",
       "failedToDelete": "Failed to delete profile",
       "failedToSetDefault": "Failed to set default profile",
-      "confirmDelete": "Are you sure you want to delete this profile?"
+      "confirmDelete": "Are you sure you want to delete this profile?",
+      "authToken": "Auth Token",
+      "authTokenPlaceholder": "Leave empty to keep existing",
+      "authTokenEditHint": "Leave empty to keep the existing Auth Token",
+      "credentialMethod": "Authentication Method",
+      "credentialMethodApiKey": "API Key",
+      "credentialMethodAuthToken": "Auth Token"
     },
     "sshKeys": {
       "title": "SSH Keys",

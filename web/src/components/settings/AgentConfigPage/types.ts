@@ -48,6 +48,11 @@ export interface AgentConfigActions {
 }
 
 /**
+ * Credential method type - api_key and auth_token are mutually exclusive
+ */
+export type CredentialMethod = "api_key" | "auth_token";
+
+/**
  * Credential form data for add/edit dialog
  */
 export interface CredentialFormData {
@@ -55,6 +60,8 @@ export interface CredentialFormData {
   description: string;
   baseUrl: string;
   apiKey: string;
+  authToken: string;
+  credentialMethod: CredentialMethod;
 }
 
 /**

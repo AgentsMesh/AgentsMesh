@@ -77,7 +77,7 @@ func (h *UserAgentCredentialHandler) ListProfilesForAgentType(c *gin.Context) {
 	// Convert to response format
 	responses := make([]*agent.CredentialProfileResponse, len(profiles))
 	for i, p := range profiles {
-		responses[i] = p.ToResponse()
+		responses[i] = h.credentialSvc.ProfileToResponse(p)
 	}
 
 	// Always include RunnerHost as a virtual option
@@ -139,7 +139,7 @@ func (h *UserAgentCredentialHandler) CreateProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"profile": profile.ToResponse()})
+	c.JSON(http.StatusCreated, gin.H{"profile": h.credentialSvc.ProfileToResponse(profile)})
 }
 
 // GetProfile returns a single credential profile
@@ -163,7 +163,7 @@ func (h *UserAgentCredentialHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"profile": profile.ToResponse()})
+	c.JSON(http.StatusOK, gin.H{"profile": h.credentialSvc.ProfileToResponse(profile)})
 }
 
 // UpdateCredentialProfileRequest represents a request to update a credential profile
@@ -214,7 +214,7 @@ func (h *UserAgentCredentialHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"profile": profile.ToResponse()})
+	c.JSON(http.StatusOK, gin.H{"profile": h.credentialSvc.ProfileToResponse(profile)})
 }
 
 // DeleteProfile deletes a credential profile
@@ -264,6 +264,6 @@ func (h *UserAgentCredentialHandler) SetDefault(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Profile set as default",
-		"profile": profile.ToResponse(),
+		"profile": h.credentialSvc.ProfileToResponse(profile),
 	})
 }

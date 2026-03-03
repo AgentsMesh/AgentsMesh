@@ -375,7 +375,13 @@
       "failedToSave": "保存配置失败",
       "failedToDelete": "删除配置失败",
       "failedToSetDefault": "设置默认配置失败",
-      "confirmDelete": "确定要删除此配置吗？"
+      "confirmDelete": "确定要删除此配置吗？",
+      "authToken": "Auth Token",
+      "authTokenPlaceholder": "留空以保持现有值",
+      "authTokenEditHint": "留空以保持现有的 Auth Token",
+      "credentialMethod": "认证方式",
+      "credentialMethodApiKey": "API 密钥",
+      "credentialMethodAuthToken": "Auth Token"
     },
     "sshKeys": {
       "title": "SSH 密钥",
