@@ -96,6 +96,9 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 	case *runnerv1.RunnerMessage_McpRequest:
 		a.handleMcpRequest(ctx, runnerID, conn, payload.McpRequest)
 
+	case *runnerv1.RunnerMessage_Pong:
+		a.handlePong(runnerID, conn, payload.Pong)
+
 	default:
 		a.logger.Warn("unknown message type", "runner_id", runnerID)
 	}
@@ -201,6 +204,16 @@ func (a *GRPCRunnerAdapter) handleHeartbeatAgentVersions(ctx context.Context, ru
 		"changes", len(versions),
 	)
 	a.persistAgentVersions(ctx, runnerID, versions, true)
+}
+
+// handlePong handles PongEvent from Runner - updates downstream liveness tracking.
+func (a *GRPCRunnerAdapter) handlePong(runnerID int64, conn *runner.GRPCConnection, pong *runnerv1.PongEvent) {
+	conn.UpdateLastPong()
+	rtt := time.Now().UnixMilli() - pong.PingTimestamp
+	a.logger.Debug("downstream pong received",
+		"runner_id", runnerID,
+		"rtt_ms", rtt,
+	)
 }
 
 // persistAgentVersions saves agent version info to the database.

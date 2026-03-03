@@ -187,7 +187,6 @@ func (a *GRPCRunnerAdapter) Connect(stream runnerv1.RunnerService_ConnectServer)
 	// Wrap gRPC stream as GRPCStream interface for RunnerConnectionManager
 	grpcStream := &grpcStreamAdapter{
 		stream: stream,
-		sendCh: make(chan *runnerv1.ServerMessage, 100),
 		done:   make(chan struct{}),
 	}
 
@@ -210,8 +209,19 @@ func (a *GRPCRunnerAdapter) Connect(stream runnerv1.RunnerService_ConnectServer)
 		go a.startRevocationChecker(ctx, runnerInfo.ID, runnerInfo.OrganizationID, identity.CertSerialNumber, cancel)
 	}
 
+	// Start downstream ping loop (detects dead downstream path)
+	go a.downstreamPingLoop(ctx, runnerInfo.ID, conn, cancel)
+
 	// Start sender goroutine (sends proto messages from conn.Send channel to stream)
-	go a.sendLoop(runnerInfo.ID, conn, grpcStream)
+	// Wrapped to detect sendLoop exit and mark connection as dead
+	go func() {
+		a.sendLoop(runnerInfo.ID, conn, grpcStream)
+		// sendLoop 退出意味着下行通路已死
+		a.logger.Warn("sendLoop exited, marking connection as dead",
+			"runner_id", runnerInfo.ID)
+		conn.Close()  // 标记关闭，后续 SendMessage() 立即返回 ErrConnectionClosed
+		cancel()      // 取消上下文，receiveLoop 会自然退出
+	}()
 
 	// Receive loop (blocking) - converts proto to internal types and delegates to connManager
 	err = a.receiveLoop(ctx, runnerInfo.ID, conn, stream)

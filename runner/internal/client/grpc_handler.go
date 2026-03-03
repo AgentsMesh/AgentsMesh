@@ -41,14 +41,25 @@ func (c *GRPCConnection) readLoop(ctx context.Context, done chan<- struct{}) {
 }
 
 // handleServerMessage dispatches received server messages to appropriate handlers.
+// Heavy operations (CreatePod, SubscribeTerminal, CreateAutopilot) are dispatched
+// asynchronously via goroutines to avoid blocking the readLoop.
+// Lightweight operations remain synchronous to preserve message ordering.
 func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 	switch payload := msg.Payload.(type) {
 	case *runnerv1.ServerMessage_InitializeResult:
 		c.handleInitializeResult(payload.InitializeResult)
 
+	// Heavy operations - async dispatch to avoid blocking readLoop
 	case *runnerv1.ServerMessage_CreatePod:
-		c.handleCreatePod(payload.CreatePod)
+		go c.handleCreatePod(payload.CreatePod)
 
+	case *runnerv1.ServerMessage_SubscribeTerminal:
+		go c.handleSubscribeTerminal(payload.SubscribeTerminal)
+
+	case *runnerv1.ServerMessage_CreateAutopilot:
+		go c.handleCreateAutopilot(payload.CreateAutopilot)
+
+	// Lightweight operations - synchronous to preserve ordering
 	case *runnerv1.ServerMessage_TerminatePod:
 		c.handleTerminatePod(payload.TerminatePod)
 
@@ -64,23 +75,20 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 	case *runnerv1.ServerMessage_SendPrompt:
 		c.handleSendPrompt(payload.SendPrompt)
 
-	case *runnerv1.ServerMessage_SubscribeTerminal:
-		c.handleSubscribeTerminal(payload.SubscribeTerminal)
-
 	case *runnerv1.ServerMessage_UnsubscribeTerminal:
 		c.handleUnsubscribeTerminal(payload.UnsubscribeTerminal)
 
 	case *runnerv1.ServerMessage_QuerySandboxes:
 		c.handleQuerySandboxes(payload.QuerySandboxes)
 
-	case *runnerv1.ServerMessage_CreateAutopilot:
-		c.handleCreateAutopilot(payload.CreateAutopilot)
-
 	case *runnerv1.ServerMessage_AutopilotControl:
 		c.handleAutopilotControl(payload.AutopilotControl)
 
 	case *runnerv1.ServerMessage_McpResponse:
 		c.handleMcpResponse(payload.McpResponse)
+
+	case *runnerv1.ServerMessage_Ping:
+		c.handlePing(payload.Ping)
 
 	default:
 		logger.GRPC().Warn("Unknown server message type")
@@ -278,6 +286,20 @@ func (c *GRPCConnection) handleMcpResponse(resp *runnerv1.McpResponse) {
 		return
 	}
 	c.rpcClient.HandleResponse(resp)
+}
+
+// handlePing handles downstream ping from server - immediately replies with pong.
+// This is a lightweight synchronous operation to maintain ordering with other control messages.
+func (c *GRPCConnection) handlePing(ping *runnerv1.PingCommand) {
+	if err := c.sendControl(&runnerv1.RunnerMessage{
+		Payload: &runnerv1.RunnerMessage_Pong{
+			Pong: &runnerv1.PongEvent{
+				PingTimestamp: ping.Timestamp,
+			},
+		},
+	}); err != nil {
+		logger.GRPC().Warn("Failed to send pong response", "error", err)
+	}
 }
 
 // SetRPCClient sets the RPCClient for handling MCP request-response over gRPC stream.

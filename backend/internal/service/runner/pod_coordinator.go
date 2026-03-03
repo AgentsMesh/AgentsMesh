@@ -4,11 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"gorm.io/gorm"
+)
+
+// Terminate command backoff constants
+const (
+	terminateCooldown      = 5 * time.Minute  // 冷却期：两次 terminate 之间的最短间隔
+	terminateCacheCleanup  = 30 * time.Minute // 缓存条目过期清理阈值
 )
 
 // PodCoordinator coordinates pod lifecycle events between backend and runners
@@ -25,6 +32,11 @@ type PodCoordinator struct {
 
 	// Relay connection cache for tracking Runner's relay connections
 	relayConnectionCache *RelayConnectionCache
+
+	// Terminate command backoff: prevents sending duplicate terminate commands
+	// during heartbeat reconciliation. Maps podKey → last sent time.
+	terminateSentCache map[string]time.Time
+	terminateCacheMu   sync.Mutex
 
 	// Callbacks
 	onStatusChange   func(podKey string, status string, agentStatus string)
@@ -49,6 +61,7 @@ func NewPodCoordinator(
 		logger:               logger,
 		commandSender:        NewNoOpCommandSender(logger), // Default to no-op
 		relayConnectionCache: NewRelayConnectionCache(),
+		terminateSentCache:   make(map[string]time.Time),
 	}
 
 	// Set up callbacks from connection manager
@@ -200,6 +213,35 @@ func (pc *PodCoordinator) SendCreateAutopilot(runnerID int64, cmd *runnerv1.Crea
 // Delegates to the underlying command sender.
 func (pc *PodCoordinator) SendAutopilotControl(runnerID int64, cmd *runnerv1.AutopilotControlCommand) error {
 	return pc.commandSender.SendAutopilotControl(runnerID, cmd)
+}
+
+// ==================== Terminate Command Backoff ====================
+
+// isTerminateCooldown checks whether a terminate command for the given podKey
+// is within the cooldown period.
+func (pc *PodCoordinator) isTerminateCooldown(podKey string) bool {
+	pc.terminateCacheMu.Lock()
+	defer pc.terminateCacheMu.Unlock()
+	if lastSent, ok := pc.terminateSentCache[podKey]; ok {
+		return time.Since(lastSent) < terminateCooldown
+	}
+	return false
+}
+
+// recordTerminateSent records that a terminate command was sent for the given podKey.
+// Also performs lazy cleanup of expired entries.
+func (pc *PodCoordinator) recordTerminateSent(podKey string) {
+	pc.terminateCacheMu.Lock()
+	defer pc.terminateCacheMu.Unlock()
+	now := time.Now()
+	pc.terminateSentCache[podKey] = now
+
+	// Lazy cleanup: remove entries older than terminateCacheCleanup
+	for key, t := range pc.terminateSentCache {
+		if now.Sub(t) > terminateCacheCleanup {
+			delete(pc.terminateSentCache, key)
+		}
+	}
 }
 
 // ==================== Relay Connection Queries ====================

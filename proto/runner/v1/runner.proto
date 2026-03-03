@@ -39,6 +39,8 @@ message RunnerMessage {
     AutopilotThinkingEvent autopilot_thinking = 20;
     // MCP 请求（Runner -> Backend，复用 gRPC 双向流）
     McpRequest mcp_request = 21;
+    // 下行心跳响应（Runner -> Backend）
+    PongEvent pong = 22;
   }
   int64 timestamp = 15;
 }
@@ -166,6 +168,8 @@ message ServerMessage {
     AutopilotControlCommand autopilot_control = 12;
     // MCP 响应（Backend -> Runner，复用 gRPC 双向流）
     McpResponse mcp_response = 13;
+    // 下行心跳探测（Backend -> Runner）
+    PingCommand ping = 14;
   }
   int64 timestamp = 15;
 }
@@ -564,4 +568,18 @@ message McpResponse {
 message McpError {
   int32 code = 1;         // HTTP 状态码风格的错误码
   string message = 2;     // 错误描述
+}
+
+// ==================== 下行心跳探测 (Downstream Ping/Pong) ====================
+
+// PingCommand Backend 下行心跳探测（Backend -> Runner）
+// 用于检测下行通路是否可用，Runner 收到后立即回复 PongEvent
+message PingCommand {
+  int64 timestamp = 1;   // Backend 发送时间戳(Unix ms)，用于 RTT 测量
+}
+
+// PongEvent Runner 下行心跳响应（Runner -> Backend）
+// 原样回传 Backend 发送时间戳，用于 RTT 计算和下行通路存活检测
+message PongEvent {
+  int64 ping_timestamp = 1;  // 原样回传 Backend 发送时间戳
 }

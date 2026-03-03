@@ -29,7 +29,6 @@ func TestGRPCRunnerAdapter_SendLoop_DoneSignal(t *testing.T) {
 	done := make(chan struct{})
 	grpcAdapter := &grpcStreamAdapter{
 		stream: &mockSendStream{},
-		sendCh: make(chan *runnerv1.ServerMessage, 10),
 		done:   done,
 	}
 
@@ -67,7 +66,6 @@ func TestGRPCRunnerAdapter_SendLoop_ChannelClosed(t *testing.T) {
 	done := make(chan struct{})
 	grpcAdapter := &grpcStreamAdapter{
 		stream: &mockSendStream{},
-		sendCh: make(chan *runnerv1.ServerMessage, 10),
 		done:   done,
 	}
 
@@ -110,7 +108,6 @@ func TestGRPCRunnerAdapter_SendLoop_SendError(t *testing.T) {
 	done := make(chan struct{})
 	grpcAdapter := &grpcStreamAdapter{
 		stream: errorStream,
-		sendCh: make(chan *runnerv1.ServerMessage, 10),
 		done:   done,
 	}
 
@@ -152,7 +149,6 @@ func TestGRPCRunnerAdapter_SendLoop_SuccessfulSend(t *testing.T) {
 	done := make(chan struct{})
 	grpcAdapter := &grpcStreamAdapter{
 		stream: successStream,
-		sendCh: make(chan *runnerv1.ServerMessage, 10),
 		done:   done,
 	}
 

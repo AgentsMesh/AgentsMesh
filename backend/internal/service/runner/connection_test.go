@@ -102,6 +102,47 @@ func TestGRPCConnection_GetLastPing(t *testing.T) {
 	assert.WithinDuration(t, time.Now(), ping, time.Second)
 }
 
+func TestGRPCConnection_LastPong_InitiallyZero(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	// Initially zero (no pong received yet)
+	assert.True(t, conn.GetLastPong().IsZero())
+}
+
+func TestGRPCConnection_UpdateLastPong(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	assert.True(t, conn.GetLastPong().IsZero())
+
+	// Update lastPong
+	conn.UpdateLastPong()
+
+	lastPong := conn.GetLastPong()
+	assert.False(t, lastPong.IsZero())
+	assert.WithinDuration(t, time.Now(), lastPong, time.Second)
+}
+
+func TestGRPCConnection_UpdateLastPong_Advances(t *testing.T) {
+	stream := newMockRunnerStream()
+	defer stream.Close()
+
+	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+
+	conn.UpdateLastPong()
+	first := conn.GetLastPong()
+
+	time.Sleep(10 * time.Millisecond)
+	conn.UpdateLastPong()
+	second := conn.GetLastPong()
+
+	assert.True(t, second.After(first), "second UpdateLastPong should advance the timestamp")
+}
+
 func TestGRPCConnection_IsClosed(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()

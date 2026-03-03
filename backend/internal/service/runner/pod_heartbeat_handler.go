@@ -72,6 +72,10 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 
 		if err != nil {
 			// Pod not found in database, tell runner to terminate it
+			if pc.isTerminateCooldown(podKey) {
+				continue
+			}
+			pc.recordTerminateSent(podKey)
 			pc.logger.Warn("runner reported unknown pod, sending terminate",
 				"pod_key", podKey,
 				"runner_id", runnerID)
@@ -85,6 +89,14 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 
 		// Check if pod should be terminated (already completed/terminated in DB)
 		if pod.Status == agentpod.StatusCompleted || pod.Status == agentpod.StatusTerminated {
+			// Apply cooldown to prevent sending terminate every heartbeat cycle
+			if pc.isTerminateCooldown(podKey) {
+				pc.logger.Debug("terminate cooldown active, skipping",
+					"pod_key", podKey,
+					"runner_id", runnerID)
+				continue
+			}
+			pc.recordTerminateSent(podKey)
 			pc.logger.Warn("runner reported terminated pod, sending terminate",
 				"pod_key", podKey,
 				"runner_id", runnerID,

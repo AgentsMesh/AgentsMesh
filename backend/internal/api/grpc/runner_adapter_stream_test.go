@@ -15,9 +15,9 @@ import (
 func TestGrpcStreamAdapter_Send(t *testing.T) {
 	t.Run("successful send", func(t *testing.T) {
 		done := make(chan struct{})
-		sendCh := make(chan *runnerv1.ServerMessage, 10)
+		mockStream := &mockSendStream{}
 		adapter := &grpcStreamAdapter{
-			sendCh: sendCh,
+			stream: mockStream,
 			done:   done,
 		}
 
@@ -27,56 +27,43 @@ func TestGrpcStreamAdapter_Send(t *testing.T) {
 		err := adapter.Send(msg)
 		require.NoError(t, err)
 
-		// Verify message was queued
-		select {
-		case received := <-sendCh:
-			assert.Equal(t, msg, received)
-		default:
-			t.Fatal("expected message to be queued")
-		}
+		// Verify message was sent to stream
+		msgs := mockStream.getSentMsgs()
+		require.Len(t, msgs, 1)
+		assert.Equal(t, msg, msgs[0])
 	})
 
-	t.Run("send when closed with full buffer", func(t *testing.T) {
+	t.Run("send when closed", func(t *testing.T) {
 		done := make(chan struct{})
-		// Use unbuffered channel - will block on send, triggering select's other cases
-		sendCh := make(chan *runnerv1.ServerMessage)
+		mockStream := &mockSendStream{}
 		adapter := &grpcStreamAdapter{
-			sendCh: sendCh,
+			stream: mockStream,
 			done:   done,
 		}
 		close(done)
 
-		// With default case in select:
-		// - sendCh is full (unbuffered, no receiver)
-		// - done is closed
-		// - default case matches first due to non-blocking select
-		// So we expect "buffer full" or "connection closed" depending on select order
 		msg := &runnerv1.ServerMessage{Timestamp: 12345}
 		err := adapter.Send(msg)
 		require.Error(t, err)
-		// The error could be either "buffer full" or "connection closed" due to select non-determinism
-		// but with default present, "buffer full" is most likely
-		errMsg := err.Error()
-		assert.True(t, errMsg == "rpc error: code = ResourceExhausted desc = send buffer full" ||
-			errMsg == "rpc error: code = Canceled desc = connection closed",
-			"unexpected error: %s", errMsg)
+		assert.Contains(t, err.Error(), "connection closed")
 	})
 }
 
-func TestGrpcStreamAdapter_Send_BufferFull(t *testing.T) {
+func TestGrpcStreamAdapter_Send_StreamError(t *testing.T) {
 	done := make(chan struct{})
-	sendCh := make(chan *runnerv1.ServerMessage) // Unbuffered channel
+	mockStream := &mockSendStream{
+		sendErr: context.DeadlineExceeded,
+	}
 
 	adapter := &grpcStreamAdapter{
-		sendCh: sendCh,
+		stream: mockStream,
 		done:   done,
 	}
 
-	// Send should fail immediately as buffer is full (no receiver)
 	msg := &runnerv1.ServerMessage{Timestamp: 12345}
 	err := adapter.Send(msg)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "send buffer full")
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func TestGrpcStreamAdapter_Recv(t *testing.T) {
@@ -88,7 +75,6 @@ func TestGrpcStreamAdapter_Recv(t *testing.T) {
 
 	adapter := &grpcStreamAdapter{
 		stream: mockStream,
-		sendCh: make(chan *runnerv1.ServerMessage, 10),
 		done:   make(chan struct{}),
 	}
 
@@ -114,7 +100,6 @@ func TestGrpcStreamAdapter_Context(t *testing.T) {
 
 	adapter := &grpcStreamAdapter{
 		stream: mockStream,
-		sendCh: make(chan *runnerv1.ServerMessage, 10),
 		done:   make(chan struct{}),
 	}
 

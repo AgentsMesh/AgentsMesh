@@ -32,6 +32,7 @@ type GRPCConnection struct {
 	// Connection timestamps
 	ConnectedAt time.Time
 	LastPing    time.Time
+	lastPong    time.Time // Last downstream pong received time
 
 	// Initialization state
 	initialized     bool
@@ -103,6 +104,20 @@ func (c *GRPCConnection) GetLastPing() time.Time {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.LastPing
+}
+
+// UpdateLastPong updates the last downstream pong time.
+func (c *GRPCConnection) UpdateLastPong() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.lastPong = time.Now()
+}
+
+// GetLastPong returns the last downstream pong time.
+func (c *GRPCConnection) GetLastPong() time.Time {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.lastPong
 }
 
 // IsClosed returns whether the connection is closed.
