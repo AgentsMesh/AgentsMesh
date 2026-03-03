@@ -103,16 +103,19 @@ release-snapshot:
 # Install / Uninstall (for local development)
 # =============================================================================
 
+LOCAL_BIN := $(HOME)/.local/bin
+
 .PHONY: install
 install: build
-	@echo "Installing to /usr/local/bin..."
-	@sudo cp $(RUNNER) /usr/local/bin/runner
-	@echo "Installed: /usr/local/bin/runner"
+	@echo "Installing to $(LOCAL_BIN)..."
+	@mkdir -p $(LOCAL_BIN)
+	@cp $(RUNNER) $(LOCAL_BIN)/runner
+	@echo "Installed: $(LOCAL_BIN)/runner"
 
 .PHONY: uninstall
 uninstall:
-	@echo "Removing from /usr/local/bin..."
-	@sudo rm -f /usr/local/bin/runner
+	@echo "Removing from $(LOCAL_BIN)..."
+	@rm -f $(LOCAL_BIN)/runner
 	@echo "Uninstalled"
 
 # =============================================================================
@@ -165,8 +168,8 @@ help:
 	@echo "  make release-snapshot - Create snapshot release with GoReleaser"
 	@echo ""
 	@echo "Install:"
-	@echo "  make install          - Install to /usr/local/bin"
-	@echo "  make uninstall        - Remove from /usr/local/bin"
+	@echo "  make install          - Install to ~/.local/bin"
+	@echo "  make uninstall        - Remove from ~/.local/bin"
 	@echo ""
 	@echo "Service:"
 	@echo "  make service-install  - Install as system service"

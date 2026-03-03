@@ -18,7 +18,6 @@ NC='\033[0m' # No Color
 GITHUB_REPO="AgentsMesh/AgentsMeshRunner"
 BINARY_NAME="agentsmesh-runner"
 INSTALL_DIR=""
-USE_SUDO="no"
 
 # Print colored message
 info() {
@@ -43,10 +42,9 @@ is_tty() {
     [ -t 0 ]
 }
 
-# Detect install directory with three-level fallback:
+# Detect install directory:
 #   1. $INSTALL_DIR env var (user-specified)
-#   2. /usr/local/bin (writable directly, or via passwordless sudo)
-#   3. ~/.local/bin (user-space fallback, always writable)
+#   2. ~/.local/bin (primary, user-space, no sudo required)
 detect_install_dir() {
     # Priority 1: user-specified INSTALL_DIR
     if [ -n "$INSTALL_DIR" ]; then
@@ -62,41 +60,12 @@ detect_install_dir() {
         error "Cannot write to specified INSTALL_DIR: $INSTALL_DIR"
     fi
 
-    # Priority 2: /usr/local/bin
-    if [ -d "/usr/local/bin" ] && [ -w "/usr/local/bin" ]; then
-        INSTALL_DIR="/usr/local/bin"
-        info "Install directory: $INSTALL_DIR"
-        return
-    fi
-
-    # Try passwordless sudo for /usr/local/bin
-    if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-        INSTALL_DIR="/usr/local/bin"
-        USE_SUDO="yes"
-        if [ ! -d "$INSTALL_DIR" ]; then
-            sudo mkdir -p "$INSTALL_DIR"
-        fi
-        info "Install directory: $INSTALL_DIR (via sudo)"
-        return
-    fi
-
-    # In TTY mode, prompt for sudo password
-    if is_tty && command -v sudo >/dev/null 2>&1; then
-        warn "/usr/local/bin is not writable, attempting sudo..."
-        if sudo -v 2>/dev/null; then
-            INSTALL_DIR="/usr/local/bin"
-            USE_SUDO="yes"
-            info "Install directory: $INSTALL_DIR (via sudo)"
-            return
-        fi
-    fi
-
-    # Priority 3: ~/.local/bin (user-space fallback)
+    # Priority 2: ~/.local/bin (primary)
     INSTALL_DIR="$HOME/.local/bin"
     if [ ! -d "$INSTALL_DIR" ]; then
         mkdir -p "$INSTALL_DIR"
     fi
-    info "Install directory: $INSTALL_DIR (user-space fallback)"
+    info "Install directory: $INSTALL_DIR"
 }
 
 # Check if ~/.local/bin is in PATH and print configuration hints
@@ -232,18 +201,10 @@ install() {
         error "Binary not found in archive"
     fi
 
-    # Install binary to detected directory
+    # Install binary
     info "Installing to $INSTALL_DIR..."
-
-    if [ -w "$INSTALL_DIR" ]; then
-        mv "$BINARY_PATH" "$INSTALL_DIR/$BINARY_NAME"
-        chmod +x "$INSTALL_DIR/$BINARY_NAME"
-    elif [ "$USE_SUDO" = "yes" ]; then
-        sudo mv "$BINARY_PATH" "$INSTALL_DIR/$BINARY_NAME"
-        sudo chmod +x "$INSTALL_DIR/$BINARY_NAME"
-    else
-        error "Cannot write to $INSTALL_DIR"
-    fi
+    mv "$BINARY_PATH" "$INSTALL_DIR/$BINARY_NAME"
+    chmod +x "$INSTALL_DIR/$BINARY_NAME"
 
     success "AgentsMesh Runner v$VERSION installed successfully!"
 }
