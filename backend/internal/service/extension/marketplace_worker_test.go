@@ -126,6 +126,10 @@ func (m *mockExtensionRepo) UpsertMcpMarketItem(_ context.Context, _ *extension.
 	return nil
 }
 
+func (m *mockExtensionRepo) BatchUpsertMcpMarketItems(_ context.Context, _ []*extension.McpMarketItem) error {
+	return nil
+}
+
 func (m *mockExtensionRepo) DeactivateMcpMarketItemsNotIn(_ context.Context, _ string, _ []string) (int64, error) {
 	return 0, nil
 }

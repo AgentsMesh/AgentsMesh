@@ -172,6 +172,10 @@ func (m *svcMockRepo) UpsertMcpMarketItem(_ context.Context, _ *extension.McpMar
 	return nil
 }
 
+func (m *svcMockRepo) BatchUpsertMcpMarketItems(_ context.Context, _ []*extension.McpMarketItem) error {
+	return nil
+}
+
 func (m *svcMockRepo) DeactivateMcpMarketItemsNotIn(_ context.Context, _ string, _ []string) (int64, error) {
 	return 0, nil
 }

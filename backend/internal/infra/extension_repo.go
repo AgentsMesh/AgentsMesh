@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/AgentsMesh/AgentsMesh/backend/internal/domain/extension"
 )
@@ -258,6 +259,38 @@ func (r *extensionRepo) UpsertMcpMarketItem(ctx context.Context, item *extension
 		item.Slug = item.Slug + "-registry"
 	}
 	return r.db.WithContext(ctx).Create(item).Error
+}
+
+func (r *extensionRepo) BatchUpsertMcpMarketItems(ctx context.Context, items []*extension.McpMarketItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	const batchSize = 100
+	now := time.Now()
+
+	// Pre-process: handle slug conflicts with seed data and set timestamps
+	for _, item := range items {
+		item.UpdatedAt = now
+		if item.CreatedAt.IsZero() {
+			item.CreatedAt = now
+		}
+	}
+
+	// Use GORM's OnConflict clause targeting the partial unique index on registry_name.
+	// On conflict, update all mutable fields while preserving created_at.
+	return r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "registry_name"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"name", "description", "icon", "transport_type", "command",
+				"default_args", "default_http_url", "default_http_headers",
+				"env_var_schema", "agent_type_filter", "category", "is_active",
+				"version", "repository_url", "registry_meta", "last_synced_at",
+				"updated_at",
+			}),
+		}).
+		CreateInBatches(items, batchSize).Error
 }
 
 func (r *extensionRepo) DeactivateMcpMarketItemsNotIn(ctx context.Context, sourceType string, registryNames []string) (int64, error) {

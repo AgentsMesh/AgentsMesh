@@ -28,8 +28,9 @@ func NewMcpRegistrySyncer(client *McpRegistryClient, repo extension.Repository) 
 
 // Sync performs a full sync from the MCP Registry:
 //  1. Fetch all latest+active servers from the registry API.
-//  2. Convert each entry to McpMarketItem and upsert.
-//  3. Deactivate local registry items that no longer exist upstream.
+//  2. Convert entries to McpMarketItems in memory.
+//  3. Batch upsert all items in a single DB round-trip per batch.
+//  4. Deactivate local registry items that no longer exist upstream.
 func (s *McpRegistrySyncer) Sync(ctx context.Context) error {
 	entries, err := s.client.FetchAll(ctx)
 	if err != nil {
@@ -39,9 +40,11 @@ func (s *McpRegistrySyncer) Sync(ctx context.Context) error {
 	slog.Info("MCP Registry sync: fetched entries", "count", len(entries))
 
 	now := time.Now()
+	var items []*extension.McpMarketItem
 	var synced []string
-	var created, updated, skipped int
+	var skipped int
 
+	// Phase 1: Convert all entries in memory (no DB calls)
 	for _, entry := range entries {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -55,23 +58,18 @@ func (s *McpRegistrySyncer) Sync(ctx context.Context) error {
 			continue
 		}
 
-		if err := s.repo.UpsertMcpMarketItem(ctx, item); err != nil {
-			slog.Warn("MCP Registry sync: upsert failed",
-				"slug", item.Slug, "error", err)
-			skipped++
-			continue
-		}
-
-		// Track whether this was a create or update for logging
-		if item.ID == 0 {
-			created++
-		} else {
-			updated++
-		}
+		items = append(items, item)
 		synced = append(synced, item.RegistryName)
 	}
 
-	// Deactivate registry items no longer present in the upstream registry
+	// Phase 2: Batch upsert all items
+	if len(items) > 0 {
+		if err := s.repo.BatchUpsertMcpMarketItems(ctx, items); err != nil {
+			return fmt.Errorf("batch upsert: %w", err)
+		}
+	}
+
+	// Phase 3: Deactivate registry items no longer present upstream
 	deactivated, err := s.repo.DeactivateMcpMarketItemsNotIn(ctx, extension.McpSourceRegistry, synced)
 	if err != nil {
 		slog.Warn("MCP Registry sync: deactivation failed", "error", err)

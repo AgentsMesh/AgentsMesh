@@ -237,16 +237,14 @@
         "period": "por usuário/mês"
       },
       "enterprise": {
-        "name": "Enterprise",
+        "name": "Business",
         "description": "Para organizações com necessidades avançadas de segurança.",
         "features": {
           "0": "Tudo no Pro",
-          "1": "SSO SAML/LDAP",
-          "2": "Logs de auditoria",
-          "3": "Suporte dedicado",
-          "4": "Implantação privada",
-          "5": "Garantia de SLA",
-          "6": "Contratos personalizados"
+          "1": "Suporte dedicado",
+          "2": "Implantação privada",
+          "3": "Garantia de SLA",
+          "4": "Contratos personalizados"
         },
         "cta": "Contatar Vendas",
         "price": "Personalizado",
@@ -270,7 +268,7 @@
       },
       "footer": "Todos os planos incluem criptografia SSL, SLA de 99,9% de tempo de atividade e backups regulares.",
       "customPlan": "Precisa de um plano personalizado?",
-      "contactUs": "Entre em contato",
+      "contactUs": "Contact Us",
       "free": {
         "name": "Grátis",
         "price": "$0",

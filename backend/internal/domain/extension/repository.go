@@ -35,6 +35,7 @@ type Repository interface {
 	GetMcpMarketItem(ctx context.Context, id int64) (*McpMarketItem, error)
 	FindMcpMarketItemByRegistryName(ctx context.Context, registryName string) (*McpMarketItem, error)
 	UpsertMcpMarketItem(ctx context.Context, item *McpMarketItem) error
+	BatchUpsertMcpMarketItems(ctx context.Context, items []*McpMarketItem) error
 	DeactivateMcpMarketItemsNotIn(ctx context.Context, sourceType string, registryNames []string) (int64, error)
 
 	// Installed MCP Servers

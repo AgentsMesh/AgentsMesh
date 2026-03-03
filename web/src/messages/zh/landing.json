@@ -234,21 +234,19 @@
         "cta": "升级专业版"
       },
       "enterprise": {
-        "name": "企业版",
+        "name": "Business",
         "description": "适合需要高级规模和安全性的组织。",
         "features": {
           "0": "最多 50 个席位",
           "1": "50 个并发 Pod",
           "2": "100 个 Runner",
           "3": "无限仓库",
-          "4": "优先支持",
-          "5": "SSO 集成（即将推出）",
-          "6": "审计日志"
+          "4": "优先支持"
         },
-        "cta": "升级企业版"
+        "cta": "升级 Business"
       },
       "onpremise": {
-        "name": "私有部署版",
+        "name": "OnPremise",
         "price": "商务报价",
         "period": "联系我们",
         "description": "完全私有部署，数据完全可控。",
@@ -265,7 +263,7 @@
       },
       "footer": "所有方案均支持 BYOK（自带 API Key）- 使用您自己的 AI API Key，无使用量限制。",
       "customPlan": "需要私有部署？",
-      "contactUs": "联系我们"
+      "contactUs": "Contact Us"
     },
     "selfHosted": {
       "title": "需要完整的",
