@@ -22,6 +22,7 @@ import {
   Server,
   Settings,
   Repeat,
+  CircleHelp,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/common";
@@ -149,8 +150,30 @@ export function ActivityBar({ className }: ActivityBarProps) {
           })}
         </nav>
 
-        {/* Bottom activities (Settings) */}
+        {/* Bottom activities (Help + Settings) */}
         <nav className="flex flex-col items-center py-2 gap-1 border-t border-border">
+          {/* Help & Feedback */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href="https://discord.gg/XmnSebwHY"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 flex items-center justify-center rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <CircleHelp className="w-5 h-5" />
+              </a>
+            </TooltipTrigger>
+            <TooltipPortal>
+              <TooltipContent
+                side="right"
+                className="z-50 bg-popover text-popover-foreground px-2 py-1 text-sm rounded shadow-md border border-border"
+              >
+                {t("ide.activities.help")}
+              </TooltipContent>
+            </TooltipPortal>
+          </Tooltip>
+
           {bottomActivities.map((activity) => {
             const Icon = ICON_MAP[activity.icon] || Settings;
             const isActive = activeActivity === activity.id;

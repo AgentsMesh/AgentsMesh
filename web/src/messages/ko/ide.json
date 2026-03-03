@@ -7,7 +7,8 @@
       "loops": "Loops",
       "repositories": "저장소",
       "runners": "Runner",
-      "settings": "설정"
+      "settings": "설정",
+      "help": "도움말 및 피드백"
     },
     "bottomPanel": {
       "output": "출력",

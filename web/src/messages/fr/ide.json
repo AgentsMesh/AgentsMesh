@@ -7,7 +7,8 @@
       "loops": "Loops",
       "repositories": "Dépôts",
       "runners": "Runner",
-      "settings": "Paramètres"
+      "settings": "Paramètres",
+      "help": "Aide et commentaires"
     },
     "bottomPanel": {
       "output": "Sortie",
