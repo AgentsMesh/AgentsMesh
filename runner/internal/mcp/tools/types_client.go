@@ -46,6 +46,7 @@ type TicketClient interface {
 	GetTicket(ctx context.Context, ticketSlug string, contentOffset, contentLimit *int) (*Ticket, error)
 	CreateTicket(ctx context.Context, repositoryID *int64, title, content string, priority TicketPriority, parentTicketSlug *string) (*Ticket, error)
 	UpdateTicket(ctx context.Context, ticketSlug string, title, content *string, status *TicketStatus, priority *TicketPriority) (*Ticket, error)
+	PostComment(ctx context.Context, ticketSlug, content string, parentID *int64) (*TicketComment, error)
 }
 
 // PodClient defines the interface for pod creation.

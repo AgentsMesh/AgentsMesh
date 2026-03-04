@@ -113,6 +113,17 @@ type Ticket struct {
 	UpdatedAt         string         `json:"updated_at"`
 }
 
+// TicketComment represents a comment on a ticket.
+type TicketComment struct {
+	ID        int64  `json:"id"`
+	TicketID  int64  `json:"ticket_id"`
+	Content   string `json:"content"`
+	ParentID  *int64 `json:"parent_id,omitempty"`
+	AuthorID  int64  `json:"author_id"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
 // ConfigFieldSummary is a simplified config field for LLM consumption.
 // Removes validation and show_when fields that are only used by frontend.
 type ConfigFieldSummary struct {

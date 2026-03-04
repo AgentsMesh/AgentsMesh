@@ -131,6 +131,8 @@ func (a *GRPCRunnerAdapter) dispatchMcpMethod(ctx context.Context, tc *middlewar
 		return a.mcpCreateTicket(ctx, tc, req.Payload)
 	case "update_ticket":
 		return a.mcpUpdateTicket(ctx, tc, req.Payload)
+	case "post_comment":
+		return a.mcpPostComment(ctx, tc, req.Payload)
 
 	// Terminal methods
 	case "observe_terminal":

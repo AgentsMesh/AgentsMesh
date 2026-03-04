@@ -13,7 +13,8 @@
   <a href="https://agentsmesh.ai">Website</a> ·
   <a href="https://agentsmesh.ai/docs">Docs</a> ·
   <a href="#quick-start">Quick Start</a> ·
-  <a href="https://discord.gg/agentsmesh">Discord</a>
+  <a href="https://discord.gg/Rgq4m4jE">Discord</a> ·
+  <a href="https://www.linkedin.com/company/agentsmesh">LinkedIn</a>
 </p>
 
 <p align="center">

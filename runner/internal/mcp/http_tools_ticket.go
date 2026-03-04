@@ -174,6 +174,43 @@ func (s *HTTPServer) createCreateTicketTool() *MCPTool {
 	}
 }
 
+func (s *HTTPServer) createPostCommentTool() *MCPTool {
+	return &MCPTool{
+		Name:        "post_comment",
+		Description: "Post a comment on a ticket. Optionally reply to an existing comment by providing parent_id.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"ticket_slug": map[string]interface{}{
+					"type":        "string",
+					"description": "Ticket slug (e.g., 'AM-123')",
+				},
+				"content": map[string]interface{}{
+					"type":        "string",
+					"description": "Comment content",
+				},
+				"parent_id": map[string]interface{}{
+					"type":        "integer",
+					"description": "ID of the parent comment to reply to (optional)",
+				},
+			},
+			"required": []string{"ticket_slug", "content"},
+		},
+		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
+			ticketSlug := getStringArg(args, "ticket_slug")
+			if ticketSlug == "" {
+				return nil, fmt.Errorf("ticket_slug is required")
+			}
+			content := getStringArg(args, "content")
+			if content == "" {
+				return nil, fmt.Errorf("content is required")
+			}
+			parentID := getInt64PtrArg(args, "parent_id")
+			return client.PostComment(ctx, ticketSlug, content, parentID)
+		},
+	}
+}
+
 func (s *HTTPServer) createUpdateTicketTool() *MCPTool {
 	return &MCPTool{
 		Name:        "update_ticket",

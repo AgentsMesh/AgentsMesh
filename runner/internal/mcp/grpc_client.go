@@ -449,6 +449,24 @@ func (c *GRPCCollaborationClient) UpdateTicket(ctx context.Context, ticketSlug s
 	return &result.Ticket, nil
 }
 
+// PostComment posts a comment on a ticket.
+func (c *GRPCCollaborationClient) PostComment(ctx context.Context, ticketSlug, content string, parentID *int64) (*tools.TicketComment, error) {
+	params := map[string]interface{}{
+		"ticket_slug": ticketSlug,
+		"content":     content,
+	}
+	if parentID != nil {
+		params["parent_id"] = *parentID
+	}
+	var result struct {
+		Comment tools.TicketComment `json:"comment"`
+	}
+	if err := c.call(ctx, "post_comment", params, &result); err != nil {
+		return nil, err
+	}
+	return &result.Comment, nil
+}
+
 // ==================== PodClient ====================
 
 // CreatePod creates a new AgentPod.

@@ -176,6 +176,10 @@ func (m *mockFormatClient) CreatePod(_ context.Context, _ *tools.PodCreateReques
 	return &tools.PodCreateResponse{PodKey: "new-pod", Status: "initializing"}, nil
 }
 
+func (m *mockFormatClient) PostComment(_ context.Context, _ string, _ string, _ *int64) (*tools.TicketComment, error) {
+	return &tools.TicketComment{ID: 1, Content: "test comment"}, nil
+}
+
 // --- Helper: register pod with mock client ---
 
 func setupServerWithMockClient(t *testing.T) *HTTPServer {
