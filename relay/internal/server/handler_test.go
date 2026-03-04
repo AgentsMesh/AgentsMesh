@@ -220,7 +220,7 @@ func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
 	defer bc2.Close()
 
 	// Read close message from bc2
-	bc2.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = bc2.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, _, err = bc2.ReadMessage()
 	if err == nil {
 		t.Fatal("expected close error from max subscribers")

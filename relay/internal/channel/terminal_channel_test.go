@@ -132,7 +132,7 @@ func TestTerminalChannel_AddSubscriber_ReceivesBuffer(t *testing.T) {
 	// Read buffered messages from subscriber client
 	var received [][]byte
 	for i := 0; i < 2; i++ {
-		clientConn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		_ = clientConn.SetReadDeadline(time.Now().Add(2 * time.Second))
 		_, data, err := clientConn.ReadMessage()
 		if err != nil {
 			t.Fatalf("read buffered message %d: %v", i, err)
@@ -186,7 +186,7 @@ func TestTerminalChannel_Broadcast(t *testing.T) {
 		{"s1", s1Client},
 		{"s2", s2Client},
 	} {
-		tc.conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		_ = tc.conn.SetReadDeadline(time.Now().Add(2 * time.Second))
 		_, got, err := tc.conn.ReadMessage()
 		if err != nil {
 			t.Fatalf("read %s: %v", tc.name, err)
@@ -342,7 +342,7 @@ func TestTerminalChannel_ForwardPubToSub(t *testing.T) {
 	}
 
 	// Read from subscriber client
-	subClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = subClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err := subClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("read from subClient: %v", err)
@@ -368,7 +368,7 @@ func TestTerminalChannel_ForwardSubToPub(t *testing.T) {
 		t.Fatalf("write input to subClient: %v", err)
 	}
 
-	pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err := pubClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("read input from pubClient: %v", err)
@@ -383,7 +383,7 @@ func TestTerminalChannel_ForwardSubToPub(t *testing.T) {
 		t.Fatalf("write ping to subClient: %v", err)
 	}
 
-	subClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = subClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err = subClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("read pong from subClient: %v", err)
@@ -471,7 +471,7 @@ func TestTerminalChannel_ControlRequest_ViaForwarding(t *testing.T) {
 		t.Fatalf("s1 write control request: %v", err)
 	}
 
-	s1Client.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = s1Client.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, respData, err := s1Client.ReadMessage()
 	if err != nil {
 		t.Fatalf("s1 read control response: %v", err)
@@ -504,7 +504,7 @@ func TestTerminalChannel_ControlRequest_ViaForwarding(t *testing.T) {
 		t.Fatalf("s2 write control request: %v", err)
 	}
 
-	s2Client.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = s2Client.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, respData2, err := s2Client.ReadMessage()
 	if err != nil {
 		t.Fatalf("s2 read control response: %v", err)
@@ -537,7 +537,7 @@ func TestTerminalChannel_ControlRequest_ViaForwarding(t *testing.T) {
 		t.Fatalf("s1 write control query: %v", err)
 	}
 
-	s1Client.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = s1Client.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, queryRespData, err := s1Client.ReadMessage()
 	if err != nil {
 		t.Fatalf("s1 read control query response: %v", err)
@@ -570,7 +570,7 @@ func TestTerminalChannel_ControlRequest_ViaForwarding(t *testing.T) {
 		t.Fatalf("s1 write control release: %v", err)
 	}
 
-	s1Client.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = s1Client.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, releaseRespData, err := s1Client.ReadMessage()
 	if err != nil {
 		t.Fatalf("s1 read control release response: %v", err)
@@ -613,7 +613,7 @@ func TestTerminalChannel_ForwardSubToPub_ImagePaste(t *testing.T) {
 	}
 
 	// Read from publisher — should receive the image paste data
-	pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err := pubClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("read image paste from pubClient: %v", err)
@@ -652,7 +652,7 @@ func TestTerminalChannel_ForwardSubToPub_InputRejected(t *testing.T) {
 	}
 
 	// Read from publisher — should only get s1's message
-	pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err := pubClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("read from pubClient: %v", err)
@@ -704,7 +704,7 @@ func TestTerminalChannel_ForwardSubToPub_ImagePasteRejected(t *testing.T) {
 	}
 
 	// Read from publisher — should only get s1's image paste
-	pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err := pubClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("read from pubClient: %v", err)
@@ -768,7 +768,7 @@ func TestTerminalChannel_ControlRequest_InvalidPayload(t *testing.T) {
 	}
 
 	// Verify publisher gets the input (i.e. the invalid control was silently skipped)
-	pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err := pubClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("read from pubClient: %v", err)
@@ -797,7 +797,7 @@ func TestTerminalChannel_AddSubscriber_PubDisconnected(t *testing.T) {
 	ch.AddSubscriber("s1", subServer)
 
 	// Read RunnerDisconnected notification from subClient
-	subClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = subClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err := subClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("failed to read RunnerDisconnected: %v", err)
@@ -859,7 +859,7 @@ func TestTerminalChannel_ForwardSubToPub_InvalidMessage(t *testing.T) {
 	}
 
 	// Verify publisher gets the valid input (invalid message was silently skipped)
-	pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, data, err := pubClient.ReadMessage()
 	if err != nil {
 		t.Fatalf("read from pubClient: %v", err)

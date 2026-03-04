@@ -86,6 +86,8 @@ describe("Pod Store", () => {
       vi.mocked(podApi.list).mockResolvedValue({
         pods: [mockPod, mockPod2],
         total: 2,
+        limit: 20,
+        offset: 0,
       });
 
       await act(async () => {
@@ -100,7 +102,7 @@ describe("Pod Store", () => {
     });
 
     it("should pass filters to API", async () => {
-      vi.mocked(podApi.list).mockResolvedValue({ pods: [], total: 0 });
+      vi.mocked(podApi.list).mockResolvedValue({ pods: [], total: 0, limit: 20, offset: 0 });
 
       await act(async () => {
         await usePodStore.getState().fetchPods({ status: "running", runnerId: 1 });
@@ -113,7 +115,7 @@ describe("Pod Store", () => {
     });
 
     it("should handle empty response", async () => {
-      vi.mocked(podApi.list).mockResolvedValue({ pods: undefined as unknown as typeof mockPod[], total: 0 });
+      vi.mocked(podApi.list).mockResolvedValue({ pods: undefined as unknown as typeof mockPod[], total: 0, limit: 20, offset: 0 });
 
       await act(async () => {
         await usePodStore.getState().fetchPods();

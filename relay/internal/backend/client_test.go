@@ -406,7 +406,7 @@ func TestClient_Register_WithTLS(t *testing.T) {
 			TLSExpiry: "2027-01-01T00:00:00Z",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -440,7 +440,7 @@ func (e *errorReader) Read(p []byte) (int, error) {
 func TestClient_Register_DNSCreated(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(RegisterResponse{
+		_ = json.NewEncoder(w).Encode(RegisterResponse{
 			Status:     "ok",
 			URL:        "wss://us-east-1.relay.example.com",
 			DNSCreated: true,
@@ -461,7 +461,7 @@ func TestClient_Register_DNSCreated_URLWithoutDNSFlag(t *testing.T) {
 	// When URL is returned but DNSCreated is false, relayURL should NOT be updated
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(RegisterResponse{
+		_ = json.NewEncoder(w).Encode(RegisterResponse{
 			Status:     "ok",
 			URL:        "wss://ignored.example.com",
 			DNSCreated: false,
@@ -530,7 +530,7 @@ func TestClient_Register_WithTLS_SaveFiles(t *testing.T) {
 func TestClient_Register_WithAutoIP(t *testing.T) {
 	var capturedReq RegisterRequest
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&capturedReq)
+		_ = json.NewDecoder(r.Body).Decode(&capturedReq)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(RegisterResponse{Status: "ok"})
 	}))
@@ -637,7 +637,7 @@ func TestClient_SendHeartbeat_WithTLSResponse(t *testing.T) {
 func TestClient_SendHeartbeat_NeedCert(t *testing.T) {
 	var captured HeartbeatRequest
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&captured)
+		_ = json.NewDecoder(r.Body).Decode(&captured)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
@@ -656,7 +656,7 @@ func TestClient_SendHeartbeat_NeedCert(t *testing.T) {
 func TestClient_SendHeartbeat_NeedCert_False(t *testing.T) {
 	var captured HeartbeatRequest
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&captured)
+		_ = json.NewDecoder(r.Body).Decode(&captured)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()

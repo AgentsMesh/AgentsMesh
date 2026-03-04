@@ -872,7 +872,7 @@ func TestServer_Start_SignalHandling(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FindProcess: %v", err)
 	}
-	p.Signal(syscall.SIGINT)
+	_ = p.Signal(syscall.SIGINT)
 
 	select {
 	case err := <-errCh:
@@ -1063,8 +1063,8 @@ func TestServer_Start_TLS_GetCertificate_WithCertFiles(t *testing.T) {
 	dir := t.TempDir()
 	certFile := dir + "/cert.pem"
 	keyFile := dir + "/key.pem"
-	os.WriteFile(certFile, []byte(certPEM), 0644)
-	os.WriteFile(keyFile, []byte(keyPEM), 0600)
+	_ = os.WriteFile(certFile, []byte(certPEM), 0644)
+	_ = os.WriteFile(keyFile, []byte(keyPEM), 0600)
 
 	mockBackend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -1233,8 +1233,8 @@ func TestServer_Start_TLS_GetCertificate_InvalidCertFiles(t *testing.T) {
 	dir := t.TempDir()
 	certFile := dir + "/cert.pem"
 	keyFile := dir + "/key.pem"
-	os.WriteFile(certFile, []byte("INVALID"), 0644)
-	os.WriteFile(keyFile, []byte("INVALID"), 0600)
+	_ = os.WriteFile(certFile, []byte("INVALID"), 0644)
+	_ = os.WriteFile(keyFile, []byte("INVALID"), 0600)
 
 	mockBackend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -1410,7 +1410,7 @@ func generateSelfSignedCert(t *testing.T) (certPEM, keyPEM string) {
 	}
 
 	certBuf := &bytes.Buffer{}
-	pem.Encode(certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	_ = pem.Encode(certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 
 	keyDER, err := x509.MarshalECPrivateKey(key)
 	if err != nil {
@@ -1418,7 +1418,7 @@ func generateSelfSignedCert(t *testing.T) (certPEM, keyPEM string) {
 	}
 
 	keyBuf := &bytes.Buffer{}
-	pem.Encode(keyBuf, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+	_ = pem.Encode(keyBuf, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 
 	return certBuf.String(), keyBuf.String()
 }
