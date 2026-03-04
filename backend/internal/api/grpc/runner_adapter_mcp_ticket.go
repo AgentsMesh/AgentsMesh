@@ -275,6 +275,37 @@ func (a *GRPCRunnerAdapter) mcpUpdateTicket(ctx context.Context, tc *middleware.
 	return map[string]interface{}{"ticket": a.enrichTicketForMCP(ctx, tc.OrganizationID, t, nil)}, nil
 }
 
+// mcpPostComment handles the "post_comment" MCP method.
+func (a *GRPCRunnerAdapter) mcpPostComment(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
+	var params struct {
+		TicketSlug string  `json:"ticket_slug"`
+		Content    string  `json:"content"`
+		ParentID   *int64  `json:"parent_id"`
+	}
+	if err := unmarshalPayload(payload, &params); err != nil {
+		return nil, err
+	}
+
+	if params.TicketSlug == "" {
+		return nil, newMcpError(400, "ticket_slug is required")
+	}
+	if params.Content == "" {
+		return nil, newMcpError(400, "content is required")
+	}
+
+	t, err := a.ticketService.GetTicketByIDOrSlug(ctx, tc.OrganizationID, params.TicketSlug)
+	if err != nil {
+		return nil, newMcpError(404, "ticket not found")
+	}
+
+	comment, err := a.ticketService.CreateComment(ctx, t.ID, tc.UserID, params.Content, params.ParentID, nil)
+	if err != nil {
+		return nil, newMcpError(500, "failed to post comment")
+	}
+
+	return map[string]interface{}{"comment": comment}, nil
+}
+
 // ==================== Pod MCP Methods ====================
 
 // mcpCreatePod handles the "create_pod" MCP method.
