@@ -38,9 +38,10 @@ type ImagePasteHandler func(mimeType string, data []byte)
 // Note: sessionID has been removed - channels are now identified by PodKey only
 type Client struct {
 	// Configuration
-	relayURL string
-	podKey   string
-	token    string // JWT token for authentication
+	relayURL    string
+	fallbackURL string // Fallback relay URL if primary fails (e.g., Docker-internal URL → public URL)
+	podKey      string
+	token       string // JWT token for authentication
 
 	// WebSocket connection
 	conn   *websocket.Conn
@@ -137,6 +138,11 @@ func (c *Client) UpdateToken(newToken string) {
 	c.token = newToken
 	c.connMu.Unlock()
 	c.logger.Info("Token updated")
+}
+
+// SetFallbackURL sets a fallback URL to try if the primary relay URL fails.
+func (c *Client) SetFallbackURL(url string) {
+	c.fallbackURL = url
 }
 
 // GetRelayURL returns the relay URL

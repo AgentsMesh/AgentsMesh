@@ -10,13 +10,27 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Connect establishes connection to the Relay server
+// Connect establishes connection to the Relay server.
+// If the primary URL fails and a fallback URL is set, it retries with the fallback.
+// On fallback success, the primary URL is permanently updated to the fallback.
 func (c *Client) Connect() error {
 	c.reconnectMu.Lock()
 	defer c.reconnectMu.Unlock()
 
 	if err := c.connectInternal(); err != nil {
-		return err
+		// If primary URL failed and we have a fallback, try it
+		if c.fallbackURL != "" && c.fallbackURL != c.relayURL {
+			c.logger.Warn("Primary relay URL failed, trying fallback",
+				"primary", c.relayURL, "fallback", c.fallbackURL, "error", err)
+			c.relayURL = c.fallbackURL
+			c.fallbackURL = "" // Clear to prevent loops
+			if err2 := c.connectInternal(); err2 != nil {
+				return err2
+			}
+			// Fall through to success
+		} else {
+			return err
+		}
 	}
 
 	// Mark as connected after successful dial
