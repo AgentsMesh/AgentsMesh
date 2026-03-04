@@ -13,6 +13,7 @@ func clearEnv() {
 		"RELAY_ID", "RELAY_URL", "RELAY_INTERNAL_URL", "RELAY_REGION", "RELAY_CAPACITY",
 		"RELAY_SERVER_HOST", "RELAY_SERVER_PORT", "RELAY_JWT_SECRET", "RELAY_JWT_ISSUER",
 		"RELAY_BACKEND_URL", "RELAY_INTERNAL_API_SECRET",
+		"PRIMARY_DOMAIN", "USE_HTTPS", "TLS_ENABLED", "RELAY_NAME", "RELAY_AUTO_IP",
 	} {
 		os.Unsetenv(env)
 	}
@@ -148,5 +149,124 @@ func TestLoad_InternalURL(t *testing.T) {
 	cfg, _ := Load()
 	if cfg.Relay.InternalURL != "ws://relay:8090" {
 		t.Errorf("Relay.InternalURL: expected ws://relay:8090, got %q", cfg.Relay.InternalURL)
+	}
+}
+
+func TestLoad_PrimaryDomain_WS(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+	os.Setenv("JWT_SECRET", "test-jwt")
+	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	os.Setenv("PRIMARY_DOMAIN", "example.com:10000")
+	// RELAY_URL not set, USE_HTTPS not set → ws://
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	want := "ws://example.com:10000/relay"
+	if cfg.Relay.URL != want {
+		t.Errorf("Relay.URL: got %q, want %q", cfg.Relay.URL, want)
+	}
+}
+
+func TestLoad_PrimaryDomain_WSS(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+	os.Setenv("JWT_SECRET", "test-jwt")
+	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	os.Setenv("PRIMARY_DOMAIN", "agentsmesh.com")
+	os.Setenv("USE_HTTPS", "true")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	want := "wss://agentsmesh.com/relay"
+	if cfg.Relay.URL != want {
+		t.Errorf("Relay.URL: got %q, want %q", cfg.Relay.URL, want)
+	}
+}
+
+func TestLoad_TLSEnabled_FallbackURL(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+	os.Setenv("JWT_SECRET", "test-jwt")
+	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	os.Setenv("TLS_ENABLED", "true")
+	// No PRIMARY_DOMAIN, no RELAY_URL → fallback to wss://localhost:port
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	want := "wss://localhost:8090"
+	if cfg.Relay.URL != want {
+		t.Errorf("Relay.URL: got %q, want %q", cfg.Relay.URL, want)
+	}
+	if !cfg.Server.TLS.Enabled {
+		t.Error("TLS.Enabled should be true")
+	}
+}
+
+func TestLoad_SessionConfigDefaults(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+	os.Setenv("JWT_SECRET", "test-jwt")
+	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	cfg, _ := Load()
+	if cfg.Session.RunnerReconnectTimeout != 30*time.Second {
+		t.Errorf("RunnerReconnectTimeout: got %v, want 30s", cfg.Session.RunnerReconnectTimeout)
+	}
+	if cfg.Session.BrowserReconnectTimeout != 30*time.Second {
+		t.Errorf("BrowserReconnectTimeout: got %v, want 30s", cfg.Session.BrowserReconnectTimeout)
+	}
+	if cfg.Session.PendingConnectionTimeout != 60*time.Second {
+		t.Errorf("PendingConnectionTimeout: got %v, want 60s", cfg.Session.PendingConnectionTimeout)
+	}
+	if cfg.Session.OutputBufferSize != 256*1024 {
+		t.Errorf("OutputBufferSize: got %d, want %d", cfg.Session.OutputBufferSize, 256*1024)
+	}
+	if cfg.Session.OutputBufferCount != 200 {
+		t.Errorf("OutputBufferCount: got %d, want 200", cfg.Session.OutputBufferCount)
+	}
+}
+
+func TestLoad_TLSConfig(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+	os.Setenv("JWT_SECRET", "test-jwt")
+	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	os.Setenv("TLS_ENABLED", "true")
+	os.Setenv("TLS_CERT_FILE", "/etc/relay/cert.pem")
+	os.Setenv("TLS_KEY_FILE", "/etc/relay/key.pem")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if !cfg.Server.TLS.Enabled {
+		t.Error("TLS.Enabled should be true")
+	}
+	if cfg.Server.TLS.CertFile != "/etc/relay/cert.pem" {
+		t.Errorf("TLS.CertFile: got %q", cfg.Server.TLS.CertFile)
+	}
+	if cfg.Server.TLS.KeyFile != "/etc/relay/key.pem" {
+		t.Errorf("TLS.KeyFile: got %q", cfg.Server.TLS.KeyFile)
+	}
+}
+
+func TestLoad_RelayNameAndAutoIP(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+	os.Setenv("JWT_SECRET", "test-jwt")
+	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	os.Setenv("RELAY_NAME", "us-east-1")
+	os.Setenv("RELAY_AUTO_IP", "true")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.Relay.Name != "us-east-1" {
+		t.Errorf("Relay.Name: got %q, want us-east-1", cfg.Relay.Name)
+	}
+	if !cfg.Relay.AutoIP {
+		t.Error("Relay.AutoIP should be true")
 	}
 }

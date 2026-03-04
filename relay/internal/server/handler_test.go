@@ -152,6 +152,115 @@ func TestHandler_HandleBrowserWS_Success(t *testing.T) {
 	}
 }
 
+func TestHandler_HandleRunnerWS_EmptyPodKey(t *testing.T) {
+	h := createTestHandler()
+	token, _ := auth.GenerateToken(testSecret, testIssuer, "", 1, 2, 3, time.Hour)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/runner/terminal?token="+token, nil)
+	h.HandleRunnerWS(w, r)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestHandler_HandleBrowserWS_EmptyPodKey(t *testing.T) {
+	h := createTestHandler()
+	token, _ := auth.GenerateToken(testSecret, testIssuer, "", 1, 2, 3, time.Hour)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/browser/terminal?token="+token, nil)
+	h.HandleBrowserWS(w, r)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
+	cm := channel.NewChannelManager(30*time.Second, 1, nil)
+	tv := auth.NewTokenValidator(testSecret, testIssuer)
+	h := NewHandler(cm, tv)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/runner") {
+			h.HandleRunnerWS(w, r)
+		} else {
+			h.HandleBrowserWS(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	podKey := "pod-max-sub"
+	token := validToken(podKey)
+	wsBase := "ws" + strings.TrimPrefix(srv.URL, "http")
+
+	// Connect runner (publisher)
+	rc, _, err := websocket.DefaultDialer.Dial(wsBase+"/runner?token="+token, nil)
+	if err != nil {
+		t.Fatalf("runner dial: %v", err)
+	}
+	defer rc.Close()
+
+	// Wait for publisher to be registered
+	time.Sleep(50 * time.Millisecond)
+
+	// Connect first browser (subscriber) - should succeed
+	bc1, _, err := websocket.DefaultDialer.Dial(wsBase+"/browser?token="+token, nil)
+	if err != nil {
+		t.Fatalf("browser1 dial: %v", err)
+	}
+	defer bc1.Close()
+
+	// Wait for subscriber to be registered
+	time.Sleep(50 * time.Millisecond)
+
+	// Connect second browser - should hit max subscribers
+	bc2, _, err := websocket.DefaultDialer.Dial(wsBase+"/browser?token="+token, nil)
+	if err != nil {
+		t.Fatalf("browser2 dial: %v", err)
+	}
+	defer bc2.Close()
+
+	// Read close message from bc2
+	bc2.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_, _, err = bc2.ReadMessage()
+	if err == nil {
+		t.Fatal("expected close error from max subscribers")
+	}
+	closeErr, ok := err.(*websocket.CloseError)
+	if !ok {
+		// Connection was closed, that's expected behavior
+		return
+	}
+	if closeErr.Code != websocket.ClosePolicyViolation {
+		t.Errorf("expected ClosePolicyViolation (%d), got %d", websocket.ClosePolicyViolation, closeErr.Code)
+	}
+}
+
+func TestHandler_HandleRunnerWS_UpgradeError(t *testing.T) {
+	// Test the WebSocket upgrade error path: valid token + non-WebSocket request
+	h := createTestHandler()
+	token := validToken("pod-1")
+	w := httptest.NewRecorder()
+	// This is NOT a WebSocket upgrade request — no Upgrade/Connection headers
+	r := httptest.NewRequest("GET", "/runner/terminal?token="+token, nil)
+	h.HandleRunnerWS(w, r)
+	// The upgrader writes 400 Bad Request when upgrade headers are missing
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 from upgrade failure, got %d", w.Code)
+	}
+}
+
+func TestHandler_HandleBrowserWS_UpgradeError(t *testing.T) {
+	// Test the WebSocket upgrade error path: valid token + non-WebSocket request
+	h := createTestHandler()
+	token := validToken("pod-1")
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/browser/terminal?token="+token, nil)
+	h.HandleBrowserWS(w, r)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 from upgrade failure, got %d", w.Code)
+	}
+}
+
 func TestHandler_ChannelCreation(t *testing.T) {
 	h := createTestHandler()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
