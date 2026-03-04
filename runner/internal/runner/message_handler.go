@@ -37,12 +37,6 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	// cancelled on shutdown, instead of blocking with context.Background().
 	ctx := h.runner.GetRunContext()
 
-	// Check capacity
-	if h.runner.cfg.MaxConcurrentPods > 0 && h.podStore.Count() >= h.runner.cfg.MaxConcurrentPods {
-		h.sendPodError(cmd.PodKey, "max concurrent pods reached")
-		return fmt.Errorf("max concurrent pods reached")
-	}
-
 	// Register a pending pod placeholder to prevent race conditions:
 	// - TerminatePod arriving during Build can find and remove the placeholder
 	// - Exit handler after Start can find the pod in store

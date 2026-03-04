@@ -70,37 +70,6 @@ func TestOnCreatePodSuccess(t *testing.T) {
 	}
 }
 
-func TestOnCreatePodMaxCapacity(t *testing.T) {
-	tempDir := t.TempDir()
-	store := NewInMemoryPodStore()
-	mockConn := client.NewMockConnection()
-
-	runner := &Runner{
-		cfg: &config.Config{
-			MaxConcurrentPods: 1,
-			WorkspaceRoot:     tempDir,
-		},
-	}
-
-	handler := NewRunnerMessageHandler(runner, store, mockConn)
-
-	// Add pod
-	store.Put("existing-pod", &Pod{ID: "existing-pod"})
-
-	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "new-pod",
-		LaunchCommand: "echo",
-	}
-
-	err := handler.OnCreatePod(cmd)
-	if err == nil {
-		t.Error("expected error for max capacity")
-	}
-	if !contains(err.Error(), "max concurrent pods") {
-		t.Errorf("error = %v, want containing 'max concurrent pods'", err)
-	}
-}
-
 func TestOnCreatePodInvalidCommand(t *testing.T) {
 	tempDir := t.TempDir()
 	store := NewInMemoryPodStore()
