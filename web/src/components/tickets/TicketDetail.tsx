@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, lazy, Suspense } from "react";
+import { useEffect, useCallback, useRef, lazy, Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,20 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   const router = useRouter();
   const t = useTranslations();
   const { currentOrg } = useAuthStore();
-  const { currentTicket, fetchTicket, updateTicket, updateTicketStatus, deleteTicket, loading, error } = useTicketStore();
+
+  // Use individual selectors to prevent re-renders from unrelated store changes
+  // (e.g., fetchTickets() triggered by WebSocket events sets shared `loading`)
+  const currentTicket = useTicketStore(state => state.currentTicket);
+  const fetchTicket = useTicketStore(state => state.fetchTicket);
+  const updateTicket = useTicketStore(state => state.updateTicket);
+  const updateTicketStatus = useTicketStore(state => state.updateTicketStatus);
+  const deleteTicket = useTicketStore(state => state.deleteTicket);
+  const error = useTicketStore(state => state.error);
+
+  // Local loading state to avoid re-renders from shared store `loading`
+  // Derived from whether we've loaded the current slug (avoids setState in effect)
+  const [loadedSlug, setLoadedSlug] = useState<string | null>(null);
+  const initialLoading = loadedSlug !== slug;
 
   const { dialogProps, confirm } = useConfirmDialog();
   const { subTickets, relations, commits, comments, addComment, updateComment, deleteComment } = useTicketExtraData(slug, !!currentTicket);
@@ -38,7 +51,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   }, []);
 
   useEffect(() => {
-    fetchTicket(slug);
+    fetchTicket(slug).finally(() => setLoadedSlug(slug));
   }, [slug, fetchTicket]);
 
   const handleTitleSave = useCallback(async (newTitle: string) => {
@@ -98,7 +111,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
     }
   }, [confirm, deleteTicket, slug, router, currentOrg, t]);
 
-  if (loading && !currentTicket) {
+  if (initialLoading && !currentTicket) {
     return <TicketDetailSkeleton />;
   }
 

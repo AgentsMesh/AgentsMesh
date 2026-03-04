@@ -14,12 +14,12 @@ export default function TicketsPage() {
   const t = useTranslations();
   const router = useRouter();
   const { currentOrg } = useAuthStore();
-  const {
-    loading,
-    viewMode,
-    fetchTickets,
-    updateTicketStatus,
-  } = useTicketStore();
+
+  // Use individual selectors to prevent re-renders from unrelated store changes
+  const loading = useTicketStore(state => state.loading);
+  const viewMode = useTicketStore(state => state.viewMode);
+  const fetchTickets = useTicketStore(state => state.fetchTickets);
+  const updateTicketStatus = useTicketStore(state => state.updateTicketStatus);
 
   const tickets = useFilteredTickets();
 

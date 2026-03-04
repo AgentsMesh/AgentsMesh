@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Ticket, TicketStatus, TicketPriority } from "@/stores/ticket";
@@ -252,22 +252,26 @@ function SidebarPodSection({
     (p) => p.status !== "running" && p.status !== "initializing"
   );
 
+  // Memoize ticketContext to prevent CreatePodModal re-renders on parent re-render
+  const ticketContext = useMemo(() =>
+    ticket.id
+      ? {
+          id: ticket.id,
+          slug: ticketSlug,
+          title: ticket.title,
+          repositoryId: ticket.repository_id,
+        }
+      : undefined,
+    [ticket.id, ticketSlug, ticket.title, ticket.repository_id]
+  );
+
   return (
     <>
       <CreatePodModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreated={handlePodCreated}
-        ticketContext={
-          ticket.id
-            ? {
-                id: ticket.id,
-                slug: ticketSlug,
-                title: ticket.title,
-                repositoryId: ticket.repository_id,
-              }
-            : undefined
-        }
+        ticketContext={ticketContext}
       />
 
       <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">

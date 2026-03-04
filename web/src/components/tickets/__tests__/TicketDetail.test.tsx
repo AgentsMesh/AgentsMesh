@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@/test/test-utils'
 import { TicketDetail } from '../TicketDetail'
-import { useTicketStore } from '@/stores/ticket'
 import { ticketApi } from '@/lib/api'
 
 // Mock next/navigation
@@ -22,9 +21,12 @@ vi.mock('@/stores/auth', () => ({
   }),
 }))
 
-// Mock ticket store
+// Mock ticket store — supports both selector and no-selector calls
+const mockTicketStoreState: Record<string, unknown> = {}
 vi.mock('@/stores/ticket', () => ({
-  useTicketStore: vi.fn(),
+  useTicketStore: vi.fn((selector?: (state: Record<string, unknown>) => unknown) =>
+    selector ? selector(mockTicketStoreState) : mockTicketStoreState
+  ),
   getStatusInfo: (status: string) => ({
     label: status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
     color: 'text-gray-700',
@@ -111,7 +113,7 @@ describe('TicketDetail Component', () => {
     repository: { id: 1, name: 'my-repo' },
   }
 
-  const mockFetchTicket = vi.fn()
+  const mockFetchTicket = vi.fn().mockResolvedValue(undefined)
   const mockUpdateTicket = vi.fn()
   const mockUpdateTicketStatus = vi.fn()
   const mockDeleteTicket = vi.fn()
@@ -119,7 +121,8 @@ describe('TicketDetail Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    ;(useTicketStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    // Update mutable store state (shared with the mock)
+    Object.assign(mockTicketStoreState, {
       currentTicket: mockTicket,
       fetchTicket: mockFetchTicket,
       updateTicket: mockUpdateTicket,
@@ -179,12 +182,8 @@ describe('TicketDetail Component', () => {
 
   describe('loading state', () => {
     it('should render skeleton when loading', () => {
-      ;(useTicketStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      Object.assign(mockTicketStoreState, {
         currentTicket: null,
-        fetchTicket: mockFetchTicket,
-        updateTicket: mockUpdateTicket,
-        updateTicketStatus: mockUpdateTicketStatus,
-        deleteTicket: mockDeleteTicket,
         loading: true,
         error: null,
       })
@@ -195,70 +194,62 @@ describe('TicketDetail Component', () => {
   })
 
   describe('error state', () => {
-    it('should render error message', () => {
-      ;(useTicketStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    it('should render error message', async () => {
+      Object.assign(mockTicketStoreState, {
         currentTicket: null,
-        fetchTicket: mockFetchTicket,
-        updateTicket: mockUpdateTicket,
-        updateTicketStatus: mockUpdateTicketStatus,
-        deleteTicket: mockDeleteTicket,
         loading: false,
         error: 'Failed to load ticket',
       })
 
       render(<TicketDetail slug="PROJ-42" />)
-      expect(screen.getByText('Failed to load ticket')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByText('Failed to load ticket')).toBeInTheDocument()
+      })
     })
 
-    it('should render retry button on error', () => {
-      ;(useTicketStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    it('should render retry button on error', async () => {
+      Object.assign(mockTicketStoreState, {
         currentTicket: null,
-        fetchTicket: mockFetchTicket,
-        updateTicket: mockUpdateTicket,
-        updateTicketStatus: mockUpdateTicketStatus,
-        deleteTicket: mockDeleteTicket,
         loading: false,
         error: 'Failed to load ticket',
       })
 
       render(<TicketDetail slug="PROJ-42" />)
-      const retryButton = screen.getByText('Retry')
-      expect(retryButton).toBeInTheDocument()
+      await waitFor(() => {
+        const retryButton = screen.getByText('Retry')
+        expect(retryButton).toBeInTheDocument()
+      })
     })
 
-    it('should call fetchTicket when retry is clicked', () => {
-      ;(useTicketStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    it('should call fetchTicket when retry is clicked', async () => {
+      Object.assign(mockTicketStoreState, {
         currentTicket: null,
-        fetchTicket: mockFetchTicket,
-        updateTicket: mockUpdateTicket,
-        updateTicketStatus: mockUpdateTicketStatus,
-        deleteTicket: mockDeleteTicket,
         loading: false,
         error: 'Failed to load ticket',
       })
 
       render(<TicketDetail slug="PROJ-42" />)
-      const retryButton = screen.getByText('Retry')
-      fireEvent.click(retryButton)
+      await waitFor(() => {
+        const retryButton = screen.getByText('Retry')
+        fireEvent.click(retryButton)
+      })
 
       expect(mockFetchTicket).toHaveBeenCalledTimes(2)
     })
   })
 
   describe('not found state', () => {
-    it('should render not found message when ticket is null', () => {
-      ;(useTicketStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    it('should render not found message when ticket is null', async () => {
+      Object.assign(mockTicketStoreState, {
         currentTicket: null,
-        fetchTicket: mockFetchTicket,
-        updateTicket: mockUpdateTicket,
-        updateTicketStatus: mockUpdateTicketStatus,
-        deleteTicket: mockDeleteTicket,
         loading: false,
         error: null,
       })
 
       render(<TicketDetail slug="PROJ-42" />)
-      expect(screen.getByText('Ticket not found')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByText('Ticket not found')).toBeInTheDocument()
+      })
     })
   })
 
@@ -288,14 +279,8 @@ describe('TicketDetail Component', () => {
     })
 
     it('should show no assignees message when empty', async () => {
-      ;(useTicketStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      Object.assign(mockTicketStoreState, {
         currentTicket: { ...mockTicket, assignees: [] },
-        fetchTicket: mockFetchTicket,
-        updateTicket: mockUpdateTicket,
-        updateTicketStatus: mockUpdateTicketStatus,
-        deleteTicket: mockDeleteTicket,
-        loading: false,
-        error: null,
       })
 
       render(<TicketDetail slug="PROJ-42" />)
