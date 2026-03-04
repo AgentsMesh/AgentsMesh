@@ -63,17 +63,17 @@ brew install agentsmesh/tap/agentsmesh-runner`}</pre>
         <h3 className="text-lg font-medium mb-2 mt-6">
           {t("docs.runners.setup.quickInstall.linuxTitle")}
         </h3>
-        <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
-          <pre className="text-green-500 dark:text-green-400">{`# Debian/Ubuntu
-VERSION=$(curl -s https://api.github.com/repos/AgentsMesh/AgentsMesh/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
-wget https://github.com/AgentsMesh/AgentsMesh/releases/download/v\${VERSION}/agentsmesh-runner_\${VERSION}_linux_amd64.deb
-sudo dpkg -i agentsmesh-runner_\${VERSION}_linux_amd64.deb
-
-# RHEL/CentOS/Fedora
-VERSION=$(curl -s https://api.github.com/repos/AgentsMesh/AgentsMesh/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
-wget https://github.com/AgentsMesh/AgentsMesh/releases/download/v\${VERSION}/agentsmesh-runner_\${VERSION}_linux_amd64.rpm
-sudo rpm -i agentsmesh-runner_\${VERSION}_linux_amd64.rpm`}</pre>
-        </div>
+        <p className="text-sm text-muted-foreground mb-2">
+          The one-line script above also works on Linux. Alternatively, download .deb/.rpm/.apk packages from{" "}
+          <a
+            href="https://github.com/AgentsMesh/AgentsMesh/releases/latest"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline"
+          >
+            GitHub Releases
+          </a>.
+        </p>
 
         <h3 className="text-lg font-medium mb-2 mt-6">
           {t("docs.runners.setup.quickInstall.afterInstall")}

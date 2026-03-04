@@ -70,20 +70,14 @@ docker compose exec -T postgres psql -U agentsmesh -d agentsmesh < seed/onpremis
 On the machine where you want to run AI Agent tasks:
 
 ```bash
-# Download Runner
-# Linux
-curl -LO https://github.com/AgentsMesh/agentsmesh/releases/latest/download/runner-linux-amd64
-chmod +x runner-linux-amd64
-
-# macOS
-curl -LO https://github.com/AgentsMesh/agentsmesh/releases/latest/download/runner-darwin-amd64
-chmod +x runner-darwin-amd64
+# Install Runner (macOS / Linux)
+curl -fsSL https://agentsmesh.ai/install.sh | sh
 
 # Register Runner
-./runner register --server http://192.168.1.100 --token onpremise-runner-token
+agentsmesh-runner register --server http://192.168.1.100 --token onpremise-runner-token
 
 # Start Runner
-./runner run
+agentsmesh-runner run
 ```
 
 ## Directory Structure

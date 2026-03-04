@@ -53,16 +53,19 @@ The script will:
 
 ## Register a Runner
 
-Runners execute AI agents on your machines. Download the runner binary from [GitHub Releases](https://github.com/AgentsMesh/AgentsMesh/releases), then:
+Runners execute AI agents on your machines. Install the runner:
 
 ```bash
+# Install (macOS / Linux)
+curl -fsSL https://agentsmesh.ai/install.sh | sh
+
 # Register
-./runner register \
+agentsmesh-runner register \
   --server http://<HOST>:<HTTP_PORT> \
   --token selfhost-runner-token
 
 # Start
-./runner run
+agentsmesh-runner run
 ```
 
 ## Manual Setup

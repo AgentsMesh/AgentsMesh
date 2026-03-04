@@ -16,6 +16,18 @@ AgentsMesh Runner is a lightweight agent that connects to the AgentsMesh server 
 
 ## Installation
 
+### macOS / Linux (one-line)
+
+```bash
+curl -fsSL https://agentsmesh.ai/install.sh | sh
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://agentsmesh.ai/install.ps1 | iex
+```
+
 ### macOS (Homebrew)
 
 ```bash
@@ -23,52 +35,7 @@ brew tap agentsmesh/tap https://github.com/AgentsMesh/BrewCask
 brew install agentsmesh/tap/agentsmesh-runner
 ```
 
-### macOS/Linux (Direct download)
-
-```bash
-# macOS (Universal binary - Intel & Apple Silicon)
-curl -fsSL https://github.com/AgentsMesh/AgentsMesh/releases/latest/download/agentsmesh-runner_0.2.1_darwin_all.tar.gz | tar xz
-sudo mv agentsmesh-runner /usr/local/bin/
-
-# Linux x86_64
-curl -fsSL https://github.com/AgentsMesh/AgentsMesh/releases/latest/download/agentsmesh-runner_0.2.1_linux_amd64.tar.gz | tar xz
-sudo mv agentsmesh-runner /usr/local/bin/
-
-# Linux ARM64
-curl -fsSL https://github.com/AgentsMesh/AgentsMesh/releases/latest/download/agentsmesh-runner_0.2.1_linux_arm64.tar.gz | tar xz
-sudo mv agentsmesh-runner /usr/local/bin/
-```
-
-> **Note**: Replace `0.2.1` with the [latest version](https://github.com/AgentsMesh/AgentsMesh/releases/latest).
-
-### Linux (Debian/Ubuntu)
-
-```bash
-# Download the latest .deb package (x86_64)
-VERSION=$(curl -s https://api.github.com/repos/AgentsMesh/AgentsMesh/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
-wget https://github.com/AgentsMesh/AgentsMesh/releases/download/v${VERSION}/agentsmesh-runner_${VERSION}_linux_amd64.deb
-sudo dpkg -i agentsmesh-runner_${VERSION}_linux_amd64.deb
-```
-
-### Linux (RHEL/CentOS/Fedora)
-
-```bash
-# Download the latest .rpm package (x86_64)
-VERSION=$(curl -s https://api.github.com/repos/AgentsMesh/AgentsMesh/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
-wget https://github.com/AgentsMesh/AgentsMesh/releases/download/v${VERSION}/agentsmesh-runner_${VERSION}_linux_amd64.rpm
-sudo rpm -i agentsmesh-runner_${VERSION}_linux_amd64.rpm
-```
-
-### Windows
-
-Download the latest `.zip` file from [Releases](https://github.com/AgentsMesh/AgentsMesh/releases/latest), extract, and add to your PATH.
-
-Or using Scoop:
-
-```powershell
-scoop bucket add agentsmesh https://github.com/AgentsMesh/scoop-bucket
-scoop install agentsmesh-runner
-```
+All binaries are available on the [Releases](https://github.com/AgentsMesh/AgentsMesh/releases/latest) page (tar.gz, deb, rpm, zip).
 
 ## Quick Start
 
