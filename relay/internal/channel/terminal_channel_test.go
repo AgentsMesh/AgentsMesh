@@ -662,7 +662,7 @@ func TestTerminalChannel_ForwardSubToPub_InputRejected(t *testing.T) {
 	}
 
 	// Verify publisher doesn't receive s2's rejected message within a short window
-	pubClient.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+	_ = pubClient.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
 	_, _, err = pubClient.ReadMessage()
 	if err == nil {
 		t.Fatal("expected no more messages from publisher (s2 input should have been rejected)")

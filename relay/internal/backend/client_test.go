@@ -485,7 +485,7 @@ func TestClient_Register_WithTLS_SaveFiles(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(RegisterResponse{
+		_ = json.NewEncoder(w).Encode(RegisterResponse{
 			Status:    "ok",
 			TLSCert:   "SAVED_CERT",
 			TLSKey:    "SAVED_KEY",
@@ -532,7 +532,7 @@ func TestClient_Register_WithAutoIP(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&capturedReq)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(RegisterResponse{Status: "ok"})
+		_ = json.NewEncoder(w).Encode(RegisterResponse{Status: "ok"})
 	}))
 	defer srv.Close()
 
@@ -582,7 +582,7 @@ func TestClient_SendHeartbeat_WithTLSResponse(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(HeartbeatResponse{
+		_ = json.NewEncoder(w).Encode(HeartbeatResponse{
 			Status:    "ok",
 			TLSCert:   "HB_CERT",
 			TLSKey:    "HB_KEY",
@@ -692,7 +692,7 @@ func TestClient_SaveCertificateFiles_KeyWriteError(t *testing.T) {
 func TestClient_Register_WithAutoIP_Failure(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(RegisterResponse{Status: "ok"})
+		_ = json.NewEncoder(w).Encode(RegisterResponse{Status: "ok"})
 	}))
 	defer srv.Close()
 
@@ -727,7 +727,7 @@ func TestClient_Register_WithAutoIP_Failure(t *testing.T) {
 func TestClient_Register_WithTLS_SaveFails(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(RegisterResponse{
+		_ = json.NewEncoder(w).Encode(RegisterResponse{
 			Status:    "ok",
 			TLSCert:   "CERT",
 			TLSKey:    "KEY",
@@ -760,7 +760,7 @@ func TestClient_Register_WithTLS_SaveFails(t *testing.T) {
 func TestClient_SendHeartbeat_WithTLS_SaveFails(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(HeartbeatResponse{
+		_ = json.NewEncoder(w).Encode(HeartbeatResponse{
 			Status:    "ok",
 			TLSCert:   "HB_CERT",
 			TLSKey:    "HB_KEY",

@@ -373,7 +373,7 @@ func TestServer_New_OnAllSubscribersGoneCallback(t *testing.T) {
 			var req struct {
 				PodKey string `json:"pod_key"`
 			}
-			json.NewDecoder(r.Body).Decode(&req)
+			_ = json.NewDecoder(r.Body).Decode(&req)
 			notifyCalled <- req.PodKey
 		}
 		w.WriteHeader(http.StatusOK)
@@ -981,7 +981,7 @@ func TestServer_Start_TLS_GetCertificate_WithBackendCert(t *testing.T) {
 				TLSKey:    key,
 				TLSExpiry: "2027-01-01T00:00:00Z",
 			}
-			json.NewEncoder(w).Encode(resp)
+			_ = json.NewEncoder(w).Encode(resp)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -1156,7 +1156,7 @@ func TestServer_Start_TLS_GetCertificate_InvalidBackendCert(t *testing.T) {
 				TLSKey:    "INVALID_KEY_PEM",
 				TLSExpiry: "2027-01-01T00:00:00Z",
 			}
-			json.NewEncoder(w).Encode(resp)
+			_ = json.NewEncoder(w).Encode(resp)
 			return
 		}
 		w.WriteHeader(http.StatusOK)

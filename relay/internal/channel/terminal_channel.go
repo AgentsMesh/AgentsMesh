@@ -206,8 +206,8 @@ func (c *TerminalChannel) RemoveSubscriber(subscriberID string) {
 
 	if count == 0 {
 		// Last subscriber left, start keep-alive timer
-		c.lastSubscriberDisconnect = time.Now()
 		c.subscribersMu.Lock()
+		c.lastSubscriberDisconnect = time.Now()
 		c.keepAliveTimer = time.AfterFunc(c.config.KeepAliveDuration, func() {
 			// Check if still no subscribers after timeout
 			c.subscribersMu.RLock()
