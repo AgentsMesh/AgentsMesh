@@ -32,18 +32,18 @@ func runUpdate(args []string) {
 		fmt.Println(`Check and install updates for the AgentsMesh Runner.
 
 Usage:
-  runner update [options]
+  agentsmesh-runner update [options]
 
 Options:`)
 		fs.PrintDefaults()
 		fmt.Println(`
 Examples:
-  runner update              # Interactive update
-  runner update --check      # Only check for updates
-  runner update -y           # Silent update (wait for pods to finish)
-  runner update -f           # Force immediate update (may interrupt pods)
-  runner update -v v1.2.3    # Update to specific version
-  runner update --pre        # Include prerelease versions`)
+  agentsmesh-runner update              # Interactive update
+  agentsmesh-runner update --check      # Only check for updates
+  agentsmesh-runner update -y           # Silent update (wait for pods to finish)
+  agentsmesh-runner update -f           # Force immediate update (may interrupt pods)
+  agentsmesh-runner update -v v1.2.3    # Update to specific version
+  agentsmesh-runner update --pre        # Include prerelease versions`)
 	}
 
 	if err := fs.Parse(args); err != nil {

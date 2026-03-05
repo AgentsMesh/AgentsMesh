@@ -23,14 +23,14 @@ func runRegister(args []string) {
 		fmt.Println(`Register this runner with the AgentsMesh server using gRPC/mTLS.
 
 Usage:
-  runner register [options]
+  agentsmesh-runner register [options]
 
 Examples:
-  runner register                    # Interactive login (opens browser)
-  runner register --headless         # Interactive without browser (for SSH)
-  runner register --token <token>    # Token-based registration
-  runner register --server <url>     # Self-hosted server
-  runner register --force            # Overwrite existing registration without confirmation
+  agentsmesh-runner register                    # Interactive login (opens browser)
+  agentsmesh-runner register --headless         # Interactive without browser (for SSH)
+  agentsmesh-runner register --token <token>    # Token-based registration
+  agentsmesh-runner register --server <url>     # Self-hosted server
+  agentsmesh-runner register --force            # Overwrite existing registration without confirmation
 
 Options:
   --server <url>     Server URL (default: https://agentsmesh.ai)
