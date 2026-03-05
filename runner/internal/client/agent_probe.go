@@ -2,7 +2,10 @@ package client
 
 import (
 	"context"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -204,17 +207,61 @@ func probeAgentTypes(agentTypes []*runnerv1.AgentTypeInfo) []agentProbeResult {
 
 		path, err := exec.LookPath(agent.Command)
 		if err != nil {
-			logger.GRPCTrace().Trace("Agent command not found in PATH", "agent", agent.Slug, "command", agent.Command)
-			results = append(results, r)
-			continue
+			// Fallback: search common user binary directories.
+			// This handles cases where the service runs with a minimal PATH
+			// (e.g. launchd on macOS provides only /usr/bin:/bin:/usr/sbin:/sbin).
+			path = lookPathFallback(agent.Command)
+			if path == "" {
+				logger.GRPCTrace().Trace("Agent command not found in PATH or fallback dirs",
+					"agent", agent.Slug, "command", agent.Command)
+				results = append(results, r)
+				continue
+			}
+			logger.GRPC().Debug("Agent found via fallback path search",
+				"agent", agent.Slug, "command", agent.Command, "path", path)
 		}
 
 		r.found = true
 		r.path = path
-		r.version = detectAgentVersion(agent.Command)
+		r.version = detectAgentVersion(path)
 		results = append(results, r)
 	}
 	return results
+}
+
+// lookPathFallback searches common user binary directories for a command.
+// Returns the full path if found, empty string otherwise.
+func lookPathFallback(command string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	dirs := []string{
+		filepath.Join(home, ".local", "bin"),
+	}
+
+	if runtime.GOOS == "darwin" {
+		dirs = append(dirs,
+			"/opt/homebrew/bin",
+			"/opt/homebrew/sbin",
+			"/usr/local/bin",
+		)
+	} else {
+		dirs = append(dirs,
+			"/usr/local/bin",
+			"/snap/bin",
+		)
+	}
+
+	for _, dir := range dirs {
+		candidate := filepath.Join(dir, command)
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+			return candidate
+		}
+	}
+
+	return ""
 }
 
 // detectAgentVersion runs "<command> --version" and extracts the version string.
