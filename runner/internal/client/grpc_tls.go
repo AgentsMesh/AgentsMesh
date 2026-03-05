@@ -11,12 +11,18 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/tls/certprovider"
 	"google.golang.org/grpc/credentials/tls/certprovider/pemfile"
 	"google.golang.org/grpc/security/advancedtls"
 )
 
 // createAdvancedTLSCredentials creates TLS credentials using advancedtls package.
 // This enables automatic certificate hot-reloading when certificate files are updated.
+//
+// Uses CertVerification (chain-only, no hostname check) because:
+//   - Private PKI: both server and client certs are signed by our own CA
+//   - Server cert SANs may not include the public hostname (e.g., api.agentsmesh.cn)
+//   - SNI must remain as the dial target hostname for correct Traefik TCP routing
 func (c *GRPCConnection) createAdvancedTLSCredentials() (credentials.TransportCredentials, error) {
 	// Create identity certificate provider with file watching
 	// This provider will automatically reload certificates when files change
@@ -31,45 +37,13 @@ func (c *GRPCConnection) createAdvancedTLSCredentials() (credentials.TransportCr
 	}
 
 	// Create root certificate provider with file watching for CA
-	// This allows CA certificate rotation if needed
 	rootProvider, err := pemfile.NewProvider(pemfile.Options{
 		RootFile:        c.caFile,
 		RefreshDuration: 24 * time.Hour, // CA changes are rare, check daily
 	})
 	if err != nil {
 		logger.GRPC().Warn("Failed to create pemfile root provider, using static CA", "error", err)
-		// Fall back to static CA if file watching fails
-		caCert, readErr := os.ReadFile(c.caFile)
-		if readErr != nil {
-			return nil, fmt.Errorf("failed to read CA certificate: %w", readErr)
-		}
-		caPool := x509.NewCertPool()
-		if !caPool.AppendCertsFromPEM(caCert) {
-			return nil, fmt.Errorf("failed to parse CA certificate")
-		}
-
-		// Save identity provider for cleanup, rootProvider is nil in this path
-		c.identityProvider = identityProvider
-		c.rootProvider = nil
-
-		// Use static root certificates
-		options := &advancedtls.Options{
-			IdentityOptions: advancedtls.IdentityCertificateOptions{
-				IdentityProvider: identityProvider,
-			},
-			RootOptions: advancedtls.RootCertificateOptions{
-				RootCertificates: caPool,
-			},
-			MinTLSVersion: tls.VersionTLS13,
-			MaxTLSVersion: tls.VersionTLS13,
-			// Only verify certificate chain, not hostname (server may use IP)
-			VerificationType: advancedtls.CertVerification,
-		}
-		creds, err := advancedtls.NewClientCreds(options)
-		if err != nil {
-			return nil, err
-		}
-		return creds, nil
+		return c.createStaticCACredentials(identityProvider)
 	}
 
 	// Save providers for cleanup to prevent goroutine leaks
@@ -86,7 +60,8 @@ func (c *GRPCConnection) createAdvancedTLSCredentials() (credentials.TransportCr
 		},
 		MinTLSVersion: tls.VersionTLS13,
 		MaxTLSVersion: tls.VersionTLS13,
-		// Only verify certificate chain, not hostname (server may use IP)
+		// Only verify certificate chain, not hostname.
+		// Server cert SANs may not include the public domain; SNI must stay as dial target for routing.
 		VerificationType: advancedtls.CertVerification,
 	}
 
@@ -97,16 +72,51 @@ func (c *GRPCConnection) createAdvancedTLSCredentials() (credentials.TransportCr
 	return creds, nil
 }
 
+// createStaticCACredentials creates advancedtls credentials with a static CA pool.
+// Used when the root certificate file watcher fails to initialize.
+func (c *GRPCConnection) createStaticCACredentials(identityProvider certprovider.Provider) (credentials.TransportCredentials, error) {
+	caCert, err := os.ReadFile(c.caFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
+	}
+	caPool := x509.NewCertPool()
+	if !caPool.AppendCertsFromPEM(caCert) {
+		return nil, fmt.Errorf("failed to parse CA certificate")
+	}
+
+	c.identityProvider = identityProvider
+	c.rootProvider = nil
+
+	options := &advancedtls.Options{
+		IdentityOptions: advancedtls.IdentityCertificateOptions{
+			IdentityProvider: identityProvider,
+		},
+		RootOptions: advancedtls.RootCertificateOptions{
+			RootCertificates: caPool,
+		},
+		MinTLSVersion:    tls.VersionTLS13,
+		MaxTLSVersion:    tls.VersionTLS13,
+		VerificationType: advancedtls.CertVerification,
+	}
+	creds, err := advancedtls.NewClientCreds(options)
+	if err != nil {
+		return nil, err
+	}
+	return creds, nil
+}
+
 // createFallbackTLSCredentials creates standard TLS credentials as fallback.
-// Used when advancedtls is not available or fails to initialize.
+// Used when advancedtls pemfile providers fail to initialize.
+//
+// Uses InsecureSkipVerify + VerifyConnection to verify chain without hostname check.
+// This keeps SNI as the dial target for correct proxy routing while still verifying
+// the server cert is signed by our private CA.
 func (c *GRPCConnection) createFallbackTLSCredentials() (credentials.TransportCredentials, error) {
-	// Load client certificate
 	cert, err := tls.LoadX509KeyPair(c.certFile, c.keyFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load client certificate: %w", err)
 	}
 
-	// Load CA certificate (only trust AgentMesh CA, not system CAs)
 	caCert, err := os.ReadFile(c.caFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
@@ -117,12 +127,29 @@ func (c *GRPCConnection) createFallbackTLSCredentials() (credentials.TransportCr
 		return nil, fmt.Errorf("failed to parse CA certificate")
 	}
 
-	// TLS config - only trust our private CA
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caPool,
-		ServerName:   c.tlsServerName,
 		MinVersion:   tls.VersionTLS13,
+		// Skip default verification (which includes hostname check) so SNI stays as
+		// the dial target hostname for correct Traefik routing. Chain verification is
+		// performed in VerifyConnection below.
+		InsecureSkipVerify: true,
+		VerifyConnection: func(cs tls.ConnectionState) error {
+			if len(cs.PeerCertificates) == 0 {
+				return fmt.Errorf("server presented no certificates")
+			}
+			// Verify the certificate chain against our private CA (no hostname check)
+			opts := x509.VerifyOptions{
+				Roots:         caPool,
+				Intermediates: x509.NewCertPool(),
+			}
+			for _, cert := range cs.PeerCertificates[1:] {
+				opts.Intermediates.AddCert(cert)
+			}
+			_, err := cs.PeerCertificates[0].Verify(opts)
+			return err
+		},
 	}
 
 	return credentials.NewTLS(tlsConfig), nil
@@ -158,21 +185,15 @@ func (c *GRPCConnection) checkCertificateExpiry() {
 
 	logger.GRPCTrace().Trace("Certificate expiry check", "days_until_expiry", daysUntilExpiry)
 
-	// Check if renewal is needed (30 days before expiry by default)
 	if daysUntilExpiry <= float64(c.certRenewalDays) {
 		log.Info("Certificate expires soon, triggering renewal", "days_until_expiry", daysUntilExpiry)
-
-		// Attempt to renew certificate via REST API
 		if err := c.renewCertificate(); err != nil {
 			log.Error("Certificate renewal failed", "error", err)
-			// Don't return here - still check for urgent reconnection
 		} else {
 			log.Info("Certificate renewed successfully, advancedtls will auto-reload")
 		}
 	}
 
-	// Check if urgent reconnection is needed (7 days before expiry by default)
-	// This ensures long-lived connections use the new certificate
 	if daysUntilExpiry <= float64(c.certUrgentDays) {
 		log.Warn("Certificate expiring urgently, triggering reconnection", "days_until_expiry", daysUntilExpiry)
 		c.triggerReconnect()
@@ -199,7 +220,6 @@ func (c *GRPCConnection) getCertDaysUntilExpiry() (float64, error) {
 }
 
 // IsCertificateExpired checks if the certificate has expired.
-// Returns true if the certificate is expired, along with error details if any.
 func (c *GRPCConnection) IsCertificateExpired() (bool, error) {
 	daysUntilExpiry, err := c.getCertDaysUntilExpiry()
 	if err != nil {
@@ -245,7 +265,6 @@ func (c *GRPCConnection) GetCertificateExpiryInfo() (*CertificateExpiryInfo, err
 }
 
 // renewCertificate calls the Backend REST API to renew the certificate.
-// The new certificate is saved to files, and advancedtls will automatically reload them.
 func (c *GRPCConnection) renewCertificate() error {
 	if c.serverURL == "" {
 		return fmt.Errorf("server URL not configured, cannot renew certificate")
@@ -254,8 +273,6 @@ func (c *GRPCConnection) renewCertificate() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Call the renewal API using mTLS
-	// Note: This requires a working TLS connection with the current certificate
 	result, err := RenewCertificate(ctx, RenewalRequest{
 		ServerURL: c.serverURL,
 		CertFile:  c.certFile,
@@ -266,8 +283,6 @@ func (c *GRPCConnection) renewCertificate() error {
 		return fmt.Errorf("renewal API call failed: %w", err)
 	}
 
-	// Save new certificate to files
-	// advancedtls FileWatcherCertificateProvider will detect the change and reload
 	if err := os.WriteFile(c.certFile, []byte(result.Certificate), 0600); err != nil {
 		return fmt.Errorf("failed to save new certificate: %w", err)
 	}
@@ -283,7 +298,6 @@ func (c *GRPCConnection) renewCertificate() error {
 }
 
 // triggerReconnect signals the connection loop to reconnect.
-// This is used to ensure long-lived connections use the new certificate.
 func (c *GRPCConnection) triggerReconnect() {
 	select {
 	case c.reconnectCh <- struct{}{}:

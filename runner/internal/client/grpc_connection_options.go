@@ -64,11 +64,3 @@ func WithGRPCCertUrgentDays(days int) GRPCConnectionOption {
 	}
 }
 
-// WithGRPCTLSServerName sets the TLS server name for SNI and certificate verification.
-// This is needed when the server certificate's SANs don't include the public hostname
-// (e.g., server cert is for "agentmesh-backend" but endpoint is "agentsmesh.ai:9443").
-func WithGRPCTLSServerName(name string) GRPCConnectionOption {
-	return func(c *GRPCConnection) {
-		c.tlsServerName = name
-	}
-}
