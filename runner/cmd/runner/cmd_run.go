@@ -32,12 +32,12 @@ func runRunner(args []string) {
 		fmt.Println(`Start the AgentsMesh runner.
 
 Usage:
-  runner run [options]
+  agentsmesh-runner run [options]
 
 Options:`)
 		fs.PrintDefaults()
 		fmt.Println(`
-The runner must be registered first using 'runner register'.
+The runner must be registered first using 'agentsmesh-runner register'.
 Configuration is loaded from ~/.agentsmesh/config.yaml by default.
 Log file is written to $TMPDIR/agentsmesh/runner.log by default (with rotation).
 
@@ -61,7 +61,7 @@ The runner uses gRPC/mTLS for secure communication with the server.`)
 
 	// Check if config exists
 	if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
-		fmt.Fprintln(os.Stderr, "Error: Runner not registered. Please run 'runner register' first.")
+		fmt.Fprintln(os.Stderr, "Error: Runner not registered. Please run 'agentsmesh-runner register' first.")
 		os.Exit(1)
 	}
 
@@ -112,7 +112,7 @@ The runner uses gRPC/mTLS for secure communication with the server.`)
 	}
 
 	if !cfg.UsesGRPC() {
-		log.Error("gRPC configuration is required. Please re-register the runner using 'runner register'")
+		log.Error("gRPC configuration is required. Please re-register the runner using 'agentsmesh-runner register'")
 		os.Exit(1)
 	}
 
