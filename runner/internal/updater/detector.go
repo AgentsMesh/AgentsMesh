@@ -3,6 +3,7 @@ package updater
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/creativeprojects/go-selfupdate"
@@ -68,8 +69,10 @@ func (g *GitHubReleaseDetector) DetectLatest(ctx context.Context) (*ReleaseInfo,
 }
 
 // DetectVersion finds a specific version from GitHub.
+// The version is normalized to a tag format (e.g., "0.8.2" → "v0.8.2")
+// because go-selfupdate compares it directly against git tag names.
 func (g *GitHubReleaseDetector) DetectVersion(ctx context.Context, version string) (*ReleaseInfo, bool, error) {
-	release, found, err := g.updater.DetectVersion(ctx, selfupdate.NewRepositorySlug(RepoOwner, RepoName), version)
+	release, found, err := g.updater.DetectVersion(ctx, selfupdate.NewRepositorySlug(RepoOwner, RepoName), versionToTag(version))
 	if err != nil {
 		return nil, false, err
 	}
@@ -87,7 +90,7 @@ func (g *GitHubReleaseDetector) DetectVersion(ctx context.Context, version strin
 
 // DownloadTo downloads a release to the specified path.
 func (g *GitHubReleaseDetector) DownloadTo(ctx context.Context, release *ReleaseInfo, path string) error {
-	r, found, err := g.updater.DetectVersion(ctx, selfupdate.NewRepositorySlug(RepoOwner, RepoName), release.Version)
+	r, found, err := g.updater.DetectVersion(ctx, selfupdate.NewRepositorySlug(RepoOwner, RepoName), versionToTag(release.Version))
 	if err != nil {
 		return err
 	}
@@ -95,4 +98,14 @@ func (g *GitHubReleaseDetector) DownloadTo(ctx context.Context, release *Release
 		return fmt.Errorf("release not found")
 	}
 	return g.updater.UpdateTo(ctx, r, path)
+}
+
+// versionToTag ensures a version string has the "v" prefix to match git tag format.
+// go-selfupdate's DetectVersion compares the version directly against tag names,
+// so "0.8.2" must become "v0.8.2" to match the tag "v0.8.2".
+func versionToTag(version string) string {
+	if version != "" && !strings.HasPrefix(version, "v") {
+		return "v" + version
+	}
+	return version
 }
