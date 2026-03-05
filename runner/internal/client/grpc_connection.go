@@ -300,9 +300,9 @@ func isFatalStreamError(err error) (bool, string) {
 	case codes.Unauthenticated:
 		msg := st.Message()
 		if strings.Contains(msg, "runner not found") {
-			return true, "This runner has been deleted from the server. Please re-register with: runner register --server <SERVER> --token <TOKEN> --force"
+			return true, "This runner has been deleted from the server. Please re-register with: agentsmesh-runner register --server <SERVER> --token <TOKEN> --force"
 		}
-		return true, "Authentication failed: " + msg + ". Please re-register with: runner register --server <SERVER> --token <TOKEN> --force"
+		return true, "Authentication failed: " + msg + ". Please re-register with: agentsmesh-runner register --server <SERVER> --token <TOKEN> --force"
 
 	case codes.PermissionDenied:
 		msg := st.Message()

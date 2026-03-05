@@ -45,7 +45,7 @@ func printUsage() {
 	fmt.Println(`AgentsMesh Runner
 
 Usage:
-  runner <command> [options]
+  agentsmesh-runner <command> [options]
 
 Commands:
   login       Login to AgentsMesh server (alias for register)
@@ -59,17 +59,17 @@ Commands:
   help        Show this help message
 
 Login Examples:
-  runner login
+  agentsmesh-runner login
       Opens browser for authorization (uses https://agentsmesh.ai)
 
-  runner login --headless
+  agentsmesh-runner login --headless
       Print URL only, don't open browser (for SSH/remote sessions)
 
-  runner login --token <token>
+  agentsmesh-runner login --token <token>
       Login using a pre-generated token
 
-  runner login --server https://self-hosted.example.com
+  agentsmesh-runner login --server https://self-hosted.example.com
       Login to a self-hosted AgentsMesh server
 
-Use "runner <command> --help" for more information about a command.`)
+Use "agentsmesh-runner <command> --help" for more information about a command.`)
 }

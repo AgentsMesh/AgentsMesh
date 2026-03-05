@@ -60,7 +60,7 @@ func New(cfg *config.Config) (*Runner, error) {
 
 	// Load gRPC config (certificates)
 	if err := cfg.LoadGRPCConfig(); err != nil {
-		return nil, fmt.Errorf("failed to load gRPC config: %w - please register the runner first using 'runner register'", err)
+		return nil, fmt.Errorf("failed to load gRPC config: %w - please register the runner first using 'agentsmesh-runner register'", err)
 	}
 
 	// Validate required configuration
@@ -69,7 +69,7 @@ func New(cfg *config.Config) (*Runner, error) {
 	}
 
 	if !cfg.UsesGRPC() {
-		return nil, fmt.Errorf("gRPC configuration is required - please re-register the runner using 'runner register'")
+		return nil, fmt.Errorf("gRPC configuration is required - please re-register the runner using 'agentsmesh-runner register'")
 	}
 
 	// Create workspace manager
@@ -99,7 +99,7 @@ func New(cfg *config.Config) (*Runner, error) {
 	}
 
 	if certInfo.IsExpired {
-		return nil, fmt.Errorf("certificate has expired on %s. Please reactivate the runner using:\n  runner reactivate --token <token>\nGet a reactivation token from the web UI", certInfo.ExpiresAt.Format("2006-01-02"))
+		return nil, fmt.Errorf("certificate has expired on %s. Please reactivate the runner using:\n  agentsmesh-runner reactivate --token <token>\nGet a reactivation token from the web UI", certInfo.ExpiresAt.Format("2006-01-02"))
 	}
 
 	if certInfo.NeedsRenewal {
