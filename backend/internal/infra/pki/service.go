@@ -24,11 +24,12 @@ type Service struct {
 
 // Config holds PKI service configuration.
 type Config struct {
-	CACertFile     string // Path to CA certificate file
-	CAKeyFile      string // Path to CA private key file
-	ServerCertFile string // Path to server certificate file (optional)
-	ServerKeyFile  string // Path to server private key file (optional)
-	ValidityDays   int    // Certificate validity period in days (default: 365)
+	CACertFile     string   // Path to CA certificate file
+	CAKeyFile      string   // Path to CA private key file
+	ServerCertFile string   // Path to server certificate file (optional)
+	ServerKeyFile  string   // Path to server private key file (optional)
+	ValidityDays   int      // Certificate validity period in days (default: 365)
+	ServerCertSANs []string // Additional DNS SANs for auto-generated server certificate (e.g., public domain names)
 }
 
 // CertificateInfo holds information about an issued certificate.

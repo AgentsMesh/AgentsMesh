@@ -14,8 +14,8 @@ func TestConfigDefaults(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if cfg.ServerURL != "https://api.agentsmesh.ai" {
-		t.Errorf("ServerURL: got %v, want https://api.agentsmesh.ai", cfg.ServerURL)
+	if cfg.ServerURL != "https://agentsmesh.ai" {
+		t.Errorf("ServerURL: got %v, want https://agentsmesh.ai", cfg.ServerURL)
 	}
 
 	if cfg.MaxConcurrentPods != 5 {

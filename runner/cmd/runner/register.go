@@ -50,7 +50,7 @@ func registerInteractive(ctx context.Context, serverURL, nodeID string, headless
 	fmt.Printf("✓ gRPC Endpoint: %s\n", result.GRPCEndpoint)
 	fmt.Printf("✓ Certificates saved to ~/.agentsmesh/certs/\n")
 	fmt.Println("\nYou can now start the runner with:")
-	fmt.Println("  runner run")
+	fmt.Println("  agentsmesh-runner run")
 
 	return nil
 }
@@ -75,7 +75,7 @@ func registerWithGRPCToken(ctx context.Context, serverURL, token, nodeID string)
 	fmt.Printf("✓ gRPC Endpoint: %s\n", result.GRPCEndpoint)
 	fmt.Printf("✓ Certificates saved to ~/.agentsmesh/certs/\n")
 	fmt.Println("\nYou can now start the runner with:")
-	fmt.Println("  runner run")
+	fmt.Println("  agentsmesh-runner run")
 
 	return nil
 }
@@ -104,7 +104,7 @@ func reactivateRunner(ctx context.Context, serverURL, token string) error {
 	fmt.Println("✓ Runner reactivated successfully!")
 	fmt.Println("✓ New certificates saved to ~/.agentsmesh/certs/")
 	fmt.Println("\nYou can now start the runner with:")
-	fmt.Println("  runner run")
+	fmt.Println("  agentsmesh-runner run")
 
 	return nil
 }

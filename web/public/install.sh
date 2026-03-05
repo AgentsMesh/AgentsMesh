@@ -228,7 +228,7 @@ print_next_steps() {
     success "Next steps:"
     echo ""
     echo "  1. Register your runner:"
-    echo "     ${BLUE}agentsmesh-runner register --server https://api.agentsmesh.ai --token <YOUR_TOKEN>${NC}"
+    echo "     ${BLUE}agentsmesh-runner register --server https://agentsmesh.ai --token <YOUR_TOKEN>${NC}"
     echo ""
     echo "  2. Start the runner:"
     echo "     ${BLUE}agentsmesh-runner run${NC}"

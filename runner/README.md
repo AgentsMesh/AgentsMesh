@@ -44,7 +44,7 @@ All binaries are available on the [Releases](https://github.com/AgentsMesh/Agent
 Get a registration token from your AgentsMesh dashboard, then:
 
 ```bash
-# Global: https://api.agentsmesh.ai (or your own server address)
+# Global: https://agentsmesh.ai (or your own server address)
 agentsmesh-runner register --server <SERVER_URL> --token YOUR_TOKEN
 ```
 

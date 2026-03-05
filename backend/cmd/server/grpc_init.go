@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/url"
+	"strings"
 
 	grpcserver "github.com/anthropics/agentsmesh/backend/internal/api/grpc"
 	v1 "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
@@ -35,6 +37,7 @@ func initializePKIAndGRPC(
 		ServerCertFile: cfg.PKI.ServerCertFile,
 		ServerKeyFile:  cfg.PKI.ServerKeyFile,
 		ValidityDays:   cfg.PKI.ValidityDays,
+		ServerCertSANs: deriveServerCertSANs(cfg),
 	})
 	if err != nil {
 		slog.Error("Failed to initialize PKI service", "error", err)
@@ -219,4 +222,38 @@ func createDNSProvider(relayCfg config.RelayConfig) dns.Provider {
 	default:
 		return nil
 	}
+}
+
+// deriveServerCertSANs extracts domain names from PrimaryDomain and GRPC.Endpoint
+// to include as SANs in the auto-generated server certificate.
+//
+// Examples:
+//   - PrimaryDomain="agentsmesh.cn"       → ["agentsmesh.cn"]
+//   - PrimaryDomain="localhost:10000"      → ["localhost"] (already a default SAN)
+//   - GRPC.Endpoint="grpcs://api.agentsmesh.cn:9443" → ["api.agentsmesh.cn"]
+func deriveServerCertSANs(cfg *config.Config) []string {
+	var sans []string
+
+	// Extract hostname from PrimaryDomain (strip port if present)
+	if cfg.PrimaryDomain != "" {
+		host := cfg.PrimaryDomain
+		if idx := strings.LastIndex(host, ":"); idx != -1 {
+			host = host[:idx]
+		}
+		if host != "" {
+			sans = append(sans, host)
+		}
+	}
+
+	// Extract hostname from GRPC public endpoint URL
+	if cfg.GRPC.Endpoint != "" {
+		if u, err := url.Parse(cfg.GRPC.Endpoint); err == nil && u.Hostname() != "" {
+			sans = append(sans, u.Hostname())
+		}
+	}
+
+	if len(sans) > 0 {
+		slog.Info("Server certificate SANs derived from config", "sans", sans)
+	}
+	return sans
 }

@@ -20,7 +20,7 @@ func runReactivate(args []string) {
 		fmt.Println(`Reactivate a runner with an expired certificate.
 
 Usage:
-  runner reactivate --token <reactivation-token>
+  agentsmesh-runner reactivate --token <reactivation-token>
 
 Options:`)
 		fs.PrintDefaults()
@@ -31,7 +31,7 @@ you can generate a reactivation token from the web UI:
 1. Go to Runner management page
 2. Find your runner and click "Reactivate"
 3. Copy the generated token
-4. Run: runner reactivate --token <token>
+4. Run: agentsmesh-runner reactivate --token <token>
 
 The runner will receive new certificates and can reconnect.`)
 	}

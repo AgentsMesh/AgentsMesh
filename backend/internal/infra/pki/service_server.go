@@ -25,27 +25,44 @@ func (s *Service) loadOrGenerateServerCert(cfg *Config) (tls.Certificate, error)
 		// If files don't exist, generate new certificate
 	}
 
-	// Generate new server certificate
-	return s.generateServerCert()
+	// Generate new server certificate with configured SANs
+	return s.generateServerCert(cfg.ServerCertSANs)
 }
 
 // generateServerCert generates a new server certificate signed by CA.
-func (s *Service) generateServerCert() (tls.Certificate, error) {
-	// Generate ECDSA key pair
+// extraSANs are additional DNS names to include (e.g., public domain names).
+func (s *Service) generateServerCert(extraSANs []string) (tls.Certificate, error) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("failed to generate server key: %w", err)
 	}
 
-	// Generate serial number
 	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	now := time.Now()
-	// Server certificate valid for 1 year
 	expiresAt := now.Add(365 * 24 * time.Hour)
+
+	// Default SANs for internal/development use
+	dnsNames := []string{
+		"localhost",
+		"backend",
+		"agentmesh-backend",
+	}
+
+	// Append public domain SANs (deduplicated)
+	seen := make(map[string]bool, len(dnsNames)+len(extraSANs))
+	for _, name := range dnsNames {
+		seen[name] = true
+	}
+	for _, name := range extraSANs {
+		if name != "" && !seen[name] {
+			dnsNames = append(dnsNames, name)
+			seen[name] = true
+		}
+	}
 
 	template := &x509.Certificate{
 		SerialNumber: serial,
@@ -58,21 +75,14 @@ func (s *Service) generateServerCert() (tls.Certificate, error) {
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		// Add DNS names for local development
-		DNSNames: []string{
-			"localhost",
-			"backend",
-			"agentmesh-backend",
-		},
+		DNSNames:              dnsNames,
 	}
 
-	// Sign with CA
 	certDER, err := x509.CreateCertificate(rand.Reader, template, s.caCert, &key.PublicKey, s.caKey)
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("failed to create server certificate: %w", err)
 	}
 
-	// Encode to PEM
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 	keyDER, _ := x509.MarshalECPrivateKey(key)
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})

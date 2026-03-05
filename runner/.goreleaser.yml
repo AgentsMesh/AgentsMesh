@@ -196,7 +196,7 @@ release:
     ### Quick Start
 
     ```bash
-    # Register (Global: https://api.agentsmesh.ai or your own server)
+    # Register (Global: https://agentsmesh.ai or your own server)
     agentsmesh-runner register --server <SERVER_URL> --token YOUR_TOKEN
 
     # Start runner
@@ -234,7 +234,7 @@ brews:
       To get started with AgentsMesh Runner:
 
       1. Register the runner with your AgentsMesh server:
-         # Global: https://api.agentsmesh.ai (or your own server address)
+         # Global: https://agentsmesh.ai (or your own server address)
          agentsmesh-runner register --server <SERVER_URL> --token YOUR_TOKEN
 
       2. Start the runner:
