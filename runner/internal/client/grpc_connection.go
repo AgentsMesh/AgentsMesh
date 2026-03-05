@@ -90,10 +90,6 @@ type GRPCConnection struct {
 	certRenewalDays          int // Days before expiry to trigger renewal (default 30)
 	certUrgentDays           int // Days before expiry for urgent reconnection (default 7)
 
-	// TLS server name for SNI (overrides hostname from gRPC endpoint)
-	// Required when server cert SANs don't include the public hostname
-	tlsServerName string
-
 	// RPCClient for MCP request-response over gRPC stream
 	rpcClient *RPCClient
 
@@ -128,7 +124,6 @@ func NewGRPCConnection(endpoint, nodeID, orgSlug, certFile, keyFile, caFile stri
 		certExpiryWarningDays:    30,
 		certRenewalDays:          30, // Renew 30 days before expiry
 		certUrgentDays:           7,  // Urgent reconnection 7 days before expiry
-		tlsServerName:            "agentmesh-backend", // Default SNI for server cert SAN matching
 		terminalRateLimit:        50 * 1024, // Default: 50KB/s (conservative for shared bandwidth)
 		agentProbe:               NewAgentProbe(),
 	}
@@ -223,12 +218,6 @@ func (c *GRPCConnection) Connect() error {
 			Timeout:             10 * time.Second,
 			PermitWithoutStream: true,
 		}),
-	}
-
-	// Override the authority (and TLS SNI) when server cert SANs don't include the public hostname.
-	// This replaces the deprecated creds.OverrideServerName().
-	if c.tlsServerName != "" {
-		dialOpts = append(dialOpts, grpc.WithAuthority(c.tlsServerName))
 	}
 
 	// Connect to server

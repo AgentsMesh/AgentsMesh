@@ -265,6 +265,105 @@ func TestServerCert(t *testing.T) {
 	assert.NotEmpty(t, serverCert.Certificate)
 }
 
+func TestServerCert_DefaultSANs(t *testing.T) {
+	service, tmpDir := setupTestPKI(t)
+	defer os.RemoveAll(tmpDir)
+
+	serverCert := service.ServerCert()
+	require.NotEmpty(t, serverCert.Certificate)
+
+	// Parse the leaf certificate
+	x509Cert, err := x509.ParseCertificate(serverCert.Certificate[0])
+	require.NoError(t, err)
+
+	// Default SANs should always be present
+	assert.Contains(t, x509Cert.DNSNames, "localhost")
+	assert.Contains(t, x509Cert.DNSNames, "backend")
+	assert.Contains(t, x509Cert.DNSNames, "agentmesh-backend")
+}
+
+func TestServerCert_WithExtraSANs(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "pki-sans-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	certPEM, keyPEM := createTestCA(t)
+	certFile := filepath.Join(tmpDir, "ca.crt")
+	keyFile := filepath.Join(tmpDir, "ca.key")
+	require.NoError(t, os.WriteFile(certFile, certPEM, 0644))
+	require.NoError(t, os.WriteFile(keyFile, keyPEM, 0600))
+
+	cfg := &Config{
+		CACertFile:     certFile,
+		CAKeyFile:      keyFile,
+		ValidityDays:   365,
+		ServerCertSANs: []string{"api.agentsmesh.cn", "agentsmesh.cn"},
+	}
+
+	service, err := NewService(cfg)
+	require.NoError(t, err)
+
+	serverCert := service.ServerCert()
+	require.NotEmpty(t, serverCert.Certificate)
+
+	x509Cert, err := x509.ParseCertificate(serverCert.Certificate[0])
+	require.NoError(t, err)
+
+	// Default SANs
+	assert.Contains(t, x509Cert.DNSNames, "localhost")
+	assert.Contains(t, x509Cert.DNSNames, "backend")
+	assert.Contains(t, x509Cert.DNSNames, "agentmesh-backend")
+	// Extra SANs from config
+	assert.Contains(t, x509Cert.DNSNames, "api.agentsmesh.cn")
+	assert.Contains(t, x509Cert.DNSNames, "agentsmesh.cn")
+}
+
+func TestServerCert_ExtraSANs_Deduplicated(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "pki-sans-dedup-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	certPEM, keyPEM := createTestCA(t)
+	certFile := filepath.Join(tmpDir, "ca.crt")
+	keyFile := filepath.Join(tmpDir, "ca.key")
+	require.NoError(t, os.WriteFile(certFile, certPEM, 0644))
+	require.NoError(t, os.WriteFile(keyFile, keyPEM, 0600))
+
+	cfg := &Config{
+		CACertFile:   certFile,
+		CAKeyFile:    keyFile,
+		ValidityDays: 365,
+		// "localhost" is already a default SAN, empty strings should be ignored
+		ServerCertSANs: []string{"localhost", "", "api.example.com", "api.example.com"},
+	}
+
+	service, err := NewService(cfg)
+	require.NoError(t, err)
+
+	serverCert := service.ServerCert()
+	require.NotEmpty(t, serverCert.Certificate)
+
+	x509Cert, err := x509.ParseCertificate(serverCert.Certificate[0])
+	require.NoError(t, err)
+
+	// Count occurrences - "localhost" should appear exactly once
+	localhostCount := 0
+	exampleCount := 0
+	for _, name := range x509Cert.DNSNames {
+		if name == "localhost" {
+			localhostCount++
+		}
+		if name == "api.example.com" {
+			exampleCount++
+		}
+	}
+	assert.Equal(t, 1, localhostCount, "localhost should not be duplicated")
+	assert.Equal(t, 1, exampleCount, "api.example.com should not be duplicated")
+
+	// Total should be 3 defaults + 1 new = 4
+	assert.Len(t, x509Cert.DNSNames, 4)
+}
+
 func TestDefaultValidityDays(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "pki-default-validity-*")
 	require.NoError(t, err)
