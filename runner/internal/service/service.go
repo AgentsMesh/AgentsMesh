@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/kardianos/service"
@@ -167,6 +169,11 @@ func Install(configPath string) error {
 		cfg.Arguments = []string{"run"}
 	}
 
+	// Capture current PATH so that the service inherits user-installed binaries
+	// (e.g. ~/.local/bin, /opt/homebrew/bin). Without this, launchd/systemd
+	// starts with a minimal PATH that cannot find agent commands like "claude".
+	cfg.EnvVars = buildServiceEnvVars()
+
 	// Create a minimal program for installation
 	prg := &Program{}
 	s, err := service.New(prg, cfg)
@@ -181,6 +188,51 @@ func Install(configPath string) error {
 
 	log.Info("Service installed successfully")
 	return nil
+}
+
+// buildServiceEnvVars constructs the environment variables for the service.
+// It captures the current PATH and ensures common user binary directories are included.
+func buildServiceEnvVars() map[string]string {
+	envVars := make(map[string]string)
+
+	// Start with the current shell PATH (richest source of user-installed dirs)
+	currentPath := os.Getenv("PATH")
+
+	// Ensure common user binary directories are present
+	extraDirs := userBinaryDirs()
+	for _, dir := range extraDirs {
+		if !strings.Contains(currentPath, dir) {
+			if _, err := os.Stat(dir); err == nil {
+				currentPath = dir + ":" + currentPath
+			}
+		}
+	}
+
+	envVars["PATH"] = currentPath
+	return envVars
+}
+
+// userBinaryDirs returns common directories where user-installed agent binaries live.
+func userBinaryDirs() []string {
+	home, _ := os.UserHomeDir()
+	dirs := []string{
+		filepath.Join(home, ".local", "bin"),
+	}
+
+	if runtime.GOOS == "darwin" {
+		dirs = append(dirs,
+			"/opt/homebrew/bin",
+			"/opt/homebrew/sbin",
+			"/usr/local/bin",
+		)
+	} else {
+		dirs = append(dirs,
+			"/usr/local/bin",
+			"/snap/bin",
+		)
+	}
+
+	return dirs
 }
 
 // Uninstall removes the runner system service.
