@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
+	"sync/atomic"
 	"time"
 
 	"github.com/anthropics/agentsmesh/relay/internal/auth"
@@ -26,7 +24,7 @@ type Server struct {
 	handler        *Handler
 
 	// Graceful shutdown control
-	acceptingConnections bool
+	acceptingConnections atomic.Bool
 
 	logger *slog.Logger
 }
@@ -50,11 +48,11 @@ func New(cfg *config.Config) *Server {
 
 	// Create server instance first (for closure capture)
 	s := &Server{
-		cfg:                  cfg,
-		backendClient:        backendClient,
-		acceptingConnections: true,
-		logger:               slog.With("component", "server"),
+		cfg:           cfg,
+		backendClient: backendClient,
+		logger:        slog.With("component", "server"),
 	}
+	s.acceptingConnections.Store(true)
 
 	// Create callback for when all subscribers leave a channel
 	// Uses closure to capture server instance instead of global variable
@@ -98,11 +96,8 @@ func (s *Server) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to register with backend: %w", err)
 	}
 
-	// Start heartbeat loop
-	go s.backendClient.StartHeartbeat(ctx, s.cfg.Backend.HeartbeatInterval, func() int {
-		stats := s.channelManager.Stats()
-		return stats.ActiveChannels
-	})
+	// Start heartbeat loop with automatic restart on unexpected exit
+	go s.runHeartbeat(ctx)
 
 	// Set up HTTP routes
 	mux := http.NewServeMux()
@@ -170,18 +165,41 @@ func (s *Server) Start(ctx context.Context) error {
 		}()
 	}
 
-	// Set up signal handling for graceful shutdown
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-
-	// Wait for context cancellation, signal, or error
+	// Wait for context cancellation or server error
+	// Signal handling is done by the caller (main.go) which cancels the context.
 	select {
 	case <-ctx.Done():
 		return s.gracefulShutdown("context_cancelled")
-	case sig := <-sigCh:
-		return s.gracefulShutdown(fmt.Sprintf("signal_%s", sig))
 	case err := <-errCh:
 		return err
+	}
+}
+
+// runHeartbeat runs the heartbeat loop with automatic restart on unexpected exit.
+// This provides resilience against panics or unexpected goroutine termination.
+func (s *Server) runHeartbeat(ctx context.Context) {
+	const restartDelay = 5 * time.Second
+
+	for {
+		s.backendClient.StartHeartbeat(ctx, s.cfg.Backend.HeartbeatInterval, func() int {
+			stats := s.channelManager.Stats()
+			return stats.ActiveChannels
+		})
+
+		// If context is cancelled, don't restart
+		if ctx.Err() != nil {
+			return
+		}
+
+		// Unexpected exit (e.g., recovered panic), restart after delay
+		s.logger.Error("Heartbeat goroutine exited unexpectedly, restarting",
+			"restart_delay", restartDelay)
+		select {
+		case <-time.After(restartDelay):
+			s.logger.Info("Restarting heartbeat goroutine")
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
@@ -197,7 +215,7 @@ func (s *Server) gracefulShutdown(reason string) error {
 	cancel()
 
 	// 2. Stop accepting new connections
-	s.acceptingConnections = false
+	s.acceptingConnections.Store(false)
 	s.logger.Info("Stopped accepting new connections")
 
 	// 3. Wait for existing channels to close (with timeout)
@@ -232,7 +250,7 @@ func (s *Server) gracefulShutdown(reason string) error {
 
 // IsAcceptingConnections returns whether the server is accepting new connections
 func (s *Server) IsAcceptingConnections() bool {
-	return s.acceptingConnections
+	return s.acceptingConnections.Load()
 }
 
 // Stats returns server statistics

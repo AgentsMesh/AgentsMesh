@@ -454,17 +454,46 @@ func (c *Client) Unregister(ctx context.Context, reason string) error {
 	return nil
 }
 
-// StartHeartbeat starts the heartbeat loop
+// StartHeartbeat starts the heartbeat loop.
+// It logs lifecycle events and recovers from panics to provide diagnostics.
+// The getConnections callback has a 5-second timeout to prevent deadlock propagation.
 func (c *Client) StartHeartbeat(ctx context.Context, interval time.Duration, getConnections func() int) {
+	c.logger.Info("Heartbeat goroutine started", "interval", interval)
+	defer func() {
+		if r := recover(); r != nil {
+			c.logger.Error("Heartbeat goroutine panicked", "panic", r)
+		}
+		c.logger.Info("Heartbeat goroutine stopped")
+	}()
+
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
+			c.logger.Info("Heartbeat stopping: context cancelled")
 			return
 		case <-ticker.C:
-			connections := getConnections()
+			// Get connections with timeout to prevent deadlock propagation
+			// (e.g., if Stats() is blocked by a lock held by a slow WebSocket write)
+			connCh := make(chan int, 1)
+			go func() {
+				connCh <- getConnections()
+			}()
+
+			var connections int
+			select {
+			case connections = <-connCh:
+				// Success
+			case <-time.After(5 * time.Second):
+				c.logger.Warn("getConnections callback timed out, using 0")
+				connections = 0
+			case <-ctx.Done():
+				c.logger.Info("Heartbeat stopping: context cancelled during getConnections")
+				return
+			}
+
 			if err := c.SendHeartbeat(ctx, connections); err != nil {
 				c.logger.Warn("Heartbeat failed", "error", err)
 

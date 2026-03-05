@@ -21,7 +21,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"testing"
 	"time"
 
@@ -811,8 +810,8 @@ func TestServer_New_OnAllSubscribersGone_NotifyFails(t *testing.T) {
 	// If we reach here without panic, the error path was handled gracefully
 }
 
-func TestServer_Start_SignalHandling(t *testing.T) {
-	// Test the signal handling path in Start() (line 181-182)
+func TestServer_Start_ContextCancellation(t *testing.T) {
+	// Test the context cancellation path in Start() — signal handling is now in main.go
 	mockBackend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -840,7 +839,7 @@ func TestServer_Start_SignalHandling(t *testing.T) {
 			MaxBrowsersPerPod: 10,
 		},
 		Relay: config.RelayConfig{
-			ID:       "relay-signal-test",
+			ID:       "relay-ctx-test",
 			URL:      fmt.Sprintf("ws://127.0.0.1:%d", port),
 			Region:   "test",
 			Capacity: 100,
@@ -849,9 +848,10 @@ func TestServer_Start_SignalHandling(t *testing.T) {
 
 	s := New(cfg)
 
+	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- s.Start(context.Background())
+		errCh <- s.Start(ctx)
 	}()
 
 	// Wait for server to be ready
@@ -867,12 +867,8 @@ func TestServer_Start_SignalHandling(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 
-	// Send SIGINT to trigger signal path
-	p, err := os.FindProcess(os.Getpid())
-	if err != nil {
-		t.Fatalf("FindProcess: %v", err)
-	}
-	_ = p.Signal(syscall.SIGINT)
+	// Cancel context to trigger shutdown (simulating main.go signal handler calling cancel())
+	cancel()
 
 	select {
 	case err := <-errCh:
@@ -880,7 +876,7 @@ func TestServer_Start_SignalHandling(t *testing.T) {
 			t.Errorf("Start returned error: %v", err)
 		}
 	case <-time.After(10 * time.Second):
-		t.Fatal("Start did not return after signal")
+		t.Fatal("Start did not return after context cancellation")
 	}
 }
 

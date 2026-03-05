@@ -10,10 +10,45 @@ import (
 	"github.com/anthropics/agentsmesh/relay/internal/protocol"
 )
 
+// writeWait is the maximum time allowed for a WebSocket write to complete.
+// Prevents dead/slow connections from blocking indefinitely and causing lock contention.
+const writeWait = 5 * time.Second
+
+// writeToConn writes a binary message to a WebSocket connection with a write deadline.
+func writeToConn(conn *websocket.Conn, data []byte) error {
+	_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
+	return conn.WriteMessage(websocket.BinaryMessage, data)
+}
+
+// writeToPublisher writes data to the publisher connection with serialization.
+// Returns nil silently if no publisher is connected (normal during reconnection).
+func (c *TerminalChannel) writeToPublisher(data []byte) error {
+	c.publisherWriteMu.Lock()
+	defer c.publisherWriteMu.Unlock()
+
+	c.publisherMu.RLock()
+	pub := c.publisher
+	c.publisherMu.RUnlock()
+
+	if pub == nil {
+		return nil
+	}
+	return writeToConn(pub, data)
+}
+
 // Subscriber represents a browser WebSocket connection (observer)
 type Subscriber struct {
-	ID   string
-	Conn *websocket.Conn
+	ID      string
+	Conn    *websocket.Conn
+	writeMu sync.Mutex // Serializes writes (gorilla/websocket is not concurrent-write safe)
+}
+
+// WriteMessage writes a binary message to the subscriber with a write deadline.
+// Serializes concurrent writes since gorilla/websocket does not support them.
+func (s *Subscriber) WriteMessage(data []byte) error {
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+	return writeToConn(s.Conn, data)
 }
 
 // ChannelConfig holds configuration for a terminal channel
@@ -48,8 +83,9 @@ type TerminalChannel struct {
 	config ChannelConfig
 
 	// Publisher: Runner connection (1)
-	publisher   *websocket.Conn
-	publisherMu sync.RWMutex
+	publisher        *websocket.Conn
+	publisherMu      sync.RWMutex
+	publisherWriteMu sync.Mutex // Serializes writes to publisher (gorilla/websocket is not concurrent-write safe)
 
 	// Subscribers: Browser connections (N)
 	subscribers   map[string]*Subscriber // subscriberID -> conn
@@ -104,9 +140,11 @@ func NewTerminalChannelWithConfig(podKey string, cfg ChannelConfig, onAllSubscri
 	}
 }
 
-// SetPublisher sets the publisher (runner) connection
+// SetPublisher sets the publisher (runner) connection.
+// If an old publisher connection exists, it is closed so its forwarding goroutine exits cleanly.
 func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
 	c.publisherMu.Lock()
+	oldConn := c.publisher
 	wasDisconnected := c.publisherDisconnected
 	c.publisher = conn
 	c.publisherDisconnected = false
@@ -117,6 +155,12 @@ func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
 		c.publisherReconnectTimer = nil
 	}
 	c.publisherMu.Unlock()
+
+	// Close old publisher connection so its forwarding goroutine exits via ReadMessage error.
+	// The old goroutine's handlePublisherDisconnect will see c.publisher != oldConn and return early.
+	if oldConn != nil && oldConn != conn {
+		oldConn.Close()
+	}
 
 	if wasDisconnected {
 		c.logger.Info("Publisher reconnected")
@@ -146,17 +190,20 @@ func (c *TerminalChannel) IsPublisherDisconnected() bool {
 
 // AddSubscriber adds a subscriber (browser observer)
 func (c *TerminalChannel) AddSubscriber(subscriberID string, conn *websocket.Conn) {
+	subscriber := &Subscriber{ID: subscriberID, Conn: conn}
+
 	c.subscribersMu.Lock()
-	c.subscribers[subscriberID] = &Subscriber{ID: subscriberID, Conn: conn}
+	c.subscribers[subscriberID] = subscriber
 
 	// Cancel keep-alive timer if exists
 	if c.keepAliveTimer != nil {
 		c.keepAliveTimer.Stop()
 		c.keepAliveTimer = nil
 	}
+	count := len(c.subscribers)
 	c.subscribersMu.Unlock()
 
-	c.logger.Info("Subscriber connected", "subscriber_id", subscriberID, "total_subscribers", len(c.subscribers))
+	c.logger.Info("Subscriber connected", "subscriber_id", subscriberID, "total_subscribers", count)
 
 	// Send buffered Output messages to new subscriber
 	// This allows new observers to see recent terminal output they missed
@@ -165,7 +212,7 @@ func (c *TerminalChannel) AddSubscriber(subscriberID string, conn *websocket.Con
 		c.logger.Debug("Sending buffered output to new subscriber",
 			"subscriber_id", subscriberID, "count", len(bufferedOutput))
 		for _, data := range bufferedOutput {
-			if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+			if err := subscriber.WriteMessage(data); err != nil {
 				c.logger.Warn("Failed to send buffered output to new subscriber",
 					"subscriber_id", subscriberID, "error", err)
 				break // Stop sending if connection has issues
@@ -175,7 +222,7 @@ func (c *TerminalChannel) AddSubscriber(subscriberID string, conn *websocket.Con
 
 	// Notify new subscriber if publisher is currently disconnected
 	if c.IsPublisherDisconnected() {
-		if err := conn.WriteMessage(websocket.BinaryMessage, protocol.EncodeRunnerDisconnected()); err != nil {
+		if err := subscriber.WriteMessage(protocol.EncodeRunnerDisconnected()); err != nil {
 			c.logger.Warn("Failed to send publisher disconnected status to new subscriber",
 				"subscriber_id", subscriberID, "error", err)
 		}
@@ -232,20 +279,36 @@ func (c *TerminalChannel) SubscriberCount() int {
 	return len(c.subscribers)
 }
 
-// Broadcast sends data to all connected subscribers
+// Broadcast sends data to all connected subscribers.
+// Uses snapshot-then-write pattern: subscribers are copied under lock, then
+// writes happen without holding the lock. This prevents a slow/dead subscriber
+// from blocking SubscriberCount(), Stats(), and the heartbeat goroutine.
 func (c *TerminalChannel) Broadcast(data []byte) {
+	// Snapshot subscribers under lock
 	c.subscribersMu.RLock()
-	defer c.subscribersMu.RUnlock()
+	subscribers := make([]*Subscriber, 0, len(c.subscribers))
+	for _, sub := range c.subscribers {
+		subscribers = append(subscribers, sub)
+	}
+	c.subscribersMu.RUnlock()
 
-	subscriberCount := len(c.subscribers)
-	c.logger.Debug("Broadcasting to subscribers", "data_len", len(data), "subscriber_count", subscriberCount)
+	c.logger.Debug("Broadcasting to subscribers", "data_len", len(data), "subscriber_count", len(subscribers))
 
-	for _, subscriber := range c.subscribers {
-		if err := subscriber.Conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
-			c.logger.Warn("Failed to send to subscriber", "subscriber_id", subscriber.ID, "error", err)
+	// Write to each subscriber with deadline (no lock held)
+	var failedIDs []string
+	for _, subscriber := range subscribers {
+		if err := subscriber.WriteMessage(data); err != nil {
+			c.logger.Warn("Failed to send to subscriber, removing",
+				"subscriber_id", subscriber.ID, "error", err)
+			failedIDs = append(failedIDs, subscriber.ID)
 		} else {
 			c.logger.Debug("Sent to subscriber", "subscriber_id", subscriber.ID, "data_len", len(data))
 		}
+	}
+
+	// Remove failed subscribers (acquires write lock separately)
+	for _, id := range failedIDs {
+		c.RemoveSubscriber(id)
 	}
 }
 
@@ -288,23 +351,28 @@ func (c *TerminalChannel) getBufferedOutput() [][]byte {
 	return result
 }
 
-// forwardPublisherToSubscribers forwards data from publisher to all subscribers
+// forwardPublisherToSubscribers forwards data from publisher to all subscribers.
+// Each goroutine captures its own conn reference at start. When SetPublisher replaces
+// the publisher, it closes the old conn, causing this goroutine's ReadMessage to fail
+// and exit cleanly via handlePublisherDisconnect's identity check.
 func (c *TerminalChannel) forwardPublisherToSubscribers() {
 	c.logger.Debug("Starting forwardPublisherToSubscribers loop")
+
+	// Capture conn once — this goroutine is bound to this specific connection
+	c.publisherMu.RLock()
+	conn := c.publisher
+	c.publisherMu.RUnlock()
+
+	if conn == nil {
+		c.logger.Debug("Publisher conn is nil, exiting forward loop")
+		return
+	}
+
 	for {
-		c.publisherMu.RLock()
-		conn := c.publisher
-		c.publisherMu.RUnlock()
-
-		if conn == nil {
-			c.logger.Debug("Publisher conn is nil, exiting forward loop")
-			break
-		}
-
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			c.logger.Info("Publisher disconnected", "error", err)
-			c.handlePublisherDisconnect()
+			c.handlePublisherDisconnect(conn)
 			break
 		}
 
@@ -359,37 +427,35 @@ func (c *TerminalChannel) forwardSubscriberToPublisher(subscriberID string) {
 
 		// Handle ping/pong locally
 		if msg.Type == protocol.MsgTypePing {
-			if err := subscriber.Conn.WriteMessage(websocket.BinaryMessage, protocol.EncodePong()); err != nil {
+			if err := subscriber.WriteMessage(protocol.EncodePong()); err != nil {
 				c.logger.Warn("Failed to send pong", "subscriber_id", subscriberID)
 			}
 			continue
 		}
 
-		// Forward to publisher
-		c.publisherMu.RLock()
-		if c.publisher != nil {
-			if err := c.publisher.WriteMessage(websocket.BinaryMessage, data); err != nil {
-				c.logger.Warn("Failed to forward to publisher", "error", err)
-			}
+		// Forward to publisher (serialized via publisherWriteMu)
+		if err := c.writeToPublisher(data); err != nil {
+			c.logger.Warn("Failed to forward to publisher", "error", err)
 		}
-		c.publisherMu.RUnlock()
 	}
 }
 
-// handlePublisherDisconnect handles publisher disconnect
-// Instead of immediately closing the channel, wait for publisher to reconnect
-func (c *TerminalChannel) handlePublisherDisconnect() {
+// handlePublisherDisconnect handles publisher disconnect with connection identity check.
+// Takes disconnectedConn to verify it's still the current publisher before acting.
+// If SetPublisher already replaced the publisher, this is a no-op (early return).
+func (c *TerminalChannel) handlePublisherDisconnect(disconnectedConn *websocket.Conn) {
 	c.publisherMu.Lock()
-	if c.publisher != nil {
-		c.publisher.Close()
-		c.publisher = nil
-	}
-	c.publisherDisconnected = true
 
-	// Notify all subscribers that publisher has disconnected
-	c.publisherMu.Unlock()
-	c.Broadcast(protocol.EncodeRunnerDisconnected())
-	c.publisherMu.Lock()
+	// Identity check: if publisher was already replaced by SetPublisher, just return.
+	// The old conn was already closed by SetPublisher, no need to close again.
+	if c.publisher != disconnectedConn {
+		c.publisherMu.Unlock()
+		return
+	}
+
+	c.publisher.Close()
+	c.publisher = nil
+	c.publisherDisconnected = true
 
 	c.logger.Info("Publisher disconnected, waiting for reconnection",
 		"timeout", c.config.PublisherReconnectTimeout)
@@ -406,6 +472,9 @@ func (c *TerminalChannel) handlePublisherDisconnect() {
 		}
 	})
 	c.publisherMu.Unlock()
+
+	// Broadcast AFTER releasing lock — eliminates the Unlock→Lock window
+	c.Broadcast(protocol.EncodeRunnerDisconnected())
 }
 
 // handleControlRequest handles input control requests
@@ -439,13 +508,16 @@ func (c *TerminalChannel) handleControlRequest(subscriberID string, payload []by
 
 	if response != nil {
 		data, _ := protocol.EncodeControlRequest(response)
+		// Get connection under lock, release before writing to avoid holding lock during I/O
 		c.subscribersMu.RLock()
-		if subscriber, ok := c.subscribers[subscriberID]; ok {
-			if err := subscriber.Conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+		subscriber, ok := c.subscribers[subscriberID]
+		c.subscribersMu.RUnlock()
+
+		if ok {
+			if err := subscriber.WriteMessage(data); err != nil {
 				c.logger.Warn("Failed to send control response", "subscriber_id", subscriberID, "error", err)
 			}
 		}
-		c.subscribersMu.RUnlock()
 	}
 }
 
