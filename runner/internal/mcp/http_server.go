@@ -100,7 +100,7 @@ func (s *HTTPServer) Start() error {
 	mux.HandleFunc("/pods", s.handlePods)
 
 	s.httpServer = &http.Server{
-		Addr:         fmt.Sprintf(":%d", s.port),
+		Addr:         fmt.Sprintf("127.0.0.1:%d", s.port),
 		Handler:      mux,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,

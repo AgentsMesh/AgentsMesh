@@ -97,6 +97,12 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: runner/go.sum
 
+      - name: Install rcodesign (macOS code signing)
+        run: |
+          RCODESIGN_VERSION="0.27.0"
+          curl -fsSL "https://github.com/indygreg/apple-codesign/releases/download/${RCODESIGN_VERSION}/apple-codesign-${RCODESIGN_VERSION}-x86_64-unknown-linux-musl.tar.gz" | tar xz
+          sudo cp ./apple-codesign-*/rcodesign /usr/local/bin/
+
       - name: Release with GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -107,3 +113,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}

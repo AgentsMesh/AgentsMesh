@@ -29,6 +29,12 @@ builds:
       - -s -w
       - -X main.version={{.Version}}
       - -X main.buildTime={{.Date}}
+    hooks:
+      post:
+        - cmd: sh -c '[ "{{ .Os }}" = "darwin" ] && ./build/scripts/sign-darwin.sh "{{ .Path }}" || true'
+          output: true
+          env:
+            - ENTITLEMENTS=./build/darwin/entitlements.plist
 
 archives:
   - id: cli-archive
