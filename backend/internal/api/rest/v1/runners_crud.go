@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -154,6 +155,10 @@ func (h *RunnerHandler) DeleteRunner(c *gin.Context) {
 	}
 
 	if err := h.runnerService.DeleteRunner(c.Request.Context(), runnerID); err != nil {
+		if errors.Is(err, runner.ErrRunnerHasLoopRefs) {
+			apierr.Conflict(c, apierr.HAS_REFERENCES, "Cannot delete runner: it is referenced by one or more loops")
+			return
+		}
 		apierr.InternalError(c, "Failed to delete runner")
 		return
 	}
