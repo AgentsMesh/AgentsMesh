@@ -216,10 +216,16 @@ describe("AddRunnerModal", () => {
       fireEvent.click(screen.getByText("runners.addRunnerModal.generate"));
 
       await waitFor(() => {
-        expect(screen.getByText("runners.addRunnerModal.copyCommand")).toBeInTheDocument();
+        expect(screen.getAllByText("runners.addRunnerModal.copyCommand").length).toBeGreaterThan(0);
       });
 
-      fireEvent.click(screen.getByText("runners.addRunnerModal.copyCommand"));
+      // Find the copy button in the register & run command block
+      const copyButtons = screen.getAllByText("runners.addRunnerModal.copyCommand");
+      const registerCopyBtn = copyButtons.find(btn =>
+        btn.closest("div.bg-muted")?.querySelector("code")?.textContent?.includes("agentsmesh-runner register")
+      );
+      expect(registerCopyBtn).toBeDefined();
+      fireEvent.click(registerCopyBtn!);
 
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
         expect.stringContaining("agentsmesh-runner register")
