@@ -14,6 +14,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/pidfile"
 	"github.com/anthropics/agentsmesh/runner/internal/runner"
 )
 
@@ -55,6 +56,16 @@ func NewProgram(cfg *config.Config) *Program {
 func (p *Program) Start(s service.Service) error {
 	log.Info("Service starting")
 
+	// Clean up stale process (non-fatal in service mode — manager will retry)
+	if err := pidfile.CleanupStaleProcess(); err != nil {
+		log.Warn("Failed to clean up stale process", "error", err)
+	}
+
+	// Write PID file
+	if err := pidfile.Write(); err != nil {
+		log.Warn("Failed to write PID file", "error", err)
+	}
+
 	// Create runner instance
 	r, err := runner.New(p.cfg)
 	if err != nil {
@@ -94,6 +105,8 @@ func (p *Program) Start(s service.Service) error {
 // Stop is called when the service is stopped.
 func (p *Program) Stop(s service.Service) error {
 	log.Info("Service stopping")
+
+	pidfile.Remove()
 
 	if p.cancel != nil {
 		p.cancel()

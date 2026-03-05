@@ -24,11 +24,20 @@ func (c *GRPCConnection) connectionLoop() {
 
 		// Try to connect
 		if err := c.Connect(); err != nil {
+			attempt := c.reconnectStrategy.AttemptCount()
 			delay := c.reconnectStrategy.NextDelay()
 			logger.GRPC().Warn("Failed to connect, will retry",
-				"attempt", c.reconnectStrategy.AttemptCount(),
+				"attempt", attempt+1,
+				"endpoint", c.endpoint,
 				"error", err,
 				"retry_in", delay)
+
+			// After every 3 failed attempts, try auto-discovering a new endpoint.
+			// This self-heals runners with stale grpc_endpoint configs (e.g. after
+			// server port changes in dev or server migrations in prod).
+			if (attempt+1)%3 == 0 && c.serverURL != "" {
+				c.tryEndpointDiscovery()
+			}
 
 			select {
 			case <-c.stopCh:
@@ -66,6 +75,52 @@ func (c *GRPCConnection) connectionLoop() {
 		case <-time.After(c.reconnectStrategy.CurrentInterval()):
 		}
 	}
+}
+
+// tryEndpointDiscovery queries the backend discovery endpoint and updates the gRPC
+// endpoint if it has changed. This allows runners to self-heal when the server's
+// gRPC port or hostname changes without requiring full re-registration.
+func (c *GRPCConnection) tryEndpointDiscovery() {
+	log := logger.GRPC()
+	log.Info("Trying endpoint auto-discovery", "server_url", c.serverURL, "current_endpoint", c.endpoint)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	newEndpoint, err := DiscoverGRPCEndpoint(ctx, c.serverURL)
+	if err != nil {
+		log.Warn("Endpoint discovery failed", "error", err)
+		return
+	}
+
+	c.mu.Lock()
+	currentEndpoint := c.endpoint
+	c.mu.Unlock()
+
+	if newEndpoint == currentEndpoint {
+		log.Debug("Endpoint unchanged after discovery", "endpoint", currentEndpoint)
+		return
+	}
+
+	log.Info("Auto-discovered new gRPC endpoint",
+		"old_endpoint", currentEndpoint,
+		"new_endpoint", newEndpoint)
+
+	c.mu.Lock()
+	c.endpoint = newEndpoint
+	c.mu.Unlock()
+
+	// Persist the new endpoint to config file so restarts use the updated value
+	if c.onEndpointChanged != nil {
+		if err := c.onEndpointChanged(newEndpoint); err != nil {
+			log.Warn("Failed to persist updated endpoint to config", "error", err)
+		} else {
+			log.Info("Updated grpc_endpoint in config file")
+		}
+	}
+
+	// Reset backoff so we reconnect quickly with the new endpoint
+	c.reconnectStrategy.Reset()
 }
 
 // runConnection establishes the bidirectional stream and handles messages.

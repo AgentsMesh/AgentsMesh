@@ -68,6 +68,14 @@ type Config struct {
 
 	// Version is set programmatically from build-time ldflags, not from config file
 	Version string `yaml:"-" mapstructure:"-"`
+
+	// ConfigFilePath is set programmatically to track where config was loaded from.
+	// Not stored in config file.
+	ConfigFilePath string `yaml:"-" mapstructure:"-"`
+
+	// ResolvedPATH is the login shell PATH resolved at startup.
+	// Used to inject a usable PATH into PTY environments when running as a service.
+	ResolvedPATH string `yaml:"-" mapstructure:"-"`
 }
 
 // AutoUpdateConfig holds auto-update configuration.

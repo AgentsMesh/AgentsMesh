@@ -46,7 +46,7 @@ func printServiceUsage() {
 	fmt.Println(`Manage AgentsMesh Runner as a system service.
 
 Usage:
-  runner service <action> [options]
+  agentsmesh-runner service <action> [options]
 
 Actions:
   install     Install runner as a system service
@@ -60,10 +60,10 @@ Options for 'install':
   --config    Path to config file (default: ~/.agentsmesh/config.yaml)
 
 Examples:
-  runner service install
-  runner service install --config /etc/agentsmesh/config.yaml
-  runner service start
-  runner service status`)
+  agentsmesh-runner service install
+  agentsmesh-runner service install --config /etc/agentsmesh/config.yaml
+  agentsmesh-runner service start
+  agentsmesh-runner service status`)
 }
 
 func runServiceInstall(args []string) {
@@ -83,7 +83,7 @@ func runServiceInstall(args []string) {
 	// Check if config exists
 	if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
 		fmt.Printf("Error: Config file not found at %s\n", cfgPath)
-		fmt.Println("Please run 'runner register' first to create the configuration.")
+		fmt.Println("Please run 'agentsmesh-runner register' first to create the configuration.")
 		os.Exit(1)
 	}
 
@@ -93,7 +93,7 @@ func runServiceInstall(args []string) {
 	}
 
 	fmt.Println("Service installed successfully.")
-	fmt.Println("Use 'runner service start' to start the service.")
+	fmt.Println("Use 'agentsmesh-runner service start' to start the service.")
 }
 
 func runServiceUninstall() {

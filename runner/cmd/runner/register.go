@@ -150,6 +150,21 @@ func backupExistingConfig(configDir string) {
 
 // saveGRPCConfig saves gRPC registration result to ~/.agentsmesh/
 func saveGRPCConfig(nodeID, serverURL, orgSlug, certPEM, keyPEM, caCertPEM, grpcEndpoint string) error {
+	// Ensure config directory exists first
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get home directory: %w", err)
+	}
+
+	configDir := filepath.Join(home, ".agentsmesh")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	// Backup existing configuration before overwriting (must happen before SaveCertificates
+	// so the backup doesn't rename the freshly saved certs directory)
+	backupExistingConfig(configDir)
+
 	cfg := &config.Config{
 		NodeID:       nodeID,
 		ServerURL:    serverURL,
@@ -161,20 +176,6 @@ func saveGRPCConfig(nodeID, serverURL, orgSlug, certPEM, keyPEM, caCertPEM, grpc
 	if err := cfg.SaveCertificates([]byte(certPEM), []byte(keyPEM), []byte(caCertPEM)); err != nil {
 		return fmt.Errorf("failed to save certificates: %w", err)
 	}
-
-	// Save full config file
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("failed to get home directory: %w", err)
-	}
-
-	configDir := filepath.Join(home, ".agentsmesh")
-	if err := os.MkdirAll(configDir, 0700); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
-	}
-
-	// Backup existing configuration before overwriting
-	backupExistingConfig(configDir)
 
 	grpcConfig := savedGRPCConfig{
 		ServerURL:         serverURL,

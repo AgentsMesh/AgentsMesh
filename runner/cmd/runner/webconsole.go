@@ -20,7 +20,7 @@ func runWebConsole(args []string) {
 		fmt.Println(`Open the AgentsMesh Runner web console in browser.
 
 Usage:
-  runner webconsole [options]
+  agentsmesh-runner webconsole [options]
 
 Options:`)
 		fs.PrintDefaults()
@@ -31,7 +31,7 @@ The web console provides a web-based interface to:
   - View logs
   - Manage runner configuration
 
-Note: The runner must be running ('runner run') for the web console to be accessible.`)
+Note: The runner must be running ('agentsmesh-runner run') for the web console to be accessible.`)
 	}
 
 	if err := fs.Parse(args); err != nil {
@@ -46,7 +46,7 @@ Note: The runner must be running ('runner run') for the web console to be access
 	if err != nil {
 		fmt.Println("Error: Web console is not accessible.")
 		fmt.Println("")
-		fmt.Println("Make sure the runner is running with 'runner run' first.")
+		fmt.Println("Make sure the runner is running with 'agentsmesh-runner run' first.")
 		fmt.Printf("The web console should be available at %s\n", url)
 		os.Exit(1)
 	}

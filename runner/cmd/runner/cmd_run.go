@@ -13,8 +13,10 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/console"
+	"github.com/anthropics/agentsmesh/runner/internal/envpath"
 	"github.com/anthropics/agentsmesh/runner/internal/lifecycle"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/pidfile"
 	"github.com/anthropics/agentsmesh/runner/internal/runner"
 )
 
@@ -32,12 +34,12 @@ func runRunner(args []string) {
 		fmt.Println(`Start the AgentsMesh runner.
 
 Usage:
-  runner run [options]
+  agentsmesh-runner run [options]
 
 Options:`)
 		fs.PrintDefaults()
 		fmt.Println(`
-The runner must be registered first using 'runner register'.
+The runner must be registered first using 'agentsmesh-runner register'.
 Configuration is loaded from ~/.agentsmesh/config.yaml by default.
 Log file is written to $TMPDIR/agentsmesh/runner.log by default (with rotation).
 
@@ -61,7 +63,7 @@ The runner uses gRPC/mTLS for secure communication with the server.`)
 
 	// Check if config exists
 	if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
-		fmt.Fprintln(os.Stderr, "Error: Runner not registered. Please run 'runner register' first.")
+		fmt.Fprintln(os.Stderr, "Error: Runner not registered. Please run 'agentsmesh-runner register' first.")
 		os.Exit(1)
 	}
 
@@ -112,14 +114,16 @@ The runner uses gRPC/mTLS for secure communication with the server.`)
 	}
 
 	if !cfg.UsesGRPC() {
-		log.Error("gRPC configuration is required. Please re-register the runner using 'runner register'")
+		log.Error("gRPC configuration is required. Please re-register the runner using 'agentsmesh-runner register'")
 		os.Exit(1)
 	}
 
 	log.Info("Using gRPC/mTLS connection mode", "endpoint", cfg.GRPCEndpoint)
 
-	// Pass build-time version to config for gRPC handshake
+	// Pass build-time version and config file path for auto-discovery healing
 	cfg.Version = version
+	cfg.ConfigFilePath = cfgFile
+	cfg.ResolvedPATH = envpath.ResolveLoginShellPATH()
 
 	startRunner(cfg)
 }
@@ -133,6 +137,20 @@ func startRunner(cfg *config.Config) {
 	}()
 
 	log := logger.Runner()
+
+	// Clean up stale runner process from previous run
+	if err := pidfile.CleanupStaleProcess(); err != nil {
+		log.Error("Failed to clean up stale runner", "error", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Write PID file for next startup to find us
+	if err := pidfile.Write(); err != nil {
+		log.Warn("Failed to write PID file", "error", err)
+		// Non-fatal: runner works fine without it, just can't auto-cleanup next time
+	}
+	defer pidfile.Remove()
 
 	// Create runner instance
 	r, err := runner.New(cfg)
@@ -166,7 +184,9 @@ func startRunner(cfg *config.Config) {
 	consoleServer.UpdateStatus(true, false, 0, 0, "")
 	consoleServer.AddLog("info", "Runner starting...")
 
-	if err := r.Run(ctx); err != nil {
+	if err := r.Run(ctx); err != nil && ctx.Err() == nil {
+		// Only treat as error if context wasn't canceled (i.e., not a graceful shutdown).
+		// os.Exit bypasses defers (including pidfile.Remove), so only use it for real errors.
 		consoleServer.UpdateStatus(false, false, 0, 0, err.Error())
 		consoleServer.AddLog("error", fmt.Sprintf("Runner error: %v", err))
 		log.Error("Runner error", "error", err)

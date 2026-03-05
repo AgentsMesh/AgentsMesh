@@ -28,6 +28,8 @@ func main() {
 		runWebConsole(os.Args[2:])
 	case "reactivate":
 		runReactivate(os.Args[2:])
+	case "update-endpoint":
+		runUpdateEndpoint(os.Args[2:])
 	case "update":
 		runUpdate(os.Args[2:])
 	case "version", "-v", "--version":
@@ -45,7 +47,7 @@ func printUsage() {
 	fmt.Println(`AgentsMesh Runner
 
 Usage:
-  runner <command> [options]
+  agentsmesh-runner <command> [options]
 
 Commands:
   login       Login to AgentsMesh server (alias for register)
@@ -53,23 +55,24 @@ Commands:
   run         Start the runner in CLI mode (requires prior registration)
   webconsole  Open the web console in browser
   service     Manage runner as a system service (install/start/stop)
-  reactivate  Reactivate runner with expired certificate
-  update      Check and install updates
+  reactivate       Reactivate runner with expired certificate
+  update-endpoint  Update gRPC endpoint without re-registration
+  update           Check and install updates
   version     Show version information
   help        Show this help message
 
 Login Examples:
-  runner login
+  agentsmesh-runner login
       Opens browser for authorization (uses https://agentsmesh.ai)
 
-  runner login --headless
+  agentsmesh-runner login --headless
       Print URL only, don't open browser (for SSH/remote sessions)
 
-  runner login --token <token>
+  agentsmesh-runner login --token <token>
       Login using a pre-generated token
 
-  runner login --server https://self-hosted.example.com
+  agentsmesh-runner login --server https://self-hosted.example.com
       Login to a self-hosted AgentsMesh server
 
-Use "runner <command> --help" for more information about a command.`)
+Use "agentsmesh-runner <command> --help" for more information about a command.`)
 }

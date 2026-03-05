@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ==================== gRPC/mTLS Configuration ====================
@@ -80,6 +82,37 @@ func (c *Config) SaveCertificates(certPEM, keyPEM, caCertPEM []byte) error {
 	c.CertFile = certPath
 	c.KeyFile = keyPath
 	c.CAFile = caPath
+
+	return nil
+}
+
+// UpdateGRPCEndpointInFile updates the grpc_endpoint field in the config file without
+// requiring full re-registration. Used by auto-discovery to heal stale endpoints.
+func UpdateGRPCEndpointInFile(configFile, newEndpoint string) error {
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		return errors.New("failed to read config file: " + err.Error())
+	}
+
+	// Unmarshal into a generic map to preserve unknown fields
+	var rawCfg map[string]interface{}
+	if err := yaml.Unmarshal(data, &rawCfg); err != nil {
+		return errors.New("failed to parse config file: " + err.Error())
+	}
+	if rawCfg == nil {
+		rawCfg = make(map[string]interface{})
+	}
+
+	rawCfg["grpc_endpoint"] = newEndpoint
+
+	updated, err := yaml.Marshal(rawCfg)
+	if err != nil {
+		return errors.New("failed to marshal updated config: " + err.Error())
+	}
+
+	if err := os.WriteFile(configFile, updated, 0600); err != nil {
+		return errors.New("failed to write config file: " + err.Error())
+	}
 
 	return nil
 }

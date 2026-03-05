@@ -296,7 +296,14 @@ func (b *PodBuilder) resolveArgs(args []string, sandboxRoot, workDir string) []s
 func (b *PodBuilder) mergeEnvVars(sandboxRoot string) map[string]string {
 	result := make(map[string]string)
 
-	// Add config env vars first (lowest priority)
+	// Inject resolved login shell PATH as lowest-priority base.
+	// This ensures PTY processes can find tools (claude, aider, etc.)
+	// even when the runner runs as a systemd/launchd service with minimal PATH.
+	if b.deps.Config != nil && b.deps.Config.ResolvedPATH != "" {
+		result["PATH"] = b.deps.Config.ResolvedPATH
+	}
+
+	// Add config env vars (overrides resolved PATH if user sets PATH in config)
 	if b.deps.Config != nil {
 		for k, v := range b.deps.Config.AgentEnvVars {
 			result[k] = v
@@ -316,9 +323,9 @@ func (b *PodBuilder) mergeEnvVars(sandboxRoot string) map[string]string {
 		for k, v := range overrides {
 			if k == "PATH" {
 				// v is a directory to prepend to PATH
-				basePath := os.Getenv("PATH")
-				if existing, ok := result["PATH"]; ok {
-					basePath = existing
+				basePath := result["PATH"]
+				if basePath == "" {
+					basePath = os.Getenv("PATH")
 				}
 				result["PATH"] = v + ":" + basePath
 				continue

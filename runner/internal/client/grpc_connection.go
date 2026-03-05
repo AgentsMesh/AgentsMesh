@@ -103,6 +103,10 @@ type GRPCConnection struct {
 	// Fatal error tracking - when set, connectionLoop should stop retrying
 	fatalErr   error
 	fatalErrMu sync.Mutex
+
+	// onEndpointChanged is called when auto-discovery detects a new gRPC endpoint.
+	// Implementations should persist the new endpoint to the config file.
+	onEndpointChanged func(newEndpoint string) error
 }
 
 // NewGRPCConnection creates a new gRPC connection with mTLS.

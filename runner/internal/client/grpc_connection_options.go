@@ -72,3 +72,12 @@ func WithGRPCTLSServerName(name string) GRPCConnectionOption {
 		c.tlsServerName = name
 	}
 }
+
+// WithGRPCEndpointChanged sets a callback invoked when auto-discovery detects a new
+// gRPC endpoint. The callback should persist the new endpoint to the config file so
+// the runner continues to use it after a restart.
+func WithGRPCEndpointChanged(fn func(newEndpoint string) error) GRPCConnectionOption {
+	return func(c *GRPCConnection) {
+		c.onEndpointChanged = fn
+	}
+}

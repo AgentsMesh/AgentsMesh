@@ -81,6 +81,19 @@ func New(cfg *config.Config) (*Runner, error) {
 	// Create gRPC/mTLS connection
 	logger.Runner().Info("Using gRPC/mTLS connection", "endpoint", cfg.GRPCEndpoint)
 
+	connOpts := []client.GRPCConnectionOption{
+		client.WithGRPCServerURL(cfg.ServerURL),
+		client.WithGRPCRunnerVersion(cfg.Version),
+	}
+	// Wire endpoint auto-discovery: when the runner detects a new gRPC endpoint
+	// via the discovery API, persist it to the config file for future restarts.
+	if cfg.ConfigFilePath != "" {
+		cfgFile := cfg.ConfigFilePath
+		connOpts = append(connOpts, client.WithGRPCEndpointChanged(func(newEndpoint string) error {
+			return config.UpdateGRPCEndpointInFile(cfgFile, newEndpoint)
+		}))
+	}
+
 	grpcConn := client.NewGRPCConnection(
 		cfg.GRPCEndpoint,
 		cfg.NodeID,
@@ -88,8 +101,7 @@ func New(cfg *config.Config) (*Runner, error) {
 		cfg.CertFile,
 		cfg.KeyFile,
 		cfg.CAFile,
-		client.WithGRPCServerURL(cfg.ServerURL),
-		client.WithGRPCRunnerVersion(cfg.Version),
+		connOpts...,
 	)
 
 	// Check certificate validity before connecting
