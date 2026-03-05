@@ -1,6 +1,5 @@
 # AgentsMesh Runner Installation Script for Windows
 # Usage: irm https://agentsmesh.ai/install.ps1 | iex
-#    or: Invoke-WebRequest -Uri https://agentsmesh.ai/install.ps1 -OutFile install.ps1; .\install.ps1
 #
 # For macOS/Linux, use: curl -fsSL https://agentsmesh.ai/install.sh | sh
 
