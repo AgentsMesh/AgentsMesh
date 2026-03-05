@@ -216,7 +216,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             ({ isActive, ...rest }) => rest,
           );
         }
-        return state as WorkspaceState;
+        return state as unknown as WorkspaceState;
       },
       partialize: (state) => ({
         panes: state.panes,

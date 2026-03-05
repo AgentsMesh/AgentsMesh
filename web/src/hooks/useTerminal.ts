@@ -162,11 +162,13 @@ export function useTerminal(
     // Deferred initial fit — use requestAnimationFrame to ensure the container
     // layout is complete before measuring.  We store the dims for the
     // post-subscribe resize message below.
-    let initialDims: { cols: number; rows: number } | null = null;
+    // Store initial dimensions after layout completes. Typed as a mutable
+    // container so TypeScript doesn't narrow to `never` inside the async IIFE.
+    const initialDims: { value: { cols: number; rows: number } | null } = { value: null };
     const deferredFitRaf = requestAnimationFrame(() => {
       const dims = safeFit(fitAddon);
       if (dims) {
-        initialDims = dims;
+        initialDims.value = dims;
         lastSyncedSizeRef.current = dims;
       }
     });
@@ -210,8 +212,8 @@ export function useTerminal(
         connectionRef.current = handle;
         // Send initial resize after connection is established
         // This ensures the resize is sent after WebSocket is connected
-        if (initialDims) {
-          terminalPool.forceResize(podKey, initialDims.cols, initialDims.rows);
+        if (initialDims.value) {
+          terminalPool.forceResize(podKey, initialDims.value.cols, initialDims.value.rows);
         }
       } catch (error) {
         if (abortController.signal.aborted) return;

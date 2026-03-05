@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act } from "@testing-library/react";
 import {
   useMeshStore,
@@ -119,14 +119,12 @@ describe("Mesh Store", () => {
         topology: mockTopology,
       });
 
-      let promise: Promise<void>;
       act(() => {
-        promise = useMeshStore.getState().fetchTopology();
+        useMeshStore.getState().fetchTopology();
       });
-      // Advance past the 500ms debounce window
+      // Advance past the 500ms debounce window and flush the async work
       await act(async () => {
         vi.advanceTimersByTime(500);
-        await promise!;
       });
 
       const state = useMeshStore.getState();
@@ -140,13 +138,11 @@ describe("Mesh Store", () => {
         new Error("Network error")
       );
 
-      let promise: Promise<void>;
       act(() => {
-        promise = useMeshStore.getState().fetchTopology();
+        useMeshStore.getState().fetchTopology();
       });
       await act(async () => {
         vi.advanceTimersByTime(500);
-        await promise!;
       });
 
       const state = useMeshStore.getState();
@@ -157,13 +153,11 @@ describe("Mesh Store", () => {
     it("should handle non-Error rejection", async () => {
       vi.mocked(meshApi.getTopology).mockRejectedValue("Unknown error");
 
-      let promise: Promise<void>;
       act(() => {
-        promise = useMeshStore.getState().fetchTopology();
+        useMeshStore.getState().fetchTopology();
       });
       await act(async () => {
         vi.advanceTimersByTime(500);
-        await promise!;
       });
 
       const state = useMeshStore.getState();
