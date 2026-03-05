@@ -4,7 +4,7 @@ import React, { useEffect, useCallback, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { usePodStore, Pod } from "@/stores/pod";
+import { usePodStore, Pod, SIDEBAR_STATUS_MAP } from "@/stores/pod";
 import { useRunnerStore } from "@/stores/runner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,18 +77,32 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
     }
   }, [fetchSidebarPods, filter, fetchRunners]);
 
-  // Search filter (status filtering is now server-side) — memoized for stable ref
-  const filteredPods = useMemo(() => pods.filter((pod) => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesPodKey = pod.pod_key.toLowerCase().includes(query);
-      const matchesTicket = pod.ticket?.slug?.toLowerCase().includes(query);
-      const matchesRunner = pod.runner?.node_id?.toLowerCase().includes(query);
-      return matchesPodKey || matchesTicket || matchesRunner;
-    }
+  // Client-side status + search filter.
+  // Status filtering is primarily server-side (fetchSidebarPods), but fetchPod and
+  // WebSocket events can inject pods that don't match the current tab. Guard here.
+  const filteredPods = useMemo(() => {
+    const allowedStatuses = SIDEBAR_STATUS_MAP[filter];
+    const statusSet = allowedStatuses
+      ? new Set(allowedStatuses.split(","))
+      : null; // "all" → show everything
 
-    return true;
-  }), [pods, searchQuery]);
+    return pods.filter((pod) => {
+      // Status guard
+      if (statusSet && !statusSet.has(pod.status)) return false;
+
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          pod.pod_key.toLowerCase().includes(query) ||
+          !!pod.ticket?.slug?.toLowerCase().includes(query) ||
+          !!pod.runner?.node_id?.toLowerCase().includes(query)
+        );
+      }
+
+      return true;
+    });
+  }, [pods, searchQuery, filter]);
 
   // Sort pods: running/initializing first, then by creation time (newest first)
   const sortedPods = useMemo(() => {
