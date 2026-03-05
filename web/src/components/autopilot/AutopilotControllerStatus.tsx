@@ -92,13 +92,11 @@ export function AutopilotControllerStatus({
   className,
   compact = false,
 }: AutopilotControllerStatusProps) {
-  const {
-    pauseAutopilotController,
-    resumeAutopilotController,
-    stopAutopilotController,
-    takeoverAutopilotController,
-    handbackAutopilotController,
-  } = useAutopilotStore();
+  const pauseAutopilotController = useAutopilotStore((s) => s.pauseAutopilotController);
+  const resumeAutopilotController = useAutopilotStore((s) => s.resumeAutopilotController);
+  const stopAutopilotController = useAutopilotStore((s) => s.stopAutopilotController);
+  const takeoverAutopilotController = useAutopilotStore((s) => s.takeoverAutopilotController);
+  const handbackAutopilotController = useAutopilotStore((s) => s.handbackAutopilotController);
 
   const phaseInfo = phaseConfig[autopilotController.phase];
   const cbInfo = circuitBreakerConfig[autopilotController.circuit_breaker.state];

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { usePodStore } from "@/stores/pod";
+import { getPodDisplayName } from "@/lib/pod-utils";
 import {
   X,
   Maximize2,
@@ -17,7 +18,6 @@ import {
 type ConnectionStatus = "connected" | "connecting" | "disconnected" | "error";
 
 interface TerminalPaneHeaderProps {
-  title: string;
   podKey: string;
   connectionStatus: ConnectionStatus;
   isMaximized: boolean;
@@ -31,11 +31,10 @@ interface TerminalPaneHeaderProps {
 }
 
 /**
- * Header component for TerminalPane
- * Contains status indicator, title, and action buttons
+ * Header component for TerminalPane.
+ * Title is derived from podStore (single source of truth), not passed as prop.
  */
 export function TerminalPaneHeader({
-  title,
   podKey,
   connectionStatus,
   isMaximized,
@@ -47,6 +46,12 @@ export function TerminalPaneHeader({
   onMaximize,
   onClose,
 }: TerminalPaneHeaderProps) {
+  // Derive title from podStore — single source of truth
+  const title = usePodStore((state) => {
+    const pod = state.pods.find((p) => p.pod_key === podKey);
+    return pod ? getPodDisplayName(pod) : podKey.substring(0, 8);
+  });
+
   const getStatusColor = () => {
     switch (connectionStatus) {
       case "connected":

@@ -61,7 +61,10 @@ function ResizeHandle({ direction }: { direction: "horizontal" | "vertical" }) {
 }
 
 export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProps) {
-  const { panes, activePane, gridLayout, removePane } = useWorkspaceStore();
+  const panes = useWorkspaceStore((s) => s.panes);
+  const activePane = useWorkspaceStore((s) => s.activePane);
+  const gridLayout = useWorkspaceStore((s) => s.gridLayout);
+  const removePane = useWorkspaceStore((s) => s.removePane);
 
   // 根据布局计算可见的 panes
   const visiblePanes = useMemo(() => {
@@ -90,7 +93,6 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
         key={pane.id}
         paneId={pane.id}
         podKey={pane.podKey}
-        title={pane.title}
         isActive={pane.id === activePane}
         onClose={() => removePane(pane.id)}
         onPopout={onPopout ? () => onPopout(pane.id) : undefined}

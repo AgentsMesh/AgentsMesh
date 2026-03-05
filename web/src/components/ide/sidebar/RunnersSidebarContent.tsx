@@ -29,12 +29,10 @@ const STATUS_FILTER_VALUES = ["all", "online", "offline"] as const;
 export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebarContentProps) {
   const t = useTranslations();
   const router = useRouter();
-  const { currentOrg } = useAuthStore();
-  const {
-    runners,
-    loading,
-    fetchRunners,
-  } = useRunnerStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const runners = useRunnerStore((s) => s.runners);
+  const loading = useRunnerStore((s) => s.loading);
+  const fetchRunners = useRunnerStore((s) => s.fetchRunners);
 
   // State
   const [refreshing, setRefreshing] = useState(false);

@@ -77,20 +77,18 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 }
 
 export function usePushNotifications() {
-  const {
-    permission,
-    subscription,
-    preferences,
-    isSupported,
-    isLoading,
-    error,
-    setPermission,
-    setSubscription,
-    setIsSupported,
-    setIsLoading,
-    setError,
-    setPreferences,
-  } = usePushNotificationStore();
+  const permission = usePushNotificationStore((s) => s.permission);
+  const subscription = usePushNotificationStore((s) => s.subscription);
+  const preferences = usePushNotificationStore((s) => s.preferences);
+  const isSupported = usePushNotificationStore((s) => s.isSupported);
+  const isLoading = usePushNotificationStore((s) => s.isLoading);
+  const error = usePushNotificationStore((s) => s.error);
+  const setPermission = usePushNotificationStore((s) => s.setPermission);
+  const setSubscription = usePushNotificationStore((s) => s.setSubscription);
+  const setIsSupported = usePushNotificationStore((s) => s.setIsSupported);
+  const setIsLoading = usePushNotificationStore((s) => s.setIsLoading);
+  const setError = usePushNotificationStore((s) => s.setError);
+  const setPreferences = usePushNotificationStore((s) => s.setPreferences);
 
   // Check support on mount
   useEffect(() => {

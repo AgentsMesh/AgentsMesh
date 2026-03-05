@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -72,12 +72,12 @@ export default function TicketPodPanel({
     setShowCreateForm(false);
   };
 
-  const activePods = pods.filter(
+  const activePods = useMemo(() => pods.filter(
     (s) => s.status === "running" || s.status === "initializing"
-  );
-  const inactivePods = pods.filter(
+  ), [pods]);
+  const inactivePods = useMemo(() => pods.filter(
     (s) => s.status !== "running" && s.status !== "initializing"
-  );
+  ), [pods]);
 
   if (loading) {
     return (
@@ -137,7 +137,7 @@ export default function TicketPodPanel({
         <div className="space-y-1">
         {/* Active Pods */}
         {activePods.map((pod) => (
-          <PodItem key={pod.pod_key} pod={pod} ticketSlug={ticketSlug} />
+          <PodItem key={pod.pod_key} pod={pod} />
         ))}
 
           {/* Inactive Pods (collapsed by default if there are active ones) */}
@@ -148,7 +148,7 @@ export default function TicketPodPanel({
               </summary>
               <div className="mt-1 space-y-1">
                 {inactivePods.map((pod) => (
-                  <PodItem key={pod.pod_key} pod={pod} ticketSlug={ticketSlug} />
+                  <PodItem key={pod.pod_key} pod={pod} />
                 ))}
               </div>
             </details>
@@ -169,19 +169,18 @@ export default function TicketPodPanel({
 
 interface PodItemProps {
   pod: TicketPod;
-  ticketSlug: string;
 }
 
-function PodItem({ pod, ticketSlug }: PodItemProps) {
+function PodItem({ pod }: PodItemProps) {
   const t = useTranslations();
   const router = useRouter();
-  const { currentOrg } = useAuthStore();
-  const { addPane } = useWorkspaceStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const addPane = useWorkspaceStore((s) => s.addPane);
   const isActive = pod.status === "running" || pod.status === "initializing";
 
   const handleConnect = () => {
     // Add to workspace and navigate
-    addPane(pod.pod_key, `${ticketSlug} Pod`);
+    addPane(pod.pod_key);
     router.push(`/${currentOrg?.slug}/workspace`);
   };
 

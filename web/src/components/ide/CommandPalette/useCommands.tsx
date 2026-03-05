@@ -24,8 +24,9 @@ export function useCommands(t: (key: string) => string): {
   actionCommands: CommandItemData[];
 } {
   const router = useRouter();
-  const { currentOrg, logout } = useAuthStore();
-  const { setActiveActivity } = useIDEStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const logout = useAuthStore((s) => s.logout);
+  const setActiveActivity = useIDEStore((s) => s.setActiveActivity);
   const orgSlug = currentOrg?.slug || "";
 
   const navigationCommands: CommandItemData[] = useMemo(

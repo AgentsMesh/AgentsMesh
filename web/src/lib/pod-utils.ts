@@ -51,31 +51,3 @@ export function getPodDisplayName(
   // Fallback: just the truncated pod_key
   return `${keyPrefix}...`;
 }
-
-/**
- * Get a short display name for a Pod (for compact UI elements).
- *
- * @param pod - Pod data
- * @param maxLength - Maximum length (default: 12)
- * @returns Short display name
- */
-export function getPodShortName(
-  pod: PodDisplayInfo,
-  maxLength: number = 12
-): string {
-  if (pod.title) {
-    if (pod.title.length > maxLength) {
-      return pod.title.substring(0, maxLength - 1) + "…";
-    }
-    return pod.title;
-  }
-
-  if (pod.ticket?.slug) {
-    if (pod.ticket.slug.length > maxLength) {
-      return pod.ticket.slug.substring(0, maxLength - 1) + "…";
-    }
-    return pod.ticket.slug;
-  }
-
-  return pod.pod_key.substring(0, Math.min(8, maxLength));
-}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
@@ -19,15 +19,14 @@ interface WorkspaceManagerProps {
 
 export function WorkspaceManager({ className }: WorkspaceManagerProps) {
   const { isMobile } = useBreakpoint();
-  const { panes, addPane, _hasHydrated } = useWorkspaceStore();
-  const { pods, fetchPods } = usePodStore();
+  const panes = useWorkspaceStore((s) => s.panes);
+  const addPane = useWorkspaceStore((s) => s.addPane);
+  const _hasHydrated = useWorkspaceStore((s) => s._hasHydrated);
   const [showPodSelector, setShowPodSelector] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Load pods on mount
-  useEffect(() => {
-    fetchPods({ status: "running" });
-  }, [fetchPods]);
+  // Memoize to avoid creating a new array reference on every render
+  const openPodKeys = useMemo(() => panes.map((p) => p.podKey), [panes]);
 
   // Handle adding new terminal
   const handleAddNew = () => {
@@ -35,8 +34,8 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
   };
 
   // Handle selecting a pod
-  const handleSelectPod = (podKey: string, title?: string) => {
-    addPane(podKey, title);
+  const handleSelectPod = (podKey: string) => {
+    addPane(podKey);
     setShowPodSelector(false);
   };
 
@@ -89,13 +88,6 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
     );
   }
 
-  // Get running pods that aren't already open
-  const availablePods = pods.filter(
-    (pod) =>
-      pod.status === "running" &&
-      !panes.some((pane) => pane.podKey === pod.pod_key)
-  );
-
   return (
     <div className={cn("flex flex-col h-full bg-terminal-bg", className)}>
       {/* Desktop layout */}
@@ -125,10 +117,10 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
         </>
       )}
 
-      {/* Pod selector modal */}
+      {/* Pod selector modal — subscribes to podStore only when open */}
       {showPodSelector && (
         <PodSelectorModal
-          pods={availablePods}
+          openPodKeys={openPodKeys}
           onSelect={handleSelectPod}
           onClose={() => setShowPodSelector(false)}
         />
@@ -138,18 +130,22 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
 }
 
 interface PodSelectorModalProps {
-  pods: Array<{
-    pod_key: string;
-    status: string;
-    agent_status: string;
-    created_at: string;
-    runner?: { node_id: string };
-  }>;
-  onSelect: (podKey: string, title?: string) => void;
+  openPodKeys: string[];
+  onSelect: (podKey: string) => void;
   onClose: () => void;
 }
 
-function PodSelectorModal({ pods, onSelect, onClose }: PodSelectorModalProps) {
+function PodSelectorModal({ openPodKeys, onSelect, onClose }: PodSelectorModalProps) {
+  // Subscribe to raw pods array — filter in useMemo to avoid creating
+  // a new array reference inside the selector (causes infinite re-render loop).
+  const allPods = usePodStore((s) => s.pods);
+  const pods = useMemo(
+    () => allPods.filter(
+      (pod) => pod.status === "running" && !openPodKeys.includes(pod.pod_key)
+    ),
+    [allPods, openPodKeys]
+  );
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-background border border-border rounded-lg w-full max-w-md max-h-[80vh] overflow-hidden">
@@ -172,7 +168,7 @@ function PodSelectorModal({ pods, onSelect, onClose }: PodSelectorModalProps) {
                 <button
                   key={pod.pod_key}
                   className="w-full p-4 text-left hover:bg-muted transition-colors"
-                  onClick={() => onSelect(pod.pod_key, getPodDisplayName(pod))}
+                  onClick={() => onSelect(pod.pod_key)}
                 >
                   <div className="flex items-center justify-between">
                     <code className="text-sm font-mono bg-muted px-2 py-0.5 rounded">

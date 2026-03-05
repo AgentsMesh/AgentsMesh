@@ -41,7 +41,7 @@ export function InfoTabContent({
   orgSlug,
   t,
 }: InfoTabContentProps) {
-  const { pods } = usePodStore();
+  const pods = usePodStore((s) => s.pods);
   const relatedPods = getRelatedPods(pods, pod);
 
   if (!selectedPodKey) {

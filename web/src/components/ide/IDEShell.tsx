@@ -103,7 +103,7 @@ export function IDEShell({
       toast.info("Pod created! Waiting for it to start...", {
         description: `Pod: ${displayName}`,
       });
-      addPane(pod.pod_key, displayName);
+      addPane(pod.pod_key);
       fetchPods();
     }
   }, [addPane, fetchPods]);

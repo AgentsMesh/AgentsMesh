@@ -26,8 +26,11 @@ import type { TicketsSidebarContentProps } from "./types";
 export function TicketsSidebarContent({ className }: TicketsSidebarContentProps) {
   const t = useTranslations();
   const router = useRouter();
-  const { currentOrg } = useAuthStore();
-  const { viewMode, tickets: allTickets, fetchTickets, setViewMode } = useTicketStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const viewMode = useTicketStore((s) => s.viewMode);
+  const allTickets = useTicketStore((s) => s.tickets);
+  const fetchTickets = useTicketStore((s) => s.fetchTickets);
+  const setViewMode = useTicketStore((s) => s.setViewMode);
 
   // Filter state and actions
   const {

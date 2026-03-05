@@ -37,8 +37,9 @@ export function HelpRequestPanel({
   onApprove,
   onCustomResponse,
 }: HelpRequestPanelProps) {
-  const { getThinking, approveAutopilotController } = useAutopilotStore();
-  const thinking = getThinking(autopilotControllerKey);
+  const approveAutopilotController = useAutopilotStore((s) => s.approveAutopilotController);
+  // Reactive thinking selector — re-renders when this controller's thinking changes
+  const thinking = useAutopilotStore((s) => s.thinking[autopilotControllerKey] ?? null);
 
   // Only show when there's a help request
   if (!thinking?.help_request) {

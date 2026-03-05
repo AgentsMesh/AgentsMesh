@@ -7,7 +7,6 @@ import { useAuthStore } from "@/stores/auth";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { Search, Command as CommandIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { getPodDisplayName } from "@/lib/pod-utils";
 import { useCommandPaletteSearch } from "./useCommandPaletteSearch";
 import { useCommands } from "./useCommands";
 import { SearchResultGroups } from "./SearchResultGroups";
@@ -25,8 +24,8 @@ import type { CommandPaletteProps, CommandItemData, PodSearchResult, TicketSearc
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
   const t = useTranslations();
-  const { currentOrg } = useAuthStore();
-  const { addPane } = useWorkspaceStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const addPane = useWorkspaceStore((s) => s.addPane);
   const [search, setSearch] = useState("");
 
   const orgSlug = currentOrg?.slug || "";
@@ -72,7 +71,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const handleSelectPod = useCallback(
     (pod: PodSearchResult) => {
-      addPane(pod.pod_key, getPodDisplayName(pod));
+      addPane(pod.pod_key);
       router.push(`/${orgSlug}/workspace`);
       handleOpenChange(false);
     },

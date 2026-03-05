@@ -42,7 +42,8 @@ const KEYS = {
 
 export function TerminalToolbar({ className }: TerminalToolbarProps) {
   const t = useTranslations();
-  const { panes, activePane } = useWorkspaceStore();
+  const panes = useWorkspaceStore((s) => s.panes);
+  const activePane = useWorkspaceStore((s) => s.activePane);
   const [isOpen, setIsOpen] = useState(false);
   const [ctrlActive, setCtrlActive] = useState(false);
   const [altActive, setAltActive] = useState(false);

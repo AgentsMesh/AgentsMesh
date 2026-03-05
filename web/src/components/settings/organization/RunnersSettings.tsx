@@ -16,16 +16,14 @@ interface RunnersSettingsProps {
 
 export function RunnersSettings({ t }: RunnersSettingsProps) {
   const i18n = useTranslations();
-  const {
-    runners,
-    loading,
-    error,
-    fetchRunners,
-    updateRunner,
-    deleteRunner,
-    createToken,
-    clearError,
-  } = useRunnerStore();
+  const runners = useRunnerStore((s) => s.runners);
+  const loading = useRunnerStore((s) => s.loading);
+  const error = useRunnerStore((s) => s.error);
+  const fetchRunners = useRunnerStore((s) => s.fetchRunners);
+  const updateRunner = useRunnerStore((s) => s.updateRunner);
+  const deleteRunner = useRunnerStore((s) => s.deleteRunner);
+  const createToken = useRunnerStore((s) => s.createToken);
+  const clearError = useRunnerStore((s) => s.clearError);
 
   const [editingRunner, setEditingRunner] = useState<Runner | null>(null);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);

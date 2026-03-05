@@ -53,27 +53,23 @@ export const useRunnerStore = create<RunnerState>((set) => ({
   },
 
   fetchAvailableRunners: async () => {
-    set({ loading: true, error: null });
     try {
       const response = await runnerApi.listAvailable();
-      set({ availableRunners: response.runners || [], loading: false });
+      set({ availableRunners: response.runners || [] });
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to fetch available runners"),
-        loading: false,
       });
     }
   },
 
   fetchRunner: async (id) => {
-    set({ loading: true, error: null });
     try {
       const response = await runnerApi.get(id);
-      set({ currentRunner: response.runner, loading: false });
+      set({ currentRunner: response.runner });
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to fetch runner"),
-        loading: false,
       });
     }
   },

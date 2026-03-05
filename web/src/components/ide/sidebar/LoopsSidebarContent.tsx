@@ -25,8 +25,10 @@ export function LoopsSidebarContent({ className }: { className?: string }) {
   const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
-  const { currentOrg } = useAuthStore();
-  const { loops, loading, fetchLoops } = useLoopStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const loops = useLoopStore((s) => s.loops);
+  const loading = useLoopStore((s) => s.loading);
+  const fetchLoops = useLoopStore((s) => s.fetchLoops);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);

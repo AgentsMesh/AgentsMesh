@@ -38,8 +38,10 @@ export interface TicketDetailPaneProps {
 export function TicketDetailPane({ slug, onClose, className }: TicketDetailPaneProps) {
   const t = useTranslations();
   const router = useRouter();
-  const { currentOrg } = useAuthStore();
-  const { updateTicket, updateTicketStatus, tickets } = useTicketStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const updateTicket = useTicketStore((s) => s.updateTicket);
+  const updateTicketStatus = useTicketStore((s) => s.updateTicketStatus);
+  const tickets = useTicketStore((s) => s.tickets);
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);

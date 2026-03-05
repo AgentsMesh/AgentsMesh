@@ -9,14 +9,12 @@ vi.mock("../TerminalPane", () => ({
   TerminalPane: ({
     paneId,
     podKey,
-    title,
     isActive,
     onClose,
     onPopout,
   }: {
     paneId: string;
     podKey: string;
-    title: string;
     isActive: boolean;
     onClose?: () => void;
     onPopout?: () => void;
@@ -24,10 +22,9 @@ vi.mock("../TerminalPane", () => ({
     <div
       data-testid={`terminal-pane-${paneId}`}
       data-pod-key={podKey}
-      data-title={title}
       data-active={isActive}
     >
-      <span>Terminal: {title}</span>
+      <span>Terminal: {podKey}</span>
       {onClose && (
         <button data-testid={`close-${paneId}`} onClick={onClose}>
           Close
@@ -133,7 +130,7 @@ describe("TerminalGrid", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
+          { id: "pane-1", podKey: "pod-1" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "1x1", rows: 1, cols: 1 },
@@ -144,7 +141,7 @@ describe("TerminalGrid", () => {
       render(<TerminalGrid />);
 
       expect(screen.getByTestId("terminal-pane-pane-1")).toBeInTheDocument();
-      expect(screen.getByText("Terminal: Terminal 1")).toBeInTheDocument();
+      expect(screen.getByText("Terminal: pod-1")).toBeInTheDocument();
     });
 
     it("should not render PanelGroup in 1x1 layout", () => {
@@ -165,8 +162,8 @@ describe("TerminalGrid", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -209,8 +206,8 @@ describe("TerminalGrid", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "2x1", rows: 2, cols: 1 },
@@ -236,10 +233,10 @@ describe("TerminalGrid", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
-          { id: "pane-3", podKey: "pod-3", title: "Terminal 3", isActive: false },
-          { id: "pane-4", podKey: "pod-4", title: "Terminal 4", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
+          { id: "pane-3", podKey: "pod-3" },
+          { id: "pane-4", podKey: "pod-4" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "2x2", rows: 2, cols: 2 },
@@ -276,7 +273,7 @@ describe("TerminalGrid", () => {
     it("should render fallback layout for unknown layout type", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
+          { id: "pane-1", podKey: "pod-1" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "custom" as GridLayout["type"], rows: 3, cols: 3 },
@@ -294,7 +291,7 @@ describe("TerminalGrid", () => {
     it("should render empty slot when pane count is less than grid capacity", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
+          { id: "pane-1", podKey: "pod-1" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -311,7 +308,7 @@ describe("TerminalGrid", () => {
     it("should call onAddNew when clicking Add Terminal in empty slot", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
+          { id: "pane-1", podKey: "pod-1" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -329,7 +326,7 @@ describe("TerminalGrid", () => {
     it("should not render Add Terminal button in empty slot when onAddNew is not provided", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
+          { id: "pane-1", podKey: "pod-1" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -346,8 +343,8 @@ describe("TerminalGrid", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -396,11 +393,11 @@ describe("TerminalGrid", () => {
     it("should show panes around active pane when there are more panes than grid capacity", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: false },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
-          { id: "pane-3", podKey: "pod-3", title: "Terminal 3", isActive: true },
-          { id: "pane-4", podKey: "pod-4", title: "Terminal 4", isActive: false },
-          { id: "pane-5", podKey: "pod-5", title: "Terminal 5", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
+          { id: "pane-3", podKey: "pod-3" },
+          { id: "pane-4", podKey: "pod-4" },
+          { id: "pane-5", podKey: "pod-5" },
         ],
         activePane: "pane-3",
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -418,9 +415,9 @@ describe("TerminalGrid", () => {
     it("should show first panes when no active pane", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: false },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
-          { id: "pane-3", podKey: "pod-3", title: "Terminal 3", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
+          { id: "pane-3", podKey: "pod-3" },
         ],
         activePane: null,
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -436,8 +433,8 @@ describe("TerminalGrid", () => {
     it("should show first panes when active pane is not found", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: false },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "non-existent-pane",
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -454,8 +451,8 @@ describe("TerminalGrid", () => {
     it("should render horizontal resize handle with correct classes", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "1x2", rows: 1, cols: 2 },
@@ -470,8 +467,8 @@ describe("TerminalGrid", () => {
     it("should render vertical resize handle with correct classes", () => {
       useWorkspaceStore.setState({
         panes: [
-          { id: "pane-1", podKey: "pod-1", title: "Terminal 1", isActive: true },
-          { id: "pane-2", podKey: "pod-2", title: "Terminal 2", isActive: false },
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
         gridLayout: { type: "2x1", rows: 2, cols: 1 },

@@ -16,12 +16,14 @@ export default function WorkspacePage() {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { panes, addPane, _hasHydrated } = useWorkspaceStore();
+  const panes = useWorkspaceStore((s) => s.panes);
+  const addPane = useWorkspaceStore((s) => s.addPane);
+  const _hasHydrated = useWorkspaceStore((s) => s._hasHydrated);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const processedPodRef = useRef<string | null>(null);
 
-  const handleOpenPod = useCallback((podKey: string, title?: string) => {
-    addPane(podKey, title || `Pod ${podKey.substring(0, 8)}`);
+  const handleOpenPod = useCallback((podKey: string) => {
+    addPane(podKey);
   }, [addPane]);
 
   // Handle ?pod=xxx query param to auto-open a pod

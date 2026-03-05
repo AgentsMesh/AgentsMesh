@@ -36,7 +36,8 @@ export function ChannelPodManager({
   onPodsChanged,
 }: ChannelPodManagerProps) {
   const t = useTranslations();
-  const { pods: allPods, fetchPods } = usePodStore();
+  const allPods = usePodStore((s) => s.pods);
+  const fetchPods = usePodStore((s) => s.fetchPods);
 
   const [open, setOpen] = useState(false);
   const [channelPods, setChannelPods] = useState<ChannelPod[]>([]);

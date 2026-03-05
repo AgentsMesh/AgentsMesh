@@ -28,7 +28,7 @@ import { Ticket, TicketStatus } from "@/stores/ticket";
 import { useTranslations } from "next-intl";
 import { useTicketPrefetch } from "@/hooks/useTicketPrefetch";
 import { cn } from "@/lib/utils";
-import { CircleDashed, GripVertical } from "lucide-react";
+import { GripVertical } from "lucide-react";
 
 type Status = TicketStatus;
 

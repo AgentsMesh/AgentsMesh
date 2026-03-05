@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef } from "react";
 import "@xterm/xterm/css/xterm.css";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -14,6 +14,7 @@ import {
   AutopilotStatusBar,
 } from "@/components/autopilot";
 import { useIDEStore } from "@/stores/ide";
+import { getPodDisplayName } from "@/lib/pod-utils";
 import { TerminalPaneHeader } from "./TerminalPaneHeader";
 import { TerminalLoadingState, TerminalErrorState } from "./TerminalStateViews";
 import { RelayStatusOverlay } from "./RelayStatusOverlay";
@@ -21,7 +22,6 @@ import { RelayStatusOverlay } from "./RelayStatusOverlay";
 interface TerminalPaneProps {
   paneId: string;
   podKey: string;
-  title: string;
   isActive: boolean;
   onClose?: () => void;
   onMaximize?: () => void;
@@ -33,7 +33,6 @@ interface TerminalPaneProps {
 export function TerminalPane({
   paneId,
   podKey,
-  title,
   isActive,
   onClose,
   onMaximize,
@@ -44,19 +43,28 @@ export function TerminalPane({
   const [isMaximized, setIsMaximized] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
   const [showAutopilotModal, setShowAutopilotModal] = useState(false);
-  const { terminalFontSize, setActivePane } = useWorkspaceStore();
-  const { setBottomPanelOpen, setBottomPanelTab } = useIDEStore();
+  const terminalFontSize = useWorkspaceStore((s) => s.terminalFontSize);
+  const setActivePane = useWorkspaceStore((s) => s.setActivePane);
+  const setBottomPanelOpen = useIDEStore((s) => s.setBottomPanelOpen);
+  const setBottomPanelTab = useIDEStore((s) => s.setBottomPanelTab);
   const initProgress = usePodStore((state) => state.initProgress[podKey]);
   const terminatePod = usePodStore((state) => state.terminatePod);
 
+  // Derive pod title from podStore for the autopilot modal
+  const podTitle = usePodStore((state) => {
+    const pod = state.pods.find((p) => p.pod_key === podKey);
+    return pod ? getPodDisplayName(pod) : podKey.substring(0, 8);
+  });
+
   // AutopilotController state - find if there's an active AutopilotController for this Pod
   const autopilotController = useAutopilotStore((state) => state.getAutopilotControllerByPodKey(podKey));
-  const getThinking = useAutopilotStore((state) => state.getThinking);
 
-  // Get thinking state for this autopilot
-  const thinking = autopilotController
-    ? getThinking(autopilotController.autopilot_controller_key)
-    : null;
+  // Get thinking state reactively via selector (not imperatively via getThinking)
+  // so that real-time thinking updates trigger re-renders.
+  const autopilotControllerKey = autopilotController?.autopilot_controller_key;
+  const thinking = useAutopilotStore((state) =>
+    autopilotControllerKey ? state.thinking[autopilotControllerKey] ?? null : null
+  );
 
   // Auto-open BottomPanel Autopilot tab when help is needed
   React.useEffect(() => {
@@ -73,31 +81,39 @@ export function TerminalPane({
   // Pod status tracking
   const { podStatus, isPodReady, podError } = usePodStatus(podKey);
 
+  // "Sticky ready" flag: once the terminal has been shown, don't unmount it
+  // due to transient status changes (e.g., stale WebSocket events causing
+  // status to temporarily revert to "initializing").  The terminal should
+  // only be hidden for genuine terminal error states.
+  const wasEverReady = useRef(false);
+  if (isPodReady) {
+    wasEverReady.current = true;
+  }
+  const showTerminal = wasEverReady.current;
+
   // Terminal initialization and management
   const {
     terminalRef,
     xtermRef,
-    fitAddonRef,
     connectionStatus,
     isRunnerDisconnected,
     syncSize,
-  } = useTerminal(podKey, terminalFontSize, isPodReady, isActive);
+  } = useTerminal(podKey, terminalFontSize, showTerminal, isActive);
 
   // Mobile touch scrolling support
-  useTouchScroll(terminalRef, xtermRef, isPodReady);
+  useTouchScroll(terminalRef, xtermRef, showTerminal);
 
   const handleFocus = useCallback(() => {
     setActivePane(paneId);
   }, [paneId, setActivePane]);
 
   const handleMaximize = useCallback(() => {
-    setIsMaximized(!isMaximized);
+    setIsMaximized((prev) => !prev);
     onMaximize?.();
-    // Fit terminal after layout change
-    setTimeout(() => {
-      fitAddonRef.current?.fit();
-    }, 100);
-  }, [isMaximized, onMaximize, fitAddonRef]);
+    // ResizeObserver in useTerminal will auto-fit after layout change.
+    // Use syncSize as a fallback to ensure PTY size is updated.
+    requestAnimationFrame(() => syncSize());
+  }, [onMaximize, syncSize]);
 
   const handleTerminate = useCallback(async () => {
     setIsTerminating(true);
@@ -124,7 +140,6 @@ export function TerminalPane({
       {/* Header */}
       {showHeader && (
         <TerminalPaneHeader
-          title={title}
           podKey={podKey}
           connectionStatus={connectionStatus}
           isMaximized={isMaximized}
@@ -139,7 +154,7 @@ export function TerminalPane({
       )}
 
       {/* Terminal or Loading/Error State */}
-      {!isPodReady ? (
+      {!showTerminal ? (
         podError ? (
           <TerminalErrorState error={podError} onClose={onClose} />
         ) : (
@@ -194,7 +209,7 @@ export function TerminalPane({
         open={showAutopilotModal}
         onClose={() => setShowAutopilotModal(false)}
         podKey={podKey}
-        podTitle={title}
+        podTitle={podTitle}
       />
     </div>
   );

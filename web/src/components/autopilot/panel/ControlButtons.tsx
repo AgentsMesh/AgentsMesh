@@ -10,13 +10,11 @@ interface ControlButtonsProps {
 }
 
 export function ControlButtons({ autopilotController }: ControlButtonsProps) {
-  const {
-    pauseAutopilotController,
-    resumeAutopilotController,
-    stopAutopilotController,
-    takeoverAutopilotController,
-    handbackAutopilotController,
-  } = useAutopilotStore();
+  const pauseAutopilotController = useAutopilotStore((s) => s.pauseAutopilotController);
+  const resumeAutopilotController = useAutopilotStore((s) => s.resumeAutopilotController);
+  const stopAutopilotController = useAutopilotStore((s) => s.stopAutopilotController);
+  const takeoverAutopilotController = useAutopilotStore((s) => s.takeoverAutopilotController);
+  const handbackAutopilotController = useAutopilotStore((s) => s.handbackAutopilotController);
 
   const isActive = ["initializing", "running", "paused", "user_takeover", "waiting_approval"].includes(
     autopilotController.phase

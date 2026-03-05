@@ -28,10 +28,9 @@ interface MeshState {
   nodePositions: Record<string, { x: number; y: number }>; // Cached drag positions for Runner Group nodes
 
   // Actions
-  fetchTopology: () => Promise<void>;
+  fetchTopology: () => void;
   selectNode: (podKey: string | null) => void;
   selectChannel: (channelId: number | null) => void;
-  updateNodeTitle: (podKey: string, title: string) => void;
   updateNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
   clearError: () => void;
 
@@ -44,6 +43,11 @@ interface MeshState {
   getRunnerInfo: (runnerId: number) => RunnerInfo | undefined;
 }
 
+// Debounce timer for fetchTopology — pod events fire in rapid succession
+// (created → status_changed → terminated) and each triggers a topology refresh.
+// Coalesce into a single API call after 500ms of inactivity.
+let topologyDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 export const useMeshStore = create<MeshState>((set, get) => ({
   topology: null,
   selectedNode: null,
@@ -52,17 +56,27 @@ export const useMeshStore = create<MeshState>((set, get) => ({
   error: null,
   nodePositions: {},
 
-  fetchTopology: async () => {
-    set({ loading: true, error: null });
-    try {
-      const response = await meshApi.getTopology();
-      set({ topology: response.topology, loading: false });
-    } catch (error: unknown) {
-      set({
-        error: getErrorMessage(error, "Failed to fetch topology"),
-        loading: false,
-      });
+  fetchTopology: () => {
+    // Cancel any pending debounced call
+    if (topologyDebounceTimer) {
+      clearTimeout(topologyDebounceTimer);
     }
+    // Fire-and-forget with debounce — callers never await this.
+    // Previous implementation wrapped in Promise which leaked when
+    // a subsequent call cancelled the timer (resolve never called).
+    topologyDebounceTimer = setTimeout(async () => {
+      topologyDebounceTimer = null;
+      set({ loading: true, error: null });
+      try {
+        const response = await meshApi.getTopology();
+        set({ topology: response.topology, loading: false });
+      } catch (error: unknown) {
+        set({
+          error: getErrorMessage(error, "Failed to fetch topology"),
+          loading: false,
+        });
+      }
+    }, 500);
   },
 
   selectNode: (podKey) => {
@@ -71,19 +85,6 @@ export const useMeshStore = create<MeshState>((set, get) => ({
 
   selectChannel: (channelId) => {
     set({ selectedChannel: channelId, selectedNode: null });
-  },
-
-  updateNodeTitle: (podKey, title) => {
-    set((state) => ({
-      topology: state.topology
-        ? {
-            ...state.topology,
-            nodes: state.topology.nodes.map((n) =>
-              n.pod_key === podKey ? { ...n, title } : n
-            ),
-          }
-        : null,
-    }));
   },
 
   updateNodePosition: (nodeId, position) => {

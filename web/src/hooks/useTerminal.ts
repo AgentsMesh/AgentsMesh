@@ -159,14 +159,17 @@ export function useTerminal(
     // Note: Terminal state will be restored from backend via WebSocket on connect
     term.open(terminalRef.current);
 
-    // Try initial fit - may fail if container has zero dimensions
-    // ResizeObserver will handle fitting when dimensions become valid
-    // Note: Don't send resize here - connection doesn't exist yet
-    // We'll send resize after subscribe() completes
-    const initialDims = safeFit(fitAddon);
-    if (initialDims) {
-      lastSyncedSizeRef.current = initialDims;
-    }
+    // Deferred initial fit — use requestAnimationFrame to ensure the container
+    // layout is complete before measuring.  We store the dims for the
+    // post-subscribe resize message below.
+    let initialDims: { cols: number; rows: number } | null = null;
+    const deferredFitRaf = requestAnimationFrame(() => {
+      const dims = safeFit(fitAddon);
+      if (dims) {
+        initialDims = dims;
+        lastSyncedSizeRef.current = dims;
+      }
+    });
 
     // Create write scheduler to aggregate high-frequency writes
     // This reduces xterm.write() calls from 4000-6700/s to ~60/s
@@ -274,9 +277,13 @@ export function useTerminal(
       const writeDisposable = term.onWriteParsed(syncTextareaPosition);
 
       // Initial sync after terminal is rendered
-      requestAnimationFrame(syncTextareaPosition);
+      const initialSyncRafId = requestAnimationFrame(syncTextareaPosition);
 
-      disposablesRef.current.push(cursorDisposable, writeDisposable);
+      disposablesRef.current.push(
+        cursorDisposable,
+        writeDisposable,
+        { dispose: () => cancelAnimationFrame(initialSyncRafId) },
+      );
     }
 
     // Image paste support: intercept paste events with image data
@@ -338,10 +345,31 @@ export function useTerminal(
     // Register terminal instance for cross-component access (e.g., TerminalToolbar)
     terminalRegistry.register(podKey, term);
 
+    // --- ResizeObserver: bound to terminal lifecycle to guarantee creation ---
+    // Previously in a separate effect whose deps could desync from terminal creation.
+    const resizeObserver = new ResizeObserver(() => {
+      const dims = safeFit(fitAddon);
+      if (dims) {
+        debouncedSizeSync(dims.cols, dims.rows);
+      }
+    });
+    resizeObserver.observe(terminalRef.current);
+
+    const handleWindowResize = () => {
+      const dims = safeFit(fitAddon);
+      if (dims) {
+        debouncedSizeSync(dims.cols, dims.rows);
+      }
+    };
+    window.addEventListener("resize", handleWindowResize);
+
     // Cleanup
     return () => {
       abortController.abort();  // Prevent late async subscribe from storing handle
       unsubscribeStatus();
+      cancelAnimationFrame(deferredFitRaf);
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", handleWindowResize);
       // Clear any pending size sync timer
       if (sizeSyncTimerRef.current) {
         clearTimeout(sizeSyncTimerRef.current);
@@ -369,65 +397,19 @@ export function useTerminal(
   }, [podKey, isPodReady]);
 
   /**
-   * ResizeObserver-based container size tracking.
-   * This is the standard approach recommended by xterm.js maintainers.
-   * @see https://github.com/xtermjs/xterm.js/issues/3029
-   *
-   * The observer triggers fit() whenever container dimensions change,
-   * which handles:
-   * - Initial render when container gets valid dimensions
-   * - Window resize
-   * - Panel expand/collapse
-   * - Page/tab switch (container becomes visible)
-   */
-  useEffect(() => {
-    const fitAddon = fitAddonRef.current;
-    const container = terminalRef.current;
-    if (!container) return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      if (!fitAddon) return;
-
-      // Use safeFit to check dimensions before fitting
-      const dims = safeFit(fitAddon);
-      if (dims) {
-        // Sync size to PTY when dimensions change
-        debouncedSizeSync(dims.cols, dims.rows);
-      }
-    });
-
-    // Observe the terminal container itself (not parent)
-    // This catches all size changes including flex layout updates
-    resizeObserver.observe(container);
-
-    // Also listen to window resize as a fallback
-    const handleWindowResize = () => {
-      if (!fitAddon) return;
-      const dims = safeFit(fitAddon);
-      if (dims) {
-        debouncedSizeSync(dims.cols, dims.rows);
-      }
-    };
-    window.addEventListener("resize", handleWindowResize);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", handleWindowResize);
-    };
-  }, [debouncedSizeSync]);
-
-  /**
    * Handle page visibility change.
    * When browser tab becomes visible again, ensure terminal is properly sized.
    */
   useEffect(() => {
+    let rafId: number | undefined;
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && isActive) {
         const fitAddon = fitAddonRef.current;
         if (!fitAddon) return;
 
         // Delay slightly to allow browser to update layout
-        requestAnimationFrame(() => {
+        rafId = requestAnimationFrame(() => {
           const dims = safeFit(fitAddon);
           if (dims) {
             debouncedSizeSync(dims.cols, dims.rows);
@@ -439,6 +421,7 @@ export function useTerminal(
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isActive, debouncedSizeSync]);
@@ -448,22 +431,28 @@ export function useTerminal(
    * This handles tab switching within the application.
    */
   useEffect(() => {
+    let rafId: number | undefined;
+
     if (isActive && xtermRef.current) {
       xtermRef.current.focus();
 
       const fitAddon = fitAddonRef.current;
-      if (!fitAddon) return;
-
-      // Fit after next paint to ensure layout is complete
-      requestAnimationFrame(() => {
-        const dims = safeFit(fitAddon);
-        if (dims) {
-          // Force immediate sync when pane becomes active
-          // to ensure PTY size matches terminal display
-          forceImmediateSizeSync(dims.cols, dims.rows);
-        }
-      });
+      if (fitAddon) {
+        // Fit after next paint to ensure layout is complete
+        rafId = requestAnimationFrame(() => {
+          const dims = safeFit(fitAddon);
+          if (dims) {
+            // Force immediate sync when pane becomes active
+            // to ensure PTY size matches terminal display
+            forceImmediateSizeSync(dims.cols, dims.rows);
+          }
+        });
+      }
     }
+
+    return () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
+    };
   }, [isActive, forceImmediateSizeSync]);
 
   // Update font size

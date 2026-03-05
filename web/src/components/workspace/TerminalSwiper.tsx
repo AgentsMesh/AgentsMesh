@@ -4,6 +4,8 @@ import React, { useRef, useEffect, useState } from "react";
 import { useDrag } from "@use-gesture/react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { usePodStore } from "@/stores/pod";
+import { getPodDisplayName } from "@/lib/pod-utils";
 import { TerminalPane } from "./TerminalPane";
 import { Terminal as TerminalIcon, Plus, ChevronLeft, ChevronRight, Scaling } from "lucide-react";
 import { terminalPool } from "@/stores/workspace";
@@ -16,12 +18,10 @@ interface TerminalSwiperProps {
 
 export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const {
-    panes,
-    mobileActiveIndex,
-    setMobileActiveIndex,
-    removePane,
-  } = useWorkspaceStore();
+  const panes = useWorkspaceStore((s) => s.panes);
+  const mobileActiveIndex = useWorkspaceStore((s) => s.mobileActiveIndex);
+  const setMobileActiveIndex = useWorkspaceStore((s) => s.setMobileActiveIndex);
+  const removePane = useWorkspaceStore((s) => s.removePane);
 
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -169,7 +169,7 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
 
         <div className="flex items-center gap-2">
           <span className="text-sm text-terminal-text font-medium">
-            {currentPane?.title || "Terminal"}
+            <SwiperPaneTitle podKey={currentPane?.podKey} />
           </span>
           <span className="text-xs text-terminal-text-muted">
             {mobileActiveIndex + 1} / {panes.length}
@@ -231,7 +231,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
           <TerminalPane
             paneId={currentPane.id}
             podKey={currentPane.podKey}
-            title={currentPane.title}
             isActive={true}
             onClose={() => removePane(currentPane.id)}
             showHeader={false}
@@ -241,6 +240,16 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
       </div>
     </div>
   );
+}
+
+/** Reads pod title from podStore — single source of truth. */
+function SwiperPaneTitle({ podKey }: { podKey?: string }) {
+  const title = usePodStore((state) => {
+    if (!podKey) return "Terminal";
+    const pod = state.pods.find((p) => p.pod_key === podKey);
+    return pod ? getPodDisplayName(pod) : "Terminal";
+  });
+  return <>{title}</>;
 }
 
 export default TerminalSwiper;

@@ -56,7 +56,8 @@ export function LoopCreateDialog({
   editLoop,
 }: LoopCreateDialogProps) {
   const t = useTranslations();
-  const { createLoop, updateLoop } = useLoopStore();
+  const createLoop = useLoopStore((s) => s.createLoop);
+  const updateLoop = useLoopStore((s) => s.updateLoop);
   const isEdit = !!editLoop;
 
   const [loading, setLoading] = useState(false);

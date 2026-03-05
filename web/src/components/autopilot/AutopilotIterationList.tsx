@@ -4,6 +4,9 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useAutopilotStore, AutopilotIteration } from "@/stores/autopilot";
+
+// Stable empty array to avoid infinite re-render when key is missing from iterations map.
+const EMPTY_ITERATIONS: AutopilotIteration[] = [];
 import {
   CheckCircle,
   XCircle,
@@ -139,8 +142,10 @@ export function AutopilotIterationList({
   className,
   maxItems,
 }: AutopilotIterationListProps) {
-  const { iterations, fetchIterations } = useAutopilotStore();
-  const controllerIterations = iterations[autopilotControllerKey] || [];
+  const controllerIterations = useAutopilotStore(
+    (s) => s.iterations[autopilotControllerKey] ?? EMPTY_ITERATIONS
+  );
+  const fetchIterations = useAutopilotStore((s) => s.fetchIterations);
 
   React.useEffect(() => {
     if (autopilotControllerKey) {

@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { usePodStore } from "@/stores/pod";
+import { getPodDisplayName } from "@/lib/pod-utils";
 import { Button } from "@/components/ui/button";
 import {
   X,
@@ -27,30 +29,12 @@ interface TerminalTabsProps {
 
 export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullscreen }: TerminalTabsProps) {
   const t = useTranslations();
-  const {
-    panes,
-    activePane,
-    setActivePane,
-    removePane,
-    gridLayout,
-    setGridLayout,
-  } = useWorkspaceStore();
-
-  const getConnectionStatus = (podKey: string) => {
-    const status = terminalPool.getStatus(podKey);
-    switch (status) {
-      case "connected":
-        return "bg-green-500";
-      case "connecting":
-        return "bg-yellow-500 animate-pulse";
-      case "disconnected":
-        return "bg-gray-500";
-      case "error":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
+  const panes = useWorkspaceStore((s) => s.panes);
+  const activePane = useWorkspaceStore((s) => s.activePane);
+  const setActivePane = useWorkspaceStore((s) => s.setActivePane);
+  const removePane = useWorkspaceStore((s) => s.removePane);
+  const gridLayout = useWorkspaceStore((s) => s.gridLayout);
+  const setGridLayout = useWorkspaceStore((s) => s.setGridLayout);
 
   return (
     <div
@@ -72,10 +56,8 @@ export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullsc
             )}
             onClick={() => setActivePane(pane.id)}
           >
-            <Circle
-              className={cn("w-2 h-2 flex-shrink-0", getConnectionStatus(pane.podKey))}
-            />
-            <span className="truncate">{pane.title}</span>
+            <ConnectionDot podKey={pane.podKey} />
+            <span className="truncate"><TabPaneTitle podKey={pane.podKey} /></span>
             <button
               className={cn(
                 "ml-1 p-0.5 rounded hover:bg-terminal-bg-active flex-shrink-0",
@@ -175,6 +157,37 @@ export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullsc
       </div>
     </div>
   );
+}
+
+/** Reactive connection status dot — subscribes to terminalPool status changes. */
+function ConnectionDot({ podKey }: { podKey: string }) {
+  const [statusClass, setStatusClass] = useState("bg-gray-500");
+
+  useEffect(() => {
+    const toClass = (s: string) => {
+      switch (s) {
+        case "connected": return "bg-green-500";
+        case "connecting": return "bg-yellow-500 animate-pulse";
+        case "error": return "bg-red-500";
+        default: return "bg-gray-500";
+      }
+    };
+
+    return terminalPool.onStatusChange(podKey, (info) => {
+      setStatusClass(toClass(info.status));
+    });
+  }, [podKey]);
+
+  return <Circle className={cn("w-2 h-2 flex-shrink-0", statusClass)} />;
+}
+
+/** Reads pod title from podStore — single source of truth. */
+function TabPaneTitle({ podKey }: { podKey: string }) {
+  const title = usePodStore((state) => {
+    const pod = state.pods.find((p) => p.pod_key === podKey);
+    return pod ? getPodDisplayName(pod) : `Pod ${podKey.substring(0, 8)}`;
+  });
+  return <>{title}</>;
 }
 
 export default TerminalTabs;

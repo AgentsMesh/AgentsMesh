@@ -10,6 +10,7 @@ interface LoopState {
   currentLoop: LoopData | null;
   runs: LoopRunData[];
   loading: boolean;
+  loopLoading: boolean;
   runsLoading: boolean;
   error: string | null;
   totalCount: number;
@@ -37,6 +38,7 @@ export const useLoopStore = create<LoopState>((set, get) => ({
   currentLoop: null,
   runs: [],
   loading: false,
+  loopLoading: false,
   runsLoading: false,
   error: null,
   totalCount: 0,
@@ -59,12 +61,12 @@ export const useLoopStore = create<LoopState>((set, get) => ({
     if (currentSlug && currentSlug !== slug) {
       set({ runs: [], runsTotalCount: 0, runsOffset: 0 });
     }
-    set({ loading: true, error: null });
+    set({ loopLoading: true, error: null });
     try {
       const res = await loopApi.get(slug);
-      set({ currentLoop: res.loop, loading: false });
+      set({ currentLoop: res.loop, loopLoading: false });
     } catch (err) {
-      set({ error: getErrorMessage(err, "An error occurred"), loading: false });
+      set({ error: getErrorMessage(err, "An error occurred"), loopLoading: false });
     }
   },
 

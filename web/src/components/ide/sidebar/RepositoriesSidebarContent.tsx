@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
@@ -68,8 +68,8 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
     }
   }, []);
 
-  // Filter repositories
-  const filteredRepositories = repositories.filter((repo) => {
+  // Filter repositories — memoized for stable ref
+  const filteredRepositories = useMemo(() => repositories.filter((repo) => {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -84,7 +84,7 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
     }
 
     return true;
-  });
+  }), [repositories, searchQuery, selectedProvider]);
 
   // Handle repository click
   const handleRepoClick = (repo: RepositoryData) => {

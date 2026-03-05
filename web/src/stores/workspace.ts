@@ -40,8 +40,6 @@ export const terminalRegistry = new TerminalRegistry();
 export interface TerminalPane {
   id: string;
   podKey: string;
-  title: string;
-  isActive: boolean;
   gridPosition?: {
     x: number;
     y: number;
@@ -72,11 +70,10 @@ interface WorkspaceState {
   terminalFontSize: number;
 
   // Actions
-  addPane: (podKey: string, title?: string) => string;
+  addPane: (podKey: string) => string;
   removePane: (paneId: string) => void;
   setActivePane: (paneId: string | null) => void;
   updatePanePosition: (paneId: string, position: TerminalPane["gridPosition"]) => void;
-  updatePaneTitle: (podKey: string, title: string) => void;
   setGridLayout: (layout: GridLayout) => void;
   setMobileActiveIndex: (index: number) => void;
   setTerminalFontSize: (size: number) => void;
@@ -88,7 +85,7 @@ interface WorkspaceState {
   setHasHydrated: (state: boolean) => void;
 }
 
-const generatePaneId = () => `pane-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generatePaneId = () => `pane-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
 export const useWorkspaceStore = create<WorkspaceState>()(
   persist(
@@ -100,20 +97,19 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       terminalFontSize: 14,
       _hasHydrated: false,
 
-      addPane: (podKey, title) => {
-        const existingPane = get().panes.find((p) => p.podKey === podKey);
-        if (existingPane) {
-          set({ activePane: existingPane.id });
+      addPane: (podKey) => {
+        const panes = get().panes;
+        const existingIndex = panes.findIndex((p) => p.podKey === podKey);
+        if (existingIndex >= 0) {
+          const existingPane = panes[existingIndex];
+          set({ activePane: existingPane.id, mobileActiveIndex: existingIndex });
           return existingPane.id;
         }
 
         const id = generatePaneId();
-        const panes = get().panes;
         const newPane: TerminalPane = {
           id,
           podKey,
-          title: title || `Pod ${podKey.substring(0, 8)}`,
-          isActive: true,
           gridPosition: {
             x: panes.length % 2,
             y: Math.floor(panes.length / 2),
@@ -123,8 +119,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         };
 
         set((state) => ({
-          panes: [...state.panes.map((p) => ({ ...p, isActive: false })), newPane],
+          panes: [...state.panes, newPane],
           activePane: id,
+          mobileActiveIndex: state.panes.length,
         }));
 
         return id;
@@ -132,32 +129,44 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
       removePane: (paneId) => {
         set((state) => {
+          const removedIndex = state.panes.findIndex((p) => p.id === paneId);
           const newPanes = state.panes.filter((p) => p.id !== paneId);
           const wasActive = state.activePane === paneId;
+
+          let newMobileIndex: number;
+          if (wasActive) {
+            // Active pane removed — fall back to first pane
+            newMobileIndex = 0;
+          } else if (removedIndex >= 0 && removedIndex < state.mobileActiveIndex) {
+            // Non-active pane removed BEFORE current index — shift down
+            newMobileIndex = state.mobileActiveIndex - 1;
+          } else {
+            newMobileIndex = state.mobileActiveIndex;
+          }
+          // Safety clamp
+          newMobileIndex = Math.min(newMobileIndex, Math.max(0, newPanes.length - 1));
+
           return {
             panes: newPanes,
             activePane: wasActive ? (newPanes[0]?.id || null) : state.activePane,
-            mobileActiveIndex: Math.min(state.mobileActiveIndex, Math.max(0, newPanes.length - 1)),
+            mobileActiveIndex: newMobileIndex,
           };
         });
       },
 
       setActivePane: (paneId) => {
-        set((state) => ({
-          panes: state.panes.map((p) => ({ ...p, isActive: p.id === paneId })),
-          activePane: paneId,
-        }));
+        set((state) => {
+          const mobileIndex = paneId ? state.panes.findIndex((p) => p.id === paneId) : 0;
+          return {
+            activePane: paneId,
+            mobileActiveIndex: Math.max(0, mobileIndex),
+          };
+        });
       },
 
       updatePanePosition: (paneId, position) => {
         set((state) => ({
           panes: state.panes.map((p) => (p.id === paneId ? { ...p, gridPosition: position } : p)),
-        }));
-      },
-
-      updatePaneTitle: (podKey, title) => {
-        set((state) => ({
-          panes: state.panes.map((p) => (p.podKey === podKey ? { ...p, title } : p)),
         }));
       },
 
@@ -190,6 +199,25 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     }),
     {
       name: "agentsmesh-workspace",
+      version: 2,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as Record<string, unknown>;
+        if (version < 1 && Array.isArray(state.panes)) {
+          // v0 → v1: remove obsolete `title` field from persisted panes
+          state.panes = (state.panes as Record<string, unknown>[]).map(
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            ({ title, ...rest }) => rest,
+          );
+        }
+        if (version < 2 && Array.isArray(state.panes)) {
+          // v1 → v2: remove obsolete `isActive` field (derived from activePane now)
+          state.panes = (state.panes as Record<string, unknown>[]).map(
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            ({ isActive, ...rest }) => rest,
+          );
+        }
+        return state as WorkspaceState;
+      },
       partialize: (state) => ({
         panes: state.panes,
         activePane: state.activePane,

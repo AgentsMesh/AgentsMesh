@@ -39,28 +39,27 @@ describe("Workspace Store", () => {
 
       expect(result.current.panes).toHaveLength(1);
       expect(result.current.panes[0].podKey).toBe("pod-123");
-      expect(result.current.panes[0].isActive).toBe(true);
       expect(result.current.activePane).toBe(paneId!);
     });
 
-    it("should use custom title when provided", () => {
+    it("should add a new pane with podKey", () => {
       const { result } = renderHook(() => useWorkspaceStore());
 
       act(() => {
-        result.current.addPane("pod-123", "My Terminal");
+        result.current.addPane("pod-123");
       });
 
-      expect(result.current.panes[0].title).toBe("My Terminal");
+      expect(result.current.panes[0].podKey).toBe("pod-123");
     });
 
-    it("should generate default title from podKey", () => {
+    it("should assign grid position based on pane index", () => {
       const { result } = renderHook(() => useWorkspaceStore());
 
       act(() => {
         result.current.addPane("pod-abc12345");
       });
 
-      expect(result.current.panes[0].title).toBe("Pod pod-abc1");
+      expect(result.current.panes[0].gridPosition).toEqual({ x: 0, y: 0, w: 1, h: 1 });
     });
 
     it("should return existing pane id if pod already open", () => {
@@ -151,8 +150,6 @@ describe("Workspace Store", () => {
       });
 
       expect(result.current.activePane).toBe(firstId!);
-      expect(result.current.panes[0].isActive).toBe(true);
-      expect(result.current.panes[1].isActive).toBe(false);
     });
 
     it("should set active pane to null", () => {
@@ -267,13 +264,12 @@ describe("Workspace Store", () => {
       const { result } = renderHook(() => useWorkspaceStore());
 
       act(() => {
-        result.current.addPane("pod-123", "Test Terminal");
+        result.current.addPane("pod-123");
       });
 
       const pane = result.current.getPaneByPodKey("pod-123");
       expect(pane).toBeDefined();
       expect(pane?.podKey).toBe("pod-123");
-      expect(pane?.title).toBe("Test Terminal");
     });
 
     it("should return undefined for non-existent podKey", () => {
@@ -293,6 +289,153 @@ describe("Workspace Store", () => {
       });
 
       expect(result.current._hasHydrated).toBe(true);
+    });
+  });
+
+  describe("mobileActiveIndex sync", () => {
+    it("setActivePane should sync mobileActiveIndex", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      let firstId: string;
+      act(() => {
+        firstId = result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+        result.current.addPane("pod-3");
+      });
+
+      // Active is last pane (index 2)
+      expect(result.current.mobileActiveIndex).toBe(2);
+
+      // Switch to first pane
+      act(() => {
+        result.current.setActivePane(firstId!);
+      });
+
+      expect(result.current.activePane).toBe(firstId!);
+      expect(result.current.mobileActiveIndex).toBe(0);
+    });
+
+    it("setActivePane(null) should reset mobileActiveIndex to 0", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      act(() => {
+        result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+      });
+
+      act(() => {
+        result.current.setActivePane(null);
+      });
+
+      expect(result.current.mobileActiveIndex).toBe(0);
+    });
+
+    it("addPane (existing pod) should sync mobileActiveIndex", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      act(() => {
+        result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+        result.current.addPane("pod-3");
+      });
+
+      // Re-add pod-1 — should switch to index 0
+      act(() => {
+        result.current.addPane("pod-1");
+      });
+
+      expect(result.current.activePane).toBe(result.current.panes[0].id);
+      expect(result.current.mobileActiveIndex).toBe(0);
+    });
+
+    it("addPane (new pod) should set mobileActiveIndex to new pane index", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      act(() => {
+        result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+      });
+
+      act(() => {
+        result.current.addPane("pod-3");
+      });
+
+      // New pane appended at index 2
+      expect(result.current.mobileActiveIndex).toBe(2);
+      expect(result.current.panes[2].podKey).toBe("pod-3");
+    });
+
+    it("removePane should shift mobileActiveIndex when removing pane before active", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      act(() => {
+        result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+        result.current.addPane("pod-3");
+      });
+
+      // Switch to middle pane (index 1)
+      act(() => {
+        result.current.setActivePane(result.current.panes[1].id);
+      });
+      expect(result.current.mobileActiveIndex).toBe(1);
+
+      // Remove first pane (before active) — index should shift down
+      act(() => {
+        result.current.removePane(result.current.panes[0].id);
+      });
+
+      expect(result.current.panes).toHaveLength(2);
+      expect(result.current.panes[0].podKey).toBe("pod-2");
+      expect(result.current.mobileActiveIndex).toBe(0);
+      expect(result.current.activePane).toBe(result.current.panes[0].id);
+    });
+
+    it("removePane (active pane) should reset mobileActiveIndex to 0", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      act(() => {
+        result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+        result.current.addPane("pod-3");
+      });
+
+      // Active is last pane (index 2)
+      expect(result.current.mobileActiveIndex).toBe(2);
+
+      // Remove active pane — falls back to first
+      act(() => {
+        result.current.removePane(result.current.panes[2].id);
+      });
+
+      expect(result.current.panes).toHaveLength(2);
+      expect(result.current.activePane).toBe(result.current.panes[0].id);
+      expect(result.current.mobileActiveIndex).toBe(0);
+    });
+
+    it("removePane should not shift mobileActiveIndex when removing pane after active", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      act(() => {
+        result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+        result.current.addPane("pod-3");
+      });
+
+      // Switch to first pane (index 0)
+      act(() => {
+        result.current.setActivePane(result.current.panes[0].id);
+      });
+      expect(result.current.mobileActiveIndex).toBe(0);
+
+      // Remove last pane (after active) — index stays
+      act(() => {
+        result.current.removePane(result.current.panes[2].id);
+      });
+
+      expect(result.current.panes).toHaveLength(2);
+      expect(result.current.mobileActiveIndex).toBe(0);
+      expect(result.current.activePane).toBe(result.current.panes[0].id);
     });
   });
 });

@@ -91,10 +91,12 @@ function getSidebarContent(
  * available on desktop (e.g., ticket lists, channel lists, etc.)
  */
 export function MobileSidebar({ className }: MobileSidebarProps) {
-  const { activeActivity, mobileSidebarOpen, setMobileSidebarOpen } = useIDEStore();
-  const { currentOrg } = useAuthStore();
-  const { addPane } = useWorkspaceStore();
-  const { fetchPods } = usePodStore();
+  const activeActivity = useIDEStore((s) => s.activeActivity);
+  const mobileSidebarOpen = useIDEStore((s) => s.mobileSidebarOpen);
+  const setMobileSidebarOpen = useIDEStore((s) => s.setMobileSidebarOpen);
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const addPane = useWorkspaceStore((s) => s.addPane);
+  const fetchPods = usePodStore((s) => s.fetchPods);
 
   // Modal states
   const [createPodModalOpen, setCreatePodModalOpen] = useState(false);
@@ -113,7 +115,7 @@ export function MobileSidebar({ className }: MobileSidebarProps) {
       toast.info("Pod created! Waiting for it to start...", {
         description: `Pod: ${displayName}`,
       });
-      addPane(pod.pod_key, displayName);
+      addPane(pod.pod_key);
       fetchPods();
     }
   }, [addPane, fetchPods]);

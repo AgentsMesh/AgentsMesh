@@ -23,7 +23,10 @@ export function GeneralSettings({ org, t }: GeneralSettingsProps) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const router = useRouter();
-  const { currentOrg, organizations, setCurrentOrg, setOrganizations } = useAuthStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const organizations = useAuthStore((s) => s.organizations);
+  const setCurrentOrg = useAuthStore((s) => s.setCurrentOrg);
+  const setOrganizations = useAuthStore((s) => s.setOrganizations);
 
   const deleteOrgDialog = useConfirmDialog({
     title: t("settings.dangerZone.title"),

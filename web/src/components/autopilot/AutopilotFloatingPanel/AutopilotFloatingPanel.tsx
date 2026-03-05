@@ -25,9 +25,11 @@ export function AutopilotFloatingPanel({
   onClose,
 }: AutopilotFloatingPanelProps) {
   const [activeTab, setActiveTab] = React.useState<"thinking" | "progress" | "history">("thinking");
-  const { getThinking } = useAutopilotStore();
 
-  const thinking = getThinking(autopilotController.autopilot_controller_key);
+  // Reactive thinking selector — re-renders when this controller's thinking changes
+  const thinking = useAutopilotStore(
+    (s) => s.thinking[autopilotController.autopilot_controller_key] ?? null
+  );
 
   // Auto switch to thinking tab when help is needed
   React.useEffect(() => {

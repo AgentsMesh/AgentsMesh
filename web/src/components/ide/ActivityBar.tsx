@@ -43,8 +43,9 @@ interface ActivityBarProps {
 }
 
 export function ActivityBar({ className }: ActivityBarProps) {
-  const { activeActivity, setActiveActivity } = useIDEStore();
-  const { currentOrg } = useAuthStore();
+  const activeActivity = useIDEStore((s) => s.activeActivity);
+  const setActiveActivity = useIDEStore((s) => s.setActiveActivity);
+  const currentOrg = useAuthStore((s) => s.currentOrg);
   const params = useParams();
   const pathname = usePathname();
   const orgSlug = currentOrg?.slug || (params.org as string) || "";

@@ -22,13 +22,17 @@ interface AutopilotPanelContentProps {
 
 export function AutopilotPanelContent({ podKey, className }: AutopilotPanelContentProps) {
   const [activeTab, setActiveTab] = React.useState<"thinking" | "progress" | "history">("thinking");
-  const { getAutopilotControllerByPodKey, getThinking } = useAutopilotStore();
-
-  // Get autopilot controller for selected pod
-  const autopilotController = podKey ? getAutopilotControllerByPodKey(podKey) : undefined;
-  const thinking = autopilotController
-    ? getThinking(autopilotController.autopilot_controller_key)
-    : null;
+  // Reactive selectors — re-render only when the matched controller or its thinking changes
+  const activePhases = ["initializing", "running", "paused", "user_takeover", "waiting_approval"];
+  const autopilotController = useAutopilotStore((s) =>
+    podKey
+      ? s.autopilotControllers.find((c) => c.pod_key === podKey && activePhases.includes(c.phase))
+      : undefined
+  );
+  const autopilotControllerKey = autopilotController?.autopilot_controller_key;
+  const thinking = useAutopilotStore((s) =>
+    autopilotControllerKey ? s.thinking[autopilotControllerKey] ?? null : null
+  );
 
   // Auto switch to thinking tab when help is needed
   const decisionType = thinking?.decision_type;

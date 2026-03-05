@@ -47,23 +47,21 @@ export default function LoopDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
   const orgSlug = params.org as string;
-  const {
-    currentLoop,
-    runs,
-    runsLoading,
-    runsTotalCount,
-    loading,
-    error,
-    fetchLoop,
-    fetchRuns,
-    triggerLoop,
-    cancelRun,
-    enableLoop,
-    disableLoop,
-    deleteLoop,
-    loadMoreRuns,
-    clearError,
-  } = useLoopStore();
+  const currentLoop = useLoopStore((s) => s.currentLoop);
+  const runs = useLoopStore((s) => s.runs);
+  const runsLoading = useLoopStore((s) => s.runsLoading);
+  const runsTotalCount = useLoopStore((s) => s.runsTotalCount);
+  const loopLoading = useLoopStore((s) => s.loopLoading);
+  const error = useLoopStore((s) => s.error);
+  const fetchLoop = useLoopStore((s) => s.fetchLoop);
+  const fetchRuns = useLoopStore((s) => s.fetchRuns);
+  const triggerLoop = useLoopStore((s) => s.triggerLoop);
+  const cancelRun = useLoopStore((s) => s.cancelRun);
+  const enableLoop = useLoopStore((s) => s.enableLoop);
+  const disableLoop = useLoopStore((s) => s.disableLoop);
+  const deleteLoop = useLoopStore((s) => s.deleteLoop);
+  const loadMoreRuns = useLoopStore((s) => s.loadMoreRuns);
+  const clearError = useLoopStore((s) => s.clearError);
 
   const [editOpen, setEditOpen] = useState(false);
   const [triggering, setTriggering] = useState(false);
@@ -74,7 +72,7 @@ export default function LoopDetailPage() {
     variant: "destructive",
   });
 
-  const { setCurrentLoop } = useLoopStore();
+  const setCurrentLoop = useLoopStore((s) => s.setCurrentLoop);
 
   useEffect(() => {
     fetchLoop(slug);
@@ -158,7 +156,7 @@ export default function LoopDetailPage() {
     }
   }, [slug, deleteLoop, deleteDialog, router, orgSlug, t]);
 
-  if (loading && !currentLoop) {
+  if (loopLoading && !currentLoop) {
     return <CenteredSpinner className="h-full" />;
   }
 

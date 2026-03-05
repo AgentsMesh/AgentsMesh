@@ -17,6 +17,9 @@ import {
   Send,
 } from "lucide-react";
 
+// Stable empty array — avoids new reference on every selector call
+const EMPTY_HISTORY: never[] = [];
+
 interface AutopilotThinkingPanelProps {
   autopilotControllerKey: string;
   className?: string;
@@ -83,10 +86,11 @@ export function AutopilotThinkingPanel({
   className,
   showHistory = false,
 }: AutopilotThinkingPanelProps) {
-  const { getThinking, getThinkingHistory } = useAutopilotStore();
-
-  const thinking = getThinking(autopilotControllerKey);
-  const history = showHistory ? getThinkingHistory(autopilotControllerKey) : [];
+  // Reactive selectors — re-render when this controller's thinking/history changes
+  const thinking = useAutopilotStore((s) => s.thinking[autopilotControllerKey] ?? null);
+  const history = useAutopilotStore((s) =>
+    showHistory ? s.thinkingHistory[autopilotControllerKey] ?? EMPTY_HISTORY : EMPTY_HISTORY
+  );
 
   if (!thinking) {
     return (

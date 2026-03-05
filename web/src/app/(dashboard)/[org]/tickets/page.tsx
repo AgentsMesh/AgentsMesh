@@ -16,7 +16,6 @@ export default function TicketsPage() {
   const { currentOrg } = useAuthStore();
 
   // Use individual selectors to prevent re-renders from unrelated store changes
-  const loading = useTicketStore(state => state.loading);
   const viewMode = useTicketStore(state => state.viewMode);
   const fetchTickets = useTicketStore(state => state.fetchTickets);
   const updateTicketStatus = useTicketStore(state => state.updateTicketStatus);
@@ -26,12 +25,15 @@ export default function TicketsPage() {
   // Keyboard-selected ticket for J/K navigation highlighting
   const [keyboardSelectedSlug, setKeyboardSelectedSlug] = useState<string | null>(null);
 
+  // Local loading state — store's shared `loading` is no longer set by async actions
+  const [loading, setLoading] = useState(true);
+
   // State for auto-triggered create pod modal (when dragging ticket to in_progress)
   const [createPodTicket, setCreatePodTicket] = useState<Ticket | null>(null);
 
   // Load tickets on mount
   useEffect(() => {
-    fetchTickets();
+    fetchTickets().finally(() => setLoading(false));
   }, [fetchTickets]);
 
   const handleStatusChange = useCallback(async (slug: string, newStatus: TicketStatus) => {

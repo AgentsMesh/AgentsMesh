@@ -82,7 +82,9 @@ export const useAutopilotStore = create<AutopilotState>((set, get) => ({
   },
 
   fetchAutopilotController: async (key) => {
-    set({ loading: true, error: null });
+    // NOTE: Do NOT set shared `loading` here — this fetches a single controller
+    // and should not interfere with fetchAutopilotControllers (list).
+    set({ error: null });
     try {
       const controller = await autopilotApi.get(key);
       set((state) => {
@@ -98,32 +100,25 @@ export const useAutopilotStore = create<AutopilotState>((set, get) => ({
         return {
           autopilotControllers: updatedControllers,
           currentAutopilotController: controller,
-          loading: false,
         };
       });
     } catch (error: unknown) {
-      set({
-        error: getErrorMessage(error, "Failed to fetch AutopilotController"),
-        loading: false,
-      });
+      set({ error: getErrorMessage(error, "Failed to fetch AutopilotController") });
     }
   },
 
   createAutopilotController: async (data) => {
-    set({ loading: true, error: null });
+    // NOTE: Do NOT set shared `loading` here — creation is independent of list fetch.
+    set({ error: null });
     try {
       const controller = await autopilotApi.create(data);
       set((state) => ({
         autopilotControllers: [...state.autopilotControllers, controller],
         currentAutopilotController: controller,
-        loading: false,
       }));
       return controller;
     } catch (error: unknown) {
-      set({
-        error: getErrorMessage(error, "Failed to create AutopilotController"),
-        loading: false,
-      });
+      set({ error: getErrorMessage(error, "Failed to create AutopilotController") });
       throw error;
     }
   },
@@ -304,25 +299,41 @@ export const useAutopilotStore = create<AutopilotState>((set, get) => ({
   },
 
   addIteration: (key, iteration) => {
-    set((state) => ({
-      iterations: {
-        ...state.iterations,
-        [key]: [...(state.iterations[key] || []), iteration],
-      },
-    }));
+    set((state) => {
+      const prev = state.iterations[key] || [];
+      // Cap iterations per key to prevent unbounded memory growth
+      const MAX_ITERATIONS = 200;
+      const updated = prev.length >= MAX_ITERATIONS
+        ? [...prev.slice(prev.length - MAX_ITERATIONS + 1), iteration]
+        : [...prev, iteration];
+      return {
+        iterations: {
+          ...state.iterations,
+          [key]: updated,
+        },
+      };
+    });
   },
 
   updateThinking: (key, thinking) => {
-    set((state) => ({
-      thinking: {
-        ...state.thinking,
-        [key]: thinking,
-      },
-      thinkingHistory: {
-        ...state.thinkingHistory,
-        [key]: [...(state.thinkingHistory[key] || []), thinking],
-      },
-    }));
+    set((state) => {
+      const prev = state.thinkingHistory[key] || [];
+      // Cap history at 100 entries to prevent unbounded memory growth
+      const MAX_THINKING_HISTORY = 100;
+      const updated = prev.length >= MAX_THINKING_HISTORY
+        ? [...prev.slice(prev.length - MAX_THINKING_HISTORY + 1), thinking]
+        : [...prev, thinking];
+      return {
+        thinking: {
+          ...state.thinking,
+          [key]: thinking,
+        },
+        thinkingHistory: {
+          ...state.thinkingHistory,
+          [key]: updated,
+        },
+      };
+    });
   },
 
   setCurrentAutopilotController: (controller) => {

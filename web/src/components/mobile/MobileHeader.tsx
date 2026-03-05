@@ -18,8 +18,10 @@ interface MobileHeaderProps {
 }
 
 export function MobileHeader({ className, title, actions }: MobileHeaderProps) {
-  const { activeActivity, setMobileDrawerOpen, setMobileSidebarOpen } = useIDEStore();
-  const { currentOrg } = useAuthStore();
+  const activeActivity = useIDEStore((s) => s.activeActivity);
+  const setMobileDrawerOpen = useIDEStore((s) => s.setMobileDrawerOpen);
+  const setMobileSidebarOpen = useIDEStore((s) => s.setMobileSidebarOpen);
+  const currentOrg = useAuthStore((s) => s.currentOrg);
   const params = useParams();
   const t = useTranslations();
   const orgSlug = currentOrg?.slug || (params.org as string) || "";

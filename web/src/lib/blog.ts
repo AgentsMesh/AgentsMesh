@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import matter from "gray-matter";
-import { locales, defaultLocale, type Locale } from "@/lib/i18n/config";
+import { locales, defaultLocale } from "@/lib/i18n/config";
 
 /** Blog post frontmatter fields */
 export interface PostMeta {

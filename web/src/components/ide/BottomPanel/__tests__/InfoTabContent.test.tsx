@@ -7,9 +7,10 @@ import type { PodData } from "@/lib/api/pod";
 let mockPods: PodData[] = [];
 
 vi.mock("@/stores/pod", () => ({
-  usePodStore: () => ({
-    pods: mockPods,
-  }),
+  usePodStore: (selector?: (s: Record<string, unknown>) => unknown) => {
+    const state = { pods: mockPods };
+    return selector ? selector(state) : state;
+  },
 }));
 
 // Mock t function - returns the key for easy assertion

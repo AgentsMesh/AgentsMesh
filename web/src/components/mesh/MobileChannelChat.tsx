@@ -22,18 +22,17 @@ interface MobileChannelChatProps {
  * MobileChannelChat - Full-screen chat panel for mobile devices
  */
 export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps) {
-  const {
-    currentChannel,
-    messages,
-    messagesLoading,
-    loading,
-    fetchChannel,
-    fetchMessages,
-    sendMessage,
-    setCurrentChannel,
-  } = useChannelStore();
+  const currentChannel = useChannelStore((s) => s.currentChannel);
+  const messages = useChannelStore((s) => s.messages);
+  const messagesLoading = useChannelStore((s) => s.messagesLoading);
+  const channelLoading = useChannelStore((s) => s.channelLoading);
+  const fetchChannel = useChannelStore((s) => s.fetchChannel);
+  const fetchMessages = useChannelStore((s) => s.fetchMessages);
+  const sendMessage = useChannelStore((s) => s.sendMessage);
+  const setCurrentChannel = useChannelStore((s) => s.setCurrentChannel);
 
-  const { topology, fetchTopology } = useMeshStore();
+  const topology = useMeshStore((s) => s.topology);
+  const fetchTopology = useMeshStore((s) => s.fetchTopology);
 
   // Load channel and messages when channelId changes
   useEffect(() => {
@@ -120,7 +119,7 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
   }));
 
   // Loading state
-  if (loading && !currentChannel) {
+  if (channelLoading && !currentChannel) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
         <div className="flex-shrink-0 border-b border-border px-4 py-3 flex items-center gap-3">

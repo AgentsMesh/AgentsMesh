@@ -61,7 +61,7 @@ export function CreateTicketDialog({
       onOpenChange(false);
       onCreated?.();
       router.push(`/support/${ticket.id}`);
-    } catch (err) {
+    } catch {
       setError(t("support.error.createFailed"));
     } finally {
       setIsSubmitting(false);

@@ -15,17 +15,20 @@ const mockFetchIterations = vi.fn();
 const mockIterations: Record<string, unknown[]> = {};
 
 vi.mock("@/stores/autopilot", () => ({
-  useAutopilotStore: () => ({
-    getAutopilotControllerByPodKey: () => mockAutopilotController,
-    getThinking: () => mockThinking,
-    pauseAutopilotController: mockPauseAutopilotController,
-    resumeAutopilotController: mockResumeAutopilotController,
-    stopAutopilotController: mockStopAutopilotController,
-    takeoverAutopilotController: mockTakeoverAutopilotController,
-    handbackAutopilotController: mockHandbackAutopilotController,
-    fetchIterations: mockFetchIterations,
-    iterations: mockIterations,
-  }),
+  useAutopilotStore: (selector?: (s: Record<string, unknown>) => unknown) => {
+    const state = {
+      autopilotControllers: mockAutopilotController ? [mockAutopilotController] : [],
+      thinking: { "test-key-123": mockThinking } as Record<string, unknown>,
+      pauseAutopilotController: mockPauseAutopilotController,
+      resumeAutopilotController: mockResumeAutopilotController,
+      stopAutopilotController: mockStopAutopilotController,
+      takeoverAutopilotController: mockTakeoverAutopilotController,
+      handbackAutopilotController: mockHandbackAutopilotController,
+      fetchIterations: mockFetchIterations,
+      iterations: mockIterations,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 // Helper to create mock controller
@@ -176,20 +179,29 @@ describe("AutopilotPanelContent", () => {
   });
 
   describe("phase configurations", () => {
+    // Active phases: component finds the controller and renders its phase label
     it.each([
       ["initializing", "Initializing"],
       ["running", "Running"],
       ["paused", "Paused"],
       ["user_takeover", "User Control"],
       ["waiting_approval", "Waiting Approval"],
-      ["completed", "Completed"],
-      ["failed", "Failed"],
-      ["stopped", "Stopped"],
-      ["max_iterations", "Max Iterations"],
     ] as const)("should display correct label for %s phase", (phase, expectedLabel) => {
       mockAutopilotController = createMockController(phase);
       render(<AutopilotPanelContent podKey="pod-123" />);
       expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+    });
+
+    // Terminal phases: component filters them out (matching getAutopilotControllerByPodKey)
+    it.each([
+      ["completed"],
+      ["failed"],
+      ["stopped"],
+      ["max_iterations"],
+    ] as const)("should show no autopilot message for terminal phase %s", (phase) => {
+      mockAutopilotController = createMockController(phase);
+      render(<AutopilotPanelContent podKey="pod-123" />);
+      expect(screen.getByText("No active Autopilot for this Pod")).toBeInTheDocument();
     });
   });
 

@@ -21,7 +21,12 @@ export function CreateAutopilotControllerModal({
   podKey,
   podTitle,
 }: CreateAutopilotControllerModalProps) {
-  const { createAutopilotController, loading, error, clearError } = useAutopilotStore();
+  const createAutopilotController = useAutopilotStore((s) => s.createAutopilotController);
+  const error = useAutopilotStore((s) => s.error);
+  const clearError = useAutopilotStore((s) => s.clearError);
+
+  // Local submitting state — store's shared `loading` is reserved for list fetch
+  const [submitting, setSubmitting] = useState(false);
 
   // Form state
   const [initialPrompt, setInitialPrompt] = useState("");
@@ -49,6 +54,7 @@ export function CreateAutopilotControllerModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setSubmitting(true);
     try {
       await createAutopilotController({
         pod_key: podKey,
@@ -62,6 +68,8 @@ export function CreateAutopilotControllerModal({
       onClose();
     } catch {
       // Error is handled by store
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -221,8 +229,8 @@ export function CreateAutopilotControllerModal({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Starting...

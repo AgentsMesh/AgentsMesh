@@ -35,6 +35,7 @@ interface ChannelState {
   currentChannel: Channel | null;
   messages: ChannelMessage[];
   loading: boolean;
+  channelLoading: boolean;
   messagesLoading: boolean;
   error: string | null;
 
@@ -78,41 +79,41 @@ export const useChannelStore = create<ChannelState>((set) => ({
   currentChannel: null,
   messages: [],
   loading: false,
+  channelLoading: false,
   messagesLoading: false,
   error: null,
 
   fetchChannels: async (filters) => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       // Convert camelCase to snake_case for API
       const apiFilters = filters ? {
         include_archived: filters.includeArchived,
       } : undefined;
       const response = await channelApi.list(apiFilters);
-      set({ channels: response.channels || [], loading: false });
+      set({ channels: response.channels || [] });
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to fetch channels"),
-        loading: false,
       });
     }
   },
 
   fetchChannel: async (id) => {
-    set({ loading: true, error: null });
+    set({ channelLoading: true, error: null });
     try {
       const response = await channelApi.get(id);
-      set({ currentChannel: response.channel, loading: false });
+      set({ currentChannel: response.channel, channelLoading: false });
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to fetch channel"),
-        loading: false,
+        channelLoading: false,
       });
     }
   },
 
   createChannel: async (data) => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       // Convert camelCase to snake_case for API
       const apiData = {
@@ -125,13 +126,11 @@ export const useChannelStore = create<ChannelState>((set) => ({
       const response = await channelApi.create(apiData);
       set((state) => ({
         channels: [response.channel, ...state.channels],
-        loading: false,
       }));
       return response.channel;
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to create channel"),
-        loading: false,
       });
       throw error;
     }

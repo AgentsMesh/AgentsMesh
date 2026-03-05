@@ -106,13 +106,27 @@ describe("Mesh Store", () => {
   });
 
   describe("fetchTopology", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("should fetch topology successfully", async () => {
       vi.mocked(meshApi.getTopology).mockResolvedValue({
         topology: mockTopology,
       });
 
+      let promise: Promise<void>;
+      act(() => {
+        promise = useMeshStore.getState().fetchTopology();
+      });
+      // Advance past the 500ms debounce window
       await act(async () => {
-        await useMeshStore.getState().fetchTopology();
+        vi.advanceTimersByTime(500);
+        await promise!;
       });
 
       const state = useMeshStore.getState();
@@ -126,8 +140,13 @@ describe("Mesh Store", () => {
         new Error("Network error")
       );
 
+      let promise: Promise<void>;
+      act(() => {
+        promise = useMeshStore.getState().fetchTopology();
+      });
       await act(async () => {
-        await useMeshStore.getState().fetchTopology();
+        vi.advanceTimersByTime(500);
+        await promise!;
       });
 
       const state = useMeshStore.getState();
@@ -138,8 +157,13 @@ describe("Mesh Store", () => {
     it("should handle non-Error rejection", async () => {
       vi.mocked(meshApi.getTopology).mockRejectedValue("Unknown error");
 
+      let promise: Promise<void>;
+      act(() => {
+        promise = useMeshStore.getState().fetchTopology();
+      });
       await act(async () => {
-        await useMeshStore.getState().fetchTopology();
+        vi.advanceTimersByTime(500);
+        await promise!;
       });
 
       const state = useMeshStore.getState();

@@ -12,14 +12,17 @@ const mockHandbackAutopilotController = vi.fn();
 let mockThinking: AutopilotThinking | null = null;
 
 vi.mock("@/stores/autopilot", () => ({
-  useAutopilotStore: () => ({
-    pauseAutopilotController: mockPauseAutopilotController,
-    resumeAutopilotController: mockResumeAutopilotController,
-    stopAutopilotController: mockStopAutopilotController,
-    takeoverAutopilotController: mockTakeoverAutopilotController,
-    handbackAutopilotController: mockHandbackAutopilotController,
-    getThinking: () => mockThinking,
-  }),
+  useAutopilotStore: (selector?: (s: Record<string, unknown>) => unknown) => {
+    const state = {
+      pauseAutopilotController: mockPauseAutopilotController,
+      resumeAutopilotController: mockResumeAutopilotController,
+      stopAutopilotController: mockStopAutopilotController,
+      takeoverAutopilotController: mockTakeoverAutopilotController,
+      handbackAutopilotController: mockHandbackAutopilotController,
+      thinking: { "test-key-123": mockThinking } as Record<string, AutopilotThinking | null>,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 // Helper to create mock controller

@@ -22,14 +22,14 @@ interface SideBarProps {
 export function SideBar({ className, children }: SideBarProps) {
   const router = useRouter();
   const t = useTranslations();
-  const {
-    activeActivity,
-    sidebarOpen,
-    sidebarWidth,
-    setSidebarWidth,
-    toggleSidebar,
-  } = useIDEStore();
-  const { currentOrg, organizations, setCurrentOrg } = useAuthStore();
+  const activeActivity = useIDEStore((s) => s.activeActivity);
+  const sidebarOpen = useIDEStore((s) => s.sidebarOpen);
+  const sidebarWidth = useIDEStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useIDEStore((s) => s.setSidebarWidth);
+  const toggleSidebar = useIDEStore((s) => s.toggleSidebar);
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const organizations = useAuthStore((s) => s.organizations);
+  const setCurrentOrg = useAuthStore((s) => s.setCurrentOrg);
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const orgDropdownRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);

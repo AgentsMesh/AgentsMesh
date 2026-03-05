@@ -208,8 +208,8 @@ function SidebarPodSection({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const { currentOrg } = useAuthStore();
-  const { addPane } = useWorkspaceStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const addPane = useWorkspaceStore((s) => s.addPane);
 
   const [pods, setPods] = useState<TicketPod[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,7 +237,7 @@ function SidebarPodSection({
   };
 
   const handleConnect = (podKey: string) => {
-    addPane(podKey, `${ticketSlug} Pod`);
+    addPane(podKey);
     router.push(`/${currentOrg?.slug}/workspace`);
   };
 

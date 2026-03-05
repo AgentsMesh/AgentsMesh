@@ -102,14 +102,16 @@ export function AutopilotStatusBar({
   className,
   onTogglePanel,
 }: AutopilotStatusBarProps) {
-  const {
-    pauseAutopilotController,
-    resumeAutopilotController,
-    stopAutopilotController,
-    takeoverAutopilotController,
-    handbackAutopilotController,
-    getThinking,
-  } = useAutopilotStore();
+  const pauseAutopilotController = useAutopilotStore((s) => s.pauseAutopilotController);
+  const resumeAutopilotController = useAutopilotStore((s) => s.resumeAutopilotController);
+  const stopAutopilotController = useAutopilotStore((s) => s.stopAutopilotController);
+  const takeoverAutopilotController = useAutopilotStore((s) => s.takeoverAutopilotController);
+  const handbackAutopilotController = useAutopilotStore((s) => s.handbackAutopilotController);
+
+  // Reactive thinking selector — re-renders when this controller's thinking changes
+  const thinking: AutopilotThinking | null = useAutopilotStore(
+    (s) => s.thinking[autopilotController.autopilot_controller_key] ?? null
+  );
 
   const phaseInfo = phaseConfig[autopilotController.phase];
   const progress =
@@ -118,9 +120,6 @@ export function AutopilotStatusBar({
   const isActive = ["initializing", "running", "paused", "user_takeover", "waiting_approval"].includes(
     autopilotController.phase
   );
-
-  // Get latest thinking for reasoning display
-  const thinking: AutopilotThinking | null = getThinking(autopilotController.autopilot_controller_key);
   const reasoningText = thinking?.reasoning;
 
   // Is needing help?

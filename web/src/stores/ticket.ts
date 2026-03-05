@@ -100,49 +100,43 @@ export const useTicketStore = create<TicketState>((set, get) => ({
 
   fetchTickets: async (filters) => {
     const mergedFilters = { ...get().filters, ...filters };
-    set({ loading: true, error: null, filters: mergedFilters });
+    set({ error: null, filters: mergedFilters });
     try {
       const response = await ticketApi.list(mergedFilters);
       set({
         tickets: response.tickets || [],
         totalCount: response.total || 0,
-        loading: false,
       });
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to fetch tickets"),
-        loading: false,
       });
     }
   },
 
   fetchTicket: async (slug) => {
-    set({ loading: true, error: null });
     try {
       const ticket = await ticketApi.get(slug);
-      set({ currentTicket: ticket, loading: false });
+      set({ currentTicket: ticket });
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to fetch ticket"),
-        loading: false,
       });
     }
   },
 
   createTicket: async (data) => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       const ticket = await ticketApi.create(data);
       set((state) => ({
         tickets: [ticket, ...state.tickets],
         totalCount: state.totalCount + 1,
-        loading: false,
       }));
       return ticket;
     } catch (error: unknown) {
       set({
         error: getErrorMessage(error, "Failed to create ticket"),
-        loading: false,
       });
       throw error;
     }

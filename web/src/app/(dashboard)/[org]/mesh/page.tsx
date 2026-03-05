@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { MeshTopology } from "@/components/mesh";
@@ -12,15 +12,14 @@ import { cn } from "@/lib/utils";
 
 export default function MeshPage() {
   const t = useTranslations();
-  const {
-    topology,
-    selectedChannel,
-    loading,
-    error,
-    fetchTopology,
-    selectChannel,
-    clearError,
-  } = useMeshStore();
+  // Granular selectors — subscribe only to fields actually used
+  const topology = useMeshStore((s) => s.topology);
+  const selectedChannel = useMeshStore((s) => s.selectedChannel);
+  const loading = useMeshStore((s) => s.loading);
+  const error = useMeshStore((s) => s.error);
+  const fetchTopology = useMeshStore((s) => s.fetchTopology);
+  const selectChannel = useMeshStore((s) => s.selectChannel);
+  const clearError = useMeshStore((s) => s.clearError);
 
   const { isMobile } = useBreakpoint();
 
@@ -28,11 +27,17 @@ export default function MeshPage() {
     fetchTopology();
   }, [fetchTopology]);
 
-  const activePodCount = topology?.nodes.filter(
-    (n) => n.status === "running" || n.status === "initializing"
-  ).length || 0;
+  const activePodCount = useMemo(() =>
+    topology?.nodes.filter(
+      (n) => n.status === "running" || n.status === "initializing"
+    ).length || 0,
+    [topology?.nodes]
+  );
 
-  const activeChannelCount = topology?.channels.filter((c) => !c.is_archived).length || 0;
+  const activeChannelCount = useMemo(() =>
+    topology?.channels.filter((c) => !c.is_archived).length || 0,
+    [topology?.channels]
+  );
 
   // Handle closing the chat panel
   const handleCloseChat = useCallback(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
@@ -27,18 +27,15 @@ interface MeshSidebarContentProps {
 export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
   const router = useRouter();
   const t = useTranslations();
-  const { currentOrg } = useAuthStore();
-  const {
-    topology,
-    loading,
-    selectedNode,
-    selectedChannel,
-    fetchTopology,
-    selectNode,
-    selectChannel,
-    getChannelsForNode,
-  } = useMeshStore();
-  const { addPane } = useWorkspaceStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const topology = useMeshStore((s) => s.topology);
+  const loading = useMeshStore((s) => s.loading);
+  const selectedNode = useMeshStore((s) => s.selectedNode);
+  const selectedChannel = useMeshStore((s) => s.selectedChannel);
+  const fetchTopology = useMeshStore((s) => s.fetchTopology);
+  const selectNode = useMeshStore((s) => s.selectNode);
+  const selectChannel = useMeshStore((s) => s.selectChannel);
+  const addPane = useWorkspaceStore((s) => s.addPane);
 
   // State
   const [refreshing, setRefreshing] = useState(false);
@@ -63,28 +60,35 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
     }
   }, [fetchTopology]);
 
-  // Filter channels
-  const filteredChannels = (topology?.channels || []).filter((channel) => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      if (!channel.name.toLowerCase().includes(query)) return false;
-    }
-    return true;
-  });
+  // Filter channels — memoized to avoid new array ref on every render
+  const filteredChannels = useMemo(() => {
+    return (topology?.channels || []).filter((channel) => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        if (!channel.name.toLowerCase().includes(query)) return false;
+      }
+      return true;
+    });
+  }, [topology?.channels, searchQuery]);
 
-  // Filter nodes
-  const filteredNodes = (topology?.nodes || []).filter((node) => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesPodKey = node.pod_key.toLowerCase().includes(query);
-      const matchesModel = node.model?.toLowerCase().includes(query);
-      if (!matchesPodKey && !matchesModel) return false;
-    }
-    return true;
-  });
+  // Filter nodes — memoized to avoid new array ref on every render
+  const filteredNodes = useMemo(() => {
+    return (topology?.nodes || []).filter((node) => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesPodKey = node.pod_key.toLowerCase().includes(query);
+        const matchesModel = node.model?.toLowerCase().includes(query);
+        if (!matchesPodKey && !matchesModel) return false;
+      }
+      return true;
+    });
+  }, [topology?.nodes, searchQuery]);
 
-  // Stats
-  const activeNodes = topology?.nodes.filter(n => n.status === "running" || n.status === "initializing").length || 0;
+  // Stats — memoized to avoid recalc on every render
+  const activeNodes = useMemo(
+    () => topology?.nodes.filter(n => n.status === "running" || n.status === "initializing").length || 0,
+    [topology?.nodes]
+  );
   const totalChannels = topology?.channels.length || 0;
   const totalBindings = topology?.edges.length || 0;
 
@@ -101,20 +105,30 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
   // Open terminal for pod
   const handleOpenTerminal = (podKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    addPane(podKey, podKey);
+    addPane(podKey);
     router.push(`/${currentOrg?.slug}/workspace`);
   };
 
-  // Get selected node details
-  const selectedNodeData = selectedNode
-    ? topology?.nodes.find(n => n.pod_key === selectedNode)
-    : null;
-  const selectedNodeChannels = selectedNode ? getChannelsForNode(selectedNode) : [];
+  // Get selected node details — memoized, computed directly from topology
+  // (imperative store methods like getChannelsForNode have stable refs that
+  // won't trigger useMemo re-computation when topology updates)
+  const selectedNodeData = useMemo(
+    () => selectedNode ? topology?.nodes.find(n => n.pod_key === selectedNode) ?? null : null,
+    [selectedNode, topology?.nodes]
+  );
+  const selectedNodeChannels = useMemo(
+    () => {
+      if (!selectedNode || !topology) return [];
+      return topology.channels.filter(c => c.pod_keys.includes(selectedNode));
+    },
+    [selectedNode, topology]
+  );
 
   // Get selected channel details
-  const selectedChannelData = selectedChannel
-    ? topology?.channels.find(c => c.id === selectedChannel)
-    : null;
+  const selectedChannelData = useMemo(
+    () => selectedChannel ? topology?.channels.find(c => c.id === selectedChannel) ?? null : null,
+    [selectedChannel, topology?.channels]
+  );
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -191,8 +205,8 @@ export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
 
       {/* Selected node/channel details */}
       <MeshSelectedDetails
-        selectedNode={selectedNodeData || null}
-        selectedChannel={selectedChannelData || null}
+        selectedNode={selectedNodeData}
+        selectedChannel={selectedChannelData}
         nodeChannels={selectedNodeChannels}
         onOpenTerminal={handleOpenTerminal}
         t={t}

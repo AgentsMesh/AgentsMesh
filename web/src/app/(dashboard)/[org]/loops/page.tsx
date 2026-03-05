@@ -17,8 +17,15 @@ export default function LoopsPage() {
   const t = useTranslations();
   const router = useRouter();
   const { currentOrg } = useAuthStore();
-  const { loops, loading, error, fetchLoops, triggerLoop, enableLoop, disableLoop, deleteLoop, clearError } =
-    useLoopStore();
+  const loops = useLoopStore((s) => s.loops);
+  const loading = useLoopStore((s) => s.loading);
+  const error = useLoopStore((s) => s.error);
+  const fetchLoops = useLoopStore((s) => s.fetchLoops);
+  const triggerLoop = useLoopStore((s) => s.triggerLoop);
+  const enableLoop = useLoopStore((s) => s.enableLoop);
+  const disableLoop = useLoopStore((s) => s.disableLoop);
+  const deleteLoop = useLoopStore((s) => s.deleteLoop);
+  const clearError = useLoopStore((s) => s.clearError);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editLoop, setEditLoop] = useState<LoopData | null>(null);

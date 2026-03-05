@@ -43,33 +43,31 @@ const TAB_IDS: BottomPanelTab[] = ["channels", "activity", "autopilot", "deliver
 
 export function BottomPanel({ className }: BottomPanelProps) {
   const t = useTranslations();
-  const {
-    bottomPanelOpen,
-    bottomPanelHeight,
-    bottomPanelTab,
-    setBottomPanelOpen,
-    setBottomPanelHeight,
-    setBottomPanelTab,
-    toggleBottomPanel,
-  } = useIDEStore();
+  const bottomPanelOpen = useIDEStore((s) => s.bottomPanelOpen);
+  const bottomPanelHeight = useIDEStore((s) => s.bottomPanelHeight);
+  const bottomPanelTab = useIDEStore((s) => s.bottomPanelTab);
+  const setBottomPanelOpen = useIDEStore((s) => s.setBottomPanelOpen);
+  const setBottomPanelHeight = useIDEStore((s) => s.setBottomPanelHeight);
+  const setBottomPanelTab = useIDEStore((s) => s.setBottomPanelTab);
+  const toggleBottomPanel = useIDEStore((s) => s.toggleBottomPanel);
 
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useAuthStore((s) => s.currentOrg);
   const orgSlug = currentOrg?.slug || "";
 
-  const { panes, activePane } = useWorkspaceStore();
-  const { topology, getChannelsForNode, getEdgesForNode, fetchTopology } = useMeshStore();
+  const panes = useWorkspaceStore((s) => s.panes);
+  const activePane = useWorkspaceStore((s) => s.activePane);
+  const topology = useMeshStore((s) => s.topology);
+  const fetchTopology = useMeshStore((s) => s.fetchTopology);
 
   // Channel detail state
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
-  const {
-    currentChannel,
-    messages,
-    messagesLoading,
-    fetchChannel,
-    fetchMessages,
-    sendMessage,
-    setCurrentChannel,
-  } = useChannelStore();
+  const currentChannel = useChannelStore((s) => s.currentChannel);
+  const messages = useChannelStore((s) => s.messages);
+  const messagesLoading = useChannelStore((s) => s.messagesLoading);
+  const fetchChannel = useChannelStore((s) => s.fetchChannel);
+  const fetchMessages = useChannelStore((s) => s.fetchMessages);
+  const sendMessage = useChannelStore((s) => s.sendMessage);
+  const setCurrentChannel = useChannelStore((s) => s.setCurrentChannel);
 
   const resizeRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -102,27 +100,33 @@ export function BottomPanel({ className }: BottomPanelProps) {
     return pane?.podKey ?? null;
   }, [activePane, panes]);
 
-  // Get current pod data for Delivery tab
-  const { pods } = usePodStore();
-  const currentPod = useMemo(() => {
-    if (!selectedPodKey) return null;
-    return pods.find((p) => p.pod_key === selectedPodKey) || null;
-  }, [selectedPodKey, pods]);
+  // Get current pod data for Delivery tab — reactive selector
+  const currentPod = usePodStore((s) =>
+    selectedPodKey ? s.pods.find((p) => p.pod_key === selectedPodKey) ?? null : null
+  );
 
-  // Get autopilot status for the selected pod
-  const { getAutopilotControllerByPodKey } = useAutopilotStore();
-  const activeAutopilot = selectedPodKey ? getAutopilotControllerByPodKey(selectedPodKey) : undefined;
+  // Reactive autopilot selector — re-renders when controller for this pod changes
+  const activePhases = ["initializing", "running", "paused", "user_takeover", "waiting_approval"];
+  const activeAutopilot = useAutopilotStore((s) =>
+    selectedPodKey
+      ? s.autopilotControllers.find((c) => c.pod_key === selectedPodKey && activePhases.includes(c.phase))
+      : undefined
+  );
 
-  // Get channels and bindings for selected pod
+  // Get channels and bindings for selected pod — compute directly from topology
+  // (imperative store methods like getChannelsForNode have stable refs that
+  // won't trigger useMemo re-computation when topology updates)
   const podChannels = useMemo(() => {
-    if (!selectedPodKey) return [];
-    return getChannelsForNode(selectedPodKey);
-  }, [selectedPodKey, getChannelsForNode]);
+    if (!selectedPodKey || !topology) return [];
+    return topology.channels.filter((c) => c.pod_keys.includes(selectedPodKey));
+  }, [selectedPodKey, topology]);
 
   const podEdges = useMemo(() => {
-    if (!selectedPodKey) return [];
-    return getEdgesForNode(selectedPodKey);
-  }, [selectedPodKey, getEdgesForNode]);
+    if (!selectedPodKey || !topology) return [];
+    return topology.edges.filter(
+      (e) => e.source === selectedPodKey || e.target === selectedPodKey
+    );
+  }, [selectedPodKey, topology]);
 
   // Separate incoming and outgoing bindings
   const { incomingBindings, outgoingBindings } = useMemo(() => {
