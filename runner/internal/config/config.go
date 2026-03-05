@@ -96,7 +96,7 @@ func Load(configFile string) (*Config, error) {
 	v := viper.New()
 
 	// Set defaults
-	v.SetDefault("server_url", "https://api.agentsmesh.ai")
+	v.SetDefault("server_url", "https://agentsmesh.ai")
 	v.SetDefault("max_concurrent_pods", 5)
 	v.SetDefault("workspace_root", "/workspace")
 	v.SetDefault("mcp_port", 19000)

@@ -173,7 +173,7 @@ function Show-NextSteps {
     Write-Success "Next steps:"
     Write-Host ""
     Write-Host "  1. Register your runner:" -ForegroundColor White
-    Write-Host "     agentsmesh-runner register --server https://api.agentsmesh.ai --token <YOUR_TOKEN>" -ForegroundColor Blue
+    Write-Host "     agentsmesh-runner register --server https://agentsmesh.ai --token <YOUR_TOKEN>" -ForegroundColor Blue
     Write-Host ""
     Write-Host "  2. Start the runner:" -ForegroundColor White
     Write-Host "     agentsmesh-runner run" -ForegroundColor Blue

@@ -177,7 +177,7 @@ export function getWsBaseUrl(): string {
 }
 
 // Default server URL for SSR and production
-const DEFAULT_SERVER_URL = "https://api.agentsmesh.ai";
+const DEFAULT_SERVER_URL = "https://agentsmesh.ai";
 
 /**
  * 获取服务器部署 URL（SSR-safe 版本）
@@ -202,7 +202,7 @@ export function getServerUrlSSR(): string {
  * 对于 SSR 组件，请使用 getServerUrlSSR() 获取初始值，
  * 然后在 useEffect 中调用 getServerUrl() 更新
  *
- * @returns 完整的服务器 URL（如 https://api.agentsmesh.ai）
+ * @returns 完整的服务器 URL（如 https://agentsmesh.ai）
  */
 export function getServerUrl(): string {
   // 客户端：使用当前页面的 origin
