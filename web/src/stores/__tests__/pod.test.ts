@@ -7,7 +7,8 @@ vi.mock("@/lib/api", () => ({
   podApi: { list: vi.fn(), get: vi.fn(), create: vi.fn(), terminate: vi.fn() },
   ApiError: class extends Error {
     status: number;
-    constructor(m: string, s: number) { super(m); this.name = "ApiError"; this.status = s; }
+    statusText: string;
+    constructor(s: number, t: string) { super(`API Error: ${s} ${t}`); this.name = "ApiError"; this.status = s; this.statusText = t; }
   },
 }));
 

@@ -7,7 +7,8 @@ vi.mock("@/lib/api", () => ({
   podApi: { list: vi.fn(), get: vi.fn(), create: vi.fn(), terminate: vi.fn() },
   ApiError: class extends Error {
     status: number;
-    constructor(m: string, s: number) { super(m); this.name = "ApiError"; this.status = s; }
+    statusText: string;
+    constructor(s: number, t: string) { super(`API Error: ${s} ${t}`); this.name = "ApiError"; this.status = s; this.statusText = t; }
   },
 }));
 
@@ -117,7 +118,7 @@ describe("Pod Store — terminatePod", () => {
   it("should treat 404 as already terminated", async () => {
     usePodStore.setState({ pods: [mockPod] });
     vi.mocked(podApi.terminate).mockRejectedValue(
-      new ApiError("Not Found", 404)
+      new ApiError(404, "Not Found")
     );
 
     // Should NOT throw
