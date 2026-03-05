@@ -170,8 +170,19 @@ EOF
 # 生成 .env 配置
 generate_env() {
     local worktree_name=$(get_worktree_name)
-    local offset=$(calculate_port_offset "$worktree_name")
     local project_name="agentsmesh-${worktree_name}"
+
+    # If .env already exists for this project, preserve existing ports to keep
+    # runner configs, stored endpoints, and other tools stable across runs.
+    if [[ -f "$ENV_FILE" ]] && grep -q "COMPOSE_PROJECT_NAME=$project_name" "$ENV_FILE"; then
+        source "$ENV_FILE"
+        WORKTREE_NAME="$worktree_name"
+        PORT_OFFSET=$(( (HTTP_PORT - 10000) / 50 ))
+        success "保留现有端口配置 (worktree: $worktree_name, PRIMARY_DOMAIN: localhost:$HTTP_PORT)"
+        return 0
+    fi
+
+    local offset=$(calculate_port_offset "$worktree_name")
 
     # 保存到全局变量供其他函数使用
     WORKTREE_NAME="$worktree_name"
@@ -423,6 +434,103 @@ init_gitea() {
     "$SCRIPT_DIR/gitea/init-gitea.sh" "$gitea_container" "$gitea_port"
 }
 
+# Kill all stale runner-related processes and restart Docker runner/relay containers.
+# Use this when runners are in a bad state and you want a clean slate.
+reset_runners() {
+    if [[ -f "$ENV_FILE" ]]; then
+        source "$ENV_FILE"
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo "  Reset Runner Services"
+    echo "=========================================="
+    echo ""
+
+    # 1. Kill local agentsmesh-runner process
+    if pgrep -f "agentsmesh-runner" &>/dev/null; then
+        info "停止本地 agentsmesh-runner 进程..."
+        pkill -f "agentsmesh-runner" 2>/dev/null || true
+        sleep 1
+        pkill -9 -f "agentsmesh-runner" 2>/dev/null || true
+        success "本地 runner 进程已停止"
+    else
+        info "未发现本地 agentsmesh-runner 进程"
+    fi
+
+    # 2. Kill anything holding runner-related ports (orphaned after ungraceful kills)
+    local runner_ports=(19000 19080 9090)  # MCP server, web console, health check
+    for port in "${runner_ports[@]}"; do
+        local pids
+        pids=$(lsof -ti :"$port" 2>/dev/null) || true
+        if [[ -n "$pids" ]]; then
+            info "释放端口 $port (PID: $pids)..."
+            echo "$pids" | xargs kill -9 2>/dev/null || true
+            success "端口 $port 已释放"
+        fi
+    done
+
+    # 3. Start Docker Desktop if not running
+    if ! docker info &>/dev/null 2>&1; then
+        info "Docker 未运行，正在启动 Docker Desktop..."
+        open -a Docker
+        local max_wait=30
+        for ((i=1; i<=max_wait; i++)); do
+            if docker info &>/dev/null 2>&1; then
+                success "Docker 已启动"
+                break
+            fi
+            if [[ $i -eq $max_wait ]]; then
+                warn "Docker 启动超时，跳过容器重启"
+                echo ""
+                success "本地 runner 进程已清理，请手动启动 Docker 后运行："
+                echo "  agentsmesh-runner run"
+                return 0
+            fi
+            sleep 2
+        done
+    fi
+
+    # 4. Restart Docker runner and relay containers
+    cd "$SCRIPT_DIR"
+    info "重启 Docker runner 和 relay 容器..."
+    docker compose up -d --force-recreate runner relay 2>&1 | grep -v "^#" | grep -v warning || true
+
+    # Wait for relay to become healthy
+    local max_wait=20
+    for ((i=1; i<=max_wait; i++)); do
+        local relay_status
+        relay_status=$(docker compose ps relay 2>/dev/null | grep relay | awk '{print $NF}')
+        if echo "$relay_status" | grep -q "healthy"; then
+            success "Docker runner 和 relay 已就绪"
+            break
+        fi
+        if [[ $i -eq $max_wait ]]; then
+            warn "Relay 健康检查超时，可能仍在启动中"
+        fi
+        sleep 2
+    done
+
+    # 5. Auto-fix stale grpc_endpoint in local runner config
+    local runner_config="$HOME/.agentsmesh/config.yaml"
+    if [[ -f "$runner_config" ]] && command -v agentsmesh-runner &>/dev/null; then
+        local current_endpoint new_endpoint grpc_port
+        current_endpoint=$(grep "grpc_endpoint:" "$runner_config" | awk '{print $2}')
+        grpc_port="${GRPC_PORT:-10001}"
+        new_endpoint="grpcs://127.0.0.1:$grpc_port"
+        if [[ "$current_endpoint" != "$new_endpoint" ]]; then
+            info "修复本地 runner 配置中的 grpc_endpoint..."
+            sed -i '' "s|grpc_endpoint:.*|grpc_endpoint: $new_endpoint|" "$runner_config"
+            success "grpc_endpoint 已更新: $current_endpoint → $new_endpoint"
+        fi
+    fi
+
+    echo ""
+    success "Runner 服务已重置！如需使用本地 runner，请运行："
+    echo "  agentsmesh-runner run"
+    echo ""
+}
+
 # 清理环境
 clean() {
     # 读取端口配置
@@ -484,8 +592,17 @@ start_frontend() {
     source "$ENV_FILE"
     local web_dir="$SCRIPT_DIR/../../web"
     local web_port="${WEB_PORT:-3000}"
+    local lock_file="$web_dir/.next/dev/lock"
 
-    # 检查是否已有前端进程在运行
+    # Kill any stale Next.js process holding the lock, then clear it
+    if [[ -f "$lock_file" ]]; then
+        warn "检测到残留的 Next.js 锁文件，清理中..."
+        pkill -f "next dev --turbopack" 2>/dev/null || true
+        rm -f "$lock_file"
+        success "锁文件已清理"
+    fi
+
+    # 检查是否已有前端进程在运行（端口占用）
     if lsof -i :"$web_port" &>/dev/null; then
         warn "端口 $web_port 已被占用，跳过前端启动"
         return 0
@@ -497,13 +614,21 @@ start_frontend() {
         return 1
     fi
 
-    # 检查依赖
-    if [[ ! -d "$web_dir/node_modules" ]]; then
+    # 检查依赖（lockfile 变化时重新安装）
+    local lockfile="$web_dir/pnpm-lock.yaml"
+    local lockfile_hash_file="$web_dir/node_modules/.pnpm-lock-hash"
+    local current_hash=""
+    local cached_hash=""
+    [[ -f "$lockfile" ]] && current_hash=$(md5 -q "$lockfile" 2>/dev/null || md5sum "$lockfile" | cut -d' ' -f1)
+    [[ -f "$lockfile_hash_file" ]] && cached_hash=$(cat "$lockfile_hash_file")
+
+    if [[ ! -d "$web_dir/node_modules" || "$current_hash" != "$cached_hash" ]]; then
         info "安装前端依赖..."
         (cd "$web_dir" && pnpm install --frozen-lockfile) || {
             error "前端依赖安装失败"
             return 1
         }
+        echo "$current_hash" > "$lockfile_hash_file"
         success "前端依赖安装完成"
     fi
 
@@ -536,13 +661,20 @@ main() {
         exit 0
     fi
 
+    # 处理 --reset-runners 参数
+    if [[ "${1:-}" == "--reset-runners" || "${1:-}" == "--kill-runners" ]]; then
+        reset_runners
+        exit 0
+    fi
+
     # 显示帮助
     if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
         echo "用法: $0 [选项]"
         echo ""
         echo "选项:"
-        echo "  无参数    一键启动完整开发环境（Docker 后端 + 本地前端）"
-        echo "  --clean   停止并清理所有服务"
+        echo "  无参数           一键启动完整开发环境（Docker 后端 + 本地前端）"
+        echo "  --clean          停止并清理所有服务"
+        echo "  --reset-runners  终止所有 runner 进程并重启 Docker runner/relay 容器"
         echo ""
         echo "前端日志: tail -f deploy/dev/web.log"
         exit 0

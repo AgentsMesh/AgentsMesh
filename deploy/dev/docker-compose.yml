@@ -211,6 +211,7 @@ services:
       - PKI_CA_KEY_FILE=/app/ssl/ca.key
       - PKI_VALIDITY_DAYS=365
       - GRPC_ADDRESS=:9090
+      - GRPC_PUBLIC_ENDPOINT=grpcs://127.0.0.1:${GRPC_PORT:-10001}
     volumes:
       # Mount source code for hot reload
       - ../../backend:/app
