@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -68,7 +69,7 @@ cert_file: /home/user/.agentsmesh/certs/runner.crt
 key_file: /home/user/.agentsmesh/certs/runner.key
 ca_file: /home/user/.agentsmesh/certs/ca.crt
 `
-	tmpFile := t.TempDir() + "/config.yaml"
+	tmpFile := filepath.Join(t.TempDir(), "config.yaml")
 	if err := os.WriteFile(tmpFile, []byte(original), 0600); err != nil {
 		t.Fatalf("failed to write temp config: %v", err)
 	}
@@ -109,7 +110,7 @@ ca_file: /home/user/.agentsmesh/certs/ca.crt
 
 func TestUpdateGRPCEndpointInFile_AppendsWhenMissing(t *testing.T) {
 	original := "server_url: https://app.example.com\nrunner_id: abc-123\n"
-	tmpFile := t.TempDir() + "/config.yaml"
+	tmpFile := filepath.Join(t.TempDir(), "config.yaml")
 	if err := os.WriteFile(tmpFile, []byte(original), 0600); err != nil {
 		t.Fatalf("failed to write temp config: %v", err)
 	}

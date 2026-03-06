@@ -17,26 +17,27 @@ const (
 )
 
 var (
-	kernel32DLL                = syscall.NewLazyDLL("kernel32.dll")
+	kernel32DLL                  = syscall.NewLazyDLL("kernel32.dll")
 	procCreateToolhelp32Snapshot = kernel32DLL.NewProc("CreateToolhelp32Snapshot")
-	procProcess32First         = kernel32DLL.NewProc("Process32FirstW")
-	procProcess32Next          = kernel32DLL.NewProc("Process32NextW")
-	procOpenProcessInsp        = kernel32DLL.NewProc("OpenProcess")
-	procGetExitCodeProcessInsp = kernel32DLL.NewProc("GetExitCodeProcess")
+	procProcess32First           = kernel32DLL.NewProc("Process32FirstW")
+	procProcess32Next            = kernel32DLL.NewProc("Process32NextW")
+	procOpenProcess              = kernel32DLL.NewProc("OpenProcess")
+	procGetExitCodeProcess       = kernel32DLL.NewProc("GetExitCodeProcess")
+	procGetProcessHandleCount    = kernel32DLL.NewProc("GetProcessHandleCount")
 )
 
 // processEntry32W mirrors the Windows PROCESSENTRY32W struct.
 type processEntry32W struct {
-	Size              uint32
-	CntUsage          uint32
-	ProcessID         uint32
-	DefaultHeapID     uintptr
-	ModuleID          uint32
-	CntThreads        uint32
-	ParentProcessID   uint32
-	PriClassBase      int32
-	Flags             uint32
-	ExeFile           [maxPath]uint16
+	Size            uint32
+	CntUsage        uint32
+	ProcessID       uint32
+	DefaultHeapID   uintptr
+	ModuleID        uint32
+	CntThreads      uint32
+	ParentProcessID uint32
+	PriClassBase    int32
+	Flags           uint32
+	ExeFile         [maxPath]uint16
 }
 
 // windowsInspector implements Inspector for Windows
@@ -121,7 +122,7 @@ func (i *windowsInspector) GetProcessName(pid int) string {
 
 // IsRunning checks if a process is still alive.
 func (i *windowsInspector) IsRunning(pid int) bool {
-	handle, _, _ := procOpenProcessInsp.Call(
+	handle, _, _ := procOpenProcess.Call(
 		uintptr(processQueryLimitedInfo),
 		0,
 		uintptr(pid),
@@ -132,7 +133,7 @@ func (i *windowsInspector) IsRunning(pid int) bool {
 	defer syscall.CloseHandle(syscall.Handle(handle))
 
 	var exitCode uint32
-	ret, _, _ := procGetExitCodeProcessInsp.Call(handle, uintptr(unsafe.Pointer(&exitCode)))
+	ret, _, _ := procGetExitCodeProcess.Call(handle, uintptr(unsafe.Pointer(&exitCode)))
 	if ret == 0 {
 		return false
 	}
@@ -150,21 +151,25 @@ func (i *windowsInspector) GetState(pid int) string {
 }
 
 // HasOpenFiles checks if a process likely has active I/O.
-// On Windows, enumerating open handles requires elevated privileges (NtQuerySystemInformation).
-// As a heuristic, we check if the process has child threads beyond its initial thread.
-// This correlates with active I/O operations in practice.
+// On Windows, uses GetProcessHandleCount to approximate file descriptor usage.
+// A process with many open handles (files, pipes, sockets, registry keys) is
+// likely performing active I/O. The threshold of 100 is a heuristic: a typical
+// idle process has ~30-60 handles, while one doing file I/O has significantly more.
 func (i *windowsInspector) HasOpenFiles(pid int) bool {
-	entries, err := snapshotProcesses()
-	if err != nil {
+	handle, _, _ := procOpenProcess.Call(
+		uintptr(processQueryLimitedInfo),
+		0,
+		uintptr(pid),
+	)
+	if handle == 0 {
 		return false
 	}
+	defer syscall.CloseHandle(syscall.Handle(handle))
 
-	for idx := range entries {
-		if entries[idx].ProcessID == uint32(pid) {
-			// A process doing I/O typically has more threads than its initial thread.
-			// The threshold of 4 is a reasonable heuristic: main thread + I/O threads.
-			return entries[idx].CntThreads > 4
-		}
+	var handleCount uint32
+	ret, _, _ := procGetProcessHandleCount.Call(handle, uintptr(unsafe.Pointer(&handleCount)))
+	if ret == 0 {
+		return false
 	}
-	return false
+	return handleCount > 100
 }

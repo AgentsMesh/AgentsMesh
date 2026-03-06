@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 // --- Test applyGitConfig ---
@@ -73,9 +75,8 @@ func TestApplyGitConfigGitDirError(t *testing.T) {
 }
 
 func TestApplyGitConfigWriteError(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("skipping as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 
 	tmpDir := t.TempDir()
 

@@ -8,22 +8,12 @@ import (
 	"unsafe"
 )
 
-const (
-	processQueryLimitedInformation = 0x1000
-	stillActive                    = 259
-)
-
-var (
-	kernel32              = syscall.NewLazyDLL("kernel32.dll")
-	procOpenProcess       = kernel32.NewProc("OpenProcess")
-	procGetExitCodeProcess = kernel32.NewProc("GetExitCodeProcess")
-)
-
 // IsAlive checks whether the process with the given PID is still running.
 // On Windows, it opens a handle to the process and checks its exit code.
+// Uses shared DLL definitions from windows.go.
 func IsAlive(pid int) error {
 	handle, _, err := procOpenProcess.Call(
-		uintptr(processQueryLimitedInformation),
+		uintptr(processQueryLimitedInfo),
 		0,
 		uintptr(pid),
 	)
@@ -38,7 +28,7 @@ func IsAlive(pid int) error {
 		return fmt.Errorf("failed to get exit code for pid %d: %w", pid, err)
 	}
 
-	if exitCode != stillActive {
+	if exitCode != processExitCodeStillActive {
 		return fmt.Errorf("process not running (pid %d, exit code %d)", pid, exitCode)
 	}
 

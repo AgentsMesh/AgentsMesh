@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 // --- Test CreateWorktree ---
@@ -38,9 +40,8 @@ func TestCreateWorktreeInvalidRepoURLFormat(t *testing.T) {
 }
 
 func TestCreateWorktreeMkdirParentError(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("skipping as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 
 	tmpDir := t.TempDir()
 

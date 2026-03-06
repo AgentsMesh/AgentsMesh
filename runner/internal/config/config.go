@@ -133,7 +133,9 @@ func Load(configFile string) (*Config, error) {
 		v.SetConfigName("runner")
 		v.SetConfigType("yaml")
 		v.AddConfigPath(".")
-		v.AddConfigPath("$HOME/.agentsmesh")
+		if home, err := os.UserHomeDir(); err == nil {
+			v.AddConfigPath(filepath.Join(home, ".agentsmesh"))
+		}
 		if runtime.GOOS != "windows" {
 			v.AddConfigPath("/etc/agentsmesh")
 		}
@@ -198,6 +200,10 @@ func defaultWorkspaceRoot() string {
 	if runtime.GOOS == "windows" {
 		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
 			return filepath.Join(localAppData, "agentsmesh", "workspace")
+		}
+		// Fallback when LOCALAPPDATA is not set (e.g., containers)
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, ".agentsmesh", "workspace")
 		}
 	}
 	return "/workspace"

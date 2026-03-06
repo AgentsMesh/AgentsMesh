@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 // --- Test ensureRepository ---
@@ -120,9 +122,8 @@ func TestEnsureRepositoryFetch(t *testing.T) {
 }
 
 func TestEnsureRepositoryMkdirError(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("skipping as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 
 	tmpDir := t.TempDir()
 	manager, _ := NewManager(tmpDir, "")

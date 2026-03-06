@@ -18,6 +18,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/pidfile"
 	"github.com/anthropics/agentsmesh/runner/internal/runner"
+	"github.com/anthropics/agentsmesh/runner/internal/updater"
 )
 
 // DefaultConsolePort is the default port for the web console.
@@ -143,6 +144,9 @@ func startRunner(cfg *config.Config) (ok bool) {
 
 	log := logger.Runner()
 
+	// Clean up leftover binaries from previous self-update (Windows rename-self strategy)
+	updater.CleanupOldBinaries()
+
 	// Clean up stale runner process from previous run
 	if err := pidfile.CleanupStaleProcess(); err != nil {
 		log.Error("Failed to clean up stale runner", "error", err)
@@ -174,7 +178,7 @@ func startRunner(cfg *config.Config) (ok bool) {
 
 	// Handle shutdown signals
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		sig := <-sigChan

@@ -96,7 +96,9 @@ func UpdateGRPCEndpointInFile(configFile, newEndpoint string) error {
 		return errors.New("failed to read config file: " + err.Error())
 	}
 
-	lines := strings.Split(string(data), "\n")
+	// Normalize line endings to handle Windows \r\n
+	content := strings.ReplaceAll(string(data), "\r\n", "\n")
+	lines := strings.Split(content, "\n")
 	found := false
 	for i, line := range lines {
 		if strings.HasPrefix(strings.TrimSpace(line), "grpc_endpoint:") {
