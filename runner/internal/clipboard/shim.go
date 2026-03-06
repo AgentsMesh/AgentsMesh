@@ -86,7 +86,7 @@ if [[ "$*" == *"-o"* ]] || [[ "$*" == *"--output"* ]]; then
   fi
 fi
 # For all other operations, try real xclip
-REAL_XCLIP=$(which -a xclip 2>/dev/null | grep -v "$0" | head -1)
+REAL_XCLIP=$(command -v xclip 2>/dev/null | grep -v "$0" | head -1)
 if [ -n "$REAL_XCLIP" ]; then
   exec "$REAL_XCLIP" "$@"
 fi

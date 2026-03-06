@@ -10,7 +10,7 @@ import (
 func TestConfigStruct(t *testing.T) {
 	cfg := Config{
 		Name:    "test-server",
-		Command: "/usr/bin/node",
+		Command: testDummyCmd(),
 		Args:    []string{"server.js"},
 		Env:     map[string]string{"NODE_ENV": "production"},
 	}
@@ -19,8 +19,8 @@ func TestConfigStruct(t *testing.T) {
 		t.Errorf("Name: got %v, want test-server", cfg.Name)
 	}
 
-	if cfg.Command != "/usr/bin/node" {
-		t.Errorf("Command: got %v, want /usr/bin/node", cfg.Command)
+	if cfg.Command != testDummyCmd() {
+		t.Errorf("Command: got %v, want %v", cfg.Command, testDummyCmd())
 	}
 
 	if len(cfg.Args) != 1 {

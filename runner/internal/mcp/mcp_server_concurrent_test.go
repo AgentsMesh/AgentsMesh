@@ -7,7 +7,7 @@ import (
 // Tests for concurrent access to server
 
 func TestServerConcurrentAccess(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 
 	// Pre-populate
 	server.tools["tool1"] = &Tool{Name: "tool1"}

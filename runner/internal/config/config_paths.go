@@ -19,7 +19,7 @@ func (c *Config) GetWorkspace() string {
 	// Default to user's home directory
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return "/tmp/agentsmesh"
+		return filepath.Join(os.TempDir(), "agentsmesh")
 	}
 	return filepath.Join(home, ".agentsmesh")
 }

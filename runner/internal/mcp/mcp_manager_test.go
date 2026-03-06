@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -26,7 +27,7 @@ func TestManagerAddServer(t *testing.T) {
 
 	cfg := &Config{
 		Name:    "test-server",
-		Command: "/usr/bin/echo",
+		Command: testDummyCmd(),
 	}
 
 	manager.AddServer(cfg)
@@ -53,8 +54,8 @@ func TestManagerGetServerNotFound(t *testing.T) {
 func TestManagerListServers(t *testing.T) {
 	manager := NewManager()
 
-	manager.AddServer(&Config{Name: "server-1", Command: "/usr/bin/echo"})
-	manager.AddServer(&Config{Name: "server-2", Command: "/usr/bin/echo"})
+	manager.AddServer(&Config{Name: "server-1", Command: testDummyCmd()})
+	manager.AddServer(&Config{Name: "server-2", Command: testDummyCmd()})
 
 	servers := manager.ListServers()
 	if len(servers) != 2 {
@@ -92,8 +93,8 @@ func TestManagerStopServerNotFound(t *testing.T) {
 func TestManagerStopAll(t *testing.T) {
 	manager := NewManager()
 
-	manager.AddServer(&Config{Name: "server-1", Command: "/usr/bin/echo"})
-	manager.AddServer(&Config{Name: "server-2", Command: "/usr/bin/echo"})
+	manager.AddServer(&Config{Name: "server-1", Command: testDummyCmd()})
+	manager.AddServer(&Config{Name: "server-2", Command: testDummyCmd()})
 
 	// Should not panic
 	manager.StopAll()
@@ -128,7 +129,7 @@ func TestManagerCallToolServerNotFound(t *testing.T) {
 
 func TestManagerCallToolServerNotRunning(t *testing.T) {
 	manager := NewManager()
-	manager.AddServer(&Config{Name: "test-server", Command: "/usr/bin/echo"})
+	manager.AddServer(&Config{Name: "test-server", Command: testDummyCmd()})
 
 	_, err := manager.CallTool(context.TODO(), "test-server", "tool", nil)
 	if err == nil {
@@ -147,7 +148,7 @@ func TestManagerReadResourceServerNotFound(t *testing.T) {
 
 func TestManagerReadResourceServerNotRunning(t *testing.T) {
 	manager := NewManager()
-	manager.AddServer(&Config{Name: "test-server", Command: "/usr/bin/echo"})
+	manager.AddServer(&Config{Name: "test-server", Command: testDummyCmd()})
 
 	_, _, err := manager.ReadResource(context.TODO(), "test-server", "file://test")
 	if err == nil {
@@ -157,8 +158,8 @@ func TestManagerReadResourceServerNotRunning(t *testing.T) {
 
 func TestManagerGetStatus(t *testing.T) {
 	manager := NewManager()
-	manager.AddServer(&Config{Name: "server-1", Command: "/usr/bin/echo"})
-	manager.AddServer(&Config{Name: "server-2", Command: "/usr/bin/echo"})
+	manager.AddServer(&Config{Name: "server-1", Command: testDummyCmd()})
+	manager.AddServer(&Config{Name: "server-2", Command: testDummyCmd()})
 
 	statuses := manager.GetStatus()
 	if len(statuses) != 2 {
@@ -209,17 +210,17 @@ func TestManagerLoadConfigValid(t *testing.T) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.json")
 
-	config := `{
+	config := fmt.Sprintf(`{
 		"mcpServers": {
 			"server-1": {
-				"command": "/usr/bin/echo",
+				"command": "%s",
 				"args": ["hello"]
 			},
 			"server-2": {
-				"command": "/usr/bin/cat"
+				"command": "%s"
 			}
 		}
-	}`
+	}`, testDummyCmd(), testCatCmd())
 
 	os.WriteFile(configPath, []byte(config), 0644)
 

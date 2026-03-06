@@ -9,7 +9,7 @@ import (
 func TestNewServer(t *testing.T) {
 	cfg := &Config{
 		Name:    "test-server",
-		Command: "/usr/bin/echo",
+		Command: testDummyCmd(),
 		Args:    []string{"hello"},
 		Env:     map[string]string{"KEY": "VALUE"},
 	}
@@ -24,8 +24,8 @@ func TestNewServer(t *testing.T) {
 		t.Errorf("name: got %v, want test-server", server.name)
 	}
 
-	if server.command != "/usr/bin/echo" {
-		t.Errorf("command: got %v, want /usr/bin/echo", server.command)
+	if server.command != testDummyCmd() {
+		t.Errorf("command: got %v, want %v", server.command, testDummyCmd())
 	}
 
 	if len(server.args) != 1 {
@@ -52,7 +52,7 @@ func TestNewServer(t *testing.T) {
 func TestServerName(t *testing.T) {
 	cfg := &Config{
 		Name:    "test-server",
-		Command: "/usr/bin/echo",
+		Command: testDummyCmd(),
 	}
 
 	server := NewServer(cfg)
@@ -65,7 +65,7 @@ func TestServerName(t *testing.T) {
 func TestServerIsRunningInitially(t *testing.T) {
 	cfg := &Config{
 		Name:    "test-server",
-		Command: "/usr/bin/echo",
+		Command: testDummyCmd(),
 	}
 
 	server := NewServer(cfg)
@@ -78,7 +78,7 @@ func TestServerIsRunningInitially(t *testing.T) {
 func TestServerGetToolsEmpty(t *testing.T) {
 	cfg := &Config{
 		Name:    "test-server",
-		Command: "/usr/bin/echo",
+		Command: testDummyCmd(),
 	}
 
 	server := NewServer(cfg)
@@ -92,7 +92,7 @@ func TestServerGetToolsEmpty(t *testing.T) {
 func TestServerGetResourcesEmpty(t *testing.T) {
 	cfg := &Config{
 		Name:    "test-server",
-		Command: "/usr/bin/echo",
+		Command: testDummyCmd(),
 	}
 
 	server := NewServer(cfg)
@@ -106,7 +106,7 @@ func TestServerGetResourcesEmpty(t *testing.T) {
 func TestServerStopNotRunning(t *testing.T) {
 	cfg := &Config{
 		Name:    "test-server",
-		Command: "/usr/bin/echo",
+		Command: testDummyCmd(),
 	}
 
 	server := NewServer(cfg)

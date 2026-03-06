@@ -9,7 +9,7 @@ import (
 // Tests for response routing and error handling
 
 func TestServerResponseRouting(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 
 	// Set up pending channel
 	ch := make(chan *Response, 1)
@@ -42,7 +42,7 @@ func TestServerResponseRouting(t *testing.T) {
 }
 
 func TestServerResponseRoutingUnknownID(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 
 	// No pending channel for ID 999
 	resp := &Response{

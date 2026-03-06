@@ -15,7 +15,7 @@ func WriteTestScript(t *testing.T, dir, name, body string) string {
 	t.Helper()
 
 	path := filepath.Join(dir, name)
-	content := "#!/bin/bash\n" + body + "\n"
+	content := "#!/bin/sh\n" + body + "\n"
 
 	if err := os.WriteFile(path, []byte(content), 0755); err != nil {
 		t.Fatalf("WriteTestScript: failed to write %s: %v", path, err)

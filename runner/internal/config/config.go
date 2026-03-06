@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/spf13/viper"
@@ -106,7 +108,7 @@ func Load(configFile string) (*Config, error) {
 	// Set defaults
 	v.SetDefault("server_url", "https://agentsmesh.ai")
 	v.SetDefault("max_concurrent_pods", 5)
-	v.SetDefault("workspace_root", "/workspace")
+	v.SetDefault("workspace_root", defaultWorkspaceRoot())
 	v.SetDefault("mcp_port", 19000)
 	v.SetDefault("health_check_port", 9090)
 	v.SetDefault("log_level", "info")
@@ -132,7 +134,9 @@ func Load(configFile string) (*Config, error) {
 		v.SetConfigType("yaml")
 		v.AddConfigPath(".")
 		v.AddConfigPath("$HOME/.agentsmesh")
-		v.AddConfigPath("/etc/agentsmesh")
+		if runtime.GOOS != "windows" {
+			v.AddConfigPath("/etc/agentsmesh")
+		}
 	}
 
 	if err := v.ReadInConfig(); err != nil {
@@ -187,4 +191,14 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+// defaultWorkspaceRoot returns a platform-appropriate default workspace root.
+func defaultWorkspaceRoot() string {
+	if runtime.GOOS == "windows" {
+		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
+			return filepath.Join(localAppData, "agentsmesh", "workspace")
+		}
+	}
+	return "/workspace"
 }

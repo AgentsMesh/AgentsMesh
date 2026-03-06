@@ -2,8 +2,10 @@ package mcp
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -34,6 +36,9 @@ func TestServerStartWithExitScript(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell")
+	}
 
 	// Create a temporary script that exits immediately
 	tmpDir := t.TempDir()
@@ -62,6 +67,10 @@ func TestServerStartWithExitScript(t *testing.T) {
 
 // TestServerStopWithProcess tests Stop with a running process
 func TestServerStopWithRunningProcess(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell")
+	}
+
 	// Create a script that sleeps
 	tmpDir := t.TempDir()
 	scriptPath := filepath.Join(tmpDir, "sleep.sh")
@@ -109,7 +118,7 @@ func TestServerStopWithRunningProcess(t *testing.T) {
 
 // TestServerStopWithStdin tests Stop closing stdin
 func TestServerStopWithStdin(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/cat"})
+	server := NewServer(&Config{Name: "test", Command: testCatCmd()})
 
 	// Create a pipe for stdin
 	r, w, err := os.Pipe()
@@ -138,7 +147,7 @@ func TestServerStopWithStdin(t *testing.T) {
 
 // TestServerCallWithValidPipe tests call with a valid stdin pipe
 func TestServerCallWithValidPipe(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/cat"})
+	server := NewServer(&Config{Name: "test", Command: testCatCmd()})
 
 	// Create a pipe for stdin
 	_, w, err := os.Pipe()
@@ -170,7 +179,7 @@ func TestServerCallWithValidPipe(t *testing.T) {
 
 // TestServerSendMarshalSuccess tests send with valid data
 func TestServerSendMarshalSuccess(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/cat"})
+	server := NewServer(&Config{Name: "test", Command: testCatCmd()})
 
 	// Create a pipe for stdin
 	r, w, err := os.Pipe()
@@ -232,8 +241,8 @@ func TestManagerStartAllWithInvalidServer(t *testing.T) {
 // TestManagerGetAllToolsWithServers tests GetAllTools with servers that have tools
 func TestManagerGetAllToolsWithServers(t *testing.T) {
 	manager := NewManager()
-	manager.AddServer(&Config{Name: "server1", Command: "/bin/echo"})
-	manager.AddServer(&Config{Name: "server2", Command: "/bin/echo"})
+	manager.AddServer(&Config{Name: "server1", Command: testDummyCmd()})
+	manager.AddServer(&Config{Name: "server2", Command: testDummyCmd()})
 
 	// Manually add tools to servers and mark them as running
 	server1, _ := manager.GetServer("server1")
@@ -258,8 +267,8 @@ func TestManagerGetAllToolsWithServers(t *testing.T) {
 // TestManagerGetAllResourcesWithServers tests GetAllResources with servers that have resources
 func TestManagerGetAllResourcesWithServers(t *testing.T) {
 	manager := NewManager()
-	manager.AddServer(&Config{Name: "server1", Command: "/bin/echo"})
-	manager.AddServer(&Config{Name: "server2", Command: "/bin/echo"})
+	manager.AddServer(&Config{Name: "server1", Command: testDummyCmd()})
+	manager.AddServer(&Config{Name: "server2", Command: testDummyCmd()})
 
 	// Manually add resources to servers and mark them as running
 	server1, _ := manager.GetServer("server1")
@@ -286,10 +295,10 @@ func TestManagerLoadConfigWithEnvVars(t *testing.T) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.json")
 
-	config := `{
+	config := fmt.Sprintf(`{
 		"mcpServers": {
 			"server-1": {
-				"command": "/usr/bin/echo",
+				"command": "%s",
 				"args": ["hello"],
 				"env": {
 					"KEY": "VALUE",
@@ -297,7 +306,7 @@ func TestManagerLoadConfigWithEnvVars(t *testing.T) {
 				}
 			}
 		}
-	}`
+	}`, testDummyCmd())
 
 	os.WriteFile(configPath, []byte(config), 0644)
 
@@ -325,7 +334,7 @@ func TestManagerLoadConfigWithEnvVars(t *testing.T) {
 // TestManagerGetStatusWithTools tests GetStatus with servers that have tools
 func TestManagerGetStatusWithTools(t *testing.T) {
 	manager := NewManager()
-	manager.AddServer(&Config{Name: "server1", Command: "/bin/echo"})
+	manager.AddServer(&Config{Name: "server1", Command: testDummyCmd()})
 
 	// Manually add tools and mark server as running
 	server, _ := manager.GetServer("server1")

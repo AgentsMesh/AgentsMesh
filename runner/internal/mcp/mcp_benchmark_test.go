@@ -67,7 +67,7 @@ func BenchmarkNewManager(b *testing.B) {
 
 func BenchmarkManagerAddServer(b *testing.B) {
 	manager := NewManager()
-	cfg := &Config{Name: "test", Command: "/usr/bin/echo"}
+	cfg := &Config{Name: "test", Command: testDummyCmd()}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -80,7 +80,7 @@ func BenchmarkManagerListServers(b *testing.B) {
 	for i := 0; i < 10; i++ {
 		manager.AddServer(&Config{
 			Name:    "server-" + string(rune('0'+i)),
-			Command: "/usr/bin/echo",
+			Command: testDummyCmd(),
 		})
 	}
 
@@ -92,7 +92,7 @@ func BenchmarkManagerListServers(b *testing.B) {
 
 func BenchmarkManagerGetServer(b *testing.B) {
 	manager := NewManager()
-	manager.AddServer(&Config{Name: "test-server", Command: "/usr/bin/echo"})
+	manager.AddServer(&Config{Name: "test-server", Command: testDummyCmd()})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -103,7 +103,7 @@ func BenchmarkManagerGetServer(b *testing.B) {
 func BenchmarkNewServer(b *testing.B) {
 	cfg := &Config{
 		Name:    "test-server",
-		Command: "/usr/bin/echo",
+		Command: testDummyCmd(),
 		Args:    []string{"hello"},
 	}
 

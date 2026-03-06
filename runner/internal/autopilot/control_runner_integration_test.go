@@ -6,6 +6,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -14,6 +15,9 @@ import (
 )
 
 func TestControlRunner_StartControlProcess_NonJSONOutput(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)
@@ -51,6 +55,9 @@ echo "All done successfully."
 }
 
 func TestControlRunner_StartControlProcess_LongOutput(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)
@@ -90,6 +97,9 @@ echo "Done."
 }
 
 func TestControlRunner_ResumeControlProcess_Timeout(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell")
+	}
 	// Create temp directory with a script that sleeps
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)
@@ -124,6 +134,9 @@ func TestControlRunner_ResumeControlProcess_Timeout(t *testing.T) {
 }
 
 func TestControlRunner_StartControlProcess_ProcessError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)
@@ -157,6 +170,9 @@ func TestControlRunner_StartControlProcess_ProcessError(t *testing.T) {
 }
 
 func TestControlRunner_ResumeControlProcess_ProcessError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)

@@ -136,6 +136,9 @@ func TestControlRunner_StartControlProcess_Timeout(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell")
+	}
 	// Create temp directory with a script that sleeps
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)

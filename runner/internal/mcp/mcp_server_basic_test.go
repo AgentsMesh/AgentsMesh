@@ -10,7 +10,7 @@ import (
 // Tests for Server basic methods
 
 func TestServerGetToolsWithData(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 
 	// Add tools manually
 	server.tools["tool1"] = &Tool{Name: "tool1", Description: "Tool 1"}
@@ -23,7 +23,7 @@ func TestServerGetToolsWithData(t *testing.T) {
 }
 
 func TestServerGetResourcesWithData(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 
 	// Add resources manually
 	server.resources["res1"] = &Resource{URI: "file://test1.txt", Name: "test1.txt"}
@@ -36,7 +36,7 @@ func TestServerGetResourcesWithData(t *testing.T) {
 }
 
 func TestServerStopWithPendingChannels(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 
 	// Add pending channels manually
 	ch1 := make(chan *Response, 1)
@@ -81,7 +81,7 @@ func TestServerStopWithPendingChannels(t *testing.T) {
 }
 
 func TestServerSendWhenNotRunning(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 
 	req := &Request{
 		JSONRPC: "2.0",
@@ -100,7 +100,7 @@ func TestServerSendWhenNotRunning(t *testing.T) {
 }
 
 func TestServerNotifyWhenNotRunning(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 
 	err := server.notify("test", nil)
 	if err == nil {
@@ -109,7 +109,7 @@ func TestServerNotifyWhenNotRunning(t *testing.T) {
 }
 
 func TestServerNotifyWithParams(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 	server.running = true
 
 	// Will fail because stdin is nil
@@ -128,7 +128,7 @@ func TestServerNotifyWithParams(t *testing.T) {
 }
 
 func TestServerCallContextCancelled(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 	server.running = true
 
 	// Create a cancelled context
@@ -149,7 +149,7 @@ func TestServerCallContextCancelled(t *testing.T) {
 }
 
 func TestServerStartAlreadyRunning(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 	server.running = true
 
 	err := server.Start(context.Background())
@@ -163,7 +163,7 @@ func TestServerStartAlreadyRunning(t *testing.T) {
 }
 
 func TestServerCallWithParamsMarshalError(t *testing.T) {
-	server := NewServer(&Config{Name: "test", Command: "/bin/echo"})
+	server := NewServer(&Config{Name: "test", Command: testDummyCmd()})
 	server.running = true
 
 	r, w, _ := os.Pipe()
