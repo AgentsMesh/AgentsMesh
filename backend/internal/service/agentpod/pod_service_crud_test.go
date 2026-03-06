@@ -78,6 +78,46 @@ func TestCreatePod(t *testing.T) {
 	}
 }
 
+func TestCreatePod_CredentialProfileID(t *testing.T) {
+	db := setupTestDB(t)
+	svc := NewPodService(db)
+	ctx := context.Background()
+
+	t.Run("stores credential_profile_id when provided", func(t *testing.T) {
+		profileID := int64(42)
+		pod, err := svc.CreatePod(ctx, &CreatePodRequest{
+			OrganizationID:      1,
+			RunnerID:            1,
+			CreatedByID:         1,
+			CredentialProfileID: &profileID,
+		})
+		if err != nil {
+			t.Fatalf("CreatePod failed: %v", err)
+		}
+		if pod.CredentialProfileID == nil {
+			t.Fatal("CredentialProfileID should not be nil")
+		}
+		if *pod.CredentialProfileID != 42 {
+			t.Errorf("CredentialProfileID = %d, want 42", *pod.CredentialProfileID)
+		}
+	})
+
+	t.Run("stores nil credential_profile_id when not provided", func(t *testing.T) {
+		pod, err := svc.CreatePod(ctx, &CreatePodRequest{
+			OrganizationID:      1,
+			RunnerID:            1,
+			CreatedByID:         1,
+			CredentialProfileID: nil,
+		})
+		if err != nil {
+			t.Fatalf("CreatePod failed: %v", err)
+		}
+		if pod.CredentialProfileID != nil {
+			t.Errorf("CredentialProfileID should be nil, got %d", *pod.CredentialProfileID)
+		}
+	})
+}
+
 func TestCreatePod_DefaultValues(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewPodService(db)

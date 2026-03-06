@@ -321,6 +321,10 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		InitialPrompt     string                 `json:"initial_prompt"`
 		BranchName        *string                `json:"branch_name"`
 		PermissionMode    *string                `json:"permission_mode"`
+		// CredentialProfileID specifies which credential profile to use
+		// - nil (field absent): use user's default profile, fallback to RunnerHost if no default
+		// - 0: explicit RunnerHost mode (use Runner's local environment, no credentials injected)
+		// - >0: use specified credential profile ID
 		CredentialProfileID *int64               `json:"credential_profile_id"`
 		ConfigOverrides   map[string]interface{} `json:"config_overrides"`
 		Cols              int32                  `json:"cols"`

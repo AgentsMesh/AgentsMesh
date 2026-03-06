@@ -361,3 +361,74 @@ func TestCreatePod_PermissionMode(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, coord.createPodCalled)
 }
+
+// ==================== CredentialProfileID DB Storage Tests ====================
+
+func TestCreatePod_CredentialProfileID_ZeroConvertsToNil(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+
+	agentTypeID := int64(1)
+	zero := int64(0)
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID:      1,
+		UserID:              1,
+		RunnerID:            1,
+		AgentTypeID:         &agentTypeID,
+		CredentialProfileID: &zero, // explicit RunnerHost
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, result.Pod)
+
+	// Verify DB record: 0 should be converted to nil (FK constraint)
+	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
+	require.NoError(t, err)
+	assert.Nil(t, dbPod.CredentialProfileID, "credential_profile_id=0 should be stored as nil in DB")
+}
+
+func TestCreatePod_CredentialProfileID_PositiveStored(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+
+	agentTypeID := int64(1)
+	profileID := int64(42)
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID:      1,
+		UserID:              1,
+		RunnerID:            1,
+		AgentTypeID:         &agentTypeID,
+		CredentialProfileID: &profileID,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, result.Pod)
+
+	// Verify DB record: positive ID should be stored as-is
+	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
+	require.NoError(t, err)
+	require.NotNil(t, dbPod.CredentialProfileID, "credential_profile_id=42 should be stored")
+	assert.Equal(t, int64(42), *dbPod.CredentialProfileID)
+}
+
+func TestCreatePod_CredentialProfileID_NilStaysNil(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+
+	agentTypeID := int64(1)
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID:      1,
+		UserID:              1,
+		RunnerID:            1,
+		AgentTypeID:         &agentTypeID,
+		CredentialProfileID: nil, // use default
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, result.Pod)
+
+	// Verify DB record: nil should stay nil
+	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
+	require.NoError(t, err)
+	assert.Nil(t, dbPod.CredentialProfileID, "nil credential_profile_id should stay nil in DB")
+}

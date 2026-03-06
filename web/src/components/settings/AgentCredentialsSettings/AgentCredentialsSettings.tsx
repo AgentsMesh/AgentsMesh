@@ -62,7 +62,9 @@ export function AgentCredentialsSettings() {
 
   // Handle dialog submit
   const handleDialogSubmit = useCallback(async (data: CredentialFormData) => {
-    if (!selectedAgentTypeId) return;
+    if (!selectedAgentTypeId) {
+      throw new Error("No agent type selected");
+    }
     await handleSaveProfile(selectedAgentTypeId, data, editingProfile);
     setShowDialog(false);
   }, [selectedAgentTypeId, editingProfile, handleSaveProfile]);

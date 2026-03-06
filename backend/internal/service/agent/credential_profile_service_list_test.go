@@ -257,4 +257,39 @@ func TestCredentialProfileService_GetEffectiveCredentialsForPod(t *testing.T) {
 		_, _, err := svc.GetEffectiveCredentialsForPod(ctx, userID, at.ID, &badID)
 		assert.ErrorIs(t, err, ErrCredentialProfileNotFound)
 	})
+
+	t.Run("explicit RunnerHost (profileID=0) bypasses default profile", func(t *testing.T) {
+		// Create a default profile with credentials for user 50
+		params := &CreateCredentialProfileParams{
+			AgentTypeID: at.ID,
+			Name:        "Default for User 50",
+			IsDefault:   true,
+			Credentials: map[string]string{"api_key": "should-not-be-used"},
+		}
+		_, err := svc.CreateCredentialProfile(ctx, int64(50), params)
+		require.NoError(t, err)
+
+		// Explicit RunnerHost: profileID = 0 should return RunnerHost even with default present
+		zero := int64(0)
+		creds, isRunnerHost, err := svc.GetEffectiveCredentialsForPod(ctx, int64(50), at.ID, &zero)
+		require.NoError(t, err)
+		assert.True(t, isRunnerHost, "profileID=0 should always return RunnerHost")
+		assert.Nil(t, creds, "no credentials should be returned for explicit RunnerHost")
+	})
+
+	t.Run("nil profileID uses default profile when available", func(t *testing.T) {
+		// User 50 already has a default profile from previous test
+		creds, isRunnerHost, err := svc.GetEffectiveCredentialsForPod(ctx, int64(50), at.ID, nil)
+		require.NoError(t, err)
+		assert.False(t, isRunnerHost, "nil profileID should use default profile")
+		assert.Equal(t, "should-not-be-used", creds["api_key"])
+	})
+
+	t.Run("nil profileID falls back to RunnerHost when no default", func(t *testing.T) {
+		// User 888 has no profiles at all
+		creds, isRunnerHost, err := svc.GetEffectiveCredentialsForPod(ctx, int64(888), at.ID, nil)
+		require.NoError(t, err)
+		assert.True(t, isRunnerHost, "nil profileID without default should fallback to RunnerHost")
+		assert.Nil(t, creds)
+	})
 }
