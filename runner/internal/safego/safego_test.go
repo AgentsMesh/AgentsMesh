@@ -32,50 +32,45 @@ func TestGo_NormalExecution(t *testing.T) {
 func TestGo_PanicRecovery(t *testing.T) {
 	ResetPanicCount()
 
-	var recovered atomic.Bool
-	done := make(chan struct{})
-
 	Go("test-panic", func() {
-		defer func() {
-			recovered.Store(true)
-			close(done)
-		}()
 		panic("test panic")
 	})
 
-	select {
-	case <-done:
-	case <-time.After(2 * time.Second):
-		t.Fatal("timeout waiting for goroutine to complete")
-	}
-
-	// The panic should be recovered, not propagated
-	if PanicCount() != 1 {
-		t.Errorf("expected 1 panic, got %d", PanicCount())
+	// Wait for run()'s deferred recover to increment panicCount.
+	// We poll PanicCount directly instead of using a done channel inside fn,
+	// because fn's inner defer runs before run()'s outer recover defer,
+	// which would create a race between the signal and the counter increment.
+	deadline := time.After(2 * time.Second)
+	for PanicCount() != 1 {
+		select {
+		case <-deadline:
+			t.Fatalf("timeout: expected 1 panic, got %d", PanicCount())
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
 	}
 }
 
 func TestGo_DoesNotCrashProcess(t *testing.T) {
 	ResetPanicCount()
 
-	done := make(chan struct{})
-
 	// Start a goroutine that panics
 	Go("test-crash", func() {
-		defer close(done)
 		panic("should not crash process")
 	})
 
-	select {
-	case <-done:
-	case <-time.After(2 * time.Second):
-		t.Fatal("timeout waiting for goroutine")
+	// Wait for panic recovery to complete by polling PanicCount.
+	// Same rationale as TestGo_PanicRecovery — avoids inner/outer defer race.
+	deadline := time.After(2 * time.Second)
+	for PanicCount() != 1 {
+		select {
+		case <-deadline:
+			t.Fatalf("timeout: expected 1 panic, got %d", PanicCount())
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
 	}
-
 	// If we get here, the process didn't crash
-	if PanicCount() != 1 {
-		t.Errorf("expected 1 panic, got %d", PanicCount())
-	}
 }
 
 func TestGoLoop_NormalReturn(t *testing.T) {
