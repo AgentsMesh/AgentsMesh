@@ -147,7 +147,8 @@ func TestPodBuilderMergeEnvVars_ClipboardPrependsPATH(t *testing.T) {
 
 	// PATH should be shimBinDir:systemPATH
 	path := result["PATH"]
-	expectedPrefix := clipboard.ShimBinDir(dir) + ":"
+	sep := string(os.PathListSeparator)
+	expectedPrefix := clipboard.ShimBinDir(dir) + sep
 	if !strings.HasPrefix(path, expectedPrefix) {
 		t.Errorf("PATH should start with %q, got %q", expectedPrefix, path)
 	}
@@ -164,7 +165,8 @@ func TestPodBuilderMergeEnvVars_ClipboardPrependsToCustomPATH(t *testing.T) {
 		t.Fatalf("Setup: %v", err)
 	}
 
-	customPath := "/custom/bin:/other/bin"
+	sep := string(os.PathListSeparator)
+	customPath := "/custom/bin" + sep + "/other/bin"
 	builder := NewPodBuilder(PodBuilderDeps{
 		Config:    &config.Config{},
 		Clipboard: shimBackend,
@@ -178,7 +180,7 @@ func TestPodBuilderMergeEnvVars_ClipboardPrependsToCustomPATH(t *testing.T) {
 
 	result := builder.mergeEnvVars(dir)
 
-	expected := clipboard.ShimBinDir(dir) + ":" + customPath
+	expected := clipboard.ShimBinDir(dir) + sep + customPath
 	if result["PATH"] != expected {
 		t.Errorf("PATH = %q, want %q", result["PATH"], expected)
 	}
@@ -298,7 +300,7 @@ func TestPodBuilderMergeEnvVars_ClipboardMixedOverrides(t *testing.T) {
 	result := builder.mergeEnvVars(dir)
 
 	// PATH should be prepended
-	expectedPathPrefix := clipboard.ShimBinDir(dir) + ":"
+	expectedPathPrefix := clipboard.ShimBinDir(dir) + string(os.PathListSeparator)
 	if !strings.HasPrefix(result["PATH"], expectedPathPrefix) {
 		t.Errorf("PATH should start with %q, got %q", expectedPathPrefix, result["PATH"])
 	}

@@ -22,8 +22,9 @@ func TestConfigDefaults(t *testing.T) {
 		t.Errorf("MaxConcurrentPods: got %v, want 5", cfg.MaxConcurrentPods)
 	}
 
-	if cfg.WorkspaceRoot != "/workspace" {
-		t.Errorf("WorkspaceRoot: got %v, want /workspace", cfg.WorkspaceRoot)
+	expectedRoot := defaultWorkspaceRoot()
+	if cfg.WorkspaceRoot != expectedRoot {
+		t.Errorf("WorkspaceRoot: got %v, want %v", cfg.WorkspaceRoot, expectedRoot)
 	}
 
 	if cfg.HealthCheckPort != 9090 {
