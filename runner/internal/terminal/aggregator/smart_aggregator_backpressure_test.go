@@ -182,21 +182,21 @@ func TestSmartAggregator_TimerFlushCriticalLoad(t *testing.T) {
 			atomic.AddInt32(&flushCount, 1)
 		},
 		func() float64 { return float64(usage.Load()) / 100.0 },
-		WithSmartBaseDelay(10*time.Millisecond),
-		WithSmartMaxDelay(50*time.Millisecond),
+		WithSmartBaseDelay(20*time.Millisecond),
+		WithSmartMaxDelay(100*time.Millisecond),
 	)
 
 	// Write data under critical load
 	agg.Write([]byte("data"))
 
 	// Wait less than maxDelay - should not flush
-	time.Sleep(30 * time.Millisecond)
+	time.Sleep(60 * time.Millisecond)
 
 	// Lower the usage
 	usage.Store(0)
 
-	// Wait for flush
-	time.Sleep(100 * time.Millisecond)
+	// Wait for flush (generous margin for Windows timer resolution ~15ms)
+	time.Sleep(300 * time.Millisecond)
 
 	count := atomic.LoadInt32(&flushCount)
 	if count == 0 {
