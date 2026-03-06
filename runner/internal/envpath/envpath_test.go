@@ -3,6 +3,7 @@ package envpath
 import (
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -16,8 +17,14 @@ func TestResolveLoginShellPATH_ReturnsNonEmpty(t *testing.T) {
 
 func TestResolveLoginShellPATH_ContainsStandardDirs(t *testing.T) {
 	result := ResolveLoginShellPATH()
-	if !strings.Contains(result, "/usr/bin") {
-		t.Errorf("expected PATH to contain /usr/bin, got: %s", result)
+	if runtime.GOOS == "windows" {
+		if !strings.Contains(strings.ToLower(result), "windows") {
+			t.Errorf("expected PATH to contain windows system dir, got: %s", result)
+		}
+	} else {
+		if !strings.Contains(result, "/usr/bin") {
+			t.Errorf("expected PATH to contain /usr/bin, got: %s", result)
+		}
 	}
 }
 
@@ -50,6 +57,9 @@ func TestResolveLoginShellPATH_FallbackOnInvalidShell(t *testing.T) {
 // It creates a small sh wrapper that emits noise and then prints PATH with the
 // sentinel, simulating a .zshrc with nvm or welcome-message output.
 func TestResolveLoginShellPATH_NoisyProfile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("skipping login shell test on Windows")
+	}
 	// Create a fake login shell script that emits noisy output around the PATH.
 	dir := t.TempDir()
 	fakeShell := dir + "/fakesh"

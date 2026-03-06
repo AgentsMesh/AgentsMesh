@@ -49,7 +49,7 @@ func TestAutopilotController_HandleDecision_Completed(t *testing.T) {
 
 	// Create mock agent that returns TASK_COMPLETED
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent",
-		"echo \"TASK_COMPLETED\"\necho \"All tasks done.\"")
+		"echo TASK_COMPLETED\necho All tasks done.")
 
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:    "Test",
@@ -108,7 +108,7 @@ func TestAutopilotController_HandleDecision_NeedHumanHelp(t *testing.T) {
 
 	// Create mock agent that returns NEED_HUMAN_HELP
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent",
-		"echo \"NEED_HUMAN_HELP\"\necho \"Need credentials.\"")
+		"echo NEED_HUMAN_HELP\necho Need credentials.")
 
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:    "Test",
@@ -157,7 +157,7 @@ func TestAutopilotController_HandleDecision_GiveUp(t *testing.T) {
 
 	// Create mock agent that returns GIVE_UP
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent",
-		"echo \"GIVE_UP\"\necho \"Cannot complete.\"")
+		"echo GIVE_UP\necho Cannot complete.")
 
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:    "Test",
@@ -216,7 +216,7 @@ func TestAutopilotController_HandleDecision_Continue(t *testing.T) {
 
 	// Create mock agent that returns CONTINUE
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent",
-		"echo \"CONTINUE\"\necho \"Working on it.\"")
+		"echo CONTINUE\necho Working on it.")
 
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:    "Test",

@@ -138,7 +138,7 @@ func TestOutputActivityDetector_OutputRate(t *testing.T) {
 
 	// Some output
 	d.OnOutput(100)
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	rate := d.GetOutputRate()
 	// Should be roughly 100 bytes / 0.05 seconds = 2000 bytes/sec

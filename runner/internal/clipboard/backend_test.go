@@ -288,7 +288,7 @@ func TestShimBackend_Setup(t *testing.T) {
 			t.Errorf("shim %s not found: %v", name, err)
 			continue
 		}
-		if info.Mode()&0111 == 0 {
+		if runtime.GOOS != "windows" && info.Mode()&0111 == 0 {
 			t.Errorf("shim %s not executable", name)
 		}
 	}

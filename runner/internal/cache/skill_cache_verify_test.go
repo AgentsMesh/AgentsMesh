@@ -8,8 +8,10 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -292,19 +294,23 @@ func TestExtractTarGz_ZeroMode(t *testing.T) {
 	err = extractTarGz(bytes.NewReader(buf.Bytes()), targetDir)
 	require.NoError(t, err)
 
-	// Verify zero-mode file gets default 0644
-	info, err := os.Stat(filepath.Join(targetDir, "default-mode.txt"))
-	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0644), info.Mode().Perm())
+	// Verify zero-mode file gets default 0644 (Unix only; Windows has different permission model)
+	if runtime.GOOS != "windows" {
+		info, err := os.Stat(filepath.Join(targetDir, "default-mode.txt"))
+		require.NoError(t, err)
+		assert.Equal(t, os.FileMode(0644), info.Mode().Perm())
+	}
 
 	data, err := os.ReadFile(filepath.Join(targetDir, "default-mode.txt"))
 	require.NoError(t, err)
 	assert.Equal(t, content, string(data))
 
 	// Verify explicit-mode file has permissions capped at 0644 (extractTarGz strips execute bits)
-	info, err = os.Stat(filepath.Join(targetDir, "explicit-mode.sh"))
-	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0644), info.Mode().Perm())
+	if runtime.GOOS != "windows" {
+		info, err := os.Stat(filepath.Join(targetDir, "explicit-mode.sh"))
+		require.NoError(t, err)
+		assert.Equal(t, os.FileMode(0644), info.Mode().Perm())
+	}
 
 	data, err = os.ReadFile(filepath.Join(targetDir, "explicit-mode.sh"))
 	require.NoError(t, err)
@@ -373,9 +379,8 @@ func TestExtractTarGz_SymlinkSkipped(t *testing.T) {
 }
 
 func TestExtractTarGz_FileInReadOnlyDir(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 	// Test that file creation fails when target dir is read-only
 	targetDir := t.TempDir()
 
@@ -406,9 +411,8 @@ func TestExtractTarGz_FileInReadOnlyDir(t *testing.T) {
 }
 
 func TestExtractTarGz_DirCreationFailInReadOnlyTarget(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 	// Test that TypeDir MkdirAll fails when target is read-only
 	targetDir := t.TempDir()
 
@@ -436,9 +440,8 @@ func TestExtractTarGz_DirCreationFailInReadOnlyTarget(t *testing.T) {
 }
 
 func TestExtractTarGz_FileCreationFail(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 	// Test that OpenFile fails when the parent dir exists but is read-only
 	targetDir := t.TempDir()
 

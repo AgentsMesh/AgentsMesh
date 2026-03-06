@@ -254,8 +254,9 @@ func TestManagerWithMockMCP(t *testing.T) {
 	}
 
 	// Check if python3 is available
-	if _, err := exec.LookPath("python3"); err != nil {
-		t.Skip("python3 not available")
+	pythonCmd := testutil.PythonCommand()
+	if _, err := exec.LookPath(pythonCmd); err != nil {
+		t.Skip(pythonCmd + " not available")
 	}
 
 	scriptPath := createMockMCPServer(t)
@@ -263,7 +264,7 @@ func TestManagerWithMockMCP(t *testing.T) {
 	manager := NewManager()
 	manager.AddServer(&Config{
 		Name:    "mock-test",
-		Command: "python3",
+		Command: pythonCmd,
 		Args:    []string{scriptPath},
 	})
 

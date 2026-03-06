@@ -249,6 +249,6 @@ func (s *ScriptPreparationStep) addToolPaths(env []string) []string {
 	}
 
 	// PATH not found in env — construct a minimal one
-	env = append(env, "PATH="+envpath.PrependToPath("/usr/bin:/bin:/usr/sbin:/sbin", extraDirs...))
+	env = append(env, "PATH="+envpath.PrependToPath(envpath.DefaultSystemPath(), extraDirs...))
 	return env
 }

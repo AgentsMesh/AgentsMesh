@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -136,6 +137,9 @@ func TestUpdater_CreateBackup_ExecPathError(t *testing.T) {
 }
 
 func TestUpdater_Rollback_AtomicReplaceError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping: Windows allows rename of file over directory")
+	}
 	tmpDir, err := os.MkdirTemp("", "rollback-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)

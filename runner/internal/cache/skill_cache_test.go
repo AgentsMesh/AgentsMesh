@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/runner/internal/testutil"
@@ -372,8 +373,10 @@ func TestSkillCacheManager_ExtractTo_ZeroModeDefaults644(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, content, string(data))
 
-	// Verify file permissions default to 0644
-	info, err := os.Stat(filepath.Join(targetDir, "zero-mode.txt"))
-	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0644), info.Mode().Perm())
+	// Verify file permissions default to 0644 (Unix only)
+	if runtime.GOOS != "windows" {
+		info, err := os.Stat(filepath.Join(targetDir, "zero-mode.txt"))
+		require.NoError(t, err)
+		assert.Equal(t, os.FileMode(0644), info.Mode().Perm())
+	}
 }

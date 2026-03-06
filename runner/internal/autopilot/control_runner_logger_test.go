@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -16,6 +17,9 @@ import (
 func TestControlRunner_StartControlProcess_WithLogger(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires printf on Windows")
 	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
@@ -59,6 +63,9 @@ printf '%s\n' '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-sessi
 func TestControlRunner_ResumeControlProcess_WithLogger(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires printf on Windows")
 	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
@@ -106,6 +113,9 @@ func TestControlRunner_StartControlProcess_LongOutputTruncation(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires shell scripts on Windows")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)
@@ -150,6 +160,9 @@ echo "Done."
 func TestControlRunner_ResumeControlProcess_LongOutputTruncation(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires shell scripts on Windows")
 	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
@@ -199,6 +212,9 @@ func TestControlRunner_StartControlProcess_ErrorWithLogger(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires shell scripts on Windows")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)
@@ -237,6 +253,9 @@ func TestControlRunner_StartControlProcess_ErrorWithLogger(t *testing.T) {
 func TestControlRunner_ResumeControlProcess_ErrorWithLogger(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires shell scripts on Windows")
 	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")

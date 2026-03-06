@@ -33,3 +33,12 @@ func UserBinaryDirs() []string {
 func exeSuffix() string {
 	return ".exe"
 }
+
+// DefaultSystemPath returns a minimal system PATH for Windows.
+func DefaultSystemPath() string {
+	systemRoot := os.Getenv("SystemRoot")
+	if systemRoot == "" {
+		systemRoot = `C:\Windows`
+	}
+	return filepath.Join(systemRoot, "System32") + ";" + systemRoot
+}

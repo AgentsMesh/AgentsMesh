@@ -3,6 +3,7 @@ package clipboard
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -16,7 +17,7 @@ func TestSetupShims(t *testing.T) {
 		t.Fatalf("SetupShims: %v", err)
 	}
 
-	// Verify shim scripts exist and are executable
+	// Verify shim scripts exist and are executable (Unix only)
 	for _, name := range []string{"xclip", "osascript"} {
 		path := filepath.Join(ShimBinDir(dir), name)
 		info, err := os.Stat(path)
@@ -24,7 +25,7 @@ func TestSetupShims(t *testing.T) {
 			t.Errorf("shim %s not found: %v", name, err)
 			continue
 		}
-		if info.Mode()&0111 == 0 {
+		if runtime.GOOS != "windows" && info.Mode()&0111 == 0 {
 			t.Errorf("shim %s not executable", name)
 		}
 	}
@@ -252,7 +253,7 @@ func TestWriteImage_EmptyData(t *testing.T) {
 
 func TestShimBinDir(t *testing.T) {
 	got := ShimBinDir("/tmp/sandbox")
-	want := "/tmp/sandbox/.clipboard-shim/bin"
+	want := filepath.FromSlash("/tmp/sandbox/.clipboard-shim/bin")
 	if got != want {
 		t.Errorf("ShimBinDir: got %q, want %q", got, want)
 	}
@@ -260,7 +261,7 @@ func TestShimBinDir(t *testing.T) {
 
 func TestDataDir(t *testing.T) {
 	got := dataDir("/tmp/sandbox")
-	want := "/tmp/sandbox/.clipboard-shim/data"
+	want := filepath.FromSlash("/tmp/sandbox/.clipboard-shim/data")
 	if got != want {
 		t.Errorf("dataDir: got %q, want %q", got, want)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +34,9 @@ func TestScriptPreparationStepExecuteEmpty(t *testing.T) {
 }
 
 func TestScriptPreparationStepExecuteWithEnvVars(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires Unix shell variable expansion")
+	}
 	tmpDir := t.TempDir()
 	outputFile := filepath.Join(tmpDir, "output.txt")
 
@@ -61,7 +65,13 @@ func TestScriptPreparationStepExecuteWithEnvVars(t *testing.T) {
 }
 
 func TestScriptPreparationStepTimeout(t *testing.T) {
-	step := NewScriptPreparationStep("sleep 10", 100*time.Millisecond)
+	var script string
+	if runtime.GOOS == "windows" {
+		script = "ping -n 11 127.0.0.1 >nul" // ~10 second delay on Windows
+	} else {
+		script = "sleep 10"
+	}
+	step := NewScriptPreparationStep(script, 100*time.Millisecond)
 	ctx := &PreparationContext{
 		PodID:      "pod-1",
 		WorkspaceDir: t.TempDir(),
@@ -86,7 +96,12 @@ func TestScriptPreparationStepDefaultTimeout(t *testing.T) {
 func TestAddToolPathsWithPATH(t *testing.T) {
 	step := NewScriptPreparationStep("echo test", time.Minute)
 
-	env := []string{"HOME=/home/test", "PATH=/usr/bin:/bin", "USER=test"}
+	var env []string
+	if runtime.GOOS == "windows" {
+		env = []string{"HOME=C:\\Users\\test", "PATH=C:\\Windows\\System32;C:\\Windows", "USER=test"}
+	} else {
+		env = []string{"HOME=/home/test", "PATH=/usr/bin:/bin", "USER=test"}
+	}
 	result := step.addToolPaths(env)
 
 	pathFound := false
@@ -94,11 +109,18 @@ func TestAddToolPathsWithPATH(t *testing.T) {
 		if strings.HasPrefix(e, "PATH=") {
 			pathFound = true
 			path := strings.TrimPrefix(e, "PATH=")
-			if !strings.Contains(path, "/usr/bin") {
-				t.Errorf("PATH should contain /usr/bin, got: %s", path)
-			}
-			if !strings.Contains(path, "/usr/local/bin") {
-				t.Errorf("PATH should contain /usr/local/bin, got: %s", path)
+			if runtime.GOOS == "windows" {
+				// On Windows, should still contain original paths
+				if !strings.Contains(path, "System32") {
+					t.Errorf("PATH should contain System32, got: %s", path)
+				}
+			} else {
+				if !strings.Contains(path, "/usr/bin") {
+					t.Errorf("PATH should contain /usr/bin, got: %s", path)
+				}
+				if !strings.Contains(path, "/usr/local/bin") {
+					t.Errorf("PATH should contain /usr/local/bin, got: %s", path)
+				}
 			}
 		}
 	}
@@ -119,11 +141,18 @@ func TestAddToolPathsWithoutPATH(t *testing.T) {
 		if strings.HasPrefix(e, "PATH=") {
 			pathFound = true
 			path := strings.TrimPrefix(e, "PATH=")
-			if !strings.Contains(path, "/usr/bin") {
-				t.Errorf("PATH should contain /usr/bin, got: %s", path)
-			}
-			if !strings.Contains(path, "/bin") {
-				t.Errorf("PATH should contain /bin, got: %s", path)
+			if runtime.GOOS == "windows" {
+				// On Windows, the fallback path should contain user binary dirs
+				if !strings.Contains(strings.ToLower(path), ".local") {
+					t.Errorf("PATH should contain .local dir, got: %s", path)
+				}
+			} else {
+				if !strings.Contains(path, "/usr/bin") {
+					t.Errorf("PATH should contain /usr/bin, got: %s", path)
+				}
+				if !strings.Contains(path, "/bin") {
+					t.Errorf("PATH should contain /bin, got: %s", path)
+				}
 			}
 		}
 	}

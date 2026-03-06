@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -37,7 +38,10 @@ func TestDefaultHealthChecker_ProcessNotFound(t *testing.T) {
 
 	err := hc(ctx, pid)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "process not running")
+	// Unix: "process not running: ...", Windows: "process not found (pid ...): ..."
+	errMsg := err.Error()
+	assert.True(t, strings.Contains(errMsg, "process not running") || strings.Contains(errMsg, "process not found"),
+		"expected error to contain 'process not running' or 'process not found', got: %s", errMsg)
 }
 
 func TestDefaultHealthChecker_ContextTimeout(t *testing.T) {

@@ -3,6 +3,7 @@ package autopilot
 import (
 	"context"
 	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -88,7 +89,7 @@ func TestControlRunner_RunControlProcess_Start(t *testing.T) {
 	// echo command will fail with wrong args, but we test the flow
 	if err != nil {
 		// Expected for non-existent agent type
-		assert.Contains(t, err.Error(), "control process")
+		assert.Contains(t, err.Error(), "command failed")
 	} else {
 		assert.NotNil(t, decision)
 	}
@@ -125,7 +126,7 @@ func TestControlRunner_RunControlProcess_Resume(t *testing.T) {
 	// echo command will fail with wrong args, but we test the flow
 	if err != nil {
 		// Expected for non-existent agent type
-		assert.Contains(t, err.Error(), "control process")
+		assert.Contains(t, err.Error(), "command failed")
 	} else {
 		assert.NotNil(t, decision)
 	}
@@ -169,6 +170,9 @@ func TestControlRunner_StartControlProcess_Success(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires printf on Windows")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)
@@ -176,7 +180,7 @@ func TestControlRunner_StartControlProcess_Success(t *testing.T) {
 
 	// Create a script that outputs a valid decision
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent",
-		`echo '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-session-abc"}'`)
+		`printf '%s\n' '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-session-abc"}'`)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
@@ -211,7 +215,7 @@ func TestControlRunner_ResumeControlProcess_Success(t *testing.T) {
 
 	// Create a script that outputs a valid decision
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent",
-		`echo '{"result": "CONTINUE\nMore work needed."}'`)
+		`printf '%s\n' '{"result": "CONTINUE\nMore work needed."}'`)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",

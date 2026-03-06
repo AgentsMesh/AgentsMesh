@@ -39,3 +39,8 @@ func UserBinaryDirs() []string {
 func exeSuffix() string {
 	return ""
 }
+
+// DefaultSystemPath returns a minimal system PATH for the current OS.
+func DefaultSystemPath() string {
+	return "/usr/bin:/bin:/usr/sbin:/sbin"
+}

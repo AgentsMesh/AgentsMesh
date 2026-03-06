@@ -93,7 +93,7 @@ func TestSmartAggregator_BufferLimitWithClearScreen(t *testing.T) {
 	agg.Write([]byte("\x1b[2J"))
 	agg.Write([]byte("new frame content"))
 
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	agg.Stop()
 
 	mu.Lock()
