@@ -177,12 +177,12 @@ func TestOutputActivityDetector_SetCallback(t *testing.T) {
 
 func TestOutputActivityDetector_WindowReset(t *testing.T) {
 	d := NewOutputActivityDetector(OutputActivityConfig{
-		WindowDuration: 50 * time.Millisecond,
+		WindowDuration: 100 * time.Millisecond,
 	})
 
 	// First output
 	d.OnOutput(100)
-	time.Sleep(60 * time.Millisecond) // Window expires
+	time.Sleep(150 * time.Millisecond) // Window expires
 
 	// Second output in new window
 	d.OnOutput(50)

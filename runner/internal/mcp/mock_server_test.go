@@ -3,7 +3,6 @@ package mcp
 import (
 	"context"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -119,11 +118,8 @@ func TestServerWithMockMCP(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	// Check if python3 is available
+	testutil.SkipIfNoPython(t)
 	pythonCmd := testutil.PythonCommand()
-	if _, err := exec.LookPath(pythonCmd); err != nil {
-		t.Skip(pythonCmd + " not available")
-	}
 
 	scriptPath := createMockMCPServer(t)
 
@@ -167,11 +163,8 @@ func TestServerCallToolWithMockMCP(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	// Check if python3 is available
+	testutil.SkipIfNoPython(t)
 	pythonCmd := testutil.PythonCommand()
-	if _, err := exec.LookPath(pythonCmd); err != nil {
-		t.Skip(pythonCmd + " not available")
-	}
 
 	scriptPath := createMockMCPServer(t)
 
@@ -208,11 +201,8 @@ func TestServerReadResourceWithMockMCP(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	// Check if python3 is available
+	testutil.SkipIfNoPython(t)
 	pythonCmd := testutil.PythonCommand()
-	if _, err := exec.LookPath(pythonCmd); err != nil {
-		t.Skip(pythonCmd + " not available")
-	}
 
 	scriptPath := createMockMCPServer(t)
 
@@ -253,11 +243,8 @@ func TestManagerWithMockMCP(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	// Check if python3 is available
+	testutil.SkipIfNoPython(t)
 	pythonCmd := testutil.PythonCommand()
-	if _, err := exec.LookPath(pythonCmd); err != nil {
-		t.Skip(pythonCmd + " not available")
-	}
 
 	scriptPath := createMockMCPServer(t)
 

@@ -3,7 +3,6 @@ package mcp
 import (
 	"context"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -174,9 +173,7 @@ func TestCallToolMCPErrorResponse(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	if _, err := exec.LookPath(testutil.PythonCommand()); err != nil {
-		t.Skip(testutil.PythonCommand() + " not available")
-	}
+	testutil.SkipIfNoPython(t)
 
 	scriptPath := createErrorMCPServer(t)
 
@@ -208,9 +205,7 @@ func TestCallToolIsErrorResponse(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	if _, err := exec.LookPath(testutil.PythonCommand()); err != nil {
-		t.Skip(testutil.PythonCommand() + " not available")
-	}
+	testutil.SkipIfNoPython(t)
 
 	scriptPath := createIsErrorMCPServer(t)
 
@@ -247,9 +242,7 @@ func TestReadResourceErrorResponse(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	if _, err := exec.LookPath(testutil.PythonCommand()); err != nil {
-		t.Skip(testutil.PythonCommand() + " not available")
-	}
+	testutil.SkipIfNoPython(t)
 
 	scriptPath := createErrorMCPServer(t)
 
@@ -281,9 +274,7 @@ func TestReadResourceEmptyContentsError(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	if _, err := exec.LookPath(testutil.PythonCommand()); err != nil {
-		t.Skip(testutil.PythonCommand() + " not available")
-	}
+	testutil.SkipIfNoPython(t)
 
 	scriptPath := createIsErrorMCPServer(t)
 
@@ -351,9 +342,7 @@ for line in sys.stdin:
 		t.Skip("skipping integration test in short mode")
 	}
 
-	if _, err := exec.LookPath(testutil.PythonCommand()); err != nil {
-		t.Skip(testutil.PythonCommand() + " not available")
-	}
+	testutil.SkipIfNoPython(t)
 
 	tmpDir := t.TempDir()
 	scriptPath := filepath.Join(tmpDir, "empty_iserror.py")

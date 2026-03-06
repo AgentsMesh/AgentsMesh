@@ -208,6 +208,9 @@ func TestControlRunner_ResumeControlProcess_Success(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test that requires printf on Windows")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "control_runner_test")
 	require.NoError(t, err)

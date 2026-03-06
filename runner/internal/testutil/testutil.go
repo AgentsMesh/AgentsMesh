@@ -4,6 +4,7 @@ package testutil
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -44,6 +45,22 @@ func PythonCommand() string {
 		return "python"
 	}
 	return "python3"
+}
+
+// SkipIfNoPython skips the test if a working Python 3 interpreter is not available.
+// On Windows, exec.LookPath may find the Microsoft Store shim (WindowsApps/python.exe)
+// which is not a real Python installation, so we verify by running "python --version".
+func SkipIfNoPython(t *testing.T) {
+	t.Helper()
+	cmd := PythonCommand()
+	if _, err := exec.LookPath(cmd); err != nil {
+		t.Skipf("%s not in PATH", cmd)
+	}
+	// Verify the interpreter actually works (catches Windows Store shim)
+	out, err := exec.Command(cmd, "--version").CombinedOutput()
+	if err != nil {
+		t.Skipf("%s found but not functional: %v (output: %s)", cmd, err, out)
+	}
 }
 
 // ExeSuffix returns the executable file extension for the current OS.
