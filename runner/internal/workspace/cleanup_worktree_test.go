@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 // --- Test CleanupOldWorktrees ---
@@ -80,9 +82,8 @@ func TestCleanupOldWorktreesWithFile(t *testing.T) {
 }
 
 func TestCleanupOldWorktreesReadDirError(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 
 	tmpDir := t.TempDir()
 	manager, _ := NewManager(tmpDir, "")

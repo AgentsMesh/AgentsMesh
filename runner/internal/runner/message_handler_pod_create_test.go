@@ -6,6 +6,7 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
 
@@ -31,10 +32,11 @@ func TestOnCreatePodSuccess(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
+	sleepCmd, sleepArgs := testutil.SleepCommand(10)
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-pod-1",
-		LaunchCommand: "sleep",
-		LaunchArgs:    []string{"10"},
+		LaunchCommand: sleepCmd,
+		LaunchArgs:    sleepArgs,
 	}
 
 	err = handler.OnCreatePod(cmd)

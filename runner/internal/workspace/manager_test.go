@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 // --- Test Manager (workspace.go) ---
@@ -95,9 +97,8 @@ func TestNewManagerCreatesDirectory(t *testing.T) {
 func TestNewManagerError(t *testing.T) {
 	// Try to create manager in a read-only location (will likely fail on most systems)
 	// Skip if running as root
-	if os.Geteuid() == 0 {
-		t.Skip("skipping as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 
 	// Create a read-only directory
 	tmpDir := t.TempDir()

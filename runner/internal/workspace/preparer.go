@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/envpath"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
@@ -189,8 +189,9 @@ func (s *ScriptPreparationStep) Execute(ctx context.Context, prepCtx *Preparatio
 	log.Info("Executing preparation script",
 		"pod_id", prepCtx.PodID, "workspace_dir", prepCtx.WorkspaceDir, "timeout", s.timeout.String())
 
-	// Create command
-	cmd := exec.CommandContext(ctx, "/bin/sh", "-c", s.script)
+	// Create command using platform-appropriate shell
+	shell, flag := envpath.ShellCommand()
+	cmd := exec.CommandContext(ctx, shell, flag, s.script)
 	cmd.Dir = prepCtx.WorkspaceDir
 	cmd.Env = s.buildEnv(prepCtx)
 
@@ -237,28 +238,17 @@ func (s *ScriptPreparationStep) buildEnv(prepCtx *PreparationContext) []string {
 
 // addToolPaths adds common tool paths to the environment.
 func (s *ScriptPreparationStep) addToolPaths(env []string) []string {
-	var extraPaths string
-	if runtime.GOOS == "darwin" {
-		// macOS: add homebrew paths for both Apple Silicon and Intel
-		extraPaths = "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin"
-	} else {
-		// Linux: add common paths
-		extraPaths = "/usr/local/bin"
-	}
+	extraDirs := envpath.UserBinaryDirs()
 
-	// Find and update PATH, or add it if not present
-	pathFound := false
 	for i, e := range env {
 		if strings.HasPrefix(e, "PATH=") {
 			currentPath := strings.TrimPrefix(e, "PATH=")
-			env[i] = "PATH=" + extraPaths + ":" + currentPath
-			pathFound = true
-			break
+			env[i] = "PATH=" + envpath.PrependToPath(currentPath, extraDirs...)
+			return env
 		}
 	}
-	if !pathFound {
-		env = append(env, "PATH="+extraPaths+":/usr/bin:/bin:/usr/sbin:/sbin")
-	}
 
+	// PATH not found in env — construct a minimal one
+	env = append(env, "PATH="+envpath.PrependToPath("/usr/bin:/bin:/usr/sbin:/sbin", extraDirs...))
 	return env
 }

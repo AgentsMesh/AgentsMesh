@@ -6,8 +6,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"syscall"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/process"
 )
 
 // applyPendingUpdate applies the downloaded update.
@@ -137,17 +138,7 @@ func DefaultHealthChecker(minRunTime time.Duration) HealthChecker {
 		case <-time.After(minRunTime):
 		}
 
-		// Check if the process is still running
-		proc, err := os.FindProcess(pid)
-		if err != nil {
-			return fmt.Errorf("process not found: %w", err)
-		}
-
-		// On Unix systems, Signal(0) checks if the process exists without sending a signal
-		if err := proc.Signal(syscall.Signal(0)); err != nil {
-			return fmt.Errorf("process not running: %w", err)
-		}
-
-		return nil
+		// Check if the process is still running (cross-platform)
+		return process.IsAlive(pid)
 	}
 }

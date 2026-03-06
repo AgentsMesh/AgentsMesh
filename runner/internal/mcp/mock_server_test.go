@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 // mockMCPServerScript returns a bash script that simulates an MCP server
@@ -118,15 +120,16 @@ func TestServerWithMockMCP(t *testing.T) {
 	}
 
 	// Check if python3 is available
-	if _, err := exec.LookPath("python3"); err != nil {
-		t.Skip("python3 not available")
+	pythonCmd := testutil.PythonCommand()
+	if _, err := exec.LookPath(pythonCmd); err != nil {
+		t.Skip(pythonCmd + " not available")
 	}
 
 	scriptPath := createMockMCPServer(t)
 
 	server := NewServer(&Config{
 		Name:    "mock-test",
-		Command: "python3",
+		Command: pythonCmd,
 		Args:    []string{scriptPath},
 	})
 
@@ -165,15 +168,16 @@ func TestServerCallToolWithMockMCP(t *testing.T) {
 	}
 
 	// Check if python3 is available
-	if _, err := exec.LookPath("python3"); err != nil {
-		t.Skip("python3 not available")
+	pythonCmd := testutil.PythonCommand()
+	if _, err := exec.LookPath(pythonCmd); err != nil {
+		t.Skip(pythonCmd + " not available")
 	}
 
 	scriptPath := createMockMCPServer(t)
 
 	server := NewServer(&Config{
 		Name:    "mock-test",
-		Command: "python3",
+		Command: pythonCmd,
 		Args:    []string{scriptPath},
 	})
 
@@ -205,15 +209,16 @@ func TestServerReadResourceWithMockMCP(t *testing.T) {
 	}
 
 	// Check if python3 is available
-	if _, err := exec.LookPath("python3"); err != nil {
-		t.Skip("python3 not available")
+	pythonCmd := testutil.PythonCommand()
+	if _, err := exec.LookPath(pythonCmd); err != nil {
+		t.Skip(pythonCmd + " not available")
 	}
 
 	scriptPath := createMockMCPServer(t)
 
 	server := NewServer(&Config{
 		Name:    "mock-test",
-		Command: "python3",
+		Command: pythonCmd,
 		Args:    []string{scriptPath},
 	})
 

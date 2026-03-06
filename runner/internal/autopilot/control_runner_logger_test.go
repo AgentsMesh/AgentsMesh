@@ -23,9 +23,10 @@ func TestControlRunner_StartControlProcess_WithLogger(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Create a script that outputs a valid decision with session_id
+	// Use printf instead of echo to avoid macOS /bin/sh interpreting \n as newline
 	scriptPath := filepath.Join(tmpDir, "mock_agent")
 	script := `#!/bin/sh
-echo '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-session-xyz"}'
+printf '%s\n' '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-session-xyz"}'
 `
 	err = os.WriteFile(scriptPath, []byte(script), 0755)
 	require.NoError(t, err)
@@ -65,9 +66,10 @@ func TestControlRunner_ResumeControlProcess_WithLogger(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Create a script that outputs a valid decision
+	// Use printf instead of echo to avoid macOS /bin/sh interpreting \n as newline
 	scriptPath := filepath.Join(tmpDir, "mock_agent")
 	script := `#!/bin/sh
-echo '{"result": "CONTINUE\nMore work needed."}'
+printf '%s\n' '{"result": "CONTINUE\nMore work needed."}'
 `
 	err = os.WriteFile(scriptPath, []byte(script), 0755)
 	require.NoError(t, err)

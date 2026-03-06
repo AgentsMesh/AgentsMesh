@@ -1,8 +1,11 @@
 package terminal
 
 import (
+	"os"
 	"testing"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 // --- Test Terminal Start and PTY operations ---
@@ -11,10 +14,11 @@ func TestTerminalStartSuccess(t *testing.T) {
 	outputReceived := make(chan bool, 1)
 	exitReceived := make(chan int, 1)
 
+	cmd, args := testutil.EchoCommand("hello")
 	opts := Options{
-		Command: "echo",
-		Args:    []string{"hello"},
-		WorkDir: "/tmp",
+		Command: cmd,
+		Args:    args,
+		WorkDir: os.TempDir(),
 		OnOutput: func(data []byte) {
 			select {
 			case outputReceived <- true:
@@ -58,9 +62,11 @@ func TestTerminalStartSuccess(t *testing.T) {
 }
 
 func TestTerminalWriteSuccess(t *testing.T) {
+	cmd, args := testutil.CatCommand()
 	opts := Options{
-		Command:  "cat",
-		WorkDir:  "/tmp",
+		Command:  cmd,
+		Args:     args,
+		WorkDir:  os.TempDir(),
 		OnOutput: func(data []byte) {},
 	}
 
@@ -83,10 +89,11 @@ func TestTerminalWriteSuccess(t *testing.T) {
 }
 
 func TestTerminalResizeSuccess(t *testing.T) {
+	cmd, args := testutil.SleepCommand(5)
 	opts := Options{
-		Command: "sleep",
-		Args:    []string{"5"},
-		WorkDir: "/tmp",
+		Command: cmd,
+		Args:    args,
+		WorkDir: os.TempDir(),
 	}
 
 	term, err := New(opts)
@@ -108,10 +115,11 @@ func TestTerminalResizeSuccess(t *testing.T) {
 }
 
 func TestTerminalPIDRunning(t *testing.T) {
+	cmd, args := testutil.SleepCommand(5)
 	opts := Options{
-		Command: "sleep",
-		Args:    []string{"5"},
-		WorkDir: "/tmp",
+		Command: cmd,
+		Args:    args,
+		WorkDir: os.TempDir(),
 	}
 
 	term, err := New(opts)
@@ -132,10 +140,11 @@ func TestTerminalPIDRunning(t *testing.T) {
 }
 
 func TestTerminalStopRunning(t *testing.T) {
+	cmd, args := testutil.SleepCommand(60)
 	opts := Options{
-		Command: "sleep",
-		Args:    []string{"60"},
-		WorkDir: "/tmp",
+		Command: cmd,
+		Args:    args,
+		WorkDir: os.TempDir(),
 	}
 
 	term, err := New(opts)
@@ -161,10 +170,11 @@ func TestTerminalStopRunning(t *testing.T) {
 }
 
 func TestTerminalWriteClosed(t *testing.T) {
+	cmd, args := testutil.SleepCommand(60)
 	opts := Options{
-		Command: "sleep",
-		Args:    []string{"60"},
-		WorkDir: "/tmp",
+		Command: cmd,
+		Args:    args,
+		WorkDir: os.TempDir(),
 	}
 
 	term, err := New(opts)
@@ -187,10 +197,11 @@ func TestTerminalWriteClosed(t *testing.T) {
 }
 
 func TestTerminalResizeClosed(t *testing.T) {
+	cmd, args := testutil.SleepCommand(60)
 	opts := Options{
-		Command: "sleep",
-		Args:    []string{"60"},
-		WorkDir: "/tmp",
+		Command: cmd,
+		Args:    args,
+		WorkDir: os.TempDir(),
 	}
 
 	term, err := New(opts)
@@ -218,9 +229,11 @@ func TestTerminalExitCode(t *testing.T) {
 	exitCode := -1
 	exitReceived := make(chan bool, 1)
 
+	cmd, args := testutil.FalseCommand()
 	opts := Options{
-		Command: "false", // returns exit code 1
-		WorkDir: "/tmp",
+		Command: cmd, // returns exit code 1
+		Args:    args,
+		WorkDir: os.TempDir(),
 		OnExit: func(code int) {
 			exitCode = code
 			exitReceived <- true

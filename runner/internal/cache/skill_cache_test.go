@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -167,8 +168,8 @@ func TestSkillCacheManager_CacheDir(t *testing.T) {
 }
 
 func TestNewSkillCacheManager_InvalidPath(t *testing.T) {
-	// /dev/null is a regular file, not a directory — creating a subdirectory under it should fail
-	invalidPath := "/dev/null/impossible/cache/dir"
+	// Use a path that cannot be created as a directory
+	invalidPath := testutil.InvalidDirPath()
 	mgr, err := NewSkillCacheManager(invalidPath)
 	assert.Nil(t, mgr)
 	assert.Error(t, err)
@@ -248,9 +249,8 @@ func TestSkillCacheManager_ExtractTo_WithDirectoryEntries(t *testing.T) {
 }
 
 func TestSkillCacheManager_Put_CreateTempFail(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 
 	cacheDir := t.TempDir()
 	mgr, err := NewSkillCacheManager(cacheDir)
@@ -274,16 +274,15 @@ func TestSkillCacheManager_ExtractTo_TargetDirCreationFail(t *testing.T) {
 	_, err = mgr.Put(sha, bytes.NewReader(createTestTarGz(t, map[string]string{"a.txt": "a"})))
 	require.NoError(t, err)
 
-	// Use a path under /dev/null which can't be created
-	err = mgr.ExtractTo(sha, "/dev/null/impossible/target")
+	// Use a path under an invalid location which can't be created
+	err = mgr.ExtractTo(sha, testutil.InvalidDirPath())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to create target directory")
 }
 
 func TestSkillCacheManager_ExtractTo_OpenCachedFileFail(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 
 	cacheDir := t.TempDir()
 	mgr, err := NewSkillCacheManager(cacheDir)
@@ -320,9 +319,8 @@ func TestSkillCacheManager_ExtractTo_InvalidGzip(t *testing.T) {
 }
 
 func TestSkillCacheManager_PutAndVerify_PutFails(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 
 	cacheDir := t.TempDir()
 	mgr, err := NewSkillCacheManager(cacheDir)

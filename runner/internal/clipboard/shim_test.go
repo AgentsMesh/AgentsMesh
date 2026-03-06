@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 func TestSetupShims(t *testing.T) {
@@ -52,9 +54,8 @@ func TestSetupShims_Idempotent(t *testing.T) {
 }
 
 func TestSetupShims_CannotCreateBinDir(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 	dir := t.TempDir()
 	readonlyDir := filepath.Join(dir, "readonly")
 	if err := os.Mkdir(readonlyDir, 0555); err != nil {
@@ -68,9 +69,8 @@ func TestSetupShims_CannotCreateBinDir(t *testing.T) {
 }
 
 func TestSetupShims_CannotCreateDataDir(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 	dir := t.TempDir()
 	// Create bin dir but make parent of data dir read-only after
 	shimDir := filepath.Join(dir, shimDirName)
@@ -88,9 +88,8 @@ func TestSetupShims_CannotCreateDataDir(t *testing.T) {
 }
 
 func TestSetupShims_CannotWriteXclip(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 	dir := t.TempDir()
 	// Pre-create directories
 	binDir := filepath.Join(dir, shimDirName, "bin")
@@ -208,9 +207,8 @@ func TestWriteImage_UnsupportedMimeType(t *testing.T) {
 }
 
 func TestWriteImage_CannotCreateDataDir(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("skipping test when running as root")
-	}
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
 	dir := t.TempDir()
 	readonlyDir := filepath.Join(dir, "readonly")
 	if err := os.Mkdir(readonlyDir, 0555); err != nil {

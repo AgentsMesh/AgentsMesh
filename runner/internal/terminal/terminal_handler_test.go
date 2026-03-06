@@ -1,18 +1,22 @@
 package terminal
 
 import (
+	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 )
 
 // --- Test SetOutputHandler and SetExitHandler ---
 
 func TestSetOutputHandler(t *testing.T) {
-	// Use sh -c with sleep to ensure output is captured reliably in CI
+	// Use shell script with sleep to ensure output is captured reliably in CI
+	cmd, args := testutil.ShellScript("echo test && sleep 0.1")
 	opts := Options{
-		Command: "sh",
-		Args:    []string{"-c", "echo test && sleep 0.1"},
+		Command: cmd,
+		Args:    args,
 	}
 
 	term, err := New(opts)
@@ -60,8 +64,10 @@ func TestSetOutputHandler(t *testing.T) {
 }
 
 func TestSetExitHandler(t *testing.T) {
+	cmd, args := testutil.TrueCommand()
 	opts := Options{
-		Command: "true", // Command that exits immediately with code 0
+		Command: cmd, // Command that exits immediately with code 0
+		Args:    args,
 	}
 
 	term, err := New(opts)
@@ -94,9 +100,10 @@ func TestSetExitHandler(t *testing.T) {
 }
 
 func TestSetOutputHandlerNil(t *testing.T) {
+	cmd, args := testutil.EchoCommand("hello")
 	opts := Options{
-		Command: "echo",
-		Args:    []string{"hello"},
+		Command: cmd,
+		Args:    args,
 	}
 
 	term, err := New(opts)
@@ -118,8 +125,10 @@ func TestSetOutputHandlerNil(t *testing.T) {
 }
 
 func TestSetExitHandlerNil(t *testing.T) {
+	cmd, args := testutil.TrueCommand()
 	opts := Options{
-		Command: "true",
+		Command: cmd,
+		Args:    args,
 	}
 
 	term, err := New(opts)
@@ -141,11 +150,12 @@ func TestSetExitHandlerNil(t *testing.T) {
 }
 
 func TestSetHandlersBeforeStart(t *testing.T) {
-	// Use sleep instead of echo to ensure we have time to capture output
+	// Use shell script instead of echo to ensure we have time to capture output
 	// echo may complete too fast in CI environments with race detector
+	cmd, args := testutil.ShellScript("echo hello && sleep 0.1")
 	opts := Options{
-		Command:  "sh",
-		Args:     []string{"-c", "echo hello && sleep 0.1"},
+		Command:  cmd,
+		Args:     args,
 		OnOutput: func([]byte) { /* initial handler */ },
 		OnExit:   func(int) { /* initial handler */ },
 	}
@@ -195,8 +205,10 @@ func TestSetHandlersBeforeStart(t *testing.T) {
 // --- Test Redraw ---
 
 func TestTerminalRedrawNotStarted(t *testing.T) {
+	cmd, args := testutil.EchoCommand("test")
 	opts := Options{
-		Command: "echo",
+		Command: cmd,
+		Args:    args,
 	}
 
 	term, _ := New(opts)
@@ -208,10 +220,11 @@ func TestTerminalRedrawNotStarted(t *testing.T) {
 }
 
 func TestTerminalRedrawClosed(t *testing.T) {
+	cmd, args := testutil.SleepCommand(60)
 	opts := Options{
-		Command: "sleep",
-		Args:    []string{"60"},
-		WorkDir: "/tmp",
+		Command: cmd,
+		Args:    args,
+		WorkDir: os.TempDir(),
 	}
 
 	term, err := New(opts)
@@ -234,10 +247,11 @@ func TestTerminalRedrawClosed(t *testing.T) {
 }
 
 func TestTerminalRedrawSuccess(t *testing.T) {
+	cmd, args := testutil.SleepCommand(5)
 	opts := Options{
-		Command: "sleep",
-		Args:    []string{"5"},
-		WorkDir: "/tmp",
+		Command: cmd,
+		Args:    args,
+		WorkDir: os.TempDir(),
 	}
 
 	term, err := New(opts)

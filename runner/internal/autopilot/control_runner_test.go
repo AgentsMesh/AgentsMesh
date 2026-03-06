@@ -3,10 +3,10 @@ package autopilot
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +19,7 @@ func TestControlRunner_NewControlRunner(t *testing.T) {
 	})
 
 	cr := NewControlRunner(ControlRunnerConfig{
-		WorkDir:        "/tmp",
+		WorkDir:        os.TempDir(),
 		AgentType:      "claude",
 		PromptBuilder:  pb,
 		DecisionParser: nil, // Should use default
@@ -32,7 +32,7 @@ func TestControlRunner_NewControlRunner(t *testing.T) {
 
 func TestControlRunner_DefaultAgentType(t *testing.T) {
 	cr := NewControlRunner(ControlRunnerConfig{
-		WorkDir:   "/tmp",
+		WorkDir:   os.TempDir(),
 		AgentType: "", // Should default to "claude"
 	})
 
@@ -41,7 +41,7 @@ func TestControlRunner_DefaultAgentType(t *testing.T) {
 
 func TestControlRunner_DefaultDecisionParser(t *testing.T) {
 	cr := NewControlRunner(ControlRunnerConfig{
-		WorkDir:        "/tmp",
+		WorkDir:        os.TempDir(),
 		DecisionParser: nil, // Should create default
 	})
 
@@ -50,7 +50,7 @@ func TestControlRunner_DefaultDecisionParser(t *testing.T) {
 
 func TestControlRunner_GetSetSessionID(t *testing.T) {
 	cr := NewControlRunner(ControlRunnerConfig{
-		WorkDir: "/tmp",
+		WorkDir: os.TempDir(),
 	})
 
 	// Initially empty
@@ -141,9 +141,7 @@ func TestControlRunner_StartControlProcess_Timeout(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Create a script that sleeps longer than timeout
-	scriptPath := filepath.Join(tmpDir, "slow_agent")
-	err = os.WriteFile(scriptPath, []byte("#!/bin/sh\nsleep 10"), 0755)
-	require.NoError(t, err)
+	scriptPath := testutil.WriteTestScript(t, tmpDir, "slow_agent", "sleep 10")
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
@@ -177,12 +175,8 @@ func TestControlRunner_StartControlProcess_Success(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Create a script that outputs a valid decision
-	scriptPath := filepath.Join(tmpDir, "mock_agent")
-	script := `#!/bin/sh
-echo '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-session-abc"}'
-`
-	err = os.WriteFile(scriptPath, []byte(script), 0755)
-	require.NoError(t, err)
+	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent",
+		`echo '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-session-abc"}'`)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
@@ -216,12 +210,8 @@ func TestControlRunner_ResumeControlProcess_Success(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Create a script that outputs a valid decision
-	scriptPath := filepath.Join(tmpDir, "mock_agent")
-	script := `#!/bin/sh
-echo '{"result": "CONTINUE\nMore work needed."}'
-`
-	err = os.WriteFile(scriptPath, []byte(script), 0755)
-	require.NoError(t, err)
+	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent",
+		`echo '{"result": "CONTINUE\nMore work needed."}'`)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",

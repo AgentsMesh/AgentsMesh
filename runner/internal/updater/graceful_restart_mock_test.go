@@ -3,9 +3,9 @@ package updater
 import (
 	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,12 +23,7 @@ func TestDefaultRestartFunc_Success(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	testBinary := filepath.Join(tmpDir, "test-binary")
-
-	// Create a simple shell script that exits immediately
-	script := "#!/bin/sh\nexit 0\n"
-	err = os.WriteFile(testBinary, []byte(script), 0755)
-	require.NoError(t, err)
+	testBinary := testutil.WriteTestScript(t, tmpDir, "test-binary", "exit 0")
 
 	// We can't easily test DefaultRestartFunc directly since it uses os.Executable
 	// Instead, test the restart logic separately

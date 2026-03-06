@@ -2,15 +2,13 @@ package client
 
 import (
 	"context"
-	"os"
 	"os/exec"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/anthropics/agentsmesh/runner/internal/envpath"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
@@ -210,7 +208,7 @@ func probeAgentTypes(agentTypes []*runnerv1.AgentTypeInfo) []agentProbeResult {
 			// Fallback: search common user binary directories.
 			// This handles cases where the service runs with a minimal PATH
 			// (e.g. launchd on macOS provides only /usr/bin:/bin:/usr/sbin:/sbin).
-			path = lookPathFallback(agent.Command)
+			path = envpath.LookPathFallback(agent.Command)
 			if path == "" {
 				logger.GRPCTrace().Trace("Agent command not found in PATH or fallback dirs",
 					"agent", agent.Slug, "command", agent.Command)
@@ -227,41 +225,6 @@ func probeAgentTypes(agentTypes []*runnerv1.AgentTypeInfo) []agentProbeResult {
 		results = append(results, r)
 	}
 	return results
-}
-
-// lookPathFallback searches common user binary directories for a command.
-// Returns the full path if found, empty string otherwise.
-func lookPathFallback(command string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-
-	dirs := []string{
-		filepath.Join(home, ".local", "bin"),
-	}
-
-	if runtime.GOOS == "darwin" {
-		dirs = append(dirs,
-			"/opt/homebrew/bin",
-			"/opt/homebrew/sbin",
-			"/usr/local/bin",
-		)
-	} else {
-		dirs = append(dirs,
-			"/usr/local/bin",
-			"/snap/bin",
-		)
-	}
-
-	for _, dir := range dirs {
-		candidate := filepath.Join(dir, command)
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
-			return candidate
-		}
-	}
-
-	return ""
 }
 
 // detectAgentVersion runs "<command> --version" and extracts the version string.
