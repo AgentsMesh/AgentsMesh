@@ -208,7 +208,7 @@ export default function LoopDetailPage() {
             {t("loops.back")}
           </button>
 
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="min-w-0">
               <div className="flex items-center gap-3 mb-1.5">
                 <h1 className="text-xl font-bold truncate">{loop.name}</h1>
@@ -234,7 +234,7 @@ export default function LoopDetailPage() {
               )}
             </div>
 
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
               {isEnabled && (
                 <Button size="sm" onClick={handleTrigger} disabled={triggering || loop.active_run_count >= loop.max_concurrent_runs} className="gap-1.5">
                   {triggering ? (
@@ -380,7 +380,7 @@ export default function LoopDetailPage() {
                     icon={<Zap className="w-3.5 h-3.5" />}
                     label={t("loops.webhookUrl")}
                     value={
-                      <span className="text-xs font-mono truncate max-w-[200px] inline-block align-bottom">
+                      <span className="text-xs font-mono truncate max-w-[140px] sm:max-w-[200px] md:max-w-[300px] inline-block align-bottom">
                         {loop.callback_url}
                       </span>
                     }
@@ -411,7 +411,7 @@ export default function LoopDetailPage() {
                 <div className="absolute top-2 left-3 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
                   {t("loops.curlExample")}
                 </div>
-                <pre suppressHydrationWarning className="pt-7 pb-3 px-3 bg-muted/50 rounded-lg text-xs font-mono overflow-x-auto text-foreground/70 leading-relaxed">
+                <pre suppressHydrationWarning className="pt-7 pb-3 px-3 bg-muted/50 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all text-foreground/70 leading-relaxed">
 {`curl -X POST \\
   ${typeof window !== "undefined" ? window.location.origin : ""}/api/v1/ext/orgs/${orgSlug}/loops/${loop.slug}/trigger \\
   -H "X-API-Key: amk_your_api_key_here" \\
@@ -523,7 +523,7 @@ function ConfigRow({
         {icon}
         {label}
       </span>
-      <span className="font-medium capitalize">{value}</span>
+      <span className="font-medium capitalize min-w-0">{value}</span>
     </div>
   );
 }

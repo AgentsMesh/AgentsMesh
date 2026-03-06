@@ -428,7 +428,7 @@ export function LoopCreateDialog({
             </div>
 
             {/* Sandbox & Concurrency */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>{t("loops.sandboxStrategy")}</Label>
                 <Select value={sandboxStrategy} onValueChange={setSandboxStrategy}>
@@ -461,7 +461,7 @@ export function LoopCreateDialog({
             </div>
 
             {/* Timeout & Max Concurrent */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>{t("loops.timeout")}</Label>
                 <div className="flex items-center gap-2">

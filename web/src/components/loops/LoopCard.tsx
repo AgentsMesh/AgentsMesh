@@ -104,7 +104,7 @@ export function LoopCard({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                className="h-7 w-7 p-0 opacity-60 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
               >
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
@@ -259,7 +259,7 @@ export function LoopCard({
           size="sm"
           variant="ghost"
           tabIndex={-1}
-          className="h-7 text-xs gap-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-7 text-xs gap-1 text-muted-foreground opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
           onClick={() => onClick(loop.slug)}
         >
           {t("loops.details")}

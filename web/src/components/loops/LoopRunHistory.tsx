@@ -166,7 +166,7 @@ function RunRow({
     <div>
       <div
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-lg",
+          "flex items-center flex-wrap md:flex-nowrap gap-x-3 gap-y-1 px-3 py-2.5 rounded-lg",
           "border border-transparent",
           "hover:bg-accent/50 hover:border-border/50",
           "transition-colors duration-150",
@@ -216,7 +216,7 @@ function RunRow({
         </div>
 
         {/* Trigger type */}
-        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground w-16 flex-shrink-0">
+        <span className="hidden sm:inline-flex items-center gap-1 text-xs text-muted-foreground w-16 flex-shrink-0">
           {run.trigger_type === "manual" ? (
             <User className="w-3 h-3 flex-shrink-0" />
           ) : run.trigger_type === "api" ? (
