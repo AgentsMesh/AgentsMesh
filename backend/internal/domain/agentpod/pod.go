@@ -83,6 +83,11 @@ type Pod struct {
 	// Enables tracking the chain of resumed sessions
 	SourcePodKey *string `gorm:"size:100" json:"source_pod_key,omitempty"`
 
+	// CredentialProfileID records which credential profile was used to create this pod.
+	// nil = used default profile (or RunnerHost fallback), >0 = specific profile ID.
+	// Sentinel value 0 is NOT stored (FK constraint); explicit RunnerHost is stored as nil.
+	CredentialProfileID *int64 `json:"credential_profile_id,omitempty"`
+
 	// ConfigOverrides stores pod-level configuration overrides
 	// Merged with organization defaults during Pod creation
 	ConfigOverrides agent.ConfigValues `gorm:"type:jsonb;default:'{}'" json:"config_overrides,omitempty"`

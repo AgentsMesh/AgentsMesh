@@ -159,28 +159,33 @@ export function useAgentCredentials(
       if (data.authToken) credentials.auth_token = data.authToken;
     }
 
-    if (editingProfile) {
-      // When updating, always send credentials object to ensure stale fields
-      // from the other method are cleared (backend replaces entire object)
-      await userAgentCredentialApi.update(editingProfile.id, {
-        name: data.name,
-        description: data.description || undefined,
-        is_runner_host: false,
-        credentials: Object.keys(credentials).length > 0 ? credentials : undefined,
-      });
-      setSuccess(t("settings.agentCredentials.profileUpdated"));
-    } else {
-      await userAgentCredentialApi.create(agentTypeId, {
-        name: data.name,
-        description: data.description || undefined,
-        is_runner_host: false,
-        credentials: credentials,
-      });
-      setSuccess(t("settings.agentCredentials.profileCreated"));
-    }
+    try {
+      if (editingProfile) {
+        // When updating, always send credentials object to ensure stale fields
+        // from the other method are cleared (backend replaces entire object)
+        await userAgentCredentialApi.update(editingProfile.id, {
+          name: data.name,
+          description: data.description || undefined,
+          is_runner_host: false,
+          credentials: Object.keys(credentials).length > 0 ? credentials : undefined,
+        });
+        setSuccess(t("settings.agentCredentials.profileUpdated"));
+      } else {
+        await userAgentCredentialApi.create(agentTypeId, {
+          name: data.name,
+          description: data.description || undefined,
+          is_runner_host: false,
+          credentials: credentials,
+        });
+        setSuccess(t("settings.agentCredentials.profileCreated"));
+      }
 
-    await loadData();
-    setTimeout(() => setSuccess(null), 3000);
+      await loadData();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error("Failed to save credential profile:", err);
+      throw err;
+    }
   }, [loadData, t]);
 
   // Get profiles for a specific agent type

@@ -44,6 +44,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		title TEXT,
 		session_id TEXT,
 		source_pod_key TEXT,
+		credential_profile_id INTEGER,
 		config_overrides TEXT DEFAULT '{}',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

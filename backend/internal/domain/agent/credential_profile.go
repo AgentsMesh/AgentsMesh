@@ -4,9 +4,10 @@ import (
 	"time"
 )
 
-// RunnerHostProfileID is a special constant indicating "RunnerHost" mode
-// When credential_profile_id is 0 or nil, it means using Runner's local environment
-// and no credentials will be injected into the pod
+// RunnerHostProfileID is a special sentinel value indicating explicit "RunnerHost" mode.
+// When credential_profile_id is explicitly set to 0, the system uses the Runner's local
+// environment and no credentials are injected into the pod.
+// This is distinct from nil/absent, which means "use user's default profile".
 const RunnerHostProfileID int64 = 0
 
 // UserAgentCredentialProfile represents a user's credential configuration profile for an agent type

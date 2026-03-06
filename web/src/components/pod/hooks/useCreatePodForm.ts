@@ -254,7 +254,7 @@ export function useCreatePodForm(
           branch_name: selectedBranch || undefined,
           initial_prompt: finalPrompt,
           config_overrides: config,
-          credential_profile_id: selectedCredentialProfile > 0 ? selectedCredentialProfile : undefined,
+          credential_profile_id: selectedCredentialProfile,
           ticket_slug: options?.ticketSlug,
           cols: options?.cols,
           rows: options?.rows,

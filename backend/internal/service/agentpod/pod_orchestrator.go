@@ -219,18 +219,26 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	}
 
 	// === 4. DB record creation ===
+	// Convert credential_profile_id for DB storage:
+	// 0 (explicit RunnerHost) → nil (FK constraint does not allow 0)
+	var dbCredProfileID *int64
+	if req.CredentialProfileID != nil && *req.CredentialProfileID > 0 {
+		dbCredProfileID = req.CredentialProfileID
+	}
+
 	pod, err := o.podService.CreatePod(ctx, &CreatePodRequest{
-		OrganizationID:    req.OrganizationID,
-		RunnerID:          req.RunnerID,
-		AgentTypeID:       req.AgentTypeID,
-		CustomAgentTypeID: req.CustomAgentTypeID,
-		RepositoryID:      req.RepositoryID,
-		TicketID:          req.TicketID,
-		CreatedByID:       req.UserID,
-		InitialPrompt:     req.InitialPrompt,
-		BranchName:        req.BranchName,
-		SessionID:         sessionID,
-		SourcePodKey:      req.SourcePodKey,
+		OrganizationID:      req.OrganizationID,
+		RunnerID:            req.RunnerID,
+		AgentTypeID:         req.AgentTypeID,
+		CustomAgentTypeID:   req.CustomAgentTypeID,
+		RepositoryID:        req.RepositoryID,
+		TicketID:            req.TicketID,
+		CreatedByID:         req.UserID,
+		InitialPrompt:       req.InitialPrompt,
+		BranchName:          req.BranchName,
+		SessionID:           sessionID,
+		SourcePodKey:        req.SourcePodKey,
+		CredentialProfileID: dbCredProfileID,
 	})
 	if err != nil {
 		return nil, err // Includes ErrSandboxAlreadyResumed

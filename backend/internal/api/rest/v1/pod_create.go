@@ -23,8 +23,9 @@ type CreatePodRequest struct {
 	PermissionMode    *string `json:"permission_mode"` // "plan", "default", or "bypassPermissions"
 
 	// CredentialProfileID specifies which credential profile to use
-	// - nil or 0: RunnerHost mode (use Runner's local environment, no credentials injected)
-	// - >0: Use specified credential profile ID
+	// - nil (field absent): use user's default profile, fallback to RunnerHost if no default
+	// - 0: explicit RunnerHost mode (use Runner's local environment, no credentials injected)
+	// - >0: use specified credential profile ID
 	CredentialProfileID *int64 `json:"credential_profile_id"`
 
 	// ConfigOverrides allows users to override agent type default configuration
