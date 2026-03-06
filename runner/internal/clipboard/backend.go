@@ -36,6 +36,12 @@ type detectEnv struct {
 
 // detect implements the backend selection logic with injectable dependencies.
 func detect(env detectEnv) Backend {
+	// 0. Windows: no Unix clipboard tools available, use no-op backend.
+	//    Native Windows clipboard support (clip.exe / PowerShell Set-Clipboard)
+	//    can be added in the future if needed.
+	if env.goos == "windows" {
+		return &NoopBackend{}
+	}
 	// 1. macOS: pasteboard is always available (no display server needed)
 	if env.goos == "darwin" {
 		if _, err := env.lookPath("osascript"); err == nil {
@@ -54,7 +60,7 @@ func detect(env detectEnv) Backend {
 			return &NativeBackend{tool: "xclip"}
 		}
 	}
-	// 4. Headless fallback
+	// 4. Headless fallback (Unix bash shim scripts)
 	return &ShimBackend{}
 }
 
@@ -115,3 +121,12 @@ func (b *NativeBackend) EnvOverrides(sandboxRoot string) map[string]string {
 	// Native clipboard doesn't need PATH overrides
 	return nil
 }
+
+// NoopBackend is a clipboard backend that does nothing.
+// Used on platforms where clipboard shim scripts are not applicable (e.g. Windows).
+type NoopBackend struct{}
+
+func (b *NoopBackend) Name() string                        { return "noop" }
+func (b *NoopBackend) Setup(string) error                  { return nil }
+func (b *NoopBackend) WriteImage(string, string, []byte) error { return fmt.Errorf("clipboard not supported on this platform") }
+func (b *NoopBackend) EnvOverrides(string) map[string]string   { return nil }

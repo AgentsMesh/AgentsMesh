@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/envpath"
 	"gopkg.in/yaml.v3"
 )
 
@@ -186,7 +188,7 @@ func saveGRPCConfig(nodeID, serverURL, orgSlug, certPEM, keyPEM, caCertPEM, grpc
 		KeyFile:           cfg.KeyFile,
 		CAFile:            cfg.CAFile,
 		MaxConcurrentPods: 5,
-		WorkspaceRoot:     "/tmp/agentsmesh-workspace",
+		WorkspaceRoot:     defaultWorkspaceRoot(),
 		DefaultAgent:      "claude-code",
 		DefaultShell:      getDefaultShell(),
 		HealthCheckPort:   9090,
@@ -212,8 +214,21 @@ func getDefaultShell() string {
 	if shell != "" {
 		return shell
 	}
-	// Default to /bin/sh if SHELL is not set
-	return "/bin/sh"
+	s, _ := envpath.ShellCommand()
+	return s
+}
+
+// defaultWorkspaceRoot returns the platform-appropriate default workspace root.
+func defaultWorkspaceRoot() string {
+	if runtime.GOOS == "windows" {
+		// Use %LOCALAPPDATA%\agentsmesh-workspace on Windows
+		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
+			return filepath.Join(localAppData, "agentsmesh-workspace")
+		}
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, "agentsmesh-workspace")
+	}
+	return filepath.Join(os.TempDir(), "agentsmesh-workspace")
 }
 
 // savedGRPCConfig represents the gRPC configuration saved to ~/.agentsmesh/config.yaml

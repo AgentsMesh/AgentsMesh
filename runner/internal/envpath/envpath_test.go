@@ -29,6 +29,9 @@ func TestResolveLoginShellPATH_ContainsStandardDirs(t *testing.T) {
 }
 
 func TestResolveLoginShellPATH_FallbackOnEmptyShell(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("skipping $SHELL test on Windows")
+	}
 	original := os.Getenv("SHELL")
 	t.Setenv("SHELL", "")
 	defer os.Setenv("SHELL", original)
@@ -41,6 +44,9 @@ func TestResolveLoginShellPATH_FallbackOnEmptyShell(t *testing.T) {
 }
 
 func TestResolveLoginShellPATH_FallbackOnInvalidShell(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("skipping $SHELL test on Windows")
+	}
 	original := os.Getenv("SHELL")
 	t.Setenv("SHELL", "/nonexistent/shell")
 	defer os.Setenv("SHELL", original)
