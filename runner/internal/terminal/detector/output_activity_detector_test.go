@@ -187,6 +187,9 @@ func TestOutputActivityDetector_WindowReset(t *testing.T) {
 	// Second output in new window
 	d.OnOutput(50)
 
+	// Small delay to ensure non-zero elapsed time for rate calculation
+	time.Sleep(10 * time.Millisecond)
+
 	// The output count should have been reset
 	// We can't directly check outputCount, but the rate calculation reflects it
 	rate := d.GetOutputRate()
