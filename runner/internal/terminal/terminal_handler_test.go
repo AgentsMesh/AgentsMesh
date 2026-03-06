@@ -2,6 +2,7 @@ package terminal
 
 import (
 	"os"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -12,8 +13,15 @@ import (
 // --- Test SetOutputHandler and SetExitHandler ---
 
 func TestSetOutputHandler(t *testing.T) {
-	// Use shell script with sleep to ensure output is captured reliably in CI
-	cmd, args := testutil.ShellScript("echo test && sleep 0.1")
+	// Use shell script with a short delay to ensure output is captured reliably in CI.
+	// Windows has no 'sleep' command; use 'ping -n 2 127.0.0.1 >nul' as a ~1s delay.
+	var script string
+	if runtime.GOOS == "windows" {
+		script = "echo test & ping -n 2 127.0.0.1 >nul"
+	} else {
+		script = "echo test && sleep 0.1"
+	}
+	cmd, args := testutil.ShellScript(script)
 	opts := Options{
 		Command: cmd,
 		Args:    args,
@@ -150,9 +158,15 @@ func TestSetExitHandlerNil(t *testing.T) {
 }
 
 func TestSetHandlersBeforeStart(t *testing.T) {
-	// Use shell script instead of echo to ensure we have time to capture output
-	// echo may complete too fast in CI environments with race detector
-	cmd, args := testutil.ShellScript("echo hello && sleep 0.1")
+	// Use shell script instead of echo to ensure we have time to capture output.
+	// echo may complete too fast in CI environments with race detector.
+	var script string
+	if runtime.GOOS == "windows" {
+		script = "echo hello & ping -n 2 127.0.0.1 >nul"
+	} else {
+		script = "echo hello && sleep 0.1"
+	}
+	cmd, args := testutil.ShellScript(script)
 	opts := Options{
 		Command:  cmd,
 		Args:     args,
