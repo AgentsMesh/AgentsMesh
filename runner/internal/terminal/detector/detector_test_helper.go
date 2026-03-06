@@ -5,11 +5,14 @@ import (
 )
 
 // testDetectorConfig returns a config with short thresholds for fast testing.
+// Thresholds must leave sufficient margin above simulateContinuousOutput's 30ms
+// sleep to avoid false transitions on platforms with coarse timer resolution
+// (e.g., Windows ~15ms granularity).
 func testDetectorConfig() MultiSignalConfig {
 	return MultiSignalConfig{
-		IdleThreshold:    50 * time.Millisecond,
-		ConfirmThreshold: 50 * time.Millisecond,
-		MinStableTime:    50 * time.Millisecond,
+		IdleThreshold:    100 * time.Millisecond,
+		ConfirmThreshold: 100 * time.Millisecond,
+		MinStableTime:    100 * time.Millisecond,
 		WaitingThreshold: 0.6,
 	}
 }
