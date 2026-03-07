@@ -242,7 +242,7 @@ func (c *GRPCConnection) Connect() error {
 	if err != nil {
 		host = dialTarget // No port in dialTarget, use as-is
 	}
-	if err := creds.OverrideServerName(host); err != nil {
+	if err := creds.OverrideServerName(host); err != nil { //nolint:staticcheck // advancedtls has no other public API to set ServerName; the unexported serverNameOverride field is inaccessible
 		logger.GRPC().Warn("Failed to override TLS server name", "error", err)
 	}
 
