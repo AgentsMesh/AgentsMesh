@@ -60,6 +60,7 @@ runner/bin/
 runner/tmp/
 runner/*.out
 runner/runner
+runner/runner.exe
 runner/coverage.html
 
 # =========================
