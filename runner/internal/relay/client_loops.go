@@ -37,6 +37,20 @@ func (c *Client) readLoop() {
 			// Graceful shutdown - call onClose and don't reconnect
 			c.fireOnClose()
 		default:
+			// Flap detection: if the connection died quickly, increment the
+			// reconnect counter so reconnectLoop applies increasing backoff.
+			// This prevents 500ms tight-loop reconnects when the relay keeps
+			// closing us immediately (e.g., no subscriber waiting).
+			connAt := c.connectedAt.Load()
+			connDuration := time.Since(time.UnixMilli(connAt))
+			if connDuration < minStableConnected {
+				count := c.reconnectCount.Add(1)
+				c.logger.Warn("Connection was short-lived, increasing reconnect backoff",
+					"duration", connDuration, "reconnect_count", count)
+			} else {
+				c.reconnectCount.Store(0)
+			}
+
 			// Unexpected disconnect - attempt reconnection
 			// Use atomic.Swap to prevent concurrent reconnect attempts
 			if !c.reconnecting.Swap(true) {

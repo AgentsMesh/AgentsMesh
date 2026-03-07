@@ -61,7 +61,18 @@ func (c *Client) reconnectLoop() {
 		return
 	}
 
+	// Use reconnectCount to resume backoff across reconnectLoop invocations.
+	// When a connection "succeeds" but dies immediately (flap), readLoop increments
+	// reconnectCount. We use it here so the backoff doesn't reset to 500ms each time.
+	flapCount := int(c.reconnectCount.Load())
 	backoff := initialBackoff
+	for i := 0; i < flapCount; i++ {
+		backoff = min(backoff*2, maxReconnectDelay)
+	}
+	if flapCount > 0 {
+		c.logger.Info("Applying flap-aware backoff",
+			"flap_count", flapCount, "initial_backoff", backoff)
+	}
 	tokenRefreshAttempted := false
 
 	for attempt := 1; ; attempt++ {

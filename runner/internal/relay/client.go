@@ -18,8 +18,9 @@ const (
 	maxMessageSize = 4 * 1024 * 1024 // 4MB max message size (supports image paste)
 
 	// Reconnection settings
-	maxReconnectDelay = 30 * time.Second
-	initialBackoff    = 500 * time.Millisecond
+	maxReconnectDelay  = 30 * time.Second
+	initialBackoff     = 500 * time.Millisecond
+	minStableConnected = 10 * time.Second // connection must last this long to reset backoff
 )
 
 // InputHandler is called when user input is received from relay
@@ -55,21 +56,22 @@ type Client struct {
 	onTokenExpired func() (newToken string) // Called when token expires, should request new token from Backend
 
 	// State
-	connected    atomic.Bool
-	connectedAt  atomic.Int64  // Unix milliseconds timestamp when connected
-	reconnecting atomic.Bool   // Prevents concurrent reconnect attempts
-	stopped      atomic.Bool   // Indicates client has been permanently stopped
-	stopCh       chan struct{} // Signals client shutdown (permanent)
-	connDoneCh   chan struct{} // Signals current connection is done (closed on disconnect)
-	stopOnce     sync.Once
-	closeOnce    sync.Once // Ensures onClose callback fires at most once
-	sendCh       chan []byte
-	logger       *slog.Logger
-	ctx          context.Context
-	cancel       context.CancelFunc
-	wg           sync.WaitGroup
-	wgMu         sync.Mutex // Protects wg.Add() to ensure atomicity with stopped check
-	reconnectMu  sync.Mutex
+	connected      atomic.Bool
+	connectedAt    atomic.Int64  // Unix milliseconds timestamp when connected
+	reconnecting   atomic.Bool   // Prevents concurrent reconnect attempts
+	reconnectCount atomic.Int32  // Tracks consecutive short-lived connections (flap detection)
+	stopped        atomic.Bool   // Indicates client has been permanently stopped
+	stopCh         chan struct{} // Signals client shutdown (permanent)
+	connDoneCh     chan struct{} // Signals current connection is done (closed on disconnect)
+	stopOnce       sync.Once
+	closeOnce      sync.Once // Ensures onClose callback fires at most once
+	sendCh         chan []byte
+	logger         *slog.Logger
+	ctx            context.Context
+	cancel         context.CancelFunc
+	wg             sync.WaitGroup
+	wgMu           sync.Mutex // Protects wg.Add() to ensure atomicity with stopped check
+	reconnectMu    sync.Mutex
 }
 
 // NewClient creates a new Relay WebSocket client
