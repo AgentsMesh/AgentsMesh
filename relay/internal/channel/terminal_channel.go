@@ -620,17 +620,15 @@ func (c *TerminalChannel) handleControlRequest(subscriberID string, payload []by
 		response = &protocol.ControlRequest{Action: "error", Controller: ""}
 	}
 
-	if response != nil {
-		data, _ := protocol.EncodeControlRequest(response)
-		// Get connection under lock, release before writing to avoid holding lock during I/O
-		c.subscribersMu.RLock()
-		subscriber, ok := c.subscribers[subscriberID]
-		c.subscribersMu.RUnlock()
+	data, _ := protocol.EncodeControlRequest(response)
+	// Get connection under lock, release before writing to avoid holding lock during I/O
+	c.subscribersMu.RLock()
+	subscriber, ok := c.subscribers[subscriberID]
+	c.subscribersMu.RUnlock()
 
-		if ok {
-			if err := subscriber.WriteMessage(data); err != nil {
-				c.logger.Warn("Failed to send control response", "subscriber_id", subscriberID, "error", err)
-			}
+	if ok {
+		if err := subscriber.WriteMessage(data); err != nil {
+			c.logger.Warn("Failed to send control response", "subscriber_id", subscriberID, "error", err)
 		}
 	}
 }

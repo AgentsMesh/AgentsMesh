@@ -162,7 +162,7 @@ type SessionClosedRequest struct {
 // drainBody discards up to 4KB of response body so the underlying TCP connection
 // can be reused by net/http's connection pool, then closes the body.
 func drainBody(body io.ReadCloser) {
-	io.Copy(io.Discard, io.LimitReader(body, 4096))
+	_, _ = io.Copy(io.Discard, io.LimitReader(body, 4096))
 	body.Close()
 }
 
