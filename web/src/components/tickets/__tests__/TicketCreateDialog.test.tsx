@@ -7,43 +7,6 @@ vi.mock("@/components/layout/useBreakpoint", () => ({
   useBreakpoint: (...args: unknown[]) => mockUseBreakpoint(...args),
 }));
 
-// Mock vaul
-vi.mock("vaul", () => ({
-  Drawer: {
-    Root: ({
-      children,
-      open,
-    }: {
-      children: React.ReactNode;
-      open: boolean;
-    }) => (open ? <div data-testid="drawer-root">{children}</div> : null),
-    Portal: ({ children }: { children: React.ReactNode }) => (
-      <div>{children}</div>
-    ),
-    Overlay: ({ className }: { className?: string }) => (
-      <div className={className} />
-    ),
-    Content: ({
-      children,
-      className,
-    }: {
-      children: React.ReactNode;
-      className?: string;
-    }) => (
-      <div data-testid="drawer-content" className={className}>
-        {children}
-      </div>
-    ),
-    Title: ({
-      children,
-      className,
-    }: {
-      children: React.ReactNode;
-      className?: string;
-    }) => <span className={className}>{children}</span>,
-  },
-}));
-
 // Mock ticketApi
 const mockCreate = vi.fn();
 vi.mock("@/lib/api", () => ({
@@ -278,27 +241,12 @@ describe("TicketCreateDialog", () => {
       setMobile();
     });
 
-    it("renders in mobile drawer mode", () => {
-      render(<TicketCreateDialog {...defaultProps} />);
-
-      expect(screen.getByTestId("drawer-root")).toBeInTheDocument();
-      expect(screen.getByTestId("drawer-content")).toBeInTheDocument();
-    });
-
     it("uses compact min-height for block editor on mobile", () => {
       render(<TicketCreateDialog {...defaultProps} />);
 
       const editorWrapper = screen.getByTestId("block-editor").parentElement!;
       expect(editorWrapper.className).toContain("min-h-[100px]");
       expect(editorWrapper.className).not.toContain("min-h-[150px]");
-    });
-
-    it("uses dvh-based max height on the drawer", () => {
-      render(<TicketCreateDialog {...defaultProps} />);
-
-      const drawerContent = screen.getByTestId("drawer-content");
-      expect(drawerContent.className).toContain("max-h-[85dvh]");
-      expect(drawerContent.className).not.toContain("max-h-[90vh]");
     });
 
     it("title input is visible and accessible in mobile mode", () => {
