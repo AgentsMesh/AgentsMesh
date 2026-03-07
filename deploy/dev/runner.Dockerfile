@@ -47,6 +47,9 @@ RUN npm install -g @google/gemini-cli
 # 4. OpenCode - Open source AI coding agent
 RUN npm install -g opencode-ai
 
+# Install coreutils for GNU env (supports -S flag required by Node.js CLI shebangs)
+RUN apk add --no-cache coreutils
+
 # Verify installations
 RUN echo "=== Verifying AI CLI installations ===" && \
     claude --version && \

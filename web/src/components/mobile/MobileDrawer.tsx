@@ -12,6 +12,7 @@ import {
   Terminal,
   Ticket,
   Network,
+  MessageSquare,
   FolderGit2,
   Server,
   Settings,
@@ -24,6 +25,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   terminal: Terminal,
   ticket: Ticket,
   network: Network,
+  "message-square": MessageSquare,
   repository: FolderGit2,
   server: Server,
   settings: Settings,
@@ -49,6 +51,8 @@ export function MobileDrawer({ className }: MobileDrawerProps) {
         return `/${orgSlug}/workspace`;
       case "tickets":
         return `/${orgSlug}/tickets`;
+      case "channels":
+        return `/${orgSlug}/channels`;
       case "mesh":
         return `/${orgSlug}/mesh`;
       case "repositories":

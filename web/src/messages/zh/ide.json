@@ -3,6 +3,7 @@
     "activities": {
       "workspace": "工作区",
       "tickets": "任务",
+      "channels": "频道",
       "mesh": "AgentsMesh",
       "loops": "Loop",
       "repositories": "仓库",

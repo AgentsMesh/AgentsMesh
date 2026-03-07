@@ -3,6 +3,7 @@
     "activities": {
       "workspace": "Workspace",
       "tickets": "Tickets",
+      "channels": "Channels",
       "mesh": "AgentsMesh",
       "loops": "Loops",
       "repositories": "Repositories",

@@ -9,6 +9,7 @@ import { useIDEStore, getMoreMenuActivities, type ActivityType } from "@/stores/
 import { useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import {
+  Network,
   Server,
   Settings,
   Repeat,
@@ -22,6 +23,7 @@ import {
 import { themeConfigs, type Theme } from "@/lib/theme";
 
 const ICON_MAP: Record<string, LucideIcon> = {
+  network: Network,
   server: Server,
   settings: Settings,
   repeat: Repeat,
@@ -62,6 +64,8 @@ export function MobileMoreMenu({ className }: MobileMoreMenuProps) {
 
   const getActivityRoute = (activity: ActivityType): string => {
     switch (activity) {
+      case "mesh":
+        return `/${orgSlug}/mesh`;
       case "loops":
         return `/${orgSlug}/loops`;
       case "runners":

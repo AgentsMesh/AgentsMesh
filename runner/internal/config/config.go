@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -42,6 +43,12 @@ type Config struct {
 	// MCP settings
 	MCPConfigPath string `mapstructure:"mcp_config_path"` // Path to MCP servers config file
 	MCPPort       int    `mapstructure:"mcp_port"`        // MCP HTTP Server port (default: 19000)
+
+	// Relay settings
+	// RelayBaseURL overrides the origin (scheme://host:port) of relay URLs received from Backend.
+	// Used in Docker environments where Runner cannot reach the external PRIMARY_DOMAIN.
+	// Example: "ws://traefik:80" rewrites "ws://localhost:31650/relay" → "ws://traefik:80/relay"
+	RelayBaseURL string `mapstructure:"relay_base_url"`
 
 	// Sandbox settings
 	Workspace string `mapstructure:"workspace"` // Workspace root for sandboxes and repos cache
@@ -193,6 +200,30 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+// RewriteRelayURL replaces the origin (scheme://host:port) of the given relay URL
+// with RelayBaseURL, preserving the path and query. Returns the original URL unchanged
+// if RelayBaseURL is not configured or parsing fails.
+func (c *Config) RewriteRelayURL(relayURL string) string {
+	if c.RelayBaseURL == "" {
+		return relayURL
+	}
+
+	orig, err := url.Parse(relayURL)
+	if err != nil {
+		return relayURL
+	}
+
+	base, err := url.Parse(c.RelayBaseURL)
+	if err != nil {
+		return relayURL
+	}
+
+	// Replace origin, keep path and query from original
+	orig.Scheme = base.Scheme
+	orig.Host = base.Host
+	return orig.String()
 }
 
 // DefaultWorkspaceRoot returns a platform-appropriate default workspace root.

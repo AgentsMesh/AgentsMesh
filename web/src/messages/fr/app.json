@@ -292,6 +292,8 @@
     "ticketsDescription": "Voir et gérer les tickets",
     "goToMesh": "Aller à AgentsMesh",
     "meshDescription": "Topologie réseau",
+    "goToChannels": "Go to Channels",
+    "channelsDescription": "Team collaboration channels",
     "goToRepositories": "Aller aux dépôts",
     "repositoriesDescription": "Gérer les dépôts",
     "goToRunners": "Aller aux runners",

@@ -3,6 +3,7 @@
     "activities": {
       "workspace": "워크스페이스",
       "tickets": "티켓",
+      "channels": "채널",
       "mesh": "AgentsMesh",
       "loops": "Loops",
       "repositories": "저장소",
@@ -120,7 +121,7 @@
         "showTerminatedPods": "Show terminated pods",
         "networkStats": "Network Stats",
         "active": "Active",
-        "channels": "Channels",
+        "channels": "채널",
         "bindings": "Bindings",
         "channelsSection": "채널",
         "podsSection": "Pod",

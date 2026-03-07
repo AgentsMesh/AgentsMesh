@@ -1,0 +1,36 @@
+{
+  "channels": {
+    "emptyState": "채널을 선택하여 채팅 시작",
+    "emptyStateHint": "사이드바에서 채널을 선택하여 메시지를 확인하고 팀과 협업하세요",
+    "sidebar": {
+      "searchPlaceholder": "채널 검색...",
+      "createChannel": "새 채널",
+      "refresh": "새로고침",
+      "showArchived": "보관된 항목 표시",
+      "hideArchived": "보관된 항목 숨기기",
+      "noChannels": "채널이 없습니다",
+      "noMatch": "일치하는 채널이 없습니다",
+      "podsCount": "{count}개 Pod"
+    },
+    "createDialog": {
+      "title": "채널 만들기",
+      "name": "채널 이름",
+      "namePlaceholder": "예: feature-auth, bug-fix-login",
+      "nameRequired": "채널 이름을 입력하세요",
+      "description": "설명",
+      "descriptionPlaceholder": "이 채널의 목적은?",
+      "descriptionHint": "선택 사항",
+      "failed": "채널 생성에 실패했습니다"
+    },
+    "messages": {
+      "today": "오늘",
+      "yesterday": "어제",
+      "loadOlder": "이전 메시지 불러오기",
+      "loading": "로딩 중...",
+      "noMessages": "메시지가 없습니다",
+      "startConversation": "대화를 시작하세요!",
+      "copyMessage": "복사",
+      "moreActions": "더 보기"
+    }
+  }
+}

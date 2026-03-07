@@ -15,6 +15,7 @@ import {
   Terminal,
   Ticket,
   Network,
+  MessageSquare,
   FolderGit2,
   MoreHorizontal,
   type LucideIcon,
@@ -24,6 +25,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   terminal: Terminal,
   ticket: Ticket,
   network: Network,
+  "message-square": MessageSquare,
   repository: FolderGit2,
 };
 
@@ -48,6 +50,8 @@ export function MobileTabBar({ className }: MobileTabBarProps) {
         return `/${orgSlug}/workspace`;
       case "tickets":
         return `/${orgSlug}/tickets`;
+      case "channels":
+        return `/${orgSlug}/channels`;
       case "mesh":
         return `/${orgSlug}/mesh`;
       case "repositories":

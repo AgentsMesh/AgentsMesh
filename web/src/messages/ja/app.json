@@ -292,6 +292,8 @@
     "ticketsDescription": "チケットの表示と管理",
     "goToMesh": "AgentsMeshへ移動",
     "meshDescription": "ネットワークトポロジー",
+    "goToChannels": "Go to Channels",
+    "channelsDescription": "Team collaboration channels",
     "goToRepositories": "リポジトリへ移動",
     "repositoriesDescription": "リポジトリの管理",
     "goToRunners": "Runnerへ移動",

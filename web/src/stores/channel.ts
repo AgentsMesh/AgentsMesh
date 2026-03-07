@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { channelApi, ChannelMessage } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
+import { useAuthStore } from "./auth";
 
 export interface Channel {
   id: number;
@@ -39,7 +40,15 @@ interface ChannelState {
   messagesLoading: boolean;
   error: string | null;
 
+  // Channels Tab state
+  selectedChannelId: number | null;
+  searchQuery: string;
+  showArchived: boolean;
+
   // Actions
+  setSelectedChannelId: (id: number | null) => void;
+  setSearchQuery: (query: string) => void;
+  setShowArchived: (show: boolean) => void;
   fetchChannels: (filters?: {
     includeArchived?: boolean;
   }) => Promise<void>;
@@ -74,7 +83,7 @@ interface ChannelState {
   clearError: () => void;
 }
 
-export const useChannelStore = create<ChannelState>((set) => ({
+export const useChannelStore = create<ChannelState>((set, get) => ({
   channels: [],
   currentChannel: null,
   messages: [],
@@ -82,6 +91,24 @@ export const useChannelStore = create<ChannelState>((set) => ({
   channelLoading: false,
   messagesLoading: false,
   error: null,
+
+  // Channels Tab state
+  selectedChannelId: null,
+  searchQuery: "",
+  showArchived: false,
+
+  setSelectedChannelId: (id) => {
+    set({ selectedChannelId: id });
+    if (id !== null) {
+      get().fetchChannel(id);
+      get().fetchMessages(id);
+    } else {
+      set({ currentChannel: null, messages: [] });
+    }
+  },
+
+  setSearchQuery: (query) => set({ searchQuery: query }),
+  setShowArchived: (show) => set({ showArchived: show }),
 
   fetchChannels: async (filters) => {
     set({ error: null });
@@ -209,13 +236,31 @@ export const useChannelStore = create<ChannelState>((set) => ({
   sendMessage: async (channelId, content, podKey) => {
     try {
       const response = await channelApi.sendMessage(channelId, content, podKey);
-      // Deduplicate: WebSocket event may have already added this message
-      set((state) => ({
-        messages: state.messages.some((m) => m.id === response.message.id)
-          ? state.messages
-          : [...state.messages, response.message],
-      }));
-      return response.message;
+      const msg = response.message;
+
+      // POST response may lack sender_user — backfill from auth store
+      if (!msg.sender_user && msg.sender_user_id) {
+        const authUser = useAuthStore.getState().user;
+        if (authUser && authUser.id === msg.sender_user_id) {
+          msg.sender_user = {
+            id: authUser.id,
+            username: authUser.username,
+            name: authUser.name,
+            avatar_url: authUser.avatar_url,
+          };
+        }
+      }
+
+      set((state) => {
+        const idx = state.messages.findIndex((m) => m.id === msg.id);
+        if (idx >= 0) {
+          const updated = [...state.messages];
+          updated[idx] = msg;
+          return { messages: updated };
+        }
+        return { messages: [...state.messages, msg] };
+      });
+      return msg;
     } catch (error: unknown) {
       set({ error: getErrorMessage(error, "Failed to send message") });
       throw error;
@@ -259,11 +304,20 @@ export const useChannelStore = create<ChannelState>((set) => ({
   },
 
   addMessage: (message) => {
-    set((state) => ({
-      messages: state.messages.some((m) => m.id === message.id)
-        ? state.messages
-        : [...state.messages, message],
-    }));
+    set((state) => {
+      const idx = state.messages.findIndex((m) => m.id === message.id);
+      if (idx >= 0) {
+        // Merge: prefer the version with richer sender info
+        const existing = state.messages[idx];
+        if (!existing.sender_user && message.sender_user) {
+          const updated = [...state.messages];
+          updated[idx] = message;
+          return { messages: updated };
+        }
+        return {}; // Already have complete data, skip
+      }
+      return { messages: [...state.messages, message] };
+    });
   },
 
   clearError: () => {

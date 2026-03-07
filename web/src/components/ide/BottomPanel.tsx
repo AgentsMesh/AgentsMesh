@@ -23,8 +23,8 @@ import { useAutopilotStore } from "@/stores/autopilot";
 import { usePodStore } from "@/stores/pod";
 import { useAuthStore } from "@/stores/auth";
 import { podApi } from "@/lib/api/pod";
-import { extractPromptFromMention, buildChannelPrompt } from "@/components/mesh/MessageInput";
-import type { MentionedPod } from "@/components/mesh/MessageInput";
+import { extractPromptFromMention, buildChannelPrompt } from "@/components/channel/MessageInput";
+import type { MentionedPod } from "@/components/channel/MessageInput";
 import { ChannelsTabContent, ActivityTabContent, DeliveryTabContent, InfoTabContent } from "./BottomPanel/index";
 
 interface BottomPanelProps {

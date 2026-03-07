@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { meshApi, MeshNodeData, MeshEdgeData, ChannelInfoData, MeshTopologyData, RunnerInfoData } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 import { Play, Hourglass, Pause, type LucideIcon } from "lucide-react";
+import { useIDEStore } from "./ide";
+import { useChannelStore } from "./channel";
 
 // Re-export API types with cleaner names for component use
 export type MeshNode = MeshNodeData;
@@ -84,6 +86,11 @@ export const useMeshStore = create<MeshState>((set, get) => ({
   },
 
   selectChannel: (channelId) => {
+    if (channelId !== null) {
+      // Navigate to Channels tab and select the channel
+      useIDEStore.getState().setActiveActivity("channels");
+      useChannelStore.getState().setSelectedChannelId(channelId);
+    }
     set({ selectedChannel: channelId, selectedNode: null });
   },
 

@@ -137,49 +137,79 @@
       }
     },
     "gettingStarted": {
-      "title": "Quick Start",
-      "description": "Get AgentsMesh up and running in just a few minutes. This guide will walk you through the essential setup steps.",
+      "title": "Schnellstart",
+      "description": "Starten Sie AgentsMesh in sechs Schritten. Diese Anleitung führt Sie durch die Kontoerstellung, Runner-Einrichtung, Agenten-Installation und den Start Ihres ersten KI-Pods.",
       "step1": {
-        "title": "Create an Account",
-        "description": "Sign up to create your account and organization. You'll receive a verification email to confirm your account.",
-        "whatYouSetUp": "What you'll set up:",
-        "item1": "Personal account with email verification",
-        "item2": "Organization (team workspace)",
-        "item3": "Initial organization settings"
+        "title": "Konto erstellen",
+        "description": "Registrieren Sie sich auf der Anmeldeseite mit E-Mail, Benutzername und Passwort. Sie erhalten eine Bestätigungs-E-Mail. Falls sie nicht innerhalb weniger Minuten eintrifft, prüfen Sie Ihren Spam-Ordner.",
+        "whatYouGet": "Nach der E-Mail-Verifizierung führt Sie der Einrichtungsassistent durch:",
+        "item1": "Einen persönlichen Arbeitsbereich (Ein-Klick) oder Team-Arbeitsbereich erstellen",
+        "item2": "Optional einer bestehenden Organisation über einen Einladungslink beitreten"
       },
       "step2": {
-        "title": "Configure AI Providers",
-        "description": "Go to Settings → AgentPod → AI Providers to configure your AI provider API keys. AgentsMesh supports multiple providers:",
-        "anthropic": "Anthropic (Claude)",
-        "anthropicDesc": "For Claude Code agent. Get your API key from",
-        "openai": "OpenAI",
-        "openaiDesc": "For Codex CLI agent. Get your API key from",
-        "google": "Google (Gemini)",
-        "googleDesc": "For Gemini CLI agent. Get your API key from",
-        "custom": "Custom Provider",
-        "customDesc": "For Aider, OpenCode, or custom agents with your own API endpoints."
+        "title": "Runner einrichten",
+        "description": "Ein Runner ist die Ausführungsumgebung, in der KI-Agenten-Pods laufen. Installieren Sie AgentsMesh Runner auf Ihrer Entwicklungsmaschine oder Ihrem Server.",
+        "methodToken": "Mit einem Token registrieren",
+        "methodLogin": "Mit Browser-Login registrieren",
+        "seeSetup": "Siehe {link} für Docker-, Homebrew-, Linux-Paket- und Kubernetes-Bereitstellungsoptionen."
       },
       "step3": {
-        "title": "Setup a Runner",
-        "description": "Runners are the execution environments where AI agent Pods run. Download and configure the AgentsMesh Runner on your development machine or server.",
-        "seeSetup": "See {link} for detailed installation instructions and Docker/Kubernetes deployment options."
+        "title": "KI-Agenten-CLIs installieren",
+        "description": "Installieren Sie die gewünschten CLI-Tools auf Ihrer Runner-Maschine und setzen Sie die erforderlichen API-Key-Umgebungsvariablen. Der Runner erkennt installierte CLIs automatisch über PATH und meldet verfügbare Agenten an die Plattform.",
+        "claudeCode": "Claude Code",
+        "claudeCodeInstall": "npm install -g @anthropic-ai/claude-code",
+        "claudeCodeEnv": "export ANTHROPIC_API_KEY=sk-ant-...",
+        "claudeCodeHint": "API-Schlüssel erhalten von",
+        "codexCli": "Codex CLI",
+        "codexCliInstall": "npm install -g @openai/codex",
+        "codexCliEnv": "export OPENAI_API_KEY=sk-...",
+        "codexCliHint": "API-Schlüssel erhalten von",
+        "geminiCli": "Gemini CLI",
+        "geminiCliInstall": "npm install -g @google/gemini-cli",
+        "geminiCliEnv": "export GOOGLE_API_KEY=...",
+        "geminiCliHint": "API-Schlüssel erhalten von",
+        "tip": "Starten Sie nach der Installation den Runner neu oder warten Sie auf den nächsten Heartbeat. Die neu verfügbaren Agenten erscheinen im Neues-Pod-Dialog."
       },
       "step4": {
-        "title": "Start a Pod",
-        "description": "Create a new AgentPod and start coding with AI assistance!",
-        "item1": "Navigate to AgentPod in the sidebar",
-        "item2": "Click New Pod",
-        "item3": "Select an AI agent type (Claude Code, Codex CLI, etc.)",
-        "item4": "Choose a Runner to execute the Pod",
-        "item5": "Optionally link to a repository and ticket",
-        "item6": "Click Create to start your AI-powered development Pod"
+        "title": "Git-Anbieter verbinden",
+        "description": "Die Verbindung eines Git-Anbieters ermöglicht es Ihren Pods, Repositories zu klonen und in isolierten Git-Worktrees zu arbeiten. Gehen Sie zu Einstellungen → Persönlich → Git-Einstellungen, um einen Anbieter hinzuzufügen.",
+        "github": "GitHub",
+        "githubDesc": "Fügen Sie ein persönliches Zugriffstoken mit repo-Scope hinzu.",
+        "githubTokenUrl": "github.com/settings/tokens",
+        "gitlab": "GitLab",
+        "gitlabDesc": "Fügen Sie ein persönliches Zugriffstoken mit api- und read_repository-Scopes hinzu. Selbst gehostete Instanzen werden unterstützt.",
+        "seeGuide": "Siehe {link} für vollständige Einrichtungsanweisungen einschließlich SSH-Schlüssel und Gitee."
+      },
+      "step5": {
+        "title": "Pod starten",
+        "description": "Erstellen Sie Ihren ersten AgentPod und beginnen Sie mit KI-unterstützter Programmierung!",
+        "item1": "Navigieren Sie zum Workspace in der Seitenleiste",
+        "item2": "Klicken Sie auf Neuer Pod",
+        "item3": "Wählen Sie einen KI-Agenten-Typ (Claude Code, Codex CLI usw.)",
+        "item4": "Wählen Sie einen Runner",
+        "item5": "Wählen Sie optional ein Repository und einen Branch",
+        "item6": "Verknüpfen Sie optional ein Ticket für Kontext",
+        "item7": "Fügen Sie einen initialen Prompt hinzu, der die Aufgabe beschreibt",
+        "item8": "Klicken Sie auf Erstellen"
+      },
+      "step6": {
+        "title": "Mit Ihrem Agenten interagieren",
+        "description": "Nach der Erstellung öffnet sich die Terminal-Ansicht mit einer Live-Sitzung. Ihr KI-Agent beginnt mit der Ausführung des initialen Prompts oder wartet auf Eingabe, falls keiner angegeben wurde.",
+        "item1": "Geben Sie Folge-Prompts oder Befehle direkt im Terminal ein",
+        "item2": "Beobachten Sie die Statusanzeige des Agenten — Leerlauf, Ausführung oder Warten",
+        "item3": "Der Agent arbeitet im Repository-Worktree, wenn einer verknüpft wurde",
+        "item4": "Beenden Sie den Pod über die Symbolleiste, wenn Ihre Aufgabe abgeschlossen ist"
       },
       "nextSteps": {
-        "title": "Next Steps",
-        "agentpod": "Learn about AgentPod →",
-        "agentpodDesc": "Remote AI development workstations",
-        "mesh": "Explore Mesh →",
-        "meshDesc": "Multi-agent collaboration features"
+        "title": "Nächste Schritte",
+        "agentpod": "Mehr über AgentPod →",
+        "agentpodDesc": "Remote-KI-Entwicklungsworkstations",
+        "mesh": "Mesh erkunden →",
+        "meshDesc": "Multi-Agenten-Kollaborationsfunktionen",
+        "tickets": "Tickets & Kanban →",
+        "ticketsDesc": "An Pods gebundenes Aufgabenmanagement",
+        "multiAgent": "Multi-Agenten-Workflows →",
+        "multiAgentDesc": "Mehrere KI-Agenten koordinieren"
       }
     },
     "features": {
@@ -235,12 +265,10 @@
           "descriptionHeader": "Description",
           "idle": "Idle",
           "idleDesc": "Agent is waiting for a task or prompt",
-          "working": "Working",
-          "workingDesc": "Agent is actively executing a task",
           "waiting": "Waiting",
           "waitingDesc": "Agent is waiting for user input or approval",
-          "finished": "Finished",
-          "finishedDesc": "Agent has completed its task"
+          "executing": "Ausführend",
+          "executingDesc": "Der Agent führt aktiv eine Aufgabe aus"
         },
         "configuration": {
           "title": "Pod Configuration",
@@ -535,6 +563,74 @@
           "removeRepo": "Removing a Repository",
           "removeRepoSteps": "Removing a repository disconnects it from AgentsMesh. Existing Pods using this repository will not be affected, but new Pods cannot be created with it."
         }
+      },
+      "loops": {
+        "title": "Loops",
+        "description": "CI/CD für KI-Agenten-Aufgaben. Definieren Sie wiederholbare automatisierte Aufgaben und lösen Sie sie nach Zeitplan oder per API aus — wie Cron-Jobs für Ihre KI-Agenten.",
+        "overview": {
+          "title": "Übersicht",
+          "description": "Loops ermöglicht es, eine Aufgabe einmal zu definieren und wiederholt auszuführen. Jeder Loop umschließt einen Pod mit einem Prompt-Template, Trigger-Konfiguration und Ausführungsrichtlinie. Hauptfunktionen:",
+          "item1": "Cron-Planung oder API-ausgelöste Ausführung",
+          "item2": "Autopilot (überwacht) oder Direct (autonom) Ausführungsmodi",
+          "item3": "Persistente Sandbox-Wiederverwendung für inkrementelle Arbeit",
+          "item4": "Variablenersetzung in Prompt-Templates",
+          "item5": "Webhook-Callbacks für Ausführungsabschluss-Benachrichtigungen",
+          "item6": "Gleichzeitigkeitsrichtlinien (Überspringen, Warteschlange oder Ersetzen)"
+        },
+        "executionModes": {
+          "title": "Ausführungsmodi",
+          "autopilot": "Autopilot",
+          "autopilotDesc": "Ein Control Agent überwacht die Ausführung. Er überwacht den Fortschritt, behandelt Fehler und entscheidet, wann die Aufgabe abgeschlossen ist. Ideal für komplexe, mehrstufige Workflows.",
+          "direct": "Direct",
+          "directDesc": "Der Agent führt den Prompt autonom aus. Der Pod wird automatisch beendet, wenn der Agent fertig ist. Ideal für einfache, klar definierte Aufgaben."
+        },
+        "triggerTypes": {
+          "title": "Trigger-Typen",
+          "description": "Loops unterstützt zwei Trigger-Mechanismen:",
+          "cron": "Cron-Zeitplan",
+          "cronDesc": "Ausführung nach wiederkehrendem Zeitplan mit Standard-Cron-Ausdrücken (z.B. '0 9 * * *' für täglich um 9 Uhr UTC). Der Scheduler prüft alle 30 Sekunden auf fällige Loops.",
+          "api": "API-Trigger",
+          "apiDesc": "Ausführungen programmatisch per HTTP POST auslösen. Übergeben Sie Laufzeitvariablen, um jede Ausführung anzupassen. Ideal für CI/CD-Pipelines, Webhooks und ereignisgesteuerte Automatisierung."
+        },
+        "sandboxStrategies": {
+          "title": "Sandbox-Strategien",
+          "description": "Steuern Sie, wie die Ausführungsumgebung zwischen den Durchläufen verwaltet wird:",
+          "persistent": "Persistent",
+          "persistentDesc": "Verwendet dieselbe Sandbox zwischen Durchläufen. Dateiänderungen, Git-Status und installierte Pakete bleiben erhalten. Verwendet Pod Resume zur Wiederherstellung der vorherigen Umgebung.",
+          "fresh": "Fresh",
+          "freshDesc": "Erstellt für jeden Durchlauf eine neue Sandbox. Garantiert jedes Mal einen sauberen Ausgangszustand. Ideal für Aufgaben, die reproduzierbare Umgebungen benötigen."
+        },
+        "sessionPersistence": {
+          "title": "Sitzungs-Persistenz",
+          "description": "Wenn aktiviert, behält der Agent den Gesprächsverlauf zwischen Durchläufen bei. Dieselbe SessionID wird wiederverwendet, sodass der Agent den Kontext früherer Ausführungen kennt. Deaktivieren Sie dies für unabhängige Durchläufe ohne historischen Kontext."
+        },
+        "concurrency": {
+          "title": "Gleichzeitigkeitsrichtlinien",
+          "description": "Steuern Sie, was passiert, wenn ein neuer Durchlauf ausgelöst wird, während ein anderer aktiv ist:",
+          "skip": "Skip",
+          "skipDesc": "Der neue Durchlauf wird übersprungen, wenn die maximale Anzahl gleichzeitiger Durchläufe erreicht ist.",
+          "queue": "Queue",
+          "queueDesc": "Der neue Durchlauf wird in die Warteschlange eingereiht und startet, wenn ein Platz frei wird.",
+          "replace": "Replace",
+          "replaceDesc": "Der aktive Durchlauf wird abgebrochen und durch den neuen ersetzt."
+        },
+        "promptTemplates": {
+          "title": "Prompt-Templates",
+          "description": "Verwenden Sie {{variable}}-Platzhalter in Ihrem Prompt. Definieren Sie Standardwerte bei der Loop-Erstellung und überschreiben Sie sie beim Auslösen. Beispiel:",
+          "example": "Überprüfe alle geänderten Dateien im {{branch}}-Branch seit dem letzten Review. Fokus auf {{focus_area}}-Probleme."
+        },
+        "webhookCallbacks": {
+          "title": "Webhook-Callbacks",
+          "description": "Konfigurieren Sie eine Callback-URL, um HTTP-POST-Benachrichtigungen bei Abschluss eines Durchlaufs zu erhalten. Die Nutzlast enthält Ausführungsstatus, Dauer, Exit-Zusammenfassung und Fehlerdetails. Verwenden Sie dies zur Integration mit Slack, PagerDuty oder benutzerdefiniertem Monitoring."
+        },
+        "useCases": {
+          "title": "Anwendungsfälle",
+          "item1": "Automatisierte tägliche Code-Reviews",
+          "item2": "Nächtliche Abhängigkeitsaktualisierungen und Sicherheitsscans",
+          "item3": "PR-ausgelöste Testgenerierung",
+          "item4": "Geplante Dokumentationsaktualisierungen",
+          "item5": "Ereignisgesteuerte Bug-Triage und -Reproduktion"
+        }
       }
     },
     "runners": {
@@ -555,7 +651,9 @@
           "brewTitle": "macOS (Homebrew)",
           "linuxTitle": "Linux (Package Manager)",
           "afterInstall": "After Installation",
-          "tokenHint": "Get your registration token from Settings → Runners → Create Token in the AgentsMesh web interface."
+          "tokenHint": "Get your registration token from Settings → Runners → Create Token in the AgentsMesh web interface.",
+          "methodToken": "Option A: Mit einem Token registrieren",
+          "methodLogin": "Option B: Mit Browser-Login registrieren"
         },
         "docker": {
           "title": "Docker Installation"
@@ -1048,7 +1146,6 @@
             "params": {
               "repository_id": "Nach Repository-ID filtern",
               "status": "Nach Status filtern (open, in_progress, resolved, closed)",
-              "type": "Nach Typ filtern (bug, feature, task, improvement)",
               "assignee_id": "Nach zugewiesener Benutzer-ID filtern",
               "labels": "Nach Labels filtern (kommagetrennt)",
               "limit": "Maximale Anzahl der zurückzugebenden Ergebnisse",
@@ -1073,7 +1170,6 @@
             "title": "POST /tickets",
             "description": "Ein neues Ticket erstellen. Erfordert mindestens einen Typ und Titel.",
             "fields": {
-              "type": "Ticket-Typ: bug, feature, task oder improvement",
               "title": "Ticket-Titel (1-500 Zeichen)",
               "priority": "Prioritätsstufe: low, medium, high oder critical",
               "status": "Anfangsstatus (Standard: open)",
@@ -1091,7 +1187,6 @@
             },
             "fields": {
               "title": "Aktualisierter Ticket-Titel",
-              "type": "Aktualisierter Ticket-Typ",
               "priority": "Aktualisierte Prioritätsstufe",
               "status": "Aktualisierter Status",
               "assignee_id": "Aktualisierte zugewiesene Benutzer-ID",
@@ -1269,6 +1364,118 @@
               "id": "Die numerische ID des Repositories",
               "branch": "Nach Quell-Branch-Namen filtern",
               "state": "Nach Status filtern: opened, merged, closed oder all"
+            }
+          }
+        }
+      },
+      "loops": {
+        "title": "Loops API",
+        "description": "Verwalten Sie automatisierte Loop-Aufgaben und deren Ausführungen. Erstellen Sie Loops, konfigurieren Sie Trigger und überwachen Sie die Ausführung über die REST-API.",
+        "endpoints": {
+          "title": "Endpoints",
+          "list": "List all loops",
+          "create": "Create a new loop",
+          "get": "Get loop by slug",
+          "update": "Update a loop",
+          "delete": "Delete a loop",
+          "enable": "Enable a loop",
+          "disable": "Disable a loop",
+          "trigger": "Manually trigger a run",
+          "listRuns": "List runs for a loop",
+          "getRun": "Get run details",
+          "cancelRun": "Cancel an active run"
+        },
+        "examples": {
+          "title": "Code Examples",
+          "createLoop": "Create a scheduled loop",
+          "triggerRun": "Trigger a run with variables"
+        },
+        "details": {
+          "title": "Endpoint Details",
+          "listLoops": {
+            "title": "GET /loops",
+            "description": "Retrieve all loops in the organization. Returns loops sorted by creation date."
+          },
+          "createLoop": {
+            "title": "POST /loops",
+            "description": "Create a new loop with the specified configuration.",
+            "fields": {
+              "name": "Loop name (required, 1-255 characters)",
+              "description": "Optional description",
+              "agent_type_id": "Built-in agent type ID to use",
+              "custom_agent_type_id": "Custom agent type ID (alternative to agent_type_id)",
+              "prompt_template": "Task prompt with {{variable}} placeholders (required)",
+              "prompt_variables": "Default values for prompt variables (JSON object)",
+              "repository_id": "Repository to clone into the sandbox",
+              "runner_id": "Preferred runner for execution",
+              "branch_name": "Git branch to check out",
+              "execution_mode": "autopilot or direct (default: autopilot)",
+              "cron_expression": "Cron schedule (e.g., '0 9 * * *'). If set, loop triggers on schedule",
+              "sandbox_strategy": "persistent or fresh (default: persistent)",
+              "session_persistence": "Keep agent session across runs (default: true)",
+              "concurrency_policy": "skip, queue, or replace (default: skip)",
+              "max_concurrent_runs": "Maximum concurrent runs (default: 1)",
+              "timeout_minutes": "Run timeout in minutes (default: 60)",
+              "callback_url": "Webhook URL for run completion notifications",
+              "autopilot_config": "Autopilot parameters (max_iterations, iteration_timeout_sec)"
+            }
+          },
+          "getLoop": {
+            "title": "GET /loops/:slug",
+            "description": "Retrieve detailed information about a specific loop by its slug.",
+            "params": {
+              "slug": "Loop slug (auto-generated from name)"
+            }
+          },
+          "updateLoop": {
+            "title": "PUT /loops/:slug",
+            "description": "Update an existing loop. All fields are optional — only provided fields will be updated.",
+            "params": {
+              "slug": "Loop slug"
+            }
+          },
+          "deleteLoop": {
+            "title": "DELETE /loops/:slug",
+            "description": "Permanently delete a loop and all its run history. This action cannot be undone.",
+            "params": {
+              "slug": "Loop slug"
+            }
+          },
+          "enableLoop": {
+            "title": "POST /loops/:slug/enable",
+            "description": "Enable a disabled loop. Re-enables cron scheduling if configured."
+          },
+          "disableLoop": {
+            "title": "POST /loops/:slug/disable",
+            "description": "Disable a loop. Cron scheduling is paused and manual triggers are blocked."
+          },
+          "triggerLoop": {
+            "title": "POST /loops/:slug/trigger",
+            "description": "Manually trigger a new run. Optionally pass variables to override prompt template defaults.",
+            "fields": {
+              "variables": "Variable overrides for the prompt template (JSON object)"
+            }
+          },
+          "listRuns": {
+            "title": "GET /loops/:slug/runs",
+            "description": "Retrieve the run history for a loop, sorted by most recent first.",
+            "params": {
+              "limit": "Maximum number of results to return",
+              "offset": "Number of results to skip for pagination"
+            }
+          },
+          "getRun": {
+            "title": "GET /loops/:slug/runs/:run_id",
+            "description": "Retrieve detailed information about a specific run.",
+            "params": {
+              "run_id": "Run ID"
+            }
+          },
+          "cancelRun": {
+            "title": "POST /loops/:slug/runs/:run_id/cancel",
+            "description": "Cancel an active run. Terminates the associated Pod and marks the run as cancelled.",
+            "params": {
+              "run_id": "Run ID"
             }
           }
         }

@@ -33,6 +33,7 @@ export default getRequestConfig(async () => {
     import(`@/messages/${locale}/content.json`),
     import(`@/messages/${locale}/extensions.json`),
     import(`@/messages/${locale}/loops.json`),
+    import(`@/messages/${locale}/channels.json`),
   ]);
 
   const messages = Object.assign({}, ...files.map((f) => f.default));
