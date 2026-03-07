@@ -3,6 +3,7 @@ package relay
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"log/slog"
 	"strings"
 
@@ -55,9 +56,15 @@ func (s *DNSService) IsEnabled() bool {
 // GenerateRelayDomain generates the full domain name for a relay
 // e.g., "us-east-1" -> "us-east-1.relay.agentsmesh.cn"
 func (s *DNSService) GenerateRelayDomain(relayName string) string {
-	// Sanitize relay name (lowercase, alphanumeric and hyphens only)
-	name := strings.ToLower(relayName)
-	name = sanitizeRelayName(name)
+	// sanitizeRelayName already handles lowercasing
+	name := sanitizeRelayName(relayName)
+	if name == "" {
+		// Non-ASCII names sanitize to empty; use FNV hash for uniqueness
+		// to prevent multiple relays from colliding on the same domain.
+		h := fnv.New32a()
+		h.Write([]byte(relayName))
+		name = fmt.Sprintf("relay-%08x", h.Sum32())
+	}
 
 	return fmt.Sprintf("%s.%s", name, s.baseDomain)
 }
@@ -65,7 +72,7 @@ func (s *DNSService) GenerateRelayDomain(relayName string) string {
 // CreateRecord creates a DNS A record for a relay
 func (s *DNSService) CreateRecord(ctx context.Context, relayName, ip string) error {
 	if !s.enabled {
-		return fmt.Errorf("DNS service is not enabled")
+		return fmt.Errorf("dns service is not enabled")
 	}
 
 	domain := s.GenerateRelayDomain(relayName)
@@ -89,7 +96,7 @@ func (s *DNSService) CreateRecord(ctx context.Context, relayName, ip string) err
 // DeleteRecord deletes the DNS A record for a relay
 func (s *DNSService) DeleteRecord(ctx context.Context, relayName string) error {
 	if !s.enabled {
-		return fmt.Errorf("DNS service is not enabled")
+		return fmt.Errorf("dns service is not enabled")
 	}
 
 	domain := s.GenerateRelayDomain(relayName)
@@ -110,7 +117,7 @@ func (s *DNSService) DeleteRecord(ctx context.Context, relayName string) error {
 // UpdateRecord updates the DNS A record for a relay
 func (s *DNSService) UpdateRecord(ctx context.Context, relayName, ip string) error {
 	if !s.enabled {
-		return fmt.Errorf("DNS service is not enabled")
+		return fmt.Errorf("dns service is not enabled")
 	}
 
 	domain := s.GenerateRelayDomain(relayName)
@@ -134,7 +141,7 @@ func (s *DNSService) UpdateRecord(ctx context.Context, relayName, ip string) err
 // GetRecord returns the current IP for a relay domain
 func (s *DNSService) GetRecord(ctx context.Context, relayName string) (string, error) {
 	if !s.enabled {
-		return "", fmt.Errorf("DNS service is not enabled")
+		return "", fmt.Errorf("dns service is not enabled")
 	}
 
 	domain := s.GenerateRelayDomain(relayName)

@@ -54,9 +54,18 @@ func (m *Manager) GetHealthyRelayCount() int {
 	return count
 }
 
-// HasHealthyRelays checks if there are any healthy relays
+// HasHealthyRelays checks if there are any healthy relays.
+// Inlined with early return to avoid iterating all relays.
 func (m *Manager) HasHealthyRelays() bool {
-	return m.GetHealthyRelayCount() > 0
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	for _, r := range m.relays {
+		if r.Healthy {
+			return true
+		}
+	}
+	return false
 }
 
 // GetRelayByID returns a relay by ID

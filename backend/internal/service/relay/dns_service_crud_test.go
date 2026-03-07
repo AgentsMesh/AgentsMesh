@@ -29,7 +29,7 @@ func TestDNSService_CreateRecord_Disabled(t *testing.T) {
 	err := svc.CreateRecord(ctx, "us-east-1", "192.168.1.1")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "DNS service is not enabled")
+	assert.Contains(t, err.Error(), "dns service is not enabled")
 }
 
 func TestDNSService_CreateRecord_ProviderError(t *testing.T) {
@@ -64,7 +64,7 @@ func TestDNSService_DeleteRecord_Disabled(t *testing.T) {
 	err := svc.DeleteRecord(ctx, "us-east-1")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "DNS service is not enabled")
+	assert.Contains(t, err.Error(), "dns service is not enabled")
 }
 
 func TestDNSService_DeleteRecord_ProviderError(t *testing.T) {
@@ -99,7 +99,7 @@ func TestDNSService_UpdateRecord_Disabled(t *testing.T) {
 	err := svc.UpdateRecord(ctx, "us-east-1", "192.168.1.2")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "DNS service is not enabled")
+	assert.Contains(t, err.Error(), "dns service is not enabled")
 }
 
 func TestDNSService_UpdateRecord_ProviderError(t *testing.T) {
@@ -145,7 +145,7 @@ func TestDNSService_GetRecord_Disabled(t *testing.T) {
 	ip, err := svc.GetRecord(ctx, "us-east-1")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "DNS service is not enabled")
+	assert.Contains(t, err.Error(), "dns service is not enabled")
 	assert.Empty(t, ip)
 }
 

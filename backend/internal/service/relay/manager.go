@@ -2,11 +2,19 @@ package relay
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
 	"time"
 )
+
+// ErrCapacityLimitReached is returned when the relay count exceeds maxRelayCount.
+var ErrCapacityLimitReached = errors.New("relay capacity limit reached")
+
+// storeOpTimeout is the default timeout for persistent store operations.
+// Keep short to avoid blocking request-serving goroutines on store failures.
+const storeOpTimeout = 2 * time.Second
 
 // Manager manages relay servers
 type Manager struct {
@@ -14,7 +22,6 @@ type Manager struct {
 	mu     sync.RWMutex
 
 	healthCheckInterval time.Duration
-	loadBalancingConfig LoadBalancingConfig
 
 	// Optional persistent store (Redis)
 	store Store
@@ -22,6 +29,7 @@ type Manager struct {
 	// Lifecycle management
 	stopCh  chan struct{}
 	stopped bool
+	wg      sync.WaitGroup // tracks background goroutines (healthCheckLoop)
 
 	logger *slog.Logger
 }
@@ -36,13 +44,6 @@ func WithStore(store Store) ManagerOption {
 	}
 }
 
-// WithLoadBalancingConfig sets the load balancing configuration
-func WithLoadBalancingConfig(cfg LoadBalancingConfig) ManagerOption {
-	return func(m *Manager) {
-		m.loadBalancingConfig = cfg
-	}
-}
-
 // WithHealthCheckInterval sets the interval for health checks
 func WithHealthCheckInterval(interval time.Duration) ManagerOption {
 	return func(m *Manager) {
@@ -50,23 +51,11 @@ func WithHealthCheckInterval(interval time.Duration) ManagerOption {
 	}
 }
 
-// NewManager creates a new relay manager
-func NewManager() *Manager {
-	return NewManagerWithOptions()
-}
-
-// NewManagerWithConfig creates a new relay manager with custom load balancing config
-// Deprecated: Use NewManagerWithOptions instead
-func NewManagerWithConfig(lbConfig LoadBalancingConfig) *Manager {
-	return NewManagerWithOptions(WithLoadBalancingConfig(lbConfig))
-}
-
 // NewManagerWithOptions creates a new relay manager with options
 func NewManagerWithOptions(opts ...ManagerOption) *Manager {
 	m := &Manager{
 		relays:              make(map[string]*RelayInfo),
 		healthCheckInterval: 30 * time.Second,
-		loadBalancingConfig: DefaultLoadBalancingConfig(),
 		stopCh:              make(chan struct{}),
 		logger:              slog.With("component", "relay_manager"),
 	}
@@ -76,18 +65,30 @@ func NewManagerWithOptions(opts ...ManagerOption) *Manager {
 		opt(m)
 	}
 
+	// Guard against invalid interval that would panic time.NewTicker
+	if m.healthCheckInterval <= 0 {
+		m.healthCheckInterval = 30 * time.Second
+	}
+
 	// Load from persistent store if available
 	if m.store != nil {
 		m.loadFromStore()
 	}
 
+	// Clean stale relays loaded from store before accepting new traffic.
+	// Must run BEFORE starting healthCheckLoop to avoid concurrent doHealthCheck execution.
+	if m.store != nil {
+		m.doHealthCheck()
+	}
+
 	// Start background health check
+	m.wg.Add(1)
 	go m.healthCheckLoop()
 
 	return m
 }
 
-// Stop gracefully stops the manager and its background goroutines
+// Stop gracefully stops the manager and waits for background goroutines to exit.
 func (m *Manager) Stop() {
 	m.mu.Lock()
 	if m.stopped {
@@ -98,6 +99,7 @@ func (m *Manager) Stop() {
 	m.mu.Unlock()
 
 	close(m.stopCh)
+	m.wg.Wait() // wait for healthCheckLoop to exit
 	m.logger.Info("Relay manager stopped")
 }
 
@@ -114,151 +116,80 @@ func (m *Manager) loadFromStore() {
 		return
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), storeOpTimeout*3) // startup can be slower
+	defer cancel()
 
-	// Load relays
 	relays, err := m.store.GetAllRelays(ctx)
 	if err != nil {
 		m.logger.Warn("Failed to load relays from store", "error", err)
-	} else {
-		m.mu.Lock()
-		for _, r := range relays {
-			m.relays[r.ID] = r
-		}
-		m.mu.Unlock()
-		m.logger.Info("Loaded relays from store", "count", len(relays))
+		return
 	}
+
+	m.mu.Lock()
+	for _, r := range relays {
+		// Defensive copy: prevent aliasing with store-internal pointers
+		relayCopy := *r
+		m.relays[relayCopy.ID] = &relayCopy
+	}
+	m.mu.Unlock()
+	m.logger.Info("Loaded relays from store", "count", len(relays))
 }
 
-// Register registers a new relay or updates existing one
-// Returns error if persistence fails (when store is configured)
+// maxRelayCount is the safety cap on concurrent relay registrations.
+// Prevents unbounded memory growth from misconfigured or malicious clients.
+const maxRelayCount = 1000
+
+// Register registers a new relay or updates existing one.
+// The input is copied to prevent data races with the caller retaining the pointer.
+// Returns error if persistence fails (when store is configured).
+//
+// Note: the capacity check uses RLock→check→RUnlock→Lock→insert pattern (TOCTOU).
+// maxRelayCount is a soft safety cap, not a hard guarantee; concurrent registrations
+// may briefly exceed it by the number of in-flight goroutines, which is acceptable.
 func (m *Manager) Register(info *RelayInfo) error {
-	info.LastHeartbeat = time.Now()
-	info.Healthy = true
+	if info.ID == "" {
+		return fmt.Errorf("relay ID must not be empty")
+	}
+	if info.URL == "" {
+		return fmt.Errorf("relay URL must not be empty")
+	}
+
+	// Copy input to prevent data race — caller may retain the original pointer
+	infoCopy := *info
+	infoCopy.LastHeartbeat = time.Now()
+	infoCopy.Healthy = true
+
+	// Check capacity limit (allow re-registration of existing relays)
+	m.mu.RLock()
+	_, isUpdate := m.relays[infoCopy.ID]
+	relayCount := len(m.relays)
+	m.mu.RUnlock()
+
+	if !isUpdate && relayCount >= maxRelayCount {
+		return ErrCapacityLimitReached
+	}
 
 	// Persist to store first (if configured)
 	if m.store != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := m.store.SaveRelay(ctx, info); err != nil {
-			m.logger.Error("Failed to persist relay to store", "relay_id", info.ID, "error", err)
+		ctx, cancel := context.WithTimeout(context.Background(), storeOpTimeout)
+		err := m.store.SaveRelay(ctx, &infoCopy)
+		cancel() // release immediately, don't defer past the store call
+		if err != nil {
+			m.logger.Error("Failed to persist relay to store", "relay_id", infoCopy.ID, "error", err)
 			return fmt.Errorf("failed to persist relay: %w", err)
 		}
 	}
 
-	// Then update memory
+	// Then update memory (store the copy, not the original pointer)
 	m.mu.Lock()
-	m.relays[info.ID] = info
+	m.relays[infoCopy.ID] = &infoCopy
 	m.mu.Unlock()
 
 	m.logger.Info("Relay registered",
-		"relay_id", info.ID,
-		"url", info.URL,
-		"region", info.Region,
-		"capacity", info.Capacity)
+		"relay_id", infoCopy.ID,
+		"url", infoCopy.URL,
+		"region", infoCopy.Region,
+		"capacity", infoCopy.Capacity)
 
 	return nil
-}
-
-// Heartbeat updates relay health status
-func (m *Manager) Heartbeat(relayID string, connections int, cpuUsage, memoryUsage float64) error {
-	return m.HeartbeatWithLatency(relayID, connections, cpuUsage, memoryUsage, 0)
-}
-
-// HeartbeatWithLatency updates relay health status including latency metric
-func (m *Manager) HeartbeatWithLatency(relayID string, connections int, cpuUsage, memoryUsage float64, latencyMs int) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	relay, ok := m.relays[relayID]
-	if !ok {
-		return fmt.Errorf("relay not found: %s", relayID)
-	}
-
-	relay.CurrentConnections = connections
-	relay.CPUUsage = cpuUsage
-	relay.MemoryUsage = memoryUsage
-	relay.LastHeartbeat = time.Now()
-	relay.Healthy = true
-
-	// Update latency with exponential moving average for smoothing
-	if latencyMs > 0 {
-		if relay.AvgLatencyMs == 0 {
-			relay.AvgLatencyMs = latencyMs
-		} else {
-			// EMA with alpha = 0.3 for moderate smoothing
-			relay.AvgLatencyMs = int(float64(relay.AvgLatencyMs)*0.7 + float64(latencyMs)*0.3)
-		}
-	}
-
-	return nil
-}
-
-// Unregister removes a relay
-func (m *Manager) Unregister(relayID string) {
-	m.mu.Lock()
-	delete(m.relays, relayID)
-	m.mu.Unlock()
-
-	// Remove from store
-	if m.store != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := m.store.DeleteRelay(ctx, relayID); err != nil {
-			m.logger.Warn("Failed to delete relay from store", "relay_id", relayID, "error", err)
-		}
-	}
-
-	m.logger.Info("Relay unregistered", "relay_id", relayID)
-}
-
-// ForceUnregister removes a relay
-func (m *Manager) ForceUnregister(relayID string) {
-	m.mu.Lock()
-	delete(m.relays, relayID)
-	m.mu.Unlock()
-
-	// Remove from store
-	if m.store != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		if err := m.store.DeleteRelay(ctx, relayID); err != nil {
-			m.logger.Warn("Failed to delete relay from store", "relay_id", relayID, "error", err)
-		}
-	}
-
-	m.logger.Info("Relay force unregistered", "relay_id", relayID)
-}
-
-// GracefulUnregister marks a relay as offline (graceful shutdown from relay itself)
-func (m *Manager) GracefulUnregister(relayID string, reason string) {
-	m.mu.Lock()
-
-	relay, ok := m.relays[relayID]
-	if !ok {
-		m.mu.Unlock()
-		return
-	}
-
-	// Mark as unhealthy so no new connections are assigned
-	relay.Healthy = false
-
-	// Remove the relay
-	delete(m.relays, relayID)
-	m.mu.Unlock()
-
-	// Remove from store
-	if m.store != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		if err := m.store.DeleteRelay(ctx, relayID); err != nil {
-			m.logger.Warn("Failed to delete relay from store", "relay_id", relayID, "error", err)
-		}
-	}
-
-	m.logger.Info("Relay gracefully unregistered",
-		"relay_id", relayID,
-		"reason", reason)
 }

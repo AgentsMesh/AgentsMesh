@@ -6,73 +6,64 @@ import (
 )
 
 func TestForceUnregister(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	relay := &RelayInfo{ID: "relay-1", URL: "wss://relay.example.com"}
 	if err := m.Register(relay); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
 
-	// Force unregister
 	m.ForceUnregister("relay-1")
 
-	// Verify relay is removed
 	if m.GetRelayByID("relay-1") != nil {
 		t.Error("relay should be removed")
 	}
 }
 
 func TestForceUnregisterNotFound(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 
 	// Should not panic on unknown relay
 	m.ForceUnregister("unknown")
 
-	// Verify no side effects
 	if len(m.GetRelays()) != 0 {
 		t.Error("should have no relays")
 	}
 }
 
 func TestGracefulUnregister(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	relay := &RelayInfo{ID: "relay-1", URL: "wss://relay.example.com"}
 	if err := m.Register(relay); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
 
-	// Graceful unregister
 	m.GracefulUnregister("relay-1", "shutdown")
 
-	// Verify relay is removed
 	if m.GetRelayByID("relay-1") != nil {
 		t.Error("relay should be removed")
 	}
 }
 
 func TestGracefulUnregisterNotFound(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 
 	// Should not panic on unknown relay
 	m.GracefulUnregister("unknown", "shutdown")
 
-	// Verify no side effects
 	if len(m.GetRelays()) != 0 {
 		t.Error("should have no relays")
 	}
 }
 
 func TestManagerStop(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 
-	// Should not be stopped initially
 	if m.IsStopped() {
 		t.Error("manager should not be stopped initially")
 	}
 
-	// Stop the manager
 	m.Stop()
 
-	// Should be stopped now
 	if !m.IsStopped() {
 		t.Error("manager should be stopped after Stop()")
 	}
@@ -85,11 +76,10 @@ func TestManagerStop(t *testing.T) {
 }
 
 func TestManagerStopWithHealthCheck(t *testing.T) {
-	m := NewManagerWithOptions(
-		WithHealthCheckInterval(50 * time.Millisecond),
+	m := newTestManager(t,
+		WithHealthCheckInterval(50*time.Millisecond),
 	)
 
-	// Register a relay to trigger health check activity
 	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://r1.com"}); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
@@ -117,24 +107,25 @@ func TestManagerStopWithHealthCheck(t *testing.T) {
 }
 
 func TestMarkRelayUnhealthy(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 
-	// Register a healthy relay
 	relay := &RelayInfo{ID: "relay-1", URL: "wss://r1.com"}
 	if err := m.Register(relay); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
 
-	// Verify it's healthy
 	r := m.GetRelayByID("relay-1")
 	if !r.Healthy {
 		t.Error("relay should be healthy after registration")
 	}
 
-	// Mark as unhealthy
+	// Set last heartbeat to past so TOCTOU re-check passes
+	m.mu.Lock()
+	m.relays["relay-1"].LastHeartbeat = time.Now().Add(-time.Minute)
+	m.mu.Unlock()
+
 	m.markRelayUnhealthy("relay-1")
 
-	// Verify it's unhealthy
 	r = m.GetRelayByID("relay-1")
 	if r.Healthy {
 		t.Error("relay should be unhealthy after markRelayUnhealthy")
@@ -142,16 +133,34 @@ func TestMarkRelayUnhealthy(t *testing.T) {
 }
 
 func TestMarkRelayUnhealthyNotFound(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 
 	// Should not panic on unknown relay
 	m.markRelayUnhealthy("unknown")
 }
 
-func TestMarkRelayUnhealthyAlreadyUnhealthy(t *testing.T) {
-	m := NewManager()
+func TestMarkRelayUnhealthyTOCTOUProtection(t *testing.T) {
+	m := newTestManager(t)
 
-	// Register and mark unhealthy
+	relay := &RelayInfo{ID: "relay-1", URL: "wss://r1.com"}
+	if err := m.Register(relay); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	// Relay was just registered (LastHeartbeat ≈ now).
+	// markRelayUnhealthy's TOCTOU re-check should detect the recent heartbeat
+	// and skip marking it unhealthy.
+	m.markRelayUnhealthy("relay-1")
+
+	r := m.GetRelayByID("relay-1")
+	if !r.Healthy {
+		t.Error("recently heartbeated relay should remain healthy (TOCTOU protection)")
+	}
+}
+
+func TestMarkRelayUnhealthyAlreadyUnhealthy(t *testing.T) {
+	m := newTestManager(t)
+
 	relay := &RelayInfo{ID: "relay-1", URL: "wss://r1.com"}
 	if err := m.Register(relay); err != nil {
 		t.Fatalf("Register failed: %v", err)
@@ -167,5 +176,98 @@ func TestMarkRelayUnhealthyAlreadyUnhealthy(t *testing.T) {
 	r := m.GetRelayByID("relay-1")
 	if r.Healthy {
 		t.Error("relay should still be unhealthy")
+	}
+}
+
+func TestRemoveStaleRelay(t *testing.T) {
+	m := newTestManager(t)
+
+	if err := m.Register(&RelayInfo{ID: "relay-stale", URL: "wss://stale.com"}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if m.GetRelayByID("relay-stale") == nil {
+		t.Fatal("relay should exist after registration")
+	}
+
+	// Set last heartbeat to far past so re-check inside removeStaleRelay passes
+	m.mu.Lock()
+	m.relays["relay-stale"].LastHeartbeat = time.Now().Add(-time.Hour)
+	m.mu.Unlock()
+
+	m.removeStaleRelay("relay-stale")
+
+	if m.GetRelayByID("relay-stale") != nil {
+		t.Error("stale relay should be removed")
+	}
+}
+
+func TestRemoveStaleRelaySkipsReRegistered(t *testing.T) {
+	m := newTestManager(t)
+
+	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://r1.com"}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	// Relay was just registered (LastHeartbeat ≈ now), removeStaleRelay should NOT delete it
+	m.removeStaleRelay("relay-1")
+
+	if m.GetRelayByID("relay-1") == nil {
+		t.Error("recently registered relay should NOT be removed by removeStaleRelay")
+	}
+}
+
+func TestRemoveStaleRelayNotFound(t *testing.T) {
+	m := newTestManager(t)
+
+	// Should not panic on unknown relay
+	m.removeStaleRelay("unknown")
+}
+
+func TestDoHealthCheckMarksUnhealthy(t *testing.T) {
+	m := newTestManager(t,
+		WithHealthCheckInterval(10*time.Millisecond),
+	)
+
+	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://r1.com"}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	// Set last heartbeat to > 1 interval but < staleRelayMultiplier intervals ago
+	// This should trigger the unhealthy path (not the stale removal path)
+	m.mu.Lock()
+	m.relays["relay-1"].LastHeartbeat = time.Now().Add(-50 * time.Millisecond) // 5x interval, < 10x stale
+	m.mu.Unlock()
+
+	m.doHealthCheck()
+
+	r := m.GetRelayByID("relay-1")
+	if r == nil {
+		t.Fatal("relay should still exist (not stale yet)")
+	}
+	if r.Healthy {
+		t.Error("relay should be marked unhealthy by doHealthCheck")
+	}
+}
+
+func TestDoHealthCheckRemovesStaleRelays(t *testing.T) {
+	m := newTestManager(t,
+		WithHealthCheckInterval(10*time.Millisecond),
+	)
+
+	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://r1.com"}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	// Set last heartbeat to far past (beyond staleRelayMultiplier * interval)
+	m.mu.Lock()
+	m.relays["relay-1"].LastHeartbeat = time.Now().Add(-time.Hour)
+	m.mu.Unlock()
+
+	// Run one health check cycle
+	m.doHealthCheck()
+
+	// Relay should be auto-removed (not just marked unhealthy)
+	if m.GetRelayByID("relay-1") != nil {
+		t.Error("stale relay should be auto-removed by doHealthCheck")
 	}
 }

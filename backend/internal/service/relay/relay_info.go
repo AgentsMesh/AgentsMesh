@@ -2,11 +2,15 @@ package relay
 
 import "time"
 
-// RelayInfo holds information about a relay server
+// RelayInfo holds information about a relay server.
+//
+// All fields are value types (string, int, float64, time.Time, bool).
+// This struct is safe to shallow-copy via `copy := *info`.
+// If a reference type (slice, map, pointer) is ever added, update all copy sites
+// (Register, GetRelays, GetRelayByID, selectFromCandidatesLocked) to deep-copy.
 type RelayInfo struct {
 	ID                 string    `json:"id"`
-	URL                string    `json:"url"`          // Public WebSocket URL for browsers (wss://relay.example.com)
-	InternalURL        string    `json:"internal_url"` // Internal WebSocket URL for runners (ws://relay:8090 in Docker)
+	URL                string    `json:"url"`          // Public WebSocket URL via reverse proxy (e.g. wss://example.com/relay)
 	Region             string    `json:"region"`       // Geographic region
 	Capacity           int       `json:"capacity"`     // Maximum connections
 	CurrentConnections int       `json:"connections"`  // Current active connections
@@ -17,33 +21,14 @@ type RelayInfo struct {
 
 	// Metrics for enhanced load balancing
 	AvgLatencyMs int `json:"avg_latency_ms"` // Average heartbeat latency in milliseconds
+
+	// GeoIP-resolved coordinates (populated at registration from relay's public IP)
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
 
-// LoadBalancingConfig holds configuration for relay selection algorithm
-type LoadBalancingConfig struct {
-	ConnectionWeight float64 // Weight for connection count factor (default: 0.4)
-	CPUWeight        float64 // Weight for CPU usage factor (default: 0.25)
-	MemoryWeight     float64 // Weight for memory usage factor (default: 0.15)
-	LatencyWeight    float64 // Weight for latency factor (default: 0.1)
-	RegionBonus      float64 // Bonus score for same region (default: 50)
-}
-
-// DefaultLoadBalancingConfig returns default load balancing configuration
-func DefaultLoadBalancingConfig() LoadBalancingConfig {
-	return LoadBalancingConfig{
-		ConnectionWeight: 0.4,
-		CPUWeight:        0.25,
-		MemoryWeight:     0.15,
-		LatencyWeight:    0.1,
-		RegionBonus:      50,
-	}
-}
-
-// GetRunnerURL returns the URL that runners should use to connect.
-// Returns InternalURL if set, otherwise falls back to URL.
-func (r *RelayInfo) GetRunnerURL() string {
-	if r.InternalURL != "" {
-		return r.InternalURL
-	}
-	return r.URL
+// HasGeoCoords returns true if the relay has resolved geographic coordinates.
+// Uses non-zero check: (0,0) is in the Gulf of Guinea — no real relay would be there.
+func (r *RelayInfo) HasGeoCoords() bool {
+	return r.Latitude != 0 || r.Longitude != 0
 }

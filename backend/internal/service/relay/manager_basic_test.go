@@ -5,7 +5,7 @@ import (
 )
 
 func TestNewManager(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	if m == nil {
 		t.Fatal("NewManager returned nil")
 	}
@@ -15,7 +15,7 @@ func TestNewManager(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	info := &RelayInfo{
 		ID:       "relay-1",
 		URL:      "wss://relay.example.com",
@@ -39,8 +39,30 @@ func TestRegister(t *testing.T) {
 	}
 }
 
+func TestRegisterEmptyID(t *testing.T) {
+	m := newTestManager(t)
+	err := m.Register(&RelayInfo{ID: "", URL: "wss://relay.example.com"})
+	if err == nil {
+		t.Fatal("expected error for empty ID")
+	}
+	if err.Error() != "relay ID must not be empty" {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestRegisterEmptyURL(t *testing.T) {
+	m := newTestManager(t)
+	err := m.Register(&RelayInfo{ID: "relay-1", URL: ""})
+	if err == nil {
+		t.Fatal("expected error for empty URL")
+	}
+	if err.Error() != "relay URL must not be empty" {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
 func TestHeartbeat(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://relay.example.com"}); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
@@ -60,7 +82,7 @@ func TestHeartbeat(t *testing.T) {
 }
 
 func TestHeartbeatNotFound(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	err := m.Heartbeat("unknown", 0, 0, 0)
 	if err == nil {
 		t.Error("expected error for unknown relay")
@@ -68,7 +90,7 @@ func TestHeartbeatNotFound(t *testing.T) {
 }
 
 func TestHeartbeatWithLatency(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://relay.example.com"}); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
@@ -98,20 +120,42 @@ func TestHeartbeatWithLatency(t *testing.T) {
 }
 
 func TestHeartbeatWithLatencyNotFound(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	err := m.HeartbeatWithLatency("unknown", 0, 0, 0, 100)
 	if err == nil {
 		t.Error("expected error for unknown relay")
 	}
 }
 
-func TestUnregister(t *testing.T) {
-	m := NewManager()
+func TestHeartbeatWithLatencyZeroPreservesExisting(t *testing.T) {
+	m := newTestManager(t)
 	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://relay.example.com"}); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
 
-	m.Unregister("relay-1")
+	// Set initial latency
+	if err := m.HeartbeatWithLatency("relay-1", 10, 20, 30, 100); err != nil {
+		t.Fatalf("HeartbeatWithLatency: %v", err)
+	}
+
+	// Heartbeat with latencyMs=0 should NOT reset existing AvgLatencyMs
+	if err := m.HeartbeatWithLatency("relay-1", 10, 20, 30, 0); err != nil {
+		t.Fatalf("HeartbeatWithLatency: %v", err)
+	}
+
+	r := m.GetRelayByID("relay-1")
+	if r.AvgLatencyMs != 100 {
+		t.Errorf("latencyMs=0 should preserve existing: got %d, want 100", r.AvgLatencyMs)
+	}
+}
+
+func TestForceUnregisterBasic(t *testing.T) {
+	m := newTestManager(t)
+	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://relay.example.com"}); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	m.ForceUnregister("relay-1")
 
 	if len(m.GetRelays()) != 0 {
 		t.Error("relay should be removed")
@@ -119,7 +163,7 @@ func TestUnregister(t *testing.T) {
 }
 
 func TestGetRelayByID(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://relay.example.com", Region: "us-east"}); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
@@ -139,22 +183,8 @@ func TestGetRelayByID(t *testing.T) {
 	}
 }
 
-func TestRelayInfoGetRunnerURL(t *testing.T) {
-	// With internal URL
-	r1 := &RelayInfo{URL: "wss://public.com", InternalURL: "ws://internal:8090"}
-	if r1.GetRunnerURL() != "ws://internal:8090" {
-		t.Errorf("should return internal URL: %s", r1.GetRunnerURL())
-	}
-
-	// Without internal URL
-	r2 := &RelayInfo{URL: "wss://public.com"}
-	if r2.GetRunnerURL() != "wss://public.com" {
-		t.Errorf("should fallback to URL: %s", r2.GetRunnerURL())
-	}
-}
-
 func TestGetHealthyRelayCount(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://r1.com"}); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
@@ -176,7 +206,7 @@ func TestGetHealthyRelayCount(t *testing.T) {
 }
 
 func TestHasHealthyRelays(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	if m.HasHealthyRelays() {
 		t.Error("should be false with no relays")
 	}
@@ -190,7 +220,7 @@ func TestHasHealthyRelays(t *testing.T) {
 }
 
 func TestGetStats(t *testing.T) {
-	m := NewManager()
+	m := newTestManager(t)
 	if err := m.Register(&RelayInfo{ID: "relay-1", URL: "wss://r1.com", CurrentConnections: 10}); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
