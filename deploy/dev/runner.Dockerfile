@@ -29,7 +29,9 @@ RUN apk add --no-cache \
     shadow \
     sudo \
     # For JSON processing in scripts
-    jq
+    jq \
+    # GNU coreutils provides env -S support required by Node.js CLI tools
+    coreutils
 
 # ============================================
 # Install AI CLI Tools (as root, before user switch)
