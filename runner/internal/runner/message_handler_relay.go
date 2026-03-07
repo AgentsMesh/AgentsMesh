@@ -31,7 +31,7 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 
 	log.Info("Subscribing to terminal via Relay",
 		"pod_key", req.PodKey,
-		"relay_url", req.RelayURL)
+		"relay_url", relayURL)
 
 	pod, ok := h.podStore.Get(req.PodKey)
 	if !ok {
@@ -46,11 +46,11 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	// Check if already connected to the same Relay URL (under lock)
 	existingClient := pod.RelayClient
 	if existingClient != nil {
-		if existingClient.IsConnected() && existingClient.GetRelayURL() == req.RelayURL {
+		if existingClient.IsConnected() && existingClient.GetRelayURL() == relayURL {
 			// Already connected to the same Relay, just update token for future reconnects
 			log.Info("Already connected to same relay, updating token only",
 				"pod_key", req.PodKey,
-				"relay_url", req.RelayURL)
+				"relay_url", relayURL)
 			existingClient.UpdateToken(req.RunnerToken)
 			return nil
 		}
@@ -58,7 +58,7 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		log.Info("Disconnecting existing relay connection",
 			"pod_key", req.PodKey,
 			"old_relay_url", existingClient.GetRelayURL(),
-			"new_relay_url", req.RelayURL,
+			"new_relay_url", relayURL,
 			"was_connected", existingClient.IsConnected())
 		pod.RelayClient = nil
 		// Stop outside the field — existing client has its own internal state
@@ -67,7 +67,7 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 
 	// Create new relay client (no sessionID needed)
 	relayClient := relay.NewClient(
-		req.RelayURL,
+		relayURL,
 		req.PodKey,
 		req.RunnerToken,
 		slog.Default().With("pod_key", req.PodKey),
