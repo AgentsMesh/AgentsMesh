@@ -76,7 +76,7 @@ func fetchGoogleUserInfo(ctx context.Context, accessToken string) (*OAuthUserInf
 	defer userResp.Body.Close()
 
 	if userResp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Google API returned status %d", userResp.StatusCode)
+		return nil, fmt.Errorf("google API returned status %d", userResp.StatusCode)
 	}
 
 	var googleUser struct {

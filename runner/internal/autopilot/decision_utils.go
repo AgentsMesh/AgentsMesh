@@ -122,7 +122,6 @@ func ExtractJSONBlock(output string) map[string]interface{} {
 			depth--
 			if depth == 0 {
 				end = i + 1
-				break
 			}
 		}
 		if end > 0 {
@@ -204,7 +203,6 @@ func extractJSONString(content string) string {
 			depth--
 			if depth == 0 {
 				end = i + 1
-				break
 			}
 		}
 		if end > 0 {

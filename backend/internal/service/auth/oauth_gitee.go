@@ -73,7 +73,7 @@ func fetchGiteeUserInfo(ctx context.Context, accessToken string) (*OAuthUserInfo
 	defer userResp.Body.Close()
 
 	if userResp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gitee API returned status %d", userResp.StatusCode)
+		return nil, fmt.Errorf("gitee API returned status %d", userResp.StatusCode)
 	}
 
 	var giteeUser struct {

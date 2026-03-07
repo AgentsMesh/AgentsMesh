@@ -106,7 +106,7 @@ ca_file: /home/user/.agentsmesh/certs/ca.crt
 	sIdx := indexOf(content, "server_url:")
 	rIdx := indexOf(content, "runner_id:")
 	cIdx := indexOf(content, "cert_file:")
-	if !(sIdx < rIdx && rIdx < cIdx) {
+	if sIdx >= rIdx || rIdx >= cIdx {
 		t.Errorf("key order changed: server_url=%d runner_id=%d cert_file=%d\n%s", sIdx, rIdx, cIdx, content)
 	}
 }

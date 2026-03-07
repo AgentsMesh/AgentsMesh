@@ -157,13 +157,13 @@ func (l AvailablePodList) FormatText() string {
 	b.WriteString("| Pod Key | Status | Agent Type | Created By | Ticket |\n")
 	b.WriteString("|---------|--------|------------|------------|--------|\n")
 	for _, p := range l {
-		b.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s |\n",
+		fmt.Fprintf(&b, "| %s | %s | %s | %s | %s |\n",
 			escapeTableCell(p.PodKey),
 			p.Status,
 			escapeTableCell(string(p.AgentType)),
 			escapeTableCell(p.GetUsername()),
 			escapeTableCell(p.GetTicketTitle()),
-		))
+		)
 	}
 	return strings.TrimRight(b.String(), "\n")
 }
@@ -222,13 +222,13 @@ func (l RepositoryList) FormatText() string {
 	b.WriteString("| ID | Name | Provider | Default Branch | Clone URL |\n")
 	b.WriteString("|----|------|----------|----------------|-----------|\n")
 	for _, r := range l {
-		b.WriteString(fmt.Sprintf("| %d | %s | %s | %s | %s |\n",
+		fmt.Fprintf(&b, "| %d | %s | %s | %s | %s |\n",
 			r.ID,
 			escapeTableCell(r.Name),
 			escapeTableCell(r.ProviderType),
 			escapeTableCell(r.DefaultBranch),
 			escapeTableCell(r.CloneURL),
-		))
+		)
 	}
 	return strings.TrimRight(b.String(), "\n")
 }
@@ -242,13 +242,13 @@ func (l BindingList) FormatText() string {
 	b.WriteString("| ID | Initiator | Target | Status | Granted Scopes |\n")
 	b.WriteString("|----|-----------|--------|--------|----------------|\n")
 	for _, bd := range l {
-		b.WriteString(fmt.Sprintf("| %d | %s | %s | %s | %s |\n",
+		fmt.Fprintf(&b, "| %d | %s | %s | %s | %s |\n",
 			bd.ID,
 			escapeTableCell(bd.InitiatorPod),
 			escapeTableCell(bd.TargetPod),
 			bd.Status,
 			joinScopes(bd.GrantedScopes),
-		))
+		)
 	}
 	return strings.TrimRight(b.String(), "\n")
 }

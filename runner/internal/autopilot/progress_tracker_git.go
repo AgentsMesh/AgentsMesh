@@ -101,7 +101,7 @@ func (pt *ProgressTracker) parseDiffStats(output string, summary *GitDiffSummary
 				if idx := strings.Index(line, marker); idx > 0 {
 					parts := strings.Fields(line[:idx])
 					if len(parts) >= 1 {
-						fmt.Sscanf(parts[len(parts)-1], "%d", &summary.Insertions)
+						_, _ = fmt.Sscanf(parts[len(parts)-1], "%d", &summary.Insertions)
 					}
 					break
 				}
@@ -112,7 +112,7 @@ func (pt *ProgressTracker) parseDiffStats(output string, summary *GitDiffSummary
 				if idx := strings.Index(line, marker); idx > 0 {
 					parts := strings.Fields(line[:idx])
 					if len(parts) >= 1 {
-						fmt.Sscanf(parts[len(parts)-1], "%d", &summary.Deletions)
+						_, _ = fmt.Sscanf(parts[len(parts)-1], "%d", &summary.Deletions)
 					}
 					break
 				}
@@ -131,7 +131,7 @@ func (pt *ProgressTracker) generateContentHash(diff *GitDiffSummary) string {
 	}
 
 	// Include stats
-	hasher.Write([]byte(fmt.Sprintf("%d:%d", diff.Insertions, diff.Deletions)))
+	fmt.Fprintf(hasher, "%d:%d", diff.Insertions, diff.Deletions)
 
 	// Include untracked files
 	for _, f := range diff.UntrackedFiles {
