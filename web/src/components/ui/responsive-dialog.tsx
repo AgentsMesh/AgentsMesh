@@ -146,14 +146,12 @@ export function ResponsiveDialogContent({
 }: ResponsiveDialogContentProps) {
   const { isMobile } = useBreakpoint();
 
-  // Mobile: Drawer content
+  // Mobile: Drawer content (className is not applied to Drawer.Content
+  // to avoid width constraints like max-w-lg breaking the full-width bottom sheet)
   if (isMobile) {
     return (
       <Drawer.Content
-        className={cn(
-          "fixed bottom-0 left-0 right-0 bg-background rounded-t-2xl z-50 max-h-[85dvh] flex flex-col",
-          className
-        )}
+        className="fixed bottom-0 left-0 right-0 bg-background rounded-t-2xl z-50 max-h-[85dvh] flex flex-col"
         aria-describedby={undefined}
       >
         {/* Handle */}
