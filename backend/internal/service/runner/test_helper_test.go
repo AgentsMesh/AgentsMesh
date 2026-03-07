@@ -144,7 +144,7 @@ func (m *MockCommandSender) SendPrompt(ctx context.Context, runnerID int64, podK
 	return nil
 }
 
-func (m *MockCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, publicRelayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
+func (m *MockCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.SubscribeTerminalCalls++

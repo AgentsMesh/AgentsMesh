@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"io"
 	"strings"
@@ -46,16 +47,15 @@ func (r *WebhookRouter) verifyGitHubSignature(c *gin.Context, secret string) boo
 // verifyGiteeSignature verifies Gitee webhook signature using HMAC-SHA256
 func (r *WebhookRouter) verifyGiteeSignature(c *gin.Context, secret string) bool {
 	// Gitee supports multiple signature methods
-	// Method 1: X-Gitee-Token (simple token comparison)
+	timestamp := c.GetHeader("X-Gitee-Timestamp")
 	token := c.GetHeader("X-Gitee-Token")
-	if token != "" {
-		return token == secret
+
+	if token == "" {
+		return false
 	}
 
-	// Method 2: X-Gitee-Timestamp + X-Gitee-Token with HMAC
-	timestamp := c.GetHeader("X-Gitee-Timestamp")
-	signature := c.GetHeader("X-Gitee-Token")
-	if timestamp != "" && signature != "" {
+	// Method 1: X-Gitee-Timestamp + X-Gitee-Token with HMAC (preferred, more secure)
+	if timestamp != "" {
 		// Read the request body
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
@@ -71,8 +71,9 @@ func (r *WebhookRouter) verifyGiteeSignature(c *gin.Context, secret string) bool
 		mac.Write([]byte(stringToSign))
 		expectedMAC := hex.EncodeToString(mac.Sum(nil))
 
-		return hmac.Equal([]byte(signature), []byte(expectedMAC))
+		return hmac.Equal([]byte(token), []byte(expectedMAC))
 	}
 
-	return false
+	// Method 2: Simple X-Gitee-Token comparison (constant-time)
+	return subtle.ConstantTimeCompare([]byte(token), []byte(secret)) == 1
 }

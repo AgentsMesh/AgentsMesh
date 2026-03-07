@@ -90,10 +90,17 @@ func (s *Service) UpdateAgentVersions(ctx context.Context, runnerID int64, versi
 		return err
 	}
 
-	// Sync in-memory cache so GetRunner returns fresh data immediately
+	// Sync in-memory cache so GetRunner returns fresh data immediately.
+	// Store a new copy to avoid data races with concurrent Range readers.
 	if active, ok := s.activeRunners.Load(runnerID); ok {
 		if ar, ok := active.(*ActiveRunner); ok && ar.Runner != nil {
-			ar.Runner.AgentVersions = runner.AgentVersionSlice(versions)
+			updated := *ar.Runner
+			updated.AgentVersions = runner.AgentVersionSlice(versions)
+			s.activeRunners.Store(runnerID, &ActiveRunner{
+				Runner:   &updated,
+				LastPing: ar.LastPing,
+				PodCount: ar.PodCount,
+			})
 		}
 	}
 	return nil

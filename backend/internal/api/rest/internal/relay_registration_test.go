@@ -71,3 +71,34 @@ func TestReplaceURLHost(t *testing.T) {
 		})
 	}
 }
+
+func TestParseRelayURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawURL  string
+		wantOK  bool
+	}{
+		{"valid wss with host", "wss://relay.example.com:8443", true},
+		{"valid ws with host", "ws://192.168.1.1:8090", true},
+		{"valid wss with path", "wss://relay.example.com/ws", true},
+		{"http scheme rejected", "http://relay.example.com", false},
+		{"https scheme rejected", "https://relay.example.com", false},
+		{"scheme only no host", "wss:", false},
+		{"scheme with empty authority", "wss://", false},
+		{"empty string", "", false},
+		{"invalid URL", "://invalid", false},
+		{"relative path", "/relay/ws", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u, err := parseRelayURL(tt.rawURL)
+			if tt.wantOK {
+				require.NoError(t, err)
+				assert.NotNil(t, u)
+			} else {
+				assert.True(t, err != nil || u == nil, "expected error or nil for %q", tt.rawURL)
+			}
+		})
+	}
+}

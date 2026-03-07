@@ -93,6 +93,11 @@ func TooManyRequests(c *gin.Context, message string) {
 	Respond(c, http.StatusTooManyRequests, RATE_LIMITED, message)
 }
 
+// CapacityExceeded sends a 429 Too Many Requests response with CAPACITY_EXCEEDED code.
+func CapacityExceeded(c *gin.Context, message string) {
+	Respond(c, http.StatusTooManyRequests, CAPACITY_EXCEEDED, message)
+}
+
 // PayloadTooLarge sends a 413 Request Entity Too Large response.
 func PayloadTooLarge(c *gin.Context, message string) {
 	Respond(c, http.StatusRequestEntityTooLarge, PAYLOAD_TOO_LARGE, message)

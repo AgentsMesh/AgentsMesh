@@ -26,6 +26,7 @@ type LoopScheduler struct {
 	cronParser   cron.Parser
 	stopCh       chan struct{}
 	stopOnce     sync.Once
+	wg           sync.WaitGroup
 }
 
 // NewLoopScheduler creates a new LoopScheduler.
@@ -63,6 +64,8 @@ func (s *LoopScheduler) Start() {
 		s.logger.Error("failed to initialize next run times", "error", err)
 	}
 
+	s.wg.Add(2)
+
 	// Cron trigger check (every 30 seconds)
 	go s.safeLoop("cron_trigger", s.runCronLoop)
 
@@ -72,10 +75,12 @@ func (s *LoopScheduler) Start() {
 	s.logger.Info("loop scheduler started (cron check: 30s, timeout check: 60s)")
 }
 
-// Stop gracefully stops the scheduler. Safe to call multiple times.
+// Stop gracefully stops the scheduler and waits for goroutines to exit.
+// Safe to call multiple times.
 func (s *LoopScheduler) Stop() {
 	s.stopOnce.Do(func() {
 		close(s.stopCh)
+		s.wg.Wait()
 		s.logger.Info("loop scheduler stopped")
 	})
 }
@@ -83,6 +88,7 @@ func (s *LoopScheduler) Stop() {
 // safeLoop runs fn in an infinite recovery loop. If fn panics, it logs and restarts
 // after a 5-second cooldown. Stops when stopCh is closed.
 func (s *LoopScheduler) safeLoop(name string, fn func()) {
+	defer s.wg.Done()
 	for {
 		func() {
 			defer func() {

@@ -3,6 +3,7 @@ package job
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
@@ -15,6 +16,8 @@ type SubscriptionScheduler struct {
 	renewJob    *SubscriptionRenewJob
 	emailJob    *RenewalReminderJob
 	stopCh      chan struct{}
+	stopOnce    sync.Once
+	wg          sync.WaitGroup
 	logger      *slog.Logger
 }
 
@@ -34,17 +37,33 @@ func (s *SubscriptionScheduler) Start() {
 	s.logger.Info("starting subscription scheduler")
 
 	// Run jobs immediately on startup
-	go s.runInitialJobs()
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.runInitialJobs()
+	}()
 
 	// Start periodic job runners
-	go s.runHourlyJobs()
-	go s.runDailyJobs()
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.runHourlyJobs()
+	}()
+
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.runDailyJobs()
+	}()
 }
 
-// Stop stops all scheduled jobs
+// Stop stops all scheduled jobs and waits for goroutines to exit
 func (s *SubscriptionScheduler) Stop() {
 	s.logger.Info("stopping subscription scheduler")
-	close(s.stopCh)
+	s.stopOnce.Do(func() {
+		close(s.stopCh)
+	})
+	s.wg.Wait()
 }
 
 // runInitialJobs runs jobs immediately on startup

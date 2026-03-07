@@ -252,7 +252,7 @@ func TestDeleteGRPCRegistrationToken(t *testing.T) {
 		require.NoError(t, db.Where("organization_id = ?", org.ID).First(&token).Error)
 
 		// Delete
-		err = service.DeleteGRPCRegistrationToken(ctx, token.ID)
+		err = service.DeleteGRPCRegistrationToken(ctx, token.ID, org.ID)
 		require.NoError(t, err)
 
 		// Verify deleted

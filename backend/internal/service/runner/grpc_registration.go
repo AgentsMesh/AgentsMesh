@@ -90,9 +90,12 @@ func (s *Service) ListGRPCRegistrationTokens(ctx context.Context, orgID int64) (
 }
 
 // DeleteGRPCRegistrationToken deletes a gRPC registration token.
-// Returns ErrGRPCTokenNotFound if the token doesn't exist.
-func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID int64) error {
-	result := s.db.WithContext(ctx).Delete(&runner.GRPCRegistrationToken{}, tokenID)
+// Only deletes if the token belongs to the specified organization (prevents cross-org deletion).
+// Returns ErrGRPCTokenNotFound if the token doesn't exist or belongs to a different organization.
+func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID, orgID int64) error {
+	result := s.db.WithContext(ctx).
+		Where("id = ? AND organization_id = ?", tokenID, orgID).
+		Delete(&runner.GRPCRegistrationToken{})
 	if result.Error != nil {
 		return result.Error
 	}

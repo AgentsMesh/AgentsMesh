@@ -189,6 +189,7 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 			RelayManager:   svc.RelayManager,
 			DNSService:     svc.RelayDNSService,
 			ACMEManager:    svc.RelayACMEManager,
+			GeoResolver:    svc.GeoResolver,
 			InternalSecret: cfg.Server.InternalAPISecret,
 		})
 	}

@@ -3,6 +3,7 @@ package billing
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
@@ -44,7 +45,10 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 	if sub != nil && sub.CustomQuotas != nil {
 		if customLimit, ok := sub.CustomQuotas[resource]; ok {
 			if limit, ok := customLimit.(float64); ok && int(limit) != -1 {
-				current, _ := s.getCurrentResourceCount(ctx, orgID, resource)
+				current, err := s.getCurrentResourceCount(ctx, orgID, resource)
+				if err != nil {
+					return fmt.Errorf("failed to get current resource count: %w", err)
+				}
 				if current+requestedAmount > int(limit) {
 					return ErrQuotaExceeded
 				}
@@ -75,7 +79,10 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 		return nil
 	}
 
-	current, _ := s.getCurrentResourceCount(ctx, orgID, resource)
+	current, err := s.getCurrentResourceCount(ctx, orgID, resource)
+	if err != nil {
+		return fmt.Errorf("failed to get current resource count: %w", err)
+	}
 	if current+requestedAmount > limit {
 		return ErrQuotaExceeded
 	}
@@ -117,25 +124,26 @@ func (s *Service) CheckSeatAvailability(ctx context.Context, orgID int64, reques
 
 func (s *Service) getCurrentResourceCount(ctx context.Context, orgID int64, resource string) (int, error) {
 	var count int64
+	var err error
 
 	switch resource {
 	case "users":
-		s.db.WithContext(ctx).Table("organization_members").Where("organization_id = ?", orgID).Count(&count)
+		err = s.db.WithContext(ctx).Table("organization_members").Where("organization_id = ?", orgID).Count(&count).Error
 	case "runners":
-		s.db.WithContext(ctx).Table("runners").Where("organization_id = ?", orgID).Count(&count)
+		err = s.db.WithContext(ctx).Table("runners").Where("organization_id = ?", orgID).Count(&count).Error
 	case "concurrent_pods":
 		// Count active pods (running or initializing)
-		s.db.WithContext(ctx).Table("pods").
+		err = s.db.WithContext(ctx).Table("pods").
 			Where("organization_id = ? AND status IN ?", orgID, []string{"running", "initializing"}).
-			Count(&count)
+			Count(&count).Error
 	case "repositories":
-		s.db.WithContext(ctx).Table("repositories").Where("organization_id = ?", orgID).Count(&count)
+		err = s.db.WithContext(ctx).Table("repositories").Where("organization_id = ?", orgID).Count(&count).Error
 	case "pod_minutes":
-		usage, _ := s.GetUsage(ctx, orgID, billing.UsageTypePodMinutes)
-		return int(usage), nil
+		usage, err := s.GetUsage(ctx, orgID, billing.UsageTypePodMinutes)
+		return int(usage), err
 	}
 
-	return int(count), nil
+	return int(count), err
 }
 
 // GetCurrentConcurrentPods returns the number of currently active pods for an organization

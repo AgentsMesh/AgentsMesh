@@ -136,21 +136,14 @@ func (s *Scheduler) Stop() {
 	}
 	s.mu.RUnlock()
 
-	// Wait for all tasks to finish with timeout
-	done := make(chan struct{})
-	go func() {
-		s.wg.Wait()
-		close(done)
-	}()
+	// Wait for all tasks to finish. Each task has a context-based timeout
+	// (2x interval), so they will eventually return. We must wait for all
+	// goroutines to exit before closing the results channel to avoid
+	// send-on-closed-channel panic.
+	s.wg.Wait()
+	s.logger.Info("all tasks stopped gracefully")
 
-	select {
-	case <-done:
-		s.logger.Info("all tasks stopped gracefully")
-	case <-time.After(30 * time.Second):
-		s.logger.Warn("some tasks did not stop in time")
-	}
-
-	// Close results channel only once
+	// Close results channel only once (safe now that all senders have exited)
 	s.closeOnce.Do(func() {
 		close(s.results)
 	})
@@ -252,14 +245,40 @@ func (s *Scheduler) executeTask(task *Task) {
 func (s *Scheduler) processResults() {
 	defer s.wg.Done()
 
-	for result := range s.results {
-		s.mu.RLock()
-		listeners := s.listeners
-		s.mu.RUnlock()
-
-		for _, fn := range listeners {
-			fn(result)
+	for {
+		select {
+		case result, ok := <-s.results:
+			if !ok {
+				return
+			}
+			s.notifyListeners(result)
+		case <-s.ctx.Done():
+			// Drain any results already buffered, then exit.
+			// Use non-blocking receive to avoid deadlocking with Stop()
+			// which closes the channel only after wg.Wait().
+			for {
+				select {
+				case result, ok := <-s.results:
+					if !ok {
+						return
+					}
+					s.notifyListeners(result)
+				default:
+					return
+				}
+			}
 		}
+	}
+}
+
+// notifyListeners sends a result to all registered listeners.
+func (s *Scheduler) notifyListeners(result TaskResult) {
+	s.mu.RLock()
+	listeners := s.listeners
+	s.mu.RUnlock()
+
+	for _, fn := range listeners {
+		fn(result)
 	}
 }
 

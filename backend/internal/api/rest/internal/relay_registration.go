@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -9,6 +11,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
+)
+
+// Default values for relay registration fields.
+const (
+	defaultRelayCapacity = 1000      // max connections when not specified
+	defaultRelayRegion   = "default" // region when not specified
 )
 
 // Register handles relay registration
@@ -30,6 +38,7 @@ func (h *RelayHandler) Register(c *gin.Context) {
 	// Handle DNS auto-registration if relay_name and IP provided and DNS service enabled.
 	// DNS service only manages A records (domain → IP).
 	// The relay's URL (scheme + port) is authoritative from the relay itself.
+	// Note: req.IP format is already validated by binding tag ("omitempty,ip").
 	if req.RelayName != "" && req.IP != "" && h.dnsService != nil && h.dnsService.IsEnabled() {
 		// Create/update DNS A record
 		if err := h.dnsService.CreateRecord(c.Request.Context(), req.RelayName, req.IP); err != nil {
@@ -44,13 +53,13 @@ func (h *RelayHandler) Register(c *gin.Context) {
 			domain := h.dnsService.GenerateRelayDomain(req.RelayName)
 			if newURL, err := replaceURLHost(url, domain); err == nil {
 				url = newURL
+				dnsCreated = true
 			} else {
 				h.logger.Warn("Failed to replace URL host, using relay-reported URL",
 					"url", url,
 					"domain", domain,
 					"error", err)
 			}
-			dnsCreated = true
 			h.logger.Info("DNS record created for relay",
 				"relay_name", req.RelayName,
 				"ip", req.IP,
@@ -64,25 +73,65 @@ func (h *RelayHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Validate URL scheme (only ws:// and wss:// allowed for relay WebSocket connections)
+	parsedURL, err := parseRelayURL(url)
+	if err != nil {
+		apierr.InvalidInput(c, "url must use ws:// or wss:// scheme with a valid host")
+		return
+	}
+
 	info := &relay.RelayInfo{
-		ID:          req.RelayID,
-		URL:         url,
-		InternalURL: req.InternalURL,
-		Region:      req.Region,
-		Capacity:    req.Capacity,
+		ID:       req.RelayID,
+		URL:      url,
+		Region:   req.Region,
+		Capacity: req.Capacity,
 	}
 
 	if info.Capacity == 0 {
-		info.Capacity = 1000 // Default capacity
+		info.Capacity = defaultRelayCapacity
 	}
 
 	if info.Region == "" {
-		info.Region = "default"
+		info.Region = defaultRelayRegion
+	}
+
+	// Resolve relay geographic coordinates from its IP
+	if h.geoResolver != nil {
+		relayIP := req.IP
+		if relayIP == "" {
+			// Extract IP from parsed URL (only if it's an IP, not a hostname)
+			if host := parsedURL.Hostname(); net.ParseIP(host) != nil {
+				relayIP = host
+			}
+		}
+		if relayIP != "" {
+			if loc := h.geoResolver.Resolve(relayIP); loc != nil {
+				info.Latitude = loc.Latitude
+				info.Longitude = loc.Longitude
+				h.logger.Info("Relay GeoIP resolved",
+					"relay_id", req.RelayID,
+					"ip", relayIP,
+					"latitude", loc.Latitude,
+					"longitude", loc.Longitude,
+					"country", loc.Country)
+			}
+		}
 	}
 
 	if err := h.relayManager.Register(info); err != nil {
 		h.logger.Error("Failed to register relay", "relay_id", req.RelayID, "error", err)
-		apierr.InternalError(c, "failed to register relay")
+		// Best-effort rollback: clean up DNS record if we created one
+		if dnsCreated && h.dnsService != nil {
+			if delErr := h.dnsService.DeleteRecord(c.Request.Context(), req.RelayName); delErr != nil {
+				h.logger.Warn("Failed to rollback DNS record after registration failure",
+					"relay_name", req.RelayName, "error", delErr)
+			}
+		}
+		if errors.Is(err, relay.ErrCapacityLimitReached) {
+			apierr.CapacityExceeded(c, "relay capacity limit reached")
+		} else {
+			apierr.InternalError(c, "failed to register relay")
+		}
 		return
 	}
 
@@ -93,7 +142,6 @@ func (h *RelayHandler) Register(c *gin.Context) {
 		"dns_created", dnsCreated)
 
 	response.URL = url
-	response.InternalURL = req.InternalURL
 	response.DNSCreated = dnsCreated
 
 	// Include TLS certificate if ACME is enabled and certificate is available
@@ -116,66 +164,6 @@ func (h *RelayHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// Unregister handles graceful relay unregistration
-// POST /api/internal/relays/unregister
-func (h *RelayHandler) Unregister(c *gin.Context) {
-	var req UnregisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		apierr.ValidationError(c, err.Error())
-		return
-	}
-
-	// Get relay info before unregistering
-	relayInfo := h.relayManager.GetRelayByID(req.RelayID)
-	if relayInfo == nil {
-		// Relay not found, but that's OK for unregister (idempotent)
-		h.logger.Info("Unregister request for unknown relay",
-			"relay_id", req.RelayID,
-			"reason", req.Reason)
-		c.JSON(http.StatusOK, gin.H{"status": "not_found"})
-		return
-	}
-
-	// Gracefully unregister
-	h.relayManager.GracefulUnregister(req.RelayID, req.Reason)
-
-	h.logger.Info("Relay gracefully unregistered",
-		"relay_id", req.RelayID,
-		"reason", req.Reason)
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "unregistered",
-		"reason": req.Reason,
-	})
-}
-
-// ForceUnregister removes a relay
-// DELETE /api/internal/relays/:relay_id
-func (h *RelayHandler) ForceUnregister(c *gin.Context) {
-	relayID := c.Param("relay_id")
-	if relayID == "" {
-		apierr.InvalidInput(c, "relay_id is required")
-		return
-	}
-
-	// Check if relay exists
-	relayInfo := h.relayManager.GetRelayByID(relayID)
-	if relayInfo == nil {
-		apierr.ResourceNotFound(c, "relay not found")
-		return
-	}
-
-	// Force unregister
-	h.relayManager.ForceUnregister(relayID)
-
-	h.logger.Info("Relay force unregistered", "relay_id", relayID)
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":   "unregistered",
-		"relay_id": relayID,
-	})
-}
-
 // replaceURLHost parses rawURL and replaces only the hostname with newHost,
 // preserving scheme, port, and path.
 // e.g., replaceURLHost("wss://47.77.190.14:8443", "01.relay.agentsmesh.ai")
@@ -184,7 +172,7 @@ func (h *RelayHandler) ForceUnregister(c *gin.Context) {
 func replaceURLHost(rawURL, newHost string) (string, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return "", fmt.Errorf("invalid URL %q: %w", rawURL, err)
+		return "", fmt.Errorf("invalid URL: %w", err)
 	}
 
 	port := u.Port()
@@ -195,4 +183,17 @@ func replaceURLHost(rawURL, newHost string) (string, error) {
 	}
 
 	return u.String(), nil
+}
+
+// parseRelayURL parses and validates a relay URL.
+// Returns the parsed URL or an error if the scheme is not ws/wss or host is empty.
+func parseRelayURL(rawURL string) (*url.URL, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid relay URL: %w", err)
+	}
+	if (u.Scheme != "ws" && u.Scheme != "wss") || u.Host == "" {
+		return nil, fmt.Errorf("relay URL must use ws:// or wss:// scheme with a non-empty host")
+	}
+	return u, nil
 }

@@ -40,11 +40,18 @@ func (c *RelayConnectionCache) Update(runnerID int64, connections []RelayConnect
 	}
 }
 
-// Get returns relay connections for a runner
+// Get returns a copy of relay connections for a runner.
+// Returns a copy to prevent external modification of internal state.
 func (c *RelayConnectionCache) Get(runnerID int64) []RelayConnectionInfo {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.cache[runnerID]
+	src := c.cache[runnerID]
+	if src == nil {
+		return nil
+	}
+	result := make([]RelayConnectionInfo, len(src))
+	copy(result, src)
+	return result
 }
 
 // Delete removes relay connections for a runner (called when runner disconnects)

@@ -60,14 +60,16 @@ func (j *SubscriptionRenewJob) FreezeExpiredSubscriptions(ctx context.Context) e
 
 	// Also update organization subscription_status for frozen subscriptions
 	if activeResult.RowsAffected > 0 || trialResult.RowsAffected > 0 {
-		j.db.WithContext(ctx).Exec(`
+		if err := j.db.WithContext(ctx).Exec(`
 			UPDATE organizations o
 			SET subscription_status = 'frozen'
 			FROM subscriptions s
 			WHERE s.organization_id = o.id
 			AND s.status = 'frozen'
 			AND o.subscription_status != 'frozen'
-		`)
+		`).Error; err != nil {
+			return fmt.Errorf("failed to sync organization subscription_status: %w", err)
+		}
 	}
 
 	return nil

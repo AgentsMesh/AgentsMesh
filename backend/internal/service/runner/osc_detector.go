@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 
@@ -37,7 +36,12 @@ func (d *OSCDetector) PublishNotification(ctx context.Context, podKey, title, bo
 		return false
 	}
 
-	// Publish notification event
+	// Publish notification event — use json.Marshal for safe encoding of user-controlled input
+	notifData, _ := json.Marshal(map[string]string{
+		"title":   title,
+		"body":    body,
+		"pod_key": podKey,
+	})
 	d.eventBus.Publish(ctx, &eventbus.Event{
 		Type:           eventbus.EventTerminalNotification,
 		Category:       eventbus.CategoryNotification,
@@ -45,11 +49,7 @@ func (d *OSCDetector) PublishNotification(ctx context.Context, podKey, title, bo
 		TargetUserID:   &creatorID,
 		EntityType:     "pod",
 		EntityID:       podKey,
-		Data: json.RawMessage(`{
-			"title": "` + escapeJSON(title) + `",
-			"body": "` + escapeJSON(body) + `",
-			"pod_key": "` + podKey + `"
-		}`),
+		Data:           json.RawMessage(notifData),
 	})
 
 	return true
@@ -74,40 +74,19 @@ func (d *OSCDetector) PublishTitle(ctx context.Context, podKey, title string) bo
 		// The frontend will still get the update in real-time
 	}
 
-	// Publish pod:title_changed event
+	// Publish pod:title_changed event — use json.Marshal for safe encoding
+	titleData, _ := json.Marshal(map[string]string{
+		"pod_key": podKey,
+		"title":   title,
+	})
 	d.eventBus.Publish(ctx, &eventbus.Event{
 		Type:           eventbus.EventPodTitleChanged,
 		Category:       eventbus.CategoryEntity,
 		OrganizationID: orgID,
 		EntityType:     "pod",
 		EntityID:       podKey,
-		Data: json.RawMessage(`{
-			"pod_key": "` + podKey + `",
-			"title": "` + escapeJSON(title) + `"
-		}`),
+		Data:           json.RawMessage(titleData),
 	})
 
 	return true
-}
-
-// escapeJSON escapes special characters in JSON string values
-func escapeJSON(s string) string {
-	var result bytes.Buffer
-	for _, r := range s {
-		switch r {
-		case '"':
-			result.WriteString(`\"`)
-		case '\\':
-			result.WriteString(`\\`)
-		case '\n':
-			result.WriteString(`\n`)
-		case '\r':
-			result.WriteString(`\r`)
-		case '\t':
-			result.WriteString(`\t`)
-		default:
-			result.WriteRune(r)
-		}
-	}
-	return result.String()
 }

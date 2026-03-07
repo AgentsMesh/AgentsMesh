@@ -2,7 +2,10 @@ package billing
 
 import (
 	"context"
+	"errors"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
@@ -20,7 +23,10 @@ func (s *Service) CreatePaymentOrder(ctx context.Context, order *billing.Payment
 func (s *Service) GetPaymentOrderByNo(ctx context.Context, orderNo string) (*billing.PaymentOrder, error) {
 	var order billing.PaymentOrder
 	if err := s.db.WithContext(ctx).Where("order_no = ?", orderNo).First(&order).Error; err != nil {
-		return nil, ErrOrderNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, err
 	}
 	return &order, nil
 }
@@ -29,7 +35,10 @@ func (s *Service) GetPaymentOrderByNo(ctx context.Context, orderNo string) (*bil
 func (s *Service) GetPaymentOrderByExternalNo(ctx context.Context, externalNo string) (*billing.PaymentOrder, error) {
 	var order billing.PaymentOrder
 	if err := s.db.WithContext(ctx).Where("external_order_no = ?", externalNo).First(&order).Error; err != nil {
-		return nil, ErrOrderNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, err
 	}
 	return &order, nil
 }

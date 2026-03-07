@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"crypto/subtle"
 	"net/http"
 
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
@@ -9,13 +10,15 @@ import (
 
 // handleGitLabWebhook handles GitLab webhook events (global endpoint)
 func (r *WebhookRouter) handleGitLabWebhook(c *gin.Context) {
-	// Verify webhook secret if configured
-	if r.cfg.Webhook.GitLabSecret != "" {
-		token := c.GetHeader("X-Gitlab-Token")
-		if token != r.cfg.Webhook.GitLabSecret {
-			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook token")
-			return
-		}
+	if r.cfg.Webhook.GitLabSecret == "" {
+		r.logger.Warn("GitLab webhook received but secret is not configured")
+		apierr.Unauthorized(c, apierr.INVALID_TOKEN, "webhook secret not configured")
+		return
+	}
+	token := c.GetHeader("X-Gitlab-Token")
+	if subtle.ConstantTimeCompare([]byte(token), []byte(r.cfg.Webhook.GitLabSecret)) != 1 {
+		apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook token")
+		return
 	}
 
 	r.processWebhook(c, "gitlab")
@@ -23,13 +26,14 @@ func (r *WebhookRouter) handleGitLabWebhook(c *gin.Context) {
 
 // handleGitHubWebhook handles GitHub webhook events (global endpoint)
 func (r *WebhookRouter) handleGitHubWebhook(c *gin.Context) {
-	// Verify webhook secret if configured
-	if r.cfg.Webhook.GitHubSecret != "" {
-		// GitHub uses X-Hub-Signature-256 for HMAC verification
-		if !r.verifyGitHubSignature(c, r.cfg.Webhook.GitHubSecret) {
-			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook signature")
-			return
-		}
+	if r.cfg.Webhook.GitHubSecret == "" {
+		r.logger.Warn("GitHub webhook received but secret is not configured")
+		apierr.Unauthorized(c, apierr.INVALID_TOKEN, "webhook secret not configured")
+		return
+	}
+	if !r.verifyGitHubSignature(c, r.cfg.Webhook.GitHubSecret) {
+		apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook signature")
+		return
 	}
 
 	r.processWebhook(c, "github")
@@ -37,12 +41,14 @@ func (r *WebhookRouter) handleGitHubWebhook(c *gin.Context) {
 
 // handleGiteeWebhook handles Gitee webhook events (global endpoint)
 func (r *WebhookRouter) handleGiteeWebhook(c *gin.Context) {
-	// Verify webhook secret if configured
-	if r.cfg.Webhook.GiteeSecret != "" {
-		if !r.verifyGiteeSignature(c, r.cfg.Webhook.GiteeSecret) {
-			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook signature")
-			return
-		}
+	if r.cfg.Webhook.GiteeSecret == "" {
+		r.logger.Warn("Gitee webhook received but secret is not configured")
+		apierr.Unauthorized(c, apierr.INVALID_TOKEN, "webhook secret not configured")
+		return
+	}
+	if !r.verifyGiteeSignature(c, r.cfg.Webhook.GiteeSecret) {
+		apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook signature")
+		return
 	}
 
 	r.processWebhook(c, "gitee")

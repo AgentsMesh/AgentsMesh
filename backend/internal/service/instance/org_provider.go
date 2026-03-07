@@ -62,6 +62,7 @@ type OrgAwarenessService struct {
 	logger          *slog.Logger
 	instanceID      string // unique ID for this instance (used as Redis key suffix)
 	stopCh          chan struct{}
+	wg              sync.WaitGroup // tracks the background refresh goroutine
 }
 
 // NewOrgAwarenessService creates a new OrgAwarenessService.
@@ -93,7 +94,9 @@ func NewOrgAwarenessService(
 func (s *OrgAwarenessService) Start() {
 	s.Refresh()
 
+	s.wg.Add(1)
 	go func() {
+		defer s.wg.Done()
 		ticker := time.NewTicker(refreshInterval)
 		defer ticker.Stop()
 		for {
@@ -112,6 +115,7 @@ func (s *OrgAwarenessService) Start() {
 // Stop gracefully stops the periodic refresh.
 func (s *OrgAwarenessService) Stop() {
 	close(s.stopCh)
+	s.wg.Wait() // wait for background goroutine to exit
 
 	// Clean up Redis key on shutdown
 	if s.redisClient != nil {

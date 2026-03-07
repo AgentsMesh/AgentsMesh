@@ -1,12 +1,14 @@
 package v1
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/geo"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
@@ -18,6 +20,7 @@ type TerminalConnectHandler struct {
 	relayManager   *relay.Manager
 	tokenGenerator *relay.TokenGenerator
 	commandSender  runner.RunnerCommandSender
+	geoResolver    geo.Resolver
 }
 
 // NewTerminalConnectHandler creates a new terminal connect handler
@@ -26,12 +29,14 @@ func NewTerminalConnectHandler(
 	relayManager *relay.Manager,
 	tokenGenerator *relay.TokenGenerator,
 	commandSender runner.RunnerCommandSender,
+	geoResolver geo.Resolver,
 ) *TerminalConnectHandler {
 	return &TerminalConnectHandler{
 		podService:     podService,
 		relayManager:   relayManager,
 		tokenGenerator: tokenGenerator,
 		commandSender:  commandSender,
+		geoResolver:    geoResolver,
 	}
 }
 
@@ -68,6 +73,10 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 
 	// Check organization access
 	tenant := middleware.GetTenant(c)
+	if tenant == nil {
+		apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "Unauthorized")
+		return
+	}
 	if pod.OrganizationID != tenant.OrganizationID {
 		apierr.ForbiddenAccess(c)
 		return
@@ -86,9 +95,16 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 		return
 	}
 
-	// Select relay for this pod using org-affinity based selection
-	// The runner region is not used anymore, org affinity provides stable relay selection
-	relayInfo := h.relayManager.SelectRelayForPod(tenant.OrganizationSlug)
+	// Select relay for this pod using geo-aware + org-affinity based selection
+	opts := relay.GeoSelectOptions{OrgSlug: tenant.OrganizationSlug}
+	if h.geoResolver != nil {
+		if loc := h.geoResolver.Resolve(c.ClientIP()); loc != nil {
+			opts.Latitude = loc.Latitude
+			opts.Longitude = loc.Longitude
+			opts.HasUserLocation = true
+		}
+	}
+	relayInfo := h.relayManager.SelectRelayForPodGeo(opts)
 	if relayInfo == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "No healthy relay available")
 		return
@@ -96,7 +112,6 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 
 	// Always notify runner to connect to relay
 	// Runner handles idempotency - if already connected to same relay, it just updates the token
-	// Use internal URL for runner (Docker network) if available
 	if h.commandSender != nil && pod.RunnerID > 0 {
 		// Generate runner token for authentication
 		// userID=0 indicates this is a runner token (not a browser token)
@@ -116,14 +131,16 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 			c.Request.Context(),
 			pod.RunnerID,
 			podKey,
-			relayInfo.GetRunnerURL(), // Docker-internal URL for Docker runners
-			relayInfo.URL,            // Public URL via Traefik — fallback for local runners
+			relayInfo.URL, // Public URL via reverse proxy — all runners use this single URL
 			runnerToken,
 			true, // include snapshot
 			1000, // snapshot history lines
 		); err != nil {
 			// Log but don't fail - runner might connect later
-			c.Error(err)
+			slog.Warn("Failed to send subscribe terminal command to runner",
+				"pod_key", podKey,
+				"runner_id", pod.RunnerID,
+				"error", err)
 		}
 	}
 
@@ -156,7 +173,8 @@ func RegisterTerminalConnectRoutes(
 	relayManager *relay.Manager,
 	tokenGenerator *relay.TokenGenerator,
 	commandSender runner.RunnerCommandSender,
+	geoResolver geo.Resolver,
 ) {
-	handler := NewTerminalConnectHandler(podService, relayManager, tokenGenerator, commandSender)
+	handler := NewTerminalConnectHandler(podService, relayManager, tokenGenerator, commandSender, geoResolver)
 	router.GET("/pods/:key/terminal/connect", handler.GetTerminalConnection)
 }

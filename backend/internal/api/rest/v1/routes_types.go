@@ -13,6 +13,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	"github.com/anthropics/agentsmesh/backend/internal/service/geo"
 	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
@@ -82,6 +83,9 @@ type Services struct {
 	RelayTokenGenerator *relay.TokenGenerator // Relay token generation
 	RelayDNSService     *relay.DNSService     // Relay DNS management
 	RelayACMEManager    *acme.Manager         // ACME certificate management for Relay TLS
+
+	// GeoIP resolver for geo-aware relay selection
+	GeoResolver geo.Resolver
 
 	// Runner version checker (optional, checks GitHub Releases for latest version)
 	VersionChecker *runner.VersionChecker

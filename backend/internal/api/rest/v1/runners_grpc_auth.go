@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
@@ -53,7 +54,11 @@ func (h *GRPCRunnerHandler) GetAuthStatus(c *gin.Context) {
 
 	resp, err := h.runnerService.GetAuthStatus(c.Request.Context(), authKey, h.pkiService)
 	if err != nil {
-		apierr.ResourceNotFound(c, err.Error())
+		if errors.Is(err, runner.ErrAuthRequestNotFound) {
+			apierr.ResourceNotFound(c, "Auth request not found")
+		} else {
+			apierr.InternalError(c, "Failed to get auth status")
+		}
 		return
 	}
 
@@ -89,13 +94,19 @@ func (h *GRPCRunnerHandler) AuthorizeRunner(c *gin.Context) {
 
 	r, err := h.runnerService.AuthorizeRunner(c.Request.Context(), req.AuthKey, tenant.OrganizationID, tenant.UserID, req.NodeID)
 	if err != nil {
-		switch err {
-		case runner.ErrRunnerAlreadyExists:
+		switch {
+		case errors.Is(err, runner.ErrRunnerAlreadyExists):
 			apierr.Conflict(c, apierr.ALREADY_EXISTS, "Runner with this node_id already exists")
-		case runner.ErrRunnerQuotaExceeded:
+		case errors.Is(err, runner.ErrRunnerQuotaExceeded):
 			apierr.PaymentRequired(c, apierr.RUNNER_QUOTA_EXCEEDED, "Runner quota exceeded")
+		case errors.Is(err, runner.ErrAuthRequestNotFound):
+			apierr.ResourceNotFound(c, "Auth request not found")
+		case errors.Is(err, runner.ErrAuthRequestExpired):
+			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Auth request expired")
+		case errors.Is(err, runner.ErrAuthRequestAlreadyAuthorized):
+			apierr.Conflict(c, apierr.ALREADY_EXISTS, "Auth request already authorized")
 		default:
-			apierr.ValidationError(c, err.Error())
+			apierr.InternalError(c, "Failed to authorize runner")
 		}
 		return
 	}

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -231,6 +232,14 @@ func Load() (*Config, error) {
 			},
 		},
 	}, nil
+}
+
+// WarnInsecureDefaults logs warnings for insecure default configuration values.
+// Should be called at startup after loading configuration.
+func (c *Config) WarnInsecureDefaults() {
+	if c.Server.InternalAPISecret == "change-me-internal-secret" {
+		slog.Warn("SECURITY: INTERNAL_API_SECRET is using the default value; set a strong random secret via environment variable")
+	}
 }
 
 // =============================================================================

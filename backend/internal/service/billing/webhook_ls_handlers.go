@@ -14,7 +14,7 @@ import (
 // ===========================================
 
 // HandleSubscriptionCreated handles subscription creation webhook event (mainly for LemonSqueezy)
-func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.WebhookEvent) error {
+func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	if event.SubscriptionID == "" {
@@ -28,6 +28,13 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 		}
 		return err
 	}
+	// Roll back the idempotency mark if the handler fails, so the event
+	// can be retried on the next delivery.
+	defer func() {
+		if retErr != nil {
+			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
+		}
+	}()
 
 	// Find subscription by organization (the order_created event should have already created it)
 	// We need to update it with the LemonSqueezy subscription ID
@@ -64,7 +71,7 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 }
 
 // HandleSubscriptionPaused handles subscription pause webhook event
-func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.WebhookEvent) error {
+func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	if event.SubscriptionID == "" {
@@ -78,6 +85,13 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 		}
 		return err
 	}
+	// Roll back the idempotency mark if the handler fails, so the event
+	// can be retried on the next delivery.
+	defer func() {
+		if retErr != nil {
+			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
+		}
+	}()
 
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
@@ -100,7 +114,7 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 }
 
 // HandleSubscriptionResumed handles subscription resume webhook event
-func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.WebhookEvent) error {
+func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	if event.SubscriptionID == "" {
@@ -114,6 +128,13 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 		}
 		return err
 	}
+	// Roll back the idempotency mark if the handler fails, so the event
+	// can be retried on the next delivery.
+	defer func() {
+		if retErr != nil {
+			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
+		}
+	}()
 
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
@@ -135,7 +156,7 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 }
 
 // HandleSubscriptionExpired handles subscription expiration webhook event
-func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.WebhookEvent) error {
+func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	if event.SubscriptionID == "" {
@@ -149,6 +170,13 @@ func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.Webho
 		}
 		return err
 	}
+	// Roll back the idempotency mark if the handler fails, so the event
+	// can be retried on the next delivery.
+	defer func() {
+		if retErr != nil {
+			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
+		}
+	}()
 
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {

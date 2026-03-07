@@ -116,27 +116,26 @@ func (wp *WorkerPool) Start() {
 func (wp *WorkerPool) Stop() {
 	wp.logger.Info("stopping worker pool")
 	wp.cancel()
+
+	// Wait for all workers and retry goroutines to finish before closing
+	// channels. cancel() causes workers to exit their loop and retry
+	// goroutines to abort their backoff, so they will all return.
+	wp.wg.Wait()
 	close(wp.jobs)
-
-	// Wait for workers with timeout
-	done := make(chan struct{})
-	go func() {
-		wp.wg.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		wp.logger.Info("worker pool stopped gracefully")
-	case <-time.After(30 * time.Second):
-		wp.logger.Warn("worker pool did not stop in time")
-	}
-
 	close(wp.results)
+
+	wp.logger.Info("worker pool stopped gracefully")
 }
 
 // Submit adds a job to the queue
 func (wp *WorkerPool) Submit(job *Job) error {
+	// Reject submissions after the pool has been canceled
+	select {
+	case <-wp.ctx.Done():
+		return fmt.Errorf("worker pool is stopped")
+	default:
+	}
+
 	if job.ID == "" {
 		job.ID = fmt.Sprintf("%s-%d", job.Type, time.Now().UnixNano())
 	}
@@ -153,6 +152,8 @@ func (wp *WorkerPool) Submit(job *Job) error {
 			"type", job.Type,
 			"priority", job.Priority)
 		return nil
+	case <-wp.ctx.Done():
+		return fmt.Errorf("worker pool is stopped")
 	default:
 		return fmt.Errorf("job queue is full")
 	}
@@ -169,13 +170,24 @@ func (wp *WorkerPool) worker(id int) {
 
 	wp.logger.Debug("worker started", "worker_id", id)
 
-	for job := range wp.jobs {
+	for {
 		select {
 		case <-wp.ctx.Done():
 			return
-		default:
+		case job, ok := <-wp.jobs:
+			if !ok {
+				return
+			}
+
 			result := wp.processJob(job)
-			wp.results <- result
+
+			// Use select to avoid blocking if results channel
+			// is closed concurrently during shutdown.
+			select {
+			case wp.results <- result:
+			case <-wp.ctx.Done():
+				return
+			}
 		}
 	}
 }
@@ -229,11 +241,17 @@ func (wp *WorkerPool) processJob(job *Job) JobResult {
 			"max_retry", job.MaxRetry,
 			"error", result.Error)
 
-		// Re-submit with exponential backoff
+		// Re-submit with exponential backoff (tracked by WaitGroup)
+		wp.wg.Add(1)
 		go func() {
+			defer wp.wg.Done()
 			backoff := time.Duration(job.retryCount) * time.Second
-			time.Sleep(backoff)
-			_ = wp.Submit(job)
+			select {
+			case <-time.After(backoff):
+				_ = wp.Submit(job)
+			case <-wp.ctx.Done():
+				return
+			}
 		}()
 	} else if result.Error != nil {
 		wp.logger.Error("job failed permanently",

@@ -17,6 +17,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/job"
 	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
+	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -65,6 +66,7 @@ func waitForShutdown(
 	subscriptionScheduler *job.SubscriptionScheduler,
 	loopScheduler LoopSchedulerStopper,
 	orgAwareness *instance.OrgAwarenessService,
+	relayManager *relay.Manager,
 	db *gorm.DB,
 	redisClient *redis.Client,
 ) {
@@ -105,6 +107,11 @@ func waitForShutdown(
 	// Stop heartbeat batcher (flush pending writes)
 	if heartbeatBatcher != nil {
 		heartbeatBatcher.Stop()
+	}
+
+	// Stop relay manager (terminates health check goroutine)
+	if relayManager != nil {
+		relayManager.Stop()
 	}
 
 	// Close EventBus

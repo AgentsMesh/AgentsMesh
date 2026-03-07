@@ -457,7 +457,6 @@ func (o *PodOrchestrator) buildPodCommand(
 
 	// Build the request for ConfigBuilder
 	buildReq := &agent.ConfigBuildRequest{
-		AgentTypeID:         *req.AgentTypeID,
 		OrganizationID:      req.OrganizationID,
 		UserID:              req.UserID,
 		CredentialProfileID: req.CredentialProfileID,
@@ -480,6 +479,11 @@ func (o *PodOrchestrator) buildPodCommand(
 		Cols:                req.Cols,
 		Rows:                req.Rows,
 		RunnerAgentVersions: runnerAgentVersions,
+	}
+
+	// Set AgentTypeID only when present (nil for CustomAgentType pods)
+	if req.AgentTypeID != nil {
+		buildReq.AgentTypeID = *req.AgentTypeID
 	}
 
 	return o.configBuilder.BuildPodCommand(ctx, buildReq)

@@ -145,8 +145,12 @@ func (c *GRPCConnection) CloseChan() <-chan struct{} {
 
 // SendMessage sends a message through the gRPC stream.
 // This is non-blocking; message is queued to the Send channel.
+// Holds RLock during the entire check-and-send to prevent Close() from
+// closing the Send channel between the IsClosed check and the channel write.
 func (c *GRPCConnection) SendMessage(msg *runnerv1.ServerMessage) error {
-	if c.IsClosed() {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.closed {
 		return ErrConnectionClosed
 	}
 

@@ -60,7 +60,7 @@ func (s *Service) RequestAuthURL(ctx context.Context, req *RequestAuthURLRequest
 func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService interfaces.PKICertificateIssuer) (*AuthStatusResponse, error) {
 	var pendingAuth runner.PendingAuth
 	if err := s.db.WithContext(ctx).Where("auth_key = ?", authKey).First(&pendingAuth).Error; err != nil {
-		return nil, fmt.Errorf("auth request not found")
+		return nil, ErrAuthRequestNotFound
 	}
 
 	// Check expiration
@@ -88,6 +88,31 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 	var r runner.Runner
 	if err := s.db.WithContext(ctx).First(&r, *pendingAuth.RunnerID).Error; err != nil {
 		return nil, fmt.Errorf("failed to get runner: %w", err)
+	}
+
+	// Handle lost HTTP response: if the runner already has a certificate from
+	// a prior successful poll whose response was lost, revoke the orphaned cert
+	// and re-issue. We cannot return the original (private key is not stored),
+	// so re-issuing is the only way to recover without deadlocking the runner.
+	if r.CertSerialNumber != nil && *r.CertSerialNumber != "" {
+		now := time.Now()
+		_ = s.db.WithContext(ctx).Model(&runner.Certificate{}).
+			Where("serial_number = ?", *r.CertSerialNumber).
+			Updates(map[string]interface{}{
+				"revoked_at":        now,
+				"revocation_reason": "re-issued: prior poll response lost",
+			}).Error // best-effort revocation; proceed regardless
+	}
+
+	// Atomic claim: delete pendingAuth before cert issuance to prevent concurrent
+	// polls from each issuing a certificate. Only one request can succeed.
+	deleteResult := s.db.WithContext(ctx).
+		Where("id = ? AND authorized = true", pendingAuth.ID).
+		Delete(&runner.PendingAuth{})
+	if deleteResult.RowsAffected == 0 {
+		// Concurrent poll already consumed this auth record; return pending
+		// so the runner's HTTP client retries with the other response.
+		return &AuthStatusResponse{Status: "pending"}, nil
 	}
 
 	// Get org slug
@@ -133,9 +158,6 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 		return nil, fmt.Errorf("failed to update runner certificate info: %w", err)
 	}
 
-	// Delete the pending auth record (one-time use)
-	s.db.WithContext(ctx).Delete(&pendingAuth)
-
 	return &AuthStatusResponse{
 		Status:        "authorized",
 		RunnerID:      r.ID,
@@ -152,17 +174,27 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int64, userID int64, nodeID string) (*runner.Runner, error) {
 	var pendingAuth runner.PendingAuth
 	if err := s.db.WithContext(ctx).Where("auth_key = ?", authKey).First(&pendingAuth).Error; err != nil {
-		return nil, fmt.Errorf("auth request not found")
+		return nil, ErrAuthRequestNotFound
 	}
 
-	// Check expiration
+	// Check expiration (informational — the atomic claim below also checks)
 	if pendingAuth.IsExpired() {
-		return nil, fmt.Errorf("auth request expired")
+		return nil, ErrAuthRequestExpired
 	}
 
-	// Check if already authorized
-	if pendingAuth.Authorized {
-		return nil, fmt.Errorf("auth request already authorized")
+	// Atomic claim: set authorized=true only if currently false and not expired.
+	// Prevents TOCTOU race from concurrent Web UI double-clicks.
+	claimResult := s.db.WithContext(ctx).Model(&runner.PendingAuth{}).
+		Where("id = ? AND authorized = false AND expires_at > ?", pendingAuth.ID, time.Now()).
+		Updates(map[string]interface{}{
+			"authorized":      true,
+			"organization_id": orgID,
+		})
+	if claimResult.Error != nil {
+		return nil, fmt.Errorf("failed to claim auth request: %w", claimResult.Error)
+	}
+	if claimResult.RowsAffected == 0 {
+		return nil, ErrAuthRequestAlreadyAuthorized
 	}
 
 	// Use provided nodeID or generate one
@@ -171,9 +203,10 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		finalNodeID = *pendingAuth.NodeID
 	}
 	if finalNodeID == "" {
-		// Generate a random node ID
 		nodeIDBytes := make([]byte, 8)
-		rand.Read(nodeIDBytes)
+		if _, err := rand.Read(nodeIDBytes); err != nil {
+			return nil, fmt.Errorf("failed to generate node ID: %w", err)
+		}
 		finalNodeID = fmt.Sprintf("runner-%s", hex.EncodeToString(nodeIDBytes))
 	}
 
@@ -204,12 +237,10 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		return nil, fmt.Errorf("failed to create runner: %w", err)
 	}
 
-	// Update pending auth
-	pendingAuth.Authorized = true
-	pendingAuth.OrganizationID = &orgID
-	pendingAuth.RunnerID = &r.ID
-
-	if err := s.db.WithContext(ctx).Save(&pendingAuth).Error; err != nil {
+	// Update pending auth with runner ID
+	if err := s.db.WithContext(ctx).Model(&runner.PendingAuth{}).
+		Where("id = ?", pendingAuth.ID).
+		Update("runner_id", r.ID).Error; err != nil {
 		return nil, fmt.Errorf("failed to update pending auth: %w", err)
 	}
 

@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -24,18 +25,21 @@ func (r *WebhookRouter) handleGitLabWebhookWithRepo(c *gin.Context) {
 		token := c.GetHeader("X-Gitlab-Token")
 		valid, err := r.webhookService.VerifyWebhookSecret(c.Request.Context(), repoID, token)
 		if err != nil || !valid {
-			// Fallback to global secret
-			if r.cfg.Webhook.GitLabSecret == "" || token != r.cfg.Webhook.GitLabSecret {
+			// Fallback to global secret (constant-time comparison)
+			if r.cfg.Webhook.GitLabSecret == "" || subtle.ConstantTimeCompare([]byte(token), []byte(r.cfg.Webhook.GitLabSecret)) != 1 {
 				apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook token")
 				return
 			}
 		}
 	} else if r.cfg.Webhook.GitLabSecret != "" {
 		token := c.GetHeader("X-Gitlab-Token")
-		if token != r.cfg.Webhook.GitLabSecret {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(r.cfg.Webhook.GitLabSecret)) != 1 {
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook token")
 			return
 		}
+	} else {
+		apierr.Unauthorized(c, apierr.INVALID_TOKEN, "webhook secret not configured")
+		return
 	}
 
 	r.processWebhookWithRepo(c, "gitlab", orgSlug, repoID)
@@ -64,7 +68,11 @@ func (r *WebhookRouter) handleGitHubWebhookWithRepo(c *gin.Context) {
 	}
 
 	// Fallback to global secret if repo-specific verification failed
-	if !verified && r.cfg.Webhook.GitHubSecret != "" {
+	if !verified {
+		if r.cfg.Webhook.GitHubSecret == "" {
+			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "webhook secret not configured")
+			return
+		}
 		if !r.verifyGitHubSignature(c, r.cfg.Webhook.GitHubSecret) {
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook signature")
 			return
@@ -96,7 +104,11 @@ func (r *WebhookRouter) handleGiteeWebhookWithRepo(c *gin.Context) {
 	}
 
 	// Fallback to global secret if repo-specific verification failed
-	if !verified && r.cfg.Webhook.GiteeSecret != "" {
+	if !verified {
+		if r.cfg.Webhook.GiteeSecret == "" {
+			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "webhook secret not configured")
+			return
+		}
 		if !r.verifyGiteeSignature(c, r.cfg.Webhook.GiteeSecret) {
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook signature")
 			return

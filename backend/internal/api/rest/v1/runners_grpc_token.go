@@ -109,7 +109,7 @@ func (h *GRPCRunnerHandler) DeleteGRPCToken(c *gin.Context) {
 		return
 	}
 
-	if err := h.runnerService.DeleteGRPCRegistrationToken(c.Request.Context(), tokenID); err != nil {
+	if err := h.runnerService.DeleteGRPCRegistrationToken(c.Request.Context(), tokenID, tenant.OrganizationID); err != nil {
 		if errors.Is(err, runner.ErrGRPCTokenNotFound) {
 			apierr.ResourceNotFound(c, "Token not found")
 			return
@@ -140,16 +140,16 @@ func (h *GRPCRunnerHandler) RegisterWithToken(c *gin.Context) {
 		h.pkiService,
 	)
 	if err != nil {
-		switch err {
-		case runner.ErrInvalidToken:
+		switch {
+		case errors.Is(err, runner.ErrInvalidToken):
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "Invalid token")
-		case runner.ErrTokenExpired:
+		case errors.Is(err, runner.ErrTokenExpired):
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "Token expired")
-		case runner.ErrTokenExhausted:
+		case errors.Is(err, runner.ErrTokenExhausted):
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "Token usage exhausted")
-		case runner.ErrRunnerAlreadyExists:
+		case errors.Is(err, runner.ErrRunnerAlreadyExists):
 			apierr.Conflict(c, apierr.ALREADY_EXISTS, "Runner with this node_id already exists")
-		case runner.ErrRunnerQuotaExceeded:
+		case errors.Is(err, runner.ErrRunnerQuotaExceeded):
 			apierr.PaymentRequired(c, apierr.RUNNER_QUOTA_EXCEEDED, "Runner quota exceeded")
 		default:
 			apierr.InternalError(c, "Failed to register runner")

@@ -33,7 +33,7 @@ func (s *Service) syncOrganizationSubscription(ctx context.Context, orgID int64,
 	if err := s.db.WithContext(ctx).Table("organizations").
 		Where("id = ?", orgID).
 		Updates(updates).Error; err != nil {
-		log.Printf("[WARN] syncOrganizationSubscription: failed to sync org=%d: %v", orgID, err)
+		log.Printf("[ERROR] syncOrganizationSubscription: failed to sync organization subscription fields for org_id=%d (updates=%v): %v", orgID, updates, err)
 	}
 }
 
@@ -82,7 +82,12 @@ func (s *Service) handleRecurringPaymentSuccess(ctx context.Context, event *paym
 	}
 
 	// Renew the subscription period using the (possibly updated) billing cycle
-	sub.CurrentPeriodStart = sub.CurrentPeriodEnd
+	// Guard against zero-value CurrentPeriodEnd to avoid starting from epoch
+	if sub.CurrentPeriodEnd.IsZero() {
+		sub.CurrentPeriodStart = time.Now()
+	} else {
+		sub.CurrentPeriodStart = sub.CurrentPeriodEnd
+	}
 	if sub.BillingCycle == billing.BillingCycleYearly {
 		sub.CurrentPeriodEnd = sub.CurrentPeriodStart.AddDate(1, 0, 0)
 	} else {
@@ -330,7 +335,12 @@ func (s *Service) renewSubscriptionFromOrder(ctx context.Context, order *billing
 	}
 
 	// Set new period using the (possibly updated) billing cycle
-	sub.CurrentPeriodStart = sub.CurrentPeriodEnd
+	// Guard against zero-value CurrentPeriodEnd to avoid starting from epoch
+	if sub.CurrentPeriodEnd.IsZero() {
+		sub.CurrentPeriodStart = time.Now()
+	} else {
+		sub.CurrentPeriodStart = sub.CurrentPeriodEnd
+	}
 	if sub.BillingCycle == billing.BillingCycleYearly {
 		sub.CurrentPeriodEnd = sub.CurrentPeriodStart.AddDate(1, 0, 0)
 	} else {

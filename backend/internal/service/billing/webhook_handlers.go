@@ -16,7 +16,7 @@ import (
 // ===========================================
 
 // HandlePaymentSucceeded handles a successful payment webhook event
-func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookEvent) error {
+func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	// Idempotency check
@@ -26,6 +26,13 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 		}
 		return err
 	}
+	// Roll back the idempotency mark if the handler fails, so the event
+	// can be retried on the next delivery.
+	defer func() {
+		if retErr != nil {
+			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
+		}
+	}()
 
 	// Try to find order by order_no first, then by external_order_no
 	var order *billing.PaymentOrder
@@ -33,9 +40,15 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 
 	if event.OrderNo != "" {
 		order, err = s.GetPaymentOrderByNo(ctx, event.OrderNo)
+		if err != nil && !errors.Is(err, ErrOrderNotFound) {
+			return fmt.Errorf("failed to lookup order by order_no: %w", err)
+		}
 	}
 	if order == nil && event.ExternalOrderNo != "" {
 		order, err = s.GetPaymentOrderByExternalNo(ctx, event.ExternalOrderNo)
+		if err != nil && !errors.Is(err, ErrOrderNotFound) {
+			return fmt.Errorf("failed to lookup order by external_order_no: %w", err)
+		}
 	}
 
 	// For recurring payments (invoice.paid), there may not be an order in our system
@@ -88,7 +101,7 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 }
 
 // HandlePaymentFailed handles a failed payment webhook event
-func (s *Service) HandlePaymentFailed(c *gin.Context, event *payment.WebhookEvent) error {
+func (s *Service) HandlePaymentFailed(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	// Idempotency check
@@ -98,6 +111,11 @@ func (s *Service) HandlePaymentFailed(c *gin.Context, event *payment.WebhookEven
 		}
 		return err
 	}
+	defer func() {
+		if retErr != nil {
+			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
+		}
+	}()
 
 	// For recurring payment failures, freeze the subscription
 	if event.SubscriptionID != "" {
@@ -110,9 +128,15 @@ func (s *Service) HandlePaymentFailed(c *gin.Context, event *payment.WebhookEven
 
 	if event.OrderNo != "" {
 		order, err = s.GetPaymentOrderByNo(ctx, event.OrderNo)
+		if err != nil && !errors.Is(err, ErrOrderNotFound) {
+			return fmt.Errorf("failed to lookup order by order_no: %w", err)
+		}
 	}
 	if order == nil && event.ExternalOrderNo != "" {
 		order, err = s.GetPaymentOrderByExternalNo(ctx, event.ExternalOrderNo)
+		if err != nil && !errors.Is(err, ErrOrderNotFound) {
+			return fmt.Errorf("failed to lookup order by external_order_no: %w", err)
+		}
 	}
 
 	if err != nil || order == nil {
@@ -124,7 +148,7 @@ func (s *Service) HandlePaymentFailed(c *gin.Context, event *payment.WebhookEven
 }
 
 // HandleSubscriptionCanceled handles subscription cancellation webhook event
-func (s *Service) HandleSubscriptionCanceled(c *gin.Context, event *payment.WebhookEvent) error {
+func (s *Service) HandleSubscriptionCanceled(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	if event.SubscriptionID == "" {
@@ -138,6 +162,11 @@ func (s *Service) HandleSubscriptionCanceled(c *gin.Context, event *payment.Webh
 		}
 		return err
 	}
+	defer func() {
+		if retErr != nil {
+			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
+		}
+	}()
 
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {

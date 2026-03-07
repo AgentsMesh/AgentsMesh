@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -54,66 +55,56 @@ func NewEventsClient(hub *Hub, conn *websocket.Conn, userID, orgID int64) *Clien
 	}
 }
 
-// SetPod sets the pod for this client
+// SetPod sets the pod for this client.
+// Holds shard.mu while writing c.podKey to prevent data race with handleUnregister.
 func (c *Client) SetPod(podKey string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Get the shard for this client
 	shard := c.hub.getShardByClient(c)
 
-	// Remove from old pod
+	// Single shard.mu critical section: remove old, update field, add new
+	shard.mu.Lock()
 	if c.podKey != "" {
-		shard.mu.Lock()
 		delete(shard.podClients[c.podKey], c)
 		if len(shard.podClients[c.podKey]) == 0 {
 			delete(shard.podClients, c.podKey)
 		}
-		shard.mu.Unlock()
 	}
-
 	c.podKey = podKey
-
-	// Add to new pod
 	if podKey != "" {
-		shard.mu.Lock()
 		if shard.podClients[podKey] == nil {
 			shard.podClients[podKey] = make(map[*Client]bool)
 		}
 		shard.podClients[podKey][c] = true
-		shard.mu.Unlock()
 	}
+	shard.mu.Unlock()
 }
 
-// SetChannel sets the channel subscription for this client
+// SetChannel sets the channel subscription for this client.
+// Holds shard.mu while writing c.channelID to prevent data race with handleUnregister.
 func (c *Client) SetChannel(channelID int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Get the shard for this client
 	shard := c.hub.getShardByClient(c)
 
-	// Remove from old channel
+	// Single shard.mu critical section: remove old, update field, add new
+	shard.mu.Lock()
 	if c.channelID != 0 {
-		shard.mu.Lock()
 		delete(shard.channelClients[c.channelID], c)
 		if len(shard.channelClients[c.channelID]) == 0 {
 			delete(shard.channelClients, c.channelID)
 		}
-		shard.mu.Unlock()
 	}
-
 	c.channelID = channelID
-
-	// Add to new channel
 	if channelID != 0 {
-		shard.mu.Lock()
 		if shard.channelClients[channelID] == nil {
 			shard.channelClients[channelID] = make(map[*Client]bool)
 		}
 		shard.channelClients[channelID][c] = true
-		shard.mu.Unlock()
 	}
+	shard.mu.Unlock()
 }
 
 // ReadPump pumps messages from the WebSocket connection to the hub
@@ -183,7 +174,11 @@ func (c *Client) WritePump() {
 	}
 }
 
-// Send sends a message to the client
+// ErrSendBufferFull is returned when the client's send buffer is full.
+var ErrSendBufferFull = fmt.Errorf("websocket: send buffer full")
+
+// Send sends a message to the client.
+// Returns ErrSendBufferFull if the send channel is at capacity.
 func (c *Client) Send(msg *Message) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
@@ -194,6 +189,6 @@ func (c *Client) Send(msg *Message) error {
 	case c.send <- data:
 		return nil
 	default:
-		return nil
+		return ErrSendBufferFull
 	}
 }

@@ -77,8 +77,8 @@ func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *
 		"circuit_breaker", status.GetCircuitBreakerState())
 
 	// Notify via callback (to publish realtime event)
-	if onAutopilotStatusChange != nil {
-		onAutopilotStatusChange(
+	if pc.onAutopilotStatusChange != nil {
+		pc.onAutopilotStatusChange(
 			data.GetAutopilotKey(),
 			data.GetPodKey(),
 			status.GetPhase(),
@@ -118,13 +118,13 @@ func (pc *PodCoordinator) handleAutopilotControllerCreated(runnerID int64, data 
 		"runner_id", runnerID)
 
 	// Notify via callback
-	if onAutopilotStatusChange != nil {
+	if pc.onAutopilotStatusChange != nil {
 		// Fetch the full AutopilotController to get max_iterations
 		var rp agentpod.AutopilotController
 		if err := pc.db.WithContext(ctx).
 			Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
 			First(&rp).Error; err == nil {
-			onAutopilotStatusChange(
+			pc.onAutopilotStatusChange(
 				data.GetAutopilotKey(),
 				data.GetPodKey(),
 				agentpod.AutopilotPhaseRunning,
@@ -174,13 +174,13 @@ func (pc *PodCoordinator) handleAutopilotControllerTerminated(runnerID int64, da
 		"reason", data.GetReason())
 
 	// Notify via callback
-	if onAutopilotStatusChange != nil {
+	if pc.onAutopilotStatusChange != nil {
 		// Fetch the full AutopilotController to get details
 		var rp agentpod.AutopilotController
 		if err := pc.db.WithContext(ctx).
 			Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
 			First(&rp).Error; err == nil {
-			onAutopilotStatusChange(
+			pc.onAutopilotStatusChange(
 				data.GetAutopilotKey(),
 				rp.PodKey,
 				phase,

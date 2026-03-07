@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	infraTasks "github.com/anthropics/agentsmesh/backend/internal/infra/tasks"
@@ -40,6 +41,7 @@ type Manager struct {
 	cfg       Config
 	scheduler *infraTasks.Scheduler
 	workers   *infraTasks.WorkerPool
+	wg        sync.WaitGroup
 
 	// Services
 	pipelinePoller *PipelinePollerService
@@ -98,6 +100,7 @@ func (m *Manager) Start() error {
 	m.workers.Start()
 
 	// Monitor worker results
+	m.wg.Add(1)
 	go m.monitorWorkerResults()
 
 	m.logger.Info("task manager started")
@@ -109,6 +112,7 @@ func (m *Manager) Stop() {
 	m.logger.Info("stopping task manager")
 	m.scheduler.Stop()
 	m.workers.Stop()
+	m.wg.Wait()
 	m.logger.Info("task manager stopped")
 }
 
@@ -156,6 +160,8 @@ func (m *Manager) registerScheduledTasks() {
 
 // monitorWorkerResults monitors worker results for logging/metrics
 func (m *Manager) monitorWorkerResults() {
+	defer m.wg.Done()
+
 	for result := range m.workers.Results() {
 		if !result.Success {
 			m.logger.Error("job failed",

@@ -41,6 +41,12 @@ type PodCoordinator struct {
 	// Callbacks
 	onStatusChange   func(podKey string, status string, agentStatus string)
 	onInitProgress   func(podKey string, phase string, progress int, message string)
+
+	// Autopilot callbacks (set during initialization, read concurrently — safe because
+	// they are set before any goroutine accesses them, establishing happens-before)
+	onAutopilotStatusChange    AutopilotStatusChangeFunc
+	onAutopilotIterationChange AutopilotIterationChangeFunc
+	onAutopilotThinkingChange  AutopilotThinkingChangeFunc
 }
 
 // NewPodCoordinator creates a new pod coordinator.
@@ -134,8 +140,13 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *ru
 	// Registration happens in handlePodCreated when Runner confirms the pod is actually created.
 	// This ensures we don't have stale routes if pod creation fails on Runner side.
 
-	// Send create pod command to runner via command sender
-	return pc.commandSender.SendCreatePod(ctx, runnerID, cmd)
+	// Send create pod command to runner via command sender.
+	// Rollback pod count on failure to keep capacity accurate.
+	if err := pc.commandSender.SendCreatePod(ctx, runnerID, cmd); err != nil {
+		_ = pc.DecrementPods(ctx, runnerID)
+		return err
+	}
+	return nil
 }
 
 // TerminatePod terminates a pod on a runner

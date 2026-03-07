@@ -129,9 +129,9 @@ func TestHandleGitLabWebhookWithRepo_NoSecretConfigured(t *testing.T) {
 
 	router.handleGitLabWebhookWithRepo(c)
 
-	// Without any secret configured, should process successfully
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+	// Without any secret configured, should reject with 401
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %d, got %d: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 	}
 }
 

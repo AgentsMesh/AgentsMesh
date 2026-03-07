@@ -65,8 +65,8 @@ func TestHandleGiteeWebhookWithRepo_NoSecretConfigured(t *testing.T) {
 
 	router.handleGiteeWebhookWithRepo(c)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %d, got %d: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 	}
 }
 
@@ -116,8 +116,8 @@ func TestHandleGiteeWebhookWithRepo_WithWebhookService(t *testing.T) {
 
 	router.handleGiteeWebhookWithRepo(c)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %d, got %d: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 	}
 }
 

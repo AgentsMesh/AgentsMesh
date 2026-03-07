@@ -78,8 +78,8 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 		"summary", data.GetSummary())
 
 	// Notify via callback (to publish realtime event)
-	if onAutopilotIterationChange != nil {
-		onAutopilotIterationChange(
+	if pc.onAutopilotIterationChange != nil {
+		pc.onAutopilotIterationChange(
 			data.GetAutopilotKey(),
 			data.GetIteration(),
 			data.GetPhase(),
@@ -91,8 +91,8 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 
 	// Also send status_changed event to update current_iteration in frontend
 	// The frontend relies on autopilot:status_changed to update the iteration counter display
-	if onAutopilotStatusChange != nil {
-		onAutopilotStatusChange(
+	if pc.onAutopilotStatusChange != nil {
+		pc.onAutopilotStatusChange(
 			data.GetAutopilotKey(),
 			rp.PodKey,
 			rp.Phase, // Keep current phase
@@ -115,7 +115,7 @@ func (pc *PodCoordinator) handleAutopilotThinking(runnerID int64, data *runnerv1
 		"reasoning", data.GetReasoning())
 
 	// Notify via callback (to publish realtime event)
-	if onAutopilotThinkingChange != nil {
-		onAutopilotThinkingChange(runnerID, data)
+	if pc.onAutopilotThinkingChange != nil {
+		pc.onAutopilotThinkingChange(runnerID, data)
 	}
 }

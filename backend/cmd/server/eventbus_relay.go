@@ -19,7 +19,6 @@ func setupRelayTokenRefreshCallback(
 	runnerConnMgr *runner.RunnerConnectionManager,
 	tokenGenerator *relay.TokenGenerator,
 	commandSender runner.RunnerCommandSender,
-	publicRelayURL string,
 ) {
 	runnerConnMgr.SetRequestRelayTokenCallback(func(runnerID int64, data *runnerv1.RequestRelayTokenEvent) {
 		slog.Info("Received relay token refresh request",
@@ -83,7 +82,6 @@ func setupRelayTokenRefreshCallback(
 			runnerID,
 			data.PodKey,
 			data.RelayUrl,
-			publicRelayURL,
 			newToken,
 			true, // include snapshot (runner will resend after reconnect)
 			1000, // snapshot history lines

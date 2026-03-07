@@ -18,7 +18,10 @@ func (h *RelayHandler) Heartbeat(c *gin.Context) {
 	}
 
 	if err := h.relayManager.HeartbeatWithLatency(req.RelayID, req.Connections, req.CPUUsage, req.MemoryUsage, req.LatencyMs); err != nil {
-		apierr.ResourceNotFound(c, err.Error())
+		h.logger.Warn("Heartbeat from unknown relay",
+			"relay_id", req.RelayID,
+			"error", err)
+		apierr.ResourceNotFound(c, "relay not found")
 		return
 	}
 

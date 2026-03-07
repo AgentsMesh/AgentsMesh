@@ -52,3 +52,12 @@ func isDuplicateKeyError(err error) bool {
 		strings.Contains(errStr, "UNIQUE constraint failed") ||
 		strings.Contains(errStr, "Duplicate entry")
 }
+
+// DeleteWebhookProcessedMark removes the idempotency record for a webhook event,
+// allowing it to be reprocessed. This is used to roll back the mark when the
+// handler fails after the mark was written.
+func (s *Service) DeleteWebhookProcessedMark(ctx context.Context, eventID, provider string) {
+	s.db.WithContext(ctx).
+		Where("event_id = ? AND provider = ?", eventID, provider).
+		Delete(&billing.WebhookEvent{})
+}

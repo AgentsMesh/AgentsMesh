@@ -50,8 +50,8 @@ func (s *GRPCCommandSender) SendPrompt(ctx context.Context, runnerID int64, podK
 }
 
 // SendSubscribeTerminal sends a subscribe terminal command via gRPC.
-func (s *GRPCCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, publicRelayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
-	return s.adapter.SendSubscribeTerminal(runnerID, podKey, relayURL, publicRelayURL, runnerToken, includeSnapshot, snapshotHistory)
+func (s *GRPCCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
+	return s.adapter.SendSubscribeTerminal(runnerID, podKey, relayURL, runnerToken, includeSnapshot, snapshotHistory)
 }
 
 // SendUnsubscribeTerminal sends an unsubscribe terminal command via gRPC.

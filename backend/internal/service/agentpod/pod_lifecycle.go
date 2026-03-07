@@ -2,6 +2,8 @@ package agentpod
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
@@ -115,16 +117,19 @@ func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reported
 	}
 
 	now := time.Now()
+	var errs []error
 	for _, pod := range dbPods {
 		if !reportedSet[pod.PodKey] {
-			s.db.WithContext(ctx).Model(pod).Updates(map[string]interface{}{
+			if err := s.db.WithContext(ctx).Model(pod).Updates(map[string]interface{}{
 				"status":      agentpod.StatusOrphaned,
 				"finished_at": now,
-			})
+			}).Error; err != nil {
+				errs = append(errs, fmt.Errorf("mark pod %s orphaned: %w", pod.PodKey, err))
+			}
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 // CleanupStalePods marks stale pods as terminated

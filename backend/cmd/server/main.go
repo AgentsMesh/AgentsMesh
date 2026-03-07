@@ -6,6 +6,7 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"os"
 
 	grpcserver "github.com/anthropics/agentsmesh/backend/internal/api/grpc"
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest"
@@ -16,6 +17,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/service/geo"
 	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
 	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
@@ -29,6 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+	cfg.WarnInsecureDefaults()
 
 	// Initialize logger
 	appLogger, err := logger.New(logger.Config{
@@ -75,10 +78,14 @@ func main() {
 	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(db, redisClient, appLogger, services.agentType)
 
 	// Initialize Relay services
-	relayManager := relay.NewManager()
+	relayManager := relay.NewManagerWithOptions()
 	relayTokenGenerator := relay.NewTokenGenerator(cfg.JWT.Secret, "agentsmesh-relay")
 	relayDNSService, relayACMEManager := initializeRelayServices(cfg)
 	slog.Info("Relay services initialized")
+
+	// Initialize GeoIP resolver for geo-aware relay selection
+	geoResolver := initializeGeoResolver()
+	defer geoResolver.Close()
 
 	// Setup terminal router event publishing
 	terminalRouter.SetEventBus(eventBus)
@@ -151,7 +158,7 @@ func main() {
 			terminalRouter.SetCommandSender(grpcCommandSender)
 			sandboxQuerySender = grpcCommandSender
 			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server")
-			setupRelayTokenRefreshCallback(db, runnerConnMgr, relayTokenGenerator, grpcCommandSender, cfg.RelayURL())
+			setupRelayTokenRefreshCallback(db, runnerConnMgr, relayTokenGenerator, grpcCommandSender)
 		}
 	} else {
 		slog.Warn("PKI CA files not configured, gRPC/mTLS disabled")
@@ -203,6 +210,7 @@ func main() {
 		RelayTokenGenerator: relayTokenGenerator,
 		RelayDNSService:     relayDNSService,
 		RelayACMEManager:    relayACMEManager,
+		GeoResolver:         geoResolver,
 		VersionChecker:      versionChecker,
 		Extension:           services.extension,
 		ExtensionRepo:       services.extensionRepo,
@@ -236,7 +244,30 @@ func main() {
 	srv := startHTTPServer(cfg, router)
 
 	// Graceful shutdown
-	waitForShutdown(srv, grpcServer, eventBus, heartbeatBatcher, subscriptionScheduler, loopScheduler, orgAwareness, db, redisClient)
+	waitForShutdown(srv, grpcServer, eventBus, heartbeatBatcher, subscriptionScheduler, loopScheduler, orgAwareness, relayManager, db, redisClient)
+}
+
+// initializeGeoResolver creates a GeoIP resolver.
+// Tries GEO_MMDB_PATH env, then default Docker path /app/data/geoip.mmdb.
+// Falls back to NoOpResolver if no MMDB file is available.
+func initializeGeoResolver() geo.Resolver {
+	mmdbPath := os.Getenv("GEO_MMDB_PATH")
+	if mmdbPath == "" {
+		mmdbPath = "/app/data/geoip.mmdb"
+	}
+
+	if _, err := os.Stat(mmdbPath); err == nil {
+		resolver, err := geo.NewMMDBResolver(mmdbPath)
+		if err != nil {
+			slog.Warn("Failed to open GeoIP database, geo-aware relay disabled", "path", mmdbPath, "error", err)
+			return geo.NewNoOpResolver()
+		}
+		slog.Info("GeoIP resolver initialized", "path", mmdbPath)
+		return resolver
+	}
+
+	slog.Info("GeoIP database not found, geo-aware relay disabled", "path", mmdbPath)
+	return geo.NewNoOpResolver()
 }
 
 // initializeRelayServices initializes Relay DNS and ACME services

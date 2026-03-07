@@ -30,8 +30,12 @@ func (eb *EventBus) SubscribeOrg(orgID int64) {
 
 	eb.subscribedOrgs[orgID] = true
 
+	// Create a per-org context so UnsubscribeOrg can cancel this goroutine
+	orgCtx, orgCancel := context.WithCancel(eb.ctx)
+	eb.orgCancels[orgID] = orgCancel
+
 	// Start a goroutine to subscribe to this org's channel
-	go eb.subscribeToOrgChannel(orgID)
+	go eb.subscribeToOrgChannel(orgCtx, orgID)
 }
 
 // UnsubscribeOrg unsubscribes from events for a specific organization
@@ -39,16 +43,22 @@ func (eb *EventBus) UnsubscribeOrg(orgID int64) {
 	eb.orgsMu.Lock()
 	defer eb.orgsMu.Unlock()
 	delete(eb.subscribedOrgs, orgID)
+
+	// Cancel the per-org goroutine so it exits promptly
+	if cancel, ok := eb.orgCancels[orgID]; ok {
+		cancel()
+		delete(eb.orgCancels, orgID)
+	}
 }
 
 // subscribeToOrgChannel subscribes to Redis pub/sub for an organization
-func (eb *EventBus) subscribeToOrgChannel(orgID int64) {
+func (eb *EventBus) subscribeToOrgChannel(ctx context.Context, orgID int64) {
 	if eb.redisClient == nil {
 		return
 	}
 
 	channel := eb.redisChannel(orgID)
-	pubsub := eb.redisClient.Subscribe(eb.ctx, channel)
+	pubsub := eb.redisClient.Subscribe(ctx, channel)
 	defer pubsub.Close()
 
 	eb.logger.Debug("subscribed to Redis channel", "channel", channel, "org_id", orgID)
@@ -56,18 +66,10 @@ func (eb *EventBus) subscribeToOrgChannel(orgID int64) {
 	ch := pubsub.Channel()
 	for {
 		select {
-		case <-eb.ctx.Done():
+		case <-ctx.Done():
 			return
 		case msg, ok := <-ch:
 			if !ok {
-				return
-			}
-
-			// Check if still subscribed
-			eb.orgsMu.RLock()
-			subscribed := eb.subscribedOrgs[orgID]
-			eb.orgsMu.RUnlock()
-			if !subscribed {
 				return
 			}
 

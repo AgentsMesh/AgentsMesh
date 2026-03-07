@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -45,7 +46,14 @@ func (h *GRPCRunnerHandler) RenewCertificate(c *gin.Context) {
 
 	resp, err := h.runnerService.RenewCertificate(c.Request.Context(), nodeID, oldSerial, h.pkiService)
 	if err != nil {
-		apierr.InternalError(c, err.Error())
+		switch {
+		case errors.Is(err, runner.ErrRunnerNotFound):
+			apierr.ResourceNotFound(c, "Runner not found")
+		case errors.Is(err, runner.ErrCertificateMismatch):
+			apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "Certificate mismatch")
+		default:
+			apierr.InternalError(c, "Certificate renewal failed")
+		}
 		return
 	}
 
@@ -121,7 +129,13 @@ func (h *GRPCRunnerHandler) Reactivate(c *gin.Context) {
 		h.pkiService,
 	)
 	if err != nil {
-		apierr.Unauthorized(c, apierr.AUTH_REQUIRED, err.Error())
+		switch {
+		case errors.Is(err, runner.ErrInvalidToken),
+			errors.Is(err, runner.ErrTokenExpired):
+			apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "Invalid or expired token")
+		default:
+			apierr.InternalError(c, "Failed to reactivate runner")
+		}
 		return
 	}
 
@@ -136,8 +150,14 @@ func (h *GRPCRunnerHandler) Reactivate(c *gin.Context) {
 
 // GetDiscovery returns the current gRPC endpoint for runner auto-discovery.
 // GET /api/v1/runners/grpc/discovery
-// No authentication required - allows runners with stale endpoints to self-heal.
+// Authenticated via mTLS - requires X-Client-Cert-CN header (same as RenewCertificate).
 func (h *GRPCRunnerHandler) GetDiscovery(c *gin.Context) {
+	nodeID := c.GetHeader("X-Client-Cert-CN")
+	if nodeID == "" {
+		apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "Missing client certificate")
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"grpc_endpoint": h.config.GRPC.Endpoint,
 	})
@@ -162,7 +182,7 @@ func RegisterGRPCRunnerRoutes(r *gin.RouterGroup, handler *GRPCRunnerHandler) {
 		// Certificate renewal (authenticated via mTLS, X-Client-Cert-* headers)
 		grpcPublic.POST("/renew-certificate", handler.RenewCertificate)
 
-		// Discovery - returns current gRPC endpoint for auto-healing stale configs
+		// Discovery - returns current gRPC endpoint (authenticated via mTLS, X-Client-Cert-* headers)
 		grpcPublic.GET("/discovery", handler.GetDiscovery)
 	}
 }

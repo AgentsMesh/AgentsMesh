@@ -81,11 +81,11 @@ func (h *PodHandler) ObserveTerminal(c *gin.Context) {
 	}
 
 	lines := req.Lines
-	if lines <= 0 {
-		lines = 100 // Default to last 100 lines
-	}
 	if lines == -1 {
 		lines = 10000 // Get all available output
+	}
+	if lines <= 0 {
+		lines = 100 // Default to last 100 lines
 	}
 
 	// Get recent output (processed, without ANSI escape sequences)
@@ -112,7 +112,7 @@ func (h *PodHandler) ObserveTerminal(c *gin.Context) {
 		CursorX:    cursorCol,
 		CursorY:    cursorRow,
 		TotalLines: totalLines,
-		HasMore:    lines != -1 && totalLines >= lines,
+		HasMore:    totalLines >= lines,
 	}
 
 	// Include screen snapshot if requested

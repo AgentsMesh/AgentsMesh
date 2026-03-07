@@ -110,7 +110,9 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 	nodeID := req.NodeID
 	if nodeID == "" {
 		nodeIDBytes := make([]byte, 8)
-		rand.Read(nodeIDBytes)
+		if _, err := rand.Read(nodeIDBytes); err != nil {
+			return nil, fmt.Errorf("failed to generate node ID: %w", err)
+		}
 		nodeID = fmt.Sprintf("runner-%s", hex.EncodeToString(nodeIDBytes))
 	}
 
@@ -125,9 +127,10 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 	// Use transaction for atomic token usage update and runner creation
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Atomic token usage update with condition check
-		// This prevents race condition by checking and updating in a single atomic operation
+		// This prevents race condition by checking and updating in a single atomic operation.
+		// Only check used_count < max_uses; single_use tokens already have max_uses = 1.
 		updateResult := tx.Model(&runner.GRPCRegistrationToken{}).
-			Where("id = ? AND (used_count < max_uses OR single_use = false)", regToken.ID).
+			Where("id = ? AND used_count < max_uses", regToken.ID).
 			Where("expires_at > ?", time.Now()).
 			Update("used_count", gorm.Expr("used_count + 1"))
 

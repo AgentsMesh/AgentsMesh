@@ -58,10 +58,10 @@ func (m *Manager) saveCertificate() error {
 	keyPEMPath := filepath.Join(m.cfg.StorageDir, "key.pem")
 
 	if err := os.WriteFile(certPEMPath, cert.Certificate, 0644); err != nil {
-		m.logger.Warn("Failed to write cert.pem", "error", err)
+		m.logger.Error("Failed to write cert.pem", "error", err)
 	}
 	if err := os.WriteFile(keyPEMPath, cert.PrivateKey, 0600); err != nil {
-		m.logger.Warn("Failed to write key.pem", "error", err)
+		m.logger.Error("Failed to write key.pem", "error", err)
 	}
 
 	return nil

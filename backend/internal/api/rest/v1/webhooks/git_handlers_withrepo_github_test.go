@@ -65,8 +65,8 @@ func TestHandleGitHubWebhookWithRepo_NoSecretConfigured(t *testing.T) {
 
 	router.handleGitHubWebhookWithRepo(c)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %d, got %d: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 	}
 }
 
@@ -117,9 +117,9 @@ func TestHandleGitHubWebhookWithRepo_WithWebhookService(t *testing.T) {
 
 	router.handleGitHubWebhookWithRepo(c)
 
-	// No secret configured, should process successfully
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+	// No secret configured, should reject with 401
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %d, got %d: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 	}
 }
 

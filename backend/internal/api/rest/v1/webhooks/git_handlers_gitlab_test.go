@@ -79,8 +79,8 @@ func TestHandleGitLabWebhook_NoSecret(t *testing.T) {
 
 	router.handleGitLabWebhook(c)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
 	}
 }
 

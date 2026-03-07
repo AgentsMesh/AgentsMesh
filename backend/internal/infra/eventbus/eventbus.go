@@ -32,6 +32,7 @@ type EventBus struct {
 
 	// subscribedOrgs tracks which organizations are subscribed for Redis pub/sub
 	subscribedOrgs map[int64]bool
+	orgCancels     map[int64]context.CancelFunc // per-org cancel functions to stop goroutines
 	orgsMu         sync.RWMutex
 }
 
@@ -56,6 +57,7 @@ func NewEventBus(redisClient *redis.Client, logger *slog.Logger) *EventBus {
 		handlers:         make(map[EventType][]EventHandler),
 		categoryHandlers: make(map[EventCategory][]EventHandler),
 		subscribedOrgs:   make(map[int64]bool),
+		orgCancels:       make(map[int64]context.CancelFunc),
 		ctx:              ctx,
 		cancel:           cancel,
 	}

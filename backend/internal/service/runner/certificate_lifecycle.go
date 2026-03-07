@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
@@ -24,12 +25,12 @@ func (s *Service) RenewCertificate(ctx context.Context, nodeID, oldSerial string
 	// Find runner by node_id
 	var r runner.Runner
 	if err := s.db.WithContext(ctx).Where("node_id = ?", nodeID).First(&r).Error; err != nil {
-		return nil, fmt.Errorf("runner not found")
+		return nil, ErrRunnerNotFound
 	}
 
 	// Verify certificate serial matches
 	if r.CertSerialNumber == nil || *r.CertSerialNumber != oldSerial {
-		return nil, fmt.Errorf("certificate mismatch")
+		return nil, ErrCertificateMismatch
 	}
 
 	// Get org slug
@@ -49,7 +50,7 @@ func (s *Service) RenewCertificate(ctx context.Context, nodeID, oldSerial string
 		return nil, fmt.Errorf("failed to issue certificate: %w", err)
 	}
 
-	// Revoke old certificate
+	// Revoke old certificate (best-effort: old cert may not exist in DB for legacy runners)
 	now := time.Now()
 	reason := "renewed"
 	if err := s.db.WithContext(ctx).Model(&runner.Certificate{}).
@@ -58,7 +59,8 @@ func (s *Service) RenewCertificate(ctx context.Context, nodeID, oldSerial string
 			"revoked_at":        now,
 			"revocation_reason": reason,
 		}).Error; err != nil {
-		// Log but don't fail - old cert may not exist in DB
+		slog.Warn("Failed to revoke old certificate during renewal",
+			"node_id", nodeID, "old_serial", oldSerial, "error", err)
 	}
 
 	// Save new certificate
@@ -73,14 +75,23 @@ func (s *Service) RenewCertificate(ctx context.Context, nodeID, oldSerial string
 		return nil, fmt.Errorf("failed to save certificate: %w", err)
 	}
 
-	// Update runner
-	if err := s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("id = ?", r.ID).
+	// Update runner (CAS: only succeeds if cert_serial_number still matches oldSerial).
+	// This serializes concurrent renewals — at most one wins. The loser's issued cert
+	// remains in the certificates table but is never referenced by the runner (harmless orphan).
+	updateResult := s.db.WithContext(ctx).Model(&runner.Runner{}).
+		Where("id = ? AND cert_serial_number = ?", r.ID, oldSerial).
 		Updates(map[string]interface{}{
 			"cert_serial_number": certInfo.SerialNumber,
 			"cert_expires_at":    certInfo.ExpiresAt,
-		}).Error; err != nil {
-		return nil, fmt.Errorf("failed to update runner: %w", err)
+		})
+	if updateResult.Error != nil {
+		return nil, fmt.Errorf("failed to update runner: %w", updateResult.Error)
+	}
+	if updateResult.RowsAffected == 0 {
+		// Another concurrent renewal already completed; discard this duplicate.
+		slog.Warn("Concurrent certificate renewal detected, discarding duplicate",
+			"node_id", nodeID, "orphaned_serial", certInfo.SerialNumber)
+		return nil, ErrCertificateMismatch
 	}
 
 	return &RenewCertificateResponse{

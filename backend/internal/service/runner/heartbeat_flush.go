@@ -46,16 +46,11 @@ func (b *HeartbeatBatcher) flush() {
 		"duration", time.Since(start))
 }
 
-// flushBatch writes a batch of heartbeats to the database using bulk update
+// flushBatch writes a batch of heartbeats to the database using independent updates.
+// Each update is independent so one failure doesn't abort the entire batch
+// (PostgreSQL marks a transaction as aborted after any SQL error).
 func (b *HeartbeatBatcher) flushBatch(ctx context.Context, items []*HeartbeatItem) int {
 	if len(items) == 0 {
-		return 0
-	}
-
-	// Use transaction for batch update
-	tx := b.db.WithContext(ctx).Begin()
-	if tx.Error != nil {
-		b.logger.Error("failed to begin transaction", "error", tx.Error)
 		return 0
 	}
 
@@ -70,7 +65,8 @@ func (b *HeartbeatBatcher) flushBatch(ctx context.Context, items []*HeartbeatIte
 			updates["runner_version"] = item.Version
 		}
 
-		result := tx.Model(&runner.Runner{}).
+		result := b.db.WithContext(ctx).
+			Model(&runner.Runner{}).
 			Where("id = ?", item.RunnerID).
 			Updates(updates)
 
@@ -83,12 +79,6 @@ func (b *HeartbeatBatcher) flushBatch(ctx context.Context, items []*HeartbeatIte
 		if result.RowsAffected > 0 {
 			updated++
 		}
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		b.logger.Error("failed to commit heartbeat batch", "error", err)
-		tx.Rollback()
-		return 0
 	}
 
 	return updated

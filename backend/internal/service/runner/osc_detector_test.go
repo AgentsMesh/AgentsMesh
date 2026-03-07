@@ -183,24 +183,3 @@ func TestOSCDetector_PublishTitle_UpdateTitleError(t *testing.T) {
 	assert.True(t, result)
 }
 
-func TestEscapeJSON(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"hello", "hello"},
-		{`hello "world"`, `hello \"world\"`},
-		{"hello\nworld", `hello\nworld`},
-		{"hello\tworld", `hello\tworld`},
-		{"hello\\world", `hello\\world`},
-		{"hello\rworld", `hello\rworld`},
-		{`"quoted"`, `\"quoted\"`},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := escapeJSON(tt.input)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}

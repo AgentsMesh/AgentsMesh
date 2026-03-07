@@ -17,7 +17,7 @@ import (
 // ===========================================
 
 // HandleSubscriptionUpdated handles subscription update webhook event
-func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.WebhookEvent) error {
+func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	if event.SubscriptionID == "" {
@@ -31,6 +31,13 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 		}
 		return err
 	}
+	// Roll back the idempotency mark if the handler fails, so the event
+	// can be retried on the next delivery.
+	defer func() {
+		if retErr != nil {
+			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
+		}
+	}()
 
 	// Find subscription by provider subscription ID
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)

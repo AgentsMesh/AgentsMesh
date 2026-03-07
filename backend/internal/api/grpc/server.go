@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -106,15 +107,15 @@ func NewServer(deps *ServerDependencies) (*Server, error) {
 	opts := []grpc.ServerOption{
 		// Keepalive configuration for long-running streams
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle:     0,                                    // Never close idle connections
-			MaxConnectionAge:      0,                                    // Never close connections due to age
-			MaxConnectionAgeGrace: 0,                                    // No grace period
-			Time:                  30 * 1000 * 1000 * 1000,              // 30 seconds ping interval
-			Timeout:               10 * 1000 * 1000 * 1000,              // 10 seconds ping timeout
+			MaxConnectionIdle:     0,                 // Never close idle connections
+			MaxConnectionAge:      0,                 // Never close connections due to age
+			MaxConnectionAgeGrace: 0,                 // No grace period
+			Time:                  30 * time.Second,  // 30 seconds ping interval
+			Timeout:               10 * time.Second,  // 10 seconds ping timeout
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime:             10 * 1000 * 1000 * 1000, // 10 seconds minimum between client pings
-			PermitWithoutStream: true,                   // Allow pings without active streams
+			MinTime:             10 * time.Second, // 10 seconds minimum between client pings
+			PermitWithoutStream: true,             // Allow pings without active streams
 		}),
 		// Message size limits
 		grpc.MaxRecvMsgSize(16 * 1024 * 1024), // 16MB max receive

@@ -83,13 +83,35 @@ func (s *Service) Reactivate(ctx context.Context, req *ReactivateRequest, pkiSer
 	// Find the token
 	var reactivationToken runner.ReactivationToken
 	if err := s.db.WithContext(ctx).Where("token_hash = ?", tokenHash).First(&reactivationToken).Error; err != nil {
-		return nil, fmt.Errorf("invalid token")
+		return nil, ErrInvalidToken
 	}
 
-	// Validate token
-	if !reactivationToken.IsValid() {
-		return nil, fmt.Errorf("token expired or already used")
+	// Atomic claim: mark token as used only if it hasn't been used yet and isn't expired.
+	// This prevents TOCTOU race where two concurrent requests both pass IsValid() check.
+	now := time.Now()
+	claimResult := s.db.WithContext(ctx).Model(&reactivationToken).
+		Where("used_at IS NULL AND expires_at > ?", now).
+		Update("used_at", now)
+	if claimResult.Error != nil {
+		return nil, fmt.Errorf("failed to claim token: %w", claimResult.Error)
 	}
+	if claimResult.RowsAffected == 0 {
+		return nil, ErrTokenExpired
+	}
+
+	// Compensating action: if any subsequent step fails, unclaim the token
+	// so the user can retry. Without this, a transient PKI/DB failure would
+	// permanently consume the one-time token with no certificate issued.
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			unclaimCtx, unclaimCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer unclaimCancel()
+			_ = s.db.WithContext(unclaimCtx).
+				Model(&reactivationToken).
+				Update("used_at", nil).Error
+		}
+	}()
 
 	// Get runner
 	var r runner.Runner
@@ -136,13 +158,7 @@ func (s *Service) Reactivate(ctx context.Context, req *ReactivateRequest, pkiSer
 		return nil, fmt.Errorf("failed to update runner: %w", err)
 	}
 
-	// Mark token as used
-	now := time.Now()
-	if err := s.db.WithContext(ctx).Model(&reactivationToken).
-		Update("used_at", now).Error; err != nil {
-		return nil, fmt.Errorf("failed to mark token as used: %w", err)
-	}
-
+	succeeded = true
 	return &ReactivateResponse{
 		Certificate:   string(certInfo.CertPEM),
 		PrivateKey:    string(certInfo.KeyPEM),
