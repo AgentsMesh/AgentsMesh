@@ -2,6 +2,7 @@ package rest
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest/internal"
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
@@ -16,11 +17,12 @@ import (
 	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 // NewRouter creates and configures the Gin router
-func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.Logger) *gin.Engine {
+func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.Logger, redisClient *redis.Client) *gin.Engine {
 	if !cfg.Server.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -75,9 +77,11 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 	// API v1
 	apiV1 := r.Group("/api/v1")
 	{
-		// Public routes (no auth required)
+		// Public routes (no auth required, with rate limiting)
 		authHandler := v1.NewAuthHandler(svc.Auth, svc.User, emailSvc, cfg)
-		authHandler.RegisterRoutes(apiV1.Group("/auth"))
+		authGroup := apiV1.Group("/auth")
+		authGroup.Use(middleware.IPRateLimiter(redisClient, "auth", 20, time.Minute))
+		authHandler.RegisterRoutes(authGroup)
 
 		// Public config endpoints (deployment info for frontend)
 		v1.RegisterPublicConfigRoutes(apiV1.Group("/config"), svc.Billing)

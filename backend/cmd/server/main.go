@@ -223,7 +223,7 @@ func main() {
 	}
 
 	// Initialize router
-	router := rest.NewRouter(cfg, svc, db, appLogger.Logger)
+	router := rest.NewRouter(cfg, svc, db, appLogger.Logger, redisClient)
 
 	// Start MarketplaceWorker if configured
 	if services.marketplaceWorker != nil {
