@@ -16,6 +16,7 @@ import {
   FolderGit2,
   Server,
   Settings,
+  Repeat,
   LogOut,
   ChevronRight,
   type LucideIcon,
@@ -29,6 +30,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   repository: FolderGit2,
   server: Server,
   settings: Settings,
+  repeat: Repeat,
 };
 
 interface MobileDrawerProps {
@@ -59,6 +61,8 @@ export function MobileDrawer({ className }: MobileDrawerProps) {
         return `/${orgSlug}/repositories`;
       case "runners":
         return `/${orgSlug}/runners`;
+      case "loops":
+        return `/${orgSlug}/loops`;
       case "settings":
         return `/${orgSlug}/settings`;
       default:

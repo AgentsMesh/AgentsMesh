@@ -54,6 +54,8 @@ export function MobileTabBar({ className }: MobileTabBarProps) {
         return `/${orgSlug}/channels`;
       case "mesh":
         return `/${orgSlug}/mesh`;
+      case "loops":
+        return `/${orgSlug}/loops`;
       case "repositories":
         return `/${orgSlug}/repositories`;
       default:
