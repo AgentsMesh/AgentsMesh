@@ -51,10 +51,9 @@ func testConfig() *config.Config {
 			MaxBrowsersPerPod: 10,
 		},
 		Relay: config.RelayConfig{
-			ID:          "relay-1",
-			URL:         "ws://localhost:8090",
-			InternalURL: "ws://relay:8090",
-			Region:      "us-west",
+			ID:       "relay-1",
+			URL:      "ws://localhost:8090",
+			Region:   "us-west",
 			Capacity:    1000,
 		},
 	}

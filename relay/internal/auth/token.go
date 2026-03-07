@@ -22,14 +22,24 @@ type RelayClaims struct {
 	jwt.RegisteredClaims
 }
 
+// IsRunnerToken returns true if this is a runner-issued token (UserID == 0).
+func (c *RelayClaims) IsRunnerToken() bool { return c.UserID == 0 }
+
+// IsBrowserToken returns true if this is a browser-issued token (UserID != 0).
+func (c *RelayClaims) IsBrowserToken() bool { return c.UserID != 0 }
+
 // TokenValidator validates relay tokens
 type TokenValidator struct {
 	secretKey []byte
 	issuer    string
 }
 
-// NewTokenValidator creates a new token validator
+// NewTokenValidator creates a new token validator.
+// Panics if secret is empty to prevent validating tokens with a zero-length HMAC key.
 func NewTokenValidator(secret, issuer string) *TokenValidator {
+	if secret == "" {
+		panic("relay token validator secret must not be empty")
+	}
 	return &TokenValidator{
 		secretKey: []byte(secret),
 		issuer:    issuer,

@@ -32,6 +32,13 @@ func DefaultChannelManagerConfig() ChannelManagerConfig {
 	}
 }
 
+// closeWithReason sends a WebSocket Close frame with a reason before closing the connection.
+func closeWithReason(conn *websocket.Conn, reason string) {
+	msg := websocket.FormatCloseMessage(websocket.CloseNormalClosure, reason)
+	_ = conn.WriteControl(websocket.CloseMessage, msg, time.Now().Add(writeWait))
+	conn.Close()
+}
+
 // ChannelManager manages terminal channels
 // Channels are keyed by PodKey (not session ID)
 type ChannelManager struct {
@@ -47,6 +54,10 @@ type ChannelManager struct {
 
 	// Callbacks
 	onAllSubscribersGone func(podKey string)
+
+	// Shutdown signal for cleanupPendingConnections goroutine
+	closeOnce sync.Once
+	done      chan struct{}
 
 	logger *slog.Logger
 }
@@ -80,6 +91,7 @@ func NewChannelManagerWithConfig(cfg ChannelManagerConfig, onAllSubscribersGone 
 		pendingSubscribers:   make(map[string]*pendingSubscriber),
 		config:               cfg,
 		onAllSubscribersGone: onAllSubscribersGone,
+		done:                 make(chan struct{}),
 		logger:               slog.With("component", "channel_manager"),
 	}
 
@@ -106,22 +118,27 @@ func (m *ChannelManager) HandlePublisherConnect(podKey string, conn *websocket.C
 	// Check if there's a pending subscriber waiting for this pod
 	if pending, ok := m.pendingSubscribers[podKey]; ok {
 		delete(m.pendingSubscribers, podKey)
-		m.mu.Unlock()
 
-		// Create new channel and connect both
+		// Create new channel and insert into map while still holding lock.
+		// This prevents TOCTOU race where concurrent requests for the same podKey
+		// don't see the channel being created.
 		channel := NewTerminalChannelWithConfig(podKey, m.buildChannelConfig(), m.onAllSubscribersGone, m.onChannelClosed)
-		channel.SetPublisher(conn)
-		channel.AddSubscriber(pending.subscriberID, pending.conn)
-
-		m.mu.Lock()
 		m.channels[podKey] = channel
 		m.mu.Unlock()
+
+		// SetPublisher/AddSubscriber have their own internal locks
+		channel.SetPublisher(conn)
+		channel.AddSubscriber(pending.subscriberID, pending.conn)
 
 		m.logger.Info("Channel created (publisher connected to waiting subscriber)", "pod_key", podKey)
 		return nil
 	}
 
 	// No subscriber waiting, add to pending publishers
+	// Close any existing pending publisher for this pod to prevent connection leak
+	if old, exists := m.pendingPublishers[podKey]; exists {
+		closeWithReason(old.conn, "replaced by new publisher connection")
+	}
 	m.pendingPublishers[podKey] = &pendingPublisher{
 		conn:      conn,
 		podKey:    podKey,
@@ -140,15 +157,12 @@ func (m *ChannelManager) HandleSubscriberConnect(podKey, subscriberID string, co
 
 	// Check if channel already exists for this pod
 	if channel, ok := m.channels[podKey]; ok {
-		// Check subscriber limit
-		if channel.SubscriberCount() >= m.config.MaxSubscribersPerPod {
-			m.mu.Unlock()
-			return &MaxSubscribersError{Max: m.config.MaxSubscribersPerPod}
-		}
 		m.mu.Unlock()
 
-		// Add subscriber to existing channel
-		channel.AddSubscriber(subscriberID, conn)
+		// Atomically check subscriber limit and add (prevents over-admission race)
+		if err := channel.AddSubscriberWithLimit(subscriberID, conn, m.config.MaxSubscribersPerPod); err != nil {
+			return err
+		}
 		m.logger.Info("Subscriber joined existing channel", "pod_key", podKey, "subscriber_id", subscriberID)
 		return nil
 	}
@@ -156,22 +170,27 @@ func (m *ChannelManager) HandleSubscriberConnect(podKey, subscriberID string, co
 	// Check if there's a pending publisher waiting for this pod
 	if pending, ok := m.pendingPublishers[podKey]; ok {
 		delete(m.pendingPublishers, podKey)
-		m.mu.Unlock()
 
-		// Create new channel and connect both
+		// Create new channel and insert into map while still holding lock.
+		// This prevents TOCTOU race where concurrent requests for the same podKey
+		// don't see the channel being created.
 		channel := NewTerminalChannelWithConfig(podKey, m.buildChannelConfig(), m.onAllSubscribersGone, m.onChannelClosed)
-		channel.SetPublisher(pending.conn)
-		channel.AddSubscriber(subscriberID, conn)
-
-		m.mu.Lock()
 		m.channels[podKey] = channel
 		m.mu.Unlock()
+
+		// SetPublisher/AddSubscriber have their own internal locks
+		channel.SetPublisher(pending.conn)
+		channel.AddSubscriber(subscriberID, conn)
 
 		m.logger.Info("Channel created (subscriber connected to waiting publisher)", "pod_key", podKey)
 		return nil
 	}
 
 	// No publisher waiting, add to pending subscribers
+	// Close any existing pending subscriber for this pod to prevent connection leak
+	if old, exists := m.pendingSubscribers[podKey]; exists {
+		closeWithReason(old.conn, "replaced by new subscriber connection")
+	}
 	m.pendingSubscribers[podKey] = &pendingSubscriber{
 		conn:         conn,
 		subscriberID: subscriberID,
@@ -218,7 +237,13 @@ func (m *ChannelManager) cleanupPendingConnections() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
+	for {
+		select {
+		case <-ticker.C:
+		case <-m.done:
+			return
+		}
+
 		m.mu.Lock()
 
 		now := time.Now()
@@ -243,6 +268,38 @@ func (m *ChannelManager) cleanupPendingConnections() {
 		}
 
 		m.mu.Unlock()
+	}
+}
+
+// Close stops the cleanup goroutine and cleans up all connections.
+// Closes active channels, pending publishers, and pending subscribers.
+// Safe to call multiple times.
+func (m *ChannelManager) Close() {
+	m.closeOnce.Do(func() {
+		close(m.done)
+	})
+
+	// Close all active channels to release WebSocket connections
+	m.mu.Lock()
+	channels := make([]*TerminalChannel, 0, len(m.channels))
+	for podKey, ch := range m.channels {
+		channels = append(channels, ch)
+		delete(m.channels, podKey)
+	}
+	// Clean up pending connections
+	for podKey, pending := range m.pendingPublishers {
+		pending.conn.Close()
+		delete(m.pendingPublishers, podKey)
+	}
+	for podKey, pending := range m.pendingSubscribers {
+		pending.conn.Close()
+		delete(m.pendingSubscribers, podKey)
+	}
+	m.mu.Unlock()
+
+	// Close channels outside the lock to avoid deadlock
+	for _, ch := range channels {
+		ch.Close()
 	}
 }
 

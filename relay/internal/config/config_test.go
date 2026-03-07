@@ -10,7 +10,7 @@ func clearEnv() {
 	for _, env := range []string{
 		"JWT_SECRET", "INTERNAL_API_SECRET", "SERVER_HOST", "SERVER_PORT", "JWT_ISSUER",
 		"BACKEND_URL", "HEARTBEAT_INTERVAL", "KEEP_ALIVE_DURATION", "MAX_BROWSERS_PER_POD",
-		"RELAY_ID", "RELAY_URL", "RELAY_INTERNAL_URL", "RELAY_REGION", "RELAY_CAPACITY",
+		"RELAY_ID", "RELAY_URL", "RELAY_REGION", "RELAY_CAPACITY",
 		"RELAY_SERVER_HOST", "RELAY_SERVER_PORT", "RELAY_JWT_SECRET", "RELAY_JWT_ISSUER",
 		"RELAY_BACKEND_URL", "RELAY_INTERNAL_API_SECRET",
 		"PRIMARY_DOMAIN", "USE_HTTPS", "TLS_ENABLED", "RELAY_NAME", "RELAY_AUTO_IP",
@@ -137,18 +137,6 @@ func TestLoad_WithRelayPrefix(t *testing.T) {
 	cfg, _ := Load()
 	if cfg.Server.Host != "10.0.0.1" || cfg.JWT.Issuer != "prefixed-issuer" {
 		t.Error("RELAY_ prefixed env vars not working")
-	}
-}
-
-func TestLoad_InternalURL(t *testing.T) {
-	clearEnv()
-	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
-	os.Setenv("RELAY_INTERNAL_URL", "ws://relay:8090")
-	cfg, _ := Load()
-	if cfg.Relay.InternalURL != "ws://relay:8090" {
-		t.Errorf("Relay.InternalURL: expected ws://relay:8090, got %q", cfg.Relay.InternalURL)
 	}
 }
 

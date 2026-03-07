@@ -7,11 +7,14 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -22,7 +25,6 @@ type Client struct {
 	relayID           string
 	relayName         string // Name for DNS auto-registration
 	relayURL          string
-	relayInternalURL  string // Internal URL for runners (Docker network)
 	relayRegion       string
 	relayCapacity     int
 	relayIP           string // Public IP for DNS auto-registration
@@ -57,7 +59,6 @@ type ClientConfig struct {
 	RelayID           string
 	RelayName         string
 	RelayURL          string
-	RelayInternalURL  string
 	RelayRegion       string
 	RelayCapacity     int
 	AutoIP            bool
@@ -66,13 +67,12 @@ type ClientConfig struct {
 }
 
 // NewClient creates a new backend client
-func NewClient(baseURL, internalAPISecret, relayID, relayURL, relayInternalURL, relayRegion string, relayCapacity int) *Client {
+func NewClient(baseURL, internalAPISecret, relayID, relayURL, relayRegion string, relayCapacity int) *Client {
 	return &Client{
 		baseURL:           baseURL,
 		internalAPISecret: internalAPISecret,
 		relayID:           relayID,
 		relayURL:          relayURL,
-		relayInternalURL:  relayInternalURL,
 		relayRegion:       relayRegion,
 		relayCapacity:     relayCapacity,
 		httpClient: &http.Client{
@@ -90,7 +90,6 @@ func NewClientWithConfig(cfg ClientConfig) *Client {
 		relayID:           cfg.RelayID,
 		relayName:         cfg.RelayName,
 		relayURL:          cfg.RelayURL,
-		relayInternalURL:  cfg.RelayInternalURL,
 		relayRegion:       cfg.RelayRegion,
 		relayCapacity:     cfg.RelayCapacity,
 		autoIP:            cfg.AutoIP,
@@ -114,21 +113,19 @@ func NewClientWithConfig(cfg ClientConfig) *Client {
 
 // RegisterRequest represents relay registration request
 type RegisterRequest struct {
-	RelayID     string `json:"relay_id"`
-	RelayName   string `json:"relay_name,omitempty"`   // Name for DNS auto-registration
-	IP          string `json:"ip,omitempty"`           // Public IP for DNS auto-registration
-	URL         string `json:"url,omitempty"`          // Public URL (optional if DNS auto)
-	InternalURL string `json:"internal_url,omitempty"`
-	Region      string `json:"region"`
-	Capacity    int    `json:"capacity"`
+	RelayID  string `json:"relay_id"`
+	RelayName string `json:"relay_name,omitempty"` // Name for DNS auto-registration
+	IP       string `json:"ip,omitempty"`          // Public IP for DNS auto-registration
+	URL      string `json:"url,omitempty"`         // Public URL (optional if DNS auto)
+	Region   string `json:"region"`
+	Capacity int    `json:"capacity"`
 }
 
 // RegisterResponse represents relay registration response
 type RegisterResponse struct {
-	Status      string `json:"status"`
-	URL         string `json:"url,omitempty"`          // Generated URL (if DNS auto-registration)
-	InternalURL string `json:"internal_url,omitempty"`
-	DNSCreated  bool   `json:"dns_created,omitempty"`  // Whether DNS record was created
+	Status     string `json:"status"`
+	URL        string `json:"url,omitempty"`         // Generated URL (if DNS auto-registration)
+	DNSCreated bool   `json:"dns_created,omitempty"` // Whether DNS record was created
 
 	// TLS certificate (if ACME is enabled on backend)
 	TLSCert   string `json:"tls_cert,omitempty"`   // PEM encoded certificate chain
@@ -162,6 +159,13 @@ type SessionClosedRequest struct {
 	SessionID string `json:"session_id"`
 }
 
+// drainBody discards up to 4KB of response body so the underlying TCP connection
+// can be reused by net/http's connection pool, then closes the body.
+func drainBody(body io.ReadCloser) {
+	io.Copy(io.Discard, io.LimitReader(body, 4096))
+	body.Close()
+}
+
 // Register registers this relay with the backend
 func (c *Client) Register(ctx context.Context) error {
 	// Auto-detect public IP if enabled and relay name is set
@@ -176,13 +180,12 @@ func (c *Client) Register(ctx context.Context) error {
 	}
 
 	req := RegisterRequest{
-		RelayID:     c.relayID,
-		RelayName:   c.relayName,
-		IP:          c.relayIP,
-		URL:         c.relayURL,
-		InternalURL: c.relayInternalURL,
-		Region:      c.relayRegion,
-		Capacity:    c.relayCapacity,
+		RelayID:  c.relayID,
+		RelayName: c.relayName,
+		IP:       c.relayIP,
+		URL:      c.relayURL,
+		Region:   c.relayRegion,
+		Capacity: c.relayCapacity,
 	}
 
 	body, err := json.Marshal(req)
@@ -202,7 +205,7 @@ func (c *Client) Register(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to send register request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer drainBody(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("registration failed with status: %d", resp.StatusCode)
@@ -266,16 +269,16 @@ func (c *Client) detectPublicIP(ctx context.Context) (string, error) {
 		}
 
 		body, err := func() ([]byte, error) {
-			defer resp.Body.Close()
-			return io.ReadAll(resp.Body)
+			defer drainBody(resp.Body)
+			return io.ReadAll(io.LimitReader(resp.Body, 256)) // IP address is at most 45 bytes
 		}()
 		if err != nil {
 			continue
 		}
 
 		ip := strings.TrimSpace(string(body))
-		// Validate IP format (basic check)
-		if ip != "" && len(ip) <= 45 && !strings.Contains(ip, "<") {
+		// Validate IP format with strict parsing
+		if ip != "" && net.ParseIP(ip) != nil {
 			return ip, nil
 		}
 	}
@@ -336,7 +339,7 @@ func (c *Client) SendHeartbeat(ctx context.Context, connections int) error {
 	if err != nil {
 		return fmt.Errorf("failed to send heartbeat: %w", err)
 	}
-	defer resp.Body.Close()
+	defer drainBody(resp.Body)
 
 	// Store latency for next heartbeat
 	c.mu.Lock()
@@ -400,7 +403,7 @@ func (c *Client) NotifySessionClosed(ctx context.Context, podKey, sessionID stri
 	if err != nil {
 		return fmt.Errorf("failed to send session closed notification: %w", err)
 	}
-	defer resp.Body.Close()
+	defer drainBody(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("session closed notification failed with status: %d", resp.StatusCode)
@@ -440,7 +443,7 @@ func (c *Client) Unregister(ctx context.Context, reason string) error {
 	if err != nil {
 		return fmt.Errorf("failed to send unregister request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer drainBody(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unregistration failed with status: %d", resp.StatusCode)
@@ -469,29 +472,41 @@ func (c *Client) StartHeartbeat(ctx context.Context, interval time.Duration, get
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	// Tracks whether a getConnections goroutine is still running.
+	// Prevents goroutine accumulation when getConnections is blocked.
+	var getConnBusy atomic.Bool
+
 	for {
 		select {
 		case <-ctx.Done():
 			c.logger.Info("Heartbeat stopping: context cancelled")
 			return
 		case <-ticker.C:
-			// Get connections with timeout to prevent deadlock propagation
-			// (e.g., if Stats() is blocked by a lock held by a slow WebSocket write)
-			connCh := make(chan int, 1)
-			go func() {
-				connCh <- getConnections()
-			}()
-
 			var connections int
-			select {
-			case connections = <-connCh:
-				// Success
-			case <-time.After(5 * time.Second):
-				c.logger.Warn("getConnections callback timed out, using 0")
+			if getConnBusy.Load() {
+				// Previous getConnections still running — skip to avoid goroutine pileup
+				c.logger.Debug("Previous getConnections still running, using 0")
 				connections = 0
-			case <-ctx.Done():
-				c.logger.Info("Heartbeat stopping: context cancelled during getConnections")
-				return
+			} else {
+				// Get connections with timeout to prevent deadlock propagation
+				// (e.g., if Stats() is blocked by a lock held by a slow WebSocket write)
+				connCh := make(chan int, 1)
+				getConnBusy.Store(true)
+				go func() {
+					defer getConnBusy.Store(false)
+					connCh <- getConnections()
+				}()
+
+				select {
+				case connections = <-connCh:
+					// Success
+				case <-time.After(5 * time.Second):
+					c.logger.Warn("getConnections callback timed out, using 0")
+					connections = 0
+				case <-ctx.Done():
+					c.logger.Info("Heartbeat stopping: context cancelled during getConnections")
+					return
+				}
 			}
 
 			if err := c.SendHeartbeat(ctx, connections); err != nil {
@@ -534,22 +549,52 @@ func (c *Client) GetTLSExpiry() string {
 	return c.tlsExpiry
 }
 
-// saveCertificateFiles saves certificate and key to files
+// saveCertificateFiles saves certificate and key to files atomically.
+// Uses write-to-temp-then-rename to prevent inconsistent state on crash.
 func (c *Client) saveCertificateFiles(cert, key string) error {
 	if c.certFile == "" || c.keyFile == "" {
 		return nil // No paths configured, skip saving
 	}
 
-	if err := os.WriteFile(c.certFile, []byte(cert), 0644); err != nil {
-		return fmt.Errorf("failed to write certificate file: %w", err)
+	// Write key first (more sensitive) — atomic via temp file + rename
+	if err := atomicWriteFile(c.keyFile, []byte(key), 0600); err != nil {
+		return fmt.Errorf("failed to write key file: %w", err)
 	}
 
-	if err := os.WriteFile(c.keyFile, []byte(key), 0600); err != nil {
-		return fmt.Errorf("failed to write key file: %w", err)
+	if err := atomicWriteFile(c.certFile, []byte(cert), 0644); err != nil {
+		return fmt.Errorf("failed to write certificate file: %w", err)
 	}
 
 	c.logger.Info("Certificate files saved", "cert_file", c.certFile, "key_file", c.keyFile)
 	return nil
+}
+
+// atomicWriteFile writes data to a temp file then renames it to the target path.
+// This ensures the target file is never in a partially-written state.
+func atomicWriteFile(path string, data []byte, perm os.FileMode) error {
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, filepath.Base(path)+".tmp.*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return err
+	}
+	if err := tmp.Chmod(perm); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpName)
+		return err
+	}
+
+	return os.Rename(tmpName, path)
 }
 
 // loadCertificateFiles loads certificate and key from files

@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -13,6 +14,10 @@ import (
 // writeWait is the maximum time allowed for a WebSocket write to complete.
 // Prevents dead/slow connections from blocking indefinitely and causing lock contention.
 const writeWait = 5 * time.Second
+
+// maxMessageSize limits the maximum incoming WebSocket message size (4MB).
+// Prevents a malicious or buggy client from causing OOM via oversized frames.
+const maxMessageSize = 4 * 1024 * 1024
 
 // writeToConn writes a binary message to a WebSocket connection with a write deadline.
 func writeToConn(conn *websocket.Conn, data []byte) error {
@@ -145,6 +150,19 @@ func NewTerminalChannelWithConfig(podKey string, cfg ChannelConfig, onAllSubscri
 // If an old publisher connection exists, it is closed so its forwarding goroutine exits cleanly.
 func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
 	c.publisherMu.Lock()
+
+	// Check closed INSIDE publisherMu to prevent race with Close().
+	// Without this, Close() could complete between the closed check and
+	// publisherMu.Lock(), leaving a goroutine on a dead channel.
+	c.closedMu.RLock()
+	if c.closed {
+		c.closedMu.RUnlock()
+		c.publisherMu.Unlock()
+		conn.Close()
+		return
+	}
+	c.closedMu.RUnlock()
+
 	oldConn := c.publisher
 	wasDisconnected := c.publisherDisconnected
 	c.publisher = conn
@@ -191,9 +209,37 @@ func (c *TerminalChannel) IsPublisherDisconnected() bool {
 
 // AddSubscriber adds a subscriber (browser observer)
 func (c *TerminalChannel) AddSubscriber(subscriberID string, conn *websocket.Conn) {
+	_ = c.addSubscriberInternal(subscriberID, conn, 0)
+}
+
+// AddSubscriberWithLimit atomically checks subscriber count and adds if under limit.
+// Returns MaxSubscribersError if at capacity. Use maxSubscribers=0 for no limit.
+func (c *TerminalChannel) AddSubscriberWithLimit(subscriberID string, conn *websocket.Conn, maxSubscribers int) error {
+	return c.addSubscriberInternal(subscriberID, conn, maxSubscribers)
+}
+
+// addSubscriberInternal is the shared implementation for AddSubscriber/AddSubscriberWithLimit.
+func (c *TerminalChannel) addSubscriberInternal(subscriberID string, conn *websocket.Conn, maxSubscribers int) error {
 	subscriber := &Subscriber{ID: subscriberID, Conn: conn}
 
 	c.subscribersMu.Lock()
+
+	// Check closed INSIDE subscribersMu to prevent TOCTOU race with Close().
+	// Without this, Close() could complete between the closed check and
+	// subscribersMu.Lock(), leaving a goroutine on a dead channel.
+	c.closedMu.RLock()
+	if c.closed {
+		c.closedMu.RUnlock()
+		c.subscribersMu.Unlock()
+		conn.Close()
+		return fmt.Errorf("channel closed")
+	}
+	c.closedMu.RUnlock()
+
+	if maxSubscribers > 0 && len(c.subscribers) >= maxSubscribers {
+		c.subscribersMu.Unlock()
+		return &MaxSubscribersError{Max: maxSubscribers}
+	}
 	c.subscribers[subscriberID] = subscriber
 
 	// Cancel keep-alive timer if exists
@@ -231,15 +277,19 @@ func (c *TerminalChannel) AddSubscriber(subscriberID string, conn *websocket.Con
 
 	// Start forwarding from this subscriber to publisher
 	go c.forwardSubscriberToPublisher(subscriberID)
+	return nil
 }
 
 // RemoveSubscriber removes a subscriber
 func (c *TerminalChannel) RemoveSubscriber(subscriberID string) {
 	c.subscribersMu.Lock()
-	if subscriber, ok := c.subscribers[subscriberID]; ok {
-		subscriber.Conn.Close()
-		delete(c.subscribers, subscriberID)
+	subscriber, ok := c.subscribers[subscriberID]
+	if !ok {
+		c.subscribersMu.Unlock()
+		return
 	}
+	subscriber.Conn.Close()
+	delete(c.subscribers, subscriberID)
 	count := len(c.subscribers)
 	c.subscribersMu.Unlock()
 
@@ -255,8 +305,27 @@ func (c *TerminalChannel) RemoveSubscriber(subscriberID string) {
 	if count == 0 {
 		// Last subscriber left, start keep-alive timer
 		c.subscribersMu.Lock()
+
+		// Double-check: a new subscriber may have connected between the
+		// unlock above and this re-lock, preventing a spurious timer.
+		if len(c.subscribers) != 0 {
+			c.subscribersMu.Unlock()
+			return
+		}
+
+		// Stop any existing timer to prevent duplicates
+		if c.keepAliveTimer != nil {
+			c.keepAliveTimer.Stop()
+		}
+
 		c.lastSubscriberDisconnect = time.Now()
 		c.keepAliveTimer = time.AfterFunc(c.config.KeepAliveDuration, func() {
+			// Guard against race with Close(): if channel is already closed,
+			// skip the callback to avoid spurious onAllSubscribersGone calls.
+			if c.IsClosed() {
+				return
+			}
+
 			// Check if still no subscribers after timeout
 			c.subscribersMu.RLock()
 			stillEmpty := len(c.subscribers) == 0
@@ -322,10 +391,19 @@ func (c *TerminalChannel) bufferOutput(data []byte) {
 
 	// Evict old messages if buffer is full (by count or size)
 	for len(c.outputBuffer) >= c.config.OutputBufferCount || (c.outputBufferBytes+dataLen > c.config.OutputBufferSize && len(c.outputBuffer) > 0) {
-		// Remove oldest message
+		// Remove oldest message and nil out the slot to allow GC to reclaim it
 		oldMsg := c.outputBuffer[0]
+		c.outputBuffer[0] = nil // prevent memory leak from underlying array reference
 		c.outputBuffer = c.outputBuffer[1:]
 		c.outputBufferBytes -= len(oldMsg)
+	}
+
+	// Compact: when the underlying array is much larger than the live slice,
+	// copy to a fresh slice to release the wasted capacity.
+	if cap(c.outputBuffer) > len(c.outputBuffer)*3 && cap(c.outputBuffer) > c.config.OutputBufferCount {
+		compacted := make([][]byte, len(c.outputBuffer), c.config.OutputBufferCount)
+		copy(compacted, c.outputBuffer)
+		c.outputBuffer = compacted
 	}
 
 	// Only buffer if this single message fits
@@ -343,6 +421,10 @@ func (c *TerminalChannel) bufferOutput(data []byte) {
 func (c *TerminalChannel) clearOutputBuffer() {
 	c.outputBufferMu.Lock()
 	defer c.outputBufferMu.Unlock()
+	// Nil out references to allow GC before reslicing
+	for i := range c.outputBuffer {
+		c.outputBuffer[i] = nil
+	}
 	c.outputBuffer = c.outputBuffer[:0]
 	c.outputBufferBytes = 0
 }
@@ -378,6 +460,8 @@ func (c *TerminalChannel) forwardPublisherToSubscribers() {
 		return
 	}
 
+	conn.SetReadLimit(maxMessageSize)
+
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
@@ -394,10 +478,12 @@ func (c *TerminalChannel) forwardPublisherToSubscribers() {
 			c.bufferOutput(data)
 		}
 
-		// Snapshot supersedes all buffered output — clear buffer so future
-		// subscribers don't receive stale output followed by a duplicate snapshot
+		// Snapshot supersedes all buffered output — clear buffer and replace with
+		// the snapshot itself, so new subscribers joining after this point receive
+		// the complete terminal state instead of an empty buffer.
 		if msg != nil && msg.Type == protocol.MsgTypeSnapshot {
 			c.clearOutputBuffer()
+			c.bufferOutput(data)
 		}
 
 		c.Broadcast(data)
@@ -413,6 +499,8 @@ func (c *TerminalChannel) forwardSubscriberToPublisher(subscriberID string) {
 	if !ok {
 		return
 	}
+
+	subscriber.Conn.SetReadLimit(maxMessageSize)
 
 	for {
 		_, data, err := subscriber.Conn.ReadMessage()
@@ -433,8 +521,8 @@ func (c *TerminalChannel) forwardSubscriberToPublisher(subscriberID string) {
 			continue
 		}
 
-		// For input and image paste messages, check control permission
-		if msg.Type == protocol.MsgTypeInput || msg.Type == protocol.MsgTypeImagePaste {
+		// For input, image paste, and resize messages, check control permission
+		if msg.Type == protocol.MsgTypeInput || msg.Type == protocol.MsgTypeImagePaste || msg.Type == protocol.MsgTypeResize {
 			if !c.CanInput(subscriberID) {
 				c.logger.Debug("Input rejected, no control", "subscriber_id", subscriberID)
 				continue
@@ -471,7 +559,9 @@ func (c *TerminalChannel) handlePublisherDisconnect(disconnectedConn *websocket.
 		return
 	}
 
-	c.publisher.Close()
+	// Save reference, nil out under lock, then close outside lock
+	// to avoid blocking other goroutines while Close() performs I/O.
+	conn := c.publisher
 	c.publisher = nil
 	c.publisherDisconnected = true
 
@@ -490,6 +580,9 @@ func (c *TerminalChannel) handlePublisherDisconnect(disconnectedConn *websocket.
 		}
 	})
 	c.publisherMu.Unlock()
+
+	// Close connection after releasing lock
+	conn.Close()
 
 	// Broadcast AFTER releasing lock — eliminates the Unlock→Lock window
 	c.Broadcast(protocol.EncodeRunnerDisconnected())
@@ -522,6 +615,9 @@ func (c *TerminalChannel) handleControlRequest(subscriberID string, payload []by
 		c.controllerMu.RLock()
 		response = &protocol.ControlRequest{Action: "status", Controller: c.controllerID}
 		c.controllerMu.RUnlock()
+
+	default:
+		response = &protocol.ControlRequest{Action: "error", Controller: ""}
 	}
 
 	if response != nil {
@@ -610,6 +706,15 @@ func (c *TerminalChannel) Close() {
 	}
 	c.subscribers = make(map[string]*Subscriber)
 	c.subscribersMu.Unlock()
+
+	// Release output buffer memory
+	c.outputBufferMu.Lock()
+	for i := range c.outputBuffer {
+		c.outputBuffer[i] = nil
+	}
+	c.outputBuffer = nil
+	c.outputBufferBytes = 0
+	c.outputBufferMu.Unlock()
 
 	// Notify channel closed
 	if c.onChannelClosed != nil {

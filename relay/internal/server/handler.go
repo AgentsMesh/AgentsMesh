@@ -3,6 +3,8 @@ package server
 import (
 	"log/slog"
 	"net/http"
+	"strconv"
+	"sync/atomic"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -22,18 +24,22 @@ var upgrader = websocket.Upgrader{
 
 // Handler handles WebSocket connections
 type Handler struct {
-	channelManager *channel.ChannelManager
-	tokenValidator *auth.TokenValidator
-	logger         *slog.Logger
+	channelManager       *channel.ChannelManager
+	tokenValidator       *auth.TokenValidator
+	acceptingConnections *atomic.Bool // shared with Server for graceful shutdown
+	logger               *slog.Logger
 }
 
 // NewHandler creates a new WebSocket handler
 func NewHandler(channelManager *channel.ChannelManager, tokenValidator *auth.TokenValidator) *Handler {
-	return &Handler{
-		channelManager: channelManager,
-		tokenValidator: tokenValidator,
-		logger:         slog.With("component", "ws_handler"),
+	h := &Handler{
+		channelManager:       channelManager,
+		tokenValidator:       tokenValidator,
+		acceptingConnections: &atomic.Bool{},
+		logger:               slog.With("component", "ws_handler"),
 	}
+	h.acceptingConnections.Store(true)
+	return h
 }
 
 // HandleRunnerWS handles runner WebSocket connections (Publisher)
@@ -41,6 +47,11 @@ func NewHandler(channelManager *channel.ChannelManager, tokenValidator *auth.Tok
 // The token contains pod_key and runner_id for authentication
 // Channel is identified by pod_key (not session_id)
 func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
+	if !h.acceptingConnections.Load() {
+		http.Error(w, "server shutting down", http.StatusServiceUnavailable)
+		return
+	}
+
 	tokenStr := r.URL.Query().Get("token")
 
 	if tokenStr == "" {
@@ -54,6 +65,14 @@ func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Warn("Invalid runner token", "error", err)
 		http.Error(w, "invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	// Enforce token type: runner tokens must have UserID == 0.
+	// Prevents browser tokens from being used to impersonate a publisher.
+	if claims.UserID != 0 {
+		h.logger.Warn("Non-runner token used on runner endpoint", "user_id", claims.UserID, "pod_key", claims.PodKey)
+		http.Error(w, "invalid token type", http.StatusUnauthorized)
 		return
 	}
 
@@ -87,6 +106,11 @@ func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
 // Path: /browser/terminal?token=xxx
 // Channel is identified by pod_key from the token (not session_id)
 func (h *Handler) HandleBrowserWS(w http.ResponseWriter, r *http.Request) {
+	if !h.acceptingConnections.Load() {
+		http.Error(w, "server shutting down", http.StatusServiceUnavailable)
+		return
+	}
+
 	tokenStr := r.URL.Query().Get("token")
 
 	if tokenStr == "" {
@@ -100,6 +124,14 @@ func (h *Handler) HandleBrowserWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Warn("Invalid token", "error", err)
 		http.Error(w, "invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	// Enforce token type: browser tokens must have UserID != 0.
+	// Prevents runner tokens from being used to subscribe to terminal output.
+	if claims.UserID == 0 {
+		h.logger.Warn("Non-browser token used on browser endpoint", "pod_key", claims.PodKey)
+		http.Error(w, "invalid token type", http.StatusUnauthorized)
 		return
 	}
 
@@ -152,31 +184,8 @@ func (h *Handler) HandleStats(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	// Simple JSON encoding without external dependency
-	_, _ = w.Write([]byte(`{"active_channels":` + itoa(stats.ActiveChannels) +
-		`,"total_subscribers":` + itoa(stats.TotalSubscribers) +
-		`,"pending_publishers":` + itoa(stats.PendingPublishers) +
-		`,"pending_subscribers":` + itoa(stats.PendingSubscribers) + `}`))
-}
-
-func itoa(i int) string {
-	if i == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	pos := len(buf)
-	neg := i < 0
-	if neg {
-		i = -i
-	}
-	for i > 0 {
-		pos--
-		buf[pos] = byte('0' + i%10)
-		i /= 10
-	}
-	if neg {
-		pos--
-		buf[pos] = '-'
-	}
-	return string(buf[pos:])
+	_, _ = w.Write([]byte(`{"active_channels":` + strconv.Itoa(stats.ActiveChannels) +
+		`,"total_subscribers":` + strconv.Itoa(stats.TotalSubscribers) +
+		`,"pending_publishers":` + strconv.Itoa(stats.PendingPublishers) +
+		`,"pending_subscribers":` + strconv.Itoa(stats.PendingSubscribers) + `}`))
 }

@@ -38,7 +38,6 @@ func New(cfg *config.Config) *Server {
 		RelayID:           cfg.Relay.ID,
 		RelayName:         cfg.Relay.Name,
 		RelayURL:          cfg.Relay.URL,
-		RelayInternalURL:  cfg.Relay.InternalURL,
 		RelayRegion:       cfg.Relay.Region,
 		RelayCapacity:     cfg.Relay.Capacity,
 		AutoIP:            cfg.Relay.AutoIP,
@@ -86,50 +85,19 @@ func New(cfg *config.Config) *Server {
 	// Create handler
 	s.handler = NewHandler(s.channelManager, tokenValidator)
 
+	// Share the acceptingConnections flag between server and handler
+	s.handler.acceptingConnections = &s.acceptingConnections
+
 	return s
-}
-
-// registerWithRetry attempts to register with the backend, retrying with exponential
-// backoff. This handles the startup race condition where the relay starts before the
-// backend HTTP server is fully ready.
-func (s *Server) registerWithRetry(ctx context.Context) error {
-	const maxWait = 2 * time.Minute
-	backoff := time.Second
-	deadline := time.Now().Add(maxWait)
-
-	for {
-		err := s.backendClient.Register(ctx)
-		if err == nil {
-			return nil
-		}
-
-		if time.Now().After(deadline) {
-			return fmt.Errorf("timed out waiting for backend after %s: %w", maxWait, err)
-		}
-
-		s.logger.Warn("Backend not ready yet, retrying...",
-			"error", err,
-			"retry_in", backoff)
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(backoff):
-		}
-
-		backoff *= 2
-		if backoff > 30*time.Second {
-			backoff = 30 * time.Second
-		}
-	}
 }
 
 // Start starts the relay server
 func (s *Server) Start(ctx context.Context) error {
-	// Register with backend, retrying until the backend is ready.
-	// The relay may start before the backend HTTP server is fully initialized.
-	if err := s.registerWithRetry(ctx); err != nil {
-		return fmt.Errorf("failed to register with backend: %w", err)
+	// Register with backend. Docker Compose `depends_on: backend: condition: service_healthy`
+	// ensures the backend is ready before the relay starts — no retry logic needed here.
+	if err := s.backendClient.Register(ctx); err != nil {
+		s.channelManager.Close() // clean up cleanup goroutine started in constructor
+		return fmt.Errorf("failed to register with backend (ensure backend is running and healthy): %w", err)
 	}
 
 	// Start heartbeat loop with automatic restart on unexpected exit
@@ -143,10 +111,12 @@ func (s *Server) Start(ctx context.Context) error {
 	mux.HandleFunc("/stats", s.handler.HandleStats)
 
 	s.httpServer = &http.Server{
-		Addr:         s.cfg.Server.Address(),
-		Handler:      mux,
-		ReadTimeout:  s.cfg.Server.ReadTimeout,
-		WriteTimeout: s.cfg.Server.WriteTimeout,
+		Addr:              s.cfg.Server.Address(),
+		Handler:           mux,
+		ReadTimeout:       s.cfg.Server.ReadTimeout,
+		ReadHeaderTimeout: 10 * time.Second,
+		// WriteTimeout intentionally omitted: it applies globally including
+		// to upgraded WebSocket connections, killing them after the timeout.
 	}
 
 	// Start server in goroutine
@@ -243,16 +213,17 @@ func (s *Server) runHeartbeat(ctx context.Context) {
 func (s *Server) gracefulShutdown(reason string) error {
 	s.logger.Info("Starting graceful shutdown...", "reason", reason)
 
-	// 1. Notify backend that this relay is going offline
+	// 1. Stop accepting new connections first, so no new sessions are created
+	// while we notify the backend that this relay is going offline.
+	s.acceptingConnections.Store(false)
+	s.logger.Info("Stopped accepting new connections")
+
+	// 2. Notify backend that this relay is going offline
 	unregCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	if err := s.backendClient.Unregister(unregCtx, reason); err != nil {
 		s.logger.Warn("Failed to unregister from backend", "error", err)
 	}
 	cancel()
-
-	// 2. Stop accepting new connections
-	s.acceptingConnections.Store(false)
-	s.logger.Info("Stopped accepting new connections")
 
 	// 3. Wait for existing channels to close (with timeout)
 	gracePeriod := 30 * time.Second
@@ -279,6 +250,9 @@ func (s *Server) gracefulShutdown(reason string) error {
 		s.logger.Error("HTTP server shutdown error", "error", err)
 		return err
 	}
+
+	// 5. Stop channel manager cleanup goroutine
+	s.channelManager.Close()
 
 	s.logger.Info("Graceful shutdown completed")
 	return nil

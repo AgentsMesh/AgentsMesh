@@ -30,7 +30,6 @@ func main() {
 	slog.Info("Configuration loaded",
 		"relay_id", cfg.Relay.ID,
 		"relay_url", cfg.Relay.URL,
-		"relay_internal_url", cfg.Relay.InternalURL,
 		"region", cfg.Relay.Region,
 		"capacity", cfg.Relay.Capacity,
 		"server_address", cfg.Server.Address())

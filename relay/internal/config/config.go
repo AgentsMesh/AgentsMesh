@@ -77,13 +77,12 @@ type SessionConfig struct {
 
 // RelayConfig holds relay identity configuration
 type RelayConfig struct {
-	ID          string `mapstructure:"id"`
-	Name        string `mapstructure:"name"`         // Relay name for DNS auto-registration (e.g., "us-east-1")
-	URL         string `mapstructure:"url"`          // Public URL for browsers (auto-generated if Name is set)
-	InternalURL string `mapstructure:"internal_url"` // Internal URL for runners (Docker network)
-	Region      string `mapstructure:"region"`
-	Capacity    int    `mapstructure:"capacity"`
-	AutoIP      bool   `mapstructure:"auto_ip"`      // Auto-detect public IP for DNS registration
+	ID       string `mapstructure:"id"`
+	Name     string `mapstructure:"name"`    // Relay name for DNS auto-registration (e.g., "us-east-1")
+	URL      string `mapstructure:"url"`     // Public URL for browsers and runners (auto-generated from PRIMARY_DOMAIN)
+	Region   string `mapstructure:"region"`
+	Capacity int    `mapstructure:"capacity"`
+	AutoIP   bool   `mapstructure:"auto_ip"` // Auto-detect public IP for DNS registration
 }
 
 // Load loads configuration from environment variables and config file
@@ -147,7 +146,6 @@ func Load() (*Config, error) {
 		"RELAY_ID":           "relay.id",
 		"RELAY_NAME":         "relay.name",
 		"RELAY_URL":          "relay.url",
-		"RELAY_INTERNAL_URL": "relay.internal_url",
 		"RELAY_REGION":       "relay.region",
 		"RELAY_CAPACITY":     "relay.capacity",
 		"RELAY_AUTO_IP":      "relay.auto_ip",
@@ -157,9 +155,12 @@ func Load() (*Config, error) {
 		if val := os.Getenv(env); val != "" {
 			v.Set(key, val)
 		}
-		// Also try with RELAY_ prefix
-		if val := os.Getenv("RELAY_" + env); val != "" {
-			v.Set(key, val)
+		// Also try with RELAY_ prefix, but skip keys that already start with RELAY_
+		// to avoid double-prefixed lookups like RELAY_RELAY_ID
+		if !strings.HasPrefix(env, "RELAY_") {
+			if val := os.Getenv("RELAY_" + env); val != "" {
+				v.Set(key, val)
+			}
 		}
 	}
 

@@ -89,23 +89,17 @@ func expiredToken() string {
 	t, _ := auth.GenerateToken(testSecret, testIssuer, "p1", 1, 2, 3, -time.Hour)
 	return t
 }
+
+// validToken generates a browser token (userID=2, non-zero) for browser endpoint tests.
 func validToken(podKey string) string {
 	t, _ := auth.GenerateToken(testSecret, testIssuer, podKey, 1, 2, 3, time.Hour)
 	return t
 }
 
-func TestItoa(t *testing.T) {
-	tests := []struct {
-		in  int
-		out string
-	}{
-		{0, "0"}, {1, "1"}, {123, "123"}, {-1, "-1"}, {-123, "-123"}, {1000000, "1000000"},
-	}
-	for _, tt := range tests {
-		if got := itoa(tt.in); got != tt.out {
-			t.Errorf("itoa(%d) = %q, want %q", tt.in, got, tt.out)
-		}
-	}
+// runnerToken generates a runner token (userID=0) for runner endpoint tests.
+func runnerToken(podKey string) string {
+	t, _ := auth.GenerateToken(testSecret, testIssuer, podKey, 1, 0, 3, time.Hour)
+	return t
 }
 
 func TestUpgraderSettings(t *testing.T) {
@@ -121,8 +115,8 @@ func TestHandler_HandleRunnerWS_Success(t *testing.T) {
 	h := createTestHandler()
 	srv := httptest.NewServer(http.HandlerFunc(h.HandleRunnerWS))
 	defer srv.Close()
-	// Use valid token for runner authentication
-	url := "ws" + strings.TrimPrefix(srv.URL, "http") + "?token=" + validToken("pod-1")
+	// Use runner token (userID=0) for runner authentication
+	url := "ws" + strings.TrimPrefix(srv.URL, "http") + "?token=" + runnerToken("pod-1")
 	c, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		t.Fatalf("dial failed: %v", err)
@@ -154,7 +148,7 @@ func TestHandler_HandleBrowserWS_Success(t *testing.T) {
 
 func TestHandler_HandleRunnerWS_EmptyPodKey(t *testing.T) {
 	h := createTestHandler()
-	token, _ := auth.GenerateToken(testSecret, testIssuer, "", 1, 2, 3, time.Hour)
+	token, _ := auth.GenerateToken(testSecret, testIssuer, "", 1, 0, 3, time.Hour)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/runner/terminal?token="+token, nil)
 	h.HandleRunnerWS(w, r)
@@ -189,11 +183,12 @@ func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
 	defer srv.Close()
 
 	podKey := "pod-max-sub"
-	token := validToken(podKey)
+	browserToken := validToken(podKey)
+	runnerTok := runnerToken(podKey)
 	wsBase := "ws" + strings.TrimPrefix(srv.URL, "http")
 
 	// Connect runner (publisher)
-	rc, _, err := websocket.DefaultDialer.Dial(wsBase+"/runner?token="+token, nil)
+	rc, _, err := websocket.DefaultDialer.Dial(wsBase+"/runner?token="+runnerTok, nil)
 	if err != nil {
 		t.Fatalf("runner dial: %v", err)
 	}
@@ -203,7 +198,7 @@ func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Connect first browser (subscriber) - should succeed
-	bc1, _, err := websocket.DefaultDialer.Dial(wsBase+"/browser?token="+token, nil)
+	bc1, _, err := websocket.DefaultDialer.Dial(wsBase+"/browser?token="+browserToken, nil)
 	if err != nil {
 		t.Fatalf("browser1 dial: %v", err)
 	}
@@ -213,7 +208,7 @@ func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Connect second browser - should hit max subscribers
-	bc2, _, err := websocket.DefaultDialer.Dial(wsBase+"/browser?token="+token, nil)
+	bc2, _, err := websocket.DefaultDialer.Dial(wsBase+"/browser?token="+browserToken, nil)
 	if err != nil {
 		t.Fatalf("browser2 dial: %v", err)
 	}
@@ -238,7 +233,7 @@ func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
 func TestHandler_HandleRunnerWS_UpgradeError(t *testing.T) {
 	// Test the WebSocket upgrade error path: valid token + non-WebSocket request
 	h := createTestHandler()
-	token := validToken("pod-1")
+	token := runnerToken("pod-1")
 	w := httptest.NewRecorder()
 	// This is NOT a WebSocket upgrade request — no Upgrade/Connection headers
 	r := httptest.NewRequest("GET", "/runner/terminal?token="+token, nil)
@@ -272,9 +267,9 @@ func TestHandler_ChannelCreation(t *testing.T) {
 		}
 	}))
 	defer srv.Close()
-	// Runner first - using token for authentication (podKey = "pod-1")
-	runnerToken := validToken("pod-1")
-	rc, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http")+"/runner?token="+runnerToken, nil)
+	// Runner first - using runner token (userID=0) for authentication (podKey = "pod-1")
+	rToken := runnerToken("pod-1")
+	rc, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http")+"/runner?token="+rToken, nil)
 	if err != nil {
 		t.Fatalf("runner dial failed: %v", err)
 	}
