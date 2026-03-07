@@ -24,8 +24,6 @@ interface ResponsiveDialogProps {
 interface ResponsiveDialogContentProps {
   children: React.ReactNode;
   className?: string;
-  /** Title for accessibility (shown in drawer handle area on mobile) */
-  title?: string;
 }
 
 interface ResponsiveDialogHeaderProps {
@@ -124,14 +122,11 @@ export function ResponsiveDialog({
 export function ResponsiveDialogContent({
   children,
   className,
-  title,
 }: ResponsiveDialogContentProps) {
-  // Floating centered dialog (same pattern for mobile and desktop,
-  // matching CreatePodModal design)
   return (
     <div
       className={cn(
-        "bg-background border border-border rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col",
+        "bg-background border border-border rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto p-4 md:p-6",
         className
       )}
       onClick={(e) => e.stopPropagation()}
@@ -147,12 +142,7 @@ export function ResponsiveDialogHeader({
   onClose,
 }: ResponsiveDialogHeaderProps) {
   return (
-    <div
-      className={cn(
-        "px-4 md:px-6 py-4 border-b flex-shrink-0 flex items-center justify-between",
-        className
-      )}
-    >
+    <div className={cn("flex items-center justify-between mb-4", className)}>
       {children}
       {onClose && (
         <button
@@ -192,12 +182,7 @@ export function ResponsiveDialogBody({
   className,
 }: ResponsiveDialogBodyProps) {
   return (
-    <div
-      className={cn(
-        "px-4 md:px-6 py-4 flex-1 overflow-y-auto min-h-0 overscroll-contain",
-        className
-      )}
-    >
+    <div className={cn(className)}>
       {children}
     </div>
   );
@@ -208,12 +193,7 @@ export function ResponsiveDialogFooter({
   className,
 }: ResponsiveDialogFooterProps) {
   return (
-    <div
-      className={cn(
-        "px-4 md:px-6 py-4 border-t flex items-center gap-2 flex-shrink-0 flex-col-reverse md:flex-row md:justify-end",
-        className
-      )}
-    >
+    <div className={cn("flex items-center gap-2 mt-4 flex-col-reverse md:flex-row md:justify-end", className)}>
       {children}
     </div>
   );
