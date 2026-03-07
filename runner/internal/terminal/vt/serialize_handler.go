@@ -93,9 +93,9 @@ func (h *StringSerializeHandler) nextCell(cell, oldCell Cell, row, col int) {
 	if styleChanged {
 		if h.nullCellCount > 0 {
 			if !h.cursorStyle.Bg.Equals(h.backgroundCell.Bg) {
-				h.currentRow.WriteString(fmt.Sprintf("\x1b[%dX", h.nullCellCount))
+				fmt.Fprintf(&h.currentRow, "\x1b[%dX", h.nullCellCount)
 			}
-			h.currentRow.WriteString(fmt.Sprintf("\x1b[%dC", h.nullCellCount))
+			fmt.Fprintf(&h.currentRow, "\x1b[%dC", h.nullCellCount)
 			h.nullCellCount = 0
 		}
 
@@ -124,10 +124,10 @@ func (h *StringSerializeHandler) nextCell(cell, oldCell Cell, row, col int) {
 	} else {
 		if h.nullCellCount > 0 {
 			if h.cursorStyle.Bg.Equals(h.backgroundCell.Bg) {
-				h.currentRow.WriteString(fmt.Sprintf("\x1b[%dC", h.nullCellCount))
+				fmt.Fprintf(&h.currentRow, "\x1b[%dC", h.nullCellCount)
 			} else {
-				h.currentRow.WriteString(fmt.Sprintf("\x1b[%dX", h.nullCellCount))
-				h.currentRow.WriteString(fmt.Sprintf("\x1b[%dC", h.nullCellCount))
+				fmt.Fprintf(&h.currentRow, "\x1b[%dX", h.nullCellCount)
+				fmt.Fprintf(&h.currentRow, "\x1b[%dC", h.nullCellCount)
 			}
 			h.nullCellCount = 0
 		}
@@ -152,7 +152,7 @@ func (h *StringSerializeHandler) nextCell(cell, oldCell Cell, row, col int) {
 // rowEnd handles end of row processing
 func (h *StringSerializeHandler) rowEnd(row int, isLastRow bool) {
 	if h.nullCellCount > 0 && !h.cursorStyle.Bg.Equals(h.backgroundCell.Bg) {
-		h.currentRow.WriteString(fmt.Sprintf("\x1b[%dX", h.nullCellCount))
+		fmt.Fprintf(&h.currentRow, "\x1b[%dX", h.nullCellCount)
 	}
 
 	rowSeparator := ""
@@ -203,7 +203,7 @@ func (h *StringSerializeHandler) serializeString(startRow, endRow int, excludeFi
 
 	if !excludeFinalCursorPosition {
 		cursorRow, cursorCol := h.vt.CursorPosition()
-		content.WriteString(fmt.Sprintf("\x1b[%d;%dH", cursorRow+1, cursorCol+1))
+		fmt.Fprintf(&content, "\x1b[%d;%dH", cursorRow+1, cursorCol+1)
 	}
 
 	curFg, curBg, curAttrs, curUlStyle, curUlColor := h.vt.GetCurrentStyle()

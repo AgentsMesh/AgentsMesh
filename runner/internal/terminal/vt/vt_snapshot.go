@@ -178,7 +178,7 @@ func (h *StringSerializeHandler) serializeScreenNoLock(startRow, endRow int, exc
 	h.rowIndex = 0
 
 	// Process each row from the screen buffer
-	var prevCell Cell = NewCell(' ')
+	var prevCell = NewCell(' ')
 	for row := startRow; row <= endRow; row++ {
 		// Reset per-row state
 		h.currentRow.Reset()
@@ -209,7 +209,7 @@ func (h *StringSerializeHandler) serializeScreenNoLock(startRow, endRow int, exc
 func (h *StringSerializeHandler) rowEndScreenOnly(row int, isLastRow bool, nextLineWrapped bool) {
 	// If there are colorful empty cells at line end, we must preserve them
 	if h.nullCellCount > 0 && !h.cursorStyle.Bg.Equals(h.backgroundCell.Bg) {
-		h.currentRow.WriteString(fmt.Sprintf("\x1b[%dX", h.nullCellCount))
+		fmt.Fprintf(&h.currentRow, "\x1b[%dX", h.nullCellCount)
 	}
 
 	rowSeparator := ""
@@ -271,7 +271,7 @@ func (h *StringSerializeHandler) serializeStringScreenOnly(startRow, endRow int,
 		// Use CUP (Cursor Position) - 1-indexed
 		cursorRow := h.vt.cursorY + 1
 		cursorCol := h.vt.cursorX + 1
-		content.WriteString(fmt.Sprintf("\x1b[%d;%dH", cursorRow, cursorCol))
+		fmt.Fprintf(&content, "\x1b[%d;%dH", cursorRow, cursorCol)
 	}
 
 	// Restore cursor's current style

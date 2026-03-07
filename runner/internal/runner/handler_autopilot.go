@@ -32,7 +32,7 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 		var ok bool
 		targetPod, ok = h.podStore.Get(podKey)
 		if !ok {
-			return fmt.Errorf("Pod not found: %s", podKey)
+			return fmt.Errorf("pod not found: %s", podKey)
 		}
 	}
 
@@ -40,12 +40,12 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 	if cmd.PodConfig != nil && targetPod == nil {
 		podKey = cmd.PodConfig.PodKey
 		if err := h.OnCreatePod(cmd.PodConfig); err != nil {
-			return fmt.Errorf("failed to create Pod: %w", err)
+			return fmt.Errorf("failed to create pod: %w", err)
 		}
 		var ok bool
 		targetPod, ok = h.podStore.Get(podKey)
 		if !ok {
-			return fmt.Errorf("Pod not found after creation: %s", podKey)
+			return fmt.Errorf("pod not found after creation: %s", podKey)
 		}
 	}
 

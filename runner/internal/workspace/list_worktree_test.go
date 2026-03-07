@@ -19,7 +19,7 @@ func TestListWorktreesEmpty(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if worktrees != nil && len(worktrees) > 0 {
+	if len(worktrees) > 0 {
 		t.Errorf("worktrees should be empty, got %v", worktrees)
 	}
 }

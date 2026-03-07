@@ -17,7 +17,7 @@ func (h *StringSerializeHandler) serializeWithHistory(startRow, endRow, historyL
 	h.lastContentCursorCol = 0
 	h.rowIndex = 0
 
-	var prevCell Cell = NewCell(' ')
+	var prevCell = NewCell(' ')
 	for row := startRow; row <= endRow; row++ {
 		h.currentRow.Reset()
 		h.nullCellCount = 0
@@ -52,7 +52,7 @@ func (h *StringSerializeHandler) serializeWithHistory(startRow, endRow, historyL
 // rowEndWithWrap handles end of row processing with explicit wrap info
 func (h *StringSerializeHandler) rowEndWithWrap(row int, isLastRow bool, currentWrapped bool, hasNextRow bool) {
 	if h.nullCellCount > 0 && !h.cursorStyle.Bg.Equals(h.backgroundCell.Bg) {
-		h.currentRow.WriteString(fmt.Sprintf("\x1b[%dX", h.nullCellCount))
+		fmt.Fprintf(&h.currentRow, "\x1b[%dX", h.nullCellCount)
 	}
 
 	rowSeparator := ""
@@ -117,7 +117,7 @@ func (h *StringSerializeHandler) serializeStringForHistory(startRow, endRow, his
 	if !excludeFinalCursorPosition {
 		cursorRow := h.vt.cursorY + 1
 		cursorCol := h.vt.cursorX + 1
-		content.WriteString(fmt.Sprintf("\x1b[%d;%dH", cursorRow, cursorCol))
+		fmt.Fprintf(&content, "\x1b[%d;%dH", cursorRow, cursorCol)
 	}
 
 	curFg, curBg, curAttrs, curUlStyle, curUlColor := h.vt.getCurrentStyleNoLock()
