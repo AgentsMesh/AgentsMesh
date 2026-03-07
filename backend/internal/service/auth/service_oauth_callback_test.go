@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
 )
 
@@ -67,7 +68,7 @@ func TestHandleOAuthCallback(t *testing.T) {
 
 func TestHandleOAuthCallbackWithUserService(t *testing.T) {
 	db := setupTestDB(t)
-	userSvc := userService.NewService(db)
+	userSvc := userService.NewService(infra.NewUserRepository(db))
 
 	cfg := &Config{
 		JWTSecret:         "test-secret-key-at-least-32-bytes",

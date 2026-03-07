@@ -41,19 +41,19 @@ func setupSettingsTestDB(t *testing.T) *gorm.DB {
 
 func TestNewSettingsService(t *testing.T) {
 	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
+	service := newTestSettingsService(db)
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
 	}
-	if service.db != db {
-		t.Fatal("expected service.db to be the provided db")
+	if service.repo == nil {
+		t.Fatal("expected service.repo to be set")
 	}
 }
 
 func TestGetUserSettings_NewUser(t *testing.T) {
 	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
+	service := newTestSettingsService(db)
 	ctx := context.Background()
 
 	settings, err := service.GetUserSettings(ctx, 1)
@@ -80,7 +80,7 @@ func TestGetUserSettings_NewUser(t *testing.T) {
 
 func TestGetUserSettings_ExistingUser(t *testing.T) {
 	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
+	service := newTestSettingsService(db)
 	ctx := context.Background()
 
 	// Create existing settings
@@ -105,7 +105,7 @@ func TestGetUserSettings_ExistingUser(t *testing.T) {
 
 func TestUpdateUserSettings(t *testing.T) {
 	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
+	service := newTestSettingsService(db)
 	ctx := context.Background()
 
 	// Get settings first (creates default)
@@ -148,7 +148,7 @@ func TestUpdateUserSettings(t *testing.T) {
 
 func TestUpdateUserSettings_PartialUpdate(t *testing.T) {
 	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
+	service := newTestSettingsService(db)
 	ctx := context.Background()
 
 	// Create with initial values
@@ -184,7 +184,7 @@ func TestUpdateUserSettings_PartialUpdate(t *testing.T) {
 
 func TestDeleteUserSettings(t *testing.T) {
 	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
+	service := newTestSettingsService(db)
 	ctx := context.Background()
 
 	// Create settings
@@ -209,7 +209,7 @@ func TestDeleteUserSettings(t *testing.T) {
 
 func TestGetDefaultAgentConfig(t *testing.T) {
 	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
+	service := newTestSettingsService(db)
 	ctx := context.Background()
 
 	// Create settings with agent config
@@ -244,7 +244,7 @@ func TestGetDefaultAgentConfig(t *testing.T) {
 
 func TestGetTerminalPreferences(t *testing.T) {
 	db := setupSettingsTestDB(t)
-	service := NewSettingsService(db)
+	service := newTestSettingsService(db)
 	ctx := context.Background()
 
 	// Create settings with terminal preferences

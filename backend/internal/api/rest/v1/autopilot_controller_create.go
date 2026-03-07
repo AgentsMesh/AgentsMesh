@@ -47,7 +47,7 @@ func (h *AutopilotControllerHandler) CreateAutopilotController(c *gin.Context) {
 		return
 	}
 
-	controller, err := h.service.CreateAndStart(&agentpodSvc.CreateAndStartRequest{
+	controller, err := h.service.CreateAndStart(c.Request.Context(), &agentpodSvc.CreateAndStartRequest{
 		OrganizationID:        orgID,
 		Pod:                   targetPod,
 		InitialPrompt:         req.InitialPrompt,

@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 // ===========================================
@@ -11,7 +13,7 @@ import (
 
 func TestCreate(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -37,7 +39,7 @@ func TestCreate(t *testing.T) {
 
 func TestCreateDuplicate(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -61,7 +63,7 @@ func TestCreateDuplicate(t *testing.T) {
 
 func TestCreateWithDefaultBranch(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -87,7 +89,7 @@ func TestCreateWithDefaultBranch(t *testing.T) {
 
 func TestCreateWithTicketPrefix(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	prefix := "PROJ"
@@ -114,7 +116,7 @@ func TestCreateWithTicketPrefix(t *testing.T) {
 
 func TestGetByID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -140,7 +142,7 @@ func TestGetByID(t *testing.T) {
 
 func TestGetByIDNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	_, err := service.GetByID(ctx, 999)
@@ -151,7 +153,7 @@ func TestGetByIDNotFound(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -180,7 +182,7 @@ func TestUpdate(t *testing.T) {
 
 func TestUpdateNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	_, err := service.Update(ctx, 99999, map[string]interface{}{"name": "test"})
@@ -191,7 +193,7 @@ func TestUpdateNotFound(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{

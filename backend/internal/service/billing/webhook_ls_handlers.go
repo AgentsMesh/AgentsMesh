@@ -39,31 +39,31 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 	// Find subscription by organization (the order_created event should have already created it)
 	// We need to update it with the LemonSqueezy subscription ID
 	if event.Provider == billing.PaymentProviderLemonSqueezy {
-		var sub billing.Subscription
+		var sub *billing.Subscription
 		var err error
 
 		// Try to find by customer ID first (set during order_created)
 		if event.CustomerID != "" {
-			err = s.db.WithContext(ctx).Where("lemonsqueezy_customer_id = ?", event.CustomerID).First(&sub).Error
+			sub, err = s.repo.FindSubscriptionByLSCustomerID(ctx, event.CustomerID)
 		}
 
 		// Fallback: try to find by order_no if customer_id lookup failed
 		// The order_no is passed in custom_data and stored in payment_orders
-		if err != nil && event.OrderNo != "" {
-			var order billing.PaymentOrder
-			if orderErr := s.db.WithContext(ctx).Where("order_no = ?", event.OrderNo).First(&order).Error; orderErr == nil {
-				err = s.db.WithContext(ctx).Where("organization_id = ?", order.OrganizationID).First(&sub).Error
+		if (err != nil || sub == nil) && event.OrderNo != "" {
+			order, orderErr := s.repo.GetPaymentOrderByNo(ctx, event.OrderNo)
+			if orderErr == nil && order != nil {
+				sub, err = s.repo.GetSubscriptionByOrgID(ctx, order.OrganizationID)
 			}
 		}
 
 		// Update subscription with LemonSqueezy IDs if found and not already set
-		if err == nil && sub.LemonSqueezySubscriptionID == nil {
+		if err == nil && sub != nil && sub.LemonSqueezySubscriptionID == nil {
 			sub.LemonSqueezySubscriptionID = &event.SubscriptionID
 			// Also set customer_id if not already set
 			if sub.LemonSqueezyCustomerID == nil && event.CustomerID != "" {
 				sub.LemonSqueezyCustomerID = &event.CustomerID
 			}
-			return s.db.WithContext(ctx).Save(&sub).Error
+			return s.repo.SaveSubscription(ctx, sub)
 		}
 	}
 
@@ -103,7 +103,7 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 	// Do NOT set FrozenAt here — FrozenAt is reserved for payment failure freezes.
 	sub.Status = billing.SubscriptionStatusPaused
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 
@@ -145,7 +145,7 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 	sub.Status = billing.SubscriptionStatusActive
 	sub.FrozenAt = nil
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 
@@ -188,7 +188,7 @@ func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.Webho
 	// because this is a natural expiration, not a user-initiated cancellation.
 	sub.Status = billing.SubscriptionStatusExpired
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 

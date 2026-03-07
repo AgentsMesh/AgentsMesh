@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
-	"gorm.io/gorm"
 )
 
 // TriggerRunAtomic atomically triggers a loop run within a FOR UPDATE transaction.
@@ -28,9 +27,9 @@ type LoopRunService struct {
 }
 
 // NewLoopRunService creates a new LoopRunService
-func NewLoopRunService(db *gorm.DB) *LoopRunService {
+func NewLoopRunService(repo loopDomain.LoopRunRepository) *LoopRunService {
 	return &LoopRunService{
-		repo: loopDomain.NewLoopRunRepository(db),
+		repo: repo,
 	}
 }
 

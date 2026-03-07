@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"gorm.io/gorm"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
 // ========== Errors ==========
@@ -19,23 +19,23 @@ var (
 
 // ========== Service ==========
 
-// Service handles ticket operations
+// Service handles ticket operations.
 type Service struct {
-	db             *gorm.DB
+	repo           ticket.TicketRepository
 	eventPublisher EventPublisher
 }
 
-// NewService creates a new ticket service
-func NewService(db *gorm.DB) *Service {
-	return &Service{db: db}
+// NewService creates a new ticket service.
+func NewService(repo ticket.TicketRepository) *Service {
+	return &Service{repo: repo}
 }
 
-// SetEventPublisher sets the event publisher for real-time events
+// SetEventPublisher sets the event publisher for real-time events.
 func (s *Service) SetEventPublisher(ep EventPublisher) {
 	s.eventPublisher = ep
 }
 
-// publishEvent publishes a ticket event if EventPublisher is configured
+// publishEvent publishes a ticket event if EventPublisher is configured.
 func (s *Service) publishEvent(ctx context.Context, eventType TicketEventType, orgID int64, slug, status, previousStatus string) {
 	if s.eventPublisher != nil {
 		s.eventPublisher.PublishTicketEvent(ctx, eventType, orgID, slug, status, previousStatus)
@@ -44,7 +44,7 @@ func (s *Service) publishEvent(ctx context.Context, eventType TicketEventType, o
 
 // ========== Request Types ==========
 
-// CreateTicketRequest represents a ticket creation request
+// CreateTicketRequest represents a ticket creation request.
 type CreateTicketRequest struct {
 	OrganizationID int64
 	RepositoryID   *int64
@@ -60,18 +60,5 @@ type CreateTicketRequest struct {
 	Labels         []string // Label names for convenience
 }
 
-// ListTicketsFilter represents filters for listing tickets
-type ListTicketsFilter struct {
-	OrganizationID int64
-	RepositoryID   *int64
-	Status         string
-	Priority       string
-	AssigneeID     *int64
-	ReporterID     *int64
-	LabelIDs       []int64
-	ParentTicketID *int64
-	Query          string
-	UserRole       string // Kept for future use
-	Limit          int
-	Offset         int
-}
+// ListTicketsFilter is a type alias for backward compatibility.
+type ListTicketsFilter = ticket.TicketListFilter

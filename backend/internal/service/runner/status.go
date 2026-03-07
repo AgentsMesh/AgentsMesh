@@ -10,10 +10,10 @@ import (
 // UpdateRunnerStatus updates runner status
 func (s *Service) UpdateRunnerStatus(ctx context.Context, runnerID int64, status string) error {
 	now := time.Now()
-	return s.db.WithContext(ctx).Model(&runner.Runner{}).Where("id = ?", runnerID).Updates(map[string]interface{}{
+	return s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
 		"status":         status,
 		"last_heartbeat": now,
-	}).Error
+	})
 }
 
 // SetRunnerStatus sets the runner status (alias for UpdateRunnerStatus)
@@ -55,43 +55,39 @@ func (s *Service) MarkDisconnected(ctx context.Context, runnerID int64) error {
 
 // UpdateHostInfo updates runner host information
 func (s *Service) UpdateHostInfo(ctx context.Context, runnerID int64, hostInfo map[string]interface{}) error {
-	return s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("id = ?", runnerID).
-		Update("host_info", hostInfo).Error
+	return s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
+		"host_info": hostInfo,
+	})
 }
 
 // UpdateRunnerVersionAndHostInfo updates runner version and host information atomically.
 // Called during gRPC initialization handshake to persist RunnerInfo from the connect request.
 func (s *Service) UpdateRunnerVersionAndHostInfo(ctx context.Context, runnerID int64, version string, hostInfo map[string]interface{}) error {
-	updates := map[string]interface{}{
+	return s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
 		"runner_version": version,
 		"host_info":      hostInfo,
-	}
-	return s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("id = ?", runnerID).
-		Updates(updates).Error
+	})
 }
 
 // UpdateAvailableAgents updates the list of available agents for a runner
 // Called when runner completes initialization handshake
 func (s *Service) UpdateAvailableAgents(ctx context.Context, runnerID int64, agents []string) error {
-	return s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("id = ?", runnerID).
-		Update("available_agents", runner.StringSlice(agents)).Error
+	return s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
+		"available_agents": runner.StringSlice(agents),
+	})
 }
 
 // UpdateAgentVersions updates the detected agent version info for a runner.
 // Called when runner completes initialization handshake (Runner >= 0.4.7).
 // Also refreshes the activeRunners cache to keep GetRunner consistent.
 func (s *Service) UpdateAgentVersions(ctx context.Context, runnerID int64, versions []runner.AgentVersion) error {
-	if err := s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("id = ?", runnerID).
-		Update("agent_versions", runner.AgentVersionSlice(versions)).Error; err != nil {
+	if err := s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
+		"agent_versions": runner.AgentVersionSlice(versions),
+	}); err != nil {
 		return err
 	}
 
 	// Sync in-memory cache so GetRunner returns fresh data immediately.
-	// Store a new copy to avoid data races with concurrent Range readers.
 	if active, ok := s.activeRunners.Load(runnerID); ok {
 		if ar, ok := active.(*ActiveRunner); ok && ar.Runner != nil {
 			updated := *ar.Runner
@@ -131,7 +127,6 @@ func (s *Service) MergeAgentVersions(ctx context.Context, runnerID int64, change
 	// Apply changes
 	for slug, change := range changes {
 		if change.Version == "" && change.Path == "" {
-			// Removal: agent no longer available
 			delete(merged, slug)
 		} else {
 			merged[slug] = change
@@ -149,18 +144,12 @@ func (s *Service) MergeAgentVersions(ctx context.Context, runnerID int64, change
 
 // IncrementPods increments the pod count for a runner
 func (s *Service) IncrementPods(ctx context.Context, runnerID int64) error {
-	return s.db.WithContext(ctx).Exec(
-		"UPDATE runners SET current_pods = current_pods + 1 WHERE id = ?",
-		runnerID,
-	).Error
+	return s.repo.IncrementPods(ctx, runnerID)
 }
 
 // DecrementPods decrements the pod count for a runner
 func (s *Service) DecrementPods(ctx context.Context, runnerID int64) error {
-	return s.db.WithContext(ctx).Exec(
-		"UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?",
-		runnerID,
-	).Error
+	return s.repo.DecrementPods(ctx, runnerID)
 }
 
 // RunnerUpdateFunc is a callback for runner status updates

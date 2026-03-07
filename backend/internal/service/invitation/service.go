@@ -5,7 +5,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
-	"gorm.io/gorm"
 )
 
 var (
@@ -25,16 +24,14 @@ const (
 
 // Service handles invitation operations
 type Service struct {
-	db           *gorm.DB
 	repo         invitation.Repository
 	emailService email.Service
 }
 
 // NewService creates a new invitation service
-func NewService(db *gorm.DB, emailService email.Service) *Service {
+func NewService(repo invitation.Repository, emailService email.Service) *Service {
 	return &Service{
-		db:           db,
-		repo:         invitation.NewRepository(db),
+		repo:         repo,
 		emailService: emailService,
 	}
 }

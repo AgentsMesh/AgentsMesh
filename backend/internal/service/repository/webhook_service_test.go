@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 // ===========================================
@@ -13,13 +14,14 @@ import (
 func TestNewWebhookService(t *testing.T) {
 	db := setupWebhookTestDB(t)
 	cfg := &config.Config{}
-	svc := NewWebhookService(db, cfg, nil, nil)
+	repo := infra.NewGitProviderRepository(db)
+	svc := NewWebhookService(repo, cfg, nil, nil)
 
 	if svc == nil {
 		t.Fatal("expected non-nil service")
 	}
-	if svc.db != db {
-		t.Error("db not set correctly")
+	if svc.repo == nil {
+		t.Error("repo not set correctly")
 	}
 	if svc.cfg != cfg {
 		t.Error("config not set correctly")

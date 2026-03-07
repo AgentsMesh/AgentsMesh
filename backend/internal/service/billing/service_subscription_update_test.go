@@ -14,7 +14,7 @@ import (
 
 func TestUpdateSubscriptionUpgrade(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -37,7 +37,7 @@ func TestUpdateSubscriptionUpgrade(t *testing.T) {
 
 func TestUpdateSubscriptionDowngrade(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -69,7 +69,7 @@ func TestUpdateSubscriptionDowngrade(t *testing.T) {
 
 func TestUpdateSubscriptionDowngradeSeatExceeds(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // Free plan max_users = 5
@@ -98,7 +98,7 @@ func TestUpdateSubscriptionDowngradeSeatExceeds(t *testing.T) {
 
 func TestUpdateSubscriptionPaidToPaid(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -132,7 +132,7 @@ func TestUpdateSubscriptionPaidToPaid(t *testing.T) {
 
 func TestUpdateSubscriptionNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -145,7 +145,7 @@ func TestUpdateSubscriptionNotFound(t *testing.T) {
 
 func TestUpdateSubscriptionInvalidNewPlan(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -159,7 +159,7 @@ func TestUpdateSubscriptionInvalidNewPlan(t *testing.T) {
 
 func TestUpdateSubscriptionSamePlan(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

@@ -24,12 +24,8 @@ func (pc *PodCoordinator) handleAgentStatus(runnerID int64, data *runnerv1.Agent
 	updates := map[string]interface{}{
 		"agent_status": data.Status,
 	}
-	// Note: Pid not available in Proto AgentStatusEvent
 
-	if err := pc.db.WithContext(ctx).
-		Model(&agentpod.Pod{}).
-		Where("pod_key = ?", data.PodKey).
-		Updates(updates).Error; err != nil {
+	if err := pc.podRepo.UpdateAgentStatus(ctx, data.PodKey, updates); err != nil {
 		pc.logger.Error("failed to update agent status",
 			"pod_key", data.PodKey,
 			"error", err)

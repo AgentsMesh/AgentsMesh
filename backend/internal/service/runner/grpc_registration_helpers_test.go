@@ -15,7 +15,7 @@ import (
 
 func TestGetRunnerByNodeID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("returns runner by node ID", func(t *testing.T) {
@@ -40,7 +40,7 @@ func TestGetRunnerByNodeID(t *testing.T) {
 
 func TestCleanupExpiredPendingAuths(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("cleans up expired pending auths", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestCleanupExpiredPendingAuths(t *testing.T) {
 
 func TestCleanupExpiredReactivationTokens(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("cleans up expired reactivation tokens", func(t *testing.T) {

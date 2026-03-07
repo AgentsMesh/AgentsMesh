@@ -10,13 +10,13 @@ import (
 
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
 	}
-	if service.db != db {
-		t.Fatal("expected service.db to be the provided db")
+	if service.repo == nil {
+		t.Fatal("expected service.repo to be non-nil")
 	}
 }
 

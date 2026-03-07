@@ -10,7 +10,7 @@ import (
 
 func TestGetProviderCredentials(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create a provider
@@ -39,7 +39,7 @@ func TestGetProviderCredentials(t *testing.T) {
 
 func TestGetProviderCredentials_NotFound(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	_, err := service.GetProviderCredentials(ctx, 999)
@@ -50,7 +50,7 @@ func TestGetProviderCredentials_NotFound(t *testing.T) {
 
 func TestGetUserDefaultCredentials(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create providers
@@ -78,7 +78,7 @@ func TestGetUserDefaultCredentials(t *testing.T) {
 
 func TestGetUserDefaultCredentials_NotFound(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	_, err := service.GetUserDefaultCredentials(ctx, 1, agentpod.AIProviderTypeClaude)
@@ -88,7 +88,7 @@ func TestGetUserDefaultCredentials_NotFound(t *testing.T) {
 }
 
 func TestValidateCredentials(t *testing.T) {
-	service := NewAIProviderService(nil, nil)
+	service := newTestAIProviderService(nil, nil)
 
 	tests := []struct {
 		name         string
@@ -154,7 +154,7 @@ func TestValidateCredentials(t *testing.T) {
 }
 
 func TestDecryptCredentials_EmptyString(t *testing.T) {
-	service := NewAIProviderService(nil, nil)
+	service := newTestAIProviderService(nil, nil)
 
 	_, err := service.decryptCredentials("")
 	if err != ErrCredentialsNotFound {
@@ -163,7 +163,7 @@ func TestDecryptCredentials_EmptyString(t *testing.T) {
 }
 
 func TestDecryptCredentials_InvalidJSON(t *testing.T) {
-	service := NewAIProviderService(nil, nil)
+	service := newTestAIProviderService(nil, nil)
 
 	_, err := service.decryptCredentials("not-json")
 	if err != ErrInvalidCredentials {
@@ -172,7 +172,7 @@ func TestDecryptCredentials_InvalidJSON(t *testing.T) {
 }
 
 func TestEncryptDecryptCredentials_DevMode(t *testing.T) {
-	service := NewAIProviderService(nil, nil) // nil encryptor = dev mode
+	service := newTestAIProviderService(nil, nil) // nil encryptor = dev mode
 	ctx := context.Background()
 
 	creds := map[string]string{

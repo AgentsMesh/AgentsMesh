@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -250,7 +251,7 @@ func TestProcessWebhookWithRepo_RegistryNoHandler(t *testing.T) {
 	registry := NewHandlerRegistry(logger)
 	// Don't set up default handlers
 
-	repoSvc := repository.NewService(db)
+	repoSvc := repository.NewService(infra.NewGitProviderRepository(db))
 
 	router := &WebhookRouter{
 		db:          db,

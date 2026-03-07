@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	billingService "github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 	"gorm.io/driver/sqlite"
@@ -172,7 +173,7 @@ func createMockRouter(t *testing.T) (*WebhookRouter, *gorm.DB, *payment.Factory)
 	}
 
 	// Create billing service with mock (uses full config for URL derivation)
-	billingSvc := billingService.NewServiceWithConfig(db, cfg)
+	billingSvc := billingService.NewServiceWithConfig(infra.NewBillingRepository(db), cfg)
 	factory := billingSvc.GetPaymentFactory()
 
 	return &WebhookRouter{

@@ -41,7 +41,7 @@ func createTestRunner(t *testing.T, db interface{ Exec(string, ...any) interface
 
 func TestDeleteRunner(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -72,7 +72,7 @@ func TestDeleteRunner(t *testing.T) {
 
 func TestListRunners(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create multiple runners directly
@@ -102,7 +102,7 @@ func TestListRunners(t *testing.T) {
 
 func TestListAvailableRunners(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create two runners
@@ -141,7 +141,7 @@ func TestListAvailableRunners(t *testing.T) {
 
 func TestSelectAvailableRunner(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create two runners
@@ -180,7 +180,7 @@ func TestSelectAvailableRunner(t *testing.T) {
 
 func TestSelectAvailableRunnerNoneAvailable(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// No runners at all
@@ -192,7 +192,7 @@ func TestSelectAvailableRunnerNoneAvailable(t *testing.T) {
 
 func TestSelectAvailableRunnerFromCache(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create two runners
@@ -247,7 +247,7 @@ func TestSelectAvailableRunnerFromCache(t *testing.T) {
 
 func TestSelectAvailableRunnerSkipsInactiveInCache(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner
@@ -284,7 +284,7 @@ func TestSelectAvailableRunnerSkipsInactiveInCache(t *testing.T) {
 
 func TestSelectAvailableRunnerSkipsDisabledInCache(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner
@@ -321,7 +321,7 @@ func TestSelectAvailableRunnerSkipsDisabledInCache(t *testing.T) {
 
 func TestListRunnersVisibility(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	registrantUserID := int64(10)
@@ -367,7 +367,7 @@ func TestListRunnersVisibility(t *testing.T) {
 
 func TestAuthorizeRunnerSetsRegisteredByUserID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create org
@@ -405,7 +405,7 @@ func TestAuthorizeRunnerSetsRegisteredByUserID(t *testing.T) {
 
 func TestSelectAvailableRunnerSkipsFullInCache(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner with max 2 pods

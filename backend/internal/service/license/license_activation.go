@@ -44,15 +44,12 @@ func (s *Service) ActivateLicense(ctx context.Context, licenseData []byte) error
 	}
 
 	// Deactivate any existing licenses
-	if err := s.db.WithContext(ctx).
-		Model(&billing.License{}).
-		Where("is_active = ?", true).
-		Update("is_active", false).Error; err != nil {
+	if err := s.repo.DeactivateAll(ctx); err != nil {
 		s.logger.Warn("failed to deactivate existing licenses", "error", err)
 	}
 
 	// Create new license record
-	if err := s.db.WithContext(ctx).Create(dbLicense).Error; err != nil {
+	if err := s.repo.Create(ctx, dbLicense); err != nil {
 		return fmt.Errorf("failed to save license: %w", err)
 	}
 

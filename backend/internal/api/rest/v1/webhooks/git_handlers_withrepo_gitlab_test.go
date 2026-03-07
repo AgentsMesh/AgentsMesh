@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -150,8 +151,8 @@ func TestHandleGitLabWebhookWithRepo_WithWebhookService(t *testing.T) {
 	registry := NewHandlerRegistry(logger)
 	SetupDefaultHandlers(registry, logger)
 
-	repoSvc := repository.NewService(db)
-	webhookSvc := repository.NewWebhookService(db, cfg, nil, nil)
+	repoSvc := repository.NewService(infra.NewGitProviderRepository(db))
+	webhookSvc := repository.NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 
 	router := &WebhookRouter{
 		db:             db,
@@ -200,8 +201,8 @@ func TestHandleGitLabWebhookWithRepo_WebhookServiceReturnsError(t *testing.T) {
 	registry := NewHandlerRegistry(logger)
 	SetupDefaultHandlers(registry, logger)
 
-	repoSvc := repository.NewService(db)
-	webhookSvc := repository.NewWebhookService(db, cfg, nil, nil)
+	repoSvc := repository.NewService(infra.NewGitProviderRepository(db))
+	webhookSvc := repository.NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 
 	router := &WebhookRouter{
 		db:             db,

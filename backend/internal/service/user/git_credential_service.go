@@ -6,7 +6,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
-	"gorm.io/gorm"
 )
 
 // CreateGitCredential creates a new Git credential for a user
@@ -17,11 +16,11 @@ func (s *Service) CreateGitCredential(ctx context.Context, userID int64, req *Cr
 	}
 
 	// Check if credential with same name already exists
-	var existing user.GitCredential
-	err := s.db.WithContext(ctx).
-		Where("user_id = ? AND name = ?", userID, req.Name).
-		First(&existing).Error
-	if err == nil {
+	exists, err := s.repo.GitCredentialNameExists(ctx, userID, req.Name, nil)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, ErrCredentialAlreadyExists
 	}
 
@@ -42,7 +41,7 @@ func (s *Service) CreateGitCredential(ctx context.Context, userID int64, req *Cr
 		credential.HostPattern = &req.HostPattern
 	}
 
-	if err := s.db.WithContext(ctx).Create(credential).Error; err != nil {
+	if err := s.repo.CreateGitCredential(ctx, credential); err != nil {
 		return nil, err
 	}
 
@@ -113,29 +112,19 @@ func (s *Service) processCredentialType(ctx context.Context, userID int64, crede
 
 // GetGitCredential returns a Git credential by ID
 func (s *Service) GetGitCredential(ctx context.Context, userID, credentialID int64) (*user.GitCredential, error) {
-	var credential user.GitCredential
-	err := s.db.WithContext(ctx).
-		Preload("RepositoryProvider").
-		Where("id = ? AND user_id = ?", credentialID, userID).
-		First(&credential).Error
+	credential, err := s.repo.GetGitCredentialWithProvider(ctx, userID, credentialID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err == user.ErrNotFound {
 			return nil, ErrCredentialNotFound
 		}
 		return nil, err
 	}
-	return &credential, nil
+	return credential, nil
 }
 
 // ListGitCredentials returns all Git credentials for a user
 func (s *Service) ListGitCredentials(ctx context.Context, userID int64) ([]*user.GitCredential, error) {
-	var credentials []*user.GitCredential
-	err := s.db.WithContext(ctx).
-		Preload("RepositoryProvider").
-		Where("user_id = ?", userID).
-		Order("created_at DESC").
-		Find(&credentials).Error
-	return credentials, err
+	return s.repo.ListGitCredentialsWithProvider(ctx, userID)
 }
 
 // UpdateGitCredential updates a Git credential
@@ -150,11 +139,11 @@ func (s *Service) UpdateGitCredential(ctx context.Context, userID, credentialID 
 
 	if req.Name != nil && *req.Name != "" {
 		// Check if new name conflicts
-		var existing user.GitCredential
-		err := s.db.WithContext(ctx).
-			Where("user_id = ? AND name = ? AND id != ?", userID, *req.Name, credentialID).
-			First(&existing).Error
-		if err == nil {
+		exists, err := s.repo.GitCredentialNameExists(ctx, userID, *req.Name, &credentialID)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
 			return nil, ErrCredentialAlreadyExists
 		}
 		updates["name"] = *req.Name
@@ -177,7 +166,7 @@ func (s *Service) UpdateGitCredential(ctx context.Context, userID, credentialID 
 		return credential, nil
 	}
 
-	if err := s.db.WithContext(ctx).Model(credential).Updates(updates).Error; err != nil {
+	if err := s.repo.UpdateGitCredential(ctx, credential, updates); err != nil {
 		return nil, err
 	}
 
@@ -232,12 +221,9 @@ func (s *Service) applyCredentialTypeUpdates(credential *user.GitCredential, req
 // DeleteGitCredential deletes a Git credential
 func (s *Service) DeleteGitCredential(ctx context.Context, userID, credentialID int64) error {
 	// First check if this is the default credential
-	var credential user.GitCredential
-	err := s.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", credentialID, userID).
-		First(&credential).Error
+	credential, err := s.repo.GetGitCredentialWithProvider(ctx, userID, credentialID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err == user.ErrNotFound {
 			return ErrCredentialNotFound
 		}
 		return err
@@ -245,21 +231,16 @@ func (s *Service) DeleteGitCredential(ctx context.Context, userID, credentialID 
 
 	// If this is the default, clear user's default credential reference
 	if credential.IsDefault {
-		if err := s.db.WithContext(ctx).
-			Model(&user.User{}).
-			Where("id = ? AND default_git_credential_id = ?", userID, credentialID).
-			Update("default_git_credential_id", nil).Error; err != nil {
+		if err := s.repo.ClearUserDefaultCredential(ctx, userID, credentialID); err != nil {
 			return err
 		}
 	}
 
-	result := s.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", credentialID, userID).
-		Delete(&user.GitCredential{})
-	if result.Error != nil {
-		return result.Error
+	rowsAffected, err := s.repo.DeleteGitCredential(ctx, userID, credentialID)
+	if err != nil {
+		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrCredentialNotFound
 	}
 	return nil

@@ -4,6 +4,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	billingdomain "github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -29,10 +31,15 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// newTestRepo creates a BillingRepository from *gorm.DB for tests.
+func newTestRepo(db *gorm.DB) billingdomain.BillingRepository {
+	return infra.NewBillingRepository(db)
+}
+
 // setupTestService creates a test service with seeded plans
 func setupTestService(t *testing.T) (*Service, *gorm.DB) {
 	db := setupTestDB(t)
-	svc := NewService(db, "")
+	svc := NewService(newTestRepo(db), "")
 
 	// Seed standard plans: based (ID=1), pro (ID=2), enterprise (ID=3)
 	seedTestPlan(t, db)

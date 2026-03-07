@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -50,7 +51,7 @@ func TestRegisterRoutes_WithRepoEndpoints(t *testing.T) {
 
 func TestWithRepositoryService(t *testing.T) {
 	db := setupTestDBForWithRepo(t)
-	repoSvc := repository.NewService(db)
+	repoSvc := repository.NewService(infra.NewGitProviderRepository(db))
 
 	opt := WithRepositoryService(repoSvc)
 

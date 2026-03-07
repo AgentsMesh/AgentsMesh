@@ -10,7 +10,7 @@ import (
 
 // TestIntegrationUpgradeWithCheckout tests the upgrade flow with checkout
 func TestIntegrationUpgradeWithCheckout(t *testing.T) {
-	service, factory := setupIntegrationTestService(t)
+	service, factory, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 
 	// 1. Create based subscription
@@ -74,7 +74,7 @@ func TestIntegrationUpgradeWithCheckout(t *testing.T) {
 
 // TestIntegrationMockProviderWebhook tests mock provider webhook handling
 func TestIntegrationMockProviderWebhook(t *testing.T) {
-	service, factory := setupIntegrationTestService(t)
+	service, factory, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 
 	// 1. Create checkout session
@@ -124,7 +124,7 @@ func TestIntegrationMockProviderWebhook(t *testing.T) {
 
 // TestIntegrationRefundPayment tests payment refund
 func TestIntegrationRefundPayment(t *testing.T) {
-	_, factory := setupIntegrationTestService(t)
+	_, factory, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 
 	provider, _ := factory.GetDefaultProvider()
@@ -150,7 +150,7 @@ func TestIntegrationRefundPayment(t *testing.T) {
 
 // TestIntegrationCancelSubscription tests subscription cancellation via provider
 func TestIntegrationCancelSubscription(t *testing.T) {
-	_, factory := setupIntegrationTestService(t)
+	_, factory, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 
 	provider, _ := factory.GetDefaultProvider()

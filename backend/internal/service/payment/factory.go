@@ -3,8 +3,6 @@ package payment
 import (
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	alipayprovider "github.com/anthropics/agentsmesh/backend/internal/service/payment/alipay"
@@ -19,16 +17,28 @@ import (
 type Factory struct {
 	appConfig       *config.Config            // Full app config for URL derivation
 	config          *config.PaymentConfig     // Payment config
-	db              *gorm.DB
+	licenseRepo     billing.LicenseRepository // Optional, for license provider
 	mockProvider    *mockprovider.Provider    // Singleton mock provider instance
 	licenseProvider *licenseprovider.Provider // Singleton license provider instance
 }
 
-// NewFactoryWithDB creates a new payment provider factory with database support
+// NewFactoryFromConfig creates a payment provider factory without database support.
+// License provider will not be available. Use NewFactoryWithLicenseRepo if license support is needed.
+func NewFactoryFromConfig(appConfig *config.Config) *Factory {
+	return NewFactoryWithLicenseRepo(appConfig, nil)
+}
+
+// NewFactoryWithDB creates a new payment provider factory with database support (deprecated shim).
+// Prefer NewFactoryWithLicenseRepo for new code.
+func NewFactoryWithDB(appConfig *config.Config, _ interface{}) *Factory {
+	return NewFactoryWithLicenseRepo(appConfig, nil)
+}
+
+// NewFactoryWithLicenseRepo creates a new payment provider factory with license repository support
 // appConfig is needed for URL derivation (AlipayNotifyURL, WeChatNotifyURL, etc.)
-func NewFactoryWithDB(appConfig *config.Config, db *gorm.DB) *Factory {
+func NewFactoryWithLicenseRepo(appConfig *config.Config, licenseRepo billing.LicenseRepository) *Factory {
 	cfg := &appConfig.Payment
-	f := &Factory{appConfig: appConfig, config: cfg, db: db}
+	f := &Factory{appConfig: appConfig, config: cfg, licenseRepo: licenseRepo}
 
 	// Initialize mock provider if enabled
 	if cfg.MockEnabled {
@@ -39,9 +49,9 @@ func NewFactoryWithDB(appConfig *config.Config, db *gorm.DB) *Factory {
 		f.mockProvider = mockprovider.NewProvider(baseURL)
 	}
 
-	// Initialize license provider if enabled and db is available
-	if cfg.LicenseEnabled() && db != nil {
-		licenseProvider, err := licenseprovider.NewProvider(&cfg.License, db)
+	// Initialize license provider if enabled and license repo is available
+	if cfg.LicenseEnabled() && licenseRepo != nil {
+		licenseProvider, err := licenseprovider.NewProvider(&cfg.License, licenseRepo)
 		if err == nil {
 			f.licenseProvider = licenseProvider
 		}

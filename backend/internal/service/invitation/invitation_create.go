@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
+	invitationDomain "github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 )
 
@@ -21,22 +21,23 @@ type CreateRequest struct {
 }
 
 // Create creates a new invitation and sends an email
-func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitation.Invitation, error) {
+func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitationDomain.Invitation, error) {
 	// Validate role
 	if req.Role != organization.RoleAdmin && req.Role != organization.RoleMember {
 		return nil, ErrInvalidRole
 	}
 
-	// Check if user is already a member
-	var existingMember organization.Member
-	err := s.db.WithContext(ctx).Where("organization_id = ? AND user_id IN (SELECT id FROM users WHERE email = ?)",
-		req.OrganizationID, req.Email).First(&existingMember).Error
-	if err == nil {
+	// Check if user is already a member (by email)
+	exists, err := s.repo.CheckMemberExistsByEmail(ctx, req.OrganizationID, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, ErrAlreadyMember
 	}
 
 	// Check for existing pending invitation
-	existing, err := s.repo.GetByOrgAndEmail(req.OrganizationID, req.Email)
+	existing, err := s.repo.GetByOrgAndEmail(ctx, req.OrganizationID, req.Email)
 	if err == nil && existing.IsPending() {
 		return nil, ErrPendingInvitation
 	}
@@ -47,7 +48,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitation.I
 		return nil, err
 	}
 
-	inv := &invitation.Invitation{
+	inv := &invitationDomain.Invitation{
 		OrganizationID: req.OrganizationID,
 		Email:          req.Email,
 		Role:           req.Role,
@@ -56,7 +57,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitation.I
 		ExpiresAt:      time.Now().AddDate(0, 0, InvitationValidDays),
 	}
 
-	if err := s.repo.Create(inv); err != nil {
+	if err := s.repo.Create(ctx, inv); err != nil {
 		return nil, err
 	}
 
@@ -65,6 +66,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitation.I
 		if err := s.emailService.SendOrgInvitationEmail(ctx, req.Email, req.OrgName, req.InviterName, token); err != nil {
 			// Log error but don't fail the invitation creation
 			// The invitation can still be accessed via the token
+			_ = err
 		}
 	}
 
@@ -73,7 +75,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitation.I
 
 // Resend resends an invitation email
 func (s *Service) Resend(ctx context.Context, invitationID int64, inviterName, orgName string) error {
-	inv, err := s.repo.GetByID(invitationID)
+	inv, err := s.repo.GetByID(ctx, invitationID)
 	if err != nil {
 		return ErrInvitationNotFound
 	}
@@ -85,7 +87,7 @@ func (s *Service) Resend(ctx context.Context, invitationID int64, inviterName, o
 	// Extend expiration if needed
 	if inv.IsExpired() || time.Until(inv.ExpiresAt) < 24*time.Hour {
 		inv.ExpiresAt = time.Now().AddDate(0, 0, InvitationValidDays)
-		if err := s.repo.Update(inv); err != nil {
+		if err := s.repo.Update(ctx, inv); err != nil {
 			return err
 		}
 	}

@@ -3,8 +3,8 @@ package agentpod
 import (
 	"errors"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
-	"gorm.io/gorm"
 )
 
 var (
@@ -16,14 +16,14 @@ var (
 
 // AIProviderService handles AI provider credential operations
 type AIProviderService struct {
-	db        *gorm.DB
+	repo      agentpod.AIProviderRepository
 	encryptor *crypto.Encryptor
 }
 
 // NewAIProviderService creates a new AI provider service
-func NewAIProviderService(db *gorm.DB, encryptor *crypto.Encryptor) *AIProviderService {
+func NewAIProviderService(repo agentpod.AIProviderRepository, encryptor *crypto.Encryptor) *AIProviderService {
 	return &AIProviderService{
-		db:        db,
+		repo:      repo,
 		encryptor: encryptor,
 	}
 }

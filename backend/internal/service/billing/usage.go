@@ -23,7 +23,7 @@ func (s *Service) RecordUsage(ctx context.Context, orgID int64, usageType string
 		Metadata:       metadata,
 	}
 
-	return s.db.WithContext(ctx).Create(record).Error
+	return s.repo.CreateUsageRecord(ctx, record)
 }
 
 // GetUsage returns usage for an organization in current period
@@ -33,32 +33,11 @@ func (s *Service) GetUsage(ctx context.Context, orgID int64, usageType string) (
 		return 0, err
 	}
 
-	var total float64
-	if err := s.db.WithContext(ctx).Model(&billing.UsageRecord{}).
-		Where("organization_id = ? AND usage_type = ? AND period_start >= ? AND period_end <= ?",
-			orgID, usageType, sub.CurrentPeriodStart, sub.CurrentPeriodEnd).
-		Select("COALESCE(SUM(quantity), 0)").
-		Scan(&total).Error; err != nil {
-		return 0, err
-	}
-
-	return total, nil
+	return s.repo.SumUsageByPeriod(ctx, orgID, usageType, sub.CurrentPeriodStart, sub.CurrentPeriodEnd)
 }
 
 // GetUsageHistory returns usage history for an organization
 func (s *Service) GetUsageHistory(ctx context.Context, orgID int64, usageType string, months int) ([]*billing.UsageRecord, error) {
 	since := time.Now().AddDate(0, -months, 0)
-
-	var records []*billing.UsageRecord
-	query := s.db.WithContext(ctx).Where("organization_id = ? AND period_start >= ?", orgID, since)
-
-	if usageType != "" {
-		query = query.Where("usage_type = ?", usageType)
-	}
-
-	if err := query.Order("period_start DESC").Find(&records).Error; err != nil {
-		return nil, err
-	}
-
-	return records, nil
+	return s.repo.ListUsageHistory(ctx, orgID, usageType, since)
 }

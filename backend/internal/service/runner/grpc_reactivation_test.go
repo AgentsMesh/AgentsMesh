@@ -13,7 +13,7 @@ import (
 
 func TestGenerateReactivationToken(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("generates reactivation token", func(t *testing.T) {
@@ -46,7 +46,7 @@ func TestGenerateReactivationToken(t *testing.T) {
 
 func TestReactivate(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("returns error for invalid token", func(t *testing.T) {

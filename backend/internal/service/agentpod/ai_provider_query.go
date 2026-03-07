@@ -2,36 +2,28 @@ package agentpod
 
 import (
 	"context"
-	"errors"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"gorm.io/gorm"
 )
 
 // GetUserDefaultCredentials returns the default credentials for a user and provider type
 func (s *AIProviderService) GetUserDefaultCredentials(ctx context.Context, userID int64, providerType string) (map[string]string, error) {
-	var provider agentpod.UserAIProvider
-	err := s.db.WithContext(ctx).
-		Where("user_id = ? AND provider_type = ? AND is_default = ? AND is_enabled = ?",
-			userID, providerType, true, true).
-		First(&provider).Error
+	provider, err := s.repo.GetDefaultByType(ctx, userID, providerType)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrProviderNotFound
-		}
 		return nil, err
+	}
+	if provider == nil {
+		return nil, ErrProviderNotFound
 	}
 
 	return s.decryptCredentials(provider.EncryptedCredentials)
 }
 
 // GetAIProviderEnvVars returns AI provider credentials as environment variables for a user
-// This retrieves the user's default provider credentials and formats them for PTY injection
 func (s *AIProviderService) GetAIProviderEnvVars(ctx context.Context, userID int64) (map[string]string, error) {
-	// Try to get default Claude credentials first
 	credentials, err := s.GetUserDefaultCredentials(ctx, userID, agentpod.AIProviderTypeClaude)
 	if err != nil {
-		if errors.Is(err, ErrProviderNotFound) {
+		if err == ErrProviderNotFound {
 			return nil, nil // No credentials configured
 		}
 		return nil, err
@@ -42,15 +34,12 @@ func (s *AIProviderService) GetAIProviderEnvVars(ctx context.Context, userID int
 
 // GetAIProviderEnvVarsByID returns AI provider credentials as environment variables by provider ID
 func (s *AIProviderService) GetAIProviderEnvVarsByID(ctx context.Context, providerID int64) (map[string]string, error) {
-	var provider agentpod.UserAIProvider
-	err := s.db.WithContext(ctx).
-		Where("id = ? AND is_enabled = ?", providerID, true).
-		First(&provider).Error
+	provider, err := s.repo.GetEnabledByID(ctx, providerID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrProviderNotFound
-		}
 		return nil, err
+	}
+	if provider == nil {
+		return nil, ErrProviderNotFound
 	}
 
 	credentials, err := s.decryptCredentials(provider.EncryptedCredentials)
@@ -63,39 +52,22 @@ func (s *AIProviderService) GetAIProviderEnvVarsByID(ctx context.Context, provid
 
 // GetUserProviders returns all AI providers for a user
 func (s *AIProviderService) GetUserProviders(ctx context.Context, userID int64) ([]*agentpod.UserAIProvider, error) {
-	var providers []*agentpod.UserAIProvider
-	err := s.db.WithContext(ctx).
-		Where("user_id = ?", userID).
-		Order("provider_type, name").
-		Find(&providers).Error
-	if err != nil {
-		return nil, err
-	}
-	return providers, nil
+	return s.repo.ListByUser(ctx, userID)
 }
 
 // GetUserProvidersByType returns AI providers for a user filtered by type
 func (s *AIProviderService) GetUserProvidersByType(ctx context.Context, userID int64, providerType string) ([]*agentpod.UserAIProvider, error) {
-	var providers []*agentpod.UserAIProvider
-	err := s.db.WithContext(ctx).
-		Where("user_id = ? AND provider_type = ?", userID, providerType).
-		Order("is_default DESC, name").
-		Find(&providers).Error
-	if err != nil {
-		return nil, err
-	}
-	return providers, nil
+	return s.repo.ListByUserAndType(ctx, userID, providerType)
 }
 
 // GetProviderCredentials returns decrypted credentials for a provider
-// This should only be used when the credentials need to be displayed/edited
 func (s *AIProviderService) GetProviderCredentials(ctx context.Context, providerID int64) (map[string]string, error) {
-	var provider agentpod.UserAIProvider
-	if err := s.db.WithContext(ctx).First(&provider, providerID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrProviderNotFound
-		}
+	provider, err := s.repo.GetByID(ctx, providerID)
+	if err != nil {
 		return nil, err
+	}
+	if provider == nil {
+		return nil, ErrProviderNotFound
 	}
 
 	return s.decryptCredentials(provider.EncryptedCredentials)

@@ -13,7 +13,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 var (
@@ -25,15 +24,15 @@ var (
 
 // Service handles file operations
 type Service struct {
-	db      *gorm.DB
+	repo    file.FileRepository
 	storage storage.Storage
 	config  config.StorageConfig
 }
 
 // NewService creates a new file service
-func NewService(db *gorm.DB, storage storage.Storage, cfg config.StorageConfig) *Service {
+func NewService(repo file.FileRepository, storage storage.Storage, cfg config.StorageConfig) *Service {
 	return &Service{
-		db:      db,
+		repo:    repo,
 		storage: storage,
 		config:  cfg,
 	}
@@ -87,7 +86,7 @@ func (s *Service) Upload(ctx context.Context, req *UploadRequest) (*UploadRespon
 		Size:           req.Size,
 	}
 
-	if err := s.db.WithContext(ctx).Create(f).Error; err != nil {
+	if err := s.repo.Create(ctx, f); err != nil {
 		// Try to clean up uploaded file on database error
 		_ = s.storage.Delete(ctx, storageKey)
 		return nil, fmt.Errorf("failed to create file record: %w", err)
@@ -107,17 +106,14 @@ func (s *Service) Upload(ctx context.Context, req *UploadRequest) (*UploadRespon
 
 // GetByID retrieves a file by ID
 func (s *Service) GetByID(ctx context.Context, id int64, orgID int64) (*file.File, error) {
-	var f file.File
-	err := s.db.WithContext(ctx).
-		Where("id = ? AND organization_id = ?", id, orgID).
-		First(&f).Error
+	f, err := s.repo.GetByID(ctx, id, orgID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrFileNotFound
-		}
 		return nil, err
 	}
-	return &f, nil
+	if f == nil {
+		return nil, ErrFileNotFound
+	}
+	return f, nil
 }
 
 // GetURL returns a presigned URL for accessing a file
@@ -143,7 +139,7 @@ func (s *Service) Delete(ctx context.Context, id int64, orgID int64) error {
 	}
 
 	// Delete database record
-	if err := s.db.WithContext(ctx).Delete(f).Error; err != nil {
+	if err := s.repo.Delete(ctx, f); err != nil {
 		return fmt.Errorf("failed to delete file record: %w", err)
 	}
 

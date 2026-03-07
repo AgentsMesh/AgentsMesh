@@ -10,7 +10,7 @@ import (
 
 // TestIntegrationWebhookPaymentSucceeded tests webhook handling for successful payment
 func TestIntegrationWebhookPaymentSucceeded(t *testing.T) {
-	service, factory := setupIntegrationTestService(t)
+	service, factory, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -80,7 +80,7 @@ func TestIntegrationWebhookPaymentSucceeded(t *testing.T) {
 
 // TestIntegrationWebhookPaymentFailed tests webhook handling for failed payment
 func TestIntegrationWebhookPaymentFailed(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -134,7 +134,7 @@ func TestIntegrationWebhookPaymentFailed(t *testing.T) {
 
 // TestIntegrationPaymentSucceededByExternalOrderNo tests finding order by external order no
 func TestIntegrationPaymentSucceededByExternalOrderNo(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -185,7 +185,7 @@ func TestIntegrationPaymentSucceededByExternalOrderNo(t *testing.T) {
 
 // TestIntegrationPaymentFailedByExternalOrderNo tests finding failed order by external order no
 func TestIntegrationPaymentFailedByExternalOrderNo(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 

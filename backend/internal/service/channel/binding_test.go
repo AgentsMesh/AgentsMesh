@@ -9,7 +9,7 @@ import (
 
 func TestPodBinding(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("create binding", func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestPodBinding(t *testing.T) {
 	t.Run("approve binding", func(t *testing.T) {
 		created, _ := svc.CreateBinding(ctx, 1, "approve-init", "approve-target", nil)
 		// Note: pq.StringArray doesn't work with SQLite, update status directly
-		err := svc.db.WithContext(ctx).Model(&channel.PodBinding{}).
+		err := db.WithContext(ctx).Model(&channel.PodBinding{}).
 			Where("id = ?", created.ID).
 			Update("status", channel.BindingStatusActive).Error
 		if err != nil {
@@ -73,7 +73,7 @@ func TestPodBinding(t *testing.T) {
 
 	t.Run("revoke binding", func(t *testing.T) {
 		created, _ := svc.CreateBinding(ctx, 1, "revoke-init", "revoke-target", nil)
-		svc.db.WithContext(ctx).Model(&channel.PodBinding{}).
+		db.WithContext(ctx).Model(&channel.PodBinding{}).
 			Where("id = ?", created.ID).
 			Update("status", channel.BindingStatusActive)
 		if err := svc.RevokeBinding(ctx, created.ID); err != nil {
@@ -88,7 +88,7 @@ func TestPodBinding(t *testing.T) {
 
 func TestChannelPods(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "pod-test"})

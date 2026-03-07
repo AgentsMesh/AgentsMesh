@@ -2,10 +2,8 @@ package agentpod
 
 import (
 	"context"
-	"errors"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"gorm.io/gorm"
 )
 
 // CreateUserProvider creates a new AI provider for a user
@@ -27,12 +25,12 @@ func (s *AIProviderService) CreateUserProvider(ctx context.Context, userID int64
 
 	// If this is set as default, clear other defaults for this provider type
 	if isDefault {
-		if err := s.clearDefaultProvider(ctx, userID, providerType); err != nil {
+		if err := s.repo.ClearDefaults(ctx, userID, providerType); err != nil {
 			return nil, err
 		}
 	}
 
-	if err := s.db.WithContext(ctx).Create(provider).Error; err != nil {
+	if err := s.repo.Create(ctx, provider); err != nil {
 		return nil, err
 	}
 
@@ -41,12 +39,12 @@ func (s *AIProviderService) CreateUserProvider(ctx context.Context, userID int64
 
 // UpdateUserProvider updates an existing AI provider
 func (s *AIProviderService) UpdateUserProvider(ctx context.Context, providerID int64, name string, credentials map[string]string, isDefault, isEnabled bool) (*agentpod.UserAIProvider, error) {
-	var provider agentpod.UserAIProvider
-	if err := s.db.WithContext(ctx).First(&provider, providerID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrProviderNotFound
-		}
+	provider, err := s.repo.GetByID(ctx, providerID)
+	if err != nil {
 		return nil, err
+	}
+	if provider == nil {
+		return nil, ErrProviderNotFound
 	}
 
 	// Encrypt new credentials if provided
@@ -63,7 +61,7 @@ func (s *AIProviderService) UpdateUserProvider(ctx context.Context, providerID i
 
 	// Handle default flag
 	if isDefault && !provider.IsDefault {
-		if err := s.clearDefaultProvider(ctx, provider.UserID, provider.ProviderType); err != nil {
+		if err := s.repo.ClearDefaults(ctx, provider.UserID, provider.ProviderType); err != nil {
 			return nil, err
 		}
 		provider.IsDefault = true
@@ -71,41 +69,33 @@ func (s *AIProviderService) UpdateUserProvider(ctx context.Context, providerID i
 		provider.IsDefault = false
 	}
 
-	if err := s.db.WithContext(ctx).Save(&provider).Error; err != nil {
+	if err := s.repo.Save(ctx, provider); err != nil {
 		return nil, err
 	}
 
-	return &provider, nil
+	return provider, nil
 }
 
 // DeleteUserProvider deletes an AI provider
 func (s *AIProviderService) DeleteUserProvider(ctx context.Context, providerID int64) error {
-	return s.db.WithContext(ctx).Delete(&agentpod.UserAIProvider{}, providerID).Error
+	return s.repo.Delete(ctx, providerID)
 }
 
 // SetDefaultProvider sets a provider as the default for its type
 func (s *AIProviderService) SetDefaultProvider(ctx context.Context, providerID int64) error {
-	var provider agentpod.UserAIProvider
-	if err := s.db.WithContext(ctx).First(&provider, providerID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrProviderNotFound
-		}
+	provider, err := s.repo.GetByID(ctx, providerID)
+	if err != nil {
 		return err
+	}
+	if provider == nil {
+		return ErrProviderNotFound
 	}
 
 	// Clear other defaults
-	if err := s.clearDefaultProvider(ctx, provider.UserID, provider.ProviderType); err != nil {
+	if err := s.repo.ClearDefaults(ctx, provider.UserID, provider.ProviderType); err != nil {
 		return err
 	}
 
 	// Set this one as default
-	return s.db.WithContext(ctx).Model(&provider).Update("is_default", true).Error
-}
-
-// clearDefaultProvider clears the default flag for all providers of a type
-func (s *AIProviderService) clearDefaultProvider(ctx context.Context, userID int64, providerType string) error {
-	return s.db.WithContext(ctx).
-		Model(&agentpod.UserAIProvider{}).
-		Where("user_id = ? AND provider_type = ?", userID, providerType).
-		Update("is_default", false).Error
+	return s.repo.SetDefault(ctx, providerID)
 }

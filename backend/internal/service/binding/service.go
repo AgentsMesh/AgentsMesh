@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
-	"gorm.io/gorm"
 )
 
 var (
@@ -24,7 +23,7 @@ const PendingExpiryHours = 24
 
 // Service handles pod binding operations
 type Service struct {
-	db         *gorm.DB
+	repo       channel.BindingRepository
 	podQuerier PodQuerier
 }
 
@@ -34,9 +33,9 @@ type PodQuerier interface {
 }
 
 // NewService creates a new binding service
-func NewService(db *gorm.DB, podQuerier PodQuerier) *Service {
+func NewService(repo channel.BindingRepository, podQuerier PodQuerier) *Service {
 	return &Service{
-		db:         db,
+		repo:       repo,
 		podQuerier: podQuerier,
 	}
 }
@@ -53,60 +52,43 @@ func (s *Service) validateScopes(scopes []string) error {
 
 // GetBinding returns a binding by ID
 func (s *Service) GetBinding(ctx context.Context, bindingID int64) (*channel.PodBinding, error) {
-	var binding channel.PodBinding
-	if err := s.db.WithContext(ctx).First(&binding, bindingID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrBindingNotFound
-		}
+	binding, err := s.repo.GetByID(ctx, bindingID)
+	if err != nil {
 		return nil, err
 	}
-	return &binding, nil
+	if binding == nil {
+		return nil, ErrBindingNotFound
+	}
+	return binding, nil
 }
 
 // GetActiveBinding returns an active binding between two pods
 func (s *Service) GetActiveBinding(ctx context.Context, initiatorPod, targetPod string) (*channel.PodBinding, error) {
-	var binding channel.PodBinding
-	if err := s.db.WithContext(ctx).
-		Where("initiator_pod = ? AND target_pod = ? AND status = ?",
-			initiatorPod, targetPod, channel.BindingStatusActive).
-		First(&binding).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrBindingNotFound
-		}
+	binding, err := s.repo.GetActive(ctx, initiatorPod, targetPod)
+	if err != nil {
 		return nil, err
 	}
-	return &binding, nil
+	if binding == nil {
+		return nil, ErrBindingNotFound
+	}
+	return binding, nil
 }
 
 // GetExistingBinding returns any existing binding (active or pending) between two pods
 func (s *Service) GetExistingBinding(ctx context.Context, initiatorPod, targetPod string) (*channel.PodBinding, error) {
-	var binding channel.PodBinding
-	if err := s.db.WithContext(ctx).
-		Where("initiator_pod = ? AND target_pod = ? AND status IN ?",
-			initiatorPod, targetPod, []string{channel.BindingStatusActive, channel.BindingStatusPending}).
-		First(&binding).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrBindingNotFound
-		}
+	binding, err := s.repo.GetExisting(ctx, initiatorPod, targetPod)
+	if err != nil {
 		return nil, err
 	}
-	return &binding, nil
+	if binding == nil {
+		return nil, ErrBindingNotFound
+	}
+	return binding, nil
 }
 
 // GetBindingsForPod returns all bindings for a pod (as initiator or target)
 func (s *Service) GetBindingsForPod(ctx context.Context, podKey string, status *string) ([]*channel.PodBinding, error) {
-	query := s.db.WithContext(ctx).
-		Where("initiator_pod = ? OR target_pod = ?", podKey, podKey)
-
-	if status != nil {
-		query = query.Where("status = ?", *status)
-	}
-
-	var bindings []*channel.PodBinding
-	if err := query.Order("created_at DESC").Find(&bindings).Error; err != nil {
-		return nil, err
-	}
-	return bindings, nil
+	return s.repo.ListForPod(ctx, podKey, status)
 }
 
 // GetBoundPods returns pod keys that are bound to a pod
@@ -150,14 +132,7 @@ func (s *Service) IsBound(ctx context.Context, podA, podB string) (bool, error) 
 
 // GetPendingRequests returns pending binding requests for a target pod
 func (s *Service) GetPendingRequests(ctx context.Context, targetPod string) ([]*channel.PodBinding, error) {
-	var bindings []*channel.PodBinding
-	if err := s.db.WithContext(ctx).
-		Where("target_pod = ? AND status = ?", targetPod, channel.BindingStatusPending).
-		Order("created_at ASC").
-		Find(&bindings).Error; err != nil {
-		return nil, err
-	}
-	return bindings, nil
+	return s.repo.ListPending(ctx, targetPod)
 }
 
 // HasScope checks if initiator has a specific scope on target

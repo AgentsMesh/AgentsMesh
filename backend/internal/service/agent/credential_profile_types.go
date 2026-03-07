@@ -6,7 +6,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
-	"gorm.io/gorm"
 )
 
 // Errors for CredentialProfileService
@@ -23,15 +22,15 @@ type AgentTypeProvider interface {
 
 // CredentialProfileService handles user credential profile operations
 type CredentialProfileService struct {
-	db               *gorm.DB
+	repo             agent.CredentialProfileRepository
 	agentTypeService AgentTypeProvider
 	encryptor        *crypto.Encryptor
 }
 
 // NewCredentialProfileService creates a new credential profile service
-func NewCredentialProfileService(db *gorm.DB, agentTypeService AgentTypeProvider, encryptor *crypto.Encryptor) *CredentialProfileService {
+func NewCredentialProfileService(repo agent.CredentialProfileRepository, agentTypeService AgentTypeProvider, encryptor *crypto.Encryptor) *CredentialProfileService {
 	return &CredentialProfileService{
-		db:               db,
+		repo:             repo,
 		agentTypeService: agentTypeService,
 		encryptor:        encryptor,
 	}

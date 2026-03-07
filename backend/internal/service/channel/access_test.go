@@ -8,7 +8,7 @@ import (
 
 func TestChannelAccess(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "access-test"})
@@ -71,18 +71,4 @@ func TestChannelAccess(t *testing.T) {
 			t.Errorf("TrackAccess update failed: %v", err)
 		}
 	})
-}
-
-func TestChannelPod_TableName(t *testing.T) {
-	cp := &ChannelPod{ID: 1, ChannelID: 2, PodKey: "test-pod", JoinedAt: time.Now()}
-	if cp.TableName() != "channel_pods" {
-		t.Errorf("TableName = %s, want channel_pods", cp.TableName())
-	}
-}
-
-func TestChannelAccess_TableName(t *testing.T) {
-	ca := &ChannelAccess{ID: 1, ChannelID: 2, PodKey: strPtr("test-pod"), LastAccess: time.Now()}
-	if ca.TableName() != "channel_access" {
-		t.Errorf("TableName = %s, want channel_access", ca.TableName())
-	}
 }

@@ -9,7 +9,7 @@ import (
 
 func TestCreateLabel(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	label, err := service.CreateLabel(ctx, 1, nil, "bug", "#FF0000")
@@ -27,7 +27,7 @@ func TestCreateLabel(t *testing.T) {
 
 func TestCreateDuplicateLabel(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create first label
@@ -42,7 +42,7 @@ func TestCreateDuplicateLabel(t *testing.T) {
 
 func TestListLabels(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create labels
@@ -63,7 +63,7 @@ func TestListLabels(t *testing.T) {
 
 func TestTicketWithAssignees(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create ticket with assignees
@@ -88,7 +88,7 @@ func TestTicketWithAssignees(t *testing.T) {
 
 func TestTicketWithLabels(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create labels
@@ -131,7 +131,7 @@ func TestUpdateStatus_Transitions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := setupTestDB(t)
-			service := NewService(db)
+			service := newTestService(db)
 			ctx := context.Background()
 
 			tkt, _ := service.CreateTicket(ctx, &CreateTicketRequest{

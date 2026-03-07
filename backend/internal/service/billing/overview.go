@@ -54,13 +54,10 @@ func (s *Service) GetBillingOverview(ctx context.Context, orgID int64) (*Billing
 	podMinutes, _ := s.GetUsage(ctx, orgID, billing.UsageTypePodMinutes)
 
 	// Count resources
-	var userCount, runnerCount, repoCount, concurrentPodCount int64
-	s.db.WithContext(ctx).Table("organization_members").Where("organization_id = ?", orgID).Count(&userCount)
-	s.db.WithContext(ctx).Table("runners").Where("organization_id = ?", orgID).Count(&runnerCount)
-	s.db.WithContext(ctx).Table("repositories").Where("organization_id = ?", orgID).Count(&repoCount)
-	s.db.WithContext(ctx).Table("pods").
-		Where("organization_id = ? AND status IN ?", orgID, []string{"running", "initializing"}).
-		Count(&concurrentPodCount)
+	userCount, _ := s.repo.CountOrgMembers(ctx, orgID)
+	runnerCount, _ := s.repo.CountRunners(ctx, orgID)
+	repoCount, _ := s.repo.CountRepositories(ctx, orgID)
+	concurrentPodCount, _ := s.repo.CountActivePods(ctx, orgID)
 
 	return &BillingOverview{
 		Plan:               plan,

@@ -3,7 +3,7 @@ package agent
 import (
 	"errors"
 
-	"gorm.io/gorm"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
 var (
@@ -13,10 +13,10 @@ var (
 
 // MessageService handles agent message operations
 type MessageService struct {
-	db *gorm.DB
+	repo agent.MessageRepository
 }
 
 // NewMessageService creates a new message service
-func NewMessageService(db *gorm.DB) *MessageService {
-	return &MessageService{db: db}
+func NewMessageService(repo agent.MessageRepository) *MessageService {
+	return &MessageService{repo: repo}
 }

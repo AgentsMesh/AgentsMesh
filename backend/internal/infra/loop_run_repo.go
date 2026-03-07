@@ -1,4 +1,4 @@
-package loop
+package infra
 
 import (
 	"context"
@@ -7,36 +7,37 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-// runRepository implements LoopRunRepository
-type runRepository struct {
+// loopRunRepo implements loop.LoopRunRepository using GORM
+type loopRunRepo struct {
 	db *gorm.DB
 }
 
 // NewLoopRunRepository creates a new loop run repository
-func NewLoopRunRepository(db *gorm.DB) LoopRunRepository {
-	return &runRepository{db: db}
+func NewLoopRunRepository(db *gorm.DB) loop.LoopRunRepository {
+	return &loopRunRepo{db: db}
 }
 
-func (r *runRepository) Create(ctx context.Context, run *LoopRun) error {
+func (r *loopRunRepo) Create(ctx context.Context, run *loop.LoopRun) error {
 	return r.db.WithContext(ctx).Create(run).Error
 }
 
-func (r *runRepository) GetByID(ctx context.Context, id int64) (*LoopRun, error) {
-	var run LoopRun
+func (r *loopRunRepo) GetByID(ctx context.Context, id int64) (*loop.LoopRun, error) {
+	var run loop.LoopRun
 	if err := r.db.WithContext(ctx).First(&run, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrNotFound
+			return nil, loop.ErrNotFound
 		}
 		return nil, err
 	}
 	return &run, nil
 }
 
-func (r *runRepository) List(ctx context.Context, filter *RunListFilter) ([]*LoopRun, int64, error) {
+func (r *loopRunRepo) List(ctx context.Context, filter *loop.RunListFilter) ([]*loop.LoopRun, int64, error) {
 	query := r.db.WithContext(ctx).Where("loop_id = ?", filter.LoopID)
 
 	// For finished runs, status in DB is authoritative — filter at DB level.
@@ -50,7 +51,7 @@ func (r *runRepository) List(ctx context.Context, filter *RunListFilter) ([]*Loo
 	}
 
 	var total int64
-	if err := query.Model(&LoopRun{}).Count(&total).Error; err != nil {
+	if err := query.Model(&loop.LoopRun{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -59,7 +60,7 @@ func (r *runRepository) List(ctx context.Context, filter *RunListFilter) ([]*Loo
 		limit = 20
 	}
 
-	var runs []*LoopRun
+	var runs []*loop.LoopRun
 	if err := query.Order("created_at DESC").
 		Limit(limit).
 		Offset(filter.Offset).
@@ -70,21 +71,19 @@ func (r *runRepository) List(ctx context.Context, filter *RunListFilter) ([]*Loo
 	return runs, total, nil
 }
 
-func (r *runRepository) Update(ctx context.Context, runID int64, updates map[string]interface{}) error {
+func (r *loopRunRepo) Update(ctx context.Context, runID int64, updates map[string]interface{}) error {
 	updates["updated_at"] = time.Now()
 	return r.db.WithContext(ctx).
-		Model(&LoopRun{}).
+		Model(&loop.LoopRun{}).
 		Where("id = ?", runID).
 		Updates(updates).Error
 }
 
 // FinishRun atomically marks a run as finished with optimistic locking.
-// Uses WHERE finished_at IS NULL to prevent double-processing from concurrent events.
-// Returns true if the row was updated, false if already finished (no-op).
-func (r *runRepository) FinishRun(ctx context.Context, runID int64, updates map[string]interface{}) (bool, error) {
+func (r *loopRunRepo) FinishRun(ctx context.Context, runID int64, updates map[string]interface{}) (bool, error) {
 	updates["updated_at"] = time.Now()
 	result := r.db.WithContext(ctx).
-		Model(&LoopRun{}).
+		Model(&loop.LoopRun{}).
 		Where("id = ? AND finished_at IS NULL", runID).
 		Updates(updates)
 	if result.Error != nil {
@@ -93,23 +92,23 @@ func (r *runRepository) FinishRun(ctx context.Context, runID int64, updates map[
 	return result.RowsAffected > 0, nil
 }
 
-func (r *runRepository) GetMaxRunNumber(ctx context.Context, loopID int64) (int, error) {
+func (r *loopRunRepo) GetMaxRunNumber(ctx context.Context, loopID int64) (int, error) {
 	var maxNumber int
 	err := r.db.WithContext(ctx).
-		Model(&LoopRun{}).
+		Model(&loop.LoopRun{}).
 		Where("loop_id = ?", loopID).
 		Select("COALESCE(MAX(run_number), 0)").
 		Scan(&maxNumber).Error
 	return maxNumber, err
 }
 
-func (r *runRepository) GetByAutopilotKey(ctx context.Context, autopilotKey string) (*LoopRun, error) {
-	var run LoopRun
+func (r *loopRunRepo) GetByAutopilotKey(ctx context.Context, autopilotKey string) (*loop.LoopRun, error) {
+	var run loop.LoopRun
 	if err := r.db.WithContext(ctx).
 		Where("autopilot_controller_key = ? AND finished_at IS NULL", autopilotKey).
 		First(&run).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrNotFound
+			return nil, loop.ErrNotFound
 		}
 		return nil, err
 	}
@@ -117,13 +116,7 @@ func (r *runRepository) GetByAutopilotKey(ctx context.Context, autopilotKey stri
 }
 
 // CountActiveRuns counts runs that are actually active, using Pod status as SSOT.
-//
-// A run is active if:
-//   - pod_key is NULL AND status = 'pending' (Pod not yet created)
-//   - pod_key is set AND the Pod is in an active state
-//
-// Terminated/completed Pods automatically free the concurrency slot.
-func (r *runRepository) CountActiveRuns(ctx context.Context, loopID int64) (int64, error) {
+func (r *loopRunRepo) CountActiveRuns(ctx context.Context, loopID int64) (int64, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
 		Table("loop_runs").
@@ -132,7 +125,7 @@ func (r *runRepository) CountActiveRuns(ctx context.Context, loopID int64) (int6
 		Where(
 			"(loop_runs.pod_key IS NULL AND loop_runs.status = ?) OR "+
 				"(loop_runs.pod_key IS NOT NULL AND pods.status IN ?)",
-			RunStatusPending,
+			loop.RunStatusPending,
 			agentpod.ActiveStatuses(),
 		).
 		Count(&count).Error
@@ -140,18 +133,14 @@ func (r *runRepository) CountActiveRuns(ctx context.Context, loopID int64) (int6
 }
 
 // GetActiveRunByPodKey finds an unfinished run by its pod key.
-//
-// Uses finished_at IS NULL as the guard instead of Pod status, because by the
-// time a Pod termination event fires, the Pod is already in a terminal state.
-// HandleRunCompleted sets finished_at to provide idempotency (prevents double processing).
-func (r *runRepository) GetActiveRunByPodKey(ctx context.Context, podKey string) (*LoopRun, error) {
-	var run LoopRun
+func (r *loopRunRepo) GetActiveRunByPodKey(ctx context.Context, podKey string) (*loop.LoopRun, error) {
+	var run loop.LoopRun
 	err := r.db.WithContext(ctx).
 		Where("pod_key = ? AND finished_at IS NULL", podKey).
 		First(&run).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrNotFound
+			return nil, loop.ErrNotFound
 		}
 		return nil, err
 	}
@@ -159,10 +148,8 @@ func (r *runRepository) GetActiveRunByPodKey(ctx context.Context, podKey string)
 }
 
 // GetTimedOutRuns returns running runs that have exceeded their timeout.
-func (r *runRepository) GetTimedOutRuns(ctx context.Context, orgIDs []int64) ([]*LoopRun, error) {
-	var runs []*LoopRun
-	// Active statuses excluding "disconnected" — a disconnected pod
-	// should not be considered "timed out" since it may reconnect.
+func (r *loopRunRepo) GetTimedOutRuns(ctx context.Context, orgIDs []int64) ([]*loop.LoopRun, error) {
+	var runs []*loop.LoopRun
 	timedOutEligible := []string{agentpod.StatusInitializing, agentpod.StatusRunning, agentpod.StatusPaused}
 	query := r.db.WithContext(ctx).
 		Table("loop_runs").
@@ -180,14 +167,8 @@ func (r *runRepository) GetTimedOutRuns(ctx context.Context, orgIDs []int64) ([]
 }
 
 // ComputeLoopStats computes run statistics from Pod status (SSOT).
-//
-// Optimized two-phase approach to avoid loading all runs into memory:
-// 1. Finished runs (finished_at IS NOT NULL): counted via SQL aggregation — their
-//    status in the DB is already authoritative (set by HandleRunCompleted/MarkRunTerminal).
-// 2. Active runs (finished_at IS NULL, pod_key IS NOT NULL): fetched individually
-//    and resolved via Go-side DeriveRunStatus for SSOT consistency.
-func (r *runRepository) ComputeLoopStats(ctx context.Context, loopID int64) (total, successful, failed int, err error) {
-	// Phase 1: Aggregate finished runs via SQL (O(1) memory, efficient for large histories)
+func (r *loopRunRepo) ComputeLoopStats(ctx context.Context, loopID int64) (total, successful, failed int, err error) {
+	// Phase 1: Aggregate finished runs via SQL
 	type finishedStats struct {
 		Total      int `gorm:"column:total"`
 		Successful int `gorm:"column:successful"`
@@ -200,7 +181,7 @@ func (r *runRepository) ComputeLoopStats(ctx context.Context, loopID int64) (tot
 			COUNT(*) as total,
 			COUNT(*) FILTER (WHERE status = ?) as successful,
 			COUNT(*) FILTER (WHERE status IN (?, ?, ?)) as failed
-		`, RunStatusCompleted, RunStatusFailed, RunStatusTimeout, RunStatusCancelled).
+		`, loop.RunStatusCompleted, loop.RunStatusFailed, loop.RunStatusTimeout, loop.RunStatusCancelled).
 		Where("loop_id = ? AND finished_at IS NOT NULL", loopID).
 		Scan(&fs).Error
 	if err != nil {
@@ -210,7 +191,7 @@ func (r *runRepository) ComputeLoopStats(ctx context.Context, loopID int64) (tot
 	successful = fs.Successful
 	failed = fs.Failed
 
-	// Phase 2: Resolve active runs via Go-side SSOT (small set — bounded by max_concurrent_runs)
+	// Phase 2: Resolve active runs via Go-side SSOT
 	type activeRunRow struct {
 		Status         string  `gorm:"column:status"`
 		PodKey         *string `gorm:"column:pod_key"`
@@ -244,13 +225,13 @@ func (r *runRepository) ComputeLoopStats(ctx context.Context, loopID int64) (tot
 			if row.AutopilotPhase != nil {
 				autopilotPhase = *row.AutopilotPhase
 			}
-			effectiveStatus = DeriveRunStatus(podStatus, autopilotPhase)
+			effectiveStatus = loop.DeriveRunStatus(podStatus, autopilotPhase)
 		}
 
 		switch effectiveStatus {
-		case RunStatusCompleted:
+		case loop.RunStatusCompleted:
 			successful++
-		case RunStatusFailed, RunStatusTimeout, RunStatusCancelled:
+		case loop.RunStatusFailed, loop.RunStatusTimeout, loop.RunStatusCancelled:
 			failed++
 		}
 	}
@@ -258,7 +239,7 @@ func (r *runRepository) ComputeLoopStats(ctx context.Context, loopID int64) (tot
 }
 
 // GetLatestPodKey returns the pod_key from the most recent run that has one.
-func (r *runRepository) GetLatestPodKey(ctx context.Context, loopID int64) *string {
+func (r *loopRunRepo) GetLatestPodKey(ctx context.Context, loopID int64) *string {
 	type result struct {
 		PodKey string `gorm:"column:pod_key"`
 	}
@@ -278,12 +259,12 @@ func (r *runRepository) GetLatestPodKey(ctx context.Context, loopID int64) *stri
 }
 
 // BatchGetPodStatuses returns Pod status info for a batch of pod keys.
-func (r *runRepository) BatchGetPodStatuses(ctx context.Context, podKeys []string) ([]PodStatusInfo, error) {
+func (r *loopRunRepo) BatchGetPodStatuses(ctx context.Context, podKeys []string) ([]loop.PodStatusInfo, error) {
 	if len(podKeys) == 0 {
 		return nil, nil
 	}
 
-	var results []PodStatusInfo
+	var results []loop.PodStatusInfo
 	err := r.db.WithContext(ctx).
 		Table("pods").
 		Select("pod_key, status, finished_at").
@@ -293,7 +274,7 @@ func (r *runRepository) BatchGetPodStatuses(ctx context.Context, podKeys []strin
 }
 
 // BatchGetAutopilotPhases returns autopilot phases for a batch of keys.
-func (r *runRepository) BatchGetAutopilotPhases(ctx context.Context, autopilotKeys []string) (map[string]string, error) {
+func (r *loopRunRepo) BatchGetAutopilotPhases(ctx context.Context, autopilotKeys []string) (map[string]string, error) {
 	if len(autopilotKeys) == 0 {
 		return nil, nil
 	}
@@ -319,11 +300,11 @@ func (r *runRepository) BatchGetAutopilotPhases(ctx context.Context, autopilotKe
 }
 
 // GetOrphanPendingRuns returns pending runs with no pod_key that are stuck for > 5 minutes.
-func (r *runRepository) GetOrphanPendingRuns(ctx context.Context, orgIDs []int64) ([]*LoopRun, error) {
-	var runs []*LoopRun
+func (r *loopRunRepo) GetOrphanPendingRuns(ctx context.Context, orgIDs []int64) ([]*loop.LoopRun, error) {
+	var runs []*loop.LoopRun
 	query := r.db.WithContext(ctx).
 		Where("pod_key IS NULL").
-		Where("status = ?", RunStatusPending).
+		Where("status = ?", loop.RunStatusPending).
 		Where("finished_at IS NULL").
 		Where("created_at < NOW() - INTERVAL '5 minutes'")
 	if len(orgIDs) > 0 {
@@ -334,7 +315,7 @@ func (r *runRepository) GetOrphanPendingRuns(ctx context.Context, orgIDs []int64
 }
 
 // CountActiveRunsByLoopIDs batch-counts active runs for multiple loops using Pod status (SSOT).
-func (r *runRepository) CountActiveRunsByLoopIDs(ctx context.Context, loopIDs []int64) (map[int64]int64, error) {
+func (r *loopRunRepo) CountActiveRunsByLoopIDs(ctx context.Context, loopIDs []int64) (map[int64]int64, error) {
 	if len(loopIDs) == 0 {
 		return nil, nil
 	}
@@ -352,7 +333,7 @@ func (r *runRepository) CountActiveRunsByLoopIDs(ctx context.Context, loopIDs []
 		Where(
 			"(loop_runs.pod_key IS NULL AND loop_runs.status = ?) OR "+
 				"(loop_runs.pod_key IS NOT NULL AND pods.status IN ?)",
-			RunStatusPending,
+			loop.RunStatusPending,
 			agentpod.ActiveStatuses(),
 		).
 		Group("loop_runs.loop_id").
@@ -369,7 +350,7 @@ func (r *runRepository) CountActiveRunsByLoopIDs(ctx context.Context, loopIDs []
 }
 
 // GetAvgDuration returns the average duration in seconds for completed runs of a loop.
-func (r *runRepository) GetAvgDuration(ctx context.Context, loopID int64) (*float64, error) {
+func (r *loopRunRepo) GetAvgDuration(ctx context.Context, loopID int64) (*float64, error) {
 	var avg *float64
 	err := r.db.WithContext(ctx).
 		Table("loop_runs").
@@ -380,14 +361,11 @@ func (r *runRepository) GetAvgDuration(ctx context.Context, loopID int64) (*floa
 }
 
 // DeleteOldFinishedRuns deletes finished runs exceeding the retention limit.
-// Keeps the most recent `keep` finished runs (by id DESC), deletes the rest.
-func (r *runRepository) DeleteOldFinishedRuns(ctx context.Context, loopID int64, keep int) (int64, error) {
+func (r *loopRunRepo) DeleteOldFinishedRuns(ctx context.Context, loopID int64, keep int) (int64, error) {
 	if keep <= 0 {
 		return 0, nil
 	}
 
-	// Delete finished runs that are outside the retention window.
-	// Uses a subquery to find the cutoff ID — runs with id <= cutoff are deleted.
 	result := r.db.WithContext(ctx).Exec(`
 		DELETE FROM loop_runs
 		WHERE loop_id = ? AND finished_at IS NOT NULL
@@ -406,131 +384,47 @@ func (r *runRepository) DeleteOldFinishedRuns(ctx context.Context, loopID int64,
 }
 
 // TriggerRunAtomic atomically creates a loop run within a FOR UPDATE transaction.
-// Handles concurrency check (SSOT via Pod JOIN), run number generation, and record creation.
-func (r *runRepository) TriggerRunAtomic(ctx context.Context, params *TriggerRunAtomicParams) (*TriggerRunAtomicResult, error) {
-	var result *TriggerRunAtomicResult
+func (r *loopRunRepo) TriggerRunAtomic(ctx context.Context, params *loop.TriggerRunAtomicParams) (*loop.TriggerRunAtomicResult, error) {
+	var result *loop.TriggerRunAtomicResult
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Lock the loop row with FOR UPDATE to serialize concurrent triggers
-		var loop Loop
+		var l loop.Loop
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			First(&loop, params.LoopID).Error; err != nil {
+			First(&l, params.LoopID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrNotFound
+				return loop.ErrNotFound
 			}
 			return fmt.Errorf("failed to get loop: %w", err)
 		}
 
-		if !loop.IsEnabled() {
-			return ErrLoopDisabled
+		if !l.IsEnabled() {
+			return loop.ErrLoopDisabled
 		}
 
 		// 2. Count active runs using Pod status (SSOT) — within the transaction
 		var activeCount int64
 		if err := tx.Table("loop_runs").
 			Joins("LEFT JOIN pods ON pods.pod_key = loop_runs.pod_key").
-			Where("loop_runs.loop_id = ?", loop.ID).
+			Where("loop_runs.loop_id = ?", l.ID).
 			Where(
 				"(loop_runs.pod_key IS NULL AND loop_runs.status = ?) OR "+
 					"(loop_runs.pod_key IS NOT NULL AND pods.status IN ?)",
-				RunStatusPending,
+				loop.RunStatusPending,
 				agentpod.ActiveStatuses(),
 			).
 			Count(&activeCount).Error; err != nil {
 			return fmt.Errorf("failed to count active runs: %w", err)
 		}
 
-		if activeCount >= int64(loop.MaxConcurrentRuns) {
-			switch loop.ConcurrencyPolicy {
-			case ConcurrencyPolicySkip:
-				// Create skipped run (still in transaction for atomic run_number)
-				var maxNumber int
-				tx.Model(&LoopRun{}).
-					Where("loop_id = ?", loop.ID).
-					Select("COALESCE(MAX(run_number), 0)").
-					Scan(&maxNumber)
-
-				now := time.Now()
-				skippedRun := &LoopRun{
-					OrganizationID: loop.OrganizationID,
-					LoopID:         loop.ID,
-					RunNumber:      maxNumber + 1,
-					Status:         RunStatusSkipped,
-					TriggerType:    params.TriggerType,
-					TriggerSource:  &params.TriggerSource,
-					FinishedAt:     &now, // Mark as finished so retention cleanup can cover it
-				}
-				if err := tx.Create(skippedRun).Error; err != nil {
-					return err
-				}
-				result = &TriggerRunAtomicResult{
-					Run:     skippedRun,
-					Loop:    &loop,
-					Skipped: true,
-					Reason:  "max concurrent runs reached",
-				}
-				return nil
-			case ConcurrencyPolicyQueue:
-				// Queue is not yet implemented — create a skipped run record
-				var qMaxNumber int
-				tx.Model(&LoopRun{}).
-					Where("loop_id = ?", loop.ID).
-					Select("COALESCE(MAX(run_number), 0)").
-					Scan(&qMaxNumber)
-				qNow := time.Now()
-				queuedRun := &LoopRun{
-					OrganizationID: loop.OrganizationID,
-					LoopID:         loop.ID,
-					RunNumber:      qMaxNumber + 1,
-					Status:         RunStatusSkipped,
-					TriggerType:    params.TriggerType,
-					TriggerSource:  &params.TriggerSource,
-					FinishedAt:     &qNow,
-				}
-				if err := tx.Create(queuedRun).Error; err != nil {
-					return err
-				}
-				result = &TriggerRunAtomicResult{
-					Run:     queuedRun,
-					Loop:    &loop,
-					Skipped: true,
-					Reason:  "queued (not yet implemented)",
-				}
-				return nil
-			case ConcurrencyPolicyReplace:
-				// Replace is not yet implemented — create a skipped run record
-				var rMaxNumber int
-				tx.Model(&LoopRun{}).
-					Where("loop_id = ?", loop.ID).
-					Select("COALESCE(MAX(run_number), 0)").
-					Scan(&rMaxNumber)
-				rNow := time.Now()
-				replacedRun := &LoopRun{
-					OrganizationID: loop.OrganizationID,
-					LoopID:         loop.ID,
-					RunNumber:      rMaxNumber + 1,
-					Status:         RunStatusSkipped,
-					TriggerType:    params.TriggerType,
-					TriggerSource:  &params.TriggerSource,
-					FinishedAt:     &rNow,
-				}
-				if err := tx.Create(replacedRun).Error; err != nil {
-					return err
-				}
-				result = &TriggerRunAtomicResult{
-					Run:     replacedRun,
-					Loop:    &loop,
-					Skipped: true,
-					Reason:  "replace (not yet implemented)",
-				}
-				return nil
-			}
+		if activeCount >= int64(l.MaxConcurrentRuns) {
+			return r.handleConcurrencyPolicy(tx, &l, params, &result)
 		}
 
 		// 3. Get next run number atomically (inside transaction with lock)
 		var maxNumber int
-		if err := tx.Model(&LoopRun{}).
-			Where("loop_id = ?", loop.ID).
+		if err := tx.Model(&loop.LoopRun{}).
+			Where("loop_id = ?", l.ID).
 			Select("COALESCE(MAX(run_number), 0)").
 			Scan(&maxNumber).Error; err != nil {
 			return fmt.Errorf("failed to get next run number: %w", err)
@@ -538,14 +432,14 @@ func (r *runRepository) TriggerRunAtomic(ctx context.Context, params *TriggerRun
 		runNumber := maxNumber + 1
 
 		// 4. Create the run record (status=pending, no pod_key yet)
-		resolvedPrompt := loop.PromptTemplate
+		resolvedPrompt := l.PromptTemplate
 		now := time.Now()
 
-		run := &LoopRun{
-			OrganizationID: loop.OrganizationID,
-			LoopID:         loop.ID,
+		run := &loop.LoopRun{
+			OrganizationID: l.OrganizationID,
+			LoopID:         l.ID,
 			RunNumber:      runNumber,
-			Status:         RunStatusPending,
+			Status:         loop.RunStatusPending,
 			TriggerType:    params.TriggerType,
 			TriggerSource:  &params.TriggerSource,
 			TriggerParams:  params.TriggerParams,
@@ -557,7 +451,7 @@ func (r *runRepository) TriggerRunAtomic(ctx context.Context, params *TriggerRun
 			return fmt.Errorf("failed to create loop run: %w", err)
 		}
 
-		result = &TriggerRunAtomicResult{Run: run, Loop: &loop}
+		result = &loop.TriggerRunAtomicResult{Run: run, Loop: &l}
 		return nil
 	})
 
@@ -567,3 +461,45 @@ func (r *runRepository) TriggerRunAtomic(ctx context.Context, params *TriggerRun
 
 	return result, nil
 }
+
+// handleConcurrencyPolicy handles concurrency policy when max concurrent runs is reached.
+func (r *loopRunRepo) handleConcurrencyPolicy(tx *gorm.DB, l *loop.Loop, params *loop.TriggerRunAtomicParams, result **loop.TriggerRunAtomicResult) error {
+	var maxNumber int
+	tx.Model(&loop.LoopRun{}).
+		Where("loop_id = ?", l.ID).
+		Select("COALESCE(MAX(run_number), 0)").
+		Scan(&maxNumber)
+
+	now := time.Now()
+	skippedRun := &loop.LoopRun{
+		OrganizationID: l.OrganizationID,
+		LoopID:         l.ID,
+		RunNumber:      maxNumber + 1,
+		Status:         loop.RunStatusSkipped,
+		TriggerType:    params.TriggerType,
+		TriggerSource:  &params.TriggerSource,
+		FinishedAt:     &now,
+	}
+	if err := tx.Create(skippedRun).Error; err != nil {
+		return err
+	}
+
+	reason := "max concurrent runs reached"
+	switch l.ConcurrencyPolicy {
+	case loop.ConcurrencyPolicyQueue:
+		reason = "queued (not yet implemented)"
+	case loop.ConcurrencyPolicyReplace:
+		reason = "replace (not yet implemented)"
+	}
+
+	*result = &loop.TriggerRunAtomicResult{
+		Run:     skippedRun,
+		Loop:    l,
+		Skipped: true,
+		Reason:  reason,
+	}
+	return nil
+}
+
+// Compile-time interface compliance check
+var _ loop.LoopRunRepository = (*loopRunRepo)(nil)

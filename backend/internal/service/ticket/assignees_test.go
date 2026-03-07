@@ -7,7 +7,7 @@ import (
 
 func TestUpdateAssignees(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create ticket with initial assignees
@@ -47,7 +47,7 @@ func TestUpdateAssignees(t *testing.T) {
 
 func TestAddRemoveAssignee(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	tkt, _ := service.CreateTicket(ctx, &CreateTicketRequest{
@@ -85,7 +85,7 @@ func TestAddRemoveAssignee(t *testing.T) {
 
 func TestAddRemoveLabel(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	label, _ := service.CreateLabel(ctx, 1, nil, "test-label", "#FF0000")
@@ -124,7 +124,7 @@ func TestAddRemoveLabel(t *testing.T) {
 
 func TestGetAssignees(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Insert test users (users table is created by setupTestDB)
@@ -150,7 +150,7 @@ func TestGetAssignees(t *testing.T) {
 
 func TestGetTicketLabels(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	label1, _ := service.CreateLabel(ctx, 1, nil, "bug", "#FF0000")
@@ -176,7 +176,7 @@ func TestGetTicketLabels(t *testing.T) {
 
 func TestGetChildTickets(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	parent, _ := service.CreateTicket(ctx, &CreateTicketRequest{
@@ -211,7 +211,7 @@ func TestGetChildTickets(t *testing.T) {
 
 func TestGetActiveTickets(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create tickets with different statuses
@@ -238,7 +238,7 @@ func TestGetActiveTickets(t *testing.T) {
 
 func TestGetTicketStats(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create a ticket to ensure the function can be called

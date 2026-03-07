@@ -11,7 +11,7 @@ import (
 
 func TestUpdateRunnerStatus(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -38,7 +38,7 @@ func TestUpdateRunnerStatus(t *testing.T) {
 
 func TestSetRunnerStatus(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -77,7 +77,7 @@ func TestSetRunnerStatus(t *testing.T) {
 
 func TestIsConnected(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	// Not connected initially
 	if service.IsConnected(1) {
@@ -94,7 +94,7 @@ func TestIsConnected(t *testing.T) {
 
 func TestMarkConnectedDisconnected(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -141,7 +141,7 @@ func TestMarkConnectedDisconnected(t *testing.T) {
 
 func TestSubscribeStatusChanges(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	unsubscribe, err := service.SubscribeStatusChanges(ctx, func(r *runner.Runner) {})
@@ -159,7 +159,7 @@ func TestSubscribeStatusChanges(t *testing.T) {
 
 func TestUpdateAvailableAgents(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -238,7 +238,7 @@ func TestUpdateAvailableAgents(t *testing.T) {
 
 func TestMergeAgentVersions(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	r := &runner.Runner{

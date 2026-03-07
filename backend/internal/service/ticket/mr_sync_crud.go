@@ -7,35 +7,29 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
-	"gorm.io/gorm"
 )
 
-// FindOrCreateMR finds or creates an MR record from git provider data
+// FindOrCreateMR finds or creates an MR record from git provider data.
 func (s *MRSyncService) FindOrCreateMR(ctx context.Context, orgID int64, t *ticket.Ticket, mrData *MRData, podID *int64) (*ticket.MergeRequest, error) {
 	if mrData.WebURL == "" {
 		return nil, errors.New("MR data must contain web URL")
 	}
 
 	// Try to find existing MR by URL
-	var existing ticket.MergeRequest
-	err := s.db.WithContext(ctx).
-		Where("mr_url = ?", mrData.WebURL).
-		First(&existing).Error
+	existing, err := s.repo.GetMRByURL(ctx, mrData.WebURL)
+	if err != nil {
+		return nil, err
+	}
 
-	if err == nil {
-		// Update existing record
-		s.updateMRFromData(&existing, mrData)
+	if existing != nil {
+		s.updateMRFromData(existing, mrData)
 		if podID != nil && existing.PodID == nil {
 			existing.PodID = podID
 		}
-		if err := s.db.WithContext(ctx).Save(&existing).Error; err != nil {
+		if err := s.repo.SaveMR(ctx, existing); err != nil {
 			return nil, err
 		}
-		return &existing, nil
-	}
-
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		return existing, nil
 	}
 
 	// Create new record
@@ -58,58 +52,32 @@ func (s *MRSyncService) FindOrCreateMR(ctx context.Context, orgID int64, t *tick
 		LastSyncedAt:   &now,
 	}
 
-	if err := s.db.WithContext(ctx).Create(mr).Error; err != nil {
+	if err := s.repo.CreateMR(ctx, mr); err != nil {
 		return nil, err
 	}
-
 	return mr, nil
 }
 
-// GetTicketMRs returns all MRs for a ticket
+// GetTicketMRs returns all MRs for a ticket.
 func (s *MRSyncService) GetTicketMRs(ctx context.Context, ticketID int64) ([]*ticket.MergeRequest, error) {
-	var mrs []*ticket.MergeRequest
-	if err := s.db.WithContext(ctx).
-		Where("ticket_id = ?", ticketID).
-		Order("created_at DESC").
-		Find(&mrs).Error; err != nil {
-		return nil, err
-	}
-	return mrs, nil
+	return s.repo.ListMRsByTicket(ctx, ticketID)
 }
 
-// GetPodMRs returns all MRs for a pod
+// GetPodMRs returns all MRs for a pod.
 func (s *MRSyncService) GetPodMRs(ctx context.Context, podID int64) ([]*ticket.MergeRequest, error) {
-	var mrs []*ticket.MergeRequest
-	if err := s.db.WithContext(ctx).
-		Where("pod_id = ?", podID).
-		Order("created_at DESC").
-		Find(&mrs).Error; err != nil {
-		return nil, err
-	}
-	return mrs, nil
+	return s.repo.ListMRsByPod(ctx, podID)
 }
 
-// FindTicketByBranch finds a ticket by branch name pattern within an organization
+// FindTicketByBranch finds a ticket by branch name pattern within an organization.
 func (s *MRSyncService) FindTicketByBranch(ctx context.Context, organizationID int64, branchName string) (*ticket.Ticket, error) {
 	match := ticketSlugRegex.FindString(branchName)
 	if match == "" {
 		return nil, nil
 	}
-
-	var t ticket.Ticket
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND slug = ?", organizationID, match).
-		First(&t).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &t, nil
+	return s.repo.FindTicketByOrgAndSlug(ctx, organizationID, match)
 }
 
-// updateMRFromData updates MR record from provider data
+// updateMRFromData updates MR record from provider data.
 func (s *MRSyncService) updateMRFromData(mr *ticket.MergeRequest, data *MRData) {
 	mr.Title = data.Title
 	mr.State = data.State
@@ -122,7 +90,7 @@ func (s *MRSyncService) updateMRFromData(mr *ticket.MergeRequest, data *MRData) 
 	mr.LastSyncedAt = &now
 }
 
-// buildMRData converts git provider MR to MRData
+// buildMRData converts git provider MR to MRData.
 func (s *MRSyncService) buildMRData(mr *git.MergeRequest) *MRData {
 	data := &MRData{
 		IID:          mr.IID,

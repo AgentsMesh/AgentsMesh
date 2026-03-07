@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 // ===========================================
@@ -13,7 +14,7 @@ import (
 
 func TestNewService_WebhookServiceNil(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 
 	// Initially, webhook service should be nil
 	ws := service.GetWebhookService()
@@ -24,10 +25,10 @@ func TestNewService_WebhookServiceNil(t *testing.T) {
 
 func TestSetWebhookService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	cfg := &config.Config{}
 
-	webhookService := NewWebhookService(db, cfg, nil, nil)
+	webhookService := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 
 	// Set webhook service
 	service.SetWebhookService(webhookService)
@@ -41,11 +42,11 @@ func TestSetWebhookService(t *testing.T) {
 
 func TestSetWebhookService_CanBeCalledMultipleTimes(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	cfg := &config.Config{}
 
 	// First webhook service
-	webhookService1 := NewWebhookService(db, cfg, nil, nil)
+	webhookService1 := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 	service.SetWebhookService(webhookService1)
 
 	ws1 := service.GetWebhookService()
@@ -54,7 +55,7 @@ func TestSetWebhookService_CanBeCalledMultipleTimes(t *testing.T) {
 	}
 
 	// Replace with second webhook service
-	webhookService2 := NewWebhookService(db, cfg, nil, nil)
+	webhookService2 := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 	service.SetWebhookService(webhookService2)
 
 	ws2 := service.GetWebhookService()
@@ -68,11 +69,11 @@ func TestSetWebhookService_CanBeCalledMultipleTimes(t *testing.T) {
 
 func TestSetWebhookService_NilValue(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	cfg := &config.Config{}
 
 	// Set a webhook service first
-	webhookService := NewWebhookService(db, cfg, nil, nil)
+	webhookService := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 	service.SetWebhookService(webhookService)
 
 	ws := service.GetWebhookService()
@@ -91,10 +92,10 @@ func TestSetWebhookService_NilValue(t *testing.T) {
 
 func TestGetWebhookService_ReturnsInterface(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	cfg := &config.Config{}
 
-	webhookService := NewWebhookService(db, cfg, nil, nil)
+	webhookService := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 	service.SetWebhookService(webhookService)
 
 	// GetWebhookService returns WebhookServiceInterface
@@ -113,7 +114,7 @@ func TestGetWebhookService_ReturnsInterface(t *testing.T) {
 
 func TestCreateWithWebhook_NoWebhookService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db) // No webhook service set
+	service := NewService(infra.NewGitProviderRepository(db)) // No webhook service set
 
 	userID := int64(1)
 	req := &CreateRequest{
@@ -149,10 +150,10 @@ func TestCreateWithWebhook_NoWebhookService(t *testing.T) {
 
 func TestCreateWithWebhook_NoUserID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	cfg := &config.Config{}
 
-	webhookService := NewWebhookService(db, cfg, nil, nil)
+	webhookService := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 	service.SetWebhookService(webhookService)
 
 	req := &CreateRequest{
@@ -185,12 +186,12 @@ func TestCreateWithWebhook_NoUserID(t *testing.T) {
 
 func TestCreateWithWebhook_WithWebhookService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	cfg := &config.Config{}
 	cfg.PrimaryDomain = "app.example.com"
 	cfg.UseHTTPS = true
 
-	webhookService := NewWebhookService(db, cfg, nil, nil)
+	webhookService := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 	service.SetWebhookService(webhookService)
 
 	userID := int64(1)

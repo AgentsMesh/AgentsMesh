@@ -76,18 +76,18 @@ func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
 
 func TestNewCredentialProfileService(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
 
 	assert.NotNil(t, svc)
-	assert.Equal(t, db, svc.db)
+	assert.NotNil(t, svc.repo)
 	assert.Equal(t, agentTypeSvc, svc.agentTypeService)
 }
 
 func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -190,8 +190,8 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 
 func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -237,8 +237,8 @@ func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
 
 func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -367,8 +367,8 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 
 func TestCredentialProfileService_DeleteCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType

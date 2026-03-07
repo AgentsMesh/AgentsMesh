@@ -15,7 +15,7 @@ import (
 
 func TestHandleSubscriptionPaused(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -57,7 +57,7 @@ func TestHandleSubscriptionPaused(t *testing.T) {
 
 func TestHandleSubscriptionResumed(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

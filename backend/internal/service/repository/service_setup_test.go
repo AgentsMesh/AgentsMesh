@@ -3,6 +3,7 @@ package repository
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -84,11 +85,18 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	repo := infra.NewGitProviderRepository(db)
+	service := NewService(repo)
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
 	}
+}
+
+func setupTestService(t *testing.T) (*Service, *gorm.DB) {
+	db := setupTestDB(t)
+	repo := infra.NewGitProviderRepository(db)
+	return NewService(repo), db
 }
 
 func TestErrorVariables(t *testing.T) {

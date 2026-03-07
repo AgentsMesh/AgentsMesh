@@ -56,19 +56,16 @@ func setupMessageTestDB(t *testing.T) *gorm.DB {
 
 func TestNewMessageService(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 
 	if svc == nil {
 		t.Error("NewMessageService returned nil")
-	}
-	if svc.db != db {
-		t.Error("Service db not set correctly")
 	}
 }
 
 func TestSendMessage(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	t.Run("send basic message", func(t *testing.T) {
@@ -132,7 +129,7 @@ func TestSendMessage(t *testing.T) {
 
 func TestGetMessage(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	content := agent.MessageContent{"text": "test"}

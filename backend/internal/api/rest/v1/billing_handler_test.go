@@ -6,13 +6,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/gin-gonic/gin"
 )
 
 func TestNewBillingHandler(t *testing.T) {
 	db := setupBillingTestDB(t)
-	billingSvc := billing.NewService(db, "")
+	billingSvc := billing.NewService(infra.NewBillingRepository(db), "")
 
 	handler := NewBillingHandler(billingSvc)
 

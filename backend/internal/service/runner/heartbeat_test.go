@@ -12,7 +12,7 @@ import (
 
 func TestHeartbeat(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -47,7 +47,7 @@ func TestHeartbeat(t *testing.T) {
 
 func TestUpdateHeartbeatWithPods(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -79,7 +79,7 @@ func TestUpdateHeartbeatWithPods(t *testing.T) {
 
 func TestUpdateHeartbeatWithPodsNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	err := service.UpdateHeartbeatWithPods(ctx, 99999, nil, "1.0.0")
@@ -90,7 +90,7 @@ func TestUpdateHeartbeatWithPodsNotFound(t *testing.T) {
 
 func TestMarkOfflineRunners(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly

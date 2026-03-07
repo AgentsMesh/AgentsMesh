@@ -29,7 +29,7 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*us
 
 	// Update last login
 	now := time.Now()
-	s.db.WithContext(ctx).Model(u).Update("last_login_at", now)
+	_ = s.repo.UpdateUserField(ctx, u.ID, "last_login_at", now)
 
 	return u, nil
 }
@@ -44,20 +44,17 @@ func (s *Service) SetEmailVerificationToken(ctx context.Context, userID int64) (
 
 	expiresAt := time.Now().Add(24 * time.Hour)
 
-	err = s.db.WithContext(ctx).Model(&user.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+	err = s.repo.UpdateUser(ctx, userID, map[string]interface{}{
 		"email_verification_token":      token,
 		"email_verification_expires_at": expiresAt,
-	}).Error
+	})
 
 	return token, err
 }
 
 // VerifyEmail verifies a user's email using the verification token
 func (s *Service) VerifyEmail(ctx context.Context, token string) (*user.User, error) {
-	var u user.User
-	err := s.db.WithContext(ctx).
-		Where("email_verification_token = ?", token).
-		First(&u).Error
+	u, err := s.repo.GetByVerificationToken(ctx, token)
 	if err != nil {
 		return nil, ErrInvalidVerificationToken
 	}
@@ -73,17 +70,17 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) (*user.User, er
 	}
 
 	// Mark as verified and clear token
-	err = s.db.WithContext(ctx).Model(&u).Updates(map[string]interface{}{
+	err = s.repo.UpdateUser(ctx, u.ID, map[string]interface{}{
 		"is_email_verified":             true,
 		"email_verification_token":      nil,
 		"email_verification_expires_at": nil,
-	}).Error
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	u.IsEmailVerified = true
-	return &u, nil
+	return u, nil
 }
 
 // SetPasswordResetToken generates and sets a password reset token for the user
@@ -101,20 +98,17 @@ func (s *Service) SetPasswordResetToken(ctx context.Context, email string) (stri
 
 	expiresAt := time.Now().Add(1 * time.Hour)
 
-	err = s.db.WithContext(ctx).Model(u).Updates(map[string]interface{}{
+	err = s.repo.UpdateUser(ctx, u.ID, map[string]interface{}{
 		"password_reset_token":      token,
 		"password_reset_expires_at": expiresAt,
-	}).Error
+	})
 
 	return token, u, err
 }
 
 // ResetPassword resets the user's password using the reset token
 func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) (*user.User, error) {
-	var u user.User
-	err := s.db.WithContext(ctx).
-		Where("password_reset_token = ?", token).
-		First(&u).Error
+	u, err := s.repo.GetByResetToken(ctx, token)
 	if err != nil {
 		return nil, ErrInvalidResetToken
 	}
@@ -131,23 +125,23 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 	}
 
 	// Update password and clear reset token
-	err = s.db.WithContext(ctx).Model(&u).Updates(map[string]interface{}{
+	err = s.repo.UpdateUser(ctx, u.ID, map[string]interface{}{
 		"password_hash":             string(hash),
 		"password_reset_token":      nil,
 		"password_reset_expires_at": nil,
-	}).Error
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &u, nil
+	return u, nil
 }
 
 // GetByVerificationToken returns a user by their verification token
 func (s *Service) GetByVerificationToken(ctx context.Context, token string) (*user.User, error) {
-	var u user.User
-	if err := s.db.WithContext(ctx).Where("email_verification_token = ?", token).First(&u).Error; err != nil {
+	u, err := s.repo.GetByVerificationToken(ctx, token)
+	if err != nil {
 		return nil, ErrInvalidVerificationToken
 	}
-	return &u, nil
+	return u, nil
 }

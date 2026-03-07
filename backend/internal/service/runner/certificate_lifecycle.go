@@ -23,8 +23,11 @@ type RenewCertificateResponse struct {
 // Called when certificate is about to expire (within 30 days).
 func (s *Service) RenewCertificate(ctx context.Context, nodeID, oldSerial string, pkiService interfaces.PKICertificateIssuer) (*RenewCertificateResponse, error) {
 	// Find runner by node_id
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).Where("node_id = ?", nodeID).First(&r).Error; err != nil {
+	r, err := s.repo.GetByNodeID(ctx, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
 		return nil, ErrRunnerNotFound
 	}
 
@@ -34,31 +37,22 @@ func (s *Service) RenewCertificate(ctx context.Context, nodeID, oldSerial string
 	}
 
 	// Get org slug
-	var org struct {
-		Slug string
+	orgSlug, err := s.repo.GetOrgSlug(ctx, r.OrganizationID)
+	if err != nil {
+		return nil, err
 	}
-	if err := s.db.WithContext(ctx).Table("organizations").
-		Select("slug").
-		Where("id = ?", r.OrganizationID).
-		First(&org).Error; err != nil {
+	if orgSlug == "" {
 		return nil, fmt.Errorf("organization not found")
 	}
 
 	// Issue new certificate
-	certInfo, err := pkiService.IssueRunnerCertificate(nodeID, org.Slug)
+	certInfo, err := pkiService.IssueRunnerCertificate(nodeID, orgSlug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to issue certificate: %w", err)
 	}
 
-	// Revoke old certificate (best-effort: old cert may not exist in DB for legacy runners)
-	now := time.Now()
-	reason := "renewed"
-	if err := s.db.WithContext(ctx).Model(&runner.Certificate{}).
-		Where("serial_number = ?", oldSerial).
-		Updates(map[string]interface{}{
-			"revoked_at":        now,
-			"revocation_reason": reason,
-		}).Error; err != nil {
+	// Revoke old certificate (best-effort)
+	if err := s.repo.RevokeCertificate(ctx, oldSerial, "renewed"); err != nil {
 		slog.Warn("Failed to revoke old certificate during renewal",
 			"node_id", nodeID, "old_serial", oldSerial, "error", err)
 	}
@@ -71,24 +65,19 @@ func (s *Service) RenewCertificate(ctx context.Context, nodeID, oldSerial string
 		IssuedAt:     certInfo.IssuedAt,
 		ExpiresAt:    certInfo.ExpiresAt,
 	}
-	if err := s.db.WithContext(ctx).Create(cert).Error; err != nil {
+	if err := s.repo.CreateCertificate(ctx, cert); err != nil {
 		return nil, fmt.Errorf("failed to save certificate: %w", err)
 	}
 
 	// Update runner (CAS: only succeeds if cert_serial_number still matches oldSerial).
-	// This serializes concurrent renewals — at most one wins. The loser's issued cert
-	// remains in the certificates table but is never referenced by the runner (harmless orphan).
-	updateResult := s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("id = ? AND cert_serial_number = ?", r.ID, oldSerial).
-		Updates(map[string]interface{}{
-			"cert_serial_number": certInfo.SerialNumber,
-			"cert_expires_at":    certInfo.ExpiresAt,
-		})
-	if updateResult.Error != nil {
-		return nil, fmt.Errorf("failed to update runner: %w", updateResult.Error)
+	rowsAffected, err := s.repo.UpdateFieldsCAS(ctx, r.ID, "cert_serial_number", oldSerial, map[string]interface{}{
+		"cert_serial_number": certInfo.SerialNumber,
+		"cert_expires_at":    certInfo.ExpiresAt,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update runner: %w", err)
 	}
-	if updateResult.RowsAffected == 0 {
-		// Another concurrent renewal already completed; discard this duplicate.
+	if rowsAffected == 0 {
 		slog.Warn("Concurrent certificate renewal detected, discarding duplicate",
 			"node_id", nodeID, "orphaned_serial", certInfo.SerialNumber)
 		return nil, ErrCertificateMismatch
@@ -105,19 +94,16 @@ func (s *Service) RenewCertificate(ctx context.Context, nodeID, oldSerial string
 
 // RevokeCertificate revokes a runner's certificate.
 func (s *Service) RevokeCertificate(ctx context.Context, serialNumber, reason string) error {
-	now := time.Now()
-	return s.db.WithContext(ctx).Model(&runner.Certificate{}).
-		Where("serial_number = ?", serialNumber).
-		Updates(map[string]interface{}{
-			"revoked_at":        now,
-			"revocation_reason": reason,
-		}).Error
+	return s.repo.RevokeCertificate(ctx, serialNumber, reason)
 }
 
 // IsCertificateRevoked checks if a certificate is revoked.
 func (s *Service) IsCertificateRevoked(ctx context.Context, serialNumber string) (bool, error) {
-	var cert runner.Certificate
-	if err := s.db.WithContext(ctx).Where("serial_number = ?", serialNumber).First(&cert).Error; err != nil {
+	cert, err := s.repo.GetCertificateBySerial(ctx, serialNumber)
+	if err != nil {
+		return false, err
+	}
+	if cert == nil {
 		// Certificate not found in DB - not revoked (might be legacy)
 		return false, nil
 	}

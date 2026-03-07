@@ -7,6 +7,7 @@ import (
 
 	userDomain "github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/user"
 )
 
@@ -59,7 +60,7 @@ func TestGetGitProviderForUser_PrefersBotToken(t *testing.T) {
 
 	// Create service with mock - note: we can't directly inject mockUserService
 	// because WebhookService expects *user.Service. This test validates the logic flow.
-	svc := NewWebhookService(db, nil, nil, nil)
+	svc := NewWebhookService(infra.NewGitProviderRepository(db), nil, nil, nil)
 	_ = svc
 
 	repo := &gitprovider.Repository{

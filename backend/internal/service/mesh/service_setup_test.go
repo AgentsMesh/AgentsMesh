@@ -3,6 +3,8 @@ package mesh
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/mesh"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -73,6 +75,12 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	)`)
 
 	return db
+}
+
+func setupTestRepo(t *testing.T) (mesh.MeshRepository, *gorm.DB) {
+	db := setupTestDB(t)
+	repo := infra.NewMeshRepository(db)
+	return repo, db
 }
 
 // ChannelPod for testing (local type to avoid import cycle)

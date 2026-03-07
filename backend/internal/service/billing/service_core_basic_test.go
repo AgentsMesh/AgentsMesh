@@ -13,7 +13,7 @@ import (
 
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
@@ -25,7 +25,7 @@ func TestNewService(t *testing.T) {
 
 func TestNewServiceWithStripeKey(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "sk_test_fake_key")
+	service := NewService(newTestRepo(db), "sk_test_fake_key")
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
@@ -54,7 +54,7 @@ func TestNewServiceWithConfig(t *testing.T) {
 	db := setupTestDB(t)
 
 	// Test with nil config
-	service := NewServiceWithConfig(db, nil)
+	service := NewServiceWithConfig(newTestRepo(db), nil)
 	if service == nil {
 		t.Fatal("expected non-nil service")
 	}
@@ -67,7 +67,7 @@ func TestNewServiceWithConfig(t *testing.T) {
 		DeploymentType: config.DeploymentGlobal,
 		MockEnabled:    true,
 	})
-	service = NewServiceWithConfig(db, appCfg)
+	service = NewServiceWithConfig(newTestRepo(db), appCfg)
 	if service == nil {
 		t.Fatal("expected non-nil service")
 	}
@@ -79,7 +79,7 @@ func TestNewServiceWithConfig(t *testing.T) {
 func TestGetPaymentFactory(t *testing.T) {
 	db := setupTestDB(t)
 	appCfg := testConfigWithPayment(&config.PaymentConfig{MockEnabled: true})
-	service := NewServiceWithConfig(db, appCfg)
+	service := NewServiceWithConfig(newTestRepo(db), appCfg)
 
 	factory := service.GetPaymentFactory()
 	if factory == nil {
@@ -89,7 +89,7 @@ func TestGetPaymentFactory(t *testing.T) {
 
 func TestCreateStripeCustomerDisabled(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	customerID, err := service.CreateStripeCustomer(ctx, 1, "test@example.com", "Test Org")
@@ -105,7 +105,7 @@ func TestGetDeploymentInfo(t *testing.T) {
 	db := setupTestDB(t)
 
 	// Without config
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	info := service.GetDeploymentInfo()
 	if info.DeploymentType != "global" {
 		t.Errorf("expected 'global', got %s", info.DeploymentType)
@@ -116,7 +116,7 @@ func TestGetDeploymentInfo(t *testing.T) {
 		DeploymentType: config.DeploymentCN,
 		MockEnabled:    true,
 	})
-	service = NewServiceWithConfig(db, appCfg)
+	service = NewServiceWithConfig(newTestRepo(db), appCfg)
 	info = service.GetDeploymentInfo()
 	if info.DeploymentType != "cn" {
 		t.Errorf("expected 'cn', got %s", info.DeploymentType)
@@ -152,7 +152,7 @@ func TestNewServiceWithConfigStripe(t *testing.T) {
 			SecretKey: "sk_test_fake",
 		},
 	})
-	service := NewServiceWithConfig(db, appCfg)
+	service := NewServiceWithConfig(newTestRepo(db), appCfg)
 	if service == nil {
 		t.Fatal("expected non-nil service")
 	}

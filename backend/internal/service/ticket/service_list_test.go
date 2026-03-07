@@ -9,7 +9,7 @@ import (
 
 func TestListTickets(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create multiple tickets
@@ -45,7 +45,7 @@ func TestListTickets(t *testing.T) {
 
 func TestListTicketsWithFilter(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create tickets with different statuses
@@ -94,7 +94,7 @@ func TestListTicketsWithFilter(t *testing.T) {
 // TestListTickets_Filters covers various filter combinations
 func TestListTickets_Filters(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Setup: Create tickets with varied properties

@@ -10,7 +10,7 @@ import (
 
 func TestSendMessage(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	created, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "msg-test"})
@@ -40,7 +40,7 @@ func TestSendMessage(t *testing.T) {
 
 func TestGetMessages(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "msgs-test"})
@@ -79,7 +79,7 @@ func TestGetMessages(t *testing.T) {
 
 func TestEnhancedMessageService(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "enhanced"})
@@ -123,7 +123,7 @@ func TestEnhancedMessageService(t *testing.T) {
 
 func TestSendMessage_WithEventBus(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	ch, err := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "test-channel"})

@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"gorm.io/gorm"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
 // NewService creates a new license service
-func NewService(db *gorm.DB, cfg *config.LicenseConfig, logger *slog.Logger) (*Service, error) {
+func NewService(repo billing.LicenseRepository, cfg *config.LicenseConfig, logger *slog.Logger) (*Service, error) {
 	svc := &Service{
-		db:     db,
+		repo:   repo,
 		cfg:    cfg,
 		logger: logger,
 	}

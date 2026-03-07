@@ -8,7 +8,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 var (
@@ -24,19 +23,19 @@ var (
 
 // Service handles user operations
 type Service struct {
-	db            *gorm.DB
+	repo          user.Repository
 	encryptionKey string
 }
 
 // NewService creates a new user service
-func NewService(db *gorm.DB) *Service {
-	return &Service{db: db}
+func NewService(repo user.Repository) *Service {
+	return &Service{repo: repo}
 }
 
 // NewServiceWithEncryption creates a new user service with encryption support
-func NewServiceWithEncryption(db *gorm.DB, encryptionKey string) *Service {
+func NewServiceWithEncryption(repo user.Repository, encryptionKey string) *Service {
 	return &Service{
-		db:            db,
+		repo:          repo,
 		encryptionKey: encryptionKey,
 	}
 }
@@ -57,13 +56,20 @@ type CreateRequest struct {
 // Create creates a new user
 func (s *Service) Create(ctx context.Context, req *CreateRequest) (*user.User, error) {
 	// Check if email already exists
-	var existing user.User
-	if err := s.db.WithContext(ctx).Where("email = ?", req.Email).First(&existing).Error; err == nil {
+	exists, err := s.repo.EmailExists(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, ErrEmailAlreadyExists
 	}
 
 	// Check if username already exists
-	if err := s.db.WithContext(ctx).Where("username = ?", req.Username).First(&existing).Error; err == nil {
+	exists, err = s.repo.UsernameExists(ctx, req.Username)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, ErrUsernameExists
 	}
 
@@ -89,7 +95,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*user.User, e
 		u.PasswordHash = &passwordHash
 	}
 
-	if err := s.db.WithContext(ctx).Create(u).Error; err != nil {
+	if err := s.repo.CreateUser(ctx, u); err != nil {
 		return nil, err
 	}
 
@@ -98,34 +104,34 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*user.User, e
 
 // GetByID returns a user by ID
 func (s *Service) GetByID(ctx context.Context, id int64) (*user.User, error) {
-	var u user.User
-	if err := s.db.WithContext(ctx).First(&u, id).Error; err != nil {
+	u, err := s.repo.GetByID(ctx, id)
+	if err != nil {
 		return nil, ErrUserNotFound
 	}
-	return &u, nil
+	return u, nil
 }
 
 // GetByEmail returns a user by email
 func (s *Service) GetByEmail(ctx context.Context, email string) (*user.User, error) {
-	var u user.User
-	if err := s.db.WithContext(ctx).Where("email = ?", email).First(&u).Error; err != nil {
+	u, err := s.repo.GetByEmail(ctx, email)
+	if err != nil {
 		return nil, ErrUserNotFound
 	}
-	return &u, nil
+	return u, nil
 }
 
 // GetByUsername returns a user by username
 func (s *Service) GetByUsername(ctx context.Context, username string) (*user.User, error) {
-	var u user.User
-	if err := s.db.WithContext(ctx).Where("username = ?", username).First(&u).Error; err != nil {
+	u, err := s.repo.GetByUsername(ctx, username)
+	if err != nil {
 		return nil, ErrUserNotFound
 	}
-	return &u, nil
+	return u, nil
 }
 
 // Update updates a user
 func (s *Service) Update(ctx context.Context, id int64, updates map[string]interface{}) (*user.User, error) {
-	if err := s.db.WithContext(ctx).Model(&user.User{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+	if err := s.repo.UpdateUser(ctx, id, updates); err != nil {
 		return nil, err
 	}
 	return s.GetByID(ctx, id)
@@ -137,22 +143,17 @@ func (s *Service) UpdatePassword(ctx context.Context, id int64, password string)
 	if err != nil {
 		return err
 	}
-	return s.db.WithContext(ctx).Model(&user.User{}).Where("id = ?", id).Update("password_hash", string(hash)).Error
+	return s.repo.UpdateUserField(ctx, id, "password_hash", string(hash))
 }
 
 // Delete deletes a user
 func (s *Service) Delete(ctx context.Context, id int64) error {
-	return s.db.WithContext(ctx).Delete(&user.User{}, id).Error
+	return s.repo.DeleteUser(ctx, id)
 }
 
 // Search searches for users
 func (s *Service) Search(ctx context.Context, query string, limit int) ([]*user.User, error) {
-	var users []*user.User
-	err := s.db.WithContext(ctx).
-		Where("username ILIKE ? OR name ILIKE ? OR email ILIKE ?", "%"+query+"%", "%"+query+"%", "%"+query+"%").
-		Limit(limit).
-		Find(&users).Error
-	return users, err
+	return s.repo.SearchUsers(ctx, query, limit)
 }
 
 // generateToken generates a random token

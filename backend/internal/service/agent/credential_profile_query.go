@@ -6,17 +6,11 @@ import (
 	"fmt"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"gorm.io/gorm"
 )
 
 // ListCredentialProfiles returns all credential profiles for a user, grouped by agent type
 func (s *CredentialProfileService) ListCredentialProfiles(ctx context.Context, userID int64) ([]*agent.CredentialProfilesByAgentType, error) {
-	var profiles []*agent.UserAgentCredentialProfile
-	err := s.db.WithContext(ctx).
-		Preload("AgentType").
-		Where("user_id = ? AND is_active = ?", userID, true).
-		Order("agent_type_id, is_default DESC, name").
-		Find(&profiles).Error
+	profiles, err := s.repo.ListActiveWithAgentType(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -50,29 +44,19 @@ func (s *CredentialProfileService) ListCredentialProfiles(ctx context.Context, u
 
 // ListCredentialProfilesForAgentType returns all credential profiles for a specific agent type
 func (s *CredentialProfileService) ListCredentialProfilesForAgentType(ctx context.Context, userID, agentTypeID int64) ([]*agent.UserAgentCredentialProfile, error) {
-	var profiles []*agent.UserAgentCredentialProfile
-	err := s.db.WithContext(ctx).
-		Preload("AgentType").
-		Where("user_id = ? AND agent_type_id = ? AND is_active = ?", userID, agentTypeID, true).
-		Order("is_default DESC, name").
-		Find(&profiles).Error
-	return profiles, err
+	return s.repo.ListByAgentType(ctx, userID, agentTypeID)
 }
 
 // GetDefaultCredentialProfile returns the default credential profile for a user and agent type
 func (s *CredentialProfileService) GetDefaultCredentialProfile(ctx context.Context, userID, agentTypeID int64) (*agent.UserAgentCredentialProfile, error) {
-	var profile agent.UserAgentCredentialProfile
-	err := s.db.WithContext(ctx).
-		Preload("AgentType").
-		Where("user_id = ? AND agent_type_id = ? AND is_default = ? AND is_active = ?", userID, agentTypeID, true, true).
-		First(&profile).Error
+	profile, err := s.repo.GetDefault(ctx, userID, agentTypeID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrCredentialProfileNotFound
-		}
 		return nil, err
 	}
-	return &profile, nil
+	if profile == nil {
+		return nil, ErrCredentialProfileNotFound
+	}
+	return profile, nil
 }
 
 // GetEffectiveCredentialsForPod returns the credentials to be injected for a pod.

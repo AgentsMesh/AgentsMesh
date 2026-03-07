@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -49,7 +50,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 // newTestService creates a Service with an in-memory DB and nil redis
 func newTestService(t *testing.T) (*Service, *gorm.DB) {
 	db := setupTestDB(t)
-	svc := NewService(db, nil)
+	svc := NewService(infra.NewAPIKeyRepository(db), nil)
 	return svc, db
 }
 

@@ -13,7 +13,7 @@ func TestPodCoordinatorCreatePod(t *testing.T) {
 	// Note: This test verifies the CreatePod flow when a proper command sender is available.
 	// We use a mock command sender to test the coordinator logic.
 	logger := newTestLogger()
-	db, cm, tr, hb := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a runner and add connection
 	r := &runner.Runner{
@@ -32,7 +32,7 @@ func TestPodCoordinatorCreatePod(t *testing.T) {
 	rc.SetInitialized(true, []string{"claude"})
 
 	// Create coordinator and set mock command sender that succeeds
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 	mockSender := &MockCommandSender{}
 	pc.SetCommandSender(mockSender)
 	ctx := context.Background()
@@ -67,7 +67,7 @@ func TestPodCoordinatorCreatePod(t *testing.T) {
 func TestPodCoordinatorCreatePodWithoutCommandSender(t *testing.T) {
 	// Test that CreatePod returns error when commandSender is not set
 	logger := newTestLogger()
-	db, cm, tr, hb := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -81,7 +81,7 @@ func TestPodCoordinatorCreatePodWithoutCommandSender(t *testing.T) {
 	}
 
 	// Create coordinator WITHOUT setting command sender
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	cmd := &runnerv1.CreatePodCommand{
@@ -100,7 +100,7 @@ func TestPodCoordinatorTerminatePod(t *testing.T) {
 	// SQLite doesn't support GREATEST, so this test only verifies key functionality
 	// The actual decrement functionality works in PostgreSQL
 	logger := newTestLogger()
-	db, cm, tr, hb := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -126,7 +126,7 @@ func TestPodCoordinatorTerminatePod(t *testing.T) {
 	rc.SetInitialized(true, []string{"claude"})
 
 	// Create coordinator with mock command sender
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 	mockSender := &MockCommandSender{}
 	pc.SetCommandSender(mockSender)
 	ctx := context.Background()
@@ -148,9 +148,9 @@ func TestPodCoordinatorTerminatePod(t *testing.T) {
 
 func TestPodCoordinatorTerminatePodNotFound(t *testing.T) {
 	logger := newTestLogger()
-	db, cm, tr, hb := setupPodCoordinatorDeps(t)
+	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Try to terminate non-existent pod

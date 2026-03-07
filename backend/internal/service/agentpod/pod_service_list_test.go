@@ -9,7 +9,7 @@ import (
 
 func TestListPods(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create multiple pods
@@ -95,7 +95,7 @@ func TestListPods(t *testing.T) {
 
 func TestListActivePods(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create pods with different statuses
@@ -127,7 +127,7 @@ func TestListActivePods(t *testing.T) {
 
 func TestListByRunner(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create pods
@@ -166,7 +166,7 @@ func TestListByRunner(t *testing.T) {
 
 func TestListByTicket(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	ticketID := int64(100)
@@ -191,7 +191,7 @@ func TestListByTicket(t *testing.T) {
 
 func TestGetPodsByTicket(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	ticketID := int64(42)

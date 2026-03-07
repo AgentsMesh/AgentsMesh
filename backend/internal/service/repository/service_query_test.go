@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 // ===========================================
@@ -11,7 +13,7 @@ import (
 
 func TestListByOrganization(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	req1 := &CreateRequest{
@@ -49,7 +51,7 @@ func TestListByOrganization(t *testing.T) {
 
 func TestGetByExternalID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -75,7 +77,7 @@ func TestGetByExternalID(t *testing.T) {
 
 func TestGetByExternalIDNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	_, err := service.GetByExternalID(ctx, "github", "https://github.com", "nonexistent")
@@ -86,7 +88,7 @@ func TestGetByExternalIDNotFound(t *testing.T) {
 
 func TestGetCloneURL(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	t.Run("repository with clone URL", func(t *testing.T) {
@@ -121,7 +123,7 @@ func TestGetCloneURL(t *testing.T) {
 
 func TestGetNextTicketNumber(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	// Create tickets table for testing
@@ -179,7 +181,7 @@ func TestGetNextTicketNumber(t *testing.T) {
 
 func TestSyncFromProviderNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	_, err := service.SyncFromProvider(ctx, 99999, "access_token")
@@ -190,7 +192,7 @@ func TestSyncFromProviderNotFound(t *testing.T) {
 
 func TestListBranchesNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
 
 	_, err := service.ListBranches(ctx, 99999, "access_token")

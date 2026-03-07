@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/pki"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"gorm.io/driver/sqlite"
@@ -322,6 +323,11 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 
 	return db
+}
+
+// newTestService creates a Service backed by an in-memory DB for testing.
+func newTestService(db *gorm.DB) *Service {
+	return NewService(infra.NewRunnerRepository(db))
 }
 
 // testOrg represents a test organization

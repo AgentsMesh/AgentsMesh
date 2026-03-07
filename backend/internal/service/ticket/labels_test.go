@@ -7,7 +7,7 @@ import (
 
 func TestLabel_CRUD(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("create and get", func(t *testing.T) {
@@ -57,7 +57,7 @@ func TestLabel_CRUD(t *testing.T) {
 
 func TestLabel_Errors(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -89,7 +89,7 @@ func TestLabel_Errors(t *testing.T) {
 
 func TestDeleteLabel_NoError(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// DeleteLabel should not error even if label doesn't exist
@@ -101,7 +101,7 @@ func TestDeleteLabel_NoError(t *testing.T) {
 
 func TestListLabels_WithRepositoryScope(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Org-level label

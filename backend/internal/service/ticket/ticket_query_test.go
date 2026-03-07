@@ -8,7 +8,7 @@ import (
 
 func TestGetTicketByIDOrSlug(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create tickets in org 1

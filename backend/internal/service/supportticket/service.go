@@ -14,7 +14,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/supportticket"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 var (
@@ -31,15 +30,15 @@ var (
 
 // Service handles support ticket operations
 type Service struct {
-	db      *gorm.DB
+	repo    supportticket.Repository
 	storage storage.Storage
 	config  config.StorageConfig
 }
 
 // NewService creates a new support ticket service
-func NewService(db *gorm.DB, storage storage.Storage, cfg config.StorageConfig) *Service {
+func NewService(repo supportticket.Repository, storage storage.Storage, cfg config.StorageConfig) *Service {
 	return &Service{
-		db:      db,
+		repo:    repo,
 		storage: storage,
 		config:  cfg,
 	}
@@ -107,7 +106,6 @@ type Stats struct {
 
 // Create creates a new support ticket with an initial message
 func (s *Service) Create(ctx context.Context, userID int64, req *CreateRequest) (*supportticket.SupportTicket, error) {
-	// Validate category
 	category := req.Category
 	if category == "" {
 		category = supportticket.CategoryOther
@@ -116,7 +114,6 @@ func (s *Service) Create(ctx context.Context, userID int64, req *CreateRequest) 
 		return nil, ErrInvalidCategory
 	}
 
-	// Validate priority
 	priority := req.Priority
 	if priority == "" {
 		priority = supportticket.PriorityMedium
@@ -125,62 +122,36 @@ func (s *Service) Create(ctx context.Context, userID int64, req *CreateRequest) 
 		return nil, ErrInvalidPriority
 	}
 
-	var ticket supportticket.SupportTicket
-
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Create ticket
-		ticket = supportticket.SupportTicket{
-			UserID:   userID,
-			Title:    req.Title,
-			Category: category,
-			Status:   supportticket.StatusOpen,
-			Priority: priority,
-		}
-		if err := tx.Create(&ticket).Error; err != nil {
-			return fmt.Errorf("failed to create ticket: %w", err)
-		}
-
-		// Create initial message
-		if req.Content != "" {
-			msg := supportticket.SupportTicketMessage{
-				TicketID:     ticket.ID,
-				UserID:       userID,
-				Content:      req.Content,
-				IsAdminReply: false,
-			}
-			if err := tx.Create(&msg).Error; err != nil {
-				return fmt.Errorf("failed to create initial message: %w", err)
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	ticket := supportticket.SupportTicket{
+		UserID:   userID,
+		Title:    req.Title,
+		Category: category,
+		Status:   supportticket.StatusOpen,
+		Priority: priority,
 	}
 
+	var msg *supportticket.SupportTicketMessage
+	if req.Content != "" {
+		msg = &supportticket.SupportTicketMessage{
+			UserID:       userID,
+			Content:      req.Content,
+			IsAdminReply: false,
+		}
+	}
+
+	if err := s.repo.CreateTicketWithMessage(ctx, &ticket, msg); err != nil {
+		return nil, fmt.Errorf("failed to create ticket: %w", err)
+	}
 	return &ticket, nil
 }
 
 // ListByUser returns paginated tickets for a specific user
 func (s *Service) ListByUser(ctx context.Context, userID int64, query *ListQuery) (*ListResponse, error) {
 	page, pageSize := normalizePagination(query.Page, query.PageSize)
+	offset := (page - 1) * pageSize
 
-	db := s.db.WithContext(ctx).Where("user_id = ?", userID)
-	if query.Status != "" {
-		db = db.Where("status = ?", query.Status)
-	}
-
-	var total int64
-	if err := db.Model(&supportticket.SupportTicket{}).Count(&total).Error; err != nil {
-		return nil, fmt.Errorf("failed to count tickets: %w", err)
-	}
-
-	var tickets []supportticket.SupportTicket
-	if err := db.Order("created_at DESC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
-		Find(&tickets).Error; err != nil {
+	tickets, total, err := s.repo.ListByUser(ctx, userID, query.Status, pageSize, offset)
+	if err != nil {
 		return nil, fmt.Errorf("failed to list tickets: %w", err)
 	}
 
@@ -195,22 +166,18 @@ func (s *Service) ListByUser(ctx context.Context, userID int64, query *ListQuery
 
 // GetByID returns a ticket by ID, verifying user ownership
 func (s *Service) GetByID(ctx context.Context, id, userID int64) (*supportticket.SupportTicket, error) {
-	var ticket supportticket.SupportTicket
-	err := s.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", id, userID).
-		First(&ticket).Error
+	ticket, err := s.repo.GetByIDAndUser(ctx, id, userID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrTicketNotFound
-		}
 		return nil, err
 	}
-	return &ticket, nil
+	if ticket == nil {
+		return nil, ErrTicketNotFound
+	}
+	return ticket, nil
 }
 
 // AddMessage adds a user message to a ticket
 func (s *Service) AddMessage(ctx context.Context, ticketID, userID int64, req *AddMessageRequest) (*supportticket.SupportTicketMessage, error) {
-	// Verify ticket ownership
 	if _, err := s.GetByID(ctx, ticketID, userID); err != nil {
 		return nil, err
 	}
@@ -222,38 +189,18 @@ func (s *Service) AddMessage(ctx context.Context, ticketID, userID int64, req *A
 		IsAdminReply: false,
 	}
 
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(msg).Error; err != nil {
-			return fmt.Errorf("failed to create message: %w", err)
-		}
-
-		// Reopen if resolved/closed
-		if err := tx.Model(&supportticket.SupportTicket{}).
-			Where("id = ? AND status IN ?", ticketID, []string{supportticket.StatusResolved, supportticket.StatusClosed}).
-			Updates(map[string]interface{}{
-				"status":     supportticket.StatusOpen,
-				"updated_at": time.Now(),
-			}).Error; err != nil {
-			return fmt.Errorf("failed to reopen ticket: %w", err)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	if err := s.repo.AddMessageAndReopen(ctx, msg, ticketID); err != nil {
+		return nil, fmt.Errorf("failed to add message: %w", err)
 	}
-
 	return msg, nil
 }
 
 // ListMessages returns all messages for a ticket (user-side, verifies ownership)
 func (s *Service) ListMessages(ctx context.Context, ticketID, userID int64) ([]supportticket.SupportTicketMessage, error) {
-	// Verify ticket ownership
 	if _, err := s.GetByID(ctx, ticketID, userID); err != nil {
 		return nil, err
 	}
-
-	return s.listMessagesByTicketID(ctx, ticketID)
+	return s.repo.ListMessagesByTicketID(ctx, ticketID)
 }
 
 // UploadAttachment uploads a file attachment and associates it with a ticket/message
@@ -262,21 +209,17 @@ func (s *Service) UploadAttachment(ctx context.Context, ticketID, userID int64, 
 		return nil, ErrStorageError
 	}
 
-	// Verify ticket exists
-	var ticket supportticket.SupportTicket
-	err := s.db.WithContext(ctx).First(&ticket, ticketID).Error
+	ticket, err := s.repo.GetTicketByID(ctx, ticketID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrTicketNotFound
-		}
 		return nil, err
 	}
-	// For regular users, verify ownership; admin users bypass this check
+	if ticket == nil {
+		return nil, ErrTicketNotFound
+	}
 	if ticket.UserID != userID && !isAdmin {
 		return nil, ErrAccessDenied
 	}
 
-	// Validate file size using config (fallback to 10MB)
 	maxSize := s.config.MaxFileSize * 1024 * 1024
 	if maxSize <= 0 {
 		maxSize = 10 * 1024 * 1024
@@ -285,7 +228,6 @@ func (s *Service) UploadAttachment(ctx context.Context, ticketID, userID int64, 
 		return nil, ErrFileTooLarge
 	}
 
-	// Generate storage key: support-tickets/{user_id}/{year}/{month}/{uuid}.{ext}
 	ext := path.Ext(req.FileName)
 	if ext == "" {
 		ext = ".bin"
@@ -294,12 +236,10 @@ func (s *Service) UploadAttachment(ctx context.Context, ticketID, userID int64, 
 	storageKey := fmt.Sprintf("support-tickets/%d/%d/%02d/%s%s",
 		userID, now.Year(), now.Month(), uuid.New().String(), ext)
 
-	// Upload to storage
 	if _, err := s.storage.Upload(ctx, storageKey, req.Reader, req.Size, req.ContentType); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrStorageError, err)
 	}
 
-	// Create attachment record
 	attachment := &supportticket.SupportTicketAttachment{
 		TicketID:     ticketID,
 		MessageID:    messageID,
@@ -309,8 +249,7 @@ func (s *Service) UploadAttachment(ctx context.Context, ticketID, userID int64, 
 		MimeType:     req.ContentType,
 		Size:         req.Size,
 	}
-	if err := s.db.WithContext(ctx).Create(attachment).Error; err != nil {
-		// Cleanup uploaded file on DB error
+	if err := s.repo.CreateAttachment(ctx, attachment); err != nil {
 		if delErr := s.storage.Delete(ctx, storageKey); delErr != nil {
 			slog.Warn("failed to cleanup uploaded file after DB error", "storage_key", storageKey, "error", delErr)
 		}
@@ -326,19 +265,19 @@ func (s *Service) GetAttachmentURL(ctx context.Context, attachmentID, userID int
 		return "", ErrStorageError
 	}
 
-	var attachment supportticket.SupportTicketAttachment
-	err := s.db.WithContext(ctx).First(&attachment, attachmentID).Error
+	attachment, err := s.repo.GetAttachmentByID(ctx, attachmentID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", ErrAttachmentNotFound
-		}
 		return "", err
 	}
+	if attachment == nil {
+		return "", ErrAttachmentNotFound
+	}
 
-	// Verify user has access (owns the ticket)
-	var ticket supportticket.SupportTicket
-	err = s.db.WithContext(ctx).First(&ticket, attachment.TicketID).Error
+	ticket, err := s.repo.GetTicketByID(ctx, attachment.TicketID)
 	if err != nil {
+		return "", err
+	}
+	if ticket == nil {
 		return "", ErrTicketNotFound
 	}
 	if ticket.UserID != userID {
@@ -353,33 +292,10 @@ func (s *Service) GetAttachmentURL(ctx context.Context, attachmentID, userID int
 // AdminList returns paginated tickets for admin (all users)
 func (s *Service) AdminList(ctx context.Context, query *AdminListQuery) (*ListResponse, error) {
 	page, pageSize := normalizePagination(query.Page, query.PageSize)
+	offset := (page - 1) * pageSize
 
-	db := s.db.WithContext(ctx).Model(&supportticket.SupportTicket{})
-	db = db.Preload("User").Preload("AssignedAdmin")
-
-	if query.Search != "" {
-		db = db.Where("title ILIKE ?", "%"+query.Search+"%")
-	}
-	if query.Status != "" {
-		db = db.Where("status = ?", query.Status)
-	}
-	if query.Category != "" {
-		db = db.Where("category = ?", query.Category)
-	}
-	if query.Priority != "" {
-		db = db.Where("priority = ?", query.Priority)
-	}
-
-	var total int64
-	if err := db.Count(&total).Error; err != nil {
-		return nil, fmt.Errorf("failed to count tickets: %w", err)
-	}
-
-	var tickets []supportticket.SupportTicket
-	if err := db.Order("created_at DESC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
-		Find(&tickets).Error; err != nil {
+	tickets, total, err := s.repo.AdminList(ctx, query.Search, query.Status, query.Category, query.Priority, pageSize, offset)
+	if err != nil {
 		return nil, fmt.Errorf("failed to list tickets: %w", err)
 	}
 
@@ -394,28 +310,23 @@ func (s *Service) AdminList(ctx context.Context, query *AdminListQuery) (*ListRe
 
 // AdminGetByID returns a ticket by ID (no ownership check)
 func (s *Service) AdminGetByID(ctx context.Context, id int64) (*supportticket.SupportTicket, error) {
-	var ticket supportticket.SupportTicket
-	err := s.db.WithContext(ctx).
-		Preload("User").
-		Preload("AssignedAdmin").
-		First(&ticket, id).Error
+	ticket, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrTicketNotFound
-		}
 		return nil, err
 	}
-	return &ticket, nil
+	if ticket == nil {
+		return nil, ErrTicketNotFound
+	}
+	return ticket, nil
 }
 
 // AdminListMessages returns all messages for a ticket (admin, no ownership check)
 func (s *Service) AdminListMessages(ctx context.Context, ticketID int64) ([]supportticket.SupportTicketMessage, error) {
-	return s.listMessagesByTicketID(ctx, ticketID)
+	return s.repo.ListMessagesByTicketID(ctx, ticketID)
 }
 
 // AdminAddReply adds an admin reply to a ticket
 func (s *Service) AdminAddReply(ctx context.Context, ticketID, adminUserID int64, req *AddMessageRequest) (*supportticket.SupportTicketMessage, error) {
-	// Verify ticket exists
 	if _, err := s.AdminGetByID(ctx, ticketID); err != nil {
 		return nil, err
 	}
@@ -427,27 +338,9 @@ func (s *Service) AdminAddReply(ctx context.Context, ticketID, adminUserID int64
 		IsAdminReply: true,
 	}
 
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(msg).Error; err != nil {
-			return fmt.Errorf("failed to create admin reply: %w", err)
-		}
-
-		// Auto-transition from open to in_progress when admin first replies
-		if err := tx.Model(&supportticket.SupportTicket{}).
-			Where("id = ? AND status = ?", ticketID, supportticket.StatusOpen).
-			Updates(map[string]interface{}{
-				"status":     supportticket.StatusInProgress,
-				"updated_at": time.Now(),
-			}).Error; err != nil {
-			return fmt.Errorf("failed to transition ticket status: %w", err)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	if err := s.repo.AddAdminReplyAndTransition(ctx, msg, ticketID); err != nil {
+		return nil, fmt.Errorf("failed to create admin reply: %w", err)
 	}
-
 	return msg, nil
 }
 
@@ -457,21 +350,18 @@ func (s *Service) AdminUpdateStatus(ctx context.Context, ticketID int64, status 
 		return ErrInvalidStatus
 	}
 
-	// Fetch current ticket to validate transition
-	var ticket supportticket.SupportTicket
-	if err := s.db.WithContext(ctx).First(&ticket, ticketID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrTicketNotFound
-		}
+	ticket, err := s.repo.GetTicketByID(ctx, ticketID)
+	if err != nil {
 		return fmt.Errorf("failed to get ticket: %w", err)
 	}
+	if ticket == nil {
+		return ErrTicketNotFound
+	}
 
-	// Same status is a no-op
 	if ticket.Status == status {
 		return nil
 	}
 
-	// Validate transition
 	allowed, ok := supportticket.ValidTransitions[ticket.Status]
 	if !ok || !allowed[status] {
 		return ErrInvalidTransition
@@ -481,22 +371,16 @@ func (s *Service) AdminUpdateStatus(ctx context.Context, ticketID int64, status 
 		"status":     status,
 		"updated_at": time.Now(),
 	}
-	// Only set resolved_at on first resolution (don't overwrite)
 	if status == supportticket.StatusResolved && ticket.ResolvedAt == nil {
 		now := time.Now()
 		updates["resolved_at"] = &now
 	}
 
-	// Optimistic lock: WHERE includes current status to prevent race conditions
-	result := s.db.WithContext(ctx).
-		Model(&supportticket.SupportTicket{}).
-		Where("id = ? AND status = ?", ticketID, ticket.Status).
-		Updates(updates)
-	if result.Error != nil {
-		return fmt.Errorf("failed to update ticket status: %w", result.Error)
+	rowsAffected, err := s.repo.UpdateStatus(ctx, ticketID, ticket.Status, status, updates)
+	if err != nil {
+		return fmt.Errorf("failed to update ticket status: %w", err)
 	}
-	if result.RowsAffected == 0 {
-		// Status was concurrently changed by another request
+	if rowsAffected == 0 {
 		return ErrInvalidTransition
 	}
 	return nil
@@ -504,17 +388,11 @@ func (s *Service) AdminUpdateStatus(ctx context.Context, ticketID int64, status 
 
 // AdminAssign assigns a ticket to an admin
 func (s *Service) AdminAssign(ctx context.Context, ticketID, adminUserID int64) error {
-	result := s.db.WithContext(ctx).
-		Model(&supportticket.SupportTicket{}).
-		Where("id = ?", ticketID).
-		Updates(map[string]interface{}{
-			"assigned_admin_id": adminUserID,
-			"updated_at":        time.Now(),
-		})
-	if result.Error != nil {
-		return fmt.Errorf("failed to assign ticket: %w", result.Error)
+	rowsAffected, err := s.repo.AssignAdmin(ctx, ticketID, adminUserID)
+	if err != nil {
+		return fmt.Errorf("failed to assign ticket: %w", err)
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrTicketNotFound
 	}
 	return nil
@@ -524,21 +402,20 @@ func (s *Service) AdminAssign(ctx context.Context, ticketID, adminUserID int64) 
 func (s *Service) AdminGetStats(ctx context.Context) (*Stats, error) {
 	stats := &Stats{}
 
-	// Each query must use a fresh db session to avoid Where condition accumulation
-	model := &supportticket.SupportTicket{}
-	if err := s.db.WithContext(ctx).Model(model).Count(&stats.Total).Error; err != nil {
+	var err error
+	if stats.Total, err = s.repo.CountByStatus(ctx, ""); err != nil {
 		return nil, err
 	}
-	if err := s.db.WithContext(ctx).Model(model).Where("status = ?", supportticket.StatusOpen).Count(&stats.Open).Error; err != nil {
+	if stats.Open, err = s.repo.CountByStatus(ctx, supportticket.StatusOpen); err != nil {
 		return nil, err
 	}
-	if err := s.db.WithContext(ctx).Model(model).Where("status = ?", supportticket.StatusInProgress).Count(&stats.InProgress).Error; err != nil {
+	if stats.InProgress, err = s.repo.CountByStatus(ctx, supportticket.StatusInProgress); err != nil {
 		return nil, err
 	}
-	if err := s.db.WithContext(ctx).Model(model).Where("status = ?", supportticket.StatusResolved).Count(&stats.Resolved).Error; err != nil {
+	if stats.Resolved, err = s.repo.CountByStatus(ctx, supportticket.StatusResolved); err != nil {
 		return nil, err
 	}
-	if err := s.db.WithContext(ctx).Model(model).Where("status = ?", supportticket.StatusClosed).Count(&stats.Closed).Error; err != nil {
+	if stats.Closed, err = s.repo.CountByStatus(ctx, supportticket.StatusClosed); err != nil {
 		return nil, err
 	}
 
@@ -551,33 +428,18 @@ func (s *Service) AdminGetAttachmentURL(ctx context.Context, attachmentID int64)
 		return "", ErrStorageError
 	}
 
-	var attachment supportticket.SupportTicketAttachment
-	err := s.db.WithContext(ctx).First(&attachment, attachmentID).Error
+	attachment, err := s.repo.GetAttachmentByID(ctx, attachmentID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", ErrAttachmentNotFound
-		}
 		return "", err
+	}
+	if attachment == nil {
+		return "", ErrAttachmentNotFound
 	}
 
 	return s.storage.GetURL(ctx, attachment.StorageKey, 1*time.Hour)
 }
 
 // --- Internal helpers ---
-
-func (s *Service) listMessagesByTicketID(ctx context.Context, ticketID int64) ([]supportticket.SupportTicketMessage, error) {
-	var messages []supportticket.SupportTicketMessage
-	err := s.db.WithContext(ctx).
-		Where("ticket_id = ?", ticketID).
-		Preload("User").
-		Preload("Attachments").
-		Order("created_at ASC").
-		Find(&messages).Error
-	if err != nil {
-		return nil, fmt.Errorf("failed to list messages: %w", err)
-	}
-	return messages, nil
-}
 
 func normalizePagination(page, pageSize int) (int, int) {
 	if page < 1 {

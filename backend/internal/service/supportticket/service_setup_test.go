@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -90,7 +91,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func createTestService(t *testing.T) (*Service, *gorm.DB) {
 	db := setupTestDB(t)
-	service := NewService(db, nil, config.StorageConfig{})
+	repo := infra.NewSupportTicketRepository(db)
+	service := NewService(repo, nil, config.StorageConfig{})
 	return service, db
 }
 
@@ -107,7 +109,8 @@ func createTestUser(t *testing.T, db *gorm.DB, userID int64, email string) {
 
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil, config.StorageConfig{})
+	repo := infra.NewSupportTicketRepository(db)
+	service := NewService(repo, nil, config.StorageConfig{})
 
 	if service == nil {
 		t.Fatal("expected non-nil service")

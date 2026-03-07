@@ -11,6 +11,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	domain "github.com/anthropics/agentsmesh/backend/internal/domain/supportticket"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"gorm.io/gorm"
 )
@@ -56,7 +57,8 @@ func (m *mockStorage) Exists(_ context.Context, _ string) (bool, error) {
 
 func createServiceWithStorage(t *testing.T, stor *mockStorage, cfg config.StorageConfig) (*Service, *gorm.DB) {
 	db := setupTestDB(t)
-	service := NewService(db, stor, cfg)
+	repo := infra.NewSupportTicketRepository(db)
+	service := NewService(repo, stor, cfg)
 	return service, db
 }
 

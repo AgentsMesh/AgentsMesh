@@ -285,7 +285,7 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 	// If autopilot mode, create AutopilotController via the encapsulated service method
 	if loop.IsAutopilot() && o.autopilotSvc != nil {
 		var err error
-		autopilotKey, err = o.startAutopilot(loop, run, pod, resolvedPrompt)
+		autopilotKey, err = o.startAutopilot(ctx, loop, run, pod, resolvedPrompt)
 		if err != nil {
 			o.logger.Error("autopilot creation failed, terminating Pod",
 				"run_id", run.ID, "pod_key", pod.PodKey, "error", err)
@@ -314,11 +314,11 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 
 // startAutopilot delegates Autopilot creation to AutopilotControllerService.CreateAndStart.
 // Returns the autopilot controller key and any error.
-func (o *LoopOrchestrator) startAutopilot(loop *loopDomain.Loop, run *loopDomain.LoopRun, pod *agentpod.Pod, resolvedPrompt string) (string, error) {
+func (o *LoopOrchestrator) startAutopilot(ctx context.Context, loop *loopDomain.Loop, run *loopDomain.LoopRun, pod *agentpod.Pod, resolvedPrompt string) (string, error) {
 	// Extract autopilot config via typed struct (all zeros → domain defaults apply)
 	apCfg := loop.ParseAutopilotConfig()
 
-	controller, err := o.autopilotSvc.CreateAndStart(&agentpodSvc.CreateAndStartRequest{
+	controller, err := o.autopilotSvc.CreateAndStart(ctx, &agentpodSvc.CreateAndStartRequest{
 		OrganizationID:      loop.OrganizationID,
 		Pod:                 pod,
 		InitialPrompt:       resolvedPrompt,

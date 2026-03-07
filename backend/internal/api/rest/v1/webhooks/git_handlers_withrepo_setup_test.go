@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -55,7 +56,8 @@ func createTestRouterForWithRepo(t *testing.T, cfg *config.Config) (*WebhookRout
 	registry := NewHandlerRegistry(logger)
 	SetupDefaultHandlers(registry, logger)
 
-	repoSvc := repository.NewService(db)
+	repoRepo := infra.NewGitProviderRepository(db)
+	repoSvc := repository.NewService(repoRepo)
 
 	return &WebhookRouter{
 		db:          db,

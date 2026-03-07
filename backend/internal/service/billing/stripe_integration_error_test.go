@@ -91,7 +91,7 @@ func TestStripeIntegration_ErrorHandling(t *testing.T) {
 	db := setupStripeIntegrationTestDB(t)
 	seedStripeIntegrationTestPlan(t, db)
 
-	svc := NewService(db, stripeKey)
+	svc := NewService(newTestRepo(db), stripeKey)
 	ctx := context.Background()
 
 	// Create subscription first

@@ -9,7 +9,7 @@ import (
 
 // TestIntegrationPaymentFailedNoOrder tests payment failed with no order
 func TestIntegrationPaymentFailedNoOrder(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	c, _ := createTestGinContext()
 
 	// Event for non-existent order (not a recurring payment)

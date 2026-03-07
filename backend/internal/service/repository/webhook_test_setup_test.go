@@ -5,6 +5,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -55,9 +56,10 @@ func setupWebhookTestDB(t *testing.T) *gorm.DB {
 
 func createTestWebhookService(t *testing.T) (*WebhookService, *gorm.DB) {
 	db := setupWebhookTestDB(t)
+	repo := infra.NewGitProviderRepository(db)
 	cfg := &config.Config{}
 	// Note: userService is nil - tests that need it should mock appropriately
-	svc := NewWebhookService(db, cfg, nil, nil)
+	svc := NewWebhookService(repo, cfg, nil, nil)
 	return svc, db
 }
 

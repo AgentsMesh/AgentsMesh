@@ -11,7 +11,7 @@ import (
 
 func TestSetEventBus(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 
 	// Test that SetEventBus doesn't panic with nil
 	svc.SetEventBus(nil)
@@ -22,7 +22,7 @@ func TestSetEventBus(t *testing.T) {
 
 func TestSendMessage_EventBusIntegration(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	eb := eventbus.NewEventBus(nil, newTestLogger())
@@ -76,7 +76,7 @@ func TestSendMessage_EventBusIntegration(t *testing.T) {
 
 func TestSendMessage_EventBusIntegration_MultipleMessages(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	eb := eventbus.NewEventBus(nil, newTestLogger())
@@ -113,7 +113,7 @@ func TestSendMessage_EventBusIntegration_MultipleMessages(t *testing.T) {
 
 func TestSendMessage_ArchivedChannel_NoEvent(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "archived-channel"})

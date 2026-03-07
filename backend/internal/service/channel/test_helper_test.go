@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -100,4 +101,9 @@ func intPtr(i int64) *int64 {
 
 func strPtr(s string) *string {
 	return &s
+}
+
+// newTestService creates a channel Service backed by an in-memory DB for testing.
+func newTestService(db *gorm.DB) *Service {
+	return NewService(infra.NewChannelRepository(db))
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
@@ -86,7 +87,7 @@ func createTestPaymentRouter(cfg *config.Config) (*WebhookRouter, *gorm.DB) {
 	SetupDefaultHandlers(registry, logger)
 
 	// Create billing service without payment factory (will be nil)
-	billingSvc := billing.NewService(db, "")
+	billingSvc := billing.NewService(infra.NewBillingRepository(db), "")
 
 	return &WebhookRouter{
 		db:             db,
@@ -245,7 +246,7 @@ func TestNewWebhookRouterWithBillingSvc(t *testing.T) {
 	db := setupTestDBForPayment(nil)
 	logger := testLoggerForPayment()
 	cfg := &config.Config{}
-	billingSvc := billing.NewService(db, "")
+	billingSvc := billing.NewService(infra.NewBillingRepository(db), "")
 
 	router := NewWebhookRouterWithBillingSvc(db, cfg, logger, billingSvc)
 

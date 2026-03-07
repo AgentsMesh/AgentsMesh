@@ -14,7 +14,7 @@ import (
 
 func TestCheckQuotaWithinLimit(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -28,7 +28,7 @@ func TestCheckQuotaWithinLimit(t *testing.T) {
 
 func TestCheckQuotaExceeded(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // max_users = 5
@@ -47,7 +47,7 @@ func TestCheckQuotaExceeded(t *testing.T) {
 
 func TestCheckQuotaUnlimited(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedEnterprisePlan(t, db) // max_users = -1 (unlimited)
@@ -71,7 +71,7 @@ func TestCheckQuotaUnlimited(t *testing.T) {
 
 func TestCheckQuotaCustomQuota(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -87,7 +87,7 @@ func TestCheckQuotaCustomQuota(t *testing.T) {
 
 func TestCheckQuotaNoSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -101,7 +101,7 @@ func TestCheckQuotaNoSubscription(t *testing.T) {
 
 func TestCheckQuotaAllResourceTypes(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -118,7 +118,7 @@ func TestCheckQuotaAllResourceTypes(t *testing.T) {
 
 func TestCheckQuotaRunners(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // max_runners = 1
@@ -136,7 +136,7 @@ func TestCheckQuotaRunners(t *testing.T) {
 
 func TestCheckQuotaConcurrentPods(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // max_concurrent_pods = 5 (based plan)
@@ -156,7 +156,7 @@ func TestCheckQuotaConcurrentPods(t *testing.T) {
 
 func TestCheckQuotaRepositories(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // max_repositories = 5 (based plan)
@@ -176,7 +176,7 @@ func TestCheckQuotaRepositories(t *testing.T) {
 
 func TestCheckQuotaWithCustomQuotaExceeded(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -196,7 +196,7 @@ func TestCheckQuotaWithCustomQuotaExceeded(t *testing.T) {
 
 func TestCheckQuotaPodMinutes(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // included_pod_minutes = 100
@@ -214,7 +214,7 @@ func TestCheckQuotaPodMinutes(t *testing.T) {
 
 func TestCheckQuotaFrozenSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	plan := seedTestPlan(t, db)
@@ -242,7 +242,7 @@ func TestCheckQuotaFrozenSubscription(t *testing.T) {
 
 func TestCheckQuotaWithUnlimitedCustomQuota(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedEnterprisePlan(t, db) // Enterprise has unlimited users (-1)
@@ -270,7 +270,7 @@ func TestCheckQuotaWithUnlimitedCustomQuota(t *testing.T) {
 
 func TestSetCustomQuota(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -292,7 +292,7 @@ func TestSetCustomQuota(t *testing.T) {
 
 func TestSetCustomQuotaNoSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	err := service.SetCustomQuota(ctx, 999, "users", 100)

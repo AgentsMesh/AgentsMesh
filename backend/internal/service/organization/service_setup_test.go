@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -102,7 +103,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
@@ -111,7 +112,7 @@ func TestNewService(t *testing.T) {
 
 func TestCreateOrganization(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -141,7 +142,7 @@ func TestCreateOrganization(t *testing.T) {
 
 func TestCreateOrganizationDuplicateSlug(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Org 1", Slug: "test-org"}
@@ -157,7 +158,7 @@ func TestCreateOrganizationDuplicateSlug(t *testing.T) {
 
 func TestCreateOrganizationWithoutLogo(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -178,7 +179,7 @@ func TestCreateOrganizationWithoutLogo(t *testing.T) {
 
 func TestGetByID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -195,7 +196,7 @@ func TestGetByID(t *testing.T) {
 
 func TestGetByIDNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	_, err := service.GetByID(ctx, 99999)
@@ -206,7 +207,7 @@ func TestGetByIDNotFound(t *testing.T) {
 
 func TestGetBySlug(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -223,7 +224,7 @@ func TestGetBySlug(t *testing.T) {
 
 func TestGetBySlugNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	_, err := service.GetBySlug(ctx, "nonexistent")
@@ -234,7 +235,7 @@ func TestGetBySlugNotFound(t *testing.T) {
 
 func TestGetOrgBySlug(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -251,7 +252,7 @@ func TestGetOrgBySlug(t *testing.T) {
 
 func TestGetOrgBySlugNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	_, err := service.GetOrgBySlug(ctx, "nonexistent")
@@ -262,7 +263,7 @@ func TestGetOrgBySlugNotFound(t *testing.T) {
 
 func TestUpdateOrganization(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -282,7 +283,7 @@ func TestUpdateOrganization(t *testing.T) {
 
 func TestDeleteOrganization(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -301,7 +302,7 @@ func TestDeleteOrganization(t *testing.T) {
 
 func TestListByUser(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	// Create two organizations
@@ -341,7 +342,7 @@ func TestListByUser(t *testing.T) {
 
 func TestListByUserNoOrgs(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	orgs, err := service.ListByUser(ctx, 999)

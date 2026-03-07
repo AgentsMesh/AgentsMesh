@@ -62,7 +62,7 @@ func TestStripeIntegration_CreateCustomer(t *testing.T) {
 	db := setupStripeIntegrationTestDB(t)
 	seedStripeIntegrationTestPlan(t, db)
 
-	svc := NewService(db, stripeKey)
+	svc := NewService(newTestRepo(db), stripeKey)
 	now := time.Now()
 	db.Create(&billing.Subscription{
 		OrganizationID: 1, PlanID: 1, Status: billing.SubscriptionStatusActive,
@@ -117,7 +117,7 @@ func TestStripeIntegration_ServiceWithNilStripeClient(t *testing.T) {
 	db := setupStripeIntegrationTestDB(t)
 	seedStripeIntegrationTestPlan(t, db)
 
-	svc := NewService(db, "")
+	svc := NewService(newTestRepo(db), "")
 	customerID, err := svc.CreateStripeCustomer(context.Background(), 1, "test@example.com", "Test")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

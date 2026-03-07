@@ -9,7 +9,7 @@ import (
 
 func TestCreateUserProvider(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	credentials := map[string]string{
@@ -43,7 +43,7 @@ func TestCreateUserProvider(t *testing.T) {
 
 func TestGetUserProviders(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create multiple providers
@@ -73,7 +73,7 @@ func TestGetUserProviders(t *testing.T) {
 
 func TestGetUserProvidersByType(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create multiple providers
@@ -108,7 +108,7 @@ func TestGetUserProvidersByType(t *testing.T) {
 
 func TestUpdateUserProvider(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create a provider
@@ -135,7 +135,7 @@ func TestUpdateUserProvider(t *testing.T) {
 
 func TestUpdateUserProvider_NotFound(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	_, err := service.UpdateUserProvider(ctx, 999, "Name", nil, false, true)
@@ -146,7 +146,7 @@ func TestUpdateUserProvider_NotFound(t *testing.T) {
 
 func TestUpdateUserProvider_WithCredentials(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create a provider
@@ -169,7 +169,7 @@ func TestUpdateUserProvider_WithCredentials(t *testing.T) {
 
 func TestDeleteUserProvider(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create a provider
@@ -194,7 +194,7 @@ func TestDeleteUserProvider(t *testing.T) {
 
 func TestSetDefaultProvider(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create two providers of same type
@@ -231,7 +231,7 @@ func TestSetDefaultProvider(t *testing.T) {
 
 func TestSetDefaultProvider_NotFound(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	err := service.SetDefaultProvider(ctx, 999)
@@ -242,7 +242,7 @@ func TestSetDefaultProvider_NotFound(t *testing.T) {
 
 func TestCreateUserProvider_EmptyCredentials(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create with empty credentials - should succeed (validation happens at API layer)
@@ -258,7 +258,7 @@ func TestCreateUserProvider_EmptyCredentials(t *testing.T) {
 
 func TestCreateUserProvider_SetsDefault(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create first default provider

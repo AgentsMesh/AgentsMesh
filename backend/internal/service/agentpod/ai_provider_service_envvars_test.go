@@ -8,7 +8,7 @@ import (
 )
 
 func TestFormatEnvVars(t *testing.T) {
-	service := NewAIProviderService(nil, nil)
+	service := newTestAIProviderService(nil, nil)
 
 	t.Run("claude credentials", func(t *testing.T) {
 		creds := map[string]string{
@@ -57,7 +57,7 @@ func TestFormatEnvVars(t *testing.T) {
 }
 
 func TestFormatEnvVars_Gemini(t *testing.T) {
-	service := NewAIProviderService(nil, nil)
+	service := newTestAIProviderService(nil, nil)
 
 	creds := map[string]string{
 		"api_key": "gemini-test-key",
@@ -72,7 +72,7 @@ func TestFormatEnvVars_Gemini(t *testing.T) {
 
 func TestGetAIProviderEnvVars(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create a default provider
@@ -95,7 +95,7 @@ func TestGetAIProviderEnvVars(t *testing.T) {
 
 func TestGetAIProviderEnvVars_NoDefaultProvider(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// When no default provider exists, should return nil, nil (not error)
@@ -110,7 +110,7 @@ func TestGetAIProviderEnvVars_NoDefaultProvider(t *testing.T) {
 
 func TestGetAIProviderEnvVarsByID(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	// Create a provider
@@ -133,7 +133,7 @@ func TestGetAIProviderEnvVarsByID(t *testing.T) {
 
 func TestGetAIProviderEnvVarsByID_NotFound(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil)
+	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
 	_, err := service.GetAIProviderEnvVarsByID(ctx, 999)

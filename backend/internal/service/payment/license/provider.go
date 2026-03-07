@@ -14,52 +14,50 @@ import (
 	"os"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
 var (
-	ErrInvalidLicense     = errors.New("invalid license")
-	ErrLicenseExpired     = errors.New("license expired")
-	ErrLicenseRevoked     = errors.New("license revoked")
-	ErrLicenseNotFound    = errors.New("license not found")
-	ErrInvalidSignature   = errors.New("invalid license signature")
-	ErrNoPublicKey        = errors.New("no public key configured")
-	ErrAlreadyActivated   = errors.New("license already activated for another organization")
+	ErrInvalidLicense      = errors.New("invalid license")
+	ErrLicenseExpired      = errors.New("license expired")
+	ErrLicenseRevoked      = errors.New("license revoked")
+	ErrLicenseNotFound     = errors.New("license not found")
+	ErrInvalidSignature    = errors.New("invalid license signature")
+	ErrNoPublicKey         = errors.New("no public key configured")
+	ErrAlreadyActivated    = errors.New("license already activated for another organization")
 	ErrLicenseFileNotFound = errors.New("license file not found")
 )
 
 // LicenseData represents the JSON structure of a license file
 type LicenseData struct {
-	LicenseKey       string    `json:"license_key"`
-	OrganizationName string    `json:"organization_name"`
-	ContactEmail     string    `json:"contact_email"`
-	PlanName         string    `json:"plan_name"`
-	MaxUsers         int       `json:"max_users"`
-	MaxRunners       int       `json:"max_runners"`
-	MaxRepositories  int       `json:"max_repositories"`
-	MaxConcurrentPods int      `json:"max_concurrent_pods"`
-	Features         []string  `json:"features,omitempty"`
-	IssuedAt         time.Time `json:"issued_at"`
-	ExpiresAt        *time.Time `json:"expires_at,omitempty"`
-	Signature        string    `json:"signature"`
+	LicenseKey        string     `json:"license_key"`
+	OrganizationName  string     `json:"organization_name"`
+	ContactEmail      string     `json:"contact_email"`
+	PlanName          string     `json:"plan_name"`
+	MaxUsers          int        `json:"max_users"`
+	MaxRunners        int        `json:"max_runners"`
+	MaxRepositories   int        `json:"max_repositories"`
+	MaxConcurrentPods int        `json:"max_concurrent_pods"`
+	Features          []string   `json:"features,omitempty"`
+	IssuedAt          time.Time  `json:"issued_at"`
+	ExpiresAt         *time.Time `json:"expires_at,omitempty"`
+	Signature         string     `json:"signature"`
 }
 
 // Provider implements the LicenseProvider interface
 type Provider struct {
 	config    *config.LicenseConfig
-	db        *gorm.DB
+	repo      billing.LicenseRepository
 	publicKey *rsa.PublicKey
 }
 
 // NewProvider creates a new license provider
-func NewProvider(cfg *config.LicenseConfig, db *gorm.DB) (*Provider, error) {
+func NewProvider(cfg *config.LicenseConfig, repo billing.LicenseRepository) (*Provider, error) {
 	p := &Provider{
 		config: cfg,
-		db:     db,
+		repo:   repo,
 	}
 
 	// Load public key if configured
@@ -102,8 +100,11 @@ func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) 
 
 // CancelSubscription deactivates a license
 func (p *Provider) CancelSubscription(ctx context.Context, licenseKey string, immediate bool) error {
-	var license billing.License
-	if err := p.db.WithContext(ctx).Where("license_key = ?", licenseKey).First(&license).Error; err != nil {
+	license, err := p.repo.GetByKey(ctx, licenseKey)
+	if err != nil {
+		return err
+	}
+	if license == nil {
 		return ErrLicenseNotFound
 	}
 
@@ -113,7 +114,7 @@ func (p *Provider) CancelSubscription(ctx context.Context, licenseKey string, im
 	license.RevokedAt = &now
 	license.RevocationReason = &reason
 
-	return p.db.WithContext(ctx).Save(&license).Error
+	return p.repo.Save(ctx, license)
 }
 
 // VerifyLicense verifies a license file/key and returns the license if valid
@@ -165,10 +166,12 @@ func (p *Provider) VerifyLicense(ctx context.Context, licenseData []byte) (*bill
 // GetLicenseStatus returns the current license status
 func (p *Provider) GetLicenseStatus(ctx context.Context) (*types.LicenseStatus, error) {
 	// Try to load from database first (if license was activated)
-	var license billing.License
-	err := p.db.WithContext(ctx).Where("is_active = ?", true).Order("created_at DESC").First(&license).Error
-	if err == nil {
-		return p.licenseToStatus(&license), nil
+	license, err := p.repo.GetActiveLicense(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if license != nil {
+		return p.licenseToStatus(license), nil
 	}
 
 	// Try to load from file if configured
@@ -204,13 +207,12 @@ func (p *Provider) GetLicenseStatus(ctx context.Context) (*types.LicenseStatus, 
 // ActivateLicense activates a license for an organization
 func (p *Provider) ActivateLicense(ctx context.Context, licenseKey string, orgID int64) error {
 	// Find the license by key
-	var license billing.License
-	err := p.db.WithContext(ctx).Where("license_key = ?", licenseKey).First(&license).Error
+	license, err := p.repo.GetByKey(ctx, licenseKey)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrLicenseNotFound
-		}
 		return err
+	}
+	if license == nil {
+		return ErrLicenseNotFound
 	}
 
 	// Check if license is valid
@@ -235,7 +237,7 @@ func (p *Provider) ActivateLicense(ctx context.Context, licenseKey string, orgID
 	license.ActivatedOrgID = &orgID
 	license.LastVerifiedAt = &now
 
-	return p.db.WithContext(ctx).Save(&license).Error
+	return p.repo.Save(ctx, license)
 }
 
 // ActivateLicenseFromFile activates a license from file data
@@ -247,9 +249,12 @@ func (p *Provider) ActivateLicenseFromFile(ctx context.Context, licenseData []by
 	}
 
 	// Check if this license key already exists
-	var existing billing.License
-	err = p.db.WithContext(ctx).Where("license_key = ?", license.LicenseKey).First(&existing).Error
-	if err == nil {
+	existing, err := p.repo.GetByKey(ctx, license.LicenseKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if existing != nil {
 		// License exists - check if it can be activated
 		if existing.IsActivated() && *existing.ActivatedOrgID != orgID {
 			return nil, ErrAlreadyActivated
@@ -259,10 +264,10 @@ func (p *Provider) ActivateLicenseFromFile(ctx context.Context, licenseData []by
 		existing.ActivatedAt = &now
 		existing.ActivatedOrgID = &orgID
 		existing.LastVerifiedAt = &now
-		if err := p.db.WithContext(ctx).Save(&existing).Error; err != nil {
+		if err := p.repo.Save(ctx, existing); err != nil {
 			return nil, err
 		}
-		return &existing, nil
+		return existing, nil
 	}
 
 	// Create new license record
@@ -271,7 +276,7 @@ func (p *Provider) ActivateLicenseFromFile(ctx context.Context, licenseData []by
 	license.ActivatedOrgID = &orgID
 	license.LastVerifiedAt = &now
 
-	if err := p.db.WithContext(ctx).Create(license).Error; err != nil {
+	if err := p.repo.Create(ctx, license); err != nil {
 		return nil, err
 	}
 

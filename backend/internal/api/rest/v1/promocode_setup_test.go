@@ -3,6 +3,7 @@ package v1
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	promocodeSvc "github.com/anthropics/agentsmesh/backend/internal/service/promocode"
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,8 @@ func setupPromoCodeHandlerTest(t *testing.T) (*PromoCodeHandler, *gorm.DB, *gin.
 	// Create tables
 	setupPromoCodeTestDB(t, db)
 
-	service := promocodeSvc.NewService(db)
+	promoRepo := infra.NewPromocodeRepository(db)
+	service := promocodeSvc.NewService(promoRepo, infra.NewGormBillingProvider(db))
 	handler := NewPromoCodeHandler(service)
 	router := gin.New()
 

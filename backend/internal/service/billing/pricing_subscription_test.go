@@ -16,7 +16,7 @@ func almostEqual(a, b, tolerance float64) bool {
 
 func TestCalculateSubscriptionPrice(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)    // based plan: 0/month
@@ -98,7 +98,7 @@ func TestCalculateSubscriptionPrice(t *testing.T) {
 
 func TestCalculateRenewalPrice(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -134,7 +134,7 @@ func TestCalculateRenewalPrice(t *testing.T) {
 
 func TestCalculateRenewalPrice_ChangeCycle(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -170,7 +170,7 @@ func TestCalculateRenewalPrice_ChangeCycle(t *testing.T) {
 
 func TestCalculateRenewalPriceNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.CalculateRenewalPrice(ctx, 999, "")
@@ -181,7 +181,7 @@ func TestCalculateRenewalPriceNotFound(t *testing.T) {
 
 func TestCalculateRenewalPriceYearly(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)

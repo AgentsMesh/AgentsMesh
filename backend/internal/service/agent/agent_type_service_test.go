@@ -12,18 +12,15 @@ import (
 
 func TestNewAgentTypeService(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	if svc == nil {
 		t.Error("NewAgentTypeService returned nil")
-	}
-	if svc.db != db {
-		t.Error("Service db not set correctly")
 	}
 }
 
 func TestListBuiltinAgentTypes(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	types, err := svc.ListBuiltinAgentTypes(ctx)
@@ -47,7 +44,7 @@ func TestListBuiltinAgentTypes(t *testing.T) {
 
 func TestGetAgentType(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	t.Run("existing agent type", func(t *testing.T) {
@@ -76,7 +73,7 @@ func TestGetAgentType(t *testing.T) {
 
 func TestGetAgentTypeBySlug(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	t.Run("existing slug", func(t *testing.T) {
@@ -102,7 +99,7 @@ func TestGetAgentTypeBySlug(t *testing.T) {
 
 func TestGetAgentTypesForRunner(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 
 	t.Run("returns active agent types", func(t *testing.T) {
 		types := svc.GetAgentTypesForRunner()
@@ -141,7 +138,7 @@ func TestGetAgentTypesForRunner(t *testing.T) {
 		badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Silent),
 		})
-		badSvc := NewAgentTypeService(badDB)
+		badSvc := newTestAgentTypeService(badDB)
 		result := badSvc.GetAgentTypesForRunner()
 		if result != nil {
 			t.Errorf("Expected nil on database error, got %v", result)

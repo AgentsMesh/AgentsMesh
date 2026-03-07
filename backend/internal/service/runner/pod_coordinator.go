@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"gorm.io/gorm"
 )
 
 // Terminate command backoff constants
@@ -20,7 +20,9 @@ const (
 
 // PodCoordinator coordinates pod lifecycle events between backend and runners
 type PodCoordinator struct {
-	db                *gorm.DB
+	podRepo           agentpod.PodRepository
+	runnerRepo        runnerDomain.RunnerRepository
+	autopilotRepo     agentpod.AutopilotRepository
 	connectionManager *RunnerConnectionManager
 	terminalRouter    *TerminalRouter
 	heartbeatBatcher  *HeartbeatBatcher
@@ -53,14 +55,16 @@ type PodCoordinator struct {
 // By default, uses NoOpCommandSender which logs warnings. Call SetCommandSender
 // to configure a real command sender (e.g., GRPCCommandSender).
 func NewPodCoordinator(
-	db *gorm.DB,
+	podRepo agentpod.PodRepository,
+	runnerRepo runnerDomain.RunnerRepository,
 	cm *RunnerConnectionManager,
 	tr *TerminalRouter,
 	hb *HeartbeatBatcher,
 	logger *slog.Logger,
 ) *PodCoordinator {
 	pc := &PodCoordinator{
-		db:                   db,
+		podRepo:              podRepo,
+		runnerRepo:           runnerRepo,
 		connectionManager:    cm,
 		terminalRouter:       tr,
 		heartbeatBatcher:     hb,
@@ -96,6 +100,12 @@ func (pc *PodCoordinator) SetCommandSender(sender RunnerCommandSender) {
 	pc.logger.Info("command sender configured", "type", fmt.Sprintf("%T", sender))
 }
 
+// SetAutopilotRepo sets the autopilot repository for autopilot event handling.
+// Must be called before autopilot events are received.
+func (pc *PodCoordinator) SetAutopilotRepo(repo agentpod.AutopilotRepository) {
+	pc.autopilotRepo = repo
+}
+
 // GetCommandSender returns the command sender for sending commands to runners.
 // Returns nil if no command sender is configured.
 func (pc *PodCoordinator) GetCommandSender() RunnerCommandSender {
@@ -114,18 +124,12 @@ func (pc *PodCoordinator) SetInitProgressCallback(fn func(podKey string, phase s
 
 // IncrementPods increments pod count for a runner
 func (pc *PodCoordinator) IncrementPods(ctx context.Context, runnerID int64) error {
-	return pc.db.WithContext(ctx).Exec(
-		"UPDATE runners SET current_pods = current_pods + 1 WHERE id = ?",
-		runnerID,
-	).Error
+	return pc.runnerRepo.IncrementPods(ctx, runnerID)
 }
 
 // DecrementPods decrements pod count for a runner
 func (pc *PodCoordinator) DecrementPods(ctx context.Context, runnerID int64) error {
-	return pc.db.WithContext(ctx).Exec(
-		"UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?",
-		runnerID,
-	).Error
+	return pc.runnerRepo.DecrementPods(ctx, runnerID)
 }
 
 // CreatePod creates a new pod on a runner
@@ -152,10 +156,8 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *ru
 // TerminatePod terminates a pod on a runner
 func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error {
 	// Get pod to find runner
-	var pod agentpod.Pod
-	if err := pc.db.WithContext(ctx).
-		Where("pod_key = ?", podKey).
-		First(&pod).Error; err != nil {
+	pod, err := pc.podRepo.GetByKey(ctx, podKey)
+	if err != nil {
 		return err
 	}
 
@@ -169,12 +171,10 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 
 	// Update pod status
 	now := time.Now()
-	if err := pc.db.WithContext(ctx).
-		Model(&pod).
-		Updates(map[string]interface{}{
-			"status":      agentpod.StatusCompleted,
-			"finished_at": now,
-		}).Error; err != nil {
+	if _, err := pc.podRepo.UpdateByKey(ctx, podKey, map[string]interface{}{
+		"status":      agentpod.StatusCompleted,
+		"finished_at": now,
+	}); err != nil {
 		return err
 	}
 
@@ -187,29 +187,22 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 
 // UpdateActivity updates last activity timestamp for a pod
 func (pc *PodCoordinator) UpdateActivity(ctx context.Context, podKey string) error {
-	return pc.db.WithContext(ctx).
-		Model(&agentpod.Pod{}).
-		Where("pod_key = ?", podKey).
-		Update("last_activity", time.Now()).Error
+	return pc.podRepo.UpdateField(ctx, podKey, "last_activity", time.Now())
 }
 
 // MarkDisconnected marks a pod as disconnected (user closed browser)
 func (pc *PodCoordinator) MarkDisconnected(ctx context.Context, podKey string) error {
-	return pc.db.WithContext(ctx).
-		Model(&agentpod.Pod{}).
-		Where("pod_key = ? AND status = ?", podKey, agentpod.StatusRunning).
-		Update("status", agentpod.StatusDisconnected).Error
+	return pc.podRepo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusRunning, map[string]interface{}{
+		"status": agentpod.StatusDisconnected,
+	})
 }
 
 // MarkReconnected marks a pod as running again (user reconnected)
 func (pc *PodCoordinator) MarkReconnected(ctx context.Context, podKey string) error {
-	return pc.db.WithContext(ctx).
-		Model(&agentpod.Pod{}).
-		Where("pod_key = ? AND status = ?", podKey, agentpod.StatusDisconnected).
-		Updates(map[string]interface{}{
-			"status":        agentpod.StatusRunning,
-			"last_activity": time.Now(),
-		}).Error
+	return pc.podRepo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusDisconnected, map[string]interface{}{
+		"status":        agentpod.StatusRunning,
+		"last_activity": time.Now(),
+	})
 }
 
 // ==================== AutopilotController Commands ====================

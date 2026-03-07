@@ -16,7 +16,7 @@ import (
 
 func TestNewPodOrchestrator(t *testing.T) {
 	db := setupTestDB(t)
-	podSvc := NewPodService(db)
+	podSvc := newTestPodService(db)
 	coord := &mockPodCoordinator{}
 
 	deps := &PodOrchestratorDeps{
@@ -32,7 +32,7 @@ func TestNewPodOrchestrator(t *testing.T) {
 
 func TestCreatePod_NormalMode_Success(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -57,7 +57,7 @@ func TestCreatePod_NormalMode_Success(t *testing.T) {
 
 func TestCreatePod_NormalMode_MissingRunnerID(t *testing.T) {
 	// Without RunnerSelector/AgentTypeResolver injected, RunnerID=0 should fail with ErrMissingRunnerID
-	orch, _ := setupOrchestrator(t)
+	orch, _, _ := setupOrchestrator(t)
 
 	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -82,7 +82,7 @@ func TestCreatePod_AutoSelectRunner_Success(t *testing.T) {
 		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code"},
 	}
 
-	orch, _ := setupOrchestrator(t,
+	orch, _, _ := setupOrchestrator(t,
 		withCoordinator(coord),
 		withRunnerSelector(selector),
 		withAgentTypeResolver(resolver),
@@ -112,7 +112,7 @@ func TestCreatePod_AutoSelectRunner_NoAvailableRunner(t *testing.T) {
 		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code"},
 	}
 
-	orch, _ := setupOrchestrator(t,
+	orch, _, _ := setupOrchestrator(t,
 		withRunnerSelector(selector),
 		withAgentTypeResolver(resolver),
 	)
@@ -137,7 +137,7 @@ func TestCreatePod_AutoSelectRunner_AgentTypeResolveError(t *testing.T) {
 		err: errors.New("agent type not found"),
 	}
 
-	orch, _ := setupOrchestrator(t,
+	orch, _, _ := setupOrchestrator(t,
 		withRunnerSelector(selector),
 		withAgentTypeResolver(resolver),
 	)
@@ -165,7 +165,7 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code"},
 	}
 
-	orch, _ := setupOrchestrator(t,
+	orch, _, _ := setupOrchestrator(t,
 		withCoordinator(coord),
 		withRunnerSelector(selector),
 		withAgentTypeResolver(resolver),
@@ -185,7 +185,7 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 }
 
 func TestCreatePod_NormalMode_MissingAgentTypeID(t *testing.T) {
-	orch, _ := setupOrchestrator(t)
+	orch, _, _ := setupOrchestrator(t)
 
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -201,7 +201,7 @@ func TestCreatePod_NormalMode_MissingAgentTypeID(t *testing.T) {
 func TestCreatePod_QuotaExceeded(t *testing.T) {
 	errQuota := errors.New("quota exceeded")
 	billing := &mockBillingService{err: errQuota}
-	orch, _ := setupOrchestrator(t, withBilling(billing))
+	orch, _, _ := setupOrchestrator(t, withBilling(billing))
 
 	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -217,7 +217,7 @@ func TestCreatePod_QuotaExceeded(t *testing.T) {
 
 func TestCreatePod_NilBilling_SkipsQuotaCheck(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -233,7 +233,7 @@ func TestCreatePod_NilBilling_SkipsQuotaCheck(t *testing.T) {
 
 func TestCreatePod_NilCoordinator(t *testing.T) {
 	// No coordinator -> pod is created in DB but no command sent
-	orch, _ := setupOrchestrator(t)
+	orch, _, _ := setupOrchestrator(t)
 
 	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -250,7 +250,7 @@ func TestCreatePod_NilCoordinator(t *testing.T) {
 
 func TestCreatePod_CoordinatorSendFailure_ReturnsWarning(t *testing.T) {
 	coord := &mockPodCoordinator{err: errors.New("runner not connected")}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -268,7 +268,7 @@ func TestCreatePod_CoordinatorSendFailure_ReturnsWarning(t *testing.T) {
 func TestCreatePod_ConfigBuildFailure(t *testing.T) {
 	// Create an orchestrator with a provider that fails on GetAgentType
 	db := setupTestDB(t)
-	podSvc := NewPodService(db)
+	podSvc := newTestPodService(db)
 
 	provider := &mockAgentConfigProvider{
 		agentErr: errors.New("agent type not found"),
@@ -294,7 +294,7 @@ func TestCreatePod_ConfigBuildFailure(t *testing.T) {
 
 func TestCreatePod_SessionID_SetForNormalMode(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -312,7 +312,7 @@ func TestCreatePod_SessionID_SetForNormalMode(t *testing.T) {
 
 func TestCreatePod_ConfigOverrides_Preserved(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -329,7 +329,7 @@ func TestCreatePod_ConfigOverrides_Preserved(t *testing.T) {
 
 func TestCreatePod_NilConfigOverrides_Initialized(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -346,7 +346,7 @@ func TestCreatePod_NilConfigOverrides_Initialized(t *testing.T) {
 
 func TestCreatePod_PermissionMode(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	permMode := "bypassPermissions"
@@ -366,7 +366,7 @@ func TestCreatePod_PermissionMode(t *testing.T) {
 
 func TestCreatePod_CredentialProfileID_ZeroConvertsToNil(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	zero := int64(0)
@@ -389,7 +389,7 @@ func TestCreatePod_CredentialProfileID_ZeroConvertsToNil(t *testing.T) {
 
 func TestCreatePod_CredentialProfileID_PositiveStored(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	profileID := int64(42)
@@ -413,7 +413,7 @@ func TestCreatePod_CredentialProfileID_PositiveStored(t *testing.T) {
 
 func TestCreatePod_CredentialProfileID_NilStaysNil(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{

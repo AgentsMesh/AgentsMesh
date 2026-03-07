@@ -1,6 +1,7 @@
 package agentpod
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -85,11 +86,11 @@ func newTestPod() *agentpod.Pod {
 func TestCreateAndStart_Success(t *testing.T) {
 	db := setupAutopilotTestDB(t)
 	sender := &mockCommandSender{}
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 	svc.SetCommandSender(sender)
 
 	pod := newTestPod()
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            pod,
 		InitialPrompt:  "Review the code",
@@ -121,9 +122,9 @@ func TestCreateAndStart_Success(t *testing.T) {
 
 func TestCreateAndStart_NilPod(t *testing.T) {
 	db := setupAutopilotTestDB(t)
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            nil,
 		InitialPrompt:  "test",
@@ -136,10 +137,10 @@ func TestCreateAndStart_NilPod(t *testing.T) {
 
 func TestCreateAndStart_DefaultValues(t *testing.T) {
 	db := setupAutopilotTestDB(t)
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 	// No command sender — verifies nil sender is safe
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
 		InitialPrompt:  "test",
@@ -157,10 +158,10 @@ func TestCreateAndStart_DefaultValues(t *testing.T) {
 func TestCreateAndStart_CustomValues(t *testing.T) {
 	db := setupAutopilotTestDB(t)
 	sender := &mockCommandSender{}
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 	svc.SetCommandSender(sender)
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID:      1,
 		Pod:                 newTestPod(),
 		InitialPrompt:       "test",
@@ -185,9 +186,9 @@ func TestCreateAndStart_CustomValues(t *testing.T) {
 
 func TestCreateAndStart_CustomKeyPrefix(t *testing.T) {
 	db := setupAutopilotTestDB(t)
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
 		InitialPrompt:  "test",
@@ -200,9 +201,9 @@ func TestCreateAndStart_CustomKeyPrefix(t *testing.T) {
 
 func TestCreateAndStart_DefaultKeyPrefix(t *testing.T) {
 	db := setupAutopilotTestDB(t)
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
 		InitialPrompt:  "test",
@@ -216,10 +217,10 @@ func TestCreateAndStart_DefaultKeyPrefix(t *testing.T) {
 func TestCreateAndStart_OptionalConfigFields(t *testing.T) {
 	db := setupAutopilotTestDB(t)
 	sender := &mockCommandSender{}
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 	svc.SetCommandSender(sender)
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID:        1,
 		Pod:                   newTestPod(),
 		InitialPrompt:         "test",
@@ -244,9 +245,9 @@ func TestCreateAndStart_OptionalConfigFields(t *testing.T) {
 
 func TestCreateAndStart_OptionalFieldsOmitted(t *testing.T) {
 	db := setupAutopilotTestDB(t)
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
 		InitialPrompt:  "test",
@@ -261,10 +262,10 @@ func TestCreateAndStart_OptionalFieldsOmitted(t *testing.T) {
 
 func TestCreateAndStart_NilCommandSender(t *testing.T) {
 	db := setupAutopilotTestDB(t)
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 	// commandSender is nil (not set)
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
 		InitialPrompt:  "test",
@@ -278,10 +279,10 @@ func TestCreateAndStart_NilCommandSender(t *testing.T) {
 func TestCreateAndStart_CommandSenderFailure(t *testing.T) {
 	db := setupAutopilotTestDB(t)
 	sender := &mockCommandSender{err: assert.AnError}
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 	svc.SetCommandSender(sender)
 
-	controller, err := svc.CreateAndStart(&CreateAndStartRequest{
+	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
 		InitialPrompt:  "test",
@@ -296,9 +297,9 @@ func TestCreateAndStart_CommandSenderFailure(t *testing.T) {
 
 func TestCreateAndStart_DBPersistence(t *testing.T) {
 	db := setupAutopilotTestDB(t)
-	svc := NewAutopilotControllerService(db)
+	svc := newTestAutopilotService(db)
 
-	created, err := svc.CreateAndStart(&CreateAndStartRequest{
+	created, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
 		InitialPrompt:  "persisted prompt",
@@ -306,7 +307,7 @@ func TestCreateAndStart_DBPersistence(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify we can retrieve the record from DB
-	fetched, err := svc.GetAutopilotControllerByKey(created.AutopilotControllerKey)
+	fetched, err := svc.GetAutopilotControllerByKey(context.Background(), created.AutopilotControllerKey)
 	require.NoError(t, err)
 	assert.Equal(t, created.ID, fetched.ID)
 	assert.Equal(t, "persisted prompt", fetched.InitialPrompt)

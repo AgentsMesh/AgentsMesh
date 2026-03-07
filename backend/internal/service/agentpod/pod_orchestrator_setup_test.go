@@ -183,10 +183,10 @@ func newTestProvider() *mockAgentConfigProvider {
 	}
 }
 
-func setupOrchestrator(t *testing.T, opts ...func(*PodOrchestratorDeps)) (*PodOrchestrator, *PodService) {
+func setupOrchestrator(t *testing.T, opts ...func(*PodOrchestratorDeps)) (*PodOrchestrator, *PodService, *gorm.DB) {
 	t.Helper()
 	db := setupOrchestratorTestDB(t)
-	podSvc := NewPodService(db)
+	podSvc := newTestPodService(db)
 
 	provider := newTestProvider()
 	configBuilder := agent.NewConfigBuilder(provider)
@@ -200,7 +200,7 @@ func setupOrchestrator(t *testing.T, opts ...func(*PodOrchestratorDeps)) (*PodOr
 		opt(deps)
 	}
 
-	return NewPodOrchestrator(deps), podSvc
+	return NewPodOrchestrator(deps), podSvc, db
 }
 
 func withCoordinator(coord PodCoordinatorForOrchestrator) func(*PodOrchestratorDeps) {

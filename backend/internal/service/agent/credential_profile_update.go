@@ -16,20 +16,18 @@ func (s *CredentialProfileService) UpdateCredentialProfile(ctx context.Context, 
 
 	// Check name uniqueness if changing
 	if params.Name != nil && *params.Name != profile.Name {
-		var existing agent.UserAgentCredentialProfile
-		err := s.db.WithContext(ctx).
-			Where("user_id = ? AND agent_type_id = ? AND name = ? AND id != ?", userID, profile.AgentTypeID, *params.Name, profileID).
-			First(&existing).Error
-		if err == nil {
+		exists, err := s.repo.NameExists(ctx, userID, profile.AgentTypeID, *params.Name, &profileID)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
 			return nil, ErrCredentialProfileExists
 		}
 	}
 
 	// If setting as default, unset other defaults
 	if params.IsDefault != nil && *params.IsDefault && !profile.IsDefault {
-		s.db.WithContext(ctx).Model(&agent.UserAgentCredentialProfile{}).
-			Where("user_id = ? AND agent_type_id = ? AND id != ?", userID, profile.AgentTypeID, profileID).
-			Update("is_default", false)
+		s.repo.UnsetDefaults(ctx, userID, profile.AgentTypeID)
 	}
 
 	// Build updates
@@ -64,7 +62,7 @@ func (s *CredentialProfileService) UpdateCredentialProfile(ctx context.Context, 
 	}
 
 	if len(updates) > 0 {
-		if err := s.db.WithContext(ctx).Model(profile).Updates(updates).Error; err != nil {
+		if err := s.repo.Update(ctx, profile, updates); err != nil {
 			return nil, err
 		}
 	}
@@ -80,12 +78,10 @@ func (s *CredentialProfileService) SetDefaultCredentialProfile(ctx context.Conte
 	}
 
 	// Unset other defaults
-	s.db.WithContext(ctx).Model(&agent.UserAgentCredentialProfile{}).
-		Where("user_id = ? AND agent_type_id = ? AND id != ?", userID, profile.AgentTypeID, profileID).
-		Update("is_default", false)
+	s.repo.UnsetDefaults(ctx, userID, profile.AgentTypeID)
 
 	// Set this as default
-	if err := s.db.WithContext(ctx).Model(profile).Update("is_default", true).Error; err != nil {
+	if err := s.repo.SetDefault(ctx, profile); err != nil {
 		return nil, err
 	}
 

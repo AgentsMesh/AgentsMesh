@@ -15,7 +15,7 @@ import (
 
 func TestHandleSubscriptionCreated(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -54,7 +54,7 @@ func TestHandleSubscriptionCreated(t *testing.T) {
 
 func TestHandleSubscriptionCreatedByOrderNo(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -108,7 +108,7 @@ func TestHandleSubscriptionCreatedByOrderNo(t *testing.T) {
 
 func TestHandleSubscriptionCreatedNoSubscriptionID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 
 	c, _ := createTestGinContext()
 	event := &payment.WebhookEvent{

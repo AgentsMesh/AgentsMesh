@@ -14,7 +14,7 @@ import (
 
 func TestGetSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	plan := seedTestPlan(t, db)
@@ -41,7 +41,7 @@ func TestGetSubscription(t *testing.T) {
 
 func TestGetSubscriptionNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetSubscription(ctx, 999)
@@ -52,7 +52,7 @@ func TestGetSubscriptionNotFound(t *testing.T) {
 
 func TestCreateSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -71,7 +71,7 @@ func TestCreateSubscription(t *testing.T) {
 
 func TestCreateSubscriptionPlanNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.CreateSubscription(ctx, 1, "nonexistent")
@@ -82,7 +82,7 @@ func TestCreateSubscriptionPlanNotFound(t *testing.T) {
 
 func TestCancelSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -101,7 +101,7 @@ func TestCancelSubscription(t *testing.T) {
 
 func TestCancelSubscriptionNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	err := service.CancelSubscription(ctx, 999)
@@ -112,7 +112,7 @@ func TestCancelSubscriptionNotFound(t *testing.T) {
 
 func TestSetCancelAtPeriodEnd(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -131,7 +131,7 @@ func TestSetCancelAtPeriodEnd(t *testing.T) {
 
 func TestSetNextBillingCycle(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -150,7 +150,7 @@ func TestSetNextBillingCycle(t *testing.T) {
 
 func TestSetAutoRenew(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

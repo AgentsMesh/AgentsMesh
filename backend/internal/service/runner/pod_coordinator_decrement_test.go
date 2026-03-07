@@ -11,9 +11,8 @@ func TestPodCoordinatorDecrementPods(t *testing.T) {
 	// Note: DecrementPods uses GREATEST which SQLite doesn't support
 	// This test verifies the method exists and can be called
 	// The actual functionality should be tested with PostgreSQL in integration tests
-	db := setupTestDB(t)
 	logger := newTestLogger()
-	_, cm, tr, hb := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a runner with pods
 	r := &runner.Runner{
@@ -26,7 +25,7 @@ func TestPodCoordinatorDecrementPods(t *testing.T) {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Call DecrementPods - may fail due to SQLite GREATEST limitation
@@ -37,9 +36,8 @@ func TestPodCoordinatorDecrementPods(t *testing.T) {
 func TestPodCoordinatorDecrementPodsNotBelowZero(t *testing.T) {
 	// Note: DecrementPods uses GREATEST which SQLite doesn't support
 	// This test verifies the method exists and can be called
-	db := setupTestDB(t)
 	logger := newTestLogger()
-	_, cm, tr, hb := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a runner with 0 pods
 	r := &runner.Runner{
@@ -52,7 +50,7 @@ func TestPodCoordinatorDecrementPodsNotBelowZero(t *testing.T) {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Call DecrementPods - may fail due to SQLite GREATEST limitation
@@ -61,11 +59,10 @@ func TestPodCoordinatorDecrementPodsNotBelowZero(t *testing.T) {
 }
 
 func TestPodCoordinatorGetCommandSender(t *testing.T) {
-	db := setupTestDB(t)
 	logger := newTestLogger()
-	_, cm, tr, hb := setupPodCoordinatorDeps(t)
+	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 
 	// Default should be NoOpCommandSender
 	sender := pc.GetCommandSender()
@@ -86,11 +83,10 @@ func TestPodCoordinatorGetCommandSender(t *testing.T) {
 }
 
 func TestPodCoordinatorSetInitProgressCallback(t *testing.T) {
-	db := setupTestDB(t)
 	logger := newTestLogger()
-	_, cm, tr, hb := setupPodCoordinatorDeps(t)
+	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 
 	called := false
 	pc.SetInitProgressCallback(func(podKey, phase string, progress int, message string) {

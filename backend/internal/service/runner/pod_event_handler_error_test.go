@@ -9,7 +9,7 @@ import (
 )
 
 func TestHandlePodError(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner with 1 pod
 	r := &runner.Runner{
@@ -18,12 +18,12 @@ func TestHandlePodError(t *testing.T) {
 		Status:         "online",
 		CurrentPods:    1,
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create an initializing pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"error-pod-1", r.ID, agentpod.StatusInitializing)
 
 	// Track status change callback
@@ -45,7 +45,7 @@ func TestHandlePodError(t *testing.T) {
 	// Verify pod was updated to error status
 	var status string
 	var errorCode, errorMessage *string
-	pc.db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "error-pod-1").
+	db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "error-pod-1").
 		Row().Scan(&status, &errorCode, &errorMessage)
 
 	if status != agentpod.StatusError {
@@ -60,7 +60,7 @@ func TestHandlePodError(t *testing.T) {
 
 	// Verify finished_at was set
 	var finishedAt *string
-	pc.db.Raw(`SELECT finished_at FROM pods WHERE pod_key = ?`, "error-pod-1").Scan(&finishedAt)
+	db.Raw(`SELECT finished_at FROM pods WHERE pod_key = ?`, "error-pod-1").Scan(&finishedAt)
 	if finishedAt == nil {
 		t.Error("finished_at should be set")
 	}
@@ -75,7 +75,7 @@ func TestHandlePodError(t *testing.T) {
 }
 
 func TestHandlePodError_EmptyPodKey(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, _ := setupPodEventHandlerDeps(t)
 
 	// Track status change callback - should NOT be called
 	callbackCalled := false
@@ -99,7 +99,7 @@ func TestHandlePodError_EmptyPodKey(t *testing.T) {
 }
 
 func TestHandlePodError_RunningPod(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -108,12 +108,12 @@ func TestHandlePodError_RunningPod(t *testing.T) {
 		Status:         "online",
 		CurrentPods:    1,
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a running pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"running-pod-1", r.ID, agentpod.StatusRunning)
 
 	// Handle runtime error (e.g., PTY read failure)
@@ -129,7 +129,7 @@ func TestHandlePodError_RunningPod(t *testing.T) {
 	// (status will be updated by the subsequent pod_terminated event)
 	var status string
 	var errorCode, errorMessage *string
-	pc.db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "running-pod-1").
+	db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "running-pod-1").
 		Row().Scan(&status, &errorCode, &errorMessage)
 
 	if status != agentpod.StatusRunning {
@@ -145,14 +145,14 @@ func TestHandlePodError_RunningPod(t *testing.T) {
 
 	// Verify runner pod count was NOT decremented (only terminated event does that)
 	var currentPods int
-	pc.db.Raw(`SELECT current_pods FROM runners WHERE id = ?`, r.ID).Scan(&currentPods)
+	db.Raw(`SELECT current_pods FROM runners WHERE id = ?`, r.ID).Scan(&currentPods)
 	if currentPods != 1 {
 		t.Errorf("current_pods should remain 1 (terminated event decrements), got %d", currentPods)
 	}
 }
 
 func TestHandlePodError_ThenTerminated_PreservesErrorCode(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -161,12 +161,12 @@ func TestHandlePodError_ThenTerminated_PreservesErrorCode(t *testing.T) {
 		Status:         "online",
 		CurrentPods:    1,
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a running pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"pty-seq-pod", r.ID, agentpod.StatusRunning)
 
 	// Step 1: handlePodError records the PTY error (error_code = PTY_READ_ERROR)
@@ -188,7 +188,7 @@ func TestHandlePodError_ThenTerminated_PreservesErrorCode(t *testing.T) {
 	// Verify: error_code should be preserved as PTY_READ_ERROR (not overwritten to "process_exit")
 	var status string
 	var errorCode, errorMessage *string
-	pc.db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "pty-seq-pod").
+	db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "pty-seq-pod").
 		Row().Scan(&status, &errorCode, &errorMessage)
 
 	if status != agentpod.StatusError {
@@ -203,7 +203,7 @@ func TestHandlePodError_ThenTerminated_PreservesErrorCode(t *testing.T) {
 }
 
 func TestHandlePodError_NonExistentPod(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, _ := setupPodEventHandlerDeps(t)
 
 	// Track callback
 	callbackCalled := false

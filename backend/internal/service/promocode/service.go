@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
-	"gorm.io/gorm"
 )
 
 var (
@@ -22,25 +21,14 @@ var (
 
 // Service handles promo code operations
 type Service struct {
-	db       *gorm.DB
 	repo     promocode.Repository
 	billing  BillingProvider
 }
 
 // NewService creates a new promo code service
-func NewService(db *gorm.DB) *Service {
+func NewService(repo promocode.Repository, billing BillingProvider) *Service {
 	return &Service{
-		db:       db,
-		repo:     promocode.NewRepository(db),
-		billing:  NewGormBillingProvider(db),
-	}
-}
-
-// NewServiceWithBilling creates a new promo code service with custom billing provider
-func NewServiceWithBilling(db *gorm.DB, billing BillingProvider) *Service {
-	return &Service{
-		db:       db,
-		repo:     promocode.NewRepository(db),
+		repo:     repo,
 		billing:  billing,
 	}
 }
@@ -80,10 +68,10 @@ func (s *Service) Validate(ctx context.Context, req *ValidateRequest) (*Validate
 
 	promoCode, err := s.repo.GetByCode(ctx, code)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return &ValidateResponse{Valid: false, Code: code, MessageCode: ErrCodeNotFound}, nil
-		}
 		return nil, err
+	}
+	if promoCode == nil {
+		return &ValidateResponse{Valid: false, Code: code, MessageCode: ErrCodeNotFound}, nil
 	}
 
 	// Check basic validity
@@ -173,50 +161,38 @@ func (s *Service) Redeem(ctx context.Context, req *RedeemRequest) (*RedeemRespon
 		return nil, ErrInvalidPlan
 	}
 
-	// Execute in transaction
+	// Execute atomic redeem via repository
 	var newPeriodEnd time.Time
-	var previousPlanName *string
-	var previousPeriodEnd *time.Time
 
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Apply subscription via billing provider
-		result, err := s.billing.ApplyPromoSubscription(ctx, tx, &ApplySubscriptionRequest{
-			OrganizationID: req.OrganizationID,
-			PlanID:         targetPlan.ID,
-			DurationMonths: promoCode.DurationMonths,
-		})
-		if err != nil {
-			return err
-		}
+	redemption := &promocode.Redemption{
+		PromoCodeID:    promoCode.ID,
+		OrganizationID: req.OrganizationID,
+		UserID:         req.UserID,
+		PlanName:       promoCode.PlanName,
+		DurationMonths: promoCode.DurationMonths,
+		IPAddress:      &req.IPAddress,
+		UserAgent:      &req.UserAgent,
+	}
 
-		newPeriodEnd = result.NewPeriodEnd
-		previousPlanName = result.PreviousPlanName
-		previousPeriodEnd = result.PreviousPeriodEnd
-
-		// Create redemption record
-		redemption := &promocode.Redemption{
-			PromoCodeID:       promoCode.ID,
-			OrganizationID:    req.OrganizationID,
-			UserID:            req.UserID,
-			PlanName:          promoCode.PlanName,
-			DurationMonths:    promoCode.DurationMonths,
-			PreviousPlanName:  previousPlanName,
-			PreviousPeriodEnd: previousPeriodEnd,
-			NewPeriodEnd:      newPeriodEnd,
-			IPAddress:         &req.IPAddress,
-			UserAgent:         &req.UserAgent,
-		}
-		if err := tx.Create(redemption).Error; err != nil {
-			return err
-		}
-
-		// Increment used count
-		if err := tx.Model(&promocode.PromoCode{}).Where("id = ?", promoCode.ID).
-			Update("used_count", gorm.Expr("used_count + 1")).Error; err != nil {
-			return err
-		}
-
-		return nil
+	err = s.repo.RedeemAtomic(ctx, &promocode.RedeemAtomicParams{
+		Redemption:  redemption,
+		PromoCodeID: promoCode.ID,
+		ApplyBilling: func(ctx context.Context, tx interface{}) error {
+			result, err := s.billing.ApplyPromoSubscription(ctx, tx, &ApplySubscriptionRequest{
+				OrganizationID: req.OrganizationID,
+				PlanID:         targetPlan.ID,
+				DurationMonths: promoCode.DurationMonths,
+			})
+			if err != nil {
+				return err
+			}
+			// Backfill redemption fields from billing result (pointer, updated before repo.Create)
+			newPeriodEnd = result.NewPeriodEnd
+			redemption.PreviousPlanName = result.PreviousPlanName
+			redemption.PreviousPeriodEnd = result.PreviousPeriodEnd
+			redemption.NewPeriodEnd = newPeriodEnd
+			return nil
+		},
 	})
 
 	if err != nil {

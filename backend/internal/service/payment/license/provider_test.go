@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
+	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -47,14 +48,20 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func TestNewProvider(t *testing.T) {
+func setupTestProvider(t *testing.T) *Provider {
 	db := setupTestDB(t)
+	repo := infra.NewLicenseRepository(db)
 	cfg := &config.LicenseConfig{}
 
-	provider, err := NewProvider(cfg, db)
+	provider, err := NewProvider(cfg, repo)
 	if err != nil {
 		t.Fatalf("failed to create provider: %v", err)
 	}
+	return provider
+}
+
+func TestNewProvider(t *testing.T) {
+	provider := setupTestProvider(t)
 
 	if provider.GetProviderName() != billing.PaymentProviderLicense {
 		t.Errorf("expected provider name %s, got %s", billing.PaymentProviderLicense, provider.GetProviderName())
@@ -62,10 +69,7 @@ func TestNewProvider(t *testing.T) {
 }
 
 func TestVerifyLicense(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	// Create valid license data (without signature verification)
@@ -102,10 +106,7 @@ func TestVerifyLicense(t *testing.T) {
 }
 
 func TestVerifyLicense_Expired(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	expiredTime := time.Now().Add(-24 * time.Hour)
@@ -128,10 +129,7 @@ func TestVerifyLicense_Expired(t *testing.T) {
 }
 
 func TestVerifyLicense_InvalidJSON(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	_, err := provider.VerifyLicense(ctx, []byte("invalid json"))
@@ -141,10 +139,7 @@ func TestVerifyLicense_InvalidJSON(t *testing.T) {
 }
 
 func TestActivateLicenseFromFile(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	licenseData := LicenseData{
@@ -176,10 +171,7 @@ func TestActivateLicenseFromFile(t *testing.T) {
 }
 
 func TestActivateLicenseFromFile_AlreadyActivated(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	licenseData := LicenseData{
@@ -207,10 +199,7 @@ func TestActivateLicenseFromFile_AlreadyActivated(t *testing.T) {
 }
 
 func TestGetLicenseStatus_NoLicense(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	status, err := provider.GetLicenseStatus(ctx)
@@ -224,10 +213,7 @@ func TestGetLicenseStatus_NoLicense(t *testing.T) {
 }
 
 func TestGetLicenseStatus_WithActiveLicense(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	// Create and activate a license
@@ -257,10 +243,7 @@ func TestGetLicenseStatus_WithActiveLicense(t *testing.T) {
 }
 
 func TestCancelSubscription(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	// Create and activate a license
@@ -290,10 +273,7 @@ func TestCancelSubscription(t *testing.T) {
 }
 
 func TestCancelSubscription_NotFound(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	err := provider.CancelSubscription(ctx, "NONEXISTENT", true)
@@ -303,10 +283,7 @@ func TestCancelSubscription_NotFound(t *testing.T) {
 }
 
 func TestUnsupportedOperations(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	// CreateCheckoutSession should return error
@@ -335,10 +312,7 @@ func TestUnsupportedOperations(t *testing.T) {
 }
 
 func TestLicenseWithExpiry(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := &config.LicenseConfig{}
-
-	provider, _ := NewProvider(cfg, db)
+	provider := setupTestProvider(t)
 	ctx := context.Background()
 
 	// Create license expiring in 15 days

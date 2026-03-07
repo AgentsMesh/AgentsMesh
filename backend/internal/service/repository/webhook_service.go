@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
 	"github.com/anthropics/agentsmesh/backend/internal/service/user"
-	"gorm.io/gorm"
 )
 
 // Webhook-related errors
@@ -23,16 +23,16 @@ var (
 
 // WebhookService handles webhook registration and management for repositories
 type WebhookService struct {
-	db          *gorm.DB
+	repo        gitprovider.RepositoryRepo
 	cfg         *config.Config
 	userService *user.Service
 	logger      *slog.Logger
 }
 
 // NewWebhookService creates a new webhook service
-func NewWebhookService(db *gorm.DB, cfg *config.Config, userService *user.Service, logger *slog.Logger) *WebhookService {
+func NewWebhookService(repo gitprovider.RepositoryRepo, cfg *config.Config, userService *user.Service, logger *slog.Logger) *WebhookService {
 	return &WebhookService{
-		db:          db,
+		repo:        repo,
 		cfg:         cfg,
 		userService: userService,
 		logger:      logger,

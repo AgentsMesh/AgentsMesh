@@ -9,7 +9,7 @@ import (
 
 func TestValidateScopes(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 
 	t.Run("valid scopes", func(t *testing.T) {
 		err := service.validateScopes([]string{channel.BindingScopeTerminalRead})
@@ -36,7 +36,7 @@ func TestValidateScopes(t *testing.T) {
 func TestRequestBinding(t *testing.T) {
 	db := setupTestDB(t)
 	querier := NewMockPodQuerier()
-	service := NewService(db, querier)
+	service := newTestService(db, querier)
 	ctx := context.Background()
 
 	t.Run("creates pending binding", func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestRequestBinding(t *testing.T) {
 
 func TestCreateAutoBinding(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("creates active binding", func(t *testing.T) {
@@ -127,7 +127,7 @@ func TestCreateAutoBinding(t *testing.T) {
 
 func TestGetBinding(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("returns binding by ID", func(t *testing.T) {
@@ -153,7 +153,7 @@ func TestGetBinding(t *testing.T) {
 
 func TestGetActiveBinding(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("returns active binding", func(t *testing.T) {
@@ -182,7 +182,7 @@ func TestGetActiveBinding(t *testing.T) {
 
 func TestGetBindingsForPod(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("returns all bindings for pod", func(t *testing.T) {
@@ -219,7 +219,7 @@ func TestGetBindingsForPod(t *testing.T) {
 
 func TestGetBoundPods(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("returns bound pod keys", func(t *testing.T) {
@@ -250,7 +250,7 @@ func TestGetBoundPods(t *testing.T) {
 
 func TestGetPendingRequests(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("returns pending requests for target", func(t *testing.T) {

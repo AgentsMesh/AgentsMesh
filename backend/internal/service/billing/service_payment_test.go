@@ -14,7 +14,7 @@ import (
 
 func TestCreatePaymentOrder(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	order := &billing.PaymentOrder{
@@ -39,7 +39,7 @@ func TestCreatePaymentOrder(t *testing.T) {
 
 func TestGetPaymentOrderByNo(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	order := &billing.PaymentOrder{
@@ -65,7 +65,7 @@ func TestGetPaymentOrderByNo(t *testing.T) {
 
 func TestGetPaymentOrderByNoNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetPaymentOrderByNo(ctx, "nonexistent")
@@ -76,7 +76,7 @@ func TestGetPaymentOrderByNoNotFound(t *testing.T) {
 
 func TestGetPaymentOrderByExternalNo(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	extNo := "ext_123"
@@ -104,7 +104,7 @@ func TestGetPaymentOrderByExternalNo(t *testing.T) {
 
 func TestUpdatePaymentOrderStatus(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	order := &billing.PaymentOrder{
@@ -135,7 +135,7 @@ func TestUpdatePaymentOrderStatus(t *testing.T) {
 
 func TestUpdatePaymentOrderStatusFailed(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	order := &billing.PaymentOrder{
@@ -168,7 +168,7 @@ func TestUpdatePaymentOrderStatusFailed(t *testing.T) {
 
 func TestCreateInvoice(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	now := time.Now()
@@ -194,7 +194,7 @@ func TestCreateInvoice(t *testing.T) {
 
 func TestGetInvoicesByOrg(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	now := time.Now()
@@ -223,7 +223,7 @@ func TestGetInvoicesByOrg(t *testing.T) {
 
 func TestGetInvoicesByOrgWithPagination(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	now := time.Now()
@@ -256,7 +256,7 @@ func TestGetInvoicesByOrgWithPagination(t *testing.T) {
 
 func TestCreatePaymentTransaction(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	// Create order first

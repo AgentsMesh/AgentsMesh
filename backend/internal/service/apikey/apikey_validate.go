@@ -10,7 +10,6 @@ import (
 	"time"
 
 	apikeyDomain "github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
-	"gorm.io/gorm"
 )
 
 const (
@@ -58,9 +57,9 @@ func (s *Service) ValidateKey(ctx context.Context, rawKey string) (*ValidateResu
 	}
 
 	// Cache miss: query DB
-	var key apikeyDomain.APIKey
-	if err := s.db.WithContext(ctx).Where("key_hash = ?", keyHash).First(&key).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+	key, err := s.repo.GetByKeyHash(ctx, keyHash)
+	if err != nil {
+		if err == apikeyDomain.ErrNotFound {
 			return nil, ErrAPIKeyNotFound
 		}
 		return nil, fmt.Errorf("failed to validate api key: %w", err)

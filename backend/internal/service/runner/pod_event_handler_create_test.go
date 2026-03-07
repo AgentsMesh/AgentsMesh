@@ -10,7 +10,7 @@ import (
 )
 
 func TestHandlePodCreated(t *testing.T) {
-	pc, _, tr := setupPodEventHandlerDeps(t)
+	pc, _, tr, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -18,12 +18,12 @@ func TestHandlePodCreated(t *testing.T) {
 		NodeID:         "create-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a pending pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"create-pod-1", r.ID, agentpod.StatusInitializing)
 
 	// Track status change callback
@@ -47,7 +47,7 @@ func TestHandlePodCreated(t *testing.T) {
 	var status string
 	var pid int
 	var sandboxPath, branchName *string
-	pc.db.Raw(`SELECT status, pty_pid, sandbox_path, branch_name FROM pods WHERE pod_key = ?`, "create-pod-1").
+	db.Raw(`SELECT status, pty_pid, sandbox_path, branch_name FROM pods WHERE pod_key = ?`, "create-pod-1").
 		Row().Scan(&status, &pid, &sandboxPath, &branchName)
 
 	if status != agentpod.StatusRunning {
@@ -78,7 +78,7 @@ func TestHandlePodCreated(t *testing.T) {
 }
 
 func TestHandlePodCreatedMinimalData(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -86,12 +86,12 @@ func TestHandlePodCreatedMinimalData(t *testing.T) {
 		NodeID:         "minimal-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a pending pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"minimal-pod-1", r.ID, agentpod.StatusInitializing)
 
 	// Handle pod created with minimal data (using Proto type)
@@ -104,7 +104,7 @@ func TestHandlePodCreatedMinimalData(t *testing.T) {
 
 	// Verify pod was updated
 	var status string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "minimal-pod-1").Scan(&status)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "minimal-pod-1").Scan(&status)
 	if status != agentpod.StatusRunning {
 		t.Errorf("status: got %q, want %q", status, agentpod.StatusRunning)
 	}
@@ -113,7 +113,7 @@ func TestHandlePodCreatedMinimalData(t *testing.T) {
 func TestHandlePodTerminated(t *testing.T) {
 	// Note: handlePodTerminated calls DecrementPods which uses GREATEST
 	// SQLite doesn't support GREATEST, so we skip the pod count verification
-	pc, _, tr := setupPodEventHandlerDeps(t)
+	pc, _, tr, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -122,12 +122,12 @@ func TestHandlePodTerminated(t *testing.T) {
 		Status:         "online",
 		CurrentPods:    2,
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a running pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, pty_pid) VALUES (?, ?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status, pty_pid) VALUES (?, ?, ?, ?)`,
 		"term-pod-1", r.ID, agentpod.StatusRunning, 12345)
 	tr.RegisterPod("term-pod-1", r.ID)
 
@@ -150,7 +150,7 @@ func TestHandlePodTerminated(t *testing.T) {
 	var status string
 	var agentStatus string
 	var finishedAt time.Time
-	pc.db.Raw(`SELECT status, agent_status, finished_at FROM pods WHERE pod_key = ?`, "term-pod-1").
+	db.Raw(`SELECT status, agent_status, finished_at FROM pods WHERE pod_key = ?`, "term-pod-1").
 		Row().Scan(&status, &agentStatus, &finishedAt)
 
 	if status != agentpod.StatusCompleted {
@@ -180,7 +180,7 @@ func TestHandlePodTerminated(t *testing.T) {
 func TestHandlePodTerminated_WithEarlyOutput(t *testing.T) {
 	// When a process exits quickly and the relay was never connected,
 	// the Runner captures early output and includes it in the termination event.
-	pc, _, tr := setupPodEventHandlerDeps(t)
+	pc, _, tr, db := setupPodEventHandlerDeps(t)
 
 	r := &runner.Runner{
 		OrganizationID: 1,
@@ -188,11 +188,11 @@ func TestHandlePodTerminated_WithEarlyOutput(t *testing.T) {
 		Status:         "online",
 		CurrentPods:    1,
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, pty_pid) VALUES (?, ?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status, pty_pid) VALUES (?, ?, ?, ?)`,
 		"early-pod-1", r.ID, agentpod.StatusRunning, 99999)
 	tr.RegisterPod("early-pod-1", r.ID)
 
@@ -213,7 +213,7 @@ func TestHandlePodTerminated_WithEarlyOutput(t *testing.T) {
 	// Verify pod was set to error status with error message
 	var status string
 	var errorCode, errorMessage *string
-	pc.db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "early-pod-1").
+	db.Raw(`SELECT status, error_code, error_message FROM pods WHERE pod_key = ?`, "early-pod-1").
 		Row().Scan(&status, &errorCode, &errorMessage)
 
 	if status != agentpod.StatusError {

@@ -15,7 +15,7 @@ import (
 func TestGetBoard(t *testing.T) {
 	ctx := context.Background()
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	// Create tickets in different statuses
 	statuses := []string{
@@ -79,7 +79,7 @@ func TestGetBoard(t *testing.T) {
 func TestGetSubTicketCounts(t *testing.T) {
 	ctx := context.Background()
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	// Create parent tickets
 	parent1 := &ticket.Ticket{

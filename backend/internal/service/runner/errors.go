@@ -1,6 +1,10 @@
 package runner
 
-import "errors"
+import (
+	"errors"
+
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+)
 
 // Service errors - business logic errors
 var (
@@ -8,7 +12,7 @@ var (
 	ErrRunnerOffline       = errors.New("runner is offline")
 	ErrInvalidToken        = errors.New("invalid registration token")
 	ErrTokenExpired        = errors.New("registration token expired")
-	ErrTokenExhausted      = errors.New("registration token usage exhausted")
+	ErrTokenExhausted      = runnerDomain.ErrTokenExhausted // shared with infra layer
 	ErrRunnerAlreadyExists = errors.New("runner already exists")
 	ErrRunnerDisabled      = errors.New("runner is disabled")
 	ErrRunnerQuotaExceeded = errors.New("runner quota exceeded")

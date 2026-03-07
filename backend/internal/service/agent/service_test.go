@@ -3,6 +3,8 @@ package agent
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
+	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -71,6 +73,25 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		VALUES ('inactive-agent', 'Inactive', 'Inactive agent', 'inactive', 'inactive', X'5B5D', 1, 0)`)
 
 	return db
+}
+
+// Test helper functions that wrap *gorm.DB into Repository interfaces via infra layer.
+// This keeps the infra import in one place rather than every test file.
+
+func newTestAgentTypeService(db *gorm.DB) *AgentTypeService {
+	return NewAgentTypeService(infra.NewAgentTypeRepository(db))
+}
+
+func newTestCredentialProfileService(db *gorm.DB, atSvc AgentTypeProvider, enc *crypto.Encryptor) *CredentialProfileService {
+	return NewCredentialProfileService(infra.NewCredentialProfileRepository(db), atSvc, enc)
+}
+
+func newTestUserConfigService(db *gorm.DB, atSvc AgentTypeProvider) *UserConfigService {
+	return NewUserConfigService(infra.NewUserConfigRepository(db), atSvc)
+}
+
+func newTestMessageService(db *gorm.DB) *MessageService {
+	return NewMessageService(infra.NewAgentMessageRepository(db))
 }
 
 // strPtr is a helper function to create a pointer to a string value.

@@ -47,7 +47,7 @@ func (s *Service) RequestScopes(ctx context.Context, bindingID int64, requesterP
 		binding.PendingScopes = append(binding.PendingScopes, newScopes...)
 	}
 
-	if err := s.db.WithContext(ctx).Save(binding).Error; err != nil {
+	if err := s.repo.Save(ctx, binding); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +98,7 @@ func (s *Service) ApproveScopes(ctx context.Context, bindingID int64, approverPo
 	binding.GrantedScopes = pq.StringArray(newGranted)
 	binding.PendingScopes = pq.StringArray(newPending)
 
-	if err := s.db.WithContext(ctx).Save(binding).Error; err != nil {
+	if err := s.repo.Save(ctx, binding); err != nil {
 		return nil, err
 	}
 

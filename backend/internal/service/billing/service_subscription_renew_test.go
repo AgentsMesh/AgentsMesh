@@ -14,7 +14,7 @@ import (
 
 func TestRenewSubscriptionMonthly(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -36,7 +36,7 @@ func TestRenewSubscriptionMonthly(t *testing.T) {
 
 func TestRenewSubscriptionYearly(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -69,7 +69,7 @@ func TestRenewSubscriptionYearly(t *testing.T) {
 
 func TestRenewSubscriptionNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	err := service.RenewSubscription(ctx, 999)

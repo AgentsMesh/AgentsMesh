@@ -3,6 +3,9 @@ package agentpod
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
+	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -100,13 +103,40 @@ func containsStr(s, substr string) bool {
 	return false
 }
 
+// newTestPodService wraps *gorm.DB into PodRepository for testing.
+func newTestPodService(db *gorm.DB) *PodService {
+	return NewPodService(infra.NewPodRepository(db))
+}
+
+// newTestSettingsService wraps *gorm.DB into SettingsRepository for testing.
+func newTestSettingsService(db *gorm.DB) *SettingsService {
+	return NewSettingsService(infra.NewSettingsRepository(db))
+}
+
+// newTestAIProviderService wraps *gorm.DB into AIProviderRepository for testing.
+// Accepts nil db for tests that don't hit the DB (pure logic tests).
+func newTestAIProviderService(db *gorm.DB, enc *crypto.Encryptor) *AIProviderService {
+	if db == nil {
+		return NewAIProviderService(nil, enc)
+	}
+	return NewAIProviderService(infra.NewAIProviderRepository(db), enc)
+}
+
+// newTestAutopilotService wraps *gorm.DB into AutopilotRepository for testing.
+func newTestAutopilotService(db *gorm.DB) *AutopilotControllerService {
+	return NewAutopilotControllerService(infra.NewAutopilotRepository(db))
+}
+
 func TestNewPodService(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	if svc == nil {
 		t.Error("NewPodService returned nil")
 	}
-	if svc.db != db {
-		t.Error("Service db not set correctly")
+	if svc.repo == nil {
+		t.Error("Service repo not set correctly")
 	}
 }
+
+// suppress unused import for agentpod domain
+var _ = agentpod.StatusRunning

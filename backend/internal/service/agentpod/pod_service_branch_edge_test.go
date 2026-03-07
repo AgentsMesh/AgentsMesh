@@ -12,7 +12,7 @@ import (
 
 func TestFindByBranchAndRepo_BranchNameCaseSensitivity(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	orgID := int64(1)
@@ -48,7 +48,7 @@ func TestFindByBranchAndRepo_BranchNameCaseSensitivity(t *testing.T) {
 
 func TestFindByBranchAndRepo_SpecialCharactersInBranch(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	orgID := int64(1)
@@ -95,7 +95,7 @@ func TestFindByBranchAndRepo_SpecialCharactersInBranch(t *testing.T) {
 
 func TestFindByBranchAndRepo_NilBranchPod(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create pod without branch_name
@@ -120,7 +120,7 @@ func TestFindByBranchAndRepo_NilBranchPod(t *testing.T) {
 
 func TestFindByBranchAndRepo_NilRepoPod(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create pod without repository_id

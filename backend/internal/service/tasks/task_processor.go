@@ -9,7 +9,6 @@ import (
 
 	infraTasks "github.com/anthropics/agentsmesh/backend/internal/infra/tasks"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 // TaskHandler is the interface for task-specific handlers
@@ -26,7 +25,6 @@ type TaskHandler interface {
 
 // TaskProcessorService processes completed pipeline tasks
 type TaskProcessorService struct {
-	db       *gorm.DB
 	redis    *redis.Client
 	watcher  *infraTasks.PipelineWatcher
 	handlers map[string]TaskHandler
@@ -36,12 +34,10 @@ type TaskProcessorService struct {
 
 // NewTaskProcessorService creates a new task processor service
 func NewTaskProcessorService(
-	db *gorm.DB,
 	redisClient *redis.Client,
 	logger *slog.Logger,
 ) *TaskProcessorService {
 	return &TaskProcessorService{
-		db:       db,
 		redis:    redisClient,
 		watcher:  infraTasks.NewPipelineWatcher(redisClient, logger),
 		handlers: make(map[string]TaskHandler),
@@ -232,41 +228,25 @@ const (
 	TaskStatusCanceled   = "canceled"
 )
 
+// TaskExecutionRepository handles task execution persistence.
+type TaskExecutionRepository interface {
+	UpdateStatus(ctx context.Context, taskID int64, status string, errorMsg string) error
+	GetByID(ctx context.Context, taskID int64) (*TaskExecution, error)
+}
+
 // BaseTaskHandler provides common functionality for task handlers
 type BaseTaskHandler struct {
-	DB     *gorm.DB
+	Repo   TaskExecutionRepository
 	Redis  *redis.Client
 	Logger *slog.Logger
 }
 
 // UpdateTaskStatus updates the status of a task execution
 func (h *BaseTaskHandler) UpdateTaskStatus(ctx context.Context, taskID int64, status string, errorMsg string) error {
-	updates := map[string]interface{}{
-		"status":     status,
-		"updated_at": time.Now(),
-	}
-
-	if errorMsg != "" {
-		updates["error_message"] = errorMsg
-	}
-
-	if status == TaskStatusSuccess || status == TaskStatusFailed {
-		now := time.Now()
-		updates["finished_at"] = &now
-	}
-
-	return h.DB.WithContext(ctx).
-		Model(&TaskExecution{}).
-		Where("id = ?", taskID).
-		Updates(updates).Error
+	return h.Repo.UpdateStatus(ctx, taskID, status, errorMsg)
 }
 
 // GetTaskExecution retrieves a task execution by ID
 func (h *BaseTaskHandler) GetTaskExecution(ctx context.Context, taskID int64) (*TaskExecution, error) {
-	var task TaskExecution
-	err := h.DB.WithContext(ctx).First(&task, taskID).Error
-	if err != nil {
-		return nil, err
-	}
-	return &task, nil
+	return h.Repo.GetByID(ctx, taskID)
 }

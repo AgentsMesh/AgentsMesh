@@ -25,7 +25,7 @@ func setupBadMessageDB(t *testing.T) *gorm.DB {
 
 func TestMessageService_SendMessage_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.SendMessage(ctx, "s1", "s2", "text", agent.MessageContent{}, nil, nil)
@@ -36,7 +36,7 @@ func TestMessageService_SendMessage_DBError(t *testing.T) {
 
 func TestMessageService_GetMessage_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetMessage(ctx, 1)
@@ -51,7 +51,7 @@ func TestMessageService_GetMessage_DBError(t *testing.T) {
 
 func TestMessageService_GetMessages_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetMessages(ctx, "receiver", false, nil, 10, 0)
@@ -62,7 +62,7 @@ func TestMessageService_GetMessages_DBError(t *testing.T) {
 
 func TestMessageService_GetUnreadMessages_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetUnreadMessages(ctx, "receiver", 10)
@@ -73,7 +73,7 @@ func TestMessageService_GetUnreadMessages_DBError(t *testing.T) {
 
 func TestMessageService_GetUnreadCount_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetUnreadCount(ctx, "receiver")
@@ -84,7 +84,7 @@ func TestMessageService_GetUnreadCount_DBError(t *testing.T) {
 
 func TestMessageService_GetConversation_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetConversation(ctx, "conv-123", 10)
@@ -95,7 +95,7 @@ func TestMessageService_GetConversation_DBError(t *testing.T) {
 
 func TestMessageService_GetPendingRetries_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetPendingRetries(ctx, time.Now(), 10)
@@ -106,7 +106,7 @@ func TestMessageService_GetPendingRetries_DBError(t *testing.T) {
 
 func TestMessageService_GetSentMessages_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetSentMessages(ctx, "sender", 10, 0)
@@ -117,7 +117,7 @@ func TestMessageService_GetSentMessages_DBError(t *testing.T) {
 
 func TestMessageService_GetMessagesBetween_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetMessagesBetween(ctx, "alice", "bob", 10)
@@ -128,7 +128,7 @@ func TestMessageService_GetMessagesBetween_DBError(t *testing.T) {
 
 func TestMessageService_GetDeadLetters_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.GetDeadLetters(ctx, 10, 0)
@@ -139,7 +139,7 @@ func TestMessageService_GetDeadLetters_DBError(t *testing.T) {
 
 func TestMessageService_ReplayDeadLetter_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.ReplayDeadLetter(ctx, 1)
@@ -150,7 +150,7 @@ func TestMessageService_ReplayDeadLetter_DBError(t *testing.T) {
 
 func TestMessageService_CleanupExpiredMessages_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.CleanupExpiredMessages(ctx, time.Now())
@@ -161,7 +161,7 @@ func TestMessageService_CleanupExpiredMessages_DBError(t *testing.T) {
 
 func TestMessageService_MarkAllRead_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	_, err := svc.MarkAllRead(ctx, "receiver")
@@ -172,7 +172,7 @@ func TestMessageService_MarkAllRead_DBError(t *testing.T) {
 
 func TestMessageService_MarkDelivered_DBError(t *testing.T) {
 	db := setupBadMessageDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// This should not error since it updates non-existent rows (returns 0 affected)

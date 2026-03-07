@@ -3,9 +3,8 @@ package user
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	domainUser "github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
-	"gorm.io/gorm"
 )
 
 // UpdateRepositoryProviderRequest represents a request to update a repository provider
@@ -19,7 +18,7 @@ type UpdateRepositoryProviderRequest struct {
 }
 
 // UpdateRepositoryProvider updates a repository provider
-func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, providerID int64, req *UpdateRepositoryProviderRequest) (*user.RepositoryProvider, error) {
+func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, providerID int64, req *UpdateRepositoryProviderRequest) (*domainUser.RepositoryProvider, error) {
 	// Verify ownership
 	provider, err := s.GetRepositoryProvider(ctx, userID, providerID)
 	if err != nil {
@@ -30,11 +29,11 @@ func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, provider
 
 	if req.Name != nil && *req.Name != "" {
 		// Check if new name conflicts with existing provider
-		var existing user.RepositoryProvider
-		err := s.db.WithContext(ctx).
-			Where("user_id = ? AND name = ? AND id != ?", userID, *req.Name, providerID).
-			First(&existing).Error
-		if err == nil {
+		exists, err := s.repo.RepositoryProviderNameExists(ctx, userID, *req.Name, &providerID)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
 			return nil, ErrProviderAlreadyExists
 		}
 		updates["name"] = *req.Name
@@ -89,7 +88,7 @@ func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, provider
 		return provider, nil
 	}
 
-	if err := s.db.WithContext(ctx).Model(provider).Updates(updates).Error; err != nil {
+	if err := s.repo.UpdateRepositoryProvider(ctx, provider, updates); err != nil {
 		return nil, err
 	}
 
@@ -104,18 +103,5 @@ func (s *Service) SetDefaultRepositoryProvider(ctx context.Context, userID, prov
 		return err
 	}
 
-	// Start transaction
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Clear all defaults for this user
-		if err := tx.Model(&user.RepositoryProvider{}).
-			Where("user_id = ?", userID).
-			Update("is_default", false).Error; err != nil {
-			return err
-		}
-
-		// Set the new default
-		return tx.Model(&user.RepositoryProvider{}).
-			Where("id = ? AND user_id = ?", providerID, userID).
-			Update("is_default", true).Error
-	})
+	return s.repo.SetDefaultRepositoryProvider(ctx, userID, providerID)
 }

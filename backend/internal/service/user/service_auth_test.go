@@ -3,11 +3,13 @@ package user
 import (
 	"context"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 func TestAuthenticate(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create a user with password
@@ -30,7 +32,7 @@ func TestAuthenticate(t *testing.T) {
 
 func TestAuthenticateInvalidPassword(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -48,7 +50,7 @@ func TestAuthenticateInvalidPassword(t *testing.T) {
 
 func TestAuthenticateUserNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	_, err := service.Authenticate(ctx, "nonexistent@example.com", "password")
@@ -59,7 +61,7 @@ func TestAuthenticateUserNotFound(t *testing.T) {
 
 func TestAuthenticateNoPassword(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create user without password
@@ -77,7 +79,7 @@ func TestAuthenticateNoPassword(t *testing.T) {
 
 func TestAuthenticateInactiveUser(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -98,7 +100,7 @@ func TestAuthenticateInactiveUser(t *testing.T) {
 
 func TestUpdatePassword(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{

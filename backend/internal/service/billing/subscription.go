@@ -7,16 +7,18 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
-	"gorm.io/gorm"
 )
 
 // GetSubscription returns subscription for an organization
 func (s *Service) GetSubscription(ctx context.Context, orgID int64) (*billing.Subscription, error) {
-	var sub billing.Subscription
-	if err := s.db.WithContext(ctx).Preload("Plan").Where("organization_id = ?", orgID).First(&sub).Error; err != nil {
+	sub, err := s.repo.GetSubscriptionByOrgID(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if sub == nil {
 		return nil, ErrSubscriptionNotFound
 	}
-	return &sub, nil
+	return sub, nil
 }
 
 // CreateSubscription creates a new subscription
@@ -38,7 +40,7 @@ func (s *Service) CreateSubscription(ctx context.Context, orgID int64, planName 
 		CurrentPeriodEnd:   periodEnd,
 	}
 
-	if err := s.db.WithContext(ctx).Create(sub).Error; err != nil {
+	if err := s.repo.CreateSubscription(ctx, sub); err != nil {
 		return nil, err
 	}
 
@@ -47,19 +49,21 @@ func (s *Service) CreateSubscription(ctx context.Context, orgID int64, planName 
 }
 
 // CreateTrialSubscription creates a trial subscription for a new organization.
-// NOTE: This uses the service's own DB connection. If the org was created in a
+// NOTE: This uses the service's own repo. If the org was created in a
 // transaction that hasn't committed yet, use CreateTrialSubscriptionTx instead.
 func (s *Service) CreateTrialSubscription(ctx context.Context, orgID int64, planName string, trialDays int) (*billing.Subscription, error) {
-	return s.createTrialSubscription(ctx, s.db, orgID, planName, trialDays)
+	return s.createTrialSubscription(ctx, s.repo, orgID, planName, trialDays)
 }
 
-// CreateTrialSubscriptionTx creates a trial subscription using the provided transaction DB.
+// CreateTrialSubscriptionTx creates a trial subscription using the provided transaction handle.
 // This ensures the subscription insert can see the org record created in the same transaction.
-func (s *Service) CreateTrialSubscriptionTx(ctx context.Context, tx *gorm.DB, orgID int64, planName string, trialDays int) (*billing.Subscription, error) {
-	return s.createTrialSubscription(ctx, tx, orgID, planName, trialDays)
+// The rawTx parameter must be the underlying DB transaction type (e.g. *gorm.DB).
+func (s *Service) CreateTrialSubscriptionTx(ctx context.Context, rawTx interface{}, orgID int64, planName string, trialDays int) (*billing.Subscription, error) {
+	txRepo := s.repo.Scoped(rawTx)
+	return s.createTrialSubscription(ctx, txRepo, orgID, planName, trialDays)
 }
 
-func (s *Service) createTrialSubscription(ctx context.Context, db *gorm.DB, orgID int64, planName string, trialDays int) (*billing.Subscription, error) {
+func (s *Service) createTrialSubscription(ctx context.Context, repo billing.BillingRepository, orgID int64, planName string, trialDays int) (*billing.Subscription, error) {
 	plan, err := s.GetPlan(ctx, planName)
 	if err != nil {
 		return nil, err
@@ -82,7 +86,7 @@ func (s *Service) createTrialSubscription(ctx context.Context, db *gorm.DB, orgI
 		SeatCount:          1,
 	}
 
-	if err := db.WithContext(ctx).Create(sub).Error; err != nil {
+	if err := repo.CreateSubscription(ctx, sub); err != nil {
 		return nil, err
 	}
 
@@ -91,9 +95,7 @@ func (s *Service) createTrialSubscription(ctx context.Context, db *gorm.DB, orgI
 }
 
 // AdminCreateSubscription creates a new active subscription for an organization that doesn't have one.
-// This is intended for admin operations to fix organizations missing subscription records.
 func (s *Service) AdminCreateSubscription(ctx context.Context, orgID int64, planName string, months int) (*billing.Subscription, error) {
-	// Check if subscription already exists
 	_, err := s.GetSubscription(ctx, orgID)
 	if err == nil {
 		return nil, ErrSubscriptionAlreadyExists
@@ -121,24 +123,18 @@ func (s *Service) AdminCreateSubscription(ctx context.Context, orgID int64, plan
 		SeatCount:          1,
 	}
 
-	if err := s.db.WithContext(ctx).Create(sub).Error; err != nil {
+	if err := s.repo.CreateSubscription(ctx, sub); err != nil {
 		return nil, err
 	}
 
 	// Sync organization table redundant fields
-	s.db.WithContext(ctx).Table("organizations").
-		Where("id = ?", orgID).
-		Updates(map[string]interface{}{
-			"subscription_plan":   plan.Name,
-			"subscription_status": billing.SubscriptionStatusActive,
-		})
+	s.syncOrganizationSubscription(ctx, orgID, &plan.Name, strPtr(billing.SubscriptionStatusActive))
 
 	sub.Plan = plan
 	return sub, nil
 }
 
 // AdminUpdatePlan directly changes the subscription plan without payment checks or downgrade delays.
-// This is intended for admin operations where the admin has full authority.
 func (s *Service) AdminUpdatePlan(ctx context.Context, orgID int64, planName string) (*billing.Subscription, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -153,20 +149,15 @@ func (s *Service) AdminUpdatePlan(ctx context.Context, orgID int64, planName str
 	log.Printf("[AdminUpdatePlan] orgID=%d, planName=%q, sub.PlanID=%d, newPlan.ID=%d, newPlan.Name=%q",
 		orgID, planName, sub.PlanID, newPlan.ID, newPlan.Name)
 
-	if err := s.db.WithContext(ctx).
-		Model(&billing.Subscription{}).
-		Where("id = ?", sub.ID).
-		Updates(map[string]interface{}{
-			"plan_id":           newPlan.ID,
-			"downgrade_to_plan": nil,
-		}).Error; err != nil {
+	if err := s.repo.UpdateSubscriptionFields(ctx, sub.ID, map[string]interface{}{
+		"plan_id":           newPlan.ID,
+		"downgrade_to_plan": nil,
+	}); err != nil {
 		return nil, err
 	}
 
 	// Sync organization table redundant fields
-	s.db.WithContext(ctx).Table("organizations").
-		Where("id = ?", orgID).
-		Update("subscription_plan", newPlan.Name)
+	s.syncOrganizationSubscription(ctx, orgID, &newPlan.Name, nil)
 
 	sub.PlanID = newPlan.ID
 	sub.DowngradeToPlan = nil
@@ -175,14 +166,12 @@ func (s *Service) AdminUpdatePlan(ctx context.Context, orgID int64, planName str
 }
 
 // AdminRenew extends a subscription by the specified number of months.
-// Starts from current_period_end (or now, whichever is later). Reactivates canceled/frozen subscriptions.
 func (s *Service) AdminRenew(ctx context.Context, orgID int64, months int) (*billing.Subscription, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Start from current_period_end or now, whichever is later
 	start := sub.CurrentPeriodEnd
 	now := time.Now()
 	if now.After(start) {
@@ -190,60 +179,47 @@ func (s *Service) AdminRenew(ctx context.Context, orgID int64, months int) (*bil
 	}
 	end := start.AddDate(0, months, 0)
 
-	if err := s.db.WithContext(ctx).
-		Model(&billing.Subscription{}).
-		Where("id = ?", sub.ID).
-		Updates(map[string]interface{}{
-			"status":               billing.SubscriptionStatusActive,
-			"current_period_start": start,
-			"current_period_end":   end,
-			"frozen_at":            nil,
-			"canceled_at":          nil,
-			"cancel_at_period_end": false,
-		}).Error; err != nil {
+	if err := s.repo.UpdateSubscriptionFields(ctx, sub.ID, map[string]interface{}{
+		"status":               billing.SubscriptionStatusActive,
+		"current_period_start": start,
+		"current_period_end":   end,
+		"frozen_at":            nil,
+		"canceled_at":          nil,
+		"cancel_at_period_end": false,
+	}); err != nil {
 		return nil, err
 	}
 
 	// Sync organization table
-	s.db.WithContext(ctx).Table("organizations").
-		Where("id = ?", orgID).
-		Update("subscription_status", billing.SubscriptionStatusActive)
+	s.syncOrganizationSubscription(ctx, orgID, nil, strPtr(billing.SubscriptionStatusActive))
 
 	// Reload to get fresh data
 	return s.GetSubscription(ctx, orgID)
 }
 
-// AdminCancelSubscription cancels a subscription without calling external payment APIs (Stripe, etc.).
+// AdminCancelSubscription cancels a subscription without calling external payment APIs.
 func (s *Service) AdminCancelSubscription(ctx context.Context, orgID int64) error {
 	now := time.Now()
 
-	if err := s.db.WithContext(ctx).
-		Model(&billing.Subscription{}).
-		Where("organization_id = ?", orgID).
-		Updates(map[string]interface{}{
-			"status":      billing.SubscriptionStatusCanceled,
-			"canceled_at": now,
-		}).Error; err != nil {
+	if err := s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
+		"status":      billing.SubscriptionStatusCanceled,
+		"canceled_at": now,
+	}); err != nil {
 		return err
 	}
 
 	// Sync organization table
-	s.db.WithContext(ctx).Table("organizations").
-		Where("id = ?", orgID).
-		Update("subscription_status", billing.SubscriptionStatusCanceled)
-
+	s.syncOrganizationSubscription(ctx, orgID, nil, strPtr(billing.SubscriptionStatusCanceled))
 	return nil
 }
 
 // UpgradePlan upgrades the subscription plan via the payment provider API.
-// LemonSqueezy automatically handles proration for the billing difference.
 func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string) (*billing.Subscription, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
 		return nil, ErrSubscriptionNotFound
 	}
 
-	// Only active or trialing subscriptions can be upgraded
 	if !sub.IsActive() && !sub.IsTrialing() {
 		if sub.IsFrozen() {
 			return nil, ErrSubscriptionFrozen
@@ -256,7 +232,6 @@ func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string)
 		return nil, ErrPlanNotFound
 	}
 
-	// Reuse preloaded plan from GetSubscription if available
 	currentPlan := sub.Plan
 	if currentPlan == nil {
 		currentPlan, err = s.GetPlanByID(ctx, sub.PlanID)
@@ -265,13 +240,10 @@ func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string)
 		}
 	}
 
-	// Only allow upgrades (higher price), not downgrades
 	if newPlan.PricePerSeatMonthly <= currentPlan.PricePerSeatMonthly {
 		return nil, fmt.Errorf("can only upgrade to a higher plan; use downgrade for lower plans")
 	}
 
-	// Find the variant ID for the target plan matching the current billing cycle
-	// Default to USD; for CN deployment we'd use CNY
 	currency := billing.CurrencyUSD
 	if s.paymentConfig != nil && s.paymentConfig.DeploymentType == "cn" {
 		currency = billing.CurrencyCNY
@@ -281,7 +253,6 @@ func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string)
 		return nil, fmt.Errorf("price not found for target plan: %w", err)
 	}
 
-	// Get the appropriate variant ID based on billing cycle
 	var variantID string
 	if sub.BillingCycle == billing.BillingCycleYearly {
 		if price.LemonSqueezyVariantIDYearly != nil {
@@ -293,7 +264,6 @@ func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string)
 		}
 	}
 
-	// Call provider API if subscription has a provider subscription ID
 	if sub.LemonSqueezySubscriptionID != nil && *sub.LemonSqueezySubscriptionID != "" {
 		if variantID == "" {
 			return nil, fmt.Errorf("no variant ID configured for plan %q with billing cycle %q and currency %q", planName, sub.BillingCycle, currency)
@@ -307,25 +277,16 @@ func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string)
 		}
 	}
 
-	// Update local DB
-	// NOTE: If this fails after provider API succeeded, the webhook sync (Phase 1)
-	// will reconcile the data on the next subscription_updated event.
-	if err := s.db.WithContext(ctx).Model(&billing.Subscription{}).
-		Where("id = ?", sub.ID).
-		Updates(map[string]interface{}{
-			"plan_id":           newPlan.ID,
-			"downgrade_to_plan": nil,
-		}).Error; err != nil {
+	if err := s.repo.UpdateSubscriptionFields(ctx, sub.ID, map[string]interface{}{
+		"plan_id":           newPlan.ID,
+		"downgrade_to_plan": nil,
+	}); err != nil {
 		log.Printf("[WARN] UpgradePlan: provider API succeeded but DB update failed for org=%d, plan=%s: %v", orgID, planName, err)
 		return nil, fmt.Errorf("failed to sync plan locally: %w", err)
 	}
 
 	// Sync organization table redundant fields
-	if err := s.db.WithContext(ctx).Table("organizations").
-		Where("id = ?", orgID).
-		Update("subscription_plan", newPlan.Name).Error; err != nil {
-		log.Printf("[WARN] UpgradePlan: failed to sync organization table for org=%d: %v", orgID, err)
-	}
+	s.syncOrganizationSubscription(ctx, orgID, &newPlan.Name, nil)
 
 	sub.PlanID = newPlan.ID
 	sub.DowngradeToPlan = nil
@@ -345,56 +306,41 @@ func (s *Service) UpdateSubscription(ctx context.Context, orgID int64, planName 
 		return nil, err
 	}
 
-	// Get current plan for comparison
 	currentPlan, err := s.GetPlanByID(ctx, sub.PlanID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Determine if this is an upgrade or downgrade based on price
 	isDowngrade := newPlan.PricePerSeatMonthly < currentPlan.PricePerSeatMonthly
 
 	if isDowngrade {
-		// Downgrade: schedule for end of billing period
-		// Check if current seat count exceeds new plan's max_users
 		if newPlan.MaxUsers > 0 && sub.SeatCount > newPlan.MaxUsers {
 			return nil, ErrSeatCountExceedsLimit
 		}
 
-		// Set downgrade to take effect at period end
 		sub.DowngradeToPlan = &planName
-		if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+		if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 			return nil, err
 		}
 
-		// Return current subscription with downgrade scheduled
 		sub.Plan = currentPlan
 		return sub, nil
 	}
 
-	// Upgrade: immediate effect (payment should be handled separately via checkout)
-	// For free plan or if no payment required, apply immediately
 	if currentPlan.PricePerSeatMonthly == 0 || newPlan.PricePerSeatMonthly == 0 {
 		sub.PlanID = newPlan.ID
-		sub.DowngradeToPlan = nil // Clear any pending downgrade
+		sub.DowngradeToPlan = nil
 
-		// Update Stripe subscription if enabled
-		if s.stripeEnabled && sub.StripeSubscriptionID != nil {
-			// In a real implementation, update Stripe subscription here
-		}
-
-		if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+		if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 			return nil, err
 		}
 
-		// Sync organization table with new plan name
 		s.syncOrganizationSubscription(ctx, orgID, &newPlan.Name, nil)
 
 		sub.Plan = newPlan
 		return sub, nil
 	}
 
-	// For paid upgrades, just return the subscription - payment flow handles the actual upgrade
 	sub.Plan = currentPlan
 	return sub, nil
 }

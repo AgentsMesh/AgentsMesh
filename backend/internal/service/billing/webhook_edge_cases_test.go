@@ -15,7 +15,7 @@ import (
 
 func TestHandlePaymentSucceededWithYearlyBilling(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -63,7 +63,7 @@ func TestHandlePaymentSucceededWithYearlyBilling(t *testing.T) {
 
 func TestUpgradePlanWithNilPlanID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -100,7 +100,7 @@ func TestUpgradePlanWithNilPlanID(t *testing.T) {
 
 func TestHandlePaymentSucceededNoOrder(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 
 	c, _ := createTestGinContext()
 	event := &payment.WebhookEvent{
@@ -120,7 +120,7 @@ func TestHandlePaymentSucceededNoOrder(t *testing.T) {
 
 func TestHandlePaymentSucceededAlreadySucceeded(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -161,7 +161,7 @@ func TestHandlePaymentSucceededAlreadySucceeded(t *testing.T) {
 
 func TestHandlePaymentFailedNoOrder(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 
 	c, _ := createTestGinContext()
 	event := &payment.WebhookEvent{

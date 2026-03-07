@@ -4,14 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	invitationDomain "github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
 )
 
 // GetByToken retrieves an invitation by its token
-func (s *Service) GetByToken(ctx context.Context, token string) (*invitation.Invitation, error) {
-	inv, err := s.repo.GetByToken(token)
+func (s *Service) GetByToken(ctx context.Context, token string) (*invitationDomain.Invitation, error) {
+	inv, err := s.repo.GetByToken(ctx, token)
 	if err != nil {
 		return nil, ErrInvitationNotFound
 	}
@@ -19,8 +17,8 @@ func (s *Service) GetByToken(ctx context.Context, token string) (*invitation.Inv
 }
 
 // GetByID retrieves an invitation by ID
-func (s *Service) GetByID(ctx context.Context, id int64) (*invitation.Invitation, error) {
-	inv, err := s.repo.GetByID(id)
+func (s *Service) GetByID(ctx context.Context, id int64) (*invitationDomain.Invitation, error) {
+	inv, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, ErrInvitationNotFound
 	}
@@ -28,13 +26,13 @@ func (s *Service) GetByID(ctx context.Context, id int64) (*invitation.Invitation
 }
 
 // ListByOrganization lists all invitations for an organization
-func (s *Service) ListByOrganization(ctx context.Context, orgID int64) ([]*invitation.Invitation, error) {
-	return s.repo.ListByOrganization(orgID)
+func (s *Service) ListByOrganization(ctx context.Context, orgID int64) ([]*invitationDomain.Invitation, error) {
+	return s.repo.ListByOrganization(ctx, orgID)
 }
 
 // ListPendingByEmail lists all pending invitations for an email
-func (s *Service) ListPendingByEmail(ctx context.Context, email string) ([]*invitation.Invitation, error) {
-	return s.repo.ListPendingByEmail(email)
+func (s *Service) ListPendingByEmail(ctx context.Context, email string) ([]*invitationDomain.Invitation, error) {
+	return s.repo.ListPendingByEmail(ctx, email)
 }
 
 // GetInvitationInfo returns information about an invitation for display
@@ -52,33 +50,28 @@ type InvitationInfo struct {
 
 // GetInvitationInfo retrieves detailed invitation info for display
 func (s *Service) GetInvitationInfo(ctx context.Context, token string) (*InvitationInfo, error) {
-	inv, err := s.repo.GetByToken(token)
+	inv, err := s.repo.GetByToken(ctx, token)
 	if err != nil {
 		return nil, ErrInvitationNotFound
 	}
 
-	var org organization.Organization
-	if err := s.db.WithContext(ctx).First(&org, inv.OrganizationID).Error; err != nil {
+	orgInfo, err := s.repo.GetOrganization(ctx, inv.OrganizationID)
+	if err != nil {
 		return nil, err
 	}
 
-	var inviter user.User
-	if err := s.db.WithContext(ctx).First(&inviter, inv.InvitedBy).Error; err != nil {
+	inviterName, err := s.repo.GetUserDisplayName(ctx, inv.InvitedBy)
+	if err != nil {
 		return nil, err
-	}
-
-	inviterName := inviter.Username
-	if inviter.Name != nil && *inviter.Name != "" {
-		inviterName = *inviter.Name
 	}
 
 	return &InvitationInfo{
 		ID:          inv.ID,
 		Email:       inv.Email,
 		Role:        inv.Role,
-		OrgID:       org.ID,
-		OrgName:     org.Name,
-		OrgSlug:     org.Slug,
+		OrgID:       inv.OrganizationID,
+		OrgName:     orgInfo.Name,
+		OrgSlug:     orgInfo.Slug,
 		InviterName: inviterName,
 		ExpiresAt:   inv.ExpiresAt,
 		IsExpired:   inv.IsExpired(),

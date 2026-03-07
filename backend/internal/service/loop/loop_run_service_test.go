@@ -6,6 +6,7 @@ import (
 	"time"
 
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -112,7 +113,8 @@ func setupLoopRunServiceTestDB(t *testing.T) *gorm.DB {
 
 func newTestLoopRunService(t *testing.T) (*LoopRunService, *gorm.DB) {
 	db := setupLoopRunServiceTestDB(t)
-	svc := NewLoopRunService(db)
+	repo := infra.NewLoopRunRepository(db)
+	svc := NewLoopRunService(repo)
 	return svc, db
 }
 

@@ -59,10 +59,7 @@ func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *
 		updates["approval_request_at"] = now
 	}
 
-	if err := pc.db.WithContext(ctx).
-		Model(&agentpod.AutopilotController{}).
-		Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
-		Updates(updates).Error; err != nil {
+	if err := pc.autopilotRepo.UpdateStatusByKey(ctx, data.GetAutopilotKey(), updates); err != nil {
 		pc.logger.Error("failed to update autopilot pod status",
 			"autopilot_controller_key", data.GetAutopilotKey(),
 			"error", err)
@@ -102,10 +99,7 @@ func (pc *PodCoordinator) handleAutopilotControllerCreated(runnerID int64, data 
 		"updated_at": now,
 	}
 
-	if err := pc.db.WithContext(ctx).
-		Model(&agentpod.AutopilotController{}).
-		Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
-		Updates(updates).Error; err != nil {
+	if err := pc.autopilotRepo.UpdateStatusByKey(ctx, data.GetAutopilotKey(), updates); err != nil {
 		pc.logger.Error("failed to update autopilot pod on creation",
 			"autopilot_controller_key", data.GetAutopilotKey(),
 			"error", err)
@@ -120,10 +114,8 @@ func (pc *PodCoordinator) handleAutopilotControllerCreated(runnerID int64, data 
 	// Notify via callback
 	if pc.onAutopilotStatusChange != nil {
 		// Fetch the full AutopilotController to get max_iterations
-		var rp agentpod.AutopilotController
-		if err := pc.db.WithContext(ctx).
-			Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
-			First(&rp).Error; err == nil {
+		rp, err := pc.autopilotRepo.GetByKey(ctx, data.GetAutopilotKey())
+		if err == nil {
 			pc.onAutopilotStatusChange(
 				data.GetAutopilotKey(),
 				data.GetPodKey(),
@@ -158,10 +150,7 @@ func (pc *PodCoordinator) handleAutopilotControllerTerminated(runnerID int64, da
 		"updated_at":   now,
 	}
 
-	if err := pc.db.WithContext(ctx).
-		Model(&agentpod.AutopilotController{}).
-		Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
-		Updates(updates).Error; err != nil {
+	if err := pc.autopilotRepo.UpdateStatusByKey(ctx, data.GetAutopilotKey(), updates); err != nil {
 		pc.logger.Error("failed to update autopilot pod on termination",
 			"autopilot_controller_key", data.GetAutopilotKey(),
 			"error", err)
@@ -176,10 +165,8 @@ func (pc *PodCoordinator) handleAutopilotControllerTerminated(runnerID int64, da
 	// Notify via callback
 	if pc.onAutopilotStatusChange != nil {
 		// Fetch the full AutopilotController to get details
-		var rp agentpod.AutopilotController
-		if err := pc.db.WithContext(ctx).
-			Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
-			First(&rp).Error; err == nil {
+		rp, err := pc.autopilotRepo.GetByKey(ctx, data.GetAutopilotKey())
+		if err == nil {
 			pc.onAutopilotStatusChange(
 				data.GetAutopilotKey(),
 				rp.PodKey,

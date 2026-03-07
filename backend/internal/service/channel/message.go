@@ -30,12 +30,12 @@ func (s *Service) SendMessage(ctx context.Context, channelID int64, senderPod *s
 		Metadata:     metadata,
 	}
 
-	if err := s.db.WithContext(ctx).Create(msg).Error; err != nil {
+	if err := s.repo.CreateMessage(ctx, msg); err != nil {
 		return nil, err
 	}
 
 	// Update channel updated_at
-	s.db.WithContext(ctx).Model(ch).Update("updated_at", time.Now())
+	_ = s.repo.TouchChannel(ctx, channelID)
 
 	// Publish channel:message event via EventBus
 	if s.eventBus != nil {
@@ -65,20 +65,8 @@ func (s *Service) SendMessage(ctx context.Context, channelID int64, senderPod *s
 
 // GetMessages returns messages for a channel
 func (s *Service) GetMessages(ctx context.Context, channelID int64, before *time.Time, limit int) ([]*channel.Message, error) {
-	query := s.db.WithContext(ctx).Where("channel_id = ?", channelID)
-
-	if before != nil {
-		query = query.Where("created_at < ?", *before)
-	}
-
-	var messages []*channel.Message
-	if err := query.
-		Preload("SenderUser").
-		Preload("SenderPodInfo").
-		Preload("SenderPodInfo.AgentType").
-		Order("created_at DESC").
-		Limit(limit).
-		Find(&messages).Error; err != nil {
+	messages, err := s.repo.GetMessages(ctx, channelID, before, limit)
+	if err != nil {
 		return nil, err
 	}
 
@@ -107,26 +95,14 @@ func (s *Service) SendMessageAsPod(ctx context.Context, channelID int64, podKey 
 
 // GetMessagesMentioning returns messages mentioning a specific pod
 func (s *Service) GetMessagesMentioning(ctx context.Context, channelID int64, podKey string, limit int) ([]*channel.Message, error) {
-	var messages []*channel.Message
 	pattern := "@" + podKey
-	if err := s.db.WithContext(ctx).
-		Where("channel_id = ? AND content LIKE ?", channelID, "%"+pattern+"%").
-		Order("created_at DESC").
-		Limit(limit).
-		Find(&messages).Error; err != nil {
-		return nil, err
-	}
-	return messages, nil
+	return s.repo.GetMessagesMentioning(ctx, channelID, pattern, limit)
 }
 
 // GetRecentMessages returns the most recent messages from a channel
 func (s *Service) GetRecentMessages(ctx context.Context, channelID int64, limit int) ([]*channel.Message, error) {
-	var messages []*channel.Message
-	if err := s.db.WithContext(ctx).
-		Where("channel_id = ?", channelID).
-		Order("created_at DESC").
-		Limit(limit).
-		Find(&messages).Error; err != nil {
+	messages, err := s.repo.GetRecentMessages(ctx, channelID, limit)
+	if err != nil {
 		return nil, err
 	}
 

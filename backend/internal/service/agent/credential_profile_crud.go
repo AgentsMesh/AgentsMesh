@@ -2,11 +2,9 @@ package agent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"gorm.io/gorm"
 )
 
 // CreateCredentialProfile creates a new credential profile for a user
@@ -17,25 +15,22 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 	}
 
 	// Check if profile with same name exists
-	var existing agent.UserAgentCredentialProfile
-	err := s.db.WithContext(ctx).
-		Where("user_id = ? AND agent_type_id = ? AND name = ?", userID, params.AgentTypeID, params.Name).
-		First(&existing).Error
-	if err == nil {
+	exists, err := s.repo.NameExists(ctx, userID, params.AgentTypeID, params.Name, nil)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, ErrCredentialProfileExists
 	}
 
 	// If setting as default, unset other defaults for this agent type
 	if params.IsDefault {
-		s.db.WithContext(ctx).Model(&agent.UserAgentCredentialProfile{}).
-			Where("user_id = ? AND agent_type_id = ?", userID, params.AgentTypeID).
-			Update("is_default", false)
+		s.repo.UnsetDefaults(ctx, userID, params.AgentTypeID)
 	}
 
 	// Encrypt credentials if provided
 	var encryptedCreds agent.EncryptedCredentials
 	if !params.IsRunnerHost && params.Credentials != nil {
-		var err error
 		encryptedCreds, err = s.encryptCredentials(params.Credentials)
 		if err != nil {
 			return nil, fmt.Errorf("encrypt credentials: %w", err)
@@ -53,7 +48,7 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 		IsActive:             true,
 	}
 
-	if err := s.db.WithContext(ctx).Create(profile).Error; err != nil {
+	if err := s.repo.Create(ctx, profile); err != nil {
 		return nil, err
 	}
 
@@ -63,29 +58,23 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 
 // GetCredentialProfile returns a credential profile by ID
 func (s *CredentialProfileService) GetCredentialProfile(ctx context.Context, userID, profileID int64) (*agent.UserAgentCredentialProfile, error) {
-	var profile agent.UserAgentCredentialProfile
-	err := s.db.WithContext(ctx).
-		Preload("AgentType").
-		Where("id = ? AND user_id = ?", profileID, userID).
-		First(&profile).Error
+	profile, err := s.repo.GetWithAgentType(ctx, userID, profileID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrCredentialProfileNotFound
-		}
 		return nil, err
 	}
-	return &profile, nil
+	if profile == nil {
+		return nil, ErrCredentialProfileNotFound
+	}
+	return profile, nil
 }
 
 // DeleteCredentialProfile deletes a credential profile
 func (s *CredentialProfileService) DeleteCredentialProfile(ctx context.Context, userID, profileID int64) error {
-	result := s.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", profileID, userID).
-		Delete(&agent.UserAgentCredentialProfile{})
-	if result.Error != nil {
-		return result.Error
+	rowsAffected, err := s.repo.Delete(ctx, userID, profileID)
+	if err != nil {
+		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrCredentialProfileNotFound
 	}
 	return nil

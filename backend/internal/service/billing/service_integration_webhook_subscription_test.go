@@ -11,7 +11,7 @@ import (
 
 // TestIntegrationWebhookSubscriptionCanceled tests subscription cancellation webhook
 func TestIntegrationWebhookSubscriptionCanceled(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -31,7 +31,7 @@ func TestIntegrationWebhookSubscriptionCanceled(t *testing.T) {
 		StripeSubscriptionID: &stripeSubID,
 		StripeCustomerID:     &stripeCusID,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	// 2. Simulate subscription canceled webhook
 	event := &payment.WebhookEvent{
@@ -58,7 +58,7 @@ func TestIntegrationWebhookSubscriptionCanceled(t *testing.T) {
 
 // TestIntegrationWebhookSubscriptionUpdated tests subscription status update webhook
 func TestIntegrationWebhookSubscriptionUpdated(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -79,7 +79,7 @@ func TestIntegrationWebhookSubscriptionUpdated(t *testing.T) {
 		StripeCustomerID:     &stripeCusID,
 		AutoRenew:            true,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	// 2. Simulate subscription status change to past_due
 	event := &payment.WebhookEvent{
@@ -106,7 +106,7 @@ func TestIntegrationWebhookSubscriptionUpdated(t *testing.T) {
 
 // TestIntegrationSubscriptionCanceledNoSubscription tests cancellation when subscription not found
 func TestIntegrationSubscriptionCanceledNoSubscription(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	c, _ := createTestGinContext()
 
 	event := &payment.WebhookEvent{
@@ -127,7 +127,7 @@ func TestIntegrationSubscriptionCanceledNoSubscription(t *testing.T) {
 
 // TestIntegrationSubscriptionCanceledEmptySubscriptionID tests cancellation with empty ID
 func TestIntegrationSubscriptionCanceledEmptySubscriptionID(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	c, _ := createTestGinContext()
 
 	event := &payment.WebhookEvent{
@@ -148,7 +148,7 @@ func TestIntegrationSubscriptionCanceledEmptySubscriptionID(t *testing.T) {
 
 // TestIntegrationSubscriptionUpdatedNoSubscription tests update when subscription not found
 func TestIntegrationSubscriptionUpdatedNoSubscription(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	c, _ := createTestGinContext()
 
 	event := &payment.WebhookEvent{
@@ -169,7 +169,7 @@ func TestIntegrationSubscriptionUpdatedNoSubscription(t *testing.T) {
 
 // TestIntegrationSubscriptionUpdatedEmptySubscriptionID tests update with empty ID
 func TestIntegrationSubscriptionUpdatedEmptySubscriptionID(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	c, _ := createTestGinContext()
 
 	event := &payment.WebhookEvent{
@@ -190,7 +190,7 @@ func TestIntegrationSubscriptionUpdatedEmptySubscriptionID(t *testing.T) {
 
 // TestIntegrationSubscriptionUpdatedVariousStatuses tests different status updates
 func TestIntegrationSubscriptionUpdatedVariousStatuses(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -221,7 +221,7 @@ func TestIntegrationSubscriptionUpdatedVariousStatuses(t *testing.T) {
 			StripeSubscriptionID: &stripeSubID,
 			StripeCustomerID:     &stripeCusID,
 		}
-		service.db.Create(sub)
+		db.Create(sub)
 
 		// Send update event
 		event := &payment.WebhookEvent{

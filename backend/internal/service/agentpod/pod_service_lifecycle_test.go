@@ -9,7 +9,7 @@ import (
 
 func TestHandlePodCreated(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -36,7 +36,7 @@ func TestHandlePodCreated(t *testing.T) {
 
 func TestHandlePodTerminated(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -63,7 +63,7 @@ func TestHandlePodTerminated(t *testing.T) {
 
 func TestTerminatePod(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{

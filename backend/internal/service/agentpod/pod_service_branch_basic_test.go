@@ -12,7 +12,7 @@ import (
 
 func TestFindByBranchAndRepo(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	t.Run("find existing pod by branch and repo", func(t *testing.T) {
@@ -113,7 +113,7 @@ func TestFindByBranchAndRepo(t *testing.T) {
 
 func TestFindByBranchAndRepo_ReturnsMostRecent(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	orgID := int64(1)

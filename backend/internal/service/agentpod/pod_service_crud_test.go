@@ -9,7 +9,7 @@ import (
 
 func TestCreatePod(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -80,7 +80,7 @@ func TestCreatePod(t *testing.T) {
 
 func TestCreatePod_CredentialProfileID(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	t.Run("stores credential_profile_id when provided", func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestCreatePod_CredentialProfileID(t *testing.T) {
 
 func TestCreatePod_DefaultValues(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -145,7 +145,7 @@ func TestCreatePod_DefaultValues(t *testing.T) {
 
 func TestGetPod(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create a pod first
@@ -182,7 +182,7 @@ func TestGetPod(t *testing.T) {
 
 func TestGetPodByID(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create a pod first
@@ -213,7 +213,7 @@ func TestGetPodByID(t *testing.T) {
 
 func TestGetPodOrganizationAndCreator(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create a pod first

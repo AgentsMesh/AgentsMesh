@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -44,7 +45,8 @@ func setupTestService(t *testing.T) (*Service, *storage.MockStorage, *gorm.DB) {
 		MaxFileSize:  10, // 10MB
 		AllowedTypes: []string{"image/jpeg", "image/png", "image/gif", "application/pdf"},
 	}
-	svc := NewService(db, mockStorage, cfg)
+	repo := infra.NewFileRepository(db)
+	svc := NewService(repo, mockStorage, cfg)
 	return svc, mockStorage, db
 }
 

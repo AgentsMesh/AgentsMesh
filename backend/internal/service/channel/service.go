@@ -6,7 +6,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
-	"gorm.io/gorm"
 )
 
 var (
@@ -17,13 +16,13 @@ var (
 
 // Service handles channel operations
 type Service struct {
-	db       *gorm.DB
+	repo     channel.ChannelRepository
 	eventBus *eventbus.EventBus
 }
 
 // NewService creates a new channel service
-func NewService(db *gorm.DB) *Service {
-	return &Service{db: db}
+func NewService(repo channel.ChannelRepository) *Service {
+	return &Service{repo: repo}
 }
 
 // SetEventBus sets the event bus for publishing channel events
@@ -44,10 +43,11 @@ type CreateChannelRequest struct {
 
 // CreateChannel creates a new channel
 func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) (*channel.Channel, error) {
-	var existing channel.Channel
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND name = ?", req.OrganizationID, req.Name).
-		First(&existing).Error; err == nil {
+	existing, err := s.repo.GetByOrgAndName(ctx, req.OrganizationID, req.Name)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
 		return nil, ErrDuplicateName
 	}
 
@@ -62,7 +62,7 @@ func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) 
 		IsArchived:      false,
 	}
 
-	if err := s.db.WithContext(ctx).Create(ch).Error; err != nil {
+	if err := s.repo.Create(ctx, ch); err != nil {
 		return nil, err
 	}
 
@@ -71,60 +71,35 @@ func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) 
 
 // GetChannel returns a channel by ID
 func (s *Service) GetChannel(ctx context.Context, channelID int64) (*channel.Channel, error) {
-	var ch channel.Channel
-	if err := s.db.WithContext(ctx).First(&ch, channelID).Error; err != nil {
+	ch, err := s.repo.GetByID(ctx, channelID)
+	if err != nil {
+		return nil, err
+	}
+	if ch == nil {
 		return nil, ErrChannelNotFound
 	}
-	return &ch, nil
+	return ch, nil
 }
 
 // GetChannelByName returns a channel by name within an organization
 func (s *Service) GetChannelByName(ctx context.Context, orgID int64, name string) (*channel.Channel, error) {
-	var ch channel.Channel
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND name = ?", orgID, name).
-		First(&ch).Error; err != nil {
+	ch, err := s.repo.GetByOrgAndName(ctx, orgID, name)
+	if err != nil {
+		return nil, err
+	}
+	if ch == nil {
 		return nil, ErrChannelNotFound
 	}
-	return &ch, nil
+	return ch, nil
 }
 
 // ListChannelsFilter contains optional filters for listing channels.
-type ListChannelsFilter struct {
-	IncludeArchived bool
-	RepositoryID    *int64
-	TicketID        *int64
-	Limit           int
-	Offset          int
-}
+// Kept for backward compatibility; delegates to domain type.
+type ListChannelsFilter = channel.ChannelListFilter
 
 // ListChannels returns channels for an organization with optional filters.
 func (s *Service) ListChannels(ctx context.Context, orgID int64, filter *ListChannelsFilter) ([]*channel.Channel, int64, error) {
-	query := s.db.WithContext(ctx).Model(&channel.Channel{}).Where("organization_id = ?", orgID)
-
-	if !filter.IncludeArchived {
-		query = query.Where("is_archived = ?", false)
-	}
-	if filter.RepositoryID != nil {
-		query = query.Where("repository_id = ?", *filter.RepositoryID)
-	}
-	if filter.TicketID != nil {
-		query = query.Where("ticket_id = ?", *filter.TicketID)
-	}
-
-	var total int64
-	query.Count(&total)
-
-	var channels []*channel.Channel
-	if err := query.
-		Order("updated_at DESC").
-		Limit(filter.Limit).
-		Offset(filter.Offset).
-		Find(&channels).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return channels, total, nil
+	return s.repo.ListByOrg(ctx, orgID, filter)
 }
 
 // UpdateChannel updates a channel
@@ -150,7 +125,7 @@ func (s *Service) UpdateChannel(ctx context.Context, channelID int64, name, desc
 	}
 
 	if len(updates) > 0 {
-		if err := s.db.WithContext(ctx).Model(ch).Updates(updates).Error; err != nil {
+		if err := s.repo.UpdateFields(ctx, channelID, updates); err != nil {
 			return nil, err
 		}
 	}
@@ -160,25 +135,15 @@ func (s *Service) UpdateChannel(ctx context.Context, channelID int64, name, desc
 
 // ArchiveChannel archives a channel
 func (s *Service) ArchiveChannel(ctx context.Context, channelID int64) error {
-	return s.db.WithContext(ctx).Model(&channel.Channel{}).
-		Where("id = ?", channelID).
-		Update("is_archived", true).Error
+	return s.repo.SetArchived(ctx, channelID, true)
 }
 
 // UnarchiveChannel unarchives a channel
 func (s *Service) UnarchiveChannel(ctx context.Context, channelID int64) error {
-	return s.db.WithContext(ctx).Model(&channel.Channel{}).
-		Where("id = ?", channelID).
-		Update("is_archived", false).Error
+	return s.repo.SetArchived(ctx, channelID, false)
 }
 
 // GetChannelsByTicket returns channels for a ticket
 func (s *Service) GetChannelsByTicket(ctx context.Context, ticketID int64) ([]*channel.Channel, error) {
-	var channels []*channel.Channel
-	if err := s.db.WithContext(ctx).
-		Where("ticket_id = ?", ticketID).
-		Find(&channels).Error; err != nil {
-		return nil, err
-	}
-	return channels, nil
+	return s.repo.GetByTicketID(ctx, ticketID)
 }

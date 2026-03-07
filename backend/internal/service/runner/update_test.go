@@ -11,7 +11,7 @@ import (
 
 func TestUpdateRunner(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -51,7 +51,7 @@ func TestUpdateRunner(t *testing.T) {
 
 func TestUpdateRunnerNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	newDesc := "Updated Description"
@@ -65,7 +65,7 @@ func TestUpdateRunnerNotFound(t *testing.T) {
 
 func TestUpdateHostInfo(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -92,7 +92,7 @@ func TestUpdateHostInfo(t *testing.T) {
 
 func TestIncrementPods(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -126,7 +126,7 @@ func TestIncrementPods(t *testing.T) {
 
 func TestDecrementPods(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runner directly
@@ -149,7 +149,7 @@ func TestDecrementPodsMethod(t *testing.T) {
 	// This test simply verifies the DecrementPods method exists and can be called
 	// The actual GREATEST function is not supported by SQLite, but works in PostgreSQL
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	// Verify the method exists by calling it
 	// Just check it doesn't panic, ignore error since SQLite doesn't support GREATEST

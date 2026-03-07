@@ -12,7 +12,6 @@ import (
 
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 	"github.com/robfig/cron/v3"
-	"gorm.io/gorm"
 )
 
 var cronParser = cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
@@ -92,9 +91,9 @@ type LoopService struct {
 }
 
 // NewLoopService creates a new LoopService
-func NewLoopService(db *gorm.DB) *LoopService {
+func NewLoopService(repo loopDomain.LoopRepository) *LoopService {
 	return &LoopService{
-		repo: loopDomain.NewLoopRepository(db),
+		repo: repo,
 	}
 }
 

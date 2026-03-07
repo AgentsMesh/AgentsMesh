@@ -13,7 +13,7 @@ import (
 
 func TestRecordUsage(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -27,7 +27,7 @@ func TestRecordUsage(t *testing.T) {
 
 func TestGetUsage(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -47,7 +47,7 @@ func TestGetUsage(t *testing.T) {
 
 func TestGetUsageHistory(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -66,7 +66,7 @@ func TestGetUsageHistory(t *testing.T) {
 
 func TestGetUsageHistoryAllTypes(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -86,7 +86,7 @@ func TestGetUsageHistoryAllTypes(t *testing.T) {
 
 func TestRecordUsageNoSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	// No subscription exists
@@ -98,7 +98,7 @@ func TestRecordUsageNoSubscription(t *testing.T) {
 
 func TestGetUsageNoSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetUsage(ctx, 999, "pod_minutes")
@@ -109,7 +109,7 @@ func TestGetUsageNoSubscription(t *testing.T) {
 
 func TestGetCurrentConcurrentPods(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	db.Exec("INSERT INTO pods (organization_id, name, status) VALUES (1, 'pod1', 'running')")

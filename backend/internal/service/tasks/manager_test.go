@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"testing"
@@ -9,46 +10,18 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
-func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
+// mockPodCleaner implements StalePodCleaner for testing.
+type mockPodCleaner struct {
+	markStaleResult int64
+	markStaleErr    error
+	markStaleCalls  int
+}
 
-	db.Exec(`CREATE TABLE IF NOT EXISTS pods (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		pod_key TEXT NOT NULL UNIQUE,
-		organization_id INTEGER NOT NULL,
-		status TEXT NOT NULL DEFAULT 'pending',
-		last_activity DATETIME,
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
-
-	db.Exec(`CREATE TABLE IF NOT EXISTS task_executions (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		task_type TEXT NOT NULL,
-		task_subtype TEXT,
-		status TEXT NOT NULL DEFAULT 'pending',
-		git_lab_project_id TEXT,
-		git_lab_pipeline_id INTEGER,
-		git_lab_pipeline_url TEXT,
-		triggered_by TEXT,
-		trigger_params TEXT,
-		error_message TEXT,
-		started_at DATETIME,
-		finished_at DATETIME,
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
-
-	return db
+func (m *mockPodCleaner) MarkStaleAsDisconnected(_ context.Context, _ time.Time) (int64, error) {
+	m.markStaleCalls++
+	return m.markStaleResult, m.markStaleErr
 }
 
 func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
@@ -111,7 +84,7 @@ func TestConfigValues(t *testing.T) {
 		PipelinePollerInterval: 5 * time.Second,
 		TaskProcessorInterval:  15 * time.Second,
 		MRSyncInterval:         1 * time.Minute,
-		PodCleanupInterval: 5 * time.Minute,
+		PodCleanupInterval:     5 * time.Minute,
 		WorkerCount:            8,
 		MaxQueueSize:           500,
 	}
@@ -125,18 +98,18 @@ func TestConfigValues(t *testing.T) {
 }
 
 func TestNewManager(t *testing.T) {
-	db := setupTestDB(t)
+	podCleaner := &mockPodCleaner{}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 	cfg := DefaultConfig()
 
-	manager := NewManager(db, redisClient, logger, cfg)
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
 
 	if manager == nil {
 		t.Fatal("expected non-nil manager")
 	}
-	if manager.db != db {
-		t.Error("expected manager.db to be set")
+	if manager.podCleaner != podCleaner {
+		t.Error("expected manager.podCleaner to be set")
 	}
 	if manager.redis != redisClient {
 		t.Error("expected manager.redis to be set")
@@ -150,19 +123,19 @@ func TestNewManager(t *testing.T) {
 }
 
 func TestManager_StartStop(t *testing.T) {
-	db := setupTestDB(t)
+	podCleaner := &mockPodCleaner{}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 	cfg := Config{
 		PipelinePollerInterval: 1 * time.Hour, // Long interval to avoid actual polling
 		TaskProcessorInterval:  1 * time.Hour,
 		MRSyncInterval:         1 * time.Hour,
-		PodCleanupInterval: 1 * time.Hour,
+		PodCleanupInterval:     1 * time.Hour,
 		WorkerCount:            2,
 		MaxQueueSize:           100,
 	}
 
-	manager := NewManager(db, redisClient, logger, cfg)
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
 
 	// Start manager
 	err := manager.Start()
@@ -178,12 +151,12 @@ func TestManager_StartStop(t *testing.T) {
 }
 
 func TestManager_GetScheduledTasks(t *testing.T) {
-	db := setupTestDB(t)
+	podCleaner := &mockPodCleaner{}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 	cfg := DefaultConfig()
 
-	manager := NewManager(db, redisClient, logger, cfg)
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
 	manager.Start()
 	defer manager.Stop()
 
@@ -213,12 +186,12 @@ func TestManager_GetScheduledTasks(t *testing.T) {
 }
 
 func TestManager_GetQueueLength(t *testing.T) {
-	db := setupTestDB(t)
+	podCleaner := &mockPodCleaner{}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 	cfg := DefaultConfig()
 
-	manager := NewManager(db, redisClient, logger, cfg)
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
 
 	length := manager.GetQueueLength()
 	if length != 0 {
@@ -227,12 +200,12 @@ func TestManager_GetQueueLength(t *testing.T) {
 }
 
 func TestManager_GetJobHandlerTypes(t *testing.T) {
-	db := setupTestDB(t)
+	podCleaner := &mockPodCleaner{}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 	cfg := DefaultConfig()
 
-	manager := NewManager(db, redisClient, logger, cfg)
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
 
 	types := manager.GetJobHandlerTypes()
 	// Initially empty
@@ -242,65 +215,62 @@ func TestManager_GetJobHandlerTypes(t *testing.T) {
 }
 
 func TestManager_CleanupStalePods(t *testing.T) {
-	db := setupTestDB(t)
+	podCleaner := &mockPodCleaner{markStaleResult: 1}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 	cfg := DefaultConfig()
 
-	// Insert a stale pod
-	staleTime := time.Now().Add(-2 * time.Hour)
-	db.Exec(`INSERT INTO pods (pod_key, organization_id, status, last_activity) VALUES (?, ?, ?, ?)`,
-		"stale-pod", 1, "running", staleTime)
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
 
-	manager := NewManager(db, redisClient, logger, cfg)
-
-	// Call cleanup directly
 	err := manager.cleanupStalePods(context.Background())
 	if err != nil {
 		t.Fatalf("cleanupStalePods() error = %v", err)
 	}
 
-	// Verify pod status changed
-	var status string
-	db.Raw("SELECT status FROM pods WHERE pod_key = ?", "stale-pod").Scan(&status)
-	if status != "disconnected" {
-		t.Errorf("expected status 'disconnected', got '%s'", status)
+	if podCleaner.markStaleCalls != 1 {
+		t.Errorf("expected 1 call to MarkStaleAsDisconnected, got %d", podCleaner.markStaleCalls)
 	}
 }
 
 func TestManager_CleanupStalePods_NoStale(t *testing.T) {
-	db := setupTestDB(t)
+	podCleaner := &mockPodCleaner{markStaleResult: 0}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 	cfg := DefaultConfig()
 
-	// Insert a recent pod
-	recentTime := time.Now()
-	db.Exec(`INSERT INTO pods (pod_key, organization_id, status, last_activity) VALUES (?, ?, ?, ?)`,
-		"recent-pod", 1, "running", recentTime)
-
-	manager := NewManager(db, redisClient, logger, cfg)
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
 
 	err := manager.cleanupStalePods(context.Background())
 	if err != nil {
 		t.Fatalf("cleanupStalePods() error = %v", err)
 	}
 
-	// Verify pod status unchanged
-	var status string
-	db.Raw("SELECT status FROM pods WHERE pod_key = ?", "recent-pod").Scan(&status)
-	if status != "running" {
-		t.Errorf("expected status 'running', got '%s'", status)
+	if podCleaner.markStaleCalls != 1 {
+		t.Errorf("expected 1 call to MarkStaleAsDisconnected, got %d", podCleaner.markStaleCalls)
 	}
 }
 
-func TestManager_GetPipelineWatcher(t *testing.T) {
-	db := setupTestDB(t)
+func TestManager_CleanupStalePods_Error(t *testing.T) {
+	podCleaner := &mockPodCleaner{markStaleErr: errors.New("db error")}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 	cfg := DefaultConfig()
 
-	manager := NewManager(db, redisClient, logger, cfg)
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
+
+	err := manager.cleanupStalePods(context.Background())
+	if err == nil {
+		t.Fatal("expected error from cleanupStalePods")
+	}
+}
+
+func TestManager_GetPipelineWatcher(t *testing.T) {
+	podCleaner := &mockPodCleaner{}
+	_, redisClient := setupTestRedis(t)
+	logger := testLogger()
+	cfg := DefaultConfig()
+
+	manager := NewManager(podCleaner, redisClient, logger, cfg)
 
 	watcher := manager.GetPipelineWatcher()
 	if watcher == nil {

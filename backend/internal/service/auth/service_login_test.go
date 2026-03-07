@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
 )
 
 func TestLoginWithUserService(t *testing.T) {
 	db := setupTestDB(t)
-	userSvc := userService.NewService(db)
+	userSvc := userService.NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	cfg := &Config{
@@ -92,7 +93,7 @@ func TestLoginWithUserService(t *testing.T) {
 
 func TestLoginErrors(t *testing.T) {
 	db := setupTestDB(t)
-	userSvc := userService.NewService(db)
+	userSvc := userService.NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	cfg := &Config{

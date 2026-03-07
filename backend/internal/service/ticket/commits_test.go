@@ -25,7 +25,7 @@ func setupCommitsTestDB(t *testing.T) (*Service, context.Context) {
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)
 
-	return NewService(db), context.Background()
+	return newTestService(db), context.Background()
 }
 
 func TestLinkCommit(t *testing.T) {

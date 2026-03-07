@@ -24,21 +24,19 @@ func (s *PodService) HandlePodCreated(ctx context.Context, podKey string, ptyPID
 	if branchName != "" {
 		updates["branch_name"] = branchName
 	}
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ?", podKey).
-		Updates(updates).Error
+	_, err := s.repo.UpdateByKey(ctx, podKey, updates)
+	return err
 }
 
 // HandlePodTerminated handles the pod_terminated event from runner
 func (s *PodService) HandlePodTerminated(ctx context.Context, podKey string, exitCode *int) error {
 	now := time.Now()
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ?", podKey).
-		Updates(map[string]interface{}{
-			"status":      agentpod.StatusTerminated,
-			"finished_at": now,
-			"pty_pid":     nil,
-		}).Error
+	_, err := s.repo.UpdateByKey(ctx, podKey, map[string]interface{}{
+		"status":      agentpod.StatusTerminated,
+		"finished_at": now,
+		"pty_pid":     nil,
+	})
+	return err
 }
 
 // TerminatePod terminates a pod
@@ -74,39 +72,28 @@ func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
 
 // MarkDisconnected marks a pod as disconnected (user closed browser)
 func (s *PodService) MarkDisconnected(ctx context.Context, podKey string) error {
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ? AND status = ?", podKey, agentpod.StatusRunning).
-		Update("status", agentpod.StatusDisconnected).Error
+	return s.repo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusRunning, map[string]interface{}{
+		"status": agentpod.StatusDisconnected,
+	})
 }
 
 // MarkReconnected marks a pod as running again (user reconnected)
 func (s *PodService) MarkReconnected(ctx context.Context, podKey string) error {
 	now := time.Now()
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ? AND status = ?", podKey, agentpod.StatusDisconnected).
-		Updates(map[string]interface{}{
-			"status":        agentpod.StatusRunning,
-			"last_activity": now,
-		}).Error
+	return s.repo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusDisconnected, map[string]interface{}{
+		"status":        agentpod.StatusRunning,
+		"last_activity": now,
+	})
 }
 
 // RecordActivity records pod activity
 func (s *PodService) RecordActivity(ctx context.Context, podKey string) error {
-	now := time.Now()
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ?", podKey).
-		Update("last_activity", now).Error
+	return s.repo.UpdateField(ctx, podKey, "last_activity", time.Now())
 }
 
 // ReconcilePods marks orphaned pods that are not reported by runner
 func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reportedPodKeys []string) error {
-	var dbPods []*agentpod.Pod
-	err := s.db.WithContext(ctx).
-		Where("runner_id = ? AND status IN ?", runnerID, []string{
-			agentpod.StatusRunning,
-			agentpod.StatusInitializing,
-		}).
-		Find(&dbPods).Error
+	dbPods, err := s.repo.ListActiveByRunner(ctx, runnerID)
 	if err != nil {
 		return err
 	}
@@ -120,10 +107,7 @@ func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reported
 	var errs []error
 	for _, pod := range dbPods {
 		if !reportedSet[pod.PodKey] {
-			if err := s.db.WithContext(ctx).Model(pod).Updates(map[string]interface{}{
-				"status":      agentpod.StatusOrphaned,
-				"finished_at": now,
-			}).Error; err != nil {
+			if err := s.repo.MarkOrphaned(ctx, pod, now); err != nil {
 				errs = append(errs, fmt.Errorf("mark pod %s orphaned: %w", pod.PodKey, err))
 			}
 		}
@@ -135,16 +119,5 @@ func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reported
 // CleanupStalePods marks stale pods as terminated
 func (s *PodService) CleanupStalePods(ctx context.Context, maxIdleHours int) (int64, error) {
 	threshold := time.Now().Add(-time.Duration(maxIdleHours) * time.Hour)
-	now := time.Now()
-
-	result := s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("status IN ? AND last_activity < ?", []string{
-			agentpod.StatusDisconnected,
-		}, threshold).
-		Updates(map[string]interface{}{
-			"status":      agentpod.StatusTerminated,
-			"finished_at": now,
-		})
-
-	return result.RowsAffected, result.Error
+	return s.repo.CleanupStale(ctx, threshold)
 }

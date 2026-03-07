@@ -12,6 +12,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest"
 	v1 "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/acme"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
@@ -75,7 +76,10 @@ func main() {
 	}
 
 	// Initialize Runner components
-	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(db, redisClient, appLogger, services.agentType)
+	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentType)
+
+	// Wire AutopilotRepository into PodCoordinator for autopilot event handling
+	podCoordinator.SetAutopilotRepo(services.autopilotRepo)
 
 	// Initialize Relay services
 	relayManager := relay.NewManagerWithOptions()
@@ -117,7 +121,8 @@ func main() {
 	slog.Info("PodOrchestrator created")
 
 	// Initialize OrgAwarenessService (tracks which orgs this instance serves)
-	orgAwareness := instance.NewOrgAwarenessService(db, runnerConnMgr, redisClient, cfg.Server.Address, appLogger.Logger)
+	runnerOrgQuerier := infra.NewRunnerOrgQuerier(db)
+	orgAwareness := instance.NewOrgAwarenessService(runnerOrgQuerier, runnerConnMgr, redisClient, cfg.Server.Address, appLogger.Logger)
 	orgAwareness.Start()
 	setupOrgAwarenessRefresh(eventBus, orgAwareness)
 	slog.Info("OrgAwarenessService started")

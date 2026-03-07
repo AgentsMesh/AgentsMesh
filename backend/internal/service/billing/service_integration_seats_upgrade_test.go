@@ -11,7 +11,7 @@ import (
 
 // TestIntegrationAddSeatsFlow tests the seat addition flow
 func TestIntegrationAddSeatsFlow(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -32,7 +32,7 @@ func TestIntegrationAddSeatsFlow(t *testing.T) {
 		StripeCustomerID:     &stripeCusID,
 		SeatCount:            1,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	// 2. Create order for adding seats
 	order := &billing.PaymentOrder{
@@ -77,7 +77,7 @@ func TestIntegrationAddSeatsFlow(t *testing.T) {
 
 // TestIntegrationPlanUpgradeFlow tests plan upgrade via payment
 func TestIntegrationPlanUpgradeFlow(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -99,7 +99,7 @@ func TestIntegrationPlanUpgradeFlow(t *testing.T) {
 		StripeCustomerID:     &stripeCusID,
 		SeatCount:            1,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	// 2. Create upgrade order
 	order := &billing.PaymentOrder{
@@ -145,7 +145,7 @@ func TestIntegrationPlanUpgradeFlow(t *testing.T) {
 
 // TestIntegrationUpgradePlanWithNilPlanID tests upgrade with nil plan ID
 func TestIntegrationUpgradePlanWithNilPlanID(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 

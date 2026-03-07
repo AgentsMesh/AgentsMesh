@@ -24,8 +24,11 @@ type GenerateReactivationTokenResponse struct {
 // GenerateReactivationToken creates a one-time token for reactivating a runner with expired certificate.
 func (s *Service) GenerateReactivationToken(ctx context.Context, runnerID, userID int64) (*GenerateReactivationTokenResponse, error) {
 	// Verify runner exists
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).First(&r, runnerID).Error; err != nil {
+	r, err := s.repo.GetByID(ctx, runnerID)
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
 		return nil, fmt.Errorf("runner not found")
 	}
 
@@ -51,7 +54,7 @@ func (s *Service) GenerateReactivationToken(ctx context.Context, runnerID, userI
 		CreatedBy: &userID,
 	}
 
-	if err := s.db.WithContext(ctx).Create(reactivationToken).Error; err != nil {
+	if err := s.repo.CreateReactivationToken(ctx, reactivationToken); err != nil {
 		return nil, fmt.Errorf("failed to create reactivation token: %w", err)
 	}
 
@@ -81,57 +84,53 @@ func (s *Service) Reactivate(ctx context.Context, req *ReactivateRequest, pkiSer
 	tokenHash := hex.EncodeToString(tokenHashBytes[:])
 
 	// Find the token
-	var reactivationToken runner.ReactivationToken
-	if err := s.db.WithContext(ctx).Where("token_hash = ?", tokenHash).First(&reactivationToken).Error; err != nil {
+	reactivationToken, err := s.repo.GetReactivationTokenByHash(ctx, tokenHash)
+	if err != nil {
+		return nil, err
+	}
+	if reactivationToken == nil {
 		return nil, ErrInvalidToken
 	}
 
 	// Atomic claim: mark token as used only if it hasn't been used yet and isn't expired.
-	// This prevents TOCTOU race where two concurrent requests both pass IsValid() check.
-	now := time.Now()
-	claimResult := s.db.WithContext(ctx).Model(&reactivationToken).
-		Where("used_at IS NULL AND expires_at > ?", now).
-		Update("used_at", now)
-	if claimResult.Error != nil {
-		return nil, fmt.Errorf("failed to claim token: %w", claimResult.Error)
+	rowsAffected, err := s.repo.ClaimReactivationToken(ctx, reactivationToken.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to claim token: %w", err)
 	}
-	if claimResult.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return nil, ErrTokenExpired
 	}
 
 	// Compensating action: if any subsequent step fails, unclaim the token
-	// so the user can retry. Without this, a transient PKI/DB failure would
-	// permanently consume the one-time token with no certificate issued.
 	succeeded := false
 	defer func() {
 		if !succeeded {
 			unclaimCtx, unclaimCancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer unclaimCancel()
-			_ = s.db.WithContext(unclaimCtx).
-				Model(&reactivationToken).
-				Update("used_at", nil).Error
+			_ = s.repo.UnclaimReactivationToken(unclaimCtx, reactivationToken.ID)
 		}
 	}()
 
 	// Get runner
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).First(&r, reactivationToken.RunnerID).Error; err != nil {
+	r, err := s.repo.GetByID(ctx, reactivationToken.RunnerID)
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
 		return nil, fmt.Errorf("runner not found")
 	}
 
 	// Get org slug
-	var org struct {
-		Slug string
+	orgSlug, err := s.repo.GetOrgSlug(ctx, r.OrganizationID)
+	if err != nil {
+		return nil, err
 	}
-	if err := s.db.WithContext(ctx).Table("organizations").
-		Select("slug").
-		Where("id = ?", r.OrganizationID).
-		First(&org).Error; err != nil {
+	if orgSlug == "" {
 		return nil, fmt.Errorf("organization not found")
 	}
 
 	// Issue new certificate
-	certInfo, err := pkiService.IssueRunnerCertificate(r.NodeID, org.Slug)
+	certInfo, err := pkiService.IssueRunnerCertificate(r.NodeID, orgSlug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to issue certificate: %w", err)
 	}
@@ -144,17 +143,15 @@ func (s *Service) Reactivate(ctx context.Context, req *ReactivateRequest, pkiSer
 		IssuedAt:     certInfo.IssuedAt,
 		ExpiresAt:    certInfo.ExpiresAt,
 	}
-	if err := s.db.WithContext(ctx).Create(cert).Error; err != nil {
+	if err := s.repo.CreateCertificate(ctx, cert); err != nil {
 		return nil, fmt.Errorf("failed to save certificate: %w", err)
 	}
 
 	// Update runner
-	if err := s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("id = ?", r.ID).
-		Updates(map[string]interface{}{
-			"cert_serial_number": certInfo.SerialNumber,
-			"cert_expires_at":    certInfo.ExpiresAt,
-		}).Error; err != nil {
+	if err := s.repo.UpdateFields(ctx, r.ID, map[string]interface{}{
+		"cert_serial_number": certInfo.SerialNumber,
+		"cert_expires_at":    certInfo.ExpiresAt,
+	}); err != nil {
 		return nil, fmt.Errorf("failed to update runner: %w", err)
 	}
 
@@ -168,7 +165,5 @@ func (s *Service) Reactivate(ctx context.Context, req *ReactivateRequest, pkiSer
 
 // CleanupExpiredReactivationTokens removes expired reactivation tokens.
 func (s *Service) CleanupExpiredReactivationTokens(ctx context.Context) error {
-	return s.db.WithContext(ctx).
-		Where("expires_at < ? OR used_at IS NOT NULL", time.Now()).
-		Delete(&runner.ReactivationToken{}).Error
+	return s.repo.CleanupExpiredReactivationTokens(ctx)
 }

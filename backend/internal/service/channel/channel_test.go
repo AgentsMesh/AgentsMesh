@@ -7,18 +7,18 @@ import (
 
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	if svc == nil {
 		t.Error("NewService returned nil")
 	}
-	if svc.db != db {
-		t.Error("Service db not set correctly")
+	if svc.repo == nil {
+		t.Error("Service repo not set correctly")
 	}
 }
 
 func TestCreateChannel(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -59,7 +59,7 @@ func TestCreateChannel(t *testing.T) {
 
 func TestCreateChannel_DuplicateName(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	req := &CreateChannelRequest{OrganizationID: 1, Name: "general"}
@@ -74,7 +74,7 @@ func TestCreateChannel_DuplicateName(t *testing.T) {
 
 func TestGetChannel(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	created, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "test"})
@@ -95,7 +95,7 @@ func TestGetChannel(t *testing.T) {
 
 func TestGetChannelByName(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	created, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "named"})
@@ -116,7 +116,7 @@ func TestGetChannelByName(t *testing.T) {
 
 func TestGetChannelsByTicket(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	ticketID := int64(42)

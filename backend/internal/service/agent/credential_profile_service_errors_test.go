@@ -22,8 +22,8 @@ func TestCredentialProfileService_GetCredentialProfile_DBError(t *testing.T) {
 	)`)
 	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	_, err := svc.GetCredentialProfile(ctx, 1, 1)
@@ -39,8 +39,8 @@ func TestCredentialProfileService_DeleteCredentialProfile_DBError(t *testing.T) 
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	err := svc.DeleteCredentialProfile(ctx, 1, 1)
@@ -56,8 +56,8 @@ func TestCredentialProfileService_GetDefaultCredentialProfile_DBError(t *testing
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	_, err := svc.GetDefaultCredentialProfile(ctx, 1, 1)
@@ -70,8 +70,8 @@ func TestCredentialProfileService_GetDefaultCredentialProfile_DBError(t *testing
 
 func TestCredentialProfileService_SetDefaultCredentialProfile_Success(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -101,8 +101,8 @@ func TestCredentialProfileService_GetEffectiveCredentialsForPod_DefaultNotFoundE
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	_, isRunner, err := svc.GetEffectiveCredentialsForPod(ctx, 1, 1, nil)
@@ -129,8 +129,8 @@ func TestCredentialProfileService_CreateCredentialProfile_CreateDBError(t *testi
 		id INTEGER PRIMARY KEY AUTOINCREMENT
 	)`)
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	_, err := svc.CreateCredentialProfile(ctx, 1, &CreateCredentialProfileParams{
@@ -147,8 +147,8 @@ func TestCredentialProfileService_CreateCredentialProfile_CreateDBError(t *testi
 
 func TestCredentialProfileService_UpdateCredentialProfile_UpdateDBError(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -174,8 +174,8 @@ func TestCredentialProfileService_UpdateCredentialProfile_UpdateDBError(t *testi
 
 func TestCredentialProfileService_ListCredentialProfiles_EmptyAgentType(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	db.Exec(`INSERT INTO user_agent_credential_profiles
@@ -241,8 +241,8 @@ func TestCredentialProfileService_SetDefaultCredentialProfile_UpdateError(t *tes
 		(user_id, agent_type_id, name, is_runner_host, is_default, is_active)
 		VALUES (1, 1, 'Test Profile', 0, 0, 1)`)
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
 	ctx := context.Background()
 
 	updated, err := svc.SetDefaultCredentialProfile(ctx, 1, 1)

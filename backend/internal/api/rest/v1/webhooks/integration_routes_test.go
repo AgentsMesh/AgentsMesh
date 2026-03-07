@@ -8,6 +8,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	billingService "github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 	"github.com/gin-gonic/gin"
@@ -131,7 +132,7 @@ func TestMockRouterWithNilFactory(t *testing.T) {
 	SetupDefaultHandlers(registry, logger)
 
 	// Create billing service without mock
-	billingSvc := billingService.NewService(db, "")
+	billingSvc := billingService.NewService(infra.NewBillingRepository(db), "")
 
 	cfg := &config.Config{}
 

@@ -9,7 +9,7 @@ import (
 )
 
 func TestHandleAgentStatus(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -17,12 +17,12 @@ func TestHandleAgentStatus(t *testing.T) {
 		NodeID:         "agent-status-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a running pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"agent-pod-1", r.ID, agentpod.StatusRunning)
 
 	// Track status change callback
@@ -41,7 +41,7 @@ func TestHandleAgentStatus(t *testing.T) {
 
 	// Verify pod was updated
 	var agentStatus string
-	pc.db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "agent-pod-1").
+	db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "agent-pod-1").
 		Scan(&agentStatus)
 
 	if agentStatus != agentpod.AgentStatusExecuting {
@@ -55,7 +55,7 @@ func TestHandleAgentStatus(t *testing.T) {
 }
 
 func TestHandleAgentStatusPreservesPtyPid(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -63,12 +63,12 @@ func TestHandleAgentStatusPreservesPtyPid(t *testing.T) {
 		NodeID:         "agent-nopid-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a running pod with existing pid
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, pty_pid) VALUES (?, ?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status, pty_pid) VALUES (?, ?, ?, ?)`,
 		"agent-nopid-1", r.ID, agentpod.StatusRunning, 11111)
 
 	// Handle agent status change (using Proto type)
@@ -82,7 +82,7 @@ func TestHandleAgentStatusPreservesPtyPid(t *testing.T) {
 	// Verify agent_status was updated but pid was not changed
 	var agentStatus string
 	var pid int
-	pc.db.Raw(`SELECT agent_status, pty_pid FROM pods WHERE pod_key = ?`, "agent-nopid-1").
+	db.Raw(`SELECT agent_status, pty_pid FROM pods WHERE pod_key = ?`, "agent-nopid-1").
 		Row().Scan(&agentStatus, &pid)
 
 	if agentStatus != agentpod.AgentStatusIdle {
@@ -94,7 +94,7 @@ func TestHandleAgentStatusPreservesPtyPid(t *testing.T) {
 }
 
 func TestHandleAgentStatusRejectsInvalidStatus(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -102,12 +102,12 @@ func TestHandleAgentStatusRejectsInvalidStatus(t *testing.T) {
 		NodeID:         "agent-invalid-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a running pod with known agent_status
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, agent_status) VALUES (?, ?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status, agent_status) VALUES (?, ?, ?, ?)`,
 		"agent-invalid-1", r.ID, agentpod.StatusRunning, agentpod.AgentStatusIdle)
 
 	// Track callback invocations
@@ -129,7 +129,7 @@ func TestHandleAgentStatusRejectsInvalidStatus(t *testing.T) {
 
 		// Verify agent_status was NOT updated (should remain idle)
 		var agentStatus string
-		pc.db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "agent-invalid-1").
+		db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "agent-invalid-1").
 			Scan(&agentStatus)
 
 		if agentStatus != agentpod.AgentStatusIdle {
@@ -145,7 +145,7 @@ func TestHandleAgentStatusRejectsInvalidStatus(t *testing.T) {
 }
 
 func TestHandleAgentStatusValidWaiting(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -153,12 +153,12 @@ func TestHandleAgentStatusValidWaiting(t *testing.T) {
 		NodeID:         "agent-waiting-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a running pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"agent-waiting-1", r.ID, agentpod.StatusRunning)
 
 	// Track callback
@@ -177,7 +177,7 @@ func TestHandleAgentStatusValidWaiting(t *testing.T) {
 
 	// Verify pod was updated
 	var agentStatus string
-	pc.db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "agent-waiting-1").
+	db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "agent-waiting-1").
 		Scan(&agentStatus)
 
 	if agentStatus != agentpod.AgentStatusWaiting {
@@ -191,7 +191,7 @@ func TestHandleAgentStatusValidWaiting(t *testing.T) {
 }
 
 func TestHandleRunnerDisconnect(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -199,12 +199,12 @@ func TestHandleRunnerDisconnect(t *testing.T) {
 		NodeID:         "disconnect-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a running pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"disconnect-pod-1", r.ID, agentpod.StatusRunning)
 
 	// Handle runner disconnect
@@ -212,21 +212,21 @@ func TestHandleRunnerDisconnect(t *testing.T) {
 
 	// Verify runner was marked as offline
 	var updated runner.Runner
-	pc.db.First(&updated, r.ID)
+	db.First(&updated, r.ID)
 	if updated.Status != "offline" {
 		t.Errorf("runner status: got %q, want %q", updated.Status, "offline")
 	}
 
 	// Verify pod is NOT immediately orphaned (by design)
 	var podStatus string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "disconnect-pod-1").Scan(&podStatus)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "disconnect-pod-1").Scan(&podStatus)
 	if podStatus != agentpod.StatusRunning {
 		t.Errorf("pod should still be running (not immediately orphaned): got %q", podStatus)
 	}
 }
 
 func TestHandlePodInitProgress(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, _ := setupPodEventHandlerDeps(t)
 
 	// Track callback invocation
 	var callbackPodKey, callbackPhase, callbackMessage string
@@ -264,7 +264,7 @@ func TestHandlePodInitProgress(t *testing.T) {
 }
 
 func TestHandlePodInitProgressNoCallback(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, _ := setupPodEventHandlerDeps(t)
 
 	// No callback set - should not panic
 	data := &runnerv1.PodInitProgressEvent{

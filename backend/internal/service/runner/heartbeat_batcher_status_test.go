@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 func TestHeartbeatBatcherGetRunnerStatus(t *testing.T) {
 	mr, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	ctx := context.Background()
 
 	// Test not found
@@ -56,9 +59,10 @@ func TestHeartbeatBatcherGetRunnerStatus(t *testing.T) {
 func TestHeartbeatBatcherIsRunnerOnline(t *testing.T) {
 	mr, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	ctx := context.Background()
 
 	// Test non-existent runner

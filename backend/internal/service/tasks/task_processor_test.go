@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -130,17 +131,13 @@ func TestTaskExecutionFullModel(t *testing.T) {
 }
 
 func TestNewTaskProcessorService(t *testing.T) {
-	db := setupTestDB(t)
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 
-	processor := NewTaskProcessorService(db, redisClient, logger)
+	processor := NewTaskProcessorService(redisClient, logger)
 
 	if processor == nil {
 		t.Fatal("expected non-nil processor")
-	}
-	if processor.db != db {
-		t.Error("expected processor.db to be set")
 	}
 	if processor.handlers == nil {
 		t.Error("expected handlers map to be initialized")
@@ -171,11 +168,10 @@ func (m *MockTaskHandler) ProcessFailure(ctx context.Context, pipeline *infraTas
 }
 
 func TestTaskProcessorService_RegisterHandler(t *testing.T) {
-	db := setupTestDB(t)
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 
-	processor := NewTaskProcessorService(db, redisClient, logger)
+	processor := NewTaskProcessorService(redisClient, logger)
 
 	handler := &MockTaskHandler{taskType: "test_task"}
 	processor.RegisterHandler(handler)
@@ -190,11 +186,10 @@ func TestTaskProcessorService_RegisterHandler(t *testing.T) {
 }
 
 func TestTaskProcessorService_GetRegisteredTypes(t *testing.T) {
-	db := setupTestDB(t)
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 
-	processor := NewTaskProcessorService(db, redisClient, logger)
+	processor := NewTaskProcessorService(redisClient, logger)
 
 	// Register multiple handlers
 	processor.RegisterHandler(&MockTaskHandler{taskType: "type_a"})
@@ -208,11 +203,10 @@ func TestTaskProcessorService_GetRegisteredTypes(t *testing.T) {
 }
 
 func TestTaskProcessorService_Process_NoHandlers(t *testing.T) {
-	db := setupTestDB(t)
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 
-	processor := NewTaskProcessorService(db, redisClient, logger)
+	processor := NewTaskProcessorService(redisClient, logger)
 
 	result, err := processor.Process(context.Background())
 	if err != nil {
@@ -223,83 +217,85 @@ func TestTaskProcessorService_Process_NoHandlers(t *testing.T) {
 	}
 }
 
+// mockTaskExecRepo implements TaskExecutionRepository for testing.
+type mockTaskExecRepo struct {
+	updateStatusErr error
+	getByIDResult   *TaskExecution
+	getByIDErr      error
+	lastStatus      string
+	lastErrorMsg    string
+}
+
+func (m *mockTaskExecRepo) UpdateStatus(_ context.Context, _ int64, status string, errorMsg string) error {
+	m.lastStatus = status
+	m.lastErrorMsg = errorMsg
+	return m.updateStatusErr
+}
+
+func (m *mockTaskExecRepo) GetByID(_ context.Context, _ int64) (*TaskExecution, error) {
+	return m.getByIDResult, m.getByIDErr
+}
+
 func TestBaseTaskHandler_UpdateTaskStatus(t *testing.T) {
-	db := setupTestDB(t)
+	repo := &mockTaskExecRepo{}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 
 	handler := &BaseTaskHandler{
-		DB:     db,
+		Repo:   repo,
 		Redis:  redisClient,
 		Logger: logger,
 	}
-
-	// Insert a task
-	db.Exec(`INSERT INTO task_executions (id, task_type, status) VALUES (1, 'test', 'pending')`)
 
 	err := handler.UpdateTaskStatus(context.Background(), 1, TaskStatusRunning, "")
 	if err != nil {
 		t.Fatalf("UpdateTaskStatus() error = %v", err)
 	}
-
-	// Verify status changed
-	var status string
-	db.Raw("SELECT status FROM task_executions WHERE id = 1").Scan(&status)
-	if status != TaskStatusRunning {
-		t.Errorf("expected status 'running', got '%s'", status)
+	if repo.lastStatus != TaskStatusRunning {
+		t.Errorf("expected status 'running', got '%s'", repo.lastStatus)
 	}
 }
 
 func TestBaseTaskHandler_UpdateTaskStatus_WithError(t *testing.T) {
-	db := setupTestDB(t)
+	repo := &mockTaskExecRepo{}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 
 	handler := &BaseTaskHandler{
-		DB:     db,
+		Repo:   repo,
 		Redis:  redisClient,
 		Logger: logger,
 	}
-
-	// Insert a task
-	db.Exec(`INSERT INTO task_executions (id, task_type, status) VALUES (2, 'test', 'running')`)
 
 	err := handler.UpdateTaskStatus(context.Background(), 2, TaskStatusFailed, "Connection timeout")
 	if err != nil {
 		t.Fatalf("UpdateTaskStatus() error = %v", err)
 	}
-
-	// Verify status and error message
-	var status, errorMsg string
-	db.Raw("SELECT status, error_message FROM task_executions WHERE id = 2").Row().Scan(&status, &errorMsg)
-	if status != TaskStatusFailed {
-		t.Errorf("expected status 'failed', got '%s'", status)
+	if repo.lastStatus != TaskStatusFailed {
+		t.Errorf("expected status 'failed', got '%s'", repo.lastStatus)
 	}
-	if errorMsg != "Connection timeout" {
-		t.Errorf("expected error message 'Connection timeout', got '%s'", errorMsg)
+	if repo.lastErrorMsg != "Connection timeout" {
+		t.Errorf("expected error message 'Connection timeout', got '%s'", repo.lastErrorMsg)
 	}
 }
 
 func TestBaseTaskHandler_GetTaskExecution(t *testing.T) {
-	db := setupTestDB(t)
-	_, redisClient := setupTestRedis(t)
-	logger := testLogger()
-
-	handler := &BaseTaskHandler{
-		DB:     db,
-		Redis:  redisClient,
-		Logger: logger,
-	}
-
-	// Insert a task using GORM to ensure correct column mapping
-	te := TaskExecution{
+	expected := &TaskExecution{
 		ID:              3,
 		TaskType:        "sync",
 		TaskSubtype:     "gitlab",
 		Status:          "pending",
 		GitLabProjectID: "12345",
 	}
-	db.Create(&te)
+	repo := &mockTaskExecRepo{getByIDResult: expected}
+	_, redisClient := setupTestRedis(t)
+	logger := testLogger()
+
+	handler := &BaseTaskHandler{
+		Repo:   repo,
+		Redis:  redisClient,
+		Logger: logger,
+	}
 
 	task, err := handler.GetTaskExecution(context.Background(), 3)
 	if err != nil {
@@ -317,12 +313,12 @@ func TestBaseTaskHandler_GetTaskExecution(t *testing.T) {
 }
 
 func TestBaseTaskHandler_GetTaskExecution_NotFound(t *testing.T) {
-	db := setupTestDB(t)
+	repo := &mockTaskExecRepo{getByIDErr: errors.New("record not found")}
 	_, redisClient := setupTestRedis(t)
 	logger := testLogger()
 
 	handler := &BaseTaskHandler{
-		DB:     db,
+		Repo:   repo,
 		Redis:  redisClient,
 		Logger: logger,
 	}

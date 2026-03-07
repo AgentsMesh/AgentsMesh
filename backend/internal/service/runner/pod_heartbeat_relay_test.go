@@ -9,7 +9,7 @@ import (
 )
 
 func TestHandleHeartbeat_RelayConnections(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -17,7 +17,7 @@ func TestHandleHeartbeat_RelayConnections(t *testing.T) {
 		NodeID:         "relay-heartbeat-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
@@ -88,7 +88,7 @@ func TestHandleHeartbeat_RelayConnections(t *testing.T) {
 }
 
 func TestHandleHeartbeat_RelayConnectionsUpdate(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -96,7 +96,7 @@ func TestHandleHeartbeat_RelayConnectionsUpdate(t *testing.T) {
 		NodeID:         "relay-update-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
@@ -139,7 +139,7 @@ func TestHandleHeartbeat_RelayConnectionsUpdate(t *testing.T) {
 }
 
 func TestHandleHeartbeat_RelayConnectionsEmpty(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -147,7 +147,7 @@ func TestHandleHeartbeat_RelayConnectionsEmpty(t *testing.T) {
 		NodeID:         "relay-empty-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
@@ -184,7 +184,7 @@ func TestHandleHeartbeat_RelayConnectionsEmpty(t *testing.T) {
 }
 
 func TestHandleHeartbeat_RelayConnectionsNil(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -192,7 +192,7 @@ func TestHandleHeartbeat_RelayConnectionsNil(t *testing.T) {
 		NodeID:         "relay-nil-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
@@ -229,7 +229,7 @@ func TestHandleHeartbeat_RelayConnectionsNil(t *testing.T) {
 }
 
 func TestHandleHeartbeat_RelayConnectionsDisconnectedState(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -237,7 +237,7 @@ func TestHandleHeartbeat_RelayConnectionsDisconnectedState(t *testing.T) {
 		NodeID:         "relay-disconnected-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
@@ -275,7 +275,7 @@ func TestHandleHeartbeat_RelayConnectionsDisconnectedState(t *testing.T) {
 }
 
 func TestHandleRunnerDisconnect_ClearsRelayCache(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -283,7 +283,7 @@ func TestHandleRunnerDisconnect_ClearsRelayCache(t *testing.T) {
 		NodeID:         "relay-disconnect-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
@@ -315,7 +315,7 @@ func TestHandleRunnerDisconnect_ClearsRelayCache(t *testing.T) {
 }
 
 func TestGetRelayConnections_NonExistentRunner(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, _ := setupPodEventHandlerDeps(t)
 
 	// Query connections for non-existent runner
 	connections := pc.GetRelayConnections(9999)
@@ -325,7 +325,7 @@ func TestGetRelayConnections_NonExistentRunner(t *testing.T) {
 }
 
 func TestHandleHeartbeat_MultipleRunners(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create two runners
 	r1 := &runner.Runner{
@@ -338,10 +338,10 @@ func TestHandleHeartbeat_MultipleRunners(t *testing.T) {
 		NodeID:         "relay-multi-node-2",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r1).Error; err != nil {
+	if err := db.Create(r1).Error; err != nil {
 		t.Fatalf("failed to create runner 1: %v", err)
 	}
-	if err := pc.db.Create(r2).Error; err != nil {
+	if err := db.Create(r2).Error; err != nil {
 		t.Fatalf("failed to create runner 2: %v", err)
 	}
 

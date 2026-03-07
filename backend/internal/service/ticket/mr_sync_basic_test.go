@@ -14,7 +14,7 @@ func TestNewMRSyncService(t *testing.T) {
 	db := setupMRSyncTestDB(t)
 	provider := &MockGitProvider{}
 
-	service := NewMRSyncService(db, provider)
+	service := newTestMRSyncService(db, provider)
 	assert.NotNil(t, service)
 }
 
@@ -22,7 +22,7 @@ func TestFindOrCreateMR(t *testing.T) {
 	ctx := context.Background()
 	db := setupMRSyncTestDB(t)
 	provider := &MockGitProvider{}
-	service := NewMRSyncService(db, provider)
+	service := newTestMRSyncService(db, provider)
 
 	// Create a ticket
 	tkt := &ticket.Ticket{

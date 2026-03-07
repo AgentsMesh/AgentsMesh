@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 func TestAddMember(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -32,7 +33,7 @@ func TestAddMember(t *testing.T) {
 
 func TestRemoveMember(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -52,7 +53,7 @@ func TestRemoveMember(t *testing.T) {
 
 func TestRemoveMemberOwner(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -67,7 +68,7 @@ func TestRemoveMemberOwner(t *testing.T) {
 
 func TestUpdateMemberRole(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -87,7 +88,7 @@ func TestUpdateMemberRole(t *testing.T) {
 
 func TestListMembers(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	// Create test users first
@@ -112,7 +113,7 @@ func TestListMembers(t *testing.T) {
 
 func TestListMembersEmpty(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	members, err := service.ListMembers(ctx, 999)
@@ -127,7 +128,7 @@ func TestListMembersEmpty(t *testing.T) {
 
 func TestGetMemberNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}

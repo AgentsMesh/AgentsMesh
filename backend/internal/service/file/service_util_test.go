@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -79,7 +80,8 @@ func BenchmarkUpload(b *testing.B) {
 
 	mockStorage := storage.NewMockStorage()
 	cfg := config.StorageConfig{MaxFileSize: 10, AllowedTypes: []string{"image/png"}}
-	svc := NewService(db, mockStorage, cfg)
+	repo := infra.NewFileRepository(db)
+	svc := NewService(repo, mockStorage, cfg)
 
 	content := []byte("benchmark test content")
 

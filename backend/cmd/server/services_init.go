@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	agentpodDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
@@ -71,12 +73,18 @@ type serviceContainer struct {
 	loop              *loop.LoopService
 	loopRun           *loop.LoopRunService
 	supportTicket     *supportticketservice.Service
+
+	// Repositories exposed for runner component wiring
+	podRepo       agentpodDomain.PodRepository
+	runnerRepo    runnerDomain.RunnerRepository
+	autopilotRepo agentpodDomain.AutopilotRepository
 }
 
 // initializeServices creates all business services
 func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Client) *serviceContainer {
 	// Use JWT secret as encryption key for token encryption (OAuth tokens, etc.)
-	userSvc := user.NewServiceWithEncryption(db, cfg.JWT.Secret)
+	userRepo := infra.NewUserRepository(db)
+	userSvc := user.NewServiceWithEncryption(userRepo, cfg.JWT.Secret)
 	authCfg := &auth.Config{
 		JWTSecret:         cfg.JWT.Secret,
 		JWTExpiration:     time.Duration(cfg.JWT.ExpirationHours) * time.Hour,
@@ -89,28 +97,42 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	encryptor := crypto.NewEncryptor(cfg.JWT.Secret)
 
 	// Initialize agent sub-services (split by responsibility per SRP)
-	agentTypeSvc := agent.NewAgentTypeService(db)
-	credentialProfileSvc := agent.NewCredentialProfileService(db, agentTypeSvc, encryptor)
-	userConfigSvc := agent.NewUserConfigService(db, agentTypeSvc)
+	agentTypeRepo := infra.NewAgentTypeRepository(db)
+	agentTypeSvc := agent.NewAgentTypeService(agentTypeRepo)
+	credentialProfileRepo := infra.NewCredentialProfileRepository(db)
+	credentialProfileSvc := agent.NewCredentialProfileService(credentialProfileRepo, agentTypeSvc, encryptor)
+	userConfigRepo := infra.NewUserConfigRepository(db)
+	userConfigSvc := agent.NewUserConfigService(userConfigRepo, agentTypeSvc)
 
-	repoSvc := repository.NewService(db)
-	webhookSvc := repository.NewWebhookService(db, cfg, userSvc, slog.Default())
+	gitRepoRepo := infra.NewGitProviderRepository(db)
+	repoSvc := repository.NewService(gitRepoRepo)
+	webhookSvc := repository.NewWebhookService(gitRepoRepo, cfg, userSvc, slog.Default())
 	// Connect webhook service to repository service for automatic registration
 	repoSvc.SetWebhookService(webhookSvc)
-	billingSvc := billing.NewServiceWithConfig(db, cfg)
+	billingRepo := infra.NewBillingRepository(db)
+	billingSvc := billing.NewServiceWithConfig(billingRepo, cfg)
 	// Organization service must be created after billing service so trial subscriptions
 	// are automatically created when new organizations are created
-	orgSvc := organization.NewServiceWithBilling(db, billingSvc)
-	runnerSvc := runner.NewService(db, billingSvc)
-	podSvc := agentpod.NewPodService(db)
-	autopilotSvc := agentpod.NewAutopilotControllerService(db)
-	channelSvc := channel.NewService(db)
-	ticketSvc := ticket.NewService(db)
+	orgRepo := infra.NewOrganizationRepository(db)
+	orgSvc := organization.NewServiceWithBilling(orgRepo, billingSvc)
+	runnerRepo := infra.NewRunnerRepository(db)
+	runnerSvc := runner.NewService(runnerRepo, billingSvc)
+	podRepo := infra.NewPodRepository(db)
+	podSvc := agentpod.NewPodService(podRepo)
+	autopilotRepo := infra.NewAutopilotRepository(db)
+	autopilotSvc := agentpod.NewAutopilotControllerService(autopilotRepo)
+	channelRepo := infra.NewChannelRepository(db)
+	channelSvc := channel.NewService(channelRepo)
+	ticketRepo := infra.NewTicketRepository(db)
+	ticketSvc := ticket.NewService(ticketRepo)
 	// gitProvider is nil for webhook-only usage; batch sync functions won't work
 	// but FindOrCreateMR and FindTicketByBranch work fine without it
-	mrSyncSvc := ticket.NewMRSyncService(db, nil)
-	bindingSvc := binding.NewService(db, podSvc)
-	meshSvc := mesh.NewService(db, podSvc, channelSvc, bindingSvc)
+	mrSyncRepo := infra.NewMRSyncRepository(db)
+	mrSyncSvc := ticket.NewMRSyncService(mrSyncRepo, nil)
+	bindingRepo := infra.NewBindingRepository(db)
+	bindingSvc := binding.NewService(bindingRepo, podSvc)
+	meshRepo := infra.NewMeshRepository(db)
+	meshSvc := mesh.NewService(meshRepo, podSvc, channelSvc, bindingSvc)
 
 	// Initialize email service for invitations
 	emailSvc := email.NewService(email.Config{
@@ -119,14 +141,18 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		FromAddress: cfg.Email.FromAddress,
 		BaseURL:     cfg.FrontendURL(),
 	})
-	invitationSvc := invitation.NewService(db, emailSvc)
+	invitationRepo := infra.NewInvitationRepository(db)
+	invitationSvc := invitation.NewService(invitationRepo, emailSvc)
 
 	// Initialize promo code service
-	promoCodeSvc := promocode.NewService(db)
+	promocodeRepo := infra.NewPromocodeRepository(db)
+	promoCodeSvc := promocode.NewService(promocodeRepo, infra.NewGormBillingProvider(db))
 
 	// Initialize AgentPod settings and AI provider services
-	agentpodSettingsSvc := agentpod.NewSettingsService(db)
-	agentpodAIProviderSvc := agentpod.NewAIProviderService(db, encryptor)
+	agentpodSettingsRepo := infra.NewSettingsRepository(db)
+	agentpodSettingsSvc := agentpod.NewSettingsService(agentpodSettingsRepo)
+	aiProviderRepo := infra.NewAIProviderRepository(db)
+	agentpodAIProviderSvc := agentpod.NewAIProviderService(aiProviderRepo, encryptor)
 
 	// Initialize storage (S3-compatible)
 	fileSvc := initializeFileService(cfg, db)
@@ -135,12 +161,15 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	supportTicketSvc := initializeSupportTicketService(cfg, db)
 
 	// Initialize API key service
-	apikeySvc := apikeyservice.NewService(db, redisClient)
+	apikeyRepo := infra.NewAPIKeyRepository(db)
+	apikeySvc := apikeyservice.NewService(apikeyRepo, redisClient)
 	apikeyAdapterSvc := apikeyservice.NewMiddlewareAdapter(apikeySvc)
 
 	// Initialize loop services
-	loopSvc := loop.NewLoopService(db)
-	loopRunSvc := loop.NewLoopRunService(db)
+	loopRepo := infra.NewLoopRepository(db)
+	loopRunRepo := infra.NewLoopRunRepository(db)
+	loopSvc := loop.NewLoopService(loopRepo)
+	loopRunSvc := loop.NewLoopRunService(loopRunRepo)
 
 	// Initialize license service (for OnPremise deployments)
 	licenseSvc := initializeLicenseService(cfg, db)
@@ -182,6 +211,9 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		loop:               loopSvc,
 		loopRun:            loopRunSvc,
 		supportTicket:      supportTicketSvc,
+		podRepo:            podRepo,
+		runnerRepo:         runnerRepo,
+		autopilotRepo:      autopilotRepo,
 	}
 }
 
@@ -213,7 +245,8 @@ func initializeFileService(cfg *config.Config, db *gorm.DB) *fileservice.Service
 	}
 
 	slog.Info("Storage initialized", "endpoint", cfg.Storage.Endpoint, "bucket", cfg.Storage.Bucket)
-	return fileservice.NewService(db, s3Storage, cfg.Storage)
+	fileRepo := infra.NewFileRepository(db)
+	return fileservice.NewService(fileRepo, s3Storage, cfg.Storage)
 }
 
 // initializeLicenseService initializes the license service for OnPremise deployments
@@ -222,7 +255,8 @@ func initializeLicenseService(cfg *config.Config, db *gorm.DB) *license.Service 
 		return nil
 	}
 
-	licenseSvc, err := license.NewService(db, &cfg.Payment.License, slog.Default())
+	licenseRepo := infra.NewLicenseRepository(db)
+	licenseSvc, err := license.NewService(licenseRepo, &cfg.Payment.License, slog.Default())
 	if err != nil {
 		slog.Warn("Failed to initialize license service", "error", err)
 		return nil
@@ -285,10 +319,12 @@ func initializeExtensionServices(cfg *config.Config, db *gorm.DB) (*extensionser
 
 // initializeSupportTicketService initializes the support ticket service
 func initializeSupportTicketService(cfg *config.Config, db *gorm.DB) *supportticketservice.Service {
+	supportTicketRepo := infra.NewSupportTicketRepository(db)
+
 	if cfg.Storage.AccessKey == "" || cfg.Storage.SecretKey == "" {
 		slog.Warn("Storage not configured, support ticket attachments disabled")
 		// Still create service with nil storage (text-only tickets work)
-		return supportticketservice.NewService(db, nil, cfg.Storage)
+		return supportticketservice.NewService(supportTicketRepo, nil, cfg.Storage)
 	}
 
 	s3Storage, err := storage.NewS3Storage(storage.S3Config{
@@ -303,9 +339,9 @@ func initializeSupportTicketService(cfg *config.Config, db *gorm.DB) *supporttic
 	})
 	if err != nil {
 		slog.Error("Failed to initialize storage for support tickets", "error", err)
-		return supportticketservice.NewService(db, nil, cfg.Storage)
+		return supportticketservice.NewService(supportTicketRepo, nil, cfg.Storage)
 	}
 
 	slog.Info("Support ticket service initialized")
-	return supportticketservice.NewService(db, s3Storage, cfg.Storage)
+	return supportticketservice.NewService(supportTicketRepo, s3Storage, cfg.Storage)
 }

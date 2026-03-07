@@ -8,17 +8,19 @@ import (
 )
 
 func TestNewPodCoordinator(t *testing.T) {
-	db := setupTestDB(t)
 	logger := newTestLogger()
-	_, cm, tr, hb := setupPodCoordinatorDeps(t)
+	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 
 	if pc == nil {
 		t.Fatal("NewPodCoordinator returned nil")
 	}
-	if pc.db != db {
-		t.Error("db not set correctly")
+	if pc.podRepo != podRepo {
+		t.Error("podRepo not set correctly")
+	}
+	if pc.runnerRepo != runnerRepo {
+		t.Error("runnerRepo not set correctly")
 	}
 	if pc.connectionManager != cm {
 		t.Error("connectionManager not set correctly")
@@ -32,11 +34,10 @@ func TestNewPodCoordinator(t *testing.T) {
 }
 
 func TestPodCoordinatorSetStatusChangeCallback(t *testing.T) {
-	db := setupTestDB(t)
 	logger := newTestLogger()
-	_, cm, tr, hb := setupPodCoordinatorDeps(t)
+	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 
 	pc.SetStatusChangeCallback(func(podKey string, status string, agentStatus string) {
 		// Callback set for testing
@@ -48,9 +49,8 @@ func TestPodCoordinatorSetStatusChangeCallback(t *testing.T) {
 }
 
 func TestPodCoordinatorIncrementPods(t *testing.T) {
-	db := setupTestDB(t)
 	logger := newTestLogger()
-	_, cm, tr, hb := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -63,7 +63,7 @@ func TestPodCoordinatorIncrementPods(t *testing.T) {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	pc := NewPodCoordinator(db, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Increment pods

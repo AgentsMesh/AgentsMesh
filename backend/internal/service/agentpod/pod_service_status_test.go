@@ -9,7 +9,7 @@ import (
 
 func TestUpdatePodStatus(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create a pod
@@ -57,7 +57,7 @@ func TestUpdatePodStatus(t *testing.T) {
 
 func TestUpdateAgentStatus(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -84,7 +84,7 @@ func TestUpdateAgentStatus(t *testing.T) {
 
 func TestMarkDisconnected(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -108,7 +108,7 @@ func TestMarkDisconnected(t *testing.T) {
 
 func TestMarkReconnected(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{

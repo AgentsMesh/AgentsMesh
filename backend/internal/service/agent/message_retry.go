@@ -9,16 +9,7 @@ import (
 
 // GetPendingRetries returns messages that need retry
 func (s *MessageService) GetPendingRetries(ctx context.Context, before time.Time, limit int) ([]*agent.AgentMessage, error) {
-	var messages []*agent.AgentMessage
-	if err := s.db.WithContext(ctx).
-		Where("status = ? AND next_retry_at IS NOT NULL AND next_retry_at <= ?",
-			agent.MessageStatusFailed, before).
-		Order("next_retry_at ASC").
-		Limit(limit).
-		Find(&messages).Error; err != nil {
-		return nil, err
-	}
-	return messages, nil
+	return s.repo.GetPendingRetries(ctx, before, limit)
 }
 
 // RecordDeliveryFailure records a delivery failure and schedules retry
@@ -44,7 +35,7 @@ func (s *MessageService) RecordDeliveryFailure(ctx context.Context, messageID in
 			FinalAttempt:      message.DeliveryAttempts,
 			MovedAt:           now,
 		}
-		if err := s.db.WithContext(ctx).Create(deadLetter).Error; err != nil {
+		if err := s.repo.CreateDeadLetter(ctx, deadLetter); err != nil {
 			return err
 		}
 	} else {
@@ -55,29 +46,18 @@ func (s *MessageService) RecordDeliveryFailure(ctx context.Context, messageID in
 		message.NextRetryAt = &nextRetry
 	}
 
-	return s.db.WithContext(ctx).Save(message).Error
+	return s.repo.Save(ctx, message)
 }
 
 // GetDeadLetters returns dead letter entries for review
 func (s *MessageService) GetDeadLetters(ctx context.Context, limit, offset int) ([]*agent.DeadLetterEntry, error) {
-	var entries []*agent.DeadLetterEntry
-	if err := s.db.WithContext(ctx).
-		Preload("OriginalMessage").
-		Order("moved_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&entries).Error; err != nil {
-		return nil, err
-	}
-	return entries, nil
+	return s.repo.GetDeadLetters(ctx, limit, offset)
 }
 
 // ReplayDeadLetter attempts to replay a dead letter message
 func (s *MessageService) ReplayDeadLetter(ctx context.Context, entryID int64) (*agent.AgentMessage, error) {
-	var entry agent.DeadLetterEntry
-	if err := s.db.WithContext(ctx).
-		Preload("OriginalMessage").
-		First(&entry, entryID).Error; err != nil {
+	entry, err := s.repo.GetDeadLetterWithMessage(ctx, entryID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -88,7 +68,7 @@ func (s *MessageService) ReplayDeadLetter(ctx context.Context, entryID int64) (*
 	entry.OriginalMessage.NextRetryAt = nil
 	entry.OriginalMessage.DeliveryError = nil
 
-	if err := s.db.WithContext(ctx).Save(entry.OriginalMessage).Error; err != nil {
+	if err := s.repo.Save(ctx, entry.OriginalMessage); err != nil {
 		return nil, err
 	}
 
@@ -96,7 +76,7 @@ func (s *MessageService) ReplayDeadLetter(ctx context.Context, entryID int64) (*
 	entry.ReplayedAt = &now
 	result := "Replayed successfully"
 	entry.ReplayResult = &result
-	if err := s.db.WithContext(ctx).Save(&entry).Error; err != nil {
+	if err := s.repo.SaveDeadLetter(ctx, entry); err != nil {
 		return nil, err
 	}
 
@@ -105,8 +85,5 @@ func (s *MessageService) ReplayDeadLetter(ctx context.Context, entryID int64) (*
 
 // CleanupExpiredMessages removes old dead letter entries
 func (s *MessageService) CleanupExpiredMessages(ctx context.Context, olderThan time.Time) (int64, error) {
-	result := s.db.WithContext(ctx).
-		Where("moved_at < ?", olderThan).
-		Delete(&agent.DeadLetterEntry{})
-	return result.RowsAffected, result.Error
+	return s.repo.CleanupExpiredDeadLetters(ctx, olderThan)
 }

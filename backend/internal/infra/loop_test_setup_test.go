@@ -1,4 +1,4 @@
-package loop
+package infra
 
 import (
 	"testing"
@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// setupTestDB creates an in-memory SQLite database for testing.
+// setupLoopTestDB creates an in-memory SQLite database for testing.
 // Creates loop-related tables plus minimal pods/autopilot_controllers tables for SSOT queries.
-func setupTestDB(t *testing.T) *gorm.DB {
+func setupLoopTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		Logger:                                   logger.Default.LogMode(logger.Silent),
@@ -124,4 +124,4 @@ func setupTestDB(t *testing.T) *gorm.DB {
 }
 
 // Helper functions for creating test data
-func strPtr(s string) *string { return &s }
+func loopStrPtr(s string) *string { return &s }

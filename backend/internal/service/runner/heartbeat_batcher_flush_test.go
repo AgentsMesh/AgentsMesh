@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 func TestHeartbeatBatcherFlush(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
 	// Create a runner in the database
@@ -23,7 +25,7 @@ func TestHeartbeatBatcherFlush(t *testing.T) {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 
 	ctx := context.Background()
 
@@ -57,9 +59,10 @@ func TestHeartbeatBatcherFlush(t *testing.T) {
 func TestHeartbeatBatcherFlushEmptyBuffer(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 
 	// Flush empty buffer should not panic
 	batcher.Flush()
@@ -72,6 +75,7 @@ func TestHeartbeatBatcherFlushEmptyBuffer(t *testing.T) {
 func TestHeartbeatBatcherFlushLoop(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
 	// Create a runner in the database
@@ -84,7 +88,7 @@ func TestHeartbeatBatcherFlushLoop(t *testing.T) {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	batcher.SetInterval(50 * time.Millisecond)
 
 	ctx := context.Background()
@@ -117,6 +121,7 @@ func TestHeartbeatBatcherFlushLoop(t *testing.T) {
 func TestHeartbeatBatcherFlushBatch(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
 	// Create multiple runners
@@ -131,7 +136,7 @@ func TestHeartbeatBatcherFlushBatch(t *testing.T) {
 		}
 	}
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	ctx := context.Background()
 
 	// Record heartbeats for all runners

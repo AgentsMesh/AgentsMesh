@@ -3,11 +3,13 @@ package user
 import (
 	"context"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 func TestGetOrCreateByOAuth(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create new user via OAuth
@@ -37,7 +39,7 @@ func TestGetOrCreateByOAuth(t *testing.T) {
 
 func TestGetOrCreateByOAuthExistingVerifiedEmail(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create user via regular signup
@@ -64,7 +66,7 @@ func TestGetOrCreateByOAuthExistingVerifiedEmail(t *testing.T) {
 
 func TestGetOrCreateByOAuthExistingUnverifiedEmail(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create user via regular signup (email NOT verified)
@@ -89,7 +91,7 @@ func TestGetOrCreateByOAuthExistingUnverifiedEmail(t *testing.T) {
 
 func TestGetOrCreateByOAuthDuplicateUsername(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create user with username
@@ -114,7 +116,7 @@ func TestGetOrCreateByOAuthDuplicateUsername(t *testing.T) {
 
 func TestListIdentities(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create user with OAuth
@@ -132,7 +134,7 @@ func TestListIdentities(t *testing.T) {
 
 func TestGetIdentity(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	user, _, _ := service.GetOrCreateByOAuth(ctx, "github", "12345", "githubuser", "test@example.com", "Test", "")
@@ -148,7 +150,7 @@ func TestGetIdentity(t *testing.T) {
 
 func TestGetIdentityNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -165,7 +167,7 @@ func TestGetIdentityNotFound(t *testing.T) {
 
 func TestDeleteIdentity(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	user, _, _ := service.GetOrCreateByOAuth(ctx, "github", "12345", "githubuser", "test@example.com", "Test", "")
@@ -183,7 +185,7 @@ func TestDeleteIdentity(t *testing.T) {
 
 func TestUpdateIdentityTokens(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	user, _, _ := service.GetOrCreateByOAuth(ctx, "github", "12345", "githubuser", "test@example.com", "Test", "")
@@ -201,7 +203,7 @@ func TestUpdateIdentityTokens(t *testing.T) {
 
 func TestGetOrCreateByOAuthEmptyEmail(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// First user with empty email via OAuth

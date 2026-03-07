@@ -7,14 +7,13 @@ import (
 	"time"
 
 	apikeyDomain "github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
-	"gorm.io/gorm"
 )
 
 // UpdateAPIKey updates an API key's metadata with organization ownership verification
 func (s *Service) UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *UpdateAPIKeyRequest) (*apikeyDomain.APIKey, error) {
-	var key apikeyDomain.APIKey
-	if err := s.db.WithContext(ctx).Where("id = ? AND organization_id = ?", id, orgID).First(&key).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+	key, err := s.repo.GetByID(ctx, id, orgID)
+	if err != nil {
+		if err == apikeyDomain.ErrNotFound {
 			return nil, ErrAPIKeyNotFound
 		}
 		return nil, fmt.Errorf("failed to get api key: %w", err)
@@ -34,13 +33,11 @@ func (s *Service) UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *
 		}
 		req.Name = &trimmed
 		// Check duplicate name within organization (excluding self)
-		var count int64
-		if err := s.db.WithContext(ctx).Model(&apikeyDomain.APIKey{}).
-			Where("organization_id = ? AND name = ? AND id != ?", key.OrganizationID, *req.Name, id).
-			Count(&count).Error; err != nil {
+		exists, err := s.repo.CheckDuplicateName(ctx, key.OrganizationID, *req.Name, &id)
+		if err != nil {
 			return nil, fmt.Errorf("failed to check duplicate name: %w", err)
 		}
-		if count > 0 {
+		if exists {
 			return nil, ErrDuplicateKeyName
 		}
 		updates["name"] = *req.Name
@@ -63,7 +60,7 @@ func (s *Service) UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *
 		updates["is_enabled"] = *req.IsEnabled
 	}
 
-	if err := s.db.WithContext(ctx).Model(&key).Updates(updates).Error; err != nil {
+	if err := s.repo.Update(ctx, key, updates); err != nil {
 		return nil, fmt.Errorf("failed to update api key: %w", err)
 	}
 
@@ -71,27 +68,28 @@ func (s *Service) UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *
 	s.invalidateCache(ctx, key.KeyHash)
 
 	// Reload with organization ownership
-	if err := s.db.WithContext(ctx).Where("id = ? AND organization_id = ?", id, orgID).First(&key).Error; err != nil {
+	key, err = s.repo.GetByID(ctx, id, orgID)
+	if err != nil {
 		return nil, fmt.Errorf("failed to reload api key: %w", err)
 	}
 
-	return &key, nil
+	return key, nil
 }
 
 // RevokeAPIKey disables an API key with organization ownership verification
 func (s *Service) RevokeAPIKey(ctx context.Context, id int64, orgID int64) error {
-	var key apikeyDomain.APIKey
-	if err := s.db.WithContext(ctx).Where("id = ? AND organization_id = ?", id, orgID).First(&key).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+	key, err := s.repo.GetByID(ctx, id, orgID)
+	if err != nil {
+		if err == apikeyDomain.ErrNotFound {
 			return ErrAPIKeyNotFound
 		}
 		return fmt.Errorf("failed to get api key: %w", err)
 	}
 
-	if err := s.db.WithContext(ctx).Model(&key).Updates(map[string]interface{}{
+	if err := s.repo.Update(ctx, key, map[string]interface{}{
 		"is_enabled": false,
 		"updated_at": time.Now(),
-	}).Error; err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to revoke api key: %w", err)
 	}
 
@@ -103,15 +101,15 @@ func (s *Service) RevokeAPIKey(ctx context.Context, id int64, orgID int64) error
 
 // DeleteAPIKey permanently deletes an API key with organization ownership verification
 func (s *Service) DeleteAPIKey(ctx context.Context, id int64, orgID int64) error {
-	var key apikeyDomain.APIKey
-	if err := s.db.WithContext(ctx).Where("id = ? AND organization_id = ?", id, orgID).First(&key).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+	key, err := s.repo.GetByID(ctx, id, orgID)
+	if err != nil {
+		if err == apikeyDomain.ErrNotFound {
 			return ErrAPIKeyNotFound
 		}
 		return fmt.Errorf("failed to get api key: %w", err)
 	}
 
-	if err := s.db.WithContext(ctx).Delete(&key).Error; err != nil {
+	if err := s.repo.Delete(ctx, key); err != nil {
 		return fmt.Errorf("failed to delete api key: %w", err)
 	}
 
@@ -123,7 +121,5 @@ func (s *Service) DeleteAPIKey(ctx context.Context, id int64, orgID int64) error
 
 // UpdateLastUsed updates the last_used_at timestamp (fire-and-forget, errors are logged)
 func (s *Service) UpdateLastUsed(ctx context.Context, id int64) error {
-	return s.db.WithContext(ctx).Model(&apikeyDomain.APIKey{}).
-		Where("id = ?", id).
-		Update("last_used_at", time.Now()).Error
+	return s.repo.UpdateLastUsed(ctx, id)
 }

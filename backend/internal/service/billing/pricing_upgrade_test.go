@@ -10,7 +10,7 @@ import (
 
 func TestCalculateUpgradePrice(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)       // based plan ($9.9/month)
@@ -53,7 +53,7 @@ func TestCalculateUpgradePrice(t *testing.T) {
 
 func TestCalculateUpgradePriceYearlyCycle(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)       // based plan ($99/year)
@@ -93,7 +93,7 @@ func TestCalculateUpgradePriceYearlyCycle(t *testing.T) {
 
 func TestCalculateUpgradePriceZeroSeats(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -124,7 +124,7 @@ func TestCalculateUpgradePriceZeroSeats(t *testing.T) {
 
 func TestCalculateUpgradePriceDowngrade(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -157,7 +157,7 @@ func TestCalculateUpgradePriceDowngrade(t *testing.T) {
 
 func TestCalculateUpgradePriceNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.CalculateUpgradePrice(ctx, 999, "pro")
@@ -168,7 +168,7 @@ func TestCalculateUpgradePriceNotFound(t *testing.T) {
 
 func TestCalculateUpgradePricePlanNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

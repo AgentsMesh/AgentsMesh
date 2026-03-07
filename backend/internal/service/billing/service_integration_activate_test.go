@@ -11,7 +11,7 @@ import (
 
 // TestIntegrationActivateNewSubscription tests activation of brand new subscription
 func TestIntegrationActivateNewSubscription(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -80,7 +80,7 @@ func TestIntegrationActivateNewSubscription(t *testing.T) {
 
 // TestIntegrationActivateNewSubscriptionYearly tests activation of yearly subscription
 func TestIntegrationActivateNewSubscriptionYearly(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 

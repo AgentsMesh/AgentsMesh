@@ -1,4 +1,4 @@
-package promocode
+package promocode_test
 
 import (
 	"context"
@@ -7,11 +7,12 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
+	svc "github.com/anthropics/agentsmesh/backend/internal/service/promocode"
 )
 
 func TestService_Validate(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create test promo codes
@@ -100,7 +101,7 @@ func TestService_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := svc.Validate(ctx, &ValidateRequest{
+			resp, err := service.Validate(ctx, &svc.ValidateRequest{
 				Code:           tt.code,
 				OrganizationID: tt.orgID,
 			})
@@ -117,7 +118,7 @@ func TestService_Validate(t *testing.T) {
 
 func TestService_Redeem(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create test promo code
@@ -139,7 +140,7 @@ func TestService_Redeem(t *testing.T) {
 
 	// Test: non-owner cannot redeem
 	t.Run("non-owner cannot redeem", func(t *testing.T) {
-		resp, err := svc.Redeem(ctx, &RedeemRequest{
+		resp, err := service.Redeem(ctx, &svc.RedeemRequest{
 			Code:           "REDEEM2024",
 			OrganizationID: 1,
 			UserID:         1,
@@ -156,7 +157,7 @@ func TestService_Redeem(t *testing.T) {
 
 	// Test: owner can redeem
 	t.Run("owner can redeem", func(t *testing.T) {
-		resp, err := svc.Redeem(ctx, &RedeemRequest{
+		resp, err := service.Redeem(ctx, &svc.RedeemRequest{
 			Code:           "REDEEM2024",
 			OrganizationID: 1,
 			UserID:         1,
@@ -203,7 +204,7 @@ func TestService_Redeem(t *testing.T) {
 
 	// Test: cannot redeem same code twice
 	t.Run("cannot redeem same code twice", func(t *testing.T) {
-		resp, err := svc.Redeem(ctx, &RedeemRequest{
+		resp, err := service.Redeem(ctx, &svc.RedeemRequest{
 			Code:           "REDEEM2024",
 			OrganizationID: 1,
 			UserID:         1,
@@ -221,7 +222,7 @@ func TestService_Redeem(t *testing.T) {
 
 func TestService_RedeemExtendsExistingSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create test promo code
@@ -253,7 +254,7 @@ func TestService_RedeemExtendsExistingSubscription(t *testing.T) {
 	db.Exec(`INSERT INTO organizations (id, name, slug) VALUES (2, 'Test Org 2', 'test-org-2')`)
 
 	t.Run("extends existing subscription", func(t *testing.T) {
-		resp, err := svc.Redeem(ctx, &RedeemRequest{
+		resp, err := service.Redeem(ctx, &svc.RedeemRequest{
 			Code:           "EXTEND2024",
 			OrganizationID: 2,
 			UserID:         1,

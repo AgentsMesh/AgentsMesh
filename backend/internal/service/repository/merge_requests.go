@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
 )
 
 // MergeRequestInfo represents merge request information returned by the service
@@ -26,45 +26,31 @@ type MergeRequestInfo struct {
 // branch: optional filter by source branch
 // state: filter by state (opened, merged, closed, all)
 func (s *Service) ListMergeRequests(ctx context.Context, repoID int64, branch, state string) ([]*MergeRequestInfo, error) {
-	// Build query
-	query := s.db.WithContext(ctx).Model(&ticket.MergeRequest{}).Where("repository_id = ?", repoID)
-
-	// Filter by branch if provided
-	if branch != "" {
-		query = query.Where("source_branch = ?", branch)
-	}
-
-	// Filter by state if not "all"
-	if state != "" && state != "all" {
-		query = query.Where("state = ?", state)
-	}
-
-	// Order by created_at desc
-	query = query.Order("created_at DESC")
-
-	var mrs []ticket.MergeRequest
-	if err := query.Find(&mrs).Error; err != nil {
+	rows, err := s.repo.ListMergeRequests(ctx, repoID, branch, state)
+	if err != nil {
 		return nil, err
 	}
 
-	// Transform to MergeRequestInfo
-	result := make([]*MergeRequestInfo, 0, len(mrs))
-	for _, mr := range mrs {
-		result = append(result, &MergeRequestInfo{
-			ID:             mr.ID,
-			MRIID:          mr.MRIID,
-			Title:          mr.Title,
-			State:          mr.State,
-			MRURL:          mr.MRURL,
-			SourceBranch:   mr.SourceBranch,
-			TargetBranch:   mr.TargetBranch,
-			PipelineStatus: mr.PipelineStatus,
-			PipelineID:     mr.PipelineID,
-			PipelineURL:    mr.PipelineURL,
-			TicketID:       mr.TicketID,
-			PodID:          mr.PodID,
-		})
+	result := make([]*MergeRequestInfo, 0, len(rows))
+	for _, mr := range rows {
+		result = append(result, mrRowToInfo(mr))
 	}
-
 	return result, nil
+}
+
+func mrRowToInfo(mr gitprovider.MergeRequestRow) *MergeRequestInfo {
+	return &MergeRequestInfo{
+		ID:             mr.ID,
+		MRIID:          mr.MRIID,
+		Title:          mr.Title,
+		State:          mr.State,
+		MRURL:          mr.MRURL,
+		SourceBranch:   mr.SourceBranch,
+		TargetBranch:   mr.TargetBranch,
+		PipelineStatus: mr.PipelineStatus,
+		PipelineID:     mr.PipelineID,
+		PipelineURL:    mr.PipelineURL,
+		TicketID:       mr.TicketID,
+		PodID:          mr.PodID,
+	}
 }

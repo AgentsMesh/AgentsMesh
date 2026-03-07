@@ -8,8 +8,12 @@ import (
 
 	infraTasks "github.com/anthropics/agentsmesh/backend/internal/infra/tasks"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
+
+// StalePodCleaner marks initializing/running pods with stale activity as disconnected.
+type StalePodCleaner interface {
+	MarkStaleAsDisconnected(ctx context.Context, threshold time.Time) (int64, error)
+}
 
 // DefaultConfig returns default task manager configuration
 func DefaultConfig() Config {
@@ -35,13 +39,13 @@ type Config struct {
 
 // Manager coordinates all background tasks
 type Manager struct {
-	db        *gorm.DB
-	redis     *redis.Client
-	logger    *slog.Logger
-	cfg       Config
-	scheduler *infraTasks.Scheduler
-	workers   *infraTasks.WorkerPool
-	wg        sync.WaitGroup
+	podCleaner StalePodCleaner
+	redis      *redis.Client
+	logger     *slog.Logger
+	cfg        Config
+	scheduler  *infraTasks.Scheduler
+	workers    *infraTasks.WorkerPool
+	wg         sync.WaitGroup
 
 	// Services
 	pipelinePoller *PipelinePollerService
@@ -49,12 +53,12 @@ type Manager struct {
 }
 
 // NewManager creates a new task manager
-func NewManager(db *gorm.DB, redisClient *redis.Client, logger *slog.Logger, cfg Config) *Manager {
+func NewManager(podCleaner StalePodCleaner, redisClient *redis.Client, logger *slog.Logger, cfg Config) *Manager {
 	m := &Manager{
-		db:     db,
-		redis:  redisClient,
-		logger: logger,
-		cfg:    cfg,
+		podCleaner: podCleaner,
+		redis:      redisClient,
+		logger:     logger,
+		cfg:        cfg,
 	}
 
 	// Initialize scheduler
@@ -70,8 +74,8 @@ func NewManager(db *gorm.DB, redisClient *redis.Client, logger *slog.Logger, cfg
 	)
 
 	// Initialize services
-	m.pipelinePoller = NewPipelinePollerService(db, redisClient, logger.With("component", "pipeline_poller"))
-	m.taskProcessor = NewTaskProcessorService(db, redisClient, logger.With("component", "task_processor"))
+	m.pipelinePoller = NewPipelinePollerService(redisClient, logger.With("component", "pipeline_poller"))
+	m.taskProcessor = NewTaskProcessorService(redisClient, logger.With("component", "task_processor"))
 
 	return m
 }
@@ -179,19 +183,14 @@ func (m *Manager) cleanupStalePods(ctx context.Context) error {
 	// Update pods with stale heartbeats
 	staleThreshold := time.Now().Add(-30 * time.Minute)
 
-	result := m.db.WithContext(ctx).
-		Table("pods").
-		Where("status IN ?", []string{"initializing", "running"}).
-		Where("last_activity < ? OR last_activity IS NULL", staleThreshold).
-		Update("status", "disconnected")
-
-	if result.Error != nil {
-		return result.Error
+	rowsAffected, err := m.podCleaner.MarkStaleAsDisconnected(ctx, staleThreshold)
+	if err != nil {
+		return err
 	}
 
-	if result.RowsAffected > 0 {
+	if rowsAffected > 0 {
 		m.logger.Info("cleaned up stale pods",
-			"count", result.RowsAffected)
+			"count", rowsAffected)
 	}
 
 	return nil

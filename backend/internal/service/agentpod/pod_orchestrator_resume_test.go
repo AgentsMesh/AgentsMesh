@@ -13,7 +13,7 @@ import (
 
 func TestCreatePod_ResumeMode_Success(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	// Create source pod (terminated)
 	agentTypeID := int64(1)
@@ -28,7 +28,7 @@ func TestCreatePod_ResumeMode_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Terminate the source pod (use raw SQL to avoid GREATEST() SQLite incompatibility)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -44,7 +44,7 @@ func TestCreatePod_ResumeMode_Success(t *testing.T) {
 }
 
 func TestCreatePod_ResumeMode_SourcePodNotFound(t *testing.T) {
-	orch, _ := setupOrchestrator(t)
+	orch, _, _ := setupOrchestrator(t)
 
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -57,7 +57,7 @@ func TestCreatePod_ResumeMode_SourcePodNotFound(t *testing.T) {
 }
 
 func TestCreatePod_ResumeMode_AccessDenied(t *testing.T) {
-	orch, podSvc := setupOrchestrator(t)
+	orch, podSvc, db := setupOrchestrator(t)
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -67,7 +67,7 @@ func TestCreatePod_ResumeMode_AccessDenied(t *testing.T) {
 		CreatedByID:    1,
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	_, err = orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1, // Different org from source pod
@@ -80,7 +80,7 @@ func TestCreatePod_ResumeMode_AccessDenied(t *testing.T) {
 }
 
 func TestCreatePod_ResumeMode_NotTerminated(t *testing.T) {
-	orch, podSvc := setupOrchestrator(t)
+	orch, podSvc, _ := setupOrchestrator(t)
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -104,7 +104,7 @@ func TestCreatePod_ResumeMode_NotTerminated(t *testing.T) {
 
 func TestCreatePod_ResumeMode_AlreadyResumed(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -115,7 +115,7 @@ func TestCreatePod_ResumeMode_AlreadyResumed(t *testing.T) {
 		SessionID:      "session-1",
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	// First resume should succeed
 	_, err = orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -137,10 +137,10 @@ func TestCreatePod_ResumeMode_AlreadyResumed(t *testing.T) {
 }
 
 func TestCreatePod_ResumeMode_RunnerMismatch(t *testing.T) {
-	orch, podSvc := setupOrchestrator(t)
+	orch, podSvc, db := setupOrchestrator(t)
 
 	// Insert a second runner
-	podSvc.db.Exec("INSERT INTO runners (id, node_id, status, current_pods) VALUES (2, 'runner-002', 'online', 0)")
+	db.Exec("INSERT INTO runners (id, node_id, status, current_pods) VALUES (2, 'runner-002', 'online', 0)")
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -151,7 +151,7 @@ func TestCreatePod_ResumeMode_RunnerMismatch(t *testing.T) {
 		SessionID:      "session-1",
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	_, err = orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -166,7 +166,7 @@ func TestCreatePod_ResumeMode_RunnerMismatch(t *testing.T) {
 
 func TestCreatePod_ResumeMode_InheritRunnerID(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -177,7 +177,7 @@ func TestCreatePod_ResumeMode_InheritRunnerID(t *testing.T) {
 		SessionID:      "session-1",
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	// RunnerID=0 -> should inherit from source pod
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -193,7 +193,7 @@ func TestCreatePod_ResumeMode_InheritRunnerID(t *testing.T) {
 
 func TestCreatePod_ResumeMode_InheritConfig(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	repoID := int64(10)
@@ -210,7 +210,7 @@ func TestCreatePod_ResumeMode_InheritConfig(t *testing.T) {
 		SessionID:      "session-1",
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -227,7 +227,7 @@ func TestCreatePod_ResumeMode_InheritConfig(t *testing.T) {
 
 func TestCreatePod_ResumeMode_SessionReused(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -238,7 +238,7 @@ func TestCreatePod_ResumeMode_SessionReused(t *testing.T) {
 		SessionID:      "my-session-id",
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -253,7 +253,7 @@ func TestCreatePod_ResumeMode_SessionReused(t *testing.T) {
 
 func TestCreatePod_ResumeMode_NoSessionID_GeneratesNew(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -264,7 +264,7 @@ func TestCreatePod_ResumeMode_NoSessionID_GeneratesNew(t *testing.T) {
 		SessionID:      "", // No session ID
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -279,7 +279,7 @@ func TestCreatePod_ResumeMode_NoSessionID_GeneratesNew(t *testing.T) {
 
 func TestCreatePod_ResumeMode_DisableResumeAgentSession(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -290,7 +290,7 @@ func TestCreatePod_ResumeMode_DisableResumeAgentSession(t *testing.T) {
 		SessionID:      "session-1",
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
 
 	resumeOff := false
 	_, err = orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -306,7 +306,7 @@ func TestCreatePod_ResumeMode_DisableResumeAgentSession(t *testing.T) {
 
 func TestCreatePod_ResumeMode_CompletedPod(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -317,7 +317,7 @@ func TestCreatePod_ResumeMode_CompletedPod(t *testing.T) {
 		SessionID:      "session-1",
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusCompleted, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusCompleted, sourcePod.PodKey)
 
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -331,7 +331,7 @@ func TestCreatePod_ResumeMode_CompletedPod(t *testing.T) {
 
 func TestCreatePod_ResumeMode_OrphanedPod(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -342,7 +342,7 @@ func TestCreatePod_ResumeMode_OrphanedPod(t *testing.T) {
 		SessionID:      "session-1",
 	})
 	require.NoError(t, err)
-	podSvc.db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusOrphaned, sourcePod.PodKey)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusOrphaned, sourcePod.PodKey)
 
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
@@ -356,7 +356,7 @@ func TestCreatePod_ResumeMode_OrphanedPod(t *testing.T) {
 
 func TestCreatePod_ResumeMode_SandboxPath(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord))
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
@@ -370,7 +370,7 @@ func TestCreatePod_ResumeMode_SandboxPath(t *testing.T) {
 
 	// Set sandbox path on source pod
 	sandboxPath := "/home/user/sandbox/pod-123"
-	podSvc.db.Model(&podDomain.Pod{}).Where("pod_key = ?", sourcePod.PodKey).Updates(map[string]interface{}{
+	db.Model(&podDomain.Pod{}).Where("pod_key = ?", sourcePod.PodKey).Updates(map[string]interface{}{
 		"sandbox_path": sandboxPath,
 		"status":       podDomain.StatusTerminated,
 	})

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
 // flush writes all buffered heartbeats to the database
@@ -46,40 +46,29 @@ func (b *HeartbeatBatcher) flush() {
 		"duration", time.Since(start))
 }
 
-// flushBatch writes a batch of heartbeats to the database using independent updates.
-// Each update is independent so one failure doesn't abort the entire batch
-// (PostgreSQL marks a transaction as aborted after any SQL error).
+// flushBatch writes a batch of heartbeats to the database via RunnerRepository.
+// Each update is independent so one failure doesn't abort the entire batch.
 func (b *HeartbeatBatcher) flushBatch(ctx context.Context, items []*HeartbeatItem) int {
 	if len(items) == 0 {
 		return 0
 	}
 
-	updated := 0
-	for _, item := range items {
-		updates := map[string]interface{}{
-			"last_heartbeat": item.Timestamp,
-			"current_pods":   item.CurrentPods,
-			"status":         item.Status,
-		}
-		if item.Version != "" {
-			updates["runner_version"] = item.Version
-		}
-
-		result := b.db.WithContext(ctx).
-			Model(&runner.Runner{}).
-			Where("id = ?", item.RunnerID).
-			Updates(updates)
-
-		if result.Error != nil {
-			b.logger.Error("failed to update runner heartbeat",
-				"runner_id", item.RunnerID,
-				"error", result.Error)
-			continue
-		}
-		if result.RowsAffected > 0 {
-			updated++
+	// Convert HeartbeatItem to domain HeartbeatUpdate
+	domainItems := make([]runnerDomain.HeartbeatUpdate, len(items))
+	for i, item := range items {
+		domainItems[i] = runnerDomain.HeartbeatUpdate{
+			RunnerID:    item.RunnerID,
+			CurrentPods: item.CurrentPods,
+			Status:      item.Status,
+			Version:     item.Version,
+			Timestamp:   item.Timestamp,
 		}
 	}
 
+	updated, err := b.runnerRepo.BatchUpdateHeartbeats(ctx, domainItems)
+	if err != nil {
+		b.logger.Error("failed to batch update heartbeats", "error", err)
+		return 0
+	}
 	return updated
 }

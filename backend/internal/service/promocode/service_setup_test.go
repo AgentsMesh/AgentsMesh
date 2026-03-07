@@ -1,10 +1,12 @@
-package promocode
+package promocode_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
+	svc "github.com/anthropics/agentsmesh/backend/internal/service/promocode"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -156,6 +158,11 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// newTestService creates a Service with real infra implementations for integration testing
+func newTestService(db *gorm.DB) *svc.Service {
+	return svc.NewService(infra.NewPromocodeRepository(db), infra.NewGormBillingProvider(db))
+}
+
 // Helper function
 func intPtr(i int) *int {
 	return &i
@@ -163,17 +170,17 @@ func intPtr(i int) *int {
 
 func TestService_Create(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	tests := []struct {
 		name    string
-		req     *CreateRequest
+		req     *svc.CreateRequest
 		wantErr bool
 	}{
 		{
 			name: "create valid promo code",
-			req: &CreateRequest{
+			req: &svc.CreateRequest{
 				Code:           "TEST2024",
 				Name:           "Test Promo",
 				Description:    "Test promo code",
@@ -186,7 +193,7 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			name: "create with max uses",
-			req: &CreateRequest{
+			req: &svc.CreateRequest{
 				Code:           "LIMITED100",
 				Name:           "Limited Promo",
 				Type:           promocode.PromoTypeCampaign,
@@ -199,7 +206,7 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			name: "create with invalid plan",
-			req: &CreateRequest{
+			req: &svc.CreateRequest{
 				Code:           "INVALID",
 				Name:           "Invalid",
 				Type:           promocode.PromoTypeInternal,
@@ -213,7 +220,7 @@ func TestService_Create(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := svc.Create(ctx, tt.req)
+			got, err := service.Create(ctx, tt.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 				return

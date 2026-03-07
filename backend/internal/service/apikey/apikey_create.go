@@ -52,13 +52,11 @@ func (s *Service) CreateAPIKey(ctx context.Context, req *CreateAPIKeyRequest) (*
 	}
 
 	// Check duplicate name within organization
-	var count int64
-	if err := s.db.WithContext(ctx).Model(&apikeyDomain.APIKey{}).
-		Where("organization_id = ? AND name = ?", req.OrganizationID, req.Name).
-		Count(&count).Error; err != nil {
+	exists, err := s.repo.CheckDuplicateName(ctx, req.OrganizationID, req.Name, nil)
+	if err != nil {
 		return nil, fmt.Errorf("failed to check duplicate name: %w", err)
 	}
-	if count > 0 {
+	if exists {
 		return nil, ErrDuplicateKeyName
 	}
 
@@ -94,7 +92,7 @@ func (s *Service) CreateAPIKey(ctx context.Context, req *CreateAPIKeyRequest) (*
 		CreatedBy:      req.CreatedBy,
 	}
 
-	if err := s.db.WithContext(ctx).Create(key).Error; err != nil {
+	if err := s.repo.Create(ctx, key); err != nil {
 		return nil, fmt.Errorf("failed to create api key: %w", err)
 	}
 

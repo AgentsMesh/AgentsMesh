@@ -9,7 +9,7 @@ import (
 
 func TestSubscribe(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	unsubscribe, err := svc.Subscribe(ctx, "test-pod", func(s *agentpod.Pod) {})

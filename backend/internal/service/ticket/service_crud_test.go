@@ -10,7 +10,7 @@ import (
 
 func TestCreateTicket(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	req := &CreateTicketRequest{
@@ -45,7 +45,7 @@ func TestCreateTicket(t *testing.T) {
 
 func TestGetTicket(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create a ticket
@@ -70,7 +70,7 @@ func TestGetTicket(t *testing.T) {
 
 func TestGetTicketNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	_, err := service.GetTicket(ctx, 99999)
@@ -81,7 +81,7 @@ func TestGetTicketNotFound(t *testing.T) {
 
 func TestGetTicketBySlug(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create a ticket
@@ -106,7 +106,7 @@ func TestGetTicketBySlug(t *testing.T) {
 
 func TestGetTicketBySlug_NotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	_, err := service.GetTicketBySlug(ctx, int64(1), "NONEXISTENT-999")
@@ -117,7 +117,7 @@ func TestGetTicketBySlug_NotFound(t *testing.T) {
 
 func TestUpdateTicket(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create a ticket
@@ -161,7 +161,7 @@ func TestUpdateTicket(t *testing.T) {
 
 func TestUpdateTicket_NotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	_, err := service.UpdateTicket(ctx, 99999, map[string]interface{}{"title": "test"})
@@ -172,7 +172,7 @@ func TestUpdateTicket_NotFound(t *testing.T) {
 
 func TestDeleteTicket(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create a ticket
@@ -262,7 +262,7 @@ func TestCreateTicket_TableDriven(t *testing.T) {
 			if tt.setupDB != nil {
 				tt.setupDB(db)
 			}
-			service := NewService(db)
+			service := newTestService(db)
 			ctx := context.Background()
 
 			tkt, err := service.CreateTicket(ctx, tt.req)

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
@@ -20,11 +21,11 @@ type AutopilotControllerCommandSender interface {
 
 // AutopilotControllerServiceInterface defines the interface for AutopilotController service operations
 type AutopilotControllerServiceInterface interface {
-	GetAutopilotController(orgID int64, autopilotPodKey string) (*agentpod.AutopilotController, error)
-	ListAutopilotControllers(orgID int64) ([]*agentpod.AutopilotController, error)
-	CreateAndStart(req *agentpodSvc.CreateAndStartRequest) (*agentpod.AutopilotController, error)
-	UpdateAutopilotController(pod *agentpod.AutopilotController) error
-	GetIterations(autopilotPodID int64) ([]*agentpod.AutopilotIteration, error)
+	GetAutopilotController(ctx context.Context, orgID int64, autopilotPodKey string) (*agentpod.AutopilotController, error)
+	ListAutopilotControllers(ctx context.Context, orgID int64) ([]*agentpod.AutopilotController, error)
+	CreateAndStart(ctx context.Context, req *agentpodSvc.CreateAndStartRequest) (*agentpod.AutopilotController, error)
+	UpdateAutopilotController(ctx context.Context, pod *agentpod.AutopilotController) error
+	GetIterations(ctx context.Context, autopilotPodID int64) ([]*agentpod.AutopilotIteration, error)
 }
 
 // AutopilotControllerHandler handles AutopilotController-related HTTP requests
@@ -95,7 +96,7 @@ func (h *AutopilotControllerHandler) GetAutopilotController(c *gin.Context) {
 		return
 	}
 
-	autopilotPod, err := h.service.GetAutopilotController(orgID, key)
+	autopilotPod, err := h.service.GetAutopilotController(c.Request.Context(), orgID, key)
 	if err != nil {
 		apierr.ResourceNotFound(c, "autopilot pod not found")
 		return
@@ -117,7 +118,7 @@ func (h *AutopilotControllerHandler) ListAutopilotControllers(c *gin.Context) {
 		return
 	}
 
-	pods, err := h.service.ListAutopilotControllers(orgID)
+	pods, err := h.service.ListAutopilotControllers(c.Request.Context(), orgID)
 	if err != nil {
 		apierr.InternalError(c, "failed to list autopilot pods")
 		return
@@ -143,7 +144,7 @@ func (h *AutopilotControllerHandler) GetIterations(c *gin.Context) {
 		return
 	}
 
-	iterations, err := h.service.GetIterations(autopilotPod.ID)
+	iterations, err := h.service.GetIterations(c.Request.Context(), autopilotPod.ID)
 	if err != nil {
 		apierr.InternalError(c, "failed to get iterations")
 		return
@@ -171,7 +172,7 @@ func (h *AutopilotControllerHandler) getAutopilotControllerFromContext(c *gin.Co
 		return nil
 	}
 
-	autopilotPod, err := h.service.GetAutopilotController(orgID, key)
+	autopilotPod, err := h.service.GetAutopilotController(c.Request.Context(), orgID, key)
 	if err != nil {
 		apierr.ResourceNotFound(c, "autopilot pod not found")
 		return nil

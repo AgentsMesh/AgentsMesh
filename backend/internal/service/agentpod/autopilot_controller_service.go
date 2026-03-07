@@ -1,13 +1,13 @@
 package agentpod
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"gorm.io/gorm"
 )
 
 var (
@@ -15,28 +15,22 @@ var (
 )
 
 // AutopilotCommandSender defines the interface for sending autopilot commands to runners.
-// Defined here to avoid circular dependency with service/runner.
 type AutopilotCommandSender interface {
 	SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error
 }
 
 // AutopilotControllerService handles AutopilotController operations.
-//
-// Responsibilities:
-//   - CRUD operations for AutopilotController records
-//   - CreateAndStart: full lifecycle of creating a controller record + sending gRPC command to Runner
 type AutopilotControllerService struct {
-	db            *gorm.DB
+	repo          agentpod.AutopilotRepository
 	commandSender AutopilotCommandSender
 }
 
 // NewAutopilotControllerService creates a new AutopilotController service
-func NewAutopilotControllerService(db *gorm.DB) *AutopilotControllerService {
-	return &AutopilotControllerService{db: db}
+func NewAutopilotControllerService(repo agentpod.AutopilotRepository) *AutopilotControllerService {
+	return &AutopilotControllerService{repo: repo}
 }
 
 // SetCommandSender injects the command sender for gRPC communication with Runners.
-// Must be called after PodCoordinator has its command sender configured.
 func (s *AutopilotControllerService) SetCommandSender(sender AutopilotCommandSender) {
 	s.commandSender = sender
 }
@@ -46,10 +40,9 @@ func (s *AutopilotControllerService) SetCommandSender(sender AutopilotCommandSen
 // CreateAndStartRequest contains all parameters for creating and starting an AutopilotController.
 type CreateAndStartRequest struct {
 	OrganizationID int64
-	Pod            *agentpod.Pod // the validated target Pod (must be active)
+	Pod            *agentpod.Pod
 	InitialPrompt  string
 
-	// Optional configuration (zero values use domain defaults from agentpod package)
 	MaxIterations         int32
 	IterationTimeoutSec   int32
 	NoProgressThreshold   int32
@@ -58,43 +51,27 @@ type CreateAndStartRequest struct {
 	ControlAgentType      string
 	ControlPromptTemplate string
 	MCPConfigJSON         string
-
-	// KeyPrefix customizes the generated autopilot controller key.
-	// Examples: "autopilot" (REST), "loop-daily-review-run3" (Loop).
-	// Defaults to "autopilot" if empty.
-	KeyPrefix string
+	KeyPrefix             string
 }
 
 // CreateAndStart creates an AutopilotController record, applies domain defaults,
 // and sends the creation command to the Runner via gRPC.
-//
-// This is the single entry point for Autopilot creation, used by both:
-//   - REST API handler (user-initiated)
-//   - LoopOrchestrator (automated Loop runs)
-//
-// Returns the created controller and any error.
-func (s *AutopilotControllerService) CreateAndStart(req *CreateAndStartRequest) (*agentpod.AutopilotController, error) {
+func (s *AutopilotControllerService) CreateAndStart(ctx context.Context, req *CreateAndStartRequest) (*agentpod.AutopilotController, error) {
 	if req.Pod == nil {
 		return nil, fmt.Errorf("target pod is required")
 	}
 
-	// 1. Generate key
 	prefix := req.KeyPrefix
 	if prefix == "" {
 		prefix = "autopilot"
 	}
 	autopilotKey := fmt.Sprintf("%s-%s-%d", prefix, req.Pod.PodKey, time.Now().UnixNano())
 
-	// 2. Apply domain defaults for zero-valued config fields
 	maxIter, iterTimeout, noProg, sameErr, approvalTimeout := agentpod.ApplyDefaults(
-		req.MaxIterations,
-		req.IterationTimeoutSec,
-		req.NoProgressThreshold,
-		req.SameErrorThreshold,
-		req.ApprovalTimeoutMin,
+		req.MaxIterations, req.IterationTimeoutSec, req.NoProgressThreshold,
+		req.SameErrorThreshold, req.ApprovalTimeoutMin,
 	)
 
-	// 3. Build domain model
 	controller := &agentpod.AutopilotController{
 		OrganizationID:         req.OrganizationID,
 		AutopilotControllerKey: autopilotKey,
@@ -121,12 +98,10 @@ func (s *AutopilotControllerService) CreateAndStart(req *CreateAndStartRequest) 
 		controller.MCPConfigJSON = &req.MCPConfigJSON
 	}
 
-	// 4. Persist to database
-	if err := s.db.Create(controller).Error; err != nil {
+	if err := s.repo.Create(ctx, controller); err != nil {
 		return nil, fmt.Errorf("failed to create autopilot controller: %w", err)
 	}
 
-	// 5. Send command to Runner
 	if s.commandSender != nil {
 		cmd := &runnerv1.CreateAutopilotCommand{
 			AutopilotKey: autopilotKey,
@@ -153,87 +128,68 @@ func (s *AutopilotControllerService) CreateAndStart(req *CreateAndStartRequest) 
 
 // ========== CRUD Operations ==========
 
-// GetAutopilotController retrieves a AutopilotController by organization ID and key
-func (s *AutopilotControllerService) GetAutopilotController(orgID int64, autopilotPodKey string) (*agentpod.AutopilotController, error) {
-	var pod agentpod.AutopilotController
-	err := s.db.Where("organization_id = ? AND autopilot_controller_key = ?", orgID, autopilotPodKey).First(&pod).Error
+// GetAutopilotController retrieves an AutopilotController by organization ID and key
+func (s *AutopilotControllerService) GetAutopilotController(ctx context.Context, orgID int64, autopilotPodKey string) (*agentpod.AutopilotController, error) {
+	controller, err := s.repo.GetByOrgAndKey(ctx, orgID, autopilotPodKey)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrAutopilotControllerNotFound
-		}
 		return nil, err
 	}
-	return &pod, nil
+	if controller == nil {
+		return nil, ErrAutopilotControllerNotFound
+	}
+	return controller, nil
 }
 
 // ListAutopilotControllers lists all AutopilotControllers for an organization
-func (s *AutopilotControllerService) ListAutopilotControllers(orgID int64) ([]*agentpod.AutopilotController, error) {
-	var pods []*agentpod.AutopilotController
-	err := s.db.Where("organization_id = ?", orgID).Order("created_at DESC").Find(&pods).Error
-	if err != nil {
-		return nil, err
-	}
-	return pods, nil
+func (s *AutopilotControllerService) ListAutopilotControllers(ctx context.Context, orgID int64) ([]*agentpod.AutopilotController, error) {
+	return s.repo.ListByOrg(ctx, orgID)
 }
 
 // CreateAutopilotController creates a new AutopilotController record.
-// Prefer CreateAndStart for the full lifecycle (record + gRPC command).
-func (s *AutopilotControllerService) CreateAutopilotController(pod *agentpod.AutopilotController) error {
-	return s.db.Create(pod).Error
+func (s *AutopilotControllerService) CreateAutopilotController(ctx context.Context, pod *agentpod.AutopilotController) error {
+	return s.repo.Create(ctx, pod)
 }
 
 // UpdateAutopilotController updates an existing AutopilotController
-func (s *AutopilotControllerService) UpdateAutopilotController(pod *agentpod.AutopilotController) error {
-	return s.db.Save(pod).Error
+func (s *AutopilotControllerService) UpdateAutopilotController(ctx context.Context, pod *agentpod.AutopilotController) error {
+	return s.repo.Save(ctx, pod)
 }
 
-// UpdateAutopilotControllerStatus updates the status fields of a AutopilotController
-func (s *AutopilotControllerService) UpdateAutopilotControllerStatus(autopilotPodKey string, updates map[string]interface{}) error {
-	return s.db.Model(&agentpod.AutopilotController{}).
-		Where("autopilot_controller_key = ?", autopilotPodKey).
-		Updates(updates).Error
+// UpdateAutopilotControllerStatus updates the status fields of an AutopilotController
+func (s *AutopilotControllerService) UpdateAutopilotControllerStatus(ctx context.Context, autopilotPodKey string, updates map[string]interface{}) error {
+	return s.repo.UpdateStatusByKey(ctx, autopilotPodKey, updates)
 }
 
-// GetIterations retrieves all iterations for a AutopilotController
-func (s *AutopilotControllerService) GetIterations(autopilotPodID int64) ([]*agentpod.AutopilotIteration, error) {
-	var iterations []*agentpod.AutopilotIteration
-	err := s.db.Where("autopilot_controller_id = ?", autopilotPodID).Order("iteration ASC").Find(&iterations).Error
-	if err != nil {
-		return nil, err
-	}
-	return iterations, nil
+// GetIterations retrieves all iterations for an AutopilotController
+func (s *AutopilotControllerService) GetIterations(ctx context.Context, autopilotPodID int64) ([]*agentpod.AutopilotIteration, error) {
+	return s.repo.ListIterations(ctx, autopilotPodID)
 }
 
 // CreateIteration creates a new iteration record
-func (s *AutopilotControllerService) CreateIteration(iteration *agentpod.AutopilotIteration) error {
-	return s.db.Create(iteration).Error
+func (s *AutopilotControllerService) CreateIteration(ctx context.Context, iteration *agentpod.AutopilotIteration) error {
+	return s.repo.CreateIteration(ctx, iteration)
 }
 
-// GetAutopilotControllerByKey retrieves a AutopilotController by key only (for internal use)
-func (s *AutopilotControllerService) GetAutopilotControllerByKey(autopilotPodKey string) (*agentpod.AutopilotController, error) {
-	var pod agentpod.AutopilotController
-	err := s.db.Where("autopilot_controller_key = ?", autopilotPodKey).First(&pod).Error
+// GetAutopilotControllerByKey retrieves an AutopilotController by key only
+func (s *AutopilotControllerService) GetAutopilotControllerByKey(ctx context.Context, autopilotPodKey string) (*agentpod.AutopilotController, error) {
+	controller, err := s.repo.GetByKey(ctx, autopilotPodKey)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrAutopilotControllerNotFound
-		}
 		return nil, err
 	}
-	return &pod, nil
+	if controller == nil {
+		return nil, ErrAutopilotControllerNotFound
+	}
+	return controller, nil
 }
 
 // GetActiveAutopilotControllerForPod retrieves active AutopilotController for a pod
-func (s *AutopilotControllerService) GetActiveAutopilotControllerForPod(podKey string) (*agentpod.AutopilotController, error) {
-	var pod agentpod.AutopilotController
-	err := s.db.Where("pod_key = ? AND phase NOT IN ?",
-		podKey,
-		agentpod.TerminalPhases(),
-	).First(&pod).Error
+func (s *AutopilotControllerService) GetActiveAutopilotControllerForPod(ctx context.Context, podKey string) (*agentpod.AutopilotController, error) {
+	controller, err := s.repo.GetActiveForPod(ctx, podKey)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrAutopilotControllerNotFound
-		}
 		return nil, err
 	}
-	return &pod, nil
+	if controller == nil {
+		return nil, ErrAutopilotControllerNotFound
+	}
+	return controller, nil
 }

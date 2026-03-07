@@ -17,10 +17,8 @@ func (s *Service) GetSeatUsage(ctx context.Context, orgID int64) (*SeatUsage, er
 	}
 
 	// Count current members
-	var memberCount int64
-	if err := s.db.WithContext(ctx).Table("organization_members").
-		Where("organization_id = ?", orgID).
-		Count(&memberCount).Error; err != nil {
+	memberCount, err := s.repo.CountOrgMembers(ctx, orgID)
+	if err != nil {
 		return nil, fmt.Errorf("failed to count organization members: %w", err)
 	}
 
@@ -94,9 +92,9 @@ func (s *Service) UpdateSeats(ctx context.Context, orgID int64, additionalSeats 
 	// Sync local DB
 	// NOTE: If this fails after provider API succeeded, the webhook sync (Phase 1)
 	// will reconcile the data on the next subscription_updated event.
-	if err := s.db.WithContext(ctx).Model(&billingdomain.Subscription{}).
-		Where("organization_id = ?", orgID).
-		Update("seat_count", newTotalSeats).Error; err != nil {
+	if err := s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
+		"seat_count": newTotalSeats,
+	}); err != nil {
 		log.Printf("[WARN] UpdateSeats: provider API succeeded but DB update failed for org=%d, newSeats=%d: %v", orgID, newTotalSeats, err)
 		return fmt.Errorf("failed to sync seat count locally: %w", err)
 	}
@@ -121,9 +119,9 @@ func (s *Service) getSubscriptionProvider() (payment.SubscriptionProvider, error
 
 // AdminSetSeatCount directly sets the seat count for a subscription without payment validation.
 func (s *Service) AdminSetSeatCount(ctx context.Context, orgID int64, seatCount int) error {
-	return s.db.WithContext(ctx).Model(&billingdomain.Subscription{}).
-		Where("organization_id = ?", orgID).
-		Update("seat_count", seatCount).Error
+	return s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
+		"seat_count": seatCount,
+	})
 }
 
 // SeatUsage represents seat usage information

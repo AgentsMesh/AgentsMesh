@@ -15,7 +15,7 @@ import (
 
 func TestHandleRecurringPaymentSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -72,7 +72,7 @@ func TestHandleRecurringPaymentSuccess(t *testing.T) {
 
 func TestHandleRecurringPaymentSuccessYearly(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -111,7 +111,7 @@ func TestHandleRecurringPaymentSuccessYearly(t *testing.T) {
 
 func TestHandleRecurringPaymentFailure(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -151,7 +151,7 @@ func TestHandleRecurringPaymentFailure(t *testing.T) {
 
 func TestActivateSubscriptionWithStripeIDs(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

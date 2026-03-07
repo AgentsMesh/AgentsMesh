@@ -19,7 +19,7 @@ import (
 // setupTestServiceWithMockStripe creates a test service with mock Stripe client
 func setupTestServiceWithMockStripe(t *testing.T) (*Service, *gorm.DB, *MockStripeClient) {
 	db := setupTestDB(t)
-	svc := NewService(db, "")
+	svc := NewService(newTestRepo(db), "")
 
 	mockClient := NewMockStripeClient()
 	svc.SetStripeEnabled(true)

@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
@@ -30,10 +28,7 @@ func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCre
 		updates["branch_name"] = data.BranchName
 	}
 
-	if err := pc.db.WithContext(ctx).
-		Model(&agentpod.Pod{}).
-		Where("pod_key = ?", data.PodKey).
-		Updates(updates).Error; err != nil {
+	if _, err := pc.podRepo.UpdateByKey(ctx, data.PodKey, updates); err != nil {
 		pc.logger.Error("failed to update pod on creation",
 			"pod_key", data.PodKey,
 			"error", err)
@@ -76,28 +71,28 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 		// Store the error message so the frontend can display why the pod failed.
 		status = agentpod.StatusError
 		updates["error_message"] = data.ErrorMessage
+		updates["status"] = status
 		// Preserve existing error_code if already set by a prior error event
 		// (e.g., PTY_READ_ERROR from handlePodError). Only set the default
 		// "process_exit" code when no specific error code exists yet.
-		updates["error_code"] = gorm.Expr("COALESCE(NULLIF(error_code, ''), ?)", "process_exit")
-	}
-	updates["status"] = status
-
-	if err := pc.db.WithContext(ctx).
-		Model(&agentpod.Pod{}).
-		Where("pod_key = ?", data.PodKey).
-		Updates(updates).Error; err != nil {
-		pc.logger.Error("failed to update pod on termination",
-			"pod_key", data.PodKey,
-			"error", err)
-		return
+		if err := pc.podRepo.UpdateTerminatedWithFallbackError(ctx, data.PodKey, updates, "process_exit"); err != nil {
+			pc.logger.Error("failed to update pod on termination",
+				"pod_key", data.PodKey,
+				"error", err)
+			return
+		}
+	} else {
+		updates["status"] = status
+		if _, err := pc.podRepo.UpdateByKey(ctx, data.PodKey, updates); err != nil {
+			pc.logger.Error("failed to update pod on termination",
+				"pod_key", data.PodKey,
+				"error", err)
+			return
+		}
 	}
 
 	// Decrement runner pod count
-	pc.db.WithContext(ctx).Exec(
-		"UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?",
-		runnerID,
-	)
+	_ = pc.runnerRepo.DecrementPods(ctx, runnerID)
 
 	// Unregister from terminal router
 	pc.terminalRouter.UnregisterPod(data.PodKey)
@@ -129,28 +124,22 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 	now := time.Now()
 
 	// Handle errors during initialization (pod creation failed)
-	result := pc.db.WithContext(ctx).
-		Model(&agentpod.Pod{}).
-		Where("pod_key = ? AND status = ?", data.PodKey, agentpod.StatusInitializing).
-		Updates(map[string]interface{}{
-			"status":        agentpod.StatusError,
-			"error_code":    data.Code,
-			"error_message": data.Message,
-			"finished_at":   now,
-		})
-	if result.Error != nil {
+	rowsAffected, err := pc.podRepo.UpdateByKeyAndStatusCounted(ctx, data.PodKey, agentpod.StatusInitializing, map[string]interface{}{
+		"status":        agentpod.StatusError,
+		"error_code":    data.Code,
+		"error_message": data.Message,
+		"finished_at":   now,
+	})
+	if err != nil {
 		pc.logger.Error("failed to update pod on error",
 			"pod_key", data.PodKey,
-			"error", result.Error)
+			"error", err)
 		return
 	}
 
-	if result.RowsAffected > 0 {
-		// Initialization error — decrement runner pod count
-		pc.db.WithContext(ctx).Exec(
-			"UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?",
-			runnerID,
-		)
+	if rowsAffected > 0 {
+		// Initialization error -- decrement runner pod count
+		_ = pc.runnerRepo.DecrementPods(ctx, runnerID)
 
 		pc.logger.Error("pod creation failed",
 			"pod_key", data.PodKey,
@@ -167,21 +156,18 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 	// Handle errors during runtime (e.g., PTY read failure due to disk full).
 	// Only store the error info; don't change status or finished_at here because
 	// a pod_terminated event will follow shortly to finalize the pod lifecycle.
-	result = pc.db.WithContext(ctx).
-		Model(&agentpod.Pod{}).
-		Where("pod_key = ? AND status = ?", data.PodKey, agentpod.StatusRunning).
-		Updates(map[string]interface{}{
-			"error_code":    data.Code,
-			"error_message": data.Message,
-		})
-	if result.Error != nil {
+	rowsAffected, err = pc.podRepo.UpdateByKeyAndStatusCounted(ctx, data.PodKey, agentpod.StatusRunning, map[string]interface{}{
+		"error_code":    data.Code,
+		"error_message": data.Message,
+	})
+	if err != nil {
 		pc.logger.Error("failed to store runtime error on pod",
 			"pod_key", data.PodKey,
-			"error", result.Error)
+			"error", err)
 		return
 	}
 
-	if result.RowsAffected > 0 {
+	if rowsAffected > 0 {
 		pc.logger.Error("pod runtime error recorded",
 			"pod_key", data.PodKey,
 			"runner_id", runnerID,
@@ -202,10 +188,9 @@ func (pc *PodCoordinator) handleRunnerDisconnect(runnerID int64) {
 	// Mark runner as offline, but don't immediately orphan pods
 	// Pods will be orphaned by reconcilePods if runner doesn't reconnect
 	// and report them in heartbeat
-	if err := pc.db.WithContext(ctx).
-		Table("runners").
-		Where("id = ?", runnerID).
-		Update("status", "offline").Error; err != nil {
+	if err := pc.runnerRepo.UpdateFields(ctx, runnerID, map[string]interface{}{
+		"status": "offline",
+	}); err != nil {
 		pc.logger.Error("failed to mark runner as offline",
 			"runner_id", runnerID,
 			"error", err)

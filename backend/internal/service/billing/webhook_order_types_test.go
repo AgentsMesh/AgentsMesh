@@ -15,7 +15,7 @@ import (
 
 func TestHandlePaymentSucceededSeatPurchase(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -59,7 +59,7 @@ func TestHandlePaymentSucceededSeatPurchase(t *testing.T) {
 
 func TestHandlePaymentSucceededPlanUpgrade(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -102,7 +102,7 @@ func TestHandlePaymentSucceededPlanUpgrade(t *testing.T) {
 
 func TestHandlePaymentSucceededRenewal(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

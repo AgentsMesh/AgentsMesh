@@ -8,6 +8,7 @@ import (
 	"time"
 
 	apikeyDomain "github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +28,7 @@ func newTestServiceWithRedis(t *testing.T) (*Service, *miniredis.Miniredis) {
 		rdb.Close()
 	})
 
-	svc := NewService(db, rdb)
+	svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 	return svc, mr
 }
 
@@ -65,7 +66,7 @@ func TestValidateKeyWithRedisCache(t *testing.T) {
 		mr := miniredis.RunT(t)
 		rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 		t.Cleanup(func() { rdb.Close() })
-		svc := NewService(db, rdb)
+		svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 
 		resp, key := createTestAPIKey(t, svc, 1, "cache-disabled", []string{"pods:read"})
 
@@ -95,7 +96,7 @@ func TestValidateKeyWithRedisCache(t *testing.T) {
 		mr := miniredis.RunT(t)
 		rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 		t.Cleanup(func() { rdb.Close() })
-		svc := NewService(db, rdb)
+		svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 
 		resp, key := createTestAPIKey(t, svc, 1, "cache-expired", []string{"pods:read"})
 
@@ -126,7 +127,7 @@ func TestValidateKeyWithRedisCache(t *testing.T) {
 		mr := miniredis.RunT(t)
 		rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 		t.Cleanup(func() { rdb.Close() })
-		svc := NewService(db, rdb)
+		svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 
 		resp, key := createTestAPIKey(t, svc, 1, "update-cache", []string{"pods:read"})
 
@@ -152,7 +153,7 @@ func TestValidateKeyWithRedisCache(t *testing.T) {
 		mr := miniredis.RunT(t)
 		rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 		t.Cleanup(func() { rdb.Close() })
-		svc := NewService(db, rdb)
+		svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 
 		resp, key := createTestAPIKey(t, svc, 1, "revoke-cache", []string{"pods:read"})
 
@@ -175,7 +176,7 @@ func TestValidateKeyWithRedisCache(t *testing.T) {
 		mr := miniredis.RunT(t)
 		rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 		t.Cleanup(func() { rdb.Close() })
-		svc := NewService(db, rdb)
+		svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 
 		resp, key := createTestAPIKey(t, svc, 1, "delete-cache", []string{"pods:read"})
 
@@ -251,7 +252,7 @@ func TestSetCache(t *testing.T) {
 		mr := miniredis.RunT(t)
 		rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 		db := setupTestDB(t)
-		svc := NewService(db, rdb)
+		svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 
 		// Close miniredis to cause Set to fail
 		mr.Close()
@@ -286,7 +287,7 @@ func TestInvalidateCache(t *testing.T) {
 		mr := miniredis.RunT(t)
 		rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 		db := setupTestDB(t)
-		svc := NewService(db, rdb)
+		svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 
 		// Close miniredis to cause Del to fail
 		mr.Close()
@@ -304,7 +305,7 @@ func TestGetFromCacheInvalidJSON(t *testing.T) {
 		rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 		t.Cleanup(func() { rdb.Close() })
 		db := setupTestDB(t)
-		svc := NewService(db, rdb)
+		svc := NewService(infra.NewAPIKeyRepository(db), rdb)
 
 		// Write invalid JSON directly to the cache key
 		mr.Set(cachePrefix+"badjson", "not-valid-json")

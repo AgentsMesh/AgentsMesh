@@ -9,7 +9,7 @@ import (
 
 func TestRequestScopes(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("requests additional scopes", func(t *testing.T) {
@@ -52,7 +52,7 @@ func TestRequestScopes(t *testing.T) {
 
 func TestApproveScopes(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("approves pending scopes", func(t *testing.T) {
@@ -98,7 +98,7 @@ func TestApproveScopes(t *testing.T) {
 
 func TestHasScope(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("returns true for granted scope", func(t *testing.T) {
@@ -141,7 +141,7 @@ func TestHasScope(t *testing.T) {
 func TestEvaluatePolicy(t *testing.T) {
 	db := setupTestDB(t)
 	querier := NewMockPodQuerier()
-	service := NewService(db, querier)
+	service := newTestService(db, querier)
 	ctx := context.Background()
 
 	t.Run("explicit only policy returns pending", func(t *testing.T) {

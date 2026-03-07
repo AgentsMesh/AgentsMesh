@@ -4,11 +4,17 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// newTestMRSyncService creates a MRSyncService backed by an in-memory DB for testing.
+func newTestMRSyncService(db *gorm.DB, gitProvider git.Provider) *MRSyncService {
+	return NewMRSyncService(infra.NewMRSyncRepository(db), gitProvider)
+}
 
 // MockGitProvider implements git.Provider for testing
 type MockGitProvider struct {
@@ -211,6 +217,7 @@ func setupMRSyncTestDB(t *testing.T) *gorm.DB {
 			preparation_script TEXT,
 			preparation_timeout INTEGER DEFAULT 300,
 			is_active INTEGER DEFAULT 1,
+			webhook_config TEXT,
 			deleted_at DATETIME,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

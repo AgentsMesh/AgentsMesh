@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"gorm.io/gorm"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
 // LicenseData represents the decoded license file structure
@@ -32,7 +32,7 @@ type LicenseLimits struct {
 
 // Service handles license verification and management
 type Service struct {
-	db        *gorm.DB
+	repo      billing.LicenseRepository
 	cfg       *config.LicenseConfig
 	logger    *slog.Logger
 	publicKey interface{} // *rsa.PublicKey, but stored as interface to avoid import in types file

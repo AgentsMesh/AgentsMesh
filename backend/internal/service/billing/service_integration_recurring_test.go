@@ -11,7 +11,7 @@ import (
 
 // TestIntegrationRecurringPaymentSuccess tests recurring payment handling
 func TestIntegrationRecurringPaymentSuccess(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -33,7 +33,7 @@ func TestIntegrationRecurringPaymentSuccess(t *testing.T) {
 		AutoRenew:            true,
 		SeatCount:            1,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	originalPeriodEnd := sub.CurrentPeriodEnd
 
@@ -64,7 +64,7 @@ func TestIntegrationRecurringPaymentSuccess(t *testing.T) {
 
 // TestIntegrationRecurringPaymentYearly tests recurring payment for yearly subscription
 func TestIntegrationRecurringPaymentYearly(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -86,7 +86,7 @@ func TestIntegrationRecurringPaymentYearly(t *testing.T) {
 		AutoRenew:            true,
 		SeatCount:            1,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	originalPeriodEnd := sub.CurrentPeriodEnd
 
@@ -118,7 +118,7 @@ func TestIntegrationRecurringPaymentYearly(t *testing.T) {
 
 // TestIntegrationRecurringPaymentWithDowngrade tests recurring payment with pending downgrade
 func TestIntegrationRecurringPaymentWithDowngrade(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -143,7 +143,7 @@ func TestIntegrationRecurringPaymentWithDowngrade(t *testing.T) {
 		AutoRenew:            true,
 		SeatCount:            1,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	// 2. Simulate invoice.paid webhook
 	event := &payment.WebhookEvent{
@@ -175,7 +175,7 @@ func TestIntegrationRecurringPaymentWithDowngrade(t *testing.T) {
 
 // TestIntegrationRecurringPaymentWithBillingCycleChange tests recurring payment with billing cycle change
 func TestIntegrationRecurringPaymentWithBillingCycleChange(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -199,7 +199,7 @@ func TestIntegrationRecurringPaymentWithBillingCycleChange(t *testing.T) {
 		AutoRenew:            true,
 		SeatCount:            1,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	// 2. Simulate invoice.paid webhook
 	event := &payment.WebhookEvent{
@@ -231,7 +231,7 @@ func TestIntegrationRecurringPaymentWithBillingCycleChange(t *testing.T) {
 
 // TestIntegrationRecurringPaymentFailure tests recurring payment failure and subscription freeze
 func TestIntegrationRecurringPaymentFailure(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -253,7 +253,7 @@ func TestIntegrationRecurringPaymentFailure(t *testing.T) {
 		AutoRenew:            true,
 		SeatCount:            1,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	// 2. Simulate invoice.payment_failed webhook
 	event := &payment.WebhookEvent{
@@ -286,7 +286,7 @@ func TestIntegrationRecurringPaymentFailure(t *testing.T) {
 
 // TestIntegrationRecurringPaymentSuccessNoSubscription tests success when subscription not found
 func TestIntegrationRecurringPaymentSuccessNoSubscription(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	c, _ := createTestGinContext()
 
 	// Subscription ID that doesn't exist (recurring payment with no matching subscription)
@@ -310,7 +310,7 @@ func TestIntegrationRecurringPaymentSuccessNoSubscription(t *testing.T) {
 
 // TestIntegrationRecurringPaymentFailureNoSubscription tests failure when subscription not found
 func TestIntegrationRecurringPaymentFailureNoSubscription(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, _ := setupIntegrationTestService(t)
 	c, _ := createTestGinContext()
 
 	// Subscription ID that doesn't exist

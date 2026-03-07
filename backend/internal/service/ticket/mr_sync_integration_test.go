@@ -15,7 +15,7 @@ import (
 
 func TestBuildMRData(t *testing.T) {
 	db := setupMRSyncTestDB(t)
-	service := NewMRSyncService(db, nil)
+	service := newTestMRSyncService(db, nil)
 
 	t.Run("converts git.MergeRequest to MRData", func(t *testing.T) {
 		mergedAt := time.Now()
@@ -70,7 +70,7 @@ func TestBuildMRData(t *testing.T) {
 
 func TestUpdateMRFromData(t *testing.T) {
 	db := setupMRSyncTestDB(t)
-	service := NewMRSyncService(db, nil)
+	service := newTestMRSyncService(db, nil)
 
 	t.Run("updates MR fields from data", func(t *testing.T) {
 		mr := &ticket.MergeRequest{
@@ -126,7 +126,7 @@ func TestMRSyncServiceIntegration(t *testing.T) {
 			},
 		}
 
-		service := NewMRSyncService(db, provider)
+		service := newTestMRSyncService(db, provider)
 
 		// Create repo
 		repo := &gitprovider.Repository{
@@ -183,7 +183,7 @@ func TestMRSyncServiceIntegration(t *testing.T) {
 			},
 		}
 
-		service := NewMRSyncService(db, provider)
+		service := newTestMRSyncService(db, provider)
 
 		// Create repo
 		repo := &gitprovider.Repository{

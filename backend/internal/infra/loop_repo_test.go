@@ -1,28 +1,29 @@
-package loop
+package infra
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLoopRepository_Create(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
-	loop := &Loop{
+	l := &loop.Loop{
 		OrganizationID: 1,
 		Name:           "Test Loop",
 		Slug:           "test-loop",
 		PromptTemplate: "Review code in {{branch}}",
-		ExecutionMode:  ExecutionModeAutopilot,
-		Status:         StatusEnabled,
-		SandboxStrategy:   SandboxStrategyPersistent,
-		ConcurrencyPolicy: ConcurrencyPolicySkip,
+		ExecutionMode:  loop.ExecutionModeAutopilot,
+		Status:         loop.StatusEnabled,
+		SandboxStrategy:   loop.SandboxStrategyPersistent,
+		ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1,
 		TimeoutMinutes:    60,
 		AutopilotConfig:   []byte("{}"),
@@ -30,30 +31,30 @@ func TestLoopRepository_Create(t *testing.T) {
 		CreatedByID:       1,
 	}
 
-	err := repo.Create(ctx, loop)
+	err := repo.Create(ctx, l)
 	require.NoError(t, err)
-	assert.NotZero(t, loop.ID)
+	assert.NotZero(t, l.ID)
 }
 
 func TestLoopRepository_GetByID(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
 	// Seed
-	loop := &Loop{
+	l := &loop.Loop{
 		OrganizationID: 1, Name: "Test", Slug: "test",
 		PromptTemplate: "prompt",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
 	}
-	require.NoError(t, repo.Create(ctx, loop))
+	require.NoError(t, repo.Create(ctx, l))
 
 	t.Run("should return loop by ID", func(t *testing.T) {
-		got, err := repo.GetByID(ctx, loop.ID)
+		got, err := repo.GetByID(ctx, l.ID)
 		require.NoError(t, err)
 		assert.Equal(t, "test", got.Slug)
 		assert.Equal(t, "Test", got.Name)
@@ -61,25 +62,25 @@ func TestLoopRepository_GetByID(t *testing.T) {
 
 	t.Run("should return ErrNotFound for non-existent ID", func(t *testing.T) {
 		_, err := repo.GetByID(ctx, 99999)
-		assert.ErrorIs(t, err, ErrNotFound)
+		assert.ErrorIs(t, err, loop.ErrNotFound)
 	})
 }
 
 func TestLoopRepository_GetBySlug(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
-	loop := &Loop{
+	l := &loop.Loop{
 		OrganizationID: 1, Name: "My Loop", Slug: "my-loop",
 		PromptTemplate: "prompt",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
 	}
-	require.NoError(t, repo.Create(ctx, loop))
+	require.NoError(t, repo.Create(ctx, l))
 
 	t.Run("should return loop by org_id and slug", func(t *testing.T) {
 		got, err := repo.GetBySlug(ctx, 1, "my-loop")
@@ -89,51 +90,51 @@ func TestLoopRepository_GetBySlug(t *testing.T) {
 
 	t.Run("should return ErrNotFound for different org", func(t *testing.T) {
 		_, err := repo.GetBySlug(ctx, 999, "my-loop")
-		assert.ErrorIs(t, err, ErrNotFound)
+		assert.ErrorIs(t, err, loop.ErrNotFound)
 	})
 
 	t.Run("should return ErrNotFound for non-existent slug", func(t *testing.T) {
 		_, err := repo.GetBySlug(ctx, 1, "no-such-loop")
-		assert.ErrorIs(t, err, ErrNotFound)
+		assert.ErrorIs(t, err, loop.ErrNotFound)
 	})
 }
 
 func TestLoopRepository_List(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
 	// Seed multiple loops
 	cron := "0 9 * * *"
-	loops := []*Loop{
-		{OrganizationID: 1, Name: "Loop A", Slug: "loop-a", Status: StatusEnabled,
-			ExecutionMode: ExecutionModeAutopilot, CronExpression: &cron,
+	loops := []*loop.Loop{
+		{OrganizationID: 1, Name: "Loop A", Slug: "loop-a", Status: loop.StatusEnabled,
+			ExecutionMode: loop.ExecutionModeAutopilot, CronExpression: &cron,
 			PromptTemplate: "p",
-			SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+			SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 			MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 			AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"), CreatedByID: 1},
-		{OrganizationID: 1, Name: "Loop B", Slug: "loop-b", Status: StatusEnabled,
-			ExecutionMode: ExecutionModeDirect,
+		{OrganizationID: 1, Name: "Loop B", Slug: "loop-b", Status: loop.StatusEnabled,
+			ExecutionMode: loop.ExecutionModeDirect,
 			PromptTemplate: "p",
-			SandboxStrategy: SandboxStrategyFresh, ConcurrencyPolicy: ConcurrencyPolicySkip,
+			SandboxStrategy: loop.SandboxStrategyFresh, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 			MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 			AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"), CreatedByID: 1},
-		{OrganizationID: 1, Name: "Loop C", Slug: "loop-c", Status: StatusDisabled,
-			ExecutionMode: ExecutionModeAutopilot,
+		{OrganizationID: 1, Name: "Loop C", Slug: "loop-c", Status: loop.StatusDisabled,
+			ExecutionMode: loop.ExecutionModeAutopilot,
 			PromptTemplate: "p",
-			SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+			SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 			MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 			AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"), CreatedByID: 1},
-		{OrganizationID: 1, Name: "Loop D", Slug: "loop-d", Status: StatusArchived,
-			ExecutionMode: ExecutionModeDirect,
+		{OrganizationID: 1, Name: "Loop D", Slug: "loop-d", Status: loop.StatusArchived,
+			ExecutionMode: loop.ExecutionModeDirect,
 			PromptTemplate: "p",
-			SandboxStrategy: SandboxStrategyFresh, ConcurrencyPolicy: ConcurrencyPolicySkip,
+			SandboxStrategy: loop.SandboxStrategyFresh, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 			MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 			AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"), CreatedByID: 1},
-		{OrganizationID: 2, Name: "Other Org Loop", Slug: "other", Status: StatusEnabled,
-			ExecutionMode: ExecutionModeAutopilot,
+		{OrganizationID: 2, Name: "Other Org Loop", Slug: "other", Status: loop.StatusEnabled,
+			ExecutionMode: loop.ExecutionModeAutopilot,
 			PromptTemplate: "p",
-			SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+			SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 			MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 			AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"), CreatedByID: 2},
 	}
@@ -142,16 +143,16 @@ func TestLoopRepository_List(t *testing.T) {
 	}
 
 	t.Run("should list non-archived loops by default", func(t *testing.T) {
-		result, total, err := repo.List(ctx, &ListFilter{OrganizationID: 1})
+		result, total, err := repo.List(ctx, &loop.ListFilter{OrganizationID: 1})
 		require.NoError(t, err)
 		assert.Equal(t, int64(3), total) // A, B, C (not D=archived)
 		assert.Len(t, result, 3)
 	})
 
 	t.Run("should filter by status", func(t *testing.T) {
-		result, total, err := repo.List(ctx, &ListFilter{
+		result, total, err := repo.List(ctx, &loop.ListFilter{
 			OrganizationID: 1,
-			Status:         StatusEnabled,
+			Status:         loop.StatusEnabled,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), total) // A, B
@@ -159,9 +160,9 @@ func TestLoopRepository_List(t *testing.T) {
 	})
 
 	t.Run("should filter by execution mode", func(t *testing.T) {
-		result, total, err := repo.List(ctx, &ListFilter{
+		result, total, err := repo.List(ctx, &loop.ListFilter{
 			OrganizationID: 1,
-			ExecutionMode:  ExecutionModeDirect,
+			ExecutionMode:  loop.ExecutionModeDirect,
 		})
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), total) // B (not D=archived)
@@ -171,7 +172,7 @@ func TestLoopRepository_List(t *testing.T) {
 
 	t.Run("should filter by cron enabled", func(t *testing.T) {
 		enabled := true
-		result, _, err := repo.List(ctx, &ListFilter{
+		result, _, err := repo.List(ctx, &loop.ListFilter{
 			OrganizationID: 1,
 			CronEnabled:    &enabled,
 		})
@@ -181,7 +182,7 @@ func TestLoopRepository_List(t *testing.T) {
 	})
 
 	t.Run("should respect limit and offset", func(t *testing.T) {
-		result, total, err := repo.List(ctx, &ListFilter{
+		result, total, err := repo.List(ctx, &loop.ListFilter{
 			OrganizationID: 1,
 			Limit:          2,
 			Offset:         0,
@@ -192,7 +193,7 @@ func TestLoopRepository_List(t *testing.T) {
 	})
 
 	t.Run("should isolate by organization", func(t *testing.T) {
-		result, total, err := repo.List(ctx, &ListFilter{OrganizationID: 2})
+		result, total, err := repo.List(ctx, &loop.ListFilter{OrganizationID: 2})
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), total)
 		assert.Len(t, result, 1)
@@ -201,52 +202,52 @@ func TestLoopRepository_List(t *testing.T) {
 }
 
 func TestLoopRepository_Update(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
-	loop := &Loop{
+	l := &loop.Loop{
 		OrganizationID: 1, Name: "Original", Slug: "original",
 		PromptTemplate: "prompt",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
 	}
-	require.NoError(t, repo.Create(ctx, loop))
+	require.NoError(t, repo.Create(ctx, l))
 
-	err := repo.Update(ctx, loop.ID, map[string]interface{}{
-		"name":           "Updated",
-		"status":         StatusDisabled,
-		"total_runs":     5,
+	err := repo.Update(ctx, l.ID, map[string]interface{}{
+		"name":            "Updated",
+		"status":          loop.StatusDisabled,
+		"total_runs":      5,
 		"successful_runs": 3,
 	})
 	require.NoError(t, err)
 
-	got, err := repo.GetByID(ctx, loop.ID)
+	got, err := repo.GetByID(ctx, l.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated", got.Name)
-	assert.Equal(t, StatusDisabled, got.Status)
+	assert.Equal(t, loop.StatusDisabled, got.Status)
 	assert.Equal(t, 5, got.TotalRuns)
 	assert.Equal(t, 3, got.SuccessfulRuns)
 }
 
 func TestLoopRepository_Delete(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
-	loop := &Loop{
+	l := &loop.Loop{
 		OrganizationID: 1, Name: "To Delete", Slug: "to-delete",
 		PromptTemplate: "prompt",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
 	}
-	require.NoError(t, repo.Create(ctx, loop))
+	require.NoError(t, repo.Create(ctx, l))
 
 	t.Run("should delete existing loop", func(t *testing.T) {
 		affected, err := repo.Delete(ctx, 1, "to-delete")
@@ -254,7 +255,7 @@ func TestLoopRepository_Delete(t *testing.T) {
 		assert.Equal(t, int64(1), affected)
 
 		_, err = repo.GetBySlug(ctx, 1, "to-delete")
-		assert.ErrorIs(t, err, ErrNotFound)
+		assert.ErrorIs(t, err, loop.ErrNotFound)
 	})
 
 	t.Run("should return 0 affected for non-existent", func(t *testing.T) {
@@ -265,7 +266,7 @@ func TestLoopRepository_Delete(t *testing.T) {
 }
 
 func TestLoopRepository_GetDueCronLoops(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
@@ -274,12 +275,12 @@ func TestLoopRepository_GetDueCronLoops(t *testing.T) {
 	futureTime := time.Now().Add(1 * time.Hour)
 
 	// Due cron loop
-	due := &Loop{
+	due := &loop.Loop{
 		OrganizationID: 1, Name: "Due", Slug: "due",
 		PromptTemplate: "prompt",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron, NextRunAt: &pastTime,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
@@ -287,12 +288,12 @@ func TestLoopRepository_GetDueCronLoops(t *testing.T) {
 	require.NoError(t, repo.Create(ctx, due))
 
 	// Not yet due
-	notDue := &Loop{
+	notDue := &loop.Loop{
 		OrganizationID: 1, Name: "Not Due", Slug: "not-due",
 		PromptTemplate: "prompt",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron, NextRunAt: &futureTime,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
@@ -300,12 +301,12 @@ func TestLoopRepository_GetDueCronLoops(t *testing.T) {
 	require.NoError(t, repo.Create(ctx, notDue))
 
 	// Disabled loop
-	disabled := &Loop{
+	disabled := &loop.Loop{
 		OrganizationID: 1, Name: "Disabled", Slug: "disabled",
 		PromptTemplate: "prompt",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusDisabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusDisabled,
 		CronExpression: &cron, NextRunAt: &pastTime,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
@@ -319,58 +320,58 @@ func TestLoopRepository_GetDueCronLoops(t *testing.T) {
 }
 
 func TestLoopRepository_FindLoopsNeedingNextRun(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
 	cron := "0 9 * * *"
 	pastTime := time.Now().Add(-1 * time.Hour)
 
-	// Enabled cron loop with next_run_at IS NULL → should be found
-	needsInit := &Loop{
+	// Enabled cron loop with next_run_at IS NULL -> should be found
+	needsInit := &loop.Loop{
 		OrganizationID: 1, Name: "Needs Init", Slug: "needs-init",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron, // next_run_at is nil
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
 	}
 	require.NoError(t, repo.Create(ctx, needsInit))
 
-	// Enabled cron loop with next_run_at set → should NOT be found
-	hasNextRun := &Loop{
+	// Enabled cron loop with next_run_at set -> should NOT be found
+	hasNextRun := &loop.Loop{
 		OrganizationID: 1, Name: "Has Next", Slug: "has-next",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron, NextRunAt: &pastTime,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
 	}
 	require.NoError(t, repo.Create(ctx, hasNextRun))
 
-	// Disabled cron loop with next_run_at IS NULL → should NOT be found
-	disabled := &Loop{
+	// Disabled cron loop with next_run_at IS NULL -> should NOT be found
+	disabled := &loop.Loop{
 		OrganizationID: 1, Name: "Disabled", Slug: "disabled",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusDisabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusDisabled,
 		CronExpression: &cron,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
 	}
 	require.NoError(t, repo.Create(ctx, disabled))
 
-	// API-only loop (no cron) → should NOT be found
-	apiOnly := &Loop{
+	// API-only loop (no cron) -> should NOT be found
+	apiOnly := &loop.Loop{
 		OrganizationID: 1, Name: "API Only", Slug: "api-only",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
@@ -384,28 +385,28 @@ func TestLoopRepository_FindLoopsNeedingNextRun(t *testing.T) {
 }
 
 func TestLoopRepository_IncrementRunStats(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
-	loop := &Loop{
+	l := &loop.Loop{
 		OrganizationID: 1, Name: "Stats Loop", Slug: "stats-loop",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
 	}
-	require.NoError(t, repo.Create(ctx, loop))
+	require.NoError(t, repo.Create(ctx, l))
 
 	now := time.Now()
 
 	t.Run("should increment total and successful for completed", func(t *testing.T) {
-		err := repo.IncrementRunStats(ctx, loop.ID, RunStatusCompleted, now)
+		err := repo.IncrementRunStats(ctx, l.ID, loop.RunStatusCompleted, now)
 		require.NoError(t, err)
 
-		got, err := repo.GetByID(ctx, loop.ID)
+		got, err := repo.GetByID(ctx, l.ID)
 		require.NoError(t, err)
 		assert.Equal(t, 1, got.TotalRuns)
 		assert.Equal(t, 1, got.SuccessfulRuns)
@@ -413,10 +414,10 @@ func TestLoopRepository_IncrementRunStats(t *testing.T) {
 	})
 
 	t.Run("should increment total and failed for failed", func(t *testing.T) {
-		err := repo.IncrementRunStats(ctx, loop.ID, RunStatusFailed, now)
+		err := repo.IncrementRunStats(ctx, l.ID, loop.RunStatusFailed, now)
 		require.NoError(t, err)
 
-		got, err := repo.GetByID(ctx, loop.ID)
+		got, err := repo.GetByID(ctx, l.ID)
 		require.NoError(t, err)
 		assert.Equal(t, 2, got.TotalRuns)
 		assert.Equal(t, 1, got.SuccessfulRuns)
@@ -424,10 +425,10 @@ func TestLoopRepository_IncrementRunStats(t *testing.T) {
 	})
 
 	t.Run("should increment total and failed for timeout", func(t *testing.T) {
-		err := repo.IncrementRunStats(ctx, loop.ID, RunStatusTimeout, now)
+		err := repo.IncrementRunStats(ctx, l.ID, loop.RunStatusTimeout, now)
 		require.NoError(t, err)
 
-		got, err := repo.GetByID(ctx, loop.ID)
+		got, err := repo.GetByID(ctx, l.ID)
 		require.NoError(t, err)
 		assert.Equal(t, 3, got.TotalRuns)
 		assert.Equal(t, 1, got.SuccessfulRuns)
@@ -435,10 +436,10 @@ func TestLoopRepository_IncrementRunStats(t *testing.T) {
 	})
 
 	t.Run("should only increment total for skipped", func(t *testing.T) {
-		err := repo.IncrementRunStats(ctx, loop.ID, RunStatusSkipped, now)
+		err := repo.IncrementRunStats(ctx, l.ID, loop.RunStatusSkipped, now)
 		require.NoError(t, err)
 
-		got, err := repo.GetByID(ctx, loop.ID)
+		got, err := repo.GetByID(ctx, l.ID)
 		require.NoError(t, err)
 		assert.Equal(t, 4, got.TotalRuns)
 		assert.Equal(t, 1, got.SuccessfulRuns)
@@ -449,7 +450,7 @@ func TestLoopRepository_IncrementRunStats(t *testing.T) {
 // ========== Org-scoped filtering tests ==========
 
 func TestLoopRepository_GetDueCronLoops_WithOrgFilter(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
@@ -457,12 +458,12 @@ func TestLoopRepository_GetDueCronLoops_WithOrgFilter(t *testing.T) {
 	pastTime := time.Now().Add(-1 * time.Hour)
 
 	// Due loop in org 1
-	org1Loop := &Loop{
+	org1Loop := &loop.Loop{
 		OrganizationID: 1, Name: "Org1 Due", Slug: "org1-due",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron, NextRunAt: &pastTime,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
@@ -470,12 +471,12 @@ func TestLoopRepository_GetDueCronLoops_WithOrgFilter(t *testing.T) {
 	require.NoError(t, repo.Create(ctx, org1Loop))
 
 	// Due loop in org 2
-	org2Loop := &Loop{
+	org2Loop := &loop.Loop{
 		OrganizationID: 2, Name: "Org2 Due", Slug: "org2-due",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron, NextRunAt: &pastTime,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 2,
@@ -483,12 +484,12 @@ func TestLoopRepository_GetDueCronLoops_WithOrgFilter(t *testing.T) {
 	require.NoError(t, repo.Create(ctx, org2Loop))
 
 	// Due loop in org 3
-	org3Loop := &Loop{
+	org3Loop := &loop.Loop{
 		OrganizationID: 3, Name: "Org3 Due", Slug: "org3-due",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron, NextRunAt: &pastTime,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 3,
@@ -524,19 +525,19 @@ func TestLoopRepository_GetDueCronLoops_WithOrgFilter(t *testing.T) {
 }
 
 func TestLoopRepository_FindLoopsNeedingNextRun_WithOrgFilter(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupLoopTestDB(t)
 	repo := NewLoopRepository(db)
 	ctx := context.Background()
 
 	cron := "0 9 * * *"
 
 	// Loop needing init in org 1
-	org1 := &Loop{
+	org1 := &loop.Loop{
 		OrganizationID: 1, Name: "Org1 Init", Slug: "org1-init",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 1,
@@ -544,12 +545,12 @@ func TestLoopRepository_FindLoopsNeedingNextRun_WithOrgFilter(t *testing.T) {
 	require.NoError(t, repo.Create(ctx, org1))
 
 	// Loop needing init in org 2
-	org2 := &Loop{
+	org2 := &loop.Loop{
 		OrganizationID: 2, Name: "Org2 Init", Slug: "org2-init",
 		PromptTemplate: "p",
-		ExecutionMode: ExecutionModeAutopilot, Status: StatusEnabled,
+		ExecutionMode: loop.ExecutionModeAutopilot, Status: loop.StatusEnabled,
 		CronExpression: &cron,
-		SandboxStrategy: SandboxStrategyPersistent, ConcurrencyPolicy: ConcurrencyPolicySkip,
+		SandboxStrategy: loop.SandboxStrategyPersistent, ConcurrencyPolicy: loop.ConcurrencyPolicySkip,
 		MaxConcurrentRuns: 1, TimeoutMinutes: 60,
 		AutopilotConfig: []byte("{}"), ConfigOverrides: []byte("{}"),
 		CreatedByID: 2,

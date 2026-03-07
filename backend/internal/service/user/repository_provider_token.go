@@ -7,60 +7,33 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
-	"gorm.io/gorm"
 )
 
 // GetDecryptedProviderToken retrieves and decrypts the access token for a repository provider
 // It first checks if the provider has a linked OAuth identity, then falls back to bot token
 func (s *Service) GetDecryptedProviderToken(ctx context.Context, userID, providerID int64) (string, error) {
 	// Get provider with Identity preloaded
-	var provider user.RepositoryProvider
-	err := s.db.WithContext(ctx).
-		Preload("Identity").
-		Where("id = ? AND user_id = ?", providerID, userID).
-		First(&provider).Error
+	provider, err := s.repo.GetRepositoryProviderWithIdentity(ctx, userID, providerID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err == user.ErrNotFound {
 			return "", ErrProviderNotFound
 		}
 		return "", err
 	}
 
-	// 1. Try OAuth identity token first
-	if provider.IdentityID != nil && provider.Identity != nil {
-		if provider.Identity.AccessTokenEncrypted != nil && *provider.Identity.AccessTokenEncrypted != "" {
-			if s.encryptionKey != "" {
-				return crypto.DecryptWithKey(*provider.Identity.AccessTokenEncrypted, s.encryptionKey)
-			}
-			return *provider.Identity.AccessTokenEncrypted, nil
-		}
-	}
-
-	// 2. Fall back to bot token
-	if provider.BotTokenEncrypted != nil && *provider.BotTokenEncrypted != "" {
-		if s.encryptionKey != "" {
-			return crypto.DecryptWithKey(*provider.BotTokenEncrypted, s.encryptionKey)
-		}
-		return *provider.BotTokenEncrypted, nil
-	}
-
-	return "", nil
+	return s.decryptProviderToken(provider)
 }
 
 // GetRepositoryProviderByTypeAndURL returns a repository provider by provider type and base URL
 func (s *Service) GetRepositoryProviderByTypeAndURL(ctx context.Context, userID int64, providerType, baseURL string) (*user.RepositoryProvider, error) {
-	var provider user.RepositoryProvider
-	err := s.db.WithContext(ctx).
-		Preload("Identity").
-		Where("user_id = ? AND provider_type = ? AND base_url = ? AND is_active = ?", userID, providerType, baseURL, true).
-		First(&provider).Error
+	provider, err := s.repo.GetRepositoryProviderByTypeAndURL(ctx, userID, providerType, baseURL)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err == user.ErrNotFound {
 			return nil, ErrProviderNotFound
 		}
 		return nil, err
 	}
-	return &provider, nil
+	return provider, nil
 }
 
 // GetDecryptedProviderTokenByTypeAndURL retrieves the access token for a repository provider
@@ -71,6 +44,11 @@ func (s *Service) GetDecryptedProviderTokenByTypeAndURL(ctx context.Context, use
 		return "", err
 	}
 
+	return s.decryptProviderToken(provider)
+}
+
+// decryptProviderToken extracts and decrypts the token from a provider
+func (s *Service) decryptProviderToken(provider *user.RepositoryProvider) (string, error) {
 	// 1. Try OAuth identity token first
 	if provider.IdentityID != nil && provider.Identity != nil {
 		if provider.Identity.AccessTokenEncrypted != nil && *provider.Identity.AccessTokenEncrypted != "" {
@@ -102,15 +80,12 @@ func (s *Service) EnsureRepositoryProviderForIdentity(ctx context.Context, userI
 	}
 
 	// 2. Check if a provider already exists linked to this identity
-	var existing user.RepositoryProvider
-	err = s.db.WithContext(ctx).
-		Where("user_id = ? AND identity_id = ?", userID, identity.ID).
-		First(&existing).Error
+	_, err = s.repo.GetRepositoryProviderByIdentityID(ctx, userID, identity.ID)
 	if err == nil {
 		// Provider already exists, nothing to do
 		return nil
 	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	if !errors.Is(err, user.ErrNotFound) {
 		return err
 	}
 
@@ -130,27 +105,22 @@ func (s *Service) EnsureRepositoryProviderForIdentity(ctx context.Context, userI
 		IsActive:     true,
 	}
 
-	return s.db.WithContext(ctx).Create(newProvider).Error
+	return s.repo.CreateRepositoryProvider(ctx, newProvider)
 }
 
 // ensureUniqueProviderName returns a unique provider name for the user
 // If the name already exists, it appends a numeric suffix (e.g., "GitHub (2)")
 func (s *Service) ensureUniqueProviderName(ctx context.Context, userID int64, baseName string) string {
-	var existing user.RepositoryProvider
-	err := s.db.WithContext(ctx).
-		Where("user_id = ? AND name = ?", userID, baseName).
-		First(&existing).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	exists, _ := s.repo.RepositoryProviderNameExists(ctx, userID, baseName, nil)
+	if !exists {
 		return baseName // Name is available
 	}
 
 	// Name exists, find a unique suffix
 	for i := 2; i <= 100; i++ {
 		candidateName := fmt.Sprintf("%s (%d)", baseName, i)
-		err := s.db.WithContext(ctx).
-			Where("user_id = ? AND name = ?", userID, candidateName).
-			First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		exists, _ := s.repo.RepositoryProviderNameExists(ctx, userID, candidateName, nil)
+		if !exists {
 			return candidateName
 		}
 	}

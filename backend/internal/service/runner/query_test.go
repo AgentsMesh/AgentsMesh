@@ -12,7 +12,7 @@ import (
 
 func TestGetByNodeID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create a runner
@@ -38,7 +38,7 @@ func TestGetByNodeID(t *testing.T) {
 
 func TestGetByNodeIDAndOrgID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create runners with same node_id in different orgs
@@ -82,7 +82,7 @@ func TestGetByNodeIDAndOrgID(t *testing.T) {
 
 func TestUpdateLastSeen(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create a runner with offline status
@@ -107,7 +107,7 @@ func TestUpdateLastSeen(t *testing.T) {
 
 func TestGetRunner(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create a runner
@@ -154,7 +154,7 @@ func TestSelectAvailableRunnerForAgent(t *testing.T) {
 
 	t.Run("returns runner from cache when it supports the agent", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		r := &runner.Runner{
 			ID:              1,
@@ -179,7 +179,7 @@ func TestSelectAvailableRunnerForAgent(t *testing.T) {
 
 	t.Run("skips cached runner that does not support the agent", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		// This runner only supports "aider", not "claude-code"
 		r := &runner.Runner{
@@ -207,7 +207,7 @@ func TestSelectAvailableRunnerForAgent(t *testing.T) {
 
 	t.Run("selects least-loaded runner from cache", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		r1 := &runner.Runner{
 			ID: 1, OrganizationID: 1, NodeID: "runner-1",
@@ -232,7 +232,7 @@ func TestSelectAvailableRunnerForAgent(t *testing.T) {
 
 	t.Run("ignores runners from different organization", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		r := &runner.Runner{
 			ID: 1, OrganizationID: 999, NodeID: "runner-other-org",
@@ -248,7 +248,7 @@ func TestSelectAvailableRunnerForAgent(t *testing.T) {
 
 	t.Run("ignores disabled runners in cache", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		r := &runner.Runner{
 			ID: 1, OrganizationID: 1, NodeID: "runner-disabled",
@@ -264,7 +264,7 @@ func TestSelectAvailableRunnerForAgent(t *testing.T) {
 
 	t.Run("ignores runners at capacity in cache", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		r := &runner.Runner{
 			ID: 1, OrganizationID: 1, NodeID: "runner-full",
@@ -280,7 +280,7 @@ func TestSelectAvailableRunnerForAgent(t *testing.T) {
 
 	t.Run("ignores stale runners in cache", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		r := &runner.Runner{
 			ID: 1, OrganizationID: 1, NodeID: "runner-stale",
@@ -297,7 +297,7 @@ func TestSelectAvailableRunnerForAgent(t *testing.T) {
 
 	t.Run("returns private runner only to registrant", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		registrantUserID := int64(10)
 		otherUserID := int64(20)
@@ -327,7 +327,7 @@ func TestSelectAvailableRunnerVisibility(t *testing.T) {
 
 	t.Run("private runner visible to registrant in cache", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		registrantUserID := int64(10)
 		r := &runner.Runner{
@@ -345,7 +345,7 @@ func TestSelectAvailableRunnerVisibility(t *testing.T) {
 
 	t.Run("private runner invisible to other users in cache", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		registrantUserID := int64(10)
 		otherUserID := int64(20)
@@ -363,7 +363,7 @@ func TestSelectAvailableRunnerVisibility(t *testing.T) {
 
 	t.Run("organization runner visible to any org member in cache", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		registrantUserID := int64(10)
 		otherUserID := int64(20)
@@ -387,7 +387,7 @@ func TestSelectAvailableRunnerVisibility(t *testing.T) {
 
 	t.Run("private runner without RegisteredByUserID invisible to all", func(t *testing.T) {
 		db := setupTestDB(t)
-		service := NewService(db)
+		service := newTestService(db)
 
 		r := &runner.Runner{
 			ID: 1, OrganizationID: 1, NodeID: "runner-private-no-owner",
@@ -404,7 +404,7 @@ func TestSelectAvailableRunnerVisibility(t *testing.T) {
 
 func TestUpdateRunnerVisibility(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("updates visibility from organization to private", func(t *testing.T) {

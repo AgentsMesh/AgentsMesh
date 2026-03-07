@@ -10,7 +10,7 @@ import (
 
 func TestCleanupStalePods(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create a disconnected pod
@@ -43,7 +43,7 @@ func TestCleanupStalePods(t *testing.T) {
 
 func TestReconcilePods(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create pods

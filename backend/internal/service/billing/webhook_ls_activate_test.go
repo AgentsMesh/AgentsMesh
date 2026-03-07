@@ -15,7 +15,7 @@ import (
 
 func TestActivateSubscriptionWithLemonSqueezyIDs(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -65,7 +65,7 @@ func TestActivateSubscriptionWithLemonSqueezyIDs(t *testing.T) {
 
 func TestUpdateExistingSubscriptionWithLemonSqueezyIDs(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -125,7 +125,7 @@ func TestUpdateExistingSubscriptionWithLemonSqueezyIDs(t *testing.T) {
 
 func TestFindSubscriptionByProviderIDLemonSqueezy(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

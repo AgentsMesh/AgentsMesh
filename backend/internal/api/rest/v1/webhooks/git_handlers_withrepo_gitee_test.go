@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -85,8 +86,9 @@ func TestHandleGiteeWebhookWithRepo_WithWebhookService(t *testing.T) {
 	registry := NewHandlerRegistry(logger)
 	SetupDefaultHandlers(registry, logger)
 
-	repoSvc := repository.NewService(db)
-	webhookSvc := repository.NewWebhookService(db, cfg, nil, nil)
+	gitRepo := infra.NewGitProviderRepository(db)
+	repoSvc := repository.NewService(gitRepo)
+	webhookSvc := repository.NewWebhookService(gitRepo, cfg, nil, nil)
 
 	router := &WebhookRouter{
 		db:             db,
@@ -132,7 +134,8 @@ func TestHandleGiteeWebhookWithRepo_InvalidSignature(t *testing.T) {
 	registry := NewHandlerRegistry(logger)
 	SetupDefaultHandlers(registry, logger)
 
-	repoSvc := repository.NewService(db)
+	gitRepo2 := infra.NewGitProviderRepository(db)
+	repoSvc := repository.NewService(gitRepo2)
 
 	router := &WebhookRouter{
 		db:          db,

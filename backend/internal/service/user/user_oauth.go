@@ -12,8 +12,8 @@ import (
 // GetOrCreateByOAuth gets or creates a user from OAuth identity
 func (s *Service) GetOrCreateByOAuth(ctx context.Context, provider, providerUserID, providerUsername, email, name, avatarURL string) (*user.User, bool, error) {
 	// Check if identity already exists
-	var identity user.Identity
-	if err := s.db.WithContext(ctx).Where("provider = ? AND provider_user_id = ?", provider, providerUserID).First(&identity).Error; err == nil {
+	identity, err := s.repo.GetIdentityByProviderUser(ctx, provider, providerUserID)
+	if err == nil {
 		// Identity exists, get user
 		u, err := s.GetByID(ctx, identity.UserID)
 		return u, false, err
@@ -74,23 +74,23 @@ func (s *Service) GetOrCreateByOAuth(ctx context.Context, provider, providerUser
 			u.AvatarURL = &avatarURL
 		}
 
-		if err := s.db.WithContext(ctx).Create(u).Error; err != nil {
+		if err := s.repo.CreateUser(ctx, u); err != nil {
 			return nil, false, err
 		}
 		isNew = true
 	}
 
 	// Create identity
-	identity = user.Identity{
+	newIdentity := &user.Identity{
 		UserID:         u.ID,
 		Provider:       provider,
 		ProviderUserID: providerUserID,
 	}
 	if providerUsername != "" {
-		identity.ProviderUsername = &providerUsername
+		newIdentity.ProviderUsername = &providerUsername
 	}
 
-	if err := s.db.WithContext(ctx).Create(&identity).Error; err != nil {
+	if err := s.repo.CreateIdentity(ctx, newIdentity); err != nil {
 		return nil, false, err
 	}
 
@@ -130,18 +130,12 @@ func (s *Service) UpdateIdentityTokens(ctx context.Context, userID int64, provid
 		}
 	}
 
-	return s.db.WithContext(ctx).Model(&user.Identity{}).
-		Where("user_id = ? AND provider = ?", userID, provider).
-		Updates(updates).Error
+	return s.repo.UpdateIdentityFields(ctx, userID, provider, updates)
 }
 
 // GetIdentity returns an OAuth identity
 func (s *Service) GetIdentity(ctx context.Context, userID int64, provider string) (*user.Identity, error) {
-	var identity user.Identity
-	if err := s.db.WithContext(ctx).Where("user_id = ? AND provider = ?", userID, provider).First(&identity).Error; err != nil {
-		return nil, err
-	}
-	return &identity, nil
+	return s.repo.GetIdentity(ctx, userID, provider)
 }
 
 // GetIdentityByProvider returns an OAuth identity by provider (alias for GetIdentity)
@@ -198,12 +192,10 @@ func (s *Service) GetDecryptedTokens(ctx context.Context, userID int64, provider
 
 // ListIdentities returns all identities for a user
 func (s *Service) ListIdentities(ctx context.Context, userID int64) ([]*user.Identity, error) {
-	var identities []*user.Identity
-	err := s.db.WithContext(ctx).Where("user_id = ?", userID).Find(&identities).Error
-	return identities, err
+	return s.repo.ListIdentities(ctx, userID)
 }
 
 // DeleteIdentity deletes an OAuth identity
 func (s *Service) DeleteIdentity(ctx context.Context, userID int64, provider string) error {
-	return s.db.WithContext(ctx).Where("user_id = ? AND provider = ?", userID, provider).Delete(&user.Identity{}).Error
+	return s.repo.DeleteIdentity(ctx, userID, provider)
 }

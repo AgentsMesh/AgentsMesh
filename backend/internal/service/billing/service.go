@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/stripe/stripe-go/v76"
-	"gorm.io/gorm"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
@@ -30,7 +29,7 @@ var (
 
 // Service handles billing operations
 type Service struct {
-	db             *gorm.DB
+	repo           billing.BillingRepository
 	stripeEnabled  bool
 	paymentFactory *payment.Factory
 	paymentConfig  *config.PaymentConfig
@@ -40,12 +39,12 @@ type Service struct {
 // NewService creates a new billing service without payment configuration.
 // This is primarily for testing purposes where payment providers are not needed.
 // For production use, prefer NewServiceWithConfig which supports all payment providers.
-func NewService(db *gorm.DB, stripeKey string) *Service {
+func NewService(repo billing.BillingRepository, stripeKey string) *Service {
 	if stripeKey != "" {
 		stripe.Key = stripeKey
 	}
 	svc := &Service{
-		db:            db,
+		repo:          repo,
 		stripeEnabled: stripeKey != "",
 	}
 	// Use default Stripe client if Stripe is enabled
@@ -58,9 +57,9 @@ func NewService(db *gorm.DB, stripeKey string) *Service {
 // NewServiceWithConfig creates a new billing service with full configuration
 // appConfig is needed for URL derivation (AlipayNotifyURL, WeChatNotifyURL, etc.)
 // If appConfig is nil, returns a service with no payment providers configured.
-func NewServiceWithConfig(db *gorm.DB, appConfig *config.Config) *Service {
+func NewServiceWithConfig(repo billing.BillingRepository, appConfig *config.Config) *Service {
 	svc := &Service{
-		db: db,
+		repo: repo,
 	}
 
 	// Handle nil config gracefully - return service without payment providers
@@ -71,8 +70,8 @@ func NewServiceWithConfig(db *gorm.DB, appConfig *config.Config) *Service {
 	cfg := &appConfig.Payment
 	svc.paymentConfig = cfg
 
-	// Use NewFactoryWithDB to support license provider and URL derivation
-	svc.paymentFactory = payment.NewFactoryWithDB(appConfig, db)
+	// Use NewFactoryFromConfig to avoid DB dependency in service layer
+	svc.paymentFactory = payment.NewFactoryFromConfig(appConfig)
 	svc.stripeEnabled = cfg.StripeEnabled()
 
 	// Set Stripe key and client if enabled
@@ -119,9 +118,9 @@ func (s *Service) CreateStripeCustomer(ctx context.Context, orgID int64, email, 
 	}
 
 	// Update subscription with Stripe customer ID
-	s.db.WithContext(ctx).Model(&billing.Subscription{}).
-		Where("organization_id = ?", orgID).
-		Update("stripe_customer_id", c.ID)
+	s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
+		"stripe_customer_id": c.ID,
+	})
 
 	return c.ID, nil
 }

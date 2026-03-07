@@ -13,7 +13,7 @@ import (
 
 func TestRequestAuthURL(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("creates pending auth with all fields", func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestRequestAuthURL(t *testing.T) {
 
 func TestGetAuthStatus(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("returns pending status", func(t *testing.T) {
@@ -166,7 +166,7 @@ func TestGetAuthStatus(t *testing.T) {
 
 func TestAuthorizeRunner(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("authorizes pending auth", func(t *testing.T) {

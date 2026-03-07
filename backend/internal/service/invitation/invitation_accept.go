@@ -2,21 +2,25 @@ package invitation
 
 import (
 	"context"
-	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
-	"gorm.io/gorm"
+	invitationDomain "github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
 )
 
 // AcceptResult contains the result of accepting an invitation
 type AcceptResult struct {
-	Organization *organization.Organization
-	Member       *organization.Member
+	Organization *AcceptOrgInfo
+}
+
+// AcceptOrgInfo contains organization info returned on invitation acceptance
+type AcceptOrgInfo struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
 }
 
 // Accept accepts an invitation and adds the user as a member
 func (s *Service) Accept(ctx context.Context, token string, userID int64) (*AcceptResult, error) {
-	inv, err := s.repo.GetByToken(token)
+	inv, err := s.repo.GetByToken(ctx, token)
 	if err != nil {
 		return nil, ErrInvitationNotFound
 	}
@@ -30,51 +34,42 @@ func (s *Service) Accept(ctx context.Context, token string, userID int64) (*Acce
 	}
 
 	// Check if user is already a member
-	var existingMember organization.Member
-	err = s.db.WithContext(ctx).Where("organization_id = ? AND user_id = ?",
-		inv.OrganizationID, userID).First(&existingMember).Error
-	if err == nil {
+	exists, err := s.repo.CheckMemberExists(ctx, inv.OrganizationID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, ErrAlreadyMember
 	}
 
-	var org organization.Organization
-	var member *organization.Member
-
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Get organization
-		if err := tx.First(&org, inv.OrganizationID).Error; err != nil {
-			return err
-		}
-
-		// Add user as member
-		member = &organization.Member{
-			OrganizationID: inv.OrganizationID,
-			UserID:         userID,
-			Role:           inv.Role,
-		}
-		if err := tx.Create(member).Error; err != nil {
-			return err
-		}
-
-		// Mark invitation as accepted
-		now := time.Now()
-		inv.AcceptedAt = &now
-		return tx.Save(inv).Error
+	// Atomically add member and mark invitation as accepted
+	_, err = s.repo.AcceptInvitationAtomic(ctx, &invitationDomain.AcceptInvitationParams{
+		Invitation: inv,
+		UserID:     userID,
+		Role:       inv.Role,
 	})
+	if err != nil {
+		return nil, err
+	}
 
+	// Fetch org info for the response
+	orgInfo, err := s.repo.GetOrganization(ctx, inv.OrganizationID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AcceptResult{
-		Organization: &org,
-		Member:       member,
+		Organization: &AcceptOrgInfo{
+			ID:   inv.OrganizationID,
+			Name: orgInfo.Name,
+			Slug: orgInfo.Slug,
+		},
 	}, nil
 }
 
 // Revoke revokes a pending invitation
 func (s *Service) Revoke(ctx context.Context, invitationID int64) error {
-	inv, err := s.repo.GetByID(invitationID)
+	inv, err := s.repo.GetByID(ctx, invitationID)
 	if err != nil {
 		return ErrInvitationNotFound
 	}
@@ -83,10 +78,10 @@ func (s *Service) Revoke(ctx context.Context, invitationID int64) error {
 		return ErrInvitationAccepted
 	}
 
-	return s.repo.Delete(invitationID)
+	return s.repo.Delete(ctx, invitationID)
 }
 
 // CleanupExpired removes expired invitations
 func (s *Service) CleanupExpired(ctx context.Context) error {
-	return s.repo.DeleteExpired()
+	return s.repo.DeleteExpired(ctx)
 }

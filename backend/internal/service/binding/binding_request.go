@@ -10,12 +10,10 @@ import (
 
 // RequestBinding creates a binding request between two pods
 func (s *Service) RequestBinding(ctx context.Context, orgID int64, initiatorPod, targetPod string, scopes []string, policy string) (*channel.PodBinding, error) {
-	// Validate scopes
 	if err := s.validateScopes(scopes); err != nil {
 		return nil, err
 	}
 
-	// Prevent self-binding
 	if initiatorPod == targetPod {
 		return nil, ErrSelfBinding
 	}
@@ -62,7 +60,7 @@ func (s *Service) RequestBinding(ctx context.Context, orgID int64, initiatorPod,
 		binding.RespondedAt = &now
 	}
 
-	if err := s.db.WithContext(ctx).Create(binding).Error; err != nil {
+	if err := s.repo.Create(ctx, binding); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +96,7 @@ func (s *Service) CreateAutoBinding(ctx context.Context, orgID int64, initiatorP
 		ExpiresAt:      nil, // Active bindings don't expire
 	}
 
-	if err := s.db.WithContext(ctx).Create(binding).Error; err != nil {
+	if err := s.repo.Create(ctx, binding); err != nil {
 		return nil, err
 	}
 
@@ -131,7 +129,7 @@ func (s *Service) AcceptBinding(ctx context.Context, bindingID int64, targetPod 
 	binding.RespondedAt = &now
 	binding.ExpiresAt = nil // Active bindings don't expire
 
-	if err := s.db.WithContext(ctx).Save(binding).Error; err != nil {
+	if err := s.repo.Save(ctx, binding); err != nil {
 		return nil, err
 	}
 
@@ -160,7 +158,7 @@ func (s *Service) RejectBinding(ctx context.Context, bindingID int64, targetPod 
 		binding.RejectionReason = &reason
 	}
 
-	if err := s.db.WithContext(ctx).Save(binding).Error; err != nil {
+	if err := s.repo.Save(ctx, binding); err != nil {
 		return nil, err
 	}
 
@@ -179,7 +177,7 @@ func (s *Service) Unbind(ctx context.Context, initiatorPod, targetPod string) (b
 	}
 
 	binding.Status = channel.BindingStatusInactive
-	if err := s.db.WithContext(ctx).Save(binding).Error; err != nil {
+	if err := s.repo.Save(ctx, binding); err != nil {
 		return false, err
 	}
 
@@ -188,11 +186,5 @@ func (s *Service) Unbind(ctx context.Context, initiatorPod, targetPod string) (b
 
 // CleanupExpiredBindings marks expired pending bindings as expired
 func (s *Service) CleanupExpiredBindings(ctx context.Context) (int64, error) {
-	result := s.db.WithContext(ctx).
-		Model(&channel.PodBinding{}).
-		Where("status = ? AND expires_at IS NOT NULL AND expires_at < ?",
-			channel.BindingStatusPending, time.Now()).
-		Update("status", channel.BindingStatusExpired)
-
-	return result.RowsAffected, result.Error
+	return s.repo.MarkExpired(ctx, time.Now())
 }

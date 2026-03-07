@@ -28,7 +28,7 @@ func TestBuildPodCommand_WithRepository(t *testing.T) {
 	}
 	repoSvc := &mockRepoService{repo: repo}
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
 
 	agentTypeID := int64(1)
 	repoID := int64(10)
@@ -51,7 +51,7 @@ func TestBuildPodCommand_WithRepository(t *testing.T) {
 
 func TestBuildPodCommand_WithRepositoryURL(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	repoURL := "https://github.com/org/repo.git"
@@ -75,7 +75,7 @@ func TestBuildPodCommand_BranchOverride(t *testing.T) {
 	}
 	repoSvc := &mockRepoService{repo: repo}
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
 
 	agentTypeID := int64(1)
 	repoID := int64(10)
@@ -101,7 +101,7 @@ func TestBuildPodCommand_WithTicket(t *testing.T) {
 		},
 	}
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
 
 	agentTypeID := int64(1)
 	ticketID := int64(1)
@@ -119,7 +119,7 @@ func TestBuildPodCommand_WithTicket(t *testing.T) {
 
 func TestBuildPodCommand_WithTicketSlug(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
 	ticketSlug := "AM-99"
@@ -148,7 +148,7 @@ func TestBuildPodCommand_WithOAuthCredential(t *testing.T) {
 	}
 	coord := &mockPodCoordinator{}
 	repoURL := "https://github.com/org/repo.git"
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
 
 	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -178,7 +178,7 @@ func TestBuildPodCommand_WithSSHCredential(t *testing.T) {
 	}
 	coord := &mockPodCoordinator{}
 	repoURL := "git@github.com:org/repo.git"
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
 
 	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -204,7 +204,7 @@ func TestBuildPodCommand_RunnerLocalCredential_NoCredsSent(t *testing.T) {
 	}
 	coord := &mockPodCoordinator{}
 	repoURL := "https://github.com/org/repo.git"
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
 
 	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
@@ -225,7 +225,7 @@ func TestBuildPodCommand_RunnerLocalCredential_NoCredsSent(t *testing.T) {
 
 func TestGetUserGitCredential_NilUserService(t *testing.T) {
 	db := setupTestDB(t)
-	podSvc := NewPodService(db)
+	podSvc := newTestPodService(db)
 	provider := newTestProvider()
 	orch := NewPodOrchestrator(&PodOrchestratorDeps{
 		PodService:    podSvc,
@@ -242,7 +242,7 @@ func TestGetUserGitCredential_NoDefaultCredential(t *testing.T) {
 		defaultCredErr: errors.New("not found"),
 	}
 	db := setupTestDB(t)
-	podSvc := NewPodService(db)
+	podSvc := newTestPodService(db)
 	provider := newTestProvider()
 	orch := NewPodOrchestrator(&PodOrchestratorDeps{
 		PodService:    podSvc,
@@ -262,7 +262,7 @@ func TestGetUserGitCredential_RunnerLocal(t *testing.T) {
 		},
 	}
 	db := setupTestDB(t)
-	podSvc := NewPodService(db)
+	podSvc := newTestPodService(db)
 	provider := newTestProvider()
 	orch := NewPodOrchestrator(&PodOrchestratorDeps{
 		PodService:    podSvc,
@@ -283,7 +283,7 @@ func TestGetUserGitCredential_DecryptError(t *testing.T) {
 		decryptedErr: errors.New("decrypt failed"),
 	}
 	db := setupTestDB(t)
-	podSvc := NewPodService(db)
+	podSvc := newTestPodService(db)
 	provider := newTestProvider()
 	orch := NewPodOrchestrator(&PodOrchestratorDeps{
 		PodService:    podSvc,
@@ -307,7 +307,7 @@ func TestGetUserGitCredential_Success_PAT(t *testing.T) {
 		},
 	}
 	db := setupTestDB(t)
-	podSvc := NewPodService(db)
+	podSvc := newTestPodService(db)
 	provider := newTestProvider()
 	orch := NewPodOrchestrator(&PodOrchestratorDeps{
 		PodService:    podSvc,
@@ -326,7 +326,7 @@ func TestGetUserGitCredential_Success_PAT(t *testing.T) {
 func TestBuildPodCommand_RepoServiceError_IgnoresRepo(t *testing.T) {
 	repoSvc := &mockRepoService{err: errors.New("repo not found")}
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
 
 	agentTypeID := int64(1)
 	repoID := int64(999)
@@ -345,7 +345,7 @@ func TestBuildPodCommand_RepoServiceError_IgnoresRepo(t *testing.T) {
 func TestBuildPodCommand_TicketServiceError_IgnoresTicket(t *testing.T) {
 	ticketSvc := &mockTicketServiceForOrch{err: errors.New("ticket not found")}
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
 
 	agentTypeID := int64(1)
 	ticketID := int64(999)

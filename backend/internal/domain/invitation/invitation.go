@@ -1,6 +1,7 @@
 package invitation
 
 import (
+	"context"
 	"time"
 )
 
@@ -38,15 +39,43 @@ func (i *Invitation) IsPending() bool {
 	return !i.IsAccepted() && !i.IsExpired()
 }
 
+// AcceptInvitationParams holds parameters for the atomic accept operation
+type AcceptInvitationParams struct {
+	Invitation *Invitation
+	UserID     int64
+	Role       string
+}
+
+// AcceptInvitationResult holds the result of accepting an invitation
+type AcceptInvitationResult struct {
+	OrganizationID int64
+	MemberID       int64
+}
+
+// OrgInfo holds basic organization information
+type OrgInfo struct {
+	Name string
+	Slug string
+}
+
 // Repository defines the interface for invitation data access
 type Repository interface {
-	Create(invitation *Invitation) error
-	GetByToken(token string) (*Invitation, error)
-	GetByID(id int64) (*Invitation, error)
-	GetByOrgAndEmail(orgID int64, email string) (*Invitation, error)
-	ListByOrganization(orgID int64) ([]*Invitation, error)
-	ListPendingByEmail(email string) ([]*Invitation, error)
-	Update(invitation *Invitation) error
-	Delete(id int64) error
-	DeleteExpired() error
+	Create(ctx context.Context, invitation *Invitation) error
+	GetByToken(ctx context.Context, token string) (*Invitation, error)
+	GetByID(ctx context.Context, id int64) (*Invitation, error)
+	GetByOrgAndEmail(ctx context.Context, orgID int64, email string) (*Invitation, error)
+	ListByOrganization(ctx context.Context, orgID int64) ([]*Invitation, error)
+	ListPendingByEmail(ctx context.Context, email string) ([]*Invitation, error)
+	Update(ctx context.Context, invitation *Invitation) error
+	Delete(ctx context.Context, id int64) error
+	DeleteExpired(ctx context.Context) error
+
+	// Cross-entity queries (avoid Service needing direct DB access)
+	CheckMemberExists(ctx context.Context, orgID int64, userID int64) (bool, error)
+	CheckMemberExistsByEmail(ctx context.Context, orgID int64, email string) (bool, error)
+	GetOrganization(ctx context.Context, orgID int64) (*OrgInfo, error)
+	GetUserDisplayName(ctx context.Context, userID int64) (string, error)
+
+	// AcceptInvitationAtomic atomically adds a member and marks the invitation as accepted
+	AcceptInvitationAtomic(ctx context.Context, params *AcceptInvitationParams) (*AcceptInvitationResult, error)
 }

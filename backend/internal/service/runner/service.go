@@ -6,12 +6,11 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	"gorm.io/gorm"
 )
 
 // Service handles runner operations
 type Service struct {
-	db             *gorm.DB
+	repo           runner.RunnerRepository
 	billingService *billing.Service
 	activeRunners  sync.Map // map[runnerID]*ActiveRunner
 }
@@ -25,9 +24,9 @@ type ActiveRunner struct {
 
 // NewService creates a new runner service
 // billingService is optional - pass nil to skip quota checks (useful for tests)
-func NewService(db *gorm.DB, billingService ...*billing.Service) *Service {
+func NewService(repo runner.RunnerRepository, billingService ...*billing.Service) *Service {
 	s := &Service{
-		db: db,
+		repo: repo,
 	}
 	if len(billingService) > 0 {
 		s.billingService = billingService[0]

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -87,7 +88,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
@@ -96,7 +97,7 @@ func TestNewService(t *testing.T) {
 
 func TestCreateUser(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -130,7 +131,7 @@ func TestCreateUser(t *testing.T) {
 
 func TestCreateUserDuplicateEmail(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -152,7 +153,7 @@ func TestCreateUserDuplicateEmail(t *testing.T) {
 
 func TestCreateUserDuplicateUsername(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -174,7 +175,7 @@ func TestCreateUserDuplicateUsername(t *testing.T) {
 
 func TestCreateUserWithoutName(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -194,7 +195,7 @@ func TestCreateUserWithoutName(t *testing.T) {
 
 func TestGetByID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create a user
@@ -216,7 +217,7 @@ func TestGetByID(t *testing.T) {
 
 func TestGetByIDNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	_, err := service.GetByID(ctx, 99999)
@@ -227,7 +228,7 @@ func TestGetByIDNotFound(t *testing.T) {
 
 func TestGetByEmail(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -247,7 +248,7 @@ func TestGetByEmail(t *testing.T) {
 
 func TestGetByEmailNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	_, err := service.GetByEmail(ctx, "nonexistent@example.com")
@@ -258,7 +259,7 @@ func TestGetByEmailNotFound(t *testing.T) {
 
 func TestGetByUsername(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{
@@ -278,7 +279,7 @@ func TestGetByUsername(t *testing.T) {
 
 func TestGetByUsernameNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	_, err := service.GetByUsername(ctx, "nonexistent")
@@ -289,7 +290,7 @@ func TestGetByUsernameNotFound(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create a user
@@ -317,7 +318,7 @@ func TestUpdateUser(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	// Create a user

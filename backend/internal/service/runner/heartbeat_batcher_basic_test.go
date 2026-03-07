@@ -3,14 +3,17 @@ package runner
 import (
 	"testing"
 	"time"
+
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 func TestNewHeartbeatBatcher(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 
 	if batcher == nil {
 		t.Fatal("NewHeartbeatBatcher returned nil")
@@ -26,9 +29,10 @@ func TestNewHeartbeatBatcher(t *testing.T) {
 func TestHeartbeatBatcherSetInterval(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	batcher.SetInterval(1 * time.Second)
 
 	if batcher.interval != 1*time.Second {
@@ -39,9 +43,10 @@ func TestHeartbeatBatcherSetInterval(t *testing.T) {
 func TestHeartbeatBatcherStartStop(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	batcher.SetInterval(10 * time.Millisecond)
 
 	// Start batcher
@@ -91,9 +96,10 @@ func TestHeartbeatBatcherConstants(t *testing.T) {
 func TestHeartbeatBatcherRestartAfterStop(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	batcher.SetInterval(10 * time.Millisecond)
 
 	// Start, stop, restart

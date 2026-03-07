@@ -8,8 +8,8 @@ import (
 )
 
 func TestBatchGetTicketPods(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	// Create pods
@@ -37,8 +37,8 @@ func TestBatchGetTicketPods(t *testing.T) {
 }
 
 func TestBatchGetTicketPods_Empty(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	result, err := service.BatchGetTicketPods(ctx, []int64{})
@@ -51,8 +51,8 @@ func TestBatchGetTicketPods_Empty(t *testing.T) {
 }
 
 func TestBatchGetTicketPods_NoPods(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	result, err := service.BatchGetTicketPods(ctx, []int64{1, 2, 3})
@@ -71,8 +71,8 @@ func TestBatchGetTicketPods_NoPods(t *testing.T) {
 }
 
 func TestBatchGetTicketPods_PodWithNilTicket(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	// Create pod with nil ticket_id

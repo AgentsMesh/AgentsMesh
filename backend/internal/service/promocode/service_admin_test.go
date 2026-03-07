@@ -1,4 +1,4 @@
-package promocode
+package promocode_test
 
 import (
 	"context"
@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
+	svc "github.com/anthropics/agentsmesh/backend/internal/service/promocode"
 )
 
 func TestService_Deactivate(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create test promo code
@@ -26,7 +27,7 @@ func TestService_Deactivate(t *testing.T) {
 	db.Create(code)
 
 	t.Run("deactivate existing code", func(t *testing.T) {
-		err := svc.Deactivate(ctx, code.ID)
+		err := service.Deactivate(ctx, code.ID)
 		if err != nil {
 			t.Errorf("Deactivate() error = %v", err)
 			return
@@ -41,7 +42,7 @@ func TestService_Deactivate(t *testing.T) {
 	})
 
 	t.Run("deactivate nonexistent code", func(t *testing.T) {
-		err := svc.Deactivate(ctx, 99999)
+		err := service.Deactivate(ctx, 99999)
 		if err == nil {
 			t.Error("Deactivate() should fail for nonexistent code")
 		}
@@ -50,7 +51,7 @@ func TestService_Deactivate(t *testing.T) {
 
 func TestService_List(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create test promo codes
@@ -68,7 +69,7 @@ func TestService_List(t *testing.T) {
 	}
 
 	t.Run("list all", func(t *testing.T) {
-		codes, total, err := svc.List(ctx, &promocode.ListFilter{
+		codes, total, err := service.List(ctx, &promocode.ListFilter{
 			Page:     1,
 			PageSize: 10,
 		})
@@ -86,7 +87,7 @@ func TestService_List(t *testing.T) {
 
 	t.Run("list active only", func(t *testing.T) {
 		active := true
-		codes, total, err := svc.List(ctx, &promocode.ListFilter{
+		codes, total, err := service.List(ctx, &promocode.ListFilter{
 			IsActive: &active,
 			Page:     1,
 			PageSize: 10,
@@ -108,7 +109,7 @@ func TestService_List(t *testing.T) {
 	})
 
 	t.Run("list with pagination", func(t *testing.T) {
-		codes, total, err := svc.List(ctx, &promocode.ListFilter{
+		codes, total, err := service.List(ctx, &promocode.ListFilter{
 			Page:     1,
 			PageSize: 2,
 		})
@@ -124,3 +125,6 @@ func TestService_List(t *testing.T) {
 		}
 	})
 }
+
+// Silence unused import warning for svc package
+var _ = svc.ErrPromoCodeNotFound

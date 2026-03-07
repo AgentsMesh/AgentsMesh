@@ -11,12 +11,10 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
 	infraTasks "github.com/anthropics/agentsmesh/backend/internal/infra/tasks"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 // PipelinePollerService polls GitLab for pipeline status updates
 type PipelinePollerService struct {
-	db           *gorm.DB
 	redis        *redis.Client
 	watcher      *infraTasks.PipelineWatcher
 	gitProviders map[int64]git.Provider
@@ -30,12 +28,10 @@ type PipelinePollerService struct {
 
 // NewPipelinePollerService creates a new pipeline poller service
 func NewPipelinePollerService(
-	db *gorm.DB,
 	redisClient *redis.Client,
 	logger *slog.Logger,
 ) *PipelinePollerService {
 	return &PipelinePollerService{
-		db:           db,
 		redis:        redisClient,
 		watcher:      infraTasks.NewPipelineWatcher(redisClient, logger),
 		gitProviders: make(map[int64]git.Provider),

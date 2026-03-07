@@ -5,14 +5,13 @@ import (
 	"errors"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"gorm.io/gorm"
 )
 
 // Errors for AgentTypeService
 var (
-	ErrAgentTypeNotFound      = errors.New("agent type not found")
-	ErrAgentSlugExists        = errors.New("agent type slug already exists")
-	ErrAgentTypeHasLoopRefs   = errors.New("cannot delete: agent type is referenced by one or more loops")
+	ErrAgentTypeNotFound    = errors.New("agent type not found")
+	ErrAgentSlugExists      = errors.New("agent type slug already exists")
+	ErrAgentTypeHasLoopRefs = errors.New("cannot delete: agent type is referenced by one or more loops")
 )
 
 // AgentTypeInfo is a simplified agent type for Runner initialization
@@ -36,26 +35,24 @@ type CreateCustomAgentRequest struct {
 
 // AgentTypeService handles agent type operations
 type AgentTypeService struct {
-	db *gorm.DB
+	repo agent.AgentTypeRepository
 }
 
 // NewAgentTypeService creates a new agent type service
-func NewAgentTypeService(db *gorm.DB) *AgentTypeService {
-	return &AgentTypeService{db: db}
+func NewAgentTypeService(repo agent.AgentTypeRepository) *AgentTypeService {
+	return &AgentTypeService{repo: repo}
 }
 
 // ListBuiltinAgentTypes returns all builtin agent types
 func (s *AgentTypeService) ListBuiltinAgentTypes(ctx context.Context) ([]*agent.AgentType, error) {
-	var types []*agent.AgentType
-	err := s.db.WithContext(ctx).Where("is_builtin = ? AND is_active = ?", true, true).Find(&types).Error
-	return types, err
+	return s.repo.ListBuiltinActive(ctx)
 }
 
 // GetAgentTypesForRunner returns agent types for Runner initialization handshake
 // This implements the runner.AgentTypesProvider interface
 func (s *AgentTypeService) GetAgentTypesForRunner() []AgentTypeInfo {
-	var types []*agent.AgentType
-	if err := s.db.Where("is_active = ?", true).Find(&types).Error; err != nil {
+	types, err := s.repo.ListAllActive(context.Background())
+	if err != nil {
 		return nil
 	}
 
@@ -73,27 +70,35 @@ func (s *AgentTypeService) GetAgentTypesForRunner() []AgentTypeInfo {
 
 // GetAgentType returns an agent type by ID
 func (s *AgentTypeService) GetAgentType(ctx context.Context, id int64) (*agent.AgentType, error) {
-	var agentType agent.AgentType
-	if err := s.db.WithContext(ctx).First(&agentType, id).Error; err != nil {
+	at, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if at == nil {
 		return nil, ErrAgentTypeNotFound
 	}
-	return &agentType, nil
+	return at, nil
 }
 
 // GetAgentTypeBySlug returns an agent type by slug
 func (s *AgentTypeService) GetAgentTypeBySlug(ctx context.Context, slug string) (*agent.AgentType, error) {
-	var agentType agent.AgentType
-	if err := s.db.WithContext(ctx).Where("slug = ?", slug).First(&agentType).Error; err != nil {
+	at, err := s.repo.GetBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+	if at == nil {
 		return nil, ErrAgentTypeNotFound
 	}
-	return &agentType, nil
+	return at, nil
 }
 
 // CreateCustomAgentType creates a custom agent type for an organization
 func (s *AgentTypeService) CreateCustomAgentType(ctx context.Context, orgID int64, req *CreateCustomAgentRequest) (*agent.CustomAgentType, error) {
-	// Check if slug already exists
-	var existing agent.CustomAgentType
-	if err := s.db.WithContext(ctx).Where("organization_id = ? AND slug = ?", orgID, req.Slug).First(&existing).Error; err == nil {
+	exists, err := s.repo.CustomSlugExists(ctx, orgID, req.Slug)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, ErrAgentSlugExists
 	}
 
@@ -109,7 +114,7 @@ func (s *AgentTypeService) CreateCustomAgentType(ctx context.Context, orgID int6
 		IsActive:         true,
 	}
 
-	if err := s.db.WithContext(ctx).Create(customAgent).Error; err != nil {
+	if err := s.repo.CreateCustom(ctx, customAgent); err != nil {
 		return nil, err
 	}
 
@@ -118,42 +123,35 @@ func (s *AgentTypeService) CreateCustomAgentType(ctx context.Context, orgID int6
 
 // UpdateCustomAgentType updates a custom agent type
 func (s *AgentTypeService) UpdateCustomAgentType(ctx context.Context, id int64, updates map[string]interface{}) (*agent.CustomAgentType, error) {
-	if err := s.db.WithContext(ctx).Model(&agent.CustomAgentType{}).Where("id = ?", id).Updates(updates).Error; err != nil {
-		return nil, err
-	}
-
-	var customAgent agent.CustomAgentType
-	if err := s.db.WithContext(ctx).First(&customAgent, id).Error; err != nil {
-		return nil, err
-	}
-	return &customAgent, nil
+	return s.repo.UpdateCustom(ctx, id, updates)
 }
 
 // DeleteCustomAgentType deletes a custom agent type.
 // Blocks deletion if any loops reference this agent type (application-level RESTRICT).
 func (s *AgentTypeService) DeleteCustomAgentType(ctx context.Context, id int64) error {
-	var loopCount int64
-	if err := s.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM loops WHERE custom_agent_type_id = ?", id).Scan(&loopCount).Error; err != nil {
+	loopCount, err := s.repo.CountLoopReferences(ctx, id)
+	if err != nil {
 		return err
 	}
 	if loopCount > 0 {
 		return ErrAgentTypeHasLoopRefs
 	}
-	return s.db.WithContext(ctx).Delete(&agent.CustomAgentType{}, id).Error
+	return s.repo.DeleteCustom(ctx, id)
 }
 
 // ListCustomAgentTypes returns custom agent types for an organization
 func (s *AgentTypeService) ListCustomAgentTypes(ctx context.Context, orgID int64) ([]*agent.CustomAgentType, error) {
-	var types []*agent.CustomAgentType
-	err := s.db.WithContext(ctx).Where("organization_id = ? AND is_active = ?", orgID, true).Find(&types).Error
-	return types, err
+	return s.repo.ListCustomByOrg(ctx, orgID)
 }
 
 // GetCustomAgentType returns a custom agent type by ID
 func (s *AgentTypeService) GetCustomAgentType(ctx context.Context, id int64) (*agent.CustomAgentType, error) {
-	var customAgent agent.CustomAgentType
-	if err := s.db.WithContext(ctx).First(&customAgent, id).Error; err != nil {
+	custom, err := s.repo.GetCustomByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if custom == nil {
 		return nil, ErrAgentTypeNotFound
 	}
-	return &customAgent, nil
+	return custom, nil
 }

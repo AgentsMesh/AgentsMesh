@@ -11,7 +11,7 @@ import (
 
 // TestIntegrationRenewalFlow tests subscription renewal flow
 func TestIntegrationRenewalFlow(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -28,7 +28,7 @@ func TestIntegrationRenewalFlow(t *testing.T) {
 		CurrentPeriodEnd:   now.Add(-time.Hour), // Expired
 		SeatCount:          2,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	originalPeriodEnd := sub.CurrentPeriodEnd
 
@@ -77,7 +77,7 @@ func TestIntegrationRenewalFlow(t *testing.T) {
 
 // TestIntegrationRenewalFlowYearly tests yearly subscription renewal
 func TestIntegrationRenewalFlowYearly(t *testing.T) {
-	service, _ := setupIntegrationTestService(t)
+	service, _, db := setupIntegrationTestService(t)
 	ctx := context.Background()
 	c, _ := createTestGinContext()
 
@@ -94,7 +94,7 @@ func TestIntegrationRenewalFlowYearly(t *testing.T) {
 		CurrentPeriodEnd:   now.Add(-time.Hour), // Expired
 		SeatCount:          2,
 	}
-	service.db.Create(sub)
+	db.Create(sub)
 
 	originalPeriodEnd := sub.CurrentPeriodEnd
 

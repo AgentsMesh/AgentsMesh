@@ -11,7 +11,7 @@ import (
 
 func TestGetPlan(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -27,7 +27,7 @@ func TestGetPlan(t *testing.T) {
 
 func TestGetPlanNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetPlan(ctx, "nonexistent")
@@ -38,7 +38,7 @@ func TestGetPlanNotFound(t *testing.T) {
 
 func TestListPlans(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -55,7 +55,7 @@ func TestListPlans(t *testing.T) {
 
 func TestGetPlanByID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	plan := seedTestPlan(t, db)
@@ -71,7 +71,7 @@ func TestGetPlanByID(t *testing.T) {
 
 func TestGetPlanByIDNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetPlanByID(ctx, 9999)
@@ -82,7 +82,7 @@ func TestGetPlanByIDNotFound(t *testing.T) {
 
 func TestListPlansEmpty(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	plans, err := service.ListPlans(ctx)

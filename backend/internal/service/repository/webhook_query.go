@@ -37,14 +37,17 @@ func (s *WebhookService) MarkWebhookAsConfigured(ctx context.Context, repo *gitp
 	repo.WebhookConfig.NeedsManualSetup = false
 	repo.WebhookConfig.LastError = ""
 
-	return s.db.WithContext(ctx).Save(repo).Error
+	return s.repo.Save(ctx, repo)
 }
 
 // VerifyWebhookSecret verifies that the provided secret matches the repository's webhook secret
 func (s *WebhookService) VerifyWebhookSecret(ctx context.Context, repoID int64, providedSecret string) (bool, error) {
-	var repo gitprovider.Repository
-	if err := s.db.WithContext(ctx).First(&repo, repoID).Error; err != nil {
+	repo, err := s.repo.GetByID(ctx, repoID)
+	if err != nil {
 		return false, err
+	}
+	if repo == nil {
+		return false, ErrRepositoryNotFound
 	}
 
 	if repo.WebhookConfig == nil || repo.WebhookConfig.Secret == "" {
@@ -56,11 +59,12 @@ func (s *WebhookService) VerifyWebhookSecret(ctx context.Context, repoID int64, 
 
 // GetRepositoryByIDWithWebhook retrieves a repository by ID with webhook config
 func (s *WebhookService) GetRepositoryByIDWithWebhook(ctx context.Context, repoID int64) (*gitprovider.Repository, error) {
-	var repo gitprovider.Repository
-	if err := s.db.WithContext(ctx).
-		Where("deleted_at IS NULL").
-		First(&repo, repoID).Error; err != nil {
+	repo, err := s.repo.GetByID(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	if repo == nil {
 		return nil, ErrRepositoryNotFound
 	}
-	return &repo, nil
+	return repo, nil
 }

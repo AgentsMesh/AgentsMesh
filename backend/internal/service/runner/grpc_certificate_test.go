@@ -13,7 +13,7 @@ import (
 
 func TestRenewCertificate(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("returns error for non-existent runner", func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestRenewCertificate(t *testing.T) {
 
 func TestRevokeCertificate(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("revokes certificate", func(t *testing.T) {
@@ -126,7 +126,7 @@ func TestRevokeCertificate(t *testing.T) {
 
 func TestIsCertificateRevoked(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("returns false for non-revoked certificate", func(t *testing.T) {

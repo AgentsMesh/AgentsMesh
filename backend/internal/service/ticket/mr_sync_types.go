@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
-	"gorm.io/gorm"
 )
 
 var (
@@ -15,24 +15,24 @@ var (
 	ErrNoRepositoryLink = errors.New("ticket has no repository linked")
 )
 
-// ticketSlugRegex matches patterns like "AM-123" in branch names
+// ticketSlugRegex matches patterns like "AM-123" in branch names.
 var ticketSlugRegex = regexp.MustCompile(`([A-Z]+-\d+)`)
 
-// MRSyncService handles MR synchronization with git providers
+// MRSyncService handles MR synchronization with git providers.
 type MRSyncService struct {
-	db          *gorm.DB
+	repo        ticket.MRSyncRepository
 	gitProvider git.Provider
 }
 
-// NewMRSyncService creates a new MR sync service
-func NewMRSyncService(db *gorm.DB, gitProvider git.Provider) *MRSyncService {
+// NewMRSyncService creates a new MR sync service.
+func NewMRSyncService(repo ticket.MRSyncRepository, gitProvider git.Provider) *MRSyncService {
 	return &MRSyncService{
-		db:          db,
+		repo:        repo,
 		gitProvider: gitProvider,
 	}
 }
 
-// MRData represents MR data from git provider
+// MRData represents MR data from git provider.
 type MRData struct {
 	IID            int
 	WebURL         string

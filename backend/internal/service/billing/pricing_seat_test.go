@@ -10,7 +10,7 @@ import (
 
 func TestCalculateSeatPurchasePrice(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -52,7 +52,7 @@ func TestCalculateSeatPurchasePrice(t *testing.T) {
 
 func TestCalculateSeatPurchasePrice_BasedPlan(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -67,7 +67,7 @@ func TestCalculateSeatPurchasePrice_BasedPlan(t *testing.T) {
 
 func TestCalculateSeatPurchasePrice_ExceedsMax(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db) // max_users = 50
@@ -94,7 +94,7 @@ func TestCalculateSeatPurchasePrice_ExceedsMax(t *testing.T) {
 
 func TestCalculateSeatPurchasePriceInvalidSeats(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.CalculateSeatPurchasePrice(ctx, 1, 0)
@@ -110,7 +110,7 @@ func TestCalculateSeatPurchasePriceInvalidSeats(t *testing.T) {
 
 func TestCalculateSeatPurchasePriceYearlyCycle(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)

@@ -10,11 +10,11 @@ import (
 // Heartbeat updates runner heartbeat
 func (s *Service) Heartbeat(ctx context.Context, runnerID int64, currentPods int) error {
 	now := time.Now()
-	return s.db.WithContext(ctx).Model(&runner.Runner{}).Where("id = ?", runnerID).Updates(map[string]interface{}{
+	return s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
 		"last_heartbeat": now,
 		"current_pods":   currentPods,
 		"status":         runner.RunnerStatusOnline,
-	}).Error
+	})
 }
 
 // HeartbeatPodInfo represents a pod reported in heartbeat
@@ -26,8 +26,11 @@ type HeartbeatPodInfo struct {
 
 // UpdateHeartbeatWithPods updates runner heartbeat with pod reconciliation
 func (s *Service) UpdateHeartbeatWithPods(ctx context.Context, runnerID int64, pods []HeartbeatPodInfo, version string) error {
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).First(&r, runnerID).Error; err != nil {
+	r, err := s.repo.GetByID(ctx, runnerID)
+	if err != nil {
+		return err
+	}
+	if r == nil {
 		return ErrRunnerNotFound
 	}
 
@@ -41,20 +44,23 @@ func (s *Service) UpdateHeartbeatWithPods(ctx context.Context, runnerID int64, p
 		updates["runner_version"] = version
 	}
 
+	// Reflect updates in the cached runner object so GetRunner returns fresh data.
+	r.CurrentPods = len(pods)
+	r.Status = runner.RunnerStatusOnline
+	r.LastHeartbeat = &now
+
 	// Update active runner in memory
 	s.activeRunners.Store(runnerID, &ActiveRunner{
-		Runner:   &r,
+		Runner:   r,
 		LastPing: now,
 		PodCount: len(pods),
 	})
 
-	return s.db.WithContext(ctx).Model(&r).Updates(updates).Error
+	return s.repo.UpdateFields(ctx, runnerID, updates)
 }
 
 // MarkOfflineRunners marks runners as offline if no heartbeat received
 func (s *Service) MarkOfflineRunners(ctx context.Context, timeout time.Duration) error {
 	threshold := time.Now().Add(-timeout)
-	return s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("status = ? AND last_heartbeat < ?", runner.RunnerStatusOnline, threshold).
-		Update("status", runner.RunnerStatusOffline).Error
+	return s.repo.MarkOfflineRunners(ctx, threshold)
 }

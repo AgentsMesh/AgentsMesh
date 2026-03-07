@@ -8,29 +8,20 @@ import (
 
 // GetPod returns a pod by key
 func (s *PodService) GetPod(ctx context.Context, podKey string) (*agentpod.Pod, error) {
-	var pod agentpod.Pod
-	if err := s.db.WithContext(ctx).
-		Preload("Runner").
-		Preload("AgentType").
-		Preload("Repository").
-		Where("pod_key = ?", podKey).
-		First(&pod).Error; err != nil {
+	pod, err := s.repo.GetByKey(ctx, podKey)
+	if err != nil {
 		return nil, ErrPodNotFound
 	}
-	return &pod, nil
+	return pod, nil
 }
 
 // GetPodByID returns a pod by ID
 func (s *PodService) GetPodByID(ctx context.Context, podID int64) (*agentpod.Pod, error) {
-	var pod agentpod.Pod
-	if err := s.db.WithContext(ctx).
-		Preload("Runner").
-		Preload("AgentType").
-		Preload("Repository").
-		First(&pod, podID).Error; err != nil {
+	pod, err := s.repo.GetByID(ctx, podID)
+	if err != nil {
 		return nil, ErrPodNotFound
 	}
-	return &pod, nil
+	return pod, nil
 }
 
 // GetPodByKey returns a pod by key (implements middleware.PodService)
@@ -55,179 +46,49 @@ func (s *PodService) GetPodInfo(ctx context.Context, podKey string) (map[string]
 
 // GetPodOrganizationAndCreator returns the organization ID and creator ID for a pod
 func (s *PodService) GetPodOrganizationAndCreator(ctx context.Context, podKey string) (orgID, creatorID int64, err error) {
-	var pod agentpod.Pod
-	if err := s.db.WithContext(ctx).
-		Select("organization_id", "created_by_id").
-		Where("pod_key = ?", podKey).
-		First(&pod).Error; err != nil {
+	orgID, creatorID, err = s.repo.GetOrgAndCreator(ctx, podKey)
+	if err != nil {
 		return 0, 0, ErrPodNotFound
 	}
-	return pod.OrganizationID, pod.CreatedByID, nil
+	return orgID, creatorID, nil
 }
 
 // GetPodsByTicket returns pods for a ticket
 func (s *PodService) GetPodsByTicket(ctx context.Context, ticketID int64) ([]*agentpod.Pod, error) {
-	var pods []*agentpod.Pod
-	if err := s.db.WithContext(ctx).
-		Preload("Runner").
-		Preload("AgentType").
-		Preload("Repository").
-		Where("ticket_id = ?", ticketID).
-		Order("created_at DESC").
-		Find(&pods).Error; err != nil {
-		return nil, err
-	}
-	return pods, nil
+	return s.repo.ListByTicket(ctx, ticketID)
 }
 
 // ListPods returns pods for an organization
 func (s *PodService) ListPods(ctx context.Context, orgID int64, statuses []string, limit, offset int) ([]*agentpod.Pod, int64, error) {
-	query := s.db.WithContext(ctx).Model(&agentpod.Pod{}).Where("organization_id = ?", orgID)
-
-	switch len(statuses) {
-	case 0:
-		// No status filter
-	case 1:
-		query = query.Where("status = ?", statuses[0])
-	default:
-		query = query.Where("status IN ?", statuses)
-	}
-
-	var total int64
-	query.Count(&total)
-
-	var pods []*agentpod.Pod
-	if err := query.
-		Preload("Runner").
-		Preload("AgentType").
-		Preload("Ticket").
-		Preload("CreatedBy").
-		Preload("Repository").
-		Order("created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&pods).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return pods, total, nil
+	return s.repo.ListByOrg(ctx, orgID, statuses, limit, offset)
 }
 
 // ListActivePods returns active pods for a runner
 func (s *PodService) ListActivePods(ctx context.Context, runnerID int64) ([]*agentpod.Pod, error) {
-	var pods []*agentpod.Pod
-	if err := s.db.WithContext(ctx).
-		Where("runner_id = ? AND status IN ?", runnerID, []string{
-			agentpod.StatusInitializing,
-			agentpod.StatusRunning,
-			agentpod.StatusPaused,
-			agentpod.StatusDisconnected,
-		}).
-		Find(&pods).Error; err != nil {
-		return nil, err
-	}
-	return pods, nil
+	return s.repo.ListActive(ctx, runnerID)
 }
 
 // ListByRunner returns pods for a runner with optional status filter
 func (s *PodService) ListByRunner(ctx context.Context, runnerID int64, status string) ([]*agentpod.Pod, error) {
-	query := s.db.WithContext(ctx).Where("runner_id = ?", runnerID)
-	if status != "" {
-		query = query.Where("status = ?", status)
-	}
-
-	var pods []*agentpod.Pod
-	if err := query.
-		Preload("Runner").
-		Preload("AgentType").
-		Preload("Repository").
-		Order("created_at DESC").
-		Find(&pods).Error; err != nil {
-		return nil, err
-	}
-	return pods, nil
+	return s.repo.ListByRunner(ctx, runnerID, status)
 }
 
 // ListByTicket returns pods for a ticket
 func (s *PodService) ListByTicket(ctx context.Context, ticketID int64) ([]*agentpod.Pod, error) {
-	var pods []*agentpod.Pod
-	if err := s.db.WithContext(ctx).
-		Preload("Runner").
-		Preload("AgentType").
-		Preload("Repository").
-		Where("ticket_id = ?", ticketID).
-		Order("created_at DESC").
-		Find(&pods).Error; err != nil {
-		return nil, err
-	}
-	return pods, nil
+	return s.repo.ListByTicket(ctx, ticketID)
 }
 
 // ListPodsByRunner returns pods for a runner with pagination and optional status filter
 func (s *PodService) ListPodsByRunner(ctx context.Context, runnerID int64, status string, limit, offset int) ([]*agentpod.Pod, int64, error) {
-	query := s.db.WithContext(ctx).Model(&agentpod.Pod{}).Where("runner_id = ?", runnerID)
-
-	if status != "" {
-		query = query.Where("status = ?", status)
-	}
-
-	var total int64
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	var pods []*agentpod.Pod
-	if err := query.
-		Preload("AgentType").
-		Preload("Ticket").
-		Preload("CreatedBy").
-		Preload("Repository").
-		Order("created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&pods).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return pods, total, nil
+	return s.repo.ListByRunnerPaginated(ctx, runnerID, status, limit, offset)
 }
 
 // GetActivePodBySourcePodKey returns an active pod that was resumed from the given source pod key
-// This is used to prevent multiple pods from resuming the same sandbox simultaneously
-// Returns nil if no active pod is found with the given source_pod_key
 func (s *PodService) GetActivePodBySourcePodKey(ctx context.Context, sourcePodKey string) (*agentpod.Pod, error) {
-	var pod agentpod.Pod
-	// Query for active pods that have the given source_pod_key
-	// Active statuses include: initializing, running, paused, disconnected
-	// Note: disconnected means user closed browser but pod is still running on runner
-	err := s.db.WithContext(ctx).
-		Where("source_pod_key = ?", sourcePodKey).
-		Where("status IN ?", []string{
-			agentpod.StatusInitializing,
-			agentpod.StatusRunning,
-			agentpod.StatusPaused,
-			agentpod.StatusDisconnected,
-		}).
-		First(&pod).Error
-
-	if err != nil {
-		// Not found is expected when no active pod exists
-		return nil, err
-	}
-	return &pod, nil
+	return s.repo.GetActivePodBySourcePodKey(ctx, sourcePodKey)
 }
 
 // FindByBranchAndRepo finds a Pod by branch name and repository ID
-// Used for associating MR webhook events with Pods
-// Returns the most recently created Pod matching the criteria
 func (s *PodService) FindByBranchAndRepo(ctx context.Context, orgID, repoID int64, branchName string) (*agentpod.Pod, error) {
-	var pod agentpod.Pod
-	err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND repository_id = ? AND branch_name = ?", orgID, repoID, branchName).
-		Order("created_at DESC"). // Get the most recent Pod
-		First(&pod).Error
-	if err != nil {
-		return nil, err
-	}
-	return &pod, nil
+	return s.repo.FindByBranchAndRepo(ctx, orgID, repoID, branchName)
 }

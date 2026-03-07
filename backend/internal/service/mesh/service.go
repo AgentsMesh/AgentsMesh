@@ -7,11 +7,9 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/mesh"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	bindingService "github.com/anthropics/agentsmesh/backend/internal/service/binding"
 	channelService "github.com/anthropics/agentsmesh/backend/internal/service/channel"
 	podService "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	"gorm.io/gorm"
 )
 
 var (
@@ -21,7 +19,7 @@ var (
 
 // Service handles Mesh operations
 type Service struct {
-	db             *gorm.DB
+	repo           mesh.MeshRepository
 	podService     *podService.PodService
 	channelService *channelService.Service
 	bindingService *bindingService.Service
@@ -29,13 +27,13 @@ type Service struct {
 
 // NewService creates a new Mesh service
 func NewService(
-	db *gorm.DB,
+	repo mesh.MeshRepository,
 	ps *podService.PodService,
 	cs *channelService.Service,
 	bs *bindingService.Service,
 ) *Service {
 	return &Service{
-		db:             db,
+		repo:           repo,
 		podService:     ps,
 		channelService: cs,
 		bindingService: bs,
@@ -120,10 +118,8 @@ func (s *Service) GetTopology(ctx context.Context, orgID int64) (*mesh.MeshTopol
 	}
 
 	// 4. Get enabled runners for the organization
-	var runners []*runner.Runner
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND is_enabled = ?", orgID, true).
-		Find(&runners).Error; err != nil {
+	runners, err := s.repo.ListEnabledRunners(ctx, orgID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -178,25 +174,19 @@ func (s *Service) podToNode(pod *agentpod.Pod) mesh.MeshNode {
 
 // getChannelPods returns pod keys in a channel
 func (s *Service) getChannelPods(ctx context.Context, channelID int64) []string {
-	var channelPods []mesh.ChannelPod
-	s.db.WithContext(ctx).
-		Where("channel_id = ?", channelID).
-		Find(&channelPods)
-
-	keys := make([]string, len(channelPods))
-	for i, cp := range channelPods {
-		keys[i] = cp.PodKey
+	keys, err := s.repo.GetChannelPodKeys(ctx, channelID)
+	if err != nil {
+		return nil
 	}
 	return keys
 }
 
 // getChannelMessageCount returns the message count for a channel
 func (s *Service) getChannelMessageCount(ctx context.Context, channelID int64) int {
-	var count int64
-	s.db.WithContext(ctx).
-		Model(&channel.Message{}).
-		Where("channel_id = ?", channelID).
-		Count(&count)
+	count, err := s.repo.CountChannelMessages(ctx, channelID)
+	if err != nil {
+		return 0
+	}
 	return int(count)
 }
 
@@ -246,10 +236,8 @@ func (s *Service) GetActivePodsForTicket(ctx context.Context, ticketID int64) ([
 // BatchGetTicketPods returns pods for multiple tickets
 func (s *Service) BatchGetTicketPods(ctx context.Context, ticketIDs []int64) (*mesh.BatchTicketPodsResponse, error) {
 	// Get all pods for the given ticket IDs
-	var pods []*agentpod.Pod
-	if err := s.db.WithContext(ctx).
-		Where("ticket_id IN ?", ticketIDs).
-		Find(&pods).Error; err != nil {
+	pods, err := s.repo.ListPodsByTicketIDs(ctx, ticketIDs)
+	if err != nil {
 		return nil, err
 	}
 
@@ -283,14 +271,12 @@ func (s *Service) JoinChannel(ctx context.Context, channelID int64, podKey strin
 		ChannelID: channelID,
 		PodKey:    podKey,
 	}
-	return s.db.WithContext(ctx).Create(cp).Error
+	return s.repo.CreateChannelPod(ctx, cp)
 }
 
 // LeaveChannel removes a pod from a channel
 func (s *Service) LeaveChannel(ctx context.Context, channelID int64, podKey string) error {
-	return s.db.WithContext(ctx).
-		Where("channel_id = ? AND pod_key = ?", channelID, podKey).
-		Delete(&mesh.ChannelPod{}).Error
+	return s.repo.DeleteChannelPod(ctx, channelID, podKey)
 }
 
 // RecordChannelAccess records access to a channel
@@ -300,5 +286,5 @@ func (s *Service) RecordChannelAccess(ctx context.Context, channelID int64, podK
 		PodKey:    podKey,
 		UserID:    userID,
 	}
-	return s.db.WithContext(ctx).Create(access).Error
+	return s.repo.CreateChannelAccess(ctx, access)
 }

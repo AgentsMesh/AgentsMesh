@@ -6,13 +6,14 @@ import (
 	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 // initializeInfrastructure initializes WebSocket hub, EventBus, and Redis
@@ -77,7 +78,8 @@ func initializeRedisFromHost(cfg *config.Config) *redis.Client {
 
 // initializeRunnerComponents initializes runner-related components
 func initializeRunnerComponents(
-	db *gorm.DB,
+	podRepo agentpod.PodRepository,
+	runnerRepo runnerDomain.RunnerRepository,
 	redisClient *redis.Client,
 	appLogger *logger.Logger,
 	agentTypeSvc *agent.AgentTypeService,
@@ -97,11 +99,11 @@ func initializeRunnerComponents(
 	terminalRouter := runner.NewTerminalRouter(runnerConnMgr, appLogger.Logger)
 
 	// Initialize Heartbeat batcher (batches heartbeat DB writes for high-scale performance)
-	heartbeatBatcher := runner.NewHeartbeatBatcher(redisClient, db, appLogger.Logger)
+	heartbeatBatcher := runner.NewHeartbeatBatcher(redisClient, runnerRepo, appLogger.Logger)
 	heartbeatBatcher.Start()
 
 	// Initialize Pod coordinator (manages pod lifecycle between backend and runner)
-	podCoordinator := runner.NewPodCoordinator(db, runnerConnMgr, terminalRouter, heartbeatBatcher, appLogger.Logger)
+	podCoordinator := runner.NewPodCoordinator(podRepo, runnerRepo, runnerConnMgr, terminalRouter, heartbeatBatcher, appLogger.Logger)
 
 	// Initialize Sandbox query service (handles sandbox status queries to runners)
 	sandboxQuerySvc := runner.NewSandboxQueryService(runnerConnMgr)

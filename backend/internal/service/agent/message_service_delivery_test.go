@@ -10,7 +10,7 @@ import (
 
 func TestMarkRead(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	msg, _ := svc.SendMessage(ctx, "sender", "receiver", "text", agent.MessageContent{}, nil, nil)
@@ -51,7 +51,7 @@ func TestMarkRead(t *testing.T) {
 
 func TestMarkDelivered(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	msg, _ := svc.SendMessage(ctx, "sender", "receiver", "text", agent.MessageContent{}, nil, nil)
@@ -72,7 +72,7 @@ func TestMarkDelivered(t *testing.T) {
 
 func TestMarkAllRead(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Send multiple messages
@@ -97,7 +97,7 @@ func TestMarkAllRead(t *testing.T) {
 
 func TestDeleteMessage(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	msg, _ := svc.SendMessage(ctx, "sender", "receiver", "text", agent.MessageContent{}, nil, nil)
@@ -136,7 +136,7 @@ func TestDeleteMessage(t *testing.T) {
 
 func TestGetPendingRetries(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Create a message with failed status and next_retry_at
@@ -160,7 +160,7 @@ func TestGetPendingRetries(t *testing.T) {
 
 func TestRecordDeliveryFailure(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	t.Run("first failure schedules retry", func(t *testing.T) {
@@ -219,7 +219,7 @@ func TestRecordDeliveryFailure(t *testing.T) {
 
 func TestGetDeadLetters(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Create messages and move to dead letter
@@ -240,7 +240,7 @@ func TestGetDeadLetters(t *testing.T) {
 
 func TestReplayDeadLetter(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Create message and move to dead letter
@@ -286,7 +286,7 @@ func TestReplayDeadLetter(t *testing.T) {
 
 func TestCleanupExpiredMessages(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Create dead letter entries

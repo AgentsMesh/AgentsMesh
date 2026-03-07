@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
@@ -103,14 +102,10 @@ func (s *Service) CheckSeatAvailability(ctx context.Context, orgID int64, reques
 	}
 
 	// Count current members (used seats)
-	var usedSeats int64
-	s.db.WithContext(ctx).Table("organization_members").Where("organization_id = ?", orgID).Count(&usedSeats)
+	usedSeats, _ := s.repo.CountOrgMembers(ctx, orgID)
 
 	// Count pending invitations (reserved seats)
-	var pendingInvitations int64
-	s.db.WithContext(ctx).Table("invitations").
-		Where("organization_id = ? AND accepted_at IS NULL AND expires_at > ?", orgID, time.Now()).
-		Count(&pendingInvitations)
+	pendingInvitations, _ := s.repo.CountPendingInvitations(ctx, orgID)
 
 	// Available seats = purchased seats - used seats - pending invitations
 	availableSeats := sub.SeatCount - int(usedSeats) - int(pendingInvitations)
@@ -128,16 +123,13 @@ func (s *Service) getCurrentResourceCount(ctx context.Context, orgID int64, reso
 
 	switch resource {
 	case "users":
-		err = s.db.WithContext(ctx).Table("organization_members").Where("organization_id = ?", orgID).Count(&count).Error
+		count, err = s.repo.CountOrgMembers(ctx, orgID)
 	case "runners":
-		err = s.db.WithContext(ctx).Table("runners").Where("organization_id = ?", orgID).Count(&count).Error
+		count, err = s.repo.CountRunners(ctx, orgID)
 	case "concurrent_pods":
-		// Count active pods (running or initializing)
-		err = s.db.WithContext(ctx).Table("pods").
-			Where("organization_id = ? AND status IN ?", orgID, []string{"running", "initializing"}).
-			Count(&count).Error
+		count, err = s.repo.CountActivePods(ctx, orgID)
 	case "repositories":
-		err = s.db.WithContext(ctx).Table("repositories").Where("organization_id = ?", orgID).Count(&count).Error
+		count, err = s.repo.CountRepositories(ctx, orgID)
 	case "pod_minutes":
 		usage, err := s.GetUsage(ctx, orgID, billing.UsageTypePodMinutes)
 		return int(usage), err
@@ -164,5 +156,5 @@ func (s *Service) SetCustomQuota(ctx context.Context, orgID int64, resource stri
 
 	sub.CustomQuotas[resource] = limit
 
-	return s.db.WithContext(ctx).Save(sub).Error
+	return s.repo.SaveSubscription(ctx, sub)
 }

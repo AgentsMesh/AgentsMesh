@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 )
@@ -58,7 +56,7 @@ func (s *Service) GenerateGRPCRegistrationToken(ctx context.Context, orgID, user
 		regToken.Labels = runner.Labels(req.Labels)
 	}
 
-	if err := s.db.WithContext(ctx).Create(regToken).Error; err != nil {
+	if err := s.repo.CreateRegistrationToken(ctx, regToken); err != nil {
 		return nil, fmt.Errorf("failed to create registration token: %w", err)
 	}
 
@@ -77,8 +75,11 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 	tokenHash := hex.EncodeToString(tokenHashBytes[:])
 
 	// Find the token first (read-only check)
-	var regToken runner.GRPCRegistrationToken
-	if err := s.db.WithContext(ctx).Where("token_hash = ?", tokenHash).First(&regToken).Error; err != nil {
+	regToken, err := s.repo.GetRegistrationTokenByHash(ctx, tokenHash)
+	if err != nil {
+		return nil, err
+	}
+	if regToken == nil {
 		return nil, ErrInvalidToken
 	}
 
@@ -88,14 +89,11 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 	}
 
 	// Get org slug
-	var org struct {
-		ID   int64
-		Slug string
+	orgSlug, err := s.repo.GetOrgSlug(ctx, regToken.OrganizationID)
+	if err != nil {
+		return nil, err
 	}
-	if err := s.db.WithContext(ctx).Table("organizations").
-		Select("id, slug").
-		Where("id = ?", regToken.OrganizationID).
-		First(&org).Error; err != nil {
+	if orgSlug == "" {
 		return nil, fmt.Errorf("organization not found")
 	}
 
@@ -117,88 +115,50 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 	}
 
 	// Check if runner already exists
-	var existing runner.Runner
-	if err := s.db.WithContext(ctx).Where("organization_id = ? AND node_id = ?", regToken.OrganizationID, nodeID).First(&existing).Error; err == nil {
-		return nil, ErrRunnerAlreadyExists
-	}
-
-	var result *RegisterWithTokenResponse
-
-	// Use transaction for atomic token usage update and runner creation
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Atomic token usage update with condition check
-		// This prevents race condition by checking and updating in a single atomic operation.
-		// Only check used_count < max_uses; single_use tokens already have max_uses = 1.
-		updateResult := tx.Model(&runner.GRPCRegistrationToken{}).
-			Where("id = ? AND used_count < max_uses", regToken.ID).
-			Where("expires_at > ?", time.Now()).
-			Update("used_count", gorm.Expr("used_count + 1"))
-
-		if updateResult.Error != nil {
-			return fmt.Errorf("failed to update token usage: %w", updateResult.Error)
-		}
-
-		if updateResult.RowsAffected == 0 {
-			// Either token exhausted or expired (race condition case)
-			return ErrTokenExhausted
-		}
-
-		// Create runner
-		r := &runner.Runner{
-			OrganizationID:     regToken.OrganizationID,
-			NodeID:             nodeID,
-			Status:             runner.RunnerStatusOffline,
-			MaxConcurrentPods:  5,
-			Visibility:         runner.VisibilityOrganization,
-			RegisteredByUserID: regToken.CreatedBy,
-		}
-
-		if err := tx.Create(r).Error; err != nil {
-			return fmt.Errorf("failed to create runner: %w", err)
-		}
-
-		// Issue certificate (outside transaction as it doesn't need DB)
-		certInfo, err := pkiService.IssueRunnerCertificate(nodeID, org.Slug)
-		if err != nil {
-			return fmt.Errorf("failed to issue certificate: %w", err)
-		}
-
-		// Save certificate
-		cert := &runner.Certificate{
-			RunnerID:     r.ID,
-			SerialNumber: certInfo.SerialNumber,
-			Fingerprint:  certInfo.Fingerprint,
-			IssuedAt:     certInfo.IssuedAt,
-			ExpiresAt:    certInfo.ExpiresAt,
-		}
-		if err := tx.Create(cert).Error; err != nil {
-			return fmt.Errorf("failed to save certificate: %w", err)
-		}
-
-		// Update runner with certificate info
-		if err := tx.Model(&runner.Runner{}).
-			Where("id = ?", r.ID).
-			Updates(map[string]interface{}{
-				"cert_serial_number": certInfo.SerialNumber,
-				"cert_expires_at":    certInfo.ExpiresAt,
-			}).Error; err != nil {
-			return fmt.Errorf("failed to update runner certificate info: %w", err)
-		}
-
-		result = &RegisterWithTokenResponse{
-			RunnerID:      r.ID,
-			Certificate:   string(certInfo.CertPEM),
-			PrivateKey:    string(certInfo.KeyPEM),
-			CACertificate: string(pkiService.CACertPEM()),
-			OrgSlug:       org.Slug,
-		}
-
-		return nil
-	})
-
+	exists, err := s.repo.ExistsByNodeIDAndOrg(ctx, regToken.OrganizationID, nodeID)
 	if err != nil {
 		return nil, err
 	}
+	if exists {
+		return nil, ErrRunnerAlreadyExists
+	}
 
-	return result, nil
+	// Prepare runner and certificate objects
+	r := &runner.Runner{
+		OrganizationID:     regToken.OrganizationID,
+		NodeID:             nodeID,
+		Status:             runner.RunnerStatusOffline,
+		MaxConcurrentPods:  5,
+		Visibility:         runner.VisibilityOrganization,
+		RegisteredByUserID: regToken.CreatedBy,
+	}
+
+	// Atomic: claim token + create runner.
+	// PKI issuance happens inside the callback so that if the token is exhausted,
+	// the PKI call is never reached.
+	cert := &runner.Certificate{}
+	var certPEM, keyPEM []byte
+	if err := s.repo.RegisterWithTokenAtomic(ctx, regToken.ID, r, cert, func() error {
+		certInfo, err := pkiService.IssueRunnerCertificate(nodeID, orgSlug)
+		if err != nil {
+			return fmt.Errorf("failed to issue certificate: %w", err)
+		}
+		cert.SerialNumber = certInfo.SerialNumber
+		cert.Fingerprint = certInfo.Fingerprint
+		cert.IssuedAt = certInfo.IssuedAt
+		cert.ExpiresAt = certInfo.ExpiresAt
+		certPEM = certInfo.CertPEM
+		keyPEM = certInfo.KeyPEM
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return &RegisterWithTokenResponse{
+		RunnerID:      r.ID,
+		Certificate:   string(certPEM),
+		PrivateKey:    string(keyPEM),
+		CACertificate: string(pkiService.CACertPEM()),
+		OrgSlug:       orgSlug,
+	}, nil
 }

@@ -14,7 +14,7 @@ import (
 
 func TestGetBillingOverview(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -43,7 +43,7 @@ func TestGetBillingOverview(t *testing.T) {
 
 func TestGetBillingOverviewNoSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -57,7 +57,7 @@ func TestGetBillingOverviewNoSubscription(t *testing.T) {
 
 func TestGetBillingOverviewWithNilPlan(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	plan := seedTestPlan(t, db)

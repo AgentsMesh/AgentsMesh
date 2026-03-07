@@ -14,7 +14,7 @@ import (
 
 func TestCreateTrialSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -39,7 +39,7 @@ func TestCreateTrialSubscription(t *testing.T) {
 
 func TestCreateTrialSubscriptionDefaultDays(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -59,7 +59,7 @@ func TestCreateTrialSubscriptionDefaultDays(t *testing.T) {
 
 func TestCreateTrialSubscriptionPlanNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.CreateTrialSubscription(ctx, 1, "nonexistent", 30)
@@ -70,7 +70,7 @@ func TestCreateTrialSubscriptionPlanNotFound(t *testing.T) {
 
 func TestActivateTrialSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -95,7 +95,7 @@ func TestActivateTrialSubscription(t *testing.T) {
 
 func TestActivateTrialSubscriptionYearly(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -126,7 +126,7 @@ func TestActivateTrialSubscriptionYearly(t *testing.T) {
 
 func TestActivateTrialSubscriptionAlreadyActive(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -148,7 +148,7 @@ func TestActivateTrialSubscriptionAlreadyActive(t *testing.T) {
 
 func TestActivateTrialSubscriptionNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	err := service.ActivateTrialSubscription(ctx, 999, billing.BillingCycleMonthly)

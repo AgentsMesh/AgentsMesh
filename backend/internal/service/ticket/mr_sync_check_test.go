@@ -15,7 +15,7 @@ func TestCheckPodForNewMR(t *testing.T) {
 
 	t.Run("returns nil for pod without branch", func(t *testing.T) {
 		provider := &MockGitProvider{}
-		service := NewMRSyncService(db, provider)
+		service := newTestMRSyncService(db, provider)
 
 		pod := &agentpod.Pod{
 			ID:             1,
@@ -30,7 +30,7 @@ func TestCheckPodForNewMR(t *testing.T) {
 
 	t.Run("returns nil for pod without ticket", func(t *testing.T) {
 		provider := &MockGitProvider{}
-		service := NewMRSyncService(db, provider)
+		service := newTestMRSyncService(db, provider)
 
 		branchName := "feature/test"
 		pod := &agentpod.Pod{
@@ -46,7 +46,7 @@ func TestCheckPodForNewMR(t *testing.T) {
 	})
 
 	t.Run("returns error when git provider is nil", func(t *testing.T) {
-		service := NewMRSyncService(db, nil)
+		service := newTestMRSyncService(db, nil)
 
 		branchName := "feature/test"
 		ticketID := int64(1)
@@ -68,7 +68,7 @@ func TestBatchCheckPods(t *testing.T) {
 	db := setupMRSyncTestDB(t)
 
 	t.Run("returns error when git provider is nil", func(t *testing.T) {
-		service := NewMRSyncService(db, nil)
+		service := newTestMRSyncService(db, nil)
 
 		_, err := service.BatchCheckPods(ctx)
 		assert.Error(t, err)
@@ -77,7 +77,7 @@ func TestBatchCheckPods(t *testing.T) {
 
 	t.Run("returns empty when no matching pods", func(t *testing.T) {
 		provider := &MockGitProvider{}
-		service := NewMRSyncService(db, provider)
+		service := newTestMRSyncService(db, provider)
 
 		mrs, err := service.BatchCheckPods(ctx)
 		require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestBatchSyncMRStatus(t *testing.T) {
 	db := setupMRSyncTestDB(t)
 
 	t.Run("returns error when git provider is nil", func(t *testing.T) {
-		service := NewMRSyncService(db, nil)
+		service := newTestMRSyncService(db, nil)
 
 		_, err := service.BatchSyncMRStatus(ctx)
 		assert.Error(t, err)
@@ -99,7 +99,7 @@ func TestBatchSyncMRStatus(t *testing.T) {
 
 	t.Run("returns empty when no open MRs", func(t *testing.T) {
 		provider := &MockGitProvider{}
-		service := NewMRSyncService(db, provider)
+		service := newTestMRSyncService(db, provider)
 
 		mrs, err := service.BatchSyncMRStatus(ctx)
 		require.NoError(t, err)

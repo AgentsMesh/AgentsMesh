@@ -11,7 +11,7 @@ import (
 // constraint on slug but generated numbers per-org, causing conflicts.
 func TestCreateTicket_SlugScopedToOrg(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Create ticket in org 1
@@ -72,7 +72,7 @@ func TestCreateTicket_PrefixScopedToOrg(t *testing.T) {
 	db.Exec(`INSERT INTO repositories (id, ticket_prefix) VALUES (1, 'PROJ')`)
 	db.Exec(`INSERT INTO repositories (id, ticket_prefix) VALUES (2, 'PROJ')`)
 
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	repoID1 := int64(1)
@@ -135,7 +135,7 @@ func TestCreateTicket_MixedPrefixesInSameOrg(t *testing.T) {
 	db.Exec(`INSERT INTO repositories (id, ticket_prefix) VALUES (1, 'PROJ')`)
 	db.Exec(`INSERT INTO repositories (id, ticket_prefix) VALUES (2, 'BUG')`)
 
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	repoID1 := int64(1)

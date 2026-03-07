@@ -4,12 +4,16 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
-// setupPodCoordinatorTestDB sets up database with pods table for testing
-func setupPodCoordinatorTestDB(t *testing.T) *gorm.DB {
+// setupPodCoordinatorTestDB sets up database with pods table for testing.
+// Returns gorm.DB (for raw SQL in tests) plus repository interfaces.
+func setupPodCoordinatorTestDB(t *testing.T) (*gorm.DB, agentpod.PodRepository, runnerDomain.RunnerRepository) {
 	db := setupTestDB(t)
 
 	// Create tables for pods
@@ -32,11 +36,13 @@ func setupPodCoordinatorTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to create pods table: %v", err)
 	}
 
-	return db
+	podRepo := infra.NewPodRepository(db)
+	runnerRepo := infra.NewRunnerRepository(db)
+	return db, podRepo, runnerRepo
 }
 
 // setupPodCoordinatorDeps sets up dependencies for PodCoordinator testing
-func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, *TerminalRouter, *HeartbeatBatcher) {
+func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, *TerminalRouter, *HeartbeatBatcher, agentpod.PodRepository, runnerDomain.RunnerRepository) {
 	mr, err := miniredis.Run()
 	if err != nil {
 		t.Fatalf("failed to start miniredis: %v", err)
@@ -53,11 +59,11 @@ func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, 
 	})
 
 	logger := newTestLogger()
-	db := setupPodCoordinatorTestDB(t)
+	db, podRepo, runnerRepo := setupPodCoordinatorTestDB(t)
 
 	cm := NewRunnerConnectionManager(logger)
 	tr := NewTerminalRouter(cm, logger)
-	hb := NewHeartbeatBatcher(redisClient, db, logger)
+	hb := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 
-	return db, cm, tr, hb
+	return db, cm, tr, hb, podRepo, runnerRepo
 }

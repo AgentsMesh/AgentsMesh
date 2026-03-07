@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"gorm.io/gorm"
 )
 
 var (
@@ -14,37 +13,34 @@ var (
 
 // SettingsService handles user AgentPod settings operations
 type SettingsService struct {
-	db *gorm.DB
+	repo agentpod.SettingsRepository
 }
 
 // NewSettingsService creates a new settings service
-func NewSettingsService(db *gorm.DB) *SettingsService {
-	return &SettingsService{db: db}
+func NewSettingsService(repo agentpod.SettingsRepository) *SettingsService {
+	return &SettingsService{repo: repo}
 }
 
 // GetUserSettings returns the AgentPod settings for a user
 // Creates default settings if none exist
 func (s *SettingsService) GetUserSettings(ctx context.Context, userID int64) (*agentpod.UserAgentPodSettings, error) {
-	var settings agentpod.UserAgentPodSettings
-	err := s.db.WithContext(ctx).
-		Where("user_id = ?", userID).
-		First(&settings).Error
-
+	settings, err := s.repo.GetByUserID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Create default settings
-			settings = agentpod.UserAgentPodSettings{
-				UserID: userID,
-			}
-			if err := s.db.WithContext(ctx).Create(&settings).Error; err != nil {
-				return nil, err
-			}
-			return &settings, nil
-		}
 		return nil, err
 	}
 
-	return &settings, nil
+	if settings == nil {
+		// Create default settings
+		settings = &agentpod.UserAgentPodSettings{
+			UserID: userID,
+		}
+		if err := s.repo.Create(ctx, settings); err != nil {
+			return nil, err
+		}
+		return settings, nil
+	}
+
+	return settings, nil
 }
 
 // UpdateUserSettings updates the AgentPod settings for a user
@@ -71,7 +67,7 @@ func (s *SettingsService) UpdateUserSettings(ctx context.Context, userID int64, 
 		settings.TerminalTheme = updates.TerminalTheme
 	}
 
-	if err := s.db.WithContext(ctx).Save(settings).Error; err != nil {
+	if err := s.repo.Save(ctx, settings); err != nil {
 		return nil, err
 	}
 
@@ -80,9 +76,7 @@ func (s *SettingsService) UpdateUserSettings(ctx context.Context, userID int64, 
 
 // DeleteUserSettings removes AgentPod settings for a user
 func (s *SettingsService) DeleteUserSettings(ctx context.Context, userID int64) error {
-	return s.db.WithContext(ctx).
-		Where("user_id = ?", userID).
-		Delete(&agentpod.UserAgentPodSettings{}).Error
+	return s.repo.DeleteByUserID(ctx, userID)
 }
 
 // UserSettingsUpdate represents partial updates to user settings

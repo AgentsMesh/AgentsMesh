@@ -7,7 +7,7 @@ import (
 
 func TestListChannels(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	for i := 0; i < 5; i++ {
@@ -43,7 +43,7 @@ func TestListChannels(t *testing.T) {
 
 func TestListChannels_FilterByRepositoryID(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	repoA := intPtr(10)
@@ -89,7 +89,7 @@ func TestListChannels_FilterByRepositoryID(t *testing.T) {
 
 func TestListChannels_FilterByTicketID(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	ticketA := intPtr(100)
@@ -126,7 +126,7 @@ func TestListChannels_FilterByTicketID(t *testing.T) {
 
 func TestListChannels_CombinedFilters(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	repo := intPtr(10)
@@ -153,7 +153,7 @@ func TestListChannels_CombinedFilters(t *testing.T) {
 
 func TestUpdateChannel(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	created, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "original"})
@@ -192,7 +192,7 @@ func TestUpdateChannel(t *testing.T) {
 
 func TestArchiveUnarchiveChannel(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewService(db)
+	svc := newTestService(db)
 	ctx := context.Background()
 
 	created, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "archive-test"})

@@ -6,25 +6,23 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
-	"gorm.io/gorm"
 )
 
 var (
-	ErrPodNotFound             = errors.New("pod not found")
-	ErrNoAvailableRunner       = errors.New("no available runner")
-	ErrPodTerminated           = errors.New("pod already terminated")
-	ErrRunnerNotFound          = errors.New("runner not found")
-	ErrRunnerOffline           = errors.New("runner is offline")
-	ErrSandboxAlreadyResumed   = errors.New("sandbox has already been resumed by another active pod")
+	ErrPodNotFound           = errors.New("pod not found")
+	ErrNoAvailableRunner     = errors.New("no available runner")
+	ErrPodTerminated         = errors.New("pod already terminated")
+	ErrRunnerNotFound        = errors.New("runner not found")
+	ErrRunnerOffline         = errors.New("runner is offline")
+	// ErrSandboxAlreadyResumed is re-exported from domain for backward compatibility.
+	ErrSandboxAlreadyResumed = agentpod.ErrSandboxAlreadyResumed
 )
 
 // PodService handles pod operations
 type PodService struct {
-	db             *gorm.DB
+	repo           agentpod.PodRepository
 	eventPublisher EventPublisher
 }
 
@@ -34,8 +32,8 @@ func (s *PodService) SetEventPublisher(publisher EventPublisher) {
 }
 
 // NewPodService creates a new pod service
-func NewPodService(db *gorm.DB) *PodService {
-	return &PodService{db: db}
+func NewPodService(repo agentpod.PodRepository) *PodService {
+	return &PodService{repo: repo}
 }
 
 // CreatePodRequest represents a pod creation request
@@ -118,12 +116,7 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 		CredentialProfileID: req.CredentialProfileID,
 	}
 
-	if err := s.db.WithContext(ctx).Create(pod).Error; err != nil {
-		// Check for unique constraint violation on source_pod_key
-		// This happens when two resume requests race for the same sandbox
-		if isUniqueConstraintViolation(err, "idx_pods_source_pod_key_active_unique") {
-			return nil, ErrSandboxAlreadyResumed
-		}
+	if err := s.repo.Create(ctx, pod); err != nil {
 		return nil, err
 	}
 
@@ -140,27 +133,23 @@ func (s *PodService) CreatePodForTicket(ctx context.Context, req *CreatePodReque
 		return nil, errors.New("ticket_id is required")
 	}
 
-	var t ticket.Ticket
-	if err := s.db.WithContext(ctx).First(&t, *req.TicketID).Error; err != nil {
+	slug, title, err := s.repo.GetTicketByID(ctx, *req.TicketID)
+	if err != nil {
 		return nil, fmt.Errorf("ticket not found: %w", err)
 	}
 
 	if req.InitialPrompt == "" {
-		req.InitialPrompt = BuildTicketPrompt(&t)
+		req.InitialPrompt = fmt.Sprintf("Working on ticket: %s\nTitle: %s", slug, title)
 	}
 
 	return s.CreatePod(ctx, req)
 }
 
-// isUniqueConstraintViolation checks if the error is a PostgreSQL unique constraint violation
-// for the specified constraint/index name
-func isUniqueConstraintViolation(err error, constraintName string) bool {
-	if err == nil {
-		return false
+// buildTicketPromptFromFields builds a ticket prompt from title and description fields
+func buildTicketPromptFromFields(title, description string) string {
+	prompt := fmt.Sprintf("Work on ticket: %s", title)
+	if description != "" {
+		prompt += fmt.Sprintf("\n\nDescription: %s", description)
 	}
-	errStr := err.Error()
-	// PostgreSQL unique violation error contains "duplicate key value violates unique constraint"
-	// and the constraint name
-	return strings.Contains(errStr, "duplicate key value") &&
-		strings.Contains(errStr, constraintName)
+	return prompt
 }

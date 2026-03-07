@@ -70,36 +70,30 @@ type RegisterWithTokenResponse struct {
 
 // GetRunnerByNodeID returns a runner by node_id.
 func (s *Service) GetRunnerByNodeID(ctx context.Context, nodeID string) (*runner.Runner, error) {
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).Where("node_id = ?", nodeID).First(&r).Error; err != nil {
+	r, err := s.repo.GetByNodeID(ctx, nodeID)
+	if err != nil {
 		return nil, err
 	}
-	return &r, nil
+	if r == nil {
+		return nil, ErrRunnerNotFound
+	}
+	return r, nil
 }
 
 // ListGRPCRegistrationTokens lists all gRPC registration tokens for an organization.
 func (s *Service) ListGRPCRegistrationTokens(ctx context.Context, orgID int64) ([]runner.GRPCRegistrationToken, error) {
-	var tokens []runner.GRPCRegistrationToken
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ?", orgID).
-		Order("created_at DESC").
-		Find(&tokens).Error; err != nil {
-		return nil, err
-	}
-	return tokens, nil
+	return s.repo.ListRegistrationTokensByOrg(ctx, orgID)
 }
 
 // DeleteGRPCRegistrationToken deletes a gRPC registration token.
 // Only deletes if the token belongs to the specified organization (prevents cross-org deletion).
 // Returns ErrGRPCTokenNotFound if the token doesn't exist or belongs to a different organization.
 func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID, orgID int64) error {
-	result := s.db.WithContext(ctx).
-		Where("id = ? AND organization_id = ?", tokenID, orgID).
-		Delete(&runner.GRPCRegistrationToken{})
-	if result.Error != nil {
-		return result.Error
+	rowsAffected, err := s.repo.DeleteRegistrationToken(ctx, tokenID, orgID)
+	if err != nil {
+		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrGRPCTokenNotFound
 	}
 	return nil
@@ -107,7 +101,5 @@ func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID, orgI
 
 // CleanupExpiredPendingAuths removes expired pending auth records.
 func (s *Service) CleanupExpiredPendingAuths(ctx context.Context) error {
-	return s.db.WithContext(ctx).
-		Where("expires_at < ?", time.Now()).
-		Delete(&runner.PendingAuth{}).Error
+	return s.repo.CleanupExpiredPendingAuths(ctx)
 }

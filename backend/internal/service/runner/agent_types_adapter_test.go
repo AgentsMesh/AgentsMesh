@@ -3,6 +3,7 @@ package runner
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +45,7 @@ func setupAgentTestDB(t *testing.T) *gorm.DB {
 
 func TestNewAgentTypeServiceAdapter(t *testing.T) {
 	db := setupAgentTestDB(t)
-	agentTypeSvc := agent.NewAgentTypeService(db)
+	agentTypeSvc := agent.NewAgentTypeService(infra.NewAgentTypeRepository(db))
 
 	adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
@@ -55,7 +56,7 @@ func TestNewAgentTypeServiceAdapter(t *testing.T) {
 func TestAgentTypeServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 	t.Run("returns empty list when no agent types", func(t *testing.T) {
 		db := setupAgentTestDB(t)
-		agentTypeSvc := agent.NewAgentTypeService(db)
+		agentTypeSvc := agent.NewAgentTypeService(infra.NewAgentTypeRepository(db))
 		adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 		result := adapter.GetAgentTypesForRunner()
@@ -72,7 +73,7 @@ func TestAgentTypeServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 		db.Exec(`INSERT INTO agent_types (slug, name, launch_command, executable, is_active)
 			VALUES ('aider', 'Aider', 'aider', 'aider', TRUE)`)
 
-		agentTypeSvc := agent.NewAgentTypeService(db)
+		agentTypeSvc := agent.NewAgentTypeService(infra.NewAgentTypeRepository(db))
 		adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 		result := adapter.GetAgentTypesForRunner()
@@ -93,7 +94,7 @@ func TestAgentTypeServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 		db.Exec(`INSERT INTO agent_types (slug, name, launch_command, executable, is_active)
 			VALUES ('disabled-agent', 'Disabled', 'disabled', 'disabled', FALSE)`)
 
-		agentTypeSvc := agent.NewAgentTypeService(db)
+		agentTypeSvc := agent.NewAgentTypeService(infra.NewAgentTypeRepository(db))
 		adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 		result := adapter.GetAgentTypesForRunner()
@@ -109,7 +110,7 @@ func TestAgentTypeServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 		db.Exec(`INSERT INTO agent_types (slug, name, launch_command, is_active)
 			VALUES ('no-exec', 'No Executable', 'custom-cmd', TRUE)`)
 
-		agentTypeSvc := agent.NewAgentTypeService(db)
+		agentTypeSvc := agent.NewAgentTypeService(infra.NewAgentTypeRepository(db))
 		adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 		result := adapter.GetAgentTypesForRunner()
@@ -122,7 +123,7 @@ func TestAgentTypeServiceAdapter_GetAgentTypesForRunner(t *testing.T) {
 
 func TestAgentTypeServiceAdapter_ImplementsInterface(t *testing.T) {
 	db := setupAgentTestDB(t)
-	agentTypeSvc := agent.NewAgentTypeService(db)
+	agentTypeSvc := agent.NewAgentTypeService(infra.NewAgentTypeRepository(db))
 	adapter := NewAgentTypeServiceAdapter(agentTypeSvc)
 
 	// Verify it implements AgentTypesProvider interface

@@ -3,6 +3,7 @@ package v1
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/gin-gonic/gin"
@@ -127,7 +128,7 @@ func seedBillingTestData(db *gorm.DB) {
 
 func setupBillingHandler(t *testing.T) (*BillingHandler, *gorm.DB, *gin.Engine) {
 	db := setupBillingTestDB(t)
-	billingSvc := billing.NewService(db, "")
+	billingSvc := billing.NewService(infra.NewBillingRepository(db), "")
 	handler := NewBillingHandler(billingSvc)
 
 	gin.SetMode(gin.TestMode)

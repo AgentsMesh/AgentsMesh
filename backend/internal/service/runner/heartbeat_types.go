@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
+	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 const (
@@ -26,9 +26,9 @@ const (
 // HeartbeatBatcher aggregates heartbeat updates and flushes them to the database in batches
 // This reduces database write pressure from 3,333/sec (100K runners / 30s) to ~667/sec (5s batch)
 type HeartbeatBatcher struct {
-	redis  *redis.Client
-	db     *gorm.DB
-	logger *slog.Logger
+	redis      *redis.Client
+	runnerRepo runnerDomain.RunnerRepository
+	logger     *slog.Logger
 
 	buffer   map[int64]*HeartbeatItem
 	mu       sync.Mutex
@@ -58,13 +58,13 @@ type RedisRunnerStatus struct {
 }
 
 // NewHeartbeatBatcher creates a new heartbeat batcher
-func NewHeartbeatBatcher(redisClient *redis.Client, db *gorm.DB, logger *slog.Logger) *HeartbeatBatcher {
+func NewHeartbeatBatcher(redisClient *redis.Client, runnerRepo runnerDomain.RunnerRepository, logger *slog.Logger) *HeartbeatBatcher {
 	return &HeartbeatBatcher{
-		redis:    redisClient,
-		db:       db,
-		logger:   logger,
-		buffer:   make(map[int64]*HeartbeatItem),
-		interval: DefaultFlushInterval,
+		redis:      redisClient,
+		runnerRepo: runnerRepo,
+		logger:     logger,
+		buffer:     make(map[int64]*HeartbeatItem),
+		interval:   DefaultFlushInterval,
 		// stopCh and doneCh are created in Start() to allow restart
 	}
 }

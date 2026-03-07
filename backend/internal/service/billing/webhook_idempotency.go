@@ -2,7 +2,6 @@ package billing
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -15,7 +14,7 @@ import (
 // ===========================================
 
 // ErrWebhookAlreadyProcessed is returned when a webhook event has already been processed
-var ErrWebhookAlreadyProcessed = errors.New("webhook event already processed")
+var ErrWebhookAlreadyProcessed = fmt.Errorf("webhook event already processed")
 
 // CheckAndMarkWebhookProcessed checks if a webhook event has already been processed.
 // If not, it marks it as processed and returns nil.
@@ -29,7 +28,7 @@ func (s *Service) CheckAndMarkWebhookProcessed(ctx context.Context, eventID, pro
 	}
 
 	// Try to insert - if duplicate, will fail due to unique constraint
-	err := s.db.WithContext(ctx).Create(webhookEvent).Error
+	err := s.repo.CreateWebhookEvent(ctx, webhookEvent)
 	if err != nil {
 		// Check if it's a duplicate key error
 		if isDuplicateKeyError(err) {
@@ -57,7 +56,5 @@ func isDuplicateKeyError(err error) bool {
 // allowing it to be reprocessed. This is used to roll back the mark when the
 // handler fails after the mark was written.
 func (s *Service) DeleteWebhookProcessedMark(ctx context.Context, eventID, provider string) {
-	s.db.WithContext(ctx).
-		Where("event_id = ? AND provider = ?", eventID, provider).
-		Delete(&billing.WebhookEvent{})
+	s.repo.DeleteWebhookEvent(ctx, eventID, provider)
 }

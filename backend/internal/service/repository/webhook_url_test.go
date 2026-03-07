@@ -7,6 +7,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 // ===========================================
@@ -20,7 +21,7 @@ func TestBuildWebhookURL(t *testing.T) {
 	cfg.PrimaryDomain = "app.example.com"
 	cfg.UseHTTPS = true
 
-	svc := NewWebhookService(db, cfg, nil, nil)
+	svc := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 
 	repo := &gitprovider.Repository{
 		ID:           123,
@@ -41,7 +42,7 @@ func TestBuildWebhookURL_HTTP(t *testing.T) {
 	cfg.PrimaryDomain = "localhost:8080"
 	cfg.UseHTTPS = false
 
-	svc := NewWebhookService(db, cfg, nil, nil)
+	svc := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 
 	repo := &gitprovider.Repository{
 		ID:           456,
@@ -62,7 +63,7 @@ func TestBuildWebhookURL_DifferentProviders(t *testing.T) {
 	cfg.PrimaryDomain = "app.example.com"
 	cfg.UseHTTPS = true
 
-	svc := NewWebhookService(db, cfg, nil, nil)
+	svc := NewWebhookService(infra.NewGitProviderRepository(db), cfg, nil, nil)
 
 	tests := []struct {
 		providerType string

@@ -7,20 +7,20 @@ import (
 )
 
 func TestNewService(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
 	}
-	if service.db != db {
-		t.Error("expected service.db to be the provided db")
+	if service.repo == nil {
+		t.Error("expected service.repo to be set")
 	}
 }
 
 func TestPodToNode(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 
 	ticketID := int64(100)
 	repoID := int64(200)
@@ -59,8 +59,8 @@ func TestPodToNode(t *testing.T) {
 }
 
 func TestPodToNode_NilValues(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 
 	// Test with minimal pod (nil optional fields)
 	pod := &agentpod.Pod{
@@ -96,8 +96,8 @@ func TestErrorVariables(t *testing.T) {
 }
 
 func TestServiceFields(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 
 	// Verify nil services are accepted
 	if service.podService != nil {

@@ -6,8 +6,8 @@ import (
 )
 
 func TestGetChannelPods(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	// Add some channel pods
@@ -20,8 +20,8 @@ func TestGetChannelPods(t *testing.T) {
 }
 
 func TestGetChannelMessageCount(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	// Add some messages
@@ -34,8 +34,8 @@ func TestGetChannelMessageCount(t *testing.T) {
 }
 
 func TestJoinChannel(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	err := service.JoinChannel(ctx, 1, "test-pod")
@@ -54,8 +54,8 @@ func TestJoinChannel(t *testing.T) {
 }
 
 func TestLeaveChannel(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	// Join first
@@ -76,8 +76,8 @@ func TestLeaveChannel(t *testing.T) {
 }
 
 func TestRecordChannelAccess(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	podKey := "test-pod"
@@ -99,8 +99,8 @@ func TestRecordChannelAccess(t *testing.T) {
 }
 
 func TestGetChannelPods_Empty(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	keys := service.getChannelPods(ctx, 999)
@@ -110,8 +110,8 @@ func TestGetChannelPods_Empty(t *testing.T) {
 }
 
 func TestGetChannelMessageCount_Empty(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	count := service.getChannelMessageCount(ctx, 999)
@@ -121,8 +121,8 @@ func TestGetChannelMessageCount_Empty(t *testing.T) {
 }
 
 func TestJoinChannel_Duplicate(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	// Join twice - should create two records (no unique constraint in test)
@@ -140,8 +140,8 @@ func TestJoinChannel_Duplicate(t *testing.T) {
 }
 
 func TestLeaveChannel_NotExists(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, _ := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	// Leave a channel we never joined - should not error
@@ -152,8 +152,8 @@ func TestLeaveChannel_NotExists(t *testing.T) {
 }
 
 func TestRecordChannelAccess_NilPod(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	userID := int64(1)
@@ -173,8 +173,8 @@ func TestRecordChannelAccess_NilPod(t *testing.T) {
 }
 
 func TestRecordChannelAccess_NilUser(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewService(db, nil, nil, nil)
+	repo, db := setupTestRepo(t)
+	service := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	podKey := "pod-key"

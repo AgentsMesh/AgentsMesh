@@ -12,35 +12,37 @@ import (
 // GetByNodeID returns a runner by its node ID.
 // This is used by gRPC server for mTLS authentication.
 func (s *Service) GetByNodeID(ctx context.Context, nodeID string) (*runner.Runner, error) {
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).Where("node_id = ?", nodeID).First(&r).Error; err != nil {
+	r, err := s.repo.GetByNodeID(ctx, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
 		return nil, ErrRunnerNotFound
 	}
-	return &r, nil
+	return r, nil
 }
 
 // GetByNodeIDAndOrgID returns a runner by node ID within a specific organization.
 // This prevents cross-org runner mismatch when the same node_id exists in multiple orgs.
 func (s *Service) GetByNodeIDAndOrgID(ctx context.Context, nodeID string, orgID int64) (*runner.Runner, error) {
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).
-		Where("node_id = ? AND organization_id = ?", nodeID, orgID).
-		First(&r).Error; err != nil {
+	r, err := s.repo.GetByNodeIDAndOrgID(ctx, nodeID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
 		return nil, ErrRunnerNotFound
 	}
-	return &r, nil
+	return r, nil
 }
 
 // UpdateLastSeen updates the last heartbeat time for a runner.
 // This is called when gRPC server receives messages from a runner.
 func (s *Service) UpdateLastSeen(ctx context.Context, runnerID int64) error {
 	now := time.Now()
-	return s.db.WithContext(ctx).Model(&runner.Runner{}).
-		Where("id = ?", runnerID).
-		Updates(map[string]interface{}{
-			"last_heartbeat": now,
-			"status":         runner.RunnerStatusOnline,
-		}).Error
+	return s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
+		"last_heartbeat": now,
+		"status":         runner.RunnerStatusOnline,
+	})
 }
 
 // GetRunner returns a runner by ID
@@ -54,47 +56,35 @@ func (s *Service) GetRunner(ctx context.Context, runnerID int64) (*runner.Runner
 	}
 
 	// Fall back to database
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).First(&r, runnerID).Error; err != nil {
+	r, err := s.repo.GetByID(ctx, runnerID)
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
 		return nil, ErrRunnerNotFound
 	}
-	return &r, nil
+	return r, nil
 }
 
 // ListRunners returns runners for an organization, filtered by visibility.
 // Organization-visible runners are returned for all users; private runners only for the registrant.
 func (s *Service) ListRunners(ctx context.Context, orgID int64, userID int64) ([]*runner.Runner, error) {
-	var runners []*runner.Runner
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND (visibility = 'organization' OR (visibility = 'private' AND registered_by_user_id = ?))", orgID, userID).
-		Find(&runners).Error; err != nil {
-		return nil, err
-	}
-	return runners, nil
+	return s.repo.ListByOrg(ctx, orgID, userID)
 }
 
 // ListAvailableRunners returns online runners that can accept pods, filtered by visibility.
 func (s *Service) ListAvailableRunners(ctx context.Context, orgID int64, userID int64) ([]*runner.Runner, error) {
-	var runners []*runner.Runner
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND status = ? AND is_enabled = ? AND current_pods < max_concurrent_pods AND (visibility = 'organization' OR (visibility = 'private' AND registered_by_user_id = ?))",
-			orgID, runner.RunnerStatusOnline, true, userID).
-		Find(&runners).Error; err != nil {
-		return nil, err
-	}
-	return runners, nil
+	return s.repo.ListAvailable(ctx, orgID, userID)
 }
 
 // SelectAvailableRunner selects an available runner using least-pods strategy, filtered by visibility.
 // Prioritizes runners from activeRunners cache for better performance.
 func (s *Service) SelectAvailableRunner(ctx context.Context, orgID int64, userID int64) (*runner.Runner, error) {
 	// First, try to find available runners from cache
-	// This avoids DB round-trip for most cases when runners are actively connected
 	var cachedRunners []*ActiveRunner
 	s.activeRunners.Range(func(key, value interface{}) bool {
 		if ar, ok := value.(*ActiveRunner); ok && ar.Runner != nil {
 			r := ar.Runner
-			// Check if runner matches criteria (including visibility)
 			if r.OrganizationID == orgID &&
 				r.Status == runner.RunnerStatusOnline &&
 				r.IsEnabled &&
@@ -108,7 +98,6 @@ func (s *Service) SelectAvailableRunner(ctx context.Context, orgID int64, userID
 	})
 
 	if len(cachedRunners) > 0 {
-		// Sort by pod count (least loaded first)
 		sort.Slice(cachedRunners, func(i, j int) bool {
 			return cachedRunners[i].PodCount < cachedRunners[j].PodCount
 		})
@@ -116,20 +105,13 @@ func (s *Service) SelectAvailableRunner(ctx context.Context, orgID int64, userID
 	}
 
 	// Fall back to database query if cache miss
-	var runners []*runner.Runner
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND status = ? AND is_enabled = ? AND current_pods < max_concurrent_pods AND (visibility = 'organization' OR (visibility = 'private' AND registered_by_user_id = ?))",
-			orgID, runner.RunnerStatusOnline, true, userID).
-		Order("current_pods ASC").
-		Find(&runners).Error; err != nil {
+	runners, err := s.repo.ListAvailableOrdered(ctx, orgID, userID)
+	if err != nil {
 		return nil, err
 	}
-
 	if len(runners) == 0 {
 		return nil, ErrRunnerOffline
 	}
-
-	// Return the runner with least pods
 	return runners[0], nil
 }
 
@@ -155,7 +137,6 @@ func (s *Service) SelectAvailableRunnerForAgent(ctx context.Context, orgID int64
 	})
 
 	if len(cachedRunners) > 0 {
-		// Sort by pod count (least loaded first)
 		sort.Slice(cachedRunners, func(i, j int) bool {
 			return cachedRunners[i].PodCount < cachedRunners[j].PodCount
 		})
@@ -168,19 +149,13 @@ func (s *Service) SelectAvailableRunnerForAgent(ctx context.Context, orgID int64
 		return nil, err
 	}
 
-	var runners []*runner.Runner
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND status = ? AND is_enabled = ? AND current_pods < max_concurrent_pods AND available_agents @> ? AND (visibility = 'organization' OR (visibility = 'private' AND registered_by_user_id = ?))",
-			orgID, runner.RunnerStatusOnline, true, string(agentJSON), userID).
-		Order("current_pods ASC").
-		Find(&runners).Error; err != nil {
+	runners, err := s.repo.ListAvailableForAgent(ctx, orgID, userID, string(agentJSON))
+	if err != nil {
 		return nil, err
 	}
-
 	if len(runners) == 0 {
 		return nil, ErrNoRunnerForAgent
 	}
-
 	return runners[0], nil
 }
 
@@ -194,8 +169,11 @@ type RunnerUpdateInput struct {
 
 // UpdateRunner updates a runner's configuration
 func (s *Service) UpdateRunner(ctx context.Context, runnerID int64, input RunnerUpdateInput) (*runner.Runner, error) {
-	var r runner.Runner
-	if err := s.db.WithContext(ctx).First(&r, runnerID).Error; err != nil {
+	r, err := s.repo.GetByID(ctx, runnerID)
+	if err != nil {
+		return nil, err
+	}
+	if r == nil {
 		return nil, ErrRunnerNotFound
 	}
 
@@ -217,15 +195,15 @@ func (s *Service) UpdateRunner(ctx context.Context, runnerID int64, input Runner
 	}
 
 	if len(updates) > 0 {
-		if err := s.db.WithContext(ctx).Model(&r).Updates(updates).Error; err != nil {
+		if err := s.repo.UpdateFields(ctx, runnerID, updates); err != nil {
 			return nil, err
 		}
 	}
 
 	// Reload the runner
-	if err := s.db.WithContext(ctx).First(&r, runnerID).Error; err != nil {
+	r, err = s.repo.GetByID(ctx, runnerID)
+	if err != nil {
 		return nil, err
 	}
-
-	return &r, nil
+	return r, nil
 }

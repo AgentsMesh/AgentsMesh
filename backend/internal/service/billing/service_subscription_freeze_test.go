@@ -13,7 +13,7 @@ import (
 
 func TestFreezeSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -35,7 +35,7 @@ func TestFreezeSubscription(t *testing.T) {
 
 func TestUnfreezeSubscriptionMonthly(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -58,7 +58,7 @@ func TestUnfreezeSubscriptionMonthly(t *testing.T) {
 
 func TestUnfreezeSubscriptionYearly(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -81,7 +81,7 @@ func TestUnfreezeSubscriptionYearly(t *testing.T) {
 
 func TestUnfreezeSubscriptionNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	err := service.UnfreezeSubscription(ctx, 999, billing.BillingCycleMonthly)

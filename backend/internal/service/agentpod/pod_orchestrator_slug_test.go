@@ -21,7 +21,7 @@ func TestSlugResolution_ResolvesTicketIDFromSlug(t *testing.T) {
 		},
 	}
 	coord := &mockPodCoordinator{}
-	orch, podSvc := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
+	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
 
 	agentTypeID := int64(1)
 	ticketSlug := "AM-42"
@@ -50,7 +50,7 @@ func TestSlugResolution_ResolvesTicketIDFromSlug(t *testing.T) {
 func TestSlugResolution_FailureDoesNotBlockPodCreation(t *testing.T) {
 	ticketSvc := &mockTicketServiceForOrch{err: errors.New("ticket not found")}
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
 
 	agentTypeID := int64(1)
 	ticketSlug := "NONEXIST-999"
@@ -75,7 +75,7 @@ func TestSlugResolution_ExplicitTicketIDTakesPriority(t *testing.T) {
 		},
 	}
 	coord := &mockPodCoordinator{}
-	orch, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
+	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
 
 	agentTypeID := int64(1)
 	ticketID := int64(7) // Explicitly provided TicketID

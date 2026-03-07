@@ -12,7 +12,7 @@ import (
 
 func TestCreateCustomAgentType(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	t.Run("create new custom agent type", func(t *testing.T) {
@@ -79,7 +79,7 @@ func TestCreateCustomAgentType(t *testing.T) {
 
 func TestUpdateCustomAgentType(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	desc := "Original description"
@@ -128,7 +128,7 @@ func TestUpdateCustomAgentType(t *testing.T) {
 
 func TestDeleteCustomAgentType(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	desc := "To be deleted"
@@ -153,7 +153,7 @@ func TestDeleteCustomAgentType(t *testing.T) {
 
 func TestListCustomAgentTypes(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	for i := 0; i < 3; i++ {
@@ -187,7 +187,7 @@ func TestListCustomAgentTypes(t *testing.T) {
 
 func TestGetCustomAgentType(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	desc := "Get test description"
@@ -219,7 +219,7 @@ func TestGetCustomAgentType(t *testing.T) {
 
 func TestCreateCustomAgentRequest(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	t.Run("with all fields", func(t *testing.T) {
@@ -282,7 +282,7 @@ func TestCreateCustomAgentType_CreateError(t *testing.T) {
 		UNIQUE(organization_id, slug)
 	)`)
 
-	svc := NewAgentTypeService(badDB)
+	svc := newTestAgentTypeService(badDB)
 	ctx := context.Background()
 
 	_, err := svc.CreateCustomAgentType(ctx, 1, &CreateCustomAgentRequest{
@@ -306,7 +306,7 @@ func TestCreateCustomAgentType_CreateError(t *testing.T) {
 
 func TestUpdateCustomAgentType_Errors(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewAgentTypeService(db)
+	svc := newTestAgentTypeService(db)
 	ctx := context.Background()
 
 	desc := "Test description"
@@ -363,7 +363,7 @@ func TestAgentTypeService_CreateCustomAgentType_DBCreateError(t *testing.T) {
 		UNIQUE(organization_id, slug)
 	)`)
 
-	svc := NewAgentTypeService(badDB)
+	svc := newTestAgentTypeService(badDB)
 	ctx := context.Background()
 
 	_, err := svc.CreateCustomAgentType(ctx, 1, &CreateCustomAgentRequest{

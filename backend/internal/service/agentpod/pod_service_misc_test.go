@@ -8,7 +8,7 @@ import (
 
 func TestUpdatePodPTY(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -28,7 +28,7 @@ func TestUpdatePodPTY(t *testing.T) {
 
 func TestUpdateSandboxPath(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -54,7 +54,7 @@ func TestUpdateSandboxPath(t *testing.T) {
 
 func TestRecordActivity(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	req := &CreatePodRequest{
@@ -79,7 +79,7 @@ func TestRecordActivity(t *testing.T) {
 
 func TestUpdatePodTitle(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	// Create a pod first

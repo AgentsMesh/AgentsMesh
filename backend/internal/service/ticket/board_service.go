@@ -8,9 +8,8 @@ import (
 
 // ========== Board View (Kanban) ==========
 
-// GetBoard returns a kanban board view of tickets
+// GetBoard returns a kanban board view of tickets.
 func (s *Service) GetBoard(ctx context.Context, filter *ListTicketsFilter) (*ticket.Board, error) {
-	// Define board columns (ordered)
 	columnStatuses := []string{
 		ticket.TicketStatusBacklog,
 		ticket.TicketStatusTodo,
@@ -44,96 +43,24 @@ func (s *Service) GetBoard(ctx context.Context, filter *ListTicketsFilter) (*tic
 	return board, nil
 }
 
-// GetActiveTickets returns active (non-completed) tickets
+// GetActiveTickets returns active (non-completed) tickets.
 func (s *Service) GetActiveTickets(ctx context.Context, orgID int64, repoID *int64, limit int) ([]*ticket.Ticket, error) {
-	query := s.db.WithContext(ctx).
-		Where("organization_id = ?", orgID).
-		Where("status != ?", ticket.TicketStatusDone)
-
-	if repoID != nil {
-		query = query.Where("repository_id = ?", *repoID)
-	}
-
-	var tickets []*ticket.Ticket
-	if err := query.
-		Preload("Assignees.User").
-		Preload("Labels").
-		Order("updated_at DESC").
-		Limit(limit).
-		Find(&tickets).Error; err != nil {
-		return nil, err
-	}
-
-	return tickets, nil
+	return s.repo.GetActiveTickets(ctx, orgID, repoID, limit)
 }
 
-// GetChildTickets returns child tickets for a parent ticket
+// GetChildTickets returns child tickets for a parent ticket.
 func (s *Service) GetChildTickets(ctx context.Context, parentTicketID int64) ([]*ticket.Ticket, error) {
-	var tickets []*ticket.Ticket
-	if err := s.db.WithContext(ctx).
-		Preload("Assignees.User").
-		Preload("Labels").
-		Where("parent_ticket_id = ?", parentTicketID).
-		Order("created_at ASC").
-		Find(&tickets).Error; err != nil {
-		return nil, err
-	}
-	return tickets, nil
+	return s.repo.GetChildTickets(ctx, parentTicketID)
 }
 
-// GetSubTicketCounts returns sub-ticket counts for multiple parent tickets
+// GetSubTicketCounts returns sub-ticket counts for multiple parent tickets.
 func (s *Service) GetSubTicketCounts(ctx context.Context, parentTicketIDs []int64) (map[int64]map[string]int64, error) {
-	type countResult struct {
-		ParentTicketID int64
-		Status         string
-		Count          int64
-	}
-
-	var results []countResult
-	if err := s.db.WithContext(ctx).
-		Model(&ticket.Ticket{}).
-		Select("parent_ticket_id, status, COUNT(*) as count").
-		Where("parent_ticket_id IN ?", parentTicketIDs).
-		Group("parent_ticket_id, status").
-		Find(&results).Error; err != nil {
-		return nil, err
-	}
-
-	counts := make(map[int64]map[string]int64)
-	for _, r := range results {
-		if counts[r.ParentTicketID] == nil {
-			counts[r.ParentTicketID] = make(map[string]int64)
-		}
-		counts[r.ParentTicketID][r.Status] = r.Count
-	}
-
-	return counts, nil
+	return s.repo.GetSubTicketCounts(ctx, parentTicketIDs)
 }
 
 // ========== Statistics ==========
 
-// GetTicketStats returns ticket statistics for a repository
+// GetTicketStats returns ticket statistics for a repository.
 func (s *Service) GetTicketStats(ctx context.Context, orgID int64, repoID *int64) (map[string]int64, error) {
-	stats := make(map[string]int64)
-
-	query := s.db.WithContext(ctx).Model(&ticket.Ticket{}).Where("organization_id = ?", orgID)
-	if repoID != nil {
-		query = query.Where("repository_id = ?", *repoID)
-	}
-
-	statuses := []string{
-		ticket.TicketStatusBacklog,
-		ticket.TicketStatusTodo,
-		ticket.TicketStatusInProgress,
-		ticket.TicketStatusInReview,
-		ticket.TicketStatusDone,
-	}
-
-	for _, status := range statuses {
-		var count int64
-		query.Where("status = ?", status).Count(&count)
-		stats[status] = count
-	}
-
-	return stats, nil
+	return s.repo.GetTicketStats(ctx, orgID, repoID)
 }

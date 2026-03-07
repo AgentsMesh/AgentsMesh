@@ -11,7 +11,7 @@ import (
 
 func TestGetPlanPrice(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // Seeds based plan with USD and CNY prices
@@ -43,7 +43,7 @@ func TestGetPlanPrice(t *testing.T) {
 
 func TestGetPlanPricePlanNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetPlanPrice(ctx, "nonexistent", "USD")
@@ -54,7 +54,7 @@ func TestGetPlanPricePlanNotFound(t *testing.T) {
 
 func TestGetPlanPriceCurrencyNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -67,7 +67,7 @@ func TestGetPlanPriceCurrencyNotFound(t *testing.T) {
 
 func TestGetPlanPriceByID(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	plan := seedTestPlan(t, db)
@@ -86,7 +86,7 @@ func TestGetPlanPriceByID(t *testing.T) {
 
 func TestGetPlanPriceByIDNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetPlanPriceByID(ctx, 9999, "USD")
@@ -97,7 +97,7 @@ func TestGetPlanPriceByIDNotFound(t *testing.T) {
 
 func TestGetPlanPrices(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // Seeds with USD and CNY prices
@@ -125,7 +125,7 @@ func TestGetPlanPrices(t *testing.T) {
 
 func TestGetPlanPricesPlanNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetPlanPrices(ctx, "nonexistent")
@@ -136,7 +136,7 @@ func TestGetPlanPricesPlanNotFound(t *testing.T) {
 
 func TestListPlansWithPrices(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -166,7 +166,7 @@ func TestListPlansWithPrices(t *testing.T) {
 
 func TestListPlansWithPricesCNY(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -190,7 +190,7 @@ func TestListPlansWithPricesCNY(t *testing.T) {
 
 func TestListPlansWithPricesNoCurrency(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

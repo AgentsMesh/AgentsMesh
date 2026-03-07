@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -67,10 +68,15 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// newTestService creates a binding Service backed by an in-memory DB for testing.
+func newTestService(db *gorm.DB, querier PodQuerier) *Service {
+	return NewService(infra.NewBindingRepository(db), querier)
+}
+
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
 	querier := NewMockPodQuerier()
-	service := NewService(db, querier)
+	service := newTestService(db, querier)
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
@@ -79,7 +85,7 @@ func TestNewService(t *testing.T) {
 
 func TestNewServiceWithoutQuerier(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 
 	if service == nil {
 		t.Fatal("expected non-nil service")

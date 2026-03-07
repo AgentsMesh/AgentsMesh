@@ -9,7 +9,7 @@ import (
 
 func TestGetMessages(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Send multiple messages to the same receiver
@@ -75,7 +75,7 @@ func TestGetMessages(t *testing.T) {
 
 func TestGetUnreadMessages(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Send messages
@@ -94,7 +94,7 @@ func TestGetUnreadMessages(t *testing.T) {
 
 func TestGetUnreadCount(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	for i := 0; i < 3; i++ {
@@ -112,7 +112,7 @@ func TestGetUnreadCount(t *testing.T) {
 
 func TestGetConversation(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	correlationID := "conv-123"
@@ -137,7 +137,7 @@ func TestGetConversation(t *testing.T) {
 
 func TestGetThread(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Send root message
@@ -169,7 +169,7 @@ func TestGetThread(t *testing.T) {
 
 func TestGetSentMessages(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Send multiple messages from same sender
@@ -188,7 +188,7 @@ func TestGetSentMessages(t *testing.T) {
 
 func TestGetMessagesBetween(t *testing.T) {
 	db := setupMessageTestDB(t)
-	svc := NewMessageService(db)
+	svc := newTestMessageService(db)
 	ctx := context.Background()
 
 	// Send messages in both directions

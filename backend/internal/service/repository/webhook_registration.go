@@ -66,7 +66,7 @@ func (s *WebhookService) saveManualSetupConfig(ctx context.Context, repo *gitpro
 		LastError:        errorMsg,
 		CreatedAt:        now,
 	}
-	if err := s.db.WithContext(ctx).Save(repo).Error; err != nil {
+	if err := s.repo.Save(ctx, repo); err != nil {
 		return nil, fmt.Errorf("failed to save webhook config: %w", err)
 	}
 
@@ -92,7 +92,7 @@ func (s *WebhookService) saveSuccessConfig(ctx context.Context, repo *gitprovide
 		NeedsManualSetup: false,
 		CreatedAt:        now,
 	}
-	if err := s.db.WithContext(ctx).Save(repo).Error; err != nil {
+	if err := s.repo.Save(ctx, repo); err != nil {
 		return nil, fmt.Errorf("failed to save webhook config: %w", err)
 	}
 
@@ -106,7 +106,7 @@ func (s *WebhookService) DeleteWebhookForRepository(ctx context.Context, repo *g
 	if repo.WebhookConfig == nil || repo.WebhookConfig.ID == "" {
 		// No webhook registered - just clear the config
 		repo.WebhookConfig = nil
-		return s.db.WithContext(ctx).Save(repo).Error
+		return s.repo.Save(ctx, repo)
 	}
 
 	// Try to get user's git provider
@@ -119,7 +119,7 @@ func (s *WebhookService) DeleteWebhookForRepository(ctx context.Context, repo *g
 				"error", err)
 		}
 		repo.WebhookConfig = nil
-		return s.db.WithContext(ctx).Save(repo).Error
+		return s.repo.Save(ctx, repo)
 	}
 
 	// Try to delete webhook from git provider
@@ -134,7 +134,7 @@ func (s *WebhookService) DeleteWebhookForRepository(ctx context.Context, repo *g
 	}
 
 	repo.WebhookConfig = nil
-	return s.db.WithContext(ctx).Save(repo).Error
+	return s.repo.Save(ctx, repo)
 }
 
 // buildWebhookURL constructs the webhook URL for a repository

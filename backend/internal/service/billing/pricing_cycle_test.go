@@ -14,7 +14,7 @@ import (
 
 func TestCalculateBillingCycleChangePrice(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -49,7 +49,7 @@ func TestCalculateBillingCycleChangePrice(t *testing.T) {
 
 func TestCalculateBillingCycleChangePriceYearlyToMonthly(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -84,7 +84,7 @@ func TestCalculateBillingCycleChangePriceYearlyToMonthly(t *testing.T) {
 
 func TestCalculateBillingCycleChangePriceSameCycle(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -114,7 +114,7 @@ func TestCalculateBillingCycleChangePriceSameCycle(t *testing.T) {
 
 func TestCalculateBillingCycleChangePriceNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.CalculateBillingCycleChangePrice(ctx, 999, billing.BillingCycleYearly)
@@ -172,7 +172,7 @@ func TestCalculateRemainingPeriodRatio(t *testing.T) {
 
 func TestGetPricePreview(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -195,7 +195,7 @@ func TestGetPricePreview(t *testing.T) {
 
 func TestGetPricePreviewUpgrade(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -227,7 +227,7 @@ func TestGetPricePreviewUpgrade(t *testing.T) {
 
 func TestGetPricePreviewSeatPurchase(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)
@@ -257,7 +257,7 @@ func TestGetPricePreviewSeatPurchase(t *testing.T) {
 
 func TestGetPricePreviewRenewal(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db)

@@ -13,7 +13,7 @@ import (
 
 func TestGenerateGRPCRegistrationToken(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("generates token with default settings", func(t *testing.T) {
@@ -70,7 +70,7 @@ func TestGenerateGRPCRegistrationToken(t *testing.T) {
 
 func TestRegisterWithToken(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("returns error for invalid token", func(t *testing.T) {
@@ -207,7 +207,7 @@ func TestRegisterWithToken(t *testing.T) {
 
 func TestListGRPCRegistrationTokens(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("lists tokens for organization", func(t *testing.T) {
@@ -236,7 +236,7 @@ func TestListGRPCRegistrationTokens(t *testing.T) {
 
 func TestDeleteGRPCRegistrationToken(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	t.Run("deletes token", func(t *testing.T) {

@@ -4,9 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// newTestService creates a Service backed by an in-memory DB for testing.
+func newTestService(db *gorm.DB) *Service {
+	return NewService(infra.NewTicketRepository(db))
+}
 
 func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
@@ -147,7 +153,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func TestNewService(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
@@ -156,7 +162,7 @@ func TestNewService(t *testing.T) {
 
 func TestNewServiceWithContext(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 	ctx := context.Background()
 
 	// Verify service can be used with context

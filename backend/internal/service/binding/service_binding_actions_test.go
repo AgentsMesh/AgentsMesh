@@ -9,7 +9,7 @@ import (
 
 func TestAcceptBinding(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("accepts pending binding", func(t *testing.T) {
@@ -51,7 +51,7 @@ func TestAcceptBinding(t *testing.T) {
 
 func TestRejectBinding(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("rejects pending binding", func(t *testing.T) {
@@ -83,7 +83,7 @@ func TestRejectBinding(t *testing.T) {
 
 func TestUnbind(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("unbinds active binding", func(t *testing.T) {
@@ -131,7 +131,7 @@ func TestUnbind(t *testing.T) {
 
 func TestIsBound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("returns true for bound pods", func(t *testing.T) {
@@ -173,7 +173,7 @@ func TestIsBound(t *testing.T) {
 
 func TestCleanupExpiredBindings(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, nil)
+	service := newTestService(db, nil)
 	ctx := context.Background()
 
 	t.Run("cleans up expired bindings", func(t *testing.T) {

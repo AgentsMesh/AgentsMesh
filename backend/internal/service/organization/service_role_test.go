@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 func TestIsAdmin(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -38,7 +39,7 @@ func TestIsAdmin(t *testing.T) {
 
 func TestIsAdminNonMember(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -56,7 +57,7 @@ func TestIsAdminNonMember(t *testing.T) {
 
 func TestIsOwner(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -78,7 +79,7 @@ func TestIsOwner(t *testing.T) {
 
 func TestIsOwnerNonMember(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -95,7 +96,7 @@ func TestIsOwnerNonMember(t *testing.T) {
 
 func TestIsMember(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -116,7 +117,7 @@ func TestIsMember(t *testing.T) {
 
 func TestGetUserRole(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -133,7 +134,7 @@ func TestGetUserRole(t *testing.T) {
 
 func TestGetUserRoleNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}
@@ -147,7 +148,7 @@ func TestGetUserRoleNotFound(t *testing.T) {
 
 func TestGetMemberRole(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db)
+	service := NewService(infra.NewOrganizationRepository(db))
 	ctx := context.Background()
 
 	req := &CreateRequest{Name: "Test Org", Slug: "test-org"}

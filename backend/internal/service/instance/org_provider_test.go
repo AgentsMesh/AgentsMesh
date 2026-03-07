@@ -1,6 +1,7 @@
 package instance
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"sync"
@@ -35,6 +36,19 @@ func (m *mockRunnerConnector) setRunnerIDs(ids []int64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.runnerIDs = ids
+}
+
+// gormRunnerOrgQuerier is a test implementation of RunnerOrgQuerier backed by GORM.
+type gormRunnerOrgQuerier struct{ db *gorm.DB }
+
+func (q *gormRunnerOrgQuerier) GetOrgIDsByRunnerIDs(ctx context.Context, runnerIDs []int64) ([]int64, error) {
+	var orgIDs []int64
+	err := q.db.WithContext(ctx).
+		Table("runners").
+		Where("id IN ?", runnerIDs).
+		Distinct("organization_id").
+		Pluck("organization_id", &orgIDs).Error
+	return orgIDs, err
 }
 
 // testLogger returns a silent slog.Logger for tests
@@ -74,10 +88,15 @@ func seedRunners(t *testing.T, db *gorm.DB, runners []runnerSeed) {
 	}
 }
 
+func newTestService(db *gorm.DB, connector ConnectedRunnerIDsProvider) *OrgAwarenessService {
+	orgQuerier := &gormRunnerOrgQuerier{db: db}
+	return NewOrgAwarenessService(orgQuerier, connector, nil, "test:8080", testLogger())
+}
+
 func TestOrgAwarenessService_GetLocalOrgIDs_NoRunners(t *testing.T) {
 	db := setupTestDB(t)
 	connector := &mockRunnerConnector{}
-	svc := NewOrgAwarenessService(db, connector, nil, "test:8080", testLogger())
+	svc := newTestService(db, connector)
 
 	svc.Refresh()
 
@@ -95,7 +114,7 @@ func TestOrgAwarenessService_GetLocalOrgIDs_WithRunners(t *testing.T) {
 	})
 
 	connector := &mockRunnerConnector{runnerIDs: []int64{1, 3}} // org 100 and 200
-	svc := NewOrgAwarenessService(db, connector, nil, "test:8080", testLogger())
+	svc := newTestService(db, connector)
 
 	svc.Refresh()
 
@@ -109,7 +128,7 @@ func TestOrgAwarenessService_GetLocalOrgIDs_ReturnsDefensiveCopy(t *testing.T) {
 	seedRunners(t, db, []runnerSeed{{1, 100}})
 
 	connector := &mockRunnerConnector{runnerIDs: []int64{1}}
-	svc := NewOrgAwarenessService(db, connector, nil, "test:8080", testLogger())
+	svc := newTestService(db, connector)
 	svc.Refresh()
 
 	// Mutate the returned slice
@@ -130,7 +149,7 @@ func TestOrgAwarenessService_Refresh_UpdatesOnRunnerChange(t *testing.T) {
 	})
 
 	connector := &mockRunnerConnector{runnerIDs: []int64{1}} // only org 100
-	svc := NewOrgAwarenessService(db, connector, nil, "test:8080", testLogger())
+	svc := newTestService(db, connector)
 	svc.Refresh()
 
 	assert.ElementsMatch(t, []int64{100}, svc.GetLocalOrgIDs())
@@ -157,7 +176,7 @@ func TestOrgAwarenessService_Refresh_DeduplicatesOrgs(t *testing.T) {
 	})
 
 	connector := &mockRunnerConnector{runnerIDs: []int64{1, 2, 3}}
-	svc := NewOrgAwarenessService(db, connector, nil, "test:8080", testLogger())
+	svc := newTestService(db, connector)
 	svc.Refresh()
 
 	result := svc.GetLocalOrgIDs()
@@ -171,7 +190,7 @@ func TestOrgAwarenessService_Refresh_IgnoresUnknownRunners(t *testing.T) {
 
 	// Runner ID 999 doesn't exist in DB
 	connector := &mockRunnerConnector{runnerIDs: []int64{1, 999}}
-	svc := NewOrgAwarenessService(db, connector, nil, "test:8080", testLogger())
+	svc := newTestService(db, connector)
 	svc.Refresh()
 
 	result := svc.GetLocalOrgIDs()
@@ -183,7 +202,7 @@ func TestOrgAwarenessService_StartStop(t *testing.T) {
 	seedRunners(t, db, []runnerSeed{{1, 100}})
 
 	connector := &mockRunnerConnector{runnerIDs: []int64{1}}
-	svc := NewOrgAwarenessService(db, connector, nil, "test:8080", testLogger())
+	svc := newTestService(db, connector)
 
 	svc.Start()
 
@@ -205,7 +224,7 @@ func TestOrgAwarenessService_ConcurrentAccess(t *testing.T) {
 	})
 
 	connector := &mockRunnerConnector{runnerIDs: []int64{1, 2}}
-	svc := NewOrgAwarenessService(db, connector, nil, "test:8080", testLogger())
+	svc := newTestService(db, connector)
 	svc.Refresh()
 
 	// Concurrent reads and writes should not panic or race

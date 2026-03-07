@@ -118,7 +118,7 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 		}
 	}
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 
@@ -131,13 +131,12 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 // and links the subscription_id. This serves as a fallback when the normal
 // subscription_created → subscription_updated ordering is disrupted by race conditions.
 func (s *Service) findAndLinkLSSubscription(ctx context.Context, event *payment.WebhookEvent) (*billing.Subscription, error) {
-	var sub billing.Subscription
-
-	// Try by customer_id
-	if err := s.db.WithContext(ctx).
-		Where("lemonsqueezy_customer_id = ?", event.CustomerID).
-		First(&sub).Error; err != nil {
+	sub, err := s.repo.FindSubscriptionByLSCustomerID(ctx, event.CustomerID)
+	if err != nil {
 		return nil, err
+	}
+	if sub == nil {
+		return nil, ErrSubscriptionNotFound
 	}
 
 	// Link the subscription_id if not set
@@ -147,5 +146,5 @@ func (s *Service) findAndLinkLSSubscription(ctx context.Context, event *payment.
 			event.SubscriptionID, sub.OrganizationID, event.CustomerID)
 	}
 
-	return &sub, nil
+	return sub, nil
 }

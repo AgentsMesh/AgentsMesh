@@ -60,7 +60,7 @@ func setupRelationsTestDB(t *testing.T) *gorm.DB {
 func TestCreateRelation(t *testing.T) {
 	ctx := context.Background()
 	db := setupRelationsTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	// Create two tickets
 	ticket1 := &ticket.Ticket{
@@ -171,7 +171,7 @@ func TestCreateRelation(t *testing.T) {
 func TestDeleteRelation(t *testing.T) {
 	ctx := context.Background()
 	db := setupRelationsTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	// Create two tickets
 	ticket1 := &ticket.Ticket{
@@ -218,7 +218,7 @@ func TestDeleteRelation(t *testing.T) {
 func TestListRelations(t *testing.T) {
 	ctx := context.Background()
 	db := setupRelationsTestDB(t)
-	service := NewService(db)
+	service := newTestService(db)
 
 	// Create tickets
 	ticket1 := &ticket.Ticket{

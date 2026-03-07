@@ -10,7 +10,7 @@ import (
 )
 
 func TestHandleHeartbeat(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -18,12 +18,12 @@ func TestHandleHeartbeat(t *testing.T) {
 		NodeID:         "heartbeat-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"heartbeat-pod-1", r.ID, agentpod.StatusRunning)
 
 	// Send heartbeat (using Proto type)
@@ -42,7 +42,7 @@ func TestHandleHeartbeat(t *testing.T) {
 }
 
 func TestHandleHeartbeatSyncsAgentStatus(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -50,12 +50,12 @@ func TestHandleHeartbeatSyncsAgentStatus(t *testing.T) {
 		NodeID:         "hb-agent-sync-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a pod with idle agent_status
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, agent_status) VALUES (?, ?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status, agent_status) VALUES (?, ?, ?, ?)`,
 		"hb-agent-pod-1", r.ID, agentpod.StatusRunning, agentpod.AgentStatusIdle)
 
 	// Send heartbeat with AgentStatus set to executing
@@ -69,7 +69,7 @@ func TestHandleHeartbeatSyncsAgentStatus(t *testing.T) {
 
 	// Verify agent_status was updated in DB
 	var agentStatus string
-	pc.db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "hb-agent-pod-1").
+	db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "hb-agent-pod-1").
 		Scan(&agentStatus)
 
 	if agentStatus != agentpod.AgentStatusExecuting {
@@ -78,7 +78,7 @@ func TestHandleHeartbeatSyncsAgentStatus(t *testing.T) {
 }
 
 func TestHandleHeartbeatSkipsEmptyAgentStatus(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -86,12 +86,12 @@ func TestHandleHeartbeatSkipsEmptyAgentStatus(t *testing.T) {
 		NodeID:         "hb-empty-agent-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a pod with executing agent_status
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status, agent_status) VALUES (?, ?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status, agent_status) VALUES (?, ?, ?, ?)`,
 		"hb-empty-pod-1", r.ID, agentpod.StatusRunning, agentpod.AgentStatusExecuting)
 
 	// Send heartbeat with empty AgentStatus
@@ -105,7 +105,7 @@ func TestHandleHeartbeatSkipsEmptyAgentStatus(t *testing.T) {
 
 	// Verify agent_status was NOT modified (should still be executing)
 	var agentStatus string
-	pc.db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "hb-empty-pod-1").
+	db.Raw(`SELECT agent_status FROM pods WHERE pod_key = ?`, "hb-empty-pod-1").
 		Scan(&agentStatus)
 
 	if agentStatus != agentpod.AgentStatusExecuting {
@@ -115,7 +115,7 @@ func TestHandleHeartbeatSkipsEmptyAgentStatus(t *testing.T) {
 }
 
 func TestHandleHeartbeatReconcilePods(t *testing.T) {
-	pc, _, tr := setupPodEventHandlerDeps(t)
+	pc, _, tr, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -123,14 +123,14 @@ func TestHandleHeartbeatReconcilePods(t *testing.T) {
 		NodeID:         "reconcile-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create pods in DB
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"reconcile-pod-1", r.ID, agentpod.StatusRunning)
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"reconcile-pod-2", r.ID, agentpod.StatusRunning)
 
 	// Send heartbeat with only pod-1 (using Proto type)
@@ -144,7 +144,7 @@ func TestHandleHeartbeatReconcilePods(t *testing.T) {
 
 	// Verify pod-1 is still running and registered
 	var status1 string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "reconcile-pod-1").Scan(&status1)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "reconcile-pod-1").Scan(&status1)
 	if status1 != agentpod.StatusRunning {
 		t.Errorf("pod-1 status: got %q, want %q", status1, agentpod.StatusRunning)
 	}
@@ -154,14 +154,14 @@ func TestHandleHeartbeatReconcilePods(t *testing.T) {
 
 	// Verify pod-2 is orphaned
 	var status2 string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "reconcile-pod-2").Scan(&status2)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "reconcile-pod-2").Scan(&status2)
 	if status2 != agentpod.StatusOrphaned {
 		t.Errorf("pod-2 status: got %q, want %q", status2, agentpod.StatusOrphaned)
 	}
 }
 
 func TestHandleHeartbeatRestoreOrphanedPod(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -169,12 +169,12 @@ func TestHandleHeartbeatRestoreOrphanedPod(t *testing.T) {
 		NodeID:         "restore-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create an orphaned pod
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"orphan-pod-1", r.ID, agentpod.StatusOrphaned)
 
 	// Send heartbeat reporting the orphaned pod as running (using Proto type)
@@ -188,14 +188,14 @@ func TestHandleHeartbeatRestoreOrphanedPod(t *testing.T) {
 
 	// Verify pod was restored
 	var status string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "orphan-pod-1").Scan(&status)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "orphan-pod-1").Scan(&status)
 	if status != agentpod.StatusRunning {
 		t.Errorf("orphaned pod should be restored: got %q, want %q", status, agentpod.StatusRunning)
 	}
 }
 
 func TestReconcilePods(t *testing.T) {
-	pc, _, tr := setupPodEventHandlerDeps(t)
+	pc, _, tr, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -203,16 +203,16 @@ func TestReconcilePods(t *testing.T) {
 		NodeID:         "reconcile-test-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create multiple pods
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"recon-pod-1", r.ID, agentpod.StatusRunning)
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"recon-pod-2", r.ID, agentpod.StatusRunning)
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"recon-pod-3", r.ID, agentpod.StatusInitializing)
 
 	ctx := context.Background()
@@ -230,8 +230,8 @@ func TestReconcilePods(t *testing.T) {
 
 	// Verify pod-2 and pod-3 are orphaned
 	var status2, status3 string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "recon-pod-2").Scan(&status2)
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "recon-pod-3").Scan(&status3)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "recon-pod-2").Scan(&status2)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "recon-pod-3").Scan(&status3)
 
 	if status2 != agentpod.StatusOrphaned {
 		t.Errorf("pod-2 should be orphaned: got %q", status2)
@@ -242,7 +242,7 @@ func TestReconcilePods(t *testing.T) {
 }
 
 func TestReconcilePodsCompletedNotAffected(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -250,12 +250,12 @@ func TestReconcilePodsCompletedNotAffected(t *testing.T) {
 		NodeID:         "completed-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create a completed pod (should not be affected by reconciliation)
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"completed-pod-1", r.ID, agentpod.StatusCompleted)
 
 	ctx := context.Background()
@@ -265,14 +265,14 @@ func TestReconcilePodsCompletedNotAffected(t *testing.T) {
 
 	// Verify completed pod is NOT changed
 	var status string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "completed-pod-1").Scan(&status)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "completed-pod-1").Scan(&status)
 	if status != agentpod.StatusCompleted {
 		t.Errorf("completed pod should not be affected: got %q", status)
 	}
 }
 
 func TestReconcilePodsOrphanedCallsStatusChangeCallback(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -280,14 +280,14 @@ func TestReconcilePodsOrphanedCallsStatusChangeCallback(t *testing.T) {
 		NodeID:         "orphan-callback-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create running pods
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"orphan-cb-pod-1", r.ID, agentpod.StatusRunning)
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"orphan-cb-pod-2", r.ID, agentpod.StatusRunning)
 
 	// Track callback invocations
@@ -312,8 +312,8 @@ func TestReconcilePodsOrphanedCallsStatusChangeCallback(t *testing.T) {
 
 	// Verify both pods are orphaned in DB
 	var status1, status2 string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "orphan-cb-pod-1").Scan(&status1)
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "orphan-cb-pod-2").Scan(&status2)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "orphan-cb-pod-1").Scan(&status1)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "orphan-cb-pod-2").Scan(&status2)
 	if status1 != agentpod.StatusOrphaned {
 		t.Errorf("pod-1 should be orphaned: got %q", status1)
 	}
@@ -347,7 +347,7 @@ func TestReconcilePodsOrphanedCallsStatusChangeCallback(t *testing.T) {
 }
 
 func TestReconcilePodsRestoredCallsStatusChangeCallback(t *testing.T) {
-	pc, _, _ := setupPodEventHandlerDeps(t)
+	pc, _, _, db := setupPodEventHandlerDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -355,14 +355,14 @@ func TestReconcilePodsRestoredCallsStatusChangeCallback(t *testing.T) {
 		NodeID:         "restore-callback-node",
 		Status:         "online",
 	}
-	if err := pc.db.Create(r).Error; err != nil {
+	if err := db.Create(r).Error; err != nil {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
 	// Create orphaned pods
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"restore-cb-pod-1", r.ID, agentpod.StatusOrphaned)
-	pc.db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
+	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"restore-cb-pod-2", r.ID, agentpod.StatusOrphaned)
 
 	// Track callback invocations
@@ -390,8 +390,8 @@ func TestReconcilePodsRestoredCallsStatusChangeCallback(t *testing.T) {
 
 	// Verify both pods are restored to running in DB
 	var status1, status2 string
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "restore-cb-pod-1").Scan(&status1)
-	pc.db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "restore-cb-pod-2").Scan(&status2)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "restore-cb-pod-1").Scan(&status1)
+	db.Raw(`SELECT status FROM pods WHERE pod_key = ?`, "restore-cb-pod-2").Scan(&status2)
 	if status1 != agentpod.StatusRunning {
 		t.Errorf("pod-1 should be running: got %q", status1)
 	}

@@ -12,7 +12,7 @@ import (
 
 func TestFindByBranchAndRepo_DifferentBranches(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	orgID := int64(1)
@@ -54,7 +54,7 @@ func TestFindByBranchAndRepo_DifferentBranches(t *testing.T) {
 
 func TestFindByBranchAndRepo_DifferentRepos(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	orgID := int64(1)
@@ -96,7 +96,7 @@ func TestFindByBranchAndRepo_DifferentRepos(t *testing.T) {
 
 func TestFindByBranchAndRepo_DifferentOrgs(t *testing.T) {
 	db := setupTestDB(t)
-	svc := NewPodService(db)
+	svc := newTestPodService(db)
 	ctx := context.Background()
 
 	repoID := int64(800)

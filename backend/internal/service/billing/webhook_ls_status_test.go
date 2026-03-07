@@ -16,7 +16,7 @@ import (
 
 func TestHandleSubscriptionExpired(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -58,7 +58,7 @@ func TestHandleSubscriptionExpired(t *testing.T) {
 
 func TestHandleSubscriptionUpdatedLemonSqueezy(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)

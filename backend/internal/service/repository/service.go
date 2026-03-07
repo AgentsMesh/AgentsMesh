@@ -3,11 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
-	"gorm.io/gorm"
 )
 
 var (
@@ -19,14 +17,14 @@ var (
 
 // Service handles repository operations
 type Service struct {
-	db             *gorm.DB
+	repo           gitprovider.RepositoryRepo
 	webhookService *WebhookService
 }
 
 // NewService creates a new repository service
-func NewService(db *gorm.DB) *Service {
+func NewService(repo gitprovider.RepositoryRepo) *Service {
 	return &Service{
-		db: db,
+		repo: repo,
 	}
 }
 
@@ -65,11 +63,11 @@ type CreateRequest struct {
 // Create creates a new repository configuration
 func (s *Service) Create(ctx context.Context, req *CreateRequest) (*gitprovider.Repository, error) {
 	// Check if repository already exists (unique: org + provider_type + provider_base_url + full_path)
-	var existing gitprovider.Repository
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND provider_type = ? AND provider_base_url = ? AND full_path = ?",
-			req.OrganizationID, req.ProviderType, req.ProviderBaseURL, req.FullPath).
-		First(&existing).Error; err == nil {
+	existing, err := s.repo.FindByOrgAndPath(ctx, req.OrganizationID, req.ProviderType, req.ProviderBaseURL, req.FullPath)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
 		return nil, ErrRepositoryExists
 	}
 
@@ -113,7 +111,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*gitprovider.
 		repo.CloneURL = repo.HttpCloneURL
 	}
 
-	if err := s.db.WithContext(ctx).Create(repo).Error; err != nil {
+	if err := s.repo.Create(ctx, repo); err != nil {
 		return nil, err
 	}
 
@@ -207,13 +205,14 @@ func generateCloneURL(providerType, baseURL, fullPath string) string {
 
 // GetByID returns a repository by ID
 func (s *Service) GetByID(ctx context.Context, id int64) (*gitprovider.Repository, error) {
-	var repo gitprovider.Repository
-	if err := s.db.WithContext(ctx).
-		Where("deleted_at IS NULL").
-		First(&repo, id).Error; err != nil {
+	repo, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if repo == nil {
 		return nil, ErrRepositoryNotFound
 	}
-	return &repo, nil
+	return repo, nil
 }
 
 // GetByIDForUser returns a repository by ID, checking visibility permissions
@@ -235,7 +234,7 @@ func (s *Service) GetByIDForUser(ctx context.Context, id int64, userID int64) (*
 
 // Update updates a repository
 func (s *Service) Update(ctx context.Context, id int64, updates map[string]interface{}) (*gitprovider.Repository, error) {
-	if err := s.db.WithContext(ctx).Model(&gitprovider.Repository{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+	if err := s.repo.Update(ctx, id, updates); err != nil {
 		return nil, err
 	}
 	return s.GetByID(ctx, id)
@@ -244,72 +243,61 @@ func (s *Service) Update(ctx context.Context, id int64, updates map[string]inter
 // Delete soft deletes a repository.
 // Blocks deletion if any loops reference this repository (application-level RESTRICT).
 func (s *Service) Delete(ctx context.Context, id int64) error {
-	var loopCount int64
-	if err := s.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM loops WHERE repository_id = ?", id).Scan(&loopCount).Error; err != nil {
+	loopCount, err := s.repo.CountLoopRefs(ctx, id)
+	if err != nil {
 		return err
 	}
 	if loopCount > 0 {
 		return ErrRepositoryHasLoopRefs
 	}
-	return s.db.WithContext(ctx).Model(&gitprovider.Repository{}).
-		Where("id = ?", id).
-		Update("deleted_at", time.Now()).Error
+	return s.repo.SoftDelete(ctx, id)
 }
 
 // HardDelete permanently deletes a repository.
 // Blocks deletion if any loops reference this repository (application-level RESTRICT).
 func (s *Service) HardDelete(ctx context.Context, id int64) error {
-	var loopCount int64
-	if err := s.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM loops WHERE repository_id = ?", id).Scan(&loopCount).Error; err != nil {
+	loopCount, err := s.repo.CountLoopRefs(ctx, id)
+	if err != nil {
 		return err
 	}
 	if loopCount > 0 {
 		return ErrRepositoryHasLoopRefs
 	}
-	return s.db.WithContext(ctx).Unscoped().Delete(&gitprovider.Repository{}, id).Error
+	return s.repo.HardDelete(ctx, id)
 }
 
 // ListByOrganization returns repositories for an organization
 func (s *Service) ListByOrganization(ctx context.Context, orgID int64) ([]*gitprovider.Repository, error) {
-	var repos []*gitprovider.Repository
-	err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND is_active = ? AND deleted_at IS NULL", orgID, true).
-		Order("created_at DESC").Find(&repos).Error
-	return repos, err
+	return s.repo.ListByOrganization(ctx, orgID)
 }
 
 // ListByOrganizationForUser returns repositories visible to a specific user
 func (s *Service) ListByOrganizationForUser(ctx context.Context, orgID int64, userID int64) ([]*gitprovider.Repository, error) {
-	var repos []*gitprovider.Repository
-	err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND is_active = ? AND deleted_at IS NULL", orgID, true).
-		Where("(visibility = 'organization' OR (visibility = 'private' AND imported_by_user_id = ?))", userID).
-		Order("created_at DESC").Find(&repos).Error
-	return repos, err
+	return s.repo.ListByOrganizationForUser(ctx, orgID, userID)
 }
 
 // GetByExternalID returns a repository by provider type, base URL, and external ID
 func (s *Service) GetByExternalID(ctx context.Context, providerType, providerBaseURL, externalID string) (*gitprovider.Repository, error) {
-	var repo gitprovider.Repository
-	if err := s.db.WithContext(ctx).
-		Where("provider_type = ? AND provider_base_url = ? AND external_id = ? AND deleted_at IS NULL",
-			providerType, providerBaseURL, externalID).
-		First(&repo).Error; err != nil {
+	repo, err := s.repo.GetByExternalID(ctx, providerType, providerBaseURL, externalID)
+	if err != nil {
+		return nil, err
+	}
+	if repo == nil {
 		return nil, ErrRepositoryNotFound
 	}
-	return &repo, nil
+	return repo, nil
 }
 
 // GetByFullPath returns a repository by organization, provider, and full path
 func (s *Service) GetByFullPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*gitprovider.Repository, error) {
-	var repo gitprovider.Repository
-	if err := s.db.WithContext(ctx).
-		Where("organization_id = ? AND provider_type = ? AND provider_base_url = ? AND full_path = ? AND deleted_at IS NULL",
-			orgID, providerType, providerBaseURL, fullPath).
-		First(&repo).Error; err != nil {
+	repo, err := s.repo.GetByFullPath(ctx, orgID, providerType, providerBaseURL, fullPath)
+	if err != nil {
+		return nil, err
+	}
+	if repo == nil {
 		return nil, ErrRepositoryNotFound
 	}
-	return &repo, nil
+	return repo, nil
 }
 
 // GetCloneURL returns the clone URL for a repository
@@ -386,11 +374,9 @@ func (s *Service) ListBranches(ctx context.Context, repoID int64, accessToken st
 
 // GetNextTicketNumber returns the next ticket number for a repository
 func (s *Service) GetNextTicketNumber(ctx context.Context, repoID int64) (int, error) {
-	var maxNumber int
-	s.db.WithContext(ctx).
-		Table("tickets").
-		Where("repository_id = ?", repoID).
-		Select("COALESCE(MAX(number), 0)").
-		Scan(&maxNumber)
+	maxNumber, err := s.repo.GetMaxTicketNumber(ctx, repoID)
+	if err != nil {
+		return 0, err
+	}
 	return maxNumber + 1, nil
 }

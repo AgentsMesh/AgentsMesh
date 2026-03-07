@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 // LocalOrgProvider returns the set of organization IDs that this server instance
@@ -30,6 +29,11 @@ type LocalOrgProvider interface {
 // importing the runner package (prevents circular dependency).
 type ConnectedRunnerIDsProvider interface {
 	GetConnectedRunnerIDs() []int64
+}
+
+// RunnerOrgQuerier resolves organization IDs from runner IDs.
+type RunnerOrgQuerier interface {
+	GetOrgIDsByRunnerIDs(ctx context.Context, runnerIDs []int64) ([]int64, error)
 }
 
 const (
@@ -56,7 +60,7 @@ type OrgAwarenessService struct {
 	mu     sync.RWMutex
 	orgIDs []int64
 
-	db              *gorm.DB
+	orgQuerier      RunnerOrgQuerier
 	runnerConnector ConnectedRunnerIDsProvider
 	redisClient     *redis.Client
 	logger          *slog.Logger
@@ -68,20 +72,20 @@ type OrgAwarenessService struct {
 // NewOrgAwarenessService creates a new OrgAwarenessService.
 //
 // Parameters:
-//   - db: database connection for querying runners.organization_id
+//   - orgQuerier: resolves organization IDs from runner IDs
 //   - runnerConnector: provides connected runner IDs (from RunnerConnectionManager)
 //   - redisClient: optional, for cross-component visibility (nil to disable)
 //   - instanceID: unique identifier for this server instance (e.g., hostname:port)
 //   - logger: structured logger
 func NewOrgAwarenessService(
-	db *gorm.DB,
+	orgQuerier RunnerOrgQuerier,
 	runnerConnector ConnectedRunnerIDsProvider,
 	redisClient *redis.Client,
 	instanceID string,
 	logger *slog.Logger,
 ) *OrgAwarenessService {
 	return &OrgAwarenessService{
-		db:              db,
+		orgQuerier:      orgQuerier,
 		runnerConnector: runnerConnector,
 		redisClient:     redisClient,
 		instanceID:      instanceID,
@@ -152,10 +156,11 @@ func (s *OrgAwarenessService) Refresh() {
 
 	var orgIDs []int64
 	if len(runnerIDs) > 0 {
-		s.db.Table("runners").
-			Where("id IN ?", runnerIDs).
-			Distinct("organization_id").
-			Pluck("organization_id", &orgIDs)
+		var err error
+		orgIDs, err = s.orgQuerier.GetOrgIDsByRunnerIDs(context.Background(), runnerIDs)
+		if err != nil {
+			s.logger.Error("failed to query org IDs", "error", err)
+		}
 	}
 
 	s.mu.Lock()

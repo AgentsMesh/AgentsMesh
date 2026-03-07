@@ -178,7 +178,7 @@ func (s *Service) HandleSubscriptionCanceled(c *gin.Context, event *payment.Webh
 	sub.Status = billing.SubscriptionStatusCanceled
 	sub.CanceledAt = &now
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 

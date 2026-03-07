@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
@@ -76,7 +77,8 @@ func NewWebhookRouter(db *gorm.DB, cfg *config.Config, logger *slog.Logger, opts
 
 	// Initialize billing service and payment factory for payment webhooks
 	// Full config is passed for URL derivation (AlipayNotifyURL, etc.)
-	billingSvc := billing.NewServiceWithConfig(db, cfg)
+	billingRepo := infra.NewBillingRepository(db)
+	billingSvc := billing.NewServiceWithConfig(billingRepo, cfg)
 	paymentFactory := billingSvc.GetPaymentFactory()
 
 	r := &WebhookRouter{

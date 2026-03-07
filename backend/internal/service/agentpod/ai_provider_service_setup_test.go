@@ -39,12 +39,12 @@ func setupAIProviderTestDB(t *testing.T) *gorm.DB {
 
 func TestNewAIProviderService(t *testing.T) {
 	db := setupAIProviderTestDB(t)
-	service := NewAIProviderService(db, nil) // nil encryptor for development mode
+	service := newTestAIProviderService(db, nil) // nil encryptor for development mode
 
 	if service == nil {
 		t.Fatal("expected non-nil service")
 	}
-	if service.db != db {
-		t.Fatal("expected service.db to be the provided db")
+	if service.repo == nil {
+		t.Fatal("expected service.repo to be set")
 	}
 }

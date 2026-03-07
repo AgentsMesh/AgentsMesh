@@ -29,8 +29,8 @@ func setupTestDBWithUserAgentConfigs(t *testing.T) *gorm.DB {
 
 func TestUserConfigService_GetUserAgentConfig(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewUserConfigService(db, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestUserConfigService(db, agentTypeSvc)
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -77,8 +77,8 @@ func TestUserConfigService_GetUserAgentConfig(t *testing.T) {
 
 func TestUserConfigService_SetUserAgentConfig(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewUserConfigService(db, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestUserConfigService(db, agentTypeSvc)
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -139,8 +139,8 @@ func TestUserConfigService_SetUserAgentConfig(t *testing.T) {
 
 func TestUserConfigService_DeleteUserAgentConfig(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewUserConfigService(db, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestUserConfigService(db, agentTypeSvc)
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -175,8 +175,8 @@ func TestUserConfigService_DeleteUserAgentConfig(t *testing.T) {
 
 func TestUserConfigService_ListUserAgentConfigs(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewUserConfigService(db, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestUserConfigService(db, agentTypeSvc)
 	ctx := context.Background()
 
 	var agents []agent.AgentType
@@ -218,8 +218,8 @@ func TestUserConfigService_ListUserAgentConfigs(t *testing.T) {
 
 func TestUserConfigService_GetUserEffectiveConfig(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewUserConfigService(db, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestUserConfigService(db, agentTypeSvc)
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -294,8 +294,8 @@ func TestUserConfigService_GetUserAgentConfig_DBError(t *testing.T) {
 	)`)
 	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewUserConfigService(badDB, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestUserConfigService(badDB, agentTypeSvc)
 	ctx := context.Background()
 
 	_, err := svc.GetUserAgentConfig(ctx, 1, 1)
@@ -306,8 +306,8 @@ func TestUserConfigService_GetUserAgentConfig_DBError(t *testing.T) {
 
 func TestUserConfigService_SetUserAgentConfig_UpdateError(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := NewAgentTypeService(db)
-	svc := NewUserConfigService(db, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(db)
+	svc := newTestUserConfigService(db, agentTypeSvc)
 	ctx := context.Background()
 
 	var at agent.AgentType
@@ -339,8 +339,8 @@ func TestUserConfigService_DeleteUserAgentConfig_DBError(t *testing.T) {
 	)`)
 	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewUserConfigService(badDB, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestUserConfigService(badDB, agentTypeSvc)
 	ctx := context.Background()
 
 	err := svc.DeleteUserAgentConfig(ctx, 1, 1)
@@ -365,8 +365,8 @@ func TestUserConfigService_SetUserAgentConfig_CreateDBError(t *testing.T) {
 		id INTEGER PRIMARY KEY AUTOINCREMENT
 	)`)
 
-	agentTypeSvc := NewAgentTypeService(badDB)
-	svc := NewUserConfigService(badDB, agentTypeSvc)
+	agentTypeSvc := newTestAgentTypeService(badDB)
+	svc := newTestUserConfigService(badDB, agentTypeSvc)
 	ctx := context.Background()
 
 	_, err := svc.SetUserAgentConfig(ctx, 1, 1, agent.ConfigValues{"key": "value"})

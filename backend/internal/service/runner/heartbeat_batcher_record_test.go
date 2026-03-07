@@ -3,14 +3,17 @@ package runner
 import (
 	"context"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 )
 
 func TestHeartbeatBatcherRecordHeartbeat(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 
 	ctx := context.Background()
 	runnerID := int64(123)
@@ -46,9 +49,10 @@ func TestHeartbeatBatcherRecordHeartbeat(t *testing.T) {
 func TestHeartbeatBatcherRecordHeartbeatWithoutVersion(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 
 	ctx := context.Background()
 	runnerID := int64(456)
@@ -70,9 +74,10 @@ func TestHeartbeatBatcherRecordHeartbeatWithoutVersion(t *testing.T) {
 func TestHeartbeatBatcherBufferSize(t *testing.T) {
 	_, redisClient := setupMiniredisForBatcher(t)
 	db := setupTestDB(t)
+	runnerRepo := infra.NewRunnerRepository(db)
 	logger := newTestLogger()
 
-	batcher := NewHeartbeatBatcher(redisClient, db, logger)
+	batcher := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	ctx := context.Background()
 
 	// Initially empty

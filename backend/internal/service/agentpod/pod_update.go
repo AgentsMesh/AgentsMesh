@@ -17,15 +17,19 @@ func (s *PodService) UpdatePodStatus(ctx context.Context, podKey, status string)
 		updates["finished_at"] = time.Now()
 	}
 
-	result := s.db.WithContext(ctx).Model(&agentpod.Pod{}).Where("pod_key = ?", podKey).Updates(updates)
-	if result.RowsAffected == 0 {
+	rowsAffected, err := s.repo.UpdateByKey(ctx, podKey, updates)
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
 		return ErrPodNotFound
 	}
 
 	if status == agentpod.StatusTerminated || status == agentpod.StatusOrphaned {
-		var pod agentpod.Pod
-		s.db.WithContext(ctx).Where("pod_key = ?", podKey).First(&pod)
-		s.db.WithContext(ctx).Exec("UPDATE runners SET current_pods = GREATEST(current_pods - 1, 0) WHERE id = ?", pod.RunnerID)
+		pod, err := s.repo.GetByKey(ctx, podKey)
+		if err == nil {
+			_ = s.repo.DecrementRunnerPods(ctx, pod.RunnerID)
+		}
 	}
 
 	return nil
@@ -40,23 +44,17 @@ func (s *PodService) UpdateAgentStatus(ctx context.Context, podKey, agentStatus 
 	if agentPID != nil {
 		updates["agent_pid"] = *agentPID
 	}
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ?", podKey).
-		Updates(updates).Error
+	return s.repo.UpdateAgentStatus(ctx, podKey, updates)
 }
 
 // UpdatePodPTY updates pod PTY PID
 func (s *PodService) UpdatePodPTY(ctx context.Context, podKey string, ptyPID int) error {
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ?", podKey).
-		Update("pty_pid", ptyPID).Error
+	return s.repo.UpdateField(ctx, podKey, "pty_pid", ptyPID)
 }
 
 // UpdatePodTitle updates pod title (from OSC 0/2 terminal escape sequences)
 func (s *PodService) UpdatePodTitle(ctx context.Context, podKey, title string) error {
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ?", podKey).
-		Update("title", title).Error
+	return s.repo.UpdateField(ctx, podKey, "title", title)
 }
 
 // UpdateSandboxPath updates pod sandbox path and branch
@@ -65,9 +63,8 @@ func (s *PodService) UpdateSandboxPath(ctx context.Context, podKey, sandboxPath,
 	if branchName != "" {
 		updates["branch_name"] = branchName
 	}
-	return s.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("pod_key = ?", podKey).
-		Updates(updates).Error
+	_, err := s.repo.UpdateByKey(ctx, podKey, updates)
+	return err
 }
 
 // PodUpdateFunc is a callback for pod updates

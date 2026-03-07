@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
 )
 
 func TestRegisterWithUserService(t *testing.T) {
 	db := setupTestDB(t)
-	userSvc := userService.NewService(db)
+	userSvc := userService.NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	cfg := &Config{
@@ -95,7 +96,7 @@ func TestRegisterWithUserService(t *testing.T) {
 
 func TestRegisterErrors(t *testing.T) {
 	db := setupTestDB(t)
-	userSvc := userService.NewService(db)
+	userSvc := userService.NewService(infra.NewUserRepository(db))
 	ctx := context.Background()
 
 	cfg := &Config{

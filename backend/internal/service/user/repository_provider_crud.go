@@ -6,7 +6,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
-	"gorm.io/gorm"
 )
 
 var (
@@ -33,11 +32,11 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 	}
 
 	// Check if provider with same name already exists
-	var existing user.RepositoryProvider
-	err := s.db.WithContext(ctx).
-		Where("user_id = ? AND name = ?", userID, req.Name).
-		First(&existing).Error
-	if err == nil {
+	exists, err := s.repo.RepositoryProviderNameExists(ctx, userID, req.Name, nil)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, ErrProviderAlreadyExists
 	}
 
@@ -81,7 +80,7 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 		}
 	}
 
-	if err := s.db.WithContext(ctx).Create(provider).Error; err != nil {
+	if err := s.repo.CreateRepositoryProvider(ctx, provider); err != nil {
 		return nil, err
 	}
 
@@ -90,39 +89,28 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 
 // GetRepositoryProvider returns a repository provider by ID
 func (s *Service) GetRepositoryProvider(ctx context.Context, userID, providerID int64) (*user.RepositoryProvider, error) {
-	var provider user.RepositoryProvider
-	err := s.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", providerID, userID).
-		First(&provider).Error
+	provider, err := s.repo.GetRepositoryProvider(ctx, userID, providerID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err == user.ErrNotFound {
 			return nil, ErrProviderNotFound
 		}
 		return nil, err
 	}
-	return &provider, nil
+	return provider, nil
 }
 
 // ListRepositoryProviders returns all repository providers for a user
 func (s *Service) ListRepositoryProviders(ctx context.Context, userID int64) ([]*user.RepositoryProvider, error) {
-	var providers []*user.RepositoryProvider
-	err := s.db.WithContext(ctx).
-		Preload("Identity").
-		Where("user_id = ?", userID).
-		Order("created_at DESC").
-		Find(&providers).Error
-	return providers, err
+	return s.repo.ListRepositoryProviders(ctx, userID)
 }
 
 // DeleteRepositoryProvider deletes a repository provider
 func (s *Service) DeleteRepositoryProvider(ctx context.Context, userID, providerID int64) error {
-	result := s.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", providerID, userID).
-		Delete(&user.RepositoryProvider{})
-	if result.Error != nil {
-		return result.Error
+	rowsAffected, err := s.repo.DeleteRepositoryProvider(ctx, userID, providerID)
+	if err != nil {
+		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrProviderNotFound
 	}
 	return nil

@@ -6,8 +6,6 @@ import (
 	"log"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 )
@@ -30,30 +28,21 @@ func (s *Service) syncOrganizationSubscription(ctx context.Context, orgID int64,
 	if len(updates) == 0 {
 		return
 	}
-	if err := s.db.WithContext(ctx).Table("organizations").
-		Where("id = ?", orgID).
-		Updates(updates).Error; err != nil {
+	if err := s.repo.SyncOrganizationSubscription(ctx, orgID, updates); err != nil {
 		log.Printf("[ERROR] syncOrganizationSubscription: failed to sync organization subscription fields for org_id=%d (updates=%v): %v", orgID, updates, err)
 	}
 }
 
 // findSubscriptionByProviderID finds a subscription by provider-specific ID
 func (s *Service) findSubscriptionByProviderID(ctx context.Context, provider string, subscriptionID string) (*billing.Subscription, error) {
-	var sub billing.Subscription
-	var err error
-
-	switch provider {
-	case billing.PaymentProviderLemonSqueezy:
-		err = s.db.WithContext(ctx).Where("lemonsqueezy_subscription_id = ?", subscriptionID).First(&sub).Error
-	default:
-		// Default to Stripe for backward compatibility
-		err = s.db.WithContext(ctx).Where("stripe_subscription_id = ?", subscriptionID).First(&sub).Error
-	}
-
+	sub, err := s.repo.FindSubscriptionByProviderID(ctx, provider, subscriptionID)
 	if err != nil {
 		return nil, err
 	}
-	return &sub, nil
+	if sub == nil {
+		return nil, ErrSubscriptionNotFound
+	}
+	return sub, nil
 }
 
 // handleRecurringPaymentSuccess handles successful recurring payments
@@ -98,7 +87,7 @@ func (s *Service) handleRecurringPaymentSuccess(ctx context.Context, event *paym
 	sub.Status = billing.SubscriptionStatusActive
 	sub.FrozenAt = nil
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 
@@ -120,7 +109,7 @@ func (s *Service) handleRecurringPaymentFailure(ctx context.Context, event *paym
 	sub.Status = billing.SubscriptionStatusFrozen
 	sub.FrozenAt = &now
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 
@@ -181,7 +170,7 @@ func (s *Service) activateSubscription(ctx context.Context, order *billing.Payme
 		// Set provider-specific IDs based on provider
 		setProviderIDs(sub, event)
 
-		if err := s.db.WithContext(ctx).Create(sub).Error; err != nil {
+		if err := s.repo.CreateSubscription(ctx, sub); err != nil {
 			return err
 		}
 
@@ -218,7 +207,7 @@ func (s *Service) activateSubscription(ctx context.Context, order *billing.Payme
 	// Set provider-specific IDs based on provider
 	setProviderIDs(sub, event)
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 
@@ -251,15 +240,14 @@ func setProviderIDs(sub *billing.Subscription, event *payment.WebhookEvent) {
 
 // findPlanByVariantID looks up a plan by LemonSqueezy variant ID from plan_prices table
 func (s *Service) findPlanByVariantID(ctx context.Context, variantID string) (*billing.SubscriptionPlan, error) {
-	var price billing.PlanPrice
-	err := s.db.WithContext(ctx).
-		Preload("Plan").
-		Where("lemonsqueezy_variant_id_monthly = ? OR lemonsqueezy_variant_id_yearly = ?", variantID, variantID).
-		First(&price).Error
+	plan, err := s.repo.FindPlanByVariantID(ctx, variantID)
 	if err != nil {
 		return nil, err
 	}
-	return price.Plan, nil
+	if plan == nil {
+		return nil, ErrPlanNotFound
+	}
+	return plan, nil
 }
 
 // addSeats adds seats to a subscription after payment
@@ -274,9 +262,7 @@ func (s *Service) addSeats(ctx context.Context, order *billing.PaymentOrder) err
 		}
 	}
 
-	return s.db.WithContext(ctx).Model(&billing.Subscription{}).
-		Where("organization_id = ?", order.OrganizationID).
-		Update("seat_count", gorm.Expr("seat_count + ?", order.Seats)).Error
+	return s.repo.AddSeats(ctx, order.OrganizationID, order.Seats)
 }
 
 // upgradePlan upgrades a subscription to a new plan
@@ -284,13 +270,11 @@ func (s *Service) upgradePlan(ctx context.Context, order *billing.PaymentOrder) 
 	if order.PlanID == nil {
 		return ErrInvalidPlan
 	}
-	if err := s.db.WithContext(ctx).Model(&billing.Subscription{}).
-		Where("organization_id = ?", order.OrganizationID).
-		Updates(map[string]interface{}{
-			"plan_id":           *order.PlanID,
-			"downgrade_to_plan": nil,
-			"updated_at":        time.Now(),
-		}).Error; err != nil {
+	if err := s.repo.UpdateSubscriptionFieldsByOrg(ctx, order.OrganizationID, map[string]interface{}{
+		"plan_id":           *order.PlanID,
+		"downgrade_to_plan": nil,
+		"updated_at":        time.Now(),
+	}); err != nil {
 		return err
 	}
 
@@ -349,7 +333,7 @@ func (s *Service) renewSubscriptionFromOrder(ctx context.Context, order *billing
 	sub.Status = billing.SubscriptionStatusActive
 	sub.FrozenAt = nil
 
-	if err := s.db.WithContext(ctx).Save(sub).Error; err != nil {
+	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
 		return err
 	}
 

@@ -14,7 +14,7 @@ import (
 
 func TestCheckSeatAvailability(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -49,7 +49,7 @@ func TestCheckSeatAvailability(t *testing.T) {
 
 func TestCheckSeatAvailabilityWithPendingInvitations(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -84,7 +84,7 @@ func TestCheckSeatAvailabilityWithPendingInvitations(t *testing.T) {
 
 func TestCheckSeatAvailabilityNoSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	// No subscription = default 1 seat
@@ -100,7 +100,7 @@ func TestCheckSeatAvailabilityNoSubscription(t *testing.T) {
 
 func TestGetSeatUsage(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedProPlan(t, db) // Use Pro plan for CanAddSeats = true
@@ -141,7 +141,7 @@ func TestGetSeatUsage(t *testing.T) {
 
 func TestGetSeatUsageFreePlan(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db)
@@ -158,7 +158,7 @@ func TestGetSeatUsageFreePlan(t *testing.T) {
 
 func TestGetSeatUsageNoSubscription(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	_, err := service.GetSeatUsage(ctx, 999)
@@ -169,7 +169,7 @@ func TestGetSeatUsageNoSubscription(t *testing.T) {
 
 func TestGetSeatUsageWithNilPlan(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewService(db, "")
+	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
 	plan := seedProPlan(t, db)

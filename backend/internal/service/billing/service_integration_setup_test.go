@@ -7,6 +7,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
+	"gorm.io/gorm"
 )
 
 // ===========================================
@@ -14,7 +15,7 @@ import (
 // These tests verify the complete payment flow
 // ===========================================
 
-func setupIntegrationTestService(t *testing.T) (*Service, *payment.Factory) {
+func setupIntegrationTestService(t *testing.T) (*Service, *payment.Factory, *gorm.DB) {
 	db := setupTestDB(t)
 
 	// Seed plans
@@ -33,15 +34,15 @@ func setupIntegrationTestService(t *testing.T) (*Service, *payment.Factory) {
 		},
 	}
 
-	service := NewServiceWithConfig(db, appCfg)
+	service := NewServiceWithConfig(newTestRepo(db), appCfg)
 	factory := service.GetPaymentFactory()
 
-	return service, factory
+	return service, factory, db
 }
 
 // TestIntegrationCreateSubscriptionFlow tests the complete subscription creation flow
 func TestIntegrationCreateSubscriptionFlow(t *testing.T) {
-	service, factory := setupIntegrationTestService(t)
+	service, factory, _ := setupIntegrationTestService(t)
 	ctx := context.Background()
 
 	// 1. Create a based subscription first

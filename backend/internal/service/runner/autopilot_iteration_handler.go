@@ -13,11 +13,9 @@ import (
 func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv1.AutopilotIterationEvent) {
 	ctx := context.Background()
 
-	// Get AutopilotController ID
-	var rp agentpod.AutopilotController
-	if err := pc.db.WithContext(ctx).
-		Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
-		First(&rp).Error; err != nil {
+	// Get AutopilotController by key
+	rp, err := pc.autopilotRepo.GetByKey(ctx, data.GetAutopilotKey())
+	if err != nil {
 		pc.logger.Error("failed to find autopilot pod for iteration",
 			"autopilot_controller_key", data.GetAutopilotKey(),
 			"error", err)
@@ -48,7 +46,7 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 		DurationMs:            data.GetDurationMs(),
 	}
 
-	if err := pc.db.WithContext(ctx).Create(iteration).Error; err != nil {
+	if err := pc.autopilotRepo.CreateIteration(ctx, iteration); err != nil {
 		pc.logger.Error("failed to create autopilot iteration record",
 			"autopilot_controller_key", data.GetAutopilotKey(),
 			"iteration", data.GetIteration(),
@@ -58,14 +56,11 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 
 	// Update AutopilotController current_iteration and last_iteration_at
 	now := time.Now()
-	if err := pc.db.WithContext(ctx).
-		Model(&agentpod.AutopilotController{}).
-		Where("autopilot_controller_key = ?", data.GetAutopilotKey()).
-		Updates(map[string]interface{}{
-			"current_iteration": data.GetIteration(),
-			"last_iteration_at": now,
-			"updated_at":        now,
-		}).Error; err != nil {
+	if err := pc.autopilotRepo.UpdateStatusByKey(ctx, data.GetAutopilotKey(), map[string]interface{}{
+		"current_iteration": data.GetIteration(),
+		"last_iteration_at": now,
+		"updated_at":        now,
+	}); err != nil {
 		pc.logger.Error("failed to update autopilot pod iteration count",
 			"autopilot_controller_key", data.GetAutopilotKey(),
 			"error", err)
