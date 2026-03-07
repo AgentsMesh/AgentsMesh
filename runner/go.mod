@@ -18,7 +18,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.11.1
 	github.com/thejerf/suture/v4 v4.0.6
-	golang.org/x/term v0.38.0
+	golang.org/x/term v0.40.0
 	golang.org/x/time v0.14.0
 	google.golang.org/grpc v1.78.0
 	google.golang.org/grpc/security/advancedtls v1.0.0
@@ -60,7 +60,7 @@ require (
 	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
-	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
