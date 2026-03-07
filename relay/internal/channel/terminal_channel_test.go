@@ -65,7 +65,7 @@ func TestTerminalChannel_SetPublisher_Reconnect(t *testing.T) {
 	ch.AddSubscriber("s1", subServer)
 
 	// Close the publisher client side to trigger disconnect
-	pubClient.Close()
+	_ = pubClient.Close()
 
 	// Wait for publisher disconnect to be detected
 	waitFor(t, func() bool {
@@ -211,7 +211,7 @@ func TestTerminalChannel_PublisherDisconnect_Timeout(t *testing.T) {
 	ch.AddSubscriber("s1", subServer)
 
 	// Close publisher client to trigger disconnect
-	pubClient.Close()
+	_ = pubClient.Close()
 
 	// Wait for channel to close due to reconnect timeout
 	waitFor(t, func() bool {

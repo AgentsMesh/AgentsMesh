@@ -97,7 +97,7 @@ func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.channelManager.HandlePublisherConnect(podKey, conn); err != nil {
 		h.logger.Error("Failed to handle publisher connect", "error", err, "pod_key", podKey)
-		conn.Close()
+		_ = conn.Close()
 		return
 	}
 }

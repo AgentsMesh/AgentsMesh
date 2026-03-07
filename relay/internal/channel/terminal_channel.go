@@ -582,7 +582,7 @@ func (c *TerminalChannel) handlePublisherDisconnect(disconnectedConn *websocket.
 	c.publisherMu.Unlock()
 
 	// Close connection after releasing lock
-	conn.Close()
+	_ = conn.Close()
 
 	// Broadcast AFTER releasing lock — eliminates the Unlock→Lock window
 	c.Broadcast(protocol.EncodeRunnerDisconnected())
