@@ -64,7 +64,9 @@ RUN addgroup -g 1000 runner && \
     adduser -u 1000 -G runner -h /home/runner -s /bin/bash -D runner && \
     # Give runner user ownership of app directory
     chown -R runner:runner /app && \
-    # Create workspace directory
+    # Create workspace directories (volume mount point + fallback)
+    mkdir -p /workspace && \
+    chown -R runner:runner /workspace && \
     mkdir -p /tmp/agentsmesh-workspace && \
     chown -R runner:runner /tmp/agentsmesh-workspace && \
     # Create .agentsmesh config directory (note: with 's')

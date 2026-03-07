@@ -1,0 +1,35 @@
+# HTTP routing via file provider
+# Replaces Docker provider labels (more reliable across Docker Desktop restarts)
+
+http:
+  routers:
+    backend-api:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/api`) || PathPrefix(`/health`)"
+      service: backend-api
+
+    relay:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/relay`)"
+      service: relay
+      middlewares:
+        - relay-strip
+
+  middlewares:
+    relay-strip:
+      stripPrefix:
+        prefixes:
+          - "/relay"
+
+  services:
+    backend-api:
+      loadBalancer:
+        servers:
+          - url: "http://backend:8080"
+
+    relay:
+      loadBalancer:
+        servers:
+          - url: "http://relay:8090"
