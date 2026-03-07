@@ -23,6 +23,7 @@ set -e
 # 默认配置（与 seed 数据匹配）
 BACKEND_URL="${BACKEND_URL:-http://backend:8080}"
 GRPC_ENDPOINT="${GRPC_ENDPOINT:-nginx:9443}"
+RELAY_BASE_URL="${RELAY_BASE_URL:-}"
 RUNNER_NODE_ID="${RUNNER_NODE_ID:-dev-runner}"
 RUNNER_ORG_SLUG="${RUNNER_ORG_SLUG:-dev-org}"
 MAX_CONCURRENT_PODS="${MAX_CONCURRENT_PODS:-10}"
@@ -37,11 +38,12 @@ echo "  AgentsMesh Runner Entrypoint"
 echo "========================================"
 echo ""
 echo "配置信息："
-echo "  Backend URL:   $BACKEND_URL"
-echo "  gRPC Endpoint: $GRPC_ENDPOINT"
-echo "  Node ID:       $RUNNER_NODE_ID"
-echo "  Org Slug:      $RUNNER_ORG_SLUG"
-echo "  Max Pods:      $MAX_CONCURRENT_PODS"
+echo "  Backend URL:    $BACKEND_URL"
+echo "  gRPC Endpoint:  $GRPC_ENDPOINT"
+echo "  Relay Base URL: $RELAY_BASE_URL"
+echo "  Node ID:        $RUNNER_NODE_ID"
+echo "  Org Slug:       $RUNNER_ORG_SLUG"
+echo "  Max Pods:       $MAX_CONCURRENT_PODS"
 echo ""
 
 # 等待 Backend 就绪
@@ -270,6 +272,9 @@ grpc_endpoint: "${GRPC_ENDPOINT}"
 cert_file: "${CERTS_DIR}/runner.crt"
 key_file: "${CERTS_DIR}/runner.key"
 ca_file: "${CERTS_DIR}/ca.crt"
+
+# Relay URL override (Docker: rewrite external relay URL to Docker-internal Traefik)
+relay_base_url: "${RELAY_BASE_URL}"
 
 # Runner identification
 node_id: "${RUNNER_NODE_ID}"

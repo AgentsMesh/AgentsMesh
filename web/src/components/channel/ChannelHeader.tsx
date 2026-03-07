@@ -11,7 +11,7 @@ interface ChannelHeaderProps {
   podCount: number;
   /** Channel ID for pod management */
   channelId: number;
-  onClose: () => void;
+  onClose?: () => void;
   onRefresh?: () => void;
   loading?: boolean;
   /** Compact mode for embedded use (e.g., bottom panel) */
@@ -102,15 +102,17 @@ export function ChannelHeader({
             </Button>
           )}
 
-          {/* Close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onClose}
-          >
-            <X className="w-4 h-4" />
-          </Button>
+          {/* Close button — only shown when onClose is provided */}
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onClose}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -4,18 +4,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
+import { Dialog, DialogContent, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { userGitCredentialApi } from "@/lib/api";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 interface AddCredentialDialogProps {
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
 /**
  * AddCredentialDialog - Dialog for adding a new Git credential (PAT or SSH Key)
  */
-export function AddCredentialDialog({ onClose, onSuccess }: AddCredentialDialogProps) {
+export function AddCredentialDialog({ open, onOpenChange, onSuccess }: AddCredentialDialogProps) {
   const t = useTranslations();
   const [credentialType, setCredentialType] = useState<"pat" | "ssh_key">("pat");
   const [name, setName] = useState("");
@@ -62,16 +65,9 @@ export function AddCredentialDialog({ onClose, onSuccess }: AddCredentialDialogP
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background rounded-lg shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-lg font-semibold">{t("settings.gitSettings.credentials.dialog.title")}</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            ✕
-          </button>
-        </div>
-
-        <div className="p-4 space-y-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent title={t("settings.gitSettings.credentials.dialog.title")}>
+        <DialogBody className="space-y-4">
           {error && (
             <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg">
               {error}
@@ -79,25 +75,22 @@ export function AddCredentialDialog({ onClose, onSuccess }: AddCredentialDialogP
           )}
 
           <FormField label={t("settings.gitSettings.credentials.dialog.type")}>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={credentialType === "pat"}
-                  onChange={() => setCredentialType("pat")}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Personal Access Token</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={credentialType === "ssh_key"}
-                  onChange={() => setCredentialType("ssh_key")}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">SSH Key</span>
-              </label>
+            <div className="flex gap-1 p-1 bg-muted rounded-lg">
+              {(["pat", "ssh_key"] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setCredentialType(type)}
+                  className={cn(
+                    "flex-1 px-3 py-1.5 text-sm rounded-md transition-colors",
+                    credentialType === type
+                      ? "bg-background text-foreground shadow-sm font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {type === "pat" ? "Personal Access Token" : "SSH Key"}
+                </button>
+              ))}
             </div>
           </FormField>
 
@@ -156,17 +149,17 @@ export function AddCredentialDialog({ onClose, onSuccess }: AddCredentialDialogP
               placeholder="github.com, gitlab.company.com"
             />
           </FormField>
-        </div>
+        </DialogBody>
 
-        <div className="flex justify-end gap-3 p-4 border-t border-border">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={saving}>
             {saving ? t("common.loading") : t("common.save")}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

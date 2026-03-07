@@ -220,15 +220,14 @@ export function GitSettingsContent() {
         />
       )}
 
-      {showAddCredentialDialog && (
-        <AddCredentialDialog
-          onClose={() => setShowAddCredentialDialog(false)}
-          onSuccess={() => {
-            setShowAddCredentialDialog(false);
-            refetch();
-          }}
-        />
-      )}
+      <AddCredentialDialog
+        open={showAddCredentialDialog}
+        onOpenChange={setShowAddCredentialDialog}
+        onSuccess={() => {
+          setShowAddCredentialDialog(false);
+          refetch();
+        }}
+      />
 
       {/* Delete confirmation dialogs */}
       <ConfirmDialog {...deleteProviderDialog.dialogProps} />

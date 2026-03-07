@@ -1,0 +1,36 @@
+{
+  "channels": {
+    "emptyState": "Selecciona un canal para empezar a chatear",
+    "emptyStateHint": "Elige un canal de la barra lateral para ver mensajes y colaborar con tu equipo",
+    "sidebar": {
+      "searchPlaceholder": "Buscar canales...",
+      "createChannel": "Nuevo canal",
+      "refresh": "Actualizar",
+      "showArchived": "Mostrar archivados",
+      "hideArchived": "Ocultar archivados",
+      "noChannels": "No hay canales aún",
+      "noMatch": "Ningún canal coincide con tu búsqueda",
+      "podsCount": "{count} pods"
+    },
+    "createDialog": {
+      "title": "Crear canal",
+      "name": "Nombre del canal",
+      "namePlaceholder": "Ej: feature-auth, bug-fix-login",
+      "nameRequired": "El nombre del canal es obligatorio",
+      "description": "Descripción",
+      "descriptionPlaceholder": "¿De qué trata este canal?",
+      "descriptionHint": "Opcional",
+      "failed": "Error al crear el canal"
+    },
+    "messages": {
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "loadOlder": "Cargar mensajes anteriores",
+      "loading": "Cargando...",
+      "noMessages": "Aún no hay mensajes",
+      "startConversation": "¡Inicia la conversación!",
+      "copyMessage": "Copiar",
+      "moreActions": "Más"
+    }
+  }
+}

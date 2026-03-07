@@ -2,15 +2,16 @@
 
 import { useState, useRef, useCallback, useMemo, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { SendHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { MentionDropdown } from "./MentionDropdown";
 import { useMentionCandidates, type MentionItem } from "@/hooks/useMentionCandidates";
+import { parsePodMentions, getMentionQuery } from "./mention";
 
-/** Pod mention info resolved at send time */
-export interface MentionedPod {
-  podKey: string;
-  mentionText: string;
-}
+// Re-export for backward compatibility
+export { extractPromptFromMention, buildChannelPrompt } from "./mention";
+export type { MentionedPod } from "./mention";
+import type { MentionedPod } from "./mention";
 
 interface MessageInputProps {
   onSend: (content: string, mentionedPods?: MentionedPod[]) => void;
@@ -20,93 +21,6 @@ interface MessageInputProps {
   channelId?: number | null;
 }
 
-/**
- * Parse @mentions from text and match against known pod candidates.
- * Returns deduplicated list of mentioned pods with their full pod keys.
- */
-function parsePodMentions(
-  text: string,
-  candidates: MentionItem[]
-): MentionedPod[] {
-  const podCandidates = candidates.filter((c) => c.type === "pod");
-  if (podCandidates.length === 0) return [];
-
-  const mentionRegex = /@([\w.\-]+)/g;
-  const result: MentionedPod[] = [];
-  const seen = new Set<string>();
-
-  let match;
-  while ((match = mentionRegex.exec(text)) !== null) {
-    const mentionText = match[1];
-    const pod = podCandidates.find((p) => p.mentionText === mentionText);
-    if (pod && !seen.has(pod.id)) {
-      seen.add(pod.id);
-      result.push({
-        podKey: pod.id.replace("pod:", ""),
-        mentionText: pod.mentionText,
-      });
-    }
-  }
-
-  return result;
-}
-
-/**
- * Extract the prompt text by stripping pod @mentions from the message.
- * User @mentions are preserved as they may be part of the natural language prompt.
- */
-export function extractPromptFromMention(
-  content: string,
-  mentionedPods: MentionedPod[]
-): string {
-  let prompt = content;
-  for (const pod of mentionedPods) {
-    // Escape special regex chars in mentionText
-    const escaped = pod.mentionText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    prompt = prompt.replace(new RegExp(`@${escaped}\\s*`, "g"), "");
-  }
-  return prompt.trim();
-}
-
-/**
- * Build a context-aware prompt for a pod, wrapping the raw prompt with
- * channel origin and reply instruction.
- */
-export function buildChannelPrompt(
-  rawPrompt: string,
-  channelName: string
-): string {
-  return [
-    `Message from channel(#${channelName}): ${rawPrompt}`,
-    "",
-    "If you finish it, please reply to this channel.",
-  ].join("\n");
-}
-
-/**
- * Extract the @ query at the cursor position.
- * Returns the query string (text after @) and its start index, or null if not in a mention.
- */
-function getMentionQuery(
-  text: string,
-  cursorPos: number
-): { query: string; startIndex: number } | null {
-  // Search backwards from cursor for '@'
-  const textBeforeCursor = text.slice(0, cursorPos);
-  const atIndex = textBeforeCursor.lastIndexOf("@");
-
-  if (atIndex === -1) return null;
-
-  // '@' must be at the start of text or preceded by a whitespace/newline
-  if (atIndex > 0 && !/\s/.test(textBeforeCursor[atIndex - 1])) return null;
-
-  // Extract query: text between '@' and cursor (must not contain whitespace)
-  const query = textBeforeCursor.slice(atIndex + 1);
-  if (/\s/.test(query)) return null;
-
-  return { query, startIndex: atIndex };
-}
-
 export function MessageInput({
   onSend,
   disabled,
@@ -114,7 +28,8 @@ export function MessageInput({
   channelId,
 }: MessageInputProps) {
   const t = useTranslations();
-  const defaultPlaceholder = placeholder || t("mesh.messageInput.placeholder");
+  const defaultPlaceholder =
+    placeholder || t("mesh.messageInput.placeholder");
   const [content, setContent] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -134,7 +49,6 @@ export function MessageInput({
     enabled: !!channelId,
   });
 
-  // Filter candidates by query
   const filteredCandidates = useMemo(() => {
     return candidates.filter((item) => {
       if (!mentionQuery) return true;
@@ -147,19 +61,16 @@ export function MessageInput({
     });
   }, [candidates, mentionQuery]);
 
-  // Clamp active index to valid range
   const safeActiveIndex = Math.min(
     activeIndex,
     Math.max(filteredCandidates.length - 1, 0)
   );
 
-  // Calculate dropdown position relative to container
   const updateDropdownPosition = useCallback(() => {
     const textarea = textareaRef.current;
     const container = containerRef.current;
     if (!textarea || !container) return;
 
-    // Position dropdown above the textarea
     const containerRect = container.getBoundingClientRect();
     const textareaRect = textarea.getBoundingClientRect();
 
@@ -169,7 +80,6 @@ export function MessageInput({
     });
   }, []);
 
-  // Detect @ mention trigger on text change
   const handleChange = useCallback(
     (value: string) => {
       setContent(value);
@@ -193,20 +103,16 @@ export function MessageInput({
     [candidates.length, updateDropdownPosition]
   );
 
-  // Handle mention selection
   const handleMentionSelect = useCallback(
     (item: MentionItem) => {
       const before = content.slice(0, mentionStartIndex);
-      const after = content.slice(
-        mentionStartIndex + 1 + mentionQuery.length
-      );
+      const after = content.slice(mentionStartIndex + 1 + mentionQuery.length);
       const mentionText = `@${item.mentionText} `;
       const newContent = before + mentionText + after;
 
       setContent(newContent);
       setMentionVisible(false);
 
-      // Restore focus and cursor position
       requestAnimationFrame(() => {
         const textarea = textareaRef.current;
         if (textarea) {
@@ -223,21 +129,17 @@ export function MessageInput({
     const trimmedContent = content.trim();
     if (!trimmedContent || disabled) return;
 
-    // Resolve @pod mentions from the message content
     const mentionedPods = parsePodMentions(trimmedContent, candidates);
-
     onSend(trimmedContent, mentionedPods.length > 0 ? mentionedPods : undefined);
     setContent("");
     setMentionVisible(false);
 
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle mention dropdown navigation
     if (mentionVisible && filteredCandidates.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -265,7 +167,6 @@ export function MessageInput({
       }
     }
 
-    // Send on Enter (without Shift)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -273,7 +174,6 @@ export function MessageInput({
   };
 
   const handleInput = () => {
-    // Auto-resize textarea
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(
@@ -284,7 +184,7 @@ export function MessageInput({
   };
 
   return (
-    <div className="border-t p-4" ref={containerRef}>
+    <div className="border-t px-4 py-3" ref={containerRef}>
       <div className="flex items-end gap-2">
         <div className="flex-1 relative">
           {/* Mention dropdown */}
@@ -302,9 +202,9 @@ export function MessageInput({
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
-            placeholder={defaultPlaceholder}
+            placeholder={`${defaultPlaceholder}  (Enter ↵)`}
             disabled={disabled}
-            className="w-full resize-none rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 min-h-[44px] max-h-[200px]"
+            className="w-full resize-none rounded-xl border bg-muted/40 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background disabled:opacity-50 min-h-[42px] max-h-[200px] transition-colors"
             rows={1}
           />
         </div>
@@ -312,25 +212,10 @@ export function MessageInput({
           onClick={handleSend}
           disabled={disabled || !content.trim()}
           size="icon"
-          className="h-[44px] w-[44px]"
+          className="h-[42px] w-[42px] rounded-xl"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
-          </svg>
+          <SendHorizontal className="w-4 h-4" />
         </Button>
-      </div>
-      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-        <span>{t("mesh.messageInput.hint")}</span>
       </div>
     </div>
   );

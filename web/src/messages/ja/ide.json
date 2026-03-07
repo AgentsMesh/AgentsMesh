@@ -3,6 +3,7 @@
     "activities": {
       "workspace": "ワークスペース",
       "tickets": "チケット",
+      "channels": "チャンネル",
       "mesh": "AgentsMesh",
       "loops": "Loops",
       "repositories": "リポジトリ",
@@ -120,7 +121,7 @@
         "showTerminatedPods": "Show terminated pods",
         "networkStats": "Network Stats",
         "active": "Active",
-        "channels": "Channels",
+        "channels": "チャンネル",
         "bindings": "Bindings",
         "channelsSection": "チャンネル",
         "podsSection": "Pod",

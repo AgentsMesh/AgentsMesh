@@ -1,0 +1,36 @@
+{
+  "channels": {
+    "emptyState": "选择一个频道开始聊天",
+    "emptyStateHint": "从侧边栏选择一个频道，查看消息并与团队协作",
+    "sidebar": {
+      "searchPlaceholder": "搜索频道...",
+      "createChannel": "新建频道",
+      "refresh": "刷新",
+      "showArchived": "显示已归档",
+      "hideArchived": "隐藏已归档",
+      "noChannels": "暂无频道",
+      "noMatch": "没有匹配的频道",
+      "podsCount": "{count} 个 Pod"
+    },
+    "createDialog": {
+      "title": "创建频道",
+      "name": "频道名称",
+      "namePlaceholder": "例如 feature-auth、bug-fix-login",
+      "nameRequired": "请输入频道名称",
+      "description": "描述",
+      "descriptionPlaceholder": "这个频道用于什么？",
+      "descriptionHint": "可选",
+      "failed": "创建频道失败"
+    },
+    "messages": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "loadOlder": "加载更早的消息",
+      "loading": "加载中...",
+      "noMessages": "暂无消息",
+      "startConversation": "开始对话吧！",
+      "copyMessage": "复制",
+      "moreActions": "更多"
+    }
+  }
+}

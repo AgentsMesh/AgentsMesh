@@ -1,14 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ChannelHeader } from "@/components/mesh/ChannelHeader";
-import { ChannelDocument } from "@/components/mesh/ChannelDocument";
-import { MessageList } from "@/components/mesh/MessageList";
-import { MessageInput } from "@/components/mesh/MessageInput";
+import { ChannelHeader } from "@/components/channel/ChannelHeader";
+import { ChannelDocument } from "@/components/channel/ChannelDocument";
+import { MessageList } from "@/components/channel/MessageList";
+import { MessageInput } from "@/components/channel/MessageInput";
 import { ChevronLeft } from "lucide-react";
 import type { ChannelInfo, MeshTopology } from "@/stores/mesh";
 import type { TransformedMessage } from "./types";
-import type { MentionedPod } from "@/components/mesh/MessageInput";
+import type { MentionedPod } from "@/components/channel/MessageInput";
 
 interface ChannelDetailViewProps {
   channelId: number;

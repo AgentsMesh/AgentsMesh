@@ -138,48 +138,78 @@
     },
     "gettingStarted": {
       "title": "快速上手",
-      "description": "几分钟内启动 AgentsMesh。本指南将带你完成基本设置步骤。",
+      "description": "六步启动 AgentsMesh。本指南将带你完成账户创建、Runner 配置、智能体安装，并启动你的第一个 AI Pod。",
       "step1": {
         "title": "创建账户",
-        "description": "注册以创建你的账户和组织。你将收到一封验证邮件来确认账户。",
-        "whatYouSetUp": "你将设置：",
-        "item1": "带邮箱验证的个人账户",
-        "item2": "组织（团队工作空间）",
-        "item3": "初始组织设置"
+        "description": "前往注册页面，填写邮箱、用户名和密码。提交后你将收到一封验证邮件——如果几分钟内没有收到，请检查垃圾邮件文件夹。",
+        "whatYouGet": "验证邮箱后，引导向导将帮助你：",
+        "item1": "创建个人工作空间（一键）或团队工作空间",
+        "item2": "或通过邀请链接加入已有组织"
       },
       "step2": {
-        "title": "配置 AI 服务商",
-        "description": "前往 设置 → AgentPod → AI 服务商 配置你的 AI 服务商 API 密钥。AgentsMesh 支持多个服务商：",
-        "anthropic": "Anthropic (Claude)",
-        "anthropicDesc": "用于 Claude Code 智能体。从以下网站获取 API 密钥",
-        "openai": "OpenAI",
-        "openaiDesc": "用于 Codex CLI 智能体。从以下网站获取 API 密钥",
-        "google": "Google (Gemini)",
-        "googleDesc": "用于 Gemini CLI 智能体。从以下网站获取 API 密钥",
-        "custom": "自定义服务商",
-        "customDesc": "用于 Aider、OpenCode 或自定义智能体，使用你自己的 API 端点。"
+        "title": "配置 Runner",
+        "description": "Runner 是 AI 智能体 Pod 的执行环境。在你的开发机器或服务器上安装 AgentsMesh Runner。",
+        "methodToken": "使用令牌注册",
+        "methodLogin": "使用浏览器登录注册",
+        "seeSetup": "查看 {link} 了解 Docker、Homebrew、Linux 包和 Kubernetes 部署选项。"
       },
       "step3": {
-        "title": "配置 Runner",
-        "description": "Runner 是 AI 智能体 Pod 的执行环境。在你的开发机器或服务器上下载并配置 AgentsMesh Runner。",
-        "seeSetup": "查看 {link} 了解详细的安装说明和 Docker/Kubernetes 部署选项。"
+        "title": "安装 AI 智能体 CLI",
+        "description": "在 Runner 机器上安装你需要的 CLI 工具并设置 API 密钥环境变量。Runner 会通过 PATH 自动检测已安装的 CLI，并向平台报告可用智能体。",
+        "claudeCode": "Claude Code",
+        "claudeCodeInstall": "npm install -g @anthropic-ai/claude-code",
+        "claudeCodeEnv": "export ANTHROPIC_API_KEY=sk-ant-...",
+        "claudeCodeHint": "从以下网站获取 API 密钥",
+        "codexCli": "Codex CLI",
+        "codexCliInstall": "npm install -g @openai/codex",
+        "codexCliEnv": "export OPENAI_API_KEY=sk-...",
+        "codexCliHint": "从以下网站获取 API 密钥",
+        "geminiCli": "Gemini CLI",
+        "geminiCliInstall": "npm install -g @google/gemini-cli",
+        "geminiCliEnv": "export GOOGLE_API_KEY=...",
+        "geminiCliHint": "从以下网站获取 API 密钥",
+        "tip": "安装后重启 Runner 或等待下一次心跳。新的可用智能体将出现在新建 Pod 对话框中。"
       },
       "step4": {
+        "title": "连接 Git 服务商",
+        "description": "连接 Git 服务商后，Pod 可以克隆仓库并在隔离的 Git 工作树中工作。前往 设置 → 个人 → Git 设置 添加服务商。",
+        "github": "GitHub",
+        "githubDesc": "添加具有 repo 权限的个人访问令牌。",
+        "githubTokenUrl": "github.com/settings/tokens",
+        "gitlab": "GitLab",
+        "gitlabDesc": "添加具有 api 和 read_repository 权限的个人访问令牌。支持自托管实例。",
+        "seeGuide": "查看 {link} 了解完整配置说明，包括 SSH 密钥和 Gitee。"
+      },
+      "step5": {
         "title": "启动 Pod",
-        "description": "创建一个新的 AgentPod，开始 AI 辅助编程！",
-        "item1": "在侧边栏中导航到 AgentPod",
+        "description": "创建你的第一个 AgentPod，开始 AI 辅助编程！",
+        "item1": "在侧边栏中导航到工作空间",
         "item2": "点击 新建 Pod",
         "item3": "选择 AI 智能体类型（Claude Code、Codex CLI 等）",
-        "item4": "选择执行 Pod 的 Runner",
-        "item5": "可选地关联仓库和任务",
-        "item6": "点击 创建 启动你的 AI 开发 Pod"
+        "item4": "选择一个 Runner",
+        "item5": "可选地选择仓库和分支",
+        "item6": "可选地关联任务以提供上下文",
+        "item7": "添加描述任务的初始提示",
+        "item8": "点击 创建"
+      },
+      "step6": {
+        "title": "与智能体交互",
+        "description": "创建后将打开终端视图，显示实时会话。AI 智能体开始执行初始提示，如果未提供则等待输入。",
+        "item1": "直接在终端中输入后续提示或命令",
+        "item2": "观察智能体状态指示器——空闲、执行中或等待中",
+        "item3": "如果关联了仓库，智能体在仓库工作树中工作",
+        "item4": "任务完成后从工具栏终止 Pod"
       },
       "nextSteps": {
         "title": "下一步",
         "agentpod": "了解 AgentPod →",
         "agentpodDesc": "远程 AI 开发工作站",
         "mesh": "探索 Mesh →",
-        "meshDesc": "多智能体协作功能"
+        "meshDesc": "多智能体协作功能",
+        "tickets": "任务与看板 →",
+        "ticketsDesc": "关联 Pod 的任务管理",
+        "multiAgent": "多智能体工作流 →",
+        "multiAgentDesc": "协调多个 AI 智能体"
       }
     },
     "features": {
@@ -235,12 +265,10 @@
           "descriptionHeader": "说明",
           "idle": "空闲",
           "idleDesc": "智能体正在等待任务或提示",
-          "working": "工作中",
-          "workingDesc": "智能体正在执行任务",
           "waiting": "等待中",
           "waitingDesc": "智能体正在等待用户输入或确认",
-          "finished": "已完成",
-          "finishedDesc": "智能体已完成任务"
+          "executing": "执行中",
+          "executingDesc": "智能体正在执行任务"
         },
         "configuration": {
           "title": "Pod 配置",
@@ -623,7 +651,9 @@
           "brewTitle": "macOS (Homebrew)",
           "linuxTitle": "Linux（包管理器）",
           "afterInstall": "安装后",
-          "tokenHint": "在 AgentsMesh Web 界面的 设置 → Runner → 创建令牌 中获取注册令牌。"
+          "tokenHint": "在 AgentsMesh Web 界面的 设置 → Runner → 创建令牌 中获取注册令牌。",
+          "methodToken": "选项 A：使用令牌注册",
+          "methodLogin": "选项 B：使用浏览器登录注册"
         },
         "docker": {
           "title": "Docker 安装"
@@ -1116,7 +1146,6 @@
             "params": {
               "repository_id": "按仓库 ID 筛选",
               "status": "按状态筛选（open、in_progress、resolved、closed）",
-              "type": "按类型筛选（bug、feature、task、improvement）",
               "assignee_id": "按负责人用户 ID 筛选",
               "labels": "按标签筛选（逗号分隔）",
               "limit": "返回的最大结果数",
@@ -1141,7 +1170,6 @@
             "title": "POST /tickets",
             "description": "创建新任务。至少需要提供类型和标题。",
             "fields": {
-              "type": "任务类型：bug、feature、task 或 improvement",
               "title": "任务标题（1-500 个字符）",
               "priority": "优先级：low、medium、high 或 critical",
               "status": "初始状态（默认为 open）",
@@ -1159,7 +1187,6 @@
             },
             "fields": {
               "title": "更新后的任务标题",
-              "type": "更新后的任务类型",
               "priority": "更新后的优先级",
               "status": "更新后的状态",
               "assignee_id": "更新后的负责人用户 ID",

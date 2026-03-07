@@ -7,6 +7,7 @@ import { persist } from "zustand/middleware";
 export type ActivityType =
   | "workspace"
   | "tickets"
+  | "channels"
   | "mesh"
   | "loops"
   | "repositories"
@@ -136,6 +137,13 @@ export const ACTIVITIES: ActivityConfig[] = [
     mobileOrder: 2,
   },
   {
+    id: "channels",
+    label: "Channels",
+    icon: "message-square",
+    mobileVisible: true,
+    mobileOrder: 4,
+  },
+  {
     id: "mesh",
     label: "AgentsMesh",
     icon: "network",
@@ -152,8 +160,7 @@ export const ACTIVITIES: ActivityConfig[] = [
     id: "repositories",
     label: "Repositories",
     icon: "repository",
-    mobileVisible: true,
-    mobileOrder: 4,
+    mobileVisible: false, // In "More" menu on mobile
   },
   {
     id: "runners",

@@ -292,6 +292,8 @@
     "ticketsDescription": "티켓 보기 및 관리",
     "goToMesh": "AgentsMesh로 이동",
     "meshDescription": "네트워크 토폴로지",
+    "goToChannels": "Go to Channels",
+    "channelsDescription": "Team collaboration channels",
     "goToRepositories": "저장소로 이동",
     "repositoriesDescription": "저장소 관리",
     "goToRunners": "Runner로 이동",

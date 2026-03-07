@@ -1,0 +1,36 @@
+{
+  "channels": {
+    "emptyState": "チャンネルを選択してチャットを開始",
+    "emptyStateHint": "サイドバーからチャンネルを選択して、メッセージを表示しチームと協力しましょう",
+    "sidebar": {
+      "searchPlaceholder": "チャンネルを検索...",
+      "createChannel": "新規チャンネル",
+      "refresh": "更新",
+      "showArchived": "アーカイブ済みを表示",
+      "hideArchived": "アーカイブ済みを非表示",
+      "noChannels": "チャンネルがありません",
+      "noMatch": "一致するチャンネルがありません",
+      "podsCount": "{count} Pods"
+    },
+    "createDialog": {
+      "title": "チャンネルを作成",
+      "name": "チャンネル名",
+      "namePlaceholder": "例: feature-auth、bug-fix-login",
+      "nameRequired": "チャンネル名を入力してください",
+      "description": "説明",
+      "descriptionPlaceholder": "このチャンネルの目的は？",
+      "descriptionHint": "任意",
+      "failed": "チャンネルの作成に失敗しました"
+    },
+    "messages": {
+      "today": "今日",
+      "yesterday": "昨日",
+      "loadOlder": "過去のメッセージを読み込む",
+      "loading": "読み込み中...",
+      "noMessages": "メッセージがありません",
+      "startConversation": "会話を始めましょう！",
+      "copyMessage": "コピー",
+      "moreActions": "その他"
+    }
+  }
+}

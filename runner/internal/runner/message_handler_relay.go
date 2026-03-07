@@ -18,6 +18,17 @@ const maxImagePasteSize = 2 * 1024 * 1024 // 2MB, matches frontend limit
 // This allows multiple clients (Web + Mobile) to share the same connection.
 func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalRequest) error {
 	log := logger.Pod()
+
+	// Rewrite relay URL origin if RELAY_BASE_URL is configured (Docker dev environment)
+	relayURL := h.runner.cfg.RewriteRelayURL(req.RelayURL)
+	if relayURL != req.RelayURL {
+		log.Info("Relay URL rewritten",
+			"pod_key", req.PodKey,
+			"original", req.RelayURL,
+			"rewritten", relayURL)
+		req.RelayURL = relayURL
+	}
+
 	log.Info("Subscribing to terminal via Relay",
 		"pod_key", req.PodKey,
 		"relay_url", req.RelayURL)

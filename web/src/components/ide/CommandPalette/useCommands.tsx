@@ -8,6 +8,7 @@ import {
   Terminal,
   Ticket,
   Network,
+  MessageSquare,
   FolderGit2,
   Server,
   Settings,
@@ -65,6 +66,18 @@ export function useCommands(t: (key: string) => string): {
         action: () => {
           setActiveActivity("mesh");
           router.push(`/${orgSlug}/mesh`);
+        },
+      },
+      {
+        id: "nav-channels",
+        category: "navigation",
+        label: t("commandPalette.goToChannels"),
+        description: t("commandPalette.channelsDescription"),
+        icon: <MessageSquare className="w-4 h-4" />,
+        keywords: ["chat", "messages", "collaboration", "channels"],
+        action: () => {
+          setActiveActivity("channels");
+          router.push(`/${orgSlug}/channels`);
         },
       },
       {

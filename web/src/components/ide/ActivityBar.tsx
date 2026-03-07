@@ -18,6 +18,7 @@ import {
   Terminal,
   Ticket,
   Network,
+  MessageSquare,
   FolderGit2,
   Server,
   Settings,
@@ -32,6 +33,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   terminal: Terminal,
   ticket: Ticket,
   network: Network,
+  "message-square": MessageSquare,
   repeat: Repeat,
   repository: FolderGit2,
   server: Server,
@@ -58,6 +60,8 @@ export function ActivityBar({ className }: ActivityBarProps) {
         return `/${orgSlug}/workspace`;
       case "tickets":
         return `/${orgSlug}/tickets`;
+      case "channels":
+        return `/${orgSlug}/channels`;
       case "mesh":
         return `/${orgSlug}/mesh`;
       case "loops":
@@ -79,6 +83,8 @@ export function ActivityBar({ className }: ActivityBarProps) {
       setActiveActivity("workspace");
     } else if (pathname.includes("/tickets")) {
       setActiveActivity("tickets");
+    } else if (pathname.includes("/channels")) {
+      setActiveActivity("channels");
     } else if (pathname.includes("/mesh")) {
       setActiveActivity("mesh");
     } else if (pathname.includes("/loops")) {

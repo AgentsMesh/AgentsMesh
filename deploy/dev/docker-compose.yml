@@ -265,6 +265,9 @@ services:
       - BACKEND_URL=http://backend:8080
       # gRPC + mTLS endpoint (traefik passthrough to backend)
       - GRPC_ENDPOINT=traefik:9443
+      # Relay connection override: Runner inside Docker cannot reach the external
+      # PRIMARY_DOMAIN (localhost:...), so rewrite relay URL origin to use Traefik internally.
+      - RELAY_BASE_URL=ws://traefik:80
       # Runner identification (matches seed data in deploy/dev/seed/seed.sql)
       - RUNNER_NODE_ID=dev-runner
       - RUNNER_ORG_SLUG=dev-org
@@ -318,6 +321,10 @@ services:
       # SSH keys for Git operations (deploy keys)
       # ============================================
       - ./runner-ssh:/home/runner/.ssh:ro
+    # LAN access: map friendly hostname to host machine, use socat on Mac for port forwarding
+    # Usage: socat TCP-LISTEN:<port>,bind=0.0.0.0,fork TCP:<lan-ip>:<port>
+    extra_hosts:
+      - "host.lan:host-gateway"
     # Use entrypoint script for auto-configuration
     entrypoint: ["/usr/local/bin/runner-entrypoint.sh"]
     # Runner communicates with backend via gRPC through traefik (TLS passthrough)

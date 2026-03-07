@@ -13,6 +13,7 @@ import { TicketsSidebarContent } from "./sidebar/TicketsSidebarContent";
 import { RepositoriesSidebarContent } from "./sidebar/RepositoriesSidebarContent";
 import { RunnersSidebarContent } from "./sidebar/RunnersSidebarContent";
 import { MeshSidebarContent } from "./sidebar/MeshSidebarContent";
+import { ChannelsSidebarContent } from "./sidebar/ChannelsSidebarContent";
 import { LoopsSidebarContent } from "./sidebar/LoopsSidebarContent";
 import { SettingsSidebarContent } from "./sidebar/SettingsSidebarContent";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
@@ -57,6 +58,8 @@ function getSidebarContent(
       return <WorkspaceSidebarContent onCreatePod={callbacks.onCreatePod} />;
     case "tickets":
       return <TicketsSidebarContent />;
+    case "channels":
+      return <ChannelsSidebarContent />;
     case "mesh":
       return <MeshSidebarContent />;
     case "loops":

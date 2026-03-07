@@ -79,6 +79,8 @@ export function SideBar({ className, children }: SideBarProps) {
         return t("ide.activities.workspace");
       case "tickets":
         return t("ide.activities.tickets");
+      case "channels":
+        return t("ide.activities.channels");
       case "mesh":
         return t("ide.activities.mesh");
       case "repositories":
