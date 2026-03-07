@@ -3,6 +3,7 @@ package client
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"strings"
 	"sync"
@@ -229,6 +230,20 @@ func (c *GRPCConnection) Connect() error {
 	creds, err := c.createAdvancedTLSCredentials()
 	if err != nil {
 		return fmt.Errorf("failed to create TLS credentials: %w", err)
+	}
+
+	// Fix advancedtls SNI bug: advancedtls.ClientHandshake sets ServerName to the
+	// full authority string (e.g. "agentsmesh.ai:9443" including port), unlike
+	// standard gRPC credentials which strips the port via net.SplitHostPort.
+	// An SNI with port violates RFC 6066 and is rejected by some network middleboxes
+	// (corporate firewalls, DPI). Set the correct hostname-only ServerName here so
+	// advancedtls won't overwrite it with the authority.
+	host, _, err := net.SplitHostPort(dialTarget)
+	if err != nil {
+		host = dialTarget // No port in dialTarget, use as-is
+	}
+	if err := creds.OverrideServerName(host); err != nil {
+		logger.GRPC().Warn("Failed to override TLS server name", "error", err)
 	}
 
 	// gRPC dial options
