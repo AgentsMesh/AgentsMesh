@@ -23,6 +23,21 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 		// Direct Proto type passing - no conversion
 		a.connManager.HandleHeartbeat(runnerID, payload.Heartbeat)
 
+		// Acknowledge heartbeat so Runner can detect upstream liveness.
+		// Without this ack, Runner cannot distinguish "heartbeat arrived" from
+		// "heartbeat was silently lost in a half-dead connection".
+		ack := &runnerv1.ServerMessage{
+			Payload: &runnerv1.ServerMessage_HeartbeatAck{
+				HeartbeatAck: &runnerv1.HeartbeatAck{
+					HeartbeatTimestamp: msg.Timestamp,
+				},
+			},
+			Timestamp: time.Now().UnixMilli(),
+		}
+		if err := conn.SendMessage(ack); err != nil {
+			a.logger.Warn("failed to send heartbeat ack", "runner_id", runnerID, "error", err)
+		}
+
 		// Process agent version updates from heartbeat (only present when versions changed)
 		if len(payload.Heartbeat.AgentVersions) > 0 {
 			a.handleHeartbeatAgentVersions(ctx, runnerID, payload.Heartbeat.AgentVersions)

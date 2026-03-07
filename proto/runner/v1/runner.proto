@@ -170,6 +170,8 @@ message ServerMessage {
     McpResponse mcp_response = 13;
     // 下行心跳探测（Backend -> Runner）
     PingCommand ping = 14;
+    // 上行心跳确认（Backend -> Runner）
+    HeartbeatAck heartbeat_ack = 16;
   }
   int64 timestamp = 15;
 }
@@ -582,4 +584,10 @@ message PingCommand {
 // 原样回传 Backend 发送时间戳，用于 RTT 计算和下行通路存活检测
 message PongEvent {
   int64 ping_timestamp = 1;  // 原样回传 Backend 发送时间戳
+}
+
+// HeartbeatAck Backend 对 Runner 心跳的确认（Backend -> Runner）
+// Runner 收到后确认心跳已到达 Backend，用于上行通路存活检测
+message HeartbeatAck {
+  int64 heartbeat_timestamp = 1;  // 原样回传 Runner 心跳的时间戳
 }

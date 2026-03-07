@@ -1332,6 +1332,7 @@ type ServerMessage struct {
 	//	*ServerMessage_AutopilotControl
 	//	*ServerMessage_McpResponse
 	//	*ServerMessage_Ping
+	//	*ServerMessage_HeartbeatAck
 	Payload       isServerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1501,6 +1502,15 @@ func (x *ServerMessage) GetPing() *PingCommand {
 	return nil
 }
 
+func (x *ServerMessage) GetHeartbeatAck() *HeartbeatAck {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerMessage_HeartbeatAck); ok {
+			return x.HeartbeatAck
+		}
+	}
+	return nil
+}
+
 func (x *ServerMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -1571,6 +1581,11 @@ type ServerMessage_Ping struct {
 	Ping *PingCommand `protobuf:"bytes,14,opt,name=ping,proto3,oneof"`
 }
 
+type ServerMessage_HeartbeatAck struct {
+	// 上行心跳确认（Backend -> Runner）
+	HeartbeatAck *HeartbeatAck `protobuf:"bytes,16,opt,name=heartbeat_ack,json=heartbeatAck,proto3,oneof"`
+}
+
 func (*ServerMessage_InitializeResult) isServerMessage_Payload() {}
 
 func (*ServerMessage_CreatePod) isServerMessage_Payload() {}
@@ -1598,6 +1613,8 @@ func (*ServerMessage_AutopilotControl) isServerMessage_Payload() {}
 func (*ServerMessage_McpResponse) isServerMessage_Payload() {}
 
 func (*ServerMessage_Ping) isServerMessage_Payload() {}
+
+func (*ServerMessage_HeartbeatAck) isServerMessage_Payload() {}
 
 // InitializeResult 初始化响应
 type InitializeResult struct {
@@ -4618,6 +4635,52 @@ func (x *PongEvent) GetPingTimestamp() int64 {
 	return 0
 }
 
+// HeartbeatAck Backend 对 Runner 心跳的确认（Backend -> Runner）
+// Runner 收到后确认心跳已到达 Backend，用于上行通路存活检测
+type HeartbeatAck struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	HeartbeatTimestamp int64                  `protobuf:"varint,1,opt,name=heartbeat_timestamp,json=heartbeatTimestamp,proto3" json:"heartbeat_timestamp,omitempty"` // 原样回传 Runner 心跳的时间戳
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *HeartbeatAck) Reset() {
+	*x = HeartbeatAck{}
+	mi := &file_runner_v1_runner_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatAck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatAck) ProtoMessage() {}
+
+func (x *HeartbeatAck) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatAck.ProtoReflect.Descriptor instead.
+func (*HeartbeatAck) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *HeartbeatAck) GetHeartbeatTimestamp() int64 {
+	if x != nil {
+		return x.HeartbeatTimestamp
+	}
+	return 0
+}
+
 var File_runner_v1_runner_proto protoreflect.FileDescriptor
 
 const file_runner_v1_runner_proto_rawDesc = "" +
@@ -4721,7 +4784,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12\x1a\n" +
 	"\bprogress\x18\x03 \x01(\x05R\bprogress\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\xbb\b\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"\xfb\b\n" +
 	"\rServerMessage\x12J\n" +
 	"\x11initialize_result\x18\x01 \x01(\v2\x1b.runner.v1.InitializeResultH\x00R\x10initializeResult\x12<\n" +
 	"\n" +
@@ -4739,7 +4802,8 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x10create_autopilot\x18\v \x01(\v2!.runner.v1.CreateAutopilotCommandH\x00R\x0fcreateAutopilot\x12Q\n" +
 	"\x11autopilot_control\x18\f \x01(\v2\".runner.v1.AutopilotControlCommandH\x00R\x10autopilotControl\x12;\n" +
 	"\fmcp_response\x18\r \x01(\v2\x16.runner.v1.McpResponseH\x00R\vmcpResponse\x12,\n" +
-	"\x04ping\x18\x0e \x01(\v2\x16.runner.v1.PingCommandH\x00R\x04ping\x12\x1c\n" +
+	"\x04ping\x18\x0e \x01(\v2\x16.runner.v1.PingCommandH\x00R\x04ping\x12>\n" +
+	"\rheartbeat_ack\x18\x10 \x01(\v2\x17.runner.v1.HeartbeatAckH\x00R\fheartbeatAck\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"\xcc\x01\n" +
 	"\x10InitializeResult\x12)\n" +
@@ -4972,7 +5036,9 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\vPingCommand\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\"2\n" +
 	"\tPongEvent\x12%\n" +
-	"\x0eping_timestamp\x18\x01 \x01(\x03R\rpingTimestamp2R\n" +
+	"\x0eping_timestamp\x18\x01 \x01(\x03R\rpingTimestamp\"?\n" +
+	"\fHeartbeatAck\x12/\n" +
+	"\x13heartbeat_timestamp\x18\x01 \x01(\x03R\x12heartbeatTimestamp2R\n" +
 	"\rRunnerService\x12A\n" +
 	"\aConnect\x12\x18.runner.v1.RunnerMessage\x1a\x18.runner.v1.ServerMessage(\x010\x01B\x9a\x01\n" +
 	"\rcom.runner.v1B\vRunnerProtoP\x01Z7github.com/anthropic/agentmesh/proto/runner/v1;runnerv1\xa2\x02\x03RXX\xaa\x02\tRunner.V1\xca\x02\tRunner\\V1\xe2\x02\x15Runner\\V1\\GPBMetadata\xea\x02\n" +
@@ -4990,7 +5056,7 @@ func file_runner_v1_runner_proto_rawDescGZIP() []byte {
 	return file_runner_v1_runner_proto_rawDescData
 }
 
-var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 63)
+var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 64)
 var file_runner_v1_runner_proto_goTypes = []any{
 	(*RunnerMessage)(nil),              // 0: runner.v1.RunnerMessage
 	(*InitializeRequest)(nil),          // 1: runner.v1.InitializeRequest
@@ -5053,8 +5119,9 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*McpError)(nil),                   // 58: runner.v1.McpError
 	(*PingCommand)(nil),                // 59: runner.v1.PingCommand
 	(*PongEvent)(nil),                  // 60: runner.v1.PongEvent
-	nil,                                // 61: runner.v1.ErrorEvent.DetailsEntry
-	nil,                                // 62: runner.v1.CreatePodCommand.EnvVarsEntry
+	(*HeartbeatAck)(nil),               // 61: runner.v1.HeartbeatAck
+	nil,                                // 62: runner.v1.ErrorEvent.DetailsEntry
+	nil,                                // 63: runner.v1.CreatePodCommand.EnvVarsEntry
 }
 var file_runner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: runner.v1.RunnerMessage.initialize:type_name -> runner.v1.InitializeRequest
@@ -5083,7 +5150,7 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	6,  // 23: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
 	7,  // 24: runner.v1.HeartbeatData.relay_connections:type_name -> runner.v1.RelayConnectionInfo
 	4,  // 25: runner.v1.HeartbeatData.agent_versions:type_name -> runner.v1.AgentVersionInfo
-	61, // 26: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
+	62, // 26: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
 	16, // 27: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
 	19, // 28: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
 	23, // 29: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
@@ -5098,35 +5165,36 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	40, // 38: runner.v1.ServerMessage.autopilot_control:type_name -> runner.v1.AutopilotControlCommand
 	57, // 39: runner.v1.ServerMessage.mcp_response:type_name -> runner.v1.McpResponse
 	59, // 40: runner.v1.ServerMessage.ping:type_name -> runner.v1.PingCommand
-	17, // 41: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
-	18, // 42: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
-	62, // 43: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
-	21, // 44: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
-	22, // 45: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
-	20, // 46: runner.v1.CreatePodCommand.resources_to_download:type_name -> runner.v1.ResourceToDownload
-	32, // 47: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
-	34, // 48: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
-	38, // 49: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
-	44, // 50: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
-	45, // 51: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
-	46, // 52: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
-	41, // 53: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
-	42, // 54: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
-	43, // 55: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
-	19, // 56: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
-	48, // 57: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
-	52, // 58: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
-	53, // 59: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
-	54, // 60: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
-	55, // 61: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
-	58, // 62: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
-	0,  // 63: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
-	15, // 64: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
-	64, // [64:65] is the sub-list for method output_type
-	63, // [63:64] is the sub-list for method input_type
-	63, // [63:63] is the sub-list for extension type_name
-	63, // [63:63] is the sub-list for extension extendee
-	0,  // [0:63] is the sub-list for field type_name
+	61, // 41: runner.v1.ServerMessage.heartbeat_ack:type_name -> runner.v1.HeartbeatAck
+	17, // 42: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
+	18, // 43: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
+	63, // 44: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
+	21, // 45: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
+	22, // 46: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
+	20, // 47: runner.v1.CreatePodCommand.resources_to_download:type_name -> runner.v1.ResourceToDownload
+	32, // 48: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
+	34, // 49: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
+	38, // 50: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
+	44, // 51: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
+	45, // 52: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
+	46, // 53: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
+	41, // 54: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
+	42, // 55: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
+	43, // 56: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
+	19, // 57: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
+	48, // 58: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
+	52, // 59: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
+	53, // 60: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
+	54, // 61: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
+	55, // 62: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
+	58, // 63: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
+	0,  // 64: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
+	15, // 65: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
+	65, // [65:66] is the sub-list for method output_type
+	64, // [64:65] is the sub-list for method input_type
+	64, // [64:64] is the sub-list for extension type_name
+	64, // [64:64] is the sub-list for extension extendee
+	0,  // [0:64] is the sub-list for field type_name
 }
 
 func init() { file_runner_v1_runner_proto_init() }
@@ -5172,6 +5240,7 @@ func file_runner_v1_runner_proto_init() {
 		(*ServerMessage_AutopilotControl)(nil),
 		(*ServerMessage_McpResponse)(nil),
 		(*ServerMessage_Ping)(nil),
+		(*ServerMessage_HeartbeatAck)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[40].OneofWrappers = []any{
 		(*AutopilotControlCommand_Pause)(nil),
@@ -5187,7 +5256,7 @@ func file_runner_v1_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_v1_runner_proto_rawDesc), len(file_runner_v1_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   63,
+			NumMessages:   64,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

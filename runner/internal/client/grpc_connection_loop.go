@@ -163,6 +163,16 @@ func (c *GRPCConnection) runConnection() {
 	c.stream = stream
 	c.mu.Unlock()
 
+	// Initialize recv liveness timestamp so the watchdog doesn't fire prematurely.
+	c.lastRecvTime.Store(time.Now().UnixNano())
+
+	// Create heartbeat monitor for this connection.
+	// Triggers reconnect if 3 consecutive heartbeats go unacknowledged,
+	// detecting upstream (Runner→Backend) path failure.
+	c.heartbeatMonitor = NewHeartbeatMonitor(3, func() {
+		cancel() // Cancel stream context → triggers reconnection
+	})
+
 	logger.GRPC().Info("Bidirectional stream established")
 
 	done := make(chan struct{})
@@ -212,6 +222,16 @@ func (c *GRPCConnection) runConnection() {
 		c.certRenewalChecker(ctx, done)
 	})
 
+	// Start recv watchdog — detects half-dead connections where readLoop
+	// is stuck on Recv() after the server closed the downstream.
+	// Backend sends downstream pings every 30s; if nothing arrives for
+	// 3× heartbeatInterval the connection is dead.
+	wg.Add(1)
+	safego.Go("grpc-recv-watchdog", func() {
+		defer wg.Done()
+		c.recvWatchdog(done, cancel)
+	})
+
 	// Monitor for reconnection signal (certificate renewal)
 	wg.Add(1)
 	safego.Go("grpc-reconnect-monitor", func() {
@@ -250,6 +270,44 @@ func (c *GRPCConnection) runConnection() {
 	// This prevents goroutine accumulation across reconnections.
 	wg.Wait()
 	logger.GRPC().Debug("All child goroutines exited, runConnection returning")
+}
+
+// recvWatchdog monitors for recv liveness. If no message is received from the
+// server for 3× heartbeatInterval (90s by default, matching the backend's
+// downstream pong timeout), the connection is considered half-dead and
+// reconnection is triggered by cancelling the stream context.
+//
+// This handles the case where the backend has closed the downstream send loop
+// (e.g. pong timeout) but the runner's stream.Recv() keeps blocking because
+// the gRPC transport hasn't detected the closure.
+func (c *GRPCConnection) recvWatchdog(done <-chan struct{}, cancel context.CancelFunc) {
+	recvTimeout := 3 * c.heartbeatInterval
+	ticker := time.NewTicker(c.heartbeatInterval)
+	defer ticker.Stop()
+
+	log := logger.GRPC()
+
+	for {
+		select {
+		case <-c.stopCh:
+			return
+		case <-done:
+			return
+		case <-ticker.C:
+			lastRecvNs := c.lastRecvTime.Load()
+			if lastRecvNs == 0 {
+				continue // Not yet initialized
+			}
+			lastRecv := time.Unix(0, lastRecvNs)
+			since := time.Since(lastRecv)
+			if since > recvTimeout {
+				log.Error("Recv watchdog: no message from server, triggering reconnect",
+					"timeout", recvTimeout, "last_recv_ago", since)
+				cancel() // Cancel stream context → unblocks Recv() → readLoop exits
+				return
+			}
+		}
+	}
 }
 
 // buildMTLSConfig builds a TLS config for mTLS HTTP requests using the runner's

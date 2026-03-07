@@ -79,6 +79,12 @@ type GRPCConnection struct {
 	// Stuck detection for writeLoop
 	lastSendTime atomic.Int64
 
+	// Recv liveness tracking — updated by readLoop on every successful Recv().
+	// recvWatchdog triggers reconnect when no message arrives for 3× heartbeatInterval,
+	// handling the half-dead connection case where the server closed the downstream
+	// but stream.Recv() keeps blocking on the runner side.
+	lastRecvTime atomic.Int64
+
 	// Rate limiting for terminal output (bytes per second)
 	// Default: 100KB/s to avoid overwhelming slow server connections
 	terminalRateLimiter *rate.Limiter
@@ -89,6 +95,10 @@ type GRPCConnection struct {
 	certExpiryWarningDays    int
 	certRenewalDays          int // Days before expiry to trigger renewal (default 30)
 	certUrgentDays           int // Days before expiry for urgent reconnection (default 7)
+
+	// Heartbeat monitor for upstream liveness detection.
+	// Created per-connection in runConnection(); nil before first connection.
+	heartbeatMonitor *HeartbeatMonitor
 
 	// RPCClient for MCP request-response over gRPC stream
 	rpcClient *RPCClient
@@ -338,14 +348,16 @@ func isFatalStreamError(err error) (bool, string) {
 	}
 }
 
-// LastActivityTime returns the last time a message was successfully sent.
+// LastActivityTime returns the most recent send or recv timestamp.
 // Used by the Watchdog health checker to detect stuck connections.
 func (c *GRPCConnection) LastActivityTime() time.Time {
-	ns := c.lastSendTime.Load()
-	if ns == 0 {
+	sendNs := c.lastSendTime.Load()
+	recvNs := c.lastRecvTime.Load()
+	latest := max(sendNs, recvNs)
+	if latest == 0 {
 		return time.Time{}
 	}
-	return time.Unix(0, ns)
+	return time.Unix(0, latest)
 }
 
 // Ensure GRPCConnection implements Connection interface.

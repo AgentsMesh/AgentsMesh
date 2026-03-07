@@ -148,6 +148,9 @@ func (c *GRPCConnection) heartbeatLoop(ctx context.Context, done <-chan struct{}
 
 	// Send initial heartbeat
 	c.sendHeartbeat()
+	if c.heartbeatMonitor != nil {
+		c.heartbeatMonitor.OnSent()
+	}
 
 	for {
 		select {
@@ -159,6 +162,9 @@ func (c *GRPCConnection) heartbeatLoop(ctx context.Context, done <-chan struct{}
 			return
 		case <-ticker.C:
 			c.sendHeartbeat()
+			if c.heartbeatMonitor != nil {
+				c.heartbeatMonitor.OnSent()
+			}
 		}
 	}
 }
