@@ -55,7 +55,7 @@ func (h *StringSerializeHandler) serialize(startRow, endRow int, excludeFinalCur
 	h.lastContentCursorCol = 0
 	h.rowIndex = 0
 
-	var prevCell Cell = NewCell(' ')
+	var prevCell = NewCell(' ')
 	for row := startRow; row <= endRow; row++ {
 		h.currentRow.Reset()
 		h.nullCellCount = 0

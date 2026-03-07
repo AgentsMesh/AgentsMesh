@@ -207,8 +207,8 @@ func (b *FrameBuffer) IsLastFrameFullRedraw() bool {
 	}
 
 	// Find the last complete frame (match starts with ends)
-	var lastCompleteFrameStart int = -1
-	var lastCompleteFrameEnd int = -1
+	var lastCompleteFrameStart = -1
+	var lastCompleteFrameEnd = -1
 	usedEnds := make(map[int]bool)
 
 	for _, startPos := range startPositions {

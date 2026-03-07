@@ -131,7 +131,7 @@ func (pt *ProgressTracker) generateContentHash(diff *GitDiffSummary) string {
 	}
 
 	// Include stats
-	fmt.Fprintf(hasher, "%d:%d", diff.Insertions, diff.Deletions)
+	_, _ = fmt.Fprintf(hasher, "%d:%d", diff.Insertions, diff.Deletions)
 
 	// Include untracked files
 	for _, f := range diff.UntrackedFiles {

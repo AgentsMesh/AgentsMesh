@@ -72,7 +72,7 @@ func (d *FrameDetector) AnalyzeFrameBoundaries(data []byte) FrameBoundary {
 
 	// Match starts with ends to find complete frames
 	// Strategy: iterate through starts, find matching end after each start
-	var lastCompleteEnd int = -1
+	var lastCompleteEnd = -1
 	var usedEnds = make(map[int]bool)
 
 	for _, startPos := range startPositions {

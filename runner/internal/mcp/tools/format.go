@@ -270,13 +270,13 @@ func (l ChannelList) FormatText() string {
 	b.WriteString("| ID | Name | Members | Archived | Description |\n")
 	b.WriteString("|----|------|---------|----------|-------------|\n")
 	for _, c := range l {
-		b.WriteString(fmt.Sprintf("| %d | %s | %d | %t | %s |\n",
+		fmt.Fprintf(&b, "| %d | %s | %d | %t | %s |\n",
 			c.ID,
 			escapeTableCell(c.Name),
 			c.MemberCount,
 			c.IsArchived,
 			escapeTableCell(truncate(c.Description, 80)),
-		))
+		)
 	}
 	return strings.TrimRight(b.String(), "\n")
 }
@@ -303,12 +303,12 @@ func (l TicketList) FormatText() string {
 	b.WriteString("| Slug | Title | Status | Priority |\n")
 	b.WriteString("|------|-------|--------|----------|\n")
 	for _, t := range l {
-		b.WriteString(fmt.Sprintf("| %s | %s | %s | %s |\n",
+		fmt.Fprintf(&b, "| %s | %s | %s | %s |\n",
 			escapeTableCell(t.Slug),
 			escapeTableCell(truncate(t.Title, 60)),
 			t.Status,
 			t.Priority,
-		))
+		)
 	}
 	return strings.TrimRight(b.String(), "\n")
 }

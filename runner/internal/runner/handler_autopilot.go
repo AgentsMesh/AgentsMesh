@@ -20,7 +20,7 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 
 	// Check if Autopilot already exists
 	if h.runner.GetAutopilot(cmd.AutopilotKey) != nil {
-		return fmt.Errorf("Autopilot already exists: %s", cmd.AutopilotKey)
+		return fmt.Errorf("autopilot already exists: %s", cmd.AutopilotKey)
 	}
 
 	var targetPod *Pod
@@ -110,7 +110,7 @@ func (h *RunnerMessageHandler) OnAutopilotControl(cmd *runnerv1.AutopilotControl
 
 	ac := h.runner.GetAutopilot(cmd.AutopilotKey)
 	if ac == nil {
-		return fmt.Errorf("Autopilot not found: %s", cmd.AutopilotKey)
+		return fmt.Errorf("autopilot not found: %s", cmd.AutopilotKey)
 	}
 
 	switch action := cmd.Action.(type) {

@@ -72,8 +72,8 @@ func (l *PTYLogger) WriteAggregated(data []byte) error {
 		return nil
 	}
 	// Add separator between flushes for readability
-	l.aggFile.WriteString(fmt.Sprintf("\n--- flush at %s (%d bytes) ---\n",
-		time.Now().Format("15:04:05.000"), len(data)))
+	fmt.Fprintf(l.aggFile, "\n--- flush at %s (%d bytes) ---\n",
+		time.Now().Format("15:04:05.000"), len(data))
 	_, err := l.aggFile.Write(data)
 	return err
 }
