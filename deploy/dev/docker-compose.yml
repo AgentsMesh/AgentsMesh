@@ -212,6 +212,10 @@ services:
       - PKI_VALIDITY_DAYS=365
       - GRPC_ADDRESS=:9090
       - GRPC_PUBLIC_ENDPOINT=grpcs://127.0.0.1:${GRPC_PORT:-10001}
+      # =============================================================================
+      # GeoIP for geo-aware relay selection
+      # =============================================================================
+      - GEO_MMDB_PATH=/opt/geoip/geoip.mmdb
     volumes:
       # Mount source code for hot reload
       - ../../backend:/app
@@ -348,8 +352,6 @@ services:
       # =============================================================================
       - PRIMARY_DOMAIN=${PRIMARY_DOMAIN:-localhost:10000}
       - USE_HTTPS=${USE_HTTPS:-false}
-      # Internal URL for runners (Docker network, direct connection) - must be explicit
-      - RELAY_INTERNAL_URL=ws://relay:8090
       # Session management
       - SESSION_KEEP_ALIVE_DURATION=30s
       - DEBUG=true

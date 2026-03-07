@@ -160,6 +160,10 @@ services:
       # Admin Console
       # =========================================================================
       - ADMIN_ENABLED=true
+      # =========================================================================
+      # GeoIP for geo-aware relay selection (built into image at /app/data/geoip.mmdb)
+      # =========================================================================
+      - GEO_MMDB_PATH=${GEO_MMDB_PATH:-/app/data/geoip.mmdb}
     volumes:
       # SSL certificates for PKI (CA cert/key for signing Runner certificates)
       - ./ssl:/app/ssl:ro
@@ -248,10 +252,6 @@ services:
       # =========================================================================
       - PRIMARY_DOMAIN=${SERVER_IP}
       - USE_HTTPS=false
-      # For on-premise deployment, runners are OUTSIDE Docker network
-      # so they should use the public URL (via Traefik), not internal URL
-      # Leave RELAY_INTERNAL_URL empty to use public URL for runners
-      # - RELAY_INTERNAL_URL=ws://relay:8090
       # Session management
       - SESSION_KEEP_ALIVE_DURATION=30s
       - DEBUG=false

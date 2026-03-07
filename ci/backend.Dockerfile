@@ -45,6 +45,17 @@ RUN addgroup -g 1000 -S app && \
 COPY --from=builder /app/server /app/server
 COPY --from=builder /app/migrations /app/migrations
 
+# Download GeoIP database (DB-IP City Lite, free, CC BY 4.0, no account needed)
+# Enables geo-aware relay selection. ~20MB, rebuilt monthly by DB-IP.
+# Try current month first, fall back to previous month if not yet available.
+RUN mkdir -p /app/data && \
+    CURRENT=$(date +%Y-%m) && \
+    MONTH=$(date +%m) && YEAR=$(date +%Y) && \
+    if [ "$MONTH" = "01" ]; then PREV="$((YEAR-1))-12"; else PREV=$(printf "%d-%02d" "$YEAR" "$((10#$MONTH-1))"); fi && \
+    (curl -sSfL "https://download.db-ip.com/free/dbip-city-lite-${CURRENT}.mmdb.gz" | gunzip > /app/data/geoip.mmdb) || \
+    (curl -sSfL "https://download.db-ip.com/free/dbip-city-lite-${PREV}.mmdb.gz" | gunzip > /app/data/geoip.mmdb) || \
+    echo "GeoIP download failed (non-fatal), geo-aware relay selection disabled"
+
 # Create data directory for ACME storage and set ownership
 RUN mkdir -p /data/acme && \
     chown -R app:app /app /data
