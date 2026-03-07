@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/repository"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
 	"github.com/stretchr/testify/assert"
@@ -129,7 +129,7 @@ func TestMRSyncServiceIntegration(t *testing.T) {
 		service := NewMRSyncService(db, provider)
 
 		// Create repo
-		repo := &repository.Repository{
+		repo := &gitprovider.Repository{
 			OrganizationID: 1,
 			Name:           "test-repo",
 			FullPath:       "org/test-repo",
@@ -186,7 +186,7 @@ func TestMRSyncServiceIntegration(t *testing.T) {
 		service := NewMRSyncService(db, provider)
 
 		// Create repo
-		repo := &repository.Repository{
+		repo := &gitprovider.Repository{
 			OrganizationID: 1,
 			Name:           "error-repo",
 			FullPath:       "org/error-repo",

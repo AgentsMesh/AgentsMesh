@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/repository"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
 	"github.com/stretchr/testify/assert"
@@ -169,7 +169,7 @@ func TestSyncMRByURL(t *testing.T) {
 
 		// Create repository
 		repoID := int64(10)
-		repo := &repository.Repository{
+		repo := &gitprovider.Repository{
 			OrganizationID: 1,
 			Name:           "repo",
 			FullPath:       "org/repo",
