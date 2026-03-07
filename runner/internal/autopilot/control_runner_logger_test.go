@@ -122,10 +122,13 @@ func TestControlRunner_StartControlProcess_LongOutputTruncation(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Create a script that outputs >2000 chars without JSON
+	// Use POSIX-compatible while loop instead of bash-only brace expansion {1..300}
 	scriptPath := filepath.Join(tmpDir, "mock_agent")
 	script := `#!/bin/sh
-for i in {1..300}; do
+i=1
+while [ $i -le 300 ]; do
   echo "This is a very long line of output number $i that should help us exceed the 2000 character limit"
+  i=$((i + 1))
 done
 echo "TASK_COMPLETED"
 echo "Done."
@@ -170,10 +173,13 @@ func TestControlRunner_ResumeControlProcess_LongOutputTruncation(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Create a script that outputs >2000 chars without JSON
+	// Use POSIX-compatible while loop instead of bash-only brace expansion {1..300}
 	scriptPath := filepath.Join(tmpDir, "mock_agent")
 	script := `#!/bin/sh
-for i in {1..300}; do
+i=1
+while [ $i -le 300 ]; do
   echo "This is a very long line of output number $i that should help us exceed the 2000 character limit"
+  i=$((i + 1))
 done
 echo "CONTINUE"
 echo "More work."

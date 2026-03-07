@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
+	"os/user"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/cache"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/fsutil"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
@@ -40,7 +44,9 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 
 	result, err := strategy.Setup(ctx, sandboxRoot, cfg)
 	if err != nil {
-		os.RemoveAll(sandboxRoot)
+		if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
+			slog.Warn("Failed to clean up sandbox after setup error", "path", sandboxRoot, "error", rmErr)
+		}
 		return "", "", "", err
 	}
 
@@ -49,13 +55,17 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 		b.sendProgress("preparing", 70, "Creating files...")
 	}
 	if err := b.createFiles(sandboxRoot, result.WorkingDir); err != nil {
-		os.RemoveAll(sandboxRoot)
+		if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
+			slog.Warn("Failed to clean up sandbox after file creation error", "path", sandboxRoot, "error", rmErr)
+		}
 		return "", "", "", err
 	}
 
 	// Download skill packages
 	if err := b.downloadResources(ctx, sandboxRoot, result.WorkingDir); err != nil {
-		os.RemoveAll(sandboxRoot)
+		if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
+			slog.Warn("Failed to clean up sandbox after download error", "path", sandboxRoot, "error", rmErr)
+		}
 		return "", "", "", fmt.Errorf("failed to download resources: %w", err)
 	}
 
@@ -134,6 +144,26 @@ func (b *PodBuilder) setupGitWorktree(ctx context.Context, sandboxRoot string, c
 				return "", "", &client.PodError{
 					Code:    client.ErrCodeFileCreate,
 					Message: fmt.Sprintf("failed to write SSH key: %v", err),
+				}
+			}
+			// On Windows, os.FileMode(0600) is not enforced by the filesystem.
+			// SSH clients require strict permissions, so use icacls to remove
+			// inherited ACLs and grant read-only access to the current user.
+			if runtime.GOOS == "windows" {
+				username := os.Getenv("USERNAME")
+				if username == "" {
+					// Fallback for Windows Service or container environments
+					// where USERNAME may not be set.
+					if u, err := user.Current(); err == nil {
+						username = u.Username
+					}
+				}
+				if username != "" {
+					if err := exec.Command("icacls", keyFile, "/inheritance:r",
+						"/grant:r", username+":R").Run(); err != nil {
+						logger.Pod().Warn("Failed to set SSH key ACL (SSH may reject key if permissions are too open)",
+							"error", err, "key_file", keyFile)
+					}
 				}
 			}
 			opts = append(opts, workspace.WithSSHKeyPath(keyFile))
@@ -259,9 +289,35 @@ func (b *PodBuilder) downloadResources(ctx context.Context, sandboxRoot, workDir
 
 // createFiles creates files from the FilesToCreate list.
 func (b *PodBuilder) createFiles(sandboxRoot, workDir string) error {
+	absSandbox, err := filepath.Abs(sandboxRoot)
+	if err != nil {
+		return &client.PodError{
+			Code:    client.ErrCodeFileCreate,
+			Message: fmt.Sprintf("failed to resolve sandbox root: %v", err),
+		}
+	}
+	absSandbox = filepath.Clean(absSandbox)
+
 	for _, f := range b.cmd.FilesToCreate {
 		// Resolve path template
 		path := b.resolvePath(f.Path, sandboxRoot, workDir)
+
+		// Validate resolved path stays within sandbox to prevent path traversal attacks
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return &client.PodError{
+				Code:    client.ErrCodeFileCreate,
+				Message: fmt.Sprintf("failed to resolve file path: %v", err),
+				Details: map[string]string{"path": f.Path},
+			}
+		}
+		if absPath != absSandbox && !strings.HasPrefix(absPath, absSandbox+string(os.PathSeparator)) {
+			return &client.PodError{
+				Code:    client.ErrCodeFileCreate,
+				Message: fmt.Sprintf("path %q escapes sandbox root", f.Path),
+				Details: map[string]string{"path": f.Path},
+			}
+		}
 
 		if f.IsDirectory {
 			if err := os.MkdirAll(path, 0755); err != nil {

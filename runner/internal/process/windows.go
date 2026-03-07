@@ -141,8 +141,15 @@ func (i *windowsInspector) IsRunning(pid int) bool {
 }
 
 // GetState returns a Unix-compatible process state string.
-// Windows does not have direct equivalents to Unix process states (R, S, D, etc.).
-// Returns "R" for running processes, empty string otherwise.
+// Windows does not expose per-process scheduling states (R, S, D, T, Z) like
+// /proc/<pid>/stat on Linux. The Win32 API only lets us check if a process
+// is running or exited. As a result:
+//   - "R" is returned for any running process (cannot distinguish sleeping vs CPU-running).
+//   - "" is returned for exited or inaccessible processes.
+//
+// Callers (e.g., monitor_check.go) treat "R" as "active" which is correct —
+// the only false-positive scenario would be a truly zombie process, which
+// Windows handles by auto-reaping via the kernel.
 func (i *windowsInspector) GetState(pid int) string {
 	if i.IsRunning(pid) {
 		return "R"

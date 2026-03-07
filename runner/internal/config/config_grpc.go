@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/anthropics/agentsmesh/runner/internal/textutil"
 )
 
 // ==================== gRPC/mTLS Configuration ====================
@@ -53,6 +55,10 @@ func (c *Config) GetCertsDir() string {
 }
 
 // SaveCertificates saves gRPC certificates to the default location.
+// Note: On Windows, Unix permission bits (0700/0600) are silently ignored.
+// File access is governed by Windows ACLs which default to the creating user.
+// For enhanced security on multi-user Windows systems, consider applying
+// explicit ACLs via golang.org/x/sys/windows.
 func (c *Config) SaveCertificates(certPEM, keyPEM, caCertPEM []byte) error {
 	certsDir := c.GetCertsDir()
 	if err := os.MkdirAll(certsDir, 0700); err != nil {
@@ -96,8 +102,11 @@ func UpdateGRPCEndpointInFile(configFile, newEndpoint string) error {
 		return errors.New("failed to read config file: " + err.Error())
 	}
 
-	// Normalize line endings to handle Windows \r\n
-	content := strings.ReplaceAll(string(data), "\r\n", "\n")
+	// Normalize line endings to handle Windows \r\n, then detect original style
+	// so we can preserve it when writing back.
+	raw := string(data)
+	useCRLF := strings.Contains(raw, "\r\n")
+	content := textutil.NormalizeLineEndings(raw)
 	lines := strings.Split(content, "\n")
 	found := false
 	for i, line := range lines {
@@ -117,7 +126,12 @@ func UpdateGRPCEndpointInFile(configFile, newEndpoint string) error {
 		lines = append(lines, "grpc_endpoint: "+newEndpoint)
 	}
 
-	if err := os.WriteFile(configFile, []byte(strings.Join(lines, "\n")), 0600); err != nil {
+	// Preserve original line ending style when writing back
+	lineEnding := "\n"
+	if useCRLF {
+		lineEnding = "\r\n"
+	}
+	if err := os.WriteFile(configFile, []byte(strings.Join(lines, lineEnding)), 0600); err != nil {
 		return errors.New("failed to write config file: " + err.Error())
 	}
 

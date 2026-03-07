@@ -207,14 +207,14 @@ func TestNativeBackend_Name(t *testing.T) {
 
 func TestNativeBackend_Setup(t *testing.T) {
 	b := &NativeBackend{tool: "xclip"}
-	if err := b.Setup("/tmp/sandbox"); err != nil {
+	if err := b.Setup(t.TempDir()); err != nil {
 		t.Errorf("NativeBackend.Setup() = %v, want nil", err)
 	}
 }
 
 func TestNativeBackend_EnvOverrides(t *testing.T) {
 	b := &NativeBackend{tool: "xclip"}
-	overrides := b.EnvOverrides("/tmp/sandbox")
+	overrides := b.EnvOverrides(t.TempDir())
 	if overrides != nil {
 		t.Errorf("NativeBackend.EnvOverrides() = %v, want nil", overrides)
 	}
@@ -222,7 +222,7 @@ func TestNativeBackend_EnvOverrides(t *testing.T) {
 
 func TestNativeBackend_WriteImage_UnsupportedTool(t *testing.T) {
 	b := &NativeBackend{tool: "unknown"}
-	err := b.WriteImage("/tmp/sandbox", "image/png", []byte{1, 2, 3})
+	err := b.WriteImage(t.TempDir(), "image/png", []byte{1, 2, 3})
 	if err == nil {
 		t.Error("expected error for unsupported tool")
 	}

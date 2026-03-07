@@ -144,11 +144,6 @@ func (m *MockClient) SetTokenExpiredHandler(handler func() string) {
 	m.onTokenExpired = handler
 }
 
-// SetFallbackURL implements RelayClient.
-func (m *MockClient) SetFallbackURL(url string) {
-	// No-op for mock
-}
-
 // SendOutput implements RelayClient.
 func (m *MockClient) SendOutput(data []byte) error {
 	return nil

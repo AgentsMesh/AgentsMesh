@@ -87,6 +87,10 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 
 	// Start Autopilot
 	if err := ac.Start(); err != nil {
+		// Clean up Monitor subscription registered above
+		if h.runner.agentMonitor != nil {
+			h.runner.agentMonitor.Unsubscribe("autopilot-" + cmd.AutopilotKey)
+		}
 		h.runner.RemoveAutopilot(cmd.AutopilotKey)
 		return fmt.Errorf("failed to start Autopilot: %w", err)
 	}

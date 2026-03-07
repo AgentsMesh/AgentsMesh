@@ -2,6 +2,7 @@ package autopilot
 
 import (
 	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -42,6 +43,9 @@ func waitForTerminalPhase(rp *AutopilotController, timeout time.Duration) Phase 
 func TestAutopilotController_HandleDecision_Completed(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping: shell-based test scripts use Unix echo semantics")
 	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "autopilot_test")
@@ -102,6 +106,9 @@ func TestAutopilotController_HandleDecision_NeedHumanHelp(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping: shell-based test scripts use Unix echo semantics")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "autopilot_test")
 	require.NoError(t, err)
@@ -150,6 +157,9 @@ func TestAutopilotController_HandleDecision_NeedHumanHelp(t *testing.T) {
 func TestAutopilotController_HandleDecision_GiveUp(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping: shell-based test scripts use Unix echo semantics")
 	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "autopilot_test")
@@ -209,6 +219,9 @@ func TestAutopilotController_HandleDecision_GiveUp(t *testing.T) {
 func TestAutopilotController_HandleDecision_Continue(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping: shell-based test scripts use Unix echo semantics")
 	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "autopilot_test")
@@ -308,6 +321,9 @@ func TestAutopilotController_RunSingleDecision_ControlFailureRetry(t *testing.T)
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping: shell-based test scripts use Unix echo semantics")
+	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "autopilot_test")
 	require.NoError(t, err)
@@ -370,6 +386,9 @@ func TestAutopilotController_RunSingleDecision_ControlFailureRetry(t *testing.T)
 func TestAutopilotController_RunSingleDecision_WorkerNotWaitingAfterFailure(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test that requires shell execution in CI environment")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping: shell-based test scripts use Unix echo semantics")
 	}
 	// Create temp directory
 	tmpDir, err := os.MkdirTemp("", "autopilot_test")

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/anthropics/agentsmesh/runner/internal/fsutil"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
@@ -24,7 +25,7 @@ func (m *Manager) RemoveWorktree(ctx context.Context, worktreePath string) error
 	if err != nil {
 		// If we can't find the main repo, just remove the directory
 		log.Debug("Main repo not found, removing directory directly", "path", worktreePath)
-		return os.RemoveAll(worktreePath)
+		return fsutil.RemoveAll(worktreePath)
 	}
 
 	return m.removeWorktreeInternal(ctx, repoPath, worktreePath)
@@ -39,7 +40,7 @@ func (m *Manager) removeWorktreeInternal(ctx context.Context, repoPath, worktree
 		// If git worktree remove fails, try manual removal
 		logger.Workspace().Warn("Git worktree remove failed, trying manual removal",
 			"error", err, "output", string(output))
-		return os.RemoveAll(worktreePath)
+		return fsutil.RemoveAll(worktreePath)
 	}
 
 	// Prune worktrees
@@ -112,8 +113,11 @@ func (m *Manager) CleanupOldWorktrees(ctx context.Context) error {
 			// Worktree exists, check if it's still valid
 			if _, err := os.Stat(filepath.Join(worktreePath, ".git")); os.IsNotExist(err) {
 				// Invalid worktree (no .git), remove it
-				os.RemoveAll(worktreePath)
-				cleanedCount++
+				if err := fsutil.RemoveAll(worktreePath); err != nil {
+					log.Warn("Failed to remove invalid worktree", "path", worktreePath, "error", err)
+				} else {
+					cleanedCount++
+				}
 			}
 		}
 	}

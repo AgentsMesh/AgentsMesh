@@ -69,6 +69,10 @@ func (s *HTTPServer) handleMCP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Limit request body size to prevent OOM from oversized payloads (1MB)
+	const maxMCPRequestSize = 1 * 1024 * 1024
+	r.Body = http.MaxBytesReader(w, r.Body, maxMCPRequestSize)
+
 	// Parse request
 	var req MCPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

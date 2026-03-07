@@ -84,41 +84,56 @@ func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 		log := logger.Pod()
 		log.Info("Pod exited", "pod_key", podKey, "exit_code", exitCode)
 
+		pod := h.podStore.Delete(podKey)
+		if pod == nil {
+			// Pod was already removed by OnTerminatePod — it will handle
+			// the terminated event and cleanup. Avoid double-send.
+			log.Info("Pod already removed (terminated by server), skipping exit handler cleanup", "pod_key", podKey)
+			return
+		}
+
 		var earlyOutput string
 
-		pod := h.podStore.Delete(podKey)
-		if pod != nil {
-			pod.SetStatus(PodStatusStopped)
+		pod.SetStatus(PodStatusStopped)
 
-			if pod.PTYLogger != nil {
-				pod.PTYLogger.Close()
+		if pod.PTYLogger != nil {
+			pod.PTYLogger.Close()
+		}
+
+		pod.StopStateDetector()
+
+		// Stop aggregator BEFORE disconnecting relay, so the final flush
+		// can still be sent through the relay if it's connected.
+		if pod.Aggregator != nil {
+			pod.Aggregator.Stop()
+
+			// Retrieve any early output that was buffered before the relay connected.
+			// This captures error messages from fast-exiting processes.
+			if buf := pod.Aggregator.DrainEarlyBuffer(); len(buf) > 0 {
+				earlyOutput = string(buf)
+				log.Info("Captured early output from fast-exiting process",
+					"pod_key", podKey, "bytes", len(buf))
 			}
+		}
 
-			pod.StopStateDetector()
+		// If a PTY error was recorded (e.g., disk full causing I/O error),
+		// use it as the error message so the backend sets error status.
+		if ptyErr := pod.GetPTYError(); ptyErr != "" && earlyOutput == "" {
+			earlyOutput = ptyErr
+			log.Info("Using stored PTY error as termination reason",
+				"pod_key", podKey, "error", ptyErr)
+		}
 
-			// Stop aggregator BEFORE disconnecting relay, so the final flush
-			// can still be sent through the relay if it's connected.
-			if pod.Aggregator != nil {
-				pod.Aggregator.Stop()
+		pod.DisconnectRelay()
 
-				// Retrieve any early output that was buffered before the relay connected.
-				// This captures error messages from fast-exiting processes.
-				if buf := pod.Aggregator.DrainEarlyBuffer(); len(buf) > 0 {
-					earlyOutput = string(buf)
-					log.Info("Captured early output from fast-exiting process",
-						"pod_key", podKey, "bytes", len(buf))
-				}
-			}
-
-			// If a PTY error was recorded (e.g., disk full causing I/O error),
-			// use it as the error message so the backend sets error status.
-			if ptyErr := pod.GetPTYError(); ptyErr != "" && earlyOutput == "" {
-				earlyOutput = ptyErr
-				log.Info("Using stored PTY error as termination reason",
-					"pod_key", podKey, "error", ptyErr)
-			}
-
-			pod.DisconnectRelay()
+		// Unregister from MCP server and agent monitor (same as OnTerminatePod).
+		// createExitHandler is the most common exit path (process exits naturally),
+		// so these must be cleaned up here too, not just in OnTerminatePod.
+		if h.runner.mcpServer != nil {
+			h.runner.mcpServer.UnregisterPod(podKey)
+		}
+		if h.runner.agentMonitor != nil {
+			h.runner.agentMonitor.UnregisterPod(podKey)
 		}
 
 		// Include early output or PTY error in the termination event so the

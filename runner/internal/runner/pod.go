@@ -103,6 +103,11 @@ func (p *Pod) GetRelayClient() relay.RelayClient {
 	return p.RelayClient
 }
 
+// LockRelay acquires the relay write lock for atomic check-and-set operations
+// (e.g., OnSubscribeTerminal). Caller must call UnlockRelay when done.
+func (p *Pod) LockRelay()   { p.relayMu.Lock() }
+func (p *Pod) UnlockRelay() { p.relayMu.Unlock() }
+
 // HasRelayClient returns whether a relay client is connected
 func (p *Pod) HasRelayClient() bool {
 	p.relayMu.RLock()

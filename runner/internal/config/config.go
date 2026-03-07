@@ -108,7 +108,7 @@ func Load(configFile string) (*Config, error) {
 	// Set defaults
 	v.SetDefault("server_url", "https://agentsmesh.ai")
 	v.SetDefault("max_concurrent_pods", 5)
-	v.SetDefault("workspace_root", defaultWorkspaceRoot())
+	v.SetDefault("workspace_root", DefaultWorkspaceRoot())
 	v.SetDefault("mcp_port", 19000)
 	v.SetDefault("health_check_port", 9090)
 	v.SetDefault("log_level", "info")
@@ -195,8 +195,11 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// defaultWorkspaceRoot returns a platform-appropriate default workspace root.
-func defaultWorkspaceRoot() string {
+// DefaultWorkspaceRoot returns a platform-appropriate default workspace root.
+// On Windows: %LOCALAPPDATA%\agentsmesh\workspace (fallback to ~/.agentsmesh/workspace).
+// On Unix (Docker/server): /workspace (container convention).
+// Exported so register.go can use the same logic.
+func DefaultWorkspaceRoot() string {
 	if runtime.GOOS == "windows" {
 		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
 			return filepath.Join(localAppData, "agentsmesh", "workspace")

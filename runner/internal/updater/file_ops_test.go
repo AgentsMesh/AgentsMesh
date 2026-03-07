@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/runner/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -99,6 +100,9 @@ func TestCopyFile_Success(t *testing.T) {
 }
 
 func TestCopyFile_SourceStatError(t *testing.T) {
+	testutil.SkipIfRoot(t)
+	testutil.SkipIfNoChmodSupport(t)
+
 	tmpDir, err := os.MkdirTemp("", "file-ops-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)

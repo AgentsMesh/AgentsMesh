@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/UserExistsError/conpty"
+
+	"github.com/anthropics/agentsmesh/runner/internal/process"
 )
 
 // windowsPTY wraps ConPTY for Windows platforms.
@@ -27,6 +29,7 @@ type windowsPTY struct {
 
 	readDeadline time.Time
 	deadlineMu   sync.Mutex
+	sizeMu       sync.RWMutex // protects cols and rows
 }
 
 type readResult struct {
@@ -197,12 +200,19 @@ func (w *windowsPTY) Close() error {
 }
 
 func (w *windowsPTY) Resize(cols, rows int) error {
+	if err := w.cpty.Resize(cols, rows); err != nil {
+		return err
+	}
+	w.sizeMu.Lock()
 	w.cols = cols
 	w.rows = rows
-	return w.cpty.Resize(cols, rows)
+	w.sizeMu.Unlock()
+	return nil
 }
 
 func (w *windowsPTY) GetSize() (int, int, error) {
+	w.sizeMu.RLock()
+	defer w.sizeMu.RUnlock()
 	return w.cols, w.rows, nil
 }
 
@@ -223,6 +233,11 @@ func (w *windowsPTY) Wait() (int, error) {
 }
 
 func (w *windowsPTY) Kill() error {
+	// Force-terminate the child process tree. On Windows, child processes are
+	// NOT killed when the parent dies, so we must walk the tree and kill each one.
+	// We do this before Close() because Close() only shuts down the ConPTY
+	// handle, which may not immediately terminate the child process.
+	_ = process.KillProcessTree(w.cpty.Pid())
 	return w.Close()
 }
 

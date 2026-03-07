@@ -49,20 +49,37 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 	case *runnerv1.ServerMessage_InitializeResult:
 		c.handleInitializeResult(payload.InitializeResult)
 
-	// Heavy operations - async dispatch to avoid blocking readLoop
+	// Heavy operations - async dispatch to avoid blocking readLoop.
+	// Tracked by handlerWg so Stop() can wait for them to finish.
 	case *runnerv1.ServerMessage_CreatePod:
-		go c.handleCreatePod(payload.CreatePod)
+		c.handlerWg.Add(1)
+		go func() {
+			defer c.handlerWg.Done()
+			c.handleCreatePod(payload.CreatePod)
+		}()
+
+	case *runnerv1.ServerMessage_TerminatePod:
+		c.handlerWg.Add(1)
+		go func() {
+			defer c.handlerWg.Done()
+			c.handleTerminatePod(payload.TerminatePod)
+		}()
 
 	case *runnerv1.ServerMessage_SubscribeTerminal:
-		go c.handleSubscribeTerminal(payload.SubscribeTerminal)
+		c.handlerWg.Add(1)
+		go func() {
+			defer c.handlerWg.Done()
+			c.handleSubscribeTerminal(payload.SubscribeTerminal)
+		}()
 
 	case *runnerv1.ServerMessage_CreateAutopilot:
-		go c.handleCreateAutopilot(payload.CreateAutopilot)
+		c.handlerWg.Add(1)
+		go func() {
+			defer c.handlerWg.Done()
+			c.handleCreateAutopilot(payload.CreateAutopilot)
+		}()
 
 	// Lightweight operations - synchronous to preserve ordering
-	case *runnerv1.ServerMessage_TerminatePod:
-		c.handleTerminatePod(payload.TerminatePod)
-
 	case *runnerv1.ServerMessage_TerminalInput:
 		c.handleTerminalInput(payload.TerminalInput)
 
@@ -204,7 +221,6 @@ func (c *GRPCConnection) handleSubscribeTerminal(cmd *runnerv1.SubscribeTerminal
 	req := SubscribeTerminalRequest{
 		PodKey:          cmd.PodKey,
 		RelayURL:        cmd.RelayUrl,
-		PublicRelayURL:  cmd.PublicRelayUrl,
 		RunnerToken:     cmd.RunnerToken,
 		IncludeSnapshot: cmd.IncludeSnapshot,
 		SnapshotHistory: cmd.SnapshotHistory,

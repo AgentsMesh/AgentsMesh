@@ -3,7 +3,10 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/runner/internal/textutil"
 )
 
 // Tests for gRPC configuration and persistence
@@ -127,27 +130,12 @@ func TestUpdateGRPCEndpointInFile_AppendsWhenMissing(t *testing.T) {
 }
 
 func containsLine(s, substr string) bool {
-	for _, line := range splitLines(s) {
-		if line == substr {
+	for _, line := range textutil.SplitLines(s) {
+		if line != "" && line == substr {
 			return true
 		}
 	}
 	return false
-}
-
-func splitLines(s string) []string {
-	var lines []string
-	start := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\n' {
-			lines = append(lines, s[start:i])
-			start = i + 1
-		}
-	}
-	if start < len(s) {
-		lines = append(lines, s[start:])
-	}
-	return lines
 }
 
 func indexOf(s, sub string) int {
@@ -161,9 +149,11 @@ func indexOf(s, sub string) int {
 
 func TestConfigSaveAndLoadGRPCConfig(t *testing.T) {
 	tmpHome := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpHome)
-	defer os.Setenv("HOME", originalHome)
+	// os.UserHomeDir() checks USERPROFILE first on Windows, HOME on Unix.
+	t.Setenv("HOME", tmpHome)
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", tmpHome)
+	}
 
 	cfg := &Config{}
 

@@ -3,6 +3,8 @@ package autopilot
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/anthropics/agentsmesh/runner/internal/textutil"
 )
 
 // ExtractResultFromJSON extracts the "result" field from Claude Code JSON output.
@@ -20,7 +22,7 @@ func ExtractResultFromJSON(output string) string {
 // Returns the DecisionType if found, or empty string if not found.
 // Markers must appear at the beginning of a line (after optional whitespace).
 func FindDecisionMarker(output string) DecisionType {
-	lines := strings.Split(output, "\n")
+	lines := textutil.SplitLines(output)
 
 	// Search from the end of the output, as the decision is typically at the end
 	for i := len(lines) - 1; i >= 0; i-- {
@@ -48,7 +50,7 @@ func FindDecisionMarker(output string) DecisionType {
 // ExtractSummary extracts a brief summary from the output.
 // It looks for content after decision markers that appear at line start.
 func ExtractSummary(output string) string {
-	lines := strings.Split(output, "\n")
+	lines := textutil.SplitLines(output)
 	markers := []string{"TASK_COMPLETED", "CONTINUE", "NEED_HUMAN_HELP", "GIVE_UP"}
 
 	// Find the line with a decision marker at start

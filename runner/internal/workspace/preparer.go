@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/envfilter"
 	"github.com/anthropics/agentsmesh/runner/internal/envpath"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
@@ -222,8 +223,8 @@ func (s *ScriptPreparationStep) Execute(ctx context.Context, prepCtx *Preparatio
 
 // buildEnv builds the environment variables for script execution.
 func (s *ScriptPreparationStep) buildEnv(prepCtx *PreparationContext) []string {
-	// Start with current environment
-	env := os.Environ()
+	// Start with filtered environment (removes sensitive/unnecessary vars)
+	env := envfilter.FilterEnv(os.Environ())
 
 	// Add extra paths for common tools
 	env = s.addToolPaths(env)

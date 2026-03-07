@@ -197,6 +197,9 @@ func (r *Runner) AddService(svc suture.Service) {
 // Run starts the runner with a suture Supervisor tree and blocks until context is cancelled.
 // All core components (gRPC connection, MCP server, Monitor, etc.) are managed by the Supervisor,
 // which automatically restarts them on failure.
+//
+// Shutdown order: when ctx is cancelled, pods are stopped first (while gRPC is still alive
+// to send final output/status), then the supervisor is torn down.
 func (r *Runner) Run(ctx context.Context) error {
 	log := logger.Runner()
 	log.Info("Runner starting", "node_id", r.cfg.NodeID, "org", r.cfg.OrgSlug)
@@ -240,16 +243,39 @@ func (r *Runner) Run(ctx context.Context) error {
 		supervisor.Add(svc)
 	}
 
-	// Supervisor.Serve() blocks until ctx is cancelled
-	err := supervisor.Serve(ctx)
+	// Decouple supervisor lifecycle from external shutdown signal.
+	// When ctx is cancelled, stop pods first (while gRPC is still alive),
+	// then cancel the supervisor.
+	supervisorCtx, supervisorCancel := context.WithCancel(context.Background())
+	defer supervisorCancel()
 
-	log.Info("Shutting down runner...")
-	r.stopAllPods()
+	shutdownDone := make(chan struct{})
+	go func() {
+		<-ctx.Done()
+		log.Info("Shutting down runner...")
+		r.stopAllPods()    // Pods stop while gRPC still connected
+		close(shutdownDone)
+		supervisorCancel() // Now tear down gRPC + other services
+	}()
+
+	// Supervisor.Serve() blocks until supervisorCtx is cancelled
+	err := supervisor.Serve(supervisorCtx)
+
+	// If supervisor exited on its own (not from our shutdown goroutine),
+	// also clean up pods
+	select {
+	case <-shutdownDone:
+		// Normal shutdown — pods already stopped
+	default:
+		r.stopAllPods()
+	}
 
 	return err
 }
 
 // stopAllPods stops all active autopilots and pods during shutdown.
+// Pods are stopped in parallel with a global timeout to fit within
+// Windows SCM's 20s shutdown limit.
 func (r *Runner) stopAllPods() {
 	log := logger.Runner()
 
@@ -265,22 +291,41 @@ func (r *Runner) stopAllPods() {
 	r.autopilots = make(map[string]*autopilot.AutopilotController)
 	r.autopilotsMu.Unlock()
 
-	// Stop all pods
+	// Stop all pods in parallel
 	pods := r.podStore.All()
-	if len(pods) > 0 {
-		log.Info("Stopping all pods", "count", len(pods))
+	if len(pods) == 0 {
+		return
 	}
+	log.Info("Stopping all pods in parallel", "count", len(pods))
+
+	var wg sync.WaitGroup
 	for _, pod := range pods {
-		log.Debug("Stopping pod", "pod_key", pod.PodKey)
-		pod.DisconnectRelay()
-		pod.StopStateDetector()
-		if pod.Aggregator != nil {
-			pod.Aggregator.Stop()
-		}
-		if pod.Terminal != nil {
-			pod.Terminal.Stop()
-		}
-		r.podStore.Delete(pod.PodKey)
+		wg.Add(1)
+		go func(p *Pod) {
+			defer wg.Done()
+			log.Debug("Stopping pod", "pod_key", p.PodKey)
+			p.DisconnectRelay()
+			p.StopStateDetector()
+			if p.Aggregator != nil {
+				p.Aggregator.Stop()
+			}
+			if p.Terminal != nil {
+				p.Terminal.Stop()
+			}
+			r.podStore.Delete(p.PodKey)
+		}(pod)
+	}
+
+	// Total timeout: fits within Windows SCM 20s limit
+	// (leaves headroom for autopilot stop + supervisor teardown)
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+
+	select {
+	case <-done:
+		log.Info("All pods stopped successfully")
+	case <-time.After(15 * time.Second):
+		log.Warn("Timeout waiting for pods to stop", "count", len(pods))
 	}
 }
 

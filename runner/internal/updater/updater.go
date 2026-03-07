@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -171,7 +172,18 @@ func (u *Updater) Download(ctx context.Context, version string, _ func(downloade
 		return "", fmt.Errorf("version %s not found", version)
 	}
 
-	tmpFile, err := os.CreateTemp("", "runner-update-*")
+	// Create temp file in the same directory as the executable to ensure
+	// os.Rename works (avoids cross-device link errors on Windows).
+	// Fall back to system temp dir if the executable's directory is not writable
+	// (e.g., C:\Program Files\ requires admin privileges).
+	execPath, err := u.execPathFunc()
+	if err != nil {
+		return "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+	tmpFile, err := os.CreateTemp(filepath.Dir(execPath), "runner-update-*")
+	if err != nil {
+		tmpFile, err = os.CreateTemp("", "runner-update-*")
+	}
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}

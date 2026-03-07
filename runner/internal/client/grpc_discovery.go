@@ -3,6 +3,7 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,8 +20,9 @@ type discoveryResponse struct {
 // public gRPC endpoint. Runners use this to self-heal stale grpc_endpoint configs
 // without needing to re-register.
 //
-// The endpoint is public and requires no authentication: GET {serverURL}/api/v1/runners/grpc/discovery
-func DiscoverGRPCEndpoint(ctx context.Context, serverURL string) (string, error) {
+// The endpoint requires mTLS authentication: GET {serverURL}/api/v1/runners/grpc/discovery
+// If tlsConfig is nil, the request is sent without mTLS (will fail if server requires it).
+func DiscoverGRPCEndpoint(ctx context.Context, serverURL string, tlsConfig *tls.Config) (string, error) {
 	if serverURL == "" {
 		return "", fmt.Errorf("server_url is not configured")
 	}
@@ -32,7 +34,14 @@ func DiscoverGRPCEndpoint(ctx context.Context, serverURL string) (string, error)
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+	}
+	if tlsConfig != nil {
+		transport.TLSClientConfig = tlsConfig
+	}
+	client := &http.Client{Timeout: 10 * time.Second, Transport: transport}
+
 	resp, err := client.Do(httpReq)
 	if err != nil {
 		return "", fmt.Errorf("request failed: %w", err)
@@ -40,12 +49,12 @@ func DiscoverGRPCEndpoint(ctx context.Context, serverURL string) (string, error)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	var result discoveryResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1024*1024)).Decode(&result); err != nil {
 		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
 

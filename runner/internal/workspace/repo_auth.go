@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/fsutil"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
@@ -23,22 +24,20 @@ func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path st
 
 	// Check if repository exists (bare repo has HEAD file directly in path, not in .git subdirectory)
 	if _, err := os.Stat(filepath.Join(path, "HEAD")); err == nil {
-		// Bare repository exists, update remote URL with auth and fetch updates
+		// Bare repository exists, fetch updates using auth URL directly.
+		// IMPORTANT: Do NOT persist authURL to remote config — the bare repo is
+		// shared across Pods, and any Pod could read the stored token.
+		// Instead, pass the auth URL as an explicit fetch argument.
 		log.Debug("Repository exists, fetching updates", "path", path)
-		// Update remote URL with authentication (for fetch operations)
 		authURL := m.prepareAuthURL(repoURL, opts)
-		setURLCmd := exec.CommandContext(ctx, "git", "remote", "set-url", "origin", authURL)
-		setURLCmd.Dir = path
-		setURLCmd.Run() // Ignore errors, URL might already be set
-
-		fetchCmd := exec.CommandContext(ctx, "git", "fetch", "--all")
+		fetchCmd := exec.CommandContext(ctx, "git", "fetch", authURL, "+refs/heads/*:refs/remotes/origin/*")
 		fetchCmd.Dir = path
 		m.setGitAuthEnv(fetchCmd, opts)
 		if output, err := fetchCmd.CombinedOutput(); err != nil {
 			// Fetch failed — the bare repo may be corrupted. Remove and re-clone.
 			log.Warn("Fetch failed on existing repo, removing corrupted repo and re-cloning",
 				"path", path, "error", err, "output", string(output))
-			if removeErr := os.RemoveAll(path); removeErr != nil {
+			if removeErr := fsutil.RemoveAll(path); removeErr != nil {
 				return fmt.Errorf("failed to fetch and failed to remove corrupted repo: fetch error: %s, remove error: %w", output, removeErr)
 			}
 			return m.cloneBareRepository(ctx, repoURL, path, opts)
@@ -51,7 +50,7 @@ func (m *Manager) ensureRepositoryWithAuth(ctx context.Context, repoURL, path st
 	// Clean it up before cloning.
 	if info, err := os.Stat(path); err == nil && info.IsDir() {
 		log.Warn("Directory exists but is not a valid bare repo, removing before clone", "path", path)
-		if err := os.RemoveAll(path); err != nil {
+		if err := fsutil.RemoveAll(path); err != nil {
 			return fmt.Errorf("failed to remove invalid repo directory: %w", err)
 		}
 	}
@@ -76,10 +75,18 @@ func (m *Manager) cloneBareRepository(ctx context.Context, repoURL, path string,
 	m.setGitAuthEnv(cloneCmd, opts)
 	if output, err := cloneCmd.CombinedOutput(); err != nil {
 		// Clean up any partial clone artifacts to avoid blocking future retries
-		os.RemoveAll(path)
-		return fmt.Errorf("failed to clone: %s, output: %s", err, output)
+		if removeErr := fsutil.RemoveAll(path); removeErr != nil {
+			log.Warn("Failed to clean up partial clone", "path", path, "error", removeErr)
+		}
+		return fmt.Errorf("failed to clone: %w, output: %s", err, output)
 	}
 	log.Debug("Repository cloned successfully", "path", path)
+
+	// After clone, remove token from stored remote URL to prevent cross-pod leakage.
+	// The bare repo is shared across pods; only transient operations should use auth.
+	cleanURLCmd := exec.CommandContext(ctx, "git", "remote", "set-url", "origin", repoURL)
+	cleanURLCmd.Dir = path
+	cleanURLCmd.Run() // Best-effort cleanup
 
 	// For bare repos, configure fetch refspec to get all remote branches as origin/*
 	// This enables using origin/branch_name references in worktree commands
@@ -87,8 +94,9 @@ func (m *Manager) cloneBareRepository(ctx context.Context, repoURL, path string,
 	configCmd.Dir = path
 	configCmd.Run() // Ignore errors
 
-	// Fetch to populate origin/* references
-	fetchCmd := exec.CommandContext(ctx, "git", "fetch", "--all")
+	// Fetch to populate origin/* references using auth URL directly (not stored in config)
+	authURL := m.prepareAuthURL(repoURL, opts)
+	fetchCmd := exec.CommandContext(ctx, "git", "fetch", authURL, "+refs/heads/*:refs/remotes/origin/*")
 	fetchCmd.Dir = path
 	m.setGitAuthEnv(fetchCmd, opts)
 	fetchCmd.Run() // Ignore errors
@@ -214,7 +222,7 @@ func (m *Manager) applyGitConfig(ctx context.Context, worktreePath string) error
 	cmd := exec.CommandContext(ctx, "git", "config", "--local", "include.path", "config.local")
 	cmd.Dir = worktreePath
 	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to include local config: %s, output: %s", err, output)
+		return fmt.Errorf("failed to include local config: %w, output: %s", err, output)
 	}
 
 	return nil

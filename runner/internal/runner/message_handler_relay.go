@@ -27,8 +27,13 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
-	// Check if already connected to the same Relay URL
-	existingClient := pod.GetRelayClient()
+	// Serialize concurrent subscribe operations for the same pod to prevent
+	// relay client leaks when two subscribe_terminal commands arrive concurrently.
+	pod.LockRelay()
+	defer pod.UnlockRelay()
+
+	// Check if already connected to the same Relay URL (under lock)
+	existingClient := pod.RelayClient
 	if existingClient != nil {
 		if existingClient.IsConnected() && existingClient.GetRelayURL() == req.RelayURL {
 			// Already connected to the same Relay, just update token for future reconnects
@@ -44,7 +49,9 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 			"old_relay_url", existingClient.GetRelayURL(),
 			"new_relay_url", req.RelayURL,
 			"was_connected", existingClient.IsConnected())
-		pod.DisconnectRelay()
+		pod.RelayClient = nil
+		// Stop outside the field — existing client has its own internal state
+		existingClient.Stop()
 	}
 
 	// Create new relay client (no sessionID needed)
@@ -55,13 +62,6 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		slog.Default().With("pod_key", req.PodKey),
 	)
 
-	// Set fallback relay URL (public Traefik URL) for local runners that
-	// can't resolve Docker-internal hostnames (e.g. ws://relay:8090).
-	// The backend derives this from PRIMARY_DOMAIN — no runner config dependency.
-	if req.PublicRelayURL != "" {
-		relayClient.SetFallbackURL(req.PublicRelayURL)
-	}
-
 	h.setupRelayClientHandlers(relayClient, pod, req)
 
 	if err := relayClient.Connect(); err != nil {
@@ -69,9 +69,11 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	}
 
 	if !relayClient.Start() {
+		relayClient.Stop() // Clean up connection resources from Connect()
 		return fmt.Errorf("failed to start relay client: client already stopped")
 	}
-	pod.SetRelayClient(relayClient)
+	// Direct field assignment — we already hold relayMu via LockRelay
+	pod.RelayClient = relayClient
 
 	if pod.Aggregator != nil {
 		pod.Aggregator.SetRelayOutput(func(data []byte) {
@@ -91,7 +93,9 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	if pod.VirtualTerminal != nil && pod.VirtualTerminal.IsAltScreen() && pod.Terminal != nil {
 		go func() {
 			time.Sleep(100 * time.Millisecond)
-			pod.Terminal.Redraw()
+			if err := pod.Terminal.Redraw(); err != nil {
+				log.Warn("Failed to redraw terminal after relay connect", "pod_key", req.PodKey, "error", err)
+			}
 		}()
 	}
 
@@ -183,7 +187,9 @@ func (h *RunnerMessageHandler) setupRelayClientHandlers(relayClient relay.RelayC
 		if pod.VirtualTerminal != nil && pod.VirtualTerminal.IsAltScreen() && pod.Terminal != nil {
 			go func() {
 				time.Sleep(100 * time.Millisecond)
-				pod.Terminal.Redraw()
+				if err := pod.Terminal.Redraw(); err != nil {
+					log.Warn("Failed to redraw terminal after relay reconnect", "pod_key", podKey, "error", err)
+				}
 			}()
 		}
 	})

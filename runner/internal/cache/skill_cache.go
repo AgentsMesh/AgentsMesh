@@ -202,7 +202,11 @@ func extractTarGz(r io.Reader, targetDir string) error {
 	}
 	defer gz.Close()
 
+	// Limit total entries to prevent inode exhaustion (tar bomb)
+	const maxEntries = 10000
+
 	tr := tar.NewReader(gz)
+	entryCount := 0
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -210,6 +214,11 @@ func extractTarGz(r io.Reader, targetDir string) error {
 		}
 		if err != nil {
 			return fmt.Errorf("failed to read tar entry: %w", err)
+		}
+
+		entryCount++
+		if entryCount > maxEntries {
+			return fmt.Errorf("tar archive exceeds maximum entry count (%d)", maxEntries)
 		}
 
 		// Sanitize path to prevent directory traversal

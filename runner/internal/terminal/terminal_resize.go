@@ -29,27 +29,37 @@ func (t *Terminal) Resize(cols, rows int) error {
 // don't respond to SIGWINCH when they're in an idle/waiting state.
 func (t *Terminal) Redraw() error {
 	t.mu.Lock()
-	defer t.mu.Unlock()
-
 	if t.closed || t.proc == nil {
+		t.mu.Unlock()
 		return fmt.Errorf("terminal is not running")
 	}
 
 	// Get current size
 	cols, rows, err := t.proc.GetSize()
 	if err != nil {
+		t.mu.Unlock()
 		return fmt.Errorf("failed to get terminal size: %w", err)
 	}
 
 	// Resize to cols+1 to trigger redraw
 	if err := t.proc.Resize(cols+1, rows); err != nil {
+		t.mu.Unlock()
 		return fmt.Errorf("failed to expand terminal: %w", err)
 	}
+	t.mu.Unlock()
 
-	// Small delay to ensure the resize is processed
+	// Small delay to ensure the resize is processed — lock released so
+	// other Terminal operations (Write, Resize) are not blocked.
 	time.Sleep(50 * time.Millisecond)
 
 	// Resize back to original size
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.closed || t.proc == nil {
+		return fmt.Errorf("terminal closed during redraw")
+	}
+
 	if err := t.proc.Resize(cols, rows); err != nil {
 		return fmt.Errorf("failed to restore terminal size: %w", err)
 	}

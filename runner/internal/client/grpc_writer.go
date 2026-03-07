@@ -34,10 +34,13 @@ func (c *GRPCConnection) writeLoop(ctx context.Context, done <-chan struct{}) {
 			return
 
 		case <-stuckTicker.C:
-			// Stuck detection: if no successful send for 30 seconds, trigger reconnect
+			// Stuck detection: if no successful send for 2*heartbeatInterval, trigger reconnect.
+			// Using 2x avoids false positives when heartbeat just happens to align with check.
+			stuckThreshold := 2 * c.heartbeatInterval
 			lastSend := time.Unix(0, c.lastSendTime.Load())
-			if time.Since(lastSend) > 30*time.Second {
-				log.Error("WriteLoop stuck for 30s, triggering reconnect")
+			if time.Since(lastSend) > stuckThreshold {
+				log.Error("WriteLoop stuck, triggering reconnect",
+					"threshold", stuckThreshold, "last_send_ago", time.Since(lastSend))
 				c.triggerReconnect()
 				return
 			}

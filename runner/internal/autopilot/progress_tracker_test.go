@@ -12,12 +12,13 @@ import (
 )
 
 func TestNewProgressTracker(t *testing.T) {
+	workDir := filepath.Join(os.TempDir(), "test")
 	pt := NewProgressTracker(ProgressTrackerConfig{
-		WorkDir: "/tmp/test",
+		WorkDir: workDir,
 	})
 
 	assert.NotNil(t, pt)
-	assert.Equal(t, "/tmp/test", pt.workDir)
+	assert.Equal(t, workDir, pt.workDir)
 	assert.Empty(t, pt.snapshots)
 	assert.Nil(t, pt.lastSnapshot)
 }
@@ -218,7 +219,7 @@ func TestProgressTracker_GetChangedFilesSince(t *testing.T) {
 
 func TestProgressTracker_NonExistentDir(t *testing.T) {
 	pt := NewProgressTracker(ProgressTrackerConfig{
-		WorkDir: "/nonexistent/path/that/does/not/exist",
+		WorkDir: filepath.Join(os.TempDir(), "nonexistent_path_that_does_not_exist"),
 	})
 
 	snapshot := pt.CaptureSnapshot()
@@ -231,7 +232,7 @@ func TestProgressTracker_NonExistentDir(t *testing.T) {
 
 func TestGitDiffSummary_ParseDiffStats(t *testing.T) {
 	pt := NewProgressTracker(ProgressTrackerConfig{
-		WorkDir: "/tmp",
+		WorkDir: os.TempDir(),
 	})
 
 	tests := []struct {

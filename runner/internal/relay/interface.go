@@ -17,7 +17,6 @@ type RelayClient interface {
 	GetRelayURL() string
 	GetConnectedAt() int64
 	UpdateToken(newToken string)
-	SetFallbackURL(url string)
 
 	// Handler registration
 	SetInputHandler(handler InputHandler)

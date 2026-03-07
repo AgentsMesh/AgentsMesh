@@ -1,7 +1,7 @@
 package runner
 
 import (
-	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -91,10 +91,13 @@ func TestPodAllFields(t *testing.T) {
 
 // TestNewRunnerRequiresGRPC verifies that New() requires gRPC configuration.
 func TestNewRunnerRequiresGRPC(t *testing.T) {
-	// Isolate HOME to prevent loading existing gRPC certificates
-	originalHome := os.Getenv("HOME")
-	t.Setenv("HOME", t.TempDir())
-	defer os.Setenv("HOME", originalHome)
+	// Isolate HOME to prevent loading existing gRPC certificates.
+	// os.UserHomeDir() checks USERPROFILE first on Windows, HOME on Unix.
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", tmpHome)
+	}
 
 	tempDir := t.TempDir()
 	cfg := &config.Config{

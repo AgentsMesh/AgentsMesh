@@ -2,10 +2,13 @@ package workspace
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/anthropics/agentsmesh/runner/internal/envfilter"
 )
 
 // prepareAuthURL prepares the repository URL with authentication if needed
@@ -32,16 +35,17 @@ func (m *Manager) prepareAuthURL(repoURL string, opts *WorktreeOptions) string {
 // setGitAuthEnv sets environment variables for git authentication.
 // Always disables interactive prompts to prevent blocking in daemon mode.
 func (m *Manager) setGitAuthEnv(cmd *exec.Cmd, opts *WorktreeOptions) {
-	// Start with current environment
-	env := os.Environ()
+	// Start with filtered environment (removes sensitive/unnecessary vars)
+	env := envfilter.FilterEnv(os.Environ())
 
 	// Always disable interactive prompts — Runner is a daemon and cannot handle interactive input
 	env = append(env, "GIT_TERMINAL_PROMPT=0")
 	env = append(env, "GIT_ASKPASS=")
 
 	if opts != nil && opts.SSHKeyPath != "" {
-		// Set SSH key path with BatchMode to prevent SSH password prompts
-		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no -o BatchMode=yes", opts.SSHKeyPath)
+		// Set SSH key path with BatchMode to prevent SSH password prompts.
+		// Quote the key path to handle Windows paths with spaces.
+		sshCmd := fmt.Sprintf(`ssh -i "%s" -o StrictHostKeyChecking=no -o BatchMode=yes`, opts.SSHKeyPath)
 		env = append(env, fmt.Sprintf("GIT_SSH_COMMAND=%s", sshCmd))
 	}
 
@@ -52,7 +56,7 @@ func (m *Manager) setGitAuthEnv(cmd *exec.Cmd, opts *WorktreeOptions) {
 // Similar to setGitAuthEnv but always forces BatchMode and ConnectTimeout for SSH
 // to ensure the probe never blocks.
 func (m *Manager) setProbeEnv(cmd *exec.Cmd, opts *WorktreeOptions) {
-	env := os.Environ()
+	env := envfilter.FilterEnv(os.Environ())
 
 	// Disable interactive prompts
 	env = append(env, "GIT_TERMINAL_PROMPT=0")
@@ -60,7 +64,7 @@ func (m *Manager) setProbeEnv(cmd *exec.Cmd, opts *WorktreeOptions) {
 
 	// Always set SSH command with BatchMode and short timeout for probing
 	if opts != nil && opts.SSHKeyPath != "" {
-		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=30", opts.SSHKeyPath)
+		sshCmd := fmt.Sprintf(`ssh -i "%s" -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=30`, opts.SSHKeyPath)
 		env = append(env, fmt.Sprintf("GIT_SSH_COMMAND=%s", sshCmd))
 	} else {
 		// For runner_local mode, still enforce BatchMode and ConnectTimeout during probe
@@ -112,13 +116,24 @@ func (m *Manager) ListWorktrees() ([]string, error) {
 	return worktrees, nil
 }
 
-// extractRepoName extracts repository name from URL
+// extractRepoName extracts repository name from URL.
+// Supports: SCP-style (git@host:user/repo), ssh:// (with optional port), and HTTPS URLs.
 func extractRepoName(repoURL string) string {
-	// Handle SSH URLs: git@github.com:user/repo.git
-	if strings.Contains(repoURL, "@") {
-		parts := strings.Split(repoURL, ":")
-		if len(parts) == 2 {
-			path := parts[1]
+	// Handle ssh:// URLs: ssh://git@host:port/user/repo.git
+	if strings.HasPrefix(repoURL, "ssh://") {
+		if u, err := url.Parse(repoURL); err == nil {
+			p := strings.TrimPrefix(u.Path, "/")
+			p = strings.TrimSuffix(p, ".git")
+			if p != "" {
+				return strings.ReplaceAll(p, "/", "-")
+			}
+		}
+	}
+
+	// Handle SCP-style SSH URLs: git@github.com:user/repo.git
+	if strings.Contains(repoURL, "@") && !strings.Contains(repoURL, "://") {
+		if idx := strings.LastIndex(repoURL, ":"); idx != -1 {
+			path := repoURL[idx+1:]
 			path = strings.TrimSuffix(path, ".git")
 			return strings.ReplaceAll(path, "/", "-")
 		}

@@ -3,6 +3,10 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -80,14 +84,23 @@ func (c *GRPCConnection) connectionLoop() {
 // tryEndpointDiscovery queries the backend discovery endpoint and updates the gRPC
 // endpoint if it has changed. This allows runners to self-heal when the server's
 // gRPC port or hostname changes without requiring full re-registration.
+// Uses mTLS authentication — if the TLS config cannot be built (e.g. certificates
+// not yet provisioned), discovery is silently skipped.
 func (c *GRPCConnection) tryEndpointDiscovery() {
 	log := logger.GRPC()
 	log.Info("Trying endpoint auto-discovery", "server_url", c.serverURL, "current_endpoint", c.endpoint)
 
+	// Build mTLS config using existing cert/key/ca files
+	tlsConfig, err := buildMTLSConfig(c.certFile, c.keyFile, c.caFile)
+	if err != nil {
+		log.Warn("Cannot perform endpoint discovery (mTLS config failed, certificates may not exist yet)", "error", err)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	newEndpoint, err := DiscoverGRPCEndpoint(ctx, c.serverURL)
+	newEndpoint, err := DiscoverGRPCEndpoint(ctx, c.serverURL, tlsConfig)
 	if err != nil {
 		log.Warn("Endpoint discovery failed", "error", err)
 		return
@@ -237,4 +250,30 @@ func (c *GRPCConnection) runConnection() {
 	// This prevents goroutine accumulation across reconnections.
 	wg.Wait()
 	logger.GRPC().Debug("All child goroutines exited, runConnection returning")
+}
+
+// buildMTLSConfig builds a TLS config for mTLS HTTP requests using the runner's
+// certificate, key, and CA files. Returns an error if any file cannot be loaded.
+// This follows the same pattern as RenewCertificate in grpc_registration_renewal.go.
+func buildMTLSConfig(certFile, keyFile, caFile string) (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load client certificate: %w", err)
+	}
+
+	caCert, err := os.ReadFile(caFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
+	}
+
+	caPool := x509.NewCertPool()
+	if !caPool.AppendCertsFromPEM(caCert) {
+		return nil, fmt.Errorf("failed to parse CA certificate")
+	}
+
+	return &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caPool,
+		MinVersion:   tls.VersionTLS13,
+	}, nil
 }

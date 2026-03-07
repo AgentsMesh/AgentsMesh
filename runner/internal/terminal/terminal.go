@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/term"
 
+	"github.com/anthropics/agentsmesh/runner/internal/envfilter"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/safego"
 )
@@ -76,8 +77,9 @@ func New(opts Options) (*Terminal, error) {
 	// Build environment with proper deduplication.
 	// Using a map prevents duplicate keys (e.g., TERM appearing twice)
 	// which can confuse some programs.
+	// Filter Runner-internal vars to prevent leakage to child processes.
 	envMap := make(map[string]string)
-	for _, e := range os.Environ() {
+	for _, e := range envfilter.FilterEnv(os.Environ()) {
 		if idx := strings.Index(e, "="); idx >= 0 {
 			envMap[e[:idx]] = e[idx+1:]
 		}

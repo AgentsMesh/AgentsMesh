@@ -125,7 +125,7 @@ func (d *Downloader) download(ctx context.Context, sha, url string) (int64, erro
 		return 0, fmt.Errorf("failed to cache downloaded data: %w", err)
 	}
 
-	if cr.n > maxDownloadSize {
+	if cr.n >= maxDownloadSize {
 		// Remove the oversized cached file
 		d.cache.mu.Lock()
 		os.Remove(d.cache.cachePath(sha))

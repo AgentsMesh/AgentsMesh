@@ -42,6 +42,11 @@ func NewGitHubReleaseDetector() (*GitHubReleaseDetector, error) {
 
 	updater, err := selfupdate.NewUpdater(selfupdate.Config{
 		Source: source,
+		// Require checksum validation for downloaded binaries.
+		// Release assets must include a "checksums.txt" file.
+		// If missing, update fails safely (ErrValidationAssetNotFound) —
+		// prefer no update over executing an unverified binary.
+		Validator: &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create updater: %w", err)

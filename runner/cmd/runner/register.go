@@ -218,15 +218,14 @@ func getDefaultShell() string {
 	return s
 }
 
-// defaultWorkspaceRoot returns the platform-appropriate default workspace root.
+// defaultWorkspaceRoot returns the platform-appropriate default workspace root
+// for writing to config.yaml during registration.
+// On Windows: consistent with config.DefaultWorkspaceRoot().
+// On Unix (local user): uses os.TempDir() since /workspace may not be writable.
 func defaultWorkspaceRoot() string {
 	if runtime.GOOS == "windows" {
-		// Use %LOCALAPPDATA%\agentsmesh-workspace on Windows
-		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
-			return filepath.Join(localAppData, "agentsmesh-workspace")
-		}
-		home, _ := os.UserHomeDir()
-		return filepath.Join(home, "agentsmesh-workspace")
+		// Delegate to config package for consistent Windows paths
+		return config.DefaultWorkspaceRoot()
 	}
 	return filepath.Join(os.TempDir(), "agentsmesh-workspace")
 }

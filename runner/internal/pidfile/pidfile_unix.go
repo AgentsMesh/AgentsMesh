@@ -3,6 +3,7 @@
 package pidfile
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -32,6 +33,10 @@ func CleanupStaleProcess() error {
 
 	// Check if process is alive (signal 0 = existence check)
 	if err := syscall.Kill(pid, 0); err != nil {
+		if errors.Is(err, syscall.EPERM) {
+			// EPERM from signal 0 means the process exists but is owned by another user.
+			return fmt.Errorf("stale runner (PID %d) is owned by another user — try running with sudo or as the same user that started it", pid)
+		}
 		// ESRCH = no such process → stale PID file from a dead process
 		slog.Info("Removing stale PID file (process not running)", "pid", pid)
 		os.Remove(pidPath)
@@ -49,8 +54,16 @@ func CleanupStaleProcess() error {
 	}
 
 	// It's our stale runner — kill it gracefully
-	slog.Warn("Found stale runner process, sending SIGTERM", "pid", pid)
-	_ = syscall.Kill(pid, syscall.SIGTERM)
+	slog.Warn("Found stale runner process, terminating it",
+		"pid", pid,
+		"executable", recordedExec,
+		"pid_file", pidPath)
+	if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+		if errors.Is(err, syscall.EPERM) {
+			return fmt.Errorf("cannot kill stale runner (PID %d): permission denied — try running with sudo or as the same user that started it", pid)
+		}
+		return fmt.Errorf("cannot send SIGTERM to stale runner (PID %d): %w", pid, err)
+	}
 
 	// Wait up to 5s for graceful exit
 	if waitForExit(pid, 5*time.Second) {
@@ -61,7 +74,12 @@ func CleanupStaleProcess() error {
 
 	// Escalate to SIGKILL
 	slog.Warn("SIGTERM ignored, sending SIGKILL", "pid", pid)
-	_ = syscall.Kill(pid, syscall.SIGKILL)
+	if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
+		if errors.Is(err, syscall.EPERM) {
+			return fmt.Errorf("cannot force-kill stale runner (PID %d): permission denied — try running with sudo or as the same user that started it", pid)
+		}
+		return fmt.Errorf("cannot send SIGKILL to stale runner (PID %d): %w", pid, err)
+	}
 
 	if waitForExit(pid, 2*time.Second) {
 		slog.Info("Stale runner force-killed", "pid", pid)

@@ -128,6 +128,7 @@ func RenewCertificate(ctx context.Context, req RenewalRequest) (*RenewalResult, 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
 			TLSClientConfig: tlsConfig,
 		},
 	}

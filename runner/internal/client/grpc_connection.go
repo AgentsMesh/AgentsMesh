@@ -103,6 +103,13 @@ type GRPCConnection struct {
 	// onEndpointChanged is called when auto-discovery detects a new gRPC endpoint.
 	// Implementations should persist the new endpoint to the config file.
 	onEndpointChanged func(newEndpoint string) error
+
+	// handlerWg tracks async handler goroutines (handleCreatePod, etc.)
+	// so Stop() can wait for in-flight handlers to finish.
+	handlerWg sync.WaitGroup
+
+	// loopWg tracks the connectionLoop goroutine for clean shutdown.
+	loopWg sync.WaitGroup
 }
 
 // NewGRPCConnection creates a new gRPC connection with mTLS.
@@ -247,7 +254,11 @@ func (c *GRPCConnection) Connect() error {
 // Start starts the connection management loop.
 func (c *GRPCConnection) Start() {
 	logger.GRPC().Info("gRPC connection manager starting", "endpoint", c.endpoint)
-	safego.Go("grpc-connection-loop", c.connectionLoop)
+	c.loopWg.Add(1)
+	safego.Go("grpc-connection-loop", func() {
+		defer c.loopWg.Done()
+		c.connectionLoop()
+	})
 }
 
 // Stop stops the connection and releases resources.
@@ -255,6 +266,13 @@ func (c *GRPCConnection) Stop() {
 	c.stopOnce.Do(func() {
 		logger.GRPC().Info("gRPC connection stopping")
 		close(c.stopCh)
+
+		// Wait for connectionLoop to exit before cleaning up resources
+		c.loopWg.Wait()
+
+		// Wait for in-flight async handlers (handleCreatePod, etc.)
+		c.handlerWg.Wait()
+
 		c.mu.Lock()
 		if c.conn != nil {
 			c.conn.Close()

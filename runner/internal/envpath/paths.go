@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 // PathListSeparator returns the OS-specific PATH list separator (":" on Unix, ";" on Windows).
@@ -14,15 +13,24 @@ func PathListSeparator() string {
 
 // PrependToPath prepends dirs to current, using the OS-specific separator.
 // Directories that already appear in current are skipped to avoid duplication.
+// Uses filepath.SplitList for exact element matching (avoids substring false positives).
 func PrependToPath(current string, dirs ...string) string {
 	sep := PathListSeparator()
+
+	// Build element set for exact matching
+	existing := make(map[string]struct{})
+	for _, elem := range filepath.SplitList(current) {
+		existing[elem] = struct{}{}
+	}
+
 	for i := len(dirs) - 1; i >= 0; i-- {
 		dir := dirs[i]
 		if dir == "" {
 			continue
 		}
-		if !strings.Contains(current, dir) {
+		if _, found := existing[dir]; !found {
 			current = dir + sep + current
+			existing[dir] = struct{}{}
 		}
 	}
 	return current

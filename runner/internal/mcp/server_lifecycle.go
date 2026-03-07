@@ -8,6 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+
+	"github.com/anthropics/agentsmesh/runner/internal/envfilter"
+	"github.com/anthropics/agentsmesh/runner/internal/process"
 )
 
 // Server represents an MCP server instance
@@ -42,6 +45,13 @@ func NewServer(cfg *Config) *Server {
 
 // Start starts the MCP server process
 func (s *Server) Start(ctx context.Context) error {
+	// Pre-check: verify the command exists before acquiring the lock.
+	// On Windows, exec.CommandContext may fail with a cryptic error if the
+	// binary is not on PATH. LookPath gives a clear "not found" message.
+	if _, err := exec.LookPath(s.command); err != nil {
+		return fmt.Errorf("MCP server command not found: %s: %w", s.command, err)
+	}
+
 	s.mu.Lock()
 
 	if s.running {
@@ -52,8 +62,8 @@ func (s *Server) Start(ctx context.Context) error {
 	// Build command
 	s.cmd = exec.CommandContext(ctx, s.command, s.args...)
 
-	// Set environment
-	s.cmd.Env = os.Environ()
+	// Set environment — filter Runner-internal vars to prevent leakage
+	s.cmd.Env = envfilter.FilterEnv(os.Environ())
 	for k, v := range s.env {
 		s.cmd.Env = append(s.cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
@@ -111,9 +121,11 @@ func (s *Server) Stop() error {
 		s.stdin.Close()
 	}
 
-	// Kill process if still running
+	// Kill process tree if still running.
+	// On Windows, child processes are NOT killed when the parent dies,
+	// so we must walk the tree and kill each descendant.
 	if s.cmd != nil && s.cmd.Process != nil {
-		s.cmd.Process.Kill()
+		_ = process.KillProcessTree(s.cmd.Process.Pid)
 		s.cmd.Wait()
 	}
 

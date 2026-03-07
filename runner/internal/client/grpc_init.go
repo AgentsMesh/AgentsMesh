@@ -14,6 +14,8 @@ import (
 
 // sendWithTimeout sends a message with a timeout to prevent blocking forever.
 // This is used for critical messages like initialization where we can't afford to block.
+// On timeout, clears the stream reference so the blocked Send goroutine will eventually
+// return when the underlying connection is closed (consistent with sendAndRecord behavior).
 func (c *GRPCConnection) sendWithTimeout(msg *runnerv1.RunnerMessage, timeout time.Duration) error {
 	c.mu.Lock()
 	stream := c.stream
@@ -32,6 +34,12 @@ func (c *GRPCConnection) sendWithTimeout(msg *runnerv1.RunnerMessage, timeout ti
 	case err := <-errCh:
 		return err
 	case <-time.After(timeout):
+		// Close the stream to unblock the goroutine stuck on Send().
+		// Just setting stream=nil leaves the goroutine alive until reconnect.
+		stream.CloseSend()
+		c.mu.Lock()
+		c.stream = nil
+		c.mu.Unlock()
 		return fmt.Errorf("send timed out after %v", timeout)
 	}
 }
@@ -39,6 +47,13 @@ func (c *GRPCConnection) sendWithTimeout(msg *runnerv1.RunnerMessage, timeout ti
 // performInitialization performs the three-phase initialization handshake.
 func (c *GRPCConnection) performInitialization(ctx context.Context) error {
 	logger.GRPC().Debug("Starting initialization handshake...")
+
+	// Drain any stale result from a previous connection's initResultCh
+	// to prevent reading an outdated InitializeResult.
+	select {
+	case <-c.initResultCh:
+	default:
+	}
 
 	// Use a shorter timeout for initialization messages (5s)
 	// This ensures we fail fast if stream.Send() is blocking

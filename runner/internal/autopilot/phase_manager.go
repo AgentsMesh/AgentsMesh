@@ -63,7 +63,8 @@ func (pm *PhaseManager) SetPhase(phase Phase) bool {
 		"from", oldPhase,
 		"to", phase)
 
-	pm.reportStatus()
+	// Pass phase explicitly to avoid TOCTOU between SetPhase and statusGetter
+	pm.reportStatusForPhase(phase)
 	return true
 }
 
@@ -117,15 +118,17 @@ func (pm *PhaseManager) TransitionToRunning() bool {
 	if pm.phase == PhaseInitializing || pm.phase == PhasePaused {
 		pm.phase = PhaseRunning
 		pm.mu.Unlock()
-		pm.reportStatus()
+		pm.reportStatusForPhase(PhaseRunning)
 		return true
 	}
 	pm.mu.Unlock()
 	return false
 }
 
-// reportStatus reports the current status via the EventReporter.
-func (pm *PhaseManager) reportStatus() {
+// reportStatusForPhase reports status with an explicit phase to avoid TOCTOU.
+// The phase is captured at the call site under the lock, ensuring consistency
+// between the phase and the status snapshot.
+func (pm *PhaseManager) reportStatusForPhase(phase Phase) {
 	if pm.reporter == nil || pm.statusGetter == nil {
 		return
 	}
@@ -135,15 +138,18 @@ func (pm *PhaseManager) reportStatus() {
 		return
 	}
 
-	pm.mu.RLock()
-	status.Phase = string(pm.phase)
-	pm.mu.RUnlock()
+	status.Phase = string(phase)
 
 	pm.reporter.ReportAutopilotStatus(&runnerv1.AutopilotStatusEvent{
 		AutopilotKey: pm.autopilotKey,
 		PodKey:       pm.podKey,
 		Status:       status,
 	})
+}
+
+// reportStatus reports status with the current phase (for ReportStatus public API).
+func (pm *PhaseManager) reportStatus() {
+	pm.reportStatusForPhase(pm.GetPhase())
 }
 
 // ReportStatus triggers a status report with current phase.

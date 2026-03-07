@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/textutil"
 )
 
 // getGitDiffSummary retrieves git diff information for the working directory.
@@ -40,8 +41,8 @@ func (pt *ProgressTracker) getGitDiffSummary() *GitDiffSummary {
 		return summary
 	}
 
-	// Parse git status output
-	lines := strings.Split(string(output), "\n")
+	// Parse git status output (normalize \r\n for Windows git)
+	lines := textutil.SplitLines(string(output))
 	for _, line := range lines {
 		if len(line) < 3 {
 			continue
@@ -87,7 +88,7 @@ func (pt *ProgressTracker) getGitDiffSummary() *GitDiffSummary {
 
 // parseDiffStats parses the git diff --stat output.
 func (pt *ProgressTracker) parseDiffStats(output string, summary *GitDiffSummary) {
-	lines := strings.Split(output, "\n")
+	lines := textutil.SplitLines(output)
 	for _, line := range lines {
 		// Look for summary line: " N files changed, X insertions(+), Y deletions(-)"
 		// Also handles singular forms: "1 insertion(+)", "1 deletion(-)"

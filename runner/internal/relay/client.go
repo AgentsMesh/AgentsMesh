@@ -38,10 +38,9 @@ type ImagePasteHandler func(mimeType string, data []byte)
 // Note: sessionID has been removed - channels are now identified by PodKey only
 type Client struct {
 	// Configuration
-	relayURL    string
-	fallbackURL string // Fallback relay URL if primary fails (e.g., Docker-internal URL → public URL)
-	podKey      string
-	token       string // JWT token for authentication
+	relayURL string
+	podKey   string
+	token    string // JWT token for authentication
 
 	// WebSocket connection
 	conn   *websocket.Conn
@@ -63,6 +62,7 @@ type Client struct {
 	stopCh       chan struct{} // Signals client shutdown (permanent)
 	connDoneCh   chan struct{} // Signals current connection is done (closed on disconnect)
 	stopOnce     sync.Once
+	closeOnce    sync.Once // Ensures onClose callback fires at most once
 	sendCh       chan []byte
 	logger       *slog.Logger
 	ctx          context.Context
@@ -114,6 +114,16 @@ func (c *Client) SetCloseHandler(handler CloseHandler) {
 	c.onClose = handler
 }
 
+// fireOnClose invokes the onClose callback exactly once, regardless of how many
+// code paths trigger it (readLoop defer, reconnectLoop failure branches, etc.).
+func (c *Client) fireOnClose() {
+	c.closeOnce.Do(func() {
+		if c.onClose != nil {
+			c.onClose()
+		}
+	})
+}
+
 // SetImagePasteHandler sets the handler for image paste events from browsers
 func (c *Client) SetImagePasteHandler(handler ImagePasteHandler) {
 	c.onImagePaste = handler
@@ -138,11 +148,6 @@ func (c *Client) UpdateToken(newToken string) {
 	c.token = newToken
 	c.connMu.Unlock()
 	c.logger.Info("Token updated")
-}
-
-// SetFallbackURL sets a fallback URL to try if the primary relay URL fails.
-func (c *Client) SetFallbackURL(url string) {
-	c.fallbackURL = url
 }
 
 // GetRelayURL returns the relay URL

@@ -172,9 +172,12 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 		pod.PTYLogger.Close()
 	}
 	pod.StopStateDetector()
+	// Stop aggregator BEFORE disconnecting relay, so the final flush
+	// can still be sent through the relay (matches createExitHandler order).
 	if pod.Aggregator != nil {
 		pod.Aggregator.Stop()
 	}
+	pod.DisconnectRelay()
 	if pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}

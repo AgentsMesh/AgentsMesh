@@ -67,8 +67,7 @@ type TerminalRedrawRequest struct {
 // The Runner should connect to the specified Relay URL and start streaming terminal output.
 type SubscribeTerminalRequest struct {
 	PodKey          string `json:"pod_key"`
-	RelayURL        string `json:"relay_url"`         // Docker-internal URL (e.g. ws://relay:8090)
-	PublicRelayURL  string `json:"public_relay_url"`  // Public URL via Traefik — fallback for local runners
+	RelayURL        string `json:"relay_url"`         // Public URL via reverse proxy (e.g. wss://example.com/relay)
 	RunnerToken     string `json:"runner_token"`      // JWT token for Relay authentication
 	IncludeSnapshot bool   `json:"include_snapshot"`
 	SnapshotHistory int32  `json:"snapshot_history"`

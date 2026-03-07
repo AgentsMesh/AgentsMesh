@@ -107,6 +107,9 @@ func TestSetupShims_CannotWriteXclip(t *testing.T) {
 }
 
 func TestSetupShims_CannotWriteOsascript(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("clipboard shims are Unix-only")
+	}
 	dir := t.TempDir()
 	// Pre-create everything and write xclip successfully
 	binDir := filepath.Join(dir, shimDirName, "bin")
@@ -126,6 +129,9 @@ func TestSetupShims_CannotWriteOsascript(t *testing.T) {
 }
 
 func TestSetupShims_ScriptContent(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("clipboard shims are Unix-only")
+	}
 	dir := t.TempDir()
 	if err := SetupShims(dir); err != nil {
 		t.Fatalf("SetupShims: %v", err)
@@ -252,16 +258,18 @@ func TestWriteImage_EmptyData(t *testing.T) {
 }
 
 func TestShimBinDir(t *testing.T) {
-	got := ShimBinDir("/tmp/sandbox")
-	want := filepath.FromSlash("/tmp/sandbox/.clipboard-shim/bin")
+	dir := t.TempDir()
+	got := ShimBinDir(dir)
+	want := filepath.Join(dir, ".clipboard-shim", "bin")
 	if got != want {
 		t.Errorf("ShimBinDir: got %q, want %q", got, want)
 	}
 }
 
 func TestDataDir(t *testing.T) {
-	got := dataDir("/tmp/sandbox")
-	want := filepath.FromSlash("/tmp/sandbox/.clipboard-shim/data")
+	dir := t.TempDir()
+	got := dataDir(dir)
+	want := filepath.Join(dir, ".clipboard-shim", "data")
 	if got != want {
 		t.Errorf("dataDir: got %q, want %q", got, want)
 	}

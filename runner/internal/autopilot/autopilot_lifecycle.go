@@ -12,6 +12,9 @@ import (
 func (ac *AutopilotController) Start() error {
 	ac.log.Info("Starting AutopilotController", "autopilot_key", ac.key, "pod_key", ac.podKey)
 
+	// Start state detection (deferred from constructor to avoid goroutines in New*)
+	ac.stateCoordinator.Start()
+
 	// Report created event
 	if ac.reporter != nil {
 		ac.reporter.ReportAutopilotCreated(&runnerv1.AutopilotCreatedEvent{
@@ -44,10 +47,17 @@ func (ac *AutopilotController) Stop() {
 		ac.phaseMgr.SetPhaseWithoutReport(PhaseStopped)
 
 		ac.stateCoordinator.Stop()
+
+		// Acquire wgMu to ensure no new wg.Add() can happen while we set stopped=true.
+		// This guarantees that after this block, no new goroutines will be added to wg.
+		ac.wgMu.Lock()
+		ac.stopped = true
+		ac.wgMu.Unlock()
+
 		ac.cancel()
 
-		// Wait for all running goroutines to complete inside stopOnce
-		// to ensure cleanup happens in the correct order
+		// Wait for all running goroutines to complete.
+		// Since stopped=true and wgMu was held, no new goroutines can be started.
 		ac.wg.Wait()
 
 		// Cleanup MCP config file

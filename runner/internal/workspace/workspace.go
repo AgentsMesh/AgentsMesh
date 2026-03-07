@@ -12,7 +12,8 @@ import (
 type Manager struct {
 	root          string
 	gitConfigPath string
-	mu            sync.Mutex
+	mu            sync.Mutex // Global lock for cleanup/list operations
+	repoLocks     sync.Map   // repoName -> *sync.Mutex (per-repo locking)
 }
 
 // WorktreeOptions contains options for creating a worktree
@@ -67,4 +68,12 @@ func NewManager(root, gitConfigPath string) (*Manager, error) {
 		root:          root,
 		gitConfigPath: gitConfigPath,
 	}, nil
+}
+
+// getRepoLock returns a per-repository mutex, creating one if needed.
+// This allows concurrent worktree creation for different repositories
+// while serializing operations on the same repository.
+func (m *Manager) getRepoLock(repoName string) *sync.Mutex {
+	actual, _ := m.repoLocks.LoadOrStore(repoName, &sync.Mutex{})
+	return actual.(*sync.Mutex)
 }

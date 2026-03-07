@@ -51,15 +51,18 @@ func (m *Manager) CreateWorktreeWithOptions(ctx context.Context, repoURL, branch
 		repoURL = probeURL
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	// Parse repo name from URL
+	// Parse repo name from URL (needed before locking)
 	repoName := extractRepoName(repoURL)
 	if repoName == "" {
 		return nil, fmt.Errorf("invalid repository URL: %s", repoURL)
 	}
 	log.Debug("Parsed repo name", "name", repoName)
+
+	// Per-repo lock: allows concurrent worktree creation for different repositories
+	// while serializing git operations (clone/fetch) on the same repository.
+	repoLock := m.getRepoLock(repoName)
+	repoLock.Lock()
+	defer repoLock.Unlock()
 
 	// Main repository path (bare repo cache, shared across pods)
 	mainRepoPath := filepath.Join(m.root, "repos", repoName)

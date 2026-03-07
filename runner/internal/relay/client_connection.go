@@ -2,6 +2,7 @@ package relay
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"time"
@@ -11,26 +12,12 @@ import (
 )
 
 // Connect establishes connection to the Relay server.
-// If the primary URL fails and a fallback URL is set, it retries with the fallback.
-// On fallback success, the primary URL is permanently updated to the fallback.
 func (c *Client) Connect() error {
 	c.reconnectMu.Lock()
 	defer c.reconnectMu.Unlock()
 
 	if err := c.connectInternal(); err != nil {
-		// If primary URL failed and we have a fallback, try it
-		if c.fallbackURL != "" && c.fallbackURL != c.relayURL {
-			c.logger.Warn("Primary relay URL failed, trying fallback",
-				"primary", c.relayURL, "fallback", c.fallbackURL, "error", err)
-			c.relayURL = c.fallbackURL
-			c.fallbackURL = "" // Clear to prevent loops
-			if err2 := c.connectInternal(); err2 != nil {
-				return err2
-			}
-			// Fall through to success
-		} else {
-			return err
-		}
+		return err
 	}
 
 	// Mark as connected after successful dial
@@ -41,6 +28,11 @@ func (c *Client) Connect() error {
 }
 
 func (c *Client) connectInternal() error {
+	// Snapshot token under connMu to avoid data race with UpdateToken()
+	c.connMu.RLock()
+	token := c.token
+	c.connMu.RUnlock()
+
 	// Build WebSocket URL with query parameters
 	u, err := url.Parse(c.relayURL)
 	if err != nil {
@@ -63,7 +55,7 @@ func (c *Client) connectInternal() error {
 	// This preserves any path prefix from reverse proxy configuration
 	u.Path = path.Join(u.Path, "/runner/terminal")
 	q := u.Query()
-	q.Set("token", c.token)
+	q.Set("token", token)
 	u.RawQuery = q.Encode()
 
 	// Log URL without token for security
@@ -72,6 +64,7 @@ func (c *Client) connectInternal() error {
 	// Establish WebSocket connection
 	dialer := websocket.Dialer{
 		HandshakeTimeout: 10 * time.Second,
+		Proxy:            http.ProxyFromEnvironment,
 	}
 
 	conn, _, err := dialer.DialContext(c.ctx, u.String(), nil)

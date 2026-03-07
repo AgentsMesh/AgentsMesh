@@ -15,6 +15,13 @@ func (ac *AutopilotController) runSingleDecision(iteration int) {
 
 	// Internal retry loop - errors don't consume iteration quota
 	for {
+		// Check for context cancellation before each attempt
+		if err := ac.ctx.Err(); err != nil {
+			ac.log.Info("Context cancelled, stopping decision loop",
+				"autopilot_key", ac.key, "iteration", iteration, "error", err)
+			return
+		}
+
 		startTime := time.Now()
 
 		// Create timeout context

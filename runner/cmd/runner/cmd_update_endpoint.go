@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"os"
@@ -72,10 +74,38 @@ can no longer connect. This avoids a full re-registration.`)
 
 	fmt.Printf("Querying discovery endpoint: %s/api/v1/runners/grpc/discovery\n", cfg.ServerURL)
 
+	// Build mTLS config using runner's certificates for authenticated discovery
+	var tlsConfig *tls.Config
+	if cfg.CertFile != "" && cfg.KeyFile != "" && cfg.CAFile != "" {
+		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to load client certificate: %v\n", err)
+			os.Exit(1)
+		}
+		caCert, err := os.ReadFile(cfg.CAFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to read CA certificate: %v\n", err)
+			os.Exit(1)
+		}
+		caPool := x509.NewCertPool()
+		if !caPool.AppendCertsFromPEM(caCert) {
+			fmt.Fprintln(os.Stderr, "Failed to parse CA certificate")
+			os.Exit(1)
+		}
+		tlsConfig = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      caPool,
+			MinVersion:   tls.VersionTLS13,
+		}
+	} else {
+		fmt.Fprintln(os.Stderr, "Error: Certificate files not configured. Please register the runner first.")
+		os.Exit(1)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	newEndpoint, err := client.DiscoverGRPCEndpoint(ctx, cfg.ServerURL)
+	newEndpoint, err := client.DiscoverGRPCEndpoint(ctx, cfg.ServerURL, tlsConfig)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Discovery failed: %v\n", err)
 		os.Exit(1)
