@@ -8,7 +8,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/UserExistsError/conpty v0.1.4
 	github.com/anthropics/agentsmesh/proto v0.0.0
-	github.com/creack/pty v1.1.21
+	github.com/creack/pty v1.1.24
 	github.com/creativeprojects/go-selfupdate v1.5.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
