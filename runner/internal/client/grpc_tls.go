@@ -22,7 +22,7 @@ import (
 // Uses CertVerification (chain-only, no hostname check) because:
 //   - Private PKI: both server and client certs are signed by our own CA
 //   - Server cert SANs may not include the public hostname (e.g., api.agentsmesh.cn)
-//   - SNI must remain as the dial target hostname for correct Traefik TCP routing
+//   - grpcAuthority overrides SNI to a non-routable hostname to avoid proxy interception
 func (c *GRPCConnection) createAdvancedTLSCredentials() (credentials.TransportCredentials, error) {
 	// Create identity certificate provider with file watching
 	// This provider will automatically reload certificates when files change
@@ -61,7 +61,7 @@ func (c *GRPCConnection) createAdvancedTLSCredentials() (credentials.TransportCr
 		MinTLSVersion: tls.VersionTLS13,
 		MaxTLSVersion: tls.VersionTLS13,
 		// Only verify certificate chain, not hostname.
-		// Server cert SANs may not include the public domain; SNI must stay as dial target for routing.
+		// Server cert SANs may not include the public domain; SNI is set via grpcAuthority.
 		VerificationType: advancedtls.CertVerification,
 	}
 
@@ -109,7 +109,7 @@ func (c *GRPCConnection) createStaticCACredentials(identityProvider certprovider
 // Used when advancedtls pemfile providers fail to initialize.
 //
 // Uses InsecureSkipVerify + VerifyConnection to verify chain without hostname check.
-// This keeps SNI as the dial target for correct proxy routing while still verifying
+// SNI is overridden by grpcAuthority to a non-routable hostname; still verifies
 // the server cert is signed by our private CA.
 func (c *GRPCConnection) createFallbackTLSCredentials() (credentials.TransportCredentials, error) {
 	cert, err := tls.LoadX509KeyPair(c.certFile, c.keyFile)
@@ -131,8 +131,8 @@ func (c *GRPCConnection) createFallbackTLSCredentials() (credentials.TransportCr
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caPool,
 		MinVersion:   tls.VersionTLS13,
-		// Skip default verification (which includes hostname check) so SNI stays as
-		// the dial target hostname for correct Traefik routing. Chain verification is
+		// Skip default verification (which includes hostname check) since grpcAuthority
+		// overrides SNI to a non-routable hostname. Chain verification is
 		// performed in VerifyConnection below.
 		InsecureSkipVerify: true,
 		VerifyConnection: func(cs tls.ConnectionState) error {
