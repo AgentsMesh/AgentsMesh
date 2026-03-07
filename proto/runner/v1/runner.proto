@@ -297,8 +297,8 @@ message TerminalRedrawCommand {
 // Backend 通知 Runner 有观察者要订阅终端，Runner 应连接到 Relay
 message SubscribeTerminalCommand {
   string pod_key = 1;
-  string relay_url = 2;         // Internal Relay URL for Docker runners (ws://relay:8090)
-  string public_relay_url = 3;  // Public Relay URL via Traefik (ws://host:port/relay) — fallback for local runners that can't resolve Docker-internal hostnames
+  string relay_url = 2;        // Public Relay URL via reverse proxy (e.g. ws://host:port/relay)
+  reserved 3;                  // Was public_relay_url — removed: all runners use the single public URL
   bool include_snapshot = 4;   // 是否发送快照
   int32 snapshot_history = 5;  // 快照历史行数
   string runner_token = 6;     // Runner 认证 Token（JWT）

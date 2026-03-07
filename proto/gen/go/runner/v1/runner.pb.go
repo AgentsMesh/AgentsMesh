@@ -2455,8 +2455,7 @@ func (x *TerminalRedrawCommand) GetPodKey() string {
 type SubscribeTerminalCommand struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	PodKey          string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
-	RelayUrl        string                 `protobuf:"bytes,2,opt,name=relay_url,json=relayUrl,proto3" json:"relay_url,omitempty"`                       // Relay WebSocket URL (wss://relay.example.com)
-	PublicRelayUrl  string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"public_relay_url,omitempty"`              // Public Relay URL via Traefik — fallback for local runners
+	RelayUrl        string                 `protobuf:"bytes,2,opt,name=relay_url,json=relayUrl,proto3" json:"relay_url,omitempty"`                       // Public Relay URL via reverse proxy (e.g. ws://host:port/relay)
 	IncludeSnapshot bool                   `protobuf:"varint,4,opt,name=include_snapshot,json=includeSnapshot,proto3" json:"include_snapshot,omitempty"` // 是否发送快照
 	SnapshotHistory int32                  `protobuf:"varint,5,opt,name=snapshot_history,json=snapshotHistory,proto3" json:"snapshot_history,omitempty"` // 快照历史行数
 	RunnerToken     string                 `protobuf:"bytes,6,opt,name=runner_token,json=runnerToken,proto3" json:"runner_token,omitempty"`              // Runner 认证 Token（JWT）
@@ -2504,13 +2503,6 @@ func (x *SubscribeTerminalCommand) GetPodKey() string {
 func (x *SubscribeTerminalCommand) GetRelayUrl() string {
 	if x != nil {
 		return x.RelayUrl
-	}
-	return ""
-}
-
-func (x *SubscribeTerminalCommand) GetPublicRelayUrl() string {
-	if x != nil {
-		return x.PublicRelayUrl
 	}
 	return ""
 }
@@ -4823,15 +4815,13 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x16\n" +
 	"\x06prompt\x18\x02 \x01(\tR\x06prompt\"0\n" +
 	"\x15TerminalRedrawCommand\x12\x17\n" +
-	"\apod_key\x18\x01 \x01(\tR\x06podKey\"\xe8\x01\n" +
+	"\apod_key\x18\x01 \x01(\tR\x06podKey\"\xcf\x01\n" +
 	"\x18SubscribeTerminalCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x1b\n" +
-	"\trelay_url\x18\x02 \x01(\tR\brelayUrl\x12\x1d\n" +
-	"\n" +
-	"session_id\x18\x03 \x01(\tR\tsessionId\x12)\n" +
+	"\trelay_url\x18\x02 \x01(\tR\brelayUrl\x12)\n" +
 	"\x10include_snapshot\x18\x04 \x01(\bR\x0fincludeSnapshot\x12)\n" +
 	"\x10snapshot_history\x18\x05 \x01(\x05R\x0fsnapshotHistory\x12!\n" +
-	"\frunner_token\x18\x06 \x01(\tR\vrunnerToken\"5\n" +
+	"\frunner_token\x18\x06 \x01(\tR\vrunnerTokenJ\x04\b\x03\x10\x04\"5\n" +
 	"\x1aUnsubscribeTerminalCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\"m\n" +
 	"\x16RequestRelayTokenEvent\x12\x17\n" +
