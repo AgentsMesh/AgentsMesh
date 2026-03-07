@@ -197,12 +197,6 @@ func extractHost(baseURL string) string {
 	return host
 }
 
-// generateCloneURL generates clone URL based on provider type (kept for backward compatibility)
-func generateCloneURL(providerType, baseURL, fullPath string) string {
-	httpURL, _ := generateCloneURLs(providerType, baseURL, fullPath)
-	return httpURL
-}
-
 // GetByID returns a repository by ID
 func (s *Service) GetByID(ctx context.Context, id int64) (*gitprovider.Repository, error) {
 	repo, err := s.repo.GetByID(ctx, id)

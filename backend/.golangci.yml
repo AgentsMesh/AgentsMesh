@@ -71,16 +71,3 @@ linters:
       - text: "SA1019:.*infra/tasks"
         linters:
           - staticcheck
-
-      # time.Until simplification - low priority
-      - text: "S1024:"
-        linters:
-          - gosimple
-
-      # Unused functions kept for future use
-      - text: "func `generateCloneURL` is unused"
-        linters:
-          - unused
-      - text: "func `toProviderResponse` is unused"
-        linters:
-          - unused

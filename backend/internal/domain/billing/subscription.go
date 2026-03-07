@@ -116,7 +116,7 @@ func (s *Subscription) GetRemainingTrialDays() int {
 	if s.Status != SubscriptionStatusTrialing {
 		return 0
 	}
-	remaining := s.CurrentPeriodEnd.Sub(time.Now()).Hours() / 24
+	remaining := time.Until(s.CurrentPeriodEnd).Hours() / 24
 	if remaining < 0 {
 		return 0
 	}

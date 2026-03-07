@@ -1,7 +1,6 @@
 package v1
 
 import (
-	domainUser "github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
@@ -66,9 +65,4 @@ type UpdateRepositoryProviderRequest struct {
 	ClientSecret *string `json:"client_secret"`
 	BotToken     *string `json:"bot_token"`
 	IsActive     *bool   `json:"is_active"`
-}
-
-// toProviderResponse converts a provider to response format (internal helper)
-func toProviderResponse(p *domainUser.RepositoryProvider) *domainUser.RepositoryProviderResponse {
-	return p.ToResponse()
 }

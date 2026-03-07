@@ -11,9 +11,10 @@ import (
 func (s *PodService) UpdatePodStatus(ctx context.Context, podKey, status string) error {
 	updates := map[string]interface{}{"status": status}
 
-	if status == agentpod.StatusRunning {
+	switch status {
+	case agentpod.StatusRunning:
 		updates["started_at"] = time.Now()
-	} else if status == agentpod.StatusTerminated || status == agentpod.StatusOrphaned {
+	case agentpod.StatusTerminated, agentpod.StatusOrphaned:
 		updates["finished_at"] = time.Now()
 	}
 

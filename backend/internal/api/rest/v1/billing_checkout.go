@@ -134,9 +134,10 @@ func (h *BillingHandler) calculateCheckoutPrice(c *gin.Context, tenant *middlewa
 		priceCalc, err := h.billingService.CalculateSeatPurchasePrice(ctx, tenant.OrganizationID, req.Seats)
 		if err != nil {
 			errMsg := "seat purchase calculation failed"
-			if err == billingService.ErrInvalidPlan {
+			switch err {
+			case billingService.ErrInvalidPlan:
 				errMsg = "cannot add seats to based plan, please upgrade first"
-			} else if err == billingService.ErrQuotaExceeded {
+			case billingService.ErrQuotaExceeded:
 				errMsg = "exceeds maximum seats for this plan"
 			}
 			apierr.BadRequest(c, apierr.VALIDATION_FAILED, errMsg)

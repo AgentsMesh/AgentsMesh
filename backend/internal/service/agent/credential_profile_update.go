@@ -27,7 +27,7 @@ func (s *CredentialProfileService) UpdateCredentialProfile(ctx context.Context, 
 
 	// If setting as default, unset other defaults
 	if params.IsDefault != nil && *params.IsDefault && !profile.IsDefault {
-		s.repo.UnsetDefaults(ctx, userID, profile.AgentTypeID)
+		_ = s.repo.UnsetDefaults(ctx, userID, profile.AgentTypeID)
 	}
 
 	// Build updates
@@ -78,7 +78,7 @@ func (s *CredentialProfileService) SetDefaultCredentialProfile(ctx context.Conte
 	}
 
 	// Unset other defaults
-	s.repo.UnsetDefaults(ctx, userID, profile.AgentTypeID)
+	_ = s.repo.UnsetDefaults(ctx, userID, profile.AgentTypeID)
 
 	// Set this as default
 	if err := s.repo.SetDefault(ctx, profile); err != nil {

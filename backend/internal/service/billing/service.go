@@ -118,7 +118,7 @@ func (s *Service) CreateStripeCustomer(ctx context.Context, orgID int64, email, 
 	}
 
 	// Update subscription with Stripe customer ID
-	s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
+	_ = s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
 		"stripe_customer_id": c.ID,
 	})
 

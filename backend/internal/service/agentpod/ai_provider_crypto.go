@@ -72,7 +72,7 @@ func (s *AIProviderService) ValidateCredentials(providerType string, credentials
 	case agentpod.AIProviderTypeClaude:
 		// Claude requires either api_key or auth_token
 		if credentials["api_key"] == "" && credentials["auth_token"] == "" {
-			return errors.New("Claude provider requires either api_key or auth_token")
+			return errors.New("claude provider requires either api_key or auth_token")
 		}
 	case agentpod.AIProviderTypeOpenAI, agentpod.AIProviderTypeCodex:
 		// OpenAI/Codex requires api_key
@@ -82,7 +82,7 @@ func (s *AIProviderService) ValidateCredentials(providerType string, credentials
 	case agentpod.AIProviderTypeGemini:
 		// Gemini requires api_key
 		if credentials["api_key"] == "" {
-			return errors.New("Gemini provider requires api_key")
+			return errors.New("gemini provider requires api_key")
 		}
 	}
 	return nil

@@ -26,11 +26,12 @@ func (p *GiteeProvider) GetMergeRequest(ctx context.Context, projectID string, m
 // ListMergeRequests returns pull requests for a repository
 func (p *GiteeProvider) ListMergeRequests(ctx context.Context, projectID string, state string, page, perPage int) ([]*MergeRequest, error) {
 	gtState := "all"
-	if state == "opened" {
+	switch state {
+	case "opened":
 		gtState = "open"
-	} else if state == "merged" {
+	case "merged":
 		gtState = "merged"
-	} else if state == "closed" {
+	case "closed":
 		gtState = "closed"
 	}
 
@@ -98,11 +99,12 @@ func (p *GiteeProvider) ListMergeRequests(ctx context.Context, projectID string,
 // ListMergeRequestsByBranch returns pull requests filtered by source branch
 func (p *GiteeProvider) ListMergeRequestsByBranch(ctx context.Context, projectID, sourceBranch, state string) ([]*MergeRequest, error) {
 	gtState := "all"
-	if state == "opened" {
+	switch state {
+	case "opened":
 		gtState = "open"
-	} else if state == "merged" {
+	case "merged":
 		gtState = "merged"
-	} else if state == "closed" {
+	case "closed":
 		gtState = "closed"
 	}
 

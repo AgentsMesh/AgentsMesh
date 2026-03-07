@@ -137,9 +137,10 @@ func (pc *PodCoordinator) handleAutopilotControllerTerminated(runnerID int64, da
 	now := time.Now()
 	phase := agentpod.AutopilotPhaseStopped
 	if reason := data.GetReason(); reason != "" {
-		if reason == "completed" {
+		switch reason {
+		case "completed":
 			phase = agentpod.AutopilotPhaseCompleted
-		} else if reason == "failed" {
+		case "failed":
 			phase = agentpod.AutopilotPhaseFailed
 		}
 	}

@@ -173,16 +173,7 @@ func (s *WebhookService) getGitProviderForUser(ctx context.Context, repo *gitpro
 
 	// 2. Fall back to OAuth tokens from user_identities
 	// Map repository provider type to OAuth provider name
-	oauthProvider := repo.ProviderType
-	if oauthProvider == "github" {
-		oauthProvider = "github"
-	} else if oauthProvider == "gitlab" {
-		oauthProvider = "gitlab"
-	} else if oauthProvider == "gitee" {
-		oauthProvider = "gitee"
-	}
-
-	tokens, err := s.userService.GetDecryptedTokens(ctx, userID, oauthProvider)
+	tokens, err := s.userService.GetDecryptedTokens(ctx, userID, repo.ProviderType)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrNoAccessToken, err)
 	}

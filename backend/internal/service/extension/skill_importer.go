@@ -547,10 +547,11 @@ func (imp *SkillImporter) cloneRepo(ctx context.Context, source *extension.Skill
 // validateGitBranch validates that a branch name contains only safe characters
 func validateGitBranch(branch string) error {
 	for _, c := range branch {
-		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-			c == '-' || c == '_' || c == '.' || c == '/') {
-			return fmt.Errorf("invalid branch name character: %c", c)
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+			c == '-' || c == '_' || c == '.' || c == '/' {
+			continue
 		}
+		return fmt.Errorf("invalid branch name character: %c", c)
 	}
 	return nil
 }

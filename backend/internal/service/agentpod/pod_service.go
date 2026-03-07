@@ -144,12 +144,3 @@ func (s *PodService) CreatePodForTicket(ctx context.Context, req *CreatePodReque
 
 	return s.CreatePod(ctx, req)
 }
-
-// buildTicketPromptFromFields builds a ticket prompt from title and description fields
-func buildTicketPromptFromFields(title, description string) string {
-	prompt := fmt.Sprintf("Work on ticket: %s", title)
-	if description != "" {
-		prompt += fmt.Sprintf("\n\nDescription: %s", description)
-	}
-	return prompt
-}

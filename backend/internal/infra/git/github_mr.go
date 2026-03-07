@@ -25,9 +25,10 @@ func (p *GitHubProvider) GetMergeRequest(ctx context.Context, projectID string, 
 // ListMergeRequests returns pull requests for a repository
 func (p *GitHubProvider) ListMergeRequests(ctx context.Context, projectID string, state string, page, perPage int) ([]*MergeRequest, error) {
 	ghState := "all"
-	if state == "opened" {
+	switch state {
+	case "opened":
 		ghState = "open"
-	} else if state == "merged" || state == "closed" {
+	case "merged", "closed":
 		ghState = "closed"
 	}
 
@@ -98,9 +99,10 @@ func (p *GitHubProvider) ListMergeRequests(ctx context.Context, projectID string
 // ListMergeRequestsByBranch returns pull requests filtered by head branch
 func (p *GitHubProvider) ListMergeRequestsByBranch(ctx context.Context, projectID, sourceBranch, state string) ([]*MergeRequest, error) {
 	ghState := "all"
-	if state == "opened" {
+	switch state {
+	case "opened":
 		ghState = "open"
-	} else if state == "merged" || state == "closed" {
+	case "merged", "closed":
 		ghState = "closed"
 	}
 

@@ -56,5 +56,5 @@ func isDuplicateKeyError(err error) bool {
 // allowing it to be reprocessed. This is used to roll back the mark when the
 // handler fails after the mark was written.
 func (s *Service) DeleteWebhookProcessedMark(ctx context.Context, eventID, provider string) {
-	s.repo.DeleteWebhookEvent(ctx, eventID, provider)
+	_ = s.repo.DeleteWebhookEvent(ctx, eventID, provider)
 }

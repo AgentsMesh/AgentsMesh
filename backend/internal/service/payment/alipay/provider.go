@@ -138,7 +138,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	// Parse amount
 	if totalAmount, ok := formData["total_amount"]; ok && totalAmount != "" {
 		var amount float64
-		fmt.Sscanf(totalAmount, "%f", &amount)
+		_, _ = fmt.Sscanf(totalAmount, "%f", &amount)
 		result.Amount = amount
 	}
 

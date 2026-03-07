@@ -25,7 +25,7 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 
 	// If setting as default, unset other defaults for this agent type
 	if params.IsDefault {
-		s.repo.UnsetDefaults(ctx, userID, params.AgentTypeID)
+		_ = s.repo.UnsetDefaults(ctx, userID, params.AgentTypeID)
 	}
 
 	// Encrypt credentials if provided
