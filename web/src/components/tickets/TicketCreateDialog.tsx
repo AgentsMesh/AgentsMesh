@@ -158,7 +158,7 @@ export function TicketCreateDialog({
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent className="max-w-lg" title={dialogTitle}>
-        <ResponsiveDialogHeader>
+        <ResponsiveDialogHeader onClose={() => onOpenChange(false)}>
           <ResponsiveDialogTitle>{dialogTitle}</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
 

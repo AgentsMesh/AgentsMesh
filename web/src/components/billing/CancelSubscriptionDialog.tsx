@@ -62,7 +62,7 @@ export function CancelSubscriptionDialog({
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent className="sm:max-w-md" title={dialogTitle}>
-        <ResponsiveDialogHeader className="text-center pb-2">
+        <ResponsiveDialogHeader className="text-center pb-2" onClose={() => onOpenChange(false)}>
           <div className="mx-auto w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4">
             <AlertTriangle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
           </div>

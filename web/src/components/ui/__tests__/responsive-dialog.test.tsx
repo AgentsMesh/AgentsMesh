@@ -112,7 +112,7 @@ describe("ResponsiveDialog", () => {
       setMobile();
     });
 
-    it("renders using vaul Drawer", () => {
+    it("renders as full-screen dialog", () => {
       render(
         <ResponsiveDialog open={true} onOpenChange={vi.fn()}>
           <ResponsiveDialogContent title="Test Dialog">
@@ -121,8 +121,6 @@ describe("ResponsiveDialog", () => {
         </ResponsiveDialog>
       );
 
-      expect(screen.getByTestId("drawer-root")).toBeInTheDocument();
-      expect(screen.getByTestId("drawer-content")).toBeInTheDocument();
       expect(screen.getByText("Mobile Content")).toBeInTheDocument();
     });
 
@@ -152,21 +150,7 @@ describe("ResponsiveDialogContent", () => {
       setMobile();
     });
 
-    it("uses dvh units for max height instead of vh", () => {
-      render(
-        <ResponsiveDialog open={true} onOpenChange={vi.fn()}>
-          <ResponsiveDialogContent title="Test">
-            <div>Content</div>
-          </ResponsiveDialogContent>
-        </ResponsiveDialog>
-      );
-
-      const drawerContent = screen.getByTestId("drawer-content");
-      expect(drawerContent.className).toContain("max-h-[85dvh]");
-      expect(drawerContent.className).not.toContain("max-h-[90vh]");
-    });
-
-    it("uses overflow-hidden on wrapper div instead of overflow-y-auto to prevent nested scrolling", () => {
+    it("renders full-screen content with flex layout", () => {
       render(
         <ResponsiveDialog open={true} onOpenChange={vi.fn()}>
           <ResponsiveDialogContent title="Test">
@@ -175,41 +159,12 @@ describe("ResponsiveDialogContent", () => {
         </ResponsiveDialog>
       );
 
-      // The wrapper div is the parent of the children inside drawer-content
       const child = screen.getByTestId("child");
       const wrapperDiv = child.parentElement!;
       expect(wrapperDiv.className).toContain("flex-1");
       expect(wrapperDiv.className).toContain("flex-col");
       expect(wrapperDiv.className).toContain("min-h-0");
       expect(wrapperDiv.className).toContain("overflow-hidden");
-      expect(wrapperDiv.className).not.toContain("overflow-y-auto");
-    });
-
-    it("renders the drag handle", () => {
-      const { container } = render(
-        <ResponsiveDialog open={true} onOpenChange={vi.fn()}>
-          <ResponsiveDialogContent title="Test">
-            <div>Content</div>
-          </ResponsiveDialogContent>
-        </ResponsiveDialog>
-      );
-
-      const handle = container.querySelector(".rounded-full.bg-muted");
-      expect(handle).toBeInTheDocument();
-    });
-
-    it("renders accessible title as sr-only", () => {
-      render(
-        <ResponsiveDialog open={true} onOpenChange={vi.fn()}>
-          <ResponsiveDialogContent title="Accessible Title">
-            <div>Content</div>
-          </ResponsiveDialogContent>
-        </ResponsiveDialog>
-      );
-
-      const title = screen.getByTestId("drawer-title");
-      expect(title).toHaveTextContent("Accessible Title");
-      expect(title.className).toContain("sr-only");
     });
   });
 

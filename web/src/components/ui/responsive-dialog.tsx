@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useCallback, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { Drawer } from "vaul";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
@@ -33,6 +32,8 @@ interface ResponsiveDialogContentProps {
 interface ResponsiveDialogHeaderProps {
   children: React.ReactNode;
   className?: string;
+  /** Close handler for mobile back/close button */
+  onClose?: () => void;
 }
 
 interface ResponsiveDialogTitleProps {
@@ -63,7 +64,7 @@ interface ResponsiveDialogCloseProps {
 /**
  * ResponsiveDialog - A dialog component that adapts to screen size
  * - Desktop: Shows as a centered modal dialog
- * - Mobile: Shows as a bottom drawer (vaul)
+ * - Mobile: Shows as a full-screen dialog
  */
 export function ResponsiveDialog({
   open,
@@ -74,10 +75,8 @@ export function ResponsiveDialog({
   const overlayRef = useRef<HTMLDivElement>(null);
   const mounted = useIsMounted();
 
-  // Handle escape key (for desktop mode)
+  // Handle escape key
   useEffect(() => {
-    if (isMobile) return;
-
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) {
         onOpenChange(false);
@@ -85,12 +84,10 @@ export function ResponsiveDialog({
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [open, onOpenChange, isMobile]);
+  }, [open, onOpenChange]);
 
-  // Prevent body scroll when open (for desktop mode)
+  // Prevent body scroll when open
   useEffect(() => {
-    if (isMobile) return;
-
     if (open) {
       document.body.style.overflow = "hidden";
     } else {
@@ -99,7 +96,7 @@ export function ResponsiveDialog({
     return () => {
       document.body.style.overflow = "";
     };
-  }, [open, isMobile]);
+  }, [open]);
 
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent) => {
@@ -110,23 +107,20 @@ export function ResponsiveDialog({
     [onOpenChange]
   );
 
-  // Mobile: Use vaul Drawer
-  if (isMobile) {
-    return (
-      <Drawer.Root open={open} onOpenChange={onOpenChange}>
-        <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
-          {children}
-        </Drawer.Portal>
-      </Drawer.Root>
-    );
-  }
-
-  // Desktop: Use standard dialog with Portal
   // Wait for mount to ensure document.body is available (SSR-safe)
   if (!open || !mounted) return null;
 
-  // Use Portal to render dialog at document body level
+  // Mobile: Full-screen dialog
+  if (isMobile) {
+    return createPortal(
+      <div className="fixed inset-0 z-50 bg-background flex flex-col">
+        {children}
+      </div>,
+      document.body
+    );
+  }
+
+  // Desktop: Centered modal with overlay
   return createPortal(
     <div
       ref={overlayRef}
@@ -146,26 +140,12 @@ export function ResponsiveDialogContent({
 }: ResponsiveDialogContentProps) {
   const { isMobile } = useBreakpoint();
 
-  // Mobile: Drawer content (className is not applied to Drawer.Content
-  // to avoid width constraints like max-w-lg breaking the full-width bottom sheet)
+  // Mobile: Full-screen content
   if (isMobile) {
     return (
-      <Drawer.Content
-        className="fixed bottom-0 left-0 right-0 bg-background rounded-t-2xl z-50 max-h-[85dvh] flex flex-col"
-        aria-describedby={undefined}
-      >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
-          <div className="w-10 h-1 rounded-full bg-muted" />
-        </div>
-        {/* Hidden title for accessibility */}
-        {title && <Drawer.Title className="sr-only">{title}</Drawer.Title>}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {children}
-        </div>
-        {/* Safe area padding */}
-        <div className="h-safe flex-shrink-0" />
-      </Drawer.Content>
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {children}
+      </div>
     );
   }
 
@@ -186,6 +166,7 @@ export function ResponsiveDialogContent({
 export function ResponsiveDialogHeader({
   children,
   className,
+  onClose,
 }: ResponsiveDialogHeaderProps) {
   const { isMobile } = useBreakpoint();
 
@@ -193,11 +174,20 @@ export function ResponsiveDialogHeader({
     <div
       className={cn(
         "px-6 py-4 border-b flex-shrink-0",
-        isMobile && "px-4",
+        isMobile && "px-4 flex items-center justify-between",
         className
       )}
     >
       {children}
+      {isMobile && onClose && (
+        <button
+          onClick={onClose}
+          className="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring ml-2"
+        >
+          <X className="h-5 w-5" />
+          <span className="sr-only">Close</span>
+        </button>
+      )}
     </div>
   );
 }
