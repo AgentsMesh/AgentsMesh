@@ -1,6 +1,6 @@
 module github.com/anthropics/agentsmesh/backend
 
-go 1.24.0
+go 1.25
 
 replace github.com/anthropics/agentsmesh/proto => ../proto
 

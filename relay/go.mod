@@ -1,6 +1,6 @@
 module github.com/anthropics/agentsmesh/relay
 
-go 1.24.11
+go 1.25
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.2

@@ -85,6 +85,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           working-directory: backend
+          install-mode: goinstall
           version: latest
           args: --timeout=5m
 
@@ -186,6 +187,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           working-directory: relay
+          install-mode: goinstall
           version: latest
           args: --timeout=5m
 
