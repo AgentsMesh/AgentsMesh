@@ -4,7 +4,6 @@ import { useEffect, useRef, useCallback, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useBreakpoint } from "@/components/layout/useBreakpoint";
 
 // SSR-safe hook to detect client-side mounting
 const emptySubscribe = () => () => {};
@@ -63,15 +62,14 @@ interface ResponsiveDialogCloseProps {
 
 /**
  * ResponsiveDialog - A dialog component that adapts to screen size
- * - Desktop: Shows as a centered modal dialog
- * - Mobile: Shows as a full-screen dialog
+ * - Both mobile and desktop: floating centered modal dialog with overlay
+ * - Uses responsive padding (px-4 on mobile, px-6 on desktop)
  */
 export function ResponsiveDialog({
   open,
   onOpenChange,
   children,
 }: ResponsiveDialogProps) {
-  const { isMobile } = useBreakpoint();
   const overlayRef = useRef<HTMLDivElement>(null);
   const mounted = useIsMounted();
 
@@ -110,17 +108,7 @@ export function ResponsiveDialog({
   // Wait for mount to ensure document.body is available (SSR-safe)
   if (!open || !mounted) return null;
 
-  // Mobile: Full-screen dialog
-  if (isMobile) {
-    return createPortal(
-      <div className="fixed inset-0 z-50 bg-background flex flex-col">
-        {children}
-      </div>,
-      document.body
-    );
-  }
-
-  // Desktop: Centered modal with overlay
+  // Both mobile and desktop: centered floating dialog with overlay
   return createPortal(
     <div
       ref={overlayRef}
@@ -138,22 +126,12 @@ export function ResponsiveDialogContent({
   className,
   title,
 }: ResponsiveDialogContentProps) {
-  const { isMobile } = useBreakpoint();
-
-  // Mobile: Full-screen content
-  if (isMobile) {
-    return (
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {children}
-      </div>
-    );
-  }
-
-  // Desktop: Dialog content
+  // Floating centered dialog (same pattern for mobile and desktop,
+  // matching CreatePodModal design)
   return (
     <div
       className={cn(
-        "bg-background rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col",
+        "bg-background border border-border rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col",
         className
       )}
       onClick={(e) => e.stopPropagation()}
@@ -168,18 +146,15 @@ export function ResponsiveDialogHeader({
   className,
   onClose,
 }: ResponsiveDialogHeaderProps) {
-  const { isMobile } = useBreakpoint();
-
   return (
     <div
       className={cn(
-        "px-6 py-4 border-b flex-shrink-0",
-        isMobile && "px-4 flex items-center justify-between",
+        "px-4 md:px-6 py-4 border-b flex-shrink-0 flex items-center justify-between",
         className
       )}
     >
       {children}
-      {isMobile && onClose && (
+      {onClose && (
         <button
           onClick={onClose}
           className="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring ml-2"
@@ -216,13 +191,10 @@ export function ResponsiveDialogBody({
   children,
   className,
 }: ResponsiveDialogBodyProps) {
-  const { isMobile } = useBreakpoint();
-
   return (
     <div
       className={cn(
-        "px-6 py-4 flex-1 overflow-y-auto min-h-0",
-        isMobile && "px-4 overscroll-contain",
+        "px-4 md:px-6 py-4 flex-1 overflow-y-auto min-h-0 overscroll-contain",
         className
       )}
     >
@@ -235,13 +207,10 @@ export function ResponsiveDialogFooter({
   children,
   className,
 }: ResponsiveDialogFooterProps) {
-  const { isMobile } = useBreakpoint();
-
   return (
     <div
       className={cn(
-        "px-6 py-4 border-t flex items-center gap-2 flex-shrink-0",
-        isMobile ? "px-4 flex-col-reverse" : "justify-end",
+        "px-4 md:px-6 py-4 border-t flex items-center gap-2 flex-shrink-0 flex-col-reverse md:flex-row md:justify-end",
         className
       )}
     >
