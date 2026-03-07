@@ -245,7 +245,7 @@ func TestChannelManager_PubReconnect(t *testing.T) {
 	}
 
 	// Close the publisher client to trigger disconnect
-	pubClient.Close()
+	_ = pubClient.Close()
 	waitFor(t, func() bool {
 		return ch.IsPublisherDisconnected()
 	}, 2*time.Second)

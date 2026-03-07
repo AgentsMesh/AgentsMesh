@@ -19,7 +19,7 @@ func TestTerminalChannel_AddSubscriber_PubDisconnected(t *testing.T) {
 	ch.SetPublisher(pubServer)
 
 	// Close the publisher client side to trigger disconnect
-	pubClient.Close()
+	_ = pubClient.Close()
 
 	// Wait for publisher disconnect to be detected
 	waitFor(t, func() bool {
@@ -89,7 +89,7 @@ func TestTerminalChannel_AddSubscriber_BufferedOutputWriteError(t *testing.T) {
 	// Create a subscriber WS pair and close the SERVER-side conn immediately
 	// so that WriteMessage during AddSubscriber will fail
 	subServer, _ := createWSPair(t)
-	subServer.Close() // Close server-side, writes will definitely fail
+	_ = subServer.Close() // Close server-side, writes will definitely fail
 
 	// AddSubscriber should handle the write error gracefully (not panic)
 	ch.AddSubscriber("s1", subServer)
@@ -108,7 +108,7 @@ func TestTerminalChannel_ForwardSubToPub_PublisherWriteError(t *testing.T) {
 	ch.AddSubscriber("s1", subServer)
 
 	// Close pubClient to break the connection (make writes to pubServer fail)
-	pubClient.Close()
+	_ = pubClient.Close()
 
 	// Wait for publisher disconnect to be detected so the forwardPublisherToSubscribers loop breaks
 	waitFor(t, func() bool {
@@ -117,8 +117,8 @@ func TestTerminalChannel_ForwardSubToPub_PublisherWriteError(t *testing.T) {
 
 	// Set a new publisher that is already closed (so WriteMessage will fail)
 	brokenPubServer, brokenPubClient := createWSPair(t)
-	brokenPubServer.Close() // Close server-side so writes fail immediately
-	brokenPubClient.Close()
+	_ = brokenPubServer.Close() // Close server-side so writes fail immediately
+	_ = brokenPubClient.Close()
 
 	// Directly set publisher to the broken conn (bypassing SetPublisher's goroutine start)
 	ch.publisherMu.Lock()
@@ -143,7 +143,7 @@ func TestTerminalChannel_AddSubscriber_PubDisconnectedWriteError(t *testing.T) {
 	ch.SetPublisher(pubServer)
 
 	// Close the publisher to trigger disconnect
-	pubClient.Close()
+	_ = pubClient.Close()
 	waitFor(t, func() bool {
 		return ch.IsPublisherDisconnected()
 	}, 2*time.Second)
@@ -151,7 +151,7 @@ func TestTerminalChannel_AddSubscriber_PubDisconnectedWriteError(t *testing.T) {
 	// Create a subscriber WS pair and close the SERVER-side conn
 	// so that the WriteMessage for RunnerDisconnected will fail
 	subServer, _ := createWSPair(t)
-	subServer.Close()
+	_ = subServer.Close()
 
 	// AddSubscriber should handle the write error gracefully (not panic)
 	ch.AddSubscriber("s1", subServer)

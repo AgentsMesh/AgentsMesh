@@ -121,7 +121,7 @@ func TestHandler_HandleRunnerWS_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dial failed: %v", err)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 	// Wait for connection to be registered in channel manager
 	time.Sleep(50 * time.Millisecond)
 	if h.channelManager.Stats().PendingPublishers != 1 {
@@ -138,7 +138,7 @@ func TestHandler_HandleBrowserWS_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dial failed: %v", err)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 	// Wait for connection to be registered in channel manager
 	time.Sleep(50 * time.Millisecond)
 	if h.channelManager.Stats().PendingSubscribers != 1 {
@@ -192,7 +192,7 @@ func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("runner dial: %v", err)
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 
 	// Wait for publisher to be registered
 	time.Sleep(50 * time.Millisecond)
@@ -202,7 +202,7 @@ func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("browser1 dial: %v", err)
 	}
-	defer bc1.Close()
+	defer func() { _ = bc1.Close() }()
 
 	// Wait for subscriber to be registered
 	time.Sleep(50 * time.Millisecond)
@@ -212,7 +212,7 @@ func TestHandler_HandleBrowserWS_MaxSubscribers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("browser2 dial: %v", err)
 	}
-	defer bc2.Close()
+	defer func() { _ = bc2.Close() }()
 
 	// Read close message from bc2
 	_ = bc2.SetReadDeadline(time.Now().Add(2 * time.Second))
@@ -273,13 +273,13 @@ func TestHandler_ChannelCreation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("runner dial failed: %v", err)
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	// Then browser with same podKey
 	bc, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http")+"/browser?token="+validToken("pod-1"), nil)
 	if err != nil {
 		t.Fatalf("browser dial failed: %v", err)
 	}
-	defer bc.Close()
+	defer func() { _ = bc.Close() }()
 	time.Sleep(50 * time.Millisecond)
 	if h.channelManager.Stats().ActiveChannels != 1 {
 		t.Error("should have active channel")

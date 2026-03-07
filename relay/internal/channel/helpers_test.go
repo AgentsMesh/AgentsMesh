@@ -40,8 +40,8 @@ func createWSPair(t *testing.T) (*websocket.Conn, *websocket.Conn) {
 	srv.Close()
 
 	t.Cleanup(func() {
-		clientConn.Close()
-		serverConn.Close()
+		_ = clientConn.Close()
+		_ = serverConn.Close()
 	})
 
 	return serverConn, clientConn

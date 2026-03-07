@@ -36,7 +36,7 @@ func DefaultChannelManagerConfig() ChannelManagerConfig {
 func closeWithReason(conn *websocket.Conn, reason string) {
 	msg := websocket.FormatCloseMessage(websocket.CloseNormalClosure, reason)
 	_ = conn.WriteControl(websocket.CloseMessage, msg, time.Now().Add(writeWait))
-	conn.Close()
+	_ = conn.Close()
 }
 
 // ChannelManager manages terminal channels
@@ -252,7 +252,7 @@ func (m *ChannelManager) cleanupPendingConnections() {
 		// Clean up stale pending publishers
 		for podKey, pending := range m.pendingPublishers {
 			if now.Sub(pending.createdAt) > timeout {
-				pending.conn.Close()
+				_ = pending.conn.Close()
 				delete(m.pendingPublishers, podKey)
 				m.logger.Info("Cleaned up stale pending publisher", "pod_key", podKey)
 			}
@@ -261,7 +261,7 @@ func (m *ChannelManager) cleanupPendingConnections() {
 		// Clean up stale pending subscribers
 		for podKey, pending := range m.pendingSubscribers {
 			if now.Sub(pending.createdAt) > timeout {
-				pending.conn.Close()
+				_ = pending.conn.Close()
 				delete(m.pendingSubscribers, podKey)
 				m.logger.Info("Cleaned up stale pending subscriber", "pod_key", podKey)
 			}
@@ -288,11 +288,11 @@ func (m *ChannelManager) Close() {
 	}
 	// Clean up pending connections
 	for podKey, pending := range m.pendingPublishers {
-		pending.conn.Close()
+		_ = pending.conn.Close()
 		delete(m.pendingPublishers, podKey)
 	}
 	for podKey, pending := range m.pendingSubscribers {
-		pending.conn.Close()
+		_ = pending.conn.Close()
 		delete(m.pendingSubscribers, podKey)
 	}
 	m.mu.Unlock()

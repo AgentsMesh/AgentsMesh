@@ -158,7 +158,7 @@ func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
 	if c.closed {
 		c.closedMu.RUnlock()
 		c.publisherMu.Unlock()
-		conn.Close()
+		_ = conn.Close()
 		return
 	}
 	c.closedMu.RUnlock()
@@ -178,7 +178,7 @@ func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
 	// Close old publisher connection so its forwarding goroutine exits via ReadMessage error.
 	// The old goroutine's handlePublisherDisconnect will see c.publisher != oldConn and return early.
 	if oldConn != nil && oldConn != conn {
-		oldConn.Close()
+		_ = oldConn.Close()
 	}
 
 	if wasDisconnected {
@@ -231,7 +231,7 @@ func (c *TerminalChannel) addSubscriberInternal(subscriberID string, conn *webso
 	if c.closed {
 		c.closedMu.RUnlock()
 		c.subscribersMu.Unlock()
-		conn.Close()
+		_ = conn.Close()
 		return fmt.Errorf("channel closed")
 	}
 	c.closedMu.RUnlock()
@@ -288,7 +288,7 @@ func (c *TerminalChannel) RemoveSubscriber(subscriberID string) {
 		c.subscribersMu.Unlock()
 		return
 	}
-	subscriber.Conn.Close()
+	_ = subscriber.Conn.Close()
 	delete(c.subscribers, subscriberID)
 	count := len(c.subscribers)
 	c.subscribersMu.Unlock()
@@ -692,7 +692,7 @@ func (c *TerminalChannel) Close() {
 		c.publisherReconnectTimer = nil
 	}
 	if c.publisher != nil {
-		c.publisher.Close()
+		_ = c.publisher.Close()
 		c.publisher = nil
 	}
 	c.publisherMu.Unlock()
@@ -700,7 +700,7 @@ func (c *TerminalChannel) Close() {
 	// Close all subscriber connections
 	c.subscribersMu.Lock()
 	for _, subscriber := range c.subscribers {
-		subscriber.Conn.Close()
+		_ = subscriber.Conn.Close()
 	}
 	c.subscribers = make(map[string]*Subscriber)
 	c.subscribersMu.Unlock()

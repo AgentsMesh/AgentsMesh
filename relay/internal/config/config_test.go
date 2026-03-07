@@ -15,7 +15,7 @@ func clearEnv() {
 		"RELAY_BACKEND_URL", "RELAY_INTERNAL_API_SECRET",
 		"PRIMARY_DOMAIN", "USE_HTTPS", "TLS_ENABLED", "RELAY_NAME", "RELAY_AUTO_IP",
 	} {
-		os.Unsetenv(env)
+		_ = os.Unsetenv(env)
 	}
 }
 
@@ -35,12 +35,12 @@ func TestServerConfig_Address(t *testing.T) {
 func TestLoad_MissingSecrets(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("INTERNAL_API_SECRET", "test")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test")
 	if _, err := Load(); err == nil {
 		t.Error("expected error for missing JWT_SECRET")
 	}
 	clearEnv()
-	os.Setenv("JWT_SECRET", "test")
+	_ = os.Setenv("JWT_SECRET", "test")
 	if _, err := Load(); err == nil {
 		t.Error("expected error for missing INTERNAL_API_SECRET")
 	}
@@ -49,8 +49,8 @@ func TestLoad_MissingSecrets(t *testing.T) {
 func TestLoad_WithRequiredEnvVars(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
@@ -79,14 +79,14 @@ func TestLoad_WithRequiredEnvVars(t *testing.T) {
 func TestLoad_EnvironmentOverrides(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
-	os.Setenv("SERVER_HOST", "192.168.1.1")
-	os.Setenv("JWT_ISSUER", "custom-issuer")
-	os.Setenv("BACKEND_URL", "http://custom:8080")
-	os.Setenv("RELAY_ID", "relay-custom")
-	os.Setenv("RELAY_URL", "ws://custom:8090")
-	os.Setenv("RELAY_REGION", "us-west")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("SERVER_HOST", "192.168.1.1")
+	_ = os.Setenv("JWT_ISSUER", "custom-issuer")
+	_ = os.Setenv("BACKEND_URL", "http://custom:8080")
+	_ = os.Setenv("RELAY_ID", "relay-custom")
+	_ = os.Setenv("RELAY_URL", "ws://custom:8090")
+	_ = os.Setenv("RELAY_REGION", "us-west")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
@@ -108,8 +108,8 @@ func TestLoad_EnvironmentOverrides(t *testing.T) {
 func TestLoad_RelayIDDefault(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
 	cfg, _ := Load()
 	if cfg.Relay.ID == "" || len(cfg.Relay.ID) < 6 {
 		t.Error("Relay.ID should be auto-generated")
@@ -119,8 +119,8 @@ func TestLoad_RelayIDDefault(t *testing.T) {
 func TestLoad_RelayURLDefault(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
 	cfg, _ := Load()
 	if cfg.Relay.URL != "ws://localhost:8090" {
 		t.Errorf("Relay.URL: expected ws://localhost:8090, got %q", cfg.Relay.URL)
@@ -130,10 +130,10 @@ func TestLoad_RelayURLDefault(t *testing.T) {
 func TestLoad_WithRelayPrefix(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
-	os.Setenv("RELAY_SERVER_HOST", "10.0.0.1")
-	os.Setenv("RELAY_JWT_ISSUER", "prefixed-issuer")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("RELAY_SERVER_HOST", "10.0.0.1")
+	_ = os.Setenv("RELAY_JWT_ISSUER", "prefixed-issuer")
 	cfg, _ := Load()
 	if cfg.Server.Host != "10.0.0.1" || cfg.JWT.Issuer != "prefixed-issuer" {
 		t.Error("RELAY_ prefixed env vars not working")
@@ -143,9 +143,9 @@ func TestLoad_WithRelayPrefix(t *testing.T) {
 func TestLoad_PrimaryDomain_WS(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
-	os.Setenv("PRIMARY_DOMAIN", "example.com:10000")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("PRIMARY_DOMAIN", "example.com:10000")
 	// RELAY_URL not set, USE_HTTPS not set → ws://
 	cfg, err := Load()
 	if err != nil {
@@ -160,10 +160,10 @@ func TestLoad_PrimaryDomain_WS(t *testing.T) {
 func TestLoad_PrimaryDomain_WSS(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
-	os.Setenv("PRIMARY_DOMAIN", "agentsmesh.ai")
-	os.Setenv("USE_HTTPS", "true")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("PRIMARY_DOMAIN", "agentsmesh.ai")
+	_ = os.Setenv("USE_HTTPS", "true")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
@@ -177,9 +177,9 @@ func TestLoad_PrimaryDomain_WSS(t *testing.T) {
 func TestLoad_TLSEnabled_FallbackURL(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
-	os.Setenv("TLS_ENABLED", "true")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("TLS_ENABLED", "true")
 	// No PRIMARY_DOMAIN, no RELAY_URL → fallback to wss://localhost:port
 	cfg, err := Load()
 	if err != nil {
@@ -197,8 +197,8 @@ func TestLoad_TLSEnabled_FallbackURL(t *testing.T) {
 func TestLoad_SessionConfigDefaults(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
 	cfg, _ := Load()
 	if cfg.Session.RunnerReconnectTimeout != 30*time.Second {
 		t.Errorf("RunnerReconnectTimeout: got %v, want 30s", cfg.Session.RunnerReconnectTimeout)
@@ -220,11 +220,11 @@ func TestLoad_SessionConfigDefaults(t *testing.T) {
 func TestLoad_TLSConfig(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
-	os.Setenv("TLS_ENABLED", "true")
-	os.Setenv("TLS_CERT_FILE", "/etc/relay/cert.pem")
-	os.Setenv("TLS_KEY_FILE", "/etc/relay/key.pem")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("TLS_ENABLED", "true")
+	_ = os.Setenv("TLS_CERT_FILE", "/etc/relay/cert.pem")
+	_ = os.Setenv("TLS_KEY_FILE", "/etc/relay/key.pem")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
@@ -243,10 +243,10 @@ func TestLoad_TLSConfig(t *testing.T) {
 func TestLoad_RelayNameAndAutoIP(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
-	os.Setenv("JWT_SECRET", "test-jwt")
-	os.Setenv("INTERNAL_API_SECRET", "test-internal")
-	os.Setenv("RELAY_NAME", "us-east-1")
-	os.Setenv("RELAY_AUTO_IP", "true")
+	_ = os.Setenv("JWT_SECRET", "test-jwt")
+	_ = os.Setenv("INTERNAL_API_SECRET", "test-internal")
+	_ = os.Setenv("RELAY_NAME", "us-east-1")
+	_ = os.Setenv("RELAY_AUTO_IP", "true")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)

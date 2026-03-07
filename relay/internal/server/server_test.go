@@ -67,7 +67,7 @@ func findFreePort(t *testing.T) int {
 		t.Fatalf("findFreePort: %v", err)
 	}
 	port := l.Addr().(*net.TCPAddr).Port
-	l.Close()
+	_ = l.Close()
 	return port
 }
 
@@ -230,7 +230,7 @@ func TestServer_StartAndShutdown(t *testing.T) {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/health", port))
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				healthOK = true
 				break
@@ -254,7 +254,7 @@ func TestServer_StartAndShutdown(t *testing.T) {
 		t.Fatalf("stats request failed: %v", err)
 	}
 	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if !strings.Contains(string(body), "active_channels") {
 		t.Errorf("unexpected stats body: %s", body)
 	}
@@ -432,7 +432,7 @@ func TestServer_New_OnAllSubscribersGoneCallback(t *testing.T) {
 
 	// Close the subscriber client connection to trigger the forwardSubscriberToPublisher
 	// goroutine to call RemoveSubscriber, which starts the keep-alive timer → onAllSubscribersGone
-	subUpgrader.clientConn.Close()
+	_ = subUpgrader.clientConn.Close()
 
 	// Wait for the onAllSubscribersGone callback
 	select {
@@ -479,8 +479,8 @@ func createTestWSPair(t *testing.T) *testWSPair {
 	srv.Close()
 
 	t.Cleanup(func() {
-		clientConn.Close()
-		serverConn.Close()
+		_ = clientConn.Close()
+		_ = serverConn.Close()
 	})
 
 	return &testWSPair{serverConn: serverConn, clientConn: clientConn}
@@ -546,7 +546,7 @@ func TestServer_GracefulShutdown_WithActiveChannels(t *testing.T) {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/health", port))
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				break
 			}
@@ -602,7 +602,7 @@ func TestServer_Start_PortInUse(t *testing.T) {
 		t.Fatal(err)
 	}
 	port := l.Addr().(*net.TCPAddr).Port
-	defer l.Close()
+	defer func() { _ = l.Close() }()
 
 	cfg := &config.Config{
 		Server: config.ServerConfig{
@@ -703,7 +703,7 @@ func TestServer_GracefulShutdown_WaitsForChannels(t *testing.T) {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/health", port))
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				break
 			}
@@ -801,7 +801,7 @@ func TestServer_New_OnAllSubscribersGone_NotifyFails(t *testing.T) {
 	}
 
 	// Close the subscriber client to trigger removal → keep-alive → onAllSubscribersGone → NotifySessionClosed error
-	subPair.clientConn.Close()
+	_ = subPair.clientConn.Close()
 
 	// Wait for the callback to fire and the error to be logged (not crash)
 	time.Sleep(500 * time.Millisecond)
@@ -858,7 +858,7 @@ func TestServer_Start_ContextCancellation(t *testing.T) {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/health", port))
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				break
 			}
@@ -942,7 +942,7 @@ func TestServer_Start_TLS_GetCertificate_NoCert(t *testing.T) {
 		&tls.Config{InsecureSkipVerify: true},
 	)
 	if err == nil {
-		tlsConn.Close()
+		_ = tlsConn.Close()
 		// It's OK if the connection fails — the point is to exercise GetCertificate
 	}
 	// The error is expected (no certificate available)
@@ -1039,7 +1039,7 @@ func TestServer_Start_TLS_GetCertificate_WithBackendCert(t *testing.T) {
 		// TLS handshake might fail if cert doesn't match hostname, but callback was exercised
 		t.Logf("TLS dial error (expected): %v", err)
 	} else {
-		tlsConn.Close()
+		_ = tlsConn.Close()
 	}
 
 	cancel()
@@ -1123,7 +1123,7 @@ func TestServer_Start_TLS_GetCertificate_WithCertFiles(t *testing.T) {
 		t.Logf("TLS dial error (may be expected): %v", err)
 	} else {
 		// TLS handshake succeeded with cert files
-		tlsConn.Close()
+		_ = tlsConn.Close()
 	}
 
 	cancel()
@@ -1211,7 +1211,7 @@ func TestServer_Start_TLS_GetCertificate_InvalidBackendCert(t *testing.T) {
 		&tls.Config{InsecureSkipVerify: true},
 	)
 	if err == nil {
-		tlsConn.Close()
+		_ = tlsConn.Close()
 	}
 
 	cancel()
@@ -1290,7 +1290,7 @@ func TestServer_Start_TLS_GetCertificate_InvalidCertFiles(t *testing.T) {
 		&tls.Config{InsecureSkipVerify: true},
 	)
 	if err == nil {
-		tlsConn.Close()
+		_ = tlsConn.Close()
 	}
 
 	cancel()
@@ -1355,7 +1355,7 @@ func TestServer_GracefulShutdown_UnregisterFails(t *testing.T) {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/health", port))
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				break
 			}
