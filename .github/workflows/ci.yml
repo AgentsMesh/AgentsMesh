@@ -82,7 +82,7 @@ jobs:
           cache-dependency-path: backend/go.sum
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           working-directory: backend
           install-mode: goinstall
@@ -133,7 +133,7 @@ jobs:
           cache-dependency-path: runner/go.sum
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           working-directory: runner
           install-mode: goinstall
@@ -184,7 +184,7 @@ jobs:
           cache-dependency-path: relay/go.sum
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           working-directory: relay
           install-mode: goinstall
