@@ -40,7 +40,7 @@
     "applyNow": "立即申请",
     "positions": {
       "harnessEngineer": {
-        "title": "Harness Engineer（约束系统工程师）",
+        "title": "Harness Engineer（线束工程师）",
         "description": "Harness Engineer 负责构建 AI 智能体运行的基础环境。你将设计沙箱、定义执行约束，构建让智能体安全、隔离且高性能运行的基础设施。",
         "resp1": "设计和构建安全、隔离的 AI 智能体运行时环境",
         "resp2": "定义执行约束、权限边界和安全护栏",
