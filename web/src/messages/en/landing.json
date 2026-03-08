@@ -362,6 +362,7 @@
         "documentation": "Documentation",
         "apiReference": "API Reference",
         "tutorials": "Tutorials",
+        "github": "GitHub",
         "changelog": "Changelog",
         "status": "Status"
       },

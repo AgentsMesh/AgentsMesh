@@ -381,6 +381,7 @@
         "documentation": "ドキュメント",
         "apiReference": "APIリファレンス",
         "tutorials": "チュートリアル",
+        "github": "GitHub",
         "changelog": "変更履歴",
         "status": "ステータス"
       },

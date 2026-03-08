@@ -362,6 +362,7 @@
         "documentation": "文档",
         "apiReference": "API 参考",
         "tutorials": "教程",
+        "github": "GitHub",
         "changelog": "更新日志",
         "status": "服务状态"
       },
