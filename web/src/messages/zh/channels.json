@@ -30,6 +30,15 @@
       "noMessages": "暂无消息",
       "startConversation": "开始对话吧！",
       "copyMessage": "复制",
+      "editMessage": "编辑",
+      "deleteMessage": "删除",
+      "edited": "已编辑",
+      "save": "保存",
+      "cancel": "取消",
+      "editHint": "Enter 保存，Esc 取消",
+      "deleteConfirmTitle": "删除消息",
+      "deleteConfirmDescription": "确定要删除这条消息吗？此操作无法撤销。",
+      "delete": "删除",
       "moreActions": "更多"
     }
   }

@@ -7,6 +7,7 @@ import { Hash, Archive } from "lucide-react";
 interface ChannelListItemProps {
   channel: Channel;
   isSelected: boolean;
+  unreadCount?: number;
   onClick: () => void;
 }
 
@@ -14,7 +15,7 @@ interface ChannelListItemProps {
  * Individual channel item in the sidebar list.
  * Shows active pod indicator (green dot) when channel has running pods.
  */
-export function ChannelListItem({ channel, isSelected, onClick }: ChannelListItemProps) {
+export function ChannelListItem({ channel, isSelected, unreadCount = 0, onClick }: ChannelListItemProps) {
   const runningPodCount =
     channel.pods?.filter((p) => p.status === "running" || p.status === "initializing").length ?? 0;
   const hasActivePods = runningPodCount > 0;
@@ -48,6 +49,12 @@ export function ChannelListItem({ channel, isSelected, onClick }: ChannelListIte
           </p>
         )}
       </div>
+      {/* Unread badge */}
+      {unreadCount > 0 && !isSelected && (
+        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-primary text-primary-foreground shrink-0">
+          {unreadCount > 99 ? "99+" : unreadCount}
+        </span>
+      )}
       {channel.pods && channel.pods.length > 0 && (
         <span
           className={cn(

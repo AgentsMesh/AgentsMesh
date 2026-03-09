@@ -30,7 +30,9 @@ const (
 	EventPodInitProgress  EventType = "pod:init_progress"
 
 	// Channel events
-	EventChannelMessage EventType = "channel:message"
+	EventChannelMessage        EventType = "channel:message"
+	EventChannelMessageEdited  EventType = "channel:message_edited"
+	EventChannelMessageDeleted EventType = "channel:message_deleted"
 
 	// Ticket events
 	EventTicketCreated       EventType = "ticket:created"
@@ -72,7 +74,18 @@ const (
 	EventTerminalNotification EventType = "terminal:notification" // OSC 777
 	EventTaskCompleted        EventType = "task:completed"        // Agent finished
 	EventMentionNotification  EventType = "mention:notification"  // @mention (future)
+	EventNotification         EventType = "notification"          // Unified notification (via dispatcher)
 )
+
+// NotificationPayload is the unified payload for all dispatched notifications
+type NotificationPayload struct {
+	Source   string          `json:"source"`
+	Title    string          `json:"title"`
+	Body     string          `json:"body"`
+	Link     string          `json:"link,omitempty"`
+	Priority string          `json:"priority"`
+	Channels map[string]bool `json:"channels"`
+}
 
 // ===== System Events (Category: system) =====
 const (
@@ -175,10 +188,25 @@ type ChannelMessageData struct {
 	ChannelID    int64          `json:"channel_id"`
 	SenderPod    *string        `json:"sender_pod,omitempty"`
 	SenderUserID *int64         `json:"sender_user_id,omitempty"`
+	SenderName   string         `json:"sender_name,omitempty"`
 	MessageType  string         `json:"message_type"`
 	Content      string         `json:"content"`
 	Metadata     map[string]any `json:"metadata,omitempty"`
 	CreatedAt    string         `json:"created_at"`
+}
+
+// ChannelMessageEditedData represents the payload for message edit events
+type ChannelMessageEditedData struct {
+	ID        int64  `json:"id"`
+	ChannelID int64  `json:"channel_id"`
+	Content   string `json:"content"`
+	EditedAt  string `json:"edited_at"`
+}
+
+// ChannelMessageDeletedData represents the payload for message delete events
+type ChannelMessageDeletedData struct {
+	ID        int64 `json:"id"`
+	ChannelID int64 `json:"channel_id"`
 }
 
 // PodInitProgressData represents the payload for pod initialization progress events

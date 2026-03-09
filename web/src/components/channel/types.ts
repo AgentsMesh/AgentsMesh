@@ -10,6 +10,7 @@ export interface TransformedMessage {
   content: string;
   messageType: "text" | "system" | "code" | "command";
   metadata?: Record<string, unknown>;
+  editedAt?: string;
   createdAt: string;
   pod?: {
     podKey: string;

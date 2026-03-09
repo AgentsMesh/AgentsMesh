@@ -18,6 +18,7 @@
 DO $$
 DECLARE
     v_user_id BIGINT;
+    v_user2_id BIGINT;
     v_admin_id BIGINT;
     v_org_id BIGINT;
     v_token_id BIGINT;
@@ -81,6 +82,24 @@ BEGIN
     RAISE NOTICE 'Organization ID: %', v_org_id;
 
     -- =========================================================================
+    -- 2.1 创建第二个测试用户（同组织成员，用于多用户测试）
+    -- =========================================================================
+    -- 密码: devpass123 (与主测试用户相同)
+
+    INSERT INTO users (email, username, name, password_hash, is_active, is_email_verified)
+    SELECT 'dev2@agentsmesh.local', 'devuser2', 'Dev User 2',
+           '$2a$10$/95Zk1f1HFGXACwCb.bOw.d3vTjclw5NdGwQuK1Eaji6cDq0PuXp2',
+           TRUE, TRUE
+    WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'dev2@agentsmesh.local')
+    RETURNING id INTO v_user2_id;
+
+    IF v_user2_id IS NULL THEN
+        SELECT id INTO v_user2_id FROM users WHERE email = 'dev2@agentsmesh.local';
+    END IF;
+
+    RAISE NOTICE 'User 2 ID: %', v_user2_id;
+
+    -- =========================================================================
     -- 3. 添加用户为组织所有者
     -- =========================================================================
 
@@ -89,6 +108,17 @@ BEGIN
     WHERE NOT EXISTS (
         SELECT 1 FROM organization_members
         WHERE organization_id = v_org_id AND user_id = v_user_id
+    );
+
+    -- =========================================================================
+    -- 3.1 添加第二用户为组织成员
+    -- =========================================================================
+
+    INSERT INTO organization_members (organization_id, user_id, role)
+    SELECT v_org_id, v_user2_id, 'member'
+    WHERE NOT EXISTS (
+        SELECT 1 FROM organization_members
+        WHERE organization_id = v_org_id AND user_id = v_user2_id
     );
 
     -- =========================================================================
@@ -279,8 +309,9 @@ BEGIN
 
     RAISE NOTICE 'Seed data created successfully!';
     RAISE NOTICE '  - User: dev@agentsmesh.local / devpass123';
+    RAISE NOTICE '  - User 2: dev2@agentsmesh.local / devpass123';
     RAISE NOTICE '  - Admin: admin@agentsmesh.local / adminpass123';
-    RAISE NOTICE '  - Organization: dev-org';
+    RAISE NOTICE '  - Organization: dev-org (dev + dev2)';
     RAISE NOTICE '  - Runner: dev-runner (node_id)';
     RAISE NOTICE '  - Git Provider: Local Gitea (http://gitea:3000)';
     RAISE NOTICE '  - Repository: dev-org/demo-webapp (Gitea)';

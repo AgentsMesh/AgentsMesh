@@ -20,6 +20,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/license"
 	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/service/mesh"
+	notifService "github.com/anthropics/agentsmesh/backend/internal/service/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/service/promocode"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
@@ -103,4 +104,7 @@ type Services struct {
 
 	// Support ticket service (user-level, no org scope)
 	SupportTicket *supportticketservice.Service
+
+	// Notification preference store
+	NotificationPrefStore *notifService.PreferenceStore
 }

@@ -24,7 +24,7 @@ export { useRunnerStore } from "./runner";
 export { usePodStore } from "./pod";
 
 // Channel store
-export { useChannelStore } from "./channel";
+export { useChannelStore, useChannelMessageStore } from "./channel";
 
 // Ticket store
 export { useTicketStore, useFilteredTickets } from "./ticket";

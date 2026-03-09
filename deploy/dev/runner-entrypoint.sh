@@ -286,9 +286,6 @@ org_slug: "${RUNNER_ORG_SLUG}"
 # Capacity
 max_concurrent_pods: ${MAX_CONCURRENT_PODS}
 
-# Relay URL rewrite (Docker: Runner cannot reach public relay URL)
-relay_base_url: "${RELAY_BASE_URL}"
-
 # Workspace settings
 workspace: "/workspace"
 workspace_root: "/workspace/repos"

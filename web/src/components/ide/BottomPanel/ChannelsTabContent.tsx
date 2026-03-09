@@ -30,6 +30,7 @@ export function ChannelsTabContent({
     content: msg.content,
     messageType: msg.message_type as "text" | "system" | "code" | "command",
     metadata: msg.metadata,
+    editedAt: msg.edited_at,
     createdAt: msg.created_at,
     pod: msg.sender_pod_info
       ? {

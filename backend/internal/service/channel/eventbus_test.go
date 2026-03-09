@@ -28,6 +28,7 @@ func TestSendMessage_EventBusIntegration(t *testing.T) {
 	eb := eventbus.NewEventBus(nil, newTestLogger())
 	defer eb.Close()
 	svc.SetEventBus(eb)
+	svc.AddPostSendHook(NewEventPublishHook(eb, nil))
 
 	ch, err := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 42, Name: "integration-test"})
 	if err != nil {
@@ -44,7 +45,7 @@ func TestSendMessage_EventBusIntegration(t *testing.T) {
 
 	senderPod := "test-pod-123"
 	senderUserID := int64(99)
-	msg, err := svc.SendMessage(ctx, ch.ID, &senderPod, &senderUserID, "text", "Hello from integration test", nil)
+	msg, err := svc.SendMessage(ctx, ch.ID, &senderPod, &senderUserID, "text", "Hello from integration test", nil, nil)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}
@@ -82,6 +83,7 @@ func TestSendMessage_EventBusIntegration_MultipleMessages(t *testing.T) {
 	eb := eventbus.NewEventBus(nil, newTestLogger())
 	defer eb.Close()
 	svc.SetEventBus(eb)
+	svc.AddPostSendHook(NewEventPublishHook(eb, nil))
 
 	ch, err := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "multi-msg-channel"})
 	if err != nil {
@@ -97,7 +99,7 @@ func TestSendMessage_EventBusIntegration_MultipleMessages(t *testing.T) {
 	})
 
 	for i := 0; i < 3; i++ {
-		if _, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "Message content", nil); err != nil {
+		if _, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "Message content", nil, nil); err != nil {
 			t.Fatalf("SendMessage %d failed: %v", i, err)
 		}
 	}
@@ -122,13 +124,14 @@ func TestSendMessage_ArchivedChannel_NoEvent(t *testing.T) {
 	eb := eventbus.NewEventBus(nil, newTestLogger())
 	defer eb.Close()
 	svc.SetEventBus(eb)
+	svc.AddPostSendHook(NewEventPublishHook(eb, nil))
 
 	var eventCount int
 	eb.Subscribe(eventbus.EventChannelMessage, func(event *eventbus.Event) {
 		eventCount++
 	})
 
-	_, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "Should fail", nil)
+	_, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "Should fail", nil, nil)
 	if err != ErrChannelArchived {
 		t.Errorf("Expected ErrChannelArchived, got %v", err)
 	}

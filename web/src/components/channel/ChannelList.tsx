@@ -34,6 +34,7 @@ interface Channel {
 interface ChannelListProps {
   channels: Channel[];
   selectedId?: number;
+  unreadCounts?: Record<number, number>;
   onSelect?: (channel: Channel) => void;
   onArchive?: (id: number) => void;
   onUnarchive?: (id: number) => void;
@@ -42,6 +43,7 @@ interface ChannelListProps {
 export function ChannelList({
   channels,
   selectedId,
+  unreadCounts,
   onSelect,
   onArchive,
   onUnarchive,
@@ -111,12 +113,20 @@ export function ChannelList({
                   </div>
 
                   {/* Active Pods Badge */}
-                  {activePodCount(channel) > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      {activePodCount(channel)}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {/* Unread Badge */}
+                    {(unreadCounts?.[channel.id] ?? 0) > 0 && selectedId !== channel.id && (
+                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-primary text-primary-foreground">
+                        {(unreadCounts?.[channel.id] ?? 0) > 99 ? "99+" : unreadCounts?.[channel.id]}
+                      </span>
+                    )}
+                    {activePodCount(channel) > 0 && (
+                      <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        {activePodCount(channel)}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Related Ticket */}

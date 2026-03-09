@@ -2,8 +2,8 @@ package grpc
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
+	"strings"
 
 	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
@@ -198,14 +198,16 @@ func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.T
 		msgType = "text"
 	}
 
-	// Convert mentions to JSON for storage if provided
-	var mentionsJSON []byte
-	if len(params.Mentions) > 0 {
-		mentionsJSON, _ = json.Marshal(params.Mentions)
+	// Parse structured mentions from MCP params (format: "user:123", "pod:my-pod-key")
+	var mentions []channel.MentionInput
+	for _, m := range params.Mentions {
+		parts := strings.SplitN(m, ":", 2)
+		if len(parts) == 2 {
+			mentions = append(mentions, channel.MentionInput{Type: parts[0], ID: parts[1]})
+		}
 	}
-	_ = mentionsJSON // mentions are passed via the SendMessage call
 
-	msg, err := a.channelService.SendMessage(ctx, params.ChannelID, &podKey, &tc.UserID, msgType, params.Content, nil)
+	msg, err := a.channelService.SendMessage(ctx, params.ChannelID, &podKey, &tc.UserID, msgType, params.Content, nil, mentions)
 	if err != nil {
 		return nil, newMcpError(500, "failed to send message")
 	}

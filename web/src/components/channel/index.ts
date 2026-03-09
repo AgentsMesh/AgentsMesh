@@ -13,10 +13,4 @@ export { default as MentionDropdown } from "./MentionDropdown";
 
 // Types and utilities
 export type { TransformedMessage } from "./types";
-export type { MentionedPod } from "./mention";
-export {
-  parsePodMentions,
-  extractPromptFromMention,
-  buildChannelPrompt,
-  getMentionQuery,
-} from "./mention";
+export { getMentionQuery } from "./mention";

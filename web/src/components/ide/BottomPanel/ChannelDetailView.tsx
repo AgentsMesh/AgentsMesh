@@ -1,14 +1,17 @@
 "use client";
 
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ChannelHeader } from "@/components/channel/ChannelHeader";
 import { ChannelDocument } from "@/components/channel/ChannelDocument";
 import { MessageList } from "@/components/channel/MessageList";
 import { MessageInput } from "@/components/channel/MessageInput";
 import { ChevronLeft } from "lucide-react";
+import { useAuthStore } from "@/stores/auth";
+import { useChannelMessageStore } from "@/stores/channel";
 import type { ChannelInfo, MeshTopology } from "@/stores/mesh";
 import type { TransformedMessage } from "./types";
-import type { MentionedPod } from "@/components/channel/MessageInput";
+import type { MentionPayload } from "@/lib/api/channel";
 
 interface ChannelDetailViewProps {
   channelId: number;
@@ -22,7 +25,7 @@ interface ChannelDetailViewProps {
   messages: TransformedMessage[];
   messagesLoading: boolean;
   onBack: () => void;
-  onSendMessage: (content: string, mentionedPods?: MentionedPod[]) => Promise<void>;
+  onSendMessage: (content: string, mentions?: MentionPayload[]) => Promise<void>;
   onLoadMore: () => void;
   onRefresh: () => void;
   onPodsChanged?: () => void;
@@ -45,6 +48,24 @@ export function ChannelDetailView({
   onPodsChanged,
   t,
 }: ChannelDetailViewProps) {
+  const currentUserId = useAuthStore((s) => s.user?.id);
+  const editMessage = useChannelMessageStore((s) => s.editMessage);
+  const deleteMessage = useChannelMessageStore((s) => s.deleteMessage);
+
+  const handleEditMessage = useCallback(
+    async (messageId: number, content: string) => {
+      await editMessage(channelId, messageId, content);
+    },
+    [channelId, editMessage]
+  );
+
+  const handleDeleteMessage = useCallback(
+    async (messageId: number) => {
+      await deleteMessage(channelId, messageId);
+    },
+    [channelId, deleteMessage]
+  );
+
   const channelInfo = topology?.channels.find((c: ChannelInfo) => c.id === channelId);
   const podCount = channelInfo?.pod_keys.length || currentChannel?.pods?.length || 0;
 
@@ -87,6 +108,9 @@ export function ChannelDetailView({
           loading={messagesLoading}
           hasMore={messages.length >= 50 && messages.length % 50 === 0}
           onLoadMore={onLoadMore}
+          currentUserId={currentUserId}
+          onEditMessage={handleEditMessage}
+          onDeleteMessage={handleDeleteMessage}
         />
       </div>
 

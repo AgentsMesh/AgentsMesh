@@ -30,6 +30,15 @@
       "noMessages": "Aucun message pour le moment",
       "startConversation": "Lancez la conversation !",
       "copyMessage": "Copier",
+      "editMessage": "Modifier",
+      "deleteMessage": "Supprimer",
+      "edited": "modifié",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "editHint": "Entrée pour enregistrer, Échap pour annuler",
+      "deleteConfirmTitle": "Supprimer le message",
+      "deleteConfirmDescription": "Êtes-vous sûr de vouloir supprimer ce message ? Cette action est irréversible.",
+      "delete": "Supprimer",
       "moreActions": "Plus"
     }
   }

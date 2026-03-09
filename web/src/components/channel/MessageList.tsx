@@ -11,6 +11,12 @@ interface MessageListProps {
   loading?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
+  /** Current user ID for showing edit/delete on own messages */
+  currentUserId?: number;
+  /** Callback to edit a message */
+  onEditMessage?: (messageId: number, content: string) => Promise<void>;
+  /** Callback to delete a message */
+  onDeleteMessage?: (messageId: number) => Promise<void>;
 }
 
 function getSenderName(msg: TransformedMessage): string {
@@ -19,7 +25,7 @@ function getSenderName(msg: TransformedMessage): string {
   return "Unknown";
 }
 
-export function MessageList({ messages, loading, hasMore, onLoadMore }: MessageListProps) {
+export function MessageList({ messages, loading, hasMore, onLoadMore, currentUserId, onEditMessage, onDeleteMessage }: MessageListProps) {
   const t = useTranslations("channels.messages");
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -120,6 +126,9 @@ export function MessageList({ messages, loading, hasMore, onLoadMore }: MessageL
             message={message}
             isFirstInGroup
             formatTime={formatTime}
+            currentUserId={currentUserId}
+            onEdit={onEditMessage}
+            onDelete={onDeleteMessage}
           />
         </div>
       </div>

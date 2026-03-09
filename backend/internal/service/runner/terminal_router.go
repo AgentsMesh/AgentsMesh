@@ -88,6 +88,16 @@ func (tr *TerminalRouter) SetPodInfoGetter(getter PodInfoGetter) {
 	tr.oscDetector.podInfoGetter = getter
 }
 
+// SetNotifyFunc sets the notification callback for OSC notifications.
+// When set, OSC notifications are routed through the NotificationDispatcher
+// for preference-aware delivery instead of direct EventBus publish.
+func (tr *TerminalRouter) SetNotifyFunc(fn NotifyFunc) {
+	if tr.oscDetector == nil {
+		tr.oscDetector = &OSCDetector{}
+	}
+	tr.oscDetector.notifyFunc = fn
+}
+
 // RegisterPod registers a pod's runner mapping with default terminal size.
 func (tr *TerminalRouter) RegisterPod(podKey string, runnerID int64) {
 	tr.RegisterPodWithSize(podKey, runnerID, DefaultTerminalCols, DefaultTerminalRows)

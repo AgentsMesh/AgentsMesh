@@ -47,20 +47,23 @@ func TestOSCDetector_PublishNotification_Success(t *testing.T) {
 	getter := &mockPodInfoGetter{orgID: 100, creatorID: 1}
 	detector := NewOSCDetector(eb, getter)
 
-	// Subscribe to capture events
-	var receivedEvents []*eventbus.Event
-	var mu sync.Mutex
-	eb.Subscribe(eventbus.EventTerminalNotification, func(event *eventbus.Event) {
-		mu.Lock()
-		receivedEvents = append(receivedEvents, event)
-		mu.Unlock()
-	})
+	// Set up notifyFunc to capture the dispatch call
+	var notifSource, notifTitle, notifBody, notifResolver string
+	detector.notifyFunc = func(_ context.Context, orgID int64, source, entityID, title, body, link, resolver string) {
+		notifSource = source
+		notifTitle = title
+		notifBody = body
+		notifResolver = resolver
+	}
 
-	// Publish notification
 	ctx := context.Background()
 	result := detector.PublishNotification(ctx, "pod-test-123", "Build Complete", "Your build finished successfully")
 
 	assert.True(t, result)
+	assert.Equal(t, "terminal:osc", notifSource)
+	assert.Equal(t, "Build Complete", notifTitle)
+	assert.Equal(t, "Your build finished successfully", notifBody)
+	assert.Equal(t, "pod_creator:pod-test-123", notifResolver)
 }
 
 func TestOSCDetector_PublishNotification_NilEventBus(t *testing.T) {

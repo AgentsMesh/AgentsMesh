@@ -89,7 +89,17 @@ func (r *organizationRepo) DeleteWithCleanup(ctx context.Context, id int64) erro
 		tx.Exec("DELETE FROM loop_runs WHERE organization_id = ?", id)
 		tx.Exec("DELETE FROM loops WHERE organization_id = ?", id)
 
-		// Delete the org — FK CASCADE handles all other dependent tables
+		// Channel cleanup (FK removed in migration 000072)
+		subq := "SELECT id FROM channels WHERE organization_id = ?"
+		tx.Exec("DELETE FROM channel_messages WHERE channel_id IN ("+subq+")", id)
+		tx.Exec("DELETE FROM channel_members WHERE channel_id IN ("+subq+")", id)
+		tx.Exec("DELETE FROM channel_read_states WHERE channel_id IN ("+subq+")", id)
+		tx.Exec("DELETE FROM channel_pods WHERE channel_id IN ("+subq+")", id)
+		tx.Exec("DELETE FROM channel_access WHERE channel_id IN ("+subq+")", id)
+		tx.Exec("DELETE FROM pod_bindings WHERE channel_id IN ("+subq+")", id)
+		tx.Exec("DELETE FROM channels WHERE organization_id = ?", id)
+
+		// Delete the org — remaining FK CASCADE handles other dependent tables
 		return tx.Delete(&organization.Organization{}, id).Error
 	})
 }

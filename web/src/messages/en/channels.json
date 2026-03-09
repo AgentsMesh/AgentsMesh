@@ -30,6 +30,15 @@
       "noMessages": "No messages yet",
       "startConversation": "Start the conversation!",
       "copyMessage": "Copy",
+      "editMessage": "Edit",
+      "deleteMessage": "Delete",
+      "edited": "edited",
+      "save": "Save",
+      "cancel": "Cancel",
+      "editHint": "Enter to save, Esc to cancel",
+      "deleteConfirmTitle": "Delete message",
+      "deleteConfirmDescription": "Are you sure you want to delete this message? This action cannot be undone.",
+      "delete": "Delete",
       "moreActions": "More"
     }
   }

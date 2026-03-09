@@ -132,7 +132,7 @@ func (r *channelRepository) TouchChannel(ctx context.Context, channelID int64) e
 }
 
 func (r *channelRepository) GetMessages(ctx context.Context, channelID int64, before *time.Time, limit int) ([]*channel.Message, error) {
-	query := r.db.WithContext(ctx).Where("channel_id = ?", channelID)
+	query := r.db.WithContext(ctx).Where("channel_id = ? AND is_deleted = FALSE", channelID)
 	if before != nil {
 		query = query.Where("created_at < ?", *before)
 	}
@@ -149,10 +149,16 @@ func (r *channelRepository) GetMessages(ctx context.Context, channelID int64, be
 	return messages, nil
 }
 
-func (r *channelRepository) GetMessagesMentioning(ctx context.Context, channelID int64, pattern string, limit int) ([]*channel.Message, error) {
+func (r *channelRepository) GetMessagesMentioning(ctx context.Context, channelID int64, podKey string, limit int) ([]*channel.Message, error) {
 	var messages []*channel.Message
+	// Structured mentions: search for podKey in metadata JSON.
+	// CAST(metadata AS TEXT) works in both PostgreSQL (JSONB→text) and SQLite (TEXT no-op).
+	// Text LIKE fallback: matches legacy "@podKey" mentions in content.
+	metaPattern := `%"` + podKey + `"%`
+	textPattern := "%@" + podKey + "%"
 	if err := r.db.WithContext(ctx).
-		Where("channel_id = ? AND content LIKE ?", channelID, "%"+pattern+"%").
+		Where("channel_id = ? AND is_deleted = FALSE AND (CAST(metadata AS TEXT) LIKE ? OR content LIKE ?)",
+			channelID, metaPattern, textPattern).
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&messages).Error; err != nil {
@@ -164,7 +170,7 @@ func (r *channelRepository) GetMessagesMentioning(ctx context.Context, channelID
 func (r *channelRepository) GetRecentMessages(ctx context.Context, channelID int64, limit int) ([]*channel.Message, error) {
 	var messages []*channel.Message
 	if err := r.db.WithContext(ctx).
-		Where("channel_id = ?", channelID).
+		Where("channel_id = ? AND is_deleted = FALSE", channelID).
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&messages).Error; err != nil {

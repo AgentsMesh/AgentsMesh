@@ -79,6 +79,23 @@ export default function DashboardLayout({
     [showNotification, navigateToWorkspace]
   );
 
+  // Handle unified browser notifications (from NotificationDispatcher)
+  const handleBrowserNotification = useCallback(
+    (data: { title: string; body: string; link?: string }) => {
+      showNotification({
+        title: data.title,
+        body: data.body,
+        tag: `notif-${Date.now()}`,
+        onClick: () => {
+          if (data.link && currentOrg?.slug) {
+            router.push(`/${currentOrg.slug}${data.link}`);
+          }
+        },
+      });
+    },
+    [showNotification, router, currentOrg]
+  );
+
   // Show loading state while hydrating
   if (!_hasHydrated) {
     return (
@@ -96,6 +113,7 @@ export default function DashboardLayout({
     <RealtimeProvider
       onTerminalNotification={handleTerminalNotification}
       onTaskCompleted={handleTaskCompleted}
+      onBrowserNotification={handleBrowserNotification}
     >
       <ResponsiveShell>{children}</ResponsiveShell>
     </RealtimeProvider>

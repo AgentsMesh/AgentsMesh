@@ -17,7 +17,7 @@ func TestSendMessage(t *testing.T) {
 
 	t.Run("send text message", func(t *testing.T) {
 		podKey := "test-pod"
-		msg, err := svc.SendMessage(ctx, created.ID, &podKey, nil, channel.MessageTypeText, "Hello", channel.MessageMetadata{})
+		msg, err := svc.SendMessage(ctx, created.ID, &podKey, nil, channel.MessageTypeText, "Hello", channel.MessageMetadata{}, nil)
 		if err != nil || msg.Content != "Hello" || msg.MessageType != channel.MessageTypeText {
 			t.Errorf("SendMessage failed: %v", err)
 		}
@@ -25,14 +25,14 @@ func TestSendMessage(t *testing.T) {
 
 	t.Run("send to archived channel", func(t *testing.T) {
 		svc.ArchiveChannel(ctx, created.ID)
-		_, err := svc.SendMessage(ctx, created.ID, nil, nil, channel.MessageTypeText, "Fail", channel.MessageMetadata{})
+		_, err := svc.SendMessage(ctx, created.ID, nil, nil, channel.MessageTypeText, "Fail", channel.MessageMetadata{}, nil)
 		if err != ErrChannelArchived {
 			t.Errorf("Expected ErrChannelArchived, got %v", err)
 		}
 	})
 
 	t.Run("send to non-existent channel", func(t *testing.T) {
-		if _, err := svc.SendMessage(ctx, 99999, nil, nil, channel.MessageTypeText, "Fail", channel.MessageMetadata{}); err == nil {
+		if _, err := svc.SendMessage(ctx, 99999, nil, nil, channel.MessageTypeText, "Fail", channel.MessageMetadata{}, nil); err == nil {
 			t.Error("Expected error for non-existent channel")
 		}
 	})
@@ -46,7 +46,7 @@ func TestGetMessages(t *testing.T) {
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "msgs-test"})
 
 	for i := 0; i < 5; i++ {
-		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "Msg"+string(rune('0'+i)), channel.MessageMetadata{})
+		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "Msg"+string(rune('0'+i)), channel.MessageMetadata{}, nil)
 		time.Sleep(10 * time.Millisecond)
 	}
 
@@ -92,24 +92,27 @@ func TestEnhancedMessageService(t *testing.T) {
 	})
 
 	t.Run("send message as user", func(t *testing.T) {
-		msg, err := svc.SendMessageAsUser(ctx, ch.ID, 1, "User message", channel.MessageMetadata{})
+		msg, err := svc.SendMessageAsUser(ctx, ch.ID, 1, "User message", channel.MessageMetadata{}, nil)
 		if err != nil || msg.SenderUserID == nil || *msg.SenderUserID != 1 {
 			t.Error("SenderUserID not set correctly")
 		}
 	})
 
 	t.Run("send message as pod", func(t *testing.T) {
-		msg, err := svc.SendMessageAsPod(ctx, ch.ID, "test-pod", "Agent message", channel.MessageMetadata{})
+		msg, err := svc.SendMessageAsPod(ctx, ch.ID, "test-pod", "Agent message", channel.MessageMetadata{}, nil)
 		if err != nil || msg.SenderPod == nil || *msg.SenderPod != "test-pod" {
 			t.Error("SenderPod not set correctly")
 		}
 	})
 
 	t.Run("get messages mentioning", func(t *testing.T) {
-		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "@mention-pod hello", channel.MessageMetadata{})
+		// Legacy message: text-based @mention (fallback path)
+		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "@mention-pod hello", channel.MessageMetadata{}, nil)
+		// Structured mention: via MentionInput (JSONB path)
+		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "hello structured", channel.MessageMetadata{}, []MentionInput{{Type: "pod", ID: "mention-pod"}})
 		messages, err := svc.GetMessagesMentioning(ctx, ch.ID, "mention-pod", 10)
-		if err != nil || len(messages) != 1 {
-			t.Errorf("GetMessagesMentioning failed: %v, count=%d", err, len(messages))
+		if err != nil || len(messages) < 2 {
+			t.Errorf("GetMessagesMentioning failed: %v, count=%d (want >=2)", err, len(messages))
 		}
 	})
 
@@ -133,7 +136,7 @@ func TestSendMessage_WithEventBus(t *testing.T) {
 
 	// Test sending message without eventBus (should still work)
 	senderPod := "test-pod"
-	msg, err := svc.SendMessage(ctx, ch.ID, &senderPod, nil, "text", "Test message", nil)
+	msg, err := svc.SendMessage(ctx, ch.ID, &senderPod, nil, "text", "Test message", nil, nil)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}

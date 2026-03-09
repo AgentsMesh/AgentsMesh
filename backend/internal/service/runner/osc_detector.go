@@ -3,9 +3,15 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
+
+// NotifyFunc sends a notification via the notification dispatcher.
+// Parameters: ctx, orgID, source, entityID, title, body, link, recipientResolver.
+type NotifyFunc func(ctx context.Context, orgID int64, source, entityID, title, body, link, resolver string)
 
 // OSCDetector publishes OSC terminal notification and title events to EventBus.
 // OSC sequences are now parsed by Runner and sent as discrete gRPC messages,
@@ -13,6 +19,7 @@ import (
 type OSCDetector struct {
 	eventBus      *eventbus.EventBus
 	podInfoGetter PodInfoGetter
+	notifyFunc    NotifyFunc // optional: routes notifications via dispatcher
 }
 
 // NewOSCDetector creates a new OSC detector
@@ -23,36 +30,30 @@ func NewOSCDetector(eventBus *eventbus.EventBus, podInfoGetter PodInfoGetter) *O
 	}
 }
 
-// PublishNotification publishes a pre-parsed OSC notification to EventBus.
-// Called when Runner sends OSC 777 (iTerm2/Kitty) or OSC 9 (ConEmu/Windows Terminal) events.
+// PublishNotification publishes a pre-parsed OSC notification.
+// If notifyFunc is set, routes through NotificationDispatcher for preference-aware delivery.
+// Otherwise falls back to direct EventBus publish.
 func (d *OSCDetector) PublishNotification(ctx context.Context, podKey, title, body string) bool {
-	if d.eventBus == nil || d.podInfoGetter == nil {
+	if d.podInfoGetter == nil {
 		return false
 	}
 
-	// Get pod organization and creator info
-	orgID, creatorID, err := d.podInfoGetter.GetPodOrganizationAndCreator(ctx, podKey)
+	orgID, _, err := d.podInfoGetter.GetPodOrganizationAndCreator(ctx, podKey)
 	if err != nil {
 		return false
 	}
 
-	// Publish notification event — use json.Marshal for safe encoding of user-controlled input
-	notifData, _ := json.Marshal(map[string]string{
-		"title":   title,
-		"body":    body,
-		"pod_key": podKey,
-	})
-	d.eventBus.Publish(ctx, &eventbus.Event{
-		Type:           eventbus.EventTerminalNotification,
-		Category:       eventbus.CategoryNotification,
-		OrganizationID: orgID,
-		TargetUserID:   &creatorID,
-		EntityType:     "pod",
-		EntityID:       podKey,
-		Data:           json.RawMessage(notifData),
-	})
+	// Prefer dispatcher-based notification (preference-aware, unified format)
+	if d.notifyFunc != nil {
+		resolver := fmt.Sprintf("pod_creator:%s", podKey)
+		link := fmt.Sprintf("/workspace?pod=%s", podKey)
+		d.notifyFunc(ctx, orgID, "terminal:osc", podKey, title, body, link, resolver)
+		return true
+	}
 
-	return true
+	// No dispatcher configured — log warning and skip (legacy EventBus path removed for format consistency)
+	slog.Warn("OSC notification dropped: notifyFunc not configured", "pod_key", podKey)
+	return false
 }
 
 // PublishTitle publishes a pre-parsed OSC title change to EventBus.

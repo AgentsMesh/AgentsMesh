@@ -10,6 +10,8 @@ export type EventType =
   | "pod:title_changed"
   | "pod:init_progress"
   | "channel:message"
+  | "channel:message_edited"
+  | "channel:message_deleted"
   | "ticket:created"
   | "ticket:updated"
   | "ticket:status_changed"
@@ -37,6 +39,7 @@ export type EventType =
   | "loop_run:failed"
   | "loop_run:warning"
   // Notification events (targeted to specific users)
+  | "notification"
   | "terminal:notification"
   | "task:completed"
   | "mention:notification"
@@ -157,10 +160,29 @@ export interface ChannelMessageData {
   channel_id: number;
   sender_pod?: string;
   sender_user_id?: number;
+  sender_name?: string;
   message_type: string;
   content: string;
   metadata?: Record<string, unknown>;
   created_at: string;
+}
+
+/**
+ * Channel message edited event payload
+ */
+export interface ChannelMessageEditedData {
+  id: number;
+  channel_id: number;
+  content: string;
+  edited_at: string;
+}
+
+/**
+ * Channel message deleted event payload
+ */
+export interface ChannelMessageDeletedData {
+  id: number;
+  channel_id: number;
 }
 
 /**
@@ -283,6 +305,18 @@ export interface LoopRunEventData {
   run_number: number;
   status: string;
   pod_key?: string;
+}
+
+/**
+ * Unified notification event payload (via NotificationDispatcher)
+ */
+export interface NotificationPayloadData {
+  source: string;
+  title: string;
+  body: string;
+  link?: string;
+  priority: "normal" | "high";
+  channels: Record<string, boolean>;
 }
 
 /**

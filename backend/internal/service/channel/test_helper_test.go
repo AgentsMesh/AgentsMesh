@@ -44,6 +44,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		message_type TEXT NOT NULL,
 		content TEXT NOT NULL,
 		metadata TEXT,
+		edited_at DATETIME,
+		is_deleted INTEGER NOT NULL DEFAULT 0,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)
 

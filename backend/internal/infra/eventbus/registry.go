@@ -181,6 +181,12 @@ func (r *EventRegistry) registerBuiltinEvents() {
 		EntityType:  "channel",
 		Description: "User was mentioned in a channel",
 	}
+	r.definitions[EventNotification] = &EventDefinition{
+		Type:        EventNotification,
+		Category:    CategoryNotification,
+		EntityType:  "notification",
+		Description: "Unified notification (via dispatcher)",
+	}
 
 	// System events
 	r.definitions[EventSystemMaintenance] = &EventDefinition{

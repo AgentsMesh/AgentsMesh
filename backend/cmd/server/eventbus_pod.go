@@ -2,16 +2,19 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
+	notifDomain "github.com/anthropics/agentsmesh/backend/internal/domain/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	notifService "github.com/anthropics/agentsmesh/backend/internal/service/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"gorm.io/gorm"
 )
 
 // setupPodEventCallbacks sets up pod coordinator callbacks to publish events
-func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, eventBus *eventbus.EventBus) {
+func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, eventBus *eventbus.EventBus, notifDispatcher *notifService.Dispatcher) {
 	podCoordinator.SetStatusChangeCallback(func(podKey string, status string, agentStatus string) {
 		// Query pod to get organization ID and other metadata
 		var pod struct {
@@ -64,27 +67,19 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			slog.Error("failed to publish pod event", "error", err)
 		}
 
-		// Also publish task:completed notification when pod terminates
+		// Route task:completed through NotificationDispatcher (preference-aware)
 		if status == "completed" || status == "terminated" || status == "failed" {
-			notifData := &eventbus.TaskCompletedData{
-				PodKey:      podKey,
-				AgentStatus: status, // pod status (completed/terminated/failed)
-			}
-			notifEvent, err := eventbus.NewNotificationEvent(
-				eventbus.EventTaskCompleted,
-				pod.OrganizationID,
-				&pod.CreatedByID,
-				nil,
-				"pod",
-				podKey,
-				notifData,
-			)
-			if err != nil {
-				slog.Error("failed to create task completed event", "error", err)
-				return
-			}
-			if err := eventBus.Publish(context.Background(), notifEvent); err != nil {
-				slog.Error("failed to publish task completed event", "error", err)
+			if err := notifDispatcher.Dispatch(context.Background(), &notifDomain.NotificationRequest{
+				OrganizationID:    pod.OrganizationID,
+				Source:            notifDomain.SourceTaskCompleted,
+				SourceEntityID:    podKey,
+				RecipientResolver: fmt.Sprintf("pod_creator:%s", podKey),
+				Title:             "Task Completed",
+				Body:              fmt.Sprintf("Pod %s finished with status: %s", podKey, status),
+				Link:              fmt.Sprintf("/workspace?pod=%s", podKey),
+				Priority:          notifDomain.PriorityNormal,
+			}); err != nil {
+				slog.Error("failed to dispatch task completed notification", "pod_key", podKey, "error", err)
 			}
 		}
 	})

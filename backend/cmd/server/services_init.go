@@ -26,6 +26,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/license"
 	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/service/mesh"
+	notifService "github.com/anthropics/agentsmesh/backend/internal/service/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/service/promocode"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
@@ -73,6 +74,10 @@ type serviceContainer struct {
 	loop              *loop.LoopService
 	loopRun           *loop.LoopRunService
 	supportTicket     *supportticketservice.Service
+
+	// Notification services
+	notifDispatcher *notifService.Dispatcher
+	notifPrefStore  *notifService.PreferenceStore
 
 	// Repositories exposed for runner component wiring
 	podRepo       agentpodDomain.PodRepository
@@ -177,6 +182,10 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	// Initialize extension services (Skills marketplace, MCP servers)
 	extSvc, extRepo, skillImp, mktWorker := initializeExtensionServices(cfg, db)
 
+	// Initialize notification preference store
+	notifPrefRepo := infra.NewNotificationPreferenceRepository(db)
+	notifPrefStore := notifService.NewPreferenceStore(notifPrefRepo)
+
 	return &serviceContainer{
 		auth:               authSvc,
 		user:               userSvc,
@@ -211,6 +220,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		loop:               loopSvc,
 		loopRun:            loopRunSvc,
 		supportTicket:      supportTicketSvc,
+		notifPrefStore:     notifPrefStore,
 		podRepo:            podRepo,
 		runnerRepo:         runnerRepo,
 		autopilotRepo:      autopilotRepo,

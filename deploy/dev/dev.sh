@@ -711,9 +711,16 @@ start_frontend() {
     fi
 
     # 启动前端（后台运行，日志输出到文件）
+    # 关键：必须在主 shell 中 disown，而非在子 shell 中。
+    # 子 shell 中的 disown 无效 — 子 shell 退出后进程会被重新挂载为主 shell 的子进程，
+    # 导致 dev.sh 退出时 wait 该子进程，在 pipe 场景下（如 ./dev.sh | tail）永远挂起。
     local log_file="$SCRIPT_DIR/web.log"
     info "启动前端服务 (端口: $web_port)..."
-    (cd "$web_dir" && nohup pnpm dev --turbopack --port "$web_port" > "$log_file" 2>&1 &)
+    local saved_dir="$PWD"
+    cd "$web_dir"
+    pnpm dev --turbopack --port "$web_port" > "$log_file" 2>&1 < /dev/null &
+    disown $!
+    cd "$saved_dir"
 
     # 等待前端启动
     local max_wait=30

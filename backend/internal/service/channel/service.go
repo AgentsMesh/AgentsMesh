@@ -9,15 +9,18 @@ import (
 )
 
 var (
-	ErrChannelNotFound = errors.New("channel not found")
-	ErrChannelArchived = errors.New("channel is archived")
-	ErrDuplicateName   = errors.New("channel name already exists")
+	ErrChannelNotFound  = errors.New("channel not found")
+	ErrChannelArchived  = errors.New("channel is archived")
+	ErrDuplicateName    = errors.New("channel name already exists")
+	ErrMessageNotFound  = errors.New("message not found")
+	ErrNotMessageSender = errors.New("only the message sender can perform this action")
 )
 
 // Service handles channel operations
 type Service struct {
-	repo     channel.ChannelRepository
-	eventBus *eventbus.EventBus
+	repo          channel.ChannelRepository
+	eventBus      *eventbus.EventBus
+	postSendHooks []PostSendHook
 }
 
 // NewService creates a new channel service
@@ -28,6 +31,11 @@ func NewService(repo channel.ChannelRepository) *Service {
 // SetEventBus sets the event bus for publishing channel events
 func (s *Service) SetEventBus(eb *eventbus.EventBus) {
 	s.eventBus = eb
+}
+
+// AddPostSendHook registers a hook to be called after message persistence
+func (s *Service) AddPostSendHook(hook PostSendHook) {
+	s.postSendHooks = append(s.postSendHooks, hook)
 }
 
 // CreateChannelRequest represents a channel creation request
@@ -141,6 +149,22 @@ func (s *Service) ArchiveChannel(ctx context.Context, channelID int64) error {
 // UnarchiveChannel unarchives a channel
 func (s *Service) UnarchiveChannel(ctx context.Context, channelID int64) error {
 	return s.repo.SetArchived(ctx, channelID, false)
+}
+
+// DeleteChannel permanently deletes a channel and all associated data.
+// Prefer ArchiveChannel for soft-delete; use this only for hard-delete scenarios.
+func (s *Service) DeleteChannel(ctx context.Context, channelID int64) error {
+	return s.repo.DeleteWithCleanup(ctx, channelID)
+}
+
+// DeleteChannelsByOrg deletes all channels for an organization (used during org deletion)
+func (s *Service) DeleteChannelsByOrg(ctx context.Context, orgID int64) error {
+	return s.repo.DeleteChannelsByOrg(ctx, orgID)
+}
+
+// CleanupUserReferences removes a user's channel membership/read-state data
+func (s *Service) CleanupUserReferences(ctx context.Context, userID int64) error {
+	return s.repo.CleanupUserReferences(ctx, userID)
 }
 
 // GetChannelsByTicket returns channels for a ticket

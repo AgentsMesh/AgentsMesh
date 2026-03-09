@@ -30,6 +30,15 @@
       "noMessages": "Nenhuma mensagem ainda",
       "startConversation": "Inicie a conversa!",
       "copyMessage": "Copiar",
+      "editMessage": "Editar",
+      "deleteMessage": "Excluir",
+      "edited": "editado",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "editHint": "Enter para salvar, Esc para cancelar",
+      "deleteConfirmTitle": "Excluir mensagem",
+      "deleteConfirmDescription": "Tem certeza de que deseja excluir esta mensagem? Esta ação não pode ser desfeita.",
+      "delete": "Excluir",
       "moreActions": "Mais"
     }
   }

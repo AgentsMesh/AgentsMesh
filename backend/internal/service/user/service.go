@@ -23,8 +23,9 @@ var (
 
 // Service handles user operations
 type Service struct {
-	repo          user.Repository
-	encryptionKey string
+	repo           user.Repository
+	encryptionKey  string
+	preDeleteHooks []func(ctx context.Context, userID int64) error
 }
 
 // NewService creates a new user service
@@ -146,8 +147,18 @@ func (s *Service) UpdatePassword(ctx context.Context, id int64, password string)
 	return s.repo.UpdateUserField(ctx, id, "password_hash", string(hash))
 }
 
-// Delete deletes a user
+// AddPreDeleteHook registers a callback invoked before user deletion (for cleanup without FK CASCADE)
+func (s *Service) AddPreDeleteHook(hook func(ctx context.Context, userID int64) error) {
+	s.preDeleteHooks = append(s.preDeleteHooks, hook)
+}
+
+// Delete deletes a user after running all pre-delete cleanup hooks
 func (s *Service) Delete(ctx context.Context, id int64) error {
+	for _, hook := range s.preDeleteHooks {
+		if err := hook(ctx, id); err != nil {
+			return err
+		}
+	}
 	return s.repo.DeleteUser(ctx, id)
 }
 

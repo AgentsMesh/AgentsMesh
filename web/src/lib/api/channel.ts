@@ -1,5 +1,11 @@
 import { request, orgPath } from "./base";
 
+// Structured mention payload — caller declares who they are mentioning
+export interface MentionPayload {
+  type: "user" | "pod";
+  id: string;
+}
+
 // Channel types
 export interface ChannelData {
   id: number;
@@ -25,6 +31,8 @@ export interface ChannelMessage {
   message_type: "text" | "system" | "code" | "command";
   content: string;
   metadata?: Record<string, unknown>;
+  edited_at?: string;
+  is_deleted?: boolean;
   created_at: string;
   // Backend returns these field names (from GORM json tags)
   sender_pod_info?: {
@@ -93,20 +101,25 @@ export const channelApi = {
       method: "POST",
     }),
 
-  // Get messages in a channel
-  getMessages: (id: number, limit?: number, offset?: number) => {
+  // Get messages in a channel (supports cursor-based pagination via before_id)
+  getMessages: (id: number, limit?: number, beforeId?: number) => {
     const params = new URLSearchParams();
     if (limit) params.append("limit", String(limit));
-    if (offset) params.append("offset", String(offset));
+    if (beforeId) params.append("before_id", String(beforeId));
     const query = params.toString() ? `?${params.toString()}` : "";
     return request<{ messages: ChannelMessage[] }>(`${orgPath("/channels")}/${id}/messages${query}`);
   },
 
   // Send a message to a channel
-  sendMessage: (id: number, content: string, podKey?: string, messageType?: string) =>
+  sendMessage: (id: number, content: string, podKey?: string, messageType?: string, mentions?: MentionPayload[]) =>
     request<{ message: ChannelMessage }>(`${orgPath("/channels")}/${id}/messages`, {
       method: "POST",
-      body: { content, pod_key: podKey, message_type: messageType || "text" },
+      body: {
+        content,
+        pod_key: podKey,
+        message_type: messageType || "text",
+        ...(mentions && mentions.length > 0 ? { mentions } : {}),
+      },
     }),
 
   // Get pods joined to a channel
@@ -131,6 +144,37 @@ export const channelApi = {
   // Remove a pod from a channel
   leavePod: (id: number, podKey: string) =>
     request<{ message: string }>(`${orgPath("/channels")}/${id}/pods/${podKey}`, {
+      method: "DELETE",
+    }),
+
+  // Mark a channel as read up to a specific message
+  markRead: (id: number, messageId: number) =>
+    request<{ status: string }>(`${orgPath("/channels")}/${id}/read`, {
+      method: "POST",
+      body: { message_id: messageId },
+    }),
+
+  // Get unread message counts for all channels
+  getUnreadCounts: () =>
+    request<{ unread: Record<string, number> }>(orgPath("/channels/unread")),
+
+  // Mute/unmute a channel
+  mute: (id: number, muted: boolean) =>
+    request<{ status: string }>(`${orgPath("/channels")}/${id}/mute`, {
+      method: "POST",
+      body: { muted },
+    }),
+
+  // Edit a message
+  editMessage: (channelId: number, messageId: number, content: string) =>
+    request<{ message: ChannelMessage }>(`${orgPath("/channels")}/${channelId}/messages/${messageId}`, {
+      method: "PUT",
+      body: { content },
+    }),
+
+  // Delete a message
+  deleteMessage: (channelId: number, messageId: number) =>
+    request<{ status: string }>(`${orgPath("/channels")}/${channelId}/messages/${messageId}`, {
       method: "DELETE",
     }),
 };

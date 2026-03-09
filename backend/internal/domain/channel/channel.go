@@ -83,6 +83,9 @@ type Message struct {
 	Content     string          `gorm:"type:text;not null" json:"content"`
 	Metadata    MessageMetadata `gorm:"type:jsonb" json:"metadata,omitempty"`
 
+	EditedAt  *time.Time `gorm:"column:edited_at" json:"edited_at,omitempty"`
+	IsDeleted bool       `gorm:"default:false" json:"is_deleted,omitempty"`
+
 	CreatedAt time.Time `gorm:"not null;default:now();index" json:"created_at"`
 
 	// Associations

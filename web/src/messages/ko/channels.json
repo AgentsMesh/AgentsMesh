@@ -30,6 +30,15 @@
       "noMessages": "메시지가 없습니다",
       "startConversation": "대화를 시작하세요!",
       "copyMessage": "복사",
+      "editMessage": "편집",
+      "deleteMessage": "삭제",
+      "edited": "편집됨",
+      "save": "저장",
+      "cancel": "취소",
+      "editHint": "Enter로 저장, Esc로 취소",
+      "deleteConfirmTitle": "메시지 삭제",
+      "deleteConfirmDescription": "이 메시지를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+      "delete": "삭제",
       "moreActions": "더 보기"
     }
   }

@@ -89,9 +89,10 @@ type TerminalChannel struct {
 	config ChannelConfig
 
 	// Publisher: Runner connection (1)
-	publisher        *websocket.Conn
-	publisherMu      sync.RWMutex
-	publisherWriteMu sync.Mutex // Serializes writes to publisher (gorilla/websocket is not concurrent-write safe)
+	publisher          *websocket.Conn
+	publisherMu        sync.RWMutex
+	publisherWriteMu   sync.Mutex // Serializes writes to publisher (gorilla/websocket is not concurrent-write safe)
+	publisherReplaceMu sync.Mutex // Serializes entire SetPublisher replacement sequence
 
 	// Subscribers: Browser connections (N)
 	subscribers   map[string]*Subscriber // subscriberID -> conn
@@ -114,6 +115,10 @@ type TerminalChannel struct {
 	// Publisher reconnection support
 	publisherDisconnected   bool        // Publisher currently disconnected
 	publisherReconnectTimer *time.Timer // Timer for publisher reconnect timeout
+
+	// Publisher goroutine lifecycle
+	publisherEpoch uint64         // Incremented each SetPublisher call
+	publisherWg    sync.WaitGroup // Tracks active forwardPublisherToSubscribers goroutine
 
 	// Callbacks
 	onAllSubscribersGone func(podKey string)
@@ -147,8 +152,13 @@ func NewTerminalChannelWithConfig(podKey string, cfg ChannelConfig, onAllSubscri
 }
 
 // SetPublisher sets the publisher (runner) connection.
-// If an old publisher connection exists, it is closed so its forwarding goroutine exits cleanly.
+// If an old publisher connection exists, it is closed and its forwarding goroutine
+// is awaited before starting a new one, eliminating concurrent goroutine races.
+// Serialized via publisherReplaceMu to prevent WaitGroup races on concurrent calls.
 func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
+	c.publisherReplaceMu.Lock()
+	defer c.publisherReplaceMu.Unlock()
+
 	c.publisherMu.Lock()
 
 	// Check closed INSIDE publisherMu to prevent race with Close().
@@ -165,8 +175,19 @@ func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
 
 	oldConn := c.publisher
 	wasDisconnected := c.publisherDisconnected
+
+	// Same-conn guard: if the caller passes the exact same connection pointer,
+	// skip the replacement entirely — closing oldConn would kill the active
+	// goroutine, and publisherWg.Wait() would block forever.
+	if oldConn == conn {
+		c.publisherMu.Unlock()
+		return
+	}
+
 	c.publisher = conn
 	c.publisherDisconnected = false
+	c.publisherEpoch++
+	epoch := c.publisherEpoch
 
 	// Cancel reconnect timer if exists
 	if c.publisherReconnectTimer != nil {
@@ -176,10 +197,13 @@ func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
 	c.publisherMu.Unlock()
 
 	// Close old publisher connection so its forwarding goroutine exits via ReadMessage error.
-	// The old goroutine's handlePublisherDisconnect will see c.publisher != oldConn and return early.
-	if oldConn != nil && oldConn != conn {
+	if oldConn != nil {
 		_ = oldConn.Close()
 	}
+
+	// Wait for old goroutine to exit before starting new one — eliminates
+	// the race window where two forwarding goroutines run concurrently.
+	c.publisherWg.Wait()
 
 	if wasDisconnected {
 		c.logger.Info("Publisher reconnected")
@@ -190,7 +214,8 @@ func (c *TerminalChannel) SetPublisher(conn *websocket.Conn) {
 	}
 
 	// Start forwarding from publisher to subscribers
-	go c.forwardPublisherToSubscribers()
+	c.publisherWg.Add(1)
+	go c.forwardPublisherToSubscribers(epoch)
 }
 
 // GetPublisher returns the publisher connection (for checking if connected)
@@ -444,19 +469,23 @@ func (c *TerminalChannel) getBufferedOutput() [][]byte {
 }
 
 // forwardPublisherToSubscribers forwards data from publisher to all subscribers.
-// Each goroutine captures its own conn reference at start. When SetPublisher replaces
-// the publisher, it closes the old conn, causing this goroutine's ReadMessage to fail
-// and exit cleanly via handlePublisherDisconnect's identity check.
-func (c *TerminalChannel) forwardPublisherToSubscribers() {
-	c.logger.Debug("Starting forwardPublisherToSubscribers loop")
+// Each goroutine is bound to a specific epoch. When SetPublisher replaces the publisher,
+// it closes the old conn (causing ReadMessage to fail) and waits for this goroutine to
+// exit before starting a new one.
+func (c *TerminalChannel) forwardPublisherToSubscribers(epoch uint64) {
+	defer c.publisherWg.Done()
 
-	// Capture conn once — this goroutine is bound to this specific connection
+	c.logger.Debug("Starting forwardPublisherToSubscribers loop", "epoch", epoch)
+
 	c.publisherMu.RLock()
 	conn := c.publisher
+	currentEpoch := c.publisherEpoch
 	c.publisherMu.RUnlock()
 
-	if conn == nil {
-		c.logger.Debug("Publisher conn is nil, exiting forward loop")
+	// Epoch check: if epoch already changed, this goroutine is stale
+	if conn == nil || currentEpoch != epoch {
+		c.logger.Debug("Publisher epoch mismatch, exiting",
+			"goroutine_epoch", epoch, "current_epoch", currentEpoch)
 		return
 	}
 
@@ -465,8 +494,8 @@ func (c *TerminalChannel) forwardPublisherToSubscribers() {
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
-			c.logger.Info("Publisher disconnected", "error", err)
-			c.handlePublisherDisconnect(conn)
+			c.logger.Info("Publisher disconnected", "error", err, "epoch", epoch)
+			c.handlePublisherDisconnect(conn, epoch)
 			break
 		}
 
@@ -546,15 +575,15 @@ func (c *TerminalChannel) forwardSubscriberToPublisher(subscriberID string) {
 	}
 }
 
-// handlePublisherDisconnect handles publisher disconnect with connection identity check.
-// Takes disconnectedConn to verify it's still the current publisher before acting.
-// If SetPublisher already replaced the publisher, this is a no-op (early return).
-func (c *TerminalChannel) handlePublisherDisconnect(disconnectedConn *websocket.Conn) {
+// handlePublisherDisconnect handles publisher disconnect with double identity check
+// (pointer + epoch). If SetPublisher already replaced the publisher, this is a no-op.
+func (c *TerminalChannel) handlePublisherDisconnect(disconnectedConn *websocket.Conn, epoch uint64) {
 	c.publisherMu.Lock()
 
-	// Identity check: if publisher was already replaced by SetPublisher, just return.
-	// The old conn was already closed by SetPublisher, no need to close again.
-	if c.publisher != disconnectedConn {
+	// Double identity check: pointer AND epoch must both match.
+	// This eliminates the race where an old goroutine's disconnect handler
+	// runs after SetPublisher has already installed a new connection.
+	if c.publisher != disconnectedConn || c.publisherEpoch != epoch {
 		c.publisherMu.Unlock()
 		return
 	}
@@ -566,18 +595,30 @@ func (c *TerminalChannel) handlePublisherDisconnect(disconnectedConn *websocket.
 	c.publisherDisconnected = true
 
 	c.logger.Info("Publisher disconnected, waiting for reconnection",
-		"timeout", c.config.PublisherReconnectTimeout)
+		"timeout", c.config.PublisherReconnectTimeout, "epoch", epoch)
 
 	// Start reconnect timer
 	c.publisherReconnectTimer = time.AfterFunc(c.config.PublisherReconnectTimeout, func() {
+		// Acquire publisherReplaceMu first to serialize with SetPublisher/Close.
+		// This prevents the TOCTOU race where timer reads stillDisconnected=true,
+		// then SetPublisher reconnects, then timer proceeds to Close() the new connection.
+		c.publisherReplaceMu.Lock()
+
 		c.publisherMu.Lock()
 		stillDisconnected := c.publisherDisconnected
 		c.publisherMu.Unlock()
 
-		if stillDisconnected {
-			c.logger.Info("Publisher reconnect timeout, closing channel")
-			c.Close()
+		if !stillDisconnected {
+			c.publisherReplaceMu.Unlock()
+			return
 		}
+
+		// Still disconnected — close the channel.
+		// We already hold publisherReplaceMu, so call closeInternal directly
+		// to avoid re-acquiring it (which would deadlock).
+		c.logger.Info("Publisher reconnect timeout, closing channel")
+		c.closeInternal()
+		c.publisherReplaceMu.Unlock()
 	})
 	c.publisherMu.Unlock()
 
@@ -666,8 +707,17 @@ func (c *TerminalChannel) ReleaseControl(subscriberID string) {
 	}
 }
 
-// Close closes the channel and all connections
+// Close closes the channel and all connections.
+// Safe for concurrent callers — only the first call performs cleanup.
 func (c *TerminalChannel) Close() {
+	c.publisherReplaceMu.Lock()
+	c.closeInternal()
+	c.publisherReplaceMu.Unlock()
+}
+
+// closeInternal performs the actual close logic.
+// MUST be called with publisherReplaceMu held.
+func (c *TerminalChannel) closeInternal() {
 	c.closedMu.Lock()
 	if c.closed {
 		c.closedMu.Unlock()
@@ -696,6 +746,10 @@ func (c *TerminalChannel) Close() {
 		c.publisher = nil
 	}
 	c.publisherMu.Unlock()
+
+	// Wait for publisher forwarding goroutine to exit.
+	// conn.Close() above triggers ReadMessage error, causing the goroutine to return.
+	c.publisherWg.Wait()
 
 	// Close all subscriber connections
 	c.subscribersMu.Lock()

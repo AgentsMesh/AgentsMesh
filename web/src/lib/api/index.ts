@@ -21,7 +21,7 @@ export type { PodData } from "./pod";
 
 // Channel
 export { channelApi } from "./channel";
-export type { ChannelData, ChannelMessage } from "./channel";
+export type { ChannelData, ChannelMessage, MentionPayload } from "./channel";
 
 // Ticket
 export { ticketApi } from "./ticket";
@@ -194,3 +194,7 @@ export type {
   InstalledSkill,
   InstalledMcpServer,
 } from "./extension";
+
+// Notification
+export { notificationApi } from "./notification";
+export type { NotificationPreference } from "./notification";

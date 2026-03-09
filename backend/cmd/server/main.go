@@ -18,9 +18,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	channelService "github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	notifDomain "github.com/anthropics/agentsmesh/backend/internal/domain/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/service/geo"
 	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
 	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
+	notifService "github.com/anthropics/agentsmesh/backend/internal/service/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
@@ -70,6 +73,27 @@ func main() {
 	services.pod.SetEventPublisher(podEventPublisher)
 	services.channel.SetEventBus(eventBus)
 
+	// Create notification dispatcher and register resolvers
+	notifDispatcher := notifService.NewDispatcher(eventBus, services.notifPrefStore)
+	notifDispatcher.RegisterResolver("pod_creator", notifService.NewPodCreatorResolver(services.pod))
+	notifDispatcher.RegisterResolver("channel_members", notifService.NewChannelMemberResolver(services.channel))
+	services.notifDispatcher = notifDispatcher
+
+	// Register channel PostSendHooks (order matters: mention validation → event → notification → pod prompt)
+	channelRepo := infra.NewChannelRepository(db)
+	userLookup := infra.NewChannelUserLookup(db)
+	podLookup := infra.NewChannelPodLookup(db)
+	channelUserNames := infra.NewChannelUserNameResolver(db)
+	services.channel.AddPostSendHook(channelService.NewMentionValidatorHook(userLookup, podLookup, channelRepo))
+	services.channel.AddPostSendHook(channelService.NewEventPublishHook(eventBus, channelUserNames))
+	services.channel.AddPostSendHook(channelService.NewNotificationHook(notifDispatcher, channelUserNames))
+	slog.Info("Channel PostSendHooks registered")
+
+	// Register user pre-delete hook for channel data cleanup (replaces FK CASCADE)
+	services.user.AddPreDeleteHook(func(ctx context.Context, userID int64) error {
+		return services.channel.CleanupUserReferences(ctx, userID)
+	})
+
 	// Start Redis subscriber for multi-instance sync
 	if redisClient != nil {
 		eventBus.StartRedisSubscriber(context.Background())
@@ -95,9 +119,26 @@ func main() {
 	terminalRouter.SetEventBus(eventBus)
 	terminalRouter.SetPodInfoGetter(services.pod)
 
+	// Route OSC terminal notifications through NotificationDispatcher (preference-aware)
+	terminalRouter.SetNotifyFunc(func(ctx context.Context, orgID int64, source, entityID, title, body, link, resolver string) {
+		notifDispatcher.Dispatch(ctx, &notifDomain.NotificationRequest{
+			OrganizationID:    orgID,
+			Source:            source,
+			SourceEntityID:    entityID,
+			Title:             title,
+			Body:              body,
+			Link:              link,
+			RecipientResolver: resolver,
+		})
+	})
+
+	// Wire PodPromptHook (must be after terminalRouter is initialized)
+	services.channel.AddPostSendHook(channelService.NewPodPromptHook(terminalRouter, channelRepo))
+	slog.Info("PodPromptHook registered with TerminalRouter")
+
 	// Setup event callbacks
 	setupRunnerEventCallbacks(db, runnerConnMgr, eventBus)
-	setupPodEventCallbacks(db, podCoordinator, eventBus)
+	setupPodEventCallbacks(db, podCoordinator, eventBus, notifDispatcher)
 
 	// Create PodOrchestrator (unified Pod creation logic for REST + MCP paths)
 	compositeProvider := agent.NewCompositeProvider(services.agentType, services.credentialProfile, services.userConfig)
@@ -225,6 +266,7 @@ func main() {
 		LoopOrchestrator:    loopOrchestrator,
 		LoopScheduler:       loopScheduler,
 		SupportTicket:       services.supportTicket,
+		NotificationPrefStore: services.notifPrefStore,
 	}
 
 	// Initialize router

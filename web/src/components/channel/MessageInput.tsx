@@ -6,19 +6,27 @@ import { SendHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { MentionDropdown } from "./MentionDropdown";
 import { useMentionCandidates, type MentionItem } from "@/hooks/useMentionCandidates";
-import { parsePodMentions, getMentionQuery } from "./mention";
-
-// Re-export for backward compatibility
-export { extractPromptFromMention, buildChannelPrompt } from "./mention";
-export type { MentionedPod } from "./mention";
-import type { MentionedPod } from "./mention";
+import { getMentionQuery } from "./mention";
+import type { MentionPayload } from "@/lib/api/channel";
 
 interface MessageInputProps {
-  onSend: (content: string, mentionedPods?: MentionedPod[]) => void;
+  onSend: (content: string, mentions?: MentionPayload[]) => void;
   disabled?: boolean;
   placeholder?: string;
   /** Channel ID for fetching mention candidates */
   channelId?: number | null;
+}
+
+/**
+ * Parse a MentionItem.id ("user:123" | "pod:my-key") into a structured MentionPayload.
+ */
+function toMentionPayload(item: MentionItem): MentionPayload | null {
+  const colonIdx = item.id.indexOf(":");
+  if (colonIdx < 0) return null;
+  const type = item.id.slice(0, colonIdx);
+  const id = item.id.slice(colonIdx + 1);
+  if (type !== "user" && type !== "pod") return null;
+  return { type, id };
 }
 
 export function MessageInput({
@@ -34,7 +42,10 @@ export function MessageInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Mention state
+  // Structured mention accumulator — collects payloads as user selects from dropdown
+  const selectedMentionsRef = useRef<Map<string, MentionPayload>>(new Map());
+
+  // Mention state (for @ autocomplete UI only; actual routing is server-side)
   const [mentionVisible, setMentionVisible] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
@@ -110,6 +121,12 @@ export function MessageInput({
       const mentionText = `@${item.mentionText} `;
       const newContent = before + mentionText + after;
 
+      // Collect structured mention data
+      const payload = toMentionPayload(item);
+      if (payload) {
+        selectedMentionsRef.current.set(item.id, payload);
+      }
+
       setContent(newContent);
       setMentionVisible(false);
 
@@ -129,10 +146,14 @@ export function MessageInput({
     const trimmedContent = content.trim();
     if (!trimmedContent || disabled) return;
 
-    const mentionedPods = parsePodMentions(trimmedContent, candidates);
-    onSend(trimmedContent, mentionedPods.length > 0 ? mentionedPods : undefined);
+    const mentions = selectedMentionsRef.current.size > 0
+      ? Array.from(selectedMentionsRef.current.values())
+      : undefined;
+
+    onSend(trimmedContent, mentions);
     setContent("");
     setMentionVisible(false);
+    selectedMentionsRef.current.clear();
 
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -204,7 +225,7 @@ export function MessageInput({
             onInput={handleInput}
             placeholder={`${defaultPlaceholder}  (Enter ↵)`}
             disabled={disabled}
-            className="w-full resize-none rounded-xl border bg-muted/40 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background disabled:opacity-50 min-h-[42px] max-h-[200px] transition-colors"
+            className="block w-full resize-none rounded-xl border bg-muted/40 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background disabled:opacity-50 min-h-[42px] max-h-[200px] transition-colors"
             rows={1}
           />
         </div>
@@ -212,7 +233,7 @@ export function MessageInput({
           onClick={handleSend}
           disabled={disabled || !content.trim()}
           size="icon"
-          className="h-[42px] w-[42px] rounded-xl"
+          className="h-[42px] w-[42px] rounded-xl shrink-0"
         >
           <SendHorizontal className="w-4 h-4" />
         </Button>

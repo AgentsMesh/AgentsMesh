@@ -6,12 +6,13 @@ import { usePodStore } from "@/stores/pod";
 import { useRunnerStore } from "@/stores/runner";
 import { useTicketStore } from "@/stores/ticket";
 import { useMeshStore } from "@/stores/mesh";
-import { useChannelStore } from "@/stores/channel";
+import { useChannelStore, useChannelMessageStore } from "@/stores/channel";
 import { useAutopilotStore } from "@/stores/autopilot";
 import { useLoopStore } from "@/stores/loop";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData, PodTitleChangedData, PodInitProgressData, ChannelMessageData, AutopilotStatusChangedData, AutopilotIterationData, AutopilotCreatedData, AutopilotTerminatedData, AutopilotThinkingData, MREventData, PipelineEventData, LoopRunEventData, LoopRunWarningData } from "@/lib/realtime";
+import { useRouter } from "next/navigation";
+import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData, PodTitleChangedData, PodInitProgressData, ChannelMessageData, ChannelMessageEditedData, ChannelMessageDeletedData, AutopilotStatusChangedData, AutopilotIterationData, AutopilotCreatedData, AutopilotTerminatedData, AutopilotThinkingData, MREventData, PipelineEventData, LoopRunEventData, LoopRunWarningData, NotificationPayloadData } from "@/lib/realtime";
 
 interface RealtimeContextValue {
   connectionState: ConnectionState;
@@ -37,6 +38,8 @@ interface RealtimeProviderProps {
   onTerminalNotification?: (data: TerminalNotificationData) => void;
   /** Callback for task completed notifications */
   onTaskCompleted?: (data: TaskCompletedData) => void;
+  /** Callback for unified browser notifications */
+  onBrowserNotification?: (data: { title: string; body: string; link?: string }) => void;
 }
 
 /**
@@ -48,9 +51,11 @@ export function RealtimeProvider({
   children,
   onTerminalNotification,
   onTaskCompleted,
+  onBrowserNotification,
 }: RealtimeProviderProps) {
   const { connectionState, reconnect } = useRealtimeConnection();
   const t = useTranslations();
+  const router = useRouter();
 
   // Debounce timer for loop events — rapid events (e.g. multiple runs completing
   // within seconds) are coalesced into a single API refresh cycle.
@@ -167,10 +172,11 @@ export function RealtimeProvider({
         case "channel:message": {
           const data = event.data as ChannelMessageData;
           const channelState = useChannelStore.getState();
-          // Only add message if it belongs to the current channel
+          const msgState = useChannelMessageStore.getState();
           const currentChannel = channelState.currentChannel;
           if (currentChannel && currentChannel.id === data.channel_id) {
-            channelState.addMessage({
+            // Current channel — add message to the list
+            msgState.addMessage({
               id: data.id,
               channel_id: data.channel_id,
               sender_pod: data.sender_pod,
@@ -179,9 +185,36 @@ export function RealtimeProvider({
               content: data.content,
               metadata: data.metadata,
               created_at: data.created_at,
+              // Build sender_user from realtime sender_name so the UI can display it
+              ...(data.sender_user_id && data.sender_name ? {
+                sender_user: {
+                  id: data.sender_user_id,
+                  username: data.sender_name,
+                  name: data.sender_name,
+                },
+              } : {}),
             });
+          } else {
+            // Non-current channel — increment unread count
+            msgState.incrementUnread(data.channel_id);
           }
           console.log("[Realtime] Channel message:", data.channel_id, data.id);
+          break;
+        }
+
+        case "channel:message_edited": {
+          const data = event.data as ChannelMessageEditedData;
+          const msgState = useChannelMessageStore.getState();
+          msgState.updateMessage(data);
+          console.log("[Realtime] Channel message edited:", data.channel_id, data.id);
+          break;
+        }
+
+        case "channel:message_deleted": {
+          const data = event.data as ChannelMessageDeletedData;
+          const msgState = useChannelMessageStore.getState();
+          msgState.removeMessage(data.id);
+          console.log("[Realtime] Channel message deleted:", data.channel_id, data.id);
           break;
         }
 
@@ -197,6 +230,29 @@ export function RealtimeProvider({
           const data = event.data as TaskCompletedData;
           onTaskCompleted?.(data);
           console.log("[Realtime] Task completed:", data.pod_key, data.agent_status);
+          break;
+        }
+
+        // Unified notification event (via NotificationDispatcher)
+        case "notification": {
+          const data = event.data as NotificationPayloadData;
+          if (data.channels?.toast) {
+            const toastFn = data.priority === "high" ? toast.warning : toast.info;
+            toastFn(data.title, {
+              description: data.body,
+              duration: data.priority === "high" ? 8000 : 4000,
+              ...(data.link ? {
+                action: {
+                  label: "→",
+                  onClick: () => router.push(data.link!),
+                },
+              } : {}),
+            });
+          }
+          if (data.channels?.browser) {
+            onBrowserNotification?.({ title: data.title, body: data.body, link: data.link });
+          }
+          console.log("[Realtime] Notification:", data.source, data.title);
           break;
         }
 
@@ -326,7 +382,7 @@ export function RealtimeProvider({
     },
     // Only external callbacks and translation function are dependencies.
     // All stores are accessed via getState() to avoid reactive subscriptions.
-    [onTerminalNotification, onTaskCompleted, t]
+    [onTerminalNotification, onTaskCompleted, onBrowserNotification, t, router]
   );
 
   // Subscribe to all events
@@ -351,6 +407,7 @@ export function RealtimeProvider({
       useMeshStore.getState().fetchTopology?.();
       useAutopilotStore.getState().fetchAutopilotControllers?.();
       useLoopStore.getState().fetchLoops?.();
+      useChannelMessageStore.getState().fetchUnreadCounts?.();
     }
   }, [connectionState]);
 

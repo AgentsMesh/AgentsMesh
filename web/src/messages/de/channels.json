@@ -30,6 +30,15 @@
       "noMessages": "Noch keine Nachrichten",
       "startConversation": "Starte die Unterhaltung!",
       "copyMessage": "Kopieren",
+      "editMessage": "Bearbeiten",
+      "deleteMessage": "Löschen",
+      "edited": "bearbeitet",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "editHint": "Enter zum Speichern, Esc zum Abbrechen",
+      "deleteConfirmTitle": "Nachricht löschen",
+      "deleteConfirmDescription": "Möchten Sie diese Nachricht wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "delete": "Löschen",
       "moreActions": "Mehr"
     }
   }

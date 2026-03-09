@@ -258,8 +258,8 @@ func TestEventRegistry_ListAll(t *testing.T) {
 		}
 
 		// Count expected builtin events (based on registerBuiltinEvents)
-		// Pod: 4, Ticket: 5, Runner: 3, Notification: 3, System: 1, Autopilot: 5 = 21
-		expectedCount := 21
+		// Pod: 4, Ticket: 5, Runner: 3, Notification: 4 (+EventNotification), System: 1, Autopilot: 5 = 22
+		expectedCount := 22
 
 		if len(types) != expectedCount {
 			t.Errorf("expected %d events, got %d", expectedCount, len(types))

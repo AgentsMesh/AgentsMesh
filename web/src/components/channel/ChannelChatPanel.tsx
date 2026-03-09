@@ -51,6 +51,9 @@ export function ChannelChatPanel({ channelId, onClose }: ChannelChatPanelProps) 
         loading={chat.messagesLoading}
         hasMore={chat.hasMore}
         onLoadMore={chat.handleLoadMore}
+        currentUserId={chat.currentUserId}
+        onEditMessage={chat.handleEditMessage}
+        onDeleteMessage={chat.handleDeleteMessage}
       />
 
       <MessageInput

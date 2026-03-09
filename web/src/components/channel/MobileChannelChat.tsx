@@ -89,6 +89,9 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
         loading={chat.messagesLoading}
         hasMore={chat.hasMore}
         onLoadMore={chat.handleLoadMore}
+        currentUserId={chat.currentUserId}
+        onEditMessage={chat.handleEditMessage}
+        onDeleteMessage={chat.handleDeleteMessage}
       />
 
       <MessageInput

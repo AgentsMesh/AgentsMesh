@@ -1,6 +1,6 @@
 import type { ChannelInfo, MeshEdge, MeshTopology } from "@/stores/mesh";
 import type { ChannelMessage } from "@/lib/api";
-import type { MentionedPod } from "@/components/channel/MessageInput";
+import type { MentionPayload } from "@/lib/api/channel";
 
 /**
  * Common props for tab content components
@@ -28,7 +28,7 @@ export interface ChannelsTabContentProps extends TabContentProps {
   } | null;
   messages: ChannelMessage[];
   messagesLoading: boolean;
-  onSendMessage: (content: string, mentionedPods?: MentionedPod[]) => Promise<void>;
+  onSendMessage: (content: string, mentions?: MentionPayload[]) => Promise<void>;
   onLoadMore: () => void;
   onRefresh: () => void;
   onPodsChanged?: () => void;
@@ -51,6 +51,7 @@ export interface TransformedMessage {
   content: string;
   messageType: "text" | "system" | "code" | "command";
   metadata?: Record<string, unknown>;
+  editedAt?: string;
   createdAt: string;
   pod?: {
     podKey: string;

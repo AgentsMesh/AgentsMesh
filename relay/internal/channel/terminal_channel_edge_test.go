@@ -266,17 +266,19 @@ func TestTerminalChannel_ForwardPubToSub_NilPublisher(t *testing.T) {
 	// Test the conn == nil early exit path in forwardPublisherToSubscribers
 	ch := NewTerminalChannelWithConfig("pod-nil-pub", testChannelConfig(), nil, nil)
 
-	// Directly call forwardPublisherToSubscribers without setting a publisher
-	// The publisher is nil, so the goroutine should exit immediately via the conn == nil check
+	// Directly call forwardPublisherToSubscribers without setting a publisher.
+	// The publisher is nil, so the goroutine should exit immediately.
+	// Pass epoch=0 which won't match any real epoch, triggering the early exit.
+	ch.publisherWg.Add(1)
 	done := make(chan struct{})
 	go func() {
-		ch.forwardPublisherToSubscribers()
+		ch.forwardPublisherToSubscribers(0)
 		close(done)
 	}()
 
 	select {
 	case <-done:
-		// Success - the goroutine exited because publisher was nil
+		// Success - the goroutine exited because publisher was nil / epoch mismatch
 	case <-time.After(2 * time.Second):
 		t.Fatal("forwardPublisherToSubscribers did not exit when publisher is nil")
 	}

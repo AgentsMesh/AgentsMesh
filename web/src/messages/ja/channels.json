@@ -30,7 +30,16 @@
       "noMessages": "メッセージがありません",
       "startConversation": "会話を始めましょう！",
       "copyMessage": "コピー",
-      "moreActions": "その他"
+      "editMessage": "編集",
+      "deleteMessage": "削除",
+      "edited": "編集済み",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "editHint": "Enterで保存、Escでキャンセル",
+      "deleteConfirmTitle": "メッセージを削除",
+      "deleteConfirmDescription": "このメッセージを削除してもよろしいですか？この操作は元に戻せません。",
+      "delete": "削除",
+      "moreActions": "そ���他"
     }
   }
 }

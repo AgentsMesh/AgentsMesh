@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useIDEStore, type BottomPanelTab } from "@/stores/ide";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useMeshStore, type MeshEdge } from "@/stores/mesh";
-import { useChannelStore } from "@/stores/channel";
+import { useChannelStore, useChannelMessageStore } from "@/stores/channel";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,10 +22,8 @@ import { AutopilotPanelContent } from "@/components/autopilot";
 import { useAutopilotStore } from "@/stores/autopilot";
 import { usePodStore } from "@/stores/pod";
 import { useAuthStore } from "@/stores/auth";
-import { podApi } from "@/lib/api/pod";
-import { extractPromptFromMention, buildChannelPrompt } from "@/components/channel/MessageInput";
-import type { MentionedPod } from "@/components/channel/MessageInput";
 import { ChannelsTabContent, ActivityTabContent, DeliveryTabContent, InfoTabContent } from "./BottomPanel/index";
+import type { MentionPayload } from "@/lib/api/channel";
 
 interface BottomPanelProps {
   className?: string;
@@ -62,12 +60,13 @@ export function BottomPanel({ className }: BottomPanelProps) {
   // Channel detail state
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
   const currentChannel = useChannelStore((s) => s.currentChannel);
-  const messages = useChannelStore((s) => s.messages);
-  const messagesLoading = useChannelStore((s) => s.messagesLoading);
   const fetchChannel = useChannelStore((s) => s.fetchChannel);
-  const fetchMessages = useChannelStore((s) => s.fetchMessages);
-  const sendMessage = useChannelStore((s) => s.sendMessage);
   const setCurrentChannel = useChannelStore((s) => s.setCurrentChannel);
+
+  const messages = useChannelMessageStore((s) => s.messages);
+  const messagesLoading = useChannelMessageStore((s) => s.messagesLoading);
+  const fetchMessages = useChannelMessageStore((s) => s.fetchMessages);
+  const sendMessage = useChannelMessageStore((s) => s.sendMessage);
 
   const resizeRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -186,30 +185,16 @@ export function BottomPanel({ className }: BottomPanelProps) {
     setCurrentChannel(null);
   }, [setCurrentChannel]);
 
-  // Resolve channel name for prompt context (extracted for React Compiler compatibility)
-  const selectedChannelName = currentChannel?.name || "unknown";
-
   const handleSendMessage = useCallback(
-    async (content: string, mentionedPods?: MentionedPod[]) => {
+    async (content: string, mentions?: MentionPayload[]) => {
       if (!selectedChannelId) return;
       try {
-        await sendMessage(selectedChannelId, content);
-
-        // Forward prompt to each mentioned pod's terminal
-        if (mentionedPods && mentionedPods.length > 0) {
-          const rawPrompt = extractPromptFromMention(content, mentionedPods);
-          if (rawPrompt) {
-            const prompt = buildChannelPrompt(rawPrompt, selectedChannelName);
-            await Promise.allSettled(
-              mentionedPods.map((pod) => podApi.sendPrompt(pod.podKey, prompt))
-            );
-          }
-        }
+        await sendMessage(selectedChannelId, content, undefined, mentions);
       } catch (error) {
         console.error("Failed to send message:", error);
       }
     },
-    [selectedChannelId, sendMessage, selectedChannelName]
+    [selectedChannelId, sendMessage]
   );
 
   const handleLoadMoreMessages = useCallback(() => {

@@ -514,7 +514,16 @@
       "ticketUpdatedDesc": "当你关注的 Ticket 有更新时",
       "runnerOffline": "Runner 警报",
       "runnerOfflineDesc": "当 Runner 离线或出现问题时",
-      "active": "通知已启用"
+      "active": "通知已启用",
+      "deliveryPreferences": "投递偏好",
+      "channelMessage": "频道消息",
+      "channelMessageDesc": "你加入的频道中有新消息时",
+      "channelMention": "@提及",
+      "channelMentionDesc": "有人在频道中提及你时",
+      "terminalOsc": "终端通知",
+      "terminalOscDesc": "来自 Agent 终端的通知（OSC 事件）",
+      "taskCompleted": "任务完成",
+      "taskCompletedDesc": "Agent 完成任务时"
     },
     "runnersSection": {
       "title": "Runner",

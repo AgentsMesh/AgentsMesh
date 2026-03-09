@@ -514,7 +514,16 @@
       "ticketUpdatedDesc": "When tickets you're watching are updated",
       "runnerOffline": "Runner Alerts",
       "runnerOfflineDesc": "When a runner goes offline or has issues",
-      "active": "Notifications are active"
+      "active": "Notifications are active",
+      "deliveryPreferences": "Delivery Preferences",
+      "channelMessage": "Channel Messages",
+      "channelMessageDesc": "New messages in channels you're a member of",
+      "channelMention": "@Mentions",
+      "channelMentionDesc": "When someone mentions you in a channel",
+      "terminalOsc": "Terminal Notifications",
+      "terminalOscDesc": "Notifications from agent terminals (OSC events)",
+      "taskCompleted": "Task Completed",
+      "taskCompletedDesc": "When an agent finishes its task"
     },
     "runnersSection": {
       "title": "Runners",

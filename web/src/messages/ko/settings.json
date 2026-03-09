@@ -374,7 +374,16 @@
       "ticketUpdatedDesc": "When tickets you're watching are updated",
       "runnerOffline": "Runner Alerts",
       "runnerOfflineDesc": "When a runner goes offline or has issues",
-      "active": "Notifications are active"
+      "active": "Notifications are active",
+      "deliveryPreferences": "전달 설정",
+      "channelMessage": "채널 메시지",
+      "channelMessageDesc": "참여 중인 채널에 새 메시지가 있을 때",
+      "channelMention": "@멘션",
+      "channelMentionDesc": "채널에서 누군가 당신을 멘션했을 때",
+      "terminalOsc": "터미널 알림",
+      "terminalOscDesc": "에이전트 터미널의 알림 (OSC 이벤트)",
+      "taskCompleted": "작업 ���료",
+      "taskCompletedDesc": "에이전트가 ���업을 완료했을 때"
     },
     "runnersSection": {
       "title": "Runners",

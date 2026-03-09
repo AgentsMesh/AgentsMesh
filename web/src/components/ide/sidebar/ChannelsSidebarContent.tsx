@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth";
-import { useChannelStore } from "@/stores/channel";
+import { useChannelStore, useChannelMessageStore } from "@/stores/channel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,15 +36,19 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
   const setSearchQuery = useChannelStore((s) => s.setSearchQuery);
   const setShowArchived = useChannelStore((s) => s.setShowArchived);
 
+  const unreadCounts = useChannelMessageStore((s) => s.unreadCounts);
+  const fetchUnreadCounts = useChannelMessageStore((s) => s.fetchUnreadCounts);
+
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Load channels on mount
+  // Load channels and unread counts on mount
   useEffect(() => {
     if (currentOrg) {
       fetchChannels({ includeArchived: true });
+      fetchUnreadCounts();
     }
-  }, [currentOrg, fetchChannels]);
+  }, [currentOrg, fetchChannels, fetchUnreadCounts]);
 
   // Filter channels by search query and archived status
   const filteredChannels = useMemo(() => {
@@ -143,6 +147,7 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
                 key={channel.id}
                 channel={channel}
                 isSelected={selectedChannelId === channel.id}
+                unreadCount={unreadCounts[channel.id] || 0}
                 onClick={() => setSelectedChannelId(channel.id)}
               />
             ))}

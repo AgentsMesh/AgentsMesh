@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { act } from "@testing-library/react";
-import { useChannelStore, Channel } from "../channel";
+import { useChannelStore, useChannelMessageStore, Channel } from "../channel";
 import type { ChannelMessage } from "@/lib/api";
 
 // Alias for backward compatibility in tests
@@ -19,6 +19,7 @@ vi.mock("@/lib/api", () => ({
     sendMessage: vi.fn(),
     joinPod: vi.fn(),
     leavePod: vi.fn(),
+    markRead: vi.fn(),
   },
 }));
 
@@ -55,14 +56,21 @@ const mockMessage: Message = {
 describe("Channel Store", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset store to initial state
+    // Reset both stores to initial state
     useChannelStore.setState({
       channels: [],
       currentChannel: null,
-      messages: [],
       loading: false,
-      messagesLoading: false,
+      channelLoading: false,
       error: null,
+      selectedChannelId: null,
+      searchQuery: "",
+      showArchived: false,
+    });
+    useChannelMessageStore.setState({
+      messages: [],
+      messagesLoading: false,
+      unreadCounts: {},
     });
   });
 
@@ -72,9 +80,7 @@ describe("Channel Store", () => {
 
       expect(state.channels).toEqual([]);
       expect(state.currentChannel).toBeNull();
-      expect(state.messages).toEqual([]);
       expect(state.loading).toBe(false);
-      expect(state.messagesLoading).toBe(false);
       expect(state.error).toBeNull();
     });
   });
@@ -329,110 +335,6 @@ describe("Channel Store", () => {
     });
   });
 
-  describe("fetchMessages", () => {
-    it("should fetch messages successfully", async () => {
-      vi.mocked(channelApi.getMessages).mockResolvedValue({
-        messages: [mockMessage],
-      });
-
-      await act(async () => {
-        await useChannelStore.getState().fetchMessages(1);
-      });
-
-      const state = useChannelStore.getState();
-      expect(state.messages).toHaveLength(1);
-      expect(state.messages[0].content).toBe("Hello, world!");
-      expect(state.messagesLoading).toBe(false);
-    });
-
-    it("should append messages when offset > 0", async () => {
-      const existingMessage = { ...mockMessage, id: 0, content: "Previous message" };
-      useChannelStore.setState({ messages: [existingMessage] });
-
-      const newMessage = { ...mockMessage, id: 2, content: "New message" };
-      vi.mocked(channelApi.getMessages).mockResolvedValue({
-        messages: [newMessage],
-      });
-
-      await act(async () => {
-        await useChannelStore.getState().fetchMessages(1, 50, 1);
-      });
-
-      const state = useChannelStore.getState();
-      expect(state.messages).toHaveLength(2);
-      expect(state.messages[0].content).toBe("Previous message");
-      expect(state.messages[1].content).toBe("New message");
-    });
-
-    it("should replace messages when offset is 0", async () => {
-      useChannelStore.setState({
-        messages: [{ ...mockMessage, content: "Old message" }],
-      });
-
-      vi.mocked(channelApi.getMessages).mockResolvedValue({
-        messages: [mockMessage],
-      });
-
-      await act(async () => {
-        await useChannelStore.getState().fetchMessages(1, 50, 0);
-      });
-
-      const state = useChannelStore.getState();
-      expect(state.messages).toHaveLength(1);
-      expect(state.messages[0].content).toBe("Hello, world!");
-    });
-
-    it("should handle fetch error", async () => {
-      vi.mocked(channelApi.getMessages).mockRejectedValue({ message: "Fetch failed" });
-
-      await act(async () => {
-        await useChannelStore.getState().fetchMessages(1);
-      });
-
-      const state = useChannelStore.getState();
-      expect(state.error).toBe("Fetch failed");
-      expect(state.messagesLoading).toBe(false);
-    });
-  });
-
-  describe("sendMessage", () => {
-    it("should send message successfully", async () => {
-      vi.mocked(channelApi.sendMessage).mockResolvedValue({ message: mockMessage });
-
-      let result: Message;
-      await act(async () => {
-        result = await useChannelStore.getState().sendMessage(1, "Hello, world!");
-      });
-
-      const state = useChannelStore.getState();
-      expect(result!).toEqual(mockMessage);
-      expect(state.messages).toContainEqual(mockMessage);
-    });
-
-    it("should send message with podKey", async () => {
-      vi.mocked(channelApi.sendMessage).mockResolvedValue({ message: mockMessage });
-
-      await act(async () => {
-        await useChannelStore.getState().sendMessage(1, "Hello", "pod-123");
-      });
-
-      expect(channelApi.sendMessage).toHaveBeenCalledWith(1, "Hello", "pod-123");
-    });
-
-    it("should handle send error", async () => {
-      vi.mocked(channelApi.sendMessage).mockRejectedValue({ message: "Send failed" });
-
-      await expect(
-        act(async () => {
-          await useChannelStore.getState().sendMessage(1, "Hello");
-        })
-      ).rejects.toEqual({ message: "Send failed" });
-
-      const state = useChannelStore.getState();
-      expect(state.error).toBe("Send failed");
-    });
-  });
-
   describe("joinChannel", () => {
     beforeEach(() => {
       useChannelStore.setState({
@@ -522,14 +424,14 @@ describe("Channel Store", () => {
     });
 
     it("should clear messages when setting channel", () => {
-      useChannelStore.setState({ messages: [mockMessage] });
+      useChannelMessageStore.setState({ messages: [mockMessage] });
 
       act(() => {
         useChannelStore.getState().setCurrentChannel(mockChannel);
       });
 
-      const state = useChannelStore.getState();
-      expect(state.messages).toEqual([]);
+      const msgState = useChannelMessageStore.getState();
+      expect(msgState.messages).toEqual([]);
     });
 
     it("should set to null", () => {
@@ -544,30 +446,6 @@ describe("Channel Store", () => {
     });
   });
 
-  describe("addMessage", () => {
-    it("should add message to list", () => {
-      act(() => {
-        useChannelStore.getState().addMessage(mockMessage);
-      });
-
-      const state = useChannelStore.getState();
-      expect(state.messages).toHaveLength(1);
-      expect(state.messages[0]).toEqual(mockMessage);
-    });
-
-    it("should append to existing messages", () => {
-      const existingMessage = { ...mockMessage, id: 0, content: "First" };
-      useChannelStore.setState({ messages: [existingMessage] });
-
-      act(() => {
-        useChannelStore.getState().addMessage(mockMessage);
-      });
-
-      const state = useChannelStore.getState();
-      expect(state.messages).toHaveLength(2);
-    });
-  });
-
   describe("clearError", () => {
     it("should clear error", () => {
       useChannelStore.setState({ error: "Some error" });
@@ -578,6 +456,155 @@ describe("Channel Store", () => {
 
       const state = useChannelStore.getState();
       expect(state.error).toBeNull();
+    });
+  });
+});
+
+describe("Channel Message Store", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useChannelMessageStore.setState({
+      messages: [],
+      messagesLoading: false,
+      unreadCounts: {},
+    });
+    useChannelStore.setState({
+      currentChannel: null,
+    });
+  });
+
+  describe("initial state", () => {
+    it("should have default values", () => {
+      const state = useChannelMessageStore.getState();
+
+      expect(state.messages).toEqual([]);
+      expect(state.messagesLoading).toBe(false);
+      expect(state.unreadCounts).toEqual({});
+    });
+  });
+
+  describe("fetchMessages", () => {
+    it("should fetch messages successfully", async () => {
+      vi.mocked(channelApi.getMessages).mockResolvedValue({
+        messages: [mockMessage],
+      });
+
+      await act(async () => {
+        await useChannelMessageStore.getState().fetchMessages(1);
+      });
+
+      const state = useChannelMessageStore.getState();
+      expect(state.messages).toHaveLength(1);
+      expect(state.messages[0].content).toBe("Hello, world!");
+      expect(state.messagesLoading).toBe(false);
+    });
+
+    it("should append messages when beforeId is provided", async () => {
+      const existingMessage = { ...mockMessage, id: 0, content: "Previous message" };
+      useChannelMessageStore.setState({ messages: [existingMessage] });
+
+      const newMessage = { ...mockMessage, id: 2, content: "New message" };
+      vi.mocked(channelApi.getMessages).mockResolvedValue({
+        messages: [newMessage],
+      });
+
+      await act(async () => {
+        await useChannelMessageStore.getState().fetchMessages(1, 50, 1);
+      });
+
+      const state = useChannelMessageStore.getState();
+      expect(state.messages).toHaveLength(2);
+      // Older messages (fetched) are prepended before existing ones
+      expect(state.messages[0].content).toBe("New message");
+      expect(state.messages[1].content).toBe("Previous message");
+    });
+
+    it("should replace messages when no beforeId", async () => {
+      useChannelMessageStore.setState({
+        messages: [{ ...mockMessage, content: "Old message" }],
+      });
+
+      vi.mocked(channelApi.getMessages).mockResolvedValue({
+        messages: [mockMessage],
+      });
+
+      await act(async () => {
+        await useChannelMessageStore.getState().fetchMessages(1);
+      });
+
+      const state = useChannelMessageStore.getState();
+      expect(state.messages).toHaveLength(1);
+      expect(state.messages[0].content).toBe("Hello, world!");
+    });
+
+    it("should handle fetch error", async () => {
+      vi.mocked(channelApi.getMessages).mockRejectedValue({ message: "Fetch failed" });
+
+      await act(async () => {
+        await useChannelMessageStore.getState().fetchMessages(1);
+      });
+
+      const state = useChannelMessageStore.getState();
+      expect(state.messagesLoading).toBe(false);
+    });
+  });
+
+  describe("sendMessage", () => {
+    it("should send message successfully", async () => {
+      vi.mocked(channelApi.sendMessage).mockResolvedValue({ message: mockMessage });
+
+      let result: Message;
+      await act(async () => {
+        result = await useChannelMessageStore.getState().sendMessage(1, "Hello, world!");
+      });
+
+      const state = useChannelMessageStore.getState();
+      expect(result!).toEqual(mockMessage);
+      expect(state.messages).toContainEqual(mockMessage);
+    });
+
+    it("should send message with podKey", async () => {
+      vi.mocked(channelApi.sendMessage).mockResolvedValue({ message: mockMessage });
+
+      await act(async () => {
+        await useChannelMessageStore.getState().sendMessage(1, "Hello", "pod-123");
+      });
+
+      expect(channelApi.sendMessage).toHaveBeenCalledWith(1, "Hello", "pod-123", undefined, undefined);
+    });
+
+    it("should handle send error", async () => {
+      vi.mocked(channelApi.sendMessage).mockRejectedValue({ message: "Send failed" });
+
+      await expect(
+        act(async () => {
+          await useChannelMessageStore.getState().sendMessage(1, "Hello");
+        })
+      ).rejects.toEqual({ message: "Send failed" });
+    });
+  });
+
+  describe("addMessage", () => {
+    it("should add message to list", () => {
+      act(() => {
+        useChannelMessageStore.getState().addMessage(mockMessage);
+      });
+
+      const state = useChannelMessageStore.getState();
+      expect(state.messages).toHaveLength(1);
+      expect(state.messages[0]).toEqual(mockMessage);
+    });
+
+    it("should append to existing messages", () => {
+      const existingMessage = { ...mockMessage, id: 0, content: "First" };
+      useChannelMessageStore.setState({ messages: [existingMessage] });
+
+      act(() => {
+        useChannelMessageStore.getState().addMessage(mockMessage);
+      });
+
+      const state = useChannelMessageStore.getState();
+      expect(state.messages).toHaveLength(2);
     });
   });
 });

@@ -374,7 +374,16 @@
       "ticketUpdatedDesc": "When tickets you're watching are updated",
       "runnerOffline": "Runner Alerts",
       "runnerOfflineDesc": "When a runner goes offline or has issues",
-      "active": "Notifications are active"
+      "active": "Notifications are active",
+      "deliveryPreferences": "配信設定",
+      "channelMessage": "チャンネルメッセージ",
+      "channelMessageDesc": "参���しているチャンネルに新しいメッセージがあっ��時",
+      "channelMention": "@メンシ��ン",
+      "channelMentionDesc": "チャンネルで誰かがあなたをメンションした時",
+      "terminalOsc": "ターミナル通知",
+      "terminalOscDesc": "��ージェントターミナルからの通知（OSCイベント）",
+      "taskCompleted": "タスク完了",
+      "taskCompletedDesc": "エージェントがタスクを完了した時"
     },
     "runnersSection": {
       "title": "Runners",
