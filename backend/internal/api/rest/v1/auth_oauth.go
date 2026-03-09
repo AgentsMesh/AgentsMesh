@@ -52,13 +52,15 @@ func (h *AuthHandler) isAllowedRedirect(redirectTo string) bool {
 		return true
 	}
 
-	// Allow same-origin URLs
+	// Allow URLs whose hostname matches PrimaryDomain's hostname.
+	// Port is intentionally ignored because the frontend may run on a
+	// different port than the API (e.g., dev: Next.js on :3000, API on :80).
 	parsed, err := url.Parse(redirectTo)
 	if err != nil {
 		return false
 	}
-	allowedHost := h.config.PrimaryDomain
-	return parsed.Host == allowedHost
+	allowedHost, _, _ := strings.Cut(h.config.PrimaryDomain, ":")
+	return parsed.Hostname() == allowedHost
 }
 
 // OAuthCallback returns a handler for OAuth callback
