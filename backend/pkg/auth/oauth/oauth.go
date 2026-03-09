@@ -28,6 +28,9 @@ type UserInfo struct {
 	AvatarURL string
 }
 
+// httpClient is a shared HTTP client with a reasonable timeout for OAuth calls.
+var httpClient = &http.Client{Timeout: 10 * time.Second}
+
 // Config represents OAuth provider configuration
 type Config struct {
 	Provider        string
@@ -70,7 +73,7 @@ func (c *Config) Exchange(ctx context.Context, code string) (*Token, error) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
@@ -117,7 +120,7 @@ func (c *Config) GetUserInfo(ctx context.Context, accessToken string) (*UserInfo
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
@@ -234,7 +237,7 @@ func fetchGitHubPrimaryEmail(ctx context.Context, accessToken string) (string, e
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -292,13 +295,17 @@ func parseGitHubUserInfo(body []byte) (*UserInfo, error) {
 // parseGoogleUserInfo parses Google user info
 func parseGoogleUserInfo(body []byte) (*UserInfo, error) {
 	var data struct {
-		ID        string `json:"id"`
-		Email     string `json:"email"`
-		Name      string `json:"name"`
-		Picture   string `json:"picture"`
+		ID            string `json:"id"`
+		Email         string `json:"email"`
+		Name          string `json:"name"`
+		Picture       string `json:"picture"`
+		VerifiedEmail bool   `json:"verified_email"`
 	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, err
+	}
+	if !data.VerifiedEmail {
+		return nil, fmt.Errorf("google email %s is not verified", data.Email)
 	}
 	// Generate username from email
 	username := strings.Split(data.Email, "@")[0]
