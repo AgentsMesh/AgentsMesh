@@ -192,7 +192,7 @@ export function ActivityBar({ className }: ActivityBarProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <a
-                href="https://discord.gg/XmnSebwHY"
+                href="https://discord.gg/3RcX7VBbH9"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 flex items-center justify-center rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
