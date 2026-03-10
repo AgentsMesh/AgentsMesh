@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/pprof"
 	"sync"
 	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
 	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
+	"github.com/anthropics/agentsmesh/runner/internal/safego"
 )
 
 // PodStatusProvider provides Pod status information.
@@ -98,6 +99,14 @@ func (s *HTTPServer) Start() error {
 
 	// Debug: list pods
 	mux.HandleFunc("/pods", s.handlePods)
+
+	// pprof endpoints for runtime diagnostics (goroutine stacks, heap, etc.)
+	// Access via: curl http://127.0.0.1:<port>/debug/pprof/goroutine?debug=2
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	s.httpServer = &http.Server{
 		Addr:         fmt.Sprintf("127.0.0.1:%d", s.port),

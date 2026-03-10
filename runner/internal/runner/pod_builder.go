@@ -193,8 +193,9 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		Env:      envVars,
 		Rows:     b.rows,
 		Cols:     b.cols,
-		OnOutput: nil, // Will be wired up after all components are created
-		OnExit:   nil, // Will be set by caller (MessageHandler)
+		Label:    b.cmd.PodKey, // For log correlation in PTY diagnostics
+		OnOutput: nil,          // Will be wired up after all components are created
+		OnExit:   nil,          // Will be set by caller (MessageHandler)
 	})
 	if err != nil {
 		// Cleanup sandbox on failure
@@ -261,10 +262,27 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 
 		var screenLines []string
 		if virtualTerm != nil {
+			startFeed := time.Now()
 			screenLines = virtualTerm.Feed(data)
+			feedTime := time.Since(startFeed)
+			if feedTime > 100*time.Millisecond {
+				logger.Terminal().Warn("VT Feed slow",
+					"pod_key", podKey,
+					"data_len", len(data),
+					"feed_time", feedTime)
+			}
 		}
 		go pod.NotifyStateDetectorWithScreen(len(data), screenLines)
+
+		startWrite := time.Now()
 		agg.Write(data)
+		writeTime := time.Since(startWrite)
+		if writeTime > 100*time.Millisecond {
+			logger.Terminal().Warn("Aggregator Write slow",
+				"pod_key", podKey,
+				"data_len", len(data),
+				"write_time", writeTime)
+		}
 	})
 
 	logger.Pod().Info("Pod built", "pod_key", b.cmd.PodKey, "working_dir", workingDir, "cols", b.cols, "rows", b.rows)

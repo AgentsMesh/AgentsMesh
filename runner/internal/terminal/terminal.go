@@ -28,6 +28,7 @@ type Options struct {
 	Env      map[string]string
 	Rows     int
 	Cols     int
+	Label    string // Identifier for log correlation (e.g., pod_key)
 	OnOutput func([]byte)
 	OnExit   func(int)
 }
@@ -39,6 +40,7 @@ type Terminal struct {
 	args    []string
 	workDir string
 	env     []string
+	label   string // Identifier for log correlation (e.g., pod_key)
 
 	// PTY process handle (set in Start)
 	proc ptyProcess
@@ -120,6 +122,7 @@ func New(opts Options) (*Terminal, error) {
 		args:     opts.Args,
 		workDir:  opts.WorkDir,
 		env:      env,
+		label:    opts.Label,
 		onOutput: opts.OnOutput,
 		onExit:   opts.OnExit,
 		rows:     rows,

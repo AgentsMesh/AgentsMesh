@@ -8,11 +8,24 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
+const (
+	// handlerBlockedThreshold is the duration after which the handler is
+	// considered stuck and a goroutine-level warning is emitted.
+	handlerBlockedThreshold = 5 * time.Second
+
+	// handlerSlowWarnThreshold logs a warning when handler exceeds this.
+	handlerSlowWarnThreshold = 50 * time.Millisecond
+
+	// handlerSlowErrorThreshold logs an error when handler exceeds this.
+	handlerSlowErrorThreshold = 1 * time.Second
+)
+
 // readOutput reads output from the PTY and sends to handler.
 // Implements ttyd-style backpressure: when paused, blocks until resumed.
 // This prevents unbounded memory growth when consumer can't keep up.
 func (t *Terminal) readOutput() {
 	log := logger.TerminalTrace()
+	label := t.label
 	buf := make([]byte, 4096)
 	readCount := 0
 	timeoutCount := 0            // Track consecutive timeouts
@@ -28,7 +41,7 @@ func (t *Terminal) readOutput() {
 			// Block until resume signal or terminal closes
 			// This is the key to ttyd-style backpressure:
 			// we stop reading from PTY when consumer is overwhelmed
-			log.Warn("PTY read loop BLOCKED by backpressure", "read_count", readCount)
+			log.Warn("PTY read loop BLOCKED by backpressure", "label", label, "read_count", readCount)
 			select {
 			case <-t.resumeCh:
 				// Resumed, continue reading
@@ -52,7 +65,7 @@ func (t *Terminal) readOutput() {
 		t.mu.Unlock()
 
 		if closed || proc == nil {
-			log.Debug("PTY read loop exiting", "closed", closed, "proc_nil", proc == nil, "read_count", readCount)
+			log.Debug("PTY read loop exiting", "label", label, "closed", closed, "proc_nil", proc == nil, "read_count", readCount)
 			return
 		}
 
@@ -69,6 +82,7 @@ func (t *Terminal) readOutput() {
 				if timeoutCount%50 == 0 {
 					idleDuration := time.Since(lastOutputTime)
 					log.Debug("PTY read loop idle heartbeat",
+						"label", label,
 						"timeout_count", timeoutCount,
 						"idle_duration", idleDuration,
 						"total_reads", readCount)
@@ -83,7 +97,7 @@ func (t *Terminal) readOutput() {
 				ptyErrorHandler := t.onPTYError
 				t.mu.Unlock()
 				if !closed {
-					log.Error("PTY read error", "error", err, "read_count", readCount)
+					log.Error("PTY read error", "label", label, "error", err, "read_count", readCount)
 
 					// Notify the runner about the fatal PTY error so it can
 					// send a visible error message to the frontend via relay.
@@ -96,12 +110,12 @@ func (t *Terminal) readOutput() {
 					// so keeping it alive would only cause a frozen terminal.
 					if proc != nil {
 						pid := proc.Pid()
-						log.Info("Killing process after PTY read error", "pid", pid)
+						log.Info("Killing process after PTY read error", "label", label, "pid", pid)
 						proc.Kill()
 					}
 				}
 			} else {
-				log.Debug("PTY EOF received", "read_count", readCount)
+				log.Debug("PTY EOF received", "label", label, "read_count", readCount)
 			}
 			break
 		}
@@ -112,6 +126,7 @@ func (t *Terminal) readOutput() {
 		if n > 0 {
 			// Log every read for debugging (Trace level - high frequency)
 			log.Trace("PTY read SUCCESS",
+				"label", label,
 				"read_num", readCount,
 				"bytes", n)
 
@@ -125,21 +140,46 @@ func (t *Terminal) readOutput() {
 			t.mu.Unlock()
 
 			if handler != nil {
-				log.Trace("PTY calling handler",
-					"read_num", readCount,
-					"bytes", n)
 				startHandler := time.Now()
+
+				// Watchdog: detect handler blocking in a separate goroutine.
+				// If the handler doesn't return within the threshold, emit a
+				// high-severity log so we can correlate with pprof goroutine dumps.
+				watchdogDone := make(chan struct{})
+				go func() {
+					select {
+					case <-watchdogDone:
+						return
+					case <-time.After(handlerBlockedThreshold):
+						elapsed := time.Since(startHandler)
+						logger.Terminal().Error("PTY output handler BLOCKED — possible deadlock",
+							"label", label,
+							"read_num", readCount,
+							"bytes", n,
+							"blocked_for", elapsed,
+							"hint", "check pprof /debug/pprof/goroutine?debug=2")
+					}
+				}()
+
 				handler(data)
+				close(watchdogDone)
+
 				handlerTime := time.Since(startHandler)
-				log.Trace("PTY handler returned",
-					"read_num", readCount,
-					"bytes", n,
-					"handler_time", handlerTime)
-				if handlerTime > 50*time.Millisecond {
-					log.Warn("PTY output handler slow", "read_num", readCount, "bytes", n, "handler_time", handlerTime)
+				if handlerTime > handlerSlowErrorThreshold {
+					logger.Terminal().Error("PTY output handler extremely slow",
+						"label", label,
+						"read_num", readCount,
+						"bytes", n,
+						"handler_time", handlerTime)
+				} else if handlerTime > handlerSlowWarnThreshold {
+					log.Warn("PTY output handler slow",
+						"label", label,
+						"read_num", readCount,
+						"bytes", n,
+						"handler_time", handlerTime)
 				}
 			} else {
-				log.Warn("No output handler set", "read_num", readCount)
+				log.Warn("No output handler set", "label", label, "read_num", readCount)
 			}
 		}
 	}
@@ -151,11 +191,11 @@ func (t *Terminal) waitExit() {
 
 	exitCode, err := t.proc.Wait()
 	if err != nil {
-		log.Error("Process wait error", "error", err)
+		log.Error("Process wait error", "label", t.label, "error", err)
 	}
 
 	pid := t.proc.Pid()
-	log.Info("Process exited", "pid", pid, "exit_code", exitCode)
+	log.Info("Process exited", "label", t.label, "pid", pid, "exit_code", exitCode)
 
 	// Signal that the process has exited (unblocks Stop() if waiting)
 	close(t.doneCh)
