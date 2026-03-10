@@ -58,6 +58,9 @@ export function TicketDetailPane({ slug, onClose, className }: TicketDetailPaneP
     const cachedTicket = tickets.find(t => t.slug === slug);
     if (cachedTicket) {
       setTicket(cachedTicket);
+    } else {
+      // Reset stale ticket from previous slug
+      setTicket(null);
     }
 
     // If ticket was removed from store (e.g., deleted), skip the API call
@@ -257,7 +260,7 @@ export function TicketDetailPane({ slug, onClose, className }: TicketDetailPaneP
               </label>
               <div className="rounded-lg overflow-hidden bg-muted/20 ring-1 ring-border/30">
                 <Suspense fallback={<div className="h-[100px] animate-pulse bg-muted/30 rounded-lg" />}>
-                  <BlockViewer content={ticket.content} />
+                  <BlockViewer key={slug} content={ticket.content} />
                 </Suspense>
               </div>
             </div>
