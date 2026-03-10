@@ -14,12 +14,12 @@
       "title1": "Plataforma de",
       "title2": "Agentes de Código",
       "title3": "Basados en Terminal",
-      "slogan1": "Orquesta Agentes IA.",
-      "slogan2": "Entrega Código Más Rápido.",
+      "slogan1": "No solo programes por vibra.",
+      "slogan2": "Entrega un producto enterprise.",
       "tagline": "La nueva plataforma de desarrollo para la era de los agentes de código IA",
-      "description": "No es solo un IDE — es un centro de comando de flota de agentes. Orquesta Claude Code, Codex CLI, Gemini CLI, Aider y más. De requisitos a ejecución a entrega.",
+      "description": "Un centro de comando de flota de agentes donde planificas, colaboras y entregas — todo en un solo lugar.",
       "getStartedFree": "Comenzar Gratis",
-      "viewDocs": "Ver Documentación",
+      "viewDocs": "Solicitar Demo",
       "trustedBy": "Confiado por desarrolladores en todo el mundo",
       "teams": "Equipos en Crecimiento",
       "pods": "Miles de Pods",
@@ -130,6 +130,18 @@
           "1": "Localización completa de datos",
           "2": "Soporte para entornos air-gapped",
           "3": "Pista de auditoría completa"
+        }
+      },
+      "scheduledTasks": {
+        "title": "Tareas Programadas en Piloto Automático",
+        "subtitle": "LOOP",
+        "description": "Define tareas de desarrollo recurrentes — revisiones de código, actualizaciones de dependencias, ejecución de tests, escaneos de seguridad — y deja que los agentes las manejen según el horario. Configúralo una vez, y tu flota de agentes mantiene tu código saludable las 24 horas.",
+        "highlights": {
+          "0": "Programación estilo Cron para cualquier tarea de agente",
+          "1": "Creación automática de ramas y envío de MR/PR",
+          "2": "Notificaciones Slack/webhook al completar o fallar",
+          "3": "Historial de tareas con logs y diffs completos",
+          "4": "Componible — encadena múltiples agentes en un solo flujo de trabajo"
         }
       }
     },
@@ -346,6 +358,22 @@
         "authFeature": "Característica de autenticación",
         "empty": "Vacío"
       },
+      "schedule": {
+        "title": "Tareas Programadas",
+        "auto": "Auto",
+        "daily": "Diario 09:00",
+        "weekly": "Lun 08:00",
+        "friday": "Vie 17:00",
+        "hourly": "Cada hora",
+        "depUpdate": "Actualización de dependencias",
+        "secScan": "Escaneo de seguridad",
+        "codeReview": "Revisión de código",
+        "testSuite": "Suite de tests",
+        "passed": "Aprobado",
+        "running": "Ejecutando",
+        "pending": "Pendiente",
+        "nextRun": "Próxima ejecución en"
+      },
       "architecture": {
         "yourInfrastructure": "Tu Infraestructura",
         "runner": "Runner",
@@ -364,7 +392,7 @@
       "highlight3": "Control de flota en tiempo real"
     },
     "footer": {
-      "tagline": "Centro de Comando de Flota de Agentes IA — Orquesta agentes IA. Entrega código más rápido.",
+      "tagline": "Centro de Comando de Flota de Agentes IA — No solo programes por vibra. Entrega un producto enterprise.",
       "copyright": "AgentsMesh. Todos los derechos reservados.",
       "madeWith": "Hecho con amor para desarrolladores",
       "product": {
@@ -398,6 +426,26 @@
         "terms": "Términos de Servicio",
         "security": "Seguridad"
       }
+    },
+    "demo": {
+      "title": "Solicitar Demo",
+      "subtitle": "Descubre cómo AgentsMesh puede acelerar el flujo de desarrollo de tu equipo.",
+      "nameLabel": "Nombre completo",
+      "namePlaceholder": "Juan Pérez",
+      "emailLabel": "Email corporativo",
+      "emailPlaceholder": "juan@empresa.com",
+      "companyLabel": "Empresa",
+      "companyPlaceholder": "Empresa S.A.",
+      "referralLabel": "¿Cómo nos conociste?",
+      "referralPlaceholder": "ej. Twitter, GitHub, un amigo...",
+      "messageLabel": "Algo más? (opcional)",
+      "messagePlaceholder": "Cuéntanos sobre tu caso de uso o preguntas...",
+      "submit": "Solicitar Demo",
+      "submitting": "Enviando...",
+      "error": "Algo salió mal. Inténtalo de nuevo.",
+      "thankYou": "¡Gracias!",
+      "thankYouDescription": "Hemos recibido tu solicitud de demo y te contactaremos en 1 día hábil.",
+      "backToHome": "Volver al inicio"
     }
   }
 }

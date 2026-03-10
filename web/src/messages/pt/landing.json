@@ -14,12 +14,12 @@
       "title1": "Plataforma de Colaboração",
       "title2": "de Agentes de Código",
       "title3": "Baseados em Terminal",
-      "slogan1": "Orquestre Agentes IA.",
-      "slogan2": "Entregue Código Mais Rápido.",
+      "slogan1": "Não fique só no vibe coding.",
+      "slogan2": "Entregue um produto enterprise.",
       "tagline": "A nova plataforma de desenvolvimento para a era dos agentes de código IA",
-      "description": "Não é apenas um IDE — é um centro de comando de frota de agentes. Orquestre Claude Code, Codex CLI, Gemini CLI, Aider e mais. De requisitos à execução à entrega.",
+      "description": "Um centro de comando de frota de agentes onde você planeja, colabora e entrega — tudo em um só lugar.",
       "getStartedFree": "Começar Grátis",
-      "viewDocs": "Ver Documentação",
+      "viewDocs": "Solicitar Demo",
       "trustedBy": "Confiado por desenvolvedores em todo o mundo",
       "teams": "Equipes em Crescimento",
       "pods": "Milhares de Pods",
@@ -130,6 +130,18 @@
           "1": "Localização completa de dados",
           "2": "Suporte a ambiente air-gapped",
           "3": "Trilha de auditoria completa"
+        }
+      },
+      "scheduledTasks": {
+        "title": "Tarefas Agendadas no Piloto Automático",
+        "subtitle": "LOOP",
+        "description": "Defina tarefas de desenvolvimento recorrentes — revisões de código, atualizações de dependências, execução de testes, varreduras de segurança — e deixe os agentes cuidarem delas no horário. Configure uma vez, e sua frota de agentes mantém sua base de código saudável 24 horas por dia.",
+        "highlights": {
+          "0": "Agendamento estilo Cron para qualquer tarefa de agente",
+          "1": "Criação automática de branches e envio de MR/PR",
+          "2": "Notificações Slack/webhook ao concluir ou falhar",
+          "3": "Histórico de tarefas com logs e diffs completos",
+          "4": "Componível — encadeie múltiplos agentes em um único fluxo de trabalho"
         }
       }
     },
@@ -346,6 +358,22 @@
         "authFeature": "Recurso de autenticação",
         "empty": "Vazio"
       },
+      "schedule": {
+        "title": "Tarefas Agendadas",
+        "auto": "Auto",
+        "daily": "Diário 09:00",
+        "weekly": "Seg 08:00",
+        "friday": "Sex 17:00",
+        "hourly": "A cada hora",
+        "depUpdate": "Atualização de dependências",
+        "secScan": "Varredura de segurança",
+        "codeReview": "Revisão de código",
+        "testSuite": "Suite de testes",
+        "passed": "Aprovado",
+        "running": "Executando",
+        "pending": "Pendente",
+        "nextRun": "Próxima execução em"
+      },
       "architecture": {
         "yourInfrastructure": "Sua Infraestrutura",
         "runner": "Runner",
@@ -364,7 +392,7 @@
       "highlight3": "Controle de frota em tempo real"
     },
     "footer": {
-      "tagline": "Centro de Comando de Frota de Agentes IA — Orquestre agentes IA. Entregue código mais rápido.",
+      "tagline": "Centro de Comando de Frota de Agentes IA — Não fique só no vibe coding. Entregue um produto enterprise.",
       "copyright": "AgentsMesh. Todos os direitos reservados.",
       "madeWith": "Feito com amor para desenvolvedores",
       "product": {
@@ -398,6 +426,26 @@
         "terms": "Termos de Serviço",
         "security": "Segurança"
       }
+    },
+    "demo": {
+      "title": "Solicitar Demo",
+      "subtitle": "Veja como o AgentsMesh pode acelerar o fluxo de desenvolvimento da sua equipe.",
+      "nameLabel": "Nome completo",
+      "namePlaceholder": "João Silva",
+      "emailLabel": "Email corporativo",
+      "emailPlaceholder": "joao@empresa.com.br",
+      "companyLabel": "Empresa",
+      "companyPlaceholder": "Empresa Ltda.",
+      "referralLabel": "Como nos conheceu?",
+      "referralPlaceholder": "ex. Twitter, GitHub, um amigo...",
+      "messageLabel": "Mais alguma coisa? (opcional)",
+      "messagePlaceholder": "Conte-nos sobre seu caso de uso ou dúvidas...",
+      "submit": "Solicitar Demo",
+      "submitting": "Enviando...",
+      "error": "Algo deu errado. Tente novamente.",
+      "thankYou": "Obrigado!",
+      "thankYouDescription": "Recebemos sua solicitação de demo e entraremos em contato em 1 dia útil.",
+      "backToHome": "Voltar ao início"
     }
   }
 }

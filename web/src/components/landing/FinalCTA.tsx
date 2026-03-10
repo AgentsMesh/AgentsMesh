@@ -9,16 +9,27 @@ export function FinalCTA() {
 
   return (
     <section className="py-24 relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent" />
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/20 blur-[120px] rounded-full" />
+      {/* Background effects - enhanced */}
+      <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-primary/3 to-transparent" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/25 blur-[120px] rounded-full animate-glow-pulse" />
+      <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-primary/10 blur-[100px] rounded-full animate-glow-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/3 right-1/4 w-[250px] h-[250px] bg-primary/8 blur-[80px] rounded-full animate-glow-pulse" style={{ animationDelay: '2s' }} />
+      {/* Grid overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(var(--primary) 1px, transparent 1px),
+                           linear-gradient(90deg, var(--primary) 1px, transparent 1px)`,
+          backgroundSize: '60px 60px'
+        }}
+      />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
             {t("landing.finalCta.title1")}
             <br />
-            <span className="text-primary">{t("landing.finalCta.title2")}</span>
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">{t("landing.finalCta.title2")}</span>
           </h2>
 
           <p className="text-lg text-muted-foreground mb-8">
@@ -29,16 +40,17 @@ export function FinalCTA() {
             <Link href="/register">
               <Button
                 size="lg"
-                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8"
+                className="relative w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 shadow-lg shadow-primary/25 hover:shadow-primary/50 hover:shadow-xl transition-all hover:-translate-y-0.5 overflow-hidden group"
               >
-                {t("landing.finalCta.getStartedFree")}
+                <span className="relative z-10">{t("landing.finalCta.getStartedFree")}</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               </Button>
             </Link>
-            <a href="mailto:bd@agentsmesh.ai">
+            <Link href="/demo">
               <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8">
                 {t("landing.finalCta.scheduleDemo")}
               </Button>
-            </a>
+            </Link>
           </div>
 
           {/* Quick stats */}

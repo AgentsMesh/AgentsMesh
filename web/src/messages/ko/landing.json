@@ -14,12 +14,12 @@
       "title1": "터미널 기반",
       "title2": "코딩 에이전트",
       "title3": "협업 플랫폼",
-      "slogan1": "AI 에이전트를 오케스트레이션하세요.",
-      "slogan2": "코드를 더 빠르게 배포하세요.",
+      "slogan1": "바이브 코딩만으로는 부족합니다.",
+      "slogan2": "엔터프라이즈급 제품을 배포하세요.",
       "tagline": "AI 코딩 에이전트 시대를 위한 새로운 개발 플랫폼",
-      "description": "단순한 IDE가 아닌 에이전트 함대 커맨드 센터. Claude Code, Codex CLI, Gemini CLI, Aider 등을 오케스트레이션합니다. 요구사항에서 실행, 배포까지.",
+      "description": "에이전트 함대 커맨드 센터에서 계획, 협업, 배포를 한 곳에서.",
       "getStartedFree": "무료로 시작",
-      "viewDocs": "문서 보기",
+      "viewDocs": "데모 요청",
       "trustedBy": "전 세계 개발자들이 신뢰합니다",
       "teams": "성장하는 팀",
       "pods": "수천 개의 Pod",
@@ -130,6 +130,18 @@
           "1": "완전한 데이터 로컬화",
           "2": "에어갭 환경 지원",
           "3": "완전한 감사 추적"
+        }
+      },
+      "scheduledTasks": {
+        "title": "예약 작업 오토파일럿",
+        "subtitle": "LOOP",
+        "description": "반복적인 개발 작업을 정의하세요 — 코드 리뷰, 의존성 업데이트, 테스트 스위트 실행, 보안 스캔 — 에이전트가 일정에 따라 처리합니다. 한 번 설정하면, 에이전트 함대가 코드베이스를 24시간 건강하게 유지합니다.",
+        "highlights": {
+          "0": "모든 에이전트 작업을 위한 Cron 스타일 스케줄링",
+          "1": "자동 브랜치 생성 및 MR/PR 제출",
+          "2": "완료 또는 실패 시 Slack/Webhook 알림",
+          "3": "전체 로그와 diff가 포함된 작업 이력",
+          "4": "조합 가능 — 단일 워크플로우에서 여러 에이전트를 연결"
         }
       }
     },
@@ -346,6 +358,22 @@
         "authFeature": "인증 기능",
         "empty": "비어 있음"
       },
+      "schedule": {
+        "title": "예약 작업",
+        "auto": "자동",
+        "daily": "매일 09:00",
+        "weekly": "월요일 08:00",
+        "friday": "금요일 17:00",
+        "hourly": "매시간",
+        "depUpdate": "의존성 업데이트",
+        "secScan": "보안 스캔",
+        "codeReview": "코드 리뷰",
+        "testSuite": "테스트 스위트",
+        "passed": "통과",
+        "running": "실행 중",
+        "pending": "대기 중",
+        "nextRun": "다음 실행"
+      },
       "architecture": {
         "yourInfrastructure": "당신의 인프라",
         "runner": "Runner",
@@ -364,7 +392,7 @@
       "highlight3": "실시간 함대 제어"
     },
     "footer": {
-      "tagline": "AI 에이전트 함대 커맨드 센터 — AI 에이전트를 오케스트레이션. 코드를 더 빠르게 배포.",
+      "tagline": "AI 에이전트 함대 커맨드 센터 — 바이브 코딩만으로는 부족합니다. 엔터프라이즈급 제품을 배포하세요.",
       "copyright": "AgentsMesh. All rights reserved.",
       "madeWith": "개발자를 위한 사랑으로 제작",
       "product": {
@@ -398,6 +426,26 @@
         "terms": "서비스 약관",
         "security": "보안"
       }
+    },
+    "demo": {
+      "title": "데모 요청",
+      "subtitle": "AgentsMesh가 팀의 개발 워크플로우를 어떻게 가속화할 수 있는지 알아보세요.",
+      "nameLabel": "이름",
+      "namePlaceholder": "홍길동",
+      "emailLabel": "업무 이메일",
+      "emailPlaceholder": "gildong@company.com",
+      "companyLabel": "회사",
+      "companyPlaceholder": "주식회사 샘플",
+      "referralLabel": "어떻게 알게 되셨나요?",
+      "referralPlaceholder": "예: Twitter, GitHub, 지인 추천...",
+      "messageLabel": "추가 정보 (선택)",
+      "messagePlaceholder": "사용 사례나 질문을 알려주세요...",
+      "submit": "데모 요청",
+      "submitting": "제출 중...",
+      "error": "문제가 발생했습니다. 다시 시도해 주세요.",
+      "thankYou": "감사합니다!",
+      "thankYouDescription": "데모 요청을 접수했습니다. 1영업일 이내에 연락드리겠습니다.",
+      "backToHome": "홈으로 돌아가기"
     }
   }
 }

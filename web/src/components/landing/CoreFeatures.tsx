@@ -85,6 +85,21 @@ export function CoreFeatures() {
     },
     {
       number: "04",
+      title: t("landing.coreFeatures.scheduledTasks.title"),
+      subtitle: t("landing.coreFeatures.scheduledTasks.subtitle"),
+      description: t("landing.coreFeatures.scheduledTasks.description"),
+      highlights: [
+        t("landing.coreFeatures.scheduledTasks.highlights.0"),
+        t("landing.coreFeatures.scheduledTasks.highlights.1"),
+        t("landing.coreFeatures.scheduledTasks.highlights.2"),
+        t("landing.coreFeatures.scheduledTasks.highlights.3"),
+        t("landing.coreFeatures.scheduledTasks.highlights.4"),
+      ],
+      schedule: true,
+      align: "left",
+    },
+    {
+      number: "05",
       title: t("landing.coreFeatures.runners.title"),
       subtitle: t("landing.coreFeatures.runners.subtitle"),
       description: t("landing.coreFeatures.runners.description"),
@@ -100,12 +115,17 @@ export function CoreFeatures() {
   ];
 
   return (
-    <section className="py-24" id="features">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 relative" id="features">
+      {/* Section background glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px]" />
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            {t("landing.coreFeatures.title")} <span className="text-primary">{t("landing.coreFeatures.titleHighlight")}</span>
+            {t("landing.coreFeatures.title")} <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">{t("landing.coreFeatures.titleHighlight")}</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             {t("landing.coreFeatures.description")}
@@ -124,7 +144,7 @@ export function CoreFeatures() {
               {/* Content */}
               <div className={feature.align === "right" ? "lg:order-2" : ""}>
                 <div className="flex items-center gap-6 mb-6">
-                  <span className="text-6xl font-black bg-gradient-to-br from-primary/20 to-transparent bg-clip-text text-transparent select-none">
+                  <span className="text-6xl font-black bg-gradient-to-br from-primary/30 via-primary/15 to-transparent bg-clip-text text-transparent select-none drop-shadow-[0_0_15px_var(--primary)]">
                     {feature.number}
                   </span>
                   <div>
@@ -161,12 +181,13 @@ export function CoreFeatures() {
 
               {/* Visual */}
               <div className={`relative group ${feature.align === "right" ? "lg:order-1" : ""}`}>
-                {/* Glow effect */}
-                <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
-                
-                <div className="relative transform transition-all duration-500 hover:scale-[1.02] hover:-rotate-1">
+                {/* Glow effect - enhanced */}
+                <div className="absolute -inset-6 bg-primary/20 blur-[50px] rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-700" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+
+                <div className="relative transform transition-all duration-500 hover:scale-[1.02] hover:-rotate-1 scanline-overlay overflow-hidden rounded-xl">
                   {feature.terminal && (
-                    <div className="bg-card/95 backdrop-blur rounded-xl border border-border shadow-2xl shadow-primary/5 overflow-hidden">
+                    <div className="bg-card/95 backdrop-blur rounded-xl border border-primary/20 shadow-2xl shadow-primary/10 overflow-hidden animate-border-glow">
                       <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b border-border">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-red-500/80 border border-red-600/20" />
@@ -198,7 +219,7 @@ export function CoreFeatures() {
                   )}
 
                   {feature.diagram && (
-                    <div className="bg-card/95 backdrop-blur rounded-xl border border-border shadow-2xl shadow-primary/5 p-8 relative overflow-hidden">
+                    <div className="bg-card/95 backdrop-blur rounded-xl border border-primary/20 shadow-2xl shadow-primary/10 p-8 relative overflow-hidden animate-border-glow">
                       {/* Grid background */}
                       <div className="absolute inset-0 opacity-[0.03]" 
                            style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '20px 20px' }} 
@@ -250,7 +271,7 @@ export function CoreFeatures() {
                   )}
 
                   {feature.kanban && (
-                    <div className="bg-card/95 backdrop-blur rounded-xl border border-border shadow-2xl shadow-primary/5 p-6 relative overflow-hidden">
+                    <div className="bg-card/95 backdrop-blur rounded-xl border border-primary/20 shadow-2xl shadow-primary/10 p-6 relative overflow-hidden animate-border-glow">
                       <div className="grid grid-cols-4 gap-4">
                         {feature.kanban.columns.map((col, i) => (
                           <div key={i} className="bg-secondary/30 rounded-xl p-3 flex flex-col h-48">
@@ -298,14 +319,14 @@ export function CoreFeatures() {
                   )}
 
                   {feature.architecture && (
-                    <div className="bg-card/95 backdrop-blur rounded-xl border border-border shadow-2xl shadow-primary/5 p-8 relative overflow-hidden">
+                    <div className="bg-card/95 backdrop-blur rounded-xl border border-primary/20 shadow-2xl shadow-primary/10 p-8 relative overflow-hidden animate-border-glow">
                       <div className="relative z-10">
                         {/* Your Infrastructure box */}
                         <div className="border-2 border-dashed border-primary/20 bg-primary/5 rounded-2xl p-8 relative">
                           <div className="absolute -top-3 left-6 px-2 bg-card text-xs font-bold text-primary uppercase tracking-wider border border-primary/20 rounded">
                             {t("landing.coreDemo.architecture.yourInfrastructure")}
                           </div>
-                          
+
                           <div className="flex items-center justify-center gap-12">
                             {/* Runner */}
                             <div className="text-center group/node">
@@ -317,7 +338,7 @@ export function CoreFeatures() {
                               <div className="text-sm font-bold">{t("landing.coreDemo.architecture.runner")}</div>
                               <div className="text-[10px] text-muted-foreground mt-1 font-mono">Docker/K8s</div>
                             </div>
-                            
+
                             {/* Connection */}
                             <div className="flex flex-col items-center gap-1">
                               <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
@@ -345,16 +366,92 @@ export function CoreFeatures() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="text-center relative z-10">
                         <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-card/80 backdrop-blur rounded-full border border-border shadow-lg">
                           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                           <span className="text-sm font-medium">{t("landing.coreDemo.architecture.agentsmeshCloud")}</span>
                         </div>
                       </div>
-                      
+
                       {/* Background decoration */}
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent opacity-50 pointer-events-none" />
+                    </div>
+                  )}
+
+                  {feature.schedule && (
+                    <div className="bg-card/95 backdrop-blur rounded-xl border border-primary/20 shadow-2xl shadow-primary/10 overflow-hidden animate-border-glow">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-5 py-3.5 bg-muted/50 border-b border-border">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm font-bold text-foreground">{t("landing.coreDemo.schedule.title")}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 border border-primary/20 rounded-full">
+                          <svg className="w-3 h-3 text-primary animate-spin" style={{ animationDuration: '3s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span className="text-[11px] font-medium text-primary">{t("landing.coreDemo.schedule.auto")}</span>
+                        </div>
+                      </div>
+
+                      {/* Task rows */}
+                      <div className="divide-y divide-border/50">
+                        {[
+                          { schedule: t("landing.coreDemo.schedule.daily"), task: t("landing.coreDemo.schedule.depUpdate"), status: "passed" },
+                          { schedule: t("landing.coreDemo.schedule.weekly"), task: t("landing.coreDemo.schedule.secScan"), status: "running" },
+                          { schedule: t("landing.coreDemo.schedule.friday"), task: t("landing.coreDemo.schedule.codeReview"), status: "pending" },
+                          { schedule: t("landing.coreDemo.schedule.hourly"), task: t("landing.coreDemo.schedule.testSuite"), status: "passed" },
+                        ].map((row, i) => (
+                          <div key={i} className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors group/row">
+                            {/* Status indicator */}
+                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                              row.status === "passed" ? "bg-green-500" :
+                              row.status === "running" ? "bg-yellow-500 animate-pulse" :
+                              "bg-muted-foreground/30"
+                            }`} />
+
+                            {/* Schedule */}
+                            <div className="w-24 flex-shrink-0">
+                              <span className="text-[11px] font-mono text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
+                                {row.schedule}
+                              </span>
+                            </div>
+
+                            {/* Task name */}
+                            <div className="flex-1 text-sm font-medium text-foreground/90 group-hover/row:text-foreground transition-colors">
+                              {row.task}
+                            </div>
+
+                            {/* Status badge */}
+                            <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                              row.status === "passed" ? "bg-green-500/10 text-green-500 border border-green-500/20" :
+                              row.status === "running" ? "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20" :
+                              "bg-muted text-muted-foreground border border-border"
+                            }`}>
+                              {row.status === "passed" ? t("landing.coreDemo.schedule.passed") :
+                               row.status === "running" ? t("landing.coreDemo.schedule.running") :
+                               t("landing.coreDemo.schedule.pending")}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="px-5 py-3 bg-muted/30 border-t border-border flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground">
+                          {t("landing.coreDemo.schedule.nextRun")} <span className="font-mono text-foreground/70">12m 34s</span>
+                        </span>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                            <div key={d} className={`w-1.5 h-4 rounded-sm ${
+                              d <= 5 ? "bg-green-500/60" : "bg-border"
+                            }`} />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

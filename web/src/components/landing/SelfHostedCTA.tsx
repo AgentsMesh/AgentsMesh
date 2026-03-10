@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 
@@ -68,11 +69,11 @@ export function SelfHostedCTA() {
 
                 {/* CTAs */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <a href="mailto:bd@agentsmesh.ai">
+                  <Link href="/demo">
                     <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
                       {t("landing.selfHosted.contactSales")}
                     </Button>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

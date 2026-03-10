@@ -230,6 +230,65 @@ body:has(.app-shell) {
   }
 }
 
+/* Landing page futuristic animations */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
+  50% { border-color: color-mix(in srgb, var(--primary) 60%, transparent); }
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-border-glow {
+  animation: border-glow 3s ease-in-out infinite;
+}
+
+/* Scanline overlay for futuristic cards */
+.scanline-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    transparent 0%,
+    color-mix(in srgb, var(--primary) 3%, transparent) 50%,
+    transparent 100%
+  );
+  height: 200%;
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

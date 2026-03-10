@@ -14,12 +14,12 @@
       "title1": "Terminal-based",
       "title2": "Coding Agent",
       "title3": "Collaboration Platform",
-      "slogan1": "Orchestrate AI Agents.",
-      "slogan2": "Ship Code Faster.",
+      "slogan1": "Don't just vibe code.",
+      "slogan2": "Ship an enterprise-grade product.",
       "tagline": "The new development platform for the age of AI coding agents",
-      "description": "Not just an IDE — an Agent Fleet command center. Orchestrate Claude Code, Codex CLI, Gemini CLI, Aider and more. From requirements to execution to delivery.",
+      "description": "An agent fleet command center where you plan, collaborate, and ship — all in one place.",
       "getStartedFree": "Get Started Free",
-      "viewDocs": "View Documentation",
+      "viewDocs": "Request a Demo",
       "trustedBy": "Trusted by developers worldwide",
       "teams": "Growing Teams",
       "pods": "Thousands of Pods",
@@ -130,6 +130,18 @@
           "1": "Complete data localization",
           "2": "Air-gapped environment support",
           "3": "Full audit trail"
+        }
+      },
+      "scheduledTasks": {
+        "title": "Scheduled Tasks on Autopilot",
+        "subtitle": "LOOP",
+        "description": "Define recurring development tasks — code reviews, dependency updates, test suite runs, security scans — and let agents handle them on schedule. Set it once, and your agent fleet keeps your codebase healthy around the clock.",
+        "highlights": {
+          "0": "Cron-style scheduling for any agent task",
+          "1": "Automatic branch creation and MR/PR submission",
+          "2": "Slack/webhook notifications on completion or failure",
+          "3": "Task history with full logs and diffs",
+          "4": "Composable — chain multiple agents in a single workflow"
         }
       }
     },
@@ -327,6 +339,22 @@
         "authFeature": "Auth feature",
         "empty": "Empty"
       },
+      "schedule": {
+        "title": "Scheduled Tasks",
+        "auto": "Auto",
+        "daily": "Daily 09:00",
+        "weekly": "Mon 08:00",
+        "friday": "Fri 17:00",
+        "hourly": "Hourly",
+        "depUpdate": "Dependency Update",
+        "secScan": "Security Scan",
+        "codeReview": "Code Review",
+        "testSuite": "Test Suite",
+        "passed": "Passed",
+        "running": "Running",
+        "pending": "Pending",
+        "nextRun": "Next run in"
+      },
       "architecture": {
         "yourInfrastructure": "Your Infrastructure",
         "runner": "Runner",
@@ -345,7 +373,7 @@
       "highlight3": "Real-time fleet control"
     },
     "footer": {
-      "tagline": "AI Agent Fleet Command Center — Orchestrate AI agents. Ship code faster.",
+      "tagline": "AI Agent Fleet Command Center — Don't just vibe code. Ship an enterprise-grade product.",
       "copyright": "AgentsMesh. All rights reserved.",
       "madeWith": "Made with love for developers",
       "product": {
@@ -379,6 +407,26 @@
         "terms": "Terms of Service",
         "security": "Security"
       }
+    },
+    "demo": {
+      "title": "Request a Demo",
+      "subtitle": "See how AgentsMesh can accelerate your team's development workflow.",
+      "nameLabel": "Full Name",
+      "namePlaceholder": "John Doe",
+      "emailLabel": "Work Email",
+      "emailPlaceholder": "john@company.com",
+      "companyLabel": "Company",
+      "companyPlaceholder": "Acme Inc.",
+      "referralLabel": "How did you hear about us?",
+      "referralPlaceholder": "e.g. Twitter, GitHub, a friend...",
+      "messageLabel": "Anything else? (optional)",
+      "messagePlaceholder": "Tell us about your use case or questions...",
+      "submit": "Request Demo",
+      "submitting": "Submitting...",
+      "error": "Something went wrong. Please try again.",
+      "thankYou": "Thank You!",
+      "thankYouDescription": "We've received your demo request and will get back to you within 1 business day.",
+      "backToHome": "Back to Home"
     }
   }
 }

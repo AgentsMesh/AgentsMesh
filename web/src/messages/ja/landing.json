@@ -14,12 +14,12 @@
       "title1": "ターミナルベース",
       "title2": "コーディングエージェント",
       "title3": "コラボレーションプラットフォーム",
-      "slogan1": "AIエージェントをオーケストレート。",
-      "slogan2": "コードをより速く出荷。",
+      "slogan1": "バイブコーディングだけじゃない。",
+      "slogan2": "エンタープライズ級の製品を出荷。",
       "tagline": "AIコーディングエージェント時代の新しい開発プラットフォーム",
-      "description": "単なるIDEではなく、エージェント艦隊のコマンドセンター。Claude Code、Codex CLI、Gemini CLI、Aiderなどをオーケストレート。要件から実行、デリバリーまで。",
+      "description": "エージェント艦隊コマンドセンター。計画、コラボレーション、出荷をすべて一か所で。",
       "getStartedFree": "無料で始める",
-      "viewDocs": "ドキュメントを見る",
+      "viewDocs": "デモを申し込む",
       "trustedBy": "世界中の開発者に信頼されています",
       "teams": "成長するチーム",
       "pods": "数千のPod",
@@ -130,6 +130,18 @@
           "1": "完全なデータローカライゼーション",
           "2": "エアギャップ環境サポート",
           "3": "完全な監査証跡"
+        }
+      },
+      "scheduledTasks": {
+        "title": "スケジュールタスクをオートパイロットで",
+        "subtitle": "LOOP",
+        "description": "定期的な開発タスクを定義 — コードレビュー、依存関係の更新、テストスイートの実行、セキュリティスキャン — エージェントにスケジュール通りに処理させましょう。一度設定すれば、エージェント艦隊がコードベースを24時間健全に保ちます。",
+        "highlights": {
+          "0": "あらゆるエージェントタスクに対応するCronスタイルのスケジューリング",
+          "1": "自動ブランチ作成とMR/PR送信",
+          "2": "完了または失敗時のSlack/Webhook通知",
+          "3": "完全なログと差分を含むタスク履歴",
+          "4": "組み合わせ可能 — 単一ワークフローで複数エージェントを連結"
         }
       }
     },
@@ -346,6 +358,22 @@
         "authFeature": "認証機能",
         "empty": "空"
       },
+      "schedule": {
+        "title": "スケジュールタスク",
+        "auto": "自動",
+        "daily": "毎日 09:00",
+        "weekly": "月曜 08:00",
+        "friday": "金曜 17:00",
+        "hourly": "毎時",
+        "depUpdate": "依存関係更新",
+        "secScan": "セキュリティスキャン",
+        "codeReview": "コードレビュー",
+        "testSuite": "テストスイート",
+        "passed": "成功",
+        "running": "実行中",
+        "pending": "待機中",
+        "nextRun": "次回実行まで"
+      },
       "architecture": {
         "yourInfrastructure": "あなたのインフラ",
         "runner": "Runner",
@@ -364,7 +392,7 @@
       "highlight3": "リアルタイム艦隊制御"
     },
     "footer": {
-      "tagline": "AIエージェント艦隊コマンドセンター — AIエージェントをオーケストレート。コードをより速く出荷。",
+      "tagline": "AIエージェント艦隊コマンドセンター — バイブコーディングだけじゃない。エンタープライズ級の製品を出荷。",
       "copyright": "AgentsMesh. All rights reserved.",
       "madeWith": "開発者への愛を込めて作成",
       "product": {
@@ -398,6 +426,26 @@
         "terms": "利用規約",
         "security": "セキュリティ"
       }
+    },
+    "demo": {
+      "title": "デモを申し込む",
+      "subtitle": "AgentsMesh がチームの開発ワークフローをどのように加速できるかをご覧ください。",
+      "nameLabel": "氏名",
+      "namePlaceholder": "山田太郎",
+      "emailLabel": "業務メール",
+      "emailPlaceholder": "taro@company.co.jp",
+      "companyLabel": "会社名",
+      "companyPlaceholder": "株式会社サンプル",
+      "referralLabel": "どこで知りましたか？",
+      "referralPlaceholder": "例：Twitter、GitHub、知人の紹介...",
+      "messageLabel": "その他（任意）",
+      "messagePlaceholder": "ユースケースやご質問をお聞かせください...",
+      "submit": "デモを申し込む",
+      "submitting": "送信中...",
+      "error": "エラーが発生しました。もう一度お試しください。",
+      "thankYou": "ありがとうございます！",
+      "thankYouDescription": "デモリクエストを受け付けました。1営業日以内にご連絡いたします。",
+      "backToHome": "ホームに戻る"
     }
   }
 }

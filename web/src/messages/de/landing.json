@@ -14,12 +14,12 @@
       "title1": "Terminal-basierte",
       "title2": "Coding-Agent",
       "title3": "Kollaborationsplattform",
-      "slogan1": "KI-Agenten orchestrieren.",
-      "slogan2": "Code schneller ausliefern.",
+      "slogan1": "Nicht nur Vibe-Coding.",
+      "slogan2": "Ein Enterprise-Produkt liefern.",
       "tagline": "Die neue Entwicklungsplattform für das Zeitalter der KI-Coding-Agenten",
-      "description": "Nicht nur eine IDE — eine Agenten-Flotten-Kommandozentrale. Orchestrieren Sie Claude Code, Codex CLI, Gemini CLI, Aider und mehr. Von Anforderungen über Ausführung bis zur Auslieferung.",
+      "description": "Ein Agent-Flotten-Kommandozentrale, in der Sie planen, zusammenarbeiten und liefern — alles an einem Ort.",
       "getStartedFree": "Kostenlos starten",
-      "viewDocs": "Dokumentation ansehen",
+      "viewDocs": "Demo anfordern",
       "trustedBy": "Vertraut von Entwicklern weltweit",
       "teams": "Wachsende Teams",
       "pods": "Tausende von Pods",
@@ -130,6 +130,18 @@
           "1": "Vollständige Datenlokalisierung",
           "2": "Air-Gapped-Umgebungsunterstützung",
           "3": "Vollständiger Audit-Trail"
+        }
+      },
+      "scheduledTasks": {
+        "title": "Geplante Aufgaben auf Autopilot",
+        "subtitle": "LOOP",
+        "description": "Definieren Sie wiederkehrende Entwicklungsaufgaben — Code-Reviews, Abhängigkeitsupdates, Testsuiten, Sicherheitsscans — und lassen Sie Agenten diese nach Zeitplan erledigen. Einmal einrichten, und Ihre Agentenflotte hält Ihre Codebasis rund um die Uhr gesund.",
+        "highlights": {
+          "0": "Cron-ähnliche Planung für jede Agentenaufgabe",
+          "1": "Automatische Branch-Erstellung und MR/PR-Einreichung",
+          "2": "Slack/Webhook-Benachrichtigungen bei Abschluss oder Fehler",
+          "3": "Aufgabenhistorie mit vollständigen Logs und Diffs",
+          "4": "Kombinierbar — mehrere Agenten in einem Workflow verketten"
         }
       }
     },
@@ -346,6 +358,22 @@
         "authFeature": "Auth-Feature",
         "empty": "Leer"
       },
+      "schedule": {
+        "title": "Geplante Aufgaben",
+        "auto": "Auto",
+        "daily": "Täglich 09:00",
+        "weekly": "Mo 08:00",
+        "friday": "Fr 17:00",
+        "hourly": "Stündlich",
+        "depUpdate": "Abhängigkeitsupdate",
+        "secScan": "Sicherheitsscan",
+        "codeReview": "Code-Review",
+        "testSuite": "Testsuite",
+        "passed": "Bestanden",
+        "running": "Läuft",
+        "pending": "Ausstehend",
+        "nextRun": "Nächster Lauf in"
+      },
       "architecture": {
         "yourInfrastructure": "Ihre Infrastruktur",
         "runner": "Runner",
@@ -364,7 +392,7 @@
       "highlight3": "Echtzeit-Flottensteuerung"
     },
     "footer": {
-      "tagline": "KI-Agenten-Flotten-Kommandozentrale — KI-Agenten orchestrieren. Code schneller ausliefern.",
+      "tagline": "AI Agent-Flotten-Kommandozentrale — Nicht nur Vibe-Coding. Ein Enterprise-Produkt liefern.",
       "copyright": "AgentsMesh. Alle Rechte vorbehalten.",
       "madeWith": "Mit Liebe für Entwickler gemacht",
       "product": {
@@ -398,6 +426,26 @@
         "terms": "Nutzungsbedingungen",
         "security": "Sicherheit"
       }
+    },
+    "demo": {
+      "title": "Demo anfordern",
+      "subtitle": "Erfahren Sie, wie AgentsMesh den Entwicklungsworkflow Ihres Teams beschleunigen kann.",
+      "nameLabel": "Vollständiger Name",
+      "namePlaceholder": "Max Mustermann",
+      "emailLabel": "Geschäftliche E-Mail",
+      "emailPlaceholder": "max@unternehmen.de",
+      "companyLabel": "Unternehmen",
+      "companyPlaceholder": "Muster GmbH",
+      "referralLabel": "Wie haben Sie von uns erfahren?",
+      "referralPlaceholder": "z.B. Twitter, GitHub, ein Freund...",
+      "messageLabel": "Sonstiges (optional)",
+      "messagePlaceholder": "Erzählen Sie uns von Ihrem Anwendungsfall oder Fragen...",
+      "submit": "Demo anfordern",
+      "submitting": "Wird gesendet...",
+      "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "thankYou": "Vielen Dank!",
+      "thankYouDescription": "Wir haben Ihre Demo-Anfrage erhalten und melden uns innerhalb von 1 Werktag.",
+      "backToHome": "Zurück zur Startseite"
     }
   }
 }

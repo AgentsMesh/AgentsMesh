@@ -14,12 +14,12 @@
       "title1": "Plateforme de Collaboration",
       "title2": "d'Agents de Code",
       "title3": "Basés sur Terminal",
-      "slogan1": "Orchestrez les Agents IA.",
-      "slogan2": "Livrez du Code Plus Vite.",
+      "slogan1": "Ne faites pas que du vibe coding.",
+      "slogan2": "Livrez un produit enterprise.",
       "tagline": "La nouvelle plateforme de développement pour l'ère des agents de code IA",
-      "description": "Pas seulement un IDE — un centre de commande de flotte d'agents. Orchestrez Claude Code, Codex CLI, Gemini CLI, Aider et plus. Des exigences à l'exécution à la livraison.",
+      "description": "Un centre de commande de flotte d'agents où vous planifiez, collaborez et livrez — le tout en un seul endroit.",
       "getStartedFree": "Commencer Gratuitement",
-      "viewDocs": "Voir la Documentation",
+      "viewDocs": "Demander une Démo",
       "trustedBy": "Fait confiance par les développeurs du monde entier",
       "teams": "Équipes en Croissance",
       "pods": "Des Milliers de Pods",
@@ -130,6 +130,18 @@
           "1": "Localisation complète des données",
           "2": "Support environnement air-gapped",
           "3": "Piste d'audit complète"
+        }
+      },
+      "scheduledTasks": {
+        "title": "Tâches Planifiées en Pilote Automatique",
+        "subtitle": "LOOP",
+        "description": "Définissez des tâches de développement récurrentes — revues de code, mises à jour de dépendances, suites de tests, analyses de sécurité — et laissez les agents les gérer selon le planning. Configurez une fois, et votre flotte d'agents maintient votre base de code saine 24h/24.",
+        "highlights": {
+          "0": "Planification de type Cron pour toute tâche d'agent",
+          "1": "Création automatique de branches et soumission de MR/PR",
+          "2": "Notifications Slack/webhook à la fin ou en cas d'échec",
+          "3": "Historique des tâches avec logs et diffs complets",
+          "4": "Composable — enchaînez plusieurs agents dans un seul workflow"
         }
       }
     },
@@ -346,6 +358,22 @@
         "authFeature": "Fonctionnalité d'authentification",
         "empty": "Vide"
       },
+      "schedule": {
+        "title": "Tâches Planifiées",
+        "auto": "Auto",
+        "daily": "Quotidien 09:00",
+        "weekly": "Lun 08:00",
+        "friday": "Ven 17:00",
+        "hourly": "Toutes les heures",
+        "depUpdate": "Mise à jour des dépendances",
+        "secScan": "Analyse de sécurité",
+        "codeReview": "Revue de code",
+        "testSuite": "Suite de tests",
+        "passed": "Réussi",
+        "running": "En cours",
+        "pending": "En attente",
+        "nextRun": "Prochaine exécution dans"
+      },
       "architecture": {
         "yourInfrastructure": "Votre Infrastructure",
         "runner": "Runner",
@@ -364,7 +392,7 @@
       "highlight3": "Contrôle de flotte en temps réel"
     },
     "footer": {
-      "tagline": "Centre de Commande de Flotte d'Agents IA — Orchestrez les agents IA. Livrez du code plus vite.",
+      "tagline": "Centre de Commande de Flotte d'Agents IA — Ne faites pas que du vibe coding. Livrez un produit enterprise.",
       "copyright": "AgentsMesh. Tous droits réservés.",
       "madeWith": "Fait avec amour pour les développeurs",
       "product": {
@@ -398,6 +426,26 @@
         "terms": "Conditions d'Utilisation",
         "security": "Sécurité"
       }
+    },
+    "demo": {
+      "title": "Demander une Démo",
+      "subtitle": "Découvrez comment AgentsMesh peut accélérer le workflow de développement de votre équipe.",
+      "nameLabel": "Nom complet",
+      "namePlaceholder": "Jean Dupont",
+      "emailLabel": "Email professionnel",
+      "emailPlaceholder": "jean@entreprise.fr",
+      "companyLabel": "Entreprise",
+      "companyPlaceholder": "Entreprise SAS",
+      "referralLabel": "Comment avez-vous entendu parler de nous ?",
+      "referralPlaceholder": "ex. Twitter, GitHub, un ami...",
+      "messageLabel": "Autre chose ? (optionnel)",
+      "messagePlaceholder": "Parlez-nous de votre cas d'utilisation ou questions...",
+      "submit": "Demander une Démo",
+      "submitting": "Envoi en cours...",
+      "error": "Une erreur s'est produite. Veuillez réessayer.",
+      "thankYou": "Merci !",
+      "thankYouDescription": "Nous avons reçu votre demande de démo et vous recontacterons sous 1 jour ouvré.",
+      "backToHome": "Retour à l'accueil"
     }
   }
 }

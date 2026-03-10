@@ -14,12 +14,12 @@
       "title1": "基于终端的",
       "title2": "编程智能体",
       "title3": "协作平台",
-      "slogan1": "编排 AI 智能体。",
-      "slogan2": "更快交付代码。",
+      "slogan1": "不要只是氛围编程。",
+      "slogan2": "交付企业级产品。",
       "tagline": "AI 编程智能体时代的新一代开发平台",
-      "description": "不仅是 IDE — 更是智能体舰队指挥中心。编排 Claude Code、Codex CLI、Gemini CLI、Aider 等。从需求到执行到交付，一站式完成。",
+      "description": "智能体舰队指挥中心，让你在同一个地方规划、协作和交付。",
       "getStartedFree": "免费开始",
-      "viewDocs": "查看文档",
+      "viewDocs": "申请演示",
       "trustedBy": "受全球开发者信赖",
       "teams": "不断增长的团队",
       "pods": "数千个 Pod",
@@ -130,6 +130,18 @@
           "1": "数据完全本地化",
           "2": "支持离线环境",
           "3": "完整审计日志"
+        }
+      },
+      "scheduledTasks": {
+        "title": "定时任务自动驾驶",
+        "subtitle": "LOOP",
+        "description": "定义周期性开发任务 — 代码审查、依赖更新、测试套件运行、安全扫描 — 让智能体按计划处理。设置一次，你的智能体舰队全天候保持代码库健康。",
+        "highlights": {
+          "0": "Cron 风格调度，适用于任何智能体任务",
+          "1": "自动创建分支并提交 MR/PR",
+          "2": "完成或失败时通过 Slack/Webhook 通知",
+          "3": "任务历史记录，包含完整日志和差异",
+          "4": "可组合 — 在单个工作流中链接多个智能体"
         }
       }
     },
@@ -327,6 +339,22 @@
         "authFeature": "认证功能",
         "empty": "空"
       },
+      "schedule": {
+        "title": "定时任务",
+        "auto": "自动",
+        "daily": "每日 09:00",
+        "weekly": "周一 08:00",
+        "friday": "周五 17:00",
+        "hourly": "每小时",
+        "depUpdate": "依赖更新",
+        "secScan": "安全扫描",
+        "codeReview": "代码审查",
+        "testSuite": "测试套件",
+        "passed": "通过",
+        "running": "运行中",
+        "pending": "待执行",
+        "nextRun": "下次运行"
+      },
       "architecture": {
         "yourInfrastructure": "你的基础设施",
         "runner": "Runner",
@@ -345,7 +373,7 @@
       "highlight3": "实时舰队控制"
     },
     "footer": {
-      "tagline": "AI 智能体舰队指挥中心 — 编排 AI 智能体，更快交付代码。",
+      "tagline": "AI 智能体舰队指挥中心 — 不要只是氛围编程。交付企业级产品。",
       "copyright": "AgentsMesh. 保留所有权利。",
       "madeWith": "为开发者用心打造",
       "product": {
@@ -379,6 +407,26 @@
         "terms": "服务条款",
         "security": "安全"
       }
+    },
+    "demo": {
+      "title": "申请演示",
+      "subtitle": "了解 AgentsMesh 如何加速您团队的开发工作流。",
+      "nameLabel": "姓名",
+      "namePlaceholder": "张三",
+      "emailLabel": "工作邮箱",
+      "emailPlaceholder": "zhangsan@company.com",
+      "companyLabel": "公司",
+      "companyPlaceholder": "示例科技有限公司",
+      "referralLabel": "您是如何了解到我们的？",
+      "referralPlaceholder": "例如：Twitter、GitHub、朋友推荐...",
+      "messageLabel": "其他信息（可选）",
+      "messagePlaceholder": "告诉我们您的使用场景或问题...",
+      "submit": "申请演示",
+      "submitting": "提交中...",
+      "error": "出现了一些问题，请重试。",
+      "thankYou": "感谢您！",
+      "thankYouDescription": "我们已收到您的演示请求，将在 1 个工作日内与您联系。",
+      "backToHome": "返回首页"
     }
   }
 }

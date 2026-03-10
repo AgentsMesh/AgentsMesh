@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader, PageFooter } from "@/components/common";
 import { EnterpriseFeatures, SelfHostedCTA } from "@/components/landing";
@@ -79,11 +80,11 @@ export default function EnterprisePage() {
                 ))}
               </ul>
 
-              <a href="mailto:bd@agentsmesh.ai">
+              <Link href="/demo">
                 <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                   {t("landing.pricing.onpremise.cta")}
                 </Button>
-              </a>
+              </Link>
             </div>
           </div>
         </div>
