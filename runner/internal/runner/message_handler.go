@@ -2,20 +2,23 @@ package runner
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/relay"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // RunnerMessageHandler implements client.MessageHandler interface.
 type RunnerMessageHandler struct {
-	runner   *Runner
-	podStore PodStore
-	conn     client.Connection
+	runner             *Runner
+	podStore           PodStore
+	conn               client.Connection
+	relayClientFactory func(url, podKey, token string, logger *slog.Logger) relay.RelayClient
 }
 
 // NewRunnerMessageHandler creates a new message handler.
@@ -25,6 +28,9 @@ func NewRunnerMessageHandler(runner *Runner, store PodStore, conn client.Connect
 		runner:   runner,
 		podStore: store,
 		conn:     conn,
+		relayClientFactory: func(url, podKey, token string, logger *slog.Logger) relay.RelayClient {
+			return relay.NewClient(url, podKey, token, logger)
+		},
 	}
 }
 

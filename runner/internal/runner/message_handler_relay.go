@@ -16,6 +16,9 @@ const maxImagePasteSize = 2 * 1024 * 1024 // 2MB, matches frontend limit
 // The channel is identified by PodKey (not session ID).
 // If already connected to the same Relay URL, just update the token without reconnecting.
 // This allows multiple clients (Web + Mobile) to share the same connection.
+//
+// Lock strategy: relayMu is held ONLY for the pointer check/swap to avoid
+// blocking on network I/O or cross-module locks (vt.mu via GetSnapshot).
 func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalRequest) error {
 	log := logger.Pod()
 
@@ -38,12 +41,10 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
-	// Serialize concurrent subscribe operations for the same pod to prevent
-	// relay client leaks when two subscribe_terminal commands arrive concurrently.
+	// Phase 1: Under lock — check existing client and extract/clear if needed.
+	// Keep lock scope minimal to avoid blocking on network I/O or cross-module locks.
+	var oldClient relay.RelayClient
 	pod.LockRelay()
-	defer pod.UnlockRelay()
-
-	// Check if already connected to the same Relay URL (under lock)
 	existingClient := pod.RelayClient
 	if existingClient != nil {
 		if existingClient.IsConnected() && existingClient.GetRelayURL() == relayURL {
@@ -52,6 +53,7 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 				"pod_key", req.PodKey,
 				"relay_url", relayURL)
 			existingClient.UpdateToken(req.RunnerToken)
+			pod.UnlockRelay()
 			return nil
 		}
 		// Connected to different Relay or disconnected, need to reconnect
@@ -61,12 +63,17 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 			"new_relay_url", relayURL,
 			"was_connected", existingClient.IsConnected())
 		pod.RelayClient = nil
-		// Stop outside the field — existing client has its own internal state
-		existingClient.Stop()
+		oldClient = existingClient
+	}
+	pod.UnlockRelay()
+
+	// Stop old client outside the lock — it has its own internal state
+	if oldClient != nil {
+		oldClient.Stop()
 	}
 
-	// Create new relay client (no sessionID needed)
-	relayClient := relay.NewClient(
+	// Phase 2: Outside lock — network I/O (Connect, Start) cannot deadlock.
+	relayClient := h.relayClientFactory(
 		relayURL,
 		req.PodKey,
 		req.RunnerToken,
@@ -80,12 +87,26 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	}
 
 	if !relayClient.Start() {
-		relayClient.Stop() // Clean up connection resources from Connect()
+		relayClient.Stop()
 		return fmt.Errorf("failed to start relay client: client already stopped")
 	}
-	// Direct field assignment — we already hold relayMu via LockRelay
-	pod.RelayClient = relayClient
 
+	// Phase 3: Under lock — swap the pointer atomically.
+	// Check for a race: another goroutine may have set a different client while we were connecting.
+	pod.LockRelay()
+	if pod.RelayClient != nil {
+		// Another subscribe_terminal won the race; discard our client.
+		pod.UnlockRelay()
+		log.Info("Another relay client was set while connecting, discarding ours",
+			"pod_key", req.PodKey)
+		relayClient.Stop()
+		return nil
+	}
+	pod.RelayClient = relayClient
+	pod.UnlockRelay()
+
+	// Phase 4: Outside lock — set up relay output and send snapshot.
+	// These operations may acquire other locks (vt.mu) but relayMu is NOT held.
 	if pod.Aggregator != nil {
 		pod.Aggregator.SetRelayOutput(func(data []byte) {
 			if err := relayClient.SendOutput(data); err != nil {
@@ -94,10 +115,16 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 		})
 	}
 
-	// Send terminal snapshot so late subscribers see existing content
+	// Send terminal snapshot so late subscribers see existing content.
+	// Use TryGetSnapshot to avoid blocking if Feed() holds the VT write lock.
 	if pod.VirtualTerminal != nil {
-		snapshot := pod.VirtualTerminal.GetSnapshot()
-		relayClient.SendSnapshot(snapshot)
+		snapshot := pod.VirtualTerminal.TryGetSnapshot()
+		if snapshot != nil {
+			relayClient.SendSnapshot(snapshot)
+		} else {
+			log.Info("VT lock busy during subscribe, snapshot will be sent on next frame",
+				"pod_key", req.PodKey)
+		}
 	}
 
 	// Trigger TUI redraw if needed
@@ -191,9 +218,16 @@ func (h *RunnerMessageHandler) setupRelayClientHandlers(relayClient relay.RelayC
 				relayClient.SendOutput(data)
 			})
 		}
+		// Use TryGetSnapshot to avoid blocking if Feed() holds the VT write lock.
+		// If the lock is busy, the next aggregator frame will deliver the content.
 		if pod.VirtualTerminal != nil {
-			snapshot := pod.VirtualTerminal.GetSnapshot()
-			relayClient.SendSnapshot(snapshot)
+			snapshot := pod.VirtualTerminal.TryGetSnapshot()
+			if snapshot != nil {
+				relayClient.SendSnapshot(snapshot)
+			} else {
+				log.Info("VT lock busy during reconnect, snapshot will be sent on next frame",
+					"pod_key", podKey)
+			}
 		}
 		if pod.VirtualTerminal != nil && pod.VirtualTerminal.IsAltScreen() && pod.Terminal != nil {
 			go func() {

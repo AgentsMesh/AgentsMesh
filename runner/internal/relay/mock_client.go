@@ -2,6 +2,7 @@ package relay
 
 import (
 	"sync"
+	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
@@ -19,14 +20,17 @@ type MockClient struct {
 	connectedAt int64
 
 	// Tracking
-	ConnectCalled    bool
-	StartCalled      bool
-	StopCalled       bool
-	UpdateTokenCalls []string
+	ConnectCalled     bool
+	StartCalled       bool
+	StopCalled        bool
+	UpdateTokenCalls  []string
+	SendSnapshotCalls int // Tracks SendSnapshot call count
 
 	// Configurable behavior
 	ConnectError error
 	StartResult  bool
+	StopDelay    time.Duration // Artificial delay in Stop() to simulate real behavior
+	OnStopHook   func()        // Called during Stop() to simulate close handler side-effects
 
 	// Handlers (stored but not used in mock)
 	onInput        InputHandler
@@ -68,9 +72,18 @@ func (m *MockClient) Start() bool {
 // Stop implements RelayClient.
 func (m *MockClient) Stop() {
 	m.mu.Lock()
-	defer m.mu.Unlock()
+	delay := m.StopDelay
+	hook := m.OnStopHook
 	m.StopCalled = true
 	m.connected = false
+	m.mu.Unlock()
+
+	if delay > 0 {
+		time.Sleep(delay)
+	}
+	if hook != nil {
+		hook()
+	}
 }
 
 // IsConnected implements RelayClient.
@@ -151,6 +164,9 @@ func (m *MockClient) SendOutput(data []byte) error {
 
 // SendSnapshot implements RelayClient.
 func (m *MockClient) SendSnapshot(snapshot *vt.TerminalSnapshot) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.SendSnapshotCalls++
 	return nil
 }
 
@@ -185,6 +201,7 @@ func (m *MockClient) Reset() {
 	m.StartCalled = false
 	m.StopCalled = false
 	m.UpdateTokenCalls = nil
+	m.SendSnapshotCalls = 0
 }
 
 // Ensure MockClient implements RelayClient interface
