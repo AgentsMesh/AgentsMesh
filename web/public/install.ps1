@@ -15,17 +15,17 @@ function Write-Success { Write-Host "==> " -ForegroundColor Green -NoNewline; Wr
 function Write-Warn { Write-Host "==> " -ForegroundColor Yellow -NoNewline; Write-Host $args }
 function Write-Err { Write-Host "==> " -ForegroundColor Red -NoNewline; Write-Host $args }
 
-# Print banner
+# Print banner (ASCII-only to avoid iex parsing issues with Unicode)
 function Show-Banner {
     Write-Host ""
-    Write-Host "  █████╗  ██████╗ ███████╗███╗   ██╗████████╗███████╗███╗   ███╗███████╗███████╗██╗  ██╗" -ForegroundColor Cyan
-    Write-Host " ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝██╔════╝████╗ ████║██╔════╝██╔════╝██║  ██║" -ForegroundColor Cyan
-    Write-Host " ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║   ███████╗██╔████╔██║█████╗  ███████╗███████║" -ForegroundColor Cyan
-    Write-Host " ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   ╚════██║██║╚██╔╝██║██╔══╝  ╚════██║██╔══██║" -ForegroundColor Cyan
-    Write-Host " ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║   ███████║██║ ╚═╝ ██║███████╗███████║██║  ██║" -ForegroundColor Cyan
-    Write-Host " ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝" -ForegroundColor Cyan
+    Write-Host "     _                    _       __  __           _     " -ForegroundColor Cyan
+    Write-Host "    / \   __ _  ___ _ __ | |_ ___|  \/  | ___  __| |__  " -ForegroundColor Cyan
+    Write-Host "   / _ \ / _' |/ _ \ '_ \| __/ __| |\/| |/ _ \/ _| '_ \ " -ForegroundColor Cyan
+    Write-Host "  / ___ \ (_| |  __/ | | | |_\__ \ |  | |  __/\__ \ | | |" -ForegroundColor Cyan
+    Write-Host " /_/   \_\__, |\___|_| |_|\__|___/_|  |_|\___||___/_| |_|" -ForegroundColor Cyan
+    Write-Host "         |___/                                           " -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "                           Runner Installation Script" -ForegroundColor White
+    Write-Host "              Runner Installation Script" -ForegroundColor White
     Write-Host ""
 }
 
@@ -164,10 +164,10 @@ function Test-Installation {
     return $false
 }
 
-# Print next steps
+# Print next steps (ASCII-only separators for iex compatibility)
 function Show-NextSteps {
     Write-Host ""
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+    Write-Host "------------------------------------------------------------------------" -ForegroundColor DarkGray
     Write-Host ""
     Write-Success "Next steps:"
     Write-Host ""
@@ -177,15 +177,15 @@ function Show-NextSteps {
     Write-Host "  2. Start the runner:" -ForegroundColor White
     Write-Host "     agentsmesh-runner run" -ForegroundColor Blue
     Write-Host ""
-    Write-Host "  Get your registration token from: Settings → Runners → Create Token" -ForegroundColor Gray
+    Write-Host "  Get your registration token from: Settings > Runners > Create Token" -ForegroundColor Gray
     Write-Host ""
     Write-Host "  For more options, run: " -ForegroundColor White -NoNewline
     Write-Host "agentsmesh-runner --help" -ForegroundColor Blue
     Write-Host ""
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+    Write-Host "------------------------------------------------------------------------" -ForegroundColor DarkGray
 }
 
-# Check for Scoop
+# Check for Scoop (returns $false if user chooses Scoop instead)
 function Test-Scoop {
     if (Get-Command scoop -ErrorAction SilentlyContinue) {
         Write-Host ""
@@ -196,9 +196,10 @@ function Test-Scoop {
         $response = Read-Host "Continue with direct installation? [Y/n]"
         if ($response -match "^[nN]") {
             Write-Info "Installation cancelled. Use Scoop to install."
-            exit 0
+            return $false
         }
     }
+    return $true
 }
 
 # Main
@@ -209,7 +210,7 @@ function Main {
         $platform = Get-Platform
         Write-Info "Detected platform: $platform"
 
-        Test-Scoop
+        if (-not (Test-Scoop)) { return }
 
         $version = Get-LatestVersion
         $binaryPath = Install-Runner -Version $version -Platform $platform
@@ -220,7 +221,10 @@ function Main {
     }
     catch {
         Write-Err "Installation failed: $_"
-        exit 1
+        Write-Host ""
+        Write-Host "If the problem persists, download manually from:" -ForegroundColor Gray
+        Write-Host "  https://github.com/$GITHUB_REPO/releases/latest" -ForegroundColor Blue
+        Write-Host ""
     }
 }
 
