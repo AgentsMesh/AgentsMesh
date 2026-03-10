@@ -281,13 +281,13 @@ func TestOutputRouter_EarlyBuffer_NotUsedWhenCallbackSet(t *testing.T) {
 }
 
 func TestOutputRouter_Concurrent(t *testing.T) {
-	var mu sync.Mutex
-	var totalBytes int
+	// Track total bytes across ALL destinations (gRPC + relay).
+	// When a connected relay is set, data flows to relay.SendOutput instead of gRPC callback,
+	// so we must count both to verify no data is lost.
+	var totalBytes atomic.Int64
 
 	or := NewOutputRouter(func(data []byte) {
-		mu.Lock()
-		totalBytes += len(data)
-		mu.Unlock()
+		totalBytes.Add(int64(len(data)))
 	})
 
 	var wg sync.WaitGroup
@@ -301,10 +301,11 @@ func TestOutputRouter_Concurrent(t *testing.T) {
 		}()
 	}
 
-	// Concurrent relay updates
+	// Concurrent relay updates — relay also counts bytes via SendOutput
 	go func() {
 		for i := 0; i < 50; i++ {
-			relay := newMockRelayWriter(true)
+			relay := &countingRelayWriter{totalBytes: &totalBytes}
+			relay.connected.Store(true)
 			or.SetRelayClient(relay)
 			or.SetRelayClient(nil)
 		}
@@ -312,11 +313,25 @@ func TestOutputRouter_Concurrent(t *testing.T) {
 
 	wg.Wait()
 
-	mu.Lock()
-	if totalBytes != 1000 {
-		t.Errorf("Expected 1000 bytes routed, got %d", totalBytes)
+	got := totalBytes.Load()
+	if got != 1000 {
+		t.Errorf("Expected 1000 bytes routed, got %d", got)
 	}
-	mu.Unlock()
+}
+
+// countingRelayWriter is a RelayWriter that adds byte counts to a shared counter.
+type countingRelayWriter struct {
+	connected  atomic.Bool
+	totalBytes *atomic.Int64
+}
+
+func (c *countingRelayWriter) SendOutput(data []byte) error {
+	c.totalBytes.Add(int64(len(data)))
+	return nil
+}
+
+func (c *countingRelayWriter) IsConnected() bool {
+	return c.connected.Load()
 }
 
 func TestOutputRouter_LargeData(t *testing.T) {
