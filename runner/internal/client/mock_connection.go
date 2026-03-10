@@ -100,7 +100,7 @@ func (m *MockConnection) SendPodCreated(podKey string, pid int32, sandboxPath, b
 		"pod_key":      podKey,
 		"pid":          pid,
 		"sandbox_path": sandboxPath,
-		"branch_name":   branchName,
+		"branch_name":  branchName,
 	}})
 	return nil
 }
@@ -174,146 +174,6 @@ func (m *MockConnection) SendSandboxesStatus(requestID string, results []*Sandbo
 	return nil
 }
 
-// --- Test helper methods ---
-
-// SimulateCreatePod simulates server sending a create_pod message.
-// Uses Proto type directly for consistency with actual implementation.
-func (m *MockConnection) SimulateCreatePod(cmd *runnerv1.CreatePodCommand) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnCreatePod(cmd)
-	}
-	return nil
-}
-
-// SimulateTerminatePod simulates server sending a terminate_pod message.
-func (m *MockConnection) SimulateTerminatePod(req TerminatePodRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnTerminatePod(req)
-	}
-	return nil
-}
-
-// SimulateTerminalInput simulates server sending a terminal_input message.
-func (m *MockConnection) SimulateTerminalInput(req TerminalInputRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnTerminalInput(req)
-	}
-	return nil
-}
-
-// SimulateTerminalResize simulates server sending a terminal_resize message.
-func (m *MockConnection) SimulateTerminalResize(req TerminalResizeRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnTerminalResize(req)
-	}
-	return nil
-}
-
-// SimulateTerminalRedraw simulates server sending a terminal_redraw message.
-func (m *MockConnection) SimulateTerminalRedraw(req TerminalRedrawRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnTerminalRedraw(req)
-	}
-	return nil
-}
-
-// SimulateSubscribeTerminal simulates server sending a subscribe_terminal message.
-func (m *MockConnection) SimulateSubscribeTerminal(req SubscribeTerminalRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnSubscribeTerminal(req)
-	}
-	return nil
-}
-
-// SimulateUnsubscribeTerminal simulates server sending an unsubscribe_terminal message.
-func (m *MockConnection) SimulateUnsubscribeTerminal(req UnsubscribeTerminalRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnUnsubscribeTerminal(req)
-	}
-	return nil
-}
-
-// SimulateQuerySandboxes simulates server sending a query_sandboxes message.
-func (m *MockConnection) SimulateQuerySandboxes(req QuerySandboxesRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnQuerySandboxes(req)
-	}
-	return nil
-}
-
-// GetPods returns pods from handler (if available).
-func (m *MockConnection) GetPods() []PodInfo {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnListPods()
-	}
-	return nil
-}
-
-// GetEvents returns captured events (thread-safe).
-func (m *MockConnection) GetEvents() []EventCall {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	result := make([]EventCall, len(m.Events))
-	copy(result, m.Events)
-	return result
-}
-
-
-// IsStarted returns whether Start was called.
-func (m *MockConnection) IsStarted() bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.started
-}
-
-// IsStopped returns whether Stop was called.
-func (m *MockConnection) IsStopped() bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.stopped
-}
-
-// Reset clears all captured calls.
-func (m *MockConnection) Reset() {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.Events = nil
-	m.started = false
-	m.stopped = false
-}
-
-// QueueUsage returns the mock queue usage (always 0 for testing).
-func (m *MockConnection) QueueUsage() float64 {
-	return 0.0
-}
-
 // SendOSCNotification records an OSC notification event.
 func (m *MockConnection) SendOSCNotification(podKey, title, body string) error {
 	m.mu.Lock()
@@ -371,28 +231,6 @@ func (m *MockConnection) SendMessage(msg *runnerv1.RunnerMessage) error {
 		Type: "raw_message",
 		Data: msg,
 	})
-	return nil
-}
-
-// SimulateCreateAutopilot simulates server sending a create_autopilot message.
-func (m *MockConnection) SimulateCreateAutopilot(cmd *runnerv1.CreateAutopilotCommand) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnCreateAutopilot(cmd)
-	}
-	return nil
-}
-
-// SimulateAutopilotControl simulates server sending an autopilot_control message.
-func (m *MockConnection) SimulateAutopilotControl(cmd *runnerv1.AutopilotControlCommand) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnAutopilotControl(cmd)
-	}
 	return nil
 }
 

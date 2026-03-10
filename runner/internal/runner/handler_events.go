@@ -129,11 +129,11 @@ func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 		// Unregister from MCP server and agent monitor (same as OnTerminatePod).
 		// createExitHandler is the most common exit path (process exits naturally),
 		// so these must be cleaned up here too, not just in OnTerminatePod.
-		if h.runner.mcpServer != nil {
-			h.runner.mcpServer.UnregisterPod(podKey)
+		if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {
+			mcpSrv.UnregisterPod(podKey)
 		}
-		if h.runner.agentMonitor != nil {
-			h.runner.agentMonitor.UnregisterPod(podKey)
+		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
+			agentMon.UnregisterPod(podKey)
 		}
 
 		// Include early output or PTY error in the termination event so the

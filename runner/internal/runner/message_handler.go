@@ -1,28 +1,81 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"sync"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
+	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/monitor"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
+// MessageHandlerContext defines the subset of Runner capabilities needed by message handlers.
+// This follows the Dependency Inversion Principle: handlers depend on an abstraction,
+// not on the concrete Runner type.
+type MessageHandlerContext interface {
+	// GetRunContext returns the runner lifecycle context for cancellable operations.
+	GetRunContext() context.Context
+
+	// GetConfig returns the runner configuration.
+	GetConfig() *config.Config
+
+	// GetSandboxStatus returns sandbox status for a pod.
+	GetSandboxStatus(podKey string) *client.SandboxStatusInfo
+
+	// GetMCPServer returns the MCP server (may be nil).
+	GetMCPServer() MCPServer
+
+	// GetAgentMonitor returns the agent monitor (may be nil).
+	GetAgentMonitor() AgentMonitor
+
+	// GetAutopilot returns an AutopilotController by key.
+	GetAutopilot(key string) *autopilot.AutopilotController
+
+	// AddAutopilot registers an AutopilotController.
+	AddAutopilot(ac *autopilot.AutopilotController)
+
+	// RemoveAutopilot removes an AutopilotController by key.
+	RemoveAutopilot(key string)
+
+	// NewPodBuilder creates a new PodBuilder with the runner's dependencies.
+	NewPodBuilder() *PodBuilder
+
+	// NewPodController creates a new PodController for the given pod.
+	NewPodController(pod *Pod) *PodControllerImpl
+}
+
+// MCPServer defines the MCP server operations needed by message handlers.
+type MCPServer interface {
+	RegisterPod(podKey, orgSlug string, ticketID, projectID *int, agentType string)
+	UnregisterPod(podKey string)
+}
+
+// AgentMonitor defines the monitor operations needed by message handlers.
+type AgentMonitor interface {
+	RegisterPod(podID string, pid int)
+	UnregisterPod(podID string)
+	Subscribe(id string, callback func(monitor.PodStatus))
+	Unsubscribe(id string)
+}
+
 // RunnerMessageHandler implements client.MessageHandler interface.
 type RunnerMessageHandler struct {
-	runner             *Runner
+	runner             MessageHandlerContext
 	podStore           PodStore
 	conn               client.Connection
 	relayClientFactory func(url, podKey, token string, logger *slog.Logger) relay.RelayClient
 }
 
 // NewRunnerMessageHandler creates a new message handler.
-func NewRunnerMessageHandler(runner *Runner, store PodStore, conn client.Connection) *RunnerMessageHandler {
+func NewRunnerMessageHandler(runner MessageHandlerContext, store PodStore, conn client.Connection) *RunnerMessageHandler {
 	logger.Runner().Debug("Creating message handler")
 	return &RunnerMessageHandler{
 		runner:   runner,
@@ -61,14 +114,15 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 		rows = 24
 	}
 
-	builder := NewPodBuilderFromRunner(h.runner).
+	cfg := h.runner.GetConfig()
+	builder := h.runner.NewPodBuilder().
 		WithCommand(cmd).
 		WithTerminalSize(cols, rows).
 		WithOSCHandler(h.createOSCHandler(cmd.PodKey))
 
 	// Enable PTY logging if configured
-	if h.runner.cfg.LogPTY {
-		builder.WithPTYLogging(h.runner.cfg.GetLogPTYDir())
+	if cfg.LogPTY {
+		builder.WithPTYLogging(cfg.GetLogPTYDir())
 	}
 
 	pod, err := builder.Build(ctx)
@@ -117,12 +171,12 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	pod.SetStatus(PodStatusRunning)
 
 	// Register with MCP server and Claude monitor
-	if h.runner.mcpServer != nil {
+	if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {
 		orgSlug := h.conn.GetOrgSlug()
-		h.runner.mcpServer.RegisterPod(cmd.PodKey, orgSlug, nil, nil, cmd.LaunchCommand)
+		mcpSrv.RegisterPod(cmd.PodKey, orgSlug, nil, nil, cmd.LaunchCommand)
 	}
-	if h.runner.agentMonitor != nil {
-		h.runner.agentMonitor.RegisterPod(cmd.PodKey, pod.Terminal.PID())
+	if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
+		agentMon.RegisterPod(cmd.PodKey, pod.Terminal.PID())
 	}
 
 	// Subscribe to VT state detection events, bridge to gRPC.
@@ -188,11 +242,11 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 		pod.Terminal.Stop()
 	}
 
-	if h.runner.mcpServer != nil {
-		h.runner.mcpServer.UnregisterPod(req.PodKey)
+	if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {
+		mcpSrv.UnregisterPod(req.PodKey)
 	}
-	if h.runner.agentMonitor != nil {
-		h.runner.agentMonitor.UnregisterPod(req.PodKey)
+	if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
+		agentMon.UnregisterPod(req.PodKey)
 	}
 
 	h.sendPodTerminated(req.PodKey)
@@ -241,104 +295,8 @@ func (h *RunnerMessageHandler) getAgentStatusFromDetector(pod *Pod) string {
 	}
 }
 
-// OnListRelayConnections returns current relay connections.
-func (h *RunnerMessageHandler) OnListRelayConnections() []client.RelayConnectionInfo {
-	pods := h.podStore.All()
-	result := make([]client.RelayConnectionInfo, 0)
-
-	for _, pod := range pods {
-		relayClient := pod.GetRelayClient()
-		if relayClient != nil {
-			result = append(result, client.RelayConnectionInfo{
-				PodKey:      pod.PodKey,
-				RelayURL:    relayClient.GetRelayURL(),
-				Connected:   relayClient.IsConnected(),
-				ConnectedAt: relayClient.GetConnectedAt(),
-			})
-		}
-	}
-
-	return result
-}
-
-// OnTerminalInput handles terminal input from server.
-func (h *RunnerMessageHandler) OnTerminalInput(req client.TerminalInputRequest) error {
-	log := logger.Pod()
-	pod, ok := h.podStore.Get(req.PodKey)
-	if !ok {
-		log.Warn("Pod not found for terminal input", "pod_key", req.PodKey)
-		return fmt.Errorf("pod not found: %s", req.PodKey)
-	}
-	if pod.Terminal == nil {
-		log.Warn("Terminal not initialized for input", "pod_key", req.PodKey)
-		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
-	}
-	if err := pod.Terminal.Write(req.Data); err != nil {
-		log.Error("Failed to write terminal input", "pod_key", req.PodKey, "error", err)
-		return err
-	}
-	return nil
-}
-
-// OnTerminalResize handles terminal resize requests from server.
-func (h *RunnerMessageHandler) OnTerminalResize(req client.TerminalResizeRequest) error {
-	log := logger.Pod()
-	pod, ok := h.podStore.Get(req.PodKey)
-	if !ok {
-		log.Warn("Pod not found for terminal resize", "pod_key", req.PodKey)
-		return fmt.Errorf("pod not found: %s", req.PodKey)
-	}
-
-	if err := pod.Terminal.Resize(int(req.Cols), int(req.Rows)); err != nil {
-		log.Error("Failed to resize terminal", "pod_key", req.PodKey, "cols", req.Cols, "rows", req.Rows, "error", err)
-		return err
-	}
-	if pod.VirtualTerminal != nil {
-		pod.VirtualTerminal.Resize(int(req.Cols), int(req.Rows))
-	}
-
-	log.Debug("Terminal resized", "pod_key", req.PodKey, "cols", req.Cols, "rows", req.Rows)
-	h.sendPtyResized(req.PodKey, req.Cols, req.Rows)
-	return nil
-}
-
-// OnTerminalRedraw handles terminal redraw requests from server.
-func (h *RunnerMessageHandler) OnTerminalRedraw(req client.TerminalRedrawRequest) error {
-	log := logger.Pod()
-	pod, ok := h.podStore.Get(req.PodKey)
-	if !ok {
-		log.Warn("Pod not found for terminal redraw", "pod_key", req.PodKey)
-		return fmt.Errorf("pod not found: %s", req.PodKey)
-	}
-	log.Info("Triggering terminal redraw", "pod_key", req.PodKey)
-	if err := pod.Terminal.Redraw(); err != nil {
-		log.Error("Failed to redraw terminal", "pod_key", req.PodKey, "error", err)
-		return err
-	}
-	return nil
-}
-
-// Note: OnSubscribeTerminal, setupRelayClientHandlers, OnUnsubscribeTerminal are in message_handler_relay.go
-
-// OnQuerySandboxes handles sandbox status query from server.
-func (h *RunnerMessageHandler) OnQuerySandboxes(req client.QuerySandboxesRequest) error {
-	log := logger.Pod()
-	log.Info("Querying sandbox status", "request_id", req.RequestID, "queries", len(req.Queries))
-
-	results := make([]*client.SandboxStatusInfo, 0, len(req.Queries))
-	for _, query := range req.Queries {
-		status := h.runner.GetSandboxStatus(query.PodKey)
-		results = append(results, status)
-	}
-
-	if err := h.conn.SendSandboxesStatus(req.RequestID, results); err != nil {
-		log.Error("Failed to send sandbox status response", "request_id", req.RequestID, "error", err)
-		return err
-	}
-
-	log.Info("Sent sandbox status response", "request_id", req.RequestID, "results", len(results))
-	return nil
-}
-
 // Ensure RunnerMessageHandler implements client.MessageHandler
 var _ client.MessageHandler = (*RunnerMessageHandler)(nil)
+
+// Note: OnSubscribeTerminal, setupRelayClientHandlers, OnUnsubscribeTerminal are in message_handler_relay.go
+// Note: OnListRelayConnections, OnTerminalInput/Resize/Redraw, OnQuerySandboxes are in message_handler_ops.go

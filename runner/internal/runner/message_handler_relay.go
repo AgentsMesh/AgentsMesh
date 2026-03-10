@@ -23,7 +23,7 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	log := logger.Pod()
 
 	// Rewrite relay URL origin if RELAY_BASE_URL is configured (Docker dev environment)
-	relayURL := h.runner.cfg.RewriteRelayURL(req.RelayURL)
+	relayURL := h.runner.GetConfig().RewriteRelayURL(req.RelayURL)
 	if relayURL != req.RelayURL {
 		log.Info("Relay URL rewritten",
 			"pod_key", req.PodKey,

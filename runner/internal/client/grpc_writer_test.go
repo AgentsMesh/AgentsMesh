@@ -5,6 +5,8 @@ import (
 	"time"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mockHandlerWithRelayConnections is a mock handler that returns relay connections.
@@ -119,73 +121,44 @@ func TestBuildHeartbeatMessage_CollectsRelayConnections(t *testing.T) {
 
 	msg := buildHeartbeatMessage("test-node", handler)
 	heartbeat := msg.GetHeartbeat()
-	if heartbeat == nil {
-		t.Fatal("expected heartbeat message")
-	}
+	require.NotNil(t, heartbeat, "expected heartbeat message")
 
 	// Verify pods
-	if len(heartbeat.Pods) != 1 {
-		t.Errorf("expected 1 pod, got %d", len(heartbeat.Pods))
-	}
-	if heartbeat.Pods[0].PodKey != "pod-1" {
-		t.Errorf("expected pod-1, got %s", heartbeat.Pods[0].PodKey)
-	}
+	require.Len(t, heartbeat.Pods, 1)
+	assert.Equal(t, "pod-1", heartbeat.Pods[0].PodKey)
 
 	// Verify relay connections
-	if len(heartbeat.RelayConnections) != 1 {
-		t.Errorf("expected 1 relay connection, got %d", len(heartbeat.RelayConnections))
-	}
+	require.Len(t, heartbeat.RelayConnections, 1)
 	rc := heartbeat.RelayConnections[0]
-	if rc.PodKey != "pod-1" {
-		t.Errorf("relay connection pod_key: expected pod-1, got %s", rc.PodKey)
-	}
-	if rc.RelayUrl != "wss://relay.example.com" {
-		t.Errorf("relay connection relay_url: expected wss://relay.example.com, got %s", rc.RelayUrl)
-	}
-	if !rc.Connected {
-		t.Error("relay connection should be connected")
-	}
-	if rc.ConnectedAt != now {
-		t.Errorf("relay connection connected_at: expected %d, got %d", now, rc.ConnectedAt)
-	}
+	assert.Equal(t, "pod-1", rc.PodKey)
+	assert.Equal(t, "wss://relay.example.com", rc.RelayUrl)
+	assert.True(t, rc.Connected)
+	assert.Equal(t, now, rc.ConnectedAt)
 }
 
 // TestBuildHeartbeatMessage_EmptyRelayConnections verifies heartbeat message with empty relay connections
 func TestBuildHeartbeatMessage_EmptyRelayConnections(t *testing.T) {
 	handler := &mockHandlerWithRelayConnections{
 		pods:             []PodInfo{},
-		relayConnections: []RelayConnectionInfo{}, // Empty
+		relayConnections: []RelayConnectionInfo{},
 	}
 
 	msg := buildHeartbeatMessage("test-node", handler)
 	heartbeat := msg.GetHeartbeat()
-	if heartbeat == nil {
-		t.Fatal("expected heartbeat message")
-	}
-
-	if len(heartbeat.Pods) != 0 {
-		t.Errorf("expected 0 pods, got %d", len(heartbeat.Pods))
-	}
-	if len(heartbeat.RelayConnections) != 0 {
-		t.Errorf("expected 0 relay connections, got %d", len(heartbeat.RelayConnections))
-	}
+	require.NotNil(t, heartbeat, "expected heartbeat message")
+	assert.Empty(t, heartbeat.Pods)
+	assert.Empty(t, heartbeat.RelayConnections)
 }
 
 // TestBuildHeartbeatMessage_NilHandler verifies heartbeat message with nil handler
 func TestBuildHeartbeatMessage_NilHandler(t *testing.T) {
 	msg := buildHeartbeatMessage("test-node", nil)
 	heartbeat := msg.GetHeartbeat()
-	if heartbeat == nil {
-		t.Fatal("expected heartbeat message")
-	}
+	require.NotNil(t, heartbeat, "expected heartbeat message")
 
 	// With nil handler, pods and relay connections should be nil/empty
-	if len(heartbeat.Pods) != 0 {
-		t.Errorf("expected 0 pods with nil handler, got %d", len(heartbeat.Pods))
-	}
-	if len(heartbeat.RelayConnections) != 0 {
-		t.Errorf("expected 0 relay connections with nil handler, got %d", len(heartbeat.RelayConnections))
-	}
+	assert.Empty(t, heartbeat.Pods)
+	assert.Empty(t, heartbeat.RelayConnections)
 }
 
 // TestBuildHeartbeatMessage_MultipleRelayConnections verifies heartbeat message with multiple relay connections
@@ -206,16 +179,10 @@ func TestBuildHeartbeatMessage_MultipleRelayConnections(t *testing.T) {
 
 	msg := buildHeartbeatMessage("test-node", handler)
 	heartbeat := msg.GetHeartbeat()
-	if heartbeat == nil {
-		t.Fatal("expected heartbeat message")
-	}
+	require.NotNil(t, heartbeat, "expected heartbeat message")
 
-	if len(heartbeat.Pods) != 3 {
-		t.Errorf("expected 3 pods, got %d", len(heartbeat.Pods))
-	}
-	if len(heartbeat.RelayConnections) != 3 {
-		t.Errorf("expected 3 relay connections, got %d", len(heartbeat.RelayConnections))
-	}
+	assert.Len(t, heartbeat.Pods, 3)
+	assert.Len(t, heartbeat.RelayConnections, 3)
 
 	// Verify mixed connected states
 	connectedCount := 0
@@ -224,9 +191,7 @@ func TestBuildHeartbeatMessage_MultipleRelayConnections(t *testing.T) {
 			connectedCount++
 		}
 	}
-	if connectedCount != 2 {
-		t.Errorf("expected 2 connected relay connections, got %d", connectedCount)
-	}
+	assert.Equal(t, 2, connectedCount, "expected 2 connected relay connections")
 }
 
 // TestBuildHeartbeatMessage_NodeIdIncluded verifies heartbeat message includes correct node_id
@@ -238,13 +203,73 @@ func TestBuildHeartbeatMessage_NodeIdIncluded(t *testing.T) {
 
 	msg := buildHeartbeatMessage("my-test-node", handler)
 	heartbeat := msg.GetHeartbeat()
-	if heartbeat == nil {
-		t.Fatal("expected heartbeat message")
-	}
+	require.NotNil(t, heartbeat, "expected heartbeat message")
+	assert.Equal(t, "my-test-node", heartbeat.NodeId)
+}
 
-	if heartbeat.NodeId != "my-test-node" {
-		t.Errorf("expected node_id 'my-test-node', got '%s'", heartbeat.NodeId)
+func TestSendHeartbeat_NoHandler(t *testing.T) {
+	conn := newTestConnection()
+	setFakeStream(conn)
+	conn.handler = nil
+	conn.agentProbe = NewAgentProbe()
+
+	conn.sendHeartbeat()
+
+	select {
+	case msg := <-conn.controlCh:
+		hb := msg.GetHeartbeat()
+		require.NotNil(t, hb, "expected heartbeat payload")
+		assert.Empty(t, hb.Pods)
+	default:
+		t.Fatal("expected heartbeat in control channel")
 	}
+}
+
+func TestSendHeartbeat_WithHandler(t *testing.T) {
+	conn := newTestConnection()
+	setFakeStream(conn)
+	conn.agentProbe = NewAgentProbe()
+
+	handler := &mockHandlerWithRelayConnections{
+		pods: []PodInfo{
+			{PodKey: "pod-1", Status: "running", AgentStatus: "idle"},
+		},
+		relayConnections: []RelayConnectionInfo{
+			{PodKey: "pod-1", RelayURL: "wss://relay.example.com", Connected: true},
+		},
+	}
+	conn.handler = handler
+
+	conn.sendHeartbeat()
+
+	select {
+	case msg := <-conn.controlCh:
+		hb := msg.GetHeartbeat()
+		require.NotNil(t, hb, "expected heartbeat payload")
+		assert.Len(t, hb.Pods, 1)
+		assert.Len(t, hb.RelayConnections, 1)
+	default:
+		t.Fatal("expected heartbeat in control channel")
+	}
+}
+
+func TestSendAndRecord_NilStream(t *testing.T) {
+	conn := newTestConnection()
+	// stream is nil, should not panic
+	conn.sendAndRecord(&runnerv1.RunnerMessage{})
+}
+
+func TestSendAndRecord_Success(t *testing.T) {
+	conn := newTestConnection()
+	setFakeStream(conn)
+
+	before := time.Now().UnixNano()
+	conn.sendAndRecord(&runnerv1.RunnerMessage{})
+
+	after := time.Now().UnixNano()
+	lastSend := conn.lastSendTime.Load()
+	assert.GreaterOrEqual(t, lastSend, before, "lastSendTime should be >= before")
+	assert.LessOrEqual(t, lastSend, after, "lastSendTime should be <= after")
 }
 
 // TestBuildHeartbeatMessage_PodFieldsMapping verifies pod fields are correctly mapped
@@ -258,22 +283,11 @@ func TestBuildHeartbeatMessage_PodFieldsMapping(t *testing.T) {
 
 	msg := buildHeartbeatMessage("test-node", handler)
 	heartbeat := msg.GetHeartbeat()
-	if heartbeat == nil {
-		t.Fatal("expected heartbeat message")
-	}
-
-	if len(heartbeat.Pods) != 1 {
-		t.Fatalf("expected 1 pod, got %d", len(heartbeat.Pods))
-	}
+	require.NotNil(t, heartbeat, "expected heartbeat message")
+	require.Len(t, heartbeat.Pods, 1)
 
 	pod := heartbeat.Pods[0]
-	if pod.PodKey != "pod-1" {
-		t.Errorf("pod_key: expected pod-1, got %s", pod.PodKey)
-	}
-	if pod.Status != "running" {
-		t.Errorf("status: expected running, got %s", pod.Status)
-	}
-	if pod.AgentStatus != "executing" {
-		t.Errorf("agent_status: expected executing, got %s", pod.AgentStatus)
-	}
+	assert.Equal(t, "pod-1", pod.PodKey)
+	assert.Equal(t, "running", pod.Status)
+	assert.Equal(t, "executing", pod.AgentStatus)
 }

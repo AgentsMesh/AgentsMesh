@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/monitor"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
@@ -37,19 +36,8 @@ func (r *Runner) GetPodStatus(podKey string) (agentStatus string, podStatus stri
 		}
 	}
 
-	// Fallback: check if terminal is running
-	if pod.Terminal != nil && !pod.Terminal.IsClosed() {
-		agentStatus = "idle"
-	} else {
-		agentStatus = "idle"
-	}
-
-	return agentStatus, podStatus, shellPid, true
-}
-
-// GetAgentMonitor returns the agent process monitor.
-func (r *Runner) GetAgentMonitor() *monitor.Monitor {
-	return r.agentMonitor
+	// Fallback: no state detector available
+	return "idle", podStatus, shellPid, true
 }
 
 // GetTerminalOutput returns the terminal output for a local pod.

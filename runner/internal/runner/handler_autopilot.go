@@ -54,7 +54,7 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 	}
 
 	// Create PodController
-	podCtrl := NewPodController(targetPod, h.runner)
+	podCtrl := h.runner.NewPodController(targetPod)
 
 	// Create event reporter
 	reporter := autopilot.NewGRPCEventReporter(func(msg *runnerv1.RunnerMessage) error {
@@ -62,7 +62,7 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 	})
 
 	// Create Autopilot with MCP port for control process
-	mcpPort := h.runner.cfg.GetMCPPort()
+	mcpPort := h.runner.GetConfig().GetMCPPort()
 	ac := autopilot.NewAutopilotController(autopilot.Config{
 		AutopilotKey: cmd.AutopilotKey,
 		PodKey:       podKey,
@@ -76,9 +76,9 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 	h.runner.AddAutopilot(ac)
 
 	// Register with Monitor for event-driven callbacks
-	if h.runner.agentMonitor != nil {
+	if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
 		subscriberID := "autopilot-" + cmd.AutopilotKey
-		h.runner.agentMonitor.Subscribe(subscriberID, func(status monitor.PodStatus) {
+		agentMon.Subscribe(subscriberID, func(status monitor.PodStatus) {
 			if status.PodID == podKey && status.AgentStatus == detector.StateWaiting {
 				ac.OnPodWaiting()
 			}
@@ -88,8 +88,8 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 	// Start Autopilot
 	if err := ac.Start(); err != nil {
 		// Clean up Monitor subscription registered above
-		if h.runner.agentMonitor != nil {
-			h.runner.agentMonitor.Unsubscribe("autopilot-" + cmd.AutopilotKey)
+		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
+			agentMon.Unsubscribe("autopilot-" + cmd.AutopilotKey)
 		}
 		h.runner.RemoveAutopilot(cmd.AutopilotKey)
 		return fmt.Errorf("failed to start Autopilot: %w", err)
@@ -125,8 +125,8 @@ func (h *RunnerMessageHandler) OnAutopilotControl(cmd *runnerv1.AutopilotControl
 	case *runnerv1.AutopilotControlCommand_Stop:
 		log.Info("Stopping Autopilot", "autopilot_key", cmd.AutopilotKey)
 		ac.Stop()
-		if h.runner.agentMonitor != nil {
-			h.runner.agentMonitor.Unsubscribe("autopilot-" + cmd.AutopilotKey)
+		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
+			agentMon.Unsubscribe("autopilot-" + cmd.AutopilotKey)
 		}
 		h.runner.RemoveAutopilot(cmd.AutopilotKey)
 
