@@ -79,8 +79,16 @@ func (s *GRPCCommandSender) IsConnected(runnerID int64) bool {
 	return s.adapter.IsConnected(runnerID)
 }
 
+// SendUpgradeRunner sends an upgrade command to a runner via gRPC.
+func (s *GRPCCommandSender) SendUpgradeRunner(runnerID int64, requestID, targetVersion string, force bool) error {
+	return s.adapter.SendUpgradeRunner(runnerID, requestID, targetVersion, force)
+}
+
 // Ensure GRPCCommandSender implements runner.RunnerCommandSender
 var _ runner.RunnerCommandSender = (*GRPCCommandSender)(nil)
 
 // Ensure GRPCCommandSender implements runner.SandboxQuerySender
 var _ runner.SandboxQuerySender = (*GRPCCommandSender)(nil)
+
+// Ensure GRPCCommandSender implements runner.UpgradeCommandSender
+var _ runner.UpgradeCommandSender = (*GRPCCommandSender)(nil)

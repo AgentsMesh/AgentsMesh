@@ -123,6 +123,24 @@ func (cm *RunnerConnectionManager) HandleOSCTitle(runnerID int64, data *runnerv1
 	}
 }
 
+// ==================== Upgrade Event Handlers ====================
+
+// HandleUpgradeStatus handles upgrade status event from runner (Proto type)
+func (cm *RunnerConnectionManager) HandleUpgradeStatus(runnerID int64, data *runnerv1.UpgradeStatusEvent) {
+	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("received upgrade status",
+		"runner_id", runnerID,
+		"request_id", data.RequestId,
+		"phase", data.Phase,
+		"progress", data.Progress,
+		"message", data.Message,
+		"error", data.Error,
+	)
+	if cm.onUpgradeStatus != nil {
+		cm.onUpgradeStatus(runnerID, data)
+	}
+}
+
 // ==================== AutopilotController Event Handlers ====================
 
 // HandleAutopilotStatus handles AutopilotController status update event (Proto type)

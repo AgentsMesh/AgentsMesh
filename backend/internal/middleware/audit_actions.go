@@ -27,10 +27,11 @@ const (
 	AuditTeamMemberRemoved AuditAction = "teams.member_removed"
 
 	// Runner actions
-	AuditRunnerRegistered AuditAction = "runners.registered"
-	AuditRunnerDeleted    AuditAction = "runners.deleted"
-	AuditRunnerOnline     AuditAction = "runners.online"
-	AuditRunnerOffline    AuditAction = "runners.offline"
+	AuditRunnerRegistered      AuditAction = "runners.registered"
+	AuditRunnerDeleted         AuditAction = "runners.deleted"
+	AuditRunnerOnline          AuditAction = "runners.online"
+	AuditRunnerOffline         AuditAction = "runners.offline"
+	AuditRunnerUpgradeStarted  AuditAction = "runners.upgrade_started"
 
 	// Pod actions
 	AuditPodCreated    AuditAction = "pods.created"

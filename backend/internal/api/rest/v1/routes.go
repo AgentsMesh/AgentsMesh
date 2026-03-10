@@ -145,6 +145,9 @@ func registerRunnerRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.VersionChecker != nil {
 		runnerOpts = append(runnerOpts, WithVersionChecker(svc.VersionChecker))
 	}
+	if svc.UpgradeCommandSender != nil {
+		runnerOpts = append(runnerOpts, WithUpgradeCommandSender(svc.UpgradeCommandSender))
+	}
 	runnerHandler := NewRunnerHandler(svc.Runner, runnerOpts...)
 	runners := rg.Group("/runners")
 	{
@@ -155,6 +158,7 @@ func registerRunnerRoutes(rg *gin.RouterGroup, svc *Services) {
 		runners.DELETE("/:id", runnerHandler.DeleteRunner)
 		runners.GET("/:id/pods", runnerHandler.ListRunnerPods)
 		runners.POST("/:id/sandboxes/query", runnerHandler.QuerySandboxes)
+		runners.POST("/:id/upgrade", runnerHandler.UpgradeRunner)
 
 		if svc.GRPCRunnerHandler != nil {
 			RegisterOrgGRPCRunnerRoutes(runners, svc.GRPCRunnerHandler)

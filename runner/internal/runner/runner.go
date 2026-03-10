@@ -15,6 +15,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/mcp"
 	"github.com/anthropics/agentsmesh/runner/internal/monitor"
+	"github.com/anthropics/agentsmesh/runner/internal/updater"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
 
@@ -44,6 +45,10 @@ type Runner struct {
 	// Update management
 	draining   bool
 	drainingMu sync.RWMutex
+	upgrading  bool
+	upgradeMu  sync.Mutex
+	updater    *updater.Updater
+	restartFn  func() (int, error)
 
 	// Run lifecycle context (set by Run, used by message handlers)
 	runCtx context.Context
@@ -238,4 +243,47 @@ func (r *Runner) NewPodController(pod *Pod) *PodControllerImpl {
 // GetConnection returns the gRPC connection.
 func (r *Runner) GetConnection() client.Connection {
 	return r.conn
+}
+
+// Upgrade state management
+
+// TryStartUpgrade atomically checks and sets the upgrading flag.
+// Returns true if upgrade can proceed, false if another upgrade is in progress.
+func (r *Runner) TryStartUpgrade() bool {
+	r.upgradeMu.Lock()
+	defer r.upgradeMu.Unlock()
+	if r.upgrading {
+		return false
+	}
+	r.upgrading = true
+	return true
+}
+
+// FinishUpgrade clears the upgrading flag.
+func (r *Runner) FinishUpgrade() {
+	r.upgradeMu.Lock()
+	defer r.upgradeMu.Unlock()
+	r.upgrading = false
+}
+
+// Updater management methods
+
+// SetUpdater sets the updater instance for remote upgrade support.
+func (r *Runner) SetUpdater(u *updater.Updater) {
+	r.updater = u
+}
+
+// GetUpdater returns the updater instance.
+func (r *Runner) GetUpdater() *updater.Updater {
+	return r.updater
+}
+
+// SetRestartFunc sets the restart function for post-upgrade restart.
+func (r *Runner) SetRestartFunc(fn func() (int, error)) {
+	r.restartFn = fn
+}
+
+// GetRestartFunc returns the restart function.
+func (r *Runner) GetRestartFunc() func() (int, error) {
+	return r.restartFn
 }

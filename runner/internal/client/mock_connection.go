@@ -220,6 +220,20 @@ func (m *MockConnection) SendAgentStatus(podKey string, status string) error {
 	return nil
 }
 
+// SendUpgradeStatus records an upgrade status event.
+func (m *MockConnection) SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{
+		Type: "upgrade_status",
+		Data: event,
+	})
+	return nil
+}
+
 // SendMessage records a raw RunnerMessage.
 func (m *MockConnection) SendMessage(msg *runnerv1.RunnerMessage) error {
 	m.mu.Lock()

@@ -186,6 +186,7 @@ func main() {
 	var grpcRunnerHandler *v1.GRPCRunnerHandler
 	var grpcServer *grpcserver.Server
 	var sandboxQuerySender runner.SandboxQuerySender
+	var upgradeCommandSender runner.UpgradeCommandSender
 	if cfg.PKI.CACertFile != "" && cfg.PKI.CAKeyFile != "" {
 		mcpDeps := &grpcserver.MCPDependencies{
 			PodService:        services.pod,
@@ -205,6 +206,7 @@ func main() {
 			podCoordinator.SetCommandSender(grpcCommandSender)
 			terminalRouter.SetCommandSender(grpcCommandSender)
 			sandboxQuerySender = grpcCommandSender
+			upgradeCommandSender = grpcCommandSender
 			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server")
 			setupRelayTokenRefreshCallback(db, runnerConnMgr, relayTokenGenerator, grpcCommandSender)
 		}
@@ -253,7 +255,8 @@ func main() {
 		APIKeyAdapter:      services.apikeyAdapter,
 		GRPCRunnerHandler:  grpcRunnerHandler,
 		SandboxQueryService: sandboxQuerySvc,
-		SandboxQuerySender:  sandboxQuerySender,
+		SandboxQuerySender:   sandboxQuerySender,
+		UpgradeCommandSender: upgradeCommandSender,
 		RelayManager:        relayManager,
 		RelayTokenGenerator: relayTokenGenerator,
 		RelayDNSService:     relayDNSService,

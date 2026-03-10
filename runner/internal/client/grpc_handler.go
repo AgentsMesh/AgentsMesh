@@ -9,6 +9,7 @@ import (
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/safego"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -114,6 +115,13 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 	case *runnerv1.ServerMessage_HeartbeatAck:
 		c.handleHeartbeatAck(payload.HeartbeatAck)
 
+	case *runnerv1.ServerMessage_UpgradeRunner:
+		c.handlerWg.Add(1)
+		safego.Go("handle-upgrade-runner", func() {
+			defer c.handlerWg.Done()
+			c.handleUpgradeRunner(payload.UpgradeRunner)
+		})
+
 	default:
 		logger.GRPC().Warn("Unknown server message type")
 	}
@@ -164,3 +172,17 @@ func (c *GRPCConnection) handleTerminatePod(cmd *runnerv1.TerminatePodCommand) {
 
 // Note: Terminal, subscription, autopilot, MCP, and heartbeat handlers
 // are in grpc_handler_dispatch.go
+
+// handleUpgradeRunner handles upgrade_runner command from server.
+func (c *GRPCConnection) handleUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) {
+	log := logger.GRPC()
+	log.Info("Received upgrade_runner", "request_id", cmd.RequestId, "target_version", cmd.TargetVersion, "force", cmd.Force)
+	if c.handler == nil {
+		log.Warn("No handler set, ignoring upgrade_runner")
+		return
+	}
+
+	if err := c.handler.OnUpgradeRunner(cmd); err != nil {
+		log.Error("Failed to handle upgrade runner", "request_id", cmd.RequestId, "error", err)
+	}
+}

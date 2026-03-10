@@ -55,6 +55,9 @@ type RunnerConnectionManager struct {
 	onPodError           func(runnerID int64, data *runnerv1.ErrorEvent)
 	onOSCTitle           func(runnerID int64, data *runnerv1.OSCTitleEvent)
 
+	// Upgrade event callback
+	onUpgradeStatus func(runnerID int64, data *runnerv1.UpgradeStatusEvent)
+
 	// AutopilotController event callbacks
 	onAutopilotStatus     func(runnerID int64, data *runnerv1.AutopilotStatusEvent)
 	onAutopilotIteration  func(runnerID int64, data *runnerv1.AutopilotIterationEvent)

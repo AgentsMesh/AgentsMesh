@@ -123,6 +123,13 @@ export const runnerApi = {
       method: "POST",
       body: { pod_keys: podKeys },
     }),
+
+  // Trigger remote upgrade on a runner
+  upgrade: (id: number, data?: { target_version?: string; force?: boolean }) =>
+    request<{ request_id: string; message: string }>(`${orgPath("/runners")}/${id}/upgrade`, {
+      method: "POST",
+      body: data || {},
+    }),
 };
 
 // Pod data returned from Runner pods endpoint

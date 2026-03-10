@@ -79,6 +79,9 @@ type Services struct {
 	SandboxQueryService *runner.SandboxQueryService // Sandbox status query service
 	SandboxQuerySender  runner.SandboxQuerySender   // Sandbox query sender (gRPC adapter)
 
+	// Upgrade command sender (gRPC adapter)
+	UpgradeCommandSender runner.UpgradeCommandSender
+
 	// Relay services for terminal data streaming
 	RelayManager        *relay.Manager        // Relay server management
 	RelayTokenGenerator *relay.TokenGenerator // Relay token generation

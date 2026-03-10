@@ -63,6 +63,10 @@ func (h *mockHandlerWithRelayConnections) OnAutopilotControl(cmd *runnerv1.Autop
 	return nil
 }
 
+func (h *mockHandlerWithRelayConnections) OnUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) error {
+	return nil
+}
+
 // buildHeartbeatMessage builds a heartbeat message from handler data.
 // This is the core logic tested - extracted for testing without needing stream connection.
 func buildHeartbeatMessage(nodeID string, handler MessageHandler) *runnerv1.RunnerMessage {

@@ -186,7 +186,15 @@
       "resumeDialogTitle": "Resume Pod",
       "resumeDialogDescription": "You are about to resume from the sandbox of \"{podKey}\".",
       "resumeDialogInfo": "This will create a new Pod using the existing workspace, allowing the AI agent to continue from where it left off.",
-      "confirmResumeBtn": "Resume"
+      "confirmResumeBtn": "Resume",
+      "upgrade": "Atualizar",
+      "upgrading": "Atualizando...",
+      "upgradeConfirm": "Tem certeza de que deseja atualizar este runner para a versão mais recente? O runner será reiniciado após a atualização.",
+      "upgradeSent": "Comando de atualização enviado. O runner baixará e reiniciará automaticamente.",
+      "upgradeFailed": "Falha ao enviar o comando de atualização. Tente novamente.",
+      "upgradeOffline": "Runner está offline, não é possível atualizar",
+      "upgradeHasPods": "Runner tem pods ativos, não é possível atualizar",
+      "upgradeTooltip": "Atualizar runner para a versão mais recente"
     },
     "authorize": {
       "title": "Authorize Runner",

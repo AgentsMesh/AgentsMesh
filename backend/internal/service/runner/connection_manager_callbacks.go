@@ -111,6 +111,13 @@ func (cm *RunnerConnectionManager) GetDisconnectCallback() func(runnerID int64) 
 	return cm.onDisconnect
 }
 
+// ==================== Upgrade Callback Setters ====================
+
+// SetUpgradeStatusCallback sets the upgrade status callback (Proto type)
+func (cm *RunnerConnectionManager) SetUpgradeStatusCallback(fn func(runnerID int64, data *runnerv1.UpgradeStatusEvent)) {
+	cm.onUpgradeStatus = fn
+}
+
 // ==================== AutopilotController Callback Setters ====================
 
 // SetAutopilotStatusCallback sets the AutopilotController status callback (Proto type)

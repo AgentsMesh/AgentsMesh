@@ -15,6 +15,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/monitor"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
+	"github.com/anthropics/agentsmesh/runner/internal/updater"
 )
 
 // MessageHandlerContext defines the subset of Runner capabilities needed by message handlers.
@@ -50,6 +51,26 @@ type MessageHandlerContext interface {
 
 	// NewPodController creates a new PodController for the given pod.
 	NewPodController(pod *Pod) *PodControllerImpl
+
+	// Upgrade lifecycle methods
+
+	// GetUpdater returns the updater instance (may be nil).
+	GetUpdater() *updater.Updater
+
+	// TryStartUpgrade atomically acquires the upgrade lock.
+	TryStartUpgrade() bool
+
+	// FinishUpgrade releases the upgrade lock.
+	FinishUpgrade()
+
+	// GetActivePodCount returns the number of active pods.
+	GetActivePodCount() int
+
+	// SetDraining sets the draining mode flag.
+	SetDraining(draining bool)
+
+	// GetRestartFunc returns the restart function (may be nil).
+	GetRestartFunc() func() (int, error)
 }
 
 // MCPServer defines the MCP server operations needed by message handlers.

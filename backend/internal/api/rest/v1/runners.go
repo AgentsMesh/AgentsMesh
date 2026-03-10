@@ -7,12 +7,13 @@ import (
 
 // RunnerHandler handles runner-related requests
 type RunnerHandler struct {
-	runnerService       *runner.Service
-	podService          *agentpod.PodService
-	sandboxQueryService *runner.SandboxQueryService
-	sandboxQuerySender  runner.SandboxQuerySender
-	podCoordinator      *runner.PodCoordinator
-	versionChecker      *runner.VersionChecker
+	runnerService        *runner.Service
+	podService           *agentpod.PodService
+	sandboxQueryService  *runner.SandboxQueryService
+	sandboxQuerySender   runner.SandboxQuerySender
+	podCoordinator       *runner.PodCoordinator
+	versionChecker       *runner.VersionChecker
+	upgradeCommandSender runner.UpgradeCommandSender
 }
 
 // NewRunnerHandler creates a new runner handler
@@ -61,6 +62,13 @@ func WithPodCoordinatorForRunner(pc *runner.PodCoordinator) RunnerHandlerOption 
 func WithVersionChecker(vc *runner.VersionChecker) RunnerHandlerOption {
 	return func(h *RunnerHandler) {
 		h.versionChecker = vc
+	}
+}
+
+// WithUpgradeCommandSender sets the upgrade command sender for runner handler
+func WithUpgradeCommandSender(ucs runner.UpgradeCommandSender) RunnerHandlerOption {
+	return func(h *RunnerHandler) {
+		h.upgradeCommandSender = ucs
 	}
 }
 

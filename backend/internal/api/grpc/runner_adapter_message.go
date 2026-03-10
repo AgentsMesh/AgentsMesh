@@ -114,6 +114,9 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 	case *runnerv1.RunnerMessage_Pong:
 		a.handlePong(runnerID, conn, payload.Pong)
 
+	case *runnerv1.RunnerMessage_UpgradeStatus:
+		a.connManager.HandleUpgradeStatus(runnerID, payload.UpgradeStatus)
+
 	default:
 		a.logger.Warn("unknown message type", "runner_id", runnerID)
 	}

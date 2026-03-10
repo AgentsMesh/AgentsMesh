@@ -134,4 +134,7 @@ type MessageHandler interface {
 
 	// OnAutopilotControl handles Autopilot control commands (pause/resume/stop/approve/takeover/handback).
 	OnAutopilotControl(cmd *runnerv1.AutopilotControlCommand) error
+
+	// OnUpgradeRunner handles remote upgrade command from server.
+	OnUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) error
 }

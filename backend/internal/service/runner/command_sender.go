@@ -134,3 +134,13 @@ type SandboxQuerySender interface {
 	// IsConnected checks if a runner is connected.
 	IsConnected(runnerID int64) bool
 }
+
+// UpgradeCommandSender defines the interface for sending upgrade commands to runners.
+// This is a separate interface from RunnerCommandSender (Interface Segregation).
+type UpgradeCommandSender interface {
+	// SendUpgradeRunner sends an upgrade command to a runner.
+	SendUpgradeRunner(runnerID int64, requestID, targetVersion string, force bool) error
+
+	// IsConnected checks if a runner is connected.
+	IsConnected(runnerID int64) bool
+}

@@ -186,7 +186,15 @@
       "resumeDialogTitle": "Resume Pod",
       "resumeDialogDescription": "You are about to resume from the sandbox of \"{podKey}\".",
       "resumeDialogInfo": "This will create a new Pod using the existing workspace, allowing the AI agent to continue from where it left off.",
-      "confirmResumeBtn": "Resume"
+      "confirmResumeBtn": "Resume",
+      "upgrade": "업그레이드",
+      "upgrading": "업그레이드 중...",
+      "upgradeConfirm": "이 러너를 최신 버전으로 업그레이드하시겠습니까? 업그레이드 후 러너가 재시작됩니다.",
+      "upgradeSent": "업그레이드 명령이 전송되었습니다. 러너가 자동으로 다운로드하고 재시작합니다.",
+      "upgradeFailed": "업그레이드 명령 전송에 실패했습니다. 다시 시도해 주세요.",
+      "upgradeOffline": "러너가 오프라인이므로 업그레이드할 수 없습니다",
+      "upgradeHasPods": "러너에 활성 Pod가 있어 업그레이드할 수 없습니다",
+      "upgradeTooltip": "러너를 최신 버전으로 업그레이드"
     },
     "authorize": {
       "title": "Authorize Runner",

@@ -154,7 +154,15 @@
       "resumeDialogTitle": "恢复 Pod",
       "resumeDialogDescription": "即将从「{podKey}」的 Sandbox 恢复。",
       "resumeDialogInfo": "这将使用现有工作区创建新 Pod，让 AI 智能体可以从上次中断的地方继续工作。",
-      "confirmResumeBtn": "确认恢复"
+      "confirmResumeBtn": "确认恢复",
+      "upgrade": "升级",
+      "upgrading": "升级中...",
+      "upgradeConfirm": "确定要将此 Runner 升级到最新版本吗？升级完成后 Runner 将自动重启。",
+      "upgradeSent": "升级命令已发送，Runner 将自动下载并重启。",
+      "upgradeFailed": "升级命令发送失败，请重试。",
+      "upgradeOffline": "Runner 离线，无法升级",
+      "upgradeHasPods": "Runner 存在活跃 Pod，无法升级",
+      "upgradeTooltip": "将 Runner 升级到最新版本"
     },
     "authorize": {
       "title": "授权 Runner",

@@ -41,6 +41,8 @@ message RunnerMessage {
     McpRequest mcp_request = 21;
     // 下行心跳响应（Runner -> Backend）
     PongEvent pong = 22;
+    // 升级状态回报（Runner -> Backend）
+    UpgradeStatusEvent upgrade_status = 23;
   }
   int64 timestamp = 15;
 }
@@ -172,6 +174,8 @@ message ServerMessage {
     PingCommand ping = 14;
     // 上行心跳确认（Backend -> Runner）
     HeartbeatAck heartbeat_ack = 16;
+    // 远程升级命令（Backend -> Runner）
+    UpgradeRunnerCommand upgrade_runner = 17;
   }
   int64 timestamp = 15;
 }
@@ -590,4 +594,26 @@ message PongEvent {
 // Runner 收到后确认心跳已到达 Backend，用于上行通路存活检测
 message HeartbeatAck {
   int64 heartbeat_timestamp = 1;  // 原样回传 Runner 心跳的时间戳
+}
+
+// ==================== Runner 远程升级相关消息 ====================
+
+// UpgradeRunnerCommand 远程升级命令（Backend -> Runner）
+// 指示 Runner 下载并安装新版本，然后重启服务
+message UpgradeRunnerCommand {
+  string request_id = 1;       // UUID，关联状态回报
+  string target_version = 2;   // 目标版本号（空 = 最新版本）
+  bool force = 3;              // 忽略 Pod 计数检查
+}
+
+// UpgradeStatusEvent 升级状态回报（Runner -> Backend）
+// Runner 在升级过程中持续回报各阶段状态
+message UpgradeStatusEvent {
+  string request_id = 1;       // 对应 UpgradeRunnerCommand.request_id
+  string phase = 2;            // checking, downloading, applying, restarting, completed, failed
+  int32 progress = 3;          // 0-100（下载进度）
+  string message = 4;          // 人类可读状态信息
+  string error = 5;            // phase=failed 时的错误信息
+  string current_version = 6;  // 当前运行版本
+  string target_version = 7;   // 目标升级版本
 }

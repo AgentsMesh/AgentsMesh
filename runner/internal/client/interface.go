@@ -61,6 +61,9 @@ type ConnectionSender interface {
 	// SendAgentStatus sends an agent status change event to the server.
 	// Status values: "executing", "waiting", "idle".
 	SendAgentStatus(podKey string, status string) error
+
+	// SendUpgradeStatus sends an upgrade status event to the server.
+	SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) error
 }
 
 // ConnectionMonitor defines methods for monitoring connection health.

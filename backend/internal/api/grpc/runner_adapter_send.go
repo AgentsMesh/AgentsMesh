@@ -192,6 +192,28 @@ func (a *GRPCRunnerAdapter) SendQuerySandboxes(runnerID int64, requestID string,
 	return conn.SendMessage(msg)
 }
 
+// ==================== Runner Upgrade Commands ====================
+
+// SendUpgradeRunner sends an upgrade command to a Runner.
+func (a *GRPCRunnerAdapter) SendUpgradeRunner(runnerID int64, requestID, targetVersion string, force bool) error {
+	conn := a.connManager.GetConnection(runnerID)
+	if conn == nil {
+		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
+	}
+
+	msg := &runnerv1.ServerMessage{
+		Payload: &runnerv1.ServerMessage_UpgradeRunner{
+			UpgradeRunner: &runnerv1.UpgradeRunnerCommand{
+				RequestId:     requestID,
+				TargetVersion: targetVersion,
+				Force:         force,
+			},
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return conn.SendMessage(msg)
+}
+
 // ==================== AutopilotController Commands ====================
 
 // SendCreateAutopilot sends a create AutopilotController command to a Runner.

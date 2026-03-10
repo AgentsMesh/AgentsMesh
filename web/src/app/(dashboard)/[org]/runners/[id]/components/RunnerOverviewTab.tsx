@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { Cpu, HardDrive, Terminal, Radio } from "lucide-react";
+import { Cpu, HardDrive, Terminal, Radio, ArrowUpCircle } from "lucide-react";
 import type { RunnerData, RelayConnectionInfo } from "@/lib/api";
+import { runnerApi } from "@/lib/api";
 import { isVersionOutdated } from "@/lib/utils/version";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 interface RunnerOverviewTabProps {
   runner: RunnerData;
@@ -17,6 +20,25 @@ interface RunnerOverviewTabProps {
  */
 export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersion }: RunnerOverviewTabProps) {
   const t = useTranslations();
+  const [upgrading, setUpgrading] = useState(false);
+
+  const hasUpdate = !!latestRunnerVersion && isVersionOutdated(runner.runner_version, latestRunnerVersion);
+  const canUpgrade = hasUpdate
+    && runner.status === "online"
+    && runner.current_pods === 0;
+
+  const handleUpgrade = async () => {
+    if (!confirm(t("runners.detail.upgradeConfirm"))) return;
+    setUpgrading(true);
+    try {
+      await runnerApi.upgrade(runner.id);
+      toast.success(t("runners.detail.upgradeSent"));
+    } catch {
+      toast.error(t("runners.detail.upgradeFailed"));
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -51,10 +73,27 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
             <dd className="text-sm text-foreground">
               <span className="flex items-center gap-2">
                 {runner.runner_version || "-"}
-                {isVersionOutdated(runner.runner_version, latestRunnerVersion) && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                    {t("runners.detail.upgradeAvailable", { version: latestRunnerVersion! })}
-                  </span>
+                {hasUpdate && (
+                  <>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                      {t("runners.detail.upgradeAvailable", { version: latestRunnerVersion })}
+                    </span>
+                    <button
+                      onClick={handleUpgrade}
+                      disabled={!canUpgrade || upgrading}
+                      title={
+                        runner.status !== "online"
+                          ? t("runners.detail.upgradeOffline")
+                          : runner.current_pods > 0
+                            ? t("runners.detail.upgradeHasPods")
+                            : t("runners.detail.upgradeTooltip")
+                      }
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ArrowUpCircle className="w-3.5 h-3.5" />
+                      {upgrading ? t("runners.detail.upgrading") : t("runners.detail.upgrade")}
+                    </button>
+                  </>
                 )}
               </span>
             </dd>

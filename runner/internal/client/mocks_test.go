@@ -95,6 +95,10 @@ func (h *mockHandler) OnAutopilotControl(cmd *runnerv1.AutopilotControlCommand) 
 	return nil
 }
 
+func (h *mockHandler) OnUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) error {
+	return nil
+}
+
 // mockHandlerWithError is a mock handler that can return errors.
 type mockHandlerWithError struct {
 	createError    error
@@ -149,6 +153,10 @@ func (h *mockHandlerWithError) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 }
 
 func (h *mockHandlerWithError) OnAutopilotControl(cmd *runnerv1.AutopilotControlCommand) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) error {
 	return nil
 }
 
