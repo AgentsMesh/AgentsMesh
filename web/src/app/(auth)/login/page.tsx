@@ -150,7 +150,15 @@ export default function LoginPage() {
             </svg>
             GitHub
           </Button>
-          <Button variant="outline" type="button" disabled>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => {
+              const oauthUrl = getOAuthBaseUrl();
+              const redirectUrl = encodeURIComponent(window.location.origin + "/auth/callback");
+              window.location.href = `${oauthUrl}/api/v1/auth/oauth/google?redirect=${redirectUrl}`;
+            }}
+          >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path
                 fill="currentColor"

@@ -234,6 +234,8 @@ MINIO_ROOT_PASSWORD=minioadmin
 # =============================================================================
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 
 # =============================================================================
 # AI CLI - Claude Code

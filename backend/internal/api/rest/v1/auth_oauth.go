@@ -3,6 +3,7 @@ package v1
 import (
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
@@ -16,6 +17,12 @@ func (h *AuthHandler) OAuthRedirect(provider string) gin.HandlerFunc {
 		redirectTo := c.Query("redirect")
 		if redirectTo == "" {
 			redirectTo = h.config.OAuth.DefaultRedirectURL
+		}
+
+		// Validate redirect URL to prevent open redirect attacks
+		if !h.isAllowedRedirect(redirectTo) {
+			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Invalid redirect URL")
+			return
 		}
 
 		// Get OAuth provider configuration
@@ -36,6 +43,24 @@ func (h *AuthHandler) OAuthRedirect(provider string) gin.HandlerFunc {
 		authURL := oauthCfg.AuthURL(state)
 		c.Redirect(http.StatusTemporaryRedirect, authURL)
 	}
+}
+
+// isAllowedRedirect validates that a redirect URL is safe (same origin or relative path).
+func (h *AuthHandler) isAllowedRedirect(redirectTo string) bool {
+	// Allow relative paths
+	if strings.HasPrefix(redirectTo, "/") && !strings.HasPrefix(redirectTo, "//") {
+		return true
+	}
+
+	// Allow URLs whose hostname matches PrimaryDomain's hostname.
+	// Port is intentionally ignored because the frontend may run on a
+	// different port than the API (e.g., dev: Next.js on :3000, API on :80).
+	parsed, err := url.Parse(redirectTo)
+	if err != nil {
+		return false
+	}
+	allowedHost, _, _ := strings.Cut(h.config.PrimaryDomain, ":")
+	return parsed.Hostname() == allowedHost
 }
 
 // OAuthCallback returns a handler for OAuth callback
