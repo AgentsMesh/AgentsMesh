@@ -223,12 +223,13 @@ func (a *SmartAggregator) BufferLen() int {
 	return a.buffer.Len()
 }
 
-// SetRelayOutput sets the relay output callback.
-// When set, flushed data is sent through Relay instead of gRPC.
+// SetRelayClient sets the relay client reference for output routing.
+// When set and connected, flushed data is sent through Relay instead of gRPC.
+// When disconnected, output automatically falls back to gRPC.
 // Pass nil to disable relay output.
 // Thread-safe: can be called from any goroutine.
-func (a *SmartAggregator) SetRelayOutput(fn func([]byte)) {
-	a.router.SetRelayOutput(fn)
+func (a *SmartAggregator) SetRelayClient(client RelayWriter) {
+	a.router.SetRelayClient(client)
 }
 
 // SetPTYLogger sets the PTY logger for debugging.

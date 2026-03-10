@@ -73,9 +73,9 @@ func TestSmartAggregator_Backpressure(t *testing.T) {
 	agg.Stop()
 }
 
-// TestSmartAggregator_SetRelayOutput tests relay output configuration
-func TestSmartAggregator_SetRelayOutput(t *testing.T) {
-	var grpcData, relayData []byte
+// TestSmartAggregator_SetRelayClient tests relay client configuration
+func TestSmartAggregator_SetRelayClient(t *testing.T) {
+	var grpcData []byte
 	var mu sync.Mutex
 
 	agg := NewSmartAggregator(
@@ -99,12 +99,9 @@ func TestSmartAggregator_SetRelayOutput(t *testing.T) {
 	grpcData = nil
 	mu.Unlock()
 
-	// Set relay output
-	agg.SetRelayOutput(func(data []byte) {
-		mu.Lock()
-		relayData = append(relayData, data...)
-		mu.Unlock()
-	})
+	// Set relay client (connected)
+	relay := newMockRelayWriter(true)
+	agg.SetRelayClient(relay)
 
 	// Write with relay - should go to relay only
 	agg.Write([]byte("relay"))
@@ -112,12 +109,13 @@ func TestSmartAggregator_SetRelayOutput(t *testing.T) {
 
 	mu.Lock()
 	if bytes.Contains(grpcData, []byte("relay")) {
-		t.Error("Data should not go to gRPC when relay is set")
-	}
-	if !bytes.Contains(relayData, []byte("relay")) {
-		t.Error("Data should go to relay")
+		t.Error("Data should not go to gRPC when relay is connected")
 	}
 	mu.Unlock()
+
+	if !bytes.Contains(relay.getData(), []byte("relay")) {
+		t.Error("Data should go to relay")
+	}
 
 	agg.Stop()
 }

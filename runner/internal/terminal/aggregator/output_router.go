@@ -11,18 +11,26 @@ import (
 // 64KB is generous enough for error messages and early startup output.
 const earlyBufferMaxSize = 64 * 1024
 
+// RelayWriter abstracts the relay client for output routing.
+// Route() checks IsConnected() at call time, eliminating stale-closure races.
+type RelayWriter interface {
+	SendOutput(data []byte) error
+	IsConnected() bool
+}
+
 // OutputRouter routes terminal output to appropriate destinations.
 // Supports both legacy gRPC output and modern Relay WebSocket output.
 //
 // Priority: Relay > gRPC (when Relay is connected, gRPC is not used)
+// When Relay is registered but disconnected, output falls back to gRPC automatically.
 //
 // Early buffer: when no callback is set (during the window between pod creation
 // and relay subscription), output is buffered internally. The buffer is replayed
 // when a callback is first set, ensuring no output is lost during startup.
 type OutputRouter struct {
-	mu          sync.RWMutex
-	onFlush     func([]byte) // gRPC fallback callback
-	relayOutput func([]byte) // Relay preferred callback
+	mu      sync.RWMutex
+	onFlush func([]byte)  // gRPC fallback callback
+	relay   RelayWriter   // Relay client reference (checked at Route time)
 
 	// Early buffer: captures output before any callback is set.
 	// Once a callback is set and the buffer is drained, no further buffering occurs.
@@ -41,7 +49,12 @@ func NewOutputRouter(onFlush func([]byte)) *OutputRouter {
 }
 
 // Route sends data to the appropriate destination.
-// Priority: Relay > gRPC > early buffer
+// Priority: Relay (connected) > gRPC > early buffer
+//
+// Unlike callback-based routing, this checks relay.IsConnected() at call time,
+// so stale closures from old relay clients cannot intercept output.
+// When relay is registered but disconnected (e.g., during reconnect), output
+// automatically falls back to gRPC — no silent data loss.
 //
 // This method is safe to call from any goroutine.
 func (r *OutputRouter) Route(data []byte) {
@@ -49,33 +62,51 @@ func (r *OutputRouter) Route(data []byte) {
 		return
 	}
 
-	// Fast path: read callbacks under RLock
+	// Fast path: read fields under RLock
 	r.mu.RLock()
-	relayOutput := r.relayOutput
+	relay := r.relay
 	onFlush := r.onFlush
 	r.mu.RUnlock()
 
 	log := logger.TerminalTrace()
 
-	// Priority: Relay mode > Legacy gRPC mode
-	if relayOutput != nil {
+	// Priority: Relay mode (only when connected) > Legacy gRPC mode
+	if relay != nil && relay.IsConnected() {
 		log.Trace("OutputRouter: sending to relay", "bytes", len(data))
-		relayOutput(data)
+		if err := relay.SendOutput(data); err != nil {
+			log.Trace("OutputRouter: relay send failed, falling back to gRPC", "bytes", len(data), "error", err)
+			if onFlush != nil {
+				onFlush(data)
+			}
+		}
 		return
 	}
 	if onFlush != nil {
-		log.Trace("OutputRouter: sending to gRPC (no relay)", "bytes", len(data))
+		if relay != nil {
+			log.Trace("OutputRouter: relay disconnected, falling back to gRPC", "bytes", len(data))
+		} else {
+			log.Trace("OutputRouter: sending to gRPC (no relay)", "bytes", len(data))
+		}
 		onFlush(data)
 		return
 	}
 
 	// No callback set — buffer for later replay
 	r.mu.Lock()
-	// Re-check under write lock (callback may have been set between RUnlock and Lock)
-	if r.relayOutput != nil {
-		fn := r.relayOutput
+	// Re-check under write lock (fields may have been set between RUnlock and Lock)
+	if r.relay != nil && r.relay.IsConnected() {
+		rl := r.relay
 		r.mu.Unlock()
-		fn(data)
+		if err := rl.SendOutput(data); err == nil {
+			return
+		}
+		// Relay send failed — try gRPC fallback (re-acquire lock to read onFlush)
+		r.mu.RLock()
+		fn := r.onFlush
+		r.mu.RUnlock()
+		if fn != nil {
+			fn(data)
+		}
 		return
 	}
 	if r.onFlush != nil {
@@ -99,35 +130,45 @@ func (r *OutputRouter) Route(data []byte) {
 	r.mu.Unlock()
 }
 
-// SetRelayOutput sets the relay output callback.
-// If there is buffered early output, it is replayed through the new callback immediately.
+// SetRelayClient sets the relay client reference.
+// If there is buffered early output, it is replayed through the client immediately.
 // Pass nil to disable relay output and fall back to gRPC.
 // Thread-safe.
-func (r *OutputRouter) SetRelayOutput(fn func([]byte)) {
+func (r *OutputRouter) SetRelayClient(client RelayWriter) {
 	r.mu.Lock()
-	r.relayOutput = fn
+	r.relay = client
 	buffered := r.drainEarlyBufferLocked()
 	r.mu.Unlock()
 
 	// Replay buffered data outside the lock to avoid deadlocks
-	if fn != nil && len(buffered) > 0 {
+	if client != nil && client.IsConnected() && len(buffered) > 0 {
 		logger.Terminal().Info("OutputRouter: replaying early buffer via relay", "bytes", len(buffered))
-		fn(buffered)
+		if err := client.SendOutput(buffered); err != nil {
+			logger.Terminal().Warn("OutputRouter: failed to replay early buffer via relay, trying gRPC", "error", err)
+			r.mu.RLock()
+			fn := r.onFlush
+			r.mu.RUnlock()
+			if fn != nil {
+				fn(buffered)
+			}
+		}
+	} else if client == nil && len(buffered) > 0 {
+		// Clearing relay with buffered data — send via gRPC
+		r.mu.RLock()
+		fn := r.onFlush
+		r.mu.RUnlock()
+		if fn != nil {
+			logger.Terminal().Info("OutputRouter: replaying early buffer via gRPC (relay cleared)", "bytes", len(buffered))
+			fn(buffered)
+		}
 	}
 }
 
-// GetRelayOutput returns the current relay output callback.
-func (r *OutputRouter) GetRelayOutput() func([]byte) {
+// HasRelayClient returns whether a relay client is configured.
+func (r *OutputRouter) HasRelayClient() bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.relayOutput
-}
-
-// HasRelayOutput returns whether relay output is configured.
-func (r *OutputRouter) HasRelayOutput() bool {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return r.relayOutput != nil
+	return r.relay != nil
 }
 
 // SetOnFlush updates the gRPC callback.

@@ -165,7 +165,11 @@ func (c *Client) reconnectLoop() {
 		safego.Go("relay-write", c.writeLoop)
 
 		// Trigger reconnect callback (e.g., to resend snapshot)
-		if c.onReconnect != nil {
+		// Defense-in-depth: check stopped again before firing callback.
+		// Even though the architecture (reference-based OutputRouter) now prevents
+		// stale callbacks from causing damage, this guard ensures no callback
+		// runs after Stop() as an additional safety net.
+		if c.onReconnect != nil && !c.stopped.Load() {
 			c.onReconnect()
 		}
 		return

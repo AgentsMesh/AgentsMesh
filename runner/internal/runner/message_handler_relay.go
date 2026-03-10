@@ -108,11 +108,7 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 	// Phase 4: Outside lock — set up relay output and send snapshot.
 	// These operations may acquire other locks (vt.mu) but relayMu is NOT held.
 	if pod.Aggregator != nil {
-		pod.Aggregator.SetRelayOutput(func(data []byte) {
-			if err := relayClient.SendOutput(data); err != nil {
-				logger.RunnerTrace().Trace("Failed to send output to relay", "pod_key", req.PodKey, "error", err)
-			}
-		})
+		pod.Aggregator.SetRelayClient(relayClient)
 	}
 
 	// Send terminal snapshot so late subscribers see existing content.
@@ -192,9 +188,15 @@ func (h *RunnerMessageHandler) setupRelayClientHandlers(relayClient relay.RelayC
 
 	relayClient.SetCloseHandler(func() {
 		log.Info("Relay connection closed permanently", "pod_key", podKey)
-		pod.SetRelayClient(nil)
-		if pod.Aggregator != nil {
-			pod.Aggregator.SetRelayOutput(nil)
+		// Only clear if this client is still the active one.
+		// Prevents a stale close handler from clearing a newer client's references.
+		if pod.GetRelayClient() == relayClient {
+			pod.SetRelayClient(nil)
+			if pod.Aggregator != nil {
+				pod.Aggregator.SetRelayClient(nil)
+			}
+		} else {
+			log.Debug("Relay close handler skipped: client already replaced", "pod_key", podKey)
 		}
 	})
 
@@ -212,14 +214,11 @@ func (h *RunnerMessageHandler) setupRelayClientHandlers(relayClient relay.RelayC
 	})
 
 	relayClient.SetReconnectHandler(func() {
-		log.Info("Relay reconnected, restoring relay output", "pod_key", podKey)
-		if pod.Aggregator != nil {
-			pod.Aggregator.SetRelayOutput(func(data []byte) {
-				relayClient.SendOutput(data)
-			})
-		}
+		log.Info("Relay reconnected, sending snapshot", "pod_key", podKey)
+		// No need to re-register relay output — OutputRouter holds the client reference
+		// and checks IsConnected() at Route() time. When relay reconnects,
+		// output automatically flows through it again.
 		// Use TryGetSnapshot to avoid blocking if Feed() holds the VT write lock.
-		// If the lock is busy, the next aggregator frame will deliver the content.
 		if pod.VirtualTerminal != nil {
 			snapshot := pod.VirtualTerminal.TryGetSnapshot()
 			if snapshot != nil {
