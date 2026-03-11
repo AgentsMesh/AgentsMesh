@@ -1,8 +1,11 @@
 package terminal
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
@@ -152,12 +155,25 @@ func (t *Terminal) readOutput() {
 						return
 					case <-time.After(handlerBlockedThreshold):
 						elapsed := time.Since(startHandler)
+
+						// Capture goroutine stacks and write to temp file for post-mortem analysis.
+						// Writing to a file avoids bloating the structured log with 64KB+ of stack data.
+						stackBuf := make([]byte, 64*1024)
+						stackLen := runtime.Stack(stackBuf, true) // true = all goroutines
+
+						dumpPath := ""
+						dumpFile := filepath.Join(os.TempDir(), fmt.Sprintf("agentsmesh-blocked-%s-%d.stacks",
+							label, time.Now().Unix()))
+						if err := os.WriteFile(dumpFile, stackBuf[:stackLen], 0644); err == nil {
+							dumpPath = dumpFile
+						}
+
 						logger.Terminal().Error("PTY output handler BLOCKED — possible deadlock",
 							"label", label,
 							"read_num", readCount,
 							"bytes", n,
 							"blocked_for", elapsed,
-							"hint", "check pprof /debug/pprof/goroutine?debug=2")
+							"goroutine_dump", dumpPath)
 					}
 				}()
 

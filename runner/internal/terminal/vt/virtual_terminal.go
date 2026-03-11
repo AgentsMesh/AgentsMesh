@@ -3,8 +3,10 @@ package vt
 import (
 	"strings"
 	"sync"
+	"time"
 	"unicode/utf8"
 
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/safego"
 )
 
@@ -141,8 +143,15 @@ func (vt *VirtualTerminal) initScreen() {
 // Returns the current screen lines for downstream consumers (single-direction data flow).
 // This avoids the need for consumers to acquire a separate lock to read screen state.
 func (vt *VirtualTerminal) Feed(data []byte) []string {
+	lockStart := time.Now()
 	vt.mu.Lock()
+	lockWait := time.Since(lockStart)
 	defer vt.mu.Unlock()
+
+	if lockWait > 10*time.Millisecond {
+		logger.Terminal().Warn("VT Feed lock acquisition slow",
+			"lock_wait", lockWait, "data_len", len(data))
+	}
 
 	wasHasData := vt.hasData
 	vt.hasData = true
@@ -215,8 +224,15 @@ func (vt *VirtualTerminal) getLinesLocked() []string {
 
 // Resize resizes the terminal
 func (vt *VirtualTerminal) Resize(cols, rows int) {
+	lockStart := time.Now()
 	vt.mu.Lock()
+	lockWait := time.Since(lockStart)
 	defer vt.mu.Unlock()
+
+	if lockWait > 10*time.Millisecond {
+		logger.Terminal().Warn("VT Resize lock acquisition slow",
+			"lock_wait", lockWait, "cols", cols, "rows", rows)
+	}
 
 	if cols <= 0 {
 		cols = 80
