@@ -202,10 +202,10 @@ func TestValidateRequiredFieldsNotCleared_SAML_MetadataXMLKeepsValid(t *testing.
 	assert.NoError(t, err)
 }
 
-// --- validateUpdateFieldsMatchProtocol: LDAP with LDAP fields ---
+// --- stripCrossProtocolEmptyFields: LDAP preserves own fields ---
 
-func TestValidateUpdateFieldsMatchProtocol_LDAPWithLDAP(t *testing.T) {
-	err := validateUpdateFieldsMatchProtocol(sso.ProtocolLDAP, &UpdateConfigRequest{
+func TestStripCrossProtocol_LDAPPreservesAllLDAPFields(t *testing.T) {
+	req := &UpdateConfigRequest{
 		LDAPHost:         ptr("ldap.test.com"),
 		LDAPPort:         ptr(636),
 		LDAPUseTLS:       ptr(true),
@@ -216,22 +216,38 @@ func TestValidateUpdateFieldsMatchProtocol_LDAPWithLDAP(t *testing.T) {
 		LDAPEmailAttr:    ptr("mail"),
 		LDAPNameAttr:     ptr("cn"),
 		LDAPUsernameAttr: ptr("uid"),
-	})
-	assert.NoError(t, err)
+	}
+	stripCrossProtocolEmptyFields(sso.ProtocolLDAP, req)
+	assert.NotNil(t, req.LDAPHost)
+	assert.NotNil(t, req.LDAPPort)
+	assert.NotNil(t, req.LDAPUseTLS)
+	assert.NotNil(t, req.LDAPBindDN)
+	assert.NotNil(t, req.LDAPBindPassword)
+	assert.NotNil(t, req.LDAPBaseDN)
+	assert.NotNil(t, req.LDAPUserFilter)
+	assert.NotNil(t, req.LDAPEmailAttr)
+	assert.NotNil(t, req.LDAPNameAttr)
+	assert.NotNil(t, req.LDAPUsernameAttr)
 }
 
-// --- validateUpdateFieldsMatchProtocol: SAML with SAML fields ---
+// --- stripCrossProtocolEmptyFields: SAML preserves own fields ---
 
-func TestValidateUpdateFieldsMatchProtocol_SAMLWithSAML(t *testing.T) {
-	err := validateUpdateFieldsMatchProtocol(sso.ProtocolSAML, &UpdateConfigRequest{
+func TestStripCrossProtocol_SAMLPreservesAllSAMLFields(t *testing.T) {
+	req := &UpdateConfigRequest{
 		SAMLIDPMetadataURL: ptr("https://metadata"),
 		SAMLIDPMetadataXML: ptr("<xml/>"),
 		SAMLIDPSSOURL:      ptr("https://sso"),
 		SAMLIDPCert:        ptr("cert"),
 		SAMLSPEntityID:     ptr("entity"),
 		SAMLNameIDFormat:   ptr("format"),
-	})
-	assert.NoError(t, err)
+	}
+	stripCrossProtocolEmptyFields(sso.ProtocolSAML, req)
+	assert.NotNil(t, req.SAMLIDPMetadataURL)
+	assert.NotNil(t, req.SAMLIDPMetadataXML)
+	assert.NotNil(t, req.SAMLIDPSSOURL)
+	assert.NotNil(t, req.SAMLIDPCert)
+	assert.NotNil(t, req.SAMLSPEntityID)
+	assert.NotNil(t, req.SAMLNameIDFormat)
 }
 
 // --- ptrStringOr ---

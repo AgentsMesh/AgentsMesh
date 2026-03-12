@@ -99,42 +99,38 @@ func TestUpdateConfig_NotFound(t *testing.T) {
 	assert.ErrorIs(t, err, ErrConfigNotFound)
 }
 
-func TestUpdateConfig_CrossProtocolRejection(t *testing.T) {
+func TestUpdateConfig_CrossProtocolFieldsSilentlyStripped(t *testing.T) {
+	// Cross-protocol fields are unconditionally stripped by stripCrossProtocolEmptyFields,
+	// so sending them should succeed (fields ignored, not rejected).
 	tests := []struct {
-		name    string
-		seed    func(*mockRepository) *sso.Config
-		req     *UpdateConfigRequest
-		wantErr string
+		name string
+		seed func(*mockRepository) *sso.Config
+		req  *UpdateConfigRequest
 	}{
 		{
 			name: "SAML fields on OIDC config",
 			seed: seedOIDCConfig,
 			req:  &UpdateConfigRequest{SAMLIDPMetadataURL: ptr("https://idp.com/metadata")},
-			wantErr: "cannot set SAML/LDAP fields on an OIDC config",
 		},
 		{
 			name: "LDAP fields on OIDC config",
 			seed: seedOIDCConfig,
 			req:  &UpdateConfigRequest{LDAPHost: ptr("ldap.company.com")},
-			wantErr: "cannot set SAML/LDAP fields on an OIDC config",
 		},
 		{
 			name: "OIDC fields on SAML config",
 			seed: seedSAMLConfig,
 			req:  &UpdateConfigRequest{OIDCIssuerURL: ptr("https://issuer.com")},
-			wantErr: "cannot set OIDC/LDAP fields on a SAML config",
 		},
 		{
 			name: "OIDC fields on LDAP config",
 			seed: seedLDAPConfig,
 			req:  &UpdateConfigRequest{OIDCClientID: ptr("client-id")},
-			wantErr: "cannot set OIDC/SAML fields on an LDAP config",
 		},
 		{
 			name: "SAML fields on LDAP config",
 			seed: seedLDAPConfig,
 			req:  &UpdateConfigRequest{SAMLIDPSSOURL: ptr("https://sso.com")},
-			wantErr: "cannot set OIDC/SAML fields on an LDAP config",
 		},
 	}
 
@@ -144,9 +140,9 @@ func TestUpdateConfig_CrossProtocolRejection(t *testing.T) {
 			svc := newTestService(repo)
 			existing := tt.seed(repo)
 
-			_, err := svc.UpdateConfig(context.Background(), existing.ID, tt.req)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), tt.wantErr)
+			cfg, err := svc.UpdateConfig(context.Background(), existing.ID, tt.req)
+			require.NoError(t, err, "cross-protocol fields should be silently stripped, not rejected")
+			assert.Equal(t, existing.ID, cfg.ID)
 		})
 	}
 }
@@ -315,20 +311,26 @@ func TestBuildUpdateMap_AllCommonFields(t *testing.T) {
 	assert.Len(t, updates, 3)
 }
 
-func TestValidateUpdateFieldsMatchProtocol_AllowSameProtocol(t *testing.T) {
-	// OIDC fields on OIDC config should pass
-	err := validateUpdateFieldsMatchProtocol(sso.ProtocolOIDC, &UpdateConfigRequest{
+func TestStripCrossProtocolEmptyFields_PreservesSameProtocol(t *testing.T) {
+	// OIDC fields on OIDC config should be preserved
+	req := &UpdateConfigRequest{
 		OIDCIssuerURL: ptr("https://new-issuer.com"),
 		OIDCClientID:  ptr("new-client"),
 		OIDCScopes:    ptr("openid email"),
-	})
-	assert.NoError(t, err)
+	}
+	stripCrossProtocolEmptyFields(sso.ProtocolOIDC, req)
+	assert.NotNil(t, req.OIDCIssuerURL)
+	assert.NotNil(t, req.OIDCClientID)
+	assert.NotNil(t, req.OIDCScopes)
 
-	// LDAP fields on LDAP config should pass
-	err = validateUpdateFieldsMatchProtocol(sso.ProtocolLDAP, &UpdateConfigRequest{
+	// LDAP fields on LDAP config should be preserved
+	req2 := &UpdateConfigRequest{
 		LDAPHost:   ptr("new-host"),
 		LDAPPort:   ptr(636),
 		LDAPUseTLS: ptr(true),
-	})
-	assert.NoError(t, err)
+	}
+	stripCrossProtocolEmptyFields(sso.ProtocolLDAP, req2)
+	assert.NotNil(t, req2.LDAPHost)
+	assert.NotNil(t, req2.LDAPPort)
+	assert.NotNil(t, req2.LDAPUseTLS)
 }
