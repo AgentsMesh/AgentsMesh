@@ -1,0 +1,21 @@
+id: TC-SSO-DISC-002
+name: SSO 发现 — 无 SSO 配置的域名
+description: 验证输入没有 SSO 配置的邮箱域名时，返回空 configs 数组
+priority: high
+module: account/auth/sso/discover
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 调用 SSO discover API（无 SSO 域名）
+    expected: 返回 200，configs 为空数组
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/discover?email=user@nosso-domain.com
+      expected:
+        status: 200
+        body:
+          configs: []

@@ -1,0 +1,26 @@
+id: TC-SSO-LDAP-002
+name: LDAP 认证 — 无 LDAP 配置的域名
+description: 验证请求未配置 LDAP 的域名时返回 404
+priority: medium
+module: account/auth/sso/ldap
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 请求不存在域名的 LDAP 端点
+    expected: 返回 404
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/sso/nonexistent.com/ldap
+        headers:
+          Content-Type: application/json
+        body:
+          username: user
+          password: pass
+      expected:
+        status: 404
+        body:
+          code: RESOURCE_NOT_FOUND

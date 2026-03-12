@@ -83,6 +83,12 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		authGroup.Use(middleware.IPRateLimiter(redisClient, "auth", 20, time.Minute))
 		authHandler.RegisterRoutes(authGroup)
 
+		// SSO authentication routes (public, under /auth/sso)
+		if svc.SSO != nil {
+			ssoAuthHandler := v1.NewSSOAuthHandler(svc.SSO, svc.Auth, svc.User, cfg)
+			ssoAuthHandler.RegisterRoutes(authGroup.Group("/sso"))
+		}
+
 		// Public config endpoints (deployment info for frontend)
 		v1.RegisterPublicConfigRoutes(apiV1.Group("/config"), svc.Billing)
 
@@ -180,6 +186,7 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 			Auth:              svc.Auth,
 			Admin:             adminSvc,
 			Billing:           svc.Billing,
+			SSO:               svc.SSO,
 			RelayManager:      svc.RelayManager,
 			ExtensionRepo:     svc.ExtensionRepo,
 			MarketplaceWorker: svc.MarketplaceWorker,

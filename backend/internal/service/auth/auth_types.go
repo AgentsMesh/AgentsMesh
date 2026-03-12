@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -22,6 +23,7 @@ var (
 	ErrInvalidState        = errors.New("invalid OAuth state")
 	ErrTokenRevoked        = errors.New("token has been revoked")
 	ErrInvalidRefreshToken = errors.New("invalid refresh token")
+	ErrSSOEnforced         = errors.New("SSO login is required for this domain")
 )
 
 // Redis key prefixes
@@ -113,11 +115,17 @@ type OAuthLoginRequest struct {
 	ExpiresAt      *time.Time
 }
 
+// SSOEnforcementChecker checks if password login is allowed for an email
+type SSOEnforcementChecker interface {
+	IsPasswordLoginAllowed(ctx context.Context, email string, isSystemAdmin bool) (bool, error)
+}
+
 // Service handles authentication
 type Service struct {
 	config      *Config
 	userService *userService.Service
 	redis       *redis.Client
+	ssoChecker  SSOEnforcementChecker
 }
 
 // NewService creates a new auth service
@@ -135,4 +143,9 @@ func NewServiceWithRedis(cfg *Config, userSvc *userService.Service, redisClient 
 		userService: userSvc,
 		redis:       redisClient,
 	}
+}
+
+// SetSSOChecker sets the SSO enforcement checker (called after SSO service initialization)
+func (s *Service) SetSSOChecker(checker SSOEnforcementChecker) {
+	s.ssoChecker = checker
 }

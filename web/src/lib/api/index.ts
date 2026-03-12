@@ -198,3 +198,7 @@ export type {
 // Notification
 export { notificationApi } from "./notification";
 export type { NotificationPreference } from "./notification";
+
+// SSO
+export { ssoApi, getSSOAuthURL } from "./sso";
+export type { SSOConfig, SSODiscoverResponse } from "./sso";

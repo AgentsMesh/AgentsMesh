@@ -1,0 +1,38 @@
+id: TC-SSO-ENF-002
+name: enforce_sso — 系统管理员绕过
+description: 验证 is_system_admin=true 的用户在 enforce_sso 开启时仍可密码登录
+priority: critical
+module: account/auth/sso/enforce
+
+preconditions:
+  - 开发环境已启动
+  - 域名 agentsmesh.local 至少有一个 enforce_sso=true 的 SSO 配置
+  - admin@agentsmesh.local 用户 is_system_admin=true
+
+setup:
+  sql: |
+    UPDATE sso_configs SET enforce_sso = true WHERE domain = 'agentsmesh.local' AND protocol = 'ldap';
+
+steps:
+  - action: 使用系统管理员凭证调用登录 API
+    expected: 登录成功，返回 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+          user:
+            email: admin@agentsmesh.local
+
+cleanup:
+  - sql: |
+      UPDATE sso_configs SET enforce_sso = false WHERE domain = 'agentsmesh.local' AND protocol = 'ldap';

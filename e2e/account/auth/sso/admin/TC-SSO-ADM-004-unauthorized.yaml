@@ -1,0 +1,47 @@
+id: TC-SSO-ADM-004
+name: Admin SSO 配置 — 权限验证
+description: 验证非管理员用户和无效 token 无法访问 Admin SSO API
+priority: critical
+module: account/auth/sso/admin
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 使用无效 token 访问 Admin SSO API
+    expected: 返回 401
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs
+        headers:
+          Authorization: Bearer invalid-token
+      expected:
+        status: 401
+        body:
+          code: INVALID_TOKEN
+
+  - action: 不带 token 访问 Admin SSO API
+    expected: 返回 401
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs
+      expected:
+        status: 401
+
+  - action: 使用普通用户 token 访问 Admin SSO API
+    expected: 返回 403（非管理员）
+    verification:
+      type: api
+      auth:
+        login:
+          email: dev@agentsmesh.local
+          password: devpass123
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs
+      expected:
+        status: 403

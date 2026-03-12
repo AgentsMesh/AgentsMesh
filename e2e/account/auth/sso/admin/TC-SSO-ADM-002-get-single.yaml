@@ -1,0 +1,64 @@
+id: TC-SSO-ADM-002
+name: Admin SSO 配置 — 查询单个
+description: 验证管理员可以查询单个 SSO 配置详情，且返回字段按协议过滤
+priority: high
+module: account/auth/sso/admin
+
+preconditions:
+  - 开发环境已启动
+  - 已有 OIDC 和 LDAP 配置
+
+steps:
+  - action: 查询 OIDC 配置详情
+    expected: 返回 OIDC 相关字段，不包含 LDAP/SAML 字段
+    verification:
+      type: api
+      auth:
+        login:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs/4
+      expected:
+        status: 200
+        body:
+          protocol: oidc
+          oidc_issuer_url: not_empty
+          oidc_client_id: not_empty
+          ldap_port: null
+          ldap_host: empty_or_missing
+
+  - action: 查询 LDAP 配置详情
+    expected: 返回 LDAP 相关字段，不包含 OIDC/SAML 字段
+    verification:
+      type: api
+      auth:
+        login:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs/3
+      expected:
+        status: 200
+        body:
+          protocol: ldap
+          ldap_host: not_empty
+          ldap_port: not_null
+          oidc_issuer_url: empty_or_missing
+          saml_idp_sso_url: empty_or_missing
+
+  - action: 查询不存在的配置
+    expected: 返回 404
+    verification:
+      type: api
+      auth:
+        login:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs/99999
+      expected:
+        status: 404

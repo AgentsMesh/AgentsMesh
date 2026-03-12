@@ -1,0 +1,40 @@
+id: TC-SSO-LDAP-001
+name: LDAP 认证 — 无效凭证
+description: 验证 LDAP 认证端点使用错误凭证时返回 401
+priority: high
+module: account/auth/sso/ldap
+
+preconditions:
+  - 开发环境已启动
+  - 域名 agentsmesh.local 已配置 LDAP
+
+steps:
+  - action: 使用错误的 LDAP 凭证认证
+    expected: 返回 401
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/sso/agentsmesh.local/ldap
+        headers:
+          Content-Type: application/json
+        body:
+          username: wronguser
+          password: wrongpassword
+      expected:
+        status: 401
+
+  - action: 空用户名/密码
+    expected: 返回 400 或 401
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/sso/agentsmesh.local/ldap
+        headers:
+          Content-Type: application/json
+        body:
+          username: ""
+          password: ""
+      expected:
+        status: one_of [400, 401]

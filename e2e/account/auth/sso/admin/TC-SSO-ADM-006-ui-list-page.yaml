@@ -1,0 +1,51 @@
+id: TC-SSO-ADM-006
+name: Admin SSO 管理页 — 列表展示
+description: 验证 Admin Console SSO 配置列表页面的元素完整性（表头、筛选、创建按钮、数据行）
+priority: critical
+must_execute: true
+module: account/auth/sso/admin
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 管理员已登录 Admin Console
+  - 已有 OIDC 和 LDAP SSO 配置
+
+steps:
+  - action: 导航到 Admin SSO 配置页面
+    url: /admin/sso
+    expected: 页面加载，显示 SSO 配置列表
+    verification:
+      type: ui
+      navigate: /admin/sso
+      wait_for: 'heading "SSO Configs"'
+      check:
+        - exists: 'heading "SSO Configs"'
+        - exists: 'text "Manage single sign-on configurations"'
+        - exists: 'button contains "Create SSO Config"'
+        - exists: 'textbox placeholder="Search by domain or name..."'
+        - exists: 'combobox contains "All Protocols" or select contains "All Protocols"'
+
+  - action: 验证表格列头
+    expected: 包含 Domain、Name、Protocol、Enabled、Enforce SSO、Created 列
+    verification:
+      type: ui
+      check:
+        - exists: 'columnheader "Domain"'
+        - exists: 'columnheader "Name"'
+        - exists: 'columnheader "Protocol"'
+        - exists: 'columnheader "Enabled"'
+        - exists: 'columnheader "Enforce SSO"'
+        - exists: 'columnheader "Created"'
+
+  - action: 验证数据行
+    expected: 包含已有的 SSO 配置数据
+    verification:
+      type: ui
+      check:
+        - exists: 'cell contains "agentsmesh.local"'
+        - exists: 'badge contains "OIDC"'
+        - exists: 'badge contains "LDAP"'
+        - exists: 'badge contains "Enabled"'

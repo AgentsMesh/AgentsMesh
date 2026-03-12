@@ -1,0 +1,24 @@
+id: TC-SSO-CB-002
+name: SSO 回调 — 未知错误码
+description: 验证 SSO 回调页收到未知错误码时显示通用错误信息，不泄漏内部细节
+priority: high
+must_execute: true
+module: account/auth/sso/callback
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 导航到 SSO 回调页并传入未知错误码
+    expected: 显示通用错误信息，不泄漏错误码本身
+    verification:
+      type: ui
+      navigate: /auth/sso/callback?error=some_internal_error_code
+      wait_for: 'heading contains "失败" or heading contains "Failed"'
+      check:
+        - exists: 'heading contains "登录失败" or heading contains "Sign-in Failed"'
+        - exists: 'text contains "认证过程失败" or text contains "Authentication failed"'
+        - not_exists: 'text contains "some_internal_error_code"'

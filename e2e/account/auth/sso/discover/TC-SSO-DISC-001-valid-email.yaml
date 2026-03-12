@@ -1,0 +1,36 @@
+id: TC-SSO-DISC-001
+name: SSO 发现 — 有效 SSO 域名邮箱
+description: 验证输入有 SSO 配置的邮箱域名时，discover API 返回可用的 SSO 配置列表
+priority: high
+module: account/auth/sso/discover
+
+preconditions:
+  - 开发环境已启动
+  - 域名 agentsmesh.local 已配置 OIDC 和 LDAP 的 SSO
+
+setup:
+  sql: |
+    INSERT INTO sso_configs (domain, name, protocol, is_enabled, oidc_issuer_url, oidc_client_id, oidc_client_secret_encrypted, created_by)
+    VALUES ('sso-test.com', 'Test OIDC', 'oidc', true, 'https://accounts.google.com', 'test-id', 'encrypted', 2)
+    ON CONFLICT DO NOTHING;
+
+steps:
+  - action: 调用 SSO discover API
+    expected: 返回 200，configs 数组包含可用 SSO 配置
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/discover?email=user@agentsmesh.local
+      expected:
+        status: 200
+        body:
+          configs:
+            - domain: agentsmesh.local
+              protocol: one_of [oidc, ldap]
+              name: not_empty
+              enforce_sso: boolean
+
+cleanup:
+  - sql: |
+      DELETE FROM sso_configs WHERE domain = 'sso-test.com';

@@ -270,6 +270,7 @@ func main() {
 		LoopRun:             services.loopRun,
 		LoopOrchestrator:    loopOrchestrator,
 		LoopScheduler:       loopScheduler,
+		SSO:                  services.sso,
 		SupportTicket:       services.supportTicket,
 		NotificationPrefStore: services.notifPrefStore,
 	}

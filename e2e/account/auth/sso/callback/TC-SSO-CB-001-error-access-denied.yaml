@@ -1,0 +1,32 @@
+id: TC-SSO-CB-001
+name: SSO 回调 — access_denied 错误
+description: 验证 SSO 回调页收到 access_denied 错误时的 UI 展示
+priority: critical
+must_execute: true
+module: account/auth/sso/callback
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 导航到 SSO 回调页并传入 access_denied 错误
+    expected: 显示友好的错误页面
+    verification:
+      type: ui
+      navigate: /auth/sso/callback?error=access_denied
+      wait_for: 'heading contains "失败" or heading contains "Failed"'
+      check:
+        - exists: 'heading contains "登录失败" or heading contains "Sign-in Failed"'
+        - exists: 'text contains "取消" or text contains "denied"'
+        - exists: 'link contains "重试" or link contains "Try Again"'
+        - exists: 'link contains "创建账号" or link contains "Create Account"'
+
+  - action: 确认 URL 中的 error 参数已被清理
+    expected: 地址栏不再包含 error 参数
+    verification:
+      type: ui
+      check:
+        - url_not_contains: "error="
