@@ -172,32 +172,37 @@ func (u *Updater) Download(ctx context.Context, version string, _ func(downloade
 		return "", fmt.Errorf("version %s not found", version)
 	}
 
-	// Create temp file in the same directory as the executable to ensure
-	// os.Rename works (avoids cross-device link errors on Windows).
-	// Fall back to system temp dir if the executable's directory is not writable
-	// (e.g., C:\Program Files\ requires admin privileges).
+	// Create temp directory and use the correct binary name inside it.
+	// go-selfupdate's UpdateTo uses filepath.Split(cmdPath) to derive the
+	// executable name to look for inside the tar archive. The archive contains
+	// "agentsmesh-runner" (set by .goreleaser.yml), so the temp file basename
+	// must match. We create the temp dir in the same parent as the executable
+	// to ensure os.Rename works (avoids cross-device link errors on Windows).
 	execPath, err := u.execPathFunc()
 	if err != nil {
 		return "", fmt.Errorf("failed to get executable path: %w", err)
 	}
-	tmpFile, err := os.CreateTemp(filepath.Dir(execPath), "runner-update-*")
+	binaryName := "agentsmesh-runner"
+	if runtime.GOOS == "windows" {
+		binaryName += ".exe"
+	}
+	tmpDir, err := os.MkdirTemp(filepath.Dir(execPath), "runner-update-*")
 	if err != nil {
-		tmpFile, err = os.CreateTemp("", "runner-update-*")
+		tmpDir, err = os.MkdirTemp("", "runner-update-*")
 	}
 	if err != nil {
-		return "", fmt.Errorf("failed to create temp file: %w", err)
+		return "", fmt.Errorf("failed to create temp dir: %w", err)
 	}
-	tmpPath := tmpFile.Name()
-	tmpFile.Close()
+	tmpPath := filepath.Join(tmpDir, binaryName)
 
 	if err := detector.DownloadTo(ctx, release, tmpPath); err != nil {
-		os.Remove(tmpPath)
+		os.RemoveAll(tmpDir)
 		return "", fmt.Errorf("failed to download update: %w", err)
 	}
 
 	if runtime.GOOS != "windows" {
 		if err := os.Chmod(tmpPath, 0755); err != nil {
-			os.Remove(tmpPath)
+			os.RemoveAll(tmpDir)
 			return "", fmt.Errorf("failed to set executable permission: %w", err)
 		}
 	}
@@ -236,9 +241,10 @@ func (u *Updater) UpdateNow(ctx context.Context, progress func(downloaded, total
 	}
 
 	if err := u.Apply(tmpPath); err != nil {
-		os.Remove(tmpPath)
+		os.RemoveAll(filepath.Dir(tmpPath))
 		return "", err
 	}
+	os.RemoveAll(filepath.Dir(tmpPath))
 
 	return info.LatestVersion, nil
 }
@@ -253,9 +259,10 @@ func (u *Updater) UpdateToVersion(ctx context.Context, version string, progress 
 	}
 
 	if err := u.Apply(tmpPath); err != nil {
-		os.Remove(tmpPath)
+		os.RemoveAll(filepath.Dir(tmpPath))
 		return err
 	}
+	os.RemoveAll(filepath.Dir(tmpPath))
 
 	return nil
 }
