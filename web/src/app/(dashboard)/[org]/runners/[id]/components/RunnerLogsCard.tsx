@@ -150,14 +150,17 @@ export function RunnerLogsCard({ runnerId, runnerStatus }: RunnerLogsCardProps) 
 }
 
 /** M10: validate URL protocol before rendering download link */
-function DownloadLink({ url, label }: { url: string; label: string }) {
-  // Only allow http/https protocols to prevent XSS via javascript: URLs
+function isValidDownloadUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return <span className="text-sm text-muted-foreground">-</span>;
-    }
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
   } catch {
+    return false;
+  }
+}
+
+function DownloadLink({ url, label }: { url: string; label: string }) {
+  if (!isValidDownloadUrl(url)) {
     return <span className="text-sm text-muted-foreground">-</span>;
   }
 
