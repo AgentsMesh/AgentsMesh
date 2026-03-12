@@ -49,7 +49,7 @@ func (c *Config) validateGRPCConfig() error {
 func (c *Config) GetCertsDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return filepath.Join(os.TempDir(), "agentsmesh", "certs")
+		return filepath.Join(TempBaseDir(), "certs")
 	}
 	return filepath.Join(home, ".agentsmesh", "certs")
 }

@@ -144,3 +144,13 @@ type UpgradeCommandSender interface {
 	// IsConnected checks if a runner is connected.
 	IsConnected(runnerID int64) bool
 }
+
+// LogUploadCommandSender defines the interface for sending log upload commands to runners.
+// This is a separate interface from RunnerCommandSender (Interface Segregation).
+type LogUploadCommandSender interface {
+	// SendUploadLogs sends a log upload command to a runner.
+	SendUploadLogs(runnerID int64, requestID, presignedURL string, urlExpiresAt int64) error
+
+	// IsConnected checks if a runner is connected.
+	IsConnected(runnerID int64) bool
+}

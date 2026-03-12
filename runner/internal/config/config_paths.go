@@ -3,9 +3,23 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
+
+// TempBaseDir returns the base temporary directory for agentsmesh.
+// On Unix (macOS/Linux): /tmp/agentsmesh — a predictable, easy-to-find path.
+// On Windows: os.TempDir()/agentsmesh — since /tmp doesn't exist.
+//
+// macOS's os.TempDir() returns /var/folders/xx/.../T/ which is hard to locate,
+// so we use /tmp directly for better developer experience.
+func TempBaseDir() string {
+	if runtime.GOOS == "windows" {
+		return filepath.Join(os.TempDir(), "agentsmesh")
+	}
+	return "/tmp/agentsmesh"
+}
 
 // GetWorkspace returns the workspace directory path.
 // Falls back to WorkspaceRoot if Workspace is not set.
@@ -19,7 +33,7 @@ func (c *Config) GetWorkspace() string {
 	// Default to user's home directory
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return filepath.Join(os.TempDir(), "agentsmesh")
+		return TempBaseDir()
 	}
 	return filepath.Join(home, ".agentsmesh")
 }
@@ -57,12 +71,9 @@ func (c *Config) GetPluginsDir() string {
 }
 
 // GetLogPath returns the log file path.
+// Always uses TempBaseDir for predictable, easy-to-find log location.
 func (c *Config) GetLogPath() string {
-	if c.LogFile != "" {
-		return os.ExpandEnv(c.LogFile)
-	}
-	// Default to system temp directory (can be safely deleted)
-	return filepath.Join(os.TempDir(), "agentsmesh", "runner.log")
+	return filepath.Join(TempBaseDir(), "runner.log")
 }
 
 // GetLogConfig returns the logger configuration.
@@ -78,11 +89,8 @@ func (c *Config) GetLogConfig() logger.Config {
 }
 
 // GetLogPTYDir returns the PTY log directory path.
-// Falls back to $TMPDIR/agentsmesh/pty-logs if not set.
+// Always uses TempBaseDir for predictable, easy-to-find log location.
 func (c *Config) GetLogPTYDir() string {
-	if c.LogPTYDir != "" {
-		return os.ExpandEnv(c.LogPTYDir)
-	}
-	return filepath.Join(os.TempDir(), "agentsmesh", "pty-logs")
+	return filepath.Join(TempBaseDir(), "pty-logs")
 }
 

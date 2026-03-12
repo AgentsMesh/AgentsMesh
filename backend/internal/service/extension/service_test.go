@@ -325,6 +325,14 @@ func (m *svcMockStorage) Exists(ctx context.Context, key string) (bool, error) {
 	return true, nil
 }
 
+func (m *svcMockStorage) PresignPutURL(_ context.Context, _ string, _ string, _ time.Duration) (string, error) {
+	return "", nil
+}
+
+func (m *svcMockStorage) InternalPresignPutURL(_ context.Context, _ string, _ string, _ time.Duration) (string, error) {
+	return "", nil
+}
+
 // Compile-time assertion
 var _ storage.Storage = (*svcMockStorage)(nil)
 

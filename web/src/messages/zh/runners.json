@@ -164,6 +164,25 @@
       "upgradeHasPods": "Runner 存在活跃 Pod，无法升级",
       "upgradeTooltip": "将 Runner 升级到最新版本"
     },
+    "logs": {
+      "title": "诊断日志",
+      "upload": "上传日志",
+      "uploading": "上传中...",
+      "noLogs": "暂无诊断日志",
+      "status": {
+        "pending": "等待中",
+        "collecting": "收集中",
+        "uploading": "上传中",
+        "completed": "已完成",
+        "failed": "失败"
+      },
+      "download": "下载",
+      "size": "大小",
+      "requestedAt": "请求时间",
+      "uploadSuccess": "日志上传请求已发送",
+      "uploadFailed": "请求日志上传失败",
+      "offlineHint": "Runner 必须在线才能上传日志"
+    },
     "authorize": {
       "title": "授权 Runner",
       "description": "一个 Runner 正在请求连接到您的组织。授权后即可执行 AI 智能体任务。",

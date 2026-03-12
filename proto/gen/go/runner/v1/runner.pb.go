@@ -48,6 +48,7 @@ type RunnerMessage struct {
 	//	*RunnerMessage_McpRequest
 	//	*RunnerMessage_Pong
 	//	*RunnerMessage_UpgradeStatus
+	//	*RunnerMessage_LogUploadStatus
 	Payload       isRunnerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -289,6 +290,15 @@ func (x *RunnerMessage) GetUpgradeStatus() *UpgradeStatusEvent {
 	return nil
 }
 
+func (x *RunnerMessage) GetLogUploadStatus() *LogUploadStatusEvent {
+	if x != nil {
+		if x, ok := x.Payload.(*RunnerMessage_LogUploadStatus); ok {
+			return x.LogUploadStatus
+		}
+	}
+	return nil
+}
+
 func (x *RunnerMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -392,6 +402,11 @@ type RunnerMessage_UpgradeStatus struct {
 	UpgradeStatus *UpgradeStatusEvent `protobuf:"bytes,23,opt,name=upgrade_status,json=upgradeStatus,proto3,oneof"`
 }
 
+type RunnerMessage_LogUploadStatus struct {
+	// 日志上传状态回报（Runner -> Backend）
+	LogUploadStatus *LogUploadStatusEvent `protobuf:"bytes,24,opt,name=log_upload_status,json=logUploadStatus,proto3,oneof"`
+}
+
 func (*RunnerMessage_Initialize) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_Initialized) isRunnerMessage_Payload() {}
@@ -435,6 +450,8 @@ func (*RunnerMessage_McpRequest) isRunnerMessage_Payload() {}
 func (*RunnerMessage_Pong) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_UpgradeStatus) isRunnerMessage_Payload() {}
+
+func (*RunnerMessage_LogUploadStatus) isRunnerMessage_Payload() {}
 
 // InitializeRequest Runner 初始化请求
 type InitializeRequest struct {
@@ -1351,6 +1368,7 @@ type ServerMessage struct {
 	//	*ServerMessage_Ping
 	//	*ServerMessage_HeartbeatAck
 	//	*ServerMessage_UpgradeRunner
+	//	*ServerMessage_UploadLogs
 	Payload       isServerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1538,6 +1556,15 @@ func (x *ServerMessage) GetUpgradeRunner() *UpgradeRunnerCommand {
 	return nil
 }
 
+func (x *ServerMessage) GetUploadLogs() *UploadLogsCommand {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerMessage_UploadLogs); ok {
+			return x.UploadLogs
+		}
+	}
+	return nil
+}
+
 func (x *ServerMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -1618,6 +1645,11 @@ type ServerMessage_UpgradeRunner struct {
 	UpgradeRunner *UpgradeRunnerCommand `protobuf:"bytes,17,opt,name=upgrade_runner,json=upgradeRunner,proto3,oneof"`
 }
 
+type ServerMessage_UploadLogs struct {
+	// 日志上传命令（Backend -> Runner）
+	UploadLogs *UploadLogsCommand `protobuf:"bytes,18,opt,name=upload_logs,json=uploadLogs,proto3,oneof"`
+}
+
 func (*ServerMessage_InitializeResult) isServerMessage_Payload() {}
 
 func (*ServerMessage_CreatePod) isServerMessage_Payload() {}
@@ -1649,6 +1681,8 @@ func (*ServerMessage_Ping) isServerMessage_Payload() {}
 func (*ServerMessage_HeartbeatAck) isServerMessage_Payload() {}
 
 func (*ServerMessage_UpgradeRunner) isServerMessage_Payload() {}
+
+func (*ServerMessage_UploadLogs) isServerMessage_Payload() {}
 
 // InitializeResult 初始化响应
 type InitializeResult struct {
@@ -4871,11 +4905,159 @@ func (x *UpgradeStatusEvent) GetTargetVersion() string {
 	return ""
 }
 
+// UploadLogsCommand 日志上传命令（Backend -> Runner）
+// 指示 Runner 收集日志并上传到 S3 存储
+type UploadLogsCommand struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`             // UUID，关联状态回报
+	PresignedUrl  string                 `protobuf:"bytes,2,opt,name=presigned_url,json=presignedUrl,proto3" json:"presigned_url,omitempty"`    // S3 预签名 PUT URL
+	UrlExpiresAt  int64                  `protobuf:"varint,3,opt,name=url_expires_at,json=urlExpiresAt,proto3" json:"url_expires_at,omitempty"` // URL 过期时间（Unix 秒）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadLogsCommand) Reset() {
+	*x = UploadLogsCommand{}
+	mi := &file_runner_v1_runner_proto_msgTypes[64]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadLogsCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadLogsCommand) ProtoMessage() {}
+
+func (x *UploadLogsCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[64]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadLogsCommand.ProtoReflect.Descriptor instead.
+func (*UploadLogsCommand) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{64}
+}
+
+func (x *UploadLogsCommand) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *UploadLogsCommand) GetPresignedUrl() string {
+	if x != nil {
+		return x.PresignedUrl
+	}
+	return ""
+}
+
+func (x *UploadLogsCommand) GetUrlExpiresAt() int64 {
+	if x != nil {
+		return x.UrlExpiresAt
+	}
+	return 0
+}
+
+// LogUploadStatusEvent 日志上传状态回报（Runner -> Backend）
+// Runner 在日志上传过程中持续回报各阶段状态
+type LogUploadStatusEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`  // 对应 UploadLogsCommand.request_id
+	Phase         string                 `protobuf:"bytes,2,opt,name=phase,proto3" json:"phase,omitempty"`                           // collecting, uploading, completed, failed
+	Progress      int32                  `protobuf:"varint,3,opt,name=progress,proto3" json:"progress,omitempty"`                    // 0-100
+	Message       string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`                       // 人类可读状态信息
+	Error         string                 `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`                           // phase=failed 时的错误信息
+	SizeBytes     int64                  `protobuf:"varint,6,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"` // 日志包大小（字节）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogUploadStatusEvent) Reset() {
+	*x = LogUploadStatusEvent{}
+	mi := &file_runner_v1_runner_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogUploadStatusEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogUploadStatusEvent) ProtoMessage() {}
+
+func (x *LogUploadStatusEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogUploadStatusEvent.ProtoReflect.Descriptor instead.
+func (*LogUploadStatusEvent) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *LogUploadStatusEvent) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *LogUploadStatusEvent) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *LogUploadStatusEvent) GetProgress() int32 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
+}
+
+func (x *LogUploadStatusEvent) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *LogUploadStatusEvent) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *LogUploadStatusEvent) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
 var File_runner_v1_runner_proto protoreflect.FileDescriptor
 
 const file_runner_v1_runner_proto_rawDesc = "" +
 	"\n" +
-	"\x16runner/v1/runner.proto\x12\trunner.v1\"\xc2\f\n" +
+	"\x16runner/v1/runner.proto\x12\trunner.v1\"\x91\r\n" +
 	"\rRunnerMessage\x12>\n" +
 	"\n" +
 	"initialize\x18\x01 \x01(\v2\x1c.runner.v1.InitializeRequestH\x00R\n" +
@@ -4904,7 +5086,8 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\vmcp_request\x18\x15 \x01(\v2\x15.runner.v1.McpRequestH\x00R\n" +
 	"mcpRequest\x12*\n" +
 	"\x04pong\x18\x16 \x01(\v2\x14.runner.v1.PongEventH\x00R\x04pong\x12F\n" +
-	"\x0eupgrade_status\x18\x17 \x01(\v2\x1d.runner.v1.UpgradeStatusEventH\x00R\rupgradeStatus\x12\x1c\n" +
+	"\x0eupgrade_status\x18\x17 \x01(\v2\x1d.runner.v1.UpgradeStatusEventH\x00R\rupgradeStatus\x12M\n" +
+	"\x11log_upload_status\x18\x18 \x01(\v2\x1f.runner.v1.LogUploadStatusEventH\x00R\x0flogUploadStatus\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"v\n" +
 	"\x11InitializeRequest\x12)\n" +
@@ -4975,7 +5158,8 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12\x1a\n" +
 	"\bprogress\x18\x03 \x01(\x05R\bprogress\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\xc5\t\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"\x86\n" +
+	"\n" +
 	"\rServerMessage\x12J\n" +
 	"\x11initialize_result\x18\x01 \x01(\v2\x1b.runner.v1.InitializeResultH\x00R\x10initializeResult\x12<\n" +
 	"\n" +
@@ -4995,7 +5179,9 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\fmcp_response\x18\r \x01(\v2\x16.runner.v1.McpResponseH\x00R\vmcpResponse\x12,\n" +
 	"\x04ping\x18\x0e \x01(\v2\x16.runner.v1.PingCommandH\x00R\x04ping\x12>\n" +
 	"\rheartbeat_ack\x18\x10 \x01(\v2\x17.runner.v1.HeartbeatAckH\x00R\fheartbeatAck\x12H\n" +
-	"\x0eupgrade_runner\x18\x11 \x01(\v2\x1f.runner.v1.UpgradeRunnerCommandH\x00R\rupgradeRunner\x12\x1c\n" +
+	"\x0eupgrade_runner\x18\x11 \x01(\v2\x1f.runner.v1.UpgradeRunnerCommandH\x00R\rupgradeRunner\x12?\n" +
+	"\vupload_logs\x18\x12 \x01(\v2\x1c.runner.v1.UploadLogsCommandH\x00R\n" +
+	"uploadLogs\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"\xcc\x01\n" +
 	"\x10InitializeResult\x12)\n" +
@@ -5244,7 +5430,21 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x12\x14\n" +
 	"\x05error\x18\x05 \x01(\tR\x05error\x12'\n" +
 	"\x0fcurrent_version\x18\x06 \x01(\tR\x0ecurrentVersion\x12%\n" +
-	"\x0etarget_version\x18\a \x01(\tR\rtargetVersion2R\n" +
+	"\x0etarget_version\x18\a \x01(\tR\rtargetVersion\"}\n" +
+	"\x11UploadLogsCommand\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12#\n" +
+	"\rpresigned_url\x18\x02 \x01(\tR\fpresignedUrl\x12$\n" +
+	"\x0eurl_expires_at\x18\x03 \x01(\x03R\furlExpiresAt\"\xb6\x01\n" +
+	"\x14LogUploadStatusEvent\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12\x14\n" +
+	"\x05phase\x18\x02 \x01(\tR\x05phase\x12\x1a\n" +
+	"\bprogress\x18\x03 \x01(\x05R\bprogress\x12\x18\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\x12\x14\n" +
+	"\x05error\x18\x05 \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x06 \x01(\x03R\tsizeBytes2R\n" +
 	"\rRunnerService\x12A\n" +
 	"\aConnect\x12\x18.runner.v1.RunnerMessage\x1a\x18.runner.v1.ServerMessage(\x010\x01B\x9a\x01\n" +
 	"\rcom.runner.v1B\vRunnerProtoP\x01Z7github.com/anthropic/agentmesh/proto/runner/v1;runnerv1\xa2\x02\x03RXX\xaa\x02\tRunner.V1\xca\x02\tRunner\\V1\xe2\x02\x15Runner\\V1\\GPBMetadata\xea\x02\n" +
@@ -5262,7 +5462,7 @@ func file_runner_v1_runner_proto_rawDescGZIP() []byte {
 	return file_runner_v1_runner_proto_rawDescData
 }
 
-var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 66)
+var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 68)
 var file_runner_v1_runner_proto_goTypes = []any{
 	(*RunnerMessage)(nil),              // 0: runner.v1.RunnerMessage
 	(*InitializeRequest)(nil),          // 1: runner.v1.InitializeRequest
@@ -5328,8 +5528,10 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*HeartbeatAck)(nil),               // 61: runner.v1.HeartbeatAck
 	(*UpgradeRunnerCommand)(nil),       // 62: runner.v1.UpgradeRunnerCommand
 	(*UpgradeStatusEvent)(nil),         // 63: runner.v1.UpgradeStatusEvent
-	nil,                                // 64: runner.v1.ErrorEvent.DetailsEntry
-	nil,                                // 65: runner.v1.CreatePodCommand.EnvVarsEntry
+	(*UploadLogsCommand)(nil),          // 64: runner.v1.UploadLogsCommand
+	(*LogUploadStatusEvent)(nil),       // 65: runner.v1.LogUploadStatusEvent
+	nil,                                // 66: runner.v1.ErrorEvent.DetailsEntry
+	nil,                                // 67: runner.v1.CreatePodCommand.EnvVarsEntry
 }
 var file_runner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: runner.v1.RunnerMessage.initialize:type_name -> runner.v1.InitializeRequest
@@ -5354,57 +5556,59 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	56, // 19: runner.v1.RunnerMessage.mcp_request:type_name -> runner.v1.McpRequest
 	60, // 20: runner.v1.RunnerMessage.pong:type_name -> runner.v1.PongEvent
 	63, // 21: runner.v1.RunnerMessage.upgrade_status:type_name -> runner.v1.UpgradeStatusEvent
-	2,  // 22: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
-	4,  // 23: runner.v1.InitializedConfirm.agent_versions:type_name -> runner.v1.AgentVersionInfo
-	6,  // 24: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
-	7,  // 25: runner.v1.HeartbeatData.relay_connections:type_name -> runner.v1.RelayConnectionInfo
-	4,  // 26: runner.v1.HeartbeatData.agent_versions:type_name -> runner.v1.AgentVersionInfo
-	64, // 27: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
-	16, // 28: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
-	19, // 29: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
-	23, // 30: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
-	24, // 31: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
-	25, // 32: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
-	26, // 33: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
-	27, // 34: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
-	28, // 35: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
-	29, // 36: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
-	31, // 37: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
-	47, // 38: runner.v1.ServerMessage.create_autopilot:type_name -> runner.v1.CreateAutopilotCommand
-	40, // 39: runner.v1.ServerMessage.autopilot_control:type_name -> runner.v1.AutopilotControlCommand
-	57, // 40: runner.v1.ServerMessage.mcp_response:type_name -> runner.v1.McpResponse
-	59, // 41: runner.v1.ServerMessage.ping:type_name -> runner.v1.PingCommand
-	61, // 42: runner.v1.ServerMessage.heartbeat_ack:type_name -> runner.v1.HeartbeatAck
-	62, // 43: runner.v1.ServerMessage.upgrade_runner:type_name -> runner.v1.UpgradeRunnerCommand
-	17, // 44: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
-	18, // 45: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
-	65, // 46: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
-	21, // 47: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
-	22, // 48: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
-	20, // 49: runner.v1.CreatePodCommand.resources_to_download:type_name -> runner.v1.ResourceToDownload
-	32, // 50: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
-	34, // 51: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
-	38, // 52: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
-	44, // 53: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
-	45, // 54: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
-	46, // 55: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
-	41, // 56: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
-	42, // 57: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
-	43, // 58: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
-	19, // 59: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
-	48, // 60: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
-	52, // 61: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
-	53, // 62: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
-	54, // 63: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
-	55, // 64: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
-	58, // 65: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
-	0,  // 66: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
-	15, // 67: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
-	67, // [67:68] is the sub-list for method output_type
-	66, // [66:67] is the sub-list for method input_type
-	66, // [66:66] is the sub-list for extension type_name
-	66, // [66:66] is the sub-list for extension extendee
-	0,  // [0:66] is the sub-list for field type_name
+	65, // 22: runner.v1.RunnerMessage.log_upload_status:type_name -> runner.v1.LogUploadStatusEvent
+	2,  // 23: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
+	4,  // 24: runner.v1.InitializedConfirm.agent_versions:type_name -> runner.v1.AgentVersionInfo
+	6,  // 25: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
+	7,  // 26: runner.v1.HeartbeatData.relay_connections:type_name -> runner.v1.RelayConnectionInfo
+	4,  // 27: runner.v1.HeartbeatData.agent_versions:type_name -> runner.v1.AgentVersionInfo
+	66, // 28: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
+	16, // 29: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
+	19, // 30: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
+	23, // 31: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
+	24, // 32: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
+	25, // 33: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
+	26, // 34: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
+	27, // 35: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
+	28, // 36: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
+	29, // 37: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
+	31, // 38: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
+	47, // 39: runner.v1.ServerMessage.create_autopilot:type_name -> runner.v1.CreateAutopilotCommand
+	40, // 40: runner.v1.ServerMessage.autopilot_control:type_name -> runner.v1.AutopilotControlCommand
+	57, // 41: runner.v1.ServerMessage.mcp_response:type_name -> runner.v1.McpResponse
+	59, // 42: runner.v1.ServerMessage.ping:type_name -> runner.v1.PingCommand
+	61, // 43: runner.v1.ServerMessage.heartbeat_ack:type_name -> runner.v1.HeartbeatAck
+	62, // 44: runner.v1.ServerMessage.upgrade_runner:type_name -> runner.v1.UpgradeRunnerCommand
+	64, // 45: runner.v1.ServerMessage.upload_logs:type_name -> runner.v1.UploadLogsCommand
+	17, // 46: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
+	18, // 47: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
+	67, // 48: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
+	21, // 49: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
+	22, // 50: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
+	20, // 51: runner.v1.CreatePodCommand.resources_to_download:type_name -> runner.v1.ResourceToDownload
+	32, // 52: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
+	34, // 53: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
+	38, // 54: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
+	44, // 55: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
+	45, // 56: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
+	46, // 57: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
+	41, // 58: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
+	42, // 59: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
+	43, // 60: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
+	19, // 61: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
+	48, // 62: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
+	52, // 63: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
+	53, // 64: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
+	54, // 65: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
+	55, // 66: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
+	58, // 67: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
+	0,  // 68: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
+	15, // 69: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
+	69, // [69:70] is the sub-list for method output_type
+	68, // [68:69] is the sub-list for method input_type
+	68, // [68:68] is the sub-list for extension type_name
+	68, // [68:68] is the sub-list for extension extendee
+	0,  // [0:68] is the sub-list for field type_name
 }
 
 func init() { file_runner_v1_runner_proto_init() }
@@ -5435,6 +5639,7 @@ func file_runner_v1_runner_proto_init() {
 		(*RunnerMessage_McpRequest)(nil),
 		(*RunnerMessage_Pong)(nil),
 		(*RunnerMessage_UpgradeStatus)(nil),
+		(*RunnerMessage_LogUploadStatus)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[15].OneofWrappers = []any{
 		(*ServerMessage_InitializeResult)(nil),
@@ -5453,6 +5658,7 @@ func file_runner_v1_runner_proto_init() {
 		(*ServerMessage_Ping)(nil),
 		(*ServerMessage_HeartbeatAck)(nil),
 		(*ServerMessage_UpgradeRunner)(nil),
+		(*ServerMessage_UploadLogs)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[40].OneofWrappers = []any{
 		(*AutopilotControlCommand_Pause)(nil),
@@ -5468,7 +5674,7 @@ func file_runner_v1_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_v1_runner_proto_rawDesc), len(file_runner_v1_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   66,
+			NumMessages:   68,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

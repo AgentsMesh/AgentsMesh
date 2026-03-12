@@ -234,6 +234,20 @@ func (m *MockConnection) SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) e
 	return nil
 }
 
+// SendLogUploadStatus records a log upload status event.
+func (m *MockConnection) SendLogUploadStatus(event *runnerv1.LogUploadStatusEvent) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{
+		Type: "log_upload_status",
+		Data: event,
+	})
+	return nil
+}
+
 // SendMessage records a raw RunnerMessage.
 func (m *MockConnection) SendMessage(msg *runnerv1.RunnerMessage) error {
 	m.mu.Lock()

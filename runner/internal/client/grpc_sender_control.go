@@ -90,6 +90,17 @@ func (c *GRPCConnection) SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) e
 	return c.sendControl(msg)
 }
 
+// SendLogUploadStatus sends a log upload status event to the server (control message).
+func (c *GRPCConnection) SendLogUploadStatus(event *runnerv1.LogUploadStatusEvent) error {
+	msg := &runnerv1.RunnerMessage{
+		Payload: &runnerv1.RunnerMessage_LogUploadStatus{
+			LogUploadStatus: event,
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return c.sendControl(msg)
+}
+
 // sendError sends an error event back to the server (internal use, control message).
 func (c *GRPCConnection) sendError(podKey, code, message string) {
 	msg := &runnerv1.RunnerMessage{

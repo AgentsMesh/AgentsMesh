@@ -122,6 +122,13 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 			c.handleUpgradeRunner(payload.UpgradeRunner)
 		})
 
+	case *runnerv1.ServerMessage_UploadLogs:
+		c.handlerWg.Add(1)
+		safego.Go("handle-upload-logs", func() {
+			defer c.handlerWg.Done()
+			c.handleUploadLogs(payload.UploadLogs)
+		})
+
 	default:
 		logger.GRPC().Warn("Unknown server message type")
 	}

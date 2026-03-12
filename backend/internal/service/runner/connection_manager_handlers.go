@@ -141,6 +141,23 @@ func (cm *RunnerConnectionManager) HandleUpgradeStatus(runnerID int64, data *run
 	}
 }
 
+// HandleLogUploadStatus handles log upload status event from runner (Proto type)
+func (cm *RunnerConnectionManager) HandleLogUploadStatus(runnerID int64, data *runnerv1.LogUploadStatusEvent) {
+	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("received log upload status",
+		"runner_id", runnerID,
+		"request_id", data.RequestId,
+		"phase", data.Phase,
+		"progress", data.Progress,
+		"message", data.Message,
+		"error", data.Error,
+		"size_bytes", data.SizeBytes,
+	)
+	if cm.onLogUploadStatus != nil {
+		cm.onLogUploadStatus(runnerID, data)
+	}
+}
+
 // ==================== AutopilotController Event Handlers ====================
 
 // HandleAutopilotStatus handles AutopilotController status update event (Proto type)

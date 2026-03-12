@@ -148,6 +148,12 @@ func registerRunnerRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.UpgradeCommandSender != nil {
 		runnerOpts = append(runnerOpts, WithUpgradeCommandSender(svc.UpgradeCommandSender))
 	}
+	if svc.LogUploadSender != nil {
+		runnerOpts = append(runnerOpts, WithLogUploadSender(svc.LogUploadSender))
+	}
+	if svc.LogUploadService != nil {
+		runnerOpts = append(runnerOpts, WithLogUploadService(svc.LogUploadService))
+	}
 	runnerHandler := NewRunnerHandler(svc.Runner, runnerOpts...)
 	runners := rg.Group("/runners")
 	{
@@ -159,6 +165,8 @@ func registerRunnerRoutes(rg *gin.RouterGroup, svc *Services) {
 		runners.GET("/:id/pods", runnerHandler.ListRunnerPods)
 		runners.POST("/:id/sandboxes/query", runnerHandler.QuerySandboxes)
 		runners.POST("/:id/upgrade", runnerHandler.UpgradeRunner)
+		runners.POST("/:id/logs/upload", runnerHandler.RequestLogUpload)
+		runners.GET("/:id/logs", runnerHandler.ListRunnerLogs)
 
 		if svc.GRPCRunnerHandler != nil {
 			RegisterOrgGRPCRunnerRoutes(runners, svc.GRPCRunnerHandler)

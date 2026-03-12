@@ -55,6 +55,14 @@ func (m *mockStorage) Exists(_ context.Context, _ string) (bool, error) {
 	return true, nil
 }
 
+func (m *mockStorage) PresignPutURL(_ context.Context, _ string, _ string, _ time.Duration) (string, error) {
+	return "", nil
+}
+
+func (m *mockStorage) InternalPresignPutURL(_ context.Context, _ string, _ string, _ time.Duration) (string, error) {
+	return "", nil
+}
+
 func createServiceWithStorage(t *testing.T, stor *mockStorage, cfg config.StorageConfig) (*Service, *gorm.DB) {
 	db := setupTestDB(t)
 	repo := infra.NewSupportTicketRepository(db)

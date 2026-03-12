@@ -183,6 +183,20 @@ func (c *GRPCConnection) handlePing(ping *runnerv1.PingCommand) {
 	}
 }
 
+// handleUploadLogs handles upload_logs command from server.
+func (c *GRPCConnection) handleUploadLogs(cmd *runnerv1.UploadLogsCommand) {
+	log := logger.GRPC()
+	log.Info("Received upload_logs", "request_id", cmd.RequestId)
+	if c.handler == nil {
+		log.Warn("No handler set, ignoring upload_logs")
+		return
+	}
+
+	if err := c.handler.OnUploadLogs(cmd); err != nil {
+		log.Error("Failed to handle upload logs", "request_id", cmd.RequestId, "error", err)
+	}
+}
+
 // SetRPCClient sets the RPCClient for handling MCP request-response over gRPC stream.
 func (c *GRPCConnection) SetRPCClient(rpc *RPCClient) {
 	c.rpcClient = rpc
