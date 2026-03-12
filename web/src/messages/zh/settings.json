@@ -495,6 +495,37 @@
         }
       }
     },
+    "usagePage": {
+      "title": "Token 用量",
+      "description": "监控组织内的 Token 消耗情况",
+      "inputTokens": "输入 Token",
+      "outputTokens": "输出 Token",
+      "cacheReadTokens": "缓存读取 Token",
+      "cacheCreationTokens": "缓存创建 Token",
+      "totalTokens": "总计 Token",
+      "timeSeriesTitle": "Token 用量趋势",
+      "byAgentTitle": "按智能体统计",
+      "byUserTitle": "按用户统计",
+      "byModelTitle": "按模型统计",
+      "columnUser": "用户",
+      "columnModel": "模型",
+      "unknown": "未知",
+      "noData": "暂无 Token 用量数据",
+      "loadFailed": "加载 Token 用量数据失败",
+      "retry": "重试",
+      "filters": {
+        "timeRange": "时间范围",
+        "agentType": "智能体类型",
+        "granularity": "粒度",
+        "allAgents": "全部智能体",
+        "last7Days": "最近 7 天",
+        "last30Days": "最近 30 天",
+        "last90Days": "最近 90 天",
+        "day": "日",
+        "week": "周",
+        "month": "月"
+      }
+    },
     "notifications": {
       "title": "推送通知",
       "description": "配置重要事件的推送通知，如 Pod 状态变化、Ticket 分配和 Runner 警报。",

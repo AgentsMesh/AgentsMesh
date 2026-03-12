@@ -107,6 +107,9 @@ func main() {
 	// Wire AutopilotRepository into PodCoordinator for autopilot event handling
 	podCoordinator.SetAutopilotRepo(services.autopilotRepo)
 
+	// Wire TokenUsageService into PodCoordinator for token usage recording
+	podCoordinator.SetTokenUsageService(services.tokenUsage)
+
 	// Initialize Relay services
 	relayManager := relay.NewManagerWithOptions()
 	relayTokenGenerator := relay.NewTokenGenerator(cfg.JWT.Secret, "agentsmesh-relay")
@@ -297,6 +300,7 @@ func main() {
 		SSO:                  services.sso,
 		SupportTicket:       services.supportTicket,
 		NotificationPrefStore: services.notifPrefStore,
+		TokenUsage:            services.tokenUsage,
 	}
 
 	// Initialize router

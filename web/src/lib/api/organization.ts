@@ -20,6 +20,7 @@ export interface OrganizationData {
   id: number;
   name: string;
   slug: string;
+  role?: string;
   logo_url?: string;
   subscription_plan?: string;
   subscription_status?: string;

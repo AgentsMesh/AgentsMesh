@@ -355,6 +355,37 @@
         }
       }
     },
+    "usagePage": {
+      "title": "Token-Verbrauch",
+      "description": "Token-Verbrauch in Ihrer Organisation überwachen",
+      "inputTokens": "Eingabe-Token",
+      "outputTokens": "Ausgabe-Token",
+      "cacheReadTokens": "Cache-Lese-Token",
+      "cacheCreationTokens": "Cache-Erstellungs-Token",
+      "totalTokens": "Token gesamt",
+      "timeSeriesTitle": "Token-Verbrauch im Zeitverlauf",
+      "byAgentTitle": "Verbrauch nach Agent",
+      "byUserTitle": "Verbrauch nach Benutzer",
+      "byModelTitle": "Verbrauch nach Modell",
+      "columnUser": "Benutzer",
+      "columnModel": "Modell",
+      "unknown": "Unbekannt",
+      "noData": "Keine Token-Verbrauchsdaten verfügbar",
+      "loadFailed": "Token-Verbrauchsdaten konnten nicht geladen werden",
+      "retry": "Erneut versuchen",
+      "filters": {
+        "timeRange": "Zeitraum",
+        "agentType": "Agent-Typ",
+        "granularity": "Granularität",
+        "allAgents": "Alle Agents",
+        "last7Days": "Letzte 7 Tage",
+        "last30Days": "Letzte 30 Tage",
+        "last90Days": "Letzte 90 Tage",
+        "day": "Tag",
+        "week": "Woche",
+        "month": "Monat"
+      }
+    },
     "notifications": {
       "title": "Push Notifications",
       "description": "Configure push notifications for important events like pod status changes, ticket assignments, and runner alerts.",

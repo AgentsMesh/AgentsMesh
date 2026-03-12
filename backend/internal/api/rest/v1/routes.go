@@ -89,6 +89,9 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 
 	// Register notification preference routes
 	registerNotificationRoutes(rg, svc)
+
+	// Register token usage routes
+	registerTokenUsageRoutes(rg, svc)
 }
 
 func registerAgentRoutes(rg *gin.RouterGroup, svc *Services) {
@@ -442,4 +445,11 @@ func registerNotificationRoutes(rg *gin.RouterGroup, svc *Services) {
 		notifications.GET("/preferences", handler.GetPreferences)
 		notifications.PUT("/preferences", handler.SetPreference)
 	}
+}
+
+func registerTokenUsageRoutes(rg *gin.RouterGroup, svc *Services) {
+	if svc.TokenUsage == nil {
+		return
+	}
+	RegisterTokenUsageRoutes(rg, svc.TokenUsage)
 }

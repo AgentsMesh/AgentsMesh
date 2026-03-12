@@ -202,3 +202,14 @@ export type { NotificationPreference } from "./notification";
 // SSO
 export { ssoApi, getSSOAuthURL } from "./sso";
 export type { SSOConfig, SSODiscoverResponse } from "./sso";
+
+// Token Usage
+export { tokenUsageApi } from "./token-usage";
+export type {
+  TokenUsageSummary,
+  TokenUsageTimeSeriesPoint,
+  TokenUsageByAgent,
+  TokenUsageByUser,
+  TokenUsageByModel,
+  TokenUsageQueryParams,
+} from "./token-usage";

@@ -128,6 +128,13 @@ func (r *Runner) stopAllPods() {
 		go func(p *Pod) {
 			defer wg.Done()
 			log.Debug("Stopping pod", "pod_key", p.PodKey)
+
+			// Capture metadata before cleanup for token usage collection.
+			podKey := p.PodKey
+			agentType := p.AgentType
+			sandboxPath := p.SandboxPath
+			podStartedAt := p.StartedAt
+
 			p.DisconnectRelay()
 			p.StopStateDetector()
 			if p.Aggregator != nil {
@@ -137,19 +144,29 @@ func (r *Runner) stopAllPods() {
 				p.Terminal.Stop()
 			}
 			r.podStore.Delete(p.PodKey)
+
+			// Collect token usage synchronously (best-effort).
+			// Token files live in HOME (~/.claude/, ~/.codex/), not in sandbox,
+			// so they survive Terminal.Stop(). gRPC is still alive at this point.
+			r.messageHandler.collectAndSendTokenUsage(podKey, agentType, sandboxPath, podStartedAt)
 		}(pod)
 	}
 
 	// Total timeout: fits within Windows SCM 20s limit
-	// (leaves headroom for autopilot stop + supervisor teardown)
+	// (leaves headroom for autopilot stop + supervisor teardown).
+	// Use a timer so we can stop it on success, preventing the
+	// wg.Wait goroutine from leaking on timeout.
+	timer := time.NewTimer(15 * time.Second)
+	defer timer.Stop()
+
 	done := make(chan struct{})
 	go func() { wg.Wait(); close(done) }()
 
 	select {
 	case <-done:
 		log.Info("All pods stopped successfully")
-	case <-time.After(15 * time.Second):
-		log.Warn("Timeout waiting for pods to stop", "count", len(pods))
+	case <-timer.C:
+		log.Warn("Timeout waiting for pods to stop — some token usage data may be lost", "count", len(pods))
 	}
 }
 

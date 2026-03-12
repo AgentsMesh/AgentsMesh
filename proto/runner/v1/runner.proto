@@ -45,6 +45,8 @@ message RunnerMessage {
     UpgradeStatusEvent upgrade_status = 23;
     // 日志上传状态回报（Runner -> Backend）
     LogUploadStatusEvent log_upload_status = 24;
+    // Token 用量报告（Runner -> Backend，Pod 退出时上报）
+    TokenUsageReport token_usage = 25;
   }
   int64 timestamp = 15;
 }
@@ -641,4 +643,22 @@ message LogUploadStatusEvent {
   string message = 4;          // 人类可读状态信息
   string error = 5;            // phase=failed 时的错误信息
   int64 size_bytes = 6;        // 日志包大小（字节）
+}
+
+// ==================== Token Usage 相关消息 ====================
+
+// TokenUsageReport Pod 退出时上报的 Token 用量（Runner -> Backend）
+// 一个 Pod 可能使用多个模型，因此按模型拆分
+message TokenUsageReport {
+  string pod_key = 1;
+  repeated TokenModelUsage models = 2;
+}
+
+// TokenModelUsage 单个模型的 Token 用量
+message TokenModelUsage {
+  string model = 1;                     // 模型名称（如 "claude-sonnet-4-20250514"）
+  int64 input_tokens = 2;
+  int64 output_tokens = 3;
+  int64 cache_creation_tokens = 4;
+  int64 cache_read_tokens = 5;
 }

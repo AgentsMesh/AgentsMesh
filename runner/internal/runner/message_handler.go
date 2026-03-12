@@ -271,6 +271,14 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 	}
 
 	h.sendPodTerminated(req.PodKey)
+
+	// Async token usage collection — same as createExitHandler.
+	// Capture values before goroutine to avoid race.
+	agentType := pod.AgentType
+	sandboxPath := pod.SandboxPath
+	podStartedAt := pod.StartedAt
+	go h.collectAndSendTokenUsage(req.PodKey, agentType, sandboxPath, podStartedAt)
+
 	log.Info("Pod terminated", "pod_key", req.PodKey)
 	return nil
 }

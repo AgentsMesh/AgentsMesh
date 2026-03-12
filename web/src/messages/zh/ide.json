@@ -112,7 +112,9 @@
           "extensions": "扩展",
           "extensionsDesc": "Skill 和 MCP 服务器市场",
           "billing": "账单",
-          "billingDesc": "订阅和付款"
+          "billingDesc": "订阅和付款",
+          "usage": "Token 用量",
+          "usageDesc": "监控 Token 消耗"
         }
       },
       "mesh": {

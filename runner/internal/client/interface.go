@@ -67,6 +67,9 @@ type ConnectionSender interface {
 
 	// SendLogUploadStatus sends a log upload status event to the server.
 	SendLogUploadStatus(event *runnerv1.LogUploadStatusEvent) error
+
+	// SendTokenUsage sends a token usage report to the server.
+	SendTokenUsage(podKey string, models []*runnerv1.TokenModelUsage) error
 }
 
 // ConnectionMonitor defines methods for monitoring connection health.

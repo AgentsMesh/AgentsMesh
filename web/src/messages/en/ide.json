@@ -112,7 +112,9 @@
           "extensions": "Extensions",
           "extensionsDesc": "Skills and MCP server marketplace",
           "billing": "Billing",
-          "billingDesc": "Subscription and payments"
+          "billingDesc": "Subscription and payments",
+          "usage": "Token Usage",
+          "usageDesc": "Monitor token consumption"
         }
       },
       "mesh": {

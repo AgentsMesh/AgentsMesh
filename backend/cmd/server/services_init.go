@@ -23,6 +23,7 @@ import (
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	ssoservice "github.com/anthropics/agentsmesh/backend/internal/service/sso"
 	supportticketservice "github.com/anthropics/agentsmesh/backend/internal/service/supportticket"
+	tokenusagesvc "github.com/anthropics/agentsmesh/backend/internal/service/tokenusage"
 	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/service/license"
 	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
@@ -76,6 +77,7 @@ type serviceContainer struct {
 	loopRun           *loop.LoopRunService
 	sso               *ssoservice.Service
 	supportTicket     *supportticketservice.Service
+	tokenUsage        *tokenusagesvc.Service
 
 	// Notification services
 	notifDispatcher *notifService.Dispatcher
@@ -194,6 +196,10 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	notifPrefRepo := infra.NewNotificationPreferenceRepository(db)
 	notifPrefStore := notifService.NewPreferenceStore(notifPrefRepo)
 
+	// Initialize token usage service
+	tokenUsageRepo := infra.NewTokenUsageRepository(db)
+	tokenUsageSvc := tokenusagesvc.NewService(tokenUsageRepo, slog.Default())
+
 	return &serviceContainer{
 		auth:               authSvc,
 		user:               userSvc,
@@ -230,6 +236,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		sso:                ssoSvc,
 		supportTicket:      supportTicketSvc,
 		notifPrefStore:     notifPrefStore,
+		tokenUsage:         tokenUsageSvc,
 		podRepo:            podRepo,
 		runnerRepo:         runnerRepo,
 		autopilotRepo:      autopilotRepo,

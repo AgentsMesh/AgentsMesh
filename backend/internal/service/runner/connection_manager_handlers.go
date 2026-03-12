@@ -123,6 +123,16 @@ func (cm *RunnerConnectionManager) HandleOSCTitle(runnerID int64, data *runnerv1
 	}
 }
 
+// ==================== Token Usage Handler ====================
+
+// HandleTokenUsage handles token usage report from runner (Proto type)
+func (cm *RunnerConnectionManager) HandleTokenUsage(runnerID int64, data *runnerv1.TokenUsageReport) {
+	cm.UpdateHeartbeat(runnerID)
+	if cm.onTokenUsage != nil {
+		cm.onTokenUsage(runnerID, data)
+	}
+}
+
 // ==================== Upgrade Event Handlers ====================
 
 // HandleUpgradeStatus handles upgrade status event from runner (Proto type)

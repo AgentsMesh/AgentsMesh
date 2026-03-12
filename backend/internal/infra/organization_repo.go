@@ -57,6 +57,7 @@ func (r *organizationRepo) Update(ctx context.Context, id int64, updates map[str
 func (r *organizationRepo) ListByUser(ctx context.Context, userID int64) ([]*organization.Organization, error) {
 	var orgs []*organization.Organization
 	err := r.db.WithContext(ctx).
+		Select("organizations.*, organization_members.role AS role").
 		Joins("JOIN organization_members ON organization_members.organization_id = organizations.id").
 		Where("organization_members.user_id = ?", userID).
 		Find(&orgs).Error

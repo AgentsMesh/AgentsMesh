@@ -10,6 +10,7 @@ export interface RequestOptions {
   body?: unknown;
   headers?: Record<string, string>;
   skipAuthRefresh?: boolean; // Skip token refresh for auth endpoints
+  signal?: AbortSignal; // AbortController signal to cancel in-flight requests
 }
 
 export interface ApiErrorData {
@@ -95,7 +96,7 @@ export async function request<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { method = "GET", body, headers = {}, skipAuthRefresh = false } = options;
+  const { method = "GET", body, headers = {}, skipAuthRefresh = false, signal } = options;
   const { token } = useAuthStore.getState();
 
   const requestHeaders: Record<string, string> = {
@@ -111,6 +112,7 @@ export async function request<T>(
     method,
     headers: requestHeaders,
     body: body ? JSON.stringify(body) : undefined,
+    signal,
   });
 
   // Handle 401 Unauthorized - try to refresh token
@@ -126,6 +128,7 @@ export async function request<T>(
         method,
         headers: requestHeaders,
         body: body ? JSON.stringify(body) : undefined,
+        signal,
       });
 
       if (!retryResponse.ok) {

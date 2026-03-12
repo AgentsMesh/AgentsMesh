@@ -355,6 +355,37 @@
         }
       }
     },
+    "usagePage": {
+      "title": "토큰 사용량",
+      "description": "조직 전체의 토큰 소비를 모니터링합니다",
+      "inputTokens": "입력 토큰",
+      "outputTokens": "출력 토큰",
+      "cacheReadTokens": "캐시 읽기 토큰",
+      "cacheCreationTokens": "캐시 생성 토큰",
+      "totalTokens": "총 토큰",
+      "timeSeriesTitle": "시간별 토큰 사용량",
+      "byAgentTitle": "에이전트별 사용량",
+      "byUserTitle": "사용자별 사용량",
+      "byModelTitle": "모델별 사용량",
+      "columnUser": "사용자",
+      "columnModel": "모델",
+      "unknown": "알 수 없음",
+      "noData": "토큰 사용 데이터가 없습니다",
+      "loadFailed": "토큰 사용 데이터를 불러오지 못했습니다",
+      "retry": "다시 시도",
+      "filters": {
+        "timeRange": "기간",
+        "agentType": "에이전트 유형",
+        "granularity": "세분화",
+        "allAgents": "모든 에이전트",
+        "last7Days": "최근 7일",
+        "last30Days": "최근 30일",
+        "last90Days": "최근 90일",
+        "day": "일",
+        "week": "주",
+        "month": "월"
+      }
+    },
     "notifications": {
       "title": "Push Notifications",
       "description": "Configure push notifications for important events like pod status changes, ticket assignments, and runner alerts.",

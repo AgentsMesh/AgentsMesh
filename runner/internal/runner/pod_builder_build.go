@@ -107,7 +107,7 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	pod := &Pod{
 		ID:              b.cmd.PodKey,
 		PodKey:          b.cmd.PodKey,
-		AgentType:       "", // Could be extracted from command if needed
+		AgentType:       b.cmd.LaunchCommand,
 		Branch:          branchName,
 		SandboxPath:     sandboxRoot,
 		Clipboard:       b.deps.Clipboard,

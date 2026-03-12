@@ -49,6 +49,7 @@ type RunnerMessage struct {
 	//	*RunnerMessage_Pong
 	//	*RunnerMessage_UpgradeStatus
 	//	*RunnerMessage_LogUploadStatus
+	//	*RunnerMessage_TokenUsage
 	Payload       isRunnerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -299,6 +300,15 @@ func (x *RunnerMessage) GetLogUploadStatus() *LogUploadStatusEvent {
 	return nil
 }
 
+func (x *RunnerMessage) GetTokenUsage() *TokenUsageReport {
+	if x != nil {
+		if x, ok := x.Payload.(*RunnerMessage_TokenUsage); ok {
+			return x.TokenUsage
+		}
+	}
+	return nil
+}
+
 func (x *RunnerMessage) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
@@ -407,6 +417,11 @@ type RunnerMessage_LogUploadStatus struct {
 	LogUploadStatus *LogUploadStatusEvent `protobuf:"bytes,24,opt,name=log_upload_status,json=logUploadStatus,proto3,oneof"`
 }
 
+type RunnerMessage_TokenUsage struct {
+	// Token 用量报告（Runner -> Backend，Pod 退出时上报）
+	TokenUsage *TokenUsageReport `protobuf:"bytes,25,opt,name=token_usage,json=tokenUsage,proto3,oneof"`
+}
+
 func (*RunnerMessage_Initialize) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_Initialized) isRunnerMessage_Payload() {}
@@ -452,6 +467,8 @@ func (*RunnerMessage_Pong) isRunnerMessage_Payload() {}
 func (*RunnerMessage_UpgradeStatus) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_LogUploadStatus) isRunnerMessage_Payload() {}
+
+func (*RunnerMessage_TokenUsage) isRunnerMessage_Payload() {}
 
 // InitializeRequest Runner 初始化请求
 type InitializeRequest struct {
@@ -5053,11 +5070,142 @@ func (x *LogUploadStatusEvent) GetSizeBytes() int64 {
 	return 0
 }
 
+// TokenUsageReport Pod 退出时上报的 Token 用量（Runner -> Backend）
+// 一个 Pod 可能使用多个模型，因此按模型拆分
+type TokenUsageReport struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
+	Models        []*TokenModelUsage     `protobuf:"bytes,2,rep,name=models,proto3" json:"models,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TokenUsageReport) Reset() {
+	*x = TokenUsageReport{}
+	mi := &file_runner_v1_runner_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TokenUsageReport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TokenUsageReport) ProtoMessage() {}
+
+func (x *TokenUsageReport) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TokenUsageReport.ProtoReflect.Descriptor instead.
+func (*TokenUsageReport) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *TokenUsageReport) GetPodKey() string {
+	if x != nil {
+		return x.PodKey
+	}
+	return ""
+}
+
+func (x *TokenUsageReport) GetModels() []*TokenModelUsage {
+	if x != nil {
+		return x.Models
+	}
+	return nil
+}
+
+// TokenModelUsage 单个模型的 Token 用量
+type TokenModelUsage struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Model               string                 `protobuf:"bytes,1,opt,name=model,proto3" json:"model,omitempty"` // 模型名称（如 "claude-sonnet-4-20250514"）
+	InputTokens         int64                  `protobuf:"varint,2,opt,name=input_tokens,json=inputTokens,proto3" json:"input_tokens,omitempty"`
+	OutputTokens        int64                  `protobuf:"varint,3,opt,name=output_tokens,json=outputTokens,proto3" json:"output_tokens,omitempty"`
+	CacheCreationTokens int64                  `protobuf:"varint,4,opt,name=cache_creation_tokens,json=cacheCreationTokens,proto3" json:"cache_creation_tokens,omitempty"`
+	CacheReadTokens     int64                  `protobuf:"varint,5,opt,name=cache_read_tokens,json=cacheReadTokens,proto3" json:"cache_read_tokens,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *TokenModelUsage) Reset() {
+	*x = TokenModelUsage{}
+	mi := &file_runner_v1_runner_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TokenModelUsage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TokenModelUsage) ProtoMessage() {}
+
+func (x *TokenModelUsage) ProtoReflect() protoreflect.Message {
+	mi := &file_runner_v1_runner_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TokenModelUsage.ProtoReflect.Descriptor instead.
+func (*TokenModelUsage) Descriptor() ([]byte, []int) {
+	return file_runner_v1_runner_proto_rawDescGZIP(), []int{67}
+}
+
+func (x *TokenModelUsage) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *TokenModelUsage) GetInputTokens() int64 {
+	if x != nil {
+		return x.InputTokens
+	}
+	return 0
+}
+
+func (x *TokenModelUsage) GetOutputTokens() int64 {
+	if x != nil {
+		return x.OutputTokens
+	}
+	return 0
+}
+
+func (x *TokenModelUsage) GetCacheCreationTokens() int64 {
+	if x != nil {
+		return x.CacheCreationTokens
+	}
+	return 0
+}
+
+func (x *TokenModelUsage) GetCacheReadTokens() int64 {
+	if x != nil {
+		return x.CacheReadTokens
+	}
+	return 0
+}
+
 var File_runner_v1_runner_proto protoreflect.FileDescriptor
 
 const file_runner_v1_runner_proto_rawDesc = "" +
 	"\n" +
-	"\x16runner/v1/runner.proto\x12\trunner.v1\"\x91\r\n" +
+	"\x16runner/v1/runner.proto\x12\trunner.v1\"\xd1\r\n" +
 	"\rRunnerMessage\x12>\n" +
 	"\n" +
 	"initialize\x18\x01 \x01(\v2\x1c.runner.v1.InitializeRequestH\x00R\n" +
@@ -5087,7 +5235,9 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"mcpRequest\x12*\n" +
 	"\x04pong\x18\x16 \x01(\v2\x14.runner.v1.PongEventH\x00R\x04pong\x12F\n" +
 	"\x0eupgrade_status\x18\x17 \x01(\v2\x1d.runner.v1.UpgradeStatusEventH\x00R\rupgradeStatus\x12M\n" +
-	"\x11log_upload_status\x18\x18 \x01(\v2\x1f.runner.v1.LogUploadStatusEventH\x00R\x0flogUploadStatus\x12\x1c\n" +
+	"\x11log_upload_status\x18\x18 \x01(\v2\x1f.runner.v1.LogUploadStatusEventH\x00R\x0flogUploadStatus\x12>\n" +
+	"\vtoken_usage\x18\x19 \x01(\v2\x1b.runner.v1.TokenUsageReportH\x00R\n" +
+	"tokenUsage\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"v\n" +
 	"\x11InitializeRequest\x12)\n" +
@@ -5444,7 +5594,16 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x12\x14\n" +
 	"\x05error\x18\x05 \x01(\tR\x05error\x12\x1d\n" +
 	"\n" +
-	"size_bytes\x18\x06 \x01(\x03R\tsizeBytes2R\n" +
+	"size_bytes\x18\x06 \x01(\x03R\tsizeBytes\"_\n" +
+	"\x10TokenUsageReport\x12\x17\n" +
+	"\apod_key\x18\x01 \x01(\tR\x06podKey\x122\n" +
+	"\x06models\x18\x02 \x03(\v2\x1a.runner.v1.TokenModelUsageR\x06models\"\xcf\x01\n" +
+	"\x0fTokenModelUsage\x12\x14\n" +
+	"\x05model\x18\x01 \x01(\tR\x05model\x12!\n" +
+	"\finput_tokens\x18\x02 \x01(\x03R\vinputTokens\x12#\n" +
+	"\routput_tokens\x18\x03 \x01(\x03R\foutputTokens\x122\n" +
+	"\x15cache_creation_tokens\x18\x04 \x01(\x03R\x13cacheCreationTokens\x12*\n" +
+	"\x11cache_read_tokens\x18\x05 \x01(\x03R\x0fcacheReadTokens2R\n" +
 	"\rRunnerService\x12A\n" +
 	"\aConnect\x12\x18.runner.v1.RunnerMessage\x1a\x18.runner.v1.ServerMessage(\x010\x01B\x9a\x01\n" +
 	"\rcom.runner.v1B\vRunnerProtoP\x01Z7github.com/anthropic/agentmesh/proto/runner/v1;runnerv1\xa2\x02\x03RXX\xaa\x02\tRunner.V1\xca\x02\tRunner\\V1\xe2\x02\x15Runner\\V1\\GPBMetadata\xea\x02\n" +
@@ -5462,7 +5621,7 @@ func file_runner_v1_runner_proto_rawDescGZIP() []byte {
 	return file_runner_v1_runner_proto_rawDescData
 }
 
-var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 68)
+var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 70)
 var file_runner_v1_runner_proto_goTypes = []any{
 	(*RunnerMessage)(nil),              // 0: runner.v1.RunnerMessage
 	(*InitializeRequest)(nil),          // 1: runner.v1.InitializeRequest
@@ -5530,8 +5689,10 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*UpgradeStatusEvent)(nil),         // 63: runner.v1.UpgradeStatusEvent
 	(*UploadLogsCommand)(nil),          // 64: runner.v1.UploadLogsCommand
 	(*LogUploadStatusEvent)(nil),       // 65: runner.v1.LogUploadStatusEvent
-	nil,                                // 66: runner.v1.ErrorEvent.DetailsEntry
-	nil,                                // 67: runner.v1.CreatePodCommand.EnvVarsEntry
+	(*TokenUsageReport)(nil),           // 66: runner.v1.TokenUsageReport
+	(*TokenModelUsage)(nil),            // 67: runner.v1.TokenModelUsage
+	nil,                                // 68: runner.v1.ErrorEvent.DetailsEntry
+	nil,                                // 69: runner.v1.CreatePodCommand.EnvVarsEntry
 }
 var file_runner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: runner.v1.RunnerMessage.initialize:type_name -> runner.v1.InitializeRequest
@@ -5557,58 +5718,60 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	60, // 20: runner.v1.RunnerMessage.pong:type_name -> runner.v1.PongEvent
 	63, // 21: runner.v1.RunnerMessage.upgrade_status:type_name -> runner.v1.UpgradeStatusEvent
 	65, // 22: runner.v1.RunnerMessage.log_upload_status:type_name -> runner.v1.LogUploadStatusEvent
-	2,  // 23: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
-	4,  // 24: runner.v1.InitializedConfirm.agent_versions:type_name -> runner.v1.AgentVersionInfo
-	6,  // 25: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
-	7,  // 26: runner.v1.HeartbeatData.relay_connections:type_name -> runner.v1.RelayConnectionInfo
-	4,  // 27: runner.v1.HeartbeatData.agent_versions:type_name -> runner.v1.AgentVersionInfo
-	66, // 28: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
-	16, // 29: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
-	19, // 30: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
-	23, // 31: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
-	24, // 32: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
-	25, // 33: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
-	26, // 34: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
-	27, // 35: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
-	28, // 36: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
-	29, // 37: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
-	31, // 38: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
-	47, // 39: runner.v1.ServerMessage.create_autopilot:type_name -> runner.v1.CreateAutopilotCommand
-	40, // 40: runner.v1.ServerMessage.autopilot_control:type_name -> runner.v1.AutopilotControlCommand
-	57, // 41: runner.v1.ServerMessage.mcp_response:type_name -> runner.v1.McpResponse
-	59, // 42: runner.v1.ServerMessage.ping:type_name -> runner.v1.PingCommand
-	61, // 43: runner.v1.ServerMessage.heartbeat_ack:type_name -> runner.v1.HeartbeatAck
-	62, // 44: runner.v1.ServerMessage.upgrade_runner:type_name -> runner.v1.UpgradeRunnerCommand
-	64, // 45: runner.v1.ServerMessage.upload_logs:type_name -> runner.v1.UploadLogsCommand
-	17, // 46: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
-	18, // 47: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
-	67, // 48: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
-	21, // 49: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
-	22, // 50: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
-	20, // 51: runner.v1.CreatePodCommand.resources_to_download:type_name -> runner.v1.ResourceToDownload
-	32, // 52: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
-	34, // 53: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
-	38, // 54: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
-	44, // 55: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
-	45, // 56: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
-	46, // 57: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
-	41, // 58: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
-	42, // 59: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
-	43, // 60: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
-	19, // 61: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
-	48, // 62: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
-	52, // 63: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
-	53, // 64: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
-	54, // 65: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
-	55, // 66: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
-	58, // 67: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
-	0,  // 68: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
-	15, // 69: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
-	69, // [69:70] is the sub-list for method output_type
-	68, // [68:69] is the sub-list for method input_type
-	68, // [68:68] is the sub-list for extension type_name
-	68, // [68:68] is the sub-list for extension extendee
-	0,  // [0:68] is the sub-list for field type_name
+	66, // 23: runner.v1.RunnerMessage.token_usage:type_name -> runner.v1.TokenUsageReport
+	2,  // 24: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
+	4,  // 25: runner.v1.InitializedConfirm.agent_versions:type_name -> runner.v1.AgentVersionInfo
+	6,  // 26: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
+	7,  // 27: runner.v1.HeartbeatData.relay_connections:type_name -> runner.v1.RelayConnectionInfo
+	4,  // 28: runner.v1.HeartbeatData.agent_versions:type_name -> runner.v1.AgentVersionInfo
+	68, // 29: runner.v1.ErrorEvent.details:type_name -> runner.v1.ErrorEvent.DetailsEntry
+	16, // 30: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
+	19, // 31: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
+	23, // 32: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
+	24, // 33: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
+	25, // 34: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
+	26, // 35: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
+	27, // 36: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
+	28, // 37: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
+	29, // 38: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
+	31, // 39: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
+	47, // 40: runner.v1.ServerMessage.create_autopilot:type_name -> runner.v1.CreateAutopilotCommand
+	40, // 41: runner.v1.ServerMessage.autopilot_control:type_name -> runner.v1.AutopilotControlCommand
+	57, // 42: runner.v1.ServerMessage.mcp_response:type_name -> runner.v1.McpResponse
+	59, // 43: runner.v1.ServerMessage.ping:type_name -> runner.v1.PingCommand
+	61, // 44: runner.v1.ServerMessage.heartbeat_ack:type_name -> runner.v1.HeartbeatAck
+	62, // 45: runner.v1.ServerMessage.upgrade_runner:type_name -> runner.v1.UpgradeRunnerCommand
+	64, // 46: runner.v1.ServerMessage.upload_logs:type_name -> runner.v1.UploadLogsCommand
+	17, // 47: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
+	18, // 48: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
+	69, // 49: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
+	21, // 50: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
+	22, // 51: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
+	20, // 52: runner.v1.CreatePodCommand.resources_to_download:type_name -> runner.v1.ResourceToDownload
+	32, // 53: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
+	34, // 54: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
+	38, // 55: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
+	44, // 56: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
+	45, // 57: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
+	46, // 58: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
+	41, // 59: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
+	42, // 60: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
+	43, // 61: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
+	19, // 62: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
+	48, // 63: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
+	52, // 64: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
+	53, // 65: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
+	54, // 66: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
+	55, // 67: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
+	58, // 68: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
+	67, // 69: runner.v1.TokenUsageReport.models:type_name -> runner.v1.TokenModelUsage
+	0,  // 70: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
+	15, // 71: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
+	71, // [71:72] is the sub-list for method output_type
+	70, // [70:71] is the sub-list for method input_type
+	70, // [70:70] is the sub-list for extension type_name
+	70, // [70:70] is the sub-list for extension extendee
+	0,  // [0:70] is the sub-list for field type_name
 }
 
 func init() { file_runner_v1_runner_proto_init() }
@@ -5640,6 +5803,7 @@ func file_runner_v1_runner_proto_init() {
 		(*RunnerMessage_Pong)(nil),
 		(*RunnerMessage_UpgradeStatus)(nil),
 		(*RunnerMessage_LogUploadStatus)(nil),
+		(*RunnerMessage_TokenUsage)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[15].OneofWrappers = []any{
 		(*ServerMessage_InitializeResult)(nil),
@@ -5674,7 +5838,7 @@ func file_runner_v1_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_v1_runner_proto_rawDesc), len(file_runner_v1_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   68,
+			NumMessages:   70,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

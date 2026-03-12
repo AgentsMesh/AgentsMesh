@@ -28,6 +28,10 @@ type Organization struct {
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
+	// Role is populated by ListByUser to indicate the requesting user's role.
+	// Not a DB column — filled via raw scan in the repo query.
+	Role string `gorm:"->" json:"role,omitempty"`
+
 	// Associations
 	Members []Member `gorm:"foreignKey:OrganizationID" json:"members,omitempty"`
 }

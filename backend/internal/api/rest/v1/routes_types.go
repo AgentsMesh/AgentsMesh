@@ -30,6 +30,7 @@ import (
 	runnerlogservice "github.com/anthropics/agentsmesh/backend/internal/service/runnerlog"
 	supportticketservice "github.com/anthropics/agentsmesh/backend/internal/service/supportticket"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	tokenusagesvc "github.com/anthropics/agentsmesh/backend/internal/service/tokenusage"
 	"github.com/anthropics/agentsmesh/backend/internal/service/user"
 )
 
@@ -119,4 +120,7 @@ type Services struct {
 
 	// Notification preference store
 	NotificationPrefStore *notifService.PreferenceStore
+
+	// Token usage service
+	TokenUsage *tokenusagesvc.Service
 }

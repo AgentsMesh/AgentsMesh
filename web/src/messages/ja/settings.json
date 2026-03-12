@@ -355,6 +355,37 @@
         }
       }
     },
+    "usagePage": {
+      "title": "トークン使用量",
+      "description": "組織全体のトークン消費を監視",
+      "inputTokens": "入力トークン",
+      "outputTokens": "出力トークン",
+      "cacheReadTokens": "キャッシュ読取トークン",
+      "cacheCreationTokens": "キャッシュ作成トークン",
+      "totalTokens": "合計トークン",
+      "timeSeriesTitle": "トークン使用量の推移",
+      "byAgentTitle": "エージェント別使用量",
+      "byUserTitle": "ユーザー別使用量",
+      "byModelTitle": "モデル別使用量",
+      "columnUser": "ユーザー",
+      "columnModel": "モデル",
+      "unknown": "不明",
+      "noData": "トークン使用データがありません",
+      "loadFailed": "トークン使用データの読み込みに失敗しました",
+      "retry": "再試行",
+      "filters": {
+        "timeRange": "期間",
+        "agentType": "エージェントタイプ",
+        "granularity": "粒度",
+        "allAgents": "すべてのエージェント",
+        "last7Days": "過去7日間",
+        "last30Days": "過去30日間",
+        "last90Days": "過去90日間",
+        "day": "日",
+        "week": "週",
+        "month": "月"
+      }
+    },
     "notifications": {
       "title": "Push Notifications",
       "description": "Configure push notifications for important events like pod status changes, ticket assignments, and runner alerts.",

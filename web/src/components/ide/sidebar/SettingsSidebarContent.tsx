@@ -20,6 +20,7 @@ import {
   Sparkles,
   KeyRound,
   Puzzle,
+  BarChart3,
 } from "lucide-react";
 
 interface SettingsSidebarContentProps {
@@ -75,11 +76,15 @@ export function SettingsSidebarContent({ className }: SettingsSidebarContentProp
   }, []);
 
   // Organization settings tabs (removed "agents" - now in personal settings)
+  const isOrgAdminOrOwner = currentOrg?.role === "owner" || currentOrg?.role === "admin";
   const orgSettingsTabs: TabItem[] = [
     { id: "general", labelKey: "ide.sidebar.settings.tabs.general", icon: Settings },
     { id: "members", labelKey: "ide.sidebar.settings.tabs.members", icon: Users },
     { id: "extensions", labelKey: "ide.sidebar.settings.tabs.extensions", icon: Puzzle },
     { id: "api-keys", labelKey: "ide.sidebar.settings.tabs.apiKeys", icon: KeyRound },
+    ...(isOrgAdminOrOwner
+      ? [{ id: "usage", labelKey: "ide.sidebar.settings.tabs.usage", icon: BarChart3 }]
+      : []),
     { id: "billing", labelKey: "ide.sidebar.settings.tabs.billing", icon: CreditCard },
   ];
 

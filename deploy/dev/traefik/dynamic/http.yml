@@ -8,6 +8,7 @@ http:
         - web
       rule: "PathPrefix(`/api`) || PathPrefix(`/health`)"
       service: backend-api
+      priority: 100
 
     relay:
       entryPoints:

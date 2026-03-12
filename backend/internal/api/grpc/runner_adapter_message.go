@@ -120,6 +120,10 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 	case *runnerv1.RunnerMessage_LogUploadStatus:
 		a.connManager.HandleLogUploadStatus(runnerID, payload.LogUploadStatus)
 
+	case *runnerv1.RunnerMessage_TokenUsage:
+		// Token usage report from Runner (sent when pod exits)
+		a.connManager.HandleTokenUsage(runnerID, payload.TokenUsage)
+
 	default:
 		a.logger.Warn("unknown message type", "runner_id", runnerID)
 	}

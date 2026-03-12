@@ -68,6 +68,9 @@ type RunnerConnectionManager struct {
 	onAutopilotCreated    func(runnerID int64, data *runnerv1.AutopilotCreatedEvent)
 	onAutopilotTerminated func(runnerID int64, data *runnerv1.AutopilotTerminatedEvent)
 	onAutopilotThinking   func(runnerID int64, data *runnerv1.AutopilotThinkingEvent)
+
+	// Token usage callback
+	onTokenUsage func(runnerID int64, data *runnerv1.TokenUsageReport)
 }
 
 // grpcConnectionShard holds a subset of gRPC connections with its own lock.

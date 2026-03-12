@@ -248,6 +248,20 @@ func (m *MockConnection) SendLogUploadStatus(event *runnerv1.LogUploadStatusEven
 	return nil
 }
 
+// SendTokenUsage records a token usage report.
+func (m *MockConnection) SendTokenUsage(podKey string, models []*runnerv1.TokenModelUsage) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{
+		Type: "token_usage",
+		Data: map[string]any{"pod_key": podKey, "models": models},
+	})
+	return nil
+}
+
 // SendMessage records a raw RunnerMessage.
 func (m *MockConnection) SendMessage(msg *runnerv1.RunnerMessage) error {
 	m.mu.Lock()
