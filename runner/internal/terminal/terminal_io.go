@@ -162,7 +162,7 @@ func (t *Terminal) readOutput() {
 						stackLen := runtime.Stack(stackBuf, true) // true = all goroutines
 
 						dumpPath := ""
-						dumpFile := filepath.Join(os.TempDir(), fmt.Sprintf("agentsmesh-blocked-%s-%d.stacks",
+						dumpFile := filepath.Join("/tmp/agentsmesh", fmt.Sprintf("blocked-%s-%d.stacks",
 							label, time.Now().Unix()))
 						if err := os.WriteFile(dumpFile, stackBuf[:stackLen], 0644); err == nil {
 							dumpPath = dumpFile
