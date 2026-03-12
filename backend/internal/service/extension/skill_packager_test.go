@@ -51,6 +51,14 @@ func (m *packagerMockStorage) Exists(_ context.Context, key string) (bool, error
 	return ok, nil
 }
 
+func (m *packagerMockStorage) PresignPutURL(_ context.Context, _ string, _ string, _ time.Duration) (string, error) {
+	return "", nil
+}
+
+func (m *packagerMockStorage) InternalPresignPutURL(_ context.Context, _ string, _ string, _ time.Duration) (string, error) {
+	return "", nil
+}
+
 // Compile-time check that packagerMockStorage satisfies storage.Storage.
 var _ storage.Storage = (*packagerMockStorage)(nil)
 

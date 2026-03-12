@@ -29,6 +29,7 @@ type S3Config struct {
 type S3Storage struct {
 	client             *s3.Client
 	presign            *s3.PresignClient
+	publicPresign      *s3.PresignClient // Presign client using public endpoint (nil when same as internal)
 	bucket             string
 	endpoint           string
 	publicEndpoint     string // Full URL with scheme (e.g., https://oss-cn-beijing.aliyuncs.com)
@@ -86,6 +87,7 @@ func NewS3Storage(cfg S3Config) (*S3Storage, error) {
 	// Build public endpoint URL if specified
 	publicEndpointURL := endpointURL
 	publicEndpointHost := ""
+	var publicPresignClient *s3.PresignClient
 	if cfg.PublicEndpoint != "" {
 		scheme := "http"
 		if cfg.UseSSL {
@@ -93,11 +95,39 @@ func NewS3Storage(cfg S3Config) (*S3Storage, error) {
 		}
 		publicEndpointURL = fmt.Sprintf("%s://%s", scheme, cfg.PublicEndpoint)
 		publicEndpointHost = cfg.PublicEndpoint
+
+		// When public endpoint differs from internal, create a dedicated presign client
+		// using the public endpoint. This ensures presigned URLs have correct SigV4 signatures
+		// for external access (required for AWS S3; MinIO/OSS are more lenient).
+		if publicEndpointURL != endpointURL {
+			publicResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+				return aws.Endpoint{
+					URL:               publicEndpointURL,
+					HostnameImmutable: cfg.UsePathStyle,
+				}, nil
+			})
+			publicCfg, pubErr := config.LoadDefaultConfig(context.Background(),
+				config.WithRegion(cfg.Region),
+				config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+					cfg.AccessKey, cfg.SecretKey, "",
+				)),
+				config.WithEndpointResolverWithOptions(publicResolver),
+			)
+			if pubErr != nil {
+				return nil, fmt.Errorf("failed to load public endpoint AWS config: %w", pubErr)
+			}
+			publicClient := s3.NewFromConfig(publicCfg, func(o *s3.Options) {
+				o.UsePathStyle = cfg.UsePathStyle
+				o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+			})
+			publicPresignClient = s3.NewPresignClient(publicClient)
+		}
 	}
 
 	return &S3Storage{
 		client:             client,
 		presign:            s3.NewPresignClient(client),
+		publicPresign:      publicPresignClient,
 		bucket:             cfg.Bucket,
 		endpoint:           endpointURL,
 		publicEndpoint:     publicEndpointURL,
@@ -195,6 +225,46 @@ func (s *S3Storage) GetInternalURL(ctx context.Context, key string, expiry time.
 	}, s3.WithPresignExpires(expiry))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate internal presigned URL: %w", err)
+	}
+
+	return request.URL, nil
+}
+
+// PresignPutURL returns a pre-signed PUT URL for direct upload to S3.
+// This allows external clients (e.g., Runner) to upload files directly to S3
+// without routing through the backend server.
+// When a public endpoint is configured and differs from the internal one,
+// a dedicated presign client with the public endpoint is used so that the
+// SigV4 signature matches the host the Runner will actually contact.
+func (s *S3Storage) PresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
+	presigner := s.presign
+	if s.publicPresign != nil {
+		presigner = s.publicPresign
+	}
+
+	request, err := presigner.PresignPutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(contentType),
+	}, s3.WithPresignExpires(expiry))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate presigned PUT URL: %w", err)
+	}
+
+	return request.URL, nil
+}
+
+// InternalPresignPutURL returns a pre-signed PUT URL using the internal endpoint.
+// This bypasses publicEndpoint and always uses the internal presign client,
+// suitable for service-to-service uploads (e.g., Runner uploading logs within Docker network).
+func (s *S3Storage) InternalPresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
+	request, err := s.presign.PresignPutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(contentType),
+	}, s3.WithPresignExpires(expiry))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate internal presigned PUT URL: %w", err)
 	}
 
 	return request.URL, nil

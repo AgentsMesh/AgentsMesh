@@ -130,7 +130,31 @@ export const runnerApi = {
       method: "POST",
       body: data || {},
     }),
+
+  // Request diagnostic log upload from a runner
+  requestLogUpload: (id: number) =>
+    request<{ request_id: string; message: string }>(`${orgPath("/runners")}/${id}/logs/upload`, {
+      method: "POST",
+    }),
+
+  // List diagnostic logs for a runner
+  listLogs: (id: number) =>
+    request<{ logs: RunnerLogData[] }>(`${orgPath("/runners")}/${id}/logs`),
 };
+
+// Runner diagnostic log entry
+export interface RunnerLogData {
+  id: number;
+  request_id: string;
+  status: string;
+  storage_key?: string;
+  size_bytes: number;
+  error_message?: string;
+  requested_by_id: number;
+  download_url?: string;
+  created_at: string;
+  completed_at?: string;
+}
 
 // Pod data returned from Runner pods endpoint
 export interface RunnerPodData {

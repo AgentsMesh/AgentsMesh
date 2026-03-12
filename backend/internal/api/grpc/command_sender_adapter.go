@@ -84,6 +84,11 @@ func (s *GRPCCommandSender) SendUpgradeRunner(runnerID int64, requestID, targetV
 	return s.adapter.SendUpgradeRunner(runnerID, requestID, targetVersion, force)
 }
 
+// SendUploadLogs sends a log upload command to a runner via gRPC.
+func (s *GRPCCommandSender) SendUploadLogs(runnerID int64, requestID, presignedURL string, urlExpiresAt int64) error {
+	return s.adapter.SendUploadLogs(runnerID, requestID, presignedURL, urlExpiresAt)
+}
+
 // Ensure GRPCCommandSender implements runner.RunnerCommandSender
 var _ runner.RunnerCommandSender = (*GRPCCommandSender)(nil)
 
@@ -92,3 +97,6 @@ var _ runner.SandboxQuerySender = (*GRPCCommandSender)(nil)
 
 // Ensure GRPCCommandSender implements runner.UpgradeCommandSender
 var _ runner.UpgradeCommandSender = (*GRPCCommandSender)(nil)
+
+// Ensure GRPCCommandSender implements runner.LogUploadCommandSender
+var _ runner.LogUploadCommandSender = (*GRPCCommandSender)(nil)

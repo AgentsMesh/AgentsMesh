@@ -137,4 +137,7 @@ type MessageHandler interface {
 
 	// OnUpgradeRunner handles remote upgrade command from server.
 	OnUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) error
+
+	// OnUploadLogs handles log upload command from server.
+	OnUploadLogs(cmd *runnerv1.UploadLogsCommand) error
 }

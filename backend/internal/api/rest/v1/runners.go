@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	runner "github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	runnerlogservice "github.com/anthropics/agentsmesh/backend/internal/service/runnerlog"
 )
 
 // RunnerHandler handles runner-related requests
@@ -14,6 +15,8 @@ type RunnerHandler struct {
 	podCoordinator       *runner.PodCoordinator
 	versionChecker       *runner.VersionChecker
 	upgradeCommandSender runner.UpgradeCommandSender
+	logUploadSender      runner.LogUploadCommandSender
+	logUploadService     *runnerlogservice.Service
 }
 
 // NewRunnerHandler creates a new runner handler
@@ -69,6 +72,20 @@ func WithVersionChecker(vc *runner.VersionChecker) RunnerHandlerOption {
 func WithUpgradeCommandSender(ucs runner.UpgradeCommandSender) RunnerHandlerOption {
 	return func(h *RunnerHandler) {
 		h.upgradeCommandSender = ucs
+	}
+}
+
+// WithLogUploadSender sets the log upload command sender for runner handler
+func WithLogUploadSender(sender runner.LogUploadCommandSender) RunnerHandlerOption {
+	return func(h *RunnerHandler) {
+		h.logUploadSender = sender
+	}
+}
+
+// WithLogUploadService sets the log upload service for runner handler
+func WithLogUploadService(svc *runnerlogservice.Service) RunnerHandlerOption {
+	return func(h *RunnerHandler) {
+		h.logUploadService = svc
 	}
 }
 

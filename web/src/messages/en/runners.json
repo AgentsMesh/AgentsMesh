@@ -164,6 +164,25 @@
       "upgradeHasPods": "Runner has active pods, cannot upgrade",
       "upgradeTooltip": "Upgrade runner to the latest version"
     },
+    "logs": {
+      "title": "Diagnostic Logs",
+      "upload": "Upload Logs",
+      "uploading": "Uploading...",
+      "noLogs": "No diagnostic logs uploaded yet",
+      "status": {
+        "pending": "Pending",
+        "collecting": "Collecting",
+        "uploading": "Uploading",
+        "completed": "Completed",
+        "failed": "Failed"
+      },
+      "download": "Download",
+      "size": "Size",
+      "requestedAt": "Requested",
+      "uploadSuccess": "Log upload request sent",
+      "uploadFailed": "Failed to request log upload",
+      "offlineHint": "Runner must be online to upload logs"
+    },
     "authorize": {
       "title": "Authorize Runner",
       "description": "A Runner is requesting to connect to your organization. Authorize it to enable AI agent task execution.",

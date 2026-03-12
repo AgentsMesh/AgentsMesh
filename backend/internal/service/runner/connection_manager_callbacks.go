@@ -118,6 +118,11 @@ func (cm *RunnerConnectionManager) SetUpgradeStatusCallback(fn func(runnerID int
 	cm.onUpgradeStatus = fn
 }
 
+// SetLogUploadStatusCallback sets the log upload status callback (Proto type)
+func (cm *RunnerConnectionManager) SetLogUploadStatusCallback(fn func(runnerID int64, data *runnerv1.LogUploadStatusEvent)) {
+	cm.onLogUploadStatus = fn
+}
+
 // ==================== AutopilotController Callback Setters ====================
 
 // SetAutopilotStatusCallback sets the AutopilotController status callback (Proto type)

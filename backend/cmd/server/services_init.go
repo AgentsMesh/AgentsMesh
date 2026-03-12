@@ -364,3 +364,28 @@ func initializeSupportTicketService(cfg *config.Config, db *gorm.DB) *supporttic
 	slog.Info("Support ticket service initialized")
 	return supportticketservice.NewService(supportTicketRepo, s3Storage, cfg.Storage)
 }
+
+// initializeLogUploadStorage creates an S3 storage client for runner log uploads.
+// Reuses the same S3 configuration as other storage services.
+func initializeLogUploadStorage(cfg *config.Config) storage.Storage {
+	s3Storage, err := storage.NewS3Storage(storage.S3Config{
+		Endpoint:       cfg.Storage.Endpoint,
+		PublicEndpoint: cfg.Storage.PublicEndpoint,
+		Region:         cfg.Storage.Region,
+		Bucket:         cfg.Storage.Bucket,
+		AccessKey:      cfg.Storage.AccessKey,
+		SecretKey:      cfg.Storage.SecretKey,
+		UseSSL:         cfg.Storage.UseSSL,
+		UsePathStyle:   cfg.Storage.UsePathStyle,
+	})
+	if err != nil {
+		slog.Error("Failed to initialize storage for runner logs", "error", err)
+		return nil
+	}
+
+	if err := s3Storage.EnsureBucket(context.Background()); err != nil {
+		slog.Warn("Failed to ensure bucket for runner logs", "error", err)
+	}
+
+	return s3Storage
+}

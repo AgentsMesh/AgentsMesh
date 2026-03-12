@@ -59,6 +59,9 @@ type RunnerConnectionManager struct {
 	// Upgrade event callback
 	onUpgradeStatus func(runnerID int64, data *runnerv1.UpgradeStatusEvent)
 
+	// Log upload event callback
+	onLogUploadStatus func(runnerID int64, data *runnerv1.LogUploadStatusEvent)
+
 	// AutopilotController event callbacks
 	onAutopilotStatus     func(runnerID int64, data *runnerv1.AutopilotStatusEvent)
 	onAutopilotIteration  func(runnerID int64, data *runnerv1.AutopilotIterationEvent)

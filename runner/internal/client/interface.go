@@ -64,6 +64,9 @@ type ConnectionSender interface {
 
 	// SendUpgradeStatus sends an upgrade status event to the server.
 	SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) error
+
+	// SendLogUploadStatus sends a log upload status event to the server.
+	SendLogUploadStatus(event *runnerv1.LogUploadStatusEvent) error
 }
 
 // ConnectionMonitor defines methods for monitoring connection health.

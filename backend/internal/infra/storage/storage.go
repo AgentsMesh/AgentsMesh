@@ -40,6 +40,14 @@ type Storage interface {
 	// where the caller is on the same network as the storage service.
 	GetInternalURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 
+	// PresignPutURL returns a pre-signed PUT URL for direct upload.
+	// Uses public endpoint — suitable for browser/external uploads.
+	PresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error)
+
+	// InternalPresignPutURL returns a pre-signed PUT URL using the internal endpoint.
+	// Use this for service-to-service uploads (e.g., Runner uploading logs within Docker network).
+	InternalPresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error)
+
 	// Exists checks if a file exists in storage.
 	Exists(ctx context.Context, key string) (bool, error)
 }

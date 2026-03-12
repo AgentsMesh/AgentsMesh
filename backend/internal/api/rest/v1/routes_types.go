@@ -27,6 +27,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	runnerlogservice "github.com/anthropics/agentsmesh/backend/internal/service/runnerlog"
 	supportticketservice "github.com/anthropics/agentsmesh/backend/internal/service/supportticket"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/service/user"
@@ -82,6 +83,10 @@ type Services struct {
 
 	// Upgrade command sender (gRPC adapter)
 	UpgradeCommandSender runner.UpgradeCommandSender
+
+	// Log upload services
+	LogUploadSender  runner.LogUploadCommandSender
+	LogUploadService *runnerlogservice.Service
 
 	// Relay services for terminal data streaming
 	RelayManager        *relay.Manager        // Relay server management

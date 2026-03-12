@@ -8,6 +8,7 @@ import { runnerApi } from "@/lib/api";
 import { isVersionOutdated } from "@/lib/utils/version";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { RunnerLogsCard } from "./RunnerLogsCard";
 
 interface RunnerOverviewTabProps {
   runner: RunnerData;
@@ -246,6 +247,9 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
           </div>
         </div>
       )}
+
+      {/* Diagnostic Logs */}
+      <RunnerLogsCard runnerId={runner.id} runnerStatus={runner.status} />
     </div>
   );
 }

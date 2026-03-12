@@ -14,10 +14,11 @@ type MockStorage struct {
 	files map[string]*mockFile
 
 	// Error injection for testing
-	UploadErr  error
-	DeleteErr  error
-	GetURLErr  error
-	ExistsErr  error
+	UploadErr        error
+	DeleteErr        error
+	GetURLErr        error
+	ExistsErr        error
+	PresignPutURLErr error
 }
 
 type mockFile struct {
@@ -97,6 +98,20 @@ func (m *MockStorage) GetInternalURL(ctx context.Context, key string, expiry tim
 	return m.GetURL(ctx, key, expiry)
 }
 
+// PresignPutURL returns a mock presigned PUT URL
+func (m *MockStorage) PresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
+	if m.PresignPutURLErr != nil {
+		return "", m.PresignPutURLErr
+	}
+
+	return fmt.Sprintf("https://mock-storage.example.com/%s?upload=true&expires=%d", key, time.Now().Add(expiry).Unix()), nil
+}
+
+// InternalPresignPutURL returns a mock internal presigned PUT URL (same as PresignPutURL for mock)
+func (m *MockStorage) InternalPresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
+	return m.PresignPutURL(ctx, key, contentType, expiry)
+}
+
 // Exists checks if a file exists in memory
 func (m *MockStorage) Exists(ctx context.Context, key string) (bool, error) {
 	if m.ExistsErr != nil {
@@ -144,5 +159,6 @@ func (m *MockStorage) Reset() {
 	m.DeleteErr = nil
 	m.GetURLErr = nil
 	m.ExistsErr = nil
+	m.PresignPutURLErr = nil
 	m.mu.Unlock()
 }

@@ -43,6 +43,8 @@ message RunnerMessage {
     PongEvent pong = 22;
     // 升级状态回报（Runner -> Backend）
     UpgradeStatusEvent upgrade_status = 23;
+    // 日志上传状态回报（Runner -> Backend）
+    LogUploadStatusEvent log_upload_status = 24;
   }
   int64 timestamp = 15;
 }
@@ -176,6 +178,8 @@ message ServerMessage {
     HeartbeatAck heartbeat_ack = 16;
     // 远程升级命令（Backend -> Runner）
     UpgradeRunnerCommand upgrade_runner = 17;
+    // 日志上传命令（Backend -> Runner）
+    UploadLogsCommand upload_logs = 18;
   }
   int64 timestamp = 15;
 }
@@ -616,4 +620,25 @@ message UpgradeStatusEvent {
   string error = 5;            // phase=failed 时的错误信息
   string current_version = 6;  // 当前运行版本
   string target_version = 7;   // 目标升级版本
+}
+
+// ==================== Runner 日志上传相关消息 ====================
+
+// UploadLogsCommand 日志上传命令（Backend -> Runner）
+// 指示 Runner 收集日志并上传到 S3 存储
+message UploadLogsCommand {
+  string request_id = 1;       // UUID，关联状态回报
+  string presigned_url = 2;    // S3 预签名 PUT URL
+  int64 url_expires_at = 3;    // URL 过期时间（Unix 秒）
+}
+
+// LogUploadStatusEvent 日志上传状态回报（Runner -> Backend）
+// Runner 在日志上传过程中持续回报各阶段状态
+message LogUploadStatusEvent {
+  string request_id = 1;       // 对应 UploadLogsCommand.request_id
+  string phase = 2;            // collecting, uploading, completed, failed
+  int32 progress = 3;          // 0-100
+  string message = 4;          // 人类可读状态信息
+  string error = 5;            // phase=failed 时的错误信息
+  int64 size_bytes = 6;        // 日志包大小（字节）
 }

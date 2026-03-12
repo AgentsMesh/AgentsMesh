@@ -26,7 +26,9 @@ import (
 	notifService "github.com/anthropics/agentsmesh/backend/internal/service/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	runnerlogservice "github.com/anthropics/agentsmesh/backend/internal/service/runnerlog"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
 func main() {
@@ -187,6 +189,7 @@ func main() {
 	var grpcServer *grpcserver.Server
 	var sandboxQuerySender runner.SandboxQuerySender
 	var upgradeCommandSender runner.UpgradeCommandSender
+	var logUploadSender runner.LogUploadCommandSender
 	if cfg.PKI.CACertFile != "" && cfg.PKI.CAKeyFile != "" {
 		mcpDeps := &grpcserver.MCPDependencies{
 			PodService:        services.pod,
@@ -207,6 +210,7 @@ func main() {
 			terminalRouter.SetCommandSender(grpcCommandSender)
 			sandboxQuerySender = grpcCommandSender
 			upgradeCommandSender = grpcCommandSender
+			logUploadSender = grpcCommandSender
 			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server")
 			setupRelayTokenRefreshCallback(db, runnerConnMgr, relayTokenGenerator, grpcCommandSender)
 		}
@@ -218,6 +222,24 @@ func main() {
 	versionChecker := runner.NewVersionChecker(redisClient)
 	if versionChecker != nil {
 		versionChecker.Start(context.Background())
+	}
+
+	// Initialize runner log upload service (requires S3 storage)
+	var logUploadSvc *runnerlogservice.Service
+	if cfg.Storage.AccessKey != "" && cfg.Storage.SecretKey != "" {
+		logUploadStorage := initializeLogUploadStorage(cfg)
+		if logUploadStorage != nil {
+			logUploadRepo := infra.NewRunnerLogRepository(db)
+			logUploadSvc = runnerlogservice.NewService(logUploadRepo, logUploadStorage)
+
+			// Register callback for log upload status events from Runner
+			runnerConnMgr.SetLogUploadStatusCallback(func(runnerID int64, data *runnerv1.LogUploadStatusEvent) {
+				logUploadSvc.HandleUploadStatus(runnerID, data.RequestId, data.Phase, data.Progress, data.Message, data.Error, data.SizeBytes)
+			})
+			slog.Info("Runner log upload service initialized")
+		}
+	} else {
+		slog.Info("Runner log upload service disabled: storage not configured")
 	}
 
 	// Create services container
@@ -257,6 +279,8 @@ func main() {
 		SandboxQueryService: sandboxQuerySvc,
 		SandboxQuerySender:   sandboxQuerySender,
 		UpgradeCommandSender: upgradeCommandSender,
+		LogUploadSender:      logUploadSender,
+		LogUploadService:     logUploadSvc,
 		RelayManager:        relayManager,
 		RelayTokenGenerator: relayTokenGenerator,
 		RelayDNSService:     relayDNSService,
