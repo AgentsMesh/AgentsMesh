@@ -13,7 +13,7 @@ func TestNewGRPCConnection(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	assert.Equal(t, int64(1), conn.RunnerID)
 	assert.Equal(t, "test-node", conn.NodeID)
@@ -31,7 +31,7 @@ func TestGRPCConnection_IsInitialized(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	// Initially not initialized
 	assert.False(t, conn.IsInitialized())
@@ -49,7 +49,7 @@ func TestGRPCConnection_SetInitialized(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	agents := []string{"claude-code", "aider"}
 	conn.SetInitialized(true, agents)
@@ -62,7 +62,7 @@ func TestGRPCConnection_GetAvailableAgents(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	// Initially nil
 	assert.Nil(t, conn.GetAvailableAgents())
@@ -83,7 +83,7 @@ func TestGRPCConnection_UpdateLastPing(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 	initialPing := conn.GetLastPing()
 
 	time.Sleep(10 * time.Millisecond)
@@ -96,7 +96,7 @@ func TestGRPCConnection_GetLastPing(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	ping := conn.GetLastPing()
 	assert.WithinDuration(t, time.Now(), ping, time.Second)
@@ -106,7 +106,7 @@ func TestGRPCConnection_LastPong_InitiallyZero(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	// Initially zero (no pong received yet)
 	assert.True(t, conn.GetLastPong().IsZero())
@@ -116,7 +116,7 @@ func TestGRPCConnection_UpdateLastPong(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 	assert.True(t, conn.GetLastPong().IsZero())
 
 	// Update lastPong
@@ -131,7 +131,7 @@ func TestGRPCConnection_UpdateLastPong_Advances(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	conn.UpdateLastPong()
 	first := conn.GetLastPong()
@@ -147,7 +147,7 @@ func TestGRPCConnection_IsClosed(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	assert.False(t, conn.IsClosed())
 
@@ -159,7 +159,7 @@ func TestGRPCConnection_IsClosed(t *testing.T) {
 func TestGRPCConnection_Close(t *testing.T) {
 	stream := newMockRunnerStream()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	// Close should work
 	conn.Close()
@@ -173,7 +173,7 @@ func TestGRPCConnection_Close(t *testing.T) {
 func TestGRPCConnection_CloseChan(t *testing.T) {
 	stream := newMockRunnerStream()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	closeChan := conn.CloseChan()
 	assert.NotNil(t, closeChan)
@@ -202,7 +202,7 @@ func TestGRPCConnection_SendMessage(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	msg := &runnerv1.ServerMessage{
 		Payload: &runnerv1.ServerMessage_InitializeResult{
@@ -228,7 +228,7 @@ func TestGRPCConnection_SendMessage(t *testing.T) {
 func TestGRPCConnection_SendMessage_Closed(t *testing.T) {
 	stream := newMockRunnerStream()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 	conn.Close()
 
 	msg := &runnerv1.ServerMessage{
@@ -248,7 +248,7 @@ func TestGRPCConnection_SendMessage_BufferFull(t *testing.T) {
 	stream := newMockRunnerStream()
 	defer stream.Close()
 
-	conn := NewGRPCConnection(1, "test-node", "test-org", stream)
+	conn := NewGRPCConnection(1, 1, "test-node", "test-org", stream)
 
 	// Fill up the send buffer (buffer size is 256)
 	msg := &runnerv1.ServerMessage{

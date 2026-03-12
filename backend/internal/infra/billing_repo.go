@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
+
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"gorm.io/gorm"
 )
@@ -177,7 +179,7 @@ func (r *billingRepository) CountRunners(ctx context.Context, orgID int64) (int6
 func (r *billingRepository) CountActivePods(ctx context.Context, orgID int64) (int64, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Table("pods").
-		Where("organization_id = ? AND status IN ?", orgID, []string{"running", "initializing"}).
+		Where("organization_id = ? AND status IN ?", orgID, agentpod.ActiveStatuses()).
 		Count(&count).Error
 	return count, err
 }

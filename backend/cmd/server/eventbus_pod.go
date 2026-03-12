@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	notifDomain "github.com/anthropics/agentsmesh/backend/internal/domain/notification"
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	notifService "github.com/anthropics/agentsmesh/backend/internal/service/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
@@ -35,9 +36,9 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		var eventType eventbus.EventType
 		if agentStatus != "" {
 			eventType = eventbus.EventPodAgentChanged
-		} else if status == "completed" || status == "terminated" {
+		} else if status == agentpod.StatusCompleted || status == agentpod.StatusTerminated {
 			eventType = eventbus.EventPodTerminated
-		} else if pod.Status == "initializing" && status == "running" {
+		} else if pod.Status == agentpod.StatusInitializing && status == agentpod.StatusRunning {
 			// Pod transitioned from initializing to running - this is a newly created pod starting
 			eventType = eventbus.EventPodCreated
 		} else {
@@ -68,7 +69,7 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		}
 
 		// Route task:completed through NotificationDispatcher (preference-aware)
-		if status == "completed" || status == "terminated" || status == "failed" {
+		if status == agentpod.StatusCompleted || status == agentpod.StatusTerminated || status == agentpod.StatusError {
 			if err := notifDispatcher.Dispatch(context.Background(), &notifDomain.NotificationRequest{
 				OrganizationID:    pod.OrganizationID,
 				Source:            notifDomain.SourceTaskCompleted,

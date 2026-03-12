@@ -140,7 +140,10 @@ func TestHandleHeartbeatReconcilePods(t *testing.T) {
 		},
 	}
 
-	pc.handleHeartbeat(r.ID, data)
+	// Need orphanMissThreshold heartbeats for pod-2 to become orphaned
+	for i := 0; i < orphanMissThreshold; i++ {
+		pc.handleHeartbeat(r.ID, data)
+	}
 
 	// Verify pod-1 is still running and registered
 	var status1 string
@@ -221,7 +224,10 @@ func TestReconcilePods(t *testing.T) {
 		// pod-2 and pod-3 are NOT reported
 	}
 
-	pc.reconcilePods(ctx, r.ID, reportedPods)
+	// Need orphanMissThreshold reconcile calls for unreported pods to become orphaned
+	for i := 0; i < orphanMissThreshold; i++ {
+		pc.reconcilePods(ctx, r.ID, reportedPods)
+	}
 
 	// Verify pod-1 is registered
 	if !tr.IsPodRegistered("recon-pod-1") {
@@ -305,10 +311,13 @@ func TestReconcilePodsOrphanedCallsStatusChangeCallback(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	// Report empty pods - both should become orphaned
+	// Report empty pods - both should become orphaned after threshold
 	reportedPods := map[string]bool{}
 
-	pc.reconcilePods(ctx, r.ID, reportedPods)
+	// Need orphanMissThreshold reconcile calls for unreported pods to become orphaned
+	for i := 0; i < orphanMissThreshold; i++ {
+		pc.reconcilePods(ctx, r.ID, reportedPods)
+	}
 
 	// Verify both pods are orphaned in DB
 	var status1, status2 string

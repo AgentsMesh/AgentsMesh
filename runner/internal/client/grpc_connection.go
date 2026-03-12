@@ -74,9 +74,7 @@ type GRPCConnection struct {
 	lastSendTime atomic.Int64
 
 	// Recv liveness tracking — updated by readLoop on every successful Recv().
-	// recvWatchdog triggers reconnect when no message arrives for 3× heartbeatInterval,
-	// handling the half-dead connection case where the server closed the downstream
-	// but stream.Recv() keeps blocking on the runner side.
+	// Used for diagnostics and connection state reporting.
 	lastRecvTime atomic.Int64
 
 	// Rate limiting for terminal output (bytes per second)

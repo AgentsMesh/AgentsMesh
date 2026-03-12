@@ -127,4 +127,4 @@ func (c *GRPCConnection) tryEndpointDiscovery() {
 	c.reconnectStrategy.Reset()
 }
 
-// Note: runConnection, recvWatchdog, buildMTLSConfig are in grpc_connection_run.go
+// Note: runConnection, buildMTLSConfig are in grpc_connection_run.go

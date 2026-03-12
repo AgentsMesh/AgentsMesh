@@ -195,9 +195,8 @@ func (r *podRepo) DecrementRunnerPods(ctx context.Context, runnerID int64) error
 func (r *podRepo) ListActiveByRunner(ctx context.Context, runnerID int64) ([]*agentpod.Pod, error) {
 	var pods []*agentpod.Pod
 	err := r.db.WithContext(ctx).
-		Where("runner_id = ? AND status IN ?", runnerID, []string{
-			agentpod.StatusRunning, agentpod.StatusInitializing,
-		}).Find(&pods).Error
+		Where("runner_id = ? AND status IN ?", runnerID, agentpod.ActiveStatuses()).
+		Find(&pods).Error
 	return pods, err
 }
 

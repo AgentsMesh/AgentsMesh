@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
@@ -61,7 +62,7 @@ func (s *Service) GetDashboardStats(ctx context.Context) (*DashboardStats, error
 	if err := s.db.Table("pods").Count(&stats.TotalPods); err != nil {
 		return nil, fmt.Errorf("failed to count pods: %w", err)
 	}
-	if err := s.db.Table("pods").Where("status IN ?", []string{"pending", "starting", "running"}).Count(&stats.ActivePods); err != nil {
+	if err := s.db.Table("pods").Where("status IN ?", agentpod.ActiveStatuses()).Count(&stats.ActivePods); err != nil {
 		return nil, fmt.Errorf("failed to count active pods: %w", err)
 	}
 

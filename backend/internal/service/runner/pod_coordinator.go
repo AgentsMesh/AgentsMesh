@@ -16,6 +16,10 @@ import (
 const (
 	terminateCooldown      = 5 * time.Minute  // 冷却期：两次 terminate 之间的最短间隔
 	terminateCacheCleanup  = 30 * time.Minute // 缓存条目过期清理阈值
+
+	// orphanMissThreshold is the number of consecutive heartbeat misses required
+	// before marking a pod as orphaned. At ~30s per heartbeat cycle, 3 misses ≈ 90s.
+	orphanMissThreshold = 3
 )
 
 // PodCoordinator coordinates pod lifecycle events between backend and runners
@@ -39,6 +43,13 @@ type PodCoordinator struct {
 	// during heartbeat reconciliation. Maps podKey → last sent time.
 	terminateSentCache map[string]time.Time
 	terminateCacheMu   sync.Mutex
+
+	// Pod miss counter: tracks consecutive heartbeat misses per pod.
+	// A pod is only orphaned after orphanMissThreshold consecutive misses,
+	// providing tolerance for transient network issues and reconnections.
+	podMissCount map[string]int            // podKey → consecutive miss count
+	podMissOwner map[string]int64          // podKey → runnerID (reverse index for clearByRunner)
+	podMissMu    sync.Mutex
 
 	// Callbacks
 	onStatusChange   func(podKey string, status string, agentStatus string)
@@ -72,6 +83,8 @@ func NewPodCoordinator(
 		commandSender:        NewNoOpCommandSender(logger), // Default to no-op
 		relayConnectionCache: NewRelayConnectionCache(),
 		terminateSentCache:   make(map[string]time.Time),
+		podMissCount:         make(map[string]int),
+		podMissOwner:         make(map[string]int64),
 	}
 
 	// Set up callbacks from connection manager
@@ -178,8 +191,9 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 		return err
 	}
 
-	// Unregister from terminal router
+	// Unregister from terminal router and clean up miss counter
 	pc.terminalRouter.UnregisterPod(podKey)
+	pc.clearMissCount(podKey)
 
 	// Decrement pod count
 	return pc.DecrementPods(ctx, pod.RunnerID)
@@ -244,6 +258,40 @@ func (pc *PodCoordinator) recordTerminateSent(podKey string) {
 	for key, t := range pc.terminateSentCache {
 		if now.Sub(t) > terminateCacheCleanup {
 			delete(pc.terminateSentCache, key)
+		}
+	}
+}
+
+// ==================== Pod Miss Counter ====================
+
+// incrementMissCount increments the consecutive heartbeat miss count for a pod.
+// Returns the new miss count.
+func (pc *PodCoordinator) incrementMissCount(podKey string, runnerID int64) int {
+	pc.podMissMu.Lock()
+	defer pc.podMissMu.Unlock()
+	pc.podMissCount[podKey]++
+	pc.podMissOwner[podKey] = runnerID
+	return pc.podMissCount[podKey]
+}
+
+// clearMissCount removes the miss counter for a specific pod (e.g., pod reported in heartbeat).
+func (pc *PodCoordinator) clearMissCount(podKey string) {
+	pc.podMissMu.Lock()
+	defer pc.podMissMu.Unlock()
+	delete(pc.podMissCount, podKey)
+	delete(pc.podMissOwner, podKey)
+}
+
+// clearMissCountsForRunner removes all miss counters for pods belonging to the given runner.
+// Called on runner disconnect to prevent stale counters from affecting reconnection.
+// Uses an in-memory reverse index instead of DB queries to avoid TOCTOU races.
+func (pc *PodCoordinator) clearMissCountsForRunner(runnerID int64) {
+	pc.podMissMu.Lock()
+	defer pc.podMissMu.Unlock()
+	for podKey, ownerID := range pc.podMissOwner {
+		if ownerID == runnerID {
+			delete(pc.podMissCount, podKey)
+			delete(pc.podMissOwner, podKey)
 		}
 	}
 }

@@ -192,7 +192,7 @@ func (a *GRPCRunnerAdapter) Connect(stream runnerv1.RunnerService_ConnectServer)
 
 	// Add connection to RunnerConnectionManager (uses 256-shard locks)
 	conn := a.connManager.AddConnection(runnerInfo.ID, identity.NodeID, identity.OrgSlug, grpcStream)
-	defer a.connManager.RemoveConnection(runnerInfo.ID)
+	defer a.connManager.RemoveConnection(runnerInfo.ID, conn.Generation)
 
 	a.logger.Info("Runner connected",
 		"runner_id", runnerInfo.ID,

@@ -94,8 +94,9 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 	// Decrement runner pod count
 	_ = pc.runnerRepo.DecrementPods(ctx, runnerID)
 
-	// Unregister from terminal router
+	// Unregister from terminal router and clean up miss counter
 	pc.terminalRouter.UnregisterPod(data.PodKey)
+	pc.clearMissCount(data.PodKey)
 
 	pc.logger.Info("pod terminated",
 		"pod_key", data.PodKey,
@@ -198,6 +199,10 @@ func (pc *PodCoordinator) handleRunnerDisconnect(runnerID int64) {
 
 	// Clear relay connection cache for this runner
 	pc.relayConnectionCache.Delete(runnerID)
+
+	// Clear miss counters for this runner's pods to prevent stale counts
+	// from affecting reconciliation after reconnection.
+	pc.clearMissCountsForRunner(runnerID)
 
 	pc.logger.Info("runner disconnected, pods will be reconciled on reconnect",
 		"runner_id", runnerID)

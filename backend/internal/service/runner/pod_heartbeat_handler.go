@@ -140,25 +140,44 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 		return
 	}
 
-	// Mark pods that are in DB but not reported by runner as orphaned
-	// This means the pod process has terminated on the runner side
+	// Mark pods that are in DB but not reported by runner.
+	// Uses evidence-based orphaning: a pod must be missing for orphanMissThreshold
+	// consecutive heartbeats before being orphaned, providing tolerance for
+	// transient network issues and runner reconnections.
 	for _, p := range activePods {
-		if !reportedPods[p.PodKey] {
-			if err := pc.podRepo.MarkOrphaned(ctx, p, now); err != nil {
-				pc.logger.Error("failed to mark pod as orphaned",
-					"pod_key", p.PodKey,
-					"error", err)
-			} else {
-				pc.logger.Warn("pod marked as orphaned (not reported by runner)",
-					"pod_key", p.PodKey,
-					"runner_id", runnerID)
-				// Unregister from terminal router
-				pc.terminalRouter.UnregisterPod(p.PodKey)
+		if reportedPods[p.PodKey] {
+			// Pod is present in heartbeat — clear any accumulated miss count
+			pc.clearMissCount(p.PodKey)
+			continue
+		}
 
-				// Notify status change for WebSocket event
-				if pc.onStatusChange != nil {
-					pc.onStatusChange(p.PodKey, agentpod.StatusOrphaned, "")
-				}
+		missCount := pc.incrementMissCount(p.PodKey, runnerID)
+		if missCount < orphanMissThreshold {
+			pc.logger.Debug("pod not reported, waiting for more evidence",
+				"pod_key", p.PodKey,
+				"runner_id", runnerID,
+				"miss_count", missCount,
+				"threshold", orphanMissThreshold)
+			continue
+		}
+
+		// Evidence threshold reached — orphan the pod
+		pc.clearMissCount(p.PodKey)
+		if err := pc.podRepo.MarkOrphaned(ctx, p, now); err != nil {
+			pc.logger.Error("failed to mark pod as orphaned",
+				"pod_key", p.PodKey,
+				"error", err)
+		} else {
+			pc.logger.Warn("pod marked as orphaned (not reported by runner)",
+				"pod_key", p.PodKey,
+				"runner_id", runnerID,
+				"miss_count", missCount)
+			// Unregister from terminal router
+			pc.terminalRouter.UnregisterPod(p.PodKey)
+
+			// Notify status change for WebSocket event
+			if pc.onStatusChange != nil {
+				pc.onStatusChange(p.PodKey, agentpod.StatusOrphaned, "")
 			}
 		}
 	}

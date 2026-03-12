@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -24,10 +25,11 @@ type RunnerStream interface {
 
 // GRPCConnection represents an active gRPC connection to a runner.
 type GRPCConnection struct {
-	RunnerID int64
-	NodeID   string
-	OrgSlug  string
-	Stream   RunnerStream
+	RunnerID   int64
+	Generation int64 // Unique monotonic ID for this connection instance
+	NodeID     string
+	OrgSlug    string
+	Stream     RunnerStream
 
 	// Connection timestamps
 	ConnectedAt time.Time
@@ -37,6 +39,10 @@ type GRPCConnection struct {
 	// Initialization state
 	initialized     bool
 	availableAgents []string
+
+	// Online event deduplication: true after the first "runner online" event
+	// has been published for this connection, preventing repeated DB queries.
+	onlineEventSent atomic.Bool
 
 	// Send channel for outgoing messages (type-safe)
 	Send chan *runnerv1.ServerMessage
@@ -50,9 +56,10 @@ type GRPCConnection struct {
 }
 
 // NewGRPCConnection creates a new gRPC connection wrapper.
-func NewGRPCConnection(runnerID int64, nodeID, orgSlug string, stream RunnerStream) *GRPCConnection {
+func NewGRPCConnection(runnerID int64, generation int64, nodeID, orgSlug string, stream RunnerStream) *GRPCConnection {
 	return &GRPCConnection{
 		RunnerID:    runnerID,
+		Generation:  generation,
 		NodeID:      nodeID,
 		OrgSlug:     orgSlug,
 		Stream:      stream,
@@ -164,3 +171,13 @@ func (c *GRPCConnection) SendMessage(msg *runnerv1.ServerMessage) error {
 
 // Note: All connection errors are now defined in errors.go for consistency.
 // Use ErrConnectionClosed, ErrSendBufferFull, ErrRunnerNotConnected, ErrCommandSenderNotSet from there.
+
+// IsOnlineEventSent returns whether the "runner online" event has been sent for this connection.
+func (c *GRPCConnection) IsOnlineEventSent() bool {
+	return c.onlineEventSent.Load()
+}
+
+// MarkOnlineEventSent marks the "runner online" event as sent for this connection.
+func (c *GRPCConnection) MarkOnlineEventSent() {
+	c.onlineEventSent.Store(true)
+}

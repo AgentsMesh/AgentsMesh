@@ -171,7 +171,7 @@ func (s *Service) DeleteRunner(ctx context.Context, runnerID int64) (*runner.Run
 	// Check for active pods before deletion
 	var podCount int64
 	if err := s.db.Model(&agentpod.Pod{}).
-		Where("runner_id = ? AND status IN ?", runnerID, []string{"pending", "starting", "running"}).
+		Where("runner_id = ? AND status IN ?", runnerID, agentpod.ActiveStatuses()).
 		Count(&podCount); err != nil {
 		return nil, fmt.Errorf("failed to check pods: %w", err)
 	}

@@ -140,10 +140,10 @@ func TestConnectionManager_RemoveConnection(t *testing.T) {
 	})
 
 	// Add and remove connection
-	cm.AddConnection(1, "test-node", "test-org", stream)
+	conn := cm.AddConnection(1, "test-node", "test-org", stream)
 	assert.Equal(t, int64(1), cm.ConnectionCount())
 
-	cm.RemoveConnection(1)
+	cm.RemoveConnection(1, conn.Generation)
 	assert.Equal(t, int64(0), cm.ConnectionCount())
 	assert.Nil(t, cm.GetConnection(1))
 	assert.True(t, disconnected)
@@ -158,10 +158,10 @@ func TestConnectionManager_IsConnected(t *testing.T) {
 
 	assert.False(t, cm.IsConnected(1))
 
-	cm.AddConnection(1, "test-node", "test-org", stream)
+	conn := cm.AddConnection(1, "test-node", "test-org", stream)
 	assert.True(t, cm.IsConnected(1))
 
-	cm.RemoveConnection(1)
+	cm.RemoveConnection(1, conn.Generation)
 	assert.False(t, cm.IsConnected(1))
 }
 
@@ -278,11 +278,11 @@ func TestConnectionManager_ConcurrentOperations(t *testing.T) {
 
 			for j := 0; j < numOperations; j++ {
 				stream := newMockRunnerStream()
-				cm.AddConnection(runnerID, "node", "org", stream)
+				conn := cm.AddConnection(runnerID, "node", "org", stream)
 				cm.IsConnected(runnerID)
 				cm.GetConnection(runnerID)
 				cm.UpdateHeartbeat(runnerID)
-				cm.RemoveConnection(runnerID)
+				cm.RemoveConnection(runnerID, conn.Generation)
 				stream.Close()
 			}
 		}(i)

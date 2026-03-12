@@ -25,10 +25,11 @@ const DefaultInitTimeout = 30 * time.Second
 // - Messages are sent through the connection's Send channel
 // - Callbacks use Proto types directly (no JSON serialization overhead)
 type RunnerConnectionManager struct {
-	shards       [numShards]*grpcConnectionShard
-	logger       *slog.Logger
-	connCount    atomic.Int64
-	pingInterval time.Duration
+	shards            [numShards]*grpcConnectionShard
+	logger            *slog.Logger
+	connCount         atomic.Int64
+	generationCounter atomic.Int64 // Monotonic counter for connection generation IDs
+	pingInterval      time.Duration
 
 	// Initialization timeout
 	initTimeout     time.Duration
@@ -100,8 +101,10 @@ func (cm *RunnerConnectionManager) getShard(runnerID int64) *grpcConnectionShard
 // ==================== Connection Management ====================
 
 // AddConnection adds a gRPC connection.
+// Returns the new connection with a unique generation ID.
 func (cm *RunnerConnectionManager) AddConnection(runnerID int64, nodeID, orgSlug string, stream RunnerStream) *GRPCConnection {
 	shard := cm.getShard(runnerID)
+	gen := cm.generationCounter.Add(1)
 
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
@@ -112,7 +115,7 @@ func (cm *RunnerConnectionManager) AddConnection(runnerID int64, nodeID, orgSlug
 		cm.connCount.Add(-1)
 	}
 
-	conn := NewGRPCConnection(runnerID, nodeID, orgSlug, stream)
+	conn := NewGRPCConnection(runnerID, gen, nodeID, orgSlug, stream)
 	shard.connections[runnerID] = conn
 	cm.connCount.Add(1)
 
@@ -120,18 +123,32 @@ func (cm *RunnerConnectionManager) AddConnection(runnerID int64, nodeID, orgSlug
 		"runner_id", runnerID,
 		"node_id", nodeID,
 		"org_slug", orgSlug,
+		"generation", gen,
 		"total_connections", cm.connCount.Load(),
 	)
 
 	return conn
 }
 
-// RemoveConnection removes a gRPC connection.
-func (cm *RunnerConnectionManager) RemoveConnection(runnerID int64) {
+// RemoveConnection removes a gRPC connection only if the generation matches.
+// If the current connection has a different generation (newer connection replaced it),
+// the removal is skipped to prevent stale defer calls from closing active connections.
+func (cm *RunnerConnectionManager) RemoveConnection(runnerID, generation int64) {
 	shard := cm.getShard(runnerID)
 
 	shard.mu.Lock()
 	conn, ok := shard.connections[runnerID]
+	if ok && conn.Generation != generation {
+		// Generation mismatch: a newer connection has replaced this one.
+		// Skip removal to avoid closing the active connection.
+		shard.mu.Unlock()
+		cm.logger.Debug("generation mismatch, skipping remove",
+			"runner_id", runnerID,
+			"remove_generation", generation,
+			"current_generation", conn.Generation,
+		)
+		return
+	}
 	if ok {
 		delete(shard.connections, runnerID)
 		cm.connCount.Add(-1)
@@ -142,6 +159,7 @@ func (cm *RunnerConnectionManager) RemoveConnection(runnerID int64) {
 		conn.Close()
 		cm.logger.Info("runner disconnected (gRPC)",
 			"runner_id", runnerID,
+			"generation", generation,
 			"total_connections", cm.connCount.Load(),
 		)
 
@@ -233,30 +251,34 @@ func (cm *RunnerConnectionManager) initTimeoutLoop() {
 
 func (cm *RunnerConnectionManager) checkInitTimeouts() {
 	now := time.Now()
-	var timedOutRunners []int64
+	type timedOutEntry struct {
+		runnerID   int64
+		generation int64
+	}
+	var timedOut []timedOutEntry
 
 	for i := 0; i < numShards; i++ {
 		shard := cm.shards[i]
 		shard.mu.RLock()
 		for runnerID, conn := range shard.connections {
 			if !conn.IsInitialized() && now.Sub(conn.ConnectedAt) > cm.initTimeout {
-				timedOutRunners = append(timedOutRunners, runnerID)
+				timedOut = append(timedOut, timedOutEntry{runnerID: runnerID, generation: conn.Generation})
 			}
 		}
 		shard.mu.RUnlock()
 	}
 
-	for _, runnerID := range timedOutRunners {
+	for _, entry := range timedOut {
 		reason := "initialization timeout"
 		cm.logger.Warn("removing gRPC connection due to initialization timeout",
-			"runner_id", runnerID,
+			"runner_id", entry.runnerID,
 			"timeout", cm.initTimeout,
 		)
 
 		if cm.onInitFailed != nil {
-			cm.onInitFailed(runnerID, reason)
+			cm.onInitFailed(entry.runnerID, reason)
 		}
 
-		cm.RemoveConnection(runnerID)
+		cm.RemoveConnection(entry.runnerID, entry.generation)
 	}
 }

@@ -21,8 +21,15 @@ func setupRunnerEventCallbacks(db *gorm.DB, runnerConnMgr *runner.RunnerConnecti
 			originalHeartbeatCallback(runnerID, data)
 		}
 
-		// Publish runner online event (heartbeat indicates runner is online)
-		// Only publish if this is likely a new connection or status change
+		// Short-circuit: if this connection already sent the online event, skip DB query.
+		// Each new connection resets the flag, so the first heartbeat after (re)connect
+		// will still publish the event.
+		conn := runnerConnMgr.GetConnection(runnerID)
+		if conn == nil || conn.IsOnlineEventSent() {
+			return
+		}
+
+		// First heartbeat on this connection: query DB for org_id/node_id
 		var r struct {
 			OrganizationID int64  `gorm:"column:organization_id"`
 			NodeID         string `gorm:"column:node_id"`
@@ -47,6 +54,9 @@ func setupRunnerEventCallbacks(db *gorm.DB, runnerConnMgr *runner.RunnerConnecti
 				slog.Error("failed to publish runner online event", "error", err)
 			}
 		}
+
+		// Mark event as sent for this connection — subsequent heartbeats skip DB
+		conn.MarkOnlineEventSent()
 	})
 
 	// Wrap disconnect callback to publish runner offline events

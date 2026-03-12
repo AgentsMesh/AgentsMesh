@@ -23,7 +23,7 @@ func (c *GRPCConnection) readLoop(ctx context.Context, done chan<- struct{}) {
 	for {
 		msg, err := c.stream.Recv()
 		if err != nil {
-			// Don't update lastRecvTime on error — watchdog should detect staleness
+			// Don't update lastRecvTime on error — only track successful receives
 			if err == io.EOF {
 				log.Info("Stream ended (EOF)")
 				return
@@ -39,7 +39,7 @@ func (c *GRPCConnection) readLoop(ctx context.Context, done chan<- struct{}) {
 			}
 			return
 		}
-		// Record successful recv for liveness tracking (recvWatchdog uses this)
+		// Record successful recv for liveness tracking and diagnostics
 		c.lastRecvTime.Store(time.Now().UnixNano())
 		c.handleServerMessage(msg)
 	}
