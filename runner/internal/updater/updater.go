@@ -195,10 +195,25 @@ func (u *Updater) Download(ctx context.Context, version string, _ func(downloade
 	}
 	tmpPath := filepath.Join(tmpDir, binaryName)
 
+	// go-selfupdate's UpdateTo internally calls update.Apply, which renames
+	// the target file to ".target.old" before writing the new binary. Since
+	// tmpPath is a freshly created temp directory, the target doesn't exist
+	// yet, causing the rename to fail. Create an empty placeholder so the
+	// rename succeeds, and clean up the leftover .old afterward.
+	placeholder, err := os.Create(tmpPath)
+	if err != nil {
+		os.RemoveAll(tmpDir)
+		return "", fmt.Errorf("failed to create placeholder: %w", err)
+	}
+	placeholder.Close()
+
 	if err := detector.DownloadTo(ctx, release, tmpPath); err != nil {
 		os.RemoveAll(tmpDir)
 		return "", fmt.Errorf("failed to download update: %w", err)
 	}
+
+	// Clean up the ".target.old" placeholder left by go-selfupdate's Apply.
+	os.Remove(filepath.Join(tmpDir, "."+binaryName+".old"))
 
 	if runtime.GOOS != "windows" {
 		if err := os.Chmod(tmpPath, 0755); err != nil {
