@@ -20,12 +20,10 @@ func (s *Service) UpdateConfig(ctx context.Context, id int64, req *UpdateConfigR
 		return nil, err
 	}
 
-	// Strip cross-protocol empty-string fields before validation,
-	// then reject any non-empty cross-protocol field updates.
+	// Strip all non-matching protocol fields unconditionally.
+	// Frontends send every field (including defaults like ldap_port=389),
+	// so we nil them before any validation to avoid false cross-protocol errors.
 	stripCrossProtocolEmptyFields(existing.Protocol, req)
-	if err := validateUpdateFieldsMatchProtocol(existing.Protocol, req); err != nil {
-		return nil, err
-	}
 
 	// Reject explicitly clearing required fields (pointer non-nil but value empty).
 	if err := validateRequiredFieldsNotCleared(existing, req); err != nil {
@@ -204,39 +202,6 @@ func stripCrossProtocolEmptyFields(protocol sso.Protocol, req *UpdateConfigReque
 	}
 }
 
-// strPtrSet returns true if the *string pointer is non-nil and points to a non-empty string.
-// This correctly handles frontends that send empty strings for irrelevant cross-protocol fields.
-func strPtrSet(p *string) bool { return p != nil && *p != "" }
-
-// validateUpdateFieldsMatchProtocol rejects updates that set fields belonging
-// to a different protocol than the config's actual protocol.
-// Empty-string values are treated as "not set" so frontends can safely send
-// all fields without triggering cross-protocol validation errors.
-func validateUpdateFieldsMatchProtocol(protocol sso.Protocol, req *UpdateConfigRequest) error {
-	hasOIDC := strPtrSet(req.OIDCIssuerURL) || strPtrSet(req.OIDCClientID) || strPtrSet(req.OIDCClientSecret) || strPtrSet(req.OIDCScopes)
-	hasSAML := strPtrSet(req.SAMLIDPMetadataURL) || strPtrSet(req.SAMLIDPMetadataXML) || strPtrSet(req.SAMLIDPSSOURL) ||
-		strPtrSet(req.SAMLIDPCert) || strPtrSet(req.SAMLSPEntityID) || strPtrSet(req.SAMLNameIDFormat)
-	hasLDAP := strPtrSet(req.LDAPHost) || req.LDAPPort != nil || req.LDAPUseTLS != nil || strPtrSet(req.LDAPBindDN) ||
-		strPtrSet(req.LDAPBindPassword) || strPtrSet(req.LDAPBaseDN) || strPtrSet(req.LDAPUserFilter) ||
-		strPtrSet(req.LDAPEmailAttr) || strPtrSet(req.LDAPNameAttr) || strPtrSet(req.LDAPUsernameAttr)
-
-	switch protocol {
-	case sso.ProtocolOIDC:
-		if hasSAML || hasLDAP {
-			return NewValidationError("cannot set SAML/LDAP fields on an OIDC config")
-		}
-	case sso.ProtocolSAML:
-		if hasOIDC || hasLDAP {
-			return NewValidationError("cannot set OIDC/LDAP fields on a SAML config")
-		}
-	case sso.ProtocolLDAP:
-		if hasOIDC || hasSAML {
-			return NewValidationError("cannot set OIDC/SAML fields on an LDAP config")
-		}
-	}
-	return nil
-}
-
 // validateRequiredFieldsNotCleared rejects updates that clear protocol-specific
 // required fields (pointer non-nil but value empty).
 func validateRequiredFieldsNotCleared(existing *sso.Config, req *UpdateConfigRequest) error {
@@ -269,7 +234,7 @@ func validateRequiredFieldsNotCleared(existing *sso.Config, req *UpdateConfigReq
 		} else if req.SAMLIDPCert != nil && *req.SAMLIDPCert != "" {
 			hasCert = true
 		}
-		if metadataURL == "" && metadataXML == "" && !(ssoURL != "" && hasCert) {
+		if metadataURL == "" && metadataXML == "" && (ssoURL == "" || !hasCert) {
 			return NewValidationError("SAML requires at least one IdP source (metadata URL, metadata XML, or SSO URL with certificate)")
 		}
 	case sso.ProtocolLDAP:
