@@ -1,0 +1,24 @@
+id: TC-SSO-CB-003
+name: SSO 回调 — 缺少 token
+description: 验证 SSO 回调页在无 token 也无 error 参数时的处理
+priority: high
+must_execute: true
+module: account/auth/sso/callback
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 导航到 SSO 回调页（无任何参数）
+    expected: 显示"缺少认证令牌"错误
+    verification:
+      type: ui
+      navigate: /auth/sso/callback
+      wait_for: 'heading contains "失败" or heading contains "Failed"'
+      check:
+        - exists: 'heading contains "登录失败" or heading contains "Sign-in Failed"'
+        - exists: 'text contains "令牌" or text contains "token"'
+        - exists: 'link contains "重试" or link contains "Try Again"'

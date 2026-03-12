@@ -1,0 +1,96 @@
+id: TC-SSO-ADM-003
+name: Admin SSO 配置 — 完整 CRUD 流程
+description: 验证管理员可以创建、读取、更新、删除 SSO 配置
+priority: critical
+module: account/auth/sso/admin
+
+preconditions:
+  - 开发环境已启动
+  - admin@agentsmesh.local 用户 is_system_admin=true
+
+steps:
+  - action: 创建 OIDC 配置
+    expected: 返回 201，包含创建的配置详情
+    verification:
+      type: api
+      auth:
+        login:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      request:
+        method: POST
+        url: /api/v1/admin/sso/configs
+        headers:
+          Content-Type: application/json
+        body:
+          domain: e2e-test.com
+          name: E2E Test OIDC
+          protocol: oidc
+          is_enabled: true
+          oidc_issuer_url: https://accounts.google.com
+          oidc_client_id: e2e-client-id
+          oidc_client_secret: e2e-client-secret
+      expected:
+        status: 201
+        body:
+          domain: e2e-test.com
+          protocol: oidc
+          name: E2E Test OIDC
+          is_enabled: true
+        save:
+          config_id: id
+
+  - action: 读取创建的配置
+    expected: 返回 200，字段匹配
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs/${config_id}
+      expected:
+        status: 200
+        body:
+          domain: e2e-test.com
+          oidc_client_id: e2e-client-id
+
+  - action: 更新配置
+    expected: 返回 200，name 已更新
+    verification:
+      type: api
+      request:
+        method: PUT
+        url: /api/v1/admin/sso/configs/${config_id}
+        headers:
+          Content-Type: application/json
+        body:
+          name: Updated E2E OIDC
+          enforce_sso: true
+      expected:
+        status: 200
+        body:
+          name: Updated E2E OIDC
+          enforce_sso: true
+
+  - action: 删除配置
+    expected: 返回 204
+    verification:
+      type: api
+      request:
+        method: DELETE
+        url: /api/v1/admin/sso/configs/${config_id}
+      expected:
+        status: 204
+
+  - action: 确认已删除
+    expected: 返回 404
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs/${config_id}
+      expected:
+        status: 404
+
+cleanup:
+  - sql: |
+      DELETE FROM sso_configs WHERE domain = 'e2e-test.com';

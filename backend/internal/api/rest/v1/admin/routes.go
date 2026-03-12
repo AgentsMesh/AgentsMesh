@@ -8,6 +8,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/admin"
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	ssoservice "github.com/anthropics/agentsmesh/backend/internal/service/sso"
 	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/supportticket"
@@ -20,6 +21,7 @@ type Services struct {
 	Auth              *auth.Service
 	Admin             *admin.Service
 	Billing           *billing.Service
+	SSO               *ssoservice.Service
 	RelayManager      *relay.Manager
 	ExtensionRepo     extension.Repository
 	MarketplaceWorker *extensionservice.MarketplaceWorker
@@ -83,6 +85,12 @@ func RegisterRoutes(router *gin.Engine, cfg *config.Config, db database.DB, svc 
 	if svc.ExtensionRepo != nil {
 		skillRegistryHandler := NewSkillRegistryHandler(svc.ExtensionRepo, svc.MarketplaceWorker)
 		skillRegistryHandler.RegisterRoutes(protected)
+	}
+
+	// SSO Configs (optional - only if SSO service is available)
+	if svc.SSO != nil {
+		ssoHandler := NewSSOHandler(svc.SSO, svc.Admin)
+		ssoHandler.RegisterRoutes(protected)
 	}
 
 	// Support Tickets (optional - only if support ticket service is available)

@@ -1,0 +1,35 @@
+id: TC-SSO-OIDC-001
+name: OIDC 重定向 — 跳转到 IdP 授权页
+description: 验证 OIDC 认证端点正确生成 state 并重定向到 IdP 的授权 URL
+priority: high
+module: account/auth/sso/oidc
+
+preconditions:
+  - 开发环境已启动
+  - 域名 agentsmesh.local 已配置 OIDC（issuer: https://accounts.google.com）
+
+steps:
+  - action: 请求 OIDC 认证端点（不跟随重定向）
+    expected: 返回 302，Location 指向 IdP 授权 URL，包含 state 和 redirect_uri
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/agentsmesh.local/oidc
+        follow_redirect: false
+      expected:
+        status: 302
+        headers:
+          Location: contains "accounts.google.com"
+
+  - action: 请求不存在的域名 OIDC 端点
+    expected: 返回 404
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/nonexistent.com/oidc
+      expected:
+        status: 404
+        body:
+          code: RESOURCE_NOT_FOUND

@@ -7,6 +7,49 @@ This directory contains end-to-end test cases for AgentsMesh, written in structu
 ```
 e2e/
 ├── README.md                          # This file
+├── account/                           # Account module
+│   └── auth/                         # Authentication
+│       ├── login/                    # Login tests
+│       │   ├── TC-LOGIN-001-success.yaml
+│       │   ├── TC-LOGIN-002-invalid-credentials.yaml
+│       │   ├── TC-LOGIN-003-empty-fields.yaml
+│       │   └── TC-LOGIN-004-ui-flow.yaml
+│       └── sso/                      # SSO (OIDC + SAML + LDAP)
+│           ├── discover/             # SSO discovery
+│           │   ├── TC-SSO-DISC-001-valid-email.yaml          # Discover with SSO domain
+│           │   ├── TC-SSO-DISC-002-no-sso-domain.yaml        # Discover with non-SSO domain
+│           │   ├── TC-SSO-DISC-003-invalid-email.yaml        # Invalid email edge cases
+│           │   └── TC-SSO-DISC-004-ui-discovery-flow.yaml    # Login page discovery UI
+│           ├── oidc/                 # OIDC authentication
+│           │   ├── TC-SSO-OIDC-001-redirect.yaml             # OIDC redirect to IdP
+│           │   └── TC-SSO-OIDC-002-ui-redirect.yaml          # OIDC button click UI
+│           ├── saml/                 # SAML authentication
+│           │   ├── TC-SSO-SAML-001-redirect.yaml             # SAML AuthnRequest redirect
+│           │   └── TC-SSO-SAML-002-metadata.yaml             # SP Metadata endpoint
+│           ├── ldap/                 # LDAP authentication
+│           │   ├── TC-SSO-LDAP-001-auth-invalid.yaml         # LDAP invalid credentials
+│           │   ├── TC-SSO-LDAP-002-no-config.yaml            # LDAP no config 404
+│           │   └── TC-SSO-LDAP-003-ui-collapsible.yaml       # LDAP collapsible panel UI
+│           ├── callback/             # SSO callback page
+│           │   ├── TC-SSO-CB-001-error-access-denied.yaml    # access_denied error
+│           │   ├── TC-SSO-CB-002-error-unknown.yaml          # Unknown error code
+│           │   ├── TC-SSO-CB-003-missing-token.yaml          # Missing token
+│           │   └── TC-SSO-CB-004-url-cleanup.yaml            # URL param security cleanup
+│           ├── enforce/              # enforce_sso mode
+│           │   ├── TC-SSO-ENF-001-password-blocked.yaml      # Password login blocked
+│           │   ├── TC-SSO-ENF-002-admin-bypass.yaml          # System admin bypass
+│           │   ├── TC-SSO-ENF-003-ui-hide-password.yaml      # UI hides password/OAuth
+│           │   └── TC-SSO-ENF-004-ui-show-all.yaml           # UI shows all when off
+│           └── admin/                # Admin SSO management
+│               ├── TC-SSO-ADM-001-list.yaml                  # List SSO configs
+│               ├── TC-SSO-ADM-002-get-single.yaml            # Get single config
+│               ├── TC-SSO-ADM-003-crud.yaml                  # Full CRUD flow
+│               ├── TC-SSO-ADM-004-unauthorized.yaml          # Permission check
+│               ├── TC-SSO-ADM-005-duplicate-domain-protocol.yaml  # Unique constraint
+│               ├── TC-SSO-ADM-006-ui-list-page.yaml              # Admin list page UI
+│               ├── TC-SSO-ADM-007-ui-create-dialog.yaml          # Admin create dialog UI
+│               ├── TC-SSO-ADM-008-ui-edit-delete.yaml            # Admin edit/delete UI
+│               └── TC-SSO-ADM-009-ui-filter-search.yaml          # Admin search/filter UI
 ├── billing/                           # Billing module
 │   ├── subscription/                  # Subscription management
 │   │   ├── TC-SUB-001-status-display.yaml
@@ -287,3 +330,85 @@ Extensions E2E tests cover the full capabilities management functionality for Sk
 | Test Case | Description | Verification Type |
 |-----------|-------------|-------------------|
 | TC-EXT-001 | Full capabilities management flow (Settings → Repo → Install → Edit → Toggle → Uninstall) | UI + API |
+
+## SSO Module Test Coverage
+
+SSO E2E tests cover OIDC, SAML, and LDAP authentication protocols, including SSO discovery, enforce_sso mode, callback handling, and admin management.
+
+### Test Data
+
+| Data | Value |
+|------|-------|
+| SSO test domain | agentsmesh.local |
+| OIDC config name | Dev OIDC |
+| LDAP config name | Dev LDAP |
+| Admin SSO configs API | /api/v1/admin/sso/configs |
+| SSO discover API | /api/v1/auth/sso/discover?email=... |
+| OIDC auth endpoint | /api/v1/auth/sso/:domain/oidc |
+| SAML auth endpoint | /api/v1/auth/sso/:domain/saml |
+| LDAP auth endpoint | /api/v1/auth/sso/:domain/ldap |
+| SAML metadata endpoint | /api/v1/auth/sso/:domain/saml/metadata |
+| SSO callback page | /auth/sso/callback |
+
+### SSO Discovery Tests
+
+| Test Case | Description | Verification Type |
+|-----------|-------------|-------------------|
+| TC-SSO-DISC-001 | Discover with valid SSO domain email | API |
+| TC-SSO-DISC-002 | Discover with non-SSO domain (empty result) | API |
+| TC-SSO-DISC-003 | Invalid email edge cases (no email, bad format) | API |
+| TC-SSO-DISC-004 | Login page SSO discovery UI flow | UI |
+
+### OIDC Tests
+
+| Test Case | Description | Verification Type |
+|-----------|-------------|-------------------|
+| TC-SSO-OIDC-001 | OIDC redirect to IdP (302 + state) | API |
+| TC-SSO-OIDC-002 | OIDC button click redirects browser to IdP | UI |
+
+### SAML Tests
+
+| Test Case | Description | Verification Type |
+|-----------|-------------|-------------------|
+| TC-SSO-SAML-001 | SAML AuthnRequest redirect (or 404) | API |
+| TC-SSO-SAML-002 | SP Metadata XML endpoint | API |
+
+### LDAP Tests
+
+| Test Case | Description | Verification Type |
+|-----------|-------------|-------------------|
+| TC-SSO-LDAP-001 | LDAP auth with invalid credentials (401) | API |
+| TC-SSO-LDAP-002 | LDAP auth on non-configured domain (404) | API |
+| TC-SSO-LDAP-003 | LDAP collapsible panel expand/collapse UI | UI |
+
+### SSO Callback Tests
+
+| Test Case | Description | Verification Type |
+|-----------|-------------|-------------------|
+| TC-SSO-CB-001 | access_denied error display | UI |
+| TC-SSO-CB-002 | Unknown error code (generic message, no leak) | UI |
+| TC-SSO-CB-003 | Missing token error | UI |
+| TC-SSO-CB-004 | URL parameter security cleanup (replaceState) | UI |
+
+### enforce_sso Tests
+
+| Test Case | Description | Verification Type |
+|-----------|-------------|-------------------|
+| TC-SSO-ENF-001 | Password login blocked (SSO_REQUIRED) | API |
+| TC-SSO-ENF-002 | System admin bypass (is_system_admin=true) | API |
+| TC-SSO-ENF-003 | UI hides password and OAuth when enforced | UI |
+| TC-SSO-ENF-004 | UI shows SSO + password + OAuth when not enforced | UI |
+
+### Admin SSO Management Tests
+
+| Test Case | Description | Verification Type |
+|-----------|-------------|-------------------|
+| TC-SSO-ADM-001 | List SSO configs (paginated) | API |
+| TC-SSO-ADM-002 | Get single config (protocol field filtering) | API |
+| TC-SSO-ADM-003 | Full CRUD flow (create → read → update → delete) | API |
+| TC-SSO-ADM-004 | Permission check (401/403 for unauthorized) | API |
+| TC-SSO-ADM-005 | Unique constraint (domain + protocol) | API |
+| TC-SSO-ADM-006 | Admin SSO list page display | UI |
+| TC-SSO-ADM-007 | Admin create SSO config dialog | UI |
+| TC-SSO-ADM-008 | Admin edit and delete operations | UI |
+| TC-SSO-ADM-009 | Admin search and protocol filter | UI |

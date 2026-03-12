@@ -1,0 +1,37 @@
+id: TC-SSO-ENF-004
+name: enforce_sso=false — UI 显示 SSO + 密码 + OAuth
+description: 验证 enforce_sso 关闭时，登录页同时显示 SSO 选项、密码输入和 OAuth 按钮
+priority: high
+must_execute: true
+module: account/auth/sso/enforce
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 域名 agentsmesh.local 有 SSO 配置但全部 enforce_sso=false
+
+setup:
+  sql: |
+    UPDATE sso_configs SET enforce_sso = false WHERE domain = 'agentsmesh.local';
+
+steps:
+  - action: 导航到登录页并触发 SSO 发现
+    expected: 同时显示 SSO 卡片、"或使用密码"分隔线、密码框、OAuth 按钮
+    verification:
+      type: ui
+      navigate: /login
+      steps:
+        - fill: 'textbox "邮箱"'
+          value: dev@agentsmesh.local
+        - click: 'textbox "密码"'
+        - wait_for: 'button contains "OIDC" or button contains "LDAP"'
+      check:
+        - exists: 'button contains "OIDC"'
+        - exists: 'button contains "LDAP"'
+        - exists: 'text "或使用密码" or text "or use password"'
+        - exists: 'textbox type=password'
+        - exists: 'button "登录" or button "Sign in"'
+        - exists: 'button contains "GitHub"'
+        - exists: 'button contains "Google"'

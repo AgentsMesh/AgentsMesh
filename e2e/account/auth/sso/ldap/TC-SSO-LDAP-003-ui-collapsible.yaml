@@ -1,0 +1,58 @@
+id: TC-SSO-LDAP-003
+name: LDAP 面板 — 折叠/展开交互
+description: 验证登录页 LDAP 认证面板的折叠展开行为和表单提交
+priority: critical
+must_execute: true
+module: account/auth/sso/ldap
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 域名 agentsmesh.local 已配置 LDAP
+
+steps:
+  - action: 导航到登录页并触发 SSO 发现
+    expected: 显示 LDAP 折叠面板（默认收起）
+    verification:
+      type: ui
+      navigate: /login
+      steps:
+        - fill: 'textbox "邮箱"'
+          value: dev@agentsmesh.local
+        - click: 'textbox "密码"'
+        - wait_for: 'button contains "LDAP"'
+      check:
+        - exists: 'button contains "LDAP"'
+        - not_exists: 'textbox "用户名" or textbox "Username"'
+
+  - action: 点击展开 LDAP 面板
+    expected: 显示用户名/密码输入框和登录按钮
+    verification:
+      type: ui
+      steps:
+        - click: 'button contains "LDAP" (collapsible toggle)'
+      check:
+        - exists: 'textbox "用户名" or textbox "Username"'
+        - exists: 'textbox type=password'
+        - exists: 'button contains "LDAP" (submit)'
+
+  - action: 再次点击收起 LDAP 面板
+    expected: 用户名/密码输入框消失
+    verification:
+      type: ui
+      steps:
+        - click: 'button contains "LDAP" (collapsible toggle)'
+      check:
+        - not_exists: 'textbox "用户名" or textbox "Username"'
+
+  - action: 展开后提交空表单
+    expected: 显示错误提示
+    verification:
+      type: ui
+      steps:
+        - click: 'button contains "LDAP" (collapsible toggle)'
+        - click: 'button contains "LDAP" (submit)'
+      check:
+        - exists: 'text contains "错误" or text contains "error" or text contains "invalid"'

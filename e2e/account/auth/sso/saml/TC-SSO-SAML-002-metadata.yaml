@@ -1,0 +1,31 @@
+id: TC-SSO-SAML-002
+name: SAML SP Metadata — XML 端点
+description: 验证 SAML SP Metadata 端点返回正确的 XML 或 404（无配置时）
+priority: medium
+module: account/auth/sso/saml
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 请求有 SAML 配置的域名 metadata
+    expected: 返回 XML SP Metadata（如有 SAML 配置）或 404（如无）
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/agentsmesh.local/saml/metadata
+      expected:
+        status: one_of [200, 404]
+
+  - action: 请求不存在域名的 metadata
+    expected: 返回 404
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/nonexistent.com/saml/metadata
+      expected:
+        status: 404
+        body:
+          code: RESOURCE_NOT_FOUND

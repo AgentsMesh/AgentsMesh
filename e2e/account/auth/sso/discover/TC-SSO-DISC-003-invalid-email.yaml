@@ -1,0 +1,45 @@
+id: TC-SSO-DISC-003
+name: SSO 发现 — 无效邮箱格式
+description: 验证各种无效邮箱输入的边界处理
+priority: medium
+module: account/auth/sso/discover
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 不传 email 参数
+    expected: 返回 400 INVALID_INPUT
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/discover
+      expected:
+        status: 400
+        body:
+          code: INVALID_INPUT
+
+  - action: 传入无 @ 的非法邮箱
+    expected: 返回 400 INVALID_INPUT
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/discover?email=notanemail
+      expected:
+        status: 400
+        body:
+          code: INVALID_INPUT
+
+  - action: 传入空字符串
+    expected: 返回 400 INVALID_INPUT
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/discover?email=
+      expected:
+        status: 400
+        body:
+          code: INVALID_INPUT

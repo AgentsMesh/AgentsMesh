@@ -77,14 +77,17 @@ const (
 	TargetTypePromoCode    TargetType = "promo_code"
 	TargetTypeConfig       TargetType = "config"
 	TargetTypeSupportTicket TargetType = "support_ticket"
+	TargetTypeSSOConfig     TargetType = "sso_config"
 
 	// Aliases for convenience
-	AuditTargetUser         = TargetTypeUser
-	AuditTargetOrganization = TargetTypeOrganization
-	AuditTargetSubscription = TargetTypeSubscription
-	AuditTargetRunner       = TargetTypeRunner
-	AuditTargetPromoCode    = TargetTypePromoCode
-	AuditTargetConfig       = TargetTypeConfig
+	AuditTargetUser          = TargetTypeUser
+	AuditTargetOrganization  = TargetTypeOrganization
+	AuditTargetSubscription  = TargetTypeSubscription
+	AuditTargetRunner        = TargetTypeRunner
+	AuditTargetPromoCode     = TargetTypePromoCode
+	AuditTargetConfig        = TargetTypeConfig
+	AuditTargetSupportTicket = TargetTypeSupportTicket
+	AuditTargetSSOConfig     = TargetTypeSSOConfig
 )
 
 // AuditLog represents a system admin audit log entry

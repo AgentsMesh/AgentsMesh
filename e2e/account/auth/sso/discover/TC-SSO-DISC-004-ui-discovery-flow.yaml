@@ -1,0 +1,50 @@
+id: TC-SSO-DISC-004
+name: SSO 发现 — 登录页 UI 联动
+description: 验证登录页输入 SSO 域名邮箱后，自动触发 discover 并动态展示 SSO 选项
+priority: critical
+must_execute: true
+module: account/auth/sso/discover
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 域名 agentsmesh.local 已配置 OIDC 和 LDAP
+
+steps:
+  - action: 导航到登录页
+    url: /login
+    expected: 页面加载完成
+    verification:
+      type: ui
+      check:
+        - exists: 'textbox "邮箱"'
+        - not_exists: 'text "SSO"'
+
+  - action: 输入 SSO 域名邮箱并触发 blur
+    expected: 自动发现 SSO 配置，显示 SSO 登录选项卡片
+    verification:
+      type: ui
+      steps:
+        - fill: 'textbox "邮箱"'
+          value: dev@agentsmesh.local
+        - click: 'textbox "密码"'
+        - wait_for: 'text contains "OIDC" or text contains "LDAP"'
+      check:
+        - exists: 'button contains "OIDC"'
+        - exists: 'button contains "LDAP"'
+        - exists: 'text "或使用 SSO 登录" or text "or sign in with SSO"'
+
+  - action: 清空邮箱重新输入无 SSO 域名邮箱
+    expected: SSO 选项消失
+    verification:
+      type: ui
+      steps:
+        - fill: 'textbox "邮箱"'
+          value: user@nosso.com
+        - click: 'textbox "密码"'
+        - wait: 2000
+      check:
+        - not_exists: 'text contains "SSO"'
+        - not_exists: 'button contains "OIDC"'

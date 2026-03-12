@@ -2,18 +2,36 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
 )
 
 // Login authenticates user and returns tokens
 func (s *Service) Login(ctx context.Context, email, password string) (*LoginResult, error) {
+	// Check enforce_sso before attempting password authentication.
+	// We need to look up the user first to check is_system_admin.
+	if s.ssoChecker != nil && strings.Contains(email, "@") {
+		// Try to find the user to check admin status
+		isSystemAdmin := false
+		u, err := s.userService.GetByEmail(ctx, email)
+		if err == nil && u != nil {
+			isSystemAdmin = u.IsSystemAdmin
+		}
+
+		allowed, err := s.ssoChecker.IsPasswordLoginAllowed(ctx, email, isSystemAdmin)
+		if err == nil && !allowed {
+			return nil, ErrSSOEnforced
+		}
+	}
+
 	u, err := s.userService.Authenticate(ctx, email, password)
 	if err != nil {
-		if err == userService.ErrInvalidCredentials {
+		if errors.Is(err, userService.ErrInvalidCredentials) {
 			return nil, ErrInvalidCredentials
 		}
-		if err == userService.ErrUserInactive {
+		if errors.Is(err, userService.ErrUserInactive) {
 			return nil, ErrUserDisabled
 		}
 		return nil, err
@@ -34,6 +52,14 @@ func (s *Service) Login(ctx context.Context, email, password string) (*LoginResu
 
 // Register creates a new user and returns tokens
 func (s *Service) Register(ctx context.Context, req *RegisterRequest) (*LoginResult, error) {
+	// Enforce SSO: reject password registration for domains with enforce_sso enabled
+	if s.ssoChecker != nil && strings.Contains(req.Email, "@") {
+		allowed, err := s.ssoChecker.IsPasswordLoginAllowed(ctx, req.Email, false)
+		if err == nil && !allowed {
+			return nil, ErrSSOEnforced
+		}
+	}
+
 	u, err := s.userService.Create(ctx, &userService.CreateRequest{
 		Email:    req.Email,
 		Username: req.Username,
@@ -41,10 +67,10 @@ func (s *Service) Register(ctx context.Context, req *RegisterRequest) (*LoginRes
 		Password: req.Password,
 	})
 	if err != nil {
-		if err == userService.ErrEmailAlreadyExists {
+		if errors.Is(err, userService.ErrEmailAlreadyExists) {
 			return nil, ErrEmailExists
 		}
-		if err == userService.ErrUsernameExists {
+		if errors.Is(err, userService.ErrUsernameExists) {
 			return nil, ErrUsernameExists
 		}
 		return nil, err

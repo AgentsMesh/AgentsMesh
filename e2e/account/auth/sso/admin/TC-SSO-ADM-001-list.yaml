@@ -1,0 +1,29 @@
+id: TC-SSO-ADM-001
+name: Admin SSO 配置 — 列表查询
+description: 验证系统管理员可以查询全局 SSO 配置列表（分页）
+priority: high
+module: account/auth/sso/admin
+
+preconditions:
+  - 开发环境已启动
+  - admin@agentsmesh.local 用户 is_system_admin=true
+  - 已有 SSO 配置数据
+
+steps:
+  - action: 使用管理员 token 查询 SSO 配置列表
+    expected: 返回 200，包含分页数据和 SSO 配置列表
+    verification:
+      type: api
+      auth:
+        login:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      request:
+        method: GET
+        url: /api/v1/admin/sso/configs
+      expected:
+        status: 200
+        body:
+          data: array_not_empty
+          page: 1
+          total: greater_than_0

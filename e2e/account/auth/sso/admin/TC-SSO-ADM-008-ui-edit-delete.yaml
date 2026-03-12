@@ -1,0 +1,74 @@
+id: TC-SSO-ADM-008
+name: Admin SSO 管理页 — 编辑和删除操作
+description: 验证通过行操作菜单进行编辑、启用/禁用、删除等操作
+priority: critical
+must_execute: true
+module: account/auth/sso/admin
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 管理员已登录 Admin Console
+  - 已有 SSO 配置数据
+
+setup:
+  sql: |
+    INSERT INTO sso_configs (domain, name, protocol, is_enabled, oidc_issuer_url, oidc_client_id, oidc_client_secret_encrypted, created_by)
+    VALUES ('edit-test.com', 'Edit Test OIDC', 'oidc', true, 'https://issuer.example.com', 'client-1', 'encrypted', 2)
+    ON CONFLICT DO NOTHING;
+
+steps:
+  - action: 导航到 SSO 页面，找到测试行的操作菜单
+    expected: 操作菜单包含 Edit、Test Connection、Enable/Disable、Delete 选项
+    verification:
+      type: ui
+      navigate: /admin/sso
+      steps:
+        - wait_for: 'cell contains "edit-test.com"'
+        - click: 'row contains "edit-test.com" → button icon MoreHorizontal'
+      check:
+        - exists: 'menuitem contains "Edit"'
+        - exists: 'menuitem contains "Test Connection"'
+        - exists: 'menuitem contains "Disable" or menuitem contains "Enable"'
+        - exists: 'menuitem contains "Delete"'
+
+  - action: 点击 Edit 打开编辑对话框
+    expected: 对话框打开，预填现有配置数据
+    verification:
+      type: ui
+      steps:
+        - click: 'menuitem contains "Edit"'
+      check:
+        - exists: 'dialog'
+        - exists: 'textbox value contains "edit-test.com"'
+        - exists: 'textbox value contains "Edit Test OIDC"'
+
+  - action: 修改名称并保存
+    expected: 更新成功，列表刷新
+    verification:
+      type: ui
+      steps:
+        - fill: 'textbox contains "Edit Test OIDC"'
+          value: Updated OIDC
+        - click: 'button contains "Save" or button contains "Update"'
+        - wait_for: 'toast contains "updated" or toast contains "success"'
+      check:
+        - exists: 'cell contains "Updated OIDC"'
+
+  - action: 删除配置
+    expected: 确认对话框后删除成功
+    verification:
+      type: ui
+      steps:
+        - click: 'row contains "edit-test.com" → button icon MoreHorizontal'
+        - click: 'menuitem contains "Delete"'
+        - handle_dialog: accept
+        - wait_for: 'toast contains "deleted" or toast contains "success"'
+      check:
+        - not_exists: 'cell contains "edit-test.com"'
+
+cleanup:
+  - sql: |
+      DELETE FROM sso_configs WHERE domain = 'edit-test.com';

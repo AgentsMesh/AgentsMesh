@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
@@ -25,12 +26,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// Authenticate user
 	result, err := h.authService.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		if err == auth.ErrInvalidCredentials {
+		if errors.Is(err, auth.ErrInvalidCredentials) {
 			apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "Invalid email or password")
 			return
 		}
-		if err == auth.ErrUserDisabled {
+		if errors.Is(err, auth.ErrUserDisabled) {
 			apierr.ForbiddenDisabled(c)
+			return
+		}
+		if errors.Is(err, auth.ErrSSOEnforced) {
+			apierr.Forbidden(c, apierr.SSO_REQUIRED, "SSO login is required for this domain")
 			return
 		}
 		apierr.InternalError(c, "Authentication failed")
@@ -75,11 +80,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Name:     req.Name,
 	})
 	if err != nil {
-		if err == auth.ErrEmailExists {
+		if errors.Is(err, auth.ErrEmailExists) {
 			apierr.Conflict(c, apierr.ALREADY_EXISTS, "Email already registered")
 			return
 		}
-		if err == auth.ErrUsernameExists {
+		if errors.Is(err, auth.ErrUsernameExists) {
 			apierr.Conflict(c, apierr.ALREADY_EXISTS, "Username already taken")
 			return
 		}
@@ -138,7 +143,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	result, err := h.authService.RefreshToken(c.Request.Context(), req.RefreshToken)
 	if err != nil {
-		if err == auth.ErrInvalidToken || err == auth.ErrInvalidRefreshToken {
+		if errors.Is(err, auth.ErrInvalidToken) || errors.Is(err, auth.ErrInvalidRefreshToken) {
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "Invalid refresh token")
 			return
 		}

@@ -1,0 +1,34 @@
+id: TC-SSO-CB-004
+name: SSO 回调 — URL 参数安全清理
+description: 验证 SSO 回调页加载后自动清除 URL 中的 token/error 参数，防止泄漏
+priority: high
+must_execute: true
+module: account/auth/sso/callback
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+
+steps:
+  - action: 导航到带 error 参数的回调页
+    expected: 页面加载后 URL 中的 error 参数被清除
+    verification:
+      type: ui
+      navigate: /auth/sso/callback?error=access_denied
+      wait_for: 'heading contains "失败" or heading contains "Failed"'
+      check:
+        - url_not_contains: "error="
+        - url_not_contains: "access_denied"
+
+  - action: 导航到带伪造 token 的回调页
+    expected: 页面加载后 URL 中的 token 参数被清除
+    verification:
+      type: ui
+      navigate: /auth/sso/callback?token=fake-token&refresh_token=fake-refresh
+      wait: 3000
+      check:
+        - url_not_contains: "token="
+        - url_not_contains: "fake-token"
+        - url_not_contains: "refresh_token="

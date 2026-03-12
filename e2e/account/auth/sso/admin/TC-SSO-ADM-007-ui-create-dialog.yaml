@@ -1,0 +1,65 @@
+id: TC-SSO-ADM-007
+name: Admin SSO 管理页 — 创建对话框
+description: 验证点击 Create 按钮打开创建对话框，填写表单并成功创建 SSO 配置
+priority: critical
+must_execute: true
+module: account/auth/sso/admin
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 管理员已登录 Admin Console
+
+steps:
+  - action: 导航到 SSO 页面并点击创建按钮
+    expected: 打开创建对话框
+    verification:
+      type: ui
+      navigate: /admin/sso
+      steps:
+        - wait_for: 'button contains "Create SSO Config"'
+        - click: 'button contains "Create SSO Config"'
+      check:
+        - exists: 'dialog'
+        - exists: 'input label="Domain" or textbox placeholder contains "domain"'
+        - exists: 'input label="Name" or textbox placeholder contains "name"'
+        - exists: 'select contains "Protocol" or combobox contains "Protocol"'
+
+  - action: 选择 OIDC 协议
+    expected: 显示 OIDC 专有字段（Issuer URL、Client ID、Client Secret）
+    verification:
+      type: ui
+      steps:
+        - select: 'Protocol'
+          value: oidc
+      check:
+        - exists: 'input contains "Issuer" or textbox contains "issuer"'
+        - exists: 'input contains "Client ID" or textbox contains "client_id"'
+        - exists: 'input contains "Client Secret" or textbox contains "secret"'
+
+  - action: 填写 OIDC 配置并提交
+    expected: 创建成功，对话框关闭，列表更新
+    verification:
+      type: ui
+      steps:
+        - fill: 'textbox "Domain" or textbox placeholder contains "domain"'
+          value: e2e-ui-test.com
+        - fill: 'textbox "Name" or textbox placeholder contains "name"'
+          value: E2E UI OIDC
+        - fill: 'textbox contains "Issuer"'
+          value: https://accounts.google.com
+        - fill: 'textbox contains "Client ID"'
+          value: test-client-id
+        - fill: 'textbox contains "Client Secret"'
+          value: test-client-secret
+        - click: 'button contains "Save" or button contains "Create"'
+        - wait_for: 'toast contains "created" or toast contains "success"'
+      check:
+        - not_exists: 'dialog'
+        - exists: 'cell contains "e2e-ui-test.com"'
+
+cleanup:
+  - sql: |
+      DELETE FROM sso_configs WHERE domain = 'e2e-ui-test.com';

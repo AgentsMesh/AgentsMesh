@@ -3,14 +3,20 @@ package user
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 )
 
-// GetOrCreateByOAuth gets or creates a user from OAuth identity
+// GetOrCreateByOAuth gets or creates a user from OAuth identity.
+// Uses retry-on-conflict to handle concurrent SSO callbacks for the same user.
 func (s *Service) GetOrCreateByOAuth(ctx context.Context, provider, providerUserID, providerUsername, email, name, avatarURL string) (*user.User, bool, error) {
+	return s.getOrCreateByOAuthOnce(ctx, provider, providerUserID, providerUsername, email, name, avatarURL, true)
+}
+
+func (s *Service) getOrCreateByOAuthOnce(ctx context.Context, provider, providerUserID, providerUsername, email, name, avatarURL string, allowRetry bool) (*user.User, bool, error) {
 	// Check if identity already exists
 	identity, err := s.repo.GetIdentityByProviderUser(ctx, provider, providerUserID)
 	if err == nil {
@@ -75,6 +81,10 @@ func (s *Service) GetOrCreateByOAuth(ctx context.Context, provider, providerUser
 		}
 
 		if err := s.repo.CreateUser(ctx, u); err != nil {
+			// Concurrent SSO callback may have created the same user — retry once
+			if allowRetry && isConflictError(err) {
+				return s.getOrCreateByOAuthOnce(ctx, provider, providerUserID, providerUsername, email, name, avatarURL, false)
+			}
 			return nil, false, err
 		}
 		isNew = true
@@ -91,10 +101,25 @@ func (s *Service) GetOrCreateByOAuth(ctx context.Context, provider, providerUser
 	}
 
 	if err := s.repo.CreateIdentity(ctx, newIdentity); err != nil {
+		// Concurrent SSO callback may have created the same identity — retry once
+		if allowRetry && isConflictError(err) {
+			return s.getOrCreateByOAuthOnce(ctx, provider, providerUserID, providerUsername, email, name, avatarURL, false)
+		}
 		return nil, false, err
 	}
 
 	return u, isNew, nil
+}
+
+// isConflictError checks if err is a unique constraint violation (PostgreSQL/SQLite/MySQL).
+func isConflictError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "duplicate key value") ||
+		strings.Contains(msg, "UNIQUE constraint failed") ||
+		strings.Contains(msg, "Duplicate entry")
 }
 
 // UpdateIdentityTokens updates OAuth tokens for an identity

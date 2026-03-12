@@ -21,6 +21,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
 	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
+	ssoservice "github.com/anthropics/agentsmesh/backend/internal/service/sso"
 	supportticketservice "github.com/anthropics/agentsmesh/backend/internal/service/supportticket"
 	"github.com/anthropics/agentsmesh/backend/internal/service/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/service/license"
@@ -73,6 +74,7 @@ type serviceContainer struct {
 	marketplaceWorker *extensionservice.MarketplaceWorker
 	loop              *loop.LoopService
 	loopRun           *loop.LoopRunService
+	sso               *ssoservice.Service
 	supportTicket     *supportticketservice.Service
 
 	// Notification services
@@ -97,6 +99,12 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		Issuer:            "agentsmesh",
 	}
 	authSvc := auth.NewServiceWithRedis(authCfg, userSvc, redisClient)
+
+	// Initialize SSO service (with Redis for SAML InResponseTo validation)
+	ssoRepo := infra.NewSSOConfigRepository(db)
+	ssoSvc := ssoservice.NewServiceWithRedis(ssoRepo, cfg.JWT.Secret, cfg, redisClient)
+	// Wire SSO enforcement checker into auth service
+	authSvc.SetSSOChecker(ssoSvc)
 
 	// Initialize encryptor for credential encryption (shared across services)
 	encryptor := crypto.NewEncryptor(cfg.JWT.Secret)
@@ -219,6 +227,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		marketplaceWorker:  mktWorker,
 		loop:               loopSvc,
 		loopRun:            loopRunSvc,
+		sso:                ssoSvc,
 		supportTicket:      supportTicketSvc,
 		notifPrefStore:     notifPrefStore,
 		podRepo:            podRepo,

@@ -147,7 +147,7 @@ services:
       # =============================================================================
       - SERVER_ADDRESS=:8080
       - DEBUG=true
-      - CORS_ALLOWED_ORIGINS=http://localhost:${HTTP_PORT:-10000},http://127.0.0.1:${HTTP_PORT:-10000},http://localhost:${WEB_PORT:-10007},http://127.0.0.1:${WEB_PORT:-10007},http://localhost:3001,http://localhost,http://127.0.0.1${EXTRA_CORS_ORIGINS:+,${EXTRA_CORS_ORIGINS}}
+      - CORS_ALLOWED_ORIGINS=http://localhost:${HTTP_PORT:-10000},http://127.0.0.1:${HTTP_PORT:-10000},http://localhost:${WEB_PORT:-10007},http://127.0.0.1:${WEB_PORT:-10007},http://localhost:${WEB_ADMIN_PORT:-10011},http://127.0.0.1:${WEB_ADMIN_PORT:-10011},http://localhost:3001,http://localhost,http://127.0.0.1${EXTRA_CORS_ORIGINS:+,${EXTRA_CORS_ORIGINS}}
       # =============================================================================
       # Logging
       # =============================================================================

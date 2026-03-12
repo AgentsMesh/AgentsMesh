@@ -1,0 +1,59 @@
+id: TC-SSO-ADM-009
+name: Admin SSO 管理页 — 搜索和协议筛选
+description: 验证搜索框按域名/名称过滤，协议下拉框按 OIDC/SAML/LDAP 过滤
+priority: high
+must_execute: true
+module: account/auth/sso/admin
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 管理员已登录 Admin Console
+  - 已有 OIDC 和 LDAP 配置
+
+steps:
+  - action: 导航到 SSO 页面
+    expected: 显示所有配置
+    verification:
+      type: ui
+      navigate: /admin/sso
+      wait_for: 'heading "SSO Configs"'
+      check:
+        - exists: 'badge contains "OIDC"'
+        - exists: 'badge contains "LDAP"'
+
+  - action: 在搜索框输入域名关键词
+    expected: 列表按域名过滤
+    verification:
+      type: ui
+      steps:
+        - fill: 'textbox placeholder="Search by domain or name..."'
+          value: agentsmesh
+      check:
+        - exists: 'cell contains "agentsmesh.local"'
+
+  - action: 清空搜索，选择 OIDC 协议筛选
+    expected: 只显示 OIDC 类型配置
+    verification:
+      type: ui
+      steps:
+        - fill: 'textbox placeholder="Search by domain or name..."'
+          value: ""
+        - click: 'combobox contains "All Protocols" or select'
+        - click: 'option "OIDC" or item "OIDC"'
+      check:
+        - exists: 'badge contains "OIDC"'
+        - not_exists: 'badge contains "LDAP"'
+
+  - action: 选择 LDAP 协议筛选
+    expected: 只显示 LDAP 类型配置
+    verification:
+      type: ui
+      steps:
+        - click: 'combobox or select'
+        - click: 'option "LDAP" or item "LDAP"'
+      check:
+        - exists: 'badge contains "LDAP"'
+        - not_exists: 'badge contains "OIDC"'

@@ -11,6 +11,7 @@ import (
 	apikeyservice "github.com/anthropics/agentsmesh/backend/internal/service/apikey"
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	ssoservice "github.com/anthropics/agentsmesh/backend/internal/service/sso"
 	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/service/geo"
@@ -104,6 +105,9 @@ type Services struct {
 	LoopRun          *loop.LoopRunService
 	LoopOrchestrator *loop.LoopOrchestrator
 	LoopScheduler    *loop.LoopScheduler
+
+	// SSO service for enterprise SSO integration
+	SSO *ssoservice.Service
 
 	// Support ticket service (user-level, no org scope)
 	SupportTicket *supportticketservice.Service

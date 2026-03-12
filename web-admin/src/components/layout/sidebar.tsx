@@ -13,6 +13,7 @@ import {
   Radio,
   Boxes,
   MessageSquare,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
@@ -38,6 +39,11 @@ const navItems = [
     title: "Organizations",
     href: "/organizations",
     icon: Building2,
+  },
+  {
+    title: "SSO Configs",
+    href: "/sso",
+    icon: KeyRound,
   },
   {
     title: "Runners",

@@ -1,0 +1,22 @@
+id: TC-SSO-SAML-001
+name: SAML 重定向 — AuthnRequest 跳转 IdP
+description: 验证 SAML 认证端点生成 AuthnRequest 并重定向到 IdP SSO URL
+priority: high
+module: account/auth/sso/saml
+
+preconditions:
+  - 开发环境已启动
+  - 域名已配置 SAML SSO
+
+steps:
+  - action: 请求不存在的域名 SAML 端点
+    expected: 返回 404
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/auth/sso/nonexistent.com/saml
+      expected:
+        status: 404
+        body:
+          code: RESOURCE_NOT_FOUND

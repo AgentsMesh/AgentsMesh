@@ -1,0 +1,39 @@
+id: TC-SSO-OIDC-002
+name: OIDC 重定向 — 登录页 UI 点击跳转
+description: 验证在登录页点击 OIDC SSO 按钮后，浏览器跳转到 IdP 授权页面
+priority: critical
+must_execute: true
+module: account/auth/sso/oidc
+tags:
+  - ui
+  - mcp-required
+
+preconditions:
+  - 开发环境已启动
+  - 域名 agentsmesh.local 已配置 OIDC
+
+steps:
+  - action: 导航到登录页，输入 SSO 邮箱触发发现
+    expected: 显示 OIDC 登录按钮
+    verification:
+      type: ui
+      navigate: /login
+      steps:
+        - fill: 'textbox "邮箱"'
+          value: dev@agentsmesh.local
+        - click: 'textbox "密码"'
+        - wait_for: 'button contains "OIDC"'
+      check:
+        - exists: 'button contains "OIDC"'
+
+  - action: 点击 OIDC 登录按钮
+    expected: 浏览器跳转到 IdP（如 Google）授权页
+    verification:
+      type: ui
+      steps:
+        - click: 'button contains "OIDC"'
+        - wait: 3000
+      check:
+        - one_of:
+            - url_contains: "accounts.google.com"
+            - url_contains: "/api/v1/auth/sso"

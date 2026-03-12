@@ -1,0 +1,43 @@
+id: TC-SSO-ADM-005
+name: Admin SSO 配置 — 重复域名+协议唯一约束
+description: 验证同一域名同一协议只能创建一个 SSO 配置
+priority: high
+module: account/auth/sso/admin
+
+preconditions:
+  - 开发环境已启动
+  - admin@agentsmesh.local 用户 is_system_admin=true
+
+setup:
+  sql: |
+    INSERT INTO sso_configs (domain, name, protocol, is_enabled, oidc_issuer_url, oidc_client_id, oidc_client_secret_encrypted, created_by)
+    VALUES ('dup-test.com', 'First OIDC', 'oidc', true, 'https://issuer.example.com', 'client-1', 'encrypted', 2)
+    ON CONFLICT DO NOTHING;
+
+steps:
+  - action: 尝试创建相同域名+协议的配置
+    expected: 返回 409 冲突错误
+    verification:
+      type: api
+      auth:
+        login:
+          email: admin@agentsmesh.local
+          password: adminpass123
+      request:
+        method: POST
+        url: /api/v1/admin/sso/configs
+        headers:
+          Content-Type: application/json
+        body:
+          domain: dup-test.com
+          name: Duplicate OIDC
+          protocol: oidc
+          oidc_issuer_url: https://another-issuer.com
+          oidc_client_id: client-2
+          oidc_client_secret: secret-2
+      expected:
+        status: 409
+
+cleanup:
+  - sql: |
+      DELETE FROM sso_configs WHERE domain = 'dup-test.com';
