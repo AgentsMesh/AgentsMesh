@@ -50,7 +50,8 @@ func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *
 	// Set completed_at for terminal states
 	if status.GetPhase() == agentpod.AutopilotPhaseCompleted ||
 		status.GetPhase() == agentpod.AutopilotPhaseFailed ||
-		status.GetPhase() == agentpod.AutopilotPhaseStopped {
+		status.GetPhase() == agentpod.AutopilotPhaseStopped ||
+		status.GetPhase() == agentpod.AutopilotPhaseMaxIterations {
 		updates["completed_at"] = now
 	}
 
@@ -142,6 +143,8 @@ func (pc *PodCoordinator) handleAutopilotControllerTerminated(runnerID int64, da
 			phase = agentpod.AutopilotPhaseCompleted
 		case "failed":
 			phase = agentpod.AutopilotPhaseFailed
+		case "max_iterations":
+			phase = agentpod.AutopilotPhaseMaxIterations
 		}
 	}
 

@@ -56,9 +56,23 @@ func (ac *AutopilotController) Stop() {
 
 		ac.cancel()
 
-		// Wait for all running goroutines to complete.
-		// Since stopped=true and wgMu was held, no new goroutines can be started.
-		ac.wg.Wait()
+		// Wait for all running goroutines to complete with a timeout.
+		// In rare edge cases (e.g., process stuck in D-state), wg.Wait() could
+		// block indefinitely. A 30-second timeout prevents the entire Runner
+		// cleanup from hanging.
+		done := make(chan struct{})
+		go func() {
+			ac.wg.Wait()
+			close(done)
+		}()
+		select {
+		case <-done:
+			// All goroutines finished cleanly
+		case <-time.After(30 * time.Second):
+			ac.log.Error("Timed out waiting for goroutines to finish during Stop()",
+				"autopilot_key", ac.key,
+				"timeout", "30s")
+		}
 
 		// Cleanup MCP config file
 		if ac.mcpConfigPath != "" {

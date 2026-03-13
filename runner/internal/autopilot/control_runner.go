@@ -3,6 +3,7 @@ package autopilot
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 )
 
@@ -105,11 +106,20 @@ func (cr *ControlRunner) startControlProcess(ctx context.Context, iteration int)
 
 	stdout, stderr, err := cr.commandExecutor.Execute(ctx, cr.agentType, args, cr.workDir)
 	if err != nil {
-		if cr.log != nil {
-			cr.log.Error("Control process failed",
-				"error", err,
-				"stderr", string(stderr),
-				"stdout", string(stdout))
+		if errors.Is(err, errOutputTruncated) {
+			if cr.log != nil {
+				cr.log.Warn("Control process output truncated",
+					"error", err,
+					"stdout_len", len(stdout),
+					"stderr_len", len(stderr))
+			}
+		} else {
+			if cr.log != nil {
+				cr.log.Error("Control process failed",
+					"error", err,
+					"stderr", string(stderr),
+					"stdout", string(stdout))
+			}
 		}
 		return nil, err
 	}
@@ -178,11 +188,20 @@ func (cr *ControlRunner) resumeControlProcess(ctx context.Context, iteration int
 
 	stdout, stderr, err := cr.commandExecutor.Execute(ctx, cr.agentType, args, cr.workDir)
 	if err != nil {
-		if cr.log != nil {
-			cr.log.Error("Control process failed",
-				"error", err,
-				"stderr", string(stderr),
-				"stdout", string(stdout))
+		if errors.Is(err, errOutputTruncated) {
+			if cr.log != nil {
+				cr.log.Warn("Control process output truncated",
+					"error", err,
+					"stdout_len", len(stdout),
+					"stderr_len", len(stderr))
+			}
+		} else {
+			if cr.log != nil {
+				cr.log.Error("Control process failed",
+					"error", err,
+					"stderr", string(stderr),
+					"stdout", string(stdout))
+			}
 		}
 		return nil, err
 	}

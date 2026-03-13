@@ -193,3 +193,9 @@ func (s *AutopilotControllerService) GetActiveAutopilotControllerForPod(ctx cont
 	}
 	return controller, nil
 }
+
+// GetApprovalTimedOut returns autopilot controllers in waiting_approval phase
+// whose approval timeout has elapsed. Used by the scheduler to stop stale approvals.
+func (s *AutopilotControllerService) GetApprovalTimedOut(ctx context.Context, orgIDs []int64) ([]*agentpod.AutopilotController, error) {
+	return s.repo.GetApprovalTimedOut(ctx, orgIDs)
+}

@@ -101,4 +101,8 @@ type AutopilotRepository interface {
 	UpdateStatusByKey(ctx context.Context, key string, updates map[string]interface{}) error
 	ListIterations(ctx context.Context, controllerID int64) ([]*AutopilotIteration, error)
 	CreateIteration(ctx context.Context, iteration *AutopilotIteration) error
+	// GetApprovalTimedOut returns autopilot controllers in waiting_approval phase
+	// whose approval_request_at + approval_timeout_min has elapsed.
+	// orgIDs filters to specific organizations; nil means all orgs.
+	GetApprovalTimedOut(ctx context.Context, orgIDs []int64) ([]*AutopilotController, error)
 }

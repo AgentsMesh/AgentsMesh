@@ -39,7 +39,8 @@ const (
 func IsAutopilotPhaseTerminal(phase string) bool {
 	return phase == AutopilotPhaseCompleted ||
 		phase == AutopilotPhaseFailed ||
-		phase == AutopilotPhaseStopped
+		phase == AutopilotPhaseStopped ||
+		phase == AutopilotPhaseMaxIterations
 }
 
 // IsAutopilotPhaseActive returns true if the given phase string represents an active state.
@@ -47,13 +48,12 @@ func IsAutopilotPhaseActive(phase string) bool {
 	return phase == AutopilotPhaseRunning ||
 		phase == AutopilotPhaseInitializing ||
 		phase == AutopilotPhasePaused ||
-		phase == AutopilotPhaseWaitingApproval ||
-		phase == AutopilotPhaseMaxIterations
+		phase == AutopilotPhaseWaitingApproval
 }
 
 // TerminalPhases returns the list of terminal autopilot phases.
 func TerminalPhases() []string {
-	return []string{AutopilotPhaseCompleted, AutopilotPhaseFailed, AutopilotPhaseStopped}
+	return []string{AutopilotPhaseCompleted, AutopilotPhaseFailed, AutopilotPhaseStopped, AutopilotPhaseMaxIterations}
 }
 
 // ApplyDefaults fills zero-valued configuration fields with domain defaults.
@@ -141,8 +141,7 @@ func (r *AutopilotController) IsTerminal() bool {
 // CanResume returns true if AutopilotController can be resumed
 func (r *AutopilotController) CanResume() bool {
 	return r.Phase == AutopilotPhasePaused ||
-		r.Phase == AutopilotPhaseWaitingApproval ||
-		r.Phase == AutopilotPhaseMaxIterations
+		r.Phase == AutopilotPhaseWaitingApproval
 }
 
 // AutopilotIteration represents a single iteration record

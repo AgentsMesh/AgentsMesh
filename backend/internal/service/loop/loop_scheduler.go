@@ -126,7 +126,7 @@ func (s *LoopScheduler) runCronLoop() {
 	}
 }
 
-// runTimeoutLoop runs the timeout detection and orphan cleanup ticker loop.
+// runTimeoutLoop runs the timeout detection, approval timeout, and orphan cleanup ticker loop.
 func (s *LoopScheduler) runTimeoutLoop() {
 	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
@@ -137,6 +137,9 @@ func (s *LoopScheduler) runTimeoutLoop() {
 		case <-ticker.C:
 			if err := s.orchestrator.CheckTimeoutRuns(context.Background(), s.getOrgIDs()); err != nil {
 				s.logger.Error("timeout check failed", "error", err)
+			}
+			if err := s.orchestrator.CheckApprovalTimeouts(context.Background(), s.getOrgIDs()); err != nil {
+				s.logger.Error("approval timeout check failed", "error", err)
 			}
 			if err := s.orchestrator.CleanupOrphanPendingRuns(context.Background(), s.getOrgIDs()); err != nil {
 				s.logger.Error("orphan cleanup failed", "error", err)

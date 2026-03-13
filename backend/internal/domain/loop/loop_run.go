@@ -134,6 +134,10 @@ func DeriveRunStatus(podStatus string, autopilotPhase string) string {
 			return RunStatusFailed
 		case agentpod.AutopilotPhaseStopped:
 			return RunStatusCancelled
+		case agentpod.AutopilotPhaseMaxIterations:
+			// max_iterations means "task not finished but iteration quota exhausted".
+			// Map to completed — the autopilot did its best within the configured limit.
+			return RunStatusCompleted
 		default:
 			// Autopilot is in active phase — but if Pod is done,
 			// Pod's state is the ground truth (SSOT)

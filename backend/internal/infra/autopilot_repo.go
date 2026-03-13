@@ -92,3 +92,16 @@ func (r *autopilotRepo) ListIterations(ctx context.Context, controllerID int64) 
 func (r *autopilotRepo) CreateIteration(ctx context.Context, iteration *agentpod.AutopilotIteration) error {
 	return r.db.WithContext(ctx).Create(iteration).Error
 }
+
+func (r *autopilotRepo) GetApprovalTimedOut(ctx context.Context, orgIDs []int64) ([]*agentpod.AutopilotController, error) {
+	var controllers []*agentpod.AutopilotController
+	query := r.db.WithContext(ctx).
+		Where("phase = ?", agentpod.AutopilotPhaseWaitingApproval).
+		Where("approval_request_at IS NOT NULL").
+		Where("approval_request_at < NOW() - (approval_timeout_min || ' minutes')::INTERVAL")
+	if len(orgIDs) > 0 {
+		query = query.Where("organization_id IN ?", orgIDs)
+	}
+	err := query.Find(&controllers).Error
+	return controllers, err
+}
