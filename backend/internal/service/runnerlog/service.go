@@ -59,8 +59,8 @@ func (s *Service) RequestUpload(ctx context.Context, orgID, runnerID, userID int
 	}
 
 	// Generate presigned PUT URL
-	// Use internal presigned URL because Runner connects within Docker network
-	presignedURL, err := s.storage.InternalPresignPutURL(ctx, storageKey, "application/gzip", presignPutExpiry)
+	// Use public presigned URL because Runner is self-hosted and connects from external networks
+	presignedURL, err := s.storage.PresignPutURL(ctx, storageKey, "application/gzip", presignPutExpiry)
 	if err != nil {
 		// Mark the record as failed since we can't proceed
 		_ = s.repo.MarkFailed(ctx, requestID, "failed to generate upload URL")
