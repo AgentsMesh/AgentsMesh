@@ -70,10 +70,16 @@ func (c *Config) GetPluginsDir() string {
 	return filepath.Join(home, ".agentsmesh", "plugins")
 }
 
+// DefaultLogFileName returns the base log file name (e.g., "runner.log").
+// Used by both the logger (for rotation naming) and the log collector (for pattern matching).
+func DefaultLogFileName() string {
+	return "runner.log"
+}
+
 // GetLogPath returns the log file path.
 // Always uses TempBaseDir for predictable, easy-to-find log location.
 func (c *Config) GetLogPath() string {
-	return filepath.Join(TempBaseDir(), "runner.log")
+	return filepath.Join(TempBaseDir(), DefaultLogFileName())
 }
 
 // GetLogConfig returns the logger configuration.

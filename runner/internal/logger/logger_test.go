@@ -75,9 +75,9 @@ func TestIsLogFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isLogFile(tt.filename, tt.prefix, tt.ext)
+			got := IsLogFile(tt.filename, tt.prefix, tt.ext)
 			if got != tt.want {
-				t.Errorf("isLogFile(%q, %q, %q) = %v, want %v",
+				t.Errorf("IsLogFile(%q, %q, %q) = %v, want %v",
 					tt.filename, tt.prefix, tt.ext, got, tt.want)
 			}
 		})
@@ -225,7 +225,7 @@ func TestRotatingWriter_DirectoryCleanup(t *testing.T) {
 		if err != nil {
 			continue
 		}
-		if isLogFile(entry.Name(), "test-", ".log") {
+		if IsLogFile(entry.Name(), "test-", ".log") {
 			totalSize += info.Size()
 			logCount++
 		}

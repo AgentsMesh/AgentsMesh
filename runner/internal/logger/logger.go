@@ -196,6 +196,21 @@ func Close() error {
 	return nil
 }
 
+// IsOwnLogFile reports whether filename matches the default logger's rotated log
+// file naming pattern (e.g., "runner-2024-01-15.log", "runner-2024-01-15.log.0").
+// Returns false if the logger was not initialized with a file path.
+func IsOwnLogFile(filename string) bool {
+	mu.RLock()
+	w := defaultLogger
+	mu.RUnlock()
+
+	if w == nil || w.writer == nil {
+		return false
+	}
+	prefix := w.writer.baseName + "-"
+	return IsLogFile(filename, prefix, w.writer.ext)
+}
+
 // Default returns the default logger.
 func Default() *slog.Logger {
 	mu.RLock()

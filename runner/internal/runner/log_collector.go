@@ -60,7 +60,7 @@ func CollectLogs(ctx context.Context) (tarPath string, sizeBytes int64, err erro
 		totalBytes += written
 	}
 
-	// Collect runner.log* and diagnostic files from logDir
+	// Collect runner log files (runner-YYYY-MM-DD.log*) and diagnostic files from logDir
 	entries, dirErr := os.ReadDir(logDir)
 	if dirErr != nil {
 		log.Warn("Failed to read log directory", "dir", logDir, "error", dirErr)
@@ -73,7 +73,7 @@ func CollectLogs(ctx context.Context) (tarPath string, sizeBytes int64, err erro
 			if entry.IsDir() || entry.Type()&os.ModeSymlink != 0 {
 				continue
 			}
-			if strings.HasPrefix(name, "runner.log") ||
+			if logger.IsOwnLogFile(name) ||
 				(strings.HasPrefix(name, "blocked-") && strings.HasSuffix(name, ".stacks")) ||
 				(strings.HasPrefix(name, "diag-") && strings.HasSuffix(name, ".txt")) {
 				addFile(filepath.Join(logDir, name), name)

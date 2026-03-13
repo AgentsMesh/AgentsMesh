@@ -220,7 +220,7 @@ func (rw *rotatingWriter) cleanupOldLogs() {
 
 		name := entry.Name()
 		// Check if file matches our log pattern
-		if !isLogFile(name, prefix, rw.ext) {
+		if !IsLogFile(name, prefix, rw.ext) {
 			continue
 		}
 
@@ -262,8 +262,10 @@ func (rw *rotatingWriter) cleanupOldLogs() {
 	}
 }
 
-// isLogFile checks if a filename matches the log file pattern.
-func isLogFile(name, prefix, ext string) bool {
+// IsLogFile checks if a filename matches the rotated log file pattern.
+// Pattern: prefix + YYYY-MM-DD + ext (e.g., runner-2024-01-15.log)
+// Or: prefix + YYYY-MM-DD + ext + .N (e.g., runner-2024-01-15.log.0)
+func IsLogFile(name, prefix, ext string) bool {
 	// Match: prefix + date + ext (e.g., runner-2024-01-15.log)
 	// Or: prefix + date + ext + .N (e.g., runner-2024-01-15.log.0)
 	if len(name) < len(prefix)+len(ext)+10 { // 10 = len("YYYY-MM-DD")
