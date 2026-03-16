@@ -61,6 +61,45 @@ func TestCreateDuplicate(t *testing.T) {
 	}
 }
 
+func TestCreateAfterSoftDelete(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewService(infra.NewGitProviderRepository(db))
+	ctx := context.Background()
+
+	req := &CreateRequest{
+		OrganizationID:  1,
+		ProviderType:    "gitlab",
+		ProviderBaseURL: "https://gitlab.com",
+		CloneURL:        "https://gitlab.com/org/test-repo.git",
+		ExternalID:      "12345",
+		Name:            "test-repo",
+		FullPath:        "org/test-repo",
+		Visibility:      "organization",
+	}
+
+	created, err := service.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("failed to create repository: %v", err)
+	}
+
+	// Soft delete the repository
+	if err := service.Delete(ctx, created.ID); err != nil {
+		t.Fatalf("failed to delete repository: %v", err)
+	}
+
+	// Re-import the same repository should succeed
+	repo, err := service.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("expected re-import after soft delete to succeed, got: %v", err)
+	}
+	if repo.Name != "test-repo" {
+		t.Errorf("expected name 'test-repo', got %s", repo.Name)
+	}
+	if repo.ID == created.ID {
+		t.Error("expected new repository to have a different ID from the deleted one")
+	}
+}
+
 func TestCreateWithDefaultBranch(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(infra.NewGitProviderRepository(db))
