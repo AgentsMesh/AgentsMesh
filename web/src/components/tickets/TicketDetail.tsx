@@ -30,6 +30,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   const updateTicket = useTicketStore(state => state.updateTicket);
   const updateTicketStatus = useTicketStore(state => state.updateTicketStatus);
   const deleteTicket = useTicketStore(state => state.deleteTicket);
+  const setCurrentTicket = useTicketStore(state => state.setCurrentTicket);
   const error = useTicketStore(state => state.error);
 
   // Local loading state to avoid re-renders from shared store `loading`
@@ -51,8 +52,11 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   }, []);
 
   useEffect(() => {
+    // Clear stale ticket from previous slug so the skeleton shows
+    // instead of briefly rendering old ticket data
+    setCurrentTicket(null);
     fetchTicket(slug).finally(() => setLoadedSlug(slug));
-  }, [slug, fetchTicket]);
+  }, [slug, fetchTicket, setCurrentTicket]);
 
   const handleTitleSave = useCallback(async (newTitle: string) => {
     if (!newTitle.trim()) return;
