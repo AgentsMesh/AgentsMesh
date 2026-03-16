@@ -14,11 +14,10 @@ import (
 // ObserveTerminal Tests
 // =============================================================================
 
-func TestObserveTerminal_Success(t *testing.T) {
+func TestObserveTerminal_GetRunnerID(t *testing.T) {
 	mockRouter := &mockTerminalRouter{
-		output:    []byte("line1\nline2\nline3\n"),
-		cursorRow: 10,
-		cursorCol: 5,
+		runnerID:    42,
+		runnerFound: true,
 	}
 
 	activePod := &agentpod.Pod{
@@ -34,32 +33,44 @@ func TestObserveTerminal_Success(t *testing.T) {
 		terminalRouter: mockRouter,
 	}
 
-	_, w := createTerminalTestContext(http.MethodGet, "/pods/test-pod-key/terminal/observe?lines=100", "test-pod-key", "")
+	_ = mockPodSvc
 
-	// Simulate the handler logic since we can't inject mock podService directly
-	pod := activePod
-	if pod.OrganizationID != 100 {
-		t.Fatal("Organization mismatch")
-	}
-
+	// Simulate the handler logic: verify GetRunnerID works
 	tr, ok := h.terminalRouter.(TerminalRouterInterface)
 	if !ok {
 		t.Fatal("Terminal router not implemented")
 	}
 
-	output := tr.GetRecentOutput(pod.PodKey, 100)
-	cursorRow, cursorCol := tr.GetCursorPosition(pod.PodKey)
-
-	if string(output) != "line1\nline2\nline3\n" {
-		t.Errorf("Expected output, got %s", string(output))
+	runnerID, found := tr.GetRunnerID(activePod.PodKey)
+	if !found {
+		t.Fatal("Expected runner to be found")
 	}
-	if cursorRow != 10 || cursorCol != 5 {
-		t.Errorf("Expected cursor (10, 5), got (%d, %d)", cursorRow, cursorCol)
+	if runnerID != 42 {
+		t.Errorf("Expected runnerID 42, got %d", runnerID)
+	}
+}
+
+func TestObserveTerminal_RunnerNotFound(t *testing.T) {
+	mockRouter := &mockTerminalRouter{
+		runnerID:    0,
+		runnerFound: false,
 	}
 
-	// Verify mock was used
-	_ = mockPodSvc
-	_ = w
+	h := &PodHandler{
+		terminalRouter: mockRouter,
+	}
+
+	c, w := createTerminalTestContext(http.MethodGet, "/pods/test-pod-key/terminal/observe", "test-pod-key", "")
+
+	tr, _ := h.terminalRouter.(TerminalRouterInterface)
+	_, found := tr.GetRunnerID("test-pod-key")
+	if !found {
+		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Pod not registered on any runner")
+	}
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("Expected 503, got %d", w.Code)
+	}
 }
 
 func TestObserveTerminal_PodNotFound(t *testing.T) {
@@ -138,43 +149,49 @@ func TestObserveTerminal_TerminalRouterNotImplemented(t *testing.T) {
 	}
 }
 
-func TestObserveTerminal_GetAllOutput(t *testing.T) {
+func TestObserveTerminal_RouteObserveTerminal(t *testing.T) {
 	mockRouter := &mockTerminalRouter{
-		output: []byte("full output history\nline1\nline2\n"),
+		runnerID:    42,
+		runnerFound: true,
 	}
 
 	tr := mockRouter
-	output := tr.GetRecentOutput("test-pod", 10000) // large number to get all
+	err := tr.RouteObserveTerminal(42, "req-123", "test-pod", 100, true)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
 
-	if string(output) != "full output history\nline1\nline2\n" {
-		t.Errorf("Expected output data, got %s", string(output))
+	if tr.lastObserveRunnerID != 42 {
+		t.Errorf("Expected runnerID 42, got %d", tr.lastObserveRunnerID)
+	}
+	if tr.lastObserveRequestID != "req-123" {
+		t.Errorf("Expected requestID 'req-123', got %s", tr.lastObserveRequestID)
+	}
+	if tr.lastObservePodKey != "test-pod" {
+		t.Errorf("Expected podKey 'test-pod', got %s", tr.lastObservePodKey)
+	}
+	if tr.lastObserveLines != 100 {
+		t.Errorf("Expected lines 100, got %d", tr.lastObserveLines)
+	}
+	if !tr.lastObserveIncScreen {
+		t.Error("Expected includeScreen to be true")
 	}
 }
 
-func TestObserveTerminal_WithScreen(t *testing.T) {
+func TestObserveTerminal_RouteObserveError(t *testing.T) {
 	mockRouter := &mockTerminalRouter{
-		output: []byte("output\n"),
-		screen: "┌─────────┐\n│ Screen  │\n└─────────┘",
+		runnerID:        42,
+		runnerFound:     true,
+		routeObserveErr: errors.New("connection lost"),
 	}
 
 	tr := mockRouter
-	screen := tr.GetScreenSnapshot("test-pod")
-
-	if screen != "┌─────────┐\n│ Screen  │\n└─────────┘" {
-		t.Errorf("Expected screen snapshot, got %s", screen)
+	err := tr.RouteObserveTerminal(42, "req-123", "test-pod", 100, false)
+	if err == nil {
+		t.Error("Expected error, got nil")
 	}
-}
-
-func TestObserveTerminal_ProcessedOutput(t *testing.T) {
-	mockRouter := &mockTerminalRouter{
-		output: []byte("colored output"), // ANSI escape codes stripped by VT
-	}
-
-	tr := mockRouter
-	output := tr.GetRecentOutput("test-pod", 100)
-
-	if string(output) != "colored output" {
-		t.Errorf("Expected processed output, got %s", string(output))
+	if err.Error() != "connection lost" {
+		t.Errorf("Expected 'connection lost', got %s", err.Error())
 	}
 }
 

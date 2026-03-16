@@ -46,6 +46,9 @@ func (m *mockSender) SendOSCNotification(string, string, string) error    { retu
 func (m *mockSender) SendOSCTitle(string, string) error                   { return nil }
 func (m *mockSender) SendRequestRelayToken(string, string) error          { return nil }
 func (m *mockSender) SendSandboxesStatus(string, []*SandboxStatusInfo) error { return nil }
+func (m *mockSender) SendObserveTerminalResult(string, string, string, string, int, int, int, bool, string) error {
+	return nil
+}
 func (m *mockSender) SendUpgradeStatus(*runnerv1.UpgradeStatusEvent) error       { return nil }
 func (m *mockSender) SendLogUploadStatus(*runnerv1.LogUploadStatusEvent) error   { return nil }
 func (m *mockSender) SendTokenUsage(string, []*runnerv1.TokenModelUsage) error   { return nil }

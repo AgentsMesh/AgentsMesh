@@ -14,24 +14,20 @@ import (
 
 // Mock terminal router for testing
 type mockTerminalRouter struct {
-	output         []byte
-	screen         string
-	cursorRow      int
-	cursorCol      int
-	routeInputErr  error
-	routeResizeErr error
+	runnerID              int64
+	runnerFound           bool
+	routeInputErr         error
+	routeResizeErr        error
+	routeObserveErr       error
+	lastObserveRunnerID   int64
+	lastObserveRequestID  string
+	lastObservePodKey     string
+	lastObserveLines      int32
+	lastObserveIncScreen  bool
 }
 
-func (m *mockTerminalRouter) GetRecentOutput(podKey string, lines int) []byte {
-	return m.output
-}
-
-func (m *mockTerminalRouter) GetScreenSnapshot(podKey string) string {
-	return m.screen
-}
-
-func (m *mockTerminalRouter) GetCursorPosition(podKey string) (row, col int) {
-	return m.cursorRow, m.cursorCol
+func (m *mockTerminalRouter) GetRunnerID(podKey string) (int64, bool) {
+	return m.runnerID, m.runnerFound
 }
 
 func (m *mockTerminalRouter) RouteInput(podKey string, data []byte) error {
@@ -40,6 +36,15 @@ func (m *mockTerminalRouter) RouteInput(podKey string, data []byte) error {
 
 func (m *mockTerminalRouter) RouteResize(podKey string, cols, rows int) error {
 	return m.routeResizeErr
+}
+
+func (m *mockTerminalRouter) RouteObserveTerminal(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+	m.lastObserveRunnerID = runnerID
+	m.lastObserveRequestID = requestID
+	m.lastObservePodKey = podKey
+	m.lastObserveLines = lines
+	m.lastObserveIncScreen = includeScreen
+	return m.routeObserveErr
 }
 
 // Mock pod service for testing

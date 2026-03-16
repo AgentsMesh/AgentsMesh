@@ -325,23 +325,18 @@ func TestPodIsActive_ForTerminal(t *testing.T) {
 
 func TestTerminalRouterInterface_Implementation(t *testing.T) {
 	mock := &mockTerminalRouter{
-		output:    []byte("test output"),
-		screen:    "test screen",
-		cursorRow: 10,
-		cursorCol: 20,
+		runnerID:    42,
+		runnerFound: true,
 	}
 
 	var tr TerminalRouterInterface = mock
 
-	if string(tr.GetRecentOutput("pod", 100)) != "test output" {
-		t.Error("GetRecentOutput failed")
+	runnerID, found := tr.GetRunnerID("pod")
+	if !found {
+		t.Error("GetRunnerID: expected found=true")
 	}
-	if tr.GetScreenSnapshot("pod") != "test screen" {
-		t.Error("GetScreenSnapshot failed")
-	}
-	row, col := tr.GetCursorPosition("pod")
-	if row != 10 || col != 20 {
-		t.Error("GetCursorPosition failed")
+	if runnerID != 42 {
+		t.Errorf("GetRunnerID: expected 42, got %d", runnerID)
 	}
 	if err := tr.RouteInput("pod", []byte("input")); err != nil {
 		t.Error("RouteInput failed")
@@ -349,4 +344,8 @@ func TestTerminalRouterInterface_Implementation(t *testing.T) {
 	if err := tr.RouteResize("pod", 80, 24); err != nil {
 		t.Error("RouteResize failed")
 	}
+	if err := tr.RouteObserveTerminal(42, "req-1", "pod", 100, true); err != nil {
+		t.Error("RouteObserveTerminal failed")
+	}
 }
+

@@ -8,20 +8,18 @@ import (
 
 // TerminalRouterForMCP defines the interface for terminal router operations needed by MCP handlers.
 type TerminalRouterForMCP interface {
-	GetRecentOutput(podKey string, lines int) []byte
-	GetScreenSnapshot(podKey string) string
-	GetCursorPosition(podKey string) (row, col int)
+	GetRunnerID(podKey string) (int64, bool)
 	RouteInput(podKey string, data []byte) error
 }
 
 // ==================== Terminal MCP Methods ====================
 
 // mcpObserveTerminal handles the "observe_terminal" MCP method.
+// Proxies the request to the Runner via gRPC and waits for the result.
 func (a *GRPCRunnerAdapter) mcpObserveTerminal(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		PodKey        string `json:"pod_key"`
-		Lines         int    `json:"lines"`
-		Raw           bool   `json:"raw"`
+		Lines         int32  `json:"lines"`
 		IncludeScreen bool   `json:"include_screen"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
@@ -41,9 +39,20 @@ func (a *GRPCRunnerAdapter) mcpObserveTerminal(ctx context.Context, tc *middlewa
 		return nil, newMcpError(403, "access denied")
 	}
 
+	// Look up runner ID from terminal router
 	tr, ok := a.terminalRouter.(TerminalRouterForMCP)
 	if !ok || tr == nil {
 		return nil, newMcpError(503, "terminal router not available")
+	}
+
+	runnerID, found := tr.GetRunnerID(params.PodKey)
+	if !found {
+		return nil, newMcpError(404, "pod not registered on any runner")
+	}
+
+	// Ensure terminal query service is available
+	if a.terminalQueryService == nil {
+		return nil, newMcpError(503, "terminal query service not available")
 	}
 
 	lines := params.Lines
@@ -54,34 +63,37 @@ func (a *GRPCRunnerAdapter) mcpObserveTerminal(ctx context.Context, tc *middlewa
 		lines = 10000
 	}
 
-	output := tr.GetRecentOutput(params.PodKey, lines)
-	cursorRow, cursorCol := tr.GetCursorPosition(params.PodKey)
-
-	// Calculate total lines
-	totalLines := 0
-	for _, b := range output {
-		if b == '\n' {
-			totalLines++
-		}
+	// Proxy the request to the runner and wait for the result
+	result, err := a.terminalQueryService.ObserveTerminal(
+		ctx,
+		runnerID,
+		params.PodKey,
+		lines,
+		params.IncludeScreen,
+		a.SendObserveTerminal,
+	)
+	if err != nil {
+		return nil, newMcpErrorf(500, "failed to observe terminal: %v", err)
 	}
-	if len(output) > 0 && output[len(output)-1] != '\n' {
-		totalLines++
+
+	if result.Error != "" {
+		return nil, newMcpError(500, result.Error)
 	}
 
-	result := map[string]interface{}{
+	response := map[string]interface{}{
 		"pod_key":     params.PodKey,
-		"output":      string(output),
-		"cursor_x":    cursorCol,
-		"cursor_y":    cursorRow,
-		"total_lines": totalLines,
-		"has_more":    lines != -1 && totalLines >= lines,
+		"output":      result.Output,
+		"cursor_x":    result.CursorX,
+		"cursor_y":    result.CursorY,
+		"total_lines": result.TotalLines,
+		"has_more":    result.HasMore,
 	}
 
-	if params.IncludeScreen {
-		result["screen"] = tr.GetScreenSnapshot(params.PodKey)
+	if params.IncludeScreen && result.Screen != "" {
+		response["screen"] = result.Screen
 	}
 
-	return result, nil
+	return response, nil
 }
 
 // mcpSendTerminalText handles the "send_terminal_text" MCP method.

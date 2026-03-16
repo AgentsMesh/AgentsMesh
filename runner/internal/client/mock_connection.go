@@ -174,6 +174,27 @@ func (m *MockConnection) SendSandboxesStatus(requestID string, results []*Sandbo
 	return nil
 }
 
+// SendObserveTerminalResult records a terminal observation result.
+func (m *MockConnection) SendObserveTerminalResult(requestID, podKey, output, screen string, cursorX, cursorY, totalLines int, hasMore bool, errMsg string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: MessageType("observe_terminal_result"), Data: map[string]interface{}{
+		"request_id":  requestID,
+		"pod_key":     podKey,
+		"output":      output,
+		"screen":      screen,
+		"cursor_x":    cursorX,
+		"cursor_y":    cursorY,
+		"total_lines": totalLines,
+		"has_more":    hasMore,
+		"error":       errMsg,
+	}})
+	return nil
+}
+
 // SendOSCNotification records an OSC notification event.
 func (m *MockConnection) SendOSCNotification(podKey, title, body string) error {
 	m.mu.Lock()

@@ -123,6 +123,16 @@ func (cm *RunnerConnectionManager) HandleOSCTitle(runnerID int64, data *runnerv1
 	}
 }
 
+// ==================== Terminal Observation Handler ====================
+
+// HandleObserveTerminalResult handles observe terminal result event (Proto type)
+func (cm *RunnerConnectionManager) HandleObserveTerminalResult(runnerID int64, data *runnerv1.ObserveTerminalResult) {
+	cm.UpdateHeartbeat(runnerID)
+	if cm.onObserveTerminalResult != nil {
+		cm.onObserveTerminalResult(runnerID, data)
+	}
+}
+
 // ==================== Token Usage Handler ====================
 
 // HandleTokenUsage handles token usage report from runner (Proto type)

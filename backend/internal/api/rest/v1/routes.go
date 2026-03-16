@@ -185,6 +185,9 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.TerminalRouter != nil {
 		podOpts = append(podOpts, WithTerminalRouter(svc.TerminalRouter))
 	}
+	if svc.TerminalQueryService != nil {
+		podOpts = append(podOpts, WithTerminalQueryService(svc.TerminalQueryService))
+	}
 	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.PodOrchestrator, podOpts...)
 	pods := rg.Group("/pods")
 	{

@@ -55,6 +55,10 @@ func (h *mockHandlerWithRelayConnections) OnQuerySandboxes(req QuerySandboxesReq
 	return nil
 }
 
+func (h *mockHandlerWithRelayConnections) OnObserveTerminal(req ObserveTerminalRequest) error {
+	return nil
+}
+
 func (h *mockHandlerWithRelayConnections) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCommand) error {
 	return nil
 }

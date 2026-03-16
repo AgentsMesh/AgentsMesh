@@ -46,6 +46,9 @@ type ConnectionSender interface {
 	// SendSandboxesStatus sends sandbox status query response to the server.
 	SendSandboxesStatus(requestID string, sandboxes []*SandboxStatusInfo) error
 
+	// SendObserveTerminalResult sends terminal observation result to the server.
+	SendObserveTerminalResult(requestID, podKey, output, screen string, cursorX, cursorY, totalLines int, hasMore bool, errMsg string) error
+
 	// SendOSCNotification sends an OSC notification event to the server.
 	// This is triggered by OSC 777 (iTerm2/Kitty) or OSC 9 (ConEmu/Windows Terminal) sequences.
 	SendOSCNotification(podKey, title, body string) error

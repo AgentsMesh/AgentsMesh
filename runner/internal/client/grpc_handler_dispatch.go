@@ -120,6 +120,27 @@ func (c *GRPCConnection) handleQuerySandboxes(cmd *runnerv1.QuerySandboxesComman
 	}
 }
 
+// handleObserveTerminal handles observe_terminal command from server.
+// Reads VirtualTerminal state and sends result back via gRPC.
+func (c *GRPCConnection) handleObserveTerminal(cmd *runnerv1.ObserveTerminalCommand) {
+	log := logger.GRPC()
+	log.Info("Received observe_terminal", "request_id", cmd.RequestId, "pod_key", cmd.PodKey)
+	if c.handler == nil {
+		log.Warn("No handler set, ignoring observe_terminal")
+		return
+	}
+
+	req := ObserveTerminalRequest{
+		RequestID:     cmd.RequestId,
+		PodKey:        cmd.PodKey,
+		Lines:         int(cmd.Lines),
+		IncludeScreen: cmd.IncludeScreen,
+	}
+	if err := c.handler.OnObserveTerminal(req); err != nil {
+		log.Error("Failed to observe terminal", "request_id", cmd.RequestId, "pod_key", cmd.PodKey, "error", err)
+	}
+}
+
 // handleCreateAutopilot handles create_autopilot command from server.
 func (c *GRPCConnection) handleCreateAutopilot(cmd *runnerv1.CreateAutopilotCommand) {
 	log := logger.GRPC()

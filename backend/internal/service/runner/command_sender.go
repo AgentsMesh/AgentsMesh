@@ -43,6 +43,10 @@ type RunnerCommandSender interface {
 	// This notifies the runner that all browsers have disconnected and it should disconnect from Relay.
 	SendUnsubscribeTerminal(ctx context.Context, runnerID int64, podKey string) error
 
+	// SendObserveTerminal sends an observe terminal command to a runner.
+	// Response is delivered via callback registered in RunnerConnectionManager.
+	SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error
+
 	// SendCreateAutopilot sends a create AutopilotController command to a runner.
 	SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error
 
@@ -109,6 +113,12 @@ func (n *NoOpCommandSender) SendUnsubscribeTerminal(ctx context.Context, runnerI
 	return ErrCommandSenderNotSet
 }
 
+func (n *NoOpCommandSender) SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+	n.logger.Warn("command sender not configured, cannot send observe terminal",
+		"runner_id", runnerID, "pod_key", podKey)
+	return ErrCommandSenderNotSet
+}
+
 func (n *NoOpCommandSender) SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error {
 	n.logger.Warn("command sender not configured, cannot create autopilot",
 		"runner_id", runnerID, "autopilot_key", cmd.AutopilotKey)
@@ -130,6 +140,17 @@ type SandboxQuerySender interface {
 	// SendQuerySandboxes sends a query sandboxes command to a runner.
 	// Response is delivered via callback registered in RunnerConnectionManager.
 	SendQuerySandboxes(runnerID int64, requestID string, podKeys []string) error
+
+	// IsConnected checks if a runner is connected.
+	IsConnected(runnerID int64) bool
+}
+
+// TerminalQuerySender defines the interface for sending terminal observation queries to runners.
+// This is a separate interface from RunnerCommandSender (Interface Segregation).
+type TerminalQuerySender interface {
+	// SendObserveTerminal sends an observe terminal command to a runner.
+	// Response is delivered via callback registered in RunnerConnectionManager.
+	SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error
 
 	// IsConnected checks if a runner is connected.
 	IsConnected(runnerID int64) bool

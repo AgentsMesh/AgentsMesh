@@ -275,23 +275,10 @@ func (tr *TerminalRouter) GetRegisteredPodCount() int {
 	return total
 }
 
-// GetRecentOutput returns recent terminal output for a pod.
-// After Relay migration, terminal output is streamed directly via Relay,
-// so this returns empty. Retained for TerminalRouterInterface compatibility.
-func (tr *TerminalRouter) GetRecentOutput(podKey string, lines int) []byte {
-	return nil
-}
-
-// GetScreenSnapshot returns a text snapshot of the terminal screen.
-// After Relay migration, this is not available server-side.
-func (tr *TerminalRouter) GetScreenSnapshot(podKey string) string {
-	return ""
-}
-
-// GetCursorPosition returns the cursor position in the terminal.
-// After Relay migration, this is not available server-side.
-func (tr *TerminalRouter) GetCursorPosition(podKey string) (row, col int) {
-	return 0, 0
+// RouteObserveTerminal sends an observe terminal command to the runner hosting the pod.
+// This is used by the REST API handler to proxy observe_terminal requests.
+func (tr *TerminalRouter) RouteObserveTerminal(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+	return tr.commandSender.SendObserveTerminal(context.Background(), runnerID, requestID, podKey, lines, includeScreen)
 }
 
 // GetPtySize returns the PTY size for a pod

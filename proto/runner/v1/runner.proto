@@ -47,6 +47,8 @@ message RunnerMessage {
     LogUploadStatusEvent log_upload_status = 24;
     // Token 用量报告（Runner -> Backend，Pod 退出时上报）
     TokenUsageReport token_usage = 25;
+    // 终端观察结果（Runner -> Backend，响应 ObserveTerminalCommand）
+    ObserveTerminalResult observe_terminal_result = 26;
   }
   int64 timestamp = 15;
 }
@@ -182,6 +184,8 @@ message ServerMessage {
     UpgradeRunnerCommand upgrade_runner = 17;
     // 日志上传命令（Backend -> Runner）
     UploadLogsCommand upload_logs = 18;
+    // 终端观察命令（Backend -> Runner，代理 MCP observe_terminal 请求）
+    ObserveTerminalCommand observe_terminal = 19;
   }
   int64 timestamp = 15;
 }
@@ -364,6 +368,30 @@ message SandboxStatus {
   bool has_uncommitted_changes = 9; // 是否有未提交的更改
   bool can_resume = 10;            // 是否可以 resume（Sandbox 存在即可）
   string error = 11;               // 查询错误信息（如有）
+}
+
+// ==================== 终端观察（observe_terminal 代理）====================
+
+// ObserveTerminalCommand Backend 代理 observe_terminal 请求到 Runner
+// Runner 从本地 VirtualTerminal 读取状态并返回 ObserveTerminalResult
+message ObserveTerminalCommand {
+  string request_id = 1;      // 请求 ID，用于关联响应
+  string pod_key = 2;         // 目标 Pod
+  int32 lines = 3;            // 获取的行数
+  bool include_screen = 4;    // 是否包含屏幕快照
+}
+
+// ObserveTerminalResult Runner 返回的终端观察结果
+message ObserveTerminalResult {
+  string request_id = 1;      // 对应 ObserveTerminalCommand.request_id
+  string pod_key = 2;
+  string output = 3;          // 终端输出文本
+  string screen = 4;          // 屏幕快照（当 include_screen=true）
+  int32 cursor_x = 5;
+  int32 cursor_y = 6;
+  int32 total_lines = 7;
+  bool has_more = 8;
+  string error = 9;           // 错误信息（如有）
 }
 
 // ==================== OSC 终端通知相关 ====================

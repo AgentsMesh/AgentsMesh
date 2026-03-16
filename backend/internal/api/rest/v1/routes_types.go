@@ -79,8 +79,9 @@ type Services struct {
 	GRPCRunnerHandler *GRPCRunnerHandler
 
 	// Sandbox query services
-	SandboxQueryService *runner.SandboxQueryService // Sandbox status query service
-	SandboxQuerySender  runner.SandboxQuerySender   // Sandbox query sender (gRPC adapter)
+	SandboxQueryService  *runner.SandboxQueryService  // Sandbox status query service
+	SandboxQuerySender   runner.SandboxQuerySender    // Sandbox query sender (gRPC adapter)
+	TerminalQueryService *runner.TerminalQueryService  // Terminal observation query service
 
 	// Upgrade command sender (gRPC adapter)
 	UpgradeCommandSender runner.UpgradeCommandSender

@@ -13,8 +13,9 @@ type PodHandler struct {
 	runnerService  *runner.Service                 // Runner management
 	runnerConnMgr  *runner.RunnerConnectionManager // Runner gRPC connections
 	podCoordinator *runner.PodCoordinator          // Pod coordination (TerminatePod, terminal routing)
-	terminalRouter interface{}                     // *runner.TerminalRouter, optional
-	orchestrator   *agentpod.PodOrchestrator       // Unified Pod creation logic
+	terminalRouter       interface{}                     // *runner.TerminalRouter, optional
+	terminalQueryService *runner.TerminalQueryService    // Terminal observation proxy, optional
+	orchestrator         *agentpod.PodOrchestrator       // Unified Pod creation logic
 }
 
 // PodHandlerOption is a functional option for configuring PodHandler
@@ -38,6 +39,13 @@ func WithPodCoordinator(pc *runner.PodCoordinator) PodHandlerOption {
 func WithTerminalRouter(tr interface{}) PodHandlerOption {
 	return func(h *PodHandler) {
 		h.terminalRouter = tr
+	}
+}
+
+// WithTerminalQueryService sets the terminal query service for proxying observe_terminal
+func WithTerminalQueryService(tqs *runner.TerminalQueryService) PodHandlerOption {
+	return func(h *PodHandler) {
+		h.terminalQueryService = tqs
 	}
 }
 

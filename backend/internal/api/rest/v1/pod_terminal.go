@@ -10,11 +10,10 @@ import (
 
 // TerminalRouterInterface defines the interface for terminal router operations
 type TerminalRouterInterface interface {
-	GetRecentOutput(podKey string, lines int) []byte
-	GetScreenSnapshot(podKey string) string
-	GetCursorPosition(podKey string) (row, col int)
+	GetRunnerID(podKey string) (int64, bool)
 	RouteInput(podKey string, data []byte) error
 	RouteResize(podKey string, cols, rows int) error
+	RouteObserveTerminal(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error
 }
 
 // TerminalOutputResponse matches Runner's tools.TerminalOutput structure
@@ -68,9 +67,9 @@ func (h *PodHandler) ObserveTerminal(c *gin.Context) {
 		return
 	}
 
-	// Get terminal output from router if available
-	if h.terminalRouter == nil {
-		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Terminal router not available")
+	// Proxy terminal observation to runner via gRPC
+	if h.terminalQueryService == nil || h.terminalRouter == nil {
+		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Terminal observation not available")
 		return
 	}
 
@@ -80,44 +79,51 @@ func (h *PodHandler) ObserveTerminal(c *gin.Context) {
 		return
 	}
 
+	runnerID, found := tr.GetRunnerID(podKey)
+	if !found {
+		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Pod not registered on any runner")
+		return
+	}
+
 	lines := req.Lines
 	if lines == -1 {
-		lines = 10000 // Get all available output
+		lines = 10000
 	}
 	if lines <= 0 {
-		lines = 100 // Default to last 100 lines
+		lines = 100
 	}
 
-	// Get recent output (processed, without ANSI escape sequences)
-	output := tr.GetRecentOutput(podKey, lines)
-
-	// Get cursor position from virtual terminal
-	cursorRow, cursorCol := tr.GetCursorPosition(podKey)
-
-	// Calculate total lines (rough estimate from output)
-	totalLines := 0
-	for _, b := range output {
-		if b == '\n' {
-			totalLines++
-		}
-	}
-	if len(output) > 0 && output[len(output)-1] != '\n' {
-		totalLines++ // Count last line if not ending with newline
+	result, err := h.terminalQueryService.ObserveTerminal(
+		c.Request.Context(),
+		runnerID,
+		podKey,
+		int32(lines),
+		req.IncludeScreen,
+		func(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+			return tr.RouteObserveTerminal(runnerID, requestID, podKey, lines, includeScreen)
+		},
+	)
+	if err != nil {
+		apierr.InternalError(c, "Failed to observe terminal: "+err.Error())
+		return
 	}
 
-	// Build response matching Runner's TerminalOutput structure
+	if result.Error != "" {
+		apierr.InternalError(c, result.Error)
+		return
+	}
+
 	response := TerminalOutputResponse{
 		PodKey:     podKey,
-		Output:     string(output),
-		CursorX:    cursorCol,
-		CursorY:    cursorRow,
-		TotalLines: totalLines,
-		HasMore:    totalLines >= lines,
+		Output:     result.Output,
+		CursorX:    result.CursorX,
+		CursorY:    result.CursorY,
+		TotalLines: result.TotalLines,
+		HasMore:    result.HasMore,
 	}
 
-	// Include screen snapshot if requested
 	if req.IncludeScreen {
-		response.Screen = tr.GetScreenSnapshot(podKey)
+		response.Screen = result.Screen
 	}
 
 	c.JSON(http.StatusOK, response)

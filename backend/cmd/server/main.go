@@ -102,7 +102,7 @@ func main() {
 	}
 
 	// Initialize Runner components
-	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentType)
+	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc, terminalQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentType)
 
 	// Wire AutopilotRepository into PodCoordinator for autopilot event handling
 	podCoordinator.SetAutopilotRepo(services.autopilotRepo)
@@ -214,6 +214,7 @@ func main() {
 			sandboxQuerySender = grpcCommandSender
 			upgradeCommandSender = grpcCommandSender
 			logUploadSender = grpcCommandSender
+			grpcServer.RunnerAdapter().SetTerminalQueryService(terminalQuerySvc)
 			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server")
 			setupRelayTokenRefreshCallback(db, runnerConnMgr, relayTokenGenerator, grpcCommandSender)
 		}
@@ -279,7 +280,8 @@ func main() {
 		APIKey:             services.apikey,
 		APIKeyAdapter:      services.apikeyAdapter,
 		GRPCRunnerHandler:  grpcRunnerHandler,
-		SandboxQueryService: sandboxQuerySvc,
+		SandboxQueryService:  sandboxQuerySvc,
+		TerminalQueryService: terminalQuerySvc,
 		SandboxQuerySender:   sandboxQuerySender,
 		UpgradeCommandSender: upgradeCommandSender,
 		LogUploadSender:      logUploadSender,

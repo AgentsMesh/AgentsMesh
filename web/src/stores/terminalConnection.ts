@@ -105,7 +105,7 @@ type StatusListener = (info: RelayStatusInfo) => void;
 
 class TerminalConnectionPool {
   private connections: Map<string, TerminalConnection> = new Map();
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = 50;
   private baseReconnectDelay = 1000;
   private resizeDebounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private resizeDebounceMs = 150;

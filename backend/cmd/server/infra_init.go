@@ -83,7 +83,7 @@ func initializeRunnerComponents(
 	redisClient *redis.Client,
 	appLogger *logger.Logger,
 	agentTypeSvc *agent.AgentTypeService,
-) (*runner.RunnerConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter, *runner.HeartbeatBatcher, *runner.SandboxQueryService) {
+) (*runner.RunnerConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter, *runner.HeartbeatBatcher, *runner.SandboxQueryService, *runner.TerminalQueryService) {
 	// Initialize Runner connection manager
 	runnerConnMgr := runner.NewRunnerConnectionManager(appLogger.Logger)
 
@@ -108,5 +108,8 @@ func initializeRunnerComponents(
 	// Initialize Sandbox query service (handles sandbox status queries to runners)
 	sandboxQuerySvc := runner.NewSandboxQueryService(runnerConnMgr)
 
-	return runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc
+	// Initialize Terminal query service (proxies observe_terminal to runners via gRPC)
+	terminalQuerySvc := runner.NewTerminalQueryService(runnerConnMgr)
+
+	return runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc, terminalQuerySvc
 }

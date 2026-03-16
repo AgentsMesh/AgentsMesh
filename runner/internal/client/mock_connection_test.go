@@ -51,6 +51,7 @@ func TestMockConnection_SendEvents(t *testing.T) {
 	_ = mc.SendPodInitProgress("pod-1", "clone", 50, "cloning...")
 	_ = mc.SendRequestRelayToken("pod-1", "wss://relay")
 	_ = mc.SendSandboxesStatus("req-1", nil)
+	_ = mc.SendObserveTerminalResult("req-1", "pod-1", "output", "", 0, 0, 1, false, "")
 	_ = mc.SendOSCNotification("pod-1", "title", "body")
 	_ = mc.SendOSCTitle("pod-1", "vim")
 	_ = mc.SendAgentStatus("pod-1", "executing")
