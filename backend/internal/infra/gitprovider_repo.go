@@ -24,7 +24,7 @@ func NewGitProviderRepository(db *gorm.DB) gitprovider.RepositoryRepo {
 func (r *gitProviderRepo) FindByOrgAndPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*gitprovider.Repository, error) {
 	var repo gitprovider.Repository
 	err := r.db.WithContext(ctx).
-		Where("organization_id = ? AND provider_type = ? AND provider_base_url = ? AND full_path = ?",
+		Where("organization_id = ? AND provider_type = ? AND provider_base_url = ? AND full_path = ? AND deleted_at IS NULL",
 			orgID, providerType, providerBaseURL, fullPath).
 		First(&repo).Error
 	if err != nil {
