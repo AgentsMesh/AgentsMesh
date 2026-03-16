@@ -139,9 +139,6 @@ func registerRunnerRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.SandboxQueryService != nil {
 		runnerOpts = append(runnerOpts, WithSandboxQueryService(svc.SandboxQueryService))
 	}
-	if svc.SandboxQuerySender != nil {
-		runnerOpts = append(runnerOpts, WithSandboxQuerySender(svc.SandboxQuerySender))
-	}
 	if svc.PodCoordinator != nil {
 		runnerOpts = append(runnerOpts, WithPodCoordinatorForRunner(svc.PodCoordinator))
 	}
@@ -182,12 +179,6 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.PodCoordinator != nil {
 		podOpts = append(podOpts, WithPodCoordinator(svc.PodCoordinator))
 	}
-	if svc.TerminalRouter != nil {
-		podOpts = append(podOpts, WithTerminalRouter(svc.TerminalRouter))
-	}
-	if svc.TerminalQueryService != nil {
-		podOpts = append(podOpts, WithTerminalQueryService(svc.TerminalQueryService))
-	}
 	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.PodOrchestrator, podOpts...)
 	pods := rg.Group("/pods")
 	{
@@ -196,10 +187,6 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		pods.GET("/:key", podHandler.GetPod)
 		pods.POST("/:key/terminate", podHandler.TerminatePod)
 		pods.GET("/:key/connect", podHandler.GetConnectionInfo)
-		pods.POST("/:key/send-prompt", podHandler.SendPrompt)
-		pods.GET("/:key/terminal/observe", podHandler.ObserveTerminal)
-		pods.POST("/:key/terminal/input", podHandler.SendTerminalInput)
-		pods.POST("/:key/terminal/resize", podHandler.ResizeTerminal)
 	}
 
 	// Terminal Relay connection endpoint

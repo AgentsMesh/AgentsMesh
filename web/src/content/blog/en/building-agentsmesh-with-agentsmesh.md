@@ -138,7 +138,7 @@ We don't use role-based abstractions to organize agent collaboration. Traditiona
 
 **Channels** address the collective level: multiple Pods sharing messages, decisions, and documents in the same collaboration space. This is the foundation for Supervisor Agents and Worker Agents to form collaborative structures — not a group chat, but a structured communication layer with contextual history.
 
-**Bindings** address the capability level: point-to-point permission grants between two Pods. **terminal:read** lets one agent observe another agent's terminal output; **terminal:write** lets one agent directly control another agent's execution. Bindings are the mechanism for agents coordinating agents — the Supervisor doesn't perceive the Worker's state by sending messages, but by directly seeing its terminal.
+**Bindings** address the capability level: point-to-point permission grants between two Pods. **pod:read** lets one agent observe another agent's terminal output; **pod:write** lets one agent directly control another agent's execution. Bindings are the mechanism for agents coordinating agents — the Supervisor doesn't perceive the Worker's state by sending messages, but by directly seeing its terminal.
 
 OpenAI calls the corresponding concepts Context Engineering, architectural constraints, and entropy management. Different names, same problem.
 

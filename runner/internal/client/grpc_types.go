@@ -58,7 +58,7 @@ type GRPCPodTerminatedEvent struct {
 	ErrorMessage string `json:"error_message"`
 }
 
-// NOTE: GRPCTerminalOutputEvent removed - terminal output is exclusively streamed via Relay
+// NOTE: GRPCTerminalOutputEvent removed - output is exclusively streamed via Relay
 
 // GRPCAgentStatusEvent represents an agent status change.
 type GRPCAgentStatusEvent struct {

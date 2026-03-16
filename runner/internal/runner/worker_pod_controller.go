@@ -20,8 +20,8 @@ func NewPodController(pod *Pod, runner *Runner) *PodControllerImpl {
 	}
 }
 
-// SendTerminalText sends text to the pod's terminal.
-func (c *PodControllerImpl) SendTerminalText(text string) error {
+// SendInput sends text to the pod's terminal.
+func (c *PodControllerImpl) SendInput(text string) error {
 	if c.pod.Terminal == nil {
 		return nil
 	}

@@ -145,17 +145,6 @@ type SandboxQuerySender interface {
 	IsConnected(runnerID int64) bool
 }
 
-// TerminalQuerySender defines the interface for sending terminal observation queries to runners.
-// This is a separate interface from RunnerCommandSender (Interface Segregation).
-type TerminalQuerySender interface {
-	// SendObserveTerminal sends an observe terminal command to a runner.
-	// Response is delivered via callback registered in RunnerConnectionManager.
-	SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error
-
-	// IsConnected checks if a runner is connected.
-	IsConnected(runnerID int64) bool
-}
-
 // UpgradeCommandSender defines the interface for sending upgrade commands to runners.
 // This is a separate interface from RunnerCommandSender (Interface Segregation).
 type UpgradeCommandSender interface {

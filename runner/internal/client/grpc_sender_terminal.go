@@ -7,7 +7,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
-// NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay
+// NOTE: SendTerminalOutput removed - output is exclusively streamed via Relay
 
 // SendAgentStatus sends an agent status change event to the server (terminal message).
 func (c *GRPCConnection) SendAgentStatus(podKey string, status string) error {

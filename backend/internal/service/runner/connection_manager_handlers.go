@@ -38,7 +38,7 @@ func (cm *RunnerConnectionManager) HandlePodError(runnerID int64, data *runnerv1
 	}
 }
 
-// NOTE: HandleTerminalOutput removed - terminal output is exclusively streamed via Relay
+// NOTE: HandleTerminalOutput removed - output is exclusively streamed via Relay
 
 // HandleAgentStatus handles agent status event (Proto type)
 func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runnerv1.AgentStatusEvent) {

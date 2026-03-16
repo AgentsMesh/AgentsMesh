@@ -115,7 +115,7 @@ steps:
         interval: 3000
 
   - id: step-7
-    action: Pod A 请求 Binding 到 Pod B（初始 scope 只有 terminal:read）
+    action: Pod A 请求 Binding 到 Pod B（初始 scope 只有 pod:read）
     verification:
       type: api
       request:
@@ -128,7 +128,7 @@ steps:
         body:
           target_pod: "{pod_key_b}"
           scopes:
-            - "terminal:read"
+            - "pod:read"
       expected:
         status: 201
       save:
@@ -154,7 +154,7 @@ steps:
             status: active
 
   - id: step-9
-    action: Pod A 请求额外 scope（terminal:write）
+    action: Pod A 请求额外 scope（pod:write）
     verification:
       type: api
       request:
@@ -166,12 +166,12 @@ steps:
           Content-Type: application/json
         body:
           scopes:
-            - "terminal:write"
+            - "pod:write"
       expected:
         status: 200
         body:
           binding:
-            pending_scopes: contains("terminal:write")
+            pending_scopes: contains("pod:write")
 
   - id: step-10
     action: Pod B 批准额外 scope
@@ -186,12 +186,12 @@ steps:
           Content-Type: application/json
         body:
           scopes:
-            - "terminal:write"
+            - "pod:write"
       expected:
         status: 200
         body:
           binding:
-            scopes: contains("terminal:write")
+            scopes: contains("pod:write")
 
   - id: step-11
     action: 验证 Binding 的 scope 已更新

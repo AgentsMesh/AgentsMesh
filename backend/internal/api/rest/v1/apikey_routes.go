@@ -32,9 +32,6 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.PodCoordinator != nil {
 		podOpts = append(podOpts, WithPodCoordinator(svc.PodCoordinator))
 	}
-	if svc.TerminalRouter != nil {
-		podOpts = append(podOpts, WithTerminalRouter(svc.TerminalRouter))
-	}
 	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.PodOrchestrator, podOpts...)
 
 	podsRead := rg.Group("/pods")
@@ -91,9 +88,6 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 	var runnerOpts []RunnerHandlerOption
 	if svc.SandboxQueryService != nil {
 		runnerOpts = append(runnerOpts, WithSandboxQueryService(svc.SandboxQueryService))
-	}
-	if svc.SandboxQuerySender != nil {
-		runnerOpts = append(runnerOpts, WithSandboxQuerySender(svc.SandboxQuerySender))
 	}
 	if svc.Pod != nil {
 		runnerOpts = append(runnerOpts, WithPodServiceForRunner(svc.Pod))

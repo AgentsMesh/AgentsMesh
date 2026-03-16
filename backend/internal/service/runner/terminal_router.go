@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log/slog"
+	"sync"
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -30,6 +31,10 @@ type TerminalRouter struct {
 
 	// Sharded storage for pod-related data
 	shards [terminalShards]*terminalShard
+
+	// Pending terminal observation queries (shared with terminal_router_query.go)
+	pendingQueries sync.Map      // map[requestID]*pendingTerminalQuery
+	done           chan struct{} // signal channel for graceful shutdown of cleanup goroutine
 }
 
 // NewTerminalRouter creates a new terminal router with sharded locks.
@@ -54,6 +59,9 @@ func NewTerminalRouter(cm *RunnerConnectionManager, logger *slog.Logger) *Termin
 	// OSC events are sent directly by Runner (bypassing terminal output throttling)
 	cm.SetOSCNotificationCallback(tr.handleOSCNotification)
 	cm.SetOSCTitleCallback(tr.handleOSCTitle)
+
+	// Initialize terminal observation query support (callback + cleanup goroutine)
+	initQuerySupport(tr, cm, make(chan struct{}))
 
 	return tr
 }
@@ -275,10 +283,9 @@ func (tr *TerminalRouter) GetRegisteredPodCount() int {
 	return total
 }
 
-// RouteObserveTerminal sends an observe terminal command to the runner hosting the pod.
-// This is used by the REST API handler to proxy observe_terminal requests.
-func (tr *TerminalRouter) RouteObserveTerminal(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
-	return tr.commandSender.SendObserveTerminal(context.Background(), runnerID, requestID, podKey, lines, includeScreen)
+// Stop gracefully stops the TerminalRouter's background goroutines (query cleanup).
+func (tr *TerminalRouter) Stop() {
+	close(tr.done)
 }
 
 // GetPtySize returns the PTY size for a pod

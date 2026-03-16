@@ -120,13 +120,13 @@ func (c *GRPCConnection) handleQuerySandboxes(cmd *runnerv1.QuerySandboxesComman
 	}
 }
 
-// handleObserveTerminal handles observe_terminal command from server.
+// handleObserveTerminal handles observe_terminal (get_pod_snapshot) command from server.
 // Reads VirtualTerminal state and sends result back via gRPC.
 func (c *GRPCConnection) handleObserveTerminal(cmd *runnerv1.ObserveTerminalCommand) {
 	log := logger.GRPC()
-	log.Info("Received observe_terminal", "request_id", cmd.RequestId, "pod_key", cmd.PodKey)
+	log.Info("Received get_pod_snapshot request", "request_id", cmd.RequestId, "pod_key", cmd.PodKey)
 	if c.handler == nil {
-		log.Warn("No handler set, ignoring observe_terminal")
+		log.Warn("No handler set, ignoring get_pod_snapshot request")
 		return
 	}
 

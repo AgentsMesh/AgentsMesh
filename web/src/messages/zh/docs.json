@@ -442,8 +442,8 @@
           "title": "Pod 绑定机制",
           "description": "绑定在 Pod 之间建立权限控制的连接。绑定允许一个 Pod 与另一个 Pod 的终端或资源进行交互。",
           "scopes": "绑定范围",
-          "terminalRead": "terminal:read — 观察另一个 Pod 的终端输出",
-          "terminalWrite": "terminal:write — 向另一个 Pod 的终端发送输入",
+          "podRead": "pod:read — 观察另一个 Pod 的终端输出",
+          "podWrite": "pod:write — 向另一个 Pod 的终端发送输入",
           "flow": "绑定流程",
           "flowStep1": "Pod A 向 Pod B 发起带有特定范围的绑定请求",
           "flowStep2": "Pod B 收到绑定请求",
@@ -718,22 +718,6 @@
           "listRepos": "list_repositories",
           "listReposDesc": "列出可用的仓库"
         },
-        "terminal": {
-          "title": "终端工具",
-          "description": "这些工具需要具有适当范围的活跃绑定。",
-          "toolHeader": "工具",
-          "descriptionHeader": "说明",
-          "scopeHeader": "所需范围",
-          "observe": "observe_terminal",
-          "observeDesc": "观察另一个 Pod 的终端输出",
-          "observeScope": "terminal:read",
-          "sendText": "send_terminal_text",
-          "sendTextDesc": "向另一个 Pod 的终端发送文本",
-          "sendTextScope": "terminal:write",
-          "sendKey": "send_terminal_key",
-          "sendKeyDesc": "发送特殊按键（回车、Ctrl+C、上、下等）",
-          "sendKeyScope": "terminal:write"
-        },
         "binding": {
           "title": "Pod 绑定工具",
           "toolHeader": "工具",
@@ -810,7 +794,17 @@
           "paramsHeader": "参数",
           "createPod": "create_pod",
           "createPodDesc": "创建新的 AgentPod",
-          "createPodParams": "agent_type_id（必需）, runner_id?, ticket_slug?, initial_prompt?, model?"
+          "createPodParams": "agent_type_id（必需）, runner_id?, ticket_slug?, initial_prompt?, model?",
+          "description": "用于创建、观察和控制 Pod 的工具。观察和输入工具需要具有适当范围的活跃绑定。",
+          "getPodSnapshot": "get_pod_snapshot",
+          "getPodSnapshotDesc": "获取另一个 Pod 的终端输出快照（需要 pod:read）",
+          "getPodSnapshotParams": "pod_key, lines?, raw?, include_screen?",
+          "sendPodInput": "send_pod_input",
+          "sendPodInputDesc": "向另一个 Pod 的终端发送文本和/或按键（需要 pod:write）",
+          "sendPodInputParams": "pod_key, text?, keys?",
+          "getPodStatus": "get_pod_status",
+          "getPodStatusDesc": "获取 Pod 的 Agent 执行状态（执行中/等待中/空闲）",
+          "getPodStatusParams": "pod_key"
         }
       }
     },
@@ -932,7 +926,7 @@
           "description": "使用两个智能体——一个写代码，另一个审查：",
           "developer": "开发 Pod — 根据任务需求编写代码",
           "reviewer": "审查 Pod — 通过绑定观察开发者的终端输出，审查变更并通过频道提供反馈",
-          "flow": "审查者可以使用 observe_terminal 观察开发者工作，然后通过频道发送反馈。开发者阅读反馈并迭代改进。"
+          "flow": "审查者可以使用 get_pod_snapshot 观察开发者工作，然后通过频道发送反馈。开发者阅读反馈并迭代改进。"
         },
         "scenario2": {
           "title": "场景：前后端拆分",

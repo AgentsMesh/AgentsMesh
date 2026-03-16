@@ -13,7 +13,7 @@ const (
 	MsgTypePodCreated    MessageType = "pod_created"
 	MsgTypePodTerminated MessageType = "pod_terminated"
 	MsgTypePtyResized    MessageType = "pty_resized"
-	// NOTE: MsgTypeTerminalOutput removed - terminal output is exclusively streamed via Relay
+	// NOTE: MsgTypeTerminalOutput removed - output is exclusively streamed via Relay
 )
 
 // ==================== Pod Operation Data Structures ====================

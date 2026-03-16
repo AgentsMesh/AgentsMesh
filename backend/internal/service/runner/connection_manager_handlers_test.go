@@ -109,7 +109,7 @@ func TestConnectionManager_HandlePodTerminated(t *testing.T) {
 	assert.Equal(t, event, callbackData)
 }
 
-// NOTE: TestConnectionManager_HandleTerminalOutput removed - terminal output is exclusively streamed via Relay
+// NOTE: TestConnectionManager_HandleTerminalOutput removed - output is exclusively streamed via Relay
 
 func TestConnectionManager_HandleAgentStatus(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())

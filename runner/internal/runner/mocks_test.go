@@ -32,7 +32,7 @@ func (m *mockEventSender) SendPodStatus(podKey, status string, data map[string]i
 	}{podKey, status, data})
 }
 
-// NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay
+// NOTE: SendTerminalOutput removed - output is exclusively streamed via Relay
 
 // mockOutputHandler is a mock for testing OutputHandler interface
 type mockOutputHandler struct {

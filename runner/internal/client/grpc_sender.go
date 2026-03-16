@@ -34,7 +34,7 @@ func (c *GRPCConnection) sendControl(msg *runnerv1.RunnerMessage) error {
 
 // sendTerminal queues a terminal message (low priority).
 // Terminal messages include: agent_status.
-// NOTE: terminal_output removed - terminal output is exclusively streamed via Relay.
+// NOTE: terminal_output removed - output is exclusively streamed via Relay.
 // These messages are dropped silently if buffer is full.
 // Returns nil even when dropped to avoid blocking callers.
 //

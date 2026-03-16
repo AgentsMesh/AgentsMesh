@@ -65,7 +65,7 @@ func TestSendPodTerminated(t *testing.T) {
 	}
 }
 
-// NOTE: TestSendTerminalOutput removed - terminal output is exclusively streamed via Relay
+// NOTE: TestSendTerminalOutput removed - output is exclusively streamed via Relay
 
 func TestSendPtyResized(t *testing.T) {
 	store := NewInMemoryPodStore()
@@ -115,7 +115,7 @@ func TestSendMethodsWithNilConnection(t *testing.T) {
 	// These should not panic with nil connection
 	handler.sendPodCreated("pod-1", 123, "", "", 80, 24)
 	handler.sendPodTerminated("pod-1")
-	// NOTE: sendTerminalOutput removed - terminal output is exclusively streamed via Relay
+	// NOTE: sendTerminalOutput removed - output is exclusively streamed via Relay
 	handler.sendPtyResized("pod-1", 80, 24)
 	handler.sendPodError("pod-1", "error")
 }

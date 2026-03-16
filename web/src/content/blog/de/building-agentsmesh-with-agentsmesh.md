@@ -138,7 +138,7 @@ Wir verwenden keine Rollen-Abstraktion für die Agent-Koordination. Traditionell
 
 **Channels** adressieren die kollektive Ebene: Mehrere Pods teilen sich einen Kollaborationsraum für Nachrichten, Entscheidungen und Dokumente. Das ist die Grundlage, auf der Supervisor-Agents und Worker-Agents Kooperationsstrukturen bilden können -- kein Gruppenchat, sondern eine strukturierte Kommunikationsschicht mit Kontexthistorie.
 
-**Bindings** adressieren die Fähigkeitsebene: Punkt-zu-Punkt-Berechtigungen zwischen zwei Pods. **terminal:read** ermöglicht einem Agent, die Terminalausgabe eines anderen Agents zu beobachten; **terminal:write** ermöglicht einem Agent, die Ausführung eines anderen Agents direkt zu steuern. Bindings sind der Mechanismus, über den Agents andere Agents koordinieren -- der Supervisor erfasst den Zustand des Workers nicht durch Nachrichtenaustausch, sondern durch direkten Einblick in sein Terminal.
+**Bindings** adressieren die Fähigkeitsebene: Punkt-zu-Punkt-Berechtigungen zwischen zwei Pods. **pod:read** ermöglicht einem Agent, die Terminalausgabe eines anderen Agents zu beobachten; **pod:write** ermöglicht einem Agent, die Ausführung eines anderen Agents direkt zu steuern. Bindings sind der Mechanismus, über den Agents andere Agents koordinieren -- der Supervisor erfasst den Zustand des Workers nicht durch Nachrichtenaustausch, sondern durch direkten Einblick in sein Terminal.
 
 OpenAI nennt die entsprechenden Konzepte Context Engineering, Architektur-Constraints und Entropie-Management. Andere Begriffe, dasselbe Problem.
 

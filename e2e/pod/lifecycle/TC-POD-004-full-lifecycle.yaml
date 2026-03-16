@@ -156,41 +156,6 @@ steps:
         active_pods_with_pod: body.runner.active_pods
 
   - id: step-9
-    action: 发送终端输入命令
-    verification:
-      type: api
-      request:
-        method: POST
-        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/input
-        headers:
-          Authorization: Bearer {access_token}
-          Content-Type: application/json
-        body:
-          input: "echo 'E2E Test Output'\n"
-      expected:
-        status: 200
-        body:
-          message: contains(sent)
-
-  - id: step-10
-    action: 获取终端输出验证命令执行
-    verification:
-      type: api
-      request:
-        method: GET
-        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/observe?lines=50
-        headers:
-          Authorization: Bearer {access_token}
-      expected:
-        status: 200
-        body:
-          pod_key: "{pod_key}"
-          output: not_empty
-      retry:
-        max_attempts: 5
-        interval: 2000
-
-  - id: step-11
     action: 终止 Pod
     verification:
       type: api
@@ -204,7 +169,7 @@ steps:
         body:
           message: contains(terminated)
 
-  - id: step-12
+  - id: step-10
     action: 验证 Pod 状态为 terminated
     verification:
       type: api
@@ -219,7 +184,7 @@ steps:
           pod:
             status: terminated
 
-  - id: step-13
+  - id: step-11
     action: 验证 Runner 活跃 Pod 数恢复
     verification:
       type: api

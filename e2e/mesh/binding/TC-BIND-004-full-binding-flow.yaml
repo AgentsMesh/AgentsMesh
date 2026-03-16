@@ -165,7 +165,7 @@ steps:
           is_bound: false
 
   - id: step-9
-    action: Pod A 请求 Binding 到 Pod B（scope: terminal:read）
+    action: Pod A 请求 Binding 到 Pod B（scope: pod:read）
     verification:
       type: api
       request:
@@ -178,7 +178,7 @@ steps:
         body:
           target_pod: "{pod_key_b}"
           scopes:
-            - "terminal:read"
+            - "pod:read"
       expected:
         status: 201
         body:
@@ -224,7 +224,7 @@ steps:
             status: active
 
   - id: step-12
-    action: Pod A 请求额外 scope（terminal:write）
+    action: Pod A 请求额外 scope（pod:write）
     verification:
       type: api
       request:
@@ -236,7 +236,7 @@ steps:
           Content-Type: application/json
         body:
           scopes:
-            - "terminal:write"
+            - "pod:write"
       expected:
         status: 200
 
@@ -253,7 +253,7 @@ steps:
           Content-Type: application/json
         body:
           scopes:
-            - "terminal:write"
+            - "pod:write"
       expected:
         status: 200
 

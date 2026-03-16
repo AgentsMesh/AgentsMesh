@@ -4,19 +4,20 @@ import (
 	"context"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 )
 
 // TerminalRouterForMCP defines the interface for terminal router operations needed by MCP handlers.
 type TerminalRouterForMCP interface {
-	GetRunnerID(podKey string) (int64, bool)
 	RouteInput(podKey string, data []byte) error
+	ObserveTerminal(ctx context.Context, podKey string, lines int32, includeScreen bool) (*runner.ObserveTerminalQueryResult, error)
 }
 
-// ==================== Terminal MCP Methods ====================
+// ==================== Pod interaction MCP Methods ====================
 
-// mcpObserveTerminal handles the "observe_terminal" MCP method.
+// mcpGetPodSnapshot handles the "get_pod_snapshot" MCP method.
 // Proxies the request to the Runner via gRPC and waits for the result.
-func (a *GRPCRunnerAdapter) mcpObserveTerminal(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
+func (a *GRPCRunnerAdapter) mcpGetPodSnapshot(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		PodKey        string `json:"pod_key"`
 		Lines         int32  `json:"lines"`
@@ -39,41 +40,23 @@ func (a *GRPCRunnerAdapter) mcpObserveTerminal(ctx context.Context, tc *middlewa
 		return nil, newMcpError(403, "access denied")
 	}
 
-	// Look up runner ID from terminal router
-	tr, ok := a.terminalRouter.(TerminalRouterForMCP)
-	if !ok || tr == nil {
+	// Look up terminal router
+	if a.terminalRouter == nil {
 		return nil, newMcpError(503, "terminal router not available")
 	}
 
-	runnerID, found := tr.GetRunnerID(params.PodKey)
-	if !found {
-		return nil, newMcpError(404, "pod not registered on any runner")
-	}
-
-	// Ensure terminal query service is available
-	if a.terminalQueryService == nil {
-		return nil, newMcpError(503, "terminal query service not available")
-	}
-
 	lines := params.Lines
-	if lines <= 0 {
-		lines = 100
-	}
 	if lines == -1 {
 		lines = 10000
 	}
+	if lines <= 0 {
+		lines = 100
+	}
 
 	// Proxy the request to the runner and wait for the result
-	result, err := a.terminalQueryService.ObserveTerminal(
-		ctx,
-		runnerID,
-		params.PodKey,
-		lines,
-		params.IncludeScreen,
-		a.SendObserveTerminal,
-	)
+	result, err := a.terminalRouter.ObserveTerminal(ctx, params.PodKey, lines, params.IncludeScreen)
 	if err != nil {
-		return nil, newMcpErrorf(500, "failed to observe terminal: %v", err)
+		return nil, newMcpErrorf(500, "failed to get pod snapshot: %v", err)
 	}
 
 	if result.Error != "" {
@@ -96,48 +79,12 @@ func (a *GRPCRunnerAdapter) mcpObserveTerminal(ctx context.Context, tc *middlewa
 	return response, nil
 }
 
-// mcpSendTerminalText handles the "send_terminal_text" MCP method.
-func (a *GRPCRunnerAdapter) mcpSendTerminalText(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
-	var params struct {
-		PodKey string `json:"pod_key"`
-		Text   string `json:"text"`
-	}
-	if err := unmarshalPayload(payload, &params); err != nil {
-		return nil, err
-	}
-
-	if params.PodKey == "" {
-		return nil, newMcpError(400, "pod_key is required")
-	}
-	if params.Text == "" {
-		return nil, newMcpError(400, "text is required")
-	}
-
-	// Verify pod belongs to the organization
-	pod, err := a.podService.GetPodByKey(ctx, params.PodKey)
-	if err != nil {
-		return nil, newMcpError(404, "pod not found")
-	}
-	if pod.OrganizationID != tc.OrganizationID {
-		return nil, newMcpError(403, "access denied")
-	}
-
-	tr, ok := a.terminalRouter.(TerminalRouterForMCP)
-	if !ok || tr == nil {
-		return nil, newMcpError(503, "terminal router not available")
-	}
-
-	if err := tr.RouteInput(params.PodKey, []byte(params.Text)); err != nil {
-		return nil, newMcpErrorf(500, "failed to send terminal text: %v", err)
-	}
-
-	return map[string]interface{}{"message": "text sent"}, nil
-}
-
-// mcpSendTerminalKey handles the "send_terminal_key" MCP method.
-func (a *GRPCRunnerAdapter) mcpSendTerminalKey(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
+// mcpSendPodInput handles the "send_pod_input" MCP method.
+// Accepts text and/or keys; sends text first, then loops through keys.
+func (a *GRPCRunnerAdapter) mcpSendPodInput(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		PodKey string   `json:"pod_key"`
+		Text   string   `json:"text"`
 		Keys   []string `json:"keys"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
@@ -147,8 +94,8 @@ func (a *GRPCRunnerAdapter) mcpSendTerminalKey(ctx context.Context, tc *middlewa
 	if params.PodKey == "" {
 		return nil, newMcpError(400, "pod_key is required")
 	}
-	if len(params.Keys) == 0 {
-		return nil, newMcpError(400, "keys is required")
+	if params.Text == "" && len(params.Keys) == 0 {
+		return nil, newMcpError(400, "at least one of text or keys is required")
 	}
 
 	// Verify pod belongs to the organization
@@ -160,20 +107,26 @@ func (a *GRPCRunnerAdapter) mcpSendTerminalKey(ctx context.Context, tc *middlewa
 		return nil, newMcpError(403, "access denied")
 	}
 
-	tr, ok := a.terminalRouter.(TerminalRouterForMCP)
-	if !ok || tr == nil {
+	if a.terminalRouter == nil {
 		return nil, newMcpError(503, "terminal router not available")
 	}
 
-	// Convert key names to terminal escape sequences
-	for _, key := range params.Keys {
-		input := convertKeyToInput(key)
-		if err := tr.RouteInput(params.PodKey, []byte(input)); err != nil {
-			return nil, newMcpErrorf(500, "failed to send terminal key: %v", err)
+	// Send text first
+	if params.Text != "" {
+		if err := a.terminalRouter.RouteInput(params.PodKey, []byte(params.Text)); err != nil {
+			return nil, newMcpErrorf(500, "failed to send pod input text: %v", err)
 		}
 	}
 
-	return map[string]interface{}{"message": "keys sent"}, nil
+	// Then loop through keys
+	for _, key := range params.Keys {
+		input := convertKeyToInput(key)
+		if err := a.terminalRouter.RouteInput(params.PodKey, []byte(input)); err != nil {
+			return nil, newMcpErrorf(500, "failed to send pod input key: %v", err)
+		}
+	}
+
+	return map[string]interface{}{"message": "input sent"}, nil
 }
 
 // convertKeyToInput converts a key name to its terminal escape sequence.

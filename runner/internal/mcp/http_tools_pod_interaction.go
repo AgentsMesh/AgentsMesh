@@ -7,12 +7,12 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
-// Terminal Tools
+// Pod Interaction Tools
 
-func (s *HTTPServer) createObserveTerminalTool() *MCPTool {
+func (s *HTTPServer) createGetPodSnapshotTool() *MCPTool {
 	return &MCPTool{
-		Name:        "observe_terminal",
-		Description: "Observe the terminal output of another agent pod. Requires terminal:read permission via binding.",
+		Name:        "get_pod_snapshot",
+		Description: "Get a snapshot of another agent pod's output. Requires pod:read permission via binding.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -46,9 +46,9 @@ func (s *HTTPServer) createObserveTerminalTool() *MCPTool {
 				lines = 50
 			}
 
-			// Try local terminal provider first (for AutopilotController control process)
-			if s.terminalProvider != nil {
-				output, err := s.terminalProvider.GetTerminalOutput(podKey, lines)
+			// Try local pod provider first (for AutopilotController control process)
+			if s.podProvider != nil {
+				output, err := s.podProvider.GetPodSnapshot(podKey, lines)
 				if err == nil {
 					return output, nil
 				}
@@ -58,15 +58,15 @@ func (s *HTTPServer) createObserveTerminalTool() *MCPTool {
 			// Fall back to Backend API for remote pods
 			raw := getBoolArg(args, "raw")
 			includeScreen := getBoolArg(args, "include_screen")
-			return client.ObserveTerminal(ctx, podKey, lines, raw, includeScreen)
+			return client.GetPodSnapshot(ctx, podKey, lines, raw, includeScreen)
 		},
 	}
 }
 
-func (s *HTTPServer) createSendTerminalTextTool() *MCPTool {
+func (s *HTTPServer) createSendPodInputTool() *MCPTool {
 	return &MCPTool{
-		Name:        "send_terminal_text",
-		Description: "Send text input to another agent's terminal. Requires terminal:write permission via binding.",
+		Name:        "send_pod_input",
+		Description: "Send text and/or special keys to another agent pod. Requires pod:write permission via binding. At least one of text or keys must be provided. Supports keys: enter, escape, tab, backspace, delete, ctrl+c, ctrl+d, ctrl+u, ctrl+l, ctrl+z, ctrl+a, ctrl+e, ctrl+k, ctrl+w, up, down, left, right, home, end, pageup, pagedown, shift+tab",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -76,80 +76,44 @@ func (s *HTTPServer) createSendTerminalTextTool() *MCPTool {
 				},
 				"text": map[string]interface{}{
 					"type":        "string",
-					"description": "The text to send to the terminal",
-				},
-			},
-			"required": []string{"pod_key", "text"},
-		},
-		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
-			podKey := getStringArg(args, "pod_key")
-			text := getStringArg(args, "text")
-
-			if podKey == "" || text == "" {
-				return nil, fmt.Errorf("pod_key and text are required")
-			}
-
-			// Try local terminal provider first (for AutopilotController control process)
-			if s.terminalProvider != nil {
-				err := s.terminalProvider.SendTerminalText(podKey, text)
-				if err == nil {
-					return "Text sent successfully", nil
-				}
-				// Fall through to Backend API if local access fails
-			}
-
-			// Fall back to Backend API for remote pods
-			err := client.SendTerminalText(ctx, podKey, text)
-			if err != nil {
-				return nil, err
-			}
-			return "Text sent successfully", nil
-		},
-	}
-}
-
-func (s *HTTPServer) createSendTerminalKeyTool() *MCPTool {
-	return &MCPTool{
-		Name:        "send_terminal_key",
-		Description: "Send special keys to another agent's terminal. Supports: enter, escape, tab, backspace, delete, ctrl+c, ctrl+d, ctrl+u, ctrl+l, ctrl+z, ctrl+a, ctrl+e, ctrl+k, ctrl+w, up, down, left, right, home, end, pageup, pagedown, shift+tab",
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pod_key": map[string]interface{}{
-					"type":        "string",
-					"description": "The pod key of the target pod",
+					"description": "Text to send to the pod (optional if keys is provided)",
 				},
 				"keys": map[string]interface{}{
 					"type":        "array",
 					"items":       map[string]interface{}{"type": "string"},
-					"description": "Array of keys to send (e.g., ['ctrl+c', 'enter'])",
+					"description": "Array of special keys to send (e.g., ['ctrl+c', 'enter']). Optional if text is provided.",
 				},
 			},
-			"required": []string{"pod_key", "keys"},
+			"required": []string{"pod_key"},
 		},
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
 			podKey := getStringArg(args, "pod_key")
-			keys := getStringSliceArg(args, "keys")
-
-			if podKey == "" || len(keys) == 0 {
-				return nil, fmt.Errorf("pod_key and keys are required")
+			if podKey == "" {
+				return nil, fmt.Errorf("pod_key is required")
 			}
 
-			// Try local terminal provider first (for AutopilotController control process)
-			if s.terminalProvider != nil {
-				err := s.terminalProvider.SendTerminalKey(podKey, keys)
+			text := getStringArg(args, "text")
+			keys := getStringSliceArg(args, "keys")
+
+			if text == "" && len(keys) == 0 {
+				return nil, fmt.Errorf("at least one of text or keys is required")
+			}
+
+			// Try local pod provider first (for AutopilotController control process)
+			if s.podProvider != nil {
+				err := s.podProvider.SendPodInput(podKey, text, keys)
 				if err == nil {
-					return "Keys sent successfully", nil
+					return "Input sent successfully", nil
 				}
 				// Fall through to Backend API if local access fails
 			}
 
 			// Fall back to Backend API for remote pods
-			err := client.SendTerminalKey(ctx, podKey, keys)
+			err := client.SendPodInput(ctx, podKey, text, keys)
 			if err != nil {
 				return nil, err
 			}
-			return "Keys sent successfully", nil
+			return "Input sent successfully", nil
 		},
 	}
 }

@@ -102,7 +102,7 @@ func main() {
 	}
 
 	// Initialize Runner components
-	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc, terminalQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentType)
+	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentType)
 
 	// Wire AutopilotRepository into PodCoordinator for autopilot event handling
 	podCoordinator.SetAutopilotRepo(services.autopilotRepo)
@@ -190,7 +190,6 @@ func main() {
 	// Initialize PKI and gRPC
 	var grpcRunnerHandler *v1.GRPCRunnerHandler
 	var grpcServer *grpcserver.Server
-	var sandboxQuerySender runner.SandboxQuerySender
 	var upgradeCommandSender runner.UpgradeCommandSender
 	var logUploadSender runner.LogUploadCommandSender
 	if cfg.PKI.CACertFile != "" && cfg.PKI.CAKeyFile != "" {
@@ -211,10 +210,9 @@ func main() {
 			grpcCommandSender := grpcserver.NewGRPCCommandSender(grpcServer.RunnerAdapter())
 			podCoordinator.SetCommandSender(grpcCommandSender)
 			terminalRouter.SetCommandSender(grpcCommandSender)
-			sandboxQuerySender = grpcCommandSender
+			sandboxQuerySvc.SetSender(grpcCommandSender)
 			upgradeCommandSender = grpcCommandSender
 			logUploadSender = grpcCommandSender
-			grpcServer.RunnerAdapter().SetTerminalQueryService(terminalQuerySvc)
 			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server")
 			setupRelayTokenRefreshCallback(db, runnerConnMgr, relayTokenGenerator, grpcCommandSender)
 		}
@@ -259,7 +257,6 @@ func main() {
 		Runner:             services.runner,
 		RunnerConnMgr:      runnerConnMgr,
 		PodCoordinator:     podCoordinator,
-		TerminalRouter:     terminalRouter,
 		Pod:                services.pod,
 		PodOrchestrator:    podOrchestrator,
 		Autopilot:          services.autopilot,
@@ -281,8 +278,6 @@ func main() {
 		APIKeyAdapter:      services.apikeyAdapter,
 		GRPCRunnerHandler:  grpcRunnerHandler,
 		SandboxQueryService:  sandboxQuerySvc,
-		TerminalQueryService: terminalQuerySvc,
-		SandboxQuerySender:   sandboxQuerySender,
 		UpgradeCommandSender: upgradeCommandSender,
 		LogUploadSender:      logUploadSender,
 		LogUploadService:     logUploadSvc,

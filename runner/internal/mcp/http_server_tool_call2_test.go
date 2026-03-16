@@ -147,7 +147,7 @@ func TestHTTPServerMCPToolsCallWithIntArgs(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "observe_terminal",
+			"name": "get_pod_snapshot",
 			"arguments": {
 				"pod_key": "target",
 				"lines": 50

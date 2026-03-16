@@ -57,8 +57,8 @@ func (p *AvailablePod) GetTicketTitle() string {
 	return ""
 }
 
-// TerminalOutput represents terminal observation output.
-type TerminalOutput struct {
+// PodSnapshot represents pod observation output.
+type PodSnapshot struct {
 	PodKey     string `json:"pod_key"`
 	Output     string `json:"output"`
 	Screen     string `json:"screen,omitempty"`

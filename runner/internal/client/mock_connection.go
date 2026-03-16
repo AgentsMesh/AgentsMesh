@@ -116,7 +116,7 @@ func (m *MockConnection) SendPodTerminated(podKey string, exitCode int32, errorM
 	return nil
 }
 
-// NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay
+// NOTE: SendTerminalOutput removed - output is exclusively streamed via Relay
 
 // SendPtyResized implements Connection.
 func (m *MockConnection) SendPtyResized(podKey string, cols, rows int32) error {
@@ -181,7 +181,7 @@ func (m *MockConnection) SendObserveTerminalResult(requestID, podKey, output, sc
 	if m.SendErr != nil {
 		return m.SendErr
 	}
-	m.Events = append(m.Events, EventCall{Type: MessageType("observe_terminal_result"), Data: map[string]interface{}{
+	m.Events = append(m.Events, EventCall{Type: MessageType("pod_snapshot_result"), Data: map[string]interface{}{
 		"request_id":  requestID,
 		"pod_key":     podKey,
 		"output":      output,

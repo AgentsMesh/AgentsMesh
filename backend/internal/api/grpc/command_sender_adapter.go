@@ -100,9 +100,6 @@ var _ runner.RunnerCommandSender = (*GRPCCommandSender)(nil)
 // Ensure GRPCCommandSender implements runner.SandboxQuerySender
 var _ runner.SandboxQuerySender = (*GRPCCommandSender)(nil)
 
-// Ensure GRPCCommandSender implements runner.TerminalQuerySender
-var _ runner.TerminalQuerySender = (*GRPCCommandSender)(nil)
-
 // Ensure GRPCCommandSender implements runner.UpgradeCommandSender
 var _ runner.UpgradeCommandSender = (*GRPCCommandSender)(nil)
 

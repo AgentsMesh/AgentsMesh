@@ -238,10 +238,6 @@ Organization-scoped endpoints require the organization slug in the URL path:
 | GET | `/pods/{key}` | Get pod |
 | POST | `/pods/{key}/terminate` | Terminate pod |
 | GET | `/pods/{key}/connect` | Get connection info |
-| POST | `/pods/{key}/send-prompt` | Send prompt to agent |
-| GET | `/pods/{key}/terminal/observe` | Observe terminal output |
-| POST | `/pods/{key}/terminal/input` | Send terminal input |
-| POST | `/pods/{key}/terminal/resize` | Resize terminal |
 | GET | `/pods/{key}/terminal/connect` | Get Relay connection info |
 
 ### Channels (`/api/v1/orgs/{slug}/channels`)

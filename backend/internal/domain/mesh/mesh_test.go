@@ -113,7 +113,7 @@ func TestMeshEdgeStruct(t *testing.T) {
 		ID:            1,
 		Source:        "pod-init",
 		Target:        "pod-target",
-		GrantedScopes: []string{"terminal:read", "terminal:write"},
+		GrantedScopes: []string{"pod:read", "pod:write"},
 		PendingScopes: []string{"file:read"},
 		Status:        "active",
 	}

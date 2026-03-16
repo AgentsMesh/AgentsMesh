@@ -40,8 +40,8 @@ type TicketList []Ticket
 
 // --- Single entity FormatText ---
 
-// FormatText formats a TerminalOutput as compact header + raw output.
-func (t *TerminalOutput) FormatText() string {
+// FormatText formats a PodSnapshot as compact header + raw output.
+func (t *PodSnapshot) FormatText() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Pod: %s | Lines: %d | Has More: %t", t.PodKey, t.TotalLines, t.HasMore)
 	if t.Output != "" {

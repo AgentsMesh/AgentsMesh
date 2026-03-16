@@ -138,7 +138,7 @@ Nous n'avons pas utilisé l'abstraction de rôles pour organiser la collaboratio
 
 Le **Channel** résout la dimension collective : plusieurs Pods partagent messages, décisions et documents dans un espace de collaboration commun. C'est le fondement qui permet à un agent Supervisor et à des agents Worker de former une structure de collaboration — pas un chat de groupe, mais une couche de communication structurée avec historique contextualisé.
 
-Le **Binding** résout la dimension des capacités : une autorisation point à point entre deux Pods. **terminal:read** permet à un agent d'observer la sortie terminal d'un autre agent ; **terminal:write** permet à un agent de contrôler directement l'exécution d'un autre. Le Binding est le mécanisme par lequel un agent coordonne un autre agent — le Supervisor ne perçoit pas l'état du Worker en envoyant des messages, mais en regardant directement son terminal.
+Le **Binding** résout la dimension des capacités : une autorisation point à point entre deux Pods. **pod:read** permet à un agent d'observer la sortie terminal d'un autre agent ; **pod:write** permet à un agent de contrôler directement l'exécution d'un autre. Le Binding est le mécanisme par lequel un agent coordonne un autre agent — le Supervisor ne perçoit pas l'état du Worker en envoyant des messages, mais en regardant directement son terminal.
 
 OpenAI appelle les concepts équivalents Context Engineering, contraintes architecturales et gestion de l'entropie. Les noms diffèrent, le problème résolu est le même.
 

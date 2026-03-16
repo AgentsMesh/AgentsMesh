@@ -51,7 +51,6 @@ type Services struct {
 	Runner             *runner.Service
 	RunnerConnMgr      *runner.RunnerConnectionManager // Runner gRPC connection manager
 	PodCoordinator     *runner.PodCoordinator          // Pod lifecycle coordinator
-	TerminalRouter     *runner.TerminalRouter          // Terminal data router
 	Pod                *agentpod.PodService
 	PodOrchestrator    *agentpod.PodOrchestrator            // Unified Pod creation orchestrator
 	Autopilot          *agentpod.AutopilotControllerService // AutopilotController automation service
@@ -78,10 +77,8 @@ type Services struct {
 	// gRPC/mTLS Runner registration handler (optional, only when PKI is enabled)
 	GRPCRunnerHandler *GRPCRunnerHandler
 
-	// Sandbox query services
+	// Sandbox query service
 	SandboxQueryService  *runner.SandboxQueryService  // Sandbox status query service
-	SandboxQuerySender   runner.SandboxQuerySender    // Sandbox query sender (gRPC adapter)
-	TerminalQueryService *runner.TerminalQueryService  // Terminal observation query service
 
 	// Upgrade command sender (gRPC adapter)
 	UpgradeCommandSender runner.UpgradeCommandSender

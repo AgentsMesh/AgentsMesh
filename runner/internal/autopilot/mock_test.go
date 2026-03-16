@@ -15,11 +15,11 @@ type MockPodController struct {
 	workDir         string
 	podKey          string
 	agentStatus     string
-	sendTextError   error                   // If set, SendTerminalText will return this error
+	sendTextError   error                   // If set, SendInput will return this error
 	stateDetector   detector.StateDetector // Mock state detector
 }
 
-func (m *MockPodController) SendTerminalText(text string) error {
+func (m *MockPodController) SendInput(text string) error {
 	m.sendTextCalls = append(m.sendTextCalls, text)
 	return m.sendTextError
 }

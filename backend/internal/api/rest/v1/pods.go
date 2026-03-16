@@ -7,14 +7,12 @@ import (
 
 // PodHandler handles pod-related requests.
 // Pod creation is delegated to PodOrchestrator (service layer).
-// This handler remains responsible for CRUD, terminal, and HTTP protocol adaptation.
+// This handler remains responsible for CRUD and HTTP protocol adaptation.
 type PodHandler struct {
 	podService     PodServiceForHandler            // Pod CRUD operations (ListPods, GetPod, TerminatePod, etc.)
 	runnerService  *runner.Service                 // Runner management
 	runnerConnMgr  *runner.RunnerConnectionManager // Runner gRPC connections
 	podCoordinator *runner.PodCoordinator          // Pod coordination (TerminatePod, terminal routing)
-	terminalRouter       interface{}                     // *runner.TerminalRouter, optional
-	terminalQueryService *runner.TerminalQueryService    // Terminal observation proxy, optional
 	orchestrator         *agentpod.PodOrchestrator       // Unified Pod creation logic
 }
 
@@ -32,20 +30,6 @@ func WithRunnerConnectionManager(cm *runner.RunnerConnectionManager) PodHandlerO
 func WithPodCoordinator(pc *runner.PodCoordinator) PodHandlerOption {
 	return func(h *PodHandler) {
 		h.podCoordinator = pc
-	}
-}
-
-// WithTerminalRouter sets the terminal router
-func WithTerminalRouter(tr interface{}) PodHandlerOption {
-	return func(h *PodHandler) {
-		h.terminalRouter = tr
-	}
-}
-
-// WithTerminalQueryService sets the terminal query service for proxying observe_terminal
-func WithTerminalQueryService(tqs *runner.TerminalQueryService) PodHandlerOption {
-	return func(h *PodHandler) {
-		h.terminalQueryService = tqs
 	}
 }
 

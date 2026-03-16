@@ -11,7 +11,6 @@ type RunnerHandler struct {
 	runnerService        *runner.Service
 	podService           *agentpod.PodService
 	sandboxQueryService  *runner.SandboxQueryService
-	sandboxQuerySender   runner.SandboxQuerySender
 	podCoordinator       *runner.PodCoordinator
 	versionChecker       *runner.VersionChecker
 	upgradeCommandSender runner.UpgradeCommandSender
@@ -44,13 +43,6 @@ func WithPodServiceForRunner(ps *agentpod.PodService) RunnerHandlerOption {
 func WithSandboxQueryService(sqs *runner.SandboxQueryService) RunnerHandlerOption {
 	return func(h *RunnerHandler) {
 		h.sandboxQueryService = sqs
-	}
-}
-
-// WithSandboxQuerySender sets the sandbox query sender for runner handler
-func WithSandboxQuerySender(sqs runner.SandboxQuerySender) RunnerHandlerOption {
-	return func(h *RunnerHandler) {
-		h.sandboxQuerySender = sqs
 	}
 }
 

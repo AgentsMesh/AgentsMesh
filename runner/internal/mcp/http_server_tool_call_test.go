@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestHTTPServerMCPToolsCallObserveTerminal(t *testing.T) {
+func TestHTTPServerMCPToolsCallGetPodSnapshot(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -17,7 +17,7 @@ func TestHTTPServerMCPToolsCallObserveTerminal(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "observe_terminal",
+			"name": "get_pod_snapshot",
 			"arguments": {
 				"pod_key": "target-pod",
 				"lines": 100
@@ -43,7 +43,7 @@ func TestHTTPServerMCPToolsCallObserveTerminal(t *testing.T) {
 	}
 }
 
-func TestHTTPServerMCPToolsCallSendTerminalText(t *testing.T) {
+func TestHTTPServerMCPToolsCallSendPodInputWithText(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -52,7 +52,7 @@ func TestHTTPServerMCPToolsCallSendTerminalText(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "send_terminal_text",
+			"name": "send_pod_input",
 			"arguments": {
 				"pod_key": "target-pod",
 				"text": "hello world"
@@ -86,7 +86,7 @@ func TestHTTPServerMCPToolsCallMissingArgs(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "send_terminal_text",
+			"name": "send_pod_input",
 			"arguments": {
 				"pod_key": "target-pod"
 			}
@@ -104,7 +104,7 @@ func TestHTTPServerMCPToolsCallMissingArgs(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	// Should have an error result (missing text)
+	// Should have an error result (missing text/keys)
 	result, ok := resp.Result.(map[string]interface{})
 	if ok {
 		if !result["isError"].(bool) {
@@ -156,7 +156,7 @@ func TestHTTPServerMCPToolsCallBindPod(t *testing.T) {
 			"name": "bind_pod",
 			"arguments": {
 				"target_pod": "other-pod",
-				"scopes": ["terminal:read"]
+				"scopes": ["pod:read"]
 			}
 		}
 	}`)

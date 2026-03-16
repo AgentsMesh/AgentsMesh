@@ -12,14 +12,14 @@ func TestValidateScopes(t *testing.T) {
 	service := newTestService(db, nil)
 
 	t.Run("valid scopes", func(t *testing.T) {
-		err := service.validateScopes([]string{channel.BindingScopeTerminalRead})
+		err := service.validateScopes([]string{channel.BindingScopePodRead})
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 	})
 
 	t.Run("valid multiple scopes", func(t *testing.T) {
-		err := service.validateScopes([]string{channel.BindingScopeTerminalRead, channel.BindingScopeTerminalWrite})
+		err := service.validateScopes([]string{channel.BindingScopePodRead, channel.BindingScopePodWrite})
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -41,7 +41,7 @@ func TestRequestBinding(t *testing.T) {
 
 	t.Run("creates pending binding", func(t *testing.T) {
 		binding, err := service.RequestBinding(ctx, 1, "pod-1", "pod-2",
-			[]string{channel.BindingScopeTerminalRead}, "")
+			[]string{channel.BindingScopePodRead}, "")
 		if err != nil {
 			t.Fatalf("failed to request binding: %v", err)
 		}
@@ -55,7 +55,7 @@ func TestRequestBinding(t *testing.T) {
 
 	t.Run("self-binding returns error", func(t *testing.T) {
 		_, err := service.RequestBinding(ctx, 1, "pod-1", "pod-1",
-			[]string{channel.BindingScopeTerminalRead}, "")
+			[]string{channel.BindingScopePodRead}, "")
 		if err != ErrSelfBinding {
 			t.Errorf("expected ErrSelfBinding, got %v", err)
 		}
@@ -74,7 +74,7 @@ func TestRequestBinding(t *testing.T) {
 		querier.AddPod("user-pod-2", map[string]interface{}{"user_id": int64(1)})
 
 		binding, err := service.RequestBinding(ctx, 1, "user-pod-1", "user-pod-2",
-			[]string{channel.BindingScopeTerminalRead}, "")
+			[]string{channel.BindingScopePodRead}, "")
 		if err != nil {
 			t.Fatalf("failed to request binding: %v", err)
 		}
@@ -91,7 +91,7 @@ func TestCreateAutoBinding(t *testing.T) {
 
 	t.Run("creates active binding", func(t *testing.T) {
 		binding, err := service.CreateAutoBinding(ctx, 1, "auto-1", "auto-2",
-			[]string{channel.BindingScopeTerminalRead, channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodRead, channel.BindingScopePodWrite})
 		if err != nil {
 			t.Fatalf("failed to create auto binding: %v", err)
 		}
@@ -105,7 +105,7 @@ func TestCreateAutoBinding(t *testing.T) {
 
 	t.Run("self-binding returns error", func(t *testing.T) {
 		_, err := service.CreateAutoBinding(ctx, 1, "auto-same", "auto-same",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 		if err != ErrSelfBinding {
 			t.Errorf("expected ErrSelfBinding, got %v", err)
 		}
@@ -113,9 +113,9 @@ func TestCreateAutoBinding(t *testing.T) {
 
 	t.Run("returns existing binding", func(t *testing.T) {
 		binding1, _ := service.CreateAutoBinding(ctx, 1, "exist-1", "exist-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 		binding2, err := service.CreateAutoBinding(ctx, 1, "exist-1", "exist-2",
-			[]string{channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodWrite})
 		if err != nil {
 			t.Fatalf("failed: %v", err)
 		}
@@ -132,7 +132,7 @@ func TestGetBinding(t *testing.T) {
 
 	t.Run("returns binding by ID", func(t *testing.T) {
 		created, _ := service.CreateAutoBinding(ctx, 1, "get-1", "get-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
 		binding, err := service.GetBinding(ctx, created.ID)
 		if err != nil {
@@ -158,7 +158,7 @@ func TestGetActiveBinding(t *testing.T) {
 
 	t.Run("returns active binding", func(t *testing.T) {
 		service.CreateAutoBinding(ctx, 1, "active-1", "active-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
 		binding, err := service.GetActiveBinding(ctx, "active-1", "active-2")
 		if err != nil {
@@ -171,7 +171,7 @@ func TestGetActiveBinding(t *testing.T) {
 
 	t.Run("returns error for pending binding", func(t *testing.T) {
 		service.RequestBinding(ctx, 1, "pending-1", "pending-2",
-			[]string{channel.BindingScopeTerminalRead}, channel.BindingPolicyExplicitOnly)
+			[]string{channel.BindingScopePodRead}, channel.BindingPolicyExplicitOnly)
 
 		_, err := service.GetActiveBinding(ctx, "pending-1", "pending-2")
 		if err != ErrBindingNotFound {
@@ -187,9 +187,9 @@ func TestGetBindingsForPod(t *testing.T) {
 
 	t.Run("returns all bindings for pod", func(t *testing.T) {
 		service.CreateAutoBinding(ctx, 1, "list-main", "list-1",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 		service.CreateAutoBinding(ctx, 1, "list-main", "list-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
 		bindings, err := service.GetBindingsForPod(ctx, "list-main", nil)
 		if err != nil {
@@ -202,9 +202,9 @@ func TestGetBindingsForPod(t *testing.T) {
 
 	t.Run("filters by status", func(t *testing.T) {
 		service.CreateAutoBinding(ctx, 1, "filter-main", "filter-1",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 		service.RequestBinding(ctx, 1, "filter-main", "filter-2",
-			[]string{channel.BindingScopeTerminalRead}, channel.BindingPolicyExplicitOnly)
+			[]string{channel.BindingScopePodRead}, channel.BindingPolicyExplicitOnly)
 
 		activeStatus := channel.BindingStatusActive
 		bindings, err := service.GetBindingsForPod(ctx, "filter-main", &activeStatus)
@@ -224,9 +224,9 @@ func TestGetBoundPods(t *testing.T) {
 
 	t.Run("returns bound pod keys", func(t *testing.T) {
 		service.CreateAutoBinding(ctx, 1, "hub", "spoke-1",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 		service.CreateAutoBinding(ctx, 1, "hub", "spoke-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
 		pods, err := service.GetBoundPods(ctx, "hub")
 		if err != nil {
@@ -255,9 +255,9 @@ func TestGetPendingRequests(t *testing.T) {
 
 	t.Run("returns pending requests for target", func(t *testing.T) {
 		service.RequestBinding(ctx, 1, "req-1", "target",
-			[]string{channel.BindingScopeTerminalRead}, channel.BindingPolicyExplicitOnly)
+			[]string{channel.BindingScopePodRead}, channel.BindingPolicyExplicitOnly)
 		service.RequestBinding(ctx, 1, "req-2", "target",
-			[]string{channel.BindingScopeTerminalRead}, channel.BindingPolicyExplicitOnly)
+			[]string{channel.BindingScopePodRead}, channel.BindingPolicyExplicitOnly)
 
 		pending, err := service.GetPendingRequests(ctx, "target")
 		if err != nil {

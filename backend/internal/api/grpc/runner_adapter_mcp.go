@@ -134,13 +134,11 @@ func (a *GRPCRunnerAdapter) dispatchMcpMethod(ctx context.Context, tc *middlewar
 	case "post_comment":
 		return a.mcpPostComment(ctx, tc, req.Payload)
 
-	// Terminal methods
-	case "observe_terminal":
-		return a.mcpObserveTerminal(ctx, tc, req.Payload)
-	case "send_terminal_text":
-		return a.mcpSendTerminalText(ctx, tc, req.Payload)
-	case "send_terminal_key":
-		return a.mcpSendTerminalKey(ctx, tc, req.Payload)
+	// Pod interaction methods
+	case "get_pod_snapshot":
+		return a.mcpGetPodSnapshot(ctx, tc, req.Payload)
+	case "send_pod_input":
+		return a.mcpSendPodInput(ctx, tc, req.Payload)
 
 	// Discovery methods
 	case "list_available_pods":

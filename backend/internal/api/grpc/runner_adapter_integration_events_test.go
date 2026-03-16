@@ -54,7 +54,7 @@ func TestGRPCRunnerAdapter_RunnerEvents_Integration(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	assert.Equal(t, "pod-123", podCreatedKey)
 
-	// NOTE: TerminalOutput test removed - terminal output is exclusively streamed via Relay.
+	// NOTE: TerminalOutput test removed - output is exclusively streamed via Relay.
 	// Runner no longer sends TerminalOutputEvent via gRPC.
 
 	_ = stream.CloseSend()

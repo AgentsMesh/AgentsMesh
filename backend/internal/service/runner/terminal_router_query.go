@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,48 +30,19 @@ type pendingTerminalQuery struct {
 	timeout  time.Time
 }
 
-// TerminalQueryService handles terminal observation queries to runners
-type TerminalQueryService struct {
-	pendingQueries sync.Map      // map[requestID]*pendingTerminalQuery
-	done           chan struct{} // signal channel for graceful shutdown
-}
-
-// NewTerminalQueryService creates a new terminal query service
-func NewTerminalQueryService(cm *RunnerConnectionManager) *TerminalQueryService {
-	s := &TerminalQueryService{
-		done: make(chan struct{}),
-	}
-
-	// Set up callback from connection manager for observe terminal responses
-	if cm != nil {
-		cm.SetObserveTerminalResultCallback(func(runnerID int64, data *runnerv1.ObserveTerminalResult) {
-			s.CompleteQuery(data.RequestId, runnerID, data)
-		})
-	}
-
-	// Start cleanup goroutine for expired queries
-	go s.cleanupLoop()
-	return s
-}
-
-// Stop gracefully stops the terminal query service
-func (s *TerminalQueryService) Stop() {
-	close(s.done)
-}
-
-// RegisterQuery registers a pending query and returns a channel for the result
-func (s *TerminalQueryService) RegisterQuery(requestID string) chan *ObserveTerminalQueryResult {
+// registerQuery registers a pending query and returns a channel for the result.
+func (tr *TerminalRouter) registerQuery(requestID string) chan *ObserveTerminalQueryResult {
 	resultCh := make(chan *ObserveTerminalQueryResult, 1)
-	s.pendingQueries.Store(requestID, &pendingTerminalQuery{
+	tr.pendingQueries.Store(requestID, &pendingTerminalQuery{
 		resultCh: resultCh,
 		timeout:  time.Now().Add(TerminalQueryTimeout),
 	})
 	return resultCh
 }
 
-// CompleteQuery completes a pending query with the result
-func (s *TerminalQueryService) CompleteQuery(requestID string, runnerID int64, event *runnerv1.ObserveTerminalResult) {
-	if v, ok := s.pendingQueries.LoadAndDelete(requestID); ok {
+// completeQuery completes a pending query with the result from a runner callback.
+func (tr *TerminalRouter) completeQuery(requestID string, runnerID int64, event *runnerv1.ObserveTerminalResult) {
+	if v, ok := tr.pendingQueries.LoadAndDelete(requestID); ok {
 		pq := v.(*pendingTerminalQuery)
 
 		result := &ObserveTerminalQueryResult{
@@ -95,24 +65,25 @@ func (s *TerminalQueryService) CompleteQuery(requestID string, runnerID int64, e
 	}
 }
 
-// ObserveTerminal sends a terminal observation query to a runner and waits for the response
-func (s *TerminalQueryService) ObserveTerminal(
-	ctx context.Context,
-	runnerID int64,
-	podKey string,
-	lines int32,
-	includeScreen bool,
-	sendFn func(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error,
-) (*ObserveTerminalQueryResult, error) {
+// ObserveTerminal sends an observe terminal command to the runner hosting the pod
+// and waits for the async response. This is the single entry point for all callers
+// (REST handler, MCP handler) — no external orchestration needed.
+func (tr *TerminalRouter) ObserveTerminal(ctx context.Context, podKey string, lines int32, includeScreen bool) (*ObserveTerminalQueryResult, error) {
+	// Look up runner ID from pod-runner mapping
+	runnerID, found := tr.GetRunnerID(podKey)
+	if !found {
+		return nil, ErrRunnerNotConnected
+	}
+
 	// Generate unique request ID
 	requestID := uuid.New().String()
 
 	// Register query and get result channel
-	resultCh := s.RegisterQuery(requestID)
+	resultCh := tr.registerQuery(requestID)
 
-	// Send query to runner
-	if err := sendFn(runnerID, requestID, podKey, lines, includeScreen); err != nil {
-		s.pendingQueries.Delete(requestID)
+	// Send command to runner
+	if err := tr.commandSender.SendObserveTerminal(ctx, runnerID, requestID, podKey, lines, includeScreen); err != nil {
+		tr.pendingQueries.Delete(requestID)
 		return nil, err
 	}
 
@@ -121,10 +92,10 @@ func (s *TerminalQueryService) ObserveTerminal(
 	case result := <-resultCh:
 		return result, nil
 	case <-ctx.Done():
-		s.pendingQueries.Delete(requestID)
+		tr.pendingQueries.Delete(requestID)
 		return nil, ctx.Err()
 	case <-time.After(TerminalQueryTimeout):
-		s.pendingQueries.Delete(requestID)
+		tr.pendingQueries.Delete(requestID)
 		return &ObserveTerminalQueryResult{
 			RequestID: requestID,
 			RunnerID:  runnerID,
@@ -133,23 +104,22 @@ func (s *TerminalQueryService) ObserveTerminal(
 	}
 }
 
-// cleanupLoop periodically cleans up expired queries
-func (s *TerminalQueryService) cleanupLoop() {
+// cleanupQueryLoop periodically cleans up expired terminal queries.
+func (tr *TerminalRouter) cleanupQueryLoop() {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-s.done:
+		case <-tr.done:
 			return
 		case <-ticker.C:
 			now := time.Now()
-			s.pendingQueries.Range(func(key, value any) bool {
+			tr.pendingQueries.Range(func(key, value any) bool {
 				pq := value.(*pendingTerminalQuery)
 				if now.After(pq.timeout) {
-					if v, ok := s.pendingQueries.LoadAndDelete(key); ok {
+					if v, ok := tr.pendingQueries.LoadAndDelete(key); ok {
 						pending := v.(*pendingTerminalQuery)
-						// Send timeout error to channel
 						select {
 						case pending.resultCh <- &ObserveTerminalQueryResult{
 							RequestID: key.(string),
@@ -163,4 +133,18 @@ func (s *TerminalQueryService) cleanupLoop() {
 			})
 		}
 	}
+}
+
+// initQuerySupport sets up the observe terminal callback and starts the cleanup goroutine.
+// pendingQueries is a zero-value sync.Map (ready to use without initialization).
+func initQuerySupport(tr *TerminalRouter, cm *RunnerConnectionManager, done chan struct{}) {
+	tr.done = done
+
+	// Set up callback from connection manager for observe terminal responses
+	cm.SetObserveTerminalResultCallback(func(runnerID int64, data *runnerv1.ObserveTerminalResult) {
+		tr.completeQuery(data.RequestId, runnerID, data)
+	})
+
+	// Start cleanup goroutine for expired queries
+	go tr.cleanupQueryLoop()
 }

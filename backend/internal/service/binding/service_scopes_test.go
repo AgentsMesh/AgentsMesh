@@ -14,10 +14,10 @@ func TestRequestScopes(t *testing.T) {
 
 	t.Run("requests additional scopes", func(t *testing.T) {
 		binding, _ := service.CreateAutoBinding(ctx, 1, "scope-req-1", "scope-req-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
 		updated, err := service.RequestScopes(ctx, binding.ID, "scope-req-1",
-			[]string{channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodWrite})
 		if err != nil {
 			t.Fatalf("failed: %v", err)
 		}
@@ -29,10 +29,10 @@ func TestRequestScopes(t *testing.T) {
 
 	t.Run("wrong pod returns error", func(t *testing.T) {
 		binding, _ := service.CreateAutoBinding(ctx, 1, "scope-wrong-1", "scope-wrong-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
 		_, err := service.RequestScopes(ctx, binding.ID, "scope-wrong-2",
-			[]string{channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodWrite})
 		if err != ErrNotAuthorized {
 			t.Errorf("expected ErrNotAuthorized, got %v", err)
 		}
@@ -40,7 +40,7 @@ func TestRequestScopes(t *testing.T) {
 
 	t.Run("invalid scope returns error", func(t *testing.T) {
 		binding, _ := service.CreateAutoBinding(ctx, 1, "scope-inv-1", "scope-inv-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
 		_, err := service.RequestScopes(ctx, binding.ID, "scope-inv-1",
 			[]string{"invalid:scope"})
@@ -57,28 +57,28 @@ func TestApproveScopes(t *testing.T) {
 
 	t.Run("approves pending scopes", func(t *testing.T) {
 		binding, _ := service.CreateAutoBinding(ctx, 1, "approve-1", "approve-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 		binding, _ = service.RequestScopes(ctx, binding.ID, "approve-1",
-			[]string{channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodWrite})
 
 		approved, err := service.ApproveScopes(ctx, binding.ID, "approve-2",
-			[]string{channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodWrite})
 		if err != nil {
 			t.Fatalf("failed: %v", err)
 		}
-		if !approved.HasScope(channel.BindingScopeTerminalWrite) {
+		if !approved.HasScope(channel.BindingScopePodWrite) {
 			t.Error("expected write scope to be granted")
 		}
 	})
 
 	t.Run("wrong pod returns error", func(t *testing.T) {
 		binding, _ := service.CreateAutoBinding(ctx, 1, "approve-wrong-1", "approve-wrong-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 		binding, _ = service.RequestScopes(ctx, binding.ID, "approve-wrong-1",
-			[]string{channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodWrite})
 
 		_, err := service.ApproveScopes(ctx, binding.ID, "approve-wrong-1",
-			[]string{channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodWrite})
 		if err != ErrNotAuthorized {
 			t.Errorf("expected ErrNotAuthorized, got %v", err)
 		}
@@ -86,10 +86,10 @@ func TestApproveScopes(t *testing.T) {
 
 	t.Run("no valid pending scopes returns error", func(t *testing.T) {
 		binding, _ := service.CreateAutoBinding(ctx, 1, "approve-none-1", "approve-none-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
 		_, err := service.ApproveScopes(ctx, binding.ID, "approve-none-2",
-			[]string{channel.BindingScopeTerminalWrite})
+			[]string{channel.BindingScopePodWrite})
 		if err != ErrNoValidPendingScopes {
 			t.Errorf("expected ErrNoValidPendingScopes, got %v", err)
 		}
@@ -103,9 +103,9 @@ func TestHasScope(t *testing.T) {
 
 	t.Run("returns true for granted scope", func(t *testing.T) {
 		service.CreateAutoBinding(ctx, 1, "has-1", "has-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
-		hasScope, err := service.HasScope(ctx, "has-1", "has-2", channel.BindingScopeTerminalRead)
+		hasScope, err := service.HasScope(ctx, "has-1", "has-2", channel.BindingScopePodRead)
 		if err != nil {
 			t.Fatalf("failed: %v", err)
 		}
@@ -116,9 +116,9 @@ func TestHasScope(t *testing.T) {
 
 	t.Run("returns false for missing scope", func(t *testing.T) {
 		service.CreateAutoBinding(ctx, 1, "miss-1", "miss-2",
-			[]string{channel.BindingScopeTerminalRead})
+			[]string{channel.BindingScopePodRead})
 
-		hasScope, err := service.HasScope(ctx, "miss-1", "miss-2", channel.BindingScopeTerminalWrite)
+		hasScope, err := service.HasScope(ctx, "miss-1", "miss-2", channel.BindingScopePodWrite)
 		if err != nil {
 			t.Fatalf("failed: %v", err)
 		}
@@ -128,7 +128,7 @@ func TestHasScope(t *testing.T) {
 	})
 
 	t.Run("returns false for no binding", func(t *testing.T) {
-		hasScope, err := service.HasScope(ctx, "no-bind-1", "no-bind-2", channel.BindingScopeTerminalRead)
+		hasScope, err := service.HasScope(ctx, "no-bind-1", "no-bind-2", channel.BindingScopePodRead)
 		if err != nil {
 			t.Fatalf("failed: %v", err)
 		}

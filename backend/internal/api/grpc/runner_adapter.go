@@ -65,8 +65,7 @@ type GRPCRunnerAdapter struct {
 	runnerMcpService  *runner.Service
 	agentTypeSvc      *agent.AgentTypeService
 	userConfigSvc     *agent.UserConfigService
-	terminalRouter       interface{} // implements TerminalRouterForMCP at runtime, optional
-	terminalQueryService *runner.TerminalQueryService
+	terminalRouter       TerminalRouterForMCP // *runner.TerminalRouter, optional
 }
 
 // MCPDependencies holds optional MCP service dependencies for the gRPC adapter.
@@ -80,7 +79,7 @@ type MCPDependencies struct {
 	RunnerService     *runner.Service
 	AgentTypeSvc      *agent.AgentTypeService
 	UserConfigSvc     *agent.UserConfigService
-	TerminalRouter    interface{} // implements TerminalRouterForMCP at runtime, optional
+	TerminalRouter    TerminalRouterForMCP // *runner.TerminalRouter, optional
 }
 
 // NewGRPCRunnerAdapter creates a new gRPC Runner adapter.
@@ -120,11 +119,6 @@ func NewGRPCRunnerAdapter(
 	}
 
 	return adapter
-}
-
-// SetTerminalQueryService sets the terminal query service for proxying observe_terminal requests.
-func (a *GRPCRunnerAdapter) SetTerminalQueryService(tqs *runner.TerminalQueryService) {
-	a.terminalQueryService = tqs
 }
 
 // Connect handles the bidirectional streaming RPC for Runner communication.

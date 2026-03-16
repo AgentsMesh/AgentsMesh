@@ -128,7 +128,7 @@ steps:
         body:
           target_pod: "{pod_key_b}"
           scopes:
-            - "terminal:read"
+            - "pod:read"
       expected:
         status: 201
         body:

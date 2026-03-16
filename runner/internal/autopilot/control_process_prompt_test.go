@@ -39,9 +39,8 @@ func TestBuildInitialPrompt_Default(t *testing.T) {
 	assert.Contains(t, prompt, `"need_help"`)
 	assert.Contains(t, prompt, `"give_up"`)
 	// Should contain MCP tool instructions
-	assert.Contains(t, prompt, "observe_terminal")
-	assert.Contains(t, prompt, "send_terminal_text")
-	assert.Contains(t, prompt, "send_terminal_key")
+	assert.Contains(t, prompt, "get_pod_snapshot")
+	assert.Contains(t, prompt, "send_pod_input")
 	assert.Contains(t, prompt, "get_pod_status")
 	// Should contain pod key
 	assert.Contains(t, prompt, "worker-123")
