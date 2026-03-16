@@ -14,6 +14,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/mcp"
 	"github.com/anthropics/agentsmesh/runner/internal/monitor"
+	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
@@ -28,8 +29,9 @@ type Runner struct {
 	workspace *workspace.Manager
 
 	// Pod management
-	podStore       PodStore
-	messageHandler *RunnerMessageHandler
+	podStore         PodStore
+	messageHandler   *RunnerMessageHandler
+	podDaemonManager *poddaemon.PodDaemonManager
 
 	// Enhanced components
 	mcpManager   *mcp.Manager
@@ -128,13 +130,20 @@ func New(cfg *config.Config) (*Runner, error) {
 	// Create pod store
 	podStore := NewInMemoryPodStore()
 
+	// Create Pod Daemon manager for session persistence
+	podDaemonMgr, err := poddaemon.NewPodDaemonManager(cfg.WorkspaceRoot)
+	if err != nil {
+		log.Warn("Pod Daemon manager unavailable, sessions won't persist across restarts", "error", err)
+	}
+
 	r := &Runner{
-		cfg:        cfg,
-		conn:       grpcConn,
-		workspace:  ws,
-		podStore:   podStore,
-		autopilots: make(map[string]*autopilot.AutopilotController),
-		stopChan:   make(chan struct{}),
+		cfg:              cfg,
+		conn:             grpcConn,
+		workspace:        ws,
+		podStore:         podStore,
+		podDaemonManager: podDaemonMgr,
+		autopilots:       make(map[string]*autopilot.AutopilotController),
+		stopChan:         make(chan struct{}),
 	}
 
 	// Create message handler and set it on connection
@@ -236,6 +245,11 @@ func (r *Runner) NewPodController(pod *Pod) *PodControllerImpl {
 // GetConnection returns the gRPC connection.
 func (r *Runner) GetConnection() client.Connection {
 	return r.conn
+}
+
+// GetPodDaemonManager returns the Pod Daemon manager (may be nil).
+func (r *Runner) GetPodDaemonManager() *poddaemon.PodDaemonManager {
+	return r.podDaemonManager
 }
 
 // Upgrade state management

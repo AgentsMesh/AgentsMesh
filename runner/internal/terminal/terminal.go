@@ -20,6 +20,11 @@ const (
 	gracefulStopTimeout = 5 * time.Second
 )
 
+// PTYFactory is a function that creates a PtyProcess.
+// When set in Options, it replaces the default platform-specific startPTY.
+// This enables dependency injection for Pod Daemon mode.
+type PTYFactory func(command string, args []string, workDir string, env []string, cols, rows int) (PtyProcess, error)
+
 // Options for creating a new terminal.
 type Options struct {
 	Command  string
@@ -31,6 +36,10 @@ type Options struct {
 	Label    string // Identifier for log correlation (e.g., pod_key)
 	OnOutput func([]byte)
 	OnExit   func(int)
+
+	// PTYFactory overrides the default platform PTY creation.
+	// Used by Pod Daemon to inject daemonPTY instead of direct PTY.
+	PTYFactory PTYFactory
 }
 
 // Terminal represents a PTY terminal session.
@@ -44,6 +53,9 @@ type Terminal struct {
 
 	// PTY process handle (set in Start)
 	proc ptyProcess
+
+	// Custom PTY factory (nil = use default platform startPTY)
+	ptyFactory PTYFactory
 
 	mu       sync.Mutex
 	closed   bool
@@ -118,17 +130,18 @@ func New(opts Options) (*Terminal, error) {
 		"rows", rows)
 
 	return &Terminal{
-		command:  opts.Command,
-		args:     opts.Args,
-		workDir:  opts.WorkDir,
-		env:      env,
-		label:    opts.Label,
-		onOutput: opts.OnOutput,
-		onExit:   opts.OnExit,
-		rows:     rows,
-		cols:     cols,
-		doneCh:   make(chan struct{}),
-		resumeCh: make(chan struct{}, 1), // Buffered to avoid blocking
+		command:    opts.Command,
+		args:       opts.Args,
+		workDir:    opts.WorkDir,
+		env:        env,
+		label:      opts.Label,
+		ptyFactory: opts.PTYFactory,
+		onOutput:   opts.OnOutput,
+		onExit:     opts.OnExit,
+		rows:       rows,
+		cols:       cols,
+		doneCh:     make(chan struct{}),
+		resumeCh:   make(chan struct{}, 1), // Buffered to avoid blocking
 	}, nil
 }
 
@@ -144,8 +157,14 @@ func (t *Terminal) Start() error {
 	log := logger.Terminal()
 	log.Debug("Starting command", "command", t.command, "args", t.args, "dir", t.workDir, "cols", t.cols, "rows", t.rows)
 
-	// Start with PTY and initial size (platform-specific)
-	proc, err := startPTY(t.command, t.args, t.workDir, t.env, t.cols, t.rows)
+	// Start with PTY and initial size (custom factory or platform-specific default)
+	var proc ptyProcess
+	var err error
+	if t.ptyFactory != nil {
+		proc, err = t.ptyFactory(t.command, t.args, t.workDir, t.env, t.cols, t.rows)
+	} else {
+		proc, err = startPTY(t.command, t.args, t.workDir, t.env, t.cols, t.rows)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to start pty: %w", err)
 	}
@@ -223,6 +242,23 @@ func (t *Terminal) closePTY() {
 			t.proc.Close()
 		}
 	})
+}
+
+// Detach disconnects from the PTY without killing the underlying process.
+// Used during Runner shutdown to keep Pod Daemon processes alive for recovery.
+// For daemonPTY, Close() sends a Detach message (daemon stays running).
+// For direct PTY, this is equivalent to closePTY (process may receive SIGHUP).
+func (t *Terminal) Detach() {
+	t.mu.Lock()
+	if t.closed {
+		t.mu.Unlock()
+		return
+	}
+	t.closed = true
+	t.mu.Unlock()
+
+	logger.Terminal().Info("Terminal detaching (daemon stays alive)")
+	t.closePTY()
 }
 
 // PID returns the process ID

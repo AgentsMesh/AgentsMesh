@@ -140,6 +140,33 @@ jobs:
           version: latest
           args: --timeout=5m
 
+  runner-test-windows:
+    name: Runner Tests (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: runner/go.sum
+
+      - name: Download dependencies
+        working-directory: runner
+        run: go mod download
+
+      - name: Run tests
+        working-directory: runner
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: runner/coverage.out
+          flags: runner-windows
+          fail_ci_if_error: false
+
   # ===========================================================================
   # Relay (Go)
   # ===========================================================================

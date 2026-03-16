@@ -4,6 +4,7 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
@@ -21,6 +22,10 @@ type PodBuilderDeps struct {
 	// ProgressSender sends pod initialization progress.
 	// Can be nil if progress reporting is not needed.
 	ProgressSender client.ProgressSender
+
+	// PodDaemonManager manages daemon-based PTY sessions.
+	// Can be nil; if nil, direct PTY is used (no session persistence).
+	PodDaemonManager *poddaemon.PodDaemonManager
 }
 
 // PodBuilder builds pods using the Builder pattern.
@@ -69,8 +74,9 @@ func NewPodBuilder(deps PodBuilderDeps) *PodBuilder {
 // This maintains backward compatibility with existing code.
 func NewPodBuilderFromRunner(runner *Runner) *PodBuilder {
 	deps := PodBuilderDeps{
-		Config:         runner.cfg,
-		ProgressSender: runner.conn,
+		Config:           runner.cfg,
+		ProgressSender:   runner.conn,
+		PodDaemonManager: runner.podDaemonManager,
 	}
 	// Explicitly set Workspace only if not nil to avoid interface nil comparison issues
 	if runner.workspace != nil {

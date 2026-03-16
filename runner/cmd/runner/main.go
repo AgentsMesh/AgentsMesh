@@ -4,6 +4,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
 )
 
 var (
@@ -12,6 +14,14 @@ var (
 )
 
 func main() {
+	// Pod Daemon mode: when re-exec'd as a daemon subprocess, run the daemon
+	// main loop instead of the normal CLI. The daemon holds the PTY fd and
+	// accepts IPC connections from the Runner for I/O forwarding.
+	if configPath := os.Getenv("_AGENTSMESH_POD_DAEMON"); configPath != "" {
+		poddaemon.RunDaemon(configPath)
+		return
+	}
+
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(1)

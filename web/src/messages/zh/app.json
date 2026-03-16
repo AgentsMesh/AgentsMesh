@@ -22,7 +22,7 @@
       "running": "运行中",
       "paused": "已暂停",
       "disconnected": "已断开",
-      "orphaned": "孤立",
+      "orphaned": "重连中",
       "completed": "已完成",
       "terminated": "已终止",
       "error": "错误",

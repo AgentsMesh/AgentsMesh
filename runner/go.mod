@@ -6,6 +6,7 @@ replace github.com/anthropics/agentsmesh/proto => ../proto
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/Microsoft/go-winio v0.6.2
 	github.com/UserExistsError/conpty v0.1.4
 	github.com/anthropics/agentsmesh/proto v0.0.0
 	github.com/creack/pty v1.1.24

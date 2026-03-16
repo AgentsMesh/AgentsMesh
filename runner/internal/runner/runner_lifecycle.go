@@ -32,6 +32,9 @@ func (r *Runner) Run(ctx context.Context) error {
 	// for long-running operations (e.g., git clone in OnCreatePod).
 	r.runCtx = ctx
 
+	// Recover daemon sessions from previous Runner lifecycle
+	r.recoverDaemonSessions()
+
 	// Create top-level Supervisor
 	supervisor := suture.New("runner", suture.Spec{
 		EventHook: func(e suture.Event) {
@@ -127,7 +130,7 @@ func (r *Runner) stopAllPods() {
 		wg.Add(1)
 		go func(p *Pod) {
 			defer wg.Done()
-			log.Debug("Stopping pod", "pod_key", p.PodKey)
+			log.Debug("Detaching pod (daemon stays alive)", "pod_key", p.PodKey)
 
 			// Capture metadata before cleanup for token usage collection.
 			podKey := p.PodKey
@@ -141,13 +144,15 @@ func (r *Runner) stopAllPods() {
 				p.Aggregator.Stop()
 			}
 			if p.Terminal != nil {
-				p.Terminal.Stop()
+				// Detach instead of Stop: daemon + child process stay alive
+				// so the session can be recovered after Runner restart.
+				p.Terminal.Detach()
 			}
 			r.podStore.Delete(p.PodKey)
 
 			// Collect token usage synchronously (best-effort).
 			// Token files live in HOME (~/.claude/, ~/.codex/), not in sandbox,
-			// so they survive Terminal.Stop(). gRPC is still alive at this point.
+			// so they survive Terminal.Detach(). gRPC is still alive at this point.
 			r.messageHandler.collectAndSendTokenUsage(podKey, agentType, sandboxPath, podStartedAt)
 		}(pod)
 	}

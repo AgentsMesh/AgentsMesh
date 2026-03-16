@@ -2,13 +2,14 @@
 
 import React, { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import "@xterm/xterm/css/xterm.css";
+import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore, type SplitDirection } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
 import { useAutopilotStore } from "@/stores/autopilot";
 import { usePodStatus, useTerminal, useTouchScroll } from "@/hooks";
 import { TerminalPaneHeader } from "./TerminalPaneHeader";
-import { TerminalLoadingState, TerminalErrorState } from "./TerminalStateViews";
+import { TerminalLoadingState, TerminalErrorState, TerminalReconnectingState } from "./TerminalStateViews";
 import { RelayStatusOverlay } from "./RelayStatusOverlay";
 import { AutopilotOverlay } from "./AutopilotOverlay";
 import { AutopilotStartButton } from "./AutopilotStartButton";
@@ -137,10 +138,12 @@ export function TerminalPane({
         />
       )}
 
-      {/* Terminal or Loading/Error State */}
+      {/* Terminal or Loading/Error/Reconnecting State */}
       {!showTerminal ? (
         podError ? (
           <TerminalErrorState error={podError} onClose={onClose} />
+        ) : podStatus === "orphaned" ? (
+          <TerminalReconnectingState onClose={onClose} />
         ) : (
           <TerminalLoadingState
             podStatus={podStatus}
@@ -154,6 +157,20 @@ export function TerminalPane({
         <div className="flex flex-col flex-1 min-h-0">
           <AutopilotOverlay podKey={podKey} />
           <div className="relative flex-1 min-h-0">
+            {/* Reconnecting overlay - shown when pod is orphaned but terminal was previously active */}
+            {podStatus === "orphaned" && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-terminal-bg/80 backdrop-blur-sm">
+                <div className="text-center p-4">
+                  <RefreshCw className="w-8 h-8 text-amber-500 dark:text-amber-400 mx-auto mb-2 animate-spin" />
+                  <p className="text-terminal-text font-medium text-sm">
+                    Runner is restarting...
+                  </p>
+                  <p className="text-xs text-terminal-text-muted">
+                    Session will resume automatically
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Relay connection status overlay - always visible, floating at top */}
             <RelayStatusOverlay
               connectionStatus={connectionStatus}

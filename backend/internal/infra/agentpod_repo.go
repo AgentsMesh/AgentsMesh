@@ -220,8 +220,12 @@ func (r *podRepo) MarkStaleAsDisconnected(ctx context.Context, threshold time.Ti
 
 func (r *podRepo) CleanupStale(ctx context.Context, threshold time.Time) (int64, error) {
 	now := time.Now()
+	// Clean up both disconnected and orphaned pods that have been idle too long.
+	// Orphaned pods whose runner recovered but did not report them back are stuck
+	// in "orphaned" forever without this cleanup.
 	result := r.db.WithContext(ctx).Model(&agentpod.Pod{}).
-		Where("status IN ? AND last_activity < ?", []string{agentpod.StatusDisconnected}, threshold).
+		Where("status IN ? AND last_activity < ?",
+			[]string{agentpod.StatusDisconnected, agentpod.StatusOrphaned}, threshold).
 		Updates(map[string]interface{}{
 			"status":      agentpod.StatusTerminated,
 			"finished_at": now,

@@ -7,6 +7,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 
 interface InitProgress {
@@ -68,6 +69,43 @@ export function TerminalLoadingState({
             variant="outline"
             size="sm"
             className="mt-4 text-red-500 dark:text-red-400 border-red-500/50 hover:bg-red-500/10"
+            onClick={onClose}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Close Terminal
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface TerminalReconnectingStateProps {
+  onClose?: () => void;
+}
+
+/**
+ * Reconnecting state view for TerminalPane - shown when pod is orphaned
+ * (Runner is restarting and the session will resume automatically)
+ */
+export function TerminalReconnectingState({
+  onClose,
+}: TerminalReconnectingStateProps) {
+  return (
+    <div className="flex-1 flex items-center justify-center bg-terminal-bg">
+      <div className="text-center p-4 max-w-sm">
+        <RefreshCw className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto mb-3 animate-spin" />
+        <p className="text-terminal-text font-medium mb-1">
+          Runner is restarting...
+        </p>
+        <p className="text-sm text-terminal-text-muted mb-4">
+          Session will resume automatically. Your work is preserved.
+        </p>
+        {onClose && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-muted-foreground border-border hover:bg-muted"
             onClick={onClose}
           >
             <X className="w-4 h-4 mr-2" />

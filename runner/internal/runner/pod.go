@@ -20,6 +20,11 @@ type Pod struct {
 	RepositoryURL    string
 	Branch           string
 	SandboxPath      string
+
+	// Launch configuration (used by session recovery after Runner restart)
+	LaunchCommand string
+	LaunchArgs    []string
+	WorkDir       string
 	Terminal         *terminal.Terminal
 	VirtualTerminal  *vt.VirtualTerminal        // Virtual terminal for state management and snapshots
 	Aggregator       *aggregator.SmartAggregator // Output aggregator for adaptive frame rate

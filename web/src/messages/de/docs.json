@@ -253,8 +253,8 @@
           "completedDesc": "Pod finished successfully.",
           "terminated": "Terminated",
           "terminatedDesc": "Pod was manually stopped.",
-          "orphaned": "Orphaned",
-          "orphanedDesc": "Pod lost its Runner connection and cannot recover.",
+          "orphaned": "Reconnecting",
+          "orphanedDesc": "Runner is restarting. Session will resume automatically.",
           "error": "Error",
           "errorDesc": "Pod encountered an error during execution."
         },

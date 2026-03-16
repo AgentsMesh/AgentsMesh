@@ -253,8 +253,8 @@
           "completedDesc": "Pod 成功完成。",
           "terminated": "已终止",
           "terminatedDesc": "Pod 被手动停止。",
-          "orphaned": "已孤立",
-          "orphanedDesc": "Pod 失去 Runner 连接且无法恢复。",
+          "orphaned": "重连中",
+          "orphanedDesc": "Runner 正在重启，会话将自动恢复。",
           "error": "错误",
           "errorDesc": "Pod 执行过程中遇到错误。"
         },

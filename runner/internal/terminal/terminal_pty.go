@@ -5,9 +5,10 @@ import (
 	"time"
 )
 
-// ptyProcess abstracts platform-specific PTY operations.
+// PtyProcess abstracts platform-specific PTY operations.
 // Unix uses creack/pty + exec.Cmd, Windows uses ConPTY.
-type ptyProcess interface {
+// Pod Daemon mode provides daemonPTY which implements this interface over IPC.
+type PtyProcess interface {
 	io.ReadWriteCloser
 
 	// Resize changes the terminal size (cols=width, rows=height).
@@ -34,3 +35,6 @@ type ptyProcess interface {
 	// On Unix, this sends SIGTERM. On Windows, this sends Ctrl+C.
 	GracefulStop() error
 }
+
+// ptyProcess is the internal alias for backward compatibility within the package.
+type ptyProcess = PtyProcess

@@ -22,7 +22,7 @@
       "running": "Running",
       "paused": "Paused",
       "disconnected": "Disconnected",
-      "orphaned": "Orphaned",
+      "orphaned": "Reconnecting",
       "completed": "Completed",
       "terminated": "Terminated",
       "error": "Error",

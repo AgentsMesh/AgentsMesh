@@ -12,6 +12,7 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 // Status badge colors - matches PodData status type
@@ -20,7 +21,7 @@ const statusColors: Record<string, { bg: string; text: string; dot: string }> = 
   running: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", dot: "bg-blue-500" },
   paused: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", dot: "bg-orange-500" },
   disconnected: { bg: "bg-gray-500/10", text: "text-gray-600 dark:text-gray-400", dot: "bg-gray-500" },
-  orphaned: { bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", dot: "bg-purple-500" },
+  orphaned: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
   completed: { bg: "bg-green-500/10", text: "text-green-600 dark:text-green-400", dot: "bg-green-500" },
   terminated: { bg: "bg-gray-500/10", text: "text-gray-600 dark:text-gray-400", dot: "bg-gray-500" },
   error: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", dot: "bg-red-500" },
@@ -33,6 +34,8 @@ function getStatusIcon(status: string) {
       return <Clock className="w-3 h-3" />;
     case "running":
       return <Loader2 className="w-3 h-3 animate-spin" />;
+    case "orphaned":
+      return <RefreshCw className="w-3 h-3 animate-spin" />;
     case "paused":
       return <Square className="w-3 h-3" />;
     case "terminated":

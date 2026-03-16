@@ -9,6 +9,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
@@ -48,17 +49,46 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	// Report progress: starting PTY
 	b.sendProgress("starting_pty", 80, "Starting terminal...")
 
+	// Build PTY factory for Pod Daemon mode (session persistence across restarts)
+	var ptyFactory terminal.PTYFactory
+	if b.deps.PodDaemonManager != nil && sandboxRoot != "" {
+		mgr := b.deps.PodDaemonManager
+		opts := poddaemon.CreateOpts{
+			PodKey:         b.cmd.PodKey,
+			AgentType:      b.cmd.LaunchCommand,
+			SandboxPath:    sandboxRoot,
+			WorkDir:        workingDir,
+			RepositoryURL:  b.cmd.GetSandboxConfig().GetRepositoryUrl(),
+			Branch:         branchName,
+			TicketSlug:     b.cmd.GetSandboxConfig().GetTicketSlug(),
+			VTHistoryLimit: b.vtHistoryLimit,
+		}
+		ptyFactory = func(command string, args []string, workDir string, env []string, cols, rows int) (terminal.PtyProcess, error) {
+			opts.Command = command
+			opts.Args = args
+			opts.Env = env
+			opts.Cols = cols
+			opts.Rows = rows
+			dpty, _, err := mgr.CreateSession(opts)
+			if err != nil {
+				return nil, err
+			}
+			return dpty, nil
+		}
+	}
+
 	// Create terminal
 	term, err := terminal.New(terminal.Options{
-		Command:  b.cmd.LaunchCommand,
-		Args:     resolvedArgs,
-		WorkDir:  workingDir,
-		Env:      envVars,
-		Rows:     b.rows,
-		Cols:     b.cols,
-		Label:    b.cmd.PodKey, // For log correlation in PTY diagnostics
-		OnOutput: nil,          // Will be wired up after all components are created
-		OnExit:   nil,          // Will be set by caller (MessageHandler)
+		Command:    b.cmd.LaunchCommand,
+		Args:       resolvedArgs,
+		WorkDir:    workingDir,
+		Env:        envVars,
+		Rows:       b.rows,
+		Cols:       b.cols,
+		Label:      b.cmd.PodKey, // For log correlation in PTY diagnostics
+		PTYFactory: ptyFactory,
+		OnOutput:   nil, // Will be wired up after all components are created
+		OnExit:     nil, // Will be set by caller (MessageHandler)
 	})
 	if err != nil {
 		// Cleanup sandbox on failure
@@ -102,6 +132,9 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		AgentType:       b.cmd.LaunchCommand,
 		Branch:          branchName,
 		SandboxPath:     sandboxRoot,
+		LaunchCommand:   b.cmd.LaunchCommand,
+		LaunchArgs:      resolvedArgs,
+		WorkDir:         workingDir,
 		Terminal:        term,
 		VirtualTerminal: virtualTerm,
 		Aggregator:      agg,

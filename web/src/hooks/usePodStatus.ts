@@ -43,11 +43,11 @@ export function usePodStatus(podKey: string): UsePodStatusResult {
       error = "Pod failed";
     } else if (status === "terminated") {
       error = "Pod terminated";
-    } else if (status === "orphaned") {
-      error = "Pod orphaned - Runner connection lost";
     } else if (status === "error") {
       error = storePod?.error_message || "Pod error";
     }
+    // Note: "orphaned" is NOT an error — it means the Runner is restarting
+    // and the pod will automatically recover. Treated as a loading/reconnecting state.
 
     return { podStatus: status, isPodReady: isReady, podError: error };
   }, [storePod?.status, storePod?.error_message, fetchError]);

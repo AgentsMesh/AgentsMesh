@@ -13,6 +13,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/monitor"
+	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
@@ -261,6 +262,11 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 	pod.DisconnectRelay()
 	if pod.Terminal != nil {
 		pod.Terminal.Stop()
+	}
+
+	// Clean up Pod Daemon state (triggers daemon self-exit when it detects file deletion)
+	if pod.SandboxPath != "" {
+		poddaemon.DeleteState(pod.SandboxPath)
 	}
 
 	if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {
