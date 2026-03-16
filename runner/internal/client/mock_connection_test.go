@@ -58,7 +58,7 @@ func TestMockConnection_SendEvents(t *testing.T) {
 	_ = mc.SendMessage(&runnerv1.RunnerMessage{})
 
 	events := mc.GetEvents()
-	assert.Len(t, events, 11)
+	assert.Len(t, events, 12)
 }
 
 func TestMockConnection_SendErr(t *testing.T) {
