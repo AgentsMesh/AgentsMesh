@@ -32,10 +32,13 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   const deleteTicket = useTicketStore(state => state.deleteTicket);
   const setCurrentTicket = useTicketStore(state => state.setCurrentTicket);
 
-  // Local loading/error state — avoids re-renders from shared store state
+  // Local loading/error state — avoids re-renders from shared store state.
+  // Error is keyed by slug so it auto-clears on navigation (no synchronous
+  // setState needed inside the fetch effect).
   const [loadedSlug, setLoadedSlug] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<{ slug: string; message: string } | null>(null);
   const initialLoading = loadedSlug !== slug;
+  const error = errorInfo?.slug === slug ? errorInfo.message : null;
 
   const { dialogProps, confirm } = useConfirmDialog();
   const { subTickets, relations, commits, comments, addComment, updateComment, deleteComment } = useTicketExtraData(slug, !!currentTicket);
@@ -53,7 +56,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   useEffect(() => {
     // Clear stale ticket so the skeleton shows instead of previous ticket data
     setCurrentTicket(null);
-    setError(null);
     let cancelled = false;
 
     ticketApi.get(slug)
@@ -64,7 +66,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
       })
       .catch(err => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to fetch ticket");
+          setErrorInfo({ slug, message: err instanceof Error ? err.message : "Failed to fetch ticket" });
         }
       })
       .finally(() => {
@@ -134,11 +136,11 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   }, [confirm, deleteTicket, slug, router, currentOrg, t]);
 
   const handleRetry = useCallback(() => {
-    setError(null);
+    setErrorInfo(null);
     setLoadedSlug(null);
     ticketApi.get(slug)
       .then(ticket => setCurrentTicket(ticket))
-      .catch(err => setError(err instanceof Error ? err.message : "Failed to fetch ticket"))
+      .catch(err => setErrorInfo({ slug, message: err instanceof Error ? err.message : "Failed to fetch ticket" }))
       .finally(() => setLoadedSlug(slug));
   }, [slug, setCurrentTicket]);
 
