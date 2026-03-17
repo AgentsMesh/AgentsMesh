@@ -2,7 +2,6 @@ package runner
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
@@ -80,9 +79,25 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 
 	// Create VirtualTerminal and Aggregator (fresh state after recovery)
 	virtualTerm := vt.NewVirtualTerminal(state.Cols, state.Rows, state.VTHistoryLimit)
+	virtualTerm.SetOSCHandler(r.messageHandler.createOSCHandler(state.PodKey))
+
 	agg := aggregator.NewSmartAggregator(nil, nil,
 		aggregator.WithFullRedrawThrottling(),
 	)
+
+	// Enable PTY logging if configured (same as pod_builder_build.go)
+	var ptyLogger *aggregator.PTYLogger
+	cfg := r.GetConfig()
+	if cfg.LogPTY {
+		var logErr error
+		ptyLogger, logErr = aggregator.NewPTYLogger(cfg.GetLogPTYDir(), state.PodKey)
+		if logErr != nil {
+			logger.Runner().Warn("Failed to create PTY logger for recovered pod",
+				"pod_key", state.PodKey, "error", logErr)
+		} else {
+			agg.SetPTYLogger(ptyLogger)
+		}
+	}
 
 	// Build Pod
 	pod := &Pod{
@@ -98,8 +113,9 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 		TicketSlug:    state.TicketSlug,
 		Terminal:      term,
 		VirtualTerminal: virtualTerm,
-		Aggregator:    agg,
-		StartedAt:     state.StartedAt,
+		Aggregator:      agg,
+		PTYLogger:       ptyLogger,
+		StartedAt:       state.StartedAt,
 		Status:        PodStatusRunning,
 	}
 
@@ -139,12 +155,4 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 	}
 
 	return pod, nil
-}
-
-// recoverSessionStartedAt parses the started_at field, falling back to now.
-func recoverSessionStartedAt(startedAt time.Time) time.Time {
-	if startedAt.IsZero() {
-		return time.Now()
-	}
-	return startedAt
 }
