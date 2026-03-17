@@ -17,7 +17,7 @@ import (
 type testReleaseDetector struct {
 	detectLatestFn  func(ctx context.Context) (*updater.ReleaseInfo, bool, error)
 	detectVersionFn func(ctx context.Context, version string) (*updater.ReleaseInfo, bool, error)
-	downloadToFn    func(ctx context.Context, release *updater.ReleaseInfo, path string) error
+	updateBinaryFn  func(ctx context.Context, release *updater.ReleaseInfo, execPath string) error
 }
 
 func (d *testReleaseDetector) DetectLatest(ctx context.Context) (*updater.ReleaseInfo, bool, error) {
@@ -34,9 +34,9 @@ func (d *testReleaseDetector) DetectVersion(ctx context.Context, version string)
 	return nil, false, fmt.Errorf("not configured")
 }
 
-func (d *testReleaseDetector) DownloadTo(ctx context.Context, release *updater.ReleaseInfo, path string) error {
-	if d.downloadToFn != nil {
-		return d.downloadToFn(ctx, release, path)
+func (d *testReleaseDetector) UpdateBinary(ctx context.Context, release *updater.ReleaseInfo, execPath string) error {
+	if d.updateBinaryFn != nil {
+		return d.updateBinaryFn(ctx, release, execPath)
 	}
 	return fmt.Errorf("not configured")
 }
@@ -93,7 +93,7 @@ func failDetector() *testReleaseDetector {
 }
 
 // successDetector simulates a successful update flow:
-// DetectLatest finds v2.0.0, DetectVersion confirms it, DownloadTo writes a fake binary.
+// DetectLatest finds v2.0.0, UpdateBinary writes a fake binary to execPath.
 func successDetector(t *testing.T) *testReleaseDetector {
 	t.Helper()
 	release := &updater.ReleaseInfo{
@@ -107,8 +107,8 @@ func successDetector(t *testing.T) *testReleaseDetector {
 		detectVersionFn: func(ctx context.Context, version string) (*updater.ReleaseInfo, bool, error) {
 			return release, true, nil
 		},
-		downloadToFn: func(ctx context.Context, rel *updater.ReleaseInfo, path string) error {
-			return os.WriteFile(path, []byte("fake-binary"), 0o755)
+		updateBinaryFn: func(ctx context.Context, rel *updater.ReleaseInfo, execPath string) error {
+			return os.WriteFile(execPath, []byte("fake-binary"), 0o755)
 		},
 	}
 }
@@ -419,6 +419,9 @@ func TestOnUpgradeRunner_TargetVersion(t *testing.T) {
 	detector := &testReleaseDetector{
 		detectVersionFn: func(ctx context.Context, version string) (*updater.ReleaseInfo, bool, error) {
 			return nil, false, fmt.Errorf("version %s not found", version)
+		},
+		updateBinaryFn: func(ctx context.Context, release *updater.ReleaseInfo, execPath string) error {
+			return fmt.Errorf("version not found")
 		},
 	}
 	r.SetUpdater(updater.New("1.0.0", updater.WithReleaseDetector(detector)))
