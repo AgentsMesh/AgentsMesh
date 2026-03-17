@@ -9,7 +9,7 @@ import (
 type MockReleaseDetector struct {
 	LatestRelease   *ReleaseInfo
 	VersionReleases map[string]*ReleaseInfo
-	DownloadError   error
+	UpdateError     error
 	DetectError     error
 }
 
@@ -34,10 +34,10 @@ func (m *MockReleaseDetector) DetectVersion(ctx context.Context, version string)
 	return release, ok, nil
 }
 
-func (m *MockReleaseDetector) DownloadTo(ctx context.Context, release *ReleaseInfo, path string) error {
-	if m.DownloadError != nil {
-		return m.DownloadError
+func (m *MockReleaseDetector) UpdateBinary(ctx context.Context, release *ReleaseInfo, execPath string) error {
+	if m.UpdateError != nil {
+		return m.UpdateError
 	}
-	// Write a dummy file
-	return os.WriteFile(path, []byte("mock binary"), 0755)
+	// Write a dummy file directly to the exec path
+	return os.WriteFile(execPath, []byte("mock binary"), 0755)
 }

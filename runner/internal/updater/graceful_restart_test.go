@@ -1,9 +1,14 @@
 package updater
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Tests for DefaultRestartFunc
@@ -43,12 +48,24 @@ func TestGracefulUpdater_WithRestartFunc_Nil(t *testing.T) {
 	assert.Nil(t, g.restartFunc)
 }
 
-func TestGracefulUpdater_ApplyPendingUpdate_CallsRestart(t *testing.T) {
-	u := New("1.0.0")
+func TestGracefulUpdater_ApplyUpdate_RestartNotCalledOnFailure(t *testing.T) {
+	// When updateBinary fails, restart should not be called
+	mock := &MockReleaseDetector{
+		UpdateError: fmt.Errorf("update failed"),
+	}
 
-	// We need a scenario where applyPendingUpdate succeeds past the Apply stage
-	// This is difficult without mocking os.Executable
-	// Instead, we verify the restart function is called when set
+	tmpDir, err := os.MkdirTemp("", "graceful-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	execPath := filepath.Join(tmpDir, "runner")
+	err = os.WriteFile(execPath, []byte("old binary"), 0755)
+	require.NoError(t, err)
+
+	u := New("1.0.0",
+		WithReleaseDetector(mock),
+		WithExecPathFunc(func() (string, error) { return execPath, nil }),
+	)
 
 	called := false
 	g := NewGracefulUpdater(u, nil, WithRestartFunc(func() (int, error) {
@@ -56,15 +73,13 @@ func TestGracefulUpdater_ApplyPendingUpdate_CallsRestart(t *testing.T) {
 		return 12345, nil
 	}))
 
-	// Set up pending but with invalid path (will fail at Apply)
 	g.mu.Lock()
-	g.pendingPath = "/nonexistent/path"
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
-	err := g.applyPendingUpdate()
+	err = g.executeUpdate(context.Background())
 	assert.Error(t, err)
 
-	// Restart should not be called because Apply failed
+	// Restart should not be called because updateBinary failed
 	assert.False(t, called)
 }

@@ -32,42 +32,6 @@ func TestWithExecPathFunc_Error(t *testing.T) {
 	assert.Equal(t, expectedErr, err)
 }
 
-func TestUpdater_Apply_WithCustomExecPath(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "apply-test-*")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-
-	srcPath := filepath.Join(tmpDir, "new-binary")
-	dstPath := filepath.Join(tmpDir, "runner")
-
-	err = os.WriteFile(srcPath, []byte("new binary"), 0755)
-	require.NoError(t, err)
-
-	err = os.WriteFile(dstPath, []byte("old binary"), 0755)
-	require.NoError(t, err)
-
-	u := New("1.0.0", WithExecPathFunc(func() (string, error) {
-		return dstPath, nil
-	}))
-
-	err = u.Apply(srcPath)
-	assert.NoError(t, err)
-
-	content, err := os.ReadFile(dstPath)
-	require.NoError(t, err)
-	assert.Equal(t, "new binary", string(content))
-}
-
-func TestUpdater_Apply_ExecPathError(t *testing.T) {
-	u := New("1.0.0", WithExecPathFunc(func() (string, error) {
-		return "", errors.New("cannot get path")
-	}))
-
-	err := u.Apply("/tmp/some-file")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to get executable path")
-}
-
 func TestUpdater_Rollback_WithCustomExecPath(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "rollback-test-*")
 	require.NoError(t, err)

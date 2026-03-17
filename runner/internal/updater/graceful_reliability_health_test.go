@@ -87,11 +87,7 @@ func TestGracefulUpdater_HealthCheckSkippedForZeroPID(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	execPath := filepath.Join(tmpDir, "runner")
-	pendingPath := filepath.Join(tmpDir, "pending-binary")
-
 	err = os.WriteFile(execPath, []byte("old binary"), 0755)
-	require.NoError(t, err)
-	err = os.WriteFile(pendingPath, []byte("new binary"), 0755)
 	require.NoError(t, err)
 
 	mock := &MockReleaseDetector{}
@@ -112,11 +108,10 @@ func TestGracefulUpdater_HealthCheckSkippedForZeroPID(t *testing.T) {
 	)
 
 	g.mu.Lock()
-	g.pendingPath = pendingPath
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
-	err = g.applyPendingUpdate()
+	err = g.executeUpdate(context.Background())
 	assert.NoError(t, err)
 	assert.False(t, healthCheckCalled) // Health check should be skipped for PID 0
 }

@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -157,90 +155,10 @@ func (u *Updater) CheckForUpdate(ctx context.Context) (*UpdateInfo, error) {
 	}, nil
 }
 
-// Download downloads the specified version to a temporary file.
-func (u *Updater) Download(ctx context.Context, version string, _ func(downloaded, total int64)) (string, error) {
-	detector, err := u.getDetector()
-	if err != nil {
-		return "", err
-	}
-
-	release, found, err := detector.DetectVersion(ctx, version)
-	if err != nil {
-		return "", fmt.Errorf("failed to find version %s: %w", version, err)
-	}
-	if !found {
-		return "", fmt.Errorf("version %s not found", version)
-	}
-
-	// Create temp directory and use the correct binary name inside it.
-	// go-selfupdate's UpdateTo uses filepath.Split(cmdPath) to derive the
-	// executable name to look for inside the tar archive. The archive contains
-	// "agentsmesh-runner" (set by .goreleaser.yml), so the temp file basename
-	// must match. We create the temp dir in the same parent as the executable
-	// to ensure os.Rename works (avoids cross-device link errors on Windows).
-	execPath, err := u.execPathFunc()
-	if err != nil {
-		return "", fmt.Errorf("failed to get executable path: %w", err)
-	}
-	binaryName := "agentsmesh-runner"
-	if runtime.GOOS == "windows" {
-		binaryName += ".exe"
-	}
-	tmpDir, err := os.MkdirTemp(filepath.Dir(execPath), "runner-update-*")
-	if err != nil {
-		tmpDir, err = os.MkdirTemp("", "runner-update-*")
-	}
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp dir: %w", err)
-	}
-	tmpPath := filepath.Join(tmpDir, binaryName)
-
-	// go-selfupdate's UpdateTo internally calls update.Apply, which renames
-	// the target file to ".target.old" before writing the new binary. Since
-	// tmpPath is a freshly created temp directory, the target doesn't exist
-	// yet, causing the rename to fail. Create an empty placeholder so the
-	// rename succeeds, and clean up the leftover .old afterward.
-	placeholder, err := os.Create(tmpPath)
-	if err != nil {
-		os.RemoveAll(tmpDir)
-		return "", fmt.Errorf("failed to create placeholder: %w", err)
-	}
-	placeholder.Close()
-
-	if err := detector.DownloadTo(ctx, release, tmpPath); err != nil {
-		os.RemoveAll(tmpDir)
-		return "", fmt.Errorf("failed to download update: %w", err)
-	}
-
-	// Clean up the ".target.old" placeholder left by go-selfupdate's Apply.
-	os.Remove(filepath.Join(tmpDir, "."+binaryName+".old"))
-
-	if runtime.GOOS != "windows" {
-		if err := os.Chmod(tmpPath, 0755); err != nil {
-			os.RemoveAll(tmpDir)
-			return "", fmt.Errorf("failed to set executable permission: %w", err)
-		}
-	}
-
-	return tmpPath, nil
-}
-
-// Apply replaces the current executable with the downloaded update.
-func (u *Updater) Apply(tmpPath string) error {
-	execPath, err := u.execPathFunc()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	if err := atomicReplace(tmpPath, execPath); err != nil {
-		return fmt.Errorf("failed to apply update: %w", err)
-	}
-
-	return nil
-}
-
 // UpdateNow checks for updates and applies them immediately.
-func (u *Updater) UpdateNow(ctx context.Context, progress func(downloaded, total int64)) (string, error) {
+// The detector's UpdateBinary replaces the executable at execPath in-place
+// using go-selfupdate's atomic rename dance.
+func (u *Updater) UpdateNow(ctx context.Context) (string, error) {
 	info, err := u.CheckForUpdate(ctx)
 	if err != nil {
 		return "", err
@@ -250,34 +168,35 @@ func (u *Updater) UpdateNow(ctx context.Context, progress func(downloaded, total
 		return "", nil
 	}
 
-	tmpPath, err := u.Download(ctx, info.LatestVersion, progress)
-	if err != nil {
+	if err := u.updateBinary(ctx, info.LatestVersion); err != nil {
 		return "", err
 	}
-
-	if err := u.Apply(tmpPath); err != nil {
-		os.RemoveAll(filepath.Dir(tmpPath))
-		return "", err
-	}
-	os.RemoveAll(filepath.Dir(tmpPath))
 
 	return info.LatestVersion, nil
 }
 
 // UpdateToVersion updates to a specific version.
-func (u *Updater) UpdateToVersion(ctx context.Context, version string, progress func(downloaded, total int64)) error {
+func (u *Updater) UpdateToVersion(ctx context.Context, version string) error {
 	version = normalizeVersion(version)
+	return u.updateBinary(ctx, version)
+}
 
-	tmpPath, err := u.Download(ctx, version, progress)
+// updateBinary downloads and replaces the current executable with the given version.
+func (u *Updater) updateBinary(ctx context.Context, version string) error {
+	detector, err := u.getDetector()
 	if err != nil {
 		return err
 	}
 
-	if err := u.Apply(tmpPath); err != nil {
-		os.RemoveAll(filepath.Dir(tmpPath))
-		return err
+	execPath, err := u.execPathFunc()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
 	}
-	os.RemoveAll(filepath.Dir(tmpPath))
+
+	release := &ReleaseInfo{Version: version}
+	if err := detector.UpdateBinary(ctx, release, execPath); err != nil {
+		return fmt.Errorf("failed to update binary: %w", err)
+	}
 
 	return nil
 }

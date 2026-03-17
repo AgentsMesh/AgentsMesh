@@ -69,25 +69,32 @@ func TestGracefulUpdater_ForceUpdate_CancelsDraining(t *testing.T) {
 	assert.Error(t, err) // Will fail due to network
 }
 
-func TestGracefulUpdater_ForceUpdate_WithPendingPath(t *testing.T) {
-	u := New("1.0.0")
-
+func TestGracefulUpdater_ForceUpdate_WithPendingInfo(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "graceful-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	pendingPath := filepath.Join(tmpDir, "pending-binary")
-	err = os.WriteFile(pendingPath, []byte("new binary"), 0755)
+	execPath := filepath.Join(tmpDir, "runner")
+	err = os.WriteFile(execPath, []byte("old binary"), 0755)
 	require.NoError(t, err)
 
+	mock := &MockReleaseDetector{}
+	u := New("1.0.0",
+		WithReleaseDetector(mock),
+		WithExecPathFunc(func() (string, error) { return execPath, nil }),
+	)
 	g := NewGracefulUpdater(u, nil)
 
 	g.mu.Lock()
 	g.state = StateDraining
-	g.pendingPath = pendingPath
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
 	err = g.ForceUpdate(context.Background())
-	_ = err // May or may not fail
+	// Should succeed - mock writes "mock binary" to execPath
+	assert.NoError(t, err)
+
+	content, err := os.ReadFile(execPath)
+	require.NoError(t, err)
+	assert.Equal(t, "mock binary", string(content))
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Tests for Apply and atomicReplace functionality
+// Tests for atomicReplace, CreateBackup, and Rollback functionality
 
 func TestAtomicReplace_Success(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "atomic-test-*")
@@ -92,12 +92,6 @@ func TestAtomicReplace_SourceNotExist(t *testing.T) {
 
 func TestAtomicReplace_InvalidPath(t *testing.T) {
 	err := atomicReplace("/nonexistent/path/source", "/nonexistent/path/target")
-	assert.Error(t, err)
-}
-
-func TestUpdater_Apply_InvalidPath(t *testing.T) {
-	u := New("1.0.0")
-	err := u.Apply("/nonexistent/path/file")
 	assert.Error(t, err)
 }
 

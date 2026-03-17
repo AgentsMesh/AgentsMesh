@@ -19,14 +19,14 @@ type ReleaseInfo struct {
 	AssetName    string
 }
 
-// ReleaseDetector abstracts the release detection and download logic.
+// ReleaseDetector abstracts the release detection and update logic.
 type ReleaseDetector interface {
 	// DetectLatest finds the latest release.
 	DetectLatest(ctx context.Context) (*ReleaseInfo, bool, error)
 	// DetectVersion finds a specific version.
 	DetectVersion(ctx context.Context, version string) (*ReleaseInfo, bool, error)
-	// DownloadTo downloads a release to a specified path.
-	DownloadTo(ctx context.Context, release *ReleaseInfo, path string) error
+	// UpdateBinary downloads a release and replaces the binary at execPath in-place.
+	UpdateBinary(ctx context.Context, release *ReleaseInfo, execPath string) error
 }
 
 // GitHubReleaseDetector implements ReleaseDetector using GitHub API.
@@ -100,8 +100,10 @@ func (g *GitHubReleaseDetector) DetectVersion(ctx context.Context, version strin
 	}, true, nil
 }
 
-// DownloadTo downloads a release to the specified path.
-func (g *GitHubReleaseDetector) DownloadTo(ctx context.Context, release *ReleaseInfo, path string) error {
+// UpdateBinary downloads a release and replaces the binary at execPath in-place.
+// go-selfupdate's UpdateTo handles the atomic replacement internally
+// (rename execPath → .old, write new binary → execPath).
+func (g *GitHubReleaseDetector) UpdateBinary(ctx context.Context, release *ReleaseInfo, execPath string) error {
 	r, found, err := g.updater.DetectVersion(ctx, selfupdate.NewRepositorySlug(RepoOwner, RepoName), versionToTag(release.Version))
 	if err != nil {
 		return err
@@ -109,7 +111,7 @@ func (g *GitHubReleaseDetector) DownloadTo(ctx context.Context, release *Release
 	if !found {
 		return fmt.Errorf("release not found")
 	}
-	return g.updater.UpdateTo(ctx, r, path)
+	return g.updater.UpdateTo(ctx, r, execPath)
 }
 
 // versionToTag ensures a version string has the "v" prefix to match git tag format.

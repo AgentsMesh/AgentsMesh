@@ -51,7 +51,6 @@ func TestGracefulUpdater_CancelPendingUpdate(t *testing.T) {
 
 	g.mu.Lock()
 	g.draining = true
-	g.pendingPath = "/tmp/test-update"
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", HasUpdate: true}
 	g.mu.Unlock()
 

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Tests for file operations: copyFile, atomicReplace, CreateBackup, Rollback, Apply
+// Tests for file operations: copyFile, atomicReplace, CreateBackup, Rollback
 
 func TestCopyFile(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "updater-test-*")
@@ -158,21 +158,4 @@ func TestUpdater_Rollback_WithBackup(t *testing.T) {
 	u := New("1.0.0")
 	err = u.Rollback()
 	_ = err // May fail since binary is running
-}
-
-func TestUpdater_Apply(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "updater-test-*")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-
-	tmpPath := filepath.Join(tmpDir, "new-binary")
-	err = os.WriteFile(tmpPath, []byte("new binary content"), 0755)
-	require.NoError(t, err)
-
-	u := New("1.0.0")
-	err = u.Apply(tmpPath)
-	// May fail since replacing running binary
-	if err != nil {
-		assert.Error(t, err)
-	}
 }

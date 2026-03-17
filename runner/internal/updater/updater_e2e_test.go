@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// SimulatedDetector mimics go-selfupdate's real UpdateTo behavior inside DownloadTo:
+// SimulatedDetector mimics go-selfupdate's real UpdateTo behavior inside UpdateBinary:
 // 1. Write new content to ".target.new"
-// 2. Rename target → ".target.old"      ← this is where the real bug was
+// 2. Rename target → ".target.old"
 // 3. Rename ".target.new" → target
 // 4. Remove ".target.old"
 //
@@ -24,7 +24,7 @@ type SimulatedDetector struct {
 	VersionReleases map[string]*ReleaseInfo
 	BinaryContent   []byte // content to write as the "new binary"
 	DetectError     error
-	DownloadError   error
+	UpdateError     error
 }
 
 func (s *SimulatedDetector) DetectLatest(_ context.Context) (*ReleaseInfo, bool, error) {
@@ -45,18 +45,18 @@ func (s *SimulatedDetector) DetectVersion(_ context.Context, version string) (*R
 	return r, ok, nil
 }
 
-// DownloadTo simulates the real go-selfupdate UpdateTo → update.Apply sequence:
+// UpdateBinary simulates the real go-selfupdate UpdateTo → update.Apply sequence:
 //
 //	new → ".target.new" → rename target → ".target.old" → rename ".target.new" → target
 //
-// This is the sequence that broke in production when target did not exist.
-func (s *SimulatedDetector) DownloadTo(_ context.Context, _ *ReleaseInfo, path string) error {
-	if s.DownloadError != nil {
-		return s.DownloadError
+// Since we now operate on the real exec path (which exists), the rename succeeds.
+func (s *SimulatedDetector) UpdateBinary(_ context.Context, _ *ReleaseInfo, execPath string) error {
+	if s.UpdateError != nil {
+		return s.UpdateError
 	}
 
-	dir := filepath.Dir(path)
-	base := filepath.Base(path)
+	dir := filepath.Dir(execPath)
+	base := filepath.Base(execPath)
 	newPath := filepath.Join(dir, "."+base+".new")
 	oldPath := filepath.Join(dir, "."+base+".old")
 
@@ -73,17 +73,15 @@ func (s *SimulatedDetector) DownloadTo(_ context.Context, _ *ReleaseInfo, path s
 	// Step 2: remove leftover .old (may not exist)
 	os.Remove(oldPath)
 
-	// Step 3: rename target → .old  (THIS IS THE CRITICAL STEP)
-	if err := os.Rename(path, oldPath); err != nil {
-		// Cleanup .new on failure
+	// Step 3: rename target → .old  (works because execPath exists)
+	if err := os.Rename(execPath, oldPath); err != nil {
 		os.Remove(newPath)
-		return fmt.Errorf("rename %s → %s: %w", path, oldPath, err)
+		return fmt.Errorf("rename %s → %s: %w", execPath, oldPath, err)
 	}
 
 	// Step 4: rename .new → target
-	if err := os.Rename(newPath, path); err != nil {
-		// Rollback: restore .old → target
-		_ = os.Rename(oldPath, path)
+	if err := os.Rename(newPath, execPath); err != nil {
+		_ = os.Rename(oldPath, execPath)
 		return fmt.Errorf("rename .new → target: %w", err)
 	}
 
@@ -93,44 +91,8 @@ func (s *SimulatedDetector) DownloadTo(_ context.Context, _ *ReleaseInfo, path s
 	return nil
 }
 
-// TestE2E_Download_TargetFileDoesNotExist reproduces the exact production failure:
-// go-selfupdate's UpdateTo internally renames the target file to .old, but
-// when Download creates a fresh tmpDir the target doesn't exist yet.
-// This test ensures our DownloadTo creates the necessary placeholder.
-func TestE2E_Download_TargetFileDoesNotExist(t *testing.T) {
-	tmpDir := t.TempDir()
-	execPath := filepath.Join(tmpDir, "agentsmesh-runner")
-	if runtime.GOOS == "windows" {
-		execPath += ".exe"
-	}
-
-	// Write a fake "current binary" so Download can determine the exec dir
-	err := os.WriteFile(execPath, []byte("old"), 0755)
-	require.NoError(t, err)
-
-	sim := &SimulatedDetector{
-		VersionReleases: map[string]*ReleaseInfo{
-			"v2.0.0": {Version: "v2.0.0"},
-		},
-		BinaryContent: []byte("new binary v2"),
-	}
-
-	u := New("1.0.0",
-		WithReleaseDetector(sim),
-		WithExecPathFunc(func() (string, error) { return execPath, nil }),
-	)
-
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
-	require.NoError(t, err, "Download should succeed even though target file does not pre-exist in tmpDir")
-	defer os.RemoveAll(filepath.Dir(path))
-
-	content, err := os.ReadFile(path)
-	require.NoError(t, err)
-	assert.Equal(t, "new binary v2", string(content))
-}
-
 // TestE2E_UpdateNow_FullCycle tests the complete update cycle:
-// check → download → apply → verify new binary at exec path.
+// check → update binary in-place → verify new binary at exec path.
 func TestE2E_UpdateNow_FullCycle(t *testing.T) {
 	tmpDir := t.TempDir()
 	execPath := filepath.Join(tmpDir, "agentsmesh-runner")
@@ -154,7 +116,7 @@ func TestE2E_UpdateNow_FullCycle(t *testing.T) {
 		WithExecPathFunc(func() (string, error) { return execPath, nil }),
 	)
 
-	version, err := u.UpdateNow(context.Background(), nil)
+	version, err := u.UpdateNow(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, "v2.0.0", version)
 
@@ -187,7 +149,7 @@ func TestE2E_UpdateToVersion_FullCycle(t *testing.T) {
 		WithExecPathFunc(func() (string, error) { return execPath, nil }),
 	)
 
-	err = u.UpdateToVersion(context.Background(), "3.0.0", nil)
+	err = u.UpdateToVersion(context.Background(), "3.0.0")
 	require.NoError(t, err)
 
 	content, err := os.ReadFile(execPath)
@@ -195,19 +157,19 @@ func TestE2E_UpdateToVersion_FullCycle(t *testing.T) {
 	assert.Equal(t, "new binary v3", string(content))
 }
 
-// TestE2E_Download_TmpDirCleanedOnFailure ensures the temp directory is
-// cleaned up when DownloadTo fails.
-func TestE2E_Download_TmpDirCleanedOnFailure(t *testing.T) {
+// TestE2E_UpdateBinary_Error ensures errors from UpdateBinary are propagated.
+func TestE2E_UpdateBinary_Error(t *testing.T) {
 	tmpDir := t.TempDir()
 	execPath := filepath.Join(tmpDir, "agentsmesh-runner")
 	err := os.WriteFile(execPath, []byte("old"), 0755)
 	require.NoError(t, err)
 
 	sim := &SimulatedDetector{
+		LatestRelease: &ReleaseInfo{Version: "v2.0.0"},
 		VersionReleases: map[string]*ReleaseInfo{
 			"v2.0.0": {Version: "v2.0.0"},
 		},
-		DownloadError: fmt.Errorf("network timeout"),
+		UpdateError: fmt.Errorf("network timeout"),
 	}
 
 	u := New("1.0.0",
@@ -215,56 +177,22 @@ func TestE2E_Download_TmpDirCleanedOnFailure(t *testing.T) {
 		WithExecPathFunc(func() (string, error) { return execPath, nil }),
 	)
 
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
+	version, err := u.UpdateNow(context.Background())
 	assert.Error(t, err)
-	assert.Empty(t, path)
+	assert.Empty(t, version)
 	assert.Contains(t, err.Error(), "network timeout")
 
-	// No leftover runner-update-* dirs should remain
-	matches, _ := filepath.Glob(filepath.Join(tmpDir, "runner-update-*"))
-	assert.Empty(t, matches, "temp directory should be cleaned up on failure")
+	// Original binary should be unchanged
+	content, err := os.ReadFile(execPath)
+	require.NoError(t, err)
+	assert.Equal(t, "old", string(content))
 }
 
-// TestE2E_Download_BinaryNameMatchesPlatform ensures the temp file is always
-// named "agentsmesh-runner" (or .exe on Windows) so go-selfupdate's
-// DecompressCommand can locate it inside the tar archive.
-func TestE2E_Download_BinaryNameMatchesPlatform(t *testing.T) {
-	tmpDir := t.TempDir()
-	execPath := filepath.Join(tmpDir, "agentsmesh-runner")
-	if runtime.GOOS == "windows" {
-		execPath += ".exe"
-	}
-	err := os.WriteFile(execPath, []byte("old"), 0755)
-	require.NoError(t, err)
-
-	sim := &SimulatedDetector{
-		VersionReleases: map[string]*ReleaseInfo{
-			"v2.0.0": {Version: "v2.0.0"},
-		},
-		BinaryContent: []byte("binary"),
-	}
-
-	u := New("1.0.0",
-		WithReleaseDetector(sim),
-		WithExecPathFunc(func() (string, error) { return execPath, nil }),
-	)
-
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
-	require.NoError(t, err)
-	defer os.RemoveAll(filepath.Dir(path))
-
-	expectedName := "agentsmesh-runner"
-	if runtime.GOOS == "windows" {
-		expectedName += ".exe"
-	}
-	assert.Equal(t, expectedName, filepath.Base(path),
-		"downloaded binary must be named %q for tar archive extraction", expectedName)
-}
-
-// TestE2E_Download_ExecPathError tests that Download returns an error when
+// TestE2E_UpdateBinary_ExecPathError tests that UpdateNow returns an error when
 // the exec path function fails.
-func TestE2E_Download_ExecPathError(t *testing.T) {
+func TestE2E_UpdateBinary_ExecPathError(t *testing.T) {
 	sim := &SimulatedDetector{
+		LatestRelease: &ReleaseInfo{Version: "v2.0.0"},
 		VersionReleases: map[string]*ReleaseInfo{
 			"v2.0.0": {Version: "v2.0.0"},
 		},
@@ -275,9 +203,9 @@ func TestE2E_Download_ExecPathError(t *testing.T) {
 		WithExecPathFunc(func() (string, error) { return "", fmt.Errorf("no exec path") }),
 	)
 
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
+	version, err := u.UpdateNow(context.Background())
 	assert.Error(t, err)
-	assert.Empty(t, path)
+	assert.Empty(t, version)
 	assert.Contains(t, err.Error(), "failed to get executable path")
 }
 
@@ -316,7 +244,7 @@ func TestE2E_BackupAndRollback_FullCycle(t *testing.T) {
 	assert.Equal(t, originalContent, backupContent)
 
 	// Step 2: Update
-	version, err := u.UpdateNow(context.Background(), nil)
+	version, err := u.UpdateNow(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, "v2.0.0", version)
 
@@ -331,35 +259,6 @@ func TestE2E_BackupAndRollback_FullCycle(t *testing.T) {
 	rolledBackContent, err := os.ReadFile(execPath)
 	require.NoError(t, err)
 	assert.Equal(t, originalContent, rolledBackContent)
-}
-
-// TestE2E_Apply_CleansTmpDir verifies that UpdateNow cleans up the
-// temporary download directory after a successful apply.
-func TestE2E_Apply_CleansTmpDir(t *testing.T) {
-	tmpDir := t.TempDir()
-	execPath := filepath.Join(tmpDir, "agentsmesh-runner")
-	err := os.WriteFile(execPath, []byte("old"), 0755)
-	require.NoError(t, err)
-
-	sim := &SimulatedDetector{
-		LatestRelease: &ReleaseInfo{Version: "v2.0.0"},
-		VersionReleases: map[string]*ReleaseInfo{
-			"v2.0.0": {Version: "v2.0.0"},
-		},
-		BinaryContent: []byte("new"),
-	}
-
-	u := New("1.0.0",
-		WithReleaseDetector(sim),
-		WithExecPathFunc(func() (string, error) { return execPath, nil }),
-	)
-
-	_, err = u.UpdateNow(context.Background(), nil)
-	require.NoError(t, err)
-
-	// No leftover runner-update-* dirs should remain
-	matches, _ := filepath.Glob(filepath.Join(tmpDir, "runner-update-*"))
-	assert.Empty(t, matches, "temp directory should be cleaned up after successful update")
 }
 
 // TestE2E_VersionNormalization verifies v-prefix handling through the
@@ -384,7 +283,7 @@ func TestE2E_VersionNormalization(t *testing.T) {
 	)
 
 	// Pass version WITHOUT v-prefix — normalizeVersion should add it
-	err = u.UpdateToVersion(context.Background(), "1.2.3", nil)
+	err = u.UpdateToVersion(context.Background(), "1.2.3")
 	require.NoError(t, err)
 
 	content, err := os.ReadFile(execPath)

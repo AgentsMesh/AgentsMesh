@@ -59,18 +59,30 @@ func TestGracefulUpdater_ScheduleUpdate_WithMock_HasUpdate_NoPods(t *testing.T) 
 	assert.NoError(t, err)
 }
 
-func TestGracefulUpdater_ScheduleUpdate_WithMock_DownloadFails(t *testing.T) {
+func TestGracefulUpdater_ScheduleUpdate_WithMock_CheckFails(t *testing.T) {
 	mock := &MockReleaseDetector{
 		LatestRelease: &ReleaseInfo{
 			Version: "v2.0.0",
 		},
-		VersionReleases: map[string]*ReleaseInfo{}, // Version not found
+		VersionReleases: map[string]*ReleaseInfo{},
+		UpdateError:     assert.AnError,
 	}
 
-	u := New("1.0.0", WithReleaseDetector(mock))
-	g := NewGracefulUpdater(u, nil)
+	tmpDir, err := os.MkdirTemp("", "graceful-mock-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
 
-	err := g.ScheduleUpdate(context.Background())
+	execPath := filepath.Join(tmpDir, "runner")
+	err = os.WriteFile(execPath, []byte("old binary"), 0755)
+	require.NoError(t, err)
+
+	u := New("1.0.0",
+		WithReleaseDetector(mock),
+		WithExecPathFunc(func() (string, error) { return execPath, nil }),
+	)
+	g := NewGracefulUpdater(u, func() int { return 0 })
+
+	err = g.ScheduleUpdate(context.Background())
 	assert.Error(t, err)
 	assert.Equal(t, StateIdle, g.State())
 }
@@ -151,7 +163,6 @@ func TestGracefulUpdater_StatusCallback_DuringUpdate(t *testing.T) {
 
 	// Verify state transitions
 	assert.Contains(t, states, StateChecking)
-	assert.Contains(t, states, StateDownloading)
 	assert.Contains(t, states, StateDraining)
 	assert.Contains(t, states, StateApplying)
 }

@@ -94,21 +94,17 @@ func TestGracefulUpdater_ForceUpdate_InvalidStates(t *testing.T) {
 	}
 }
 
-func TestGracefulUpdater_DrainContext_Cleanup(t *testing.T) {
+func TestGracefulUpdater_DrainPods_PodsFinishBeforeTimeout(t *testing.T) {
 	u := New("1.0.0")
 	podCount := int32(5)
 	podCounter := func() int { return int(atomic.LoadInt32(&podCount)) }
 
 	g := NewGracefulUpdater(u, podCounter,
-		WithMaxWaitTime(100*time.Millisecond),
+		WithMaxWaitTime(500*time.Millisecond),
 		WithPollInterval(10*time.Millisecond),
 	)
 
-	// Start draining with pods
-	g.setState(StateDraining)
 	g.mu.Lock()
-	g.draining = true
-	g.pendingPath = "/tmp/test"
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0"}
 	g.mu.Unlock()
 
@@ -118,9 +114,7 @@ func TestGracefulUpdater_DrainContext_Cleanup(t *testing.T) {
 		atomic.StoreInt32(&podCount, 0)
 	}()
 
-	// Wait should complete when pods finish
-	ctx := context.Background()
-	err := g.waitAndApply(ctx)
-	// Will fail at apply stage, but drain should complete
-	assert.Error(t, err)
+	err := g.drainPods(context.Background())
+	assert.NoError(t, err)
+	assert.False(t, g.IsDraining())
 }
