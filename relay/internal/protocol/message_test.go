@@ -11,7 +11,6 @@ func TestEncodeDecodeMessage(t *testing.T) {
 		{MsgTypeSnapshot, []byte("{}")}, {MsgTypeInput, []byte("test")}, {MsgTypeResize, []byte{0, 80, 0, 24}},
 		{MsgTypePing, nil}, {MsgTypePong, nil}, {MsgTypeControl, []byte(`{"action":"request"}`)},
 		{MsgTypeRunnerDisconnected, nil}, {MsgTypeRunnerReconnected, nil},
-		{MsgTypeImagePaste, []byte{9, 'i', 'm', 'a', 'g', 'e', '/', 'p', 'n', 'g', 0x89, 0x50}},
 	}
 	for _, tt := range tests {
 		encoded := EncodeMessage(tt.msgType, tt.payload)
@@ -133,67 +132,11 @@ func TestEncodeRunnerDisconnectedReconnected(t *testing.T) {
 	}
 }
 
-func TestEncodeDecodeImagePaste(t *testing.T) {
-	tests := []struct {
-		name     string
-		mimeType string
-		data     []byte
-	}{
-		{"png", "image/png", []byte{0x89, 0x50, 0x4e, 0x47}},
-		{"jpeg", "image/jpeg", []byte{0xff, 0xd8, 0xff}},
-		{"empty_data", "image/png", []byte{}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			encoded, err := EncodeImagePaste(tt.mimeType, tt.data)
-			if err != nil {
-				t.Fatalf("EncodeImagePaste: %v", err)
-			}
-			if encoded[0] != MsgTypeImagePaste {
-				t.Errorf("type: got 0x%02x, want 0x%02x", encoded[0], MsgTypeImagePaste)
-			}
-			msg, err := DecodeMessage(encoded)
-			if err != nil {
-				t.Fatalf("DecodeMessage: %v", err)
-			}
-			mimeType, data, err := DecodeImagePaste(msg.Payload)
-			if err != nil {
-				t.Fatalf("DecodeImagePaste: %v", err)
-			}
-			if mimeType != tt.mimeType {
-				t.Errorf("mimeType: got %q, want %q", mimeType, tt.mimeType)
-			}
-			if string(data) != string(tt.data) {
-				t.Errorf("data mismatch: got %d bytes, want %d bytes", len(data), len(tt.data))
-			}
-		})
-	}
-}
-
-func TestEncodeImagePaste_MimeTypeTooLong(t *testing.T) {
-	longMime := string(make([]byte, 256))
-	if _, err := EncodeImagePaste(longMime, []byte{1}); err != ErrInvalidMessage {
-		t.Errorf("expected ErrInvalidMessage for long mime, got: %v", err)
-	}
-}
-
-func TestDecodeImagePaste_Invalid(t *testing.T) {
-	// Empty payload
-	if _, _, err := DecodeImagePaste([]byte{}); err != ErrInvalidMessage {
-		t.Errorf("expected ErrInvalidMessage for empty, got: %v", err)
-	}
-	// Mime length exceeds payload
-	if _, _, err := DecodeImagePaste([]byte{10, 'a'}); err != ErrInvalidMessage {
-		t.Errorf("expected ErrInvalidMessage for truncated mime, got: %v", err)
-	}
-}
-
 func TestMessageConstants(t *testing.T) {
 	expected := map[byte]byte{
 		MsgTypeSnapshot: 0x01, MsgTypeOutput: 0x02, MsgTypeInput: 0x03, MsgTypeResize: 0x04,
 		MsgTypePing: 0x05, MsgTypePong: 0x06, MsgTypeControl: 0x07,
 		MsgTypeRunnerDisconnected: 0x08, MsgTypeRunnerReconnected: 0x09,
-		MsgTypeImagePaste: 0x0A,
 	}
 	for got, want := range expected {
 		if got != want {

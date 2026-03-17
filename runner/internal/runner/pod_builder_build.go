@@ -37,14 +37,6 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		return nil, err
 	}
 
-	// Setup clipboard backend for image paste support
-	if sandboxRoot != "" && b.deps.Clipboard != nil {
-		if err := b.deps.Clipboard.Setup(sandboxRoot); err != nil {
-			logger.Pod().Warn("Failed to setup clipboard backend", "backend", b.deps.Clipboard.Name(), "error", err)
-			// Non-fatal: image paste won't work but pod still functions
-		}
-	}
-
 	// Resolve template variables in launch args
 	resolvedArgs := b.resolveArgs(b.cmd.LaunchArgs, sandboxRoot, workingDir)
 	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
@@ -110,7 +102,6 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		AgentType:       b.cmd.LaunchCommand,
 		Branch:          branchName,
 		SandboxPath:     sandboxRoot,
-		Clipboard:       b.deps.Clipboard,
 		Terminal:        term,
 		VirtualTerminal: virtualTerm,
 		Aggregator:      agg,
@@ -202,27 +193,6 @@ func (b *PodBuilder) mergeEnvVars(sandboxRoot string) map[string]string {
 	// Add command env vars (highest priority)
 	if b.cmd != nil {
 		for k, v := range b.cmd.EnvVars {
-			result[k] = v
-		}
-	}
-
-	// Apply clipboard backend env overrides (e.g., PATH prepend for shim)
-	if sandboxRoot != "" && b.deps.Clipboard != nil {
-		overrides := b.deps.Clipboard.EnvOverrides(sandboxRoot)
-		for k, v := range overrides {
-			if k == "PATH" {
-				// v is a directory to prepend to PATH
-				basePath := result["PATH"]
-				if basePath == "" {
-					basePath = os.Getenv("PATH")
-				}
-				if basePath == "" {
-					result["PATH"] = v
-				} else {
-					result["PATH"] = v + string(os.PathListSeparator) + basePath
-				}
-				continue
-			}
 			result[k] = v
 		}
 	}

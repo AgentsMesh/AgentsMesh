@@ -10,7 +10,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
-	"github.com/anthropics/agentsmesh/runner/internal/clipboard"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/mcp"
@@ -27,7 +26,6 @@ type Runner struct {
 	cfg       *config.Config
 	conn      client.Connection
 	workspace *workspace.Manager
-	clipboard clipboard.Backend
 
 	// Pod management
 	podStore       PodStore
@@ -127,10 +125,6 @@ func New(cfg *config.Config) (*Runner, error) {
 			"expires_at", certInfo.ExpiresAt.Format("2006-01-02"))
 	}
 
-	// Detect clipboard backend
-	cb := clipboard.Detect()
-	log.Info("Clipboard backend detected", "backend", cb.Name())
-
 	// Create pod store
 	podStore := NewInMemoryPodStore()
 
@@ -138,7 +132,6 @@ func New(cfg *config.Config) (*Runner, error) {
 		cfg:        cfg,
 		conn:       grpcConn,
 		workspace:  ws,
-		clipboard:  cb,
 		podStore:   podStore,
 		autopilots: make(map[string]*autopilot.AutopilotController),
 		stopChan:   make(chan struct{}),

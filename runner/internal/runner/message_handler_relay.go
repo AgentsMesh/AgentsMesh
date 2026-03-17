@@ -10,8 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 )
 
-const maxImagePasteSize = 2 * 1024 * 1024 // 2MB, matches frontend limit
-
 // OnSubscribeTerminal handles subscribe terminal command from server.
 // The channel is identified by PodKey (not session ID).
 // If already connected to the same Relay URL, just update the token without reconnecting.
@@ -157,32 +155,6 @@ func (h *RunnerMessageHandler) setupRelayClientHandlers(relayClient relay.RelayC
 		}
 		if pod.VirtualTerminal != nil {
 			pod.VirtualTerminal.Resize(int(cols), int(rows))
-		}
-	})
-
-	relayClient.SetImagePasteHandler(func(mimeType string, data []byte) {
-		log.Info("Received image paste from relay", "pod_key", podKey, "mime_type", mimeType, "size", len(data))
-		if len(data) > maxImagePasteSize {
-			log.Warn("Image paste too large", "pod_key", podKey, "size", len(data), "max", maxImagePasteSize)
-			return
-		}
-		if pod.Clipboard == nil {
-			log.Warn("Cannot handle image paste: no clipboard backend", "pod_key", podKey)
-			return
-		}
-		if pod.SandboxPath == "" {
-			log.Warn("Cannot handle image paste: no sandbox path", "pod_key", podKey)
-			return
-		}
-		if err := pod.Clipboard.WriteImage(pod.SandboxPath, mimeType, data); err != nil {
-			log.Error("Failed to write image to clipboard", "pod_key", podKey, "backend", pod.Clipboard.Name(), "error", err)
-			return
-		}
-		// Inject Ctrl+V (0x16) into PTY stdin to trigger the agent's paste handler
-		if pod.Terminal != nil {
-			if err := pod.Terminal.Write([]byte{0x16}); err != nil {
-				log.Error("Failed to inject Ctrl+V", "pod_key", podKey, "error", err)
-			}
 		}
 	})
 

@@ -15,7 +15,7 @@ const (
 	writeWait      = 10 * time.Second
 	pongWait       = 60 * time.Second
 	pingPeriod     = (pongWait * 9) / 10
-	maxMessageSize = 4 * 1024 * 1024 // 4MB max message size (supports image paste)
+	maxMessageSize = 4 * 1024 * 1024 // 4MB max message size
 
 	// Reconnection settings
 	maxReconnectDelay  = 30 * time.Second
@@ -31,9 +31,6 @@ type ResizeHandler func(cols, rows uint16)
 
 // CloseHandler is called when the connection is closed
 type CloseHandler func()
-
-// ImagePasteHandler is called when an image paste is received from relay
-type ImagePasteHandler func(mimeType string, data []byte)
 
 // Client is a WebSocket client for connecting to the Relay service
 // Note: sessionID has been removed - channels are now identified by PodKey only
@@ -51,7 +48,6 @@ type Client struct {
 	onInput        InputHandler
 	onResize       ResizeHandler
 	onClose        CloseHandler
-	onImagePaste   ImagePasteHandler
 	onReconnect    func()                   // Called after successful reconnection
 	onTokenExpired func() (newToken string) // Called when token expires, should request new token from Backend
 
@@ -124,11 +120,6 @@ func (c *Client) fireOnClose() {
 			c.onClose()
 		}
 	})
-}
-
-// SetImagePasteHandler sets the handler for image paste events from browsers
-func (c *Client) SetImagePasteHandler(handler ImagePasteHandler) {
-	c.onImagePaste = handler
 }
 
 // SetReconnectHandler sets the handler called after successful reconnection

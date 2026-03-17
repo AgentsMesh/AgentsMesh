@@ -180,16 +180,6 @@ func (c *Client) handleMessage(data []byte) {
 	case MsgTypePong:
 		// Received pong, connection is alive
 
-	case MsgTypeImagePaste:
-		if c.onImagePaste != nil {
-			mimeType, imgData, err := DecodeImagePaste(msg.Payload)
-			if err != nil {
-				c.logger.Error("Failed to decode image paste", "error", err)
-				return
-			}
-			c.onImagePaste(mimeType, imgData)
-		}
-
 	case MsgTypeControl:
 		// Control messages are not expected from relay to runner
 		c.logger.Debug("Received control message (ignored)")

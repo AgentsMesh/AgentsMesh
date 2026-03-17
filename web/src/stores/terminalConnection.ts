@@ -24,7 +24,6 @@ export const MsgType = {
   Control: 0x07,            // Control messages (JSON)
   RunnerDisconnected: 0x08, // Runner disconnected notification
   RunnerReconnected: 0x09,  // Runner reconnected notification
-  ImagePaste: 0x0a,         // Image paste from browser clipboard
 } as const;
 
 /**
@@ -429,23 +428,6 @@ class TerminalConnectionPool {
     const message = encodeMessage(MsgType.Input, data);
     conn.ws.send(message);
     conn.lastActivity = now;
-  }
-
-  sendImage(podKey: string, imageData: Uint8Array, mimeType: string): boolean {
-    const conn = this.connections.get(podKey);
-    if (!conn || conn.ws.readyState !== WebSocket.OPEN) return false;
-    // Reject images larger than 2MB
-    if (imageData.length > 2 * 1024 * 1024) return false;
-    // Encode: [mimeType length (1 byte)][mimeType bytes][image data]
-    const mimeBytes = new TextEncoder().encode(mimeType);
-    const payload = new Uint8Array(1 + mimeBytes.length + imageData.length);
-    payload[0] = mimeBytes.length;
-    payload.set(mimeBytes, 1);
-    payload.set(imageData, 1 + mimeBytes.length);
-    const message = encodeMessage(MsgType.ImagePaste, payload);
-    conn.ws.send(message);
-    conn.lastActivity = Date.now();
-    return true;
   }
 
   sendResize(podKey: string, cols: number, rows: number): void {

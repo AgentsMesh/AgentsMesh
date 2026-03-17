@@ -109,48 +109,6 @@ func TestEncodeSnapshot(t *testing.T) {
 	}
 }
 
-func TestDecodeImagePaste(t *testing.T) {
-	tests := []struct {
-		name     string
-		mimeType string
-		data     []byte
-	}{
-		{"png", "image/png", []byte{0x89, 0x50, 0x4e, 0x47}},
-		{"jpeg", "image/jpeg", []byte{0xff, 0xd8, 0xff}},
-		{"empty_data", "image/png", []byte{}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Manually encode: [mime_len][mime][data]
-			mimeBytes := []byte(tt.mimeType)
-			payload := make([]byte, 1+len(mimeBytes)+len(tt.data))
-			payload[0] = byte(len(mimeBytes))
-			copy(payload[1:1+len(mimeBytes)], mimeBytes)
-			copy(payload[1+len(mimeBytes):], tt.data)
-
-			mimeType, data, err := DecodeImagePaste(payload)
-			if err != nil {
-				t.Fatalf("DecodeImagePaste: %v", err)
-			}
-			if mimeType != tt.mimeType {
-				t.Errorf("mimeType: got %q, want %q", mimeType, tt.mimeType)
-			}
-			if string(data) != string(tt.data) {
-				t.Errorf("data mismatch: got %d bytes, want %d bytes", len(data), len(tt.data))
-			}
-		})
-	}
-}
-
-func TestDecodeImagePaste_Invalid(t *testing.T) {
-	if _, _, err := DecodeImagePaste([]byte{}); err != ErrInvalidMessage {
-		t.Errorf("expected ErrInvalidMessage for empty, got: %v", err)
-	}
-	if _, _, err := DecodeImagePaste([]byte{10, 'a'}); err != ErrInvalidMessage {
-		t.Errorf("expected ErrInvalidMessage for truncated mime, got: %v", err)
-	}
-}
-
 func TestMessageConstants(t *testing.T) {
 	// Verify constants match expected values
 	if MsgTypeSnapshot != 0x01 {
@@ -179,8 +137,5 @@ func TestMessageConstants(t *testing.T) {
 	}
 	if MsgTypeRunnerReconnected != 0x09 {
 		t.Error("MsgTypeRunnerReconnected")
-	}
-	if MsgTypeImagePaste != 0x0A {
-		t.Error("MsgTypeImagePaste")
 	}
 }

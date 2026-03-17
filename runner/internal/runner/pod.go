@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/clipboard"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal"
@@ -21,7 +20,6 @@ type Pod struct {
 	RepositoryURL    string
 	Branch           string
 	SandboxPath      string
-	Clipboard        clipboard.Backend          // Clipboard backend for image paste support
 	Terminal         *terminal.Terminal
 	VirtualTerminal  *vt.VirtualTerminal        // Virtual terminal for state management and snapshots
 	Aggregator       *aggregator.SmartAggregator // Output aggregator for adaptive frame rate

@@ -86,35 +86,6 @@ func TestTerminalChannel_ForwardSubToPub(t *testing.T) {
 	}
 }
 
-func TestTerminalChannel_ForwardSubToPub_ImagePaste(t *testing.T) {
-	ch := NewTerminalChannelWithConfig("pod-img-paste", testChannelConfig(), nil, nil)
-
-	pubServer, pubClient := createWSPair(t)
-	subServer, subClient := createWSPair(t)
-
-	ch.SetPublisher(pubServer)
-	ch.AddSubscriber("s1", subServer)
-
-	// Subscriber sends ImagePaste message (no controller so CanInput is true)
-	imgData, err := protocol.EncodeImagePaste("image/png", []byte("fake-png-data"))
-	if err != nil {
-		t.Fatalf("encode image paste: %v", err)
-	}
-	if err := subClient.WriteMessage(websocket.BinaryMessage, imgData); err != nil {
-		t.Fatalf("write image paste: %v", err)
-	}
-
-	// Read from publisher — should receive the image paste data
-	_ = pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
-	_, data, err := pubClient.ReadMessage()
-	if err != nil {
-		t.Fatalf("read image paste from pubClient: %v", err)
-	}
-	if !bytes.Equal(data, imgData) {
-		t.Fatalf("image paste data mismatch: got %v, want %v", data, imgData)
-	}
-}
-
 // ==================== Input Rejection (Control Enforcement) ====================
 
 func TestTerminalChannel_ForwardSubToPub_InputRejected(t *testing.T) {
@@ -160,51 +131,6 @@ func TestTerminalChannel_ForwardSubToPub_InputRejected(t *testing.T) {
 	_, _, err = pubClient.ReadMessage()
 	if err == nil {
 		t.Fatal("expected no more messages from publisher (s2 input should have been rejected)")
-	}
-}
-
-func TestTerminalChannel_ForwardSubToPub_ImagePasteRejected(t *testing.T) {
-	ch := NewTerminalChannelWithConfig("pod-img-rej", testChannelConfig(), nil, nil)
-
-	pubServer, pubClient := createWSPair(t)
-	s1Server, s1Client := createWSPair(t)
-	s2Server, s2Client := createWSPair(t)
-
-	ch.SetPublisher(pubServer)
-	ch.AddSubscriber("s1", s1Server)
-	ch.AddSubscriber("s2", s2Server)
-
-	// Grant control to s1
-	if !ch.RequestControl("s1") {
-		t.Fatal("expected RequestControl to succeed for s1")
-	}
-
-	// s2 sends image paste — should be silently rejected
-	s2ImgMsg, err := protocol.EncodeImagePaste("image/png", []byte("rejected-img"))
-	if err != nil {
-		t.Fatalf("encode image paste: %v", err)
-	}
-	if err := s2Client.WriteMessage(websocket.BinaryMessage, s2ImgMsg); err != nil {
-		t.Fatalf("s2 write image paste: %v", err)
-	}
-
-	// s1 sends image paste — should be forwarded
-	s1ImgMsg, err := protocol.EncodeImagePaste("image/png", []byte("accepted-img"))
-	if err != nil {
-		t.Fatalf("encode image paste: %v", err)
-	}
-	if err := s1Client.WriteMessage(websocket.BinaryMessage, s1ImgMsg); err != nil {
-		t.Fatalf("s1 write image paste: %v", err)
-	}
-
-	// Read from publisher — should only get s1's image paste
-	_ = pubClient.SetReadDeadline(time.Now().Add(2 * time.Second))
-	_, data, err := pubClient.ReadMessage()
-	if err != nil {
-		t.Fatalf("read from pubClient: %v", err)
-	}
-	if !bytes.Equal(data, s1ImgMsg) {
-		t.Fatalf("expected s1 image paste, got different data")
 	}
 }
 

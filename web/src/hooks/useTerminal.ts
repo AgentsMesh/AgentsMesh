@@ -7,6 +7,8 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
 import { terminalPool, terminalRegistry } from "@/stores/workspace";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
+import { uploadImage } from "@/lib/api/file";
+import { toast } from "sonner";
 
 interface TerminalConnection {
   send: (data: string) => void;
@@ -301,18 +303,19 @@ export function useTerminal(
           const blob = item.getAsFile();
           if (!blob) continue;
 
-          if (blob.size > 2 * 1024 * 1024) {
-            console.warn('Image too large for paste (max 2MB)');
-            return;
-          }
-
-          blob.arrayBuffer().then((buffer) => {
-            const imageData = new Uint8Array(buffer);
-            const success = terminalPool.sendImage(podKey, imageData, item.type);
-            if (!success) {
-              console.warn('Failed to send image paste');
-            }
-          });
+          const toastId = toast.loading('Uploading image...');
+          uploadImage(blob)
+            .then((url) => {
+              if (!connectionRef.current) {
+                toast.error('Terminal not connected', { id: toastId });
+                return;
+              }
+              connectionRef.current.send(url);
+              toast.success('Image uploaded', { id: toastId });
+            })
+            .catch((err) => {
+              toast.error(err instanceof Error ? err.message : 'Failed to upload image', { id: toastId });
+            });
           return; // Only handle first image
         }
       }

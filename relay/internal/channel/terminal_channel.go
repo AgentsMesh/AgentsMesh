@@ -550,8 +550,8 @@ func (c *TerminalChannel) forwardSubscriberToPublisher(subscriberID string) {
 			continue
 		}
 
-		// For input, image paste, and resize messages, check control permission
-		if msg.Type == protocol.MsgTypeInput || msg.Type == protocol.MsgTypeImagePaste || msg.Type == protocol.MsgTypeResize {
+		// For input and resize messages, check control permission
+		if msg.Type == protocol.MsgTypeInput || msg.Type == protocol.MsgTypeResize {
 			if !c.CanInput(subscriberID) {
 				c.logger.Debug("Input rejected, no control", "subscriber_id", subscriberID)
 				continue

@@ -20,7 +20,6 @@ const (
 	MsgTypeControl            = 0x07 // Control request (for input control)
 	MsgTypeRunnerDisconnected = 0x08 // Runner disconnected notification
 	MsgTypeRunnerReconnected  = 0x09 // Runner reconnected notification
-	MsgTypeImagePaste         = 0x0A // Image paste from browser clipboard
 )
 
 var (
@@ -101,18 +100,4 @@ func EncodePing() []byte {
 // EncodePong encodes a pong message
 func EncodePong() []byte {
 	return EncodeMessage(MsgTypePong, nil)
-}
-
-// DecodeImagePaste decodes an image paste message from payload
-func DecodeImagePaste(payload []byte) (mimeType string, data []byte, err error) {
-	if len(payload) < 1 {
-		return "", nil, ErrInvalidMessage
-	}
-	mimeLen := int(payload[0])
-	if len(payload) < 1+mimeLen {
-		return "", nil, ErrInvalidMessage
-	}
-	mimeType = string(payload[1 : 1+mimeLen])
-	data = payload[1+mimeLen:]
-	return mimeType, data, nil
 }

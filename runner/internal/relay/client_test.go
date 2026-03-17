@@ -62,26 +62,12 @@ func TestSetHandlers(t *testing.T) {
 		t.Error("onClose not set")
 	}
 
-	var pasteMime string
-	var pasteData []byte
-	c.SetImagePasteHandler(func(mimeType string, data []byte) {
-		pasteMime = mimeType
-		pasteData = data
-	})
-	if c.onImagePaste == nil {
-		t.Error("onImagePaste not set")
-	}
-
 	// Trigger handlers
 	c.onInput([]byte("test"))
 	c.onResize(80, 24)
 	c.onClose()
-	c.onImagePaste("image/png", []byte{0x89, 0x50})
 	if !inputCalled || !resizeCalled || !closeCalled {
 		t.Error("handlers not called")
-	}
-	if pasteMime != "image/png" || string(pasteData) != string([]byte{0x89, 0x50}) {
-		t.Error("image paste handler data mismatch")
 	}
 }
 
@@ -192,33 +178,6 @@ func TestHandleMessage(t *testing.T) {
 	if receivedCols != 100 || receivedRows != 50 {
 		t.Errorf("resize: %dx%d", receivedCols, receivedRows)
 	}
-
-	// Test image paste message
-	var pasteMime string
-	var pasteData []byte
-	c.SetImagePasteHandler(func(mimeType string, data []byte) {
-		pasteMime = mimeType
-		pasteData = data
-	})
-	// Manually encode image paste payload: [mime_len][mime][data]
-	imgPayload := []byte{9, 'i', 'm', 'a', 'g', 'e', '/', 'p', 'n', 'g', 0x89, 0x50}
-	imgMsg := EncodeMessage(MsgTypeImagePaste, imgPayload)
-	c.handleMessage(imgMsg)
-	if pasteMime != "image/png" {
-		t.Errorf("image paste mime: got %q, want %q", pasteMime, "image/png")
-	}
-	if string(pasteData) != string([]byte{0x89, 0x50}) {
-		t.Errorf("image paste data mismatch")
-	}
-
-	// Test image paste with no handler (should not panic)
-	c.onImagePaste = nil
-	c.handleMessage(imgMsg)
-
-	// Test image paste with invalid payload (should not panic)
-	c.SetImagePasteHandler(func(mimeType string, data []byte) {})
-	invalidImgMsg := EncodeMessage(MsgTypeImagePaste, []byte{})
-	c.handleMessage(invalidImgMsg)
 
 	// Test invalid message (should not panic)
 	c.handleMessage([]byte{})

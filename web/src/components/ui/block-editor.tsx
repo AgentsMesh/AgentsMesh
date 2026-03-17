@@ -5,8 +5,7 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { useEffect, useRef, useMemo, useCallback, useSyncExternalStore } from "react";
 import { PartialBlock } from "@blocknote/core";
-import { useAuthStore } from "@/stores/auth";
-import { getApiBaseUrl } from "@/lib/env";
+import { uploadImage } from "@/lib/api/file";
 
 interface BlockEditorProps {
   initialContent?: string; // JSON string
@@ -59,32 +58,7 @@ function useThemeDetect(): "light" | "dark" {
 
 // Upload file to backend using organization-scoped API
 async function uploadFile(file: File): Promise<string> {
-  const { token, currentOrg } = useAuthStore.getState();
-
-  if (!currentOrg) {
-    throw new Error("No organization selected");
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const API_BASE_URL = getApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/api/v1/orgs/${currentOrg.slug}/files/upload`, {
-    method: "POST",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      "X-Organization-Slug": currentOrg.slug,
-    },
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ error: "Upload failed" }));
-    throw new Error(errorData.error || "Upload failed");
-  }
-
-  const data = await res.json();
-  return data.url;
+  return uploadImage(file);
 }
 
 // Parse initial content safely

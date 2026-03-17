@@ -17,7 +17,6 @@ const (
 	MsgTypeControl            = 0x07 // Control request (for input control)
 	MsgTypeRunnerDisconnected = 0x08 // Runner disconnected notification
 	MsgTypeRunnerReconnected  = 0x09 // Runner reconnected notification
-	MsgTypeImagePaste         = 0x0A // Image paste from browser clipboard
 )
 
 var (
@@ -158,32 +157,4 @@ func EncodeRunnerDisconnected() []byte {
 // EncodeRunnerReconnected encodes a runner reconnected notification
 func EncodeRunnerReconnected() []byte {
 	return EncodeMessage(MsgTypeRunnerReconnected, nil)
-}
-
-// EncodeImagePaste encodes an image paste message
-// Wire format: [0x0A][1 byte mime_type_len][N bytes mime_type][image_data]
-func EncodeImagePaste(mimeType string, data []byte) ([]byte, error) {
-	mimeBytes := []byte(mimeType)
-	if len(mimeBytes) > 255 {
-		return nil, ErrInvalidMessage
-	}
-	payload := make([]byte, 1+len(mimeBytes)+len(data))
-	payload[0] = byte(len(mimeBytes))
-	copy(payload[1:1+len(mimeBytes)], mimeBytes)
-	copy(payload[1+len(mimeBytes):], data)
-	return EncodeMessage(MsgTypeImagePaste, payload), nil
-}
-
-// DecodeImagePaste decodes an image paste message from payload
-func DecodeImagePaste(payload []byte) (mimeType string, data []byte, err error) {
-	if len(payload) < 1 {
-		return "", nil, ErrInvalidMessage
-	}
-	mimeLen := int(payload[0])
-	if len(payload) < 1+mimeLen {
-		return "", nil, ErrInvalidMessage
-	}
-	mimeType = string(payload[1 : 1+mimeLen])
-	data = payload[1+mimeLen:]
-	return mimeType, data, nil
 }
