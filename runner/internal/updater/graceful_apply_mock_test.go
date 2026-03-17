@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -10,19 +11,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Tests for applyPendingUpdate with mock
+// Tests for executeUpdate with mock
 
-func TestGracefulUpdater_ApplyPendingUpdate_WithMock_RestartError(t *testing.T) {
+func TestGracefulUpdater_ApplyUpdate_WithMock_RestartError(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "graceful-apply-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
 	execPath := filepath.Join(tmpDir, "runner")
-	pendingPath := filepath.Join(tmpDir, "pending-binary")
-
 	err = os.WriteFile(execPath, []byte("old binary"), 0755)
-	require.NoError(t, err)
-	err = os.WriteFile(pendingPath, []byte("new binary"), 0755)
 	require.NoError(t, err)
 
 	mock := &MockReleaseDetector{}
@@ -37,27 +34,21 @@ func TestGracefulUpdater_ApplyPendingUpdate_WithMock_RestartError(t *testing.T) 
 	}))
 
 	g.mu.Lock()
-	g.pendingPath = pendingPath
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
-	// Apply should fail when restart fails (now errors are propagated)
-	err = g.applyPendingUpdate()
+	err = g.executeUpdate(context.Background())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "restart failed")
 	assert.Equal(t, StateIdle, g.State())
 }
 
-func TestGracefulUpdater_ApplyPendingUpdate_WithMock_BackupFails(t *testing.T) {
+func TestGracefulUpdater_ApplyUpdate_WithMock_BackupFails(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "graceful-apply-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
 	execPath := filepath.Join(tmpDir, "nonexistent", "runner") // Invalid path
-	pendingPath := filepath.Join(tmpDir, "pending-binary")
-
-	err = os.WriteFile(pendingPath, []byte("new binary"), 0755)
-	require.NoError(t, err)
 
 	mock := &MockReleaseDetector{}
 	u := New("1.0.0",
@@ -68,38 +59,33 @@ func TestGracefulUpdater_ApplyPendingUpdate_WithMock_BackupFails(t *testing.T) {
 	g := NewGracefulUpdater(u, nil)
 
 	g.mu.Lock()
-	g.pendingPath = pendingPath
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
-	// Apply will fail because execPath doesn't exist
-	err = g.applyPendingUpdate()
+	// Apply will fail because execPath doesn't exist (updateBinary will fail)
+	err = g.executeUpdate(context.Background())
 	assert.Error(t, err)
 	assert.Equal(t, StateIdle, g.State())
 }
 
-func TestGracefulUpdater_ApplyPendingUpdate_WithMock_NoPending(t *testing.T) {
+func TestGracefulUpdater_ApplyUpdate_WithMock_NoPending(t *testing.T) {
 	mock := &MockReleaseDetector{}
 	u := New("1.0.0", WithReleaseDetector(mock))
 	g := NewGracefulUpdater(u, nil)
 
-	err := g.applyPendingUpdate()
+	err := g.executeUpdate(context.Background())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no pending update")
 	assert.Equal(t, StateIdle, g.State())
 }
 
-func TestGracefulUpdater_ApplyPendingUpdate_WithMock_Success(t *testing.T) {
+func TestGracefulUpdater_ApplyUpdate_WithMock_Success(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "graceful-apply-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
 	execPath := filepath.Join(tmpDir, "runner")
-	pendingPath := filepath.Join(tmpDir, "pending-binary")
-
 	err = os.WriteFile(execPath, []byte("old binary"), 0755)
-	require.NoError(t, err)
-	err = os.WriteFile(pendingPath, []byte("new binary"), 0755)
 	require.NoError(t, err)
 
 	mock := &MockReleaseDetector{}
@@ -111,15 +97,14 @@ func TestGracefulUpdater_ApplyPendingUpdate_WithMock_Success(t *testing.T) {
 	restarted := false
 	g := NewGracefulUpdater(u, nil, WithRestartFunc(func() (int, error) {
 		restarted = true
-		return 12345, nil // Return a fake PID
+		return 12345, nil
 	}))
 
 	g.mu.Lock()
-	g.pendingPath = pendingPath
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
-	err = g.applyPendingUpdate()
+	err = g.executeUpdate(context.Background())
 	assert.NoError(t, err)
 	assert.True(t, restarted)
 	assert.Equal(t, StateRestarting, g.State())
@@ -127,5 +112,5 @@ func TestGracefulUpdater_ApplyPendingUpdate_WithMock_Success(t *testing.T) {
 	// Verify binary was replaced
 	content, err := os.ReadFile(execPath)
 	require.NoError(t, err)
-	assert.Equal(t, "new binary", string(content))
+	assert.Equal(t, "mock binary", string(content))
 }

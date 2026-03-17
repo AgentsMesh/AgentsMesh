@@ -205,7 +205,7 @@ func ScheduleRestartOnExit() {
 // RestartFunc returns a function that can be used to restart the service.
 // This is designed to be passed to the graceful updater.
 // Returns pid=0 because the service manager spawns the new process and we
-// don't have its PID. GracefulUpdater.applyPendingUpdate() only runs the
+// don't have its PID. GracefulUpdater.executeUpdate() only runs the
 // health check when pid > 0, so this is safe.
 func RestartFunc() func() (int, error) {
 	return func() (int, error) {

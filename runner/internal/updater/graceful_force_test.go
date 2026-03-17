@@ -14,30 +14,35 @@ import (
 // Extended tests for ForceUpdate functionality
 
 func TestGracefulUpdater_ForceUpdate_WithPendingApply(t *testing.T) {
-	u := New("1.0.0")
-
 	tmpDir, err := os.MkdirTemp("", "graceful-force-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	pendingPath := filepath.Join(tmpDir, "pending-binary")
-	err = os.WriteFile(pendingPath, []byte("new binary"), 0755)
+	execPath := filepath.Join(tmpDir, "runner")
+	err = os.WriteFile(execPath, []byte("old binary"), 0755)
 	require.NoError(t, err)
+
+	mock := &MockReleaseDetector{}
+	u := New("1.0.0",
+		WithReleaseDetector(mock),
+		WithExecPathFunc(func() (string, error) { return execPath, nil }),
+	)
 
 	g := NewGracefulUpdater(u, nil)
 
 	// Set up as if we're draining with a pending update
 	g.mu.Lock()
 	g.state = StateDraining
-	g.pendingPath = pendingPath
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
-	// ForceUpdate should try to apply the pending update
+	// ForceUpdate should apply the pending update
 	err = g.ForceUpdate(context.Background())
-	// May succeed or fail depending on os.Executable and permissions
-	// Just verify the function runs and state is handled
-	_ = err
+	assert.NoError(t, err)
+
+	content, err := os.ReadFile(execPath)
+	require.NoError(t, err)
+	assert.Equal(t, "mock binary", string(content))
 }
 
 func TestGracefulUpdater_ForceUpdate_CancelsDrain(t *testing.T) {

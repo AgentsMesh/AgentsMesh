@@ -11,14 +11,13 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/process"
 )
 
-// applyPendingUpdate applies the downloaded update.
-func (g *GracefulUpdater) applyPendingUpdate() error {
-	g.mu.Lock()
-	tmpPath := g.pendingPath
+// executeUpdate creates a backup, downloads and replaces the binary, and restarts.
+func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
+	g.mu.RLock()
 	info := g.pendingInfo
-	g.mu.Unlock()
+	g.mu.RUnlock()
 
-	if tmpPath == "" {
+	if info == nil {
 		g.setState(StateIdle)
 		return fmt.Errorf("no pending update to apply")
 	}
@@ -32,10 +31,9 @@ func (g *GracefulUpdater) applyPendingUpdate() error {
 		// Continue without backup - rollback won't be possible
 	}
 
-	// Apply update
-	if err := g.updater.Apply(tmpPath); err != nil {
+	// Update binary in-place via detector.UpdateBinary
+	if err := g.updater.updateBinary(ctx, info.LatestVersion); err != nil {
 		g.mu.Lock()
-		g.pendingPath = ""
 		g.pendingInfo = nil
 		g.mu.Unlock()
 		g.setState(StateIdle)
@@ -43,7 +41,6 @@ func (g *GracefulUpdater) applyPendingUpdate() error {
 	}
 
 	g.mu.Lock()
-	g.pendingPath = ""
 	g.pendingInfo = nil
 	g.mu.Unlock()
 

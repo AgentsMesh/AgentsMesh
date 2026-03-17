@@ -11,55 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Tests for Download and UpdateNow using MockReleaseDetector
-
-func TestUpdater_Download_WithMock_Success(t *testing.T) {
-	mock := &MockReleaseDetector{
-		VersionReleases: map[string]*ReleaseInfo{
-			"v2.0.0": {Version: "v2.0.0"},
-		},
-	}
-
-	u := New("1.0.0", WithReleaseDetector(mock))
-
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, path)
-	defer os.Remove(path)
-
-	content, err := os.ReadFile(path)
-	assert.NoError(t, err)
-	assert.Equal(t, "mock binary", string(content))
-}
-
-func TestUpdater_Download_WithMock_VersionNotFound(t *testing.T) {
-	mock := &MockReleaseDetector{
-		VersionReleases: map[string]*ReleaseInfo{},
-	}
-
-	u := New("1.0.0", WithReleaseDetector(mock))
-
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
-	assert.Error(t, err)
-	assert.Empty(t, path)
-	assert.Contains(t, err.Error(), "not found")
-}
-
-func TestUpdater_Download_WithMock_DownloadError(t *testing.T) {
-	mock := &MockReleaseDetector{
-		VersionReleases: map[string]*ReleaseInfo{
-			"v2.0.0": {Version: "v2.0.0"},
-		},
-		DownloadError: errors.New("download failed"),
-	}
-
-	u := New("1.0.0", WithReleaseDetector(mock))
-
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
-	assert.Error(t, err)
-	assert.Empty(t, path)
-	assert.Contains(t, err.Error(), "download failed")
-}
+// Tests for UpdateNow and UpdateToVersion using MockReleaseDetector
 
 func TestUpdater_UpdateNow_WithMock_Success(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "updater-test-*")
@@ -84,7 +36,7 @@ func TestUpdater_UpdateNow_WithMock_Success(t *testing.T) {
 		WithExecPathFunc(func() (string, error) { return execPath, nil }),
 	)
 
-	version, err := u.UpdateNow(context.Background(), nil)
+	version, err := u.UpdateNow(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(t, "v2.0.0", version)
 
@@ -102,36 +54,99 @@ func TestUpdater_UpdateNow_WithMock_NoUpdate(t *testing.T) {
 
 	u := New("1.0.0", WithReleaseDetector(mock))
 
-	version, err := u.UpdateNow(context.Background(), nil)
+	version, err := u.UpdateNow(context.Background())
 	assert.NoError(t, err)
 	assert.Empty(t, version)
 }
 
-func TestUpdater_Download_WithMock_DownloadToError(t *testing.T) {
+func TestUpdater_UpdateToVersion_WithMock_Success(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "updater-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	execPath := filepath.Join(tmpDir, "runner")
+	err = os.WriteFile(execPath, []byte("old binary"), 0755)
+	require.NoError(t, err)
+
 	mock := &MockReleaseDetector{
 		VersionReleases: map[string]*ReleaseInfo{
 			"v2.0.0": {Version: "v2.0.0"},
 		},
-		DownloadError: errors.New("download failed"),
 	}
 
-	u := New("1.0.0", WithReleaseDetector(mock))
+	u := New("1.0.0",
+		WithReleaseDetector(mock),
+		WithExecPathFunc(func() (string, error) { return execPath, nil }),
+	)
 
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
-	assert.Error(t, err)
-	assert.Empty(t, path)
-	assert.Contains(t, err.Error(), "failed to download update")
+	err = u.UpdateToVersion(context.Background(), "v2.0.0")
+	assert.NoError(t, err)
+
+	content, err := os.ReadFile(execPath)
+	assert.NoError(t, err)
+	assert.Equal(t, "mock binary", string(content))
 }
 
-func TestUpdater_Download_WithMock_DetectVersionError(t *testing.T) {
+func TestUpdater_UpdateBinary_WithMock_UpdateError(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "updater-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	execPath := filepath.Join(tmpDir, "runner")
+	err = os.WriteFile(execPath, []byte("old binary"), 0755)
+	require.NoError(t, err)
+
+	mock := &MockReleaseDetector{
+		LatestRelease: &ReleaseInfo{
+			Version: "v2.0.0",
+		},
+		VersionReleases: map[string]*ReleaseInfo{
+			"v2.0.0": {Version: "v2.0.0"},
+		},
+		UpdateError: errors.New("update failed"),
+	}
+
+	u := New("1.0.0",
+		WithReleaseDetector(mock),
+		WithExecPathFunc(func() (string, error) { return execPath, nil }),
+	)
+
+	version, err := u.UpdateNow(context.Background())
+	assert.Error(t, err)
+	assert.Empty(t, version)
+	assert.Contains(t, err.Error(), "update failed")
+}
+
+func TestUpdater_UpdateBinary_WithMock_DetectError(t *testing.T) {
 	mock := &MockReleaseDetector{
 		DetectError: errors.New("version detect error"),
 	}
 
 	u := New("1.0.0", WithReleaseDetector(mock))
 
-	path, err := u.Download(context.Background(), "v2.0.0", nil)
+	version, err := u.UpdateNow(context.Background())
 	assert.Error(t, err)
-	assert.Empty(t, path)
-	assert.Contains(t, err.Error(), "failed to find version")
+	assert.Empty(t, version)
+	assert.Contains(t, err.Error(), "detect")
+}
+
+func TestUpdater_UpdateBinary_WithMock_ExecPathError(t *testing.T) {
+	mock := &MockReleaseDetector{
+		LatestRelease: &ReleaseInfo{
+			Version: "v2.0.0",
+		},
+		VersionReleases: map[string]*ReleaseInfo{
+			"v2.0.0": {Version: "v2.0.0"},
+		},
+	}
+
+	u := New("1.0.0",
+		WithReleaseDetector(mock),
+		WithExecPathFunc(func() (string, error) { return "", errors.New("no exec path") }),
+	)
+
+	version, err := u.UpdateNow(context.Background())
+	assert.Error(t, err)
+	assert.Empty(t, version)
+	assert.Contains(t, err.Error(), "failed to get executable path")
 }

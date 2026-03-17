@@ -135,9 +135,6 @@ func confirmUpdate() bool {
 }
 
 func performUpdate(ctx context.Context, u *updater.Updater, targetVersion string, _ bool) error {
-	// Note: force parameter is reserved for future use with graceful updates
-	// when running pods need to be considered
-
 	// Create backup first
 	fmt.Println("\nCreating backup...")
 	backupPath, err := u.CreateBackup()
@@ -146,18 +143,9 @@ func performUpdate(ctx context.Context, u *updater.Updater, targetVersion string
 	}
 	fmt.Printf("Backup created at: %s\n", backupPath)
 
-	// Download with progress
-	fmt.Printf("\nDownloading version %s...\n", targetVersion)
-	progress := updater.NewConsoleProgress()
-
-	tmpPath, err := u.Download(ctx, targetVersion, progress.Update)
-	if err != nil {
-		return fmt.Errorf("download failed: %w", err)
-	}
-
-	// Apply update
-	fmt.Println("\nApplying update...")
-	if err := u.Apply(tmpPath); err != nil {
+	// Update binary in-place (detect + download + replace in one step)
+	fmt.Printf("\nUpdating to version %s...\n", targetVersion)
+	if err := u.UpdateToVersion(ctx, targetVersion); err != nil {
 		fmt.Println("\nUpdate failed. Attempting rollback...")
 		if rbErr := u.Rollback(); rbErr != nil {
 			return fmt.Errorf("update failed (%v) and rollback failed (%v)", err, rbErr)

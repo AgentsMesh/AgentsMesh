@@ -109,16 +109,6 @@ func TestUpdater_WithInjectedDetector(t *testing.T) {
 	assert.Same(t, mock, detector)
 }
 
-func TestUpdater_Download_ContextCanceled(t *testing.T) {
-	u := New("1.0.0")
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	_, err := u.Download(ctx, "v1.0.0", nil)
-	assert.Error(t, err)
-}
-
 func TestUpdater_CheckForUpdate_InvalidVersion(t *testing.T) {
 	u := New("invalid-version")
 
@@ -145,7 +135,7 @@ func TestUpdater_UpdateNow_NoUpdate(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	version, err := u.UpdateNow(ctx, nil)
+	version, err := u.UpdateNow(ctx)
 	if err == nil {
 		assert.Empty(t, version)
 	}
@@ -157,6 +147,6 @@ func TestUpdater_UpdateToVersion(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := u.UpdateToVersion(ctx, "v0.0.1", nil)
+	err := u.UpdateToVersion(ctx, "v0.0.1")
 	assert.Error(t, err)
 }

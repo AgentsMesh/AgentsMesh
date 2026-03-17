@@ -2,7 +2,6 @@ package updater
 
 import (
 	"context"
-	"os"
 	"sync"
 	"time"
 )
@@ -70,12 +69,11 @@ type GracefulUpdater struct {
 	healthTimeout time.Duration
 
 	// State
-	mu            sync.RWMutex
-	state         State
-	draining      bool
-	pendingPath   string
-	pendingInfo   *UpdateInfo
-	cancelDrain   context.CancelFunc
+	mu          sync.RWMutex
+	state       State
+	draining    bool
+	pendingInfo *UpdateInfo
+	cancelDrain context.CancelFunc
 }
 
 // GracefulOption configures the GracefulUpdater.
@@ -195,10 +193,6 @@ func (g *GracefulUpdater) CancelPendingUpdate() {
 		g.cancelDrain()
 	}
 
-	if g.pendingPath != "" {
-		os.Remove(g.pendingPath)
-		g.pendingPath = ""
-	}
 	g.pendingInfo = nil
 	g.draining = false
 	g.state = StateIdle

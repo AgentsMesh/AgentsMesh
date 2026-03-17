@@ -80,7 +80,7 @@ func (h *RunnerMessageHandler) runUpgrade(cmd *runnerv1.UpgradeRunnerCommand) {
 		// Update to latest version
 		h.sendUpgradeStatus(cmd.RequestId, tv, "downloading", 0, "Downloading latest version...", "", u)
 
-		newVersion, err := u.UpdateNow(ctx, nil)
+		newVersion, err := u.UpdateNow(ctx)
 		if err != nil {
 			h.sendUpgradeFailure(cmd.RequestId, tv, fmt.Sprintf("update failed: %v", err), u)
 			return
@@ -96,7 +96,7 @@ func (h *RunnerMessageHandler) runUpgrade(cmd *runnerv1.UpgradeRunnerCommand) {
 		h.sendUpgradeStatus(cmd.RequestId, tv, "downloading", 0,
 			fmt.Sprintf("Downloading version %s...", tv), "", u)
 
-		if err := u.UpdateToVersion(ctx, tv, nil); err != nil {
+		if err := u.UpdateToVersion(ctx, tv); err != nil {
 			h.sendUpgradeFailure(cmd.RequestId, tv, fmt.Sprintf("update to %s failed: %v", tv, err), u)
 			return
 		}
