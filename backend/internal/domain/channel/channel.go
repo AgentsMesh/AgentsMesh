@@ -109,8 +109,8 @@ const (
 
 // Binding scope constants
 const (
-	BindingScopeTerminalRead  = "terminal:read"
-	BindingScopeTerminalWrite = "terminal:write"
+	BindingScopePodRead  = "pod:read"
+	BindingScopePodWrite = "pod:write"
 )
 
 // Binding policy constants
@@ -122,8 +122,8 @@ const (
 
 // ValidBindingScopes contains all valid binding scopes
 var ValidBindingScopes = map[string]bool{
-	BindingScopeTerminalRead:  true,
-	BindingScopeTerminalWrite: true,
+	BindingScopePodRead:  true,
+	BindingScopePodWrite: true,
 }
 
 // PodBinding represents a binding between two pods
@@ -183,12 +183,12 @@ func (b *PodBinding) IsPending() bool {
 	return b.Status == BindingStatusPending
 }
 
-// CanObserve checks if the initiator can observe the target's terminal
+// CanObserve checks if the initiator can observe the target's pod
 func (b *PodBinding) CanObserve() bool {
-	return b.IsActive() && b.HasScope(BindingScopeTerminalRead)
+	return b.IsActive() && b.HasScope(BindingScopePodRead)
 }
 
-// CanControl checks if the initiator can send input to the target's terminal
+// CanControl checks if the initiator can send input to the target's pod
 func (b *PodBinding) CanControl() bool {
-	return b.IsActive() && b.HasScope(BindingScopeTerminalWrite)
+	return b.IsActive() && b.HasScope(BindingScopePodWrite)
 }

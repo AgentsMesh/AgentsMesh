@@ -21,7 +21,7 @@ user-invocable: false
 - `list_available_pods` - 列出可用的 Pod
 - `create_pod` - 创建新的 Agent Pod
 - `bind_pod` - 绑定到目标 Pod（获取终端权限）
-- `send_terminal_text` - 向 Pod 终端发送文本/任务
+- `send_pod_input` - 向 Pod 发送输入（文本和/或特殊键）
 - `send_channel_message` - 通过 Channel 发送消息
 
 ## 委派流程
@@ -51,7 +51,7 @@ create_pod(
 
 方式一：通过终端直接发送指令
 ```
-send_terminal_text(
+send_pod_input(
   pod_key="target-pod-key",
   text="请实现用户登录功能，完成后通过 Channel 通知我"
 )

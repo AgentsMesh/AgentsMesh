@@ -281,62 +281,8 @@ steps:
           runner:
             active_pods: greater_than({initial_active_pods})
 
-  # ========== Step 9: 验证终端输出（工作区初始化）==========
+  # ========== Step 9: UI 验证 - 导航到 Workspace ==========
   - id: step-9
-    action: 获取终端输出验证工作区初始化
-    verification:
-      type: api
-      request:
-        method: GET
-        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/observe?lines=100
-        headers:
-          Authorization: Bearer {access_token}
-      expected:
-        status: 200
-        body:
-          pod_key: "{pod_key}"
-          output: not_empty
-      retry:
-        max_attempts: 10
-        interval: 2000
-
-  # ========== Step 10: 发送测试命令验证 Git 仓库 ==========
-  - id: step-10
-    action: 发送命令检查 Git 仓库状态
-    verification:
-      type: api
-      request:
-        method: POST
-        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/input
-        headers:
-          Authorization: Bearer {access_token}
-          Content-Type: application/json
-        body:
-          input: "git remote -v && git branch --show-current\n"
-      expected:
-        status: 200
-        body:
-          message: contains(sent)
-
-  - id: step-10a
-    action: 等待并获取 Git 命令输出
-    verification:
-      type: api
-      request:
-        method: GET
-        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminal/observe?lines=50
-        headers:
-          Authorization: Bearer {access_token}
-      expected:
-        status: 200
-        body:
-          output: contains(mockrepo)
-      retry:
-        max_attempts: 5
-        interval: 2000
-
-  # ========== Step 11: UI 验证 - 导航到 Workspace ==========
-  - id: step-11
     action: 导航到 Workspace 页面
     url: /dev-org/workspace
     verification:
@@ -346,7 +292,7 @@ steps:
             - exists: 'text contains "工作区"'
             - exists: 'heading contains "Workspace"'
 
-  - id: step-11a
+  - id: step-9a
     action: 验证 Pod 在 Workspace 列表中显示
     verification:
       type: ui
@@ -355,8 +301,8 @@ steps:
             - exists: 'text contains "{pod_key}"'
             - exists: '[data-testid="pod-item"]'
 
-  # ========== Step 12: 数据库验证 ==========
-  - id: step-12
+  # ========== Step 10: 数据库验证 ==========
+  - id: step-10
     action: 验证数据库中 Pod 关联关系
     verification:
       type: database
@@ -369,8 +315,8 @@ steps:
         repository_id: "{repository_id}"
         ticket_id: "{ticket_id}"
 
-  # ========== Step 13: 清理 - 终止 Pod ==========
-  - id: step-13
+  # ========== Step 11: 清理 - 终止 Pod ==========
+  - id: step-11
     action: 终止 Pod
     verification:
       type: api
@@ -384,7 +330,7 @@ steps:
         body:
           message: contains(terminated)
 
-  - id: step-13a
+  - id: step-11a
     action: 验证 Pod 状态变为 terminated
     verification:
       type: api

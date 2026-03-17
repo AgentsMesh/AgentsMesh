@@ -182,7 +182,7 @@ func TestHTTPServerMCPToolsCallBindPodEmptyTarget(t *testing.T) {
 			"name": "bind_pod",
 			"arguments": {
 				"target_pod": "",
-				"scopes": ["terminal:read"]
+				"scopes": ["pod:read"]
 			}
 		}
 	}`)

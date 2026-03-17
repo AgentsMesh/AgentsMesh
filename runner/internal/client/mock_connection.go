@@ -116,7 +116,7 @@ func (m *MockConnection) SendPodTerminated(podKey string, exitCode int32, errorM
 	return nil
 }
 
-// NOTE: SendTerminalOutput removed - terminal output is exclusively streamed via Relay
+// NOTE: SendTerminalOutput removed - output is exclusively streamed via Relay
 
 // SendPtyResized implements Connection.
 func (m *MockConnection) SendPtyResized(podKey string, cols, rows int32) error {
@@ -171,6 +171,27 @@ func (m *MockConnection) SendSandboxesStatus(requestID string, results []*Sandbo
 		return m.SendErr
 	}
 	m.Events = append(m.Events, EventCall{Type: MessageType("sandboxes_status"), Data: map[string]interface{}{"request_id": requestID, "results": results}})
+	return nil
+}
+
+// SendObserveTerminalResult records a terminal observation result.
+func (m *MockConnection) SendObserveTerminalResult(requestID, podKey, output, screen string, cursorX, cursorY, totalLines int, hasMore bool, errMsg string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: MessageType("pod_snapshot_result"), Data: map[string]interface{}{
+		"request_id":  requestID,
+		"pod_key":     podKey,
+		"output":      output,
+		"screen":      screen,
+		"cursor_x":    cursorX,
+		"cursor_y":    cursorY,
+		"total_lines": totalLines,
+		"has_more":    hasMore,
+		"error":       errMsg,
+	}})
 	return nil
 }
 

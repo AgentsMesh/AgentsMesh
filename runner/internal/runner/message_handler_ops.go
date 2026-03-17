@@ -2,6 +2,7 @@ package runner
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
@@ -101,5 +102,50 @@ func (h *RunnerMessageHandler) OnQuerySandboxes(req client.QuerySandboxesRequest
 	}
 
 	log.Info("Sent sandbox status response", "request_id", req.RequestID, "results", len(results))
+	return nil
+}
+
+// OnObserveTerminal handles observe terminal command from server.
+// Reads VirtualTerminal state and sends result back via gRPC.
+func (h *RunnerMessageHandler) OnObserveTerminal(req client.ObserveTerminalRequest) error {
+	log := logger.Pod()
+
+	pod, ok := h.podStore.Get(req.PodKey)
+	if !ok {
+		log.Warn("Pod not found for observe terminal", "pod_key", req.PodKey)
+		return h.conn.SendObserveTerminalResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "pod not found")
+	}
+
+	if pod.VirtualTerminal == nil {
+		log.Warn("No virtual terminal for observe", "pod_key", req.PodKey)
+		return h.conn.SendObserveTerminalResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "no virtual terminal")
+	}
+
+	lines := req.Lines
+	if lines <= 0 {
+		lines = 100
+	}
+
+	output := pod.VirtualTerminal.GetOutput(lines)
+	cursorY, cursorX := pod.VirtualTerminal.CursorPosition()
+
+	var screen string
+	if req.IncludeScreen {
+		screen = pod.VirtualTerminal.GetScreenSnapshot()
+	}
+
+	// Count total lines in output to determine hasMore
+	totalLines := 0
+	if output != "" {
+		totalLines = strings.Count(output, "\n") + 1
+	}
+	hasMore := totalLines >= lines
+
+	if err := h.conn.SendObserveTerminalResult(req.RequestID, req.PodKey, output, screen, cursorX, cursorY, totalLines, hasMore, ""); err != nil {
+		log.Error("Failed to send observe terminal result", "request_id", req.RequestID, "error", err)
+		return err
+	}
+
+	log.Debug("Sent observe terminal result", "request_id", req.RequestID, "pod_key", req.PodKey, "lines", totalLines)
 	return nil
 }

@@ -22,16 +22,14 @@ type PodStatusProvider interface {
 	GetPodStatus(podKey string) (agentStatus string, podStatus string, shellPid int, found bool)
 }
 
-// LocalTerminalProvider provides direct access to local terminal operations.
+// LocalPodProvider provides direct access to local pod operations.
 // This is used by AutopilotController control process to interact with local Pods
 // without going through the Backend API.
-type LocalTerminalProvider interface {
-	// GetTerminalOutput returns the terminal output for a local pod.
-	GetTerminalOutput(podKey string, lines int) (string, error)
-	// SendTerminalText sends text to a local pod's terminal.
-	SendTerminalText(podKey string, text string) error
-	// SendTerminalKey sends special keys to a local pod's terminal.
-	SendTerminalKey(podKey string, keys []string) error
+type LocalPodProvider interface {
+	// GetPodSnapshot returns the terminal output for a local pod.
+	GetPodSnapshot(podKey string, lines int) (string, error)
+	// SendPodInput sends text and/or special keys to a local pod.
+	SendPodInput(podKey string, text string, keys []string) error
 }
 
 // HTTPServer provides an MCP server over HTTP for agent collaboration.
@@ -44,7 +42,7 @@ type HTTPServer struct {
 	httpServer       *http.Server
 	tools            []*MCPTool
 	statusProvider   PodStatusProvider
-	terminalProvider LocalTerminalProvider
+	podProvider      LocalPodProvider
 }
 
 // PodInfo holds information about a registered pod.
@@ -195,15 +193,15 @@ func (s *HTTPServer) SetStatusProvider(provider PodStatusProvider) {
 	s.statusProvider = provider
 }
 
-// SetTerminalProvider sets the local terminal provider for terminal tools.
+// SetPodProvider sets the local pod provider for pod interaction tools.
 // This enables direct access to local pods without going through Backend API.
-func (s *HTTPServer) SetTerminalProvider(provider LocalTerminalProvider) {
-	s.terminalProvider = provider
+func (s *HTTPServer) SetPodProvider(provider LocalPodProvider) {
+	s.podProvider = provider
 }
 
-// GetTerminalProvider returns the local terminal provider.
-func (s *HTTPServer) GetTerminalProvider() LocalTerminalProvider {
-	return s.terminalProvider
+// GetPodProvider returns the local pod provider.
+func (s *HTTPServer) GetPodProvider() LocalPodProvider {
+	return s.podProvider
 }
 
 // PodCount returns the number of registered pods.
@@ -239,10 +237,9 @@ func (s *HTTPServer) GenerateMCPConfig(podKey string) map[string]interface{} {
 // registerTools registers all collaboration tools.
 func (s *HTTPServer) registerTools() {
 	s.tools = []*MCPTool{
-		// Terminal tools
-		s.createObserveTerminalTool(),
-		s.createSendTerminalTextTool(),
-		s.createSendTerminalKeyTool(),
+		// Pod interaction tools
+		s.createGetPodSnapshotTool(),
+		s.createSendPodInputTool(),
 		s.createGetPodStatusTool(),
 
 		// Discovery tools

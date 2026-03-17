@@ -188,7 +188,7 @@ func (r *Runner) initEnhancedComponents(cfg *config.Config) {
 	mcpPort := cfg.GetMCPPort()
 	r.mcpServer = mcp.NewHTTPServer(rpcClient, mcpPort)
 	r.mcpServer.SetStatusProvider(r)
-	r.mcpServer.SetTerminalProvider(r)
+	r.mcpServer.SetPodProvider(r)
 
 	// Initialize Monitor (started by Supervisor in Run())
 	r.agentMonitor = monitor.NewMonitor(5 * time.Second)

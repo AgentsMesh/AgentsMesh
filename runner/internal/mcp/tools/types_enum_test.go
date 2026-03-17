@@ -12,8 +12,8 @@ func TestBindingScope(t *testing.T) {
 		scope BindingScope
 		want  string
 	}{
-		{"terminal read", ScopeTerminalRead, "terminal:read"},
-		{"terminal write", ScopeTerminalWrite, "terminal:write"},
+		{"pod read", ScopePodRead, "pod:read"},
+		{"pod write", ScopePodWrite, "pod:write"},
 	}
 
 	for _, tt := range tests {

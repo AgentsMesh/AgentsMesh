@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log/slog"
+	"sync"
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -30,6 +31,10 @@ type TerminalRouter struct {
 
 	// Sharded storage for pod-related data
 	shards [terminalShards]*terminalShard
+
+	// Pending terminal observation queries (shared with terminal_router_query.go)
+	pendingQueries sync.Map      // map[requestID]*pendingTerminalQuery
+	done           chan struct{} // signal channel for graceful shutdown of cleanup goroutine
 }
 
 // NewTerminalRouter creates a new terminal router with sharded locks.
@@ -54,6 +59,9 @@ func NewTerminalRouter(cm *RunnerConnectionManager, logger *slog.Logger) *Termin
 	// OSC events are sent directly by Runner (bypassing terminal output throttling)
 	cm.SetOSCNotificationCallback(tr.handleOSCNotification)
 	cm.SetOSCTitleCallback(tr.handleOSCTitle)
+
+	// Initialize terminal observation query support (callback + cleanup goroutine)
+	initQuerySupport(tr, cm, make(chan struct{}))
 
 	return tr
 }
@@ -275,23 +283,9 @@ func (tr *TerminalRouter) GetRegisteredPodCount() int {
 	return total
 }
 
-// GetRecentOutput returns recent terminal output for a pod.
-// After Relay migration, terminal output is streamed directly via Relay,
-// so this returns empty. Retained for TerminalRouterInterface compatibility.
-func (tr *TerminalRouter) GetRecentOutput(podKey string, lines int) []byte {
-	return nil
-}
-
-// GetScreenSnapshot returns a text snapshot of the terminal screen.
-// After Relay migration, this is not available server-side.
-func (tr *TerminalRouter) GetScreenSnapshot(podKey string) string {
-	return ""
-}
-
-// GetCursorPosition returns the cursor position in the terminal.
-// After Relay migration, this is not available server-side.
-func (tr *TerminalRouter) GetCursorPosition(podKey string) (row, col int) {
-	return 0, 0
+// Stop gracefully stops the TerminalRouter's background goroutines (query cleanup).
+func (tr *TerminalRouter) Stop() {
+	close(tr.done)
 }
 
 // GetPtySize returns the PTY size for a pod

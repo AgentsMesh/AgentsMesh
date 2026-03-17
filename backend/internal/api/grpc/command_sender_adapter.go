@@ -74,6 +74,11 @@ func (s *GRPCCommandSender) SendQuerySandboxes(runnerID int64, requestID string,
 	return s.adapter.SendQuerySandboxes(runnerID, requestID, podKeys)
 }
 
+// SendObserveTerminal sends an observe terminal command to a runner via gRPC.
+func (s *GRPCCommandSender) SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+	return s.adapter.SendObserveTerminal(runnerID, requestID, podKey, lines, includeScreen)
+}
+
 // IsConnected checks if a runner is connected.
 func (s *GRPCCommandSender) IsConnected(runnerID int64) bool {
 	return s.adapter.IsConnected(runnerID)

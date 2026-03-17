@@ -5,17 +5,17 @@ import (
 	"testing"
 )
 
-// --- TerminalOutput ---
+// --- PodSnapshot ---
 
-func TestTerminalOutput_FormatText(t *testing.T) {
+func TestPodSnapshot_FormatText(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    *TerminalOutput
+		input    *PodSnapshot
 		contains []string
 	}{
 		{
 			name: "basic output",
-			input: &TerminalOutput{
+			input: &PodSnapshot{
 				PodKey:     "pod-abc",
 				Output:     "$ ls\nfile.go",
 				TotalLines: 150,
@@ -25,7 +25,7 @@ func TestTerminalOutput_FormatText(t *testing.T) {
 		},
 		{
 			name: "with screen",
-			input: &TerminalOutput{
+			input: &PodSnapshot{
 				PodKey:     "pod-x",
 				Output:     "output",
 				Screen:     "screen content",
@@ -36,7 +36,7 @@ func TestTerminalOutput_FormatText(t *testing.T) {
 		},
 		{
 			name: "empty output",
-			input: &TerminalOutput{
+			input: &PodSnapshot{
 				PodKey:     "pod-empty",
 				TotalLines: 0,
 				HasMore:    false,
@@ -71,12 +71,12 @@ func TestBinding_FormatText(t *testing.T) {
 				ID:            1,
 				InitiatorPod:  "pod-a",
 				TargetPod:     "pod-b",
-				GrantedScopes: []BindingScope{ScopeTerminalRead, ScopeTerminalWrite},
+				GrantedScopes: []BindingScope{ScopePodRead, ScopePodWrite},
 				Status:        BindingStatusActive,
 				CreatedAt:     "2026-02-20T10:00:00Z",
 				UpdatedAt:     "2026-02-20T11:00:00Z",
 			},
-			contains: []string{"Binding: #1", "Initiator: pod-a", "Target: pod-b", "Status: active", "terminal:read, terminal:write", "Created: 2026-02-20T10:00:00Z"},
+			contains: []string{"Binding: #1", "Initiator: pod-a", "Target: pod-b", "Status: active", "pod:read, pod:write", "Created: 2026-02-20T10:00:00Z"},
 		},
 		{
 			name: "with pending scopes",
@@ -84,10 +84,10 @@ func TestBinding_FormatText(t *testing.T) {
 				ID:            2,
 				InitiatorPod:  "pod-c",
 				TargetPod:     "pod-d",
-				PendingScopes: []BindingScope{ScopeTerminalRead},
+				PendingScopes: []BindingScope{ScopePodRead},
 				Status:        BindingStatusPending,
 			},
-			contains: []string{"Binding: #2", "Status: pending", "Pending Scopes: terminal:read"},
+			contains: []string{"Binding: #2", "Status: pending", "Pending Scopes: pod:read"},
 		},
 		{
 			name: "no scopes",
@@ -396,14 +396,14 @@ func TestBindingList_FormatText(t *testing.T) {
 
 	t.Run("with bindings", func(t *testing.T) {
 		bindings := BindingList{
-			{ID: 1, InitiatorPod: "pod-a", TargetPod: "pod-b", Status: BindingStatusActive, GrantedScopes: []BindingScope{ScopeTerminalRead}},
+			{ID: 1, InitiatorPod: "pod-a", TargetPod: "pod-b", Status: BindingStatusActive, GrantedScopes: []BindingScope{ScopePodRead}},
 			{ID: 2, InitiatorPod: "pod-c", TargetPod: "pod-d", Status: BindingStatusPending},
 		}
 		result := bindings.FormatText()
 		if !strings.Contains(result, "| 1 |") || !strings.Contains(result, "| 2 |") {
 			t.Errorf("expected both bindings:\n%s", result)
 		}
-		if !strings.Contains(result, "terminal:read") {
+		if !strings.Contains(result, "pod:read") {
 			t.Errorf("expected scopes:\n%s", result)
 		}
 	})
@@ -541,8 +541,8 @@ func TestJoinScopes(t *testing.T) {
 	}{
 		{nil, ""},
 		{[]BindingScope{}, ""},
-		{[]BindingScope{ScopeTerminalRead}, "terminal:read"},
-		{[]BindingScope{ScopeTerminalRead, ScopeTerminalWrite}, "terminal:read, terminal:write"},
+		{[]BindingScope{ScopePodRead}, "pod:read"},
+		{[]BindingScope{ScopePodRead, ScopePodWrite}, "pod:read, pod:write"},
 	}
 
 	for _, tt := range tests {

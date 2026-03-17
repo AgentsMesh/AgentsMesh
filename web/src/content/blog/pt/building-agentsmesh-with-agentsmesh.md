@@ -138,7 +138,7 @@ Não usamos abstração de cargos para organizar a colaboração entre Agents. E
 
 **Channel** resolve a camada coletiva: múltiplos Pods compartilham mensagens, decisões e documentos no mesmo espaço colaborativo. É a base para que Supervisor Agents e Worker Agents formem estruturas de colaboração: não é um grupo de chat, é uma camada de comunicação estruturada com histórico contextual.
 
-**Binding** resolve a camada de capacidades: autorização ponto a ponto entre dois Pods. **terminal:read** permite que um Agent observe a saída de terminal de outro Agent; **terminal:write** permite que um Agent controle diretamente a execução de outro. Binding é o mecanismo de Agent coordenando Agent: o Supervisor não depende de mensagens para perceber o estado do Worker, ele vê diretamente o terminal.
+**Binding** resolve a camada de capacidades: autorização ponto a ponto entre dois Pods. **pod:read** permite que um Agent observe a saída de terminal de outro Agent; **pod:write** permite que um Agent controle diretamente a execução de outro. Binding é o mecanismo de Agent coordenando Agent: o Supervisor não depende de mensagens para perceber o estado do Worker, ele vê diretamente o terminal.
 
 A OpenAI chama os equivalentes de Context Engineering, restrições arquiteturais e gerenciamento de entropia. Nomes diferentes, mesmo problema.
 

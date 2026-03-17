@@ -77,7 +77,7 @@ func TestGRPCRunnerAdapter_HandleProtoMessage(t *testing.T) {
 		assert.True(t, podTerminatedReceived)
 	})
 
-	// NOTE: terminal output test removed - terminal output is exclusively streamed via Relay.
+	// NOTE: terminal output test removed - output is exclusively streamed via Relay.
 	// Runner no longer sends TerminalOutputEvent via gRPC.
 
 	t.Run("agent status message", func(t *testing.T) {

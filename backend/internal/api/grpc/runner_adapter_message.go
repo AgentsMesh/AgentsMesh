@@ -51,7 +51,7 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 		// Direct Proto type passing - no conversion
 		a.connManager.HandlePodTerminated(runnerID, payload.PodTerminated)
 
-	// NOTE: TerminalOutput case removed - terminal output is exclusively streamed via Relay.
+	// NOTE: TerminalOutput case removed - output is exclusively streamed via Relay.
 	// Runner no longer sends TerminalOutputEvent via gRPC.
 
 	case *runnerv1.RunnerMessage_AgentStatus:
@@ -107,6 +107,10 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 
 	case *runnerv1.RunnerMessage_AutopilotThinking:
 		a.connManager.HandleAutopilotThinking(runnerID, payload.AutopilotThinking)
+
+	case *runnerv1.RunnerMessage_ObserveTerminalResult:
+		// Direct Proto type passing - no conversion
+		a.connManager.HandleObserveTerminalResult(runnerID, payload.ObserveTerminalResult)
 
 	case *runnerv1.RunnerMessage_McpRequest:
 		a.handleMcpRequest(ctx, runnerID, conn, payload.McpRequest)

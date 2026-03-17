@@ -47,8 +47,8 @@ type EventReporter interface {
 // TargetPodController provides methods to interact with the controlled Pod.
 // This interface is implemented by runner.PodControllerImpl.
 type TargetPodController interface {
-	// SendTerminalText sends text to the pod's terminal.
-	SendTerminalText(text string) error
+	// SendInput sends text to the pod's terminal.
+	SendInput(text string) error
 	// GetWorkDir returns the pod's working directory.
 	GetWorkDir() string
 	// GetPodKey returns the pod's key.

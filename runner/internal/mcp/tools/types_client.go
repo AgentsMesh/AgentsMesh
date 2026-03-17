@@ -5,11 +5,10 @@ import (
 	"context"
 )
 
-// TerminalClient defines the interface for terminal operations.
-type TerminalClient interface {
-	ObserveTerminal(ctx context.Context, podKey string, lines int, raw bool, includeScreen bool) (*TerminalOutput, error)
-	SendTerminalText(ctx context.Context, podKey string, text string) error
-	SendTerminalKey(ctx context.Context, podKey string, keys []string) error
+// PodInteractionClient defines the interface for pod interaction operations.
+type PodInteractionClient interface {
+	GetPodSnapshot(ctx context.Context, podKey string, lines int, raw bool, includeScreen bool) (*PodSnapshot, error)
+	SendPodInput(ctx context.Context, podKey string, text string, keys []string) error
 }
 
 // DiscoveryClient defines the interface for pod discovery.
@@ -56,7 +55,7 @@ type PodClient interface {
 
 // CollaborationClient combines all collaboration interfaces.
 type CollaborationClient interface {
-	TerminalClient
+	PodInteractionClient
 	DiscoveryClient
 	BindingClient
 	ChannelClient

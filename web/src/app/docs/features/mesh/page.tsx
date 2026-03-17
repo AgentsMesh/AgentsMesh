@@ -106,12 +106,12 @@ export default function MeshPage() {
         <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
           <li>
             <code className="bg-muted px-1 rounded">
-              {t("docs.features.mesh.binding.terminalRead")}
+              {t("docs.features.mesh.binding.podRead")}
             </code>
           </li>
           <li>
             <code className="bg-muted px-1 rounded">
-              {t("docs.features.mesh.binding.terminalWrite")}
+              {t("docs.features.mesh.binding.podWrite")}
             </code>
           </li>
         </ul>

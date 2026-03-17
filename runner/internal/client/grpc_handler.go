@@ -103,6 +103,9 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 	case *runnerv1.ServerMessage_QuerySandboxes:
 		c.handleQuerySandboxes(payload.QuerySandboxes)
 
+	case *runnerv1.ServerMessage_ObserveTerminal:
+		c.handleObserveTerminal(payload.ObserveTerminal)
+
 	case *runnerv1.ServerMessage_AutopilotControl:
 		c.handleAutopilotControl(payload.AutopilotControl)
 

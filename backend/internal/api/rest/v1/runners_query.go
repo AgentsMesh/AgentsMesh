@@ -86,7 +86,7 @@ func (h *RunnerHandler) ListRunnerPods(c *gin.Context) {
 // QuerySandboxes queries sandbox status for specified pod keys on a runner
 // POST /api/v1/organizations/:slug/runners/:id/sandboxes/query
 func (h *RunnerHandler) QuerySandboxes(c *gin.Context) {
-	if h.sandboxQueryService == nil || h.sandboxQuerySender == nil {
+	if h.sandboxQueryService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Sandbox query service not configured")
 		return
 	}
@@ -124,7 +124,7 @@ func (h *RunnerHandler) QuerySandboxes(c *gin.Context) {
 	}
 
 	// Check if runner is connected
-	if !h.sandboxQuerySender.IsConnected(runnerID) {
+	if !h.sandboxQueryService.IsConnected(runnerID) {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Runner is not connected")
 		return
 	}
@@ -134,7 +134,6 @@ func (h *RunnerHandler) QuerySandboxes(c *gin.Context) {
 		c.Request.Context(),
 		runnerID,
 		req.PodKeys,
-		h.sandboxQuerySender.SendQuerySandboxes,
 	)
 	if err != nil {
 		apierr.InternalError(c, err.Error())

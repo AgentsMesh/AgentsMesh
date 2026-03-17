@@ -13,7 +13,7 @@ const (
 	MsgTypePodCreated    MessageType = "pod_created"
 	MsgTypePodTerminated MessageType = "pod_terminated"
 	MsgTypePtyResized    MessageType = "pty_resized"
-	// NOTE: MsgTypeTerminalOutput removed - terminal output is exclusively streamed via Relay
+	// NOTE: MsgTypeTerminalOutput removed - output is exclusively streamed via Relay
 )
 
 // ==================== Pod Operation Data Structures ====================
@@ -100,6 +100,14 @@ type SandboxStatusInfo struct {
 	Error                 string `json:"error,omitempty"`
 }
 
+// ObserveTerminalRequest is sent to query terminal state for a pod.
+type ObserveTerminalRequest struct {
+	RequestID     string `json:"request_id"`
+	PodKey        string `json:"pod_key"`
+	Lines         int    `json:"lines"`
+	IncludeScreen bool   `json:"include_screen"`
+}
+
 // ==================== Message Handler Interface ====================
 
 // MessageHandler handles incoming messages from server.
@@ -127,6 +135,10 @@ type MessageHandler interface {
 	// OnQuerySandboxes handles sandbox status query command from server.
 	// Returns sandbox status for specified pod keys.
 	OnQuerySandboxes(req QuerySandboxesRequest) error
+
+	// OnObserveTerminal handles observe terminal command from server.
+	// Reads VirtualTerminal state and sends result back via gRPC.
+	OnObserveTerminal(req ObserveTerminalRequest) error
 
 	// Autopilot commands
 	// OnCreateAutopilot handles Autopilot creation command.

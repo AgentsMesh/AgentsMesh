@@ -87,6 +87,10 @@ func (h *mockHandler) OnQuerySandboxes(req QuerySandboxesRequest) error {
 	return nil
 }
 
+func (h *mockHandler) OnObserveTerminal(req ObserveTerminalRequest) error {
+	return nil
+}
+
 func (h *mockHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCommand) error {
 	return nil
 }
@@ -149,6 +153,10 @@ func (h *mockHandlerWithError) OnUnsubscribeTerminal(req UnsubscribeTerminalRequ
 }
 
 func (h *mockHandlerWithError) OnQuerySandboxes(req QuerySandboxesRequest) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnObserveTerminal(req ObserveTerminalRequest) error {
 	return nil
 }
 

@@ -52,7 +52,7 @@ func (m *mockFormatClient) ListRepositories(_ context.Context) ([]tools.Reposito
 
 func (m *mockFormatClient) GetBindings(_ context.Context, _ *tools.BindingStatus) ([]tools.Binding, error) {
 	return []tools.Binding{
-		{ID: 1, InitiatorPod: "pod-a", TargetPod: "pod-b", Status: tools.BindingStatusActive, GrantedScopes: []tools.BindingScope{tools.ScopeTerminalRead}},
+		{ID: 1, InitiatorPod: "pod-a", TargetPod: "pod-b", Status: tools.BindingStatusActive, GrantedScopes: []tools.BindingScope{tools.ScopePodRead}},
 	}, nil
 }
 
@@ -110,14 +110,14 @@ func (m *mockFormatClient) UpdateTicket(_ context.Context, _ string, _, _ *strin
 func (m *mockFormatClient) RequestBinding(_ context.Context, _ string, _ []tools.BindingScope) (*tools.Binding, error) {
 	return &tools.Binding{
 		ID: 10, InitiatorPod: "test-pod", TargetPod: "other-pod",
-		Status: tools.BindingStatusPending, PendingScopes: []tools.BindingScope{tools.ScopeTerminalRead},
+		Status: tools.BindingStatusPending, PendingScopes: []tools.BindingScope{tools.ScopePodRead},
 	}, nil
 }
 
 func (m *mockFormatClient) AcceptBinding(_ context.Context, _ int) (*tools.Binding, error) {
 	return &tools.Binding{
 		ID: 10, InitiatorPod: "other-pod", TargetPod: "test-pod",
-		Status: tools.BindingStatusActive, GrantedScopes: []tools.BindingScope{tools.ScopeTerminalRead},
+		Status: tools.BindingStatusActive, GrantedScopes: []tools.BindingScope{tools.ScopePodRead},
 	}, nil
 }
 
@@ -160,17 +160,13 @@ func (m *mockFormatClient) GetDocument(_ context.Context, _ int) (string, error)
 
 func (m *mockFormatClient) UpdateDocument(_ context.Context, _ int, _ string) error { return nil }
 
-func (m *mockFormatClient) ObserveTerminal(_ context.Context, _ string, _ int, _ bool, _ bool) (*tools.TerminalOutput, error) {
-	return &tools.TerminalOutput{
+func (m *mockFormatClient) GetPodSnapshot(_ context.Context, _ string, _ int, _ bool, _ bool) (*tools.PodSnapshot, error) {
+	return &tools.PodSnapshot{
 		PodKey: "target-pod", Output: "$ ls\nfile.go", TotalLines: 50, HasMore: false,
 	}, nil
 }
 
-func (m *mockFormatClient) SendTerminalText(_ context.Context, _ string, _ string) error {
-	return nil
-}
-
-func (m *mockFormatClient) SendTerminalKey(_ context.Context, _ string, _ []string) error {
+func (m *mockFormatClient) SendPodInput(_ context.Context, _ string, _ string, _ []string) error {
 	return nil
 }
 
@@ -282,7 +278,7 @@ func TestFormatIntegration_GetBindings(t *testing.T) {
 	assertContains(t, text, "| 1 |")
 	assertContains(t, text, "| pod-a |")
 	assertContains(t, text, "| active |")
-	assertContains(t, text, "terminal:read")
+	assertContains(t, text, "pod:read")
 	assertNotContains(t, text, `"initiator_pod"`)
 }
 
@@ -365,7 +361,7 @@ func TestFormatIntegration_UpdateTicket(t *testing.T) {
 
 func TestFormatIntegration_BindPod(t *testing.T) {
 	server := setupServerWithMockClient(t)
-	text := callTool(t, server, "bind_pod", `{"target_pod":"other-pod","scopes":["terminal:read"]}`)
+	text := callTool(t, server, "bind_pod", `{"target_pod":"other-pod","scopes":["pod:read"]}`)
 
 	assertContains(t, text, "Binding: #10")
 	assertContains(t, text, "Initiator: test-pod")
@@ -415,9 +411,9 @@ func TestFormatIntegration_SendChannelMessage(t *testing.T) {
 	assertContains(t, text, "Content: Hello")
 }
 
-func TestFormatIntegration_ObserveTerminal(t *testing.T) {
+func TestFormatIntegration_GetPodSnapshot(t *testing.T) {
 	server := setupServerWithMockClient(t)
-	text := callTool(t, server, "observe_terminal", `{"pod_key":"target-pod"}`)
+	text := callTool(t, server, "get_pod_snapshot", `{"pod_key":"target-pod"}`)
 
 	assertContains(t, text, "Pod: target-pod")
 	assertContains(t, text, "Lines: 50")
@@ -475,20 +471,11 @@ func TestFormatIntegration_UpdateChannelDocument(t *testing.T) {
 	}
 }
 
-func TestFormatIntegration_SendTerminalText(t *testing.T) {
+func TestFormatIntegration_SendPodInput(t *testing.T) {
 	server := setupServerWithMockClient(t)
-	text := callTool(t, server, "send_terminal_text", `{"pod_key":"target-pod","text":"hello"}`)
+	text := callTool(t, server, "send_pod_input", `{"pod_key":"target-pod","text":"hello","keys":["enter"]}`)
 
-	if text != "Text sent successfully" {
-		t.Errorf("expected plain text, got: %s", text)
-	}
-}
-
-func TestFormatIntegration_SendTerminalKey(t *testing.T) {
-	server := setupServerWithMockClient(t)
-	text := callTool(t, server, "send_terminal_key", `{"pod_key":"target-pod","keys":["enter"]}`)
-
-	if text != "Keys sent successfully" {
+	if text != "Input sent successfully" {
 		t.Errorf("expected plain text, got: %s", text)
 	}
 }

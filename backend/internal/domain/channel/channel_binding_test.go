@@ -31,20 +31,20 @@ func TestBindingStatusConstants(t *testing.T) {
 // --- Test Binding Scope Constants ---
 
 func TestBindingScopeConstants(t *testing.T) {
-	if BindingScopeTerminalRead != "terminal:read" {
-		t.Errorf("expected 'terminal:read', got %s", BindingScopeTerminalRead)
+	if BindingScopePodRead != "pod:read" {
+		t.Errorf("expected 'pod:read', got %s", BindingScopePodRead)
 	}
-	if BindingScopeTerminalWrite != "terminal:write" {
-		t.Errorf("expected 'terminal:write', got %s", BindingScopeTerminalWrite)
+	if BindingScopePodWrite != "pod:write" {
+		t.Errorf("expected 'pod:write', got %s", BindingScopePodWrite)
 	}
 }
 
 func TestValidBindingScopes(t *testing.T) {
-	if !ValidBindingScopes[BindingScopeTerminalRead] {
-		t.Error("expected terminal:read to be valid")
+	if !ValidBindingScopes[BindingScopePodRead] {
+		t.Error("expected pod:read to be valid")
 	}
-	if !ValidBindingScopes[BindingScopeTerminalWrite] {
-		t.Error("expected terminal:write to be valid")
+	if !ValidBindingScopes[BindingScopePodWrite] {
+		t.Error("expected pod:write to be valid")
 	}
 	if ValidBindingScopes["invalid:scope"] {
 		t.Error("expected invalid:scope to be invalid")
@@ -81,14 +81,14 @@ func TestPodBindingTableName(t *testing.T) {
 
 func TestPodBindingHasScope(t *testing.T) {
 	pb := &PodBinding{
-		GrantedScopes: pq.StringArray{BindingScopeTerminalRead, BindingScopeTerminalWrite},
+		GrantedScopes: pq.StringArray{BindingScopePodRead, BindingScopePodWrite},
 	}
 
-	if !pb.HasScope(BindingScopeTerminalRead) {
-		t.Error("expected HasScope(terminal:read) = true")
+	if !pb.HasScope(BindingScopePodRead) {
+		t.Error("expected HasScope(pod:read) = true")
 	}
-	if !pb.HasScope(BindingScopeTerminalWrite) {
-		t.Error("expected HasScope(terminal:write) = true")
+	if !pb.HasScope(BindingScopePodWrite) {
+		t.Error("expected HasScope(pod:write) = true")
 	}
 	if pb.HasScope("invalid:scope") {
 		t.Error("expected HasScope(invalid:scope) = false")
@@ -97,14 +97,14 @@ func TestPodBindingHasScope(t *testing.T) {
 
 func TestPodBindingHasPendingScope(t *testing.T) {
 	pb := &PodBinding{
-		PendingScopes: pq.StringArray{BindingScopeTerminalWrite},
+		PendingScopes: pq.StringArray{BindingScopePodWrite},
 	}
 
-	if !pb.HasPendingScope(BindingScopeTerminalWrite) {
-		t.Error("expected HasPendingScope(terminal:write) = true")
+	if !pb.HasPendingScope(BindingScopePodWrite) {
+		t.Error("expected HasPendingScope(pod:write) = true")
 	}
-	if pb.HasPendingScope(BindingScopeTerminalRead) {
-		t.Error("expected HasPendingScope(terminal:read) = false")
+	if pb.HasPendingScope(BindingScopePodRead) {
+		t.Error("expected HasPendingScope(pod:read) = false")
 	}
 }
 
@@ -154,8 +154,8 @@ func TestPodBindingStruct(t *testing.T) {
 		OrganizationID:  100,
 		InitiatorPod:    "pod-init",
 		TargetPod:       "pod-target",
-		GrantedScopes:   pq.StringArray{BindingScopeTerminalRead},
-		PendingScopes:   pq.StringArray{BindingScopeTerminalWrite},
+		GrantedScopes:   pq.StringArray{BindingScopePodRead},
+		PendingScopes:   pq.StringArray{BindingScopePodWrite},
 		Status:          BindingStatusPending,
 		RequestedAt:     &now,
 		RejectionReason: &reason,
@@ -178,10 +178,10 @@ func TestPodBindingStruct(t *testing.T) {
 
 func BenchmarkPodBindingHasScope(b *testing.B) {
 	pb := &PodBinding{
-		GrantedScopes: pq.StringArray{BindingScopeTerminalRead, BindingScopeTerminalWrite},
+		GrantedScopes: pq.StringArray{BindingScopePodRead, BindingScopePodWrite},
 	}
 	for i := 0; i < b.N; i++ {
-		pb.HasScope(BindingScopeTerminalRead)
+		pb.HasScope(BindingScopePodRead)
 	}
 }
 
@@ -195,7 +195,7 @@ func BenchmarkPodBindingIsActive(b *testing.B) {
 func BenchmarkPodBindingCanObserve(b *testing.B) {
 	pb := &PodBinding{
 		Status:        BindingStatusActive,
-		GrantedScopes: pq.StringArray{BindingScopeTerminalRead},
+		GrantedScopes: pq.StringArray{BindingScopePodRead},
 	}
 	for i := 0; i < b.N; i++ {
 		pb.CanObserve()

@@ -79,6 +79,27 @@ func (c *GRPCConnection) SendSandboxesStatus(requestID string, sandboxes []*Sand
 	return c.sendControl(msg)
 }
 
+// SendObserveTerminalResult sends terminal observation result to the server (control message).
+func (c *GRPCConnection) SendObserveTerminalResult(requestID, podKey, output, screen string, cursorX, cursorY, totalLines int, hasMore bool, errMsg string) error {
+	msg := &runnerv1.RunnerMessage{
+		Payload: &runnerv1.RunnerMessage_ObserveTerminalResult{
+			ObserveTerminalResult: &runnerv1.ObserveTerminalResult{
+				RequestId:  requestID,
+				PodKey:     podKey,
+				Output:     output,
+				Screen:     screen,
+				CursorX:    int32(cursorX),
+				CursorY:    int32(cursorY),
+				TotalLines: int32(totalLines),
+				HasMore:    hasMore,
+				Error:      errMsg,
+			},
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return c.sendControl(msg)
+}
+
 // SendUpgradeStatus sends an upgrade status event to the server (control message).
 func (c *GRPCConnection) SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) error {
 	msg := &runnerv1.RunnerMessage{

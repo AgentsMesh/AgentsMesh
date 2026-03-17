@@ -179,8 +179,8 @@ func TestQueueUsageAccuracy(t *testing.T) {
 	t.Logf("✅ QueueUsage accuracy verified: 0%% → 50%% → 100%%")
 }
 
-// TestHighThroughputTerminalOutput simulates multiple pods with high output.
-func TestHighThroughputTerminalOutput(t *testing.T) {
+// TestHighThroughputOutput simulates multiple pods with high output.
+func TestHighThroughputOutput(t *testing.T) {
 	conn := NewGRPCConnection("localhost:9443", "test-node", "test-org", "", "", "")
 
 	var wg sync.WaitGroup

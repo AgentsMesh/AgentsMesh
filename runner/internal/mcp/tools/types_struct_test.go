@@ -11,8 +11,8 @@ func TestBindingStruct(t *testing.T) {
 		ID:            1,
 		InitiatorPod:  "pod-1",
 		TargetPod:     "pod-2",
-		GrantedScopes: []BindingScope{ScopeTerminalRead},
-		PendingScopes: []BindingScope{ScopeTerminalWrite},
+		GrantedScopes: []BindingScope{ScopePodRead},
+		PendingScopes: []BindingScope{ScopePodWrite},
 		Status:        BindingStatusActive,
 		CreatedAt:     "2024-01-01T00:00:00Z",
 		UpdatedAt:     "2024-01-01T00:00:00Z",
@@ -27,8 +27,8 @@ func TestBindingStruct(t *testing.T) {
 	if b.TargetPod != "pod-2" {
 		t.Errorf("TargetPod: got %v, want %v", b.TargetPod, "pod-2")
 	}
-	if len(b.GrantedScopes) != 1 || b.GrantedScopes[0] != ScopeTerminalRead {
-		t.Errorf("GrantedScopes: got %v, want [terminal:read]", b.GrantedScopes)
+	if len(b.GrantedScopes) != 1 || b.GrantedScopes[0] != ScopePodRead {
+		t.Errorf("GrantedScopes: got %v, want [pod:read]", b.GrantedScopes)
 	}
 	if b.Status != BindingStatusActive {
 		t.Errorf("Status: got %v, want %v", b.Status, BindingStatusActive)
@@ -58,8 +58,8 @@ func TestAvailablePodStruct(t *testing.T) {
 	}
 }
 
-func TestTerminalOutputStruct(t *testing.T) {
-	output := TerminalOutput{
+func TestPodSnapshotStruct(t *testing.T) {
+	output := PodSnapshot{
 		PodKey:     "test-pod",
 		Output:     "test output",
 		Screen:     "test screen",

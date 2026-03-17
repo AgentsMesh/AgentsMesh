@@ -9,10 +9,10 @@ import (
 type BindingScope string
 
 const (
-	// ScopeTerminalRead allows reading terminal output.
-	ScopeTerminalRead BindingScope = "terminal:read"
-	// ScopeTerminalWrite allows writing to terminal.
-	ScopeTerminalWrite BindingScope = "terminal:write"
+	// ScopePodRead allows reading pod output.
+	ScopePodRead BindingScope = "pod:read"
+	// ScopePodWrite allows writing to pod.
+	ScopePodWrite BindingScope = "pod:write"
 )
 
 // BindingStatus represents the status of a pod binding.

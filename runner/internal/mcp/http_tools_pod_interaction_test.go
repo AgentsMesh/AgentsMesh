@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestHTTPServerMCPToolsCallSendTerminalKey(t *testing.T) {
+func TestHTTPServerMCPToolsCallSendPodInput(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -17,10 +17,10 @@ func TestHTTPServerMCPToolsCallSendTerminalKey(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "send_terminal_key",
+			"name": "send_pod_input",
 			"arguments": {
 				"pod_key": "target-pod",
-				"key": "ctrl_c"
+				"keys": ["ctrl+c"]
 			}
 		}
 	}`)
@@ -38,11 +38,11 @@ func TestHTTPServerMCPToolsCallSendTerminalKey(t *testing.T) {
 
 	// Tool should be found (may error on backend call)
 	if resp.Error != nil && resp.Error.Code == -32601 {
-		t.Error("tool send_terminal_key should be found")
+		t.Error("tool send_pod_input should be found")
 	}
 }
 
-func TestHTTPServerMCPToolsCallSendTerminalKeyMissingArgs(t *testing.T) {
+func TestHTTPServerMCPToolsCallSendPodInputMissingArgs(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -51,7 +51,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyMissingArgs(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "send_terminal_key",
+			"name": "send_pod_input",
 			"arguments": {
 				"pod_key": "target-pod"
 			}
@@ -66,10 +66,10 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyMissingArgs(t *testing.T) {
 
 	var resp MCPResponse
 	json.NewDecoder(rec.Body).Decode(&resp)
-	// Should handle missing key argument
+	// Should handle missing text/keys argument
 }
 
-func TestHTTPServerMCPToolsCallSendTerminalKeyWithValidKeys(t *testing.T) {
+func TestHTTPServerMCPToolsCallSendPodInputWithTextAndKeys(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -78,9 +78,10 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyWithValidKeys(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "send_terminal_key",
+			"name": "send_pod_input",
 			"arguments": {
 				"pod_key": "target-pod",
+				"text": "hello",
 				"keys": ["ctrl+c", "enter", "escape"]
 			}
 		}
@@ -97,7 +98,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyWithValidKeys(t *testing.T) {
 	// Tool should be found
 }
 
-func TestHTTPServerMCPToolsCallSendTerminalKeyMissingPodKey(t *testing.T) {
+func TestHTTPServerMCPToolsCallSendPodInputMissingPodKey(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -106,7 +107,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyMissingPodKey(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "send_terminal_key",
+			"name": "send_pod_input",
 			"arguments": {
 				"keys": ["enter"]
 			}
@@ -123,11 +124,11 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyMissingPodKey(t *testing.T) {
 	json.NewDecoder(rec.Body).Decode(&resp)
 	// Tool should be found and validation error returned
 	if resp.Error != nil && resp.Error.Code == -32601 {
-		t.Error("tool send_terminal_key should be found")
+		t.Error("tool send_pod_input should be found")
 	}
 }
 
-func TestHTTPServerMCPToolsCallSendTerminalKeyEmptyKeys(t *testing.T) {
+func TestHTTPServerMCPToolsCallSendPodInputEmptyKeysAndText(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -136,7 +137,7 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyEmptyKeys(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "send_terminal_key",
+			"name": "send_pod_input",
 			"arguments": {
 				"pod_key": "target-pod",
 				"keys": []
@@ -154,11 +155,11 @@ func TestHTTPServerMCPToolsCallSendTerminalKeyEmptyKeys(t *testing.T) {
 	json.NewDecoder(rec.Body).Decode(&resp)
 	// Tool should be found and validation error returned
 	if resp.Error != nil && resp.Error.Code == -32601 {
-		t.Error("tool send_terminal_key should be found")
+		t.Error("tool send_pod_input should be found")
 	}
 }
 
-func TestHTTPServerMCPToolsCallObserveTerminalWithDefaultLines(t *testing.T) {
+func TestHTTPServerMCPToolsCallGetPodSnapshotWithDefaultLines(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -167,7 +168,7 @@ func TestHTTPServerMCPToolsCallObserveTerminalWithDefaultLines(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "observe_terminal",
+			"name": "get_pod_snapshot",
 			"arguments": {
 				"pod_key": "target-pod"
 			}
@@ -184,7 +185,7 @@ func TestHTTPServerMCPToolsCallObserveTerminalWithDefaultLines(t *testing.T) {
 	json.NewDecoder(rec.Body).Decode(&resp)
 }
 
-func TestHTTPServerMCPToolsCallObserveTerminalMissingPodKey(t *testing.T) {
+func TestHTTPServerMCPToolsCallGetPodSnapshotMissingPodKey(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -193,7 +194,7 @@ func TestHTTPServerMCPToolsCallObserveTerminalMissingPodKey(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "observe_terminal",
+			"name": "get_pod_snapshot",
 			"arguments": {}
 		}
 	}`)
@@ -208,11 +209,11 @@ func TestHTTPServerMCPToolsCallObserveTerminalMissingPodKey(t *testing.T) {
 	json.NewDecoder(rec.Body).Decode(&resp)
 	// Tool should be found and validation error returned
 	if resp.Error != nil && resp.Error.Code == -32601 {
-		t.Error("tool observe_terminal should be found")
+		t.Error("tool get_pod_snapshot should be found")
 	}
 }
 
-func TestHTTPServerMCPToolsCallSendTerminalTextMissingArgs(t *testing.T) {
+func TestHTTPServerMCPToolsCallSendPodInputTextOnlyMissingArgs(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 
@@ -221,7 +222,7 @@ func TestHTTPServerMCPToolsCallSendTerminalTextMissingArgs(t *testing.T) {
 		"id": 1,
 		"method": "tools/call",
 		"params": {
-			"name": "send_terminal_text",
+			"name": "send_pod_input",
 			"arguments": {
 				"pod_key": "target-pod"
 			}
@@ -238,6 +239,6 @@ func TestHTTPServerMCPToolsCallSendTerminalTextMissingArgs(t *testing.T) {
 	json.NewDecoder(rec.Body).Decode(&resp)
 	// Tool should be found and validation error returned
 	if resp.Error != nil && resp.Error.Code == -32601 {
-		t.Error("tool send_terminal_text should be found")
+		t.Error("tool send_pod_input should be found")
 	}
 }

@@ -41,10 +41,12 @@ type pendingQuery struct {
 	timeout  time.Time
 }
 
-// SandboxQueryService handles sandbox status queries to runners
+// SandboxQueryService handles sandbox status queries to runners.
+// It owns the full query lifecycle: send command → wait for async response → return result.
 type SandboxQueryService struct {
 	pendingQueries sync.Map      // map[requestID]*pendingQuery
 	done           chan struct{} // signal channel for graceful shutdown
+	sender         SandboxQuerySender // injected via SetSender (delayed wiring)
 }
 
 // NewSandboxQueryService creates a new sandbox query service
@@ -70,6 +72,20 @@ func NewSandboxQueryService(cm *RunnerConnectionManager) *SandboxQueryService {
 // Stop gracefully stops the sandbox query service
 func (s *SandboxQueryService) Stop() {
 	close(s.done)
+}
+
+// SetSender sets the command sender for sandbox queries (delayed injection).
+// Must be called before QuerySandboxes is used.
+func (s *SandboxQueryService) SetSender(sender SandboxQuerySender) {
+	s.sender = sender
+}
+
+// IsConnected checks if a runner is connected via the underlying sender.
+func (s *SandboxQueryService) IsConnected(runnerID int64) bool {
+	if s.sender == nil {
+		return false
+	}
+	return s.sender.IsConnected(runnerID)
 }
 
 // RegisterQuery registers a pending query and returns a channel for the result
@@ -124,13 +140,17 @@ func (s *SandboxQueryService) CompleteQuery(requestID string, runnerID int64, ev
 	}
 }
 
-// QuerySandboxes sends a sandbox query to a runner and waits for the response
+// QuerySandboxes sends a sandbox query to a runner and waits for the response.
+// The sender must be configured via SetSender before calling this method.
 func (s *SandboxQueryService) QuerySandboxes(
 	ctx context.Context,
 	runnerID int64,
 	podKeys []string,
-	sendFn func(runnerID int64, requestID string, podKeys []string) error,
 ) (*SandboxQueryResult, error) {
+	if s.sender == nil {
+		return nil, ErrCommandSenderNotSet
+	}
+
 	// Generate unique request ID
 	requestID := uuid.New().String()
 
@@ -138,7 +158,7 @@ func (s *SandboxQueryService) QuerySandboxes(
 	resultCh := s.RegisterQuery(requestID)
 
 	// Send query to runner
-	if err := sendFn(runnerID, requestID, podKeys); err != nil {
+	if err := s.sender.SendQuerySandboxes(runnerID, requestID, podKeys); err != nil {
 		s.pendingQueries.Delete(requestID)
 		return nil, err
 	}

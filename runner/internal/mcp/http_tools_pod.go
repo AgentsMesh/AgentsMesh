@@ -27,7 +27,7 @@ func mergeModelIntoConfigOverrides(req *tools.PodCreateRequest, model string) {
 func (s *HTTPServer) createCreatePodTool() *MCPTool {
 	return &MCPTool{
 		Name:        "create_pod",
-		Description: "Create a new agent pod. IMPORTANT: Before calling this tool, you MUST first call list_runners to get the runner_id and agent_type_id. The new pod will automatically have terminal:read and terminal:write permissions to the creator via binding.",
+		Description: "Create a new agent pod. IMPORTANT: Before calling this tool, you MUST first call list_runners to get the runner_id and agent_type_id. The new pod will automatically have pod:read and pod:write permissions to the creator via binding.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -121,9 +121,9 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 				return nil, err
 			}
 
-			// Auto-bind to the new pod with terminal permissions
-			// This allows the creator to observe and control the new pod's terminal
-			scopes := []tools.BindingScope{tools.ScopeTerminalRead, tools.ScopeTerminalWrite}
+			// Auto-bind to the new pod with pod interaction permissions
+			// This allows the creator to observe and control the new pod
+			scopes := []tools.BindingScope{tools.ScopePodRead, tools.ScopePodWrite}
 			binding, err := client.RequestBinding(ctx, resp.PodKey, scopes)
 			if err != nil {
 				// Pod created but binding failed - return both info

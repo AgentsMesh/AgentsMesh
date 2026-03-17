@@ -22,8 +22,8 @@ func (s *HTTPServer) createBindPodTool() *MCPTool {
 				},
 				"scopes": map[string]interface{}{
 					"type":        "array",
-					"items":       map[string]interface{}{"type": "string", "enum": []string{"terminal:read", "terminal:write"}},
-					"description": "Permission scopes to request (terminal:read, terminal:write)",
+					"items":       map[string]interface{}{"type": "string", "enum": []string{"pod:read", "pod:write"}},
+					"description": "Permission scopes to request (pod:read, pod:write)",
 				},
 			},
 			"required": []string{"target_pod", "scopes"},

@@ -190,7 +190,6 @@ func main() {
 	// Initialize PKI and gRPC
 	var grpcRunnerHandler *v1.GRPCRunnerHandler
 	var grpcServer *grpcserver.Server
-	var sandboxQuerySender runner.SandboxQuerySender
 	var upgradeCommandSender runner.UpgradeCommandSender
 	var logUploadSender runner.LogUploadCommandSender
 	if cfg.PKI.CACertFile != "" && cfg.PKI.CAKeyFile != "" {
@@ -211,7 +210,7 @@ func main() {
 			grpcCommandSender := grpcserver.NewGRPCCommandSender(grpcServer.RunnerAdapter())
 			podCoordinator.SetCommandSender(grpcCommandSender)
 			terminalRouter.SetCommandSender(grpcCommandSender)
-			sandboxQuerySender = grpcCommandSender
+			sandboxQuerySvc.SetSender(grpcCommandSender)
 			upgradeCommandSender = grpcCommandSender
 			logUploadSender = grpcCommandSender
 			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server")
@@ -258,7 +257,6 @@ func main() {
 		Runner:             services.runner,
 		RunnerConnMgr:      runnerConnMgr,
 		PodCoordinator:     podCoordinator,
-		TerminalRouter:     terminalRouter,
 		Pod:                services.pod,
 		PodOrchestrator:    podOrchestrator,
 		Autopilot:          services.autopilot,
@@ -279,8 +277,7 @@ func main() {
 		APIKey:             services.apikey,
 		APIKeyAdapter:      services.apikeyAdapter,
 		GRPCRunnerHandler:  grpcRunnerHandler,
-		SandboxQueryService: sandboxQuerySvc,
-		SandboxQuerySender:   sandboxQuerySender,
+		SandboxQueryService:  sandboxQuerySvc,
 		UpgradeCommandSender: upgradeCommandSender,
 		LogUploadSender:      logUploadSender,
 		LogUploadService:     logUploadSvc,

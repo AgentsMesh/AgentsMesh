@@ -28,7 +28,7 @@ func TestPromptBuilder_DefaultMCPPort(t *testing.T) {
 
 	prompt := pb.BuildInitialPrompt()
 	// Should contain MCP tool instructions (port is no longer in prompt since we use MCP config file)
-	assert.Contains(t, prompt, "observe_terminal")
+	assert.Contains(t, prompt, "get_pod_snapshot")
 	assert.Contains(t, prompt, "worker-123")
 }
 
@@ -52,9 +52,8 @@ func TestPromptBuilder_BuildInitialPrompt(t *testing.T) {
 
 	// Should contain MCP tool instructions with pod key
 	assert.Contains(t, prompt, "worker-123")
-	assert.Contains(t, prompt, "observe_terminal")
-	assert.Contains(t, prompt, "send_terminal_text")
-	assert.Contains(t, prompt, "send_terminal_key")
+	assert.Contains(t, prompt, "get_pod_snapshot")
+	assert.Contains(t, prompt, "send_pod_input")
 	assert.Contains(t, prompt, "get_pod_status")
 }
 

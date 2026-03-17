@@ -81,61 +81,72 @@ export default function MCPToolsPage() {
         </div>
       </section>
 
-      {/* Terminal Tools */}
+      {/* Pod Tools */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-4">
-          {t("docs.runners.mcpTools.terminal.title")}
+          {t("docs.runners.mcpTools.pod.title")}
         </h2>
         <p className="text-muted-foreground mb-4">
-          {t("docs.runners.mcpTools.terminal.description")}
+          {t("docs.runners.mcpTools.pod.description")}
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-border rounded-lg">
             <thead>
               <tr className="bg-muted">
                 <th className="text-left p-3 border-b border-border">
-                  {t("docs.runners.mcpTools.terminal.toolHeader")}
+                  {t("docs.runners.mcpTools.pod.toolHeader")}
                 </th>
                 <th className="text-left p-3 border-b border-border">
-                  {t("docs.runners.mcpTools.terminal.descriptionHeader")}
+                  {t("docs.runners.mcpTools.pod.descriptionHeader")}
                 </th>
                 <th className="text-left p-3 border-b border-border">
-                  {t("docs.runners.mcpTools.terminal.scopeHeader")}
+                  {t("docs.runners.mcpTools.pod.paramsHeader")}
                 </th>
               </tr>
             </thead>
             <tbody className="text-muted-foreground">
               <tr>
                 <td className="p-3 border-b border-border font-medium">
-                  {t("docs.runners.mcpTools.terminal.observe")}
+                  {t("docs.runners.mcpTools.pod.createPod")}
                 </td>
                 <td className="p-3 border-b border-border">
-                  {t("docs.runners.mcpTools.terminal.observeDesc")}
+                  {t("docs.runners.mcpTools.pod.createPodDesc")}
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  {t("docs.runners.mcpTools.terminal.observeScope")}
+                  {t("docs.runners.mcpTools.pod.createPodParams")}
                 </td>
               </tr>
               <tr>
                 <td className="p-3 border-b border-border font-medium">
-                  {t("docs.runners.mcpTools.terminal.sendText")}
+                  {t("docs.runners.mcpTools.pod.getPodSnapshot")}
                 </td>
                 <td className="p-3 border-b border-border">
-                  {t("docs.runners.mcpTools.terminal.sendTextDesc")}
+                  {t("docs.runners.mcpTools.pod.getPodSnapshotDesc")}
                 </td>
                 <td className="p-3 border-b border-border font-mono text-xs">
-                  {t("docs.runners.mcpTools.terminal.sendTextScope")}
+                  {t("docs.runners.mcpTools.pod.getPodSnapshotParams")}
+                </td>
+              </tr>
+              <tr>
+                <td className="p-3 border-b border-border font-medium">
+                  {t("docs.runners.mcpTools.pod.sendPodInput")}
+                </td>
+                <td className="p-3 border-b border-border">
+                  {t("docs.runners.mcpTools.pod.sendPodInputDesc")}
+                </td>
+                <td className="p-3 border-b border-border font-mono text-xs">
+                  {t("docs.runners.mcpTools.pod.sendPodInputParams")}
                 </td>
               </tr>
               <tr>
                 <td className="p-3 font-medium">
-                  {t("docs.runners.mcpTools.terminal.sendKey")}
+                  {t("docs.runners.mcpTools.pod.getPodStatus")}
                 </td>
                 <td className="p-3">
-                  {t("docs.runners.mcpTools.terminal.sendKeyDesc")}
+                  {t("docs.runners.mcpTools.pod.getPodStatusDesc")}
                 </td>
                 <td className="p-3 font-mono text-xs">
-                  {t("docs.runners.mcpTools.terminal.sendKeyScope")}
+                  {t("docs.runners.mcpTools.pod.getPodStatusParams")}
                 </td>
               </tr>
             </tbody>
@@ -401,43 +412,6 @@ export default function MCPToolsPage() {
                 </td>
                 <td className="p-3 font-mono text-xs">
                   {t("docs.runners.mcpTools.ticket.updateTicketParams")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Pod Tools */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">
-          {t("docs.runners.mcpTools.pod.title")}
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border border-border rounded-lg">
-            <thead>
-              <tr className="bg-muted">
-                <th className="text-left p-3 border-b border-border">
-                  {t("docs.runners.mcpTools.pod.toolHeader")}
-                </th>
-                <th className="text-left p-3 border-b border-border">
-                  {t("docs.runners.mcpTools.pod.descriptionHeader")}
-                </th>
-                <th className="text-left p-3 border-b border-border">
-                  {t("docs.runners.mcpTools.pod.paramsHeader")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-muted-foreground">
-              <tr>
-                <td className="p-3 font-medium">
-                  {t("docs.runners.mcpTools.pod.createPod")}
-                </td>
-                <td className="p-3">
-                  {t("docs.runners.mcpTools.pod.createPodDesc")}
-                </td>
-                <td className="p-3 font-mono text-xs">
-                  {t("docs.runners.mcpTools.pod.createPodParams")}
                 </td>
               </tr>
             </tbody>

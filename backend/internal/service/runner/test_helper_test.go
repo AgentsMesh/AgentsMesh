@@ -159,6 +159,10 @@ func (m *MockCommandSender) SendUnsubscribeTerminal(ctx context.Context, runnerI
 	return nil
 }
 
+func (m *MockCommandSender) SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+	return nil
+}
+
 func (m *MockCommandSender) SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -442,8 +442,8 @@
           "title": "Pod Binding Mechanism",
           "description": "Bindings establish permission-controlled connections between Pods. A binding allows one Pod to interact with another's terminal or resources.",
           "scopes": "Binding Scopes",
-          "terminalRead": "terminal:read — Observe another Pod's terminal output",
-          "terminalWrite": "terminal:write — Send input to another Pod's terminal",
+          "podRead": "pod:read — Observe another Pod's terminal output",
+          "podWrite": "pod:write — Send input to another Pod's terminal",
           "flow": "Binding Flow",
           "flowStep1": "Pod A requests a binding to Pod B with specific scopes",
           "flowStep2": "Pod B receives the binding request",
@@ -718,22 +718,6 @@
           "listRepos": "list_repositories",
           "listReposDesc": "List available repositories"
         },
-        "terminal": {
-          "title": "Terminal Tools",
-          "description": "These tools require an active binding with appropriate scopes.",
-          "toolHeader": "Tool",
-          "descriptionHeader": "Description",
-          "scopeHeader": "Required Scope",
-          "observe": "observe_terminal",
-          "observeDesc": "Watch another Pod's terminal output",
-          "observeScope": "terminal:read",
-          "sendText": "send_terminal_text",
-          "sendTextDesc": "Send text to another Pod's terminal",
-          "sendTextScope": "terminal:write",
-          "sendKey": "send_terminal_key",
-          "sendKeyDesc": "Send special keys (enter, ctrl+c, up, down, etc.)",
-          "sendKeyScope": "terminal:write"
-        },
         "binding": {
           "title": "Pod Binding Tools",
           "toolHeader": "Tool",
@@ -810,7 +794,17 @@
           "paramsHeader": "Parameters",
           "createPod": "create_pod",
           "createPodDesc": "Create a new AgentPod",
-          "createPodParams": "agent_type_id (required), runner_id?, ticket_slug?, initial_prompt?, model?"
+          "createPodParams": "agent_type_id (required), runner_id?, ticket_slug?, initial_prompt?, model?",
+          "description": "Herramientas para crear, observar y controlar Pods. Las herramientas de observación y entrada requieren un binding activo con los ámbitos apropiados.",
+          "getPodSnapshot": "get_pod_snapshot",
+          "getPodSnapshotDesc": "Obtener una instantánea de la salida del terminal de otro Pod (requiere pod:read)",
+          "getPodSnapshotParams": "pod_key, lines?, raw?, include_screen?",
+          "sendPodInput": "send_pod_input",
+          "sendPodInputDesc": "Enviar texto y/o pulsaciones de teclas a otro Pod (requiere pod:write)",
+          "sendPodInputParams": "pod_key, text?, keys?",
+          "getPodStatus": "get_pod_status",
+          "getPodStatusDesc": "Obtener el estado de ejecución del agente de un Pod (executing/waiting/idle)",
+          "getPodStatusParams": "pod_key"
         }
       }
     },
@@ -932,7 +926,7 @@
           "description": "Use two agents — one writes code, another reviews it:",
           "developer": "Developer Pod — Writes code based on ticket requirements",
           "reviewer": "Reviewer Pod — Observes the developer's terminal output via binding, reviews changes, and provides feedback through the Channel",
-          "flow": "The reviewer can use observe_terminal to watch the developer work, then send feedback via the Channel. The developer reads the feedback and iterates."
+          "flow": "The reviewer can use get_pod_snapshot to watch the developer work, then send feedback via the Channel. The developer reads the feedback and iterates."
         },
         "scenario2": {
           "title": "Scenario: Frontend + Backend Split",

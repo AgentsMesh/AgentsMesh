@@ -1,7 +1,7 @@
 id: TC-MCP-001
 name: MCP 全工具协作场景测试
 description: |
-  完整测试所有 24 个 MCP 工具的端到端场景。
+  完整测试所有 23 个 MCP 工具的端到端场景。
 
   **重要**: 本测试以 UI 界面验证为主，API 调用仅用于模拟 MCP 工具行为。
   每个关键操作后都需要在相应的 UI 页面验证结果。
@@ -13,11 +13,11 @@ description: |
   4. Ticket 操作 → 在 Tickets 页面验证
   5. 终端操作 → 在 Workspace 终端面板验证
 
-  ## MCP Tools 覆盖 (24)
+  ## MCP Tools 覆盖 (23)
   - Discovery (3): list_available_pods, list_runners, list_repositories
   - Binding (6): bind_pod, accept_binding, reject_binding, get_bindings, get_bound_pods, unbind_pod
   - Channel (7): create_channel, search_channels, get_channel, send_channel_message, get_channel_messages, get_channel_document, update_channel_document
-  - Terminal (3): observe_terminal, send_terminal_text, send_terminal_key
+  - Pod Interaction (2): get_pod_snapshot, send_pod_input
   - Ticket (4): create_ticket, search_tickets, get_ticket, update_ticket
   - Pod (1): create_pod
 
@@ -167,8 +167,8 @@ steps:
         body:
           target_pod: "{pod_key_b}"
           scopes:
-            - "terminal:read"
-            - "terminal:write"
+            - "pod:read"
+            - "pod:write"
       expected:
         status: 201
       save:
@@ -196,36 +196,20 @@ steps:
   # ============================================================================
 
   - id: step-7
-    action: "[MCP: send_terminal_text] 通过 API 向 Pod B 终端发送命令"
+    action: "[MCP: send_pod_input] 通过 MCP 工具向 Pod B 发送命令并执行"
+    description: |
+      注意：实际 MCP 工具调用通过 Runner MCP HTTP Server 而非 REST API。
+      此步骤验证 send_pod_input MCP 工具功能正常。
     verification:
-      type: api
-      request:
-        method: POST
-        url: /api/v1/orgs/{org_slug}/pods/{pod_key_b}/terminal/input
-        headers:
-          Authorization: Bearer {access_token}
-          Content-Type: application/json
-          X-Pod-Key: "{pod_key_a}"
-        body:
-          input: "echo 'Hello from MCP E2E Test'"
+      type: mcp
+      tool: send_pod_input
+      arguments:
+        pod_key: "{pod_key_b}"
+        text: "echo 'Hello from MCP E2E Test'"
+        keys:
+          - "Enter"
       expected:
-        status: 200
-
-  - id: step-8
-    action: "[MCP: send_terminal_key] 发送 Enter 键执行命令"
-    verification:
-      type: api
-      request:
-        method: POST
-        url: /api/v1/orgs/{org_slug}/pods/{pod_key_b}/terminal/input
-        headers:
-          Authorization: Bearer {access_token}
-          Content-Type: application/json
-          X-Pod-Key: "{pod_key_a}"
-        body:
-          input: "\r"
-      expected:
-        status: 200
+        success: true
 
   - id: step-9
     action: 在 Workspace 页面验证终端输出
@@ -440,18 +424,16 @@ steps:
             2. 拓扑图中 Pod A 到 Pod B 的连接线已消失或变为非活跃状态
 
   - id: step-21
-    action: "[MCP: observe_terminal] 验证解绑后无权限访问终端"
+    action: "[MCP: get_pod_snapshot] 验证解绑后无权限访问 Pod"
     verification:
-      type: api
-      request:
-        method: GET
-        url: /api/v1/orgs/{org_slug}/pods/{pod_key_b}/terminal/observe
-        headers:
-          Authorization: Bearer {access_token}
-          X-Pod-Key: "{pod_key_a}"
+      type: mcp
+      tool: get_pod_snapshot
+      arguments:
+        pod_key: "{pod_key_b}"
       expected:
-        status: 403
-        description: 解绑后应该返回 403 无权限
+        success: false
+        error: contains(permission)
+        description: 解绑后应该返回权限错误
 
   # ============================================================================
   # Phase 8: 清理并验证最终状态
@@ -587,10 +569,9 @@ mcp_tools_coverage:
     - get_channel_messages: 可通过 UI 验证
     - get_channel_document: step-14
     - update_channel_document: step-13
-  terminal:
-    - observe_terminal: step-9 (Workspace UI 验证), step-21 (权限验证)
-    - send_terminal_text: step-7
-    - send_terminal_key: step-8
+  podInteraction:
+    - get_pod_snapshot: step-9 (Workspace UI 验证), step-21 (权限验证)
+    - send_pod_input: step-7
   ticket:
     - create_ticket: step-15
     - search_tickets: step-16 (Tickets UI 验证)

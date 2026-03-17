@@ -111,6 +111,13 @@ func (cm *RunnerConnectionManager) GetDisconnectCallback() func(runnerID int64) 
 	return cm.onDisconnect
 }
 
+// ==================== Terminal Observation Callback Setter ====================
+
+// SetObserveTerminalResultCallback sets the observe terminal result callback (Proto type)
+func (cm *RunnerConnectionManager) SetObserveTerminalResultCallback(fn func(runnerID int64, data *runnerv1.ObserveTerminalResult)) {
+	cm.onObserveTerminalResult = fn
+}
+
 // ==================== Token Usage Callback Setter ====================
 
 // SetTokenUsageCallback sets the token usage report callback (Proto type)

@@ -38,7 +38,7 @@ func (cm *RunnerConnectionManager) HandlePodError(runnerID int64, data *runnerv1
 	}
 }
 
-// NOTE: HandleTerminalOutput removed - terminal output is exclusively streamed via Relay
+// NOTE: HandleTerminalOutput removed - output is exclusively streamed via Relay
 
 // HandleAgentStatus handles agent status event (Proto type)
 func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runnerv1.AgentStatusEvent) {
@@ -120,6 +120,16 @@ func (cm *RunnerConnectionManager) HandleOSCTitle(runnerID int64, data *runnerv1
 	)
 	if cm.onOSCTitle != nil {
 		cm.onOSCTitle(runnerID, data)
+	}
+}
+
+// ==================== Terminal Observation Handler ====================
+
+// HandleObserveTerminalResult handles observe terminal result event (Proto type)
+func (cm *RunnerConnectionManager) HandleObserveTerminalResult(runnerID int64, data *runnerv1.ObserveTerminalResult) {
+	cm.UpdateHeartbeat(runnerID)
+	if cm.onObserveTerminalResult != nil {
+		cm.onObserveTerminalResult(runnerID, data)
 	}
 }
 

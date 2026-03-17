@@ -6,7 +6,7 @@ This directory contains end-to-end tests for the Model Context Protocol (MCP) co
 
 ## MCP Tools Coverage
 
-The `TC-MCP-001-full-collaboration-scenario.yaml` test covers all 24 MCP tools:
+The `TC-MCP-001-full-collaboration-scenario.yaml` test covers all 23 MCP tools:
 
 ### Discovery Tools (3)
 
@@ -39,13 +39,12 @@ The `TC-MCP-001-full-collaboration-scenario.yaml` test covers all 24 MCP tools:
 | `get_channel_document` | Get shared document | step-32 |
 | `update_channel_document` | Update shared document | step-31, step-33 |
 
-### Terminal Tools (3)
+### Pod Interaction Tools (2)
 
 | Tool | Description | Test Steps |
 |------|-------------|------------|
-| `observe_terminal` | Observe another pod's terminal | step-17, step-21, step-42 |
-| `send_terminal_text` | Send text to terminal | step-18 |
-| `send_terminal_key` | Send key press to terminal | step-19 |
+| `get_pod_snapshot` | Get a snapshot of another pod's terminal | step-17, step-21, step-42 |
+| `send_pod_input` | Send text and/or key presses to terminal | step-18, step-19 |
 
 ### Ticket Tools (4)
 
@@ -85,9 +84,8 @@ Phase 4: Binding
     └── Verify binding states
 
 Phase 5: Terminal Control
-    ├── Pod A observes Pod B terminal
-    ├── Pod A sends text to Pod B
-    ├── Pod A sends Enter key
+    ├── Pod A gets Pod B terminal snapshot
+    ├── Pod A sends text and Enter key to Pod B
     └── Verify command execution
 
 Phase 6: Channel Collaboration
@@ -104,7 +102,7 @@ Phase 7: Ticket Management
 
 Phase 8: Unbinding
     ├── Pod A unbinds from Pod B
-    └── Verify permission revoked (observe fails with 403)
+    └── Verify permission revoked (get_pod_snapshot fails with 403)
 
 Phase 9: Cleanup
     ├── Archive channel

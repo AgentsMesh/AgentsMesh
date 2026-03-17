@@ -192,6 +192,30 @@ func (a *GRPCRunnerAdapter) SendQuerySandboxes(runnerID int64, requestID string,
 	return conn.SendMessage(msg)
 }
 
+// ==================== Terminal Observation Commands ====================
+
+// SendObserveTerminal sends an observe terminal command to a Runner.
+// Returns terminal observation result via callback registered in RunnerConnectionManager.
+func (a *GRPCRunnerAdapter) SendObserveTerminal(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+	conn := a.connManager.GetConnection(runnerID)
+	if conn == nil {
+		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
+	}
+
+	msg := &runnerv1.ServerMessage{
+		Payload: &runnerv1.ServerMessage_ObserveTerminal{
+			ObserveTerminal: &runnerv1.ObserveTerminalCommand{
+				RequestId:     requestID,
+				PodKey:        podKey,
+				Lines:         lines,
+				IncludeScreen: includeScreen,
+			},
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return conn.SendMessage(msg)
+}
+
 // ==================== Runner Upgrade Commands ====================
 
 // SendUpgradeRunner sends an upgrade command to a Runner.
