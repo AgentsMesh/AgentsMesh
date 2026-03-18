@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Ticket, TicketStatus, TicketPriority } from "@/stores/ticket";
+import { Ticket, TicketStatus } from "@/stores/ticket";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusSelect } from "./StatusSelect";
-import { PrioritySelect } from "./PrioritySelect";
+import { RepositorySelect } from "@/components/common/RepositorySelect";
 import { ticketApi } from "@/lib/api";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAuthStore } from "@/stores/auth";
@@ -34,7 +34,7 @@ interface TicketDetailSidebarProps {
   ticket: Ticket;
   onDelete: () => void;
   onStatusChange: (status: TicketStatus) => void;
-  onPriorityChange?: (priority: TicketPriority) => void;
+  onRepositoryChange: (repositoryId: number | null) => void;
   ticketSlug: string;
   t: (key: string, params?: Record<string, string | number>) => string;
   commentsSlot?: React.ReactNode;
@@ -59,17 +59,13 @@ export function TicketDetailSidebar({
   ticket,
   onDelete,
   onStatusChange,
-  onPriorityChange,
+  onRepositoryChange,
   ticketSlug,
   t,
   commentsSlot,
 }: TicketDetailSidebarProps) {
   const handleStatusChange = async (status: TicketStatus) => {
     onStatusChange(status);
-  };
-
-  const handlePriorityChange = async (priority: TicketPriority) => {
-    onPriorityChange?.(priority);
   };
 
   return (
@@ -97,21 +93,15 @@ export function TicketDetailSidebar({
 
         <div className="mx-4 border-t border-border/40" />
 
-        {/* Priority */}
+        {/* Repository */}
         <div className="px-4 py-3 hover:bg-muted/30 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">{t("tickets.filters.priority")}</span>
-            {onPriorityChange ? (
-              <PrioritySelect
-                value={ticket.priority}
-                onChange={handlePriorityChange}
-                showLabel
-                size="sm"
-              />
-            ) : (
-              <span className="text-sm">{t(`tickets.priority.${ticket.priority}`)}</span>
-            )}
-          </div>
+          <span className="text-xs font-medium text-muted-foreground block mb-2">{t("tickets.detail.repository")}</span>
+          <RepositorySelect
+            value={ticket.repository_id ?? null}
+            onChange={(value) => onRepositoryChange(value)}
+            placeholder={t("tickets.detail.noRepository")}
+            className="text-sm"
+          />
         </div>
 
         <div className="mx-4 border-t border-border/40" />

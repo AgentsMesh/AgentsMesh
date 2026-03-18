@@ -13,17 +13,11 @@ import {
   ResponsiveDialogBody,
   ResponsiveDialogFooter,
 } from "@/components/ui/responsive-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { TicketPriority } from "@/lib/api/ticket";
 import { ticketApi } from "@/lib/api";
 import { organizationApi, OrganizationMember } from "@/lib/api/organization";
 import { useAuthStore } from "@/stores/auth";
+import { RepositorySelect } from "@/components/common/RepositorySelect";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Users, Check } from "lucide-react";
@@ -37,18 +31,11 @@ export interface TicketCreateDialogProps {
   parentTicketSlug?: string;
 }
 
-const priorityOptions: { value: TicketPriority }[] = [
-  { value: "urgent" },
-  { value: "high" },
-  { value: "medium" },
-  { value: "low" },
-  { value: "none" },
-];
-
 interface FormData {
   title: string;
   content: string;
   priority: TicketPriority;
+  repositoryId: number | null;
   assigneeIds: number[];
 }
 
@@ -70,6 +57,7 @@ export function TicketCreateDialog({
     title: "",
     content: "",
     priority: "medium",
+    repositoryId: null,
     assigneeIds: [],
   });
 
@@ -97,6 +85,7 @@ export function TicketCreateDialog({
       title: "",
       content: "",
       priority: "medium",
+      repositoryId: null,
       assigneeIds: [],
     });
     setError(null);
@@ -114,12 +103,17 @@ export function TicketCreateDialog({
       setError(t("tickets.createDialog.titleRequired"));
       return;
     }
+    if (!form.repositoryId) {
+      setError(t("tickets.createDialog.repositoryRequired"));
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
       const response = await ticketApi.create({
+        repositoryId: form.repositoryId,
         title: form.title.trim(),
         content: form.content || undefined,
         priority: form.priority,
@@ -179,23 +173,17 @@ export function TicketCreateDialog({
               />
             </FormField>
 
-            {/* Priority */}
-            <FormField label={t("tickets.filters.priority")} htmlFor="ticket-priority">
-              <Select
-                value={form.priority}
-                onValueChange={(val) => updateField("priority", val as TicketPriority)}
-              >
-                <SelectTrigger id="ticket-priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {priorityOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {t(`tickets.priority.${opt.value}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Repository */}
+            <FormField
+              label={t("tickets.createDialog.repository")}
+              htmlFor="ticket-repo"
+              required
+            >
+              <RepositorySelect
+                value={form.repositoryId}
+                onChange={(value) => updateField("repositoryId", value)}
+                placeholder={t("tickets.createDialog.selectRepository")}
+              />
             </FormField>
 
             {/* Assignees */}

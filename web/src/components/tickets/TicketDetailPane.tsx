@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth";
-import { useTicketStore, Ticket, TicketStatus, TicketPriority } from "@/stores/ticket";
+import { useTicketStore, Ticket, TicketStatus } from "@/stores/ticket";
 import { ticketApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,6 @@ import {
 import { cn } from "@/lib/utils";
 import TicketPodPanel from "./TicketPodPanel";
 import { StatusSelect } from "./StatusSelect";
-import { PrioritySelect } from "./PrioritySelect";
 import { InlineEditableText } from "./InlineEditableText";
 import { useTicketExtraData } from "./hooks";
 import { SubTicketsList, RelationsList, CommitsList, LabelsList } from "./shared";
@@ -103,25 +102,6 @@ export function TicketDetailPane({ slug, onClose, className }: TicketDetailPaneP
       }
     },
     [ticket, slug, updateTicketStatus]
-  );
-
-  // Handle priority change with optimistic update
-  const handlePriorityChange = useCallback(
-    async (newPriority: TicketPriority) => {
-      if (!ticket) return;
-
-      const oldPriority = ticket.priority;
-      setTicket({ ...ticket, priority: newPriority });
-
-      try {
-        await updateTicket(slug, { priority: newPriority });
-      } catch (err: unknown) {
-        console.error("Failed to update priority:", err);
-        setTicket({ ...ticket, priority: oldPriority });
-        throw err;
-      }
-    },
-    [ticket, slug, updateTicket]
   );
 
   // Handle title change with optimistic update
@@ -238,16 +218,11 @@ export function TicketDetailPane({ slug, onClose, className }: TicketDetailPaneP
             inputClassName="text-lg font-bold tracking-tight"
           />
 
-          {/* Status & Priority */}
+          {/* Status */}
           <div className="flex items-center gap-2 flex-wrap">
             <StatusSelect
               value={ticket.status}
               onChange={handleStatusChange}
-              size="sm"
-            />
-            <PrioritySelect
-              value={ticket.priority}
-              onChange={handlePriorityChange}
               size="sm"
             />
           </div>
