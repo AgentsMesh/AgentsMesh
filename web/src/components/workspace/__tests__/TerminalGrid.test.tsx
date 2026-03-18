@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { TerminalGrid } from "../TerminalGrid";
 import { useWorkspaceStore } from "@/stores/workspace";
-import type { GridLayout } from "@/stores/workspace";
+import type { SplitTreeNode } from "@/stores/workspace";
 
 // Mock TerminalPane component
 vi.mock("../TerminalPane", () => ({
@@ -80,13 +80,26 @@ vi.mock("react-resizable-panels", () => ({
   ),
 }));
 
+// Helper to create split tree nodes
+function leaf(paneId: string, id = `node-${paneId}`): SplitTreeNode {
+  return { type: "leaf", id, paneId };
+}
+
+function split(
+  direction: "horizontal" | "vertical",
+  children: [SplitTreeNode, SplitTreeNode],
+  id = `split-${Math.random().toString(36).slice(2, 7)}`
+): SplitTreeNode {
+  return { type: "split", id, direction, children, sizes: [50, 50] };
+}
+
 describe("TerminalGrid", () => {
   beforeEach(() => {
     // Reset store to initial state
     useWorkspaceStore.setState({
       panes: [],
       activePane: null,
-      gridLayout: { type: "1x1", rows: 1, cols: 1 },
+      splitTree: null,
       mobileActiveIndex: 0,
       terminalFontSize: 14,
       _hasHydrated: false,
@@ -126,31 +139,23 @@ describe("TerminalGrid", () => {
     });
   });
 
-  describe("1x1 Layout", () => {
+  describe("Single Pane (Leaf)", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
-        panes: [
-          { id: "pane-1", podKey: "pod-1" },
-        ],
+        panes: [{ id: "pane-1", podKey: "pod-1" }],
         activePane: "pane-1",
-        gridLayout: { type: "1x1", rows: 1, cols: 1 },
+        splitTree: leaf("pane-1"),
       });
     });
 
-    it("should render single pane in 1x1 layout", () => {
+    it("should render single pane", () => {
       render(<TerminalGrid />);
 
       expect(screen.getByTestId("terminal-pane-pane-1")).toBeInTheDocument();
       expect(screen.getByText("Terminal: pod-1")).toBeInTheDocument();
     });
 
-    it("should not render PanelGroup in 1x1 layout", () => {
-      render(<TerminalGrid />);
-
-      expect(screen.queryByTestId("panel-group")).not.toBeInTheDocument();
-    });
-
-    it("should apply custom className to 1x1 layout", () => {
+    it("should apply custom className", () => {
       const { container } = render(<TerminalGrid className="custom-class" />);
 
       const wrapper = container.firstChild as HTMLElement;
@@ -158,7 +163,7 @@ describe("TerminalGrid", () => {
     });
   });
 
-  describe("1x2 Layout (Two Columns)", () => {
+  describe("Horizontal Split (Two Columns)", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
         panes: [
@@ -166,11 +171,11 @@ describe("TerminalGrid", () => {
           { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
+        splitTree: split("horizontal", [leaf("pane-1"), leaf("pane-2")]),
       });
     });
 
-    it("should render two panes in 1x2 layout", () => {
+    it("should render two panes", () => {
       render(<TerminalGrid />);
 
       expect(screen.getByTestId("terminal-pane-pane-1")).toBeInTheDocument();
@@ -189,20 +194,9 @@ describe("TerminalGrid", () => {
 
       expect(screen.getByTestId("separator")).toBeInTheDocument();
     });
-
-    it("should render panels with correct default and min sizes", () => {
-      render(<TerminalGrid />);
-
-      const panels = screen.getAllByTestId("panel");
-      expect(panels).toHaveLength(2);
-      panels.forEach((panel) => {
-        expect(panel).toHaveAttribute("data-default-size", "50");
-        expect(panel).toHaveAttribute("data-min-size", "20");
-      });
-    });
   });
 
-  describe("2x1 Layout (Two Rows)", () => {
+  describe("Vertical Split (Two Rows)", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
         panes: [
@@ -210,11 +204,11 @@ describe("TerminalGrid", () => {
           { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
-        gridLayout: { type: "2x1", rows: 2, cols: 1 },
+        splitTree: split("vertical", [leaf("pane-1"), leaf("pane-2")]),
       });
     });
 
-    it("should render two panes in 2x1 layout", () => {
+    it("should render two panes", () => {
       render(<TerminalGrid />);
 
       expect(screen.getByTestId("terminal-pane-pane-1")).toBeInTheDocument();
@@ -229,7 +223,7 @@ describe("TerminalGrid", () => {
     });
   });
 
-  describe("2x2 Layout (Four Grid)", () => {
+  describe("Nested Split (2x2 Grid)", () => {
     beforeEach(() => {
       useWorkspaceStore.setState({
         panes: [
@@ -239,11 +233,14 @@ describe("TerminalGrid", () => {
           { id: "pane-4", podKey: "pod-4" },
         ],
         activePane: "pane-1",
-        gridLayout: { type: "2x2", rows: 2, cols: 2 },
+        splitTree: split("vertical", [
+          split("horizontal", [leaf("pane-1"), leaf("pane-2")]),
+          split("horizontal", [leaf("pane-3"), leaf("pane-4")]),
+        ]),
       });
     });
 
-    it("should render four panes in 2x2 layout", () => {
+    it("should render four panes", () => {
       render(<TerminalGrid />);
 
       expect(screen.getByTestId("terminal-pane-pane-1")).toBeInTheDocument();
@@ -252,7 +249,7 @@ describe("TerminalGrid", () => {
       expect(screen.getByTestId("terminal-pane-pane-4")).toBeInTheDocument();
     });
 
-    it("should render nested PanelGroups for 2x2 layout", () => {
+    it("should render nested PanelGroups", () => {
       render(<TerminalGrid />);
 
       // Should have 3 panel groups: 1 vertical outer + 2 horizontal inner
@@ -260,82 +257,12 @@ describe("TerminalGrid", () => {
       expect(panelGroups.length).toBeGreaterThanOrEqual(3);
     });
 
-    it("should render multiple separators for 2x2 layout", () => {
+    it("should render multiple separators", () => {
       render(<TerminalGrid />);
 
       // Should have 3 separators: 1 vertical + 2 horizontal
       const separators = screen.getAllByTestId("separator");
       expect(separators.length).toBeGreaterThanOrEqual(3);
-    });
-  });
-
-  describe("Fallback Layout", () => {
-    it("should render fallback layout for unknown layout type", () => {
-      useWorkspaceStore.setState({
-        panes: [
-          { id: "pane-1", podKey: "pod-1" },
-        ],
-        activePane: "pane-1",
-        gridLayout: { type: "custom" as GridLayout["type"], rows: 3, cols: 3 },
-      });
-
-      render(<TerminalGrid />);
-
-      // Should fallback to rendering first pane
-      expect(screen.getByTestId("terminal-pane-pane-1")).toBeInTheDocument();
-      expect(screen.queryByTestId("panel-group")).not.toBeInTheDocument();
-    });
-  });
-
-  describe("Empty Pane Slots", () => {
-    it("should render empty slot when pane count is less than grid capacity", () => {
-      useWorkspaceStore.setState({
-        panes: [
-          { id: "pane-1", podKey: "pod-1" },
-        ],
-        activePane: "pane-1",
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
-      });
-
-      const onAddNew = vi.fn();
-      render(<TerminalGrid onAddNew={onAddNew} />);
-
-      // Should have "Add Terminal" button in empty slot
-      const addButtons = screen.getAllByRole("button", { name: /add terminal/i });
-      expect(addButtons.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it("should call onAddNew when clicking Add Terminal in empty slot", () => {
-      useWorkspaceStore.setState({
-        panes: [
-          { id: "pane-1", podKey: "pod-1" },
-        ],
-        activePane: "pane-1",
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
-      });
-
-      const onAddNew = vi.fn();
-      render(<TerminalGrid onAddNew={onAddNew} />);
-
-      const addButtons = screen.getAllByRole("button", { name: /add terminal/i });
-      fireEvent.click(addButtons[0]);
-
-      expect(onAddNew).toHaveBeenCalledTimes(1);
-    });
-
-    it("should not render Add Terminal button in empty slot when onAddNew is not provided", () => {
-      useWorkspaceStore.setState({
-        panes: [
-          { id: "pane-1", podKey: "pod-1" },
-        ],
-        activePane: "pane-1",
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
-      });
-
-      render(<TerminalGrid />);
-
-      // Empty slot should exist but without button
-      expect(screen.queryByRole("button", { name: /add terminal/i })).not.toBeInTheDocument();
     });
   });
 
@@ -347,7 +274,7 @@ describe("TerminalGrid", () => {
           { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
+        splitTree: split("horizontal", [leaf("pane-1"), leaf("pane-2")]),
       });
     });
 
@@ -389,64 +316,6 @@ describe("TerminalGrid", () => {
     });
   });
 
-  describe("Visible Panes Calculation", () => {
-    it("should show panes around active pane when there are more panes than grid capacity", () => {
-      useWorkspaceStore.setState({
-        panes: [
-          { id: "pane-1", podKey: "pod-1" },
-          { id: "pane-2", podKey: "pod-2" },
-          { id: "pane-3", podKey: "pod-3" },
-          { id: "pane-4", podKey: "pod-4" },
-          { id: "pane-5", podKey: "pod-5" },
-        ],
-        activePane: "pane-3",
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
-      });
-
-      render(<TerminalGrid />);
-
-      // With active pane at index 2 and maxVisible=2, should show panes around it
-      // startIndex = max(0, 2 - floor(2/2)) = max(0, 1) = 1
-      // So should show pane-2 and pane-3
-      expect(screen.getByTestId("terminal-pane-pane-2")).toBeInTheDocument();
-      expect(screen.getByTestId("terminal-pane-pane-3")).toBeInTheDocument();
-    });
-
-    it("should show first panes when no active pane", () => {
-      useWorkspaceStore.setState({
-        panes: [
-          { id: "pane-1", podKey: "pod-1" },
-          { id: "pane-2", podKey: "pod-2" },
-          { id: "pane-3", podKey: "pod-3" },
-        ],
-        activePane: null,
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
-      });
-
-      render(<TerminalGrid />);
-
-      expect(screen.getByTestId("terminal-pane-pane-1")).toBeInTheDocument();
-      expect(screen.getByTestId("terminal-pane-pane-2")).toBeInTheDocument();
-      expect(screen.queryByTestId("terminal-pane-pane-3")).not.toBeInTheDocument();
-    });
-
-    it("should show first panes when active pane is not found", () => {
-      useWorkspaceStore.setState({
-        panes: [
-          { id: "pane-1", podKey: "pod-1" },
-          { id: "pane-2", podKey: "pod-2" },
-        ],
-        activePane: "non-existent-pane",
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
-      });
-
-      render(<TerminalGrid />);
-
-      expect(screen.getByTestId("terminal-pane-pane-1")).toBeInTheDocument();
-      expect(screen.getByTestId("terminal-pane-pane-2")).toBeInTheDocument();
-    });
-  });
-
   describe("ResizeHandle Component", () => {
     it("should render horizontal resize handle with correct classes", () => {
       useWorkspaceStore.setState({
@@ -455,7 +324,7 @@ describe("TerminalGrid", () => {
           { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
-        gridLayout: { type: "1x2", rows: 1, cols: 2 },
+        splitTree: split("horizontal", [leaf("pane-1"), leaf("pane-2")]),
       });
 
       render(<TerminalGrid />);
@@ -471,7 +340,7 @@ describe("TerminalGrid", () => {
           { id: "pane-2", podKey: "pod-2" },
         ],
         activePane: "pane-1",
-        gridLayout: { type: "2x1", rows: 2, cols: 1 },
+        splitTree: split("vertical", [leaf("pane-1"), leaf("pane-2")]),
       });
 
       render(<TerminalGrid />);

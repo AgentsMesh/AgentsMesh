@@ -6,13 +6,10 @@ import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
 import type { SplitTreeNode } from "@/stores/workspace";
 import { TerminalPane } from "./TerminalPane";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface SplitTreeRendererProps {
   node: SplitTreeNode;
   onPopout?: (paneId: string) => void;
-  onAddNew?: () => void;
 }
 
 /**
@@ -40,29 +37,9 @@ function ResizeHandle({ direction }: { direction: "horizontal" | "vertical" }) {
 }
 
 /**
- * Empty pane slot placeholder
- */
-function EmptyPaneSlot({ onAddNew }: { onAddNew?: () => void }) {
-  return (
-    <div className="flex items-center justify-center h-full bg-terminal-bg-secondary rounded-lg border border-dashed border-terminal-border">
-      {onAddNew && (
-        <Button
-          variant="ghost"
-          className="text-terminal-text-muted hover:text-terminal-text hover:bg-terminal-bg-active"
-          onClick={onAddNew}
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Add Terminal
-        </Button>
-      )}
-    </div>
-  );
-}
-
-/**
  * Recursive renderer for a SplitTreeNode
  */
-export function SplitTreeRenderer({ node, onPopout, onAddNew }: SplitTreeRendererProps) {
+export function SplitTreeRenderer({ node, onPopout }: SplitTreeRendererProps) {
   const activePane = useWorkspaceStore((s) => s.activePane);
   const removePane = useWorkspaceStore((s) => s.removePane);
   const updateSplitSizes = useWorkspaceStore((s) => s.updateSplitSizes);
@@ -78,9 +55,6 @@ export function SplitTreeRenderer({ node, onPopout, onAddNew }: SplitTreeRendere
   );
 
   if (node.type === "leaf") {
-    if (!node.paneId) {
-      return <EmptyPaneSlot onAddNew={onAddNew} />;
-    }
     return (
       <LeafPane
         paneId={node.paneId}
@@ -104,7 +78,6 @@ export function SplitTreeRenderer({ node, onPopout, onAddNew }: SplitTreeRendere
         <SplitTreeRenderer
           node={node.children[0]}
           onPopout={onPopout}
-          onAddNew={onAddNew}
         />
       </Panel>
       <ResizeHandle direction={node.direction} />
@@ -112,7 +85,6 @@ export function SplitTreeRenderer({ node, onPopout, onAddNew }: SplitTreeRendere
         <SplitTreeRenderer
           node={node.children[1]}
           onPopout={onPopout}
-          onAddNew={onAddNew}
         />
       </Panel>
     </Group>

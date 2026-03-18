@@ -7,4 +7,5 @@ export { TerminalToolbar } from "./TerminalToolbar";
 export { RelayStatusOverlay } from "./RelayStatusOverlay";
 export { AutopilotOverlay } from "./AutopilotOverlay";
 export { AutopilotStartButton } from "./AutopilotStartButton";
+export { PodSelectorModal } from "./PodSelectorModal";
 export { WorkspaceManager } from "./WorkspaceManager";

@@ -9,7 +9,7 @@ describe("Workspace Store", () => {
     useWorkspaceStore.setState({
       panes: [],
       activePane: null,
-      gridLayout: { type: "1x1", rows: 1, cols: 1 },
+      splitTree: null,
       mobileActiveIndex: 0,
       terminalFontSize: 14,
       _hasHydrated: false,
@@ -22,7 +22,7 @@ describe("Workspace Store", () => {
 
       expect(result.current.panes).toEqual([]);
       expect(result.current.activePane).toBeNull();
-      expect(result.current.gridLayout).toEqual({ type: "1x1", rows: 1, cols: 1 });
+      expect(result.current.splitTree).toBeNull();
       expect(result.current.mobileActiveIndex).toBe(0);
       expect(result.current.terminalFontSize).toBe(14);
     });
@@ -52,14 +52,30 @@ describe("Workspace Store", () => {
       expect(result.current.panes[0].podKey).toBe("pod-123");
     });
 
-    it("should assign grid position based on pane index", () => {
+    it("should create a split tree leaf for first pane", () => {
       const { result } = renderHook(() => useWorkspaceStore());
 
       act(() => {
-        result.current.addPane("pod-abc12345");
+        result.current.addPane("pod-123");
       });
 
-      expect(result.current.panes[0].gridPosition).toEqual({ x: 0, y: 0, w: 1, h: 1 });
+      expect(result.current.splitTree).not.toBeNull();
+      expect(result.current.splitTree!.type).toBe("leaf");
+    });
+
+    it("should create a split node when adding second pane", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      act(() => {
+        result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+      });
+
+      expect(result.current.splitTree).not.toBeNull();
+      expect(result.current.splitTree!.type).toBe("split");
+      if (result.current.splitTree!.type === "split") {
+        expect(result.current.splitTree!.direction).toBe("horizontal");
+      }
     });
 
     it("should return existing pane id if pod already open", () => {
@@ -92,6 +108,7 @@ describe("Workspace Store", () => {
 
       expect(result.current.panes).toHaveLength(0);
       expect(result.current.activePane).toBeNull();
+      expect(result.current.splitTree).toBeNull();
     });
 
     it("should set next pane as active when active pane is removed", () => {
@@ -132,6 +149,7 @@ describe("Workspace Store", () => {
       expect(result.current.panes).toHaveLength(0);
       expect(result.current.activePane).toBeNull();
       expect(result.current.mobileActiveIndex).toBe(0);
+      expect(result.current.splitTree).toBeNull();
     });
   });
 
@@ -164,18 +182,8 @@ describe("Workspace Store", () => {
     });
   });
 
-  describe("grid layout", () => {
-    it("should set grid layout", () => {
-      const { result } = renderHook(() => useWorkspaceStore());
-
-      act(() => {
-        result.current.setGridLayout({ type: "2x2", rows: 2, cols: 2 });
-      });
-
-      expect(result.current.gridLayout).toEqual({ type: "2x2", rows: 2, cols: 2 });
-    });
-
-    it("should update pane position", () => {
+  describe("split tree", () => {
+    it("should split pane horizontally", () => {
       const { result } = renderHook(() => useWorkspaceStore());
 
       let paneId: string;
@@ -184,10 +192,65 @@ describe("Workspace Store", () => {
       });
 
       act(() => {
-        result.current.updatePanePosition(paneId!, { x: 1, y: 1, w: 2, h: 2 });
+        result.current.splitPane(paneId!, "horizontal", "pod-2");
       });
 
-      expect(result.current.panes[0].gridPosition).toEqual({ x: 1, y: 1, w: 2, h: 2 });
+      expect(result.current.splitTree).not.toBeNull();
+      expect(result.current.splitTree!.type).toBe("split");
+      if (result.current.splitTree!.type === "split") {
+        expect(result.current.splitTree!.direction).toBe("horizontal");
+        expect(result.current.splitTree!.children[1].type).toBe("leaf");
+        // Second child has a real pane
+        if (result.current.splitTree!.children[1].type === "leaf") {
+          expect(result.current.splitTree!.children[1].paneId).not.toBe("");
+        }
+      }
+      // New pane should be added
+      expect(result.current.panes).toHaveLength(2);
+      expect(result.current.panes[1].podKey).toBe("pod-2");
+      // Active pane should be the new pane
+      expect(result.current.activePane).toBe(result.current.panes[1].id);
+    });
+
+    it("should split pane vertically", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      let paneId: string;
+      act(() => {
+        paneId = result.current.addPane("pod-1");
+      });
+
+      act(() => {
+        result.current.splitPane(paneId!, "vertical", "pod-3");
+      });
+
+      expect(result.current.splitTree!.type).toBe("split");
+      if (result.current.splitTree!.type === "split") {
+        expect(result.current.splitTree!.direction).toBe("vertical");
+      }
+      expect(result.current.panes).toHaveLength(2);
+      expect(result.current.panes[1].podKey).toBe("pod-3");
+    });
+
+    it("should update split sizes", () => {
+      const { result } = renderHook(() => useWorkspaceStore());
+
+      act(() => {
+        result.current.addPane("pod-1");
+        result.current.addPane("pod-2");
+      });
+
+      const tree = result.current.splitTree;
+      expect(tree).not.toBeNull();
+      expect(tree!.type).toBe("split");
+
+      act(() => {
+        result.current.updateSplitSizes(tree!.id, [30, 70]);
+      });
+
+      if (result.current.splitTree!.type === "split") {
+        expect(result.current.splitTree!.sizes).toEqual([30, 70]);
+      }
     });
   });
 

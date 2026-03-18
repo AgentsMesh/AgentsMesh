@@ -40,17 +40,30 @@ export const terminalRegistry = new TerminalRegistry();
 export interface TerminalPane {
   id: string;
   podKey: string;
-  gridPosition?: {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  };
 }
 
 /**
- * Grid layout configuration
+ * Split tree types for flexible split layouts
  */
+export type SplitDirection = "horizontal" | "vertical";
+
+export type SplitTreeLeaf = {
+  type: "leaf";
+  id: string;
+  paneId: string;
+};
+
+export type SplitTreeSplit = {
+  type: "split";
+  id: string;
+  direction: SplitDirection;
+  children: [SplitTreeNode, SplitTreeNode];
+  sizes: [number, number];
+};
+
+export type SplitTreeNode = SplitTreeLeaf | SplitTreeSplit;
+
+// Keep GridLayout type for migration compatibility
 export type GridLayoutType = "1x1" | "1x2" | "2x1" | "2x2" | "custom";
 
 export interface GridLayout {
@@ -65,7 +78,7 @@ export interface GridLayout {
 interface WorkspaceState {
   panes: TerminalPane[];
   activePane: string | null;
-  gridLayout: GridLayout;
+  splitTree: SplitTreeNode | null;
   mobileActiveIndex: number;
   terminalFontSize: number;
 
@@ -73,8 +86,9 @@ interface WorkspaceState {
   addPane: (podKey: string) => string;
   removePane: (paneId: string) => void;
   setActivePane: (paneId: string | null) => void;
-  updatePanePosition: (paneId: string, position: TerminalPane["gridPosition"]) => void;
-  setGridLayout: (layout: GridLayout) => void;
+  splitPane: (paneId: string, direction: SplitDirection, podKey: string) => void;
+  closePaneFromTree: (paneId: string) => void;
+  updateSplitSizes: (splitId: string, sizes: [number, number]) => void;
   setMobileActiveIndex: (index: number) => void;
   setTerminalFontSize: (size: number) => void;
   clearAllPanes: () => void;
@@ -86,13 +100,69 @@ interface WorkspaceState {
 }
 
 const generatePaneId = () => `pane-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+const generateNodeId = () => `node-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+
+// --- Split tree helpers ---
+
+/** Find the last leaf node in the tree (for addPane auto-split) */
+function findLastLeaf(node: SplitTreeNode): SplitTreeLeaf | null {
+  if (node.type === "leaf") return node;
+  return findLastLeaf(node.children[1]) || findLastLeaf(node.children[0]);
+}
+
+/** Find a leaf by paneId */
+function findLeafByPaneId(node: SplitTreeNode, paneId: string): SplitTreeLeaf | null {
+  if (node.type === "leaf") return node.paneId === paneId ? node : null;
+  return findLeafByPaneId(node.children[0], paneId) || findLeafByPaneId(node.children[1], paneId);
+}
+
+/** Replace a node in the tree by its id, returning a new tree */
+function replaceNode(tree: SplitTreeNode, nodeId: string, replacement: SplitTreeNode): SplitTreeNode {
+  if (tree.id === nodeId) return replacement;
+  if (tree.type === "leaf") return tree;
+  return {
+    ...tree,
+    children: [
+      replaceNode(tree.children[0], nodeId, replacement),
+      replaceNode(tree.children[1], nodeId, replacement),
+    ],
+  };
+}
+
+/** Remove a leaf from the tree — its sibling replaces the parent split */
+function removeLeaf(tree: SplitTreeNode, leafId: string): SplitTreeNode | null {
+  if (tree.type === "leaf") {
+    return tree.id === leafId ? null : tree;
+  }
+  const [left, right] = tree.children;
+  if (left.id === leafId) return right;
+  if (right.id === leafId) return left;
+  const newLeft = removeLeaf(left, leafId);
+  const newRight = removeLeaf(right, leafId);
+  if (!newLeft) return newRight;
+  if (!newRight) return newLeft;
+  return { ...tree, children: [newLeft, newRight] };
+}
+
+/** Update sizes on a split node by id */
+function updateSizes(tree: SplitTreeNode, splitId: string, sizes: [number, number]): SplitTreeNode {
+  if (tree.type === "leaf") return tree;
+  if (tree.id === splitId) return { ...tree, sizes };
+  return {
+    ...tree,
+    children: [
+      updateSizes(tree.children[0], splitId, sizes),
+      updateSizes(tree.children[1], splitId, sizes),
+    ],
+  };
+}
 
 export const useWorkspaceStore = create<WorkspaceState>()(
   persist(
     (set, get) => ({
       panes: [],
       activePane: null,
-      gridLayout: { type: "1x1", rows: 1, cols: 1 },
+      splitTree: null,
       mobileActiveIndex: 0,
       terminalFontSize: 14,
       _hasHydrated: false,
@@ -107,21 +177,36 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         }
 
         const id = generatePaneId();
-        const newPane: TerminalPane = {
-          id,
-          podKey,
-          gridPosition: {
-            x: panes.length % 2,
-            y: Math.floor(panes.length / 2),
-            w: 1,
-            h: 1,
-          },
-        };
+        const newPane: TerminalPane = { id, podKey };
+        const tree = get().splitTree;
+        const leafNode: SplitTreeLeaf = { type: "leaf", id: generateNodeId(), paneId: id };
+
+        let newTree: SplitTreeNode;
+        if (!tree) {
+          // First pane — single leaf
+          newTree = leafNode;
+        } else {
+          // Split the last leaf horizontally to add new pane
+          const lastLeaf = findLastLeaf(tree);
+          if (lastLeaf) {
+            const splitNode: SplitTreeSplit = {
+              type: "split",
+              id: generateNodeId(),
+              direction: "horizontal",
+              children: [{ ...lastLeaf }, leafNode],
+              sizes: [50, 50],
+            };
+            newTree = replaceNode(tree, lastLeaf.id, splitNode);
+          } else {
+            newTree = leafNode;
+          }
+        }
 
         set((state) => ({
           panes: [...state.panes, newPane],
           activePane: id,
           mobileActiveIndex: state.panes.length,
+          splitTree: newTree,
         }));
 
         return id;
@@ -133,23 +218,31 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           const newPanes = state.panes.filter((p) => p.id !== paneId);
           const wasActive = state.activePane === paneId;
 
+          // Remove from split tree
+          let newTree = state.splitTree;
+          if (newTree) {
+            // Find the leaf node for this pane
+            const leaf = findLeafByPaneId(newTree, paneId);
+            if (leaf) {
+              newTree = removeLeaf(newTree, leaf.id);
+            }
+          }
+
           let newMobileIndex: number;
           if (wasActive) {
-            // Active pane removed — fall back to first pane
             newMobileIndex = 0;
           } else if (removedIndex >= 0 && removedIndex < state.mobileActiveIndex) {
-            // Non-active pane removed BEFORE current index — shift down
             newMobileIndex = state.mobileActiveIndex - 1;
           } else {
             newMobileIndex = state.mobileActiveIndex;
           }
-          // Safety clamp
           newMobileIndex = Math.min(newMobileIndex, Math.max(0, newPanes.length - 1));
 
           return {
             panes: newPanes,
             activePane: wasActive ? (newPanes[0]?.id || null) : state.activePane,
             mobileActiveIndex: newMobileIndex,
+            splitTree: newTree || null,
           };
         });
       },
@@ -164,14 +257,44 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         });
       },
 
-      updatePanePosition: (paneId, position) => {
-        set((state) => ({
-          panes: state.panes.map((p) => (p.id === paneId ? { ...p, gridPosition: position } : p)),
-        }));
+      splitPane: (paneId, direction, podKey) => {
+        set((state) => {
+          const tree = state.splitTree;
+          if (!tree) return state;
+
+          const leaf = findLeafByPaneId(tree, paneId);
+          if (!leaf) return state;
+
+          // Create a new pane with the selected pod
+          const newPaneId = generatePaneId();
+          const newPane: TerminalPane = { id: newPaneId, podKey };
+          const newLeaf: SplitTreeLeaf = { type: "leaf", id: generateNodeId(), paneId: newPaneId };
+          const splitNode: SplitTreeSplit = {
+            type: "split",
+            id: generateNodeId(),
+            direction,
+            children: [{ ...leaf }, newLeaf],
+            sizes: [50, 50],
+          };
+          const newTree = replaceNode(tree, leaf.id, splitNode);
+          return {
+            panes: [...state.panes, newPane],
+            activePane: newPaneId,
+            splitTree: newTree,
+          };
+        });
       },
 
-      setGridLayout: (layout) => {
-        set({ gridLayout: layout });
+      closePaneFromTree: (paneId) => {
+        // Alias for removePane — removes from both panes array and tree
+        get().removePane(paneId);
+      },
+
+      updateSplitSizes: (splitId, sizes) => {
+        set((state) => {
+          if (!state.splitTree) return state;
+          return { splitTree: updateSizes(state.splitTree, splitId, sizes) };
+        });
       },
 
       setMobileActiveIndex: (index) => {
@@ -186,7 +309,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
 
       clearAllPanes: () => {
-        set({ panes: [], activePane: null, mobileActiveIndex: 0 });
+        set({ panes: [], activePane: null, mobileActiveIndex: 0, splitTree: null });
       },
 
       getPaneByPodKey: (podKey) => {
@@ -199,7 +322,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     }),
     {
       name: "agentsmesh-workspace",
-      version: 2,
+      version: 3,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 1 && Array.isArray(state.panes)) {
@@ -210,18 +333,95 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
         if (version < 2 && Array.isArray(state.panes)) {
-          // v1 → v2: remove obsolete `isActive` field (derived from activePane now)
+          // v1 → v2: remove obsolete `isActive` field
           state.panes = (state.panes as Record<string, unknown>[]).map(
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             ({ isActive, ...rest }) => rest,
           );
+        }
+        if (version < 3 && Array.isArray(state.panes)) {
+          // v2 → v3: migrate gridLayout + panes to splitTree
+          const panes = state.panes as { id: string; podKey: string }[];
+          // Remove obsolete gridPosition from panes
+          state.panes = panes.map(({ id, podKey }) => ({ id, podKey }));
+
+          // Build split tree from existing panes + gridLayout
+          const grid = state.gridLayout as { type: string; rows: number; cols: number } | undefined;
+          delete state.gridLayout;
+
+          if (panes.length === 0) {
+            state.splitTree = null;
+          } else if (panes.length === 1) {
+            state.splitTree = { type: "leaf", id: generateNodeId(), paneId: panes[0].id };
+          } else {
+            // Build tree matching old grid layout
+            const direction: SplitDirection =
+              grid?.type === "2x1" ? "vertical" :
+              grid?.type === "2x2" ? "vertical" : "horizontal";
+
+            if (panes.length === 2) {
+              state.splitTree = {
+                type: "split",
+                id: generateNodeId(),
+                direction,
+                children: [
+                  { type: "leaf", id: generateNodeId(), paneId: panes[0].id },
+                  { type: "leaf", id: generateNodeId(), paneId: panes[1].id },
+                ],
+                sizes: [50, 50],
+              };
+            } else if (panes.length <= 4 && grid?.type === "2x2") {
+              // 2x2 grid: vertical split with 2 horizontal splits inside
+              const topRow: SplitTreeNode = panes.length >= 2 ? {
+                type: "split", id: generateNodeId(), direction: "horizontal",
+                children: [
+                  { type: "leaf", id: generateNodeId(), paneId: panes[0].id },
+                  { type: "leaf", id: generateNodeId(), paneId: panes[1].id },
+                ],
+                sizes: [50, 50],
+              } : { type: "leaf", id: generateNodeId(), paneId: panes[0].id };
+
+              const bottomRow: SplitTreeNode = panes.length >= 4 ? {
+                type: "split", id: generateNodeId(), direction: "horizontal",
+                children: [
+                  { type: "leaf", id: generateNodeId(), paneId: panes[2].id },
+                  { type: "leaf", id: generateNodeId(), paneId: panes[3].id },
+                ],
+                sizes: [50, 50],
+              } : panes.length >= 3 ? {
+                type: "split", id: generateNodeId(), direction: "horizontal",
+                children: [
+                  { type: "leaf", id: generateNodeId(), paneId: panes[2].id },
+                  { type: "leaf", id: generateNodeId(), paneId: "" },
+                ],
+                sizes: [50, 50],
+              } : { type: "leaf", id: generateNodeId(), paneId: "" };
+
+              state.splitTree = {
+                type: "split", id: generateNodeId(), direction: "vertical",
+                children: [topRow, bottomRow],
+                sizes: [50, 50],
+              };
+            } else {
+              // Fallback: chain horizontal splits
+              let tree: SplitTreeNode = { type: "leaf", id: generateNodeId(), paneId: panes[0].id };
+              for (let i = 1; i < panes.length; i++) {
+                tree = {
+                  type: "split", id: generateNodeId(), direction: "horizontal",
+                  children: [tree, { type: "leaf", id: generateNodeId(), paneId: panes[i].id }],
+                  sizes: [50, 50],
+                };
+              }
+              state.splitTree = tree;
+            }
+          }
         }
         return state as unknown as WorkspaceState;
       },
       partialize: (state) => ({
         panes: state.panes,
         activePane: state.activePane,
-        gridLayout: state.gridLayout,
+        splitTree: state.splitTree,
         mobileActiveIndex: state.mobileActiveIndex,
         terminalFontSize: state.terminalFontSize,
       }),

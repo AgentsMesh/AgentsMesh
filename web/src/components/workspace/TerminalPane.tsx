@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import "@xterm/xterm/css/xterm.css";
 import { cn } from "@/lib/utils";
-import { useWorkspaceStore } from "@/stores/workspace";
+import { useWorkspaceStore, type SplitDirection } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
 import { useAutopilotStore } from "@/stores/autopilot";
 import { usePodStatus, useTerminal, useTouchScroll } from "@/hooks";
@@ -12,6 +12,7 @@ import { TerminalLoadingState, TerminalErrorState } from "./TerminalStateViews";
 import { RelayStatusOverlay } from "./RelayStatusOverlay";
 import { AutopilotOverlay } from "./AutopilotOverlay";
 import { AutopilotStartButton } from "./AutopilotStartButton";
+import { PodSelectorModal } from "./PodSelectorModal";
 
 interface TerminalPaneProps {
   paneId: string;
@@ -36,14 +37,18 @@ export function TerminalPane({
 }: TerminalPaneProps) {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
+  const [pendingSplitDirection, setPendingSplitDirection] = useState<SplitDirection | null>(null);
   const triggerAutopilotRef = useRef<(() => void) | null>(null);
   const maximizeRafRef = useRef<number | undefined>(undefined);
   const terminalFontSize = useWorkspaceStore((s) => s.terminalFontSize);
   const setActivePane = useWorkspaceStore((s) => s.setActivePane);
   const splitPane = useWorkspaceStore((s) => s.splitPane);
+  const panes = useWorkspaceStore((s) => s.panes);
   const initProgress = usePodStore((state) => state.initProgress[podKey]);
   const terminatePod = usePodStore((state) => state.terminatePod);
   const hasAutopilot = useAutopilotStore((state) => !!state.getAutopilotControllerByPodKey(podKey));
+
+  const openPodKeys = useMemo(() => panes.map((p) => p.podKey), [panes]);
 
   // Pod status tracking
   const { podStatus, isPodReady, podError } = usePodStatus(podKey);
@@ -125,8 +130,8 @@ export function TerminalPane({
           onSyncSize={syncSize}
           onStartAutopilot={() => triggerAutopilotRef.current?.()}
           onPopout={onPopout}
-          onSplitRight={() => splitPane(paneId, "horizontal")}
-          onSplitDown={() => splitPane(paneId, "vertical")}
+          onSplitRight={() => setPendingSplitDirection("horizontal")}
+          onSplitDown={() => setPendingSplitDirection("vertical")}
           onMaximize={handleMaximize}
           onClose={onClose}
         />
@@ -167,6 +172,18 @@ export function TerminalPane({
 
       {/* Autopilot modal (managed by AutopilotStartButton) */}
       <AutopilotStartButton podKey={podKey} triggerRef={triggerAutopilotRef} />
+
+      {/* Pod selector for split */}
+      {pendingSplitDirection && (
+        <PodSelectorModal
+          openPodKeys={openPodKeys}
+          onSelect={(selectedPodKey) => {
+            splitPane(paneId, pendingSplitDirection, selectedPodKey);
+            setPendingSplitDirection(null);
+          }}
+          onClose={() => setPendingSplitDirection(null)}
+        />
+      )}
     </div>
   );
 }
