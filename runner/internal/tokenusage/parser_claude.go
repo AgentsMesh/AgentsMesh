@@ -3,8 +3,10 @@ package tokenusage
 import (
 	"bufio"
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
@@ -12,7 +14,11 @@ import (
 
 // ClaudeParser parses Claude Code JSONL session files.
 // Claude Code writes conversation history to JSONL files under:
-//   - {sandboxPath}/.claude/projects/**/*.jsonl (pod-specific)
+//
+//	$HOME/.claude/projects/{path-hash}/**/*.jsonl
+//
+// where {path-hash} is the resolved absolute sandbox path with "/" replaced by "-".
+// Subagent sessions may exist in subdirectories (e.g., subagents/{id}/*.jsonl).
 //
 // Only files modified after podStartedAt are processed to avoid
 // re-counting historical sessions from previous pod runs.
@@ -33,24 +39,49 @@ type claudeJSONLEntry struct {
 }
 
 func (p *ClaudeParser) Parse(sandboxPath string, podStartedAt time.Time) (*TokenUsage, error) {
+	log := logger.Pod()
 	usage := NewTokenUsage()
 
-	// Only scan sandbox-local path — this is the current pod's project directory.
-	// Scanning HOME would pick up sessions from other pods/projects.
-	pattern := filepath.Join(sandboxPath, ".claude", "projects", "*", "*.jsonl")
-
-	files, err := filepath.Glob(pattern)
+	home, err := os.UserHomeDir()
 	if err != nil {
-		logger.Pod().Warn("Claude parser: glob error", "pattern", pattern, "error", err)
+		log.Warn("Claude parser: cannot determine HOME", "error", err)
 		return nil, nil
 	}
 
-	for _, f := range files {
-		if !isModifiedAfter(f, podStartedAt) {
-			continue
+	// Claude Code uses the resolved working directory to compute the project hash.
+	// The sandbox may have a "workspace" subdirectory (git worktree), so try both.
+	candidates := []string{sandboxPath, filepath.Join(sandboxPath, "workspace")}
+
+	for _, candidate := range candidates {
+		resolved, err := filepath.EvalSymlinks(candidate)
+		if err != nil {
+			continue // directory doesn't exist, skip
 		}
-		if err := parseClaudeJSONLFile(f, usage); err != nil {
-			logger.Pod().Warn("Claude parser: file parse error", "file", f, "error", err)
+
+		hash := claudePathHash(resolved)
+		projectDir := filepath.Join(home, ".claude", "projects", hash)
+
+		if _, err := os.Stat(projectDir); err != nil {
+			continue // no Claude data for this path
+		}
+
+		// Walk recursively to find all *.jsonl (covers subagents/ subdirectories)
+		if walkErr := filepath.WalkDir(projectDir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+			if !strings.HasSuffix(path, ".jsonl") {
+				return nil
+			}
+			if !isModifiedAfter(path, podStartedAt) {
+				return nil
+			}
+			if parseErr := parseClaudeJSONLFile(path, usage); parseErr != nil {
+				log.Warn("Claude parser: file parse error", "file", path, "error", parseErr)
+			}
+			return nil
+		}); walkErr != nil {
+			log.Warn("Claude parser: walk error", "dir", projectDir, "error", walkErr)
 		}
 	}
 
@@ -58,6 +89,12 @@ func (p *ClaudeParser) Parse(sandboxPath string, podStartedAt time.Time) (*Token
 		return nil, nil
 	}
 	return usage, nil
+}
+
+// claudePathHash computes the project directory hash used by Claude Code.
+// It replaces all "/" with "-" in the resolved absolute path.
+func claudePathHash(resolvedPath string) string {
+	return strings.ReplaceAll(resolvedPath, string(filepath.Separator), "-")
 }
 
 func parseClaudeJSONLFile(path string, usage *TokenUsage) error {
