@@ -49,6 +49,7 @@ func TestOutputRouter_NewOutputRouter(t *testing.T) {
 
 	if or == nil {
 		t.Fatal("NewOutputRouter should not return nil")
+		return
 	}
 
 	// Route should use onFlush when no relay

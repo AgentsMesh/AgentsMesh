@@ -19,6 +19,7 @@ func TestNewPodBuilder(t *testing.T) {
 
 	if builder == nil {
 		t.Fatal("NewPodBuilderFromRunner returned nil")
+		return
 	}
 
 	if builder.deps.Config != runner.cfg {

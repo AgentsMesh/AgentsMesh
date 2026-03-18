@@ -39,6 +39,7 @@ func TestPodBuilderBuildSuccess(t *testing.T) {
 
 	if pod == nil {
 		t.Fatal("pod should not be nil")
+		return
 	}
 
 	if pod.PodKey != "pod-build-test" {

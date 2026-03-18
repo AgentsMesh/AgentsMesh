@@ -9,6 +9,7 @@ func TestNewHTTPServer(t *testing.T) {
 
 	if server == nil {
 		t.Fatal("NewHTTPServer returned nil")
+		return // unreachable, satisfies staticcheck SA5011
 	}
 
 	if server.port != 9090 {

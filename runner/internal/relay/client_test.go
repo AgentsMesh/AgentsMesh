@@ -21,6 +21,7 @@ func TestNewClient(t *testing.T) {
 	c := NewClient("ws://localhost:8080", "pod-1", "test-token", nil)
 	if c == nil {
 		t.Fatal("NewClient returned nil")
+		return
 	}
 	if c.relayURL != "ws://localhost:8080" {
 		t.Errorf("relayURL: %s", c.relayURL)

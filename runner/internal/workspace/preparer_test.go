@@ -15,6 +15,7 @@ func TestNewPreparer(t *testing.T) {
 
 	if preparer == nil {
 		t.Fatal("NewPreparer returned nil")
+		return
 	}
 
 	if preparer.StepCount() != 1 {
@@ -27,6 +28,7 @@ func TestNewPreparerFromScript(t *testing.T) {
 
 	if preparer == nil {
 		t.Fatal("NewPreparerFromScript returned nil")
+		return
 	}
 
 	if preparer.StepCount() != 1 {

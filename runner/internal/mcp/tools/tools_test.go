@@ -47,6 +47,7 @@ func TestToolRegistry(t *testing.T) {
 
 	if registry == nil {
 		t.Fatal("NewToolRegistry returned nil")
+		return
 	}
 
 	// Registry should be empty initially (no built-in tools)

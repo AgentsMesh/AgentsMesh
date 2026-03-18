@@ -21,6 +21,7 @@ func TestNewManager(t *testing.T) {
 
 	if manager == nil {
 		t.Fatal("NewManager returned nil")
+		return
 	}
 
 	if manager.root != root {
@@ -85,6 +86,7 @@ func TestNewManagerCreatesDirectory(t *testing.T) {
 
 	if manager == nil {
 		t.Fatal("NewManager returned nil")
+		return
 	}
 
 	// Verify directory was created

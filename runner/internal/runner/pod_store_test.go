@@ -10,6 +10,7 @@ func TestNewInMemoryPodStore(t *testing.T) {
 
 	if store == nil {
 		t.Fatal("NewInMemoryPodStore returned nil")
+		return
 	}
 
 	if store.pods == nil {

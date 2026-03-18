@@ -45,6 +45,7 @@ func TestNewTerminal(t *testing.T) {
 
 	if term == nil {
 		t.Fatal("New returned nil")
+		return
 	}
 
 	if term.command != "echo" {

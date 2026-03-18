@@ -18,6 +18,7 @@ func TestNewServer(t *testing.T) {
 
 	if server == nil {
 		t.Fatal("NewServer returned nil")
+		return // unreachable, satisfies staticcheck SA5011
 	}
 
 	if server.name != "test-server" {

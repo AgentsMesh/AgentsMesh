@@ -15,6 +15,7 @@ func TestNewManager(t *testing.T) {
 
 	if manager == nil {
 		t.Fatal("NewManager returned nil")
+		return // unreachable, satisfies staticcheck SA5011
 	}
 
 	if manager.servers == nil {
