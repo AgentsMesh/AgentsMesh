@@ -260,7 +260,6 @@ function createMockTerm() {
     rows: 24,
   };
 
-  // @ts-expect-error - partial mock for testing
   return term as unknown as import("@xterm/xterm").Terminal & {
     _onDataCallback: ((data: string) => void) | null;
     _onResizeCallback: ((size: { rows: number; cols: number }) => void) | null;

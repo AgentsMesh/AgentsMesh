@@ -78,7 +78,7 @@ describe("useTerminalResize", () => {
 
     it("does not call forceResize when xtermRef is null", () => {
       const refs = createMockRefs();
-      refs.xtermRef.current = null;
+      refs.xtermRef.current = null as unknown as import("@xterm/xterm").Terminal;
       const { result } = renderHook(() =>
         useTerminalResize("pod-1", refs.fitAddonRef, refs.xtermRef, refs.containerRef, true, 14)
       );
@@ -153,7 +153,7 @@ describe("useTerminalResize", () => {
   describe("null refs guard", () => {
     it("does not throw when fitAddonRef is null", () => {
       const refs = createMockRefs();
-      refs.fitAddonRef.current = null;
+      refs.fitAddonRef.current = null as unknown as import("@xterm/addon-fit").FitAddon;
 
       expect(() => {
         renderHook(() =>
@@ -164,7 +164,7 @@ describe("useTerminalResize", () => {
 
     it("does not throw when containerRef is null", () => {
       const refs = createMockRefs();
-      refs.containerRef.current = null;
+      refs.containerRef.current = null as unknown as HTMLDivElement;
 
       expect(() => {
         renderHook(() =>
