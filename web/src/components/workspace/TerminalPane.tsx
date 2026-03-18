@@ -7,17 +7,11 @@ import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
 import { useAutopilotStore } from "@/stores/autopilot";
 import { usePodStatus, useTerminal, useTouchScroll } from "@/hooks";
-import {
-  CircuitBreakerAlert,
-  TakeoverBanner,
-  CreateAutopilotControllerModal,
-  AutopilotStatusBar,
-} from "@/components/autopilot";
-import { useIDEStore } from "@/stores/ide";
-import { getPodDisplayName } from "@/lib/pod-utils";
 import { TerminalPaneHeader } from "./TerminalPaneHeader";
 import { TerminalLoadingState, TerminalErrorState } from "./TerminalStateViews";
 import { RelayStatusOverlay } from "./RelayStatusOverlay";
+import { AutopilotOverlay } from "./AutopilotOverlay";
+import { AutopilotStartButton } from "./AutopilotStartButton";
 
 interface TerminalPaneProps {
   paneId: string;
@@ -42,49 +36,20 @@ export function TerminalPane({
 }: TerminalPaneProps) {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
-  const [showAutopilotModal, setShowAutopilotModal] = useState(false);
+  const triggerAutopilotRef = useRef<(() => void) | null>(null);
   const terminalFontSize = useWorkspaceStore((s) => s.terminalFontSize);
   const setActivePane = useWorkspaceStore((s) => s.setActivePane);
-  const setBottomPanelOpen = useIDEStore((s) => s.setBottomPanelOpen);
-  const setBottomPanelTab = useIDEStore((s) => s.setBottomPanelTab);
+  const splitPane = useWorkspaceStore((s) => s.splitPane);
   const initProgress = usePodStore((state) => state.initProgress[podKey]);
   const terminatePod = usePodStore((state) => state.terminatePod);
-
-  // Derive pod title from podStore for the autopilot modal
-  const podTitle = usePodStore((state) => {
-    const pod = state.pods.find((p) => p.pod_key === podKey);
-    return pod ? getPodDisplayName(pod) : podKey.substring(0, 8);
-  });
-
-  // AutopilotController state - find if there's an active AutopilotController for this Pod
-  const autopilotController = useAutopilotStore((state) => state.getAutopilotControllerByPodKey(podKey));
-
-  // Get thinking state reactively via selector (not imperatively via getThinking)
-  // so that real-time thinking updates trigger re-renders.
-  const autopilotControllerKey = autopilotController?.autopilot_controller_key;
-  const thinking = useAutopilotStore((state) =>
-    autopilotControllerKey ? state.thinking[autopilotControllerKey] ?? null : null
-  );
-
-  // Auto-open BottomPanel Autopilot tab when help is needed
-  React.useEffect(() => {
-    if (
-      thinking?.decision_type === "need_help" ||
-      thinking?.decision_type === "NEED_HUMAN_HELP" ||
-      autopilotController?.phase === "waiting_approval"
-    ) {
-      setBottomPanelTab("autopilot");
-      setBottomPanelOpen(true);
-    }
-  }, [thinking?.decision_type, autopilotController?.phase, setBottomPanelTab, setBottomPanelOpen]);
+  const hasAutopilot = useAutopilotStore((state) => !!state.getAutopilotControllerByPodKey(podKey));
 
   // Pod status tracking
   const { podStatus, isPodReady, podError } = usePodStatus(podKey);
 
   // "Sticky ready" flag: once the terminal has been shown, don't unmount it
   // due to transient status changes (e.g., stale WebSocket events causing
-  // status to temporarily revert to "initializing").  The terminal should
-  // only be hidden for genuine terminal error states.
+  // status to temporarily revert to "initializing").
   const wasEverReady = useRef(false);
   if (isPodReady) {
     wasEverReady.current = true;
@@ -144,10 +109,12 @@ export function TerminalPane({
           connectionStatus={connectionStatus}
           isMaximized={isMaximized}
           isPodReady={isPodReady}
-          hasAutopilot={!!autopilotController}
+          hasAutopilot={hasAutopilot}
           onSyncSize={syncSize}
-          onStartAutopilot={() => setShowAutopilotModal(true)}
+          onStartAutopilot={() => triggerAutopilotRef.current?.()}
           onPopout={onPopout}
+          onSplitRight={() => splitPane(paneId, "horizontal")}
+          onSplitDown={() => splitPane(paneId, "vertical")}
           onMaximize={handleMaximize}
           onClose={onClose}
         />
@@ -168,25 +135,7 @@ export function TerminalPane({
         )
       ) : (
         <div className="flex flex-col flex-1 min-h-0">
-          {/* AutopilotController Components - show when terminal is ready and AutopilotController exists */}
-          {autopilotController && (
-            <>
-              {/* Takeover Banner - only show when user has taken over */}
-              <TakeoverBanner autopilotController={autopilotController} className="rounded-none" />
-
-              {/* Circuit Breaker Alert - show when circuit breaker is open */}
-              <CircuitBreakerAlert autopilotController={autopilotController} className="mx-2 mt-2 rounded-md" />
-
-              {/* Simplified AutopilotStatusBar - click to open BottomPanel */}
-              <AutopilotStatusBar
-                autopilotController={autopilotController}
-                onTogglePanel={() => {
-                  setBottomPanelTab("autopilot");
-                  setBottomPanelOpen(true);
-                }}
-              />
-            </>
-          )}
+          <AutopilotOverlay podKey={podKey} />
           <div className="relative flex-1 min-h-0">
             {/* Relay connection status overlay - always visible, floating at top */}
             <RelayStatusOverlay
@@ -204,13 +153,8 @@ export function TerminalPane({
         </div>
       )}
 
-      {/* Create AutopilotController Modal */}
-      <CreateAutopilotControllerModal
-        open={showAutopilotModal}
-        onClose={() => setShowAutopilotModal(false)}
-        podKey={podKey}
-        podTitle={podTitle}
-      />
+      {/* Autopilot modal (managed by AutopilotStartButton) */}
+      <AutopilotStartButton podKey={podKey} triggerRef={triggerAutopilotRef} />
     </div>
   );
 }

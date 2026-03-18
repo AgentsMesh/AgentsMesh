@@ -3,12 +3,10 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useDrag } from "@use-gesture/react";
 import { cn } from "@/lib/utils";
-import { useWorkspaceStore } from "@/stores/workspace";
-import { usePodStore } from "@/stores/pod";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { useWorkspaceStore, terminalPool, terminalRegistry } from "@/stores/workspace";
+import { usePodTitle } from "@/hooks/usePodTitle";
 import { TerminalPane } from "./TerminalPane";
 import { Terminal as TerminalIcon, Plus, ChevronLeft, ChevronRight, Scaling } from "lucide-react";
-import { terminalPool } from "@/stores/workspace";
 import { Button } from "@/components/ui/button";
 
 interface TerminalSwiperProps {
@@ -108,31 +106,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
 
   const currentPane = panes[mobileActiveIndex];
 
-  // Sync terminal size handler - we need to get xterm instance from TerminalPane
-  // Since TerminalPane doesn't expose xterm ref, we'll use terminalPool.forceResize
-  // with a reasonable default size based on container
-  const handleSyncSize = () => {
-    if (currentPane && containerRef.current) {
-      // Get container dimensions and estimate terminal size
-      // This is a fallback - ideally we'd get the actual xterm size
-      // For now, just trigger a resize with the current stored size or estimate
-      const ptySize = terminalPool.getPtySize(currentPane.podKey);
-      if (ptySize) {
-        // Note: forceResize signature is (podKey, cols, rows)
-        terminalPool.forceResize(currentPane.podKey, ptySize.cols, ptySize.rows);
-      } else {
-        // Estimate based on container - using typical terminal font metrics
-        const container = containerRef.current;
-        const cols = Math.floor(container.clientWidth / 9); // ~9px per char at 14px font
-        const rows = Math.floor(container.clientHeight / 17); // ~17px per line at 14px font
-        if (cols > 0 && rows > 0) {
-          // Note: forceResize signature is (podKey, cols, rows)
-          terminalPool.forceResize(currentPane.podKey, cols, rows);
-        }
-      }
-    }
-  };
-
   if (panes.length === 0) {
     return (
       <div className={cn("flex-1 flex items-center justify-center bg-terminal-bg", className)}>
@@ -156,47 +129,13 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Swipe indicator / pagination */}
-      <div className="h-10 flex items-center justify-between px-3 bg-terminal-bg-secondary border-b border-terminal-border">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-7 p-0 text-terminal-text-muted"
-          onClick={goToPrev}
-          disabled={mobileActiveIndex === 0}
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-terminal-text font-medium">
-            <SwiperPaneTitle podKey={currentPane?.podKey} />
-          </span>
-          <span className="text-xs text-terminal-text-muted">
-            {mobileActiveIndex + 1} / {panes.length}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 text-terminal-text-muted"
-            onClick={handleSyncSize}
-            title="Sync terminal size"
-          >
-            <Scaling className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 text-terminal-text-muted"
-            onClick={goToNext}
-            disabled={mobileActiveIndex === panes.length - 1}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      <SwiperHeader
+        podKey={currentPane?.podKey}
+        mobileActiveIndex={mobileActiveIndex}
+        paneCount={panes.length}
+        onPrev={goToPrev}
+        onNext={goToNext}
+      />
 
       {/* Dots indicator */}
       {panes.length > 1 && (
@@ -242,14 +181,84 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   );
 }
 
-/** Reads pod title from podStore — single source of truth. */
-function SwiperPaneTitle({ podKey }: { podKey?: string }) {
-  const title = usePodStore((state) => {
-    if (!podKey) return "Terminal";
-    const pod = state.pods.find((p) => p.pod_key === podKey);
-    return pod ? getPodDisplayName(pod) : "Terminal";
-  });
+/** Swiper header bar with title and navigation. */
+function SwiperHeader({
+  podKey,
+  mobileActiveIndex,
+  paneCount,
+  onPrev,
+  onNext,
+}: {
+  podKey?: string;
+  mobileActiveIndex: number;
+  paneCount: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="h-10 flex items-center justify-between px-3 bg-terminal-bg-secondary border-b border-terminal-border">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 p-0 text-terminal-text-muted"
+        onClick={onPrev}
+        disabled={mobileActiveIndex === 0}
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </Button>
+
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-terminal-text font-medium">
+          {podKey ? <SwiperPaneTitle podKey={podKey} /> : "Terminal"}
+        </span>
+        <span className="text-xs text-terminal-text-muted">
+          {mobileActiveIndex + 1} / {paneCount}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <SyncSizeButton podKey={podKey} />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 text-terminal-text-muted"
+          onClick={onNext}
+          disabled={mobileActiveIndex === paneCount - 1}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Reads pod title via usePodTitle hook. */
+function SwiperPaneTitle({ podKey }: { podKey: string }) {
+  const title = usePodTitle(podKey, "Terminal");
   return <>{title}</>;
+}
+
+/** Sync terminal size using real xterm dimensions from terminalRegistry. */
+function SyncSizeButton({ podKey }: { podKey?: string }) {
+  const handleSyncSize = () => {
+    if (!podKey) return;
+    const term = terminalRegistry.get(podKey);
+    if (term && term.cols > 0 && term.rows > 0) {
+      terminalPool.forceResize(podKey, term.cols, term.rows);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 w-7 p-0 text-terminal-text-muted"
+      onClick={handleSyncSize}
+      title="Sync terminal size"
+    >
+      <Scaling className="w-4 h-4" />
+    </Button>
+  );
 }
 
 export default TerminalSwiper;

@@ -1,24 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { usePodStore } from "@/stores/pod";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { usePodTitle } from "@/hooks/usePodTitle";
+import { useTerminalStatus } from "@/hooks/useTerminalStatus";
 import { Button } from "@/components/ui/button";
 import {
   X,
   Plus,
-  Grid2X2,
-  Rows,
-  Columns,
-  Square,
   Circle,
   Maximize2,
   Minimize2,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { terminalPool } from "@/stores/workspace";
 
 interface TerminalTabsProps {
   onAddNew?: () => void;
@@ -28,13 +22,10 @@ interface TerminalTabsProps {
 }
 
 export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullscreen }: TerminalTabsProps) {
-  const t = useTranslations();
   const panes = useWorkspaceStore((s) => s.panes);
   const activePane = useWorkspaceStore((s) => s.activePane);
   const setActivePane = useWorkspaceStore((s) => s.setActivePane);
   const removePane = useWorkspaceStore((s) => s.removePane);
-  const gridLayout = useWorkspaceStore((s) => s.gridLayout);
-  const setGridLayout = useWorkspaceStore((s) => s.setGridLayout);
 
   return (
     <div
@@ -87,65 +78,15 @@ export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullsc
         )}
       </div>
 
-      {/* Layout controls */}
-      <div className="flex items-center gap-1 px-2 border-l border-terminal-border">
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-6 w-6 p-0 text-terminal-text-muted hover:text-terminal-text-active",
-            gridLayout.type === "1x1" && "bg-terminal-bg-active text-terminal-text-active"
-          )}
-          onClick={() => setGridLayout({ type: "1x1", rows: 1, cols: 1 })}
-          title={t("terminalTabs.singleView")}
-        >
-          <Square className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-6 w-6 p-0 text-terminal-text-muted hover:text-terminal-text-active",
-            gridLayout.type === "1x2" && "bg-terminal-bg-active text-terminal-text-active"
-          )}
-          onClick={() => setGridLayout({ type: "1x2", rows: 1, cols: 2 })}
-          title={t("terminalTabs.twoColumns")}
-        >
-          <Columns className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-6 w-6 p-0 text-terminal-text-muted hover:text-terminal-text-active",
-            gridLayout.type === "2x1" && "bg-terminal-bg-active text-terminal-text-active"
-          )}
-          onClick={() => setGridLayout({ type: "2x1", rows: 2, cols: 1 })}
-          title={t("terminalTabs.twoRows")}
-        >
-          <Rows className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-6 w-6 p-0 text-terminal-text-muted hover:text-terminal-text-active",
-            gridLayout.type === "2x2" && "bg-terminal-bg-active text-terminal-text-active"
-          )}
-          onClick={() => setGridLayout({ type: "2x2", rows: 2, cols: 2 })}
-          title={t("terminalTabs.grid2x2")}
-        >
-          <Grid2X2 className="w-3.5 h-3.5" />
-        </Button>
-
-        {/* Fullscreen toggle */}
-        {onToggleFullscreen && (
+      {/* Fullscreen toggle */}
+      {onToggleFullscreen && (
+        <div className="flex items-center gap-1 px-2 border-l border-terminal-border">
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 text-terminal-text-muted hover:text-terminal-text-active ml-1"
+            className="h-6 w-6 p-0 text-terminal-text-muted hover:text-terminal-text-active"
             onClick={onToggleFullscreen}
-            title={t("terminalTabs.fullscreen")}
+            title="Fullscreen"
           >
             {isFullscreen ? (
               <Minimize2 className="w-3.5 h-3.5" />
@@ -153,40 +94,31 @@ export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullsc
               <Maximize2 className="w-3.5 h-3.5" />
             )}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/** Reactive connection status dot — subscribes to terminalPool status changes. */
+/** Reactive connection status dot — subscribes via useTerminalStatus hook. */
 function ConnectionDot({ podKey }: { podKey: string }) {
-  const [statusClass, setStatusClass] = useState("bg-gray-500");
+  const { status } = useTerminalStatus(podKey);
 
-  useEffect(() => {
-    const toClass = (s: string) => {
-      switch (s) {
-        case "connected": return "bg-green-500";
-        case "connecting": return "bg-yellow-500 animate-pulse";
-        case "error": return "bg-red-500";
-        default: return "bg-gray-500";
-      }
-    };
-
-    return terminalPool.onStatusChange(podKey, (info) => {
-      setStatusClass(toClass(info.status));
-    });
-  }, [podKey]);
+  const statusClass = (() => {
+    switch (status) {
+      case "connected": return "bg-green-500";
+      case "connecting": return "bg-yellow-500 animate-pulse";
+      case "error": return "bg-red-500";
+      default: return "bg-gray-500";
+    }
+  })();
 
   return <Circle className={cn("w-2 h-2 flex-shrink-0", statusClass)} />;
 }
 
-/** Reads pod title from podStore — single source of truth. */
+/** Reads pod title via usePodTitle hook — single source of truth. */
 function TabPaneTitle({ podKey }: { podKey: string }) {
-  const title = usePodStore((state) => {
-    const pod = state.pods.find((p) => p.pod_key === podKey);
-    return pod ? getPodDisplayName(pod) : `Pod ${podKey.substring(0, 8)}`;
-  });
+  const title = usePodTitle(podKey, `Pod ${podKey.substring(0, 8)}`);
   return <>{title}</>;
 }
 

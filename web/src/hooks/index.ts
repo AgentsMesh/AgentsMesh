@@ -8,7 +8,10 @@ export type {
 
 // Terminal-related hooks
 export { usePodStatus } from './usePodStatus';
+export { usePodTitle } from './usePodTitle';
 export { useTerminal } from './useTerminal';
+export { useTerminalResize } from './useTerminalResize';
+export { useTerminalStatus } from './useTerminalStatus';
 export { useTouchScroll } from './useTouchScroll';
 
 // Browser notification hook
