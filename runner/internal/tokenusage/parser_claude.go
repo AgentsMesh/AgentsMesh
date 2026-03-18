@@ -91,10 +91,28 @@ func (p *ClaudeParser) Parse(sandboxPath string, podStartedAt time.Time) (*Token
 	return usage, nil
 }
 
-// claudePathHash computes the project directory hash used by Claude Code.
-// It replaces all "/" with "-" in the resolved absolute path.
+// claudePathHash reproduces the project directory naming convention used by
+// Claude Code: the resolved absolute path with OS path separators replaced by "-".
+//
+// Claude Code (Node.js on macOS/Linux) simply does path.replaceAll("/", "-").
+// We also handle "\" and strip ":" so the hash is valid on Windows.
+//
+// This is intentionally NOT using filepath helpers — it must match the external
+// convention, not the local OS path semantics.
 func claudePathHash(resolvedPath string) string {
-	return strings.ReplaceAll(resolvedPath, string(filepath.Separator), "-")
+	var b strings.Builder
+	b.Grow(len(resolvedPath))
+	for _, c := range resolvedPath {
+		switch c {
+		case '/', '\\':
+			b.WriteByte('-')
+		case ':':
+			// skip (Windows drive prefix, e.g. "C:")
+		default:
+			b.WriteRune(c)
+		}
+	}
+	return b.String()
 }
 
 func parseClaudeJSONLFile(path string, usage *TokenUsage) error {

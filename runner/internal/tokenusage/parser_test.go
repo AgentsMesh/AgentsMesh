@@ -3,6 +3,7 @@ package tokenusage
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -12,6 +13,16 @@ import (
 
 // epoch is a zero time used as podStartedAt when we want all files to pass the mtime filter.
 var epoch = time.Time{}
+
+// setHome overrides the home directory for os.UserHomeDir() on all platforms.
+// On Unix it sets HOME; on Windows it sets USERPROFILE.
+func setHome(t *testing.T, dir string) {
+	t.Helper()
+	t.Setenv("HOME", dir)
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", dir)
+	}
+}
 
 // --- TokenUsage tests ---
 
@@ -92,7 +103,7 @@ invalid json line
 func setupClaudeHomeProject(t *testing.T, sandboxPath string) string {
 	t.Helper()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 
 	// Resolve symlinks to match what claudePathHash does
 	resolved, err := filepath.EvalSymlinks(sandboxPath)
@@ -167,7 +178,7 @@ func TestClaudeParser_Parse_SubagentFiles(t *testing.T) {
 
 func TestClaudeParser_NoFiles(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", dir) // Override HOME to avoid scanning real files
+	setHome(t, dir) // Override HOME to avoid scanning real files
 	parser := &ClaudeParser{}
 	usage, err := parser.Parse(t.TempDir(), epoch)
 	assert.NoError(t, err)
@@ -194,6 +205,7 @@ func TestClaudeParser_SkipsOldFiles(t *testing.T) {
 }
 
 func TestClaudePathHash(t *testing.T) {
+	// Unix-style paths (cross-platform: filepath.ToSlash is a no-op on these)
 	tests := []struct {
 		input string
 		want  string
@@ -206,6 +218,10 @@ func TestClaudePathHash(t *testing.T) {
 		got := claudePathHash(tt.input)
 		assert.Equal(t, tt.want, got, "claudePathHash(%q)", tt.input)
 	}
+
+	// Windows-style paths (filepath.ToSlash converts \ to / on all platforms)
+	assert.Equal(t, "C-Users-test", claudePathHash(`C:\Users\test`))
+	assert.Equal(t, "D-workspace", claudePathHash(`D:\workspace`))
 }
 
 // --- Codex parser tests ---
@@ -425,7 +441,7 @@ func TestCollect_UnknownAgent(t *testing.T) {
 }
 
 func TestCollect_NoData(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	setHome(t, t.TempDir())
 	usage := Collect("claude", t.TempDir(), epoch)
 	assert.Nil(t, usage)
 }
