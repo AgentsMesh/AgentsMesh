@@ -37,7 +37,7 @@ func (r *Runner) recoverDaemonSessions() {
 		if err != nil {
 			log.Warn("failed to recover session, cleaning up",
 				"pod_key", state.PodKey, "error", err)
-			r.podDaemonManager.CleanupSession(state.SandboxPath)
+			_ = r.podDaemonManager.CleanupSession(state.SandboxPath)
 			continue
 		}
 

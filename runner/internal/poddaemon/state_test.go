@@ -27,7 +27,7 @@ func TestStateSaveLoadRoundtrip(t *testing.T) {
 		Args:           []string{"--yes"},
 		Cols:           120,
 		Rows:           40,
-		StartedAt:      time.Now().Truncate(time.Millisecond),
+		StartedAt:      time.Now().UTC().Truncate(time.Millisecond),
 		VTHistoryLimit: 5000,
 	}
 

@@ -272,7 +272,7 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 
 	// Clean up Pod Daemon state (triggers daemon self-exit when it detects file deletion)
 	if pod.SandboxPath != "" {
-		poddaemon.DeleteState(pod.SandboxPath)
+		_ = poddaemon.DeleteState(pod.SandboxPath)
 	}
 
 	if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {

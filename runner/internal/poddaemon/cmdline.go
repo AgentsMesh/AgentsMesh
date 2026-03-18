@@ -39,7 +39,8 @@ func quoteWindowsArg(arg string) string {
 	b.WriteByte('"')
 
 	for i := 0; i < len(arg); i++ {
-		if arg[i] == '\\' {
+		switch arg[i] {
+		case '\\':
 			// Count consecutive backslashes
 			numBackslashes := 0
 			for i < len(arg) && arg[i] == '\\' {
@@ -64,9 +65,9 @@ func quoteWindowsArg(arg string) string {
 				}
 				b.WriteByte(arg[i])
 			}
-		} else if arg[i] == '"' {
+		case '"':
 			b.WriteString(`\"`)
-		} else {
+		default:
 			b.WriteByte(arg[i])
 		}
 	}

@@ -81,7 +81,7 @@ func (m *PodDaemonManager) CreateSession(opts CreateOpts) (*daemonPTY, *PodDaemo
 	configPath := StatePath(opts.SandboxPath)
 	pid, err := startDaemon(m.runnerBinPath, configPath, opts.SandboxPath, opts.Env)
 	if err != nil {
-		DeleteState(opts.SandboxPath)
+		_ = DeleteState(opts.SandboxPath)
 		return nil, nil, fmt.Errorf("start daemon: %w", err)
 	}
 
@@ -95,7 +95,7 @@ func (m *PodDaemonManager) CreateSession(opts CreateOpts) (*daemonPTY, *PodDaemo
 	// Wait for daemon to start listening on IPC
 	dpty, err := m.waitForDaemon(ipcPath)
 	if err != nil {
-		DeleteState(opts.SandboxPath)
+		_ = DeleteState(opts.SandboxPath)
 		return nil, nil, fmt.Errorf("connect to daemon: %w", err)
 	}
 

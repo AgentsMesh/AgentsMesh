@@ -147,7 +147,7 @@ func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 		// Clean up Pod Daemon state file (same as OnTerminatePod).
 		// Without this, daemon state persists after natural exit until next recovery scan.
 		if pod.SandboxPath != "" {
-			poddaemon.DeleteState(pod.SandboxPath)
+			_ = poddaemon.DeleteState(pod.SandboxPath)
 		}
 
 		// Unregister from MCP server and agent monitor (same as OnTerminatePod).
