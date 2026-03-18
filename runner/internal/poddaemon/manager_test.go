@@ -85,9 +85,7 @@ func TestNewPodDaemonManager(t *testing.T) {
 }
 
 func TestAttachSessionSuccess(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "pd-")
-	require.NoError(t, err)
-	t.Cleanup(func() { os.RemoveAll(dir) })
+	dir := t.TempDir()
 	ipcPath := IPCPath(dir, "a")
 
 	// Start a mock daemon listener
