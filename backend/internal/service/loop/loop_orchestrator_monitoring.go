@@ -174,6 +174,53 @@ func (o *LoopOrchestrator) CleanupOrphanPendingRuns(ctx context.Context, orgIDs 
 	return nil
 }
 
+// HandleAgentWaiting is called when a Pod's agent status changes to "waiting".
+// For direct-mode (non-autopilot) loop pods, this means the agent has finished
+// executing its prompt and returned to its REPL. The pod should be auto-terminated
+// so the loop run completes. Without this, the process never exits and the pod
+// stays "running" indefinitely.
+func (o *LoopOrchestrator) HandleAgentWaiting(ctx context.Context, podKey string) {
+	run, err := o.loopRunService.FindActiveRunByPodKey(ctx, podKey)
+	if err != nil {
+		// Not a loop-associated pod, ignore
+		return
+	}
+
+	// Only auto-terminate for direct-mode (non-autopilot) runs.
+	// Autopilot runs have their own lifecycle management via AutopilotController.
+	if run.AutopilotControllerKey != nil {
+		return
+	}
+
+	// Verify the loop is indeed direct mode (defensive check)
+	loop, err := o.loopService.GetByID(ctx, run.LoopID)
+	if err != nil {
+		o.logger.Error("failed to get loop for agent waiting check",
+			"loop_id", run.LoopID, "pod_key", podKey, "error", err)
+		return
+	}
+
+	if loop.IsAutopilot() {
+		return
+	}
+
+	o.logger.Info("agent finished in direct-mode loop, terminating pod",
+		"pod_key", podKey,
+		"loop_id", loop.ID,
+		"loop_slug", loop.Slug,
+		"run_id", run.ID,
+	)
+
+	// Terminate the pod — this triggers the normal pod termination flow
+	// (PodTerminated event → HandlePodTerminated → HandleRunCompleted)
+	if o.podTerminator != nil {
+		if err := o.podTerminator.TerminatePod(ctx, podKey); err != nil {
+			o.logger.Error("failed to terminate direct-mode loop pod",
+				"pod_key", podKey, "error", err)
+		}
+	}
+}
+
 // RefreshLoopStats recomputes loop statistics from Pod status (SSOT).
 // Call this periodically or after significant events.
 func (o *LoopOrchestrator) RefreshLoopStats(ctx context.Context, loopID int64) error {

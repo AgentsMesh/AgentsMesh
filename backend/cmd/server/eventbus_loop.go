@@ -48,6 +48,21 @@ func setupLoopEventSubscriptions(eventBus *eventbus.EventBus, loopOrchestrator *
 		}
 	})
 
+	// Agent status changed → auto-terminate direct-mode loop pods when agent finishes
+	eventBus.Subscribe(eventbus.EventPodAgentChanged, func(event *eventbus.Event) {
+		var data eventbus.PodStatusChangedData
+		if err := json.Unmarshal(event.Data, &data); err != nil {
+			return
+		}
+
+		// Only react to "waiting" — agent finished its prompt, back to REPL
+		if data.AgentStatus != agentpod.AgentStatusWaiting {
+			return
+		}
+
+		loopOrchestrator.HandleAgentWaiting(context.Background(), data.PodKey)
+	})
+
 	// Autopilot status changed → detect terminal phases and handle completion.
 	// This is the single path for Autopilot termination detection:
 	//   Runner gRPC → PodCoordinator → onAutopilotStatusChange callback → EventAutopilotStatusChanged
