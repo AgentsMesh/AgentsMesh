@@ -9,7 +9,7 @@ export type Pod = PodData;
 // Sidebar status filter → API status query parameter mapping
 export const SIDEBAR_STATUS_MAP: Record<string, string> = {
   mine: "running,initializing",
-  running: "running,initializing",
+  org: "running,initializing",
   completed: "terminated,failed,paused,completed,error,orphaned",
 };
 const SIDEBAR_PAGE_SIZE = 20;

@@ -65,10 +65,10 @@ describe("Pod Store — SIDEBAR_STATUS_MAP client-side guard", () => {
     expect(result).toHaveLength(2);
   });
 
-  it("running filter should only show running/initializing pods regardless of creator", () => {
+  it("org filter should only show running/initializing pods regardless of creator", () => {
     const runningPod: Pod = { ...otherPod, status: "running" };
     const terminatedPod: Pod = { ...myPod, status: "terminated" };
-    const result = applyClientFilter([runningPod, terminatedPod], "running", 42);
+    const result = applyClientFilter([runningPod, terminatedPod], "org", 42);
     expect(result).toHaveLength(1);
     expect(result[0].pod_key).toBe(runningPod.pod_key);
   });
@@ -85,11 +85,11 @@ describe("Pod Store — SIDEBAR_STATUS_MAP client-side guard", () => {
 describe("Pod Store — fetchSidebarPods", () => {
   beforeEach(resetPodStore);
 
-  it("should fetch with correct status mapping for running filter", async () => {
+  it("should fetch with correct status mapping for org filter", async () => {
     vi.mocked(podApi.list).mockResolvedValue({ pods: [mockPod], total: 1, limit: 20, offset: 0 });
 
     await act(async () => {
-      await usePodStore.getState().fetchSidebarPods("running");
+      await usePodStore.getState().fetchSidebarPods("org");
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
@@ -97,7 +97,7 @@ describe("Pod Store — fetchSidebarPods", () => {
       limit: 20,
       offset: 0,
     });
-    expect(usePodStore.getState().currentSidebarFilter).toBe("running");
+    expect(usePodStore.getState().currentSidebarFilter).toBe("org");
   });
 
   it("should fetch with completed status mapping", async () => {
@@ -123,6 +123,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
+      status: "running,initializing",
       createdById: 42,
       limit: 20,
       offset: 0,
@@ -139,6 +140,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
+      status: "running,initializing",
       limit: 20,
       offset: 0,
     });
@@ -152,7 +154,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     });
 
     await act(async () => {
-      await usePodStore.getState().fetchSidebarPods("running");
+      await usePodStore.getState().fetchSidebarPods("org");
     });
 
     expect(loadingDuringFetch).toBe(true);
@@ -163,7 +165,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     vi.mocked(podApi.list).mockResolvedValue({ pods: [mockPod], total: 5, limit: 20, offset: 0 });
 
     await act(async () => {
-      await usePodStore.getState().fetchSidebarPods("running");
+      await usePodStore.getState().fetchSidebarPods("org");
     });
 
     expect(usePodStore.getState().podHasMore).toBe(true);
@@ -174,7 +176,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     vi.mocked(podApi.list).mockRejectedValue(new Error("Network error"));
 
     await act(async () => {
-      await usePodStore.getState().fetchSidebarPods("running");
+      await usePodStore.getState().fetchSidebarPods("org");
     });
 
     expect(usePodStore.getState().error).toBe("Network error");
@@ -189,7 +191,7 @@ describe("Pod Store — loadMorePods", () => {
     usePodStore.setState({
       pods: [mockPod],
       podHasMore: true,
-      currentSidebarFilter: "running",
+      currentSidebarFilter: "org",
     });
     vi.mocked(podApi.list).mockResolvedValue({ pods: [mockPod2], total: 2, limit: 20, offset: 1 });
 
@@ -229,7 +231,7 @@ describe("Pod Store — loadMorePods", () => {
     usePodStore.setState({
       pods: [mockPod, mockPod2],
       podHasMore: true,
-      currentSidebarFilter: "running",
+      currentSidebarFilter: "org",
     });
     // API returns mockPod2 again (realtime event already added it)
     vi.mocked(podApi.list).mockResolvedValue({ pods: [mockPod2], total: 3, limit: 20, offset: 2 });
@@ -256,6 +258,7 @@ describe("Pod Store — loadMorePods", () => {
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
+      status: "running,initializing",
       createdById: 42,
       limit: 20,
       offset: 1,
