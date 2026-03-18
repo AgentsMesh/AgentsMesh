@@ -43,7 +43,9 @@ func TestStartDaemonProcessNotFound(t *testing.T) {
 }
 
 func TestWindowsDaemonProcessResize(t *testing.T) {
-	proc, err := startDaemonProcess("cmd.exe", []string{"/c", "timeout /t 5"}, "", nil, 80, 24)
+	// Use "ping" instead of "timeout" — timeout.exe requires interactive stdin
+	// and crashes in ConPTY within CI environments.
+	proc, err := startDaemonProcess("ping", []string{"-n", "5", "127.0.0.1"}, "", nil, 80, 24)
 	require.NoError(t, err)
 	defer proc.Close()
 	defer proc.Kill()
@@ -54,8 +56,8 @@ func TestWindowsDaemonProcessResize(t *testing.T) {
 }
 
 func TestWindowsDaemonProcessGracefulStop(t *testing.T) {
-	// Start a long-running process.
-	proc, err := startDaemonProcess("cmd.exe", []string{"/c", "timeout /t 30"}, "", nil, 80, 24)
+	// Use "ping" instead of "timeout" — timeout.exe crashes ConPTY in CI.
+	proc, err := startDaemonProcess("ping", []string{"-n", "30", "127.0.0.1"}, "", nil, 80, 24)
 	require.NoError(t, err)
 	defer proc.Close()
 
@@ -70,7 +72,7 @@ func TestWindowsDaemonProcessGracefulStop(t *testing.T) {
 }
 
 func TestWindowsDaemonProcessKill(t *testing.T) {
-	proc, err := startDaemonProcess("cmd.exe", []string{"/c", "timeout /t 30"}, "", nil, 80, 24)
+	proc, err := startDaemonProcess("ping", []string{"-n", "30", "127.0.0.1"}, "", nil, 80, 24)
 	require.NoError(t, err)
 
 	pid := proc.Pid()

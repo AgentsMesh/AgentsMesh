@@ -12,8 +12,10 @@ import (
 )
 
 func TestKillProcessTreeWindows(t *testing.T) {
-	// Start a parent process that spawns a child (cmd.exe /c timeout spawns conhost).
-	cmd := exec.Command("cmd.exe", "/c", "timeout /t 30 >nul")
+	// Use "ping -n 60 127.0.0.1" — a reliable long-running process that
+	// the current user always has permission to terminate (unlike timeout.exe
+	// which spawns conhost with elevated handles in some CI environments).
+	cmd := exec.Command("ping", "-n", "60", "127.0.0.1")
 	require.NoError(t, cmd.Start())
 
 	pid := cmd.Process.Pid
@@ -21,11 +23,11 @@ func TestKillProcessTreeWindows(t *testing.T) {
 
 	// Give the process a moment to start.
 	time.Sleep(500 * time.Millisecond)
-	assert.True(t, inspector.IsRunning(pid), "process should be running before kill")
+	require.True(t, inspector.IsRunning(pid), "process should be running before kill")
 
 	// Kill the entire tree.
 	err := KillProcessTree(pid)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Give OS time to reap.
 	time.Sleep(500 * time.Millisecond)

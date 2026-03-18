@@ -219,6 +219,7 @@ func TestProgressTracker_WithMockGitExecutor(t *testing.T) {
 	snapshot := pt.CaptureSnapshot()
 	if snapshot == nil {
 		t.Fatal("CaptureSnapshot returned nil")
+		return // unreachable, satisfies staticcheck SA5011
 	}
 
 	if !snapshot.GitDiff.HasChanges {

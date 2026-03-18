@@ -20,8 +20,8 @@ func TestStartDaemonWindows(t *testing.T) {
 	state := &PodDaemonState{
 		PodKey:      "test-daemon",
 		SandboxPath: sandboxDir,
-		Command:     "cmd.exe",
-		Args:        []string{"/c", "timeout /t 5"},
+		Command:     "ping",
+		Args:        []string{"-n", "5", "127.0.0.1"},
 		Cols:        80,
 		Rows:        24,
 	}

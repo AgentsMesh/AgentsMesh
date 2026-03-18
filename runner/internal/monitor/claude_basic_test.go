@@ -57,6 +57,7 @@ func TestNewMonitor(t *testing.T) {
 
 	if monitor == nil {
 		t.Fatal("NewMonitor returned nil")
+		return // unreachable, satisfies staticcheck SA5011
 	}
 
 	if monitor.interval != time.Second {
@@ -78,6 +79,7 @@ func TestNewMonitorWithInspector(t *testing.T) {
 
 	if monitor == nil {
 		t.Fatal("NewMonitorWithInspector returned nil")
+		return // unreachable, satisfies staticcheck SA5011
 	}
 
 	if monitor.inspector != inspector {
