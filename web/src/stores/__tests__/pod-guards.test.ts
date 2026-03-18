@@ -93,7 +93,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
-      status: "running,initializing,orphaned",
+      status: "running,initializing",
       limit: 20,
       offset: 0,
     });
@@ -123,7 +123,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
-      status: "running,initializing,orphaned",
+      status: "running,initializing",
       createdById: 42,
       limit: 20,
       offset: 0,
@@ -140,7 +140,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
-      status: "running,initializing,orphaned",
+      status: "running,initializing",
       limit: 20,
       offset: 0,
     });
@@ -200,7 +200,7 @@ describe("Pod Store — loadMorePods", () => {
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
-      status: "running,initializing,orphaned",
+      status: "running,initializing",
       limit: 20,
       offset: 1,
     });
@@ -258,7 +258,7 @@ describe("Pod Store — loadMorePods", () => {
     });
 
     expect(podApi.list).toHaveBeenCalledWith({
-      status: "running,initializing,orphaned",
+      status: "running,initializing",
       createdById: 42,
       limit: 20,
       offset: 1,
