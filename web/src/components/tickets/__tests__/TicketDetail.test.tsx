@@ -293,10 +293,10 @@ describe('TicketDetail Component', () => {
   })
 
   describe('metadata sidebar', () => {
-    it('should display ticket priority', async () => {
+    it('should display repository selector', async () => {
       render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
-        expect(screen.getByText('Priority')).toBeInTheDocument()
+        expect(screen.getByText('Repository')).toBeInTheDocument()
       })
     })
 

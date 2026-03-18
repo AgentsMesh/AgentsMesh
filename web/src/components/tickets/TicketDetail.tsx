@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAuthStore } from "@/stores/auth";
-import { useTicketStore, TicketStatus, TicketPriority } from "@/stores/ticket";
+import { useTicketStore, TicketStatus } from "@/stores/ticket";
 import { useTicketExtraData } from "./hooks";
 import { LabelsList, CommentsList, SubTicketsList, RelationsList, CommitsList } from "./shared";
 import { TicketDetailSidebar } from "./TicketDetailSidebar";
@@ -89,11 +89,11 @@ export function TicketDetail({ slug }: TicketDetailProps) {
     }
   };
 
-  const handlePriorityChange = async (newPriority: TicketPriority) => {
+  const handleRepositoryChange = async (repositoryId: number | null) => {
     try {
-      await updateTicket(slug, { priority: newPriority });
+      await updateTicket(slug, { repositoryId });
     } catch (err) {
-      console.error("Failed to update priority:", err);
+      console.error("Failed to update repository:", err);
     }
   };
 
@@ -199,7 +199,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
         ticket={currentTicket}
         onDelete={handleDelete}
         onStatusChange={handleStatusChange}
-        onPriorityChange={handlePriorityChange}
+        onRepositoryChange={handleRepositoryChange}
         ticketSlug={slug}
         t={t}
         commentsSlot={

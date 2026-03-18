@@ -29,6 +29,34 @@ vi.mock("@/components/ui/block-editor", () => ({
   ),
 }));
 
+// Mock RepositorySelect
+const mockRepositorySelectOnChange = vi.fn();
+vi.mock("@/components/common/RepositorySelect", () => ({
+  RepositorySelect: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
+    value: number | null;
+    onChange: (v: number | null) => void;
+    placeholder?: string;
+  }) => {
+    mockRepositorySelectOnChange.mockImplementation(onChange);
+    return (
+      <select
+        data-testid="repository-select"
+        value={value ?? ""}
+        onChange={(e) =>
+          onChange(e.target.value ? Number(e.target.value) : null)
+        }
+      >
+        <option value="">{placeholder || "Select..."}</option>
+        <option value="1">my-repo</option>
+      </select>
+    );
+  },
+}));
+
 import { TicketCreateDialog } from "../TicketCreateDialog";
 
 function setMobile() {
@@ -117,6 +145,25 @@ describe("TicketCreateDialog", () => {
       expect(mockCreate).not.toHaveBeenCalled();
     });
 
+    it("shows error when submitting without repository", async () => {
+      render(<TicketCreateDialog {...defaultProps} />);
+
+      const titleInput = screen.getByPlaceholderText("Enter ticket title");
+      fireEvent.change(titleInput, { target: { value: "Test Ticket" } });
+
+      const submitButton = screen.getByRole("button", {
+        name: "Create Ticket",
+      });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Repository is required")
+        ).toBeInTheDocument();
+      });
+      expect(mockCreate).not.toHaveBeenCalled();
+    });
+
     it("clears error when user starts typing", async () => {
       render(<TicketCreateDialog {...defaultProps} />);
 
@@ -145,6 +192,9 @@ describe("TicketCreateDialog", () => {
       const titleInput = screen.getByPlaceholderText("Enter ticket title");
       fireEvent.change(titleInput, { target: { value: "Test Ticket" } });
 
+      const repoSelect = screen.getByTestId("repository-select");
+      fireEvent.change(repoSelect, { target: { value: "1" } });
+
       const submitButton = screen.getByRole("button", {
         name: "Create Ticket",
       });
@@ -154,6 +204,7 @@ describe("TicketCreateDialog", () => {
         expect(mockCreate).toHaveBeenCalledWith(
           expect.objectContaining({
             title: "Test Ticket",
+            repositoryId: 1,
             priority: "medium",
           })
         );
@@ -166,6 +217,9 @@ describe("TicketCreateDialog", () => {
 
       const titleInput = screen.getByPlaceholderText("Enter ticket title");
       fireEvent.change(titleInput, { target: { value: "Test Ticket" } });
+
+      const repoSelect = screen.getByTestId("repository-select");
+      fireEvent.change(repoSelect, { target: { value: "1" } });
 
       const submitButton = screen.getByRole("button", {
         name: "Create Ticket",
@@ -182,6 +236,9 @@ describe("TicketCreateDialog", () => {
 
       const titleInput = screen.getByPlaceholderText("Enter ticket title");
       fireEvent.change(titleInput, { target: { value: "Sub-task" } });
+
+      const repoSelect = screen.getByTestId("repository-select");
+      fireEvent.change(repoSelect, { target: { value: "1" } });
 
       const submitButton = screen.getByRole("button", {
         name: "Create Ticket",
@@ -206,6 +263,9 @@ describe("TicketCreateDialog", () => {
       const titleInput = screen.getByPlaceholderText("Enter ticket title");
       fireEvent.change(titleInput, { target: { value: "Test Ticket" } });
 
+      const repoSelect = screen.getByTestId("repository-select");
+      fireEvent.change(repoSelect, { target: { value: "1" } });
+
       const submitButton = screen.getByRole("button", {
         name: "Create Ticket",
       });
@@ -224,6 +284,9 @@ describe("TicketCreateDialog", () => {
 
       const titleInput = screen.getByPlaceholderText("Enter ticket title");
       fireEvent.change(titleInput, { target: { value: "Test Ticket" } });
+
+      const repoSelect = screen.getByTestId("repository-select");
+      fireEvent.change(repoSelect, { target: { value: "1" } });
 
       const submitButton = screen.getByRole("button", {
         name: "Create Ticket",
