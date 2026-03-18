@@ -190,3 +190,53 @@ func (o *LoopOrchestrator) RefreshLoopStats(ctx context.Context, loopID int64) e
 func (o *LoopOrchestrator) GetLastPodKey(ctx context.Context, loopID int64) *string {
 	return o.loopRunService.GetLatestPodKey(ctx, loopID)
 }
+
+// CheckIdleLoopPods detects Loop Pods that have been idle (agent waiting) longer than
+// the loop's idle_timeout_sec and terminates them.
+// This handles REPL-style agents (e.g., Claude Code) that don't exit after completing a prompt.
+// orgIDs filters to specific organizations; nil means all orgs (single-instance mode).
+//
+// The run is marked as "completed" (not "cancelled") because the agent has actually finished
+// its work — the idle state means it's waiting for the next prompt, not that it was interrupted.
+// This is important for persistent sandbox resume: only completed runs update last_pod_key,
+// so future runs can resume from this run's sandbox state.
+func (o *LoopOrchestrator) CheckIdleLoopPods(ctx context.Context, orgIDs []int64) error {
+	runs, err := o.loopRunService.GetIdleLoopPods(ctx, orgIDs)
+	if err != nil {
+		o.logger.Error("failed to get idle loop pods", "error", err)
+		return err
+	}
+
+	if len(runs) == 0 {
+		return nil
+	}
+
+	o.logger.Info("found idle loop pods to terminate", "count", len(runs))
+
+	for _, run := range runs {
+		// Mark the run as completed BEFORE terminating the Pod.
+		// HandleRunCompleted uses FinishRun with optimistic locking (WHERE finished_at IS NULL),
+		// so the subsequent pod_terminated event will be a no-op (already finished).
+		o.HandleRunCompleted(ctx, run, loopDomain.RunStatusCompleted)
+
+		// Terminate the Pod to release resources
+		if run.PodKey != nil && o.podTerminator != nil {
+			if termErr := o.podTerminator.TerminatePod(ctx, *run.PodKey); termErr != nil {
+				o.logger.Error("failed to terminate idle loop pod",
+					"pod_key", *run.PodKey,
+					"run_id", run.ID,
+					"loop_id", run.LoopID,
+					"error", termErr,
+				)
+			}
+		}
+
+		o.logger.Info("terminated idle loop pod",
+			"run_id", run.ID,
+			"loop_id", run.LoopID,
+			"pod_key", run.PodKey,
+		)
+	}
+
+	return nil
+}

@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -23,6 +24,14 @@ func (pc *PodCoordinator) handleAgentStatus(runnerID int64, data *runnerv1.Agent
 
 	updates := map[string]interface{}{
 		"agent_status": data.Status,
+	}
+
+	// Track when agent enters/exits waiting state for idle timeout detection
+	if data.Status == agentpod.AgentStatusWaiting {
+		now := time.Now()
+		updates["agent_waiting_since"] = now
+	} else {
+		updates["agent_waiting_since"] = nil
 	}
 
 	if err := pc.podRepo.UpdateAgentStatus(ctx, data.PodKey, updates); err != nil {

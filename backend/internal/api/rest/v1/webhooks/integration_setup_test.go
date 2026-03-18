@@ -137,7 +137,11 @@ func setupIntegrationDB(t *testing.T) *gorm.DB {
 		id INTEGER PRIMARY KEY,
 		organization_id INTEGER,
 		name TEXT,
-		status TEXT
+		status TEXT,
+		agent_status TEXT NOT NULL DEFAULT 'idle',
+		last_activity DATETIME,
+		agent_waiting_since DATETIME,
+		finished_at DATETIME
 	)`)
 
 	// Seed test data

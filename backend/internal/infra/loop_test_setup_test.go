@@ -49,6 +49,7 @@ func setupLoopTestDB(t *testing.T) *gorm.DB {
 			max_concurrent_runs INTEGER NOT NULL DEFAULT 1,
 			max_retained_runs INTEGER NOT NULL DEFAULT 0,
 			timeout_minutes INTEGER NOT NULL DEFAULT 60,
+			idle_timeout_sec INTEGER NOT NULL DEFAULT 30,
 			sandbox_path TEXT,
 			last_pod_key TEXT,
 			created_by_id INTEGER NOT NULL DEFAULT 0,
@@ -99,6 +100,8 @@ func setupLoopTestDB(t *testing.T) *gorm.DB {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			pod_key TEXT NOT NULL UNIQUE,
 			status TEXT NOT NULL DEFAULT 'initializing',
+			agent_status TEXT NOT NULL DEFAULT 'idle',
+			agent_waiting_since DATETIME,
 			finished_at DATETIME,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)

@@ -274,4 +274,8 @@ type LoopRunRepository interface {
 	// Keeps the most recent `keep` finished runs, deletes the rest.
 	// Returns the number of rows deleted.
 	DeleteOldFinishedRuns(ctx context.Context, loopID int64, keep int) (int64, error)
+
+	// GetIdleLoopPods returns active loop runs whose Pods have been idle (agent waiting)
+	// longer than the loop's idle_timeout_sec. Used by the scheduler to auto-terminate.
+	GetIdleLoopPods(ctx context.Context, orgIDs []int64) ([]*LoopRun, error)
 }

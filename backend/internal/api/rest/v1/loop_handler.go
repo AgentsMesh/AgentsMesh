@@ -76,6 +76,7 @@ type createLoopRequest struct {
 	MaxConcurrentRuns *int                   `json:"max_concurrent_runs"`
 	MaxRetainedRuns   *int                   `json:"max_retained_runs"`
 	TimeoutMinutes    *int                   `json:"timeout_minutes"`
+	IdleTimeoutSec    *int                   `json:"idle_timeout_sec"`
 }
 
 type updateLoopRequest struct {
@@ -106,6 +107,7 @@ type updateLoopRequest struct {
 	MaxConcurrentRuns *int                   `json:"max_concurrent_runs"`
 	MaxRetainedRuns   *int                   `json:"max_retained_runs"`
 	TimeoutMinutes    *int                   `json:"timeout_minutes"`
+	IdleTimeoutSec    *int                   `json:"idle_timeout_sec"`
 }
 
 type listLoopsQuery struct {
@@ -233,6 +235,15 @@ func (h *LoopHandler) CreateLoop(c *gin.Context) {
 		sessionPersistence = *req.SessionPersistence
 	}
 
+	idleTimeoutSec := 30
+	if req.IdleTimeoutSec != nil {
+		idleTimeoutSec = *req.IdleTimeoutSec
+	}
+	if idleTimeoutSec < 0 || idleTimeoutSec > 3600 {
+		apierr.ValidationError(c, "idle_timeout_sec must be between 0 and 3600 (0 = disabled)")
+		return
+	}
+
 	loop, err := h.loopService.Create(c.Request.Context(), &loopService.CreateLoopRequest{
 		OrganizationID:      tenant.OrganizationID,
 		CreatedByID:         tenant.UserID,
@@ -260,6 +271,7 @@ func (h *LoopHandler) CreateLoop(c *gin.Context) {
 		MaxConcurrentRuns:   maxConcurrentRuns,
 		MaxRetainedRuns:     maxRetainedRuns,
 		TimeoutMinutes:      timeoutMinutes,
+		IdleTimeoutSec:      idleTimeoutSec,
 	})
 	if err != nil {
 		slog.Warn("loop create: service error", "error", err, "name", req.Name, "slug", req.Slug)
@@ -341,6 +353,10 @@ func (h *LoopHandler) UpdateLoop(c *gin.Context) {
 		apierr.ValidationError(c, "max_retained_runs must be between 0 and 10000 (0 = unlimited)")
 		return
 	}
+	if req.IdleTimeoutSec != nil && (*req.IdleTimeoutSec < 0 || *req.IdleTimeoutSec > 3600) {
+		apierr.ValidationError(c, "idle_timeout_sec must be between 0 and 3600 (0 = disabled)")
+		return
+	}
 
 	svcReq := &loopService.UpdateLoopRequest{
 		Name:                req.Name,
@@ -363,6 +379,7 @@ func (h *LoopHandler) UpdateLoop(c *gin.Context) {
 		MaxConcurrentRuns:   req.MaxConcurrentRuns,
 		MaxRetainedRuns:     req.MaxRetainedRuns,
 		TimeoutMinutes:      req.TimeoutMinutes,
+		IdleTimeoutSec:      req.IdleTimeoutSec,
 	}
 
 	if req.ConfigOverrides != nil {
