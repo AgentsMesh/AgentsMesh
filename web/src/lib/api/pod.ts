@@ -51,10 +51,11 @@ export interface PodData {
 
 // Pods API
 export const podApi = {
-  list: (filters?: { status?: string; runnerId?: number; limit?: number; offset?: number }) => {
+  list: (filters?: { status?: string; runnerId?: number; createdById?: number; limit?: number; offset?: number }) => {
     const params = new URLSearchParams();
     if (filters?.status) params.append("status", filters.status);
     if (filters?.runnerId) params.append("runner_id", String(filters.runnerId));
+    if (filters?.createdById) params.append("created_by_id", String(filters.createdById));
     if (filters?.limit) params.append("limit", String(filters.limit));
     if (filters?.offset) params.append("offset", String(filters.offset));
     const query = params.toString() ? `?${params.toString()}` : "";

@@ -12,9 +12,10 @@ import (
 
 // ListPodsRequest represents pod list request
 type ListPodsRequest struct {
-	Status string `form:"status"`
-	Limit  int    `form:"limit"`
-	Offset int    `form:"offset"`
+	Status      string `form:"status"`
+	CreatedByID int64  `form:"created_by_id"`
+	Limit       int    `form:"limit"`
+	Offset      int    `form:"offset"`
 }
 
 // ListPods lists pods
@@ -42,6 +43,7 @@ func (h *PodHandler) ListPods(c *gin.Context) {
 		c.Request.Context(),
 		tenant.OrganizationID,
 		statuses,
+		req.CreatedByID,
 		limit,
 		req.Offset,
 	)

@@ -68,7 +68,7 @@ func (r *podRepo) GetTicketByID(ctx context.Context, ticketID int64) (string, st
 	return t.Slug, t.Title, nil
 }
 
-func (r *podRepo) ListByOrg(ctx context.Context, orgID int64, statuses []string, limit, offset int) ([]*agentpod.Pod, int64, error) {
+func (r *podRepo) ListByOrg(ctx context.Context, orgID int64, statuses []string, createdByID int64, limit, offset int) ([]*agentpod.Pod, int64, error) {
 	query := r.db.WithContext(ctx).Model(&agentpod.Pod{}).Where("organization_id = ?", orgID)
 	switch len(statuses) {
 	case 0:
@@ -76,6 +76,9 @@ func (r *podRepo) ListByOrg(ctx context.Context, orgID int64, statuses []string,
 		query = query.Where("status = ?", statuses[0])
 	default:
 		query = query.Where("status IN ?", statuses)
+	}
+	if createdByID > 0 {
+		query = query.Where("created_by_id = ?", createdByID)
 	}
 
 	var total int64

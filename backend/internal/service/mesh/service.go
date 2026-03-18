@@ -43,7 +43,7 @@ func NewService(
 // GetTopology returns the complete Mesh topology for an organization
 func (s *Service) GetTopology(ctx context.Context, orgID int64) (*mesh.MeshTopology, error) {
 	// 1. Get active pods
-	pods, _, err := s.podService.ListPods(ctx, orgID, nil, 100, 0)
+	pods, _, err := s.podService.ListPods(ctx, orgID, nil, 0, 100, 0)
 	if err != nil {
 		return nil, err
 	}

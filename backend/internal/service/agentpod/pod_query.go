@@ -61,8 +61,8 @@ func (s *PodService) GetPodsByTicket(ctx context.Context, ticketID int64) ([]*ag
 }
 
 // ListPods returns pods for an organization
-func (s *PodService) ListPods(ctx context.Context, orgID int64, statuses []string, limit, offset int) ([]*agentpod.Pod, int64, error) {
-	pods, total, err := s.repo.ListByOrg(ctx, orgID, statuses, limit, offset)
+func (s *PodService) ListPods(ctx context.Context, orgID int64, statuses []string, createdByID int64, limit, offset int) ([]*agentpod.Pod, int64, error) {
+	pods, total, err := s.repo.ListByOrg(ctx, orgID, statuses, createdByID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}

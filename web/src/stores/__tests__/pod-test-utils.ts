@@ -39,6 +39,6 @@ export function resetPodStore() {
     podTotal: 0,
     podHasMore: false,
     loadingMore: false,
-    currentSidebarFilter: "running",
+    currentSidebarFilter: "mine",
   });
 }

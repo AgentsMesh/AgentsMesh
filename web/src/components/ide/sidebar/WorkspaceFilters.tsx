@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type FilterType = "all" | "running" | "completed";
+export type FilterType = "mine" | "running" | "completed";
 
 interface WorkspaceFiltersProps {
   filter: FilterType;
@@ -14,7 +14,7 @@ interface WorkspaceFiltersProps {
  * Filter tabs for pod list
  */
 export function WorkspaceFilters({ filter, onFilterChange, t }: WorkspaceFiltersProps) {
-  const filters: FilterType[] = ["running", "completed", "all"];
+  const filters: FilterType[] = ["mine", "running", "completed"];
 
   return (
     <div className="flex items-center gap-1 px-2 py-1 border-y border-border">

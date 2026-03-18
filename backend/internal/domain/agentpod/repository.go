@@ -23,8 +23,8 @@ type PodRepository interface {
 	GetOrgAndCreator(ctx context.Context, podKey string) (orgID, creatorID int64, err error)
 	// GetTicketByID returns a ticket's slug and title by ID (cross-domain read for pod creation).
 	GetTicketByID(ctx context.Context, ticketID int64) (slug, title string, err error)
-	// ListByOrg returns pods for an organization with optional status filter and pagination.
-	ListByOrg(ctx context.Context, orgID int64, statuses []string, limit, offset int) ([]*Pod, int64, error)
+	// ListByOrg returns pods for an organization with optional status and creator filter and pagination.
+	ListByOrg(ctx context.Context, orgID int64, statuses []string, createdByID int64, limit, offset int) ([]*Pod, int64, error)
 	// ListByTicket returns pods for a ticket with associations preloaded.
 	ListByTicket(ctx context.Context, ticketID int64) ([]*Pod, error)
 	// ListByRunner returns pods for a runner with optional status filter.

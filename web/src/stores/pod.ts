@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { podApi, PodData, ApiError } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth";
 import { getErrorMessage } from "@/lib/utils";
 
 // Re-export PodData as Pod for cleaner component API
@@ -7,9 +8,9 @@ export type Pod = PodData;
 
 // Sidebar status filter → API status query parameter mapping
 export const SIDEBAR_STATUS_MAP: Record<string, string> = {
+  mine: "",
   running: "running,initializing",
   completed: "terminated,failed,paused,completed,error,orphaned",
-  all: "",
 };
 const SIDEBAR_PAGE_SIZE = 20;
 
@@ -151,7 +152,7 @@ export const usePodStore = create<PodState>((set, get) => ({
   podTotal: 0,
   podHasMore: false,
   loadingMore: false,
-  currentSidebarFilter: "running",
+  currentSidebarFilter: "mine",
 
   fetchPods: async (filters) => {
     const fetchStartTs = Date.now();
@@ -226,8 +227,10 @@ export const usePodStore = create<PodState>((set, get) => ({
     set({ loading: true, error: null, currentSidebarFilter: statusFilter });
     try {
       const statusParam = SIDEBAR_STATUS_MAP[statusFilter] ?? "";
+      const createdById = statusFilter === "mine" ? useAuthStore.getState().user?.id : undefined;
       const response = await podApi.list({
         status: statusParam || undefined,
+        createdById,
         limit: SIDEBAR_PAGE_SIZE,
         offset: 0,
       });
@@ -264,8 +267,10 @@ export const usePodStore = create<PodState>((set, get) => ({
     set({ loadingMore: true });
     try {
       const statusParam = SIDEBAR_STATUS_MAP[currentSidebarFilter] ?? "";
+      const createdById = currentSidebarFilter === "mine" ? useAuthStore.getState().user?.id : undefined;
       const response = await podApi.list({
         status: statusParam || undefined,
+        createdById,
         limit: SIDEBAR_PAGE_SIZE,
         offset: pods.length,
       });

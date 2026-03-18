@@ -227,7 +227,7 @@
     "podCreated": "Pod created! Waiting for it to start...",
     "podOpened": "Pod opened",
     "filters": {
-      "all": "Alle",
+      "mine": "Meine",
       "running": "Laufend",
       "completed": "Abgeschlossen",
       "error": "Fehler"

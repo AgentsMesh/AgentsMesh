@@ -227,7 +227,7 @@
     "podCreated": "Pod created! Waiting for it to start...",
     "podOpened": "Pod opened",
     "filters": {
-      "all": "すべて",
+      "mine": "自分の",
       "running": "実行中",
       "completed": "完了",
       "error": "エラー"

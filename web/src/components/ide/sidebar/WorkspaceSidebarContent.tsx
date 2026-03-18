@@ -44,7 +44,9 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
   const addPane = useWorkspaceStore((s) => s.addPane);
   const panes = useWorkspaceStore((s) => s.panes);
 
-  const [filter, setFilter] = useState<FilterType>("running");
+  const user = useAuthStore((s) => s.user);
+
+  const [filter, setFilter] = useState<FilterType>("mine");
   const [searchQuery, setSearchQuery] = useState("");
   const [runnersExpanded, setRunnersExpanded] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,11 +86,14 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
     const allowedStatuses = SIDEBAR_STATUS_MAP[filter];
     const statusSet = allowedStatuses
       ? new Set(allowedStatuses.split(","))
-      : null; // "all" → show everything
+      : null; // "mine" → no status filter, but filter by creator below
 
     return pods.filter((pod) => {
       // Status guard
       if (statusSet && !statusSet.has(pod.status)) return false;
+
+      // Creator guard for "mine" filter
+      if (filter === "mine" && user?.id && pod.created_by?.id !== user.id) return false;
 
       // Search filter
       if (searchQuery) {
@@ -102,7 +107,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
 
       return true;
     });
-  }, [pods, searchQuery, filter]);
+  }, [pods, searchQuery, filter, user?.id]);
 
   // Sort pods: running/initializing first, then by creation time (newest first)
   const sortedPods = useMemo(() => {
@@ -206,11 +211,11 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
             <p className="text-sm text-muted-foreground">
               {searchQuery
                 ? t("workspace.emptyState.noMatch")
-                : filter === "all"
+                : filter === "mine"
                   ? t("workspace.emptyState.title")
                   : t("workspace.emptyState.noFiltered", { filter: t(`workspace.filters.${filter}`) })}
             </p>
-            {!searchQuery && filter === "all" && (
+            {!searchQuery && filter === "mine" && (
               <Button
                 size="sm"
                 variant="outline"
