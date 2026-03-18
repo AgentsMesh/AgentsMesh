@@ -133,6 +133,7 @@ type CreateLoopRequest struct {
 	MaxConcurrentRuns  int
 	MaxRetainedRuns    int // 0 = unlimited (keep all runs)
 	TimeoutMinutes     int
+	IdleTimeoutSec     int // 0 = disabled, >0 = auto-terminate after N seconds idle
 }
 
 // UpdateLoopRequest represents a loop update request
@@ -163,6 +164,7 @@ type UpdateLoopRequest struct {
 	MaxConcurrentRuns  *int
 	MaxRetainedRuns    *int
 	TimeoutMinutes     *int
+	IdleTimeoutSec     *int
 }
 
 // ListLoopsFilter represents filters for listing loops (service-level alias)
@@ -277,6 +279,7 @@ func (s *LoopService) Create(ctx context.Context, req *CreateLoopRequest) (*loop
 		MaxConcurrentRuns:   req.MaxConcurrentRuns,
 		MaxRetainedRuns:     req.MaxRetainedRuns,
 		TimeoutMinutes:      req.TimeoutMinutes,
+		IdleTimeoutSec:      req.IdleTimeoutSec,
 		CreatedByID:         req.CreatedByID,
 		NextRunAt:           nextRunAt,
 	}
@@ -416,6 +419,9 @@ func (s *LoopService) Update(ctx context.Context, orgID int64, slug string, req 
 	}
 	if req.TimeoutMinutes != nil {
 		updates["timeout_minutes"] = *req.TimeoutMinutes
+	}
+	if req.IdleTimeoutSec != nil {
+		updates["idle_timeout_sec"] = *req.IdleTimeoutSec
 	}
 
 	// H1: When runner changes on a persistent-sandbox loop, break the resume chain.

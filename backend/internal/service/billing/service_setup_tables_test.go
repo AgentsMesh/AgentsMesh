@@ -95,6 +95,10 @@ func getAuxiliaryTablesSQL() string {
 		organization_id INTEGER NOT NULL,
 		name TEXT NOT NULL,
 		status TEXT NOT NULL DEFAULT 'pending',
+		agent_status TEXT NOT NULL DEFAULT 'idle',
+		last_activity DATETIME,
+		agent_waiting_since DATETIME,
+		finished_at DATETIME,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);
 	CREATE TABLE IF NOT EXISTS invitations (

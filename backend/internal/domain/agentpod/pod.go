@@ -56,9 +56,10 @@ type Pod struct {
 	AgentStatus string `gorm:"size:50;not null;default:'idle'" json:"agent_status"`
 	AgentPID    *int   `gorm:"column:agent_pid" json:"agent_pid,omitempty"` // Claude/Agent process PID
 
-	StartedAt    *time.Time `json:"started_at,omitempty"`
-	FinishedAt   *time.Time `json:"finished_at,omitempty"`
-	LastActivity *time.Time `json:"last_activity,omitempty"`
+	StartedAt         *time.Time `json:"started_at,omitempty"`
+	FinishedAt        *time.Time `json:"finished_at,omitempty"`
+	LastActivity      *time.Time `json:"last_activity,omitempty"`
+	AgentWaitingSince *time.Time `json:"-"`
 
 	// Initial prompt and configuration
 	InitialPrompt string  `gorm:"type:text" json:"initial_prompt,omitempty"`

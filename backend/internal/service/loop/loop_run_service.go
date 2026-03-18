@@ -193,6 +193,11 @@ func (s *LoopRunService) GetOrphanPendingRuns(ctx context.Context, orgIDs []int6
 	return s.repo.GetOrphanPendingRuns(ctx, orgIDs)
 }
 
+// GetIdleLoopPods returns active loop runs whose Pods have been idle longer than idle_timeout_sec.
+func (s *LoopRunService) GetIdleLoopPods(ctx context.Context, orgIDs []int64) ([]*loopDomain.LoopRun, error) {
+	return s.repo.GetIdleLoopPods(ctx, orgIDs)
+}
+
 // ComputeLoopStats computes run statistics from Pod status (SSOT).
 func (s *LoopRunService) ComputeLoopStats(ctx context.Context, loopID int64) (total int, successful int, failed int, err error) {
 	return s.repo.ComputeLoopStats(ctx, loopID)

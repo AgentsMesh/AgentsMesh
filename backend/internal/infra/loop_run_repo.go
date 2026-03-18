@@ -501,5 +501,25 @@ func (r *loopRunRepo) handleConcurrencyPolicy(tx *gorm.DB, l *loop.Loop, params 
 	return nil
 }
 
+// GetIdleLoopPods returns active loop runs whose Pods have been idle longer than idle_timeout_sec.
+func (r *loopRunRepo) GetIdleLoopPods(ctx context.Context, orgIDs []int64) ([]*loop.LoopRun, error) {
+	var runs []*loop.LoopRun
+	query := r.db.WithContext(ctx).
+		Table("loop_runs").
+		Joins("JOIN loops ON loops.id = loop_runs.loop_id").
+		Joins("JOIN pods ON pods.pod_key = loop_runs.pod_key").
+		Where("loop_runs.finished_at IS NULL").
+		Where("pods.status = ?", agentpod.StatusRunning).
+		Where("pods.agent_status = ?", agentpod.AgentStatusWaiting).
+		Where("pods.agent_waiting_since IS NOT NULL").
+		Where("loops.idle_timeout_sec > 0").
+		Where("pods.agent_waiting_since < NOW() - (loops.idle_timeout_sec || ' seconds')::INTERVAL")
+	if len(orgIDs) > 0 {
+		query = query.Where("loop_runs.organization_id IN ?", orgIDs)
+	}
+	err := query.Find(&runs).Error
+	return runs, err
+}
+
 // Compile-time interface compliance check
 var _ loop.LoopRunRepository = (*loopRunRepo)(nil)

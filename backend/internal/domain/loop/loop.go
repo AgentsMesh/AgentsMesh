@@ -95,6 +95,7 @@ type Loop struct {
 	MaxConcurrentRuns  int    `gorm:"not null;default:1" json:"max_concurrent_runs"`
 	MaxRetainedRuns    int    `gorm:"not null;default:0" json:"max_retained_runs"` // 0 = unlimited
 	TimeoutMinutes     int    `gorm:"not null;default:60" json:"timeout_minutes"`
+	IdleTimeoutSec     int    `gorm:"not null;default:30" json:"idle_timeout_sec"`
 
 	// Runtime state (updated after runs)
 	//

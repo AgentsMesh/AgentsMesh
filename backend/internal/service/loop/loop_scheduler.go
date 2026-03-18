@@ -141,6 +141,9 @@ func (s *LoopScheduler) runTimeoutLoop() {
 			if err := s.orchestrator.CheckApprovalTimeouts(context.Background(), s.getOrgIDs()); err != nil {
 				s.logger.Error("approval timeout check failed", "error", err)
 			}
+			if err := s.orchestrator.CheckIdleLoopPods(context.Background(), s.getOrgIDs()); err != nil {
+				s.logger.Error("idle loop pod check failed", "error", err)
+			}
 			if err := s.orchestrator.CleanupOrphanPendingRuns(context.Background(), s.getOrgIDs()); err != nil {
 				s.logger.Error("orphan cleanup failed", "error", err)
 			}

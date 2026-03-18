@@ -45,6 +45,7 @@ func setupLoopRunServiceTestDB(t *testing.T) *gorm.DB {
 			max_concurrent_runs INTEGER NOT NULL DEFAULT 1,
 			max_retained_runs INTEGER NOT NULL DEFAULT 0,
 			timeout_minutes INTEGER NOT NULL DEFAULT 60,
+			idle_timeout_sec INTEGER NOT NULL DEFAULT 30,
 			permission_mode TEXT NOT NULL DEFAULT 'bypassPermissions',
 			repository_id INTEGER,
 			runner_id INTEGER,
@@ -94,7 +95,10 @@ func setupLoopRunServiceTestDB(t *testing.T) *gorm.DB {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			pod_key TEXT NOT NULL UNIQUE,
 			status TEXT NOT NULL DEFAULT 'initializing',
+			agent_status TEXT NOT NULL DEFAULT 'idle',
 			finished_at DATETIME,
+			last_activity DATETIME,
+			agent_waiting_since DATETIME,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)
 	`)

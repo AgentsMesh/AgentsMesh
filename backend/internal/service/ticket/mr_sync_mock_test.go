@@ -231,8 +231,12 @@ func setupMRSyncTestDB(t *testing.T) *gorm.DB {
 			organization_id INTEGER NOT NULL,
 			pod_key TEXT NOT NULL UNIQUE,
 			status TEXT NOT NULL DEFAULT 'initializing',
+			agent_status TEXT NOT NULL DEFAULT 'idle',
 			branch_name TEXT,
 			ticket_id INTEGER,
+			last_activity DATETIME,
+			agent_waiting_since DATETIME,
+			finished_at DATETIME,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)
