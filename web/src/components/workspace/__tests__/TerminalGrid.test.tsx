@@ -68,15 +68,11 @@ vi.mock("react-resizable-panels", () => ({
     </div>
   ),
   Separator: ({
-    children,
     className,
   }: {
-    children?: React.ReactNode;
     className?: string;
   }) => (
-    <div data-testid="separator" className={className}>
-      {children}
-    </div>
+    <div data-testid="separator" className={className} />
   ),
 }));
 
@@ -347,6 +343,26 @@ describe("TerminalGrid", () => {
 
       const separator = screen.getByTestId("separator");
       expect(separator).toHaveClass("cursor-row-resize");
+    });
+  });
+
+  describe("Resize behavior (regression)", () => {
+    beforeEach(() => {
+      useWorkspaceStore.setState({
+        panes: [
+          { id: "pane-1", podKey: "pod-1" },
+          { id: "pane-2", podKey: "pod-2" },
+        ],
+        activePane: "pane-1",
+        splitTree: split("horizontal", [leaf("pane-1"), leaf("pane-2")]),
+      });
+    });
+
+    it("should render Separator without children to avoid interfering with drag", () => {
+      render(<TerminalGrid />);
+
+      const separator = screen.getByTestId("separator");
+      expect(separator.childNodes).toHaveLength(0);
     });
   });
 });
