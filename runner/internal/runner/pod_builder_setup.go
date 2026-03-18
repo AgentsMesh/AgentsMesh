@@ -47,21 +47,39 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 		return "", "", "", err
 	}
 
+	// LocalPathStrategy reuses the source pod's sandbox as sandboxRoot,
+	// so path templates (e.g., {{.sandbox.root_path}}/.mcp.json) resolve
+	// within the correct directory instead of escaping into a new empty sandbox.
+	//
+	// sandboxOwned tracks whether we created the sandbox and are responsible for
+	// cleaning it up on error. When overridden, the source sandbox must NOT be
+	// deleted — it belongs to the source pod.
+	sandboxOwned := true
+	if result.SandboxRoot != "" && result.SandboxRoot != sandboxRoot {
+		_ = fsutil.RemoveAll(sandboxRoot) // Clean up unused new sandbox
+		sandboxRoot = result.SandboxRoot
+		sandboxOwned = false
+	}
+
 	// 3. Create files from FilesToCreate
 	if len(b.cmd.FilesToCreate) > 0 {
 		b.sendProgress("preparing", 70, "Creating files...")
 	}
 	if err := b.createFiles(sandboxRoot, result.WorkingDir); err != nil {
-		if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
-			slog.Warn("Failed to clean up sandbox after file creation error", "path", sandboxRoot, "error", rmErr)
+		if sandboxOwned {
+			if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
+				slog.Warn("Failed to clean up sandbox after file creation error", "path", sandboxRoot, "error", rmErr)
+			}
 		}
 		return "", "", "", err
 	}
 
 	// Download skill packages
 	if err := b.downloadResources(ctx, sandboxRoot, result.WorkingDir); err != nil {
-		if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
-			slog.Warn("Failed to clean up sandbox after download error", "path", sandboxRoot, "error", rmErr)
+		if sandboxOwned {
+			if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
+				slog.Warn("Failed to clean up sandbox after download error", "path", sandboxRoot, "error", rmErr)
+			}
 		}
 		return "", "", "", fmt.Errorf("failed to download resources: %w", err)
 	}

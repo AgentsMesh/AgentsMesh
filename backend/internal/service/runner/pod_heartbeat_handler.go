@@ -2,10 +2,12 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
+	"gorm.io/gorm"
 )
 
 // handleHeartbeat handles heartbeat from a runner (Proto type)
@@ -65,7 +67,24 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 	for podKey := range reportedPods {
 		pod, err := pc.podRepo.GetByKeyAndRunner(ctx, podKey, runnerID)
 		if err != nil {
-			// Pod not found in database, tell runner to terminate it
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				// Transient DB error: skip this round, retry on next heartbeat
+				pc.logger.Warn("failed to lookup reported pod, will retry",
+					"pod_key", podKey, "runner_id", runnerID, "error", err)
+				continue
+			}
+
+			// Pod confirmed not in database — use evidence accumulation
+			// to tolerate races (e.g., pod just created but DB insert not yet visible)
+			missCount := pc.incrementMissCount(podKey, runnerID)
+			if missCount < orphanMissThreshold {
+				pc.logger.Debug("unknown pod, waiting for more evidence",
+					"pod_key", podKey, "miss_count", missCount, "threshold", orphanMissThreshold)
+				continue
+			}
+			pc.clearMissCount(podKey)
+
+			// Evidence threshold reached — terminate
 			if pc.isTerminateCooldown(podKey) {
 				continue
 			}

@@ -15,6 +15,10 @@ import (
 type SetupResult struct {
 	WorkingDir string
 	BranchName string
+	// SandboxRoot overrides the default sandbox root when non-empty.
+	// Used by LocalPathStrategy to reuse the source pod's sandbox directory,
+	// preventing path template escapes during resume mode.
+	SandboxRoot string
 }
 
 // SetupStrategy defines the interface for working directory setup strategies.
@@ -110,7 +114,11 @@ func (s *LocalPathStrategy) Setup(ctx context.Context, sandboxRoot string, cfg *
 			"local_path", cfg.LocalPath)
 	}
 
-	return &SetupResult{WorkingDir: workingDir, BranchName: ""}, nil
+	return &SetupResult{
+		WorkingDir:  workingDir,
+		BranchName:  "",
+		SandboxRoot: cfg.LocalPath, // Reuse source pod's sandbox to prevent path template escapes
+	}, nil
 }
 
 // =============================================================================
