@@ -147,8 +147,8 @@ func ServiceConfig() *service.Config {
 			// macOS launchd: auto-restart on crash
 			"KeepAlive":        true,
 			"ThrottleInterval": 10,
-			// Linux systemd: auto-restart on failure
-			"Restart":               "on-failure",
+			// Linux systemd: auto-restart (always, not just on-failure)
+			"Restart":               "always",
 			"RestartSec":            "10",
 			"StartLimitBurst":       "5",
 			"StartLimitIntervalSec": "60",

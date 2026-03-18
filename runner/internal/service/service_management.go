@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/kardianos/service"
 
@@ -171,15 +172,23 @@ func GetDefaultConfigPath() string {
 // RestartForUpdate restarts the service after an update.
 // This should be called after the binary has been replaced.
 func RestartForUpdate() error {
-	prg := &Program{}
-	s, err := service.New(prg, ServiceConfig())
-	if err != nil {
-		return fmt.Errorf("failed to create service: %w", err)
-	}
-
-	// Check if running as a service
 	if !service.Interactive() {
-		// Restart the service
+		if runtime.GOOS == "darwin" {
+			// macOS launchd: kardianos/service.Restart() uses launchctl unload/load.
+			// When called from within the service process, unload kills the process
+			// before load can execute, leaving the service unregistered in launchd.
+			// Instead, exit and let KeepAlive=true restart us with the new binary.
+			log.Info("Update applied, exiting for launchd KeepAlive restart")
+			os.Exit(0)
+		}
+
+		// Linux/Windows: s.Restart() uses atomic service manager commands
+		// (systemctl restart / sc.exe) that work correctly from within the process.
+		prg := &Program{}
+		s, err := service.New(prg, ServiceConfig())
+		if err != nil {
+			return fmt.Errorf("failed to create service: %w", err)
+		}
 		err = s.Restart()
 		if err != nil {
 			return fmt.Errorf("failed to restart service: %w", err)
