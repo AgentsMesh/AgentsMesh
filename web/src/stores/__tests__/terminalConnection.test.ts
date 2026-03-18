@@ -77,20 +77,21 @@ describe("terminalConnection", () => {
       expect(terminalPool.getStatus("pod-1")).toBe("connected");
     });
 
-    it("should reconnect when new subscriber joins existing connection", async () => {
+    it("should add new subscriber to existing connection without reconnecting", async () => {
       const onMessage1 = vi.fn();
       const onMessage2 = vi.fn();
 
       await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
       await vi.runAllTimersAsync();
 
-      // New subscriber causes reconnection to get buffered output from Relay
+      // New subscriber joins existing connection (no disconnect/reconnect)
       const handle2 = await terminalPool.subscribe("pod-1", "sub-2", onMessage2);
       await vi.runAllTimersAsync();
 
       expect(handle2).toHaveProperty("send");
-      // After reconnect, only the new subscriber should be registered
-      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(1);
+      // Both subscribers should be registered on the same connection
+      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(2);
+      expect(terminalPool.getConnection("pod-1")?.subscribers.has("sub-1")).toBe(true);
       expect(terminalPool.getConnection("pod-1")?.subscribers.has("sub-2")).toBe(true);
     });
 
@@ -123,20 +124,20 @@ describe("terminalConnection", () => {
       expect(terminalPool.getStatus("pod-1")).toBe("connected");
     });
 
-    it("should reconnect when called again for same pod", async () => {
+    it("should add new subscriber when called again for same pod", async () => {
       const onMessage1 = vi.fn();
       const onMessage2 = vi.fn();
 
       await terminalPool.connect("pod-1", onMessage1);
       await vi.runAllTimersAsync();
 
-      // Second connect causes reconnection (legacy IDs are unique)
+      // Second connect adds a new subscriber (legacy IDs are unique)
       const handle2 = await terminalPool.connect("pod-1", onMessage2);
       await vi.runAllTimersAsync();
 
       expect(handle2).toHaveProperty("send");
-      // After reconnect, only 1 subscriber (the new one)
-      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(1);
+      // Both subscribers on same connection
+      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(2);
     });
   });
 
