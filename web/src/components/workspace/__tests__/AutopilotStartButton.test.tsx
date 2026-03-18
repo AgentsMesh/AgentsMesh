@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
-import { createRef, MutableRefObject } from "react";
+import { MutableRefObject } from "react";
 import { AutopilotStartButton } from "../AutopilotStartButton";
 
 // Mock stores
@@ -19,12 +19,8 @@ vi.mock("@/lib/pod-utils", () => ({
   getPodDisplayName: (pod: { name?: string; pod_key: string }) => pod.name || pod.pod_key,
 }));
 
-// Mock modal component
-let lastModalProps: { open: boolean; onClose: () => void; podKey: string; podTitle?: string } | null = null;
-
 vi.mock("@/components/autopilot", () => ({
   CreateAutopilotControllerModal: (props: { open: boolean; onClose: () => void; podKey: string; podTitle?: string }) => {
-    lastModalProps = props;
     return props.open ? (
       <div data-testid="modal">
         <span data-testid="modal-pod-key">{props.podKey}</span>
@@ -38,7 +34,6 @@ vi.mock("@/components/autopilot", () => ({
 describe("AutopilotStartButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    lastModalProps = null;
     mockPods = [{ pod_key: "pod-1", name: "My Pod" }];
   });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import "@xterm/xterm/css/xterm.css";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -37,6 +37,7 @@ export function TerminalPane({
   const [isMaximized, setIsMaximized] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
   const triggerAutopilotRef = useRef<(() => void) | null>(null);
+  const maximizeRafRef = useRef<number | undefined>(undefined);
   const terminalFontSize = useWorkspaceStore((s) => s.terminalFontSize);
   const setActivePane = useWorkspaceStore((s) => s.setActivePane);
   const splitPane = useWorkspaceStore((s) => s.splitPane);
@@ -77,7 +78,11 @@ export function TerminalPane({
     onMaximize?.();
     // ResizeObserver in useTerminal will auto-fit after layout change.
     // Use syncSize as a fallback to ensure PTY size is updated.
-    requestAnimationFrame(() => syncSize());
+    if (maximizeRafRef.current !== undefined) cancelAnimationFrame(maximizeRafRef.current);
+    maximizeRafRef.current = requestAnimationFrame(() => {
+      maximizeRafRef.current = undefined;
+      syncSize();
+    });
   }, [onMaximize, syncSize]);
 
   const handleTerminate = useCallback(async () => {
@@ -91,6 +96,13 @@ export function TerminalPane({
       setIsTerminating(false);
     }
   }, [podKey, terminatePod, onClose]);
+
+  // Cancel pending maximize RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (maximizeRafRef.current !== undefined) cancelAnimationFrame(maximizeRafRef.current);
+    };
+  }, []);
 
   return (
     <div

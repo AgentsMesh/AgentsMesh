@@ -226,11 +226,18 @@ export function setupImagePaste(
         const blob = item.getAsFile();
         if (!blob) continue;
 
+        // Check connection before starting upload to fail fast
+        if (!connectionRef.current) {
+          toast.error('Terminal not connected');
+          return;
+        }
+
         const toastId = toast.loading('Uploading image...');
         uploadImage(blob)
           .then((url) => {
+            // Re-check connection — it may have dropped during upload
             if (!connectionRef.current) {
-              toast.error('Terminal not connected', { id: toastId });
+              toast.error('Terminal disconnected during upload', { id: toastId });
               return;
             }
             connectionRef.current.send(url);

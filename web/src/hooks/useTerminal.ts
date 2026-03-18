@@ -92,6 +92,7 @@ export function useTerminal(
       terminalRegistry.unregister(podKey);
       disposablesRef.current.forEach((d) => d.dispose());
       disposablesRef.current = [];
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- async-set ref, intentional
       const connection = connectionRef.current;
       connection?.unsubscribe();
       schedulerRef.current?.dispose();

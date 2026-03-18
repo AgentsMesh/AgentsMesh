@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { useWorkspaceStore, terminalPool, terminalRegistry } from "@/stores/workspace";
+import { useTerminalInput } from "@/hooks/useTerminalInput";
 import {
   ChevronUp,
   ChevronDown,
@@ -42,14 +42,11 @@ const KEYS = {
 
 export function TerminalToolbar({ className }: TerminalToolbarProps) {
   const t = useTranslations();
-  const panes = useWorkspaceStore((s) => s.panes);
-  const activePane = useWorkspaceStore((s) => s.activePane);
+  const { activePodKey, send, scrollToBottom } = useTerminalInput();
   const [isOpen, setIsOpen] = useState(false);
   const [ctrlActive, setCtrlActive] = useState(false);
   const [altActive, setAltActive] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
-
-  const currentPane = panes.find((p) => p.id === activePane);
 
   // Close toolbar when clicking outside (touch-friendly)
   useEffect(() => {
@@ -77,8 +74,6 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
 
   // Send key with modifier support (Blink Shell style - modifiers stay active until key press)
   const sendKey = useCallback((key: string) => {
-    if (!currentPane) return;
-
     let finalKey = key;
 
     // Apply Ctrl modifier for single character keys
@@ -94,29 +89,21 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
       finalKey = "\x1b" + key;
     }
 
-    terminalPool.send(currentPane.podKey, finalKey);
+    send(finalKey);
 
     // Reset modifiers after sending (like Blink Shell)
     setCtrlActive(false);
     setAltActive(false);
-  }, [currentPane, ctrlActive, altActive]);
+  }, [send, ctrlActive, altActive]);
 
   // Direct key send without modifiers
   const sendDirectKey = useCallback((key: string) => {
-    if (!currentPane) return;
-    terminalPool.send(currentPane.podKey, key);
-    // Reset modifiers
+    send(key);
     setCtrlActive(false);
     setAltActive(false);
-  }, [currentPane]);
+  }, [send]);
 
-  // Scroll terminal to bottom
-  const scrollToBottom = useCallback(() => {
-    if (!currentPane) return;
-    terminalRegistry.scrollToBottom(currentPane.podKey);
-  }, [currentPane]);
-
-  if (!currentPane) {
+  if (!activePodKey) {
     return null;
   }
 
