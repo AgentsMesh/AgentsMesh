@@ -1,19 +1,15 @@
 package file
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func TestIsAllowedType(t *testing.T) {
-	svc, _, _ := setupTestService(t)
+	svc, _ := setupTestService(t)
 
 	tests := []struct {
 		name        string
@@ -42,7 +38,7 @@ func TestIsAllowedType(t *testing.T) {
 }
 
 func TestGenerateStorageKey(t *testing.T) {
-	svc, _, _ := setupTestService(t)
+	svc, _ := setupTestService(t)
 
 	tests := []struct {
 		name     string
@@ -59,7 +55,6 @@ func TestGenerateStorageKey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			key := svc.generateStorageKey(tt.orgID, tt.fileName)
 
-			// Should contain org ID
 			if key == "" {
 				t.Error("expected non-empty key")
 			}
@@ -73,34 +68,24 @@ func TestGenerateStorageKey(t *testing.T) {
 	}
 }
 
-// Benchmark tests
-func BenchmarkUpload(b *testing.B) {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.Exec(`CREATE TABLE files (id INTEGER PRIMARY KEY, organization_id INTEGER, uploader_id INTEGER, original_name TEXT, storage_key TEXT UNIQUE, mime_type TEXT, size INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`)
-
+func BenchmarkPresignUpload(b *testing.B) {
 	mockStorage := storage.NewMockStorage()
 	cfg := config.StorageConfig{MaxFileSize: 10, AllowedTypes: []string{"image/png"}}
-	repo := infra.NewFileRepository(db)
-	svc := NewService(repo, mockStorage, cfg)
-
-	content := []byte("benchmark test content")
+	svc := NewService(mockStorage, cfg)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		reader := bytes.NewReader(content)
-		_, _ = svc.Upload(context.Background(), &UploadRequest{
+		_, _ = svc.RequestPresignedUpload(context.Background(), &PresignUploadRequest{
 			OrganizationID: 1,
-			UploaderID:     100,
 			FileName:       "test.png",
 			ContentType:    "image/png",
-			Size:           int64(len(content)),
-			Reader:         reader,
+			Size:           1024,
 		})
 	}
 }
 
 func BenchmarkIsAllowedType(b *testing.B) {
-	svc, _, _ := setupTestService(&testing.T{})
+	svc, _ := setupTestService(&testing.T{})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

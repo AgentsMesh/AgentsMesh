@@ -1,11 +1,6 @@
 package v1
 
 import (
-	"bytes"
-	"io"
-	"mime/multipart"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
@@ -30,24 +25,6 @@ func setFileTenantContext(c *gin.Context, orgID int64, userID int64) {
 		UserRole:         "owner",
 	}
 	c.Set("tenant", tc)
-}
-
-func createMultipartRequest(fieldName, fileName string, content []byte, contentType string) (*http.Request, error) {
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	part, err := writer.CreateFormFile(fieldName, fileName)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := io.Copy(part, bytes.NewReader(content)); err != nil {
-		return nil, err
-	}
-	writer.Close()
-
-	req := httptest.NewRequest(http.MethodPost, "/files/upload", body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	return req, nil
 }
 
 func TestNewFileHandler(t *testing.T) {

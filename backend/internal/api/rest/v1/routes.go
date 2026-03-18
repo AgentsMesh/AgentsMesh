@@ -340,15 +340,14 @@ func registerInvitationRoutes(rg *gin.RouterGroup, svc *Services) {
 
 func registerFileRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.File != nil {
-		slog.Info("Registering file upload routes", "service", "file")
+		slog.Info("Registering file routes", "service", "file")
 		fileHandler := NewFileHandler(svc.File)
 		files := rg.Group("/files")
 		{
-			files.POST("/upload", fileHandler.UploadFile)
-			files.DELETE("/:id", fileHandler.DeleteFile)
+			files.POST("/presign", fileHandler.PresignUpload)
 		}
 	} else {
-		slog.Warn("File service is nil, file upload routes not registered")
+		slog.Warn("File service is nil, file routes not registered")
 	}
 }
 

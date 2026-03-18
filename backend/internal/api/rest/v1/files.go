@@ -5,10 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"strconv"
-	"time"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	fileservice "github.com/anthropics/agentsmesh/backend/internal/service/file"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
@@ -17,10 +14,7 @@ import (
 
 // FileServiceInterface defines the interface for file service operations
 type FileServiceInterface interface {
-	Upload(ctx context.Context, req *fileservice.UploadRequest) (*fileservice.UploadResponse, error)
-	GetByID(ctx context.Context, id int64, orgID int64) (*file.File, error)
-	GetURL(ctx context.Context, id int64, orgID int64, expiry time.Duration) (string, error)
-	Delete(ctx context.Context, id int64, orgID int64) error
+	RequestPresignedUpload(ctx context.Context, req *fileservice.PresignUploadRequest) (*fileservice.PresignUploadResponse, error)
 }
 
 // FileHandler handles file-related requests
@@ -35,115 +29,66 @@ func NewFileHandler(fileService FileServiceInterface) *FileHandler {
 	}
 }
 
-// UploadFile handles file upload
-// POST /api/v1/orgs/:slug/files/upload
-func (h *FileHandler) UploadFile(c *gin.Context) {
-	slog.Info(">>> UploadFile handler entered")
+// presignUploadRequest is the JSON body for presign upload
+type presignUploadRequest struct {
+	Filename    string `json:"filename" binding:"required"`
+	ContentType string `json:"content_type" binding:"required"`
+	Size        int64  `json:"size" binding:"required,gt=0"`
+}
 
+// PresignUpload returns presigned PUT and GET URLs for direct-to-S3 upload
+// POST /api/v1/orgs/:slug/files/presign
+func (h *FileHandler) PresignUpload(c *gin.Context) {
 	if h.fileService == nil {
-		slog.Error("fileService is nil!")
 		apierr.InternalError(c, "Storage not configured")
 		return
 	}
 
+	var req presignUploadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Invalid request: "+err.Error())
+		return
+	}
+
 	tenant := middleware.GetTenant(c)
-	slog.Info("File upload request received",
-		"org_id", tenant.OrganizationID,
-		"user_id", tenant.UserID,
-	)
 
-	// Get file from multipart form
-	fileHeader, err := c.FormFile("file")
-	if err != nil {
-		slog.Warn("File upload failed: no file provided", "error", err)
-		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "No file provided")
-		return
-	}
-	slog.Info("File received",
-		"filename", fileHeader.Filename,
-		"size", fileHeader.Size,
-		"content_type", fileHeader.Header.Get("Content-Type"),
-	)
-
-	// Open the file
-	file, err := fileHeader.Open()
-	if err != nil {
-		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Failed to open file")
-		return
-	}
-	defer file.Close()
-
-	// Get content type
-	contentType := fileHeader.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-
-	// Upload file
-	resp, err := h.fileService.Upload(c.Request.Context(), &fileservice.UploadRequest{
+	resp, err := h.fileService.RequestPresignedUpload(c.Request.Context(), &fileservice.PresignUploadRequest{
 		OrganizationID: tenant.OrganizationID,
-		UploaderID:     tenant.UserID,
-		FileName:       fileHeader.Filename,
-		ContentType:    contentType,
-		Size:           fileHeader.Size,
-		Reader:         file,
+		FileName:       req.Filename,
+		ContentType:    req.ContentType,
+		Size:           req.Size,
 	})
 	if err != nil {
 		switch {
 		case errors.Is(err, fileservice.ErrFileTooLarge):
 			apierr.PayloadTooLarge(c, err.Error())
 		case errors.Is(err, fileservice.ErrInvalidFileType):
-			slog.Warn("File upload rejected: invalid type",
-				"content_type", contentType,
-				"filename", fileHeader.Filename,
+			slog.Warn("Presign upload rejected: invalid type",
+				"content_type", req.ContentType,
+				"filename", req.Filename,
 				"org_id", tenant.OrganizationID,
 			)
 			apierr.UnsupportedMediaType(c, err.Error())
 		case errors.Is(err, fileservice.ErrStorageError):
-			slog.Error("File upload failed: storage error",
+			slog.Error("Presign upload failed: storage error",
 				"error", err,
-				"filename", fileHeader.Filename,
-				"size", fileHeader.Size,
-				"content_type", contentType,
+				"filename", req.Filename,
 				"org_id", tenant.OrganizationID,
 			)
-			apierr.InternalError(c, "Failed to upload file")
+			apierr.InternalError(c, "Failed to generate upload URL")
 		default:
-			slog.Error("File upload failed",
+			slog.Error("Presign upload failed",
 				"error", err,
-				"filename", fileHeader.Filename,
-				"size", fileHeader.Size,
-				"content_type", contentType,
+				"filename", req.Filename,
 				"org_id", tenant.OrganizationID,
 			)
-			apierr.InternalError(c, "Failed to upload file")
+			apierr.InternalError(c, "Failed to generate upload URL")
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
-}
-
-// DeleteFile handles file deletion
-// DELETE /api/v1/orgs/:slug/files/:id
-func (h *FileHandler) DeleteFile(c *gin.Context) {
-	tenant := middleware.GetTenant(c)
-
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid file ID")
-		return
-	}
-
-	if err := h.fileService.Delete(c.Request.Context(), id, tenant.OrganizationID); err != nil {
-		if err == fileservice.ErrFileNotFound {
-			apierr.ResourceNotFound(c, "File not found")
-			return
-		}
-		apierr.InternalError(c, "Failed to delete file")
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "File deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"put_url": resp.PutURL,
+		"get_url": resp.GetURL,
+	})
 }

@@ -170,7 +170,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	agentpodAIProviderSvc := agentpod.NewAIProviderService(aiProviderRepo, encryptor)
 
 	// Initialize storage (S3-compatible)
-	fileSvc := initializeFileService(cfg, db)
+	fileSvc := initializeFileService(cfg)
 
 	// Initialize support ticket service (reuses file service's storage config)
 	supportTicketSvc := initializeSupportTicketService(cfg, db)
@@ -244,7 +244,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 }
 
 // initializeFileService initializes the file storage service
-func initializeFileService(cfg *config.Config, db *gorm.DB) *fileservice.Service {
+func initializeFileService(cfg *config.Config) *fileservice.Service {
 	if cfg.Storage.AccessKey == "" || cfg.Storage.SecretKey == "" {
 		slog.Warn("Storage not configured, file upload disabled")
 		return nil
@@ -271,8 +271,7 @@ func initializeFileService(cfg *config.Config, db *gorm.DB) *fileservice.Service
 	}
 
 	slog.Info("Storage initialized", "endpoint", cfg.Storage.Endpoint, "bucket", cfg.Storage.Bucket)
-	fileRepo := infra.NewFileRepository(db)
-	return fileservice.NewService(fileRepo, s3Storage, cfg.Storage)
+	return fileservice.NewService(s3Storage, cfg.Storage)
 }
 
 // initializeLicenseService initializes the license service for OnPremise deployments

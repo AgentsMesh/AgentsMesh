@@ -1,25 +1,19 @@
 package file
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"testing"
 )
 
-func TestUpload_Success(t *testing.T) {
-	svc, mockStorage, _ := setupTestService(t)
+func TestRequestPresignedUpload_Success(t *testing.T) {
+	svc, _ := setupTestService(t)
 
-	content := []byte("test image content")
-	reader := bytes.NewReader(content)
-
-	resp, err := svc.Upload(context.Background(), &UploadRequest{
+	resp, err := svc.RequestPresignedUpload(context.Background(), &PresignUploadRequest{
 		OrganizationID: 1,
-		UploaderID:     100,
 		FileName:       "test.png",
 		ContentType:    "image/png",
-		Size:           int64(len(content)),
-		Reader:         reader,
+		Size:           1024,
 	})
 
 	if err != nil {
@@ -28,45 +22,23 @@ func TestUpload_Success(t *testing.T) {
 	if resp == nil {
 		t.Fatal("expected response")
 	}
-	if resp.File == nil {
-		t.Fatal("expected file in response")
+	if resp.PutURL == "" {
+		t.Error("expected PutURL in response")
 	}
-	if resp.File.OriginalName != "test.png" {
-		t.Errorf("expected OriginalName 'test.png', got %s", resp.File.OriginalName)
-	}
-	if resp.File.MimeType != "image/png" {
-		t.Errorf("expected MimeType 'image/png', got %s", resp.File.MimeType)
-	}
-	if resp.File.OrganizationID != 1 {
-		t.Errorf("expected OrganizationID 1, got %d", resp.File.OrganizationID)
-	}
-	if resp.File.UploaderID != 100 {
-		t.Errorf("expected UploaderID 100, got %d", resp.File.UploaderID)
-	}
-	if resp.URL == "" {
-		t.Error("expected URL in response")
-	}
-
-	// Verify file was stored
-	if mockStorage.FileCount() != 1 {
-		t.Errorf("expected 1 file in storage, got %d", mockStorage.FileCount())
+	if resp.GetURL == "" {
+		t.Error("expected GetURL in response")
 	}
 }
 
-func TestUpload_FileTooLarge(t *testing.T) {
-	svc, _, _ := setupTestService(t)
+func TestRequestPresignedUpload_FileTooLarge(t *testing.T) {
+	svc, _ := setupTestService(t)
 
-	// MaxFileSize is 10MB, try to upload 11MB
-	content := make([]byte, 11*1024*1024)
-	reader := bytes.NewReader(content)
-
-	_, err := svc.Upload(context.Background(), &UploadRequest{
+	// MaxFileSize is 10MB, try 11MB
+	_, err := svc.RequestPresignedUpload(context.Background(), &PresignUploadRequest{
 		OrganizationID: 1,
-		UploaderID:     100,
 		FileName:       "large.png",
 		ContentType:    "image/png",
-		Size:           int64(len(content)),
-		Reader:         reader,
+		Size:           11 * 1024 * 1024,
 	})
 
 	if err == nil {
@@ -77,19 +49,14 @@ func TestUpload_FileTooLarge(t *testing.T) {
 	}
 }
 
-func TestUpload_InvalidFileType(t *testing.T) {
-	svc, _, _ := setupTestService(t)
+func TestRequestPresignedUpload_InvalidFileType(t *testing.T) {
+	svc, _ := setupTestService(t)
 
-	content := []byte("test content")
-	reader := bytes.NewReader(content)
-
-	_, err := svc.Upload(context.Background(), &UploadRequest{
+	_, err := svc.RequestPresignedUpload(context.Background(), &PresignUploadRequest{
 		OrganizationID: 1,
-		UploaderID:     100,
 		FileName:       "test.exe",
 		ContentType:    "application/x-executable",
-		Size:           int64(len(content)),
-		Reader:         reader,
+		Size:           1024,
 	})
 
 	if err == nil {
@@ -100,20 +67,15 @@ func TestUpload_InvalidFileType(t *testing.T) {
 	}
 }
 
-func TestUpload_StorageError(t *testing.T) {
-	svc, mockStorage, _ := setupTestService(t)
-	mockStorage.UploadErr = errors.New("storage unavailable")
+func TestRequestPresignedUpload_StorageError(t *testing.T) {
+	svc, mockStorage := setupTestService(t)
+	mockStorage.PresignPutURLErr = errors.New("storage unavailable")
 
-	content := []byte("test content")
-	reader := bytes.NewReader(content)
-
-	_, err := svc.Upload(context.Background(), &UploadRequest{
+	_, err := svc.RequestPresignedUpload(context.Background(), &PresignUploadRequest{
 		OrganizationID: 1,
-		UploaderID:     100,
 		FileName:       "test.png",
 		ContentType:    "image/png",
-		Size:           int64(len(content)),
-		Reader:         reader,
+		Size:           1024,
 	})
 
 	if err == nil {

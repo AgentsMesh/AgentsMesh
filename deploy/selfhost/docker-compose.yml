@@ -56,6 +56,8 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # CORS: allow browser direct uploads via presigned URLs
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data

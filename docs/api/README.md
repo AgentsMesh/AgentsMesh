@@ -371,8 +371,7 @@ Organization-scoped endpoints require the organization slug in the URL path:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/files/upload` | Upload file |
-| DELETE | `/files/{id}` | Delete file |
+| POST | `/files/presign` | Get presigned upload URL |
 
 ### API Keys (`/api/v1/orgs/{slug}/api-keys`)
 

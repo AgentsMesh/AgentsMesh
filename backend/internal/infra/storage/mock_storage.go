@@ -82,14 +82,6 @@ func (m *MockStorage) GetURL(ctx context.Context, key string, expiry time.Durati
 		return "", m.GetURLErr
 	}
 
-	m.mu.RLock()
-	_, exists := m.files[key]
-	m.mu.RUnlock()
-
-	if !exists {
-		return "", fmt.Errorf("file not found: %s", key)
-	}
-
 	return fmt.Sprintf("https://mock-storage.example.com/%s?expires=%d", key, time.Now().Add(expiry).Unix()), nil
 }
 
@@ -135,6 +127,13 @@ func (m *MockStorage) GetFile(key string) ([]byte, bool) {
 		return nil, false
 	}
 	return f.data, true
+}
+
+// PutFile adds a file entry to mock storage (simulates direct S3 upload)
+func (m *MockStorage) PutFile(key string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.files[key] = &mockFile{key: key}
 }
 
 // FileCount returns the number of stored files for testing

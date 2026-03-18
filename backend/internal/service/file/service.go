@@ -4,58 +4,51 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/file"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
 	"github.com/google/uuid"
 )
 
 var (
-	ErrFileNotFound     = errors.New("file not found")
-	ErrFileTooLarge     = errors.New("file exceeds maximum size")
-	ErrInvalidFileType  = errors.New("file type not allowed")
-	ErrStorageError     = errors.New("storage operation failed")
+	ErrFileTooLarge    = errors.New("file exceeds maximum size")
+	ErrInvalidFileType = errors.New("file type not allowed")
+	ErrStorageError    = errors.New("storage operation failed")
 )
 
 // Service handles file operations
 type Service struct {
-	repo    file.FileRepository
 	storage storage.Storage
 	config  config.StorageConfig
 }
 
 // NewService creates a new file service
-func NewService(repo file.FileRepository, storage storage.Storage, cfg config.StorageConfig) *Service {
+func NewService(storage storage.Storage, cfg config.StorageConfig) *Service {
 	return &Service{
-		repo:    repo,
 		storage: storage,
 		config:  cfg,
 	}
 }
 
-// UploadRequest represents a file upload request
-type UploadRequest struct {
+// PresignUploadRequest represents a presigned upload request
+type PresignUploadRequest struct {
 	OrganizationID int64
-	UploaderID     int64
 	FileName       string
 	ContentType    string
 	Size           int64
-	Reader         io.Reader
 }
 
-// UploadResponse represents a file upload response
-type UploadResponse struct {
-	File *file.File `json:"file"`
-	URL  string     `json:"url"`
+// PresignUploadResponse represents a presigned upload response
+type PresignUploadResponse struct {
+	PutURL string `json:"put_url"`
+	GetURL string `json:"get_url"`
 }
 
-// Upload uploads a file to storage and records metadata
-func (s *Service) Upload(ctx context.Context, req *UploadRequest) (*UploadResponse, error) {
+// RequestPresignedUpload validates the request and returns presigned URLs for direct S3 upload
+func (s *Service) RequestPresignedUpload(ctx context.Context, req *PresignUploadRequest) (*PresignUploadResponse, error) {
 	// Validate file size
 	maxSize := s.config.MaxFileSize * 1024 * 1024 // Convert MB to bytes
 	if req.Size > maxSize {
@@ -70,80 +63,22 @@ func (s *Service) Upload(ctx context.Context, req *UploadRequest) (*UploadRespon
 	// Generate storage key
 	storageKey := s.generateStorageKey(req.OrganizationID, req.FileName)
 
-	// Upload to storage
-	_, err := s.storage.Upload(ctx, storageKey, req.Reader, req.Size, req.ContentType)
+	// Get presigned PUT URL (15 min expiry)
+	putURL, err := s.storage.PresignPutURL(ctx, storageKey, req.ContentType, 15*time.Minute)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrStorageError, err)
 	}
 
-	// Create file record
-	f := &file.File{
-		OrganizationID: req.OrganizationID,
-		UploaderID:     req.UploaderID,
-		OriginalName:   req.FileName,
-		StorageKey:     storageKey,
-		MimeType:       req.ContentType,
-		Size:           req.Size,
-	}
-
-	if err := s.repo.Create(ctx, f); err != nil {
-		// Try to clean up uploaded file on database error
-		_ = s.storage.Delete(ctx, storageKey)
-		return nil, fmt.Errorf("failed to create file record: %w", err)
-	}
-
-	// Get presigned URL
-	url, err := s.storage.GetURL(ctx, storageKey, 24*time.Hour)
+	// Get presigned GET URL (24 hour expiry)
+	getURL, err := s.storage.GetURL(ctx, storageKey, 24*time.Hour)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate URL: %w", err)
+		return nil, fmt.Errorf("failed to generate GET URL: %w", err)
 	}
 
-	return &UploadResponse{
-		File: f,
-		URL:  url,
+	return &PresignUploadResponse{
+		PutURL: putURL,
+		GetURL: getURL,
 	}, nil
-}
-
-// GetByID retrieves a file by ID
-func (s *Service) GetByID(ctx context.Context, id int64, orgID int64) (*file.File, error) {
-	f, err := s.repo.GetByID(ctx, id, orgID)
-	if err != nil {
-		return nil, err
-	}
-	if f == nil {
-		return nil, ErrFileNotFound
-	}
-	return f, nil
-}
-
-// GetURL returns a presigned URL for accessing a file
-func (s *Service) GetURL(ctx context.Context, id int64, orgID int64, expiry time.Duration) (string, error) {
-	f, err := s.GetByID(ctx, id, orgID)
-	if err != nil {
-		return "", err
-	}
-
-	return s.storage.GetURL(ctx, f.StorageKey, expiry)
-}
-
-// Delete removes a file from storage and database
-func (s *Service) Delete(ctx context.Context, id int64, orgID int64) error {
-	f, err := s.GetByID(ctx, id, orgID)
-	if err != nil {
-		return err
-	}
-
-	// Delete from storage first
-	if err := s.storage.Delete(ctx, f.StorageKey); err != nil {
-		return fmt.Errorf("%w: %v", ErrStorageError, err)
-	}
-
-	// Delete database record
-	if err := s.repo.Delete(ctx, f); err != nil {
-		return fmt.Errorf("failed to delete file record: %w", err)
-	}
-
-	return nil
 }
 
 // generateStorageKey generates a unique storage key for a file
