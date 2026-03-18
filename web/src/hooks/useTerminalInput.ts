@@ -28,5 +28,14 @@ export function useTerminalInput() {
     if (activePodKey) terminalRegistry.scrollToBottom(activePodKey);
   }, [activePodKey]);
 
-  return { activePodKey, send, scrollToBottom };
+  /** Force-sync terminal size to PTY using real xterm dimensions. */
+  const syncSize = useCallback(() => {
+    if (!activePodKey) return;
+    const term = terminalRegistry.get(activePodKey);
+    if (term && term.cols > 0 && term.rows > 0) {
+      terminalPool.forceResize(activePodKey, term.cols, term.rows);
+    }
+  }, [activePodKey]);
+
+  return { activePodKey, send, scrollToBottom, syncSize };
 }

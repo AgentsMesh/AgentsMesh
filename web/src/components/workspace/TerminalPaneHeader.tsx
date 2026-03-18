@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { usePodStore } from "@/stores/pod";
 import { usePodTitle } from "@/hooks/usePodTitle";
+import type { ConnectionStatus } from "@/stores/terminalConnection";
 import {
   X,
   Maximize2,
@@ -17,8 +18,6 @@ import {
   PanelRight,
   PanelBottom,
 } from "lucide-react";
-
-type ConnectionStatus = "connected" | "connecting" | "disconnected" | "error";
 
 interface TerminalPaneHeaderProps {
   podKey: string;

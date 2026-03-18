@@ -3,8 +3,7 @@
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { Wifi, WifiOff, Loader2, AlertTriangle } from "lucide-react";
-
-type ConnectionStatus = "connected" | "connecting" | "disconnected" | "error";
+import type { ConnectionStatus } from "@/stores/terminalConnection";
 
 interface RelayStatusOverlayProps {
   connectionStatus: ConnectionStatus;

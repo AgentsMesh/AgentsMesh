@@ -15,12 +15,18 @@ import { MsgType, encodeMessage, decodeMessage, encodeResize } from "./relayProt
 export { MsgType, encodeMessage } from "./relayProtocol";
 
 /**
+ * Connection status of a terminal WebSocket.
+ * Single source of truth — import this type instead of redefining inline.
+ */
+export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+
+/**
  * Terminal connection state
  */
 export interface TerminalConnection {
   ws: WebSocket;
   podKey: string;
-  status: "connecting" | "connected" | "disconnected" | "error";
+  status: ConnectionStatus;
   lastActivity: number;
   /** Subscribers map: subscriptionId -> callback */
   subscribers: Map<string, (data: Uint8Array | string) => void>;

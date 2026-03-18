@@ -3,8 +3,9 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useDrag } from "@use-gesture/react";
 import { cn } from "@/lib/utils";
-import { useWorkspaceStore, terminalPool, terminalRegistry } from "@/stores/workspace";
+import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodTitle } from "@/hooks/usePodTitle";
+import { useTerminalInput } from "@/hooks/useTerminalInput";
 import { TerminalPane } from "./TerminalPane";
 import { Terminal as TerminalIcon, Plus, ChevronLeft, ChevronRight, Scaling } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   const mobileActiveIndex = useWorkspaceStore((s) => s.mobileActiveIndex);
   const setMobileActiveIndex = useWorkspaceStore((s) => s.setMobileActiveIndex);
   const removePane = useWorkspaceStore((s) => s.removePane);
+  const { syncSize } = useTerminalInput();
 
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -135,6 +137,7 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
         paneCount={panes.length}
         onPrev={goToPrev}
         onNext={goToNext}
+        onSyncSize={syncSize}
       />
 
       {/* Dots indicator */}
@@ -188,12 +191,14 @@ function SwiperHeader({
   paneCount,
   onPrev,
   onNext,
+  onSyncSize,
 }: {
   podKey?: string;
   mobileActiveIndex: number;
   paneCount: number;
   onPrev: () => void;
   onNext: () => void;
+  onSyncSize: () => void;
 }) {
   return (
     <div className="h-10 flex items-center justify-between px-3 bg-terminal-bg-secondary border-b border-terminal-border">
@@ -217,7 +222,15 @@ function SwiperHeader({
       </div>
 
       <div className="flex items-center gap-1">
-        <SyncSizeButton podKey={podKey} />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 text-terminal-text-muted"
+          onClick={onSyncSize}
+          title="Sync terminal size"
+        >
+          <Scaling className="w-4 h-4" />
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -236,29 +249,6 @@ function SwiperHeader({
 function SwiperPaneTitle({ podKey }: { podKey: string }) {
   const title = usePodTitle(podKey, "Terminal");
   return <>{title}</>;
-}
-
-/** Sync terminal size using real xterm dimensions from terminalRegistry. */
-function SyncSizeButton({ podKey }: { podKey?: string }) {
-  const handleSyncSize = () => {
-    if (!podKey) return;
-    const term = terminalRegistry.get(podKey);
-    if (term && term.cols > 0 && term.rows > 0) {
-      terminalPool.forceResize(podKey, term.cols, term.rows);
-    }
-  };
-
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-7 w-7 p-0 text-terminal-text-muted"
-      onClick={handleSyncSize}
-      title="Sync terminal size"
-    >
-      <Scaling className="w-4 h-4" />
-    </Button>
-  );
 }
 
 export default TerminalSwiper;

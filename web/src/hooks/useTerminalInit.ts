@@ -4,6 +4,7 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
 import { MutableRefObject } from "react";
 import { terminalPool, terminalRegistry } from "@/stores/workspace";
+import type { ConnectionStatus } from "@/stores/terminalConnection";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 import { uploadImage } from "@/lib/api/file";
 import { toast } from "sonner";
@@ -116,7 +117,7 @@ export function setupConnection(
   scheduler: TerminalWriteScheduler,
   initialDims: { value: { cols: number; rows: number } | null },
   connectionRef: MutableRefObject<TerminalConnection | null>,
-  setConnectionStatus: (status: "connecting" | "connected" | "disconnected" | "error") => void,
+  setConnectionStatus: (status: ConnectionStatus) => void,
   setIsRunnerDisconnected: (v: boolean) => void,
 ): { abort: AbortController; unsubscribeStatus: () => void } {
   const handleMessage = (data: Uint8Array | string) => {

@@ -5,6 +5,7 @@ import { Terminal as XTerm, IDisposable } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 import { terminalRegistry } from "@/stores/workspace";
+import type { ConnectionStatus } from "@/stores/terminalConnection";
 import {
   setupTerminal,
   setupConnection,
@@ -24,7 +25,7 @@ interface UseTerminalResult {
   terminalRef: MutableRefObject<HTMLDivElement | null>;
   xtermRef: MutableRefObject<XTerm | null>;
   fitAddonRef: MutableRefObject<FitAddon | null>;
-  connectionStatus: "connecting" | "connected" | "disconnected" | "error";
+  connectionStatus: ConnectionStatus;
   isRunnerDisconnected: boolean;
   syncSize: () => void;
 }
@@ -49,7 +50,7 @@ export function useTerminal(
   const schedulerRef = useRef<TerminalWriteScheduler | null>(null);
   const disposablesRef = useRef<IDisposable[]>([]);
   const lastSyncedSizeRef = useRef<{ cols: number; rows: number } | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("connecting");
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [isRunnerDisconnected, setIsRunnerDisconnected] = useState(false);
 
   // Main effect: create terminal, connect, wire handlers — single lifecycle
