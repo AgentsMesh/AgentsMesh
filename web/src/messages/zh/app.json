@@ -245,7 +245,7 @@
     "podOpened": "Pod 已打开",
     "filters": {
       "mine": "我创建的",
-      "running": "运行中",
+      "org": "组织",
       "completed": "已完成",
       "error": "错误"
     },

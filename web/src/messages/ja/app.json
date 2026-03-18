@@ -228,7 +228,7 @@
     "podOpened": "Pod opened",
     "filters": {
       "mine": "自分の",
-      "running": "実行中",
+      "org": "組織",
       "completed": "完了",
       "error": "エラー"
     },

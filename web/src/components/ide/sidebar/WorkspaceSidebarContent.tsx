@@ -86,7 +86,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
     const allowedStatuses = SIDEBAR_STATUS_MAP[filter];
     const statusSet = allowedStatuses
       ? new Set(allowedStatuses.split(","))
-      : null; // "mine" → no status filter, but filter by creator below
+      : null;
 
     return pods.filter((pod) => {
       // Status guard

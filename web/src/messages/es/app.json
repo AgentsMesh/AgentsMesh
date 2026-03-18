@@ -228,7 +228,7 @@
     "podOpened": "Pod opened",
     "filters": {
       "mine": "Míos",
-      "running": "En Ejecución",
+      "org": "Org",
       "completed": "Completados",
       "error": "Error"
     },
