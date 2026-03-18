@@ -273,5 +273,9 @@ func (s *HTTPServer) registerTools() {
 
 		// Pod tools
 		s.createCreatePodTool(),
+
+		// Loop tools
+		s.createListLoopsTool(),
+		s.createTriggerLoopTool(),
 	}
 }

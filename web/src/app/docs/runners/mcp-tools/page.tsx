@@ -419,6 +419,57 @@ export default function MCPToolsPage() {
         </div>
       </section>
 
+      {/* Loop Tools */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4">
+          {t("docs.runners.mcpTools.loop.title")}
+        </h2>
+        <p className="text-muted-foreground mb-4">
+          {t("docs.runners.mcpTools.loop.description")}
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-border rounded-lg">
+            <thead>
+              <tr className="bg-muted">
+                <th className="text-left p-3 border-b border-border">
+                  {t("docs.runners.mcpTools.loop.toolHeader")}
+                </th>
+                <th className="text-left p-3 border-b border-border">
+                  {t("docs.runners.mcpTools.loop.descriptionHeader")}
+                </th>
+                <th className="text-left p-3 border-b border-border">
+                  {t("docs.runners.mcpTools.loop.paramsHeader")}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="text-muted-foreground">
+              <tr>
+                <td className="p-3 border-b border-border font-medium">
+                  {t("docs.runners.mcpTools.loop.listLoops")}
+                </td>
+                <td className="p-3 border-b border-border">
+                  {t("docs.runners.mcpTools.loop.listLoopsDesc")}
+                </td>
+                <td className="p-3 border-b border-border font-mono text-xs">
+                  {t("docs.runners.mcpTools.loop.listLoopsParams")}
+                </td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium">
+                  {t("docs.runners.mcpTools.loop.triggerLoop")}
+                </td>
+                <td className="p-3">
+                  {t("docs.runners.mcpTools.loop.triggerLoopDesc")}
+                </td>
+                <td className="p-3 font-mono text-xs">
+                  {t("docs.runners.mcpTools.loop.triggerLoopParams")}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <DocNavigation />
     </div>
   );

@@ -16,6 +16,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/service/binding"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	loopService "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
@@ -66,6 +67,9 @@ type GRPCRunnerAdapter struct {
 	agentTypeSvc      *agent.AgentTypeService
 	userConfigSvc     *agent.UserConfigService
 	terminalRouter       TerminalRouterForMCP // *runner.TerminalRouter, optional
+	loopService          *loopService.LoopService
+	loopRunService       *loopService.LoopRunService
+	loopOrchestrator     *loopService.LoopOrchestrator
 }
 
 // MCPDependencies holds optional MCP service dependencies for the gRPC adapter.
@@ -80,6 +84,9 @@ type MCPDependencies struct {
 	AgentTypeSvc      *agent.AgentTypeService
 	UserConfigSvc     *agent.UserConfigService
 	TerminalRouter    TerminalRouterForMCP // *runner.TerminalRouter, optional
+	LoopService       *loopService.LoopService
+	LoopRunService    *loopService.LoopRunService
+	LoopOrchestrator  *loopService.LoopOrchestrator
 }
 
 // NewGRPCRunnerAdapter creates a new gRPC Runner adapter.
@@ -116,6 +123,9 @@ func NewGRPCRunnerAdapter(
 		adapter.agentTypeSvc = mcpDeps.AgentTypeSvc
 		adapter.userConfigSvc = mcpDeps.UserConfigSvc
 		adapter.terminalRouter = mcpDeps.TerminalRouter
+		adapter.loopService = mcpDeps.LoopService
+		adapter.loopRunService = mcpDeps.LoopRunService
+		adapter.loopOrchestrator = mcpDeps.LoopOrchestrator
 	}
 
 	return adapter

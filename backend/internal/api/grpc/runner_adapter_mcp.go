@@ -152,6 +152,12 @@ func (a *GRPCRunnerAdapter) dispatchMcpMethod(ctx context.Context, tc *middlewar
 	case "create_pod":
 		return a.mcpCreatePod(ctx, tc, req.Payload)
 
+	// Loop methods
+	case "list_loops":
+		return a.mcpListLoops(ctx, tc, req.Payload)
+	case "trigger_loop":
+		return a.mcpTriggerLoop(ctx, tc, req.Payload)
+
 	default:
 		return nil, newMcpErrorf(400, "unknown MCP method: %s", req.Method)
 	}

@@ -100,7 +100,7 @@
       "agentpodDesc": "远程 AI 开发工作站",
       "agentsmeshDesc": "多智能体协作网络",
       "mcpTools": "MCP 工具",
-      "mcpToolsDesc": "24 个 AI 智能体工具"
+      "mcpToolsDesc": "26 个 AI 智能体工具"
     },
     "concepts": {
       "title": "核心概念",
@@ -133,7 +133,7 @@
       },
       "mcp": {
         "title": "MCP（模型上下文协议）",
-        "description": "AgentsMesh 提供 24 个 MCP 工具，AI 智能体可以用它们来发现资源、与其他 Pod 通信、管理任务和控制终端。MCP 服务器运行在每个 Runner 上，并为 Claude Code 等支持的智能体自动配置。"
+        "description": "AgentsMesh 提供 26 个 MCP 工具，AI 智能体可以用它们来发现资源、与其他 Pod 通信、管理任务和控制终端。MCP 服务器运行在每个 Runner 上，并为 Claude Code 等支持的智能体自动配置。"
       }
     },
     "gettingStarted": {
@@ -222,7 +222,7 @@
           "terminal": "Web 终端 — 通过 WebSocket 实时终端访问",
           "worktree": "Git 工作树 — 每个 Pod 独立的工作空间",
           "agent": "AI 智能体 — 你选择的编程助手",
-          "mcpTools": "MCP 工具 — 24 个用于发现、终端控制、协作等的工具"
+          "mcpTools": "MCP 工具 — 26 个用于发现、终端控制、协作等的工具"
         },
         "keyFeatures": {
           "title": "核心特性",
@@ -700,7 +700,7 @@
       },
       "mcpTools": {
         "title": "MCP 工具",
-        "description": "Runner 提供 24 个 MCP（模型上下文协议）工具，供 AI 智能体与其他智能体协作。工具分为 6 个类别：发现、终端、绑定、频道、任务和 Pod。",
+        "description": "Runner 提供 26 个 MCP（模型上下文协议）工具，供 AI 智能体与其他智能体协作。工具分为 7 个类别：发现、终端、绑定、频道、任务、Pod 和 Loop。",
         "overview": {
           "title": "概述",
           "description": "MCP 工具自动提供给在 AgentPod 中运行的 AI 智能体。工具通过端口 19000 的 HTTP 服务提供，使用 Pod 密钥进行认证。",
@@ -786,6 +786,19 @@
           "updateTicket": "update_ticket",
           "updateTicketDesc": "更新任务",
           "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
+        },
+        "loop": {
+          "title": "Loop 工具",
+          "description": "管理自动化 Loop 的工具 — 可通过手动触发或 Cron 调度的重复性任务。",
+          "toolHeader": "工具",
+          "descriptionHeader": "描述",
+          "paramsHeader": "参数",
+          "listLoops": "list_loops",
+          "listLoopsDesc": "列出组织中的自动化 Loop",
+          "listLoopsParams": "status?, query?, limit?, offset?",
+          "triggerLoop": "trigger_loop",
+          "triggerLoopDesc": "手动触发 Loop 运行",
+          "triggerLoopParams": "loop_slug (required), variables?"
         },
         "pod": {
           "title": "Pod 工具",

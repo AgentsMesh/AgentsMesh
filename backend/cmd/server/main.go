@@ -204,6 +204,9 @@ func main() {
 			AgentTypeSvc:      services.agentType,
 			UserConfigSvc:     services.userConfig,
 			TerminalRouter:    terminalRouter,
+			LoopService:       services.loop,
+			LoopRunService:    services.loopRun,
+			LoopOrchestrator:  loopOrchestrator,
 		}
 		grpcServer, grpcRunnerHandler = initializePKIAndGRPC(cfg, services.runner, services.org, services.agentType, runnerConnMgr, appLogger, mcpDeps)
 		if grpcServer != nil {

@@ -100,7 +100,7 @@
       "agentpodDesc": "Remote AI development workstations",
       "agentsmeshDesc": "Multi-agent collaboration network",
       "mcpTools": "MCP Tools",
-      "mcpToolsDesc": "24 tools for AI agents"
+      "mcpToolsDesc": "26 tools for AI agents"
     },
     "concepts": {
       "title": "Core Concepts",
@@ -133,7 +133,7 @@
       },
       "mcp": {
         "title": "MCP (Model Context Protocol)",
-        "description": "AgentsMesh provides 24 MCP tools that AI agents can use to discover resources, communicate with other Pods, manage tickets, and control terminals. The MCP server runs on each Runner and is automatically configured for supported agents like Claude Code."
+        "description": "AgentsMesh provides 26 MCP tools that AI agents can use to discover resources, communicate with other Pods, manage tickets, and control terminals. The MCP server runs on each Runner and is automatically configured for supported agents like Claude Code."
       }
     },
     "gettingStarted": {
@@ -222,7 +222,7 @@
           "terminal": "Web Terminal — Real-time terminal access via WebSocket",
           "worktree": "Git Worktree — Isolated workspace per Pod",
           "agent": "AI Agent — Your chosen coding assistant",
-          "mcpTools": "MCP Tools — 24 tools for discovery, terminal control, collaboration, and more"
+          "mcpTools": "MCP Tools — 26 tools for discovery, terminal control, collaboration, and more"
         },
         "keyFeatures": {
           "title": "Key Features",
@@ -700,7 +700,7 @@
       },
       "mcpTools": {
         "title": "MCP Tools",
-        "description": "The Runner provides 24 MCP (Model Context Protocol) tools for AI agents to collaborate with other agents. Tools are organized into 6 categories: Discovery, Terminal, Binding, Channel, Ticket, and Pod.",
+        "description": "The Runner provides 26 MCP (Model Context Protocol) tools for AI agents to collaborate with other agents. Tools are organized into 7 categories: Discovery, Terminal, Binding, Channel, Ticket, Pod, and Loop.",
         "overview": {
           "title": "Overview",
           "description": "MCP tools are automatically available to AI agents running in AgentPod. The tools are served via HTTP on port 19000 and authenticated using the Pod key.",
@@ -786,6 +786,19 @@
           "updateTicket": "update_ticket",
           "updateTicketDesc": "Update ticket",
           "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
+        },
+        "loop": {
+          "title": "Outils de Loop",
+          "description": "Outils pour gérer les loops automatisés — des tâches répétables pouvant être déclenchées manuellement ou via une planification cron.",
+          "toolHeader": "Outil",
+          "descriptionHeader": "Description",
+          "paramsHeader": "Paramètres",
+          "listLoops": "list_loops",
+          "listLoopsDesc": "Lister les loops automatisés dans l'organisation",
+          "listLoopsParams": "status?, query?, limit?, offset?",
+          "triggerLoop": "trigger_loop",
+          "triggerLoopDesc": "Déclencher manuellement une exécution de loop",
+          "triggerLoopParams": "loop_slug (required), variables?"
         },
         "pod": {
           "title": "Pod Tools",

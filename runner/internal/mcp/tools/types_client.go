@@ -53,6 +53,12 @@ type PodClient interface {
 	CreatePod(ctx context.Context, req *PodCreateRequest) (*PodCreateResponse, error)
 }
 
+// LoopClient defines the interface for loop operations.
+type LoopClient interface {
+	ListLoops(ctx context.Context, status, query string, limit, offset int) ([]LoopSummary, error)
+	TriggerLoop(ctx context.Context, loopSlug string, variables map[string]interface{}) (*LoopTriggerResult, error)
+}
+
 // CollaborationClient combines all collaboration interfaces.
 type CollaborationClient interface {
 	PodInteractionClient
@@ -61,6 +67,7 @@ type CollaborationClient interface {
 	ChannelClient
 	TicketClient
 	PodClient
+	LoopClient
 
 	// GetPodKey returns the current pod's key.
 	GetPodKey() string

@@ -23,6 +23,8 @@ user-invocable: false
 - `bind_pod` - 绑定到目标 Pod（获取终端权限）
 - `send_pod_input` - 向 Pod 发送输入（文本和/或特殊键）
 - `send_channel_message` - 通过 Channel 发送消息
+- `list_loops` - 列出组织中的自动化 Loop
+- `trigger_loop` - 手动触发 Loop 运行
 
 ## 委派流程
 

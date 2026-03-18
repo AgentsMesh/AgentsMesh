@@ -700,7 +700,7 @@
       },
       "mcpTools": {
         "title": "MCP Tools",
-        "description": "The Runner provides 24 MCP (Model Context Protocol) tools for AI agents to collaborate with other agents. Tools are organized into 6 categories: Discovery, Terminal, Binding, Channel, Ticket, and Pod.",
+        "description": "The Runner provides 26 MCP (Model Context Protocol) tools for AI agents to collaborate with other agents. Tools are organized into 7 categories: Discovery, Terminal, Binding, Channel, Ticket, Pod, and Loop.",
         "overview": {
           "title": "Overview",
           "description": "MCP tools are automatically available to AI agents running in AgentPod. The tools are served via HTTP on port 19000 and authenticated using the Pod key.",
@@ -786,6 +786,19 @@
           "updateTicket": "update_ticket",
           "updateTicketDesc": "Update ticket",
           "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
+        },
+        "loop": {
+          "title": "Loop Tools",
+          "description": "Tools for managing automated loops — repeatable tasks that can be triggered manually or via cron scheduling.",
+          "toolHeader": "Tool",
+          "descriptionHeader": "Description",
+          "paramsHeader": "Parameters",
+          "listLoops": "list_loops",
+          "listLoopsDesc": "List automated loops in the organization",
+          "listLoopsParams": "status?, query?, limit?, offset?",
+          "triggerLoop": "trigger_loop",
+          "triggerLoopDesc": "Manually trigger a loop run",
+          "triggerLoopParams": "loop_slug (required), variables?"
         },
         "pod": {
           "title": "Pod Tools",

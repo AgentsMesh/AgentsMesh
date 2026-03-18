@@ -38,6 +38,9 @@ type ChannelMessageList []ChannelMessage
 // TicketList is a list of tickets formatted as a Markdown table.
 type TicketList []Ticket
 
+// LoopSummaryList is a list of loops formatted as a Markdown table.
+type LoopSummaryList []LoopSummary
+
 // --- Single entity FormatText ---
 
 // FormatText formats a PodSnapshot as compact header + raw output.
@@ -308,6 +311,54 @@ func (l TicketList) FormatText() string {
 			escapeTableCell(truncate(t.Title, 60)),
 			t.Status,
 			t.Priority,
+		)
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+// FormatText formats a LoopTriggerResult as key-value text.
+func (r *LoopTriggerResult) FormatText() string {
+	var b strings.Builder
+	if r.Skipped {
+		fmt.Fprintf(&b, "Skipped: %s", r.Reason)
+		return b.String()
+	}
+	if r.Run != nil {
+		fmt.Fprintf(&b, "Run #%d (ID: %d)\n", r.Run.RunNumber, r.Run.ID)
+		fmt.Fprintf(&b, "Status: %s | Trigger: %s\n", r.Run.Status, r.Run.TriggerType)
+		if r.Run.PodKey != "" {
+			fmt.Fprintf(&b, "Pod: %s\n", r.Run.PodKey)
+		}
+		if r.Run.CreatedAt != "" {
+			fmt.Fprintf(&b, "Created: %s", r.Run.CreatedAt)
+		}
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+// FormatText formats the loop list as a Markdown table.
+func (l LoopSummaryList) FormatText() string {
+	if len(l) == 0 {
+		return "No loops found."
+	}
+	var b strings.Builder
+	b.WriteString("| Slug | Name | Status | Mode | Runs (OK/Fail/Total) | Active | Cron |\n")
+	b.WriteString("|------|------|--------|------|----------------------|--------|------|\n")
+	for _, loop := range l {
+		cron := ""
+		if loop.CronExpression != "" {
+			cron = loop.CronExpression
+		}
+		fmt.Fprintf(&b, "| %s | %s | %s | %s | %d/%d/%d | %d | %s |\n",
+			escapeTableCell(loop.Slug),
+			escapeTableCell(truncate(loop.Name, 40)),
+			loop.Status,
+			loop.ExecutionMode,
+			loop.SuccessfulRuns,
+			loop.FailedRuns,
+			loop.TotalRuns,
+			loop.ActiveRunCount,
+			escapeTableCell(cron),
 		)
 	}
 	return strings.TrimRight(b.String(), "\n")

@@ -6,7 +6,7 @@ This directory contains end-to-end tests for the Model Context Protocol (MCP) co
 
 ## MCP Tools Coverage
 
-The `TC-MCP-001-full-collaboration-scenario.yaml` test covers all 23 MCP tools:
+The `TC-MCP-001-full-collaboration-scenario.yaml` test covers all 25 MCP tools:
 
 ### Discovery Tools (3)
 
@@ -60,6 +60,13 @@ The `TC-MCP-001-full-collaboration-scenario.yaml` test covers all 23 MCP tools:
 | Tool | Description | Test Steps |
 |------|-------------|------------|
 | `create_pod` | Create a new pod | step-5, step-6, step-7 |
+
+### Loop Tools (2)
+
+| Tool | Description | Test Steps |
+|------|-------------|------------|
+| `list_loops` | List automated loops in the organization | - |
+| `trigger_loop` | Manually trigger a loop run | - |
 
 ## Test Scenario Flow
 
