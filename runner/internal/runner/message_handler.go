@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"sync"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
@@ -15,6 +14,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/monitor"
 	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
+	"github.com/anthropics/agentsmesh/runner/internal/safego"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
 )
@@ -46,6 +46,9 @@ type MessageHandlerContext interface {
 
 	// RemoveAutopilot removes an AutopilotController by key.
 	RemoveAutopilot(key string)
+
+	// GetAutopilotByPodKey returns an AutopilotController by its associated pod key.
+	GetAutopilotByPodKey(podKey string) *autopilot.AutopilotController
 
 	// NewPodBuilder creates a new PodBuilder with the runner's dependencies.
 	NewPodBuilder() *PodBuilder
@@ -161,6 +164,12 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	// Check if pod was terminated during Build (TerminatePod removed the placeholder)
 	if _, ok := h.podStore.Get(cmd.PodKey); !ok {
 		log.Info("Pod was terminated during build, cleaning up", "pod_key", cmd.PodKey)
+		if pod.Aggregator != nil {
+			pod.Aggregator.Stop()
+		}
+		if pod.PTYLogger != nil {
+			pod.PTYLogger.Close()
+		}
 		if pod.SandboxPath != "" {
 			os.RemoveAll(pod.SandboxPath)
 		}
@@ -182,7 +191,13 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	// Start terminal
 	if err := pod.Terminal.Start(); err != nil {
 		h.podStore.Delete(cmd.PodKey) // Remove from store on failure
-		// Clean up sandbox that Build() created
+		// Clean up resources that Build() created
+		if pod.Aggregator != nil {
+			pod.Aggregator.Stop()
+		}
+		if pod.PTYLogger != nil {
+			pod.PTYLogger.Close()
+		}
 		if pod.SandboxPath != "" {
 			os.RemoveAll(pod.SandboxPath)
 		}
@@ -202,36 +217,8 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 	}
 
 	// Subscribe to VT state detection events, bridge to gRPC.
-	// Use mutex to protect lastSentStatus since notifySubscribers invokes
-	// each callback in a separate goroutine (via safego.Go).
-	if pod.VirtualTerminal != nil {
-		var statusMu sync.Mutex
-		lastSentStatus := ""
-		pod.SubscribeStateChange("grpc-agent-status", func(event detector.StateChangeEvent) {
-			var backendStatus string
-			switch event.NewState {
-			case detector.StateExecuting:
-				backendStatus = "executing"
-			case detector.StateWaiting:
-				backendStatus = "waiting"
-			case detector.StateNotRunning:
-				backendStatus = "idle"
-			default:
-				return
-			}
-			statusMu.Lock()
-			if backendStatus == lastSentStatus {
-				statusMu.Unlock()
-				return // Deduplicate
-			}
-			lastSentStatus = backendStatus
-			statusMu.Unlock()
-			if err := h.conn.SendAgentStatus(cmd.PodKey, backendStatus); err != nil {
-				logger.Pod().Error("Failed to send agent status",
-					"pod_key", cmd.PodKey, "status", backendStatus, "error", err)
-			}
-		})
-	}
+	// Uses shared implementation with deduplication (same as session recovery).
+	pod.SubscribeAgentStatusBridge(h.conn.SendAgentStatus)
 
 	h.sendPodCreated(cmd.PodKey, pod.Terminal.PID(), pod.SandboxPath, pod.Branch, uint16(cols), uint16(rows))
 
@@ -250,14 +237,33 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
-	if pod.PTYLogger != nil {
-		pod.PTYLogger.Close()
+	// Clean up associated Autopilot if any (before terminal teardown)
+	if ac := h.runner.GetAutopilotByPodKey(req.PodKey); ac != nil {
+		ac.Stop()
+		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
+			agentMon.Unsubscribe("autopilot-" + ac.Key())
+		}
+		h.runner.RemoveAutopilot(ac.Key())
 	}
+
 	pod.StopStateDetector()
 	// Stop aggregator BEFORE disconnecting relay, so the final flush
 	// can still be sent through the relay (matches createExitHandler order).
+	// Close PTYLogger AFTER Aggregator.Stop() to avoid silent data loss.
+	var earlyOutput string
 	if pod.Aggregator != nil {
 		pod.Aggregator.Stop()
+
+		// Drain early output buffered before relay connected (matches createExitHandler).
+		// Without this, error messages from fast-exiting processes are silently lost.
+		if buf := pod.Aggregator.DrainEarlyBuffer(); len(buf) > 0 {
+			earlyOutput = string(buf)
+			log.Info("Drained early output on terminate",
+				"pod_key", req.PodKey, "bytes", len(buf))
+		}
+	}
+	if pod.PTYLogger != nil {
+		pod.PTYLogger.Close()
 	}
 	pod.DisconnectRelay()
 	if pod.Terminal != nil {
@@ -276,14 +282,22 @@ func (h *RunnerMessageHandler) OnTerminatePod(req client.TerminatePodRequest) er
 		agentMon.UnregisterPod(req.PodKey)
 	}
 
-	h.sendPodTerminated(req.PodKey)
+	// Include early output in the termination event so the backend can
+	// display why the process failed (matches createExitHandler behavior).
+	if h.conn != nil {
+		if err := h.conn.SendPodTerminated(req.PodKey, 0, earlyOutput); err != nil {
+			log.Error("Failed to send pod terminated event", "error", err)
+		}
+	}
 
 	// Async token usage collection — same as createExitHandler.
 	// Capture values before goroutine to avoid race.
 	agentType := pod.AgentType
 	sandboxPath := pod.SandboxPath
 	podStartedAt := pod.StartedAt
-	go h.collectAndSendTokenUsage(req.PodKey, agentType, sandboxPath, podStartedAt)
+	safego.Go("token-usage-terminate", func() {
+		h.collectAndSendTokenUsage(req.PodKey, agentType, sandboxPath, podStartedAt)
+	})
 
 	log.Info("Pod terminated", "pod_key", req.PodKey)
 	return nil

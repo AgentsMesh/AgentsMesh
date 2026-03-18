@@ -8,6 +8,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
+	"github.com/anthropics/agentsmesh/runner/internal/safego"
 )
 
 // OnSubscribeTerminal handles subscribe terminal command from server.
@@ -123,12 +124,12 @@ func (h *RunnerMessageHandler) OnSubscribeTerminal(req client.SubscribeTerminalR
 
 	// Trigger TUI redraw if needed
 	if pod.VirtualTerminal != nil && pod.VirtualTerminal.IsAltScreen() && pod.Terminal != nil {
-		go func() {
+		safego.Go("relay-subscribe-redraw", func() {
 			time.Sleep(100 * time.Millisecond)
 			if err := pod.Terminal.Redraw(); err != nil {
 				log.Warn("Failed to redraw terminal after relay connect", "pod_key", req.PodKey, "error", err)
 			}
-		}()
+		})
 	}
 
 	log.Info("Successfully subscribed to terminal via Relay", "pod_key", req.PodKey)
@@ -201,12 +202,12 @@ func (h *RunnerMessageHandler) setupRelayClientHandlers(relayClient relay.RelayC
 			}
 		}
 		if pod.VirtualTerminal != nil && pod.VirtualTerminal.IsAltScreen() && pod.Terminal != nil {
-			go func() {
+			safego.Go("relay-reconnect-redraw", func() {
 				time.Sleep(100 * time.Millisecond)
 				if err := pod.Terminal.Redraw(); err != nil {
 					log.Warn("Failed to redraw terminal after relay reconnect", "pod_key", podKey, "error", err)
 				}
-			}()
+			})
 		}
 	})
 }

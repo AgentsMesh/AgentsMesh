@@ -164,6 +164,48 @@ func (p *Pod) SubscribeStateChange(id string, cb func(detector.StateChangeEvent)
 	return true
 }
 
+// SubscribeAgentStatusBridge subscribes to state detection events and bridges them
+// to the backend via the provided sendStatus function. It maps detector states to
+// backend status strings ("executing"/"waiting"/"idle") with deduplication.
+//
+// This is used by both OnCreatePod and session recovery to wire VT state changes
+// to gRPC SendAgentStatus. The sendStatus function receives (podKey, status) and
+// should return any send error.
+func (p *Pod) SubscribeAgentStatusBridge(sendStatus func(podKey, status string) error) {
+	if p.VirtualTerminal == nil {
+		return
+	}
+
+	var statusMu sync.Mutex
+	lastSentStatus := ""
+	podKey := p.PodKey
+
+	p.SubscribeStateChange("grpc-agent-status", func(event detector.StateChangeEvent) {
+		var backendStatus string
+		switch event.NewState {
+		case detector.StateExecuting:
+			backendStatus = "executing"
+		case detector.StateWaiting:
+			backendStatus = "waiting"
+		case detector.StateNotRunning:
+			backendStatus = "idle"
+		default:
+			return
+		}
+		statusMu.Lock()
+		if backendStatus == lastSentStatus {
+			statusMu.Unlock()
+			return // Deduplicate
+		}
+		lastSentStatus = backendStatus
+		statusMu.Unlock()
+		if err := sendStatus(podKey, backendStatus); err != nil {
+			logger.Pod().Error("Failed to send agent status",
+				"pod_key", podKey, "status", backendStatus, "error", err)
+		}
+	})
+}
+
 // UnsubscribeStateChange removes a state change subscription by ID.
 func (p *Pod) UnsubscribeStateChange(id string) {
 	p.stateDetectorMu.RLock()

@@ -116,35 +116,30 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 		Aggregator:      agg,
 		PTYLogger:       ptyLogger,
 		StartedAt:       state.StartedAt,
-		Status:        PodStatusRunning,
+		Status:        PodStatusInitializing,
 	}
 
-	// Wire up output handler (same pipeline as OnCreatePod)
+	// Wire up output handler (shared implementation with circuit breaker + inline recover)
 	podKey := state.PodKey
-	term.SetOutputHandler(func(data []byte) {
-		defer func() {
-			if rec := recover(); rec != nil {
-				logger.Terminal().Error("PANIC in recovered OutputHandler",
-					"pod_key", podKey, "panic", fmt.Sprintf("%v", rec))
-			}
-		}()
-
-		var screenLines []string
-		if virtualTerm != nil {
-			screenLines = virtualTerm.Feed(data)
-		}
-		go pod.NotifyStateDetectorWithScreen(len(data), screenLines)
-		agg.Write(data)
-	})
+	term.SetOutputHandler(pod.CreateOutputHandler())
 
 	// Set exit handler
 	term.SetExitHandler(r.messageHandler.createExitHandler(podKey))
 
+	// Set PTY error handler (same as OnCreatePod)
+	term.SetPTYErrorHandler(r.messageHandler.createPTYErrorHandler(podKey, pod))
+
 	// Start Terminal I/O (readOutput + waitExit goroutines)
 	if err := term.Start(); err != nil {
+		agg.Stop() // Aggregator first (consistent with all other cleanup paths)
+		if ptyLogger != nil {
+			ptyLogger.Close()
+		}
 		dpty.Close()
 		return nil, fmt.Errorf("start terminal: %w", err)
 	}
+
+	pod.SetStatus(PodStatusRunning)
 
 	// Register with MCP and monitor
 	if mcpSrv := r.GetMCPServer(); mcpSrv != nil {
@@ -153,6 +148,9 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 	if agentMon := r.GetAgentMonitor(); agentMon != nil {
 		agentMon.RegisterPod(podKey, term.PID())
 	}
+
+	// Subscribe to VT state detection events, bridge to gRPC (shared with OnCreatePod)
+	pod.SubscribeAgentStatusBridge(r.conn.SendAgentStatus)
 
 	return pod, nil
 }

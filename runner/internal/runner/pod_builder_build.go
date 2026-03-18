@@ -143,42 +143,8 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		Status:          PodStatusInitializing,
 	}
 
-	// Wire up output handler (integrates VirtualTerminal, StateDetector, and Aggregator)
-	podKey := b.cmd.PodKey
-	term.SetOutputHandler(func(data []byte) {
-		defer func() {
-			if r := recover(); r != nil {
-				logger.Terminal().Error("PANIC in OutputHandler recovered",
-					"pod_key", podKey,
-					"panic", fmt.Sprintf("%v", r),
-					"data_len", len(data))
-			}
-		}()
-
-		var screenLines []string
-		if virtualTerm != nil {
-			startFeed := time.Now()
-			screenLines = virtualTerm.Feed(data)
-			feedTime := time.Since(startFeed)
-			if feedTime > 100*time.Millisecond {
-				logger.Terminal().Warn("VT Feed slow",
-					"pod_key", podKey,
-					"data_len", len(data),
-					"feed_time", feedTime)
-			}
-		}
-		go pod.NotifyStateDetectorWithScreen(len(data), screenLines)
-
-		startWrite := time.Now()
-		agg.Write(data)
-		writeTime := time.Since(startWrite)
-		if writeTime > 100*time.Millisecond {
-			logger.Terminal().Warn("Aggregator Write slow",
-				"pod_key", podKey,
-				"data_len", len(data),
-				"write_time", writeTime)
-		}
-	})
+	// Wire up output handler (shared implementation with circuit breaker + inline recover)
+	term.SetOutputHandler(pod.CreateOutputHandler())
 
 	logger.Pod().Info("Pod built", "pod_key", b.cmd.PodKey, "working_dir", workingDir, "cols", b.cols, "rows", b.rows)
 

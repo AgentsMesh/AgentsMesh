@@ -6,8 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
@@ -162,7 +164,9 @@ func (t *Terminal) readOutput() {
 						stackLen := runtime.Stack(stackBuf, true) // true = all goroutines
 
 						dumpPath := ""
-						dumpFile := filepath.Join("/tmp/agentsmesh", fmt.Sprintf("blocked-%s-%d.stacks",
+						stackDumpDir := config.TempBaseDir()
+						os.MkdirAll(stackDumpDir, 0755)
+						dumpFile := filepath.Join(stackDumpDir, fmt.Sprintf("blocked-%s-%d.stacks",
 							label, time.Now().Unix()))
 						if err := os.WriteFile(dumpFile, stackBuf[:stackLen], 0644); err == nil {
 							dumpPath = dumpFile
@@ -230,5 +234,35 @@ func (t *Terminal) waitExit() {
 
 	if handler != nil {
 		handler(exitCode)
+	}
+}
+
+// CleanupOldStackDumps removes stack dump files older than maxAge from the
+// temp directory. Should be called at startup to prevent unbounded growth
+// of diagnostic files written by the readOutput watchdog.
+func CleanupOldStackDumps(maxAge time.Duration) {
+	dir := config.TempBaseDir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return // Directory may not exist yet
+	}
+
+	cutoff := time.Now().Add(-maxAge)
+	removed := 0
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".stacks") {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if info.ModTime().Before(cutoff) {
+			os.Remove(filepath.Join(dir, entry.Name()))
+			removed++
+		}
+	}
+	if removed > 0 {
+		logger.Terminal().Info("Cleaned up old stack dump files", "removed", removed)
 	}
 }

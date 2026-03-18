@@ -10,6 +10,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
 	"github.com/anthropics/agentsmesh/runner/internal/lifecycle"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal"
 )
 
 // AddService registers an additional suture.Service to be managed by the Supervisor.
@@ -31,6 +32,9 @@ func (r *Runner) Run(ctx context.Context) error {
 	// Store lifecycle context so message handlers can derive cancellable contexts
 	// for long-running operations (e.g., git clone in OnCreatePod).
 	r.runCtx = ctx
+
+	// Clean up stale stack dump files from previous runs (>24h old)
+	terminal.CleanupOldStackDumps(24 * time.Hour)
 
 	// Recover daemon sessions from previous Runner lifecycle
 	r.recoverDaemonSessions()
@@ -106,17 +110,29 @@ func (r *Runner) Run(ctx context.Context) error {
 func (r *Runner) stopAllPods() {
 	log := logger.Runner()
 
-	// Stop all autopilot controllers first (they depend on pods)
+	// Stop all autopilot controllers first (they depend on pods).
+	// Copy under lock then stop in parallel to avoid holding the lock
+	// while ac.Stop() blocks (up to 30s each).
 	r.autopilotsMu.Lock()
-	if len(r.autopilots) > 0 {
-		log.Info("Stopping all autopilots", "count", len(r.autopilots))
-	}
-	for key, ac := range r.autopilots {
-		log.Debug("Stopping autopilot", "autopilot_key", key)
-		ac.Stop()
+	autopilotsCopy := make([]*autopilot.AutopilotController, 0, len(r.autopilots))
+	for _, ac := range r.autopilots {
+		autopilotsCopy = append(autopilotsCopy, ac)
 	}
 	r.autopilots = make(map[string]*autopilot.AutopilotController)
 	r.autopilotsMu.Unlock()
+
+	if len(autopilotsCopy) > 0 {
+		log.Info("Stopping all autopilots in parallel", "count", len(autopilotsCopy))
+		var apWg sync.WaitGroup
+		for _, ac := range autopilotsCopy {
+			apWg.Add(1)
+			go func(a *autopilot.AutopilotController) {
+				defer apWg.Done()
+				a.Stop()
+			}(ac)
+		}
+		apWg.Wait()
+	}
 
 	// Stop all pods in parallel
 	pods := r.podStore.All()
@@ -138,11 +154,17 @@ func (r *Runner) stopAllPods() {
 			sandboxPath := p.SandboxPath
 			podStartedAt := p.StartedAt
 
-			p.DisconnectRelay()
 			p.StopStateDetector()
+			// Stop aggregator BEFORE disconnecting relay, so the final flush
+			// can still be sent through the relay (matches createExitHandler order).
+			// Close PTYLogger AFTER Aggregator.Stop() to avoid silent data loss.
 			if p.Aggregator != nil {
 				p.Aggregator.Stop()
 			}
+			if p.PTYLogger != nil {
+				p.PTYLogger.Close()
+			}
+			p.DisconnectRelay()
 			if p.Terminal != nil {
 				// Detach instead of Stop: daemon + child process stay alive
 				// so the session can be recovered after Runner restart.
@@ -153,7 +175,9 @@ func (r *Runner) stopAllPods() {
 			// Collect token usage synchronously (best-effort).
 			// Token files live in HOME (~/.claude/, ~/.codex/), not in sandbox,
 			// so they survive Terminal.Detach(). gRPC is still alive at this point.
-			r.messageHandler.collectAndSendTokenUsage(podKey, agentType, sandboxPath, podStartedAt)
+			if r.messageHandler != nil {
+				r.messageHandler.collectAndSendTokenUsage(podKey, agentType, sandboxPath, podStartedAt)
+			}
 		}(pod)
 	}
 

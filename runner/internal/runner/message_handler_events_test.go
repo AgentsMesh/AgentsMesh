@@ -53,7 +53,11 @@ func TestSendPodTerminated(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	handler.sendPodTerminated("pod-1")
+	// Production code calls h.conn.SendPodTerminated directly (with exitCode and earlyOutput).
+	// Test the same path used by createExitHandler and OnTerminatePod.
+	if err := handler.conn.SendPodTerminated("pod-1", 0, ""); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	events := mockConn.GetEvents()
 	if len(events) != 1 {
@@ -114,7 +118,6 @@ func TestSendMethodsWithNilConnection(t *testing.T) {
 
 	// These should not panic with nil connection
 	handler.sendPodCreated("pod-1", 123, "", "", 80, 24)
-	handler.sendPodTerminated("pod-1")
 	// NOTE: sendTerminalOutput removed - output is exclusively streamed via Relay
 	handler.sendPtyResized("pod-1", 80, 24)
 	handler.sendPodError("pod-1", "error")

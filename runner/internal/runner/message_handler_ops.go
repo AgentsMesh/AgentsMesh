@@ -56,6 +56,10 @@ func (h *RunnerMessageHandler) OnTerminalResize(req client.TerminalResizeRequest
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
+	if pod.Terminal == nil {
+		log.Warn("Terminal not initialized for resize", "pod_key", req.PodKey)
+		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
+	}
 	if err := pod.Terminal.Resize(int(req.Cols), int(req.Rows)); err != nil {
 		log.Error("Failed to resize terminal", "pod_key", req.PodKey, "cols", req.Cols, "rows", req.Rows, "error", err)
 		return err
@@ -76,6 +80,10 @@ func (h *RunnerMessageHandler) OnTerminalRedraw(req client.TerminalRedrawRequest
 	if !ok {
 		log.Warn("Pod not found for terminal redraw", "pod_key", req.PodKey)
 		return fmt.Errorf("pod not found: %s", req.PodKey)
+	}
+	if pod.Terminal == nil {
+		log.Warn("Terminal not initialized for redraw", "pod_key", req.PodKey)
+		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
 	}
 	log.Info("Triggering terminal redraw", "pod_key", req.PodKey)
 	if err := pod.Terminal.Redraw(); err != nil {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net"
 	"sync"
 	"time"
@@ -27,6 +28,10 @@ type daemonPTY struct {
 	pid  int
 	cols int
 	rows int
+	log  *slog.Logger
+
+	// sizeMu protects cols/rows from concurrent Resize/GetSize access.
+	sizeMu sync.RWMutex
 
 	// Write serialization - only one goroutine may write at a time.
 	writeMu sync.Mutex
@@ -89,6 +94,7 @@ func newDaemonPTY(conn net.Conn, pid, cols, rows int) *daemonPTY {
 		pid:      pid,
 		cols:     cols,
 		rows:     rows,
+		log:      slog.Default().With("component", "daemon-pty", "pid", pid),
 		outputCh: make(chan []byte, 64),
 		exitCh:   make(chan int, 1),
 		closedCh: make(chan struct{}),

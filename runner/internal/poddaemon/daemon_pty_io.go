@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"time"
 )
@@ -93,13 +92,17 @@ func (d *daemonPTY) Resize(cols, rows int) error {
 	if err := WriteMessage(d.conn, MsgResize, payload); err != nil {
 		return err
 	}
+	d.sizeMu.Lock()
 	d.cols = cols
 	d.rows = rows
+	d.sizeMu.Unlock()
 	return nil
 }
 
 // GetSize returns the last known terminal size.
 func (d *daemonPTY) GetSize() (int, int, error) {
+	d.sizeMu.RLock()
+	defer d.sizeMu.RUnlock()
 	return d.cols, d.rows, nil
 }
 
@@ -152,7 +155,7 @@ func (d *daemonPTY) recvLoop() {
 			case <-d.closedCh:
 				return // Expected on close
 			default:
-				slog.Debug("daemon recvLoop error", "error", err)
+				d.log.Debug("daemon recvLoop error", "error", err)
 				return
 			}
 		}
@@ -177,10 +180,10 @@ func (d *daemonPTY) recvLoop() {
 
 		case MsgPong:
 			// Heartbeat response - logged at debug level
-			slog.Debug("daemon pong received")
+			d.log.Debug("daemon pong received")
 
 		default:
-			slog.Warn("daemon recvLoop: unknown message type", "type", msgType)
+			d.log.Warn("daemon recvLoop: unknown message type", "type", msgType)
 		}
 	}
 }

@@ -87,7 +87,7 @@ func (m *PodDaemonManager) CreateSession(opts CreateOpts) (*daemonPTY, *PodDaemo
 
 	state.DaemonPID = pid
 	if err := SaveState(state); err != nil {
-		log.Warn("failed to update state with daemon PID", "error", err)
+		log.Error("failed to update state with daemon PID", "error", err)
 	}
 
 	log.Info("daemon started, waiting for IPC", "pid", pid, "ipc", ipcPath)

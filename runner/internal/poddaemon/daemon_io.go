@@ -3,7 +3,6 @@ package poddaemon
 import (
 	"encoding/binary"
 	"encoding/json"
-	"log/slog"
 	"net"
 )
 
@@ -171,7 +170,7 @@ func (d *daemonServer) ptyReader() {
 			if client != nil {
 				d.connWriteMu.Lock()
 				if writeErr := WriteMessage(client, MsgOutput, data); writeErr != nil {
-					slog.Debug("write output to client failed", "error", writeErr)
+					d.log.Debug("write output to client failed", "error", writeErr)
 				}
 				d.connWriteMu.Unlock()
 			}
