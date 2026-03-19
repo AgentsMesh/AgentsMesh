@@ -56,10 +56,11 @@ fi
 echo "Preparing notarization credentials..."
 echo "$APPLE_API_KEY" | base64 -d > "$TMPDIR_SIGN/api-key.p8"
 
+# Args order: <ISSUER_ID> <KEY_ID> <PRIVATE_KEY_PATH>
 $RCODESIGN encode-app-store-connect-api-key \
   -o "$TMPDIR_SIGN/notary-key.json" \
-  "$APPLE_API_KEY_ID" \
   "$APPLE_API_KEY_ISSUER_ID" \
+  "$APPLE_API_KEY_ID" \
   "$TMPDIR_SIGN/api-key.p8"
 
 echo "Creating zip for notarization..."
