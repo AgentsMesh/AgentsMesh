@@ -42,6 +42,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
   const runnersLoading = useRunnerStore((s) => s.loading);
   const fetchRunners = useRunnerStore((s) => s.fetchRunners);
   const addPane = useWorkspaceStore((s) => s.addPane);
+  const removePaneByPodKey = useWorkspaceStore((s) => s.removePaneByPodKey);
   const panes = useWorkspaceStore((s) => s.panes);
 
   const user = useAuthStore((s) => s.user);
@@ -153,10 +154,11 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
       });
       if (confirmed) {
         await terminatePod(podKey);
+        removePaneByPodKey(podKey);
         onTerminatePod?.();
       }
     },
-    [confirm, t, terminatePod, onTerminatePod]
+    [confirm, t, terminatePod, removePaneByPodKey, onTerminatePod]
   );
 
   return (

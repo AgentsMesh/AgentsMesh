@@ -44,6 +44,7 @@ export function TerminalPane({
   const terminalFontSize = useWorkspaceStore((s) => s.terminalFontSize);
   const setActivePane = useWorkspaceStore((s) => s.setActivePane);
   const splitPane = useWorkspaceStore((s) => s.splitPane);
+  const removePaneByPodKey = useWorkspaceStore((s) => s.removePaneByPodKey);
   const panes = useWorkspaceStore((s) => s.panes);
   const initProgress = usePodStore((state) => state.initProgress[podKey]);
   const terminatePod = usePodStore((state) => state.terminatePod);
@@ -95,13 +96,13 @@ export function TerminalPane({
     setIsTerminating(true);
     try {
       await terminatePod(podKey);
-      onClose?.();
+      removePaneByPodKey(podKey);
     } catch (error) {
       console.error("Failed to terminate pod:", error);
     } finally {
       setIsTerminating(false);
     }
-  }, [podKey, terminatePod, onClose]);
+  }, [podKey, terminatePod, removePaneByPodKey]);
 
   // Cancel pending maximize RAF on unmount
   useEffect(() => {

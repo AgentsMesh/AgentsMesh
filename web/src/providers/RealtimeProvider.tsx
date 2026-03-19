@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRealtimeConnection, useAllEventsSubscription } from "@/hooks/useRealtimeEvents";
 import { usePodStore } from "@/stores/pod";
+import { useWorkspaceStore } from "@/stores/workspace";
 import { useRunnerStore } from "@/stores/runner";
 import { useTicketStore } from "@/stores/ticket";
 import { useMeshStore } from "@/stores/mesh";
@@ -101,6 +102,10 @@ export function RealtimeProvider({
               data.error_message
             );
           }
+          // Close terminal pane when pod reaches a terminal state
+          if (data.status === "terminated" || data.status === "failed" || data.status === "error") {
+            useWorkspaceStore.getState().removePaneByPodKey(data.pod_key);
+          }
           // Also refresh Mesh topology since pod status affects the mesh
           useMeshStore.getState().fetchTopology?.();
           console.log("[Realtime] Pod status changed:", data.pod_key, data.status);
@@ -120,6 +125,8 @@ export function RealtimeProvider({
           const data = event.data as PodStatusChangedData;
           // Update pod status to terminated
           usePodStore.getState().updatePodStatus?.(data.pod_key, "terminated");
+          // Close terminal pane for the terminated pod
+          useWorkspaceStore.getState().removePaneByPodKey(data.pod_key);
           // Also refresh Mesh topology since termination removes the pod from mesh
           useMeshStore.getState().fetchTopology?.();
           console.log("[Realtime] Pod terminated:", data.pod_key);

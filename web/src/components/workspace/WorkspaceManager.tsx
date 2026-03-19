@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { TerminalTabs } from "./TerminalTabs";
 import { TerminalGrid } from "./TerminalGrid";
 import { TerminalSwiper } from "./TerminalSwiper";
 import { TerminalToolbar } from "./TerminalToolbar";
@@ -21,7 +20,6 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
   const addPane = useWorkspaceStore((s) => s.addPane);
   const _hasHydrated = useWorkspaceStore((s) => s._hasHydrated);
   const [showPodSelector, setShowPodSelector] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Memoize to avoid creating a new array reference on every render
   const openPodKeys = useMemo(() => panes.map((p) => p.podKey), [panes]);
@@ -56,28 +54,6 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
     }
   };
 
-  // Toggle fullscreen
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  };
-
-  // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
-
   if (!_hasHydrated) {
     return (
       <div className="h-full bg-terminal-bg">
@@ -90,21 +66,11 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
     <div className={cn("flex flex-col h-full bg-terminal-bg", className)}>
       {/* Desktop layout */}
       {!isMobile && (
-        <>
-          {/* Tab bar */}
-          <TerminalTabs
-            onAddNew={handleAddNew}
-            isFullscreen={isFullscreen}
-            onToggleFullscreen={toggleFullscreen}
-          />
-
-          {/* Grid */}
-          <TerminalGrid
-            onPopout={handlePopout}
-            onAddNew={handleAddNew}
-            className="flex-1"
-          />
-        </>
+        <TerminalGrid
+          onPopout={handlePopout}
+          onAddNew={handleAddNew}
+          className="flex-1"
+        />
       )}
 
       {/* Mobile layout */}

@@ -18,6 +18,7 @@ import {
 import { podApi } from "@/lib/api";
 import type { MeshNode } from "@/stores/mesh";
 import { useMeshStore } from "@/stores/mesh";
+import { useWorkspaceStore } from "@/stores/workspace";
 
 interface PodContextMenuProps {
   node: MeshNode;
@@ -30,6 +31,7 @@ export default function PodContextMenu({ node, children }: PodContextMenuProps) 
   const router = useRouter();
   const orgSlug = params.org as string;
   const { fetchTopology } = useMeshStore();
+  const removePaneByPodKey = useWorkspaceStore((s) => s.removePaneByPodKey);
   const { dialogProps, confirm } = useConfirmDialog();
 
   const isActive = node.status === "running" || node.status === "initializing";
@@ -53,9 +55,10 @@ export default function PodContextMenu({ node, children }: PodContextMenuProps) 
     });
     if (confirmed) {
       await podApi.terminate(node.pod_key);
+      removePaneByPodKey(node.pod_key);
       fetchTopology();
     }
-  }, [confirm, t, node.pod_key, fetchTopology]);
+  }, [confirm, t, node.pod_key, removePaneByPodKey, fetchTopology]);
 
   return (
     <>

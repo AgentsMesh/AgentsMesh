@@ -91,6 +91,7 @@ interface WorkspaceState {
   updateSplitSizes: (splitId: string, sizes: [number, number]) => void;
   setMobileActiveIndex: (index: number) => void;
   setTerminalFontSize: (size: number) => void;
+  removePaneByPodKey: (podKey: string) => void;
   clearAllPanes: () => void;
   getPaneByPodKey: (podKey: string) => TerminalPane | undefined;
 
@@ -288,6 +289,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       closePaneFromTree: (paneId) => {
         // Alias for removePane — removes from both panes array and tree
         get().removePane(paneId);
+      },
+
+      removePaneByPodKey: (podKey) => {
+        const pane = get().panes.find((p) => p.podKey === podKey);
+        if (pane) {
+          get().removePane(pane.id);
+        }
       },
 
       updateSplitSizes: (splitId, sizes) => {
