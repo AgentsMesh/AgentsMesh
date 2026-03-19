@@ -26,11 +26,16 @@ fi
 RCODESIGN="${RCODESIGN:-rcodesign}"
 ENTITLEMENTS="${ENTITLEMENTS:-./build/darwin/entitlements.plist}"
 
-echo "$MACOS_CERTIFICATE" | base64 -d > /tmp/cert.p12
-trap 'rm -f /tmp/cert.p12 /tmp/notary-key.json /tmp/notary-submit.zip' EXIT
+# Use PID-scoped temp files to avoid race conditions when GoReleaser
+# runs multiple darwin hooks in parallel (amd64 + arm64).
+TMPDIR_SIGN="/tmp/sign-darwin-$$"
+mkdir -p "$TMPDIR_SIGN"
+trap 'rm -rf "$TMPDIR_SIGN"' EXIT
+
+echo "$MACOS_CERTIFICATE" | base64 -d > "$TMPDIR_SIGN/cert.p12"
 
 $RCODESIGN sign \
-  --p12-file /tmp/cert.p12 \
+  --p12-file "$TMPDIR_SIGN/cert.p12" \
   --p12-password "$MACOS_CERTIFICATE_PASSWORD" \
   --code-signature-flags runtime \
   --entitlements-xml-path "$ENTITLEMENTS" \
@@ -49,19 +54,21 @@ if [ -z "${APPLE_API_KEY:-}" ]; then
 fi
 
 echo "Preparing notarization credentials..."
+echo "$APPLE_API_KEY" | base64 -d > "$TMPDIR_SIGN/api-key.p8"
+
 $RCODESIGN encode-app-store-connect-api-key \
-  -o /tmp/notary-key.json \
+  -o "$TMPDIR_SIGN/notary-key.json" \
   "$APPLE_API_KEY_ID" \
   "$APPLE_API_KEY_ISSUER_ID" \
-  <(echo "$APPLE_API_KEY" | base64 -d)
+  "$TMPDIR_SIGN/api-key.p8"
 
 echo "Creating zip for notarization..."
-zip -j /tmp/notary-submit.zip "$BINARY"
+zip -j "$TMPDIR_SIGN/notary-submit.zip" "$BINARY"
 
 echo "Submitting to Apple Notary Service (this may take 2-10 minutes)..."
 $RCODESIGN notary-submit \
-  --api-key-file /tmp/notary-key.json \
+  --api-key-file "$TMPDIR_SIGN/notary-key.json" \
   --wait \
-  /tmp/notary-submit.zip
+  "$TMPDIR_SIGN/notary-submit.zip"
 
 echo "Notarized: $BINARY"
