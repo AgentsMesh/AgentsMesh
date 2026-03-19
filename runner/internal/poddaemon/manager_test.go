@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -91,6 +92,9 @@ func TestNewPodDaemonManager(t *testing.T) {
 }
 
 func TestNewPodDaemonManagerCreatesSocketDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("EnsureSocketDir is a no-op on Windows (named pipes)")
+	}
 	dir := t.TempDir()
 	socketDir := filepath.Join(t.TempDir(), "nested", "sockets")
 	mgr, err := NewPodDaemonManager(dir, socketDir)
