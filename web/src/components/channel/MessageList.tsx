@@ -4,6 +4,7 @@ import { useEffect, useRef, useMemo } from "react";
 import { MessageSquare, Bot } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { MessageBubble } from "./MessageBubble";
+import { getPodDisplayName, getShortPodKey } from "@/lib/pod-utils";
 import type { TransformedMessage } from "./types";
 
 interface MessageListProps {
@@ -20,7 +21,13 @@ interface MessageListProps {
 }
 
 function getSenderName(msg: TransformedMessage): string {
-  if (msg.pod) return msg.pod.agentType?.name || "Agent";
+  if (msg.pod) {
+    return getPodDisplayName({
+      pod_key: msg.pod.podKey,
+      alias: msg.pod.alias,
+      agent_type: msg.pod.agentType ? { name: msg.pod.agentType.name } : undefined,
+    });
+  }
   if (msg.user) return msg.user.name || msg.user.username || "Unknown";
   return "Unknown";
 }
@@ -115,7 +122,7 @@ export function MessageList({ messages, loading, hasMore, onLoadMore, currentUse
             <span className="font-medium text-sm">{getSenderName(message)}</span>
             {isAgent && message.pod && (
               <span className="text-xs text-muted-foreground">
-                {message.pod.podKey.slice(0, 8)}
+                {getShortPodKey(message.pod.podKey)}
               </span>
             )}
             <span className="text-xs text-muted-foreground">

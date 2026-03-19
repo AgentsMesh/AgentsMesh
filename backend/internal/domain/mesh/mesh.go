@@ -9,6 +9,7 @@ type MeshNode struct {
 	AgentStatus      string        `json:"agent_status"`
 	Model            *string       `json:"model,omitempty"`
 	Title            *string       `json:"title,omitempty"`
+	Alias            *string       `json:"alias,omitempty"`
 	TicketID         *int64        `json:"ticket_id,omitempty"`
 	TicketSlug       *string       `json:"ticket_slug,omitempty"`
 	TicketTitle      *string       `json:"ticket_title,omitempty"`

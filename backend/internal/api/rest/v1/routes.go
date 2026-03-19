@@ -179,6 +179,9 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.PodCoordinator != nil {
 		podOpts = append(podOpts, WithPodCoordinator(svc.PodCoordinator))
 	}
+	if svc.EventBus != nil {
+		podOpts = append(podOpts, WithEventBus(svc.EventBus))
+	}
 	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.PodOrchestrator, podOpts...)
 	pods := rg.Group("/pods")
 	{
@@ -186,6 +189,7 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		pods.POST("", podHandler.CreatePod)
 		pods.GET("/:key", podHandler.GetPod)
 		pods.POST("/:key/terminate", podHandler.TerminatePod)
+		pods.PATCH("/:key/alias", podHandler.UpdatePodAlias)
 		pods.GET("/:key/connect", podHandler.GetConnectionInfo)
 	}
 

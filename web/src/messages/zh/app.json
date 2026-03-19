@@ -77,6 +77,7 @@
     "contextMenu": {
       "openTerminal": "打开终端",
       "viewTicket": "查看任务 {slug}",
+      "rename": "重命名",
       "terminatePod": "终止 Pod",
       "terminateTitle": "终止 Pod",
       "terminateDescription": "确定要终止此 Pod 吗？此操作不可撤销。",
@@ -266,6 +267,17 @@
       "description": "确定要终止这个 Pod 吗？此操作无法撤销，所有正在运行的进程都将被停止。",
       "cancel": "取消",
       "confirm": "终止"
+    },
+    "contextMenu": {
+      "rename": "重命名",
+      "terminate": "终止"
+    },
+    "renameDialog": {
+      "title": "重命名 Pod",
+      "placeholder": "输入显示名称",
+      "hint": "留空将使用默认名称。",
+      "cancel": "取消",
+      "confirm": "保存"
     },
     "loadMore": "加载更多",
     "pod": {

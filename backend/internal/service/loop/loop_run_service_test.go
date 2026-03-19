@@ -99,6 +99,7 @@ func setupLoopRunServiceTestDB(t *testing.T) *gorm.DB {
 			finished_at DATETIME,
 			last_activity DATETIME,
 			agent_waiting_since DATETIME,
+			alias TEXT,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)
 	`)

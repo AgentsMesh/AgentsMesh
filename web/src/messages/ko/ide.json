@@ -85,7 +85,9 @@
       "pluginConfig": "Plugin Configuration",
       "create": "Pod 생성",
       "creating": "생성 중...",
-      "cancel": "취소"
+      "cancel": "취소",
+      "alias": "별칭",
+      "aliasPlaceholder": "Pod 표시 이름을 입력하세요..."
     },
     "sidebar": {
       "settings": {

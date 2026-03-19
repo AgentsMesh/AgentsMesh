@@ -8,6 +8,7 @@ export type EventType =
   | "pod:agent_status_changed"
   | "pod:terminated"
   | "pod:title_changed"
+  | "pod:alias_changed"
   | "pod:init_progress"
   | "channel:message"
   | "channel:message_edited"
@@ -140,6 +141,14 @@ export interface TaskCompletedData {
 export interface PodTitleChangedData {
   pod_key: string;
   title: string;
+}
+
+/**
+ * Pod alias changed event payload
+ */
+export interface PodAliasChangedData {
+  pod_key: string;
+  alias: string | null;
 }
 
 /**

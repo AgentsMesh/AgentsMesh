@@ -179,6 +179,7 @@ type PodCreateRequest struct {
 	AgentTypeID         *int64                 `json:"agent_type_id,omitempty"` // Required by backend API
 	TicketSlug          *string                `json:"ticket_slug,omitempty"`
 	InitialPrompt       string                 `json:"initial_prompt,omitempty"`
+	Alias               *string                `json:"alias,omitempty"` // User-defined display name (max 100 chars)
 	Model               string                 `json:"model,omitempty"`
 	RepositoryID        *int64                 `json:"repository_id,omitempty"`        // Repository ID (mutually exclusive with repository_url)
 	RepositoryURL       *string                `json:"repository_url,omitempty"`       // Direct repository URL (takes precedence over repository_id)

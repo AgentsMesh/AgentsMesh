@@ -85,7 +85,9 @@
       "pluginConfig": "Plugin Configuration",
       "create": "Podを作成",
       "creating": "作成中...",
-      "cancel": "キャンセル"
+      "cancel": "キャンセル",
+      "alias": "エイリアス",
+      "aliasPlaceholder": "Podの表示名を入力..."
     },
     "sidebar": {
       "settings": {

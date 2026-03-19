@@ -118,6 +118,55 @@ func TestCreatePod_CredentialProfileID(t *testing.T) {
 	})
 }
 
+func TestCreatePod_Alias(t *testing.T) {
+	db := setupTestDB(t)
+	svc := newTestPodService(db)
+	ctx := context.Background()
+
+	t.Run("stores alias when provided", func(t *testing.T) {
+		alias := "my-feature-pod"
+		pod, err := svc.CreatePod(ctx, &CreatePodRequest{
+			OrganizationID: 1,
+			RunnerID:       1,
+			CreatedByID:    1,
+			Alias:          &alias,
+		})
+		if err != nil {
+			t.Fatalf("CreatePod failed: %v", err)
+		}
+		if pod.Alias == nil {
+			t.Fatal("Alias should not be nil")
+		}
+		if *pod.Alias != "my-feature-pod" {
+			t.Errorf("Alias = %q, want %q", *pod.Alias, "my-feature-pod")
+		}
+
+		// Verify persisted to DB via GetPod
+		fetched, err := svc.GetPod(ctx, pod.PodKey)
+		if err != nil {
+			t.Fatalf("GetPod failed: %v", err)
+		}
+		if fetched.Alias == nil || *fetched.Alias != "my-feature-pod" {
+			t.Errorf("Persisted Alias = %v, want %q", fetched.Alias, "my-feature-pod")
+		}
+	})
+
+	t.Run("stores nil alias when not provided", func(t *testing.T) {
+		pod, err := svc.CreatePod(ctx, &CreatePodRequest{
+			OrganizationID: 1,
+			RunnerID:       1,
+			CreatedByID:    1,
+			Alias:          nil,
+		})
+		if err != nil {
+			t.Fatalf("CreatePod failed: %v", err)
+		}
+		if pod.Alias != nil {
+			t.Errorf("Alias should be nil, got %q", *pod.Alias)
+		}
+	})
+}
+
 func TestCreatePod_DefaultValues(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestPodService(db)

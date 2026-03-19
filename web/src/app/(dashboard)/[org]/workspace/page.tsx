@@ -10,6 +10,7 @@ import { CenteredSpinner } from "@/components/ui/spinner";
 import { Terminal, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
+import { getShortPodKey } from "@/lib/pod-utils";
 import type { PodData } from "@/lib/api";
 
 export default function WorkspacePage() {
@@ -38,7 +39,7 @@ export default function WorkspacePage() {
       if (!isAlreadyOpen) {
         handleOpenPod(podKey);
         toast.info(t("workspace.podOpened"), {
-          description: `Pod: ${podKey.substring(0, 8)}`,
+          description: `Pod: ${getShortPodKey(podKey)}`,
         });
       }
       // Clear the query param to avoid re-opening on refresh
@@ -73,7 +74,7 @@ export default function WorkspacePage() {
             setShowCreateModal(false);
             if (pod?.pod_key) {
               toast.info(t("workspace.podCreated"), {
-                description: `Pod: ${pod.pod_key.substring(0, 8)}`,
+                description: `Pod: ${getShortPodKey(pod.pod_key)}`,
               });
               handleOpenPod(pod.pod_key);
             }
@@ -96,7 +97,7 @@ export default function WorkspacePage() {
           setShowCreateModal(false);
           if (pod?.pod_key) {
             toast.info(t("workspace.podCreated"), {
-              description: `Pod: ${pod.pod_key.substring(0, 8)}`,
+              description: `Pod: ${getShortPodKey(pod.pod_key)}`,
             });
             handleOpenPod(pod.pod_key);
           }

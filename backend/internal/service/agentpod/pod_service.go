@@ -46,6 +46,7 @@ type CreatePodRequest struct {
 	TicketID          *int64
 	CreatedByID       int64
 	InitialPrompt     string
+	Alias             *string
 	BranchName        *string
 	Model             string
 	PermissionMode    string
@@ -108,6 +109,7 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 		Status:              agentpod.StatusInitializing,
 		AgentStatus:         agentpod.AgentStatusIdle,
 		InitialPrompt:       req.InitialPrompt,
+		Alias:               req.Alias,
 		BranchName:          req.BranchName,
 		Model:               &model,
 		PermissionMode:      &permissionMode,

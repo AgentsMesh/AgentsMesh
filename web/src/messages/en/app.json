@@ -77,6 +77,7 @@
     "contextMenu": {
       "openTerminal": "Open Terminal",
       "viewTicket": "View Ticket {slug}",
+      "rename": "Rename",
       "terminatePod": "Terminate Pod",
       "terminateTitle": "Terminate Pod",
       "terminateDescription": "Are you sure you want to terminate this pod? This action cannot be undone.",
@@ -266,6 +267,17 @@
       "description": "Are you sure you want to terminate this pod? This action cannot be undone and all running processes will be stopped.",
       "cancel": "Cancel",
       "confirm": "Terminate"
+    },
+    "contextMenu": {
+      "rename": "Rename",
+      "terminate": "Terminate"
+    },
+    "renameDialog": {
+      "title": "Rename Pod",
+      "placeholder": "Enter a display name",
+      "hint": "Leave empty to use the default name.",
+      "cancel": "Cancel",
+      "confirm": "Save"
     },
     "loadMore": "Load more",
     "pod": {

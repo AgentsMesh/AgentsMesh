@@ -58,6 +58,15 @@ func (s *PodService) UpdatePodTitle(ctx context.Context, podKey, title string) e
 	return s.repo.UpdateField(ctx, podKey, "title", title)
 }
 
+// UpdateAlias updates the user-assigned alias for a pod.
+// Pass nil to clear the alias.
+func (s *PodService) UpdateAlias(ctx context.Context, podKey string, alias *string) error {
+	if alias != nil {
+		return s.repo.UpdateField(ctx, podKey, "alias", *alias)
+	}
+	return s.repo.UpdateField(ctx, podKey, "alias", nil)
+}
+
 // UpdateSandboxPath updates pod sandbox path and branch
 func (s *PodService) UpdateSandboxPath(ctx context.Context, podKey, sandboxPath, branchName string) error {
 	updates := map[string]interface{}{"sandbox_path": sandboxPath}

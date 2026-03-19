@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utils";
 import { getPodDisplayName } from "@/lib/pod-utils";
 import { Pod } from "@/stores/pod";
-import { Button } from "@/components/ui/button";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import {
   Square,
@@ -14,6 +13,7 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react";
+import { SidebarPodContextMenu } from "./SidebarPodContextMenu";
 
 // Status badge colors - matches PodData status type
 const statusColors: Record<string, { bg: string; text: string; dot: string }> = {
@@ -51,64 +51,58 @@ interface PodListItemProps {
   pod: Pod;
   isOpen: boolean;
   onClick: () => void;
-  onTerminate: (e: React.MouseEvent) => void;
+  onTerminate: () => void;
+  onRename: () => void;
 }
 
 /**
- * Single pod item in the workspace sidebar list
+ * Single pod item in the workspace sidebar list.
+ * Right-click opens context menu with Rename / Terminate.
  */
-export function PodListItem({ pod, isOpen, onClick, onTerminate }: PodListItemProps) {
+export function PodListItem({ pod, isOpen, onClick, onTerminate, onRename }: PodListItemProps) {
   const status = statusColors[pod.status] || statusColors.terminated;
 
   return (
-    <div
-      className={cn(
-        "group flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer",
-        isOpen && "bg-muted/30"
-      )}
-      onClick={onClick}
+    <SidebarPodContextMenu
+      pod={pod}
+      onRename={onRename}
+      onTerminate={onTerminate}
     >
-      {/* Status indicator */}
-      <div className={cn("flex items-center justify-center", status.text)}>
-        {getStatusIcon(pod.status)}
-      </div>
+      <div
+        className={cn(
+          "group flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer",
+          isOpen && "bg-muted/30"
+        )}
+        onClick={onClick}
+      >
+        {/* Status indicator */}
+        <div className={cn("flex items-center justify-center", status.text)}>
+          {getStatusIcon(pod.status)}
+        </div>
 
-      {/* Pod info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm truncate font-mono">
-            {getPodDisplayName(pod)}
-          </span>
-          <AgentStatusBadge
-            agentStatus={pod.agent_status}
-            podStatus={pod.status}
-            variant="dot"
-          />
-          {isOpen && (
-            <Terminal className="w-3 h-3 text-primary flex-shrink-0" />
+        {/* Pod info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm truncate font-mono">
+              {getPodDisplayName(pod)}
+            </span>
+            <AgentStatusBadge
+              agentStatus={pod.agent_status}
+              podStatus={pod.status}
+              variant="dot"
+            />
+            {isOpen && (
+              <Terminal className="w-3 h-3 text-primary flex-shrink-0" />
+            )}
+          </div>
+          {pod.created_by?.name && (
+            <p className="text-xs text-muted-foreground truncate">
+              {pod.created_by.name}
+            </p>
           )}
         </div>
-        {pod.created_by?.name && (
-          <p className="text-xs text-muted-foreground truncate">
-            {pod.created_by.name}
-          </p>
-        )}
       </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {pod.status === "running" && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-            onClick={onTerminate}
-          >
-            <Square className="w-3 h-3" />
-          </Button>
-        )}
-      </div>
-    </div>
+    </SidebarPodContextMenu>
   );
 }
 

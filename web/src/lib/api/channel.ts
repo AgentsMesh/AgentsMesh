@@ -37,6 +37,7 @@ export interface ChannelMessage {
   // Backend returns these field names (from GORM json tags)
   sender_pod_info?: {
     pod_key: string;
+    alias?: string;
     agent_type?: {
       name: string;
     };
@@ -128,6 +129,7 @@ export const channelApi = {
       pods: Array<{
         id: number;
         pod_key: string;
+        alias?: string;
         status: string;
         agent_status: string;
       }>;

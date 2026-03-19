@@ -7,11 +7,13 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { channelApi } from "@/lib/api/channel";
 import { usePodStore } from "@/stores/pod";
+import { getPodDisplayName, getShortPodKey } from "@/lib/pod-utils";
 import { useTranslations } from "next-intl";
 
 interface ChannelPod {
   id: number;
   pod_key: string;
+  alias?: string;
   status: string;
   agent_status: string;
 }
@@ -112,9 +114,6 @@ export function ChannelPodManager({
     [channelId, onPodsChanged]
   );
 
-  // Short display key for pod
-  const shortKey = (podKey: string) => podKey.slice(0, 12);
-
   // Find pod detail from store
   const getPodDetail = (podKey: string) =>
     allPods.find((p) => p.pod_key === podKey);
@@ -164,6 +163,7 @@ export function ChannelPodManager({
                 </p>
                 {channelPods.map((pod) => {
                   const detail = getPodDetail(pod.pod_key);
+                  const displayPod = detail ?? { pod_key: pod.pod_key, alias: pod.alias };
                   return (
                     <div
                       key={pod.pod_key}
@@ -173,10 +173,10 @@ export function ChannelPodManager({
                         <Bot className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
                         <div className="min-w-0">
                           <p className="text-xs font-medium truncate">
-                            {detail?.title || detail?.agent_type?.name || shortKey(pod.pod_key)}
+                            {getPodDisplayName(displayPod)}
                           </p>
                           <p className="text-[10px] text-muted-foreground truncate">
-                            {shortKey(pod.pod_key)}
+                            {getShortPodKey(pod.pod_key)}
                           </p>
                         </div>
                       </div>
@@ -214,10 +214,10 @@ export function ChannelPodManager({
                       <Bot className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="text-xs font-medium truncate">
-                          {pod.title || pod.agent_type?.name || shortKey(pod.pod_key)}
+                          {getPodDisplayName(pod)}
                         </p>
                         <p className="text-[10px] text-muted-foreground truncate">
-                          {shortKey(pod.pod_key)}
+                          {getShortPodKey(pod.pod_key)}
                         </p>
                       </div>
                     </div>

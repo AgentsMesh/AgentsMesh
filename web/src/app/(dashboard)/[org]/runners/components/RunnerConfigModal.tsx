@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { runnerApi, type RunnerData } from "@/lib/api";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
+import { getShortPodKey } from "@/lib/pod-utils";
 
 interface RunnerConfigModalProps {
   t: (key: string, params?: Record<string, string | number>) => string;
@@ -108,7 +109,7 @@ export function RunnerConfigModal({ t, runner, onClose, onUpdated }: RunnerConfi
                     key={pod.pod_key}
                     className="flex items-center justify-between p-2 bg-muted rounded text-sm"
                   >
-                    <code>{pod.pod_key.substring(0, 12)}...</code>
+                    <code>{getShortPodKey(pod.pod_key)}</code>
                     <span className="text-muted-foreground">{pod.status}</span>
                   </div>
                 ))}

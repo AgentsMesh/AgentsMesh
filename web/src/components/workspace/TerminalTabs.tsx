@@ -4,6 +4,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodTitle } from "@/hooks/usePodTitle";
+import { getShortPodKey } from "@/lib/pod-utils";
 import { useTerminalStatus } from "@/hooks/useTerminalStatus";
 import { Button } from "@/components/ui/button";
 import {
@@ -118,7 +119,7 @@ function ConnectionDot({ podKey }: { podKey: string }) {
 
 /** Reads pod title via usePodTitle hook — single source of truth. */
 function TabPaneTitle({ podKey }: { podKey: string }) {
-  const title = usePodTitle(podKey, `Pod ${podKey.substring(0, 8)}`);
+  const title = usePodTitle(podKey, `Pod ${getShortPodKey(podKey)}`);
   return <>{title}</>;
 }
 

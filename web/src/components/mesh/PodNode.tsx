@@ -26,6 +26,7 @@ function PodNode({ data }: PodNodeProps) {
   const displayName = getPodDisplayName(
     {
       pod_key: node.pod_key,
+      alias: node.alias,
       title: node.title,
       ticket: node.ticket_slug
         ? { slug: node.ticket_slug, title: node.ticket_title }

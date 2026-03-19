@@ -77,6 +77,7 @@
     "contextMenu": {
       "openTerminal": "Abrir Terminal",
       "viewTicket": "Ver Ticket {slug}",
+      "rename": "Renombrar",
       "terminatePod": "Terminar Pod",
       "terminateTitle": "Terminar Pod",
       "terminateDescription": "¿Está seguro de que desea terminar este pod? Esta acción no se puede deshacer.",
@@ -249,6 +250,17 @@
       "description": "¿Está seguro de que desea terminar este pod? Esta acción no se puede deshacer y todos los procesos en ejecución se detendrán.",
       "cancel": "Cancelar",
       "confirm": "Terminar"
+    },
+    "contextMenu": {
+      "rename": "Renombrar",
+      "terminate": "Terminar"
+    },
+    "renameDialog": {
+      "title": "Renombrar Pod",
+      "placeholder": "Introduzca un nombre",
+      "hint": "Dejar vacío para usar el nombre predeterminado.",
+      "cancel": "Cancelar",
+      "confirm": "Guardar"
     },
     "loadMore": "Cargar más",
     "pod": {

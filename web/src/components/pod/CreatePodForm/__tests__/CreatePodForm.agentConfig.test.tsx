@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { CreatePodForm } from "../index";
 import {
   mockSetPrompt,
+  mockSetAlias,
   defaultPodCreationData,
   defaultFormState,
   defaultConfigOptions,
@@ -213,6 +214,39 @@ describe("CreatePodForm - Agent Configuration", () => {
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
       fireEvent.change(screen.getByLabelText("ide.createPod.initialPrompt"), { target: { value: "New prompt" } });
       expect(mockSetPrompt).toHaveBeenCalledWith("New prompt");
+    });
+  });
+
+  describe("alias input", () => {
+    it("should render alias input when agent is selected", () => {
+      setupAgentSelectedState();
+      render(<CreatePodForm config={{ scenario: "workspace" }} />);
+      expect(screen.getByLabelText("ide.createPod.alias")).toBeInTheDocument();
+    });
+
+    it("should call setAlias when changed", () => {
+      setupAgentSelectedState();
+      render(<CreatePodForm config={{ scenario: "workspace" }} />);
+      fireEvent.change(screen.getByLabelText("ide.createPod.alias"), { target: { value: "my-pod" } });
+      expect(mockSetAlias).toHaveBeenCalledWith("my-pod");
+    });
+
+    it("should show alias value from form state", () => {
+      setupAgentSelectedState({ alias: "existing-alias" });
+      render(<CreatePodForm config={{ scenario: "workspace" }} />);
+      expect(screen.getByLabelText("ide.createPod.alias")).toHaveValue("existing-alias");
+    });
+
+    it("should have maxLength of 100", () => {
+      setupAgentSelectedState();
+      render(<CreatePodForm config={{ scenario: "workspace" }} />);
+      expect(screen.getByLabelText("ide.createPod.alias")).toHaveAttribute("maxLength", "100");
+    });
+
+    it("should not render alias input when no agent is selected", () => {
+      vi.mocked(useCreatePodForm).mockReturnValue(defaultFormState);
+      render(<CreatePodForm config={{ scenario: "workspace" }} />);
+      expect(screen.queryByLabelText("ide.createPod.alias")).not.toBeInTheDocument();
     });
   });
 

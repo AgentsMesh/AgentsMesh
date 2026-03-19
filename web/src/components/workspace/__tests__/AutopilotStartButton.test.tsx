@@ -4,7 +4,7 @@ import { MutableRefObject } from "react";
 import { AutopilotStartButton } from "../AutopilotStartButton";
 
 // Mock stores
-let mockPods: Array<{ pod_key: string; name?: string }> = [];
+let mockPods: Array<{ pod_key: string; alias?: string; title?: string }> = [];
 
 vi.mock("@/stores/pod", () => ({
   usePodStore: (selector?: (s: Record<string, unknown>) => unknown) => {
@@ -16,7 +16,9 @@ vi.mock("@/stores/pod", () => ({
 }));
 
 vi.mock("@/lib/pod-utils", () => ({
-  getPodDisplayName: (pod: { name?: string; pod_key: string }) => pod.name || pod.pod_key,
+  getPodDisplayName: (pod: { alias?: string; title?: string; pod_key: string }) =>
+    pod.alias || pod.title || pod.pod_key.substring(0, 8),
+  getShortPodKey: (podKey: string) => podKey.substring(0, 8),
 }));
 
 vi.mock("@/components/autopilot", () => ({
@@ -34,7 +36,7 @@ vi.mock("@/components/autopilot", () => ({
 describe("AutopilotStartButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPods = [{ pod_key: "pod-1", name: "My Pod" }];
+    mockPods = [{ pod_key: "pod-1", alias: "My Pod" }];
   });
 
   it("does not render modal when trigger has not been called", () => {

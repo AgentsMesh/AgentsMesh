@@ -46,6 +46,7 @@ func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *RunnerConnectionM
 			finished_at DATETIME,
 			last_activity DATETIME,
 			agent_waiting_since DATETIME,
+			alias TEXT,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)

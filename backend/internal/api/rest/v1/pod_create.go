@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
@@ -19,6 +20,7 @@ type CreatePodRequest struct {
 	RepositoryURL     *string `json:"repository_url"`    // Direct repository URL (takes precedence over repository_id)
 	TicketSlug        *string `json:"ticket_slug"`       // Ticket slug (e.g., "AM-123")
 	InitialPrompt     string  `json:"initial_prompt"`
+	Alias             *string `json:"alias"` // User-defined display name (max 100 chars)
 	BranchName        *string `json:"branch_name"`
 	PermissionMode    *string `json:"permission_mode"` // "plan", "default", or "bypassPermissions"
 
@@ -52,6 +54,19 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
+	// Normalize alias: empty string → nil, validate length
+	if req.Alias != nil {
+		trimmed := strings.TrimSpace(*req.Alias)
+		if trimmed == "" {
+			req.Alias = nil
+		} else if len(trimmed) > 100 {
+			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Alias must be 100 characters or less")
+			return
+		} else {
+			req.Alias = &trimmed
+		}
+	}
+
 	// Build orchestration request (protocol adaptation: HTTP → service layer)
 	orchReq := &agentpod.OrchestrateCreatePodRequest{
 		OrganizationID:      tenant.OrganizationID,
@@ -63,6 +78,7 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 		RepositoryURL:       req.RepositoryURL,
 		TicketSlug:          req.TicketSlug,
 		InitialPrompt:       req.InitialPrompt,
+		Alias:               req.Alias,
 		BranchName:          req.BranchName,
 		PermissionMode:      req.PermissionMode,
 		CredentialProfileID: req.CredentialProfileID,

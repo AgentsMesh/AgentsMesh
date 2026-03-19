@@ -23,6 +23,7 @@ export interface Channel {
   };
   pods?: Array<{
     pod_key: string;
+    alias?: string;
     status: string;
     agent_type?: {
       name: string;

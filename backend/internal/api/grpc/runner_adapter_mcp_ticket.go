@@ -319,6 +319,7 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		RepositoryURL     *string                `json:"repository_url"`
 		TicketSlug        *string                `json:"ticket_slug"`
 		InitialPrompt     string                 `json:"initial_prompt"`
+		Alias             *string                `json:"alias"`
 		BranchName        *string                `json:"branch_name"`
 		PermissionMode    *string                `json:"permission_mode"`
 		// CredentialProfileID specifies which credential profile to use
@@ -347,6 +348,7 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		RepositoryURL:       params.RepositoryURL,
 		TicketSlug:          params.TicketSlug,
 		InitialPrompt:       params.InitialPrompt,
+		Alias:               params.Alias,
 		BranchName:          params.BranchName,
 		PermissionMode:      params.PermissionMode,
 		CredentialProfileID: params.CredentialProfileID,

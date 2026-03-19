@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 )
@@ -14,6 +15,7 @@ type PodHandler struct {
 	runnerConnMgr  *runner.RunnerConnectionManager // Runner gRPC connections
 	podCoordinator *runner.PodCoordinator          // Pod coordination (TerminatePod, terminal routing)
 	orchestrator         *agentpod.PodOrchestrator       // Unified Pod creation logic
+	eventBus             *eventbus.EventBus              // Event bus for real-time events
 }
 
 // PodHandlerOption is a functional option for configuring PodHandler
@@ -37,6 +39,13 @@ func WithPodCoordinator(pc *runner.PodCoordinator) PodHandlerOption {
 func WithPodService(ps PodServiceForHandler) PodHandlerOption {
 	return func(h *PodHandler) {
 		h.podService = ps
+	}
+}
+
+// WithEventBus sets the event bus for publishing real-time events
+func WithEventBus(eb *eventbus.EventBus) PodHandlerOption {
+	return func(h *PodHandler) {
+		h.eventBus = eb
 	}
 }
 

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { PodListItem } from "./PodListItem";
+import { RenameDialog } from "@/components/shared/RenameDialog";
 import { RunnerSection } from "./RunnerSection";
 import { WorkspaceFilters, type FilterType } from "./WorkspaceFilters";
 
@@ -36,6 +37,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
   const fetchSidebarPods = usePodStore((s) => s.fetchSidebarPods);
   const loadMorePods = usePodStore((s) => s.loadMorePods);
   const terminatePod = usePodStore((s) => s.terminatePod);
+  const updatePodAlias = usePodStore((s) => s.updatePodAlias);
   const podHasMore = usePodStore((s) => s.podHasMore);
   const loadingMore = usePodStore((s) => s.loadingMore);
   const runners = useRunnerStore((s) => s.runners);
@@ -51,6 +53,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
   const [searchQuery, setSearchQuery] = useState("");
   const [runnersExpanded, setRunnersExpanded] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [renamePod, setRenamePod] = useState<Pod | null>(null);
 
   // Confirm dialog for terminate
   const { dialogProps, confirm } = useConfirmDialog();
@@ -143,8 +146,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
 
   // Handle terminate with confirmation
   const handleTerminateClick = useCallback(
-    async (podKey: string, e: React.MouseEvent) => {
-      e.stopPropagation();
+    async (podKey: string) => {
       const confirmed = await confirm({
         title: t("workspace.terminateDialog.title"),
         description: t("workspace.terminateDialog.description"),
@@ -159,6 +161,20 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
       }
     },
     [confirm, t, terminatePod, removePaneByPodKey, onTerminatePod]
+  );
+
+  // Handle rename
+  const handleRenameConfirm = useCallback(
+    async (newName: string) => {
+      if (!renamePod) return;
+      try {
+        await updatePodAlias(renamePod.pod_key, newName || null);
+      } catch (error) {
+        console.error("Failed to rename pod:", error);
+      }
+      setRenamePod(null);
+    },
+    [renamePod, updatePodAlias]
   );
 
   return (
@@ -236,7 +252,8 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
                 pod={pod}
                 isOpen={isPodOpen(pod.pod_key)}
                 onClick={() => handleOpenTerminal(pod)}
-                onTerminate={(e) => handleTerminateClick(pod.pod_key, e)}
+                onTerminate={() => handleTerminateClick(pod.pod_key)}
+                onRename={() => setRenamePod(pod)}
               />
             ))}
             {podHasMore && (
@@ -269,6 +286,14 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
         onToggle={setRunnersExpanded}
         currentOrgSlug={currentOrg?.slug}
         t={t}
+      />
+
+      {/* Rename Dialog */}
+      <RenameDialog
+        open={renamePod !== null}
+        onOpenChange={(open) => { if (!open) setRenamePod(null); }}
+        currentName={renamePod?.alias || ""}
+        onConfirm={handleRenameConfirm}
       />
 
       {/* Confirm Dialog */}

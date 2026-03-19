@@ -85,7 +85,9 @@
       "pluginConfig": "插件配置",
       "create": "创建 Pod",
       "creating": "创建中...",
-      "cancel": "取消"
+      "cancel": "取消",
+      "alias": "别名",
+      "aliasPlaceholder": "输入 Pod 显示名称..."
     },
     "sidebar": {
       "settings": {

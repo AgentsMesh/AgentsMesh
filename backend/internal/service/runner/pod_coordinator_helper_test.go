@@ -29,6 +29,7 @@ func setupPodCoordinatorTestDB(t *testing.T) (*gorm.DB, agentpod.PodRepository, 
 			last_activity DATETIME,
 			agent_waiting_since DATETIME,
 			finished_at DATETIME,
+			alias TEXT,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)

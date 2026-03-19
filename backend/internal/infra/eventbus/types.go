@@ -27,6 +27,7 @@ const (
 	EventPodAgentChanged  EventType = "pod:agent_status_changed"
 	EventPodTerminated    EventType = "pod:terminated"
 	EventPodTitleChanged  EventType = "pod:title_changed"
+	EventPodAliasChanged  EventType = "pod:alias_changed"
 	EventPodInitProgress  EventType = "pod:init_progress"
 
 	// Channel events
@@ -180,6 +181,12 @@ type TaskCompletedData struct {
 type PodTitleChangedData struct {
 	PodKey string `json:"pod_key"`
 	Title  string `json:"title"`
+}
+
+// PodAliasChangedData represents the payload for pod alias change events
+type PodAliasChangedData struct {
+	PodKey string  `json:"pod_key"`
+	Alias  *string `json:"alias"`
 }
 
 // ChannelMessageData represents the payload for channel message events

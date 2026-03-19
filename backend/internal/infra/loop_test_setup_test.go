@@ -103,6 +103,7 @@ func setupLoopTestDB(t *testing.T) *gorm.DB {
 			agent_status TEXT NOT NULL DEFAULT 'idle',
 			agent_waiting_since DATETIME,
 			finished_at DATETIME,
+			alias TEXT,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)
 	`).Error

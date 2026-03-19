@@ -99,6 +99,7 @@ func getAuxiliaryTablesSQL() string {
 		last_activity DATETIME,
 		agent_waiting_since DATETIME,
 		finished_at DATETIME,
+		alias TEXT,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);
 	CREATE TABLE IF NOT EXISTS invitations (

@@ -7,6 +7,7 @@ export interface MeshNodeData {
   agent_status: string;
   model?: string;
   title?: string; // OSC 0/2 terminal title
+  alias?: string; // User-defined display name
   ticket_id?: number;
   repository_id?: number;
   created_by_id: number;
