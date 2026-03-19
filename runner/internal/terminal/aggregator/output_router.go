@@ -3,6 +3,8 @@ package aggregator
 
 import (
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
@@ -36,6 +38,11 @@ type OutputRouter struct {
 	// Once a callback is set and the buffer is drained, no further buffering occurs.
 	earlyBuffer []byte
 	earlyDone   bool // true after buffer has been drained (prevents re-buffering)
+
+	// Rate limiting for "early buffer full" warning to prevent log flooding.
+	// Accessed atomically outside the mutex for lock-free fast path.
+	lastDropWarnUnixNano atomic.Int64
+	droppedSinceLastWarn atomic.Int64
 }
 
 // NewOutputRouter creates a new output router.
@@ -47,6 +54,12 @@ func NewOutputRouter(onFlush func([]byte)) *OutputRouter {
 		onFlush: onFlush,
 	}
 }
+
+// dropWarnInterval limits "early buffer full" warnings to at most once per 5 seconds.
+// Without this, high-frequency terminal output can flood the logger with thousands
+// of warnings per second, causing extreme pressure on slog/fmt and potentially
+// triggering runtime crashes (e.g., SIGBUS on ARM64 via asyncPreempt).
+const dropWarnInterval = 5 * time.Second
 
 // Route sends data to the appropriate destination.
 // Priority: Relay (connected) > gRPC > early buffer
@@ -68,13 +81,9 @@ func (r *OutputRouter) Route(data []byte) {
 	onFlush := r.onFlush
 	r.mu.RUnlock()
 
-	log := logger.TerminalTrace()
-
 	// Priority: Relay mode (only when connected) > Legacy gRPC mode
 	if relay != nil && relay.IsConnected() {
-		log.Trace("OutputRouter: sending to relay", "bytes", len(data))
 		if err := relay.SendOutput(data); err != nil {
-			log.Trace("OutputRouter: relay send failed, falling back to gRPC", "bytes", len(data), "error", err)
 			if onFlush != nil {
 				onFlush(data)
 			}
@@ -82,11 +91,6 @@ func (r *OutputRouter) Route(data []byte) {
 		return
 	}
 	if onFlush != nil {
-		if relay != nil {
-			log.Trace("OutputRouter: relay disconnected, falling back to gRPC", "bytes", len(data))
-		} else {
-			log.Trace("OutputRouter: sending to gRPC (no relay)", "bytes", len(data))
-		}
 		onFlush(data)
 		return
 	}
@@ -122,12 +126,40 @@ func (r *OutputRouter) Route(data []byte) {
 				data = data[:remaining]
 			}
 			r.earlyBuffer = append(r.earlyBuffer, data...)
-			log.Debug("OutputRouter: buffered early output", "bytes", len(data), "total_buffered", len(r.earlyBuffer))
 		} else {
-			log.Warn("OutputRouter: early buffer full, dropping output", "bytes", len(data))
+			// Buffer full — track drops and emit a rate-limited warning.
+			// Logging is done outside the lock to avoid holding it during I/O.
+			r.droppedSinceLastWarn.Add(1)
 		}
 	}
 	r.mu.Unlock()
+
+	// Rate-limited warning outside the lock (lock-free fast path via atomics)
+	r.emitDropWarning(len(data))
+}
+
+// emitDropWarning emits a rate-limited warning when output is being dropped.
+// Uses atomics for a lock-free fast path; only acquires the logger when actually logging.
+func (r *OutputRouter) emitDropWarning(bytes int) {
+	dropped := r.droppedSinceLastWarn.Load()
+	if dropped == 0 {
+		return
+	}
+
+	now := time.Now().UnixNano()
+	last := r.lastDropWarnUnixNano.Load()
+	if now-last < int64(dropWarnInterval) {
+		return
+	}
+
+	// CAS to prevent concurrent goroutines from all logging at once
+	if !r.lastDropWarnUnixNano.CompareAndSwap(last, now) {
+		return
+	}
+
+	count := r.droppedSinceLastWarn.Swap(0)
+	logger.Terminal().Warn("OutputRouter: early buffer full, dropping output",
+		"dropped_chunks", count, "last_bytes", bytes)
 }
 
 // SetRelayClient sets the relay client reference.

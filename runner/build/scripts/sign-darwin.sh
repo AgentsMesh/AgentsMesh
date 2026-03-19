@@ -7,7 +7,11 @@ set -euo pipefail
 BINARY="$1"
 
 if [ -z "${MACOS_CERTIFICATE:-}" ]; then
-  echo "MACOS_CERTIFICATE not set, skipping sign"
+  if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
+    echo "ERROR: MACOS_CERTIFICATE not set in CI — binary will be unsigned!" >&2
+    exit 1
+  fi
+  echo "MACOS_CERTIFICATE not set, skipping sign (local build)"
   exit 0
 fi
 

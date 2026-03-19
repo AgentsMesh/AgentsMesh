@@ -35,6 +35,8 @@ builds:
           output: true
           env:
             - ENTITLEMENTS=./build/darwin/entitlements.plist
+            - MACOS_CERTIFICATE={{ .Env.MACOS_CERTIFICATE }}
+            - MACOS_CERTIFICATE_PASSWORD={{ .Env.MACOS_CERTIFICATE_PASSWORD }}
 
 archives:
   - id: cli-archive
