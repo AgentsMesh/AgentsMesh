@@ -86,7 +86,7 @@ func TestNewPodDaemonManager(t *testing.T) {
 	mgr, err := NewPodDaemonManager(dir, socketDir)
 	require.NoError(t, err)
 	assert.NotNil(t, mgr)
-	assert.Equal(t, dir, mgr.workspaceRoot)
+	assert.Equal(t, dir, mgr.sandboxesDir)
 	assert.Equal(t, socketDir, mgr.socketDir)
 	assert.NotEmpty(t, mgr.runnerBinPath) // should resolve to test binary
 }

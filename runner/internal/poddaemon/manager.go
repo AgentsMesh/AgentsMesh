@@ -11,7 +11,7 @@ import (
 
 // PodDaemonManager manages the lifecycle of pod daemon sessions.
 type PodDaemonManager struct {
-	workspaceRoot string
+	sandboxesDir  string // Base directory containing per-pod sandbox directories
 	socketDir     string // IPC socket directory (short path, provided by config)
 	runnerBinPath string
 }
@@ -35,9 +35,9 @@ type CreateOpts struct {
 }
 
 // NewPodDaemonManager creates a new manager.
-// workspaceRoot is the base directory for sandbox directories.
+// sandboxesDir is the base directory containing per-pod sandbox directories (each with pod_daemon.json).
 // socketDir is the directory for IPC sockets (must be short for Unix socket path limits).
-func NewPodDaemonManager(workspaceRoot, socketDir string) (*PodDaemonManager, error) {
+func NewPodDaemonManager(sandboxesDir, socketDir string) (*PodDaemonManager, error) {
 	binPath, err := os.Executable()
 	if err != nil {
 		return nil, fmt.Errorf("get executable path: %w", err)
@@ -48,7 +48,7 @@ func NewPodDaemonManager(workspaceRoot, socketDir string) (*PodDaemonManager, er
 	}
 
 	return &PodDaemonManager{
-		workspaceRoot: workspaceRoot,
+		sandboxesDir:  sandboxesDir,
 		socketDir:     socketDir,
 		runnerBinPath: binPath,
 	}, nil
@@ -134,14 +134,14 @@ func (m *PodDaemonManager) AttachSession(state *PodDaemonState) (*daemonPTY, err
 	return connectDaemon(state.IPCPath)
 }
 
-// RecoverSessions scans the workspace root for existing daemon state files.
+// RecoverSessions scans the sandboxes directory for existing daemon state files.
 func (m *PodDaemonManager) RecoverSessions() ([]*PodDaemonState, error) {
-	entries, err := os.ReadDir(m.workspaceRoot)
+	entries, err := os.ReadDir(m.sandboxesDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("read workspace root: %w", err)
+		return nil, fmt.Errorf("read sandboxes dir: %w", err)
 	}
 
 	var sessions []*PodDaemonState
@@ -149,7 +149,7 @@ func (m *PodDaemonManager) RecoverSessions() ([]*PodDaemonState, error) {
 		if !entry.IsDir() {
 			continue
 		}
-		sandboxPath := filepath.Join(m.workspaceRoot, entry.Name())
+		sandboxPath := filepath.Join(m.sandboxesDir, entry.Name())
 		state, err := LoadState(sandboxPath)
 		if err != nil {
 			continue // No state file or corrupt

@@ -77,6 +77,9 @@ export function RealtimeProvider({
           const data = event.data as PodCreatedData;
           // Fetch the individual pod to avoid resetting pagination state
           usePodStore.getState().fetchPod?.(data.pod_key);
+          // Refresh sidebar to show newly created pod immediately
+          const { currentSidebarFilter, fetchSidebarPods } = usePodStore.getState();
+          fetchSidebarPods?.(currentSidebarFilter);
           // Also refresh Mesh topology since a new pod affects the mesh
           useMeshStore.getState().fetchTopology?.();
           console.log("[Realtime] Pod created:", data.pod_key);
