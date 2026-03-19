@@ -131,7 +131,7 @@ func New(cfg *config.Config) (*Runner, error) {
 	podStore := NewInMemoryPodStore()
 
 	// Create Pod Daemon manager for session persistence
-	podDaemonMgr, err := poddaemon.NewPodDaemonManager(cfg.WorkspaceRoot)
+	podDaemonMgr, err := poddaemon.NewPodDaemonManager(cfg.WorkspaceRoot, cfg.GetSocketDir())
 	if err != nil {
 		log.Warn("Pod Daemon manager unavailable, sessions won't persist across restarts", "error", err)
 	}

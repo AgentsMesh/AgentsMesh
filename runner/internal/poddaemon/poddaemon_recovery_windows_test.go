@@ -29,6 +29,7 @@ func TestDaemonSurvivesParentDeathWindows(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace,
 		runnerBinPath: binPath,
 	}
 
@@ -90,6 +91,7 @@ func TestDaemonSurvivesParentDeathWindows(t *testing.T) {
 	// Phase 4: Fresh manager recovers sessions
 	mgr2 := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace,
 		runnerBinPath: binPath,
 	}
 
@@ -138,6 +140,7 @@ func TestDaemonSurvivesMultipleReattachCyclesWindows(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace,
 		runnerBinPath: binPath,
 	}
 
@@ -212,6 +215,7 @@ func TestRecoveredSessionResizeWindows(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace,
 		runnerBinPath: binPath,
 	}
 
@@ -270,6 +274,7 @@ func TestRecoveredSessionKillWindows(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace,
 		runnerBinPath: binPath,
 	}
 

@@ -221,13 +221,14 @@ func getDefaultShell() string {
 // defaultWorkspaceRoot returns the platform-appropriate default workspace root
 // for writing to config.yaml during registration.
 // On Windows: consistent with config.DefaultWorkspaceRoot().
-// On Unix (local user): uses os.TempDir() since /workspace may not be writable.
+// On Unix: uses config.TempBaseDir() base for consistent short paths on macOS
+// (avoids macOS's long /var/folders/.../T/ from os.TempDir()).
 func defaultWorkspaceRoot() string {
 	if runtime.GOOS == "windows" {
 		// Delegate to config package for consistent Windows paths
 		return config.DefaultWorkspaceRoot()
 	}
-	return filepath.Join(os.TempDir(), "agentsmesh-workspace")
+	return config.TempBaseDir() + "-workspace"
 }
 
 // savedGRPCConfig represents the gRPC configuration saved to ~/.agentsmesh/config.yaml

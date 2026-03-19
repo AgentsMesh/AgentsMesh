@@ -100,3 +100,10 @@ func (c *Config) GetLogPTYDir() string {
 	return filepath.Join(TempBaseDir(), "pty-logs")
 }
 
+// GetSocketDir returns the directory for IPC sockets.
+// Derived from TempBaseDir to guarantee short, predictable paths
+// that stay within Unix socket path limits (104 bytes on macOS).
+func (c *Config) GetSocketDir() string {
+	return filepath.Join(TempBaseDir(), "sockets")
+}
+

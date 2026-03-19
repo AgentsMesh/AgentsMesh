@@ -24,6 +24,7 @@ func TestCreateSessionAndIO(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace, // use workspace as socket dir in tests
 		runnerBinPath: binPath,
 	}
 
@@ -105,6 +106,7 @@ func TestCreateSessionExitCode(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace,
 		runnerBinPath: binPath,
 	}
 
@@ -143,6 +145,7 @@ func TestCreateSessionGracefulStop(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace,
 		runnerBinPath: binPath,
 	}
 
@@ -184,6 +187,7 @@ func TestRecoverSessionsIntegration(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: workspace,
+		socketDir:     workspace,
 		runnerBinPath: binPath,
 	}
 
@@ -377,6 +381,7 @@ func TestWaitForDaemonRetry(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: t.TempDir(),
+		socketDir:     socketDir,
 		runnerBinPath: "unused",
 	}
 
@@ -417,6 +422,7 @@ func TestWaitForDaemonTimeout(t *testing.T) {
 
 	mgr := &PodDaemonManager{
 		workspaceRoot: t.TempDir(),
+		socketDir:     t.TempDir(),
 		runnerBinPath: "unused",
 	}
 

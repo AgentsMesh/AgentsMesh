@@ -14,11 +14,10 @@ func TestIPCPathWindows(t *testing.T) {
 	assert.Equal(t, `\\.\pipe\agentsmesh-test-pod`, path)
 }
 
-func TestIPCPathWindowsIgnoresDir(t *testing.T) {
-	// The dir parameter is ignored on Windows.
-	path1 := IPCPath("/some/dir", "my-pod")
-	path2 := IPCPath("", "my-pod")
-	assert.Equal(t, path1, path2)
+func TestEnsureSocketDirWindows(t *testing.T) {
+	// EnsureSocketDir is a no-op on Windows.
+	err := EnsureSocketDir("any-path")
+	assert.NoError(t, err)
 }
 
 func TestListenAndDialWindows(t *testing.T) {

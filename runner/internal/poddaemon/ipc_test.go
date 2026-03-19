@@ -12,37 +12,22 @@ import (
 )
 
 func TestIPCPath(t *testing.T) {
-	got := IPCPath("/tmp/sandbox", "my-pod")
-	assert.Equal(t, filepath.Join("/tmp/sandbox", "my-pod.sock"), got)
+	got := IPCPath("/tmp/test-sockets", "my-pod")
+	assert.Equal(t, filepath.Join("/tmp/test-sockets", "my-pod.sock"), got)
 }
 
 func TestIPCPathEmptyName(t *testing.T) {
-	got := IPCPath("/tmp/sandbox", "")
-	assert.Equal(t, filepath.Join("/tmp/sandbox", ".sock"), got)
+	got := IPCPath("/tmp/test-sockets", "")
+	assert.Equal(t, filepath.Join("/tmp/test-sockets", ".sock"), got)
 }
 
-func TestIPCPathLongPathFallback(t *testing.T) {
-	// Create a path that would exceed the Unix socket limit
-	longDir := "/var/folders/fd/s_43n3d57433mxqq58bgxxth0000gn/T/agentsmesh-workspace/sandboxes/1-standalone-567ec13b"
-	longName := "1-standalone-567ec13b"
-	candidate := filepath.Join(longDir, longName+".sock")
-	require.Greater(t, len(candidate), maxSocketPath(), "test path should exceed socket limit")
+func TestEnsureSocketDir(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "nested", "sockets")
+	require.NoError(t, EnsureSocketDir(dir))
 
-	got := IPCPath(longDir, longName)
-	assert.Less(t, len(got), maxSocketPath(), "fallback path should be within limit")
-	assert.Contains(t, got, "am-")
-	assert.True(t, filepath.IsAbs(got))
-
-	// Deterministic: same input produces same output
-	got2 := IPCPath(longDir, longName)
-	assert.Equal(t, got, got2)
-}
-
-func TestIPCPathLongPathDifferentInputs(t *testing.T) {
-	longDir := "/var/folders/xx/very_long_directory_name_that_exceeds_limit/T/agentsmesh-workspace/sandboxes"
-	p1 := IPCPath(longDir, "pod-aaaa-bbbb-cccc-dddd")
-	p2 := IPCPath(longDir, "pod-eeee-ffff-gggg-hhhh")
-	assert.NotEqual(t, p1, p2, "different inputs should produce different paths")
+	info, err := os.Stat(dir)
+	require.NoError(t, err)
+	assert.True(t, info.IsDir())
 }
 
 // shortDir creates a short temp dir to avoid macOS 104-byte Unix socket path limit.

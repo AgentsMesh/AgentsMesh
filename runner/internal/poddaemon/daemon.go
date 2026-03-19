@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/envfilter"
 )
 
 // RunDaemon is the main entry point for the daemon process.
@@ -28,7 +30,8 @@ func RunDaemon(configPath string) {
 
 	// Start the child process with PTY
 	proc, err := startDaemonProcess(
-		state.Command, state.Args, state.WorkDir, os.Environ(),
+		state.Command, state.Args, state.WorkDir,
+		envfilter.FilterEnv(os.Environ()),
 		state.Cols, state.Rows,
 	)
 	if err != nil {

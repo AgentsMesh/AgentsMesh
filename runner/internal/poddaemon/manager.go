@@ -5,12 +5,14 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
 // PodDaemonManager manages the lifecycle of pod daemon sessions.
 type PodDaemonManager struct {
 	workspaceRoot string
+	socketDir     string // IPC socket directory (short path, provided by config)
 	runnerBinPath string
 }
 
@@ -34,14 +36,20 @@ type CreateOpts struct {
 
 // NewPodDaemonManager creates a new manager.
 // workspaceRoot is the base directory for sandbox directories.
-func NewPodDaemonManager(workspaceRoot string) (*PodDaemonManager, error) {
+// socketDir is the directory for IPC sockets (must be short for Unix socket path limits).
+func NewPodDaemonManager(workspaceRoot, socketDir string) (*PodDaemonManager, error) {
 	binPath, err := os.Executable()
 	if err != nil {
 		return nil, fmt.Errorf("get executable path: %w", err)
 	}
 
+	if err := EnsureSocketDir(socketDir); err != nil {
+		return nil, fmt.Errorf("ensure socket dir: %w", err)
+	}
+
 	return &PodDaemonManager{
 		workspaceRoot: workspaceRoot,
+		socketDir:     socketDir,
 		runnerBinPath: binPath,
 	}, nil
 }
@@ -54,7 +62,7 @@ func (m *PodDaemonManager) CreateSession(opts CreateOpts) (*daemonPTY, *PodDaemo
 		return nil, nil, fmt.Errorf("sandbox path is required")
 	}
 
-	ipcPath := IPCPath(opts.SandboxPath, opts.PodKey)
+	ipcPath := IPCPath(m.socketDir, opts.PodKey)
 
 	state := &PodDaemonState{
 		PodKey:         opts.PodKey,
@@ -95,6 +103,8 @@ func (m *PodDaemonManager) CreateSession(opts CreateOpts) (*daemonPTY, *PodDaemo
 	// Wait for daemon to start listening on IPC
 	dpty, err := m.waitForDaemon(ipcPath)
 	if err != nil {
+		captureDaemonLog(log, opts.SandboxPath, opts.PodKey)
+		_ = os.Remove(ipcPath) // Clean up socket file if daemon died before Listen()
 		_ = DeleteState(opts.SandboxPath)
 		return nil, nil, fmt.Errorf("connect to daemon: %w", err)
 	}
@@ -149,7 +159,28 @@ func (m *PodDaemonManager) RecoverSessions() ([]*PodDaemonState, error) {
 	return sessions, nil
 }
 
-// CleanupSession removes the state file for a session.
+// CleanupSession removes the state file and associated socket file for a session.
 func (m *PodDaemonManager) CleanupSession(sandboxPath string) error {
+	// Try to read state to find the socket path before deleting
+	if state, err := LoadState(sandboxPath); err == nil && state.IPCPath != "" {
+		_ = os.Remove(state.IPCPath)
+	}
 	return DeleteState(sandboxPath)
+}
+
+const daemonLogFile = "pod_daemon.log"
+
+// captureDaemonLog reads the daemon log and outputs to runner log for diagnostics.
+// Called when daemon fails to become ready, before sandbox cleanup destroys the log.
+func captureDaemonLog(log *slog.Logger, sandboxPath, podKey string) {
+	data, err := os.ReadFile(filepath.Join(sandboxPath, daemonLogFile))
+	if err != nil || len(data) == 0 {
+		return
+	}
+	const maxLen = 2048
+	if len(data) > maxLen {
+		data = data[len(data)-maxLen:]
+	}
+	log.Error("pod daemon log (process exited before IPC ready)",
+		"pod_key", podKey, "log", strings.TrimSpace(string(data)))
 }

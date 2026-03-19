@@ -19,7 +19,13 @@ func Dial(path string) (net.Conn, error) {
 }
 
 // IPCPath returns the named pipe path for the given name.
-// The dir parameter is ignored on Windows.
+// The socketDir parameter is ignored on Windows (named pipes don't use directories).
 func IPCPath(_, name string) string {
 	return `\\.\pipe\agentsmesh-` + name
+}
+
+// EnsureSocketDir is a no-op on Windows.
+// Named pipes don't need a directory.
+func EnsureSocketDir(_ string) error {
+	return nil
 }

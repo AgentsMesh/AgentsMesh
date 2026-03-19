@@ -12,6 +12,7 @@ func TestFilterEnv(t *testing.T) {
 		"PATH=/usr/bin",
 		"AGENTSMESH_NODE_ID=abc123",
 		"AGENTSMESH_ORG_SLUG=myorg",
+		"_AGENTSMESH_POD_DAEMON=/path/to/config",
 		"GRPC_GO_LOG_VERBOSITY_LEVEL=99",
 		"GRPC_GO_LOG_SEVERITY_LEVEL=info",
 		"AWS_ACCESS_KEY_ID=mykey",
