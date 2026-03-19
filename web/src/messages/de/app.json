@@ -77,6 +77,7 @@
     "contextMenu": {
       "openTerminal": "Terminal öffnen",
       "viewTicket": "Ticket {slug} anzeigen",
+      "rename": "Umbenennen",
       "terminatePod": "Pod beenden",
       "terminateTitle": "Pod beenden",
       "terminateDescription": "Möchten Sie diesen Pod wirklich beenden? Diese Aktion kann nicht rückgängig gemacht werden.",
@@ -249,6 +250,17 @@
       "description": "Möchten Sie diesen Pod wirklich beenden? Diese Aktion kann nicht rückgängig gemacht werden und alle laufenden Prozesse werden gestoppt.",
       "cancel": "Abbrechen",
       "confirm": "Beenden"
+    },
+    "contextMenu": {
+      "rename": "Umbenennen",
+      "terminate": "Beenden"
+    },
+    "renameDialog": {
+      "title": "Pod umbenennen",
+      "placeholder": "Anzeigename eingeben",
+      "hint": "Leer lassen für Standardname.",
+      "cancel": "Abbrechen",
+      "confirm": "Speichern"
     },
     "loadMore": "Mehr laden",
     "pod": {

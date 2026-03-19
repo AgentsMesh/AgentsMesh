@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { usePodStore } from "@/stores/pod";
 import { usePodTitle } from "@/hooks/usePodTitle";
+import { getShortPodKey } from "@/lib/pod-utils";
 import type { ConnectionStatus } from "@/stores/terminalConnection";
 import {
   X,
@@ -65,7 +66,7 @@ export function TerminalPaneHeader({
         <Circle className={cn("w-2 h-2 flex-shrink-0", statusColor)} />
         <span className="text-xs text-terminal-text truncate">{title}</span>
         <code className="text-[10px] text-terminal-text-muted truncate">
-          {podKey.substring(0, 8)}
+          {getShortPodKey(podKey)}
         </code>
         <TerminalAgentStatus podKey={podKey} />
       </div>

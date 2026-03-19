@@ -28,6 +28,8 @@ type PodServiceForHandler interface {
 	GetPod(ctx context.Context, podKey string) (*agentpod.Pod, error)
 	TerminatePod(ctx context.Context, podKey string) error
 	GetPodsByTicket(ctx context.Context, ticketID int64) ([]*agentpod.Pod, error)
+	// UpdateAlias updates the user-assigned alias for a pod
+	UpdateAlias(ctx context.Context, podKey string, alias *string) error
 	// GetActivePodBySourcePodKey returns an active pod that was resumed from the given source pod key
 	// Used to prevent multiple pods from resuming the same sandbox simultaneously
 	GetActivePodBySourcePodKey(ctx context.Context, sourcePodKey string) (*agentpod.Pod, error)

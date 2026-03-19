@@ -15,6 +15,7 @@ import type { RunnerData, RunnerPodData, SandboxStatus } from "@/lib/api";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
+import { getShortPodKey } from "@/lib/pod-utils";
 
 interface RunnerPodsTabProps {
   runner: RunnerData;
@@ -153,7 +154,7 @@ export function RunnerPodsTab({
                     </span>
                     {pod.source_pod_key && (
                       <span className="ml-2 text-xs text-muted-foreground">
-                        (resumed from {pod.source_pod_key.slice(0, 8)}...)
+                        (resumed from {getShortPodKey(pod.source_pod_key)}...)
                       </span>
                     )}
                   </td>

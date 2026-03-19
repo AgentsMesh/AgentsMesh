@@ -46,6 +46,7 @@ type OrchestrateCreatePodRequest struct {
 	TicketID          *int64
 	TicketSlug        *string
 	InitialPrompt     string
+	Alias             *string
 	BranchName        *string
 	PermissionMode    *string
 	CredentialProfileID *int64
@@ -235,6 +236,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		TicketID:            req.TicketID,
 		CreatedByID:         req.UserID,
 		InitialPrompt:       req.InitialPrompt,
+		Alias:               req.Alias,
 		BranchName:          req.BranchName,
 		SessionID:           sessionID,
 		SourcePodKey:        req.SourcePodKey,

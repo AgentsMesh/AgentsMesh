@@ -14,6 +14,7 @@ export interface TransformedMessage {
   createdAt: string;
   pod?: {
     podKey: string;
+    alias?: string;
     agentType?: { name: string };
   };
   user?: {

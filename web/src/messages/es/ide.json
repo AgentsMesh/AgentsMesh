@@ -85,7 +85,9 @@
       "pluginConfig": "Plugin Configuration",
       "create": "Crear Pod",
       "creating": "Creando...",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "alias": "Alias",
+      "aliasPlaceholder": "Ingrese un nombre para este pod..."
     },
     "sidebar": {
       "settings": {

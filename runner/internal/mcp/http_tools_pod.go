@@ -47,6 +47,10 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 					"type":        "string",
 					"description": "Initial prompt to send to the new agent pod",
 				},
+				"alias": map[string]interface{}{
+					"type":        "string",
+					"description": "User-defined display name for the pod (max 100 characters). Shown in sidebar instead of auto-generated title.",
+				},
 				"model": map[string]interface{}{
 					"type":        "string",
 					"description": "AI model to use for the pod",
@@ -84,6 +88,9 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 				InitialPrompt: getStringArg(args, "initial_prompt"),
 			}
 
+			if v := getStringArg(args, "alias"); v != "" {
+				req.Alias = &v
+			}
 			if v := getIntArg(args, "runner_id"); v != 0 {
 				req.RunnerID = v
 			}

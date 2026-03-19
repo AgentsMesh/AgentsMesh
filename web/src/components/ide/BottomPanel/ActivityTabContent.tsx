@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Terminal, ArrowRight, ArrowLeft } from "lucide-react";
+import { getShortPodKey } from "@/lib/pod-utils";
 import type { ActivityTabContentProps } from "./types";
 
 /**
@@ -52,7 +53,7 @@ export function ActivityTabContent({
                   className="flex items-center gap-2 px-2 py-1.5 rounded bg-muted/50 text-xs"
                 >
                   <span className="font-mono text-muted-foreground">
-                    {edge.source.substring(0, 8)}
+                    {getShortPodKey(edge.source)}
                   </span>
                   {sourcePod?.model && (
                     <span className="text-muted-foreground">
@@ -94,7 +95,7 @@ export function ActivityTabContent({
                   <span className="font-medium">{t("ide.bottomPanel.currentPod")}</span>
                   <ArrowRight className="w-3 h-3 text-blue-500" />
                   <span className="font-mono text-muted-foreground">
-                    {edge.target.substring(0, 8)}
+                    {getShortPodKey(edge.target)}
                   </span>
                   {targetPod?.model && (
                     <span className="text-muted-foreground">

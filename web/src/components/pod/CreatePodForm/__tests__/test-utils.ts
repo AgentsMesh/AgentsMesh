@@ -5,6 +5,7 @@ export const mockSetSelectedRunnerId = vi.fn();
 export const mockFormReset = vi.fn();
 export const mockFormSubmit = vi.fn();
 export const mockSetPrompt = vi.fn();
+export const mockSetAlias = vi.fn();
 export const mockSetSelectedAgent = vi.fn();
 export const mockResetPluginConfig = vi.fn();
 
@@ -26,6 +27,7 @@ export const defaultFormState = {
   selectedBranch: "",
   selectedCredentialProfile: 0,
   prompt: "",
+  alias: "",
   credentialProfiles: [],
   loadingCredentials: false,
   setSelectedAgent: mockSetSelectedAgent,
@@ -33,6 +35,7 @@ export const defaultFormState = {
   setSelectedBranch: vi.fn(),
   setSelectedCredentialProfile: vi.fn(),
   setPrompt: mockSetPrompt,
+  setAlias: mockSetAlias,
   selectedAgentSlug: "",
   loading: false,
   error: null,
@@ -105,6 +108,7 @@ export function clearAllMocks() {
   mockFormReset.mockClear();
   mockFormSubmit.mockClear();
   mockSetPrompt.mockClear();
+  mockSetAlias.mockClear();
   mockSetSelectedAgent.mockClear();
   mockResetPluginConfig.mockClear();
 }

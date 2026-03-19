@@ -132,6 +132,7 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
         pod: msg.sender_pod_info
           ? {
               podKey: msg.sender_pod_info.pod_key,
+              alias: msg.sender_pod_info.alias,
               agentType: msg.sender_pod_info.agent_type
                 ? { name: msg.sender_pod_info.agent_type.name }
                 : undefined,

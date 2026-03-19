@@ -13,7 +13,7 @@ import { useLoopStore } from "@/stores/loop";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData, PodTitleChangedData, PodInitProgressData, ChannelMessageData, ChannelMessageEditedData, ChannelMessageDeletedData, AutopilotStatusChangedData, AutopilotIterationData, AutopilotCreatedData, AutopilotTerminatedData, AutopilotThinkingData, MREventData, PipelineEventData, LoopRunEventData, LoopRunWarningData, NotificationPayloadData } from "@/lib/realtime";
+import type { ConnectionState, RealtimeEvent, PodStatusChangedData, PodCreatedData, RunnerStatusData, TicketStatusChangedData, TerminalNotificationData, TaskCompletedData, PodTitleChangedData, PodAliasChangedData, PodInitProgressData, ChannelMessageData, ChannelMessageEditedData, ChannelMessageDeletedData, AutopilotStatusChangedData, AutopilotIterationData, AutopilotCreatedData, AutopilotTerminatedData, AutopilotThinkingData, MREventData, PipelineEventData, LoopRunEventData, LoopRunWarningData, NotificationPayloadData } from "@/lib/realtime";
 
 interface RealtimeContextValue {
   connectionState: ConnectionState;
@@ -138,6 +138,14 @@ export function RealtimeProvider({
           // Update pod title in podStore for sidebar display
           usePodStore.getState().updatePodTitle(data.pod_key, data.title);
           console.log("[Realtime] Pod title changed:", data.pod_key, data.title);
+          break;
+        }
+
+        case "pod:alias_changed": {
+          const data = event.data as PodAliasChangedData;
+          // Local-only update to avoid fetchPod overwriting preloaded fields (e.g. created_by)
+          usePodStore.getState().updatePodAliasFromEvent(data.pod_key, data.alias);
+          console.log("[Realtime] Pod alias changed:", data.pod_key, data.alias);
           break;
         }
 

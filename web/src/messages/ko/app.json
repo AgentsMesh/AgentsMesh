@@ -77,6 +77,7 @@
     "contextMenu": {
       "openTerminal": "터미널 열기",
       "viewTicket": "티켓 {slug} 보기",
+      "rename": "이름 변경",
       "terminatePod": "Pod 종료",
       "terminateTitle": "Pod 종료",
       "terminateDescription": "이 Pod를 종료하시겠습니까? 이 작업은 취소할 수 없습니다.",
@@ -249,6 +250,17 @@
       "description": "이 Pod를 종료하시겠습니까? 이 작업은 취소할 수 없으며 실행 중인 모든 프로세스가 중지됩니다.",
       "cancel": "취소",
       "confirm": "종료"
+    },
+    "contextMenu": {
+      "rename": "이름 변경",
+      "terminate": "종료"
+    },
+    "renameDialog": {
+      "title": "Pod 이름 변경",
+      "placeholder": "표시 이름을 입력하세요",
+      "hint": "기본 이름을 사용하려면 비워두세요.",
+      "cancel": "취소",
+      "confirm": "저장"
     },
     "loadMore": "더 보기",
     "pod": {

@@ -59,6 +59,8 @@ interface PodState {
   updatePodStatus: (podKey: string, status: Pod["status"], agentStatus?: string, errorCode?: string, errorMessage?: string, timestamp?: number) => void;
   updateAgentStatus: (podKey: string, agentStatus: string, timestamp?: number) => void;
   updatePodTitle: (podKey: string, title: string, timestamp?: number) => void;
+  updatePodAlias: (podKey: string, alias: string | null) => Promise<void>;
+  updatePodAliasFromEvent: (podKey: string, alias: string | null) => void;
   updatePodInitProgress: (podKey: string, phase: string, progress: number, message: string) => void;
   clearInitProgress: (podKey: string) => void;
   clearError: () => void;
@@ -390,6 +392,39 @@ export const usePodStore = create<PodState>((set, get) => ({
       const result = upsertPod(state, podKey, (existing) =>
         existing ? { ...existing, title } : undefined,
         timestamp,
+      );
+      return result ?? state;
+    });
+  },
+
+  updatePodAlias: async (podKey, alias) => {
+    // Optimistic update
+    set((state) => {
+      const result = upsertPod(state, podKey, (existing) =>
+        existing ? { ...existing, alias: alias ?? undefined } : undefined,
+      );
+      return result ?? state;
+    });
+    try {
+      await podApi.updateAlias(podKey, alias);
+    } catch (error: unknown) {
+      // Revert: refetch the pod to restore server state
+      console.warn("[PodStore] updatePodAlias failed, reverting", error);
+      try {
+        const response = await podApi.get(podKey);
+        set((state) => upsertPod(state, podKey, () => response.pod) ?? state);
+      } catch {
+        // Best-effort revert failed; leave as-is
+      }
+      throw error;
+    }
+  },
+
+  // Local-only alias update from WebSocket event (no API call)
+  updatePodAliasFromEvent: (podKey, alias) => {
+    set((state) => {
+      const result = upsertPod(state, podKey, (existing) =>
+        existing ? { ...existing, alias: alias ?? undefined } : undefined,
       );
       return result ?? state;
     });

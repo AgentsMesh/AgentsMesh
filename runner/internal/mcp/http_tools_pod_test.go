@@ -214,6 +214,39 @@ func TestMergeModelIntoConfigOverrides(t *testing.T) {
 	})
 }
 
+func TestHTTPServerMCPToolsCallCreatePodWithAlias(t *testing.T) {
+	server := NewHTTPServer(nil, 9090)
+	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
+
+	body := bytes.NewBufferString(`{
+		"jsonrpc": "2.0",
+		"id": 1,
+		"method": "tools/call",
+		"params": {
+			"name": "create_pod",
+			"arguments": {
+				"agent_type_id": 1,
+				"runner_id": 2,
+				"alias": "my-feature-pod",
+				"initial_prompt": "Work on feature X"
+			}
+		}
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/mcp", body)
+	req.Header.Set("X-Pod-Key", "test-pod")
+	rec := httptest.NewRecorder()
+
+	server.handleMCP(rec, req)
+
+	var resp MCPResponse
+	json.NewDecoder(rec.Body).Decode(&resp)
+	// Tool should be found (may error on backend call, but alias param should be parsed)
+	if resp.Error != nil && resp.Error.Code == -32601 {
+		t.Error("tool create_pod should be found")
+	}
+}
+
 func TestHTTPServerMCPToolsCallCreatePodMissingAgentTypeID(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")

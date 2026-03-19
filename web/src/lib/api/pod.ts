@@ -14,6 +14,7 @@ export interface PodData {
   last_activity?: string;
   created_at: string;
   title?: string; // OSC 0/2 terminal title
+  alias?: string; // User-defined display name
   runner?: {
     id: number;
     node_id: string;
@@ -71,6 +72,7 @@ export const podApi = {
     repository_id?: number;
     ticket_slug?: string;
     initial_prompt?: string;
+    alias?: string; // User-defined display name (max 100 chars)
     branch_name?: string;
     config_overrides?: Record<string, unknown>;
     credential_profile_id?: number; // User's credential profile ID (undefined = RunnerHost mode)
@@ -108,4 +110,12 @@ export const podApi = {
       token: string;
       pod_key: string;
     }>(`${orgPath("/pods")}/${key}/terminal/connect`),
+
+  // Update pod alias (user-defined display name)
+  // Pass null to clear the alias
+  updateAlias: (key: string, alias: string | null) =>
+    request<{ message: string }>(`${orgPath("/pods")}/${key}/alias`, {
+      method: "PATCH",
+      body: { alias },
+    }),
 };

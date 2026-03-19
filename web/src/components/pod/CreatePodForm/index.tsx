@@ -15,6 +15,7 @@ import { CredentialSelect } from "./CredentialSelect";
 import { RepositorySelect, BranchInput } from "./RepositorySelect";
 import { PromptInput } from "./PromptInput";
 import { AdvancedOptions } from "./AdvancedOptions";
+import { Input } from "@/components/ui/input";
 import { estimateWorkspaceTerminalSize } from "@/lib/terminal-size";
 
 /**
@@ -157,6 +158,20 @@ export function CreatePodForm({
           {/* Advanced Options (collapsed by default) */}
           {form.selectedAgent && (
             <AdvancedOptions t={t}>
+              {/* Pod Alias (optional display name) */}
+              <div>
+                <label htmlFor="pod-alias" className="block text-sm font-medium mb-1">
+                  {t("ide.createPod.alias")}
+                </label>
+                <Input
+                  id="pod-alias"
+                  value={form.alias}
+                  onChange={(e) => form.setAlias(e.target.value)}
+                  placeholder={t("ide.createPod.aliasPlaceholder")}
+                  maxLength={100}
+                />
+              </div>
+
               {/* Runner Select (manual override, optional) */}
               <RunnerSelect
                 runners={runners}

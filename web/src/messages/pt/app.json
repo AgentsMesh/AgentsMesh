@@ -77,6 +77,7 @@
     "contextMenu": {
       "openTerminal": "Abrir Terminal",
       "viewTicket": "Ver Ticket {slug}",
+      "rename": "Renomear",
       "terminatePod": "Encerrar Pod",
       "terminateTitle": "Encerrar Pod",
       "terminateDescription": "Tem certeza de que deseja encerrar este pod? Esta ação não pode ser desfeita.",
@@ -249,6 +250,17 @@
       "description": "Tem certeza de que deseja encerrar este pod? Esta ação não pode ser desfeita e todos os processos em execução serão interrompidos.",
       "cancel": "Cancelar",
       "confirm": "Encerrar"
+    },
+    "contextMenu": {
+      "rename": "Renomear",
+      "terminate": "Encerrar"
+    },
+    "renameDialog": {
+      "title": "Renomear Pod",
+      "placeholder": "Digite um nome de exibição",
+      "hint": "Deixe vazio para usar o nome padrão.",
+      "cancel": "Cancelar",
+      "confirm": "Salvar"
     },
     "loadMore": "Carregar mais",
     "pod": {

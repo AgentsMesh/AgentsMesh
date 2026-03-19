@@ -150,6 +150,7 @@ func (s *Service) podToNode(pod *agentpod.Pod) mesh.MeshNode {
 		AgentStatus:  pod.AgentStatus,
 		Model:        pod.Model,
 		Title:        pod.Title,
+		Alias:        pod.Alias,
 		TicketID:     pod.TicketID,
 		RepositoryID: pod.RepositoryID,
 		CreatedByID:  pod.CreatedByID,

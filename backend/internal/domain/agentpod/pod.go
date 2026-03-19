@@ -76,6 +76,9 @@ type Pod struct {
 	// Terminal title from OSC 0/2 escape sequences
 	Title *string `gorm:"size:255" json:"title,omitempty"`
 
+	// User-assigned alias for display purposes
+	Alias *string `gorm:"size:100" json:"alias,omitempty"`
+
 	// Session ID for agent session management (e.g., Claude Code --session-id)
 	// Used for resume functionality - allows agents to restore conversation context
 	SessionID *string `gorm:"size:36" json:"session_id,omitempty"`

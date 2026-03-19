@@ -24,6 +24,7 @@ export interface CreatePodFormState {
   selectedBranch: string;
   selectedCredentialProfile: number; // 0 = RunnerHost, >0 = custom profile ID
   prompt: string;
+  alias: string;
 
   // Credential profiles for selected agent
   credentialProfiles: CredentialProfileData[];
@@ -35,6 +36,7 @@ export interface CreatePodFormState {
   setSelectedBranch: (branch: string) => void;
   setSelectedCredentialProfile: (id: number) => void;
   setPrompt: (prompt: string) => void;
+  setAlias: (alias: string) => void;
 
   // Computed
   selectedAgentSlug: string;
@@ -74,6 +76,7 @@ export function useCreatePodForm(
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [selectedCredentialProfile, setSelectedCredentialProfile] = useState<number>(RUNNER_HOST_PROFILE_ID);
   const [prompt, setPrompt] = useState<string>("");
+  const [alias, setAlias] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<FormValidationErrors>({});
@@ -212,6 +215,7 @@ export function useCreatePodForm(
     setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
     setCredentialProfiles([]);
     setPrompt("");
+    setAlias("");
     setError(null);
     setValidationErrors({});
     prefsInitializedRef.current = false;
@@ -253,6 +257,7 @@ export function useCreatePodForm(
           repository_id: selectedRepository || undefined,
           branch_name: selectedBranch || undefined,
           initial_prompt: finalPrompt,
+          alias: alias.trim() || undefined,
           config_overrides: config,
           credential_profile_id: selectedCredentialProfile,
           ticket_slug: options?.ticketSlug,
@@ -282,7 +287,7 @@ export function useCreatePodForm(
         setLoading(false);
       }
     },
-    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, selectedCredentialProfile, prompt, onSuccess, validate, setLastChoices]
+    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, selectedCredentialProfile, prompt, alias, onSuccess, validate, setLastChoices]
   );
 
   return {
@@ -291,6 +296,7 @@ export function useCreatePodForm(
     selectedBranch,
     selectedCredentialProfile,
     prompt,
+    alias,
     credentialProfiles,
     loadingCredentials,
     setSelectedAgent,
@@ -298,6 +304,7 @@ export function useCreatePodForm(
     setSelectedBranch,
     setSelectedCredentialProfile,
     setPrompt,
+    setAlias,
     selectedAgentSlug,
     loading,
     error,
