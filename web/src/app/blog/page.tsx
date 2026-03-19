@@ -20,8 +20,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();
 
   return {
-    title: `${t("blog.hero.title")} | AgentsMesh`,
+    title: { absolute: `${t("blog.hero.title")} | AgentsMesh` },
     description: t("blog.hero.subtitle"),
+    alternates: {
+      canonical: "https://agentsmesh.ai/blog",
+    },
+    openGraph: {
+      title: `${t("blog.hero.title")} | AgentsMesh`,
+      description: t("blog.hero.subtitle"),
+      url: "https://agentsmesh.ai/blog",
+    },
   };
 }
 
@@ -33,6 +41,28 @@ export default async function BlogPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://agentsmesh.ai",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Blog",
+              },
+            ],
+          }),
+        }}
+      />
       <PageHeader />
 
       {/* Hero */}

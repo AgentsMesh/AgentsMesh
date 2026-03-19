@@ -1,0 +1,140 @@
+# AgentsMesh — Full Documentation for LLMs
+
+> AI Agent Fleet Command Center — orchestrate Claude Code, Codex CLI, Gemini CLI, Aider and more in one platform.
+
+AgentsMesh is a multi-tenant AI Code Agent collaboration platform sitting at the **L5 organizational layer** of the AI agent stack. Rather than building individual AI agents, AgentsMesh manages how multiple AI coding agents coordinate, collaborate, and ship production-grade software together. Think of it as a fleet command center: you define the mission, assign agents, and AgentsMesh handles the coordination.
+
+## Product Positioning — L1-L5 Stack
+
+```
+L5  Organizational    AgentsMesh        – Fleet command center, manage N agents collaborating
+L4  Orchestration     n8n, Langflow     – Workflow orchestration
+L3  Runtime           Sculptor, E2B     – Agent execution environments / sandboxes
+L2  Integration       Composio, MCP     – Tool/API connectors
+L1  Agent             Claude Code, Devin – Individual AI agents
+```
+
+L5 core definition: AgentsMesh does not write code itself. It manages how a fleet of code-writing agents coordinate their work.
+
+## Core Features
+
+### AgentPod
+Isolated execution environments with PTY terminals for running AI agents securely. Each pod provides a sandboxed workspace with its own terminal session, file system isolation via Git worktrees, and real-time output streaming. Pods are created on-demand and destroyed after use, ensuring clean environments for every task.
+
+### Channels
+Multi-agent collaboration spaces where agents communicate and coordinate work. Channels serve as shared workspaces where multiple AI agents can exchange context, share findings, and coordinate on complex tasks that span multiple codebases or require different expertise.
+
+### Mesh Topology
+Visual mapping of agent relationships and task dependencies. The mesh view provides a real-time graph showing how agents are connected, what tasks they're working on, and how work flows between them. This enables teams to understand and optimize their multi-agent workflows.
+
+### Tickets
+Kanban-style task management integrated with AI agent workflows. Tickets represent units of work that can be assigned to agents, tracked through stages, and linked to specific pods and channels. The system supports automated ticket creation from code analysis and PR reviews.
+
+### Loops
+Automated feedback loops for iterative agent-driven development. Loops define repeatable patterns where agents execute, validate, and refine their work through multiple iterations until quality criteria are met.
+
+### Workspace
+Git worktree-based isolation ensuring each agent works on its own branch. Workspaces provide clean Git environments for each agent, preventing conflicts between parallel tasks. Changes are merged back through standard Git workflows with automated conflict detection.
+
+### Repositories
+Git provider integration (GitHub, GitLab) with OAuth-based access. Repositories connect your existing code hosting to AgentsMesh, enabling agents to clone, branch, commit, and push without manual credential management.
+
+## Supported AI Agents
+
+- Claude Code (Anthropic) — Primary integration with full terminal support
+- Codex CLI (OpenAI) — OpenAI's command-line coding agent
+- Gemini CLI (Google) — Google's terminal-based AI coding assistant
+- Aider — Open-source AI pair programming tool
+- Any terminal-based AI coding agent that runs in a PTY
+
+## Architecture
+
+- **Frontend**: Next.js (App Router, TypeScript, Tailwind CSS)
+- **Backend**: Go API server (Gin + GORM) with PostgreSQL and Redis
+- **Runner**: Self-hosted Go daemon connecting via gRPC + mTLS
+- **Security**: End-to-end encryption, PKI certificate management, per-tenant isolation
+
+## Deployment Models
+
+### Cloud (SaaS)
+Fully managed hosted version at agentsmesh.ai. Zero infrastructure management, automatic updates, and built-in scaling. Ideal for teams wanting to get started immediately.
+
+### Self-Hosted
+Deploy AgentsMesh on your own infrastructure. Docker Compose for single-node setups or Kubernetes for production clusters. Full control over data residency, network policies, and security configuration.
+
+### Air-Gapped
+Completely offline deployment for organizations with strict security requirements. All components run within your network boundary with no external connectivity required. PKI and certificate management are fully self-contained.
+
+## Pricing Model
+
+AgentsMesh uses a BYOK (Bring Your Own Key) model:
+- You provide your own API keys for AI providers (Anthropic, OpenAI, Google, etc.)
+- AgentsMesh charges a platform fee for orchestration, collaboration, and infrastructure
+- Free tier available for individual developers and small teams
+- Enterprise tier with SSO, audit logging, and priority support
+
+## API Overview
+
+AgentsMesh provides a comprehensive REST API for programmatic access:
+
+- **Authentication**: JWT-based auth with OAuth support (GitHub, GitLab, Google)
+- **Pods**: Create, manage, and monitor agent execution environments
+- **Channels**: Create collaboration spaces and manage agent participants
+- **Tickets**: CRUD operations for task management with status tracking
+- **Loops**: Configure and trigger automated feedback loops
+- **Repositories**: Connect and manage Git provider integrations
+- **Runners**: Register and monitor self-hosted runner instances
+
+## Documentation Pages
+
+- [Homepage](https://agentsmesh.ai): Product overview and features
+- [Documentation Hub](https://agentsmesh.ai/docs): Complete platform documentation
+- [Getting Started](https://agentsmesh.ai/docs/getting-started): Quick start guide
+- [Core Concepts](https://agentsmesh.ai/docs/concepts): Platform architecture and terminology
+- [FAQ](https://agentsmesh.ai/docs/faq): Frequently asked questions
+
+### Features
+- [AgentPod](https://agentsmesh.ai/docs/features/agentpod): Isolated agent environments
+- [Channels](https://agentsmesh.ai/docs/features/channels): Multi-agent collaboration
+- [Loops](https://agentsmesh.ai/docs/features/loops): Automated feedback loops
+- [Mesh](https://agentsmesh.ai/docs/features/mesh): Agent topology visualization
+- [Repositories](https://agentsmesh.ai/docs/features/repositories): Git integration
+- [Tickets](https://agentsmesh.ai/docs/features/tickets): Task management
+- [Workspace](https://agentsmesh.ai/docs/features/workspace): Git worktree isolation
+
+### Runners
+- [Runner Setup](https://agentsmesh.ai/docs/runners/setup): Self-hosted runner installation
+- [MCP Tools](https://agentsmesh.ai/docs/runners/mcp-tools): Model Context Protocol integration
+
+### Guides
+- [Git Integration](https://agentsmesh.ai/docs/guides/git-integration): Connecting GitHub/GitLab
+- [Multi-Agent Workflows](https://agentsmesh.ai/docs/guides/multi-agent-workflows): Orchestrating agent teams
+- [Team Management](https://agentsmesh.ai/docs/guides/team-management): Organization and access control
+
+### API Reference
+- [API Overview](https://agentsmesh.ai/docs/api): REST API introduction
+- [Authentication](https://agentsmesh.ai/docs/api/authentication): JWT and OAuth
+- [Channels API](https://agentsmesh.ai/docs/api/channels): Collaboration endpoints
+- [Loops API](https://agentsmesh.ai/docs/api/loops): Feedback loop endpoints
+- [Pods API](https://agentsmesh.ai/docs/api/pods): Pod management endpoints
+- [Repositories API](https://agentsmesh.ai/docs/api/repositories): Git integration endpoints
+- [Runners API](https://agentsmesh.ai/docs/api/runners): Runner management endpoints
+- [Tickets API](https://agentsmesh.ai/docs/api/tickets): Task management endpoints
+
+### Other Pages
+- [Blog](https://agentsmesh.ai/blog): Product updates and engineering insights
+- [Enterprise](https://agentsmesh.ai/enterprise): Self-hosted enterprise deployment
+- [Demo](https://agentsmesh.ai/demo): Request a personalized demo
+- [Changelog](https://agentsmesh.ai/changelog): Release notes and version history
+- [About](https://agentsmesh.ai/about): Company information
+- [Careers](https://agentsmesh.ai/careers): Job openings
+- [Privacy Policy](https://agentsmesh.ai/privacy): Data handling practices
+- [Terms of Service](https://agentsmesh.ai/terms): Usage terms
+
+## Use Cases
+
+- Engineering teams orchestrating multiple AI agents on large codebases
+- Organizations requiring self-hosted AI development infrastructure with air-gapped support
+- Teams adopting BYOK (Bring Your Own Key) for AI provider flexibility and cost control
+- Multi-agent workflows for parallel feature development, code review, and refactoring
+- Enterprise organizations needing audit logging, SSO, and compliance for AI-assisted development

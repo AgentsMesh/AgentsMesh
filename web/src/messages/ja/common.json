@@ -24,7 +24,9 @@
     "saving": "Saving...",
     "refresh": "Refresh",
     "connected": "Connected",
-    "disconnected": "Disconnected"
+    "disconnected": "Disconnected",
+    "pageNotFound": "お探しのページは存在しないか、移動されました。",
+    "backToHome": "ホームに戻る"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",

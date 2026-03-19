@@ -69,6 +69,11 @@ export default function Home() {
       name: "AgentsMesh",
       url: "https://agentsmesh.ai",
       logo: "https://agentsmesh.ai/icons/icon-512.png",
+      sameAs: [
+        "https://github.com/AgentsMesh/AgentsMesh",
+        "https://x.com/agentsmeshai",
+        "https://discord.gg/3RcX7VBbH9",
+      ],
     },
   };
 

@@ -24,7 +24,9 @@
     "saving": "Saving...",
     "refresh": "Refresh",
     "connected": "Connected",
-    "disconnected": "Disconnected"
+    "disconnected": "Disconnected",
+    "pageNotFound": "찾으시는 페이지가 존재하지 않거나 이동되었습니다.",
+    "backToHome": "홈으로 돌아가기"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",

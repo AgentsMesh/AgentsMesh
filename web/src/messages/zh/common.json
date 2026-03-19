@@ -32,7 +32,9 @@
     "timeAgoDays": "{count}天前",
     "timeInMinutes": "{count}分钟后",
     "timeInHours": "{count}小时后",
-    "timeInDays": "{count}天后"
+    "timeInDays": "{count}天后",
+    "pageNotFound": "您访问的页面不存在或已被移动。",
+    "backToHome": "返回首页"
   },
   "apiErrors": {
     "ACCESS_DENIED": "访问被拒绝",

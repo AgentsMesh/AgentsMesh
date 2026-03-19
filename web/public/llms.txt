@@ -1,0 +1,53 @@
+# AgentsMesh
+
+> AI Agent Fleet Command Center — orchestrate Claude Code, Codex CLI, Gemini CLI, Aider and more in one platform.
+
+AgentsMesh is a multi-tenant AI Code Agent collaboration platform. It sits at the L5 organizational layer of the AI agent stack — managing how multiple AI coding agents coordinate, collaborate, and ship production-grade software together.
+
+## Core Features
+
+- **AgentPod**: Isolated execution environments with PTY terminals for running AI agents securely
+- **Channels**: Multi-agent collaboration spaces where agents communicate and coordinate work
+- **Mesh Topology**: Visual mapping of agent relationships and task dependencies
+- **Tickets**: Kanban-style task management integrated with AI agent workflows
+- **Loops**: Automated feedback loops for iterative agent-driven development
+- **Workspace**: Git worktree-based isolation ensuring each agent works on its own branch
+- **Repositories**: Git provider integration (GitHub, GitLab) with OAuth-based access
+
+## Supported AI Agents
+
+- Claude Code (Anthropic)
+- Codex CLI (OpenAI)
+- Gemini CLI (Google)
+- Aider
+- Any terminal-based AI coding agent
+
+## Architecture
+
+- **Frontend**: Next.js (App Router, TypeScript, Tailwind CSS)
+- **Backend**: Go API server (Gin + GORM) with PostgreSQL and Redis
+- **Runner**: Self-hosted Go daemon connecting via gRPC + mTLS
+- **Security**: End-to-end encryption, PKI certificate management, tenant isolation
+
+## Key Pages
+
+- [Homepage](https://agentsmesh.ai): Product overview and features
+- [Documentation](https://agentsmesh.ai/docs): Complete platform documentation
+- [Getting Started](https://agentsmesh.ai/docs/getting-started): Quick start guide
+- [API Reference](https://agentsmesh.ai/docs/api): REST API documentation
+- [Blog](https://agentsmesh.ai/blog): Product updates and engineering insights
+- [Enterprise](https://agentsmesh.ai/enterprise): Self-hosted enterprise deployment
+- [Demo](https://agentsmesh.ai/demo): Request a personalized demo
+- [Changelog](https://agentsmesh.ai/changelog): Release notes and version history
+- [FAQ](https://agentsmesh.ai/docs/faq): Frequently asked questions
+
+## Use Cases
+
+- Engineering teams orchestrating multiple AI agents on large codebases
+- Organizations requiring self-hosted AI development infrastructure
+- Teams adopting BYOK (Bring Your Own Key) for AI provider flexibility
+- Multi-agent workflows for parallel feature development and code review
+
+## Optional
+
+- [Full documentation for LLMs](https://agentsmesh.ai/llms-full.txt): Extended version with comprehensive details

@@ -24,7 +24,9 @@
     "saving": "Saving...",
     "refresh": "Refresh",
     "connected": "Connected",
-    "disconnected": "Disconnected"
+    "disconnected": "Disconnected",
+    "pageNotFound": "A página que você procura não existe ou foi movida.",
+    "backToHome": "Voltar para o início"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",

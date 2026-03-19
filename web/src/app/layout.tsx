@@ -47,20 +47,11 @@ export const metadata: Metadata = {
     title: "AgentsMesh - AI Agent Fleet Command Center",
     description: "Don't just vibe code. Ship an enterprise-grade product. An agent fleet command center where you plan, collaborate, and ship — all in one place.",
     url: "https://agentsmesh.ai",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "AgentsMesh - AI Agent Fleet Command Center",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "AgentsMesh - AI Agent Fleet Command Center",
     description: "Don't just vibe code. Ship an enterprise-grade product. Orchestrate Claude Code, Codex CLI, Gemini CLI, Aider and more.",
-    images: ["/og-image.png"],
   },
   alternates: {
     canonical: "https://agentsmesh.ai",

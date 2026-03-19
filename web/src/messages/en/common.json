@@ -32,7 +32,9 @@
     "timeAgoDays": "{count}d ago",
     "timeInMinutes": "in {count}m",
     "timeInHours": "in {count}h",
-    "timeInDays": "in {count}d"
+    "timeInDays": "in {count}d",
+    "pageNotFound": "The page you're looking for doesn't exist or has been moved.",
+    "backToHome": "Back to Home"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",

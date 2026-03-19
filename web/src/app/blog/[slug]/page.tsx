@@ -35,12 +35,16 @@ export async function generateMetadata({
   if (!post) return { title: "Post not found" };
 
   return {
-    title: `${post.title} | AgentsMesh Blog`,
+    title: post.title,
     description: post.excerpt,
+    alternates: {
+      canonical: `https://agentsmesh.ai/blog/${slug}`,
+    },
     openGraph: {
       title: post.title,
       description: post.excerpt,
       type: "article",
+      url: `https://agentsmesh.ai/blog/${slug}`,
       publishedTime: post.date,
       authors: [post.author],
       locale: dateLocaleMap[locale] ?? "en-US",
@@ -64,6 +68,58 @@ export default async function BlogPostPage({
 
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            {
+              "@context": "https://schema.org",
+              "@type": "BlogPosting",
+              headline: post.title,
+              description: post.excerpt,
+              datePublished: post.date,
+              image: `https://agentsmesh.ai/blog/${slug}/opengraph-image`,
+              author: {
+                "@type": "Person",
+                name: post.author,
+              },
+              publisher: {
+                "@type": "Organization",
+                name: "AgentsMesh",
+                url: "https://agentsmesh.ai",
+              },
+              url: `https://agentsmesh.ai/blog/${slug}`,
+              mainEntityOfPage: {
+                "@type": "WebPage",
+                "@id": `https://agentsmesh.ai/blog/${slug}`,
+              },
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "Home",
+                  item: "https://agentsmesh.ai",
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: "Blog",
+                  item: "https://agentsmesh.ai/blog",
+                },
+                {
+                  "@type": "ListItem",
+                  position: 3,
+                  name: post.title,
+                },
+              ],
+            },
+          ]),
+        }}
+      />
       <PageHeader />
 
       {/* Article */}
