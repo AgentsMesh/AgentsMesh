@@ -45,6 +45,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		error_code TEXT,
 		error_message TEXT,
 		title TEXT,
+		alias TEXT,
 		session_id TEXT,
 		source_pod_key TEXT,
 		credential_profile_id INTEGER,

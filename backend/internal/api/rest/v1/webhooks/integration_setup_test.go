@@ -141,7 +141,8 @@ func setupIntegrationDB(t *testing.T) *gorm.DB {
 		agent_status TEXT NOT NULL DEFAULT 'idle',
 		last_activity DATETIME,
 		agent_waiting_since DATETIME,
-		finished_at DATETIME
+		finished_at DATETIME,
+		alias TEXT
 	)`)
 
 	// Seed test data
