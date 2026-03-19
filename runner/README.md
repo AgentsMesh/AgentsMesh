@@ -28,13 +28,6 @@ curl -fsSL https://agentsmesh.ai/install.sh | sh
 irm https://agentsmesh.ai/install.ps1 | iex
 ```
 
-### macOS (Homebrew)
-
-```bash
-brew tap agentsmesh/tap https://github.com/AgentsMesh/BrewCask
-brew install agentsmesh/tap/agentsmesh-runner
-```
-
 All binaries are available on the [Releases](https://github.com/AgentsMesh/AgentsMesh/releases/latest) page (tar.gz, deb, rpm, zip).
 
 ## Quick Start

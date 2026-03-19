@@ -151,7 +151,7 @@
         "description": "Runner 是 AI 智能体 Pod 的执行环境。在你的开发机器或服务器上安装 AgentsMesh Runner。",
         "methodToken": "使用令牌注册",
         "methodLogin": "使用浏览器登录注册",
-        "seeSetup": "查看 {link} 了解 Docker、Homebrew、Linux 包和 Kubernetes 部署选项。"
+        "seeSetup": "查看 {link} 了解 Docker、Linux 包和 Kubernetes 部署选项。"
       },
       "step3": {
         "title": "安装 AI 智能体 CLI",
@@ -648,7 +648,6 @@
         "quickInstall": {
           "title": "快速安装",
           "oneLineTitle": "一行命令安装（推荐）",
-          "brewTitle": "macOS (Homebrew)",
           "linuxTitle": "Linux（包管理器）",
           "afterInstall": "安装后",
           "tokenHint": "在 AgentsMesh Web 界面的 设置 → Runner → 创建令牌 中获取注册令牌。",

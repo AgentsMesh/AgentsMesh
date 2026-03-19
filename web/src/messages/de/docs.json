@@ -151,7 +151,7 @@
         "description": "Ein Runner ist die Ausführungsumgebung, in der KI-Agenten-Pods laufen. Installieren Sie AgentsMesh Runner auf Ihrer Entwicklungsmaschine oder Ihrem Server.",
         "methodToken": "Mit einem Token registrieren",
         "methodLogin": "Mit Browser-Login registrieren",
-        "seeSetup": "Siehe {link} für Docker-, Homebrew-, Linux-Paket- und Kubernetes-Bereitstellungsoptionen."
+        "seeSetup": "Siehe {link} für Docker-, Linux-Paket- und Kubernetes-Bereitstellungsoptionen."
       },
       "step3": {
         "title": "KI-Agenten-CLIs installieren",
@@ -648,7 +648,6 @@
         "quickInstall": {
           "title": "Quick Installation",
           "oneLineTitle": "One-Line Install (Recommended)",
-          "brewTitle": "macOS (Homebrew)",
           "linuxTitle": "Linux (Package Manager)",
           "afterInstall": "After Installation",
           "tokenHint": "Get your registration token from Settings → Runners → Create Token in the AgentsMesh web interface.",

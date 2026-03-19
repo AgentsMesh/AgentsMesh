@@ -56,12 +56,6 @@ The Runner is a lightweight daemon that runs on your machine and executes AI age
 curl -fsSL https://agentsmesh.ai/install.sh | sh
 ```
 
-Or via Homebrew:
-
-```bash
-brew install agentsmesh/tap/agentsmesh-runner
-```
-
 > See the [Runner README](runner/) for more installation options (deb, rpm, Windows, etc.)
 
 ### 2. Login

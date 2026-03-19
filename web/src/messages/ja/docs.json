@@ -151,7 +151,7 @@
         "description": "RunnerはAIエージェントPodの実行環境です。開発マシンまたはサーバーにAgentsMesh Runnerをインストールします。",
         "methodToken": "トークンで登録",
         "methodLogin": "ブラウザログインで登録",
-        "seeSetup": "Docker、Homebrew、Linuxパッケージ、Kubernetesデプロイオプションについては {link} をご覧ください。"
+        "seeSetup": "Docker、Linuxパッケージ、Kubernetesデプロイオプションについては {link} をご覧ください。"
       },
       "step3": {
         "title": "AIエージェントCLIをインストール",
@@ -648,7 +648,6 @@
         "quickInstall": {
           "title": "Quick Installation",
           "oneLineTitle": "One-Line Install (Recommended)",
-          "brewTitle": "macOS (Homebrew)",
           "linuxTitle": "Linux (Package Manager)",
           "afterInstall": "After Installation",
           "tokenHint": "Get your registration token from Settings → Runners → Create Token in the AgentsMesh web interface.",

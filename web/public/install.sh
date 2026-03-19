@@ -240,32 +240,6 @@ print_next_steps() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
 
-# Check for Homebrew on macOS (suggest but don't require)
-check_homebrew() {
-    if [ "$OS" = "darwin" ] && command -v brew >/dev/null 2>&1; then
-        echo ""
-        warn "Homebrew detected! You can also install via:"
-        echo "     ${BLUE}brew tap agentsmesh/tap https://github.com/AgentsMesh/BrewCask${NC}"
-        echo "     ${BLUE}brew install agentsmesh/tap/agentsmesh-runner${NC}"
-        echo ""
-
-        # In pipe mode, skip interactive prompt and continue with installation
-        if ! is_tty; then
-            info "Non-interactive mode detected, continuing with direct installation..."
-            return
-        fi
-
-        printf "Continue with direct installation? [Y/n] "
-        read -r response </dev/tty
-        case "$response" in
-            [nN][oO]|[nN])
-                info "Installation cancelled. Use Homebrew to install."
-                exit 0
-                ;;
-        esac
-    fi
-}
-
 # Main
 main() {
     echo ""
@@ -280,7 +254,6 @@ main() {
     echo ""
 
     detect_platform
-    check_homebrew
     detect_install_dir
     get_latest_version
     install

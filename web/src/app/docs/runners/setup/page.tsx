@@ -50,17 +50,6 @@ irm ${serverUrl}/install.ps1 | iex`}</pre>
         </div>
 
         <h3 className="text-lg font-medium mb-2 mt-6">
-          {t("docs.runners.setup.quickInstall.brewTitle")}
-        </h3>
-        <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
-          <pre className="text-green-500 dark:text-green-400">{`# Add AgentsMesh tap
-brew tap agentsmesh/tap https://github.com/AgentsMesh/BrewCask
-
-# Install runner
-brew install agentsmesh/tap/agentsmesh-runner`}</pre>
-        </div>
-
-        <h3 className="text-lg font-medium mb-2 mt-6">
           {t("docs.runners.setup.quickInstall.linuxTitle")}
         </h3>
         <p className="text-sm text-muted-foreground mb-2">

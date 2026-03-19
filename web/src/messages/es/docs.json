@@ -151,7 +151,7 @@
         "description": "Un Runner es el entorno de ejecución donde se ejecutan los Pods de agentes IA. Instala AgentsMesh Runner en tu máquina de desarrollo o servidor.",
         "methodToken": "Registrar con un token",
         "methodLogin": "Registrar con inicio de sesión del navegador",
-        "seeSetup": "Consulta {link} para opciones de despliegue con Docker, Homebrew, paquetes Linux y Kubernetes."
+        "seeSetup": "Consulta {link} para opciones de despliegue con Docker, paquetes Linux y Kubernetes."
       },
       "step3": {
         "title": "Instalar CLIs de agentes IA",
@@ -648,7 +648,6 @@
         "quickInstall": {
           "title": "Quick Installation",
           "oneLineTitle": "One-Line Install (Recommended)",
-          "brewTitle": "macOS (Homebrew)",
           "linuxTitle": "Linux (Package Manager)",
           "afterInstall": "After Installation",
           "tokenHint": "Get your registration token from Settings → Runners → Create Token in the AgentsMesh web interface.",

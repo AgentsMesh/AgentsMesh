@@ -151,7 +151,7 @@
         "description": "Runner는 AI 에이전트 Pod의 실행 환경입니다. 개발 머신이나 서버에 AgentsMesh Runner를 설치하세요.",
         "methodToken": "토큰으로 등록",
         "methodLogin": "브라우저 로그인으로 등록",
-        "seeSetup": "Docker, Homebrew, Linux 패키지 및 Kubernetes 배포 옵션에 대해서는 {link}을 참조하세요."
+        "seeSetup": "Docker, Linux 패키지 및 Kubernetes 배포 옵션에 대해서는 {link}을 참조하세요."
       },
       "step3": {
         "title": "AI 에이전트 CLI 설치",
@@ -648,7 +648,6 @@
         "quickInstall": {
           "title": "Quick Installation",
           "oneLineTitle": "One-Line Install (Recommended)",
-          "brewTitle": "macOS (Homebrew)",
           "linuxTitle": "Linux (Package Manager)",
           "afterInstall": "After Installation",
           "tokenHint": "Get your registration token from Settings → Runners → Create Token in the AgentsMesh web interface.",
