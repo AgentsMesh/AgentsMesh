@@ -62,6 +62,56 @@ func TestResolveLoginShellPATH_FallbackOnInvalidShell(t *testing.T) {
 // profile prints extra output before/after the PATH does not corrupt the result.
 // It creates a small sh wrapper that emits noise and then prints PATH with the
 // sentinel, simulating a .zshrc with nvm or welcome-message output.
+func TestMergeWithCurrentPATH_AppendsUniqueDirs(t *testing.T) {
+	t.Setenv("PATH", "/usr/bin:/opt/nvm/bin:/usr/local/bin")
+
+	result := mergeWithCurrentPATH("/usr/bin:/usr/local/bin")
+
+	// /opt/nvm/bin should be appended (unique to current PATH)
+	if !strings.Contains(result, "/opt/nvm/bin") {
+		t.Errorf("expected merged PATH to include /opt/nvm/bin, got: %s", result)
+	}
+	// Resolved dirs should appear first
+	if strings.Index(result, "/usr/bin") > strings.Index(result, "/opt/nvm/bin") {
+		t.Error("expected resolved dirs to appear before appended dirs")
+	}
+}
+
+func TestMergeWithCurrentPATH_NoDuplicates(t *testing.T) {
+	t.Setenv("PATH", "/usr/bin:/usr/local/bin")
+
+	result := mergeWithCurrentPATH("/usr/bin:/usr/local/bin")
+
+	dirs := strings.Split(result, ":")
+	seen := make(map[string]bool)
+	for _, d := range dirs {
+		if seen[d] {
+			t.Errorf("duplicate dir in merged PATH: %s", d)
+		}
+		seen[d] = true
+	}
+}
+
+func TestMergeWithCurrentPATH_EmptyCurrentPATH(t *testing.T) {
+	t.Setenv("PATH", "")
+
+	resolved := "/usr/bin:/usr/local/bin"
+	result := mergeWithCurrentPATH(resolved)
+	if result != resolved {
+		t.Errorf("expected %q, got %q", resolved, result)
+	}
+}
+
+func TestMergeWithCurrentPATH_IdenticalPATH(t *testing.T) {
+	t.Setenv("PATH", "/usr/bin:/usr/local/bin")
+
+	resolved := "/usr/bin:/usr/local/bin"
+	result := mergeWithCurrentPATH(resolved)
+	if result != resolved {
+		t.Errorf("expected %q when paths are identical, got %q", resolved, result)
+	}
+}
+
 func TestResolveLoginShellPATH_NoisyProfile(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("skipping login shell test on Windows")
