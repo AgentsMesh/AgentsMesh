@@ -162,8 +162,15 @@ func startRunner(cfg *config.Config) (ok bool) {
 	}
 	defer pidfile.Remove()
 
-	// Create runner instance
-	r, err := runner.New(cfg)
+	// Create runner dependencies (I/O: workspace, gRPC, certs, pod daemon)
+	deps, err := runner.CreateDeps(cfg)
+	if err != nil {
+		log.Error("Failed to create runner dependencies", "error", err)
+		return false
+	}
+
+	// Create runner (pure assembly, no I/O)
+	r, err := runner.New(deps)
 	if err != nil {
 		log.Error("Failed to create runner", "error", err)
 		return false

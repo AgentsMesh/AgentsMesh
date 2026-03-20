@@ -52,11 +52,8 @@ func (r *Runner) Run(ctx context.Context) error {
 	// Register core services
 	supervisor.Add(&lifecycle.ConnectionService{Conn: r.conn})
 
-	if r.mcpServer != nil {
-		supervisor.Add(&lifecycle.MCPServerService{Server: r.mcpServer})
-	}
-	if r.agentMonitor != nil {
-		supervisor.Add(&lifecycle.MonitorService{Monitor: r.agentMonitor})
+	for _, svc := range r.components.Services() {
+		supervisor.Add(svc)
 	}
 
 	// Register Watchdog health monitor
@@ -111,15 +108,12 @@ func (r *Runner) stopAllPods() {
 	log := logger.Runner()
 
 	// Stop all autopilot controllers first (they depend on pods).
-	// Copy under lock then stop in parallel to avoid holding the lock
-	// while ac.Stop() blocks (up to 30s each).
-	r.autopilotsMu.Lock()
-	autopilotsCopy := make([]*autopilot.AutopilotController, 0, len(r.autopilots))
-	for _, ac := range r.autopilots {
-		autopilotsCopy = append(autopilotsCopy, ac)
+	// DrainAll atomically removes all controllers and returns them
+	// so we can stop them in parallel without holding the lock.
+	var autopilotsCopy []*autopilot.AutopilotController
+	if r.autopilotStore != nil {
+		autopilotsCopy = r.autopilotStore.DrainAll()
 	}
-	r.autopilots = make(map[string]*autopilot.AutopilotController)
-	r.autopilotsMu.Unlock()
 
 	if len(autopilotsCopy) > 0 {
 		log.Info("Stopping all autopilots in parallel", "count", len(autopilotsCopy))
@@ -199,32 +193,27 @@ func (r *Runner) stopAllPods() {
 	}
 }
 
+// --- Delegation to UpgradeCoordinator ---
+
 // IsDraining returns true if the runner is waiting for pods to finish before update.
 func (r *Runner) IsDraining() bool {
-	r.drainingMu.RLock()
-	defer r.drainingMu.RUnlock()
-	return r.draining
+	if r.upgradeCoord == nil {
+		return false
+	}
+	return r.upgradeCoord.IsDraining()
 }
 
 // SetDraining sets the draining state.
 func (r *Runner) SetDraining(draining bool) {
-	r.drainingMu.Lock()
-	defer r.drainingMu.Unlock()
-	r.draining = draining
-	if draining {
-		logger.Runner().Info("Entering draining mode - no new pods will be accepted")
-	} else {
-		logger.Runner().Info("Exiting draining mode - accepting pods again")
+	if r.upgradeCoord == nil {
+		return
 	}
+	r.upgradeCoord.SetDraining(draining)
 }
 
 // CanAcceptPod returns true if the runner can accept new pods.
 func (r *Runner) CanAcceptPod() bool {
-	r.drainingMu.RLock()
-	draining := r.draining
-	r.drainingMu.RUnlock()
-
-	if draining {
+	if r.IsDraining() {
 		logger.Runner().Debug("Cannot accept pod: runner is draining")
 		return false
 	}
@@ -242,11 +231,4 @@ func (r *Runner) CanAcceptPod() bool {
 // GetActivePodCount returns the number of currently active pods.
 func (r *Runner) GetActivePodCount() int {
 	return r.podStore.Count()
-}
-
-// GetPodCounter returns a function that counts active pods.
-func (r *Runner) GetPodCounter() func() int {
-	return func() int {
-		return r.GetActivePodCount()
-	}
 }

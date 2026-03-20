@@ -66,7 +66,12 @@ func (p *Program) Start(s service.Service) error {
 	}
 
 	// Create runner instance
-	r, err := runner.New(p.cfg)
+	deps, err := runner.CreateDeps(p.cfg)
+	if err != nil {
+		p.sendStatus(Status{Running: false, Error: err})
+		return fmt.Errorf("failed to create runner deps: %w", err)
+	}
+	r, err := runner.New(deps)
 	if err != nil {
 		p.sendStatus(Status{Running: false, Error: err})
 		return fmt.Errorf("failed to create runner: %w", err)

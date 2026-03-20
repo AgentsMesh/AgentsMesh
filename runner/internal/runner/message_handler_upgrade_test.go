@@ -51,9 +51,10 @@ func newTestRunnerForUpgrade(podCount int) *Runner {
 	}
 
 	r := &Runner{
-		cfg:      &config.Config{},
-		podStore: store,
-		runCtx:   context.Background(),
+		cfg:          &config.Config{},
+		podStore:     store,
+		runCtx:       context.Background(),
+		upgradeCoord: NewUpgradeCoordinator(store.Count),
 	}
 	return r
 }

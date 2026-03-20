@@ -3,8 +3,6 @@ package runner
 import (
 	"context"
 	"fmt"
-	"sync"
-	"time"
 
 	"github.com/thejerf/suture/v4"
 
@@ -12,8 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/mcp"
-	"github.com/anthropics/agentsmesh/runner/internal/monitor"
 	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
@@ -26,29 +22,21 @@ var _ MessageHandlerContext = (*Runner)(nil)
 type Runner struct {
 	cfg       *config.Config
 	conn      client.Connection
-	workspace *workspace.Manager
+	workspace workspace.WorkspaceManagerInterface
 
 	// Pod management
 	podStore         PodStore
 	messageHandler   *RunnerMessageHandler
 	podDaemonManager *poddaemon.PodDaemonManager
 
-	// Enhanced components
-	mcpManager   *mcp.Manager
-	mcpServer    *mcp.HTTPServer
-	agentMonitor *monitor.Monitor
+	// Enhanced components (MCP + Monitor)
+	components *EnhancedComponents
 
 	// Autopilot management
-	autopilots   map[string]*autopilot.AutopilotController
-	autopilotsMu sync.RWMutex
+	autopilotStore *AutopilotStore
 
-	// Update management
-	draining   bool
-	drainingMu sync.RWMutex
-	upgrading  bool
-	upgradeMu  sync.Mutex
-	updater    *updater.Updater
-	restartFn  func() (int, error)
+	// Upgrade/draining state machine
+	upgradeCoord *UpgradeCoordinator
 
 	// Run lifecycle context (set by Run, used by message handlers)
 	runCtx context.Context
@@ -60,141 +48,55 @@ type Runner struct {
 	stopChan chan struct{}
 }
 
-// New creates a new runner instance
-func New(cfg *config.Config) (*Runner, error) {
+// RunnerDeps holds all external dependencies needed to create a Runner.
+// This separates I/O-heavy creation (gRPC, workspace, certs) from pure assembly.
+type RunnerDeps struct {
+	Config           *config.Config
+	Connection       client.Connection
+	Workspace        workspace.WorkspaceManagerInterface // optional
+	PodStore         PodStore                            // optional, defaults to InMemoryPodStore
+	PodDaemonManager *poddaemon.PodDaemonManager         // optional
+}
+
+// New creates a new runner instance from pre-created dependencies.
+// All I/O operations (gRPC connection, certificate checks, workspace creation)
+// should be done by the caller before invoking New().
+func New(deps RunnerDeps) (*Runner, error) {
 	log := logger.Runner()
-	log.Info("Creating runner instance", "node_id", cfg.NodeID)
 
-	// Load gRPC config (certificates)
-	if err := cfg.LoadGRPCConfig(); err != nil {
-		return nil, fmt.Errorf("failed to load gRPC config: %w - please register the runner first using 'agentsmesh-runner register'", err)
+	if deps.Config == nil {
+		return nil, fmt.Errorf("config is required")
+	}
+	if deps.Connection == nil {
+		return nil, fmt.Errorf("connection is required")
+	}
+	if deps.PodStore == nil {
+		deps.PodStore = NewInMemoryPodStore()
 	}
 
-	// Validate required configuration
-	if cfg.OrgSlug == "" {
-		return nil, fmt.Errorf("org_slug is required - please re-register the runner")
-	}
-
-	if !cfg.UsesGRPC() {
-		return nil, fmt.Errorf("gRPC configuration is required - please re-register the runner using 'agentsmesh-runner register'")
-	}
-
-	// Create workspace manager
-	ws, err := workspace.NewManager(cfg.WorkspaceRoot, cfg.GitConfigPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create workspace manager: %w", err)
-	}
-
-	// Create gRPC/mTLS connection
-	logger.Runner().Info("Using gRPC/mTLS connection", "endpoint", cfg.GRPCEndpoint)
-
-	connOpts := []client.GRPCConnectionOption{
-		client.WithGRPCServerURL(cfg.ServerURL),
-		client.WithGRPCRunnerVersion(cfg.Version),
-	}
-	// Wire endpoint auto-discovery: when the runner detects a new gRPC endpoint
-	// via the discovery API, persist it to the config file for future restarts.
-	if cfg.ConfigFilePath != "" {
-		cfgFile := cfg.ConfigFilePath
-		connOpts = append(connOpts, client.WithGRPCEndpointChanged(func(newEndpoint string) error {
-			return config.UpdateGRPCEndpointInFile(cfgFile, newEndpoint)
-		}))
-	}
-
-	grpcConn := client.NewGRPCConnection(
-		cfg.GRPCEndpoint,
-		cfg.NodeID,
-		cfg.OrgSlug,
-		cfg.CertFile,
-		cfg.KeyFile,
-		cfg.CAFile,
-		connOpts...,
-	)
-
-	// Check certificate validity before connecting
-	certInfo, err := grpcConn.GetCertificateExpiryInfo()
-	if err != nil {
-		return nil, fmt.Errorf("failed to check certificate: %w", err)
-	}
-
-	if certInfo.IsExpired {
-		return nil, fmt.Errorf("certificate has expired on %s. Please reactivate the runner using:\n  agentsmesh-runner reactivate --token <token>\nGet a reactivation token from the web UI", certInfo.ExpiresAt.Format("2006-01-02"))
-	}
-
-	if certInfo.NeedsRenewal {
-		logger.Runner().Warn("Certificate expires soon",
-			"days_until_expiry", certInfo.DaysUntilExpiry,
-			"expires_at", certInfo.ExpiresAt.Format("2006-01-02"))
-	}
-
-	// Create pod store
-	podStore := NewInMemoryPodStore()
-
-	// Create Pod Daemon manager for session persistence
-	podDaemonMgr, err := poddaemon.NewPodDaemonManager(cfg.GetSandboxesDir(), cfg.GetSocketDir())
-	if err != nil {
-		log.Warn("Pod Daemon manager unavailable, sessions won't persist across restarts", "error", err)
-	}
+	log.Info("Creating runner instance", "node_id", deps.Config.NodeID)
 
 	r := &Runner{
-		cfg:              cfg,
-		conn:             grpcConn,
-		workspace:        ws,
-		podStore:         podStore,
-		podDaemonManager: podDaemonMgr,
-		autopilots:       make(map[string]*autopilot.AutopilotController),
+		cfg:              deps.Config,
+		conn:             deps.Connection,
+		workspace:        deps.Workspace,
+		podStore:         deps.PodStore,
+		podDaemonManager: deps.PodDaemonManager,
+		autopilotStore:   NewAutopilotStore(),
+		upgradeCoord:     NewUpgradeCoordinator(deps.PodStore.Count),
 		stopChan:         make(chan struct{}),
 	}
 
 	// Create message handler and set it on connection
-	r.messageHandler = NewRunnerMessageHandler(r, podStore, grpcConn)
-	grpcConn.SetHandler(r.messageHandler)
+	r.messageHandler = NewRunnerMessageHandler(r, deps.PodStore, deps.Connection)
+	deps.Connection.SetHandler(r.messageHandler)
 
-	// Initialize optional enhanced components
-	r.initEnhancedComponents(cfg)
+	// Initialize optional enhanced components (MCP, Monitor)
+	r.components = NewEnhancedComponents(deps.Config, deps.Connection)
+	r.components.SetProviders(r, r)
 
 	log.Info("Runner instance created successfully")
 	return r, nil
-}
-
-// WithConnection sets a custom connection implementation (useful for testing).
-func (r *Runner) WithConnection(conn client.Connection) *Runner {
-	r.conn = conn
-	r.messageHandler = NewRunnerMessageHandler(r, r.podStore, conn)
-	conn.SetHandler(r.messageHandler)
-	return r
-}
-
-// initEnhancedComponents initializes optional enhanced components based on config.
-func (r *Runner) initEnhancedComponents(cfg *config.Config) {
-	log := logger.Runner()
-	log.Debug("Initializing enhanced components")
-
-	// Initialize MCP manager
-	r.mcpManager = mcp.NewManager()
-	if cfg.MCPConfigPath != "" {
-		if err := r.mcpManager.LoadConfig(cfg.MCPConfigPath); err != nil {
-			log.Warn("Failed to load MCP config", "error", err)
-		} else {
-			log.Debug("MCP config loaded", "path", cfg.MCPConfigPath)
-		}
-	}
-
-	// Initialize RPCClient for MCP over gRPC
-	rpcClient := client.NewRPCClient(r.conn)
-	if grpcConn, ok := r.conn.(*client.GRPCConnection); ok {
-		grpcConn.SetRPCClient(rpcClient)
-	}
-
-	// Initialize MCP HTTP Server (started by Supervisor in Run())
-	mcpPort := cfg.GetMCPPort()
-	r.mcpServer = mcp.NewHTTPServer(rpcClient, mcpPort)
-	r.mcpServer.SetStatusProvider(r)
-	r.mcpServer.SetPodProvider(r)
-
-	// Initialize Monitor (started by Supervisor in Run())
-	r.agentMonitor = monitor.NewMonitor(5 * time.Second)
-	log.Debug("Enhanced components initialized")
 }
 
 // GetRunContext returns the runner's lifecycle context.
@@ -206,11 +108,6 @@ func (r *Runner) GetRunContext() context.Context {
 	return context.Background()
 }
 
-// Config returns the runner configuration.
-func (r *Runner) Config() *config.Config {
-	return r.cfg
-}
-
 // GetConfig returns the runner configuration (implements MessageHandlerContext).
 func (r *Runner) GetConfig() *config.Config {
 	return r.cfg
@@ -218,18 +115,12 @@ func (r *Runner) GetConfig() *config.Config {
 
 // GetMCPServer returns the MCP server (implements MessageHandlerContext).
 func (r *Runner) GetMCPServer() MCPServer {
-	if r.mcpServer == nil {
-		return nil
-	}
-	return r.mcpServer
+	return r.components.MCPServer()
 }
 
 // GetAgentMonitor returns the agent monitor (implements MessageHandlerContext).
 func (r *Runner) GetAgentMonitor() AgentMonitor {
-	if r.agentMonitor == nil {
-		return nil
-	}
-	return r.agentMonitor
+	return r.components.AgentMonitor()
 }
 
 // NewPodBuilder creates a new PodBuilder with the runner's dependencies (implements MessageHandlerContext).
@@ -252,45 +143,78 @@ func (r *Runner) GetPodDaemonManager() *poddaemon.PodDaemonManager {
 	return r.podDaemonManager
 }
 
-// Upgrade state management
+// --- UpgradeController delegation (delegates to UpgradeCoordinator) ---
 
-// TryStartUpgrade atomically checks and sets the upgrading flag.
-// Returns true if upgrade can proceed, false if another upgrade is in progress.
 func (r *Runner) TryStartUpgrade() bool {
-	r.upgradeMu.Lock()
-	defer r.upgradeMu.Unlock()
-	if r.upgrading {
+	if r.upgradeCoord == nil {
 		return false
 	}
-	r.upgrading = true
-	return true
+	return r.upgradeCoord.TryStartUpgrade()
 }
 
-// FinishUpgrade clears the upgrading flag.
 func (r *Runner) FinishUpgrade() {
-	r.upgradeMu.Lock()
-	defer r.upgradeMu.Unlock()
-	r.upgrading = false
+	if r.upgradeCoord == nil {
+		return
+	}
+	r.upgradeCoord.FinishUpgrade()
 }
 
-// Updater management methods
+func (r *Runner) GetUpdater() *updater.Updater {
+	if r.upgradeCoord == nil {
+		return nil
+	}
+	return r.upgradeCoord.GetUpdater()
+}
 
 // SetUpdater sets the updater instance for remote upgrade support.
 func (r *Runner) SetUpdater(u *updater.Updater) {
-	r.updater = u
+	if r.upgradeCoord == nil {
+		return
+	}
+	r.upgradeCoord.SetUpdater(u)
 }
 
-// GetUpdater returns the updater instance.
-func (r *Runner) GetUpdater() *updater.Updater {
-	return r.updater
+func (r *Runner) GetRestartFunc() func() (int, error) {
+	if r.upgradeCoord == nil {
+		return nil
+	}
+	return r.upgradeCoord.GetRestartFunc()
 }
 
 // SetRestartFunc sets the restart function for post-upgrade restart.
 func (r *Runner) SetRestartFunc(fn func() (int, error)) {
-	r.restartFn = fn
+	if r.upgradeCoord == nil {
+		return
+	}
+	r.upgradeCoord.SetRestartFunc(fn)
 }
 
-// GetRestartFunc returns the restart function.
-func (r *Runner) GetRestartFunc() func() (int, error) {
-	return r.restartFn
+// --- AutopilotRegistry delegation (delegates to AutopilotStore) ---
+
+func (r *Runner) GetAutopilot(key string) *autopilot.AutopilotController {
+	if r.autopilotStore == nil {
+		return nil
+	}
+	return r.autopilotStore.GetAutopilot(key)
+}
+
+func (r *Runner) AddAutopilot(ac *autopilot.AutopilotController) {
+	if r.autopilotStore == nil {
+		return
+	}
+	r.autopilotStore.AddAutopilot(ac)
+}
+
+func (r *Runner) RemoveAutopilot(key string) {
+	if r.autopilotStore == nil {
+		return
+	}
+	r.autopilotStore.RemoveAutopilot(key)
+}
+
+func (r *Runner) GetAutopilotByPodKey(podKey string) *autopilot.AutopilotController {
+	if r.autopilotStore == nil {
+		return nil
+	}
+	return r.autopilotStore.GetAutopilotByPodKey(podKey)
 }

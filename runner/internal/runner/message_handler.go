@@ -19,18 +19,25 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
 )
 
-// MessageHandlerContext defines the subset of Runner capabilities needed by message handlers.
-// This follows the Dependency Inversion Principle: handlers depend on an abstraction,
-// not on the concrete Runner type.
-type MessageHandlerContext interface {
+// --- Role interfaces (ISP: split by consumer usage clusters) ---
+
+// CoreContext provides base capabilities needed by almost all handlers.
+type CoreContext interface {
 	// GetRunContext returns the runner lifecycle context for cancellable operations.
 	GetRunContext() context.Context
 
 	// GetConfig returns the runner configuration.
 	GetConfig() *config.Config
+}
 
-	// GetSandboxStatus returns sandbox status for a pod.
-	GetSandboxStatus(podKey string) *client.SandboxStatusInfo
+// PodComponentContext provides Pod lifecycle capabilities
+// (used by OnCreatePod, OnTerminatePod, recovery, sandbox queries).
+type PodComponentContext interface {
+	// NewPodBuilder creates a new PodBuilder with the runner's dependencies.
+	NewPodBuilder() *PodBuilder
+
+	// NewPodController creates a new PodController for the given pod.
+	NewPodController(pod *Pod) *PodControllerImpl
 
 	// GetMCPServer returns the MCP server (may be nil).
 	GetMCPServer() MCPServer
@@ -38,6 +45,13 @@ type MessageHandlerContext interface {
 	// GetAgentMonitor returns the agent monitor (may be nil).
 	GetAgentMonitor() AgentMonitor
 
+	// GetSandboxStatus returns sandbox status for a pod.
+	GetSandboxStatus(podKey string) *client.SandboxStatusInfo
+}
+
+// AutopilotRegistry manages AutopilotController instances
+// (used by OnCreateAutopilot, OnAutopilotControl, OnTerminatePod).
+type AutopilotRegistry interface {
 	// GetAutopilot returns an AutopilotController by key.
 	GetAutopilot(key string) *autopilot.AutopilotController
 
@@ -49,15 +63,11 @@ type MessageHandlerContext interface {
 
 	// GetAutopilotByPodKey returns an AutopilotController by its associated pod key.
 	GetAutopilotByPodKey(podKey string) *autopilot.AutopilotController
+}
 
-	// NewPodBuilder creates a new PodBuilder with the runner's dependencies.
-	NewPodBuilder() *PodBuilder
-
-	// NewPodController creates a new PodController for the given pod.
-	NewPodController(pod *Pod) *PodControllerImpl
-
-	// Upgrade lifecycle methods
-
+// UpgradeController manages upgrade/draining state machine
+// (used only by OnUpgradeRunner).
+type UpgradeController interface {
 	// GetUpdater returns the updater instance (may be nil).
 	GetUpdater() *updater.Updater
 
@@ -75,6 +85,15 @@ type MessageHandlerContext interface {
 
 	// GetRestartFunc returns the restart function (may be nil).
 	GetRestartFunc() func() (int, error)
+}
+
+// MessageHandlerContext is the composite interface for backward compatibility.
+// Runner implements this; individual handlers only consume the role interfaces they need.
+type MessageHandlerContext interface {
+	CoreContext
+	PodComponentContext
+	AutopilotRegistry
+	UpgradeController
 }
 
 // MCPServer defines the MCP server operations needed by message handlers.

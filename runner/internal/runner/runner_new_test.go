@@ -11,36 +11,15 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
-// TestRunnerWithConnection tests WithConnection method
-func TestRunnerWithConnection(t *testing.T) {
-	tempDir := t.TempDir()
-	cfg := &config.Config{
-		ServerURL:         "https://localhost:8080",
-		NodeID:            "test-runner",
-		OrgSlug:           "test-org",
-		WorkspaceRoot:     tempDir,
-		MaxConcurrentPods: 5,
-		// gRPC config will be loaded by the mock
-		GRPCEndpoint: "localhost:9443",
-		CertFile:     "/tmp/test.crt",
-		KeyFile:      "/tmp/test.key",
-		CAFile:       "/tmp/ca.crt",
-	}
-
-	// Create runner components manually since we're testing with mock
-	store := NewInMemoryPodStore()
-	r := &Runner{
-		cfg:      cfg,
-		podStore: store,
-		
-		stopChan: make(chan struct{}),
-	}
-
-	mockConn := client.NewMockConnection()
-	r.WithConnection(mockConn)
+// TestNewTestRunnerHelper tests the NewTestRunner test helper
+func TestNewTestRunnerHelper(t *testing.T) {
+	r, mockConn := NewTestRunner(t)
 
 	if r.conn != mockConn {
-		t.Error("Connection should be replaced with mock")
+		t.Error("Connection should match the MockConnection")
+	}
+	if r.cfg.NodeID != "test-node" {
+		t.Errorf("NodeID: got %v, want test-node", r.cfg.NodeID)
 	}
 }
 
@@ -169,41 +148,34 @@ func TestRunnerRunStopAllPods(t *testing.T) {
 
 // --- Test initEnhancedComponents ---
 
-func TestInitEnhancedComponentsWithMCPConfig(t *testing.T) {
-	tempDir := t.TempDir()
+func TestNewEnhancedComponentsWithMCPConfig(t *testing.T) {
 	cfg := &config.Config{
-		WorkspaceRoot: tempDir,
+		WorkspaceRoot: t.TempDir(),
 		MCPConfigPath: "/nonexistent/mcp.json", // Non-existent file - should log warning but not fail
 	}
 
-	r := &Runner{
-		cfg: cfg,
-	}
+	mockConn := client.NewMockConnection()
 
 	// Should not panic
-	r.initEnhancedComponents(cfg)
+	c := NewEnhancedComponents(cfg, mockConn)
 
-	// MCP manager should still be initialized
-	if r.mcpManager == nil {
-		t.Error("mcpManager should be initialized")
+	// Components should still be initialized (mcpManager is internal, verify via MCPServer)
+	if c.MCPServer() == nil {
+		t.Error("MCPServer should be initialized")
 	}
 }
 
-func TestInitEnhancedComponentsDefaultShell(t *testing.T) {
-	tempDir := t.TempDir()
+func TestNewEnhancedComponentsDefaultShell(t *testing.T) {
 	cfg := &config.Config{
-		WorkspaceRoot: tempDir,
+		WorkspaceRoot: t.TempDir(),
 		DefaultShell:  "", // Empty - should default to /bin/sh
 	}
 
-	r := &Runner{
-		cfg: cfg,
-	}
-
-	r.initEnhancedComponents(cfg)
+	mockConn := client.NewMockConnection()
+	c := NewEnhancedComponents(cfg, mockConn)
 
 	// Verify that enhanced components are initialized
-	if r.agentMonitor == nil {
+	if c.AgentMonitor() == nil {
 		t.Error("agentMonitor should be initialized")
 	}
 }

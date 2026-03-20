@@ -89,8 +89,8 @@ func TestPodAllFields(t *testing.T) {
 
 // --- Test Runner Struct ---
 
-// TestNewRunnerRequiresGRPC verifies that New() requires gRPC configuration.
-func TestNewRunnerRequiresGRPC(t *testing.T) {
+// TestCreateDepsRequiresGRPC verifies that CreateDeps() requires gRPC configuration.
+func TestCreateDepsRequiresGRPC(t *testing.T) {
 	// Isolate HOME to prevent loading existing gRPC certificates.
 	// os.UserHomeDir() checks USERPROFILE first on Windows, HOME on Unix.
 	tmpHome := t.TempDir()
@@ -109,12 +109,9 @@ func TestNewRunnerRequiresGRPC(t *testing.T) {
 		// No gRPC config - should fail
 	}
 
-	r, err := New(cfg)
+	_, err := CreateDeps(cfg)
 	if err == nil {
-		t.Error("New should return error when gRPC config is missing")
-	}
-	if r != nil {
-		t.Error("Runner should be nil when gRPC config is missing")
+		t.Error("CreateDeps should return error when gRPC config is missing")
 	}
 	if err != nil && !contains(err.Error(), "gRPC configuration is required") {
 		t.Errorf("Error should mention gRPC configuration, got: %v", err)

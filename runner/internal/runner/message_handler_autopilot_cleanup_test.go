@@ -53,8 +53,8 @@ func TestOnTerminatePodCleansUpAutopilot(t *testing.T) {
 	mockConn := client.NewMockConnection()
 
 	runner := &Runner{
-		cfg:        &config.Config{WorkspaceRoot: tempDir},
-		autopilots: make(map[string]*autopilot.AutopilotController),
+		cfg:            &config.Config{WorkspaceRoot: tempDir},
+		autopilotStore: NewAutopilotStore(),
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
@@ -98,8 +98,8 @@ func TestExitHandlerCleansUpAutopilot(t *testing.T) {
 	mockConn := client.NewMockConnection()
 
 	runner := &Runner{
-		cfg:        &config.Config{},
-		autopilots: make(map[string]*autopilot.AutopilotController),
+		cfg:            &config.Config{},
+		autopilotStore: NewAutopilotStore(),
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
@@ -135,8 +135,8 @@ func TestOnTerminatePodWithoutAutopilot(t *testing.T) {
 	mockConn := client.NewMockConnection()
 
 	runner := &Runner{
-		cfg:        &config.Config{WorkspaceRoot: tempDir},
-		autopilots: make(map[string]*autopilot.AutopilotController),
+		cfg:            &config.Config{WorkspaceRoot: tempDir},
+		autopilotStore: NewAutopilotStore(),
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
@@ -162,8 +162,8 @@ func TestConcurrentTerminateWithAutopilot(t *testing.T) {
 	mockConn := client.NewMockConnection()
 
 	runner := &Runner{
-		cfg:        &config.Config{},
-		autopilots: make(map[string]*autopilot.AutopilotController),
+		cfg:            &config.Config{},
+		autopilotStore: NewAutopilotStore(),
 	}
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
@@ -199,9 +199,7 @@ func TestConcurrentTerminateWithAutopilot(t *testing.T) {
 	wg.Wait()
 
 	// All autopilots should be cleaned up
-	runner.autopilotsMu.RLock()
-	remaining := len(runner.autopilots)
-	runner.autopilotsMu.RUnlock()
+	remaining := len(runner.autopilotStore.DrainAll())
 	if remaining != 0 {
 		t.Errorf("expected 0 remaining autopilots, got %d", remaining)
 	}
