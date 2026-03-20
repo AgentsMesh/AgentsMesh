@@ -63,6 +63,7 @@ services:
       - minio_data:/data
     ports:
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${MINIO_API_PORT:-9000}:9000"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 10s
