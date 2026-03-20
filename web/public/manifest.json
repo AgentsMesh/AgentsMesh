@@ -1,7 +1,7 @@
 {
   "name": "AgentsMesh",
   "short_name": "AgentsMesh",
-  "description": "AI Agent Fleet Command Center — plan, collaborate, and ship with AI agents, all in one place.",
+  "description": "AgentsMesh — AI agent fleet command center for agent orchestration and swarm coordination. Harness engineering productivity — plan, collaborate, and ship with AI coding agents.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

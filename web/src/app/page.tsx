@@ -56,7 +56,8 @@ export default function Home() {
     name: "AgentsMesh",
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web, Linux, macOS, Windows",
-    description: "An agent fleet command center where you plan, collaborate, and ship — all in one place.",
+    description: "AgentsMesh is the AI agent fleet command center for agent orchestration and swarm coordination. Harness engineering productivity — plan, collaborate, and ship with AI coding agents.",
+    alternateName: ["AgentMesh", "Agents Mesh"],
     url: "https://agentsmesh.ai",
     offers: {
       "@type": "Offer",
@@ -64,6 +65,7 @@ export default function Home() {
       priceCurrency: "USD",
       description: "Free tier available",
     },
+    keywords: "agentsmesh, agentmesh, agent fleet command center, agent swarm, agent orchestration, harness engineering, AI coding agents, multi-agent collaboration",
     publisher: {
       "@type": "Organization",
       name: "AgentsMesh",
