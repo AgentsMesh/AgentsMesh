@@ -83,7 +83,7 @@ services:
         condition: service_healthy
     environment:
       # Domain Configuration
-      - PRIMARY_DOMAIN=
+      - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}
       - USE_HTTPS=false
       # Database
       - DB_HOST=postgres
@@ -146,7 +146,7 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=production
-      - PRIMARY_DOMAIN=${SERVER_HOST}
+      - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}
       - USE_HTTPS=false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
@@ -166,7 +166,7 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=production
-      - PRIMARY_DOMAIN=${SERVER_HOST}
+      - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}
       - USE_HTTPS=false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/admin"]
@@ -194,7 +194,7 @@ services:
       - RELAY_ID=selfhost-relay-1
       - RELAY_REGION=local
       - RELAY_CAPACITY=1000
-      - PRIMARY_DOMAIN=${SERVER_HOST}
+      - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}
       - USE_HTTPS=false
       - SESSION_KEEP_ALIVE_DURATION=30s
       - DEBUG=false
