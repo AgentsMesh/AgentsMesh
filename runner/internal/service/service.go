@@ -149,8 +149,9 @@ func ServiceConfig() *service.Config {
 		Description: ServiceDescription,
 		Option: service.KeyValue{
 			"UserService": true,
-			// macOS launchd: auto-restart on crash
+			// macOS launchd: auto-restart on crash, auto-start on session create
 			"KeepAlive":        true,
+			"RunAtLoad":        true,
 			"ThrottleInterval": 10,
 			// Linux systemd: auto-restart (always, not just on-failure)
 			"Restart":               "always",
