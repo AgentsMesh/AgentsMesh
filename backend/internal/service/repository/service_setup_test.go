@@ -66,6 +66,17 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to create repositories table: %v", err)
 	}
 
+	// Partial unique index: only active (non-deleted) rows are constrained.
+	// Mirrors production schema (migration 000081).
+	err = db.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS repositories_org_provider_path_unique
+		ON repositories (organization_id, provider_type, provider_base_url, full_path)
+		WHERE deleted_at IS NULL
+	`).Error
+	if err != nil {
+		t.Fatalf("failed to create unique index: %v", err)
+	}
+
 	// Create loops table (referenced by Delete/HardDelete for application-level RESTRICT check)
 	err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS loops (
