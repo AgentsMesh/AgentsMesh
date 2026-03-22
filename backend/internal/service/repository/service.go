@@ -60,15 +60,40 @@ type CreateRequest struct {
 	ImportedByUserID *int64 // User who imported this repo
 }
 
-// Create creates a new repository configuration
+// Create creates a new repository configuration.
+// If the same repository already exists, it updates provider metadata
+// (idempotent import) so that re-importing after a provider reconnect
+// does not fail.
 func (s *Service) Create(ctx context.Context, req *CreateRequest) (*gitprovider.Repository, error) {
 	// Check if repository already exists (unique: org + provider_type + provider_base_url + full_path)
 	existing, err := s.repo.FindByOrgAndPath(ctx, req.OrganizationID, req.ProviderType, req.ProviderBaseURL, req.FullPath)
 	if err != nil {
 		return nil, err
 	}
+
+	// Idempotent import: update provider-sourced metadata, preserve user-configured fields
 	if existing != nil {
-		return nil, ErrRepositoryExists
+		updates := map[string]interface{}{
+			"name":        req.Name,
+			"external_id": req.ExternalID,
+			"is_active":   true,
+		}
+		if req.DefaultBranch != "" {
+			updates["default_branch"] = req.DefaultBranch
+		}
+		if req.ImportedByUserID != nil {
+			updates["imported_by_user_id"] = *req.ImportedByUserID
+		}
+		if req.CloneURL != "" {
+			updates["clone_url"] = req.CloneURL
+		}
+		if req.HttpCloneURL != "" {
+			updates["http_clone_url"] = req.HttpCloneURL
+		}
+		if req.SshCloneURL != "" {
+			updates["ssh_clone_url"] = req.SshCloneURL
+		}
+		return s.Update(ctx, existing.ID, updates)
 	}
 
 	repo := &gitprovider.Repository{

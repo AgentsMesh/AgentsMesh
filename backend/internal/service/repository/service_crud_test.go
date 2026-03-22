@@ -37,7 +37,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestCreateDuplicate(t *testing.T) {
+func TestCreateDuplicateIsIdempotent(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewService(infra.NewGitProviderRepository(db))
 	ctx := context.Background()
@@ -52,12 +52,22 @@ func TestCreateDuplicate(t *testing.T) {
 		FullPath:        "org/test-repo",
 		Visibility:      "organization",
 	}
-	service.Create(ctx, req)
+	original, err := service.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("failed to create repository: %v", err)
+	}
 
-	// Try to create duplicate
-	_, err := service.Create(ctx, req)
-	if err != ErrRepositoryExists {
-		t.Errorf("expected ErrRepositoryExists, got %v", err)
+	// Re-import with updated name should upsert, not error
+	req.Name = "renamed-repo"
+	updated, err := service.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("expected idempotent import to succeed, got: %v", err)
+	}
+	if updated.ID != original.ID {
+		t.Errorf("expected same ID %d, got %d", original.ID, updated.ID)
+	}
+	if updated.Name != "renamed-repo" {
+		t.Errorf("expected name 'renamed-repo', got %s", updated.Name)
 	}
 }
 

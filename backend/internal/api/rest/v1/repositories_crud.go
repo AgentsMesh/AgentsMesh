@@ -43,19 +43,26 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 		return
 	}
 
-	// Check repository quota before creation
+	// Check repository quota before creation (skip for re-imports of existing repos)
 	if h.billingService != nil {
-		if err := h.billingService.CheckQuota(c.Request.Context(), tenant.OrganizationID, "repositories", 1); err != nil {
-			if err == billing.ErrQuotaExceeded {
-				apierr.PaymentRequired(c, apierr.REPOSITORY_QUOTA_EXCEEDED, "Repository quota exceeded. Please upgrade your plan to add more repositories.")
+		_, existsErr := h.repositoryService.GetByFullPath(
+			c.Request.Context(), tenant.OrganizationID,
+			req.ProviderType, req.ProviderBaseURL, req.FullPath,
+		)
+		isNewRepo := existsErr == repository.ErrRepositoryNotFound
+		if isNewRepo {
+			if err := h.billingService.CheckQuota(c.Request.Context(), tenant.OrganizationID, "repositories", 1); err != nil {
+				if err == billing.ErrQuotaExceeded {
+					apierr.PaymentRequired(c, apierr.REPOSITORY_QUOTA_EXCEEDED, "Repository quota exceeded. Please upgrade your plan to add more repositories.")
+					return
+				}
+				if err == billing.ErrSubscriptionFrozen {
+					apierr.PaymentRequired(c, apierr.SUBSCRIPTION_FROZEN, "Your subscription has expired. Please renew to continue.")
+					return
+				}
+				apierr.InternalError(c, "Failed to check quota")
 				return
 			}
-			if err == billing.ErrSubscriptionFrozen {
-				apierr.PaymentRequired(c, apierr.SUBSCRIPTION_FROZEN, "Your subscription has expired. Please renew to continue.")
-				return
-			}
-			apierr.InternalError(c, "Failed to check quota")
-			return
 		}
 	}
 
@@ -90,15 +97,11 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 		ImportedByUserID: &userID,
 	})
 	if err != nil {
-		if err == repository.ErrRepositoryExists {
-			apierr.Conflict(c, apierr.ALREADY_EXISTS, "Repository already configured")
-			return
-		}
 		apierr.InternalError(c, "Failed to create repository")
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"repository": repo})
+	c.JSON(http.StatusOK, gin.H{"repository": repo})
 }
 
 // GetRepository returns repository by ID
