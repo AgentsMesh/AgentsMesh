@@ -69,6 +69,8 @@ type StatusListener = (info: RelayStatusInfo) => void;
  */
 class RelayConnectionPool {
   private connections: Map<string, RelayConnection> = new Map();
+  /** Guards against concurrent subscribe() creating duplicate WebSockets for the same podKey. */
+  private pendingSubscriptions: Map<string, Promise<ConnectionHandle>> = new Map();
   private maxReconnectAttempts = 50;
   private baseReconnectDelay = 1000;
   private resizeDebounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
@@ -145,10 +147,34 @@ class RelayConnectionPool {
       return this.createHandle(podKey, subscriptionId);
     }
 
+    // Guard: if another subscribe() call is already creating a connection for this podKey,
+    // wait for it to finish and then join as a new subscriber.
+    const pending = this.pendingSubscriptions.get(podKey);
+    if (pending) {
+      await pending;
+      // Connection should now exist — recurse to join it as a subscriber.
+      return this.subscribe(podKey, subscriptionId, onMessage);
+    }
+
+    // Create new connection (with concurrency guard)
+    const createPromise = this.createNewConnection(podKey, subscriptionId, onMessage);
+    this.pendingSubscriptions.set(podKey, createPromise);
+    try {
+      return await createPromise;
+    } finally {
+      this.pendingSubscriptions.delete(podKey);
+    }
+  }
+
+  private async createNewConnection(
+    podKey: string,
+    subscriptionId: string,
+    onMessage: (data: Uint8Array | string) => void,
+  ): Promise<ConnectionHandle> {
     const relayInfo = await podApi.getPodConnection(podKey);
     const ws = this.createRelayWebSocket(relayInfo);
 
-    conn = {
+    const conn: RelayConnection = {
       ws,
       podKey,
       status: "connecting",
