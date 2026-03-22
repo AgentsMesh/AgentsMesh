@@ -16,6 +16,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/envpath"
 	"github.com/anthropics/agentsmesh/runner/internal/lifecycle"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
+	"github.com/anthropics/agentsmesh/runner/internal/mcp"
 	"github.com/anthropics/agentsmesh/runner/internal/pidfile"
 	"github.com/anthropics/agentsmesh/runner/internal/runner"
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
@@ -153,6 +154,10 @@ func startRunner(cfg *config.Config) (ok bool) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return false
 	}
+
+	// Clean up stale runner that may hold the MCP port but wasn't tracked by pidfile
+	// (e.g., started before pidfile mechanism existed, or via a different launch method)
+	mcp.TryReclaimPort(cfg.GetMCPPort())
 
 	// Write PID file for next startup to find us
 	if err := pidfile.Write(); err != nil {
