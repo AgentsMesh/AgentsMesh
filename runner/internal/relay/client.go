@@ -23,12 +23,6 @@ const (
 	minStableConnected = 10 * time.Second // connection must last this long to reset backoff
 )
 
-// InputHandler is called when user input is received from relay
-type InputHandler func(data []byte)
-
-// ResizeHandler is called when terminal resize request is received from relay
-type ResizeHandler func(cols, rows uint16)
-
 // CloseHandler is called when the connection is closed
 type CloseHandler func()
 
@@ -45,8 +39,8 @@ type Client struct {
 	connMu sync.RWMutex
 
 	// Handlers
-	onInput        InputHandler
-	onResize       ResizeHandler
+	handlers   map[byte]func([]byte)
+	handlersMu sync.RWMutex
 	onClose        CloseHandler
 	onReconnect    func()                   // Called after successful reconnection
 	onTokenExpired func() (newToken string) // Called when token expires, should request new token from Backend
@@ -85,6 +79,7 @@ func NewClient(relayURL, podKey, token string, logger *slog.Logger) *Client {
 		stopCh:     make(chan struct{}),
 		connDoneCh: make(chan struct{}),
 		sendCh:     make(chan []byte, 256), // Buffered send channel
+		handlers:   make(map[byte]func([]byte)),
 		logger: logger.With(
 			"component", "relay_client",
 			"pod_key", podKey,
@@ -97,14 +92,11 @@ func NewClient(relayURL, podKey, token string, logger *slog.Logger) *Client {
 	return client
 }
 
-// SetInputHandler sets the handler for user input from browsers
-func (c *Client) SetInputHandler(handler InputHandler) {
-	c.onInput = handler
-}
-
-// SetResizeHandler sets the handler for terminal resize requests
-func (c *Client) SetResizeHandler(handler ResizeHandler) {
-	c.onResize = handler
+// SetMessageHandler registers a handler for a specific message type.
+func (c *Client) SetMessageHandler(msgType byte, handler func(payload []byte)) {
+	c.handlersMu.Lock()
+	defer c.handlersMu.Unlock()
+	c.handlers[msgType] = handler
 }
 
 // SetCloseHandler sets the handler for connection close events

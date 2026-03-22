@@ -43,6 +43,7 @@ func TestGetAgentStatusFromDetector_StateNotRunning(t *testing.T) {
 		PodKey:          "test-pod",
 		VirtualTerminal: vterminal,
 	}
+	pod.IO = NewPTYPodIO(nil, vterminal, pod)
 
 	// GetOrCreateStateDetector creates a ManagedStateDetector that starts in StateNotRunning
 	sd := pod.GetOrCreateStateDetector()
@@ -66,6 +67,7 @@ func TestGetAgentStatusFromDetector_StateExecuting(t *testing.T) {
 		PodKey:          "test-pod",
 		VirtualTerminal: vterminal,
 	}
+	pod.IO = NewPTYPodIO(nil, vterminal, pod)
 
 	sd := pod.GetOrCreateStateDetector()
 	require.NotNil(t, sd)
@@ -94,6 +96,7 @@ func TestGetAgentStatusFromDetector_StateWaiting(t *testing.T) {
 		PodKey:          "test-pod",
 		VirtualTerminal: vterminal,
 	}
+	pod.IO = NewPTYPodIO(nil, vterminal, pod)
 
 	sd := pod.GetOrCreateStateDetector()
 	require.NotNil(t, sd)
@@ -150,31 +153,28 @@ func TestGetAgentStatusFromDetector_DefaultState(t *testing.T) {
 	// Since ManagedStateDetector wraps MultiSignalDetector which only transitions
 	// between NotRunning, Executing, and Waiting, it is not possible to reach
 	// StateUnknown through normal operation. The default branch is a defensive
-	// code path that returns "idle" for any unexpected state.
+	// code path that returns "unknown" for any unexpected state.
 	//
 	// This test verifies that the function handles all known states correctly
-	// and that the nil-detector path also returns "idle" (which covers the
-	// scenario where GetOrCreateStateDetector returns nil for a pod with a
-	// VirtualTerminal that was concurrently set to nil).
+	// via PodIO and that nil IO returns "idle".
 
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 	runner := &Runner{cfg: &config.Config{}}
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	// Pod with VirtualTerminal but no detector yet created should still return idle.
-	// Calling getAgentStatusFromDetector will lazily create the detector.
+	// Pod with VirtualTerminal and IO: the newly created detector will be
+	// in StateNotRunning, which maps to "idle" via PodIO.GetAgentStatus().
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
 	pod := &Pod{
 		PodKey:          "test-pod",
 		VirtualTerminal: vterminal,
 	}
+	pod.IO = NewPTYPodIO(nil, vterminal, pod)
 	defer pod.StopStateDetector()
 
-	// The newly created detector will be in StateNotRunning, which maps to "idle".
-	// This exercises the GetOrCreateStateDetector path and the StateNotRunning case.
 	status := handler.getAgentStatusFromDetector(pod)
-	assert.Equal(t, "idle", status, "freshly created detector (StateNotRunning) should return idle")
+	assert.Equal(t, "idle", status, "freshly created detector (StateNotRunning) should return idle via PodIO")
 
 	// Verify the detector was actually created by GetOrCreateStateDetector
 	sd := pod.GetOrCreateStateDetector()
@@ -207,6 +207,7 @@ func TestOnListPodsWithPods_AgentStatus(t *testing.T) {
 		Status:          PodStatusRunning,
 		VirtualTerminal: vterminal2,
 	}
+	pod2.IO = NewPTYPodIO(nil, vterminal2, pod2)
 	store.Put("pod-2", pod2)
 	defer pod2.StopStateDetector()
 
@@ -218,6 +219,7 @@ func TestOnListPodsWithPods_AgentStatus(t *testing.T) {
 		Status:          PodStatusRunning,
 		VirtualTerminal: vterminal3,
 	}
+	pod3.IO = NewPTYPodIO(nil, vterminal3, pod3)
 	sd3 := pod3.GetOrCreateStateDetector()
 	require.NotNil(t, sd3)
 	sd3.OnOutput(100) // Transition to Executing

@@ -220,6 +220,7 @@ func TestCredentialProfileService_SetDefaultCredentialProfile_UpdateError(t *tes
 		status_detection BLOB,
 		is_builtin INTEGER NOT NULL DEFAULT 0,
 		is_active INTEGER NOT NULL DEFAULT 1,
+		supported_modes TEXT NOT NULL DEFAULT 'pty',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)

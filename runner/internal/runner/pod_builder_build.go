@@ -27,25 +27,35 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		return nil, fmt.Errorf("launch command is required")
 	}
 
-	logger.Pod().Info("Building pod", "pod_key", b.cmd.PodKey, "command", b.cmd.LaunchCommand)
+	logger.Pod().Info("Building pod", "pod_key", b.cmd.PodKey, "command", b.cmd.LaunchCommand,
+		"interaction_mode", b.cmd.GetInteractionMode())
 
 	// Report initial progress
 	b.sendProgress("pending", 0, "Initializing pod...")
 
-	// Setup sandbox and working directory
+	// Setup sandbox and working directory (shared)
 	sandboxRoot, workingDir, branchName, err := b.setup(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Resolve template variables in launch args
+	// Resolve template variables in launch args (shared)
 	resolvedArgs := b.resolveArgs(b.cmd.LaunchArgs, sandboxRoot, workingDir)
 	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
 
-	// Merge environment variables (with template resolution)
-	envVars := b.mergeEnvVars(sandboxRoot, workingDir)
+	// Merge environment variables (shared)
+	envVars := b.mergeEnvVars(sandboxRoot)
 	logger.Pod().Debug("Merged environment variables", "pod_key", b.cmd.PodKey, "count", len(envVars))
 
+	// Branch by interaction mode
+	if b.cmd.GetInteractionMode() == "acp" {
+		return b.buildACPPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars)
+	}
+	return b.buildPTYPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars)
+}
+
+// buildPTYPod creates a pod with PTY terminal interaction (existing path).
+func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, branchName string, resolvedArgs []string, envVars map[string]string) (*Pod, error) {
 	// Report progress: starting PTY
 	b.sendProgress("starting_pty", 80, "Starting terminal...")
 
@@ -130,6 +140,7 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		ID:              b.cmd.PodKey,
 		PodKey:          b.cmd.PodKey,
 		AgentType:       b.cmd.LaunchCommand,
+		InteractionMode: InteractionModePTY,
 		Branch:          branchName,
 		SandboxPath:     sandboxRoot,
 		LaunchCommand:   b.cmd.LaunchCommand,
@@ -143,10 +154,21 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		Status:          PodStatusInitializing,
 	}
 
+	// Wire PodIO for unified access
+	ptyIO := NewPTYPodIO(term, virtualTerm, pod)
+	ptyIO.SetAggregator(agg)
+	if ptyLogger != nil {
+		ptyIO.SetPTYLogger(ptyLogger)
+	}
+	pod.IO = ptyIO
+
+	// Wire PodRelay for mode-specific relay behavior
+	pod.Relay = NewPTYPodRelay(b.cmd.PodKey, pod.IO, virtualTerm, term, agg)
+
 	// Wire up output handler (shared implementation with circuit breaker + inline recover)
 	term.SetOutputHandler(pod.CreateOutputHandler())
 
-	logger.Pod().Info("Pod built", "pod_key", b.cmd.PodKey, "working_dir", workingDir, "cols", b.cols, "rows", b.rows)
+	logger.Pod().Info("Pod built (PTY)", "pod_key", b.cmd.PodKey, "working_dir", workingDir, "cols", b.cols, "rows", b.rows)
 
 	// Report progress: ready
 	b.sendProgress("ready", 100, "Pod is ready")
@@ -171,8 +193,8 @@ func (b *PodBuilder) resolveArgs(args []string, sandboxRoot, workDir string) []s
 	return resolved
 }
 
-// mergeEnvVars merges all environment variable sources and resolves template variables.
-func (b *PodBuilder) mergeEnvVars(sandboxRoot, workDir string) map[string]string {
+// mergeEnvVars merges all environment variable sources.
+func (b *PodBuilder) mergeEnvVars(sandboxRoot string) map[string]string {
 	result := make(map[string]string)
 
 	// Inject resolved login shell PATH as lowest-priority base.
@@ -194,11 +216,6 @@ func (b *PodBuilder) mergeEnvVars(sandboxRoot, workDir string) map[string]string
 		for k, v := range b.cmd.EnvVars {
 			result[k] = v
 		}
-	}
-
-	// Resolve template variables (e.g., {{.sandbox.root_path}}, {{.sandbox.work_dir}})
-	for k, v := range result {
-		result[k] = b.resolvePath(v, sandboxRoot, workDir)
 	}
 
 	return result

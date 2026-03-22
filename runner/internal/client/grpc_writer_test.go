@@ -31,23 +31,15 @@ func (h *mockHandlerWithRelayConnections) OnListRelayConnections() []RelayConnec
 	return h.relayConnections
 }
 
-func (h *mockHandlerWithRelayConnections) OnTerminalInput(req TerminalInputRequest) error {
+func (h *mockHandlerWithRelayConnections) OnPodInput(req PodInputRequest) error {
 	return nil
 }
 
-func (h *mockHandlerWithRelayConnections) OnTerminalResize(req TerminalResizeRequest) error {
+func (h *mockHandlerWithRelayConnections) OnSubscribePod(req SubscribePodRequest) error {
 	return nil
 }
 
-func (h *mockHandlerWithRelayConnections) OnTerminalRedraw(req TerminalRedrawRequest) error {
-	return nil
-}
-
-func (h *mockHandlerWithRelayConnections) OnSubscribeTerminal(req SubscribeTerminalRequest) error {
-	return nil
-}
-
-func (h *mockHandlerWithRelayConnections) OnUnsubscribeTerminal(req UnsubscribeTerminalRequest) error {
+func (h *mockHandlerWithRelayConnections) OnUnsubscribePod(req UnsubscribePodRequest) error {
 	return nil
 }
 
@@ -55,7 +47,7 @@ func (h *mockHandlerWithRelayConnections) OnQuerySandboxes(req QuerySandboxesReq
 	return nil
 }
 
-func (h *mockHandlerWithRelayConnections) OnObserveTerminal(req ObserveTerminalRequest) error {
+func (h *mockHandlerWithRelayConnections) OnObservePod(req ObservePodRequest) error {
 	return nil
 }
 
@@ -72,6 +64,10 @@ func (h *mockHandlerWithRelayConnections) OnUpgradeRunner(cmd *runnerv1.UpgradeR
 }
 
 func (h *mockHandlerWithRelayConnections) OnUploadLogs(cmd *runnerv1.UploadLogsCommand) error {
+	return nil
+}
+
+func (h *mockHandlerWithRelayConnections) OnSendPrompt(cmd *runnerv1.SendPromptCommand) error {
 	return nil
 }
 

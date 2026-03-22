@@ -38,7 +38,7 @@ func (cm *RunnerConnectionManager) HandlePodError(runnerID int64, data *runnerv1
 	}
 }
 
-// NOTE: HandleTerminalOutput removed - output is exclusively streamed via Relay
+// NOTE: HandlePodOutput removed - output is exclusively streamed via Relay
 
 // HandleAgentStatus handles agent status event (Proto type)
 func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runnerv1.AgentStatusEvent) {
@@ -48,12 +48,11 @@ func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runne
 	}
 }
 
-// HandlePtyResized handles PTY resized event (Proto type)
-func (cm *RunnerConnectionManager) HandlePtyResized(runnerID int64, data *runnerv1.PtyResizedEvent) {
+// HandlePodResized handles pod resized event (Proto type).
+// Terminal size tracking removed — resize flows through Relay. Kept for backward
+// compatibility with old runners (updates heartbeat timestamp).
+func (cm *RunnerConnectionManager) HandlePodResized(runnerID int64, data *runnerv1.PodResizedEvent) {
 	cm.UpdateHeartbeat(runnerID)
-	if cm.onPtyResized != nil {
-		cm.onPtyResized(runnerID, data)
-	}
 }
 
 // HandlePodInitProgress handles pod init progress event (Proto type)
@@ -123,13 +122,13 @@ func (cm *RunnerConnectionManager) HandleOSCTitle(runnerID int64, data *runnerv1
 	}
 }
 
-// ==================== Terminal Observation Handler ====================
+// ==================== Pod Observation Handler ====================
 
-// HandleObserveTerminalResult handles observe terminal result event (Proto type)
-func (cm *RunnerConnectionManager) HandleObserveTerminalResult(runnerID int64, data *runnerv1.ObserveTerminalResult) {
+// HandleObservePodResult handles observe pod result event (Proto type)
+func (cm *RunnerConnectionManager) HandleObservePodResult(runnerID int64, data *runnerv1.ObservePodResult) {
 	cm.UpdateHeartbeat(runnerID)
-	if cm.onObserveTerminalResult != nil {
-		cm.onObserveTerminalResult(runnerID, data)
+	if cm.onObservePodResult != nil {
+		cm.onObservePodResult(runnerID, data)
 	}
 }
 

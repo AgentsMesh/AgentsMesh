@@ -66,7 +66,7 @@ type GRPCRunnerAdapter struct {
 	runnerMcpService  *runner.Service
 	agentTypeSvc      *agent.AgentTypeService
 	userConfigSvc     *agent.UserConfigService
-	terminalRouter       TerminalRouterForMCP // *runner.TerminalRouter, optional
+	podRouter       PodRouterForMCP // *runner.PodRouter, optional
 	loopService          *loopService.LoopService
 	loopRunService       *loopService.LoopRunService
 	loopOrchestrator     *loopService.LoopOrchestrator
@@ -83,7 +83,7 @@ type MCPDependencies struct {
 	RunnerService     *runner.Service
 	AgentTypeSvc      *agent.AgentTypeService
 	UserConfigSvc     *agent.UserConfigService
-	TerminalRouter    TerminalRouterForMCP // *runner.TerminalRouter, optional
+	PodRouter    PodRouterForMCP // *runner.PodRouter, optional
 	LoopService       *loopService.LoopService
 	LoopRunService    *loopService.LoopRunService
 	LoopOrchestrator  *loopService.LoopOrchestrator
@@ -122,7 +122,7 @@ func NewGRPCRunnerAdapter(
 		adapter.runnerMcpService = mcpDeps.RunnerService
 		adapter.agentTypeSvc = mcpDeps.AgentTypeSvc
 		adapter.userConfigSvc = mcpDeps.UserConfigSvc
-		adapter.terminalRouter = mcpDeps.TerminalRouter
+		adapter.podRouter = mcpDeps.PodRouter
 		adapter.loopService = mcpDeps.LoopService
 		adapter.loopRunService = mcpDeps.LoopRunService
 		adapter.loopOrchestrator = mcpDeps.LoopOrchestrator

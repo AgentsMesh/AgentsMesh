@@ -100,10 +100,10 @@ func (b *PodBuilder) WithSetupStrategies(strategies []SetupStrategy) *PodBuilder
 	return b
 }
 
-// WithTerminalSize sets terminal dimensions.
+// WithPtySize sets PTY dimensions.
 // Parameters follow the standard convention: cols (width) first, then rows (height).
 // This matches xterm.js, ANSI standards, and most terminal libraries.
-func (b *PodBuilder) WithTerminalSize(cols, rows int) *PodBuilder {
+func (b *PodBuilder) WithPtySize(cols, rows int) *PodBuilder {
 	if cols > 0 {
 		b.cols = cols
 	}

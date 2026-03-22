@@ -13,11 +13,11 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
 
-// TestOnSubscribeTerminal_NoDeadlockWhenVTBusy verifies that OnSubscribeTerminal
+// TestOnSubscribePod_NoDeadlockWhenVTBusy verifies that OnSubscribePod
 // does not deadlock when VT's write lock is held by a concurrent Feed() call.
 // The original bug: relayMu held → GetSnapshot() needs vt.mu → Feed() holds vt.mu → deadlock.
 // The fix uses TryGetSnapshot outside relayMu, so this test must complete within the timeout.
-func TestOnSubscribeTerminal_NoDeadlockWhenVTBusy(t *testing.T) {
+func TestOnSubscribePod_NoDeadlockWhenVTBusy(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -57,10 +57,10 @@ func TestOnSubscribeTerminal_NoDeadlockWhenVTBusy(t *testing.T) {
 	}()
 	defer close(stopFeed)
 
-	// OnSubscribeTerminal must complete within the timeout — a deadlock means failure.
+	// OnSubscribePod must complete within the timeout — a deadlock means failure.
 	done := make(chan error, 1)
 	go func() {
-		done <- handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+		done <- handler.OnSubscribePod(client.SubscribePodRequest{
 			PodKey:      pod.PodKey,
 			RelayURL:    "wss://relay.example.com",
 			RunnerToken: "token-1",
@@ -70,10 +70,10 @@ func TestOnSubscribeTerminal_NoDeadlockWhenVTBusy(t *testing.T) {
 	select {
 	case err := <-done:
 		if err != nil {
-			t.Fatalf("OnSubscribeTerminal returned error: %v", err)
+			t.Fatalf("OnSubscribePod returned error: %v", err)
 		}
 	case <-time.After(3 * time.Second):
-		t.Fatal("deadlock detected: OnSubscribeTerminal blocked for 3s")
+		t.Fatal("deadlock detected: OnSubscribePod blocked for 3s")
 	}
 
 	// Verify the client was set up.
@@ -87,9 +87,9 @@ func TestOnSubscribeTerminal_NoDeadlockWhenVTBusy(t *testing.T) {
 	_ = createdClient
 }
 
-// TestOnSubscribeTerminal_ConcurrentSubscribes verifies that multiple concurrent
-// subscribe_terminal requests do not deadlock when VT is busy.
-func TestOnSubscribeTerminal_ConcurrentSubscribes(t *testing.T) {
+// TestOnSubscribePod_ConcurrentSubscribes verifies that multiple concurrent
+// subscribe PTY requests do not deadlock when VT is busy.
+func TestOnSubscribePod_ConcurrentSubscribes(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -132,7 +132,7 @@ func TestOnSubscribeTerminal_ConcurrentSubscribes(t *testing.T) {
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			defer wg.Done()
-			_ = handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+			_ = handler.OnSubscribePod(client.SubscribePodRequest{
 				PodKey:      pod.PodKey,
 				RelayURL:    "wss://relay.example.com",
 				RunnerToken: "token-concurrent",
@@ -151,7 +151,7 @@ func TestOnSubscribeTerminal_ConcurrentSubscribes(t *testing.T) {
 	case <-allDone:
 		// Success
 	case <-time.After(5 * time.Second):
-		t.Fatal("deadlock detected: concurrent OnSubscribeTerminal blocked for 5s")
+		t.Fatal("deadlock detected: concurrent OnSubscribePod blocked for 5s")
 	}
 
 	// At least one subscribe must have succeeded.
@@ -160,10 +160,10 @@ func TestOnSubscribeTerminal_ConcurrentSubscribes(t *testing.T) {
 	}
 }
 
-// TestOnSubscribeTerminal_RaceConditionTwoSubscribers verifies that when two
+// TestOnSubscribePod_RaceConditionTwoSubscribers verifies that when two
 // goroutines concurrently complete Phase 2 (Connect + Start), only one wins
 // the Phase 3 pointer swap and the loser's client is properly stopped.
-func TestOnSubscribeTerminal_RaceConditionTwoSubscribers(t *testing.T) {
+func TestOnSubscribePod_RaceConditionTwoSubscribers(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -196,7 +196,7 @@ func TestOnSubscribeTerminal_RaceConditionTwoSubscribers(t *testing.T) {
 		i := i
 		go func() {
 			defer wg.Done()
-			_ = handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+			_ = handler.OnSubscribePod(client.SubscribePodRequest{
 				PodKey:      pod.PodKey,
 				RelayURL:    "wss://relay.example.com",
 				RunnerToken: "token-" + string(rune('A'+i)),
@@ -242,9 +242,9 @@ func TestOnSubscribeTerminal_RaceConditionTwoSubscribers(t *testing.T) {
 	}
 }
 
-// TestOnSubscribeTerminal_SnapshotSentOnSuccess verifies that SendSnapshot is
-// called when VT lock is available and the subscribe succeeds.
-func TestOnSubscribeTerminal_SnapshotSentOnSuccess(t *testing.T) {
+// TestOnSubscribePod_SnapshotSentOnSuccess verifies that Send(MsgTypeSnapshot, ...)
+// is called when VT lock is available and the subscribe succeeds.
+func TestOnSubscribePod_SnapshotSentOnSuccess(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -258,7 +258,7 @@ func TestOnSubscribeTerminal_SnapshotSentOnSuccess(t *testing.T) {
 	var snapshotCalls atomic.Int32
 	handler.relayClientFactory = func(url, podKey, token string, logger *slog.Logger) relay.RelayClient {
 		mc := relay.NewMockClient(url)
-		// Wrap SendSnapshot to count calls atomically.
+		// Wrap Send to count snapshot calls atomically.
 		return &snapshotTrackingClient{MockClient: mc, calls: &snapshotCalls}
 	}
 
@@ -267,9 +267,10 @@ func TestOnSubscribeTerminal_SnapshotSentOnSuccess(t *testing.T) {
 		Status:          PodStatusRunning,
 		VirtualTerminal: terminal,
 	}
+	pod.Relay = NewPTYPodRelay(pod.PodKey, nil, terminal, nil, nil)
 	store.Put(pod.PodKey, pod)
 
-	err := handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	err := handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      pod.PodKey,
 		RelayURL:    "wss://relay.example.com",
 		RunnerToken: "token-snap",
@@ -278,19 +279,21 @@ func TestOnSubscribeTerminal_SnapshotSentOnSuccess(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Without VT contention, TryGetSnapshot should succeed and SendSnapshot should be called.
+	// Without VT contention, TryGetSnapshot should succeed and Send(MsgTypeSnapshot) should be called.
 	if snapshotCalls.Load() == 0 {
-		t.Error("expected SendSnapshot to be called when VT lock is available")
+		t.Error("expected Send(MsgTypeSnapshot) to be called when VT lock is available")
 	}
 }
 
-// snapshotTrackingClient wraps MockClient to track SendSnapshot calls atomically.
+// snapshotTrackingClient wraps MockClient to track Send(MsgTypeSnapshot) calls atomically.
 type snapshotTrackingClient struct {
 	*relay.MockClient
 	calls *atomic.Int32
 }
 
-func (s *snapshotTrackingClient) SendSnapshot(snapshot *vt.TerminalSnapshot) error {
-	s.calls.Add(1)
-	return s.MockClient.SendSnapshot(snapshot)
+func (s *snapshotTrackingClient) Send(msgType byte, payload []byte) error {
+	if msgType == relay.MsgTypeSnapshot {
+		s.calls.Add(1)
+	}
+	return s.MockClient.Send(msgType, payload)
 }

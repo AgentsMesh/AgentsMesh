@@ -12,7 +12,7 @@
  */
 export const MsgType = {
   Snapshot: 0x01,           // Complete terminal snapshot
-  Output: 0x02,             // Terminal output (raw PTY data)
+  Output: 0x02,             // Terminal output (raw pod data)
   Input: 0x03,              // User input to terminal
   Resize: 0x04,             // Terminal resize
   Ping: 0x05,               // Ping for keepalive
@@ -21,6 +21,9 @@ export const MsgType = {
   RunnerDisconnected: 0x08, // Runner disconnected notification
   RunnerReconnected: 0x09,  // Runner reconnected notification
   Resync: 0x0a,             // Resync request: ask relay to replay buffered output
+  AcpEvent: 0x0b,           // Runner → Browser, ACP event (JSON)
+  AcpCommand: 0x0c,         // Browser → Runner, ACP command (JSON)
+  AcpSnapshot: 0x0d,        // Runner → Browser, ACP session snapshot (JSON)
 } as const;
 
 /**
@@ -63,4 +66,23 @@ export function encodeResize(cols: number, rows: number): Uint8Array {
   payload[2] = (rows >> 8) & 0xff;
   payload[3] = rows & 0xff;
   return payload;
+}
+
+/**
+ * Encode a JSON object as a typed relay message (e.g. AcpCommand).
+ */
+export function encodeJsonMessage(msgType: number, obj: unknown): Uint8Array {
+  return encodeMessage(msgType, JSON.stringify(obj));
+}
+
+/**
+ * Decode a JSON payload from a relay message.
+ * Returns null if the payload cannot be parsed.
+ */
+export function decodeJsonPayload<T = unknown>(payload: Uint8Array): T | null {
+  try {
+    return JSON.parse(new TextDecoder().decode(payload)) as T;
+  } catch {
+    return null;
+  }
 }

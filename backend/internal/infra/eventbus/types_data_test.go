@@ -202,8 +202,8 @@ func TestEventDataStructures(t *testing.T) {
 		}
 	})
 
-	t.Run("TerminalNotificationData serialization", func(t *testing.T) {
-		data := &TerminalNotificationData{
+	t.Run("PodNotificationData serialization", func(t *testing.T) {
+		data := &PodNotificationData{
 			PodKey: "pod-term",
 			Title:  "Alert",
 			Body:   "Something happened",
@@ -214,7 +214,7 @@ func TestEventDataStructures(t *testing.T) {
 			t.Fatalf("failed to marshal: %v", err)
 		}
 
-		var decoded TerminalNotificationData
+		var decoded PodNotificationData
 		if err := json.Unmarshal(bytes, &decoded); err != nil {
 			t.Fatalf("failed to unmarshal: %v", err)
 		}

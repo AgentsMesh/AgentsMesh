@@ -50,7 +50,7 @@ func TestHandler_HandleRunnerWS_MissingToken(t *testing.T) {
 	h := createTestHandler()
 	// Without token should return 401 Unauthorized
 	w := httptest.NewRecorder()
-	h.HandleRunnerWS(w, httptest.NewRequest("GET", "/runner/terminal", nil))
+	h.HandleRunnerWS(w, httptest.NewRequest("GET", "/runner/relay", nil))
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", w.Code)
 	}
@@ -59,7 +59,7 @@ func TestHandler_HandleRunnerWS_MissingToken(t *testing.T) {
 func TestHandler_HandleRunnerWS_InvalidToken(t *testing.T) {
 	h := createTestHandler()
 	w := httptest.NewRecorder()
-	h.HandleRunnerWS(w, httptest.NewRequest("GET", "/runner/terminal?token=invalid", nil))
+	h.HandleRunnerWS(w, httptest.NewRequest("GET", "/runner/relay?token=invalid", nil))
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", w.Code)
 	}
@@ -78,7 +78,7 @@ func TestHandler_HandleBrowserWS_Errors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		w := httptest.NewRecorder()
-		h.HandleBrowserWS(w, httptest.NewRequest("GET", "/browser/terminal?"+tt.query, nil))
+		h.HandleBrowserWS(w, httptest.NewRequest("GET", "/browser/relay?"+tt.query, nil))
 		if w.Code != tt.code {
 			t.Errorf("%s: expected %d, got %d", tt.name, tt.code, w.Code)
 		}
@@ -150,7 +150,7 @@ func TestHandler_HandleRunnerWS_EmptyPodKey(t *testing.T) {
 	h := createTestHandler()
 	token, _ := auth.GenerateToken(testSecret, testIssuer, "", 1, 0, 3, time.Hour)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/runner/terminal?token="+token, nil)
+	r := httptest.NewRequest("GET", "/runner/relay?token="+token, nil)
 	h.HandleRunnerWS(w, r)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", w.Code)
@@ -161,7 +161,7 @@ func TestHandler_HandleBrowserWS_EmptyPodKey(t *testing.T) {
 	h := createTestHandler()
 	token, _ := auth.GenerateToken(testSecret, testIssuer, "", 1, 2, 3, time.Hour)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/browser/terminal?token="+token, nil)
+	r := httptest.NewRequest("GET", "/browser/relay?token="+token, nil)
 	h.HandleBrowserWS(w, r)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", w.Code)
@@ -236,7 +236,7 @@ func TestHandler_HandleRunnerWS_UpgradeError(t *testing.T) {
 	token := runnerToken("pod-1")
 	w := httptest.NewRecorder()
 	// This is NOT a WebSocket upgrade request — no Upgrade/Connection headers
-	r := httptest.NewRequest("GET", "/runner/terminal?token="+token, nil)
+	r := httptest.NewRequest("GET", "/runner/relay?token="+token, nil)
 	h.HandleRunnerWS(w, r)
 	// The upgrader writes 400 Bad Request when upgrade headers are missing
 	if w.Code != http.StatusBadRequest {
@@ -249,7 +249,7 @@ func TestHandler_HandleBrowserWS_UpgradeError(t *testing.T) {
 	h := createTestHandler()
 	token := validToken("pod-1")
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/browser/terminal?token="+token, nil)
+	r := httptest.NewRequest("GET", "/browser/relay?token="+token, nil)
 	h.HandleBrowserWS(w, r)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected 400 from upgrade failure, got %d", w.Code)

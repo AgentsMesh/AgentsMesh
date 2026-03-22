@@ -56,7 +56,7 @@ func TestGRPCRunnerAdapter_SendTerminatePod(t *testing.T) {
 	assert.Contains(t, err.Error(), "not connected")
 }
 
-func TestGRPCRunnerAdapter_SendTerminalInput(t *testing.T) {
+func TestGRPCRunnerAdapter_SendPodInput(t *testing.T) {
 	logger := newTestLogger()
 	runnerSvc := newMockRunnerService()
 	orgSvc := newMockOrgService()
@@ -65,21 +65,7 @@ func TestGRPCRunnerAdapter_SendTerminalInput(t *testing.T) {
 	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 	// Test sending to non-existent runner
-	err := adapter.SendTerminalInput(999, "test-pod", []byte("hello"))
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not connected")
-}
-
-func TestGRPCRunnerAdapter_SendTerminalResize(t *testing.T) {
-	logger := newTestLogger()
-	runnerSvc := newMockRunnerService()
-	orgSvc := newMockOrgService()
-	connMgr := runner.NewRunnerConnectionManager(logger)
-
-	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
-
-	// Test sending to non-existent runner
-	err := adapter.SendTerminalResize(999, "test-pod", 120, 40)
+	err := adapter.SendPodInput(999, "test-pod", []byte("hello"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not connected")
 }

@@ -6,7 +6,7 @@ import { useTerminalResize } from "../useTerminalResize";
 const mockForceResize = vi.fn();
 
 vi.mock("@/stores/workspace", () => ({
-  terminalPool: {
+  relayPool: {
     forceResize: (...args: unknown[]) => mockForceResize(...args),
   },
 }));

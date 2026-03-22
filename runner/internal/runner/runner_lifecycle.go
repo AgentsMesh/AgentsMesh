@@ -149,20 +149,16 @@ func (r *Runner) stopAllPods() {
 			podStartedAt := p.StartedAt
 
 			p.StopStateDetector()
-			// Stop aggregator BEFORE disconnecting relay, so the final flush
-			// can still be sent through the relay (matches createExitHandler order).
-			// Close PTYLogger AFTER Aggregator.Stop() to avoid silent data loss.
-			if p.Aggregator != nil {
-				p.Aggregator.Stop()
-			}
-			if p.PTYLogger != nil {
-				p.PTYLogger.Close()
+			// Mode-specific infrastructure cleanup (aggregator, loggers).
+			// Must happen BEFORE DisconnectRelay so the final flush reaches the browser.
+			if p.IO != nil {
+				p.IO.Teardown()
 			}
 			p.DisconnectRelay()
-			if p.Terminal != nil {
+			if p.IO != nil {
 				// Detach instead of Stop: daemon + child process stay alive
 				// so the session can be recovered after Runner restart.
-				p.Terminal.Detach()
+				p.IO.Detach()
 			}
 			r.podStore.Delete(p.PodKey)
 

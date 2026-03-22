@@ -182,6 +182,9 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.EventBus != nil {
 		podOpts = append(podOpts, WithEventBus(svc.EventBus))
 	}
+	if svc.PodCoordinator != nil {
+		podOpts = append(podOpts, WithCommandSender(svc.PodCoordinator.GetCommandSender()))
+	}
 	podHandler := NewPodHandler(svc.Pod, svc.Runner, svc.PodOrchestrator, podOpts...)
 	pods := rg.Group("/pods")
 	{
@@ -191,15 +194,18 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		pods.POST("/:key/terminate", podHandler.TerminatePod)
 		pods.PATCH("/:key/alias", podHandler.UpdatePodAlias)
 		pods.GET("/:key/connect", podHandler.GetConnectionInfo)
+
+		// Mode-transparent pod commands
+		pods.POST("/:key/prompt", podHandler.SendPodPrompt)
 	}
 
-	// Terminal Relay connection endpoint
+	// Relay connection endpoint
 	if svc.RelayManager != nil && svc.RelayTokenGenerator != nil {
 		var commandSender runner.RunnerCommandSender
 		if svc.PodCoordinator != nil {
 			commandSender = svc.PodCoordinator.GetCommandSender()
 		}
-		RegisterTerminalConnectRoutes(rg, svc.Pod, svc.RelayManager, svc.RelayTokenGenerator, commandSender, svc.GeoResolver)
+		RegisterPodConnectRoutes(rg, svc.Pod, svc.RelayManager, svc.RelayTokenGenerator, commandSender, svc.GeoResolver)
 	}
 
 	// AutopilotControllers

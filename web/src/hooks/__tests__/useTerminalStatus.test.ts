@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
-// Mock terminalPool
+// Mock relayPool
 let statusCallback: ((info: { status: string; runnerDisconnected: boolean }) => void) | null = null;
 const mockUnsubscribe = vi.fn();
 
-vi.mock("@/stores/terminalConnection", () => ({
-  terminalPool: {
+vi.mock("@/stores/relayConnection", () => ({
+  relayPool: {
     onStatusChange: vi.fn((podKey: string, listener: (info: { status: string; runnerDisconnected: boolean }) => void) => {
       statusCallback = listener;
       // Immediately call with initial status
@@ -30,10 +30,10 @@ describe("useTerminalStatus", () => {
     expect(result.current.runnerDisconnected).toBe(false);
   });
 
-  it("subscribes to terminalPool on mount", async () => {
-    const { terminalPool } = await import("@/stores/terminalConnection");
+  it("subscribes to relayPool on mount", async () => {
+    const { relayPool } = await import("@/stores/relayConnection");
     renderHook(() => useTerminalStatus("pod-1"));
-    expect(terminalPool.onStatusChange).toHaveBeenCalledWith("pod-1", expect.any(Function));
+    expect(relayPool.onStatusChange).toHaveBeenCalledWith("pod-1", expect.any(Function));
   });
 
   it("updates when status changes", () => {
@@ -63,7 +63,7 @@ describe("useTerminalStatus", () => {
   });
 
   it("resubscribes when podKey changes", async () => {
-    const { terminalPool } = await import("@/stores/terminalConnection");
+    const { relayPool } = await import("@/stores/relayConnection");
     const { rerender } = renderHook(
       ({ podKey }) => useTerminalStatus(podKey),
       { initialProps: { podKey: "pod-1" } }
@@ -71,7 +71,7 @@ describe("useTerminalStatus", () => {
 
     rerender({ podKey: "pod-2" });
 
-    expect(terminalPool.onStatusChange).toHaveBeenCalledWith("pod-2", expect.any(Function));
+    expect(relayPool.onStatusChange).toHaveBeenCalledWith("pod-2", expect.any(Function));
     expect(mockUnsubscribe).toHaveBeenCalled();
   });
 });

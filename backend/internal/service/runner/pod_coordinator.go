@@ -20,16 +20,6 @@ const (
 	// orphanMissThreshold is the number of consecutive heartbeat misses required
 	// before marking a pod as orphaned. At ~30s per heartbeat cycle, 3 misses ≈ 90s.
 	orphanMissThreshold = 3
-
-	// initRecoverThreshold is the number of consecutive heartbeats reporting an
-	// initializing pod before recovering it to running. At ~30s per cycle, 2 ≈ 60s.
-	// This gives PodCreated time to arrive via normal event path before fallback.
-	initRecoverThreshold = 2
-)
-
-// Pod initialization error codes used when marking pods as failed.
-const (
-	ErrCodeRunnerDisconnected = "RUNNER_DISCONNECTED"
 )
 
 // PodCoordinator coordinates pod lifecycle events between backend and runners
@@ -38,7 +28,7 @@ type PodCoordinator struct {
 	runnerRepo        runnerDomain.RunnerRepository
 	autopilotRepo     agentpod.AutopilotRepository
 	connectionManager *RunnerConnectionManager
-	terminalRouter    *TerminalRouter
+	podRouter    *PodRouter
 	heartbeatBatcher  *HeartbeatBatcher
 	logger            *slog.Logger
 
@@ -61,15 +51,6 @@ type PodCoordinator struct {
 	podMissOwner map[string]int64          // podKey → runnerID (reverse index for clearByRunner)
 	podMissMu    sync.Mutex
 
-	// Init report counter: tracks consecutive heartbeats reporting an initializing pod.
-	// A pod is only recovered (initializing → running) after initRecoverThreshold
-	// consecutive reports, preventing premature recovery of slow-but-healthy inits.
-	initReportCount map[string]int
-	initReportMu    sync.Mutex
-
-	// ACK tracker: tracks pending acknowledgments for CreatePod commands.
-	ackTracker *AckTracker
-
 	// Callbacks
 	onStatusChange   func(podKey string, status string, agentStatus string)
 	onInitProgress   func(podKey string, phase string, progress int, message string)
@@ -88,7 +69,7 @@ func NewPodCoordinator(
 	podRepo agentpod.PodRepository,
 	runnerRepo runnerDomain.RunnerRepository,
 	cm *RunnerConnectionManager,
-	tr *TerminalRouter,
+	tr *PodRouter,
 	hb *HeartbeatBatcher,
 	logger *slog.Logger,
 ) *PodCoordinator {
@@ -96,7 +77,7 @@ func NewPodCoordinator(
 		podRepo:              podRepo,
 		runnerRepo:           runnerRepo,
 		connectionManager:    cm,
-		terminalRouter:       tr,
+		podRouter:       tr,
 		heartbeatBatcher:     hb,
 		logger:               logger,
 		commandSender:        NewNoOpCommandSender(logger), // Default to no-op
@@ -104,8 +85,6 @@ func NewPodCoordinator(
 		terminateSentCache:   make(map[string]time.Time),
 		podMissCount:         make(map[string]int),
 		podMissOwner:         make(map[string]int64),
-		initReportCount:      make(map[string]int),
-		ackTracker:           NewAckTracker(),
 	}
 
 	// Set up callbacks from connection manager
@@ -166,24 +145,21 @@ func (pc *PodCoordinator) DecrementPods(ctx context.Context, runnerID int64) err
 	return pc.runnerRepo.DecrementPods(ctx, runnerID)
 }
 
-// CreatePod creates a new pod on a runner.
+// CreatePod creates a new pod on a runner
 // Uses Proto type directly for zero-copy message passing.
-// Registers an ACK expectation so the heartbeat reconciler can distinguish
-// "Runner is still initializing" from "PodCreated message was lost".
 func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error {
 	// Increment pod count first
 	if err := pc.IncrementPods(ctx, runnerID); err != nil {
 		return err
 	}
 
-	// Register ACK expectation before sending command.
-	// Resolved when Runner sends "received" progress, PodCreated, or PodError.
-	pc.ackTracker.Register(cmd.PodKey)
+	// Note: Pod is NOT registered with pod router here.
+	// Registration happens in handlePodCreated when Runner confirms the pod is actually created.
+	// This ensures we don't have stale routes if pod creation fails on Runner side.
 
 	// Send create pod command to runner via command sender.
 	// Rollback pod count on failure to keep capacity accurate.
 	if err := pc.commandSender.SendCreatePod(ctx, runnerID, cmd); err != nil {
-		pc.ackTracker.Remove(cmd.PodKey)
 		_ = pc.DecrementPods(ctx, runnerID)
 		return err
 	}
@@ -215,8 +191,8 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 		return err
 	}
 
-	// Unregister from terminal router and clean up miss counter
-	pc.terminalRouter.UnregisterPod(podKey)
+	// Unregister from pod router and clean up miss counter
+	pc.podRouter.UnregisterPod(podKey)
 	pc.clearMissCount(podKey)
 
 	// Decrement pod count
@@ -318,24 +294,6 @@ func (pc *PodCoordinator) clearMissCountsForRunner(runnerID int64) {
 			delete(pc.podMissOwner, podKey)
 		}
 	}
-}
-
-// ==================== Init Report Counter ====================
-
-// incrementInitReportCount increments the consecutive heartbeat report count
-// for an initializing pod. Returns the new count.
-func (pc *PodCoordinator) incrementInitReportCount(podKey string) int {
-	pc.initReportMu.Lock()
-	defer pc.initReportMu.Unlock()
-	pc.initReportCount[podKey]++
-	return pc.initReportCount[podKey]
-}
-
-// clearInitReportCount removes the init report counter for a pod.
-func (pc *PodCoordinator) clearInitReportCount(podKey string) {
-	pc.initReportMu.Lock()
-	defer pc.initReportMu.Unlock()
-	delete(pc.initReportCount, podKey)
 }
 
 // ==================== Relay Connection Queries ====================

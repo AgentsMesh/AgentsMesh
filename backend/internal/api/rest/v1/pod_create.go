@@ -22,7 +22,8 @@ type CreatePodRequest struct {
 	InitialPrompt     string  `json:"initial_prompt"`
 	Alias             *string `json:"alias"` // User-defined display name (max 100 chars)
 	BranchName        *string `json:"branch_name"`
-	PermissionMode    *string `json:"permission_mode"` // "plan", "default", or "bypassPermissions"
+	PermissionMode  *string `json:"permission_mode"`  // "plan", "default", or "bypassPermissions"
+	InteractionMode *string `json:"interaction_mode"` // "pty" (default) or "acp"
 
 	// CredentialProfileID specifies which credential profile to use
 	// - nil (field absent): use user's default profile, fallback to RunnerHost if no default
@@ -81,6 +82,7 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 		Alias:               req.Alias,
 		BranchName:          req.BranchName,
 		PermissionMode:      req.PermissionMode,
+		InteractionMode:     req.InteractionMode,
 		CredentialProfileID: req.CredentialProfileID,
 		ConfigOverrides:     req.ConfigOverrides,
 		Cols:                req.Cols,
@@ -119,6 +121,8 @@ func mapOrchestratorErrorToHTTP(c *gin.Context, err error) {
 		apierr.BadRequest(c, apierr.SOURCE_POD_NOT_TERMINATED, "Can only resume from terminated, completed, or orphaned pods")
 	case errors.Is(err, agentpod.ErrResumeRunnerMismatch):
 		apierr.BadRequest(c, apierr.RESUME_RUNNER_MISMATCH, "Resume requires same runner as source pod (Sandbox is local to runner)")
+	case errors.Is(err, agentpod.ErrUnsupportedInteractionMode):
+		apierr.BadRequest(c, apierr.UNSUPPORTED_INTERACTION_MODE, err.Error())
 
 	// Billing errors → 402
 	case errors.Is(err, ErrQuotaExceeded):

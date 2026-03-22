@@ -27,7 +27,11 @@ func (b *GeminiCLIBuilder) Slug() string {
 
 // HandleInitialPrompt appends the initial prompt to launch arguments.
 // Gemini CLI syntax: gemini [options] [prompt]
+// In ACP mode, the prompt is sent via JSON-RPC (session/prompt), not CLI args.
 func (b *GeminiCLIBuilder) HandleInitialPrompt(ctx *BuildContext, args []string) []string {
+	if ctx.Request.InteractionMode == "acp" {
+		return args
+	}
 	if ctx.Request.InitialPrompt != "" {
 		return append(args, ctx.Request.InitialPrompt)
 	}
@@ -49,7 +53,11 @@ func (b *GeminiCLIBuilder) BuildEnvVars(ctx *BuildContext) (map[string]string, e
 	return b.BaseAgentBuilder.BuildEnvVars(ctx)
 }
 
-// PostProcess uses the base implementation
+// PostProcess appends the --acp flag in ACP mode.
+// Gemini CLI natively supports ACP JSON-RPC 2.0 via --acp.
 func (b *GeminiCLIBuilder) PostProcess(ctx *BuildContext, cmd *runnerv1.CreatePodCommand) error {
-	return b.BaseAgentBuilder.PostProcess(ctx, cmd)
+	if ctx.Request.InteractionMode == "acp" {
+		cmd.LaunchArgs = append(cmd.LaunchArgs, "--acp")
+	}
+	return nil
 }

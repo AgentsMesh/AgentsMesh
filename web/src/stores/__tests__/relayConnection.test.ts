@@ -38,7 +38,7 @@ global.WebSocket = MockWebSocket as unknown as typeof WebSocket;
 // Mock pod API
 vi.mock("@/lib/api/pod", () => ({
   podApi: {
-    getTerminalConnection: vi.fn().mockResolvedValue({
+    getPodConnection: vi.fn().mockResolvedValue({
       relay_url: "wss://relay.example.com",
       token: "test-token",
       pod_key: "pod-1",
@@ -46,27 +46,27 @@ vi.mock("@/lib/api/pod", () => ({
   },
 }));
 
-describe("terminalConnection", () => {
-  let terminalPool: typeof import("@/stores/terminalConnection").terminalPool;
+describe("relayConnection", () => {
+  let pool: typeof import("@/stores/relayConnection").relayPool;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     // Re-import to get fresh singleton
     vi.resetModules();
-    const importedModule = await import("@/stores/terminalConnection");
-    terminalPool = importedModule.terminalPool;
+    const importedModule = await import("@/stores/relayConnection");
+    pool = importedModule.relayPool;
   });
 
   afterEach(() => {
-    terminalPool?.disconnectAll();
+    pool?.disconnectAll();
     vi.useRealTimers();
   });
 
   describe("subscribe", () => {
     it("should create connection and return handle", async () => {
       const onMessage = vi.fn();
-      const handlePromise = terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      const handlePromise = pool.subscribe("pod-1", "sub-1", onMessage);
 
       await vi.runAllTimersAsync();
       const handle = await handlePromise;
@@ -74,108 +74,108 @@ describe("terminalConnection", () => {
       expect(handle).toHaveProperty("send");
       expect(handle).toHaveProperty("unsubscribe");
       expect(handle).toHaveProperty("disconnect");
-      expect(terminalPool.getStatus("pod-1")).toBe("connected");
+      expect(pool.getStatus("pod-1")).toBe("connected");
     });
 
     it("should add new subscriber to existing connection without reconnecting", async () => {
       const onMessage1 = vi.fn();
       const onMessage2 = vi.fn();
 
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
+      await pool.subscribe("pod-1", "sub-1", onMessage1);
       await vi.runAllTimersAsync();
 
       // New subscriber joins existing connection (no disconnect/reconnect)
-      const handle2 = await terminalPool.subscribe("pod-1", "sub-2", onMessage2);
+      const handle2 = await pool.subscribe("pod-1", "sub-2", onMessage2);
       await vi.runAllTimersAsync();
 
       expect(handle2).toHaveProperty("send");
       // Both subscribers should be registered on the same connection
-      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(2);
-      expect(terminalPool.getConnection("pod-1")?.subscribers.has("sub-1")).toBe(true);
-      expect(terminalPool.getConnection("pod-1")?.subscribers.has("sub-2")).toBe(true);
+      expect(pool.getConnection("pod-1")?.subscribers.size).toBe(2);
+      expect(pool.getConnection("pod-1")?.subscribers.has("sub-1")).toBe(true);
+      expect(pool.getConnection("pod-1")?.subscribers.has("sub-2")).toBe(true);
     });
 
     it("should be idempotent - same subscriptionId replaces previous callback", async () => {
       const onMessage1 = vi.fn();
       const onMessage2 = vi.fn();
 
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
+      await pool.subscribe("pod-1", "sub-1", onMessage1);
       await vi.runAllTimersAsync();
 
       // Subscribe again with same subscriptionId
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage2);
+      await pool.subscribe("pod-1", "sub-1", onMessage2);
       await vi.runAllTimersAsync();
 
       // Should still have only 1 subscriber (replaced, not added)
-      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(1);
+      expect(pool.getConnection("pod-1")?.subscribers.size).toBe(1);
     });
   });
 
   describe("connect (deprecated)", () => {
     it("should create connection and return handle", async () => {
       const onMessage = vi.fn();
-      const handlePromise = terminalPool.connect("pod-1", onMessage);
+      const handlePromise = pool.connect("pod-1", onMessage);
 
       await vi.runAllTimersAsync();
       const handle = await handlePromise;
 
       expect(handle).toHaveProperty("send");
       expect(handle).toHaveProperty("disconnect");
-      expect(terminalPool.getStatus("pod-1")).toBe("connected");
+      expect(pool.getStatus("pod-1")).toBe("connected");
     });
 
     it("should add new subscriber when called again for same pod", async () => {
       const onMessage1 = vi.fn();
       const onMessage2 = vi.fn();
 
-      await terminalPool.connect("pod-1", onMessage1);
+      await pool.connect("pod-1", onMessage1);
       await vi.runAllTimersAsync();
 
       // Second connect adds a new subscriber (legacy IDs are unique)
-      const handle2 = await terminalPool.connect("pod-1", onMessage2);
+      const handle2 = await pool.connect("pod-1", onMessage2);
       await vi.runAllTimersAsync();
 
       expect(handle2).toHaveProperty("send");
       // Both subscribers on same connection
-      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(2);
+      expect(pool.getConnection("pod-1")?.subscribers.size).toBe(2);
     });
   });
 
   describe("unsubscribe", () => {
     it("should remove subscriber by subscriptionId", async () => {
       const onMessage = vi.fn();
-      const handle = await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      const handle = await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       handle.unsubscribe();
 
       // Subscriber should be removed
-      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(0);
+      expect(pool.getConnection("pod-1")?.subscribers.size).toBe(0);
     });
 
     it("should delay disconnect when last subscriber leaves", async () => {
       const onMessage = vi.fn();
-      const handle = await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      const handle = await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       handle.unsubscribe();
 
       // Connection should still exist (delayed disconnect)
-      expect(terminalPool.getConnection("pod-1")).toBeDefined();
+      expect(pool.getConnection("pod-1")).toBeDefined();
 
       // Advance past disconnect delay (30s)
       await vi.advanceTimersByTimeAsync(30000);
 
       // Now connection should be gone
-      expect(terminalPool.getConnection("pod-1")).toBeUndefined();
-      expect(terminalPool.getStatus("pod-1")).toBe("none");
+      expect(pool.getConnection("pod-1")).toBeUndefined();
+      expect(pool.getStatus("pod-1")).toBe("none");
     });
 
     it("should cancel disconnect timer if new subscriber joins", async () => {
       const onMessage1 = vi.fn();
       const onMessage2 = vi.fn();
 
-      const handle1 = await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
+      const handle1 = await pool.subscribe("pod-1", "sub-1", onMessage1);
       await vi.runAllTimersAsync();
 
       // Unsubscribe first subscriber
@@ -185,14 +185,14 @@ describe("terminalConnection", () => {
       await vi.advanceTimersByTimeAsync(10000);
 
       // New subscriber joins
-      await terminalPool.subscribe("pod-1", "sub-2", onMessage2);
+      await pool.subscribe("pod-1", "sub-2", onMessage2);
 
       // Advance past original disconnect time
       await vi.advanceTimersByTimeAsync(25000);
 
       // Connection should still exist (timer was cancelled)
-      expect(terminalPool.getConnection("pod-1")).toBeDefined();
-      expect(terminalPool.getConnection("pod-1")?.subscribers.size).toBe(1);
+      expect(pool.getConnection("pod-1")).toBeDefined();
+      expect(pool.getConnection("pod-1")?.subscribers.size).toBe(1);
     });
 
     // Note: In the new architecture, multiple subscribers don't coexist on the same connection.
@@ -202,73 +202,73 @@ describe("terminalConnection", () => {
 
   describe("getStatus", () => {
     it("should return 'none' for unknown pod", () => {
-      expect(terminalPool.getStatus("unknown")).toBe("none");
+      expect(pool.getStatus("unknown")).toBe("none");
     });
   });
 
   describe("isConnected", () => {
     it("should return false for unknown pod", () => {
-      expect(terminalPool.isConnected("unknown")).toBe(false);
+      expect(pool.isConnected("unknown")).toBe(false);
     });
   });
 
   describe("isRunnerDisconnected", () => {
     it("should return false for unknown pod", () => {
-      expect(terminalPool.isRunnerDisconnected("unknown")).toBe(false);
+      expect(pool.isRunnerDisconnected("unknown")).toBe(false);
     });
   });
 
   describe("disconnect", () => {
     it("should close connection and remove from pool", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
-      terminalPool.disconnect("pod-1");
+      pool.disconnect("pod-1");
 
-      expect(terminalPool.getStatus("pod-1")).toBe("none");
+      expect(pool.getStatus("pod-1")).toBe("none");
     });
 
     it("should be safe to call for non-existent pod", () => {
-      expect(() => terminalPool.disconnect("unknown")).not.toThrow();
+      expect(() => pool.disconnect("unknown")).not.toThrow();
     });
   });
 
   describe("disconnectAll", () => {
     it("should disconnect all connections", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
-      await terminalPool.subscribe("pod-2", "sub-2", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-2", "sub-2", onMessage);
       await vi.runAllTimersAsync();
 
-      terminalPool.disconnectAll();
+      pool.disconnectAll();
 
-      expect(terminalPool.getStatus("pod-1")).toBe("none");
-      expect(terminalPool.getStatus("pod-2")).toBe("none");
+      expect(pool.getStatus("pod-1")).toBe("none");
+      expect(pool.getStatus("pod-2")).toBe("none");
     });
   });
 
   describe("sendResize", () => {
     it("should not throw for invalid dimensions", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
-      expect(() => terminalPool.sendResize("pod-1", 0, 0)).not.toThrow();
-      expect(() => terminalPool.sendResize("pod-1", -1, 24)).not.toThrow();
+      expect(() => pool.sendResize("pod-1", 0, 0)).not.toThrow();
+      expect(() => pool.sendResize("pod-1", -1, 24)).not.toThrow();
     });
 
     it("should send resize message when connection is open", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       expect(conn).toBeDefined();
       expect(conn!.ws.readyState).toBe(MockWebSocket.OPEN);
 
       // sendResize is debounced, need to advance timer
-      terminalPool.sendResize("pod-1", 120, 40);
+      pool.sendResize("pod-1", 120, 40);
       await vi.advanceTimersByTimeAsync(200); // debounce is 150ms
 
       // Verify resize message was sent
@@ -284,26 +284,26 @@ describe("terminalConnection", () => {
 
     it("should not send resize for non-existent connection", async () => {
       // No connection exists for "unknown-pod"
-      terminalPool.sendResize("unknown-pod", 80, 24);
+      pool.sendResize("unknown-pod", 80, 24);
       await vi.advanceTimersByTimeAsync(200);
 
       // Should not throw, just silently do nothing
-      expect(terminalPool.getConnection("unknown-pod")).toBeUndefined();
+      expect(pool.getConnection("unknown-pod")).toBeUndefined();
     });
   });
 
   describe("forceResize", () => {
     it("should send resize immediately when connection is open", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       expect(conn).toBeDefined();
       const sendCallsBefore = (conn!.ws.send as MockSend).mock.calls.length;
 
       // forceResize should send immediately (no debounce)
-      terminalPool.forceResize("pod-1", 100, 30);
+      pool.forceResize("pod-1", 100, 30);
 
       // Verify resize message was sent immediately
       expect((conn!.ws.send as MockSend).mock.calls.length).toBe(sendCallsBefore + 1);
@@ -320,18 +320,18 @@ describe("terminalConnection", () => {
       const onMessage = vi.fn();
 
       // Start subscribe - this creates connection synchronously, but WebSocket opens async
-      const subscribePromise = terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      const subscribePromise = pool.subscribe("pod-1", "sub-1", onMessage);
 
       // Need to wait for the promise to start (microtask), but not for WebSocket to open
       await Promise.resolve();
 
       // At this point, connection exists but WebSocket is still CONNECTING
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       expect(conn).toBeDefined();
       expect(conn!.ws.readyState).toBe(MockWebSocket.CONNECTING);
 
       // forceResize while connecting should queue pendingResize
-      terminalPool.forceResize("pod-1", 80, 24);
+      pool.forceResize("pod-1", 80, 24);
 
       // Verify pendingResize was set
       expect(conn!.pendingResize).toEqual({ rows: 24, cols: 80 });
@@ -354,22 +354,22 @@ describe("terminalConnection", () => {
 
     it("should not throw for non-existent connection", () => {
       // No connection exists for "unknown-pod"
-      expect(() => terminalPool.forceResize("unknown-pod", 80, 24)).not.toThrow();
+      expect(() => pool.forceResize("unknown-pod", 80, 24)).not.toThrow();
     });
 
     it("should not send resize for invalid dimensions", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       const sendCallsBefore = (conn!.ws.send as MockSend).mock.calls.length;
 
       // Invalid dimensions should be ignored
-      terminalPool.forceResize("pod-1", 0, 24);
-      terminalPool.forceResize("pod-1", 80, 0);
-      terminalPool.forceResize("pod-1", -1, 24);
-      terminalPool.forceResize("pod-1", 80, -1);
+      pool.forceResize("pod-1", 0, 24);
+      pool.forceResize("pod-1", 80, 0);
+      pool.forceResize("pod-1", -1, 24);
+      pool.forceResize("pod-1", 80, -1);
 
       // No resize messages should be sent
       expect((conn!.ws.send as MockSend).mock.calls.length).toBe(sendCallsBefore);
@@ -380,22 +380,22 @@ describe("terminalConnection", () => {
       const onMessage2 = vi.fn();
 
       // First subscriber connects
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage1);
+      await pool.subscribe("pod-1", "sub-1", onMessage1);
       await vi.runAllTimersAsync();
 
       // New subscriber causes reconnection
-      await terminalPool.subscribe("pod-1", "sub-2", onMessage2);
+      await pool.subscribe("pod-1", "sub-2", onMessage2);
       await vi.runAllTimersAsync();
 
       // Get the new connection
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       expect(conn).toBeDefined();
       expect(conn!.ws.readyState).toBe(MockWebSocket.OPEN);
 
       const sendCallsBefore = (conn!.ws.send as MockSend).mock.calls.length;
 
       // forceResize on new connection should work
-      terminalPool.forceResize("pod-1", 120, 40);
+      pool.forceResize("pod-1", 120, 40);
 
       // Verify resize was sent
       expect((conn!.ws.send as MockSend).mock.calls.length).toBe(sendCallsBefore + 1);
@@ -405,9 +405,9 @@ describe("terminalConnection", () => {
     });
   });
 
-  describe("getPtySize", () => {
+  describe("getPodSize", () => {
     it("should return undefined for unknown pod", () => {
-      expect(terminalPool.getPtySize("unknown")).toBeUndefined();
+      expect(pool.getPodSize("unknown")).toBeUndefined();
     });
   });
 
@@ -415,11 +415,11 @@ describe("terminalConnection", () => {
     it("should forward output message to subscriber", async () => {
       const onMessage = vi.fn();
 
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       // Simulate receiving a message
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       expect(conn).toBeDefined();
 
       // Create a mock output message (type 0x02 = Output)
@@ -447,7 +447,7 @@ describe("terminalConnection", () => {
   describe("onStatusChange", () => {
     it("should call listener immediately with current status (none for unknown pod)", () => {
       const listener = vi.fn();
-      terminalPool.onStatusChange("unknown-pod", listener);
+      pool.onStatusChange("unknown-pod", listener);
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener).toHaveBeenCalledWith({
@@ -458,11 +458,11 @@ describe("terminalConnection", () => {
 
     it("should call listener immediately with current connected status", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       const listener = vi.fn();
-      terminalPool.onStatusChange("pod-1", listener);
+      pool.onStatusChange("pod-1", listener);
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener).toHaveBeenCalledWith({
@@ -473,7 +473,7 @@ describe("terminalConnection", () => {
 
     it("should notify listener when connection status changes to connected", async () => {
       const listener = vi.fn();
-      terminalPool.onStatusChange("pod-1", listener);
+      pool.onStatusChange("pod-1", listener);
 
       // Initial call with "none"
       expect(listener).toHaveBeenCalledWith({
@@ -483,7 +483,7 @@ describe("terminalConnection", () => {
 
       // Subscribe triggers "connecting" then "connected"
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       // Should have been called with "connecting" and "connected"
@@ -494,15 +494,15 @@ describe("terminalConnection", () => {
 
     it("should notify listener when disconnected", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       const listener = vi.fn();
-      terminalPool.onStatusChange("pod-1", listener);
+      pool.onStatusChange("pod-1", listener);
       listener.mockClear(); // Clear the initial call
 
       // Disconnect
-      terminalPool.disconnect("pod-1");
+      pool.disconnect("pod-1");
 
       // Should be notified with "none" (connection removed from map)
       expect(listener).toHaveBeenCalledWith({
@@ -513,15 +513,15 @@ describe("terminalConnection", () => {
 
     it("should notify listener when runner disconnects", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       const listener = vi.fn();
-      terminalPool.onStatusChange("pod-1", listener);
+      pool.onStatusChange("pod-1", listener);
       listener.mockClear();
 
       // Simulate RunnerDisconnected message (type 0x08)
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       expect(conn).toBeDefined();
       const message = new Uint8Array([0x08]); // MsgType.RunnerDisconnected
       conn!.ws.onmessage?.({ data: message.buffer } as MessageEvent);
@@ -534,10 +534,10 @@ describe("terminalConnection", () => {
 
     it("should notify listener when runner reconnects", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       expect(conn).toBeDefined();
 
       // First disconnect runner
@@ -545,7 +545,7 @@ describe("terminalConnection", () => {
       conn!.ws.onmessage?.({ data: disconnectMsg.buffer } as MessageEvent);
 
       const listener = vi.fn();
-      terminalPool.onStatusChange("pod-1", listener);
+      pool.onStatusChange("pod-1", listener);
 
       // Initial call should show runner disconnected
       expect(listener).toHaveBeenCalledWith({
@@ -566,18 +566,18 @@ describe("terminalConnection", () => {
 
     it("should support multiple listeners for same pod", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       const listener1 = vi.fn();
       const listener2 = vi.fn();
-      terminalPool.onStatusChange("pod-1", listener1);
-      terminalPool.onStatusChange("pod-1", listener2);
+      pool.onStatusChange("pod-1", listener1);
+      pool.onStatusChange("pod-1", listener2);
       listener1.mockClear();
       listener2.mockClear();
 
       // Trigger status change
-      terminalPool.disconnect("pod-1");
+      pool.disconnect("pod-1");
 
       expect(listener1).toHaveBeenCalled();
       expect(listener2).toHaveBeenCalled();
@@ -585,18 +585,18 @@ describe("terminalConnection", () => {
 
     it("should stop notifying after unsubscribe", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       const listener = vi.fn();
-      const unsubscribe = terminalPool.onStatusChange("pod-1", listener);
+      const unsubscribe = pool.onStatusChange("pod-1", listener);
       listener.mockClear();
 
       // Unsubscribe
       unsubscribe();
 
       // Trigger status change
-      terminalPool.disconnect("pod-1");
+      pool.disconnect("pod-1");
 
       // Should not have been called after unsubscribe
       expect(listener).not.toHaveBeenCalled();
@@ -604,27 +604,27 @@ describe("terminalConnection", () => {
 
     it("should clean up listener set when last listener unsubscribes", () => {
       const listener = vi.fn();
-      const unsubscribe = terminalPool.onStatusChange("pod-1", listener);
+      const unsubscribe = pool.onStatusChange("pod-1", listener);
 
       unsubscribe();
 
       // Subscribe another listener and check it works fresh
       const listener2 = vi.fn();
-      terminalPool.onStatusChange("pod-1", listener2);
+      pool.onStatusChange("pod-1", listener2);
       expect(listener2).toHaveBeenCalledTimes(1);
     });
 
     it("should notify on WebSocket error", async () => {
       const onMessage = vi.fn();
-      await terminalPool.subscribe("pod-1", "sub-1", onMessage);
+      await pool.subscribe("pod-1", "sub-1", onMessage);
       await vi.runAllTimersAsync();
 
       const listener = vi.fn();
-      terminalPool.onStatusChange("pod-1", listener);
+      pool.onStatusChange("pod-1", listener);
       listener.mockClear();
 
       // Simulate WebSocket error
-      const conn = terminalPool.getConnection("pod-1");
+      const conn = pool.getConnection("pod-1");
       conn!.ws.onerror?.(new Event("error"));
 
       expect(listener).toHaveBeenCalledWith({

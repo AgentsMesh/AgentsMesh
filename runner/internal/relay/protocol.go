@@ -1,11 +1,7 @@
 package relay
 
 import (
-	"encoding/binary"
-	"encoding/json"
 	"errors"
-
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
 
 // Message types for Relay protocol
@@ -20,6 +16,10 @@ const (
 	MsgTypeControl            = 0x07 // Control request (for input control)
 	MsgTypeRunnerDisconnected = 0x08 // Runner disconnected notification
 	MsgTypeRunnerReconnected  = 0x09 // Runner reconnected notification
+	MsgTypeResync             = 0x0A // Browser → Runner, request full state resync
+	MsgTypeAcpEvent           = 0x0B // Runner → Browser, ACP session event
+	MsgTypeAcpCommand         = 0x0C // Browser → Runner, ACP command
+	MsgTypeAcpSnapshot        = 0x0D // Runner → Browser, ACP session snapshot
 )
 
 var (
@@ -31,13 +31,6 @@ var (
 type Message struct {
 	Type    byte
 	Payload []byte
-}
-
-
-// ResizeMessage represents a terminal resize request
-type ResizeMessage struct {
-	Cols uint16 `json:"cols"`
-	Rows uint16 `json:"rows"`
 }
 
 // EncodeMessage encodes a message with type prefix
@@ -58,38 +51,6 @@ func DecodeMessage(data []byte) (*Message, error) {
 		Type:    data[0],
 		Payload: data[1:],
 	}, nil
-}
-
-// EncodeSnapshot encodes a terminal snapshot
-func EncodeSnapshot(snapshot *vt.TerminalSnapshot) ([]byte, error) {
-	payload, err := json.Marshal(snapshot)
-	if err != nil {
-		return nil, err
-	}
-	return EncodeMessage(MsgTypeSnapshot, payload), nil
-}
-
-// EncodeOutput encodes terminal output data
-func EncodeOutput(data []byte) []byte {
-	return EncodeMessage(MsgTypeOutput, data)
-}
-
-// EncodeResize encodes a resize message
-func EncodeResize(cols, rows uint16) []byte {
-	payload := make([]byte, 4)
-	binary.BigEndian.PutUint16(payload[0:2], cols)
-	binary.BigEndian.PutUint16(payload[2:4], rows)
-	return EncodeMessage(MsgTypeResize, payload)
-}
-
-// DecodeResize decodes a resize message from payload
-func DecodeResize(payload []byte) (cols, rows uint16, err error) {
-	if len(payload) < 4 {
-		return 0, 0, ErrInvalidMessage
-	}
-	cols = binary.BigEndian.Uint16(payload[0:2])
-	rows = binary.BigEndian.Uint16(payload[2:4])
-	return cols, rows, nil
 }
 
 // EncodePing encodes a ping message

@@ -44,7 +44,7 @@ func (r *Runner) recoverDaemonSessions() {
 		r.podStore.Put(pod.PodKey, pod)
 		log.Info("session recovered",
 			"pod_key", pod.PodKey,
-			"pid", pod.Terminal.PID(),
+			"pid", pod.IO.GetPID(),
 			"sandbox", pod.SandboxPath)
 	}
 }
@@ -101,10 +101,11 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 
 	// Build Pod
 	pod := &Pod{
-		ID:            state.PodKey,
-		PodKey:        state.PodKey,
-		AgentType:     state.AgentType,
-		RepositoryURL: state.RepositoryURL,
+		ID:              state.PodKey,
+		PodKey:          state.PodKey,
+		AgentType:       state.AgentType,
+		InteractionMode: InteractionModePTY,
+		RepositoryURL:   state.RepositoryURL,
 		Branch:        state.Branch,
 		SandboxPath:   state.SandboxPath,
 		LaunchCommand: state.Command,
@@ -123,6 +124,17 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 	podKey := state.PodKey
 	term.SetOutputHandler(pod.CreateOutputHandler())
 
+	// Create PodIO before Start so consumers can use it immediately
+	ptyIO := NewPTYPodIO(term, virtualTerm, pod)
+	ptyIO.SetAggregator(agg)
+	if ptyLogger != nil {
+		ptyIO.SetPTYLogger(ptyLogger)
+	}
+	pod.IO = ptyIO
+
+	// Wire PodRelay for mode-specific relay behavior
+	pod.Relay = NewPTYPodRelay(state.PodKey, pod.IO, virtualTerm, term, agg)
+
 	// Set exit handler
 	term.SetExitHandler(r.messageHandler.createExitHandler(podKey))
 
@@ -131,9 +143,8 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 
 	// Start Terminal I/O (readOutput + waitExit goroutines)
 	if err := term.Start(); err != nil {
-		agg.Stop() // Aggregator first (consistent with all other cleanup paths)
-		if ptyLogger != nil {
-			ptyLogger.Close()
+		if pod.IO != nil {
+			pod.IO.Teardown()
 		}
 		dpty.Close()
 		return nil, fmt.Errorf("start terminal: %w", err)
@@ -146,7 +157,7 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 		mcpSrv.RegisterPod(podKey, r.conn.GetOrgSlug(), nil, nil, state.AgentType)
 	}
 	if agentMon := r.GetAgentMonitor(); agentMon != nil {
-		agentMon.RegisterPod(podKey, term.PID())
+		agentMon.RegisterPod(podKey, pod.IO.GetPID())
 	}
 
 	// Subscribe to VT state detection events, bridge to gRPC (shared with OnCreatePod)

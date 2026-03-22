@@ -46,57 +46,18 @@ func (a *GRPCRunnerAdapter) SendTerminatePod(runnerID int64, podKey string, forc
 	return conn.SendMessage(msg)
 }
 
-// SendTerminalInput sends terminal input to a pod.
-func (a *GRPCRunnerAdapter) SendTerminalInput(runnerID int64, podKey string, data []byte) error {
+// SendPodInput sends pod input to a pod.
+func (a *GRPCRunnerAdapter) SendPodInput(runnerID int64, podKey string, data []byte) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
 		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
 	}
 
 	msg := &runnerv1.ServerMessage{
-		Payload: &runnerv1.ServerMessage_TerminalInput{
-			TerminalInput: &runnerv1.TerminalInputCommand{
+		Payload: &runnerv1.ServerMessage_PodInput{
+			PodInput: &runnerv1.PodInputCommand{
 				PodKey: podKey,
 				Data:   data,
-			},
-		},
-		Timestamp: time.Now().UnixMilli(),
-	}
-	return conn.SendMessage(msg)
-}
-
-// SendTerminalResize sends terminal resize command to a pod.
-func (a *GRPCRunnerAdapter) SendTerminalResize(runnerID int64, podKey string, cols, rows int32) error {
-	conn := a.connManager.GetConnection(runnerID)
-	if conn == nil {
-		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
-	}
-
-	msg := &runnerv1.ServerMessage{
-		Payload: &runnerv1.ServerMessage_TerminalResize{
-			TerminalResize: &runnerv1.TerminalResizeCommand{
-				PodKey: podKey,
-				Cols:   cols,
-				Rows:   rows,
-			},
-		},
-		Timestamp: time.Now().UnixMilli(),
-	}
-	return conn.SendMessage(msg)
-}
-
-// SendTerminalRedraw sends terminal redraw command to a pod.
-// This triggers SIGWINCH without changing terminal size, used for state recovery after server restart.
-func (a *GRPCRunnerAdapter) SendTerminalRedraw(runnerID int64, podKey string) error {
-	conn := a.connManager.GetConnection(runnerID)
-	if conn == nil {
-		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
-	}
-
-	msg := &runnerv1.ServerMessage{
-		Payload: &runnerv1.ServerMessage_TerminalRedraw{
-			TerminalRedraw: &runnerv1.TerminalRedrawCommand{
-				PodKey: podKey,
 			},
 		},
 		Timestamp: time.Now().UnixMilli(),
@@ -123,17 +84,17 @@ func (a *GRPCRunnerAdapter) SendPrompt(runnerID int64, podKey, prompt string) er
 	return conn.SendMessage(msg)
 }
 
-// SendSubscribeTerminal sends a subscribe terminal command to a pod.
-// This notifies the runner that a browser wants to observe the terminal via Relay.
-func (a *GRPCRunnerAdapter) SendSubscribeTerminal(runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
+// SendSubscribePod sends a subscribe pod command to a pod.
+// This notifies the runner that a browser wants to observe the pod via Relay.
+func (a *GRPCRunnerAdapter) SendSubscribePod(runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
 		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
 	}
 
 	msg := &runnerv1.ServerMessage{
-		Payload: &runnerv1.ServerMessage_SubscribeTerminal{
-			SubscribeTerminal: &runnerv1.SubscribeTerminalCommand{
+		Payload: &runnerv1.ServerMessage_SubscribePod{
+			SubscribePod: &runnerv1.SubscribePodCommand{
 				PodKey:          podKey,
 				RelayUrl:        relayURL,
 				RunnerToken:     runnerToken,
@@ -146,17 +107,17 @@ func (a *GRPCRunnerAdapter) SendSubscribeTerminal(runnerID int64, podKey, relayU
 	return conn.SendMessage(msg)
 }
 
-// SendUnsubscribeTerminal sends an unsubscribe terminal command to a pod.
+// SendUnsubscribePod sends an unsubscribe pod command to a pod.
 // This notifies the runner that all browsers have disconnected and it should disconnect from Relay.
-func (a *GRPCRunnerAdapter) SendUnsubscribeTerminal(runnerID int64, podKey string) error {
+func (a *GRPCRunnerAdapter) SendUnsubscribePod(runnerID int64, podKey string) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
 		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
 	}
 
 	msg := &runnerv1.ServerMessage{
-		Payload: &runnerv1.ServerMessage_UnsubscribeTerminal{
-			UnsubscribeTerminal: &runnerv1.UnsubscribeTerminalCommand{
+		Payload: &runnerv1.ServerMessage_UnsubscribePod{
+			UnsubscribePod: &runnerv1.UnsubscribePodCommand{
 				PodKey: podKey,
 			},
 		},
@@ -192,19 +153,19 @@ func (a *GRPCRunnerAdapter) SendQuerySandboxes(runnerID int64, requestID string,
 	return conn.SendMessage(msg)
 }
 
-// ==================== Terminal Observation Commands ====================
+// ==================== Pod Observation Commands ====================
 
-// SendObserveTerminal sends an observe terminal command to a Runner.
-// Returns terminal observation result via callback registered in RunnerConnectionManager.
-func (a *GRPCRunnerAdapter) SendObserveTerminal(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+// SendObservePod sends an observe pod command to a Runner.
+// Returns pod observation result via callback registered in RunnerConnectionManager.
+func (a *GRPCRunnerAdapter) SendObservePod(runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
 		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
 	}
 
 	msg := &runnerv1.ServerMessage{
-		Payload: &runnerv1.ServerMessage_ObserveTerminal{
-			ObserveTerminal: &runnerv1.ObserveTerminalCommand{
+		Payload: &runnerv1.ServerMessage_ObservePod{
+			ObservePod: &runnerv1.ObservePodCommand{
 				RequestId:     requestID,
 				PodKey:        podKey,
 				Lines:         lines,

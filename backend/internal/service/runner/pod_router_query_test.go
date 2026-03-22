@@ -8,11 +8,11 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// TestTerminalRouter_ObserveTerminal_Success tests the full async query lifecycle:
+// TestPodRouter_ObservePod_Success tests the full async query lifecycle:
 // register pod → send observe command → async complete → return result
-func TestTerminalRouter_ObserveTerminal_Success(t *testing.T) {
+func TestPodRouter_ObservePod_Success(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())
-	tr := NewTerminalRouter(cm, newTestLogger())
+	tr := NewPodRouter(cm, newTestLogger())
 	defer tr.Stop()
 
 	// Set up a mock sender that captures the requestID and completes the query async
@@ -21,7 +21,7 @@ func TestTerminalRouter_ObserveTerminal_Success(t *testing.T) {
 			// Simulate async response from runner
 			go func() {
 				time.Sleep(10 * time.Millisecond)
-				tr.completeQuery(requestID, 100, &runnerv1.ObserveTerminalResult{
+				tr.completeQuery(requestID, 100, &runnerv1.ObservePodResult{
 					RequestId:  requestID,
 					Output:     "$ hello world",
 					Screen:     "screen snapshot",
@@ -38,10 +38,10 @@ func TestTerminalRouter_ObserveTerminal_Success(t *testing.T) {
 	// Register pod
 	tr.RegisterPod("pod-1", 100)
 
-	// Call ObserveTerminal
-	result, err := tr.ObserveTerminal(context.Background(), "pod-1", 100, true)
+	// Call ObservePod
+	result, err := tr.ObservePod(context.Background(), "pod-1", 100, true)
 	if err != nil {
-		t.Fatalf("ObserveTerminal error: %v", err)
+		t.Fatalf("ObservePod error: %v", err)
 	}
 
 	if result == nil {
@@ -64,42 +64,42 @@ func TestTerminalRouter_ObserveTerminal_Success(t *testing.T) {
 	}
 }
 
-// TestTerminalRouter_ObserveTerminal_PodNotRegistered tests that ObserveTerminal returns
+// TestPodRouter_ObservePod_PodNotRegistered tests that ObservePod returns
 // ErrRunnerNotConnected when the pod is not registered.
-func TestTerminalRouter_ObserveTerminal_PodNotRegistered(t *testing.T) {
+func TestPodRouter_ObservePod_PodNotRegistered(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())
-	tr := NewTerminalRouter(cm, newTestLogger())
+	tr := NewPodRouter(cm, newTestLogger())
 	defer tr.Stop()
 
 	tr.SetCommandSender(&MockCommandSender{})
 
-	_, err := tr.ObserveTerminal(context.Background(), "nonexistent-pod", 100, false)
+	_, err := tr.ObservePod(context.Background(), "nonexistent-pod", 100, false)
 	if err != ErrRunnerNotConnected {
 		t.Errorf("err = %v, want ErrRunnerNotConnected", err)
 	}
 }
 
-// TestTerminalRouter_ObserveTerminal_SendError tests that ObserveTerminal propagates
+// TestPodRouter_ObservePod_SendError tests that ObservePod propagates
 // errors from the command sender.
-func TestTerminalRouter_ObserveTerminal_SendError(t *testing.T) {
+func TestPodRouter_ObservePod_SendError(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())
-	tr := NewTerminalRouter(cm, newTestLogger())
+	tr := NewPodRouter(cm, newTestLogger())
 	defer tr.Stop()
 
 	// Use NoOp sender which returns ErrCommandSenderNotSet
 	tr.RegisterPod("pod-1", 100)
 
-	_, err := tr.ObserveTerminal(context.Background(), "pod-1", 100, false)
+	_, err := tr.ObservePod(context.Background(), "pod-1", 100, false)
 	if err != ErrCommandSenderNotSet {
 		t.Errorf("err = %v, want ErrCommandSenderNotSet", err)
 	}
 }
 
-// TestTerminalRouter_ObserveTerminal_ContextCanceled tests that ObserveTerminal
+// TestPodRouter_ObservePod_ContextCanceled tests that ObservePod
 // respects context cancellation.
-func TestTerminalRouter_ObserveTerminal_ContextCanceled(t *testing.T) {
+func TestPodRouter_ObservePod_ContextCanceled(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())
-	tr := NewTerminalRouter(cm, newTestLogger())
+	tr := NewPodRouter(cm, newTestLogger())
 	defer tr.Stop()
 
 	// Sender that succeeds but never completes the query
@@ -118,17 +118,17 @@ func TestTerminalRouter_ObserveTerminal_ContextCanceled(t *testing.T) {
 		cancel()
 	}()
 
-	_, err := tr.ObserveTerminal(ctx, "pod-1", 100, false)
+	_, err := tr.ObservePod(ctx, "pod-1", 100, false)
 	if err != context.Canceled {
 		t.Errorf("err = %v, want context.Canceled", err)
 	}
 }
 
-// TestTerminalRouter_ObserveTerminal_Timeout tests that ObserveTerminal returns
+// TestPodRouter_ObservePod_Timeout tests that ObservePod returns
 // a timeout result when the runner doesn't respond.
-func TestTerminalRouter_ObserveTerminal_Timeout(t *testing.T) {
+func TestPodRouter_ObservePod_Timeout(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())
-	tr := NewTerminalRouter(cm, newTestLogger())
+	tr := NewPodRouter(cm, newTestLogger())
 	defer tr.Stop()
 
 	// Sender that succeeds but never completes the query
@@ -140,20 +140,20 @@ func TestTerminalRouter_ObserveTerminal_Timeout(t *testing.T) {
 	tr.SetCommandSender(sender)
 	tr.RegisterPod("pod-1", 100)
 
-	// Use a short context deadline so we don't wait for the full TerminalQueryTimeout
+	// Use a short context deadline so we don't wait for the full ObservePodTimeout
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
-	_, err := tr.ObserveTerminal(ctx, "pod-1", 100, false)
+	_, err := tr.ObservePod(ctx, "pod-1", 100, false)
 	if err != context.DeadlineExceeded {
 		t.Errorf("err = %v, want context.DeadlineExceeded", err)
 	}
 }
 
-// TestTerminalRouter_Stop tests that Stop() shuts down the cleanup goroutine.
-func TestTerminalRouter_Stop(t *testing.T) {
+// TestPodRouter_Stop tests that Stop() shuts down the cleanup goroutine.
+func TestPodRouter_Stop(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())
-	tr := NewTerminalRouter(cm, newTestLogger())
+	tr := NewPodRouter(cm, newTestLogger())
 
 	// Stop should not panic and should be callable
 	tr.Stop()
@@ -167,14 +167,14 @@ func TestTerminalRouter_Stop(t *testing.T) {
 	}
 }
 
-// observeCaptureSender is a mock RunnerCommandSender that captures ObserveTerminal calls
+// observeCaptureSender is a mock RunnerCommandSender that captures ObservePod calls
 // and calls a user-provided function with the requestID.
 type observeCaptureSender struct {
 	MockCommandSender
 	completeFn func(requestID string)
 }
 
-func (s *observeCaptureSender) SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+func (s *observeCaptureSender) SendObservePod(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
 	if s.completeFn != nil {
 		s.completeFn(requestID)
 	}

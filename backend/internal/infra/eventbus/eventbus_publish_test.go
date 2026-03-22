@@ -57,7 +57,7 @@ func TestEventBus_Publish(t *testing.T) {
 		defer eb.Close()
 
 		event := &Event{
-			Type:           EventTerminalNotification, // Notification category
+			Type:           EventPodNotification, // Notification category
 			OrganizationID: 1,
 		}
 

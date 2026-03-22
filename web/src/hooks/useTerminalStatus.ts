@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { terminalPool, type RelayStatusInfo } from "@/stores/terminalConnection";
+import { relayPool, type RelayStatusInfo } from "@/stores/relayConnection";
 
 /**
- * Subscribes to terminal connection status changes for a pod.
- * Wraps terminalPool.onStatusChange() to eliminate direct
+ * Subscribes to relay connection status changes for a pod.
+ * Wraps relayPool.onStatusChange() to eliminate direct
  * singleton coupling in UI components.
  */
 export function useTerminalStatus(podKey: string): RelayStatusInfo {
@@ -15,7 +15,7 @@ export function useTerminalStatus(podKey: string): RelayStatusInfo {
   });
 
   useEffect(() => {
-    return terminalPool.onStatusChange(podKey, setStatus);
+    return relayPool.onStatusChange(podKey, setStatus);
   }, [podKey]);
 
   return status;

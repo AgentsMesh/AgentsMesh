@@ -1,11 +1,8 @@
 package relay
 
-import (
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
-)
-
 // RelayClient defines the interface for a relay WebSocket client.
-// This interface enables dependency injection and easier testing.
+// This is a generic message pipe — zero protocol knowledge.
+// All mode-specific encoding/decoding lives in the consumer (PodRelay).
 type RelayClient interface {
 	// Connection lifecycle
 	Connect() error
@@ -18,16 +15,14 @@ type RelayClient interface {
 	GetConnectedAt() int64
 	UpdateToken(newToken string)
 
-	// Handler registration
-	SetInputHandler(handler InputHandler)
-	SetResizeHandler(handler ResizeHandler)
+	// Generic message I/O (replaces all mode-specific methods)
+	Send(msgType byte, payload []byte) error
+	SetMessageHandler(msgType byte, handler func(payload []byte))
+
+	// Lifecycle callbacks
 	SetCloseHandler(handler CloseHandler)
 	SetReconnectHandler(handler func())
 	SetTokenExpiredHandler(handler func() string)
-
-	// Data transmission
-	SendOutput(data []byte) error
-	SendSnapshot(snapshot *vt.TerminalSnapshot) error
 }
 
 // Ensure Client implements RelayClient interface

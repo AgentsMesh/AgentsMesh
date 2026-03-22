@@ -158,33 +158,16 @@ func (c *Client) handleMessage(data []byte) {
 	}
 
 	switch msg.Type {
-	case MsgTypeInput:
-		if c.onInput != nil {
-			c.onInput(msg.Payload)
-		}
-
-	case MsgTypeResize:
-		if c.onResize != nil {
-			cols, rows, err := DecodeResize(msg.Payload)
-			if err != nil {
-				c.logger.Error("Failed to decode resize", "error", err)
-				return
-			}
-			c.onResize(cols, rows)
-		}
-
 	case MsgTypePing:
-		// Respond with pong
 		c.SendPong()
-
 	case MsgTypePong:
 		// Received pong, connection is alive
-
-	case MsgTypeControl:
-		// Control messages are not expected from relay to runner
-		c.logger.Debug("Received control message (ignored)")
-
 	default:
-		c.logger.Warn("Unknown message type", "type", msg.Type)
+		c.handlersMu.RLock()
+		h := c.handlers[msg.Type]
+		c.handlersMu.RUnlock()
+		if h != nil {
+			h(msg.Payload)
+		}
 	}
 }

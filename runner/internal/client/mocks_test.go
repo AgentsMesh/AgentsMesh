@@ -13,14 +13,13 @@ type mockHandler struct {
 	createPodCalled      bool
 	terminatePodCalled   bool
 	terminalInputCalled  bool
-	terminalResizeCalled bool
-	terminalRedrawCalled bool
 
-	lastCreateCmd    *runnerv1.CreatePodCommand
-	lastTerminateReq TerminatePodRequest
-	lastInputReq     TerminalInputRequest
-	lastResizeReq    TerminalResizeRequest
-	lastRedrawReq    TerminalRedrawRequest
+	sendPromptCalled          bool
+
+	lastCreateCmd             *runnerv1.CreatePodCommand
+	lastTerminateReq          TerminatePodRequest
+	lastInputReq              PodInputRequest
+	lastSendPromptCmd         *runnerv1.SendPromptCommand
 
 	pods []PodInfo
 }
@@ -41,27 +40,11 @@ func (h *mockHandler) OnTerminatePod(req TerminatePodRequest) error {
 	return nil
 }
 
-func (h *mockHandler) OnTerminalInput(req TerminalInputRequest) error {
+func (h *mockHandler) OnPodInput(req PodInputRequest) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.terminalInputCalled = true
 	h.lastInputReq = req
-	return nil
-}
-
-func (h *mockHandler) OnTerminalResize(req TerminalResizeRequest) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.terminalResizeCalled = true
-	h.lastResizeReq = req
-	return nil
-}
-
-func (h *mockHandler) OnTerminalRedraw(req TerminalRedrawRequest) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.terminalRedrawCalled = true
-	h.lastRedrawReq = req
 	return nil
 }
 
@@ -75,11 +58,11 @@ func (h *mockHandler) OnListRelayConnections() []RelayConnectionInfo {
 	return nil
 }
 
-func (h *mockHandler) OnSubscribeTerminal(req SubscribeTerminalRequest) error {
+func (h *mockHandler) OnSubscribePod(req SubscribePodRequest) error {
 	return nil
 }
 
-func (h *mockHandler) OnUnsubscribeTerminal(req UnsubscribeTerminalRequest) error {
+func (h *mockHandler) OnUnsubscribePod(req UnsubscribePodRequest) error {
 	return nil
 }
 
@@ -87,7 +70,7 @@ func (h *mockHandler) OnQuerySandboxes(req QuerySandboxesRequest) error {
 	return nil
 }
 
-func (h *mockHandler) OnObserveTerminal(req ObserveTerminalRequest) error {
+func (h *mockHandler) OnObservePod(req ObservePodRequest) error {
 	return nil
 }
 
@@ -107,13 +90,19 @@ func (h *mockHandler) OnUploadLogs(cmd *runnerv1.UploadLogsCommand) error {
 	return nil
 }
 
+func (h *mockHandler) OnSendPrompt(cmd *runnerv1.SendPromptCommand) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.sendPromptCalled = true
+	h.lastSendPromptCmd = cmd
+	return nil
+}
+
 // mockHandlerWithError is a mock handler that can return errors.
 type mockHandlerWithError struct {
 	createError    error
 	terminateError error
 	inputError     error
-	resizeError    error
-	redrawError    error
 }
 
 func (h *mockHandlerWithError) OnCreatePod(cmd *runnerv1.CreatePodCommand) error {
@@ -124,16 +113,8 @@ func (h *mockHandlerWithError) OnTerminatePod(req TerminatePodRequest) error {
 	return h.terminateError
 }
 
-func (h *mockHandlerWithError) OnTerminalInput(req TerminalInputRequest) error {
+func (h *mockHandlerWithError) OnPodInput(req PodInputRequest) error {
 	return h.inputError
-}
-
-func (h *mockHandlerWithError) OnTerminalResize(req TerminalResizeRequest) error {
-	return h.resizeError
-}
-
-func (h *mockHandlerWithError) OnTerminalRedraw(req TerminalRedrawRequest) error {
-	return h.redrawError
 }
 
 func (h *mockHandlerWithError) OnListPods() []PodInfo {
@@ -144,11 +125,11 @@ func (h *mockHandlerWithError) OnListRelayConnections() []RelayConnectionInfo {
 	return nil
 }
 
-func (h *mockHandlerWithError) OnSubscribeTerminal(req SubscribeTerminalRequest) error {
+func (h *mockHandlerWithError) OnSubscribePod(req SubscribePodRequest) error {
 	return nil
 }
 
-func (h *mockHandlerWithError) OnUnsubscribeTerminal(req UnsubscribeTerminalRequest) error {
+func (h *mockHandlerWithError) OnUnsubscribePod(req UnsubscribePodRequest) error {
 	return nil
 }
 
@@ -156,7 +137,7 @@ func (h *mockHandlerWithError) OnQuerySandboxes(req QuerySandboxesRequest) error
 	return nil
 }
 
-func (h *mockHandlerWithError) OnObserveTerminal(req ObserveTerminalRequest) error {
+func (h *mockHandlerWithError) OnObservePod(req ObservePodRequest) error {
 	return nil
 }
 
@@ -173,6 +154,10 @@ func (h *mockHandlerWithError) OnUpgradeRunner(cmd *runnerv1.UpgradeRunnerComman
 }
 
 func (h *mockHandlerWithError) OnUploadLogs(cmd *runnerv1.UploadLogsCommand) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnSendPrompt(cmd *runnerv1.SendPromptCommand) error {
 	return nil
 }
 

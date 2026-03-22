@@ -503,14 +503,8 @@ describe("Workspace Store", () => {
   });
 });
 
-// NOTE: Terminal Connection Pool tests have been removed because the API has fundamentally changed.
-// The terminalConnection.ts now uses Relay architecture with:
-// 1. Async connect() that requires API call to get Relay connection info
+// NOTE: Relay Connection Pool tests live in relayConnection.test.ts.
+// The relayConnection.ts uses Relay architecture with:
+// 1. Async subscribe() that requires API call to get Relay connection info
 // 2. Binary protocol message encoding/decoding (not JSON)
 // 3. Different message types (MsgType.Input, MsgType.Resize, etc.)
-//
-// TODO: Rewrite these tests when Relay architecture is stable. Tests should:
-// 1. Mock podApi.getTerminalConnection to return relay info
-// 2. Use async/await for connect()
-// 3. Test binary protocol message encoding/decoding
-// 4. Test Relay-specific message types (Snapshot, Output, RunnerDisconnected, etc.)

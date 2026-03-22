@@ -16,6 +16,7 @@ type PodHandler struct {
 	podCoordinator *runner.PodCoordinator          // Pod coordination (TerminatePod, terminal routing)
 	orchestrator         *agentpod.PodOrchestrator       // Unified Pod creation logic
 	eventBus             *eventbus.EventBus              // Event bus for real-time events
+	commandSender        runner.RunnerCommandSender      // Unified command sender (PTY + ACP)
 }
 
 // PodHandlerOption is a functional option for configuring PodHandler
@@ -46,6 +47,13 @@ func WithPodService(ps PodServiceForHandler) PodHandlerOption {
 func WithEventBus(eb *eventbus.EventBus) PodHandlerOption {
 	return func(h *PodHandler) {
 		h.eventBus = eb
+	}
+}
+
+// WithCommandSender sets the unified command sender for PTY and ACP commands
+func WithCommandSender(sender runner.RunnerCommandSender) PodHandlerOption {
+	return func(h *PodHandler) {
+		h.commandSender = sender
 	}
 }
 

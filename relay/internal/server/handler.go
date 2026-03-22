@@ -43,7 +43,7 @@ func NewHandler(channelManager *channel.ChannelManager, tokenValidator *auth.Tok
 }
 
 // HandleRunnerWS handles runner WebSocket connections (Publisher)
-// Path: /runner/terminal?token=xxx
+// Path: /runner/relay?token=xxx
 // The token contains pod_key and runner_id for authentication
 // Channel is identified by pod_key (not session_id)
 func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +103,7 @@ func (h *Handler) HandleRunnerWS(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleBrowserWS handles browser WebSocket connections (Subscriber)
-// Path: /browser/terminal?token=xxx
+// Path: /browser/relay?token=xxx
 // Channel is identified by pod_key from the token (not session_id)
 func (h *Handler) HandleBrowserWS(w http.ResponseWriter, r *http.Request) {
 	if !h.acceptingConnections.Load() {

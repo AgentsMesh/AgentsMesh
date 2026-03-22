@@ -9,7 +9,7 @@ import { usePodStore } from "@/stores/pod";
 import { useAutopilotStore } from "@/stores/autopilot";
 import { usePodStatus, useTerminal, useTouchScroll } from "@/hooks";
 import { TerminalPaneHeader } from "./TerminalPaneHeader";
-import { TerminalLoadingState, TerminalErrorState, TerminalReconnectingState } from "./TerminalStateViews";
+import { PaneLoadingState, PaneErrorState, PaneReconnectingState } from "./PaneStateViews";
 import { RelayStatusOverlay } from "./RelayStatusOverlay";
 import { AutopilotOverlay } from "./AutopilotOverlay";
 import { AutopilotStartButton } from "./AutopilotStartButton";
@@ -84,7 +84,7 @@ export function TerminalPane({
     setIsMaximized((prev) => !prev);
     onMaximize?.();
     // ResizeObserver in useTerminal will auto-fit after layout change.
-    // Use syncSize as a fallback to ensure PTY size is updated.
+    // Use syncSize as a fallback to ensure pod size is updated.
     if (maximizeRafRef.current !== undefined) cancelAnimationFrame(maximizeRafRef.current);
     maximizeRafRef.current = requestAnimationFrame(() => {
       maximizeRafRef.current = undefined;
@@ -142,11 +142,11 @@ export function TerminalPane({
       {/* Terminal or Loading/Error/Reconnecting State */}
       {!showTerminal ? (
         podError ? (
-          <TerminalErrorState error={podError} onClose={onClose} />
+          <PaneErrorState error={podError} onClose={onClose} />
         ) : podStatus === "orphaned" ? (
-          <TerminalReconnectingState onClose={onClose} />
+          <PaneReconnectingState onClose={onClose} />
         ) : (
-          <TerminalLoadingState
+          <PaneLoadingState
             podStatus={podStatus}
             initProgress={initProgress}
             onClose={onClose}

@@ -25,16 +25,11 @@ const (
 	MsgTypePodCreated    = "pod_created"
 	MsgTypePodTerminated = "pod_terminated"
 	MsgTypeAgentStatus   = "agent_status"
-	MsgTypePtyResized    = "pty_resized"
+	MsgTypePodResized    = "pod_resized"
 	MsgTypeError         = "error"
 	// NOTE: terminal_output is NOT here - terminal output is streamed via Relay, not gRPC
-
-	// ==================== 运行时消息: Backend -> Runner ====================
-	MsgTypeCreatePod      = "create_pod"
-	MsgTypeTerminatePod   = "terminate_pod"
-	MsgTypeTerminalInput  = "terminal_input"
-	MsgTypeTerminalResize = "terminal_resize"
-	MsgTypeSendPrompt     = "send_prompt"
+	// NOTE: Backend→Runner commands (create_pod, terminate_pod, pod_input, send_prompt, etc.)
+	// are sent directly as Proto messages via gRPC. No string-based message type constants needed.
 )
 
 // ========== 基础消息结构 ==========
@@ -86,19 +81,12 @@ type InitializedParams struct {
 // ========== Pod 操作请求结构 ==========
 // Note: Pod command types (CreatePodCommand, FileToCreate, SandboxConfig) are now
 // defined in Proto (runnerv1 package) for zero-copy message passing.
-// Only terminal-related request types remain here for internal use.
+// Only pod-related request types remain here for internal use.
 
-// TerminalInputRequest represents terminal input to send
-type TerminalInputRequest struct {
+// PodInputRequest represents pod input to send
+type PodInputRequest struct {
 	PodKey string `json:"pod_key"`
 	Data   []byte `json:"data"`
-}
-
-// TerminalResizeRequest represents terminal resize request
-type TerminalResizeRequest struct {
-	PodKey string `json:"pod_key"`
-	Cols   int    `json:"cols"`
-	Rows   int    `json:"rows"`
 }
 
 // ========== 协议版本和特性 ==========

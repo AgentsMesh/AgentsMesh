@@ -28,10 +28,6 @@ func (b *OpenCodeBuilder) Slug() string {
 	return OpenCodeSlug
 }
 
-// HandleInitialPrompt prepends --prompt flag for TUI mode.
-// OpenCode syntax: opencode --prompt="message" [options]
-// This starts the TUI with the prompt pre-filled and stays running.
-// Using = format for shell-safe argument passing.
 // BuildLaunchArgs builds launch args and adds --model flag if configured.
 // If model is empty but models list exists, uses the first model.
 func (b *OpenCodeBuilder) BuildLaunchArgs(ctx *BuildContext) ([]string, error) {
@@ -58,8 +54,11 @@ func (b *OpenCodeBuilder) BuildLaunchArgs(ctx *BuildContext) ([]string, error) {
 }
 
 // HandleInitialPrompt passes the prompt via --prompt flag.
-// OpenCode syntax: opencode --prompt "message" [options]
+// In ACP mode, the prompt is sent via JSON-RPC (session/prompt), not CLI args.
 func (b *OpenCodeBuilder) HandleInitialPrompt(ctx *BuildContext, args []string) []string {
+	if ctx.Request.InteractionMode == "acp" {
+		return args
+	}
 	if ctx.Request.InitialPrompt != "" {
 		return append([]string{"--prompt", ctx.Request.InitialPrompt}, args...)
 	}
@@ -153,7 +152,11 @@ func (b *OpenCodeBuilder) buildMcpServers(ctx *BuildContext) map[string]interfac
 	return servers
 }
 
-// PostProcess uses the base implementation
+// PostProcess prepends "acp" subcommand in ACP mode.
+// OpenCode natively supports ACP JSON-RPC 2.0 via "opencode acp".
 func (b *OpenCodeBuilder) PostProcess(ctx *BuildContext, cmd *runnerv1.CreatePodCommand) error {
-	return b.BaseAgentBuilder.PostProcess(ctx, cmd)
+	if ctx.Request.InteractionMode == "acp" {
+		cmd.LaunchArgs = append([]string{"acp"}, cmd.LaunchArgs...)
+	}
+	return nil
 }

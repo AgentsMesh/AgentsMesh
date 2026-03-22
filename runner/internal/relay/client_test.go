@@ -1,6 +1,8 @@
 package relay
 
 import (
+	"encoding/binary"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 	"github.com/gorilla/websocket"
 )
 
@@ -46,16 +47,10 @@ func TestSetHandlers(t *testing.T) {
 	c := NewClient("ws://localhost:8080", "pod-1", "test-token", nil)
 
 	inputCalled := false
-	c.SetInputHandler(func(data []byte) { inputCalled = true })
-	if c.onInput == nil {
-		t.Error("onInput not set")
-	}
+	c.SetMessageHandler(MsgTypeInput, func(payload []byte) { inputCalled = true })
 
 	resizeCalled := false
-	c.SetResizeHandler(func(cols, rows uint16) { resizeCalled = true })
-	if c.onResize == nil {
-		t.Error("onResize not set")
-	}
+	c.SetMessageHandler(MsgTypeResize, func(payload []byte) { resizeCalled = true })
 
 	closeCalled := false
 	c.SetCloseHandler(func() { closeCalled = true })
@@ -63,9 +58,19 @@ func TestSetHandlers(t *testing.T) {
 		t.Error("onClose not set")
 	}
 
+	// Verify handlers are stored
+	c.handlersMu.RLock()
+	if c.handlers[MsgTypeInput] == nil {
+		t.Error("input handler not set")
+	}
+	if c.handlers[MsgTypeResize] == nil {
+		t.Error("resize handler not set")
+	}
+	c.handlersMu.RUnlock()
+
 	// Trigger handlers
-	c.onInput([]byte("test"))
-	c.onResize(80, 24)
+	c.handlers[MsgTypeInput]([]byte("test"))
+	c.handlers[MsgTypeResize]([]byte{0, 80, 0, 24})
 	c.onClose()
 	if !inputCalled || !resizeCalled || !closeCalled {
 		t.Error("handlers not called")
@@ -110,11 +115,31 @@ func TestConnectSchemeConversion(t *testing.T) {
 
 func TestSendNotConnected(t *testing.T) {
 	c := NewClient("ws://localhost:8080", "pod-1", "test-token", nil)
-	if err := c.SendOutput([]byte("test")); err == nil {
+	if err := c.Send(MsgTypeOutput, []byte("test")); err == nil {
 		t.Error("expected error when not connected")
 	}
 	if err := c.SendPong(); err == nil {
 		t.Error("expected error when not connected")
+	}
+}
+
+func TestSendBufferFull(t *testing.T) {
+	c := NewClient("ws://localhost:8080", "pod-1", "test-token", nil)
+	// Mark as connected so send() doesn't short-circuit on "not connected".
+	c.connected.Store(true)
+
+	// Fill the send channel to capacity.
+	for i := 0; i < cap(c.sendCh); i++ {
+		c.sendCh <- []byte{0x00}
+	}
+
+	// Next send should return "send buffer full".
+	err := c.Send(MsgTypeOutput, []byte("overflow"))
+	if err == nil {
+		t.Error("expected error when send buffer is full")
+	}
+	if err != nil && err.Error() != "send buffer full" {
+		t.Errorf("expected 'send buffer full', got: %v", err)
 	}
 }
 
@@ -158,12 +183,15 @@ func TestHandleMessage(t *testing.T) {
 	c := NewClient("ws://localhost:8080", "pod-1", "test-token", nil)
 
 	var receivedInput []byte
-	c.SetInputHandler(func(data []byte) { receivedInput = data })
+	c.SetMessageHandler(MsgTypeInput, func(payload []byte) { receivedInput = payload })
 
 	var receivedCols, receivedRows uint16
-	c.SetResizeHandler(func(cols, rows uint16) {
-		receivedCols = cols
-		receivedRows = rows
+	c.SetMessageHandler(MsgTypeResize, func(payload []byte) {
+		if len(payload) < 4 {
+			return
+		}
+		receivedCols = binary.BigEndian.Uint16(payload[0:2])
+		receivedRows = binary.BigEndian.Uint16(payload[2:4])
 	})
 
 	// Test input message
@@ -173,8 +201,11 @@ func TestHandleMessage(t *testing.T) {
 		t.Errorf("input: %s", receivedInput)
 	}
 
-	// Test resize message
-	resizeMsg := EncodeResize(100, 50)
+	// Test resize message (4-byte big-endian: cols=100, rows=50)
+	resizePayload := make([]byte, 4)
+	binary.BigEndian.PutUint16(resizePayload[0:2], 100)
+	binary.BigEndian.PutUint16(resizePayload[2:4], 50)
+	resizeMsg := EncodeMessage(MsgTypeResize, resizePayload)
 	c.handleMessage(resizeMsg)
 	if receivedCols != 100 || receivedRows != 50 {
 		t.Errorf("resize: %dx%d", receivedCols, receivedRows)
@@ -182,6 +213,14 @@ func TestHandleMessage(t *testing.T) {
 
 	// Test invalid message (should not panic)
 	c.handleMessage([]byte{})
+
+	// Test message with no registered handler (should not panic)
+	unknownMsg := EncodeMessage(0xFF, []byte("unknown"))
+	c.handleMessage(unknownMsg)
+
+	// Test pong message (no handler, just alive marker)
+	pongMsg := EncodeMessage(MsgTypePong, nil)
+	c.handleMessage(pongMsg)
 }
 
 func TestSendSnapshot(t *testing.T) {
@@ -213,9 +252,10 @@ func TestSendSnapshot(t *testing.T) {
 	}
 	c.Start()
 
-	snapshot := &vt.TerminalSnapshot{Cols: 80, Rows: 24}
-	if err := c.SendSnapshot(snapshot); err != nil {
-		t.Errorf("SendSnapshot: %v", err)
+	// Serialize snapshot payload inline (no vt dependency)
+	snapshotPayload, _ := json.Marshal(map[string]any{"cols": 80, "rows": 24})
+	if err := c.Send(MsgTypeSnapshot, snapshotPayload); err != nil {
+		t.Errorf("Send snapshot: %v", err)
 	}
 
 	// Wait for snapshot to be received before stopping

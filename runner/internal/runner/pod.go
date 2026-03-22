@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/acp"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal"
@@ -21,20 +22,37 @@ type Pod struct {
 	Branch           string
 	SandboxPath      string
 
+	// Interaction mode: "pty" (default) or "acp"
+	InteractionMode string
+
+	// Unified I/O interface — high-level consumers (MCP tools, Autopilot)
+	// should use this instead of directly accessing Terminal or ACPClient.
+	IO PodIO
+
+	// Mode-specific relay behavior (OCP: eliminates IsACPMode branches in relay layer)
+	Relay PodRelay
+
 	// Launch configuration (used by session recovery after Runner restart)
 	LaunchCommand string
 	LaunchArgs    []string
 	WorkDir       string
+	LaunchEnv     []string // Full environment slice for subprocess
+
+	// PTY-specific components (nil in ACP mode)
 	Terminal         *terminal.Terminal
 	VirtualTerminal  *vt.VirtualTerminal        // Virtual terminal for state management and snapshots
 	Aggregator       *aggregator.SmartAggregator // Output aggregator for adaptive frame rate
 	RelayClient      relay.RelayClient          // WebSocket client for Relay connection (interface for testability)
 	relayMu          sync.RWMutex               // Protects RelayClient field
+	PTYLogger        *aggregator.PTYLogger // PTY logger for debugging (optional)
+
+	// ACP-specific components (nil in PTY mode)
+	ACPClient *acp.ACPClient
+
 	StartedAt        time.Time
 	Status           string              // Pod status - use statusMu for thread-safe access
 	statusMu         sync.RWMutex        // Protects Status field
 	TicketSlug       string              // Ticket slug for worktree-based pods (e.g., "TBD-123")
-	PTYLogger        *aggregator.PTYLogger // PTY logger for debugging (optional)
 
 	// StateDetector for multi-signal state detection.
 	// This is a foundational service that can be used by Autopilot, Monitor, or other components.
@@ -58,6 +76,17 @@ const (
 	PodStatusStopped      = "stopped"
 	PodStatusFailed       = "failed"
 )
+
+// Interaction mode constants
+const (
+	InteractionModePTY = "pty"
+	InteractionModeACP = "acp"
+)
+
+// IsACPMode returns true if the pod uses ACP interaction mode.
+func (p *Pod) IsACPMode() bool {
+	return p.InteractionMode == InteractionModeACP
+}
 
 // SetPTYError stores a PTY error message for the exit handler to pick up.
 func (p *Pod) SetPTYError(msg string) {
@@ -107,7 +136,7 @@ func (p *Pod) GetRelayClient() relay.RelayClient {
 }
 
 // LockRelay acquires the relay write lock for atomic check-and-set operations
-// (e.g., OnSubscribeTerminal). Caller must call UnlockRelay when done.
+// (e.g., OnSubscribePty). Caller must call UnlockRelay when done.
 func (p *Pod) LockRelay()   { p.relayMu.Lock() }
 func (p *Pod) UnlockRelay() { p.relayMu.Unlock() }
 
@@ -134,9 +163,9 @@ func (p *Pod) DisconnectRelay() {
 		logger.Pod().Debug("Disconnecting relay client", "pod_key", p.PodKey)
 		rc.Stop()
 	}
-	// Clear aggregator relay client - will fall back to gRPC
-	if p.Aggregator != nil {
-		p.Aggregator.SetRelayClient(nil)
+	// Clear mode-specific relay wiring (aggregator for PTY, no-op for ACP)
+	if p.Relay != nil {
+		p.Relay.OnRelayDisconnected()
 	}
 }
 

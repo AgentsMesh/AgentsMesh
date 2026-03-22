@@ -74,7 +74,6 @@ func TestConnectionManager_CallbackSetters(t *testing.T) {
 	cm.SetPodCreatedCallback(func(runnerID int64, data *runnerv1.PodCreatedEvent) {})
 	cm.SetPodTerminatedCallback(func(runnerID int64, data *runnerv1.PodTerminatedEvent) {})
 	cm.SetAgentStatusCallback(func(runnerID int64, data *runnerv1.AgentStatusEvent) {})
-	cm.SetPtyResizedCallback(func(runnerID int64, data *runnerv1.PtyResizedEvent) {})
 	cm.SetInitializedCallback(func(runnerID int64, availableAgents []string) {})
 
 	// Test provider and version setters

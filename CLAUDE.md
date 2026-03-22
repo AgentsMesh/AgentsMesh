@@ -286,11 +286,12 @@ runner/
 
 1. Runner registers via gRPC, receives mTLS certificate from PKI
 2. Runner connects via gRPC bidirectional stream with mTLS
-3. Backend sends `create_pod` → Runner creates Sandbox → Starts PTY
-4. Terminal output → PTYForwarder → `terminal_output` via gRPC → WebSocket to web
-5. User input from web → WebSocket → `terminal_input` via gRPC → Runner writes to PTY stdin
-6. Backend sends `terminate_pod` → Runner stops PTY → Cleans up Sandbox
-7. Certificate auto-renewal before expiry (checked every hour)
+3. Backend sends `create_pod` → Runner creates Sandbox → Starts PTY/ACP process
+4. Backend sends `subscribe_pod` → Runner connects to Relay WebSocket
+5. Terminal I/O (data plane): Browser ↔ Relay ↔ Runner (WebSocket binary protocol)
+6. Control commands (control plane): Backend → Runner via gRPC (`terminate_pod`, `send_prompt`, etc.)
+7. Runner events → Backend via gRPC (`pod_created`, `pod_terminated`, `agent_status`, etc.)
+8. Certificate auto-renewal before expiry (checked every hour)
 
 ## Configuration
 

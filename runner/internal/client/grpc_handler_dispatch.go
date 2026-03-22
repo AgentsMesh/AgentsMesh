@@ -8,96 +8,72 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
-// handleTerminalInput handles terminal_input command from server.
-func (c *GRPCConnection) handleTerminalInput(cmd *runnerv1.TerminalInputCommand) {
+// handlePodInput handles pod_input command from server.
+func (c *GRPCConnection) handlePodInput(cmd *runnerv1.PodInputCommand) {
 	if c.handler == nil {
 		return
 	}
 
-	req := TerminalInputRequest{
+	req := PodInputRequest{
 		PodKey: cmd.PodKey,
 		Data:   cmd.Data, // gRPC uses native bytes, no encoding needed
 	}
-	if err := c.handler.OnTerminalInput(req); err != nil {
-		logger.GRPC().Error("Failed to send terminal input to pod", "pod_key", cmd.PodKey, "error", err)
-	}
-}
-
-// handleTerminalResize handles terminal_resize command from server.
-func (c *GRPCConnection) handleTerminalResize(cmd *runnerv1.TerminalResizeCommand) {
-	if c.handler == nil {
-		return
-	}
-
-	req := TerminalResizeRequest{
-		PodKey: cmd.PodKey,
-		Cols:   uint16(cmd.Cols),
-		Rows:   uint16(cmd.Rows),
-	}
-	if err := c.handler.OnTerminalResize(req); err != nil {
-		logger.GRPC().Error("Failed to resize terminal for pod", "pod_key", cmd.PodKey, "error", err)
-	}
-}
-
-// handleTerminalRedraw handles terminal_redraw command from server.
-// Uses resize +1/-1 trick to trigger terminal redraw for state recovery.
-func (c *GRPCConnection) handleTerminalRedraw(cmd *runnerv1.TerminalRedrawCommand) {
-	if c.handler == nil {
-		return
-	}
-
-	req := TerminalRedrawRequest{
-		PodKey: cmd.PodKey,
-	}
-	if err := c.handler.OnTerminalRedraw(req); err != nil {
-		logger.GRPC().Error("Failed to redraw terminal for pod", "pod_key", cmd.PodKey, "error", err)
+	if err := c.handler.OnPodInput(req); err != nil {
+		logger.GRPC().Error("Failed to send input to pod", "pod_key", cmd.PodKey, "error", err)
 	}
 }
 
 // handleSendPrompt handles send_prompt command from server.
 func (c *GRPCConnection) handleSendPrompt(cmd *runnerv1.SendPromptCommand) {
-	logger.GRPC().Debug("Received send_prompt", "pod_key", cmd.PodKey)
-	// TODO: Implement prompt sending when handler supports it
+	log := logger.GRPC()
+	log.Debug("Received send_prompt", "pod_key", cmd.PodKey)
+	if c.handler == nil {
+		log.Warn("No handler set, ignoring send_prompt")
+		return
+	}
+	if err := c.handler.OnSendPrompt(cmd); err != nil {
+		log.Error("Failed to handle send_prompt", "pod_key", cmd.PodKey, "error", err)
+	}
 }
 
-// handleSubscribeTerminal handles subscribe_terminal command from server.
-// This notifies the Runner that a browser wants to observe the terminal via Relay.
+// handleSubscribePod handles subscribe_pod command from server.
+// This notifies the Runner that a browser wants to observe the pod via Relay.
 // Channel is identified by PodKey (not session ID).
-func (c *GRPCConnection) handleSubscribeTerminal(cmd *runnerv1.SubscribeTerminalCommand) {
+func (c *GRPCConnection) handleSubscribePod(cmd *runnerv1.SubscribePodCommand) {
 	log := logger.GRPC()
-	log.Info("Received subscribe_terminal", "pod_key", cmd.PodKey, "relay_url", cmd.RelayUrl)
+	log.Info("Received subscribe_pod", "pod_key", cmd.PodKey, "relay_url", cmd.RelayUrl)
 	if c.handler == nil {
-		log.Warn("No handler set, ignoring subscribe_terminal")
+		log.Warn("No handler set, ignoring subscribe_pod")
 		return
 	}
 
-	req := SubscribeTerminalRequest{
+	req := SubscribePodRequest{
 		PodKey:          cmd.PodKey,
 		RelayURL:        cmd.RelayUrl,
 		RunnerToken:     cmd.RunnerToken,
 		IncludeSnapshot: cmd.IncludeSnapshot,
 		SnapshotHistory: cmd.SnapshotHistory,
 	}
-	if err := c.handler.OnSubscribeTerminal(req); err != nil {
-		log.Error("Failed to subscribe terminal", "pod_key", cmd.PodKey, "error", err)
+	if err := c.handler.OnSubscribePod(req); err != nil {
+		log.Error("Failed to subscribe pod", "pod_key", cmd.PodKey, "error", err)
 	}
 }
 
-// handleUnsubscribeTerminal handles unsubscribe_terminal command from server.
+// handleUnsubscribePod handles unsubscribe_pod command from server.
 // This notifies the Runner that all browsers have disconnected.
-func (c *GRPCConnection) handleUnsubscribeTerminal(cmd *runnerv1.UnsubscribeTerminalCommand) {
+func (c *GRPCConnection) handleUnsubscribePod(cmd *runnerv1.UnsubscribePodCommand) {
 	log := logger.GRPC()
-	log.Info("Received unsubscribe_terminal", "pod_key", cmd.PodKey)
+	log.Info("Received unsubscribe_pod", "pod_key", cmd.PodKey)
 	if c.handler == nil {
-		log.Warn("No handler set, ignoring unsubscribe_terminal")
+		log.Warn("No handler set, ignoring unsubscribe_pod")
 		return
 	}
 
-	req := UnsubscribeTerminalRequest{
+	req := UnsubscribePodRequest{
 		PodKey: cmd.PodKey,
 	}
-	if err := c.handler.OnUnsubscribeTerminal(req); err != nil {
-		log.Error("Failed to unsubscribe terminal", "pod_key", cmd.PodKey, "error", err)
+	if err := c.handler.OnUnsubscribePod(req); err != nil {
+		log.Error("Failed to unsubscribe pod", "pod_key", cmd.PodKey, "error", err)
 	}
 }
 
@@ -120,9 +96,9 @@ func (c *GRPCConnection) handleQuerySandboxes(cmd *runnerv1.QuerySandboxesComman
 	}
 }
 
-// handleObserveTerminal handles observe_terminal (get_pod_snapshot) command from server.
+// handleObservePod handles observe_pod (get_pod_snapshot) command from server.
 // Reads VirtualTerminal state and sends result back via gRPC.
-func (c *GRPCConnection) handleObserveTerminal(cmd *runnerv1.ObserveTerminalCommand) {
+func (c *GRPCConnection) handleObservePod(cmd *runnerv1.ObservePodCommand) {
 	log := logger.GRPC()
 	log.Info("Received get_pod_snapshot request", "request_id", cmd.RequestId, "pod_key", cmd.PodKey)
 	if c.handler == nil {
@@ -130,14 +106,14 @@ func (c *GRPCConnection) handleObserveTerminal(cmd *runnerv1.ObserveTerminalComm
 		return
 	}
 
-	req := ObserveTerminalRequest{
+	req := ObservePodRequest{
 		RequestID:     cmd.RequestId,
 		PodKey:        cmd.PodKey,
 		Lines:         int(cmd.Lines),
 		IncludeScreen: cmd.IncludeScreen,
 	}
-	if err := c.handler.OnObserveTerminal(req); err != nil {
-		log.Error("Failed to observe terminal", "request_id", cmd.RequestId, "pod_key", cmd.PodKey, "error", err)
+	if err := c.handler.OnObservePod(req); err != nil {
+		log.Error("Failed to observe pod", "request_id", cmd.RequestId, "pod_key", cmd.PodKey, "error", err)
 	}
 }
 

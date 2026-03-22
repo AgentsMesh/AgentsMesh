@@ -5,7 +5,9 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
 import type { SplitTreeNode } from "@/stores/workspace";
+import { usePodStore } from "@/stores/pod";
 import { TerminalPane } from "./TerminalPane";
+import { AgentPanel } from "./AgentPanel";
 
 interface SplitTreeRendererProps {
   node: SplitTreeNode;
@@ -100,18 +102,24 @@ function LeafPane({
   onPopout?: (paneId: string) => void;
 }) {
   const podKey = useWorkspaceStore((s) => s.panes.find((p) => p.id === paneId)?.podKey);
+  const interactionMode = usePodStore(
+    (s) => s.pods.find((p) => p.pod_key === podKey)?.interaction_mode
+  );
   if (!podKey) return null;
 
-  return (
-    <TerminalPane
-      paneId={paneId}
-      podKey={podKey}
-      isActive={paneId === activePane}
-      onClose={() => onClose(paneId)}
-      onPopout={onPopout ? () => onPopout(paneId) : undefined}
-      showHeader={true}
-    />
-  );
+  const sharedProps = {
+    paneId,
+    podKey,
+    isActive: paneId === activePane,
+    onClose: () => onClose(paneId),
+    onPopout: onPopout ? () => onPopout(paneId) : undefined,
+    showHeader: true,
+  };
+
+  if (interactionMode === "acp") {
+    return <AgentPanel {...sharedProps} />;
+  }
+  return <TerminalPane {...sharedProps} />;
 }
 
 export default SplitTreeRenderer;

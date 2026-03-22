@@ -2,9 +2,6 @@ package runner
 
 import (
 	"fmt"
-
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // GetPodStatus returns the agent status for a given pod key.
@@ -17,26 +14,11 @@ func (r *Runner) GetPodStatus(podKey string) (agentStatus string, podStatus stri
 
 	podStatus = pod.GetStatus()
 	shellPid = 0
-	if pod.Terminal != nil {
-		shellPid = pod.Terminal.PID()
+	if pod.IO != nil {
+		shellPid = pod.IO.GetPID()
+		return pod.IO.GetAgentStatus(), podStatus, shellPid, true
 	}
 
-	// Get agent status from StateDetector (preferred, unified 3-value: executing/waiting/idle)
-	if pod.VirtualTerminal != nil {
-		d := pod.GetOrCreateStateDetector()
-		if d != nil {
-			switch d.GetState() {
-			case detector.StateExecuting:
-				return "executing", podStatus, shellPid, true
-			case detector.StateWaiting:
-				return "waiting", podStatus, shellPid, true
-			default:
-				return "idle", podStatus, shellPid, true
-			}
-		}
-	}
-
-	// Fallback: no state detector available
 	return "idle", podStatus, shellPid, true
 }
 
@@ -48,12 +30,11 @@ func (r *Runner) GetPodSnapshot(podKey string, lines int) (string, error) {
 		return "", fmt.Errorf("pod not found: %s", podKey)
 	}
 
-	if pod.VirtualTerminal == nil {
-		return "", fmt.Errorf("virtual terminal not available for pod: %s", podKey)
+	if pod.IO == nil {
+		return "", fmt.Errorf("pod IO not available for pod: %s", podKey)
 	}
 
-	output := pod.VirtualTerminal.GetOutput(lines)
-	return output, nil
+	return pod.IO.GetSnapshot(lines)
 }
 
 // SendPodInput sends text and/or special keys to a local pod.
@@ -63,58 +44,19 @@ func (r *Runner) SendPodInput(podKey string, text string, keys []string) error {
 	if !exists || pod == nil {
 		return fmt.Errorf("pod not found: %s", podKey)
 	}
-
-	if pod.Terminal == nil {
-		return fmt.Errorf("terminal not available for pod: %s", podKey)
+	if pod.IO == nil {
+		return fmt.Errorf("pod IO not available: %s", podKey)
 	}
 
-	// Send text first if provided
 	if text != "" {
-		if err := pod.Terminal.Write([]byte(text)); err != nil {
-			return fmt.Errorf("failed to write text to terminal: %w", err)
+		if err := pod.IO.SendInput(text); err != nil {
+			return fmt.Errorf("failed to send text: %w", err)
 		}
-		logger.Runner().Debug("Sent text to local terminal", "pod_key", podKey, "text_length", len(text))
 	}
-
-	// Then send keys if provided
 	if len(keys) > 0 {
-		keyMap := map[string]string{
-			"enter":     "\r",
-			"escape":    "\x1b",
-			"tab":       "\t",
-			"backspace": "\x7f",
-			"delete":    "\x1b[3~",
-			"ctrl+c":    "\x03",
-			"ctrl+d":    "\x04",
-			"ctrl+u":    "\x15",
-			"ctrl+l":    "\x0c",
-			"ctrl+z":    "\x1a",
-			"ctrl+a":    "\x01",
-			"ctrl+e":    "\x05",
-			"ctrl+k":    "\x0b",
-			"ctrl+w":    "\x17",
-			"up":        "\x1b[A",
-			"down":      "\x1b[B",
-			"right":     "\x1b[C",
-			"left":      "\x1b[D",
-			"home":      "\x1b[H",
-			"end":       "\x1b[F",
-			"pageup":    "\x1b[5~",
-			"pagedown":  "\x1b[6~",
-			"shift+tab": "\x1b[Z",
+		if err := pod.IO.SendKeys(keys); err != nil {
+			return err
 		}
-
-		for _, key := range keys {
-			seq, ok := keyMap[key]
-			if !ok {
-				return fmt.Errorf("unknown key: %s", key)
-			}
-			if err := pod.Terminal.Write([]byte(seq)); err != nil {
-				return fmt.Errorf("failed to send key %s: %w", key, err)
-			}
-		}
-		logger.Runner().Debug("Sent keys to local terminal", "pod_key", podKey, "keys", keys)
 	}
-
 	return nil
 }

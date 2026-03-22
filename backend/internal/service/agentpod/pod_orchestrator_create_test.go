@@ -79,7 +79,7 @@ func TestCreatePod_AutoSelectRunner_Success(t *testing.T) {
 		runner: &runnerDomain.Runner{ID: 42, NodeID: "auto-runner"},
 	}
 	resolver := &mockAgentTypeResolver{
-		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code"},
+		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code", SupportedModes: "pty"},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
@@ -109,7 +109,7 @@ func TestCreatePod_AutoSelectRunner_NoAvailableRunner(t *testing.T) {
 		err: errors.New("no available runner supports the requested agent"),
 	}
 	resolver := &mockAgentTypeResolver{
-		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code"},
+		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code", SupportedModes: "pty"},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
@@ -162,7 +162,7 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 		err: errors.New("should not be called"),
 	}
 	resolver := &mockAgentTypeResolver{
-		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code"},
+		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code", SupportedModes: "pty"},
 	}
 
 	orch, _, _ := setupOrchestrator(t,

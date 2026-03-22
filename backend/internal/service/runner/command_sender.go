@@ -8,7 +8,7 @@ import (
 )
 
 // RunnerCommandSender defines the interface for sending commands to runners.
-// This interface allows PodCoordinator and TerminalRouter to work with different implementations:
+// This interface allows PodCoordinator and PodRouter to work with different implementations:
 // - GRPCCommandSender (gRPC adapter in api/grpc package)
 //
 // Note: RunnerConnectionManager does NOT implement this interface.
@@ -22,36 +22,30 @@ type RunnerCommandSender interface {
 	// SendTerminatePod sends a terminate pod command to a runner.
 	SendTerminatePod(ctx context.Context, runnerID int64, podKey string) error
 
-	// SendTerminalInput sends terminal input to a runner.
-	SendTerminalInput(ctx context.Context, runnerID int64, podKey string, data []byte) error
-
-	// SendTerminalResize sends terminal resize to a runner.
-	SendTerminalResize(ctx context.Context, runnerID int64, podKey string, cols, rows int) error
-
-	// SendTerminalRedraw triggers a terminal redraw without changing size.
-	// Used to restore terminal state after server restart.
-	SendTerminalRedraw(ctx context.Context, runnerID int64, podKey string) error
+	// SendPodInput sends pod input to a runner.
+	SendPodInput(ctx context.Context, runnerID int64, podKey string, data []byte) error
 
 	// SendPrompt sends a prompt to a pod.
 	SendPrompt(ctx context.Context, runnerID int64, podKey, prompt string) error
 
-	// SendSubscribeTerminal sends a subscribe terminal command to a runner.
+	// SendSubscribePod sends a subscribe pod command to a runner.
 	// relayURL is the public URL via reverse proxy (e.g. wss://example.com/relay).
-	SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error
+	SendSubscribePod(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error
 
-	// SendUnsubscribeTerminal sends an unsubscribe terminal command to a runner.
-	// This notifies the runner that all browsers have disconnected and it should disconnect from Relay.
-	SendUnsubscribeTerminal(ctx context.Context, runnerID int64, podKey string) error
+	// SendUnsubscribePod sends an unsubscribe pod command to a runner.
+	// This notifies the runner to disconnect from Relay when all browsers have disconnected.
+	SendUnsubscribePod(ctx context.Context, runnerID int64, podKey string) error
 
-	// SendObserveTerminal sends an observe terminal command to a runner.
+	// SendObservePod sends an observe pod command to a runner.
 	// Response is delivered via callback registered in RunnerConnectionManager.
-	SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error
+	SendObservePod(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error
 
 	// SendCreateAutopilot sends a create AutopilotController command to a runner.
 	SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error
 
 	// SendAutopilotControl sends an AutopilotController control command to a runner.
 	SendAutopilotControl(runnerID int64, cmd *runnerv1.AutopilotControlCommand) error
+
 }
 
 // NoOpCommandSender is a fallback implementation that logs warnings.
@@ -77,20 +71,8 @@ func (n *NoOpCommandSender) SendTerminatePod(ctx context.Context, runnerID int64
 	return ErrCommandSenderNotSet
 }
 
-func (n *NoOpCommandSender) SendTerminalInput(ctx context.Context, runnerID int64, podKey string, data []byte) error {
-	n.logger.Warn("command sender not configured, cannot send terminal input",
-		"runner_id", runnerID, "pod_key", podKey)
-	return ErrCommandSenderNotSet
-}
-
-func (n *NoOpCommandSender) SendTerminalResize(ctx context.Context, runnerID int64, podKey string, cols, rows int) error {
-	n.logger.Warn("command sender not configured, cannot send terminal resize",
-		"runner_id", runnerID, "pod_key", podKey)
-	return ErrCommandSenderNotSet
-}
-
-func (n *NoOpCommandSender) SendTerminalRedraw(ctx context.Context, runnerID int64, podKey string) error {
-	n.logger.Warn("command sender not configured, cannot send terminal redraw",
+func (n *NoOpCommandSender) SendPodInput(ctx context.Context, runnerID int64, podKey string, data []byte) error {
+	n.logger.Warn("command sender not configured, cannot send pod input",
 		"runner_id", runnerID, "pod_key", podKey)
 	return ErrCommandSenderNotSet
 }
@@ -101,20 +83,20 @@ func (n *NoOpCommandSender) SendPrompt(ctx context.Context, runnerID int64, podK
 	return ErrCommandSenderNotSet
 }
 
-func (n *NoOpCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
-	n.logger.Warn("command sender not configured, cannot send subscribe terminal",
+func (n *NoOpCommandSender) SendSubscribePod(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
+	n.logger.Warn("command sender not configured, cannot send subscribe pod",
 		"runner_id", runnerID, "pod_key", podKey)
 	return ErrCommandSenderNotSet
 }
 
-func (n *NoOpCommandSender) SendUnsubscribeTerminal(ctx context.Context, runnerID int64, podKey string) error {
-	n.logger.Warn("command sender not configured, cannot send unsubscribe terminal",
+func (n *NoOpCommandSender) SendUnsubscribePod(ctx context.Context, runnerID int64, podKey string) error {
+	n.logger.Warn("command sender not configured, cannot send unsubscribe pod",
 		"runner_id", runnerID, "pod_key", podKey)
 	return ErrCommandSenderNotSet
 }
 
-func (n *NoOpCommandSender) SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
-	n.logger.Warn("command sender not configured, cannot send observe terminal",
+func (n *NoOpCommandSender) SendObservePod(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+	n.logger.Warn("command sender not configured, cannot send observe pod",
 		"runner_id", runnerID, "pod_key", podKey)
 	return ErrCommandSenderNotSet
 }

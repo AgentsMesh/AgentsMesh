@@ -68,11 +68,11 @@ func (h *RunnerMessageHandler) createPTYErrorHandler(podKey string, pod *Pod) fu
 		errMsg := fmt.Sprintf("PTY read error: %v", err)
 		pod.SetPTYError(errMsg)
 
-		// Write a visible error message to the aggregator so it appears
+		// Write a visible error message to the output pipeline so it appears
 		// in the frontend terminal via relay. Use ANSI red color for visibility.
-		if pod.Aggregator != nil {
+		if pod.IO != nil {
 			visibleMsg := fmt.Sprintf("\r\n\x1b[1;31m[Terminal Error] PTY read failed: %v\x1b[0m\r\n", err)
-			pod.Aggregator.Write([]byte(visibleMsg))
+			pod.IO.WriteOutput([]byte(visibleMsg))
 		}
 
 		// Send error event via gRPC so backend can update pod status.
@@ -86,98 +86,81 @@ func (h *RunnerMessageHandler) createPTYErrorHandler(podKey string, pod *Pod) fu
 // createExitHandler creates an exit handler that notifies server when pod exits.
 func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 	return func(exitCode int) {
-		log := logger.Pod()
-		log.Info("Pod exited", "pod_key", podKey, "exit_code", exitCode)
-
-		pod := h.podStore.Delete(podKey)
-		if pod == nil {
-			// Pod was already removed by OnTerminatePod — it will handle
-			// the terminated event and cleanup. Avoid double-send.
-			log.Info("Pod already removed (terminated by server), skipping exit handler cleanup", "pod_key", podKey)
-			return
-		}
-
-		// Clean up associated Autopilot if any (before terminal teardown)
-		if ac := h.runner.GetAutopilotByPodKey(podKey); ac != nil {
-			ac.Stop()
-			if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
-				agentMon.Unsubscribe("autopilot-" + ac.Key())
-			}
-			h.runner.RemoveAutopilot(ac.Key())
-		}
-
-		var earlyOutput string
-
-		pod.SetStatus(PodStatusStopped)
-
-		pod.StopStateDetector()
-
-		// Stop aggregator BEFORE disconnecting relay, so the final flush
-		// can still be sent through the relay if it's connected.
-		// Close PTYLogger AFTER Aggregator.Stop() so the final flush can
-		// still write to the logger (PTYLogger.WriteAggregated returns nil
-		// when closed, causing silent data loss).
-		if pod.Aggregator != nil {
-			pod.Aggregator.Stop()
-
-			// Retrieve any early output that was buffered before the relay connected.
-			// This captures error messages from fast-exiting processes.
-			// Must be outside PTYLogger check — PTYLogger is nil in most
-			// production environments, but early output must still be captured.
-			if buf := pod.Aggregator.DrainEarlyBuffer(); len(buf) > 0 {
-				earlyOutput = string(buf)
-				log.Info("Captured early output from fast-exiting process",
-					"pod_key", podKey, "bytes", len(buf))
-			}
-		}
-		if pod.PTYLogger != nil {
-			pod.PTYLogger.Close()
-		}
-
-		// If a PTY error was recorded (e.g., disk full causing I/O error),
-		// use it as the error message so the backend sets error status.
-		if ptyErr := pod.GetPTYError(); ptyErr != "" && earlyOutput == "" {
-			earlyOutput = ptyErr
-			log.Info("Using stored PTY error as termination reason",
-				"pod_key", podKey, "error", ptyErr)
-		}
-
-		pod.DisconnectRelay()
-
-		// Clean up Pod Daemon state file (same as OnTerminatePod).
-		// Without this, daemon state persists after natural exit until next recovery scan.
-		if pod.SandboxPath != "" {
-			_ = poddaemon.DeleteState(pod.SandboxPath)
-		}
-
-		// Unregister from MCP server and agent monitor (same as OnTerminatePod).
-		// createExitHandler is the most common exit path (process exits naturally),
-		// so these must be cleaned up here too, not just in OnTerminatePod.
-		if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {
-			mcpSrv.UnregisterPod(podKey)
-		}
-		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
-			agentMon.UnregisterPod(podKey)
-		}
-
-		// Include early output or PTY error in the termination event so the
-		// backend can display why the process failed and set error status.
-		if h.conn != nil {
-			if err := h.conn.SendPodTerminated(podKey, int32(exitCode), earlyOutput); err != nil {
-				log.Error("Failed to send pod terminated event", "error", err)
-			}
-		}
-
-		// Async token usage collection — runs after termination event is sent.
-		// Uses the agent's LaunchCommand as agentType to select the parser.
-		// podStartedAt scopes collection to only this session's files.
-		agentType := pod.AgentType
-		sandboxPath := pod.SandboxPath
-		podStartedAt := pod.StartedAt
-		safego.Go("token-usage-exit", func() {
-			h.collectAndSendTokenUsage(podKey, agentType, sandboxPath, podStartedAt)
-		})
+		logger.Pod().Info("Pod exited", "pod_key", podKey, "exit_code", exitCode)
+		h.cleanupPodExit(podKey, exitCode, false)
 	}
+}
+
+// cleanupPodExit is the unified exit/cleanup path for all pod termination scenarios.
+// It handles: natural PTY exit, ACP exit, and server-initiated terminate.
+// stopIO=true only for OnTerminatePod (active kill needs explicit IO shutdown);
+// natural exits have IO already stopped.
+func (h *RunnerMessageHandler) cleanupPodExit(podKey string, exitCode int, stopIO bool) {
+	log := logger.Pod()
+
+	pod := h.podStore.Delete(podKey)
+	if pod == nil {
+		// Pod was already removed by another exit path — avoid double cleanup.
+		log.Info("Pod already removed, skipping cleanup", "pod_key", podKey)
+		return
+	}
+
+	// Clean up associated Autopilot if any (before terminal teardown)
+	if ac := h.runner.GetAutopilotByPodKey(podKey); ac != nil {
+		ac.Stop()
+		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
+			agentMon.Unsubscribe("autopilot-" + ac.Key())
+		}
+		h.runner.RemoveAutopilot(ac.Key())
+	}
+
+	pod.SetStatus(PodStatusStopped)
+	pod.StopStateDetector()
+
+	// Mode-specific infrastructure cleanup (aggregator, loggers, etc.).
+	// Must happen BEFORE DisconnectRelay so the aggregator's final flush
+	// can still reach the browser via relay.
+	var earlyOutput string
+	if pod.IO != nil {
+		earlyOutput = pod.IO.Teardown()
+		if earlyOutput != "" {
+			log.Info("Captured early output from teardown", "pod_key", podKey, "bytes", len(earlyOutput))
+		}
+	}
+
+	pod.DisconnectRelay()
+
+	if stopIO && pod.IO != nil {
+		pod.IO.Stop()
+	}
+
+	// Clean up Pod Daemon state file
+	if pod.SandboxPath != "" {
+		_ = poddaemon.DeleteState(pod.SandboxPath)
+	}
+
+	// Unregister from MCP server and agent monitor
+	if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {
+		mcpSrv.UnregisterPod(podKey)
+	}
+	if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
+		agentMon.UnregisterPod(podKey)
+	}
+
+	// Send termination event with early output / error reason
+	if h.conn != nil {
+		if err := h.conn.SendPodTerminated(podKey, int32(exitCode), earlyOutput); err != nil {
+			log.Error("Failed to send pod terminated event", "error", err)
+		}
+	}
+
+	// Async token usage collection
+	agentType := pod.AgentType
+	sandboxPath := pod.SandboxPath
+	podStartedAt := pod.StartedAt
+	safego.Go("token-usage-exit", func() {
+		h.collectAndSendTokenUsage(podKey, agentType, sandboxPath, podStartedAt)
+	})
 }
 
 // collectAndSendTokenUsage collects token usage and sends it to the backend.
@@ -226,15 +209,6 @@ func (h *RunnerMessageHandler) sendPodCreated(podKey string, pid int, sandboxPat
 	}
 	if err := h.conn.SendPodCreated(podKey, int32(pid), sandboxPath, branchName); err != nil {
 		logger.Pod().Error("Failed to send pod created event", "error", err)
-	}
-}
-
-func (h *RunnerMessageHandler) sendPtyResized(podKey string, cols, rows uint16) {
-	if h.conn == nil {
-		return
-	}
-	if err := h.conn.SendPtyResized(podKey, int32(cols), int32(rows)); err != nil {
-		logger.Terminal().Error("Failed to send pty resized event", "error", err)
 	}
 }
 

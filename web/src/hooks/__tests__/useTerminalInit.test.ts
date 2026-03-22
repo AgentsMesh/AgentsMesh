@@ -10,7 +10,7 @@ import {
 
 // Mock dependencies
 vi.mock("@/stores/workspace", () => ({
-  terminalPool: {
+  relayPool: {
     subscribe: vi.fn(),
     forceResize: vi.fn(),
     sendResize: vi.fn(),
@@ -333,8 +333,8 @@ describe("setupDataHandlers", () => {
     expect(mockSend).not.toHaveBeenCalled();
   });
 
-  it("calls terminalPool.sendResize on terminal resize", async () => {
-    const { terminalPool } = await import("@/stores/workspace");
+  it("calls relayPool.sendResize on terminal resize", async () => {
+    const { relayPool } = await import("@/stores/workspace");
     const term = createMockTerm();
     const connectionRef = { current: null };
     const isComposing = { current: false };
@@ -345,7 +345,7 @@ describe("setupDataHandlers", () => {
     const resizeCallback = term._onResizeCallback;
     resizeCallback?.({ rows: 24, cols: 80 });
 
-    expect(terminalPool.sendResize).toHaveBeenCalledWith("pod-1", 80, 24);
+    expect(relayPool.sendResize).toHaveBeenCalledWith("pod-1", 80, 24);
   });
 });
 

@@ -18,7 +18,7 @@ interface InitProgress {
   message: string;
 }
 
-interface TerminalLoadingStateProps {
+interface PaneLoadingStateProps {
   podStatus: string;
   initProgress?: InitProgress;
   onClose?: () => void;
@@ -48,13 +48,13 @@ function formatElapsed(totalSeconds: number): string {
 }
 
 /**
- * Loading/Waiting state view for TerminalPane
+ * Loading/Waiting state view for workspace panes
  */
-export function TerminalLoadingState({
+export function PaneLoadingState({
   podStatus,
   initProgress,
   onClose,
-}: TerminalLoadingStateProps) {
+}: PaneLoadingStateProps) {
   const isCompleted = podStatus === "completed";
   const elapsed = useElapsedSeconds();
   const isSlowInit = !isCompleted && elapsed >= SLOW_INIT_THRESHOLD_SEC;
@@ -112,7 +112,7 @@ export function TerminalLoadingState({
             onClick={onClose}
           >
             <X className="w-4 h-4 mr-2" />
-            Close Terminal
+            Close
           </Button>
         )}
       </div>
@@ -120,17 +120,17 @@ export function TerminalLoadingState({
   );
 }
 
-interface TerminalReconnectingStateProps {
+interface PaneReconnectingStateProps {
   onClose?: () => void;
 }
 
 /**
- * Reconnecting state view for TerminalPane - shown when pod is orphaned
+ * Reconnecting state view for workspace panes - shown when pod is orphaned
  * (Runner is restarting and the session will resume automatically)
  */
-export function TerminalReconnectingState({
+export function PaneReconnectingState({
   onClose,
-}: TerminalReconnectingStateProps) {
+}: PaneReconnectingStateProps) {
   return (
     <div className="flex-1 flex items-center justify-center bg-terminal-bg">
       <div className="text-center p-4 max-w-sm">
@@ -149,7 +149,7 @@ export function TerminalReconnectingState({
             onClick={onClose}
           >
             <X className="w-4 h-4 mr-2" />
-            Close Terminal
+            Close
           </Button>
         )}
       </div>
@@ -157,18 +157,18 @@ export function TerminalReconnectingState({
   );
 }
 
-interface TerminalErrorStateProps {
+interface PaneErrorStateProps {
   error: string;
   onClose?: () => void;
 }
 
 /**
- * Error state view for TerminalPane
+ * Error state view for workspace panes
  */
-export function TerminalErrorState({
+export function PaneErrorState({
   error,
   onClose,
-}: TerminalErrorStateProps) {
+}: PaneErrorStateProps) {
   return (
     <div className="flex-1 flex items-center justify-center bg-terminal-bg">
       <div className="text-center p-4">
@@ -185,7 +185,7 @@ export function TerminalErrorState({
             onClick={onClose}
           >
             <X className="w-4 h-4 mr-2" />
-            Close Terminal
+            Close
           </Button>
         )}
       </div>

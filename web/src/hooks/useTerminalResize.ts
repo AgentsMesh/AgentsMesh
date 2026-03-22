@@ -3,14 +3,14 @@
 import { useEffect, useCallback, useRef, MutableRefObject } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import { terminalPool } from "@/stores/workspace";
+import { relayPool } from "@/stores/workspace";
 import { safeFit } from "./useTerminalInit";
 
 /** Debounce delay for size sync operations (ms) */
 const SIZE_SYNC_DEBOUNCE_MS = 100;
 
 /**
- * Manages all terminal resize concerns: debounced PTY sync,
+ * Manages all terminal resize concerns: debounced pod sync,
  * ResizeObserver, visibility change, active-pane focus, and font size updates.
  *
  * Extracted from useTerminal for SRP.
@@ -26,7 +26,7 @@ export function useTerminalResize(
   const sizeSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedSizeRef = useRef<{ cols: number; rows: number } | null>(null);
 
-  /** Debounced size sync to PTY. Only sends if size actually changed. */
+  /** Debounced size sync to pod. Only sends if size actually changed. */
   const debouncedSizeSync = useCallback((cols: number, rows: number) => {
     const last = lastSyncedSizeRef.current;
     if (last && last.cols === cols && last.rows === rows) return;
@@ -36,7 +36,7 @@ export function useTerminalResize(
     }
     sizeSyncTimerRef.current = setTimeout(() => {
       lastSyncedSizeRef.current = { cols, rows };
-      terminalPool.forceResize(podKey, cols, rows);
+      relayPool.forceResize(podKey, cols, rows);
       sizeSyncTimerRef.current = null;
     }, SIZE_SYNC_DEBOUNCE_MS);
   }, [podKey]);
@@ -52,7 +52,7 @@ export function useTerminalResize(
       sizeSyncTimerRef.current = null;
     }
     lastSyncedSizeRef.current = { cols, rows };
-    terminalPool.forceResize(podKey, cols, rows);
+    relayPool.forceResize(podKey, cols, rows);
   }, [podKey]);
 
   // ResizeObserver + window resize — bound to terminal lifecycle

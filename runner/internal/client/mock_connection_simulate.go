@@ -27,57 +27,35 @@ func (m *MockConnection) SimulateTerminatePod(req TerminatePodRequest) error {
 	return nil
 }
 
-// SimulateTerminalInput simulates server sending a terminal_input message.
-func (m *MockConnection) SimulateTerminalInput(req TerminalInputRequest) error {
+// SimulatePodInput simulates server sending a pod_input message.
+func (m *MockConnection) SimulatePodInput(req PodInputRequest) error {
 	m.mu.Lock()
 	handler := m.handler
 	m.mu.Unlock()
 	if handler != nil {
-		return handler.OnTerminalInput(req)
+		return handler.OnPodInput(req)
 	}
 	return nil
 }
 
-// SimulateTerminalResize simulates server sending a terminal_resize message.
-func (m *MockConnection) SimulateTerminalResize(req TerminalResizeRequest) error {
+// SimulateSubscribePod simulates server sending a subscribe_pod message.
+func (m *MockConnection) SimulateSubscribePod(req SubscribePodRequest) error {
 	m.mu.Lock()
 	handler := m.handler
 	m.mu.Unlock()
 	if handler != nil {
-		return handler.OnTerminalResize(req)
+		return handler.OnSubscribePod(req)
 	}
 	return nil
 }
 
-// SimulateTerminalRedraw simulates server sending a terminal_redraw message.
-func (m *MockConnection) SimulateTerminalRedraw(req TerminalRedrawRequest) error {
+// SimulateUnsubscribePod simulates server sending an unsubscribe_pod message.
+func (m *MockConnection) SimulateUnsubscribePod(req UnsubscribePodRequest) error {
 	m.mu.Lock()
 	handler := m.handler
 	m.mu.Unlock()
 	if handler != nil {
-		return handler.OnTerminalRedraw(req)
-	}
-	return nil
-}
-
-// SimulateSubscribeTerminal simulates server sending a subscribe_terminal message.
-func (m *MockConnection) SimulateSubscribeTerminal(req SubscribeTerminalRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnSubscribeTerminal(req)
-	}
-	return nil
-}
-
-// SimulateUnsubscribeTerminal simulates server sending an unsubscribe_terminal message.
-func (m *MockConnection) SimulateUnsubscribeTerminal(req UnsubscribeTerminalRequest) error {
-	m.mu.Lock()
-	handler := m.handler
-	m.mu.Unlock()
-	if handler != nil {
-		return handler.OnUnsubscribeTerminal(req)
+		return handler.OnUnsubscribePod(req)
 	}
 	return nil
 }
@@ -111,6 +89,17 @@ func (m *MockConnection) SimulateAutopilotControl(cmd *runnerv1.AutopilotControl
 	m.mu.Unlock()
 	if handler != nil {
 		return handler.OnAutopilotControl(cmd)
+	}
+	return nil
+}
+
+// SimulateSendPrompt simulates server sending a send_prompt message.
+func (m *MockConnection) SimulateSendPrompt(cmd *runnerv1.SendPromptCommand) error {
+	m.mu.Lock()
+	handler := m.handler
+	m.mu.Unlock()
+	if handler != nil {
+		return handler.OnSendPrompt(cmd)
 	}
 	return nil
 }

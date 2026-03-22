@@ -78,7 +78,7 @@ func TestGRPCRunnerAdapter_HandleProtoMessage(t *testing.T) {
 	})
 
 	// NOTE: terminal output test removed - output is exclusively streamed via Relay.
-	// Runner no longer sends TerminalOutputEvent via gRPC.
+	// Runner no longer sends PtyOutputEvent via gRPC.
 
 	t.Run("agent status message", func(t *testing.T) {
 		var agentStatusReceived bool
@@ -98,23 +98,14 @@ func TestGRPCRunnerAdapter_HandleProtoMessage(t *testing.T) {
 		assert.True(t, agentStatusReceived)
 	})
 
-	t.Run("pty resized message", func(t *testing.T) {
-		var ptyResizedReceived bool
-		connMgr.SetPtyResizedCallback(func(runnerID int64, data *runnerv1.PtyResizedEvent) {
-			ptyResizedReceived = true
-			assert.Equal(t, int64(1), runnerID)
-			assert.Equal(t, "test-pod", data.PodKey)
-			assert.Equal(t, int32(120), data.Cols)
-			assert.Equal(t, int32(40), data.Rows)
-		})
-
+	t.Run("pod resized message (backward compat, updates heartbeat only)", func(t *testing.T) {
 		msg := &runnerv1.RunnerMessage{
-			Payload: &runnerv1.RunnerMessage_PtyResized{
-				PtyResized: &runnerv1.PtyResizedEvent{PodKey: "test-pod", Cols: 120, Rows: 40},
+			Payload: &runnerv1.RunnerMessage_PodResized{
+				PodResized: &runnerv1.PodResizedEvent{PodKey: "test-pod", Cols: 120, Rows: 40},
 			},
 		}
 		adapter.handleProtoMessage(context.Background(), 1, conn, msg)
-		assert.True(t, ptyResizedReceived)
+		// No callback — terminal size tracking removed; just verifies no panic.
 	})
 
 	t.Run("error message routes to HandlePodError callback", func(t *testing.T) {

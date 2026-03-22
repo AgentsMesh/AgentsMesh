@@ -83,7 +83,7 @@ func TestPodBuilderBuildWithAllOptions(t *testing.T) {
 
 	pod, err := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).
-		WithTerminalSize(100, 30). // (cols, rows)
+		WithPtySize(100, 30). // (cols, rows)
 		Build(context.Background())
 
 	if err != nil {
@@ -161,7 +161,7 @@ func TestPodBuilderMergeEnvVarsOverride(t *testing.T) {
 	}
 }
 
-func TestPodBuilderTerminalSizeDefaults(t *testing.T) {
+func TestPodBuilderPtySizeDefaults(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			WorkspaceRoot: "/tmp",
@@ -169,7 +169,7 @@ func TestPodBuilderTerminalSizeDefaults(t *testing.T) {
 	}
 
 	builder := NewPodBuilderFromRunner(runner).
-		WithTerminalSize(0, 0) // Zero values should use defaults
+		WithPtySize(0, 0) // Zero values should use defaults
 
 	if builder.rows != 24 {
 		t.Errorf("rows = %d, want 24 (default)", builder.rows)
@@ -308,7 +308,7 @@ func TestPodBuilderCommandFields(t *testing.T) {
 
 	builder := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).
-		WithTerminalSize(120, 40) // (cols, rows)
+		WithPtySize(120, 40) // (cols, rows)
 
 	if builder.cmd.PodKey != "command-fields-pod" {
 		t.Error("podKey not set")
@@ -323,7 +323,7 @@ func TestPodBuilderCommandFields(t *testing.T) {
 		t.Error("envVars not set correctly")
 	}
 	if builder.rows != 40 || builder.cols != 120 {
-		t.Error("terminal size not set correctly")
+		t.Error("PTY size not set correctly")
 	}
 	if builder.cmd.SandboxConfig == nil {
 		t.Error("sandboxConfig not set")

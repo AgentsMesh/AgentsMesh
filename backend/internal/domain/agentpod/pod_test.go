@@ -177,6 +177,30 @@ func TestPodStruct(t *testing.T) {
 	}
 }
 
+// --- Test IsACPMode ---
+
+func TestPodIsACPMode(t *testing.T) {
+	tests := []struct {
+		name            string
+		interactionMode string
+		expected        bool
+	}{
+		{"acp mode returns true", InteractionModeACP, true},
+		{"pty mode returns false", InteractionModePTY, false},
+		{"empty mode returns false", "", false},
+		{"unknown mode returns false", "unknown", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &Pod{InteractionMode: tt.interactionMode}
+			if p.IsACPMode() != tt.expected {
+				t.Errorf("IsACPMode() = %v, want %v", p.IsACPMode(), tt.expected)
+			}
+		})
+	}
+}
+
 // --- Test PreparationConfig ---
 
 func TestPreparationConfigStruct(t *testing.T) {

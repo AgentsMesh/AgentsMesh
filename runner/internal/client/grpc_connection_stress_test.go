@@ -57,8 +57,8 @@ func TestTerminalChannelNonBlocking(t *testing.T) {
 	start := time.Now()
 	for i := 0; i < 1000; i++ {
 		msg := &runnerv1.RunnerMessage{
-			Payload: &runnerv1.RunnerMessage_TerminalOutput{
-				TerminalOutput: &runnerv1.TerminalOutputEvent{
+			Payload: &runnerv1.RunnerMessage_PodOutput{
+				PodOutput: &runnerv1.PodOutputEvent{
 					PodKey: "test-pod",
 					Data:   []byte("test data"),
 				},

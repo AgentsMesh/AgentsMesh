@@ -58,30 +58,15 @@ func TestGRPCRunnerAdapter_SendOperations_WithConnection(t *testing.T) {
 		}
 	})
 
-	t.Run("SendTerminalInput with connection", func(t *testing.T) {
-		err := adapter.SendTerminalInput(1, "test-pod", []byte("hello"))
+	t.Run("SendPodInput with connection", func(t *testing.T) {
+		err := adapter.SendPodInput(1, "test-pod", []byte("hello"))
 		require.NoError(t, err)
 
 		select {
 		case msg := <-conn.Send:
-			assert.NotNil(t, msg.GetTerminalInput())
-			assert.Equal(t, "test-pod", msg.GetTerminalInput().PodKey)
-			assert.Equal(t, []byte("hello"), msg.GetTerminalInput().Data)
-		default:
-			t.Fatal("expected message in conn.Send channel")
-		}
-	})
-
-	t.Run("SendTerminalResize with connection", func(t *testing.T) {
-		err := adapter.SendTerminalResize(1, "test-pod", 120, 40)
-		require.NoError(t, err)
-
-		select {
-		case msg := <-conn.Send:
-			assert.NotNil(t, msg.GetTerminalResize())
-			assert.Equal(t, "test-pod", msg.GetTerminalResize().PodKey)
-			assert.Equal(t, int32(120), msg.GetTerminalResize().Cols)
-			assert.Equal(t, int32(40), msg.GetTerminalResize().Rows)
+			assert.NotNil(t, msg.GetPodInput())
+			assert.Equal(t, "test-pod", msg.GetPodInput().PodKey)
+			assert.Equal(t, []byte("hello"), msg.GetPodInput().Data)
 		default:
 			t.Fatal("expected message in conn.Send channel")
 		}

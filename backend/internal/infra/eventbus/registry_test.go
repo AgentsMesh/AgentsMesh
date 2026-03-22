@@ -21,7 +21,7 @@ func TestNewEventRegistry(t *testing.T) {
 			EventPodStatusChanged,
 			EventTicketCreated,
 			EventRunnerOnline,
-			EventTerminalNotification,
+			EventPodNotification,
 			EventSystemMaintenance,
 		}
 
@@ -43,7 +43,7 @@ func TestNewEventRegistry(t *testing.T) {
 			{EventPodStatusChanged, CategoryEntity},
 			{EventTicketCreated, CategoryEntity},
 			{EventRunnerOnline, CategoryEntity},
-			{EventTerminalNotification, CategoryNotification},
+			{EventPodNotification, CategoryNotification},
 			{EventTaskCompleted, CategoryNotification},
 			{EventSystemMaintenance, CategorySystem},
 		}
@@ -72,7 +72,7 @@ func TestNewEventRegistry(t *testing.T) {
 			{EventTicketCreated, "ticket"},
 			{EventTicketUpdated, "ticket"},
 			{EventRunnerOnline, "runner"},
-			{EventTerminalNotification, "pod"},
+			{EventPodNotification, "pod"},
 			{EventMentionNotification, "channel"},
 			{EventSystemMaintenance, ""},
 		}
@@ -171,7 +171,7 @@ func TestEventRegistry_GetCategory(t *testing.T) {
 	})
 
 	t.Run("get category for notification event", func(t *testing.T) {
-		category := r.GetCategory(EventTerminalNotification)
+		category := r.GetCategory(EventPodNotification)
 		if category != CategoryNotification {
 			t.Errorf("expected %s, got %s", CategoryNotification, category)
 		}
@@ -221,7 +221,7 @@ func TestEventRegistry_ListByCategory(t *testing.T) {
 		}
 
 		expectedEvents := []EventType{
-			EventTerminalNotification,
+			EventPodNotification,
 			EventTaskCompleted,
 			EventMentionNotification,
 		}

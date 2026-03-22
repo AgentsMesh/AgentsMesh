@@ -12,7 +12,7 @@ const (
 	// Event types (Runner -> Backend)
 	MsgTypePodCreated    MessageType = "pod_created"
 	MsgTypePodTerminated MessageType = "pod_terminated"
-	MsgTypePtyResized    MessageType = "pty_resized"
+	MsgTypePodResized    MessageType = "pod_resized"
 	// NOTE: MsgTypeTerminalOutput removed - output is exclusively streamed via Relay
 )
 
@@ -42,30 +42,17 @@ type RelayConnectionInfo struct {
 	ConnectedAt int64  `json:"connected_at"` // Unix milliseconds
 }
 
-// ==================== Terminal Data Structures ====================
+// ==================== Pod I/O Data Structures ====================
 
-// TerminalInputRequest is sent to write to PTY.
-type TerminalInputRequest struct {
+// PodInputRequest contains input data to write to pod stdin.
+type PodInputRequest struct {
 	PodKey string `json:"pod_key"`
 	Data   []byte `json:"data"` // Binary data (gRPC uses native bytes, no base64 needed)
 }
 
-// TerminalResizeRequest is sent to resize PTY.
-type TerminalResizeRequest struct {
-	PodKey string `json:"pod_key"`
-	Cols   uint16 `json:"cols"`
-	Rows   uint16 `json:"rows"`
-}
-
-// TerminalRedrawRequest is sent to trigger terminal redraw without changing size.
-// Used for restoring terminal state after server restart.
-type TerminalRedrawRequest struct {
-	PodKey string `json:"pod_key"`
-}
-
-// SubscribeTerminalRequest is sent when a browser wants to observe the terminal via Relay.
+// SubscribePodRequest is sent when a browser wants to observe the pod via Relay.
 // The Runner should connect to the specified Relay URL and start streaming terminal output.
-type SubscribeTerminalRequest struct {
+type SubscribePodRequest struct {
 	PodKey          string `json:"pod_key"`
 	RelayURL        string `json:"relay_url"`         // Public URL via reverse proxy (e.g. wss://example.com/relay)
 	RunnerToken     string `json:"runner_token"`      // JWT token for Relay authentication
@@ -73,9 +60,9 @@ type SubscribeTerminalRequest struct {
 	SnapshotHistory int32  `json:"snapshot_history"`
 }
 
-// UnsubscribeTerminalRequest is sent when all browsers have disconnected from the terminal.
+// UnsubscribePodRequest is sent when all browsers have disconnected from the pod.
 // The Runner should disconnect from the Relay.
-type UnsubscribeTerminalRequest struct {
+type UnsubscribePodRequest struct {
 	PodKey string `json:"pod_key"`
 }
 
@@ -100,8 +87,8 @@ type SandboxStatusInfo struct {
 	Error                 string `json:"error,omitempty"`
 }
 
-// ObserveTerminalRequest is sent to query terminal state for a pod.
-type ObserveTerminalRequest struct {
+// ObservePodRequest is sent to query terminal state for a pod.
+type ObservePodRequest struct {
 	RequestID     string `json:"request_id"`
 	PodKey        string `json:"pod_key"`
 	Lines         int    `json:"lines"`
@@ -118,27 +105,25 @@ type MessageHandler interface {
 	OnTerminatePod(req TerminatePodRequest) error
 	OnListPods() []PodInfo
 	OnListRelayConnections() []RelayConnectionInfo
-	OnTerminalInput(req TerminalInputRequest) error
-	OnTerminalResize(req TerminalResizeRequest) error
-	OnTerminalRedraw(req TerminalRedrawRequest) error
+	OnPodInput(req PodInputRequest) error
 
-	// OnSubscribeTerminal handles subscribe terminal command from server.
-	// This notifies the Runner that a browser wants to observe the terminal via Relay.
+	// OnSubscribePod handles subscribe pod command from server.
+	// This notifies the Runner that a browser wants to observe the pod via Relay.
 	// The Runner should connect to the specified Relay URL and start streaming terminal output.
-	OnSubscribeTerminal(req SubscribeTerminalRequest) error
+	OnSubscribePod(req SubscribePodRequest) error
 
-	// OnUnsubscribeTerminal handles unsubscribe terminal command from server.
+	// OnUnsubscribePod handles unsubscribe pod command from server.
 	// This notifies the Runner that all browsers have disconnected.
 	// The Runner should disconnect from the Relay.
-	OnUnsubscribeTerminal(req UnsubscribeTerminalRequest) error
+	OnUnsubscribePod(req UnsubscribePodRequest) error
 
 	// OnQuerySandboxes handles sandbox status query command from server.
 	// Returns sandbox status for specified pod keys.
 	OnQuerySandboxes(req QuerySandboxesRequest) error
 
-	// OnObserveTerminal handles observe terminal command from server.
+	// OnObservePod handles observe pod command from server.
 	// Reads VirtualTerminal state and sends result back via gRPC.
-	OnObserveTerminal(req ObserveTerminalRequest) error
+	OnObservePod(req ObservePodRequest) error
 
 	// Autopilot commands
 	// OnCreateAutopilot handles Autopilot creation command.
@@ -152,4 +137,9 @@ type MessageHandler interface {
 
 	// OnUploadLogs handles log upload command from server.
 	OnUploadLogs(cmd *runnerv1.UploadLogsCommand) error
+
+	// OnSendPrompt handles send_prompt command from server.
+	// Routes the prompt to the pod via PodIO.SendInput (mode-agnostic).
+	OnSendPrompt(cmd *runnerv1.SendPromptCommand) error
+
 }

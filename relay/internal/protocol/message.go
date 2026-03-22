@@ -17,6 +17,12 @@ const (
 	MsgTypeControl            = 0x07 // Control request (for input control)
 	MsgTypeRunnerDisconnected = 0x08 // Runner disconnected notification
 	MsgTypeRunnerReconnected  = 0x09 // Runner reconnected notification
+	MsgTypeResync             = 0x0A // Resync request (browser → runner, request full state)
+
+	// ACP (Agent Communication Protocol) message types
+	MsgTypeAcpEvent    = 0x0B // ACP event (ephemeral, not buffered)
+	MsgTypeAcpCommand  = 0x0C // ACP command (browser → runner)
+	MsgTypeAcpSnapshot = 0x0D // ACP snapshot (complete session state)
 )
 
 var (

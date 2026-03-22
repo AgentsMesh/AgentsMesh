@@ -10,7 +10,7 @@ import (
 )
 
 // setupPodEventHandlerDeps sets up dependencies for pod event handler testing
-func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *RunnerConnectionManager, *TerminalRouter, *gorm.DB) {
+func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *RunnerConnectionManager, *PodRouter, *gorm.DB) {
 	mr, err := miniredis.Run()
 	if err != nil {
 		t.Fatalf("failed to start miniredis: %v", err)
@@ -59,7 +59,7 @@ func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *RunnerConnectionM
 	runnerRepo := infra.NewRunnerRepository(db)
 
 	cm := NewRunnerConnectionManager(logger)
-	tr := NewTerminalRouter(cm, logger)
+	tr := NewPodRouter(cm, logger)
 	hb := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
 

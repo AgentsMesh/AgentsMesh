@@ -11,7 +11,7 @@ import (
 
 // ==================== Additional Send Tests ====================
 
-func TestGRPCRunnerAdapter_SendTerminalRedraw(t *testing.T) {
+func TestGRPCRunnerAdapter_SendSubscribePod(t *testing.T) {
 	logger := newTestLogger()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
@@ -19,29 +19,7 @@ func TestGRPCRunnerAdapter_SendTerminalRedraw(t *testing.T) {
 	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	t.Run("runner not connected", func(t *testing.T) {
-		err := adapter.SendTerminalRedraw(999, "pod-1")
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "not connected")
-	})
-
-	t.Run("successful send", func(t *testing.T) {
-		mockStream := &mockRunnerStream{}
-		connMgr.AddConnection(1, "test-node", "test-org", mockStream)
-
-		err := adapter.SendTerminalRedraw(1, "pod-1")
-		require.NoError(t, err)
-	})
-}
-
-func TestGRPCRunnerAdapter_SendSubscribeTerminal(t *testing.T) {
-	logger := newTestLogger()
-	connMgr := runner.NewRunnerConnectionManager(logger)
-	defer connMgr.Close()
-
-	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
-
-	t.Run("runner not connected", func(t *testing.T) {
-		err := adapter.SendSubscribeTerminal(999, "pod-1", "ws://relay", "token", true, 100)
+		err := adapter.SendSubscribePod(999, "pod-1", "ws://relay", "token", true, 100)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not connected")
 	})
@@ -50,12 +28,12 @@ func TestGRPCRunnerAdapter_SendSubscribeTerminal(t *testing.T) {
 		mockStream := &mockRunnerStream{}
 		connMgr.AddConnection(2, "test-node", "test-org", mockStream)
 
-		err := adapter.SendSubscribeTerminal(2, "pod-1", "ws://relay", "token", true, 100)
+		err := adapter.SendSubscribePod(2, "pod-1", "ws://relay", "token", true, 100)
 		require.NoError(t, err)
 	})
 }
 
-func TestGRPCRunnerAdapter_SendUnsubscribeTerminal(t *testing.T) {
+func TestGRPCRunnerAdapter_SendUnsubscribePod(t *testing.T) {
 	logger := newTestLogger()
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
@@ -63,7 +41,7 @@ func TestGRPCRunnerAdapter_SendUnsubscribeTerminal(t *testing.T) {
 	adapter := NewGRPCRunnerAdapter(logger, nil, nil, nil, nil, nil, connMgr, nil)
 
 	t.Run("runner not connected", func(t *testing.T) {
-		err := adapter.SendUnsubscribeTerminal(999, "pod-1")
+		err := adapter.SendUnsubscribePod(999, "pod-1")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not connected")
 	})
@@ -72,7 +50,7 @@ func TestGRPCRunnerAdapter_SendUnsubscribeTerminal(t *testing.T) {
 		mockStream := &mockRunnerStream{}
 		connMgr.AddConnection(3, "test-node", "test-org", mockStream)
 
-		err := adapter.SendUnsubscribeTerminal(3, "pod-1")
+		err := adapter.SendUnsubscribePod(3, "pod-1")
 		require.NoError(t, err)
 	})
 }

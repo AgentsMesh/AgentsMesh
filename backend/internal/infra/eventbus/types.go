@@ -72,7 +72,7 @@ const (
 
 // ===== Notification Events (Category: notification) =====
 const (
-	EventTerminalNotification EventType = "terminal:notification" // OSC 777
+	EventPodNotification EventType = "pod:notification" // OSC 777
 	EventTaskCompleted        EventType = "task:completed"        // Agent finished
 	EventMentionNotification  EventType = "mention:notification"  // @mention (future)
 	EventNotification         EventType = "notification"          // Unified notification (via dispatcher)
@@ -162,8 +162,8 @@ type TicketStatusChangedData struct {
 	PreviousStatus string `json:"previous_status,omitempty"`
 }
 
-// TerminalNotificationData represents the payload for terminal notification events
-type TerminalNotificationData struct {
+// PodNotificationData represents the payload for terminal notification events
+type PodNotificationData struct {
 	PodKey string `json:"pod_key"`
 	Title  string `json:"title"`
 	Body   string `json:"body"`
