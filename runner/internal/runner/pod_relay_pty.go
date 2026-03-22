@@ -78,7 +78,7 @@ func (r *PTYPodRelay) SendSnapshot(rc relay.RelayClient) {
 			if err != nil {
 				log.Error("Failed to marshal VT snapshot", "pod_key", r.podKey, "error", err)
 			} else {
-				rc.Send(relay.MsgTypeSnapshot, data)
+				_ = rc.Send(relay.MsgTypeSnapshot, data)
 			}
 		} else {
 			log.Info("VT lock busy, snapshot will be sent on next frame",

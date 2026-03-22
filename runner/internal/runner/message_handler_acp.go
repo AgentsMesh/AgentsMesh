@@ -43,7 +43,7 @@ func sendAcpViaRelay(pod *Pod, eventType, sessionID string, data any) {
 	if err != nil {
 		return
 	}
-	rc.Send(relay.MsgTypeAcpEvent, payload)
+	_ = rc.Send(relay.MsgTypeAcpEvent, payload)
 }
 
 // wireAndStartACPPod creates the ACPClient with Relay-forwarding callbacks,
