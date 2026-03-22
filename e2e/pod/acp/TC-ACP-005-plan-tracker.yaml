@@ -1,0 +1,55 @@
+id: TC-ACP-005
+name: ACP Plan 进度条验证
+description: 验证当 Agent 生成执行计划时，Plan Tracker 在 Activity Stream 顶部显示为水平紧凑 pill 标签进度条
+priority: high
+must_execute: true
+module: pod/acp
+tags:
+  - ui
+  - mcp-required
+  - acp
+
+preconditions:
+  - 开发环境已启动
+  - 已有一个 running 状态的 ACP Pod（Claude Code）
+
+steps:
+  - id: step-1
+    action: 登录并打开工作区
+    verification:
+      type: ui
+      details: |
+        1. navigate_page 到 /dev-org/workspace
+        2. take_snapshot 确认有 ACP Pod 面板
+
+  - id: step-2
+    action: 发送会触发 Plan 的 prompt
+    verification:
+      type: ui
+      details: |
+        1. 在输入框中输入: "请帮我创建一个完整的 Node.js Express 项目，包含 package.json、入口文件和一个简单的路由"
+        2. 按 Enter 发送
+
+  - id: step-3
+    action: 验证 Plan 进度条出现（如果 Agent 生成了 plan）
+    verification:
+      type: ui
+      details: |
+        1. 等待 Agent 处理（最多 30 秒）
+        2. take_snapshot 检查是否出现 Plan 进度条
+        3. 如果有 Plan：
+           - 确认 "Plan" 标签出现在 Activity Stream 上方
+           - 确认步骤显示为水平排列的 pill 标签（不是垂直列表）
+           - 确认 completed 步骤为绿色
+           - 确认 in_progress 步骤为蓝色
+           - 确认 pending 步骤为灰色
+        4. 如果 Agent 没有生成 Plan（正常情况，取决于 prompt 复杂度），记录为预期行为
+
+  - id: step-4
+    action: 验证 Plan 步骤状态随执行进度更新
+    verification:
+      type: ui
+      details: |
+        1. 如果有 Plan，每隔 5 秒 take_snapshot 观察步骤状态变化
+        2. 确认步骤从 pending → in_progress → completed 逐步推进
+        3. 确认 Activity Stream 中的工具调用与 Plan 步骤对应

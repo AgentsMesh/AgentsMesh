@@ -1,0 +1,87 @@
+id: TC-ACP-006
+name: ACP Slash 命令与连续对话
+description: 验证通过 Activity Stream 发送多轮指令、slash 命令的交互流程，确认消息不重复、输入框始终可用
+priority: high
+must_execute: true
+module: pod/acp
+tags:
+  - ui
+  - mcp-required
+  - acp
+
+preconditions:
+  - 开发环境已启动
+  - 已有一个 running 状态的 ACP Pod（Claude Code）
+
+steps:
+  - id: step-1
+    action: 登录并打开工作区
+    verification:
+      type: ui
+      details: |
+        1. navigate_page 到 /dev-org/workspace
+        2. take_snapshot 确认有 ACP Pod 面板
+
+  - id: step-2
+    action: 发送第一轮 prompt
+    verification:
+      type: ui
+      details: |
+        1. 在输入框中输入: "你好"
+        2. 按 Enter 发送
+        3. take_snapshot 确认：
+           - Activity Stream 中只有一条 "> 你好"（不重复）
+           - 输入框已清空
+
+  - id: step-3
+    action: 等待第一轮响应并验证
+    verification:
+      type: ui
+      details: |
+        1. 等待 Agent 响应完成（header 变为 "Idle"）
+        2. take_snapshot 确认：
+           - 有一条用户指令 "> 你好"
+           - 有 Agent 的文本回复
+           - 输入框可用，可以继续输入
+
+  - id: step-4
+    action: 发送 slash 命令 /compact
+    verification:
+      type: ui
+      details: |
+        1. 在输入框中输入: "/compact"
+        2. 按 Enter 发送
+        3. take_snapshot 确认：
+           - Activity Stream 中出现 "> /compact"
+           - slash 命令文本使用蓝色 monospace 字体（区别于普通用户指令）
+
+  - id: step-5
+    action: 等待 slash 命令响应
+    verification:
+      type: ui
+      details: |
+        1. 等待 Agent 处理 slash 命令（最多 15 秒）
+        2. take_snapshot 确认 Agent 有响应（可能是 context compacted 相关消息）
+
+  - id: step-6
+    action: 发送第二轮 prompt 验证连续对话
+    verification:
+      type: ui
+      details: |
+        1. 在输入框中输入: "请告诉我 1+1 等于多少"
+        2. 按 Enter 发送
+        3. 等待 Agent 响应完成
+        4. take_snapshot 确认：
+           - 所有历史消息保持不变（不丢失、不重复）
+           - 新的用户指令和 Agent 回复追加在底部
+           - Activity Stream 自动滚动到最新消息
+
+  - id: step-7
+    action: 验证 Activity Stream 中没有消息重复
+    verification:
+      type: ui
+      details: |
+        1. take_snapshot 获取完整 Activity Stream
+        2. 统计 "> 你好" 出现次数，确认只有 1 次
+        3. 统计 "> /compact" 出现次数，确认只有 1 次
+        4. 确认所有消息按时间顺序排列
