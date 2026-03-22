@@ -78,6 +78,15 @@ func (m *mockRepositoryService) SyncFromProvider(ctx context.Context, repoID int
 	return nil, nil
 }
 
+func (m *mockRepositoryService) GetByFullPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*gitprovider.Repository, error) {
+	for _, repo := range m.repos {
+		if repo.OrganizationID == orgID && repo.ProviderType == providerType && repo.ProviderBaseURL == providerBaseURL && repo.FullPath == fullPath {
+			return repo, nil
+		}
+	}
+	return nil, repository.ErrRepositoryNotFound
+}
+
 func (m *mockRepositoryService) ListMergeRequests(ctx context.Context, repoID int64, branch, state string) ([]*repository.MergeRequestInfo, error) {
 	return nil, nil
 }
