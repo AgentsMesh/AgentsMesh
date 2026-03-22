@@ -88,10 +88,7 @@ func TestACPClient_SendPrompt(t *testing.T) {
 
 	// Wait for notifications to arrive
 	deadline := time.After(5 * time.Second)
-	for {
-		if client.State() == StateIdle && len(receivedChunks) > 0 {
-			break
-		}
+	for client.State() != StateIdle || len(receivedChunks) == 0 {
 		select {
 		case <-deadline:
 			t.Fatalf("timeout waiting for prompt response, state=%s chunks=%d",
