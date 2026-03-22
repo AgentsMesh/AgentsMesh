@@ -202,15 +202,6 @@ func RestartForUpdate() error {
 	return nil
 }
 
-// ScheduleRestartOnExit schedules a restart when the process exits.
-// This is useful for graceful updates where we want to restart after the update is applied.
-func ScheduleRestartOnExit() {
-	// In service mode, the service manager will automatically restart the process
-	// after it exits (if configured to do so).
-	// For interactive mode, we just exit and let the user restart manually.
-	log.Info("Update complete. Process will exit for restart.")
-}
-
 // RestartFunc returns a function that can be used to restart the service.
 // This is designed to be passed to the graceful updater.
 // Returns pid=0 because the service manager spawns the new process and we

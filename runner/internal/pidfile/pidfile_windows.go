@@ -30,6 +30,14 @@ func CleanupStaleProcess() error {
 		return nil
 	}
 
+	// Defensive: on Unix, exec-replace keeps the same PID, so the new
+	// process would see its own PID and try to kill itself. On Windows
+	// service restart the PID changes, making this check a no-op — but
+	// it's kept for symmetry and safety.
+	if pid == os.Getpid() {
+		return nil
+	}
+
 	inspector := process.DefaultInspector()
 
 	// Check if the process is still alive.

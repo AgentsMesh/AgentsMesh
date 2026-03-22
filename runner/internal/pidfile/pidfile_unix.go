@@ -31,6 +31,12 @@ func CleanupStaleProcess() error {
 		return nil // No PID file or corrupt file (already cleaned up)
 	}
 
+	// After exec-replace the PID stays the same, so the new process
+	// would see its own PID in the file and try to kill itself.
+	if pid == os.Getpid() {
+		return nil
+	}
+
 	// Check if process is alive (signal 0 = existence check)
 	if err := syscall.Kill(pid, 0); err != nil {
 		if errors.Is(err, syscall.EPERM) {

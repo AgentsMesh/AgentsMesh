@@ -18,7 +18,6 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/pidfile"
 	"github.com/anthropics/agentsmesh/runner/internal/runner"
-	"github.com/anthropics/agentsmesh/runner/internal/service"
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
 )
 
@@ -178,7 +177,7 @@ func startRunner(cfg *config.Config) (ok bool) {
 
 	// Inject updater and restart function for remote upgrade support
 	r.SetUpdater(updater.New(version))
-	r.SetRestartFunc(service.RestartFunc())
+	r.SetRestartFunc(execRestartFunc())
 
 	// Create web console (lifecycle managed by Supervisor)
 	consoleServer := console.New(cfg, DefaultConsolePort, version)
