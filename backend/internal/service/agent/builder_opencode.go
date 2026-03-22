@@ -27,7 +27,11 @@ func (b *OpenCodeBuilder) Slug() string {
 
 // HandleInitialPrompt prepends the initial prompt to launch arguments.
 // OpenCode syntax: opencode [prompt] [options]
+// In ACP mode, the prompt is sent via JSON-RPC (session/prompt), not CLI args.
 func (b *OpenCodeBuilder) HandleInitialPrompt(ctx *BuildContext, args []string) []string {
+	if ctx.Request.InteractionMode == "acp" {
+		return args
+	}
 	if ctx.Request.InitialPrompt != "" {
 		return append([]string{ctx.Request.InitialPrompt}, args...)
 	}
@@ -49,7 +53,11 @@ func (b *OpenCodeBuilder) BuildEnvVars(ctx *BuildContext) (map[string]string, er
 	return b.BaseAgentBuilder.BuildEnvVars(ctx)
 }
 
-// PostProcess uses the base implementation
+// PostProcess prepends "acp" subcommand in ACP mode.
+// OpenCode natively supports ACP JSON-RPC 2.0 via "opencode acp".
 func (b *OpenCodeBuilder) PostProcess(ctx *BuildContext, cmd *runnerv1.CreatePodCommand) error {
-	return b.BaseAgentBuilder.PostProcess(ctx, cmd)
+	if ctx.Request.InteractionMode == "acp" {
+		cmd.LaunchArgs = append([]string{"acp"}, cmd.LaunchArgs...)
+	}
+	return nil
 }

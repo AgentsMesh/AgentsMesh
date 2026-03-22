@@ -41,6 +41,7 @@ export interface PodData {
     name: string;
     slug: string;
   };
+  interaction_mode?: "pty" | "acp";
   error_code?: string;
   error_message?: string;
   created_by?: {
@@ -81,6 +82,8 @@ export const podApi = {
     // Resume mode fields
     source_pod_key?: string; // Pod key to resume from (enables resume mode)
     resume_agent_session?: boolean; // Whether to restore agent session (default: true when resuming)
+    // Interaction mode
+    interaction_mode?: "pty" | "acp"; // Pod interaction mode (default: "pty")
   }) =>
     request<{ message: string; pod: PodData }>(
       orgPath("/pods"),
@@ -101,15 +104,15 @@ export const podApi = {
       `${orgPath("/pods")}/${key}/connect`
     ),
 
-  // Get terminal connection info via Relay
+  // Get Pod connection info via Relay
   // Returns Relay URL and token for WebSocket connection
   // Note: podKey is embedded in the token for channel routing
-  getTerminalConnection: (key: string) =>
+  getPodConnection: (key: string) =>
     request<{
       relay_url: string;
       token: string;
       pod_key: string;
-    }>(`${orgPath("/pods")}/${key}/terminal/connect`),
+    }>(`${orgPath("/pods")}/${key}/relay/connect`),
 
   // Update pod alias (user-defined display name)
   // Pass null to clear the alias

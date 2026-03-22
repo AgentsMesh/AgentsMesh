@@ -95,13 +95,13 @@ func TestGRPCRunnerAdapter_SendCommands_Integration(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "pod-1", msg.GetCreatePod().PodKey)
 
-	// Test SendTerminalInput
-	err = adapter.SendTerminalInput(2, "pod-1", []byte("hello"))
+	// Test SendPodInput
+	err = adapter.SendPodInput(2, "pod-1", []byte("hello"))
 	require.NoError(t, err)
 
 	msg, err = stream.Recv()
 	require.NoError(t, err)
-	assert.Equal(t, []byte("hello"), msg.GetTerminalInput().Data)
+	assert.Equal(t, []byte("hello"), msg.GetPodInput().Data)
 
 	// Test SendTerminatePod
 	err = adapter.SendTerminatePod(2, "pod-1", true)

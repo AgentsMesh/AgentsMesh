@@ -22,9 +22,9 @@ message RunnerMessage {
     HeartbeatData heartbeat = 3;
     PodCreatedEvent pod_created = 4;
     PodTerminatedEvent pod_terminated = 5;
-    TerminalOutputEvent terminal_output = 6;
+    PodOutputEvent pod_output = 6;
     AgentStatusEvent agent_status = 7;
-    PtyResizedEvent pty_resized = 8;
+    PodResizedEvent pod_resized = 8;
     ErrorEvent error = 9;
     PodInitProgressEvent pod_init_progress = 10;
     RequestRelayTokenEvent request_relay_token = 11;
@@ -47,9 +47,11 @@ message RunnerMessage {
     LogUploadStatusEvent log_upload_status = 24;
     // Token 用量报告（Runner -> Backend，Pod 退出时上报）
     TokenUsageReport token_usage = 25;
-    // 终端观察结果（Runner -> Backend，响应 ObserveTerminalCommand）
-    ObserveTerminalResult observe_terminal_result = 26;
+    // Pod 观察结果（Runner -> Backend，响应 ObservePodCommand）
+    ObservePodResult observe_pod_result = 26;
+    // 27-30 reserved: previously used for ACP gRPC events, now ACP data flows exclusively via Relay.
   }
+  reserved 27, 28, 29, 30;
   int64 timestamp = 15;
 }
 
@@ -121,8 +123,8 @@ message PodTerminatedEvent {
   string error_message = 3;
 }
 
-// TerminalOutputEvent 终端输出事件
-message TerminalOutputEvent {
+// PodOutputEvent Pod 输出事件
+message PodOutputEvent {
   string pod_key = 1;
   bytes data = 2;  // 直接二进制，无需 Base64 编码
 }
@@ -133,8 +135,8 @@ message AgentStatusEvent {
   string status = 2;
 }
 
-// PtyResizedEvent PTY 窗口大小调整事件
-message PtyResizedEvent {
+// PodResizedEvent Pod 窗口大小调整事件
+message PodResizedEvent {
   string pod_key = 1;
   int32 cols = 2;
   int32 rows = 3;
@@ -164,12 +166,12 @@ message ServerMessage {
     InitializeResult initialize_result = 1;
     CreatePodCommand create_pod = 2;
     TerminatePodCommand terminate_pod = 3;
-    TerminalInputCommand terminal_input = 4;
-    TerminalResizeCommand terminal_resize = 5;
+    PodInputCommand pod_input = 4;
+    PodResizeCommand pod_resize = 5 [deprecated = true];  // Deprecated: resize flows through Relay
     SendPromptCommand send_prompt = 6;
-    TerminalRedrawCommand terminal_redraw = 7;
-    SubscribeTerminalCommand subscribe_terminal = 8;
-    UnsubscribeTerminalCommand unsubscribe_terminal = 9;
+    PodRedrawCommand pod_redraw = 7 [deprecated = true];  // Deprecated: redraw flows through Relay snapshots
+    SubscribePodCommand subscribe_pod = 8;
+    UnsubscribePodCommand unsubscribe_pod = 9;
     QuerySandboxesCommand query_sandboxes = 10;
     // Autopilot 相关命令
     CreateAutopilotCommand create_autopilot = 11;
@@ -184,8 +186,12 @@ message ServerMessage {
     UpgradeRunnerCommand upgrade_runner = 17;
     // 日志上传命令（Backend -> Runner）
     UploadLogsCommand upload_logs = 18;
-    // 终端观察命令（Backend -> Runner，代理 MCP observe_terminal 请求）
-    ObserveTerminalCommand observe_terminal = 19;
+    // Pod 观察命令（Backend -> Runner，代理 MCP observe_pod 请求）
+    ObservePodCommand observe_pod = 19;
+    // Reserved: 原 ACP 特定命令已废弃，控制流走 Relay WebSocket
+    // 20 = acp_send_prompt (使用 send_prompt field 6)
+    // 21 = acp_permission_response (走 Relay)
+    // 22 = acp_cancel_session (走 Relay)
   }
   int64 timestamp = 15;
 }
@@ -223,6 +229,7 @@ message CreatePodCommand {
   int32 cols = 8;  // 终端列数（由浏览器传入）
   int32 rows = 9;  // 终端行数（由浏览器传入）
   repeated ResourceToDownload resources_to_download = 10;  // 需要下载的资源（Skills 等）
+  string interaction_mode = 11;  // 交互模式：pty（默认）或 acp
 }
 
 // ResourceToDownload 需要下载的资源描述
@@ -280,14 +287,14 @@ message TerminatePodCommand {
   bool force = 2;
 }
 
-// TerminalInputCommand 终端输入命令
-message TerminalInputCommand {
+// PodInputCommand Pod 输入命令
+message PodInputCommand {
   string pod_key = 1;
   bytes data = 2;
 }
 
-// TerminalResizeCommand 终端窗口调整命令
-message TerminalResizeCommand {
+// PodResizeCommand Pod 窗口调整命令
+message PodResizeCommand {
   string pod_key = 1;
   int32 cols = 2;
   int32 rows = 3;
@@ -299,19 +306,19 @@ message SendPromptCommand {
   string prompt = 2;
 }
 
-// TerminalRedrawCommand 请求终端重绘命令
+// PodRedrawCommand 请求 Pod 重绘命令
 // 用于服务器重启后恢复终端状态：使用 resize +1/-1 技巧触发终端程序重绘
 // （直接发送 SIGWINCH 对处于空闲状态的程序如 Claude Code 无效）
-// Runner 收到后执行 resize 技巧，不响应 pty_resized 事件（避免循环）
-message TerminalRedrawCommand {
+// Runner 收到后执行 resize 技巧，不响应 pod_resized 事件（避免循环）
+message PodRedrawCommand {
   string pod_key = 1;
 }
 
 // ==================== Relay 中继相关命令 ====================
 
-// SubscribeTerminalCommand 订阅终端命令
-// Backend 通知 Runner 有观察者要订阅终端，Runner 应连接到 Relay
-message SubscribeTerminalCommand {
+// SubscribePodCommand 订阅 Pod 输出命令
+// Backend 通知 Runner 有观察者要订阅 Pod 输出，Runner 应连接到 Relay
+message SubscribePodCommand {
   string pod_key = 1;
   string relay_url = 2;        // Public Relay URL via reverse proxy (e.g. ws://host:port/relay)
   reserved 3;                  // Was public_relay_url — removed: all runners use the single public URL
@@ -320,15 +327,15 @@ message SubscribeTerminalCommand {
   string runner_token = 6;     // Runner 认证 Token（JWT）
 }
 
-// UnsubscribeTerminalCommand 取消订阅终端命令
+// UnsubscribePodCommand 取消订阅 Pod 输出命令
 // Backend 通知 Runner 所有观察者已离开，Runner 应断开与 Relay 的连接
-message UnsubscribeTerminalCommand {
+message UnsubscribePodCommand {
   string pod_key = 1;
 }
 
 // RequestRelayTokenEvent Runner 请求刷新 Relay Token
 // 当 Relay 连接因 token 过期而重连失败时，Runner 发送此消息请求新 token
-// Backend 收到后会重新发送 SubscribeTerminalCommand 带有新 token
+// Backend 收到后会重新发送 SubscribePodCommand 带有新 token
 message RequestRelayTokenEvent {
   string pod_key = 1;
   string session_id = 2;     // 当前的 session ID
@@ -370,20 +377,20 @@ message SandboxStatus {
   string error = 11;               // 查询错误信息（如有）
 }
 
-// ==================== 终端观察（observe_terminal 代理）====================
+// ==================== Pod 观察（observe_pod 代理）====================
 
-// ObserveTerminalCommand Backend 代理 observe_terminal 请求到 Runner
-// Runner 从本地 VirtualTerminal 读取状态并返回 ObserveTerminalResult
-message ObserveTerminalCommand {
+// ObservePodCommand Backend 代理 observe_pod 请求到 Runner
+// Runner 从本地 VirtualTerminal 读取状态并返回 ObservePodResult
+message ObservePodCommand {
   string request_id = 1;      // 请求 ID，用于关联响应
   string pod_key = 2;         // 目标 Pod
   int32 lines = 3;            // 获取的行数
   bool include_screen = 4;    // 是否包含屏幕快照
 }
 
-// ObserveTerminalResult Runner 返回的终端观察结果
-message ObserveTerminalResult {
-  string request_id = 1;      // 对应 ObserveTerminalCommand.request_id
+// ObservePodResult Runner 返回的 Pod 观察结果
+message ObservePodResult {
+  string request_id = 1;      // 对应 ObservePodCommand.request_id
   string pod_key = 2;
   string output = 3;          // 终端输出文本
   string screen = 4;          // 屏幕快照（当 include_screen=true）

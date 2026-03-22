@@ -36,6 +36,12 @@ const (
 	PermissionModeBypass  = "bypassPermissions"
 )
 
+// Interaction mode constants
+const (
+	InteractionModePTY = "pty"
+	InteractionModeACP = "acp"
+)
+
 // Pod represents an AI coding pod (AgentPod instance)
 type Pod struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
@@ -51,7 +57,7 @@ type Pod struct {
 	TicketID     *int64 `json:"ticket_id,omitempty"`
 	CreatedByID  int64  `gorm:"not null" json:"created_by_id"`
 
-	PtyPID      *int   `gorm:"column:pty_pid" json:"pty_pid,omitempty"`
+	TerminalPID *int   `gorm:"column:pty_pid" json:"pty_pid,omitempty"`
 	Status      string `gorm:"size:50;not null;default:'initializing';index" json:"status"`
 	AgentStatus string `gorm:"size:50;not null;default:'idle'" json:"agent_status"`
 	AgentPID    *int   `gorm:"column:agent_pid" json:"agent_pid,omitempty"` // Claude/Agent process PID
@@ -67,8 +73,9 @@ type Pod struct {
 	SandboxPath   *string `gorm:"column:sandbox_path;size:500" json:"sandbox_path,omitempty"`
 
 	// Agent configuration used for this pod
-	Model          *string `gorm:"size:50" json:"model,omitempty"`           // opus/sonnet/haiku
-	PermissionMode *string `gorm:"size:50" json:"permission_mode,omitempty"` // plan/default/bypassPermissions
+	Model           *string `gorm:"size:50" json:"model,omitempty"`           // opus/sonnet/haiku
+	PermissionMode  *string `gorm:"size:50" json:"permission_mode,omitempty"` // plan/default/bypassPermissions
+	InteractionMode string  `gorm:"column:interaction_mode;type:varchar(10);default:pty;not null" json:"interaction_mode"`
 	// Error details from Runner (e.g., git clone auth failure)
 	ErrorCode    *string `gorm:"size:100" json:"error_code,omitempty"`
 	ErrorMessage *string `gorm:"type:text" json:"error_message,omitempty"`
@@ -170,6 +177,11 @@ func (p *Pod) IsTerminal() bool {
 // CanReconnect returns true if pod can be reconnected
 func (p *Pod) CanReconnect() bool {
 	return p.Status == StatusDisconnected
+}
+
+// IsACPMode returns true if the pod uses ACP interaction mode.
+func (p *Pod) IsACPMode() bool {
+	return p.InteractionMode == InteractionModeACP
 }
 
 // GetOrganizationID returns the organization ID (implements middleware.PodGetter)

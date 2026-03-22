@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { TerminalLoadingState, TerminalErrorState } from "../TerminalStateViews";
+import { PaneLoadingState, PaneErrorState } from "../PaneStateViews";
 
-describe("TerminalLoadingState", () => {
+describe("PaneLoadingState", () => {
   const defaultProps = {
     podStatus: "initializing",
     isTerminating: false,
@@ -12,14 +12,14 @@ describe("TerminalLoadingState", () => {
 
   describe("loading state (non-completed)", () => {
     it("shows spinner and waiting message", () => {
-      render(<TerminalLoadingState {...defaultProps} />);
+      render(<PaneLoadingState {...defaultProps} />);
 
       expect(screen.getByText("Waiting for Pod to be ready...")).toBeInTheDocument();
       expect(screen.queryByText("Pod completed")).not.toBeInTheDocument();
     });
 
     it("shows status text with yellow styling", () => {
-      render(<TerminalLoadingState {...defaultProps} podStatus="initializing" />);
+      render(<PaneLoadingState {...defaultProps} podStatus="initializing" />);
 
       const statusText = screen.getByText("initializing");
       expect(statusText).toBeInTheDocument();
@@ -27,20 +27,20 @@ describe("TerminalLoadingState", () => {
     });
 
     it("does not show close button for initializing status", () => {
-      render(<TerminalLoadingState {...defaultProps} podStatus="initializing" />);
+      render(<PaneLoadingState {...defaultProps} podStatus="initializing" />);
 
-      expect(screen.queryByText("Close Terminal")).not.toBeInTheDocument();
+      expect(screen.queryByText("Close")).not.toBeInTheDocument();
     });
 
     it("does not show close button for running status", () => {
-      render(<TerminalLoadingState {...defaultProps} podStatus="running" />);
+      render(<PaneLoadingState {...defaultProps} podStatus="running" />);
 
-      expect(screen.queryByText("Close Terminal")).not.toBeInTheDocument();
+      expect(screen.queryByText("Close")).not.toBeInTheDocument();
     });
 
     it("shows init progress when provided", () => {
       const initProgress = { progress: 50, phase: "Cloning", message: "Cloning repository..." };
-      render(<TerminalLoadingState {...defaultProps} initProgress={initProgress} />);
+      render(<PaneLoadingState {...defaultProps} initProgress={initProgress} />);
 
       expect(screen.getByText("Cloning repository...")).toBeInTheDocument();
       expect(screen.getByText("Cloning - 50%")).toBeInTheDocument();
@@ -49,30 +49,30 @@ describe("TerminalLoadingState", () => {
 
   describe("unknown status", () => {
     it("shows close button", () => {
-      render(<TerminalLoadingState {...defaultProps} podStatus="unknown" />);
+      render(<PaneLoadingState {...defaultProps} podStatus="unknown" />);
 
-      expect(screen.getByText("Close Terminal")).toBeInTheDocument();
+      expect(screen.getByText("Close")).toBeInTheDocument();
     });
 
     it("calls onClose when close button is clicked", () => {
       const onClose = vi.fn();
-      render(<TerminalLoadingState {...defaultProps} podStatus="unknown" onClose={onClose} />);
+      render(<PaneLoadingState {...defaultProps} podStatus="unknown" onClose={onClose} />);
 
-      fireEvent.click(screen.getByText("Close Terminal"));
+      fireEvent.click(screen.getByText("Close"));
       expect(onClose).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("completed status", () => {
     it("shows 'Pod completed' text instead of waiting message", () => {
-      render(<TerminalLoadingState {...defaultProps} podStatus="completed" />);
+      render(<PaneLoadingState {...defaultProps} podStatus="completed" />);
 
       expect(screen.getByText("Pod completed")).toBeInTheDocument();
       expect(screen.queryByText("Waiting for Pod to be ready...")).not.toBeInTheDocument();
     });
 
     it("shows status text with green styling", () => {
-      render(<TerminalLoadingState {...defaultProps} podStatus="completed" />);
+      render(<PaneLoadingState {...defaultProps} podStatus="completed" />);
 
       const statusText = screen.getByText("completed");
       expect(statusText).toBeInTheDocument();
@@ -80,36 +80,36 @@ describe("TerminalLoadingState", () => {
     });
 
     it("shows close button", () => {
-      render(<TerminalLoadingState {...defaultProps} podStatus="completed" />);
+      render(<PaneLoadingState {...defaultProps} podStatus="completed" />);
 
-      expect(screen.getByText("Close Terminal")).toBeInTheDocument();
+      expect(screen.getByText("Close")).toBeInTheDocument();
     });
 
     it("calls onClose when close button is clicked", () => {
       const onClose = vi.fn();
-      render(<TerminalLoadingState {...defaultProps} podStatus="completed" onClose={onClose} />);
+      render(<PaneLoadingState {...defaultProps} podStatus="completed" onClose={onClose} />);
 
-      fireEvent.click(screen.getByText("Close Terminal"));
+      fireEvent.click(screen.getByText("Close"));
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
     it("does not show close button when onClose is not provided", () => {
       render(
-        <TerminalLoadingState
+        <PaneLoadingState
           podStatus="completed"
           isTerminating={false}
           onTerminate={vi.fn()}
         />
       );
 
-      expect(screen.queryByText("Close Terminal")).not.toBeInTheDocument();
+      expect(screen.queryByText("Close")).not.toBeInTheDocument();
     });
   });
 });
 
-describe("TerminalErrorState", () => {
+describe("PaneErrorState", () => {
   it("shows error message", () => {
-    render(<TerminalErrorState error="Pod failed" />);
+    render(<PaneErrorState error="Pod failed" />);
 
     expect(screen.getByText("Pod failed")).toBeInTheDocument();
     expect(
@@ -118,22 +118,22 @@ describe("TerminalErrorState", () => {
   });
 
   it("shows close button when onClose is provided", () => {
-    render(<TerminalErrorState error="Pod failed" onClose={vi.fn()} />);
+    render(<PaneErrorState error="Pod failed" onClose={vi.fn()} />);
 
-    expect(screen.getByText("Close Terminal")).toBeInTheDocument();
+    expect(screen.getByText("Close")).toBeInTheDocument();
   });
 
   it("calls onClose when close button is clicked", () => {
     const onClose = vi.fn();
-    render(<TerminalErrorState error="Pod failed" onClose={onClose} />);
+    render(<PaneErrorState error="Pod failed" onClose={onClose} />);
 
-    fireEvent.click(screen.getByText("Close Terminal"));
+    fireEvent.click(screen.getByText("Close"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("does not show close button when onClose is not provided", () => {
-    render(<TerminalErrorState error="Pod terminated" />);
+    render(<PaneErrorState error="Pod terminated" />);
 
-    expect(screen.queryByText("Close Terminal")).not.toBeInTheDocument();
+    expect(screen.queryByText("Close")).not.toBeInTheDocument();
   });
 });

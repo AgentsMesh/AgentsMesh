@@ -25,8 +25,8 @@ func TestNewPodCoordinator(t *testing.T) {
 	if pc.connectionManager != cm {
 		t.Error("connectionManager not set correctly")
 	}
-	if pc.terminalRouter != tr {
-		t.Error("terminalRouter not set correctly")
+	if pc.podRouter != tr {
+		t.Error("podRouter not set correctly")
 	}
 	if pc.heartbeatBatcher != hb {
 		t.Error("heartbeatBatcher not set correctly")

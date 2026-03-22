@@ -65,9 +65,9 @@ func TestPodBuilderWithCommand(t *testing.T) {
 	}
 }
 
-func TestPodBuilderWithTerminalSize(t *testing.T) {
+func TestPodBuilderWithPtySize(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilderFromRunner(runner).WithTerminalSize(160, 48) // (cols, rows)
+	builder := NewPodBuilderFromRunner(runner).WithPtySize(160, 48) // (cols, rows)
 
 	if builder.cols != 160 {
 		t.Errorf("cols = %d, want 160", builder.cols)
@@ -78,9 +78,9 @@ func TestPodBuilderWithTerminalSize(t *testing.T) {
 	}
 }
 
-func TestPodBuilderWithTerminalSizeZeroValues(t *testing.T) {
+func TestPodBuilderWithPtySizeZeroValues(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
-	builder := NewPodBuilderFromRunner(runner).WithTerminalSize(0, 0)
+	builder := NewPodBuilderFromRunner(runner).WithPtySize(0, 0)
 
 	// Should keep defaults
 	if builder.rows != 24 {
@@ -159,7 +159,7 @@ func TestPodBuilderCommandWithAllFields(t *testing.T) {
 
 	builder := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).
-		WithTerminalSize(160, 48) // (cols, rows)
+		WithPtySize(160, 48) // (cols, rows)
 
 	if builder.cmd.PodKey != "pod-1" {
 		t.Errorf("podKey = %v, want pod-1", builder.cmd.PodKey)

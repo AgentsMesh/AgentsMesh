@@ -5,7 +5,7 @@ import { Terminal as XTerm, IDisposable } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 import { terminalRegistry } from "@/stores/workspace";
-import type { ConnectionStatus } from "@/stores/terminalConnection";
+import type { ConnectionStatus } from "@/stores/relayConnection";
 import {
   setupTerminal,
   setupConnection,

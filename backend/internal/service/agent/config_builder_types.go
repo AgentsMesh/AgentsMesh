@@ -73,6 +73,9 @@ type ConfigBuildRequest struct {
 	// Populated from Runner.AgentVersions during pod creation.
 	// Empty map or nil means Runner did not report version info (old Runner).
 	RunnerAgentVersions map[string]string
+
+	// InteractionMode specifies the pod interaction mode: "pty" (default) or "acp"
+	InteractionMode string
 }
 
 // ConfigSchemaResponse is the config schema returned to frontend

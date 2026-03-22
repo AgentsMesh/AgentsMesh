@@ -102,7 +102,7 @@ func main() {
 	}
 
 	// Initialize Runner components
-	runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentType)
+	runnerConnMgr, podCoordinator, podRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentType)
 
 	// Wire AutopilotRepository into PodCoordinator for autopilot event handling
 	podCoordinator.SetAutopilotRepo(services.autopilotRepo)
@@ -120,12 +120,12 @@ func main() {
 	geoResolver := initializeGeoResolver()
 	defer geoResolver.Close()
 
-	// Setup terminal router event publishing
-	terminalRouter.SetEventBus(eventBus)
-	terminalRouter.SetPodInfoGetter(services.pod)
+	// Setup pod router event publishing
+	podRouter.SetEventBus(eventBus)
+	podRouter.SetPodInfoGetter(services.pod)
 
 	// Route OSC terminal notifications through NotificationDispatcher (preference-aware)
-	terminalRouter.SetNotifyFunc(func(ctx context.Context, orgID int64, source, entityID, title, body, link, resolver string) {
+	podRouter.SetNotifyFunc(func(ctx context.Context, orgID int64, source, entityID, title, body, link, resolver string) {
 		if err := notifDispatcher.Dispatch(ctx, &notifDomain.NotificationRequest{
 			OrganizationID:    orgID,
 			Source:            source,
@@ -139,9 +139,9 @@ func main() {
 		}
 	})
 
-	// Wire PodPromptHook (must be after terminalRouter is initialized)
-	services.channel.AddPostSendHook(channelService.NewPodPromptHook(terminalRouter, channelRepo))
-	slog.Info("PodPromptHook registered with TerminalRouter")
+	// Wire PodPromptHook (must be after podRouter is initialized)
+	services.channel.AddPostSendHook(channelService.NewPodPromptHook(podRouter, channelRepo))
+	slog.Info("PodPromptHook registered with PodRouter")
 
 	// Setup event callbacks
 	setupRunnerEventCallbacks(db, runnerConnMgr, eventBus)
@@ -203,7 +203,7 @@ func main() {
 			RunnerService:     services.runner,
 			AgentTypeSvc:      services.agentType,
 			UserConfigSvc:     services.userConfig,
-			TerminalRouter:    terminalRouter,
+			PodRouter:    podRouter,
 			LoopService:       services.loop,
 			LoopRunService:    services.loopRun,
 			LoopOrchestrator:  loopOrchestrator,
@@ -212,11 +212,11 @@ func main() {
 		if grpcServer != nil {
 			grpcCommandSender := grpcserver.NewGRPCCommandSender(grpcServer.RunnerAdapter())
 			podCoordinator.SetCommandSender(grpcCommandSender)
-			terminalRouter.SetCommandSender(grpcCommandSender)
+			podRouter.SetCommandSender(grpcCommandSender)
 			sandboxQuerySvc.SetSender(grpcCommandSender)
 			upgradeCommandSender = grpcCommandSender
 			logUploadSender = grpcCommandSender
-			slog.Info("PodCoordinator and TerminalRouter connected to gRPC Server")
+			slog.Info("PodCoordinator and PodRouter connected to gRPC Server")
 			setupRelayTokenRefreshCallback(db, runnerConnMgr, relayTokenGenerator, grpcCommandSender)
 		}
 	} else {

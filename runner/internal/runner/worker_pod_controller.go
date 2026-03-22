@@ -1,6 +1,8 @@
 package runner
 
 import (
+	"fmt"
+
 	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
@@ -20,13 +22,12 @@ func NewPodController(pod *Pod, runner *Runner) *PodControllerImpl {
 	}
 }
 
-// SendInput sends text to the pod's terminal.
+// SendInput sends text to the pod via PodIO.
 func (c *PodControllerImpl) SendInput(text string) error {
-	if c.pod.Terminal == nil {
-		return nil
+	if c.pod.IO == nil {
+		return fmt.Errorf("pod IO not available for pod %s", c.pod.PodKey)
 	}
-	// Add newline to send the command
-	return c.pod.Terminal.Write([]byte(text + "\n"))
+	return c.pod.IO.SendInput(text + "\n")
 }
 
 // GetWorkDir returns the pod's working directory.
@@ -46,14 +47,11 @@ func (c *PodControllerImpl) GetAgentStatus() string {
 }
 
 // GetStateDetector returns the StateDetector for the pod.
-// Returns nil if the virtual terminal is not available.
+// Returns nil if state detection is not available (e.g., ACP mode without VirtualTerminal).
 // Returns the same instance across multiple calls to ensure state continuity.
 // The StateDetector interface is defined in terminal/detector package,
 // which is a foundational service independent of Autopilot.
 func (c *PodControllerImpl) GetStateDetector() detector.StateDetector {
-	if c.pod.VirtualTerminal == nil {
-		return nil
-	}
 	return c.pod.GetOrCreateStateDetector()
 }
 

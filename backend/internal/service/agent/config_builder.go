@@ -116,15 +116,16 @@ func (b *ConfigBuilder) BuildPodCommand(ctx context.Context, req *ConfigBuildReq
 
 	// 12. Create the command
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        req.PodKey,
-		LaunchCommand: agentType.LaunchCommand,
-		LaunchArgs:    launchArgs,
-		EnvVars:       envVars,
-		FilesToCreate: filesToCreate,
-		SandboxConfig: sandboxConfig,
-		InitialPrompt: req.InitialPrompt,
-		Cols:          req.Cols,
-		Rows:          req.Rows,
+		PodKey:          req.PodKey,
+		LaunchCommand:   agentType.LaunchCommand,
+		LaunchArgs:      launchArgs,
+		EnvVars:         envVars,
+		FilesToCreate:   filesToCreate,
+		SandboxConfig:   sandboxConfig,
+		InitialPrompt:   req.InitialPrompt,
+		Cols:            req.Cols,
+		Rows:            req.Rows,
+		InteractionMode: req.InteractionMode,
 	}
 
 	// 14. Allow post-processing by the builder

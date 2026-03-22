@@ -95,12 +95,10 @@ type MockCommandSender struct {
 	mu                        sync.Mutex
 	CreatePodCalls            int
 	TerminatePodCalls         int
-	TerminalInputCalls        int
-	TerminalResizeCalls       int
-	TerminalRedrawCalls       int
+	PodInputCalls        int
 	SendPromptCalls           int
-	SubscribeTerminalCalls    int
-	UnsubscribeTerminalCalls  int
+	SubscribePodCalls    int
+	UnsubscribePodCalls  int
 }
 
 func (m *MockCommandSender) SendCreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error {
@@ -117,24 +115,10 @@ func (m *MockCommandSender) SendTerminatePod(ctx context.Context, runnerID int64
 	return nil
 }
 
-func (m *MockCommandSender) SendTerminalInput(ctx context.Context, runnerID int64, podKey string, data []byte) error {
+func (m *MockCommandSender) SendPodInput(ctx context.Context, runnerID int64, podKey string, data []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.TerminalInputCalls++
-	return nil
-}
-
-func (m *MockCommandSender) SendTerminalResize(ctx context.Context, runnerID int64, podKey string, cols, rows int) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.TerminalResizeCalls++
-	return nil
-}
-
-func (m *MockCommandSender) SendTerminalRedraw(ctx context.Context, runnerID int64, podKey string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.TerminalRedrawCalls++
+	m.PodInputCalls++
 	return nil
 }
 
@@ -145,21 +129,21 @@ func (m *MockCommandSender) SendPrompt(ctx context.Context, runnerID int64, podK
 	return nil
 }
 
-func (m *MockCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
+func (m *MockCommandSender) SendSubscribePod(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.SubscribeTerminalCalls++
+	m.SubscribePodCalls++
 	return nil
 }
 
-func (m *MockCommandSender) SendUnsubscribeTerminal(ctx context.Context, runnerID int64, podKey string) error {
+func (m *MockCommandSender) SendUnsubscribePod(ctx context.Context, runnerID int64, podKey string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.UnsubscribeTerminalCalls++
+	m.UnsubscribePodCalls++
 	return nil
 }
 
-func (m *MockCommandSender) SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+func (m *MockCommandSender) SendObservePod(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
 	return nil
 }
 
@@ -173,13 +157,6 @@ func (m *MockCommandSender) SendAutopilotControl(runnerID int64, cmd *runnerv1.A
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return nil
-}
-
-// GetTerminalRedrawCalls returns the number of SendTerminalRedraw calls (thread-safe).
-func (m *MockCommandSender) GetTerminalRedrawCalls() int {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.TerminalRedrawCalls
 }
 
 // setupTestDB creates an in-memory SQLite database for testing

@@ -8,8 +8,8 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 )
 
-// TestOnSubscribeTerminal_PodNotFound tests that OnSubscribeTerminal returns error when pod not found
-func TestOnSubscribeTerminal_PodNotFound(t *testing.T) {
+// TestOnSubscribePod_PodNotFound tests that OnSubscribePod returns error when pod not found
+func TestOnSubscribePod_PodNotFound(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -19,7 +19,7 @@ func TestOnSubscribeTerminal_PodNotFound(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	err := handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	err := handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      "non-existent-pod",
 		RelayURL:    "wss://relay.example.com",
 		RunnerToken: "token-123",
@@ -34,10 +34,10 @@ func TestOnSubscribeTerminal_PodNotFound(t *testing.T) {
 	}
 }
 
-// TestOnSubscribeTerminal_AlreadyConnectedSameRelay tests that when already connected to the same relay URL,
+// TestOnSubscribePod_AlreadyConnectedSameRelay tests that when already connected to the same relay URL,
 // only the token is updated without disconnecting and reconnecting.
 // This is the key test case to prevent regression of the multi-client connection issue.
-func TestOnSubscribeTerminal_AlreadyConnectedSameRelay(t *testing.T) {
+func TestOnSubscribePod_AlreadyConnectedSameRelay(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -59,7 +59,7 @@ func TestOnSubscribeTerminal_AlreadyConnectedSameRelay(t *testing.T) {
 	pod.SetRelayClient(mockRelayClient)
 
 	// Subscribe with the same relay URL but new token
-	err := handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	err := handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      "pod-1",
 		RelayURL:    relayURL, // Same URL
 		RunnerToken: "new-token",
@@ -86,9 +86,9 @@ func TestOnSubscribeTerminal_AlreadyConnectedSameRelay(t *testing.T) {
 	}
 }
 
-// TestOnSubscribeTerminal_ConnectedToDifferentRelay tests that when connected to a different relay URL,
+// TestOnSubscribePod_ConnectedToDifferentRelay tests that when connected to a different relay URL,
 // the existing connection is disconnected and a new connection attempt is made.
-func TestOnSubscribeTerminal_ConnectedToDifferentRelay(t *testing.T) {
+func TestOnSubscribePod_ConnectedToDifferentRelay(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -108,7 +108,7 @@ func TestOnSubscribeTerminal_ConnectedToDifferentRelay(t *testing.T) {
 
 	// Subscribe with a different relay URL
 	// This will fail at Connect() since we're connecting to a real (fake) URL
-	_ = handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	_ = handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      "pod-1",
 		RelayURL:    "wss://new-relay.example.com", // Different URL
 		RunnerToken: "new-token",
@@ -120,9 +120,9 @@ func TestOnSubscribeTerminal_ConnectedToDifferentRelay(t *testing.T) {
 	}
 }
 
-// TestOnSubscribeTerminal_ExistingClientNotConnected tests that when there's an existing client
+// TestOnSubscribePod_ExistingClientNotConnected tests that when there's an existing client
 // but it's not connected, a new connection is established.
-func TestOnSubscribeTerminal_ExistingClientNotConnected(t *testing.T) {
+func TestOnSubscribePod_ExistingClientNotConnected(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -142,7 +142,7 @@ func TestOnSubscribeTerminal_ExistingClientNotConnected(t *testing.T) {
 
 	// Subscribe with the same relay URL
 	// Since client is not connected, it should try to reconnect
-	_ = handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	_ = handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      "pod-1",
 		RelayURL:    "wss://relay.example.com",
 		RunnerToken: "new-token",
@@ -154,8 +154,8 @@ func TestOnSubscribeTerminal_ExistingClientNotConnected(t *testing.T) {
 	}
 }
 
-// TestOnSubscribeTerminal_NoExistingClient tests the normal case when there's no existing relay client.
-func TestOnSubscribeTerminal_NoExistingClient(t *testing.T) {
+// TestOnSubscribePod_NoExistingClient tests the normal case when there's no existing relay client.
+func TestOnSubscribePod_NoExistingClient(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -176,7 +176,7 @@ func TestOnSubscribeTerminal_NoExistingClient(t *testing.T) {
 
 	// Subscribe - will fail to connect but that's OK for this test
 	// We just want to verify the flow when there's no existing client doesn't panic
-	_ = handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	_ = handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      "pod-1",
 		RelayURL:    "wss://relay.example.com",
 		RunnerToken: "token-123",
@@ -185,8 +185,8 @@ func TestOnSubscribeTerminal_NoExistingClient(t *testing.T) {
 	// Test passes if no panic occurs
 }
 
-// TestOnUnsubscribeTerminal_PodNotFound tests that OnUnsubscribeTerminal handles non-existent pod gracefully
-func TestOnUnsubscribeTerminal_PodNotFound(t *testing.T) {
+// TestOnUnsubscribePod_PodNotFound tests that OnUnsubscribePod handles non-existent pod gracefully
+func TestOnUnsubscribePod_PodNotFound(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -197,7 +197,7 @@ func TestOnUnsubscribeTerminal_PodNotFound(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Should not return error for non-existent pod
-	err := handler.OnUnsubscribeTerminal(client.UnsubscribeTerminalRequest{
+	err := handler.OnUnsubscribePod(client.UnsubscribePodRequest{
 		PodKey: "non-existent-pod",
 	})
 
@@ -206,8 +206,8 @@ func TestOnUnsubscribeTerminal_PodNotFound(t *testing.T) {
 	}
 }
 
-// TestOnUnsubscribeTerminal_DisconnectsRelay tests that OnUnsubscribeTerminal properly disconnects relay
-func TestOnUnsubscribeTerminal_DisconnectsRelay(t *testing.T) {
+// TestOnUnsubscribePod_DisconnectsRelay tests that OnUnsubscribePod properly disconnects relay
+func TestOnUnsubscribePod_DisconnectsRelay(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -230,7 +230,7 @@ func TestOnUnsubscribeTerminal_DisconnectsRelay(t *testing.T) {
 		t.Fatal("pod should have a relay client before unsubscribe")
 	}
 
-	err := handler.OnUnsubscribeTerminal(client.UnsubscribeTerminalRequest{
+	err := handler.OnUnsubscribePod(client.UnsubscribePodRequest{
 		PodKey: "pod-1",
 	})
 
@@ -249,9 +249,9 @@ func TestOnUnsubscribeTerminal_DisconnectsRelay(t *testing.T) {
 	}
 }
 
-// TestOnSubscribeTerminal_MultipleClientsScenario tests the scenario where multiple clients
+// TestOnSubscribePod_MultipleClientsScenario tests the scenario where multiple clients
 // (e.g., Web + Mobile) connect to the same pod. The second subscribe should not cause reconnect.
-func TestOnSubscribeTerminal_MultipleClientsScenario(t *testing.T) {
+func TestOnSubscribePod_MultipleClientsScenario(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -274,7 +274,7 @@ func TestOnSubscribeTerminal_MultipleClientsScenario(t *testing.T) {
 
 	// Simulate second client (e.g., Mobile) connecting to the same pod
 	// This should NOT cause a disconnect/reconnect
-	err := handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	err := handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      "pod-1",
 		RelayURL:    relayURL, // Same relay URL
 		RunnerToken: "token-v2",
@@ -301,7 +301,7 @@ func TestOnSubscribeTerminal_MultipleClientsScenario(t *testing.T) {
 	}
 
 	// Simulate third client connecting - should still not reconnect
-	err = handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	err = handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      "pod-1",
 		RelayURL:    relayURL,
 		RunnerToken: "token-v3",
@@ -332,9 +332,9 @@ func TestOnSubscribeTerminal_MultipleClientsScenario(t *testing.T) {
 	}
 }
 
-// TestOnSubscribeTerminal_ReconnectAfterDisconnect tests that after a client disconnects,
+// TestOnSubscribePod_ReconnectAfterDisconnect tests that after a client disconnects,
 // a new subscription correctly creates a new connection.
-func TestOnSubscribeTerminal_ReconnectAfterDisconnect(t *testing.T) {
+func TestOnSubscribePod_ReconnectAfterDisconnect(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
 
@@ -358,7 +358,7 @@ func TestOnSubscribeTerminal_ReconnectAfterDisconnect(t *testing.T) {
 	firstClient.SetConnected(false)
 
 	// New subscription should create a new connection
-	_ = handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+	_ = handler.OnSubscribePod(client.SubscribePodRequest{
 		PodKey:      "pod-1",
 		RelayURL:    relayURL,
 		RunnerToken: "new-token",

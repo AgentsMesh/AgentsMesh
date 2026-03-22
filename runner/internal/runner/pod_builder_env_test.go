@@ -97,7 +97,7 @@ func TestPodBuilderWithAllOptions(t *testing.T) {
 
 	builder := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).
-		WithTerminalSize(120, 40) // (cols, rows)
+		WithPtySize(120, 40) // (cols, rows)
 
 	if builder.cmd.PodKey != "pod-key" {
 		t.Errorf("podKey = %v, want pod-key", builder.cmd.PodKey)
@@ -112,7 +112,7 @@ func TestPodBuilderWithAllOptions(t *testing.T) {
 		t.Errorf("envVars[ENV2] = %v, want value2", builder.cmd.EnvVars["ENV2"])
 	}
 	if builder.rows != 40 || builder.cols != 120 {
-		t.Errorf("terminal size = %dx%d, want 40x120", builder.rows, builder.cols)
+		t.Errorf("PTY size = %dx%d, want 40x120", builder.rows, builder.cols)
 	}
 	if builder.cmd.SandboxConfig == nil {
 		t.Error("sandboxConfig should not be nil")
@@ -146,7 +146,7 @@ func BenchmarkPodBuilderFluentAPI(b *testing.B) {
 		}
 		NewPodBuilderFromRunner(runner).
 			WithCommand(cmd).
-			WithTerminalSize(120, 40) // (cols, rows)
+			WithPtySize(120, 40) // (cols, rows)
 	}
 }
 

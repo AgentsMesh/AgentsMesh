@@ -14,8 +14,8 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 )
 
-// TerminalConnectHandler handles terminal connection requests via Relay
-type TerminalConnectHandler struct {
+// PodConnectHandler handles pod connection requests via Relay
+type PodConnectHandler struct {
 	podService     PodServiceForHandler
 	relayManager   *relay.Manager
 	tokenGenerator *relay.TokenGenerator
@@ -23,15 +23,15 @@ type TerminalConnectHandler struct {
 	geoResolver    geo.Resolver
 }
 
-// NewTerminalConnectHandler creates a new terminal connect handler
-func NewTerminalConnectHandler(
+// NewPodConnectHandler creates a new pod connect handler
+func NewPodConnectHandler(
 	podService PodServiceForHandler,
 	relayManager *relay.Manager,
 	tokenGenerator *relay.TokenGenerator,
 	commandSender runner.RunnerCommandSender,
 	geoResolver geo.Resolver,
-) *TerminalConnectHandler {
-	return &TerminalConnectHandler{
+) *PodConnectHandler {
+	return &PodConnectHandler{
 		podService:     podService,
 		relayManager:   relayManager,
 		tokenGenerator: tokenGenerator,
@@ -40,27 +40,27 @@ func NewTerminalConnectHandler(
 	}
 }
 
-// TerminalConnectResponse is the response for terminal connect request
+// PodConnectResponse is the response for pod connect request
 // Note: SessionID has been removed - channels are now identified by PodKey only
-type TerminalConnectResponse struct {
+type PodConnectResponse struct {
 	RelayURL string `json:"relay_url"`
 	Token    string `json:"token"`
 	PodKey   string `json:"pod_key"`
 }
 
-// GetTerminalConnection returns Relay connection info for a pod
-// GET /api/v1/orgs/:slug/pods/:key/terminal/connect
+// GetPodConnection returns Relay connection info for a pod
+// GET /api/v1/orgs/:slug/pods/:key/relay/connect
 //
 // The channel is identified by PodKey (not session ID):
 // - Multiple browsers can subscribe to the same pod's channel
 // - Runner maintains a single connection per pod
 // - No new session ID is generated per request
-func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
+func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 	podKey := c.Param("key")
 
 	// Check if relay is available
 	if h.relayManager == nil || !h.relayManager.HasHealthyRelays() {
-		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Terminal relay service is not available")
+		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Relay service is not available")
 		return
 	}
 
@@ -127,7 +127,7 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 			return
 		}
 
-		if err := h.commandSender.SendSubscribeTerminal(
+		if err := h.commandSender.SendSubscribePod(
 			c.Request.Context(),
 			pod.RunnerID,
 			podKey,
@@ -137,7 +137,7 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 			1000, // snapshot history lines
 		); err != nil {
 			// Log but don't fail - runner might connect later
-			slog.Warn("Failed to send subscribe terminal command to runner",
+			slog.Warn("Failed to send subscribe pod command to runner",
 				"pod_key", podKey,
 				"runner_id", pod.RunnerID,
 				"error", err)
@@ -159,15 +159,15 @@ func (h *TerminalConnectHandler) GetTerminalConnection(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, TerminalConnectResponse{
+	c.JSON(http.StatusOK, PodConnectResponse{
 		RelayURL: relayInfo.URL,
 		Token:    token,
 		PodKey:   podKey,
 	})
 }
 
-// RegisterTerminalConnectRoutes registers terminal connect routes
-func RegisterTerminalConnectRoutes(
+// RegisterPodConnectRoutes registers pod connect routes
+func RegisterPodConnectRoutes(
 	router *gin.RouterGroup,
 	podService PodServiceForHandler,
 	relayManager *relay.Manager,
@@ -175,6 +175,6 @@ func RegisterTerminalConnectRoutes(
 	commandSender runner.RunnerCommandSender,
 	geoResolver geo.Resolver,
 ) {
-	handler := NewTerminalConnectHandler(podService, relayManager, tokenGenerator, commandSender, geoResolver)
-	router.GET("/pods/:key/terminal/connect", handler.GetTerminalConnection)
+	handler := NewPodConnectHandler(podService, relayManager, tokenGenerator, commandSender, geoResolver)
+	router.GET("/pods/:key/relay/connect", handler.GetPodConnection)
 }

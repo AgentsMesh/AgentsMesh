@@ -550,8 +550,8 @@ func (c *TerminalChannel) forwardSubscriberToPublisher(subscriberID string) {
 			continue
 		}
 
-		// For input and resize messages, check control permission
-		if msg.Type == protocol.MsgTypeInput || msg.Type == protocol.MsgTypeResize {
+		// For input, resize, and ACP command messages, check control permission
+		if msg.Type == protocol.MsgTypeInput || msg.Type == protocol.MsgTypeResize || msg.Type == protocol.MsgTypeAcpCommand {
 			if !c.CanInput(subscriberID) {
 				c.logger.Debug("Input rejected, no control", "subscriber_id", subscriberID)
 				continue

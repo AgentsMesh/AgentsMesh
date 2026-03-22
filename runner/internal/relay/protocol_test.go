@@ -2,15 +2,13 @@ package relay
 
 import (
 	"testing"
-
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
 
 func TestEncodeDecodeMessage(t *testing.T) {
 	tests := []struct {
-		name     string
-		msgType  byte
-		payload  []byte
+		name    string
+		msgType byte
+		payload []byte
 	}{
 		{"output", MsgTypeOutput, []byte("hello")},
 		{"ping", MsgTypePing, nil},
@@ -46,38 +44,6 @@ func TestDecodeMessageEmpty(t *testing.T) {
 	}
 }
 
-func TestEncodeOutput(t *testing.T) {
-	data := []byte("test output")
-	encoded := EncodeOutput(data)
-	if encoded[0] != MsgTypeOutput {
-		t.Errorf("type: got %d, want %d", encoded[0], MsgTypeOutput)
-	}
-	if string(encoded[1:]) != string(data) {
-		t.Error("payload mismatch")
-	}
-}
-
-func TestEncodeDecodeResize(t *testing.T) {
-	encoded := EncodeResize(120, 40)
-	if encoded[0] != MsgTypeResize {
-		t.Errorf("type: got %d, want %d", encoded[0], MsgTypeResize)
-	}
-	cols, rows, err := DecodeResize(encoded[1:])
-	if err != nil {
-		t.Fatalf("DecodeResize: %v", err)
-	}
-	if cols != 120 || rows != 40 {
-		t.Errorf("got %dx%d, want 120x40", cols, rows)
-	}
-}
-
-func TestDecodeResizeInvalid(t *testing.T) {
-	_, _, err := DecodeResize([]byte{1, 2})
-	if err != ErrInvalidMessage {
-		t.Errorf("expected ErrInvalidMessage, got: %v", err)
-	}
-}
-
 func TestEncodePingPong(t *testing.T) {
 	ping := EncodePing()
 	if ping[0] != MsgTypePing || len(ping) != 1 {
@@ -86,26 +52,6 @@ func TestEncodePingPong(t *testing.T) {
 	pong := EncodePong()
 	if pong[0] != MsgTypePong || len(pong) != 1 {
 		t.Errorf("pong: got type=%d len=%d", pong[0], len(pong))
-	}
-}
-
-func TestEncodeSnapshot(t *testing.T) {
-	snapshot := &vt.TerminalSnapshot{
-		Cols:              80,
-		Rows:              24,
-		Lines:             []string{"line1", "line2"},
-		SerializedContent: "test content",
-		CursorX:           0,
-		CursorY:           0,
-		CursorVisible:     true,
-		IsAltScreen:       false,
-	}
-	encoded, err := EncodeSnapshot(snapshot)
-	if err != nil {
-		t.Fatalf("EncodeSnapshot: %v", err)
-	}
-	if encoded[0] != MsgTypeSnapshot {
-		t.Errorf("type: got %d, want %d", encoded[0], MsgTypeSnapshot)
 	}
 }
 
@@ -137,5 +83,17 @@ func TestMessageConstants(t *testing.T) {
 	}
 	if MsgTypeRunnerReconnected != 0x09 {
 		t.Error("MsgTypeRunnerReconnected")
+	}
+	if MsgTypeResync != 0x0A {
+		t.Error("MsgTypeResync")
+	}
+	if MsgTypeAcpEvent != 0x0B {
+		t.Error("MsgTypeAcpEvent")
+	}
+	if MsgTypeAcpCommand != 0x0C {
+		t.Error("MsgTypeAcpCommand")
+	}
+	if MsgTypeAcpSnapshot != 0x0D {
+		t.Error("MsgTypeAcpSnapshot")
 	}
 }

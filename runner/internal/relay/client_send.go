@@ -1,26 +1,13 @@
 package relay
 
-import (
-	"fmt"
+import "fmt"
 
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
-)
-
-// SendSnapshot sends a terminal snapshot to the relay
-func (c *Client) SendSnapshot(snapshot *vt.TerminalSnapshot) error {
-	data, err := EncodeSnapshot(snapshot)
-	if err != nil {
-		return fmt.Errorf("encode snapshot: %w", err)
-	}
-	return c.send(data)
+// Send sends a message with the given type and payload via the relay.
+func (c *Client) Send(msgType byte, payload []byte) error {
+	return c.send(EncodeMessage(msgType, payload))
 }
 
-// SendOutput sends terminal output to the relay
-func (c *Client) SendOutput(data []byte) error {
-	return c.send(EncodeOutput(data))
-}
-
-// SendPong sends a pong response
+// SendPong sends a pong response (internal, used by handleMessage).
 func (c *Client) SendPong() error {
 	return c.send(EncodePong())
 }

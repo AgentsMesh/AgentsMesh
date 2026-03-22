@@ -105,8 +105,8 @@ func (s *Server) Start(ctx context.Context) error {
 
 	// Set up HTTP routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("/runner/terminal", s.handler.HandleRunnerWS)
-	mux.HandleFunc("/browser/terminal", s.handler.HandleBrowserWS)
+	mux.HandleFunc("/runner/relay", s.handler.HandleRunnerWS)
+	mux.HandleFunc("/browser/relay", s.handler.HandleBrowserWS)
 	mux.HandleFunc("/health", s.handler.HandleHealth)
 	mux.HandleFunc("/stats", s.handler.HandleStats)
 

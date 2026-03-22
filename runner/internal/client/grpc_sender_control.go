@@ -79,11 +79,11 @@ func (c *GRPCConnection) SendSandboxesStatus(requestID string, sandboxes []*Sand
 	return c.sendControl(msg)
 }
 
-// SendObserveTerminalResult sends terminal observation result to the server (control message).
-func (c *GRPCConnection) SendObserveTerminalResult(requestID, podKey, output, screen string, cursorX, cursorY, totalLines int, hasMore bool, errMsg string) error {
+// SendObservePodResult sends terminal observation result to the server (control message).
+func (c *GRPCConnection) SendObservePodResult(requestID, podKey, output, screen string, cursorX, cursorY, totalLines int, hasMore bool, errMsg string) error {
 	msg := &runnerv1.RunnerMessage{
-		Payload: &runnerv1.RunnerMessage_ObserveTerminalResult{
-			ObserveTerminalResult: &runnerv1.ObserveTerminalResult{
+		Payload: &runnerv1.RunnerMessage_ObservePodResult{
+			ObservePodResult: &runnerv1.ObservePodResult{
 				RequestId:  requestID,
 				PodKey:     podKey,
 				Output:     output,

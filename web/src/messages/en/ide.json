@@ -87,7 +87,10 @@
       "creating": "Creating...",
       "cancel": "Cancel",
       "alias": "Alias",
-      "aliasPlaceholder": "Enter a display name for this pod..."
+      "aliasPlaceholder": "Enter a display name for this pod...",
+      "interactionMode": "Interaction Mode",
+      "modePty": "Terminal (PTY)",
+      "modeAcp": "Conversational (ACP)"
     },
     "sidebar": {
       "settings": {

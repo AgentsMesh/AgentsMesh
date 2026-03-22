@@ -58,7 +58,7 @@ type GRPCPodTerminatedEvent struct {
 	ErrorMessage string `json:"error_message"`
 }
 
-// NOTE: GRPCTerminalOutputEvent removed - output is exclusively streamed via Relay
+// NOTE: GRPCPtyOutputEvent removed - output is exclusively streamed via Relay
 
 // GRPCAgentStatusEvent represents an agent status change.
 type GRPCAgentStatusEvent struct {
@@ -136,14 +136,14 @@ type GRPCTerminatePodCommand struct {
 	Force  bool   `json:"force"`
 }
 
-// GRPCTerminalInputCommand represents terminal input from server.
-type GRPCTerminalInputCommand struct {
+// GRPCPtyInputCommand represents terminal input from server.
+type GRPCPtyInputCommand struct {
 	PodKey string `json:"pod_key"`
 	Data   []byte `json:"data"`
 }
 
-// GRPCTerminalResizeCommand represents a terminal resize command.
-type GRPCTerminalResizeCommand struct {
+// GRPCPtyResizeCommand represents a terminal resize command.
+type GRPCPtyResizeCommand struct {
 	PodKey string `json:"pod_key"`
 	Cols   int32  `json:"cols"`
 	Rows   int32  `json:"rows"`

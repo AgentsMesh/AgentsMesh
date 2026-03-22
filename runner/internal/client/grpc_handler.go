@@ -46,7 +46,7 @@ func (c *GRPCConnection) readLoop(ctx context.Context, done chan<- struct{}) {
 }
 
 // handleServerMessage dispatches received server messages to appropriate handlers.
-// Heavy operations (CreatePod, SubscribeTerminal, CreateAutopilot) are dispatched
+// Heavy operations (CreatePod, SubscribePod, CreateAutopilot) are dispatched
 // asynchronously via goroutines to avoid blocking the readLoop.
 // Lightweight operations remain synchronous to preserve message ordering.
 func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
@@ -70,11 +70,11 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 			c.handleTerminatePod(payload.TerminatePod)
 		}()
 
-	case *runnerv1.ServerMessage_SubscribeTerminal:
+	case *runnerv1.ServerMessage_SubscribePod:
 		c.handlerWg.Add(1)
 		go func() {
 			defer c.handlerWg.Done()
-			c.handleSubscribeTerminal(payload.SubscribeTerminal)
+			c.handleSubscribePod(payload.SubscribePod)
 		}()
 
 	case *runnerv1.ServerMessage_CreateAutopilot:
@@ -85,26 +85,20 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 		}()
 
 	// Lightweight operations - synchronous to preserve ordering
-	case *runnerv1.ServerMessage_TerminalInput:
-		c.handleTerminalInput(payload.TerminalInput)
-
-	case *runnerv1.ServerMessage_TerminalResize:
-		c.handleTerminalResize(payload.TerminalResize)
-
-	case *runnerv1.ServerMessage_TerminalRedraw:
-		c.handleTerminalRedraw(payload.TerminalRedraw)
+	case *runnerv1.ServerMessage_PodInput:
+		c.handlePodInput(payload.PodInput)
 
 	case *runnerv1.ServerMessage_SendPrompt:
 		c.handleSendPrompt(payload.SendPrompt)
 
-	case *runnerv1.ServerMessage_UnsubscribeTerminal:
-		c.handleUnsubscribeTerminal(payload.UnsubscribeTerminal)
+	case *runnerv1.ServerMessage_UnsubscribePod:
+		c.handleUnsubscribePod(payload.UnsubscribePod)
 
 	case *runnerv1.ServerMessage_QuerySandboxes:
 		c.handleQuerySandboxes(payload.QuerySandboxes)
 
-	case *runnerv1.ServerMessage_ObserveTerminal:
-		c.handleObserveTerminal(payload.ObserveTerminal)
+	case *runnerv1.ServerMessage_ObservePod:
+		c.handleObservePod(payload.ObservePod)
 
 	case *runnerv1.ServerMessage_AutopilotControl:
 		c.handleAutopilotControl(payload.AutopilotControl)

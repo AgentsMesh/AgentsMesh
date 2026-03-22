@@ -29,19 +29,9 @@ func (s *GRPCCommandSender) SendTerminatePod(ctx context.Context, runnerID int64
 	return s.adapter.SendTerminatePod(runnerID, podKey, false)
 }
 
-// SendTerminalInput sends terminal input to a runner via gRPC.
-func (s *GRPCCommandSender) SendTerminalInput(ctx context.Context, runnerID int64, podKey string, data []byte) error {
-	return s.adapter.SendTerminalInput(runnerID, podKey, data)
-}
-
-// SendTerminalResize sends terminal resize to a runner via gRPC.
-func (s *GRPCCommandSender) SendTerminalResize(ctx context.Context, runnerID int64, podKey string, cols, rows int) error {
-	return s.adapter.SendTerminalResize(runnerID, podKey, int32(cols), int32(rows))
-}
-
-// SendTerminalRedraw triggers terminal redraw without changing size via gRPC.
-func (s *GRPCCommandSender) SendTerminalRedraw(ctx context.Context, runnerID int64, podKey string) error {
-	return s.adapter.SendTerminalRedraw(runnerID, podKey)
+// SendPodInput sends pod input to a runner via gRPC.
+func (s *GRPCCommandSender) SendPodInput(ctx context.Context, runnerID int64, podKey string, data []byte) error {
+	return s.adapter.SendPodInput(runnerID, podKey, data)
 }
 
 // SendPrompt sends a prompt to a pod via gRPC.
@@ -49,14 +39,14 @@ func (s *GRPCCommandSender) SendPrompt(ctx context.Context, runnerID int64, podK
 	return s.adapter.SendPrompt(runnerID, podKey, prompt)
 }
 
-// SendSubscribeTerminal sends a subscribe terminal command via gRPC.
-func (s *GRPCCommandSender) SendSubscribeTerminal(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
-	return s.adapter.SendSubscribeTerminal(runnerID, podKey, relayURL, runnerToken, includeSnapshot, snapshotHistory)
+// SendSubscribePod sends a subscribe pod command via gRPC.
+func (s *GRPCCommandSender) SendSubscribePod(ctx context.Context, runnerID int64, podKey, relayURL, runnerToken string, includeSnapshot bool, snapshotHistory int32) error {
+	return s.adapter.SendSubscribePod(runnerID, podKey, relayURL, runnerToken, includeSnapshot, snapshotHistory)
 }
 
-// SendUnsubscribeTerminal sends an unsubscribe terminal command via gRPC.
-func (s *GRPCCommandSender) SendUnsubscribeTerminal(ctx context.Context, runnerID int64, podKey string) error {
-	return s.adapter.SendUnsubscribeTerminal(runnerID, podKey)
+// SendUnsubscribePod sends an unsubscribe pod command via gRPC.
+func (s *GRPCCommandSender) SendUnsubscribePod(ctx context.Context, runnerID int64, podKey string) error {
+	return s.adapter.SendUnsubscribePod(runnerID, podKey)
 }
 
 // SendCreateAutopilot sends a create AutopilotController command to a runner via gRPC.
@@ -74,9 +64,9 @@ func (s *GRPCCommandSender) SendQuerySandboxes(runnerID int64, requestID string,
 	return s.adapter.SendQuerySandboxes(runnerID, requestID, podKeys)
 }
 
-// SendObserveTerminal sends an observe terminal command to a runner via gRPC.
-func (s *GRPCCommandSender) SendObserveTerminal(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
-	return s.adapter.SendObserveTerminal(runnerID, requestID, podKey, lines, includeScreen)
+// SendObservePod sends an observe pod command to a runner via gRPC.
+func (s *GRPCCommandSender) SendObservePod(ctx context.Context, runnerID int64, requestID, podKey string, lines int32, includeScreen bool) error {
+	return s.adapter.SendObservePod(runnerID, requestID, podKey, lines, includeScreen)
 }
 
 // IsConnected checks if a runner is connected.

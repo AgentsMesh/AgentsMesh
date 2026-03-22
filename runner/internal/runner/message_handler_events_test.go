@@ -70,26 +70,7 @@ func TestSendPodTerminated(t *testing.T) {
 }
 
 // NOTE: TestSendTerminalOutput removed - output is exclusively streamed via Relay
-
-func TestSendPtyResized(t *testing.T) {
-	store := NewInMemoryPodStore()
-	mockConn := client.NewMockConnection()
-
-	runner := &Runner{cfg: &config.Config{}}
-
-	handler := NewRunnerMessageHandler(runner, store, mockConn)
-
-	handler.sendPtyResized("pod-1", 100, 30)
-
-	events := mockConn.GetEvents()
-	if len(events) != 1 {
-		t.Fatalf("expected 1 event, got %d", len(events))
-	}
-
-	if events[0].Type != client.MsgTypePtyResized {
-		t.Errorf("event type = %s, want pty_resized", events[0].Type)
-	}
-}
+// NOTE: TestSendPtyResized removed - resize flows through Relay, not gRPC
 
 func TestSendPodError(t *testing.T) {
 	store := NewInMemoryPodStore()
@@ -119,7 +100,7 @@ func TestSendMethodsWithNilConnection(t *testing.T) {
 	// These should not panic with nil connection
 	handler.sendPodCreated("pod-1", 123, "", "", 80, 24)
 	// NOTE: sendTerminalOutput removed - output is exclusively streamed via Relay
-	handler.sendPtyResized("pod-1", 80, 24)
+	// NOTE: sendPtyResized removed - resize flows through Relay
 	handler.sendPodError("pod-1", "error")
 }
 
@@ -172,11 +153,15 @@ func TestCreatePTYErrorHandler(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create pod with aggregator to capture the error message
+	agg := aggregator.NewSmartAggregator(nil, nil)
 	pod := &Pod{
 		ID:         "pty-error-pod",
 		Status:     PodStatusRunning,
-		Aggregator: aggregator.NewSmartAggregator(nil, nil),
+		Aggregator: agg,
 	}
+	ptyIO := NewPTYPodIO(nil, nil, pod)
+	ptyIO.SetAggregator(agg)
+	pod.IO = ptyIO
 
 	ptyErrorHandler := handler.createPTYErrorHandler("pty-error-pod", pod)
 
@@ -248,6 +233,7 @@ func TestCreateExitHandler_WithPTYError(t *testing.T) {
 		ID:     "pty-exit-pod",
 		Status: PodStatusRunning,
 	}
+	pod.IO = NewPTYPodIO(nil, nil, pod)
 	pod.SetPTYError("PTY read error: read /dev/ptmx: input/output error")
 	store.Put("pty-exit-pod", pod)
 
@@ -289,11 +275,15 @@ func TestCreateExitHandler_EarlyOutputTakesPriority(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create pod with both a PTY error and an aggregator with early output
+	agg := aggregator.NewSmartAggregator(nil, nil)
 	pod := &Pod{
 		ID:         "priority-pod",
 		Status:     PodStatusRunning,
-		Aggregator: aggregator.NewSmartAggregator(nil, nil),
+		Aggregator: agg,
 	}
+	ptyIO := NewPTYPodIO(nil, nil, pod)
+	ptyIO.SetAggregator(agg)
+	pod.IO = ptyIO
 	pod.SetPTYError("PTY read error: something")
 	store.Put("priority-pod", pod)
 

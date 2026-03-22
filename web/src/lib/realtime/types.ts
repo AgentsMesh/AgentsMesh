@@ -41,7 +41,7 @@ export type EventType =
   | "loop_run:warning"
   // Notification events (targeted to specific users)
   | "notification"
-  | "terminal:notification"
+  | "pod:notification"
   | "task:completed"
   | "mention:notification"
   // System events
@@ -156,7 +156,7 @@ export interface PodAliasChangedData {
  */
 export interface PodInitProgressData {
   pod_key: string;
-  phase: string; // pending, cloning, preparing, starting_pty, ready
+  phase: string; // pending, cloning, preparing, starting_pod, ready
   progress: number; // 0-100
   message: string; // Human-readable progress message
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -95,12 +96,24 @@ type AgentType struct {
 	IsBuiltin bool `gorm:"not null;default:false" json:"is_builtin"`
 	IsActive  bool `gorm:"not null;default:true" json:"is_active"`
 
+	SupportedModes string `gorm:"column:supported_modes;type:varchar(50);default:pty;not null" json:"supported_modes"`
+
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
 
 func (AgentType) TableName() string {
 	return "agent_types"
+}
+
+// SupportsMode returns true if this agent type supports the given interaction mode.
+func (a *AgentType) SupportsMode(mode string) bool {
+	for _, m := range strings.Split(a.SupportedModes, ",") {
+		if strings.TrimSpace(m) == mode {
+			return true
+		}
+	}
+	return false
 }
 
 // EncryptedCredentials represents encrypted credential storage

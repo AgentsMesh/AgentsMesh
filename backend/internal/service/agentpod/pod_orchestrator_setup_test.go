@@ -143,6 +143,7 @@ func setupOrchestratorTestDB(t *testing.T) *gorm.DB {
 		launch_command TEXT,
 		description TEXT,
 		config_schema TEXT DEFAULT '{}',
+		supported_modes TEXT NOT NULL DEFAULT 'pty',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)

@@ -23,11 +23,11 @@ func (c *GRPCConnection) SendAgentStatus(podKey string, status string) error {
 	return c.sendTerminal(msg)
 }
 
-// SendPtyResized sends a PTY resize event to the server (control message).
-func (c *GRPCConnection) SendPtyResized(podKey string, cols, rows int32) error {
+// SendPodResized sends a pod terminal resize event to the server (control message).
+func (c *GRPCConnection) SendPodResized(podKey string, cols, rows int32) error {
 	msg := &runnerv1.RunnerMessage{
-		Payload: &runnerv1.RunnerMessage_PtyResized{
-			PtyResized: &runnerv1.PtyResizedEvent{
+		Payload: &runnerv1.RunnerMessage_PodResized{
+			PodResized: &runnerv1.PodResizedEvent{
 				PodKey: podKey,
 				Cols:   cols,
 				Rows:   rows,

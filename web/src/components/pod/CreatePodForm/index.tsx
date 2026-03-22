@@ -145,6 +145,43 @@ export function CreatePodForm({
             t={t}
           />
 
+          {/* Interaction Mode Toggle (only when agent supports multiple modes) */}
+          {form.selectedAgent && form.supportedModes.length > 1 && (
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                {t("ide.createPod.interactionMode")}
+              </label>
+              <div className="flex gap-2">
+                {form.supportedModes.includes("pty") && (
+                  <button
+                    type="button"
+                    onClick={() => form.setInteractionMode("pty")}
+                    className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors ${
+                      form.interactionMode === "pty"
+                        ? "border-primary bg-primary/10 text-primary font-medium"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {t("ide.createPod.modePty")}
+                  </button>
+                )}
+                {form.supportedModes.includes("acp") && (
+                  <button
+                    type="button"
+                    onClick={() => form.setInteractionMode("acp")}
+                    className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors ${
+                      form.interactionMode === "acp"
+                        ? "border-primary bg-primary/10 text-primary font-medium"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {t("ide.createPod.modeAcp")}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Initial Prompt (visible at top level) */}
           {form.selectedAgent && (
             <PromptInput

@@ -155,14 +155,14 @@ func TestNewEntityEvent(t *testing.T) {
 func TestNewNotificationEvent(t *testing.T) {
 	t.Run("creates notification event with single target user", func(t *testing.T) {
 		userID := int64(100)
-		data := &TerminalNotificationData{
+		data := &PodNotificationData{
 			PodKey: "pod-123",
 			Title:  "Task Complete",
 			Body:   "Your task has finished",
 		}
 
 		before := time.Now().UnixMilli()
-		event, err := NewNotificationEvent(EventTerminalNotification, 1, &userID, nil, "pod", "pod-123", data)
+		event, err := NewNotificationEvent(EventPodNotification, 1, &userID, nil, "pod", "pod-123", data)
 		after := time.Now().UnixMilli()
 
 		if err != nil {
@@ -172,8 +172,8 @@ func TestNewNotificationEvent(t *testing.T) {
 			t.Fatal("expected non-nil event")
 		}
 
-		if event.Type != EventTerminalNotification {
-			t.Errorf("expected type %s, got %s", EventTerminalNotification, event.Type)
+		if event.Type != EventPodNotification {
+			t.Errorf("expected type %s, got %s", EventPodNotification, event.Type)
 		}
 		if event.Category != CategoryNotification {
 			t.Errorf("expected category %s, got %s", CategoryNotification, event.Category)
@@ -185,7 +185,7 @@ func TestNewNotificationEvent(t *testing.T) {
 			t.Errorf("timestamp %d not in range [%d, %d]", event.Timestamp, before, after)
 		}
 
-		var decoded TerminalNotificationData
+		var decoded PodNotificationData
 		if err := json.Unmarshal(event.Data, &decoded); err != nil {
 			t.Fatalf("failed to unmarshal data: %v", err)
 		}
@@ -265,7 +265,7 @@ func TestNewNotificationEvent(t *testing.T) {
 		ch := make(chan int)
 		userID := int64(1)
 
-		_, err := NewNotificationEvent(EventTerminalNotification, 1, &userID, nil, "pod", "pod-err", ch)
+		_, err := NewNotificationEvent(EventPodNotification, 1, &userID, nil, "pod", "pod-err", ch)
 
 		if err == nil {
 			t.Error("expected error for unmarshalable data")
@@ -288,7 +288,7 @@ func TestEventType_Constants(t *testing.T) {
 		EventRunnerOnline,
 		EventRunnerOffline,
 		EventRunnerUpdated,
-		EventTerminalNotification,
+		EventPodNotification,
 		EventTaskCompleted,
 		EventMentionNotification,
 		EventSystemMaintenance,

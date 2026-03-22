@@ -3,9 +3,13 @@ package relay
 import (
 	"sync"
 	"time"
-
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
+
+// MockSentMessage records a message sent via Send().
+type MockSentMessage struct {
+	Type    byte
+	Payload []byte
+}
 
 // MockClient is a mock implementation of RelayClient for testing.
 type MockClient struct {
@@ -20,21 +24,20 @@ type MockClient struct {
 	connectedAt int64
 
 	// Tracking
-	ConnectCalled     bool
-	StartCalled       bool
-	StopCalled        bool
-	UpdateTokenCalls  []string
-	SendSnapshotCalls int // Tracks SendSnapshot call count
+	ConnectCalled    bool
+	StartCalled      bool
+	StopCalled       bool
+	UpdateTokenCalls []string
+	SentMessages     []MockSentMessage // Tracks all Send() calls
 
 	// Configurable behavior
 	ConnectError error
 	StartResult  bool
 	StopDelay    time.Duration // Artificial delay in Stop() to simulate real behavior
-	OnStopHook   func()        // Called during Stop() to simulate close handler side-effects
+	OnStopHook   func()       // Called during Stop() to simulate close handler side-effects
 
-	// Handlers (stored but not used in mock)
-	onInput        InputHandler
-	onResize       ResizeHandler
+	// Handlers (stored for simulation)
+	handlers       map[byte]func([]byte)
 	onClose        CloseHandler
 	onReconnect    func()
 	onTokenExpired func() string
@@ -45,6 +48,7 @@ func NewMockClient(relayURL string) *MockClient {
 	return &MockClient{
 		relayURL:    relayURL,
 		StartResult: true, // Default to successful start
+		handlers:    make(map[byte]func([]byte)),
 	}
 }
 
@@ -114,18 +118,19 @@ func (m *MockClient) UpdateToken(newToken string) {
 	m.UpdateTokenCalls = append(m.UpdateTokenCalls, newToken)
 }
 
-// SetInputHandler implements RelayClient.
-func (m *MockClient) SetInputHandler(handler InputHandler) {
+// Send implements RelayClient.
+func (m *MockClient) Send(msgType byte, payload []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.onInput = handler
+	m.SentMessages = append(m.SentMessages, MockSentMessage{Type: msgType, Payload: payload})
+	return nil
 }
 
-// SetResizeHandler implements RelayClient.
-func (m *MockClient) SetResizeHandler(handler ResizeHandler) {
+// SetMessageHandler implements RelayClient.
+func (m *MockClient) SetMessageHandler(msgType byte, handler func([]byte)) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.onResize = handler
+	m.handlers[msgType] = handler
 }
 
 // SetCloseHandler implements RelayClient.
@@ -147,19 +152,6 @@ func (m *MockClient) SetTokenExpiredHandler(handler func() string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.onTokenExpired = handler
-}
-
-// SendOutput implements RelayClient.
-func (m *MockClient) SendOutput(data []byte) error {
-	return nil
-}
-
-// SendSnapshot implements RelayClient.
-func (m *MockClient) SendSnapshot(snapshot *vt.TerminalSnapshot) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.SendSnapshotCalls++
-	return nil
 }
 
 // --- Test helpers ---
@@ -193,7 +185,30 @@ func (m *MockClient) Reset() {
 	m.StartCalled = false
 	m.StopCalled = false
 	m.UpdateTokenCalls = nil
-	m.SendSnapshotCalls = 0
+	m.SentMessages = nil
+}
+
+// SimulateMessage triggers the handler for the given message type (for testing).
+func (m *MockClient) SimulateMessage(msgType byte, payload []byte) {
+	m.mu.RLock()
+	h := m.handlers[msgType]
+	m.mu.RUnlock()
+	if h != nil {
+		h(payload)
+	}
+}
+
+// CountSentByType returns the number of sent messages of the given type.
+func (m *MockClient) CountSentByType(msgType byte) int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	count := 0
+	for _, msg := range m.SentMessages {
+		if msg.Type == msgType {
+			count++
+		}
+	}
+	return count
 }
 
 // Ensure MockClient implements RelayClient interface

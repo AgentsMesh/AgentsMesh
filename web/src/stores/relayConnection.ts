@@ -1,29 +1,29 @@
 /**
- * Terminal WebSocket connection management
+ * Relay WebSocket connection management
  * Handles connection pooling, reconnection, and message buffering
  *
  * Architecture:
- * - Browser connects to Relay (not Backend) for terminal data
+ * - Browser connects to Relay (not Backend) for terminal + ACP data
  * - Control flow: Browser -> Backend (REST) -> Runner (gRPC)
  * - Data flow: Browser <-> Relay <-> Runner (WebSocket)
  */
 
 import { podApi } from "@/lib/api/pod";
-import { MsgType, encodeMessage, decodeMessage, encodeResize } from "./relayProtocol";
+import { MsgType, encodeMessage, decodeMessage, encodeResize, encodeJsonMessage, decodeJsonPayload } from "./relayProtocol";
 
 // Re-export protocol symbols for consumers that import from this module
 export { MsgType, encodeMessage } from "./relayProtocol";
 
 /**
- * Connection status of a terminal WebSocket.
+ * Connection status of a relay WebSocket.
  * Single source of truth — import this type instead of redefining inline.
  */
 export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
 
 /**
- * Terminal connection state
+ * Relay connection state
  */
-export interface TerminalConnection {
+export interface RelayConnection {
   ws: WebSocket;
   podKey: string;
   status: ConnectionStatus;
@@ -35,7 +35,7 @@ export interface TerminalConnection {
   /** Timer for delayed disconnect when all subscribers leave */
   disconnectTimer: ReturnType<typeof setTimeout> | null;
   pendingResize?: { rows: number; cols: number };
-  ptySize?: { rows: number; cols: number };
+  podSize?: { rows: number; cols: number };
   relayUrl: string;
   relayToken: string;
   runnerDisconnected: boolean;
@@ -53,22 +53,22 @@ export interface ConnectionHandle {
 }
 
 export type RelayStatusInfo = {
-  status: TerminalConnection["status"] | "none";
+  status: RelayConnection["status"] | "none";
   runnerDisconnected: boolean;
 };
 
 type StatusListener = (info: RelayStatusInfo) => void;
 
 /**
- * Terminal connection pool for managing WebSocket connections to Relay.
+ * Relay connection pool for managing WebSocket connections.
  *
  * - Connections are keyed by podKey and shared across multiple subscribers
  * - Each subscriber has a unique subscriptionId for idempotent add/remove
  * - Connection stays open as long as at least one subscriber exists
  * - Uses delayed disconnect (30s) when last subscriber leaves
  */
-class TerminalConnectionPool {
-  private connections: Map<string, TerminalConnection> = new Map();
+class RelayConnectionPool {
+  private connections: Map<string, RelayConnection> = new Map();
   private maxReconnectAttempts = 50;
   private baseReconnectDelay = 1000;
   private resizeDebounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
@@ -78,7 +78,7 @@ class TerminalConnectionPool {
   private deduplicateWindow = 50;
   private statusListeners: Map<string, Set<StatusListener>> = new Map();
 
-  getConnection(podKey: string): TerminalConnection | undefined {
+  getConnection(podKey: string): RelayConnection | undefined {
     return this.connections.get(podKey);
   }
 
@@ -145,7 +145,7 @@ class TerminalConnectionPool {
       return this.createHandle(podKey, subscriptionId);
     }
 
-    const relayInfo = await podApi.getTerminalConnection(podKey);
+    const relayInfo = await podApi.getPodConnection(podKey);
     const ws = this.createRelayWebSocket(relayInfo);
 
     conn = {
@@ -221,8 +221,8 @@ class TerminalConnectionPool {
     this.doSendResize(podKey, cols, rows);
   }
 
-  getPtySize(podKey: string): { rows: number; cols: number } | undefined {
-    return this.connections.get(podKey)?.ptySize;
+  getPodSize(podKey: string): { rows: number; cols: number } | undefined {
+    return this.connections.get(podKey)?.podSize;
   }
 
   unsubscribe(podKey: string, subscriptionId: string): void {
@@ -263,6 +263,7 @@ class TerminalConnectionPool {
     }
     this.connections.delete(podKey);
     this.lastInputs.delete(podKey);
+    this.acpListeners.delete(podKey);
     this.notifyStatusChange(podKey);
     conn.ws.onopen = null;
     conn.ws.onmessage = null;
@@ -279,7 +280,7 @@ class TerminalConnectionPool {
     }
   }
 
-  getStatus(podKey: string): TerminalConnection["status"] | "none" {
+  getStatus(podKey: string): RelayConnection["status"] | "none" {
     return this.connections.get(podKey)?.status || "none";
   }
 
@@ -290,6 +291,45 @@ class TerminalConnectionPool {
 
   isRunnerDisconnected(podKey: string): boolean {
     return this.connections.get(podKey)?.runnerDisconnected ?? false;
+  }
+
+  /**
+   * Send an ACP command to the pod via the Relay binary protocol.
+   * The command is JSON-encoded with MsgType.AcpCommand (0x0c).
+   */
+  sendAcpCommand(podKey: string, command: Record<string, unknown>): void {
+    const conn = this.connections.get(podKey);
+    if (!conn || conn.ws.readyState !== WebSocket.OPEN) return;
+    conn.ws.send(encodeJsonMessage(MsgType.AcpCommand, command));
+    conn.lastActivity = Date.now();
+  }
+
+  /** Listener for ACP events dispatched from the relay */
+  private acpListeners: Map<string, Set<(msgType: number, payload: unknown) => void>> = new Map();
+
+  /**
+   * Register a listener for ACP relay messages (AcpEvent, AcpSnapshot, AcpCommand responses).
+   * Returns an unsubscribe function.
+   */
+  onAcpMessage(podKey: string, listener: (msgType: number, payload: unknown) => void): () => void {
+    let set = this.acpListeners.get(podKey);
+    if (!set) {
+      set = new Set();
+      this.acpListeners.set(podKey, set);
+    }
+    set.add(listener);
+    return () => {
+      set!.delete(listener);
+      if (set!.size === 0) this.acpListeners.delete(podKey);
+    };
+  }
+
+  private notifyAcpListeners(podKey: string, msgType: number, payload: unknown): void {
+    const listeners = this.acpListeners.get(podKey);
+    if (!listeners) return;
+    for (const listener of listeners) {
+      listener(msgType, payload);
+    }
   }
 
   // --- Private helpers ---
@@ -303,7 +343,7 @@ class TerminalConnectionPool {
   }
 
   private createRelayWebSocket(relayInfo: { relay_url: string; token: string }): WebSocket {
-    const url = `${relayInfo.relay_url}/browser/terminal?token=${encodeURIComponent(relayInfo.token)}`;
+    const url = `${relayInfo.relay_url}/browser/relay?token=${encodeURIComponent(relayInfo.token)}`;
     const ws = new WebSocket(url);
     ws.binaryType = "arraybuffer";
     return ws;
@@ -332,7 +372,7 @@ class TerminalConnectionPool {
     };
 
     ws.onerror = (error) => {
-      console.error(`Terminal WebSocket error for ${podKey}:`, error);
+      console.error(`Relay WebSocket error for ${podKey}:`, error);
       const c = this.connections.get(podKey);
       if (c) {
         c.status = "error";
@@ -355,7 +395,7 @@ class TerminalConnectionPool {
     };
   }
 
-  private handleRelayMessage(conn: TerminalConnection, data: ArrayBuffer | string): void {
+  private handleRelayMessage(conn: RelayConnection, data: ArrayBuffer | string): void {
     if (typeof data === "string") {
       console.warn("Received string message from Relay, expected binary");
       return;
@@ -382,6 +422,15 @@ class TerminalConnectionPool {
       case MsgType.RunnerReconnected:
         this.handleRunnerReconnected(conn);
         break;
+      case MsgType.AcpEvent:
+      case MsgType.AcpSnapshot:
+      case MsgType.AcpCommand: {
+        const parsed = decodeJsonPayload(payload);
+        if (parsed !== null) {
+          this.notifyAcpListeners(conn.podKey, type, parsed);
+        }
+        break;
+      }
       case MsgType.Pong:
         break;
       default:
@@ -389,11 +438,11 @@ class TerminalConnectionPool {
     }
   }
 
-  private handleSnapshot(conn: TerminalConnection, payload: Uint8Array): void {
+  private handleSnapshot(conn: RelayConnection, payload: Uint8Array): void {
     try {
       const snapshot = JSON.parse(new TextDecoder().decode(payload));
       if (snapshot.cols > 0 && snapshot.rows > 0) {
-        conn.ptySize = { rows: snapshot.rows, cols: snapshot.cols };
+        conn.podSize = { rows: snapshot.rows, cols: snapshot.cols };
       }
       if (snapshot.serialized_content) {
         const clearSeq = new TextEncoder().encode("\x1b[2J\x1b[H\x1b[3J");
@@ -408,18 +457,18 @@ class TerminalConnectionPool {
     }
   }
 
-  private handleControl(conn: TerminalConnection, payload: Uint8Array): void {
+  private handleControl(conn: RelayConnection, payload: Uint8Array): void {
     try {
       const msg = JSON.parse(new TextDecoder().decode(payload));
-      if (msg.type === "pty_resized") {
-        conn.ptySize = { rows: msg.rows, cols: msg.cols };
+      if (msg.type === "pod_resized") {
+        conn.podSize = { rows: msg.rows, cols: msg.cols };
       }
     } catch (e) {
       console.error("Failed to parse control message:", e);
     }
   }
 
-  private handleRunnerDisconnected(conn: TerminalConnection): void {
+  private handleRunnerDisconnected(conn: RelayConnection): void {
     console.warn(`Runner disconnected for pod ${conn.podKey}`);
     conn.runnerDisconnected = true;
     this.notifyStatusChange(conn.podKey);
@@ -431,7 +480,7 @@ class TerminalConnectionPool {
     }
   }
 
-  private handleRunnerReconnected(conn: TerminalConnection): void {
+  private handleRunnerReconnected(conn: RelayConnection): void {
     console.log(`Runner reconnected for pod ${conn.podKey}`);
     conn.runnerDisconnected = false;
     this.notifyStatusChange(conn.podKey);
@@ -501,4 +550,4 @@ class TerminalConnectionPool {
 }
 
 // Singleton instance
-export const terminalPool = new TerminalConnectionPool();
+export const relayPool = new RelayConnectionPool();

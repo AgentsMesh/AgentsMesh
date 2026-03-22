@@ -243,7 +243,7 @@ export function RealtimeProvider({
         }
 
         // Notification events
-        case "terminal:notification": {
+        case "pod:notification": {
           const data = event.data as TerminalNotificationData;
           onTerminalNotification?.(data);
           console.log("[Realtime] Terminal notification:", data.title);
@@ -399,6 +399,8 @@ export function RealtimeProvider({
           console.log("[Realtime] Loop run warning:", data.warning, data.detail);
           break;
         }
+
+        // ACP events are now handled via Relay binary protocol (see AgentPanel.tsx)
 
         default:
           console.log("[Realtime] Unknown event:", event.type);
