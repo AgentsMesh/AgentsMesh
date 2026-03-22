@@ -98,6 +98,25 @@ e2e/
 │       ├── TC-EXTSET-001-extensions-page.yaml           # Extensions page display
 │       ├── TC-EXTSET-002-skill-registries.yaml          # Skill Registries management
 │       └── TC-EXTSET-003-mcp-templates.yaml             # MCP Templates browsing
+├── pod/                              # Pod module
+│   ├── lifecycle/                   # Pod lifecycle
+│   │   ├── TC-POD-001-create-basic.yaml
+│   │   ├── TC-POD-002-create-with-repo.yaml
+│   │   ├── TC-POD-003-terminate.yaml
+│   │   ├── TC-POD-004-full-lifecycle.yaml
+│   │   ├── TC-POD-005-runner-capacity.yaml
+│   │   ├── TC-POD-006-terminate-resume.yaml
+│   │   └── TC-POD-007-resume-edge-cases.yaml
+│   ├── terminal/                    # PTY terminal
+│   │   └── TC-TERM-001-connect.yaml
+│   └── acp/                         # ACP (Agent Communication Protocol)
+│       ├── TC-ACP-001-create-and-activity-stream.yaml  # Create ACP Pod + Activity Stream
+│       ├── TC-ACP-002-tool-call-display.yaml           # Tool call 3-state icons + expand
+│       ├── TC-ACP-003-thinking-indicator.yaml          # Thinking aggregation + expand
+│       ├── TC-ACP-004-permission-flow.yaml             # Permission approve/deny flow
+│       ├── TC-ACP-005-plan-tracker.yaml                # Plan progress bar
+│       ├── TC-ACP-006-slash-command-and-conversation.yaml  # Slash commands + multi-turn
+│       └── TC-ACP-007-full-lifecycle.yaml              # Full lifecycle E2E
 └── runner/                            # Runner management module
     ├── list/                          # Runner list
     │   ├── TC-RUNNER-001-list-all.yaml       # List all Runners

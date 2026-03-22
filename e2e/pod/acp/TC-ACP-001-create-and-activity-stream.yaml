@@ -1,0 +1,145 @@
+id: TC-ACP-001
+name: 创建 ACP Pod 并验证 Activity Stream 渲染
+description: 创建 ACP 模式的 Pod（Claude Code），发送 prompt，验证 Activity Stream 正确渲染用户指令、助手输出、工具调用
+priority: critical
+must_execute: true
+module: pod/acp
+tags:
+  - ui
+  - mcp-required
+  - acp
+
+preconditions:
+  - 开发环境已启动（deploy/dev）
+  - 至少有一个 Runner 在线
+  - Runner 上已安装 Claude Code
+
+steps:
+  - id: step-1
+    action: 登录并获取 token
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 获取支持 ACP 模式的 Agent 类型（Claude Code）
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/agents/types
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          agent_types: not_empty
+      save:
+        # 选择 supported_modes 包含 "acp" 的 agent type
+        agent_type_id: body.agent_types[?supported_modes contains "acp"].id
+
+  - id: step-3
+    action: 获取可用 Runner
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/runners/available
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          runners: not_empty
+      save:
+        runner_id: body.runners[0].id
+
+  - id: step-4
+    action: 通过 UI 打开工作区页面
+    verification:
+      type: ui
+      details: |
+        1. 使用 chrome-devtools navigate_page 打开 /dev-org/workspace
+        2. 等待页面加载完成
+        3. take_snapshot 确认工作区页面已加载
+
+  - id: step-5
+    action: 通过 UI 创建 ACP Pod
+    verification:
+      type: ui
+      details: |
+        1. 点击 "+ 新建 Pod" 按钮
+        2. 在 Agent 类型选择中，选择 Claude Code
+        3. 在 prompt 输入框中输入: "你好，请简单介绍一下你自己"
+        4. 点击创建按钮
+        5. take_snapshot 验证 Pod 创建面板出现
+
+  - id: step-6
+    action: 等待 ACP Pod 进入 running 状态
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+      save:
+        pod_key: body.pods[-1].pod_key
+      retry:
+        max_attempts: 15
+        interval: 3000
+
+  - id: step-7
+    action: 验证 Activity Stream 面板渲染（用户指令）
+    verification:
+      type: ui
+      details: |
+        1. take_snapshot 获取当前页面状态
+        2. 确认 AgentPanel 已加载（而非 TerminalPane）
+        3. 确认 Activity Stream 中出现用户指令 "> 你好，请简单介绍一下你自己"
+        4. 确认用户指令前面有 ">" 符号
+        5. 确认底部有 "Send instruction..." 输入框
+
+  - id: step-8
+    action: 等待 Agent 响应并验证助手输出渲染
+    verification:
+      type: ui
+      details: |
+        1. 等待 30 秒让 Agent 完成响应
+        2. take_snapshot 获取当前页面状态
+        3. 确认 Activity Stream 中出现助手的文本输出（Markdown 渲染）
+        4. 确认助手输出没有气泡样式、没有 role 标签
+        5. 确认 header 状态显示 "Idle"（Agent 已完成处理）
+
+  - id: step-9
+    action: 验证数据库中 Pod 的 interaction_mode 字段
+    verification:
+      type: database
+      query: |
+        SELECT pod_key, interaction_mode, status FROM agent_pods
+        WHERE pod_key = '{pod_key}'
+      expected:
+        interaction_mode: acp
+        status: running
+
+cleanup:
+  - api:
+      method: POST
+      url: /api/v1/orgs/dev-org/pods/{pod_key}/terminate
+      headers:
+        Authorization: Bearer {access_token}
