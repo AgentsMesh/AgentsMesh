@@ -161,10 +161,10 @@ func TestACPPodIO_GetAgentStatus_Unstarted(t *testing.T) {
 	client := newTestACPClient()
 	io := NewACPPodIO(client)
 
-	// An unstarted client has state "uninitialized", which maps to "unknown".
+	// An unstarted client has state "uninitialized", which maps to "idle".
 	got := io.GetAgentStatus()
-	if got != "unknown" {
-		t.Errorf("GetAgentStatus() on unstarted client = %q, want %q", got, "unknown")
+	if got != "idle" {
+		t.Errorf("GetAgentStatus() on unstarted client = %q, want %q", got, "idle")
 	}
 }
 
@@ -194,10 +194,10 @@ func TestMapACPState_AllMappings(t *testing.T) {
 		{acp.StateIdle, "idle"},
 		{acp.StateWaitingPermission, "waiting"},
 		{acp.StateInitializing, "executing"},
-		{acp.StateUninitialized, "unknown"},
-		{acp.StateStopped, "unknown"},
-		{"", "unknown"},
-		{"some_random_state", "unknown"},
+		{acp.StateUninitialized, "idle"},
+		{acp.StateStopped, "idle"},
+		{"", "idle"},
+		{"some_random_state", "idle"},
 	}
 
 	for _, tt := range tests {

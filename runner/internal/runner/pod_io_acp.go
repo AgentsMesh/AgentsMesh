@@ -118,8 +118,10 @@ func mapACPState(acpState string) string {
 		return "waiting"
 	case acp.StateInitializing:
 		return "executing"
+	case acp.StateStopped, acp.StateUninitialized:
+		return "idle"
 	default:
-		return "unknown"
+		return "idle"
 	}
 }
 
