@@ -1,0 +1,66 @@
+id: TC-ACP-002
+name: ACP 工具调用显示与三态图标验证
+description: 验证 ACP Activity Stream 中工具调用的渲染：running 状态显示 spinner，completed 待结果显示灰圈，成功显示绿勾，失败显示红叉；展开可查看参数和结果
+priority: critical
+must_execute: true
+module: pod/acp
+tags:
+  - ui
+  - mcp-required
+  - acp
+
+preconditions:
+  - 开发环境已启动
+  - 已有一个 running 状态的 ACP Pod（Claude Code）
+
+steps:
+  - id: step-1
+    action: 登录并打开工作区
+    verification:
+      type: ui
+      details: |
+        1. navigate_page 到 /dev-org/workspace
+        2. take_snapshot 确认工作区已加载，且有 ACP Pod 面板
+
+  - id: step-2
+    action: 发送会触发工具调用的 prompt
+    verification:
+      type: ui
+      details: |
+        1. 在 Activity Stream 底部的 "Send instruction..." 输入框中输入: "请读取当前目录下的文件列表"
+        2. 按 Enter 发送
+        3. take_snapshot 确认用户指令 "> 请读取当前目录下的文件列表" 出现在 Activity Stream 中
+
+  - id: step-3
+    action: 验证工具调用出现在 Activity Stream 中
+    verification:
+      type: ui
+      details: |
+        1. 等待 Agent 处理（最多 30 秒）
+        2. take_snapshot 获取 Activity Stream 当前内容
+        3. 确认至少有一个工具调用行出现（显示工具名称如 "bash" 或 "list_directory"）
+        4. 确认工具调用行格式为紧凑单行（无圆角边框卡片样式）
+        5. 确认工具调用有状态图标（绿勾 ✓ 表示成功，或红叉 ✗ 表示失败）
+
+  - id: step-4
+    action: 展开工具调用查看详情
+    verification:
+      type: ui
+      details: |
+        1. 点击工具调用行的工具名称
+        2. take_snapshot 确认展开后显示：
+           - arguments_json（JSON 格式的参数）
+           - result_text（执行结果，绿色背景）或 error_message（错误信息，红色背景）
+        3. 再次点击工具名称，确认收起详情
+
+  - id: step-5
+    action: 验证 Agent 完成后的最终状态
+    verification:
+      type: ui
+      details: |
+        1. 等待 header 状态显示 "Idle"
+        2. take_snapshot 确认：
+           - Activity Stream 中有用户指令（"> ..."）
+           - 有 Agent 文本输出（Markdown 渲染）
+           - 有工具调用记录（带状态图标）
+           - 输入框可用（未被禁用）

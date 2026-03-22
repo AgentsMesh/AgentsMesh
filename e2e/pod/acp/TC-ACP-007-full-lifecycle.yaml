@@ -1,0 +1,160 @@
+id: TC-ACP-007
+name: ACP 完整生命周期（创建→交互→终止）
+description: 端到端验证 ACP Pod 的完整生命周期：通过 UI 创建 ACP Pod → 发送 prompt → 验证所有事件类型渲染 → 通过 API 验证数据一致性 → 终止 Pod
+priority: critical
+must_execute: true
+module: pod/acp
+tags:
+  - ui
+  - mcp-required
+  - acp
+
+preconditions:
+  - 开发环境已启动（deploy/dev）
+  - 至少有一个 Runner 在线
+  - Runner 上已安装 Claude Code
+
+steps:
+  - id: step-1
+    action: 登录
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/auth/login
+        headers:
+          Content-Type: application/json
+        body:
+          email: dev@agentsmesh.local
+          password: devpass123
+      expected:
+        status: 200
+        body:
+          token: not_empty
+      save:
+        access_token: body.token
+
+  - id: step-2
+    action: 通过 API 创建 ACP Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          agent_type_id: 1
+          initial_prompt: "请列出当前目录的文件"
+      expected:
+        status: 201
+        body:
+          pod:
+            pod_key: not_empty
+      save:
+        pod_key: body.pod.pod_key
+
+  - id: step-3
+    action: 等待 Pod running
+    verification:
+      type: api
+      request:
+        method: GET
+        url: /api/v1/orgs/dev-org/pods/{pod_key}
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+        body:
+          pod:
+            status: running
+      retry:
+        max_attempts: 15
+        interval: 3000
+
+  - id: step-4
+    action: 验证数据库 interaction_mode = acp
+    verification:
+      type: database
+      query: |
+        SELECT pod_key, interaction_mode, status FROM agent_pods
+        WHERE pod_key = '{pod_key}'
+      expected:
+        interaction_mode: acp
+        status: running
+
+  - id: step-5
+    action: 通过 UI 打开工作区验证 AgentPanel 渲染
+    verification:
+      type: ui
+      details: |
+        1. navigate_page 到 /dev-org/workspace
+        2. 等待页面加载
+        3. take_snapshot 验证：
+           - 侧边栏显示新创建的 ACP Pod
+           - 主面板是 AgentPanel（非 TerminalPane）
+           - 有 "Send instruction..." 输入框
+           - Activity Stream 中有初始 prompt 的用户指令和 Agent 响应
+
+  - id: step-6
+    action: 通过 UI 发送第二轮 prompt
+    verification:
+      type: ui
+      details: |
+        1. 在输入框中输入: "请创建一个 test.txt 文件"
+        2. 按 Enter 发送
+        3. 等待 Agent 处理（最多 60 秒）
+        4. take_snapshot 验证 Activity Stream 中包含：
+           - 用户指令 "> 请创建一个 test.txt 文件"
+           - Agent 文本输出
+           - 至少一个工具调用（write_file 或 bash）
+
+  - id: step-7
+    action: 通过 REST API 发送 prompt 验证跨通道
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/prompt
+        headers:
+          Authorization: Bearer {access_token}
+          Content-Type: application/json
+        body:
+          prompt: "请确认 test.txt 文件是否创建成功"
+      expected:
+        status: 200
+        body:
+          status: sent
+
+  - id: step-8
+    action: 验证 REST API 发送的 prompt 也出现在 UI 中
+    verification:
+      type: ui
+      details: |
+        1. 等待 Agent 响应（最多 30 秒）
+        2. take_snapshot 验证 Activity Stream 中包含：
+           - "> 请确认 test.txt 文件是否创建成功"
+           - Agent 的确认回复
+
+  - id: step-9
+    action: 终止 Pod
+    verification:
+      type: api
+      request:
+        method: POST
+        url: /api/v1/orgs/dev-org/pods/{pod_key}/terminate
+        headers:
+          Authorization: Bearer {access_token}
+      expected:
+        status: 200
+
+  - id: step-10
+    action: 验证 Pod 已终止
+    verification:
+      type: database
+      query: |
+        SELECT pod_key, status FROM agent_pods
+        WHERE pod_key = '{pod_key}'
+      expected:
+        status: terminated

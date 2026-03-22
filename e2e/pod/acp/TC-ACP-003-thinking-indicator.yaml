@@ -1,0 +1,62 @@
+id: TC-ACP-003
+name: ACP Thinking 指示器与聚合验证
+description: 验证 Thinking 更新在 Activity Stream 中正确聚合显示：单条 "Thinking..." 折叠行，可展开查看全文，不会刷屏
+priority: high
+must_execute: true
+module: pod/acp
+tags:
+  - ui
+  - mcp-required
+  - acp
+
+preconditions:
+  - 开发环境已启动
+  - 已有一个 running 状态的 ACP Pod（Claude Code，需要 extended thinking 模型）
+
+steps:
+  - id: step-1
+    action: 登录并打开工作区
+    verification:
+      type: ui
+      details: |
+        1. navigate_page 到 /dev-org/workspace
+        2. take_snapshot 确认工作区已加载
+
+  - id: step-2
+    action: 发送需要深度思考的 prompt
+    verification:
+      type: ui
+      details: |
+        1. 在输入框中输入: "请分析一下这个项目的架构设计，给出改进建议"
+        2. 按 Enter 发送
+
+  - id: step-3
+    action: 验证 Thinking 指示器显示正确
+    verification:
+      type: ui
+      details: |
+        1. 等待 5-10 秒让 Agent 开始思考
+        2. take_snapshot 获取 Activity Stream 内容
+        3. 确认只显示一条 "Thinking..." 指示器（不是多条）
+        4. 确认 Thinking 指示器有旋转 spinner 动画
+        5. 确认 "Thinking..." 文字是斜体灰色
+
+  - id: step-4
+    action: 展开 Thinking 查看全文
+    verification:
+      type: ui
+      details: |
+        1. 点击 "Thinking..." 文字展开
+        2. take_snapshot 确认展开后显示 thinking 的完整文本
+        3. 确认展开内容缩进显示、字号较小
+
+  - id: step-5
+    action: 验证 Thinking 完成后状态变化
+    verification:
+      type: ui
+      details: |
+        1. 等待 Agent 完成响应（最多 60 秒）
+        2. take_snapshot 获取最终状态
+        3. 确认 Thinking 指示器的 spinner 已停止（变为静态圆圈）
+        4. 确认 Thinking 后面紧跟着 Agent 的文本输出
+        5. 如果有多轮 thinking（中间有工具调用），确认每轮是独立的 "Thinking..." 条目
