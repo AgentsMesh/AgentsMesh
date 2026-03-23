@@ -124,7 +124,7 @@ class RelayConnectionPool {
     subscriptionId: string,
     onMessage: (data: Uint8Array | string) => void
   ): Promise<ConnectionHandle> {
-    let conn = this.connections.get(podKey);
+    const conn = this.connections.get(podKey);
 
     if (conn) {
       const hadPrevious = conn.subscribers.has(subscriptionId);
