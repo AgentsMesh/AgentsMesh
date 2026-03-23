@@ -22,6 +22,7 @@ export function useTerminalResize(
   containerRef: MutableRefObject<HTMLDivElement | null>,
   isActive: boolean,
   fontSize: number,
+  isTerminalReady: boolean = false,
 ): { syncSize: () => void } {
   const sizeSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedSizeRef = useRef<{ cols: number; rows: number } | null>(null);
@@ -81,7 +82,7 @@ export function useTerminalResize(
         sizeSyncTimerRef.current = null;
       }
     };
-  }, [fitAddonRef, containerRef, debouncedSizeSync]);
+  }, [fitAddonRef, containerRef, debouncedSizeSync, isTerminalReady]);
 
   // Visibility change — re-fit when tab becomes visible
   useEffect(() => {

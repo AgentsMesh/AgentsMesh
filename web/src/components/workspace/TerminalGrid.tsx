@@ -42,7 +42,7 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
   }
 
   return (
-    <div className={cn("flex-1 p-1 bg-terminal-bg", className)}>
+    <div className={cn("flex-1 p-1 bg-terminal-bg min-h-0", className)}>
       <SplitTreeRenderer
         node={splitTree}
         onPopout={onPopout}
