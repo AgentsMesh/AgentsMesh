@@ -7,6 +7,7 @@ import { terminalPool, terminalRegistry } from "@/stores/workspace";
 import type { ConnectionStatus } from "@/stores/terminalConnection";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 import { uploadImage } from "@/lib/api/file";
+import { isTouchPrimaryInput } from "@/lib/platform";
 import { toast } from "sonner";
 
 export const TERMINAL_THEME = {
@@ -157,18 +158,15 @@ export function setupConnection(
 }
 
 /**
- * Sets up IME composition tracking and mobile cursor position sync
- * on the xterm helper textarea.
+ * Tracks IME composition state on the xterm helper textarea.
+ * Runs on all platforms — needed to prevent sending incomplete
+ * IME input via term.onData.
  */
-export function setupIME(
-  container: HTMLDivElement,
-  term: XTerm,
+function setupCompositionTracking(
+  textarea: HTMLTextAreaElement,
   disposables: IDisposable[],
 ): { isComposing: { current: boolean } } {
   const isComposing = { current: false };
-
-  const textarea = container.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement;
-  if (!textarea) return { isComposing };
 
   const handleCompositionStart = () => { isComposing.current = true; };
   const handleCompositionEnd = () => { isComposing.current = false; };
@@ -183,7 +181,22 @@ export function setupIME(
     },
   });
 
-  // Mobile cursor position sync
+  return { isComposing };
+}
+
+/**
+ * Syncs the xterm helper textarea position to follow the terminal cursor.
+ * Touch-device only — on desktop, xterm.js internally positions the textarea
+ * for IME via its CompositionHelper.
+ *
+ * Only binds to onCursorMove (not onWriteParsed) to avoid output→input
+ * coupling that causes IME candidate box flickering on Windows.
+ */
+function setupMobileTextareaSync(
+  textarea: HTMLTextAreaElement,
+  term: XTerm,
+  disposables: IDisposable[],
+): void {
   const syncTextareaPosition = () => {
     const cursorX = term.buffer.active.cursorX;
     const cursorY = term.buffer.active.cursorY - term.buffer.active.viewportY;
@@ -194,16 +207,36 @@ export function setupIME(
   };
 
   const cursorDisposable = term.onCursorMove(syncTextareaPosition);
-  const writeDisposable = term.onWriteParsed(syncTextareaPosition);
   const initialSyncRafId = requestAnimationFrame(syncTextareaPosition);
 
   disposables.push(
     cursorDisposable,
-    writeDisposable,
     { dispose: () => cancelAnimationFrame(initialSyncRafId) },
   );
+}
 
-  return { isComposing };
+/**
+ * Sets up IME composition tracking and, on touch devices, textarea
+ * position sync for correct IME candidate box placement.
+ */
+export function setupIME(
+  container: HTMLDivElement,
+  term: XTerm,
+  disposables: IDisposable[],
+): { isComposing: { current: boolean } } {
+  const textarea = container.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement;
+  if (!textarea) return { isComposing: { current: false } };
+
+  const result = setupCompositionTracking(textarea, disposables);
+
+  // On touch devices, manually sync textarea position to follow cursor.
+  // On desktop, xterm.js handles this internally — manual override would
+  // conflict and cause IME candidate box flickering (e.g. Windows CJK IME).
+  if (isTouchPrimaryInput()) {
+    setupMobileTextareaSync(textarea, term, disposables);
+  }
+
+  return result;
 }
 
 /**

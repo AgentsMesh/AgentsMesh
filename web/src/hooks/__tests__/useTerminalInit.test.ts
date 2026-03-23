@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { IDisposable } from "@xterm/xterm";
 import {
   safeFit,
@@ -40,6 +40,11 @@ vi.mock("sonner", () => ({
     success: vi.fn(),
     error: vi.fn(),
   },
+}));
+
+const mockIsTouchPrimaryInput = vi.fn(() => false);
+vi.mock("@/lib/platform", () => ({
+  isTouchPrimaryInput: (...args: unknown[]) => mockIsTouchPrimaryInput(...args),
 }));
 
 describe("TERMINAL_THEME", () => {
@@ -86,6 +91,10 @@ describe("safeFit", () => {
 });
 
 describe("setupIME", () => {
+  beforeEach(() => {
+    mockIsTouchPrimaryInput.mockReturnValue(false);
+  });
+
   it("returns isComposing { current: false } when no textarea found", () => {
     const container = document.createElement("div");
     const term = createMockTerm();
@@ -116,7 +125,9 @@ describe("setupIME", () => {
     expect(isComposing.current).toBe(false);
   });
 
-  it("adds disposables for cleanup", () => {
+  it("on desktop, only adds composition cleanup disposable (no cursor/write sync)", () => {
+    mockIsTouchPrimaryInput.mockReturnValue(false);
+
     const container = document.createElement("div");
     const textarea = document.createElement("textarea");
     textarea.className = "xterm-helper-textarea";
@@ -126,11 +137,84 @@ describe("setupIME", () => {
 
     setupIME(container, term, disposables);
 
-    // Should have: composition cleanup, cursor disposable, write disposable, raf cancel
-    expect(disposables.length).toBeGreaterThanOrEqual(3);
+    // Desktop: only composition event listener cleanup
+    expect(disposables).toHaveLength(1);
+    expect(term.onCursorMove).not.toHaveBeenCalled();
+    expect(term.onWriteParsed).not.toHaveBeenCalled();
   });
 
-  it("cleans up event listeners on dispose", () => {
+  it("on touch device, adds composition + cursor sync disposables", () => {
+    mockIsTouchPrimaryInput.mockReturnValue(true);
+
+    const container = document.createElement("div");
+    const textarea = document.createElement("textarea");
+    textarea.className = "xterm-helper-textarea";
+    container.appendChild(textarea);
+    const term = createMockTerm();
+    const disposables: IDisposable[] = [];
+
+    setupIME(container, term, disposables);
+
+    // Touch: composition cleanup + cursorMove disposable + rAF cancel
+    expect(disposables).toHaveLength(3);
+    expect(term.onCursorMove).toHaveBeenCalled();
+    // onWriteParsed must NEVER be bound (output→input decoupling)
+    expect(term.onWriteParsed).not.toHaveBeenCalled();
+  });
+
+  it("on touch device, cursor move callback updates textarea position", () => {
+    mockIsTouchPrimaryInput.mockReturnValue(true);
+
+    const container = document.createElement("div");
+    const textarea = document.createElement("textarea");
+    textarea.className = "xterm-helper-textarea";
+    container.appendChild(textarea);
+    const term = createMockTerm();
+    const disposables: IDisposable[] = [];
+
+    setupIME(container, term, disposables);
+
+    // Capture the callback passed to onCursorMove
+    const cursorMoveCallback = term.onCursorMove.mock.calls[0][0] as () => void;
+
+    // Simulate cursor at position (10, 2)
+    term.buffer.active.cursorX = 10;
+    term.buffer.active.cursorY = 2;
+    term.buffer.active.viewportY = 0;
+    cursorMoveCallback();
+
+    // cellWidth = 14 * 0.6 = 8.4, cellHeight = 14 * 1.2 = 16.8
+    expect(textarea.style.left).toBe(`${10 * 8.4}px`);
+    expect(textarea.style.top).toBe(`${2 * 16.8}px`);
+  });
+
+  it("on touch device, clamps textarea position to zero when cursor is above viewport", () => {
+    mockIsTouchPrimaryInput.mockReturnValue(true);
+
+    const container = document.createElement("div");
+    const textarea = document.createElement("textarea");
+    textarea.className = "xterm-helper-textarea";
+    container.appendChild(textarea);
+    const term = createMockTerm();
+    const disposables: IDisposable[] = [];
+
+    setupIME(container, term, disposables);
+
+    const cursorMoveCallback = term.onCursorMove.mock.calls[0][0] as () => void;
+
+    // viewportY > cursorY → negative relative position → clamped to 0
+    term.buffer.active.cursorX = 0;
+    term.buffer.active.cursorY = 2;
+    term.buffer.active.viewportY = 5;
+    cursorMoveCallback();
+
+    expect(textarea.style.left).toBe("0px");
+    expect(textarea.style.top).toBe("0px");
+  });
+
+  it("cleans up event listeners on dispose (desktop)", () => {
+    mockIsTouchPrimaryInput.mockReturnValue(false);
+
     const container = document.createElement("div");
     const textarea = document.createElement("textarea");
     textarea.className = "xterm-helper-textarea";
@@ -146,6 +230,34 @@ describe("setupIME", () => {
     // After cleanup, composition events should not affect isComposing
     textarea.dispatchEvent(new Event("compositionstart"));
     expect(isComposing.current).toBe(false);
+  });
+
+  it("cleans up all disposables on dispose (touch device)", () => {
+    mockIsTouchPrimaryInput.mockReturnValue(true);
+
+    const container = document.createElement("div");
+    const textarea = document.createElement("textarea");
+    textarea.className = "xterm-helper-textarea";
+    container.appendChild(textarea);
+    const term = createMockTerm();
+    const disposables: IDisposable[] = [];
+
+    const { isComposing } = setupIME(container, term, disposables);
+
+    expect(disposables).toHaveLength(3);
+
+    // Capture cursorMove disposable mock to verify it was disposed
+    const cursorMoveDispose = term.onCursorMove.mock.results[0].value.dispose;
+
+    // Dispose all
+    disposables.forEach((d) => d.dispose());
+
+    // Composition cleanup works
+    textarea.dispatchEvent(new Event("compositionstart"));
+    expect(isComposing.current).toBe(false);
+
+    // CursorMove disposable was disposed
+    expect(cursorMoveDispose).toHaveBeenCalled();
   });
 });
 
