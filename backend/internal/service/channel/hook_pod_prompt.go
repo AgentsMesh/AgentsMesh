@@ -12,9 +12,9 @@ import (
 // podMentionTextLen matches the frontend's mentionText = podKey.slice(0, 8)
 const podMentionTextLen = 8
 
-// TerminalInputRouter sends input to a pod's terminal
-type TerminalInputRouter interface {
-	RouteInput(podKey string, data []byte) error
+// PodPromptRouter sends prompts to a pod (mode-agnostic: PTY or ACP).
+type PodPromptRouter interface {
+	RoutePrompt(podKey string, prompt string) error
 }
 
 // SystemMessageWriter creates system messages directly (bypassing hooks to avoid recursion)
@@ -22,10 +22,10 @@ type SystemMessageWriter interface {
 	CreateMessage(ctx context.Context, msg *channelDomain.Message) error
 }
 
-// NewPodPromptHook creates a hook that sends @mentioned pod content to their terminals.
+// NewPodPromptHook creates a hook that sends @mentioned pod content to their PTYs.
 // When a pod is unreachable, it writes a system message to the channel so the user
 // gets visible feedback instead of silent failure.
-func NewPodPromptHook(router TerminalInputRouter, msgWriter SystemMessageWriter) PostSendHook {
+func NewPodPromptHook(router PodPromptRouter, msgWriter SystemMessageWriter) PostSendHook {
 	return func(ctx context.Context, mc *MessageContext) error {
 		if router == nil || mc.Mentions == nil || len(mc.Mentions.PodKeys) == 0 {
 			return nil
@@ -39,7 +39,7 @@ func NewPodPromptHook(router TerminalInputRouter, msgWriter SystemMessageWriter)
 				continue
 			}
 
-			if err := router.RouteInput(podKey, []byte(prompt)); err != nil {
+			if err := router.RoutePrompt(podKey, prompt+"\r"); err != nil {
 				slog.Warn("pod unreachable for prompt",
 					"pod_key", podKey,
 					"channel", mc.Channel.Name,
@@ -48,14 +48,6 @@ func NewPodPromptHook(router TerminalInputRouter, msgWriter SystemMessageWriter)
 				// Write a system message so the user knows the pod didn't receive it
 				writeOfflineNotice(ctx, msgWriter, mc.Message.ChannelID, podKey)
 				continue
-			}
-
-			// Send Enter key to confirm the input
-			if err := router.RouteInput(podKey, []byte("\r")); err != nil {
-				slog.Error("failed to send enter to pod",
-					"pod_key", podKey,
-					"error", err,
-				)
 			}
 		}
 

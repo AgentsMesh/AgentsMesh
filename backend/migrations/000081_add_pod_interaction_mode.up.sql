@@ -1,0 +1,1 @@
+ALTER TABLE pods ADD COLUMN interaction_mode VARCHAR(10) NOT NULL DEFAULT 'pty';

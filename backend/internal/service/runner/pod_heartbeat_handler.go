@@ -122,9 +122,9 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 			continue
 		}
 
-		// Ensure pod is registered with terminal router (preserves existing VT state)
-		// This ensures routing works even after backend restart, without clearing terminal data
-		pc.terminalRouter.EnsurePodRegistered(podKey, runnerID)
+		// Ensure pod is registered with pod router (preserves existing VT state)
+		// This ensures routing works even after backend restart, without clearing PTY data
+		pc.podRouter.EnsurePodRegistered(podKey, runnerID)
 
 		// Try to restore if pod is orphaned
 		if pod.Status == agentpod.StatusOrphaned {
@@ -191,8 +191,8 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 				"pod_key", p.PodKey,
 				"runner_id", runnerID,
 				"miss_count", missCount)
-			// Unregister from terminal router
-			pc.terminalRouter.UnregisterPod(p.PodKey)
+			// Unregister from pod router
+			pc.podRouter.UnregisterPod(p.PodKey)
 
 			// Notify status change for WebSocket event
 			if pc.onStatusChange != nil {

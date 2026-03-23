@@ -137,6 +137,8 @@ func TestMessageConstants(t *testing.T) {
 		MsgTypeSnapshot: 0x01, MsgTypeOutput: 0x02, MsgTypeInput: 0x03, MsgTypeResize: 0x04,
 		MsgTypePing: 0x05, MsgTypePong: 0x06, MsgTypeControl: 0x07,
 		MsgTypeRunnerDisconnected: 0x08, MsgTypeRunnerReconnected: 0x09,
+		MsgTypeResync: 0x0A,
+		MsgTypeAcpEvent: 0x0B, MsgTypeAcpCommand: 0x0C, MsgTypeAcpSnapshot: 0x0D,
 	}
 	for got, want := range expected {
 		if got != want {

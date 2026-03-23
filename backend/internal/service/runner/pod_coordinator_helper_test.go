@@ -44,7 +44,7 @@ func setupPodCoordinatorTestDB(t *testing.T) (*gorm.DB, agentpod.PodRepository, 
 }
 
 // setupPodCoordinatorDeps sets up dependencies for PodCoordinator testing
-func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, *TerminalRouter, *HeartbeatBatcher, agentpod.PodRepository, runnerDomain.RunnerRepository) {
+func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, *PodRouter, *HeartbeatBatcher, agentpod.PodRepository, runnerDomain.RunnerRepository) {
 	mr, err := miniredis.Run()
 	if err != nil {
 		t.Fatalf("failed to start miniredis: %v", err)
@@ -64,7 +64,7 @@ func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, 
 	db, podRepo, runnerRepo := setupPodCoordinatorTestDB(t)
 
 	cm := NewRunnerConnectionManager(logger)
-	tr := NewTerminalRouter(cm, logger)
+	tr := NewPodRouter(cm, logger)
 	hb := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 
 	return db, cm, tr, hb, podRepo, runnerRepo

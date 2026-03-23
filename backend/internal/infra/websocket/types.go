@@ -27,15 +27,13 @@ const (
 type MessageType string
 
 const (
-	MessageTypeTerminalInput  MessageType = "terminal:input"
-	MessageTypeTerminalResize MessageType = "terminal:resize"
 	MessageTypePodStatus      MessageType = "pod:status"
 	MessageTypeAgentStatus    MessageType = "agent:status"
 	MessageTypeChannelMessage MessageType = "channel:message"
 	MessageTypePing           MessageType = "ping"
 	MessageTypePong           MessageType = "pong"
 	MessageTypeError          MessageType = "error"
-	// NOTE: terminal:output is NOT here - terminal output is streamed via Relay, not WebSocket
+	// NOTE: pod:input/pod:output/pod:resize are NOT here - pod I/O is streamed via Relay, not WebSocket
 )
 
 // ========== Message Structures ==========
@@ -47,17 +45,6 @@ type Message struct {
 	ChannelID int64           `json:"channel_id,omitempty"`
 	Data      json.RawMessage `json:"data,omitempty"`
 	Timestamp int64           `json:"timestamp"`
-}
-
-// TerminalInputData represents terminal input
-type TerminalInputData struct {
-	Data string `json:"data"`
-}
-
-// TerminalResizeData represents terminal resize
-type TerminalResizeData struct {
-	Cols int `json:"cols"`
-	Rows int `json:"rows"`
 }
 
 // PodStatusData represents pod status update

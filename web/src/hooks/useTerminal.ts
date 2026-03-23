@@ -5,7 +5,7 @@ import { Terminal as XTerm, IDisposable } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 import { terminalRegistry } from "@/stores/workspace";
-import type { ConnectionStatus } from "@/stores/terminalConnection";
+import type { ConnectionStatus } from "@/stores/relayConnection";
 import {
   setupTerminal,
   setupConnection,
@@ -50,6 +50,7 @@ export function useTerminal(
   const schedulerRef = useRef<TerminalWriteScheduler | null>(null);
   const disposablesRef = useRef<IDisposable[]>([]);
   const lastSyncedSizeRef = useRef<{ cols: number; rows: number } | null>(null);
+  const [isTerminalReady, setIsTerminalReady] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [isRunnerDisconnected, setIsRunnerDisconnected] = useState(false);
 
@@ -83,6 +84,7 @@ export function useTerminal(
     // Store refs
     xtermRef.current = term;
     fitAddonRef.current = fitAddon;
+    setIsTerminalReady(true);
 
     // Cleanup — connectionRef is read at cleanup time intentionally because
     // it's set asynchronously in setupConnection after the effect body runs.
@@ -102,6 +104,7 @@ export function useTerminal(
       xtermRef.current = null;
       fitAddonRef.current = null;
       lastSyncedSizeRef.current = null;
+      setIsTerminalReady(false);
     };
     // fontSize intentionally excluded — handled by useTerminalResize
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,7 +112,7 @@ export function useTerminal(
 
   // Delegate all resize concerns to the resize hook
   const { syncSize } = useTerminalResize(
-    podKey, fitAddonRef, xtermRef, terminalRef, isActive, fontSize,
+    podKey, fitAddonRef, xtermRef, terminalRef, isActive, fontSize, isTerminalReady,
   );
 
   return {

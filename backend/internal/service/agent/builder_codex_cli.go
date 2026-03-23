@@ -59,7 +59,11 @@ func (b *CodexCLIBuilder) Slug() string {
 
 // HandleInitialPrompt prepends the initial prompt to launch arguments.
 // Codex CLI syntax: codex [prompt] [options]
+// In ACP mode, the prompt is sent via JSON-RPC (turn/start), not CLI args.
 func (b *CodexCLIBuilder) HandleInitialPrompt(ctx *BuildContext, args []string) []string {
+	if ctx.Request.InteractionMode == "acp" {
+		return args
+	}
 	if ctx.Request.InitialPrompt != "" {
 		return append([]string{ctx.Request.InitialPrompt}, args...)
 	}
@@ -112,7 +116,11 @@ func (b *CodexCLIBuilder) BuildEnvVars(ctx *BuildContext) (map[string]string, er
 	return b.BaseAgentBuilder.BuildEnvVars(ctx)
 }
 
-// PostProcess uses the base implementation
+// PostProcess prepends "app-server" subcommand in ACP mode.
+// Codex CLI app-server protocol: codex app-server [options]
 func (b *CodexCLIBuilder) PostProcess(ctx *BuildContext, cmd *runnerv1.CreatePodCommand) error {
-	return b.BaseAgentBuilder.PostProcess(ctx, cmd)
+	if ctx.Request.InteractionMode == "acp" {
+		cmd.LaunchArgs = append([]string{"app-server"}, cmd.LaunchArgs...)
+	}
+	return nil
 }

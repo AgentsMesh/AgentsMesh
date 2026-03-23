@@ -92,63 +92,6 @@ func TestCreateExitHandler_DrainEarlyBuffer(t *testing.T) {
 	assertHasEvent(t, mockConn, client.MsgTypePodTerminated)
 }
 
-// --- M1: OnTerminalResize must check pod.Terminal != nil ---
-// Bug: OnTerminalResize would panic on nil pointer dereference when
-// pod.Terminal was nil (before initialization or after teardown).
-
-func TestOnTerminalResize_NilTerminal(t *testing.T) {
-	store := NewInMemoryPodStore()
-	mockConn := client.NewMockConnection()
-	runner := &Runner{cfg: &config.Config{}}
-	handler := NewRunnerMessageHandler(runner, store, mockConn)
-
-	// Pod with nil Terminal (e.g., still initializing).
-	store.Put("resize-nil-pod", &Pod{
-		PodKey:   "resize-nil-pod",
-		Terminal: nil,
-	})
-
-	err := handler.OnTerminalResize(client.TerminalResizeRequest{
-		PodKey: "resize-nil-pod",
-		Cols:   120,
-		Rows:   40,
-	})
-
-	if err == nil {
-		t.Fatal("expected error for nil terminal")
-	}
-	if !contains(err.Error(), "terminal not initialized") {
-		t.Errorf("error = %v, want containing 'terminal not initialized'", err)
-	}
-}
-
-// --- M1b: OnTerminalRedraw must check pod.Terminal != nil ---
-// Bug: OnTerminalRedraw would panic on nil pointer dereference when
-// pod.Terminal was nil (same class of bug as OnTerminalResize).
-
-func TestOnTerminalRedraw_NilTerminal(t *testing.T) {
-	store := NewInMemoryPodStore()
-	mockConn := client.NewMockConnection()
-	runner := &Runner{cfg: &config.Config{}}
-	handler := NewRunnerMessageHandler(runner, store, mockConn)
-
-	store.Put("redraw-nil-pod", &Pod{
-		PodKey:   "redraw-nil-pod",
-		Terminal: nil,
-	})
-
-	err := handler.OnTerminalRedraw(client.TerminalRedrawRequest{
-		PodKey: "redraw-nil-pod",
-	})
-
-	if err == nil {
-		t.Fatal("expected error for nil terminal on redraw")
-	}
-	if !contains(err.Error(), "terminal not initialized") {
-		t.Errorf("error = %v, want containing 'terminal not initialized'", err)
-	}
-}
-
 // --- Cleanup path consistency: both paths must produce pod_terminated event ---
 
 func TestTerminationPaths_BothSendEvent(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
@@ -28,66 +29,20 @@ func (h *RunnerMessageHandler) OnListRelayConnections() []client.RelayConnection
 	return result
 }
 
-// OnTerminalInput handles terminal input from server.
-func (h *RunnerMessageHandler) OnTerminalInput(req client.TerminalInputRequest) error {
+// OnPodInput handles PTY input from server.
+func (h *RunnerMessageHandler) OnPodInput(req client.PodInputRequest) error {
 	log := logger.Pod()
 	pod, ok := h.podStore.Get(req.PodKey)
 	if !ok {
-		log.Warn("Pod not found for terminal input", "pod_key", req.PodKey)
+		log.Warn("Pod not found for PTY input", "pod_key", req.PodKey)
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
-	if pod.Terminal == nil {
-		log.Warn("Terminal not initialized for input", "pod_key", req.PodKey)
-		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
+	if pod.IO == nil {
+		log.Warn("PodIO not available for input", "pod_key", req.PodKey)
+		return fmt.Errorf("pod IO not available for pod: %s", req.PodKey)
 	}
-	if err := pod.Terminal.Write(req.Data); err != nil {
-		log.Error("Failed to write terminal input", "pod_key", req.PodKey, "error", err)
-		return err
-	}
-	return nil
-}
-
-// OnTerminalResize handles terminal resize requests from server.
-func (h *RunnerMessageHandler) OnTerminalResize(req client.TerminalResizeRequest) error {
-	log := logger.Pod()
-	pod, ok := h.podStore.Get(req.PodKey)
-	if !ok {
-		log.Warn("Pod not found for terminal resize", "pod_key", req.PodKey)
-		return fmt.Errorf("pod not found: %s", req.PodKey)
-	}
-
-	if pod.Terminal == nil {
-		log.Warn("Terminal not initialized for resize", "pod_key", req.PodKey)
-		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
-	}
-	if err := pod.Terminal.Resize(int(req.Cols), int(req.Rows)); err != nil {
-		log.Error("Failed to resize terminal", "pod_key", req.PodKey, "cols", req.Cols, "rows", req.Rows, "error", err)
-		return err
-	}
-	if pod.VirtualTerminal != nil {
-		pod.VirtualTerminal.Resize(int(req.Cols), int(req.Rows))
-	}
-
-	log.Debug("Terminal resized", "pod_key", req.PodKey, "cols", req.Cols, "rows", req.Rows)
-	h.sendPtyResized(req.PodKey, req.Cols, req.Rows)
-	return nil
-}
-
-// OnTerminalRedraw handles terminal redraw requests from server.
-func (h *RunnerMessageHandler) OnTerminalRedraw(req client.TerminalRedrawRequest) error {
-	log := logger.Pod()
-	pod, ok := h.podStore.Get(req.PodKey)
-	if !ok {
-		log.Warn("Pod not found for terminal redraw", "pod_key", req.PodKey)
-		return fmt.Errorf("pod not found: %s", req.PodKey)
-	}
-	if pod.Terminal == nil {
-		log.Warn("Terminal not initialized for redraw", "pod_key", req.PodKey)
-		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
-	}
-	log.Info("Triggering terminal redraw", "pod_key", req.PodKey)
-	if err := pod.Terminal.Redraw(); err != nil {
-		log.Error("Failed to redraw terminal", "pod_key", req.PodKey, "error", err)
+	if err := pod.IO.SendInput(string(req.Data)); err != nil {
+		log.Error("Failed to write pod input", "pod_key", req.PodKey, "error", err)
 		return err
 	}
 	return nil
@@ -113,20 +68,20 @@ func (h *RunnerMessageHandler) OnQuerySandboxes(req client.QuerySandboxesRequest
 	return nil
 }
 
-// OnObserveTerminal handles observe terminal command from server.
-// Reads VirtualTerminal state and sends result back via gRPC.
-func (h *RunnerMessageHandler) OnObserveTerminal(req client.ObserveTerminalRequest) error {
+// OnObservePod handles observe PTY command from server.
+// Reads pod I/O state and sends result back via gRPC.
+func (h *RunnerMessageHandler) OnObservePod(req client.ObservePodRequest) error {
 	log := logger.Pod()
 
 	pod, ok := h.podStore.Get(req.PodKey)
 	if !ok {
-		log.Warn("Pod not found for observe terminal", "pod_key", req.PodKey)
-		return h.conn.SendObserveTerminalResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "pod not found")
+		log.Warn("Pod not found for observe PTY", "pod_key", req.PodKey)
+		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "pod not found")
 	}
 
-	if pod.VirtualTerminal == nil {
-		log.Warn("No virtual terminal for observe", "pod_key", req.PodKey)
-		return h.conn.SendObserveTerminalResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "no virtual terminal")
+	if pod.IO == nil {
+		log.Warn("No PodIO for observe PTY", "pod_key", req.PodKey)
+		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "pod IO not available")
 	}
 
 	lines := req.Lines
@@ -134,12 +89,16 @@ func (h *RunnerMessageHandler) OnObserveTerminal(req client.ObserveTerminalReque
 		lines = 100
 	}
 
-	output := pod.VirtualTerminal.GetOutput(lines)
-	cursorY, cursorX := pod.VirtualTerminal.CursorPosition()
+	output, err := pod.IO.GetSnapshot(lines)
+	if err != nil {
+		log.Error("Failed to get snapshot for observe PTY", "pod_key", req.PodKey, "error", err)
+		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, err.Error())
+	}
+	cursorY, cursorX := pod.IO.CursorPosition()
 
 	var screen string
 	if req.IncludeScreen {
-		screen = pod.VirtualTerminal.GetScreenSnapshot()
+		screen = pod.IO.GetScreenSnapshot()
 	}
 
 	// Count total lines in output to determine hasMore
@@ -149,11 +108,27 @@ func (h *RunnerMessageHandler) OnObserveTerminal(req client.ObserveTerminalReque
 	}
 	hasMore := totalLines >= lines
 
-	if err := h.conn.SendObserveTerminalResult(req.RequestID, req.PodKey, output, screen, cursorX, cursorY, totalLines, hasMore, ""); err != nil {
-		log.Error("Failed to send observe terminal result", "request_id", req.RequestID, "error", err)
+	if err := h.conn.SendObservePodResult(req.RequestID, req.PodKey, output, screen, cursorX, cursorY, totalLines, hasMore, ""); err != nil {
+		log.Error("Failed to send observe PTY result", "request_id", req.RequestID, "error", err)
 		return err
 	}
 
-	log.Debug("Sent observe terminal result", "request_id", req.RequestID, "pod_key", req.PodKey, "lines", totalLines)
+	log.Debug("Sent observe PTY result", "request_id", req.RequestID, "pod_key", req.PodKey, "lines", totalLines)
 	return nil
+}
+
+// OnSendPrompt handles send_prompt command from server.
+// Routes through PodIO.SendInput — PTY writes to stdin, ACP sends prompt.
+func (h *RunnerMessageHandler) OnSendPrompt(cmd *runnerv1.SendPromptCommand) error {
+	log := logger.Pod()
+	pod, ok := h.podStore.Get(cmd.PodKey)
+	if !ok {
+		log.Warn("Pod not found for send_prompt", "pod_key", cmd.PodKey)
+		return fmt.Errorf("pod not found: %s", cmd.PodKey)
+	}
+	if pod.IO == nil {
+		log.Warn("PodIO not available for send_prompt", "pod_key", cmd.PodKey)
+		return fmt.Errorf("pod IO not available: %s", cmd.PodKey)
+	}
+	return pod.IO.SendInput(cmd.Prompt)
 }

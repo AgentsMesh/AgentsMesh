@@ -31,9 +31,9 @@ type RunnerMessage struct {
 	//	*RunnerMessage_Heartbeat
 	//	*RunnerMessage_PodCreated
 	//	*RunnerMessage_PodTerminated
-	//	*RunnerMessage_TerminalOutput
+	//	*RunnerMessage_PodOutput
 	//	*RunnerMessage_AgentStatus
-	//	*RunnerMessage_PtyResized
+	//	*RunnerMessage_PodResized
 	//	*RunnerMessage_Error
 	//	*RunnerMessage_PodInitProgress
 	//	*RunnerMessage_RequestRelayToken
@@ -50,7 +50,7 @@ type RunnerMessage struct {
 	//	*RunnerMessage_UpgradeStatus
 	//	*RunnerMessage_LogUploadStatus
 	//	*RunnerMessage_TokenUsage
-	//	*RunnerMessage_ObserveTerminalResult
+	//	*RunnerMessage_ObservePodResult
 	Payload       isRunnerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -139,10 +139,10 @@ func (x *RunnerMessage) GetPodTerminated() *PodTerminatedEvent {
 	return nil
 }
 
-func (x *RunnerMessage) GetTerminalOutput() *TerminalOutputEvent {
+func (x *RunnerMessage) GetPodOutput() *PodOutputEvent {
 	if x != nil {
-		if x, ok := x.Payload.(*RunnerMessage_TerminalOutput); ok {
-			return x.TerminalOutput
+		if x, ok := x.Payload.(*RunnerMessage_PodOutput); ok {
+			return x.PodOutput
 		}
 	}
 	return nil
@@ -157,10 +157,10 @@ func (x *RunnerMessage) GetAgentStatus() *AgentStatusEvent {
 	return nil
 }
 
-func (x *RunnerMessage) GetPtyResized() *PtyResizedEvent {
+func (x *RunnerMessage) GetPodResized() *PodResizedEvent {
 	if x != nil {
-		if x, ok := x.Payload.(*RunnerMessage_PtyResized); ok {
-			return x.PtyResized
+		if x, ok := x.Payload.(*RunnerMessage_PodResized); ok {
+			return x.PodResized
 		}
 	}
 	return nil
@@ -310,10 +310,10 @@ func (x *RunnerMessage) GetTokenUsage() *TokenUsageReport {
 	return nil
 }
 
-func (x *RunnerMessage) GetObserveTerminalResult() *ObserveTerminalResult {
+func (x *RunnerMessage) GetObservePodResult() *ObservePodResult {
 	if x != nil {
-		if x, ok := x.Payload.(*RunnerMessage_ObserveTerminalResult); ok {
-			return x.ObserveTerminalResult
+		if x, ok := x.Payload.(*RunnerMessage_ObservePodResult); ok {
+			return x.ObservePodResult
 		}
 	}
 	return nil
@@ -350,16 +350,16 @@ type RunnerMessage_PodTerminated struct {
 	PodTerminated *PodTerminatedEvent `protobuf:"bytes,5,opt,name=pod_terminated,json=podTerminated,proto3,oneof"`
 }
 
-type RunnerMessage_TerminalOutput struct {
-	TerminalOutput *TerminalOutputEvent `protobuf:"bytes,6,opt,name=terminal_output,json=terminalOutput,proto3,oneof"`
+type RunnerMessage_PodOutput struct {
+	PodOutput *PodOutputEvent `protobuf:"bytes,6,opt,name=pod_output,json=podOutput,proto3,oneof"`
 }
 
 type RunnerMessage_AgentStatus struct {
 	AgentStatus *AgentStatusEvent `protobuf:"bytes,7,opt,name=agent_status,json=agentStatus,proto3,oneof"`
 }
 
-type RunnerMessage_PtyResized struct {
-	PtyResized *PtyResizedEvent `protobuf:"bytes,8,opt,name=pty_resized,json=ptyResized,proto3,oneof"`
+type RunnerMessage_PodResized struct {
+	PodResized *PodResizedEvent `protobuf:"bytes,8,opt,name=pod_resized,json=podResized,proto3,oneof"`
 }
 
 type RunnerMessage_Error struct {
@@ -432,9 +432,9 @@ type RunnerMessage_TokenUsage struct {
 	TokenUsage *TokenUsageReport `protobuf:"bytes,25,opt,name=token_usage,json=tokenUsage,proto3,oneof"`
 }
 
-type RunnerMessage_ObserveTerminalResult struct {
-	// 终端观察结果（Runner -> Backend，响应 ObserveTerminalCommand）
-	ObserveTerminalResult *ObserveTerminalResult `protobuf:"bytes,26,opt,name=observe_terminal_result,json=observeTerminalResult,proto3,oneof"`
+type RunnerMessage_ObservePodResult struct {
+	// Pod 观察结果（Runner -> Backend，响应 ObservePodCommand）
+	ObservePodResult *ObservePodResult `protobuf:"bytes,26,opt,name=observe_pod_result,json=observePodResult,proto3,oneof"` // 27-30 reserved: previously used for ACP gRPC events, now ACP data flows exclusively via Relay.
 }
 
 func (*RunnerMessage_Initialize) isRunnerMessage_Payload() {}
@@ -447,11 +447,11 @@ func (*RunnerMessage_PodCreated) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_PodTerminated) isRunnerMessage_Payload() {}
 
-func (*RunnerMessage_TerminalOutput) isRunnerMessage_Payload() {}
+func (*RunnerMessage_PodOutput) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_AgentStatus) isRunnerMessage_Payload() {}
 
-func (*RunnerMessage_PtyResized) isRunnerMessage_Payload() {}
+func (*RunnerMessage_PodResized) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_Error) isRunnerMessage_Payload() {}
 
@@ -485,7 +485,7 @@ func (*RunnerMessage_LogUploadStatus) isRunnerMessage_Payload() {}
 
 func (*RunnerMessage_TokenUsage) isRunnerMessage_Payload() {}
 
-func (*RunnerMessage_ObserveTerminalResult) isRunnerMessage_Payload() {}
+func (*RunnerMessage_ObservePodResult) isRunnerMessage_Payload() {}
 
 // InitializeRequest Runner 初始化请求
 type InitializeRequest struct {
@@ -1076,8 +1076,8 @@ func (x *PodTerminatedEvent) GetErrorMessage() string {
 	return ""
 }
 
-// TerminalOutputEvent 终端输出事件
-type TerminalOutputEvent struct {
+// PodOutputEvent Pod 输出事件
+type PodOutputEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"` // 直接二进制，无需 Base64 编码
@@ -1085,20 +1085,20 @@ type TerminalOutputEvent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TerminalOutputEvent) Reset() {
-	*x = TerminalOutputEvent{}
+func (x *PodOutputEvent) Reset() {
+	*x = PodOutputEvent{}
 	mi := &file_runner_v1_runner_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TerminalOutputEvent) String() string {
+func (x *PodOutputEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TerminalOutputEvent) ProtoMessage() {}
+func (*PodOutputEvent) ProtoMessage() {}
 
-func (x *TerminalOutputEvent) ProtoReflect() protoreflect.Message {
+func (x *PodOutputEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1110,19 +1110,19 @@ func (x *TerminalOutputEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TerminalOutputEvent.ProtoReflect.Descriptor instead.
-func (*TerminalOutputEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PodOutputEvent.ProtoReflect.Descriptor instead.
+func (*PodOutputEvent) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *TerminalOutputEvent) GetPodKey() string {
+func (x *PodOutputEvent) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
 	return ""
 }
 
-func (x *TerminalOutputEvent) GetData() []byte {
+func (x *PodOutputEvent) GetData() []byte {
 	if x != nil {
 		return x.Data
 	}
@@ -1182,8 +1182,8 @@ func (x *AgentStatusEvent) GetStatus() string {
 	return ""
 }
 
-// PtyResizedEvent PTY 窗口大小调整事件
-type PtyResizedEvent struct {
+// PodResizedEvent Pod 窗口大小调整事件
+type PodResizedEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	Cols          int32                  `protobuf:"varint,2,opt,name=cols,proto3" json:"cols,omitempty"`
@@ -1192,20 +1192,20 @@ type PtyResizedEvent struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PtyResizedEvent) Reset() {
-	*x = PtyResizedEvent{}
+func (x *PodResizedEvent) Reset() {
+	*x = PodResizedEvent{}
 	mi := &file_runner_v1_runner_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PtyResizedEvent) String() string {
+func (x *PodResizedEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PtyResizedEvent) ProtoMessage() {}
+func (*PodResizedEvent) ProtoMessage() {}
 
-func (x *PtyResizedEvent) ProtoReflect() protoreflect.Message {
+func (x *PodResizedEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1217,26 +1217,26 @@ func (x *PtyResizedEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PtyResizedEvent.ProtoReflect.Descriptor instead.
-func (*PtyResizedEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PodResizedEvent.ProtoReflect.Descriptor instead.
+func (*PodResizedEvent) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *PtyResizedEvent) GetPodKey() string {
+func (x *PodResizedEvent) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
 	return ""
 }
 
-func (x *PtyResizedEvent) GetCols() int32 {
+func (x *PodResizedEvent) GetCols() int32 {
 	if x != nil {
 		return x.Cols
 	}
 	return 0
 }
 
-func (x *PtyResizedEvent) GetRows() int32 {
+func (x *PodResizedEvent) GetRows() int32 {
 	if x != nil {
 		return x.Rows
 	}
@@ -1389,12 +1389,12 @@ type ServerMessage struct {
 	//	*ServerMessage_InitializeResult
 	//	*ServerMessage_CreatePod
 	//	*ServerMessage_TerminatePod
-	//	*ServerMessage_TerminalInput
-	//	*ServerMessage_TerminalResize
+	//	*ServerMessage_PodInput
+	//	*ServerMessage_PodResize
 	//	*ServerMessage_SendPrompt
-	//	*ServerMessage_TerminalRedraw
-	//	*ServerMessage_SubscribeTerminal
-	//	*ServerMessage_UnsubscribeTerminal
+	//	*ServerMessage_PodRedraw
+	//	*ServerMessage_SubscribePod
+	//	*ServerMessage_UnsubscribePod
 	//	*ServerMessage_QuerySandboxes
 	//	*ServerMessage_CreateAutopilot
 	//	*ServerMessage_AutopilotControl
@@ -1403,7 +1403,7 @@ type ServerMessage struct {
 	//	*ServerMessage_HeartbeatAck
 	//	*ServerMessage_UpgradeRunner
 	//	*ServerMessage_UploadLogs
-	//	*ServerMessage_ObserveTerminal
+	//	*ServerMessage_ObservePod
 	Payload       isServerMessage_Payload `protobuf_oneof:"payload"`
 	Timestamp     int64                   `protobuf:"varint,15,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1474,19 +1474,20 @@ func (x *ServerMessage) GetTerminatePod() *TerminatePodCommand {
 	return nil
 }
 
-func (x *ServerMessage) GetTerminalInput() *TerminalInputCommand {
+func (x *ServerMessage) GetPodInput() *PodInputCommand {
 	if x != nil {
-		if x, ok := x.Payload.(*ServerMessage_TerminalInput); ok {
-			return x.TerminalInput
+		if x, ok := x.Payload.(*ServerMessage_PodInput); ok {
+			return x.PodInput
 		}
 	}
 	return nil
 }
 
-func (x *ServerMessage) GetTerminalResize() *TerminalResizeCommand {
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+func (x *ServerMessage) GetPodResize() *PodResizeCommand {
 	if x != nil {
-		if x, ok := x.Payload.(*ServerMessage_TerminalResize); ok {
-			return x.TerminalResize
+		if x, ok := x.Payload.(*ServerMessage_PodResize); ok {
+			return x.PodResize
 		}
 	}
 	return nil
@@ -1501,28 +1502,29 @@ func (x *ServerMessage) GetSendPrompt() *SendPromptCommand {
 	return nil
 }
 
-func (x *ServerMessage) GetTerminalRedraw() *TerminalRedrawCommand {
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+func (x *ServerMessage) GetPodRedraw() *PodRedrawCommand {
 	if x != nil {
-		if x, ok := x.Payload.(*ServerMessage_TerminalRedraw); ok {
-			return x.TerminalRedraw
+		if x, ok := x.Payload.(*ServerMessage_PodRedraw); ok {
+			return x.PodRedraw
 		}
 	}
 	return nil
 }
 
-func (x *ServerMessage) GetSubscribeTerminal() *SubscribeTerminalCommand {
+func (x *ServerMessage) GetSubscribePod() *SubscribePodCommand {
 	if x != nil {
-		if x, ok := x.Payload.(*ServerMessage_SubscribeTerminal); ok {
-			return x.SubscribeTerminal
+		if x, ok := x.Payload.(*ServerMessage_SubscribePod); ok {
+			return x.SubscribePod
 		}
 	}
 	return nil
 }
 
-func (x *ServerMessage) GetUnsubscribeTerminal() *UnsubscribeTerminalCommand {
+func (x *ServerMessage) GetUnsubscribePod() *UnsubscribePodCommand {
 	if x != nil {
-		if x, ok := x.Payload.(*ServerMessage_UnsubscribeTerminal); ok {
-			return x.UnsubscribeTerminal
+		if x, ok := x.Payload.(*ServerMessage_UnsubscribePod); ok {
+			return x.UnsubscribePod
 		}
 	}
 	return nil
@@ -1600,10 +1602,10 @@ func (x *ServerMessage) GetUploadLogs() *UploadLogsCommand {
 	return nil
 }
 
-func (x *ServerMessage) GetObserveTerminal() *ObserveTerminalCommand {
+func (x *ServerMessage) GetObservePod() *ObservePodCommand {
 	if x != nil {
-		if x, ok := x.Payload.(*ServerMessage_ObserveTerminal); ok {
-			return x.ObserveTerminal
+		if x, ok := x.Payload.(*ServerMessage_ObservePod); ok {
+			return x.ObservePod
 		}
 	}
 	return nil
@@ -1632,28 +1634,30 @@ type ServerMessage_TerminatePod struct {
 	TerminatePod *TerminatePodCommand `protobuf:"bytes,3,opt,name=terminate_pod,json=terminatePod,proto3,oneof"`
 }
 
-type ServerMessage_TerminalInput struct {
-	TerminalInput *TerminalInputCommand `protobuf:"bytes,4,opt,name=terminal_input,json=terminalInput,proto3,oneof"`
+type ServerMessage_PodInput struct {
+	PodInput *PodInputCommand `protobuf:"bytes,4,opt,name=pod_input,json=podInput,proto3,oneof"`
 }
 
-type ServerMessage_TerminalResize struct {
-	TerminalResize *TerminalResizeCommand `protobuf:"bytes,5,opt,name=terminal_resize,json=terminalResize,proto3,oneof"`
+type ServerMessage_PodResize struct {
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	PodResize *PodResizeCommand `protobuf:"bytes,5,opt,name=pod_resize,json=podResize,proto3,oneof"` // Deprecated: resize flows through Relay
 }
 
 type ServerMessage_SendPrompt struct {
 	SendPrompt *SendPromptCommand `protobuf:"bytes,6,opt,name=send_prompt,json=sendPrompt,proto3,oneof"`
 }
 
-type ServerMessage_TerminalRedraw struct {
-	TerminalRedraw *TerminalRedrawCommand `protobuf:"bytes,7,opt,name=terminal_redraw,json=terminalRedraw,proto3,oneof"`
+type ServerMessage_PodRedraw struct {
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	PodRedraw *PodRedrawCommand `protobuf:"bytes,7,opt,name=pod_redraw,json=podRedraw,proto3,oneof"` // Deprecated: redraw flows through Relay snapshots
 }
 
-type ServerMessage_SubscribeTerminal struct {
-	SubscribeTerminal *SubscribeTerminalCommand `protobuf:"bytes,8,opt,name=subscribe_terminal,json=subscribeTerminal,proto3,oneof"`
+type ServerMessage_SubscribePod struct {
+	SubscribePod *SubscribePodCommand `protobuf:"bytes,8,opt,name=subscribe_pod,json=subscribePod,proto3,oneof"`
 }
 
-type ServerMessage_UnsubscribeTerminal struct {
-	UnsubscribeTerminal *UnsubscribeTerminalCommand `protobuf:"bytes,9,opt,name=unsubscribe_terminal,json=unsubscribeTerminal,proto3,oneof"`
+type ServerMessage_UnsubscribePod struct {
+	UnsubscribePod *UnsubscribePodCommand `protobuf:"bytes,9,opt,name=unsubscribe_pod,json=unsubscribePod,proto3,oneof"`
 }
 
 type ServerMessage_QuerySandboxes struct {
@@ -1694,9 +1698,9 @@ type ServerMessage_UploadLogs struct {
 	UploadLogs *UploadLogsCommand `protobuf:"bytes,18,opt,name=upload_logs,json=uploadLogs,proto3,oneof"`
 }
 
-type ServerMessage_ObserveTerminal struct {
-	// 终端观察命令（Backend -> Runner，代理 MCP observe_terminal 请求）
-	ObserveTerminal *ObserveTerminalCommand `protobuf:"bytes,19,opt,name=observe_terminal,json=observeTerminal,proto3,oneof"`
+type ServerMessage_ObservePod struct {
+	// Pod 观察命令（Backend -> Runner，代理 MCP observe_pod 请求）
+	ObservePod *ObservePodCommand `protobuf:"bytes,19,opt,name=observe_pod,json=observePod,proto3,oneof"`
 }
 
 func (*ServerMessage_InitializeResult) isServerMessage_Payload() {}
@@ -1705,17 +1709,17 @@ func (*ServerMessage_CreatePod) isServerMessage_Payload() {}
 
 func (*ServerMessage_TerminatePod) isServerMessage_Payload() {}
 
-func (*ServerMessage_TerminalInput) isServerMessage_Payload() {}
+func (*ServerMessage_PodInput) isServerMessage_Payload() {}
 
-func (*ServerMessage_TerminalResize) isServerMessage_Payload() {}
+func (*ServerMessage_PodResize) isServerMessage_Payload() {}
 
 func (*ServerMessage_SendPrompt) isServerMessage_Payload() {}
 
-func (*ServerMessage_TerminalRedraw) isServerMessage_Payload() {}
+func (*ServerMessage_PodRedraw) isServerMessage_Payload() {}
 
-func (*ServerMessage_SubscribeTerminal) isServerMessage_Payload() {}
+func (*ServerMessage_SubscribePod) isServerMessage_Payload() {}
 
-func (*ServerMessage_UnsubscribeTerminal) isServerMessage_Payload() {}
+func (*ServerMessage_UnsubscribePod) isServerMessage_Payload() {}
 
 func (*ServerMessage_QuerySandboxes) isServerMessage_Payload() {}
 
@@ -1733,7 +1737,7 @@ func (*ServerMessage_UpgradeRunner) isServerMessage_Payload() {}
 
 func (*ServerMessage_UploadLogs) isServerMessage_Payload() {}
 
-func (*ServerMessage_ObserveTerminal) isServerMessage_Payload() {}
+func (*ServerMessage_ObservePod) isServerMessage_Payload() {}
 
 // InitializeResult 初始化响应
 type InitializeResult struct {
@@ -1931,6 +1935,7 @@ type CreatePodCommand struct {
 	Cols                int32                  `protobuf:"varint,8,opt,name=cols,proto3" json:"cols,omitempty"`                                                            // 终端列数（由浏览器传入）
 	Rows                int32                  `protobuf:"varint,9,opt,name=rows,proto3" json:"rows,omitempty"`                                                            // 终端行数（由浏览器传入）
 	ResourcesToDownload []*ResourceToDownload  `protobuf:"bytes,10,rep,name=resources_to_download,json=resourcesToDownload,proto3" json:"resources_to_download,omitempty"` // 需要下载的资源（Skills 等）
+	InteractionMode     string                 `protobuf:"bytes,11,opt,name=interaction_mode,json=interactionMode,proto3" json:"interaction_mode,omitempty"`               // 交互模式：pty（默认）或 acp
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -2033,6 +2038,13 @@ func (x *CreatePodCommand) GetResourcesToDownload() []*ResourceToDownload {
 		return x.ResourcesToDownload
 	}
 	return nil
+}
+
+func (x *CreatePodCommand) GetInteractionMode() string {
+	if x != nil {
+		return x.InteractionMode
+	}
+	return ""
 }
 
 // ResourceToDownload 需要下载的资源描述
@@ -2371,8 +2383,8 @@ func (x *TerminatePodCommand) GetForce() bool {
 	return false
 }
 
-// TerminalInputCommand 终端输入命令
-type TerminalInputCommand struct {
+// PodInputCommand Pod 输入命令
+type PodInputCommand struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
@@ -2380,20 +2392,20 @@ type TerminalInputCommand struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TerminalInputCommand) Reset() {
-	*x = TerminalInputCommand{}
+func (x *PodInputCommand) Reset() {
+	*x = PodInputCommand{}
 	mi := &file_runner_v1_runner_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TerminalInputCommand) String() string {
+func (x *PodInputCommand) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TerminalInputCommand) ProtoMessage() {}
+func (*PodInputCommand) ProtoMessage() {}
 
-func (x *TerminalInputCommand) ProtoReflect() protoreflect.Message {
+func (x *PodInputCommand) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2405,27 +2417,27 @@ func (x *TerminalInputCommand) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TerminalInputCommand.ProtoReflect.Descriptor instead.
-func (*TerminalInputCommand) Descriptor() ([]byte, []int) {
+// Deprecated: Use PodInputCommand.ProtoReflect.Descriptor instead.
+func (*PodInputCommand) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *TerminalInputCommand) GetPodKey() string {
+func (x *PodInputCommand) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
 	return ""
 }
 
-func (x *TerminalInputCommand) GetData() []byte {
+func (x *PodInputCommand) GetData() []byte {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-// TerminalResizeCommand 终端窗口调整命令
-type TerminalResizeCommand struct {
+// PodResizeCommand Pod 窗口调整命令
+type PodResizeCommand struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	Cols          int32                  `protobuf:"varint,2,opt,name=cols,proto3" json:"cols,omitempty"`
@@ -2434,20 +2446,20 @@ type TerminalResizeCommand struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TerminalResizeCommand) Reset() {
-	*x = TerminalResizeCommand{}
+func (x *PodResizeCommand) Reset() {
+	*x = PodResizeCommand{}
 	mi := &file_runner_v1_runner_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TerminalResizeCommand) String() string {
+func (x *PodResizeCommand) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TerminalResizeCommand) ProtoMessage() {}
+func (*PodResizeCommand) ProtoMessage() {}
 
-func (x *TerminalResizeCommand) ProtoReflect() protoreflect.Message {
+func (x *PodResizeCommand) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2459,26 +2471,26 @@ func (x *TerminalResizeCommand) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TerminalResizeCommand.ProtoReflect.Descriptor instead.
-func (*TerminalResizeCommand) Descriptor() ([]byte, []int) {
+// Deprecated: Use PodResizeCommand.ProtoReflect.Descriptor instead.
+func (*PodResizeCommand) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{25}
 }
 
-func (x *TerminalResizeCommand) GetPodKey() string {
+func (x *PodResizeCommand) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
 	return ""
 }
 
-func (x *TerminalResizeCommand) GetCols() int32 {
+func (x *PodResizeCommand) GetCols() int32 {
 	if x != nil {
 		return x.Cols
 	}
 	return 0
 }
 
-func (x *TerminalResizeCommand) GetRows() int32 {
+func (x *PodResizeCommand) GetRows() int32 {
 	if x != nil {
 		return x.Rows
 	}
@@ -2538,31 +2550,31 @@ func (x *SendPromptCommand) GetPrompt() string {
 	return ""
 }
 
-// TerminalRedrawCommand 请求终端重绘命令
+// PodRedrawCommand 请求 Pod 重绘命令
 // 用于服务器重启后恢复终端状态：使用 resize +1/-1 技巧触发终端程序重绘
 // （直接发送 SIGWINCH 对处于空闲状态的程序如 Claude Code 无效）
-// Runner 收到后执行 resize 技巧，不响应 pty_resized 事件（避免循环）
-type TerminalRedrawCommand struct {
+// Runner 收到后执行 resize 技巧，不响应 pod_resized 事件（避免循环）
+type PodRedrawCommand struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TerminalRedrawCommand) Reset() {
-	*x = TerminalRedrawCommand{}
+func (x *PodRedrawCommand) Reset() {
+	*x = PodRedrawCommand{}
 	mi := &file_runner_v1_runner_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TerminalRedrawCommand) String() string {
+func (x *PodRedrawCommand) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TerminalRedrawCommand) ProtoMessage() {}
+func (*PodRedrawCommand) ProtoMessage() {}
 
-func (x *TerminalRedrawCommand) ProtoReflect() protoreflect.Message {
+func (x *PodRedrawCommand) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2574,21 +2586,21 @@ func (x *TerminalRedrawCommand) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TerminalRedrawCommand.ProtoReflect.Descriptor instead.
-func (*TerminalRedrawCommand) Descriptor() ([]byte, []int) {
+// Deprecated: Use PodRedrawCommand.ProtoReflect.Descriptor instead.
+func (*PodRedrawCommand) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *TerminalRedrawCommand) GetPodKey() string {
+func (x *PodRedrawCommand) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
 	return ""
 }
 
-// SubscribeTerminalCommand 订阅终端命令
-// Backend 通知 Runner 有观察者要订阅终端，Runner 应连接到 Relay
-type SubscribeTerminalCommand struct {
+// SubscribePodCommand 订阅 Pod 输出命令
+// Backend 通知 Runner 有观察者要订阅 Pod 输出，Runner 应连接到 Relay
+type SubscribePodCommand struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	PodKey          string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	RelayUrl        string                 `protobuf:"bytes,2,opt,name=relay_url,json=relayUrl,proto3" json:"relay_url,omitempty"`                       // Public Relay URL via reverse proxy (e.g. ws://host:port/relay)
@@ -2599,20 +2611,20 @@ type SubscribeTerminalCommand struct {
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *SubscribeTerminalCommand) Reset() {
-	*x = SubscribeTerminalCommand{}
+func (x *SubscribePodCommand) Reset() {
+	*x = SubscribePodCommand{}
 	mi := &file_runner_v1_runner_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SubscribeTerminalCommand) String() string {
+func (x *SubscribePodCommand) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SubscribeTerminalCommand) ProtoMessage() {}
+func (*SubscribePodCommand) ProtoMessage() {}
 
-func (x *SubscribeTerminalCommand) ProtoReflect() protoreflect.Message {
+func (x *SubscribePodCommand) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2624,69 +2636,69 @@ func (x *SubscribeTerminalCommand) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SubscribeTerminalCommand.ProtoReflect.Descriptor instead.
-func (*SubscribeTerminalCommand) Descriptor() ([]byte, []int) {
+// Deprecated: Use SubscribePodCommand.ProtoReflect.Descriptor instead.
+func (*SubscribePodCommand) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *SubscribeTerminalCommand) GetPodKey() string {
+func (x *SubscribePodCommand) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
 	return ""
 }
 
-func (x *SubscribeTerminalCommand) GetRelayUrl() string {
+func (x *SubscribePodCommand) GetRelayUrl() string {
 	if x != nil {
 		return x.RelayUrl
 	}
 	return ""
 }
 
-func (x *SubscribeTerminalCommand) GetIncludeSnapshot() bool {
+func (x *SubscribePodCommand) GetIncludeSnapshot() bool {
 	if x != nil {
 		return x.IncludeSnapshot
 	}
 	return false
 }
 
-func (x *SubscribeTerminalCommand) GetSnapshotHistory() int32 {
+func (x *SubscribePodCommand) GetSnapshotHistory() int32 {
 	if x != nil {
 		return x.SnapshotHistory
 	}
 	return 0
 }
 
-func (x *SubscribeTerminalCommand) GetRunnerToken() string {
+func (x *SubscribePodCommand) GetRunnerToken() string {
 	if x != nil {
 		return x.RunnerToken
 	}
 	return ""
 }
 
-// UnsubscribeTerminalCommand 取消订阅终端命令
+// UnsubscribePodCommand 取消订阅 Pod 输出命令
 // Backend 通知 Runner 所有观察者已离开，Runner 应断开与 Relay 的连接
-type UnsubscribeTerminalCommand struct {
+type UnsubscribePodCommand struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UnsubscribeTerminalCommand) Reset() {
-	*x = UnsubscribeTerminalCommand{}
+func (x *UnsubscribePodCommand) Reset() {
+	*x = UnsubscribePodCommand{}
 	mi := &file_runner_v1_runner_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UnsubscribeTerminalCommand) String() string {
+func (x *UnsubscribePodCommand) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UnsubscribeTerminalCommand) ProtoMessage() {}
+func (*UnsubscribePodCommand) ProtoMessage() {}
 
-func (x *UnsubscribeTerminalCommand) ProtoReflect() protoreflect.Message {
+func (x *UnsubscribePodCommand) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2698,12 +2710,12 @@ func (x *UnsubscribeTerminalCommand) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UnsubscribeTerminalCommand.ProtoReflect.Descriptor instead.
-func (*UnsubscribeTerminalCommand) Descriptor() ([]byte, []int) {
+// Deprecated: Use UnsubscribePodCommand.ProtoReflect.Descriptor instead.
+func (*UnsubscribePodCommand) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *UnsubscribeTerminalCommand) GetPodKey() string {
+func (x *UnsubscribePodCommand) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
@@ -2712,7 +2724,7 @@ func (x *UnsubscribeTerminalCommand) GetPodKey() string {
 
 // RequestRelayTokenEvent Runner 请求刷新 Relay Token
 // 当 Relay 连接因 token 过期而重连失败时，Runner 发送此消息请求新 token
-// Backend 收到后会重新发送 SubscribeTerminalCommand 带有新 token
+// Backend 收到后会重新发送 SubscribePodCommand 带有新 token
 type RequestRelayTokenEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
@@ -3050,9 +3062,9 @@ func (x *SandboxStatus) GetError() string {
 	return ""
 }
 
-// ObserveTerminalCommand Backend 代理 observe_terminal 请求到 Runner
-// Runner 从本地 VirtualTerminal 读取状态并返回 ObserveTerminalResult
-type ObserveTerminalCommand struct {
+// ObservePodCommand Backend 代理 observe_pod 请求到 Runner
+// Runner 从本地 VirtualTerminal 读取状态并返回 ObservePodResult
+type ObservePodCommand struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`              // 请求 ID，用于关联响应
 	PodKey        string                 `protobuf:"bytes,2,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`                       // 目标 Pod
@@ -3062,20 +3074,20 @@ type ObserveTerminalCommand struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ObserveTerminalCommand) Reset() {
-	*x = ObserveTerminalCommand{}
+func (x *ObservePodCommand) Reset() {
+	*x = ObservePodCommand{}
 	mi := &file_runner_v1_runner_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ObserveTerminalCommand) String() string {
+func (x *ObservePodCommand) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ObserveTerminalCommand) ProtoMessage() {}
+func (*ObservePodCommand) ProtoMessage() {}
 
-func (x *ObserveTerminalCommand) ProtoReflect() protoreflect.Message {
+func (x *ObservePodCommand) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3087,43 +3099,43 @@ func (x *ObserveTerminalCommand) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ObserveTerminalCommand.ProtoReflect.Descriptor instead.
-func (*ObserveTerminalCommand) Descriptor() ([]byte, []int) {
+// Deprecated: Use ObservePodCommand.ProtoReflect.Descriptor instead.
+func (*ObservePodCommand) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{35}
 }
 
-func (x *ObserveTerminalCommand) GetRequestId() string {
+func (x *ObservePodCommand) GetRequestId() string {
 	if x != nil {
 		return x.RequestId
 	}
 	return ""
 }
 
-func (x *ObserveTerminalCommand) GetPodKey() string {
+func (x *ObservePodCommand) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
 	return ""
 }
 
-func (x *ObserveTerminalCommand) GetLines() int32 {
+func (x *ObservePodCommand) GetLines() int32 {
 	if x != nil {
 		return x.Lines
 	}
 	return 0
 }
 
-func (x *ObserveTerminalCommand) GetIncludeScreen() bool {
+func (x *ObservePodCommand) GetIncludeScreen() bool {
 	if x != nil {
 		return x.IncludeScreen
 	}
 	return false
 }
 
-// ObserveTerminalResult Runner 返回的终端观察结果
-type ObserveTerminalResult struct {
+// ObservePodResult Runner 返回的 Pod 观察结果
+type ObservePodResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 对应 ObserveTerminalCommand.request_id
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 对应 ObservePodCommand.request_id
 	PodKey        string                 `protobuf:"bytes,2,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	Output        string                 `protobuf:"bytes,3,opt,name=output,proto3" json:"output,omitempty"` // 终端输出文本
 	Screen        string                 `protobuf:"bytes,4,opt,name=screen,proto3" json:"screen,omitempty"` // 屏幕快照（当 include_screen=true）
@@ -3136,20 +3148,20 @@ type ObserveTerminalResult struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ObserveTerminalResult) Reset() {
-	*x = ObserveTerminalResult{}
+func (x *ObservePodResult) Reset() {
+	*x = ObservePodResult{}
 	mi := &file_runner_v1_runner_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ObserveTerminalResult) String() string {
+func (x *ObservePodResult) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ObserveTerminalResult) ProtoMessage() {}
+func (*ObservePodResult) ProtoMessage() {}
 
-func (x *ObserveTerminalResult) ProtoReflect() protoreflect.Message {
+func (x *ObservePodResult) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3161,68 +3173,68 @@ func (x *ObserveTerminalResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ObserveTerminalResult.ProtoReflect.Descriptor instead.
-func (*ObserveTerminalResult) Descriptor() ([]byte, []int) {
+// Deprecated: Use ObservePodResult.ProtoReflect.Descriptor instead.
+func (*ObservePodResult) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{36}
 }
 
-func (x *ObserveTerminalResult) GetRequestId() string {
+func (x *ObservePodResult) GetRequestId() string {
 	if x != nil {
 		return x.RequestId
 	}
 	return ""
 }
 
-func (x *ObserveTerminalResult) GetPodKey() string {
+func (x *ObservePodResult) GetPodKey() string {
 	if x != nil {
 		return x.PodKey
 	}
 	return ""
 }
 
-func (x *ObserveTerminalResult) GetOutput() string {
+func (x *ObservePodResult) GetOutput() string {
 	if x != nil {
 		return x.Output
 	}
 	return ""
 }
 
-func (x *ObserveTerminalResult) GetScreen() string {
+func (x *ObservePodResult) GetScreen() string {
 	if x != nil {
 		return x.Screen
 	}
 	return ""
 }
 
-func (x *ObserveTerminalResult) GetCursorX() int32 {
+func (x *ObservePodResult) GetCursorX() int32 {
 	if x != nil {
 		return x.CursorX
 	}
 	return 0
 }
 
-func (x *ObserveTerminalResult) GetCursorY() int32 {
+func (x *ObservePodResult) GetCursorY() int32 {
 	if x != nil {
 		return x.CursorY
 	}
 	return 0
 }
 
-func (x *ObserveTerminalResult) GetTotalLines() int32 {
+func (x *ObservePodResult) GetTotalLines() int32 {
 	if x != nil {
 		return x.TotalLines
 	}
 	return 0
 }
 
-func (x *ObserveTerminalResult) GetHasMore() bool {
+func (x *ObservePodResult) GetHasMore() bool {
 	if x != nil {
 		return x.HasMore
 	}
 	return false
 }
 
-func (x *ObserveTerminalResult) GetError() string {
+func (x *ObservePodResult) GetError() string {
 	if x != nil {
 		return x.Error
 	}
@@ -5418,7 +5430,7 @@ var File_runner_v1_runner_proto protoreflect.FileDescriptor
 
 const file_runner_v1_runner_proto_rawDesc = "" +
 	"\n" +
-	"\x16runner/v1/runner.proto\x12\trunner.v1\"\xad\x0e\n" +
+	"\x16runner/v1/runner.proto\x12\trunner.v1\"\xa7\x0e\n" +
 	"\rRunnerMessage\x12>\n" +
 	"\n" +
 	"initialize\x18\x01 \x01(\v2\x1c.runner.v1.InitializeRequestH\x00R\n" +
@@ -5427,11 +5439,12 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\theartbeat\x18\x03 \x01(\v2\x18.runner.v1.HeartbeatDataH\x00R\theartbeat\x12=\n" +
 	"\vpod_created\x18\x04 \x01(\v2\x1a.runner.v1.PodCreatedEventH\x00R\n" +
 	"podCreated\x12F\n" +
-	"\x0epod_terminated\x18\x05 \x01(\v2\x1d.runner.v1.PodTerminatedEventH\x00R\rpodTerminated\x12I\n" +
-	"\x0fterminal_output\x18\x06 \x01(\v2\x1e.runner.v1.TerminalOutputEventH\x00R\x0eterminalOutput\x12@\n" +
+	"\x0epod_terminated\x18\x05 \x01(\v2\x1d.runner.v1.PodTerminatedEventH\x00R\rpodTerminated\x12:\n" +
+	"\n" +
+	"pod_output\x18\x06 \x01(\v2\x19.runner.v1.PodOutputEventH\x00R\tpodOutput\x12@\n" +
 	"\fagent_status\x18\a \x01(\v2\x1b.runner.v1.AgentStatusEventH\x00R\vagentStatus\x12=\n" +
-	"\vpty_resized\x18\b \x01(\v2\x1a.runner.v1.PtyResizedEventH\x00R\n" +
-	"ptyResized\x12-\n" +
+	"\vpod_resized\x18\b \x01(\v2\x1a.runner.v1.PodResizedEventH\x00R\n" +
+	"podResized\x12-\n" +
 	"\x05error\x18\t \x01(\v2\x15.runner.v1.ErrorEventH\x00R\x05error\x12M\n" +
 	"\x11pod_init_progress\x18\n" +
 	" \x01(\v2\x1f.runner.v1.PodInitProgressEventH\x00R\x0fpodInitProgress\x12S\n" +
@@ -5450,10 +5463,10 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x0eupgrade_status\x18\x17 \x01(\v2\x1d.runner.v1.UpgradeStatusEventH\x00R\rupgradeStatus\x12M\n" +
 	"\x11log_upload_status\x18\x18 \x01(\v2\x1f.runner.v1.LogUploadStatusEventH\x00R\x0flogUploadStatus\x12>\n" +
 	"\vtoken_usage\x18\x19 \x01(\v2\x1b.runner.v1.TokenUsageReportH\x00R\n" +
-	"tokenUsage\x12Z\n" +
-	"\x17observe_terminal_result\x18\x1a \x01(\v2 .runner.v1.ObserveTerminalResultH\x00R\x15observeTerminalResult\x12\x1c\n" +
+	"tokenUsage\x12K\n" +
+	"\x12observe_pod_result\x18\x1a \x01(\v2\x1b.runner.v1.ObservePodResultH\x00R\x10observePodResult\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
-	"\apayload\"v\n" +
+	"\apayloadJ\x04\b\x1b\x10\x1cJ\x04\b\x1c\x10\x1dJ\x04\b\x1d\x10\x1eJ\x04\b\x1e\x10\x1f\"v\n" +
 	"\x11InitializeRequest\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\x05R\x0fprotocolVersion\x126\n" +
 	"\vrunner_info\x18\x02 \x01(\v2\x15.runner.v1.RunnerInfoR\n" +
@@ -5498,14 +5511,14 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x12PodTerminatedEvent\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x1b\n" +
 	"\texit_code\x18\x02 \x01(\x05R\bexitCode\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"B\n" +
-	"\x13TerminalOutputEvent\x12\x17\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"=\n" +
+	"\x0ePodOutputEvent\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\"C\n" +
 	"\x10AgentStatusEvent\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\"R\n" +
-	"\x0fPtyResizedEvent\x12\x17\n" +
+	"\x0fPodResizedEvent\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x12\n" +
 	"\x04cols\x18\x02 \x01(\x05R\x04cols\x12\x12\n" +
 	"\x04rows\x18\x03 \x01(\x05R\x04rows\"\xcd\x01\n" +
@@ -5522,20 +5535,22 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12\x1a\n" +
 	"\bprogress\x18\x03 \x01(\x05R\bprogress\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\xd6\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"\x84\n" +
 	"\n" +
 	"\rServerMessage\x12J\n" +
 	"\x11initialize_result\x18\x01 \x01(\v2\x1b.runner.v1.InitializeResultH\x00R\x10initializeResult\x12<\n" +
 	"\n" +
 	"create_pod\x18\x02 \x01(\v2\x1b.runner.v1.CreatePodCommandH\x00R\tcreatePod\x12E\n" +
-	"\rterminate_pod\x18\x03 \x01(\v2\x1e.runner.v1.TerminatePodCommandH\x00R\fterminatePod\x12H\n" +
-	"\x0eterminal_input\x18\x04 \x01(\v2\x1f.runner.v1.TerminalInputCommandH\x00R\rterminalInput\x12K\n" +
-	"\x0fterminal_resize\x18\x05 \x01(\v2 .runner.v1.TerminalResizeCommandH\x00R\x0eterminalResize\x12?\n" +
+	"\rterminate_pod\x18\x03 \x01(\v2\x1e.runner.v1.TerminatePodCommandH\x00R\fterminatePod\x129\n" +
+	"\tpod_input\x18\x04 \x01(\v2\x1a.runner.v1.PodInputCommandH\x00R\bpodInput\x12@\n" +
+	"\n" +
+	"pod_resize\x18\x05 \x01(\v2\x1b.runner.v1.PodResizeCommandB\x02\x18\x01H\x00R\tpodResize\x12?\n" +
 	"\vsend_prompt\x18\x06 \x01(\v2\x1c.runner.v1.SendPromptCommandH\x00R\n" +
-	"sendPrompt\x12K\n" +
-	"\x0fterminal_redraw\x18\a \x01(\v2 .runner.v1.TerminalRedrawCommandH\x00R\x0eterminalRedraw\x12T\n" +
-	"\x12subscribe_terminal\x18\b \x01(\v2#.runner.v1.SubscribeTerminalCommandH\x00R\x11subscribeTerminal\x12Z\n" +
-	"\x14unsubscribe_terminal\x18\t \x01(\v2%.runner.v1.UnsubscribeTerminalCommandH\x00R\x13unsubscribeTerminal\x12K\n" +
+	"sendPrompt\x12@\n" +
+	"\n" +
+	"pod_redraw\x18\a \x01(\v2\x1b.runner.v1.PodRedrawCommandB\x02\x18\x01H\x00R\tpodRedraw\x12E\n" +
+	"\rsubscribe_pod\x18\b \x01(\v2\x1e.runner.v1.SubscribePodCommandH\x00R\fsubscribePod\x12K\n" +
+	"\x0funsubscribe_pod\x18\t \x01(\v2 .runner.v1.UnsubscribePodCommandH\x00R\x0eunsubscribePod\x12K\n" +
 	"\x0fquery_sandboxes\x18\n" +
 	" \x01(\v2 .runner.v1.QuerySandboxesCommandH\x00R\x0equerySandboxes\x12N\n" +
 	"\x10create_autopilot\x18\v \x01(\v2!.runner.v1.CreateAutopilotCommandH\x00R\x0fcreateAutopilot\x12Q\n" +
@@ -5545,8 +5560,9 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\rheartbeat_ack\x18\x10 \x01(\v2\x17.runner.v1.HeartbeatAckH\x00R\fheartbeatAck\x12H\n" +
 	"\x0eupgrade_runner\x18\x11 \x01(\v2\x1f.runner.v1.UpgradeRunnerCommandH\x00R\rupgradeRunner\x12?\n" +
 	"\vupload_logs\x18\x12 \x01(\v2\x1c.runner.v1.UploadLogsCommandH\x00R\n" +
-	"uploadLogs\x12N\n" +
-	"\x10observe_terminal\x18\x13 \x01(\v2!.runner.v1.ObserveTerminalCommandH\x00R\x0fobserveTerminal\x12\x1c\n" +
+	"uploadLogs\x12?\n" +
+	"\vobserve_pod\x18\x13 \x01(\v2\x1c.runner.v1.ObservePodCommandH\x00R\n" +
+	"observePod\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
 	"\apayload\"\xcc\x01\n" +
 	"\x10InitializeResult\x12)\n" +
@@ -5563,7 +5579,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12!\n" +
-	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\x98\x04\n" +
+	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\xc3\x04\n" +
 	"\x10CreatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12%\n" +
 	"\x0elaunch_command\x18\x02 \x01(\tR\rlaunchCommand\x12\x1f\n" +
@@ -5576,7 +5592,8 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04cols\x18\b \x01(\x05R\x04cols\x12\x12\n" +
 	"\x04rows\x18\t \x01(\x05R\x04rows\x12Q\n" +
 	"\x15resources_to_download\x18\n" +
-	" \x03(\v2\x1d.runner.v1.ResourceToDownloadR\x13resourcesToDownload\x1a:\n" +
+	" \x03(\v2\x1d.runner.v1.ResourceToDownloadR\x13resourcesToDownload\x12)\n" +
+	"\x10interaction_mode\x18\v \x01(\tR\x0finteractionMode\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xae\x01\n" +
@@ -5610,26 +5627,26 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\rssh_clone_url\x18\v \x01(\tR\vsshCloneUrl\"D\n" +
 	"\x13TerminatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x14\n" +
-	"\x05force\x18\x02 \x01(\bR\x05force\"C\n" +
-	"\x14TerminalInputCommand\x12\x17\n" +
+	"\x05force\x18\x02 \x01(\bR\x05force\">\n" +
+	"\x0fPodInputCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"X\n" +
-	"\x15TerminalResizeCommand\x12\x17\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"S\n" +
+	"\x10PodResizeCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x12\n" +
 	"\x04cols\x18\x02 \x01(\x05R\x04cols\x12\x12\n" +
 	"\x04rows\x18\x03 \x01(\x05R\x04rows\"D\n" +
 	"\x11SendPromptCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x16\n" +
-	"\x06prompt\x18\x02 \x01(\tR\x06prompt\"0\n" +
-	"\x15TerminalRedrawCommand\x12\x17\n" +
-	"\apod_key\x18\x01 \x01(\tR\x06podKey\"\xcf\x01\n" +
-	"\x18SubscribeTerminalCommand\x12\x17\n" +
+	"\x06prompt\x18\x02 \x01(\tR\x06prompt\"+\n" +
+	"\x10PodRedrawCommand\x12\x17\n" +
+	"\apod_key\x18\x01 \x01(\tR\x06podKey\"\xca\x01\n" +
+	"\x13SubscribePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x1b\n" +
 	"\trelay_url\x18\x02 \x01(\tR\brelayUrl\x12)\n" +
 	"\x10include_snapshot\x18\x04 \x01(\bR\x0fincludeSnapshot\x12)\n" +
 	"\x10snapshot_history\x18\x05 \x01(\x05R\x0fsnapshotHistory\x12!\n" +
-	"\frunner_token\x18\x06 \x01(\tR\vrunnerTokenJ\x04\b\x03\x10\x04\"5\n" +
-	"\x1aUnsubscribeTerminalCommand\x12\x17\n" +
+	"\frunner_token\x18\x06 \x01(\tR\vrunnerTokenJ\x04\b\x03\x10\x04\"0\n" +
+	"\x15UnsubscribePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\"m\n" +
 	"\x16RequestRelayTokenEvent\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x1d\n" +
@@ -5661,14 +5678,14 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\n" +
 	"can_resume\x18\n" +
 	" \x01(\bR\tcanResume\x12\x14\n" +
-	"\x05error\x18\v \x01(\tR\x05error\"\x8d\x01\n" +
-	"\x16ObserveTerminalCommand\x12\x1d\n" +
+	"\x05error\x18\v \x01(\tR\x05error\"\x88\x01\n" +
+	"\x11ObservePodCommand\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x17\n" +
 	"\apod_key\x18\x02 \x01(\tR\x06podKey\x12\x14\n" +
 	"\x05lines\x18\x03 \x01(\x05R\x05lines\x12%\n" +
-	"\x0einclude_screen\x18\x04 \x01(\bR\rincludeScreen\"\x87\x02\n" +
-	"\x15ObserveTerminalResult\x12\x1d\n" +
+	"\x0einclude_screen\x18\x04 \x01(\bR\rincludeScreen\"\x82\x02\n" +
+	"\x10ObservePodResult\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x17\n" +
 	"\apod_key\x18\x02 \x01(\tR\x06podKey\x12\x16\n" +
@@ -5856,78 +5873,78 @@ func file_runner_v1_runner_proto_rawDescGZIP() []byte {
 
 var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
 var file_runner_v1_runner_proto_goTypes = []any{
-	(*RunnerMessage)(nil),              // 0: runner.v1.RunnerMessage
-	(*InitializeRequest)(nil),          // 1: runner.v1.InitializeRequest
-	(*RunnerInfo)(nil),                 // 2: runner.v1.RunnerInfo
-	(*InitializedConfirm)(nil),         // 3: runner.v1.InitializedConfirm
-	(*AgentVersionInfo)(nil),           // 4: runner.v1.AgentVersionInfo
-	(*HeartbeatData)(nil),              // 5: runner.v1.HeartbeatData
-	(*PodInfo)(nil),                    // 6: runner.v1.PodInfo
-	(*RelayConnectionInfo)(nil),        // 7: runner.v1.RelayConnectionInfo
-	(*PodCreatedEvent)(nil),            // 8: runner.v1.PodCreatedEvent
-	(*PodTerminatedEvent)(nil),         // 9: runner.v1.PodTerminatedEvent
-	(*TerminalOutputEvent)(nil),        // 10: runner.v1.TerminalOutputEvent
-	(*AgentStatusEvent)(nil),           // 11: runner.v1.AgentStatusEvent
-	(*PtyResizedEvent)(nil),            // 12: runner.v1.PtyResizedEvent
-	(*ErrorEvent)(nil),                 // 13: runner.v1.ErrorEvent
-	(*PodInitProgressEvent)(nil),       // 14: runner.v1.PodInitProgressEvent
-	(*ServerMessage)(nil),              // 15: runner.v1.ServerMessage
-	(*InitializeResult)(nil),           // 16: runner.v1.InitializeResult
-	(*ServerInfo)(nil),                 // 17: runner.v1.ServerInfo
-	(*AgentTypeInfo)(nil),              // 18: runner.v1.AgentTypeInfo
-	(*CreatePodCommand)(nil),           // 19: runner.v1.CreatePodCommand
-	(*ResourceToDownload)(nil),         // 20: runner.v1.ResourceToDownload
-	(*FileToCreate)(nil),               // 21: runner.v1.FileToCreate
-	(*SandboxConfig)(nil),              // 22: runner.v1.SandboxConfig
-	(*TerminatePodCommand)(nil),        // 23: runner.v1.TerminatePodCommand
-	(*TerminalInputCommand)(nil),       // 24: runner.v1.TerminalInputCommand
-	(*TerminalResizeCommand)(nil),      // 25: runner.v1.TerminalResizeCommand
-	(*SendPromptCommand)(nil),          // 26: runner.v1.SendPromptCommand
-	(*TerminalRedrawCommand)(nil),      // 27: runner.v1.TerminalRedrawCommand
-	(*SubscribeTerminalCommand)(nil),   // 28: runner.v1.SubscribeTerminalCommand
-	(*UnsubscribeTerminalCommand)(nil), // 29: runner.v1.UnsubscribeTerminalCommand
-	(*RequestRelayTokenEvent)(nil),     // 30: runner.v1.RequestRelayTokenEvent
-	(*QuerySandboxesCommand)(nil),      // 31: runner.v1.QuerySandboxesCommand
-	(*SandboxQuery)(nil),               // 32: runner.v1.SandboxQuery
-	(*SandboxesStatusEvent)(nil),       // 33: runner.v1.SandboxesStatusEvent
-	(*SandboxStatus)(nil),              // 34: runner.v1.SandboxStatus
-	(*ObserveTerminalCommand)(nil),     // 35: runner.v1.ObserveTerminalCommand
-	(*ObserveTerminalResult)(nil),      // 36: runner.v1.ObserveTerminalResult
-	(*OSCNotificationEvent)(nil),       // 37: runner.v1.OSCNotificationEvent
-	(*OSCTitleEvent)(nil),              // 38: runner.v1.OSCTitleEvent
-	(*AutopilotStatusEvent)(nil),       // 39: runner.v1.AutopilotStatusEvent
-	(*AutopilotStatus)(nil),            // 40: runner.v1.AutopilotStatus
-	(*AutopilotIterationEvent)(nil),    // 41: runner.v1.AutopilotIterationEvent
-	(*AutopilotControlCommand)(nil),    // 42: runner.v1.AutopilotControlCommand
-	(*AutopilotApproveAction)(nil),     // 43: runner.v1.AutopilotApproveAction
-	(*AutopilotTakeoverAction)(nil),    // 44: runner.v1.AutopilotTakeoverAction
-	(*AutopilotHandbackAction)(nil),    // 45: runner.v1.AutopilotHandbackAction
-	(*AutopilotPauseAction)(nil),       // 46: runner.v1.AutopilotPauseAction
-	(*AutopilotResumeAction)(nil),      // 47: runner.v1.AutopilotResumeAction
-	(*AutopilotStopAction)(nil),        // 48: runner.v1.AutopilotStopAction
-	(*CreateAutopilotCommand)(nil),     // 49: runner.v1.CreateAutopilotCommand
-	(*AutopilotConfig)(nil),            // 50: runner.v1.AutopilotConfig
-	(*AutopilotCreatedEvent)(nil),      // 51: runner.v1.AutopilotCreatedEvent
-	(*AutopilotTerminatedEvent)(nil),   // 52: runner.v1.AutopilotTerminatedEvent
-	(*AutopilotThinkingEvent)(nil),     // 53: runner.v1.AutopilotThinkingEvent
-	(*AutopilotAction)(nil),            // 54: runner.v1.AutopilotAction
-	(*AutopilotProgress)(nil),          // 55: runner.v1.AutopilotProgress
-	(*AutopilotHelpRequest)(nil),       // 56: runner.v1.AutopilotHelpRequest
-	(*AutopilotHelpSuggestion)(nil),    // 57: runner.v1.AutopilotHelpSuggestion
-	(*McpRequest)(nil),                 // 58: runner.v1.McpRequest
-	(*McpResponse)(nil),                // 59: runner.v1.McpResponse
-	(*McpError)(nil),                   // 60: runner.v1.McpError
-	(*PingCommand)(nil),                // 61: runner.v1.PingCommand
-	(*PongEvent)(nil),                  // 62: runner.v1.PongEvent
-	(*HeartbeatAck)(nil),               // 63: runner.v1.HeartbeatAck
-	(*UpgradeRunnerCommand)(nil),       // 64: runner.v1.UpgradeRunnerCommand
-	(*UpgradeStatusEvent)(nil),         // 65: runner.v1.UpgradeStatusEvent
-	(*UploadLogsCommand)(nil),          // 66: runner.v1.UploadLogsCommand
-	(*LogUploadStatusEvent)(nil),       // 67: runner.v1.LogUploadStatusEvent
-	(*TokenUsageReport)(nil),           // 68: runner.v1.TokenUsageReport
-	(*TokenModelUsage)(nil),            // 69: runner.v1.TokenModelUsage
-	nil,                                // 70: runner.v1.ErrorEvent.DetailsEntry
-	nil,                                // 71: runner.v1.CreatePodCommand.EnvVarsEntry
+	(*RunnerMessage)(nil),            // 0: runner.v1.RunnerMessage
+	(*InitializeRequest)(nil),        // 1: runner.v1.InitializeRequest
+	(*RunnerInfo)(nil),               // 2: runner.v1.RunnerInfo
+	(*InitializedConfirm)(nil),       // 3: runner.v1.InitializedConfirm
+	(*AgentVersionInfo)(nil),         // 4: runner.v1.AgentVersionInfo
+	(*HeartbeatData)(nil),            // 5: runner.v1.HeartbeatData
+	(*PodInfo)(nil),                  // 6: runner.v1.PodInfo
+	(*RelayConnectionInfo)(nil),      // 7: runner.v1.RelayConnectionInfo
+	(*PodCreatedEvent)(nil),          // 8: runner.v1.PodCreatedEvent
+	(*PodTerminatedEvent)(nil),       // 9: runner.v1.PodTerminatedEvent
+	(*PodOutputEvent)(nil),           // 10: runner.v1.PodOutputEvent
+	(*AgentStatusEvent)(nil),         // 11: runner.v1.AgentStatusEvent
+	(*PodResizedEvent)(nil),          // 12: runner.v1.PodResizedEvent
+	(*ErrorEvent)(nil),               // 13: runner.v1.ErrorEvent
+	(*PodInitProgressEvent)(nil),     // 14: runner.v1.PodInitProgressEvent
+	(*ServerMessage)(nil),            // 15: runner.v1.ServerMessage
+	(*InitializeResult)(nil),         // 16: runner.v1.InitializeResult
+	(*ServerInfo)(nil),               // 17: runner.v1.ServerInfo
+	(*AgentTypeInfo)(nil),            // 18: runner.v1.AgentTypeInfo
+	(*CreatePodCommand)(nil),         // 19: runner.v1.CreatePodCommand
+	(*ResourceToDownload)(nil),       // 20: runner.v1.ResourceToDownload
+	(*FileToCreate)(nil),             // 21: runner.v1.FileToCreate
+	(*SandboxConfig)(nil),            // 22: runner.v1.SandboxConfig
+	(*TerminatePodCommand)(nil),      // 23: runner.v1.TerminatePodCommand
+	(*PodInputCommand)(nil),          // 24: runner.v1.PodInputCommand
+	(*PodResizeCommand)(nil),         // 25: runner.v1.PodResizeCommand
+	(*SendPromptCommand)(nil),        // 26: runner.v1.SendPromptCommand
+	(*PodRedrawCommand)(nil),         // 27: runner.v1.PodRedrawCommand
+	(*SubscribePodCommand)(nil),      // 28: runner.v1.SubscribePodCommand
+	(*UnsubscribePodCommand)(nil),    // 29: runner.v1.UnsubscribePodCommand
+	(*RequestRelayTokenEvent)(nil),   // 30: runner.v1.RequestRelayTokenEvent
+	(*QuerySandboxesCommand)(nil),    // 31: runner.v1.QuerySandboxesCommand
+	(*SandboxQuery)(nil),             // 32: runner.v1.SandboxQuery
+	(*SandboxesStatusEvent)(nil),     // 33: runner.v1.SandboxesStatusEvent
+	(*SandboxStatus)(nil),            // 34: runner.v1.SandboxStatus
+	(*ObservePodCommand)(nil),        // 35: runner.v1.ObservePodCommand
+	(*ObservePodResult)(nil),         // 36: runner.v1.ObservePodResult
+	(*OSCNotificationEvent)(nil),     // 37: runner.v1.OSCNotificationEvent
+	(*OSCTitleEvent)(nil),            // 38: runner.v1.OSCTitleEvent
+	(*AutopilotStatusEvent)(nil),     // 39: runner.v1.AutopilotStatusEvent
+	(*AutopilotStatus)(nil),          // 40: runner.v1.AutopilotStatus
+	(*AutopilotIterationEvent)(nil),  // 41: runner.v1.AutopilotIterationEvent
+	(*AutopilotControlCommand)(nil),  // 42: runner.v1.AutopilotControlCommand
+	(*AutopilotApproveAction)(nil),   // 43: runner.v1.AutopilotApproveAction
+	(*AutopilotTakeoverAction)(nil),  // 44: runner.v1.AutopilotTakeoverAction
+	(*AutopilotHandbackAction)(nil),  // 45: runner.v1.AutopilotHandbackAction
+	(*AutopilotPauseAction)(nil),     // 46: runner.v1.AutopilotPauseAction
+	(*AutopilotResumeAction)(nil),    // 47: runner.v1.AutopilotResumeAction
+	(*AutopilotStopAction)(nil),      // 48: runner.v1.AutopilotStopAction
+	(*CreateAutopilotCommand)(nil),   // 49: runner.v1.CreateAutopilotCommand
+	(*AutopilotConfig)(nil),          // 50: runner.v1.AutopilotConfig
+	(*AutopilotCreatedEvent)(nil),    // 51: runner.v1.AutopilotCreatedEvent
+	(*AutopilotTerminatedEvent)(nil), // 52: runner.v1.AutopilotTerminatedEvent
+	(*AutopilotThinkingEvent)(nil),   // 53: runner.v1.AutopilotThinkingEvent
+	(*AutopilotAction)(nil),          // 54: runner.v1.AutopilotAction
+	(*AutopilotProgress)(nil),        // 55: runner.v1.AutopilotProgress
+	(*AutopilotHelpRequest)(nil),     // 56: runner.v1.AutopilotHelpRequest
+	(*AutopilotHelpSuggestion)(nil),  // 57: runner.v1.AutopilotHelpSuggestion
+	(*McpRequest)(nil),               // 58: runner.v1.McpRequest
+	(*McpResponse)(nil),              // 59: runner.v1.McpResponse
+	(*McpError)(nil),                 // 60: runner.v1.McpError
+	(*PingCommand)(nil),              // 61: runner.v1.PingCommand
+	(*PongEvent)(nil),                // 62: runner.v1.PongEvent
+	(*HeartbeatAck)(nil),             // 63: runner.v1.HeartbeatAck
+	(*UpgradeRunnerCommand)(nil),     // 64: runner.v1.UpgradeRunnerCommand
+	(*UpgradeStatusEvent)(nil),       // 65: runner.v1.UpgradeStatusEvent
+	(*UploadLogsCommand)(nil),        // 66: runner.v1.UploadLogsCommand
+	(*LogUploadStatusEvent)(nil),     // 67: runner.v1.LogUploadStatusEvent
+	(*TokenUsageReport)(nil),         // 68: runner.v1.TokenUsageReport
+	(*TokenModelUsage)(nil),          // 69: runner.v1.TokenModelUsage
+	nil,                              // 70: runner.v1.ErrorEvent.DetailsEntry
+	nil,                              // 71: runner.v1.CreatePodCommand.EnvVarsEntry
 }
 var file_runner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: runner.v1.RunnerMessage.initialize:type_name -> runner.v1.InitializeRequest
@@ -5935,9 +5952,9 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	5,  // 2: runner.v1.RunnerMessage.heartbeat:type_name -> runner.v1.HeartbeatData
 	8,  // 3: runner.v1.RunnerMessage.pod_created:type_name -> runner.v1.PodCreatedEvent
 	9,  // 4: runner.v1.RunnerMessage.pod_terminated:type_name -> runner.v1.PodTerminatedEvent
-	10, // 5: runner.v1.RunnerMessage.terminal_output:type_name -> runner.v1.TerminalOutputEvent
+	10, // 5: runner.v1.RunnerMessage.pod_output:type_name -> runner.v1.PodOutputEvent
 	11, // 6: runner.v1.RunnerMessage.agent_status:type_name -> runner.v1.AgentStatusEvent
-	12, // 7: runner.v1.RunnerMessage.pty_resized:type_name -> runner.v1.PtyResizedEvent
+	12, // 7: runner.v1.RunnerMessage.pod_resized:type_name -> runner.v1.PodResizedEvent
 	13, // 8: runner.v1.RunnerMessage.error:type_name -> runner.v1.ErrorEvent
 	14, // 9: runner.v1.RunnerMessage.pod_init_progress:type_name -> runner.v1.PodInitProgressEvent
 	30, // 10: runner.v1.RunnerMessage.request_relay_token:type_name -> runner.v1.RequestRelayTokenEvent
@@ -5954,7 +5971,7 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	65, // 21: runner.v1.RunnerMessage.upgrade_status:type_name -> runner.v1.UpgradeStatusEvent
 	67, // 22: runner.v1.RunnerMessage.log_upload_status:type_name -> runner.v1.LogUploadStatusEvent
 	68, // 23: runner.v1.RunnerMessage.token_usage:type_name -> runner.v1.TokenUsageReport
-	36, // 24: runner.v1.RunnerMessage.observe_terminal_result:type_name -> runner.v1.ObserveTerminalResult
+	36, // 24: runner.v1.RunnerMessage.observe_pod_result:type_name -> runner.v1.ObservePodResult
 	2,  // 25: runner.v1.InitializeRequest.runner_info:type_name -> runner.v1.RunnerInfo
 	4,  // 26: runner.v1.InitializedConfirm.agent_versions:type_name -> runner.v1.AgentVersionInfo
 	6,  // 27: runner.v1.HeartbeatData.pods:type_name -> runner.v1.PodInfo
@@ -5964,12 +5981,12 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	16, // 31: runner.v1.ServerMessage.initialize_result:type_name -> runner.v1.InitializeResult
 	19, // 32: runner.v1.ServerMessage.create_pod:type_name -> runner.v1.CreatePodCommand
 	23, // 33: runner.v1.ServerMessage.terminate_pod:type_name -> runner.v1.TerminatePodCommand
-	24, // 34: runner.v1.ServerMessage.terminal_input:type_name -> runner.v1.TerminalInputCommand
-	25, // 35: runner.v1.ServerMessage.terminal_resize:type_name -> runner.v1.TerminalResizeCommand
+	24, // 34: runner.v1.ServerMessage.pod_input:type_name -> runner.v1.PodInputCommand
+	25, // 35: runner.v1.ServerMessage.pod_resize:type_name -> runner.v1.PodResizeCommand
 	26, // 36: runner.v1.ServerMessage.send_prompt:type_name -> runner.v1.SendPromptCommand
-	27, // 37: runner.v1.ServerMessage.terminal_redraw:type_name -> runner.v1.TerminalRedrawCommand
-	28, // 38: runner.v1.ServerMessage.subscribe_terminal:type_name -> runner.v1.SubscribeTerminalCommand
-	29, // 39: runner.v1.ServerMessage.unsubscribe_terminal:type_name -> runner.v1.UnsubscribeTerminalCommand
+	27, // 37: runner.v1.ServerMessage.pod_redraw:type_name -> runner.v1.PodRedrawCommand
+	28, // 38: runner.v1.ServerMessage.subscribe_pod:type_name -> runner.v1.SubscribePodCommand
+	29, // 39: runner.v1.ServerMessage.unsubscribe_pod:type_name -> runner.v1.UnsubscribePodCommand
 	31, // 40: runner.v1.ServerMessage.query_sandboxes:type_name -> runner.v1.QuerySandboxesCommand
 	49, // 41: runner.v1.ServerMessage.create_autopilot:type_name -> runner.v1.CreateAutopilotCommand
 	42, // 42: runner.v1.ServerMessage.autopilot_control:type_name -> runner.v1.AutopilotControlCommand
@@ -5978,7 +5995,7 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	63, // 45: runner.v1.ServerMessage.heartbeat_ack:type_name -> runner.v1.HeartbeatAck
 	64, // 46: runner.v1.ServerMessage.upgrade_runner:type_name -> runner.v1.UpgradeRunnerCommand
 	66, // 47: runner.v1.ServerMessage.upload_logs:type_name -> runner.v1.UploadLogsCommand
-	35, // 48: runner.v1.ServerMessage.observe_terminal:type_name -> runner.v1.ObserveTerminalCommand
+	35, // 48: runner.v1.ServerMessage.observe_pod:type_name -> runner.v1.ObservePodCommand
 	17, // 49: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
 	18, // 50: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
 	71, // 51: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
@@ -6022,9 +6039,9 @@ func file_runner_v1_runner_proto_init() {
 		(*RunnerMessage_Heartbeat)(nil),
 		(*RunnerMessage_PodCreated)(nil),
 		(*RunnerMessage_PodTerminated)(nil),
-		(*RunnerMessage_TerminalOutput)(nil),
+		(*RunnerMessage_PodOutput)(nil),
 		(*RunnerMessage_AgentStatus)(nil),
-		(*RunnerMessage_PtyResized)(nil),
+		(*RunnerMessage_PodResized)(nil),
 		(*RunnerMessage_Error)(nil),
 		(*RunnerMessage_PodInitProgress)(nil),
 		(*RunnerMessage_RequestRelayToken)(nil),
@@ -6041,18 +6058,18 @@ func file_runner_v1_runner_proto_init() {
 		(*RunnerMessage_UpgradeStatus)(nil),
 		(*RunnerMessage_LogUploadStatus)(nil),
 		(*RunnerMessage_TokenUsage)(nil),
-		(*RunnerMessage_ObserveTerminalResult)(nil),
+		(*RunnerMessage_ObservePodResult)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[15].OneofWrappers = []any{
 		(*ServerMessage_InitializeResult)(nil),
 		(*ServerMessage_CreatePod)(nil),
 		(*ServerMessage_TerminatePod)(nil),
-		(*ServerMessage_TerminalInput)(nil),
-		(*ServerMessage_TerminalResize)(nil),
+		(*ServerMessage_PodInput)(nil),
+		(*ServerMessage_PodResize)(nil),
 		(*ServerMessage_SendPrompt)(nil),
-		(*ServerMessage_TerminalRedraw)(nil),
-		(*ServerMessage_SubscribeTerminal)(nil),
-		(*ServerMessage_UnsubscribeTerminal)(nil),
+		(*ServerMessage_PodRedraw)(nil),
+		(*ServerMessage_SubscribePod)(nil),
+		(*ServerMessage_UnsubscribePod)(nil),
 		(*ServerMessage_QuerySandboxes)(nil),
 		(*ServerMessage_CreateAutopilot)(nil),
 		(*ServerMessage_AutopilotControl)(nil),
@@ -6061,7 +6078,7 @@ func file_runner_v1_runner_proto_init() {
 		(*ServerMessage_HeartbeatAck)(nil),
 		(*ServerMessage_UpgradeRunner)(nil),
 		(*ServerMessage_UploadLogs)(nil),
-		(*ServerMessage_ObserveTerminal)(nil),
+		(*ServerMessage_ObservePod)(nil),
 	}
 	file_runner_v1_runner_proto_msgTypes[42].OneofWrappers = []any{
 		(*AutopilotControlCommand_Pause)(nil),

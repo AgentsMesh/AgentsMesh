@@ -29,6 +29,7 @@ var (
 	ErrSourcePodAlreadyResumed = errors.New("source pod already resumed")
 	ErrResumeRunnerMismatch    = errors.New("resume requires same runner")
 	ErrConfigBuildFailed       = errors.New("failed to build pod configuration")
+	ErrUnsupportedInteractionMode = errors.New("agent type does not support the requested interaction mode")
 )
 
 // OrchestrateCreatePodRequest is the unified Pod creation request (protocol-agnostic).
@@ -49,6 +50,7 @@ type OrchestrateCreatePodRequest struct {
 	Alias             *string
 	BranchName        *string
 	PermissionMode    *string
+	InteractionMode   *string
 	CredentialProfileID *int64
 	ConfigOverrides   map[string]interface{}
 	Cols              int32
@@ -204,6 +206,19 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		req.ConfigOverrides["session_id"] = sessionID
 	}
 
+	// === 2.5 Resolve and validate interaction mode ===
+	interactionMode := podDomain.InteractionModePTY
+	if req.InteractionMode != nil && *req.InteractionMode != "" {
+		interactionMode = *req.InteractionMode
+	}
+	// Validate: agent type must support the requested interaction mode
+	if req.AgentTypeID != nil && o.agentTypeResolver != nil {
+		agentType, err := o.agentTypeResolver.GetAgentType(ctx, *req.AgentTypeID)
+		if err == nil && !agentType.SupportsMode(interactionMode) {
+			return nil, ErrUnsupportedInteractionMode
+		}
+	}
+
 	// === 3. Quota check ===
 	if o.billingService != nil {
 		if err := o.billingService.CheckQuota(ctx, req.OrganizationID, "concurrent_pods", 1); err != nil {
@@ -241,6 +256,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		SessionID:           sessionID,
 		SourcePodKey:        req.SourcePodKey,
 		CredentialProfileID: dbCredProfileID,
+		InteractionMode:     interactionMode,
 	})
 	if err != nil {
 		return nil, err // Includes ErrSandboxAlreadyResumed
@@ -481,6 +497,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		Cols:                req.Cols,
 		Rows:                req.Rows,
 		RunnerAgentVersions: runnerAgentVersions,
+		InteractionMode:     pod.InteractionMode,
 	}
 
 	// Set AgentTypeID only when present (nil for CustomAgentType pods)

@@ -28,7 +28,7 @@ type PodCoordinator struct {
 	runnerRepo        runnerDomain.RunnerRepository
 	autopilotRepo     agentpod.AutopilotRepository
 	connectionManager *RunnerConnectionManager
-	terminalRouter    *TerminalRouter
+	podRouter    *PodRouter
 	heartbeatBatcher  *HeartbeatBatcher
 	logger            *slog.Logger
 
@@ -69,7 +69,7 @@ func NewPodCoordinator(
 	podRepo agentpod.PodRepository,
 	runnerRepo runnerDomain.RunnerRepository,
 	cm *RunnerConnectionManager,
-	tr *TerminalRouter,
+	tr *PodRouter,
 	hb *HeartbeatBatcher,
 	logger *slog.Logger,
 ) *PodCoordinator {
@@ -77,7 +77,7 @@ func NewPodCoordinator(
 		podRepo:              podRepo,
 		runnerRepo:           runnerRepo,
 		connectionManager:    cm,
-		terminalRouter:       tr,
+		podRouter:       tr,
 		heartbeatBatcher:     hb,
 		logger:               logger,
 		commandSender:        NewNoOpCommandSender(logger), // Default to no-op
@@ -153,7 +153,7 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *ru
 		return err
 	}
 
-	// Note: Pod is NOT registered with terminal router here.
+	// Note: Pod is NOT registered with pod router here.
 	// Registration happens in handlePodCreated when Runner confirms the pod is actually created.
 	// This ensures we don't have stale routes if pod creation fails on Runner side.
 
@@ -191,8 +191,8 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 		return err
 	}
 
-	// Unregister from terminal router and clean up miss counter
-	pc.terminalRouter.UnregisterPod(podKey)
+	// Unregister from pod router and clean up miss counter
+	pc.podRouter.UnregisterPod(podKey)
 	pc.clearMissCount(podKey)
 
 	// Decrement pod count

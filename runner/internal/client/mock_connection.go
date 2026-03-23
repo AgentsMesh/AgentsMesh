@@ -118,14 +118,14 @@ func (m *MockConnection) SendPodTerminated(podKey string, exitCode int32, errorM
 
 // NOTE: SendTerminalOutput removed - output is exclusively streamed via Relay
 
-// SendPtyResized implements Connection.
-func (m *MockConnection) SendPtyResized(podKey string, cols, rows int32) error {
+// SendPodResized implements Connection.
+func (m *MockConnection) SendPodResized(podKey string, cols, rows int32) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.SendErr != nil {
 		return m.SendErr
 	}
-	m.Events = append(m.Events, EventCall{Type: MsgTypePtyResized, Data: map[string]interface{}{"pod_key": podKey, "cols": cols, "rows": rows}})
+	m.Events = append(m.Events, EventCall{Type: MsgTypePodResized, Data: map[string]interface{}{"pod_key": podKey, "cols": cols, "rows": rows}})
 	return nil
 }
 
@@ -174,8 +174,8 @@ func (m *MockConnection) SendSandboxesStatus(requestID string, results []*Sandbo
 	return nil
 }
 
-// SendObserveTerminalResult records a terminal observation result.
-func (m *MockConnection) SendObserveTerminalResult(requestID, podKey, output, screen string, cursorX, cursorY, totalLines int, hasMore bool, errMsg string) error {
+// SendObservePodResult records a pod observation result.
+func (m *MockConnection) SendObservePodResult(requestID, podKey, output, screen string, cursorX, cursorY, totalLines int, hasMore bool, errMsg string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.SendErr != nil {

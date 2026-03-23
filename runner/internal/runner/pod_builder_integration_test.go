@@ -30,7 +30,7 @@ func TestPodBuilderBuildSuccess(t *testing.T) {
 
 	pod, err := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).
-		WithTerminalSize(100, 30). // (cols, rows)
+		WithPtySize(100, 30). // (cols, rows)
 		Build(context.Background())
 
 	if err != nil {

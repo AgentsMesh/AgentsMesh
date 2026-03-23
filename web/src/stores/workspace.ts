@@ -2,8 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Terminal as XTerm } from "@xterm/xterm";
 
-// Re-export terminalPool for component convenience
-export { terminalPool } from "./terminalConnection";
+// Re-export relayPool for component convenience
+export { relayPool } from "./relayConnection";
 
 /**
  * Terminal instance registry for cross-component access
@@ -37,7 +37,7 @@ export const terminalRegistry = new TerminalRegistry();
 /**
  * Terminal pane configuration
  */
-export interface TerminalPane {
+export interface WorkspacePane {
   id: string;
   podKey: string;
 }
@@ -76,7 +76,7 @@ export interface GridLayout {
  * Workspace state management
  */
 interface WorkspaceState {
-  panes: TerminalPane[];
+  panes: WorkspacePane[];
   activePane: string | null;
   splitTree: SplitTreeNode | null;
   mobileActiveIndex: number;
@@ -93,7 +93,7 @@ interface WorkspaceState {
   setTerminalFontSize: (size: number) => void;
   removePaneByPodKey: (podKey: string) => void;
   clearAllPanes: () => void;
-  getPaneByPodKey: (podKey: string) => TerminalPane | undefined;
+  getPaneByPodKey: (podKey: string) => WorkspacePane | undefined;
 
   // Hydration
   _hasHydrated: boolean;
@@ -178,7 +178,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         }
 
         const id = generatePaneId();
-        const newPane: TerminalPane = { id, podKey };
+        const newPane: WorkspacePane = { id, podKey };
         const tree = get().splitTree;
         const leafNode: SplitTreeLeaf = { type: "leaf", id: generateNodeId(), paneId: id };
 
@@ -268,7 +268,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
           // Create a new pane with the selected pod
           const newPaneId = generatePaneId();
-          const newPane: TerminalPane = { id: newPaneId, podKey };
+          const newPane: WorkspacePane = { id: newPaneId, podKey };
           const newLeaf: SplitTreeLeaf = { type: "leaf", id: generateNodeId(), paneId: newPaneId };
           const splitNode: SplitTreeSplit = {
             type: "split",

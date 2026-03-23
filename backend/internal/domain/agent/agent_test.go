@@ -264,6 +264,50 @@ func TestCustomAgentTypeStruct(t *testing.T) {
 	}
 }
 
+// --- Test SupportsMode ---
+
+func TestAgentTypeSupportsMode(t *testing.T) {
+	tests := []struct {
+		name           string
+		supportedModes string
+		mode           string
+		expected       bool
+	}{
+		// Agent with multiple supported modes
+		{"pty supported in pty,acp", "pty,acp", "pty", true},
+		{"acp supported in pty,acp", "pty,acp", "acp", true},
+		{"unknown not supported in pty,acp", "pty,acp", "unknown", false},
+
+		// Default SupportedModes (DB default is "pty")
+		{"pty supported when default pty", "pty", "pty", true},
+		{"acp not supported when default pty", "pty", "acp", false},
+
+		// Agent that only supports acp
+		{"acp supported in acp-only", "acp", "acp", true},
+		{"pty not supported in acp-only", "acp", "pty", false},
+
+		// Whitespace trimming
+		{"trims spaces around modes", "pty, acp", "acp", true},
+		{"trims spaces for exact match", " pty , acp ", "pty", true},
+
+		// Empty mode query
+		{"empty mode not matched", "pty,acp", "", false},
+
+		// Empty SupportedModes field
+		{"empty supported_modes matches nothing", "", "pty", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			at := &AgentType{SupportedModes: tt.supportedModes}
+			got := at.SupportsMode(tt.mode)
+			if got != tt.expected {
+				t.Errorf("SupportsMode(%q) = %v, want %v", tt.mode, got, tt.expected)
+			}
+		})
+	}
+}
+
 // --- Benchmark Tests ---
 
 func BenchmarkCredentialSchemaScan(b *testing.B) {

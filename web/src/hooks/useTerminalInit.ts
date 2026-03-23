@@ -3,8 +3,8 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
 import { MutableRefObject } from "react";
-import { terminalPool, terminalRegistry } from "@/stores/workspace";
-import type { ConnectionStatus } from "@/stores/terminalConnection";
+import { relayPool, terminalRegistry } from "@/stores/workspace";
+import type { ConnectionStatus } from "@/stores/relayConnection";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 import { uploadImage } from "@/lib/api/file";
 import { toast } from "sonner";
@@ -133,11 +133,11 @@ export function setupConnection(
 
   (async () => {
     try {
-      const handle = await terminalPool.subscribe(podKey, subscriptionId, handleMessage);
+      const handle = await relayPool.subscribe(podKey, subscriptionId, handleMessage);
       if (abort.signal.aborted) return;
       connectionRef.current = handle;
       if (initialDims.value) {
-        terminalPool.forceResize(podKey, initialDims.value.cols, initialDims.value.rows);
+        relayPool.forceResize(podKey, initialDims.value.cols, initialDims.value.rows);
       }
     } catch (error) {
       if (abort.signal.aborted) return;
@@ -146,7 +146,7 @@ export function setupConnection(
     }
   })();
 
-  const unsubscribeStatus = terminalPool.onStatusChange(podKey, (info) => {
+  const unsubscribeStatus = relayPool.onStatusChange(podKey, (info) => {
     if (info.status !== "none") {
       setConnectionStatus(info.status);
     }
@@ -272,7 +272,7 @@ export function setupDataHandlers(
   });
 
   const resizeDisposable = term.onResize(({ rows, cols }) => {
-    terminalPool.sendResize(podKey, cols, rows);
+    relayPool.sendResize(podKey, cols, rows);
   });
 
   disposables.push(dataDisposable, resizeDisposable);

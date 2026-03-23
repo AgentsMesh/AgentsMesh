@@ -163,8 +163,8 @@ func (r *EventRegistry) registerBuiltinEvents() {
 	}
 
 	// Notification events
-	r.definitions[EventTerminalNotification] = &EventDefinition{
-		Type:        EventTerminalNotification,
+	r.definitions[EventPodNotification] = &EventDefinition{
+		Type:        EventPodNotification,
 		Category:    CategoryNotification,
 		EntityType:  "pod",
 		Description: "Terminal notification (OSC 777)",

@@ -51,9 +51,9 @@ func (c *Client) connectInternal() error {
 		return fmt.Errorf("unsupported scheme: %s", u.Scheme)
 	}
 
-	// Append endpoint path to the base URL path (e.g., /relay -> /relay/runner/terminal)
+	// Append endpoint path to the base URL path (e.g., /relay -> /relay/runner/relay)
 	// This preserves any path prefix from reverse proxy configuration
-	u.Path = path.Join(u.Path, "/runner/terminal")
+	u.Path = path.Join(u.Path, "/runner/relay")
 	q := u.Query()
 	q.Set("token", token)
 	u.RawQuery = q.Encode()

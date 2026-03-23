@@ -46,12 +46,12 @@ func TestMockConnection_SendEvents(t *testing.T) {
 
 	_ = mc.SendPodCreated("pod-1", 1234, "/sandbox", "main")
 	_ = mc.SendPodTerminated("pod-1", 0, "")
-	_ = mc.SendPtyResized("pod-1", 80, 24)
+	_ = mc.SendPodResized("pod-1", 80, 24)
 	_ = mc.SendError("pod-1", "err", "msg")
 	_ = mc.SendPodInitProgress("pod-1", "clone", 50, "cloning...")
 	_ = mc.SendRequestRelayToken("pod-1", "wss://relay")
 	_ = mc.SendSandboxesStatus("req-1", nil)
-	_ = mc.SendObserveTerminalResult("req-1", "pod-1", "output", "", 0, 0, 1, false, "")
+	_ = mc.SendObservePodResult("req-1", "pod-1", "output", "", 0, 0, 1, false, "")
 	_ = mc.SendOSCNotification("pod-1", "title", "body")
 	_ = mc.SendOSCTitle("pod-1", "vim")
 	_ = mc.SendAgentStatus("pod-1", "executing")
@@ -134,42 +134,16 @@ func TestMockConnection_SimulateTerminatePod(t *testing.T) {
 	handler.mu.Unlock()
 }
 
-func TestMockConnection_SimulateTerminalInput(t *testing.T) {
+func TestMockConnection_SimulatePodInput(t *testing.T) {
 	mc := NewMockConnection()
 	handler := &mockHandler{}
 	mc.SetHandler(handler)
 
-	err := mc.SimulateTerminalInput(TerminalInputRequest{PodKey: "pod-1", Data: []byte("ls")})
+	err := mc.SimulatePodInput(PodInputRequest{PodKey: "pod-1", Data: []byte("ls")})
 	assert.NoError(t, err)
 
 	handler.mu.Lock()
 	assert.True(t, handler.terminalInputCalled)
-	handler.mu.Unlock()
-}
-
-func TestMockConnection_SimulateTerminalResize(t *testing.T) {
-	mc := NewMockConnection()
-	handler := &mockHandler{}
-	mc.SetHandler(handler)
-
-	err := mc.SimulateTerminalResize(TerminalResizeRequest{PodKey: "pod-1", Cols: 120, Rows: 40})
-	assert.NoError(t, err)
-
-	handler.mu.Lock()
-	assert.True(t, handler.terminalResizeCalled)
-	handler.mu.Unlock()
-}
-
-func TestMockConnection_SimulateTerminalRedraw(t *testing.T) {
-	mc := NewMockConnection()
-	handler := &mockHandler{}
-	mc.SetHandler(handler)
-
-	err := mc.SimulateTerminalRedraw(TerminalRedrawRequest{PodKey: "pod-1"})
-	assert.NoError(t, err)
-
-	handler.mu.Lock()
-	assert.True(t, handler.terminalRedrawCalled)
 	handler.mu.Unlock()
 }
 
@@ -179,11 +153,9 @@ func TestMockConnection_SimulateNilHandler(t *testing.T) {
 
 	assert.NoError(t, mc.SimulateCreatePod(&runnerv1.CreatePodCommand{}))
 	assert.NoError(t, mc.SimulateTerminatePod(TerminatePodRequest{}))
-	assert.NoError(t, mc.SimulateTerminalInput(TerminalInputRequest{}))
-	assert.NoError(t, mc.SimulateTerminalResize(TerminalResizeRequest{}))
-	assert.NoError(t, mc.SimulateTerminalRedraw(TerminalRedrawRequest{}))
-	assert.NoError(t, mc.SimulateSubscribeTerminal(SubscribeTerminalRequest{}))
-	assert.NoError(t, mc.SimulateUnsubscribeTerminal(UnsubscribeTerminalRequest{}))
+	assert.NoError(t, mc.SimulatePodInput(PodInputRequest{}))
+	assert.NoError(t, mc.SimulateSubscribePod(SubscribePodRequest{}))
+	assert.NoError(t, mc.SimulateUnsubscribePod(UnsubscribePodRequest{}))
 	assert.NoError(t, mc.SimulateQuerySandboxes(QuerySandboxesRequest{}))
 	assert.NoError(t, mc.SimulateCreateAutopilot(&runnerv1.CreateAutopilotCommand{}))
 	assert.NoError(t, mc.SimulateAutopilotControl(&runnerv1.AutopilotControlCommand{}))

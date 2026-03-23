@@ -34,11 +34,6 @@ func (cm *RunnerConnectionManager) SetAgentStatusCallback(fn func(runnerID int64
 	cm.onAgentStatus = fn
 }
 
-// SetPtyResizedCallback sets the PTY resized callback (Proto type)
-func (cm *RunnerConnectionManager) SetPtyResizedCallback(fn func(runnerID int64, data *runnerv1.PtyResizedEvent)) {
-	cm.onPtyResized = fn
-}
-
 // SetPodInitProgressCallback sets the pod init progress callback (Proto type)
 func (cm *RunnerConnectionManager) SetPodInitProgressCallback(fn func(runnerID int64, data *runnerv1.PodInitProgressEvent)) {
 	cm.onPodInitProgress = fn
@@ -111,11 +106,11 @@ func (cm *RunnerConnectionManager) GetDisconnectCallback() func(runnerID int64) 
 	return cm.onDisconnect
 }
 
-// ==================== Terminal Observation Callback Setter ====================
+// ==================== Pod Observation Callback Setter ====================
 
-// SetObserveTerminalResultCallback sets the observe terminal result callback (Proto type)
-func (cm *RunnerConnectionManager) SetObserveTerminalResultCallback(fn func(runnerID int64, data *runnerv1.ObserveTerminalResult)) {
-	cm.onObserveTerminalResult = fn
+// SetObservePodResultCallback sets the observe pod result callback (Proto type)
+func (cm *RunnerConnectionManager) SetObservePodResultCallback(fn func(runnerID int64, data *runnerv1.ObservePodResult)) {
+	cm.onObservePodResult = fn
 }
 
 // ==================== Token Usage Callback Setter ====================

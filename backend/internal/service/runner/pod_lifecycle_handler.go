@@ -35,8 +35,8 @@ func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCre
 		return
 	}
 
-	// Register with terminal router
-	pc.terminalRouter.RegisterPod(data.PodKey, runnerID)
+	// Register with pod router
+	pc.podRouter.RegisterPod(data.PodKey, runnerID)
 
 	pc.logger.Info("pod created",
 		"pod_key", data.PodKey,
@@ -94,8 +94,8 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 	// Decrement runner pod count
 	_ = pc.runnerRepo.DecrementPods(ctx, runnerID)
 
-	// Unregister from terminal router and clean up miss counter
-	pc.terminalRouter.UnregisterPod(data.PodKey)
+	// Unregister from pod router and clean up miss counter
+	pc.podRouter.UnregisterPod(data.PodKey)
 	pc.clearMissCount(data.PodKey)
 
 	pc.logger.Info("pod terminated",

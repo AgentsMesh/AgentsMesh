@@ -55,7 +55,7 @@ func TestDisconnectRelay_NoDeadlockWithCloseHandler(t *testing.T) {
 }
 
 // TestDisconnectRelay_ConcurrentWithSubscribe verifies that DisconnectRelay
-// and OnSubscribeTerminal can run concurrently without deadlock.
+// and OnSubscribePod can run concurrently without deadlock.
 func TestDisconnectRelay_ConcurrentWithSubscribe(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -88,7 +88,7 @@ func TestDisconnectRelay_ConcurrentWithSubscribe(t *testing.T) {
 	// Goroutine 2: Subscribe (may win or lose against disconnect).
 	go func() {
 		defer wg.Done()
-		_ = handler.OnSubscribeTerminal(client.SubscribeTerminalRequest{
+		_ = handler.OnSubscribePod(client.SubscribePodRequest{
 			PodKey:      pod.PodKey,
 			RelayURL:    "wss://relay2.example.com",
 			RunnerToken: "token-new",
@@ -105,7 +105,7 @@ func TestDisconnectRelay_ConcurrentWithSubscribe(t *testing.T) {
 	case <-allDone:
 		// Success — no deadlock.
 	case <-time.After(5 * time.Second):
-		t.Fatal("deadlock detected: concurrent DisconnectRelay + OnSubscribeTerminal blocked for 5s")
+		t.Fatal("deadlock detected: concurrent DisconnectRelay + OnSubscribePod blocked for 5s")
 	}
 
 	// Final state should be consistent: client is either nil or the new one.

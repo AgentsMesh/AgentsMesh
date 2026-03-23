@@ -61,7 +61,7 @@ func TestPodRelayOperations_RaceDetection(t *testing.T) {
 }
 
 // TestPodRelayOperations_LockRelayRaceDetection exercises the LockRelay/UnlockRelay
-// path used by OnSubscribeTerminal's check-and-swap pattern concurrently with
+// path used by OnSubscribePod's check-and-swap pattern concurrently with
 // SetRelayClient and GetRelayClient.
 func TestPodRelayOperations_LockRelayRaceDetection(t *testing.T) {
 	pod := &Pod{PodKey: "pod-lock-race", Status: PodStatusRunning}
@@ -79,7 +79,7 @@ func TestPodRelayOperations_LockRelayRaceDetection(t *testing.T) {
 			for j := 0; j < iterations; j++ {
 				switch i % 3 {
 				case 0:
-					// Simulate OnSubscribeTerminal's check-and-swap pattern.
+					// Simulate OnSubscribePod's check-and-swap pattern.
 					pod.LockRelay()
 					existing := pod.RelayClient
 					if existing == nil {

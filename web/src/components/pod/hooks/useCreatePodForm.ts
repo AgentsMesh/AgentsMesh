@@ -23,6 +23,7 @@ export interface CreatePodFormState {
   selectedRepository: number | null;
   selectedBranch: string;
   selectedCredentialProfile: number; // 0 = RunnerHost, >0 = custom profile ID
+  interactionMode: "pty" | "acp";
   prompt: string;
   alias: string;
 
@@ -35,11 +36,13 @@ export interface CreatePodFormState {
   setSelectedRepository: (id: number | null) => void;
   setSelectedBranch: (branch: string) => void;
   setSelectedCredentialProfile: (id: number) => void;
+  setInteractionMode: (mode: "pty" | "acp") => void;
   setPrompt: (prompt: string) => void;
   setAlias: (alias: string) => void;
 
   // Computed
   selectedAgentSlug: string;
+  supportedModes: string[]; // parsed from agent type's supported_modes
 
   // Form state
   loading: boolean;
@@ -75,6 +78,7 @@ export function useCreatePodForm(
   const [selectedRepository, setSelectedRepository] = useState<number | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [selectedCredentialProfile, setSelectedCredentialProfile] = useState<number>(RUNNER_HOST_PROFILE_ID);
+  const [interactionMode, setInteractionMode] = useState<"pty" | "acp">("pty");
   const [prompt, setPrompt] = useState<string>("");
   const [alias, setAlias] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -109,6 +113,14 @@ export function useCreatePodForm(
     return agent?.slug || "";
   }, [selectedAgent, availableAgentTypes]);
 
+  // Parse supported modes from selected agent type
+  const supportedModes = useMemo(() => {
+    if (!selectedAgent) return ["pty"];
+    const agent = availableAgentTypes.find((a) => a.id === selectedAgent);
+    const modes = agent?.supported_modes?.split(",").map((m) => m.trim()).filter(Boolean) || [];
+    return modes.length > 0 ? modes : ["pty"];
+  }, [selectedAgent, availableAgentTypes]);
+
   // Compute form validity (runner validation is done externally)
   const isValid = useMemo(() => {
     return selectedAgent !== null;
@@ -121,8 +133,22 @@ export function useCreatePodForm(
       setSelectedAgent(null);
       setCredentialProfiles([]);
       setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
+      setInteractionMode("pty");
     }
   }, [availableAgentTypes, selectedAgent]);
+
+  // Auto-set interaction mode when agent changes based on supported modes
+  useEffect(() => {
+    if (!selectedAgent) {
+      setInteractionMode("pty");
+      return;
+    }
+    // If current mode is not supported, switch to first supported mode
+    if (!supportedModes.includes(interactionMode)) {
+      setInteractionMode(supportedModes[0] as "pty" | "acp");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAgent, supportedModes]);
 
   // Auto-select default branch when repository is selected
   useEffect(() => {
@@ -214,6 +240,7 @@ export function useCreatePodForm(
     setSelectedBranch("");
     setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
     setCredentialProfiles([]);
+    setInteractionMode("pty");
     setPrompt("");
     setAlias("");
     setError(null);
@@ -263,6 +290,7 @@ export function useCreatePodForm(
           ticket_slug: options?.ticketSlug,
           cols: options?.cols,
           rows: options?.rows,
+          interaction_mode: interactionMode !== "pty" ? interactionMode : undefined,
         });
 
         if (response.pod) {
@@ -287,7 +315,7 @@ export function useCreatePodForm(
         setLoading(false);
       }
     },
-    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, selectedCredentialProfile, prompt, alias, onSuccess, validate, setLastChoices]
+    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, selectedCredentialProfile, interactionMode, prompt, alias, onSuccess, validate, setLastChoices]
   );
 
   return {
@@ -295,6 +323,7 @@ export function useCreatePodForm(
     selectedRepository,
     selectedBranch,
     selectedCredentialProfile,
+    interactionMode,
     prompt,
     alias,
     credentialProfiles,
@@ -303,9 +332,11 @@ export function useCreatePodForm(
     setSelectedRepository,
     setSelectedBranch,
     setSelectedCredentialProfile,
+    setInteractionMode,
     setPrompt,
     setAlias,
     selectedAgentSlug,
+    supportedModes,
     loading,
     error,
     validationErrors,

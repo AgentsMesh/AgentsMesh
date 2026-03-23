@@ -41,7 +41,12 @@ func (b *ClaudeCodeBuilder) Slug() string {
 
 // HandleInitialPrompt prepends the initial prompt to launch arguments.
 // Claude Code syntax: claude [prompt] [options]
+// In ACP mode, the prompt is sent via JSON-RPC (session/prompt), not CLI args.
 func (b *ClaudeCodeBuilder) HandleInitialPrompt(ctx *BuildContext, args []string) []string {
+	// ACP mode: prompt delivered via session/prompt, not as CLI argument
+	if ctx.Request.InteractionMode == "acp" {
+		return args
+	}
 	if ctx.Request.InitialPrompt != "" {
 		return append([]string{ctx.Request.InitialPrompt}, args...)
 	}
@@ -221,7 +226,17 @@ func (b *ClaudeCodeBuilder) BuildEnvVars(ctx *BuildContext) (map[string]string, 
 	return b.BaseAgentBuilder.BuildEnvVars(ctx)
 }
 
-// PostProcess uses the base implementation
+// PostProcess adjusts the command for ACP mode.
+// In ACP mode, Claude Code is launched with stream-json flags for structured
+// I/O instead of the legacy claude-agent-acp npm bridge.
 func (b *ClaudeCodeBuilder) PostProcess(ctx *BuildContext, cmd *runnerv1.CreatePodCommand) error {
-	return b.BaseAgentBuilder.PostProcess(ctx, cmd)
+	if ctx.Request.InteractionMode == "acp" {
+		cmd.LaunchArgs = append(cmd.LaunchArgs,
+			"--output-format", "stream-json",
+			"--input-format", "stream-json",
+			"--verbose",
+			"--include-partial-messages",
+		)
+	}
+	return nil
 }

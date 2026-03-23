@@ -7,7 +7,7 @@ import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { usePodStore } from "@/stores/pod";
 import { usePodTitle } from "@/hooks/usePodTitle";
 import { getShortPodKey } from "@/lib/pod-utils";
-import type { ConnectionStatus } from "@/stores/terminalConnection";
+import type { ConnectionStatus } from "@/stores/relayConnection";
 import {
   X,
   Maximize2,

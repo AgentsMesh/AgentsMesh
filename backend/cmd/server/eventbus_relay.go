@@ -13,7 +13,7 @@ import (
 
 // setupRelayTokenRefreshCallback sets up the callback for relay token refresh requests.
 // When a runner's relay token expires during reconnection, it sends a RequestRelayToken event.
-// This callback generates a new token and sends a SubscribeTerminal command back to the runner.
+// This callback generates a new token and sends a SubscribePod command back to the runner.
 func setupRelayTokenRefreshCallback(
 	db *gorm.DB,
 	runnerConnMgr *runner.RunnerConnectionManager,
@@ -76,8 +76,8 @@ func setupRelayTokenRefreshCallback(
 			return
 		}
 
-		// Send SubscribeTerminal command with new token back to runner
-		if err := commandSender.SendSubscribeTerminal(
+		// Send SubscribePod command with new token back to runner
+		if err := commandSender.SendSubscribePod(
 			context.Background(),
 			runnerID,
 			data.PodKey,
@@ -86,7 +86,7 @@ func setupRelayTokenRefreshCallback(
 			true, // include snapshot (runner will resend after reconnect)
 			1000, // snapshot history lines
 		); err != nil {
-			slog.Error("failed to send subscribe terminal with new token",
+			slog.Error("failed to send subscribe pod with new token",
 				"runner_id", runnerID,
 				"pod_key", data.PodKey,
 				"error", err,

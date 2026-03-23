@@ -83,7 +83,7 @@ func initializeRunnerComponents(
 	redisClient *redis.Client,
 	appLogger *logger.Logger,
 	agentTypeSvc *agent.AgentTypeService,
-) (*runner.RunnerConnectionManager, *runner.PodCoordinator, *runner.TerminalRouter, *runner.HeartbeatBatcher, *runner.SandboxQueryService) {
+) (*runner.RunnerConnectionManager, *runner.PodCoordinator, *runner.PodRouter, *runner.HeartbeatBatcher, *runner.SandboxQueryService) {
 	// Initialize Runner connection manager
 	runnerConnMgr := runner.NewRunnerConnectionManager(appLogger.Logger)
 
@@ -95,18 +95,18 @@ func initializeRunnerComponents(
 	// Start initialization timeout checker (removes connections that don't complete handshake)
 	runnerConnMgr.StartInitTimeoutChecker()
 
-	// Initialize Terminal router (routes terminal data between frontend and runner)
-	terminalRouter := runner.NewTerminalRouter(runnerConnMgr, appLogger.Logger)
+	// Initialize Pod router (routes pod commands between frontend and runner)
+	podRouter := runner.NewPodRouter(runnerConnMgr, appLogger.Logger)
 
 	// Initialize Heartbeat batcher (batches heartbeat DB writes for high-scale performance)
 	heartbeatBatcher := runner.NewHeartbeatBatcher(redisClient, runnerRepo, appLogger.Logger)
 	heartbeatBatcher.Start()
 
 	// Initialize Pod coordinator (manages pod lifecycle between backend and runner)
-	podCoordinator := runner.NewPodCoordinator(podRepo, runnerRepo, runnerConnMgr, terminalRouter, heartbeatBatcher, appLogger.Logger)
+	podCoordinator := runner.NewPodCoordinator(podRepo, runnerRepo, runnerConnMgr, podRouter, heartbeatBatcher, appLogger.Logger)
 
 	// Initialize Sandbox query service (handles sandbox status queries to runners)
 	sandboxQuerySvc := runner.NewSandboxQueryService(runnerConnMgr)
 
-	return runnerConnMgr, podCoordinator, terminalRouter, heartbeatBatcher, sandboxQuerySvc
+	return runnerConnMgr, podCoordinator, podRouter, heartbeatBatcher, sandboxQuerySvc
 }

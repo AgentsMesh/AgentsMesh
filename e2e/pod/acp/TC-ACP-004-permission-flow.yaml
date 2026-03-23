@@ -1,0 +1,66 @@
+id: TC-ACP-004
+name: ACP 权限请求与审批流程
+description: 验证 Agent 发出权限请求时，Permission Dialog 正确显示工具名称和描述，用户可以 Approve 或 Deny，Agent 根据决策继续或停止
+priority: critical
+must_execute: true
+module: pod/acp
+tags:
+  - ui
+  - mcp-required
+  - acp
+
+preconditions:
+  - 开发环境已启动
+  - 已有一个 running 状态的 ACP Pod（Claude Code，权限模式非 auto-approve）
+
+steps:
+  - id: step-1
+    action: 登录并打开工作区
+    verification:
+      type: ui
+      details: |
+        1. navigate_page 到 /dev-org/workspace
+        2. take_snapshot 确认有 ACP Pod 面板
+
+  - id: step-2
+    action: 发送会触发权限请求的 prompt
+    verification:
+      type: ui
+      details: |
+        1. 在输入框中输入: "请在当前目录创建一个 hello.txt 文件，内容为 hello world"
+        2. 按 Enter 发送
+        3. 等待 Agent 处理
+
+  - id: step-3
+    action: 验证 Permission Dialog 出现
+    verification:
+      type: ui
+      details: |
+        1. 等待最多 30 秒直到 Permission Dialog 出现
+        2. take_snapshot 验证：
+           - 显示 "Permission Required" 标题
+           - 显示工具名称（如 "bash" 或 "write_file"）
+           - 显示操作描述
+           - 有 "Approve"（绿色）和 "Deny"（红色）两个按钮
+        3. 确认 Permission Dialog 显示在 Activity Stream 和输入框之间
+
+  - id: step-4
+    action: 点击 Approve 批准权限
+    verification:
+      type: ui
+      details: |
+        1. 点击 "Approve" 按钮
+        2. take_snapshot 验证：
+           - Permission Dialog 消失
+           - Activity Stream 继续显示 Agent 的后续操作（工具调用执行中）
+        3. 等待 Agent 完成处理
+
+  - id: step-5
+    action: 验证 Agent 成功完成操作
+    verification:
+      type: ui
+      details: |
+        1. 等待 header 状态变为 "Idle"
+        2. take_snapshot 确认 Activity Stream 中：
+           - 有工具调用记录（带绿勾 ✓）
+           - 有 Agent 的完成消息

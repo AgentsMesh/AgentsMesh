@@ -9,6 +9,7 @@ export interface AgentTypeData {
   launch_command?: string;
   is_builtin: boolean;
   is_active: boolean;
+  supported_modes?: string; // comma-separated: "pty", "pty,acp"
 }
 
 // Config field option for select type (value only, label from frontend i18n)

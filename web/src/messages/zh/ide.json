@@ -87,7 +87,10 @@
       "creating": "创建中...",
       "cancel": "取消",
       "alias": "别名",
-      "aliasPlaceholder": "输入 Pod 显示名称..."
+      "aliasPlaceholder": "输入 Pod 显示名称...",
+      "interactionMode": "交互模式",
+      "modePty": "终端 (PTY)",
+      "modeAcp": "对话 (ACP)"
     },
     "sidebar": {
       "settings": {

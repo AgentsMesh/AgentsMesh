@@ -7,10 +7,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 )
 
-// TerminalRouterForMCP defines the interface for terminal router operations needed by MCP handlers.
-type TerminalRouterForMCP interface {
-	RouteInput(podKey string, data []byte) error
-	ObserveTerminal(ctx context.Context, podKey string, lines int32, includeScreen bool) (*runner.ObserveTerminalQueryResult, error)
+// PodRouterForMCP defines the interface for pod router operations needed by MCP handlers.
+type PodRouterForMCP interface {
+	RoutePodInput(podKey string, data []byte) error
+	RoutePrompt(podKey string, prompt string) error
+	ObservePod(ctx context.Context, podKey string, lines int32, includeScreen bool) (*runner.ObservePodResult, error)
 }
 
 // ==================== Pod interaction MCP Methods ====================
@@ -40,9 +41,9 @@ func (a *GRPCRunnerAdapter) mcpGetPodSnapshot(ctx context.Context, tc *middlewar
 		return nil, newMcpError(403, "access denied")
 	}
 
-	// Look up terminal router
-	if a.terminalRouter == nil {
-		return nil, newMcpError(503, "terminal router not available")
+	// Look up pod router
+	if a.podRouter == nil {
+		return nil, newMcpError(503, "pod router not available")
 	}
 
 	lines := params.Lines
@@ -54,7 +55,7 @@ func (a *GRPCRunnerAdapter) mcpGetPodSnapshot(ctx context.Context, tc *middlewar
 	}
 
 	// Proxy the request to the runner and wait for the result
-	result, err := a.terminalRouter.ObserveTerminal(ctx, params.PodKey, lines, params.IncludeScreen)
+	result, err := a.podRouter.ObservePod(ctx, params.PodKey, lines, params.IncludeScreen)
 	if err != nil {
 		return nil, newMcpErrorf(500, "failed to get pod snapshot: %v", err)
 	}
@@ -107,21 +108,21 @@ func (a *GRPCRunnerAdapter) mcpSendPodInput(ctx context.Context, tc *middleware.
 		return nil, newMcpError(403, "access denied")
 	}
 
-	if a.terminalRouter == nil {
-		return nil, newMcpError(503, "terminal router not available")
+	if a.podRouter == nil {
+		return nil, newMcpError(503, "pod router not available")
 	}
 
-	// Send text first
+	// Send text via mode-agnostic RoutePrompt (PTY: writes to stdin, ACP: sends prompt).
 	if params.Text != "" {
-		if err := a.terminalRouter.RouteInput(params.PodKey, []byte(params.Text)); err != nil {
+		if err := a.podRouter.RoutePrompt(params.PodKey, params.Text); err != nil {
 			return nil, newMcpErrorf(500, "failed to send pod input text: %v", err)
 		}
 	}
 
-	// Then loop through keys
+	// Send keys via RoutePodInput (PTY-specific: terminal escape sequences).
 	for _, key := range params.Keys {
 		input := convertKeyToInput(key)
-		if err := a.terminalRouter.RouteInput(params.PodKey, []byte(input)); err != nil {
+		if err := a.podRouter.RoutePodInput(params.PodKey, []byte(input)); err != nil {
 			return nil, newMcpErrorf(500, "failed to send pod input key: %v", err)
 		}
 	}
