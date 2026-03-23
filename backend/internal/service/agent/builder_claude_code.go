@@ -120,13 +120,16 @@ func (b *ClaudeCodeBuilder) BuildFilesToCreate(ctx *BuildContext) ([]*runnerv1.F
 	}
 
 	// .mcp.json — merged MCP server configuration
+	// Placed in the plugin directory (not work_dir) to avoid overwriting
+	// any existing .mcp.json in the repository. Claude Code's --plugin-dir
+	// mechanism automatically loads .mcp.json from the plugin root.
 	mcpConfig := b.buildMcpConfig(ctx)
 	mcpJSON, err := json.MarshalIndent(mcpConfig, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal MCP config: %w", err)
 	}
 	files = append(files, &runnerv1.FileToCreate{
-		Path:    "{{.sandbox.work_dir}}/.mcp.json",
+		Path:    pluginDir + "/.mcp.json",
 		Content: string(mcpJSON),
 		Mode:    0644,
 	})

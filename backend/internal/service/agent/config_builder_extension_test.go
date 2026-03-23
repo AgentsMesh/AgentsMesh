@@ -374,6 +374,11 @@ func TestClaudeCodeBuilder_BuildFilesToCreate(t *testing.T) {
 				foundPluginJSON = true
 			case strings.HasSuffix(f.Path, ".mcp.json"):
 				foundMcpJSON = true
+				// .mcp.json must be inside the plugin directory, not in work_dir,
+				// to avoid overwriting existing .mcp.json in the repository.
+				if !strings.Contains(f.Path, "agentsmesh-plugin/") {
+					t.Errorf(".mcp.json should be inside agentsmesh-plugin/, got path: %s", f.Path)
+				}
 			case f.IsDirectory && strings.HasSuffix(f.Path, "/skills"):
 				foundSkillsDir = true
 			}
