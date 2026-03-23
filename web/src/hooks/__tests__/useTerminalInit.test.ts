@@ -44,7 +44,7 @@ vi.mock("sonner", () => ({
 
 const mockIsTouchPrimaryInput = vi.fn(() => false);
 vi.mock("@/lib/platform", () => ({
-  isTouchPrimaryInput: (...args: unknown[]) => mockIsTouchPrimaryInput(...args),
+  isTouchPrimaryInput: () => mockIsTouchPrimaryInput(),
 }));
 
 describe("TERMINAL_THEME", () => {
@@ -175,12 +175,13 @@ describe("setupIME", () => {
     setupIME(container, term, disposables);
 
     // Capture the callback passed to onCursorMove
-    const cursorMoveCallback = term.onCursorMove.mock.calls[0][0] as () => void;
+    const onCursorMoveMock = term.onCursorMove as ReturnType<typeof vi.fn>;
+    const cursorMoveCallback = onCursorMoveMock.mock.calls[0][0] as () => void;
 
     // Simulate cursor at position (10, 2)
-    term.buffer.active.cursorX = 10;
-    term.buffer.active.cursorY = 2;
-    term.buffer.active.viewportY = 0;
+    (term.buffer.active as { cursorX: number }).cursorX = 10;
+    (term.buffer.active as { cursorY: number }).cursorY = 2;
+    (term.buffer.active as { viewportY: number }).viewportY = 0;
     cursorMoveCallback();
 
     // cellWidth = 14 * 0.6 = 8.4, cellHeight = 14 * 1.2 = 16.8
@@ -200,12 +201,13 @@ describe("setupIME", () => {
 
     setupIME(container, term, disposables);
 
-    const cursorMoveCallback = term.onCursorMove.mock.calls[0][0] as () => void;
+    const onCursorMoveMock = term.onCursorMove as ReturnType<typeof vi.fn>;
+    const cursorMoveCallback = onCursorMoveMock.mock.calls[0][0] as () => void;
 
     // viewportY > cursorY → negative relative position → clamped to 0
-    term.buffer.active.cursorX = 0;
-    term.buffer.active.cursorY = 2;
-    term.buffer.active.viewportY = 5;
+    (term.buffer.active as { cursorX: number }).cursorX = 0;
+    (term.buffer.active as { cursorY: number }).cursorY = 2;
+    (term.buffer.active as { viewportY: number }).viewportY = 5;
     cursorMoveCallback();
 
     expect(textarea.style.left).toBe("0px");
@@ -247,7 +249,8 @@ describe("setupIME", () => {
     expect(disposables).toHaveLength(3);
 
     // Capture cursorMove disposable mock to verify it was disposed
-    const cursorMoveDispose = term.onCursorMove.mock.results[0].value.dispose;
+    const onCursorMoveMock = term.onCursorMove as ReturnType<typeof vi.fn>;
+    const cursorMoveDispose = onCursorMoveMock.mock.results[0].value.dispose;
 
     // Dispose all
     disposables.forEach((d) => d.dispose());
