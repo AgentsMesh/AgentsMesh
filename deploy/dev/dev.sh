@@ -105,14 +105,17 @@ generate_ai_cli_configs() {
 }
 EOF
 
-    # Codex CLI config
+    # Codex CLI config (Rust version >= 0.100.0)
     mkdir -p "$config_dir/codex"
     cat > "$config_dir/codex/config.toml" << 'EOF'
 # Codex CLI configuration for headless mode
+# Reference: https://developers.openai.com/codex/config-reference/
 
-[defaults]
-# Allow full auto mode for non-interactive execution
-approval_mode = "full-auto"
+# Approval policy: "on-request", "never", "untrusted"
+approval_policy = "never"
+
+# Sandbox mode: "read-only", "workspace-write", "danger-full-access"
+sandbox_mode = "workspace-write"
 EOF
 
     # Gemini CLI settings

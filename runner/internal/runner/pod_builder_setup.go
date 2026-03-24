@@ -61,6 +61,17 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 		sandboxOwned = false
 	}
 
+	// 2.5. Prepare agent-specific home directories (e.g., CODEX_HOME for Codex CLI)
+	// Must run before createFiles so that copied user config can be merged with platform config.
+	if err := b.prepareAgentHome(sandboxRoot, result.WorkingDir); err != nil {
+		if sandboxOwned {
+			if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
+				slog.Warn("Failed to clean up sandbox after agent home error", "path", sandboxRoot, "error", rmErr)
+			}
+		}
+		return "", "", "", err
+	}
+
 	// 3. Create files from FilesToCreate
 	if len(b.cmd.FilesToCreate) > 0 {
 		b.sendProgress("preparing", 70, "Creating files...")

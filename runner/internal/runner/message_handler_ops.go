@@ -40,7 +40,11 @@ func (h *RunnerMessageHandler) OnTerminalInput(req client.TerminalInputRequest) 
 		log.Warn("Terminal not initialized for input", "pod_key", req.PodKey)
 		return fmt.Errorf("terminal not initialized for pod: %s", req.PodKey)
 	}
-	if err := pod.Terminal.Write(req.Data); err != nil {
+
+	// Adapt input for agent-specific TUI requirements
+	data := adaptTerminalInput(req.Data, pod.AgentType)
+
+	if err := pod.Terminal.Write(data); err != nil {
 		log.Error("Failed to write terminal input", "pod_key", req.PodKey, "error", err)
 		return err
 	}

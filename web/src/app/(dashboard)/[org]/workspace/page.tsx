@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { usePodStore } from "@/stores/pod";
 import { WorkspaceManager } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
 import { CenteredSpinner } from "@/components/ui/spinner";
@@ -77,6 +78,8 @@ export default function WorkspacePage() {
                 description: `Pod: ${getShortPodKey(pod.pod_key)}`,
               });
               handleOpenPod(pod.pod_key);
+              // Add pod to sidebar list immediately (don't wait for WebSocket event)
+              usePodStore.getState().fetchPod(pod.pod_key);
             }
           }}
         />
@@ -100,6 +103,8 @@ export default function WorkspacePage() {
               description: `Pod: ${getShortPodKey(pod.pod_key)}`,
             });
             handleOpenPod(pod.pod_key);
+            // Add pod to sidebar list immediately (don't wait for WebSocket event)
+            usePodStore.getState().fetchPod(pod.pod_key);
           }
         }}
       />

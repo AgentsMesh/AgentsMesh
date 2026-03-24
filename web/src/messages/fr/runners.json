@@ -293,17 +293,13 @@
     },
     "codex-cli": {
       "fields": {
-        "mcp_enabled": {
-          "label": "Enable MCP Integration",
-          "description": "Allow the agent to communicate with AgentsMesh platform via MCP protocol"
-        },
         "approval_mode": {
-          "label": "Approval Mode",
-          "description": "Control how code changes are approved",
+          "label": "Mode d'Approbation",
+          "description": "Contrôler comment Codex gère les approbations (version Rust >= 0.100.0 requise)",
           "options": {
-            "suggest": "Suggest (Manual Approval)",
-            "auto-edit": "Auto Edit",
-            "full-auto": "Full Auto"
+            "suggest": "Sur Demande (Approbation Manuelle)",
+            "auto-edit": "Entièrement Automatique (Auto dans le workspace, demander pour externe)",
+            "full-auto": "Jamais (Entièrement Autonome)"
           }
         }
       }

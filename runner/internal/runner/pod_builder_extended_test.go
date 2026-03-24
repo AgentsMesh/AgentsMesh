@@ -116,7 +116,7 @@ func TestPodBuilderMergeEnvVarsWithNilConfig(t *testing.T) {
 
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)
 
-	result := builder.mergeEnvVars("")
+	result := builder.mergeEnvVars("", "")
 
 	if len(result) != 1 {
 		t.Errorf("result length = %d, want 1", len(result))
@@ -147,7 +147,7 @@ func TestPodBuilderMergeEnvVarsOverride(t *testing.T) {
 
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)
 
-	result := builder.mergeEnvVars("")
+	result := builder.mergeEnvVars("", "")
 
 	// Command envVars should override config
 	if result["SHARED_VAR"] != "pod_value" {

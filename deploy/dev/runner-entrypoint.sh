@@ -203,20 +203,20 @@ EOF
 # Model settings
 model = "gpt-4.1"
 
-# Approval policy: "on-request", "on-failure", "never", "untrusted"
+# Approval policy: "on-request", "never", "untrusted"
 # For automated/headless mode, use "never" to skip manual approvals
 approval_policy = "never"
 
-# Sandbox mode: "off", "workspace-read", "workspace-write", "danger-full-access"
+# Sandbox mode: "read-only", "workspace-write", "danger-full-access"
 # For development, allow full workspace write access
 sandbox_mode = "workspace-write"
 
-# Disable interactive features for headless mode
-notify = false
+# Disable notifications for headless mode (notify is an array<string> command)
+# notify = ["notify-send"]
 
 # Shell environment policy
 [shell_environment_policy]
-inherit = true
+inherit = "all"
 EOF
         echo "  ✓ OpenAI Codex 配置已初始化"
     else

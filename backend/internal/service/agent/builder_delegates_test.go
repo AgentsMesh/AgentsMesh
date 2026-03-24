@@ -63,34 +63,9 @@ func TestCodexCLIBuilder_BuildLaunchArgs(t *testing.T) {
 	}
 }
 
-func TestCodexCLIBuilder_BuildFilesToCreate(t *testing.T) {
-	builder := NewCodexCLIBuilder()
-	ctx := newDelegateBuildContext()
-
-	files, err := builder.BuildFilesToCreate(ctx)
-	if err != nil {
-		t.Fatalf("BuildFilesToCreate failed: %v", err)
-	}
-	if len(files) != 1 {
-		t.Fatalf("expected 1 file, got %d", len(files))
-	}
-	if files[0].Path != "/tmp/test.txt" {
-		t.Errorf("Path = %q, want %q", files[0].Path, "/tmp/test.txt")
-	}
-}
-
-func TestCodexCLIBuilder_BuildEnvVars(t *testing.T) {
-	builder := NewCodexCLIBuilder()
-	ctx := newDelegateBuildContext()
-
-	envVars, err := builder.BuildEnvVars(ctx)
-	if err != nil {
-		t.Fatalf("BuildEnvVars failed: %v", err)
-	}
-	if envVars["API_KEY"] != "test-key" {
-		t.Errorf("API_KEY = %q, want %q", envVars["API_KEY"], "test-key")
-	}
-}
+// Note: TestCodexCLIBuilder_BuildFilesToCreate and TestCodexCLIBuilder_BuildEnvVars
+// moved to builder_codex_cli_test.go after CodexCLIBuilder was rewritten to override
+// these methods (no longer delegates to BaseAgentBuilder).
 
 func TestCodexCLIBuilder_PostProcess(t *testing.T) {
 	builder := NewCodexCLIBuilder()

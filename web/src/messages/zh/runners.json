@@ -257,17 +257,13 @@
     },
     "codex-cli": {
       "fields": {
-        "mcp_enabled": {
-          "label": "启用 MCP 集成",
-          "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
-        },
         "approval_mode": {
           "label": "审批模式",
-          "description": "控制代码更改的审批方式",
+          "description": "控制 Codex 的审批方式（需要 Rust 版本 >= 0.100.0）",
           "options": {
-            "suggest": "建议 (手动审批)",
-            "auto-edit": "自动编辑",
-            "full-auto": "完全自动"
+            "suggest": "按需审批（手动确认）",
+            "auto-edit": "完全自动（工作区内自动，外部操作需确认）",
+            "full-auto": "从不审批（完全自主）"
           }
         }
       }

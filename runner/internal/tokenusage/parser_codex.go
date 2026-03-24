@@ -14,7 +14,11 @@ import (
 
 // CodexParser parses Codex CLI JSONL session files.
 // Codex CLI writes session data to JSONL files under:
-//   - {HOME}/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl
+//   - {CODEX_HOME}/sessions/YYYY/MM/DD/rollout-*.jsonl
+//
+// The parser checks multiple locations in priority order:
+//  1. {sandboxPath}/codex-home/sessions/ (per-pod CODEX_HOME set by platform)
+//  2. {HOME}/.codex/sessions/ (default user-level location)
 //
 // Only files modified after podStartedAt are processed.
 type CodexParser struct{}
@@ -43,20 +47,42 @@ type codexJSONLEntry struct {
 func (p *CodexParser) Parse(sandboxPath string, podStartedAt time.Time) (*TokenUsage, error) {
 	usage := NewTokenUsage()
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		logger.Pod().Warn("Codex parser: cannot get home dir", "error", err)
-		return nil, nil
+	// Check multiple session directories in priority order
+	sessionsDirs := codexSessionDirs(sandboxPath)
+	for _, sessionsDir := range sessionsDirs {
+		if _, err := os.Stat(sessionsDir); os.IsNotExist(err) {
+			continue
+		}
+		parseCodexSessionsDir(sessionsDir, podStartedAt, usage)
 	}
 
-	sessionsDir := filepath.Join(home, ".codex", "sessions")
-	if _, err := os.Stat(sessionsDir); os.IsNotExist(err) {
+	if usage.IsEmpty() {
 		return nil, nil
 	}
+	return usage, nil
+}
 
-	// Walk the sessions directory to find all .jsonl files at any depth
-	// (Codex uses YYYY/MM/DD subdirectory structure)
-	err = filepath.WalkDir(sessionsDir, func(path string, d fs.DirEntry, err error) error {
+// codexSessionDirs returns candidate session directories in priority order.
+// Per-pod CODEX_HOME (sandbox) is checked first, then user-level ~/.codex/.
+func codexSessionDirs(sandboxPath string) []string {
+	var dirs []string
+
+	// 1. Per-pod CODEX_HOME inside sandbox (set by platform via CODEX_HOME env var)
+	if sandboxPath != "" {
+		dirs = append(dirs, filepath.Join(sandboxPath, "codex-home", "sessions"))
+	}
+
+	// 2. Default user-level location
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		dirs = append(dirs, filepath.Join(home, ".codex", "sessions"))
+	}
+
+	return dirs
+}
+
+// parseCodexSessionsDir walks a sessions directory for JSONL files.
+func parseCodexSessionsDir(sessionsDir string, podStartedAt time.Time, usage *TokenUsage) {
+	err := filepath.WalkDir(sessionsDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil // skip inaccessible entries
 		}
@@ -77,11 +103,6 @@ func (p *CodexParser) Parse(sandboxPath string, podStartedAt time.Time) (*TokenU
 	if err != nil {
 		logger.Pod().Warn("Codex parser: walk error", "dir", sessionsDir, "error", err)
 	}
-
-	if usage.IsEmpty() {
-		return nil, nil
-	}
-	return usage, nil
 }
 
 func parseCodexJSONLFile(path string, usage *TokenUsage) error {

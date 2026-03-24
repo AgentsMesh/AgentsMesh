@@ -30,7 +30,7 @@ func TestPodBuilderMergeEnvVars(t *testing.T) {
 
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)
 
-	result := builder.mergeEnvVars("")
+	result := builder.mergeEnvVars("", "")
 
 	if result["CONFIG_VAR"] != "config_value" {
 		t.Errorf("CONFIG_VAR: got %v, want config_value", result["CONFIG_VAR"])
@@ -60,7 +60,7 @@ func TestPodBuilderMergeEnvVarsNilConfig(t *testing.T) {
 
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)
 
-	result := builder.mergeEnvVars("")
+	result := builder.mergeEnvVars("", "")
 
 	if result["BUILDER_VAR"] != "builder_value" {
 		t.Errorf("BUILDER_VAR: got %v, want builder_value", result["BUILDER_VAR"])
@@ -172,6 +172,6 @@ func BenchmarkPodBuilderMergeEnvVars(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		builder.mergeEnvVars("")
+		builder.mergeEnvVars("", "")
 	}
 }

@@ -42,8 +42,8 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	resolvedArgs := b.resolveArgs(b.cmd.LaunchArgs, sandboxRoot, workingDir)
 	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
 
-	// Merge environment variables
-	envVars := b.mergeEnvVars(sandboxRoot)
+	// Merge environment variables (with template resolution)
+	envVars := b.mergeEnvVars(sandboxRoot, workingDir)
 	logger.Pod().Debug("Merged environment variables", "pod_key", b.cmd.PodKey, "count", len(envVars))
 
 	// Report progress: starting PTY
@@ -171,8 +171,8 @@ func (b *PodBuilder) resolveArgs(args []string, sandboxRoot, workDir string) []s
 	return resolved
 }
 
-// mergeEnvVars merges all environment variable sources.
-func (b *PodBuilder) mergeEnvVars(sandboxRoot string) map[string]string {
+// mergeEnvVars merges all environment variable sources and resolves template variables.
+func (b *PodBuilder) mergeEnvVars(sandboxRoot, workDir string) map[string]string {
 	result := make(map[string]string)
 
 	// Inject resolved login shell PATH as lowest-priority base.
@@ -194,6 +194,11 @@ func (b *PodBuilder) mergeEnvVars(sandboxRoot string) map[string]string {
 		for k, v := range b.cmd.EnvVars {
 			result[k] = v
 		}
+	}
+
+	// Resolve template variables (e.g., {{.sandbox.root_path}}, {{.sandbox.work_dir}})
+	for k, v := range result {
+		result[k] = b.resolvePath(v, sandboxRoot, workDir)
 	}
 
 	return result
