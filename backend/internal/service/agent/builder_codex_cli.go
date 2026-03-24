@@ -167,7 +167,7 @@ func (b *CodexCLIBuilder) buildCodexTomlMcpConfig(ctx *BuildContext) string {
 	if mcpPort, ok := ctx.TemplateCtx["mcp_port"]; ok && mcpPort != nil {
 		if port, ok := mcpPort.(int); ok && port > 0 {
 			sb.WriteString("[mcp_servers.agentsmesh]\n")
-			sb.WriteString(fmt.Sprintf("url = \"http://127.0.0.1:%d/mcp\"\n", port))
+			fmt.Fprintf(&sb, "url = \"http://127.0.0.1:%d/mcp\"\n", port)
 			sb.WriteString("env_http_headers = { \"X-Pod-Key\" = \"AGENTSMESH_POD_KEY\" }\n")
 			sb.WriteString("\n")
 		}
@@ -190,9 +190,9 @@ func (b *CodexCLIBuilder) buildCodexTomlMcpConfig(ctx *BuildContext) string {
 
 		switch srv.TransportType {
 		case "http", "sse":
-			sb.WriteString(fmt.Sprintf("[mcp_servers.%s]\n", tomlKey))
+			fmt.Fprintf(&sb, "[mcp_servers.%s]\n", tomlKey)
 			if url, ok := serverConfig["url"].(string); ok && url != "" {
-				sb.WriteString(fmt.Sprintf("url = %s\n", tomlQuote(url)))
+				fmt.Fprintf(&sb, "url = %s\n", tomlQuote(url))
 			}
 			if headers, ok := serverConfig["headers"].(map[string]string); ok && len(headers) > 0 {
 				sb.WriteString("http_headers = { ")
@@ -205,12 +205,12 @@ func (b *CodexCLIBuilder) buildCodexTomlMcpConfig(ctx *BuildContext) string {
 			}
 			if envVars, ok := serverConfig["env"].(map[string]string); ok && len(envVars) > 0 {
 				envJSON, _ := json.Marshal(envVars)
-				sb.WriteString(fmt.Sprintf("env = %s\n", jsonToInlineToml(string(envJSON))))
+				fmt.Fprintf(&sb, "env = %s\n", jsonToInlineToml(string(envJSON)))
 			}
 		case "stdio":
-			sb.WriteString(fmt.Sprintf("[mcp_servers.%s]\n", tomlKey))
+			fmt.Fprintf(&sb, "[mcp_servers.%s]\n", tomlKey)
 			if cmd, ok := serverConfig["command"].(string); ok && cmd != "" {
-				sb.WriteString(fmt.Sprintf("command = %s\n", tomlQuote(cmd)))
+				fmt.Fprintf(&sb, "command = %s\n", tomlQuote(cmd))
 			}
 			if args, ok := serverConfig["args"].([]string); ok && len(args) > 0 {
 				sb.WriteString("args = [")
@@ -223,7 +223,7 @@ func (b *CodexCLIBuilder) buildCodexTomlMcpConfig(ctx *BuildContext) string {
 			}
 			if envVars, ok := serverConfig["env"].(map[string]string); ok && len(envVars) > 0 {
 				envJSON, _ := json.Marshal(envVars)
-				sb.WriteString(fmt.Sprintf("env = %s\n", jsonToInlineToml(string(envJSON))))
+				fmt.Fprintf(&sb, "env = %s\n", jsonToInlineToml(string(envJSON)))
 			}
 		default:
 			slog.Warn("Unsupported Codex MCP transport type", "slug", srv.Slug, "type", srv.TransportType)
