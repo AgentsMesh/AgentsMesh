@@ -93,7 +93,7 @@ echo "  Done."
 echo "[5/8] Pulling base images..."
 docker pull postgres:16-alpine
 docker pull redis:7-alpine
-docker pull minio/minio:latest
+docker pull pgsty/minio:latest
 docker pull traefik:v3.2
 echo "  Done."
 
@@ -111,7 +111,7 @@ echo "  Done."
 echo "[7/8] Exporting base images..."
 docker save postgres:16-alpine -o "${IMAGES_DIR}/postgres.tar"
 docker save redis:7-alpine -o "${IMAGES_DIR}/redis.tar"
-docker save minio/minio:latest -o "${IMAGES_DIR}/minio.tar"
+docker save pgsty/minio:latest -o "${IMAGES_DIR}/minio.tar"
 docker save traefik:v3.2 -o "${IMAGES_DIR}/traefik.tar"
 echo "  Done."
 

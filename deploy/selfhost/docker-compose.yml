@@ -51,7 +51,7 @@ services:
   # MinIO Object Storage (S3 Compatible)
   # ===========================================================================
   minio:
-    image: minio/minio:latest
+    image: pgsty/minio:latest
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: minioadmin
