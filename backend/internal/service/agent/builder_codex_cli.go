@@ -69,8 +69,7 @@ func (b *CodexCLIBuilder) BuildLaunchArgs(ctx *BuildContext) ([]string, error) {
 	// Enforce minimum version: only Rust rewrite (>= 0.100.0) is supported
 	if ctx.AgentVersion != "" && CompareVersions(ctx.AgentVersion, codexMinimumVersion) < 0 {
 		return nil, fmt.Errorf(
-			"Codex CLI %s is not supported (minimum: %s). "+
-				"Please upgrade to the Rust version: npm install -g @openai/codex@latest",
+			"codex CLI %s is not supported (minimum: %s), please upgrade: npm install -g @openai/codex@latest",
 			ctx.AgentVersion, codexMinimumVersion,
 		)
 	}
