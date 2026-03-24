@@ -271,12 +271,13 @@ func TestCodexParser_ParseFlatFormat(t *testing.T) {
 
 func TestCodexSessionDirs_Priority(t *testing.T) {
 	// Should return sandbox codex-home first, then user-level
-	dirs := codexSessionDirs("/sandbox/root")
+	sandboxRoot := filepath.Join("sandbox", "root")
+	dirs := codexSessionDirs(sandboxRoot)
 	require.GreaterOrEqual(t, len(dirs), 1)
-	assert.Equal(t, "/sandbox/root/codex-home/sessions", dirs[0])
+	assert.Equal(t, filepath.Join(sandboxRoot, "codex-home", "sessions"), dirs[0])
 	// Second entry should be user-level
 	if len(dirs) >= 2 {
-		assert.Contains(t, dirs[1], ".codex/sessions")
+		assert.Contains(t, dirs[1], filepath.Join(".codex", "sessions"))
 	}
 }
 
