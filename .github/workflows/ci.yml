@@ -307,18 +307,23 @@ jobs:
           - service: backend
             dockerfile: ci/backend.Dockerfile
             context: .
+            use_ecr: true
           - service: web
             dockerfile: ci/web.Dockerfile
             context: ./web
+            use_ecr: false
           - service: web-admin
             dockerfile: ci/web-admin.Dockerfile
             context: ./web-admin
+            use_ecr: false
           - service: runner
             dockerfile: ci/runner.Dockerfile
             context: .
+            use_ecr: true
           - service: relay
             dockerfile: ci/relay.Dockerfile
             context: .
+            use_ecr: true
     steps:
       - uses: actions/checkout@v6
 
@@ -333,6 +338,6 @@ jobs:
           push: false
           build-args: |
             GO_VERSION=${{ env.GO_VERSION }}
-            REGISTRY_PREFIX=${{ env.REGISTRY_PREFIX }}
+            REGISTRY_PREFIX=${{ matrix.use_ecr && env.REGISTRY_PREFIX || '' }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
