@@ -10,6 +10,7 @@ env:
   GO_VERSION: "1.25"
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
+  REGISTRY_PREFIX: "public.ecr.aws/docker/library/"
 
 jobs:
   # ===========================================================================
@@ -332,5 +333,6 @@ jobs:
           push: false
           build-args: |
             GO_VERSION=${{ env.GO_VERSION }}
+            REGISTRY_PREFIX=${{ env.REGISTRY_PREFIX }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}

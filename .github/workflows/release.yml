@@ -9,6 +9,7 @@ on:
 env:
   DOCKERHUB_NAMESPACE: agentsmesh
   GO_VERSION: "1.25"
+  REGISTRY_PREFIX: "public.ecr.aws/docker/library/"
 
 jobs:
   # ===========================================================================
@@ -70,6 +71,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GO_VERSION=${{ env.GO_VERSION }}
+            REGISTRY_PREFIX=${{ env.REGISTRY_PREFIX }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
           platforms: linux/amd64,linux/arm64
