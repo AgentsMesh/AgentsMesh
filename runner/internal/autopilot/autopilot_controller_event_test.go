@@ -29,6 +29,7 @@ func TestAutopilotController_OnPodWaiting_UserTakeover(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -66,6 +67,7 @@ func TestAutopilotController_OnPodWaiting_Paused(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -103,6 +105,7 @@ func TestAutopilotController_MaxIterations(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -138,6 +141,7 @@ func TestAutopilotController_OnPodWaiting_Completed(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -175,6 +179,7 @@ func TestAutopilotController_OnPodWaiting_Failed(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -213,6 +218,7 @@ func TestAutopilotController_OnPodWaiting_RunsDecision(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -251,6 +257,7 @@ func TestAutopilotController_OnPodWaiting_MaxIterationsWithTerminatedEvent(t *te
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -291,6 +298,7 @@ func TestAutopilotController_OnPodWaiting_Stopped(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop() // Ensure cleanup even if test fails early
@@ -327,6 +335,7 @@ func TestAutopilotController_OnPodWaiting_WaitingApproval(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -363,6 +372,7 @@ func TestAutopilotController_Start_WithWaitingWorker(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 
 	// Start should succeed and initiate first iteration when worker is waiting

@@ -42,7 +42,3 @@ const SummaryMaxLength = 1000
 
 // LogOutputMaxLength is the maximum length for log output truncation.
 const LogOutputMaxLength = 2000
-
-// UseAcpControlDefault is the default for using ACP long-lived session for the
-// control process. When false (default), the exec-based ControlRunner is used.
-const UseAcpControlDefault = false

@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // --- Test mocks for autopilot interfaces ---
@@ -22,7 +21,8 @@ func (s *stubPodController) SendInput(string) error                    { return 
 func (s *stubPodController) GetWorkDir() string                        { return s.workDir }
 func (s *stubPodController) GetPodKey() string                         { return s.podKey }
 func (s *stubPodController) GetAgentStatus() string                    { return "idle" }
-func (s *stubPodController) GetStateDetector() detector.StateDetector  { return nil }
+func (s *stubPodController) SubscribeStateChange(string, func(string)) {}
+func (s *stubPodController) UnsubscribeStateChange(string)             {}
 
 type stubEventReporter struct{}
 

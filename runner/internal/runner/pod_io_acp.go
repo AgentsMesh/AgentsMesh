@@ -2,6 +2,7 @@ package runner
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
 )
@@ -13,11 +14,18 @@ var ErrKeysNotSupported = errors.New("special keys not supported in ACP mode")
 // State mapping: processing→executing, idle→idle, waiting_permission→waiting.
 type ACPPodIO struct {
 	client *acp.ACPClient
+
+	// State change subscribers for event-driven autopilot integration.
+	stateSubsMu sync.RWMutex
+	stateSubs   map[string]func(newStatus string)
 }
 
 // NewACPPodIO creates a PodIO that delegates to an ACPClient.
 func NewACPPodIO(client *acp.ACPClient) *ACPPodIO {
-	return &ACPPodIO{client: client}
+	return &ACPPodIO{
+		client:    client,
+		stateSubs: make(map[string]func(newStatus string)),
+	}
 }
 
 func (a *ACPPodIO) Mode() string { return "acp" }
@@ -35,16 +43,26 @@ func (a *ACPPodIO) GetAgentStatus() string {
 }
 
 func (a *ACPPodIO) SubscribeStateChange(id string, cb func(newStatus string)) {
-	// ACP state changes are delivered via the OnStateChange callback
-	// which is set during ACPClient creation. We store this subscriber
-	// and the wiring is done when building the ACP pod.
-	// For now, this is a no-op since the OnStateChange callback is
-	// configured at client construction time via EventCallbacks.
-	// The message_handler_acp.go wireACPPod() sets up the bridge.
+	a.stateSubsMu.Lock()
+	a.stateSubs[id] = cb
+	a.stateSubsMu.Unlock()
 }
 
 func (a *ACPPodIO) UnsubscribeStateChange(id string) {
-	// See SubscribeStateChange comment.
+	a.stateSubsMu.Lock()
+	delete(a.stateSubs, id)
+	a.stateSubsMu.Unlock()
+}
+
+// NotifyStateChange is called by the ACP event wiring (message_handler_acp.go)
+// to propagate state changes to all subscribers (e.g. Autopilot).
+func (a *ACPPodIO) NotifyStateChange(acpState string) {
+	mapped := mapACPState(acpState)
+	a.stateSubsMu.RLock()
+	defer a.stateSubsMu.RUnlock()
+	for _, cb := range a.stateSubs {
+		cb(mapped)
+	}
 }
 
 func (a *ACPPodIO) SendKeys(keys []string) error {

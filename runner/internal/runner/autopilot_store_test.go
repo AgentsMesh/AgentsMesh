@@ -5,18 +5,18 @@ import (
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // --- Stub types for autopilot tests ---
 
 type apStubPodCtrl struct{ podKey string }
 
-func (s *apStubPodCtrl) SendInput(string) error                   { return nil }
-func (s *apStubPodCtrl) GetWorkDir() string                       { return "/tmp" }
-func (s *apStubPodCtrl) GetPodKey() string                        { return s.podKey }
-func (s *apStubPodCtrl) GetAgentStatus() string                   { return "idle" }
-func (s *apStubPodCtrl) GetStateDetector() detector.StateDetector { return nil }
+func (s *apStubPodCtrl) SendInput(string) error                    { return nil }
+func (s *apStubPodCtrl) GetWorkDir() string                        { return "/tmp" }
+func (s *apStubPodCtrl) GetPodKey() string                         { return s.podKey }
+func (s *apStubPodCtrl) GetAgentStatus() string                    { return "idle" }
+func (s *apStubPodCtrl) SubscribeStateChange(string, func(string)) {}
+func (s *apStubPodCtrl) UnsubscribeStateChange(string)             {}
 
 type apStubReporter struct{}
 
