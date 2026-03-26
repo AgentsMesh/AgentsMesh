@@ -24,21 +24,53 @@ import (
 type CodexParser struct{}
 
 // codexUsageFields holds token count fields shared by nested and flat structures.
+// Supports both Anthropic-style (input_tokens/output_tokens) and
+// OpenAI-style (prompt_tokens/completion_tokens) field names.
 type codexUsageFields struct {
+	// Anthropic-style field names
 	InputTokens              int64 `json:"input_tokens"`
 	OutputTokens             int64 `json:"output_tokens"`
 	CacheCreationInputTokens int64 `json:"cache_creation_input_tokens"`
 	CacheReadInputTokens     int64 `json:"cache_read_input_tokens"`
+	// OpenAI-style field names
+	PromptTokens     int64 `json:"prompt_tokens"`
+	CompletionTokens int64 `json:"completion_tokens"`
+}
+
+// effectiveInput returns the input token count, preferring Anthropic-style fields
+// but falling back to OpenAI-style prompt_tokens.
+func (u *codexUsageFields) effectiveInput() int64 {
+	if u.InputTokens > 0 {
+		return u.InputTokens
+	}
+	return u.PromptTokens
+}
+
+// effectiveOutput returns the output token count, preferring Anthropic-style fields
+// but falling back to OpenAI-style completion_tokens.
+func (u *codexUsageFields) effectiveOutput() int64 {
+	if u.OutputTokens > 0 {
+		return u.OutputTokens
+	}
+	return u.CompletionTokens
 }
 
 // codexJSONLEntry represents a Codex CLI JSONL entry with usage info.
-// Codex emits two formats: nested (message.model + message.usage) and flat (model + usage).
+// Codex emits multiple formats:
+//   - Nested message: message.model + message.usage (Anthropic-style)
+//   - Nested response: response.model + response.usage (OpenAI-style)
+//   - Flat: top-level model + usage
 type codexJSONLEntry struct {
 	Type    string `json:"type"`
 	Message struct {
 		Model string           `json:"model"`
 		Usage codexUsageFields `json:"usage"`
 	} `json:"message"`
+	// OpenAI response wrapper (Codex CLI uses OpenAI API)
+	Response struct {
+		Model string           `json:"model"`
+		Usage codexUsageFields `json:"usage"`
+	} `json:"response"`
 	// Flat structure (alternative format)
 	Model string            `json:"model"`
 	Usage *codexUsageFields `json:"usage"`
@@ -126,24 +158,36 @@ func parseCodexJSONLFile(path string, usage *TokenUsage) error {
 			continue
 		}
 
-		// Try nested message.usage structure first (like Claude)
-		if entry.Message.Model != "" && (entry.Message.Usage.InputTokens > 0 || entry.Message.Usage.OutputTokens > 0) {
+		// Try nested message.usage structure first (Anthropic-style)
+		if entry.Message.Model != "" && (entry.Message.Usage.effectiveInput() > 0 || entry.Message.Usage.effectiveOutput() > 0) {
 			usage.Add(
 				entry.Message.Model,
-				entry.Message.Usage.InputTokens,
-				entry.Message.Usage.OutputTokens,
+				entry.Message.Usage.effectiveInput(),
+				entry.Message.Usage.effectiveOutput(),
 				entry.Message.Usage.CacheCreationInputTokens,
 				entry.Message.Usage.CacheReadInputTokens,
 			)
 			continue
 		}
 
+		// Try nested response.usage structure (OpenAI-style, used by Codex CLI)
+		if entry.Response.Model != "" && (entry.Response.Usage.effectiveInput() > 0 || entry.Response.Usage.effectiveOutput() > 0) {
+			usage.Add(
+				entry.Response.Model,
+				entry.Response.Usage.effectiveInput(),
+				entry.Response.Usage.effectiveOutput(),
+				entry.Response.Usage.CacheCreationInputTokens,
+				entry.Response.Usage.CacheReadInputTokens,
+			)
+			continue
+		}
+
 		// Try flat structure
-		if entry.Model != "" && entry.Usage != nil && (entry.Usage.InputTokens > 0 || entry.Usage.OutputTokens > 0) {
+		if entry.Model != "" && entry.Usage != nil && (entry.Usage.effectiveInput() > 0 || entry.Usage.effectiveOutput() > 0) {
 			usage.Add(
 				entry.Model,
-				entry.Usage.InputTokens,
-				entry.Usage.OutputTokens,
+				entry.Usage.effectiveInput(),
+				entry.Usage.effectiveOutput(),
 				entry.Usage.CacheCreationInputTokens,
 				entry.Usage.CacheReadInputTokens,
 			)

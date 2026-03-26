@@ -306,6 +306,72 @@ func TestCodexParser_Parse_SandboxPath(t *testing.T) {
 	assert.Equal(t, int64(100), usage.Models["gpt-4.1"].InputTokens)
 }
 
+func TestCodexParser_ParseOpenAIResponseFormat(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "session.jsonl")
+
+	// OpenAI-style: response wrapper with prompt_tokens/completion_tokens
+	jsonl := `{"type":"response","response":{"model":"o3-mini","usage":{"prompt_tokens":800,"completion_tokens":350}}}
+{"type":"response","response":{"model":"gpt-4.1","usage":{"prompt_tokens":1200,"completion_tokens":600}}}
+`
+	require.NoError(t, os.WriteFile(file, []byte(jsonl), 0o644))
+
+	usage := NewTokenUsage()
+	err := parseCodexJSONLFile(file, usage)
+	require.NoError(t, err)
+
+	assert.Len(t, usage.Models, 2)
+
+	o3 := usage.Models["o3-mini"]
+	require.NotNil(t, o3)
+	assert.Equal(t, int64(800), o3.InputTokens)
+	assert.Equal(t, int64(350), o3.OutputTokens)
+
+	gpt := usage.Models["gpt-4.1"]
+	require.NotNil(t, gpt)
+	assert.Equal(t, int64(1200), gpt.InputTokens)
+	assert.Equal(t, int64(600), gpt.OutputTokens)
+}
+
+func TestCodexParser_ParseOpenAIFlatFormat(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "session.jsonl")
+
+	// Flat structure with OpenAI-style field names
+	jsonl := `{"model":"o3-mini","usage":{"prompt_tokens":500,"completion_tokens":250}}
+`
+	require.NoError(t, os.WriteFile(file, []byte(jsonl), 0o644))
+
+	usage := NewTokenUsage()
+	err := parseCodexJSONLFile(file, usage)
+	require.NoError(t, err)
+
+	assert.Len(t, usage.Models, 1)
+	m := usage.Models["o3-mini"]
+	require.NotNil(t, m)
+	assert.Equal(t, int64(500), m.InputTokens)
+	assert.Equal(t, int64(250), m.OutputTokens)
+}
+
+func TestCodexParser_Parse_OpenAISessionFiles(t *testing.T) {
+	// End-to-end test: sandbox path with OpenAI-style session files
+	sandboxRoot := t.TempDir()
+	sessionDir := filepath.Join(sandboxRoot, "codex-home", "sessions", "2026", "03", "26")
+	require.NoError(t, os.MkdirAll(sessionDir, 0o755))
+
+	jsonl := `{"type":"response","response":{"model":"o3-mini","usage":{"prompt_tokens":400,"completion_tokens":200}}}
+{"type":"response","response":{"model":"o3-mini","usage":{"prompt_tokens":600,"completion_tokens":300}}}
+`
+	require.NoError(t, os.WriteFile(filepath.Join(sessionDir, "rollout-xyz.jsonl"), []byte(jsonl), 0o644))
+
+	parser := &CodexParser{}
+	usage, err := parser.Parse(sandboxRoot, epoch)
+	require.NoError(t, err)
+	require.NotNil(t, usage, "should find OpenAI-style sessions in sandbox codex-home")
+	assert.Equal(t, int64(1000), usage.Models["o3-mini"].InputTokens)
+	assert.Equal(t, int64(500), usage.Models["o3-mini"].OutputTokens)
+}
+
 // --- Aider parser tests ---
 
 func TestAiderParser_Parse(t *testing.T) {
