@@ -4,8 +4,8 @@ This directory contains SSH keys used by the dev runner to access Git repositori
 
 ## Files
 
-- `id_ed25519` - Private key (**do not commit to Git**)
-- `id_ed25519.pub` - Public key (can be committed, for reference)
+- `id_ed25519` - Private key (generated locally, **not committed**)
+- `id_ed25519.pub` - Public key (derived from private key, **not committed**)
 - `config` - SSH client configuration
 - `known_hosts` - Known hosts list
 

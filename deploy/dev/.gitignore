@@ -4,3 +4,7 @@ ssl/
 ai-cli-configs/
 .env
 web.log
+
+# SSH keys are generated locally per-machine (never commit private or public key)
+runner-ssh/id_ed25519
+runner-ssh/id_ed25519.pub

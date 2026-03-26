@@ -480,10 +480,13 @@ generate_runner_ssh_key() {
 
     if [[ -f "$private_key" ]]; then
         info "Runner SSH key already exists"
+        # Always re-derive the public key from the private key to prevent
+        # mismatches (e.g. after git checkout restores a stale .pub file).
+        ssh-keygen -y -f "$private_key" > "$public_key"
         return 0
     fi
 
-    info "Generating runner SSH key (private key not committed)..."
+    info "Generating runner SSH key..."
     ssh-keygen -t ed25519 -C "agentsmesh-dev-runner@local" -f "$private_key" -N "" > /dev/null
     chmod 600 "$private_key"
     success "Runner SSH key generated: $private_key"
