@@ -190,6 +190,7 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		pods.GET("/:key", podHandler.GetPod)
 		pods.POST("/:key/terminate", podHandler.TerminatePod)
 		pods.PATCH("/:key/alias", podHandler.UpdatePodAlias)
+		pods.POST("/:key/prompt", podHandler.SendPrompt)
 		pods.GET("/:key/connect", podHandler.GetConnectionInfo)
 	}
 
