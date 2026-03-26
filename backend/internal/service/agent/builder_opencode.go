@@ -57,6 +57,15 @@ func (b *OpenCodeBuilder) BuildLaunchArgs(ctx *BuildContext) ([]string, error) {
 	return args, nil
 }
 
+// HandleInitialPrompt passes the prompt via --prompt flag.
+// OpenCode syntax: opencode --prompt "message" [options]
+func (b *OpenCodeBuilder) HandleInitialPrompt(ctx *BuildContext, args []string) []string {
+	if ctx.Request.InitialPrompt != "" {
+		return append([]string{"--prompt", ctx.Request.InitialPrompt}, args...)
+	}
+	return args
+}
+
 // SupportsMcp returns true - OpenCode supports MCP servers
 func (b *OpenCodeBuilder) SupportsMcp() bool { return true }
 
