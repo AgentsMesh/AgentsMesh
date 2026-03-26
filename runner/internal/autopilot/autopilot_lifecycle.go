@@ -48,6 +48,11 @@ func (ac *AutopilotController) Stop() {
 
 		ac.stateCoordinator.Stop()
 
+		// Stop control process (ACP mode: shuts down long-lived session)
+		if ac.controlRunner != nil {
+			ac.controlRunner.Stop()
+		}
+
 		// Acquire wgMu to ensure no new wg.Add() can happen while we set stopped=true.
 		// This guarantees that after this block, no new goroutines will be added to wg.
 		ac.wgMu.Lock()

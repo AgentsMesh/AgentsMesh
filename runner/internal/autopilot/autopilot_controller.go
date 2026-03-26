@@ -43,7 +43,7 @@ type AutopilotController struct {
 	iterCtrl         *IterationController
 	userHandler      *UserInteractionHandler
 	stateCoordinator *StateDetectorCoordinator
-	controlRunner    *ControlRunner
+	controlRunner    ControlProcess
 	promptBuilder    *PromptBuilder
 	progressTracker  *ProgressTracker
 
@@ -69,12 +69,13 @@ type AutopilotController struct {
 
 // Config contains configuration for creating an AutopilotController.
 type Config struct {
-	AutopilotKey string
-	PodKey       string
-	ProtoConfig  *runnerv1.AutopilotConfig
-	PodCtrl      TargetPodController
-	Reporter     EventReporter
-	MCPPort      int // MCP HTTP Server port for control process
+	AutopilotKey    string
+	PodKey          string
+	ProtoConfig     *runnerv1.AutopilotConfig
+	PodCtrl         TargetPodController
+	Reporter        EventReporter
+	MCPPort         int  // MCP HTTP Server port for control process
+	UseAcpControl   bool // Use ACP long-lived session instead of exec per iteration
 }
 
 // NewAutopilotController creates a new AutopilotController instance.
@@ -144,15 +145,27 @@ func NewAutopilotController(cfg Config) *AutopilotController {
 		GetCurrentIteration: ac.iterCtrl.GetCurrentIteration,
 	})
 
-	// Initialize ControlRunner
-	ac.controlRunner = NewControlRunner(ControlRunnerConfig{
-		WorkDir:        cfg.PodCtrl.GetWorkDir(),
-		AgentType:      cfg.ProtoConfig.ControlAgentType,
-		MCPConfigPath:  mcpConfigPath,
-		PromptBuilder:  ac.promptBuilder,
-		DecisionParser: NewDecisionParser(),
-		Logger:         log,
-	})
+	// Initialize ControlRunner (exec-based or ACP long-lived session)
+	if cfg.UseAcpControl {
+		ac.controlRunner = NewAcpControlProcess(AcpControlProcessConfig{
+			Command:        cfg.ProtoConfig.ControlAgentType,
+			WorkDir:        cfg.PodCtrl.GetWorkDir(),
+			MCPConfigPath:  mcpConfigPath,
+			PromptBuilder:  ac.promptBuilder,
+			DecisionParser: NewDecisionParser(),
+			Logger:         log,
+		})
+		log.Info("Using ACP control process (long-lived session)")
+	} else {
+		ac.controlRunner = NewControlRunner(ControlRunnerConfig{
+			WorkDir:        cfg.PodCtrl.GetWorkDir(),
+			AgentType:      cfg.ProtoConfig.ControlAgentType,
+			MCPConfigPath:  mcpConfigPath,
+			PromptBuilder:  ac.promptBuilder,
+			DecisionParser: NewDecisionParser(),
+			Logger:         log,
+		})
+	}
 
 	// Initialize ProgressTracker
 	ac.progressTracker = NewProgressTracker(ProgressTrackerConfig{

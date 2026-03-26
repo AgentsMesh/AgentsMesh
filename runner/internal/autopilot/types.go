@@ -2,6 +2,7 @@
 package autopilot
 
 import (
+	"context"
 	"time"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -60,4 +61,19 @@ type TargetPodController interface {
 	// The StateDetector interface is defined in terminal/detector package,
 	// which is a foundational service independent of Autopilot.
 	GetStateDetector() detector.StateDetector
+}
+
+// ControlProcess executes the control agent to make decisions.
+// Two implementations:
+//   - ExecControlProcess: launches a new CLI process per iteration (os/exec)
+//   - AcpControlProcess: maintains a long-lived ACP session (stream-json)
+type ControlProcess interface {
+	// RunControlProcess executes a single decision cycle.
+	RunControlProcess(ctx context.Context, iteration int) (*ControlDecision, error)
+	// SetSessionID sets the session ID for resumption (exec mode).
+	SetSessionID(id string)
+	// GetSessionID returns the current session ID.
+	GetSessionID() string
+	// Stop gracefully shuts down the control process.
+	Stop()
 }
