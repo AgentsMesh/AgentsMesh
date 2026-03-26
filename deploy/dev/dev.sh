@@ -697,7 +697,6 @@ show_result() {
     echo "  Local Runner:"
     echo "    agentsmesh-runner register --server http://localhost:$HTTP_PORT --token <TOKEN>"
     echo "    agentsmesh-runner run"
-    echo "    (Binary auto-built from source at ~/.local/bin/agentsmesh-runner)"
     echo ""
 }
 
@@ -855,77 +854,6 @@ start_admin_frontend() {
     echo "  查看日志: tail -f $log_file"
 }
 
-# Build runner binary from local source and install to ~/.local/bin.
-# Uses Docker (golang:1.25-alpine) — no local Go installation required.
-# Skips build when runner/ and proto/ source is unchanged since last build.
-build_runner_local() {
-    local repo_root="$SCRIPT_DIR/../.."
-    local runner_dir="$repo_root/runner"
-    local proto_dir="$repo_root/proto"
-    local install_dir="$HOME/.local/bin"
-    local binary_path="$install_dir/agentsmesh-runner"
-    local hash_cache_file="$runner_dir/.local-build-hash"
-
-    # Compute source hash: git tree SHAs for runner/ + proto/, plus uncommitted diff
-    local tree_hash dirty_hash source_hash
-    tree_hash=$(git -C "$repo_root" rev-parse HEAD:runner HEAD:proto 2>/dev/null | tr -d '\n')
-    dirty_hash=$(git -C "$repo_root" diff HEAD -- runner/ proto/ 2>/dev/null | \
-        md5 -q 2>/dev/null || \
-        git -C "$repo_root" diff HEAD -- runner/ proto/ 2>/dev/null | md5sum | cut -d' ' -f1)
-    source_hash="${tree_hash}${dirty_hash}"
-
-    # Skip if binary exists and source unchanged
-    local cached_hash=""
-    [[ -f "$hash_cache_file" ]] && cached_hash=$(cat "$hash_cache_file")
-    if [[ "$source_hash" == "$cached_hash" && -x "$binary_path" ]]; then
-        info "Runner binary up-to-date, skipping build"
-        return 0
-    fi
-
-    info "Building runner from local source (darwin/arm64)..."
-
-    # Version info matching Makefile ldflags pattern
-    local version build_time
-    version=$(git -C "$repo_root" describe --tags --always --dirty 2>/dev/null || echo "dev")
-    build_time=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-    local ldflags="-s -w -X main.version=${version} -X main.buildTime=${build_time}"
-
-    # Reuse runner's Go module cache volume (already populated by docker compose up)
-    # Note: mod cache is shared; build cache uses /root path (docker run is root user)
-    local mod_cache_vol="${COMPOSE_PROJECT_NAME}_runner-go-mod-cache"
-    local build_cache_vol="${COMPOSE_PROJECT_NAME}_runner-go-build-cache"
-
-    mkdir -p "$runner_dir/bin"
-    if ! docker run --rm \
-        -v "$(cd "$runner_dir" && pwd)":/app/runner \
-        -v "$(cd "$proto_dir" && pwd)":/app/proto \
-        -v "${mod_cache_vol}:/go/pkg/mod" \
-        -v "${build_cache_vol}:/root/.cache/go-build" \
-        -w /app/runner \
-        golang:1.25-alpine \
-        sh -c "CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
-               -ldflags '${ldflags}' \
-               -o /app/runner/bin/agentsmesh-runner \
-               ./cmd/runner" 2>&1; then
-        warn "Runner build failed — using existing binary if available"
-        return 0
-    fi
-
-    mkdir -p "$install_dir"
-    cp "$runner_dir/bin/agentsmesh-runner" "$binary_path"
-    chmod +x "$binary_path"
-    echo "$source_hash" > "$hash_cache_file"
-    success "Runner built and installed: $binary_path ($version)"
-
-    # Warn if ~/.local/bin is not in PATH
-    case ":$PATH:" in
-        *":$install_dir:"*) ;;
-        *)
-            warn "$install_dir is not in PATH. Add to ~/.zshrc:"
-            echo "    export PATH=\"$install_dir:\$PATH\" && source ~/.zshrc"
-            ;;
-    esac
-}
 
 # 主流程
 main() {
@@ -1017,9 +945,6 @@ main() {
 
     # Step 11.5: 启动本地 Admin Console
     start_admin_frontend
-
-    # Step 12: Build runner from local source
-    build_runner_local
 
     # 显示结果
     show_result
