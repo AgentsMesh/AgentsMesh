@@ -12,6 +12,10 @@ import (
 func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCreatedEvent) {
 	ctx := context.Background()
 
+	// Resolve any pending ACK (pod is alive, no need to wait further)
+	pc.ackTracker.Resolve(data.PodKey)
+	pc.clearInitReportCount(data.PodKey)
+
 	now := time.Now()
 	updates := map[string]interface{}{
 		"pty_pid":       int(data.Pid),
@@ -120,6 +124,9 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 		return
 	}
 
+	// Resolve any pending ACK (error is also an acknowledgment)
+	pc.ackTracker.Resolve(data.PodKey)
+
 	ctx := context.Background()
 
 	now := time.Now()
@@ -180,36 +187,4 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 	pc.logger.Warn("pod error ignored: pod not in initializing or running state",
 		"pod_key", data.PodKey,
 		"runner_id", runnerID)
-}
-
-// handleRunnerDisconnect handles runner disconnection
-func (pc *PodCoordinator) handleRunnerDisconnect(runnerID int64) {
-	ctx := context.Background()
-
-	// Mark runner as offline, but don't immediately orphan pods
-	// Pods will be orphaned by reconcilePods if runner doesn't reconnect
-	// and report them in heartbeat
-	if err := pc.runnerRepo.UpdateFields(ctx, runnerID, map[string]interface{}{
-		"status": "offline",
-	}); err != nil {
-		pc.logger.Error("failed to mark runner as offline",
-			"runner_id", runnerID,
-			"error", err)
-	}
-
-	// Clear relay connection cache for this runner
-	pc.relayConnectionCache.Delete(runnerID)
-
-	// Clear miss counters for this runner's pods to prevent stale counts
-	// from affecting reconciliation after reconnection.
-	pc.clearMissCountsForRunner(runnerID)
-
-	pc.logger.Info("runner disconnected, pods will be reconciled on reconnect",
-		"runner_id", runnerID)
-
-	// Note: We intentionally don't mark pods as orphaned here
-	// The runner might reconnect quickly (network glitch) and pods are still running
-	// Pods will be properly reconciled when:
-	// 1. Runner reconnects and sends heartbeat - reconcilePods will handle it
-	// 2. Pod cleanup task runs and finds stale pods
 }

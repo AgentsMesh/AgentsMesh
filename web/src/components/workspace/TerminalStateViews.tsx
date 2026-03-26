@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -8,6 +9,7 @@ import {
   AlertCircle,
   CheckCircle2,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 
 interface InitProgress {
@@ -19,9 +21,30 @@ interface InitProgress {
 interface TerminalLoadingStateProps {
   podStatus: string;
   initProgress?: InitProgress;
-  isTerminating: boolean;
-  onTerminate: () => void;
   onClose?: () => void;
+}
+
+/** Threshold in seconds after which we show a "taking longer than expected" warning */
+const SLOW_INIT_THRESHOLD_SEC = 120;
+
+function useElapsedSeconds() {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return elapsed;
+}
+
+function formatElapsed(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes === 0) return `${seconds}s`;
+  return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
 }
 
 /**
@@ -33,6 +56,8 @@ export function TerminalLoadingState({
   onClose,
 }: TerminalLoadingStateProps) {
   const isCompleted = podStatus === "completed";
+  const elapsed = useElapsedSeconds();
+  const isSlowInit = !isCompleted && elapsed >= SLOW_INIT_THRESHOLD_SEC;
 
   return (
     <div className="flex-1 flex items-center justify-center bg-terminal-bg">
@@ -63,8 +88,23 @@ export function TerminalLoadingState({
             )}
           </p>
         )}
-        {/* Show close button when status is unknown or completed */}
-        {(podStatus === "unknown" || isCompleted) && onClose && (
+        {/* Elapsed time indicator for non-completed states */}
+        {!isCompleted && (
+          <p className="text-xs text-terminal-text-muted mt-2 flex items-center justify-center gap-1">
+            <Clock className="w-3 h-3" />
+            {formatElapsed(elapsed)}
+          </p>
+        )}
+        {/* Slow initialization warning */}
+        {isSlowInit && (
+          <div className="mt-3 p-2 rounded bg-yellow-500/10 border border-yellow-500/30">
+            <p className="text-xs text-yellow-500 dark:text-yellow-400">
+              Taking longer than expected. The runner may be cloning a large repository or experiencing connectivity issues.
+            </p>
+          </div>
+        )}
+        {/* Show close button when status is unknown, completed, or init is slow */}
+        {(podStatus === "unknown" || isCompleted || isSlowInit) && onClose && (
           <Button
             variant="outline"
             size="sm"

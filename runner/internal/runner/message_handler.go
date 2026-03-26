@@ -148,6 +148,10 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 		Status: PodStatusInitializing,
 	})
 
+	// ACK: immediately tell Backend we received the command, before any heavy work.
+	// This lets Backend distinguish "Runner got the command" from "Runner never saw it".
+	_ = h.conn.SendPodInitProgress(cmd.PodKey, "received", 1, "Pod command received by runner")
+
 	// Build pod with all components (SRP: PodBuilder handles all component creation)
 	cols := int(cmd.Cols)
 	rows := int(cmd.Rows)

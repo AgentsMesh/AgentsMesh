@@ -29,7 +29,11 @@ var (
 	ErrSourcePodAlreadyResumed = errors.New("source pod already resumed")
 	ErrResumeRunnerMismatch    = errors.New("resume requires same runner")
 	ErrConfigBuildFailed       = errors.New("failed to build pod configuration")
+	ErrRunnerDispatchFailed    = errors.New("failed to dispatch pod to runner")
 )
+
+// errCodeRunnerUnreachable is the error code set on pods when runner dispatch fails.
+const errCodeRunnerUnreachable = "RUNNER_UNREACHABLE"
 
 // OrchestrateCreatePodRequest is the unified Pod creation request (protocol-agnostic).
 type OrchestrateCreatePodRequest struct {
@@ -258,10 +262,12 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		log.Printf("[pod-orchestrator] Sending create_pod to runner %d for pod %s (resume=%v)", req.RunnerID, pod.PodKey, isResumeMode)
 		if err := o.podCoordinator.CreatePod(ctx, req.RunnerID, podCmd); err != nil {
 			log.Printf("[pod-orchestrator] Failed to send create_pod: %v", err)
-			return &OrchestrateCreatePodResult{
-				Pod:     pod,
-				Warning: "Pod created but runner communication failed: " + err.Error(),
-			}, nil
+			// Mark pod as error immediately instead of leaving it stuck in initializing
+			if markErr := o.podService.MarkInitFailed(ctx, pod.PodKey, errCodeRunnerUnreachable,
+				"Failed to dispatch pod to runner: "+err.Error()); markErr != nil {
+				log.Printf("[pod-orchestrator] Failed to mark pod as init failed: %v", markErr)
+			}
+			return nil, ErrRunnerDispatchFailed
 		}
 		log.Printf("[pod-orchestrator] create_pod sent successfully for pod %s", pod.PodKey)
 	} else {

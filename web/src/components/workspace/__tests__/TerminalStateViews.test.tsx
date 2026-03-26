@@ -5,8 +5,6 @@ import { TerminalLoadingState, TerminalErrorState } from "../TerminalStateViews"
 describe("TerminalLoadingState", () => {
   const defaultProps = {
     podStatus: "initializing",
-    isTerminating: false,
-    onTerminate: vi.fn(),
     onClose: vi.fn(),
   };
 
@@ -97,8 +95,6 @@ describe("TerminalLoadingState", () => {
       render(
         <TerminalLoadingState
           podStatus="completed"
-          isTerminating={false}
-          onTerminate={vi.fn()}
         />
       );
 

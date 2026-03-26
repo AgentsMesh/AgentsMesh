@@ -53,6 +53,11 @@ func (pc *PodCoordinator) handleAgentStatus(runnerID int64, data *runnerv1.Agent
 
 // handlePodInitProgress handles pod init progress event from runner (Proto type)
 func (pc *PodCoordinator) handlePodInitProgress(runnerID int64, data *runnerv1.PodInitProgressEvent) {
+	// Resolve ACK if this is the "received" phase (Runner confirming receipt of CreatePod)
+	if data.Phase == "received" {
+		pc.ackTracker.Resolve(data.PodKey)
+	}
+
 	pc.logger.Debug("pod init progress",
 		"pod_key", data.PodKey,
 		"phase", data.Phase,

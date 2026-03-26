@@ -121,3 +121,18 @@ func (s *PodService) CleanupStalePods(ctx context.Context, maxIdleHours int) (in
 	threshold := time.Now().Add(-time.Duration(maxIdleHours) * time.Hour)
 	return s.repo.CleanupStale(ctx, threshold)
 }
+
+// MarkInitFailed marks an initializing pod as error with the given code and message.
+// This is called when pod dispatch fails (e.g., runner unreachable). The requesting
+// client receives the error via HTTP response; other clients will see the error
+// status on their next pod list refresh or via subsequent status change events.
+func (s *PodService) MarkInitFailed(ctx context.Context, podKey, errorCode, errorMessage string) error {
+	now := time.Now()
+	_, err := s.repo.UpdateByKeyAndStatusCounted(ctx, podKey, agentpod.StatusInitializing, map[string]interface{}{
+		"status":        agentpod.StatusError,
+		"error_code":    errorCode,
+		"error_message": errorMessage,
+		"finished_at":   now,
+	})
+	return err
+}

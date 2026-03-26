@@ -396,6 +396,8 @@ func mapOrchestratorErrorToMCP(err error) *mcpError {
 		return newMcpError(409, "sandbox already resumed")
 	case errors.Is(err, agentpod.ErrConfigBuildFailed):
 		return newMcpError(500, "failed to build pod configuration")
+	case errors.Is(err, agentpod.ErrRunnerDispatchFailed):
+		return newMcpError(502, "failed to dispatch pod to runner")
 	default:
 		return newMcpErrorf(500, "failed to create pod: %v", err)
 	}

@@ -144,6 +144,10 @@ func mapOrchestratorErrorToHTTP(c *gin.Context, err error) {
 	case errors.Is(err, agentpod.ErrNoAvailableRunner):
 		apierr.ServiceUnavailable(c, apierr.NO_AVAILABLE_RUNNER, "No available runner supports the requested agent type")
 
+	// Runner dispatch failure → 502
+	case errors.Is(err, agentpod.ErrRunnerDispatchFailed):
+		apierr.Respond(c, http.StatusBadGateway, apierr.RUNNER_DISPATCH_FAILED, "Failed to dispatch pod to runner. The runner may be offline or unreachable.")
+
 	// Config build failure → 500
 	case errors.Is(err, agentpod.ErrConfigBuildFailed):
 		apierr.Respond(c, http.StatusInternalServerError, apierr.POD_CONFIG_BUILD_FAILED, "Failed to build pod configuration")

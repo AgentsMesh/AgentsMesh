@@ -248,21 +248,20 @@ func TestCreatePod_NilCoordinator(t *testing.T) {
 	assert.Empty(t, result.Warning)
 }
 
-func TestCreatePod_CoordinatorSendFailure_ReturnsWarning(t *testing.T) {
+func TestCreatePod_CoordinatorSendFailure_ReturnsError(t *testing.T) {
 	coord := &mockPodCoordinator{err: errors.New("runner not connected")}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	agentTypeID := int64(1)
-	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
 		AgentTypeID:    &agentTypeID,
 	})
 
-	require.NoError(t, err) // Not an error - returns warning
-	assert.NotNil(t, result.Pod)
-	assert.Contains(t, result.Warning, "runner communication failed")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrRunnerDispatchFailed)
 }
 
 func TestCreatePod_ConfigBuildFailure(t *testing.T) {

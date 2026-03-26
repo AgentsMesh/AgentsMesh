@@ -203,6 +203,14 @@ func (r *podRepo) ListActiveByRunner(ctx context.Context, runnerID int64) ([]*ag
 	return pods, err
 }
 
+func (r *podRepo) ListInitializingByRunner(ctx context.Context, runnerID int64) ([]*agentpod.Pod, error) {
+	var pods []*agentpod.Pod
+	err := r.db.WithContext(ctx).
+		Where("runner_id = ? AND status = ?", runnerID, agentpod.StatusInitializing).
+		Find(&pods).Error
+	return pods, err
+}
+
 func (r *podRepo) MarkOrphaned(ctx context.Context, pod *agentpod.Pod, finishedAt time.Time) error {
 	return r.db.WithContext(ctx).Model(pod).Updates(map[string]interface{}{
 		"status":      agentpod.StatusOrphaned,

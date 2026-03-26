@@ -149,8 +149,6 @@ export function TerminalPane({
           <TerminalLoadingState
             podStatus={podStatus}
             initProgress={initProgress}
-            isTerminating={isTerminating}
-            onTerminate={handleTerminate}
             onClose={onClose}
           />
         )

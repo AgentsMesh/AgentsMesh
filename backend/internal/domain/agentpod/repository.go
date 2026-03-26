@@ -49,6 +49,8 @@ type PodRepository interface {
 	DecrementRunnerPods(ctx context.Context, runnerID int64) error
 	// ListActiveByRunner returns active pods (running/initializing) for reconciliation.
 	ListActiveByRunner(ctx context.Context, runnerID int64) ([]*Pod, error)
+	// ListInitializingByRunner returns pods in "initializing" state for a runner.
+	ListInitializingByRunner(ctx context.Context, runnerID int64) ([]*Pod, error)
 	// MarkOrphaned marks a pod as orphaned.
 	MarkOrphaned(ctx context.Context, pod *Pod, finishedAt time.Time) error
 	// MarkStaleAsDisconnected marks initializing/running pods with stale activity as disconnected.
