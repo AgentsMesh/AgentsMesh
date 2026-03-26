@@ -62,6 +62,9 @@ func NewControlRunner(cfg ControlRunnerConfig) *ControlRunner {
 	}
 }
 
+// Stop is a no-op for exec-based control runner (process exits after each iteration).
+func (cr *ControlRunner) Stop() {}
+
 // RunControlProcess executes the control agent to make a single decision.
 // Handles both initial start and session resume.
 func (cr *ControlRunner) RunControlProcess(ctx context.Context, iteration int) (*ControlDecision, error) {
