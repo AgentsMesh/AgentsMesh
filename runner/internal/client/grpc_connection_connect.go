@@ -60,6 +60,7 @@ func (c *GRPCConnection) Connect() error {
 	if err != nil {
 		host = dialTarget // No port in dialTarget, use as-is
 	}
+	host = normalizeServerName(host)
 	if err := creds.OverrideServerName(host); err != nil { //nolint:staticcheck // advancedtls has no other public API to set ServerName; the unexported serverNameOverride field is inaccessible
 		logger.GRPC().Warn("Failed to override TLS server name", "error", err)
 	}
@@ -143,6 +144,10 @@ func (c *GRPCConnection) Stop() {
 func parseGRPCEndpoint(endpoint string) (string, error) {
 	log := logger.GRPC()
 
+	// Trim whitespace and carriage returns that may be present in config files
+	// with Windows-style CRLF line endings.
+	endpoint = strings.TrimSpace(endpoint)
+
 	// If it doesn't contain a scheme, assume it's already host:port
 	if !strings.Contains(endpoint, "://") {
 		return endpoint, nil
@@ -172,4 +177,31 @@ func parseGRPCEndpoint(endpoint string) (string, error) {
 
 	logger.GRPCTrace().Trace("Parsed gRPC endpoint", "endpoint", endpoint, "dial_target", u.Host)
 	return u.Host, nil
+}
+
+// normalizeServerName sanitizes a hostname for use as the TLS ServerName (SNI).
+//
+// On Windows, os.Hostname() returns uppercase NetBIOS names (e.g. "DESKTOP-ABC")
+// and config files may contain CRLF line endings that leave trailing \r in values.
+// Additionally, IPv6 addresses may include zone IDs (e.g. "fe80::1%eth0") which
+// are invalid in the TLS SNI extension per RFC 6066.
+//
+// This function:
+//   - Trims whitespace and control characters (\r, \n, spaces)
+//   - Converts to lowercase per RFC 6066 §3 (SNI hostnames are case-insensitive)
+//   - Strips IPv6 zone IDs (the "%" suffix) which are link-local and not valid in SNI
+func normalizeServerName(host string) string {
+	host = strings.TrimSpace(host)
+	host = strings.ToLower(host)
+
+	// Strip IPv6 zone ID (e.g., "fe80::1%25eth0" or "fe80::1%eth0")
+	// Zone IDs are local to the machine and meaningless for TLS verification.
+	if i := strings.LastIndex(host, "%"); i != -1 {
+		// Only strip if this looks like an IPv6 address (contains ":")
+		if strings.Contains(host[:i], ":") {
+			host = host[:i]
+		}
+	}
+
+	return host
 }
