@@ -1,6 +1,7 @@
 package autopilot
 
 import (
+	"errors"
 	"os"
 	"runtime"
 	"testing"
@@ -75,6 +76,7 @@ func TestAutopilotController_HandleDecision_Completed(t *testing.T) {
 		ProtoConfig:   protoConfig,
 		PodCtrl:       workerCtrl,
 		Reporter:      reporter,
+		ControlProcess: &MockControlProcess{Decision: &ControlDecision{Type: DecisionCompleted, Summary: "All tasks done."}},
 		MCPPort:       19000,
 	})
 
@@ -137,6 +139,7 @@ func TestAutopilotController_HandleDecision_NeedHumanHelp(t *testing.T) {
 		ProtoConfig:   protoConfig,
 		PodCtrl:       workerCtrl,
 		Reporter:      reporter,
+		ControlProcess: &MockControlProcess{Decision: &ControlDecision{Type: DecisionNeedHumanHelp, Summary: "Need credentials."}},
 		MCPPort:       19000,
 	})
 
@@ -189,6 +192,7 @@ func TestAutopilotController_HandleDecision_GiveUp(t *testing.T) {
 		ProtoConfig:   protoConfig,
 		PodCtrl:       workerCtrl,
 		Reporter:      reporter,
+		ControlProcess: &MockControlProcess{Decision: &ControlDecision{Type: DecisionGiveUp, Summary: "Cannot proceed."}},
 		MCPPort:       19000,
 	})
 
@@ -251,6 +255,7 @@ func TestAutopilotController_HandleDecision_Continue(t *testing.T) {
 		ProtoConfig:   protoConfig,
 		PodCtrl:       workerCtrl,
 		Reporter:      reporter,
+		ControlProcess: &MockControlProcess{},
 		MCPPort:       19000,
 	})
 
@@ -299,6 +304,7 @@ func TestAutopilotController_OnPodWaiting_IncrementAfterMaxReached(t *testing.T)
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -353,6 +359,7 @@ func TestAutopilotController_RunSingleDecision_ControlFailureRetry(t *testing.T)
 		ProtoConfig:   protoConfig,
 		PodCtrl:       workerCtrl,
 		Reporter:      reporter,
+		ControlProcess: &MockControlProcess{Err: errors.New("mock control failure")},
 		MCPPort:       19000,
 	})
 
@@ -419,6 +426,7 @@ func TestAutopilotController_RunSingleDecision_WorkerNotWaitingAfterFailure(t *t
 		ProtoConfig:   protoConfig,
 		PodCtrl:       workerCtrl,
 		Reporter:      reporter,
+		ControlProcess: &MockControlProcess{},
 		MCPPort:       19000,
 	})
 

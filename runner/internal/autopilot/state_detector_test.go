@@ -1,216 +1,130 @@
 package autopilot
 
 import (
-	"io"
-	"log/slog"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestStateDetectorCoordinator_NewStateDetectorCoordinator(t *testing.T) {
-	mockDetector := NewMockStateDetector()
-	var calledWith detector.AgentState
+func TestStateDetectorCoordinator_TriggersOnWaiting(t *testing.T) {
+	var waitingCount atomic.Int32
+	podCtrl := NewMockPodControllerWithStateChange()
 
 	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector: mockDetector,
-		OnWaiting: func() {
-			calledWith = detector.StateWaiting
-		},
-		CheckPeriod: 100 * time.Millisecond,
-		Logger:      nil,
-		AutopilotKey: "autopilot-123",
+		PodCtrl:      podCtrl,
+		OnWaiting:    func() { waitingCount.Add(1) },
+		AutopilotKey: "test-1",
 	})
-
-	assert.NotNil(t, sdc)
-
-	// Simulate state change from executing to waiting
-	mockDetector.SetState(detector.StateExecuting)
-	mockDetector.SetState(detector.StateWaiting)
-
-	// Callback should have been triggered
-	assert.Equal(t, detector.StateWaiting, calledWith)
-}
-
-func TestStateDetectorCoordinator_DefaultCheckPeriod(t *testing.T) {
-	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector:    nil,
-		CheckPeriod: 0, // Should use default
-	})
-
-	assert.NotNil(t, sdc)
-	assert.Equal(t, 500*time.Millisecond, sdc.checkPeriod)
-}
-
-func TestStateDetectorCoordinator_NilDetector(t *testing.T) {
-	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector: nil,
-	})
-
-	// Start should not panic with nil detector
 	sdc.Start()
+	defer sdc.Stop()
 
-	// Stop should not panic
-	sdc.Stop()
-}
+	// Simulate executing → waiting transition
+	podCtrl.SimulateStateChange("executing")
+	podCtrl.SimulateStateChange("waiting")
 
-func TestStateDetectorCoordinator_Start(t *testing.T) {
-	mockDetector := NewMockStateDetector()
-
-	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector:    mockDetector,
-		CheckPeriod: 50 * time.Millisecond,
-	})
-
-	sdc.Start()
-
-	// Wait for a few detection cycles
-	time.Sleep(150 * time.Millisecond)
-
-	sdc.Stop()
-}
-
-func TestStateDetectorCoordinator_Stop(t *testing.T) {
-	mockDetector := NewMockStateDetector()
-
-	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector:    mockDetector,
-		CheckPeriod: 50 * time.Millisecond,
-	})
-
-	sdc.Start()
-	time.Sleep(60 * time.Millisecond)
-
-	sdc.Stop()
-
-	// Context should be done
-	select {
-	case <-sdc.GetContext().Done():
-		// OK
-	default:
-		t.Fatal("Context should be done after stop")
+	time.Sleep(50 * time.Millisecond)
+	if got := waitingCount.Load(); got != 1 {
+		t.Errorf("OnWaiting called %d times, want 1", got)
 	}
 }
 
-func TestStateDetectorCoordinator_GetContext(t *testing.T) {
+func TestStateDetectorCoordinator_TriggersOnIdle(t *testing.T) {
+	// ACP mode uses "idle" instead of "waiting"
+	var waitingCount atomic.Int32
+	podCtrl := NewMockPodControllerWithStateChange()
+
 	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector: nil,
+		PodCtrl:      podCtrl,
+		OnWaiting:    func() { waitingCount.Add(1) },
+		AutopilotKey: "test-2",
 	})
+	sdc.Start()
+	defer sdc.Stop()
 
-	ctx := sdc.GetContext()
-	assert.NotNil(t, ctx)
+	podCtrl.SimulateStateChange("executing")
+	podCtrl.SimulateStateChange("idle")
 
-	// Context should not be done initially
-	select {
-	case <-ctx.Done():
-		t.Fatal("Context should not be done yet")
-	default:
-		// OK
+	time.Sleep(50 * time.Millisecond)
+	if got := waitingCount.Load(); got != 1 {
+		t.Errorf("OnWaiting called %d times, want 1", got)
 	}
 }
 
-func TestStateDetectorCoordinator_CallbackOnlyOnExecutingToWaiting(t *testing.T) {
-	mockDetector := NewMockStateDetector()
-	var callCount atomic.Int32
+func TestStateDetectorCoordinator_IgnoresNonExecutingToWaiting(t *testing.T) {
+	var waitingCount atomic.Int32
+	podCtrl := NewMockPodControllerWithStateChange()
 
 	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector: mockDetector,
-		OnWaiting: func() {
-			callCount.Add(1)
-		},
+		PodCtrl:      podCtrl,
+		OnWaiting:    func() { waitingCount.Add(1) },
+		AutopilotKey: "test-3",
 	})
-
-	// Start from not_running
-	mockDetector.SetState(detector.StateNotRunning)
-	assert.Equal(t, int32(0), callCount.Load())
-
-	// Transition to waiting (not from executing) - should NOT trigger
-	mockDetector.SetState(detector.StateWaiting)
-	assert.Equal(t, int32(0), callCount.Load())
-
-	// Transition to executing
-	mockDetector.SetState(detector.StateExecuting)
-	assert.Equal(t, int32(0), callCount.Load())
-
-	// Transition from executing to waiting - SHOULD trigger
-	mockDetector.SetState(detector.StateWaiting)
-	// Note: callback is triggered in a goroutine, wait a bit
-	time.Sleep(10 * time.Millisecond)
-	assert.Equal(t, int32(1), callCount.Load())
-
-	// Stop coordinator
-	sdc.Stop()
-}
-
-func TestStateDetectorCoordinator_RunStateDetection(t *testing.T) {
-	mockDetector := NewMockStateDetector()
-
-	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector:    mockDetector,
-		CheckPeriod: 30 * time.Millisecond,
-	})
-
 	sdc.Start()
+	defer sdc.Stop()
 
-	// Wait for multiple detection cycles
-	time.Sleep(100 * time.Millisecond)
+	// idle → waiting should NOT trigger (only executing → waiting)
+	podCtrl.SimulateStateChange("idle")
+	podCtrl.SimulateStateChange("waiting")
 
-	sdc.Stop()
-
-	// Should have detected multiple times (using the counter in MockStateDetector)
-	assert.GreaterOrEqual(t, mockDetector.GetDetectCallCount(), 2)
+	time.Sleep(50 * time.Millisecond)
+	if got := waitingCount.Load(); got != 0 {
+		t.Errorf("OnWaiting called %d times, want 0 (idle→waiting should not trigger)", got)
+	}
 }
 
-func TestStateDetectorCoordinator_NilCallback(t *testing.T) {
-	mockDetector := NewMockStateDetector()
+func TestStateDetectorCoordinator_MultipleTransitions(t *testing.T) {
+	var waitingCount atomic.Int32
+	podCtrl := NewMockPodControllerWithStateChange()
 
 	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector:  mockDetector,
-		OnWaiting: nil, // No callback
+		PodCtrl:      podCtrl,
+		OnWaiting:    func() { waitingCount.Add(1) },
+		AutopilotKey: "test-4",
 	})
+	sdc.Start()
+	defer sdc.Stop()
 
-	// Should not panic when state changes
-	mockDetector.SetState(detector.StateExecuting)
-	mockDetector.SetState(detector.StateWaiting)
+	// Two full cycles
+	podCtrl.SimulateStateChange("executing")
+	podCtrl.SimulateStateChange("waiting")
+	podCtrl.SimulateStateChange("executing")
+	podCtrl.SimulateStateChange("idle")
 
+	time.Sleep(50 * time.Millisecond)
+	if got := waitingCount.Load(); got != 2 {
+		t.Errorf("OnWaiting called %d times, want 2", got)
+	}
+}
+
+func TestStateDetectorCoordinator_NilPodCtrl(t *testing.T) {
+	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
+		PodCtrl:      nil,
+		OnWaiting:    func() {},
+		AutopilotKey: "test-nil",
+	})
+	// Should not panic
+	sdc.Start()
 	sdc.Stop()
 }
 
-// Test AgentState constants
-func TestAgentState_Constants(t *testing.T) {
-	assert.Equal(t, detector.AgentState("not_running"), detector.StateNotRunning)
-	assert.Equal(t, detector.AgentState("executing"), detector.StateExecuting)
-	assert.Equal(t, detector.AgentState("waiting"), detector.StateWaiting)
-}
-
-func TestStateDetectorCoordinator_WithLogger(t *testing.T) {
-	mockDetector := NewMockStateDetector()
-	var calledWith detector.AgentState
-
-	// Create a logger to cover the log branch
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+func TestStateDetectorCoordinator_StopUnsubscribes(t *testing.T) {
+	podCtrl := NewMockPodControllerWithStateChange()
+	var waitingCount atomic.Int32
 
 	sdc := NewStateDetectorCoordinator(StateDetectorCoordinatorConfig{
-		Detector: mockDetector,
-		OnWaiting: func() {
-			calledWith = detector.StateWaiting
-		},
-		CheckPeriod: 100 * time.Millisecond,
-		Logger:      logger,
-		AutopilotKey: "autopilot-123",
+		PodCtrl:      podCtrl,
+		OnWaiting:    func() { waitingCount.Add(1) },
+		AutopilotKey: "test-unsub",
 	})
-
-	assert.NotNil(t, sdc)
-
-	// Simulate state change from executing to waiting - should trigger log
-	mockDetector.SetState(detector.StateExecuting)
-	mockDetector.SetState(detector.StateWaiting)
-
-	// Callback should have been triggered
-	assert.Equal(t, detector.StateWaiting, calledWith)
-
+	sdc.Start()
 	sdc.Stop()
+
+	// After stop, state changes should not trigger
+	podCtrl.SimulateStateChange("executing")
+	podCtrl.SimulateStateChange("waiting")
+
+	time.Sleep(50 * time.Millisecond)
+	if got := waitingCount.Load(); got != 0 {
+		t.Errorf("OnWaiting called %d times after Stop, want 0", got)
+	}
 }

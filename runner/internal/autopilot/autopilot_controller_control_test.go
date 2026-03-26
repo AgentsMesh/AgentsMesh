@@ -28,6 +28,7 @@ func TestAutopilotController_Pause_Resume(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -64,6 +65,7 @@ func TestAutopilotController_Takeover_Handback(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -100,6 +102,7 @@ func TestAutopilotController_Approve(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -136,6 +139,7 @@ func TestAutopilotController_Approve_Stop(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()
@@ -171,6 +175,7 @@ func TestAutopilotController_Approve_NotWaitingApproval(t *testing.T) {
 		ProtoConfig:  protoConfig,
 		PodCtrl:   workerCtrl,
 		Reporter:     reporter,
+		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
 	defer rp.Stop()

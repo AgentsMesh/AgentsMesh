@@ -6,8 +6,6 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/monitor"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // OnCreateAutopilot handles Autopilot creation command from server.
@@ -75,22 +73,8 @@ func (h *RunnerMessageHandler) OnCreateAutopilot(cmd *runnerv1.CreateAutopilotCo
 	// Store Autopilot
 	h.runner.AddAutopilot(ac)
 
-	// Register with Monitor for event-driven callbacks
-	if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
-		subscriberID := "autopilot-" + cmd.AutopilotKey
-		agentMon.Subscribe(subscriberID, func(status monitor.PodStatus) {
-			if status.PodID == podKey && status.AgentStatus == detector.StateWaiting {
-				ac.OnPodWaiting()
-			}
-		})
-	}
-
 	// Start Autopilot
 	if err := ac.Start(); err != nil {
-		// Clean up Monitor subscription registered above
-		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
-			agentMon.Unsubscribe("autopilot-" + cmd.AutopilotKey)
-		}
 		h.runner.RemoveAutopilot(cmd.AutopilotKey)
 		return fmt.Errorf("failed to start Autopilot: %w", err)
 	}
@@ -125,9 +109,6 @@ func (h *RunnerMessageHandler) OnAutopilotControl(cmd *runnerv1.AutopilotControl
 	case *runnerv1.AutopilotControlCommand_Stop:
 		log.Info("Stopping Autopilot", "autopilot_key", cmd.AutopilotKey)
 		ac.Stop()
-		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
-			agentMon.Unsubscribe("autopilot-" + cmd.AutopilotKey)
-		}
 		h.runner.RemoveAutopilot(cmd.AutopilotKey)
 
 	case *runnerv1.AutopilotControlCommand_Approve:

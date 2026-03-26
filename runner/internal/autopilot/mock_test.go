@@ -1,12 +1,10 @@
 package autopilot
 
 import (
+	"context"
 	"sync"
-	"sync/atomic"
-	"time"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // MockPodController is a mock implementation of TargetPodController for testing
@@ -15,8 +13,7 @@ type MockPodController struct {
 	workDir         string
 	podKey          string
 	agentStatus     string
-	sendTextError   error                   // If set, SendInput will return this error
-	stateDetector   detector.StateDetector // Mock state detector
+	sendTextError   error // If set, SendInput will return this error
 }
 
 func (m *MockPodController) SendInput(text string) error {
@@ -36,9 +33,27 @@ func (m *MockPodController) GetAgentStatus() string {
 	return m.agentStatus
 }
 
-func (m *MockPodController) GetStateDetector() detector.StateDetector {
-	return m.stateDetector
+func (m *MockPodController) SubscribeStateChange(_ string, _ func(string)) {}
+func (m *MockPodController) UnsubscribeStateChange(_ string)               {}
+
+// MockControlProcess is a configurable ControlProcess for tests.
+type MockControlProcess struct {
+	Decision *ControlDecision // If set, RunControlProcess returns this
+	Err      error            // If set, RunControlProcess returns this error
 }
+
+func (m *MockControlProcess) RunControlProcess(_ context.Context, _ int) (*ControlDecision, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	if m.Decision != nil {
+		return m.Decision, nil
+	}
+	return &ControlDecision{Type: DecisionContinue, Summary: "mock"}, nil
+}
+func (m *MockControlProcess) SetSessionID(_ string) {}
+func (m *MockControlProcess) GetSessionID() string  { return "" }
+func (m *MockControlProcess) Stop()                 {}
 
 // MockEventReporter is a mock implementation of EventReporter for testing
 type MockEventReporter struct {
@@ -125,109 +140,41 @@ func (m *MockEventReporter) GetCreatedEvents() []*runnerv1.AutopilotCreatedEvent
 	return result
 }
 
-// MockStateDetector is a mock implementation of detector.StateDetector for testing
-type MockStateDetector struct {
-	state           detector.AgentState
-	stateMu         sync.RWMutex
-	callback        detector.StateChangeCallback
-	callbackMu      sync.RWMutex
-	subscribers     map[string]func(detector.StateChangeEvent)
-	subscribersMu   sync.RWMutex
-	detectCallCount atomic.Int32 // Track number of DetectState calls (atomic for race safety)
+// MockPodControllerWithStateChange extends MockPodController with real
+// SubscribeStateChange support for testing StateDetectorCoordinator.
+type MockPodControllerWithStateChange struct {
+	MockPodController
+	mu   sync.Mutex
+	subs map[string]func(string)
 }
 
-// Compile-time interface check
-var _ detector.StateDetector = (*MockStateDetector)(nil)
-
-func NewMockStateDetector() *MockStateDetector {
-	return &MockStateDetector{
-		state:       detector.StateNotRunning,
-		subscribers: make(map[string]func(detector.StateChangeEvent)),
+func NewMockPodControllerWithStateChange() *MockPodControllerWithStateChange {
+	return &MockPodControllerWithStateChange{
+		subs: make(map[string]func(string)),
 	}
 }
 
-func (m *MockStateDetector) DetectState() detector.AgentState {
-	m.detectCallCount.Add(1)
-	m.stateMu.RLock()
-	defer m.stateMu.RUnlock()
-	return m.state
+func (m *MockPodControllerWithStateChange) SubscribeStateChange(id string, cb func(string)) {
+	m.mu.Lock()
+	m.subs[id] = cb
+	m.mu.Unlock()
 }
 
-func (m *MockStateDetector) GetDetectCallCount() int {
-	return int(m.detectCallCount.Load())
+func (m *MockPodControllerWithStateChange) UnsubscribeStateChange(id string) {
+	m.mu.Lock()
+	delete(m.subs, id)
+	m.mu.Unlock()
 }
 
-func (m *MockStateDetector) GetState() detector.AgentState {
-	m.stateMu.RLock()
-	defer m.stateMu.RUnlock()
-	return m.state
-}
-
-func (m *MockStateDetector) SetCallback(cb detector.StateChangeCallback) {
-	m.callbackMu.Lock()
-	defer m.callbackMu.Unlock()
-	m.callback = cb
-}
-
-func (m *MockStateDetector) Reset() {
-	m.stateMu.Lock()
-	defer m.stateMu.Unlock()
-	m.state = detector.StateNotRunning
-}
-
-func (m *MockStateDetector) SetState(state detector.AgentState) {
-	m.stateMu.Lock()
-	prevState := m.state
-	m.state = state
-	m.stateMu.Unlock()
-
-	if prevState == state {
-		return
-	}
-
-	// Legacy callback
-	m.callbackMu.RLock()
-	cb := m.callback
-	m.callbackMu.RUnlock()
-
-	if cb != nil {
-		cb(state, prevState)
-	}
-
-	// Notify subscribers
-	m.subscribersMu.RLock()
-	subs := make(map[string]func(detector.StateChangeEvent), len(m.subscribers))
-	for id, cb := range m.subscribers {
+// SimulateStateChange triggers all subscribers with a new status.
+func (m *MockPodControllerWithStateChange) SimulateStateChange(newStatus string) {
+	m.mu.Lock()
+	subs := make(map[string]func(string), len(m.subs))
+	for id, cb := range m.subs {
 		subs[id] = cb
 	}
-	m.subscribersMu.RUnlock()
-
-	event := detector.StateChangeEvent{
-		NewState:  state,
-		PrevState: prevState,
-		Timestamp: time.Now(),
+	m.mu.Unlock()
+	for _, cb := range subs {
+		cb(newStatus)
 	}
-	for _, subCb := range subs {
-		go subCb(event)
-	}
-}
-
-func (m *MockStateDetector) OnOutput(bytes int) {
-	// No-op for mock
-}
-
-func (m *MockStateDetector) OnScreenUpdate(lines []string) {
-	// No-op for mock
-}
-
-func (m *MockStateDetector) Subscribe(id string, cb func(detector.StateChangeEvent)) {
-	m.subscribersMu.Lock()
-	defer m.subscribersMu.Unlock()
-	m.subscribers[id] = cb
-}
-
-func (m *MockStateDetector) Unsubscribe(id string) {
-	m.subscribersMu.Lock()
-	defer m.subscribersMu.Unlock()
-	delete(m.subscribers, id)
 }

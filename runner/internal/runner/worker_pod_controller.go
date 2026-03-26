@@ -4,11 +4,10 @@ import (
 	"fmt"
 
 	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
 // PodControllerImpl implements autopilot.TargetPodController interface.
-// It provides the AutopilotController with the ability to interact with the target Pod.
+// It delegates to PodIO for mode-agnostic Pod interaction (PTY and ACP).
 type PodControllerImpl struct {
 	pod    *Pod
 	runner *Runner
@@ -40,19 +39,24 @@ func (c *PodControllerImpl) GetPodKey() string {
 	return c.pod.PodKey
 }
 
-// GetAgentStatus returns the pod's agent status.
+// GetAgentStatus returns the pod's agent status via PodIO.
 func (c *PodControllerImpl) GetAgentStatus() string {
 	agentStatus, _, _, _ := c.runner.GetPodStatus(c.pod.PodKey)
 	return agentStatus
 }
 
-// GetStateDetector returns the StateDetector for the pod.
-// Returns nil if state detection is not available (e.g., ACP mode without VirtualTerminal).
-// Returns the same instance across multiple calls to ensure state continuity.
-// The StateDetector interface is defined in terminal/detector package,
-// which is a foundational service independent of Autopilot.
-func (c *PodControllerImpl) GetStateDetector() detector.StateDetector {
-	return c.pod.GetOrCreateStateDetector()
+// SubscribeStateChange delegates to PodIO for mode-agnostic state change events.
+func (c *PodControllerImpl) SubscribeStateChange(id string, cb func(newStatus string)) {
+	if c.pod.IO != nil {
+		c.pod.IO.SubscribeStateChange(id, cb)
+	}
+}
+
+// UnsubscribeStateChange removes a state change subscription.
+func (c *PodControllerImpl) UnsubscribeStateChange(id string) {
+	if c.pod.IO != nil {
+		c.pod.IO.UnsubscribeStateChange(id)
+	}
 }
 
 // Compile-time interface check
