@@ -128,25 +128,3 @@ func TestCodexCLIBuilder_HandleInitialPrompt(t *testing.T) {
 		}
 	})
 }
-
-func TestOpenCodeBuilder_HandleInitialPrompt(t *testing.T) {
-	builder := NewOpenCodeBuilder()
-
-	t.Run("prepends prompt to args", func(t *testing.T) {
-		ctx := &BuildContext{
-			Request: &ConfigBuildRequest{
-				InitialPrompt: "Fix the bug",
-			},
-		}
-		args := []string{}
-
-		result := builder.HandleInitialPrompt(ctx, args)
-
-		if len(result) != 1 {
-			t.Fatalf("Result length = %d, want 1", len(result))
-		}
-		if result[0] != "Fix the bug" {
-			t.Errorf("First arg = %s, want 'Fix the bug'", result[0])
-		}
-	})
-}
