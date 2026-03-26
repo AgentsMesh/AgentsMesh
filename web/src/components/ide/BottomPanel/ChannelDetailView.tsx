@@ -8,7 +8,6 @@ import { MessageList } from "@/components/channel/MessageList";
 import { MessageInput } from "@/components/channel/MessageInput";
 import { ChevronLeft } from "lucide-react";
 import { useChannelChat } from "@/hooks/useChannelChat";
-import type { MentionPayload } from "@/lib/api/channel";
 
 interface ChannelDetailViewProps {
   channelId: number;
@@ -28,11 +27,12 @@ export function ChannelDetailView({
   t,
 }: ChannelDetailViewProps) {
   const chat = useChannelChat({ channelId });
+  const { handlePodsChanged: chatPodsChanged } = chat;
 
   const handlePodsChanged = useCallback(() => {
-    chat.handlePodsChanged();
+    chatPodsChanged();
     onPodsChanged?.();
-  }, [chat.handlePodsChanged, onPodsChanged]);
+  }, [chatPodsChanged, onPodsChanged]);
 
   return (
     <div className="flex flex-col h-full">

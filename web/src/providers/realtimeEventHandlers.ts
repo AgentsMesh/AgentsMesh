@@ -7,7 +7,7 @@ import { useLoopStore } from "@/stores/loop";
 import type {
   RealtimeEvent, RunnerStatusData, TicketStatusChangedData,
   ChannelMessageData, ChannelMessageEditedData, ChannelMessageDeletedData,
-  AutopilotStatusChangedData, AutopilotIterationData, AutopilotCreatedData,
+  AutopilotStatusChangedData, AutopilotIterationData,
   AutopilotTerminatedData, AutopilotThinkingData, MREventData, PipelineEventData,
   LoopRunEventData, LoopRunWarningData,
 } from "@/lib/realtime";
