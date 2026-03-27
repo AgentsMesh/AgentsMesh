@@ -1,11 +1,8 @@
 package storage
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -32,96 +29,29 @@ type S3Storage struct {
 	publicPresign      *s3.PresignClient // Presign client using public endpoint (nil when same as internal)
 	bucket             string
 	endpoint           string
-	publicEndpoint     string // Full URL with scheme (e.g., https://oss-cn-beijing.aliyuncs.com)
-	publicEndpointHost string // Host only without scheme (e.g., oss-cn-beijing.aliyuncs.com)
+	publicEndpoint     string // Full URL with scheme
+	publicEndpointHost string // Host only without scheme
 	useSSL             bool
-	usePathStyle       bool // Use path-style URLs (required for MinIO)
+	usePathStyle       bool
 }
 
 // NewS3Storage creates a new S3-compatible storage client.
 func NewS3Storage(cfg S3Config) (*S3Storage, error) {
-	// Build endpoint URL
-	var endpointURL string
-	if cfg.Endpoint != "" {
-		scheme := "http"
-		if cfg.UseSSL {
-			scheme = "https"
-		}
-		endpointURL = fmt.Sprintf("%s://%s", scheme, cfg.Endpoint)
-	}
+	endpointURL := buildEndpointURL(cfg.Endpoint, cfg.UseSSL)
 
-	// Create custom endpoint resolver if endpoint is specified
-	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		if cfg.Endpoint != "" {
-			return aws.Endpoint{
-				URL:               endpointURL,
-				HostnameImmutable: cfg.UsePathStyle,
-			}, nil
-		}
-		// Return EndpointNotFoundError to fallback to default resolution
-		return aws.Endpoint{}, &aws.EndpointNotFoundError{}
-	})
-
-	// Load AWS config
-	awsCfg, err := config.LoadDefaultConfig(context.Background(),
-		config.WithRegion(cfg.Region),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			cfg.AccessKey,
-			cfg.SecretKey,
-			"",
-		)),
-		config.WithEndpointResolverWithOptions(customResolver),
-	)
+	awsCfg, err := loadAWSConfig(cfg, endpointURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+		return nil, err
 	}
 
-	// Create S3 client with path-style option
-	// Disable automatic checksum calculation to avoid aws-chunked encoding
-	// which is not supported by Aliyun OSS
 	client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
 		o.UsePathStyle = cfg.UsePathStyle
 		o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
 	})
 
-	// Build public endpoint URL if specified
-	publicEndpointURL := endpointURL
-	publicEndpointHost := ""
-	var publicPresignClient *s3.PresignClient
-	if cfg.PublicEndpoint != "" {
-		scheme := "http"
-		if cfg.UseSSL {
-			scheme = "https"
-		}
-		publicEndpointURL = fmt.Sprintf("%s://%s", scheme, cfg.PublicEndpoint)
-		publicEndpointHost = cfg.PublicEndpoint
-
-		// When public endpoint differs from internal, create a dedicated presign client
-		// using the public endpoint. This ensures presigned URLs have correct SigV4 signatures
-		// for external access (required for AWS S3; MinIO/OSS are more lenient).
-		if publicEndpointURL != endpointURL {
-			publicResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-				return aws.Endpoint{
-					URL:               publicEndpointURL,
-					HostnameImmutable: cfg.UsePathStyle,
-				}, nil
-			})
-			publicCfg, pubErr := config.LoadDefaultConfig(context.Background(),
-				config.WithRegion(cfg.Region),
-				config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-					cfg.AccessKey, cfg.SecretKey, "",
-				)),
-				config.WithEndpointResolverWithOptions(publicResolver),
-			)
-			if pubErr != nil {
-				return nil, fmt.Errorf("failed to load public endpoint AWS config: %w", pubErr)
-			}
-			publicClient := s3.NewFromConfig(publicCfg, func(o *s3.Options) {
-				o.UsePathStyle = cfg.UsePathStyle
-				o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
-			})
-			publicPresignClient = s3.NewPresignClient(publicClient)
-		}
+	publicEndpointURL, publicEndpointHost, publicPresignClient, err := buildPublicPresign(cfg, endpointURL)
+	if err != nil {
+		return nil, err
 	}
 
 	return &S3Storage{
@@ -137,170 +67,84 @@ func NewS3Storage(cfg S3Config) (*S3Storage, error) {
 	}, nil
 }
 
-// Upload stores a file in S3.
-func (s *S3Storage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) (*FileInfo, error) {
-	// Read all content into memory to avoid chunked encoding
-	// This is required for Aliyun OSS compatibility as it doesn't support aws-chunked encoding
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file content: %w", err)
+// buildEndpointURL constructs the endpoint URL from host and SSL flag.
+func buildEndpointURL(endpoint string, useSSL bool) string {
+	if endpoint == "" {
+		return ""
 	}
-
-	input := &s3.PutObjectInput{
-		Bucket:        aws.String(s.bucket),
-		Key:           aws.String(key),
-		Body:          bytes.NewReader(data),
-		ContentType:   aws.String(contentType),
-		ContentLength: aws.Int64(int64(len(data))),
+	scheme := "http"
+	if useSSL {
+		scheme = "https"
 	}
-
-	result, err := s.client.PutObject(ctx, input)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upload file: %w", err)
-	}
-
-	etag := ""
-	if result.ETag != nil {
-		etag = *result.ETag
-	}
-
-	return &FileInfo{
-		Key:         key,
-		Size:        size,
-		ContentType: contentType,
-		ETag:        etag,
-	}, nil
+	return fmt.Sprintf("%s://%s", scheme, endpoint)
 }
 
-// Delete removes a file from S3.
-func (s *S3Storage) Delete(ctx context.Context, key string) error {
-	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to delete file: %w", err)
-	}
-	return nil
-}
-
-// GetURL returns a URL for accessing the file.
-// If publicEndpoint differs from internal endpoint, returns a simple public URL (for public buckets).
-// Otherwise, returns a pre-signed URL.
-func (s *S3Storage) GetURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
-	// If public endpoint differs from internal endpoint, return simple public URL
-	// This is used when bucket is configured for public/anonymous read access
-	if s.publicEndpoint != "" && s.endpoint != "" && s.publicEndpoint != s.endpoint {
-		scheme := "http"
-		if s.useSSL {
-			scheme = "https"
+// loadAWSConfig creates an AWS SDK config with the given S3 configuration.
+func loadAWSConfig(cfg S3Config, endpointURL string) (aws.Config, error) {
+	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		if cfg.Endpoint != "" {
+			return aws.Endpoint{
+				URL:               endpointURL,
+				HostnameImmutable: cfg.UsePathStyle,
+			}, nil
 		}
-		// Use path-style URL for MinIO: http://endpoint/bucket/key
-		// Use virtual-hosted-style URL for Aliyun OSS: http://bucket.endpoint/key
-		if s.usePathStyle {
-			return fmt.Sprintf("%s://%s/%s/%s", scheme, s.publicEndpointHost, s.bucket, key), nil
-		}
-		return fmt.Sprintf("%s://%s.%s/%s", scheme, s.bucket, s.publicEndpointHost, key), nil
-	}
-
-	// Otherwise, generate pre-signed URL
-	request, err := s.presign.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
-	}, s3.WithPresignExpires(expiry))
-	if err != nil {
-		return "", fmt.Errorf("failed to generate presigned URL: %w", err)
-	}
-
-	return request.URL, nil
-}
-
-// GetInternalURL returns a pre-signed URL using the internal endpoint.
-// This bypasses publicEndpoint and always generates a presigned URL with the internal endpoint,
-// suitable for service-to-service downloads (e.g., Runner downloading skill packages within Docker network).
-func (s *S3Storage) GetInternalURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
-	request, err := s.presign.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
-	}, s3.WithPresignExpires(expiry))
-	if err != nil {
-		return "", fmt.Errorf("failed to generate internal presigned URL: %w", err)
-	}
-
-	return request.URL, nil
-}
-
-// PresignPutURL returns a pre-signed PUT URL for direct upload to S3.
-// This allows external clients (e.g., Runner) to upload files directly to S3
-// without routing through the backend server.
-// When a public endpoint is configured and differs from the internal one,
-// a dedicated presign client with the public endpoint is used so that the
-// SigV4 signature matches the host the Runner will actually contact.
-func (s *S3Storage) PresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
-	presigner := s.presign
-	if s.publicPresign != nil {
-		presigner = s.publicPresign
-	}
-
-	request, err := presigner.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(s.bucket),
-		Key:         aws.String(key),
-		ContentType: aws.String(contentType),
-	}, s3.WithPresignExpires(expiry))
-	if err != nil {
-		return "", fmt.Errorf("failed to generate presigned PUT URL: %w", err)
-	}
-
-	return request.URL, nil
-}
-
-// InternalPresignPutURL returns a pre-signed PUT URL using the internal endpoint.
-// This bypasses publicEndpoint and always uses the internal presign client,
-// suitable for service-to-service uploads (e.g., Runner uploading logs within Docker network).
-func (s *S3Storage) InternalPresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
-	request, err := s.presign.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(s.bucket),
-		Key:         aws.String(key),
-		ContentType: aws.String(contentType),
-	}, s3.WithPresignExpires(expiry))
-	if err != nil {
-		return "", fmt.Errorf("failed to generate internal presigned PUT URL: %w", err)
-	}
-
-	return request.URL, nil
-}
-
-// Exists checks if a file exists in S3.
-func (s *S3Storage) Exists(ctx context.Context, key string) (bool, error) {
-	_, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
+		return aws.Endpoint{}, &aws.EndpointNotFoundError{}
 	})
+
+	awsCfg, err := config.LoadDefaultConfig(context.Background(),
+		config.WithRegion(cfg.Region),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			cfg.AccessKey, cfg.SecretKey, "",
+		)),
+		config.WithEndpointResolverWithOptions(resolver),
+	)
 	if err != nil {
-		// Check if it's a "not found" error
-		// AWS SDK v2 doesn't have a typed error, so we check the error message
-		return false, nil
+		return aws.Config{}, fmt.Errorf("failed to load AWS config: %w", err)
 	}
-	return true, nil
+	return awsCfg, nil
 }
 
-// EnsureBucket creates the bucket if it doesn't exist.
-func (s *S3Storage) EnsureBucket(ctx context.Context) error {
-	// Check if bucket exists
-	_, err := s.client.HeadBucket(ctx, &s3.HeadBucketInput{
-		Bucket: aws.String(s.bucket),
-	})
-	if err == nil {
-		return nil // Bucket exists
+// buildPublicPresign creates a dedicated presign client for the public endpoint if needed.
+func buildPublicPresign(cfg S3Config, endpointURL string) (string, string, *s3.PresignClient, error) {
+	publicEndpointURL := endpointURL
+	publicEndpointHost := ""
+
+	if cfg.PublicEndpoint == "" {
+		return publicEndpointURL, publicEndpointHost, nil, nil
 	}
 
-	// Create bucket
-	_, err = s.client.CreateBucket(ctx, &s3.CreateBucketInput{
-		Bucket: aws.String(s.bucket),
+	scheme := "http"
+	if cfg.UseSSL {
+		scheme = "https"
+	}
+	publicEndpointURL = fmt.Sprintf("%s://%s", scheme, cfg.PublicEndpoint)
+	publicEndpointHost = cfg.PublicEndpoint
+
+	if publicEndpointURL == endpointURL {
+		return publicEndpointURL, publicEndpointHost, nil, nil
+	}
+
+	publicResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		return aws.Endpoint{
+			URL:               publicEndpointURL,
+			HostnameImmutable: cfg.UsePathStyle,
+		}, nil
 	})
+	publicCfg, err := config.LoadDefaultConfig(context.Background(),
+		config.WithRegion(cfg.Region),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			cfg.AccessKey, cfg.SecretKey, "",
+		)),
+		config.WithEndpointResolverWithOptions(publicResolver),
+	)
 	if err != nil {
-		return fmt.Errorf("failed to create bucket: %w", err)
+		return "", "", nil, fmt.Errorf("failed to load public endpoint AWS config: %w", err)
 	}
 
-	return nil
+	publicClient := s3.NewFromConfig(publicCfg, func(o *s3.Options) {
+		o.UsePathStyle = cfg.UsePathStyle
+		o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+	})
+
+	return publicEndpointURL, publicEndpointHost, s3.NewPresignClient(publicClient), nil
 }

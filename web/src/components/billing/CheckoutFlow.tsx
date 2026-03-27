@@ -3,51 +3,28 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  billingApi,
-  SubscriptionPlan,
-  BillingCycle,
-  OrderType,
-  CheckoutResponse,
-  DeploymentInfo,
-} from "@/lib/api/billing";
+import { billingApi, SubscriptionPlan, BillingCycle, OrderType, CheckoutResponse, DeploymentInfo } from "@/lib/api/billing";
 import { useLemonSqueezy } from "@/hooks/useLemonSqueezy";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
+import { QRCodeCheckout } from "./QRCodeCheckout";
+import { BillingCycleSelector, SeatSelector } from "./CheckoutSelectors";
 
 export interface CheckoutFlowProps {
-  // Plan to checkout (for subscription/upgrade)
   plan?: SubscriptionPlan;
-  // Order type
   orderType: OrderType;
-  // Billing cycle (for subscription)
   billingCycle?: BillingCycle;
-  // Number of seats (for seat purchase)
   seats?: number;
-  // Current URL for success/cancel redirect
   currentUrl: string;
-  // Deployment info for showing available providers
   deploymentInfo?: DeploymentInfo;
-  // Translation function
   t: (key: string, params?: Record<string, string | number>) => string;
-  // Callback when checkout is created
   onCheckoutCreated?: (response: CheckoutResponse) => void;
-  // Callback for errors
   onError?: (error: string) => void;
-  // Callback when user cancels
   onCancel?: () => void;
 }
 
 export function CheckoutFlow({
-  plan,
-  orderType,
-  billingCycle = "monthly",
-  seats = 1,
-  currentUrl,
-  deploymentInfo,
-  t,
-  onCheckoutCreated,
-  onError,
-  onCancel,
+  plan, orderType, billingCycle = "monthly", seats = 1, currentUrl,
+  deploymentInfo, t, onCheckoutCreated, onError, onCancel,
 }: CheckoutFlowProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -55,66 +32,34 @@ export function CheckoutFlow({
   const [selectedSeats, setSelectedSeats] = useState(seats);
   const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null);
 
-  // LemonSqueezy overlay checkout hook
   const { openCheckout: openLemonCheckout } = useLemonSqueezy({
-    onCheckoutSuccess: () => {
-      // Refresh page to show updated subscription status
-      router.refresh();
-      // Also reload to ensure all state is updated
-      window.location.href = `${currentUrl}?payment=success`;
-    },
-    onCheckoutClose: () => {
-      // User closed checkout without completing payment
-      setLoading(false);
-    },
+    onCheckoutSuccess: () => { router.refresh(); window.location.href = `${currentUrl}?payment=success`; },
+    onCheckoutClose: () => { setLoading(false); },
   });
 
-  // Calculate price based on billing cycle
   const getPrice = useCallback(() => {
     if (!plan) return 0;
-    const basePrice =
-      selectedCycle === "yearly"
-        ? plan.price_per_seat_yearly
-        : plan.price_per_seat_monthly;
-    return basePrice * selectedSeats;
+    return (selectedCycle === "yearly" ? plan.price_per_seat_yearly : plan.price_per_seat_monthly) * selectedSeats;
   }, [plan, selectedCycle, selectedSeats]);
 
-  // Calculate annual savings
   const getAnnualSavings = useCallback(() => {
     if (!plan) return 0;
-    const monthlyTotal = plan.price_per_seat_monthly * 12 * selectedSeats;
-    const yearlyTotal = plan.price_per_seat_yearly * selectedSeats;
-    return monthlyTotal - yearlyTotal;
+    return plan.price_per_seat_monthly * 12 * selectedSeats - plan.price_per_seat_yearly * selectedSeats;
   }, [plan, selectedSeats]);
 
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const successUrl = `${currentUrl}?payment=success`;
-      const cancelUrl = `${currentUrl}?payment=cancelled`;
-
       const response = await billingApi.createCheckout({
-        order_type: orderType,
-        plan_name: plan?.name,
-        billing_cycle: selectedCycle,
-        seats: orderType === "seat_purchase" ? selectedSeats : (orderType === "subscription" ? selectedSeats : undefined),
-        success_url: successUrl,
-        cancel_url: cancelUrl,
+        order_type: orderType, plan_name: plan?.name, billing_cycle: selectedCycle,
+        seats: orderType === "seat_purchase" || orderType === "subscription" ? selectedSeats : undefined,
+        success_url: `${currentUrl}?payment=success`, cancel_url: `${currentUrl}?payment=cancelled`,
       });
-
       setCheckoutResponse(response);
       onCheckoutCreated?.(response);
-
-      // Handle checkout based on provider
       if (response.session_url) {
-        if (response.provider === "lemonsqueezy") {
-          // Use LemonSqueezy overlay checkout for better UX
-          openLemonCheckout(response.session_url);
-          // Don't set loading to false - will be done by onCheckoutClose
-        } else {
-          // For Stripe and others, redirect to checkout page
-          window.location.href = response.session_url;
-        }
+        if (response.provider === "lemonsqueezy") openLemonCheckout(response.session_url);
+        else window.location.href = response.session_url;
       }
     } catch (err) {
       onError?.(getLocalizedErrorMessage(err, t, t("billing.checkout.failed") || "Checkout failed"));
@@ -122,228 +67,54 @@ export function CheckoutFlow({
     }
   };
 
-  // If we have a QR code response (for Alipay/WeChat), show it
   if (checkoutResponse?.qr_code_url) {
-    return (
-      <QRCodeCheckout
-        response={checkoutResponse}
-        t={t}
-        onCancel={() => {
-          setCheckoutResponse(null);
-          onCancel?.();
-        }}
-      />
-    );
+    return <QRCodeCheckout response={checkoutResponse} t={t}
+      onCancel={() => { setCheckoutResponse(null); onCancel?.(); }} />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Order Summary */}
       <div className="border border-border rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">
-          {t("billing.checkout.orderSummary")}
-        </h3>
-
+        <h3 className="text-lg font-semibold mb-4">{t("billing.checkout.orderSummary")}</h3>
         {plan && (
           <div className="space-y-4">
             <div className="flex justify-between">
               <span>{t("billing.checkout.plan")}</span>
               <span className="font-medium">{plan.display_name}</span>
             </div>
-
-            {/* Billing Cycle Selector */}
             {(orderType === "subscription" || orderType === "plan_upgrade") && (
-              <div className="space-y-3">
-                <span className="text-sm text-muted-foreground">
-                  {t("billing.checkout.billingCycle")}
-                </span>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    className={`p-4 border rounded-lg text-left transition-colors ${
-                      selectedCycle === "monthly"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground"
-                    }`}
-                    onClick={() => setSelectedCycle("monthly")}
-                  >
-                    <div className="font-medium">
-                      {t("billing.checkout.monthly")}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      ${plan.price_per_seat_monthly}/seat/month
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`p-4 border rounded-lg text-left transition-colors ${
-                      selectedCycle === "yearly"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground"
-                    }`}
-                    onClick={() => setSelectedCycle("yearly")}
-                  >
-                    <div className="font-medium flex items-center gap-2">
-                      {t("billing.checkout.yearly")}
-                      {getAnnualSavings() > 0 && (
-                        <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded">
-                          {t("billing.checkout.save", {
-                            amount: getAnnualSavings().toFixed(0),
-                          })}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      ${plan.price_per_seat_yearly}/seat/year
-                    </div>
-                  </button>
-                </div>
-              </div>
+              <BillingCycleSelector plan={plan} selectedCycle={selectedCycle}
+                onCycleChange={setSelectedCycle} annualSavings={getAnnualSavings()} t={t} />
             )}
-
-            {/* Seat Selector for new subscriptions */}
-            {orderType === "subscription" ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span>{t("billing.checkout.seats")}</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="w-8 h-8 flex items-center justify-center border border-border rounded hover:bg-muted disabled:opacity-50"
-                      onClick={() => setSelectedSeats(Math.max(1, selectedSeats - 1))}
-                      disabled={selectedSeats <= 1}
-                    >
-                      -
-                    </button>
-                    <span className="font-medium w-8 text-center">{selectedSeats}</span>
-                    <button
-                      type="button"
-                      className="w-8 h-8 flex items-center justify-center border border-border rounded hover:bg-muted"
-                      onClick={() => setSelectedSeats(selectedSeats + 1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                {selectedSeats > 1 && (
-                  <div className="text-xs text-muted-foreground">
-                    ${selectedCycle === "yearly" ? plan.price_per_seat_yearly : plan.price_per_seat_monthly}/{t("billing.checkout.perSeat")}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex justify-between">
-                <span>{t("billing.checkout.seats")}</span>
-                <span className="font-medium">{selectedSeats}</span>
-              </div>
-            )}
-
+            <SeatSelector seats={selectedSeats} onSeatsChange={setSelectedSeats}
+              pricePerSeat={selectedCycle === "yearly" ? plan.price_per_seat_yearly : plan.price_per_seat_monthly}
+              isSubscription={orderType === "subscription"} t={t} />
             <div className="border-t border-border pt-4 flex justify-between text-lg font-semibold">
               <span>{t("billing.checkout.total")}</span>
-              <span>
-                ${getPrice().toFixed(2)}
-                {selectedCycle === "yearly" ? "/year" : "/month"}
-              </span>
+              <span>${getPrice().toFixed(2)}{selectedCycle === "yearly" ? "/year" : "/month"}</span>
             </div>
           </div>
         )}
-
         {orderType === "seat_purchase" && (
           <div className="space-y-4">
             <div className="flex justify-between">
               <span>{t("billing.checkout.additionalSeats")}</span>
               <span className="font-medium">{selectedSeats}</span>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {t("billing.checkout.seatPurchaseNote")}
-            </div>
+            <div className="text-sm text-muted-foreground">{t("billing.checkout.seatPurchaseNote")}</div>
           </div>
         )}
       </div>
-
-      {/* Payment Providers Info */}
       {deploymentInfo && (
         <div className="text-sm text-muted-foreground">
-          {deploymentInfo.deployment_type === "global" && (
-            <span>{t("billing.checkout.globalPayment")}</span>
-          )}
-          {deploymentInfo.deployment_type === "cn" && (
-            <span>{t("billing.checkout.cnPayment")}</span>
-          )}
+          {deploymentInfo.deployment_type === "global" && <span>{t("billing.checkout.globalPayment")}</span>}
+          {deploymentInfo.deployment_type === "cn" && <span>{t("billing.checkout.cnPayment")}</span>}
         </div>
       )}
-
-      {/* Action Buttons */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={onCancel} disabled={loading}>
-          {t("billing.checkout.cancel")}
-        </Button>
+        <Button variant="outline" onClick={onCancel} disabled={loading}>{t("billing.checkout.cancel")}</Button>
         <Button onClick={handleCheckout} loading={loading}>
-          {loading
-            ? t("billing.checkout.processing")
-            : t("billing.checkout.proceedToPayment")}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// QR Code checkout component for Alipay/WeChat
-interface QRCodeCheckoutProps {
-  response: CheckoutResponse;
-  t: (key: string, params?: Record<string, string | number>) => string;
-  onCancel?: () => void;
-}
-
-function QRCodeCheckout({ response, t, onCancel }: QRCodeCheckoutProps) {
-  const [checking, setChecking] = useState(false);
-
-  const checkStatus = async () => {
-    setChecking(true);
-    try {
-      const status = await billingApi.getCheckoutStatus(response.order_no);
-      if (status.status === "succeeded") {
-        // Refresh page to show updated subscription
-        window.location.reload();
-      }
-    } catch (err) {
-      console.error("Failed to check status:", err);
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6 text-center">
-      <h3 className="text-lg font-semibold">
-        {t("billing.checkout.scanToPay")}
-      </h3>
-
-      {response.qr_code_url && (
-        <div className="flex justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={response.qr_code_url}
-            alt="Payment QR Code"
-            className="w-64 h-64 border border-border rounded-lg"
-          />
-        </div>
-      )}
-
-      <p className="text-sm text-muted-foreground">
-        {t("billing.checkout.scanInstructions")}
-      </p>
-
-      <div className="text-sm">
-        {t("billing.checkout.orderNo")}: {response.order_no}
-      </div>
-
-      <div className="flex justify-center gap-3">
-        <Button variant="outline" onClick={onCancel}>
-          {t("billing.checkout.cancel")}
-        </Button>
-        <Button onClick={checkStatus} loading={checking}>
-          {t("billing.checkout.checkPaymentStatus")}
+          {loading ? t("billing.checkout.processing") : t("billing.checkout.proceedToPayment")}
         </Button>
       </div>
     </div>

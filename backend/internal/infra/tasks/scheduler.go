@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -43,9 +42,9 @@ type Scheduler struct {
 	listeners []func(TaskResult)
 
 	// stopped protects results channel from being written after close
-	stopped     bool
-	stoppedMu   sync.RWMutex
-	closeOnce   sync.Once
+	stopped   bool
+	stoppedMu sync.RWMutex
+	closeOnce sync.Once
 }
 
 // scheduledTask wraps a task with its control mechanisms
@@ -94,7 +93,6 @@ func (s *Scheduler) Start() {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	// Start result processor
 	s.wg.Add(1)
 	go s.processResults()
 
@@ -105,7 +103,6 @@ func (s *Scheduler) Start() {
 		s.wg.Add(1)
 		go s.runTask(st)
 
-		// Run immediately if configured
 		if st.task.RunOnStart {
 			s.wg.Add(1)
 			go func(task *Task) {
@@ -120,7 +117,6 @@ func (s *Scheduler) Start() {
 func (s *Scheduler) Stop() {
 	s.logger.Info("stopping scheduler")
 
-	// Mark as stopped first to prevent new sends to results channel
 	s.stoppedMu.Lock()
 	s.stopped = true
 	s.stoppedMu.Unlock()
@@ -136,14 +132,9 @@ func (s *Scheduler) Stop() {
 	}
 	s.mu.RUnlock()
 
-	// Wait for all tasks to finish. Each task has a context-based timeout
-	// (2x interval), so they will eventually return. We must wait for all
-	// goroutines to exit before closing the results channel to avoid
-	// send-on-closed-channel panic.
 	s.wg.Wait()
 	s.logger.Info("all tasks stopped gracefully")
 
-	// Close results channel only once (safe now that all senders have exited)
 	s.closeOnce.Do(func() {
 		close(s.results)
 	})
@@ -169,116 +160,6 @@ func (s *Scheduler) runTask(st *scheduledTask) {
 		case <-s.ctx.Done():
 			return
 		}
-	}
-}
-
-// executeTask executes a single task with panic recovery
-func (s *Scheduler) executeTask(task *Task) {
-	start := time.Now()
-
-	result := TaskResult{
-		TaskName:  task.Name,
-		StartTime: start,
-	}
-
-	// sendResult safely sends result to channel, checking stopped flag first
-	sendResult := func(r TaskResult) {
-		s.stoppedMu.RLock()
-		stopped := s.stopped
-		s.stoppedMu.RUnlock()
-
-		if stopped {
-			return
-		}
-
-		select {
-		case s.results <- r:
-		case <-s.ctx.Done():
-			// Scheduler is stopping, don't block on closed channel
-		}
-	}
-
-	// Panic recovery
-	defer func() {
-		if r := recover(); r != nil {
-			result.Error = fmt.Errorf("panic: %v\n%s", r, debug.Stack())
-			result.Success = false
-			result.EndTime = time.Now()
-			result.Duration = result.EndTime.Sub(start)
-
-			s.logger.Error("task panicked",
-				"task", task.Name,
-				"error", result.Error,
-				"duration", result.Duration)
-
-			sendResult(result)
-		}
-	}()
-
-	// Create task context with timeout (2x interval as safety margin)
-	ctx, cancel := context.WithTimeout(s.ctx, task.Interval*2)
-	defer cancel()
-
-	// Execute task
-	err := task.Func(ctx)
-
-	result.EndTime = time.Now()
-	result.Duration = result.EndTime.Sub(start)
-	result.Error = err
-	result.Success = err == nil
-
-	if err != nil {
-		s.logger.Error("task failed",
-			"task", task.Name,
-			"error", err,
-			"duration", result.Duration)
-	} else {
-		s.logger.Debug("task completed",
-			"task", task.Name,
-			"duration", result.Duration)
-	}
-
-	sendResult(result)
-}
-
-// processResults processes task results and notifies listeners
-func (s *Scheduler) processResults() {
-	defer s.wg.Done()
-
-	for {
-		select {
-		case result, ok := <-s.results:
-			if !ok {
-				return
-			}
-			s.notifyListeners(result)
-		case <-s.ctx.Done():
-			// Drain any results already buffered, then exit.
-			// Use non-blocking receive to avoid deadlocking with Stop()
-			// which closes the channel only after wg.Wait().
-			for {
-				select {
-				case result, ok := <-s.results:
-					if !ok {
-						return
-					}
-					s.notifyListeners(result)
-				default:
-					return
-				}
-			}
-		}
-	}
-}
-
-// notifyListeners sends a result to all registered listeners.
-func (s *Scheduler) notifyListeners(result TaskResult) {
-	s.mu.RLock()
-	listeners := s.listeners
-	s.mu.RUnlock()
-
-	for _, fn := range listeners {
-		fn(result)
 	}
 }
 
