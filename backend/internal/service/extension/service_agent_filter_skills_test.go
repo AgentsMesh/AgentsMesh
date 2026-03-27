@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )

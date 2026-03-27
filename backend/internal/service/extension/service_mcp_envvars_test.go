@@ -2,7 +2,6 @@ package extension
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 

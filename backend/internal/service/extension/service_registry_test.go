@@ -3,7 +3,6 @@ package extension
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"testing"
 

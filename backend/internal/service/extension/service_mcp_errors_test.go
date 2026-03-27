@@ -2,12 +2,10 @@ package extension
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
-	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 )
 
 // ---------------------------------------------------------------------------

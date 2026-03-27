@@ -3,8 +3,6 @@ package extension
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
