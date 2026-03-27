@@ -8,60 +8,49 @@ import (
 )
 
 // Compile-time interface check
-var _ agent.AgentTypeRepository = (*agentTypeRepo)(nil)
+var _ agent.AgentRepository = (*agentRepo)(nil)
 
-type agentTypeRepo struct {
+type agentRepo struct {
 	db *gorm.DB
 }
 
-// NewAgentTypeRepository creates a new GORM-based agent type repository
-func NewAgentTypeRepository(db *gorm.DB) agent.AgentTypeRepository {
-	return &agentTypeRepo{db: db}
+// NewAgentRepository creates a new GORM-based agent repository
+func NewAgentRepository(db *gorm.DB) agent.AgentRepository {
+	return &agentRepo{db: db}
 }
 
-func (r *agentTypeRepo) ListBuiltinActive(ctx context.Context) ([]*agent.AgentType, error) {
-	var types []*agent.AgentType
+func (r *agentRepo) ListBuiltinActive(ctx context.Context) ([]*agent.Agent, error) {
+	var types []*agent.Agent
 	err := r.db.WithContext(ctx).Where("is_builtin = ? AND is_active = ?", true, true).Find(&types).Error
 	return types, err
 }
 
-func (r *agentTypeRepo) ListAllActive(ctx context.Context) ([]*agent.AgentType, error) {
-	var types []*agent.AgentType
+func (r *agentRepo) ListAllActive(ctx context.Context) ([]*agent.Agent, error) {
+	var types []*agent.Agent
 	err := r.db.WithContext(ctx).Where("is_active = ?", true).Find(&types).Error
 	return types, err
 }
 
-func (r *agentTypeRepo) GetByID(ctx context.Context, id int64) (*agent.AgentType, error) {
-	var agentType agent.AgentType
-	if err := r.db.WithContext(ctx).First(&agentType, id).Error; err != nil {
+func (r *agentRepo) GetBySlug(ctx context.Context, slug string) (*agent.Agent, error) {
+	var a agent.Agent
+	if err := r.db.WithContext(ctx).Where("slug = ?", slug).First(&a).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &agentType, nil
+	return &a, nil
 }
 
-func (r *agentTypeRepo) GetBySlug(ctx context.Context, slug string) (*agent.AgentType, error) {
-	var agentType agent.AgentType
-	if err := r.db.WithContext(ctx).Where("slug = ?", slug).First(&agentType).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &agentType, nil
-}
-
-func (r *agentTypeRepo) ListCustomByOrg(ctx context.Context, orgID int64) ([]*agent.CustomAgentType, error) {
-	var types []*agent.CustomAgentType
+func (r *agentRepo) ListCustomByOrg(ctx context.Context, orgID int64) ([]*agent.CustomAgent, error) {
+	var types []*agent.CustomAgent
 	err := r.db.WithContext(ctx).Where("organization_id = ? AND is_active = ?", orgID, true).Find(&types).Error
 	return types, err
 }
 
-func (r *agentTypeRepo) GetCustomByID(ctx context.Context, id int64) (*agent.CustomAgentType, error) {
-	var custom agent.CustomAgentType
-	if err := r.db.WithContext(ctx).First(&custom, id).Error; err != nil {
+func (r *agentRepo) GetCustomBySlug(ctx context.Context, orgID int64, slug string) (*agent.CustomAgent, error) {
+	var custom agent.CustomAgent
+	if err := r.db.WithContext(ctx).Where("organization_id = ? AND slug = ?", orgID, slug).First(&custom).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -70,35 +59,35 @@ func (r *agentTypeRepo) GetCustomByID(ctx context.Context, id int64) (*agent.Cus
 	return &custom, nil
 }
 
-func (r *agentTypeRepo) CustomSlugExists(ctx context.Context, orgID int64, slug string) (bool, error) {
+func (r *agentRepo) CustomSlugExists(ctx context.Context, orgID int64, slug string) (bool, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Model(&agent.CustomAgentType{}).
+	err := r.db.WithContext(ctx).Model(&agent.CustomAgent{}).
 		Where("organization_id = ? AND slug = ?", orgID, slug).
 		Count(&count).Error
 	return count > 0, err
 }
 
-func (r *agentTypeRepo) CreateCustom(ctx context.Context, custom *agent.CustomAgentType) error {
+func (r *agentRepo) CreateCustom(ctx context.Context, custom *agent.CustomAgent) error {
 	return r.db.WithContext(ctx).Create(custom).Error
 }
 
-func (r *agentTypeRepo) UpdateCustom(ctx context.Context, id int64, updates map[string]interface{}) (*agent.CustomAgentType, error) {
-	if err := r.db.WithContext(ctx).Model(&agent.CustomAgentType{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+func (r *agentRepo) UpdateCustom(ctx context.Context, orgID int64, slug string, updates map[string]interface{}) (*agent.CustomAgent, error) {
+	if err := r.db.WithContext(ctx).Model(&agent.CustomAgent{}).Where("organization_id = ? AND slug = ?", orgID, slug).Updates(updates).Error; err != nil {
 		return nil, err
 	}
-	var custom agent.CustomAgentType
-	if err := r.db.WithContext(ctx).First(&custom, id).Error; err != nil {
+	var custom agent.CustomAgent
+	if err := r.db.WithContext(ctx).Where("organization_id = ? AND slug = ?", orgID, slug).First(&custom).Error; err != nil {
 		return nil, err
 	}
 	return &custom, nil
 }
 
-func (r *agentTypeRepo) DeleteCustom(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Delete(&agent.CustomAgentType{}, id).Error
+func (r *agentRepo) DeleteCustom(ctx context.Context, orgID int64, slug string) error {
+	return r.db.WithContext(ctx).Where("organization_id = ? AND slug = ?", orgID, slug).Delete(&agent.CustomAgent{}).Error
 }
 
-func (r *agentTypeRepo) CountLoopReferences(ctx context.Context, customID int64) (int64, error) {
+func (r *agentRepo) CountLoopReferences(ctx context.Context, orgID int64, slug string) (int64, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM loops WHERE custom_agent_type_id = ?", customID).Scan(&count).Error
+	err := r.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM loops WHERE agent_slug = ?", slug).Scan(&count).Error
 	return count, err
 }

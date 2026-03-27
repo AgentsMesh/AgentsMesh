@@ -168,7 +168,7 @@ func (r *channelRepository) GetMessagesBefore(ctx context.Context, channelID int
 		Where("channel_id = ? AND id < ? AND is_deleted = FALSE", channelID, beforeID).
 		Preload("SenderUser").
 		Preload("SenderPodInfo").
-		Preload("SenderPodInfo.AgentType").
+		Preload("SenderPodInfo.Agent").
 		Order("id DESC").
 		Limit(limit)
 

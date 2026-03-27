@@ -551,14 +551,14 @@ func TestSkillRegistryOverride_TableName(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. McpMarketItem.GetAgentTypeFilter
+// 6. McpMarketItem.GetAgentFilter
 // ---------------------------------------------------------------------------
 
-func TestMcpMarketItem_GetAgentTypeFilter_Valid(t *testing.T) {
+func TestMcpMarketItem_GetAgentFilter_Valid(t *testing.T) {
 	item := McpMarketItem{
-		AgentTypeFilter: json.RawMessage(`["claude-code","aider"]`),
+		AgentFilter: json.RawMessage(`["claude-code","aider"]`),
 	}
-	result := item.GetAgentTypeFilter()
+	result := item.GetAgentFilter()
 	if len(result) != 2 {
 		t.Fatalf("expected 2 items, got %d", len(result))
 	}
@@ -570,44 +570,44 @@ func TestMcpMarketItem_GetAgentTypeFilter_Valid(t *testing.T) {
 	}
 }
 
-func TestMcpMarketItem_GetAgentTypeFilter_Empty(t *testing.T) {
+func TestMcpMarketItem_GetAgentFilter_Empty(t *testing.T) {
 	item := McpMarketItem{
-		AgentTypeFilter: nil,
+		AgentFilter: nil,
 	}
-	result := item.GetAgentTypeFilter()
+	result := item.GetAgentFilter()
 	if result != nil {
 		t.Errorf("expected nil for empty filter, got %v", result)
 	}
 
 	// Also test with empty json.RawMessage
 	item2 := McpMarketItem{
-		AgentTypeFilter: json.RawMessage{},
+		AgentFilter: json.RawMessage{},
 	}
-	result2 := item2.GetAgentTypeFilter()
+	result2 := item2.GetAgentFilter()
 	if result2 != nil {
 		t.Errorf("expected nil for empty RawMessage, got %v", result2)
 	}
 }
 
-func TestMcpMarketItem_GetAgentTypeFilter_Invalid(t *testing.T) {
+func TestMcpMarketItem_GetAgentFilter_Invalid(t *testing.T) {
 	item := McpMarketItem{
-		AgentTypeFilter: json.RawMessage(`{invalid json`),
+		AgentFilter: json.RawMessage(`{invalid json`),
 	}
-	result := item.GetAgentTypeFilter()
+	result := item.GetAgentFilter()
 	if result != nil {
 		t.Errorf("expected nil for invalid JSON, got %v", result)
 	}
 }
 
 // ---------------------------------------------------------------------------
-// 7. SkillMarketItem.GetAgentTypeFilter
+// 7. SkillMarketItem.GetAgentFilter
 // ---------------------------------------------------------------------------
 
-func TestSkillMarketItem_GetAgentTypeFilter_Valid(t *testing.T) {
+func TestSkillMarketItem_GetAgentFilter_Valid(t *testing.T) {
 	item := SkillMarketItem{
-		AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+		AgentFilter: json.RawMessage(`["claude-code"]`),
 	}
-	result := item.GetAgentTypeFilter()
+	result := item.GetAgentFilter()
 	if len(result) != 1 {
 		t.Fatalf("expected 1 item, got %d", len(result))
 	}
@@ -616,29 +616,29 @@ func TestSkillMarketItem_GetAgentTypeFilter_Valid(t *testing.T) {
 	}
 }
 
-func TestSkillMarketItem_GetAgentTypeFilter_Empty(t *testing.T) {
+func TestSkillMarketItem_GetAgentFilter_Empty(t *testing.T) {
 	item := SkillMarketItem{
-		AgentTypeFilter: nil,
+		AgentFilter: nil,
 	}
-	result := item.GetAgentTypeFilter()
+	result := item.GetAgentFilter()
 	if result != nil {
 		t.Errorf("expected nil for empty filter, got %v", result)
 	}
 
 	item2 := SkillMarketItem{
-		AgentTypeFilter: json.RawMessage{},
+		AgentFilter: json.RawMessage{},
 	}
-	result2 := item2.GetAgentTypeFilter()
+	result2 := item2.GetAgentFilter()
 	if result2 != nil {
 		t.Errorf("expected nil for empty RawMessage, got %v", result2)
 	}
 }
 
-func TestSkillMarketItem_GetAgentTypeFilter_Invalid(t *testing.T) {
+func TestSkillMarketItem_GetAgentFilter_Invalid(t *testing.T) {
 	item := SkillMarketItem{
-		AgentTypeFilter: json.RawMessage(`not-json`),
+		AgentFilter: json.RawMessage(`not-json`),
 	}
-	result := item.GetAgentTypeFilter()
+	result := item.GetAgentFilter()
 	if result != nil {
 		t.Errorf("expected nil for invalid JSON, got %v", result)
 	}

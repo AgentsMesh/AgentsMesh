@@ -104,7 +104,7 @@ type AutopilotController struct {
 	ApprovalTimeoutMin   int32   `gorm:"not null;default:30" json:"approval_timeout_min"`
 
 	// Control agent configuration
-	ControlAgentType     *string `gorm:"size:50" json:"control_agent_type,omitempty"` // default: claude
+	ControlAgentSlug     *string `gorm:"size:50" json:"control_agent_slug,omitempty"` // default: claude
 	ControlPromptTemplate *string `gorm:"type:text" json:"control_prompt_template,omitempty"`
 	MCPConfigJSON        *string `gorm:"type:text" json:"mcp_config_json,omitempty"`
 
@@ -188,7 +188,7 @@ type CreateAutopilotControllerCommand struct {
 	NoProgressThreshold  int32   `json:"no_progress_threshold,omitempty"`
 	SameErrorThreshold   int32   `json:"same_error_threshold,omitempty"`
 	ApprovalTimeoutMin   int32   `json:"approval_timeout_min,omitempty"`
-	ControlAgentType     string  `json:"control_agent_type,omitempty"`
+	ControlAgentSlug     string  `json:"control_agent_slug,omitempty"`
 	ControlPromptTemplate string `json:"control_prompt_template,omitempty"`
 	MCPConfigJSON        string  `json:"mcp_config_json,omitempty"`
 }

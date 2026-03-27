@@ -36,16 +36,16 @@ func TestUserAgentPodSettingsTableName(t *testing.T) {
 
 func TestUserAgentPodSettingsStruct(t *testing.T) {
 	now := time.Now()
-	agentTypeID := int64(1)
+	testSlug := "claude-code"
 	model := "opus"
 	permMode := "bypassPermissions"
 	fontSize := 14
 	theme := "dark"
 
 	s := UserAgentPodSettings{
-		ID:                 1,
+		ID: 1,
 		UserID:             50,
-		DefaultAgentTypeID: &agentTypeID,
+		DefaultAgentSlug: &testSlug,
 		DefaultModel:       &model,
 		DefaultPermMode:    &permMode,
 		TerminalFontSize:   &fontSize,
@@ -73,12 +73,12 @@ func TestUserAgentPodSettingsStruct(t *testing.T) {
 
 func TestUserAgentPodSettingsWithNilOptionalFields(t *testing.T) {
 	s := UserAgentPodSettings{
-		ID:     1,
+		ID: 2,
 		UserID: 50,
 	}
 
-	if s.DefaultAgentTypeID != nil {
-		t.Error("expected DefaultAgentTypeID to be nil")
+	if s.DefaultAgentSlug != nil {
+		t.Error("expected DefaultAgentSlug to be nil")
 	}
 	if s.DefaultModel != nil {
 		t.Error("expected DefaultModel to be nil")
@@ -107,7 +107,7 @@ func TestUserAIProviderStruct(t *testing.T) {
 	now := time.Now()
 
 	p := UserAIProvider{
-		ID:                   1,
+		ID: 1,
 		UserID:               50,
 		ProviderType:         AIProviderTypeClaude,
 		Name:                 "My Claude",

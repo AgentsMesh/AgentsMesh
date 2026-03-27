@@ -149,7 +149,7 @@ func (r *channelRepository) GetMessages(ctx context.Context, channelID int64, be
 	if err := query.
 		Preload("SenderUser").
 		Preload("SenderPodInfo").
-		Preload("SenderPodInfo.AgentType").
+		Preload("SenderPodInfo.Agent").
 		Order(order).
 		Limit(limit).
 		Find(&messages).Error; err != nil {

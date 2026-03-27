@@ -10,7 +10,7 @@ type TokenUsage struct {
 	PodKey              string     `gorm:"size:100;not null" json:"pod_key"`
 	UserID              *int64     `json:"user_id"`
 	RunnerID            *int64     `json:"runner_id"`
-	AgentTypeSlug       string     `gorm:"size:50;not null" json:"agent_type_slug"`
+	AgentSlug           string     `gorm:"size:50;not null" json:"agent_slug"`
 	Model               string     `gorm:"size:100" json:"model"`
 	InputTokens         int64      `gorm:"not null;default:0" json:"input_tokens"`
 	OutputTokens        int64      `gorm:"not null;default:0" json:"output_tokens"`
@@ -27,7 +27,7 @@ func (TokenUsage) TableName() string { return "token_usages" }
 type AggregationFilter struct {
 	StartTime     time.Time
 	EndTime       time.Time
-	AgentTypeSlug *string
+	AgentSlug *string
 	UserID        *int64
 	Model         *string
 	Granularity   string // "day", "week", "month"
@@ -52,9 +52,9 @@ type TimeSeriesPoint struct {
 	CacheReadTokens     int64     `json:"cache_read_tokens"`
 }
 
-// AgentUsage holds aggregated totals for a single agent type.
+// AgentUsage holds aggregated totals for a single agent.
 type AgentUsage struct {
-	AgentTypeSlug       string `json:"agent_type"`
+	AgentSlug           string `json:"agent_slug"`
 	InputTokens         int64  `json:"input_tokens"`
 	OutputTokens        int64  `json:"output_tokens"`
 	CacheCreationTokens int64  `json:"cache_creation_tokens"`

@@ -21,11 +21,11 @@ func TestUserAgentConfig_ToResponse(t *testing.T) {
 		check  func(*testing.T, *UserAgentConfigResponse)
 	}{
 		{
-			name: "basic config without agent type",
+			name: "basic config without agent",
 			config: &UserAgentConfig{
-				ID:          1,
+				ID: 1,
 				UserID:      100,
-				AgentTypeID: 10,
+				AgentSlug: "claude-code",
 				ConfigValues: ConfigValues{
 					"model":     "opus",
 					"perm_mode": "plan",
@@ -40,8 +40,8 @@ func TestUserAgentConfig_ToResponse(t *testing.T) {
 				if resp.UserID != 100 {
 					t.Errorf("UserID = %d, want 100", resp.UserID)
 				}
-				if resp.AgentTypeID != 10 {
-					t.Errorf("AgentTypeID = %d, want 10", resp.AgentTypeID)
+				if resp.AgentSlug != "claude-code" {
+					t.Errorf("AgentSlug = %s, want claude-code", resp.AgentSlug)
 				}
 				if resp.ConfigValues["model"] != "opus" {
 					t.Errorf("ConfigValues[model] = %v, want opus", resp.ConfigValues["model"])
@@ -49,35 +49,28 @@ func TestUserAgentConfig_ToResponse(t *testing.T) {
 				if resp.ConfigValues["perm_mode"] != "plan" {
 					t.Errorf("ConfigValues[perm_mode] = %v, want plan", resp.ConfigValues["perm_mode"])
 				}
-				if resp.AgentTypeName != "" {
-					t.Errorf("AgentTypeName should be empty, got %s", resp.AgentTypeName)
-				}
-				if resp.AgentTypeSlug != "" {
-					t.Errorf("AgentTypeSlug should be empty, got %s", resp.AgentTypeSlug)
+				if resp.AgentName != "" {
+					t.Errorf("AgentName should be empty, got %s", resp.AgentName)
 				}
 			},
 		},
 		{
-			name: "config with agent type",
+			name: "config with agent",
 			config: &UserAgentConfig{
 				ID:           2,
 				UserID:       200,
-				AgentTypeID:  20,
+				AgentSlug:    "codex-cli",
 				ConfigValues: ConfigValues{"key": "value"},
 				CreatedAt:    now,
 				UpdatedAt:    now,
-				AgentType: &AgentType{
-					ID:   20,
-					Name: "Claude Code",
-					Slug: "claude-code",
+				Agent: &Agent{
+					Slug: "codex-cli",
+					Name: "Codex CLI",
 				},
 			},
 			check: func(t *testing.T, resp *UserAgentConfigResponse) {
-				if resp.AgentTypeName != "Claude Code" {
-					t.Errorf("AgentTypeName = %s, want Claude Code", resp.AgentTypeName)
-				}
-				if resp.AgentTypeSlug != "claude-code" {
-					t.Errorf("AgentTypeSlug = %s, want claude-code", resp.AgentTypeSlug)
+				if resp.AgentName != "Codex CLI" {
+					t.Errorf("AgentName = %s, want Codex CLI", resp.AgentName)
 				}
 			},
 		},
@@ -86,7 +79,7 @@ func TestUserAgentConfig_ToResponse(t *testing.T) {
 			config: &UserAgentConfig{
 				ID:           3,
 				UserID:       300,
-				AgentTypeID:  30,
+				AgentSlug:    "aider",
 				ConfigValues: ConfigValues{},
 				CreatedAt:    now,
 				UpdatedAt:    now,
@@ -102,7 +95,7 @@ func TestUserAgentConfig_ToResponse(t *testing.T) {
 			config: &UserAgentConfig{
 				ID:           4,
 				UserID:       400,
-				AgentTypeID:  40,
+				AgentSlug: "opencode",
 				ConfigValues: nil,
 				CreatedAt:    now,
 				UpdatedAt:    now,
@@ -130,9 +123,9 @@ func TestUserAgentConfig_ToResponse_TimeFormat(t *testing.T) {
 	testTime := time.Date(2025, 1, 15, 10, 30, 0, 0, time.UTC)
 
 	config := &UserAgentConfig{
-		ID:           1,
-		UserID:       1,
-		AgentTypeID:  1,
+		ID: 1,
+		UserID: 1,
+		AgentSlug: "claude-code",
 		ConfigValues: ConfigValues{},
 		CreatedAt:    testTime,
 		UpdatedAt:    testTime,
@@ -152,14 +145,13 @@ func TestUserAgentConfig_ToResponse_TimeFormat(t *testing.T) {
 func TestUserAgentConfigResponse_Structure(t *testing.T) {
 	// Test that the response struct has all expected fields
 	resp := UserAgentConfigResponse{
-		ID:            1,
-		UserID:        100,
-		AgentTypeID:   10,
-		AgentTypeName: "Claude Code",
-		AgentTypeSlug: "claude-code",
-		ConfigValues:  map[string]interface{}{"model": "opus"},
-		CreatedAt:     "2025-01-15T10:30:00Z",
-		UpdatedAt:     "2025-01-15T10:30:00Z",
+		ID:           1,
+		UserID:       100,
+		AgentSlug:    "claude-code",
+		AgentName:    "Claude Code",
+		ConfigValues: map[string]interface{}{"model": "opus"},
+		CreatedAt:    "2025-01-15T10:30:00Z",
+		UpdatedAt:    "2025-01-15T10:30:00Z",
 	}
 
 	if resp.ID != 1 {
@@ -168,13 +160,10 @@ func TestUserAgentConfigResponse_Structure(t *testing.T) {
 	if resp.UserID != 100 {
 		t.Errorf("UserID = %d, want 100", resp.UserID)
 	}
-	if resp.AgentTypeID != 10 {
-		t.Errorf("AgentTypeID = %d, want 10", resp.AgentTypeID)
+	if resp.AgentSlug != "claude-code" {
+		t.Errorf("AgentSlug = %s, want claude-code", resp.AgentSlug)
 	}
-	if resp.AgentTypeName != "Claude Code" {
-		t.Errorf("AgentTypeName = %s, want Claude Code", resp.AgentTypeName)
-	}
-	if resp.AgentTypeSlug != "claude-code" {
-		t.Errorf("AgentTypeSlug = %s, want claude-code", resp.AgentTypeSlug)
+	if resp.AgentName != "Claude Code" {
+		t.Errorf("AgentName = %s, want Claude Code", resp.AgentName)
 	}
 }

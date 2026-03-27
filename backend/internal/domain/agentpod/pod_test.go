@@ -151,7 +151,7 @@ func TestPodStruct(t *testing.T) {
 	branch := "feature/test"
 
 	p := Pod{
-		ID:             1,
+		ID: 1,
 		OrganizationID: 100,
 		PodKey:         "pod-123",
 		RunnerID:       5,

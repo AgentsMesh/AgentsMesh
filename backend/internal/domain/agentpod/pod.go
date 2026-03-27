@@ -50,8 +50,7 @@ type Pod struct {
 	PodKey   string `gorm:"size:100;not null;uniqueIndex" json:"pod_key"`
 	RunnerID int64  `gorm:"not null;index" json:"runner_id"`
 
-	AgentTypeID       *int64 `json:"agent_type_id,omitempty"`
-	CustomAgentTypeID *int64 `json:"custom_agent_type_id,omitempty"`
+	AgentSlug string `gorm:"size:100;column:agent_slug" json:"agent_slug,omitempty"`
 
 	RepositoryID *int64 `json:"repository_id,omitempty"`
 	TicketID     *int64 `json:"ticket_id,omitempty"`
@@ -108,8 +107,7 @@ type Pod struct {
 
 	// Associations
 	Runner          *runner.Runner             `gorm:"foreignKey:RunnerID" json:"runner,omitempty"`
-	AgentType       *agent.AgentType           `gorm:"foreignKey:AgentTypeID" json:"agent_type,omitempty"`
-	CustomAgentType *agent.CustomAgentType     `gorm:"foreignKey:CustomAgentTypeID" json:"custom_agent_type,omitempty"`
+	Agent           *agent.Agent               `gorm:"foreignKey:AgentSlug;references:Slug" json:"agent,omitempty"`
 	Repository      *gitprovider.Repository     `gorm:"foreignKey:RepositoryID" json:"repository,omitempty"`
 	Ticket          *ticket.Ticket             `gorm:"foreignKey:TicketID" json:"ticket,omitempty"`
 	CreatedBy       *user.User                 `gorm:"foreignKey:CreatedByID" json:"created_by,omitempty"`

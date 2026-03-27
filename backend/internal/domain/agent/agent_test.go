@@ -189,22 +189,21 @@ func TestEncryptedCredentialsValueValid(t *testing.T) {
 	}
 }
 
-// --- Test AgentType ---
+// --- Test Agent ---
 
-func TestAgentTypeTableName(t *testing.T) {
-	at := AgentType{}
-	if at.TableName() != "agent_types" {
-		t.Errorf("expected 'agent_types', got %s", at.TableName())
+func TestAgentTableName(t *testing.T) {
+	at := Agent{}
+	if at.TableName() != "agents" {
+		t.Errorf("expected 'agents', got %s", at.TableName())
 	}
 }
 
-func TestAgentTypeStruct(t *testing.T) {
+func TestAgentStruct(t *testing.T) {
 	now := time.Now()
 	desc := "Test agent"
 	args := "--verbose"
 
-	at := AgentType{
-		ID:               1,
+	at := Agent{
 		Slug:             "test-agent",
 		Name:             "Test Agent",
 		Description:      &desc,
@@ -217,8 +216,8 @@ func TestAgentTypeStruct(t *testing.T) {
 		UpdatedAt:        now,
 	}
 
-	if at.ID != 1 {
-		t.Errorf("expected ID 1, got %d", at.ID)
+	if at.Slug != "test-agent" {
+		t.Errorf("expected slug test-agent, got %s", at.Slug)
 	}
 	if at.Slug != "test-agent" {
 		t.Errorf("expected Slug 'test-agent', got %s", at.Slug)
@@ -228,21 +227,20 @@ func TestAgentTypeStruct(t *testing.T) {
 	}
 }
 
-// --- Test CustomAgentType ---
+// --- Test CustomAgent ---
 
-func TestCustomAgentTypeTableName(t *testing.T) {
-	cat := CustomAgentType{}
-	if cat.TableName() != "custom_agent_types" {
-		t.Errorf("expected 'custom_agent_types', got %s", cat.TableName())
+func TestCustomAgentTableName(t *testing.T) {
+	cat := CustomAgent{}
+	if cat.TableName() != "custom_agents" {
+		t.Errorf("expected 'custom_agents', got %s", cat.TableName())
 	}
 }
 
-func TestCustomAgentTypeStruct(t *testing.T) {
+func TestCustomAgentStruct(t *testing.T) {
 	now := time.Now()
 	desc := "Custom agent"
 
-	cat := CustomAgentType{
-		ID:             1,
+	cat := CustomAgent{
 		OrganizationID: 100,
 		Slug:           "custom-agent",
 		Name:           "Custom Agent",
@@ -253,8 +251,8 @@ func TestCustomAgentTypeStruct(t *testing.T) {
 		UpdatedAt:      now,
 	}
 
-	if cat.ID != 1 {
-		t.Errorf("expected ID 1, got %d", cat.ID)
+	if cat.Slug != "custom-agent" {
+		t.Errorf("expected slug test-agent, got %s", cat.Slug)
 	}
 	if cat.OrganizationID != 100 {
 		t.Errorf("expected OrganizationID 100, got %d", cat.OrganizationID)
@@ -333,8 +331,8 @@ func BenchmarkStatusDetectionScan(b *testing.B) {
 	}
 }
 
-func BenchmarkAgentTypeTableName(b *testing.B) {
-	at := AgentType{}
+func BenchmarkAgentTableName(b *testing.B) {
+	at := Agent{}
 	for i := 0; i < b.N; i++ {
 		at.TableName()
 	}

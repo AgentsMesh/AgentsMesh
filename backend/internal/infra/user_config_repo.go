@@ -19,11 +19,11 @@ func NewUserConfigRepository(db *gorm.DB) agent.UserConfigRepository {
 	return &userConfigRepo{db: db}
 }
 
-func (r *userConfigRepo) GetByUserAndAgentType(ctx context.Context, userID, agentTypeID int64) (*agent.UserAgentConfig, error) {
+func (r *userConfigRepo) GetByUserAndAgentSlug(ctx context.Context, userID int64, agentSlug string) (*agent.UserAgentConfig, error) {
 	var config agent.UserAgentConfig
 	err := r.db.WithContext(ctx).
-		Preload("AgentType").
-		Where("user_id = ? AND agent_type_id = ?", userID, agentTypeID).
+		Preload("Agent").
+		Where("user_id = ? AND agent_slug = ?", userID, agentSlug).
 		First(&config).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -34,17 +34,17 @@ func (r *userConfigRepo) GetByUserAndAgentType(ctx context.Context, userID, agen
 	return &config, nil
 }
 
-func (r *userConfigRepo) Upsert(ctx context.Context, userID, agentTypeID int64, configValues agent.ConfigValues) error {
+func (r *userConfigRepo) Upsert(ctx context.Context, userID int64, agentSlug string, configValues agent.ConfigValues) error {
 	var existing agent.UserAgentConfig
 	err := r.db.WithContext(ctx).
-		Where("user_id = ? AND agent_type_id = ?", userID, agentTypeID).
+		Where("user_id = ? AND agent_slug = ?", userID, agentSlug).
 		First(&existing).Error
 
 	if err != nil {
 		// Record doesn't exist, create new one
 		config := &agent.UserAgentConfig{
 			UserID:       userID,
-			AgentTypeID:  agentTypeID,
+			AgentSlug:  agentSlug,
 			ConfigValues: configValues,
 		}
 		return r.db.WithContext(ctx).Create(config).Error
@@ -56,16 +56,16 @@ func (r *userConfigRepo) Upsert(ctx context.Context, userID, agentTypeID int64, 
 		Update("config_values", configValues).Error
 }
 
-func (r *userConfigRepo) Delete(ctx context.Context, userID, agentTypeID int64) error {
+func (r *userConfigRepo) Delete(ctx context.Context, userID int64, agentSlug string) error {
 	return r.db.WithContext(ctx).
-		Where("user_id = ? AND agent_type_id = ?", userID, agentTypeID).
+		Where("user_id = ? AND agent_slug = ?", userID, agentSlug).
 		Delete(&agent.UserAgentConfig{}).Error
 }
 
 func (r *userConfigRepo) ListByUser(ctx context.Context, userID int64) ([]*agent.UserAgentConfig, error) {
 	var configs []*agent.UserAgentConfig
 	err := r.db.WithContext(ctx).
-		Preload("AgentType").
+		Preload("Agent").
 		Where("user_id = ?", userID).
 		Find(&configs).Error
 	return configs, err

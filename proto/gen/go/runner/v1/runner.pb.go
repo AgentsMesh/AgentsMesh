@@ -1744,7 +1744,7 @@ type InitializeResult struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	ProtocolVersion int32                  `protobuf:"varint,1,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"`
 	ServerInfo      *ServerInfo            `protobuf:"bytes,2,opt,name=server_info,json=serverInfo,proto3" json:"server_info,omitempty"`
-	AgentTypes      []*AgentTypeInfo       `protobuf:"bytes,3,rep,name=agent_types,json=agentTypes,proto3" json:"agent_types,omitempty"`
+	Agents          []*AgentInfo           `protobuf:"bytes,3,rep,name=agents,proto3" json:"agents,omitempty"`
 	Features        []string               `protobuf:"bytes,4,rep,name=features,proto3" json:"features,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -1794,9 +1794,9 @@ func (x *InitializeResult) GetServerInfo() *ServerInfo {
 	return nil
 }
 
-func (x *InitializeResult) GetAgentTypes() []*AgentTypeInfo {
+func (x *InitializeResult) GetAgents() []*AgentInfo {
 	if x != nil {
-		return x.AgentTypes
+		return x.Agents
 	}
 	return nil
 }
@@ -1853,8 +1853,8 @@ func (x *ServerInfo) GetVersion() string {
 	return ""
 }
 
-// AgentTypeInfo Agent 类型信息
-type AgentTypeInfo struct {
+// AgentInfo Agent 信息
+type AgentInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Slug          string                 `protobuf:"bytes,1,opt,name=slug,proto3" json:"slug,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
@@ -1864,20 +1864,20 @@ type AgentTypeInfo struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AgentTypeInfo) Reset() {
-	*x = AgentTypeInfo{}
+func (x *AgentInfo) Reset() {
+	*x = AgentInfo{}
 	mi := &file_runner_v1_runner_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AgentTypeInfo) String() string {
+func (x *AgentInfo) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AgentTypeInfo) ProtoMessage() {}
+func (*AgentInfo) ProtoMessage() {}
 
-func (x *AgentTypeInfo) ProtoReflect() protoreflect.Message {
+func (x *AgentInfo) ProtoReflect() protoreflect.Message {
 	mi := &file_runner_v1_runner_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1889,33 +1889,33 @@ func (x *AgentTypeInfo) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AgentTypeInfo.ProtoReflect.Descriptor instead.
-func (*AgentTypeInfo) Descriptor() ([]byte, []int) {
+// Deprecated: Use AgentInfo.ProtoReflect.Descriptor instead.
+func (*AgentInfo) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *AgentTypeInfo) GetSlug() string {
+func (x *AgentInfo) GetSlug() string {
 	if x != nil {
 		return x.Slug
 	}
 	return ""
 }
 
-func (x *AgentTypeInfo) GetName() string {
+func (x *AgentInfo) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *AgentTypeInfo) GetCommand() string {
+func (x *AgentInfo) GetCommand() string {
 	if x != nil {
 		return x.Command
 	}
 	return ""
 }
 
-func (x *AgentTypeInfo) GetDefaultArgs() []string {
+func (x *AgentInfo) GetDefaultArgs() []string {
 	if x != nil {
 		return x.DefaultArgs
 	}
@@ -4096,7 +4096,7 @@ type AutopilotConfig struct {
 	SameErrorThreshold     int32 `protobuf:"varint,5,opt,name=same_error_threshold,json=sameErrorThreshold,proto3" json:"same_error_threshold,omitempty"`             // 相同错误阈值，默认 5
 	ApprovalTimeoutMinutes int32 `protobuf:"varint,6,opt,name=approval_timeout_minutes,json=approvalTimeoutMinutes,proto3" json:"approval_timeout_minutes,omitempty"` // 断路器超时，默认 30
 	// 控制 Pod
-	ControlAgentType      string `protobuf:"bytes,7,opt,name=control_agent_type,json=controlAgentType,proto3" json:"control_agent_type,omitempty"`                // 默认 "claude"
+	ControlAgentSlug      string `protobuf:"bytes,7,opt,name=control_agent_slug,json=controlAgentSlug,proto3" json:"control_agent_slug,omitempty"`                // 默认 "claude"
 	ControlPromptTemplate string `protobuf:"bytes,8,opt,name=control_prompt_template,json=controlPromptTemplate,proto3" json:"control_prompt_template,omitempty"` // 可选，自定义 Control Process 的 system prompt
 	// MCP 配置（复用现有机制）
 	McpConfigJson string `protobuf:"bytes,9,opt,name=mcp_config_json,json=mcpConfigJson,proto3" json:"mcp_config_json,omitempty"` // Control Process 的 mcp.json 内容
@@ -4176,9 +4176,9 @@ func (x *AutopilotConfig) GetApprovalTimeoutMinutes() int32 {
 	return 0
 }
 
-func (x *AutopilotConfig) GetControlAgentType() string {
+func (x *AutopilotConfig) GetControlAgentSlug() string {
 	if x != nil {
-		return x.ControlAgentType
+		return x.ControlAgentSlug
 	}
 	return ""
 }
@@ -5564,18 +5564,17 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\vobserve_pod\x18\x13 \x01(\v2\x1c.runner.v1.ObservePodCommandH\x00R\n" +
 	"observePod\x12\x1c\n" +
 	"\ttimestamp\x18\x0f \x01(\x03R\ttimestampB\t\n" +
-	"\apayload\"\xcc\x01\n" +
+	"\apayload\"\xbf\x01\n" +
 	"\x10InitializeResult\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\x05R\x0fprotocolVersion\x126\n" +
 	"\vserver_info\x18\x02 \x01(\v2\x15.runner.v1.ServerInfoR\n" +
-	"serverInfo\x129\n" +
-	"\vagent_types\x18\x03 \x03(\v2\x18.runner.v1.AgentTypeInfoR\n" +
-	"agentTypes\x12\x1a\n" +
+	"serverInfo\x12,\n" +
+	"\x06agents\x18\x03 \x03(\v2\x14.runner.v1.AgentInfoR\x06agents\x12\x1a\n" +
 	"\bfeatures\x18\x04 \x03(\tR\bfeatures\"&\n" +
 	"\n" +
 	"ServerInfo\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\tR\aversion\"t\n" +
-	"\rAgentTypeInfo\x12\x12\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion\"p\n" +
+	"\tAgentInfo\x12\x12\n" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12!\n" +
@@ -5758,7 +5757,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x15no_progress_threshold\x18\x04 \x01(\x05R\x13noProgressThreshold\x120\n" +
 	"\x14same_error_threshold\x18\x05 \x01(\x05R\x12sameErrorThreshold\x128\n" +
 	"\x18approval_timeout_minutes\x18\x06 \x01(\x05R\x16approvalTimeoutMinutes\x12,\n" +
-	"\x12control_agent_type\x18\a \x01(\tR\x10controlAgentType\x126\n" +
+	"\x12control_agent_slug\x18\a \x01(\tR\x10controlAgentSlug\x126\n" +
 	"\x17control_prompt_template\x18\b \x01(\tR\x15controlPromptTemplate\x12&\n" +
 	"\x0fmcp_config_json\x18\t \x01(\tR\rmcpConfigJson\"U\n" +
 	"\x15AutopilotCreatedEvent\x12#\n" +
@@ -5891,7 +5890,7 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*ServerMessage)(nil),            // 15: runner.v1.ServerMessage
 	(*InitializeResult)(nil),         // 16: runner.v1.InitializeResult
 	(*ServerInfo)(nil),               // 17: runner.v1.ServerInfo
-	(*AgentTypeInfo)(nil),            // 18: runner.v1.AgentTypeInfo
+	(*AgentInfo)(nil),                // 18: runner.v1.AgentInfo
 	(*CreatePodCommand)(nil),         // 19: runner.v1.CreatePodCommand
 	(*ResourceToDownload)(nil),       // 20: runner.v1.ResourceToDownload
 	(*FileToCreate)(nil),             // 21: runner.v1.FileToCreate
@@ -5997,7 +5996,7 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	66, // 47: runner.v1.ServerMessage.upload_logs:type_name -> runner.v1.UploadLogsCommand
 	35, // 48: runner.v1.ServerMessage.observe_pod:type_name -> runner.v1.ObservePodCommand
 	17, // 49: runner.v1.InitializeResult.server_info:type_name -> runner.v1.ServerInfo
-	18, // 50: runner.v1.InitializeResult.agent_types:type_name -> runner.v1.AgentTypeInfo
+	18, // 50: runner.v1.InitializeResult.agents:type_name -> runner.v1.AgentInfo
 	71, // 51: runner.v1.CreatePodCommand.env_vars:type_name -> runner.v1.CreatePodCommand.EnvVarsEntry
 	21, // 52: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
 	22, // 53: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig

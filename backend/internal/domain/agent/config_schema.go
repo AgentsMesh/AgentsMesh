@@ -6,7 +6,7 @@ import (
 	"errors"
 )
 
-// ConfigSchema defines the configuration fields for an agent type
+// ConfigSchema defines the configuration fields for an agent
 type ConfigSchema struct {
 	Fields []ConfigField `json:"fields"`
 }

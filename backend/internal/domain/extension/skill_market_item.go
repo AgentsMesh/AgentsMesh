@@ -21,7 +21,7 @@ type SkillMarketItem struct {
 	StorageKey      string          `gorm:"size:500;not null" json:"storage_key"`
 	PackageSize     int64           `json:"package_size"`
 	Version         int             `gorm:"default:1" json:"version"`
-	AgentTypeFilter json.RawMessage `gorm:"type:jsonb;default:'[\"claude-code\"]'" json:"agent_type_filter,omitempty"`
+	AgentFilter json.RawMessage `gorm:"type:jsonb;default:'[\"claude-code\"]'" json:"agent_filter,omitempty"`
 	IsActive        bool            `gorm:"not null;default:true" json:"is_active"`
 	CreatedAt       time.Time       `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt       time.Time       `gorm:"not null;default:now()" json:"updated_at"`
@@ -32,14 +32,14 @@ type SkillMarketItem struct {
 
 func (SkillMarketItem) TableName() string { return "skill_market_items" }
 
-// GetAgentTypeFilter parses and returns the agent_type_filter as a string slice.
-// Returns nil if the filter is empty or null (meaning all agent types are allowed).
-func (m *SkillMarketItem) GetAgentTypeFilter() []string {
-	if len(m.AgentTypeFilter) == 0 {
+// GetAgentFilter parses and returns the agent_filter as a string slice.
+// Returns nil if the filter is empty or null (meaning all agents are allowed).
+func (m *SkillMarketItem) GetAgentFilter() []string {
+	if len(m.AgentFilter) == 0 {
 		return nil
 	}
 	var filter []string
-	if err := json.Unmarshal(m.AgentTypeFilter, &filter); err != nil {
+	if err := json.Unmarshal(m.AgentFilter, &filter); err != nil {
 		return nil
 	}
 	return filter

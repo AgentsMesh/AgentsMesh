@@ -73,25 +73,26 @@ func (sd StatusDetection) Value() (driver.Value, error) {
 	return json.Marshal(sd)
 }
 
-// AgentType represents a type of code agent (builtin or custom)
-type AgentType struct {
-	ID   int64  `gorm:"primaryKey" json:"id"`
-	Slug string `gorm:"size:50;not null;uniqueIndex" json:"slug"`
+// Agent represents a code agent definition (builtin or custom)
+type Agent struct {
+	Slug string `gorm:"size:50;primaryKey" json:"slug"`
 	Name string `gorm:"size:100;not null" json:"name"`
 
 	Description *string `gorm:"type:text" json:"description,omitempty"`
 
 	LaunchCommand string  `gorm:"size:500;not null" json:"launch_command"`
-	Executable    string  `gorm:"size:100" json:"executable,omitempty"` // Executable name for availability check
+	Executable    string  `gorm:"size:100" json:"executable,omitempty"`
 	DefaultArgs   *string `gorm:"type:text" json:"default_args,omitempty"`
 
-	// New fields for config-driven agent setup
+	// Legacy config fields (replaced by PodFile)
 	ConfigSchema    ConfigSchema    `gorm:"type:jsonb;not null;default:'{}'" json:"config_schema"`
 	CommandTemplate CommandTemplate `gorm:"type:jsonb;not null;default:'{}'" json:"command_template"`
 	FilesTemplate   FilesTemplate   `gorm:"type:jsonb" json:"files_template,omitempty"`
 
 	CredentialSchema CredentialSchema `gorm:"type:jsonb;not null;default:'[]'" json:"credential_schema"`
 	StatusDetection  StatusDetection  `gorm:"type:jsonb" json:"status_detection,omitempty"`
+
+	PodfileSource *string `gorm:"type:text" json:"podfile_source,omitempty"`
 
 	IsBuiltin bool `gorm:"not null;default:false" json:"is_builtin"`
 	IsActive  bool `gorm:"not null;default:true" json:"is_active"`
@@ -102,8 +103,8 @@ type AgentType struct {
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
 
-func (AgentType) TableName() string {
-	return "agent_types"
+func (Agent) TableName() string {
+	return "agents"
 }
 
 // SupportsMode returns true if this agent type supports the given interaction mode.
@@ -145,11 +146,10 @@ func (ec EncryptedCredentials) Value() (driver.Value, error) {
 	return json.Marshal(ec)
 }
 
-// CustomAgentType represents organization-specific custom agent types
-type CustomAgentType struct {
-	ID             int64  `gorm:"primaryKey" json:"id"`
-	OrganizationID int64  `gorm:"not null;index" json:"organization_id"`
-	Slug           string `gorm:"size:50;not null" json:"slug"`
+// CustomAgent represents an organization-specific custom agent
+type CustomAgent struct {
+	OrganizationID int64  `gorm:"primaryKey;autoIncrement:false" json:"organization_id"`
+	Slug           string `gorm:"primaryKey;size:50" json:"slug"`
 	Name           string `gorm:"size:100;not null" json:"name"`
 
 	Description *string `gorm:"type:text" json:"description,omitempty"`
@@ -160,12 +160,14 @@ type CustomAgentType struct {
 	CredentialSchema CredentialSchema `gorm:"type:jsonb;not null;default:'[]'" json:"credential_schema"`
 	StatusDetection  StatusDetection  `gorm:"type:jsonb" json:"status_detection,omitempty"`
 
+	PodfileSource *string `gorm:"type:text" json:"podfile_source,omitempty"`
+
 	IsActive bool `gorm:"not null;default:true" json:"is_active"`
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
 
-func (CustomAgentType) TableName() string {
-	return "custom_agent_types"
+func (CustomAgent) TableName() string {
+	return "custom_agents"
 }

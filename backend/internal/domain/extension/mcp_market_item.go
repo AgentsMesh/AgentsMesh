@@ -32,7 +32,7 @@ type McpMarketItem struct {
 	DefaultHttpURL     string          `gorm:"size:500" json:"default_http_url,omitempty"`
 	DefaultHttpHeaders json.RawMessage `gorm:"type:jsonb;default:'[]'" json:"default_http_headers,omitempty"`
 	EnvVarSchema       json.RawMessage `gorm:"type:jsonb;default:'[]'" json:"env_var_schema,omitempty"`
-	AgentTypeFilter    json.RawMessage `gorm:"type:jsonb" json:"agent_type_filter,omitempty"`
+	AgentFilter    json.RawMessage `gorm:"type:jsonb" json:"agent_filter,omitempty"`
 	Category           string          `gorm:"size:50" json:"category,omitempty"`
 	IsActive           bool            `gorm:"not null;default:true" json:"is_active"`
 	// Registry sync fields
@@ -49,14 +49,14 @@ type McpMarketItem struct {
 
 func (McpMarketItem) TableName() string { return "mcp_market_items" }
 
-// GetAgentTypeFilter parses and returns the agent_type_filter as a string slice.
-// Returns nil if the filter is empty or null (meaning all agent types are allowed).
-func (m *McpMarketItem) GetAgentTypeFilter() []string {
-	if len(m.AgentTypeFilter) == 0 {
+// GetAgentFilter parses and returns the agent_filter as a string slice.
+// Returns nil if the filter is empty or null (meaning all agents are allowed).
+func (m *McpMarketItem) GetAgentFilter() []string {
+	if len(m.AgentFilter) == 0 {
 		return nil
 	}
 	var filter []string
-	if err := json.Unmarshal(m.AgentTypeFilter, &filter); err != nil {
+	if err := json.Unmarshal(m.AgentFilter, &filter); err != nil {
 		return nil
 	}
 	return filter

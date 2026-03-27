@@ -4,6 +4,8 @@ go 1.25.0
 
 replace github.com/anthropics/agentsmesh/proto => ../proto
 
+replace github.com/anthropics/agentsmesh/podfile => ../podfile
+
 require (
 	github.com/NdoleStudio/lemonsqueezy-go v1.3.1
 	github.com/alicebob/miniredis/v2 v2.37.0
@@ -43,6 +45,7 @@ require (
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358 // indirect
+	github.com/anthropics/agentsmesh/podfile v0.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.4 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.19 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.19 // indirect

@@ -10,7 +10,7 @@ type UserAgentPodSettings struct {
 	UserID int64 `gorm:"not null;uniqueIndex" json:"user_id"`
 
 	// Default agent configuration
-	DefaultAgentTypeID *int64  `json:"default_agent_type_id,omitempty"`
+	DefaultAgentSlug *string `gorm:"size:100;column:default_agent_slug" json:"default_agent_slug,omitempty"`
 	DefaultModel       *string `gorm:"size:100" json:"default_model,omitempty"`
 	DefaultPermMode    *string `gorm:"size:50" json:"default_perm_mode,omitempty"` // default, accept-edits, full-auto
 
@@ -27,7 +27,7 @@ func (UserAgentPodSettings) TableName() string {
 }
 
 // UserAIProvider represents user's AI provider configuration
-// This extends the AgentType system with user-specific configurations
+// This extends the Agent system with user-specific configurations
 type UserAIProvider struct {
 	ID     int64 `gorm:"primaryKey" json:"id"`
 	UserID int64 `gorm:"not null;index" json:"user_id"`

@@ -36,7 +36,7 @@ type SkillRegistry struct {
 	Branch           string          `gorm:"size:100;default:main" json:"branch"`
 	SourceType       string          `gorm:"size:20;default:auto" json:"source_type"`               // auto / collection / single
 	DetectedType     string          `gorm:"size:20" json:"detected_type,omitempty"`                // collection / single
-	CompatibleAgents json.RawMessage `gorm:"type:jsonb;default:'[\"claude-code\"]'" json:"compatible_agents,omitempty"` // agent type whitelist
+	CompatibleAgents json.RawMessage `gorm:"type:jsonb;default:'[\"claude-code\"]'" json:"compatible_agents,omitempty"` // agent whitelist
 	AuthType         string          `gorm:"size:20;default:none" json:"auth_type"`                 // none / github_pat / gitlab_pat / ssh_key
 	AuthCredential   string          `gorm:"column:auth_credential" json:"-"`                       // encrypted, never exposed in JSON
 	LastSyncedAt     *time.Time      `json:"last_synced_at,omitempty"`
@@ -57,7 +57,7 @@ func (s *SkillRegistry) IsPlatformLevel() bool {
 }
 
 // GetCompatibleAgents parses and returns the compatible_agents as a string slice.
-// Returns nil if the field is empty or null (meaning all agent types are allowed).
+// Returns nil if the field is empty or null (meaning all agents are allowed).
 func (s *SkillRegistry) GetCompatibleAgents() []string {
 	if len(s.CompatibleAgents) == 0 {
 		return nil

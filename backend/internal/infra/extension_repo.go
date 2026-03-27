@@ -285,7 +285,7 @@ func (r *extensionRepo) BatchUpsertMcpMarketItems(ctx context.Context, items []*
 			DoUpdates: clause.AssignmentColumns([]string{
 				"name", "description", "icon", "transport_type", "command",
 				"default_args", "default_http_url", "default_http_headers",
-				"env_var_schema", "agent_type_filter", "category", "is_active",
+				"env_var_schema", "agent_filter", "category", "is_active",
 				"version", "repository_url", "registry_meta", "last_synced_at",
 				"updated_at",
 			}),

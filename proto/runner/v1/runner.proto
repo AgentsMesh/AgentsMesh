@@ -200,7 +200,7 @@ message ServerMessage {
 message InitializeResult {
   int32 protocol_version = 1;
   ServerInfo server_info = 2;
-  repeated AgentTypeInfo agent_types = 3;
+  repeated AgentInfo agents = 3;
   repeated string features = 4;
 }
 
@@ -209,8 +209,8 @@ message ServerInfo {
   string version = 1;
 }
 
-// AgentTypeInfo Agent 类型信息
-message AgentTypeInfo {
+// AgentInfo Agent 信息
+message AgentInfo {
   string slug = 1;
   string name = 2;
   string command = 3;
@@ -522,7 +522,7 @@ message AutopilotConfig {
   int32 approval_timeout_minutes = 6;    // 断路器超时，默认 30
 
   // 控制 Pod
-  string control_agent_type = 7;         // 默认 "claude"
+  string control_agent_slug = 7;         // 默认 "claude"
   string control_prompt_template = 8;    // 可选，自定义 Control Process 的 system prompt
 
   // MCP 配置（复用现有机制）

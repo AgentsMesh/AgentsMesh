@@ -244,7 +244,7 @@ func TestAgentMessageStruct(t *testing.T) {
 	parentID := int64(99)
 
 	m := AgentMessage{
-		ID:               1,
+		ID: 1,
 		SenderPod:        "pod-sender",
 		ReceiverPod:      "pod-receiver",
 		MessageType:      MessageTypeTaskAssignment,
@@ -283,7 +283,7 @@ func TestDeadLetterEntryStruct(t *testing.T) {
 	result := "success"
 
 	d := DeadLetterEntry{
-		ID:                1,
+		ID: 1,
 		OriginalMessageID: 100,
 		Reason:            "Max retries exceeded",
 		FinalAttempt:      3,

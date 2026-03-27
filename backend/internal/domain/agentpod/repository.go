@@ -15,9 +15,9 @@ var (
 type PodRepository interface {
 	// Create persists a new Pod. Returns ErrSandboxAlreadyResumed on unique constraint violation.
 	Create(ctx context.Context, pod *Pod) error
-	// GetByKey returns a Pod by its pod_key with Runner, AgentType, and Repository preloaded.
+	// GetByKey returns a Pod by its pod_key with Runner, Agent, and Repository preloaded.
 	GetByKey(ctx context.Context, podKey string) (*Pod, error)
-	// GetByID returns a Pod by its ID with Runner, AgentType, and Repository preloaded.
+	// GetByID returns a Pod by its ID with Runner, Agent, and Repository preloaded.
 	GetByID(ctx context.Context, podID int64) (*Pod, error)
 	// GetOrgAndCreator returns the organization_id and created_by_id for a pod.
 	GetOrgAndCreator(ctx context.Context, podKey string) (orgID, creatorID int64, err error)

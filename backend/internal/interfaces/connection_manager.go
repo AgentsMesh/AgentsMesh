@@ -1,15 +1,15 @@
 package interfaces
 
-// AgentTypeInfo describes an agent type for Runner initialization.
-type AgentTypeInfo struct {
+// AgentInfo describes an agent for Runner initialization.
+type AgentInfo struct {
 	Slug          string
 	Name          string
 	Executable    string
 	LaunchCommand string
 }
 
-// AgentTypesProvider provides agent type information for initialization handshake.
+// AgentsProvider provides agent information for initialization handshake.
 // This interface is used by both gRPC server and connection manager.
-type AgentTypesProvider interface {
-	GetAgentTypesForRunner() []AgentTypeInfo
+type AgentsProvider interface {
+	GetAgentsForRunner() []AgentInfo
 }

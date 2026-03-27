@@ -66,14 +66,14 @@ func (r *tokenUsageRepository) GetTimeSeries(ctx context.Context, orgID int64, f
 func (r *tokenUsageRepository) GetByAgent(ctx context.Context, orgID int64, f tokenusage.AggregationFilter) ([]tokenusage.AgentUsage, error) {
 	var results []tokenusage.AgentUsage
 	q := r.db.WithContext(ctx).Model(&tokenusage.TokenUsage{}).
-		Select(`agent_type_slug,
+		Select(`agent_slug,
 			SUM(input_tokens) as input_tokens,
 			SUM(output_tokens) as output_tokens,
 			SUM(cache_creation_tokens) as cache_creation_tokens,
 			SUM(cache_read_tokens) as cache_read_tokens,
 			SUM(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens) as total_tokens`).
 		Where("organization_id = ? AND created_at >= ? AND created_at < ?", orgID, f.StartTime, f.EndTime).
-		Group("agent_type_slug").
+		Group("agent_slug").
 		Order("total_tokens DESC").
 		Limit(effectiveLimit(f.Limit))
 	q = applyOptionalFilters(q, f, false)
@@ -136,15 +136,15 @@ func validGranularity(g string) string {
 	}
 }
 
-// applyOptionalFilters applies optional WHERE clauses for agent type, user, and model.
+// applyOptionalFilters applies optional WHERE clauses for agent, user, and model.
 // When qualified is true, column names are prefixed with "token_usages." for JOIN queries.
 func applyOptionalFilters(q *gorm.DB, f tokenusage.AggregationFilter, qualified bool) *gorm.DB {
 	prefix := ""
 	if qualified {
 		prefix = "token_usages."
 	}
-	if f.AgentTypeSlug != nil {
-		q = q.Where(prefix+"agent_type_slug = ?", *f.AgentTypeSlug)
+	if f.AgentSlug != nil {
+		q = q.Where(prefix+"agent_slug = ?", *f.AgentSlug)
 	}
 	if f.UserID != nil {
 		q = q.Where(prefix+"user_id = ?", *f.UserID)

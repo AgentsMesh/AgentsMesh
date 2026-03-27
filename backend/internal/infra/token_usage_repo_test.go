@@ -30,7 +30,7 @@ func setupTokenUsageTestDB(t *testing.T) *gorm.DB {
 			pod_key               TEXT NOT NULL,
 			user_id               INTEGER NOT NULL,
 			runner_id             INTEGER NOT NULL,
-			agent_type_slug       TEXT NOT NULL,
+			agent_slug       TEXT NOT NULL,
 			model                 TEXT,
 			input_tokens          INTEGER NOT NULL DEFAULT 0,
 			output_tokens         INTEGER NOT NULL DEFAULT 0,
@@ -66,13 +66,13 @@ func seedUsers(t *testing.T, db *gorm.DB) {
 
 func int64Ptr(v int64) *int64 { return &v }
 
-func newTestRecord(orgID, userID, runnerID int64, agentType, model string, input, output int64, createdAt time.Time) *tokenusage.TokenUsage {
+func newTestRecord(orgID, userID, runnerID int64, agentSlug, model string, input, output int64, createdAt time.Time) *tokenusage.TokenUsage {
 	return &tokenusage.TokenUsage{
 		OrganizationID: orgID,
 		PodKey:         "pod-test",
 		UserID:         int64Ptr(userID),
 		RunnerID:       int64Ptr(runnerID),
-		AgentTypeSlug:  agentType,
+		AgentSlug:      agentSlug,
 		Model:          model,
 		InputTokens:    input,
 		OutputTokens:   output,
@@ -128,27 +128,27 @@ func TestTokenUsageRepo_GetSummary(t *testing.T) {
 	// Seed data: two records within range, one outside.
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p1", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 100, OutputTokens: 50, CacheCreationTokens: 10, CacheReadTokens: 5,
 		CreatedAt: yesterday,
 	}))
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p2", UserID: int64Ptr(2), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "aider", Model: "gpt4",
+		AgentSlug: "aider", Model: "gpt4",
 		InputTokens: 200, OutputTokens: 100, CacheCreationTokens: 20, CacheReadTokens: 10,
 		CreatedAt: yesterday,
 	}))
 	// Outside range.
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p3", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 9999, OutputTokens: 9999,
 		CreatedAt: lastWeek.Add(-24 * time.Hour),
 	}))
 	// Different org.
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 99, PodKey: "p4", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 8888, OutputTokens: 8888,
 		CreatedAt: yesterday,
 	}))
@@ -168,10 +168,10 @@ func TestTokenUsageRepo_GetSummary(t *testing.T) {
 		assert.Equal(t, int64(495), result.TotalTokens)
 	})
 
-	t.Run("filters by agent_type", func(t *testing.T) {
+	t.Run("filters by agent_slug", func(t *testing.T) {
 		agent := "claude"
 		f := filter
-		f.AgentTypeSlug = &agent
+		f.AgentSlug = &agent
 		result, err := repo.GetSummary(ctx, 1, f)
 		require.NoError(t, err)
 		assert.Equal(t, int64(100), result.InputTokens)
@@ -217,13 +217,13 @@ func TestTokenUsageRepo_GetTimeSeries(t *testing.T) {
 
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p1", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 100, OutputTokens: 50,
 		CreatedAt: day1,
 	}))
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p2", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 200, OutputTokens: 100,
 		CreatedAt: day2,
 	}))
@@ -253,19 +253,19 @@ func TestTokenUsageRepo_GetByAgent(t *testing.T) {
 	now := time.Now()
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p1", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 100, OutputTokens: 50,
 		CreatedAt: now,
 	}))
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p2", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "sonnet",
+		AgentSlug: "claude", Model: "sonnet",
 		InputTokens: 200, OutputTokens: 100,
 		CreatedAt: now,
 	}))
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p3", UserID: int64Ptr(2), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "aider", Model: "gpt4",
+		AgentSlug: "aider", Model: "gpt4",
 		InputTokens: 300, OutputTokens: 150,
 		CreatedAt: now,
 	}))
@@ -282,7 +282,7 @@ func TestTokenUsageRepo_GetByAgent(t *testing.T) {
 	// Ordered by total_tokens DESC: claude (450) > aider (450) — order may vary.
 	agentMap := map[string]tokenusage.AgentUsage{}
 	for _, r := range results {
-		agentMap[r.AgentTypeSlug] = r
+		agentMap[r.AgentSlug] = r
 	}
 	assert.Equal(t, int64(300), agentMap["claude"].InputTokens)
 	assert.Equal(t, int64(300), agentMap["aider"].InputTokens)
@@ -299,13 +299,13 @@ func TestTokenUsageRepo_GetByUser(t *testing.T) {
 	now := time.Now()
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p1", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 100, OutputTokens: 50,
 		CreatedAt: now,
 	}))
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p2", UserID: int64Ptr(2), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "aider", Model: "gpt4",
+		AgentSlug: "aider", Model: "gpt4",
 		InputTokens: 200, OutputTokens: 100,
 		CreatedAt: now,
 	}))
@@ -339,19 +339,19 @@ func TestTokenUsageRepo_GetByModel(t *testing.T) {
 	now := time.Now()
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p1", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 100, OutputTokens: 50,
 		CreatedAt: now,
 	}))
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p2", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "sonnet",
+		AgentSlug: "claude", Model: "sonnet",
 		InputTokens: 200, OutputTokens: 100,
 		CreatedAt: now,
 	}))
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p3", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 50, OutputTokens: 25,
 		CreatedAt: now,
 	}))
@@ -404,13 +404,13 @@ func TestTokenUsageRepo_EndTimeBoundary(t *testing.T) {
 
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "in-range", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 100, OutputTokens: 50,
 		CreatedAt: beforeBoundary,
 	}))
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "at-boundary", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 999, OutputTokens: 999,
 		CreatedAt: boundary, // exactly at EndTime
 	}))
@@ -438,21 +438,21 @@ func TestTokenUsageRepo_CombinedFilters(t *testing.T) {
 	// Record matching all filters.
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "match", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 100, OutputTokens: 50,
 		CreatedAt: now,
 	}))
 	// Same agent but different model — should be excluded by model filter.
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "wrong-model", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "sonnet",
+		AgentSlug: "claude", Model: "sonnet",
 		InputTokens: 200, OutputTokens: 100,
 		CreatedAt: now,
 	}))
 	// Same model but different agent — should be excluded by agent filter.
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "wrong-agent", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "aider", Model: "opus",
+		AgentSlug: "aider", Model: "opus",
 		InputTokens: 300, OutputTokens: 150,
 		CreatedAt: now,
 	}))
@@ -463,7 +463,7 @@ func TestTokenUsageRepo_CombinedFilters(t *testing.T) {
 	filter := tokenusage.AggregationFilter{
 		StartTime:     now.Add(-time.Hour),
 		EndTime:       now.Add(time.Hour),
-		AgentTypeSlug: &agent,
+		AgentSlug: &agent,
 		Model:         &model,
 		UserID:        &uid,
 	}
@@ -486,7 +486,7 @@ func TestTokenUsageRepo_CombinedFilters(t *testing.T) {
 		results, err := repo.GetByAgent(ctx, 1, filter)
 		require.NoError(t, err)
 		require.Len(t, results, 1)
-		assert.Equal(t, "claude", results[0].AgentTypeSlug)
+		assert.Equal(t, "claude", results[0].AgentSlug)
 		assert.Equal(t, int64(100), results[0].InputTokens)
 	})
 
@@ -510,14 +510,14 @@ func TestTokenUsageRepo_OrgIsolation(t *testing.T) {
 	// Org 1 record.
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 1, PodKey: "p1", UserID: int64Ptr(1), RunnerID: int64Ptr(1),
-		AgentTypeSlug: "claude", Model: "opus",
+		AgentSlug: "claude", Model: "opus",
 		InputTokens: 100, OutputTokens: 50,
 		CreatedAt: now,
 	}))
 	// Org 2 record.
 	require.NoError(t, repo.Create(ctx, &tokenusage.TokenUsage{
 		OrganizationID: 2, PodKey: "p2", UserID: int64Ptr(2), RunnerID: int64Ptr(2),
-		AgentTypeSlug: "aider", Model: "gpt4",
+		AgentSlug: "aider", Model: "gpt4",
 		InputTokens: 999, OutputTokens: 999,
 		CreatedAt: now,
 	}))

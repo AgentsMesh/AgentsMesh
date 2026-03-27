@@ -57,9 +57,8 @@ type Loop struct {
 	Description *string `gorm:"type:text" json:"description,omitempty"`
 
 	// Agent configuration
-	AgentTypeID       *int64 `json:"agent_type_id,omitempty"`
-	CustomAgentTypeID *int64 `json:"custom_agent_type_id,omitempty"`
-	PermissionMode    string `gorm:"size:50;not null;default:'bypassPermissions'" json:"permission_mode"`
+	AgentSlug      string `gorm:"size:100;column:agent_slug" json:"agent_slug,omitempty"`
+	PermissionMode string `gorm:"size:50;not null;default:'bypassPermissions'" json:"permission_mode"`
 
 	// Prompt
 	PromptTemplate string `gorm:"type:text;not null" json:"prompt_template"`

@@ -30,7 +30,7 @@ func (r *podRepo) Create(ctx context.Context, pod *agentpod.Pod) error {
 func (r *podRepo) GetByKey(ctx context.Context, podKey string) (*agentpod.Pod, error) {
 	var pod agentpod.Pod
 	err := r.db.WithContext(ctx).
-		Preload("Runner").Preload("AgentType").Preload("Repository").
+		Preload("Runner").Preload("Agent").Preload("Repository").
 		Where("pod_key = ?", podKey).First(&pod).Error
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (r *podRepo) GetByKey(ctx context.Context, podKey string) (*agentpod.Pod, e
 func (r *podRepo) GetByID(ctx context.Context, podID int64) (*agentpod.Pod, error) {
 	var pod agentpod.Pod
 	err := r.db.WithContext(ctx).
-		Preload("Runner").Preload("AgentType").Preload("Repository").
+		Preload("Runner").Preload("Agent").Preload("Repository").
 		First(&pod, podID).Error
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (r *podRepo) ListByOrg(ctx context.Context, orgID int64, statuses []string,
 
 	var pods []*agentpod.Pod
 	err := query.
-		Preload("Runner").Preload("AgentType").Preload("Ticket").Preload("CreatedBy").Preload("Repository").
+		Preload("Runner").Preload("Agent").Preload("Ticket").Preload("CreatedBy").Preload("Repository").
 		Order("created_at DESC").Limit(limit).Offset(offset).Find(&pods).Error
 	if err != nil {
 		return nil, 0, err
@@ -97,7 +97,7 @@ func (r *podRepo) ListByOrg(ctx context.Context, orgID int64, statuses []string,
 func (r *podRepo) ListByTicket(ctx context.Context, ticketID int64) ([]*agentpod.Pod, error) {
 	var pods []*agentpod.Pod
 	err := r.db.WithContext(ctx).
-		Preload("Runner").Preload("AgentType").Preload("Repository").
+		Preload("Runner").Preload("Agent").Preload("Repository").
 		Where("ticket_id = ?", ticketID).Order("created_at DESC").Find(&pods).Error
 	return pods, err
 }
@@ -108,7 +108,7 @@ func (r *podRepo) ListByRunner(ctx context.Context, runnerID int64, status strin
 		query = query.Where("status = ?", status)
 	}
 	var pods []*agentpod.Pod
-	err := query.Preload("Runner").Preload("AgentType").Preload("Repository").
+	err := query.Preload("Runner").Preload("Agent").Preload("Repository").
 		Order("created_at DESC").Find(&pods).Error
 	return pods, err
 }
@@ -126,7 +126,7 @@ func (r *podRepo) ListByRunnerPaginated(ctx context.Context, runnerID int64, sta
 
 	var pods []*agentpod.Pod
 	err := query.
-		Preload("AgentType").Preload("Ticket").Preload("CreatedBy").Preload("Repository").
+		Preload("Agent").Preload("Ticket").Preload("CreatedBy").Preload("Repository").
 		Order("created_at DESC").Limit(limit).Offset(offset).Find(&pods).Error
 	if err != nil {
 		return nil, 0, err

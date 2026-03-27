@@ -5,20 +5,17 @@ import (
 )
 
 // UserAgentConfig represents user-level personal agent configuration
-// This replaces organization-level config for a more user-centric approach
 type UserAgentConfig struct {
-	ID          int64 `gorm:"primaryKey" json:"id"`
-	UserID      int64 `gorm:"not null;index" json:"user_id"`
-	AgentTypeID int64 `gorm:"not null;index" json:"agent_type_id"`
+	ID        int64  `gorm:"primaryKey" json:"id"`
+	UserID    int64  `gorm:"not null;index" json:"user_id"`
+	AgentSlug string `gorm:"size:100;not null;index;column:agent_slug" json:"agent_slug"`
 
-	// Dynamic configuration values (JSON)
 	ConfigValues ConfigValues `gorm:"type:jsonb;not null;default:'{}'" json:"config_values"`
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
-	// Associations
-	AgentType *AgentType `gorm:"foreignKey:AgentTypeID" json:"agent_type,omitempty"`
+	Agent *Agent `gorm:"foreignKey:AgentSlug;references:Slug" json:"agent,omitempty"`
 }
 
 func (UserAgentConfig) TableName() string {
@@ -29,9 +26,8 @@ func (UserAgentConfig) TableName() string {
 type UserAgentConfigResponse struct {
 	ID            int64                  `json:"id"`
 	UserID        int64                  `json:"user_id"`
-	AgentTypeID   int64                  `json:"agent_type_id"`
-	AgentTypeName string                 `json:"agent_type_name,omitempty"`
-	AgentTypeSlug string                 `json:"agent_type_slug,omitempty"`
+	AgentSlug     string                 `json:"agent_slug"`
+	AgentName string                 `json:"agent_name,omitempty"`
 	ConfigValues  map[string]interface{} `json:"config_values"`
 	CreatedAt     string                 `json:"created_at"`
 	UpdatedAt     string                 `json:"updated_at"`
@@ -42,15 +38,14 @@ func (c *UserAgentConfig) ToResponse() *UserAgentConfigResponse {
 	resp := &UserAgentConfigResponse{
 		ID:           c.ID,
 		UserID:       c.UserID,
-		AgentTypeID:  c.AgentTypeID,
+		AgentSlug:    c.AgentSlug,
 		ConfigValues: c.ConfigValues,
 		CreatedAt:    c.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:    c.UpdatedAt.Format(time.RFC3339),
 	}
 
-	if c.AgentType != nil {
-		resp.AgentTypeName = c.AgentType.Name
-		resp.AgentTypeSlug = c.AgentType.Slug
+	if c.Agent != nil {
+		resp.AgentName = c.Agent.Name
 	}
 
 	return resp
