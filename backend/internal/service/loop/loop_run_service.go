@@ -3,16 +3,9 @@ package loop
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 )
-
-// TriggerRunAtomic atomically triggers a loop run within a FOR UPDATE transaction.
-// Delegates to the repository for transactional safety.
-func (s *LoopRunService) TriggerRunAtomic(ctx context.Context, params *loopDomain.TriggerRunAtomicParams) (*loopDomain.TriggerRunAtomicResult, error) {
-	return s.repo.TriggerRunAtomic(ctx, params)
-}
 
 var (
 	ErrRunNotFound = errors.New("loop run not found")
@@ -28,9 +21,7 @@ type LoopRunService struct {
 
 // NewLoopRunService creates a new LoopRunService
 func NewLoopRunService(repo loopDomain.LoopRunRepository) *LoopRunService {
-	return &LoopRunService{
-		repo: repo,
-	}
+	return &LoopRunService{repo: repo}
 }
 
 // ListRunsFilter represents filters for listing loop runs (service-level)
@@ -55,18 +46,11 @@ func (s *LoopRunService) GetByID(ctx context.Context, id int64) (*loopDomain.Loo
 		}
 		return nil, err
 	}
-
 	s.resolveRunStatus(ctx, run)
 	return run, nil
 }
 
 // ListRuns lists LoopRuns with filters, with statuses resolved from Pod (SSOT).
-//
-// Status filtering is two-phase:
-//  1. DB-level: finished runs (finished_at IS NOT NULL) are filtered by persisted status
-//  2. Post-resolution: active runs are resolved from Pod SSOT, then filtered
-//
-// This ensures pagination works correctly for finished runs (the vast majority).
 func (s *LoopRunService) ListRuns(ctx context.Context, filter *ListRunsFilter) ([]*loopDomain.LoopRun, int64, error) {
 	runs, total, err := s.repo.List(ctx, &loopDomain.RunListFilter{
 		LoopID: filter.LoopID,
@@ -78,10 +62,8 @@ func (s *LoopRunService) ListRuns(ctx context.Context, filter *ListRunsFilter) (
 		return nil, 0, err
 	}
 
-	// Resolve statuses from Pod (SSOT) for active runs
 	s.resolveRunStatuses(ctx, runs)
 
-	// Post-filter active runs whose resolved status doesn't match the filter
 	if filter.Status != "" {
 		filtered := make([]*loopDomain.LoopRun, 0, len(runs))
 		for _, run := range runs {
@@ -89,13 +71,17 @@ func (s *LoopRunService) ListRuns(ctx context.Context, filter *ListRunsFilter) (
 				filtered = append(filtered, run)
 			}
 		}
-		// Only adjust total if active runs were filtered out
 		removed := int64(len(runs) - len(filtered))
 		runs = filtered
 		total -= removed
 	}
 
 	return runs, total, nil
+}
+
+// TriggerRunAtomic atomically triggers a loop run within a FOR UPDATE transaction.
+func (s *LoopRunService) TriggerRunAtomic(ctx context.Context, params *loopDomain.TriggerRunAtomicParams) (*loopDomain.TriggerRunAtomicResult, error) {
+	return s.repo.TriggerRunAtomic(ctx, params)
 }
 
 // GetNextRunNumber returns the next run number for a loop
@@ -118,14 +104,11 @@ func (s *LoopRunService) UpdateStatus(ctx context.Context, runID int64, updates 
 }
 
 // FinishRun atomically marks a run as finished with optimistic locking.
-// Returns true if the row was updated (caller should proceed with side-effects),
-// false if already finished by a concurrent event (caller should skip).
 func (s *LoopRunService) FinishRun(ctx context.Context, runID int64, updates map[string]interface{}) (bool, error) {
 	return s.repo.FinishRun(ctx, runID, updates)
 }
 
 // GetActiveRunByPodKey finds an active run by its pod key, with status resolved from Pod (SSOT).
-// Use this for API consumers that need the effective status.
 func (s *LoopRunService) GetActiveRunByPodKey(ctx context.Context, podKey string) (*loopDomain.LoopRun, error) {
 	run, err := s.repo.GetActiveRunByPodKey(ctx, podKey)
 	if err != nil {
@@ -134,14 +117,11 @@ func (s *LoopRunService) GetActiveRunByPodKey(ctx context.Context, podKey string
 		}
 		return nil, err
 	}
-
 	s.resolveRunStatus(ctx, run)
 	return run, nil
 }
 
 // FindActiveRunByPodKey finds an active run by its pod key WITHOUT resolving status.
-// Use this for internal event handlers that derive status from the event payload
-// (avoids redundant Pod status queries).
 func (s *LoopRunService) FindActiveRunByPodKey(ctx context.Context, podKey string) (*loopDomain.LoopRun, error) {
 	run, err := s.repo.GetActiveRunByPodKey(ctx, podKey)
 	if err != nil {
@@ -154,7 +134,6 @@ func (s *LoopRunService) FindActiveRunByPodKey(ctx context.Context, podKey strin
 }
 
 // GetActiveRunByAutopilotKey finds an active run by its autopilot controller key, with status resolved.
-// Use this for API consumers that need the effective status.
 func (s *LoopRunService) GetActiveRunByAutopilotKey(ctx context.Context, autopilotKey string) (*loopDomain.LoopRun, error) {
 	run, err := s.repo.GetByAutopilotKey(ctx, autopilotKey)
 	if err != nil {
@@ -163,13 +142,11 @@ func (s *LoopRunService) GetActiveRunByAutopilotKey(ctx context.Context, autopil
 		}
 		return nil, err
 	}
-
 	s.resolveRunStatus(ctx, run)
 	return run, nil
 }
 
 // FindActiveRunByAutopilotKey finds an active run by its autopilot controller key WITHOUT resolving status.
-// Use this for internal event handlers that derive status from the event payload.
 func (s *LoopRunService) FindActiveRunByAutopilotKey(ctx context.Context, autopilotKey string) (*loopDomain.LoopRun, error) {
 	run, err := s.repo.GetByAutopilotKey(ctx, autopilotKey)
 	if err != nil {
@@ -182,13 +159,11 @@ func (s *LoopRunService) FindActiveRunByAutopilotKey(ctx context.Context, autopi
 }
 
 // GetTimedOutRuns returns running runs that have exceeded their timeout.
-// orgIDs filters to specific organizations; nil means all orgs (single-instance mode).
 func (s *LoopRunService) GetTimedOutRuns(ctx context.Context, orgIDs []int64) ([]*loopDomain.LoopRun, error) {
 	return s.repo.GetTimedOutRuns(ctx, orgIDs)
 }
 
-// GetOrphanPendingRuns returns pending runs with no pod_key that are stuck for > 5 minutes.
-// These occur when StartRun goroutine fails or server restarts between TriggerRun and StartRun.
+// GetOrphanPendingRuns returns pending runs with no pod_key stuck for > 5 minutes.
 func (s *LoopRunService) GetOrphanPendingRuns(ctx context.Context, orgIDs []int64) ([]*loopDomain.LoopRun, error) {
 	return s.repo.GetOrphanPendingRuns(ctx, orgIDs)
 }
@@ -230,73 +205,4 @@ func (s *LoopRunService) GetAutopilotPhase(ctx context.Context, autopilotKey str
 		return ""
 	}
 	return phases[autopilotKey]
-}
-
-// resolveRunStatuses resolves status for a batch of runs from Pod (SSOT).
-func (s *LoopRunService) resolveRunStatuses(ctx context.Context, runs []*loopDomain.LoopRun) {
-	// Collect pod keys and autopilot keys
-	podKeys := make([]string, 0)
-	autopilotKeys := make([]string, 0)
-	for _, run := range runs {
-		if run.PodKey != nil {
-			podKeys = append(podKeys, *run.PodKey)
-		}
-		if run.AutopilotControllerKey != nil {
-			autopilotKeys = append(autopilotKeys, *run.AutopilotControllerKey)
-		}
-	}
-
-	if len(podKeys) == 0 {
-		return
-	}
-
-	// Batch query Pod statuses via repository
-	podInfos, err := s.repo.BatchGetPodStatuses(ctx, podKeys)
-	if err != nil {
-		slog.Error("failed to batch get pod statuses for SSOT resolution", "error", err, "count", len(podKeys))
-	}
-	podMap := make(map[string]*loopDomain.PodStatusInfo, len(podInfos))
-	for i := range podInfos {
-		podMap[podInfos[i].PodKey] = &podInfos[i]
-	}
-
-	// Batch query Autopilot phases via repository
-	autopilotMap, err := s.repo.BatchGetAutopilotPhases(ctx, autopilotKeys)
-	if err != nil {
-		slog.Error("failed to batch get autopilot phases for SSOT resolution", "error", err, "count", len(autopilotKeys))
-	}
-
-	// Resolve each run using domain logic
-	for _, run := range runs {
-		if run.PodKey == nil {
-			continue
-		}
-		// If finished_at is set, the run has been finalized by HandleRunCompleted.
-		// Use the persisted status/duration directly instead of re-deriving from Pod.
-		// This avoids stale/missing Pod data causing incorrect status after completion.
-		if run.FinishedAt != nil {
-			continue
-		}
-		pod, ok := podMap[*run.PodKey]
-		if !ok {
-			// Pod not found in DB — treat as failed (orphaned reference)
-			run.Status = loopDomain.RunStatusFailed
-			continue
-		}
-
-		autopilotPhase := ""
-		if run.AutopilotControllerKey != nil && autopilotMap != nil {
-			autopilotPhase = autopilotMap[*run.AutopilotControllerKey]
-		}
-
-		run.ResolveStatus(pod.Status, autopilotPhase, pod.FinishedAt)
-	}
-}
-
-// resolveRunStatus resolves status for a single run from Pod (SSOT).
-func (s *LoopRunService) resolveRunStatus(ctx context.Context, run *loopDomain.LoopRun) {
-	if run.PodKey == nil {
-		return
-	}
-	s.resolveRunStatuses(ctx, []*loopDomain.LoopRun{run})
 }

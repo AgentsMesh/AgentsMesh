@@ -1,10 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { billingApi, BillingOverview, SubscriptionPlan, DeploymentInfo } from "@/lib/api";
-import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { CheckoutFlow, CancelSubscriptionDialog, SeatManagement, BillingCycleSwitch } from "@/components/billing";
 import type { BillingCycle } from "@/lib/api/billing";
 import type { TranslationFn } from "./GeneralSettings";
@@ -15,151 +11,14 @@ import {
   PromoCodeCard,
   PlansDialog,
 } from "./billing";
+import { useBillingSettings } from "./billing/useBillingSettings";
 
 interface BillingSettingsProps {
   t: TranslationFn;
 }
 
 export function BillingSettings({ t }: BillingSettingsProps) {
-  const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [overview, setOverview] = useState<BillingOverview | null>(null);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [deploymentInfo, setDeploymentInfo] = useState<DeploymentInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [showPlansDialog, setShowPlansDialog] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-  const [upgrading, setUpgrading] = useState(false);
-  const [reactivating, setReactivating] = useState(false);
-  const [paymentMessage, setPaymentMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  // Check for payment callback
-  useEffect(() => {
-    const payment = searchParams.get("payment");
-    if (payment === "success") {
-      setPaymentMessage({ type: "success", text: t("settings.billingPage.paymentSuccess") });
-      // Clear the query param
-      window.history.replaceState({}, "", window.location.pathname);
-    } else if (payment === "cancelled") {
-      setPaymentMessage({ type: "error", text: t("settings.billingPage.paymentCancelled") });
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, [searchParams, t]);
-
-  const loadBillingData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [overviewRes, plansRes, deploymentRes] = await Promise.all([
-        billingApi.getOverview().catch(() => null),
-        billingApi.listPlans().catch(() => ({ plans: [] })),
-        billingApi.getDeploymentInfo().catch(() => null),
-      ]);
-      if (overviewRes?.overview) {
-        setOverview(overviewRes.overview);
-      }
-      setPlans(plansRes.plans || []);
-      if (deploymentRes) {
-        setDeploymentInfo(deploymentRes);
-      }
-    } catch (err) {
-      setError(getLocalizedErrorMessage(err, t, t("settings.billingPage.loadFailed") || "Failed to load billing data"));
-      console.error("Error loading billing data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    loadBillingData();
-  }, [loadBillingData]);
-
-  const handleSelectPlan = async (planName: string) => {
-    const plan = plans.find((p) => p.name === planName);
-    if (!plan) return;
-
-    setSelectedPlan(plan);
-    setShowPlansDialog(false);
-
-    // For free plan, no payment needed
-    if (plan.price_per_seat_monthly === 0) {
-      handleFreePlanSelect(planName);
-      return;
-    }
-
-    // If there's an existing subscription, determine if this is an upgrade or new subscription
-    if (overview) {
-      const currentPrice = overview.plan?.price_per_seat_monthly || 0;
-      const isUpgrade = plan.price_per_seat_monthly > currentPrice;
-
-      if (isUpgrade) {
-        // Upgrade: use direct provider API (no checkout redirect needed)
-        setUpgrading(true);
-        setError(null);
-        try {
-          await billingApi.upgradeSubscription(planName);
-          setPaymentMessage({ type: "success", text: t("settings.billingPage.upgradeSuccess") || "Plan upgraded successfully" });
-          await loadBillingData();
-        } catch (err) {
-          setError(getLocalizedErrorMessage(err, t, t("settings.billingPage.upgradeFailed") || "Failed to upgrade plan"));
-        } finally {
-          setUpgrading(false);
-          setSelectedPlan(null);
-        }
-        return;
-      }
-    }
-
-    // New subscription: show checkout flow
-    setShowCheckout(true);
-  };
-
-  const handleFreePlanSelect = async (planName: string) => {
-    setUpgrading(true);
-    setError(null);
-    try {
-      if (overview) {
-        await billingApi.updateSubscription(planName);
-      } else {
-        await billingApi.createSubscription(planName);
-      }
-      await loadBillingData();
-    } catch (err: unknown) {
-      console.error("Failed to select plan:", err);
-      setError(getLocalizedErrorMessage(err, t, t("settings.billingPage.selectPlanFailed") || "Failed to select plan"));
-    } finally {
-      setUpgrading(false);
-    }
-  };
-
-  const handleCheckoutComplete = () => {
-    setShowCheckout(false);
-    setSelectedPlan(null);
-    // Billing data will be refreshed after redirect from payment provider
-  };
-
-  const handleCancelSubscription = () => {
-    setShowCancelDialog(false);
-    loadBillingData();
-  };
-
-  const handleReactivateSubscription = async () => {
-    setReactivating(true);
-    try {
-      await billingApi.reactivateSubscription();
-      await loadBillingData();
-      setPaymentMessage({ type: "success", text: t("settings.billingPage.reactivateSuccess") });
-    } catch (err) {
-      console.error("Failed to reactivate subscription:", err);
-      setError(getLocalizedErrorMessage(err, t, t("settings.billingPage.reactivateFailed") || "Failed to reactivate subscription"));
-    } finally {
-      setReactivating(false);
-    }
-  };
-
-  // Get current URL for payment callbacks
+  const state = useBillingSettings(t);
   const currentUrl = typeof window !== "undefined" ? window.location.href.split("?")[0] : "";
 
   const getUsagePercent = (current: number, max: number): number => {
@@ -172,16 +31,14 @@ export function BillingSettings({ t }: BillingSettingsProps) {
     return value === -1 ? t("settings.billingPage.unlimited") : String(value);
   };
 
-  if (loading) {
-    return <BillingLoadingSkeleton />;
-  }
+  if (state.loading) return <BillingLoadingSkeleton />;
 
-  if (error && !overview) {
+  if (state.error && !state.overview) {
     return (
       <div className="space-y-6">
         <div className="border border-border rounded-lg p-6">
-          <p className="text-destructive">{error}</p>
-          <Button variant="outline" className="mt-4" onClick={loadBillingData}>
+          <p className="text-destructive">{state.error}</p>
+          <Button variant="outline" className="mt-4" onClick={state.loadBillingData}>
             {t("settings.billingPage.retry")}
           </Button>
         </div>
@@ -189,148 +46,86 @@ export function BillingSettings({ t }: BillingSettingsProps) {
     );
   }
 
-  // Show checkout flow
-  if (showCheckout && selectedPlan) {
+  if (state.showCheckout && state.selectedPlan) {
     return (
       <div className="space-y-6">
         <div className="border border-border rounded-lg p-6">
           <CheckoutFlow
-            plan={selectedPlan}
-            orderType={overview ? "plan_upgrade" : "subscription"}
+            plan={state.selectedPlan}
+            orderType={state.overview ? "plan_upgrade" : "subscription"}
             currentUrl={currentUrl}
-            deploymentInfo={deploymentInfo || undefined}
+            deploymentInfo={state.deploymentInfo || undefined}
             t={(key, params) => t(`settings.${key}`, params)}
-            onCheckoutCreated={handleCheckoutComplete}
-            onError={(err) => setError(err)}
-            onCancel={() => {
-              setShowCheckout(false);
-              setSelectedPlan(null);
-            }}
+            onCheckoutCreated={state.handleCheckoutComplete}
+            onError={(err) => state.setError(err)}
+            onCancel={() => { state.setShowCheckout(false); state.setSelectedPlan(null); }}
           />
         </div>
       </div>
     );
   }
 
-  if (!overview) {
+  if (!state.overview) {
     return (
       <div className="space-y-6">
         <div className="border border-border rounded-lg p-6 text-center">
           <h2 className="text-lg font-semibold mb-4">{t("settings.billingPage.noSubscription")}</h2>
-          <p className="text-muted-foreground mb-6">
-            {t("settings.billingPage.choosePlan")}
-          </p>
-          <Button onClick={() => setShowPlansDialog(true)}>{t("settings.billingPage.selectPlan")}</Button>
+          <p className="text-muted-foreground mb-6">{t("settings.billingPage.choosePlan")}</p>
+          <Button onClick={() => state.setShowPlansDialog(true)}>{t("settings.billingPage.selectPlan")}</Button>
         </div>
-
-        {showPlansDialog && (
-          <PlansDialog
-            plans={plans}
-            currentPlan={null}
-            onSelect={handleSelectPlan}
-            onClose={() => setShowPlansDialog(false)}
-            loading={upgrading}
-            t={t}
-          />
+        {state.showPlansDialog && (
+          <PlansDialog plans={state.plans} currentPlan={null} onSelect={state.handleSelectPlan}
+            onClose={() => state.setShowPlansDialog(false)} loading={state.upgrading} t={t} />
         )}
       </div>
     );
   }
 
-  const { plan, usage, status, billing_cycle, current_period_end } = overview;
+  const { plan, usage, status, billing_cycle, current_period_end } = state.overview;
 
   return (
     <div className="space-y-6">
-      {/* Error Message */}
-      {error && (
+      {state.error && (
         <div className="p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800">
-          {error}
-          <button
-            className="ml-4 text-sm underline"
-            onClick={() => setError(null)}
-          >
+          {state.error}
+          <button className="ml-4 text-sm underline" onClick={() => state.setError(null)}>
             {t("settings.billingPage.dismiss")}
           </button>
         </div>
       )}
-
-      {/* Payment Success/Error Message */}
-      {paymentMessage && (
-        <div
-          className={`p-4 rounded-lg ${
-            paymentMessage.type === "success"
-              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800"
-              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
-          }`}
-        >
-          {paymentMessage.text}
-          <button
-            className="ml-4 text-sm underline"
-            onClick={() => setPaymentMessage(null)}
-          >
+      {state.paymentMessage && (
+        <div className={`p-4 rounded-lg ${
+          state.paymentMessage.type === "success"
+            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800"
+            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
+        }`}>
+          {state.paymentMessage.text}
+          <button className="ml-4 text-sm underline" onClick={() => state.setPaymentMessage(null)}>
             {t("settings.billingPage.dismiss")}
           </button>
         </div>
       )}
-
-      {/* Current Plan */}
-      <CurrentPlanCard
-        plan={plan}
-        status={status}
-        billing_cycle={billing_cycle}
-        current_period_end={current_period_end}
-        cancelAtPeriodEnd={overview.cancel_at_period_end}
-        onChangePlan={() => setShowPlansDialog(true)}
-        onCancelPlan={() => setShowCancelDialog(true)}
-        onReactivate={handleReactivateSubscription}
-        reactivating={reactivating}
-        t={t}
-      />
-
-      {/* Billing Cycle Switch - only show for active paid plans */}
+      <CurrentPlanCard plan={plan} status={status} billing_cycle={billing_cycle}
+        current_period_end={current_period_end} cancelAtPeriodEnd={state.overview.cancel_at_period_end}
+        onChangePlan={() => state.setShowPlansDialog(true)} onCancelPlan={() => state.setShowCancelDialog(true)}
+        onReactivate={state.handleReactivateSubscription} reactivating={state.reactivating} t={t} />
       {status === "active" && plan?.price_per_seat_monthly > 0 && (
-        <BillingCycleSwitch
-          currentCycle={billing_cycle as BillingCycle}
-          nextCycle={overview.downgrade_to_plan ? undefined : undefined}
+        <BillingCycleSwitch currentCycle={billing_cycle as BillingCycle} nextCycle={undefined}
           t={(key, params) => t(`settings.${key}`, params)}
-          onCycleChanged={() => {
-            loadBillingData();
-            setPaymentMessage({ type: "success", text: t("settings.billing.cycleSwitch.success") });
-          }}
-          onError={(err) => setError(err)}
-        />
+          onCycleChanged={() => { state.loadBillingData(); state.setPaymentMessage({ type: "success", text: t("settings.billing.cycleSwitch.success") }); }}
+          onError={(err) => state.setError(err)} />
       )}
-
-      {/* Seat Management */}
       <SeatManagement t={(key, params) => t(`settings.${key}`, params)} currentUrl={currentUrl} />
-
-      {/* Usage */}
       <UsageCard usage={usage} getUsagePercent={getUsagePercent} formatLimit={formatLimit} t={t} />
-
-      {/* Promo Code */}
-      <PromoCodeCard onRedeemSuccess={() => loadBillingData()} t={t} />
-
-      {/* Plans Dialog */}
-      {showPlansDialog && (
-        <PlansDialog
-          plans={plans}
-          currentPlan={plan?.name || null}
-          onSelect={handleSelectPlan}
-          onClose={() => setShowPlansDialog(false)}
-          loading={upgrading}
-          t={t}
-        />
+      <PromoCodeCard onRedeemSuccess={() => state.loadBillingData()} t={t} />
+      {state.showPlansDialog && (
+        <PlansDialog plans={state.plans} currentPlan={plan?.name || null} onSelect={state.handleSelectPlan}
+          onClose={() => state.setShowPlansDialog(false)} loading={state.upgrading} t={t} />
       )}
-
-      {/* Cancel Subscription Dialog */}
-      {showCancelDialog && current_period_end && (
-        <CancelSubscriptionDialog
-          open={showCancelDialog}
-          onOpenChange={setShowCancelDialog}
-          periodEnd={current_period_end}
-          t={(key, params) => t(`settings.${key}`, params)}
-          onCancelled={handleCancelSubscription}
-        />
+      {state.showCancelDialog && current_period_end && (
+        <CancelSubscriptionDialog open={state.showCancelDialog} onOpenChange={state.setShowCancelDialog}
+          periodEnd={current_period_end} t={(key, params) => t(`settings.${key}`, params)}
+          onCancelled={state.handleCancelSubscription} />
       )}
     </div>
   );

@@ -4,16 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )
 
 // isDuplicateKeyError checks whether the given error is a database unique constraint violation.
-// Supports PostgreSQL, SQLite, and MySQL error messages.
 func isDuplicateKeyError(err error) bool {
 	if err == nil {
 		return false
@@ -24,8 +21,7 @@ func isDuplicateKeyError(err error) bool {
 		strings.Contains(errStr, "Duplicate entry") // MySQL
 }
 
-// escapeLike escapes special LIKE/ILIKE characters (%, _, \) in a search string
-// so they are treated as literal characters in PostgreSQL.
+// escapeLike escapes special LIKE/ILIKE characters (%, _, \) in a search string.
 func escapeLike(s string) string {
 	s = strings.ReplaceAll(s, `\`, `\\`)
 	s = strings.ReplaceAll(s, `%`, `\%`)
@@ -49,10 +45,8 @@ func (r *extensionRepo) ListSkillRegistries(ctx context.Context, orgID *int64) (
 	var registries []*extension.SkillRegistry
 	query := r.db.WithContext(ctx)
 	if orgID == nil {
-		// Admin: platform-level only
 		query = query.Where("organization_id IS NULL")
 	} else {
-		// Org user: merge platform-level + org-specific (same as ListSkillMarketItems)
 		query = query.Where("organization_id IS NULL OR organization_id = ?", *orgID)
 	}
 	if err := query.Order("organization_id ASC NULLS FIRST, created_at DESC").Find(&registries).Error; err != nil {
@@ -112,10 +106,8 @@ func (r *extensionRepo) ListSkillMarketItems(ctx context.Context, orgID *int64, 
 		Preload("Registry")
 
 	if orgID == nil {
-		// Platform-level only
 		query = query.Where("skill_registries.organization_id IS NULL")
 	} else {
-		// Merge platform-level + org-specific, excluding disabled platform sources
 		query = query.
 			Joins("LEFT JOIN skill_registry_overrides sso ON sso.registry_id = skill_registries.id AND sso.organization_id = ?", *orgID).
 			Where("(skill_registries.organization_id IS NULL AND (sso.id IS NULL OR sso.is_disabled = false)) OR skill_registries.organization_id = ?", *orgID)
@@ -181,124 +173,4 @@ func (r *extensionRepo) DeactivateSkillMarketItemsNotIn(ctx context.Context, reg
 	}
 
 	return query.Update("is_active", false).Error
-}
-
-// --- MCP Market Items ---
-
-func (r *extensionRepo) ListMcpMarketItems(ctx context.Context, queryStr string, category string, limit, offset int) ([]*extension.McpMarketItem, int64, error) {
-	var items []*extension.McpMarketItem
-	var total int64
-
-	query := r.db.WithContext(ctx).Model(&extension.McpMarketItem{}).Where("is_active = ?", true)
-
-	if queryStr != "" {
-		search := "%" + escapeLike(queryStr) + "%"
-		query = query.Where(
-			"slug ILIKE ? OR name ILIKE ? OR description ILIKE ?",
-			search, search, search,
-		)
-	}
-
-	if category != "" {
-		query = query.Where("category = ?", category)
-	}
-
-	// Count total matching items
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// Apply pagination defaults
-	if limit <= 0 || limit > 100 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
-	}
-
-	if err := query.Order("name ASC").Limit(limit).Offset(offset).Find(&items).Error; err != nil {
-		return nil, 0, err
-	}
-	return items, total, nil
-}
-
-func (r *extensionRepo) GetMcpMarketItem(ctx context.Context, id int64) (*extension.McpMarketItem, error) {
-	var item extension.McpMarketItem
-	if err := r.db.WithContext(ctx).First(&item, id).Error; err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-func (r *extensionRepo) FindMcpMarketItemByRegistryName(ctx context.Context, registryName string) (*extension.McpMarketItem, error) {
-	var item extension.McpMarketItem
-	if err := r.db.WithContext(ctx).Where("registry_name = ?", registryName).First(&item).Error; err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-func (r *extensionRepo) UpsertMcpMarketItem(ctx context.Context, item *extension.McpMarketItem) error {
-	// Try to find existing record by registry_name
-	if item.RegistryName != "" {
-		var existing extension.McpMarketItem
-		err := r.db.WithContext(ctx).Where("registry_name = ?", item.RegistryName).First(&existing).Error
-		if err == nil {
-			// Update existing: preserve ID and creation time
-			item.ID = existing.ID
-			item.CreatedAt = existing.CreatedAt
-			return r.db.WithContext(ctx).Save(item).Error
-		}
-	}
-	// Also check for slug conflict (from seed data)
-	var existingBySlug extension.McpMarketItem
-	err := r.db.WithContext(ctx).Where("slug = ?", item.Slug).First(&existingBySlug).Error
-	if err == nil {
-		// Slug already taken (probably by seed data), append a suffix
-		item.Slug = item.Slug + "-registry"
-	}
-	return r.db.WithContext(ctx).Create(item).Error
-}
-
-func (r *extensionRepo) BatchUpsertMcpMarketItems(ctx context.Context, items []*extension.McpMarketItem) error {
-	if len(items) == 0 {
-		return nil
-	}
-
-	const batchSize = 100
-	now := time.Now()
-
-	// Pre-process: handle slug conflicts with seed data and set timestamps
-	for _, item := range items {
-		item.UpdatedAt = now
-		if item.CreatedAt.IsZero() {
-			item.CreatedAt = now
-		}
-	}
-
-	// Use GORM's OnConflict clause targeting the partial unique index on registry_name.
-	// On conflict, update all mutable fields while preserving created_at.
-	return r.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "registry_name"}},
-			DoUpdates: clause.AssignmentColumns([]string{
-				"name", "description", "icon", "transport_type", "command",
-				"default_args", "default_http_url", "default_http_headers",
-				"env_var_schema", "agent_filter", "category", "is_active",
-				"version", "repository_url", "registry_meta", "last_synced_at",
-				"updated_at",
-			}),
-		}).
-		CreateInBatches(items, batchSize).Error
-}
-
-func (r *extensionRepo) DeactivateMcpMarketItemsNotIn(ctx context.Context, sourceType string, registryNames []string) (int64, error) {
-	query := r.db.WithContext(ctx).
-		Model(&extension.McpMarketItem{}).
-		Where("source = ? AND is_active = ?", sourceType, true)
-	if len(registryNames) > 0 {
-		query = query.Where("registry_name NOT IN ?", registryNames)
-	}
-	result := query.Update("is_active", false)
-	return result.RowsAffected, result.Error
 }
