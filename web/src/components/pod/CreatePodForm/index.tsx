@@ -3,19 +3,15 @@
 import React, { useMemo, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Spinner, CenteredSpinner } from "@/components/ui/spinner";
-import { ConfigForm } from "@/components/ide/ConfigForm";
+import { CenteredSpinner } from "@/components/ui/spinner";
 import { usePodCreationData, useCreatePodForm } from "../hooks";
 import { useConfigOptions } from "@/components/ide/hooks";
 import { CreatePodFormProps } from "./types";
 import { mergeConfig } from "./presets";
-import { RunnerSelect } from "./RunnerSelect";
 import { AgentSelect } from "./AgentSelect";
-import { CredentialSelect } from "./CredentialSelect";
-import { RepositorySelect, BranchInput } from "./RepositorySelect";
 import { PromptInput } from "./PromptInput";
-import { AdvancedOptions } from "./AdvancedOptions";
-import { Input } from "@/components/ui/input";
+import { InteractionModeToggle } from "./InteractionModeToggle";
+import { AdvancedFormSection } from "./AdvancedFormSection";
 import { estimateWorkspaceTerminalSize } from "@/lib/terminal-size";
 
 /**
@@ -145,40 +141,12 @@ export function CreatePodForm({
           />
 
           {/* Interaction Mode Toggle (only when agent supports multiple modes) */}
-          {form.selectedAgent && form.supportedModes.length > 1 && (
-            <div>
-              <label className="block text-sm font-medium mb-1.5">
-                {t("ide.createPod.interactionMode")}
-              </label>
-              <div className="flex gap-2">
-                {form.supportedModes.includes("pty") && (
-                  <button
-                    type="button"
-                    onClick={() => form.setInteractionMode("pty")}
-                    className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors ${
-                      form.interactionMode === "pty"
-                        ? "border-primary bg-primary/10 text-primary font-medium"
-                        : "border-border bg-background text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {t("ide.createPod.modePty")}
-                  </button>
-                )}
-                {form.supportedModes.includes("acp") && (
-                  <button
-                    type="button"
-                    onClick={() => form.setInteractionMode("acp")}
-                    className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors ${
-                      form.interactionMode === "acp"
-                        ? "border-primary bg-primary/10 text-primary font-medium"
-                        : "border-border bg-background text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {t("ide.createPod.modeAcp")}
-                  </button>
-                )}
-              </div>
-            </div>
+          {form.selectedAgent && (
+            <InteractionModeToggle
+              supportedModes={form.supportedModes}
+              interactionMode={form.interactionMode}
+              onModeChange={form.setInteractionMode}
+            />
           )}
 
           {/* Initial Prompt (visible at top level) */}
@@ -193,81 +161,17 @@ export function CreatePodForm({
 
           {/* Advanced Options (collapsed by default) */}
           {form.selectedAgent && (
-            <AdvancedOptions t={t}>
-              {/* Pod Alias (optional display name) */}
-              <div>
-                <label htmlFor="pod-alias" className="block text-sm font-medium mb-1">
-                  {t("ide.createPod.alias")}
-                </label>
-                <Input
-                  id="pod-alias"
-                  value={form.alias}
-                  onChange={(e) => form.setAlias(e.target.value)}
-                  placeholder={t("ide.createPod.aliasPlaceholder")}
-                  maxLength={100}
-                />
-              </div>
-
-              {/* Runner Select (manual override, optional) */}
-              <RunnerSelect
-                runners={runners}
-                selectedRunnerId={selectedRunner?.id ?? null}
-                onSelect={setSelectedRunnerId}
-                error={form.validationErrors.runner}
-                t={t}
-              />
-
-              {/* Credential Profile Select */}
-              <CredentialSelect
-                profiles={form.credentialProfiles}
-                selectedProfileId={form.selectedCredentialProfile}
-                onSelect={form.setSelectedCredentialProfile}
-                loading={form.loadingCredentials}
-                t={t}
-              />
-
-              {/* Repository Select */}
-              <RepositorySelect
-                repositories={repositories}
-                selectedRepositoryId={form.selectedRepository}
-                onSelect={form.setSelectedRepository}
-                t={t}
-              />
-
-              {/* Branch Input */}
-              {form.selectedRepository && (
-                <BranchInput
-                  value={form.selectedBranch}
-                  onChange={form.setSelectedBranch}
-                  error={form.validationErrors.branch}
-                  t={t}
-                />
-              )}
-
-              {/* Agent Configuration Section */}
-              {loadingConfig ? (
-                <div className="flex items-center justify-center py-4">
-                  <Spinner size="sm" className="mr-2" />
-                  <span className="text-sm text-muted-foreground">
-                    {t("ide.createPod.loadingPlugins")}
-                  </span>
-                </div>
-              ) : (
-                configFields.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      {t("ide.createPod.pluginConfig")}
-                    </label>
-                    <ConfigForm
-                      fields={configFields.filter((f) => f.type !== "model_list")}
-                      values={configValues}
-                      onChange={handleConfigChange}
-                      agentSlug={form.selectedAgentSlug}
-                    />
-                  </div>
-                )
-              )}
-            </AdvancedOptions>
+            <AdvancedFormSection
+              form={form}
+              runners={runners}
+              repositories={repositories}
+              selectedRunner={selectedRunner}
+              setSelectedRunnerId={setSelectedRunnerId}
+              configFields={configFields}
+              loadingConfig={loadingConfig}
+              configValues={configValues}
+              handleConfigChange={handleConfigChange}
+            />
           )}
 
           {/* Error Display */}

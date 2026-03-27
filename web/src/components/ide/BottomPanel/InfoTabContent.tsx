@@ -8,6 +8,8 @@ import { getPodDisplayName } from "@/lib/pod-utils";
 import { getPodStatusInfo } from "@/stores/mesh";
 import { usePodStore } from "@/stores/pod";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
+import { InfoRow } from "./InfoRow";
+import { RelatedPodsList } from "./RelatedPodsList";
 import {
   Terminal,
   Server,
@@ -18,7 +20,6 @@ import {
   User,
   Clock,
   AlertCircle,
-  Link2,
 } from "lucide-react";
 
 function getRelatedPods(pods: PodData[], pod: PodData | null): PodData[] {
@@ -205,104 +206,8 @@ export function InfoTabContent({
 
       {/* Related Pods */}
       {relatedPods.length > 0 && (
-        <div className="border-t border-border pt-2">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Link2 className="w-3 h-3 text-muted-foreground" />
-            <span className="text-xs font-medium">
-              {t("ide.bottomPanel.infoTab.relatedPods", {
-                count: relatedPods.length,
-              })}
-            </span>
-          </div>
-          <div className="space-y-1">
-            {relatedPods.map((rp) => {
-              const rpStatus = getPodStatusInfo(rp.status);
-              return (
-                <div
-                  key={rp.pod_key}
-                  className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50 text-xs"
-                >
-                  <span
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                      rpStatus.bgColor
-                    )}
-                  />
-                  <span className="truncate flex-1">
-                    {getPodDisplayName(rp)}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[10px] whitespace-nowrap",
-                      rpStatus.color
-                    )}
-                  >
-                    {rpStatus.label}
-                  </span>
-                  {rp.agent && (
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                      {rp.agent.name}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <RelatedPodsList relatedPods={relatedPods} t={t} />
       )}
-    </div>
-  );
-}
-
-function InfoRow({
-  icon,
-  label,
-  value,
-  mono,
-  href,
-  className,
-  valueClassName,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  mono?: boolean;
-  href?: string;
-  className?: string;
-  valueClassName?: string;
-}) {
-  const valueContent = href ? (
-    <Link
-      href={href}
-      className={cn(
-        "text-xs truncate hover:underline text-primary",
-        mono && "font-mono",
-        valueClassName
-      )}
-      title={typeof value === "string" ? value : undefined}
-    >
-      {value}
-    </Link>
-  ) : (
-    <span
-      className={cn(
-        "text-xs truncate",
-        mono && "font-mono",
-        valueClassName
-      )}
-      title={typeof value === "string" ? value : undefined}
-    >
-      {value}
-    </span>
-  );
-
-  return (
-    <div className={cn("flex items-start gap-1.5 min-w-0", className)}>
-      <span className="text-muted-foreground mt-0.5 flex-shrink-0">{icon}</span>
-      <span className="text-[10px] text-muted-foreground whitespace-nowrap flex-shrink-0">
-        {label}:
-      </span>
-      {valueContent}
     </div>
   );
 }

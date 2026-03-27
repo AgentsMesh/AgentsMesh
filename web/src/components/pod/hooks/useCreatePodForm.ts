@@ -1,64 +1,14 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { podApi, PodData, AgentData, RepositoryData } from "@/lib/api";
-import { userAgentCredentialApi, CredentialProfileData } from "@/lib/api";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { PodData, AgentData, RepositoryData } from "@/lib/api";
 import { usePodCreationStore } from "@/stores/podCreation";
+import { submitCreatePod } from "./useCreatePodFormSubmit";
+import { usePrefsAutoFill, useCredentialProfiles } from "./useCreatePodFormEffects";
+import type { CreatePodFormState, FormValidationErrors } from "./useCreatePodFormTypes";
+import { RUNNER_HOST_PROFILE_ID } from "./useCreatePodFormTypes";
 
-/**
- * Validation errors for the form
- */
-export interface FormValidationErrors {
-  runner?: string;
-  agent?: string;
-  repository?: string;
-  branch?: string;
-  prompt?: string;
-}
-
-// Special value for RunnerHost (use Runner's local environment)
-export const RUNNER_HOST_PROFILE_ID = 0;
-
-export interface CreatePodFormState {
-  // Selection state (order: Runner -> Agent -> Others)
-  selectedAgent: string | null;
-  selectedRepository: number | null;
-  selectedBranch: string;
-  selectedCredentialProfile: number; // 0 = RunnerHost, >0 = custom profile ID
-  interactionMode: "pty" | "acp";
-  prompt: string;
-  alias: string;
-
-  // Credential profiles for selected agent
-  credentialProfiles: CredentialProfileData[];
-  loadingCredentials: boolean;
-
-  // Actions
-  setSelectedAgent: (slug: string | null) => void;
-  setSelectedRepository: (id: number | null) => void;
-  setSelectedBranch: (branch: string) => void;
-  setSelectedCredentialProfile: (id: number) => void;
-  setInteractionMode: (mode: "pty" | "acp") => void;
-  setPrompt: (prompt: string) => void;
-  setAlias: (alias: string) => void;
-
-  // Computed
-  selectedAgentSlug: string;
-  supportedModes: string[]; // parsed from agent type's supported_modes
-
-  // Form state
-  loading: boolean;
-  error: string | null;
-  validationErrors: FormValidationErrors;
-  isValid: boolean;
-
-  // Actions
-  reset: () => void;
-  validate: () => boolean;
-  submit: (
-    selectedRunnerId: number | null | undefined,
-    pluginConfig: Record<string, unknown>,
-    options?: { ticketSlug?: string; initialPrompt?: string; cols?: number; rows?: number }
-  ) => Promise<PodData | null>;
-}
+// Re-export types for consumers
+export { RUNNER_HOST_PROFILE_ID } from "./useCreatePodFormTypes";
+export type { CreatePodFormState, FormValidationErrors } from "./useCreatePodFormTypes";
 
 /**
  * Hook to manage Create Pod form state and submission
@@ -70,14 +20,11 @@ export function useCreatePodForm(
   repositories: RepositoryData[],
   onSuccess?: (pod: PodData) => void
 ): CreatePodFormState {
-  // Read saved preferences for auto-fill
-  const { lastAgentSlug, lastRepositoryId, lastCredentialProfileId, lastBranchName, setLastChoices } = usePodCreationStore();
-  const prefsInitializedRef = useRef(false);
+  const { setLastChoices } = usePodCreationStore();
 
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [selectedRepository, setSelectedRepository] = useState<number | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
-  const [selectedCredentialProfile, setSelectedCredentialProfile] = useState<number>(RUNNER_HOST_PROFILE_ID);
   const [interactionMode, setInteractionMode] = useState<"pty" | "acp">("pty");
   const [prompt, setPrompt] = useState<string>("");
   const [alias, setAlias] = useState<string>("");
@@ -85,32 +32,18 @@ export function useCreatePodForm(
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<FormValidationErrors>({});
 
-  // Credential profiles state
-  const [credentialProfiles, setCredentialProfiles] = useState<CredentialProfileData[]>([]);
-  const [loadingCredentials, setLoadingCredentials] = useState(false);
+  // Credential profiles (extracted hook)
+  const creds = useCredentialProfiles(selectedAgent);
 
-  // Auto-fill from saved preferences when agents become available
-  useEffect(() => {
-    if (prefsInitializedRef.current || availableAgents.length === 0) return;
-
-    if (lastAgentSlug && availableAgents.find(a => a.slug === lastAgentSlug)) {
-      setSelectedAgent(lastAgentSlug);
-    }
-    if (lastRepositoryId && repositories.find(r => r.id === lastRepositoryId)) {
-      setSelectedRepository(lastRepositoryId);
-    }
-    if (lastBranchName) {
-      setSelectedBranch(lastBranchName);
-    }
-
-    prefsInitializedRef.current = true;
-  }, [availableAgents, repositories, lastAgentSlug, lastRepositoryId, lastBranchName]);
+  // Auto-fill from saved preferences
+  const prefsInitializedRef = usePrefsAutoFill(
+    availableAgents, repositories, setSelectedAgent, setSelectedRepository, setSelectedBranch,
+  );
 
   // Compute agent slug from selected agent
   const selectedAgentSlug = useMemo(() => {
     if (!selectedAgent) return "";
-    const agent = availableAgents.find((a) => a.slug === selectedAgent);
-    return agent?.slug || "";
+    return availableAgents.find((a) => a.slug === selectedAgent)?.slug || "";
   }, [selectedAgent, availableAgents]);
 
   // Parse supported modes from selected agent type
@@ -121,29 +54,21 @@ export function useCreatePodForm(
     return modes.length > 0 ? modes : ["pty"];
   }, [selectedAgent, availableAgents]);
 
-  // Compute form validity (runner validation is done externally)
-  const isValid = useMemo(() => {
-    return selectedAgent !== null && selectedAgent !== "";
-  }, [selectedAgent]);
+  const isValid = useMemo(() => selectedAgent !== null && selectedAgent !== "", [selectedAgent]);
 
-  // Reset agent selection when available agents change (e.g., when runner changes)
+  // Reset agent selection when available agents change
   useEffect(() => {
-    // If current selection is not in available types, reset it
     if (selectedAgent && !availableAgents.find(a => a.slug === selectedAgent)) {
       setSelectedAgent(null);
-      setCredentialProfiles([]);
-      setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
+      creds.setCredentialProfiles([]);
+      creds.setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
       setInteractionMode("pty");
     }
-  }, [availableAgents, selectedAgent]);
+  }, [availableAgents, selectedAgent, creds]);
 
   // Auto-set interaction mode when agent changes based on supported modes
   useEffect(() => {
-    if (!selectedAgent) {
-      setInteractionMode("pty");
-      return;
-    }
-    // If current mode is not supported, switch to first supported mode
+    if (!selectedAgent) { setInteractionMode("pty"); return; }
     if (!supportedModes.includes(interactionMode)) {
       setInteractionMode(supportedModes[0] as "pty" | "acp");
     }
@@ -152,54 +77,10 @@ export function useCreatePodForm(
 
   // Auto-select default branch when repository is selected
   useEffect(() => {
-    if (!selectedRepository) {
-      setSelectedBranch("");
-      return;
-    }
-
+    if (!selectedRepository) { setSelectedBranch(""); return; }
     const repo = repositories.find((r) => r.id === selectedRepository);
-    if (repo?.default_branch) {
-      setSelectedBranch(repo.default_branch);
-    }
+    if (repo?.default_branch) setSelectedBranch(repo.default_branch);
   }, [selectedRepository, repositories]);
-
-  // Load credential profiles when agent is selected
-  useEffect(() => {
-    if (!selectedAgent) {
-      setCredentialProfiles([]);
-      setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
-      return;
-    }
-
-    const loadCredentials = async () => {
-      setLoadingCredentials(true);
-      try {
-        const res = await userAgentCredentialApi.listForAgent(selectedAgent);
-        const profiles = res.profiles || [];
-        setCredentialProfiles(profiles);
-
-        // Auto-select: prefer saved preference, then default profile, then RunnerHost
-        const savedProfile = lastCredentialProfileId && profiles.find(p => p.id === lastCredentialProfileId);
-        const defaultProfile = profiles.find((p) => p.is_default);
-        if (savedProfile) {
-          setSelectedCredentialProfile(savedProfile.id);
-        } else if (defaultProfile) {
-          setSelectedCredentialProfile(defaultProfile.id);
-        } else {
-          setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
-        }
-      } catch (err) {
-        console.error("Failed to load credential profiles:", err);
-        setCredentialProfiles([]);
-        setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
-      } finally {
-        setLoadingCredentials(false);
-      }
-    };
-
-    loadCredentials();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAgent]);
 
   // Clear validation error when field changes
   useEffect(() => {
@@ -208,104 +89,58 @@ export function useCreatePodForm(
     }
   }, [selectedAgent, validationErrors.agent]);
 
-  // Validate form (runner is optional - backend auto-selects when not provided)
   const validate = useCallback((): boolean => {
     const errors: FormValidationErrors = {};
-
-    if (!selectedAgent) {
-      errors.agent = "Please select an agent";
-    }
-
-    // Branch validation: if repository is selected but branch is empty, warn
+    if (!selectedAgent) errors.agent = "Please select an agent";
     if (selectedRepository && !selectedBranch.trim()) {
       errors.branch = "Branch name is recommended when using a repository";
     }
-
-    // Validate branch name format (optional, only if provided)
-    if (selectedBranch.trim()) {
-      const branchRegex = /^[a-zA-Z0-9._/-]+$/;
-      if (!branchRegex.test(selectedBranch)) {
-        errors.branch = "Branch name contains invalid characters";
-      }
+    if (selectedBranch.trim() && !/^[a-zA-Z0-9._/-]+$/.test(selectedBranch)) {
+      errors.branch = "Branch name contains invalid characters";
     }
-
     setValidationErrors(errors);
     return Object.keys(errors).filter(k => errors[k as keyof FormValidationErrors]).length === 0;
   }, [selectedAgent, selectedRepository, selectedBranch]);
 
-  // Reset form
   const reset = useCallback(() => {
     setSelectedAgent(null);
     setSelectedRepository(null);
     setSelectedBranch("");
-    setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
-    setCredentialProfiles([]);
+    creds.setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
+    creds.setCredentialProfiles([]);
     setInteractionMode("pty");
     setPrompt("");
     setAlias("");
     setError(null);
     setValidationErrors({});
     prefsInitializedRef.current = false;
-  }, []);
+  }, [creds, prefsInitializedRef]);
 
-  // Submit form (runner_id is optional - backend auto-selects when not provided)
   const submit = useCallback(
     async (
       selectedRunnerId: number | null | undefined,
       pluginConfig: Record<string, unknown>,
       options?: { ticketSlug?: string; initialPrompt?: string; cols?: number; rows?: number }
     ): Promise<PodData | null> => {
-      // Validate before submission
-      if (!validate()) {
-        return null;
-      }
-
-      if (!selectedAgent) {
-        setError("Please select an agent");
-        return null;
-      }
-
+      if (!validate()) return null;
+      if (!selectedAgent) { setError("Please select an agent"); return null; }
       setLoading(true);
       setError(null);
-
       try {
-        // Build plugin config for API
-        const config: Record<string, unknown> = {
-          agent: selectedAgentSlug,
-          ...pluginConfig,
-        };
-
-        // Use provided initialPrompt (from options) or form prompt
-        const finalPrompt = options?.initialPrompt ?? prompt;
-
-        const response = await podApi.create({
-          agent_slug: selectedAgent,
-          runner_id: selectedRunnerId || undefined, // omit when not manually selected
-          repository_id: selectedRepository || undefined,
-          branch_name: selectedBranch || undefined,
-          initial_prompt: finalPrompt,
-          alias: alias.trim() || undefined,
-          config_overrides: config,
-          credential_profile_id: selectedCredentialProfile,
-          ticket_slug: options?.ticketSlug,
-          cols: options?.cols,
-          rows: options?.rows,
-          interaction_mode: interactionMode !== "pty" ? interactionMode : undefined,
+        const pod = await submitCreatePod({
+          selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch,
+          selectedCredentialProfile: creds.selectedCredentialProfile,
+          interactionMode, prompt, alias, selectedRunnerId, pluginConfig, options,
         });
-
-        if (response.pod) {
-          // Save choices for next time
+        if (pod) {
           setLastChoices({
-            lastAgentSlug: selectedAgent,
-            lastRepositoryId: selectedRepository,
-            lastCredentialProfileId: selectedCredentialProfile > 0 ? selectedCredentialProfile : null,
+            lastAgentSlug: selectedAgent, lastRepositoryId: selectedRepository,
+            lastCredentialProfileId: creds.selectedCredentialProfile > 0 ? creds.selectedCredentialProfile : null,
             lastBranchName: selectedBranch || null,
           });
-
-          onSuccess?.(response.pod);
-          return response.pod;
+          onSuccess?.(pod);
         }
-        return null;
+        return pod;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to create pod";
         setError(message);
@@ -315,34 +150,17 @@ export function useCreatePodForm(
         setLoading(false);
       }
     },
-    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, selectedCredentialProfile, interactionMode, prompt, alias, onSuccess, validate, setLastChoices]
+    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, creds.selectedCredentialProfile, interactionMode, prompt, alias, onSuccess, validate, setLastChoices]
   );
 
   return {
-    selectedAgent,
-    selectedRepository,
-    selectedBranch,
-    selectedCredentialProfile,
-    interactionMode,
-    prompt,
-    alias,
-    credentialProfiles,
-    loadingCredentials,
-    setSelectedAgent,
-    setSelectedRepository,
-    setSelectedBranch,
-    setSelectedCredentialProfile,
-    setInteractionMode,
-    setPrompt,
-    setAlias,
-    selectedAgentSlug,
-    supportedModes,
-    loading,
-    error,
-    validationErrors,
-    isValid,
-    reset,
-    validate,
-    submit,
+    selectedAgent, selectedRepository, selectedBranch,
+    selectedCredentialProfile: creds.selectedCredentialProfile,
+    interactionMode, prompt, alias,
+    credentialProfiles: creds.credentialProfiles, loadingCredentials: creds.loadingCredentials,
+    setSelectedAgent, setSelectedRepository, setSelectedBranch,
+    setSelectedCredentialProfile: creds.setSelectedCredentialProfile,
+    setInteractionMode, setPrompt, setAlias, selectedAgentSlug, supportedModes,
+    loading, error, validationErrors, isValid, reset, validate, submit,
   };
 }

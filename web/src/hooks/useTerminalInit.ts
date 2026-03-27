@@ -1,14 +1,15 @@
-import { Terminal as XTerm, IDisposable } from "@xterm/xterm";
+import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
 import { MutableRefObject } from "react";
-import { relayPool, terminalRegistry } from "@/stores/workspace";
-import type { ConnectionStatus } from "@/stores/relayConnection";
+import { terminalRegistry } from "@/stores/workspace";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
-import { uploadImage } from "@/lib/api/file";
-import { isTouchPrimaryInput } from "@/lib/platform";
-import { toast } from "sonner";
+
+// Re-export from split files for consumers
+export { setupConnection, setupDataHandlers } from "./useTerminalConnection";
+export type { TerminalConnection } from "./useTerminalConnection";
+export { setupIME, setupImagePaste } from "./useTerminalInputHandlers";
 
 export const TERMINAL_THEME = {
   background: "#1e1e1e",
@@ -49,7 +50,7 @@ export function safeFit(fitAddon: FitAddon): { cols: number; rows: number } | nu
   return { cols: dims.cols, rows: dims.rows };
 }
 
-interface SetupTerminalResult {
+export interface SetupTerminalResult {
   term: XTerm;
   fitAddon: FitAddon;
   scheduler: TerminalWriteScheduler;
@@ -101,212 +102,4 @@ export function setupTerminal(
   terminalRegistry.register(podKey, term);
 
   return { term, fitAddon, scheduler, initialDims, deferredFitRafId };
-}
-
-interface TerminalConnection {
-  send: (data: string) => void;
-  unsubscribe: () => void;
-  disconnect: () => void;
-}
-
-/**
- * Subscribes to the terminal pool WebSocket, wiring incoming data
- * through the scheduler. Returns an AbortController for cleanup.
- */
-export function setupConnection(
-  podKey: string,
-  scheduler: TerminalWriteScheduler,
-  initialDims: { value: { cols: number; rows: number } | null },
-  connectionRef: MutableRefObject<TerminalConnection | null>,
-  setConnectionStatus: (status: ConnectionStatus) => void,
-  setIsRunnerDisconnected: (v: boolean) => void,
-): { abort: AbortController; unsubscribeStatus: () => void } {
-  const handleMessage = (data: Uint8Array | string) => {
-    if (data instanceof Uint8Array) {
-      scheduler.schedule(data);
-    } else {
-      scheduler.schedule(new TextEncoder().encode(data));
-    }
-  };
-
-  const subscriptionId = `terminal-${podKey}`;
-  const abort = new AbortController();
-
-  (async () => {
-    try {
-      const handle = await relayPool.subscribe(podKey, subscriptionId, handleMessage);
-      if (abort.signal.aborted) return;
-      connectionRef.current = handle;
-      if (initialDims.value) {
-        relayPool.forceResize(podKey, initialDims.value.cols, initialDims.value.rows);
-      }
-    } catch (error) {
-      if (abort.signal.aborted) return;
-      console.error("Failed to connect terminal:", error);
-      setConnectionStatus("error");
-    }
-  })();
-
-  const unsubscribeStatus = relayPool.onStatusChange(podKey, (info) => {
-    if (info.status !== "none") {
-      setConnectionStatus(info.status);
-    }
-    setIsRunnerDisconnected(info.runnerDisconnected);
-  });
-
-  return { abort, unsubscribeStatus };
-}
-
-/**
- * Tracks IME composition state on the xterm helper textarea.
- * Runs on all platforms — needed to prevent sending incomplete
- * IME input via term.onData.
- */
-function setupCompositionTracking(
-  textarea: HTMLTextAreaElement,
-  disposables: IDisposable[],
-): { isComposing: { current: boolean } } {
-  const isComposing = { current: false };
-
-  const handleCompositionStart = () => { isComposing.current = true; };
-  const handleCompositionEnd = () => { isComposing.current = false; };
-
-  textarea.addEventListener('compositionstart', handleCompositionStart);
-  textarea.addEventListener('compositionend', handleCompositionEnd);
-
-  disposables.push({
-    dispose: () => {
-      textarea.removeEventListener('compositionstart', handleCompositionStart);
-      textarea.removeEventListener('compositionend', handleCompositionEnd);
-    },
-  });
-
-  return { isComposing };
-}
-
-/**
- * Syncs the xterm helper textarea position to follow the terminal cursor.
- * Touch-device only — on desktop, xterm.js internally positions the textarea
- * for IME via its CompositionHelper.
- *
- * Only binds to onCursorMove (not onWriteParsed) to avoid output→input
- * coupling that causes IME candidate box flickering on Windows.
- */
-function setupMobileTextareaSync(
-  textarea: HTMLTextAreaElement,
-  term: XTerm,
-  disposables: IDisposable[],
-): void {
-  const syncTextareaPosition = () => {
-    const cursorX = term.buffer.active.cursorX;
-    const cursorY = term.buffer.active.cursorY - term.buffer.active.viewportY;
-    const cellWidth = term.options.fontSize! * 0.6;
-    const cellHeight = term.options.fontSize! * (term.options.lineHeight || 1.2);
-    textarea.style.left = `${Math.max(0, cursorX * cellWidth)}px`;
-    textarea.style.top = `${Math.max(0, cursorY * cellHeight)}px`;
-  };
-
-  const cursorDisposable = term.onCursorMove(syncTextareaPosition);
-  const initialSyncRafId = requestAnimationFrame(syncTextareaPosition);
-
-  disposables.push(
-    cursorDisposable,
-    { dispose: () => cancelAnimationFrame(initialSyncRafId) },
-  );
-}
-
-/**
- * Sets up IME composition tracking and, on touch devices, textarea
- * position sync for correct IME candidate box placement.
- */
-export function setupIME(
-  container: HTMLDivElement,
-  term: XTerm,
-  disposables: IDisposable[],
-): { isComposing: { current: boolean } } {
-  const textarea = container.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement;
-  if (!textarea) return { isComposing: { current: false } };
-
-  const result = setupCompositionTracking(textarea, disposables);
-
-  // On touch devices, manually sync textarea position to follow cursor.
-  // On desktop, xterm.js handles this internally — manual override would
-  // conflict and cause IME candidate box flickering (e.g. Windows CJK IME).
-  if (isTouchPrimaryInput()) {
-    setupMobileTextareaSync(textarea, term, disposables);
-  }
-
-  return result;
-}
-
-/**
- * Intercepts paste events containing images — uploads them and sends
- * the resulting URL to the terminal connection.
- */
-export function setupImagePaste(
-  container: HTMLDivElement,
-  connectionRef: MutableRefObject<TerminalConnection | null>,
-  disposables: IDisposable[],
-): void {
-  const handlePaste = (e: ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (item.type.startsWith('image/')) {
-        e.preventDefault();
-        e.stopPropagation();
-        const blob = item.getAsFile();
-        if (!blob) continue;
-
-        // Check connection before starting upload to fail fast
-        if (!connectionRef.current) {
-          toast.error('Terminal not connected');
-          return;
-        }
-
-        const toastId = toast.loading('Uploading image...');
-        uploadImage(blob)
-          .then((url) => {
-            // Re-check connection — it may have dropped during upload
-            if (!connectionRef.current) {
-              toast.error('Terminal disconnected during upload', { id: toastId });
-              return;
-            }
-            connectionRef.current.send(url);
-            toast.success('Image uploaded', { id: toastId });
-          })
-          .catch((err) => {
-            toast.error(err instanceof Error ? err.message : 'Failed to upload image', { id: toastId });
-          });
-        return;
-      }
-    }
-  };
-
-  container.addEventListener('paste', handlePaste, true);
-  disposables.push({ dispose: () => container.removeEventListener('paste', handlePaste, true) });
-}
-
-/**
- * Wires onData (user input) and onResize handlers on the xterm instance.
- */
-export function setupDataHandlers(
-  term: XTerm,
-  podKey: string,
-  connectionRef: MutableRefObject<TerminalConnection | null>,
-  isComposing: { current: boolean },
-  disposables: IDisposable[],
-): void {
-  const dataDisposable = term.onData((data) => {
-    if (isComposing.current) return;
-    connectionRef.current?.send(data);
-  });
-
-  const resizeDisposable = term.onResize(({ rows, cols }) => {
-    relayPool.sendResize(podKey, cols, rows);
-  });
-
-  disposables.push(dataDisposable, resizeDisposable);
 }
