@@ -243,7 +243,7 @@ func TestCreatePod_CoordinatorSendFailure_ReturnsError(t *testing.T) {
 	coord := &mockPodCoordinator{err: errors.New("runner not connected")}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID: 1,
 		RunnerID: 1,

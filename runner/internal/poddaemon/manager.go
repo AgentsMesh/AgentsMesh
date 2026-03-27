@@ -80,7 +80,6 @@ func (m *PodDaemonManager) CreateSession(opts CreateOpts) (*daemonPTY, *PodDaemo
 		PodKey:         opts.PodKey,
 		Agent:          opts.Agent,
 		AuthToken:      authToken,
-		IPCPath:        ipcPath,
 		SandboxPath:    opts.SandboxPath,
 		WorkDir:        opts.WorkDir,
 		RepositoryURL:  opts.RepositoryURL,
