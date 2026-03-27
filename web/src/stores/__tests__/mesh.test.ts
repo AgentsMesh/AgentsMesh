@@ -402,9 +402,6 @@ describe("Mesh Store", () => {
     });
   });
 });
-
-describe("Helper Functions", () => {
-  describe("getPodStatusInfo", () => {
     it("should return correct info for initializing status", () => {
       const info = getPodStatusInfo("initializing");
       expect(info.label).toBe("Initializing");
