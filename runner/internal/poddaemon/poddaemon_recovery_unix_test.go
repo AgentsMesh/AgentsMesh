@@ -56,7 +56,7 @@ func TestDaemonSurvivesParentDeath(t *testing.T) {
 	// Phase 1: Create session (simulates Runner A creating a pod)
 	opts := CreateOpts{
 		PodKey:      "persist",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cat",
 		WorkDir:     sandbox,
 		Env:         os.Environ(),
@@ -158,7 +158,7 @@ func TestDaemonSurvivesMultipleReattachCycles(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "multi",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cat",
 		WorkDir:     sandbox,
 		Env:         os.Environ(),
@@ -234,7 +234,7 @@ func TestRecoveredSessionResize(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "rsz",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cat",
 		WorkDir:     sandbox,
 		Env:         os.Environ(),
@@ -294,7 +294,7 @@ func TestRecoveredSessionGracefulStop(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "gstop",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "sleep",
 		Args:        []string{"3600"},
 		WorkDir:     sandbox,
@@ -357,7 +357,7 @@ func TestOrphanCleanupAfterRecovery(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "orph",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "sleep",
 		Args:        []string{"3600"},
 		WorkDir:     sandbox,

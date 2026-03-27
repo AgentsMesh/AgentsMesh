@@ -281,7 +281,7 @@ func TestAvailablePodList_FormatText(t *testing.T) {
 			{
 				PodKey:    "pod-abc",
 				Status:    PodStatusRunning,
-				AgentType: AgentTypeField("claude-code"),
+				Agent: AgentField("claude-code"),
 				CreatedBy: &PodCreator{Username: "alice"},
 				Ticket:    &PodTicket{Title: "Fix bug"},
 			},
@@ -300,7 +300,7 @@ func TestAvailablePodList_FormatText(t *testing.T) {
 
 	t.Run("nil creator and ticket", func(t *testing.T) {
 		pods := AvailablePodList{
-			{PodKey: "pod-x", Status: PodStatusRunning, AgentType: AgentTypeField("aider")},
+			{PodKey: "pod-x", Status: PodStatusRunning, Agent: AgentField("aider")},
 		}
 		result := pods.FormatText()
 		if !strings.Contains(result, "| pod-x |") {
@@ -328,7 +328,7 @@ func TestRunnerSummaryList_FormatText(t *testing.T) {
 				CurrentPods:       2,
 				MaxConcurrentPods: 5,
 				Description:       "Main runner",
-				AvailableAgents: []AgentTypeSummary{
+				AvailableAgents: []AgentSummary{
 					{
 						ID:          10,
 						Slug:        "claude-code",

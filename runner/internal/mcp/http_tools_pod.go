@@ -27,7 +27,7 @@ func mergeModelIntoConfigOverrides(req *tools.PodCreateRequest, model string) {
 func (s *HTTPServer) createCreatePodTool() *MCPTool {
 	return &MCPTool{
 		Name:        "create_pod",
-		Description: "Create a new agent pod. IMPORTANT: Before calling this tool, you MUST first call list_runners to get the runner_id and agent_type_id. The new pod will automatically have pod:read and pod:write permissions to the creator via binding.",
+		Description: "Create a new agent pod. IMPORTANT: Before calling this tool, you MUST first call list_runners to get the runner_id and agent_slug. The new pod will automatically have pod:read and pod:write permissions to the creator via binding.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -35,9 +35,9 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 					"type":        "integer",
 					"description": "ID of the runner to create the pod on (required). Call list_runners first to get available runner IDs.",
 				},
-				"agent_type_id": map[string]interface{}{
+				"agent_slug": map[string]interface{}{
 					"type":        "integer",
-					"description": "ID of the agent type to use for the pod (required). Call list_runners first to see available agent types and their IDs.",
+					"description": "ID of the agent to use for the pod (required). Call list_runners first to see available agents and their IDs.",
 				},
 				"ticket_slug": map[string]interface{}{
 					"type":        "string",
@@ -73,7 +73,7 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 				},
 				"config_overrides": map[string]interface{}{
 					"type":        "object",
-					"description": "Override agent type default configuration. Keys depend on the agent type's config schema.",
+					"description": "Override agent default configuration. Keys depend on the agent's config schema.",
 				},
 				"permission_mode": map[string]interface{}{
 					"type":        "string",
@@ -81,7 +81,7 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 					"description": "Permission mode for the pod: 'plan' (default, requires approval), 'default' (normal permissions), or 'bypassPermissions' (auto-approve all).",
 				},
 			},
-			"required": []string{"runner_id", "agent_type_id"},
+			"required": []string{"runner_id", "agent_slug"},
 		},
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
 			req := &tools.PodCreateRequest{
@@ -94,8 +94,8 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 			if v := getIntArg(args, "runner_id"); v != 0 {
 				req.RunnerID = v
 			}
-			if v := getInt64PtrArg(args, "agent_type_id"); v != nil {
-				req.AgentTypeID = v
+			if v := getStringArg(args, "agent_slug"); v != "" {
+				req.AgentSlug = v
 			}
 			if v := getStringArg(args, "ticket_slug"); v != "" {
 				req.TicketSlug = &v

@@ -49,7 +49,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithAllParams(t *testing.T) {
 		"params": {
 			"name": "create_pod",
 			"arguments": {
-				"agent_type_id": 1,
+				"agent_slug": "claude-code",
 				"runner_id": 2,
 				"ticket_slug": "AM-123",
 				"initial_prompt": "Hello, start working on this task",
@@ -88,7 +88,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithRepositoryURL(t *testing.T) {
 		"params": {
 			"name": "create_pod",
 			"arguments": {
-				"agent_type_id": 1,
+				"agent_slug": "claude-code",
 				"repository_url": "https://github.com/example/repo.git",
 				"branch_name": "main"
 			}
@@ -117,7 +117,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithBypassPermissions(t *testing.T) {
 		"params": {
 			"name": "create_pod",
 			"arguments": {
-				"agent_type_id": 1,
+				"agent_slug": "claude-code",
 				"permission_mode": "bypassPermissions"
 			}
 		}
@@ -145,7 +145,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithEmptyConfigOverrides(t *testing.T) {
 		"params": {
 			"name": "create_pod",
 			"arguments": {
-				"agent_type_id": 1,
+				"agent_slug": "claude-code",
 				"config_overrides": {}
 			}
 		}
@@ -225,7 +225,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithAlias(t *testing.T) {
 		"params": {
 			"name": "create_pod",
 			"arguments": {
-				"agent_type_id": 1,
+				"agent_slug": "claude-code",
 				"runner_id": 2,
 				"alias": "my-feature-pod",
 				"initial_prompt": "Work on feature X"
@@ -247,7 +247,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithAlias(t *testing.T) {
 	}
 }
 
-func TestHTTPServerMCPToolsCallCreatePodMissingAgentTypeID(t *testing.T) {
+func TestHTTPServerMCPToolsCallCreatePodMissingAgentSlug(t *testing.T) {
 	server := NewHTTPServer(nil, 9090)
 	server.RegisterPod("test-pod", "test-org", nil, nil, "claude")
 

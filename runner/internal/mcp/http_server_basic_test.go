@@ -42,8 +42,8 @@ func TestHTTPServerRegisterPod(t *testing.T) {
 		t.Errorf("TicketID: got %v, want 123", pod.TicketID)
 	}
 
-	if pod.AgentType != "claude" {
-		t.Errorf("AgentType: got %v, want %v", pod.AgentType, "claude")
+	if pod.Agent != "claude" {
+		t.Errorf("Agent: got %v, want %v", pod.Agent, "claude")
 	}
 }
 

@@ -103,7 +103,7 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 	pod := &Pod{
 		ID:              state.PodKey,
 		PodKey:          state.PodKey,
-		AgentType:       state.AgentType,
+		Agent:           state.Agent,
 		InteractionMode: InteractionModePTY,
 		RepositoryURL:   state.RepositoryURL,
 		Branch:        state.Branch,
@@ -154,7 +154,7 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 
 	// Register with MCP and monitor
 	if mcpSrv := r.GetMCPServer(); mcpSrv != nil {
-		mcpSrv.RegisterPod(podKey, r.conn.GetOrgSlug(), nil, nil, state.AgentType)
+		mcpSrv.RegisterPod(podKey, r.conn.GetOrgSlug(), nil, nil, state.Agent)
 	}
 	if agentMon := r.GetAgentMonitor(); agentMon != nil {
 		agentMon.RegisterPod(podKey, pod.IO.GetPID())

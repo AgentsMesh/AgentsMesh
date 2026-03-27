@@ -14,7 +14,7 @@ func TestPodInfoStruct(t *testing.T) {
 		OrgSlug:      "test-org",
 		TicketID:     &ticketID,
 		ProjectID:    &projectID,
-		AgentType:    "claude",
+		Agent:        "claude",
 		RegisteredAt: time.Now(),
 		// Client is a tools.CollaborationClient interface; nil is valid for struct test
 	}

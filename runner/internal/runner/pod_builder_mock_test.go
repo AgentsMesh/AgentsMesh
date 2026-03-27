@@ -242,8 +242,8 @@ func TestPodBuilderBuildEmptyLaunchCommand(t *testing.T) {
 		t.Error("expected error for empty launch command")
 	}
 
-	if !contains(err.Error(), "launch command is required") {
-		t.Errorf("error = %v, want containing 'launch command is required'", err)
+	if !contains(err.Error(), "launch command") {
+		t.Errorf("error = %v, want containing 'launch command'", err)
 	}
 }
 

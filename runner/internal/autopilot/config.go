@@ -21,8 +21,8 @@ const (
 	// DefaultMaxConsecutiveErrors is the max consecutive errors before giving up.
 	DefaultMaxConsecutiveErrors = 3
 
-	// DefaultAgentType is the default control agent command.
-	DefaultAgentType = "claude"
+	// DefaultAgent is the default control agent command.
+	DefaultAgent = "claude"
 
 	// DefaultStateCheckPeriod is the default period for state detection checks.
 	DefaultStateCheckPeriod = 500 * time.Millisecond

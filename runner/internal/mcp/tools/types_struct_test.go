@@ -43,7 +43,7 @@ func TestAvailablePodStruct(t *testing.T) {
 		CreatedByID: 1,
 		Status:      PodStatusRunning,
 		TicketID:    &ticketID,
-		AgentType:   "claude",
+		Agent:       "claude",
 		CreatedAt:   "2024-01-01T00:00:00Z",
 	}
 

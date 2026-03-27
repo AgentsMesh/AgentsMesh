@@ -23,11 +23,13 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	if b.cmd.PodKey == "" {
 		return nil, fmt.Errorf("pod key is required")
 	}
-	if b.cmd.LaunchCommand == "" {
-		return nil, fmt.Errorf("launch command is required")
+	if b.cmd.LaunchCommand == "" && b.cmd.PodfileSource == "" {
+		return nil, fmt.Errorf("launch command or podfile source is required")
 	}
 
-	logger.Pod().Info("Building pod", "pod_key", b.cmd.PodKey, "command", b.cmd.LaunchCommand,
+	launchCommand := b.cmd.LaunchCommand
+	logger.Pod().Info("Building pod", "pod_key", b.cmd.PodKey, "command", launchCommand,
+		"has_podfile", b.cmd.PodfileSource != "",
 		"interaction_mode", b.cmd.GetInteractionMode())
 
 	// Report initial progress
@@ -39,12 +41,37 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		return nil, err
 	}
 
-	// Resolve template variables in launch args (shared)
-	resolvedArgs := b.resolveArgs(b.cmd.LaunchArgs, sandboxRoot, workingDir)
-	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
+	// PodFile mode: eval PodFile with real sandbox paths, then apply result
+	var resolvedArgs []string
+	var envVars map[string]string
+	if b.cmd.PodfileSource != "" {
+		pfResult, err := ExecutePodFile(b.cmd, sandboxRoot, workingDir)
+		if err != nil {
+			return nil, &client.PodError{
+				Code:    client.ErrCodePodfileEval,
+				Message: fmt.Sprintf("podfile eval failed: %v", err),
+			}
+		}
+		launchCommand = pfResult.LaunchCommand
+		resolvedArgs = pfResult.LaunchArgs
 
-	// Merge environment variables (shared)
-	envVars := b.mergeEnvVars(sandboxRoot)
+		// Create files from PodFile result
+		if err := b.createFilesFromProto(pfResult.FilesToCreate, sandboxRoot, workingDir); err != nil {
+			return nil, err
+		}
+
+		// Merge env vars: system env + PodFile result (PodFile overrides system)
+		envVars = b.mergeEnvVars(sandboxRoot)
+		for k, v := range pfResult.EnvVars {
+			envVars[k] = v
+		}
+	} else {
+		// Legacy mode: use pre-computed fields from CreatePodCommand
+		resolvedArgs = b.resolveArgs(b.cmd.LaunchArgs, sandboxRoot, workingDir)
+		envVars = b.mergeEnvVars(sandboxRoot)
+	}
+
+	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
 	logger.Pod().Debug("Merged environment variables", "pod_key", b.cmd.PodKey, "count", len(envVars))
 
 	// Branch by interaction mode
@@ -65,7 +92,7 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 		mgr := b.deps.PodDaemonManager
 		opts := poddaemon.CreateOpts{
 			PodKey:         b.cmd.PodKey,
-			AgentType:      b.cmd.LaunchCommand,
+			Agent:          launchCommand,
 			SandboxPath:    sandboxRoot,
 			WorkDir:        workingDir,
 			RepositoryURL:  b.cmd.GetSandboxConfig().GetRepositoryUrl(),
@@ -89,7 +116,7 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 
 	// Create terminal
 	term, err := terminal.New(terminal.Options{
-		Command:    b.cmd.LaunchCommand,
+		Command:    launchCommand,
 		Args:       resolvedArgs,
 		WorkDir:    workingDir,
 		Env:        envVars,
@@ -139,11 +166,11 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 	pod := &Pod{
 		ID:              b.cmd.PodKey,
 		PodKey:          b.cmd.PodKey,
-		AgentType:       b.cmd.LaunchCommand,
+		Agent:           launchCommand,
 		InteractionMode: InteractionModePTY,
 		Branch:          branchName,
 		SandboxPath:     sandboxRoot,
-		LaunchCommand:   b.cmd.LaunchCommand,
+		LaunchCommand:   launchCommand,
 		LaunchArgs:      resolvedArgs,
 		WorkDir:         workingDir,
 		Terminal:        term,

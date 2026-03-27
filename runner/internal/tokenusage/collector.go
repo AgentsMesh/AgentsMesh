@@ -7,23 +7,23 @@ import (
 )
 
 // Collect gathers token usage for a pod session.
-// agentType is the LaunchCommand (e.g., "claude", "aider").
+// agent is the LaunchCommand (e.g., "claude", "aider").
 // sandboxPath is the pod's sandbox root directory.
 // podStartedAt is the pod's start time; only files modified after this time are processed.
 // Returns nil if no parser is available or no usage data is found.
-func Collect(agentType, sandboxPath string, podStartedAt time.Time) *TokenUsage {
+func Collect(agent, sandboxPath string, podStartedAt time.Time) *TokenUsage {
 	log := logger.Pod()
 
-	parser := GetParser(agentType)
+	parser := GetParser(agent)
 	if parser == nil {
-		log.Debug("No token usage parser for agent type", "agent_type", agentType)
+		log.Debug("No token usage parser for agent", "agent", agent)
 		return nil
 	}
 
 	usage, err := parser.Parse(sandboxPath, podStartedAt)
 	if err != nil {
 		log.Warn("Token usage collection failed",
-			"agent_type", agentType,
+			"agent", agent,
 			"sandbox_path", sandboxPath,
 			"error", err,
 		)
@@ -31,14 +31,14 @@ func Collect(agentType, sandboxPath string, podStartedAt time.Time) *TokenUsage 
 	}
 
 	if usage == nil || usage.IsEmpty() {
-		log.Debug("No token usage data found", "agent_type", agentType)
+		log.Debug("No token usage data found", "agent", agent)
 		return nil
 	}
 
 	// Log summary
 	for _, m := range usage.Sorted() {
 		log.Info("Token usage collected",
-			"agent_type", agentType,
+			"agent", agent,
 			"model", m.Model,
 			"input", m.InputTokens,
 			"output", m.OutputTokens,

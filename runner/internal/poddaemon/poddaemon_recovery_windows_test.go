@@ -34,7 +34,7 @@ func TestDaemonSurvivesParentDeathWindows(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "persist",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cmd.exe",
 		Args:        []string{"/q"},
 		WorkDir:     sandbox,
@@ -143,7 +143,7 @@ func TestDaemonSurvivesMultipleReattachCyclesWindows(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "multi",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cmd.exe",
 		Args:        []string{"/q"},
 		WorkDir:     sandbox,
@@ -217,7 +217,7 @@ func TestRecoveredSessionResizeWindows(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "rsz",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cmd.exe",
 		Args:        []string{"/q"},
 		WorkDir:     sandbox,
@@ -275,7 +275,7 @@ func TestRecoveredSessionKillWindows(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "kill",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cmd.exe",
 		Args:        []string{"/c", "timeout /t 300"},
 		WorkDir:     sandbox,

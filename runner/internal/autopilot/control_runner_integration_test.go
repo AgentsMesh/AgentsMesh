@@ -41,7 +41,7 @@ echo "All done successfully."
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 	})
 
@@ -83,7 +83,7 @@ echo "Done."
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 	})
 
@@ -118,7 +118,7 @@ func TestControlRunner_ResumeControlProcess_Timeout(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 	})
 
@@ -155,7 +155,7 @@ func TestControlRunner_StartControlProcess_ProcessError(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 	})
 
@@ -192,7 +192,7 @@ func TestControlRunner_ResumeControlProcess_ProcessError(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 	})
 

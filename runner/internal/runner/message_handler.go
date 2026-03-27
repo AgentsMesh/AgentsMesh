@@ -95,7 +95,7 @@ type MessageHandlerContext interface {
 
 // MCPServer defines the MCP server operations needed by message handlers.
 type MCPServer interface {
-	RegisterPod(podKey, orgSlug string, ticketID, projectID *int, agentType string)
+	RegisterPod(podKey, orgSlug string, ticketID, projectID *int, agent string)
 	UnregisterPod(podKey string)
 }
 

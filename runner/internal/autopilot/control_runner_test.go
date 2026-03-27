@@ -21,23 +21,23 @@ func TestControlRunner_NewControlRunner(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:        os.TempDir(),
-		AgentType:      "claude",
+		Agent:          "claude",
 		PromptBuilder:  pb,
 		DecisionParser: nil, // Should use default
 		Logger:         nil,
 	})
 
 	assert.NotNil(t, cr)
-	assert.Equal(t, "claude", cr.agentType)
+	assert.Equal(t, "claude", cr.agent)
 }
 
-func TestControlRunner_DefaultAgentType(t *testing.T) {
+func TestControlRunner_DefaultAgent(t *testing.T) {
 	cr := NewControlRunner(ControlRunnerConfig{
-		WorkDir:   os.TempDir(),
-		AgentType: "", // Should default to "claude"
+		WorkDir: os.TempDir(),
+		Agent:   "", // Should default to "claude"
 	})
 
-	assert.Equal(t, "claude", cr.agentType)
+	assert.Equal(t, "claude", cr.agent)
 }
 
 func TestControlRunner_DefaultDecisionParser(t *testing.T) {
@@ -76,7 +76,7 @@ func TestControlRunner_RunControlProcess_Start(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     "echo", // Use echo as a simple command
+		Agent:     "echo", // Use echo as a simple command
 		PromptBuilder: pb,
 	})
 
@@ -88,7 +88,7 @@ func TestControlRunner_RunControlProcess_Start(t *testing.T) {
 
 	// echo command will fail with wrong args, but we test the flow
 	if err != nil {
-		// Expected for non-existent agent type
+		// Expected for non-existent agent
 		assert.Contains(t, err.Error(), "command failed")
 	} else {
 		assert.NotNil(t, decision)
@@ -110,7 +110,7 @@ func TestControlRunner_RunControlProcess_Resume(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     "echo", // Use echo as a simple command
+		Agent:     "echo", // Use echo as a simple command
 		PromptBuilder: pb,
 	})
 
@@ -125,7 +125,7 @@ func TestControlRunner_RunControlProcess_Resume(t *testing.T) {
 
 	// echo command will fail with wrong args, but we test the flow
 	if err != nil {
-		// Expected for non-existent agent type
+		// Expected for non-existent agent
 		assert.Contains(t, err.Error(), "command failed")
 	} else {
 		assert.NotNil(t, decision)
@@ -155,7 +155,7 @@ func TestControlRunner_StartControlProcess_Timeout(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 	})
 
@@ -193,7 +193,7 @@ func TestControlRunner_StartControlProcess_Success(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 	})
 
@@ -232,7 +232,7 @@ func TestControlRunner_ResumeControlProcess_Success(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 	})
 

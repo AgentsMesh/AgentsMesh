@@ -17,7 +17,7 @@ import (
 type Pod struct {
 	ID               string
 	PodKey           string
-	AgentType        string
+	Agent            string
 	RepositoryURL    string
 	Branch           string
 	SandboxPath      string

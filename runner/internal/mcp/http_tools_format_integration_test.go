@@ -25,7 +25,7 @@ func (m *mockFormatClient) ListAvailablePods(_ context.Context) ([]tools.Availab
 		{
 			PodKey:    "pod-abc",
 			Status:    tools.PodStatusRunning,
-			AgentType: tools.AgentTypeField("claude-code"),
+			Agent: tools.AgentField("claude-code"),
 			CreatedBy: &tools.PodCreator{Username: "alice"},
 			Ticket:    &tools.PodTicket{Title: "Fix bug"},
 		},
@@ -37,7 +37,7 @@ func (m *mockFormatClient) ListRunners(_ context.Context) ([]tools.RunnerSummary
 		{
 			ID: 1, NodeID: "node-1", Status: "online",
 			CurrentPods: 2, MaxConcurrentPods: 5,
-			AvailableAgents: []tools.AgentTypeSummary{
+			AvailableAgents: []tools.AgentSummary{
 				{ID: 10, Slug: "claude-code", Name: "Claude Code"},
 			},
 		},
@@ -423,7 +423,7 @@ func TestFormatIntegration_GetPodSnapshot(t *testing.T) {
 
 func TestFormatIntegration_CreatePod(t *testing.T) {
 	server := setupServerWithMockClient(t)
-	text := callTool(t, server, "create_pod", `{"runner_id":1,"agent_type_id":10}`)
+	text := callTool(t, server, "create_pod", `{"runner_id":1,"agent_slug":10}`)
 
 	assertContains(t, text, "Pod: new-pod")
 	assertContains(t, text, "Status: initializing")

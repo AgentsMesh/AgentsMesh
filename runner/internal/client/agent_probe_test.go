@@ -43,13 +43,13 @@ func TestAgentProbeProbeAll(t *testing.T) {
 	probe := NewAgentProbe()
 
 	// Probe with an agent that definitely exists (go) and one that doesn't
-	agentTypes := []*runnerv1.AgentTypeInfo{
+	agents := []*runnerv1.AgentInfo{
 		{Slug: "test-go", Command: "go", Name: "Go"},
 		{Slug: "nonexistent", Command: "this-command-does-not-exist-xyz", Name: "Nonexistent"},
 		{Slug: "no-command", Command: "", Name: "No Command"},
 	}
 
-	available, versions := probe.ProbeAll(agentTypes)
+	available, versions := probe.ProbeAll(agents)
 
 	// "go" should be detected, others should not
 	if len(available) != 1 || available[0] != "test-go" {
@@ -73,10 +73,10 @@ func TestAgentProbeProbeAndDiff_NoChanges(t *testing.T) {
 	probe := NewAgentProbe()
 
 	// Initial probe
-	agentTypes := []*runnerv1.AgentTypeInfo{
+	agents := []*runnerv1.AgentInfo{
 		{Slug: "test-go", Command: "go", Name: "Go"},
 	}
-	probe.ProbeAll(agentTypes)
+	probe.ProbeAll(agents)
 
 	// Second probe should return nil (no changes)
 	changes := probe.ProbeAndDiff()
@@ -89,14 +89,14 @@ func TestAgentProbeProbeAndDiff_AgentRemoved(t *testing.T) {
 	probe := NewAgentProbe()
 
 	// Initial probe with "go" agent
-	agentTypes := []*runnerv1.AgentTypeInfo{
+	agents := []*runnerv1.AgentInfo{
 		{Slug: "test-go", Command: "go", Name: "Go"},
 	}
-	probe.ProbeAll(agentTypes)
+	probe.ProbeAll(agents)
 
-	// Now change agent types to have a nonexistent command for the same slug
+	// Now change agents to have a nonexistent command for the same slug
 	probe.mu.Lock()
-	probe.agentTypes = []*runnerv1.AgentTypeInfo{
+	probe.agents = []*runnerv1.AgentInfo{
 		{Slug: "test-go", Command: "this-command-does-not-exist-xyz", Name: "Go"},
 	}
 	probe.mu.Unlock()
@@ -120,14 +120,14 @@ func TestAgentProbeProbeAndDiff_NewAgent(t *testing.T) {
 	probe := NewAgentProbe()
 
 	// Initial probe with nonexistent agent
-	agentTypes := []*runnerv1.AgentTypeInfo{
+	agents := []*runnerv1.AgentInfo{
 		{Slug: "nonexistent", Command: "this-command-does-not-exist-xyz", Name: "Nonexistent"},
 	}
-	probe.ProbeAll(agentTypes)
+	probe.ProbeAll(agents)
 
-	// Now add "go" to the agent types
+	// Now add "go" to the agents
 	probe.mu.Lock()
-	probe.agentTypes = []*runnerv1.AgentTypeInfo{
+	probe.agents = []*runnerv1.AgentInfo{
 		{Slug: "test-go", Command: "go", Name: "Go"},
 	}
 	probe.mu.Unlock()
@@ -142,7 +142,7 @@ func TestAgentProbeProbeAndDiff_NewAgent(t *testing.T) {
 	}
 }
 
-func TestAgentProbeEmptyAgentTypes(t *testing.T) {
+func TestAgentProbeEmptyAgents(t *testing.T) {
 	probe := NewAgentProbe()
 
 	// ProbeAll with empty list

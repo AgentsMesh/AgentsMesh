@@ -270,8 +270,8 @@ func TestOnListPodsEmpty_AgentStatus(t *testing.T) {
 // gracefully handles the case where VirtualTerminal is nil after pod creation.
 //
 // In practice, OnCreatePod with a real terminal (via PodBuilder) will always
-// set VirtualTerminal when the agent type supports it. However, if
-// VirtualTerminal is nil (e.g., for unsupported agent types), the subscription
+// set VirtualTerminal when the agent supports it. However, if
+// VirtualTerminal is nil (e.g., for unsupported agents), the subscription
 // block is simply skipped due to the `if pod.VirtualTerminal != nil` guard.
 //
 // Testing the full subscription callback flow requires:

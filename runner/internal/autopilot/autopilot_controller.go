@@ -149,7 +149,7 @@ func NewAutopilotController(cfg Config) *AutopilotController {
 		ac.controlRunner = cfg.ControlProcess
 	} else {
 		ac.controlRunner = NewAcpControlProcess(AcpControlProcessConfig{
-			Command:        cfg.ProtoConfig.ControlAgentType,
+			Command:        cfg.ProtoConfig.ControlAgentSlug,
 			WorkDir:        cfg.PodCtrl.GetWorkDir(),
 			MCPConfigPath:  mcpConfigPath,
 			PromptBuilder:  ac.promptBuilder,

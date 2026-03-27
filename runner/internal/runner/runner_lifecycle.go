@@ -144,7 +144,7 @@ func (r *Runner) stopAllPods() {
 
 			// Capture metadata before cleanup for token usage collection.
 			podKey := p.PodKey
-			agentType := p.AgentType
+			agent := p.Agent
 			sandboxPath := p.SandboxPath
 			podStartedAt := p.StartedAt
 
@@ -166,7 +166,7 @@ func (r *Runner) stopAllPods() {
 			// Token files live in HOME (~/.claude/, ~/.codex/), not in sandbox,
 			// so they survive Terminal.Detach(). gRPC is still alive at this point.
 			if r.messageHandler != nil {
-				r.messageHandler.collectAndSendTokenUsage(podKey, agentType, sandboxPath, podStartedAt)
+				r.messageHandler.collectAndSendTokenUsage(podKey, agent, sandboxPath, podStartedAt)
 			}
 		}(pod)
 	}

@@ -155,17 +155,17 @@ func (h *RunnerMessageHandler) cleanupPodExit(podKey string, exitCode int, stopI
 	}
 
 	// Async token usage collection
-	agentType := pod.AgentType
+	agent := pod.Agent
 	sandboxPath := pod.SandboxPath
 	podStartedAt := pod.StartedAt
 	safego.Go("token-usage-exit", func() {
-		h.collectAndSendTokenUsage(podKey, agentType, sandboxPath, podStartedAt)
+		h.collectAndSendTokenUsage(podKey, agent, sandboxPath, podStartedAt)
 	})
 }
 
 // collectAndSendTokenUsage collects token usage and sends it to the backend.
 // This is called asynchronously after pod termination and must never panic.
-func (h *RunnerMessageHandler) collectAndSendTokenUsage(podKey, agentType, sandboxPath string, podStartedAt time.Time) {
+func (h *RunnerMessageHandler) collectAndSendTokenUsage(podKey, agent, sandboxPath string, podStartedAt time.Time) {
 	log := logger.Pod()
 
 	if h == nil || h.conn == nil {
@@ -178,7 +178,7 @@ func (h *RunnerMessageHandler) collectAndSendTokenUsage(podKey, agentType, sandb
 		}
 	}()
 
-	usage := tokenusage.Collect(agentType, sandboxPath, podStartedAt)
+	usage := tokenusage.Collect(agent, sandboxPath, podStartedAt)
 	if usage == nil {
 		return
 	}

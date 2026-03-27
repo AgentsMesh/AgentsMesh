@@ -37,7 +37,7 @@ type AvailablePod struct {
 	Status      PodStatus      `json:"status"`
 	TicketID    *int           `json:"ticket_id,omitempty"`
 	Ticket      *PodTicket     `json:"ticket,omitempty"`
-	AgentType   AgentTypeField `json:"agent_type,omitempty"`
+	Agent       AgentField `json:"agent,omitempty"`
 	CreatedAt   string         `json:"created_at"`
 }
 
@@ -134,8 +134,8 @@ type ConfigFieldSummary struct {
 	Required bool        `json:"required,omitempty"`
 }
 
-// AgentTypeSummary is a simplified AgentType for LLM consumption.
-type AgentTypeSummary struct {
+// AgentSummary is a simplified Agent for LLM consumption.
+type AgentSummary struct {
 	ID          int64                  `json:"id"`
 	Slug        string                 `json:"slug"`
 	Name        string                 `json:"name"`
@@ -153,7 +153,7 @@ type RunnerSummary struct {
 	Status            string             `json:"status"`
 	CurrentPods       int                `json:"current_pods"`
 	MaxConcurrentPods int                `json:"max_concurrent_pods"`
-	AvailableAgents   []AgentTypeSummary `json:"available_agents"`
+	AvailableAgents   []AgentSummary `json:"available_agents"`
 }
 
 // Repository represents a Git repository configuration.
@@ -176,7 +176,7 @@ type Repository struct {
 // PodCreateRequest represents a request to create a new pod.
 type PodCreateRequest struct {
 	RunnerID            int                    `json:"runner_id,omitempty"`
-	AgentTypeID         *int64                 `json:"agent_type_id,omitempty"` // Required by backend API
+	AgentSlug         string `json:"agent_slug,omitempty"` // Required by backend API
 	TicketSlug          *string                `json:"ticket_slug,omitempty"`
 	InitialPrompt       string                 `json:"initial_prompt,omitempty"`
 	Alias               *string                `json:"alias,omitempty"` // User-defined display name (max 100 chars)
@@ -185,7 +185,7 @@ type PodCreateRequest struct {
 	RepositoryURL       *string                `json:"repository_url,omitempty"`       // Direct repository URL (takes precedence over repository_id)
 	BranchName          *string                `json:"branch_name,omitempty"`          // Git branch name
 	CredentialProfileID *int64                 `json:"credential_profile_id,omitempty"` // Credential profile ID (0 or nil = RunnerHost mode)
-	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"`     // Override agent type default configuration
+	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"`     // Override agent default configuration
 	PermissionMode      *string                `json:"permission_mode,omitempty"`      // "plan", "default", or "bypassPermissions"
 }
 

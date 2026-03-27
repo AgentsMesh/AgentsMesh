@@ -45,7 +45,7 @@ printf '%s\n' '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-sessi
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -92,7 +92,7 @@ printf '%s\n' '{"result": "CONTINUE\nMore work needed."}'
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -146,7 +146,7 @@ echo "Done."
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -198,7 +198,7 @@ echo "More work."
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -241,7 +241,7 @@ func TestControlRunner_StartControlProcess_ErrorWithLogger(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -284,7 +284,7 @@ func TestControlRunner_ResumeControlProcess_ErrorWithLogger(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		AgentType:     scriptPath,
+		Agent:     scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})

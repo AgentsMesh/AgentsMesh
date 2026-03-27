@@ -33,7 +33,7 @@ func TestPodStruct(t *testing.T) {
 	pod := Pod{
 		ID:               "pod-1",
 		PodKey:           "key-123",
-		AgentType:        "claude-code",
+		Agent:            "claude-code",
 		Branch:           "main",
 		SandboxPath:      "/workspace/worktrees/pod-1",
 		Terminal:         nil,
@@ -48,8 +48,8 @@ func TestPodStruct(t *testing.T) {
 	if pod.PodKey != "key-123" {
 		t.Errorf("PodKey: got %v, want key-123", pod.PodKey)
 	}
-	if pod.AgentType != "claude-code" {
-		t.Errorf("AgentType: got %v, want claude-code", pod.AgentType)
+	if pod.Agent != "claude-code" {
+		t.Errorf("Agent: got %v, want claude-code", pod.Agent)
 	}
 	if pod.GetStatus() != PodStatusRunning {
 		t.Errorf("Status: got %v, want running", pod.GetStatus())
@@ -67,7 +67,7 @@ func TestPodAllFields(t *testing.T) {
 	pod := &Pod{
 		ID:               "id-1",
 		PodKey:           "key-1",
-		AgentType:        "claude-code",
+		Agent:            "claude-code",
 		Branch:           "feature/test",
 		SandboxPath:      "/workspace/worktrees/test",
 		Terminal:         nil,

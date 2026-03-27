@@ -30,7 +30,7 @@ func TestCreateSessionAndIO(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "p",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cat",
 		WorkDir:     sandbox,
 		Env:         os.Environ(),
@@ -113,7 +113,7 @@ func TestCreateSessionExitCode(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "p",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "/bin/sh",
 		Args:        []string{"-c", "sleep 1; exit 42"},
 		WorkDir:     sandbox,
@@ -151,7 +151,7 @@ func TestCreateSessionGracefulStop(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "p",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "sleep",
 		Args:        []string{"3600"},
 		WorkDir:     sandbox,
@@ -192,7 +192,7 @@ func TestRecoverSessionsIntegration(t *testing.T) {
 
 	opts := CreateOpts{
 		PodKey:      "p",
-		AgentType:   "test",
+		Agent:       "test",
 		Command:     "cat",
 		WorkDir:     sandbox,
 		Env:         os.Environ(),

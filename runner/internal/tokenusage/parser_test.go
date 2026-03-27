@@ -444,8 +444,8 @@ func TestOpenCodeParser_ParseAlternativeUsage(t *testing.T) {
 
 func TestGetParser(t *testing.T) {
 	tests := []struct {
-		agentType string
-		wantNil   bool
+		agent   string
+		wantNil bool
 	}{
 		{"claude", false},
 		{"claude-code", false},
@@ -461,11 +461,11 @@ func TestGetParser(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		parser := GetParser(tt.agentType)
+		parser := GetParser(tt.agent)
 		if tt.wantNil {
-			assert.Nil(t, parser, "GetParser(%q) should be nil", tt.agentType)
+			assert.Nil(t, parser, "GetParser(%q) should be nil", tt.agent)
 		} else {
-			assert.NotNil(t, parser, "GetParser(%q) should not be nil", tt.agentType)
+			assert.NotNil(t, parser, "GetParser(%q) should not be nil", tt.agent)
 		}
 	}
 }

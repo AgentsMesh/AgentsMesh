@@ -248,3 +248,48 @@ func (b *PodBuilder) createFiles(sandboxRoot, workDir string) error {
 
 	return nil
 }
+
+// createFilesFromProto creates files from a proto FileToCreate list.
+// Used by PodFile mode where paths are already resolved (no template variables).
+func (b *PodBuilder) createFilesFromProto(files []*runnerv1.FileToCreate, sandboxRoot, workDir string) error {
+	if len(files) == 0 {
+		return nil
+	}
+
+	absSandbox, err := filepath.Abs(sandboxRoot)
+	if err != nil {
+		return &client.PodError{
+			Code:    client.ErrCodeFileCreate,
+			Message: fmt.Sprintf("failed to resolve sandbox root: %v", err),
+		}
+	}
+	absSandbox = filepath.Clean(absSandbox)
+
+	for _, f := range files {
+		path := f.Path
+
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			continue
+		}
+		if absPath != absSandbox && !strings.HasPrefix(absPath, absSandbox+string(os.PathSeparator)) {
+			logger.Pod().Warn("PodFile file path escapes sandbox, skipping", "path", path)
+			continue
+		}
+
+		if f.IsDirectory {
+			os.MkdirAll(path, 0755)
+			continue
+		}
+
+		os.MkdirAll(filepath.Dir(path), 0755)
+		mode := os.FileMode(0644)
+		if f.Mode != 0 {
+			mode = os.FileMode(f.Mode)
+		}
+		os.WriteFile(path, []byte(f.Content), mode)
+		logger.Pod().Debug("Created file (podfile)", "path", path)
+	}
+
+	return nil
+}

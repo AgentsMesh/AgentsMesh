@@ -157,13 +157,13 @@ func (l AvailablePodList) FormatText() string {
 		return "No available pods."
 	}
 	var b strings.Builder
-	b.WriteString("| Pod Key | Status | Agent Type | Created By | Ticket |\n")
+	b.WriteString("| Pod Key | Status | Agent | Created By | Ticket |\n")
 	b.WriteString("|---------|--------|------------|------------|--------|\n")
 	for _, p := range l {
 		fmt.Fprintf(&b, "| %s | %s | %s | %s | %s |\n",
 			escapeTableCell(p.PodKey),
 			p.Status,
-			escapeTableCell(string(p.AgentType)),
+			escapeTableCell(string(p.Agent)),
 			escapeTableCell(p.GetUsername()),
 			escapeTableCell(p.GetTicketTitle()),
 		)

@@ -4,9 +4,12 @@ go 1.25.0
 
 replace github.com/anthropics/agentsmesh/proto => ../proto
 
+replace github.com/anthropics/agentsmesh/podfile => ../podfile
+
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/UserExistsError/conpty v0.1.4
+	github.com/anthropics/agentsmesh/podfile v0.0.0-00010101000000-000000000000
 	github.com/anthropics/agentsmesh/proto v0.0.0
 	github.com/creack/pty v1.1.24
 	github.com/creativeprojects/go-selfupdate v1.5.2

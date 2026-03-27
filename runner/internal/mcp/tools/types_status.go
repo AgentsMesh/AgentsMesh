@@ -68,16 +68,16 @@ const (
 	ChannelMessageTypeSystem ChannelMessageType = "system"
 )
 
-// AgentTypeField can unmarshal both string and object formats of agent_type.
-// Backend returns agent_type as an object {id, slug, name, ...}, but we only need the slug.
-type AgentTypeField string
+// AgentField can unmarshal both string and object formats of agent.
+// Backend returns agent as an object {id, slug, name, ...}, but we only need the slug.
+type AgentField string
 
-// UnmarshalJSON implements custom JSON unmarshaling for AgentTypeField.
-func (a *AgentTypeField) UnmarshalJSON(data []byte) error {
+// UnmarshalJSON implements custom JSON unmarshaling for AgentField.
+func (a *AgentField) UnmarshalJSON(data []byte) error {
 	// Try to unmarshal as string first
 	var str string
 	if err := json.Unmarshal(data, &str); err == nil {
-		*a = AgentTypeField(str)
+		*a = AgentField(str)
 		return nil
 	}
 
@@ -86,7 +86,7 @@ func (a *AgentTypeField) UnmarshalJSON(data []byte) error {
 		Slug string `json:"slug"`
 	}
 	if err := json.Unmarshal(data, &obj); err == nil {
-		*a = AgentTypeField(obj.Slug)
+		*a = AgentField(obj.Slug)
 		return nil
 	}
 

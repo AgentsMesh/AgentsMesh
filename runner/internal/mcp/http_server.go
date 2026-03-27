@@ -51,7 +51,7 @@ type PodInfo struct {
 	OrgSlug      string
 	TicketID     *int
 	ProjectID    *int
-	AgentType    string
+	Agent        string
 	RegisteredAt time.Time
 	Client       tools.CollaborationClient
 }
@@ -153,7 +153,7 @@ func (s *HTTPServer) Stop() error {
 }
 
 // RegisterPod registers a pod with the MCP server.
-func (s *HTTPServer) RegisterPod(podKey, orgSlug string, ticketID, projectID *int, agentType string) {
+func (s *HTTPServer) RegisterPod(podKey, orgSlug string, ticketID, projectID *int, agent string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -162,7 +162,7 @@ func (s *HTTPServer) RegisterPod(podKey, orgSlug string, ticketID, projectID *in
 		OrgSlug:      orgSlug,
 		TicketID:     ticketID,
 		ProjectID:    projectID,
-		AgentType:    agentType,
+		Agent:        agent,
 		RegisteredAt: time.Now(),
 		Client:       NewGRPCCollaborationClient(s.rpcClient, podKey),
 	}

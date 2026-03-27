@@ -237,7 +237,7 @@ func (s *HTTPServer) handlePods(w http.ResponseWriter, r *http.Request) {
 			"pod_key":       info.PodKey,
 			"ticket_id":     info.TicketID,
 			"project_id":    info.ProjectID,
-			"agent_type":    info.AgentType,
+			"agent":         info.Agent,
 			"registered_at": info.RegisteredAt.Format(time.RFC3339),
 		})
 	}

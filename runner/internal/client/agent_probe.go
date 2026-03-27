@@ -34,7 +34,7 @@ type agentProbeResult struct {
 // Subprocess execution happens outside the lock to avoid blocking readers.
 type AgentProbe struct {
 	mu         sync.RWMutex
-	agentTypes []*runnerv1.AgentTypeInfo  // known agent types from server
+	agents     []*runnerv1.AgentInfo  // known agents from server
 	cache      map[string]*AgentProbeEntry // slug -> last known state
 }
 
@@ -45,18 +45,18 @@ func NewAgentProbe() *AgentProbe {
 	}
 }
 
-// ProbeAll performs a full probe of all agent types and populates the cache.
-// Called during initialization after receiving AgentTypeInfo from server.
+// ProbeAll performs a full probe of all agents and populates the cache.
+// Called during initialization after receiving AgentInfo from server.
 // Returns (available agent slugs, full version info list).
-func (p *AgentProbe) ProbeAll(agentTypes []*runnerv1.AgentTypeInfo) ([]string, []*runnerv1.AgentVersionInfo) {
+func (p *AgentProbe) ProbeAll(agents []*runnerv1.AgentInfo) ([]string, []*runnerv1.AgentVersionInfo) {
 	// Phase 1: Probe all agents without holding the lock (subprocess execution)
-	results := probeAgentTypes(agentTypes)
+	results := probeAgents(agents)
 
 	// Phase 2: Update cache under lock
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.agentTypes = agentTypes
+	p.agents = agents
 	p.cache = make(map[string]*AgentProbeEntry)
 
 	var available []string
@@ -86,24 +86,24 @@ func (p *AgentProbe) ProbeAll(agentTypes []*runnerv1.AgentTypeInfo) ([]string, [
 	return available, versions
 }
 
-// ProbeAndDiff re-probes all known agent types and returns only the changes.
+// ProbeAndDiff re-probes all known agents and returns only the changes.
 // Returns nil if no changes detected (saves heartbeat bandwidth).
 // Called before each heartbeat.
 //
 // Subprocess execution happens outside the lock to avoid blocking readers
 // during version detection (which may take seconds per agent).
 func (p *AgentProbe) ProbeAndDiff() []*runnerv1.AgentVersionInfo {
-	// Phase 1: Read agent types under read lock
+	// Phase 1: Read agents under read lock
 	p.mu.RLock()
-	agentTypes := p.agentTypes
+	agents := p.agents
 	p.mu.RUnlock()
 
-	if len(agentTypes) == 0 {
+	if len(agents) == 0 {
 		return nil
 	}
 
 	// Phase 2: Probe all agents without holding any lock (subprocess execution)
-	results := probeAgentTypes(agentTypes)
+	results := probeAgents(agents)
 
 	// Phase 3: Compare with cache and update under write lock
 	p.mu.Lock()
@@ -148,7 +148,7 @@ func (p *AgentProbe) ProbeAndDiff() []*runnerv1.AgentVersionInfo {
 	}
 
 	// Check for agents that disappeared (in cache but not probed)
-	// This handles the case where agentTypes changed between sessions
+	// This handles the case where agents changed between sessions
 	for slug := range p.cache {
 		if !probed[slug] {
 			delete(p.cache, slug)
@@ -190,11 +190,11 @@ func (p *AgentProbe) GetAgentVersions() []*runnerv1.AgentVersionInfo {
 	return versions
 }
 
-// probeAgentTypes probes all agent types for availability and version.
+// probeAgents probes all agents for availability and version.
 // This is a pure function (no lock held) — safe for concurrent use.
-func probeAgentTypes(agentTypes []*runnerv1.AgentTypeInfo) []agentProbeResult {
-	results := make([]agentProbeResult, 0, len(agentTypes))
-	for _, agent := range agentTypes {
+func probeAgents(agents []*runnerv1.AgentInfo) []agentProbeResult {
+	results := make([]agentProbeResult, 0, len(agents))
+	for _, agent := range agents {
 		r := agentProbeResult{slug: agent.Slug}
 
 		if agent.Command == "" {

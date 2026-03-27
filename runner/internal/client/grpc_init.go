@@ -88,10 +88,10 @@ func (c *GRPCConnection) performInitialization(ctx context.Context) error {
 	case result := <-c.initResultCh:
 		logger.GRPC().Debug("Received initialize_result",
 			"server_version", result.ServerInfo.Version,
-			"agent_types", len(result.AgentTypes))
+			"agents", len(result.Agents))
 
 		// Phase 3: Check available agents (with version detection) and send initialized
-		availableAgents, agentVersions := c.agentProbe.ProbeAll(result.AgentTypes)
+		availableAgents, agentVersions := c.agentProbe.ProbeAll(result.Agents)
 		c.mu.Lock()
 		c.availableAgents = availableAgents
 		c.mu.Unlock()

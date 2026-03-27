@@ -88,8 +88,8 @@ type GRPCServerInfo struct {
 	Version string `json:"version"`
 }
 
-// GRPCAgentTypeInfo represents agent type information.
-type GRPCAgentTypeInfo struct {
+// GRPCAgentInfo represents agent information.
+type GRPCAgentInfo struct {
 	Slug        string   `json:"slug"`
 	Name        string   `json:"name"`
 	Command     string   `json:"command"`
@@ -100,7 +100,7 @@ type GRPCAgentTypeInfo struct {
 type GRPCInitializeResult struct {
 	ProtocolVersion int32                `json:"protocol_version"`
 	ServerInfo      *GRPCServerInfo      `json:"server_info"`
-	AgentTypes      []*GRPCAgentTypeInfo `json:"agent_types"`
+	Agents          []*GRPCAgentInfo     `json:"agents"`
 	Features        []string             `json:"features"`
 }
 

@@ -59,7 +59,7 @@ func TestAutopilotController_HandleDecision_Completed(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:    "Test",
 		MaxIterations:    10,
-		ControlAgentType: scriptPath,
+		ControlAgentSlug: scriptPath,
 	}
 
 	workerCtrl := &MockPodController{
@@ -122,7 +122,7 @@ func TestAutopilotController_HandleDecision_NeedHumanHelp(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:    "Test",
 		MaxIterations:    10,
-		ControlAgentType: scriptPath,
+		ControlAgentSlug: scriptPath,
 	}
 
 	workerCtrl := &MockPodController{
@@ -175,7 +175,7 @@ func TestAutopilotController_HandleDecision_GiveUp(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:    "Test",
 		MaxIterations:    10,
-		ControlAgentType: scriptPath,
+		ControlAgentSlug: scriptPath,
 	}
 
 	workerCtrl := &MockPodController{
@@ -238,7 +238,7 @@ func TestAutopilotController_HandleDecision_Continue(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:    "Test",
 		MaxIterations:    10,
-		ControlAgentType: scriptPath,
+		ControlAgentSlug: scriptPath,
 	}
 
 	workerCtrl := &MockPodController{
@@ -340,7 +340,7 @@ func TestAutopilotController_RunSingleDecision_ControlFailureRetry(t *testing.T)
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:           "Test",
 		MaxIterations:           10,
-		ControlAgentType:        scriptPath,
+		ControlAgentSlug:        scriptPath,
 		IterationTimeoutSeconds: 5,
 	}
 
@@ -407,7 +407,7 @@ func TestAutopilotController_RunSingleDecision_WorkerNotWaitingAfterFailure(t *t
 	protoConfig := &runnerv1.AutopilotConfig{
 		InitialPrompt:           "Test",
 		MaxIterations:           10,
-		ControlAgentType:        scriptPath,
+		ControlAgentSlug:        scriptPath,
 		IterationTimeoutSeconds: 5,
 	}
 
