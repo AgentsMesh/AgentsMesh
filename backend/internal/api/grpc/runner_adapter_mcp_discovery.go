@@ -6,6 +6,8 @@ import (
 	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/podfile/extract"
+	"github.com/anthropics/agentsmesh/podfile/parser"
 )
 
 // ==================== Discovery MCP Methods ====================
@@ -109,18 +111,21 @@ func (a *GRPCRunnerAdapter) mcpListRunners(ctx context.Context, tc *middleware.T
 					desc = *at.Description
 				}
 
-				configFields := make([]configFieldSummary, 0, len(at.ConfigSchema.Fields))
-				for _, f := range at.ConfigSchema.Fields {
-					field := configFieldSummary{
-						Name:     f.Name,
-						Type:     f.Type,
-						Default:  f.Default,
-						Required: f.Required,
+				configFields := make([]configFieldSummary, 0)
+				if at.PodfileSource != nil && *at.PodfileSource != "" {
+					prog, errs := parser.Parse(*at.PodfileSource)
+					if len(errs) == 0 && prog != nil {
+						spec := extract.Extract(prog)
+						for _, cfg := range spec.Config {
+							field := configFieldSummary{
+								Name:    cfg.Name,
+								Type:    cfg.Type,
+								Default: cfg.Default,
+							}
+							field.Options = cfg.Options
+							configFields = append(configFields, field)
+						}
 					}
-					for _, opt := range f.Options {
-						field.Options = append(field.Options, opt.Value)
-					}
-					configFields = append(configFields, field)
 				}
 
 				userCfg := userConfigMap[at.Slug]

@@ -13,9 +13,19 @@ func TestUserAgentCredentialProfileTableName(t *testing.T) {
 	}
 }
 
+// podfileWithEnv is a helper that returns a PodFile source with ENV declarations.
+func podfileWithEnv() string {
+	return `AGENT "claude"
+ENV api_key SECRET OPTIONAL
+ENV auth_token SECRET OPTIONAL
+ENV base_url TEXT OPTIONAL
+`
+}
+
 func TestToResponse_SecretFieldsNotExposed(t *testing.T) {
 	// secret fields (api_key, auth_token) must appear in ConfiguredFields
 	// but NEVER in ConfiguredValues
+	pf := podfileWithEnv()
 	profile := &UserAgentCredentialProfile{
 		ID: 1,
 		UserID:      10,
@@ -26,13 +36,9 @@ func TestToResponse_SecretFieldsNotExposed(t *testing.T) {
 			"base_url": "https://proxy.example.com",
 		},
 		Agent: &Agent{
-			Slug: "claude-code",
-			Name: "Claude Code",
-			CredentialSchema: CredentialSchema{
-				{Name: "api_key", Type: "secret", EnvVar: "ANTHROPIC_API_KEY", Required: false},
-				{Name: "auth_token", Type: "secret", EnvVar: "ANTHROPIC_AUTH_TOKEN", Required: false},
-				{Name: "base_url", Type: "text", EnvVar: "ANTHROPIC_BASE_URL", Required: false},
-			},
+			Slug:          "claude-code",
+			Name:          "Claude Code",
+			PodfileSource: &pf,
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -63,6 +69,7 @@ func TestToResponse_SecretFieldsNotExposed(t *testing.T) {
 
 func TestToResponse_AuthTokenNotExposed(t *testing.T) {
 	// Verify auth_token (secret) is never exposed in ConfiguredValues
+	pf := podfileWithEnv()
 	profile := &UserAgentCredentialProfile{
 		ID: 2,
 		UserID:      10,
@@ -73,13 +80,9 @@ func TestToResponse_AuthTokenNotExposed(t *testing.T) {
 			"base_url":   "https://custom.api.com",
 		},
 		Agent: &Agent{
-			Slug: "claude-code",
-			Name: "Claude Code",
-			CredentialSchema: CredentialSchema{
-				{Name: "api_key", Type: "secret", EnvVar: "ANTHROPIC_API_KEY", Required: false},
-				{Name: "auth_token", Type: "secret", EnvVar: "ANTHROPIC_AUTH_TOKEN", Required: false},
-				{Name: "base_url", Type: "text", EnvVar: "ANTHROPIC_BASE_URL", Required: false},
-			},
+			Slug:          "claude-code",
+			Name:          "Claude Code",
+			PodfileSource: &pf,
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -109,7 +112,7 @@ func TestToResponse_AuthTokenNotExposed(t *testing.T) {
 
 func TestToResponse_NoAgent(t *testing.T) {
 	// Without Agent loaded, all fields go to ConfiguredFields only
-	// (no schema to determine type, so nothing goes to ConfiguredValues)
+	// (no PodFile to determine type, so nothing goes to ConfiguredValues)
 	profile := &UserAgentCredentialProfile{
 		ID:          3,
 		UserID:      10,
@@ -163,6 +166,7 @@ func TestToResponse_NilCredentials(t *testing.T) {
 
 func TestToResponse_EmptyTextValueNotExposed(t *testing.T) {
 	// Empty text values should NOT appear in ConfiguredValues
+	pf := podfileWithEnv()
 	profile := &UserAgentCredentialProfile{
 		ID:          5,
 		UserID:      10,
@@ -173,12 +177,9 @@ func TestToResponse_EmptyTextValueNotExposed(t *testing.T) {
 			"base_url": "",
 		},
 		Agent: &Agent{
-			Slug: "claude-code",
-			Name: "Claude Code",
-			CredentialSchema: CredentialSchema{
-				{Name: "api_key", Type: "secret", EnvVar: "ANTHROPIC_API_KEY", Required: false},
-				{Name: "base_url", Type: "text", EnvVar: "ANTHROPIC_BASE_URL", Required: false},
-			},
+			Slug:          "claude-code",
+			Name:          "Claude Code",
+			PodfileSource: &pf,
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

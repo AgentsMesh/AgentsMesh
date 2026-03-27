@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/podfile/extract"
+	"github.com/anthropics/agentsmesh/podfile/parser"
 )
 
 // Errors for UserConfigService
@@ -67,16 +69,20 @@ func (s *UserConfigService) ListUserAgentConfigs(ctx context.Context, userID int
 	return s.repo.ListByUser(ctx, userID)
 }
 
-// GetUserEffectiveConfig returns the effective config by merging ConfigSchema defaults and user personal config
+// GetUserEffectiveConfig returns the effective config by merging PodFile defaults and user personal config
 func (s *UserConfigService) GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agent.ConfigValues) agent.ConfigValues {
 	result := make(agent.ConfigValues)
 
-	// 1. Get ConfigSchema defaults from Agent
+	// 1. Get defaults from PodFile CONFIG declarations
 	agentDef, err := s.agentSvc.GetAgent(ctx, agentSlug)
-	if err == nil && agentDef.ConfigSchema.Fields != nil {
-		for _, field := range agentDef.ConfigSchema.Fields {
-			if field.Default != nil {
-				result[field.Name] = field.Default
+	if err == nil && agentDef.PodfileSource != nil && *agentDef.PodfileSource != "" {
+		prog, parseErrs := parser.Parse(*agentDef.PodfileSource)
+		if len(parseErrs) == 0 && prog != nil {
+			spec := extract.Extract(prog)
+			for _, cfg := range spec.Config {
+				if cfg.Default != nil {
+					result[cfg.Name] = cfg.Default
+				}
 			}
 		}
 	}

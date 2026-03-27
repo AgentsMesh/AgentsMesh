@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -231,12 +230,6 @@ func TestCreateCustomAgentRequest(t *testing.T) {
 			Description:   &desc,
 			LaunchCommand: "full-cmd",
 			DefaultArgs:   &args,
-			CredentialSchema: agent.CredentialSchema{
-				{Name: "api_key", Type: "secret", EnvVar: "API_KEY", Required: true},
-			},
-			StatusDetection: agent.StatusDetection{
-				"idle_patterns": []string{"idle"},
-			},
 		}
 
 		customAgent, err := svc.CreateCustomAgent(ctx, 1, req)
@@ -246,12 +239,6 @@ func TestCreateCustomAgentRequest(t *testing.T) {
 
 		if *customAgent.DefaultArgs != args {
 			t.Errorf("DefaultArgs = %s, want %s", *customAgent.DefaultArgs, args)
-		}
-		if len(customAgent.CredentialSchema) != 1 {
-			t.Errorf("CredentialSchema length = %d, want 1", len(customAgent.CredentialSchema))
-		}
-		if customAgent.StatusDetection["idle_patterns"] == nil {
-			t.Error("StatusDetection.idle_patterns should not be nil")
 		}
 	})
 }

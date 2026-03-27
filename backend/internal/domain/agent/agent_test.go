@@ -5,136 +5,6 @@ import (
 	"time"
 )
 
-// --- Test CredentialSchema ---
-
-func TestCredentialSchemaScanNil(t *testing.T) {
-	var cs CredentialSchema
-	err := cs.Scan(nil)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if cs != nil {
-		t.Error("expected nil CredentialSchema")
-	}
-}
-
-func TestCredentialSchemaScanValid(t *testing.T) {
-	var cs CredentialSchema
-	err := cs.Scan([]byte(`[{"name":"api_key","type":"secret","env_var":"API_KEY","required":true}]`))
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if len(cs) != 1 {
-		t.Errorf("expected 1 field, got %d", len(cs))
-	}
-	if cs[0].Name != "api_key" {
-		t.Errorf("expected Name 'api_key', got %s", cs[0].Name)
-	}
-	if cs[0].Type != "secret" {
-		t.Errorf("expected Type 'secret', got %s", cs[0].Type)
-	}
-	if cs[0].EnvVar != "API_KEY" {
-		t.Errorf("expected EnvVar 'API_KEY', got %s", cs[0].EnvVar)
-	}
-	if !cs[0].Required {
-		t.Error("expected Required true")
-	}
-}
-
-func TestCredentialSchemaScanInvalidType(t *testing.T) {
-	var cs CredentialSchema
-	err := cs.Scan("not bytes")
-	if err == nil {
-		t.Error("expected error for invalid type")
-	}
-}
-
-func TestCredentialSchemaScanInvalidJSON(t *testing.T) {
-	var cs CredentialSchema
-	err := cs.Scan([]byte(`invalid json`))
-	if err == nil {
-		t.Error("expected error for invalid JSON")
-	}
-}
-
-func TestCredentialSchemaValueNil(t *testing.T) {
-	var cs CredentialSchema
-	val, err := cs.Value()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if val != nil {
-		t.Error("expected nil value")
-	}
-}
-
-func TestCredentialSchemaValueValid(t *testing.T) {
-	cs := CredentialSchema{
-		{Name: "api_key", Type: "secret", EnvVar: "API_KEY", Required: true},
-	}
-	val, err := cs.Value()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if val == nil {
-		t.Error("expected non-nil value")
-	}
-}
-
-// --- Test StatusDetection ---
-
-func TestStatusDetectionScanNil(t *testing.T) {
-	var sd StatusDetection
-	err := sd.Scan(nil)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if sd != nil {
-		t.Error("expected nil StatusDetection")
-	}
-}
-
-func TestStatusDetectionScanValid(t *testing.T) {
-	var sd StatusDetection
-	err := sd.Scan([]byte(`{"pattern":"working","type":"regex"}`))
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if sd["pattern"] != "working" {
-		t.Errorf("expected pattern 'working', got %v", sd["pattern"])
-	}
-}
-
-func TestStatusDetectionScanInvalidType(t *testing.T) {
-	var sd StatusDetection
-	err := sd.Scan("not bytes")
-	if err == nil {
-		t.Error("expected error for invalid type")
-	}
-}
-
-func TestStatusDetectionValueNil(t *testing.T) {
-	var sd StatusDetection
-	val, err := sd.Value()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if val != nil {
-		t.Error("expected nil value")
-	}
-}
-
-func TestStatusDetectionValueValid(t *testing.T) {
-	sd := StatusDetection{"pattern": "working"}
-	val, err := sd.Value()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if val == nil {
-		t.Error("expected non-nil value")
-	}
-}
-
 // --- Test EncryptedCredentials ---
 
 func TestEncryptedCredentialsScanNil(t *testing.T) {
@@ -204,16 +74,15 @@ func TestAgentStruct(t *testing.T) {
 	args := "--verbose"
 
 	at := Agent{
-		Slug:             "test-agent",
-		Name:             "Test Agent",
-		Description:      &desc,
-		LaunchCommand:    "test-cli",
-		DefaultArgs:      &args,
-		CredentialSchema: CredentialSchema{{Name: "api_key", Type: "secret"}},
-		IsBuiltin:        true,
-		IsActive:         true,
-		CreatedAt:        now,
-		UpdatedAt:        now,
+		Slug:          "test-agent",
+		Name:          "Test Agent",
+		Description:   &desc,
+		LaunchCommand: "test-cli",
+		DefaultArgs:   &args,
+		IsBuiltin:     true,
+		IsActive:      true,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	if at.Slug != "test-agent" {
@@ -307,29 +176,6 @@ func TestAgentTypeSupportsMode(t *testing.T) {
 }
 
 // --- Benchmark Tests ---
-
-func BenchmarkCredentialSchemaScan(b *testing.B) {
-	data := []byte(`[{"name":"api_key","type":"secret","env_var":"API_KEY","required":true}]`)
-	for i := 0; i < b.N; i++ {
-		var cs CredentialSchema
-		cs.Scan(data)
-	}
-}
-
-func BenchmarkCredentialSchemaValue(b *testing.B) {
-	cs := CredentialSchema{{Name: "api_key", Type: "secret"}}
-	for i := 0; i < b.N; i++ {
-		cs.Value()
-	}
-}
-
-func BenchmarkStatusDetectionScan(b *testing.B) {
-	data := []byte(`{"pattern":"working","type":"regex"}`)
-	for i := 0; i < b.N; i++ {
-		var sd StatusDetection
-		sd.Scan(data)
-	}
-}
 
 func BenchmarkAgentTableName(b *testing.B) {
 	at := Agent{}

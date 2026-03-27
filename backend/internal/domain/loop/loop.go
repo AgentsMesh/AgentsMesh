@@ -70,7 +70,7 @@ type Loop struct {
 	TicketID            *int64 `json:"ticket_id,omitempty"`
 	CredentialProfileID *int64 `json:"credential_profile_id,omitempty"`
 
-	// Agent config overrides (dynamic configuration from ConfigSchema)
+	// Agent config overrides (dynamic configuration from PodFile CONFIG declarations)
 	ConfigOverrides json.RawMessage `gorm:"type:jsonb;default:'{}'" json:"config_overrides"`
 
 	// Prompt variables: default values for {{var}} placeholders in PromptTemplate

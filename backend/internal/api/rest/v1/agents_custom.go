@@ -3,7 +3,6 @@ package v1
 import (
 	"net/http"
 
-	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
@@ -35,15 +34,6 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 		args = &req.DefaultArgs
 	}
 
-	var credSchema agentDomain.CredentialSchema
-	var statusDetection agentDomain.StatusDetection
-	if req.StatusDetection != nil {
-		statusDetection = make(agentDomain.StatusDetection)
-		for k, v := range req.StatusDetection {
-			statusDetection[k] = v
-		}
-	}
-
 	launchCommand := req.LaunchCommand
 	var podfileSource *string
 	if req.PodfileSource != "" {
@@ -67,14 +57,12 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 	}
 
 	customAgent, err := h.agentSvc.CreateCustomAgent(c.Request.Context(), tenant.OrganizationID, &agent.CreateCustomAgentRequest{
-		Slug:             req.Slug,
-		Name:             req.Name,
-		Description:      desc,
-		LaunchCommand:    launchCommand,
-		DefaultArgs:      args,
-		CredentialSchema: credSchema,
-		StatusDetection:  statusDetection,
-		PodfileSource:    podfileSource,
+		Slug:          req.Slug,
+		Name:          req.Name,
+		Description:   desc,
+		LaunchCommand: launchCommand,
+		DefaultArgs:   args,
+		PodfileSource: podfileSource,
 	})
 	if err != nil {
 		if err == agent.ErrAgentSlugExists {

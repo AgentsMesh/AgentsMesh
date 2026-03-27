@@ -86,13 +86,10 @@ type ConfigSchemaResponse struct {
 
 // ConfigFieldResponse is a config field returned to frontend
 type ConfigFieldResponse struct {
-	Name       string                `json:"name"`
-	Type       string                `json:"type"`
-	Default    interface{}           `json:"default,omitempty"`
-	Required   bool                  `json:"required,omitempty"`
-	Options    []FieldOptionResponse `json:"options,omitempty"`
-	Validation *agent.Validation     `json:"validation,omitempty"`
-	ShowWhen   *agent.Condition      `json:"show_when,omitempty"`
+	Name    string                `json:"name"`
+	Type    string                `json:"type"`
+	Default interface{}           `json:"default,omitempty"`
+	Options []FieldOptionResponse `json:"options,omitempty"`
 }
 
 // FieldOptionResponse is a field option returned to frontend

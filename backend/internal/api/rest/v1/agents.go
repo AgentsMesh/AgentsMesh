@@ -55,14 +55,12 @@ func (p *compositeProvider) GetEffectiveCredentialsForPod(ctx context.Context, u
 // CreateCustomAgentRequest represents custom agent creation request.
 // When PodfileSource is provided, LaunchCommand becomes optional (extracted from PodFile).
 type CreateCustomAgentRequest struct {
-	Slug             string                 `json:"slug" binding:"required,min=2,max=50,alphanum"`
-	Name             string                 `json:"name" binding:"required,min=2,max=100"`
-	Description      string                 `json:"description"`
-	PodfileSource    string                 `json:"podfile_source"`
-	LaunchCommand    string                 `json:"launch_command"`
-	DefaultArgs      string                 `json:"default_args"`
-	CredentialSchema map[string]interface{} `json:"credential_schema"`
-	StatusDetection  map[string]interface{} `json:"status_detection"`
+	Slug          string `json:"slug" binding:"required,min=2,max=50,alphanum"`
+	Name          string `json:"name" binding:"required,min=2,max=100"`
+	Description   string `json:"description"`
+	PodfileSource string `json:"podfile_source"`
+	LaunchCommand string `json:"launch_command"`
+	DefaultArgs   string `json:"default_args"`
 }
 
 // SetUserAgentConfigRequest represents a request to set user's personal config

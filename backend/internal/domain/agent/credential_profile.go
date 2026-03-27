@@ -2,6 +2,9 @@ package agent
 
 import (
 	"time"
+
+	"github.com/anthropics/agentsmesh/podfile/extract"
+	"github.com/anthropics/agentsmesh/podfile/parser"
 )
 
 // RunnerHostProfileID is a special sentinel value indicating explicit "RunnerHost" mode.
@@ -86,12 +89,10 @@ func (p *UserAgentCredentialProfile) ToResponse() *CredentialProfileResponse {
 		UpdatedAt:    p.UpdatedAt.Format(time.RFC3339),
 	}
 
-	// Build a lookup of field type from CredentialSchema (requires Agent preloaded)
+	// Build a lookup of field type from PodFile ENV declarations (requires Agent preloaded)
 	fieldTypes := make(map[string]string)
 	if p.Agent != nil {
-		for _, f := range p.Agent.CredentialSchema {
-			fieldTypes[f.Name] = f.Type
-		}
+		fieldTypes = extractCredentialFieldTypes(p.Agent.PodfileSource)
 	}
 
 	// Separate credentials into ConfiguredFields (names only) and ConfiguredValues (non-secret values)
@@ -131,4 +132,24 @@ type CredentialProfilesByAgent struct {
 // ListCredentialProfilesResponse is the response for listing all user credential profiles
 type ListCredentialProfilesResponse struct {
 	Items []*CredentialProfilesByAgent `json:"items"`
+}
+
+// extractCredentialFieldTypes extracts ENV field types from PodFile source.
+// Returns a map of field name -> source type ("secret" or "text").
+func extractCredentialFieldTypes(podfileSource *string) map[string]string {
+	types := make(map[string]string)
+	if podfileSource == nil || *podfileSource == "" {
+		return types
+	}
+	prog, errs := parser.Parse(*podfileSource)
+	if len(errs) > 0 || prog == nil {
+		return types
+	}
+	spec := extract.Extract(prog)
+	for _, env := range spec.Env {
+		if env.Source != "" {
+			types[env.Name] = env.Source
+		}
+	}
+	return types
 }

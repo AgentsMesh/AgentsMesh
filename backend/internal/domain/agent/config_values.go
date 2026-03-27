@@ -35,8 +35,8 @@ func (cv ConfigValues) Value() (driver.Value, error) {
 	return json.Marshal(cv)
 }
 
-// MergeConfigs merges multiple config maps with priority (later maps override earlier)
-// Used for: ConfigSchema defaults -> user personal config -> pod overrides
+// MergeConfigs merges multiple config maps with priority (later maps override earlier).
+// Used for: PodFile CONFIG defaults -> user personal config -> pod overrides
 func MergeConfigs(configs ...map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 

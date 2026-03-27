@@ -24,14 +24,12 @@ type AgentInfo struct {
 
 // CreateCustomAgentRequest represents a custom agent creation request
 type CreateCustomAgentRequest struct {
-	Slug             string
-	Name             string
-	Description      *string
-	LaunchCommand    string
-	DefaultArgs      *string
-	CredentialSchema agent.CredentialSchema
-	StatusDetection  agent.StatusDetection
-	PodfileSource    *string
+	Slug          string
+	Name          string
+	Description   *string
+	LaunchCommand string
+	DefaultArgs   *string
+	PodfileSource *string
 }
 
 // AgentService handles agent operations
@@ -96,16 +94,14 @@ func (s *AgentService) CreateCustomAgent(ctx context.Context, orgID int64, req *
 	}
 
 	customAgent := &agent.CustomAgent{
-		OrganizationID:   orgID,
-		Slug:             req.Slug,
-		Name:             req.Name,
-		Description:      req.Description,
-		LaunchCommand:    req.LaunchCommand,
-		DefaultArgs:      req.DefaultArgs,
-		CredentialSchema: req.CredentialSchema,
-		StatusDetection:  req.StatusDetection,
-		PodfileSource:    req.PodfileSource,
-		IsActive:         true,
+		OrganizationID: orgID,
+		Slug:           req.Slug,
+		Name:           req.Name,
+		Description:    req.Description,
+		LaunchCommand:  req.LaunchCommand,
+		DefaultArgs:    req.DefaultArgs,
+		PodfileSource:  req.PodfileSource,
+		IsActive:       true,
 	}
 
 	if err := s.repo.CreateCustom(ctx, customAgent); err != nil {
