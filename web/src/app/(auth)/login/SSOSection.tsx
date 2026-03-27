@@ -25,7 +25,7 @@ export function SSOSection({ ssoConfigs, onLdapSubmit, ldapLoading }: SSOSection
   );
 
   const handleSSORedirect = (config: SSOConfig) => {
-    window.location.href = getSSOAuthURL(config.domain, config.protocol);
+    window.location.assign(getSSOAuthURL(config.domain, config.protocol));
   };
 
   return (

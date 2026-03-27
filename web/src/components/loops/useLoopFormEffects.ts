@@ -33,6 +33,7 @@ export function useCredentialLoader(
 
   useEffect(() => {
     if (!selectedAgentSlug) {
+      // eslint-disable-next-line react-compiler/react-compiler -- batch state reset on agent deselection
       setCredentialProfiles([]);
       setSelectedCredentialProfileId(RUNNER_HOST_PROFILE_ID);
       setCredentialInitialized(false);
@@ -89,6 +90,7 @@ export function useConfigRestore(
   const [configOverridesRestored, setConfigOverridesRestored] = useState(false);
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-compiler/react-compiler -- reset flag on dialog close
       setConfigOverridesRestored(false);
       return;
     }
