@@ -19,7 +19,7 @@ export interface TokenUsageTimeSeriesPoint {
 }
 
 export interface TokenUsageByAgent {
-  agent_type: string; // agent_type_slug
+  agent_slug: string;
   input_tokens: number;
   output_tokens: number;
   cache_read_tokens: number;
@@ -50,7 +50,7 @@ export interface TokenUsageByModel {
 export interface TokenUsageQueryParams {
   start_time?: string;
   end_time?: string;
-  agent_type?: string;
+  agent_slug?: string;
   user_id?: number;
   model?: string;
   granularity?: "day" | "week" | "month";
@@ -69,7 +69,7 @@ function buildQueryString(params: TokenUsageQueryParams): string {
   const searchParams = new URLSearchParams();
   if (params.start_time) searchParams.append("start_time", params.start_time);
   if (params.end_time) searchParams.append("end_time", params.end_time);
-  if (params.agent_type) searchParams.append("agent_type", params.agent_type);
+  if (params.agent_slug) searchParams.append("agent_slug", params.agent_slug);
   if (params.user_id !== undefined) searchParams.append("user_id", String(params.user_id));
   if (params.model) searchParams.append("model", params.model);
   if (params.granularity) searchParams.append("granularity", params.granularity);

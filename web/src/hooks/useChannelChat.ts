@@ -2,21 +2,15 @@
 
 /**
  * Shared hook for channel chat business logic.
- * Single source of truth for all channel message consumers:
- * ChannelChatPanel, MobileChannelChat, ChannelDetailView (BottomPanel).
+ * Eliminates ~80% code duplication between ChannelChatPanel and MobileChannelChat.
  */
 
 import { useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuthStore } from "@/stores/auth";
 import { useChannelStore, useChannelMessageStore } from "@/stores/channel";
-import { EMPTY_CACHE } from "@/stores/channelMessageStore";
 import { useMeshStore } from "@/stores/mesh";
-import { transformMessage } from "@/components/channel/transformMessage";
 import type { TransformedMessage } from "@/components/channel/types";
 import type { MentionPayload } from "@/lib/api/channel";
-
-// Re-export for backward compatibility
-export { transformMessage } from "@/components/channel/transformMessage";
 
 interface UseChannelChatOptions {
   channelId: number;
@@ -26,8 +20,6 @@ interface UseChannelChatReturn {
   currentChannel: ReturnType<typeof useChannelStore.getState>["currentChannel"];
   channelLoading: boolean;
   messagesLoading: boolean;
-  loadingMore: boolean;
-  messagesError: string | null;
   podCount: number;
   channelName: string;
   transformedMessages: TransformedMessage[];
@@ -49,12 +41,8 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   const fetchChannel = useChannelStore((s) => s.fetchChannel);
   const setCurrentChannel = useChannelStore((s) => s.setCurrentChannel);
 
-  // Per-channel cache subscription — only re-renders when THIS channel's data changes
-  const channelCache = useChannelMessageStore(
-    (s) => s.cache[channelId] ?? EMPTY_CACHE
-  );
-  const { messages, hasMore, loading: messagesLoading, loadingMore, error: messagesError } = channelCache;
-
+  const messages = useChannelMessageStore((s) => s.messages);
+  const messagesLoading = useChannelMessageStore((s) => s.messagesLoading);
   const fetchMessages = useChannelMessageStore((s) => s.fetchMessages);
   const sendMessage = useChannelMessageStore((s) => s.sendMessage);
   const editMessage = useChannelMessageStore((s) => s.editMessage);
@@ -75,38 +63,16 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     };
   }, [channelId, fetchChannel, fetchMessages, setCurrentChannel]);
 
-  // Auto mark-as-read: debounced to avoid excessive API calls when messages stream in
-  const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
-  const prevLastMsgIdRef = useRef<number | null>(null);
-  const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastMessageIdRef = useRef(lastMessageId);
-  lastMessageIdRef.current = lastMessageId;
-
+  // Auto mark-as-read when messages finish loading and channel is visible
+  const prevMessagesLoadingRef = useRef(true);
   useEffect(() => {
-    if (lastMessageId !== null && lastMessageId !== prevLastMsgIdRef.current) {
-      prevLastMsgIdRef.current = lastMessageId;
-      if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
-      markReadTimerRef.current = setTimeout(() => {
-        markRead(channelId, lastMessageId);
-      }, 300);
+    // Trigger when loading transitions from true → false (messages just loaded)
+    if (prevMessagesLoadingRef.current && !messagesLoading && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      markRead(channelId, lastMessage.id);
     }
-    return () => {
-      if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
-    };
-  }, [lastMessageId, channelId, markRead]);
-
-  // Flush pending markRead on unmount to prevent debounce loss
-  useEffect(() => {
-    return () => {
-      if (markReadTimerRef.current) {
-        clearTimeout(markReadTimerRef.current);
-        if (lastMessageIdRef.current !== null) {
-          markRead(channelId, lastMessageIdRef.current);
-        }
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channelId]);
+    prevMessagesLoadingRef.current = messagesLoading;
+  }, [messagesLoading, messages, channelId, markRead]);
 
   // Derive pod count and channel name from topology + currentChannel
   const channelInfo = topology?.channels.find((c) => c.id === channelId);
@@ -144,27 +110,52 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   );
 
   const handleLoadMore = useCallback(() => {
-    // Guard: prevent concurrent requests and unnecessary calls
-    if (loadingMore || !hasMore || messages.length === 0) return;
-    fetchMessages(channelId, 50, messages[0].id);
-  }, [channelId, messages, fetchMessages, loadingMore, hasMore]);
+    // Use the first (oldest) message ID as cursor for backward pagination
+    const oldestId = messages.length > 0 ? messages[0].id : undefined;
+    fetchMessages(channelId, 50, oldestId);
+  }, [channelId, messages, fetchMessages]);
 
   const handleRefresh = useCallback(() => {
     fetchMessages(channelId);
   }, [channelId, fetchMessages]);
 
-  // Transform raw store messages into rendering-ready format (single implementation)
+  // Transform raw store messages into rendering-ready format
   const transformedMessages: TransformedMessage[] = useMemo(
-    () => messages.map(transformMessage),
+    () =>
+      messages.map((msg) => ({
+        id: msg.id,
+        content: msg.content,
+        messageType: msg.message_type as TransformedMessage["messageType"],
+        metadata: msg.metadata,
+        editedAt: msg.edited_at,
+        createdAt: msg.created_at,
+        pod: msg.sender_pod_info
+          ? {
+              podKey: msg.sender_pod_info.pod_key,
+              alias: msg.sender_pod_info.alias,
+              agent: msg.sender_pod_info.agent
+                ? { name: msg.sender_pod_info.agent.name }
+                : undefined,
+            }
+          : undefined,
+        user: msg.sender_user
+          ? {
+              id: msg.sender_user.id,
+              username: msg.sender_user.username,
+              name: msg.sender_user.name,
+              avatarUrl: msg.sender_user.avatar_url,
+            }
+          : undefined,
+      })),
     [messages]
   );
+
+  const hasMore = messages.length >= 50 && messages.length % 50 === 0;
 
   return {
     currentChannel,
     channelLoading,
     messagesLoading,
-    loadingMore,
-    messagesError,
     podCount,
     channelName,
     transformedMessages,

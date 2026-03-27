@@ -172,7 +172,7 @@ export default function ApiLoopsPage() {
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Daily Code Review",
-    "agent_type_id": 1,
+    "agent_slug": 1,
     "prompt_template": "Review changes in {{branch}} branch",
     "prompt_variables": {"branch": "main"},
     "execution_mode": "autopilot",
@@ -236,7 +236,7 @@ export default function ApiLoopsPage() {
                 </tr>
               </thead>
               <tbody className="text-muted-foreground">
-                {(["name", "description", "agent_type_id", "custom_agent_type_id", "prompt_template", "prompt_variables", "repository_id", "runner_id", "branch_name", "execution_mode", "cron_expression", "sandbox_strategy", "session_persistence", "concurrency_policy", "max_concurrent_runs", "timeout_minutes", "callback_url", "autopilot_config"] as const).map((field) => (
+                {(["name", "description", "agent_slug", "custom_agent_slug", "prompt_template", "prompt_variables", "repository_id", "runner_id", "branch_name", "execution_mode", "cron_expression", "sandbox_strategy", "session_persistence", "concurrency_policy", "max_concurrent_runs", "timeout_minutes", "callback_url", "autopilot_config"] as const).map((field) => (
                   <tr key={field}>
                     <td className="p-2 border-b border-border font-mono text-xs">{field}</td>
                     <td className="p-2 border-b border-border">

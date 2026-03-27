@@ -226,7 +226,7 @@ const changelog: ChangelogEntry[] = [
         type: "added",
         items: [
           "Runner migrated from WebSocket to gRPC + mTLS communication",
-          "MCP tool: create_pod with agent_type_id parameter",
+          "MCP tool: create_pod with agent_slug parameter",
           "macOS universal binary support in GoReleaser",
           "Automated release pipeline for all platforms",
           "Windows ConPTY support for terminal",

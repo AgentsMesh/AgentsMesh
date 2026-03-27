@@ -42,7 +42,7 @@ export type { RunnerData, GRPCRegistrationToken, RunnerPodData, SandboxStatus, R
 // Agent
 export { agentApi, userAgentConfigApi } from "./agent";
 export type {
-  AgentTypeData,
+  AgentData,
   UserAgentConfigData,
   ConfigField,
   ConfigFieldOption,
@@ -84,7 +84,7 @@ export type {
 export { userAgentCredentialApi, isRunnerHostProfile, getProfileStatusLabel } from "./user-agent-credential";
 export type {
   CredentialProfileData,
-  CredentialProfilesByAgentType,
+  CredentialProfilesByAgent,
   CreateCredentialProfileRequest,
   UpdateCredentialProfileRequest,
   RunnerHostInfo,

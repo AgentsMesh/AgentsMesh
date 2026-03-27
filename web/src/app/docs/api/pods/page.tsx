@@ -133,7 +133,7 @@ export default function ApiPodsPage() {
   -H "X-API-Key: amk_your_api_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "agent_type_id": "claude-code",
+    "agent_slug": "claude-code",
     "runner_id": "runner-uuid",
     "initial_prompt": "Fix the login bug"
   }'`}</pre>
@@ -246,7 +246,7 @@ export default function ApiPodsPage() {
     {
       "key": "pod-abc123",
       "status": "running",
-      "agent_type_id": "claude-code",
+      "agent_slug": "claude-code",
       "runner_id": "550e8400-e29b-41d4-a716-446655440000",
       "initial_prompt": "Fix the login bug",
       "repository_id": 1,
@@ -326,7 +326,7 @@ export default function ApiPodsPage() {
   "pod": {
     "key": "pod-abc123",
     "status": "running",
-    "agent_type_id": "claude-code",
+    "agent_slug": "claude-code",
     "runner_id": "550e8400-e29b-41d4-a716-446655440000",
     "initial_prompt": "Fix the login bug",
     "repository_id": 1,
@@ -398,7 +398,7 @@ export default function ApiPodsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        agent_type_id
+                        agent_slug
                       </td>
                       <td className="p-3 border-b border-border">string</td>
                       <td className="p-3 border-b border-border">
@@ -408,7 +408,7 @@ export default function ApiPodsPage() {
                       </td>
                       <td className="p-3 border-b border-border">
                         {t(
-                          "docs.api.pods.details.createPod.fields.agent_type_id"
+                          "docs.api.pods.details.createPod.fields.agent_slug"
                         )}
                       </td>
                     </tr>
@@ -646,7 +646,7 @@ export default function ApiPodsPage() {
   "pod": {
     "key": "pod-xyz789",
     "status": "creating",
-    "agent_type_id": "claude-code",
+    "agent_slug": "claude-code",
     "runner_id": "550e8400-e29b-41d4-a716-446655440000",
     "initial_prompt": "Fix the login bug",
     "repository_id": 1,

@@ -54,7 +54,7 @@ export interface CreateAutopilotControllerRequest {
   no_progress_threshold?: number;
   same_error_threshold?: number;
   approval_timeout_min?: number;
-  control_agent_type?: string;
+  control_agent_slug?: string;
   control_prompt_template?: string;
   mcp_config_json?: string;
 }

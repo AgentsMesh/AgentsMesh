@@ -25,7 +25,7 @@ interface Channel {
   pods?: Array<{
     podKey: string;
     status: string;
-    agentType?: {
+    agent?: {
       name: string;
     };
   }>;

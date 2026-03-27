@@ -14,7 +14,7 @@ import { CredentialDialog } from "./CredentialDialog";
 import type { AgentConfigPageProps, CredentialFormData } from "./types";
 
 /**
- * AgentConfigPage - Unified configuration page for a single agent type
+ * AgentConfigPage - Unified configuration page for a single agent
  *
  * Combines credentials management and runtime configuration in one place.
  * Acts as the coordinator for the extracted sub-components.
@@ -30,7 +30,7 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
   const {
     loading,
     savingConfig,
-    agentType,
+    agent,
     configFields,
     configValues,
     credentialProfiles,
@@ -89,7 +89,7 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
     return <CenteredSpinner className="py-12" />;
   }
 
-  if (!agentType) {
+  if (!agent) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
@@ -104,9 +104,9 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
       <div className="flex items-center gap-3">
         <Bot className="w-8 h-8 text-primary" />
         <div>
-          <h2 className="text-xl font-semibold">{agentType.name}</h2>
-          {agentType.description && (
-            <p className="text-sm text-muted-foreground">{agentType.description}</p>
+          <h2 className="text-xl font-semibold">{agent.name}</h2>
+          {agent.description && (
+            <p className="text-sm text-muted-foreground">{agent.description}</p>
           )}
         </div>
       </div>

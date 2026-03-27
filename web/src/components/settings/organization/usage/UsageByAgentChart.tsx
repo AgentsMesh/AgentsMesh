@@ -28,7 +28,7 @@ export function UsageByAgentChart({ data, t }: UsageByAgentChartProps) {
   const chartData = useMemo(
     () =>
       data.map((item) => ({
-        name: item.agent_type,
+        name: item.agent_slug,
         input_tokens: item.input_tokens,
         output_tokens: item.output_tokens,
         cache_creation_tokens: item.cache_creation_tokens,

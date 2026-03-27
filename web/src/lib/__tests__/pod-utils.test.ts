@@ -61,11 +61,11 @@ describe("getPodDisplayName", () => {
     ).toBe("T-42");
   });
 
-  it("returns agent_type + short key when no other info", () => {
+  it("returns agent name + short key when no other info", () => {
     expect(
       getPodDisplayName({
         pod_key: "pod-key-12345678",
-        agent_type: { name: "Claude" },
+        agent: { name: "Claude" },
       })
     ).toBe("Claude (pod-key-)");
   });

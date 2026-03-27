@@ -7,14 +7,14 @@ import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useTranslations } from "next-intl";
 import type { CredentialProfileData } from "@/lib/api";
 import { useAgentCredentials } from "./useAgentCredentials";
-import { AgentTypeItem } from "./AgentTypeItem";
+import { AgentItem } from "./AgentItem";
 import { CredentialProfileDialog } from "./CredentialProfileDialog";
 import type { CredentialFormData } from "./types";
 
 /**
- * AgentCredentialsSettings - Manages credential profiles for all agent types
+ * AgentCredentialsSettings - Manages credential profiles for all agents
  *
- * Displays a collapsible list of agent types, each with RunnerHost as the
+ * Displays a collapsible list of agents, each with RunnerHost as the
  * default option and custom credential profiles below.
  */
 export function AgentCredentialsSettings() {
@@ -23,22 +23,22 @@ export function AgentCredentialsSettings() {
   // Dialog state
   const [showDialog, setShowDialog] = useState(false);
   const [editingProfile, setEditingProfile] = useState<CredentialProfileData | null>(null);
-  const [selectedAgentTypeId, setSelectedAgentTypeId] = useState<number | null>(null);
+  const [selectedAgentSlug, setSelectedAgentSlug] = useState<string | null>(null);
 
   // Use the custom hook for data and actions
   const {
     loading,
     error,
     success,
-    agentTypes,
-    expandedAgentTypes,
+    agents,
+    expandedAgents,
     runnerHostDefaults,
-    toggleAgentType,
+    toggleAgent,
     handleSetRunnerHostDefault,
     handleSetDefault,
     handleDelete,
     handleSaveProfile,
-    getProfilesForAgentType,
+    getProfilesForAgent,
     setError,
     setSuccess,
   } = useAgentCredentials(t);
@@ -47,27 +47,27 @@ export function AgentCredentialsSettings() {
   const { dialogProps, confirm } = useConfirmDialog();
 
   // Open add dialog
-  const handleOpenAddDialog = useCallback((agentTypeId: number) => {
-    setSelectedAgentTypeId(agentTypeId);
+  const handleOpenAddDialog = useCallback((agentSlug: string) => {
+    setSelectedAgentSlug(agentSlug);
     setEditingProfile(null);
     setShowDialog(true);
   }, []);
 
   // Open edit dialog
   const handleOpenEditDialog = useCallback((profile: CredentialProfileData) => {
-    setSelectedAgentTypeId(profile.agent_type_id);
+    setSelectedAgentSlug(profile.agent_slug);
     setEditingProfile(profile);
     setShowDialog(true);
   }, []);
 
   // Handle dialog submit
   const handleDialogSubmit = useCallback(async (data: CredentialFormData) => {
-    if (!selectedAgentTypeId) {
-      throw new Error("No agent type selected");
+    if (!selectedAgentSlug) {
+      throw new Error("No agent selected");
     }
-    await handleSaveProfile(selectedAgentTypeId, data, editingProfile);
+    await handleSaveProfile(selectedAgentSlug, data, editingProfile);
     setShowDialog(false);
-  }, [selectedAgentTypeId, editingProfile, handleSaveProfile]);
+  }, [selectedAgentSlug, editingProfile, handleSaveProfile]);
 
   // Handle delete with confirmation
   const handleDeleteWithConfirm = useCallback(async (profileId: number) => {
@@ -101,34 +101,34 @@ export function AgentCredentialsSettings() {
       {error && <AlertMessage type="error" message={error} onDismiss={() => setError(null)} />}
       {success && <AlertMessage type="success" message={success} onDismiss={() => setSuccess(null)} />}
 
-      {/* Agent Types List */}
+      {/* Agents List */}
       <div className="space-y-2">
-        {agentTypes.map((agentType) => {
-          const profiles = getProfilesForAgentType(agentType.id);
-          const isExpanded = expandedAgentTypes.has(agentType.id);
-          const isRunnerHostDefault = runnerHostDefaults.has(agentType.id);
+        {agents.map((agent) => {
+          const profiles = getProfilesForAgent(agent.slug);
+          const isExpanded = expandedAgents.has(agent.slug);
+          const isRunnerHostDefault = runnerHostDefaults.has(agent.slug);
 
           return (
-            <AgentTypeItem
-              key={agentType.id}
-              agentType={agentType}
+            <AgentItem
+              key={agent.slug}
+              agent={agent}
               profiles={profiles}
               isExpanded={isExpanded}
               isRunnerHostDefault={isRunnerHostDefault}
-              onToggle={() => toggleAgentType(agentType.id)}
-              onSetRunnerHostDefault={() => handleSetRunnerHostDefault(agentType.id)}
+              onToggle={() => toggleAgent(agent.slug)}
+              onSetRunnerHostDefault={() => handleSetRunnerHostDefault(agent.slug)}
               onSetDefault={handleSetDefault}
               onEdit={handleOpenEditDialog}
               onDelete={handleDeleteWithConfirm}
-              onAdd={() => handleOpenAddDialog(agentType.id)}
+              onAdd={() => handleOpenAddDialog(agent.slug)}
               t={t}
             />
           );
         })}
 
-        {agentTypes.length === 0 && (
+        {agents.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            {t("settings.agentCredentials.noAgentTypes")}
+            {t("settings.agentCredentials.noAgents")}
           </div>
         )}
       </div>

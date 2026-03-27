@@ -13,8 +13,8 @@ export interface LoopData {
   name: string;
   slug: string;
   description?: string;
-  agent_type_id?: number;
-  custom_agent_type_id?: number;
+  agent_slug?: string;
+  custom_agent_slug?: string;
   permission_mode: string;
   prompt_template: string;
   prompt_variables?: Record<string, unknown>;
@@ -73,8 +73,8 @@ export interface CreateLoopRequest {
   name: string;
   slug?: string;
   description?: string;
-  agent_type_id?: number;
-  custom_agent_type_id?: number;
+  agent_slug?: string;
+  custom_agent_slug?: string;
   permission_mode?: string;
   prompt_template: string;
   prompt_variables?: Record<string, unknown>;
@@ -99,8 +99,8 @@ export interface CreateLoopRequest {
 export interface UpdateLoopRequest {
   name?: string;
   description?: string;
-  agent_type_id?: number;
-  custom_agent_type_id?: number;
+  agent_slug?: string;
+  custom_agent_slug?: string;
   permission_mode?: string;
   prompt_template?: string;
   prompt_variables?: Record<string, unknown>;

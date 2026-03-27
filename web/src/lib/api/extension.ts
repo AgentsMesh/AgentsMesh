@@ -13,7 +13,7 @@ export interface SkillRegistry {
   branch: string;
   source_type: string;
   detected_type: string;
-  compatible_agents?: string[];  // agent type whitelist, e.g. ["claude-code"]
+  compatible_agents?: string[];  // agent whitelist, e.g. ["claude-code"]
   auth_type: SkillRegistryAuthType;
   // auth_credential is never returned from the API (json:"-" in Go)
   last_synced_at: string | null;

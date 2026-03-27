@@ -41,7 +41,7 @@ describe("Pod Store — createPod", () => {
     await act(async () => {
       await usePodStore.getState().createPod({
         runnerId: 1,
-        agentTypeId: 2,
+        agentSlug: "claude-code",
         repositoryId: 3,
         ticketSlug: "TICK-1",
         initialPrompt: "hello",
@@ -51,7 +51,7 @@ describe("Pod Store — createPod", () => {
 
     expect(podApi.create).toHaveBeenCalledWith({
       runner_id: 1,
-      agent_type_id: 2,
+      agent_slug: "claude-code",
       repository_id: 3,
       ticket_slug: "TICK-1",
       initial_prompt: "hello",

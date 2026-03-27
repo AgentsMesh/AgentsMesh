@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { podApi, PodData, AgentTypeData, RepositoryData } from "@/lib/api";
+import { podApi, PodData, AgentData, RepositoryData } from "@/lib/api";
 import { userAgentCredentialApi, CredentialProfileData } from "@/lib/api";
 import { usePodCreationStore } from "@/stores/podCreation";
 
@@ -19,7 +19,7 @@ export const RUNNER_HOST_PROFILE_ID = 0;
 
 export interface CreatePodFormState {
   // Selection state (order: Runner -> Agent -> Others)
-  selectedAgent: number | null;
+  selectedAgent: string | null;
   selectedRepository: number | null;
   selectedBranch: string;
   selectedCredentialProfile: number; // 0 = RunnerHost, >0 = custom profile ID
@@ -32,7 +32,7 @@ export interface CreatePodFormState {
   loadingCredentials: boolean;
 
   // Actions
-  setSelectedAgent: (id: number | null) => void;
+  setSelectedAgent: (slug: string | null) => void;
   setSelectedRepository: (id: number | null) => void;
   setSelectedBranch: (branch: string) => void;
   setSelectedCredentialProfile: (id: number) => void;
@@ -66,15 +66,15 @@ export interface CreatePodFormState {
  * This hook manages agent selection and other form fields
  */
 export function useCreatePodForm(
-  availableAgentTypes: AgentTypeData[],
+  availableAgents: AgentData[],
   repositories: RepositoryData[],
   onSuccess?: (pod: PodData) => void
 ): CreatePodFormState {
   // Read saved preferences for auto-fill
-  const { lastAgentTypeId, lastRepositoryId, lastCredentialProfileId, lastBranchName, setLastChoices } = usePodCreationStore();
+  const { lastAgentSlug, lastRepositoryId, lastCredentialProfileId, lastBranchName, setLastChoices } = usePodCreationStore();
   const prefsInitializedRef = useRef(false);
 
-  const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [selectedRepository, setSelectedRepository] = useState<number | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [selectedCredentialProfile, setSelectedCredentialProfile] = useState<number>(RUNNER_HOST_PROFILE_ID);
@@ -89,12 +89,12 @@ export function useCreatePodForm(
   const [credentialProfiles, setCredentialProfiles] = useState<CredentialProfileData[]>([]);
   const [loadingCredentials, setLoadingCredentials] = useState(false);
 
-  // Auto-fill from saved preferences when agent types become available
+  // Auto-fill from saved preferences when agents become available
   useEffect(() => {
-    if (prefsInitializedRef.current || availableAgentTypes.length === 0) return;
+    if (prefsInitializedRef.current || availableAgents.length === 0) return;
 
-    if (lastAgentTypeId && availableAgentTypes.find(a => a.id === lastAgentTypeId)) {
-      setSelectedAgent(lastAgentTypeId);
+    if (lastAgentSlug && availableAgents.find(a => a.slug === lastAgentSlug)) {
+      setSelectedAgent(lastAgentSlug);
     }
     if (lastRepositoryId && repositories.find(r => r.id === lastRepositoryId)) {
       setSelectedRepository(lastRepositoryId);
@@ -104,14 +104,14 @@ export function useCreatePodForm(
     }
 
     prefsInitializedRef.current = true;
-  }, [availableAgentTypes, repositories, lastAgentTypeId, lastRepositoryId, lastBranchName]);
+  }, [availableAgents, repositories, lastAgentSlug, lastRepositoryId, lastBranchName]);
 
   // Compute agent slug from selected agent
   const selectedAgentSlug = useMemo(() => {
     if (!selectedAgent) return "";
-    const agent = availableAgentTypes.find((a) => a.id === selectedAgent);
+    const agent = availableAgents.find((a) => a.slug === selectedAgent);
     return agent?.slug || "";
-  }, [selectedAgent, availableAgentTypes]);
+  }, [selectedAgent, availableAgents]);
 
   // Parse supported modes from selected agent type
   const supportedModes = useMemo(() => {
@@ -123,19 +123,19 @@ export function useCreatePodForm(
 
   // Compute form validity (runner validation is done externally)
   const isValid = useMemo(() => {
-    return selectedAgent !== null;
+    return selectedAgent !== null && selectedAgent !== "";
   }, [selectedAgent]);
 
-  // Reset agent selection when available agent types change (e.g., when runner changes)
+  // Reset agent selection when available agents change (e.g., when runner changes)
   useEffect(() => {
     // If current selection is not in available types, reset it
-    if (selectedAgent && !availableAgentTypes.find(a => a.id === selectedAgent)) {
+    if (selectedAgent && !availableAgents.find(a => a.slug === selectedAgent)) {
       setSelectedAgent(null);
       setCredentialProfiles([]);
       setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
       setInteractionMode("pty");
     }
-  }, [availableAgentTypes, selectedAgent]);
+  }, [availableAgents, selectedAgent]);
 
   // Auto-set interaction mode when agent changes based on supported modes
   useEffect(() => {
@@ -174,7 +174,7 @@ export function useCreatePodForm(
     const loadCredentials = async () => {
       setLoadingCredentials(true);
       try {
-        const res = await userAgentCredentialApi.listForAgentType(selectedAgent);
+        const res = await userAgentCredentialApi.listForAgent(selectedAgent);
         const profiles = res.profiles || [];
         setCredentialProfiles(profiles);
 
@@ -213,7 +213,7 @@ export function useCreatePodForm(
     const errors: FormValidationErrors = {};
 
     if (!selectedAgent) {
-      errors.agent = "Please select an agent type";
+      errors.agent = "Please select an agent";
     }
 
     // Branch validation: if repository is selected but branch is empty, warn
@@ -271,7 +271,7 @@ export function useCreatePodForm(
       try {
         // Build plugin config for API
         const config: Record<string, unknown> = {
-          agent_type: selectedAgentSlug,
+          agent: selectedAgentSlug,
           ...pluginConfig,
         };
 
@@ -279,7 +279,7 @@ export function useCreatePodForm(
         const finalPrompt = options?.initialPrompt ?? prompt;
 
         const response = await podApi.create({
-          agent_type_id: selectedAgent,
+          agent_slug: selectedAgent,
           runner_id: selectedRunnerId || undefined, // omit when not manually selected
           repository_id: selectedRepository || undefined,
           branch_name: selectedBranch || undefined,
@@ -296,7 +296,7 @@ export function useCreatePodForm(
         if (response.pod) {
           // Save choices for next time
           setLastChoices({
-            lastAgentTypeId: selectedAgent,
+            lastAgentSlug: selectedAgent,
             lastRepositoryId: selectedRepository,
             lastCredentialProfileId: selectedCredentialProfile > 0 ? selectedCredentialProfile : null,
             lastBranchName: selectedBranch || null,

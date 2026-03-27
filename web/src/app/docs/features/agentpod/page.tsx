@@ -251,10 +251,10 @@ export default function AgentPodPage() {
             <tbody className="text-muted-foreground">
               <tr>
                 <td className="p-3 border-b border-border font-medium">
-                  {t("docs.features.agentpod.configuration.agentType")}
+                  {t("docs.features.agentpod.configuration.agent")}
                 </td>
                 <td className="p-3 border-b border-border">
-                  {t("docs.features.agentpod.configuration.agentTypeDesc")}
+                  {t("docs.features.agentpod.configuration.agentDesc")}
                 </td>
               </tr>
               <tr>

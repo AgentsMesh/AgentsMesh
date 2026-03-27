@@ -20,8 +20,7 @@ export interface PodData {
     node_id: string;
     status: string;
   };
-  agent_type?: {
-    id: number;
+  agent?: {
     name: string;
     slug: string;
   };
@@ -68,7 +67,7 @@ export const podApi = {
     request<{ pod: PodData }>(`${orgPath("/pods")}/${key}`),
 
   create: (data: {
-    agent_type_id?: number; // Required unless resuming
+    agent_slug?: string; // Required unless resuming
     runner_id?: number;
     repository_id?: number;
     ticket_slug?: string;

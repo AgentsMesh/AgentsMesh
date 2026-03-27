@@ -114,9 +114,9 @@ describe("InfoTabContent", () => {
   });
 
   describe("optional fields", () => {
-    it("should display agent type when available", () => {
+    it("should display agent when available", () => {
       const pod = createMockPod({
-        agent_type: { id: 1, name: "Claude Code", slug: "claude-code" },
+        agent: { name: "Claude Code", slug: "claude-code" },
       });
       render(
         <InfoTabContent
@@ -316,7 +316,7 @@ describe("InfoTabContent", () => {
 
     it("should not display optional fields when absent", () => {
       const pod = createMockPod({
-        agent_type: undefined,
+        agent: undefined,
         runner: undefined,
         repository: undefined,
         branch_name: undefined,
@@ -334,7 +334,7 @@ describe("InfoTabContent", () => {
         />
       );
       expect(
-        screen.queryByText("ide.bottomPanel.infoTab.agentType:")
+        screen.queryByText("ide.bottomPanel.infoTab.agent:")
       ).not.toBeInTheDocument();
       expect(
         screen.queryByText("ide.bottomPanel.infoTab.runner:")
@@ -424,14 +424,14 @@ describe("InfoTabContent", () => {
         pod_key: "pod-related-1",
         status: "running",
         ticket,
-        agent_type: { id: 2, name: "Aider", slug: "aider" },
+        agent: { name: "Aider", slug: "aider" },
       });
       const relatedPod2 = createMockPod({
         id: 3,
         pod_key: "pod-related-2",
         status: "completed",
         ticket,
-        agent_type: { id: 1, name: "Claude Code", slug: "claude-code" },
+        agent: { name: "Claude Code", slug: "claude-code" },
       });
 
       mockPods = [pod, relatedPod1, relatedPod2];
@@ -450,7 +450,7 @@ describe("InfoTabContent", () => {
         screen.getByText("ide.bottomPanel.infoTab.relatedPods".replace("{count}", "2"))
       ).toBeInTheDocument();
 
-      // Should show agent types for related pods
+      // Should show agents for related pods
       expect(screen.getByText("Aider")).toBeInTheDocument();
       expect(screen.getByText("Claude Code")).toBeInTheDocument();
     });
@@ -498,13 +498,13 @@ describe("InfoTabContent", () => {
       const pod = createMockPod({
         pod_key: "pod-current",
         ticket,
-        agent_type: { id: 1, name: "CurrentAgent", slug: "current" },
+        agent: { name: "CurrentAgent", slug: "current" },
       });
       const otherPod = createMockPod({
         id: 2,
         pod_key: "pod-other",
         ticket,
-        agent_type: { id: 2, name: "OtherAgent", slug: "other" },
+        agent: { name: "OtherAgent", slug: "other" },
       });
 
       mockPods = [pod, otherPod];

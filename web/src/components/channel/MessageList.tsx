@@ -26,7 +26,7 @@ function getSenderName(msg: TransformedMessage): string {
     return getPodDisplayName({
       pod_key: msg.pod.podKey,
       alias: msg.pod.alias,
-      agent_type: msg.pod.agentType ? { name: msg.pod.agentType.name } : undefined,
+      agent: msg.pod.agent ? { name: msg.pod.agent.name } : undefined,
     });
   }
   if (msg.user) return msg.user.name || msg.user.username || "Unknown";

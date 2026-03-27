@@ -48,7 +48,7 @@ interface PodState {
   loadMorePods: () => Promise<void>;
   createPod: (data: {
     runnerId: number;
-    agentTypeId?: number;
+    agentSlug?: string;
     repositoryId?: number;
     ticketSlug?: string;
     initialPrompt?: string;
@@ -309,7 +309,7 @@ export const usePodStore = create<PodState>((set, get) => ({
     try {
       // Convert camelCase to snake_case for API
       const apiData = {
-        agent_type_id: data.agentTypeId ?? 0,
+        agent_slug: data.agentSlug ?? "",
         runner_id: data.runnerId,
         repository_id: data.repositoryId,
         ticket_slug: data.ticketSlug,

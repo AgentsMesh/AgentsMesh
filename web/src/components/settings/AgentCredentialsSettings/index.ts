@@ -1,11 +1,11 @@
 export { AgentCredentialsSettings } from "./AgentCredentialsSettings";
-export { AgentTypeItem } from "./AgentTypeItem";
+export { AgentItem } from "./AgentItem";
 export { CredentialProfileDialog } from "./CredentialProfileDialog";
 export { useAgentCredentials } from "./useAgentCredentials";
 export type {
   AgentCredentialsState,
   AgentCredentialsActions,
   CredentialFormData,
-  AgentTypeItemProps,
+  AgentItemProps,
   CredentialProfileDialogProps,
 } from "./types";

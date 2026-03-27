@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock API modules
 const mockList = vi.fn();
-const mockListTypes = vi.fn();
+const mockListAgents = vi.fn();
 const mockApiCreate = vi.fn();
 const mockApiUpdate = vi.fn();
 
@@ -14,10 +14,10 @@ vi.mock("@/lib/api", () => ({
     update: (...args: unknown[]) => mockApiUpdate(...args),
     delete: vi.fn(),
     setDefault: vi.fn(),
-    listForAgentType: vi.fn(),
+    listForAgent: vi.fn(),
   },
   agentApi: {
-    listTypes: (...args: unknown[]) => mockListTypes(...args),
+    list: (...args: unknown[]) => mockListAgents(...args),
   },
 }));
 
@@ -30,7 +30,7 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockList.mockResolvedValue({ items: [] });
-    mockListTypes.mockResolvedValue({ agent_types: [{ id: 1, name: "Claude", slug: "claude-code" }] });
+    mockListAgents.mockResolvedValue({ agents: [{ name: "Claude", slug: "claude-code" }] });
   });
 
   it("should propagate API errors from create to caller", async () => {
@@ -74,7 +74,7 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
     const editingProfile = {
       id: 5,
       user_id: 1,
-      agent_type_id: 1,
+      agent_slug: "claude-code",
       name: "Existing",
       is_runner_host: false,
       is_default: false,
