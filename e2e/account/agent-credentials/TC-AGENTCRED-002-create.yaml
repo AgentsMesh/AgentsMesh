@@ -7,11 +7,11 @@ module: account/agent-credentials
 preconditions:
   - 开发环境已启动
   - 已获取有效的 access_token
-  - 数据库中存在 agent_types 记录
+  - 数据库中存在 agents 记录
 
 notes: |
-  需要先确认系统中有效的 agent_type_id。
-  通常 Claude Code 的 agent_type_id 为 1。
+  需要先确认系统中有效的 agent_slug。
+  通常 Claude Code 的 agent_slug 为 "claude"。
 
 steps:
   - action: 登录获取 token
@@ -33,15 +33,15 @@ steps:
       save:
         access_token: body.token
 
-  - action: 获取有效的 agent_type_id
+  - action: 获取有效的 agent_slug
     verification:
       type: database
       query: |
-        SELECT id FROM agent_types WHERE is_active = true LIMIT 1
+        SELECT slug FROM agents WHERE is_active = true LIMIT 1
       expected:
-        id: not_empty
+        slug: not_empty
       save:
-        agent_type_id: id
+        agent_slug: slug
 
   - action: 创建 Agent 凭证配置
     expected: 返回 201，配置创建成功
@@ -49,7 +49,7 @@ steps:
       type: api
       request:
         method: POST
-        url: /api/v1/users/agent-credentials/types/{agent_type_id}
+        url: /api/v1/users/agent-credentials/types/{agent_slug}
         headers:
           Authorization: Bearer {access_token}
           Content-Type: application/json

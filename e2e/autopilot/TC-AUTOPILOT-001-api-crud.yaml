@@ -56,7 +56,7 @@ steps:
           Content-Type: application/json
         body:
           runner_id: "{runner_id}"
-          agent_type: "claude"
+          agent_slug: "claude"
           initial_prompt: "AutopilotController E2E Test"
       expected:
         status: 201

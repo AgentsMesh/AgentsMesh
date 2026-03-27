@@ -128,9 +128,9 @@ Organization-scoped endpoints require the organization slug in the URL path:
 | GET | `/users/me/identities` | List OAuth identities |
 | DELETE | `/users/me/identities/{provider}` | Remove OAuth identity |
 | GET | `/users/me/agent-configs` | List user agent configs |
-| GET | `/users/me/agent-configs/{agent_type_id}` | Get agent config |
-| PUT | `/users/me/agent-configs/{agent_type_id}` | Set agent config |
-| DELETE | `/users/me/agent-configs/{agent_type_id}` | Delete agent config |
+| GET | `/users/me/agent-configs/{slug}` | Get agent config |
+| PUT | `/users/me/agent-configs/{slug}` | Set agent config |
+| DELETE | `/users/me/agent-configs/{slug}` | Delete agent config |
 | GET | `/users/me/agentpod/settings` | Get AgentPod settings |
 | PUT | `/users/me/agentpod/settings` | Update AgentPod settings |
 | GET | `/users/me/agentpod/providers` | List AI providers |
@@ -158,12 +158,12 @@ Organization-scoped endpoints require the organization slug in the URL path:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/agents/types` | List agent types |
-| GET | `/agents/types/{agent_type_id}` | Get agent type |
+| GET | `/agents/types` | List agents |
+| GET | `/agents/types/{slug}` | Get agent |
 | POST | `/agents/custom` | Create custom agent |
 | PUT | `/agents/custom/{id}` | Update custom agent |
 | DELETE | `/agents/custom/{id}` | Delete custom agent |
-| GET | `/agents/{agent_type_id}/config-schema` | Get config schema |
+| GET | `/agents/{slug}/config-schema` | Get config schema |
 
 ### Repositories (`/api/v1/orgs/{slug}/repositories`)
 

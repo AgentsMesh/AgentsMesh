@@ -28,15 +28,15 @@ steps:
       save:
         access_token: body.token
 
-  - action: 获取有效的 agent_type_id
+  - action: 获取有效的 agent_slug
     verification:
       type: database
       query: |
-        SELECT id FROM agent_types WHERE is_active = true LIMIT 1
+        SELECT slug FROM agents WHERE is_active = true LIMIT 1
       expected:
-        id: not_empty
+        slug: not_empty
       save:
-        agent_type_id: id
+        agent_slug: slug
 
   - action: 创建待删除的配置
     expected: 返回 201，获取配置 ID
@@ -44,7 +44,7 @@ steps:
       type: api
       request:
         method: POST
-        url: /api/v1/users/agent-credentials/types/{agent_type_id}
+        url: /api/v1/users/agent-credentials/types/{agent_slug}
         headers:
           Authorization: Bearer {access_token}
           Content-Type: application/json

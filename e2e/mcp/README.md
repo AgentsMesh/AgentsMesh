@@ -77,7 +77,7 @@ Phase 1: Authentication
 Phase 2: Discovery
     ├── List runners
     ├── List repositories
-    └── Get agent types
+    └── Get agents
 
 Phase 3: Pod Creation
     ├── Create Pod A (Controller)

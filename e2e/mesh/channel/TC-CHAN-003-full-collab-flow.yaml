@@ -82,15 +82,15 @@ steps:
       type: api
       request:
         method: GET
-        url: /api/v1/orgs/dev-org/agents/types
+        url: /api/v1/orgs/dev-org/agents
         headers:
           Authorization: Bearer {access_token}
       expected:
         status: 200
         body:
-          agent_types: not_empty
+          agents: not_empty
       save:
-        agent_type_id: body.agent_types[0].id
+        agent_slug: body.agents[0].slug
 
   - id: step-5
     action: 创建 Pod A
@@ -104,7 +104,7 @@ steps:
           Content-Type: application/json
         body:
           runner_id: "{runner_id}"
-          agent_type_id: "{agent_type_id}"
+          agent_slug: "{agent_slug}"
           initial_prompt: "E2E Full Collab Pod A"
       expected:
         status: 201
@@ -123,7 +123,7 @@ steps:
           Content-Type: application/json
         body:
           runner_id: "{runner_id}"
-          agent_type_id: "{agent_type_id}"
+          agent_slug: "{agent_slug}"
           initial_prompt: "E2E Full Collab Pod B"
       expected:
         status: 201

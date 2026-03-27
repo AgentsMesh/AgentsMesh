@@ -27,6 +27,11 @@ WORKDIR /proto
 COPY proto/go.mod proto/go.sum ./
 RUN go mod download
 
+# Copy podfile module (required by backend go.mod replace directive)
+WORKDIR /podfile
+COPY podfile/go.mod podfile/go.sum ./
+RUN go mod download
+
 # Copy backend module
 WORKDIR /app
 COPY backend/go.mod backend/go.sum ./

@@ -49,13 +49,12 @@ steps:
     verification:
       type: database
       query: |
-        SELECT id, name, slug FROM agent_types WHERE is_active = true LIMIT 1
+        SELECT slug, name FROM agents WHERE is_active = true LIMIT 1
       expected:
-        id: not_empty
+        slug: not_empty
       save:
-        agent_type_id: id
-        agent_type_name: name
-        agent_type_slug: slug
+        agent_slug: slug
+        agent_name: name
 
   - id: step-3
     action: 导航到 Agent 设置页面
@@ -73,7 +72,7 @@ steps:
     verification:
       type: ui
       steps:
-        - click: 'tab contains "{agent_type_name}" or button contains "{agent_type_name}"'
+        - click: 'tab contains "{agent_name}" or button contains "{agent_name}"'
           optional: true
         - click: 'button contains "添加" or button contains "Add" or button contains "新建"'
       check:
@@ -165,7 +164,7 @@ steps:
       type: api
       request:
         method: GET
-        url: /api/v1/users/agent-credentials/types/{agent_type_id}
+        url: /api/v1/users/agent-credentials/types/{agent_slug}
         headers:
           Authorization: Bearer {access_token}
       expected:
