@@ -1,226 +1,72 @@
-import { request, orgPath, publicRequest } from "./base";
+import { request, orgPath } from "./base";
+import type {
+  SubscriptionPlan,
+  PlanPrice,
+  PlanWithPrice,
+  Currency,
+  UsageOverview,
+  BillingOverview,
+  Subscription,
+  CheckoutRequest,
+  CheckoutResponse,
+  CheckoutStatus,
+  BillingCycle,
+  SeatUsage,
+  Invoice,
+  DeploymentInfo,
+} from "./billing-types";
 
-// Billing types
-export interface SubscriptionPlan {
-  id: number;
-  name: string;
-  display_name: string;
-  price_per_seat_monthly: number;
-  price_per_seat_yearly: number;
-  included_pod_minutes: number;
-  price_per_extra_minute: number;
-  max_users: number;
-  max_runners: number;
-  max_repositories: number;
-  max_concurrent_pods: number;
-  features: Record<string, unknown>;
-  is_active: boolean;
-  stripe_price_id_monthly?: string;
-  stripe_price_id_yearly?: string;
-}
+// Re-export types that consumers need
+export type {
+  SubscriptionPlan, PlanPrice, PlanWithPrice, Currency, UsageOverview,
+  BillingOverview, Subscription, CheckoutRequest, CheckoutResponse,
+  CheckoutStatus, BillingCycle, SeatUsage, Invoice, DeploymentInfo,
+} from "./billing-types";
 
-// Multi-currency price for a plan
-export interface PlanPrice {
-  id: number;
-  plan_id: number;
-  currency: string; // USD, CNY
-  price_monthly: number;
-  price_yearly: number;
-  stripe_price_id_monthly?: string;
-  stripe_price_id_yearly?: string;
-  plan?: SubscriptionPlan;
-}
+export type { OrderType, PaymentProvider, PublicPlanPricing, PublicPricingResponse } from "./billing-types";
 
-// Plan with price in specific currency
-export interface PlanWithPrice {
-  plan: SubscriptionPlan;
-  price: PlanPrice;
-}
+// Re-export publicBillingApi from dedicated file
+export { publicBillingApi } from "./billing-public";
 
-// Currency type
-export type Currency = "USD" | "CNY";
-
-export interface UsageOverview {
-  pod_minutes: number;
-  included_pod_minutes: number;
-  users: number;
-  max_users: number;
-  runners: number;
-  max_runners: number;
-  repositories: number;
-  max_repositories: number;
-}
-
-export interface BillingOverview {
-  plan: SubscriptionPlan;
-  status: string;
-  billing_cycle: string;
-  current_period_start: string;
-  current_period_end: string;
-  usage: UsageOverview;
-  cancel_at_period_end?: boolean;
-  seat_count?: number;
-  downgrade_to_plan?: string;
-}
-
-export interface Subscription {
-  id: number;
-  organization_id: number;
-  plan_id: number;
-  status: string;
-  billing_cycle: string;
-  current_period_start: string;
-  current_period_end: string;
-  plan?: SubscriptionPlan;
-  payment_provider?: string;
-  payment_method?: string;
-  auto_renew: boolean;
-  cancel_at_period_end: boolean;
-  seat_count: number;
-  stripe_customer_id?: string;
-  stripe_subscription_id?: string;
-  lemonsqueezy_customer_id?: string;
-  lemonsqueezy_subscription_id?: string;
-  frozen_at?: string;
-  downgrade_to_plan?: string;
-  next_billing_cycle?: string;
-}
-
-// Checkout types
-export type OrderType = "subscription" | "seat_purchase" | "plan_upgrade" | "renewal";
-export type BillingCycle = "monthly" | "yearly";
-export type PaymentProvider = "stripe" | "lemonsqueezy" | "alipay" | "wechat";
-
-export interface CheckoutRequest {
-  order_type: OrderType;
-  plan_name?: string;
-  billing_cycle?: BillingCycle;
-  seats?: number;
-  provider?: PaymentProvider;
-  success_url: string;
-  cancel_url: string;
-}
-
-export interface CheckoutResponse {
-  order_no: string;
-  session_id: string;
-  session_url: string;
-  qr_code_url?: string;
-  expires_at: string;
-  provider?: PaymentProvider;
-}
-
-export interface CheckoutStatus {
-  order_no: string;
-  status: string;
-  order_type: string;
-  amount: number;
-  currency: string;
-  created_at: string;
-  paid_at?: string;
-}
-
-// Seat types
-export interface SeatUsage {
-  total_seats: number;
-  used_seats: number;
-  available_seats: number;
-  max_seats: number;
-  can_add_seats: boolean;
-}
-
-// Invoice types
-export interface Invoice {
-  id: number;
-  organization_id: number;
-  invoice_no: string;
-  order_no?: string;
-  amount: number;
-  tax_amount: number;
-  total_amount: number;
-  currency: string;
-  status: string;
-  billing_period_start: string;
-  billing_period_end: string;
-  paid_at?: string;
-  created_at: string;
-}
-
-// Deployment info
-export interface DeploymentInfo {
-  deployment_type: "global" | "cn" | "onpremise";
-  available_providers: string[];
-}
-
-// Public pricing info (no auth required)
-export interface PublicPlanPricing {
-  name: string;
-  display_name: string;
-  price_monthly: number;
-  price_yearly: number;
-  max_users: number;
-  max_runners: number;
-  max_repositories: number;
-  max_concurrent_pods: number;
-}
-
-export interface PublicPricingResponse {
-  deployment_type: string;
-  currency: Currency;
-  plans: PublicPlanPricing[];
-}
-
-// Billing API
+// Billing API (authenticated, org-scoped)
 export const billingApi = {
-  // Get billing overview
   getOverview: () =>
     request<{ overview: BillingOverview }>(orgPath("/billing/overview")),
 
-  // Get subscription
   getSubscription: () =>
     request<{ subscription: Subscription }>(orgPath("/billing/subscription")),
 
-  // Create subscription (for free plans, use createCheckout for paid plans)
   createSubscription: (planName: string, billingCycle?: string) =>
     request<{ subscription: Subscription }>(orgPath("/billing/subscription"), {
       method: "POST",
       body: { plan_name: planName, billing_cycle: billingCycle || "monthly" },
     }),
 
-  // Update subscription (for free plans, use createCheckout for paid upgrades)
   updateSubscription: (planName: string) =>
     request<{ subscription: Subscription }>(orgPath("/billing/subscription"), {
       method: "PUT",
       body: { plan_name: planName },
     }),
 
-  // Cancel subscription
   cancelSubscription: () =>
-    request<{ message: string }>(orgPath("/billing/subscription"), {
-      method: "DELETE",
-    }),
+    request<{ message: string }>(orgPath("/billing/subscription"), { method: "DELETE" }),
 
-  // List available plans
   listPlans: () =>
     request<{ plans: SubscriptionPlan[] }>(orgPath("/billing/plans")),
 
-  // List plans with prices for specific currency
   listPlansWithPrices: (currency: Currency = "USD") =>
     request<{ plans: PlanWithPrice[]; currency: string }>(
       orgPath(`/billing/plans/prices?currency=${currency}`)
     ),
 
-  // Get prices for a specific plan
   getPlanPrices: (planName: string, currency: Currency = "USD") =>
     request<{ price: PlanPrice; currency: string }>(
       orgPath(`/billing/plans/${planName}/prices?currency=${currency}`)
     ),
 
-  // Get all currency prices for a plan
   getAllPlanPrices: (planName: string) =>
     request<{ prices: PlanPrice[] }>(orgPath(`/billing/plans/${planName}/all-prices`)),
 
-  // Get usage
   getUsage: (type?: string) => {
     const params = type ? `?type=${type}` : "";
     return request<{ usage: UsageOverview | number; type?: string }>(
@@ -228,136 +74,59 @@ export const billingApi = {
     );
   },
 
-  // Check quota
   checkQuota: (resource: string, amount?: number) => {
     const params = new URLSearchParams({ resource });
     if (amount) params.append("amount", String(amount));
     return request<{ available: boolean }>(`${orgPath("/billing/quota/check")}?${params.toString()}`);
   },
 
-  // ===========================================
-  // Payment Checkout APIs
-  // ===========================================
-
-  // Create checkout session
   createCheckout: (req: CheckoutRequest) =>
-    request<CheckoutResponse>(orgPath("/billing/checkout"), {
-      method: "POST",
-      body: req,
-    }),
+    request<CheckoutResponse>(orgPath("/billing/checkout"), { method: "POST", body: req }),
 
-  // Get checkout/order status
   getCheckoutStatus: (orderNo: string) =>
     request<CheckoutStatus>(orgPath(`/billing/checkout/${orderNo}`)),
 
-  // ===========================================
-  // Subscription Management APIs
-  // ===========================================
-
-  // Request subscription cancellation
   requestCancelSubscription: (immediate: boolean = false) =>
     request<{ message: string; current_period_end?: string }>(
-      orgPath("/billing/subscription/cancel"),
-      {
-        method: "POST",
-        body: { immediate },
-      }
+      orgPath("/billing/subscription/cancel"), { method: "POST", body: { immediate } }
     ),
 
-  // Reactivate subscription (undo pending cancellation)
   reactivateSubscription: () =>
     request<{ message: string; current_period_end?: string }>(
-      orgPath("/billing/subscription/reactivate"),
-      {
-        method: "POST",
-      }
+      orgPath("/billing/subscription/reactivate"), { method: "POST" }
     ),
 
-  // Upgrade subscription plan (direct provider update, no checkout redirect)
   upgradeSubscription: (planName: string) =>
     request<{ message: string; subscription: Subscription }>(
-      orgPath("/billing/subscription/upgrade"),
-      {
-        method: "POST",
-        body: { plan_name: planName },
-      }
+      orgPath("/billing/subscription/upgrade"), { method: "POST", body: { plan_name: planName } }
     ),
 
-  // Change billing cycle (takes effect on next renewal)
   changeBillingCycle: (billingCycle: BillingCycle) =>
-    request<{
-      message: string;
-      current_cycle: string;
-      next_cycle: string;
-      effective_date: string;
-    }>(orgPath("/billing/subscription/change-cycle"), {
-      method: "POST",
-      body: { billing_cycle: billingCycle },
-    }),
+    request<{ message: string; current_cycle: string; next_cycle: string; effective_date: string }>(
+      orgPath("/billing/subscription/change-cycle"), { method: "POST", body: { billing_cycle: billingCycle } }
+    ),
 
-  // Update auto-renew setting
   updateAutoRenew: (autoRenew: boolean) =>
     request<{ subscription: Subscription; auto_renew: boolean }>(
-      orgPath("/billing/subscription/auto-renew"),
-      {
-        method: "PUT",
-        body: { auto_renew: autoRenew },
-      }
+      orgPath("/billing/subscription/auto-renew"), { method: "PUT", body: { auto_renew: autoRenew } }
     ),
 
-  // ===========================================
-  // Seat Management APIs
-  // ===========================================
-
-  // Get seat usage
   getSeatUsage: () =>
     request<SeatUsage>(orgPath("/billing/seats")),
 
-  // Purchase additional seats (updates subscription directly, no checkout redirect)
   purchaseSeats: (seats: number) =>
     request<{ message: string; seats?: SeatUsage }>(orgPath("/billing/seats/purchase"), {
-      method: "POST",
-      body: { seats },
+      method: "POST", body: { seats },
     }),
 
-  // ===========================================
-  // Invoice APIs
-  // ===========================================
-
-  // List invoices
   listInvoices: (limit: number = 20, offset: number = 0) =>
-    request<{ invoices: Invoice[] }>(
-      orgPath(`/billing/invoices?limit=${limit}&offset=${offset}`)
-    ),
+    request<{ invoices: Invoice[] }>(orgPath(`/billing/invoices?limit=${limit}&offset=${offset}`)),
 
-  // ===========================================
-  // Customer Portal APIs
-  // ===========================================
-
-  // Get Stripe customer portal URL
   getCustomerPortal: (returnUrl: string) =>
     request<{ url: string }>(orgPath("/billing/customer-portal"), {
-      method: "POST",
-      body: { return_url: returnUrl },
+      method: "POST", body: { return_url: returnUrl },
     }),
 
-  // ===========================================
-  // Deployment Info APIs
-  // ===========================================
-
-  // Get deployment type and available providers
   getDeploymentInfo: () =>
     request<DeploymentInfo>(orgPath("/billing/deployment")),
-};
-
-// Public billing API (no auth required)
-// Used for landing page pricing display
-export const publicBillingApi = {
-  // Get public pricing info - Single Source of Truth for pricing display
-  getPricing: () =>
-    publicRequest<PublicPricingResponse>("/api/v1/config/pricing"),
-
-  // Get deployment info
-  getDeploymentInfo: () =>
-    publicRequest<DeploymentInfo>("/api/v1/config/deployment"),
 };
