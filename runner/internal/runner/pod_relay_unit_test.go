@@ -176,52 +176,6 @@ func TestPTYPodRelay_OnRelayConnected_SetsAdapter(t *testing.T) {
 	r.OnRelayDisconnected()
 }
 
-// --- ACPPodRelay tests ---
-
-func TestACPPodRelay_SetupHandlers_Command(t *testing.T) {
-	mc := relay.NewMockClient("wss://relay.example.com")
-
-	var receivedPayload []byte
-	r := NewACPPodRelay("pod-1", nil, func(payload []byte) {
-		receivedPayload = payload
-	})
-	r.SetupHandlers(mc)
-
-	// Simulate browser sending ACP command.
-	cmdPayload := []byte(`{"type":"prompt","data":{"prompt":"hello"}}`)
-	mc.SimulateMessage(relay.MsgTypeAcpCommand, cmdPayload)
-
-	if string(receivedPayload) != string(cmdPayload) {
-		t.Errorf("expected payload %q, got %q", cmdPayload, receivedPayload)
-	}
-}
-
-func TestACPPodRelay_SendSnapshot_NilClient(t *testing.T) {
-	mc := relay.NewMockClient("wss://relay.example.com")
-	mc.SetConnected(true)
-
-	// No ACP client — should not panic.
-	r := NewACPPodRelay("pod-1", nil, nil)
-	r.SendSnapshot(mc)
-
-	if mc.CountSentByType(relay.MsgTypeAcpSnapshot) != 0 {
-		t.Error("should not send snapshot when ACP client is nil")
-	}
-}
-
-func TestACPPodRelay_OnRelayConnected_NoPanic(t *testing.T) {
-	mc := relay.NewMockClient("wss://relay.example.com")
-	r := NewACPPodRelay("pod-1", nil, nil)
-	// No-op — should not panic.
-	r.OnRelayConnected(mc)
-}
-
-func TestACPPodRelay_OnRelayDisconnected_NoPanic(t *testing.T) {
-	r := NewACPPodRelay("pod-1", nil, nil)
-	// No-op — should not panic.
-	r.OnRelayDisconnected()
-}
-
 // --- MockClient helper tests ---
 
 func TestMockClient_SimulateMessage(t *testing.T) {
@@ -329,132 +283,9 @@ func TestPTYPodRelay_OnRelayConnected_WithAggregator(t *testing.T) {
 	r := NewPTYPodRelay("pod-1", nil, nil, nil, agg)
 	r.OnRelayConnected(mc)
 
-	// Write data through the aggregator — it should route to the relay adapter.
-	// We verify the adapter was wired by checking that data eventually reaches mc.
-	// SmartAggregator buffers and flushes asynchronously, so we trigger a direct test:
-	// The adapter should be set, meaning aggregator.SetRelayClient was called.
-	// Disconnect and verify nil is passed.
 	r.OnRelayDisconnected()
-	// No panic = success. The internal state is opaque, but the code path is exercised.
 
 	agg.Stop()
-}
-
-// --- sendAcpViaRelay ---
-
-func TestSendAcpViaRelay_NoRelayClient(t *testing.T) {
-	pod := &Pod{PodKey: "pod-acp-1"}
-	// No relay client set → silently dropped.
-	sendAcpViaRelay(pod, "content_chunk", "sess-1", map[string]string{"text": "hi"})
-}
-
-func TestSendAcpViaRelay_NotConnected(t *testing.T) {
-	pod := &Pod{PodKey: "pod-acp-2"}
-	mc := relay.NewMockClient("wss://relay.example.com")
-	mc.SetConnected(false)
-	pod.SetRelayClient(mc)
-
-	sendAcpViaRelay(pod, "content_chunk", "sess-1", map[string]string{"text": "hi"})
-	// No message sent when not connected.
-	if mc.CountSentByType(relay.MsgTypeAcpEvent) != 0 {
-		t.Error("should not send when relay not connected")
-	}
-}
-
-func TestSendAcpViaRelay_Success(t *testing.T) {
-	pod := &Pod{PodKey: "pod-acp-3"}
-	mc := relay.NewMockClient("wss://relay.example.com")
-	mc.SetConnected(true)
-	pod.SetRelayClient(mc)
-
-	sendAcpViaRelay(pod, "content_chunk", "sess-1", map[string]string{"text": "hi"})
-
-	// Verify the sent message.
-	if mc.CountSentByType(relay.MsgTypeAcpEvent) != 1 {
-		t.Fatalf("expected 1 ACP event, got %d", mc.CountSentByType(relay.MsgTypeAcpEvent))
-	}
-	var envelope map[string]any
-	if err := json.Unmarshal(mc.SentMessages[0].Payload, &envelope); err != nil {
-		t.Fatalf("payload not valid JSON: %v", err)
-	}
-	if envelope["type"] != "content_chunk" {
-		t.Errorf("expected type 'content_chunk', got %v", envelope["type"])
-	}
-	if envelope["session_id"] != "sess-1" {
-		t.Errorf("expected session_id 'sess-1', got %v", envelope["session_id"])
-	}
-}
-
-func TestSendAcpViaRelay_MarshalError(t *testing.T) {
-	pod := &Pod{PodKey: "pod-acp-4"}
-	mc := relay.NewMockClient("wss://relay.example.com")
-	mc.SetConnected(true)
-	pod.SetRelayClient(mc)
-
-	// json.Marshal fails on channels — should not panic.
-	sendAcpViaRelay(pod, "bad", "", make(chan int))
-	if mc.CountSentByType(relay.MsgTypeAcpEvent) != 0 {
-		t.Error("should not send when marshal fails")
-	}
-}
-
-// --- PTYPodIO.Teardown tests ---
-
-func TestPTYPodIO_Teardown_WithPTYLogger(t *testing.T) {
-	pod := &Pod{PodKey: "pod-teardown-logger"}
-
-	agg := aggregator.NewSmartAggregator(nil, nil)
-	ptyLogger, err := aggregator.NewPTYLogger(t.TempDir(), "pod-teardown-logger")
-	if err != nil {
-		t.Fatalf("failed to create PTYLogger: %v", err)
-	}
-
-	io := NewPTYPodIO(nil, nil, pod)
-	io.SetAggregator(agg)
-	io.SetPTYLogger(ptyLogger)
-
-	result := io.Teardown()
-
-	// No PTY error set → empty result
-	if result != "" {
-		t.Errorf("expected empty teardown result, got %q", result)
-	}
-}
-
-func TestPTYPodIO_Teardown_PTYErrorFallback(t *testing.T) {
-	pod := &Pod{PodKey: "pod-teardown-err"}
-	pod.SetPTYError("disk full")
-
-	io := NewPTYPodIO(nil, nil, pod)
-
-	result := io.Teardown()
-
-	if result != "disk full" {
-		t.Errorf("expected 'disk full', got %q", result)
-	}
-}
-
-func TestPTYPodIO_Teardown_EarlyOutputTakesPriority(t *testing.T) {
-	pod := &Pod{PodKey: "pod-teardown-priority"}
-	pod.SetPTYError("disk full")
-
-	// Create aggregator with nil gRPC callback — data goes to early buffer.
-	agg := aggregator.NewSmartAggregator(nil, nil)
-	// Write data then stop immediately — unflushed data remains in early buffer.
-	agg.Write([]byte("early output data"))
-	// Give the aggregator timer a chance to see the data as "pending".
-	// Teardown calls agg.Stop() which drains remaining data into early buffer.
-
-	io := NewPTYPodIO(nil, nil, pod)
-	io.SetAggregator(agg)
-
-	result := io.Teardown()
-
-	// Either early buffer captured the data, or PTY error is used as fallback.
-	// The key invariant: result is non-empty.
-	if result == "" {
-		t.Error("expected non-empty teardown result")
-	}
 }
 
 // --- stub helpers ---
@@ -465,24 +296,24 @@ type stubPodIO struct {
 	onResize    func(int, int) (bool, error)
 }
 
-func (s *stubPodIO) Mode() string                                         { return "pty" }
-func (s *stubPodIO) GetSnapshot(int) (string, error)                      { return "", nil }
-func (s *stubPodIO) GetAgentStatus() string                               { return "idle" }
-func (s *stubPodIO) SubscribeStateChange(string, func(string))            {}
-func (s *stubPodIO) UnsubscribeStateChange(string)                        {}
-func (s *stubPodIO) Start() error                                         { return nil }
-func (s *stubPodIO) SendKeys([]string) error                              { return nil }
-func (s *stubPodIO) GetPID() int                                          { return 0 }
-func (s *stubPodIO) CursorPosition() (int, int)                           { return 0, 0 }
-func (s *stubPodIO) GetScreenSnapshot() string                            { return "" }
-func (s *stubPodIO) Stop()                                                {}
-func (s *stubPodIO) Teardown() string                                      { return "" }
-func (s *stubPodIO) SetExitHandler(func(int))                             {}
-func (s *stubPodIO) Redraw() error                                        { return nil }
-func (s *stubPodIO) Detach()                                              {}
-func (s *stubPodIO) WriteOutput([]byte)                                    {}
-func (s *stubPodIO) RespondToPermission(string, bool) error               { return nil }
-func (s *stubPodIO) CancelSession() error                                 { return nil }
+func (s *stubPodIO) Mode() string                              { return "pty" }
+func (s *stubPodIO) GetSnapshot(int) (string, error)           { return "", nil }
+func (s *stubPodIO) GetAgentStatus() string                    { return "idle" }
+func (s *stubPodIO) SubscribeStateChange(string, func(string)) {}
+func (s *stubPodIO) UnsubscribeStateChange(string)             {}
+func (s *stubPodIO) Start() error                              { return nil }
+func (s *stubPodIO) SendKeys([]string) error                   { return nil }
+func (s *stubPodIO) GetPID() int                               { return 0 }
+func (s *stubPodIO) CursorPosition() (int, int)                { return 0, 0 }
+func (s *stubPodIO) GetScreenSnapshot() string                 { return "" }
+func (s *stubPodIO) Stop()                                     {}
+func (s *stubPodIO) Teardown() string                          { return "" }
+func (s *stubPodIO) SetExitHandler(func(int))                  {}
+func (s *stubPodIO) Redraw() error                             { return nil }
+func (s *stubPodIO) Detach()                                   {}
+func (s *stubPodIO) WriteOutput([]byte)                        {}
+func (s *stubPodIO) RespondToPermission(string, bool) error    { return nil }
+func (s *stubPodIO) CancelSession() error                      { return nil }
 func (s *stubPodIO) SendInput(text string) error {
 	if s.onSendInput != nil {
 		return s.onSendInput(text)

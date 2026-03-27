@@ -1,7 +1,6 @@
 package extension
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"os"
