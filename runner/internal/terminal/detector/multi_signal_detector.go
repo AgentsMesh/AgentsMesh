@@ -1,4 +1,4 @@
-// Package terminal provides terminal state detection for AI agents.
+// Package detector provides terminal state detection for AI agents.
 package detector
 
 import (
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
 )
 
 // Note: AgentState, StateNotRunning, StateExecuting, StateWaiting, and StateChangeCallback
@@ -28,15 +27,15 @@ var _ StateDetector = (*MultiSignalDetector)(nil)
 // State Machine:
 //
 //	                 output received
-//	    ┌──────────────────────────────────────┐
-//	    │                                      │
-//	    ▼                                      │
-//	┌────────┐    confidence > threshold  ┌─────────┐
-//	│Executing│ ───────────────────────►  │ Waiting │
-//	└────────┘                            └─────────┘
-//	    ▲                                      │
-//	    │        output received               │
-//	    └──────────────────────────────────────┘
+//	    +--------------------------------------+
+//	    |                                      |
+//	    v                                      |
+//	+--------+    confidence > threshold  +---------+
+//	|Executing| ----------------------->  | Waiting |
+//	+--------+                            +---------+
+//	    ^                                      |
+//	    |        output received               |
+//	    +--------------------------------------+
 type MultiSignalDetector struct {
 	mu sync.RWMutex
 
@@ -57,10 +56,10 @@ type MultiSignalDetector struct {
 	config MultiSignalConfig
 
 	// Current state
-	currentState     AgentState
-	stateChangeTime  time.Time
-	lastCheckTime    time.Time
-	lastConfidence   float64 // Last calculated waiting confidence
+	currentState    AgentState
+	stateChangeTime time.Time
+	lastCheckTime   time.Time
+	lastConfidence  float64 // Last calculated waiting confidence
 
 	// Legacy callback (for backward compatibility)
 	// Deprecated: Use Subscribe for multiple subscribers support.
@@ -74,61 +73,10 @@ type MultiSignalDetector struct {
 	screenLines []string
 }
 
-// MultiSignalConfig contains configuration for MultiSignalDetector.
-type MultiSignalConfig struct {
-	// ActivityWeight is the weight for output activity signal (default: 0.4)
-	ActivityWeight float64
-	// StabilityWeight is the weight for screen stability signal (default: 0.3)
-	StabilityWeight float64
-	// PromptWeight is the weight for prompt detection signal (default: 0.3)
-	PromptWeight float64
-
-	// MinStableTime is the minimum time screen must be stable (default: 500ms)
-	MinStableTime time.Duration
-	// WaitingThreshold is the confidence threshold to transition to waiting (default: 0.6)
-	WaitingThreshold float64
-
-	// IdleThreshold for activity detector (default: 500ms)
-	IdleThreshold time.Duration
-	// ConfirmThreshold for activity detector (default: 500ms)
-	ConfirmThreshold time.Duration
-
-	// MaxPromptLength for prompt detector (default: 100)
-	MaxPromptLength int
-
-	// OnStateChange callback
-	OnStateChange StateChangeCallback
-}
-
 // NewMultiSignalDetector creates a new multi-signal detector.
 func NewMultiSignalDetector(cfg MultiSignalConfig) *MultiSignalDetector {
-	// Apply defaults
-	if cfg.ActivityWeight == 0 {
-		cfg.ActivityWeight = 0.4
-	}
-	if cfg.StabilityWeight == 0 {
-		cfg.StabilityWeight = 0.3
-	}
-	if cfg.PromptWeight == 0 {
-		cfg.PromptWeight = 0.3
-	}
-	if cfg.MinStableTime == 0 {
-		cfg.MinStableTime = 500 * time.Millisecond
-	}
-	if cfg.WaitingThreshold == 0 {
-		cfg.WaitingThreshold = 0.6
-	}
-	if cfg.IdleThreshold == 0 {
-		cfg.IdleThreshold = 500 * time.Millisecond
-	}
-	if cfg.ConfirmThreshold == 0 {
-		cfg.ConfirmThreshold = 500 * time.Millisecond
-	}
-	if cfg.MaxPromptLength == 0 {
-		cfg.MaxPromptLength = 100
-	}
+	cfg.applyDefaults()
 
-	// Create sub-detectors
 	activityDetector := NewOutputActivityDetector(OutputActivityConfig{
 		IdleThreshold:    cfg.IdleThreshold,
 		ConfirmThreshold: cfg.ConfirmThreshold,
@@ -204,9 +152,6 @@ func (d *MultiSignalDetector) SetProcessRunning(running bool) {
 
 	if !running {
 		d.setState(StateNotRunning)
-	} else if d.currentState == StateNotRunning {
-		// Process started, wait for output to transition to Executing
-		// Don't transition immediately - wait for actual output
 	}
 }
 
@@ -241,60 +186,6 @@ func (d *MultiSignalDetector) GetScreenStableTime() time.Duration {
 // GetIdleDuration returns how long since the last output.
 func (d *MultiSignalDetector) GetIdleDuration() time.Duration {
 	return d.activityDetector.IdleDuration()
-}
-
-// setState updates the current state and triggers callbacks.
-// Must be called with d.mu held.
-func (d *MultiSignalDetector) setState(newState AgentState) {
-	d.setStateWithConfidence(newState, d.lastConfidence)
-}
-
-// setStateWithConfidence updates the current state with a specific confidence value.
-// Must be called with d.mu held.
-func (d *MultiSignalDetector) setStateWithConfidence(newState AgentState, confidence float64) {
-	if d.currentState == newState {
-		return
-	}
-
-	prevState := d.currentState
-	d.currentState = newState
-	now := time.Now()
-	d.stateChangeTime = now
-
-	// Create event for subscribers
-	event := StateChangeEvent{
-		NewState:   newState,
-		PrevState:  prevState,
-		Timestamp:  now,
-		Confidence: confidence,
-	}
-
-	// Legacy callback (for backward compatibility)
-	if d.onStateChange != nil {
-		cb := d.onStateChange
-		safego.Go("detector-callback", func() { cb(newState, prevState) })
-	}
-
-	// Notify subscribers (use separate lock to avoid deadlock)
-	d.notifySubscribers(event)
-}
-
-// notifySubscribers sends the event to all registered subscribers.
-// Each subscriber callback is invoked in a separate goroutine.
-func (d *MultiSignalDetector) notifySubscribers(event StateChangeEvent) {
-	d.subMu.RLock()
-	// Copy subscribers to avoid holding lock during callback execution
-	subs := make(map[string]func(StateChangeEvent), len(d.subscribers))
-	for id, cb := range d.subscribers {
-		subs[id] = cb
-	}
-	d.subMu.RUnlock()
-
-	// Invoke callbacks asynchronously
-	for _, cb := range subs {
-		callback := cb
-		safego.Go("detector-subscriber", func() { callback(event) })
-	}
 }
 
 // OnOutput should be called whenever terminal output is received.
