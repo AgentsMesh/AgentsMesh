@@ -330,7 +330,7 @@ func TestRunnerSummaryList_FormatText(t *testing.T) {
 				Description:       "Main runner",
 				AvailableAgents: []AgentSummary{
 					{
-						ID:          10,
+
 						Slug:        "claude-code",
 						Name:        "Claude Code",
 						Description: "Anthropic's Claude Code agent",
@@ -342,7 +342,7 @@ func TestRunnerSummaryList_FormatText(t *testing.T) {
 			},
 		}
 		result := runners.FormatText()
-		for _, s := range []string{"Runner #1", "Node: node-1", "Status: online", "Pods: 2/5", "Main runner", "[10] Claude Code (claude-code)", "model (string)", "opus, sonnet", "*required*"} {
+		for _, s := range []string{"Runner #1", "Node: node-1", "Status: online", "Pods: 2/5", "Main runner", "Claude Code (claude-code)", "model (string)", "opus, sonnet", "*required*"} {
 			if !strings.Contains(result, s) {
 				t.Errorf("expected %q in:\n%s", s, result)
 			}

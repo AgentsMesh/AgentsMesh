@@ -76,7 +76,7 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 
 	// Branch by interaction mode
 	if b.cmd.GetInteractionMode() == "acp" {
-		return b.buildACPPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars)
+		return b.buildACPPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)
 	}
 	return b.buildPTYPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)
 }

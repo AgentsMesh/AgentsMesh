@@ -189,7 +189,7 @@ func (l RunnerSummaryList) FormatText() string {
 		if len(r.AvailableAgents) > 0 {
 			b.WriteString("  Agents:\n")
 			for _, a := range r.AvailableAgents {
-				fmt.Fprintf(&b, "    - [%d] %s (%s)", a.ID, a.Name, a.Slug)
+				fmt.Fprintf(&b, "    - %s (%s)", a.Name, a.Slug)
 				if a.Description != "" {
 					fmt.Fprintf(&b, ": %s", truncate(a.Description, 100))
 				}

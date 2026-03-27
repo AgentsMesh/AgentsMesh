@@ -296,6 +296,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 			organization_id INTEGER NOT NULL,
 			repository_id INTEGER,
 			runner_id INTEGER,
+			agent_slug TEXT,
 			custom_agent_type_id INTEGER
 		)
 	`).Error

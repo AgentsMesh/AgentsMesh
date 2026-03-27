@@ -36,8 +36,8 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 					"description": "ID of the runner to create the pod on (required). Call list_runners first to get available runner IDs.",
 				},
 				"agent_slug": map[string]interface{}{
-					"type":        "integer",
-					"description": "ID of the agent to use for the pod (required). Call list_runners first to see available agents and their IDs.",
+					"type":        "string",
+					"description": "Slug of the agent to use for the pod (required, e.g. 'claude-code'). Call list_runners first to see available agents.",
 				},
 				"ticket_slug": map[string]interface{}{
 					"type":        "string",

@@ -13,7 +13,7 @@ import (
 // buildACPPod creates a pod configured for ACP (Agent Communication Protocol) interaction.
 // The ACPClient is NOT created here — it will be created by wireAndStartACPPod()
 // in the MessageHandler, which wires Relay-forwarding event callbacks.
-func (b *PodBuilder) buildACPPod(_ context.Context, sandboxRoot, workingDir, branchName string, resolvedArgs []string, envVars map[string]string) (*Pod, error) {
+func (b *PodBuilder) buildACPPod(_ context.Context, sandboxRoot, workingDir, branchName string, resolvedArgs []string, envVars map[string]string, launchCommand string) (*Pod, error) {
 	b.sendProgress("starting_acp", 80, "Preparing ACP agent...")
 
 	// Build environment: start with current process env, then overlay envVars.
@@ -35,11 +35,11 @@ func (b *PodBuilder) buildACPPod(_ context.Context, sandboxRoot, workingDir, bra
 	pod := &Pod{
 		ID:              b.cmd.PodKey,
 		PodKey:          b.cmd.PodKey,
-		Agent:           b.cmd.LaunchCommand,
+		Agent:           launchCommand,
 		InteractionMode: InteractionModeACP,
 		Branch:          branchName,
 		SandboxPath:     sandboxRoot,
-		LaunchCommand:   b.cmd.LaunchCommand,
+		LaunchCommand:   launchCommand,
 		LaunchArgs:      resolvedArgs,
 		WorkDir:         workingDir,
 		LaunchEnv:       envSlice,

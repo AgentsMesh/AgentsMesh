@@ -76,6 +76,7 @@ func (b *ConfigBuilder) buildFromPodFile(
 		McpInstalledJson: string(installedJSON),
 		SandboxConfig:    sandboxConfig,
 		InitialPrompt:    req.InitialPrompt,
+		InteractionMode:  req.InteractionMode,
 		Cols:             req.Cols,
 		Rows:             req.Rows,
 	}, nil

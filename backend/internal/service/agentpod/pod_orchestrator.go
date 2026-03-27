@@ -327,9 +327,6 @@ func (o *PodOrchestrator) handleResumeMode(ctx context.Context, req *Orchestrate
 	if req.AgentSlug == "" {
 		req.AgentSlug = sourcePod.AgentSlug
 	}
-	if false {
-		
-	}
 	if req.RepositoryID == nil {
 		req.RepositoryID = sourcePod.RepositoryID
 	}
