@@ -1,7 +1,6 @@
 package extension
 
 import (
-	"encoding/json"
 	"testing"
 )
 

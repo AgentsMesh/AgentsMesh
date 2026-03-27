@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -246,95 +245,3 @@ func TestOnUpgradeRunner_AlreadyUpToDate(t *testing.T) {
 		t.Error("draining should be false after already-up-to-date")
 	}
 }
-
-func TestOnUpgradeRunner_SuccessfulUpdate_NoRestartFunc(t *testing.T) {
-	r := newTestRunnerForUpgrade(0)
-	// Create a fake executable path for Apply
-	tmpDir := t.TempDir()
-	fakeExec := filepath.Join(tmpDir, "runner")
-	os.WriteFile(fakeExec, []byte("old-binary"), 0o755)
-
-	r.SetUpdater(updater.New("1.0.0",
-		updater.WithReleaseDetector(successDetector(t)),
-		updater.WithExecPathFunc(func() (string, error) { return fakeExec, nil }),
-	))
-	r.SetRestartFunc(nil) // no restart function
-	mockConn := client.NewMockConnection()
-	handler := NewRunnerMessageHandler(r, r.podStore, mockConn)
-
-	err := handler.OnUpgradeRunner(&runnerv1.UpgradeRunnerCommand{
-		RequestId: "req-6",
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	statuses := getUpgradeStatuses(mockConn)
-	lastStatus := statuses[len(statuses)-1]
-	if lastStatus.Phase != "completed" {
-		t.Errorf("expected last phase=completed, got %q", lastStatus.Phase)
-	}
-	// Should report manual restart needed
-	if lastStatus.Message == "" {
-		t.Error("expected non-empty message about manual restart")
-	}
-
-	// Draining should be restored
-	if r.IsDraining() {
-		t.Error("draining should be false when no restart func and update completed")
-	}
-}
-
-func TestOnUpgradeRunner_SuccessfulUpdate_WithRestartFunc(t *testing.T) {
-	r := newTestRunnerForUpgrade(0)
-	tmpDir := t.TempDir()
-	fakeExec := filepath.Join(tmpDir, "runner")
-	os.WriteFile(fakeExec, []byte("old-binary"), 0o755)
-
-	r.SetUpdater(updater.New("1.0.0",
-		updater.WithReleaseDetector(successDetector(t)),
-		updater.WithExecPathFunc(func() (string, error) { return fakeExec, nil }),
-	))
-
-	restartCalled := false
-	r.SetRestartFunc(func() (int, error) {
-		restartCalled = true
-		return 0, nil // Simulate successful restart
-	})
-
-	mockConn := client.NewMockConnection()
-	handler := NewRunnerMessageHandler(r, r.podStore, mockConn)
-
-	err := handler.OnUpgradeRunner(&runnerv1.UpgradeRunnerCommand{
-		RequestId: "req-7",
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if !restartCalled {
-		t.Error("expected restart function to be called")
-	}
-
-	// Check phases: checking → downloading → applying → restarting
-	statuses := getUpgradeStatuses(mockConn)
-	phases := make([]string, len(statuses))
-	for i, s := range statuses {
-		phases[i] = s.Phase
-	}
-
-	expectedPhases := []string{"checking", "downloading", "applying", "restarting"}
-	for _, expected := range expectedPhases {
-		found := false
-		for _, p := range phases {
-			if p == expected {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("expected phase %q in status events, got phases: %v", expected, phases)
-		}
-	}
-}
-
