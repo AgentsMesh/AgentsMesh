@@ -13,7 +13,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 )
 
-// Standard service-level errors for typed error handling in API layer
 var (
 	ErrNotFound         = errors.New("resource not found")
 	ErrForbidden        = errors.New("access denied")
@@ -22,7 +21,7 @@ var (
 	ErrAlreadyInstalled = errors.New("already installed")
 )
 
-// validateScope checks that scope is a valid value ("org" or "user")
+// validateScope checks that scope is "org" or "user".
 func validateScope(scope string) error {
 	if scope != extension.ScopeOrg && scope != extension.ScopeUser {
 		return fmt.Errorf("%w: %s, must be 'org' or 'user'", ErrInvalidScope, scope)
@@ -30,11 +29,9 @@ func validateScope(scope string) error {
 	return nil
 }
 
-// presignedURLExpiry is the duration for presigned download URLs
 const presignedURLExpiry = 15 * time.Minute
 
-// Service provides extension management capabilities including
-// marketplace queries, skill/MCP installation management, and scope merging.
+// Service provides extension management capabilities.
 type Service struct {
 	repo     extension.Repository
 	storage  storage.Storage
@@ -43,7 +40,6 @@ type Service struct {
 	importer *SkillImporter
 }
 
-// NewService creates a new extension service
 func NewService(repo extension.Repository, storage storage.Storage, cryptoEncryptor *crypto.Encryptor) *Service {
 	return &Service{
 		repo:    repo,
@@ -66,12 +62,11 @@ func (s *Service) SetSkillImporter(imp *SkillImporter) {
 
 // --- Skill Registries ---
 
-// ListSkillRegistries lists skill registries for an organization (includes platform-level if orgID provided)
 func (s *Service) ListSkillRegistries(ctx context.Context, orgID int64) ([]*extension.SkillRegistry, error) {
 	return s.repo.ListSkillRegistries(ctx, &orgID)
 }
 
-// CreateSkillRegistryInput holds the input for creating a skill registry
+// CreateSkillRegistryInput holds the input for creating a skill registry.
 type CreateSkillRegistryInput struct {
 	RepositoryURL    string   `json:"repository_url"`
 	Branch           string   `json:"branch"`
@@ -81,7 +76,6 @@ type CreateSkillRegistryInput struct {
 	AuthCredential   string   `json:"auth_credential"`
 }
 
-// CreateSkillRegistry creates a new skill registry for an organization
 func (s *Service) CreateSkillRegistry(ctx context.Context, orgID int64, input CreateSkillRegistryInput) (*extension.SkillRegistry, error) {
 	if input.Branch == "" {
 		input.Branch = "main"
@@ -137,7 +131,6 @@ func (s *Service) CreateSkillRegistry(ctx context.Context, orgID int64, input Cr
 	return registry, nil
 }
 
-// SyncSkillRegistry triggers a sync for a skill registry
 func (s *Service) SyncSkillRegistry(ctx context.Context, orgID, sourceID int64) (*extension.SkillRegistry, error) {
 	registry, err := s.repo.GetSkillRegistry(ctx, sourceID)
 	if err != nil {
@@ -178,7 +171,6 @@ func (s *Service) SyncSkillRegistry(ctx context.Context, orgID, sourceID int64) 
 	return registry, nil
 }
 
-// DeleteSkillRegistry deletes a skill registry
 func (s *Service) DeleteSkillRegistry(ctx context.Context, orgID, sourceID int64) error {
 	registry, err := s.repo.GetSkillRegistry(ctx, sourceID)
 	if err != nil {
@@ -200,7 +192,7 @@ func (s *Service) DeleteSkillRegistry(ctx context.Context, orgID, sourceID int64
 
 // --- Skill Registry Overrides ---
 
-// TogglePlatformRegistry enables or disables a platform-level skill registry for an organization
+// TogglePlatformRegistry enables or disables a platform-level skill registry for an organization.
 func (s *Service) TogglePlatformRegistry(ctx context.Context, orgID int64, sourceID int64, disabled bool) error {
 	registry, err := s.repo.GetSkillRegistry(ctx, sourceID)
 	if err != nil {
@@ -212,28 +204,24 @@ func (s *Service) TogglePlatformRegistry(ctx context.Context, orgID int64, sourc
 	return s.repo.SetSkillRegistryOverride(ctx, orgID, sourceID, disabled)
 }
 
-// ListSkillRegistryOverrides returns all skill registry overrides for an organization
 func (s *Service) ListSkillRegistryOverrides(ctx context.Context, orgID int64) ([]*extension.SkillRegistryOverride, error) {
 	return s.repo.ListSkillRegistryOverrides(ctx, orgID)
 }
 
 // --- Marketplace Queries ---
 
-// ListMarketSkills returns skills available in the marketplace
-// Merges platform-level (org_id=NULL) + org-specific skill market items
+// ListMarketSkills returns marketplace skills, merging platform-level + org-specific items.
 func (s *Service) ListMarketSkills(ctx context.Context, orgID int64, query, category string) ([]*extension.SkillMarketItem, error) {
 	return s.repo.ListSkillMarketItems(ctx, &orgID, query, category)
 }
 
-// ListMarketMcpServers returns MCP server templates from the marketplace with pagination
 func (s *Service) ListMarketMcpServers(ctx context.Context, query, category string, limit, offset int) ([]*extension.McpMarketItem, int64, error) {
 	return s.repo.ListMcpMarketItems(ctx, query, category, limit, offset)
 }
 
 // --- Repo Skills Installation ---
 
-// ListRepoSkills lists installed skills for a repository.
-// userID is used to filter user-scope items to only the current user's installations.
+// ListRepoSkills lists installed skills for a repository, filtering user-scope items to current user.
 func (s *Service) ListRepoSkills(ctx context.Context, orgID, repoID, userID int64, scope string) ([]*extension.InstalledSkill, error) {
 	if scope == "all" {
 		scope = ""
@@ -241,7 +229,6 @@ func (s *Service) ListRepoSkills(ctx context.Context, orgID, repoID, userID int6
 	return s.repo.ListInstalledSkills(ctx, orgID, repoID, userID, scope)
 }
 
-// InstallSkillFromMarket installs a skill from the marketplace
 func (s *Service) InstallSkillFromMarket(ctx context.Context, orgID, repoID, userID, marketItemID int64, scope string) (*extension.InstalledSkill, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -283,8 +270,6 @@ func (s *Service) InstallSkillFromMarket(ctx context.Context, orgID, repoID, use
 }
 
 // InstallSkillFromGitHub imports and installs a skill from a GitHub URL.
-// It delegates to SkillPackager for cloning, packaging, and uploading,
-// then persists the installed skill record.
 func (s *Service) InstallSkillFromGitHub(ctx context.Context, orgID, repoID, userID int64, url, branch, path, scope string) (*extension.InstalledSkill, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -298,8 +283,6 @@ func (s *Service) InstallSkillFromGitHub(ctx context.Context, orgID, repoID, use
 }
 
 // InstallSkillFromUpload processes an uploaded archive and installs it as a skill.
-// It delegates to SkillPackager for extraction, packaging, and uploading,
-// then persists the installed skill record.
 func (s *Service) InstallSkillFromUpload(ctx context.Context, orgID, repoID, userID int64, reader io.Reader, filename, scope string) (*extension.InstalledSkill, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -312,7 +295,6 @@ func (s *Service) InstallSkillFromUpload(ctx context.Context, orgID, repoID, use
 	return s.packager.CompleteUploadInstall(ctx, orgID, repoID, userID, reader, filename, scope)
 }
 
-// UpdateSkill updates an installed skill (enable/disable, pin version)
 func (s *Service) UpdateSkill(ctx context.Context, orgID, repoID, installID, userID int64, userRole string, enabled *bool, pinnedVersion *int) (*extension.InstalledSkill, error) {
 	skill, err := s.repo.GetInstalledSkill(ctx, installID)
 	if err != nil {
@@ -329,12 +311,10 @@ func (s *Service) UpdateSkill(ctx context.Context, orgID, repoID, installID, use
 		return nil, fmt.Errorf("%w: skill does not belong to this repository", ErrForbidden)
 	}
 
-	// Org-scoped skills require admin/owner role to modify
 	if skill.Scope == extension.ScopeOrg && userRole != "admin" && userRole != "owner" {
 		return nil, fmt.Errorf("%w: admin permission required to modify org-scoped skill", ErrForbidden)
 	}
 
-	// User-scoped skills can only be modified by the user who installed them
 	if skill.Scope == extension.ScopeUser {
 		if skill.InstalledBy == nil || *skill.InstalledBy != userID {
 			return nil, fmt.Errorf("%w: can only modify your own user-scoped skill", ErrForbidden)
@@ -355,7 +335,6 @@ func (s *Service) UpdateSkill(ctx context.Context, orgID, repoID, installID, use
 	return skill, nil
 }
 
-// UninstallSkill removes an installed skill
 func (s *Service) UninstallSkill(ctx context.Context, orgID, repoID, installID, userID int64, userRole string) error {
 	skill, err := s.repo.GetInstalledSkill(ctx, installID)
 	if err != nil {
@@ -389,8 +368,7 @@ func (s *Service) UninstallSkill(ctx context.Context, orgID, repoID, installID, 
 
 // --- Repo MCP Server Installation ---
 
-// ListRepoMcpServers lists installed MCP servers for a repository.
-// userID is used to filter user-scope items to only the current user's installations.
+// ListRepoMcpServers lists installed MCP servers for a repository, filtering user-scope to current user.
 func (s *Service) ListRepoMcpServers(ctx context.Context, orgID, repoID, userID int64, scope string) ([]*extension.InstalledMcpServer, error) {
 	if scope == "all" {
 		scope = ""
@@ -398,7 +376,6 @@ func (s *Service) ListRepoMcpServers(ctx context.Context, orgID, repoID, userID 
 	return s.repo.ListInstalledMcpServers(ctx, orgID, repoID, userID, scope)
 }
 
-// InstallMcpFromMarket installs an MCP server from a marketplace template
 func (s *Service) InstallMcpFromMarket(ctx context.Context, orgID, repoID, userID, marketItemID int64, envVars map[string]string, scope string) (*extension.InstalledMcpServer, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -447,7 +424,6 @@ func (s *Service) InstallMcpFromMarket(ctx context.Context, orgID, repoID, userI
 	return server, nil
 }
 
-// InstallCustomMcpServer installs a custom MCP server
 func (s *Service) InstallCustomMcpServer(ctx context.Context, orgID, repoID, userID int64, server *extension.InstalledMcpServer, envVars map[string]string) (*extension.InstalledMcpServer, error) {
 	if err := validateScope(server.Scope); err != nil {
 		return nil, err
@@ -477,7 +453,6 @@ func (s *Service) InstallCustomMcpServer(ctx context.Context, orgID, repoID, use
 	return server, nil
 }
 
-// UpdateMcpServer updates an installed MCP server
 func (s *Service) UpdateMcpServer(ctx context.Context, orgID, repoID, installID, userID int64, userRole string, enabled *bool, envVars map[string]string) (*extension.InstalledMcpServer, error) {
 	server, err := s.repo.GetInstalledMcpServer(ctx, installID)
 	if err != nil {
@@ -494,12 +469,11 @@ func (s *Service) UpdateMcpServer(ctx context.Context, orgID, repoID, installID,
 		return nil, fmt.Errorf("%w: MCP server does not belong to this repository", ErrForbidden)
 	}
 
-	// Org-scoped MCP servers require admin/owner role to modify
+	// Org-scoped MCP servers require admin/owner role
 	if server.Scope == extension.ScopeOrg && userRole != "admin" && userRole != "owner" {
 		return nil, fmt.Errorf("%w: admin permission required to modify org-scoped MCP server", ErrForbidden)
 	}
 
-	// User-scoped MCP servers can only be modified by the user who installed them
 	if server.Scope == extension.ScopeUser {
 		if server.InstalledBy == nil || *server.InstalledBy != userID {
 			return nil, fmt.Errorf("%w: can only modify your own user-scoped MCP server", ErrForbidden)
@@ -524,7 +498,6 @@ func (s *Service) UpdateMcpServer(ctx context.Context, orgID, repoID, installID,
 	return server, nil
 }
 
-// UninstallMcpServer removes an installed MCP server
 func (s *Service) UninstallMcpServer(ctx context.Context, orgID, repoID, installID, userID int64, userRole string) error {
 	server, err := s.repo.GetInstalledMcpServer(ctx, installID)
 	if err != nil {
@@ -541,12 +514,11 @@ func (s *Service) UninstallMcpServer(ctx context.Context, orgID, repoID, install
 		return fmt.Errorf("%w: MCP server does not belong to this repository", ErrForbidden)
 	}
 
-	// Org-scoped MCP servers require admin/owner role to uninstall
+	// Org-scoped MCP servers require admin/owner role
 	if server.Scope == extension.ScopeOrg && userRole != "admin" && userRole != "owner" {
 		return fmt.Errorf("%w: admin permission required to uninstall org-scoped MCP server", ErrForbidden)
 	}
 
-	// User-scoped MCP servers can only be uninstalled by the user who installed them
 	if server.Scope == extension.ScopeUser {
 		if server.InstalledBy == nil || *server.InstalledBy != userID {
 			return fmt.Errorf("%w: can only uninstall your own user-scoped MCP server", ErrForbidden)
@@ -709,7 +681,7 @@ func (s *Service) DecryptCredential(encrypted string) (string, error) {
 	return s.decryptCredential(encrypted)
 }
 
-// encryptCredential encrypts a single credential string
+// encryptCredential encrypts a single credential string.
 func (s *Service) encryptCredential(credential string) (string, error) {
 	if s.crypto == nil {
 		// No encryption configured (development mode), store as-is
@@ -718,7 +690,7 @@ func (s *Service) encryptCredential(credential string) (string, error) {
 	return s.crypto.Encrypt(credential)
 }
 
-// decryptCredential decrypts a single credential string
+// decryptCredential decrypts a single credential string.
 func (s *Service) decryptCredential(encrypted string) (string, error) {
 	if s.crypto == nil || encrypted == "" {
 		return encrypted, nil
