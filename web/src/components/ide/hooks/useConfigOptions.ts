@@ -50,11 +50,10 @@ export function useConfigOptions(
   useEffect(() => {
     let cancelled = false;
 
-    console.log("[useConfigOptions] agentSlug:", agentSlug, "agentSlug:", agentSlug);
+    
 
     const loadOptions = async () => {
       if (!agentSlug) {
-        console.log("[useConfigOptions] Skipping - missing agentSlug");
         setFields([]);
         setConfig({});
         return;
@@ -83,20 +82,16 @@ export function useConfigOptions(
           const userConfigResponse = await userAgentConfigApi.get(agentSlug);
           if (!cancelled && userConfigResponse.config?.config_values) {
             const userConfig = userConfigResponse.config.config_values;
-            console.log("[useConfigOptions] User personal config:", userConfig);
 
             // Merge user config into mergedConfig
             for (const field of baseFields) {
               if (userConfig[field.name] !== undefined) {
-                console.log("[useConfigOptions] Merging user config:", field.name, "=", userConfig[field.name]);
                 mergedConfig[field.name] = userConfig[field.name];
               }
             }
-            console.log("[useConfigOptions] Final merged config:", mergedConfig);
           }
         } catch (err) {
           // User config not found or error - use ConfigSchema defaults only
-          console.log("[useConfigOptions] No user personal config found, using ConfigSchema defaults", err);
         }
 
         if (!cancelled) {
@@ -126,7 +121,7 @@ export function useConfigOptions(
     return () => {
       cancelled = true;
     };
-  }, [agentSlug, agentSlug]);
+  }, [agentSlug]);
 
   // Update a single config field
   const updateConfig = useCallback(

@@ -12,7 +12,7 @@ import (
 
 // newTestLogger and newMockRunnerStream are defined in test_helper_test.go
 
-// mockAgentsProvider implements interfaces.AgentTypesProvider for testing
+// mockAgentsProvider implements interfaces.AgentsProvider for testing
 type mockAgentsProvider struct{}
 
 func (m *mockAgentsProvider) GetAgentsForRunner() []interfaces.AgentInfo {

@@ -152,71 +152,11 @@ func evalIfStmt(ctx *Context, s *parser.IfStmt) error {
 	return nil
 }
 
-const maxForIterations = 10000
-
-func evalForStmt(ctx *Context, s *parser.ForStmt) error {
-	iterVal, err := evalExpr(ctx, s.Iter)
-	if err != nil {
-		return err
-	}
-
-	switch iter := iterVal.(type) {
-	case map[string]interface{}:
-		if len(iter) > maxForIterations {
-			return fmt.Errorf("for: map has %d entries, exceeds limit %d", len(iter), maxForIterations)
-		}
-		for k, v := range iter {
-			if s.Value != "" {
-				ctx.Set(s.Key, k)
-				ctx.Set(s.Value, v)
-			} else {
-				ctx.Set(s.Key, k)
-			}
-			if err := evalBlock(ctx, s.Body); err != nil {
-				return err
-			}
-		}
-	case []interface{}:
-		if len(iter) > maxForIterations {
-			return fmt.Errorf("for: list has %d elements, exceeds limit %d", len(iter), maxForIterations)
-		}
-		for i, v := range iter {
-			if s.Value != "" {
-				ctx.Set(s.Key, float64(i))
-				ctx.Set(s.Value, v)
-			} else {
-				ctx.Set(s.Key, v)
-			}
-			if err := evalBlock(ctx, s.Body); err != nil {
-				return err
-			}
-		}
-	default:
-		return fmt.Errorf("for: expected map or list, got %T", iterVal)
-	}
-	return nil
-}
-
 func evalBlock(ctx *Context, stmts []parser.Statement) error {
 	for _, stmt := range stmts {
 		if err := evalStmt(ctx, stmt); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func evalRemoveStmt(ctx *Context, s *parser.RemoveStmt) error {
-	val, err := evalExpr(ctx, s.Value)
-	if err != nil {
-		return err
-	}
-	str := toString(val)
-	switch s.Target {
-	case "arg":
-		ctx.Result.RemoveArgs = append(ctx.Result.RemoveArgs, str)
-	case "file":
-		ctx.Result.RemoveFiles = append(ctx.Result.RemoveFiles, str)
 	}
 	return nil
 }

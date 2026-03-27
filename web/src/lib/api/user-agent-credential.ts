@@ -58,12 +58,12 @@ export const userAgentCredentialApi = {
     request<{
       profiles: CredentialProfileData[];
       runner_host: RunnerHostInfo;
-    }>(`/api/v1/users/agent-credentials/types/${agentSlug}`),
+    }>(`/api/v1/users/agent-credentials/agents/${agentSlug}`),
 
   // Create a new credential profile
   create: (agentSlug: string, data: CreateCredentialProfileRequest) =>
     request<{ profile: CredentialProfileData }>(
-      `/api/v1/users/agent-credentials/types/${agentSlug}`,
+      `/api/v1/users/agent-credentials/agents/${agentSlug}`,
       {
         method: "POST",
         body: data,
