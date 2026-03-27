@@ -3,6 +3,7 @@ package eval
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -142,6 +143,7 @@ func builtinStrJoin(args ...interface{}) (interface{}, error) {
 		for k := range v {
 			keys = append(keys, k)
 		}
+		sort.Strings(keys)
 		return strings.Join(keys, sep), nil
 	default:
 		return "", fmt.Errorf("str_join: first argument must be a list or map, got %T", args[0])

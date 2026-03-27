@@ -88,7 +88,7 @@ func (cm *RunnerConnectionManager) SetPingInterval(interval time.Duration) {
 
 // SetAgentsProvider sets the agent types provider for initialization handshake
 func (cm *RunnerConnectionManager) SetAgentsProvider(provider interfaces.AgentsProvider) {
-	cm.agentTypesProvider = provider
+	cm.agentsProvider = provider
 }
 
 // SetServerVersion sets the server version for initialization handshake

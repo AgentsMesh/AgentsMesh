@@ -56,12 +56,10 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
           // Only online runners
           const allRunners = runnersRes.value.runners || [];
           const onlineRunners = allRunners.filter(r => r.status === "online");
-          console.log("[usePodCreationData] Runners loaded:", allRunners.length, "total,", onlineRunners.length, "online");
           setRunners(onlineRunners);
         }
         if (agentsRes.status === "fulfilled") {
           const agentList = agentsRes.value.agents || [];
-          console.log("[usePodCreationData] Agents loaded:", agentList.length, agentList.map(a => ({ slug: a.slug })));
           setAgents(agentList);
         }
         if (reposRes.status === "fulfilled") {
