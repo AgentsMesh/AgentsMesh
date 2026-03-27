@@ -13,6 +13,7 @@ export interface FieldRendererProps {
   value: unknown;
   onChange: (value: unknown) => void;
   agentSlug: string;
+  values?: Record<string, unknown>;
 }
 
 function useFieldTranslation(agentSlug: string, fieldName: string) {
