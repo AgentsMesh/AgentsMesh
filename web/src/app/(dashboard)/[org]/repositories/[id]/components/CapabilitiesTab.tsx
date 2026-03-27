@@ -18,11 +18,11 @@ import { useCapabilitiesData } from "./useCapabilitiesData";
 interface CapabilitiesTabProps { repositoryId: number; }
 
 function ExtensionSection<T extends InstalledSkill | InstalledMcpServer>({
-  title, items, emptyMessage, canManage, onAdd,
+  title, items, emptyMessage, canManage, onAdd, addLabel,
   renderCard,
 }: {
   title: string; items: T[]; emptyMessage: string; canManage: boolean;
-  onAdd: () => void; renderCard: (item: T) => React.ReactNode;
+  onAdd: () => void; addLabel: string; renderCard: (item: T) => React.ReactNode;
 }) {
   return (
     <section>
@@ -30,7 +30,7 @@ function ExtensionSection<T extends InstalledSkill | InstalledMcpServer>({
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{title}</h3>
         {canManage && (
           <Button variant="outline" size="sm" onClick={onAdd}>
-            <Plus className="w-4 h-4 mr-1" />{useTranslations()("extensions.add")}
+            <Plus className="w-4 h-4 mr-1" />{addLabel}
           </Button>
         )}
       </div>
@@ -73,10 +73,10 @@ export function CapabilitiesTab({ repositoryId }: CapabilitiesTabProps) {
       <TabsContent value="skills">
         <div className="space-y-6">
           <ExtensionSection title={t("extensions.orgInstalled")} items={orgSkills} emptyMessage={t("extensions.noSkillsInstalled")}
-            canManage={isAdmin} onAdd={() => setShowAddSkill("org")}
+            canManage={isAdmin} addLabel={t("extensions.add")} onAdd={() => setShowAddSkill("org")}
             renderCard={(s) => <SkillCard key={s.id} skill={s} canManage={isAdmin} onToggle={handleToggleSkill} onDelete={handleDeleteSkill} />} />
           <ExtensionSection title={t("extensions.myInstalled")} items={userSkills} emptyMessage={t("extensions.noSkillsInstalled")}
-            canManage={true} onAdd={() => setShowAddSkill("user")}
+            canManage={true} addLabel={t("extensions.add")} onAdd={() => setShowAddSkill("user")}
             renderCard={(s) => <SkillCard key={s.id} skill={s} canManage={true} onToggle={handleToggleSkill} onDelete={handleDeleteSkill} />} />
         </div>
       </TabsContent>
@@ -84,10 +84,10 @@ export function CapabilitiesTab({ repositoryId }: CapabilitiesTabProps) {
       <TabsContent value="mcp">
         <div className="space-y-6">
           <ExtensionSection title={t("extensions.orgInstalled")} items={orgMcpServers} emptyMessage={t("extensions.noMcpServersInstalled")}
-            canManage={isAdmin} onAdd={() => setShowAddMcp("org")}
+            canManage={isAdmin} addLabel={t("extensions.add")} onAdd={() => setShowAddMcp("org")}
             renderCard={(m) => <McpServerCard key={m.id} mcpServer={m} canManage={isAdmin} onToggle={handleToggleMcp} onDelete={handleDeleteMcp} onEditEnvVars={setEditingMcp} />} />
           <ExtensionSection title={t("extensions.myInstalled")} items={userMcpServers} emptyMessage={t("extensions.noMcpServersInstalled")}
-            canManage={true} onAdd={() => setShowAddMcp("user")}
+            canManage={true} addLabel={t("extensions.add")} onAdd={() => setShowAddMcp("user")}
             renderCard={(m) => <McpServerCard key={m.id} mcpServer={m} canManage={true} onToggle={handleToggleMcp} onDelete={handleDeleteMcp} onEditEnvVars={setEditingMcp} />} />
         </div>
       </TabsContent>
