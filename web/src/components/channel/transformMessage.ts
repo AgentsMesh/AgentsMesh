@@ -14,8 +14,8 @@ export function transformMessage(msg: ChannelMessage): TransformedMessage {
       ? {
           podKey: msg.sender_pod_info.pod_key,
           alias: msg.sender_pod_info.alias,
-          agentType: msg.sender_pod_info.agent_type
-            ? { name: msg.sender_pod_info.agent_type.name }
+          agent: msg.sender_pod_info.agent
+            ? { name: msg.sender_pod_info.agent.name }
             : undefined,
         }
       : undefined,

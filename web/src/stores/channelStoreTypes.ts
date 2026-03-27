@@ -21,7 +21,7 @@ export interface Channel {
     pod_key: string;
     alias?: string;
     status: string;
-    agent_type?: {
+    agent?: {
       name: string;
     };
   }>;
