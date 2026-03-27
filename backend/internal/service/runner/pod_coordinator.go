@@ -14,72 +14,53 @@ import (
 
 // Terminate command backoff constants
 const (
-	terminateCooldown      = 5 * time.Minute  // 冷却期：两次 terminate 之间的最短间隔
-	terminateCacheCleanup  = 30 * time.Minute // 缓存条目过期清理阈值
+	terminateCooldown     = 5 * time.Minute
+	terminateCacheCleanup = 30 * time.Minute
 
-	// orphanMissThreshold is the number of consecutive heartbeat misses required
-	// before marking a pod as orphaned. At ~30s per heartbeat cycle, 3 misses ≈ 90s.
+	// orphanMissThreshold: consecutive heartbeat misses before marking pod orphaned.
+	// At ~30s per heartbeat cycle, 3 misses ~ 90s.
 	orphanMissThreshold = 3
 
-	// initRecoverThreshold is the number of consecutive heartbeat reports of an
-	// "initializing" pod before recovering it to "running" status.
+	// initRecoverThreshold: consecutive heartbeat reports of "initializing" pod
+	// before recovering to "running".
 	initRecoverThreshold = 2
 
-	// ErrCodeRunnerDisconnected is the error code set when a runner disconnects
-	// while pods are still initializing.
 	ErrCodeRunnerDisconnected = "RUNNER_DISCONNECTED"
 )
 
-// PodCoordinator coordinates pod lifecycle events between backend and runners
+// PodCoordinator coordinates pod lifecycle events between backend and runners.
 type PodCoordinator struct {
 	podRepo           agentpod.PodRepository
 	runnerRepo        runnerDomain.RunnerRepository
 	autopilotRepo     agentpod.AutopilotRepository
 	connectionManager *RunnerConnectionManager
-	podRouter    *PodRouter
+	podRouter         *PodRouter
 	heartbeatBatcher  *HeartbeatBatcher
 	logger            *slog.Logger
 
-	// Command sender for sending commands to runners (e.g., GRPCCommandSender).
-	// Defaults to NoOpCommandSender if not explicitly set via SetCommandSender.
-	commandSender RunnerCommandSender
-
-	// Relay connection cache for tracking Runner's relay connections
+	commandSender        RunnerCommandSender
 	relayConnectionCache *RelayConnectionCache
 
-	// Terminate command backoff: prevents sending duplicate terminate commands
-	// during heartbeat reconciliation. Maps podKey → last sent time.
 	terminateSentCache map[string]time.Time
 	terminateCacheMu   sync.Mutex
 
-	// Pod miss counter: tracks consecutive heartbeat misses per pod.
-	// A pod is only orphaned after orphanMissThreshold consecutive misses,
-	// providing tolerance for transient network issues and reconnections.
-	podMissCount map[string]int            // podKey → consecutive miss count
-	podMissOwner map[string]int64          // podKey → runnerID (reverse index for clearByRunner)
+	podMissCount map[string]int
+	podMissOwner map[string]int64
 	podMissMu    sync.Mutex
 
-	// Init report counter: tracks consecutive heartbeat reports of pods stuck in "initializing".
 	initReportCount   map[string]int
 	initReportCountMu sync.Mutex
 
-	// ACK tracker for pod creation acknowledgment
 	ackTracker *AckTracker
 
-	// Callbacks
 	onStatusChange   func(podKey string, status string, agentStatus string)
 	onInitProgress   func(podKey string, phase string, progress int, message string)
 
-	// Autopilot callbacks (set during initialization, read concurrently — safe because
-	// they are set before any goroutine accesses them, establishing happens-before)
 	onAutopilotStatusChange    AutopilotStatusChangeFunc
 	onAutopilotIterationChange AutopilotIterationChangeFunc
 	onAutopilotThinkingChange  AutopilotThinkingChangeFunc
 }
 
-// NewPodCoordinator creates a new pod coordinator.
-// By default, uses NoOpCommandSender which logs warnings. Call SetCommandSender
-// to configure a real command sender (e.g., GRPCCommandSender).
 func NewPodCoordinator(
 	podRepo agentpod.PodRepository,
 	runnerRepo runnerDomain.RunnerRepository,
@@ -92,10 +73,10 @@ func NewPodCoordinator(
 		podRepo:              podRepo,
 		runnerRepo:           runnerRepo,
 		connectionManager:    cm,
-		podRouter:       tr,
+		podRouter:            tr,
 		heartbeatBatcher:     hb,
 		logger:               logger,
-		commandSender:        NewNoOpCommandSender(logger), // Default to no-op
+		commandSender:        NewNoOpCommandSender(logger),
 		relayConnectionCache: NewRelayConnectionCache(),
 		terminateSentCache:   make(map[string]time.Time),
 		podMissCount:         make(map[string]int),
@@ -104,7 +85,6 @@ func NewPodCoordinator(
 		ackTracker:           NewAckTracker(),
 	}
 
-	// Set up callbacks from connection manager
 	cm.SetHeartbeatCallback(pc.handleHeartbeat)
 	cm.SetPodCreatedCallback(pc.handlePodCreated)
 	cm.SetPodTerminatedCallback(pc.handlePodTerminated)
@@ -113,7 +93,6 @@ func NewPodCoordinator(
 	cm.SetDisconnectCallback(pc.handleRunnerDisconnect)
 	cm.SetPodInitProgressCallback(pc.handlePodInitProgress)
 
-	// Set up AutopilotController callbacks
 	cm.SetAutopilotStatusCallback(pc.handleAutopilotControllerStatus)
 	cm.SetAutopilotCreatedCallback(pc.handleAutopilotControllerCreated)
 	cm.SetAutopilotTerminatedCallback(pc.handleAutopilotControllerTerminated)
@@ -123,59 +102,41 @@ func NewPodCoordinator(
 	return pc
 }
 
-// SetCommandSender sets the command sender for sending commands to runners.
-// This must be called before using CreatePod/TerminatePod methods.
 func (pc *PodCoordinator) SetCommandSender(sender RunnerCommandSender) {
 	pc.commandSender = sender
 	pc.logger.Info("command sender configured", "type", fmt.Sprintf("%T", sender))
 }
 
-// SetAutopilotRepo sets the autopilot repository for autopilot event handling.
-// Must be called before autopilot events are received.
 func (pc *PodCoordinator) SetAutopilotRepo(repo agentpod.AutopilotRepository) {
 	pc.autopilotRepo = repo
 }
 
-// GetCommandSender returns the command sender for sending commands to runners.
-// Returns nil if no command sender is configured.
 func (pc *PodCoordinator) GetCommandSender() RunnerCommandSender {
 	return pc.commandSender
 }
 
-// SetStatusChangeCallback sets the callback for status changes
 func (pc *PodCoordinator) SetStatusChangeCallback(fn func(podKey string, status string, agentStatus string)) {
 	pc.onStatusChange = fn
 }
 
-// SetInitProgressCallback sets the callback for init progress events
 func (pc *PodCoordinator) SetInitProgressCallback(fn func(podKey string, phase string, progress int, message string)) {
 	pc.onInitProgress = fn
 }
 
-// IncrementPods increments pod count for a runner
 func (pc *PodCoordinator) IncrementPods(ctx context.Context, runnerID int64) error {
 	return pc.runnerRepo.IncrementPods(ctx, runnerID)
 }
 
-// DecrementPods decrements pod count for a runner
 func (pc *PodCoordinator) DecrementPods(ctx context.Context, runnerID int64) error {
 	return pc.runnerRepo.DecrementPods(ctx, runnerID)
 }
 
-// CreatePod creates a new pod on a runner
-// Uses Proto type directly for zero-copy message passing.
+// CreatePod creates a new pod on a runner (uses Proto type directly for zero-copy).
 func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error {
-	// Increment pod count first
 	if err := pc.IncrementPods(ctx, runnerID); err != nil {
 		return err
 	}
 
-	// Note: Pod is NOT registered with pod router here.
-	// Registration happens in handlePodCreated when Runner confirms the pod is actually created.
-	// This ensures we don't have stale routes if pod creation fails on Runner side.
-
-	// Send create pod command to runner via command sender.
-	// Rollback pod count on failure to keep capacity accurate.
 	if err := pc.commandSender.SendCreatePod(ctx, runnerID, cmd); err != nil {
 		_ = pc.DecrementPods(ctx, runnerID)
 		return err
@@ -183,23 +144,18 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *ru
 	return nil
 }
 
-// TerminatePod terminates a pod on a runner
+// TerminatePod terminates a pod on a runner.
 func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error {
-	// Get pod to find runner
 	pod, err := pc.podRepo.GetByKey(ctx, podKey)
 	if err != nil {
 		return err
 	}
 
-	// Send terminate request to runner via command sender
-	// NoOpCommandSender will log warning if not configured
 	if err := pc.commandSender.SendTerminatePod(ctx, pod.RunnerID, podKey); err != nil {
 		pc.logger.Warn("failed to send terminate to runner, marking as completed",
-			"pod_key", podKey,
-			"error", err)
+			"pod_key", podKey, "error", err)
 	}
 
-	// Update pod status
 	now := time.Now()
 	if _, err := pc.podRepo.UpdateByKey(ctx, podKey, map[string]interface{}{
 		"status":      agentpod.StatusCompleted,
@@ -208,27 +164,22 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 		return err
 	}
 
-	// Unregister from pod router and clean up miss counter
 	pc.podRouter.UnregisterPod(podKey)
 	pc.clearMissCount(podKey)
 
-	// Decrement pod count
 	return pc.DecrementPods(ctx, pod.RunnerID)
 }
 
-// UpdateActivity updates last activity timestamp for a pod
 func (pc *PodCoordinator) UpdateActivity(ctx context.Context, podKey string) error {
 	return pc.podRepo.UpdateField(ctx, podKey, "last_activity", time.Now())
 }
 
-// MarkDisconnected marks a pod as disconnected (user closed browser)
 func (pc *PodCoordinator) MarkDisconnected(ctx context.Context, podKey string) error {
 	return pc.podRepo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusRunning, map[string]interface{}{
 		"status": agentpod.StatusDisconnected,
 	})
 }
 
-// MarkReconnected marks a pod as running again (user reconnected)
 func (pc *PodCoordinator) MarkReconnected(ctx context.Context, podKey string) error {
 	return pc.podRepo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusDisconnected, map[string]interface{}{
 		"status":        agentpod.StatusRunning,
@@ -238,97 +189,14 @@ func (pc *PodCoordinator) MarkReconnected(ctx context.Context, podKey string) er
 
 // ==================== AutopilotController Commands ====================
 
-// SendCreateAutopilot sends a create AutopilotController command to a runner.
-// Delegates to the underlying command sender.
 func (pc *PodCoordinator) SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error {
 	return pc.commandSender.SendCreateAutopilot(runnerID, cmd)
 }
 
-// SendAutopilotControl sends an AutopilotController control command to a runner.
-// Delegates to the underlying command sender.
 func (pc *PodCoordinator) SendAutopilotControl(runnerID int64, cmd *runnerv1.AutopilotControlCommand) error {
 	return pc.commandSender.SendAutopilotControl(runnerID, cmd)
 }
 
-// ==================== Terminate Command Backoff ====================
-
-// isTerminateCooldown checks whether a terminate command for the given podKey
-// is within the cooldown period.
-func (pc *PodCoordinator) isTerminateCooldown(podKey string) bool {
-	pc.terminateCacheMu.Lock()
-	defer pc.terminateCacheMu.Unlock()
-	if lastSent, ok := pc.terminateSentCache[podKey]; ok {
-		return time.Since(lastSent) < terminateCooldown
-	}
-	return false
-}
-
-// recordTerminateSent records that a terminate command was sent for the given podKey.
-// Also performs lazy cleanup of expired entries.
-func (pc *PodCoordinator) recordTerminateSent(podKey string) {
-	pc.terminateCacheMu.Lock()
-	defer pc.terminateCacheMu.Unlock()
-	now := time.Now()
-	pc.terminateSentCache[podKey] = now
-
-	// Lazy cleanup: remove entries older than terminateCacheCleanup
-	for key, t := range pc.terminateSentCache {
-		if now.Sub(t) > terminateCacheCleanup {
-			delete(pc.terminateSentCache, key)
-		}
-	}
-}
-
-// ==================== Pod Miss Counter ====================
-
-// incrementMissCount increments the consecutive heartbeat miss count for a pod.
-// Returns the new miss count.
-func (pc *PodCoordinator) incrementMissCount(podKey string, runnerID int64) int {
-	pc.podMissMu.Lock()
-	defer pc.podMissMu.Unlock()
-	pc.podMissCount[podKey]++
-	pc.podMissOwner[podKey] = runnerID
-	return pc.podMissCount[podKey]
-}
-
-// clearMissCount removes the miss counter for a specific pod (e.g., pod reported in heartbeat).
-func (pc *PodCoordinator) clearMissCount(podKey string) {
-	pc.podMissMu.Lock()
-	defer pc.podMissMu.Unlock()
-	delete(pc.podMissCount, podKey)
-	delete(pc.podMissOwner, podKey)
-}
-
-// clearMissCountsForRunner removes all miss counters for pods belonging to the given runner.
-// Called on runner disconnect to prevent stale counters from affecting reconnection.
-// Uses an in-memory reverse index instead of DB queries to avoid TOCTOU races.
-func (pc *PodCoordinator) clearMissCountsForRunner(runnerID int64) {
-	pc.podMissMu.Lock()
-	defer pc.podMissMu.Unlock()
-	for podKey, ownerID := range pc.podMissOwner {
-		if ownerID == runnerID {
-			delete(pc.podMissCount, podKey)
-			delete(pc.podMissOwner, podKey)
-		}
-	}
-}
-
-// ==================== Relay Connection Queries ====================
-
-// GetRelayConnections returns relay connections for a runner
 func (pc *PodCoordinator) GetRelayConnections(runnerID int64) []RelayConnectionInfo {
 	return pc.relayConnectionCache.Get(runnerID)
-}
-
-func (pc *PodCoordinator) incrementInitReportCount(podKey string) int {
-	pc.initReportCountMu.Lock()
-	defer pc.initReportCountMu.Unlock()
-	pc.initReportCount[podKey]++
-	return pc.initReportCount[podKey]
-}
-
-func (pc *PodCoordinator) clearInitReportCount(podKey string) {
-	pc.initReportCountMu.Lock()
-	defer pc.initReportCountMu.Unlock()
-	delete(pc.initReportCount, podKey)
 }

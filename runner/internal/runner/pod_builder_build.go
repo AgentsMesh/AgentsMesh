@@ -32,16 +32,13 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		"has_podfile", b.cmd.PodfileSource != "",
 		"interaction_mode", b.cmd.GetInteractionMode())
 
-	// Report initial progress
 	b.sendProgress("pending", 0, "Initializing pod...")
 
-	// Setup sandbox and working directory (shared)
 	sandboxRoot, workingDir, branchName, err := b.setup(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// PodFile mode: eval PodFile with real sandbox paths, then apply result
 	var resolvedArgs []string
 	var envVars map[string]string
 	if b.cmd.PodfileSource != "" {
@@ -55,18 +52,15 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		launchCommand = pfResult.LaunchCommand
 		resolvedArgs = pfResult.LaunchArgs
 
-		// Create files from PodFile result
 		if err := b.createFilesFromProto(pfResult.FilesToCreate, sandboxRoot, workingDir); err != nil {
 			return nil, err
 		}
 
-		// Merge env vars: system env + PodFile result (PodFile overrides system)
 		envVars = b.mergeEnvVars(sandboxRoot)
 		for k, v := range pfResult.EnvVars {
 			envVars[k] = v
 		}
 	} else {
-		// Legacy mode: use pre-computed fields from CreatePodCommand
 		resolvedArgs = b.resolveArgs(b.cmd.LaunchArgs, sandboxRoot, workingDir)
 		envVars = b.mergeEnvVars(sandboxRoot)
 	}
@@ -74,16 +68,14 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
 	logger.Pod().Debug("Merged environment variables", "pod_key", b.cmd.PodKey, "count", len(envVars))
 
-	// Branch by interaction mode
 	if b.cmd.GetInteractionMode() == "acp" {
 		return b.buildACPPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)
 	}
 	return b.buildPTYPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)
 }
 
-// buildPTYPod creates a pod with PTY terminal interaction (existing path).
+// buildPTYPod creates a pod with PTY terminal interaction.
 func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, branchName string, resolvedArgs []string, envVars map[string]string, launchCommand string) (*Pod, error) {
-	// Report progress: starting PTY
 	b.sendProgress("starting_pty", 80, "Starting terminal...")
 
 	// Build PTY factory for Pod Daemon mode (session persistence across restarts)
@@ -114,7 +106,6 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 		}
 	}
 
-	// Create terminal
 	term, err := terminal.New(terminal.Options{
 		Command:    launchCommand,
 		Args:       resolvedArgs,
@@ -122,13 +113,10 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 		Env:        envVars,
 		Rows:       b.rows,
 		Cols:       b.cols,
-		Label:      b.cmd.PodKey, // For log correlation in PTY diagnostics
+		Label:      b.cmd.PodKey,
 		PTYFactory: ptyFactory,
-		OnOutput:   nil, // Will be wired up after all components are created
-		OnExit:     nil, // Will be set by caller (MessageHandler)
 	})
 	if err != nil {
-		// Cleanup sandbox on failure
 		if sandboxRoot != "" {
 			os.RemoveAll(sandboxRoot)
 		}
@@ -138,18 +126,13 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 		}
 	}
 
-	// Create VirtualTerminal for terminal state management and snapshots
 	virtualTerm := vt.NewVirtualTerminal(b.cols, b.rows, b.vtHistoryLimit)
 	if b.oscHandler != nil {
 		virtualTerm.SetOSCHandler(b.oscHandler)
 	}
 
-	// Create SmartAggregator for adaptive frame rate output
-	agg := aggregator.NewSmartAggregator(nil, nil,
-		aggregator.WithFullRedrawThrottling(),
-	)
+	agg := aggregator.NewSmartAggregator(nil, nil, aggregator.WithFullRedrawThrottling())
 
-	// Set up PTY logging if enabled
 	var ptyLogger *aggregator.PTYLogger
 	if b.enablePTYLogging && b.ptyLogDir != "" {
 		var logErr error
@@ -162,7 +145,6 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 		}
 	}
 
-	// Create pod with all components
 	pod := &Pod{
 		ID:              b.cmd.PodKey,
 		PodKey:          b.cmd.PodKey,
@@ -181,29 +163,21 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 		Status:          PodStatusInitializing,
 	}
 
-	// Wire PodIO for unified access
 	ptyIO := NewPTYPodIO(term, virtualTerm, pod)
 	ptyIO.SetAggregator(agg)
 	if ptyLogger != nil {
 		ptyIO.SetPTYLogger(ptyLogger)
 	}
 	pod.IO = ptyIO
-
-	// Wire PodRelay for mode-specific relay behavior
 	pod.Relay = NewPTYPodRelay(b.cmd.PodKey, pod.IO, virtualTerm, term, agg)
-
-	// Wire up output handler (shared implementation with circuit breaker + inline recover)
 	term.SetOutputHandler(pod.CreateOutputHandler())
 
 	logger.Pod().Info("Pod built (PTY)", "pod_key", b.cmd.PodKey, "working_dir", workingDir, "cols", b.cols, "rows", b.rows)
-
-	// Report progress: ready
 	b.sendProgress("ready", 100, "Pod is ready")
 
 	return pod, nil
 }
 
-// resolvePath resolves path template variables.
 func (b *PodBuilder) resolvePath(pathTemplate, sandboxRoot, workDir string) string {
 	path := pathTemplate
 	path = strings.ReplaceAll(path, "{{.sandbox.root_path}}", sandboxRoot)
@@ -211,7 +185,6 @@ func (b *PodBuilder) resolvePath(pathTemplate, sandboxRoot, workDir string) stri
 	return path
 }
 
-// resolveArgs resolves template variables in command line arguments.
 func (b *PodBuilder) resolveArgs(args []string, sandboxRoot, workDir string) []string {
 	resolved := make([]string, len(args))
 	for i, arg := range args {
@@ -220,25 +193,22 @@ func (b *PodBuilder) resolveArgs(args []string, sandboxRoot, workDir string) []s
 	return resolved
 }
 
-// mergeEnvVars merges all environment variable sources.
+// mergeEnvVars merges environment variables: resolved PATH < config env < command env.
 func (b *PodBuilder) mergeEnvVars(sandboxRoot string) map[string]string {
 	result := make(map[string]string)
 
-	// Inject resolved login shell PATH as lowest-priority base.
-	// This ensures PTY processes can find tools (claude, aider, etc.)
-	// even when the runner runs as a systemd/launchd service with minimal PATH.
+	// Inject resolved login shell PATH so PTY processes can find tools
+	// even when runner runs as a systemd/launchd service with minimal PATH.
 	if b.deps.Config != nil && b.deps.Config.ResolvedPATH != "" {
 		result["PATH"] = b.deps.Config.ResolvedPATH
 	}
 
-	// Add config env vars (overrides resolved PATH if user sets PATH in config)
 	if b.deps.Config != nil {
 		for k, v := range b.deps.Config.AgentEnvVars {
 			result[k] = v
 		}
 	}
 
-	// Add command env vars (highest priority)
 	if b.cmd != nil {
 		for k, v := range b.cmd.EnvVars {
 			result[k] = v
@@ -248,8 +218,7 @@ func (b *PodBuilder) mergeEnvVars(sandboxRoot string) map[string]string {
 	return result
 }
 
-// sendProgress sends a pod initialization progress event to the server.
-// This is a best-effort operation - errors are logged but not returned.
+// sendProgress sends a pod initialization progress event (best-effort).
 func (b *PodBuilder) sendProgress(phase string, progress int, message string) {
 	if b.cmd == nil || b.cmd.PodKey == "" || b.deps.ProgressSender == nil {
 		return
