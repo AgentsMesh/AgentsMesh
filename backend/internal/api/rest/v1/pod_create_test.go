@@ -30,10 +30,10 @@ func TestMapOrchestratorErrorToHTTP(t *testing.T) {
 			wantJSON: map[string]string{"code": "MISSING_RUNNER_ID"},
 		},
 		{
-			name:     "ErrMissingAgentTypeID -> 400",
-			err:      agentpod.ErrMissingAgentTypeID,
+			name:     "ErrMissingAgentSlug -> 400",
+			err:      agentpod.ErrMissingAgentSlug,
 			wantCode: http.StatusBadRequest,
-			wantJSON: map[string]string{"code": "MISSING_AGENT_TYPE_ID"},
+			wantJSON: map[string]string{"code": "MISSING_AGENT_SLUG"},
 		},
 		{
 			name:     "ErrSourcePodNotTerminated -> 400",

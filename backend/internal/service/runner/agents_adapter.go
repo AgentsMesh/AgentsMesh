@@ -5,29 +5,29 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 )
 
-// AgentTypeServiceAdapter adapts agent.AgentTypeService to interfaces.AgentTypesProvider interface
-type AgentTypeServiceAdapter struct {
-	agentTypeSvc *agent.AgentTypeService
+// AgentServiceAdapter adapts agent.AgentService to interfaces.AgentsProvider interface
+type AgentServiceAdapter struct {
+	agentSvc *agent.AgentService
 }
 
-// NewAgentTypeServiceAdapter creates a new adapter
-func NewAgentTypeServiceAdapter(agentTypeSvc *agent.AgentTypeService) *AgentTypeServiceAdapter {
-	return &AgentTypeServiceAdapter{agentTypeSvc: agentTypeSvc}
+// NewAgentServiceAdapter creates a new adapter
+func NewAgentServiceAdapter(agentSvc *agent.AgentService) *AgentServiceAdapter {
+	return &AgentServiceAdapter{agentSvc: agentSvc}
 }
 
-// GetAgentTypesForRunner implements interfaces.AgentTypesProvider interface
-func (a *AgentTypeServiceAdapter) GetAgentTypesForRunner() []interfaces.AgentTypeInfo {
-	// Get agent types from service
-	types := a.agentTypeSvc.GetAgentTypesForRunner()
+// GetAgentsForRunner implements interfaces.AgentsProvider interface
+func (a *AgentServiceAdapter) GetAgentsForRunner() []interfaces.AgentInfo {
+	// Get agents from service
+	agents := a.agentSvc.GetAgentsForRunner()
 
-	// Convert to interfaces.AgentTypeInfo
-	result := make([]interfaces.AgentTypeInfo, len(types))
-	for i, t := range types {
-		result[i] = interfaces.AgentTypeInfo{
-			Slug:          t.Slug,
-			Name:          t.Name,
-			Executable:    t.Executable,
-			LaunchCommand: t.LaunchCommand,
+	// Convert to interfaces.AgentInfo
+	result := make([]interfaces.AgentInfo, len(agents))
+	for i, ag := range agents {
+		result[i] = interfaces.AgentInfo{
+			Slug:          ag.Slug,
+			Name:          ag.Name,
+			Executable:    ag.Executable,
+			LaunchCommand: ag.LaunchCommand,
 		}
 	}
 	return result

@@ -16,7 +16,7 @@ func (s *CredentialProfileService) UpdateCredentialProfile(ctx context.Context, 
 
 	// Check name uniqueness if changing
 	if params.Name != nil && *params.Name != profile.Name {
-		exists, err := s.repo.NameExists(ctx, userID, profile.AgentTypeID, *params.Name, &profileID)
+		exists, err := s.repo.NameExists(ctx, userID, profile.AgentSlug, *params.Name, &profileID)
 		if err != nil {
 			return nil, err
 		}
@@ -27,7 +27,7 @@ func (s *CredentialProfileService) UpdateCredentialProfile(ctx context.Context, 
 
 	// If setting as default, unset other defaults
 	if params.IsDefault != nil && *params.IsDefault && !profile.IsDefault {
-		_ = s.repo.UnsetDefaults(ctx, userID, profile.AgentTypeID)
+		_ = s.repo.UnsetDefaults(ctx, userID, profile.AgentSlug)
 	}
 
 	// Build updates
@@ -70,7 +70,7 @@ func (s *CredentialProfileService) UpdateCredentialProfile(ctx context.Context, 
 	return s.GetCredentialProfile(ctx, userID, profileID)
 }
 
-// SetDefaultCredentialProfile sets a profile as the default for its agent type
+// SetDefaultCredentialProfile sets a profile as the default for its agent
 func (s *CredentialProfileService) SetDefaultCredentialProfile(ctx context.Context, userID, profileID int64) (*agent.UserAgentCredentialProfile, error) {
 	profile, err := s.GetCredentialProfile(ctx, userID, profileID)
 	if err != nil {
@@ -78,7 +78,7 @@ func (s *CredentialProfileService) SetDefaultCredentialProfile(ctx context.Conte
 	}
 
 	// Unset other defaults
-	_ = s.repo.UnsetDefaults(ctx, userID, profile.AgentTypeID)
+	_ = s.repo.UnsetDefaults(ctx, userID, profile.AgentSlug)
 
 	// Set this as default
 	if err := s.repo.SetDefault(ctx, profile); err != nil {

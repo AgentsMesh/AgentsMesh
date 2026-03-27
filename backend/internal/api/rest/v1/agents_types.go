@@ -2,67 +2,52 @@ package v1
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
 
-// ListAgentTypes lists available agent types
-// GET /api/v1/organizations/:slug/agents/types
-func (h *AgentHandler) ListAgentTypes(c *gin.Context) {
+// ListAgents lists available agents (builtin + custom)
+func (h *AgentHandler) ListAgents(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
-	// Get builtin types
-	builtinTypes, err := h.agentTypeSvc.ListBuiltinAgentTypes(c.Request.Context())
+	builtinAgents, err := h.agentSvc.ListBuiltinAgents(c.Request.Context())
 	if err != nil {
-		apierr.InternalError(c, "Failed to list builtin agent types")
+		apierr.InternalError(c, "Failed to list builtin agents")
 		return
 	}
 
-	// Get custom types for organization
-	customTypes, err := h.agentTypeSvc.ListCustomAgentTypes(c.Request.Context(), tenant.OrganizationID)
+	customAgents, err := h.agentSvc.ListCustomAgents(c.Request.Context(), tenant.OrganizationID)
 	if err != nil {
-		apierr.InternalError(c, "Failed to list custom agent types")
+		apierr.InternalError(c, "Failed to list custom agents")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"builtin_types": builtinTypes,
-		"custom_types":  customTypes,
+		"builtin_agents": builtinAgents,
+		"custom_agents":  customAgents,
 	})
 }
 
-// GetAgentType returns details of a specific agent type
-// GET /api/v1/organizations/:slug/agents/types/:agent_type_id
-func (h *AgentHandler) GetAgentType(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
+// GetAgent returns details of a specific agent
+func (h *AgentHandler) GetAgent(c *gin.Context) {
+	agentSlug := c.Param("slug")
+
+	agentDef, err := h.agentSvc.GetAgent(c.Request.Context(), agentSlug)
 	if err != nil {
-		apierr.InvalidInput(c, "Invalid agent type ID")
+		apierr.ResourceNotFound(c, "Agent not found")
 		return
 	}
 
-	agentType, err := h.agentTypeSvc.GetAgentType(c.Request.Context(), agentTypeID)
-	if err != nil {
-		apierr.ResourceNotFound(c, "Agent type not found")
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"agent_type": agentType})
+	c.JSON(http.StatusOK, gin.H{"agent": agentDef})
 }
 
-// GetAgentTypeConfigSchema returns the raw config schema for an agent type
-// Frontend is responsible for i18n translation using: agent.{slug}.fields.{field.name}.label
-// GET /api/v1/organizations/:slug/agents/:agent_type_id/config-schema
-func (h *AgentHandler) GetAgentTypeConfigSchema(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid agent type ID")
-		return
-	}
+// GetAgentConfigSchema returns the config schema for an agent
+func (h *AgentHandler) GetAgentConfigSchema(c *gin.Context) {
+	agentSlug := c.Param("slug")
 
-	schema, err := h.configBuilder.GetConfigSchema(c.Request.Context(), agentTypeID)
+	schema, err := h.configBuilder.GetConfigSchema(c.Request.Context(), agentSlug)
 	if err != nil {
 		apierr.InternalError(c, "Failed to get config schema")
 		return

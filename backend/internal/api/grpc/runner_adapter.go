@@ -50,7 +50,7 @@ type GRPCRunnerAdapter struct {
 	runnerService      RunnerServiceInterface
 	orgService         OrganizationServiceInterface
 	pkiService         *pki.Service
-	agentTypesProvider interfaces.AgentTypesProvider
+	agentsProvider interfaces.AgentsProvider
 
 	// Delegate connection management to RunnerConnectionManager
 	connManager *runner.RunnerConnectionManager
@@ -64,7 +64,7 @@ type GRPCRunnerAdapter struct {
 	ticketService     *ticket.Service
 	repositoryService repository.RepositoryServiceInterface
 	runnerMcpService  *runner.Service
-	agentTypeSvc      *agent.AgentTypeService
+	agentSvc      *agent.AgentService
 	userConfigSvc     *agent.UserConfigService
 	podRouter       PodRouterForMCP // *runner.PodRouter, optional
 	loopService          *loopService.LoopService
@@ -81,7 +81,7 @@ type MCPDependencies struct {
 	TicketService     *ticket.Service
 	RepositoryService repository.RepositoryServiceInterface
 	RunnerService     *runner.Service
-	AgentTypeSvc      *agent.AgentTypeService
+	AgentSvc      *agent.AgentService
 	UserConfigSvc     *agent.UserConfigService
 	PodRouter    PodRouterForMCP // *runner.PodRouter, optional
 	LoopService       *loopService.LoopService
@@ -96,7 +96,7 @@ func NewGRPCRunnerAdapter(
 	runnerService RunnerServiceInterface,
 	orgService OrganizationServiceInterface,
 	pkiService *pki.Service,
-	agentTypesProvider interfaces.AgentTypesProvider,
+	agentsProvider interfaces.AgentsProvider,
 	connManager *runner.RunnerConnectionManager,
 	mcpDeps *MCPDependencies,
 ) *GRPCRunnerAdapter {
@@ -106,7 +106,7 @@ func NewGRPCRunnerAdapter(
 		runnerService:      runnerService,
 		orgService:         orgService,
 		pkiService:         pkiService,
-		agentTypesProvider: agentTypesProvider,
+		agentsProvider: agentsProvider,
 		connManager:        connManager,
 	}
 
@@ -120,7 +120,7 @@ func NewGRPCRunnerAdapter(
 		adapter.ticketService = mcpDeps.TicketService
 		adapter.repositoryService = mcpDeps.RepositoryService
 		adapter.runnerMcpService = mcpDeps.RunnerService
-		adapter.agentTypeSvc = mcpDeps.AgentTypeSvc
+		adapter.agentSvc = mcpDeps.AgentSvc
 		adapter.userConfigSvc = mcpDeps.UserConfigSvc
 		adapter.podRouter = mcpDeps.PodRouter
 		adapter.loopService = mcpDeps.LoopService

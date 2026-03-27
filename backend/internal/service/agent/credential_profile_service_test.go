@@ -28,8 +28,8 @@ func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
 	})
 	require.NoError(t, err, "failed to connect database")
 
-	// Create agent_types table with all fields
-	err = db.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	// Create agents table with all fields
+	err = db.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
@@ -42,6 +42,7 @@ func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
 		files_template BLOB,
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
+		podfile_source TEXT,
 		is_builtin INTEGER NOT NULL DEFAULT 0,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		supported_modes TEXT NOT NULL DEFAULT 'pty',
@@ -54,7 +55,7 @@ func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
 	err = db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_credential_profiles (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
+		agent_slug TEXT NOT NULL,
 		name TEXT NOT NULL,
 		description TEXT,
 		is_runner_host INTEGER NOT NULL DEFAULT 0,
@@ -66,10 +67,10 @@ func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
 	)`).Error
 	require.NoError(t, err)
 
-	// Seed agent types
-	db.Exec(`INSERT INTO agent_types (slug, name, executable, launch_command, is_builtin, is_active)
+	// Seed agents
+	db.Exec(`INSERT INTO agents (slug, name, executable, launch_command, is_builtin, is_active)
 		VALUES ('claude-code', 'Claude Code', 'claude', 'claude', 1, 1)`)
-	db.Exec(`INSERT INTO agent_types (slug, name, executable, launch_command, is_builtin, is_active)
+	db.Exec(`INSERT INTO agents (slug, name, executable, launch_command, is_builtin, is_active)
 		VALUES ('aider', 'Aider', 'aider', 'aider', 1, 1)`)
 
 	return db
@@ -77,28 +78,28 @@ func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
 
 func TestNewCredentialProfileService(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(db)
+	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 
 	assert.NotNil(t, svc)
 	assert.NotNil(t, svc.repo)
-	assert.Equal(t, agentTypeSvc, svc.agentTypeService)
+	assert.Equal(t, agentSvc, svc.agentSvc)
 }
 
 func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(db)
+	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 	userID := int64(1)
 
 	t.Run("create profile with credentials", func(t *testing.T) {
 		desc := "Personal API key"
 		params := &CreateCredentialProfileParams{
-			AgentTypeID:  at.ID,
+			AgentSlug:  at.Slug,
 			Name:         "My API Key",
 			Description:  &desc,
 			IsRunnerHost: false,
@@ -112,7 +113,7 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotZero(t, profile.ID)
 		assert.Equal(t, userID, profile.UserID)
-		assert.Equal(t, at.ID, profile.AgentTypeID)
+		assert.Equal(t, at.Slug, profile.AgentSlug)
 		assert.Equal(t, "My API Key", profile.Name)
 		assert.Equal(t, "Personal API key", *profile.Description)
 		assert.False(t, profile.IsRunnerHost)
@@ -126,7 +127,7 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 	t.Run("create runner host profile", func(t *testing.T) {
 		desc := "Use runner's environment"
 		params := &CreateCredentialProfileParams{
-			AgentTypeID:  at.ID,
+			AgentSlug:  at.Slug,
 			Name:         "Runner Host",
 			Description:  &desc,
 			IsRunnerHost: true,
@@ -141,7 +142,7 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 
 	t.Run("duplicate name returns error", func(t *testing.T) {
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Duplicate Test",
 		}
 		_, err := svc.CreateCredentialProfile(ctx, userID, params)
@@ -152,19 +153,19 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 		assert.ErrorIs(t, err, ErrCredentialProfileExists)
 	})
 
-	t.Run("non-existent agent type returns error", func(t *testing.T) {
+	t.Run("non-existent agent returns error", func(t *testing.T) {
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: 99999,
+			AgentSlug: "nonexistent",
 			Name:        "Invalid Agent",
 		}
 		_, err := svc.CreateCredentialProfile(ctx, userID, params)
-		assert.ErrorIs(t, err, ErrAgentTypeNotFound)
+		assert.ErrorIs(t, err, ErrAgentNotFound)
 	})
 
 	t.Run("setting default unsets other defaults", func(t *testing.T) {
 		// Create first default
 		params1 := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "First Default",
 			IsDefault:   true,
 		}
@@ -174,7 +175,7 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 
 		// Create second default - should unset first
 		params2 := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Second Default",
 			IsDefault:   true,
 		}
@@ -191,18 +192,18 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 
 func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(db)
+	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 	userID := int64(1)
 
 	t.Run("get existing profile", func(t *testing.T) {
 		// Create first
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Test Profile",
 			Credentials: map[string]string{"key": "value"},
 		}
@@ -224,7 +225,7 @@ func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
 	t.Run("wrong user returns error", func(t *testing.T) {
 		// Create for user 1
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "User 1 Profile",
 		}
 		created, err := svc.CreateCredentialProfile(ctx, userID, params)
@@ -238,18 +239,18 @@ func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
 
 func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(db)
+	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 	userID := int64(1)
 
 	t.Run("update name and description", func(t *testing.T) {
 		origDesc := "Original Desc"
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Original Name",
 			Description: &origDesc,
 		}
@@ -269,7 +270,7 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 
 	t.Run("update credentials", func(t *testing.T) {
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Creds Test",
 			Credentials: map[string]string{"key": "old-value"},
 		}
@@ -287,7 +288,7 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 
 	t.Run("switch to runner host clears credentials", func(t *testing.T) {
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Switch Test",
 			Credentials: map[string]string{"key": "value"},
 		}
@@ -305,7 +306,7 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 	t.Run("update default unsets other defaults", func(t *testing.T) {
 		// Create first default
 		params1 := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "First",
 			IsDefault:   true,
 		}
@@ -314,7 +315,7 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 
 		// Create second non-default
 		params2 := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Second",
 			IsDefault:   false,
 		}
@@ -336,14 +337,14 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 
 	t.Run("duplicate name returns error", func(t *testing.T) {
 		params1 := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Name A",
 		}
 		_, err := svc.CreateCredentialProfile(ctx, int64(20), params1)
 		require.NoError(t, err)
 
 		params2 := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "Name B",
 		}
 		profile2, err := svc.CreateCredentialProfile(ctx, int64(20), params2)
@@ -368,17 +369,17 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 
 func TestCredentialProfileService_DeleteCredentialProfile(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(db)
+	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 	userID := int64(1)
 
 	t.Run("delete existing profile", func(t *testing.T) {
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "To Delete",
 		}
 		created, err := svc.CreateCredentialProfile(ctx, userID, params)
@@ -399,7 +400,7 @@ func TestCredentialProfileService_DeleteCredentialProfile(t *testing.T) {
 
 	t.Run("cannot delete other user's profile", func(t *testing.T) {
 		params := &CreateCredentialProfileParams{
-			AgentTypeID: at.ID,
+			AgentSlug: at.Slug,
 			Name:        "User 1 Only",
 		}
 		created, err := svc.CreateCredentialProfile(ctx, userID, params)

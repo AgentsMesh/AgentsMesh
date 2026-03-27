@@ -47,7 +47,7 @@ type ServerDependencies struct {
 	PKIService         *pki.Service
 	RunnerService      RunnerServiceInterface
 	OrgService         OrganizationServiceInterface
-	AgentTypesProvider interfaces.AgentTypesProvider
+	AgentsProvider interfaces.AgentsProvider
 	ConnManager        *runner.RunnerConnectionManager // Connection manager with 256-shard locks
 	MCPDeps            *MCPDependencies                // Optional MCP service dependencies
 }
@@ -153,7 +153,7 @@ func NewServer(deps *ServerDependencies) (*Server, error) {
 		deps.RunnerService,
 		deps.OrgService,
 		deps.PKIService,
-		deps.AgentTypesProvider,
+		deps.AgentsProvider,
 		deps.ConnManager,
 		deps.MCPDeps,
 	)

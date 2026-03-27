@@ -8,33 +8,32 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
-// ListCredentialProfiles returns all credential profiles for a user, grouped by agent type
-func (s *CredentialProfileService) ListCredentialProfiles(ctx context.Context, userID int64) ([]*agent.CredentialProfilesByAgentType, error) {
-	profiles, err := s.repo.ListActiveWithAgentType(ctx, userID)
+// ListCredentialProfiles returns all credential profiles for a user, grouped by agent
+func (s *CredentialProfileService) ListCredentialProfiles(ctx context.Context, userID int64) ([]*agent.CredentialProfilesByAgent, error) {
+	profiles, err := s.repo.ListActiveWithAgent(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Group by agent type
-	groupedMap := make(map[int64]*agent.CredentialProfilesByAgentType)
+	// Group by agent
+	groupedMap := make(map[string]*agent.CredentialProfilesByAgent)
 	for _, p := range profiles {
-		group, exists := groupedMap[p.AgentTypeID]
+		group, exists := groupedMap[p.AgentSlug]
 		if !exists {
-			group = &agent.CredentialProfilesByAgentType{
-				AgentTypeID: p.AgentTypeID,
+			group = &agent.CredentialProfilesByAgent{
+				AgentSlug: p.AgentSlug,
 				Profiles:    make([]*agent.CredentialProfileResponse, 0),
 			}
-			if p.AgentType != nil {
-				group.AgentTypeName = p.AgentType.Name
-				group.AgentTypeSlug = p.AgentType.Slug
+			if p.Agent != nil {
+				group.AgentName = p.Agent.Name
 			}
-			groupedMap[p.AgentTypeID] = group
+			groupedMap[p.AgentSlug] = group
 		}
 		group.Profiles = append(group.Profiles, s.ProfileToResponse(p))
 	}
 
 	// Convert map to slice
-	result := make([]*agent.CredentialProfilesByAgentType, 0, len(groupedMap))
+	result := make([]*agent.CredentialProfilesByAgent, 0, len(groupedMap))
 	for _, group := range groupedMap {
 		result = append(result, group)
 	}
@@ -42,14 +41,14 @@ func (s *CredentialProfileService) ListCredentialProfiles(ctx context.Context, u
 	return result, nil
 }
 
-// ListCredentialProfilesForAgentType returns all credential profiles for a specific agent type
-func (s *CredentialProfileService) ListCredentialProfilesForAgentType(ctx context.Context, userID, agentTypeID int64) ([]*agent.UserAgentCredentialProfile, error) {
-	return s.repo.ListByAgentType(ctx, userID, agentTypeID)
+// ListCredentialProfilesForAgent returns all credential profiles for a specific agent
+func (s *CredentialProfileService) ListCredentialProfilesForAgent(ctx context.Context, userID int64, agentSlug string) ([]*agent.UserAgentCredentialProfile, error) {
+	return s.repo.ListByAgentSlug(ctx, userID, agentSlug)
 }
 
-// GetDefaultCredentialProfile returns the default credential profile for a user and agent type
-func (s *CredentialProfileService) GetDefaultCredentialProfile(ctx context.Context, userID, agentTypeID int64) (*agent.UserAgentCredentialProfile, error) {
-	profile, err := s.repo.GetDefault(ctx, userID, agentTypeID)
+// GetDefaultCredentialProfile returns the default credential profile for a user and agent
+func (s *CredentialProfileService) GetDefaultCredentialProfile(ctx context.Context, userID int64, agentSlug string) (*agent.UserAgentCredentialProfile, error) {
+	profile, err := s.repo.GetDefault(ctx, userID, agentSlug)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +63,7 @@ func (s *CredentialProfileService) GetDefaultCredentialProfile(ctx context.Conte
 //   - nil (field absent): use user's default profile, fallback to RunnerHost if no default
 //   - 0: explicit RunnerHost mode (use Runner's local environment, no credentials injected)
 //   - >0: use specified credential profile ID
-func (s *CredentialProfileService) GetEffectiveCredentialsForPod(ctx context.Context, userID, agentTypeID int64, profileID *int64) (agent.EncryptedCredentials, bool, error) {
+func (s *CredentialProfileService) GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agent.EncryptedCredentials, bool, error) {
 	// 1. Explicit RunnerHost (profileID == 0)
 	if profileID != nil && *profileID == 0 {
 		return nil, true, nil
@@ -87,7 +86,7 @@ func (s *CredentialProfileService) GetEffectiveCredentialsForPod(ctx context.Con
 	}
 
 	// 3. Not specified (profileID == nil) → use default profile, fallback to RunnerHost
-	profile, err := s.GetDefaultCredentialProfile(ctx, userID, agentTypeID)
+	profile, err := s.GetDefaultCredentialProfile(ctx, userID, agentSlug)
 	if err != nil {
 		if errors.Is(err, ErrCredentialProfileNotFound) {
 			return nil, true, nil

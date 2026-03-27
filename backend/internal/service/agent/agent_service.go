@@ -7,15 +7,15 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
-// Errors for AgentTypeService
+// Errors for AgentService
 var (
-	ErrAgentTypeNotFound    = errors.New("agent type not found")
-	ErrAgentSlugExists      = errors.New("agent type slug already exists")
-	ErrAgentTypeHasLoopRefs = errors.New("cannot delete: agent type is referenced by one or more loops")
+	ErrAgentNotFound    = errors.New("agent not found")
+	ErrAgentSlugExists  = errors.New("agent slug already exists")
+	ErrAgentHasLoopRefs = errors.New("cannot delete: agent is referenced by one or more loops")
 )
 
-// AgentTypeInfo is a simplified agent type for Runner initialization
-type AgentTypeInfo struct {
+// AgentInfo is a simplified agent descriptor for Runner initialization
+type AgentInfo struct {
 	Slug          string `json:"slug"`
 	Name          string `json:"name"`
 	Executable    string `json:"executable"`
@@ -31,34 +31,34 @@ type CreateCustomAgentRequest struct {
 	DefaultArgs      *string
 	CredentialSchema agent.CredentialSchema
 	StatusDetection  agent.StatusDetection
+	PodfileSource    *string
 }
 
-// AgentTypeService handles agent type operations
-type AgentTypeService struct {
-	repo agent.AgentTypeRepository
+// AgentService handles agent operations
+type AgentService struct {
+	repo agent.AgentRepository
 }
 
-// NewAgentTypeService creates a new agent type service
-func NewAgentTypeService(repo agent.AgentTypeRepository) *AgentTypeService {
-	return &AgentTypeService{repo: repo}
+// NewAgentService creates a new agent service
+func NewAgentService(repo agent.AgentRepository) *AgentService {
+	return &AgentService{repo: repo}
 }
 
-// ListBuiltinAgentTypes returns all builtin agent types
-func (s *AgentTypeService) ListBuiltinAgentTypes(ctx context.Context) ([]*agent.AgentType, error) {
+// ListBuiltinAgents returns all builtin agents
+func (s *AgentService) ListBuiltinAgents(ctx context.Context) ([]*agent.Agent, error) {
 	return s.repo.ListBuiltinActive(ctx)
 }
 
-// GetAgentTypesForRunner returns agent types for Runner initialization handshake
-// This implements the runner.AgentTypesProvider interface
-func (s *AgentTypeService) GetAgentTypesForRunner() []AgentTypeInfo {
+// GetAgentsForRunner returns agents for Runner initialization handshake
+func (s *AgentService) GetAgentsForRunner() []AgentInfo {
 	types, err := s.repo.ListAllActive(context.Background())
 	if err != nil {
 		return nil
 	}
 
-	result := make([]AgentTypeInfo, 0, len(types))
+	result := make([]AgentInfo, 0, len(types))
 	for _, t := range types {
-		result = append(result, AgentTypeInfo{
+		result = append(result, AgentInfo{
 			Slug:          t.Slug,
 			Name:          t.Name,
 			Executable:    t.Executable,
@@ -68,32 +68,25 @@ func (s *AgentTypeService) GetAgentTypesForRunner() []AgentTypeInfo {
 	return result
 }
 
-// GetAgentType returns an agent type by ID
-func (s *AgentTypeService) GetAgentType(ctx context.Context, id int64) (*agent.AgentType, error) {
-	at, err := s.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if at == nil {
-		return nil, ErrAgentTypeNotFound
-	}
-	return at, nil
-}
-
-// GetAgentTypeBySlug returns an agent type by slug
-func (s *AgentTypeService) GetAgentTypeBySlug(ctx context.Context, slug string) (*agent.AgentType, error) {
+// GetBySlug returns an agent by slug, or ErrAgentNotFound if not found.
+func (s *AgentService) GetBySlug(ctx context.Context, slug string) (*agent.Agent, error) {
 	at, err := s.repo.GetBySlug(ctx, slug)
 	if err != nil {
 		return nil, err
 	}
 	if at == nil {
-		return nil, ErrAgentTypeNotFound
+		return nil, ErrAgentNotFound
 	}
 	return at, nil
 }
 
-// CreateCustomAgentType creates a custom agent type for an organization
-func (s *AgentTypeService) CreateCustomAgentType(ctx context.Context, orgID int64, req *CreateCustomAgentRequest) (*agent.CustomAgentType, error) {
+// GetAgent is an alias for GetBySlug.
+func (s *AgentService) GetAgent(ctx context.Context, slug string) (*agent.Agent, error) {
+	return s.GetBySlug(ctx, slug)
+}
+
+// CreateCustomAgent creates a custom agent for an organization
+func (s *AgentService) CreateCustomAgent(ctx context.Context, orgID int64, req *CreateCustomAgentRequest) (*agent.CustomAgent, error) {
 	exists, err := s.repo.CustomSlugExists(ctx, orgID, req.Slug)
 	if err != nil {
 		return nil, err
@@ -102,7 +95,7 @@ func (s *AgentTypeService) CreateCustomAgentType(ctx context.Context, orgID int6
 		return nil, ErrAgentSlugExists
 	}
 
-	customAgent := &agent.CustomAgentType{
+	customAgent := &agent.CustomAgent{
 		OrganizationID:   orgID,
 		Slug:             req.Slug,
 		Name:             req.Name,
@@ -111,6 +104,7 @@ func (s *AgentTypeService) CreateCustomAgentType(ctx context.Context, orgID int6
 		DefaultArgs:      req.DefaultArgs,
 		CredentialSchema: req.CredentialSchema,
 		StatusDetection:  req.StatusDetection,
+		PodfileSource:    req.PodfileSource,
 		IsActive:         true,
 	}
 
@@ -121,37 +115,37 @@ func (s *AgentTypeService) CreateCustomAgentType(ctx context.Context, orgID int6
 	return customAgent, nil
 }
 
-// UpdateCustomAgentType updates a custom agent type
-func (s *AgentTypeService) UpdateCustomAgentType(ctx context.Context, id int64, updates map[string]interface{}) (*agent.CustomAgentType, error) {
-	return s.repo.UpdateCustom(ctx, id, updates)
+// UpdateCustomAgent updates a custom agent
+func (s *AgentService) UpdateCustomAgent(ctx context.Context, orgID int64, slug string, updates map[string]interface{}) (*agent.CustomAgent, error) {
+	return s.repo.UpdateCustom(ctx, orgID, slug, updates)
 }
 
-// DeleteCustomAgentType deletes a custom agent type.
-// Blocks deletion if any loops reference this agent type (application-level RESTRICT).
-func (s *AgentTypeService) DeleteCustomAgentType(ctx context.Context, id int64) error {
-	loopCount, err := s.repo.CountLoopReferences(ctx, id)
+// DeleteCustomAgent deletes a custom agent.
+// Blocks deletion if any loops reference this agent (application-level RESTRICT).
+func (s *AgentService) DeleteCustomAgent(ctx context.Context, orgID int64, slug string) error {
+	loopCount, err := s.repo.CountLoopReferences(ctx, orgID, slug)
 	if err != nil {
 		return err
 	}
 	if loopCount > 0 {
-		return ErrAgentTypeHasLoopRefs
+		return ErrAgentHasLoopRefs
 	}
-	return s.repo.DeleteCustom(ctx, id)
+	return s.repo.DeleteCustom(ctx, orgID, slug)
 }
 
-// ListCustomAgentTypes returns custom agent types for an organization
-func (s *AgentTypeService) ListCustomAgentTypes(ctx context.Context, orgID int64) ([]*agent.CustomAgentType, error) {
+// ListCustomAgents returns custom agents for an organization
+func (s *AgentService) ListCustomAgents(ctx context.Context, orgID int64) ([]*agent.CustomAgent, error) {
 	return s.repo.ListCustomByOrg(ctx, orgID)
 }
 
-// GetCustomAgentType returns a custom agent type by ID
-func (s *AgentTypeService) GetCustomAgentType(ctx context.Context, id int64) (*agent.CustomAgentType, error) {
-	custom, err := s.repo.GetCustomByID(ctx, id)
+// GetCustomAgent returns a custom agent by slug
+func (s *AgentService) GetCustomAgent(ctx context.Context, orgID int64, slug string) (*agent.CustomAgent, error) {
+	custom, err := s.repo.GetCustomBySlug(ctx, orgID, slug)
 	if err != nil {
 		return nil, err
 	}
 	if custom == nil {
-		return nil, ErrAgentTypeNotFound
+		return nil, ErrAgentNotFound
 	}
 	return custom, nil
 }

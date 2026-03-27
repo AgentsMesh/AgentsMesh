@@ -43,7 +43,7 @@ type Services struct {
 	User *user.Service
 	Org  *organization.Service
 	// Agent services (split by responsibility)
-	AgentType          *agent.AgentTypeService
+	AgentSvc           *agent.AgentService
 	CredentialProfile  *agent.CredentialProfileService
 	UserConfig         *agent.UserConfigService
 	Repository         *repository.Service

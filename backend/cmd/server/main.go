@@ -102,7 +102,7 @@ func main() {
 	}
 
 	// Initialize Runner components
-	runnerConnMgr, podCoordinator, podRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentType)
+	runnerConnMgr, podCoordinator, podRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentSvc)
 
 	// Wire AutopilotRepository into PodCoordinator for autopilot event handling
 	podCoordinator.SetAutopilotRepo(services.autopilotRepo)
@@ -148,7 +148,7 @@ func main() {
 	setupPodEventCallbacks(db, podCoordinator, eventBus, notifDispatcher)
 
 	// Create PodOrchestrator (unified Pod creation logic for REST + MCP paths)
-	compositeProvider := agent.NewCompositeProvider(services.agentType, services.credentialProfile, services.userConfig)
+	compositeProvider := agent.NewCompositeProvider(services.agentSvc, services.credentialProfile, services.userConfig)
 	configBuilder := agent.NewConfigBuilder(compositeProvider)
 	if services.extension != nil {
 		configBuilder.SetExtensionProvider(services.extension)
@@ -163,7 +163,7 @@ func main() {
 		RepoService:       services.repository,
 		TicketService:     services.ticket,
 		RunnerSelector:    services.runner,
-		AgentTypeResolver: services.agentType,
+		AgentResolver: services.agentSvc,
 		RunnerQuery:       services.runner,
 	})
 	slog.Info("PodOrchestrator created")
@@ -201,14 +201,14 @@ func main() {
 			TicketService:     services.ticket,
 			RepositoryService: services.repository,
 			RunnerService:     services.runner,
-			AgentTypeSvc:      services.agentType,
+			AgentSvc:      services.agentSvc,
 			UserConfigSvc:     services.userConfig,
 			PodRouter:    podRouter,
 			LoopService:       services.loop,
 			LoopRunService:    services.loopRun,
 			LoopOrchestrator:  loopOrchestrator,
 		}
-		grpcServer, grpcRunnerHandler = initializePKIAndGRPC(cfg, services.runner, services.org, services.agentType, runnerConnMgr, appLogger, mcpDeps)
+		grpcServer, grpcRunnerHandler = initializePKIAndGRPC(cfg, services.runner, services.org, services.agentSvc, runnerConnMgr, appLogger, mcpDeps)
 		if grpcServer != nil {
 			grpcCommandSender := grpcserver.NewGRPCCommandSender(grpcServer.RunnerAdapter())
 			podCoordinator.SetCommandSender(grpcCommandSender)
@@ -254,7 +254,7 @@ func main() {
 		Auth:               services.auth,
 		User:               services.user,
 		Org:                services.org,
-		AgentType:          services.agentType,
+		AgentSvc:           services.agentSvc,
 		CredentialProfile:  services.credentialProfile,
 		UserConfig:         services.userConfig,
 		Repository:         services.repository,

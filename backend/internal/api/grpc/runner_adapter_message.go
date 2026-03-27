@@ -140,21 +140,21 @@ func (a *GRPCRunnerAdapter) handleInitialize(ctx context.Context, runnerID int64
 		"protocol_version", req.ProtocolVersion,
 	)
 
-	// Get agent types from provider
-	var agentTypes []*runnerv1.AgentTypeInfo
-	if a.agentTypesProvider != nil {
-		types := a.agentTypesProvider.GetAgentTypesForRunner()
-		agentTypes = make([]*runnerv1.AgentTypeInfo, len(types))
+	// Get agents from provider
+	var agents []*runnerv1.AgentInfo
+	if a.agentsProvider != nil {
+		types := a.agentsProvider.GetAgentsForRunner()
+		agents = make([]*runnerv1.AgentInfo, len(types))
 		for i, t := range types {
-			agentTypes[i] = &runnerv1.AgentTypeInfo{
+			agents[i] = &runnerv1.AgentInfo{
 				Slug:    t.Slug,
 				Name:    t.Name,
 				Command: t.Executable,
 			}
 		}
-		a.logger.Debug("sending agent types to runner",
+		a.logger.Debug("sending agents to runner",
 			"runner_id", runnerID,
-			"agent_types_count", len(agentTypes),
+			"agent_count", len(agents),
 		)
 	}
 
@@ -176,7 +176,7 @@ func (a *GRPCRunnerAdapter) handleInitialize(ctx context.Context, runnerID int64
 		ServerInfo: &runnerv1.ServerInfo{
 			Version: "1.0.0",
 		},
-		AgentTypes: agentTypes,
+		Agents: agents,
 		Features: []string{
 			"files_to_create",
 			"work_dir_config",

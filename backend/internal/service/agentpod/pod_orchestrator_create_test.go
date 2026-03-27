@@ -34,12 +34,11 @@ func TestCreatePod_NormalMode_Success(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 		InitialPrompt:  "Hello",
 		Cols:           120,
 		Rows:           40,
@@ -56,15 +55,14 @@ func TestCreatePod_NormalMode_Success(t *testing.T) {
 }
 
 func TestCreatePod_NormalMode_MissingRunnerID(t *testing.T) {
-	// Without RunnerSelector/AgentTypeResolver injected, RunnerID=0 should fail with ErrMissingRunnerID
+	// Without RunnerSelector/AgentResolver injected, RunnerID=0 should fail with ErrMissingRunnerID
 	orch, _, _ := setupOrchestrator(t)
 
-	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
+		UserID: 1,
 		RunnerID:       0, // missing
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    "claude-code",
 	})
 
 	require.Error(t, err)
@@ -78,22 +76,21 @@ func TestCreatePod_AutoSelectRunner_Success(t *testing.T) {
 	selector := &mockRunnerSelector{
 		runner: &runnerDomain.Runner{ID: 42, NodeID: "auto-runner"},
 	}
-	resolver := &mockAgentTypeResolver{
-		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code", SupportedModes: "pty"},
+	resolver := &mockAgentResolver{
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty"},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
 		withCoordinator(coord),
 		withRunnerSelector(selector),
-		withAgentTypeResolver(resolver),
+		withAgentResolver(resolver),
 	)
 
-	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
+		UserID: 1,
 		RunnerID:       0, // auto-select
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    "claude-code",
 	})
 
 	require.NoError(t, err)
@@ -108,50 +105,48 @@ func TestCreatePod_AutoSelectRunner_NoAvailableRunner(t *testing.T) {
 	selector := &mockRunnerSelector{
 		err: errors.New("no available runner supports the requested agent"),
 	}
-	resolver := &mockAgentTypeResolver{
-		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code", SupportedModes: "pty"},
+	resolver := &mockAgentResolver{
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty"},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
 		withRunnerSelector(selector),
-		withAgentTypeResolver(resolver),
+		withAgentResolver(resolver),
 	)
 
-	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
+		UserID: 1,
 		RunnerID:       0,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    "claude-code",
 	})
 
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrNoAvailableRunner))
 }
 
-func TestCreatePod_AutoSelectRunner_AgentTypeResolveError(t *testing.T) {
+func TestCreatePod_AutoSelectRunner_AgentResolveError(t *testing.T) {
 	selector := &mockRunnerSelector{
 		runner: &runnerDomain.Runner{ID: 42},
 	}
-	resolver := &mockAgentTypeResolver{
-		err: errors.New("agent type not found"),
+	resolver := &mockAgentResolver{
+		err: errors.New("agent not found"),
 	}
 
 	orch, _, _ := setupOrchestrator(t,
 		withRunnerSelector(selector),
-		withAgentTypeResolver(resolver),
+		withAgentResolver(resolver),
 	)
 
-	agentTypeID := int64(999)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
+		UserID: 1,
 		RunnerID:       0,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    "claude-code",
 	})
 
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, ErrMissingAgentTypeID))
+	assert.True(t, errors.Is(err, ErrMissingAgentSlug))
 }
 
 func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
@@ -161,22 +156,21 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 		// This would fail if called, but it shouldn't be called
 		err: errors.New("should not be called"),
 	}
-	resolver := &mockAgentTypeResolver{
-		agentType: &agentDomain.AgentType{ID: 1, Slug: "claude-code", SupportedModes: "pty"},
+	resolver := &mockAgentResolver{
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty"},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
 		withCoordinator(coord),
 		withRunnerSelector(selector),
-		withAgentTypeResolver(resolver),
+		withAgentResolver(resolver),
 	)
 
-	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
+		UserID: 1,
 		RunnerID:       5, // explicit runner
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    "claude-code",
 	})
 
 	require.NoError(t, err)
@@ -184,18 +178,18 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 	assert.Equal(t, int64(5), result.Pod.RunnerID) // uses explicit runner, not auto-selected
 }
 
-func TestCreatePod_NormalMode_MissingAgentTypeID(t *testing.T) {
+func TestCreatePod_NormalMode_MissingAgentSlug(t *testing.T) {
 	orch, _, _ := setupOrchestrator(t)
 
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    nil, // missing
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug: "", // missing
 	})
 
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, ErrMissingAgentTypeID))
+	assert.True(t, errors.Is(err, ErrMissingAgentSlug))
 }
 
 func TestCreatePod_QuotaExceeded(t *testing.T) {
@@ -203,12 +197,11 @@ func TestCreatePod_QuotaExceeded(t *testing.T) {
 	billing := &mockBillingService{err: errQuota}
 	orch, _, _ := setupOrchestrator(t, withBilling(billing))
 
-	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 	})
 
 	require.Error(t, err)
@@ -219,12 +212,11 @@ func TestCreatePod_NilBilling_SkipsQuotaCheck(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 	})
 
 	require.NoError(t, err)
@@ -235,12 +227,11 @@ func TestCreatePod_NilCoordinator(t *testing.T) {
 	// No coordinator -> pod is created in DB but no command sent
 	orch, _, _ := setupOrchestrator(t)
 
-	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 	})
 
 	require.NoError(t, err)
@@ -252,12 +243,11 @@ func TestCreatePod_CoordinatorSendFailure_ReturnsError(t *testing.T) {
 	coord := &mockPodCoordinator{err: errors.New("runner not connected")}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
-	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 	})
 
 	require.Error(t, err)
@@ -265,12 +255,12 @@ func TestCreatePod_CoordinatorSendFailure_ReturnsError(t *testing.T) {
 }
 
 func TestCreatePod_ConfigBuildFailure(t *testing.T) {
-	// Create an orchestrator with a provider that fails on GetAgentType
+	// Create an orchestrator with a provider that fails on GetAgent
 	db := setupTestDB(t)
 	podSvc := newTestPodService(db)
 
 	provider := &mockAgentConfigProvider{
-		agentErr: errors.New("agent type not found"),
+		agentErr: errors.New("agent not found"),
 	}
 	configBuilder := agent.NewConfigBuilder(provider)
 
@@ -279,12 +269,11 @@ func TestCreatePod_ConfigBuildFailure(t *testing.T) {
 		ConfigBuilder: configBuilder,
 	})
 
-	agentTypeID := int64(999)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 	})
 
 	require.Error(t, err)
@@ -295,12 +284,11 @@ func TestCreatePod_SessionID_SetForNormalMode(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 	})
 
 	require.NoError(t, err)
@@ -313,12 +301,11 @@ func TestCreatePod_ConfigOverrides_Preserved(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
-		OrganizationID:  1,
-		UserID:          1,
-		RunnerID:        1,
-		AgentTypeID:     &agentTypeID,
+		OrganizationID: 1,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 		ConfigOverrides: map[string]interface{}{"custom_key": "custom_value"},
 	})
 
@@ -330,12 +317,11 @@ func TestCreatePod_NilConfigOverrides_Initialized(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
-		OrganizationID:  1,
-		UserID:          1,
-		RunnerID:        1,
-		AgentTypeID:     &agentTypeID,
+		OrganizationID: 1,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 		ConfigOverrides: nil, // should be auto-initialized
 	})
 
@@ -347,13 +333,12 @@ func TestCreatePod_PermissionMode(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	permMode := "bypassPermissions"
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
-		UserID:         1,
-		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 		PermissionMode: &permMode,
 	})
 
@@ -367,13 +352,12 @@ func TestCreatePod_CredentialProfileID_ZeroConvertsToNil(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	zero := int64(0)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
-		OrganizationID:      1,
-		UserID:              1,
-		RunnerID:            1,
-		AgentTypeID:         &agentTypeID,
+		OrganizationID: 1,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 		CredentialProfileID: &zero, // explicit RunnerHost
 	})
 
@@ -390,13 +374,12 @@ func TestCreatePod_CredentialProfileID_PositiveStored(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	profileID := int64(42)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
-		OrganizationID:      1,
-		UserID:              1,
-		RunnerID:            1,
-		AgentTypeID:         &agentTypeID,
+		OrganizationID: 1,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 		CredentialProfileID: &profileID,
 	})
 
@@ -414,12 +397,11 @@ func TestCreatePod_CredentialProfileID_NilStaysNil(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
-		OrganizationID:      1,
-		UserID:              1,
-		RunnerID:            1,
-		AgentTypeID:         &agentTypeID,
+		OrganizationID: 1,
+		UserID: 1,
+		RunnerID: 1,
+		AgentSlug:    "claude-code",
 		CredentialProfileID: nil, // use default
 	})
 

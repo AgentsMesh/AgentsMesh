@@ -233,7 +233,7 @@ func (imp *SkillImporter) processSkill(ctx context.Context, source *extension.Sk
 		existing.Compatibility = info.Compatibility
 		existing.AllowedTools = info.AllowedTools
 		existing.Category = info.Category
-		existing.AgentTypeFilter = source.CompatibleAgents // propagate from source
+		existing.AgentFilter = source.CompatibleAgents // propagate from source
 		existing.IsActive = true
 		return imp.repo.UpdateSkillMarketItem(ctx, existing)
 	}
@@ -251,7 +251,7 @@ func (imp *SkillImporter) processSkill(ctx context.Context, source *extension.Sk
 		StorageKey:      storageKey,
 		PackageSize:     int64(len(packageData)),
 		Version:         1,
-		AgentTypeFilter: source.CompatibleAgents, // propagate from source
+		AgentFilter: source.CompatibleAgents, // propagate from source
 		IsActive:        true,
 	}
 	return imp.repo.CreateSkillMarketItem(ctx, item)

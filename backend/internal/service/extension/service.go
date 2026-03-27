@@ -569,15 +569,15 @@ type ResolvedSkill struct {
 
 // GetEffectiveMcpServers returns the merged MCP server list for a repo
 // (org scope + current user's user scope, slug dedup with user priority)
-// Filters out servers whose MarketItem has an agent_type_filter that does not include agentSlug.
+// Filters out servers whose MarketItem has an agent_filter that does not include agentSlug.
 func (s *Service) GetEffectiveMcpServers(ctx context.Context, orgID, userID, repoID int64, agentSlug string) ([]*extension.InstalledMcpServer, error) {
 	servers, err := s.repo.GetEffectiveMcpServers(ctx, orgID, userID, repoID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get effective MCP servers: %w", err)
 	}
 
-	// Filter by agent type compatibility
-	servers = filterMcpServersByAgentType(servers, agentSlug)
+	// Filter by agent compatibility
+	servers = filterMcpServersByAgent(servers, agentSlug)
 
 	// Decrypt env vars for each server
 	for _, srv := range servers {
@@ -591,15 +591,15 @@ func (s *Service) GetEffectiveMcpServers(ctx context.Context, orgID, userID, rep
 }
 
 // GetEffectiveSkills returns the merged skill list with presigned download URLs.
-// Filters out skills whose MarketItem has an agent_type_filter that does not include agentSlug.
+// Filters out skills whose MarketItem has an agent_filter that does not include agentSlug.
 func (s *Service) GetEffectiveSkills(ctx context.Context, orgID, userID, repoID int64, agentSlug string) ([]*ResolvedSkill, error) {
 	skills, err := s.repo.GetEffectiveSkills(ctx, orgID, userID, repoID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get effective skills: %w", err)
 	}
 
-	// Filter by agent type compatibility
-	skills = filterSkillsByAgentType(skills, agentSlug)
+	// Filter by agent compatibility
+	skills = filterSkillsByAgent(skills, agentSlug)
 
 	resolved := make([]*ResolvedSkill, 0, len(skills))
 	for _, skill := range skills {
@@ -635,14 +635,14 @@ func (s *Service) GetEffectiveSkills(ctx context.Context, orgID, userID, repoID 
 	return resolved, nil
 }
 
-// --- Agent type filtering helpers ---
+// --- Agent filtering helpers ---
 
-// filterMcpServersByAgentType removes MCP servers whose MarketItem has an
-// agent_type_filter that does not include the given agentSlug.
+// filterMcpServersByAgent removes MCP servers whose MarketItem has an
+// agent_filter that does not include the given agentSlug.
 // Servers without a MarketItem (custom installs) always pass through.
 // An empty agentSlug disables filtering (all servers pass through).
-// A MarketItem with an empty/null agent_type_filter means "all agents allowed".
-func filterMcpServersByAgentType(servers []*extension.InstalledMcpServer, agentSlug string) []*extension.InstalledMcpServer {
+// A MarketItem with an empty/null agent_filter means "all agents allowed".
+func filterMcpServersByAgent(servers []*extension.InstalledMcpServer, agentSlug string) []*extension.InstalledMcpServer {
 	if agentSlug == "" {
 		return servers
 	}
@@ -653,7 +653,7 @@ func filterMcpServersByAgentType(servers []*extension.InstalledMcpServer, agentS
 			result = append(result, srv)
 			continue
 		}
-		filter := srv.MarketItem.GetAgentTypeFilter()
+		filter := srv.MarketItem.GetAgentFilter()
 		if len(filter) == 0 {
 			// No filter on market item: all agents allowed
 			result = append(result, srv)
@@ -669,12 +669,12 @@ func filterMcpServersByAgentType(servers []*extension.InstalledMcpServer, agentS
 	return result
 }
 
-// filterSkillsByAgentType removes skills whose MarketItem has an
-// agent_type_filter that does not include the given agentSlug.
+// filterSkillsByAgent removes skills whose MarketItem has an
+// agent_filter that does not include the given agentSlug.
 // Skills without a MarketItem (github/upload installs) always pass through.
 // An empty agentSlug disables filtering (all skills pass through).
-// A MarketItem with an empty/null agent_type_filter means "all agents allowed".
-func filterSkillsByAgentType(skills []*extension.InstalledSkill, agentSlug string) []*extension.InstalledSkill {
+// A MarketItem with an empty/null agent_filter means "all agents allowed".
+func filterSkillsByAgent(skills []*extension.InstalledSkill, agentSlug string) []*extension.InstalledSkill {
 	if agentSlug == "" {
 		return skills
 	}
@@ -685,7 +685,7 @@ func filterSkillsByAgentType(skills []*extension.InstalledSkill, agentSlug strin
 			result = append(result, skill)
 			continue
 		}
-		filter := skill.MarketItem.GetAgentTypeFilter()
+		filter := skill.MarketItem.GetAgentFilter()
 		if len(filter) == 0 {
 			// No filter on market item: all agents allowed
 			result = append(result, skill)

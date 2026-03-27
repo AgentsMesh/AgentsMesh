@@ -9,20 +9,20 @@ import (
 // AgentConfigProvider provides agent configuration data for ConfigBuilder
 // This interface allows for dependency injection and easier testing
 type AgentConfigProvider interface {
-	// GetAgentType returns an agent type by ID
-	GetAgentType(ctx context.Context, id int64) (*agent.AgentType, error)
+	// GetAgent returns an agent by slug
+	GetAgent(ctx context.Context, slug string) (*agent.Agent, error)
 	// GetUserEffectiveConfig returns the effective config by merging defaults and user config
-	GetUserEffectiveConfig(ctx context.Context, userID, agentTypeID int64, overrides agent.ConfigValues) agent.ConfigValues
+	GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agent.ConfigValues) agent.ConfigValues
 	// GetEffectiveCredentialsForPod returns credentials for pod injection
-	GetEffectiveCredentialsForPod(ctx context.Context, userID, agentTypeID int64, profileID *int64) (agent.EncryptedCredentials, bool, error)
+	GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agent.EncryptedCredentials, bool, error)
 }
 
 // Note: AgentConfigProvider is implemented by compositeProvider in API handlers
-// that combine the three sub-services (AgentTypeService, CredentialProfileService, UserConfigService)
+// that combine the three sub-services (AgentService, CredentialProfileService, UserConfigService)
 
 // ConfigBuildRequest contains all the information needed to build a pod config
 type ConfigBuildRequest struct {
-	AgentTypeID         int64
+	AgentSlug           string
 	OrganizationID      int64
 	UserID              int64
 	CredentialProfileID *int64

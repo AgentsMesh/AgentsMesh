@@ -15,24 +15,24 @@ var (
 	ErrCredentialsRequired       = errors.New("required credentials missing")
 )
 
-// AgentTypeProvider provides agent type lookup for credential profile operations
-type AgentTypeProvider interface {
-	GetAgentType(ctx context.Context, id int64) (*agent.AgentType, error)
+// AgentProvider provides agent lookup for credential profile operations
+type AgentProvider interface {
+	GetAgent(ctx context.Context, slug string) (*agent.Agent, error)
 }
 
 // CredentialProfileService handles user credential profile operations
 type CredentialProfileService struct {
-	repo             agent.CredentialProfileRepository
-	agentTypeService AgentTypeProvider
+	repo         agent.CredentialProfileRepository
+	agentSvc     AgentProvider
 	encryptor        *crypto.Encryptor
 }
 
 // NewCredentialProfileService creates a new credential profile service
-func NewCredentialProfileService(repo agent.CredentialProfileRepository, agentTypeService AgentTypeProvider, encryptor *crypto.Encryptor) *CredentialProfileService {
+func NewCredentialProfileService(repo agent.CredentialProfileRepository, agentSvc AgentProvider, encryptor *crypto.Encryptor) *CredentialProfileService {
 	return &CredentialProfileService{
-		repo:             repo,
-		agentTypeService: agentTypeService,
-		encryptor:        encryptor,
+		repo:      repo,
+		agentSvc:  agentSvc,
+		encryptor: encryptor,
 	}
 }
 

@@ -106,8 +106,7 @@ type CreateLoopRequest struct {
 	Description    *string
 
 	// Agent configuration
-	AgentTypeID       *int64
-	CustomAgentTypeID *int64
+	AgentSlug         string
 	PermissionMode    string
 	PromptTemplate    string
 	PromptVariables   []byte // JSON
@@ -140,8 +139,7 @@ type CreateLoopRequest struct {
 type UpdateLoopRequest struct {
 	Name              *string
 	Description       *string
-	AgentTypeID       *int64
-	CustomAgentTypeID *int64
+	AgentSlug         string
 	PermissionMode    *string
 	PromptTemplate    *string
 	PromptVariables   []byte
@@ -257,8 +255,7 @@ func (s *LoopService) Create(ctx context.Context, req *CreateLoopRequest) (*loop
 		Name:                req.Name,
 		Slug:                slug,
 		Description:         req.Description,
-		AgentTypeID:         req.AgentTypeID,
-		CustomAgentTypeID:   req.CustomAgentTypeID,
+		AgentSlug:    req.AgentSlug,
 		PermissionMode:      req.PermissionMode,
 		PromptTemplate:      req.PromptTemplate,
 		PromptVariables:     req.PromptVariables,
@@ -337,11 +334,8 @@ func (s *LoopService) Update(ctx context.Context, orgID int64, slug string, req 
 	if req.Description != nil {
 		updates["description"] = *req.Description
 	}
-	if req.AgentTypeID != nil {
-		updates["agent_type_id"] = *req.AgentTypeID
-	}
-	if req.CustomAgentTypeID != nil {
-		updates["custom_agent_type_id"] = *req.CustomAgentTypeID
+	if req.AgentSlug != "" {
+		updates["agent_slug"] = req.AgentSlug
 	}
 	if req.PermissionMode != nil {
 		updates["permission_mode"] = *req.PermissionMode

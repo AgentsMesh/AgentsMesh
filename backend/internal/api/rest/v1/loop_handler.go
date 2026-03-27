@@ -51,8 +51,7 @@ type createLoopRequest struct {
 	Name              string                 `json:"name" binding:"required,min=1,max=255"`
 	Slug              string                 `json:"slug"`
 	Description       *string                `json:"description"`
-	AgentTypeID       *int64                 `json:"agent_type_id"`
-	CustomAgentTypeID *int64                 `json:"custom_agent_type_id"`
+	AgentSlug       string                 `json:"agent_slug"`
 	PermissionMode    string                 `json:"permission_mode"`
 	PromptTemplate    string                 `json:"prompt_template" binding:"required"`
 	PromptVariables   map[string]interface{} `json:"prompt_variables"`
@@ -82,8 +81,7 @@ type createLoopRequest struct {
 type updateLoopRequest struct {
 	Name              *string                `json:"name"`
 	Description       *string                `json:"description"`
-	AgentTypeID       *int64                 `json:"agent_type_id"`
-	CustomAgentTypeID *int64                 `json:"custom_agent_type_id"`
+	AgentSlug       string                 `json:"agent_slug"`
 	PermissionMode    *string                `json:"permission_mode"`
 	PromptTemplate    *string                `json:"prompt_template"`
 	PromptVariables   map[string]interface{} `json:"prompt_variables"`
@@ -250,8 +248,7 @@ func (h *LoopHandler) CreateLoop(c *gin.Context) {
 		Name:                req.Name,
 		Slug:                req.Slug,
 		Description:         req.Description,
-		AgentTypeID:         req.AgentTypeID,
-		CustomAgentTypeID:   req.CustomAgentTypeID,
+		AgentSlug:         req.AgentSlug,
 		PermissionMode:      req.PermissionMode,
 		PromptTemplate:      req.PromptTemplate,
 		PromptVariables:     promptVariables,
@@ -361,8 +358,7 @@ func (h *LoopHandler) UpdateLoop(c *gin.Context) {
 	svcReq := &loopService.UpdateLoopRequest{
 		Name:                req.Name,
 		Description:         req.Description,
-		AgentTypeID:         req.AgentTypeID,
-		CustomAgentTypeID:   req.CustomAgentTypeID,
+		AgentSlug:         req.AgentSlug,
 		PermissionMode:      req.PermissionMode,
 		PromptTemplate:      req.PromptTemplate,
 		RepositoryID:        req.RepositoryID,

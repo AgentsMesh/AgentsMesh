@@ -2,17 +2,17 @@ package v1
 
 import (
 	"net/http"
-	"strconv"
 
 	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/podfile/extract"
+	"github.com/anthropics/agentsmesh/podfile/parser"
 	"github.com/gin-gonic/gin"
 )
 
-// CreateCustomAgent creates a custom agent type
-// POST /api/v1/organizations/:slug/agents/custom
+// CreateCustomAgent creates a custom agent
 func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 	var req CreateCustomAgentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -21,14 +21,11 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	// Convert request to service request
 	var desc *string
 	if req.Description != "" {
 		desc = &req.Description
@@ -38,13 +35,7 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 		args = &req.DefaultArgs
 	}
 
-	// Convert credential schema
 	var credSchema agentDomain.CredentialSchema
-	if req.CredentialSchema != nil {
-		// TODO: properly convert credential schema from map to CredentialSchema
-	}
-
-	// Convert status detection
 	var statusDetection agentDomain.StatusDetection
 	if req.StatusDetection != nil {
 		statusDetection = make(agentDomain.StatusDetection)
@@ -53,14 +44,37 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 		}
 	}
 
-	customAgent, err := h.agentTypeSvc.CreateCustomAgentType(c.Request.Context(), tenant.OrganizationID, &agent.CreateCustomAgentRequest{
+	launchCommand := req.LaunchCommand
+	var podfileSource *string
+	if req.PodfileSource != "" {
+		podfileSource = &req.PodfileSource
+		if launchCommand == "" {
+			prog, parseErrors := parser.Parse(req.PodfileSource)
+			if len(parseErrors) > 0 {
+				apierr.ValidationError(c, "Invalid PodFile: "+parseErrors[0])
+				return
+			}
+			spec := extract.Extract(prog)
+			launchCommand = spec.Agent.Command
+			if launchCommand == "" {
+				apierr.ValidationError(c, "PodFile must declare AGENT command")
+				return
+			}
+		}
+	} else if launchCommand == "" {
+		apierr.ValidationError(c, "Either podfile_source or launch_command is required")
+		return
+	}
+
+	customAgent, err := h.agentSvc.CreateCustomAgent(c.Request.Context(), tenant.OrganizationID, &agent.CreateCustomAgentRequest{
 		Slug:             req.Slug,
 		Name:             req.Name,
 		Description:      desc,
-		LaunchCommand:    req.LaunchCommand,
+		LaunchCommand:    launchCommand,
 		DefaultArgs:      args,
 		CredentialSchema: credSchema,
 		StatusDetection:  statusDetection,
+		PodfileSource:    podfileSource,
 	})
 	if err != nil {
 		if err == agent.ErrAgentSlugExists {
@@ -74,14 +88,9 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"custom_agent": customAgent})
 }
 
-// UpdateCustomAgent updates a custom agent type
-// PUT /api/v1/organizations/:slug/agents/custom/:id
+// UpdateCustomAgent updates a custom agent
 func (h *AgentHandler) UpdateCustomAgent(c *gin.Context) {
-	customAgentID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid custom agent ID")
-		return
-	}
+	customAgentSlug := c.Param("slug")
 
 	var req map[string]interface{}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -90,14 +99,12 @@ func (h *AgentHandler) UpdateCustomAgent(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	customAgent, err := h.agentTypeSvc.UpdateCustomAgentType(c.Request.Context(), customAgentID, req)
+	customAgent, err := h.agentSvc.UpdateCustomAgent(c.Request.Context(), tenant.OrganizationID, customAgentSlug, req)
 	if err != nil {
 		apierr.InternalError(c, "Failed to update custom agent")
 		return
@@ -106,24 +113,17 @@ func (h *AgentHandler) UpdateCustomAgent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"custom_agent": customAgent})
 }
 
-// DeleteCustomAgent deletes a custom agent type
-// DELETE /api/v1/organizations/:slug/agents/custom/:id
+// DeleteCustomAgent deletes a custom agent
 func (h *AgentHandler) DeleteCustomAgent(c *gin.Context) {
-	customAgentID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid custom agent ID")
-		return
-	}
+	customAgentSlug := c.Param("slug")
 
 	tenant := middleware.GetTenant(c)
-
-	// Check admin permission
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	if err := h.agentTypeSvc.DeleteCustomAgentType(c.Request.Context(), customAgentID); err != nil {
+	if err := h.agentSvc.DeleteCustomAgent(c.Request.Context(), tenant.OrganizationID, customAgentSlug); err != nil {
 		apierr.InternalError(c, "Failed to delete custom agent")
 		return
 	}

@@ -40,8 +40,7 @@ func NewPodService(repo agentpod.PodRepository) *PodService {
 type CreatePodRequest struct {
 	OrganizationID    int64
 	RunnerID          int64
-	AgentTypeID       *int64
-	CustomAgentTypeID *int64
+	AgentSlug         string
 	RepositoryID      *int64
 	TicketID          *int64
 	CreatedByID       int64
@@ -110,8 +109,7 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 		OrganizationID:      req.OrganizationID,
 		PodKey:              podKey,
 		RunnerID:            req.RunnerID,
-		AgentTypeID:         req.AgentTypeID,
-		CustomAgentTypeID:   req.CustomAgentTypeID,
+		AgentSlug:           req.AgentSlug,
 		RepositoryID:        req.RepositoryID,
 		TicketID:            req.TicketID,
 		CreatedByID:         req.CreatedByID,

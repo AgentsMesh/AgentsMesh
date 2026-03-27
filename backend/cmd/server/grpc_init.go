@@ -25,7 +25,7 @@ func initializePKIAndGRPC(
 	cfg *config.Config,
 	runnerSvc *runner.Service,
 	orgSvc *organization.Service,
-	agentTypeSvc *agent.AgentTypeService,
+	agentSvc *agent.AgentService,
 	runnerConnMgr *runner.RunnerConnectionManager,
 	appLogger *logger.Logger,
 	mcpDeps *grpcserver.MCPDependencies,
@@ -55,7 +55,7 @@ func initializePKIAndGRPC(
 	grpcRunnerHandler := v1.NewGRPCRunnerHandler(runnerSvc, pkiService, cfg)
 
 	// Create and start gRPC server
-	grpcServerInst := createGRPCServer(cfg, pkiService, runnerSvc, orgSvc, agentTypeSvc, runnerConnMgr, appLogger, mcpDeps)
+	grpcServerInst := createGRPCServer(cfg, pkiService, runnerSvc, orgSvc, agentSvc, runnerConnMgr, appLogger, mcpDeps)
 	if grpcServerInst == nil {
 		return nil, grpcRunnerHandler
 	}
@@ -70,7 +70,7 @@ func createGRPCServer(
 	pkiService *pki.Service,
 	runnerSvc *runner.Service,
 	orgSvc *organization.Service,
-	agentTypeSvc *agent.AgentTypeService,
+	agentSvc *agent.AgentService,
 	runnerConnMgr *runner.RunnerConnectionManager,
 	appLogger *logger.Logger,
 	mcpDeps *grpcserver.MCPDependencies,
@@ -78,7 +78,7 @@ func createGRPCServer(
 	// Create service adapters
 	runnerServiceAdapter := &grpcRunnerServiceAdapter{svc: runnerSvc}
 	orgServiceAdapter := &grpcOrgServiceAdapter{svc: orgSvc}
-	agentTypesAdapter := &grpcAgentTypesAdapter{svc: agentTypeSvc}
+	agentAdapter := &grpcAgentAdapter{svc: agentSvc}
 
 	// Create gRPC server
 	grpcServerInst, err := grpcserver.NewServer(&grpcserver.ServerDependencies{
@@ -87,7 +87,7 @@ func createGRPCServer(
 		PKIService:         pkiService,
 		RunnerService:      runnerServiceAdapter,
 		OrgService:         orgServiceAdapter,
-		AgentTypesProvider: agentTypesAdapter,
+		AgentsProvider: agentAdapter,
 		ConnManager:        runnerConnMgr,
 		MCPDeps:            mcpDeps,
 	})
@@ -188,20 +188,20 @@ func (a *grpcOrgServiceAdapter) GetBySlug(ctx context.Context, slug string) (grp
 	}, nil
 }
 
-// grpcAgentTypesAdapter adapts agent.AgentTypeService to interfaces.AgentTypesProvider
-type grpcAgentTypesAdapter struct {
-	svc *agent.AgentTypeService
+// grpcAgentAdapter adapts agent.AgentService to interfaces.AgentsProvider
+type grpcAgentAdapter struct {
+	svc *agent.AgentService
 }
 
-func (a *grpcAgentTypesAdapter) GetAgentTypesForRunner() []interfaces.AgentTypeInfo {
-	types := a.svc.GetAgentTypesForRunner()
-	result := make([]interfaces.AgentTypeInfo, len(types))
-	for i, t := range types {
-		result[i] = interfaces.AgentTypeInfo{
-			Slug:          t.Slug,
-			Name:          t.Name,
-			Executable:    t.Executable,
-			LaunchCommand: t.LaunchCommand,
+func (a *grpcAgentAdapter) GetAgentsForRunner() []interfaces.AgentInfo {
+	agents := a.svc.GetAgentsForRunner()
+	result := make([]interfaces.AgentInfo, len(agents))
+	for i, ag := range agents {
+		result[i] = interfaces.AgentInfo{
+			Slug:          ag.Slug,
+			Name:          ag.Name,
+			Executable:    ag.Executable,
+			LaunchCommand: ag.LaunchCommand,
 		}
 	}
 	return result

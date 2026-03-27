@@ -22,7 +22,7 @@ func setupCompositeTestDB(t *testing.T) *gorm.DB {
 	})
 	require.NoError(t, err)
 
-	db.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	db.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY,
 		slug TEXT,
 		name TEXT,
@@ -33,12 +33,12 @@ func setupCompositeTestDB(t *testing.T) *gorm.DB {
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)
-	db.Exec("INSERT INTO agent_types (id, slug, name, launch_command) VALUES (1, 'claude-code', 'Claude Code', 'claude')")
+	db.Exec("INSERT INTO agents (id, slug, name, launch_command) VALUES (1, 'claude-code', 'Claude Code', 'claude')")
 
 	db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_configs (
 		id INTEGER PRIMARY KEY,
 		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
+		agent_slug TEXT NOT NULL,
 		config_values TEXT DEFAULT '{}',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -47,7 +47,7 @@ func setupCompositeTestDB(t *testing.T) *gorm.DB {
 	db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_credential_profiles (
 		id INTEGER PRIMARY KEY,
 		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
+		agent_slug TEXT NOT NULL,
 		name TEXT,
 		description TEXT,
 		is_runner_host INTEGER DEFAULT 0,
@@ -63,68 +63,68 @@ func setupCompositeTestDB(t *testing.T) *gorm.DB {
 
 func TestNewCompositeProvider(t *testing.T) {
 	db := setupCompositeTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	credSvc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
-	configSvc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	credSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
+	configSvc := newTestUserConfigService(db, agentSvc)
 
-	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
+	provider := NewCompositeProvider(agentSvc, credSvc, configSvc)
 	require.NotNil(t, provider)
 
 	// Verify it implements AgentConfigProvider
 	var _ AgentConfigProvider = provider
 }
 
-func TestCompositeProvider_GetAgentType_Found(t *testing.T) {
+func TestCompositeProvider_GetAgent_Found(t *testing.T) {
 	db := setupCompositeTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	credSvc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
-	configSvc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	credSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
+	configSvc := newTestUserConfigService(db, agentSvc)
 
-	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
+	provider := NewCompositeProvider(agentSvc, credSvc, configSvc)
 
-	at, err := provider.GetAgentType(context.Background(), 1)
+	at, err := provider.GetAgent(context.Background(), "claude-code")
 	require.NoError(t, err)
 	assert.Equal(t, "claude-code", at.Slug)
 	assert.Equal(t, "Claude Code", at.Name)
 }
 
-func TestCompositeProvider_GetAgentType_NotFound(t *testing.T) {
+func TestCompositeProvider_GetAgent_NotFound(t *testing.T) {
 	db := setupCompositeTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	credSvc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
-	configSvc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	credSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
+	configSvc := newTestUserConfigService(db, agentSvc)
 
-	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
+	provider := NewCompositeProvider(agentSvc, credSvc, configSvc)
 
-	_, err := provider.GetAgentType(context.Background(), 999)
+	_, err := provider.GetAgent(context.Background(), "nonexistent")
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, ErrAgentTypeNotFound))
+	assert.True(t, errors.Is(err, ErrAgentNotFound))
 }
 
 func TestCompositeProvider_GetUserEffectiveConfig(t *testing.T) {
 	db := setupCompositeTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	credSvc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
-	configSvc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	credSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
+	configSvc := newTestUserConfigService(db, agentSvc)
 
-	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
+	provider := NewCompositeProvider(agentSvc, credSvc, configSvc)
 
 	overrides := agent.ConfigValues{"model": "opus"}
-	result := provider.GetUserEffectiveConfig(context.Background(), 1, 1, overrides)
+	result := provider.GetUserEffectiveConfig(context.Background(), 1, "claude-code", overrides)
 	// With no stored config, overrides should be reflected
 	assert.Equal(t, "opus", result["model"])
 }
 
 func TestCompositeProvider_GetEffectiveCredentialsForPod_RunnerHost(t *testing.T) {
 	db := setupCompositeTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	credSvc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
-	configSvc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	credSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
+	configSvc := newTestUserConfigService(db, agentSvc)
 
-	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
+	provider := NewCompositeProvider(agentSvc, credSvc, configSvc)
 
 	// With nil profileID (runner host mode), should return empty creds, isRunnerHost=true
-	creds, isRunnerHost, err := provider.GetEffectiveCredentialsForPod(context.Background(), 1, 1, nil)
+	creds, isRunnerHost, err := provider.GetEffectiveCredentialsForPod(context.Background(), 1, "claude-code", nil)
 	require.NoError(t, err)
 	assert.True(t, isRunnerHost)
 	assert.Empty(t, creds)
@@ -132,13 +132,13 @@ func TestCompositeProvider_GetEffectiveCredentialsForPod_RunnerHost(t *testing.T
 
 func TestCompositeProvider_GetEffectiveCredentialsForPod_ProfileNotFound(t *testing.T) {
 	db := setupCompositeTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	credSvc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
-	configSvc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	credSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
+	configSvc := newTestUserConfigService(db, agentSvc)
 
-	provider := NewCompositeProvider(agentTypeSvc, credSvc, configSvc)
+	provider := NewCompositeProvider(agentSvc, credSvc, configSvc)
 
 	profileID := int64(999)
-	_, _, err := provider.GetEffectiveCredentialsForPod(context.Background(), 1, 1, &profileID)
+	_, _, err := provider.GetEffectiveCredentialsForPod(context.Background(), 1, "claude-code", &profileID)
 	require.Error(t, err)
 }

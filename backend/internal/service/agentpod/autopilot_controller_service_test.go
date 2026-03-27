@@ -56,7 +56,7 @@ func setupAutopilotTestDB(t *testing.T) *gorm.DB {
 		no_progress_threshold INTEGER NOT NULL DEFAULT 3,
 		same_error_threshold INTEGER NOT NULL DEFAULT 5,
 		approval_timeout_min INTEGER NOT NULL DEFAULT 30,
-		control_agent_type TEXT,
+		control_agent_slug TEXT,
 		control_prompt_template TEXT,
 		mcp_config_json TEXT,
 		user_takeover INTEGER NOT NULL DEFAULT 0,
@@ -224,21 +224,21 @@ func TestCreateAndStart_OptionalConfigFields(t *testing.T) {
 		OrganizationID:        1,
 		Pod:                   newTestPod(),
 		InitialPrompt:         "test",
-		ControlAgentType:      "custom-agent",
+		ControlAgentSlug:      "custom-agent",
 		ControlPromptTemplate: "You are a reviewer...",
 		MCPConfigJSON:         `{"servers":["s1"]}`,
 	})
 
 	require.NoError(t, err)
-	require.NotNil(t, controller.ControlAgentType)
-	assert.Equal(t, "custom-agent", *controller.ControlAgentType)
+	require.NotNil(t, controller.ControlAgentSlug)
+	assert.Equal(t, "custom-agent", *controller.ControlAgentSlug)
 	require.NotNil(t, controller.ControlPromptTemplate)
 	assert.Equal(t, "You are a reviewer...", *controller.ControlPromptTemplate)
 	require.NotNil(t, controller.MCPConfigJSON)
 	assert.Equal(t, `{"servers":["s1"]}`, *controller.MCPConfigJSON)
 
 	// Verify gRPC command carries optional fields
-	assert.Equal(t, "custom-agent", sender.cmd.Config.ControlAgentType)
+	assert.Equal(t, "custom-agent", sender.cmd.Config.ControlAgentSlug)
 	assert.Equal(t, "You are a reviewer...", sender.cmd.Config.ControlPromptTemplate)
 	assert.Equal(t, `{"servers":["s1"]}`, sender.cmd.Config.McpConfigJson)
 }
@@ -255,7 +255,7 @@ func TestCreateAndStart_OptionalFieldsOmitted(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	assert.Nil(t, controller.ControlAgentType)
+	assert.Nil(t, controller.ControlAgentSlug)
 	assert.Nil(t, controller.ControlPromptTemplate)
 	assert.Nil(t, controller.MCPConfigJSON)
 }

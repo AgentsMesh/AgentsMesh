@@ -14,21 +14,21 @@ var (
 
 // UserConfigService handles user personal runtime configuration
 type UserConfigService struct {
-	repo             agent.UserConfigRepository
-	agentTypeService AgentTypeProvider
+	repo     agent.UserConfigRepository
+	agentSvc AgentProvider
 }
 
 // NewUserConfigService creates a new user config service
-func NewUserConfigService(repo agent.UserConfigRepository, agentTypeService AgentTypeProvider) *UserConfigService {
+func NewUserConfigService(repo agent.UserConfigRepository, agentSvc AgentProvider) *UserConfigService {
 	return &UserConfigService{
-		repo:             repo,
-		agentTypeService: agentTypeService,
+		repo:     repo,
+		agentSvc: agentSvc,
 	}
 }
 
-// GetUserAgentConfig returns the user's personal config for an agent type
-func (s *UserConfigService) GetUserAgentConfig(ctx context.Context, userID, agentTypeID int64) (*agent.UserAgentConfig, error) {
-	config, err := s.repo.GetByUserAndAgentType(ctx, userID, agentTypeID)
+// GetUserAgentConfig returns the user's personal config for an agent
+func (s *UserConfigService) GetUserAgentConfig(ctx context.Context, userID int64, agentSlug string) (*agent.UserAgentConfig, error) {
+	config, err := s.repo.GetByUserAndAgentSlug(ctx, userID, agentSlug)
 	if err != nil {
 		return nil, err
 	}
@@ -36,30 +36,30 @@ func (s *UserConfigService) GetUserAgentConfig(ctx context.Context, userID, agen
 		// Return empty config if not found
 		return &agent.UserAgentConfig{
 			UserID:       userID,
-			AgentTypeID:  agentTypeID,
+			AgentSlug:  agentSlug,
 			ConfigValues: make(agent.ConfigValues),
 		}, nil
 	}
 	return config, nil
 }
 
-// SetUserAgentConfig sets the user's personal config for an agent type
-func (s *UserConfigService) SetUserAgentConfig(ctx context.Context, userID, agentTypeID int64, configValues agent.ConfigValues) (*agent.UserAgentConfig, error) {
-	// Verify agent type exists
-	if _, err := s.agentTypeService.GetAgentType(ctx, agentTypeID); err != nil {
+// SetUserAgentConfig sets the user's personal config for an agent
+func (s *UserConfigService) SetUserAgentConfig(ctx context.Context, userID int64, agentSlug string, configValues agent.ConfigValues) (*agent.UserAgentConfig, error) {
+	// Verify agent exists
+	if _, err := s.agentSvc.GetAgent(ctx, agentSlug); err != nil {
 		return nil, err
 	}
 
-	if err := s.repo.Upsert(ctx, userID, agentTypeID, configValues); err != nil {
+	if err := s.repo.Upsert(ctx, userID, agentSlug, configValues); err != nil {
 		return nil, err
 	}
 
-	return s.GetUserAgentConfig(ctx, userID, agentTypeID)
+	return s.GetUserAgentConfig(ctx, userID, agentSlug)
 }
 
-// DeleteUserAgentConfig deletes the user's personal config for an agent type
-func (s *UserConfigService) DeleteUserAgentConfig(ctx context.Context, userID, agentTypeID int64) error {
-	return s.repo.Delete(ctx, userID, agentTypeID)
+// DeleteUserAgentConfig deletes the user's personal config for an agent
+func (s *UserConfigService) DeleteUserAgentConfig(ctx context.Context, userID int64, agentSlug string) error {
+	return s.repo.Delete(ctx, userID, agentSlug)
 }
 
 // ListUserAgentConfigs returns all personal configs for a user
@@ -68,13 +68,13 @@ func (s *UserConfigService) ListUserAgentConfigs(ctx context.Context, userID int
 }
 
 // GetUserEffectiveConfig returns the effective config by merging ConfigSchema defaults and user personal config
-func (s *UserConfigService) GetUserEffectiveConfig(ctx context.Context, userID, agentTypeID int64, overrides agent.ConfigValues) agent.ConfigValues {
+func (s *UserConfigService) GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agent.ConfigValues) agent.ConfigValues {
 	result := make(agent.ConfigValues)
 
-	// 1. Get ConfigSchema defaults from AgentType
-	agentType, err := s.agentTypeService.GetAgentType(ctx, agentTypeID)
-	if err == nil && agentType.ConfigSchema.Fields != nil {
-		for _, field := range agentType.ConfigSchema.Fields {
+	// 1. Get ConfigSchema defaults from Agent
+	agentDef, err := s.agentSvc.GetAgent(ctx, agentSlug)
+	if err == nil && agentDef.ConfigSchema.Fields != nil {
+		for _, field := range agentDef.ConfigSchema.Fields {
 			if field.Default != nil {
 				result[field.Name] = field.Default
 			}
@@ -82,7 +82,7 @@ func (s *UserConfigService) GetUserEffectiveConfig(ctx context.Context, userID, 
 	}
 
 	// 2. Get user's personal config
-	userConfig, err := s.GetUserAgentConfig(ctx, userID, agentTypeID)
+	userConfig, err := s.GetUserAgentConfig(ctx, userID, agentSlug)
 	if err == nil && userConfig.ConfigValues != nil {
 		result = agent.MergeConfigs(result, userConfig.ConfigValues)
 	}

@@ -51,8 +51,8 @@ func (s *SettingsService) UpdateUserSettings(ctx context.Context, userID int64, 
 	}
 
 	// Apply updates
-	if updates.DefaultAgentTypeID != nil {
-		settings.DefaultAgentTypeID = updates.DefaultAgentTypeID
+	if updates.DefaultAgentSlug != nil {
+		settings.DefaultAgentSlug = updates.DefaultAgentSlug
 	}
 	if updates.DefaultModel != nil {
 		settings.DefaultModel = updates.DefaultModel
@@ -81,7 +81,7 @@ func (s *SettingsService) DeleteUserSettings(ctx context.Context, userID int64) 
 
 // UserSettingsUpdate represents partial updates to user settings
 type UserSettingsUpdate struct {
-	DefaultAgentTypeID *int64  `json:"default_agent_type_id,omitempty"`
+	DefaultAgentSlug *string `json:"default_agent_slug,omitempty"`
 	DefaultModel       *string `json:"default_model,omitempty"`
 	DefaultPermMode    *string `json:"default_perm_mode,omitempty"`
 	TerminalFontSize   *int    `json:"terminal_font_size,omitempty"`
@@ -97,7 +97,7 @@ func (s *SettingsService) GetDefaultAgentConfig(ctx context.Context, userID int6
 	}
 
 	return &DefaultAgentConfig{
-		AgentTypeID: settings.DefaultAgentTypeID,
+		AgentSlug: settings.DefaultAgentSlug,
 		Model:       settings.DefaultModel,
 		PermMode:    settings.DefaultPermMode,
 	}, nil
@@ -105,7 +105,7 @@ func (s *SettingsService) GetDefaultAgentConfig(ctx context.Context, userID int6
 
 // DefaultAgentConfig represents default agent settings
 type DefaultAgentConfig struct {
-	AgentTypeID *int64  `json:"agent_type_id,omitempty"`
+	AgentSlug *string `json:"agent_slug,omitempty"`
 	Model       *string `json:"model,omitempty"`
 	PermMode    *string `json:"perm_mode,omitempty"`
 }

@@ -29,7 +29,7 @@ func (s *Service) RecordUsage(
 	podKey string,
 	userID int64,
 	runnerID int64,
-	agentTypeSlug string,
+	agentSlug string,
 	report *runnerv1.TokenUsageReport,
 ) {
 	if podKey == "" || orgID <= 0 || report == nil || len(report.Models) == 0 {
@@ -62,7 +62,7 @@ func (s *Service) RecordUsage(
 			PodKey:              podKey,
 			UserID:              &uid,
 			RunnerID:            &rid,
-			AgentTypeSlug:       agentTypeSlug,
+			AgentSlug:           agentSlug,
 			Model:               m.Model,
 			InputTokens:         m.InputTokens,
 			OutputTokens:        m.OutputTokens,
@@ -102,7 +102,7 @@ func (s *Service) GetTimeSeries(ctx context.Context, orgID int64, filter tokenus
 	return s.repo.GetTimeSeries(ctx, orgID, filter)
 }
 
-// GetByAgent returns usage grouped by agent type slug.
+// GetByAgent returns usage grouped by agent slug.
 func (s *Service) GetByAgent(ctx context.Context, orgID int64, filter tokenusage.AggregationFilter) ([]tokenusage.AgentUsage, error) {
 	return s.repo.GetByAgent(ctx, orgID, filter)
 }

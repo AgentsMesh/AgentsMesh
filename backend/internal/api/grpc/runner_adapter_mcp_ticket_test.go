@@ -23,10 +23,10 @@ func TestMapOrchestratorErrorToMCP(t *testing.T) {
 			wantMessage: "runner_id is required",
 		},
 		{
-			name:        "ErrMissingAgentTypeID -> 400",
-			err:         agentpod.ErrMissingAgentTypeID,
+			name:        "ErrMissingAgentSlug -> 400",
+			err:         agentpod.ErrMissingAgentSlug,
 			wantCode:    400,
-			wantMessage: "agent_type_id is required",
+			wantMessage: "agent_slug is required",
 		},
 		{
 			name:        "ErrSourcePodNotTerminated -> 400",

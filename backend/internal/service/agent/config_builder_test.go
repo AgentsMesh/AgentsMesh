@@ -32,7 +32,7 @@ func setupConfigBuilderTestDB(t *testing.T) *gorm.DB {
 		os.Remove(dbFile)
 	})
 
-	if err := db.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
@@ -45,22 +45,23 @@ func setupConfigBuilderTestDB(t *testing.T) *gorm.DB {
 		files_template BLOB DEFAULT '[]',
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
+		podfile_source TEXT,
 		is_builtin INTEGER NOT NULL DEFAULT 0,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`).Error; err != nil {
-		t.Fatalf("Failed to create agent_types table: %v", err)
+		t.Fatalf("Failed to create agents table: %v", err)
 	}
 
 	if err := db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_configs (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
+		agent_slug TEXT NOT NULL,
 		config_values BLOB NOT NULL DEFAULT '{}',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE(user_id, agent_type_id)
+		UNIQUE(user_id, agent_slug)
 	)`).Error; err != nil {
 		t.Fatalf("Failed to create user_agent_configs table: %v", err)
 	}
@@ -68,7 +69,7 @@ func setupConfigBuilderTestDB(t *testing.T) *gorm.DB {
 	if err := db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_credential_profiles (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
+		agent_slug TEXT NOT NULL,
 		name TEXT NOT NULL,
 		description TEXT,
 		is_runner_host INTEGER NOT NULL DEFAULT 0,
@@ -81,43 +82,34 @@ func setupConfigBuilderTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("Failed to create user_agent_credential_profiles table: %v", err)
 	}
 
-	if err := db.Exec(`INSERT INTO agent_types (slug, name, launch_command, config_schema, command_template, credential_schema, is_builtin, is_active)
-		VALUES ('claude-code', 'Claude Code', 'claude',
-			'{"fields":[{"name":"model","type":"select","default":"opus"},{"name":"perm_mode","type":"select","default":"default"}]}',
-			'{"args":[{"args":["--model","{{.config.model}}"]}]}',
-			'[{"name":"api_key","type":"secret","env_var":"ANTHROPIC_API_KEY","required":true}]',
-			1, 1)`).Error; err != nil {
-		t.Fatalf("Failed to seed agent type: %v", err)
-	}
-
 	return db
 }
 
 // testCompositeProvider combines the three sub-services for testing ConfigBuilder
 type testCompositeProvider struct {
-	agentTypeSvc  *AgentTypeService
+	agentSvc  *AgentService
 	credentialSvc *CredentialProfileService
 	userConfigSvc *UserConfigService
 }
 
-func (p *testCompositeProvider) GetAgentType(ctx context.Context, id int64) (*agent.AgentType, error) {
-	return p.agentTypeSvc.GetAgentType(ctx, id)
+func (p *testCompositeProvider) GetAgent(ctx context.Context, slug string) (*agent.Agent, error) {
+	return p.agentSvc.GetAgent(ctx, slug)
 }
 
-func (p *testCompositeProvider) GetUserEffectiveConfig(ctx context.Context, userID, agentTypeID int64, overrides agent.ConfigValues) agent.ConfigValues {
-	return p.userConfigSvc.GetUserEffectiveConfig(ctx, userID, agentTypeID, overrides)
+func (p *testCompositeProvider) GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agent.ConfigValues) agent.ConfigValues {
+	return p.userConfigSvc.GetUserEffectiveConfig(ctx, userID, agentSlug, overrides)
 }
 
-func (p *testCompositeProvider) GetEffectiveCredentialsForPod(ctx context.Context, userID, agentTypeID int64, profileID *int64) (agent.EncryptedCredentials, bool, error) {
-	return p.credentialSvc.GetEffectiveCredentialsForPod(ctx, userID, agentTypeID, profileID)
+func (p *testCompositeProvider) GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agent.EncryptedCredentials, bool, error) {
+	return p.credentialSvc.GetEffectiveCredentialsForPod(ctx, userID, agentSlug, profileID)
 }
 
 func createTestProvider(db *gorm.DB) AgentConfigProvider {
-	agentTypeSvc := newTestAgentTypeService(db)
-	credentialSvc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
-	userConfigSvc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	credentialSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
+	userConfigSvc := newTestUserConfigService(db, agentSvc)
 	return &testCompositeProvider{
-		agentTypeSvc:  agentTypeSvc,
+		agentSvc:      agentSvc,
 		credentialSvc: credentialSvc,
 		userConfigSvc: userConfigSvc,
 	}
@@ -131,253 +123,28 @@ func TestNewConfigBuilder(t *testing.T) {
 	if builder == nil {
 		t.Error("NewConfigBuilder returned nil")
 	}
-	if builder.provider != provider {
-		t.Error("provider not set correctly")
-	}
 }
 
-func TestConfigBuilder_GetConfigSchema(t *testing.T) {
-	ctx := context.Background()
+func TestConfigBuilder_BuildPodCommand_NoPodFile(t *testing.T) {
+	db := setupConfigBuilderTestDB(t)
 
-	t.Run("get config schema", func(t *testing.T) {
-		db := setupConfigBuilderTestDB(t)
-		provider := createTestProvider(db)
-		builder := NewConfigBuilder(provider)
+	// Insert agent without PodFile
+	db.Exec(`INSERT INTO agents (slug, name, launch_command, is_builtin, is_active)
+		VALUES ('no-podfile', 'NoPodFile', 'test', 1, 1)`)
 
-		var at agent.AgentType
-		db.First(&at)
+	provider := createTestProvider(db)
+	builder := NewConfigBuilder(provider)
 
-		schema, err := builder.GetConfigSchema(ctx, at.ID)
-		if err != nil {
-			t.Fatalf("GetConfigSchema failed: %v", err)
-		}
+	var at agent.Agent
+	db.Where("slug = ?", "no-podfile").First(&at)
 
-		if schema == nil {
-			t.Fatal("GetConfigSchema returned nil")
-		}
-
-		if len(schema.Fields) == 0 {
-			t.Error("Schema should have fields")
-		}
+	_, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
+		AgentSlug: at.Slug,
+		PodKey:      "pod-1",
 	})
 
-	t.Run("invalid agent type", func(t *testing.T) {
-		db := setupConfigBuilderTestDB(t)
-		provider := createTestProvider(db)
-		builder := NewConfigBuilder(provider)
-
-		_, err := builder.GetConfigSchema(ctx, 99999)
-		if err == nil {
-			t.Error("Expected error for invalid agent type")
-		}
-	})
-}
-
-func TestConfigBuilder_buildSandboxConfig(t *testing.T) {
-	db := setupConfigBuilderTestDB(t)
-	provider := createTestProvider(db)
-	builder := NewConfigBuilder(provider)
-
-	tests := []struct {
-		name          string
-		req           *ConfigBuildRequest
-		wantNil       bool
-		wantRepoURL   string
-		wantLocalPath string
-	}{
-		{
-			name:    "nil when no repo or local path",
-			req:     &ConfigBuildRequest{},
-			wantNil: true,
-		},
-		{
-			name: "has config when repo URL provided",
-			req: &ConfigBuildRequest{
-				RepositoryURL: "https://github.com/test/repo.git",
-				SourceBranch:  "main",
-			},
-			wantNil:     false,
-			wantRepoURL: "https://github.com/test/repo.git",
-		},
-		{
-			name: "has config when local path provided",
-			req: &ConfigBuildRequest{
-				LocalPath: "/home/user/project",
-			},
-			wantNil:       false,
-			wantLocalPath: "/home/user/project",
-		},
-		{
-			name: "repo takes priority over local path",
-			req: &ConfigBuildRequest{
-				RepositoryURL: "https://github.com/test/repo.git",
-				LocalPath:     "/home/user/project",
-			},
-			wantNil:     false,
-			wantRepoURL: "https://github.com/test/repo.git",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			config := builder.buildSandboxConfig(tt.req)
-			if tt.wantNil {
-				if config != nil {
-					t.Errorf("buildSandboxConfig() should be nil, got %+v", config)
-				}
-				return
-			}
-			if config == nil {
-				t.Error("buildSandboxConfig() should not be nil")
-				return
-			}
-			if tt.wantRepoURL != "" && config.RepositoryUrl != tt.wantRepoURL {
-				t.Errorf("buildSandboxConfig() RepositoryUrl = %s, want %s", config.RepositoryUrl, tt.wantRepoURL)
-			}
-			if tt.wantLocalPath != "" && config.LocalPath != tt.wantLocalPath {
-				t.Errorf("buildSandboxConfig() LocalPath = %s, want %s", config.LocalPath, tt.wantLocalPath)
-			}
-		})
-	}
-}
-
-func TestConfigBuilder_buildTemplateContext(t *testing.T) {
-	db := setupConfigBuilderTestDB(t)
-	provider := createTestProvider(db)
-	builder := NewConfigBuilder(provider)
-
-	req := &ConfigBuildRequest{
-		MCPPort: 19000,
-		PodKey:  "test-pod-123",
-	}
-	config := agent.ConfigValues{
-		"model":     "opus",
-		"perm_mode": "plan",
-	}
-
-	ctx := builder.buildTemplateContext(req, config)
-
-	configMap, ok := ctx["config"].(agent.ConfigValues)
-	if !ok {
-		t.Fatal("config not found in context")
-	}
-	if configMap["model"] != "opus" {
-		t.Errorf("config.model = %v, want opus", configMap["model"])
-	}
-
-	if ctx["mcp_port"] != 19000 {
-		t.Errorf("mcp_port = %v, want 19000", ctx["mcp_port"])
-	}
-
-	if ctx["pod_key"] != "test-pod-123" {
-		t.Errorf("pod_key = %v, want test-pod-123", ctx["pod_key"])
-	}
-
-	sandbox, ok := ctx["sandbox"].(map[string]interface{})
-	if !ok {
-		t.Fatal("sandbox not found in context")
-	}
-	if sandbox["root_path"] != "{{.sandbox.root_path}}" {
-		t.Errorf("sandbox.root_path = %v, want placeholder", sandbox["root_path"])
-	}
-}
-
-func TestConfigBuilder_buildConfigSchemaResponse(t *testing.T) {
-	db := setupConfigBuilderTestDB(t)
-	provider := createTestProvider(db)
-	builder := NewConfigBuilder(provider)
-
-	tests := []struct {
-		name   string
-		schema *agent.ConfigSchema
-		check  func(*testing.T, *ConfigSchemaResponse)
-	}{
-		{
-			name:   "empty schema",
-			schema: &agent.ConfigSchema{},
-			check: func(t *testing.T, resp *ConfigSchemaResponse) {
-				if len(resp.Fields) != 0 {
-					t.Errorf("Fields count = %d, want 0", len(resp.Fields))
-				}
-			},
-		},
-		{
-			name: "schema with fields",
-			schema: &agent.ConfigSchema{
-				Fields: []agent.ConfigField{
-					{
-						Name:     "model",
-						Type:     "select",
-						Default:  "opus",
-						Required: true,
-						Options: []agent.FieldOption{
-							{Value: "opus"},
-							{Value: "sonnet"},
-						},
-					},
-				},
-			},
-			check: func(t *testing.T, resp *ConfigSchemaResponse) {
-				if len(resp.Fields) != 1 {
-					t.Fatalf("Fields count = %d, want 1", len(resp.Fields))
-				}
-				field := resp.Fields[0]
-				if field.Name != "model" {
-					t.Errorf("Field.Name = %s, want model", field.Name)
-				}
-				if field.Type != "select" {
-					t.Errorf("Field.Type = %s, want select", field.Type)
-				}
-				if field.Default != "opus" {
-					t.Errorf("Field.Default = %v, want opus", field.Default)
-				}
-				if !field.Required {
-					t.Error("Field.Required should be true")
-				}
-				if len(field.Options) != 2 {
-					t.Errorf("Field.Options count = %d, want 2", len(field.Options))
-				}
-			},
-		},
-		{
-			name: "schema with validation and show_when",
-			schema: &agent.ConfigSchema{
-				Fields: []agent.ConfigField{
-					{
-						Name: "custom_model",
-						Type: "string",
-						Validation: &agent.Validation{
-							MinLength: intPtr(1),
-							MaxLength: intPtr(100),
-						},
-						ShowWhen: &agent.Condition{
-							Field:    "use_custom",
-							Operator: "eq",
-							Value:    true,
-						},
-					},
-				},
-			},
-			check: func(t *testing.T, resp *ConfigSchemaResponse) {
-				if len(resp.Fields) != 1 {
-					t.Fatalf("Fields count = %d, want 1", len(resp.Fields))
-				}
-				field := resp.Fields[0]
-				if field.Validation == nil {
-					t.Error("Field.Validation should not be nil")
-				}
-				if field.ShowWhen == nil {
-					t.Error("Field.ShowWhen should not be nil")
-				}
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			resp := builder.buildConfigSchemaResponse(tt.schema)
-			tt.check(t, resp)
-		})
+	if err == nil {
+		t.Error("Expected error for agent without PodFile")
 	}
 }
 

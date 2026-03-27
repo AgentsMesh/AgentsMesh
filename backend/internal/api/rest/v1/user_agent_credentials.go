@@ -28,12 +28,12 @@ func NewUserAgentCredentialHandler(credentialSvc *agentService.CredentialProfile
 func (h *UserAgentCredentialHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	credentials := rg.Group("/agent-credentials")
 	{
-		// List all profiles grouped by agent type
+		// List all profiles grouped by agent
 		credentials.GET("", h.ListProfiles)
 
-		// Agent type specific routes
-		credentials.GET("/types/:agent_type_id", h.ListProfilesForAgentType)
-		credentials.POST("/types/:agent_type_id", h.CreateProfile)
+		// Agent specific routes
+		credentials.GET("/types/:slug", h.ListProfilesForAgent)
+		credentials.POST("/types/:slug", h.CreateProfile)
 
 		// Profile specific routes
 		credentials.GET("/profiles/:id", h.GetProfile)
@@ -43,7 +43,7 @@ func (h *UserAgentCredentialHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// ListProfiles lists all credential profiles for the current user, grouped by agent type
+// ListProfiles lists all credential profiles for the current user, grouped by agent
 // GET /api/v1/users/agent-credentials
 func (h *UserAgentCredentialHandler) ListProfiles(c *gin.Context) {
 	userID := middleware.GetUserID(c)
@@ -57,18 +57,14 @@ func (h *UserAgentCredentialHandler) ListProfiles(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": profiles})
 }
 
-// ListProfilesForAgentType lists all credential profiles for a specific agent type
-// GET /api/v1/users/agent-credentials/types/:agent_type_id
-func (h *UserAgentCredentialHandler) ListProfilesForAgentType(c *gin.Context) {
+// ListProfilesForAgent lists all credential profiles for a specific agent
+// GET /api/v1/users/agent-credentials/types/:agent_slug
+func (h *UserAgentCredentialHandler) ListProfilesForAgent(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid agent_type_id")
-		return
-	}
+	agentSlug := c.Param("slug")
 
-	profiles, err := h.credentialSvc.ListCredentialProfilesForAgentType(c.Request.Context(), userID, agentTypeID)
+	profiles, err := h.credentialSvc.ListCredentialProfilesForAgent(c.Request.Context(), userID, agentSlug)
 	if err != nil {
 		apierr.InternalError(c, "Failed to list credential profiles")
 		return
@@ -101,16 +97,12 @@ type CreateCredentialProfileRequest struct {
 	IsDefault    bool              `json:"is_default"`
 }
 
-// CreateProfile creates a new credential profile for a specific agent type
-// POST /api/v1/users/agent-credentials/types/:agent_type_id
+// CreateProfile creates a new credential profile for a specific agent
+// POST /api/v1/users/agent-credentials/types/:agent_slug
 func (h *UserAgentCredentialHandler) CreateProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid agent_type_id")
-		return
-	}
+	agentSlug := c.Param("slug")
 
 	var req CreateCredentialProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -119,7 +111,7 @@ func (h *UserAgentCredentialHandler) CreateProfile(c *gin.Context) {
 	}
 
 	profile, err := h.credentialSvc.CreateCredentialProfile(c.Request.Context(), userID, &agentService.CreateCredentialProfileParams{
-		AgentTypeID:  agentTypeID,
+		AgentSlug:  agentSlug,
 		Name:         req.Name,
 		Description:  req.Description,
 		IsRunnerHost: req.IsRunnerHost,
@@ -129,8 +121,8 @@ func (h *UserAgentCredentialHandler) CreateProfile(c *gin.Context) {
 
 	if err != nil {
 		switch err {
-		case agentService.ErrAgentTypeNotFound:
-			apierr.ResourceNotFound(c, "Agent type not found")
+		case agentService.ErrAgentNotFound:
+			apierr.ResourceNotFound(c, "Agent not found")
 		case agentService.ErrCredentialProfileExists:
 			apierr.Conflict(c, apierr.ALREADY_EXISTS, "Profile with this name already exists")
 		default:
@@ -241,7 +233,7 @@ func (h *UserAgentCredentialHandler) DeleteProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Profile deleted"})
 }
 
-// SetDefault sets a profile as the default for its agent type
+// SetDefault sets a profile as the default for its agent
 // POST /api/v1/users/agent-credentials/profiles/:id/set-default
 func (h *UserAgentCredentialHandler) SetDefault(c *gin.Context) {
 	userID := middleware.GetUserID(c)

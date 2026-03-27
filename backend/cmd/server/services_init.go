@@ -46,7 +46,7 @@ type serviceContainer struct {
 	user              *user.Service
 	org               *organization.Service
 	// Agent services (split by responsibility per SRP)
-	agentType         *agent.AgentTypeService
+	agentSvc          *agent.AgentService
 	credentialProfile *agent.CredentialProfileService
 	userConfig        *agent.UserConfigService
 	repository        *repository.Service
@@ -112,12 +112,12 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	encryptor := crypto.NewEncryptor(cfg.JWT.Secret)
 
 	// Initialize agent sub-services (split by responsibility per SRP)
-	agentTypeRepo := infra.NewAgentTypeRepository(db)
-	agentTypeSvc := agent.NewAgentTypeService(agentTypeRepo)
+	agentRepo := infra.NewAgentRepository(db)
+	agentSvc := agent.NewAgentService(agentRepo)
 	credentialProfileRepo := infra.NewCredentialProfileRepository(db)
-	credentialProfileSvc := agent.NewCredentialProfileService(credentialProfileRepo, agentTypeSvc, encryptor)
+	credentialProfileSvc := agent.NewCredentialProfileService(credentialProfileRepo, agentSvc, encryptor)
 	userConfigRepo := infra.NewUserConfigRepository(db)
-	userConfigSvc := agent.NewUserConfigService(userConfigRepo, agentTypeSvc)
+	userConfigSvc := agent.NewUserConfigService(userConfigRepo, agentSvc)
 
 	gitRepoRepo := infra.NewGitProviderRepository(db)
 	repoSvc := repository.NewService(gitRepoRepo)
@@ -204,7 +204,7 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 		auth:               authSvc,
 		user:               userSvc,
 		org:                orgSvc,
-		agentType:          agentTypeSvc,
+		agentSvc:           agentSvc,
 		credentialProfile:  credentialProfileSvc,
 		userConfig:         userConfigSvc,
 		repository:         repoSvc,

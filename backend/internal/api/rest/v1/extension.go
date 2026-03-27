@@ -80,7 +80,7 @@ type CreateSkillRegistryRequest struct {
 	RepositoryURL    string   `json:"repository_url" binding:"required,url"`
 	Branch           string   `json:"branch"`
 	SourceType       string   `json:"source_type"`
-	CompatibleAgents []string `json:"compatible_agents"` // agent type whitelist, e.g. ["claude-code"]
+	CompatibleAgents []string `json:"compatible_agents"` // agent whitelist, e.g. ["claude-code"]
 	AuthType         string   `json:"auth_type"`         // none / github_pat / gitlab_pat / ssh_key
 	AuthCredential   string   `json:"auth_credential"`   // PAT or SSH key (encrypted at service layer)
 }

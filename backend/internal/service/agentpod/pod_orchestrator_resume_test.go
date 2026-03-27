@@ -16,12 +16,12 @@ func TestCreatePod_ResumeMode_Success(t *testing.T) {
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
 	// Create source pod (terminated)
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sessionID := "existing-session-123"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      sessionID,
 	})
@@ -38,9 +38,9 @@ func TestCreatePod_ResumeMode_Success(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotNil(t, result.Pod)
-	// Should inherit runner_id and agent_type_id from source pod
+	// Should inherit runner_id and agent_slug from source pod
 	assert.Equal(t, int64(1), result.Pod.RunnerID)
-	assert.Equal(t, &agentTypeID, result.Pod.AgentTypeID)
+	assert.Equal(t, agentSlug, result.Pod.AgentSlug)
 }
 
 func TestCreatePod_ResumeMode_SourcePodNotFound(t *testing.T) {
@@ -59,11 +59,11 @@ func TestCreatePod_ResumeMode_SourcePodNotFound(t *testing.T) {
 func TestCreatePod_ResumeMode_AccessDenied(t *testing.T) {
 	orch, podSvc, db := setupOrchestrator(t)
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 999, // Different org
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 	})
 	require.NoError(t, err)
@@ -82,11 +82,11 @@ func TestCreatePod_ResumeMode_AccessDenied(t *testing.T) {
 func TestCreatePod_ResumeMode_NotTerminated(t *testing.T) {
 	orch, podSvc, _ := setupOrchestrator(t)
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 	})
 	require.NoError(t, err)
@@ -106,11 +106,11 @@ func TestCreatePod_ResumeMode_AlreadyResumed(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "session-1",
 	})
@@ -142,11 +142,11 @@ func TestCreatePod_ResumeMode_RunnerMismatch(t *testing.T) {
 	// Insert a second runner
 	db.Exec("INSERT INTO runners (id, node_id, status, current_pods) VALUES (2, 'runner-002', 'online', 0)")
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1, // Source on runner 1
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "session-1",
 	})
@@ -168,11 +168,11 @@ func TestCreatePod_ResumeMode_InheritRunnerID(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "session-1",
 	})
@@ -195,14 +195,14 @@ func TestCreatePod_ResumeMode_InheritConfig(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	repoID := int64(10)
 	ticketID := int64(20)
 	branch := "feature-branch"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		RepositoryID:   &repoID,
 		TicketID:       &ticketID,
 		BranchName:     &branch,
@@ -219,7 +219,7 @@ func TestCreatePod_ResumeMode_InheritConfig(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, &agentTypeID, result.Pod.AgentTypeID)
+	assert.Equal(t, agentSlug, result.Pod.AgentSlug)
 	assert.Equal(t, &repoID, result.Pod.RepositoryID)
 	assert.Equal(t, &ticketID, result.Pod.TicketID)
 	assert.Equal(t, &branch, result.Pod.BranchName)
@@ -229,11 +229,11 @@ func TestCreatePod_ResumeMode_SessionReused(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "my-session-id",
 	})
@@ -255,11 +255,11 @@ func TestCreatePod_ResumeMode_NoSessionID_GeneratesNew(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "", // No session ID
 	})
@@ -281,11 +281,11 @@ func TestCreatePod_ResumeMode_DisableResumeAgentSession(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "session-1",
 	})
@@ -308,11 +308,11 @@ func TestCreatePod_ResumeMode_CompletedPod(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "session-1",
 	})
@@ -333,11 +333,11 @@ func TestCreatePod_ResumeMode_OrphanedPod(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "session-1",
 	})
@@ -358,11 +358,11 @@ func TestCreatePod_ResumeMode_SandboxPath(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		CreatedByID:    1,
 		SessionID:      "session-1",
 	})

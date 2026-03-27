@@ -2,7 +2,6 @@ package v1
 
 import (
 	"net/http"
-	"strconv"
 
 	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
@@ -10,12 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ============================================================================
-// User Agent Config API (Personal Runtime Configuration)
-// ============================================================================
-
 // ListUserAgentConfigs returns all personal configs for the current user
-// GET /api/v1/users/me/agent-configs
 func (h *AgentHandler) ListUserAgentConfigs(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -25,7 +19,6 @@ func (h *AgentHandler) ListUserAgentConfigs(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	responses := make([]*agentDomain.UserAgentConfigResponse, len(configs))
 	for i, cfg := range configs {
 		responses[i] = cfg.ToResponse()
@@ -34,18 +27,12 @@ func (h *AgentHandler) ListUserAgentConfigs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"configs": responses})
 }
 
-// GetUserAgentConfig returns the user's personal config for an agent type
-// GET /api/v1/users/me/agent-configs/:agent_type_id
+// GetUserAgentConfig returns the user's personal config for an agent
 func (h *AgentHandler) GetUserAgentConfig(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid agent type ID")
-		return
-	}
-
+	agentSlug := c.Param("slug")
 	userID := middleware.GetUserID(c)
 
-	config, err := h.userConfigSvc.GetUserAgentConfig(c.Request.Context(), userID, agentTypeID)
+	config, err := h.userConfigSvc.GetUserAgentConfig(c.Request.Context(), userID, agentSlug)
 	if err != nil {
 		apierr.InternalError(c, "Failed to get user config")
 		return
@@ -54,14 +41,10 @@ func (h *AgentHandler) GetUserAgentConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"config": config.ToResponse()})
 }
 
-// SetUserAgentConfig sets the user's personal config for an agent type
-// PUT /api/v1/users/me/agent-configs/:agent_type_id
+// SetUserAgentConfig sets the user's personal config for an agent
 func (h *AgentHandler) SetUserAgentConfig(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid agent type ID")
-		return
-	}
+	agentSlug := c.Param("slug")
+	userID := middleware.GetUserID(c)
 
 	var req SetUserAgentConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -69,15 +52,12 @@ func (h *AgentHandler) SetUserAgentConfig(c *gin.Context) {
 		return
 	}
 
-	userID := middleware.GetUserID(c)
-
-	// Convert to ConfigValues
 	configValues := make(agentDomain.ConfigValues)
 	for k, v := range req.ConfigValues {
 		configValues[k] = v
 	}
 
-	config, err := h.userConfigSvc.SetUserAgentConfig(c.Request.Context(), userID, agentTypeID, configValues)
+	config, err := h.userConfigSvc.SetUserAgentConfig(c.Request.Context(), userID, agentSlug, configValues)
 	if err != nil {
 		apierr.InternalError(c, "Failed to set user config")
 		return
@@ -86,18 +66,12 @@ func (h *AgentHandler) SetUserAgentConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"config": config.ToResponse()})
 }
 
-// DeleteUserAgentConfig deletes the user's personal config for an agent type
-// DELETE /api/v1/users/me/agent-configs/:agent_type_id
+// DeleteUserAgentConfig deletes the user's personal config for an agent
 func (h *AgentHandler) DeleteUserAgentConfig(c *gin.Context) {
-	agentTypeID, err := strconv.ParseInt(c.Param("agent_type_id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid agent type ID")
-		return
-	}
-
+	agentSlug := c.Param("slug")
 	userID := middleware.GetUserID(c)
 
-	if err := h.userConfigSvc.DeleteUserAgentConfig(c.Request.Context(), userID, agentTypeID); err != nil {
+	if err := h.userConfigSvc.DeleteUserAgentConfig(c.Request.Context(), userID, agentSlug); err != nil {
 		apierr.InternalError(c, "Failed to delete user config")
 		return
 	}

@@ -2,7 +2,7 @@ package agent
 
 // CreateCredentialProfileParams contains parameters for creating a credential profile
 type CreateCredentialProfileParams struct {
-	AgentTypeID  int64
+	AgentSlug  string
 	Name         string
 	Description  *string
 	IsRunnerHost bool

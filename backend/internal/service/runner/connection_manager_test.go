@@ -12,11 +12,11 @@ import (
 
 // newTestLogger and newMockRunnerStream are defined in test_helper_test.go
 
-// mockAgentTypesProvider implements interfaces.AgentTypesProvider for testing
-type mockAgentTypesProvider struct{}
+// mockAgentsProvider implements interfaces.AgentsProvider for testing
+type mockAgentsProvider struct{}
 
-func (m *mockAgentTypesProvider) GetAgentTypesForRunner() []interfaces.AgentTypeInfo {
-	return []interfaces.AgentTypeInfo{
+func (m *mockAgentsProvider) GetAgentsForRunner() []interfaces.AgentInfo {
+	return []interfaces.AgentInfo{
 		{Slug: "claude-code", Name: "Claude Code", Executable: "claude", LaunchCommand: "claude --model sonnet"},
 	}
 }
@@ -77,7 +77,7 @@ func TestConnectionManager_CallbackSetters(t *testing.T) {
 	cm.SetInitializedCallback(func(runnerID int64, availableAgents []string) {})
 
 	// Test provider and version setters
-	cm.SetAgentTypesProvider(&mockAgentTypesProvider{})
+	cm.SetAgentsProvider(&mockAgentsProvider{})
 	cm.SetServerVersion("1.0.0")
 	assert.Equal(t, "1.0.0", cm.serverVersion)
 }

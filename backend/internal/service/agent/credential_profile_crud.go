@@ -9,13 +9,13 @@ import (
 
 // CreateCredentialProfile creates a new credential profile for a user
 func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, userID int64, params *CreateCredentialProfileParams) (*agent.UserAgentCredentialProfile, error) {
-	// Verify agent type exists
-	if _, err := s.agentTypeService.GetAgentType(ctx, params.AgentTypeID); err != nil {
+	// Verify agent exists
+	if _, err := s.agentSvc.GetAgent(ctx, params.AgentSlug); err != nil {
 		return nil, err
 	}
 
 	// Check if profile with same name exists
-	exists, err := s.repo.NameExists(ctx, userID, params.AgentTypeID, params.Name, nil)
+	exists, err := s.repo.NameExists(ctx, userID, params.AgentSlug, params.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -23,9 +23,9 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 		return nil, ErrCredentialProfileExists
 	}
 
-	// If setting as default, unset other defaults for this agent type
+	// If setting as default, unset other defaults for this agent
 	if params.IsDefault {
-		_ = s.repo.UnsetDefaults(ctx, userID, params.AgentTypeID)
+		_ = s.repo.UnsetDefaults(ctx, userID, params.AgentSlug)
 	}
 
 	// Encrypt credentials if provided
@@ -39,7 +39,7 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 
 	profile := &agent.UserAgentCredentialProfile{
 		UserID:               userID,
-		AgentTypeID:          params.AgentTypeID,
+		AgentSlug:          params.AgentSlug,
 		Name:                 params.Name,
 		Description:          params.Description,
 		IsRunnerHost:         params.IsRunnerHost,
@@ -52,13 +52,13 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 		return nil, err
 	}
 
-	// Reload with AgentType
+	// Reload with Agent
 	return s.GetCredentialProfile(ctx, userID, profile.ID)
 }
 
 // GetCredentialProfile returns a credential profile by ID
 func (s *CredentialProfileService) GetCredentialProfile(ctx context.Context, userID, profileID int64) (*agent.UserAgentCredentialProfile, error) {
-	profile, err := s.repo.GetWithAgentType(ctx, userID, profileID)
+	profile, err := s.repo.GetWithAgent(ctx, userID, profileID)
 	if err != nil {
 		return nil, err
 	}

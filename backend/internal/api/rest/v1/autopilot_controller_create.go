@@ -56,7 +56,7 @@ func (h *AutopilotControllerHandler) CreateAutopilotController(c *gin.Context) {
 		NoProgressThreshold:   req.NoProgressThreshold,
 		SameErrorThreshold:    req.SameErrorThreshold,
 		ApprovalTimeoutMin:    req.ApprovalTimeoutMin,
-		ControlAgentType:      req.ControlAgentType,
+		ControlAgentSlug:      req.ControlAgentSlug,
 		ControlPromptTemplate: req.ControlPromptTemplate,
 		MCPConfigJSON:         req.MCPConfigJSON,
 		KeyPrefix:             "autopilot",

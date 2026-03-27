@@ -14,8 +14,7 @@ import (
 // CreatePodRequest represents pod creation request
 type CreatePodRequest struct {
 	RunnerID          int64   `json:"runner_id"`     // Required for new pods, optional when resuming (inherited from source)
-	AgentTypeID       *int64  `json:"agent_type_id"` // Required unless resuming (then inherited from source pod)
-	CustomAgentTypeID *int64  `json:"custom_agent_type_id"`
+	AgentSlug       string `json:"agent_slug"` // Required unless resuming (then inherited from source pod)
 	RepositoryID      *int64  `json:"repository_id"`
 	RepositoryURL     *string `json:"repository_url"`    // Direct repository URL (takes precedence over repository_id)
 	TicketSlug        *string `json:"ticket_slug"`       // Ticket slug (e.g., "AM-123")
@@ -31,7 +30,7 @@ type CreatePodRequest struct {
 	// - >0: use specified credential profile ID
 	CredentialProfileID *int64 `json:"credential_profile_id"`
 
-	// ConfigOverrides allows users to override agent type default configuration
+	// ConfigOverrides allows users to override agent default configuration
 	ConfigOverrides map[string]interface{} `json:"config_overrides"`
 
 	// Terminal size (from browser xterm.js)
@@ -73,8 +72,7 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 		OrganizationID:      tenant.OrganizationID,
 		UserID:              tenant.UserID,
 		RunnerID:            req.RunnerID,
-		AgentTypeID:         req.AgentTypeID,
-		CustomAgentTypeID:   req.CustomAgentTypeID,
+		AgentSlug:         req.AgentSlug,
 		RepositoryID:        req.RepositoryID,
 		RepositoryURL:       req.RepositoryURL,
 		TicketSlug:          req.TicketSlug,
@@ -115,8 +113,8 @@ func mapOrchestratorErrorToHTTP(c *gin.Context, err error) {
 	// Validation errors → 400
 	case errors.Is(err, agentpod.ErrMissingRunnerID):
 		apierr.BadRequest(c, apierr.MISSING_RUNNER_ID, err.Error())
-	case errors.Is(err, agentpod.ErrMissingAgentTypeID):
-		apierr.BadRequest(c, apierr.MISSING_AGENT_TYPE_ID, err.Error())
+	case errors.Is(err, agentpod.ErrMissingAgentSlug):
+		apierr.BadRequest(c, apierr.MISSING_AGENT_SLUG, err.Error())
 	case errors.Is(err, agentpod.ErrSourcePodNotTerminated):
 		apierr.BadRequest(c, apierr.SOURCE_POD_NOT_TERMINATED, "Can only resume from terminated, completed, or orphaned pods")
 	case errors.Is(err, agentpod.ErrResumeRunnerMismatch):
@@ -146,7 +144,7 @@ func mapOrchestratorErrorToHTTP(c *gin.Context, err error) {
 
 	// No available runner → 503
 	case errors.Is(err, agentpod.ErrNoAvailableRunner):
-		apierr.ServiceUnavailable(c, apierr.NO_AVAILABLE_RUNNER, "No available runner supports the requested agent type")
+		apierr.ServiceUnavailable(c, apierr.NO_AVAILABLE_RUNNER, "No available runner supports the requested agent")
 
 	// Runner dispatch failure → 502
 	case errors.Is(err, agentpod.ErrRunnerDispatchFailed):

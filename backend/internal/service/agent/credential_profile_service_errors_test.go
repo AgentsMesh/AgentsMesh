@@ -14,16 +14,16 @@ func TestCredentialProfileService_GetCredentialProfile_DBError(t *testing.T) {
 	badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		launch_command TEXT NOT NULL DEFAULT ''
 	)`)
-	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
+	badDB.Exec(`INSERT INTO agents (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentSvc, testEncryptor())
 	ctx := context.Background()
 
 	_, err := svc.GetCredentialProfile(ctx, 1, 1)
@@ -39,8 +39,8 @@ func TestCredentialProfileService_DeleteCredentialProfile_DBError(t *testing.T) 
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentSvc, testEncryptor())
 	ctx := context.Background()
 
 	err := svc.DeleteCredentialProfile(ctx, 1, 1)
@@ -56,11 +56,11 @@ func TestCredentialProfileService_GetDefaultCredentialProfile_DBError(t *testing
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentSvc, testEncryptor())
 	ctx := context.Background()
 
-	_, err := svc.GetDefaultCredentialProfile(ctx, 1, 1)
+	_, err := svc.GetDefaultCredentialProfile(ctx, 1, "claude-code")
 	if err == nil {
 		t.Log("SQLite handled missing table gracefully")
 	} else {
@@ -70,15 +70,15 @@ func TestCredentialProfileService_GetDefaultCredentialProfile_DBError(t *testing
 
 func TestCredentialProfileService_SetDefaultCredentialProfile_Success(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(db)
+	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 
 	profile, err := svc.CreateCredentialProfile(ctx, 1, &CreateCredentialProfileParams{
-		AgentTypeID: at.ID,
+		AgentSlug: at.Slug,
 		Name:        "Test Profile",
 		IsDefault:   false,
 		Credentials: agent.EncryptedCredentials{"api_key": "test"},
@@ -101,11 +101,11 @@ func TestCredentialProfileService_GetEffectiveCredentialsForPod_DefaultNotFoundE
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentSvc, testEncryptor())
 	ctx := context.Background()
 
-	_, isRunner, err := svc.GetEffectiveCredentialsForPod(ctx, 1, 1, nil)
+	_, isRunner, err := svc.GetEffectiveCredentialsForPod(ctx, 1, "claude-code", nil)
 	if err != nil {
 		t.Logf("Got error as expected: %v", err)
 	} else if isRunner {
@@ -117,24 +117,24 @@ func TestCredentialProfileService_CreateCredentialProfile_CreateDBError(t *testi
 	badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		launch_command TEXT NOT NULL DEFAULT '',
 		credential_schema BLOB DEFAULT '[]'
 	)`)
-	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
+	badDB.Exec(`INSERT INTO agents (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 	badDB.Exec(`CREATE TABLE IF NOT EXISTS user_agent_credential_profiles (
 		id INTEGER PRIMARY KEY AUTOINCREMENT
 	)`)
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentSvc, testEncryptor())
 	ctx := context.Background()
 
 	_, err := svc.CreateCredentialProfile(ctx, 1, &CreateCredentialProfileParams{
-		AgentTypeID: 1,
+		AgentSlug: "claude-code",
 		Name:        "Test",
 		Credentials: agent.EncryptedCredentials{"api_key": "test"},
 	})
@@ -147,15 +147,15 @@ func TestCredentialProfileService_CreateCredentialProfile_CreateDBError(t *testi
 
 func TestCredentialProfileService_UpdateCredentialProfile_UpdateDBError(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(db)
+	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 
 	profile, err := svc.CreateCredentialProfile(ctx, 1, &CreateCredentialProfileParams{
-		AgentTypeID: at.ID,
+		AgentSlug: at.Slug,
 		Name:        "Test Profile",
 		Credentials: agent.EncryptedCredentials{"api_key": "test"},
 	})
@@ -172,14 +172,14 @@ func TestCredentialProfileService_UpdateCredentialProfile_UpdateDBError(t *testi
 	}
 }
 
-func TestCredentialProfileService_ListCredentialProfiles_EmptyAgentType(t *testing.T) {
+func TestCredentialProfileService_ListCredentialProfiles_EmptyAgent(t *testing.T) {
 	db := setupCredentialProfileTestDB(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestCredentialProfileService(db, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(db)
+	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
 
 	db.Exec(`INSERT INTO user_agent_credential_profiles
-		(user_id, agent_type_id, name, is_runner_host, is_default, is_active, credentials_encrypted)
+		(user_id, agent_slug, name, is_runner_host, is_default, is_active, credentials_encrypted)
 		VALUES (1, 999, 'Test Profile', 0, 0, 1, X'7B7D')`)
 
 	groups, err := svc.ListCredentialProfiles(ctx, 1)
@@ -189,15 +189,15 @@ func TestCredentialProfileService_ListCredentialProfiles_EmptyAgentType(t *testi
 
 	found := false
 	for _, g := range groups {
-		if g.AgentTypeID == 999 {
+		if g.AgentSlug == "nonexistent" {
 			found = true
-			if g.AgentTypeName != "" || g.AgentTypeSlug != "" {
-				t.Log("AgentTypeName/Slug should be empty for non-existent agent type")
+			if g.AgentName != "" {
+				t.Log("AgentName should be empty for non-existent agent")
 			}
 		}
 	}
 	if !found && len(groups) == 0 {
-		t.Log("Profile with non-existent agent type not returned (acceptable)")
+		t.Log("Profile with non-existent agent not returned (acceptable)")
 	}
 }
 
@@ -205,7 +205,7 @@ func TestCredentialProfileService_SetDefaultCredentialProfile_UpdateError(t *tes
 	badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
@@ -218,17 +218,18 @@ func TestCredentialProfileService_SetDefaultCredentialProfile_UpdateError(t *tes
 		files_template BLOB,
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
+		podfile_source TEXT,
 		is_builtin INTEGER NOT NULL DEFAULT 0,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		supported_modes TEXT NOT NULL DEFAULT 'pty',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)
-	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
+	badDB.Exec(`INSERT INTO agents (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 	badDB.Exec(`CREATE TABLE IF NOT EXISTS user_agent_credential_profiles (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
+		agent_slug TEXT NOT NULL,
 		name TEXT NOT NULL,
 		description TEXT,
 		is_runner_host INTEGER NOT NULL DEFAULT 0,
@@ -239,11 +240,11 @@ func TestCredentialProfileService_SetDefaultCredentialProfile_UpdateError(t *tes
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)
 	badDB.Exec(`INSERT INTO user_agent_credential_profiles
-		(user_id, agent_type_id, name, is_runner_host, is_default, is_active)
+		(user_id, agent_slug, name, is_runner_host, is_default, is_active)
 		VALUES (1, 1, 'Test Profile', 0, 0, 1)`)
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestCredentialProfileService(badDB, agentTypeSvc, testEncryptor())
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestCredentialProfileService(badDB, agentSvc, testEncryptor())
 	ctx := context.Background()
 
 	updated, err := svc.SetDefaultCredentialProfile(ctx, 1, 1)

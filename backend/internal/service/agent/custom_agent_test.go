@@ -10,12 +10,12 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func TestCreateCustomAgentType(t *testing.T) {
+func TestCreateCustomAgent(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
-	t.Run("create new custom agent type", func(t *testing.T) {
+	t.Run("create new custom agent", func(t *testing.T) {
 		desc := "Test agent description"
 		req := &CreateCustomAgentRequest{
 			Slug:          "test-agent",
@@ -24,9 +24,9 @@ func TestCreateCustomAgentType(t *testing.T) {
 			LaunchCommand: "test-cmd",
 		}
 
-		customAgent, err := svc.CreateCustomAgentType(ctx, 1, req)
+		customAgent, err := svc.CreateCustomAgent(ctx, 1, req)
 		if err != nil {
-			t.Fatalf("CreateCustomAgentType failed: %v", err)
+			t.Fatalf("CreateCustomAgent failed: %v", err)
 		}
 
 		if customAgent.Slug != "test-agent" {
@@ -52,7 +52,7 @@ func TestCreateCustomAgentType(t *testing.T) {
 			LaunchCommand: "test-cmd-2",
 		}
 
-		_, err := svc.CreateCustomAgentType(ctx, 1, req)
+		_, err := svc.CreateCustomAgent(ctx, 1, req)
 		if err != ErrAgentSlugExists {
 			t.Errorf("Expected ErrAgentSlugExists, got %v", err)
 		}
@@ -67,9 +67,9 @@ func TestCreateCustomAgentType(t *testing.T) {
 			LaunchCommand: "test-cmd",
 		}
 
-		customAgent, err := svc.CreateCustomAgentType(ctx, 2, req)
+		customAgent, err := svc.CreateCustomAgent(ctx, 2, req)
 		if err != nil {
-			t.Fatalf("CreateCustomAgentType for different org failed: %v", err)
+			t.Fatalf("CreateCustomAgent for different org failed: %v", err)
 		}
 		if customAgent.OrganizationID != 2 {
 			t.Errorf("OrganizationID = %d, want 2", customAgent.OrganizationID)
@@ -77,9 +77,9 @@ func TestCreateCustomAgentType(t *testing.T) {
 	})
 }
 
-func TestUpdateCustomAgentType(t *testing.T) {
+func TestUpdateCustomAgent(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
 	desc := "Original description"
@@ -89,15 +89,15 @@ func TestUpdateCustomAgentType(t *testing.T) {
 		Description:   &desc,
 		LaunchCommand: "update-test-cmd",
 	}
-	customAgent, _ := svc.CreateCustomAgentType(ctx, 1, req)
+	customAgent, _ := svc.CreateCustomAgent(ctx, 1, req)
 
 	t.Run("update name", func(t *testing.T) {
 		updates := map[string]interface{}{
 			"name": "Updated Name",
 		}
-		updated, err := svc.UpdateCustomAgentType(ctx, customAgent.ID, updates)
+		updated, err := svc.UpdateCustomAgent(ctx, 1, customAgent.Slug, updates)
 		if err != nil {
-			t.Fatalf("UpdateCustomAgentType failed: %v", err)
+			t.Fatalf("UpdateCustomAgent failed: %v", err)
 		}
 		if updated.Name != "Updated Name" {
 			t.Errorf("Name = %s, want Updated Name", updated.Name)
@@ -109,9 +109,9 @@ func TestUpdateCustomAgentType(t *testing.T) {
 		updates := map[string]interface{}{
 			"description": newDesc,
 		}
-		updated, err := svc.UpdateCustomAgentType(ctx, customAgent.ID, updates)
+		updated, err := svc.UpdateCustomAgent(ctx, 1, customAgent.Slug, updates)
 		if err != nil {
-			t.Fatalf("UpdateCustomAgentType failed: %v", err)
+			t.Fatalf("UpdateCustomAgent failed: %v", err)
 		}
 		if updated.Description == nil || *updated.Description != newDesc {
 			t.Errorf("Description not updated correctly")
@@ -119,16 +119,16 @@ func TestUpdateCustomAgentType(t *testing.T) {
 	})
 
 	t.Run("update non-existent returns error", func(t *testing.T) {
-		_, err := svc.UpdateCustomAgentType(ctx, 999999, map[string]interface{}{"name": "Won't Work"})
+		_, err := svc.UpdateCustomAgent(ctx, 1, "nonexistent", map[string]interface{}{"name": "Won't Work"})
 		if err == nil {
 			t.Error("Expected error for non-existent ID")
 		}
 	})
 }
 
-func TestDeleteCustomAgentType(t *testing.T) {
+func TestDeleteCustomAgent(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
 	desc := "To be deleted"
@@ -138,27 +138,27 @@ func TestDeleteCustomAgentType(t *testing.T) {
 		Description:   &desc,
 		LaunchCommand: "delete-test-cmd",
 	}
-	customAgent, _ := svc.CreateCustomAgentType(ctx, 1, req)
+	customAgent, _ := svc.CreateCustomAgent(ctx, 1, req)
 
-	err := svc.DeleteCustomAgentType(ctx, customAgent.ID)
+	err := svc.DeleteCustomAgent(ctx, 1, customAgent.Slug)
 	if err != nil {
-		t.Fatalf("DeleteCustomAgentType failed: %v", err)
+		t.Fatalf("DeleteCustomAgent failed: %v", err)
 	}
 
-	_, err = svc.GetCustomAgentType(ctx, customAgent.ID)
-	if err != ErrAgentTypeNotFound {
-		t.Error("Custom agent type should be deleted")
+	_, err = svc.GetCustomAgent(ctx, 1, customAgent.Slug)
+	if err != ErrAgentNotFound {
+		t.Error("Custom agent should be deleted")
 	}
 }
 
-func TestListCustomAgentTypes(t *testing.T) {
+func TestListCustomAgents(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
 	for i := 0; i < 3; i++ {
 		desc := "Test description"
-		svc.CreateCustomAgentType(ctx, 1, &CreateCustomAgentRequest{
+		svc.CreateCustomAgent(ctx, 1, &CreateCustomAgentRequest{
 			Slug:          "list-test-" + string(rune('a'+i)),
 			Name:          "List Test " + string(rune('A'+i)),
 			Description:   &desc,
@@ -166,9 +166,9 @@ func TestListCustomAgentTypes(t *testing.T) {
 		})
 	}
 
-	types, err := svc.ListCustomAgentTypes(ctx, 1)
+	types, err := svc.ListCustomAgents(ctx, 1)
 	if err != nil {
-		t.Fatalf("ListCustomAgentTypes failed: %v", err)
+		t.Fatalf("ListCustomAgents failed: %v", err)
 	}
 
 	if len(types) < 3 {
@@ -185,9 +185,9 @@ func TestListCustomAgentTypes(t *testing.T) {
 	}
 }
 
-func TestGetCustomAgentType(t *testing.T) {
+func TestGetCustomAgent(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
 	desc := "Get test description"
@@ -197,29 +197,29 @@ func TestGetCustomAgentType(t *testing.T) {
 		Description:   &desc,
 		LaunchCommand: "get-test-cmd",
 	}
-	customAgent, _ := svc.CreateCustomAgentType(ctx, 1, req)
+	customAgent, _ := svc.CreateCustomAgent(ctx, 1, req)
 
-	t.Run("existing custom agent type", func(t *testing.T) {
-		got, err := svc.GetCustomAgentType(ctx, customAgent.ID)
+	t.Run("existing custom agent", func(t *testing.T) {
+		got, err := svc.GetCustomAgent(ctx, 1, customAgent.Slug)
 		if err != nil {
-			t.Errorf("GetCustomAgentType failed: %v", err)
+			t.Errorf("GetCustomAgent failed: %v", err)
 		}
 		if got.Slug != "get-test-agent" {
 			t.Errorf("Slug = %s, want get-test-agent", got.Slug)
 		}
 	})
 
-	t.Run("non-existent custom agent type", func(t *testing.T) {
-		_, err := svc.GetCustomAgentType(ctx, 99999)
-		if err != ErrAgentTypeNotFound {
-			t.Errorf("Expected ErrAgentTypeNotFound, got %v", err)
+	t.Run("non-existent custom agent", func(t *testing.T) {
+		_, err := svc.GetCustomAgent(ctx, 1, "nonexistent")
+		if err != ErrAgentNotFound {
+			t.Errorf("Expected ErrAgentNotFound, got %v", err)
 		}
 	})
 }
 
 func TestCreateCustomAgentRequest(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
 	t.Run("with all fields", func(t *testing.T) {
@@ -239,9 +239,9 @@ func TestCreateCustomAgentRequest(t *testing.T) {
 			},
 		}
 
-		customAgent, err := svc.CreateCustomAgentType(ctx, 1, req)
+		customAgent, err := svc.CreateCustomAgent(ctx, 1, req)
 		if err != nil {
-			t.Fatalf("CreateCustomAgentType failed: %v", err)
+			t.Fatalf("CreateCustomAgent failed: %v", err)
 		}
 
 		if *customAgent.DefaultArgs != args {
@@ -256,17 +256,17 @@ func TestCreateCustomAgentRequest(t *testing.T) {
 	})
 }
 
-func TestCreateCustomAgentType_CreateError(t *testing.T) {
+func TestCreateCustomAgent_CreateError(t *testing.T) {
 	badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		launch_command TEXT NOT NULL DEFAULT ''
 	)`)
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS custom_agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS custom_agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		organization_id INTEGER NOT NULL,
 		slug TEXT NOT NULL,
@@ -276,16 +276,17 @@ func TestCreateCustomAgentType_CreateError(t *testing.T) {
 		default_args TEXT,
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
+		podfile_source TEXT,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		UNIQUE(organization_id, slug)
 	)`)
 
-	svc := newTestAgentTypeService(badDB)
+	svc := newTestAgentService(badDB)
 	ctx := context.Background()
 
-	_, err := svc.CreateCustomAgentType(ctx, 1, &CreateCustomAgentRequest{
+	_, err := svc.CreateCustomAgent(ctx, 1, &CreateCustomAgentRequest{
 		Slug:          "test-agent",
 		Name:          "Test Agent",
 		LaunchCommand: "test",
@@ -294,7 +295,7 @@ func TestCreateCustomAgentType_CreateError(t *testing.T) {
 		t.Fatalf("First create failed: %v", err)
 	}
 
-	_, err = svc.CreateCustomAgentType(ctx, 1, &CreateCustomAgentRequest{
+	_, err = svc.CreateCustomAgent(ctx, 1, &CreateCustomAgentRequest{
 		Slug:          "test-agent",
 		Name:          "Test Agent 2",
 		LaunchCommand: "test2",
@@ -304,13 +305,13 @@ func TestCreateCustomAgentType_CreateError(t *testing.T) {
 	}
 }
 
-func TestUpdateCustomAgentType_Errors(t *testing.T) {
+func TestUpdateCustomAgent_Errors(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
 	desc := "Test description"
-	customAgent, err := svc.CreateCustomAgentType(ctx, 1, &CreateCustomAgentRequest{
+	customAgent, err := svc.CreateCustomAgent(ctx, 1, &CreateCustomAgentRequest{
 		Slug:          "test-update-agent",
 		Name:          "Test Agent",
 		Description:   &desc,
@@ -321,7 +322,7 @@ func TestUpdateCustomAgentType_Errors(t *testing.T) {
 	}
 
 	t.Run("successful update", func(t *testing.T) {
-		updated, err := svc.UpdateCustomAgentType(ctx, customAgent.ID, map[string]interface{}{
+		updated, err := svc.UpdateCustomAgent(ctx, 1, customAgent.Slug, map[string]interface{}{
 			"name": "Updated Name",
 		})
 		if err != nil {
@@ -333,7 +334,7 @@ func TestUpdateCustomAgentType_Errors(t *testing.T) {
 	})
 
 	t.Run("update non-existent returns error on second query", func(t *testing.T) {
-		_, err := svc.UpdateCustomAgentType(ctx, 999999, map[string]interface{}{
+		_, err := svc.UpdateCustomAgent(ctx, 1, "nonexistent", map[string]interface{}{
 			"name": "Won't Work",
 		})
 		if err == nil {
@@ -342,17 +343,17 @@ func TestUpdateCustomAgentType_Errors(t *testing.T) {
 	})
 }
 
-func TestAgentTypeService_CreateCustomAgentType_DBCreateError(t *testing.T) {
+func TestAgentService_CreateCustomAgent_DBCreateError(t *testing.T) {
 	badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		launch_command TEXT NOT NULL DEFAULT ''
 	)`)
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS custom_agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS custom_agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		organization_id INTEGER NOT NULL,
 		slug TEXT NOT NULL,
@@ -363,10 +364,10 @@ func TestAgentTypeService_CreateCustomAgentType_DBCreateError(t *testing.T) {
 		UNIQUE(organization_id, slug)
 	)`)
 
-	svc := newTestAgentTypeService(badDB)
+	svc := newTestAgentService(badDB)
 	ctx := context.Background()
 
-	_, err := svc.CreateCustomAgentType(ctx, 1, &CreateCustomAgentRequest{
+	_, err := svc.CreateCustomAgent(ctx, 1, &CreateCustomAgentRequest{
 		Slug:          "test-agent",
 		Name:          "Test Agent",
 		LaunchCommand: "test",

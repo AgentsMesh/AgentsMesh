@@ -82,14 +82,14 @@ func initializeRunnerComponents(
 	runnerRepo runnerDomain.RunnerRepository,
 	redisClient *redis.Client,
 	appLogger *logger.Logger,
-	agentTypeSvc *agent.AgentTypeService,
+	agentSvc *agent.AgentService,
 ) (*runner.RunnerConnectionManager, *runner.PodCoordinator, *runner.PodRouter, *runner.HeartbeatBatcher, *runner.SandboxQueryService) {
 	// Initialize Runner connection manager
 	runnerConnMgr := runner.NewRunnerConnectionManager(appLogger.Logger)
 
-	// Setup AgentTypesProvider for initialization handshake
-	agentTypesAdapter := runner.NewAgentTypeServiceAdapter(agentTypeSvc)
-	runnerConnMgr.SetAgentTypesProvider(agentTypesAdapter)
+	// Setup AgentsProvider for initialization handshake
+	agentAdapter := runner.NewAgentServiceAdapter(agentSvc)
+	runnerConnMgr.SetAgentsProvider(agentAdapter)
 	runnerConnMgr.SetServerVersion("1.0.0") // TODO: Get from build info
 
 	// Start initialization timeout checker (removes connections that don't complete handshake)

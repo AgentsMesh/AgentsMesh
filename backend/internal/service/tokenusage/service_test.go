@@ -88,7 +88,7 @@ func TestRecordUsage_CreatesOneRecordPerModel(t *testing.T) {
 	assert.Equal(t, int64(10), *repo.records[0].UserID)
 	require.NotNil(t, repo.records[0].RunnerID)
 	assert.Equal(t, int64(20), *repo.records[0].RunnerID)
-	assert.Equal(t, "claude", repo.records[0].AgentTypeSlug)
+	assert.Equal(t, "claude", repo.records[0].AgentSlug)
 
 	assert.Equal(t, "claude-opus-4-20250514", repo.records[1].Model)
 	assert.Equal(t, int64(50), repo.records[1].CacheCreationTokens)
@@ -200,7 +200,7 @@ func TestGetSummary_DelegatesToRepo(t *testing.T) {
 
 func TestGetByAgent_DelegatesToRepo(t *testing.T) {
 	expected := []tokenusage.AgentUsage{
-		{AgentTypeSlug: "claude", InputTokens: 1000, TotalTokens: 1500},
+		{AgentSlug: "claude", InputTokens: 1000, TotalTokens: 1500},
 	}
 	repo := &mockRepository{agents: expected}
 	svc := NewService(repo, testLogger())

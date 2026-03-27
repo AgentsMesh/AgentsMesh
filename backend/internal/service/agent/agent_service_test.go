@@ -10,22 +10,22 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func TestNewAgentTypeService(t *testing.T) {
+func TestNewAgentService(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	if svc == nil {
-		t.Error("NewAgentTypeService returned nil")
+		t.Error("NewAgentService returned nil")
 	}
 }
 
-func TestListBuiltinAgentTypes(t *testing.T) {
+func TestListBuiltinAgents(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
-	types, err := svc.ListBuiltinAgentTypes(ctx)
+	types, err := svc.ListBuiltinAgents(ctx)
 	if err != nil {
-		t.Fatalf("ListBuiltinAgentTypes failed: %v", err)
+		t.Fatalf("ListBuiltinAgents failed: %v", err)
 	}
 
 	if len(types) != 2 {
@@ -42,44 +42,44 @@ func TestListBuiltinAgentTypes(t *testing.T) {
 	}
 }
 
-func TestGetAgentType(t *testing.T) {
+func TestGetAgent(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
-	t.Run("existing agent type", func(t *testing.T) {
-		var at agent.AgentType
+	t.Run("existing agent", func(t *testing.T) {
+		var at agent.Agent
 		db.First(&at)
 
-		got, err := svc.GetAgentType(ctx, at.ID)
+		got, err := svc.GetAgent(ctx, at.Slug)
 		if err != nil {
-			t.Errorf("GetAgentType failed: %v", err)
+			t.Errorf("GetAgent failed: %v", err)
 		}
 		if got.Slug != at.Slug {
 			t.Errorf("Slug = %s, want %s", got.Slug, at.Slug)
 		}
 	})
 
-	t.Run("non-existent agent type", func(t *testing.T) {
-		_, err := svc.GetAgentType(ctx, 99999)
+	t.Run("non-existent agent", func(t *testing.T) {
+		_, err := svc.GetAgent(ctx, "nonexistent")
 		if err == nil {
-			t.Error("Expected error for non-existent agent type")
+			t.Error("Expected error for non-existent agent")
 		}
-		if err != ErrAgentTypeNotFound {
-			t.Errorf("Expected ErrAgentTypeNotFound, got %v", err)
+		if err != ErrAgentNotFound {
+			t.Errorf("Expected ErrAgentNotFound, got %v", err)
 		}
 	})
 }
 
-func TestGetAgentTypeBySlug(t *testing.T) {
+func TestGetBySlug(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 	ctx := context.Background()
 
 	t.Run("existing slug", func(t *testing.T) {
-		at, err := svc.GetAgentTypeBySlug(ctx, "claude-code")
+		at, err := svc.GetBySlug(ctx, "claude-code")
 		if err != nil {
-			t.Errorf("GetAgentTypeBySlug failed: %v", err)
+			t.Errorf("GetBySlug failed: %v", err)
 		}
 		if at.Slug != "claude-code" {
 			t.Errorf("Slug = %s, want claude-code", at.Slug)
@@ -87,24 +87,24 @@ func TestGetAgentTypeBySlug(t *testing.T) {
 	})
 
 	t.Run("non-existent slug", func(t *testing.T) {
-		_, err := svc.GetAgentTypeBySlug(ctx, "non-existent")
+		_, err := svc.GetBySlug(ctx, "non-existent")
 		if err == nil {
 			t.Error("Expected error for non-existent slug")
 		}
-		if err != ErrAgentTypeNotFound {
-			t.Errorf("Expected ErrAgentTypeNotFound, got %v", err)
+		if err != ErrAgentNotFound {
+			t.Errorf("Expected ErrAgentNotFound, got %v", err)
 		}
 	})
 }
 
-func TestGetAgentTypesForRunner(t *testing.T) {
+func TestGetAgentsForRunner(t *testing.T) {
 	db := setupTestDB(t)
-	svc := newTestAgentTypeService(db)
+	svc := newTestAgentService(db)
 
-	t.Run("returns active agent types", func(t *testing.T) {
-		types := svc.GetAgentTypesForRunner()
+	t.Run("returns active agents", func(t *testing.T) {
+		types := svc.GetAgentsForRunner()
 		if types == nil {
-			t.Fatal("GetAgentTypesForRunner returned nil")
+			t.Fatal("GetAgentsForRunner returned nil")
 		}
 		if len(types) != 2 {
 			t.Errorf("Types count = %d, want 2 (only active)", len(types))
@@ -121,7 +121,7 @@ func TestGetAgentTypesForRunner(t *testing.T) {
 	})
 
 	t.Run("includes executable field", func(t *testing.T) {
-		types := svc.GetAgentTypesForRunner()
+		types := svc.GetAgentsForRunner()
 		found := false
 		for _, at := range types {
 			if at.Slug == "claude-code" && at.Executable == "claude" {
@@ -138,8 +138,8 @@ func TestGetAgentTypesForRunner(t *testing.T) {
 		badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Silent),
 		})
-		badSvc := newTestAgentTypeService(badDB)
-		result := badSvc.GetAgentTypesForRunner()
+		badSvc := newTestAgentService(badDB)
+		result := badSvc.GetAgentsForRunner()
 		if result != nil {
 			t.Errorf("Expected nil on database error, got %v", result)
 		}

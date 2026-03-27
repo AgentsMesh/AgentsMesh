@@ -62,7 +62,7 @@ func TestParseFilter_Defaults(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "day", filter.Granularity)
-	assert.Nil(t, filter.AgentTypeSlug)
+	assert.Nil(t, filter.AgentSlug)
 	assert.Nil(t, filter.UserID)
 	assert.Nil(t, filter.Model)
 	// Default range: last 30 days.
@@ -130,12 +130,12 @@ func TestParseFilter_InvalidDateFormat(t *testing.T) {
 }
 
 func TestParseFilter_OptionalFilters(t *testing.T) {
-	c := newTestContext("agent_type=claude&user_id=42&model=opus")
+	c := newTestContext("agent_slug=claude&user_id=42&model=opus")
 	filter, err := parseFilter(c)
 	require.NoError(t, err)
 
-	require.NotNil(t, filter.AgentTypeSlug)
-	assert.Equal(t, "claude", *filter.AgentTypeSlug)
+	require.NotNil(t, filter.AgentSlug)
+	assert.Equal(t, "claude", *filter.AgentSlug)
 	require.NotNil(t, filter.UserID)
 	assert.Equal(t, int64(42), *filter.UserID)
 	require.NotNil(t, filter.Model)
@@ -165,12 +165,12 @@ func TestParseFilter_DateRangeExactly366Days(t *testing.T) {
 	require.NoError(t, err2)
 }
 
-func TestParseFilter_OnlyAgentType(t *testing.T) {
-	// Long agent_type slug — accepted by parseFilter (validation is elsewhere).
+func TestParseFilter_OnlyAgentSlug(t *testing.T) {
+	// Long agent slug — accepted by parseFilter (validation is elsewhere).
 	slug := strings.Repeat("a", 100)
-	c := newTestContext("agent_type=" + slug)
+	c := newTestContext("agent_slug=" + slug)
 	filter, err := parseFilter(c)
 	require.NoError(t, err)
-	require.NotNil(t, filter.AgentTypeSlug)
-	assert.Equal(t, slug, *filter.AgentTypeSlug)
+	require.NotNil(t, filter.AgentSlug)
+	assert.Equal(t, slug, *filter.AgentSlug)
 }

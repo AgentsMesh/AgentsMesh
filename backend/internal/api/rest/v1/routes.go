@@ -15,7 +15,7 @@ func RegisterAllRoutes(rg *gin.RouterGroup, cfg *config.Config, svc *Services) {
 	authHandler.RegisterRoutes(rg.Group("/auth"))
 
 	// User routes (authenticated, but not org-scoped)
-	RegisterUserRoutes(rg.Group("/users"), svc.User, svc.Org, svc.AgentType, svc.CredentialProfile, svc.UserConfig, svc.AgentPodSettings, svc.AgentPodAIProvider)
+	RegisterUserRoutes(rg.Group("/users"), svc.User, svc.Org, svc.AgentSvc, svc.CredentialProfile, svc.UserConfig, svc.AgentPodSettings, svc.AgentPodAIProvider)
 
 	// Organization routes (authenticated, some require org context)
 	// Path changed: /organizations -> /orgs
@@ -95,15 +95,15 @@ func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
 }
 
 func registerAgentRoutes(rg *gin.RouterGroup, svc *Services) {
-	agentHandler := NewAgentHandler(svc.AgentType, svc.CredentialProfile, svc.UserConfig)
+	agentHandler := NewAgentHandler(svc.AgentSvc, svc.CredentialProfile, svc.UserConfig)
 	agents := rg.Group("/agents")
 	{
-		agents.GET("/types", agentHandler.ListAgentTypes)
-		agents.GET("/types/:agent_type_id", agentHandler.GetAgentType)
+		agents.GET("", agentHandler.ListAgents)
+		agents.GET("/:slug", agentHandler.GetAgent)
 		agents.POST("/custom", agentHandler.CreateCustomAgent)
-		agents.PUT("/custom/:id", agentHandler.UpdateCustomAgent)
-		agents.DELETE("/custom/:id", agentHandler.DeleteCustomAgent)
-		agents.GET("/:agent_type_id/config-schema", agentHandler.GetAgentTypeConfigSchema)
+		agents.PUT("/custom/:slug", agentHandler.UpdateCustomAgent)
+		agents.DELETE("/custom/:slug", agentHandler.DeleteCustomAgent)
+		agents.GET("/:slug/config-schema", agentHandler.GetAgentConfigSchema)
 	}
 }
 

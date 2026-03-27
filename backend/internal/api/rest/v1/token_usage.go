@@ -34,7 +34,7 @@ func NewTokenUsageHandler(svc *tokenusagesvc.Service) *TokenUsageHandler {
 
 // GetDashboard returns all token usage data in a single response.
 // The 5 queries run concurrently via errgroup for lower latency.
-// GET /token-usage/dashboard?start_time=&end_time=&agent_type=&user_id=&model=&granularity=
+// GET /token-usage/dashboard?start_time=&end_time=&agent_slug=&user_id=&model=&granularity=
 func (h *TokenUsageHandler) GetDashboard(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 	if !isAdminOrOwner(tenant) {
@@ -157,8 +157,8 @@ func parseFilter(c *gin.Context) (tokenusage.AggregationFilter, error) {
 		filter.Granularity = "day"
 	}
 
-	if s := c.Query("agent_type"); s != "" {
-		filter.AgentTypeSlug = &s
+	if s := c.Query("agent_slug"); s != "" {
+		filter.AgentSlug = &s
 	}
 	if s := c.Query("user_id"); s != "" {
 		id, err := strconv.ParseInt(s, 10, 64)

@@ -27,8 +27,8 @@ func TestGRPCRunnerAdapter_Connect_Integration(t *testing.T) {
 	})
 	orgSvc.AddOrg("test-org", OrganizationInfo{ID: 100, Slug: "test-org"})
 
-	agentProvider := &mockAgentTypesProvider{
-		agentTypes: []interfaces.AgentTypeInfo{
+	agentProvider := &mockAgentsProvider{
+		agents: []interfaces.AgentInfo{
 			{Slug: "claude-code", Name: "Claude Code", Executable: "claude"},
 		},
 	}

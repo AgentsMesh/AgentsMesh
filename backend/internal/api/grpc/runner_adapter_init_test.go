@@ -21,7 +21,7 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 	connMgr := runner.NewRunnerConnectionManager(logger)
 	defer connMgr.Close()
 
-	t.Run("without agent types provider", func(t *testing.T) {
+	t.Run("without agents provider", func(t *testing.T) {
 		adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
 		// Add a connection
@@ -40,7 +40,7 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 			require.NotNil(t, initResult)
 			assert.Equal(t, int32(2), initResult.ProtocolVersion)
 			assert.NotNil(t, initResult.ServerInfo)
-			assert.Empty(t, initResult.AgentTypes)
+			assert.Empty(t, initResult.Agents)
 			assert.Contains(t, initResult.Features, "files_to_create")
 			assert.Contains(t, initResult.Features, "work_dir_config")
 			assert.Contains(t, initResult.Features, "initial_prompt")
@@ -49,9 +49,9 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 		}
 	})
 
-	t.Run("with agent types provider", func(t *testing.T) {
-		agentProvider := &mockAgentTypesProvider{
-			agentTypes: []interfaces.AgentTypeInfo{
+	t.Run("with agents provider", func(t *testing.T) {
+		agentProvider := &mockAgentsProvider{
+			agents: []interfaces.AgentInfo{
 				{Slug: "claude-code", Name: "Claude Code", Executable: "claude"},
 				{Slug: "aider", Name: "Aider", Executable: "aider"},
 			},
@@ -72,10 +72,10 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 		case response := <-conn.Send:
 			initResult := response.GetInitializeResult()
 			require.NotNil(t, initResult)
-			require.Len(t, initResult.AgentTypes, 2)
-			assert.Equal(t, "claude-code", initResult.AgentTypes[0].Slug)
-			assert.Equal(t, "Claude Code", initResult.AgentTypes[0].Name)
-			assert.Equal(t, "claude", initResult.AgentTypes[0].Command)
+			require.Len(t, initResult.Agents, 2)
+			assert.Equal(t, "claude-code", initResult.Agents[0].Slug)
+			assert.Equal(t, "Claude Code", initResult.Agents[0].Name)
+			assert.Equal(t, "claude", initResult.Agents[0].Command)
 		default:
 			t.Fatal("expected message to be sent to conn.Send channel")
 		}
@@ -100,13 +100,13 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 	})
 }
 
-// mockAgentTypesProvider implements AgentTypesProvider for testing
-type mockAgentTypesProvider struct {
-	agentTypes []interfaces.AgentTypeInfo
+// mockAgentsProvider implements AgentsProvider for testing
+type mockAgentsProvider struct {
+	agents []interfaces.AgentInfo
 }
 
-func (m *mockAgentTypesProvider) GetAgentTypesForRunner() []interfaces.AgentTypeInfo {
-	return m.agentTypes
+func (m *mockAgentsProvider) GetAgentsForRunner() []interfaces.AgentInfo {
+	return m.agents
 }
 
 // ==================== handleInitialized Tests ====================

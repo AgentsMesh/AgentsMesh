@@ -9,9 +9,9 @@ import (
 )
 
 // RegisterUserRoutes registers user routes
-func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *organization.Service, agentTypeSvc *agent.AgentTypeService, credentialSvc *agent.CredentialProfileService, userConfigSvc *agent.UserConfigService, agentpodSettingsSvc *agentpod.SettingsService, agentpodAIProviderSvc *agentpod.AIProviderService) {
+func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *organization.Service, agentSvc *agent.AgentService, credentialSvc *agent.CredentialProfileService, userConfigSvc *agent.UserConfigService, agentpodSettingsSvc *agentpod.SettingsService, agentpodAIProviderSvc *agentpod.AIProviderService) {
 	userHandler := NewUserHandler(userSvc, orgSvc)
-	agentHandler := NewAgentHandler(agentTypeSvc, credentialSvc, userConfigSvc)
+	agentHandler := NewAgentHandler(agentSvc, credentialSvc, userConfigSvc)
 
 	// Profile routes
 	rg.GET("/me", userHandler.GetCurrentUser)
@@ -23,9 +23,9 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 
 	// User agent configs (personal runtime configuration)
 	rg.GET("/me/agent-configs", agentHandler.ListUserAgentConfigs)
-	rg.GET("/me/agent-configs/:agent_type_id", agentHandler.GetUserAgentConfig)
-	rg.PUT("/me/agent-configs/:agent_type_id", agentHandler.SetUserAgentConfig)
-	rg.DELETE("/me/agent-configs/:agent_type_id", agentHandler.DeleteUserAgentConfig)
+	rg.GET("/me/agent-configs/:slug", agentHandler.GetUserAgentConfig)
+	rg.PUT("/me/agent-configs/:slug", agentHandler.SetUserAgentConfig)
+	rg.DELETE("/me/agent-configs/:slug", agentHandler.DeleteUserAgentConfig)
 
 	// AgentPod settings routes
 	if agentpodSettingsSvc != nil && agentpodAIProviderSvc != nil {

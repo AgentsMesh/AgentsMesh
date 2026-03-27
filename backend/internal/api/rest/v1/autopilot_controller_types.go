@@ -19,7 +19,7 @@ type CreateAutopilotControllerRequest struct {
 	NoProgressThreshold   int32  `json:"no_progress_threshold,omitempty"`
 	SameErrorThreshold    int32  `json:"same_error_threshold,omitempty"`
 	ApprovalTimeoutMin    int32  `json:"approval_timeout_min,omitempty"`
-	ControlAgentType      string `json:"control_agent_type,omitempty"`
+	ControlAgentSlug      string `json:"control_agent_slug,omitempty"`
 	ControlPromptTemplate string `json:"control_prompt_template,omitempty"`
 	MCPConfigJSON         string `json:"mcp_config_json,omitempty"`
 }

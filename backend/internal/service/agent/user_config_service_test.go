@@ -17,11 +17,11 @@ func setupTestDBWithUserAgentConfigs(t *testing.T) *gorm.DB {
 	db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_configs (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
-		agent_type_id INTEGER NOT NULL,
+		agent_slug TEXT NOT NULL,
 		config_values BLOB NOT NULL DEFAULT '{}',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE(user_id, agent_type_id)
+		UNIQUE(user_id, agent_slug)
 	)`)
 
 	return db
@@ -29,23 +29,23 @@ func setupTestDBWithUserAgentConfigs(t *testing.T) *gorm.DB {
 
 func TestUserConfigService_GetUserAgentConfig(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	svc := newTestUserConfigService(db, agentSvc)
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 
 	t.Run("returns empty config when not found", func(t *testing.T) {
-		config, err := svc.GetUserAgentConfig(ctx, 1, at.ID)
+		config, err := svc.GetUserAgentConfig(ctx, 1, at.Slug)
 		if err != nil {
 			t.Errorf("GetUserAgentConfig failed: %v", err)
 		}
 		if config.UserID != 1 {
 			t.Errorf("UserID = %d, want 1", config.UserID)
 		}
-		if config.AgentTypeID != at.ID {
-			t.Errorf("AgentTypeID = %d, want %d", config.AgentTypeID, at.ID)
+		if config.AgentSlug != at.Slug {
+			t.Errorf("AgentSlug = %s, want %s", config.AgentSlug, at.Slug)
 		}
 		if len(config.ConfigValues) != 0 {
 			t.Error("Should return empty config values when not found")
@@ -57,12 +57,12 @@ func TestUserConfigService_GetUserAgentConfig(t *testing.T) {
 			"model":           "opus",
 			"permission_mode": "plan",
 		}
-		_, err := svc.SetUserAgentConfig(ctx, 2, at.ID, configValues)
+		_, err := svc.SetUserAgentConfig(ctx, 2, at.Slug, configValues)
 		if err != nil {
 			t.Fatalf("SetUserAgentConfig failed: %v", err)
 		}
 
-		config, err := svc.GetUserAgentConfig(ctx, 2, at.ID)
+		config, err := svc.GetUserAgentConfig(ctx, 2, at.Slug)
 		if err != nil {
 			t.Errorf("GetUserAgentConfig failed: %v", err)
 		}
@@ -77,11 +77,11 @@ func TestUserConfigService_GetUserAgentConfig(t *testing.T) {
 
 func TestUserConfigService_SetUserAgentConfig(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	svc := newTestUserConfigService(db, agentSvc)
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 
 	t.Run("create new config", func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestUserConfigService_SetUserAgentConfig(t *testing.T) {
 			"model":       "sonnet",
 			"mcp_enabled": true,
 		}
-		config, err := svc.SetUserAgentConfig(ctx, 1, at.ID, configValues)
+		config, err := svc.SetUserAgentConfig(ctx, 1, at.Slug, configValues)
 		if err != nil {
 			t.Errorf("SetUserAgentConfig failed: %v", err)
 		}
@@ -102,14 +102,14 @@ func TestUserConfigService_SetUserAgentConfig(t *testing.T) {
 	})
 
 	t.Run("update existing config", func(t *testing.T) {
-		_, err := svc.SetUserAgentConfig(ctx, 3, at.ID, agent.ConfigValues{
+		_, err := svc.SetUserAgentConfig(ctx, 3, at.Slug, agent.ConfigValues{
 			"model": "opus",
 		})
 		if err != nil {
 			t.Fatalf("First SetUserAgentConfig failed: %v", err)
 		}
 
-		updatedConfig, err := svc.SetUserAgentConfig(ctx, 3, at.ID, agent.ConfigValues{
+		updatedConfig, err := svc.SetUserAgentConfig(ctx, 3, at.Slug, agent.ConfigValues{
 			"model":           "sonnet",
 			"permission_mode": "default",
 		})
@@ -124,49 +124,49 @@ func TestUserConfigService_SetUserAgentConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("fails for non-existent agent type", func(t *testing.T) {
-		_, err := svc.SetUserAgentConfig(ctx, 1, 99999, agent.ConfigValues{
+	t.Run("fails for non-existent agent", func(t *testing.T) {
+		_, err := svc.SetUserAgentConfig(ctx, 1, "nonexistent", agent.ConfigValues{
 			"model": "opus",
 		})
 		if err == nil {
-			t.Error("Expected error for non-existent agent type")
+			t.Error("Expected error for non-existent agent")
 		}
-		if err != ErrAgentTypeNotFound {
-			t.Errorf("Expected ErrAgentTypeNotFound, got %v", err)
+		if err != ErrAgentNotFound {
+			t.Errorf("Expected ErrAgentNotFound, got %v", err)
 		}
 	})
 }
 
 func TestUserConfigService_DeleteUserAgentConfig(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	svc := newTestUserConfigService(db, agentSvc)
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 
 	t.Run("delete existing config", func(t *testing.T) {
-		_, err := svc.SetUserAgentConfig(ctx, 1, at.ID, agent.ConfigValues{
+		_, err := svc.SetUserAgentConfig(ctx, 1, at.Slug, agent.ConfigValues{
 			"model": "opus",
 		})
 		if err != nil {
 			t.Fatalf("SetUserAgentConfig failed: %v", err)
 		}
 
-		err = svc.DeleteUserAgentConfig(ctx, 1, at.ID)
+		err = svc.DeleteUserAgentConfig(ctx, 1, at.Slug)
 		if err != nil {
 			t.Errorf("DeleteUserAgentConfig failed: %v", err)
 		}
 
-		config, _ := svc.GetUserAgentConfig(ctx, 1, at.ID)
+		config, _ := svc.GetUserAgentConfig(ctx, 1, at.Slug)
 		if len(config.ConfigValues) != 0 {
 			t.Error("Config should be deleted (empty values returned)")
 		}
 	})
 
 	t.Run("delete non-existent config is ok", func(t *testing.T) {
-		err := svc.DeleteUserAgentConfig(ctx, 999, 999)
+		err := svc.DeleteUserAgentConfig(ctx, 999, "nonexistent")
 		if err != nil {
 			t.Errorf("DeleteUserAgentConfig should not fail for non-existent config: %v", err)
 		}
@@ -175,16 +175,16 @@ func TestUserConfigService_DeleteUserAgentConfig(t *testing.T) {
 
 func TestUserConfigService_ListUserAgentConfigs(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	svc := newTestUserConfigService(db, agentSvc)
 	ctx := context.Background()
 
-	var agents []agent.AgentType
+	var agents []agent.Agent
 	db.Where("is_active = ?", true).Find(&agents)
 
 	userID := int64(100)
 	for i, at := range agents {
-		_, err := svc.SetUserAgentConfig(ctx, userID, at.ID, agent.ConfigValues{
+		_, err := svc.SetUserAgentConfig(ctx, userID, at.Slug, agent.ConfigValues{
 			"model": "model-" + string(rune('a'+i)),
 		})
 		if err != nil {
@@ -193,7 +193,7 @@ func TestUserConfigService_ListUserAgentConfigs(t *testing.T) {
 	}
 
 	if len(agents) > 0 {
-		svc.SetUserAgentConfig(ctx, 200, agents[0].ID, agent.ConfigValues{
+		svc.SetUserAgentConfig(ctx, 200, agents[0].Slug, agent.ConfigValues{
 			"model": "other-user",
 		})
 	}
@@ -218,20 +218,20 @@ func TestUserConfigService_ListUserAgentConfigs(t *testing.T) {
 
 func TestUserConfigService_GetUserEffectiveConfig(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	svc := newTestUserConfigService(db, agentSvc)
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 
 	t.Run("user config is applied", func(t *testing.T) {
-		svc.SetUserAgentConfig(ctx, 1, at.ID, agent.ConfigValues{
+		svc.SetUserAgentConfig(ctx, 1, at.Slug, agent.ConfigValues{
 			"model":       "opus",
 			"mcp_enabled": true,
 		})
 
-		config := svc.GetUserEffectiveConfig(ctx, 1, at.ID, nil)
+		config := svc.GetUserEffectiveConfig(ctx, 1, at.Slug, nil)
 
 		if config["model"] != "opus" {
 			t.Errorf("model = %v, want opus", config["model"])
@@ -242,7 +242,7 @@ func TestUserConfigService_GetUserEffectiveConfig(t *testing.T) {
 	})
 
 	t.Run("overrides take precedence over user config", func(t *testing.T) {
-		svc.SetUserAgentConfig(ctx, 2, at.ID, agent.ConfigValues{
+		svc.SetUserAgentConfig(ctx, 2, at.Slug, agent.ConfigValues{
 			"model":           "opus",
 			"permission_mode": "plan",
 		})
@@ -252,7 +252,7 @@ func TestUserConfigService_GetUserEffectiveConfig(t *testing.T) {
 			"mcp_enabled": true,
 		}
 
-		config := svc.GetUserEffectiveConfig(ctx, 2, at.ID, overrides)
+		config := svc.GetUserEffectiveConfig(ctx, 2, at.Slug, overrides)
 
 		if config["model"] != "sonnet" {
 			t.Errorf("model = %v, want sonnet (overridden)", config["model"])
@@ -266,15 +266,15 @@ func TestUserConfigService_GetUserEffectiveConfig(t *testing.T) {
 	})
 
 	t.Run("empty when no config exists", func(t *testing.T) {
-		config := svc.GetUserEffectiveConfig(ctx, 999, at.ID, nil)
+		config := svc.GetUserEffectiveConfig(ctx, 999, at.Slug, nil)
 
 		if config == nil {
 			t.Error("Should return non-nil map")
 		}
 	})
 
-	t.Run("handles non-existent agent type gracefully", func(t *testing.T) {
-		config := svc.GetUserEffectiveConfig(ctx, 1, 99999, nil)
+	t.Run("handles non-existent agent gracefully", func(t *testing.T) {
+		config := svc.GetUserEffectiveConfig(ctx, 1, "nonexistent", nil)
 
 		if config == nil {
 			t.Error("Should return non-nil map")
@@ -286,19 +286,19 @@ func TestUserConfigService_GetUserAgentConfig_DBError(t *testing.T) {
 	badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		launch_command TEXT NOT NULL DEFAULT ''
 	)`)
-	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
+	badDB.Exec(`INSERT INTO agents (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestUserConfigService(badDB, agentTypeSvc)
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestUserConfigService(badDB, agentSvc)
 	ctx := context.Background()
 
-	_, err := svc.GetUserAgentConfig(ctx, 1, 1)
+	_, err := svc.GetUserAgentConfig(ctx, 1, "claude-code")
 	if err == nil {
 		t.Log("SQLite didn't return error for missing table, which is acceptable")
 	}
@@ -306,19 +306,19 @@ func TestUserConfigService_GetUserAgentConfig_DBError(t *testing.T) {
 
 func TestUserConfigService_SetUserAgentConfig_UpdateError(t *testing.T) {
 	db := setupTestDBWithUserAgentConfigs(t)
-	agentTypeSvc := newTestAgentTypeService(db)
-	svc := newTestUserConfigService(db, agentTypeSvc)
+	agentSvc := newTestAgentService(db)
+	svc := newTestUserConfigService(db, agentSvc)
 	ctx := context.Background()
 
-	var at agent.AgentType
+	var at agent.Agent
 	db.First(&at)
 
-	_, err := svc.SetUserAgentConfig(ctx, 1, at.ID, agent.ConfigValues{"key": "value1"})
+	_, err := svc.SetUserAgentConfig(ctx, 1, at.Slug, agent.ConfigValues{"key": "value1"})
 	if err != nil {
 		t.Fatalf("Failed to create initial config: %v", err)
 	}
 
-	updated, err := svc.SetUserAgentConfig(ctx, 1, at.ID, agent.ConfigValues{"key": "value2"})
+	updated, err := svc.SetUserAgentConfig(ctx, 1, at.Slug, agent.ConfigValues{"key": "value2"})
 	if err != nil {
 		t.Fatalf("Failed to update config: %v", err)
 	}
@@ -331,19 +331,19 @@ func TestUserConfigService_DeleteUserAgentConfig_DBError(t *testing.T) {
 	badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		launch_command TEXT NOT NULL DEFAULT ''
 	)`)
-	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
+	badDB.Exec(`INSERT INTO agents (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestUserConfigService(badDB, agentTypeSvc)
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestUserConfigService(badDB, agentSvc)
 	ctx := context.Background()
 
-	err := svc.DeleteUserAgentConfig(ctx, 1, 1)
+	err := svc.DeleteUserAgentConfig(ctx, 1, "claude-code")
 	if err != nil {
 		t.Logf("Got expected error: %v", err)
 	}
@@ -353,23 +353,23 @@ func TestUserConfigService_SetUserAgentConfig_CreateDBError(t *testing.T) {
 	badDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	badDB.Exec(`CREATE TABLE IF NOT EXISTS agent_types (
+	badDB.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		slug TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		launch_command TEXT NOT NULL DEFAULT '',
 		config_schema BLOB DEFAULT '{}'
 	)`)
-	badDB.Exec(`INSERT INTO agent_types (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
+	badDB.Exec(`INSERT INTO agents (slug, name, launch_command) VALUES ('test', 'Test', 'test')`)
 	badDB.Exec(`CREATE TABLE IF NOT EXISTS user_agent_configs (
 		id INTEGER PRIMARY KEY AUTOINCREMENT
 	)`)
 
-	agentTypeSvc := newTestAgentTypeService(badDB)
-	svc := newTestUserConfigService(badDB, agentTypeSvc)
+	agentSvc := newTestAgentService(badDB)
+	svc := newTestUserConfigService(badDB, agentSvc)
 	ctx := context.Background()
 
-	_, err := svc.SetUserAgentConfig(ctx, 1, 1, agent.ConfigValues{"key": "value"})
+	_, err := svc.SetUserAgentConfig(ctx, 1, "claude-code", agent.ConfigValues{"key": "value"})
 	if err == nil {
 		t.Log("SQLite handled the insert gracefully (unexpected)")
 	} else {

@@ -313,8 +313,7 @@ func (a *GRPCRunnerAdapter) mcpPostComment(ctx context.Context, tc *middleware.T
 func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		RunnerID          int64                  `json:"runner_id"`
-		AgentTypeID       *int64                 `json:"agent_type_id"`
-		CustomAgentTypeID *int64                 `json:"custom_agent_type_id"`
+		AgentSlug       string                 `json:"agent_slug"`
 		RepositoryID      *int64                 `json:"repository_id"`
 		RepositoryURL     *string                `json:"repository_url"`
 		TicketSlug        *string                `json:"ticket_slug"`
@@ -342,8 +341,7 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		OrganizationID:      tc.OrganizationID,
 		UserID:              tc.UserID,
 		RunnerID:            params.RunnerID,
-		AgentTypeID:         params.AgentTypeID,
-		CustomAgentTypeID:   params.CustomAgentTypeID,
+		AgentSlug:           params.AgentSlug,
 		RepositoryID:        params.RepositoryID,
 		RepositoryURL:       params.RepositoryURL,
 		TicketSlug:          params.TicketSlug,
@@ -380,8 +378,8 @@ func mapOrchestratorErrorToMCP(err error) *mcpError {
 	switch {
 	case errors.Is(err, agentpod.ErrMissingRunnerID):
 		return newMcpError(400, "runner_id is required")
-	case errors.Is(err, agentpod.ErrMissingAgentTypeID):
-		return newMcpError(400, "agent_type_id is required")
+	case errors.Is(err, agentpod.ErrMissingAgentSlug):
+		return newMcpError(400, "agent_slug is required")
 	case errors.Is(err, agentpod.ErrSourcePodNotTerminated):
 		return newMcpError(400, "source pod is not terminated")
 	case errors.Is(err, agentpod.ErrResumeRunnerMismatch):

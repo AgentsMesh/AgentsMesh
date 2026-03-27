@@ -48,7 +48,7 @@ type CreateAndStartRequest struct {
 	NoProgressThreshold   int32
 	SameErrorThreshold    int32
 	ApprovalTimeoutMin    int32
-	ControlAgentType      string
+	ControlAgentSlug      string
 	ControlPromptTemplate string
 	MCPConfigJSON         string
 	KeyPrefix             string
@@ -88,8 +88,8 @@ func (s *AutopilotControllerService) CreateAndStart(ctx context.Context, req *Cr
 		CircuitBreakerState:    agentpod.CircuitBreakerClosed,
 	}
 
-	if req.ControlAgentType != "" {
-		controller.ControlAgentType = &req.ControlAgentType
+	if req.ControlAgentSlug != "" {
+		controller.ControlAgentSlug = &req.ControlAgentSlug
 	}
 	if req.ControlPromptTemplate != "" {
 		controller.ControlPromptTemplate = &req.ControlPromptTemplate
@@ -113,7 +113,7 @@ func (s *AutopilotControllerService) CreateAndStart(ctx context.Context, req *Cr
 				NoProgressThreshold:     noProg,
 				SameErrorThreshold:      sameErr,
 				ApprovalTimeoutMinutes:  approvalTimeout,
-				ControlAgentType:        req.ControlAgentType,
+				ControlAgentSlug:        req.ControlAgentSlug,
 				ControlPromptTemplate:   req.ControlPromptTemplate,
 				McpConfigJson:           req.MCPConfigJSON,
 			},

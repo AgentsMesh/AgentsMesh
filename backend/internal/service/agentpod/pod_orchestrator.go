@@ -22,7 +22,7 @@ import (
 // Callers (REST / MCP) map these to protocol-specific responses.
 var (
 	ErrMissingRunnerID         = errors.New("runner_id is required")
-	ErrMissingAgentTypeID      = errors.New("agent_type_id is required")
+	ErrMissingAgentSlug      = errors.New("agent_slug is required")
 	ErrSourcePodNotFound       = errors.New("source pod not found")
 	ErrSourcePodAccessDenied   = errors.New("source pod belongs to different organization")
 	ErrSourcePodNotTerminated  = errors.New("source pod is not terminated")
@@ -44,8 +44,7 @@ type OrchestrateCreatePodRequest struct {
 
 	// Basic parameters
 	RunnerID          int64
-	AgentTypeID       *int64
-	CustomAgentTypeID *int64
+	AgentSlug         string
 	RepositoryID      *int64
 	RepositoryURL     *string
 	TicketID          *int64
@@ -110,9 +109,9 @@ type RunnerQueryForOrchestrator interface {
 	GetRunner(ctx context.Context, runnerID int64) (*runnerDomain.Runner, error)
 }
 
-// AgentTypeResolverForOrchestrator resolves an agent type by ID.
-type AgentTypeResolverForOrchestrator interface {
-	GetAgentType(ctx context.Context, id int64) (*agentDomain.AgentType, error)
+// AgentResolverForOrchestrator resolves an agent by slug.
+type AgentResolverForOrchestrator interface {
+	GetAgent(ctx context.Context, slug string) (*agentDomain.Agent, error)
 }
 
 // PodOrchestratorDeps holds all dependencies for PodOrchestrator.
@@ -125,7 +124,7 @@ type PodOrchestratorDeps struct {
 	RepoService       RepositoryServiceForOrchestrator  // optional
 	TicketService     TicketServiceForOrchestrator      // optional
 	RunnerSelector    RunnerSelectorForOrchestrator     // optional
-	AgentTypeResolver AgentTypeResolverForOrchestrator  // optional
+	AgentResolver AgentResolverForOrchestrator  // optional
 	RunnerQuery       RunnerQueryForOrchestrator        // optional: for version-aware command building
 }
 
@@ -140,7 +139,7 @@ type PodOrchestrator struct {
 	repoService       RepositoryServiceForOrchestrator
 	ticketService     TicketServiceForOrchestrator
 	runnerSelector    RunnerSelectorForOrchestrator
-	agentTypeResolver AgentTypeResolverForOrchestrator
+	agentResolver AgentResolverForOrchestrator
 	runnerQuery       RunnerQueryForOrchestrator
 }
 
@@ -155,7 +154,7 @@ func NewPodOrchestrator(deps *PodOrchestratorDeps) *PodOrchestrator {
 		repoService:       deps.RepoService,
 		ticketService:     deps.TicketService,
 		runnerSelector:    deps.RunnerSelector,
-		agentTypeResolver: deps.AgentTypeResolver,
+		agentResolver:     deps.AgentResolver,
 		runnerQuery:       deps.RunnerQuery,
 	}
 }
@@ -181,19 +180,19 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	} else {
 		// === 2. Normal mode validation ===
-		if req.AgentTypeID == nil {
-			return nil, ErrMissingAgentTypeID
+		if req.AgentSlug == "" {
+			return nil, ErrMissingAgentSlug
 		}
 		if req.RunnerID == 0 {
-			// Auto-select a runner compatible with the requested agent type
-			if o.runnerSelector == nil || o.agentTypeResolver == nil {
+			// Auto-select a runner compatible with the requested agent
+			if o.runnerSelector == nil || o.agentResolver == nil {
 				return nil, ErrMissingRunnerID
 			}
-			agentType, err := o.agentTypeResolver.GetAgentType(ctx, *req.AgentTypeID)
+			agentDef, err := o.agentResolver.GetAgent(ctx, req.AgentSlug)
 			if err != nil {
-				return nil, ErrMissingAgentTypeID
+				return nil, ErrMissingAgentSlug
 			}
-			selectedRunner, err := o.runnerSelector.SelectAvailableRunnerForAgent(ctx, req.OrganizationID, req.UserID, agentType.Slug)
+			selectedRunner, err := o.runnerSelector.SelectAvailableRunnerForAgent(ctx, req.OrganizationID, req.UserID, agentDef.Slug)
 			if err != nil {
 				return nil, ErrNoAvailableRunner
 			}
@@ -249,8 +248,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	pod, err := o.podService.CreatePod(ctx, &CreatePodRequest{
 		OrganizationID:      req.OrganizationID,
 		RunnerID:            req.RunnerID,
-		AgentTypeID:         req.AgentTypeID,
-		CustomAgentTypeID:   req.CustomAgentTypeID,
+		AgentSlug:           req.AgentSlug,
 		RepositoryID:        req.RepositoryID,
 		TicketID:            req.TicketID,
 		CreatedByID:         req.UserID,
@@ -326,11 +324,11 @@ func (o *PodOrchestrator) handleResumeMode(ctx context.Context, req *Orchestrate
 	}
 
 	// Inherit configuration from source pod
-	if req.AgentTypeID == nil {
-		req.AgentTypeID = sourcePod.AgentTypeID
+	if req.AgentSlug == "" {
+		req.AgentSlug = sourcePod.AgentSlug
 	}
-	if req.CustomAgentTypeID == nil {
-		req.CustomAgentTypeID = sourcePod.CustomAgentTypeID
+	if false {
+		
 	}
 	if req.RepositoryID == nil {
 		req.RepositoryID = sourcePod.RepositoryID
@@ -506,9 +504,9 @@ func (o *PodOrchestrator) buildPodCommand(
 		InteractionMode:     pod.InteractionMode,
 	}
 
-	// Set AgentTypeID only when present (nil for CustomAgentType pods)
-	if req.AgentTypeID != nil {
-		buildReq.AgentTypeID = *req.AgentTypeID
+	// Set AgentSlug when present
+	if req.AgentSlug != "" {
+		buildReq.AgentSlug = req.AgentSlug
 	}
 
 	return o.configBuilder.BuildPodCommand(ctx, buildReq)

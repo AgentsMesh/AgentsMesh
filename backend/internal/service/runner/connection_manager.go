@@ -36,8 +36,8 @@ type RunnerConnectionManager struct {
 	initTimeoutStop chan struct{}
 	initTimeoutOnce sync.Once
 
-	// Agent types provider and server version for initialization handshake
-	agentTypesProvider interfaces.AgentTypesProvider
+	// Agent provider and server version for initialization handshake
+	agentsProvider interfaces.AgentsProvider
 	serverVersion      string
 
 	// Event callbacks - use Proto types directly for zero-copy efficiency

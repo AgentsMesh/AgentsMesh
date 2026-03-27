@@ -30,13 +30,13 @@ func TestBuildPodCommand_WithRepository(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	repoID := int64(10)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		RepositoryID:   &repoID,
 	})
 
@@ -53,13 +53,13 @@ func TestBuildPodCommand_WithRepositoryURL(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	repoURL := "https://github.com/org/repo.git"
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		RepositoryURL:  &repoURL,
 	})
 
@@ -77,14 +77,14 @@ func TestBuildPodCommand_BranchOverride(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	repoID := int64(10)
 	branch := "feature/my-branch"
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		RepositoryID:   &repoID,
 		BranchName:     &branch,
 	})
@@ -103,13 +103,13 @@ func TestBuildPodCommand_WithTicket(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	ticketID := int64(1)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		TicketID:       &ticketID,
 	})
 
@@ -121,13 +121,13 @@ func TestBuildPodCommand_WithTicketSlug(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	ticketSlug := "AM-99"
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		TicketSlug:     &ticketSlug,
 	})
 
@@ -150,12 +150,12 @@ func TestBuildPodCommand_WithOAuthCredential(t *testing.T) {
 	repoURL := "https://github.com/org/repo.git"
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		RepositoryURL:  &repoURL,
 	})
 
@@ -180,12 +180,12 @@ func TestBuildPodCommand_WithSSHCredential(t *testing.T) {
 	repoURL := "git@github.com:org/repo.git"
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		RepositoryURL:  &repoURL,
 	})
 
@@ -206,12 +206,12 @@ func TestBuildPodCommand_RunnerLocalCredential_NoCredsSent(t *testing.T) {
 	repoURL := "https://github.com/org/repo.git"
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withUserSvc(userSvc))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		RepositoryURL:  &repoURL,
 	})
 
@@ -328,13 +328,13 @@ func TestBuildPodCommand_RepoServiceError_IgnoresRepo(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withRepoSvc(repoSvc))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	repoID := int64(999)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		RepositoryID:   &repoID,
 	})
 
@@ -347,13 +347,13 @@ func TestBuildPodCommand_TicketServiceError_IgnoresTicket(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, _, _ := setupOrchestrator(t, withCoordinator(coord), withTicketSvc(ticketSvc))
 
-	agentTypeID := int64(1)
+	agentSlug := "claude-code"
 	ticketID := int64(999)
 	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
-		AgentTypeID:    &agentTypeID,
+		AgentSlug:    agentSlug,
 		TicketID:       &ticketID,
 	})
 

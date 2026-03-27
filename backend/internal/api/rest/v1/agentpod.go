@@ -40,7 +40,7 @@ func (h *AgentPodHandler) GetSettings(c *gin.Context) {
 
 // UpdateSettingsRequest represents settings update request
 type UpdateSettingsRequest struct {
-	DefaultAgentTypeID *int64  `json:"default_agent_type_id"`
+	DefaultAgentSlug *string  `json:"default_agent_slug"`
 	DefaultModel       *string `json:"default_model"`
 	DefaultPermMode    *string `json:"default_perm_mode" binding:"omitempty,oneof=default accept-edits full-auto"`
 	TerminalFontSize   *int    `json:"terminal_font_size" binding:"omitempty,min=8,max=32"`
@@ -59,7 +59,7 @@ func (h *AgentPodHandler) UpdateSettings(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
 	updates := &agentpod.UserSettingsUpdate{
-		DefaultAgentTypeID: req.DefaultAgentTypeID,
+		DefaultAgentSlug: req.DefaultAgentSlug,
 		DefaultModel:       req.DefaultModel,
 		DefaultPermMode:    req.DefaultPermMode,
 		TerminalFontSize:   req.TerminalFontSize,

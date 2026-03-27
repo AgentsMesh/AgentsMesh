@@ -47,8 +47,7 @@ func TestCreatePodRequest(t *testing.T) {
 	req := &CreatePodRequest{
 		OrganizationID:    1,
 		RunnerID:          3,
-		AgentTypeID:       intPtr(4),
-		CustomAgentTypeID: intPtr(5),
+		AgentSlug:         "agent-4",
 		RepositoryID:      intPtr(6),
 		TicketID:          intPtr(7),
 		CreatedByID:       8,

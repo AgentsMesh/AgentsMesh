@@ -23,7 +23,7 @@ func setupSettingsTestDB(t *testing.T) *gorm.DB {
 		CREATE TABLE IF NOT EXISTS user_agentpod_settings (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER NOT NULL UNIQUE,
-			default_agent_type_id INTEGER,
+			default_agent_slug INTEGER,
 			default_model TEXT,
 			default_perm_mode TEXT,
 			terminal_font_size INTEGER,
@@ -213,12 +213,11 @@ func TestGetDefaultAgentConfig(t *testing.T) {
 	ctx := context.Background()
 
 	// Create settings with agent config
-	agentTypeID := int64(5)
 	model := "claude-3-sonnet"
 	permMode := "accept-edits"
 	existing := &agentpod.UserAgentPodSettings{
 		UserID:             20,
-		DefaultAgentTypeID: &agentTypeID,
+		DefaultAgentSlug: strPtr("claude-code"),
 		DefaultModel:       &model,
 		DefaultPermMode:    &permMode,
 	}
@@ -231,8 +230,8 @@ func TestGetDefaultAgentConfig(t *testing.T) {
 		t.Fatalf("failed to get default agent config: %v", err)
 	}
 
-	if config.AgentTypeID == nil || *config.AgentTypeID != 5 {
-		t.Errorf("expected AgentTypeID 5")
+	if config.AgentSlug == nil || *config.AgentSlug != "claude-code" {
+		t.Errorf("expected AgentSlug 5")
 	}
 	if config.Model == nil || *config.Model != "claude-3-sonnet" {
 		t.Errorf("expected Model 'claude-3-sonnet'")

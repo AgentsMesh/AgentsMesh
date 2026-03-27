@@ -3346,10 +3346,10 @@ func TestInstallCustomMcpServer_CreateServerError(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: Agent type filtering for GetEffectiveMcpServers
+// Tests: Agent filtering for GetEffectiveMcpServers
 // ---------------------------------------------------------------------------
 
-func TestGetEffectiveMcpServers_AgentTypeFilter_MatchingAgent(t *testing.T) {
+func TestGetEffectiveMcpServers_AgentFilter_MatchingAgent(t *testing.T) {
 	// MCP server with MarketItem filter ["claude-code"] should be included when agentSlug="claude-code"
 	repo := &svcMockRepo{
 		getEffectiveMcpServersFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error) {
@@ -3361,7 +3361,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_MatchingAgent(t *testing.T) {
 					MarketItem: &extension.McpMarketItem{
 						ID:              100,
 						Slug:            "filtered-server",
-						AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+						AgentFilter: json.RawMessage(`["claude-code"]`),
 					},
 				},
 			}, nil
@@ -3381,7 +3381,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_MatchingAgent(t *testing.T) {
 	}
 }
 
-func TestGetEffectiveMcpServers_AgentTypeFilter_NonMatchingAgent(t *testing.T) {
+func TestGetEffectiveMcpServers_AgentFilter_NonMatchingAgent(t *testing.T) {
 	// MCP server with MarketItem filter ["claude-code"] should be excluded when agentSlug="aider"
 	repo := &svcMockRepo{
 		getEffectiveMcpServersFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error) {
@@ -3393,7 +3393,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_NonMatchingAgent(t *testing.T) {
 					MarketItem: &extension.McpMarketItem{
 						ID:              100,
 						Slug:            "claude-only-server",
-						AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+						AgentFilter: json.RawMessage(`["claude-code"]`),
 					},
 				},
 			}, nil
@@ -3410,7 +3410,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_NonMatchingAgent(t *testing.T) {
 	}
 }
 
-func TestGetEffectiveMcpServers_AgentTypeFilter_CustomServerAlwaysIncluded(t *testing.T) {
+func TestGetEffectiveMcpServers_AgentFilter_CustomServerAlwaysIncluded(t *testing.T) {
 	// MCP server without MarketItem (custom install) should always be included
 	repo := &svcMockRepo{
 		getEffectiveMcpServersFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error) {
@@ -3434,8 +3434,8 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_CustomServerAlwaysIncluded(t *te
 	}
 }
 
-func TestGetEffectiveMcpServers_AgentTypeFilter_NullFilterAllowsAll(t *testing.T) {
-	// MCP server with MarketItem that has null/empty agent_type_filter should be included for any agent
+func TestGetEffectiveMcpServers_AgentFilter_NullFilterAllowsAll(t *testing.T) {
+	// MCP server with MarketItem that has null/empty agent_filter should be included for any agent
 	repo := &svcMockRepo{
 		getEffectiveMcpServersFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error) {
 			return []*extension.InstalledMcpServer{
@@ -3446,7 +3446,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_NullFilterAllowsAll(t *testing.T
 					MarketItem: &extension.McpMarketItem{
 						ID:              100,
 						Slug:            "universal-server",
-						AgentTypeFilter: nil, // null = all agents
+						AgentFilter: nil, // null = all agents
 					},
 				},
 			}, nil
@@ -3463,7 +3463,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_NullFilterAllowsAll(t *testing.T
 	}
 }
 
-func TestGetEffectiveMcpServers_AgentTypeFilter_EmptySlugDisablesFilter(t *testing.T) {
+func TestGetEffectiveMcpServers_AgentFilter_EmptySlugDisablesFilter(t *testing.T) {
 	// When agentSlug is empty, no filtering should happen
 	repo := &svcMockRepo{
 		getEffectiveMcpServersFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error) {
@@ -3475,7 +3475,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_EmptySlugDisablesFilter(t *testi
 					MarketItem: &extension.McpMarketItem{
 						ID:              100,
 						Slug:            "claude-only",
-						AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+						AgentFilter: json.RawMessage(`["claude-code"]`),
 					},
 				},
 			}, nil
@@ -3492,7 +3492,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_EmptySlugDisablesFilter(t *testi
 	}
 }
 
-func TestGetEffectiveMcpServers_AgentTypeFilter_MultipleAgentTypes(t *testing.T) {
+func TestGetEffectiveMcpServers_AgentFilter_MultipleAgents(t *testing.T) {
 	// MCP server with filter ["claude-code", "aider"] should be included for both
 	repo := &svcMockRepo{
 		getEffectiveMcpServersFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error) {
@@ -3504,7 +3504,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_MultipleAgentTypes(t *testing.T)
 					MarketItem: &extension.McpMarketItem{
 						ID:              100,
 						Slug:            "multi-agent-server",
-						AgentTypeFilter: json.RawMessage(`["claude-code", "aider"]`),
+						AgentFilter: json.RawMessage(`["claude-code", "aider"]`),
 					},
 				},
 			}, nil
@@ -3540,7 +3540,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_MultipleAgentTypes(t *testing.T)
 	}
 }
 
-func TestGetEffectiveMcpServers_AgentTypeFilter_MixedServers(t *testing.T) {
+func TestGetEffectiveMcpServers_AgentFilter_MixedServers(t *testing.T) {
 	// Mix of filtered, unfiltered, and custom servers
 	repo := &svcMockRepo{
 		getEffectiveMcpServersFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error) {
@@ -3551,7 +3551,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_MixedServers(t *testing.T) {
 					MarketItemID: int64Ptr(100),
 					MarketItem: &extension.McpMarketItem{
 						ID:              100,
-						AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+						AgentFilter: json.RawMessage(`["claude-code"]`),
 					},
 				},
 				{
@@ -3560,7 +3560,7 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_MixedServers(t *testing.T) {
 					MarketItemID: int64Ptr(101),
 					MarketItem: &extension.McpMarketItem{
 						ID:              101,
-						AgentTypeFilter: nil,
+						AgentFilter: nil,
 					},
 				},
 				{
@@ -3597,10 +3597,10 @@ func TestGetEffectiveMcpServers_AgentTypeFilter_MixedServers(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: Agent type filtering for GetEffectiveSkills
+// Tests: Agent filtering for GetEffectiveSkills
 // ---------------------------------------------------------------------------
 
-func TestGetEffectiveSkills_AgentTypeFilter_MatchingAgent(t *testing.T) {
+func TestGetEffectiveSkills_AgentFilter_MatchingAgent(t *testing.T) {
 	// Skill with MarketItem filter ["claude-code"] should be included when agentSlug="claude-code"
 	repo := &svcMockRepo{
 		getEffectiveSkillsFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error) {
@@ -3616,7 +3616,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_MatchingAgent(t *testing.T) {
 					MarketItem: &extension.SkillMarketItem{
 						ID:              100,
 						Slug:            "filtered-skill",
-						AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+						AgentFilter: json.RawMessage(`["claude-code"]`),
 						ContentSha:      "abc123",
 						StorageKey:      "skills/filtered-skill/v1.tar.gz",
 						PackageSize:     1024,
@@ -3639,7 +3639,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_MatchingAgent(t *testing.T) {
 	}
 }
 
-func TestGetEffectiveSkills_AgentTypeFilter_NonMatchingAgent(t *testing.T) {
+func TestGetEffectiveSkills_AgentFilter_NonMatchingAgent(t *testing.T) {
 	// Skill with MarketItem filter ["claude-code"] should be excluded when agentSlug="aider"
 	repo := &svcMockRepo{
 		getEffectiveSkillsFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error) {
@@ -3655,7 +3655,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_NonMatchingAgent(t *testing.T) {
 					MarketItem: &extension.SkillMarketItem{
 						ID:              100,
 						Slug:            "claude-only-skill",
-						AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+						AgentFilter: json.RawMessage(`["claude-code"]`),
 						ContentSha:      "abc123",
 						StorageKey:      "skills/claude-only-skill/v1.tar.gz",
 						PackageSize:     1024,
@@ -3675,7 +3675,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_NonMatchingAgent(t *testing.T) {
 	}
 }
 
-func TestGetEffectiveSkills_AgentTypeFilter_GitHubInstallAlwaysIncluded(t *testing.T) {
+func TestGetEffectiveSkills_AgentFilter_GitHubInstallAlwaysIncluded(t *testing.T) {
 	// Skill without MarketItem (github install) should always be included
 	repo := &svcMockRepo{
 		getEffectiveSkillsFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error) {
@@ -3703,8 +3703,8 @@ func TestGetEffectiveSkills_AgentTypeFilter_GitHubInstallAlwaysIncluded(t *testi
 	}
 }
 
-func TestGetEffectiveSkills_AgentTypeFilter_NullFilterAllowsAll(t *testing.T) {
-	// Skill with MarketItem that has null agent_type_filter should be included for any agent
+func TestGetEffectiveSkills_AgentFilter_NullFilterAllowsAll(t *testing.T) {
+	// Skill with MarketItem that has null agent_filter should be included for any agent
 	repo := &svcMockRepo{
 		getEffectiveSkillsFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error) {
 			return []*extension.InstalledSkill{
@@ -3719,7 +3719,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_NullFilterAllowsAll(t *testing.T) {
 					MarketItem: &extension.SkillMarketItem{
 						ID:              100,
 						Slug:            "universal-skill",
-						AgentTypeFilter: nil,
+						AgentFilter: nil,
 						ContentSha:      "ghi789",
 						StorageKey:      "skills/universal-skill/v1.tar.gz",
 						PackageSize:     512,
@@ -3739,7 +3739,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_NullFilterAllowsAll(t *testing.T) {
 	}
 }
 
-func TestGetEffectiveSkills_AgentTypeFilter_EmptySlugDisablesFilter(t *testing.T) {
+func TestGetEffectiveSkills_AgentFilter_EmptySlugDisablesFilter(t *testing.T) {
 	// When agentSlug is empty, no filtering should happen
 	repo := &svcMockRepo{
 		getEffectiveSkillsFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error) {
@@ -3755,7 +3755,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_EmptySlugDisablesFilter(t *testing.T
 					MarketItem: &extension.SkillMarketItem{
 						ID:              100,
 						Slug:            "claude-only-skill",
-						AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+						AgentFilter: json.RawMessage(`["claude-code"]`),
 						ContentSha:      "abc123",
 						StorageKey:      "skills/claude-only-skill/v1.tar.gz",
 						PackageSize:     1024,
@@ -3775,7 +3775,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_EmptySlugDisablesFilter(t *testing.T
 	}
 }
 
-func TestGetEffectiveSkills_AgentTypeFilter_MixedSkills(t *testing.T) {
+func TestGetEffectiveSkills_AgentFilter_MixedSkills(t *testing.T) {
 	// Mix of filtered, unfiltered, and non-market skills
 	repo := &svcMockRepo{
 		getEffectiveSkillsFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error) {
@@ -3790,7 +3790,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_MixedSkills(t *testing.T) {
 					MarketItemID:  int64Ptr(100),
 					MarketItem: &extension.SkillMarketItem{
 						ID:              100,
-						AgentTypeFilter: json.RawMessage(`["claude-code"]`),
+						AgentFilter: json.RawMessage(`["claude-code"]`),
 						ContentSha:      "sha1",
 						StorageKey:      "skills/claude-only/v1.tar.gz",
 						PackageSize:     100,
@@ -3806,7 +3806,7 @@ func TestGetEffectiveSkills_AgentTypeFilter_MixedSkills(t *testing.T) {
 					MarketItemID:  int64Ptr(101),
 					MarketItem: &extension.SkillMarketItem{
 						ID:              101,
-						AgentTypeFilter: nil,
+						AgentFilter: nil,
 						ContentSha:      "sha2",
 						StorageKey:      "skills/universal/v1.tar.gz",
 						PackageSize:     200,
