@@ -13,7 +13,6 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock useAuthStore to provide currentOrg
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
     currentOrg: { slug: 'test-org' },
@@ -21,7 +20,6 @@ vi.mock('@/stores/auth', () => ({
   }),
 }))
 
-// Mock ticket store — supports both selector and no-selector calls
 const mockTicketStoreState: Record<string, unknown> = {}
 vi.mock('@/stores/ticket', () => ({
   useTicketStore: vi.fn((selector?: (state: Record<string, unknown>) => unknown) =>
@@ -35,11 +33,10 @@ vi.mock('@/stores/ticket', () => ({
   getPriorityInfo: (priority: string) => ({
     label: priority.charAt(0).toUpperCase() + priority.slice(1),
     color: 'text-gray-500',
-    icon: '→',
+    icon: '->',
   }),
 }))
 
-// Mock ticket API
 vi.mock('@/lib/api', () => ({
   ticketApi: {
     getSubTickets: vi.fn(),
@@ -53,7 +50,6 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
-// Mock RepositorySelect
 vi.mock('@/components/common/RepositorySelect', () => ({
   RepositorySelect: ({ value, onChange, placeholder }: { value: number | null; onChange: (v: number | null) => void; placeholder?: string }) => (
     <select data-testid="repository-select" value={value ?? ''} onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}>
@@ -63,7 +59,6 @@ vi.mock('@/components/common/RepositorySelect', () => ({
   ),
 }))
 
-// Mock BlockEditor (lazy-loaded in TicketDetail, always editable)
 vi.mock('@/components/ui/block-editor', () => ({
   BlockViewer: ({ content }: { content: string }) => <div data-testid="block-viewer">{content}</div>,
   default: ({ initialContent, onChange }: { initialContent: string; onChange?: (v: string) => void; editable?: boolean }) => (
@@ -71,19 +66,16 @@ vi.mock('@/components/ui/block-editor', () => ({
   ),
 }))
 
-// Mock workspace store (used by sidebar pod section)
 vi.mock('@/stores/workspace', () => ({
   useWorkspaceStore: () => ({
     addPane: vi.fn(),
   }),
 }))
 
-// Mock CreatePodModal
 vi.mock('@/components/ide/CreatePodModal', () => ({
   CreatePodModal: () => null,
 }))
 
-// Mock pod utils and AgentStatusBadge
 vi.mock('@/lib/pod-utils', () => ({
   getPodDisplayName: (pod: { pod_key: string }) => pod.pod_key,
 }))
@@ -91,7 +83,7 @@ vi.mock('@/components/shared/AgentStatusBadge', () => ({
   AgentStatusBadge: () => null,
 }))
 
-describe('TicketDetail Component', () => {
+describe('TicketDetail - Editing, Status & Delete', () => {
   const mockTicket = {
     id: 1,
     number: 42,
@@ -114,21 +106,17 @@ describe('TicketDetail Component', () => {
   }
 
   const mockFetchTicket = vi.fn().mockResolvedValue(undefined)
-  const mockSetCurrentTicket = vi.fn()
-  const mockUpdateTicket = vi.fn()
-  const mockUpdateTicketStatus = vi.fn()
   const mockDeleteTicket = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Update mutable store state (shared with the mock)
     Object.assign(mockTicketStoreState, {
       currentTicket: mockTicket,
       fetchTicket: mockFetchTicket,
-      setCurrentTicket: mockSetCurrentTicket,
-      updateTicket: mockUpdateTicket,
-      updateTicketStatus: mockUpdateTicketStatus,
+      setCurrentTicket: vi.fn(),
+      updateTicket: vi.fn(),
+      updateTicketStatus: vi.fn(),
       deleteTicket: mockDeleteTicket,
       loading: false,
       error: null,
@@ -141,180 +129,108 @@ describe('TicketDetail Component', () => {
     ;(ticketApi.getPods as ReturnType<typeof vi.fn>).mockResolvedValue({ pods: [] })
   })
 
-  describe('rendering', () => {
-    it('should not render slug (slug shown in page breadcrumb only)', async () => {
+  describe('pod panel', () => {
+    it('should show execute button in sidebar', async () => {
+      render(<TicketDetail slug="PROJ-42" />)
+      await waitFor(() => {
+        expect(screen.getByText('Execute')).toBeInTheDocument()
+      })
+    })
+
+    it('should show no pods message when empty', async () => {
+      render(<TicketDetail slug="PROJ-42" />)
+      await waitFor(() => {
+        expect(screen.getByText('No pods for this ticket yet')).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('inline editing (Linear-style)', () => {
+    it('should render inline editable title', async () => {
       render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByText('Implement new feature')).toBeInTheDocument()
       })
-      expect(screen.queryByText('PROJ-42')).not.toBeInTheDocument()
     })
 
-    it('should render ticket title', async () => {
+    it('should render block editor for content (always editable)', async () => {
       render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
-        expect(screen.getByText('Implement new feature')).toBeInTheDocument()
+        expect(screen.getByTestId('block-editor')).toBeInTheDocument()
       })
     })
 
-    it('should render ticket description in block editor', async () => {
+    it('should not show a separate Edit button', async () => {
       render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
-        const editor = screen.getByTestId('block-editor')
-        expect(editor).toBeInTheDocument()
-        expect(editor).toHaveTextContent('This is the ticket description')
-      })
-    })
-
-    it('should render status badge', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        const badges = screen.getAllByText('In Progress')
-        expect(badges.length).toBeGreaterThanOrEqual(1)
-      })
-    })
-
-    it('should call fetchTicket on mount', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(mockFetchTicket).toHaveBeenCalledWith('PROJ-42')
+        expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
       })
     })
   })
 
-  describe('loading state', () => {
-    it('should render skeleton when loading', () => {
-      Object.assign(mockTicketStoreState, {
-        currentTicket: null,
-        loading: true,
-        error: null,
-      })
-
-      render(<TicketDetail slug="PROJ-42" />)
-      expect(screen.getByTestId('ticket-detail-skeleton')).toBeInTheDocument()
-    })
-  })
-
-  describe('error state', () => {
-    it('should render error message', async () => {
-      Object.assign(mockTicketStoreState, {
-        currentTicket: null,
-        loading: false,
-        error: 'Failed to load ticket',
-      })
-
+  describe('status change', () => {
+    it('should render StatusSelect in sidebar', async () => {
       render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
-        expect(screen.getByText('Failed to load ticket')).toBeInTheDocument()
-      })
-    })
-
-    it('should render retry button on error', async () => {
-      Object.assign(mockTicketStoreState, {
-        currentTicket: null,
-        loading: false,
-        error: 'Failed to load ticket',
-      })
-
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        const retryButton = screen.getByText('Retry')
-        expect(retryButton).toBeInTheDocument()
-      })
-    })
-
-    it('should call fetchTicket when retry is clicked', async () => {
-      Object.assign(mockTicketStoreState, {
-        currentTicket: null,
-        loading: false,
-        error: 'Failed to load ticket',
-      })
-
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        const retryButton = screen.getByText('Retry')
-        fireEvent.click(retryButton)
-      })
-
-      expect(mockFetchTicket).toHaveBeenCalledTimes(2)
-    })
-  })
-
-  describe('not found state', () => {
-    it('should render not found message when ticket is null', async () => {
-      Object.assign(mockTicketStoreState, {
-        currentTicket: null,
-        loading: false,
-        error: null,
-      })
-
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('Ticket not found')).toBeInTheDocument()
+        expect(screen.getByText('Status')).toBeInTheDocument()
       })
     })
   })
 
-  describe('labels', () => {
-    it('should render labels when provided', async () => {
+  describe('delete action', () => {
+    it('should show delete button', async () => {
       render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
-        expect(screen.getByText('frontend')).toBeInTheDocument()
+        expect(screen.getByText('Delete')).toBeInTheDocument()
       })
     })
 
-    it('should apply label colors', async () => {
+    it('should show confirmation modal when delete is clicked', async () => {
       render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        const label = screen.getByText('frontend')
-        expect(label).toHaveStyle({ color: '#3b82f6' })
-      })
-    })
-  })
 
-  describe('assignees', () => {
-    it('should render assignees', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument()
+        const deleteButton = screen.getByText('Delete')
+        fireEvent.click(deleteButton)
       })
+
+      expect(screen.getByText('Delete Ticket')).toBeInTheDocument()
+      expect(screen.getByText(/Are you sure you want to delete ticket/)).toBeInTheDocument()
     })
 
-    it('should show no assignees message when empty', async () => {
-      Object.assign(mockTicketStoreState, {
-        currentTicket: { ...mockTicket, assignees: [] },
-      })
+    it('should call deleteTicket and navigate when confirmed', async () => {
+      mockDeleteTicket.mockResolvedValue({})
 
       render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('No assignees')).toBeInTheDocument()
-      })
-    })
-  })
 
-  describe('metadata sidebar', () => {
-    it('should display repository selector', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
-        expect(screen.getByText('Repository')).toBeInTheDocument()
+        const deleteButton = screen.getByText('Delete')
+        fireEvent.click(deleteButton)
+      })
+
+      const confirmButtons = screen.getAllByText('Delete')
+      const confirmDeleteButton = confirmButtons[confirmButtons.length - 1]
+      fireEvent.click(confirmDeleteButton)
+
+      await waitFor(() => {
+        expect(mockDeleteTicket).toHaveBeenCalledWith('PROJ-42')
+        expect(mockRouterPush).toHaveBeenCalledWith('/test-org/tickets')
       })
     })
 
-    it('should display due date when provided', async () => {
+    it('should close modal when cancel is clicked', async () => {
       render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('Due Date')).toBeInTheDocument()
-      })
-    })
 
-    it('should display timestamps', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
-        // Timestamps are now in compact "Created Xd ago · Updated Xd ago" format
-        const timestampEl = screen.getByText(/Created/)
-        expect(timestampEl).toBeInTheDocument()
+        const deleteButton = screen.getByText('Delete')
+        fireEvent.click(deleteButton)
+      })
+
+      const cancelButton = screen.getAllByText('Cancel')[0]
+      fireEvent.click(cancelButton)
+
+      await waitFor(() => {
+        expect(screen.queryByText('Delete Ticket')).not.toBeInTheDocument()
       })
     })
   })
-
 })

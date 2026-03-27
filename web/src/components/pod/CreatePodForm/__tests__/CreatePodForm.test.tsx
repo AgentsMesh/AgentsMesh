@@ -219,4 +219,23 @@ describe("CreatePodForm", () => {
     });
   });
 
+  describe("cancel button", () => {
+    it("should render cancel button when onCancel is provided", () => {
+      render(<CreatePodForm config={{ scenario: "workspace", onCancel: vi.fn() }} />);
+      expect(screen.getByText("ide.createPod.cancel")).toBeInTheDocument();
+    });
+
+    it("should call onCancel when clicked", () => {
+      const onCancel = vi.fn();
+      render(<CreatePodForm config={{ scenario: "workspace", onCancel }} />);
+      fireEvent.click(screen.getByText("ide.createPod.cancel"));
+      expect(onCancel).toHaveBeenCalled();
+    });
+
+    it("should not render cancel button when onCancel is not provided", () => {
+      render(<CreatePodForm config={{ scenario: "workspace" }} />);
+      expect(screen.queryByText("ide.createPod.cancel")).not.toBeInTheDocument();
+    });
+  });
+
 });
