@@ -3,7 +3,7 @@ package agentpod
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 
 	"github.com/google/uuid"
 
@@ -239,24 +239,23 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 
 	podCmd, err := o.buildPodCommand(ctx, req, pod, sourcePod, isResumeMode)
 	if err != nil {
-		log.Printf("[pod-orchestrator] Failed to build pod command: %v", err)
+		slog.Error("failed to build pod command", "pod_key", pod.PodKey, "error", err)
 		return nil, errors.Join(ErrConfigBuildFailed, err)
 	}
 
-	// Dispatch to Runner
 	if o.podCoordinator != nil {
-		log.Printf("[pod-orchestrator] Sending create_pod to runner %d for pod %s (resume=%v)", req.RunnerID, pod.PodKey, isResumeMode)
+		slog.Info("dispatching create_pod to runner", "runner_id", req.RunnerID, "pod_key", pod.PodKey, "resume", isResumeMode)
 		if err := o.podCoordinator.CreatePod(ctx, req.RunnerID, podCmd); err != nil {
-			log.Printf("[pod-orchestrator] Failed to send create_pod: %v", err)
+			slog.Error("failed to dispatch create_pod", "pod_key", pod.PodKey, "error", err)
 			if markErr := o.podService.MarkInitFailed(ctx, pod.PodKey, errCodeRunnerUnreachable,
 				"Failed to dispatch pod to runner: "+err.Error()); markErr != nil {
-				log.Printf("[pod-orchestrator] Failed to mark pod as init failed: %v", markErr)
+				slog.Error("failed to mark pod as init failed", "pod_key", pod.PodKey, "error", markErr)
 			}
 			return nil, ErrRunnerDispatchFailed
 		}
-		log.Printf("[pod-orchestrator] create_pod sent successfully for pod %s", pod.PodKey)
+		slog.Info("create_pod dispatched", "pod_key", pod.PodKey)
 	} else {
-		log.Printf("[pod-orchestrator] PodCoordinator is nil, cannot send create_pod command")
+		slog.Warn("PodCoordinator is nil, cannot dispatch create_pod", "pod_key", pod.PodKey)
 	}
 
 	return &OrchestrateCreatePodResult{Pod: pod}, nil

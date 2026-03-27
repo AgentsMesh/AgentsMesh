@@ -2,7 +2,7 @@ package agentpod
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"github.com/google/uuid"
 
@@ -90,7 +90,7 @@ func (o *PodOrchestrator) getUserGitCredential(ctx context.Context, userID int64
 
 	decrypted, err := o.userService.GetDecryptedCredentialToken(ctx, userID, defaultCred.ID)
 	if err != nil {
-		log.Printf("[pod-orchestrator] Failed to decrypt Git credential: %v", err)
+		slog.Warn("failed to decrypt Git credential", "user_id", userID, "error", err)
 		return nil
 	}
 
