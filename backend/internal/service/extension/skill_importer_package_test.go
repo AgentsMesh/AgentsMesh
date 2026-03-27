@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -340,4 +341,23 @@ func TestPackageSkillDir_FileOpenError(t *testing.T) {
 
 	_, err := packageSkillDir(dir)
 	assert.Error(t, err, "should fail when file cannot be opened")
+}
+
+func TestPackageSkillDir_SocketFileError(t *testing.T) {
+	// tar.FileInfoHeader returns an error for socket files.
+	// Use a short temp dir path because Unix sockets have a path length limit.
+	dir, err := os.MkdirTemp("/tmp", "skl-")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: test\n---"), 0644))
+
+	socketPath := filepath.Join(dir, "s.sock")
+	listener, err := net.Listen("unix", socketPath)
+	require.NoError(t, err)
+	defer listener.Close()
+
+	_, err = packageSkillDir(dir)
+	assert.Error(t, err, "should fail when encountering a socket file")
+	assert.Contains(t, err.Error(), "sockets not supported")
 }
