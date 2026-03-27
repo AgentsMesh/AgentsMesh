@@ -72,7 +72,9 @@ func (r *PTYPodRelay) SendSnapshot(rc relay.RelayClient) {
 	log := logger.Pod()
 
 	if r.virtualTerminal != nil {
-		snapshot := r.virtualTerminal.TryGetSnapshot()
+		// Use blocking GetSnapshot() — subscribe snapshot is a critical one-time operation
+		// that must succeed. TryGetSnapshot() is for periodic ticks where skipping is OK.
+		snapshot := r.virtualTerminal.GetSnapshot()
 		if snapshot != nil {
 			data, err := json.Marshal(snapshot)
 			if err != nil {
@@ -80,9 +82,6 @@ func (r *PTYPodRelay) SendSnapshot(rc relay.RelayClient) {
 			} else {
 				_ = rc.Send(relay.MsgTypeSnapshot, data)
 			}
-		} else {
-			log.Info("VT lock busy, snapshot will be sent on next frame",
-				"pod_key", r.podKey)
 		}
 	}
 
