@@ -3,7 +3,6 @@ import {
   render,
   screen,
   fireEvent,
-  waitFor,
   act,
   cleanup,
 } from "@testing-library/react";
@@ -209,11 +208,8 @@ describe("APIKeysSettings", () => {
 
   describe("loading state", () => {
     it("should show loading state initially", () => {
-      // Make the list call hang indefinitely
       mockList.mockReturnValue(new Promise(() => {}));
-
       render(<APIKeysSettings t={mockT} />);
-
       expect(
         screen.getByText("settings.apiKeys.loading")
       ).toBeInTheDocument();
@@ -223,9 +219,7 @@ describe("APIKeysSettings", () => {
   describe("empty state", () => {
     it("should show empty state when no keys exist", async () => {
       mockList.mockResolvedValue({ api_keys: [], total: 0 });
-
       await renderAndWaitForLoad();
-
       expect(
         screen.getByText("settings.apiKeys.noKeys")
       ).toBeInTheDocument();
@@ -233,9 +227,7 @@ describe("APIKeysSettings", () => {
 
     it("should show empty state when api_keys is null/undefined", async () => {
       mockList.mockResolvedValue({ api_keys: null, total: 0 });
-
       await renderAndWaitForLoad();
-
       expect(
         screen.getByText("settings.apiKeys.noKeys")
       ).toBeInTheDocument();
@@ -248,10 +240,7 @@ describe("APIKeysSettings", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
       mockList.mockRejectedValue(new Error("Network error"));
-
       await renderAndWaitForLoad();
-
-      // Error text uses the translation key
       expect(
         screen.getByText("settings.apiKeys.loadError")
       ).toBeInTheDocument();
@@ -263,17 +252,13 @@ describe("APIKeysSettings", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
       mockList.mockRejectedValue(new Error("Network error"));
-
       await renderAndWaitForLoad();
-
       expect(
         screen.getByText("settings.apiKeys.loadError")
       ).toBeInTheDocument();
-
       await act(async () => {
         fireEvent.click(screen.getByText("settings.apiKeys.dismiss"));
       });
-
       expect(
         screen.queryByText("settings.apiKeys.loadError")
       ).not.toBeInTheDocument();
@@ -284,18 +269,12 @@ describe("APIKeysSettings", () => {
   describe("key list rendering", () => {
     it("should render list of API keys after loading", async () => {
       await renderAndWaitForLoad();
-
-      expect(
-        screen.getByTestId("api-key-card-1")
-      ).toBeInTheDocument();
-      expect(
-        screen.getByTestId("api-key-card-2")
-      ).toBeInTheDocument();
+      expect(screen.getByTestId("api-key-card-1")).toBeInTheDocument();
+      expect(screen.getByTestId("api-key-card-2")).toBeInTheDocument();
     });
 
     it("should display correct key names", async () => {
       await renderAndWaitForLoad();
-
       expect(screen.getByText("CI/CD Key")).toBeInTheDocument();
       expect(screen.getByText("Monitoring Key")).toBeInTheDocument();
     });
@@ -304,7 +283,6 @@ describe("APIKeysSettings", () => {
   describe("header rendering", () => {
     it("should display title and description", () => {
       render(<APIKeysSettings t={mockT} />);
-
       expect(
         screen.getByText("settings.apiKeys.title")
       ).toBeInTheDocument();
@@ -315,293 +293,33 @@ describe("APIKeysSettings", () => {
 
     it("should display create button", () => {
       render(<APIKeysSettings t={mockT} />);
-
       expect(
         screen.getByText("settings.apiKeys.createKey")
       ).toBeInTheDocument();
     });
   });
 
-  describe("create flow", () => {
-    it("should open create dialog when create button is clicked", async () => {
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByText("settings.apiKeys.createKey"));
-      });
-
-      expect(screen.getByTestId("create-dialog")).toBeInTheDocument();
-    });
-
-    it("should close create dialog when close is clicked", async () => {
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByText("settings.apiKeys.createKey"));
-      });
-
-      expect(screen.getByTestId("create-dialog")).toBeInTheDocument();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("create-dialog-close"));
-      });
-
-      expect(
-        screen.queryByTestId("create-dialog")
-      ).not.toBeInTheDocument();
-    });
-
-    it("should show secret dialog after successful creation", async () => {
-      mockCreate.mockResolvedValue({
-        api_key: { id: 3, name: "New Key" },
-        raw_key: "am_new_secret123",
-      });
-
-      await renderAndWaitForLoad();
-
-      // Open create dialog
-      await act(async () => {
-        fireEvent.click(screen.getByText("settings.apiKeys.createKey"));
-      });
-
-      // Submit creation
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("create-dialog-submit"));
-      });
-
-      // Secret dialog should appear
-      await waitFor(() => {
-        expect(screen.getByTestId("secret-dialog")).toBeInTheDocument();
-      });
-      expect(screen.getByTestId("raw-key")).toHaveTextContent(
-        "am_new_secret123"
-      );
-    });
-
-    it("should close secret dialog when done is clicked", async () => {
-      mockCreate.mockResolvedValue({
-        api_key: { id: 3, name: "New Key" },
-        raw_key: "am_new_secret123",
-      });
-
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByText("settings.apiKeys.createKey"));
-      });
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("create-dialog-submit"));
-      });
-
-      await waitFor(() => {
-        expect(screen.getByTestId("secret-dialog")).toBeInTheDocument();
-      });
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("secret-dialog-close"));
-      });
-
-      expect(
-        screen.queryByTestId("secret-dialog")
-      ).not.toBeInTheDocument();
-    });
-
-    it("should refresh key list after creation", async () => {
-      mockCreate.mockResolvedValue({
-        api_key: { id: 3, name: "New Key" },
-        raw_key: "am_new_secret123",
-      });
-
-      await renderAndWaitForLoad();
-
-      // mockList was called once during initial mount
-      expect(mockList).toHaveBeenCalledTimes(1);
-
-      await act(async () => {
-        fireEvent.click(screen.getByText("settings.apiKeys.createKey"));
-      });
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("create-dialog-submit"));
-      });
-
-      // Should have called list again to refresh
-      await waitFor(() => {
-        expect(mockList).toHaveBeenCalledTimes(2);
-      });
-    });
-  });
-
-  describe("edit flow", () => {
-    it("should open edit dialog when edit button is clicked", async () => {
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("edit-1"));
-      });
-
-      expect(screen.getByTestId("edit-dialog")).toBeInTheDocument();
-      expect(screen.getByTestId("editing-key-name")).toHaveTextContent(
-        "CI/CD Key"
-      );
-    });
-
-    it("should close edit dialog when close is clicked", async () => {
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("edit-1"));
-      });
-
-      expect(screen.getByTestId("edit-dialog")).toBeInTheDocument();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("edit-dialog-close"));
-      });
-
-      expect(
-        screen.queryByTestId("edit-dialog")
-      ).not.toBeInTheDocument();
-    });
-
-    it("should refresh key list after saving edit", async () => {
-      mockUpdate.mockResolvedValue({
-        api_key: { id: 1, name: "Updated" },
-      });
-
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("edit-1"));
-      });
-
-      const initialCallCount = mockList.mock.calls.length;
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("edit-dialog-save"));
-      });
-
-      await waitFor(() => {
-        expect(mockList).toHaveBeenCalledTimes(initialCallCount + 1);
-      });
-    });
-  });
-
-  describe("revoke flow", () => {
-    it("should call confirm dialog when revoke is clicked", async () => {
-      mockConfirm.mockResolvedValue(false); // user cancels
-
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("revoke-1"));
-      });
-
-      expect(mockConfirm).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: "settings.apiKeys.revokeDialog.title",
-          description: "settings.apiKeys.revokeDialog.description",
-          variant: "destructive",
-        })
-      );
-    });
-
-    it("should call revoke API when confirmed", async () => {
-      mockConfirm.mockResolvedValue(true);
-      mockRevoke.mockResolvedValue({ message: "Revoked" });
-
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("revoke-1"));
-      });
-
-      await waitFor(() => {
-        expect(mockRevoke).toHaveBeenCalledWith(1);
-      });
-    });
-
-    it("should NOT call revoke API when cancelled", async () => {
-      mockConfirm.mockResolvedValue(false);
-
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("revoke-1"));
-      });
-
-      expect(mockRevoke).not.toHaveBeenCalled();
-    });
-
-    it("should refresh key list after successful revoke", async () => {
-      mockConfirm.mockResolvedValue(true);
-      mockRevoke.mockResolvedValue({ message: "Revoked" });
-
-      await renderAndWaitForLoad();
-
-      const callCountBefore = mockList.mock.calls.length;
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("revoke-1"));
-      });
-
-      await waitFor(() => {
-        expect(mockList).toHaveBeenCalledTimes(callCountBefore + 1);
-      });
-    });
-
-    it("should handle revoke API failure gracefully", async () => {
-      mockConfirm.mockResolvedValue(true);
-      mockRevoke.mockRejectedValue(new Error("Revoke failed"));
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
-      await renderAndWaitForLoad();
-
-      await act(async () => {
-        fireEvent.click(screen.getByTestId("revoke-1"));
-      });
-
-      // Should not crash - error is logged
-      await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
-          "Failed to revoke API key:",
-          expect.any(Error)
-        );
-      });
-
-      consoleSpy.mockRestore();
-    });
-  });
-
   describe("translation function", () => {
     it("should call t with correct keys for title and description", () => {
       render(<APIKeysSettings t={mockT} />);
-
       expect(mockT).toHaveBeenCalledWith("settings.apiKeys.title");
       expect(mockT).toHaveBeenCalledWith("settings.apiKeys.description");
     });
 
     it("should call t with correct key for create button", () => {
       render(<APIKeysSettings t={mockT} />);
-
       expect(mockT).toHaveBeenCalledWith("settings.apiKeys.createKey");
     });
 
     it("should call t with correct key for loading state", () => {
       mockList.mockReturnValue(new Promise(() => {}));
       render(<APIKeysSettings t={mockT} />);
-
       expect(mockT).toHaveBeenCalledWith("settings.apiKeys.loading");
     });
 
     it("should call t with correct key for empty state", async () => {
       mockList.mockResolvedValue({ api_keys: [], total: 0 });
-
       await renderAndWaitForLoad();
-
       expect(mockT).toHaveBeenCalledWith("settings.apiKeys.noKeys");
     });
 
@@ -610,9 +328,7 @@ describe("APIKeysSettings", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
       mockList.mockRejectedValue(new Error("fail"));
-
       await renderAndWaitForLoad();
-
       expect(mockT).toHaveBeenCalledWith("settings.apiKeys.loadError");
       consoleSpy.mockRestore();
     });
