@@ -34,6 +34,9 @@ export interface RelayConnection {
   reconnectTimer: ReturnType<typeof setTimeout> | null;
   /** Timer for delayed disconnect when all subscribers leave */
   disconnectTimer: ReturnType<typeof setTimeout> | null;
+  /** Timer for snapshot resync retry */
+  snapshotTimer: ReturnType<typeof setTimeout> | null;
+  snapshotReceived: boolean;
   pendingResize?: { rows: number; cols: number };
   podSize?: { rows: number; cols: number };
   relayUrl: string;
@@ -183,6 +186,8 @@ class RelayConnectionPool {
       reconnectAttempts: 0,
       reconnectTimer: null,
       disconnectTimer: null,
+      snapshotTimer: null,
+      snapshotReceived: false,
       relayUrl: relayInfo.relay_url,
       relayToken: relayInfo.token,
       runnerDisconnected: false,
@@ -287,6 +292,10 @@ class RelayConnectionPool {
       clearTimeout(conn.disconnectTimer);
       conn.disconnectTimer = null;
     }
+    if (conn.snapshotTimer) {
+      clearTimeout(conn.snapshotTimer);
+      conn.snapshotTimer = null;
+    }
     this.connections.delete(podKey);
     this.lastInputs.delete(podKey);
     this.acpListeners.delete(podKey);
@@ -382,11 +391,14 @@ class RelayConnectionPool {
         c.status = "connected";
         c.lastActivity = Date.now();
         c.reconnectAttempts = 0;
+        c.snapshotReceived = false;
         this.notifyStatusChange(podKey);
         if (c.pendingResize) {
           this.doSendResize(podKey, c.pendingResize.cols, c.pendingResize.rows);
           c.pendingResize = undefined;
         }
+        // Schedule snapshot resync retry — if no snapshot arrives within 2s, request again
+        this.scheduleSnapshotRetry(podKey);
       }
     };
 
@@ -464,7 +476,27 @@ class RelayConnectionPool {
     }
   }
 
+  /** Schedule a resync retry if no snapshot is received within 2 seconds. Retries up to 3 times. */
+  private scheduleSnapshotRetry(podKey: string, attempt = 0): void {
+    const conn = this.connections.get(podKey);
+    if (!conn || attempt >= 3) return;
+
+    conn.snapshotTimer = setTimeout(() => {
+      const c = this.connections.get(podKey);
+      if (!c || c.snapshotReceived) return;
+      if (c.ws.readyState === WebSocket.OPEN) {
+        c.ws.send(encodeMessage(MsgType.Resync, new Uint8Array(0)));
+        this.scheduleSnapshotRetry(podKey, attempt + 1);
+      }
+    }, 2000);
+  }
+
   private handleSnapshot(conn: RelayConnection, payload: Uint8Array): void {
+    conn.snapshotReceived = true;
+    if (conn.snapshotTimer) {
+      clearTimeout(conn.snapshotTimer);
+      conn.snapshotTimer = null;
+    }
     try {
       const snapshot = JSON.parse(new TextDecoder().decode(payload));
       if (snapshot.cols > 0 && snapshot.rows > 0) {
