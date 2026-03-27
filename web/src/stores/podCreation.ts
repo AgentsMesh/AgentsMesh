@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
  * Pod creation preferences - remembers last user choices
  */
 interface PodCreationPreferences {
-  lastAgentTypeId: number | null;
+  lastAgentSlug: string | null;
   lastRepositoryId: number | null;
   lastCredentialProfileId: number | null;
   lastBranchName: string | null;
@@ -14,7 +14,7 @@ interface PodCreationPreferences {
     choices: Partial<
       Pick<
         PodCreationPreferences,
-        "lastAgentTypeId" | "lastRepositoryId" | "lastCredentialProfileId" | "lastBranchName"
+        "lastAgentSlug" | "lastRepositoryId" | "lastCredentialProfileId" | "lastBranchName"
       >
     >
   ) => void;
@@ -28,7 +28,7 @@ interface PodCreationPreferences {
 export const usePodCreationStore = create<PodCreationPreferences>()(
   persist(
     (set) => ({
-      lastAgentTypeId: null,
+      lastAgentSlug: null,
       lastRepositoryId: null,
       lastCredentialProfileId: null,
       lastBranchName: null,
@@ -36,7 +36,7 @@ export const usePodCreationStore = create<PodCreationPreferences>()(
       setLastChoices: (choices) => set((state) => ({ ...state, ...choices })),
       clearLastChoices: () =>
         set({
-          lastAgentTypeId: null,
+          lastAgentSlug: null,
           lastRepositoryId: null,
           lastCredentialProfileId: null,
           lastBranchName: null,
@@ -49,7 +49,7 @@ export const usePodCreationStore = create<PodCreationPreferences>()(
     {
       name: "agentsmesh-pod-creation",
       partialize: (state) => ({
-        lastAgentTypeId: state.lastAgentTypeId,
+        lastAgentSlug: state.lastAgentSlug,
         lastRepositoryId: state.lastRepositoryId,
         lastCredentialProfileId: state.lastCredentialProfileId,
         lastBranchName: state.lastBranchName,

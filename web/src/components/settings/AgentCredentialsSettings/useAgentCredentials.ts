@@ -5,8 +5,8 @@ import {
   userAgentCredentialApi,
   agentApi,
   type CredentialProfileData,
-  type CredentialProfilesByAgentType,
-  type AgentTypeData,
+  type CredentialProfilesByAgent,
+  type AgentData,
 } from "@/lib/api";
 import type { AgentCredentialsState, AgentCredentialsActions, CredentialFormData } from "./types";
 
@@ -21,10 +21,10 @@ export function useAgentCredentials(
   const [success, setSuccess] = useState<string | null>(null);
 
   // Data state
-  const [profilesByAgentType, setProfilesByAgentType] = useState<CredentialProfilesByAgentType[]>([]);
-  const [agentTypes, setAgentTypes] = useState<AgentTypeData[]>([]);
-  const [expandedAgentTypes, setExpandedAgentTypes] = useState<Set<number>>(new Set());
-  const [runnerHostDefaults, setRunnerHostDefaults] = useState<Set<number>>(new Set());
+  const [profilesByAgent, setProfilesByAgent] = useState<CredentialProfilesByAgent[]>([]);
+  const [agents, setAgents] = useState<AgentData[]>([]);
+  const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
+  const [runnerHostDefaults, setRunnerHostDefaults] = useState<Set<string>>(new Set());
 
   // Load data
   const loadData = useCallback(async () => {
@@ -32,42 +32,42 @@ export function useAgentCredentials(
       setLoading(true);
       setError(null);
 
-      const [profilesRes, typesRes] = await Promise.all([
+      const [profilesRes, agentsRes] = await Promise.all([
         userAgentCredentialApi.list(),
-        agentApi.listTypes(),
+        agentApi.list(),
       ]);
 
-      setProfilesByAgentType(profilesRes.items || []);
-      setAgentTypes(typesRes.agent_types || []);
+      setProfilesByAgent(profilesRes.items || []);
+      setAgents(agentsRes.agents || []);
 
-      // Determine which agent types have RunnerHost as default
-      const runnerHostDefaultSet = new Set<number>();
-      const agentTypeIds = new Set(typesRes.agent_types?.map((at: AgentTypeData) => at.id) || []);
+      // Determine which agents have RunnerHost as default
+      const runnerHostDefaultSet = new Set<string>();
+      const agentSlugs = new Set(agentsRes.agents?.map((a: AgentData) => a.slug) || []);
 
-      // Start by assuming all agent types default to RunnerHost
-      agentTypeIds.forEach((id: number) => runnerHostDefaultSet.add(id));
+      // Start by assuming all agents default to RunnerHost
+      agentSlugs.forEach((slug: string) => runnerHostDefaultSet.add(slug));
 
       // Remove from set if there's a custom default profile
       profilesRes.items?.forEach((item) => {
         const hasCustomDefault = item.profiles.some((p) => p.is_default);
         if (hasCustomDefault) {
-          runnerHostDefaultSet.delete(item.agent_type_id);
+          runnerHostDefaultSet.delete(item.agent_slug);
         }
       });
 
       setRunnerHostDefaults(runnerHostDefaultSet);
 
-      // Auto-expand first agent type or those with profiles
-      const expandedIds = new Set<number>();
-      if (typesRes.agent_types?.length > 0) {
-        expandedIds.add(typesRes.agent_types[0].id);
+      // Auto-expand first agent or those with profiles
+      const expandedIds = new Set<string>();
+      if (agentsRes.agents?.length > 0) {
+        expandedIds.add(agentsRes.agents[0].slug);
       }
       profilesRes.items?.forEach((item) => {
         if (item.profiles.length > 0) {
-          expandedIds.add(item.agent_type_id);
+          expandedIds.add(item.agent_slug);
         }
       });
-      setExpandedAgentTypes(expandedIds);
+      setExpandedAgents(expandedIds);
     } catch (err) {
       console.error("Failed to load agent credentials:", err);
       setError(t("settings.agentCredentials.failedToLoad"));
@@ -80,24 +80,24 @@ export function useAgentCredentials(
     loadData();
   }, [loadData]);
 
-  // Toggle agent type expansion
-  const toggleAgentType = useCallback((agentTypeId: number) => {
-    setExpandedAgentTypes((prev) => {
+  // Toggle agent expansion
+  const toggleAgent = useCallback((agentSlug: string) => {
+    setExpandedAgents((prev) => {
       const next = new Set(prev);
-      if (next.has(agentTypeId)) {
-        next.delete(agentTypeId);
+      if (next.has(agentSlug)) {
+        next.delete(agentSlug);
       } else {
-        next.add(agentTypeId);
+        next.add(agentSlug);
       }
       return next;
     });
   }, []);
 
-  // Set RunnerHost as default for an agent type
-  const handleSetRunnerHostDefault = useCallback(async (agentTypeId: number) => {
+  // Set RunnerHost as default for an agent
+  const handleSetRunnerHostDefault = useCallback(async (agentSlug: string) => {
     try {
       setError(null);
-      const group = profilesByAgentType.find((g) => g.agent_type_id === agentTypeId);
+      const group = profilesByAgent.find((g) => g.agent_slug === agentSlug);
       const currentDefault = group?.profiles.find((p) => p.is_default);
       if (currentDefault) {
         await userAgentCredentialApi.update(currentDefault.id, { is_default: false });
@@ -109,7 +109,7 @@ export function useAgentCredentials(
       console.error("Failed to set RunnerHost as default:", err);
       setError(t("settings.agentCredentials.failedToSetDefault"));
     }
-  }, [profilesByAgentType, loadData, t]);
+  }, [profilesByAgent, loadData, t]);
 
   // Set custom profile as default
   const handleSetDefault = useCallback(async (profileId: number) => {
@@ -143,7 +143,7 @@ export function useAgentCredentials(
   // Sends only the active credential method's value; the other is excluded.
   // Backend replaces the entire credentials object, clearing stale fields.
   const handleSaveProfile = useCallback(async (
-    agentTypeId: number,
+    agentSlug: string,
     data: CredentialFormData,
     editingProfile: CredentialProfileData | null
   ) => {
@@ -171,7 +171,7 @@ export function useAgentCredentials(
         });
         setSuccess(t("settings.agentCredentials.profileUpdated"));
       } else {
-        await userAgentCredentialApi.create(agentTypeId, {
+        await userAgentCredentialApi.create(agentSlug, {
           name: data.name,
           description: data.description || undefined,
           is_runner_host: false,
@@ -188,29 +188,29 @@ export function useAgentCredentials(
     }
   }, [loadData, t]);
 
-  // Get profiles for a specific agent type
-  const getProfilesForAgentType = useCallback((agentTypeId: number): CredentialProfileData[] => {
-    const group = profilesByAgentType.find((g) => g.agent_type_id === agentTypeId);
+  // Get profiles for a specific agent
+  const getProfilesForAgent = useCallback((agentSlug: string): CredentialProfileData[] => {
+    const group = profilesByAgent.find((g) => g.agent_slug === agentSlug);
     return group?.profiles || [];
-  }, [profilesByAgentType]);
+  }, [profilesByAgent]);
 
   return {
     // State
     loading,
     error,
     success,
-    profilesByAgentType,
-    agentTypes,
-    expandedAgentTypes,
+    profilesByAgent,
+    agents,
+    expandedAgents,
     runnerHostDefaults,
 
     // Actions
-    toggleAgentType,
+    toggleAgent,
     handleSetRunnerHostDefault,
     handleSetDefault,
     handleDelete,
     handleSaveProfile,
-    getProfilesForAgentType,
+    getProfilesForAgent,
     setError,
     setSuccess,
   };

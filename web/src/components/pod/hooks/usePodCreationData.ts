@@ -4,31 +4,31 @@ import {
   agentApi,
   repositoryApi,
   RunnerData,
-  AgentTypeData,
+  AgentData,
   RepositoryData,
 } from "@/lib/api";
 
 export interface PodCreationData {
   runners: RunnerData[];
-  agentTypes: AgentTypeData[];
+  agents: AgentData[];
   repositories: RepositoryData[];
   loading: boolean;
   error: string | null;
   // Runner selection state
   selectedRunner: RunnerData | null;
   setSelectedRunnerId: (id: number | null) => void;
-  // Agent types filtered by selected runner's available agents
-  availableAgentTypes: AgentTypeData[];
+  // Agents filtered by selected runner's available agents
+  availableAgents: AgentData[];
 }
 
 /**
  * Hook to load data required for pod creation (runners, agents, repositories)
- * Agent types are filtered based on the selected runner's available agents
+ * Agents are filtered based on the selected runner's available agents
  * Only loads when enabled is true (e.g., when modal is open)
  */
 export function usePodCreationData(enabled: boolean): PodCreationData {
   const [runners, setRunners] = useState<RunnerData[]>([]);
-  const [agentTypes, setAgentTypes] = useState<AgentTypeData[]>([]);
+  const [agents, setAgents] = useState<AgentData[]>([]);
   const [repositories, setRepositories] = useState<RepositoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +46,7 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
       try {
         const [runnersRes, agentsRes, reposRes] = await Promise.allSettled([
           runnerApi.list(),
-          agentApi.listTypes(),
+          agentApi.list(),
           repositoryApi.list(),
         ]);
 
@@ -60,9 +60,9 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
           setRunners(onlineRunners);
         }
         if (agentsRes.status === "fulfilled") {
-          const agents = agentsRes.value.agent_types || [];
-          console.log("[usePodCreationData] Agent types loaded:", agents.length, agents.map(a => ({ id: a.id, slug: a.slug })));
-          setAgentTypes(agents);
+          const agentList = agentsRes.value.agents || [];
+          console.log("[usePodCreationData] Agents loaded:", agentList.length, agentList.map(a => ({ slug: a.slug })));
+          setAgents(agentList);
         }
         if (reposRes.status === "fulfilled") {
           setRepositories(reposRes.value.repositories || []);
@@ -99,28 +99,28 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
     return runners.find(r => r.id === selectedRunnerId) || null;
   }, [runners, selectedRunnerId]);
 
-  // Filter agent types based on selected runner's available agents
+  // Filter agents based on selected runner's available agents
   // When no runner is manually selected: union of all online runners' available agents
   // When runner is manually selected: filter by that runner's available agents
-  const availableAgentTypes = useMemo((): AgentTypeData[] => {
+  const availableAgents = useMemo((): AgentData[] => {
     if (selectedRunner?.available_agents?.length) {
-      return agentTypes.filter(agent => selectedRunner.available_agents!.includes(agent.slug));
+      return agents.filter(agent => selectedRunner.available_agents!.includes(agent.slug));
     }
 
     // No runner selected: show union of all online runners' available agents
     const allSlugs = new Set(runners.flatMap(r => r.available_agents || []));
     if (allSlugs.size === 0) return [];
-    return agentTypes.filter(agent => allSlugs.has(agent.slug));
-  }, [selectedRunner, runners, agentTypes]);
+    return agents.filter(agent => allSlugs.has(agent.slug));
+  }, [selectedRunner, runners, agents]);
 
   return {
     runners,
-    agentTypes,
+    agents,
     repositories,
     loading,
     error,
     selectedRunner,
     setSelectedRunnerId,
-    availableAgentTypes,
+    availableAgents,
   };
 }

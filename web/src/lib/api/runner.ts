@@ -20,7 +20,7 @@ export interface RunnerData {
     cpu_cores?: number;
     hostname?: string;
   };
-  // New field from Runner handshake - list of available agent type slugs
+  // New field from Runner handshake - list of available agent slugs
   available_agents?: string[];
   created_at: string;
   updated_at: string;
@@ -162,8 +162,8 @@ export interface RunnerPodData {
   pod_key: string;
   organization_id: number;
   runner_id: number;
-  agent_type_id?: number;
-  custom_agent_type_id?: number;
+  agent_slug?: string;
+  custom_agent_slug?: string;
   repository_id?: number;
   ticket_id?: number;
   ticket?: {

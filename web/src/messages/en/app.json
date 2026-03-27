@@ -296,7 +296,7 @@
     },
     "modal": {
       "title": "Create New Pod",
-      "agentType": "Agent Type",
+      "agent": "Agent",
       "selectAgent": "Select an agent...",
       "selectRunner": "Select a runner...",
       "repositoryOptional": "Repository (optional)",

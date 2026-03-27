@@ -13,7 +13,7 @@ interface PodDisplayInfo {
   loop?: {
     name?: string;
   };
-  agent_type?: {
+  agent?: {
     name?: string;
   };
 }
@@ -27,7 +27,7 @@ interface PodDisplayInfo {
  * 3. Loop name (if created by a loop job)
  * 4. OSC title (set by terminal applications like Claude Code)
  * 5. Ticket slug fallback
- * 6. Agent type name + truncated pod_key
+ * 6. Agent name + truncated pod_key
  * 7. Truncated pod_key
  *
  * @param pod - Pod data with optional alias, title, ticket, and loop
@@ -77,10 +77,10 @@ export function getPodDisplayName(
     return pod.ticket.slug;
   }
 
-  // Priority 6: Agent type + truncated pod_key
+  // Priority 6: Agent name + truncated pod_key
   const keyPrefix = getShortPodKey(pod.pod_key);
-  if (pod.agent_type?.name) {
-    return `${pod.agent_type.name} (${keyPrefix})`;
+  if (pod.agent?.name) {
+    return `${pod.agent.name} (${keyPrefix})`;
   }
 
   // Priority 7: Fallback to truncated pod_key

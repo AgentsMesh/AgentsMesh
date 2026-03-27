@@ -38,7 +38,7 @@ export interface ChannelMessage {
   sender_pod_info?: {
     pod_key: string;
     alias?: string;
-    agent_type?: {
+    agent?: {
       name: string;
     };
   };

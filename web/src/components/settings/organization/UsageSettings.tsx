@@ -81,7 +81,7 @@ export function UsageSettings({ t }: UsageSettingsProps) {
     const v = searchParams.get("granularity");
     return isValidGranularity(v) ? v : "day";
   });
-  const [agentType, setAgentType] = useState(() => searchParams.get("agentType") || "");
+  const [agent, setAgent] = useState(() => searchParams.get("agent") || "");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,9 +92,9 @@ export function UsageSettings({ t }: UsageSettingsProps) {
   const [byUser, setByUser] = useState<TokenUsageByUser[]>([]);
   const [byModel, setByModel] = useState<TokenUsageByModel[]>([]);
 
-  // Agent type list derived from unfiltered data to avoid circular dependency:
+  // Agent list derived from unfiltered data to avoid circular dependency:
   // selecting an agent filter would otherwise shrink the filter options list.
-  const [allAgentTypes, setAllAgentTypes] = useState<string[]>([]);
+  const [allAgents, setAllAgents] = useState<string[]>([]);
 
   // AbortController ref to cancel in-flight requests on filter changes.
   const abortRef = useRef<AbortController | null>(null);
@@ -118,10 +118,10 @@ export function UsageSettings({ t }: UsageSettingsProps) {
     } else {
       params.delete("granularity");
     }
-    if (agentType) {
-      params.set("agentType", agentType);
+    if (agent) {
+      params.set("agent", agent);
     } else {
-      params.delete("agentType");
+      params.delete("agent");
     }
 
     const newQuery = params.toString();
@@ -129,7 +129,7 @@ export function UsageSettings({ t }: UsageSettingsProps) {
     if (newQuery !== currentQuery) {
       router.replace(`?${newQuery}`, { scroll: false });
     }
-  }, [timeRange, granularity, agentType, searchParams, router]);
+  }, [timeRange, granularity, agent, searchParams, router]);
 
   const loadData = useCallback(async () => {
     // Cancel any in-flight request from the previous filter change.
@@ -144,7 +144,7 @@ export function UsageSettings({ t }: UsageSettingsProps) {
       start_time: start,
       end_time: end,
       granularity,
-      agent_type: agentType || undefined,
+      agent_slug: agent || undefined,
     };
 
     try {
@@ -160,11 +160,11 @@ export function UsageSettings({ t }: UsageSettingsProps) {
       setByUser(data.by_user ?? []);
       setByModel(data.by_model ?? []);
 
-      // Update agent type list only from unfiltered requests to break
+      // Update agent list only from unfiltered requests to break
       // the circular dependency (filtered byAgent → fewer filter options).
-      if (!agentType && data.by_agent) {
-        setAllAgentTypes(
-          [...new Set(data.by_agent.map((a) => a.agent_type))].filter(Boolean)
+      if (!agent && data.by_agent) {
+        setAllAgents(
+          [...new Set(data.by_agent.map((a) => a.agent_slug))].filter(Boolean)
         );
       }
     } catch (err: unknown) {
@@ -174,7 +174,7 @@ export function UsageSettings({ t }: UsageSettingsProps) {
     } finally {
       setLoading(false);
     }
-  }, [timeRange, granularity, agentType]);
+  }, [timeRange, granularity, agent]);
 
   useEffect(() => {
     loadData();
@@ -222,11 +222,11 @@ export function UsageSettings({ t }: UsageSettingsProps) {
       <UsageFilters
         timeRange={timeRange}
         granularity={granularity}
-        agentType={agentType}
+        agent={agent}
         onTimeRangeChange={setTimeRange}
         onGranularityChange={setGranularity}
-        onAgentTypeChange={setAgentType}
-        agentTypes={allAgentTypes}
+        onAgentChange={setAgent}
+        agents={allAgents}
         t={t}
       />
 

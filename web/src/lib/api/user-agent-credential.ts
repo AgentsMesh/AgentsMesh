@@ -4,7 +4,7 @@ import { request } from "./base";
 export interface CredentialProfileData {
   id: number;
   user_id: number;
-  agent_type_id: number;
+  agent_slug: string;
   name: string;
   description?: string;
   is_runner_host: boolean;
@@ -12,16 +12,14 @@ export interface CredentialProfileData {
   is_active: boolean;
   configured_fields?: string[];
   configured_values?: Record<string, string>;
-  agent_type_name?: string;
-  agent_type_slug?: string;
+  agent_name?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface CredentialProfilesByAgentType {
-  agent_type_id: number;
-  agent_type_name: string;
-  agent_type_slug: string;
+export interface CredentialProfilesByAgent {
+  agent_slug: string;
+  agent_name: string;
   profiles: CredentialProfileData[];
 }
 
@@ -49,23 +47,23 @@ export interface RunnerHostInfo {
 
 // User Agent Credential Profile API
 export const userAgentCredentialApi = {
-  // List all credential profiles grouped by agent type
+  // List all credential profiles grouped by agent
   list: () =>
     request<{
-      items: CredentialProfilesByAgentType[];
+      items: CredentialProfilesByAgent[];
     }>("/api/v1/users/agent-credentials"),
 
-  // List credential profiles for a specific agent type
-  listForAgentType: (agentTypeId: number) =>
+  // List credential profiles for a specific agent
+  listForAgent: (agentSlug: string) =>
     request<{
       profiles: CredentialProfileData[];
       runner_host: RunnerHostInfo;
-    }>(`/api/v1/users/agent-credentials/types/${agentTypeId}`),
+    }>(`/api/v1/users/agent-credentials/types/${agentSlug}`),
 
   // Create a new credential profile
-  create: (agentTypeId: number, data: CreateCredentialProfileRequest) =>
+  create: (agentSlug: string, data: CreateCredentialProfileRequest) =>
     request<{ profile: CredentialProfileData }>(
-      `/api/v1/users/agent-credentials/types/${agentTypeId}`,
+      `/api/v1/users/agent-credentials/types/${agentSlug}`,
       {
         method: "POST",
         body: data,
@@ -97,7 +95,7 @@ export const userAgentCredentialApi = {
       }
     ),
 
-  // Set a profile as default for its agent type
+  // Set a profile as default for its agent
   setDefault: (profileId: number) =>
     request<{ message: string; profile: CredentialProfileData }>(
       `/api/v1/users/agent-credentials/profiles/${profileId}/set-default`,

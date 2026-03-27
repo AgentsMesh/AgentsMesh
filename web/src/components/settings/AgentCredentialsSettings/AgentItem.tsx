@@ -13,10 +13,10 @@ import {
   ChevronRight,
   Star,
 } from "lucide-react";
-import type { AgentTypeItemProps } from "./types";
+import type { AgentItemProps } from "./types";
 
 /**
- * AgentIcon - Returns an icon based on agent type slug
+ * AgentIcon - Returns an icon based on agent slug
  */
 function AgentIcon({ slug: _slug }: { slug: string }) {
   void _slug; // Reserved for future per-agent icons
@@ -24,13 +24,13 @@ function AgentIcon({ slug: _slug }: { slug: string }) {
 }
 
 /**
- * AgentTypeItem - Expandable panel for a single agent type's credentials
+ * AgentItem - Expandable panel for a single agent's credentials
  *
- * Shows the agent type header with expand/collapse toggle,
+ * Shows the agent header with expand/collapse toggle,
  * RunnerHost as first option, and custom credential profiles below.
  */
-export function AgentTypeItem({
-  agentType,
+export function AgentItem({
+  agent,
   profiles,
   isExpanded,
   isRunnerHostDefault,
@@ -41,10 +41,10 @@ export function AgentTypeItem({
   onDelete,
   onAdd,
   t,
-}: AgentTypeItemProps) {
+}: AgentItemProps) {
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      {/* Agent Type Header */}
+      {/* Agent Header */}
       <button
         className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
         onClick={onToggle}
@@ -55,12 +55,12 @@ export function AgentTypeItem({
           ) : (
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           )}
-          <AgentIcon slug={agentType.slug} />
+          <AgentIcon slug={agent.slug} />
           <div className="text-left">
-            <div className="font-medium">{agentType.name}</div>
-            {agentType.description && (
+            <div className="font-medium">{agent.name}</div>
+            {agent.description && (
               <div className="text-xs text-muted-foreground">
-                {agentType.description}
+                {agent.description}
               </div>
             )}
           </div>
@@ -184,4 +184,4 @@ export function AgentTypeItem({
   );
 }
 
-export default AgentTypeItem;
+export default AgentItem;

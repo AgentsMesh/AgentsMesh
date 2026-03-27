@@ -243,7 +243,7 @@
         "seeSetup": "Docker、Linuxパッケージ、Kubernetesデプロイオプションについては {link} をご覧ください。"
       },
       "step3": {
-        "title": "AIエージェントCLIをインストール",
+        "title": "AI エージェントCLIをインストール",
         "description": "Runnerマシンに使用するCLIツールをインストールし、必要なAPIキー環境変数を設定します。RunnerはPATHからインストール済みCLIを自動検出し、利用可能なエージェントをプラットフォームに報告します。",
         "claudeCode": "Claude Code",
         "claudeCodeInstall": "npm install -g @anthropic-ai/claude-code",
@@ -275,7 +275,7 @@
         "description": "Pod（AgentPod）は、AI エージェントが専用のターミナルと隔離されたコードワークスペースで動作する仮想ワークステーションです。さっそく最初の Pod を作成しましょう！",
         "item1": "サイドバーからワークスペースに移動",
         "item2": "「新規Pod」をクリック",
-        "item3": "AIエージェントタイプを選択（Claude Code、Codex CLIなど）",
+        "item3": "AI エージェントを選択（Claude Code、Codex CLIなど）",
         "item4": "Runnerを選択",
         "item5": "任意でリポジトリとブランチを選択 — エージェントは隔離されたコピー（Git ワークツリー）で作業するため、メインブランチは安全です",
         "item6": "任意でチケットをリンクしてコンテキストを提供",
@@ -285,7 +285,7 @@
       },
       "step6": {
         "title": "エージェントと対話",
-        "description": "作成後、ライブセッション付きのターミナルビューが開きます。AIエージェントが初期プロンプトの実行を開始するか、未指定の場合は入力を待ちます。",
+        "description": "作成後、ライブセッション付きのターミナルビューが開きます。AI エージェントが初期プロンプトの実行を開始するか、未指定の場合は入力を待ちます。",
         "item1": "ターミナルで直接フォローアップのプロンプトやコマンドを入力",
         "item2": "エージェントのステータスインジケーターを確認 — Idle（入力待ち）、Executing（タスク実行中）、Waiting（承認待ち）",
         "item3": "リポジトリがリンクされている場合、エージェントはワークツリー内で作業",
@@ -310,7 +310,7 @@
         "tickets": "チケット＆かんばん →",
         "ticketsDesc": "Podにリンクされたタスク管理",
         "multiAgent": "マルチエージェントワークフロー →",
-        "multiAgentDesc": "複数のAIエージェントを協調"
+        "multiAgentDesc": "複数のAI エージェントを協調"
       }
     },
     "features": {
@@ -376,8 +376,8 @@
           "description": "When creating a Pod, you can configure:",
           "optionHeader": "Option",
           "descriptionHeader": "Description",
-          "agentType": "Agent Type",
-          "agentTypeDesc": "Claude Code, Codex CLI, Gemini CLI, Aider, or custom",
+          "agent": "Agent",
+          "agentDesc": "Claude Code, Codex CLI, Gemini CLI, Aider, or custom",
           "model": "Model",
           "modelDesc": "opus, sonnet, or haiku (for Claude)",
           "permissionMode": "Permission Mode",
@@ -409,7 +409,7 @@
         },
         "podList": {
           "title": "Pod Management",
-          "description": "The pod list sidebar shows all your Pods with real-time status indicators. Filter by status, agent type, or repository to quickly find what you need.",
+          "description": "The pod list sidebar shows all your Pods with real-time status indicators. Filter by status, agent, or repository to quickly find what you need.",
           "statusFilters": "Status Filters",
           "statusFiltersDesc": "Filter Pods by Running, Paused, Completed, or Error states.",
           "quickActions": "Quick Actions",
@@ -419,7 +419,7 @@
         },
         "quickCreate": {
           "title": "Quick Create",
-          "description": "Launch new Pods quickly from the Workspace with the Quick Create dialog. Select an agent type, choose a runner, and optionally link a repository — all in a few clicks.",
+          "description": "Launch new Pods quickly from the Workspace with the Quick Create dialog. Select an agent, choose a runner, and optionally link a repository — all in a few clicks.",
           "steps": "Steps: Choose Agent → Select Runner → (Optional) Link Repository → Create"
         },
         "realTime": {
@@ -667,7 +667,7 @@
       },
       "loops": {
         "title": "Loops",
-        "description": "AIエージェントタスクのCI/CD。繰り返し可能な自動化タスクを定義し、スケジュールまたはAPI経由でトリガーします — AIエージェント用のcronジョブのようなものです。",
+        "description": "AI エージェントタスクのCI/CD。繰り返し可能な自動化タスクを定義し、スケジュールまたはAPI経由でトリガーします — AI エージェント用のcronジョブのようなものです。",
         "overview": {
           "title": "概要",
           "description": "Loopsはタスクを一度定義して繰り返し実行できます。各LoopはPromptテンプレート、トリガー設定、実行ポリシーを持つPodをラップします。主な機能：",
@@ -907,7 +907,7 @@
           "paramsHeader": "Parameters",
           "createPod": "create_pod",
           "createPodDesc": "Create a new AgentPod",
-          "createPodParams": "agent_type_id (required), runner_id?, ticket_slug?, initial_prompt?, model?",
+          "createPodParams": "agent_slug (required), runner_id?, ticket_slug?, initial_prompt?, model?",
           "description": "Podの作成、監視、制御のためのツール。監視と入力ツールには、適切なスコープを持つアクティブなバインディングが必要です。",
           "getPodSnapshot": "get_pod_snapshot",
           "getPodSnapshotDesc": "他のPodのターミナル出力のスナップショットを取得（pod:read が必要）",
@@ -1201,7 +1201,7 @@
             "description": "指定されたRunner上に新しいAgentPodを作成します。Podは指定された設定で初期化され、実行を開始します。",
             "fields": {
               "runner_id": "Podを作成するRunnerのID",
-              "agent_type_id": "エージェントタイプ識別子（例：claude-code、aider）",
+              "agent_slug": "エージェント識別子（例：claude-code、aider）",
               "initial_prompt": "エージェントへの初期プロンプトまたはタスク",
               "repository_id": "Podに関連付けるリポジトリ",
               "branch": "作業するGitブランチ",
@@ -1509,8 +1509,8 @@
             "fields": {
               "name": "Loop name (required, 1-255 characters)",
               "description": "Optional description",
-              "agent_type_id": "Built-in agent type ID to use",
-              "custom_agent_type_id": "Custom agent type ID (alternative to agent_type_id)",
+              "agent_slug": "Built-in agent slug to use",
+              "custom_agent_slug": "Custom agent slug (alternative to agent_slug)",
               "prompt_template": "Task prompt with {{variable}} placeholders (required)",
               "prompt_variables": "Default values for prompt variables (JSON object)",
               "repository_id": "Repository to clone into the sandbox",
@@ -1881,7 +1881,7 @@
           "title": "新しい Pod を作成する",
           "description": "右上の「New Pod」ボタンをクリックします。いくつかの設定オプションを含む Pod 作成ダイアログが開きます。",
           "fields": "以下のフィールドを入力してください：",
-          "field1": "エージェントタイプ — 使用する AI エージェントを選択します（例：Claude Code）",
+          "field1": "エージェント — 使用する AI エージェントを選択します（例：Claude Code）",
           "field2": "Runner — この Pod をホストする Runner を選択します",
           "field3": "リポジトリ — エージェントが作業するリポジトリを選択します（任意）",
           "field4": "ブランチ — チェックアウトするブランチを選択します（デフォルトはメインブランチ）",
@@ -2073,7 +2073,7 @@
           "description": "「New Loop」をクリックして自動化を設定します：",
           "fields": "ループの設定を入力してください：",
           "field1": "名前 — わかりやすい名前（例：「デイリーコードレビュー」）",
-          "field2": "エージェントタイプ — 使用する AI エージェント（例：Claude Code）",
+          "field2": "エージェント — 使用する AI エージェント（例：Claude Code）",
           "field3": "Runner — ループを実行する Runner",
           "field4": "リポジトリ — エージェントが作業するリポジトリ",
           "field5": "ブランチ — チェックアウトするブランチ（デフォルトは main）",

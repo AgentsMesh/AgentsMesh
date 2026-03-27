@@ -68,7 +68,7 @@ export function LoopCreateDialog({
   const [promptTemplate, setPromptTemplate] = useState(editLoop?.prompt_template || "");
 
   // --- Pod configuration fields ---
-  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(editLoop?.agent_type_id || null);
+  const [selectedAgentSlug, setSelectedAgentSlug] = useState<string | null>(editLoop?.agent_slug || null);
   const [selectedRunnerId, setSelectedRunnerId] = useState<number | null>(editLoop?.runner_id || null);
   const [selectedRepositoryId, setSelectedRepositoryId] = useState<number | null>(editLoop?.repository_id || null);
   const [selectedBranch, setSelectedBranch] = useState(editLoop?.branch_name || "");
@@ -96,7 +96,7 @@ export function LoopCreateDialog({
     setName(editLoop?.name || "");
     setDescription(editLoop?.description || "");
     setPromptTemplate(editLoop?.prompt_template || "");
-    setSelectedAgentId(editLoop?.agent_type_id || null);
+    setSelectedAgentSlug(editLoop?.agent_slug || null);
     setSelectedRunnerId(editLoop?.runner_id || null);
     setSelectedRepositoryId(editLoop?.repository_id || null);
     setSelectedBranch(editLoop?.branch_name || "");
@@ -120,7 +120,7 @@ export function LoopCreateDialog({
     repositories,
     selectedRunner,
     setSelectedRunnerId: setPodSelectedRunnerId,
-    availableAgentTypes,
+    availableAgents,
   } = usePodCreationData(open);
 
   // Sync runner selection with Pod creation data hook
@@ -128,12 +128,6 @@ export function LoopCreateDialog({
     setPodSelectedRunnerId(selectedRunnerId);
   }, [selectedRunnerId, setPodSelectedRunnerId]);
 
-  // Compute agent slug for config options
-  const selectedAgentSlug = useMemo(() => {
-    if (!selectedAgentId) return "";
-    const agent = availableAgentTypes.find((a) => a.id === selectedAgentId);
-    return agent?.slug || "";
-  }, [selectedAgentId, availableAgentTypes]);
 
   // Load agent config schema
   const {
@@ -144,8 +138,7 @@ export function LoopCreateDialog({
   } = useConfigOptions(
     selectedRunner?.id || null,
     selectedAgentSlug,
-    selectedAgentId
-  );
+    );
 
   // Restore config_overrides from editLoop in edit mode once config fields have loaded
   const [configOverridesRestored, setConfigOverridesRestored] = useState(false);
@@ -175,7 +168,7 @@ export function LoopCreateDialog({
   }, [open]);
 
   useEffect(() => {
-    if (!selectedAgentId) {
+    if (!selectedAgentSlug) {
       setCredentialProfiles([]);
       setSelectedCredentialProfileId(RUNNER_HOST_PROFILE_ID);
       setCredentialInitialized(false);
@@ -185,7 +178,7 @@ export function LoopCreateDialog({
     const loadCredentials = async () => {
       setLoadingCredentials(true);
       try {
-        const res = await userAgentCredentialApi.listForAgentType(selectedAgentId);
+        const res = await userAgentCredentialApi.listForAgent(selectedAgentSlug);
         const profiles = res.profiles || [];
         setCredentialProfiles(profiles);
 
@@ -210,7 +203,7 @@ export function LoopCreateDialog({
     };
 
     loadCredentials();
-  }, [selectedAgentId, editLoop, credentialInitialized]);
+  }, [selectedAgentSlug, editLoop, credentialInitialized]);
 
   // Auto-fill branch when repository changes
   useEffect(() => {
@@ -226,20 +219,20 @@ export function LoopCreateDialog({
 
   // Reset agent if not available in current runner's agents (only after agents loaded)
   useEffect(() => {
-    if (availableAgentTypes.length > 0 && selectedAgentId && !availableAgentTypes.find((a) => a.id === selectedAgentId)) {
-      setSelectedAgentId(null);
+    if (availableAgents.length > 0 && selectedAgentSlug && !availableAgents.find((a) => a.slug === selectedAgentSlug)) {
+      setSelectedAgentSlug(null);
     }
-  }, [availableAgentTypes, selectedAgentId]);
+  }, [availableAgents, selectedAgentSlug]);
 
   const handleSubmit = useCallback(async () => {
-    if (!name.trim() || !promptTemplate.trim() || !selectedAgentId) return;
+    if (!name.trim() || !promptTemplate.trim() || !selectedAgentSlug) return;
 
     setLoading(true);
     try {
       const data = {
         name: name.trim(),
         description: description || undefined,
-        agent_type_id: selectedAgentId,
+        agent_slug: selectedAgentSlug,
         prompt_template: promptTemplate,
         runner_id: selectedRunnerId || undefined,
         repository_id: selectedRepositoryId || undefined,
@@ -274,7 +267,7 @@ export function LoopCreateDialog({
       setLoading(false);
     }
   }, [
-    name, description, promptTemplate, selectedAgentId, selectedRunnerId,
+    name, description, promptTemplate, selectedAgentSlug, selectedRunnerId,
     selectedRepositoryId, selectedBranch, selectedCredentialProfileId, configValues,
     executionMode, cronEnabled, cronExpression, sandboxStrategy,
     concurrencyPolicy, timeoutMinutes, callbackUrl, sessionPersistence,
@@ -311,16 +304,16 @@ export function LoopCreateDialog({
             />
           </div>
 
-          {/* Agent Type Select */}
+          {/* Agent Select */}
           <AgentSelect
-            agents={availableAgentTypes}
-            selectedAgentId={selectedAgentId}
-            onSelect={setSelectedAgentId}
+            agents={availableAgents}
+            selectedAgentSlug={selectedAgentSlug}
+            onSelect={setSelectedAgentSlug}
             t={t}
           />
 
           {/* Prompt Template (shown when agent selected) */}
-          {selectedAgentId && (
+          {selectedAgentSlug && (
             <PromptInput
               value={promptTemplate}
               onChange={setPromptTemplate}
@@ -330,7 +323,7 @@ export function LoopCreateDialog({
           )}
 
           {/* Pod Configuration (Advanced, collapsed) */}
-          {selectedAgentId && (
+          {selectedAgentSlug && (
             <AdvancedOptions t={t}>
               <RunnerSelect
                 runners={runners}
@@ -539,7 +532,7 @@ export function LoopCreateDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={loading || !name.trim() || !promptTemplate.trim() || !selectedAgentId}
+            disabled={loading || !name.trim() || !promptTemplate.trim() || !selectedAgentSlug}
           >
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {isEdit ? t("common.save") : t("loops.createLoop")}

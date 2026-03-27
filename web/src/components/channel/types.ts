@@ -15,7 +15,7 @@ export interface TransformedMessage {
   pod?: {
     podKey: string;
     alias?: string;
-    agentType?: { name: string };
+    agent?: { name: string };
   };
   user?: {
     id: number;

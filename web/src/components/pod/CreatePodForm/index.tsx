@@ -44,11 +44,11 @@ export function CreatePodForm({
     loading: loadingData,
     selectedRunner,
     setSelectedRunnerId,
-    availableAgentTypes,
+    availableAgents,
   } = usePodCreationData(enabled);
 
   // Form state management
-  const form = useCreatePodForm(availableAgentTypes, repositories, onSuccess);
+  const form = useCreatePodForm(availableAgents, repositories, onSuccess);
 
   // Config options management (loads from Backend ConfigSchema)
   const {
@@ -59,7 +59,6 @@ export function CreatePodForm({
     resetConfig: resetConfig,
   } = useConfigOptions(
     selectedRunner?.id || null,
-    form.selectedAgentSlug,
     form.selectedAgent
   );
 
@@ -136,10 +135,10 @@ export function CreatePodForm({
         <CenteredSpinner className="py-8" />
       ) : (
         <div className="space-y-4">
-          {/* Agent Type Select (shown first) */}
+          {/* Agent Select (shown first) */}
           <AgentSelect
-            agents={availableAgentTypes}
-            selectedAgentId={form.selectedAgent}
+            agents={availableAgents}
+            selectedAgentSlug={form.selectedAgent}
             onSelect={form.setSelectedAgent}
             error={form.validationErrors.agent}
             t={t}

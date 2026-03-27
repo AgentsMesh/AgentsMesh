@@ -1,8 +1,7 @@
 import { request, orgPath } from "./base";
 
-// Agent type interface
-export interface AgentTypeData {
-  id: number;
+// Agent interface (slug is the primary key, no numeric id)
+export interface AgentData {
   slug: string;
   name: string;
   description?: string;
@@ -50,9 +49,8 @@ export interface ConfigSchema {
 export interface UserAgentConfigData {
   id: number;
   user_id: number;
-  agent_type_id: number;
-  agent_type_name?: string;
-  agent_type_slug?: string;
+  agent_slug: string;
+  agent_name?: string;
   config_values: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -60,20 +58,20 @@ export interface UserAgentConfigData {
 
 // Agents API
 export const agentApi = {
-  listTypes: async () => {
+  list: async () => {
     const response = await request<{
-      builtin_types: AgentTypeData[];
-      custom_types: AgentTypeData[];
-    }>(orgPath("/agents/types"));
-    // Combine builtin and custom types for frontend compatibility
+      builtin_agents: AgentData[];
+      custom_agents: AgentData[];
+    }>(orgPath("/agents"));
+    // Combine builtin and custom agents for frontend compatibility
     return {
-      agent_types: [...(response.builtin_types || []), ...(response.custom_types || [])],
+      agents: [...(response.builtin_agents || []), ...(response.custom_agents || [])],
     };
   },
 
-  // Get config schema for an agent type (raw, frontend handles i18n)
-  getConfigSchema: (agentTypeId: number) => {
-    return request<{ schema: ConfigSchema }>(`${orgPath("/agents")}/${agentTypeId}/config-schema`);
+  // Get config schema for an agent (raw, frontend handles i18n)
+  getConfigSchema: (agentSlug: string) => {
+    return request<{ schema: ConfigSchema }>(`${orgPath("/agents")}/${agentSlug}/config-schema`);
   },
 };
 
@@ -83,20 +81,20 @@ export const userAgentConfigApi = {
   list: () =>
     request<{ configs: UserAgentConfigData[] }>("/api/v1/users/me/agent-configs"),
 
-  // Get user's personal config for a specific agent type
-  get: (agentTypeId: number) =>
-    request<{ config: UserAgentConfigData }>(`/api/v1/users/me/agent-configs/${agentTypeId}`),
+  // Get user's personal config for a specific agent
+  get: (agentSlug: string) =>
+    request<{ config: UserAgentConfigData }>(`/api/v1/users/me/agent-configs/${agentSlug}`),
 
-  // Set/update user's personal config for an agent type
-  set: (agentTypeId: number, configValues: Record<string, unknown>) =>
-    request<{ config: UserAgentConfigData }>(`/api/v1/users/me/agent-configs/${agentTypeId}`, {
+  // Set/update user's personal config for an agent
+  set: (agentSlug: string, configValues: Record<string, unknown>) =>
+    request<{ config: UserAgentConfigData }>(`/api/v1/users/me/agent-configs/${agentSlug}`, {
       method: "PUT",
       body: { config_values: configValues },
     }),
 
-  // Delete user's personal config for an agent type
-  delete: (agentTypeId: number) =>
-    request<{ message: string }>(`/api/v1/users/me/agent-configs/${agentTypeId}`, {
+  // Delete user's personal config for an agent
+  delete: (agentSlug: string) =>
+    request<{ message: string }>(`/api/v1/users/me/agent-configs/${agentSlug}`, {
       method: "DELETE",
     }),
 };

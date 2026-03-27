@@ -8,11 +8,11 @@ export type Granularity = "day" | "week" | "month";
 interface UsageFiltersProps {
   timeRange: TimeRange;
   granularity: Granularity;
-  agentType: string;
+  agent: string;
   onTimeRangeChange: (range: TimeRange) => void;
   onGranularityChange: (granularity: Granularity) => void;
-  onAgentTypeChange: (agentType: string) => void;
-  agentTypes: string[];
+  onAgentChange: (agent: string) => void;
+  agents: string[];
   t: TranslationFn;
 }
 
@@ -31,11 +31,11 @@ const granularityOptions: { value: Granularity; labelKey: string }[] = [
 export function UsageFilters({
   timeRange,
   granularity,
-  agentType,
+  agent,
   onTimeRangeChange,
   onGranularityChange,
-  onAgentTypeChange,
-  agentTypes,
+  onAgentChange,
+  agents,
   t,
 }: UsageFiltersProps) {
   return (
@@ -84,19 +84,19 @@ export function UsageFilters({
         </div>
       </div>
 
-      {/* Agent Type */}
+      {/* Agent Filter */}
       <div className="flex items-center gap-1.5">
         <span className="text-sm text-muted-foreground">
-          {t("settings.usagePage.filters.agentType")}:
+          {t("settings.usagePage.filters.agent")}:
         </span>
         <select
-          value={agentType}
-          onChange={(e) => onAgentTypeChange(e.target.value)}
-          disabled={agentTypes.length === 0}
+          value={agent}
+          onChange={(e) => onAgentChange(e.target.value)}
+          disabled={agents.length === 0}
           className="rounded-md border border-border bg-background px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <option value="">{t("settings.usagePage.filters.allAgents")}</option>
-          {agentTypes.map((agentSlug) => (
+          {agents.map((agentSlug) => (
             <option key={agentSlug} value={agentSlug}>
               {agentSlug}
             </option>

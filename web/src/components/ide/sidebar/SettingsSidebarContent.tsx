@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
-import { agentApi, AgentTypeData } from "@/lib/api/agent";
+import { agentApi, AgentData } from "@/lib/api/agent";
 import {
   Settings,
   Users,
@@ -59,20 +59,20 @@ export function SettingsSidebarContent({ className }: SettingsSidebarContentProp
     "agent-config": currentTab.startsWith("agents/"),
   });
 
-  // Agent types from backend
-  const [agentTypes, setAgentTypes] = useState<AgentTypeData[]>([]);
+  // Agents from backend
+  const [agents, setAgents] = useState<AgentData[]>([]);
 
-  // Fetch agent types on mount
+  // Fetch agents on mount
   useEffect(() => {
-    const fetchAgentTypes = async () => {
+    const fetchAgents = async () => {
       try {
-        const response = await agentApi.listTypes();
-        setAgentTypes(response.agent_types || []);
+        const response = await agentApi.list();
+        setAgents(response.agents || []);
       } catch (error) {
-        console.error("Failed to fetch agent types:", error);
+        console.error("Failed to fetch agents:", error);
       }
     };
-    fetchAgentTypes();
+    fetchAgents();
   }, []);
 
   // Organization settings tabs (removed "agents" - now in personal settings)
@@ -96,7 +96,7 @@ export function SettingsSidebarContent({ className }: SettingsSidebarContentProp
       id: "agent-config",
       labelKey: "settings.personal.tabs.agentConfig",
       icon: Sparkles,
-      children: agentTypes.map(agent => ({
+      children: agents.map(agent => ({
         id: `agents/${agent.slug}`,
         label: agent.name,
         icon: Bot,

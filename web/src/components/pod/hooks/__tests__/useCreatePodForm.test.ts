@@ -3,16 +3,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock external dependencies before importing the hook
 const mockCreate = vi.fn();
-const mockListForAgentType = vi.fn();
+const mockListForAgent = vi.fn();
 
 vi.mock("@/lib/api", () => ({
   podApi: { create: (...args: unknown[]) => mockCreate(...args) },
-  userAgentCredentialApi: { listForAgentType: (...args: unknown[]) => mockListForAgentType(...args) },
+  userAgentCredentialApi: { listForAgent: (...args: unknown[]) => mockListForAgent(...args) },
 }));
 
 vi.mock("@/stores/podCreation", () => ({
   usePodCreationStore: () => ({
-    lastAgentTypeId: null,
+    lastAgentSlug: null,
     lastRepositoryId: null,
     lastCredentialProfileId: null,
     lastBranchName: null,
@@ -25,24 +25,24 @@ vi.mock("@/stores/podCreation", () => ({
 
 import { useCreatePodForm, RUNNER_HOST_PROFILE_ID } from "../useCreatePodForm";
 
-const mockAgentTypes = [
-  { id: 1, name: "Claude Code", slug: "claude-code", is_builtin: true, is_active: true },
+const mockAgents = [
+  { name: "Claude Code", slug: "claude-code", is_builtin: true, is_active: true },
 ];
 
 describe("useCreatePodForm - credential_profile_id submission", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockListForAgentType.mockResolvedValue({ profiles: [], runner_host: { available: true } });
+    mockListForAgent.mockResolvedValue({ profiles: [], runner_host: { available: true } });
   });
 
   it("should send credential_profile_id=0 when RunnerHost is selected", async () => {
     mockCreate.mockResolvedValue({ pod: { pod_key: "test-pod", id: 1, status: "initializing", agent_status: "idle" } });
 
-    const { result } = renderHook(() => useCreatePodForm(mockAgentTypes, []));
+    const { result } = renderHook(() => useCreatePodForm(mockAgents, []));
 
     // Select agent to pass validation
     act(() => {
-      result.current.setSelectedAgent(1);
+      result.current.setSelectedAgent("claude-code");
     });
 
     // Verify default is RunnerHost (0)
@@ -65,10 +65,10 @@ describe("useCreatePodForm - credential_profile_id submission", () => {
   it("should send credential_profile_id with positive ID when custom profile selected", async () => {
     mockCreate.mockResolvedValue({ pod: { pod_key: "test-pod", id: 1, status: "initializing", agent_status: "idle" } });
 
-    const { result } = renderHook(() => useCreatePodForm(mockAgentTypes, []));
+    const { result } = renderHook(() => useCreatePodForm(mockAgents, []));
 
     act(() => {
-      result.current.setSelectedAgent(1);
+      result.current.setSelectedAgent("claude-code");
       result.current.setSelectedCredentialProfile(42);
     });
 
@@ -84,10 +84,10 @@ describe("useCreatePodForm - credential_profile_id submission", () => {
   it("should always include credential_profile_id in API call regardless of value", async () => {
     mockCreate.mockResolvedValue({ pod: { pod_key: "test-pod", id: 1, status: "initializing", agent_status: "idle" } });
 
-    const { result } = renderHook(() => useCreatePodForm(mockAgentTypes, []));
+    const { result } = renderHook(() => useCreatePodForm(mockAgents, []));
 
     act(() => {
-      result.current.setSelectedAgent(1);
+      result.current.setSelectedAgent("claude-code");
     });
 
     await act(async () => {

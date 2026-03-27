@@ -1,21 +1,21 @@
 "use client";
 
-import type { AgentTypeData } from "@/lib/api";
+import type { AgentData } from "@/lib/api";
 
 interface AgentSelectProps {
-  agents: AgentTypeData[];
-  selectedAgentId: number | null;
-  onSelect: (agentId: number | null) => void;
+  agents: AgentData[];
+  selectedAgentSlug: string | null;
+  onSelect: (agentSlug: string | null) => void;
   error?: string;
   t: (key: string) => string;
 }
 
 /**
- * Agent type selection dropdown component
+ * Agent selection dropdown component
  */
 export function AgentSelect({
   agents,
-  selectedAgentId,
+  selectedAgentSlug,
   onSelect,
   error,
   t,
@@ -36,19 +36,19 @@ export function AgentSelect({
   return (
     <div>
       <label
-        htmlFor="agent-type-select"
+        htmlFor="agent-select"
         className="block text-sm font-medium mb-2"
       >
         {t("ide.createPod.selectAgent")}
       </label>
       <select
-        id="agent-type-select"
+        id="agent-select"
         className={`w-full px-3 py-2 border rounded-md bg-background ${
           error ? "border-destructive" : "border-border"
         }`}
-        value={selectedAgentId || ""}
+        value={selectedAgentSlug || ""}
         onChange={(e) =>
-          onSelect(e.target.value ? Number(e.target.value) : null)
+          onSelect(e.target.value || null)
         }
         aria-required="true"
         aria-invalid={!!error}
@@ -56,7 +56,7 @@ export function AgentSelect({
       >
         <option value="">{t("ide.createPod.selectAgentPlaceholder")}</option>
         {agents.map((agent) => (
-          <option key={agent.id} value={agent.id}>
+          <option key={agent.slug} value={agent.slug}>
             {agent.name}
           </option>
         ))}

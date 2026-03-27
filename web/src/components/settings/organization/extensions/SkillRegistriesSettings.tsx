@@ -12,7 +12,7 @@ import { RefreshCw, Trash2, Plus, Lock, Globe } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import type { TranslationFn } from "../GeneralSettings";
 
-// Supported agent types for the compatible_agents field
+// Supported agents for the compatible_agents field
 const SUPPORTED_AGENTS = [
   { slug: "claude-code", label: "Claude Code" },
   { slug: "gemini-cli", label: "Gemini CLI" },

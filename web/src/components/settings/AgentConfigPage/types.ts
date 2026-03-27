@@ -1,4 +1,4 @@
-import type { ConfigField, AgentTypeData, CredentialProfileData } from "@/lib/api";
+import type { ConfigField, AgentData, CredentialProfileData } from "@/lib/api";
 
 /**
  * Props for AgentConfigPage component
@@ -16,7 +16,7 @@ export interface AgentConfigState {
   savingConfig: boolean;
 
   // Data
-  agentType: AgentTypeData | null;
+  agent: AgentData | null;
   configFields: ConfigField[];
   configValues: Record<string, unknown>;
   credentialProfiles: CredentialProfileData[];

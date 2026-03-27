@@ -15,23 +15,23 @@ vi.mock("../useAgentCredentials", () => ({
     loading: false,
     error: null,
     success: null,
-    agentTypes: [{ id: 1, name: "Claude Code", slug: "claude-code", is_builtin: true, is_active: true }],
-    expandedAgentTypes: new Set([1]),
-    runnerHostDefaults: new Set([1]),
-    toggleAgentType: vi.fn(),
+    agents: [{ name: "Claude Code", slug: "claude-code", is_builtin: true, is_active: true }],
+    expandedAgents: new Set(["claude-code"]),
+    runnerHostDefaults: new Set(["claude-code"]),
+    toggleAgent: vi.fn(),
     handleSetRunnerHostDefault: vi.fn(),
     handleSetDefault: vi.fn(),
     handleDelete: vi.fn(),
     handleSaveProfile: mockHandleSaveProfile,
-    getProfilesForAgentType: () => [],
+    getProfilesForAgent: () => [],
     setError: mockSetError,
     setSuccess: mockSetSuccess,
   }),
 }));
 
-vi.mock("../AgentTypeItem", () => ({
-  AgentTypeItem: ({ onAdd }: { onAdd: () => void }) => (
-    <div data-testid="agent-type-item">
+vi.mock("../AgentItem", () => ({
+  AgentItem: ({ onAdd }: { onAdd: () => void }) => (
+    <div data-testid="agent-item">
       <button data-testid="add-profile" onClick={onAdd}>Add</button>
     </div>
   ),
@@ -88,10 +88,10 @@ describe("AgentCredentialsSettings - handleDialogSubmit", () => {
     mockHandleSaveProfile.mockResolvedValue(undefined);
   });
 
-  it("should call handleSaveProfile with correct agentTypeId when dialog is submitted", async () => {
+  it("should call handleSaveProfile with correct agentSlug when dialog is submitted", async () => {
     render(<AgentCredentialsSettings />);
 
-    // Open add dialog (sets selectedAgentTypeId = 1)
+    // Open add dialog (sets selectedAgentSlug = "claude-code")
     fireEvent.click(screen.getByTestId("add-profile"));
 
     // Dialog should appear
@@ -102,7 +102,7 @@ describe("AgentCredentialsSettings - handleDialogSubmit", () => {
 
     await waitFor(() => {
       expect(mockHandleSaveProfile).toHaveBeenCalledWith(
-        1,
+        "claude-code",
         expect.objectContaining({ name: "Test" }),
         null
       );

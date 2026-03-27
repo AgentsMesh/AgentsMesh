@@ -2,7 +2,7 @@
 
 import { Terminal, Hash, Users, ChevronRight } from "lucide-react";
 import { ChannelDetailView } from "./ChannelDetailView";
-import type { ChannelsTabContentProps } from "./types";
+import type { ChannelsTabContentProps, TransformedMessage } from "./types";
 import type { ChannelInfo } from "@/stores/mesh";
 
 /**
@@ -14,15 +14,55 @@ export function ChannelsTabContent({
   selectedChannelId,
   onChannelClick,
   onBackToList,
+  topology,
+  currentChannel,
+  messages,
+  messagesLoading,
+  onSendMessage,
+  onLoadMore,
+  onRefresh,
   onPodsChanged,
   t,
 }: ChannelsTabContentProps) {
+  // Transform messages for MessageList component
+  const transformedMessages: TransformedMessage[] = messages.map((msg) => ({
+    id: msg.id,
+    content: msg.content,
+    messageType: msg.message_type as "text" | "system" | "code" | "command",
+    metadata: msg.metadata,
+    editedAt: msg.edited_at,
+    createdAt: msg.created_at,
+    pod: msg.sender_pod_info
+      ? {
+          podKey: msg.sender_pod_info.pod_key,
+          agent: msg.sender_pod_info.agent
+            ? { name: msg.sender_pod_info.agent.name }
+            : undefined,
+        }
+      : undefined,
+    user: msg.sender_user
+      ? {
+          id: msg.sender_user.id,
+          username: msg.sender_user.username,
+          name: msg.sender_user.name,
+          avatarUrl: msg.sender_user.avatar_url,
+        }
+      : undefined,
+  }));
+
   // If a channel is selected, show channel detail
   if (selectedChannelId) {
     return (
       <ChannelDetailView
         channelId={selectedChannelId}
+        topology={topology}
+        currentChannel={currentChannel}
+        messages={transformedMessages}
+        messagesLoading={messagesLoading}
         onBack={onBackToList}
+        onSendMessage={onSendMessage}
+        onLoadMore={onLoadMore}
+        onRefresh={onRefresh}
         onPodsChanged={onPodsChanged}
         t={t}
       />

@@ -85,7 +85,7 @@
       "toggleSuccess": "Platform registry toggled successfully",
       "failedToToggle": "Failed to toggle platform registry",
       "compatibleAgents": "Compatible Agents",
-      "compatibleAgentsHint": "Select which code agent types can use skills from this registry.",
+      "compatibleAgentsHint": "Select which code agents can use skills from this registry.",
       "authentication": "Authentication",
       "authenticationHint": "For private repositories, provide an access token or SSH key.",
       "authNone": "None (Public Repository)",

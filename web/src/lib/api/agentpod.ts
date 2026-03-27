@@ -8,7 +8,7 @@ export interface UserAgentPodSettings {
   user_id: number;
   preparation_script?: string;
   preparation_timeout: number;
-  default_agent_type_id?: number;
+  default_agent_slug?: string;
   default_model?: string;
   default_perm_mode?: string;
   terminal_font_size?: number;

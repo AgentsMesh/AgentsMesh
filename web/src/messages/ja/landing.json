@@ -10,7 +10,7 @@
       "language": "言語"
     },
     "hero": {
-      "badge": "AIエージェント艦隊コマンドセンター",
+      "badge": "AI エージェント艦隊コマンドセンター",
       "title1": "ターミナルベース",
       "title2": "コーディングエージェント",
       "title3": "コラボレーションプラットフォーム",
@@ -148,14 +148,14 @@
     "howItWorks": {
       "title": "3ステップで",
       "titleHighlight": "開始",
-      "description": "デプロイ、接続、そして数分でAIエージェントとのコラボレーションを開始。",
+      "description": "デプロイ、接続、そして数分でAI エージェントとのコラボレーションを開始。",
       "step1": {
         "title": "ランナーをデプロイ",
         "description": "Runnerをダウンロードし、サーバーまたはローカルマシンに登録。"
       },
       "step2": {
         "title": "AgentPodを作成",
-        "description": "Webコンソールを使用して、お好みのAIエージェントでPodを作成。"
+        "description": "Webコンソールを使用して、お好みのAI エージェントでPodを作成。"
       },
       "step3": {
         "title": "コラボレーション開始",
@@ -308,9 +308,9 @@
       "contactSales": "エンタープライズ営業に連絡"
     },
     "finalCta": {
-      "title1": "AIエージェント艦隊を",
+      "title1": "AI エージェント艦隊を",
       "title2": "オーケストレートする準備はできましたか？",
-      "description": "AIエージェントオーケストレーションでより速くコードを出荷する開発者に参加しましょう。無料で始められ、クレジットカードは不要です。",
+      "description": "AI エージェントオーケストレーションでより速くコードを出荷する開発者に参加しましょう。無料で始められ、クレジットカードは不要です。",
       "getStartedFree": "無料で始める",
       "scheduleDemo": "デモを予約",
       "freeTier": "無料プランあり",
@@ -385,14 +385,14 @@
     "demoVideo": {
       "title": "実際の",
       "titleHighlight": "動作を見る",
-      "description": "AgentsMeshがAIエージェントを要件からデリバリーまでオーケストレートする様子を2分以内でご覧ください。",
+      "description": "AgentsMeshがAI エージェントを要件からデリバリーまでオーケストレートする様子を2分以内でご覧ください。",
       "iframeTitle": "AgentsMesh製品デモ",
       "highlight1": "フルライフサイクルデモ",
       "highlight2": "マルチエージェントオーケストレーション",
       "highlight3": "リアルタイム艦隊制御"
     },
     "footer": {
-      "tagline": "AIエージェント艦隊コマンドセンター — バイブコーディングだけじゃない。エンタープライズ級の製品を出荷。",
+      "tagline": "AI エージェント艦隊コマンドセンター — バイブコーディングだけじゃない。エンタープライズ級の製品を出荷。",
       "copyright": "AgentsMesh. All rights reserved.",
       "madeWith": "開発者への愛を込めて作成",
       "product": {

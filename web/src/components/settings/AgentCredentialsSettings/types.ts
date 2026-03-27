@@ -1,4 +1,4 @@
-import type { CredentialProfileData, AgentTypeData, CredentialProfilesByAgentType } from "@/lib/api";
+import type { CredentialProfileData, AgentData, CredentialProfilesByAgent } from "@/lib/api";
 
 /**
  * State returned by useAgentCredentials hook
@@ -7,26 +7,26 @@ export interface AgentCredentialsState {
   loading: boolean;
   error: string | null;
   success: string | null;
-  profilesByAgentType: CredentialProfilesByAgentType[];
-  agentTypes: AgentTypeData[];
-  expandedAgentTypes: Set<number>;
-  runnerHostDefaults: Set<number>;
+  profilesByAgent: CredentialProfilesByAgent[];
+  agents: AgentData[];
+  expandedAgents: Set<string>;
+  runnerHostDefaults: Set<string>;
 }
 
 /**
  * Actions returned by useAgentCredentials hook
  */
 export interface AgentCredentialsActions {
-  toggleAgentType: (agentTypeId: number) => void;
-  handleSetRunnerHostDefault: (agentTypeId: number) => Promise<void>;
+  toggleAgent: (agentSlug: string) => void;
+  handleSetRunnerHostDefault: (agentSlug: string) => Promise<void>;
   handleSetDefault: (profileId: number) => Promise<void>;
   handleDelete: (profileId: number) => Promise<void>;
   handleSaveProfile: (
-    agentTypeId: number,
+    agentSlug: string,
     data: CredentialFormData,
     editingProfile: CredentialProfileData | null
   ) => Promise<void>;
-  getProfilesForAgentType: (agentTypeId: number) => CredentialProfileData[];
+  getProfilesForAgent: (agentSlug: string) => CredentialProfileData[];
   setError: (error: string | null) => void;
   setSuccess: (success: string | null) => void;
 }
@@ -49,10 +49,10 @@ export interface CredentialFormData {
 }
 
 /**
- * Props for AgentTypeItem component
+ * Props for AgentItem component
  */
-export interface AgentTypeItemProps {
-  agentType: AgentTypeData;
+export interface AgentItemProps {
+  agent: AgentData;
   profiles: CredentialProfileData[];
   isExpanded: boolean;
   isRunnerHostDefault: boolean;

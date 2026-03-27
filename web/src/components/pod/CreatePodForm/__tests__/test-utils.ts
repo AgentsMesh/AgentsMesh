@@ -16,8 +16,8 @@ export const defaultPodCreationData = {
   loading: false,
   selectedRunner: null,
   setSelectedRunnerId: mockSetSelectedRunnerId,
-  availableAgentTypes: [],
-  agentTypes: [],
+  availableAgents: [],
+  agents: [],
   error: null,
 };
 
@@ -70,8 +70,7 @@ export const mockRunner = {
   updated_at: "2024-01-01T00:00:00Z",
 };
 
-export const mockAgentType = {
-  id: 1,
+export const mockAgent = {
   name: "Claude Code",
   slug: "claude-code",
   is_builtin: true,
@@ -97,7 +96,7 @@ export const mockRepository = {
 export const mockCredentialProfile = {
   id: 1,
   user_id: 1,
-  agent_type_id: 1,
+  agent_slug: "claude-code",
   name: "My Credentials",
   is_runner_host: false,
   is_default: false,

@@ -13,7 +13,7 @@ import {
   defaultFormState,
   defaultConfigOptions,
   mockRunner,
-  mockAgentType,
+  mockAgent,
   clearAllMocks,
 } from "./test-utils";
 
@@ -49,7 +49,7 @@ vi.mock("@/components/ui/collapsible", () => ({
 
 vi.mock("@/stores/podCreation", () => ({
   usePodCreationStore: () => ({
-    lastAgentTypeId: null,
+    lastAgentSlug: null,
     lastRepositoryId: null,
     lastCredentialProfileId: null,
     lastBranchName: null,
@@ -83,7 +83,7 @@ describe("CreatePodForm", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [mockRunner],
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
 
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
@@ -94,7 +94,7 @@ describe("CreatePodForm", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [mockRunner],
-        availableAgentTypes: [],
+        availableAgents: [],
       });
 
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
@@ -105,7 +105,7 @@ describe("CreatePodForm", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [mockRunner],
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -120,7 +120,7 @@ describe("CreatePodForm", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [],
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -144,7 +144,7 @@ describe("CreatePodForm", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [mockRunner, { ...mockRunner, id: 2, node_id: "runner-2" }],
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -161,7 +161,7 @@ describe("CreatePodForm", () => {
         ...defaultPodCreationData,
         runners: [mockRunner],
         selectedRunner: mockRunner,
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -177,7 +177,7 @@ describe("CreatePodForm", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [mockRunner],
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -195,19 +195,19 @@ describe("CreatePodForm", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [mockRunner],
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
 
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
-      fireEvent.change(screen.getByLabelText("ide.createPod.selectAgent"), { target: { value: "1" } });
-      expect(mockSetSelectedAgent).toHaveBeenCalledWith(1);
+      fireEvent.change(screen.getByLabelText("ide.createPod.selectAgent"), { target: { value: "claude-code" } });
+      expect(mockSetSelectedAgent).toHaveBeenCalledWith("claude-code");
     });
 
     it("should show agent validation error", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [mockRunner],
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -225,7 +225,7 @@ describe("CreatePodForm", () => {
         ...defaultPodCreationData,
         runners: [mockRunner],
         selectedRunner: mockRunner,
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -254,7 +254,7 @@ describe("CreatePodForm", () => {
         ...defaultPodCreationData,
         runners: [mockRunner],
         selectedRunner: null, // no manual selection
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -295,7 +295,7 @@ describe("CreatePodForm", () => {
       vi.mocked(usePodCreationData).mockReturnValue({
         ...defaultPodCreationData,
         runners: [mockRunner],
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -311,7 +311,7 @@ describe("CreatePodForm", () => {
         ...defaultPodCreationData,
         runners: [],
         selectedRunner: null,
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
@@ -374,7 +374,7 @@ describe("CreatePodForm", () => {
         ...defaultPodCreationData,
         runners: [mockRunner],
         selectedRunner: mockRunner,
-        availableAgentTypes: [mockAgentType],
+        availableAgents: [mockAgent],
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,

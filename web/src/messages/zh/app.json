@@ -296,7 +296,7 @@
     },
     "modal": {
       "title": "创建新 Pod",
-      "agentType": "智能体类型",
+      "agent": "智能体",
       "selectAgent": "选择智能体...",
       "selectRunner": "选择 Runner...",
       "repositoryOptional": "仓库（可选）",

@@ -92,12 +92,12 @@ export function InfoTabContent({
           mono
         />
 
-        {/* Agent Type */}
-        {pod.agent_type && (
+        {/* Agent */}
+        {pod.agent && (
           <InfoRow
             icon={<Bot className="w-3 h-3" />}
-            label={t("ide.bottomPanel.infoTab.agentType")}
-            value={pod.agent_type.name}
+            label={t("ide.bottomPanel.infoTab.agent")}
+            value={pod.agent.name}
           />
         )}
 
@@ -239,9 +239,9 @@ export function InfoTabContent({
                   >
                     {rpStatus.label}
                   </span>
-                  {rp.agent_type && (
+                  {rp.agent && (
                     <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                      {rp.agent_type.name}
+                      {rp.agent.name}
                     </span>
                   )}
                 </div>
