@@ -90,7 +90,7 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 
 // UpdateCustomAgent updates a custom agent
 func (h *AgentHandler) UpdateCustomAgent(c *gin.Context) {
-	customAgentSlug := c.Param("slug")
+	customAgentSlug := c.Param("agent_slug")
 
 	var req map[string]interface{}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -115,7 +115,7 @@ func (h *AgentHandler) UpdateCustomAgent(c *gin.Context) {
 
 // DeleteCustomAgent deletes a custom agent
 func (h *AgentHandler) DeleteCustomAgent(c *gin.Context) {
-	customAgentSlug := c.Param("slug")
+	customAgentSlug := c.Param("agent_slug")
 
 	tenant := middleware.GetTenant(c)
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {

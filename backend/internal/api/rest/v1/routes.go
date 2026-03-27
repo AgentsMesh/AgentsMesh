@@ -99,11 +99,11 @@ func registerAgentRoutes(rg *gin.RouterGroup, svc *Services) {
 	agents := rg.Group("/agents")
 	{
 		agents.GET("", agentHandler.ListAgents)
-		agents.GET("/:slug", agentHandler.GetAgent)
+		agents.GET("/:agent_slug", agentHandler.GetAgent)
 		agents.POST("/custom", agentHandler.CreateCustomAgent)
-		agents.PUT("/custom/:slug", agentHandler.UpdateCustomAgent)
-		agents.DELETE("/custom/:slug", agentHandler.DeleteCustomAgent)
-		agents.GET("/:slug/config-schema", agentHandler.GetAgentConfigSchema)
+		agents.PUT("/custom/:agent_slug", agentHandler.UpdateCustomAgent)
+		agents.DELETE("/custom/:agent_slug", agentHandler.DeleteCustomAgent)
+		agents.GET("/:agent_slug/config-schema", agentHandler.GetAgentConfigSchema)
 	}
 }
 

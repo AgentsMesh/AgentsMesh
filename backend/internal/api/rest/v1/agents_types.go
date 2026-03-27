@@ -32,7 +32,7 @@ func (h *AgentHandler) ListAgents(c *gin.Context) {
 
 // GetAgent returns details of a specific agent
 func (h *AgentHandler) GetAgent(c *gin.Context) {
-	agentSlug := c.Param("slug")
+	agentSlug := c.Param("agent_slug")
 
 	agentDef, err := h.agentSvc.GetAgent(c.Request.Context(), agentSlug)
 	if err != nil {
@@ -45,7 +45,7 @@ func (h *AgentHandler) GetAgent(c *gin.Context) {
 
 // GetAgentConfigSchema returns the config schema for an agent
 func (h *AgentHandler) GetAgentConfigSchema(c *gin.Context) {
-	agentSlug := c.Param("slug")
+	agentSlug := c.Param("agent_slug")
 
 	schema, err := h.configBuilder.GetConfigSchema(c.Request.Context(), agentSlug)
 	if err != nil {
