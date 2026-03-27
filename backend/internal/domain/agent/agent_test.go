@@ -297,7 +297,7 @@ func TestAgentTypeSupportsMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			at := &AgentType{SupportedModes: tt.supportedModes}
+			at := &Agent{SupportedModes: tt.supportedModes}
 			got := at.SupportsMode(tt.mode)
 			if got != tt.expected {
 				t.Errorf("SupportsMode(%q) = %v, want %v", tt.mode, got, tt.expected)

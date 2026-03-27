@@ -115,7 +115,7 @@ func (s *Service) SelectAvailableRunner(ctx context.Context, orgID int64, userID
 	return runners[0], nil
 }
 
-// SelectAvailableRunnerForAgent selects an available runner that supports the given agent, filtered by visibility.
+// SelectAvailableRunnerForAgent selects an available runner that supports the given agent type, filtered by visibility.
 // Uses the same cache-first, DB-fallback pattern as SelectAvailableRunner with agent compatibility filtering.
 func (s *Service) SelectAvailableRunnerForAgent(ctx context.Context, orgID int64, userID int64, agentSlug string) (*runner.Runner, error) {
 	// First, try to find available runners from cache

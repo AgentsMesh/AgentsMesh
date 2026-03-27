@@ -35,7 +35,7 @@ func (b *PodBuilder) buildACPPod(_ context.Context, sandboxRoot, workingDir, bra
 	pod := &Pod{
 		ID:              b.cmd.PodKey,
 		PodKey:          b.cmd.PodKey,
-		AgentType:       b.cmd.LaunchCommand,
+		Agent:           b.cmd.LaunchCommand,
 		InteractionMode: InteractionModeACP,
 		Branch:          branchName,
 		SandboxPath:     sandboxRoot,

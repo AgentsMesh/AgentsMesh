@@ -9,7 +9,7 @@ import (
 )
 
 // SetTokenUsageService wires the token usage callback.
-// The PodCoordinator looks up pod info (org, user, agent) and delegates
+// The PodCoordinator looks up pod info (org, user, agent type) and delegates
 // recording to the TokenUsageService.
 func (pc *PodCoordinator) SetTokenUsageService(svc *tokenusagesvc.Service) {
 	pc.connectionManager.SetTokenUsageCallback(func(runnerID int64, data *runnerv1.TokenUsageReport) {
@@ -39,7 +39,7 @@ func (pc *PodCoordinator) handleTokenUsage(runnerID int64, data *runnerv1.TokenU
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Look up the pod to retrieve org, user, and agent info.
+	// Look up the pod to retrieve org, user, and agent type info.
 	pod, err := pc.podRepo.GetByKey(ctx, data.PodKey)
 	if err != nil {
 		pc.logger.Error("failed to look up pod for token usage",
@@ -60,12 +60,10 @@ func (pc *PodCoordinator) handleTokenUsage(runnerID int64, data *runnerv1.TokenU
 		return
 	}
 
-	// Determine agent slug from the pod's association.
-	agentSlug := "unknown"
-	if pod.Agent != nil {
-		agentSlug = pod.Agent.Slug
-	} else if pod.AgentSlug != "" {
-		agentSlug = pod.AgentSlug
+	// Determine agent slug from the pod.
+	agentSlug := pod.AgentSlug
+	if agentSlug == "" {
+		agentSlug = "unknown"
 	}
 	// Enforce DB column length limit (VARCHAR(50)).
 	const maxSlugLen = 50

@@ -1936,8 +1936,16 @@ type CreatePodCommand struct {
 	Rows                int32                  `protobuf:"varint,9,opt,name=rows,proto3" json:"rows,omitempty"`                                                            // 终端行数（由浏览器传入）
 	ResourcesToDownload []*ResourceToDownload  `protobuf:"bytes,10,rep,name=resources_to_download,json=resourcesToDownload,proto3" json:"resources_to_download,omitempty"` // 需要下载的资源（Skills 等）
 	InteractionMode     string                 `protobuf:"bytes,11,opt,name=interaction_mode,json=interactionMode,proto3" json:"interaction_mode,omitempty"`               // 交互模式：pty（默认）或 acp
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// PodFile 相关字段（Runner eval PodFile 需要的上下文）
+	PodfileSource    string            `protobuf:"bytes,12,opt,name=podfile_source,json=podfileSource,proto3" json:"podfile_source,omitempty"`                                                                        // PodFile 脚本源代码
+	ConfigValues     map[string]string `protobuf:"bytes,13,rep,name=config_values,json=configValues,proto3" json:"config_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 用户配置值
+	Credentials      map[string]string `protobuf:"bytes,14,rep,name=credentials,proto3" json:"credentials,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`                       // 加密凭证
+	IsRunnerHost     bool              `protobuf:"varint,15,opt,name=is_runner_host,json=isRunnerHost,proto3" json:"is_runner_host,omitempty"`                                                                        // 是否使用 Runner 本机凭证
+	McpPort          int32             `protobuf:"varint,16,opt,name=mcp_port,json=mcpPort,proto3" json:"mcp_port,omitempty"`                                                                                         // MCP 端口
+	McpBuiltinJson   string            `protobuf:"bytes,17,opt,name=mcp_builtin_json,json=mcpBuiltinJson,proto3" json:"mcp_builtin_json,omitempty"`                                                                   // JSON: 内建 MCP 服务器配置
+	McpInstalledJson string            `protobuf:"bytes,18,opt,name=mcp_installed_json,json=mcpInstalledJson,proto3" json:"mcp_installed_json,omitempty"`                                                             // JSON: 已安装 MCP 服务器配置
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CreatePodCommand) Reset() {
@@ -2043,6 +2051,55 @@ func (x *CreatePodCommand) GetResourcesToDownload() []*ResourceToDownload {
 func (x *CreatePodCommand) GetInteractionMode() string {
 	if x != nil {
 		return x.InteractionMode
+	}
+	return ""
+}
+
+func (x *CreatePodCommand) GetPodfileSource() string {
+	if x != nil {
+		return x.PodfileSource
+	}
+	return ""
+}
+
+func (x *CreatePodCommand) GetConfigValues() map[string]string {
+	if x != nil {
+		return x.ConfigValues
+	}
+	return nil
+}
+
+func (x *CreatePodCommand) GetCredentials() map[string]string {
+	if x != nil {
+		return x.Credentials
+	}
+	return nil
+}
+
+func (x *CreatePodCommand) GetIsRunnerHost() bool {
+	if x != nil {
+		return x.IsRunnerHost
+	}
+	return false
+}
+
+func (x *CreatePodCommand) GetMcpPort() int32 {
+	if x != nil {
+		return x.McpPort
+	}
+	return 0
+}
+
+func (x *CreatePodCommand) GetMcpBuiltinJson() string {
+	if x != nil {
+		return x.McpBuiltinJson
+	}
+	return ""
+}
+
+func (x *CreatePodCommand) GetMcpInstalledJson() string {
+	if x != nil {
+		return x.McpInstalledJson
 	}
 	return ""
 }
@@ -5578,7 +5635,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12!\n" +
-	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\xc3\x04\n" +
+	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\xa8\b\n" +
 	"\x10CreatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12%\n" +
 	"\x0elaunch_command\x18\x02 \x01(\tR\rlaunchCommand\x12\x1f\n" +
@@ -5592,8 +5649,21 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04rows\x18\t \x01(\x05R\x04rows\x12Q\n" +
 	"\x15resources_to_download\x18\n" +
 	" \x03(\v2\x1d.runner.v1.ResourceToDownloadR\x13resourcesToDownload\x12)\n" +
-	"\x10interaction_mode\x18\v \x01(\tR\x0finteractionMode\x1a:\n" +
+	"\x10interaction_mode\x18\v \x01(\tR\x0finteractionMode\x12%\n" +
+	"\x0epodfile_source\x18\f \x01(\tR\rpodfileSource\x12R\n" +
+	"\rconfig_values\x18\r \x03(\v2-.runner.v1.CreatePodCommand.ConfigValuesEntryR\fconfigValues\x12N\n" +
+	"\vcredentials\x18\x0e \x03(\v2,.runner.v1.CreatePodCommand.CredentialsEntryR\vcredentials\x12$\n" +
+	"\x0eis_runner_host\x18\x0f \x01(\bR\fisRunnerHost\x12\x19\n" +
+	"\bmcp_port\x18\x10 \x01(\x05R\amcpPort\x12(\n" +
+	"\x10mcp_builtin_json\x18\x11 \x01(\tR\x0emcpBuiltinJson\x12,\n" +
+	"\x12mcp_installed_json\x18\x12 \x01(\tR\x10mcpInstalledJson\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a?\n" +
+	"\x11ConfigValuesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
+	"\x10CredentialsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xae\x01\n" +
 	"\x12ResourceToDownload\x12\x10\n" +
@@ -5870,7 +5940,7 @@ func file_runner_v1_runner_proto_rawDescGZIP() []byte {
 	return file_runner_v1_runner_proto_rawDescData
 }
 
-var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
+var file_runner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 74)
 var file_runner_v1_runner_proto_goTypes = []any{
 	(*RunnerMessage)(nil),            // 0: runner.v1.RunnerMessage
 	(*InitializeRequest)(nil),        // 1: runner.v1.InitializeRequest
@@ -5944,6 +6014,8 @@ var file_runner_v1_runner_proto_goTypes = []any{
 	(*TokenModelUsage)(nil),          // 69: runner.v1.TokenModelUsage
 	nil,                              // 70: runner.v1.ErrorEvent.DetailsEntry
 	nil,                              // 71: runner.v1.CreatePodCommand.EnvVarsEntry
+	nil,                              // 72: runner.v1.CreatePodCommand.ConfigValuesEntry
+	nil,                              // 73: runner.v1.CreatePodCommand.CredentialsEntry
 }
 var file_runner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: runner.v1.RunnerMessage.initialize:type_name -> runner.v1.InitializeRequest
@@ -6001,30 +6073,32 @@ var file_runner_v1_runner_proto_depIdxs = []int32{
 	21, // 52: runner.v1.CreatePodCommand.files_to_create:type_name -> runner.v1.FileToCreate
 	22, // 53: runner.v1.CreatePodCommand.sandbox_config:type_name -> runner.v1.SandboxConfig
 	20, // 54: runner.v1.CreatePodCommand.resources_to_download:type_name -> runner.v1.ResourceToDownload
-	32, // 55: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
-	34, // 56: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
-	40, // 57: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
-	46, // 58: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
-	47, // 59: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
-	48, // 60: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
-	43, // 61: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
-	44, // 62: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
-	45, // 63: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
-	19, // 64: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
-	50, // 65: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
-	54, // 66: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
-	55, // 67: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
-	56, // 68: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
-	57, // 69: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
-	60, // 70: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
-	69, // 71: runner.v1.TokenUsageReport.models:type_name -> runner.v1.TokenModelUsage
-	0,  // 72: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
-	15, // 73: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
-	73, // [73:74] is the sub-list for method output_type
-	72, // [72:73] is the sub-list for method input_type
-	72, // [72:72] is the sub-list for extension type_name
-	72, // [72:72] is the sub-list for extension extendee
-	0,  // [0:72] is the sub-list for field type_name
+	72, // 55: runner.v1.CreatePodCommand.config_values:type_name -> runner.v1.CreatePodCommand.ConfigValuesEntry
+	73, // 56: runner.v1.CreatePodCommand.credentials:type_name -> runner.v1.CreatePodCommand.CredentialsEntry
+	32, // 57: runner.v1.QuerySandboxesCommand.queries:type_name -> runner.v1.SandboxQuery
+	34, // 58: runner.v1.SandboxesStatusEvent.sandboxes:type_name -> runner.v1.SandboxStatus
+	40, // 59: runner.v1.AutopilotStatusEvent.status:type_name -> runner.v1.AutopilotStatus
+	46, // 60: runner.v1.AutopilotControlCommand.pause:type_name -> runner.v1.AutopilotPauseAction
+	47, // 61: runner.v1.AutopilotControlCommand.resume:type_name -> runner.v1.AutopilotResumeAction
+	48, // 62: runner.v1.AutopilotControlCommand.stop:type_name -> runner.v1.AutopilotStopAction
+	43, // 63: runner.v1.AutopilotControlCommand.approve:type_name -> runner.v1.AutopilotApproveAction
+	44, // 64: runner.v1.AutopilotControlCommand.takeover:type_name -> runner.v1.AutopilotTakeoverAction
+	45, // 65: runner.v1.AutopilotControlCommand.handback:type_name -> runner.v1.AutopilotHandbackAction
+	19, // 66: runner.v1.CreateAutopilotCommand.pod_config:type_name -> runner.v1.CreatePodCommand
+	50, // 67: runner.v1.CreateAutopilotCommand.config:type_name -> runner.v1.AutopilotConfig
+	54, // 68: runner.v1.AutopilotThinkingEvent.action:type_name -> runner.v1.AutopilotAction
+	55, // 69: runner.v1.AutopilotThinkingEvent.progress:type_name -> runner.v1.AutopilotProgress
+	56, // 70: runner.v1.AutopilotThinkingEvent.help_request:type_name -> runner.v1.AutopilotHelpRequest
+	57, // 71: runner.v1.AutopilotHelpRequest.suggestions:type_name -> runner.v1.AutopilotHelpSuggestion
+	60, // 72: runner.v1.McpResponse.error:type_name -> runner.v1.McpError
+	69, // 73: runner.v1.TokenUsageReport.models:type_name -> runner.v1.TokenModelUsage
+	0,  // 74: runner.v1.RunnerService.Connect:input_type -> runner.v1.RunnerMessage
+	15, // 75: runner.v1.RunnerService.Connect:output_type -> runner.v1.ServerMessage
+	75, // [75:76] is the sub-list for method output_type
+	74, // [74:75] is the sub-list for method input_type
+	74, // [74:74] is the sub-list for extension type_name
+	74, // [74:74] is the sub-list for extension extendee
+	0,  // [0:74] is the sub-list for field type_name
 }
 
 func init() { file_runner_v1_runner_proto_init() }
@@ -6093,7 +6167,7 @@ func file_runner_v1_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_runner_v1_runner_proto_rawDesc), len(file_runner_v1_runner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   72,
+			NumMessages:   74,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

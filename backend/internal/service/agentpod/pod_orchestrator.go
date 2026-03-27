@@ -214,10 +214,10 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	if req.InteractionMode != nil && *req.InteractionMode != "" {
 		interactionMode = *req.InteractionMode
 	}
-	// Validate: agent type must support the requested interaction mode
-	if req.AgentTypeID != nil && o.agentTypeResolver != nil {
-		agentType, err := o.agentTypeResolver.GetAgentType(ctx, *req.AgentTypeID)
-		if err == nil && !agentType.SupportsMode(interactionMode) {
+	// Validate: agent must support the requested interaction mode
+	if req.AgentSlug != "" && o.agentResolver != nil {
+		agentDef, err := o.agentResolver.GetAgent(ctx, req.AgentSlug)
+		if err == nil && !agentDef.SupportsMode(interactionMode) {
 			return nil, ErrUnsupportedInteractionMode
 		}
 	}

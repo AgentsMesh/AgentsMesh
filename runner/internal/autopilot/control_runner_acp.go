@@ -50,7 +50,7 @@ func NewAcpControlProcess(cfg AcpControlProcessConfig) *AcpControlProcess {
 
 	command := cfg.Command
 	if command == "" {
-		command = DefaultAgentType
+		command = DefaultAgent
 	}
 
 	// Build launch args for ACP stream-json mode

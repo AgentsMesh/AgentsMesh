@@ -64,7 +64,7 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 		}
 
 		// Ensure pod is registered with terminal router (preserves existing VT state)
-		pc.terminalRouter.EnsurePodRegistered(podKey, runnerID)
+		pc.podRouter.EnsurePodRegistered(podKey, runnerID)
 
 		// Restore orphaned pod
 		if pod.Status == agentpod.StatusOrphaned {
@@ -156,7 +156,7 @@ func (pc *PodCoordinator) reconcileMissingPods(ctx context.Context, runnerID int
 		} else {
 			pc.logger.Warn("pod marked as orphaned (not reported by runner)",
 				"pod_key", p.PodKey, "runner_id", runnerID, "miss_count", missCount)
-			pc.terminalRouter.UnregisterPod(p.PodKey)
+			pc.podRouter.UnregisterPod(p.PodKey)
 			if pc.onStatusChange != nil {
 				pc.onStatusChange(p.PodKey, agentpod.StatusOrphaned, "")
 			}

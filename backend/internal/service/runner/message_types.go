@@ -64,7 +64,7 @@ type RunnerInfo struct {
 type InitializeResult struct {
 	ProtocolVersion int                       `json:"protocol_version"`
 	ServerInfo      ServerInfo                `json:"server_info"`
-	Agents      []interfaces.AgentInfo `json:"agents"`
+	AgentTypes      []interfaces.AgentInfo `json:"agent_types"`
 	Features        []string                  `json:"features"`
 }
 

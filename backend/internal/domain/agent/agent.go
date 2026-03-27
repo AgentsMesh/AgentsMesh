@@ -107,8 +107,8 @@ func (Agent) TableName() string {
 	return "agents"
 }
 
-// SupportsMode returns true if this agent type supports the given interaction mode.
-func (a *AgentType) SupportsMode(mode string) bool {
+// SupportsMode returns true if this agent supports the given interaction mode.
+func (a *Agent) SupportsMode(mode string) bool {
 	for _, m := range strings.Split(a.SupportedModes, ",") {
 		if strings.TrimSpace(m) == mode {
 			return true

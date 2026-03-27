@@ -20,6 +20,14 @@ const (
 	// orphanMissThreshold is the number of consecutive heartbeat misses required
 	// before marking a pod as orphaned. At ~30s per heartbeat cycle, 3 misses ≈ 90s.
 	orphanMissThreshold = 3
+
+	// initRecoverThreshold is the number of consecutive heartbeat reports of an
+	// "initializing" pod before recovering it to "running" status.
+	initRecoverThreshold = 2
+
+	// ErrCodeRunnerDisconnected is the error code set when a runner disconnects
+	// while pods are still initializing.
+	ErrCodeRunnerDisconnected = "RUNNER_DISCONNECTED"
 )
 
 // PodCoordinator coordinates pod lifecycle events between backend and runners
@@ -50,6 +58,13 @@ type PodCoordinator struct {
 	podMissCount map[string]int            // podKey → consecutive miss count
 	podMissOwner map[string]int64          // podKey → runnerID (reverse index for clearByRunner)
 	podMissMu    sync.Mutex
+
+	// Init report counter: tracks consecutive heartbeat reports of pods stuck in "initializing".
+	initReportCount   map[string]int
+	initReportCountMu sync.Mutex
+
+	// ACK tracker for pod creation acknowledgment
+	ackTracker *AckTracker
 
 	// Callbacks
 	onStatusChange   func(podKey string, status string, agentStatus string)
@@ -85,6 +100,8 @@ func NewPodCoordinator(
 		terminateSentCache:   make(map[string]time.Time),
 		podMissCount:         make(map[string]int),
 		podMissOwner:         make(map[string]int64),
+		initReportCount:      make(map[string]int),
+		ackTracker:           NewAckTracker(),
 	}
 
 	// Set up callbacks from connection manager
@@ -301,4 +318,17 @@ func (pc *PodCoordinator) clearMissCountsForRunner(runnerID int64) {
 // GetRelayConnections returns relay connections for a runner
 func (pc *PodCoordinator) GetRelayConnections(runnerID int64) []RelayConnectionInfo {
 	return pc.relayConnectionCache.Get(runnerID)
+}
+
+func (pc *PodCoordinator) incrementInitReportCount(podKey string) int {
+	pc.initReportCountMu.Lock()
+	defer pc.initReportCountMu.Unlock()
+	pc.initReportCount[podKey]++
+	return pc.initReportCount[podKey]
+}
+
+func (pc *PodCoordinator) clearInitReportCount(podKey string) {
+	pc.initReportCountMu.Lock()
+	defer pc.initReportCountMu.Unlock()
+	delete(pc.initReportCount, podKey)
 }

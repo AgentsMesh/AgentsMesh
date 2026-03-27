@@ -116,10 +116,10 @@ export function useCreatePodForm(
   // Parse supported modes from selected agent type
   const supportedModes = useMemo(() => {
     if (!selectedAgent) return ["pty"];
-    const agent = availableAgentTypes.find((a) => a.id === selectedAgent);
+    const agent = availableAgents.find((a) => a.slug === selectedAgent);
     const modes = agent?.supported_modes?.split(",").map((m) => m.trim()).filter(Boolean) || [];
     return modes.length > 0 ? modes : ["pty"];
-  }, [selectedAgent, availableAgentTypes]);
+  }, [selectedAgent, availableAgents]);
 
   // Compute form validity (runner validation is done externally)
   const isValid = useMemo(() => {

@@ -78,11 +78,11 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	if b.cmd.GetInteractionMode() == "acp" {
 		return b.buildACPPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars)
 	}
-	return b.buildPTYPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars)
+	return b.buildPTYPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)
 }
 
 // buildPTYPod creates a pod with PTY terminal interaction (existing path).
-func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, branchName string, resolvedArgs []string, envVars map[string]string) (*Pod, error) {
+func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, branchName string, resolvedArgs []string, envVars map[string]string, launchCommand string) (*Pod, error) {
 	// Report progress: starting PTY
 	b.sendProgress("starting_pty", 80, "Starting terminal...")
 

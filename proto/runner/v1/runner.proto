@@ -230,6 +230,14 @@ message CreatePodCommand {
   int32 rows = 9;  // 终端行数（由浏览器传入）
   repeated ResourceToDownload resources_to_download = 10;  // 需要下载的资源（Skills 等）
   string interaction_mode = 11;  // 交互模式：pty（默认）或 acp
+  // PodFile 相关字段（Runner eval PodFile 需要的上下文）
+  string podfile_source = 12;              // PodFile 脚本源代码
+  map<string, string> config_values = 13;  // 用户配置值
+  map<string, string> credentials = 14;    // 加密凭证
+  bool is_runner_host = 15;                // 是否使用 Runner 本机凭证
+  int32 mcp_port = 16;                     // MCP 端口
+  string mcp_builtin_json = 17;            // JSON: 内建 MCP 服务器配置
+  string mcp_installed_json = 18;          // JSON: 已安装 MCP 服务器配置
 }
 
 // ResourceToDownload 需要下载的资源描述
