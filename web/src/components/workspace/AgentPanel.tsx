@@ -44,16 +44,13 @@ export function AgentPanel({
   className,
 }: AgentPanelProps) {
   const [isMaximized, setIsMaximized] = useState(false);
-  const [isTerminating, setIsTerminating] = useState(false);
   const [pendingSplitDirection, setPendingSplitDirection] =
     useState<SplitDirection | null>(null);
 
   const setActivePane = useWorkspaceStore((s) => s.setActivePane);
   const splitPane = useWorkspaceStore((s) => s.splitPane);
-  const removePaneByPodKey = useWorkspaceStore((s) => s.removePaneByPodKey);
   const panes = useWorkspaceStore((s) => s.panes);
   const initProgress = usePodStore((state) => state.initProgress[podKey]);
-  const terminatePod = usePodStore((state) => state.terminatePod);
   const session = useAcpSessionStore((s) => s.sessions[podKey]);
 
   const openPodKeys = useMemo(() => panes.map((p) => p.podKey), [panes]);
@@ -72,17 +69,6 @@ export function AgentPanel({
     onMaximize?.();
   }, [onMaximize]);
 
-  const handleTerminate = useCallback(async () => {
-    setIsTerminating(true);
-    try {
-      await terminatePod(podKey);
-      removePaneByPodKey(podKey);
-    } catch (error) {
-      console.error("Failed to terminate pod:", error);
-    } finally {
-      setIsTerminating(false);
-    }
-  }, [podKey, terminatePod, removePaneByPodKey]);
 
   return (
     <div
@@ -115,8 +101,6 @@ export function AgentPanel({
           <PaneLoadingState
             podStatus={podStatus}
             initProgress={initProgress}
-            isTerminating={isTerminating}
-            onTerminate={handleTerminate}
             onClose={onClose}
           />
         )

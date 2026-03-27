@@ -86,8 +86,9 @@ export function RealtimeProvider({
       }
 
       // Notification events
-      switch (event.type) {
+      switch (event.type as string) {
         case "terminal:notification":
+        case "pod:notification":
           onTerminalNotification?.(event.data as TerminalNotificationData);
           break;
         case "task:completed":
