@@ -1,7 +1,7 @@
 export * from "./types";
+export { EventSubscriptionManager } from "./EventSubscriptionManager";
 export {
-  EventSubscriptionManager,
   getEventSubscriptionManager,
   resetEventSubscriptionManager,
   onManagerReset,
-} from "./EventSubscriptionManager";
+} from "./EventSubscriptionManagerSingleton";
