@@ -287,7 +287,10 @@ func (b *PodBuilder) createFilesFromProto(files []*runnerv1.FileToCreate, sandbo
 		if f.Mode != 0 {
 			mode = os.FileMode(f.Mode)
 		}
-		os.WriteFile(path, []byte(f.Content), mode)
+		if err := os.WriteFile(path, []byte(f.Content), mode); err != nil {
+			logger.Pod().Warn("Failed to create file (podfile)", "path", path, "error", err)
+			continue
+		}
 		logger.Pod().Debug("Created file (podfile)", "path", path)
 	}
 

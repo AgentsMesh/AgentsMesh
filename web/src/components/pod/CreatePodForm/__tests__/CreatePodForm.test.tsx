@@ -109,7 +109,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
       });
 
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
@@ -124,7 +124,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
       });
 
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
@@ -148,7 +148,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
       });
 
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
@@ -165,7 +165,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
       });
 
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
@@ -181,7 +181,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
         validationErrors: { runner: "Runner is required" },
       });
 
@@ -229,7 +229,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
         prompt: "test prompt",
         selectedAgentSlug: "claude-code",
         isValid: true,
@@ -258,7 +258,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
         prompt: "test prompt",
         selectedAgentSlug: "claude-code",
         isValid: true,
@@ -315,7 +315,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
       });
 
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
@@ -326,7 +326,7 @@ describe("CreatePodForm", () => {
       setupSubmitState();
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
         loading: true,
       });
 
@@ -378,7 +378,7 @@ describe("CreatePodForm", () => {
       });
       vi.mocked(useCreatePodForm).mockReturnValue({
         ...defaultFormState,
-        selectedAgent: 1,
+        selectedAgent: "claude-code",
         isValid: true,
       });
 

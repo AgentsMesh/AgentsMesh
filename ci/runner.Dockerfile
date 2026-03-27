@@ -15,11 +15,15 @@ ENV GOPROXY=${GOPROXY}
 # Copy proto module first (required by replace directive in go.mod)
 COPY proto /proto
 
+# Copy podfile module (required by replace directive in go.mod)
+COPY podfile/go.mod podfile/go.sum /podfile/
+
 # Copy go mod files
 COPY runner/go.mod runner/go.sum ./
 RUN go mod download
 
 # Copy source code
+COPY podfile/ /podfile/
 COPY runner/ .
 
 # Build the binary

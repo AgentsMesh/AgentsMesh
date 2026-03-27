@@ -80,7 +80,7 @@ describe("CreatePodForm - Agent Configuration", () => {
 
     vi.mocked(useCreatePodForm).mockReturnValue({
       ...defaultFormState,
-      selectedAgent: 1,
+      selectedAgent: "claude-code",
       credentialProfiles: [
         { ...mockCredentialProfile, id: 1, name: "My Credentials", is_default: false },
         { ...mockCredentialProfile, id: 2, name: "Default Creds", is_default: true },

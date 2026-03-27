@@ -56,7 +56,7 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
     // handleSaveProfile should throw the API error
     await expect(
       act(async () => {
-        await result.current.handleSaveProfile(1, formData, null);
+        await result.current.handleSaveProfile("claude-code", formData, null);
       })
     ).rejects.toThrow("Network error");
   });
@@ -94,7 +94,7 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
 
     await expect(
       act(async () => {
-        await result.current.handleSaveProfile(1, formData, editingProfile);
+        await result.current.handleSaveProfile("claude-code", formData, editingProfile);
       })
     ).rejects.toThrow("Unauthorized");
   });
@@ -118,7 +118,7 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
     };
 
     await act(async () => {
-      await result.current.handleSaveProfile(1, formData, null);
+      await result.current.handleSaveProfile("claude-code", formData, null);
     });
 
     expect(mockApiCreate).toHaveBeenCalledTimes(1);
