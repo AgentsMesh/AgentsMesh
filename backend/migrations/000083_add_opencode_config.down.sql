@@ -7,6 +7,5 @@ UPDATE agent_types SET
                 "default": true
             }
         ]
-    }'::jsonb,
-    command_template = '{"args": []}'::jsonb
+    }'::jsonb
 WHERE slug = 'opencode';

@@ -28,10 +28,6 @@ func (b *OpenCodeBuilder) Slug() string {
 	return OpenCodeSlug
 }
 
-// HandleInitialPrompt prepends --prompt flag for TUI mode.
-// OpenCode syntax: opencode --prompt="message" [options]
-// This starts the TUI with the prompt pre-filled and stays running.
-// Using = format for shell-safe argument passing.
 // BuildLaunchArgs builds launch args and adds --model flag if configured.
 // If model is empty but models list exists, uses the first model.
 func (b *OpenCodeBuilder) BuildLaunchArgs(ctx *BuildContext) ([]string, error) {
