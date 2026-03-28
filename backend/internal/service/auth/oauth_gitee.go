@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
@@ -39,6 +40,7 @@ func exchangeGiteeCode(ctx context.Context, cfg OAuthConfig, code string) (strin
 		"grant_type":    {"authorization_code"},
 	})
 	if err != nil {
+		slog.Error("Gitee OAuth code exchange failed", "error", err)
 		return "", fmt.Errorf("failed to exchange code: %w", err)
 	}
 	defer tokenResp.Body.Close()
@@ -48,10 +50,12 @@ func exchangeGiteeCode(ctx context.Context, cfg OAuthConfig, code string) (strin
 		Error       string `json:"error"`
 	}
 	if err := json.NewDecoder(tokenResp.Body).Decode(&tokenData); err != nil {
+		slog.Error("failed to decode Gitee OAuth token response", "error", err)
 		return "", fmt.Errorf("failed to decode token response: %w", err)
 	}
 
 	if tokenData.Error != "" || tokenData.AccessToken == "" {
+		slog.Warn("Gitee OAuth returned invalid code", "oauth_error", tokenData.Error)
 		return "", ErrInvalidOAuthCode
 	}
 
@@ -62,17 +66,20 @@ func exchangeGiteeCode(ctx context.Context, cfg OAuthConfig, code string) (strin
 func fetchGiteeUserInfo(ctx context.Context, accessToken string) (*OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://gitee.com/api/v5/user?access_token="+accessToken, nil)
 	if err != nil {
+		slog.Error("failed to create Gitee user info request", "error", err)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	userResp, err := client.Do(req)
 	if err != nil {
+		slog.Error("failed to fetch Gitee user info", "error", err)
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 	defer userResp.Body.Close()
 
 	if userResp.StatusCode != http.StatusOK {
+		slog.Error("Gitee user info API returned non-OK status", "status", userResp.StatusCode)
 		return nil, fmt.Errorf("gitee API returned status %d", userResp.StatusCode)
 	}
 
@@ -84,6 +91,7 @@ func fetchGiteeUserInfo(ctx context.Context, accessToken string) (*OAuthUserInfo
 		AvatarURL string `json:"avatar_url"`
 	}
 	if err := json.NewDecoder(userResp.Body).Decode(&giteeUser); err != nil {
+		slog.Error("failed to decode Gitee user info", "error", err)
 		return nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
 

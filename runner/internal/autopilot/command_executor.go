@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os/exec"
 )
 
@@ -69,13 +70,16 @@ func (e *DefaultCommandExecutor) Execute(ctx context.Context, name string, args 
 	err := cmd.Run()
 	if err != nil {
 		if ctx.Err() != nil {
+			slog.Error("command timed out", "command", name, "work_dir", workDir, "error", ctx.Err())
 			return stdout.Bytes(), stderr.Bytes(), fmt.Errorf("command timed out: %w", ctx.Err())
 		}
+		slog.Error("command failed", "command", name, "work_dir", workDir, "error", err)
 		return stdout.Bytes(), stderr.Bytes(), fmt.Errorf("command failed: %w", err)
 	}
 
 	// Warn caller if output was truncated
 	if stdout.Len() >= maxOutputSize || stderr.Len() >= maxOutputSize {
+		slog.Warn("command output truncated", "command", name, "work_dir", workDir, "stdout_len", stdout.Len(), "stderr_len", stderr.Len())
 		return stdout.Bytes(), stderr.Bytes(), errOutputTruncated
 	}
 

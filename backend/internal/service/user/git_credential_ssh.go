@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"log/slog"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -15,6 +16,7 @@ func parseSSHKey(privateKeyPEM, publicKeyStr string) (string, string, string, er
 	// Parse the private key
 	signer, err := ssh.ParsePrivateKey([]byte(privateKeyPEM))
 	if err != nil {
+		slog.Error("failed to parse SSH private key", "error", err)
 		return "", "", "", ErrInvalidSSHKey
 	}
 
@@ -35,6 +37,7 @@ func GenerateSSHKeyPair() (privateKey, publicKey string, err error) {
 	// Generate ED25519 key (more secure and shorter than RSA)
 	pubKey, privKey, err := generateED25519Key()
 	if err != nil {
+		slog.Error("failed to generate ED25519 SSH key pair", "error", err)
 		return "", "", err
 	}
 	return privKey, pubKey, nil
@@ -45,6 +48,7 @@ func generateED25519Key() (publicKey, privateKey string, err error) {
 	// Generate random seed
 	seed := make([]byte, 32)
 	if _, err := rand.Read(seed); err != nil {
+		slog.Error("failed to generate random seed for SSH key", "error", err)
 		return "", "", err
 	}
 

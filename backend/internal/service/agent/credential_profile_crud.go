@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
@@ -17,6 +18,7 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 	// Check if profile with same name exists
 	exists, err := s.repo.NameExists(ctx, userID, params.AgentSlug, params.Name, nil)
 	if err != nil {
+		slog.Error("failed to check credential profile name existence", "user_id", userID, "agent_slug", params.AgentSlug, "error", err)
 		return nil, err
 	}
 	if exists {
@@ -33,6 +35,7 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 	if !params.IsRunnerHost && params.Credentials != nil {
 		encryptedCreds, err = s.encryptCredentials(params.Credentials)
 		if err != nil {
+			slog.Error("failed to encrypt credentials for new profile", "user_id", userID, "agent_slug", params.AgentSlug, "error", err)
 			return nil, fmt.Errorf("encrypt credentials: %w", err)
 		}
 	}
@@ -49,9 +52,11 @@ func (s *CredentialProfileService) CreateCredentialProfile(ctx context.Context, 
 	}
 
 	if err := s.repo.Create(ctx, profile); err != nil {
+		slog.Error("failed to create credential profile", "user_id", userID, "agent_slug", params.AgentSlug, "error", err)
 		return nil, err
 	}
 
+	slog.Info("credential profile created", "user_id", userID, "profile_id", profile.ID, "agent_slug", params.AgentSlug)
 	// Reload with Agent
 	return s.GetCredentialProfile(ctx, userID, profile.ID)
 }
@@ -72,10 +77,12 @@ func (s *CredentialProfileService) GetCredentialProfile(ctx context.Context, use
 func (s *CredentialProfileService) DeleteCredentialProfile(ctx context.Context, userID, profileID int64) error {
 	rowsAffected, err := s.repo.Delete(ctx, userID, profileID)
 	if err != nil {
+		slog.Error("failed to delete credential profile", "user_id", userID, "profile_id", profileID, "error", err)
 		return err
 	}
 	if rowsAffected == 0 {
 		return ErrCredentialProfileNotFound
 	}
+	slog.Info("credential profile deleted", "user_id", userID, "profile_id", profileID)
 	return nil
 }

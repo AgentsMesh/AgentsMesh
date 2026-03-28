@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"log/slog"
 	"time"
 
 	invitationDomain "github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
@@ -30,6 +31,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitationDo
 	// Check if user is already a member (by email)
 	exists, err := s.repo.CheckMemberExistsByEmail(ctx, req.OrganizationID, req.Email)
 	if err != nil {
+		slog.Error("failed to check member existence", "org_id", req.OrganizationID, "email", req.Email, "error", err)
 		return nil, err
 	}
 	if exists {
@@ -45,6 +47,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitationDo
 	// Generate unique token
 	token, err := generateToken()
 	if err != nil {
+		slog.Error("failed to generate invitation token", "error", err)
 		return nil, err
 	}
 
@@ -58,18 +61,18 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*invitationDo
 	}
 
 	if err := s.repo.Create(ctx, inv); err != nil {
+		slog.Error("failed to create invitation", "org_id", req.OrganizationID, "email", req.Email, "error", err)
 		return nil, err
 	}
 
 	// Send invitation email
 	if s.emailService != nil {
 		if err := s.emailService.SendOrgInvitationEmail(ctx, req.Email, req.OrgName, req.InviterName, token); err != nil {
-			// Log error but don't fail the invitation creation
-			// The invitation can still be accessed via the token
-			_ = err
+			slog.Warn("failed to send invitation email", "org_id", req.OrganizationID, "email", req.Email, "error", err)
 		}
 	}
 
+	slog.Info("invitation created", "org_id", req.OrganizationID, "email", req.Email, "role", req.Role, "inviter_id", req.InviterID)
 	return inv, nil
 }
 
@@ -88,6 +91,7 @@ func (s *Service) Resend(ctx context.Context, invitationID int64, inviterName, o
 	if inv.IsExpired() || time.Until(inv.ExpiresAt) < 24*time.Hour {
 		inv.ExpiresAt = time.Now().AddDate(0, 0, InvitationValidDays)
 		if err := s.repo.Update(ctx, inv); err != nil {
+			slog.Error("failed to extend invitation expiration", "invitation_id", invitationID, "error", err)
 			return err
 		}
 	}
@@ -97,6 +101,7 @@ func (s *Service) Resend(ctx context.Context, invitationID int64, inviterName, o
 		return s.emailService.SendOrgInvitationEmail(ctx, inv.Email, orgName, inviterName, inv.Token)
 	}
 
+	slog.Info("invitation resent", "invitation_id", invitationID, "email", inv.Email)
 	return nil
 }
 

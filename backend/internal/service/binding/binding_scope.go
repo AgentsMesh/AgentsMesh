@@ -2,6 +2,7 @@ package binding
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/lib/pq"
@@ -48,9 +49,11 @@ func (s *Service) RequestScopes(ctx context.Context, bindingID int64, requesterP
 	}
 
 	if err := s.repo.Save(ctx, binding); err != nil {
+		slog.Error("failed to save requested scopes", "binding_id", bindingID, "error", err)
 		return nil, err
 	}
 
+	slog.Info("scopes requested", "binding_id", bindingID, "new_scopes", newScopes, "auto_approved", autoApprove)
 	return binding, nil
 }
 
@@ -99,8 +102,10 @@ func (s *Service) ApproveScopes(ctx context.Context, bindingID int64, approverPo
 	binding.PendingScopes = pq.StringArray(newPending)
 
 	if err := s.repo.Save(ctx, binding); err != nil {
+		slog.Error("failed to save approved scopes", "binding_id", bindingID, "error", err)
 		return nil, err
 	}
 
+	slog.Info("scopes approved", "binding_id", bindingID, "approved_scopes", approved, "approver_pod", approverPod)
 	return binding, nil
 }
