@@ -141,6 +141,7 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *ru
 		_ = pc.DecrementPods(ctx, runnerID)
 		return err
 	}
+	pc.logger.Info("pod dispatched to runner", "pod_key", cmd.PodKey, "runner_id", runnerID)
 	return nil
 }
 
@@ -166,6 +167,8 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 
 	pc.podRouter.UnregisterPod(podKey)
 	pc.clearMissCount(podKey)
+
+	pc.logger.Info("pod terminate sent", "pod_key", podKey, "runner_id", pod.RunnerID)
 
 	return pc.DecrementPods(ctx, pod.RunnerID)
 }

@@ -171,9 +171,11 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 			}
 			selectedRunner, err := o.runnerSelector.SelectAvailableRunnerForAgent(ctx, req.OrganizationID, req.UserID, agentDef.Slug)
 			if err != nil {
+				slog.Warn("runner auto-selection failed", "org_id", req.OrganizationID, "agent_slug", req.AgentSlug, "error", err)
 				return nil, ErrNoAvailableRunner
 			}
 			req.RunnerID = selectedRunner.ID
+			slog.Info("runner auto-selected", "runner_id", selectedRunner.ID, "org_id", req.OrganizationID, "agent_slug", req.AgentSlug)
 		}
 		sessionID = uuid.New().String()
 	}
@@ -200,6 +202,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	// Quota check
 	if o.billingService != nil {
 		if err := o.billingService.CheckQuota(ctx, req.OrganizationID, "concurrent_pods", 1); err != nil {
+			slog.Warn("pod quota check failed", "org_id", req.OrganizationID, "error", err)
 			return nil, err
 		}
 	}
@@ -209,6 +212,8 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		t, err := o.ticketService.GetTicketBySlug(ctx, req.OrganizationID, *req.TicketSlug)
 		if err == nil && t != nil {
 			req.TicketID = &t.ID
+		} else if err != nil {
+			slog.Warn("ticket slug resolution failed", "org_id", req.OrganizationID, "ticket_slug", *req.TicketSlug, "error", err)
 		}
 	}
 
@@ -244,7 +249,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	}
 
 	if o.podCoordinator != nil {
-		slog.Info("dispatching create_pod to runner", "runner_id", req.RunnerID, "pod_key", pod.PodKey, "resume", isResumeMode)
+		slog.Info("dispatching create_pod to runner", "runner_id", req.RunnerID, "pod_key", pod.PodKey, "session_id", sessionID, "resume", isResumeMode)
 		if err := o.podCoordinator.CreatePod(ctx, req.RunnerID, podCmd); err != nil {
 			slog.Error("failed to dispatch create_pod", "pod_key", pod.PodKey, "error", err)
 			if markErr := o.podService.MarkInitFailed(ctx, pod.PodKey, errCodeRunnerUnreachable,

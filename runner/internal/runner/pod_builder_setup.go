@@ -36,10 +36,11 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 	b.sendProgress("preparing", 20, "Setting up working directory...")
 
 	strategy := b.selectSetupStrategy(cfg)
-	logger.Pod().Debug("Working directory setup mode", "pod_key", b.cmd.PodKey, "mode", strategy.Name())
+	logger.Pod().Info("Setup strategy selected", "pod_key", b.cmd.PodKey, "strategy", strategy.Name())
 
 	result, err := strategy.Setup(ctx, sandboxRoot, cfg)
 	if err != nil {
+		logger.Pod().Error("Setup strategy failed", "pod_key", b.cmd.PodKey, "strategy", strategy.Name(), "error", err)
 		if rmErr := fsutil.RemoveAll(sandboxRoot); rmErr != nil {
 			slog.Warn("Failed to clean up sandbox after setup error", "path", sandboxRoot, "error", rmErr)
 		}

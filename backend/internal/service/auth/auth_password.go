@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 
 	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
@@ -29,11 +30,14 @@ func (s *Service) Login(ctx context.Context, email, password string) (*LoginResu
 	u, err := s.userService.Authenticate(ctx, email, password)
 	if err != nil {
 		if errors.Is(err, userService.ErrInvalidCredentials) {
+			slog.Warn("login failed", "email", email, "reason", "invalid_credentials")
 			return nil, ErrInvalidCredentials
 		}
 		if errors.Is(err, userService.ErrUserInactive) {
+			slog.Warn("login failed", "email", email, "reason", "user_disabled")
 			return nil, ErrUserDisabled
 		}
+		slog.Warn("login failed", "email", email, "reason", "internal_error")
 		return nil, err
 	}
 
@@ -41,6 +45,8 @@ func (s *Service) Login(ctx context.Context, email, password string) (*LoginResu
 	if err != nil {
 		return nil, err
 	}
+
+	slog.Info("user logged in", "user_id", u.ID, "email", email)
 
 	return &LoginResult{
 		User:         u,
@@ -80,6 +86,8 @@ func (s *Service) Register(ctx context.Context, req *RegisterRequest) (*LoginRes
 	if err != nil {
 		return nil, err
 	}
+
+	slog.Info("user registered", "user_id", u.ID, "email", req.Email)
 
 	return &LoginResult{
 		User:         u,

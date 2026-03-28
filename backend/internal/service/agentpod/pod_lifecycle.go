@@ -30,7 +30,7 @@ func (s *PodService) HandlePodCreated(ctx context.Context, podKey string, ptyPID
 		slog.Error("failed to handle pod created", "pod_key", podKey, "error", err)
 		return err
 	}
-	slog.Info("pod created", "pod_key", podKey, "pty_pid", ptyPID)
+	slog.Info("pod started on runner", "pod_key", podKey, "sandbox_path", sandboxPath, "pty_pid", ptyPID)
 	return nil
 }
 
@@ -46,7 +46,7 @@ func (s *PodService) HandlePodTerminated(ctx context.Context, podKey string, exi
 		slog.Error("failed to handle pod terminated", "pod_key", podKey, "error", err)
 		return err
 	}
-	slog.Info("pod terminated", "pod_key", podKey)
+	slog.Info("pod terminated", "pod_key", podKey, "exit_code", exitCode)
 	return nil
 }
 
@@ -62,6 +62,7 @@ func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
 		return ErrPodTerminated
 	}
 
+	slog.Info("pod terminate requested", "pod_key", podKey)
 	previousStatus := pod.Status
 	if err := s.UpdatePodStatus(ctx, podKey, agentpod.StatusTerminated); err != nil {
 		slog.Error("failed to terminate pod", "pod_key", podKey, "error", err)

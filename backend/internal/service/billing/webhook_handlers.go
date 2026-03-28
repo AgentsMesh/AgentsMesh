@@ -94,7 +94,7 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	slog.Info("payment succeeded", append(attrs, "order_no", order.OrderNo, "order_type", order.OrderType, "amount", event.Amount)...)
+	slog.Info("payment succeeded", append(attrs, "order_no", order.OrderNo, "org_id", order.OrganizationID, "order_type", order.OrderType, "amount", event.Amount)...)
 
 	// Process based on order type
 	switch order.OrderType {

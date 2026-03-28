@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
@@ -129,6 +130,8 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 	if err := s.repo.Create(ctx, pod); err != nil {
 		return nil, err
 	}
+
+	slog.Info("pod created", "pod_key", pod.PodKey, "org_id", pod.OrganizationID, "agent_slug", pod.AgentSlug, "runner_id", pod.RunnerID)
 
 	// NOTE: current_pods increment is handled by PodCoordinator.CreatePod(),
 	// which runs only when a command is actually sent to Runner.

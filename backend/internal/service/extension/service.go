@@ -127,6 +127,8 @@ func (s *Service) CreateSkillRegistry(ctx context.Context, orgID int64, input Cr
 		return nil, fmt.Errorf("failed to create skill registry: %w", err)
 	}
 
+	slog.Info("skill registry created", "registry_id", registry.ID, "org_id", orgID, "repository_url", input.RepositoryURL)
+
 	return registry, nil
 }
 
@@ -166,6 +168,8 @@ func (s *Service) SyncSkillRegistry(ctx context.Context, orgID, sourceID int64) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to reload registry after sync: %w", err)
 	}
+
+	slog.Info("skill registry synced", "registry_id", sourceID, "org_id", orgID, "sync_status", registry.SyncStatus)
 
 	return registry, nil
 }
