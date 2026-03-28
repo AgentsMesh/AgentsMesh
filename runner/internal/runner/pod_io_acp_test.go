@@ -21,7 +21,7 @@ func newTestACPClient() *acp.ACPClient {
 
 func TestACPPodIO_Mode(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	if got := io.Mode(); got != "acp" {
 		t.Errorf("Mode() = %q, want %q", got, "acp")
@@ -30,7 +30,7 @@ func TestACPPodIO_Mode(t *testing.T) {
 
 func TestACPPodIO_SendKeys_WithKeys_ReturnsError(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	err := io.SendKeys([]string{"ctrl+c"})
 	if err == nil {
@@ -43,7 +43,7 @@ func TestACPPodIO_SendKeys_WithKeys_ReturnsError(t *testing.T) {
 
 func TestACPPodIO_SendKeys_Empty_NoError(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	if err := io.SendKeys(nil); err != nil {
 		t.Errorf("SendKeys(nil) = %v, want nil", err)
@@ -55,7 +55,7 @@ func TestACPPodIO_SendKeys_Empty_NoError(t *testing.T) {
 
 func TestACPPodIO_Resize_NopReturnsFalse(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	resized, err := io.Resize(120, 40)
 	if err != nil {
@@ -68,7 +68,7 @@ func TestACPPodIO_Resize_NopReturnsFalse(t *testing.T) {
 
 func TestACPPodIO_GetPID_ReturnsZero(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	if got := io.GetPID(); got != 0 {
 		t.Errorf("GetPID() = %d, want 0", got)
@@ -77,7 +77,7 @@ func TestACPPodIO_GetPID_ReturnsZero(t *testing.T) {
 
 func TestACPPodIO_CursorPosition_ReturnsZeroZero(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	row, col := io.CursorPosition()
 	if row != 0 || col != 0 {
@@ -87,7 +87,7 @@ func TestACPPodIO_CursorPosition_ReturnsZeroZero(t *testing.T) {
 
 func TestACPPodIO_GetScreenSnapshot_ReturnsEmpty(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	if got := io.GetScreenSnapshot(); got != "" {
 		t.Errorf("GetScreenSnapshot() = %q, want empty string", got)
@@ -96,7 +96,7 @@ func TestACPPodIO_GetScreenSnapshot_ReturnsEmpty(t *testing.T) {
 
 func TestACPPodIO_Redraw_NopReturnsNil(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	if err := io.Redraw(); err != nil {
 		t.Errorf("Redraw() = %v, want nil", err)
@@ -105,7 +105,7 @@ func TestACPPodIO_Redraw_NopReturnsNil(t *testing.T) {
 
 func TestACPPodIO_Detach_NoPanic(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	// Should not panic — it's a no-op.
 	io.Detach()
@@ -113,7 +113,7 @@ func TestACPPodIO_Detach_NoPanic(t *testing.T) {
 
 func TestACPPodIO_WriteOutput_NoPanic(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	// Should not panic — it's a no-op.
 	io.WriteOutput([]byte("some data"))
@@ -123,7 +123,7 @@ func TestACPPodIO_WriteOutput_NoPanic(t *testing.T) {
 
 func TestACPPodIO_Teardown_ReturnsEmpty(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	if got := io.Teardown(); got != "" {
 		t.Errorf("Teardown() = %q, want empty string", got)
@@ -132,7 +132,7 @@ func TestACPPodIO_Teardown_ReturnsEmpty(t *testing.T) {
 
 func TestACPPodIO_SetExitHandler_NoPanic(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	// Should not panic — it's a no-op.
 	io.SetExitHandler(func(exitCode int) {})
@@ -141,7 +141,7 @@ func TestACPPodIO_SetExitHandler_NoPanic(t *testing.T) {
 
 func TestACPPodIO_SubscribeStateChange_NoPanic(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	// Should not panic — currently a no-op per implementation comment.
 	io.SubscribeStateChange("test-sub", func(newStatus string) {})
@@ -149,7 +149,7 @@ func TestACPPodIO_SubscribeStateChange_NoPanic(t *testing.T) {
 
 func TestACPPodIO_UnsubscribeStateChange_NoPanic(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	// Should not panic — currently a no-op per implementation comment.
 	io.UnsubscribeStateChange("test-sub")
@@ -159,7 +159,7 @@ func TestACPPodIO_UnsubscribeStateChange_NoPanic(t *testing.T) {
 
 func TestACPPodIO_GetAgentStatus_Unstarted(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	// An unstarted client has state "uninitialized", which maps to "idle".
 	got := io.GetAgentStatus()
@@ -172,7 +172,7 @@ func TestACPPodIO_GetAgentStatus_Unstarted(t *testing.T) {
 
 func TestACPPodIO_GetSnapshot_EmptyClient(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	snapshot, err := io.GetSnapshot(10)
 	if err != nil {
@@ -213,7 +213,7 @@ func TestMapACPState_AllMappings(t *testing.T) {
 
 func TestACPPodIO_Stop_Unstarted(t *testing.T) {
 	client := newTestACPClient()
-	io := NewACPPodIO(client)
+	io := NewACPPodIO(client, "test-pod")
 
 	// Stop on an unstarted client should not panic.
 	// ACPClient.Stop() uses sync.Once and checks cmd.Process == nil.

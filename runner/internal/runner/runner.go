@@ -149,7 +149,13 @@ func (r *Runner) TryStartUpgrade() bool {
 	if r.upgradeCoord == nil {
 		return false
 	}
-	return r.upgradeCoord.TryStartUpgrade()
+	ok := r.upgradeCoord.TryStartUpgrade()
+	if ok {
+		logger.Runner().Info("Upgrade started")
+	} else {
+		logger.Runner().Warn("Upgrade request rejected (already in progress or pods active)")
+	}
+	return ok
 }
 
 func (r *Runner) FinishUpgrade() {
@@ -157,6 +163,7 @@ func (r *Runner) FinishUpgrade() {
 		return
 	}
 	r.upgradeCoord.FinishUpgrade()
+	logger.Runner().Info("Upgrade finished")
 }
 
 func (r *Runner) GetUpdater() *updater.Updater {

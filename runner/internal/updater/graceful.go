@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // State represents the current update state.
@@ -168,11 +170,16 @@ func (g *GracefulUpdater) PendingVersion() string {
 
 func (g *GracefulUpdater) setState(state State) {
 	g.mu.Lock()
+	prev := g.state
 	g.state = state
 	info := g.pendingInfo
 	cb := g.onStatus          // Copy callback reference
 	podCounter := g.podCounter // Copy podCounter reference
 	g.mu.Unlock()
+
+	if prev != state {
+		logger.Updater().Info("Update state changed", "from", prev, "to", state)
+	}
 
 	// Callback executed outside lock (avoid deadlock), using snapshot from lock
 	if cb != nil {
@@ -192,6 +199,8 @@ func (g *GracefulUpdater) CancelPendingUpdate() {
 	if g.cancelDrain != nil {
 		g.cancelDrain()
 	}
+
+	logger.Updater().Info("Pending update cancelled", "was_draining", g.draining)
 
 	g.pendingInfo = nil
 	g.draining = false

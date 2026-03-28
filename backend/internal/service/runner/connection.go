@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -142,6 +143,11 @@ func (c *GRPCConnection) Close() {
 		c.mu.Unlock()
 		close(c.closeChan)
 		close(c.Send)
+		slog.Info("gRPC connection closed",
+			"runner_id", c.RunnerID,
+			"generation", c.Generation,
+			"node_id", c.NodeID,
+		)
 	})
 }
 
@@ -158,6 +164,10 @@ func (c *GRPCConnection) SendMessage(msg *runnerv1.ServerMessage) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if c.closed {
+		slog.Warn("attempted send on closed connection",
+			"runner_id", c.RunnerID,
+			"generation", c.Generation,
+		)
 		return ErrConnectionClosed
 	}
 
@@ -165,6 +175,10 @@ func (c *GRPCConnection) SendMessage(msg *runnerv1.ServerMessage) error {
 	case c.Send <- msg:
 		return nil
 	default:
+		slog.Error("send buffer full, message dropped",
+			"runner_id", c.RunnerID,
+			"generation", c.Generation,
+		)
 		return ErrSendBufferFull
 	}
 }

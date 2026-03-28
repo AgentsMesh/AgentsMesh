@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -59,7 +60,11 @@ func (c *Cache) Set(ctx context.Context, key string, value interface{}, expirati
 	if err != nil {
 		return fmt.Errorf("failed to marshal value: %w", err)
 	}
-	return c.client.Set(ctx, key, data, expiration).Err()
+	if err := c.client.Set(ctx, key, data, expiration).Err(); err != nil {
+		slog.Error("redis SET failed", "key", key, "error", err)
+		return err
+	}
+	return nil
 }
 
 // Get retrieves a value by key
@@ -69,6 +74,7 @@ func (c *Cache) Get(ctx context.Context, key string, dest interface{}) error {
 		if err == redis.Nil {
 			return ErrNotFound
 		}
+		slog.Error("redis GET failed", "key", key, "error", err)
 		return err
 	}
 	return json.Unmarshal(data, dest)
@@ -76,7 +82,11 @@ func (c *Cache) Get(ctx context.Context, key string, dest interface{}) error {
 
 // Delete removes a key
 func (c *Cache) Delete(ctx context.Context, keys ...string) error {
-	return c.client.Del(ctx, keys...).Err()
+	if err := c.client.Del(ctx, keys...).Err(); err != nil {
+		slog.Error("redis DEL failed", "keys", keys, "error", err)
+		return err
+	}
+	return nil
 }
 
 // Exists checks if a key exists
@@ -94,7 +104,12 @@ func (c *Cache) SetNX(ctx context.Context, key string, value interface{}, expira
 	if err != nil {
 		return false, fmt.Errorf("failed to marshal value: %w", err)
 	}
-	return c.client.SetNX(ctx, key, data, expiration).Result()
+	ok, err := c.client.SetNX(ctx, key, data, expiration).Result()
+	if err != nil {
+		slog.Error("redis SETNX failed", "key", key, "error", err)
+		return false, err
+	}
+	return ok, nil
 }
 
 // Increment increments a counter
@@ -125,7 +140,11 @@ func (c *Cache) HSet(ctx context.Context, key, field string, value interface{}) 
 	if err != nil {
 		return fmt.Errorf("failed to marshal value: %w", err)
 	}
-	return c.client.HSet(ctx, key, field, data).Err()
+	if err := c.client.HSet(ctx, key, field, data).Err(); err != nil {
+		slog.Error("redis HSET failed", "key", key, "field", field, "error", err)
+		return err
+	}
+	return nil
 }
 
 // HGet gets a field from a hash
@@ -135,6 +154,7 @@ func (c *Cache) HGet(ctx context.Context, key, field string, dest interface{}) e
 		if err == redis.Nil {
 			return ErrNotFound
 		}
+		slog.Error("redis HGET failed", "key", key, "field", field, "error", err)
 		return err
 	}
 	return json.Unmarshal(data, dest)
@@ -147,105 +167,9 @@ func (c *Cache) HGetAll(ctx context.Context, key string) (map[string]string, err
 
 // HDel deletes fields from a hash
 func (c *Cache) HDel(ctx context.Context, key string, fields ...string) error {
-	return c.client.HDel(ctx, key, fields...).Err()
-}
-
-// List operations
-
-// LPush pushes values to the left of a list
-func (c *Cache) LPush(ctx context.Context, key string, values ...interface{}) error {
-	return c.client.LPush(ctx, key, values...).Err()
-}
-
-// RPush pushes values to the right of a list
-func (c *Cache) RPush(ctx context.Context, key string, values ...interface{}) error {
-	return c.client.RPush(ctx, key, values...).Err()
-}
-
-// LRange gets a range of elements from a list
-func (c *Cache) LRange(ctx context.Context, key string, start, stop int64) ([]string, error) {
-	return c.client.LRange(ctx, key, start, stop).Result()
-}
-
-// LTrim trims a list to the specified range
-func (c *Cache) LTrim(ctx context.Context, key string, start, stop int64) error {
-	return c.client.LTrim(ctx, key, start, stop).Err()
-}
-
-// Pub/Sub operations
-
-// Publish publishes a message to a channel
-func (c *Cache) Publish(ctx context.Context, channel string, message interface{}) error {
-	data, err := json.Marshal(message)
-	if err != nil {
-		return fmt.Errorf("failed to marshal message: %w", err)
+	if err := c.client.HDel(ctx, key, fields...).Err(); err != nil {
+		slog.Error("redis HDEL failed", "key", key, "fields", fields, "error", err)
+		return err
 	}
-	return c.client.Publish(ctx, channel, data).Err()
-}
-
-// Subscribe subscribes to channels
-func (c *Cache) Subscribe(ctx context.Context, channels ...string) *redis.PubSub {
-	return c.client.Subscribe(ctx, channels...)
-}
-
-// PSubscribe subscribes to channels matching patterns
-func (c *Cache) PSubscribe(ctx context.Context, patterns ...string) *redis.PubSub {
-	return c.client.PSubscribe(ctx, patterns...)
-}
-
-// Errors
-var (
-	ErrNotFound = fmt.Errorf("key not found")
-)
-
-// Key prefixes for different data types
-const (
-	PrefixPod       = "pod:"
-	PrefixUser      = "user:"
-	PrefixOrg       = "org:"
-	PrefixRunner    = "runner:"
-	PrefixChannel   = "channel:"
-	PrefixRateLimit = "ratelimit:"
-	PrefixLock      = "lock:"
-	PrefixPubSub    = "pubsub:"
-)
-
-// PodKey returns a cache key for a pod
-func PodKey(podKey string) string {
-	return PrefixPod + podKey
-}
-
-// UserKey returns a cache key for a user
-func UserKey(userID int64) string {
-	return fmt.Sprintf("%s%d", PrefixUser, userID)
-}
-
-// OrgKey returns a cache key for an organization
-func OrgKey(orgID int64) string {
-	return fmt.Sprintf("%s%d", PrefixOrg, orgID)
-}
-
-// RunnerKey returns a cache key for a runner
-func RunnerKey(runnerID int64) string {
-	return fmt.Sprintf("%s%d", PrefixRunner, runnerID)
-}
-
-// ChannelKey returns a cache key for a channel
-func ChannelKey(channelID int64) string {
-	return fmt.Sprintf("%s%d", PrefixChannel, channelID)
-}
-
-// RateLimitKey returns a cache key for rate limiting
-func RateLimitKey(identifier string) string {
-	return PrefixRateLimit + identifier
-}
-
-// LockKey returns a cache key for distributed locking
-func LockKey(resource string) string {
-	return PrefixLock + resource
-}
-
-// PubSubChannel returns a pub/sub channel name
-func PubSubChannel(channelType string, id int64) string {
-	return fmt.Sprintf("%s%s:%d", PrefixPubSub, channelType, id)
+	return nil
 }

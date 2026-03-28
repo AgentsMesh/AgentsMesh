@@ -1,44 +1,14 @@
 package runner
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
-
-// ErrNotSupported is returned when an operation is not supported in the current mode.
-var ErrNotSupported = errors.New("operation not supported in this mode")
-
-// ptyKeyMap maps human-readable key names to terminal escape sequences.
-var ptyKeyMap = map[string]string{
-	"enter":     "\r",
-	"escape":    "\x1b",
-	"tab":       "\t",
-	"backspace": "\x7f",
-	"delete":    "\x1b[3~",
-	"ctrl+c":    "\x03",
-	"ctrl+d":    "\x04",
-	"ctrl+u":    "\x15",
-	"ctrl+l":    "\x0c",
-	"ctrl+z":    "\x1a",
-	"ctrl+a":    "\x01",
-	"ctrl+e":    "\x05",
-	"ctrl+k":    "\x0b",
-	"ctrl+w":    "\x17",
-	"up":        "\x1b[A",
-	"down":      "\x1b[B",
-	"right":     "\x1b[C",
-	"left":      "\x1b[D",
-	"home":      "\x1b[H",
-	"end":       "\x1b[F",
-	"pageup":    "\x1b[5~",
-	"pagedown":  "\x1b[6~",
-	"shift+tab": "\x1b[Z",
-}
 
 // PTYPodIO wraps existing Terminal + VirtualTerminal + StateDetector
 // to implement PodIO for PTY-mode pods. Pure delegation, zero new logic.
@@ -75,6 +45,8 @@ func (p *PTYPodIO) Mode() string { return "pty" }
 
 func (p *PTYPodIO) SendInput(text string) error {
 	if p.terminal == nil {
+		logger.Pod().Error("PTY SendInput failed: terminal not initialized",
+			"pod_key", p.pod.PodKey)
 		return fmt.Errorf("terminal not initialized")
 	}
 	return p.terminal.Write([]byte(text))
@@ -129,9 +101,13 @@ func (p *PTYPodIO) SendKeys(keys []string) error {
 	for _, key := range keys {
 		seq, ok := ptyKeyMap[key]
 		if !ok {
+			logger.Pod().Error("PTY SendKeys: unknown key",
+				"pod_key", p.pod.PodKey, "key", key)
 			return fmt.Errorf("unknown key: %s", key)
 		}
 		if err := p.terminal.Write([]byte(seq)); err != nil {
+			logger.Pod().Error("PTY SendKeys failed",
+				"pod_key", p.pod.PodKey, "key", key, "error", err)
 			return fmt.Errorf("failed to send key %s: %w", key, err)
 		}
 	}
@@ -140,6 +116,8 @@ func (p *PTYPodIO) SendKeys(keys []string) error {
 
 func (p *PTYPodIO) Resize(cols, rows int) (bool, error) {
 	if err := p.terminal.Resize(cols, rows); err != nil {
+		logger.Pod().Error("PTY resize failed",
+			"pod_key", p.pod.PodKey, "cols", cols, "rows", rows, "error", err)
 		return false, err
 	}
 	if p.virtualTerminal != nil {
@@ -171,12 +149,22 @@ func (p *PTYPodIO) GetScreenSnapshot() string {
 
 func (p *PTYPodIO) Start() error {
 	if p.terminal == nil {
+		logger.Pod().Error("PTY Start failed: terminal not initialized",
+			"pod_key", p.pod.PodKey)
 		return fmt.Errorf("terminal not initialized")
 	}
-	return p.terminal.Start()
+	logger.Pod().Info("PTY starting", "pod_key", p.pod.PodKey)
+	if err := p.terminal.Start(); err != nil {
+		logger.Pod().Error("PTY Start failed",
+			"pod_key", p.pod.PodKey, "error", err)
+		return err
+	}
+	logger.Pod().Info("PTY started", "pod_key", p.pod.PodKey, "pid", p.terminal.PID())
+	return nil
 }
 
 func (p *PTYPodIO) Stop() {
+	logger.Pod().Info("PTY stopping", "pod_key", p.pod.PodKey)
 	if p.terminal != nil {
 		p.terminal.Stop()
 	}
@@ -190,12 +178,15 @@ func (p *PTYPodIO) SetExitHandler(handler func(exitCode int)) {
 
 func (p *PTYPodIO) Redraw() error {
 	if p.terminal == nil {
+		logger.Pod().Error("PTY Redraw failed: terminal not initialized",
+			"pod_key", p.pod.PodKey)
 		return fmt.Errorf("terminal not initialized")
 	}
 	return p.terminal.Redraw()
 }
 
 func (p *PTYPodIO) Detach() {
+	logger.Pod().Info("PTY detaching", "pod_key", p.pod.PodKey)
 	if p.terminal != nil {
 		p.terminal.Detach()
 	}
@@ -216,6 +207,7 @@ func (p *PTYPodIO) CancelSession() error {
 }
 
 func (p *PTYPodIO) Teardown() string {
+	logger.Pod().Info("PTY teardown starting", "pod_key", p.pod.PodKey)
 	var earlyOutput string
 	if p.aggregator != nil {
 		p.aggregator.Stop()
@@ -228,7 +220,11 @@ func (p *PTYPodIO) Teardown() string {
 	}
 	if ptyErr := p.pod.GetPTYError(); ptyErr != "" && earlyOutput == "" {
 		earlyOutput = ptyErr
+		logger.Pod().Warn("PTY teardown found PTY error",
+			"pod_key", p.pod.PodKey, "error", ptyErr)
 	}
+	logger.Pod().Info("PTY teardown completed", "pod_key", p.pod.PodKey,
+		"has_early_output", earlyOutput != "")
 	return earlyOutput
 }
 

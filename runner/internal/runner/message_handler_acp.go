@@ -109,7 +109,7 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 
 	// Wire client into pod
 	pod.ACPClient = acpClient
-	pod.IO = NewACPPodIO(acpClient)
+	pod.IO = NewACPPodIO(acpClient, podKey)
 	pod.Relay = NewACPPodRelay(podKey, acpClient, func(payload []byte) {
 		h.handleAcpRelayCommand(pod, payload)
 	})

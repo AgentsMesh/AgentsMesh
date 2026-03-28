@@ -17,6 +17,10 @@ func (cm *RunnerConnectionManager) HandleHeartbeat(runnerID int64, data *runnerv
 // HandlePodCreated handles pod created event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodCreated(runnerID int64, data *runnerv1.PodCreatedEvent) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("pod created event received",
+		"runner_id", runnerID,
+		"pod_key", data.GetPodKey(),
+	)
 	if cm.onPodCreated != nil {
 		cm.onPodCreated(runnerID, data)
 	}
@@ -25,6 +29,11 @@ func (cm *RunnerConnectionManager) HandlePodCreated(runnerID int64, data *runner
 // HandlePodTerminated handles pod terminated event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodTerminated(runnerID int64, data *runnerv1.PodTerminatedEvent) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("pod terminated event received",
+		"runner_id", runnerID,
+		"pod_key", data.GetPodKey(),
+		"exit_code", data.GetExitCode(),
+	)
 	if cm.onPodTerminated != nil {
 		cm.onPodTerminated(runnerID, data)
 	}
@@ -33,6 +42,12 @@ func (cm *RunnerConnectionManager) HandlePodTerminated(runnerID int64, data *run
 // HandlePodError handles pod error event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodError(runnerID int64, data *runnerv1.ErrorEvent) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Error("pod error event received",
+		"runner_id", runnerID,
+		"pod_key", data.GetPodKey(),
+		"code", data.GetCode(),
+		"message", data.GetMessage(),
+	)
 	if cm.onPodError != nil {
 		cm.onPodError(runnerID, data)
 	}
@@ -43,6 +58,11 @@ func (cm *RunnerConnectionManager) HandlePodError(runnerID int64, data *runnerv1
 // HandleAgentStatus handles agent status event (Proto type)
 func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runnerv1.AgentStatusEvent) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("agent status event received",
+		"runner_id", runnerID,
+		"pod_key", data.GetPodKey(),
+		"status", data.GetStatus(),
+	)
 	if cm.onAgentStatus != nil {
 		cm.onAgentStatus(runnerID, data)
 	}
@@ -58,6 +78,12 @@ func (cm *RunnerConnectionManager) HandlePodResized(runnerID int64, data *runner
 // HandlePodInitProgress handles pod init progress event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodInitProgress(runnerID int64, data *runnerv1.PodInitProgressEvent) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("pod init progress received",
+		"runner_id", runnerID,
+		"pod_key", data.GetPodKey(),
+		"phase", data.GetPhase(),
+		"progress", data.GetProgress(),
+	)
 	if cm.onPodInitProgress != nil {
 		cm.onPodInitProgress(runnerID, data)
 	}
@@ -66,6 +92,11 @@ func (cm *RunnerConnectionManager) HandlePodInitProgress(runnerID int64, data *r
 // HandleInitialized handles initialized confirmation (Proto type)
 func (cm *RunnerConnectionManager) HandleInitialized(runnerID int64, availableAgents []string) {
 	cm.UpdateHeartbeat(runnerID)
+
+	cm.logger.Info("runner initialized",
+		"runner_id", runnerID,
+		"available_agents", availableAgents,
+	)
 
 	// Mark connection as initialized
 	if conn := cm.GetConnection(runnerID); conn != nil {
@@ -80,6 +111,10 @@ func (cm *RunnerConnectionManager) HandleInitialized(runnerID int64, availableAg
 // HandleRequestRelayToken handles relay token refresh request (Proto type)
 func (cm *RunnerConnectionManager) HandleRequestRelayToken(runnerID int64, data *runnerv1.RequestRelayTokenEvent) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("relay token requested",
+		"runner_id", runnerID,
+		"pod_key", data.GetPodKey(),
+	)
 	if cm.onRequestRelayToken != nil {
 		cm.onRequestRelayToken(runnerID, data)
 	}
@@ -88,6 +123,11 @@ func (cm *RunnerConnectionManager) HandleRequestRelayToken(runnerID int64, data 
 // HandleSandboxesStatus handles sandbox status response event (Proto type)
 func (cm *RunnerConnectionManager) HandleSandboxesStatus(runnerID int64, data *runnerv1.SandboxesStatusEvent) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("sandboxes status received",
+		"runner_id", runnerID,
+		"request_id", data.GetRequestId(),
+		"sandbox_count", len(data.GetSandboxes()),
+	)
 	if cm.onSandboxesStatus != nil {
 		cm.onSandboxesStatus(runnerID, data)
 	}
@@ -127,6 +167,11 @@ func (cm *RunnerConnectionManager) HandleOSCTitle(runnerID int64, data *runnerv1
 // HandleObservePodResult handles observe pod result event (Proto type)
 func (cm *RunnerConnectionManager) HandleObservePodResult(runnerID int64, data *runnerv1.ObservePodResult) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("observe pod result received",
+		"runner_id", runnerID,
+		"request_id", data.GetRequestId(),
+		"pod_key", data.GetPodKey(),
+	)
 	if cm.onObservePodResult != nil {
 		cm.onObservePodResult(runnerID, data)
 	}
@@ -137,112 +182,11 @@ func (cm *RunnerConnectionManager) HandleObservePodResult(runnerID int64, data *
 // HandleTokenUsage handles token usage report from runner (Proto type)
 func (cm *RunnerConnectionManager) HandleTokenUsage(runnerID int64, data *runnerv1.TokenUsageReport) {
 	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("token usage report received",
+		"runner_id", runnerID,
+		"pod_key", data.GetPodKey(),
+	)
 	if cm.onTokenUsage != nil {
 		cm.onTokenUsage(runnerID, data)
-	}
-}
-
-// ==================== Upgrade Event Handlers ====================
-
-// HandleUpgradeStatus handles upgrade status event from runner (Proto type)
-func (cm *RunnerConnectionManager) HandleUpgradeStatus(runnerID int64, data *runnerv1.UpgradeStatusEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	cm.logger.Info("received upgrade status",
-		"runner_id", runnerID,
-		"request_id", data.RequestId,
-		"phase", data.Phase,
-		"progress", data.Progress,
-		"message", data.Message,
-		"error", data.Error,
-	)
-	if cm.onUpgradeStatus != nil {
-		cm.onUpgradeStatus(runnerID, data)
-	}
-}
-
-// HandleLogUploadStatus handles log upload status event from runner (Proto type)
-func (cm *RunnerConnectionManager) HandleLogUploadStatus(runnerID int64, data *runnerv1.LogUploadStatusEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	cm.logger.Info("received log upload status",
-		"runner_id", runnerID,
-		"request_id", data.RequestId,
-		"phase", data.Phase,
-		"progress", data.Progress,
-		"message", data.Message,
-		"error", data.Error,
-		"size_bytes", data.SizeBytes,
-	)
-	if cm.onLogUploadStatus != nil {
-		cm.onLogUploadStatus(runnerID, data)
-	}
-}
-
-// ==================== AutopilotController Event Handlers ====================
-
-// HandleAutopilotStatus handles AutopilotController status update event (Proto type)
-func (cm *RunnerConnectionManager) HandleAutopilotStatus(runnerID int64, data *runnerv1.AutopilotStatusEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	cm.logger.Debug("received AutopilotController status",
-		"runner_id", runnerID,
-		"autopilot_key", data.AutopilotKey,
-		"phase", data.Status.GetPhase(),
-	)
-	if cm.onAutopilotStatus != nil {
-		cm.onAutopilotStatus(runnerID, data)
-	}
-}
-
-// HandleAutopilotIteration handles AutopilotController iteration event (Proto type)
-func (cm *RunnerConnectionManager) HandleAutopilotIteration(runnerID int64, data *runnerv1.AutopilotIterationEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	cm.logger.Debug("received AutopilotController iteration",
-		"runner_id", runnerID,
-		"autopilot_key", data.AutopilotKey,
-		"iteration", data.Iteration,
-		"phase", data.Phase,
-	)
-	if cm.onAutopilotIteration != nil {
-		cm.onAutopilotIteration(runnerID, data)
-	}
-}
-
-// HandleAutopilotCreated handles AutopilotController created event (Proto type)
-func (cm *RunnerConnectionManager) HandleAutopilotCreated(runnerID int64, data *runnerv1.AutopilotCreatedEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	cm.logger.Info("AutopilotController created",
-		"runner_id", runnerID,
-		"autopilot_key", data.AutopilotKey,
-		"pod_key", data.PodKey,
-	)
-	if cm.onAutopilotCreated != nil {
-		cm.onAutopilotCreated(runnerID, data)
-	}
-}
-
-// HandleAutopilotTerminated handles AutopilotController terminated event (Proto type)
-func (cm *RunnerConnectionManager) HandleAutopilotTerminated(runnerID int64, data *runnerv1.AutopilotTerminatedEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	cm.logger.Info("AutopilotController terminated",
-		"runner_id", runnerID,
-		"autopilot_key", data.AutopilotKey,
-		"reason", data.Reason,
-	)
-	if cm.onAutopilotTerminated != nil {
-		cm.onAutopilotTerminated(runnerID, data)
-	}
-}
-
-// HandleAutopilotThinking handles AutopilotController thinking event (Proto type)
-// This event exposes the Control Agent's decision-making process to the user
-func (cm *RunnerConnectionManager) HandleAutopilotThinking(runnerID int64, data *runnerv1.AutopilotThinkingEvent) {
-	cm.UpdateHeartbeat(runnerID)
-	cm.logger.Debug("received AutopilotController thinking",
-		"runner_id", runnerID,
-		"autopilot_key", data.AutopilotKey,
-		"iteration", data.Iteration,
-		"decision_type", data.DecisionType,
-	)
-	if cm.onAutopilotThinking != nil {
-		cm.onAutopilotThinking(runnerID, data)
 	}
 }

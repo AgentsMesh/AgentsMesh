@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // ErrKeysNotSupported is returned when special key input is attempted in ACP mode.
@@ -14,6 +15,7 @@ var ErrKeysNotSupported = errors.New("special keys not supported in ACP mode")
 // State mapping: processing→executing, idle→idle, waiting_permission→waiting.
 type ACPPodIO struct {
 	client *acp.ACPClient
+	podKey string // for structured logging context
 
 	// State change subscribers for event-driven autopilot integration.
 	stateSubsMu sync.RWMutex
@@ -21,9 +23,10 @@ type ACPPodIO struct {
 }
 
 // NewACPPodIO creates a PodIO that delegates to an ACPClient.
-func NewACPPodIO(client *acp.ACPClient) *ACPPodIO {
+func NewACPPodIO(client *acp.ACPClient, podKey string) *ACPPodIO {
 	return &ACPPodIO{
 		client:    client,
+		podKey:    podKey,
 		stateSubs: make(map[string]func(newStatus string)),
 	}
 }
@@ -31,6 +34,7 @@ func NewACPPodIO(client *acp.ACPClient) *ACPPodIO {
 func (a *ACPPodIO) Mode() string { return "acp" }
 
 func (a *ACPPodIO) SendInput(text string) error {
+	logger.Pod().Debug("ACP sending prompt", "pod_key", a.podKey)
 	return a.client.SendPrompt(text)
 }
 
@@ -89,10 +93,17 @@ func (a *ACPPodIO) GetScreenSnapshot() string {
 }
 
 func (a *ACPPodIO) Start() error {
-	return a.client.Start()
+	logger.Pod().Info("ACP starting", "pod_key", a.podKey)
+	if err := a.client.Start(); err != nil {
+		logger.Pod().Error("ACP start failed", "pod_key", a.podKey, "error", err)
+		return err
+	}
+	logger.Pod().Info("ACP started", "pod_key", a.podKey)
+	return nil
 }
 
 func (a *ACPPodIO) Stop() {
+	logger.Pod().Info("ACP stopping", "pod_key", a.podKey)
 	a.client.Stop()
 }
 
@@ -114,15 +125,26 @@ func (a *ACPPodIO) WriteOutput(data []byte) {
 }
 
 func (a *ACPPodIO) RespondToPermission(requestID string, approved bool) error {
+	logger.Pod().Info("ACP responding to permission",
+		"pod_key", a.podKey, "request_id", requestID, "approved", approved)
 	err := a.client.RespondToPermission(requestID, approved)
-	if err == nil {
+	if err != nil {
+		logger.Pod().Error("ACP permission response failed",
+			"pod_key", a.podKey, "request_id", requestID, "error", err)
+	} else {
 		a.client.RemovePendingPermission(requestID)
 	}
 	return err
 }
 
 func (a *ACPPodIO) CancelSession() error {
-	return a.client.CancelSession()
+	logger.Pod().Info("ACP cancelling session", "pod_key", a.podKey)
+	if err := a.client.CancelSession(); err != nil {
+		logger.Pod().Error("ACP cancel session failed",
+			"pod_key", a.podKey, "error", err)
+		return err
+	}
+	return nil
 }
 
 // mapACPState maps ACP client states to backend-compatible status strings.

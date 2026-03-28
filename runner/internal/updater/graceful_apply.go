@@ -3,16 +3,18 @@ package updater
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/exec"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/process"
 )
 
 // executeUpdate creates a backup, downloads and replaces the binary, and restarts.
 func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
+	log := logger.Updater()
+
 	g.mu.RLock()
 	info := g.pendingInfo
 	g.mu.RUnlock()
@@ -22,17 +24,19 @@ func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
 		return fmt.Errorf("no pending update to apply")
 	}
 
+	log.Info("Applying update", "from", info.CurrentVersion, "to", info.LatestVersion)
 	g.setState(StateApplying)
 
 	// Create backup for potential rollback
 	backupPath, err := g.updater.CreateBackup()
 	if err != nil {
-		slog.Warn("failed to create backup", "error", err)
+		log.Warn("Failed to create backup (rollback unavailable)", "error", err)
 		// Continue without backup - rollback won't be possible
 	}
 
 	// Update binary in-place via detector.UpdateBinary
 	if err := g.updater.updateBinary(ctx, info.LatestVersion); err != nil {
+		log.Error("Failed to apply update", "version", info.LatestVersion, "error", err)
 		g.mu.Lock()
 		g.pendingInfo = nil
 		g.mu.Unlock()
@@ -44,16 +48,16 @@ func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
 	g.pendingInfo = nil
 	g.mu.Unlock()
 
-	slog.Info("update applied successfully", "from", info.CurrentVersion, "to", info.LatestVersion)
+	log.Info("Update applied successfully", "from", info.CurrentVersion, "to", info.LatestVersion)
 
 	// Restart
 	g.setState(StateRestarting)
 	if g.restartFunc != nil {
 		pid, err := g.restartFunc()
 		if err != nil {
-			slog.Error("restart failed, attempting rollback", "error", err)
+			log.Error("Restart failed, attempting rollback", "error", err)
 			if rbErr := g.rollbackUpdate(backupPath); rbErr != nil {
-				slog.Error("rollback also failed", "error", rbErr)
+				log.Error("Rollback also failed", "error", rbErr)
 			}
 			g.setState(StateIdle)
 			return fmt.Errorf("restart failed: %w", err)
@@ -65,18 +69,18 @@ func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
 			defer cancel()
 
 			if err := g.healthChecker(ctx, pid); err != nil {
-				slog.Error("health check failed, attempting rollback", "error", err)
+				log.Error("Health check failed, attempting rollback", "pid", pid, "error", err)
 				// Terminate the unhealthy new process
 				if proc, findErr := os.FindProcess(pid); findErr == nil && proc != nil {
 					_ = proc.Kill()
 				}
 				if rbErr := g.rollbackUpdate(backupPath); rbErr != nil {
-					slog.Error("rollback also failed", "error", rbErr)
+					log.Error("Rollback also failed", "error", rbErr)
 				}
 				g.setState(StateIdle)
 				return fmt.Errorf("health check failed: %w", err)
 			}
-			slog.Info("health check passed for new process", "pid", pid)
+			log.Info("Health check passed for new process", "pid", pid)
 		}
 	}
 
@@ -85,13 +89,17 @@ func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
 
 // rollbackUpdate attempts to restore the previous version from backup.
 func (g *GracefulUpdater) rollbackUpdate(backupPath string) error {
+	log := logger.Updater()
 	if backupPath == "" {
+		log.Error("No backup available for rollback")
 		return fmt.Errorf("no backup available for rollback")
 	}
+	log.Info("Rolling back to previous version", "backup", backupPath)
 	if err := g.updater.Rollback(); err != nil {
+		log.Error("Rollback failed", "error", err)
 		return fmt.Errorf("rollback failed: %w", err)
 	}
-	slog.Info("successfully rolled back to previous version")
+	log.Info("Successfully rolled back to previous version")
 	return nil
 }
 
@@ -117,7 +125,7 @@ func DefaultRestartFunc() RestartFunc {
 			return 0, fmt.Errorf("failed to start new process: %w", err)
 		}
 
-		slog.Info("new process started, current process should exit", "pid", cmd.Process.Pid)
+		logger.Updater().Info("New process started, current process should exit", "pid", cmd.Process.Pid)
 		// Note: Caller is responsible for graceful shutdown after this returns
 		// Do NOT call os.Exit() here as it prevents proper cleanup
 		return cmd.Process.Pid, nil

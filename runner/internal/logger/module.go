@@ -81,6 +81,11 @@ func Autopilot() *slog.Logger {
 	return Module("autopilot")
 }
 
+// Updater returns a logger for update/upgrade operations.
+func Updater() *slog.Logger {
+	return Module("updater")
+}
+
 // Trace logs a message at Trace level using the default logger.
 // Use for high-frequency, low-level debugging that would be too verbose for Debug.
 func Trace(msg string, args ...any) {
