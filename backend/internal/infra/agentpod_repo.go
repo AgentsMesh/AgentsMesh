@@ -80,7 +80,9 @@ func (r *podRepo) ListByOrg(ctx context.Context, orgID int64, statuses []string,
 	}
 
 	var total int64
-	query.Count(&total)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	var pods []*agentpod.Pod
 	err := query.

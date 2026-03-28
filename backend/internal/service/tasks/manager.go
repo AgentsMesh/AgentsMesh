@@ -15,6 +15,11 @@ type StalePodCleaner interface {
 	MarkStaleAsDisconnected(ctx context.Context, threshold time.Time) (int64, error)
 }
 
+// DeadLetterCleaner removes old dead letter entries past their TTL.
+type DeadLetterCleaner interface {
+	CleanupExpiredMessages(ctx context.Context, olderThan time.Time) (int64, error)
+}
+
 // DefaultConfig returns default task manager configuration
 func DefaultConfig() Config {
 	return Config{
@@ -22,6 +27,8 @@ func DefaultConfig() Config {
 		TaskProcessorInterval:  30 * time.Second,
 		MRSyncInterval:         5 * time.Minute,
 		PodCleanupInterval:     10 * time.Minute,
+		DLQCleanupInterval:     24 * time.Hour,
+		DLQRetentionTTL:        30 * 24 * time.Hour, // 30 days
 		WorkerCount:            4,
 		MaxQueueSize:           1000,
 	}
@@ -33,6 +40,8 @@ type Config struct {
 	TaskProcessorInterval  time.Duration
 	MRSyncInterval         time.Duration
 	PodCleanupInterval     time.Duration
+	DLQCleanupInterval     time.Duration
+	DLQRetentionTTL        time.Duration
 	WorkerCount            int
 	MaxQueueSize           int
 }
@@ -40,6 +49,7 @@ type Config struct {
 // Manager coordinates all background tasks
 type Manager struct {
 	podCleaner StalePodCleaner
+	dlqCleaner DeadLetterCleaner
 	redis      *redis.Client
 	logger     *slog.Logger
 	cfg        Config
@@ -83,6 +93,12 @@ func NewManager(podCleaner StalePodCleaner, redisClient *redis.Client, logger *s
 // RegisterTaskHandler registers a handler for processing completed tasks
 func (m *Manager) RegisterTaskHandler(handler TaskHandler) {
 	m.taskProcessor.RegisterHandler(handler)
+}
+
+// SetDeadLetterCleaner sets the dead-letter cleanup dependency.
+// Must be called before Start if DLQ cleanup is desired.
+func (m *Manager) SetDeadLetterCleaner(cleaner DeadLetterCleaner) {
+	m.dlqCleaner = cleaner
 }
 
 // RegisterJobHandler registers a handler for background jobs
@@ -160,6 +176,18 @@ func (m *Manager) registerScheduledTasks() {
 			return m.cleanupStalePods(ctx)
 		},
 	})
+
+	// DLQ Cleanup - removes dead letter entries older than TTL
+	if m.dlqCleaner != nil {
+		_ = m.scheduler.Register(&infraTasks.Task{
+			Name:       "dlq_cleanup",
+			Interval:   m.cfg.DLQCleanupInterval,
+			RunOnStart: false,
+			Func: func(ctx context.Context) error {
+				return m.cleanupDeadLetters(ctx)
+			},
+		})
+	}
 }
 
 // monitorWorkerResults monitors worker results for logging/metrics
@@ -176,91 +204,4 @@ func (m *Manager) monitorWorkerResults() {
 				"retried", result.Retried)
 		}
 	}
-}
-
-// cleanupStalePods cleans up pods that are no longer active
-func (m *Manager) cleanupStalePods(ctx context.Context) error {
-	// Update pods with stale heartbeats
-	staleThreshold := time.Now().Add(-30 * time.Minute)
-
-	rowsAffected, err := m.podCleaner.MarkStaleAsDisconnected(ctx, staleThreshold)
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected > 0 {
-		m.logger.Info("cleaned up stale pods",
-			"count", rowsAffected)
-	}
-
-	return nil
-}
-
-// SubmitJob submits a job to the worker pool
-func (m *Manager) SubmitJob(job *infraTasks.Job) error {
-	return m.workers.Submit(job)
-}
-
-// RunTaskNow triggers a scheduled task to run immediately
-func (m *Manager) RunTaskNow(taskName string) error {
-	return m.scheduler.RunNow(taskName)
-}
-
-// GetScheduledTasks returns all scheduled task names
-func (m *Manager) GetScheduledTasks() []string {
-	return m.scheduler.GetTaskNames()
-}
-
-// GetJobHandlerTypes returns all registered job handler types
-func (m *Manager) GetJobHandlerTypes() []string {
-	return m.workers.GetHandlerTypes()
-}
-
-// GetQueueLength returns the current job queue length
-func (m *Manager) GetQueueLength() int {
-	return m.workers.QueueLength()
-}
-
-// GetPipelineWatcher returns the pipeline watcher for webhook handlers
-func (m *Manager) GetPipelineWatcher() *infraTasks.PipelineWatcher {
-	return infraTasks.NewPipelineWatcher(m.redis, m.logger)
-}
-
-// Health represents the health status of the task manager
-type Health struct {
-	Healthy             bool   `json:"healthy"`
-	PollerHealthy       bool   `json:"poller_healthy"`
-	WatchingCount       int64  `json:"watching_count"`
-	QueueLength         int    `json:"queue_length"`
-	ScheduledTasks      int    `json:"scheduled_tasks"`
-	RegisteredHandlers  int    `json:"registered_handlers"`
-}
-
-// CheckHealth returns the health status of the task manager
-func (m *Manager) CheckHealth(ctx context.Context) (*Health, error) {
-	health := &Health{
-		QueueLength:        m.workers.QueueLength(),
-		ScheduledTasks:     len(m.scheduler.GetTaskNames()),
-		RegisteredHandlers: len(m.workers.GetHandlerTypes()),
-	}
-
-	// Check poller health
-	pollerHealthy, err := m.pipelinePoller.CheckHealth(ctx)
-	if err != nil {
-		m.logger.Warn("failed to check poller health", "error", err)
-	}
-	health.PollerHealthy = pollerHealthy
-
-	// Get watching count
-	watcher := infraTasks.NewPipelineWatcher(m.redis, m.logger)
-	watchingCount, err := watcher.GetWatchingCount(ctx)
-	if err != nil {
-		m.logger.Warn("failed to get watching count", "error", err)
-	}
-	health.WatchingCount = watchingCount
-
-	// Overall health
-	health.Healthy = health.PollerHealthy && health.QueueLength < m.cfg.MaxQueueSize
-
-	return health, nil
 }
