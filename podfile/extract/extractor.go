@@ -35,6 +35,10 @@ func Extract(prog *parser.Program) *podfile.PodSpec {
 			spec.Skills = append(spec.Skills, d.Slugs...)
 		case *parser.SetupDecl:
 			spec.Setup = &podfile.SetupSpec{Script: d.Script, Timeout: d.Timeout}
+		case *parser.ModeDecl:
+			spec.Mode = d.Mode
+		case *parser.CredentialDecl:
+			spec.CredentialProfile = d.ProfileName
 		}
 	}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { CenteredSpinner } from "@/components/ui/spinner";
@@ -12,7 +12,7 @@ import { AgentSelect } from "./AgentSelect";
 import { PromptInput } from "./PromptInput";
 import { InteractionModeToggle } from "./InteractionModeToggle";
 import { AdvancedFormSection } from "./AdvancedFormSection";
-import { estimateWorkspaceTerminalSize } from "@/lib/terminal-size";
+import { useCreatePodSubmitHandler } from "./useCreatePodSubmitHandler";
 
 /**
  * Shared Pod creation form component
@@ -33,6 +33,9 @@ export function CreatePodForm({
 
   const { context, promptGenerator, onSuccess, onError, onCancel } = mergedConfig;
 
+  // Track selected agent at parent level so both hooks can consume it
+  const [selectedAgentSlug, setSelectedAgentSlug] = useState<string | null>(null);
+
   // Load base data (runners, agents, repositories)
   const {
     runners,
@@ -43,10 +46,8 @@ export function CreatePodForm({
     availableAgents,
   } = usePodCreationData(enabled);
 
-  // Form state management
-  const form = useCreatePodForm(availableAgents, repositories, onSuccess);
-
   // Config options management (loads from Backend ConfigSchema)
+  // Placed before useCreatePodForm so configValues is available
   const {
     fields: configFields,
     loading: loadingConfig,
@@ -55,8 +56,16 @@ export function CreatePodForm({
     resetConfig: resetConfig,
   } = useConfigOptions(
     selectedRunner?.id || null,
-    form.selectedAgent
+    selectedAgentSlug
   );
+
+  // Form state management (receives configValues for PodFile Layer generation)
+  const form = useCreatePodForm(availableAgents, repositories, onSuccess, configValues);
+
+  // Sync selected agent from form to local state for useConfigOptions
+  useEffect(() => {
+    setSelectedAgentSlug(form.selectedAgent);
+  }, [form.selectedAgent]);
 
   // Reset form when enabled changes from true to false (e.g., modal closes)
   useEffect(() => {
@@ -64,6 +73,7 @@ export function CreatePodForm({
       form.reset();
       resetConfig();
       setSelectedRunnerId(null);
+      setSelectedAgentSlug(null);
       promptInitializedRef.current = false;
       repoInitializedRef.current = false;
     }
@@ -104,26 +114,9 @@ export function CreatePodForm({
   }, [enabled, defaultPrompt, form.prompt, form.setPrompt]);
 
   // Handle form submission
-  // runner_id is optional - when not manually selected, backend auto-selects
-  const handleCreate = async () => {
-    if (!form.selectedAgent) return;
-
-    try {
-      // Estimate terminal size based on current window/device dimensions
-      const { cols, rows } = estimateWorkspaceTerminalSize();
-
-      // Pass runner as null/undefined when not manually selected (backend auto-selects)
-      await form.submit(selectedRunner?.id ?? null, configValues, {
-        ticketSlug: context?.ticket?.slug,
-        initialPrompt: form.prompt,
-        cols,
-        rows,
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Unknown error");
-      onError?.(error);
-    }
-  };
+  const handleCreate = useCreatePodSubmitHandler(
+    form, selectedRunner, configValues, context, onError,
+  );
 
   return (
     <div className={className}>

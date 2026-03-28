@@ -37,6 +37,11 @@ type BuildResult struct {
 	RemoveFiles  []string // file paths to remove from FilesToCreate
 	RemoveEnvs   []string // env names to remove from EnvVars
 	RemoveSkills []string // skill slugs to remove from Skills
+
+	// From MODE declaration
+	Mode string // "pty" or "acp"
+	// From CREDENTIAL declaration
+	CredentialProfile string // profile name or "runner_host"
 }
 
 // FileEntry represents a file to create in the sandbox.

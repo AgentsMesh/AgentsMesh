@@ -80,6 +80,18 @@ type RemoveDecl struct {
 	Position Position
 }
 
+// ModeDecl: MODE pty | MODE acp
+type ModeDecl struct {
+	Mode     string // "pty" or "acp"
+	Position Position
+}
+
+// CredentialDecl: CREDENTIAL "profile-name" | CREDENTIAL runner_host
+type CredentialDecl struct {
+	ProfileName string // profile name or "runner_host"
+	Position    Position
+}
+
 func (d *AgentDecl) declNode()         {}
 func (d *ExecutableDecl) declNode()    {}
 func (d *ConfigDecl) declNode()        {}
@@ -91,6 +103,8 @@ func (d *McpDecl) declNode()           {}
 func (d *SkillsDecl) declNode()        {}
 func (d *SetupDecl) declNode()         {}
 func (d *RemoveDecl) declNode()        {}
+func (d *ModeDecl) declNode()           {}
+func (d *CredentialDecl) declNode()     {}
 
 func (d *AgentDecl) Pos() Position         { return d.Position }
 func (d *ExecutableDecl) Pos() Position    { return d.Position }
@@ -103,3 +117,5 @@ func (d *McpDecl) Pos() Position           { return d.Position }
 func (d *SkillsDecl) Pos() Position        { return d.Position }
 func (d *SetupDecl) Pos() Position         { return d.Position }
 func (d *RemoveDecl) Pos() Position        { return d.Position }
+func (d *ModeDecl) Pos() Position           { return d.Position }
+func (d *CredentialDecl) Pos() Position     { return d.Position }

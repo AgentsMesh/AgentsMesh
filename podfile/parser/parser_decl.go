@@ -28,6 +28,10 @@ func (p *Parser) tryParseDeclaration(tok lexer.Token) Declaration {
 		return p.parseSetupDecl(pos)
 	case lexer.KW_REMOVE:
 		return p.parseRemoveDecl(pos)
+	case lexer.KW_MODE:
+		return p.parseModeDecl(pos)
+	case lexer.KW_CREDENTIAL:
+		return p.parseCredentialDecl(pos)
 	default:
 		return nil
 	}

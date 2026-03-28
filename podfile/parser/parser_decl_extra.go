@@ -44,3 +44,22 @@ func (p *Parser) parseRemoveDecl(pos Position) *RemoveDecl {
 	p.expectNewline()
 	return &RemoveDecl{Target: target, Name: name, Position: pos}
 }
+
+// parseModeDecl: MODE pty | MODE acp
+func (p *Parser) parseModeDecl(pos Position) *ModeDecl {
+	p.advance()
+	mode := p.expectIdentOrString()
+	if mode != "pty" && mode != "acp" {
+		p.errorf("MODE: expected pty or acp, got %s", mode)
+	}
+	p.expectNewline()
+	return &ModeDecl{Mode: mode, Position: pos}
+}
+
+// parseCredentialDecl: CREDENTIAL "profile-name" | CREDENTIAL runner_host
+func (p *Parser) parseCredentialDecl(pos Position) *CredentialDecl {
+	p.advance()
+	name := p.expectIdentOrString()
+	p.expectNewline()
+	return &CredentialDecl{ProfileName: name, Position: pos}
+}

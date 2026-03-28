@@ -2,7 +2,7 @@
 // It merges declarations from multiple PodFile ASTs and concatenates statements.
 //
 // Merge rules:
-//   - Scalar declarations (AGENT, EXECUTABLE, REPO, BRANCH, MCP): slice overrides base
+//   - Scalar declarations (AGENT, EXECUTABLE, REPO, BRANCH, MCP, MODE, CREDENTIAL): slice overrides base
 //   - Keyed declarations (CONFIG, ENV): merge by name, slice overrides same-name
 //   - List declarations (SKILLS): union
 //   - Statements: slice appended after base
@@ -143,6 +143,10 @@ func getDeclKey(d parser.Declaration) declKey {
 		return declKey{Type: "SKILLS"}
 	case *parser.SetupDecl:
 		return declKey{Type: "SETUP"}
+	case *parser.ModeDecl:
+		return declKey{Type: "MODE"}
+	case *parser.CredentialDecl:
+		return declKey{Type: "CREDENTIAL"}
 	case *parser.RemoveDecl:
 		return declKey{Type: "REMOVE", Name: v.Target + "." + v.Name}
 	default:
