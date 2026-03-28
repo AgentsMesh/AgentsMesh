@@ -3,6 +3,7 @@ package infra
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
@@ -22,7 +23,7 @@ func (r *channelRepository) UpsertAccess(ctx context.Context, channelID int64, p
 
 	var existing channelAccess
 	if err := query.First(&existing).Error; err == nil {
-		return r.db.WithContext(ctx).Model(&existing).Update("last_access", gorm.Expr("now()")).Error
+		return r.db.WithContext(ctx).Model(&existing).Update("last_access", time.Now()).Error
 	}
 
 	return r.db.WithContext(ctx).Create(&channelAccess{
