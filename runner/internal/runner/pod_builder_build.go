@@ -23,13 +23,15 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	if b.cmd.PodKey == "" {
 		return nil, fmt.Errorf("pod key is required")
 	}
-	if b.cmd.LaunchCommand == "" && b.cmd.PodfileSource == "" {
-		return nil, fmt.Errorf("launch command or podfile source is required")
+	if b.cmd.PodfileSource == "" {
+		return nil, &client.PodError{
+			Code:    client.ErrCodePodfileEval,
+			Message: "podfile source is required",
+		}
 	}
 
 	launchCommand := b.cmd.LaunchCommand
 	logger.Pod().Info("Building pod", "pod_key", b.cmd.PodKey, "command", launchCommand,
-		"has_podfile", b.cmd.PodfileSource != "",
 		"interaction_mode", b.cmd.GetInteractionMode())
 
 	b.sendProgress("pending", 0, "Initializing pod...")
@@ -39,30 +41,23 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		return nil, err
 	}
 
-	var resolvedArgs []string
-	var envVars map[string]string
-	if b.cmd.PodfileSource != "" {
-		pfResult, err := ExecutePodFile(b.cmd, sandboxRoot, workingDir)
-		if err != nil {
-			return nil, &client.PodError{
-				Code:    client.ErrCodePodfileEval,
-				Message: fmt.Sprintf("podfile eval failed: %v", err),
-			}
+	pfResult, err := ExecutePodFile(b.cmd, sandboxRoot, workingDir)
+	if err != nil {
+		return nil, &client.PodError{
+			Code:    client.ErrCodePodfileEval,
+			Message: fmt.Sprintf("podfile eval failed: %v", err),
 		}
-		launchCommand = pfResult.LaunchCommand
-		resolvedArgs = pfResult.LaunchArgs
+	}
+	launchCommand = pfResult.LaunchCommand
+	resolvedArgs := pfResult.LaunchArgs
 
-		if err := b.createFilesFromProto(pfResult.FilesToCreate, sandboxRoot, workingDir); err != nil {
-			return nil, err
-		}
+	if err := b.createFilesFromProto(pfResult.FilesToCreate, sandboxRoot, workingDir); err != nil {
+		return nil, err
+	}
 
-		envVars = b.mergeEnvVars(sandboxRoot)
-		for k, v := range pfResult.EnvVars {
-			envVars[k] = v
-		}
-	} else {
-		resolvedArgs = b.resolveArgs(b.cmd.LaunchArgs, sandboxRoot, workingDir)
-		envVars = b.mergeEnvVars(sandboxRoot)
+	envVars := b.mergeEnvVars(sandboxRoot)
+	for k, v := range pfResult.EnvVars {
+		envVars[k] = v
 	}
 
 	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
@@ -183,14 +178,6 @@ func (b *PodBuilder) resolvePath(pathTemplate, sandboxRoot, workDir string) stri
 	path = strings.ReplaceAll(path, "{{.sandbox.root_path}}", sandboxRoot)
 	path = strings.ReplaceAll(path, "{{.sandbox.work_dir}}", workDir)
 	return path
-}
-
-func (b *PodBuilder) resolveArgs(args []string, sandboxRoot, workDir string) []string {
-	resolved := make([]string, len(args))
-	for i, arg := range args {
-		resolved[i] = b.resolvePath(arg, sandboxRoot, workDir)
-	}
-	return resolved
 }
 
 // mergeEnvVars merges environment variables: resolved PATH < config env < command env.
