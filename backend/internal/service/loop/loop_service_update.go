@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
@@ -143,8 +144,10 @@ func (s *LoopService) Update(ctx context.Context, orgID int64, slug string, req 
 
 	if len(updates) > 0 {
 		if err := s.repo.Update(ctx, loop.ID, updates); err != nil {
+			slog.Error("failed to update loop", "loop_id", loop.ID, "slug", slug, "org_id", orgID, "error", err)
 			return nil, err
 		}
+		slog.Info("loop updated", "loop_id", loop.ID, "slug", slug, "org_id", orgID)
 	}
 
 	return s.GetBySlug(ctx, orgID, slug)
@@ -160,11 +163,13 @@ func (s *LoopService) Delete(ctx context.Context, orgID int64, slug string) erro
 		if errors.Is(err, loopDomain.ErrHasActiveRuns) {
 			return ErrHasActiveRuns
 		}
+		slog.Error("failed to delete loop", "slug", slug, "org_id", orgID, "error", err)
 		return err
 	}
 	if affected == 0 {
 		return ErrLoopNotFound
 	}
+	slog.Info("loop deleted", "slug", slug, "org_id", orgID)
 	return nil
 }
 
@@ -198,8 +203,10 @@ func (s *LoopService) SetStatus(ctx context.Context, orgID int64, slug string, s
 	}
 
 	if err := s.repo.Update(ctx, loop.ID, updates); err != nil {
+		slog.Error("failed to set loop status", "loop_id", loop.ID, "slug", slug, "status", status, "error", err)
 		return nil, err
 	}
 
+	slog.Info("loop status changed", "loop_id", loop.ID, "slug", slug, "org_id", orgID, "status", status)
 	return s.GetBySlug(ctx, orgID, slug)
 }

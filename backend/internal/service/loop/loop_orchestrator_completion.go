@@ -17,17 +17,24 @@ func (o *LoopOrchestrator) SetRunPodKey(ctx context.Context, runID int64, podKey
 	if autopilotKey != "" {
 		updates["autopilot_controller_key"] = autopilotKey
 	}
-	return o.loopRunService.UpdateStatus(ctx, runID, updates)
+	if err := o.loopRunService.UpdateStatus(ctx, runID, updates); err != nil {
+		o.logger.Error("failed to set run pod key", "run_id", runID, "pod_key", podKey, "error", err)
+		return err
+	}
+	o.logger.Info("run pod key set", "run_id", runID, "pod_key", podKey, "autopilot_key", autopilotKey)
+	return nil
 }
 
 // MarkRunFailed marks a run as failed when Pod creation or Autopilot setup fails.
 // This is only used when no Pod exists (or Pod was cleaned up) — because no SSOT is available.
 func (o *LoopOrchestrator) MarkRunFailed(ctx context.Context, runID int64, errorMessage string) error {
+	o.logger.Warn("marking run as failed", "run_id", runID, "error_message", errorMessage)
 	return o.markRunTerminal(ctx, runID, loopDomain.RunStatusFailed, errorMessage)
 }
 
 // MarkRunCancelled marks a run as cancelled (e.g. user-initiated cancellation of a pending run).
 func (o *LoopOrchestrator) MarkRunCancelled(ctx context.Context, runID int64, reason string) error {
+	o.logger.Info("marking run as cancelled", "run_id", runID, "reason", reason)
 	return o.markRunTerminal(ctx, runID, loopDomain.RunStatusCancelled, reason)
 }
 

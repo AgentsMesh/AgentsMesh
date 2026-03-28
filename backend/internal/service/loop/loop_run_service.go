@@ -3,6 +3,7 @@ package loop
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 )
@@ -34,7 +35,12 @@ type ListRunsFilter struct {
 
 // Create creates a new LoopRun
 func (s *LoopRunService) Create(ctx context.Context, run *loopDomain.LoopRun) error {
-	return s.repo.Create(ctx, run)
+	if err := s.repo.Create(ctx, run); err != nil {
+		slog.Error("failed to create loop run", "loop_id", run.LoopID, "run_number", run.RunNumber, "error", err)
+		return err
+	}
+	slog.Info("loop run created", "run_id", run.ID, "loop_id", run.LoopID, "run_number", run.RunNumber)
+	return nil
 }
 
 // GetByID retrieves a LoopRun by ID, with status resolved from Pod (SSOT).
@@ -105,7 +111,15 @@ func (s *LoopRunService) UpdateStatus(ctx context.Context, runID int64, updates 
 
 // FinishRun atomically marks a run as finished with optimistic locking.
 func (s *LoopRunService) FinishRun(ctx context.Context, runID int64, updates map[string]interface{}) (bool, error) {
-	return s.repo.FinishRun(ctx, runID, updates)
+	updated, err := s.repo.FinishRun(ctx, runID, updates)
+	if err != nil {
+		slog.Error("failed to finish loop run", "run_id", runID, "error", err)
+		return false, err
+	}
+	if updated {
+		slog.Info("loop run finished", "run_id", runID, "status", updates["status"])
+	}
+	return updated, nil
 }
 
 // GetActiveRunByPodKey finds an active run by its pod key, with status resolved from Pod (SSOT).
@@ -195,7 +209,15 @@ func (s *LoopRunService) GetAvgDuration(ctx context.Context, loopID int64) (*flo
 
 // DeleteOldFinishedRuns deletes finished runs exceeding the retention limit.
 func (s *LoopRunService) DeleteOldFinishedRuns(ctx context.Context, loopID int64, keep int) (int64, error) {
-	return s.repo.DeleteOldFinishedRuns(ctx, loopID, keep)
+	deleted, err := s.repo.DeleteOldFinishedRuns(ctx, loopID, keep)
+	if err != nil {
+		slog.Error("failed to delete old finished runs", "loop_id", loopID, "keep", keep, "error", err)
+		return 0, err
+	}
+	if deleted > 0 {
+		slog.Info("old finished runs deleted", "loop_id", loopID, "deleted", deleted, "keep", keep)
+	}
+	return deleted, nil
 }
 
 // GetAutopilotPhase returns the autopilot phase for a given controller key.

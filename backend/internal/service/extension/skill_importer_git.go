@@ -3,6 +3,7 @@ package extension
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
@@ -28,6 +29,7 @@ func validateGitBranch(branch string) error {
 // For PAT-based auth, the token is injected into the URL so git receives it via HTTPS.
 // For SSH key auth, a temporary identity file is created and passed via GIT_SSH_COMMAND.
 func gitCloneWithAuth(ctx context.Context, repoURL, branch, targetDir, authType, credential string) error {
+	slog.Info("git clone with auth", "auth_type", authType, "branch", branch)
 	switch authType {
 	case extension.AuthTypeGitHubPAT:
 		// GitHub PAT: inject as https://<token>@github.com/owner/repo.git
@@ -127,6 +129,7 @@ func gitCloneWithSSHKey(ctx context.Context, repoURL, branch, targetDir, sshKey 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		sanitized := sanitizeGitOutput(string(output))
+		slog.Error("git clone with SSH key failed", "error", err)
 		return fmt.Errorf("git clone with SSH key failed: %s: %w", sanitized, err)
 	}
 	return nil
@@ -159,6 +162,7 @@ func gitClone(ctx context.Context, url, branch, targetDir string) error {
 	if err != nil {
 		// Sanitize output to prevent PAT tokens from leaking into logs/errors
 		sanitized := sanitizeGitOutput(string(output))
+		slog.Error("git clone failed", "branch", branch, "error", err)
 		return fmt.Errorf("git clone failed: %s: %w", sanitized, err)
 	}
 	return nil

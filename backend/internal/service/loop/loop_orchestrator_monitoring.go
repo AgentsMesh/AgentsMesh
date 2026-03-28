@@ -21,6 +21,9 @@ func (o *LoopOrchestrator) HandlePodTerminated(ctx context.Context, podKey strin
 		return
 	}
 
+	o.logger.Info("handling pod terminated for loop run",
+		"pod_key", podKey, "pod_status", podStatus, "run_id", run.ID, "loop_id", run.LoopID)
+
 	// Derive effective status using SSOT logic
 	autopilotPhase := ""
 	if run.AutopilotControllerKey != nil {
@@ -52,6 +55,9 @@ func (o *LoopOrchestrator) HandleAutopilotTerminated(ctx context.Context, autopi
 		// Not a loop-associated autopilot, ignore
 		return
 	}
+
+	o.logger.Info("handling autopilot terminated for loop run",
+		"autopilot_key", autopilotKey, "phase", phase, "run_id", run.ID, "loop_id", run.LoopID)
 
 	// Delegate to DeriveRunStatus for consistent mapping (SSOT)
 	// Pod status is irrelevant when autopilot phase is terminal — DeriveRunStatus handles this.
@@ -179,10 +185,16 @@ func (o *LoopOrchestrator) CleanupOrphanPendingRuns(ctx context.Context, orgIDs 
 func (o *LoopOrchestrator) RefreshLoopStats(ctx context.Context, loopID int64) error {
 	total, successful, failed, err := o.loopRunService.ComputeLoopStats(ctx, loopID)
 	if err != nil {
+		o.logger.Error("failed to compute loop stats", "loop_id", loopID, "error", err)
 		return fmt.Errorf("failed to compute loop stats: %w", err)
 	}
 
-	return o.loopService.UpdateStats(ctx, loopID, total, successful, failed)
+	if err := o.loopService.UpdateStats(ctx, loopID, total, successful, failed); err != nil {
+		o.logger.Error("failed to update loop stats", "loop_id", loopID, "error", err)
+		return err
+	}
+
+	return nil
 }
 
 // GetLastPodKey returns the pod_key from the most recent run that has one.
