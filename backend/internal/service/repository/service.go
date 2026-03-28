@@ -92,8 +92,10 @@ func (s *Service) GetByIDForUser(ctx context.Context, id int64, userID int64) (*
 // Update updates a repository
 func (s *Service) Update(ctx context.Context, id int64, updates map[string]interface{}) (*gitprovider.Repository, error) {
 	if err := s.repo.Update(ctx, id, updates); err != nil {
+		slog.Error("failed to update repository", "repo_id", id, "error", err)
 		return nil, err
 	}
+	slog.Info("repository updated", "repo_id", id)
 	return s.GetByID(ctx, id)
 }
 
@@ -107,7 +109,12 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 	if loopCount > 0 {
 		return ErrRepositoryHasLoopRefs
 	}
-	return s.repo.SoftDelete(ctx, id)
+	if err := s.repo.SoftDelete(ctx, id); err != nil {
+		slog.Error("failed to soft-delete repository", "repo_id", id, "error", err)
+		return err
+	}
+	slog.Info("repository soft-deleted", "repo_id", id)
+	return nil
 }
 
 // HardDelete permanently deletes a repository.
@@ -120,7 +127,12 @@ func (s *Service) HardDelete(ctx context.Context, id int64) error {
 	if loopCount > 0 {
 		return ErrRepositoryHasLoopRefs
 	}
-	return s.repo.HardDelete(ctx, id)
+	if err := s.repo.HardDelete(ctx, id); err != nil {
+		slog.Error("failed to hard-delete repository", "repo_id", id, "error", err)
+		return err
+	}
+	slog.Info("repository hard-deleted", "repo_id", id)
+	return nil
 }
 
 // ListByOrganization returns repositories for an organization
