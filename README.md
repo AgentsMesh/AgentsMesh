@@ -1,4 +1,10 @@
 <p align="center">
+  <a href="https://youtu.be/VaXImaly3dM">
+    <img src="https://img.youtube.com/vi/VaXImaly3dM/maxresdefault.jpg" alt="Loopal Demo Video" width="600" />
+  </a>
+</p>
+
+<p align="center">
   <pre align="center">
   _        ___    ___   ____     _     _
  | |      / _ \  / _ \ |  _ \   / \   | |
