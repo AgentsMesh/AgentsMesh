@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -136,8 +137,11 @@ func (p *SkillPackager) packageDir(ctx context.Context, dirPath string) (*Packag
 	storageKey := fmt.Sprintf("skills/direct/%s/%s.tar.gz", info.Slug, sha)
 	_, err = p.storage.Upload(ctx, storageKey, bytes.NewReader(packageData), int64(len(packageData)), "application/gzip")
 	if err != nil {
+		slog.Error("failed to upload skill package", "slug", info.Slug, "storage_key", storageKey, "error", err)
 		return nil, fmt.Errorf("failed to upload: %w", err)
 	}
+
+	slog.Info("skill packaged and uploaded", "slug", info.Slug, "content_sha", sha, "package_size", len(packageData))
 
 	return &PackagedSkill{
 		Slug:        info.Slug,

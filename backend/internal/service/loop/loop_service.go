@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/url"
 	"regexp"
@@ -200,7 +201,11 @@ func (s *LoopService) List(ctx context.Context, filter *ListLoopsFilter) ([]*loo
 }
 
 func (s *LoopService) UpdateRunStats(ctx context.Context, loopID int64, status string, lastRunAt time.Time) error {
-	return s.repo.IncrementRunStats(ctx, loopID, status, lastRunAt)
+	if err := s.repo.IncrementRunStats(ctx, loopID, status, lastRunAt); err != nil {
+		slog.Error("failed to update loop run stats", "loop_id", loopID, "status", status, "error", err)
+		return err
+	}
+	return nil
 }
 
 // UpdateStats sets the run statistics on a Loop to absolute values.
@@ -213,10 +218,15 @@ func (s *LoopService) UpdateStats(ctx context.Context, loopID int64, total, succ
 }
 
 func (s *LoopService) ClearRuntimeState(ctx context.Context, loopID int64) error {
-	return s.repo.Update(ctx, loopID, map[string]interface{}{
+	if err := s.repo.Update(ctx, loopID, map[string]interface{}{
 		"sandbox_path": nil,
 		"last_pod_key": nil,
-	})
+	}); err != nil {
+		slog.Error("failed to clear loop runtime state", "loop_id", loopID, "error", err)
+		return err
+	}
+	slog.Info("loop runtime state cleared", "loop_id", loopID)
+	return nil
 }
 
 func (s *LoopService) UpdateRuntimeState(ctx context.Context, loopID int64, sandboxPath *string, lastPodKey *string) error {

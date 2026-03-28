@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
@@ -91,15 +92,21 @@ func (s *Service) ListGRPCRegistrationTokens(ctx context.Context, orgID int64) (
 func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID, orgID int64) error {
 	rowsAffected, err := s.repo.DeleteRegistrationToken(ctx, tokenID, orgID)
 	if err != nil {
+		slog.Error("failed to delete gRPC registration token", "token_id", tokenID, "org_id", orgID, "error", err)
 		return err
 	}
 	if rowsAffected == 0 {
 		return ErrGRPCTokenNotFound
 	}
+	slog.Info("gRPC registration token deleted", "token_id", tokenID, "org_id", orgID)
 	return nil
 }
 
 // CleanupExpiredPendingAuths removes expired pending auth records.
 func (s *Service) CleanupExpiredPendingAuths(ctx context.Context) error {
-	return s.repo.CleanupExpiredPendingAuths(ctx)
+	if err := s.repo.CleanupExpiredPendingAuths(ctx); err != nil {
+		slog.Error("failed to cleanup expired pending auths", "error", err)
+		return err
+	}
+	return nil
 }
