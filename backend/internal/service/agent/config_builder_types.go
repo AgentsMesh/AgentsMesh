@@ -76,6 +76,10 @@ type ConfigBuildRequest struct {
 
 	// InteractionMode specifies the pod interaction mode: "pty" (default) or "acp"
 	InteractionMode string
+
+	// PodfileLayer is a raw PodFile Layer source sent directly from frontend.
+	// When set, it replaces the auto-generated user layer (config overrides / MCP / API key path).
+	PodfileLayer string
 }
 
 // ConfigSchemaResponse is the config schema returned to frontend

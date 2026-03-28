@@ -28,6 +28,7 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		// - 0: explicit RunnerHost mode (use Runner's local environment, no credentials injected)
 		// - >0: use specified credential profile ID
 		CredentialProfileID *int64               `json:"credential_profile_id"`
+		PodfileLayer      *string                `json:"podfile_layer"`
 		ConfigOverrides   map[string]interface{} `json:"config_overrides"`
 		Cols              int32                  `json:"cols"`
 		Rows              int32                  `json:"rows"`
@@ -52,6 +53,7 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		BranchName:          params.BranchName,
 		PermissionMode:      params.PermissionMode,
 		CredentialProfileID: params.CredentialProfileID,
+		PodfileLayer:        params.PodfileLayer,
 		ConfigOverrides:     params.ConfigOverrides,
 		Cols:                params.Cols,
 		Rows:                params.Rows,
@@ -86,6 +88,8 @@ func mapOrchestratorErrorToMCP(err error) *mcpError {
 		return newMcpError(400, "source pod is not terminated")
 	case errors.Is(err, agentpod.ErrResumeRunnerMismatch):
 		return newMcpError(400, "resume requires same runner")
+	case errors.Is(err, agentpod.ErrInvalidPodfileLayer):
+		return newMcpError(400, err.Error())
 	case errors.Is(err, agentpod.ErrSourcePodAccessDenied):
 		return newMcpError(403, "source pod access denied")
 	case errors.Is(err, agentpod.ErrSourcePodNotFound):

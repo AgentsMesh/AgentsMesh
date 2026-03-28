@@ -30,6 +30,9 @@ type CreatePodRequest struct {
 	// - >0: use specified credential profile ID
 	CredentialProfileID *int64 `json:"credential_profile_id"`
 
+	// PodfileLayer is a raw PodFile Layer source from frontend (takes precedence over individual config fields)
+	PodfileLayer *string `json:"podfile_layer"`
+
 	// ConfigOverrides allows users to override agent default configuration
 	ConfigOverrides map[string]interface{} `json:"config_overrides"`
 
@@ -82,6 +85,7 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 		PermissionMode:      req.PermissionMode,
 		InteractionMode:     req.InteractionMode,
 		CredentialProfileID: req.CredentialProfileID,
+		PodfileLayer:        req.PodfileLayer,
 		ConfigOverrides:     req.ConfigOverrides,
 		Cols:                req.Cols,
 		Rows:                req.Rows,
@@ -121,6 +125,8 @@ func mapOrchestratorErrorToHTTP(c *gin.Context, err error) {
 		apierr.BadRequest(c, apierr.RESUME_RUNNER_MISMATCH, "Resume requires same runner as source pod (Sandbox is local to runner)")
 	case errors.Is(err, agentpod.ErrUnsupportedInteractionMode):
 		apierr.BadRequest(c, apierr.UNSUPPORTED_INTERACTION_MODE, err.Error())
+	case errors.Is(err, agentpod.ErrInvalidPodfileLayer):
+		apierr.BadRequest(c, apierr.VALIDATION_FAILED, err.Error())
 
 	// Billing errors → 402
 	case errors.Is(err, ErrQuotaExceeded):

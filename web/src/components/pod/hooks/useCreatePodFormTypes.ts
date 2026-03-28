@@ -37,6 +37,13 @@ export interface CreatePodFormState {
   setPrompt: (prompt: string) => void;
   setAlias: (alias: string) => void;
 
+  // PodFile Layer
+  rawLayerMode: boolean;
+  rawLayerText: string;
+  podfileLayer: string;
+  setRawLayerMode: (enabled: boolean) => void;
+  setRawLayerText: (text: string) => void;
+
   // Computed
   selectedAgentSlug: string;
   supportedModes: string[]; // parsed from agent type's supported_modes

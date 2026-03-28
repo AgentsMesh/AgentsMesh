@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { PodData, AgentData, RepositoryData } from "@/lib/api";
 import { usePodCreationStore } from "@/stores/podCreation";
+import { buildPodfileLayer } from "@/lib/podfile-layer";
 import { submitCreatePod } from "./useCreatePodFormSubmit";
 import { usePrefsAutoFill, useCredentialProfiles } from "./useCreatePodFormEffects";
 import type { CreatePodFormState, FormValidationErrors } from "./useCreatePodFormTypes";
@@ -18,7 +19,8 @@ export type { CreatePodFormState, FormValidationErrors } from "./useCreatePodFor
 export function useCreatePodForm(
   availableAgents: AgentData[],
   repositories: RepositoryData[],
-  onSuccess?: (pod: PodData) => void
+  onSuccess?: (pod: PodData) => void,
+  configValues?: Record<string, unknown>
 ): CreatePodFormState {
   const { setLastChoices } = usePodCreationStore();
 
@@ -31,6 +33,10 @@ export function useCreatePodForm(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<FormValidationErrors>({});
+
+  // PodFile Layer state
+  const [rawLayerMode, setRawLayerModeState] = useState(false);
+  const [rawLayerText, setRawLayerText] = useState("");
 
   // Credential profiles (extracted hook)
   const creds = useCredentialProfiles(selectedAgent);
@@ -153,6 +159,21 @@ export function useCreatePodForm(
     [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, creds.selectedCredentialProfile, interactionMode, prompt, alias, onSuccess, validate, setLastChoices]
   );
 
+  // PodFile Layer: compute from form fields or use raw text
+  const generatedLayer = useMemo(() => {
+    // TODO: pass actual repositoryUrl/branchName/credentialType when available
+    return buildPodfileLayer({ configValues: {} });
+  }, []);
+
+  const podfileLayer = rawLayerMode ? rawLayerText : generatedLayer;
+
+  const setRawLayerMode = useCallback((enabled: boolean) => {
+    if (enabled && !rawLayerText) {
+      setRawLayerText(generatedLayer);
+    }
+    setRawLayerModeState(enabled);
+  }, [generatedLayer, rawLayerText]);
+
   return {
     selectedAgent, selectedRepository, selectedBranch,
     selectedCredentialProfile: creds.selectedCredentialProfile,
@@ -162,5 +183,7 @@ export function useCreatePodForm(
     setSelectedCredentialProfile: creds.setSelectedCredentialProfile,
     setInteractionMode, setPrompt, setAlias, selectedAgentSlug, supportedModes,
     loading, error, validationErrors, isValid, reset, validate, submit,
+    // PodFile Layer
+    rawLayerMode, rawLayerText, podfileLayer, setRawLayerMode, setRawLayerText,
   };
 }

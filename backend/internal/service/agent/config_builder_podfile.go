@@ -10,6 +10,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/podfile/merge"
 	"github.com/anthropics/agentsmesh/podfile/parser"
+	"github.com/anthropics/agentsmesh/podfile/serialize"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
@@ -26,43 +27,43 @@ func (b *ConfigBuilder) buildFromPodFile(
 		return nil, fmt.Errorf("podfile parse errors: %v", errs)
 	}
 
-	// 2. Merge config: defaults + user personal config + request overrides
-	config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentSlug, agent.ConfigValues(req.ConfigOverrides))
+	// 2. Build user layer: prefer direct PodFile layer from frontend, fallback to individual fields
+	var userLayerSrc string
+	if req.PodfileLayer != "" {
+		// Frontend sent raw PodFile Layer — use directly (already validated by caller)
+		userLayerSrc = req.PodfileLayer
+	} else {
+		// Backward compat: build layer from individual fields (MCP/API key path)
+		config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentSlug, agent.ConfigValues(req.ConfigOverrides))
+		userLayerSrc = buildUserLayer(config, req)
+	}
 
-	// 3. Build user layer from config overrides + repo/branch
-	userLayerSrc := buildUserLayer(config, req)
+	// 3. Parse and merge user layer into base
 	userProg, parseErrors := parser.Parse(userLayerSrc)
 	if len(parseErrors) > 0 {
 		return nil, fmt.Errorf("invalid user config layer: %s", parseErrors[0])
 	}
-
-	// 4. Validate AST merge (for future AST serializer)
 	_ = merge.Merge(baseProg, userProg)
 
-	// 5. Send concatenated source to Runner.
-	// Runner re-parses and evals the full source. Concatenation works correctly because:
-	// - Declaration eval uses assignment semantics (later overrides earlier)
-	// - SKILLS eval uses append (union semantics, same as merge)
-	// - REMOVE is collected and applied post-eval via ApplyRemoves
-	// - Statements (arg, file, etc.) are appended, which is the intended behavior
-	// TODO: implement AST serializer to replace concatenation for full correctness
-	mergedSource := *agentDef.PodfileSource + "\n" + userLayerSrc
+	// 4. Serialize merged AST to PodFile source
+	mergedSource := serialize.Serialize(baseProg)
 
-	// 6. Get credentials
+	// 5. Get credentials
 	creds, isRunnerHost, err := b.provider.GetEffectiveCredentialsForPod(ctx, req.UserID, req.AgentSlug, req.CredentialProfileID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
 
-	// 7. Build MCP context as JSON
+	// 6. Build MCP context as JSON
 	builtinMCP, installedMCP := b.buildMCPContext(ctx, req, agentDef.Slug)
 	builtinJSON, _ := json.Marshal(builtinMCP)
 	installedJSON, _ := json.Marshal(installedMCP)
 
-	// 8. Convert config values to string map for proto
+	// 7. Convert config values to string map for proto
+	config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentSlug, agent.ConfigValues(req.ConfigOverrides))
 	configValues := configToStringMap(config)
 
-	// 9. Build sandbox config (repo/branch/git creds — not in PodFile)
+	// 8. Build sandbox config (repo/branch/git creds — not in PodFile)
 	sandboxConfig := b.buildSandboxConfig(req)
 
 	return &runnerv1.CreatePodCommand{

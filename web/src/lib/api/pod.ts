@@ -83,6 +83,8 @@ export const podApi = {
     resume_agent_session?: boolean; // Whether to restore agent session (default: true when resuming)
     // Interaction mode
     interaction_mode?: "pty" | "acp"; // Pod interaction mode (default: "pty")
+    // PodFile Layer source (direct pass-through)
+    podfile_layer?: string;
   }) =>
     request<{ message: string; pod: PodData }>(
       orgPath("/pods"),

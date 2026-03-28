@@ -28,6 +28,7 @@ var (
 	ErrSourcePodAlreadyResumed    = errors.New("source pod already resumed")
 	ErrResumeRunnerMismatch       = errors.New("resume requires same runner")
 	ErrConfigBuildFailed          = errors.New("failed to build pod configuration")
+	ErrInvalidPodfileLayer        = errors.New("invalid podfile layer")
 	ErrRunnerDispatchFailed       = errors.New("failed to dispatch pod to runner")
 	ErrUnsupportedInteractionMode = errors.New("agent type does not support the requested interaction mode")
 )
@@ -51,6 +52,7 @@ type OrchestrateCreatePodRequest struct {
 	PermissionMode      *string
 	InteractionMode     *string
 	CredentialProfileID *int64
+	PodfileLayer        *string
 	ConfigOverrides     map[string]interface{}
 	Cols                int32
 	Rows                int32
