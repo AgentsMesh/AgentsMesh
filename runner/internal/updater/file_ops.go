@@ -3,6 +3,7 @@ package updater
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -33,16 +34,20 @@ func atomicReplaceWindows(src, dst string) error {
 		// If .old is locked from a previous run, try a timestamped name.
 		bakPath = fmt.Sprintf("%s.old.%d", dst, os.Getpid())
 		if err2 := os.Rename(dst, bakPath); err2 != nil {
+			slog.Error("Failed to backup original file during Windows replace", "dst", dst, "error", err2)
 			return fmt.Errorf("failed to backup original file: %w", err2)
 		}
+		slog.Warn("Used timestamped backup path due to locked .old file", "backup", bakPath)
 	}
 
 	// Move the new binary to the original path (now free).
 	if err := os.Rename(src, dst); err != nil {
 		// Rollback: restore the backup.
 		if rbErr := os.Rename(bakPath, dst); rbErr != nil {
+			slog.Error("Replace failed and rollback also failed", "replace_error", err, "rollback_error", rbErr)
 			return fmt.Errorf("failed to replace file (%v) and rollback also failed (%v)", err, rbErr)
 		}
+		slog.Error("Replace failed but rollback succeeded", "error", err)
 		return fmt.Errorf("failed to replace file (rollback succeeded): %w", err)
 	}
 

@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/sso"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
@@ -32,6 +33,7 @@ func (s *Service) UpdateConfig(ctx context.Context, id int64, req *UpdateConfigR
 
 	updates, err := s.buildUpdateMap(req)
 	if err != nil {
+		slog.Error("failed to build SSO update map", "config_id", id, "protocol", existing.Protocol, "error", err)
 		return nil, fmt.Errorf("failed to build update map: %w", err)
 	}
 	if len(updates) == 0 {
@@ -42,8 +44,11 @@ func (s *Service) UpdateConfig(ctx context.Context, id int64, req *UpdateConfigR
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrConfigNotFound
 		}
+		slog.Error("failed to update SSO config", "config_id", id, "protocol", existing.Protocol, "error", err)
 		return nil, fmt.Errorf("failed to update SSO config: %w", err)
 	}
+
+	slog.Info("SSO config updated", "config_id", id, "protocol", existing.Protocol, "domain", existing.Domain)
 
 	return s.GetConfig(ctx, id)
 }
@@ -75,6 +80,7 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 		if *req.OIDCClientSecret != "" {
 			encrypted, err := crypto.EncryptWithKey(*req.OIDCClientSecret, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt OIDC client secret", "error", err)
 				return nil, fmt.Errorf("failed to encrypt OIDC client secret: %w", err)
 			}
 			updates["oidc_client_secret_encrypted"] = encrypted
@@ -110,6 +116,7 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 		if *req.SAMLIDPCert != "" {
 			encrypted, err := crypto.EncryptWithKey(*req.SAMLIDPCert, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt SAML IdP cert", "error", err)
 				return nil, fmt.Errorf("failed to encrypt SAML IdP cert: %w", err)
 			}
 			updates["saml_idp_cert_encrypted"] = encrypted
@@ -142,6 +149,7 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 		if *req.LDAPBindPassword != "" {
 			encrypted, err := crypto.EncryptWithKey(*req.LDAPBindPassword, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt LDAP bind password", "error", err)
 				return nil, fmt.Errorf("failed to encrypt LDAP bind password: %w", err)
 			}
 			updates["ldap_bind_password_encrypted"] = encrypted

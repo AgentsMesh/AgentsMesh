@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // listTools retrieves available tools from the server
@@ -45,6 +47,7 @@ func (s *Server) GetTools() []*Tool {
 
 // CallTool calls an MCP tool
 func (s *Server) CallTool(ctx context.Context, name string, arguments map[string]interface{}) (json.RawMessage, error) {
+	log := logger.MCP()
 	params := map[string]interface{}{
 		"name":      name,
 		"arguments": arguments,
@@ -52,10 +55,12 @@ func (s *Server) CallTool(ctx context.Context, name string, arguments map[string
 
 	resp, err := s.call(ctx, "tools/call", params)
 	if err != nil {
+		log.Error("MCP tool call RPC failed", "server", s.name, "tool", name, "error", err)
 		return nil, err
 	}
 
 	if resp.Error != nil {
+		log.Error("MCP tool call returned error", "server", s.name, "tool", name, "error", resp.Error.Message)
 		return nil, fmt.Errorf("tool call failed: %s", resp.Error.Message)
 	}
 
@@ -69,13 +74,16 @@ func (s *Server) CallTool(ctx context.Context, name string, arguments map[string
 	}
 
 	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		log.Error("Failed to parse MCP tool result", "server", s.name, "tool", name, "error", err)
 		return nil, fmt.Errorf("failed to parse tool result: %w", err)
 	}
 
 	if result.IsError {
 		if len(result.Content) > 0 && result.Content[0].Text != "" {
+			log.Warn("MCP tool returned error content", "server", s.name, "tool", name, "error", result.Content[0].Text)
 			return nil, fmt.Errorf("tool error: %s", result.Content[0].Text)
 		}
+		log.Warn("MCP tool returned error without details", "server", s.name, "tool", name)
 		return nil, fmt.Errorf("tool returned error")
 	}
 

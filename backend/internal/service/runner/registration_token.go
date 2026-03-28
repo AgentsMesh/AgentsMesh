@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
@@ -57,8 +58,11 @@ func (s *Service) GenerateGRPCRegistrationToken(ctx context.Context, orgID, user
 	}
 
 	if err := s.repo.CreateRegistrationToken(ctx, regToken); err != nil {
+		slog.Error("failed to create registration token", "org_id", orgID, "user_id", userID, "error", err)
 		return nil, fmt.Errorf("failed to create registration token: %w", err)
 	}
+
+	slog.Info("registration token generated", "org_id", orgID, "user_id", userID)
 
 	return &GenerateGRPCRegistrationTokenResponse{
 		Token:     token,
@@ -77,14 +81,17 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 	// Find the token first (read-only check)
 	regToken, err := s.repo.GetRegistrationTokenByHash(ctx, tokenHash)
 	if err != nil {
+		slog.Error("failed to lookup registration token", "error", err)
 		return nil, err
 	}
 	if regToken == nil {
+		slog.Warn("invalid registration token presented")
 		return nil, ErrInvalidToken
 	}
 
 	// Basic validation (before transaction)
 	if regToken.IsExpired() {
+		slog.Warn("expired registration token presented", "token_id", regToken.ID)
 		return nil, ErrTokenExpired
 	}
 
@@ -100,6 +107,7 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 	// Check runner quota
 	if s.billingService != nil {
 		if err := s.billingService.CheckQuota(ctx, regToken.OrganizationID, "runners", 1); err != nil {
+			slog.Warn("runner quota exceeded", "org_id", regToken.OrganizationID)
 			return nil, ErrRunnerQuotaExceeded
 		}
 	}
@@ -120,6 +128,7 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		return nil, err
 	}
 	if exists {
+		slog.Warn("runner already exists", "org_id", regToken.OrganizationID, "node_id", nodeID)
 		return nil, ErrRunnerAlreadyExists
 	}
 
@@ -151,8 +160,11 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		keyPEM = certInfo.KeyPEM
 		return nil
 	}); err != nil {
+		slog.Error("runner registration with token failed", "org_id", regToken.OrganizationID, "node_id", nodeID, "error", err)
 		return nil, err
 	}
+
+	slog.Info("runner registered with token", "runner_id", r.ID, "org_id", regToken.OrganizationID, "node_id", nodeID, "org_slug", orgSlug)
 
 	return &RegisterWithTokenResponse{
 		RunnerID:      r.ID,

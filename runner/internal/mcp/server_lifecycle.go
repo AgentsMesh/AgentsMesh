@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/anthropics/agentsmesh/runner/internal/envfilter"
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/process"
 )
 
@@ -45,10 +46,13 @@ func NewServer(cfg *Config) *Server {
 
 // Start starts the MCP server process
 func (s *Server) Start(ctx context.Context) error {
+	log := logger.MCP()
+
 	// Pre-check: verify the command exists before acquiring the lock.
 	// On Windows, exec.CommandContext may fail with a cryptic error if the
 	// binary is not on PATH. LookPath gives a clear "not found" message.
 	if _, err := exec.LookPath(s.command); err != nil {
+		log.Error("MCP server command not found", "name", s.name, "command", s.command, "error", err)
 		return fmt.Errorf("MCP server command not found: %s: %w", s.command, err)
 	}
 
@@ -73,18 +77,21 @@ func (s *Server) Start(ctx context.Context) error {
 	s.stdin, err = s.cmd.StdinPipe()
 	if err != nil {
 		s.mu.Unlock()
+		log.Error("Failed to create stdin pipe", "name", s.name, "error", err)
 		return fmt.Errorf("failed to create stdin pipe: %w", err)
 	}
 
 	s.stdout, err = s.cmd.StdoutPipe()
 	if err != nil {
 		s.mu.Unlock()
+		log.Error("Failed to create stdout pipe", "name", s.name, "error", err)
 		return fmt.Errorf("failed to create stdout pipe: %w", err)
 	}
 
 	// Start process
 	if err := s.cmd.Start(); err != nil {
 		s.mu.Unlock()
+		log.Error("Failed to start MCP server process", "name", s.name, "command", s.command, "error", err)
 		return fmt.Errorf("failed to start MCP server: %w", err)
 	}
 
@@ -99,9 +106,11 @@ func (s *Server) Start(ctx context.Context) error {
 	// Initialize the server
 	if err := s.initialize(ctx); err != nil {
 		s.Stop()
+		log.Error("Failed to initialize MCP server", "name", s.name, "error", err)
 		return fmt.Errorf("failed to initialize MCP server: %w", err)
 	}
 
+	log.Info("MCP server started and initialized", "name", s.name)
 	return nil
 }
 

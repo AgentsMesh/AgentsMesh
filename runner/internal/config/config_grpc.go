@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,24 +63,28 @@ func (c *Config) GetCertsDir() string {
 func (c *Config) SaveCertificates(certPEM, keyPEM, caCertPEM []byte) error {
 	certsDir := c.GetCertsDir()
 	if err := os.MkdirAll(certsDir, 0700); err != nil {
+		slog.Error("Failed to create certs directory", "path", certsDir, "error", err)
 		return err
 	}
 
 	// Save certificate
 	certPath := filepath.Join(certsDir, "runner.crt")
 	if err := os.WriteFile(certPath, certPEM, 0600); err != nil {
+		slog.Error("Failed to write certificate file", "path", certPath, "error", err)
 		return err
 	}
 
 	// Save private key
 	keyPath := filepath.Join(certsDir, "runner.key")
 	if err := os.WriteFile(keyPath, keyPEM, 0600); err != nil {
+		slog.Error("Failed to write private key file", "path", keyPath, "error", err)
 		return err
 	}
 
 	// Save CA certificate
 	caPath := filepath.Join(certsDir, "ca.crt")
 	if err := os.WriteFile(caPath, caCertPEM, 0644); err != nil {
+		slog.Error("Failed to write CA certificate file", "path", caPath, "error", err)
 		return err
 	}
 
@@ -88,6 +93,7 @@ func (c *Config) SaveCertificates(certPEM, keyPEM, caCertPEM []byte) error {
 	c.KeyFile = keyPath
 	c.CAFile = caPath
 
+	slog.Info("Certificates saved successfully", "dir", certsDir)
 	return nil
 }
 
@@ -99,6 +105,7 @@ func (c *Config) SaveCertificates(certPEM, keyPEM, caCertPEM []byte) error {
 func UpdateGRPCEndpointInFile(configFile, newEndpoint string) error {
 	data, err := os.ReadFile(configFile)
 	if err != nil {
+		slog.Error("Failed to read config file for endpoint update", "path", configFile, "error", err)
 		return errors.New("failed to read config file: " + err.Error())
 	}
 
@@ -132,9 +139,11 @@ func UpdateGRPCEndpointInFile(configFile, newEndpoint string) error {
 		lineEnding = "\r\n"
 	}
 	if err := os.WriteFile(configFile, []byte(strings.Join(lines, lineEnding)), 0600); err != nil {
+		slog.Error("Failed to write config file for endpoint update", "path", configFile, "error", err)
 		return errors.New("failed to write config file: " + err.Error())
 	}
 
+	slog.Info("gRPC endpoint updated in config file", "path", configFile, "endpoint", newEndpoint)
 	return nil
 }
 

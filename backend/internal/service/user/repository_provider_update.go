@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"log/slog"
 
 	domainUser "github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
@@ -58,6 +59,7 @@ func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, provider
 		} else if s.encryptionKey != "" {
 			encrypted, err := crypto.EncryptWithKey(*req.ClientSecret, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt client secret", "user_id", userID, "provider_id", providerID, "error", err)
 				return nil, err
 			}
 			updates["client_secret_encrypted"] = encrypted
@@ -72,6 +74,7 @@ func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, provider
 		} else if s.encryptionKey != "" {
 			encrypted, err := crypto.EncryptWithKey(*req.BotToken, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt bot token", "user_id", userID, "provider_id", providerID, "error", err)
 				return nil, err
 			}
 			updates["bot_token_encrypted"] = encrypted
@@ -89,8 +92,11 @@ func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, provider
 	}
 
 	if err := s.repo.UpdateRepositoryProvider(ctx, provider, updates); err != nil {
+		slog.Error("failed to update repository provider", "user_id", userID, "provider_id", providerID, "error", err)
 		return nil, err
 	}
+
+	slog.Info("repository provider updated", "user_id", userID, "provider_id", providerID)
 
 	return s.GetRepositoryProvider(ctx, userID, providerID)
 }

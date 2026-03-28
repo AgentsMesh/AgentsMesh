@@ -1,15 +1,13 @@
 package cache
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 )
 
@@ -24,6 +22,7 @@ type SkillCacheManager struct {
 // The directory is created if it doesn't exist.
 func NewSkillCacheManager(cacheDir string) (*SkillCacheManager, error) {
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		slog.Error("Failed to create skill cache directory", "path", cacheDir, "error", err)
 		return nil, fmt.Errorf("failed to create cache directory %s: %w", cacheDir, err)
 	}
 	return &SkillCacheManager{cacheDir: cacheDir}, nil
@@ -70,6 +69,7 @@ func (m *SkillCacheManager) Put(sha string, data io.Reader) (string, error) {
 	// Write to temp file first — outside lock to avoid blocking during network IO
 	tmpFile, err := os.CreateTemp(m.cacheDir, "download-*.tmp")
 	if err != nil {
+		slog.Error("Failed to create temp file for cache put", "dir", m.cacheDir, "error", err)
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tmpPath := tmpFile.Name()
@@ -101,6 +101,7 @@ func (m *SkillCacheManager) Put(sha string, data io.Reader) (string, error) {
 	m.mu.Unlock()
 
 	if renameErr != nil {
+		slog.Error("Failed to rename temp file to cache", "sha", sha, "error", renameErr)
 		return "", fmt.Errorf("failed to rename temp file to cache: %w", renameErr)
 	}
 	tmpPath = "" // Prevent cleanup
@@ -139,6 +140,7 @@ func (m *SkillCacheManager) PutAndVerify(expectedSha string, data io.Reader) (st
 		m.mu.Lock()
 		os.Remove(m.cachePath(expectedSha))
 		m.mu.Unlock()
+		slog.Error("Skill cache SHA mismatch", "expected", expectedSha, "got", computedSha)
 		return "", fmt.Errorf("SHA mismatch: expected %s, got %s", expectedSha, computedSha)
 	}
 
@@ -154,6 +156,7 @@ func (m *SkillCacheManager) ExtractTo(sha string, targetDir string) error {
 	m.mu.RUnlock()
 
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
+		slog.Warn("Skill cache miss during extract", "sha", sha)
 		return fmt.Errorf("cache miss for SHA %s", sha)
 	}
 
@@ -193,87 +196,4 @@ func isValidSHA(sha string) bool {
 		return false
 	}
 	return true
-}
-
-// extractTarGz extracts a tar.gz archive to the specified directory.
-func extractTarGz(r io.Reader, targetDir string) error {
-	gz, err := gzip.NewReader(r)
-	if err != nil {
-		return fmt.Errorf("failed to create gzip reader: %w", err)
-	}
-	defer gz.Close()
-
-	// Limit total entries to prevent inode exhaustion (tar bomb)
-	const maxEntries = 10000
-
-	tr := tar.NewReader(gz)
-	entryCount := 0
-	for {
-		header, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("failed to read tar entry: %w", err)
-		}
-
-		entryCount++
-		if entryCount > maxEntries {
-			return fmt.Errorf("tar archive exceeds maximum entry count (%d)", maxEntries)
-		}
-
-		// Sanitize path to prevent directory traversal
-		name := header.Name
-		if strings.Contains(name, "..") {
-			continue
-		}
-		targetPath := filepath.Join(targetDir, filepath.Clean(name))
-
-		// Ensure target path is within target directory
-		if !strings.HasPrefix(targetPath, filepath.Clean(targetDir)+string(os.PathSeparator)) &&
-			targetPath != filepath.Clean(targetDir) {
-			continue
-		}
-
-		switch header.Typeflag {
-		case tar.TypeDir:
-			// Restrict directory permissions to prevent world-writable dirs
-			dirMode := os.FileMode(header.Mode) & 0755
-			if dirMode == 0 {
-				dirMode = 0755
-			}
-			if err := os.MkdirAll(targetPath, dirMode); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", targetPath, err)
-			}
-		case tar.TypeReg:
-			// Ensure parent directory exists
-			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-				return fmt.Errorf("failed to create parent dir for %s: %w", targetPath, err)
-			}
-
-			// Restrict file permissions: strip execute bits, cap at 0644
-			mode := os.FileMode(header.Mode) & 0644
-			if mode == 0 {
-				mode = 0644
-			}
-
-			outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
-			if err != nil {
-				return fmt.Errorf("failed to create file %s: %w", targetPath, err)
-			}
-
-			// Limit extraction size to prevent zip bombs (50MB per file)
-			const maxFileSize = 50 * 1024 * 1024
-			if _, err := io.Copy(outFile, io.LimitReader(tr, maxFileSize)); err != nil {
-				outFile.Close()
-				return fmt.Errorf("failed to extract file %s: %w", targetPath, err)
-			}
-			outFile.Close()
-		default:
-			// Skip symlinks, hardlinks, and other special types
-			continue
-		}
-	}
-
-	return nil
 }

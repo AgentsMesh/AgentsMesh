@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/stripe/stripe-go/v76"
@@ -93,8 +94,11 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 
 	sess, err := checkoutsession.New(params)
 	if err != nil {
+		slog.Error("failed to create Stripe checkout session", "org_id", req.OrganizationID, "order_type", req.OrderType, "error", err)
 		return nil, fmt.Errorf("failed to create checkout session: %w", err)
 	}
+
+	slog.Info("Stripe checkout session created", "session_id", sess.ID, "org_id", req.OrganizationID, "order_type", req.OrderType)
 
 	return &types.CheckoutResponse{
 		SessionID:       sess.ID,
@@ -109,6 +113,7 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (string, error) {
 	sess, err := checkoutsession.Get(sessionID, nil)
 	if err != nil {
+		slog.Error("failed to get Stripe checkout session", "session_id", sessionID, "error", err)
 		return "", fmt.Errorf("failed to get checkout session: %w", err)
 	}
 
@@ -128,6 +133,7 @@ func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (str
 func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature string) (*types.WebhookEvent, error) {
 	event, err := webhook.ConstructEvent(payload, signature, p.webhookSecret)
 	if err != nil {
+		slog.Error("failed to verify Stripe webhook signature", "error", err)
 		return nil, fmt.Errorf("failed to verify webhook signature: %w", err)
 	}
 
@@ -142,6 +148,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	case billing.WebhookEventCheckoutCompleted:
 		var sess stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
+			slog.Error("failed to parse Stripe checkout session", "event_id", event.ID, "error", err)
 			return nil, fmt.Errorf("failed to parse checkout session: %w", err)
 		}
 		result.ExternalOrderNo = sess.ID
@@ -161,6 +168,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	case billing.WebhookEventInvoicePaid:
 		var inv stripe.Invoice
 		if err := json.Unmarshal(event.Data.Raw, &inv); err != nil {
+			slog.Error("failed to parse Stripe invoice", "event_id", event.ID, "error", err)
 			return nil, fmt.Errorf("failed to parse invoice: %w", err)
 		}
 		result.ExternalOrderNo = inv.ID
@@ -177,6 +185,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	case billing.WebhookEventInvoiceFailed:
 		var inv stripe.Invoice
 		if err := json.Unmarshal(event.Data.Raw, &inv); err != nil {
+			slog.Error("failed to parse Stripe invoice", "event_id", event.ID, "error", err)
 			return nil, fmt.Errorf("failed to parse invoice: %w", err)
 		}
 		result.ExternalOrderNo = inv.ID
@@ -196,6 +205,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	case billing.WebhookEventSubscriptionDeleted:
 		var sub stripe.Subscription
 		if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
+			slog.Error("failed to parse Stripe subscription", "event_id", event.ID, "error", err)
 			return nil, fmt.Errorf("failed to parse subscription: %w", err)
 		}
 		result.SubscriptionID = sub.ID
@@ -207,6 +217,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	case billing.WebhookEventSubscriptionUpdated:
 		var sub stripe.Subscription
 		if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
+			slog.Error("failed to parse Stripe subscription", "event_id", event.ID, "error", err)
 			return nil, fmt.Errorf("failed to parse subscription: %w", err)
 		}
 		result.SubscriptionID = sub.ID
