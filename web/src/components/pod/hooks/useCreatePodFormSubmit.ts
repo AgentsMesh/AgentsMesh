@@ -15,6 +15,7 @@ export async function submitCreatePod(params: {
   alias: string;
   selectedRunnerId: number | null | undefined;
   pluginConfig: Record<string, unknown>;
+  podfileLayer?: string;
   options?: { ticketSlug?: string; initialPrompt?: string; cols?: number; rows?: number };
 }): Promise<PodData | null> {
   const {
@@ -28,6 +29,7 @@ export async function submitCreatePod(params: {
     alias,
     selectedRunnerId,
     pluginConfig,
+    podfileLayer,
     options,
   } = params;
 
@@ -53,6 +55,7 @@ export async function submitCreatePod(params: {
     cols: options?.cols,
     rows: options?.rows,
     interaction_mode: interactionMode !== "pty" ? interactionMode : undefined,
+    podfile_layer: podfileLayer || undefined,
   });
 
   return response.pod || null;

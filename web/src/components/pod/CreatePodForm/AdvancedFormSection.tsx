@@ -38,9 +38,14 @@ export function AdvancedFormSection({
 }: AdvancedFormSectionProps) {
   const t = useTranslations();
 
+  // When source mode is ON, hide form sections represented in the PodFile Layer
+  // (ConfigForm, RepositorySelect, BranchInput, CredentialSelect)
+  // Keep: Alias, RunnerSelect (not represented in PodFile Layer)
+  const hideFormSections = form.rawLayerMode;
+
   return (
     <AdvancedOptions t={t}>
-      {/* Pod Alias (optional display name) */}
+      {/* Pod Alias (optional display name) — always visible */}
       <div>
         <label htmlFor="pod-alias" className="block text-sm font-medium mb-1">
           {t("ide.createPod.alias")}
@@ -54,7 +59,7 @@ export function AdvancedFormSection({
         />
       </div>
 
-      {/* Runner Select (manual override, optional) */}
+      {/* Runner Select (manual override, optional) — always visible */}
       <RunnerSelect
         runners={runners}
         selectedRunnerId={selectedRunner?.id ?? null}
@@ -63,58 +68,63 @@ export function AdvancedFormSection({
         t={t}
       />
 
-      {/* Credential Profile Select */}
-      <CredentialSelect
-        profiles={form.credentialProfiles}
-        selectedProfileId={form.selectedCredentialProfile}
-        onSelect={form.setSelectedCredentialProfile}
-        loading={form.loadingCredentials}
-        t={t}
-      />
+      {/* Form-mode-only sections (hidden when source mode is ON) */}
+      {!hideFormSections && (
+        <>
+          {/* Credential Profile Select */}
+          <CredentialSelect
+            profiles={form.credentialProfiles}
+            selectedProfileId={form.selectedCredentialProfile}
+            onSelect={form.setSelectedCredentialProfile}
+            loading={form.loadingCredentials}
+            t={t}
+          />
 
-      {/* Repository Select */}
-      <RepositorySelect
-        repositories={repositories}
-        selectedRepositoryId={form.selectedRepository}
-        onSelect={form.setSelectedRepository}
-        t={t}
-      />
+          {/* Repository Select */}
+          <RepositorySelect
+            repositories={repositories}
+            selectedRepositoryId={form.selectedRepository}
+            onSelect={form.setSelectedRepository}
+            t={t}
+          />
 
-      {/* Branch Input */}
-      {form.selectedRepository && (
-        <BranchInput
-          value={form.selectedBranch}
-          onChange={form.setSelectedBranch}
-          error={form.validationErrors.branch}
-          t={t}
-        />
-      )}
-
-      {/* Agent Configuration Section */}
-      {loadingConfig ? (
-        <div className="flex items-center justify-center py-4">
-          <Spinner size="sm" className="mr-2" />
-          <span className="text-sm text-muted-foreground">
-            {t("ide.createPod.loadingPlugins")}
-          </span>
-        </div>
-      ) : (
-        configFields.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              {t("ide.createPod.pluginConfig")}
-            </label>
-            <ConfigForm
-              fields={configFields}
-              values={configValues}
-              onChange={handleConfigChange}
-              agentSlug={form.selectedAgentSlug}
+          {/* Branch Input */}
+          {form.selectedRepository && (
+            <BranchInput
+              value={form.selectedBranch}
+              onChange={form.setSelectedBranch}
+              error={form.validationErrors.branch}
+              t={t}
             />
-          </div>
-        )
+          )}
+
+          {/* Agent Configuration Section */}
+          {loadingConfig ? (
+            <div className="flex items-center justify-center py-4">
+              <Spinner size="sm" className="mr-2" />
+              <span className="text-sm text-muted-foreground">
+                {t("ide.createPod.loadingPlugins")}
+              </span>
+            </div>
+          ) : (
+            configFields.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {t("ide.createPod.pluginConfig")}
+                </label>
+                <ConfigForm
+                  fields={configFields}
+                  values={configValues}
+                  onChange={handleConfigChange}
+                  agentSlug={form.selectedAgentSlug}
+                />
+              </div>
+            )
+          )}
+        </>
       )}
 
-      {/* PodFile Layer Editor */}
+      {/* PodFile Layer Editor — always visible */}
       <PodfileLayerEditor
         generatedLayer={form.podfileLayer}
         rawMode={form.rawLayerMode}

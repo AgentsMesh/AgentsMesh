@@ -48,6 +48,8 @@ const (
 	KW_OFF            // OFF
 	KW_OPTIONAL       // OPTIONAL
 	KW_REMOVE         // REMOVE
+	KW_MODE           // MODE
+	KW_CREDENTIAL     // CREDENTIAL
 
 	// Config type keywords (uppercase)
 	KW_BOOL   // BOOL
@@ -106,6 +108,8 @@ var declarationKeywords = map[string]TokenType{
 	"OFF":            KW_OFF,
 	"OPTIONAL":       KW_OPTIONAL,
 	"REMOVE":         KW_REMOVE,
+	"MODE":           KW_MODE,
+	"CREDENTIAL":     KW_CREDENTIAL,
 	"BOOL":           KW_BOOL,
 	"STRING":         KW_STRING,
 	"NUMBER":         KW_NUMBER,
@@ -159,6 +163,7 @@ func (t TokenType) String() string {
 		KW_ENV: "ENV", KW_REPO: "REPO", KW_BRANCH: "BRANCH",
 		KW_GIT_CREDENTIAL: "GIT_CREDENTIAL", KW_MCP: "MCP", KW_SKILLS: "SKILLS",
 		KW_SETUP: "SETUP", KW_ON: "ON", KW_OFF: "OFF", KW_OPTIONAL: "OPTIONAL", KW_REMOVE: "REMOVE",
+		KW_MODE: "MODE", KW_CREDENTIAL: "CREDENTIAL",
 		KW_BOOL: "BOOL", KW_STRING: "STRING_TYPE", KW_NUMBER: "NUMBER_TYPE",
 		KW_SECRET: "SECRET", KW_TEXT: "TEXT", KW_SELECT: "SELECT",
 		KW_ARG: "arg", KW_ENV_L: "env", KW_FILE: "file", KW_MKDIR: "mkdir",

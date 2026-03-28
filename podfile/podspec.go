@@ -7,13 +7,15 @@ package podfile
 //
 // PodSpec is produced by extract.Extract() and is JSON-serializable.
 type PodSpec struct {
-	Agent       AgentSpec       `json:"agent"`
-	Config      []ConfigSpec    `json:"config,omitempty"`
-	Env         []EnvSpec       `json:"env,omitempty"`
-	Repo        *RepoSpec       `json:"repo,omitempty"`
-	MCP         *MCPSpec        `json:"mcp,omitempty"`
-	Skills      []string        `json:"skills,omitempty"`
-	Setup       *SetupSpec      `json:"setup,omitempty"`
+	Agent             AgentSpec       `json:"agent"`
+	Config            []ConfigSpec    `json:"config,omitempty"`
+	Env               []EnvSpec       `json:"env,omitempty"`
+	Repo              *RepoSpec       `json:"repo,omitempty"`
+	MCP               *MCPSpec        `json:"mcp,omitempty"`
+	Skills            []string        `json:"skills,omitempty"`
+	Setup             *SetupSpec      `json:"setup,omitempty"`
+	Mode              string          `json:"mode,omitempty"`
+	CredentialProfile string          `json:"credential_profile,omitempty"`
 }
 
 // AgentSpec describes which agent CLI to use.

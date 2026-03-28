@@ -119,8 +119,37 @@ export function useCreatePodForm(
     setAlias("");
     setError(null);
     setValidationErrors({});
+    setRawLayerModeState(false);
+    setRawLayerText("");
     prefsInitializedRef.current = false;
   }, [creds, prefsInitializedRef]);
+
+  // PodFile Layer: compute from form fields
+  const generatedLayer = useMemo(() => {
+    const repoUrl = selectedRepository
+      ? repositories.find((r) => r.id === selectedRepository)?.clone_url
+      : undefined;
+    const credType = creds.selectedCredentialProfile === RUNNER_HOST_PROFILE_ID
+      ? undefined
+      : creds.credentialProfiles.find(
+          (p) => p.id === creds.selectedCredentialProfile
+        )?.name;
+    return buildPodfileLayer({
+      configValues: configValues ?? {},
+      repositoryUrl: repoUrl,
+      branchName: selectedBranch || undefined,
+      credentialType: credType,
+    });
+  }, [configValues, selectedRepository, repositories, selectedBranch, creds.selectedCredentialProfile, creds.credentialProfiles]);
+
+  const podfileLayer = rawLayerMode ? rawLayerText : generatedLayer;
+
+  const setRawLayerMode = useCallback((enabled: boolean) => {
+    if (enabled && !rawLayerText) {
+      setRawLayerText(generatedLayer);
+    }
+    setRawLayerModeState(enabled);
+  }, [generatedLayer, rawLayerText]);
 
   const submit = useCallback(
     async (
@@ -136,7 +165,8 @@ export function useCreatePodForm(
         const pod = await submitCreatePod({
           selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch,
           selectedCredentialProfile: creds.selectedCredentialProfile,
-          interactionMode, prompt, alias, selectedRunnerId, pluginConfig, options,
+          interactionMode, prompt, alias, selectedRunnerId, pluginConfig,
+          podfileLayer: podfileLayer || undefined, options,
         });
         if (pod) {
           setLastChoices({
@@ -156,23 +186,8 @@ export function useCreatePodForm(
         setLoading(false);
       }
     },
-    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, creds.selectedCredentialProfile, interactionMode, prompt, alias, onSuccess, validate, setLastChoices]
+    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, creds.selectedCredentialProfile, interactionMode, prompt, alias, podfileLayer, onSuccess, validate, setLastChoices]
   );
-
-  // PodFile Layer: compute from form fields or use raw text
-  const generatedLayer = useMemo(() => {
-    // TODO: pass actual repositoryUrl/branchName/credentialType when available
-    return buildPodfileLayer({ configValues: {} });
-  }, []);
-
-  const podfileLayer = rawLayerMode ? rawLayerText : generatedLayer;
-
-  const setRawLayerMode = useCallback((enabled: boolean) => {
-    if (enabled && !rawLayerText) {
-      setRawLayerText(generatedLayer);
-    }
-    setRawLayerModeState(enabled);
-  }, [generatedLayer, rawLayerText]);
 
   return {
     selectedAgent, selectedRepository, selectedBranch,

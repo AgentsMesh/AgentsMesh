@@ -60,6 +60,10 @@ func writeDecl(b *strings.Builder, decl parser.Declaration) {
 		writeSetupDecl(b, d)
 	case *parser.RemoveDecl:
 		fmt.Fprintf(b, "REMOVE %s %s", d.Target, d.Name)
+	case *parser.ModeDecl:
+		fmt.Fprintf(b, "MODE %s", d.Mode)
+	case *parser.CredentialDecl:
+		fmt.Fprintf(b, "CREDENTIAL %s", quoteIfNeeded(d.ProfileName))
 	}
 }
 

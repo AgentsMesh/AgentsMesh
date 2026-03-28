@@ -36,6 +36,10 @@ func evalDecl(ctx *Context, decl parser.Declaration) error {
 		// CONFIG is metadata for UI; no build-time side effect.
 	case *parser.RemoveDecl:
 		return evalRemoveDecl(ctx, d)
+	case *parser.ModeDecl:
+		ctx.Result.Mode = d.Mode
+	case *parser.CredentialDecl:
+		ctx.Result.CredentialProfile = d.ProfileName
 	}
 	return nil
 }
