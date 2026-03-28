@@ -140,7 +140,14 @@ func (m *AgentMessage) CanRetry() bool {
 	return m.Status == MessageStatusFailed && m.DeliveryAttempts < m.MaxRetries
 }
 
-// DeadLetterEntry represents a failed message moved to dead letter queue
+// DeadLetterEntry represents a failed message moved to dead letter queue.
+//
+// Lifecycle:
+//  1. Created when a message exceeds MaxRetries (see RecordDeliveryFailure).
+//  2. An admin may replay it via ReplayDeadLetter, which resets the original
+//     message to "pending" and records ReplayedAt + ReplayResult here.
+//  3. Old entries are garbage-collected by the "dlq_cleanup" scheduled task
+//     (TTL default: 30 days). See service/tasks/Manager for registration.
 type DeadLetterEntry struct {
 	ID int64 `gorm:"primaryKey" json:"id"`
 
@@ -148,11 +155,11 @@ type DeadLetterEntry struct {
 	OriginalMessageID int64 `gorm:"not null;uniqueIndex" json:"original_message_id"`
 
 	// Failure information
-	Reason       string `gorm:"size:500;not null" json:"reason"`
-	FinalAttempt int    `gorm:"not null" json:"final_attempt"`
+	Reason       string    `gorm:"size:500;not null" json:"reason"`
+	FinalAttempt int       `gorm:"not null" json:"final_attempt"`
 	MovedAt      time.Time `gorm:"not null;default:now()" json:"moved_at"`
 
-	// Replay information
+	// Replay information — populated by ReplayDeadLetter
 	ReplayedAt   *time.Time `json:"replayed_at,omitempty"`
 	ReplayResult *string    `gorm:"size:500" json:"replay_result,omitempty"`
 

@@ -29,6 +29,7 @@ type Server struct {
 	tools      map[string]*Tool
 	resources  map[string]*Resource
 	running    bool
+	readerDone sync.WaitGroup
 }
 
 // NewServer creates a new MCP server instance
@@ -98,6 +99,7 @@ func (s *Server) Start(ctx context.Context) error {
 	s.running = true
 
 	// Start reading responses
+	s.readerDone.Add(1)
 	go s.readResponses()
 
 	// Release lock before initialize (which needs to acquire lock for RPC calls)
@@ -117,9 +119,9 @@ func (s *Server) Start(ctx context.Context) error {
 // Stop stops the MCP server
 func (s *Server) Stop() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	if !s.running {
+		s.mu.Unlock()
 		return nil
 	}
 
@@ -138,11 +140,23 @@ func (s *Server) Stop() error {
 		s.cmd.Wait()
 	}
 
-	// Cancel all pending requests
+	// Close stdout to unblock readResponses (prevents FD leak)
+	if s.stdout != nil {
+		s.stdout.Close()
+	}
+
+	// Release the lock and wait for readResponses goroutine to exit
+	// before closing pending channels — this prevents send-on-closed-channel.
+	s.mu.Unlock()
+	s.readerDone.Wait()
+
+	// Now safe to close pending channels — readResponses has exited
+	s.mu.Lock()
 	for _, ch := range s.pending {
 		close(ch)
 	}
 	s.pending = make(map[int64]chan *Response)
+	s.mu.Unlock()
 
 	return nil
 }

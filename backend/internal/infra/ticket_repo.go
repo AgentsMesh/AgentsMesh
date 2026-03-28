@@ -86,7 +86,9 @@ func (r *ticketRepository) List(ctx context.Context, f *ticket.TicketListFilter)
 	}
 
 	var total int64
-	query.Count(&total)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	var tickets []*ticket.Ticket
 	if err := query.
@@ -110,10 +112,12 @@ func (r *ticketRepository) CreateTicketAtomic(ctx context.Context, p *ticket.Cre
 		// Generate next number (scoped to org + prefix to prevent race conditions)
 		var maxNumber int
 		likePattern := fmt.Sprintf("%s-%%", p.Prefix)
-		tx.Model(&ticket.Ticket{}).
+		if err := tx.Model(&ticket.Ticket{}).
 			Where("organization_id = ? AND slug LIKE ?", p.Ticket.OrganizationID, likePattern).
 			Select("COALESCE(MAX(number), 0)").
-			Scan(&maxNumber)
+			Scan(&maxNumber).Error; err != nil {
+			return err
+		}
 
 		p.Ticket.Number = maxNumber + 1
 		p.Ticket.Slug = fmt.Sprintf("%s-%d", p.Prefix, p.Ticket.Number)

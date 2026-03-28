@@ -106,6 +106,7 @@ func (s *Server) send(req *Request) error {
 
 // readResponses reads responses from the server
 func (s *Server) readResponses() {
+	defer s.readerDone.Done()
 	decoder := json.NewDecoder(s.stdout)
 
 	for {
@@ -117,11 +118,16 @@ func (s *Server) readResponses() {
 			continue
 		}
 
-		// Route response to waiting caller
+		// Route response to waiting caller — remove from pending under lock
+		// before sending, so Stop() won't close a channel we're about to use.
 		s.mu.Lock()
-		if ch, ok := s.pending[resp.ID]; ok {
-			ch <- &resp
+		ch, ok := s.pending[resp.ID]
+		if ok {
+			delete(s.pending, resp.ID)
 		}
 		s.mu.Unlock()
+		if ok {
+			ch <- &resp
+		}
 	}
 }
