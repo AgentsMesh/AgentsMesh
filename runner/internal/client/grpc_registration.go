@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/pkg/browser"
+
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // ==================== Tailscale-style Interactive Registration ====================
@@ -37,6 +39,7 @@ type InteractiveRegistrationResult struct {
 // RequestAuthURL requests an authorization URL from the server.
 // Step 1 of interactive registration - Runner requests auth URL.
 func RequestAuthURL(ctx context.Context, req InteractiveRegistrationRequest) (authURL, authKey string, expiresIn int, err error) {
+	log := logger.GRPC()
 	requestURL := fmt.Sprintf("%s/api/v1/runners/grpc/auth-url", req.ServerURL)
 
 	body := map[string]interface{}{
@@ -51,11 +54,13 @@ func RequestAuthURL(ctx context.Context, req InteractiveRegistrationRequest) (au
 
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {
+		log.Error("Failed to marshal auth URL request", "error", err)
 		return "", "", 0, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", requestURL, bytes.NewReader(bodyBytes))
 	if err != nil {
+		log.Error("Failed to create auth URL request", "error", err)
 		return "", "", 0, fmt.Errorf("failed to create request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
@@ -63,12 +68,14 @@ func RequestAuthURL(ctx context.Context, req InteractiveRegistrationRequest) (au
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(httpReq)
 	if err != nil {
+		log.Error("Auth URL request failed", "url", requestURL, "error", err)
 		return "", "", 0, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
+		log.Error("Auth URL request returned non-OK status", "status", resp.StatusCode, "body", string(respBody))
 		return "", "", 0, fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
@@ -78,9 +85,11 @@ func RequestAuthURL(ctx context.Context, req InteractiveRegistrationRequest) (au
 		ExpiresIn int    `json:"expires_in"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Error("Failed to decode auth URL response", "error", err)
 		return "", "", 0, fmt.Errorf("failed to decode response: %w", err)
 	}
 
+	log.Info("Auth URL obtained", "expires_in", result.ExpiresIn)
 	return result.AuthURL, result.AuthKey, result.ExpiresIn, nil
 }
 
@@ -98,16 +107,19 @@ type AuthStatus struct {
 // GetAuthStatus polls the server for authorization status.
 // Step 2 of interactive registration - Runner polls until authorized.
 func GetAuthStatus(ctx context.Context, serverURL, authKey string) (*AuthStatus, error) {
+	log := logger.GRPC()
 	requestURL := fmt.Sprintf("%s/api/v1/runners/grpc/auth-status?key=%s", serverURL, authKey)
 
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
 	if err != nil {
+		log.Error("Failed to create auth status request", "error", err)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(httpReq)
 	if err != nil {
+		log.Error("Auth status request failed", "error", err)
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
@@ -118,11 +130,13 @@ func GetAuthStatus(ctx context.Context, serverURL, authKey string) (*AuthStatus,
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
+		log.Error("Auth status returned non-OK status", "status", resp.StatusCode, "body", string(respBody))
 		return nil, fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	var status AuthStatus
 	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+		log.Error("Failed to decode auth status response", "error", err)
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
@@ -132,9 +146,12 @@ func GetAuthStatus(ctx context.Context, serverURL, authKey string) (*AuthStatus,
 // InteractiveRegister performs Tailscale-style interactive registration.
 // Opens a browser for user authorization and polls for completion.
 func InteractiveRegister(ctx context.Context, req InteractiveRegistrationRequest) (*InteractiveRegistrationResult, error) {
+	log := logger.GRPC()
+
 	// Step 1: Request auth URL
 	authURL, authKey, expiresIn, err := RequestAuthURL(ctx, req)
 	if err != nil {
+		log.Error("Failed to request auth URL", "error", err)
 		return nil, fmt.Errorf("failed to request auth URL: %w", err)
 	}
 

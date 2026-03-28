@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -70,17 +71,21 @@ func (d *Downloader) DownloadAndExtract(ctx context.Context, res *runnerv1.Resou
 	// 1. Check cache
 	if _, ok := d.cache.Get(res.Sha); ok {
 		result.CacheHit = true
+		slog.Debug("Skill cache hit", "sha", res.Sha)
 	} else {
 		// 2. Download from presigned URL
 		if res.DownloadUrl == "" {
 			return nil, fmt.Errorf("download URL is required for SHA %s", res.Sha)
 		}
 
+		slog.Info("Downloading skill resource", "sha", res.Sha)
 		bytesRead, err := d.download(ctx, res.Sha, res.DownloadUrl)
 		if err != nil {
+			slog.Error("Failed to download skill resource", "sha", res.Sha, "error", err)
 			return nil, fmt.Errorf("failed to download resource (SHA: %s): %w", res.Sha, err)
 		}
 		result.BytesRead = bytesRead
+		slog.Info("Skill resource downloaded", "sha", res.Sha, "bytes", bytesRead)
 	}
 
 	// 3. Resolve target path and extract
@@ -109,6 +114,7 @@ func (d *Downloader) download(ctx context.Context, sha, url string) (int64, erro
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		slog.Error("Unexpected HTTP status for skill download", "sha", sha, "status", resp.StatusCode)
 		return 0, fmt.Errorf("unexpected HTTP status: %d", resp.StatusCode)
 	}
 
@@ -130,6 +136,7 @@ func (d *Downloader) download(ctx context.Context, sha, url string) (int64, erro
 		d.cache.mu.Lock()
 		os.Remove(d.cache.cachePath(sha))
 		d.cache.mu.Unlock()
+		slog.Error("Download exceeded maximum size", "sha", sha, "max_bytes", maxDownloadSize)
 		return 0, fmt.Errorf("download exceeded maximum size of %d bytes", maxDownloadSize)
 	}
 

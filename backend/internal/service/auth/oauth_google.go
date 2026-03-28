@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -40,6 +41,7 @@ func exchangeGoogleCode(ctx context.Context, cfg OAuthConfig, code string) (stri
 		"grant_type":    {"authorization_code"},
 	})
 	if err != nil {
+		slog.Error("Google OAuth code exchange failed", "error", err)
 		return "", fmt.Errorf("failed to exchange code: %w", err)
 	}
 	defer tokenResp.Body.Close()
@@ -50,10 +52,12 @@ func exchangeGoogleCode(ctx context.Context, cfg OAuthConfig, code string) (stri
 		Error       string `json:"error"`
 	}
 	if err := json.NewDecoder(tokenResp.Body).Decode(&tokenData); err != nil {
+		slog.Error("failed to decode Google OAuth token response", "error", err)
 		return "", fmt.Errorf("failed to decode token response: %w", err)
 	}
 
 	if tokenData.Error != "" || tokenData.AccessToken == "" {
+		slog.Warn("Google OAuth returned invalid code", "oauth_error", tokenData.Error)
 		return "", ErrInvalidOAuthCode
 	}
 
@@ -71,11 +75,13 @@ func fetchGoogleUserInfo(ctx context.Context, accessToken string) (*OAuthUserInf
 	client := &http.Client{Timeout: 10 * time.Second}
 	userResp, err := client.Do(req)
 	if err != nil {
+		slog.Error("failed to fetch Google user info", "error", err)
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 	defer userResp.Body.Close()
 
 	if userResp.StatusCode != http.StatusOK {
+		slog.Error("Google user info API returned non-OK status", "status", userResp.StatusCode)
 		return nil, fmt.Errorf("google API returned status %d", userResp.StatusCode)
 	}
 
@@ -87,6 +93,7 @@ func fetchGoogleUserInfo(ctx context.Context, accessToken string) (*OAuthUserInf
 		VerifiedEmail bool   `json:"verified_email"`
 	}
 	if err := json.NewDecoder(userResp.Body).Decode(&googleUser); err != nil {
+		slog.Error("failed to decode Google user info", "error", err)
 		return nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
 

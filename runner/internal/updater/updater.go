@@ -5,6 +5,7 @@ package updater
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -107,6 +108,7 @@ func (u *Updater) getDetector() (ReleaseDetector, error) {
 func (u *Updater) CheckForUpdate(ctx context.Context) (*UpdateInfo, error) {
 	detector, err := u.getDetector()
 	if err != nil {
+		slog.Error("Failed to create release detector", "error", err)
 		return nil, err
 	}
 
@@ -120,6 +122,7 @@ func (u *Updater) CheckForUpdate(ctx context.Context) (*UpdateInfo, error) {
 	// Find latest release
 	release, found, err := detector.DetectLatest(ctx)
 	if err != nil {
+		slog.Error("Failed to detect latest version", "repo", RepoOwner+"/"+RepoName, "error", err)
 		return nil, fmt.Errorf("failed to detect latest version from %s/%s: %w", RepoOwner, RepoName, err)
 	}
 
@@ -133,6 +136,7 @@ func (u *Updater) CheckForUpdate(ctx context.Context) (*UpdateInfo, error) {
 	// Parse latest version
 	latestSemver, err := semver.NewVersion(release.Version)
 	if err != nil {
+		slog.Error("Failed to parse latest version", "version", release.Version, "error", err)
 		return nil, fmt.Errorf("failed to parse latest version %q: %w", release.Version, err)
 	}
 
@@ -185,58 +189,28 @@ func (u *Updater) UpdateToVersion(ctx context.Context, version string) error {
 func (u *Updater) updateBinary(ctx context.Context, version string) error {
 	detector, err := u.getDetector()
 	if err != nil {
+		slog.Error("Failed to create release detector for update", "error", err)
 		return err
 	}
 
 	execPath, err := u.execPathFunc()
 	if err != nil {
+		slog.Error("Failed to get executable path for update", "error", err)
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
 
+	slog.Info("Updating binary", "version", version, "path", execPath)
 	release := &ReleaseInfo{Version: version}
 	if err := detector.UpdateBinary(ctx, release, execPath); err != nil {
+		slog.Error("Failed to update binary", "version", version, "error", err)
 		return fmt.Errorf("failed to update binary: %w", err)
 	}
 
+	slog.Info("Binary updated successfully", "version", version)
 	return nil
 }
 
 // CurrentVersion returns the current version.
 func (u *Updater) CurrentVersion() string {
 	return u.currentVersion
-}
-
-// Rollback restores the previous version if a backup exists.
-func (u *Updater) Rollback() error {
-	execPath, err := u.execPathFunc()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	backupPath := execPath + ".bak"
-	if _, err := os.Stat(backupPath); os.IsNotExist(err) {
-		return fmt.Errorf("no backup found at %s", backupPath)
-	}
-
-	if err := atomicReplace(backupPath, execPath); err != nil {
-		return fmt.Errorf("failed to restore backup: %w", err)
-	}
-
-	return nil
-}
-
-// CreateBackup creates a backup of the current executable.
-func (u *Updater) CreateBackup() (string, error) {
-	execPath, err := u.execPathFunc()
-	if err != nil {
-		return "", fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	backupPath := execPath + ".bak"
-
-	if err := copyFile(execPath, backupPath); err != nil {
-		return "", fmt.Errorf("failed to create backup: %w", err)
-	}
-
-	return backupPath, nil
 }
