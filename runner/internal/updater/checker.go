@@ -2,7 +2,7 @@ package updater
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -170,7 +170,7 @@ func (c *BackgroundChecker) doCheck(ctx context.Context) (*UpdateInfo, error) {
 	c.lastCheck = time.Now()
 	c.mu.Unlock()
 
-	log.Printf("[updater] Checking for updates...")
+	slog.Info("checking for updates")
 
 	info, err := c.updater.CheckForUpdate(ctx)
 	if err != nil {
@@ -178,7 +178,7 @@ func (c *BackgroundChecker) doCheck(ctx context.Context) (*UpdateInfo, error) {
 		c.lastError = err
 		c.mu.Unlock()
 
-		log.Printf("[updater] Update check failed: %v", err)
+		slog.Error("update check failed", "error", err)
 		if c.onError != nil {
 			c.onError(err)
 		}
@@ -191,11 +191,11 @@ func (c *BackgroundChecker) doCheck(ctx context.Context) (*UpdateInfo, error) {
 	c.mu.Unlock()
 
 	if !info.HasUpdate {
-		log.Printf("[updater] No update available (current: %s, latest: %s)", info.CurrentVersion, info.LatestVersion)
+		slog.Info("no update available", "current", info.CurrentVersion, "latest", info.LatestVersion)
 		return info, nil
 	}
 
-	log.Printf("[updater] Update available: %s -> %s", info.CurrentVersion, info.LatestVersion)
+	slog.Info("update available", "current", info.CurrentVersion, "latest", info.LatestVersion)
 
 	// Notify callback
 	if c.onUpdate != nil {
@@ -212,7 +212,7 @@ func (c *BackgroundChecker) doCheck(ctx context.Context) (*UpdateInfo, error) {
 			defer cancel()
 
 			if err := c.graceful.ScheduleUpdate(updateCtx); err != nil {
-				log.Printf("[updater] Failed to schedule update: %v", err)
+				slog.Error("failed to schedule update", "error", err)
 			}
 		}()
 	}

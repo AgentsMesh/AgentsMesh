@@ -2,7 +2,7 @@ package billing
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
@@ -28,7 +28,8 @@ func (s *Service) syncOrganizationSubscription(ctx context.Context, orgID int64,
 		return
 	}
 	if err := s.repo.SyncOrganizationSubscription(ctx, orgID, updates); err != nil {
-		log.Printf("[ERROR] syncOrganizationSubscription: failed to sync organization subscription fields for org_id=%d (updates=%v): %v", orgID, updates, err)
+		slog.Error("failed to sync organization subscription fields",
+			"org_id", orgID, "updates", updates, "error", err)
 	}
 }
 
@@ -84,8 +85,9 @@ func (s *Service) addSeats(ctx context.Context, order *billing.PaymentOrder) err
 	sub, err := s.GetSubscription(ctx, order.OrganizationID)
 	if err == nil && sub.Plan != nil && sub.Plan.MaxUsers > 0 {
 		if sub.SeatCount+order.Seats > sub.Plan.MaxUsers {
-			log.Printf("[WARN] addSeats: seat count %d + %d would exceed plan max_users %d for org=%d",
-				sub.SeatCount, order.Seats, sub.Plan.MaxUsers, order.OrganizationID)
+			slog.Warn("seat count would exceed plan max_users limit",
+			"current_seats", sub.SeatCount, "additional_seats", order.Seats,
+			"max_users", sub.Plan.MaxUsers, "org_id", order.OrganizationID)
 			return ErrQuotaExceeded
 		}
 	}
@@ -136,8 +138,8 @@ func (s *Service) renewSubscriptionFromOrder(ctx context.Context, order *billing
 			sub.PlanID = plan.ID
 			downgradedPlanName = &plan.Name
 		} else {
-			log.Printf("[WARN] renewSubscriptionFromOrder: pending downgrade to plan %q not found for org=%d, downgrade dropped: %v",
-				*sub.DowngradeToPlan, sub.OrganizationID, err)
+			slog.Warn("pending downgrade plan not found, downgrade dropped",
+				"plan", *sub.DowngradeToPlan, "org_id", sub.OrganizationID, "error", err)
 		}
 		sub.DowngradeToPlan = nil
 	}

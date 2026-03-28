@@ -3,6 +3,7 @@ package email
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/resend/resend-go/v2"
 )
@@ -217,34 +218,33 @@ type ConsoleService struct {
 // SendVerificationEmail prints verification email to console
 func (s *ConsoleService) SendVerificationEmail(ctx context.Context, to, token string) error {
 	verifyURL := fmt.Sprintf("%s/verify-email/callback?token=%s", s.baseURL, token)
-	fmt.Printf("[EMAIL] Verification email to: %s\n", to)
-	fmt.Printf("[EMAIL] Verify URL: %s\n", verifyURL)
+	slog.Info("console email: verification",
+		"to", to, "verify_url", verifyURL)
 	return nil
 }
 
 // SendPasswordResetEmail prints password reset email to console
 func (s *ConsoleService) SendPasswordResetEmail(ctx context.Context, to, token string) error {
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.baseURL, token)
-	fmt.Printf("[EMAIL] Password reset email to: %s\n", to)
-	fmt.Printf("[EMAIL] Reset URL: %s\n", resetURL)
+	slog.Info("console email: password reset",
+		"to", to, "reset_url", resetURL)
 	return nil
 }
 
 // SendOrgInvitationEmail prints organization invitation to console
 func (s *ConsoleService) SendOrgInvitationEmail(ctx context.Context, to, orgName, inviterName, token string) error {
 	inviteURL := fmt.Sprintf("%s/invite/%s", s.baseURL, token)
-	fmt.Printf("[EMAIL] Organization invitation to: %s\n", to)
-	fmt.Printf("[EMAIL] Org: %s, Inviter: %s\n", orgName, inviterName)
-	fmt.Printf("[EMAIL] Invite URL: %s\n", inviteURL)
+	slog.Info("console email: organization invitation",
+		"to", to, "org", orgName, "inviter", inviterName, "invite_url", inviteURL)
 	return nil
 }
 
 // SendRenewalReminder prints renewal reminder to console
 func (s *ConsoleService) SendRenewalReminder(ctx context.Context, to, orgName, planName string, expiryDate time.Time, daysRemaining int, orgSlug string) error {
 	renewURL := fmt.Sprintf("%s/%s/settings?scope=organization&tab=billing", s.baseURL, orgSlug)
-	fmt.Printf("[EMAIL] Renewal reminder to: %s\n", to)
-	fmt.Printf("[EMAIL] Org: %s, Plan: %s\n", orgName, planName)
-	fmt.Printf("[EMAIL] Expiry: %s, Days remaining: %d\n", expiryDate.Format("2006-01-02"), daysRemaining)
-	fmt.Printf("[EMAIL] Renew URL: %s\n", renewURL)
+	slog.Info("console email: renewal reminder",
+		"to", to, "org", orgName, "plan", planName,
+		"expiry", expiryDate.Format("2006-01-02"), "days_remaining", daysRemaining,
+		"renew_url", renewURL)
 	return nil
 }

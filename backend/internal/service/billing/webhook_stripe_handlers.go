@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,8 +48,8 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 		if event.Provider == billing.PaymentProviderLemonSqueezy && event.CustomerID != "" {
 			sub, err = s.findAndLinkLSSubscription(ctx, event)
 			if err != nil {
-				log.Printf("[WARN] HandleSubscriptionUpdated: subscription not found for provider=%s, subscriptionID=%s, customerID=%s",
-					event.Provider, event.SubscriptionID, event.CustomerID)
+				slog.Warn("subscription not found for provider",
+				"provider", event.Provider, "subscription_id", event.SubscriptionID, "customer_id", event.CustomerID)
 				return nil
 			}
 		} else {
@@ -67,8 +67,8 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 			billing.SubscriptionStatusExpired:
 			sub.Status = mappedStatus
 		default:
-			log.Printf("[WARN] HandleSubscriptionUpdated: unknown LemonSqueezy status %q for subscriptionID=%s — status not updated",
-				event.Status, event.SubscriptionID)
+			slog.Warn("unknown LemonSqueezy subscription status",
+				"status", event.Status, "subscription_id", event.SubscriptionID)
 		}
 	} else {
 		// Generic status mapping for Stripe and others
@@ -87,8 +87,8 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 		case "expired":
 			sub.Status = billing.SubscriptionStatusExpired
 		default:
-			log.Printf("[WARN] HandleSubscriptionUpdated: unknown status %q from provider=%s, subscriptionID=%s — status not updated",
-				event.Status, event.Provider, event.SubscriptionID)
+			slog.Warn("unknown subscription status from provider",
+				"status", event.Status, "provider", event.Provider, "subscription_id", event.SubscriptionID)
 		}
 	}
 
@@ -142,8 +142,8 @@ func (s *Service) findAndLinkLSSubscription(ctx context.Context, event *payment.
 	// Link the subscription_id if not set
 	if sub.LemonSqueezySubscriptionID == nil {
 		sub.LemonSqueezySubscriptionID = &event.SubscriptionID
-		log.Printf("[INFO] findAndLinkLSSubscription: linked subscription_id=%s to org=%d via customer_id=%s (race condition recovery)",
-			event.SubscriptionID, sub.OrganizationID, event.CustomerID)
+		slog.Info("linked LS subscription via customer ID (race condition recovery)",
+			"subscription_id", event.SubscriptionID, "org_id", sub.OrganizationID, "customer_id", event.CustomerID)
 	}
 
 	return sub, nil

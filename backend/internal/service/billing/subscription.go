@@ -2,7 +2,7 @@ package billing
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
@@ -145,8 +145,9 @@ func (s *Service) AdminUpdatePlan(ctx context.Context, orgID int64, planName str
 		return nil, err
 	}
 
-	log.Printf("[AdminUpdatePlan] orgID=%d, planName=%q, sub.PlanID=%d, newPlan.ID=%d, newPlan.Name=%q",
-		orgID, planName, sub.PlanID, newPlan.ID, newPlan.Name)
+	slog.Info("admin updating subscription plan",
+		"org_id", orgID, "plan_name", planName,
+		"old_plan_id", sub.PlanID, "new_plan_id", newPlan.ID, "new_plan_name", newPlan.Name)
 
 	if err := s.repo.UpdateSubscriptionFields(ctx, sub.ID, map[string]interface{}{
 		"plan_id":           newPlan.ID,

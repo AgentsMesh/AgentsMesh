@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	billingdomain "github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
@@ -95,7 +95,8 @@ func (s *Service) UpdateSeats(ctx context.Context, orgID int64, additionalSeats 
 	if err := s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
 		"seat_count": newTotalSeats,
 	}); err != nil {
-		log.Printf("[WARN] UpdateSeats: provider API succeeded but DB update failed for org=%d, newSeats=%d: %v", orgID, newTotalSeats, err)
+		slog.Warn("provider API succeeded but DB update failed for seat change",
+			"org_id", orgID, "new_seats", newTotalSeats, "error", err)
 		return fmt.Errorf("failed to sync seat count locally: %w", err)
 	}
 	return nil

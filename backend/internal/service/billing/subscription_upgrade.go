@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
@@ -76,7 +76,8 @@ func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string)
 		"plan_id":           newPlan.ID,
 		"downgrade_to_plan": nil,
 	}); err != nil {
-		log.Printf("[WARN] UpgradePlan: provider API succeeded but DB update failed for org=%d, plan=%s: %v", orgID, planName, err)
+		slog.Warn("provider API succeeded but DB update failed for plan upgrade",
+			"org_id", orgID, "plan", planName, "error", err)
 		return nil, fmt.Errorf("failed to sync plan locally: %w", err)
 	}
 

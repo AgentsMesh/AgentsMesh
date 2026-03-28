@@ -3,7 +3,7 @@ package updater
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"time"
@@ -27,7 +27,7 @@ func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
 	// Create backup for potential rollback
 	backupPath, err := g.updater.CreateBackup()
 	if err != nil {
-		log.Printf("[updater] Warning: failed to create backup: %v", err)
+		slog.Warn("failed to create backup", "error", err)
 		// Continue without backup - rollback won't be possible
 	}
 
@@ -44,16 +44,16 @@ func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
 	g.pendingInfo = nil
 	g.mu.Unlock()
 
-	log.Printf("[updater] Update applied successfully: %s -> %s", info.CurrentVersion, info.LatestVersion)
+	slog.Info("update applied successfully", "from", info.CurrentVersion, "to", info.LatestVersion)
 
 	// Restart
 	g.setState(StateRestarting)
 	if g.restartFunc != nil {
 		pid, err := g.restartFunc()
 		if err != nil {
-			log.Printf("[updater] Restart failed, attempting rollback: %v", err)
+			slog.Error("restart failed, attempting rollback", "error", err)
 			if rbErr := g.rollbackUpdate(backupPath); rbErr != nil {
-				log.Printf("[updater] Rollback also failed: %v", rbErr)
+				slog.Error("rollback also failed", "error", rbErr)
 			}
 			g.setState(StateIdle)
 			return fmt.Errorf("restart failed: %w", err)
@@ -65,18 +65,18 @@ func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
 			defer cancel()
 
 			if err := g.healthChecker(ctx, pid); err != nil {
-				log.Printf("[updater] Health check failed, attempting rollback: %v", err)
+				slog.Error("health check failed, attempting rollback", "error", err)
 				// Terminate the unhealthy new process
 				if proc, findErr := os.FindProcess(pid); findErr == nil && proc != nil {
 					_ = proc.Kill()
 				}
 				if rbErr := g.rollbackUpdate(backupPath); rbErr != nil {
-					log.Printf("[updater] Rollback also failed: %v", rbErr)
+					slog.Error("rollback also failed", "error", rbErr)
 				}
 				g.setState(StateIdle)
 				return fmt.Errorf("health check failed: %w", err)
 			}
-			log.Printf("[updater] Health check passed for new process (PID: %d)", pid)
+			slog.Info("health check passed for new process", "pid", pid)
 		}
 	}
 
@@ -91,7 +91,7 @@ func (g *GracefulUpdater) rollbackUpdate(backupPath string) error {
 	if err := g.updater.Rollback(); err != nil {
 		return fmt.Errorf("rollback failed: %w", err)
 	}
-	log.Printf("[updater] Successfully rolled back to previous version")
+	slog.Info("successfully rolled back to previous version")
 	return nil
 }
 
@@ -117,7 +117,7 @@ func DefaultRestartFunc() RestartFunc {
 			return 0, fmt.Errorf("failed to start new process: %w", err)
 		}
 
-		log.Printf("[updater] New process started (PID: %d), current process should exit", cmd.Process.Pid)
+		slog.Info("new process started, current process should exit", "pid", cmd.Process.Pid)
 		// Note: Caller is responsible for graceful shutdown after this returns
 		// Do NOT call os.Exit() here as it prevents proper cleanup
 		return cmd.Process.Pid, nil

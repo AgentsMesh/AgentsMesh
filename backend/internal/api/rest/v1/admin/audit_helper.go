@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
@@ -22,7 +22,8 @@ func LogAdminAction(
 ) {
 	adminUserID := middleware.GetAdminUserID(c)
 	if adminUserID == 0 {
-		log.Printf("[AUDIT] Warning: admin user ID not found in context for action %s", action)
+		slog.Warn("admin user ID not found in context for audit action",
+			"action", action)
 		return
 	}
 
@@ -41,7 +42,8 @@ func LogAdminAction(
 	if err != nil {
 		// Log the error but don't fail the request
 		// Audit logging failure should not prevent the operation from succeeding
-		log.Printf("[AUDIT] Failed to log action %s on %s/%d by admin %d: %v",
-			action, targetType, targetID, adminUserID, err)
+		slog.Warn("failed to log admin audit action",
+			"action", action, "target_type", targetType, "target_id", targetID,
+			"admin_id", adminUserID, "error", err)
 	}
 }

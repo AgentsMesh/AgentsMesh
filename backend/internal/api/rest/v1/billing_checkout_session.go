@@ -2,7 +2,7 @@ package v1
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	billingdomain "github.com/anthropics/agentsmesh/backend/internal/domain/billing"
@@ -92,7 +92,8 @@ func (h *BillingHandler) createCheckoutSession(c *gin.Context, tenant *middlewar
 	if err := h.billingService.CreatePaymentOrder(c.Request.Context(), order); err != nil {
 		// Order must be persisted before returning the checkout URL to the user.
 		// Without a local order record, webhook reconciliation will be unreliable.
-		log.Printf("[ERROR] createCheckoutSession: failed to save order %s: %v", orderNo, err)
+		slog.Error("failed to save payment order",
+			"order_no", orderNo, "error", err)
 		apierr.InternalError(c, "failed to create payment order")
 		return
 	}

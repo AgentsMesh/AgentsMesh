@@ -3,7 +3,7 @@ package updater
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 )
 
@@ -36,7 +36,7 @@ func (g *GracefulUpdater) ScheduleUpdate(ctx context.Context) error {
 		return nil
 	}
 
-	log.Printf("[updater] New version available: %s -> %s", info.CurrentVersion, info.LatestVersion)
+	slog.Info("new version available", "current", info.CurrentVersion, "latest", info.LatestVersion)
 
 	g.mu.Lock()
 	g.pendingInfo = info
@@ -81,11 +81,11 @@ func (g *GracefulUpdater) drainPods(ctx context.Context) error {
 		}
 
 		if activePods == 0 {
-			log.Printf("[updater] No active pods, applying update...")
+			slog.Info("no active pods, applying update")
 			return nil
 		}
 
-		log.Printf("[updater] Waiting for %d active pod(s) to finish...", activePods)
+		slog.Info("waiting for active pods to finish", "count", activePods)
 
 		if g.onStatus != nil {
 			g.mu.RLock()
@@ -97,7 +97,7 @@ func (g *GracefulUpdater) drainPods(ctx context.Context) error {
 		select {
 		case <-drainCtx.Done():
 			if drainCtx.Err() == context.DeadlineExceeded {
-				log.Printf("[updater] Max wait time reached with %d active pods, postponing update", activePods)
+				slog.Warn("max wait time reached, postponing update", "activePods", activePods)
 				g.mu.Lock()
 				g.pendingInfo = nil
 				g.mu.Unlock()

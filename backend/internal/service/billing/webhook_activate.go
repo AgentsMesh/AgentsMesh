@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
@@ -25,8 +25,8 @@ func (s *Service) handleRecurringPaymentSuccess(ctx context.Context, event *paym
 			sub.PlanID = plan.ID
 			downgradedPlanName = &plan.Name
 		} else {
-			log.Printf("[WARN] handleRecurringPaymentSuccess: pending downgrade to plan %q not found for org=%d, downgrade dropped: %v",
-				*sub.DowngradeToPlan, sub.OrganizationID, err)
+			slog.Warn("pending downgrade plan not found on recurring payment, downgrade dropped",
+				"plan", *sub.DowngradeToPlan, "org_id", sub.OrganizationID, "error", err)
 		}
 		sub.DowngradeToPlan = nil
 	}
