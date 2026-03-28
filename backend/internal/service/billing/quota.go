@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
@@ -19,6 +20,7 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 			plan, _ = s.GetPlan(ctx, billing.PlanBased)
 			if plan == nil {
 				// No Based plan in database, allow by default
+				slog.Warn("no based plan found in database, allowing by default", "org_id", orgID, "resource", resource)
 				return nil
 			}
 		} else {
@@ -27,6 +29,7 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 	} else {
 		// Check frozen status - frozen subscriptions cannot create new resources
 		if sub.IsFrozen() {
+			slog.Warn("quota check denied: subscription frozen", "org_id", orgID, "resource", resource)
 			return ErrSubscriptionFrozen
 		}
 
@@ -83,6 +86,7 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 		return fmt.Errorf("failed to get current resource count: %w", err)
 	}
 	if current+requestedAmount > limit {
+		slog.Warn("quota exceeded", "org_id", orgID, "resource", resource, "current", current, "requested", requestedAmount, "limit", limit)
 		return ErrQuotaExceeded
 	}
 
@@ -111,6 +115,7 @@ func (s *Service) CheckSeatAvailability(ctx context.Context, orgID int64, reques
 	availableSeats := sub.SeatCount - int(usedSeats) - int(pendingInvitations)
 
 	if availableSeats < requestedSeats {
+		slog.Warn("seat quota exceeded", "org_id", orgID, "available", availableSeats, "requested", requestedSeats)
 		return ErrQuotaExceeded
 	}
 
@@ -156,5 +161,10 @@ func (s *Service) SetCustomQuota(ctx context.Context, orgID int64, resource stri
 
 	sub.CustomQuotas[resource] = limit
 
-	return s.repo.SaveSubscription(ctx, sub)
+	if err = s.repo.SaveSubscription(ctx, sub); err != nil {
+		slog.Error("failed to save custom quota", "org_id", orgID, "resource", resource, "limit", limit, "error", err)
+		return err
+	}
+	slog.Info("custom quota set", "org_id", orgID, "resource", resource, "limit", limit)
+	return nil
 }

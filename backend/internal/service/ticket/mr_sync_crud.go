@@ -3,6 +3,7 @@ package ticket
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
@@ -53,8 +54,10 @@ func (s *MRSyncService) FindOrCreateMR(ctx context.Context, orgID int64, t *tick
 	}
 
 	if err := s.repo.CreateMR(ctx, mr); err != nil {
+		slog.Error("failed to create MR record", "ticket_id", t.ID, "mr_url", mrData.WebURL, "error", err)
 		return nil, err
 	}
+	slog.Info("MR record created", "mr_id", mr.ID, "ticket_id", t.ID, "mr_url", mrData.WebURL)
 	return mr, nil
 }
 

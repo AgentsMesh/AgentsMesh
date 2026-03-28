@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
@@ -105,15 +106,23 @@ func (s *AgentService) CreateCustomAgent(ctx context.Context, orgID int64, req *
 	}
 
 	if err := s.repo.CreateCustom(ctx, customAgent); err != nil {
+		slog.Error("failed to create custom agent", "org_id", orgID, "slug", req.Slug, "error", err)
 		return nil, err
 	}
 
+	slog.Info("custom agent created", "org_id", orgID, "slug", req.Slug)
 	return customAgent, nil
 }
 
 // UpdateCustomAgent updates a custom agent
 func (s *AgentService) UpdateCustomAgent(ctx context.Context, orgID int64, slug string, updates map[string]interface{}) (*agent.CustomAgent, error) {
-	return s.repo.UpdateCustom(ctx, orgID, slug, updates)
+	result, err := s.repo.UpdateCustom(ctx, orgID, slug, updates)
+	if err != nil {
+		slog.Error("failed to update custom agent", "org_id", orgID, "slug", slug, "error", err)
+		return nil, err
+	}
+	slog.Info("custom agent updated", "org_id", orgID, "slug", slug)
+	return result, nil
 }
 
 // DeleteCustomAgent deletes a custom agent.
@@ -126,7 +135,12 @@ func (s *AgentService) DeleteCustomAgent(ctx context.Context, orgID int64, slug 
 	if loopCount > 0 {
 		return ErrAgentHasLoopRefs
 	}
-	return s.repo.DeleteCustom(ctx, orgID, slug)
+	if err := s.repo.DeleteCustom(ctx, orgID, slug); err != nil {
+		slog.Error("failed to delete custom agent", "org_id", orgID, "slug", slug, "error", err)
+		return err
+	}
+	slog.Info("custom agent deleted", "org_id", orgID, "slug", slug)
+	return nil
 }
 
 // ListCustomAgents returns custom agents for an organization

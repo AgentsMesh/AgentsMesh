@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
@@ -13,7 +14,12 @@ import (
 
 // CreatePaymentOrder creates a new payment order
 func (s *Service) CreatePaymentOrder(ctx context.Context, order *billing.PaymentOrder) error {
-	return s.repo.CreatePaymentOrder(ctx, order)
+	if err := s.repo.CreatePaymentOrder(ctx, order); err != nil {
+		slog.Error("failed to create payment order", "order_no", order.OrderNo, "org_id", order.OrganizationID, "error", err)
+		return err
+	}
+	slog.Info("payment order created", "order_no", order.OrderNo, "org_id", order.OrganizationID, "provider", order.PaymentProvider)
+	return nil
 }
 
 // GetPaymentOrderByNo returns a payment order by order number
@@ -54,7 +60,12 @@ func (s *Service) UpdatePaymentOrderStatus(ctx context.Context, orderNo string, 
 		updates["paid_at"] = &now
 	}
 
-	return s.repo.UpdatePaymentOrderStatus(ctx, orderNo, updates)
+	if err := s.repo.UpdatePaymentOrderStatus(ctx, orderNo, updates); err != nil {
+		slog.Error("failed to update payment order status", "order_no", orderNo, "status", status, "error", err)
+		return err
+	}
+	slog.Info("payment order status updated", "order_no", orderNo, "status", status)
+	return nil
 }
 
 // ===========================================
@@ -63,7 +74,12 @@ func (s *Service) UpdatePaymentOrderStatus(ctx context.Context, orderNo string, 
 
 // CreatePaymentTransaction creates a new payment transaction
 func (s *Service) CreatePaymentTransaction(ctx context.Context, tx *billing.PaymentTransaction) error {
-	return s.repo.CreatePaymentTransaction(ctx, tx)
+	if err := s.repo.CreatePaymentTransaction(ctx, tx); err != nil {
+		slog.Error("failed to create payment transaction", "payment_order_id", tx.PaymentOrderID, "type", tx.TransactionType, "error", err)
+		return err
+	}
+	slog.Info("payment transaction created", "payment_order_id", tx.PaymentOrderID, "type", tx.TransactionType, "amount", tx.Amount)
+	return nil
 }
 
 // ===========================================
@@ -72,7 +88,12 @@ func (s *Service) CreatePaymentTransaction(ctx context.Context, tx *billing.Paym
 
 // CreateInvoice creates a new invoice
 func (s *Service) CreateInvoice(ctx context.Context, invoice *billing.Invoice) error {
-	return s.repo.CreateInvoice(ctx, invoice)
+	if err := s.repo.CreateInvoice(ctx, invoice); err != nil {
+		slog.Error("failed to create invoice", "org_id", invoice.OrganizationID, "error", err)
+		return err
+	}
+	slog.Info("invoice created", "org_id", invoice.OrganizationID, "total", invoice.Total)
+	return nil
 }
 
 // GetInvoicesByOrg returns all invoices for an organization

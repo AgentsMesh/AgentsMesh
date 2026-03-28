@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"log/slog"
 
 	domainUser "github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
@@ -15,7 +16,13 @@ func (s *Service) SetDefaultGitCredential(ctx context.Context, userID, credentia
 		return err
 	}
 
-	return s.repo.SetDefaultGitCredential(ctx, userID, credentialID)
+	if err := s.repo.SetDefaultGitCredential(ctx, userID, credentialID); err != nil {
+		slog.Error("failed to set default git credential",
+			"user_id", userID, "credential_id", credentialID, "error", err)
+		return err
+	}
+	slog.Info("default git credential set", "user_id", userID, "credential_id", credentialID)
+	return nil
 }
 
 // ClearDefaultGitCredential clears the user's default Git credential (falls back to runner_local)
@@ -49,6 +56,8 @@ func (s *Service) GetDecryptedCredentialToken(ctx context.Context, userID, crede
 		if credential.RepositoryProviderID != nil {
 			token, err := s.GetDecryptedProviderToken(ctx, userID, *credential.RepositoryProviderID)
 			if err != nil {
+				slog.Error("failed to decrypt oauth provider token",
+					"user_id", userID, "credential_id", credentialID, "error", err)
 				return nil, err
 			}
 			result.Token = token
@@ -59,6 +68,8 @@ func (s *Service) GetDecryptedCredentialToken(ctx context.Context, userID, crede
 			if s.encryptionKey != "" {
 				decrypted, err := crypto.DecryptWithKey(*credential.PATEncrypted, s.encryptionKey)
 				if err != nil {
+					slog.Error("failed to decrypt PAT",
+						"user_id", userID, "credential_id", credentialID, "error", err)
 					return nil, err
 				}
 				result.Token = decrypted
@@ -72,6 +83,8 @@ func (s *Service) GetDecryptedCredentialToken(ctx context.Context, userID, crede
 			if s.encryptionKey != "" {
 				decrypted, err := crypto.DecryptWithKey(*credential.PrivateKeyEncrypted, s.encryptionKey)
 				if err != nil {
+					slog.Error("failed to decrypt SSH private key",
+						"user_id", userID, "credential_id", credentialID, "error", err)
 					return nil, err
 				}
 				result.SSHPrivateKey = decrypted
@@ -94,10 +107,17 @@ func (s *Service) CreateCredentialFromProvider(ctx context.Context, userID, prov
 		return nil, err
 	}
 
-	// Create a credential linked to this provider
-	return s.CreateGitCredential(ctx, userID, &CreateGitCredentialRequest{
+	cred, err := s.CreateGitCredential(ctx, userID, &CreateGitCredentialRequest{
 		Name:                 provider.Name + " (OAuth)",
 		CredentialType:       domainUser.CredentialTypeOAuth,
 		RepositoryProviderID: &providerID,
 	})
+	if err != nil {
+		slog.Error("failed to create credential from provider",
+			"user_id", userID, "provider_id", providerID, "error", err)
+		return nil, err
+	}
+	slog.Info("credential created from provider",
+		"user_id", userID, "credential_id", cred.ID, "provider_id", providerID)
+	return cred, nil
 }

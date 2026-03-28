@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
@@ -53,7 +54,13 @@ func (s *Service) decryptProviderToken(provider *user.RepositoryProvider) (strin
 	if provider.IdentityID != nil && provider.Identity != nil {
 		if provider.Identity.AccessTokenEncrypted != nil && *provider.Identity.AccessTokenEncrypted != "" {
 			if s.encryptionKey != "" {
-				return crypto.DecryptWithKey(*provider.Identity.AccessTokenEncrypted, s.encryptionKey)
+				decrypted, err := crypto.DecryptWithKey(*provider.Identity.AccessTokenEncrypted, s.encryptionKey)
+				if err != nil {
+					slog.Error("failed to decrypt identity access token",
+						"provider_id", provider.ID, "identity_id", *provider.IdentityID, "error", err)
+					return "", err
+				}
+				return decrypted, nil
 			}
 			return *provider.Identity.AccessTokenEncrypted, nil
 		}
@@ -62,7 +69,13 @@ func (s *Service) decryptProviderToken(provider *user.RepositoryProvider) (strin
 	// 2. Fall back to bot token
 	if provider.BotTokenEncrypted != nil && *provider.BotTokenEncrypted != "" {
 		if s.encryptionKey != "" {
-			return crypto.DecryptWithKey(*provider.BotTokenEncrypted, s.encryptionKey)
+			decrypted, err := crypto.DecryptWithKey(*provider.BotTokenEncrypted, s.encryptionKey)
+			if err != nil {
+				slog.Error("failed to decrypt bot token",
+					"provider_id", provider.ID, "error", err)
+				return "", err
+			}
+			return decrypted, nil
 		}
 		return *provider.BotTokenEncrypted, nil
 	}
@@ -105,7 +118,14 @@ func (s *Service) EnsureRepositoryProviderForIdentity(ctx context.Context, userI
 		IsActive:     true,
 	}
 
-	return s.repo.CreateRepositoryProvider(ctx, newProvider)
+	if err := s.repo.CreateRepositoryProvider(ctx, newProvider); err != nil {
+		slog.Error("failed to create repository provider for identity",
+			"user_id", userID, "provider", provider, "error", err)
+		return err
+	}
+	slog.Info("repository provider created for oauth identity",
+		"user_id", userID, "provider", provider, "provider_id", newProvider.ID)
+	return nil
 }
 
 // ensureUniqueProviderName returns a unique provider name for the user

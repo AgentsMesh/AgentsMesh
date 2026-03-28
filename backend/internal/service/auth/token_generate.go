@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
@@ -41,12 +42,14 @@ func (s *Service) GenerateTokenPairWithContext(ctx context.Context, u *user.User
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	accessToken, err := token.SignedString([]byte(s.config.JWTSecret))
 	if err != nil {
+		slog.Error("failed to sign access token", "user_id", u.ID, "error", err)
 		return nil, err
 	}
 
 	// Generate refresh token
 	refreshBytes := make([]byte, 32)
 	if _, err := rand.Read(refreshBytes); err != nil {
+		slog.Error("failed to generate refresh token bytes", "user_id", u.ID, "error", err)
 		return nil, err
 	}
 	refreshToken := base64.URLEncoding.EncodeToString(refreshBytes)
@@ -61,10 +64,12 @@ func (s *Service) GenerateTokenPairWithContext(ctx context.Context, u *user.User
 			ExpiresAt:      refreshExpiresAt,
 		}
 		if err := s.storeRefreshToken(ctx, refreshToken, tokenData); err != nil {
+			slog.Error("failed to store refresh token in redis", "user_id", u.ID, "error", err)
 			return nil, fmt.Errorf("failed to store refresh token: %w", err)
 		}
 	}
 
+	slog.Info("token pair generated", "user_id", u.ID, "org_id", orgID)
 	return &TokenPair{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -100,6 +105,7 @@ func GenerateState() (string, error) {
 func (s *Service) GenerateTokens(ctx context.Context, u *user.User) (*LoginResult, error) {
 	tokens, err := s.GenerateTokenPairWithContext(ctx, u, 0, "")
 	if err != nil {
+		slog.Error("failed to generate tokens after email verification", "user_id", u.ID, "error", err)
 		return nil, err
 	}
 

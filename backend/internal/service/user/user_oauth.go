@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -40,6 +41,8 @@ func (s *Service) getOrCreateByOAuthOnce(ctx context.Context, provider, provider
 				u = existing
 			} else {
 				emailTaken = true
+				slog.Warn("oauth email matches unverified account, using placeholder",
+					"provider", provider, "email", email)
 			}
 		}
 	}
@@ -83,10 +86,16 @@ func (s *Service) getOrCreateByOAuthOnce(ctx context.Context, provider, provider
 		if err := s.repo.CreateUser(ctx, u); err != nil {
 			// Concurrent SSO callback may have created the same user — retry once
 			if allowRetry && isConflictError(err) {
+				slog.Warn("oauth user creation conflict, retrying",
+					"provider", provider, "provider_user_id", providerUserID)
 				return s.getOrCreateByOAuthOnce(ctx, provider, providerUserID, providerUsername, email, name, avatarURL, false)
 			}
+			slog.Error("failed to create oauth user",
+				"provider", provider, "provider_user_id", providerUserID, "error", err)
 			return nil, false, err
 		}
+		slog.Info("oauth user created",
+			"user_id", u.ID, "provider", provider, "provider_user_id", providerUserID)
 		isNew = true
 	}
 
@@ -103,8 +112,12 @@ func (s *Service) getOrCreateByOAuthOnce(ctx context.Context, provider, provider
 	if err := s.repo.CreateIdentity(ctx, newIdentity); err != nil {
 		// Concurrent SSO callback may have created the same identity — retry once
 		if allowRetry && isConflictError(err) {
+			slog.Warn("oauth identity creation conflict, retrying",
+				"provider", provider, "provider_user_id", providerUserID)
 			return s.getOrCreateByOAuthOnce(ctx, provider, providerUserID, providerUsername, email, name, avatarURL, false)
 		}
+		slog.Error("failed to create oauth identity",
+			"user_id", u.ID, "provider", provider, "error", err)
 		return nil, false, err
 	}
 
@@ -134,6 +147,8 @@ func (s *Service) UpdateIdentityTokens(ctx context.Context, userID int64, provid
 		if accessToken != "" {
 			encrypted, err := crypto.EncryptWithKey(accessToken, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt oauth access token",
+					"user_id", userID, "provider", provider, "error", err)
 				return err
 			}
 			updates["access_token_encrypted"] = encrypted
@@ -141,12 +156,16 @@ func (s *Service) UpdateIdentityTokens(ctx context.Context, userID int64, provid
 		if refreshToken != "" {
 			encrypted, err := crypto.EncryptWithKey(refreshToken, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt oauth refresh token",
+					"user_id", userID, "provider", provider, "error", err)
 				return err
 			}
 			updates["refresh_token_encrypted"] = encrypted
 		}
 	} else {
 		// Fallback: store as-is (not recommended for production)
+		slog.Warn("storing oauth tokens without encryption",
+			"user_id", userID, "provider", provider)
 		if accessToken != "" {
 			updates["access_token_encrypted"] = accessToken
 		}
@@ -222,5 +241,6 @@ func (s *Service) ListIdentities(ctx context.Context, userID int64) ([]*user.Ide
 
 // DeleteIdentity deletes an OAuth identity
 func (s *Service) DeleteIdentity(ctx context.Context, userID int64, provider string) error {
+	slog.Info("deleting oauth identity", "user_id", userID, "provider", provider)
 	return s.repo.DeleteIdentity(ctx, userID, provider)
 }

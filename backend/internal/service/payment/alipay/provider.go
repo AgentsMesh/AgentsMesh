@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"time"
 
@@ -48,7 +49,7 @@ func (p *Provider) GetProviderName() string {
 	return billing.PaymentProviderAlipay
 }
 
-// CreateCheckoutSession creates a face-to-face QR code payment (当面付)
+// CreateCheckoutSession creates a face-to-face QR code payment
 func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.CheckoutRequest) (*types.CheckoutResponse, error) {
 	trade := alipay.TradePreCreate{
 		Trade: alipay.Trade{
@@ -62,13 +63,16 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 
 	result, err := p.client.TradePreCreate(ctx, trade)
 	if err != nil {
+		slog.Error("failed to create alipay precreate", "order_no", req.IdempotencyKey, "amount", req.ActualAmount, "error", err)
 		return nil, fmt.Errorf("failed to create alipay precreate: %w", err)
 	}
 
 	if !result.IsSuccess() {
+		slog.Error("alipay precreate failed", "order_no", req.IdempotencyKey, "sub_code", result.SubCode, "sub_msg", result.SubMsg)
 		return nil, fmt.Errorf("alipay precreate failed: %s - %s", result.SubCode, result.SubMsg)
 	}
 
+	slog.Info("alipay checkout session created", "order_no", req.IdempotencyKey, "amount", req.ActualAmount)
 	return &types.CheckoutResponse{
 		SessionID:       req.IdempotencyKey,
 		OrderNo:         req.IdempotencyKey,
@@ -111,6 +115,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	// Parse the form data from JSON
 	var formData map[string]string
 	if err := json.Unmarshal(payload, &formData); err != nil {
+		slog.Error("failed to parse alipay notification", "error", err)
 		return nil, fmt.Errorf("failed to parse alipay notification: %w", err)
 	}
 
@@ -122,6 +127,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 
 	// Verify signature
 	if err := p.client.VerifySign(values); err != nil {
+		slog.Error("alipay signature verification failed", "notify_id", formData["notify_id"], "error", err)
 		return nil, fmt.Errorf("alipay signature verification failed: %w", err)
 	}
 
@@ -160,6 +166,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		result.RawPayload[k] = v
 	}
 
+	slog.Info("alipay webhook processed", "notify_id", result.EventID, "order_no", result.OrderNo, "status", result.Status)
 	return result, nil
 }
 
@@ -174,13 +181,16 @@ func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) 
 
 	result, err := p.client.TradeRefund(ctx, refund)
 	if err != nil {
+		slog.Error("failed to create alipay refund", "order_no", req.OrderNo, "amount", req.Amount, "error", err)
 		return nil, fmt.Errorf("failed to create alipay refund: %w", err)
 	}
 
 	if !result.IsSuccess() {
+		slog.Error("alipay refund failed", "order_no", req.OrderNo, "sub_code", result.SubCode, "sub_msg", result.SubMsg)
 		return nil, fmt.Errorf("alipay refund failed: %s - %s", result.SubCode, result.SubMsg)
 	}
 
+	slog.Info("alipay refund created", "order_no", req.OrderNo, "amount", req.Amount)
 	return &types.RefundResponse{
 		RefundID: req.IdempotencyKey,
 		Status:   "success",
@@ -198,86 +208,15 @@ func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string
 
 	result, err := p.client.TradeClose(ctx, close)
 	if err != nil {
+		slog.Error("failed to close alipay trade", "trade_no", subscriptionID, "error", err)
 		return fmt.Errorf("failed to close alipay trade: %w", err)
 	}
 
 	if !result.IsSuccess() && result.SubCode != "ACQ.TRADE_NOT_EXIST" {
+		slog.Error("alipay trade close failed", "trade_no", subscriptionID, "sub_code", result.SubCode, "sub_msg", result.SubMsg)
 		return fmt.Errorf("alipay trade close failed: %s - %s", result.SubCode, result.SubMsg)
 	}
 
+	slog.Info("alipay trade closed", "trade_no", subscriptionID)
 	return nil
-}
-
-// CreateAgreementSign creates a signing request for auto-debit agreement (周期扣款签约)
-// Note: This requires special Alipay merchant permissions for 周期扣款
-func (p *Provider) CreateAgreementSign(ctx context.Context, req *types.AgreementSignRequest) (*types.AgreementSignResponse, error) {
-	// For Alipay agreement signing, we need to use the web/mobile page sign API
-	// This is a simplified implementation - production would use alipay.open.auth.appAuthToken or similar
-
-	// Generate external agreement number
-	externalAgreementNo := fmt.Sprintf("org_%d_%d", req.OrganizationID, time.Now().Unix())
-
-	// Build sign URL params (this would typically be done via SDK)
-	// In production, you'd use the actual Alipay SDK method for agreement signing
-	signParams := fmt.Sprintf(
-		"app_id=%s&method=alipay.user.agreement.page.sign&charset=utf-8&sign_type=RSA2"+
-			"&personal_product_code=GENERAL_WITHHOLDING_P&sign_scene=INDUSTRY|DIGITAL_MEDIA"+
-			"&external_agreement_no=%s&notify_url=%s&return_url=%s",
-		p.appID,
-		externalAgreementNo,
-		p.notifyURL,
-		req.ReturnURL,
-	)
-
-	return &types.AgreementSignResponse{
-		SignURL:   fmt.Sprintf("https://openapi.alipay.com/gateway.do?%s", signParams),
-		RequestNo: externalAgreementNo,
-		ExpiresAt: time.Now().Add(24 * time.Hour),
-	}, nil
-}
-
-// ExecuteAgreementPay executes a payment using the agreement (代扣)
-func (p *Provider) ExecuteAgreementPay(ctx context.Context, req *types.AgreementPayRequest) (*types.AgreementPayResponse, error) {
-	pay := alipay.TradePay{
-		Trade: alipay.Trade{
-			Subject:     req.Description,
-			OutTradeNo:  req.OrderNo,
-			TotalAmount: fmt.Sprintf("%.2f", req.Amount),
-			ProductCode: "GENERAL_WITHHOLDING",
-		},
-		AgreementParams: &alipay.AgreementParams{
-			AgreementNo: req.AgreementNo,
-		},
-	}
-
-	result, err := p.client.TradePay(ctx, pay)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute alipay agreement pay: %w", err)
-	}
-
-	if !result.IsSuccess() {
-		return nil, fmt.Errorf("alipay agreement pay failed: %s - %s", result.SubCode, result.SubMsg)
-	}
-
-	paidAt := time.Now()
-	return &types.AgreementPayResponse{
-		TransactionID: result.TradeNo,
-		Status:        "success",
-		Amount:        req.Amount,
-		PaidAt:        &paidAt,
-	}, nil
-}
-
-// CancelAgreement cancels an auto-debit agreement (解约)
-// Note: This requires the agreement to be in an active state
-func (p *Provider) CancelAgreement(ctx context.Context, agreementNo string) error {
-	// In the smartwalle/alipay SDK, agreement operations may require additional setup
-	// This is a placeholder that would use the actual SDK method when available
-	return fmt.Errorf("alipay agreement cancellation requires additional merchant configuration")
-}
-
-// GetAgreementStatus checks the status of an agreement
-func (p *Provider) GetAgreementStatus(ctx context.Context, agreementNo string) (string, error) {
-	// Similar to CancelAgreement, this requires specific SDK support
-	return "", fmt.Errorf("alipay agreement query requires additional merchant configuration")
 }

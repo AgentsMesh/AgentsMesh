@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
@@ -27,9 +28,11 @@ func (s *Service) CreatePromoCode(ctx context.Context, code *promocode.PromoCode
 	}
 
 	if err := s.db.Create(code); err != nil {
+		slog.Error("admin: failed to create promo code", "code", code.Code, "error", err)
 		return fmt.Errorf("failed to create promo code: %w", err)
 	}
 
+	slog.Info("admin: promo code created", "code_id", code.ID, "code", code.Code, "admin_user_id", adminUserID)
 	// Create audit log
 	s.createPromoCodeAuditLog(ctx, adminUserID, admin.AuditActionCreate, code.ID, nil, code)
 
@@ -66,9 +69,11 @@ func (s *Service) UpdatePromoCode(ctx context.Context, id int64, input *PromoCod
 	code.UpdatedAt = time.Now()
 
 	if err := s.db.Save(&code); err != nil {
+		slog.Error("admin: failed to update promo code", "code_id", id, "error", err)
 		return nil, fmt.Errorf("failed to update promo code: %w", err)
 	}
 
+	slog.Info("admin: promo code updated", "code_id", id, "admin_user_id", adminUserID)
 	// Create audit log
 	s.createPromoCodeAuditLog(ctx, adminUserID, admin.AuditActionUpdate, code.ID, &oldData, &code)
 
@@ -93,9 +98,11 @@ func (s *Service) DeletePromoCode(ctx context.Context, id int64, adminUserID int
 
 	// Delete the promo code
 	if err := s.db.Delete(&promocode.PromoCode{}, id); err != nil {
+		slog.Error("admin: failed to delete promo code", "code_id", id, "error", err)
 		return fmt.Errorf("failed to delete promo code: %w", err)
 	}
 
+	slog.Info("admin: promo code deleted", "code_id", id, "admin_user_id", adminUserID)
 	// Create audit log
 	s.createPromoCodeAuditLog(ctx, adminUserID, admin.AuditActionDelete, id, &code, nil)
 

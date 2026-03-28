@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
@@ -27,6 +28,8 @@ func (s *MessageService) RecordDeliveryFailure(ctx context.Context, messageID in
 	if message.DeliveryAttempts >= message.MaxRetries {
 		message.Status = agent.MessageStatusDeadLetter
 		message.NextRetryAt = nil
+
+		slog.Warn("message moved to dead letter", "message_id", messageID, "attempts", message.DeliveryAttempts, "error", errorMsg)
 
 		// Create dead letter entry
 		deadLetter := &agent.DeadLetterEntry{
@@ -80,6 +83,7 @@ func (s *MessageService) ReplayDeadLetter(ctx context.Context, entryID int64) (*
 		return nil, err
 	}
 
+	slog.Info("dead letter replayed", "entry_id", entryID, "message_id", entry.OriginalMessage.ID)
 	return entry.OriginalMessage, nil
 }
 

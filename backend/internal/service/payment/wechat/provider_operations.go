@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -33,6 +34,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	}
 
 	if err := json.Unmarshal(payload, &notification); err != nil {
+		slog.Error("failed to parse wechat notification", "error", err)
 		return nil, fmt.Errorf("failed to parse wechat notification: %w", err)
 	}
 
@@ -51,6 +53,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		notification.Resource.Ciphertext,
 	)
 	if err != nil {
+		slog.Error("failed to decrypt wechat notification", "notification_id", notification.ID, "error", err)
 		return nil, fmt.Errorf("failed to decrypt wechat notification: %w", err)
 	}
 
@@ -85,6 +88,7 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	result.RawPayload = make(map[string]interface{})
 	_ = json.Unmarshal([]byte(plaintext), &result.RawPayload)
 
+	slog.Info("wechat webhook processed", "notification_id", result.EventID, "order_no", result.OrderNo, "status", result.Status)
 	return result, nil
 }
 
@@ -107,11 +111,13 @@ func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) 
 
 	resp, result, err := svc.Create(ctx, refundReq)
 	if err != nil {
+		slog.Error("failed to create wechat refund", "order_no", req.OrderNo, "amount", req.Amount, "error", err)
 		return nil, fmt.Errorf("failed to create wechat refund: %w", err)
 	}
 
 	if result.Response.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(result.Response.Body)
+		slog.Error("wechat refund failed", "order_no", req.OrderNo, "status_code", result.Response.StatusCode)
 		return nil, fmt.Errorf("wechat refund failed: %s", string(body))
 	}
 
@@ -142,14 +148,17 @@ func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string
 		Mchid:      core.String(p.mchID),
 	})
 	if err != nil {
+		slog.Error("failed to close wechat order", "trade_no", subscriptionID, "error", err)
 		return fmt.Errorf("failed to close wechat order: %w", err)
 	}
 
 	if result.Response.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(result.Response.Body)
+		slog.Error("wechat close order failed", "trade_no", subscriptionID, "status_code", result.Response.StatusCode)
 		return fmt.Errorf("wechat close order failed: %s", string(body))
 	}
 
+	slog.Info("wechat order closed", "trade_no", subscriptionID)
 	return nil
 }
 

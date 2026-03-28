@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
@@ -23,14 +24,21 @@ func (s *Service) LinkMergeRequest(ctx context.Context, orgID, ticketID int64, p
 	}
 
 	if err := s.repo.CreateMR(ctx, mr); err != nil {
+		slog.Error("failed to link merge request", "ticket_id", ticketID, "mr_url", mrURL, "error", err)
 		return nil, err
 	}
+	slog.Info("merge request linked", "mr_id", mr.ID, "ticket_id", ticketID, "mr_url", mrURL)
 	return mr, nil
 }
 
 // UpdateMergeRequestState updates a merge request state.
 func (s *Service) UpdateMergeRequestState(ctx context.Context, mrID int64, state string) error {
-	return s.repo.UpdateMRState(ctx, mrID, state)
+	if err := s.repo.UpdateMRState(ctx, mrID, state); err != nil {
+		slog.Error("failed to update merge request state", "mr_id", mrID, "state", state, "error", err)
+		return err
+	}
+	slog.Info("merge request state updated", "mr_id", mrID, "state", state)
+	return nil
 }
 
 // GetMergeRequestByURL returns a merge request by URL.
