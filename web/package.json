@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@blocknote/core": "^0.47.1",
+    "@blocknote/core": "^0.47.3",
     "@blocknote/mantine": "^0.47.1",
     "@blocknote/react": "^0.47.1",
     "@dnd-kit/core": "^6.3.1",
