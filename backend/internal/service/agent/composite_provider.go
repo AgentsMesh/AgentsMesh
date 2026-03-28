@@ -38,3 +38,7 @@ func (p *CompositeAgentProvider) GetUserEffectiveConfig(ctx context.Context, use
 func (p *CompositeAgentProvider) GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agent.EncryptedCredentials, bool, error) {
 	return p.credentialSvc.GetEffectiveCredentialsForPod(ctx, userID, agentSlug, profileID)
 }
+
+func (p *CompositeAgentProvider) ResolveCredentialsByName(ctx context.Context, userID int64, agentSlug, profileName string) (agent.EncryptedCredentials, bool, error) {
+	return p.credentialSvc.ResolveCredentialsByName(ctx, userID, agentSlug, profileName)
+}

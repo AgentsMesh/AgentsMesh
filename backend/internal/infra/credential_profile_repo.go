@@ -38,6 +38,21 @@ func (r *credentialProfileRepo) GetWithAgent(ctx context.Context, userID, profil
 	return &profile, nil
 }
 
+func (r *credentialProfileRepo) GetByName(ctx context.Context, userID int64, agentSlug, name string) (*agent.UserAgentCredentialProfile, error) {
+	var profile agent.UserAgentCredentialProfile
+	err := r.db.WithContext(ctx).
+		Preload("Agent").
+		Where("user_id = ? AND agent_slug = ? AND name = ? AND is_active = ?", userID, agentSlug, name, true).
+		First(&profile).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &profile, nil
+}
+
 func (r *credentialProfileRepo) Delete(ctx context.Context, userID, profileID int64) (int64, error) {
 	result := r.db.WithContext(ctx).
 		Where("id = ? AND user_id = ?", profileID, userID).

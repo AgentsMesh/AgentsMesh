@@ -133,8 +133,8 @@ export function CreatePodForm({
             t={t}
           />
 
-          {/* Interaction Mode Toggle (only when agent supports multiple modes) */}
-          {form.selectedAgent && (
+          {/* Interaction Mode Toggle (only when agent supports multiple modes and source mode is off) */}
+          {form.selectedAgent && !form.rawLayerMode && (
             <InteractionModeToggle
               supportedModes={form.supportedModes}
               interactionMode={form.interactionMode}

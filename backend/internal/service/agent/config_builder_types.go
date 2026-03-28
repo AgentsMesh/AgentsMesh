@@ -15,6 +15,8 @@ type AgentConfigProvider interface {
 	GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agent.ConfigValues) agent.ConfigValues
 	// GetEffectiveCredentialsForPod returns credentials for pod injection
 	GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agent.EncryptedCredentials, bool, error)
+	// ResolveCredentialsByName resolves credentials by profile name from PodFile CREDENTIAL declaration
+	ResolveCredentialsByName(ctx context.Context, userID int64, agentSlug, profileName string) (agent.EncryptedCredentials, bool, error)
 }
 
 // Note: AgentConfigProvider is implemented by compositeProvider in API handlers

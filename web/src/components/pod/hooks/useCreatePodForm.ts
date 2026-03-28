@@ -129,7 +129,7 @@ export function useCreatePodForm(
     const repoUrl = selectedRepository
       ? repositories.find((r) => r.id === selectedRepository)?.clone_url
       : undefined;
-    const credType = creds.selectedCredentialProfile === RUNNER_HOST_PROFILE_ID
+    const credProfileName = creds.selectedCredentialProfile === RUNNER_HOST_PROFILE_ID
       ? undefined
       : creds.credentialProfiles.find(
           (p) => p.id === creds.selectedCredentialProfile
@@ -138,9 +138,11 @@ export function useCreatePodForm(
       configValues: configValues ?? {},
       repositoryUrl: repoUrl,
       branchName: selectedBranch || undefined,
-      credentialType: credType,
+      credentialType: credProfileName,
+      interactionMode,
+      credentialProfileName: credProfileName,
     });
-  }, [configValues, selectedRepository, repositories, selectedBranch, creds.selectedCredentialProfile, creds.credentialProfiles]);
+  }, [configValues, selectedRepository, repositories, selectedBranch, creds.selectedCredentialProfile, creds.credentialProfiles, interactionMode]);
 
   const podfileLayer = rawLayerMode ? rawLayerText : generatedLayer;
 

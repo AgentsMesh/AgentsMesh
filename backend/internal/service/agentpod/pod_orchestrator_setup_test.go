@@ -106,6 +106,13 @@ func (m *mockAgentConfigProvider) GetEffectiveCredentialsForPod(_ context.Contex
 	return m.creds, m.isRunner, m.credsErr
 }
 
+func (m *mockAgentConfigProvider) ResolveCredentialsByName(_ context.Context, _ int64, _, profileName string) (agentDomain.EncryptedCredentials, bool, error) {
+	if profileName == "runner_host" {
+		return nil, true, nil
+	}
+	return m.creds, m.isRunner, m.credsErr
+}
+
 // mockRunnerSelector implements RunnerSelectorForOrchestrator for testing.
 type mockRunnerSelector struct {
 	runner *runnerDomain.Runner

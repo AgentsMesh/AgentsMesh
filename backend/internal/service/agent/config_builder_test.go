@@ -104,6 +104,10 @@ func (p *testCompositeProvider) GetEffectiveCredentialsForPod(ctx context.Contex
 	return p.credentialSvc.GetEffectiveCredentialsForPod(ctx, userID, agentSlug, profileID)
 }
 
+func (p *testCompositeProvider) ResolveCredentialsByName(ctx context.Context, userID int64, agentSlug, profileName string) (agent.EncryptedCredentials, bool, error) {
+	return p.credentialSvc.ResolveCredentialsByName(ctx, userID, agentSlug, profileName)
+}
+
 func createTestProvider(db *gorm.DB) AgentConfigProvider {
 	agentSvc := newTestAgentService(db)
 	credentialSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())

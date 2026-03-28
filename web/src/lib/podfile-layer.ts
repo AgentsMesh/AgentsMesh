@@ -23,8 +23,20 @@ export function buildPodfileLayer(params: {
   repositoryUrl?: string;
   branchName?: string;
   credentialType?: string;
+  interactionMode?: string;
+  credentialProfileName?: string;
 }): string {
   const lines: string[] = [];
+
+  // MODE declaration (if not default "pty")
+  if (params.interactionMode && params.interactionMode !== "pty") {
+    lines.push(`MODE ${params.interactionMode}`);
+  }
+
+  // CREDENTIAL declaration (profile name; omit for runner_host default)
+  if (params.credentialProfileName) {
+    lines.push(`CREDENTIAL "${params.credentialProfileName}"`);
+  }
 
   // CONFIG declarations
   for (const [key, value] of Object.entries(params.configValues)) {

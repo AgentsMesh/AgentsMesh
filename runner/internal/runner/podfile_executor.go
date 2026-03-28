@@ -12,11 +12,13 @@ import (
 // PodFileResult holds the output of PodFile evaluation,
 // ready for PodBuilder to use for creating the Pod.
 type PodFileResult struct {
-	LaunchCommand  string
-	LaunchArgs     []string
-	EnvVars        map[string]string
-	FilesToCreate  []*runnerv1.FileToCreate
-	PromptPosition string
+	LaunchCommand     string
+	LaunchArgs        []string
+	EnvVars           map[string]string
+	FilesToCreate     []*runnerv1.FileToCreate
+	PromptPosition    string
+	Mode              string // "pty" or "acp" — from MODE declaration
+	CredentialProfile string // profile name — from CREDENTIAL declaration
 }
 
 // ExecutePodFile parses and evaluates a PodFile with real sandbox paths.
@@ -99,11 +101,13 @@ func toResult(br *eval.BuildResult, initialPrompt string) *PodFileResult {
 	}
 
 	return &PodFileResult{
-		LaunchCommand:  br.LaunchCommand,
-		LaunchArgs:     args,
-		EnvVars:        br.EnvVars,
-		FilesToCreate:  files,
-		PromptPosition: br.PromptPosition,
+		LaunchCommand:     br.LaunchCommand,
+		LaunchArgs:        args,
+		EnvVars:           br.EnvVars,
+		FilesToCreate:     files,
+		PromptPosition:    br.PromptPosition,
+		Mode:              br.Mode,
+		CredentialProfile: br.CredentialProfile,
 	}
 }
 

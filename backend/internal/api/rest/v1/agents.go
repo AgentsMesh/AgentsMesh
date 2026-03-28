@@ -52,6 +52,10 @@ func (p *compositeProvider) GetEffectiveCredentialsForPod(ctx context.Context, u
 	return p.credentialSvc.GetEffectiveCredentialsForPod(ctx, userID, agentSlug, profileID)
 }
 
+func (p *compositeProvider) ResolveCredentialsByName(ctx context.Context, userID int64, agentSlug, profileName string) (agentDomain.EncryptedCredentials, bool, error) {
+	return p.credentialSvc.ResolveCredentialsByName(ctx, userID, agentSlug, profileName)
+}
+
 // CreateCustomAgentRequest represents custom agent creation request.
 // When PodfileSource is provided, LaunchCommand becomes optional (extracted from PodFile).
 type CreateCustomAgentRequest struct {

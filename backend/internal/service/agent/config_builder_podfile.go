@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
+	"github.com/anthropics/agentsmesh/podfile/extract"
 	"github.com/anthropics/agentsmesh/podfile/merge"
 	"github.com/anthropics/agentsmesh/podfile/parser"
 	"github.com/anthropics/agentsmesh/podfile/serialize"
@@ -48,22 +49,36 @@ func (b *ConfigBuilder) buildFromPodFile(
 	// 4. Serialize merged AST to PodFile source
 	mergedSource := serialize.Serialize(baseProg)
 
-	// 5. Get credentials
-	creds, isRunnerHost, err := b.provider.GetEffectiveCredentialsForPod(ctx, req.UserID, req.AgentSlug, req.CredentialProfileID)
+	// 5. Extract MODE/CREDENTIAL from merged PodFile to override request-level settings
+	spec := extract.Extract(baseProg)
+	interactionMode := req.InteractionMode
+	if spec.Mode != "" {
+		interactionMode = spec.Mode
+	}
+
+	// 6. Get credentials — PodFile CREDENTIAL overrides req.CredentialProfileID
+	var creds agent.EncryptedCredentials
+	var isRunnerHost bool
+	var err error
+	if spec.CredentialProfile != "" {
+		creds, isRunnerHost, err = b.provider.ResolveCredentialsByName(ctx, req.UserID, req.AgentSlug, spec.CredentialProfile)
+	} else {
+		creds, isRunnerHost, err = b.provider.GetEffectiveCredentialsForPod(ctx, req.UserID, req.AgentSlug, req.CredentialProfileID)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
 
-	// 6. Build MCP context as JSON
+	// 7. Build MCP context as JSON
 	builtinMCP, installedMCP := b.buildMCPContext(ctx, req, agentDef.Slug)
 	builtinJSON, _ := json.Marshal(builtinMCP)
 	installedJSON, _ := json.Marshal(installedMCP)
 
-	// 7. Convert config values to string map for proto
+	// 8. Convert config values to string map for proto
 	config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentSlug, agent.ConfigValues(req.ConfigOverrides))
 	configValues := configToStringMap(config)
 
-	// 8. Build sandbox config (repo/branch/git creds — not in PodFile)
+	// 9. Build sandbox config (repo/branch/git creds — not in PodFile)
 	sandboxConfig := b.buildSandboxConfig(req)
 
 	return &runnerv1.CreatePodCommand{
@@ -77,7 +92,7 @@ func (b *ConfigBuilder) buildFromPodFile(
 		McpInstalledJson: string(installedJSON),
 		SandboxConfig:    sandboxConfig,
 		InitialPrompt:    req.InitialPrompt,
-		InteractionMode:  req.InteractionMode,
+		InteractionMode:  interactionMode,
 		Cols:             req.Cols,
 		Rows:             req.Rows,
 	}, nil

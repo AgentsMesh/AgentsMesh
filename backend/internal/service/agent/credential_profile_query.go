@@ -102,3 +102,28 @@ func (s *CredentialProfileService) GetEffectiveCredentialsForPod(ctx context.Con
 	}
 	return decrypted, false, nil
 }
+
+// ResolveCredentialsByName resolves credentials by profile name from a PodFile CREDENTIAL declaration.
+// "runner_host" → RunnerHost mode (no credentials injected).
+// Any other name → look up by name, return credentials + isRunnerHost flag.
+func (s *CredentialProfileService) ResolveCredentialsByName(ctx context.Context, userID int64, agentSlug, profileName string) (agent.EncryptedCredentials, bool, error) {
+	if profileName == "runner_host" {
+		return nil, true, nil
+	}
+
+	profile, err := s.repo.GetByName(ctx, userID, agentSlug, profileName)
+	if err != nil {
+		return nil, false, fmt.Errorf("lookup credential profile %q: %w", profileName, err)
+	}
+	if profile == nil {
+		return nil, false, fmt.Errorf("credential profile %q not found for agent %s", profileName, agentSlug)
+	}
+	if profile.IsRunnerHost {
+		return nil, true, nil
+	}
+	decrypted, err := s.decryptCredentials(profile.CredentialsEncrypted)
+	if err != nil {
+		return nil, false, fmt.Errorf("decrypt credentials for profile %q: %w", profileName, err)
+	}
+	return decrypted, false, nil
+}

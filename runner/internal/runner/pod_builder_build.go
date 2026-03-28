@@ -51,6 +51,12 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	launchCommand = pfResult.LaunchCommand
 	resolvedArgs := pfResult.LaunchArgs
 
+	// PodFile MODE declaration overrides the proto interaction mode
+	interactionMode := b.cmd.GetInteractionMode()
+	if pfResult.Mode != "" {
+		interactionMode = pfResult.Mode
+	}
+
 	if err := b.createFilesFromProto(pfResult.FilesToCreate, sandboxRoot, workingDir); err != nil {
 		return nil, err
 	}
@@ -63,7 +69,7 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
 	logger.Pod().Debug("Merged environment variables", "pod_key", b.cmd.PodKey, "count", len(envVars))
 
-	if b.cmd.GetInteractionMode() == "acp" {
+	if interactionMode == "acp" {
 		return b.buildACPPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)
 	}
 	return b.buildPTYPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)

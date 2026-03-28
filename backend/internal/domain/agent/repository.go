@@ -26,6 +26,7 @@ type AgentRepository interface {
 type CredentialProfileRepository interface {
 	Create(ctx context.Context, profile *UserAgentCredentialProfile) error
 	GetWithAgent(ctx context.Context, userID, profileID int64) (*UserAgentCredentialProfile, error)
+	GetByName(ctx context.Context, userID int64, agentSlug, name string) (*UserAgentCredentialProfile, error)
 	Delete(ctx context.Context, userID, profileID int64) (int64, error)
 
 	ListActiveWithAgent(ctx context.Context, userID int64) ([]*UserAgentCredentialProfile, error)
