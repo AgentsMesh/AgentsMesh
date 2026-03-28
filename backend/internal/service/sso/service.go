@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
@@ -76,8 +77,10 @@ func (s *Service) DeleteConfig(ctx context.Context, id int64) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrConfigNotFound
 		}
+		slog.Error("failed to delete SSO config", "config_id", id, "error", err)
 		return fmt.Errorf("failed to delete SSO config: %w", err)
 	}
+	slog.Info("SSO config deleted", "config_id", id)
 	return nil
 }
 
@@ -96,5 +99,10 @@ func (s *Service) DecryptSecret(encrypted string) (string, error) {
 	if encrypted == "" {
 		return "", nil
 	}
-	return crypto.DecryptWithKey(encrypted, s.encryptionKey)
+	decrypted, err := crypto.DecryptWithKey(encrypted, s.encryptionKey)
+	if err != nil {
+		slog.Error("failed to decrypt SSO secret", "error", err)
+		return "", err
+	}
+	return decrypted, nil
 }

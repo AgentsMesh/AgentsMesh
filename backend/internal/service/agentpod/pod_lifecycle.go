@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
@@ -25,7 +26,12 @@ func (s *PodService) HandlePodCreated(ctx context.Context, podKey string, ptyPID
 		updates["branch_name"] = branchName
 	}
 	_, err := s.repo.UpdateByKey(ctx, podKey, updates)
-	return err
+	if err != nil {
+		slog.Error("failed to handle pod created", "pod_key", podKey, "error", err)
+		return err
+	}
+	slog.Info("pod created", "pod_key", podKey, "pty_pid", ptyPID)
+	return nil
 }
 
 // HandlePodTerminated handles the pod_terminated event from runner
@@ -36,13 +42,19 @@ func (s *PodService) HandlePodTerminated(ctx context.Context, podKey string, exi
 		"finished_at": now,
 		"pty_pid":     nil,
 	})
-	return err
+	if err != nil {
+		slog.Error("failed to handle pod terminated", "pod_key", podKey, "error", err)
+		return err
+	}
+	slog.Info("pod terminated", "pod_key", podKey)
+	return nil
 }
 
 // TerminatePod terminates a pod
 func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
 	pod, err := s.GetPod(ctx, podKey)
 	if err != nil {
+		slog.Error("failed to get pod for termination", "pod_key", podKey, "error", err)
 		return err
 	}
 
@@ -52,8 +64,11 @@ func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
 
 	previousStatus := pod.Status
 	if err := s.UpdatePodStatus(ctx, podKey, agentpod.StatusTerminated); err != nil {
+		slog.Error("failed to terminate pod", "pod_key", podKey, "error", err)
 		return err
 	}
+
+	slog.Info("pod terminated by user", "pod_key", podKey, "previous_status", previousStatus)
 
 	if s.eventPublisher != nil {
 		s.eventPublisher.PublishPodEvent(
@@ -109,6 +124,8 @@ func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reported
 		if !reportedSet[pod.PodKey] {
 			if err := s.repo.MarkOrphaned(ctx, pod, now); err != nil {
 				errs = append(errs, fmt.Errorf("mark pod %s orphaned: %w", pod.PodKey, err))
+			} else {
+				slog.Warn("pod marked orphaned during reconciliation", "pod_key", pod.PodKey, "runner_id", runnerID)
 			}
 		}
 	}
@@ -119,7 +136,15 @@ func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reported
 // CleanupStalePods marks stale pods as terminated
 func (s *PodService) CleanupStalePods(ctx context.Context, maxIdleHours int) (int64, error) {
 	threshold := time.Now().Add(-time.Duration(maxIdleHours) * time.Hour)
-	return s.repo.CleanupStale(ctx, threshold)
+	count, err := s.repo.CleanupStale(ctx, threshold)
+	if err != nil {
+		slog.Error("failed to cleanup stale pods", "max_idle_hours", maxIdleHours, "error", err)
+		return 0, err
+	}
+	if count > 0 {
+		slog.Info("cleaned up stale pods", "count", count, "max_idle_hours", maxIdleHours)
+	}
+	return count, nil
 }
 
 // MarkInitFailed marks an initializing pod as error with the given code and message.
@@ -134,5 +159,10 @@ func (s *PodService) MarkInitFailed(ctx context.Context, podKey, errorCode, erro
 		"error_message": errorMessage,
 		"finished_at":   now,
 	})
-	return err
+	if err != nil {
+		slog.Error("failed to mark pod init failed", "pod_key", podKey, "error_code", errorCode, "error", err)
+		return err
+	}
+	slog.Warn("pod init failed", "pod_key", podKey, "error_code", errorCode, "error_message", errorMessage)
+	return nil
 }

@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
@@ -93,7 +94,12 @@ func (s *Service) UpdateOrganizationSubscriptionStatus(ctx context.Context, orgI
 		return err
 	}
 	org.SubscriptionStatus = status
-	return s.db.Save(&org)
+	if err := s.db.Save(&org); err != nil {
+		slog.Error("admin: failed to update org subscription status", "org_id", orgID, "status", status, "error", err)
+		return err
+	}
+	slog.Info("admin: org subscription status updated", "org_id", orgID, "status", status)
+	return nil
 }
 
 // DeleteOrganization deletes an organization after checking for active runners.
@@ -122,6 +128,11 @@ func (s *Service) DeleteOrganization(ctx context.Context, orgID int64) error {
 		gormTx.Exec("DELETE FROM loops WHERE organization_id = ?", orgID)
 
 		// Delete the org — FK CASCADE handles all other dependent tables
-		return tx.Delete(&org)
+		if err := tx.Delete(&org); err != nil {
+			slog.Error("admin: failed to delete organization", "org_id", orgID, "error", err)
+			return err
+		}
+		slog.Info("admin: organization deleted", "org_id", orgID)
+		return nil
 	})
 }

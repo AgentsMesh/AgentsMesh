@@ -2,6 +2,7 @@ package binding
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
@@ -61,9 +62,11 @@ func (s *Service) RequestBinding(ctx context.Context, orgID int64, initiatorPod,
 	}
 
 	if err := s.repo.Create(ctx, binding); err != nil {
+		slog.Error("failed to create binding request", "initiator", initiatorPod, "target", targetPod, "error", err)
 		return nil, err
 	}
 
+	slog.Info("binding requested", "binding_id", binding.ID, "initiator", initiatorPod, "target", targetPod, "status", initialStatus)
 	return binding, nil
 }
 
@@ -97,9 +100,11 @@ func (s *Service) CreateAutoBinding(ctx context.Context, orgID int64, initiatorP
 	}
 
 	if err := s.repo.Create(ctx, binding); err != nil {
+		slog.Error("failed to create auto-binding", "initiator", initiatorPod, "target", targetPod, "error", err)
 		return nil, err
 	}
 
+	slog.Info("auto-binding created", "binding_id", binding.ID, "initiator", initiatorPod, "target", targetPod)
 	return binding, nil
 }
 
@@ -130,9 +135,11 @@ func (s *Service) AcceptBinding(ctx context.Context, bindingID int64, targetPod 
 	binding.ExpiresAt = nil // Active bindings don't expire
 
 	if err := s.repo.Save(ctx, binding); err != nil {
+		slog.Error("failed to accept binding", "binding_id", bindingID, "error", err)
 		return nil, err
 	}
 
+	slog.Info("binding accepted", "binding_id", bindingID, "target_pod", targetPod)
 	return binding, nil
 }
 
@@ -159,9 +166,11 @@ func (s *Service) RejectBinding(ctx context.Context, bindingID int64, targetPod 
 	}
 
 	if err := s.repo.Save(ctx, binding); err != nil {
+		slog.Error("failed to reject binding", "binding_id", bindingID, "error", err)
 		return nil, err
 	}
 
+	slog.Info("binding rejected", "binding_id", bindingID, "target_pod", targetPod, "reason", reason)
 	return binding, nil
 }
 
@@ -178,13 +187,23 @@ func (s *Service) Unbind(ctx context.Context, initiatorPod, targetPod string) (b
 
 	binding.Status = channel.BindingStatusInactive
 	if err := s.repo.Save(ctx, binding); err != nil {
+		slog.Error("failed to unbind", "initiator", initiatorPod, "target", targetPod, "error", err)
 		return false, err
 	}
 
+	slog.Info("pods unbound", "binding_id", binding.ID, "initiator", binding.InitiatorPod, "target", binding.TargetPod)
 	return true, nil
 }
 
 // CleanupExpiredBindings marks expired pending bindings as expired
 func (s *Service) CleanupExpiredBindings(ctx context.Context) (int64, error) {
-	return s.repo.MarkExpired(ctx, time.Now())
+	count, err := s.repo.MarkExpired(ctx, time.Now())
+	if err != nil {
+		slog.Error("failed to cleanup expired bindings", "error", err)
+		return 0, err
+	}
+	if count > 0 {
+		slog.Info("expired bindings cleaned up", "count", count)
+	}
+	return count, nil
 }

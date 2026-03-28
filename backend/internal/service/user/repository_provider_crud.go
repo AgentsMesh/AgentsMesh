@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
@@ -59,6 +60,8 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 		if req.ClientSecret != "" {
 			encrypted, err := crypto.EncryptWithKey(req.ClientSecret, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt client secret",
+					"user_id", userID, "provider_type", req.ProviderType, "error", err)
 				return nil, err
 			}
 			provider.ClientSecretEncrypted = &encrypted
@@ -66,12 +69,16 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 		if req.BotToken != "" {
 			encrypted, err := crypto.EncryptWithKey(req.BotToken, s.encryptionKey)
 			if err != nil {
+				slog.Error("failed to encrypt bot token",
+					"user_id", userID, "provider_type", req.ProviderType, "error", err)
 				return nil, err
 			}
 			provider.BotTokenEncrypted = &encrypted
 		}
 	} else {
 		// No encryption key - store as-is (not recommended)
+		slog.Warn("storing provider secrets without encryption",
+			"user_id", userID, "provider_type", req.ProviderType)
 		if req.ClientSecret != "" {
 			provider.ClientSecretEncrypted = &req.ClientSecret
 		}
@@ -81,9 +88,13 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 	}
 
 	if err := s.repo.CreateRepositoryProvider(ctx, provider); err != nil {
+		slog.Error("failed to create repository provider",
+			"user_id", userID, "provider_type", req.ProviderType, "error", err)
 		return nil, err
 	}
 
+	slog.Info("repository provider created",
+		"user_id", userID, "provider_id", provider.ID, "provider_type", req.ProviderType)
 	return provider, nil
 }
 
@@ -108,10 +119,13 @@ func (s *Service) ListRepositoryProviders(ctx context.Context, userID int64) ([]
 func (s *Service) DeleteRepositoryProvider(ctx context.Context, userID, providerID int64) error {
 	rowsAffected, err := s.repo.DeleteRepositoryProvider(ctx, userID, providerID)
 	if err != nil {
+		slog.Error("failed to delete repository provider",
+			"user_id", userID, "provider_id", providerID, "error", err)
 		return err
 	}
 	if rowsAffected == 0 {
 		return ErrProviderNotFound
 	}
+	slog.Info("repository provider deleted", "user_id", userID, "provider_id", providerID)
 	return nil
 }

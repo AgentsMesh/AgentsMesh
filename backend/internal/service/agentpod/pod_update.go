@@ -2,6 +2,7 @@ package agentpod
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
@@ -20,6 +21,7 @@ func (s *PodService) UpdatePodStatus(ctx context.Context, podKey, status string)
 
 	rowsAffected, err := s.repo.UpdateByKey(ctx, podKey, updates)
 	if err != nil {
+		slog.Error("failed to update pod status", "pod_key", podKey, "status", status, "error", err)
 		return err
 	}
 	if rowsAffected == 0 {

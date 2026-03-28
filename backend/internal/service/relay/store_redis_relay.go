@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra/cache"
@@ -56,6 +57,7 @@ func (s *RedisStore) SaveRelay(ctx context.Context, relay *RelayInfo) error {
 	pipe.Set(ctx, s.key(relayHeartbeatPrefix, relay.ID), relay.LastHeartbeat.Unix(), relayHeartbeatTTL)
 
 	if _, err := pipe.Exec(ctx); err != nil {
+		slog.Error("failed to save relay", "relay_id", relay.ID, "error", err)
 		return fmt.Errorf("failed to save relay: %w", err)
 	}
 	return nil
@@ -194,6 +196,7 @@ func (s *RedisStore) DeleteRelay(ctx context.Context, relayID string) error {
 	pipe.Del(ctx, s.key(relayHeartbeatPrefix, relayID))
 
 	if _, err := pipe.Exec(ctx); err != nil {
+		slog.Error("failed to delete relay", "relay_id", relayID, "error", err)
 		return fmt.Errorf("failed to delete relay: %w", err)
 	}
 	return nil

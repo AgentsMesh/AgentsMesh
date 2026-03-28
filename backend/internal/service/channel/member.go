@@ -2,6 +2,7 @@ package channel
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
@@ -17,7 +18,12 @@ func (s *Service) SetMemberMuted(ctx context.Context, channelID, userID int64, m
 	if err := s.repo.UpsertMember(ctx, channelID, userID); err != nil {
 		return err
 	}
-	return s.repo.SetMemberMuted(ctx, channelID, userID, muted)
+	if err := s.repo.SetMemberMuted(ctx, channelID, userID, muted); err != nil {
+		slog.Error("failed to set member muted", "channel_id", channelID, "user_id", userID, "muted", muted, "error", err)
+		return err
+	}
+	slog.Info("channel member muted updated", "channel_id", channelID, "user_id", userID, "muted", muted)
+	return nil
 }
 
 // MarkRead marks a channel as read up to a specific message ID

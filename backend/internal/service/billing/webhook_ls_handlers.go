@@ -2,6 +2,7 @@ package billing
 
 import (
 	"errors"
+	"log/slog"
 
 	"github.com/gin-gonic/gin"
 
@@ -24,8 +25,10 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
+			slog.Info("webhook already processed, skipping", "event_id", event.EventID, "provider", event.Provider)
 			return nil
 		}
+		slog.Error("failed to check webhook idempotency", "event_id", event.EventID, "provider", event.Provider, "error", err)
 		return err
 	}
 	// Roll back the idempotency mark if the handler fails, so the event
@@ -63,7 +66,12 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 			if sub.LemonSqueezyCustomerID == nil && event.CustomerID != "" {
 				sub.LemonSqueezyCustomerID = &event.CustomerID
 			}
-			return s.repo.SaveSubscription(ctx, sub)
+			if err := s.repo.SaveSubscription(ctx, sub); err != nil {
+				slog.Error("failed to save subscription with LS IDs", "org_id", sub.OrganizationID, "subscription_id", event.SubscriptionID, "error", err)
+				return err
+			}
+			slog.Info("subscription linked to LemonSqueezy", "org_id", sub.OrganizationID, "ls_subscription_id", event.SubscriptionID)
+			return nil
 		}
 	}
 
@@ -81,8 +89,10 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
+			slog.Info("webhook already processed, skipping", "event_id", event.EventID, "provider", event.Provider)
 			return nil
 		}
+		slog.Error("failed to check webhook idempotency", "event_id", event.EventID, "provider", event.Provider, "error", err)
 		return err
 	}
 	// Roll back the idempotency mark if the handler fails, so the event
@@ -95,6 +105,7 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
+		slog.Warn("subscription not found for pause webhook", "provider", event.Provider, "subscription_id", event.SubscriptionID)
 		return nil // Subscription not found
 	}
 
@@ -104,12 +115,14 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 	sub.Status = billing.SubscriptionStatusPaused
 
 	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
+		slog.Error("failed to save paused subscription", "org_id", sub.OrganizationID, "error", err)
 		return err
 	}
 
 	// Sync organization table
 	status := billing.SubscriptionStatusPaused
 	s.syncOrganizationSubscription(ctx, sub.OrganizationID, nil, &status)
+	slog.Info("subscription paused via webhook", "org_id", sub.OrganizationID, "provider", event.Provider)
 	return nil
 }
 
@@ -124,8 +137,10 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
+			slog.Info("webhook already processed, skipping", "event_id", event.EventID, "provider", event.Provider)
 			return nil
 		}
+		slog.Error("failed to check webhook idempotency", "event_id", event.EventID, "provider", event.Provider, "error", err)
 		return err
 	}
 	// Roll back the idempotency mark if the handler fails, so the event
@@ -138,6 +153,7 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
+		slog.Warn("subscription not found for resume webhook", "provider", event.Provider, "subscription_id", event.SubscriptionID)
 		return nil // Subscription not found
 	}
 
@@ -146,12 +162,14 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 	sub.FrozenAt = nil
 
 	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
+		slog.Error("failed to save resumed subscription", "org_id", sub.OrganizationID, "error", err)
 		return err
 	}
 
 	// Sync organization table
 	status := billing.SubscriptionStatusActive
 	s.syncOrganizationSubscription(ctx, sub.OrganizationID, nil, &status)
+	slog.Info("subscription resumed via webhook", "org_id", sub.OrganizationID, "provider", event.Provider)
 	return nil
 }
 
@@ -166,8 +184,10 @@ func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.Webho
 	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
+			slog.Info("webhook already processed, skipping", "event_id", event.EventID, "provider", event.Provider)
 			return nil
 		}
+		slog.Error("failed to check webhook idempotency", "event_id", event.EventID, "provider", event.Provider, "error", err)
 		return err
 	}
 	// Roll back the idempotency mark if the handler fails, so the event
@@ -180,6 +200,7 @@ func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.Webho
 
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
+		slog.Warn("subscription not found for expiration webhook", "provider", event.Provider, "subscription_id", event.SubscriptionID)
 		return nil // Subscription not found
 	}
 
@@ -189,11 +210,13 @@ func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.Webho
 	sub.Status = billing.SubscriptionStatusExpired
 
 	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
+		slog.Error("failed to save expired subscription", "org_id", sub.OrganizationID, "error", err)
 		return err
 	}
 
 	// Sync organization table
 	status := billing.SubscriptionStatusExpired
 	s.syncOrganizationSubscription(ctx, sub.OrganizationID, nil, &status)
+	slog.Info("subscription expired via webhook", "org_id", sub.OrganizationID, "provider", event.Provider)
 	return nil
 }

@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
@@ -143,6 +144,7 @@ func (s *Service) DisableRunner(ctx context.Context, runnerID int64) (*runner.Ru
 		return nil, fmt.Errorf("failed to disable runner: %w", err)
 	}
 
+	slog.Info("admin: runner disabled", "runner_id", runnerID)
 	return &r, nil
 }
 
@@ -158,6 +160,7 @@ func (s *Service) EnableRunner(ctx context.Context, runnerID int64) (*runner.Run
 		return nil, fmt.Errorf("failed to enable runner: %w", err)
 	}
 
+	slog.Info("admin: runner enabled", "runner_id", runnerID)
 	return &r, nil
 }
 
@@ -190,5 +193,6 @@ func (s *Service) DeleteRunner(ctx context.Context, runnerID int64) (*runner.Run
 		return nil, fmt.Errorf("failed to delete runner: %w", err)
 	}
 
+	slog.Info("admin: runner deleted", "runner_id", runnerID)
 	return &r, nil
 }

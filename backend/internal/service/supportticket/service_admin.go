@@ -3,6 +3,7 @@ package supportticket
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
 	"time"
 
@@ -61,8 +62,10 @@ func (s *Service) AdminAddReply(ctx context.Context, ticketID, adminUserID int64
 	}
 
 	if err := s.repo.AddAdminReplyAndTransition(ctx, msg, ticketID); err != nil {
+		slog.Error("failed to add admin reply", "ticket_id", ticketID, "admin_user_id", adminUserID, "error", err)
 		return nil, fmt.Errorf("failed to create admin reply: %w", err)
 	}
+	slog.Info("admin reply added", "ticket_id", ticketID, "admin_user_id", adminUserID)
 	return msg, nil
 }
 
@@ -105,6 +108,7 @@ func (s *Service) AdminUpdateStatus(ctx context.Context, ticketID int64, status 
 	if rowsAffected == 0 {
 		return ErrInvalidTransition
 	}
+	slog.Info("support ticket status updated", "ticket_id", ticketID, "old_status", ticket.Status, "new_status", status)
 	return nil
 }
 
@@ -112,11 +116,13 @@ func (s *Service) AdminUpdateStatus(ctx context.Context, ticketID int64, status 
 func (s *Service) AdminAssign(ctx context.Context, ticketID, adminUserID int64) error {
 	rowsAffected, err := s.repo.AssignAdmin(ctx, ticketID, adminUserID)
 	if err != nil {
+		slog.Error("failed to assign support ticket", "ticket_id", ticketID, "admin_user_id", adminUserID, "error", err)
 		return fmt.Errorf("failed to assign ticket: %w", err)
 	}
 	if rowsAffected == 0 {
 		return ErrTicketNotFound
 	}
+	slog.Info("support ticket assigned", "ticket_id", ticketID, "admin_user_id", adminUserID)
 	return nil
 }
 

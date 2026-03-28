@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
@@ -31,6 +32,7 @@ func (s *Service) IsConnected(runnerID int64) bool {
 func (s *Service) MarkConnected(ctx context.Context, runnerID int64) error {
 	r, err := s.GetRunner(ctx, runnerID)
 	if err != nil {
+		slog.Error("failed to get runner for connect", "runner_id", runnerID, "error", err)
 		return err
 	}
 
@@ -44,12 +46,14 @@ func (s *Service) MarkConnected(ctx context.Context, runnerID int64) error {
 		PodCount: r.CurrentPods,
 	})
 
+	slog.Info("runner connected", "runner_id", runnerID)
 	return s.UpdateRunnerStatus(ctx, runnerID, runner.RunnerStatusOnline)
 }
 
 // MarkDisconnected marks a runner as disconnected
 func (s *Service) MarkDisconnected(ctx context.Context, runnerID int64) error {
 	s.activeRunners.Delete(runnerID)
+	slog.Info("runner disconnected", "runner_id", runnerID)
 	return s.UpdateRunnerStatus(ctx, runnerID, runner.RunnerStatusOffline)
 }
 
@@ -72,6 +76,7 @@ func (s *Service) UpdateRunnerVersionAndHostInfo(ctx context.Context, runnerID i
 // UpdateAvailableAgents updates the list of available agents for a runner
 // Called when runner completes initialization handshake
 func (s *Service) UpdateAvailableAgents(ctx context.Context, runnerID int64, agents []string) error {
+	slog.Info("runner available agents updated", "runner_id", runnerID, "agents", agents)
 	return s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
 		"available_agents": runner.StringSlice(agents),
 	})

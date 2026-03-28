@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"golang.org/x/crypto/bcrypt"
@@ -79,6 +80,7 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*user.User, e
 	if req.Password != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
+			slog.Error("failed to hash password during user creation", "email", req.Email, "error", err)
 			return nil, err
 		}
 		passwordHash = string(hash)
@@ -97,9 +99,11 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*user.User, e
 	}
 
 	if err := s.repo.CreateUser(ctx, u); err != nil {
+		slog.Error("failed to create user", "email", req.Email, "error", err)
 		return nil, err
 	}
 
+	slog.Info("user created", "user_id", u.ID, "email", req.Email)
 	return u, nil
 }
 
@@ -142,9 +146,15 @@ func (s *Service) Update(ctx context.Context, id int64, updates map[string]inter
 func (s *Service) UpdatePassword(ctx context.Context, id int64, password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
+		slog.Error("failed to hash password during update", "user_id", id, "error", err)
 		return err
 	}
-	return s.repo.UpdateUserField(ctx, id, "password_hash", string(hash))
+	if err := s.repo.UpdateUserField(ctx, id, "password_hash", string(hash)); err != nil {
+		slog.Error("failed to update password", "user_id", id, "error", err)
+		return err
+	}
+	slog.Info("password updated", "user_id", id)
+	return nil
 }
 
 // AddPreDeleteHook registers a callback invoked before user deletion (for cleanup without FK CASCADE)
@@ -156,10 +166,16 @@ func (s *Service) AddPreDeleteHook(hook func(ctx context.Context, userID int64) 
 func (s *Service) Delete(ctx context.Context, id int64) error {
 	for _, hook := range s.preDeleteHooks {
 		if err := hook(ctx, id); err != nil {
+			slog.Error("pre-delete hook failed", "user_id", id, "error", err)
 			return err
 		}
 	}
-	return s.repo.DeleteUser(ctx, id)
+	if err := s.repo.DeleteUser(ctx, id); err != nil {
+		slog.Error("failed to delete user", "user_id", id, "error", err)
+		return err
+	}
+	slog.Info("user deleted", "user_id", id)
+	return nil
 }
 
 // Search searches for users

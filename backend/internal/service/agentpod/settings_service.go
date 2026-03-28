@@ -3,6 +3,7 @@ package agentpod
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
@@ -68,9 +69,11 @@ func (s *SettingsService) UpdateUserSettings(ctx context.Context, userID int64, 
 	}
 
 	if err := s.repo.Save(ctx, settings); err != nil {
+		slog.Error("failed to update user settings", "user_id", userID, "error", err)
 		return nil, err
 	}
 
+	slog.Info("user settings updated", "user_id", userID)
 	return settings, nil
 }
 

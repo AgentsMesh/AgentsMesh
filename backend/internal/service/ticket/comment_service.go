@@ -3,6 +3,7 @@ package ticket
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
@@ -36,9 +37,11 @@ func (s *Service) CreateComment(ctx context.Context, ticketID, userID int64, con
 	}
 
 	if err := s.repo.CreateComment(ctx, comment); err != nil {
+		slog.Error("failed to create comment", "ticket_id", ticketID, "user_id", userID, "error", err)
 		return nil, err
 	}
 
+	slog.Info("comment created", "comment_id", comment.ID, "ticket_id", ticketID, "user_id", userID)
 	// Reload with user association
 	loaded, err := s.repo.GetCommentWithUser(ctx, comment.ID)
 	if err != nil {
@@ -72,9 +75,11 @@ func (s *Service) UpdateComment(ctx context.Context, ticketID, commentID, userID
 	comment.Mentions = mentions
 
 	if err := s.repo.UpdateComment(ctx, comment); err != nil {
+		slog.Error("failed to update comment", "comment_id", commentID, "ticket_id", ticketID, "error", err)
 		return nil, err
 	}
 
+	slog.Info("comment updated", "comment_id", commentID, "ticket_id", ticketID, "user_id", userID)
 	loaded, err := s.repo.GetCommentWithUser(ctx, commentID)
 	if err != nil {
 		return nil, err
@@ -103,5 +108,10 @@ func (s *Service) DeleteComment(ctx context.Context, ticketID, commentID, userID
 
 // DeleteCommentsByTicket deletes all comments for a ticket.
 func (s *Service) DeleteCommentsByTicket(ctx context.Context, ticketID int64) error {
-	return s.repo.DeleteCommentsByTicket(ctx, ticketID)
+	if err := s.repo.DeleteCommentsByTicket(ctx, ticketID); err != nil {
+		slog.Error("failed to delete comments by ticket", "ticket_id", ticketID, "error", err)
+		return err
+	}
+	slog.Info("comments deleted for ticket", "ticket_id", ticketID)
+	return nil
 }

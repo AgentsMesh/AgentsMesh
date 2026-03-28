@@ -2,6 +2,7 @@ package promocode
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -64,9 +65,11 @@ func (s *Service) Create(ctx context.Context, req *CreateRequest) (*promocode.Pr
 	}
 
 	if err := s.repo.Create(ctx, promoCode); err != nil {
+		slog.Error("failed to create promo code", "code", code, "error", err)
 		return nil, err
 	}
 
+	slog.Info("promo code created", "code_id", promoCode.ID, "code", code, "plan", req.PlanName)
 	return promoCode, nil
 }
 
@@ -87,7 +90,12 @@ func (s *Service) Deactivate(ctx context.Context, id int64) error {
 		return ErrPromoCodeNotFound
 	}
 	promoCode.IsActive = false
-	return s.repo.Update(ctx, promoCode)
+	if err := s.repo.Update(ctx, promoCode); err != nil {
+		slog.Error("failed to deactivate promo code", "code_id", id, "error", err)
+		return err
+	}
+	slog.Info("promo code deactivated", "code_id", id)
+	return nil
 }
 
 // Activate activates a promo code (Admin only)
@@ -97,5 +105,10 @@ func (s *Service) Activate(ctx context.Context, id int64) error {
 		return ErrPromoCodeNotFound
 	}
 	promoCode.IsActive = true
-	return s.repo.Update(ctx, promoCode)
+	if err := s.repo.Update(ctx, promoCode); err != nil {
+		slog.Error("failed to activate promo code", "code_id", id, "error", err)
+		return err
+	}
+	slog.Info("promo code activated", "code_id", id)
+	return nil
 }

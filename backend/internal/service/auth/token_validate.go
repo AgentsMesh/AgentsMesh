@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -66,33 +67,39 @@ func (s *Service) isTokenBlacklisted(ctx context.Context, token string) (bool, e
 // RefreshToken refreshes access token using refresh token stored in Redis
 func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*LoginResult, error) {
 	if s.redis == nil {
+		slog.Error("refresh token attempted without redis")
 		return nil, ErrInvalidRefreshToken
 	}
 
 	tokenData, err := s.validateRefreshToken(ctx, refreshToken)
 	if err != nil {
+		slog.Warn("refresh token validation failed", "error", err)
 		return nil, err
 	}
 
 	u, err := s.userService.GetByID(ctx, tokenData.UserID)
 	if err != nil {
+		slog.Error("failed to get user for token refresh", "user_id", tokenData.UserID, "error", err)
 		return nil, err
 	}
 
 	if !u.IsActive {
+		slog.Warn("token refresh denied for disabled user", "user_id", u.ID)
 		return nil, ErrUserDisabled
 	}
 
 	// Invalidate old refresh token (token rotation for security)
 	if err := s.revokeRefreshToken(ctx, refreshToken); err != nil {
-		// Log but don't fail
+		slog.Warn("failed to revoke old refresh token during rotation", "user_id", u.ID, "error", err)
 	}
 
 	tokens, err := s.GenerateTokenPairWithContext(ctx, u, tokenData.OrganizationID, tokenData.Role)
 	if err != nil {
+		slog.Error("failed to generate new token pair during refresh", "user_id", u.ID, "error", err)
 		return nil, err
 	}
 
+	slog.Info("token refreshed", "user_id", u.ID, "org_id", tokenData.OrganizationID)
 	return &LoginResult{
 		User:         u,
 		Token:        tokens.AccessToken,

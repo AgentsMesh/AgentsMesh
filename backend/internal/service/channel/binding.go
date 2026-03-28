@@ -2,6 +2,7 @@ package channel
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
@@ -17,9 +18,11 @@ func (s *Service) CreateBinding(ctx context.Context, orgID int64, initiatorPod, 
 	}
 
 	if err := s.repo.CreateBinding(ctx, binding); err != nil {
+		slog.Error("failed to create binding", "org_id", orgID, "initiator", initiatorPod, "target", targetPod, "error", err)
 		return nil, err
 	}
 
+	slog.Info("binding created", "binding_id", binding.ID, "initiator", initiatorPod, "target", targetPod)
 	return binding, nil
 }
 
@@ -54,22 +57,37 @@ func (s *Service) ListBindingsForPod(ctx context.Context, podKey string) ([]*cha
 
 // ApproveBinding approves a binding request
 func (s *Service) ApproveBinding(ctx context.Context, bindingID int64, scopes []string) error {
-	return s.repo.UpdateBindingFields(ctx, bindingID, map[string]interface{}{
+	if err := s.repo.UpdateBindingFields(ctx, bindingID, map[string]interface{}{
 		"status":         channel.BindingStatusActive,
 		"granted_scopes": scopes,
-	})
+	}); err != nil {
+		slog.Error("failed to approve binding", "binding_id", bindingID, "error", err)
+		return err
+	}
+	slog.Info("binding approved", "binding_id", bindingID)
+	return nil
 }
 
 // RejectBinding rejects a binding request
 func (s *Service) RejectBinding(ctx context.Context, bindingID int64) error {
-	return s.repo.UpdateBindingFields(ctx, bindingID, map[string]interface{}{
+	if err := s.repo.UpdateBindingFields(ctx, bindingID, map[string]interface{}{
 		"status": channel.BindingStatusRejected,
-	})
+	}); err != nil {
+		slog.Error("failed to reject binding", "binding_id", bindingID, "error", err)
+		return err
+	}
+	slog.Info("binding rejected", "binding_id", bindingID)
+	return nil
 }
 
 // RevokeBinding revokes an approved binding
 func (s *Service) RevokeBinding(ctx context.Context, bindingID int64) error {
-	return s.repo.UpdateBindingFields(ctx, bindingID, map[string]interface{}{
+	if err := s.repo.UpdateBindingFields(ctx, bindingID, map[string]interface{}{
 		"status": channel.BindingStatusInactive,
-	})
+	}); err != nil {
+		slog.Error("failed to revoke binding", "binding_id", bindingID, "error", err)
+		return err
+	}
+	slog.Info("binding revoked", "binding_id", bindingID)
+	return nil
 }

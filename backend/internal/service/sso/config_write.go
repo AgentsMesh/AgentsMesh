@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 
@@ -64,9 +65,13 @@ func (s *Service) CreateConfig(ctx context.Context, req *CreateConfigRequest, cr
 	}
 
 	if err := s.repo.Create(ctx, cfg); err != nil {
+		slog.Error("failed to create SSO config",
+			"domain", cfg.Domain, "protocol", string(protocol), "created_by", createdBy, "error", err)
 		return nil, fmt.Errorf("failed to create SSO config: %w", err)
 	}
 
+	slog.Info("SSO config created",
+		"config_id", cfg.ID, "domain", cfg.Domain, "protocol", string(protocol))
 	return cfg, nil
 }
 
@@ -83,6 +88,7 @@ func (s *Service) setOIDCFields(cfg *sso.Config, req *CreateConfigRequest) error
 	if req.OIDCClientSecret != "" {
 		encrypted, err := crypto.EncryptWithKey(req.OIDCClientSecret, s.encryptionKey)
 		if err != nil {
+			slog.Error("failed to encrypt OIDC client secret", "error", err)
 			return fmt.Errorf("failed to encrypt OIDC client secret: %w", err)
 		}
 		cfg.OIDCClientSecretEncrypted = &encrypted
@@ -128,6 +134,7 @@ func (s *Service) setSAMLFields(cfg *sso.Config, req *CreateConfigRequest) error
 	if req.SAMLIDPCert != "" {
 		encrypted, err := crypto.EncryptWithKey(req.SAMLIDPCert, s.encryptionKey)
 		if err != nil {
+			slog.Error("failed to encrypt SAML IdP cert", "error", err)
 			return fmt.Errorf("failed to encrypt SAML IdP cert: %w", err)
 		}
 		cfg.SAMLIDPCertEncrypted = &encrypted
@@ -170,6 +177,7 @@ func (s *Service) setLDAPFields(cfg *sso.Config, req *CreateConfigRequest) error
 	if req.LDAPBindPassword != "" {
 		encrypted, err := crypto.EncryptWithKey(req.LDAPBindPassword, s.encryptionKey)
 		if err != nil {
+			slog.Error("failed to encrypt LDAP bind password", "error", err)
 			return fmt.Errorf("failed to encrypt LDAP bind password: %w", err)
 		}
 		cfg.LDAPBindPasswordEncrypted = &encrypted

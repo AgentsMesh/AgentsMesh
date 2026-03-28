@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
@@ -23,10 +24,18 @@ func getGitHubAuthURL(cfg OAuthConfig, state string) string {
 func handleGitHubCallback(ctx context.Context, cfg OAuthConfig, code string) (*OAuthUserInfo, error) {
 	accessToken, err := exchangeGitHubCode(ctx, cfg, code)
 	if err != nil {
+		slog.Error("github oauth code exchange failed", "error", err)
 		return nil, err
 	}
 
-	return fetchGitHubUserInfo(ctx, accessToken)
+	userInfo, err := fetchGitHubUserInfo(ctx, accessToken)
+	if err != nil {
+		slog.Error("github oauth user info fetch failed", "error", err)
+		return nil, err
+	}
+
+	slog.Info("github oauth callback succeeded", "username", userInfo.Username, "email", userInfo.Email)
+	return userInfo, nil
 }
 
 // exchangeGitHubCode exchanges authorization code for access token
@@ -55,6 +64,7 @@ func exchangeGitHubCode(ctx context.Context, cfg OAuthConfig, code string) (stri
 
 	accessToken := values.Get("access_token")
 	if accessToken == "" {
+		slog.Warn("github oauth returned empty access token")
 		return "", ErrInvalidOAuthCode
 	}
 
@@ -79,6 +89,7 @@ func fetchGitHubUserInfo(ctx context.Context, accessToken string) (*OAuthUserInf
 	defer userResp.Body.Close()
 
 	if userResp.StatusCode != http.StatusOK {
+		slog.Error("github API returned non-OK status", "status", userResp.StatusCode)
 		return nil, fmt.Errorf("GitHub API returned status %d", userResp.StatusCode)
 	}
 

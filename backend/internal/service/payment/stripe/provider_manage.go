@@ -3,6 +3,7 @@ package stripe
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/stripe/stripe-go/v76"
@@ -41,9 +42,11 @@ func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) 
 
 	r, err := refund.New(params)
 	if err != nil {
+		slog.Error("failed to create stripe refund", "order_no", req.OrderNo, "amount", req.Amount, "error", err)
 		return nil, fmt.Errorf("failed to create refund: %w", err)
 	}
 
+	slog.Info("stripe refund created", "refund_id", r.ID, "amount", float64(r.Amount)/100, "currency", string(r.Currency))
 	return &types.RefundResponse{
 		RefundID: r.ID,
 		Status:   string(r.Status),
@@ -57,6 +60,7 @@ func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string
 	if immediate {
 		_, err := subscription.Cancel(subscriptionID, nil)
 		if err != nil {
+			slog.Error("failed to cancel stripe subscription immediately", "subscription_id", subscriptionID, "error", err)
 			return fmt.Errorf("failed to cancel subscription: %w", err)
 		}
 	} else {
@@ -64,9 +68,11 @@ func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string
 			CancelAtPeriodEnd: stripe.Bool(true),
 		})
 		if err != nil {
+			slog.Error("failed to set stripe cancel at period end", "subscription_id", subscriptionID, "error", err)
 			return fmt.Errorf("failed to set cancel at period end: %w", err)
 		}
 	}
+	slog.Info("stripe subscription canceled", "subscription_id", subscriptionID, "immediate", immediate)
 	return nil
 }
 
@@ -82,9 +88,11 @@ func (p *Provider) CreateCustomer(ctx context.Context, email string, name string
 
 	c, err := customer.New(params)
 	if err != nil {
+		slog.Error("failed to create stripe customer", "email", email, "error", err)
 		return "", fmt.Errorf("failed to create customer: %w", err)
 	}
 
+	slog.Info("stripe customer created", "customer_id", c.ID, "email", email)
 	return c.ID, nil
 }
 
@@ -110,6 +118,7 @@ func (p *Provider) UpdateSubscriptionSeats(ctx context.Context, subscriptionID s
 	// Get current subscription
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
+		slog.Error("failed to get stripe subscription for seat update", "subscription_id", subscriptionID, "error", err)
 		return fmt.Errorf("failed to get subscription: %w", err)
 	}
 
@@ -128,9 +137,11 @@ func (p *Provider) UpdateSubscriptionSeats(ctx context.Context, subscriptionID s
 		ProrationBehavior: stripe.String(string(stripe.SubscriptionSchedulePhaseProrationBehaviorCreateProrations)),
 	})
 	if err != nil {
+		slog.Error("failed to update stripe subscription seats", "subscription_id", subscriptionID, "seats", seats, "error", err)
 		return fmt.Errorf("failed to update subscription seats: %w", err)
 	}
 
+	slog.Info("stripe subscription seats updated", "subscription_id", subscriptionID, "seats", seats)
 	return nil
 }
 

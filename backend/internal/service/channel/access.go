@@ -2,13 +2,18 @@ package channel
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
 // TrackAccess records a pod or user accessing a channel
 func (s *Service) TrackAccess(ctx context.Context, channelID int64, podKey *string, userID *int64) error {
-	return s.repo.UpsertAccess(ctx, channelID, podKey, userID)
+	if err := s.repo.UpsertAccess(ctx, channelID, podKey, userID); err != nil {
+		slog.Error("failed to track channel access", "channel_id", channelID, "pod_key", podKey, "user_id", userID, "error", err)
+		return err
+	}
+	return nil
 }
 
 // GetChannelsForPod returns channels a pod has accessed

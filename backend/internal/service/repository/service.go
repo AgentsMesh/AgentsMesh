@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
 )
