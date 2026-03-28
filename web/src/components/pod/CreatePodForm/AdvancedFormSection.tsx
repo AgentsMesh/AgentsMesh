@@ -9,6 +9,7 @@ import { RunnerSelect } from "./RunnerSelect";
 import { CredentialSelect } from "./CredentialSelect";
 import { RepositorySelect, BranchInput } from "./RepositorySelect";
 import { AdvancedOptions } from "./AdvancedOptions";
+import { PodfileLayerEditor } from "./PodfileLayerEditor";
 import type { CreatePodFormState } from "../hooks";
 import type { RunnerData, RepositoryData, ConfigField } from "@/lib/api";
 
@@ -112,6 +113,16 @@ export function AdvancedFormSection({
           </div>
         )
       )}
+
+      {/* PodFile Layer Editor */}
+      <PodfileLayerEditor
+        generatedLayer={form.podfileLayer}
+        rawMode={form.rawLayerMode}
+        rawText={form.rawLayerText}
+        onRawModeChange={form.setRawLayerMode}
+        onRawTextChange={form.setRawLayerText}
+        t={t}
+      />
     </AdvancedOptions>
   );
 }

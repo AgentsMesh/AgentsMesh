@@ -83,6 +83,8 @@
       "autoCleanup": "Auto cleanup on completion",
       "loadingPlugins": "Loading plugin options...",
       "pluginConfig": "Plugin Configuration",
+      "podfileLayer": "PodFile Layer",
+      "sourceMode": "Source Mode",
       "create": "Create Pod",
       "creating": "Creating...",
       "cancel": "Cancel",
