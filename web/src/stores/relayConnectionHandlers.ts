@@ -47,8 +47,20 @@ export function dispatchRelayMessage(
       callbacks.onRunnerReconnected(conn);
       break;
     case MsgType.AcpEvent:
-    case MsgType.AcpSnapshot:
     case MsgType.AcpCommand: {
+      const parsed = decodeJsonPayload(payload);
+      if (parsed !== null) {
+        callbacks.onAcpMessage(conn.podKey, type, parsed);
+      }
+      break;
+    }
+    case MsgType.AcpSnapshot: {
+      // Mark snapshot received so the retry timer stops sending Resync requests.
+      conn.snapshotReceived = true;
+      if (conn.snapshotTimer) {
+        clearTimeout(conn.snapshotTimer);
+        conn.snapshotTimer = null;
+      }
       const parsed = decodeJsonPayload(payload);
       if (parsed !== null) {
         callbacks.onAcpMessage(conn.podKey, type, parsed);

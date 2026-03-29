@@ -1,11 +1,13 @@
 package runner
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/acp"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
@@ -186,6 +188,16 @@ func (h *RunnerMessageHandler) handleAcpRelayCommand(pod *Pod, payload []byte) {
 
 	switch cmd.Type {
 	case "prompt":
+		// Wait for ACP client to finish initializing before sending prompt.
+		if acpIO, ok := pod.IO.(*ACPPodIO); ok {
+			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			s := acpIO.client.WaitReady(ctx)
+			cancel()
+			if s != acp.StateIdle {
+				log.Error("ACP client not ready for prompt", "pod_key", pod.PodKey, "state", s)
+				return
+			}
+		}
 		// Echo user message back to all relay subscribers so it appears in chat.
 		sendAcpViaRelay(pod, "content_chunk", "", map[string]string{
 			"text": cmd.Prompt, "role": "user",
@@ -197,6 +209,9 @@ func (h *RunnerMessageHandler) handleAcpRelayCommand(pod *Pod, payload []byte) {
 	case "permission_response":
 		if err := pod.IO.RespondToPermission(cmd.ReqID, cmd.Approv); err != nil {
 			log.Error("Failed to respond to ACP permission via relay", "pod_key", pod.PodKey, "error", err)
+		}
+		if pod.ACPClient != nil {
+			pod.ACPClient.RemovePendingPermission(cmd.ReqID)
 		}
 
 	case "cancel":

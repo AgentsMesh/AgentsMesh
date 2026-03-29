@@ -44,13 +44,13 @@ func (b *ConfigBuilder) buildFromPodFile(
 	if len(parseErrors) > 0 {
 		return nil, fmt.Errorf("invalid user config layer: %s", parseErrors[0])
 	}
-	_ = merge.Merge(baseProg, userProg)
+	mergedProg := merge.Merge(baseProg, userProg)
 
 	// 4. Serialize merged AST to PodFile source
-	mergedSource := serialize.Serialize(baseProg)
+	mergedSource := serialize.Serialize(mergedProg)
 
 	// 5. Extract MODE/CREDENTIAL from merged PodFile to override request-level settings
-	spec := extract.Extract(baseProg)
+	spec := extract.Extract(mergedProg)
 	interactionMode := req.InteractionMode
 	if spec.Mode != "" {
 		interactionMode = spec.Mode

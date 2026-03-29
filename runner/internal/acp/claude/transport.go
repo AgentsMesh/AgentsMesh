@@ -181,7 +181,9 @@ func (t *Transport) handleMessage(msg *message) {
 	case "stream_event":
 		t.handleStreamEvent(msg)
 	case "assistant":
-		// Streaming mode: content already delivered via stream_event.
+		// In streaming mode, content is already delivered via stream_event.
+		// In non-streaming mode (no --print), extract text from the message.
+		t.handleAssistant(msg)
 	case "user":
 		t.handleUser(msg)
 	case "result":

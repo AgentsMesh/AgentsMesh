@@ -56,10 +56,23 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	// Pre-declare so callbacks can capture it (NewClient returns the same pointer).
 	var acpClient *acp.ACPClient
 
+	// Inject transport-specific CLI flags for ACP mode.
+	acpArgs := pod.LaunchArgs
+	transportType := inferTransportType(pod.LaunchCommand)
+	if transportType == acp.TransportTypeClaudeStream {
+		acpArgs = append([]string{
+			"--print",
+			"--output-format", "stream-json",
+			"--input-format", "stream-json",
+			"--include-partial-messages",
+			"--verbose",
+		}, acpArgs...)
+	}
+
 	// Create ACPClient with event callbacks that forward via Relay.
 	acpClient = acp.NewClient(acp.ClientConfig{
 		Command:       pod.LaunchCommand,
-		Args:          pod.LaunchArgs,
+		Args:          acpArgs,
 		WorkDir:       pod.WorkDir,
 		Env:           pod.LaunchEnv,
 		Logger:        log.With("pod_key", podKey),

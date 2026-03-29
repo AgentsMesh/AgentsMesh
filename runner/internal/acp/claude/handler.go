@@ -174,6 +174,39 @@ func (t *Transport) handleCanUseTool(requestID string, req *controlRequestPayloa
 	}
 }
 
+// handleAssistant extracts text content from a non-streaming assistant message.
+// In non-streaming mode, Claude sends the complete response as an "assistant" message
+// rather than incremental stream_event chunks.
+func (t *Transport) handleAssistant(msg *message) {
+	if msg.Message == nil || t.callbacks.OnContentChunk == nil {
+		return
+	}
+
+	var assistantMsg struct {
+		Content []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content"`
+	}
+	if err := json.Unmarshal(msg.Message, &assistantMsg); err != nil {
+		t.logger.Warn("failed to parse assistant message", "error", err)
+		return
+	}
+
+	t.sessionMu.RLock()
+	sid := t.sessionID
+	t.sessionMu.RUnlock()
+
+	for _, block := range assistantMsg.Content {
+		if block.Type == "text" && block.Text != "" {
+			t.callbacks.OnContentChunk(sid, acp.ContentChunk{
+				Text: block.Text,
+				Role: "assistant",
+			})
+		}
+	}
+}
+
 func (t *Transport) handleResult(msg *message) {
 	if msg.Subtype == "success" || msg.Subtype == "" {
 		if t.callbacks.OnStateChange != nil {

@@ -7,6 +7,7 @@ import { MsgType, encodeMessage, encodeResize } from "./relayProtocol";
 import type { RelayConnection, ConnectionHandle } from "./relayConnectionTypes";
 import { dispatchRelayMessage, handleSnapshot, handleControl, handleRunnerDisconnected, handleRunnerReconnected } from "./relayConnectionHandlers";
 import { scheduleSnapshotRetry, scheduleReconnect } from "./relayConnectionRetry";
+import { dispatchAcpRelayEvent } from "./acpEventDispatcher";
 
 /** Pool internals needed by WebSocket lifecycle functions */
 export interface PoolContext {
@@ -89,7 +90,9 @@ function setupWebSocketHandlers(ctx: PoolContext, podKey: string, ws: WebSocket)
         ctx.notifyStatusChange(conn.podKey);
       },
       onAcpMessage: (pk, msgType, payload) => {
-        ctx.notifyAcpListeners(pk, msgType, payload);
+        // Dispatch directly to store (always available) so buffered snapshots
+        // arriving before useAcpRelay's useEffect are not lost.
+        dispatchAcpRelayEvent(pk, msgType, payload);
       },
     });
   };

@@ -63,6 +63,7 @@ type ACPClient struct {
 	cancel       context.CancelFunc
 	done         chan struct{}
 	waitExitDone chan struct{} // closed when waitExit() completes
+	stateChanged chan struct{} // signaled on every state transition
 	stopOnce     sync.Once
 
 	logger *slog.Logger
@@ -87,6 +88,7 @@ func NewClient(cfg ClientConfig) *ACPClient {
 		cancel:       cancel,
 		done:         make(chan struct{}),
 		waitExitDone: make(chan struct{}),
+		stateChanged: make(chan struct{}, 1),
 		logger:       cfg.Logger.With("component", "acp-client"),
 	}
 }
@@ -104,8 +106,31 @@ func (c *ACPClient) setState(state string) {
 	c.state = state
 	c.stateMu.Unlock()
 
-	if old != state && c.cfg.Callbacks.OnStateChange != nil {
-		c.cfg.Callbacks.OnStateChange(state)
+	if old != state {
+		// Notify waiters that state changed (non-blocking broadcast).
+		select {
+		case c.stateChanged <- struct{}{}:
+		default:
+		}
+		if c.cfg.Callbacks.OnStateChange != nil {
+			c.cfg.Callbacks.OnStateChange(state)
+		}
+	}
+}
+
+// WaitReady blocks until the client leaves the initializing/uninitialized state
+// or the context expires. Returns the current state.
+func (c *ACPClient) WaitReady(ctx context.Context) string {
+	for {
+		s := c.State()
+		if s != StateInitializing && s != StateUninitialized {
+			return s
+		}
+		select {
+		case <-ctx.Done():
+			return c.State()
+		case <-c.stateChanged:
+		}
 	}
 }
 
