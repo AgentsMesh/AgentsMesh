@@ -39,6 +39,7 @@ func TestCreatePod_NormalMode_Success(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		InitialPrompt:  "Hello",
 		Cols:           120,
 		Rows:           40,
@@ -63,6 +64,7 @@ func TestCreatePod_NormalMode_MissingRunnerID(t *testing.T) {
 		UserID: 1,
 		RunnerID:       0, // missing
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -77,7 +79,7 @@ func TestCreatePod_AutoSelectRunner_Success(t *testing.T) {
 		runner: &runnerDomain.Runner{ID: 42, NodeID: "auto-runner"},
 	}
 	resolver := &mockAgentResolver{
-		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty"},
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", PodfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
@@ -91,6 +93,7 @@ func TestCreatePod_AutoSelectRunner_Success(t *testing.T) {
 		UserID: 1,
 		RunnerID:       0, // auto-select
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -106,7 +109,7 @@ func TestCreatePod_AutoSelectRunner_NoAvailableRunner(t *testing.T) {
 		err: errors.New("no available runner supports the requested agent"),
 	}
 	resolver := &mockAgentResolver{
-		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty"},
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", PodfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
@@ -119,6 +122,7 @@ func TestCreatePod_AutoSelectRunner_NoAvailableRunner(t *testing.T) {
 		UserID: 1,
 		RunnerID:       0,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -143,6 +147,7 @@ func TestCreatePod_AutoSelectRunner_AgentResolveError(t *testing.T) {
 		UserID: 1,
 		RunnerID:       0,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -157,7 +162,7 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 		err: errors.New("should not be called"),
 	}
 	resolver := &mockAgentResolver{
-		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty"},
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", PodfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
@@ -171,6 +176,7 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 		UserID: 1,
 		RunnerID:       5, // explicit runner
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -202,6 +208,7 @@ func TestCreatePod_QuotaExceeded(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -217,6 +224,7 @@ func TestCreatePod_NilBilling_SkipsQuotaCheck(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -232,6 +240,7 @@ func TestCreatePod_NilCoordinator(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -248,6 +257,7 @@ func TestCreatePod_CoordinatorSendFailure_ReturnsError(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -274,6 +284,7 @@ func TestCreatePod_ConfigBuildFailure(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -289,6 +300,7 @@ func TestCreatePod_SessionID_SetForNormalMode(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -306,6 +318,7 @@ func TestCreatePod_ConfigOverrides_Preserved(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		ConfigOverrides: map[string]interface{}{"custom_key": "custom_value"},
 	})
 
@@ -322,6 +335,7 @@ func TestCreatePod_NilConfigOverrides_Initialized(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		ConfigOverrides: nil, // should be auto-initialized
 	})
 
@@ -339,6 +353,7 @@ func TestCreatePod_PermissionMode(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		PermissionMode: &permMode,
 	})
 
@@ -358,6 +373,7 @@ func TestCreatePod_CredentialProfileID_ZeroConvertsToNil(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		CredentialProfileID: &zero, // explicit RunnerHost
 	})
 
@@ -380,6 +396,7 @@ func TestCreatePod_CredentialProfileID_PositiveStored(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		CredentialProfileID: &profileID,
 	})
 
@@ -402,6 +419,7 @@ func TestCreatePod_CredentialProfileID_NilStaysNil(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
+		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		CredentialProfileID: nil, // use default
 	})
 

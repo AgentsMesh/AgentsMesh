@@ -5,54 +5,37 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/podfile/extract"
-	"github.com/anthropics/agentsmesh/podfile/merge"
 	"github.com/anthropics/agentsmesh/podfile/parser"
-	"github.com/anthropics/agentsmesh/podfile/serialize"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// buildFromPodFile merges PodFile layers and sends merged source + context to Runner.
-// Runner evaluates the PodFile with real sandbox paths.
+// buildFromPodFile builds the CreatePodCommand from PodFile source + context.
+// MergedPodfileSource (from orchestrator) is preferred. Falls back to base PodFile for resume mode.
 func (b *ConfigBuilder) buildFromPodFile(
 	ctx context.Context,
 	req *ConfigBuildRequest,
 	agentDef *agent.Agent,
 ) (*runnerv1.CreatePodCommand, error) {
-	// 1. Parse base PodFile
-	baseProg, errs := parser.Parse(*agentDef.PodfileSource)
+	mergedSource := req.MergedPodfileSource
+	if mergedSource == "" {
+		// Resume mode or no PodfileLayer: use base PodFile directly
+		if agentDef.PodfileSource == nil {
+			return nil, fmt.Errorf("agent %s has no podfile source", req.AgentSlug)
+		}
+		mergedSource = *agentDef.PodfileSource
+	}
+
+	// Extract CREDENTIAL from merged source
+	prog, errs := parser.Parse(mergedSource)
 	if len(errs) > 0 {
-		return nil, fmt.Errorf("podfile parse errors: %v", errs)
+		return nil, fmt.Errorf("podfile parse error: %v", errs[0])
 	}
+	spec := extract.Extract(prog)
 
-	// 2. Build user layer: prefer direct PodFile layer from frontend, fallback to individual fields
-	var userLayerSrc string
-	if req.PodfileLayer != "" {
-		// Frontend sent raw PodFile Layer — use directly (already validated by caller)
-		userLayerSrc = req.PodfileLayer
-	} else {
-		// Backward compat: build layer from individual fields (MCP/API key path)
-		config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentSlug, agent.ConfigValues(req.ConfigOverrides))
-		userLayerSrc = buildUserLayer(config, req)
-	}
-
-	// 3. Parse and merge user layer into base
-	userProg, parseErrors := parser.Parse(userLayerSrc)
-	if len(parseErrors) > 0 {
-		return nil, fmt.Errorf("invalid user config layer: %s", parseErrors[0])
-	}
-	merge.Merge(baseProg, userProg)
-
-	// 4. Serialize merged AST to PodFile source
-	mergedSource := serialize.Serialize(baseProg)
-
-	// 5. Extract CREDENTIAL from merged PodFile (MODE is handled by orchestrator before DB write)
-	spec := extract.Extract(baseProg)
-
-	// 6. Get credentials — PodFile CREDENTIAL overrides req.CredentialProfileID
+	// Get credentials — PodFile CREDENTIAL overrides req.CredentialProfileID
 	var creds agent.EncryptedCredentials
 	var isRunnerHost bool
 	var err error
@@ -65,21 +48,21 @@ func (b *ConfigBuilder) buildFromPodFile(
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
 
-	// 7. Build MCP context as JSON
+	// Build MCP context as JSON
 	builtinMCP, installedMCP := b.buildMCPContext(ctx, req, agentDef.Slug)
 	builtinJSON, _ := json.Marshal(builtinMCP)
 	installedJSON, _ := json.Marshal(installedMCP)
 
-	// 8. Convert config values to string map for proto
+	// Convert config values to string map for proto
 	config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentSlug, agent.ConfigValues(req.ConfigOverrides))
 	configValues := configToStringMap(config)
 
-	// 9. Build sandbox config (repo/branch/git creds — not in PodFile)
+	// Build sandbox config (repo/branch/git creds)
 	sandboxConfig := b.buildSandboxConfig(req)
 
 	return &runnerv1.CreatePodCommand{
 		PodKey:           req.PodKey,
-		PodfileSource:    mergedSource,
+		PodfileSource:    req.MergedPodfileSource,
 		ConfigValues:     configValues,
 		Credentials:      credentialsToMap(creds),
 		IsRunnerHost:     isRunnerHost,
@@ -91,48 +74,6 @@ func (b *ConfigBuilder) buildFromPodFile(
 		Cols:             req.Cols,
 		Rows:             req.Rows,
 	}, nil
-}
-
-// buildUserLayer constructs a PodFile Layer from user config overrides and repo info.
-func buildUserLayer(config agent.ConfigValues, req *ConfigBuildRequest) string {
-	var lines []string
-	for k, v := range config {
-		lines = append(lines, fmt.Sprintf("CONFIG %s = %s", k, formatLiteralValue(v)))
-	}
-	if req.RepositoryURL != "" {
-		lines = append(lines, fmt.Sprintf("REPO \"%s\"", req.RepositoryURL))
-	}
-	if req.SourceBranch != "" {
-		lines = append(lines, fmt.Sprintf("BRANCH \"%s\"", req.SourceBranch))
-	}
-	if req.CredentialType != "" {
-		lines = append(lines, fmt.Sprintf("GIT_CREDENTIAL %s", req.CredentialType))
-	}
-	return strings.Join(lines, "\n")
-}
-
-func formatLiteralValue(v interface{}) string {
-	switch val := v.(type) {
-	case string:
-		// Escape special characters to prevent PodFile injection
-		escaped := strings.ReplaceAll(val, `\`, `\\`)
-		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
-		escaped = strings.ReplaceAll(escaped, "\n", `\n`)
-		escaped = strings.ReplaceAll(escaped, "\t", `\t`)
-		return fmt.Sprintf("\"%s\"", escaped)
-	case bool:
-		if val {
-			return "true"
-		}
-		return "false"
-	case float64:
-		if val == float64(int64(val)) {
-			return fmt.Sprintf("%d", int64(val))
-		}
-		return fmt.Sprintf("%g", val)
-	default:
-		return fmt.Sprintf("\"%v\"", val)
-	}
 }
 
 func configToStringMap(config agent.ConfigValues) map[string]string {
@@ -153,7 +94,7 @@ func configToStringMap(config agent.ConfigValues) map[string]string {
 	return result
 }
 
-// buildSandboxConfig builds sandbox config, using PodFile declarations as fallback.
+// buildSandboxConfig builds sandbox config from request fields.
 func (b *ConfigBuilder) buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.SandboxConfig {
 	repoURL := req.RepositoryURL
 	if repoURL == "" && req.HttpCloneURL == "" && req.SshCloneURL == "" && req.LocalPath == "" {

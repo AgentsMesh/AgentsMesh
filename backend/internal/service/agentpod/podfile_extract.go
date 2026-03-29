@@ -6,23 +6,28 @@ import (
 	"github.com/anthropics/agentsmesh/podfile/extract"
 	"github.com/anthropics/agentsmesh/podfile/merge"
 	"github.com/anthropics/agentsmesh/podfile/parser"
+	"github.com/anthropics/agentsmesh/podfile/serialize"
 )
 
-// podfileOverrides holds values extracted from a merged PodFile (base + user layer).
-// These override API-level parameters before writing to DB, ensuring DB and Runner
-// use the same values (PodFile SSOT).
-type podfileOverrides struct {
+// podfileExtractResult holds values extracted from a merged PodFile (base + user layer).
+// It contains both overrides for DB write and the serialized merged source for Runner,
+// eliminating the need for downstream re-parsing.
+type podfileExtractResult struct {
+	// Overrides for DB write
 	Mode              string // MODE pty/acp
 	CredentialProfile string // CREDENTIAL "profile-name"
 	Branch            string // BRANCH "branch-name"
 	RepoSlug          string // REPO "slug" (e.g., "dev-org/demo-api")
 	PermissionMode    string // CONFIG permission_mode = "plan"
 	Prompt            string // PROMPT "initial prompt content"
+	// Merged PodFile source (for Runner, avoids re-parsing in ConfigBuilder)
+	MergedPodfileSource string
 }
 
-// extractPodfileOverrides parses the agent base PodFile and user layer,
-// merges them, and extracts declaration values for DB and Runner consistency.
-func extractPodfileOverrides(basePodfileSrc, userLayerSrc string) (*podfileOverrides, error) {
+// extractFromPodfileLayer parses the agent base PodFile and user layer,
+// merges them, serializes the result, and extracts declaration values.
+// Single-pass: parse + merge + serialize + extract — all in one place.
+func extractFromPodfileLayer(basePodfileSrc, userLayerSrc string) (*podfileExtractResult, error) {
 	baseProg, baseErrs := parser.Parse(basePodfileSrc)
 	if len(baseErrs) > 0 {
 		return nil, fmt.Errorf("base podfile parse error: %v", baseErrs[0])
@@ -34,26 +39,29 @@ func extractPodfileOverrides(basePodfileSrc, userLayerSrc string) (*podfileOverr
 	}
 
 	merge.Merge(baseProg, userProg)
+
+	mergedSource := serialize.Serialize(baseProg)
 	spec := extract.Extract(baseProg)
 
-	overrides := &podfileOverrides{
-		Mode:              spec.Mode,
-		CredentialProfile: spec.CredentialProfile,
-		Prompt:            spec.Prompt,
+	result := &podfileExtractResult{
+		Mode:                spec.Mode,
+		CredentialProfile:   spec.CredentialProfile,
+		Prompt:              spec.Prompt,
+		MergedPodfileSource: mergedSource,
 	}
 
 	if spec.Repo != nil {
-		overrides.RepoSlug = spec.Repo.URL // REPO value: slug (e.g., "dev-org/demo-api")
-		overrides.Branch = spec.Repo.Branch
+		result.RepoSlug = spec.Repo.URL
+		result.Branch = spec.Repo.Branch
 	}
 
 	for _, cfg := range spec.Config {
 		if cfg.Name == "permission_mode" {
 			if s, ok := cfg.Default.(string); ok {
-				overrides.PermissionMode = s
+				result.PermissionMode = s
 			}
 		}
 	}
 
-	return overrides, nil
+	return result, nil
 }

@@ -41,8 +41,6 @@ func Extract(prog *parser.Program) *podfile.PodSpec {
 			spec.CredentialProfile = d.ProfileName
 		case *parser.PromptDecl:
 			spec.Prompt = d.Content
-		case *parser.PromptPositionDecl:
-			spec.PromptPosition = d.Mode
 		}
 	}
 

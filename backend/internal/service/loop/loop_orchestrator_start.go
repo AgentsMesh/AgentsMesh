@@ -210,10 +210,15 @@ func (o *LoopOrchestrator) startAutopilot(ctx context.Context, loop *loopDomain.
 }
 
 // formatLayerValue formats a value for PodFile CONFIG syntax.
+// Strings are escaped to prevent PodFile injection.
 func formatLayerValue(v interface{}) string {
 	switch val := v.(type) {
 	case string:
-		return fmt.Sprintf(`"%s"`, val)
+		escaped := strings.ReplaceAll(val, `\`, `\\`)
+		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
+		escaped = strings.ReplaceAll(escaped, "\n", `\n`)
+		escaped = strings.ReplaceAll(escaped, "\t", `\t`)
+		return fmt.Sprintf(`"%s"`, escaped)
 	case bool:
 		if val {
 			return "true"

@@ -76,9 +76,9 @@ type ConfigBuildRequest struct {
 	// Empty map or nil means Runner did not report version info (old Runner).
 	RunnerAgentVersions map[string]string
 
-	// PodfileLayer is a raw PodFile Layer source sent directly from frontend.
-	// When set, it replaces the auto-generated user layer (config overrides / MCP / API key path).
-	PodfileLayer string
+	// MergedPodfileSource is the pre-merged PodFile source (base + user layer, serialized).
+	// Produced by orchestrator's extractFromPodfileLayer — single parse+merge pass.
+	MergedPodfileSource string
 }
 
 // ConfigSchemaResponse is the config schema returned to frontend

@@ -16,6 +16,7 @@ func (o *PodOrchestrator) buildPodCommand(
 	pod *podDomain.Pod,
 	sourcePod *podDomain.Pod,
 	isResumeMode bool,
+	mergedPodfileSource string,
 ) (*runnerv1.CreatePodCommand, error) {
 	permissionMode := "plan"
 	if req.PermissionMode != nil {
@@ -139,9 +140,8 @@ func (o *PodOrchestrator) buildPodCommand(
 		RunnerAgentVersions: runnerAgentVersions,
 	}
 
-	if req.PodfileLayer != nil {
-		buildReq.PodfileLayer = *req.PodfileLayer
-		// Syntax validation already done by extractPodfileOverrides in orchestrator
+	if mergedPodfileSource != "" {
+		buildReq.MergedPodfileSource = mergedPodfileSource
 	}
 
 	if req.AgentSlug != "" {

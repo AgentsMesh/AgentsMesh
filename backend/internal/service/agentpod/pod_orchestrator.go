@@ -192,32 +192,34 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 
 	// PodFile Layer SSOT: merge base PodFile + user Layer, extract declarations
 	// to override API params. This ensures DB and Runner use identical values.
+	var mergedPodfileSource string
 	if req.PodfileLayer != nil && *req.PodfileLayer != "" && req.AgentSlug != "" && o.agentResolver != nil {
 		agentDef, err := o.agentResolver.GetAgent(ctx, req.AgentSlug)
 		if err == nil && agentDef.PodfileSource != nil {
-			overrides, err := extractPodfileOverrides(*agentDef.PodfileSource, *req.PodfileLayer)
+			result, err := extractFromPodfileLayer(*agentDef.PodfileSource, *req.PodfileLayer)
 			if err != nil {
 				return nil, err
 			}
-			if overrides.Mode != "" {
-				req.InteractionMode = &overrides.Mode
+			mergedPodfileSource = result.MergedPodfileSource
+			if result.Mode != "" {
+				req.InteractionMode = &result.Mode
 			}
-			if overrides.Branch != "" {
-				req.BranchName = &overrides.Branch
+			if result.Branch != "" {
+				req.BranchName = &result.Branch
 			}
-			if overrides.PermissionMode != "" {
-				req.PermissionMode = &overrides.PermissionMode
+			if result.PermissionMode != "" {
+				req.PermissionMode = &result.PermissionMode
 			}
 			// REPO slug → resolve RepositoryID for DB record + sandbox config
-			if overrides.RepoSlug != "" && req.RepositoryID == nil && o.repoService != nil {
-				repo, repoErr := o.repoService.FindByOrgSlug(ctx, req.OrganizationID, overrides.RepoSlug)
+			if result.RepoSlug != "" && req.RepositoryID == nil && o.repoService != nil {
+				repo, repoErr := o.repoService.FindByOrgSlug(ctx, req.OrganizationID, result.RepoSlug)
 				if repoErr == nil && repo != nil {
 					req.RepositoryID = &repo.ID
 				}
 			}
 			// PROMPT content → override InitialPrompt
-			if overrides.Prompt != "" {
-				req.InitialPrompt = overrides.Prompt
+			if result.Prompt != "" {
+				req.InitialPrompt = result.Prompt
 			}
 			// CREDENTIAL name → resolved by config_builder downstream
 		}
@@ -285,7 +287,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		return nil, err
 	}
 
-	podCmd, err := o.buildPodCommand(ctx, req, pod, sourcePod, isResumeMode)
+	podCmd, err := o.buildPodCommand(ctx, req, pod, sourcePod, isResumeMode, mergedPodfileSource)
 	if err != nil {
 		slog.Error("failed to build pod command", "pod_key", pod.PodKey, "error", err)
 		return nil, errors.Join(ErrConfigBuildFailed, err)

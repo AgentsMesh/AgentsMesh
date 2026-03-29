@@ -225,7 +225,7 @@ message CreatePodCommand {
   map<string, string> env_vars = 4;
   repeated FileToCreate files_to_create = 5;
   SandboxConfig sandbox_config = 6;  // 替代原 work_dir_config
-  string initial_prompt = 7;
+  string initial_prompt = 7 [deprecated = true];  // Deprecated: Runner reads PROMPT from PodFile eval
   int32 cols = 8;  // 终端列数（由浏览器传入）
   int32 rows = 9;  // 终端行数（由浏览器传入）
   repeated ResourceToDownload resources_to_download = 10;  // 需要下载的资源（Skills 等）

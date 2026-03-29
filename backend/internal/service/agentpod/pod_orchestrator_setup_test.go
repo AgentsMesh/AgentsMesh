@@ -214,6 +214,7 @@ func setupOrchestrator(t *testing.T, opts ...func(*PodOrchestratorDeps)) (*PodOr
 	deps := &PodOrchestratorDeps{
 		PodService:    podSvc,
 		ConfigBuilder: configBuilder,
+		AgentResolver: &mockAgentResolver{agentDef: provider.agentDef},
 	}
 
 	for _, opt := range opts {
@@ -250,3 +251,5 @@ func withRunnerSelector(rs RunnerSelectorForOrchestrator) func(*PodOrchestratorD
 func withAgentResolver(ar AgentResolverForOrchestrator) func(*PodOrchestratorDeps) {
 	return func(d *PodOrchestratorDeps) { d.AgentResolver = ar }
 }
+
+func ptrStr(s string) *string { return &s }
