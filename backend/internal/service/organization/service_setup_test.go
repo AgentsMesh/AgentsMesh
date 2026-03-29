@@ -98,6 +98,49 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to create users table: %v", err)
 	}
 
+	// Tables needed for DeleteWithCleanup (application-level cascade)
+	err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS loops (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS loop_runs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS channels (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS channel_messages (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			channel_id INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS channel_members (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			channel_id INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS channel_read_states (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			channel_id INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS channel_pods (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			channel_id INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS channel_access (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			channel_id INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS pod_bindings (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			channel_id INTEGER NOT NULL
+		)
+	`).Error
+	if err != nil {
+		t.Fatalf("failed to create cleanup tables: %v", err)
+	}
+
 	return db
 }
 
