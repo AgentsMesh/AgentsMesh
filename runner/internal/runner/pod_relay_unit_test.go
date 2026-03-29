@@ -301,7 +301,6 @@ func (s *stubPodIO) GetSnapshot(int) (string, error)           { return "", nil 
 func (s *stubPodIO) GetAgentStatus() string                    { return "idle" }
 func (s *stubPodIO) SubscribeStateChange(string, func(string)) {}
 func (s *stubPodIO) UnsubscribeStateChange(string)             {}
-func (s *stubPodIO) Start() error                              { return nil }
 func (s *stubPodIO) SendKeys([]string) error                   { return nil }
 func (s *stubPodIO) GetPID() int                               { return 0 }
 func (s *stubPodIO) CursorPosition() (int, int)                { return 0, 0 }

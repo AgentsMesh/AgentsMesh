@@ -2,6 +2,8 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { PodData, AgentData, RepositoryData } from "@/lib/api";
 import { usePodCreationStore } from "@/stores/podCreation";
 import { buildPodfileLayer } from "@/lib/podfile-layer";
+import { POD_MODE_PTY } from "@/lib/pod-modes";
+import type { PodMode } from "@/lib/pod-modes";
 import { submitCreatePod } from "./useCreatePodFormSubmit";
 import { usePrefsAutoFill, useCredentialProfiles } from "./useCreatePodFormEffects";
 import type { CreatePodFormState, FormValidationErrors } from "./useCreatePodFormTypes";
@@ -27,7 +29,7 @@ export function useCreatePodForm(
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [selectedRepository, setSelectedRepository] = useState<number | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
-  const [interactionMode, setInteractionMode] = useState<"pty" | "acp">("pty");
+  const [interactionMode, setInteractionMode] = useState<PodMode>(POD_MODE_PTY);
   const [prompt, setPrompt] = useState<string>("");
   const [alias, setAlias] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -54,10 +56,10 @@ export function useCreatePodForm(
 
   // Parse supported modes from selected agent type
   const supportedModes = useMemo(() => {
-    if (!selectedAgent) return ["pty"];
+    if (!selectedAgent) return [POD_MODE_PTY];
     const agent = availableAgents.find((a) => a.slug === selectedAgent);
     const modes = agent?.supported_modes?.split(",").map((m) => m.trim()).filter(Boolean) || [];
-    return modes.length > 0 ? modes : ["pty"];
+    return modes.length > 0 ? modes : [POD_MODE_PTY];
   }, [selectedAgent, availableAgents]);
 
   const isValid = useMemo(() => selectedAgent !== null && selectedAgent !== "", [selectedAgent]);
@@ -68,15 +70,15 @@ export function useCreatePodForm(
       setSelectedAgent(null);
       creds.setCredentialProfiles([]);
       creds.setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
-      setInteractionMode("pty");
+      setInteractionMode(POD_MODE_PTY);
     }
   }, [availableAgents, selectedAgent, creds]);
 
   // Auto-set interaction mode when agent changes based on supported modes
   useEffect(() => {
-    if (!selectedAgent) { setInteractionMode("pty"); return; }
+    if (!selectedAgent) { setInteractionMode(POD_MODE_PTY); return; }
     if (!supportedModes.includes(interactionMode)) {
-      setInteractionMode(supportedModes[0] as "pty" | "acp");
+      setInteractionMode(supportedModes[0] as PodMode);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAgent, supportedModes]);
@@ -114,7 +116,7 @@ export function useCreatePodForm(
     setSelectedBranch("");
     creds.setSelectedCredentialProfile(RUNNER_HOST_PROFILE_ID);
     creds.setCredentialProfiles([]);
-    setInteractionMode("pty");
+    setInteractionMode(POD_MODE_PTY);
     setPrompt("");
     setAlias("");
     setError(null);

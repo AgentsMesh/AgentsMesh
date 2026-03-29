@@ -1,4 +1,5 @@
 import { PodData, CredentialProfileData } from "@/lib/api";
+import type { PodMode } from "@/lib/pod-modes";
 
 /**
  * Validation errors for the form
@@ -20,7 +21,7 @@ export interface CreatePodFormState {
   selectedRepository: number | null;
   selectedBranch: string;
   selectedCredentialProfile: number; // 0 = RunnerHost, >0 = custom profile ID
-  interactionMode: "pty" | "acp";
+  interactionMode: PodMode;
   prompt: string;
   alias: string;
 
@@ -33,7 +34,7 @@ export interface CreatePodFormState {
   setSelectedRepository: (id: number | null) => void;
   setSelectedBranch: (branch: string) => void;
   setSelectedCredentialProfile: (id: number) => void;
-  setInteractionMode: (mode: "pty" | "acp") => void;
+  setInteractionMode: (mode: PodMode) => void;
   setPrompt: (prompt: string) => void;
   setAlias: (alias: string) => void;
 

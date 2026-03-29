@@ -1,4 +1,5 @@
 import { request, orgPath } from "./base";
+import type { PodMode } from "@/lib/pod-modes";
 
 // Pod interface matching the store
 export interface PodData {
@@ -40,7 +41,7 @@ export interface PodData {
     name: string;
     slug: string;
   };
-  interaction_mode?: "pty" | "acp";
+  interaction_mode?: PodMode;
   error_code?: string;
   error_message?: string;
   created_by?: {

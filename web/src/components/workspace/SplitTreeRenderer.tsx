@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
 import type { SplitTreeNode } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
+import { POD_MODE_ACP } from "@/lib/pod-modes";
 import { TerminalPane } from "./TerminalPane";
 import { AgentPanel } from "./AgentPanel";
 
@@ -116,7 +117,7 @@ function LeafPane({
     showHeader: true,
   };
 
-  if (interactionMode === "acp") {
+  if (interactionMode === POD_MODE_ACP) {
     return <AgentPanel {...sharedProps} />;
   }
   return <TerminalPane {...sharedProps} />;

@@ -1,4 +1,5 @@
 import { podApi, PodData } from "@/lib/api";
+import type { PodMode } from "@/lib/pod-modes";
 
 /**
  * Builds the API request payload and submits the pod creation request.
@@ -12,7 +13,7 @@ export async function submitCreatePod(params: {
   selectedRepository: number | null;
   selectedBranch: string;
   selectedCredentialProfile: number;
-  interactionMode: "pty" | "acp";
+  interactionMode: PodMode;
   prompt: string;
   alias: string;
   selectedRunnerId: number | null | undefined;

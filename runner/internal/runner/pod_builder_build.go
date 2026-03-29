@@ -53,7 +53,7 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	// MODE from PodFile eval (SSOT)
 	interactionMode := pfResult.Mode
 	if interactionMode == "" {
-		interactionMode = "pty" // default
+		interactionMode = InteractionModePTY
 	}
 
 	if err := b.createFilesFromProto(pfResult.FilesToCreate, sandboxRoot, workingDir); err != nil {
@@ -68,7 +68,7 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
 	logger.Pod().Debug("Merged environment variables", "pod_key", b.cmd.PodKey, "count", len(envVars))
 
-	if interactionMode == "acp" {
+	if interactionMode == InteractionModeACP {
 		return b.buildACPPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)
 	}
 	return b.buildPTYPod(ctx, sandboxRoot, workingDir, branchName, resolvedArgs, envVars, launchCommand)

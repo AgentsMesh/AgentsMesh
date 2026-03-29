@@ -3,6 +3,8 @@
  * A PodFile Layer is a DSL fragment that configures a Pod's environment.
  */
 
+import { POD_MODE_PTY } from "@/lib/pod-modes";
+
 /**
  * Escape and quote a string value for PodFile syntax.
  */
@@ -29,8 +31,8 @@ export function buildPodfileLayer(params: {
 }): string {
   const lines: string[] = [];
 
-  // MODE declaration (if not default "pty")
-  if (params.interactionMode && params.interactionMode !== "pty") {
+  // MODE declaration (if not default PTY)
+  if (params.interactionMode && params.interactionMode !== POD_MODE_PTY) {
     lines.push(`MODE ${params.interactionMode}`);
   }
 

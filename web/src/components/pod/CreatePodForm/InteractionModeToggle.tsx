@@ -2,11 +2,13 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { POD_MODE_PTY, POD_MODE_ACP } from "@/lib/pod-modes";
+import type { PodMode } from "@/lib/pod-modes";
 
 interface InteractionModeToggleProps {
   supportedModes: string[];
   interactionMode: string;
-  onModeChange: (mode: "pty" | "acp") => void;
+  onModeChange: (mode: PodMode) => void;
 }
 
 export function InteractionModeToggle({
@@ -24,12 +26,12 @@ export function InteractionModeToggle({
         {t("ide.createPod.interactionMode")}
       </label>
       <div className="flex gap-2">
-        {supportedModes.includes("pty") && (
+        {supportedModes.includes(POD_MODE_PTY) && (
           <button
             type="button"
-            onClick={() => onModeChange("pty")}
+            onClick={() => onModeChange(POD_MODE_PTY)}
             className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors ${
-              interactionMode === "pty"
+              interactionMode === POD_MODE_PTY
                 ? "border-primary bg-primary/10 text-primary font-medium"
                 : "border-border bg-background text-muted-foreground hover:bg-muted"
             }`}
@@ -37,12 +39,12 @@ export function InteractionModeToggle({
             {t("ide.createPod.modePty")}
           </button>
         )}
-        {supportedModes.includes("acp") && (
+        {supportedModes.includes(POD_MODE_ACP) && (
           <button
             type="button"
-            onClick={() => onModeChange("acp")}
+            onClick={() => onModeChange(POD_MODE_ACP)}
             className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors ${
-              interactionMode === "acp"
+              interactionMode === POD_MODE_ACP
                 ? "border-primary bg-primary/10 text-primary font-medium"
                 : "border-border bg-background text-muted-foreground hover:bg-muted"
             }`}

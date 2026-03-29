@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import { POD_MODE_PTY } from "@/lib/pod-modes";
 
 // Mock functions
 export const mockSetSelectedRunnerId = vi.fn();
@@ -26,7 +27,7 @@ export const defaultFormState = {
   selectedRepository: null,
   selectedBranch: "",
   selectedCredentialProfile: 0,
-  interactionMode: "pty" as const,
+  interactionMode: POD_MODE_PTY,
   prompt: "",
   alias: "",
   credentialProfiles: [],
@@ -39,7 +40,7 @@ export const defaultFormState = {
   setPrompt: mockSetPrompt,
   setAlias: mockSetAlias,
   selectedAgentSlug: "",
-  supportedModes: ["pty"],
+  supportedModes: [POD_MODE_PTY],
   loading: false,
   error: null,
   validationErrors: {},

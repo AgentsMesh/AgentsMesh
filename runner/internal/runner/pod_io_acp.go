@@ -31,7 +31,7 @@ func NewACPPodIO(client *acp.ACPClient, podKey string) *ACPPodIO {
 	}
 }
 
-func (a *ACPPodIO) Mode() string { return "acp" }
+func (a *ACPPodIO) Mode() string { return InteractionModeACP }
 
 func (a *ACPPodIO) SendInput(text string) error {
 	logger.Pod().Debug("ACP sending prompt", "pod_key", a.podKey)
@@ -90,16 +90,6 @@ func (a *ACPPodIO) CursorPosition() (row, col int) {
 
 func (a *ACPPodIO) GetScreenSnapshot() string {
 	return "" // ACP has no terminal screen
-}
-
-func (a *ACPPodIO) Start() error {
-	logger.Pod().Info("ACP starting", "pod_key", a.podKey)
-	if err := a.client.Start(); err != nil {
-		logger.Pod().Error("ACP start failed", "pod_key", a.podKey, "error", err)
-		return err
-	}
-	logger.Pod().Info("ACP started", "pod_key", a.podKey)
-	return nil
 }
 
 func (a *ACPPodIO) Stop() {

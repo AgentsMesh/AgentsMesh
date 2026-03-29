@@ -12,23 +12,23 @@ import (
 )
 
 // CreatePodRequest represents pod creation request.
-// Pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL) is conveyed via PodfileLayer (SSOT).
+// Pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL, PROMPT) is conveyed via PodfileLayer (SSOT).
 type CreatePodRequest struct {
 	AgentSlug    string  `json:"agent_slug"`    // Required: determines base PodFile
 	RunnerID     int64   `json:"runner_id"`     // Optional: auto-select if omitted
 	TicketSlug   *string `json:"ticket_slug"`   // Optional: associate with ticket
-	InitialPrompt string `json:"initial_prompt"` // Optional: initial message to agent
 	Alias        *string `json:"alias"`         // Optional: display name (max 100 chars)
 
-	// PodFile Layer — SSOT for all pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL)
+	// PodFile Layer — SSOT for all pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL, PROMPT)
 	PodfileLayer *string `json:"podfile_layer"`
 
 	// Legacy fields: accepted for backward compatibility (MCP callers), ignored when PodfileLayer is set
+	InitialPrompt       string                 `json:"initial_prompt,omitempty"`   // Deprecated: use PodFile PROMPT declaration
 	RepositoryID        *int64                 `json:"repository_id,omitempty"`
 	RepositoryURL       *string                `json:"repository_url,omitempty"`
 	BranchName          *string                `json:"branch_name,omitempty"`
 	PermissionMode      *string                `json:"permission_mode,omitempty"`
-	InteractionMode     *string                `json:"interaction_mode,omitempty"`
+	InteractionMode     *string                `json:"interaction_mode,omitempty"` // Deprecated: use PodFile MODE declaration
 	CredentialProfileID *int64                 `json:"credential_profile_id,omitempty"`
 	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"`
 

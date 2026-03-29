@@ -29,11 +29,6 @@ type PodIO interface {
 	// UnsubscribeStateChange removes a state change subscription.
 	UnsubscribeStateChange(id string)
 
-	// Start begins the pod's I/O pipeline.
-	// PTY: starts the terminal process.
-	// ACP: launches subprocess, performs initialize handshake, creates session.
-	Start() error
-
 	// SendKeys sends special key sequences (e.g., "ctrl+c", "enter", "up").
 	// PTY: maps key names to escape sequences and writes to stdin.
 	// ACP: returns ErrKeysNotSupported.

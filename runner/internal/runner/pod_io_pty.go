@@ -41,7 +41,7 @@ func (p *PTYPodIO) SetPTYLogger(l *aggregator.PTYLogger) {
 	p.ptyLogger = l
 }
 
-func (p *PTYPodIO) Mode() string { return "pty" }
+func (p *PTYPodIO) Mode() string { return InteractionModePTY }
 
 func (p *PTYPodIO) SendInput(text string) error {
 	if p.terminal == nil {
@@ -145,22 +145,6 @@ func (p *PTYPodIO) GetScreenSnapshot() string {
 		return ""
 	}
 	return p.virtualTerminal.GetScreenSnapshot()
-}
-
-func (p *PTYPodIO) Start() error {
-	if p.terminal == nil {
-		logger.Pod().Error("PTY Start failed: terminal not initialized",
-			"pod_key", p.pod.PodKey)
-		return fmt.Errorf("terminal not initialized")
-	}
-	logger.Pod().Info("PTY starting", "pod_key", p.pod.PodKey)
-	if err := p.terminal.Start(); err != nil {
-		logger.Pod().Error("PTY Start failed",
-			"pod_key", p.pod.PodKey, "error", err)
-		return err
-	}
-	logger.Pod().Info("PTY started", "pod_key", p.pod.PodKey, "pid", p.terminal.PID())
-	return nil
 }
 
 func (p *PTYPodIO) Stop() {

@@ -117,8 +117,10 @@ func (h *RunnerMessageHandler) OnObservePod(req client.ObservePodRequest) error 
 	return nil
 }
 
-// OnSendPrompt handles send_prompt command from server.
+// OnSendPrompt handles send_prompt command from server (gRPC control plane).
 // Routes through PodIO.SendInput — PTY writes to stdin, ACP sends prompt.
+// For ACP mode, also echoes the user message via Relay so it appears in the
+// chat UI (consistent with the Relay command path in handleAcpRelayCommand).
 func (h *RunnerMessageHandler) OnSendPrompt(cmd *runnerv1.SendPromptCommand) error {
 	log := logger.Pod()
 	pod, ok := h.podStore.Get(cmd.PodKey)
@@ -129,6 +131,12 @@ func (h *RunnerMessageHandler) OnSendPrompt(cmd *runnerv1.SendPromptCommand) err
 	if pod.IO == nil {
 		log.Warn("PodIO not available for send_prompt", "pod_key", cmd.PodKey)
 		return fmt.Errorf("pod IO not available: %s", cmd.PodKey)
+	}
+	// ACP: echo user message to Relay so it appears in the chat panel.
+	if pod.IsACPMode() {
+		sendAcpViaRelay(pod, "content_chunk", "", map[string]string{
+			"text": cmd.Prompt, "role": "user",
+		})
 	}
 	return pod.IO.SendInput(cmd.Prompt)
 }

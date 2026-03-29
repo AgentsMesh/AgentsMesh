@@ -22,7 +22,6 @@ func (m *acpMockPodIO) GetSnapshot(int) (string, error)           { return "", n
 func (m *acpMockPodIO) GetAgentStatus() string                    { return "idle" }
 func (m *acpMockPodIO) SubscribeStateChange(string, func(string)) {}
 func (m *acpMockPodIO) UnsubscribeStateChange(string)             {}
-func (m *acpMockPodIO) Start() error                              { return nil }
 func (m *acpMockPodIO) SendKeys([]string) error                   { return nil }
 func (m *acpMockPodIO) Resize(int, int) (bool, error)             { return false, nil }
 func (m *acpMockPodIO) GetPID() int                               { return 0 }

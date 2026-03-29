@@ -43,7 +43,15 @@ func sendAcpViaRelay(pod *Pod, eventType, sessionID string, data any) {
 	if err != nil {
 		return
 	}
-	_ = rc.Send(relay.MsgTypeAcpEvent, payload)
+	if err := rc.Send(relay.MsgTypeAcpEvent, payload); err != nil {
+		// Log critical events that should not be silently lost.
+		// Permission requests cause agent to hang if the user never sees them;
+		// tool call results leave the UI spinner stuck forever.
+		if eventType == "permission_request" || eventType == "tool_call_result" {
+			logger.Pod().Warn("Failed to send critical ACP event via relay",
+				"pod_key", pod.PodKey, "event_type", eventType, "error", err)
+		}
+	}
 }
 
 // wireAndStartACPPod creates the ACPClient with Relay-forwarding callbacks,
