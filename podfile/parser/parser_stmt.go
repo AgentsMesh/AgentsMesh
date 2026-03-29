@@ -8,8 +8,6 @@ func (p *Parser) tryParseStatement(tok lexer.Token) Statement {
 	switch tok.Type {
 	case lexer.KW_ARG:
 		return p.parseArgStmt(pos)
-	case lexer.KW_ENV_L:
-		return p.parseEnvStmt(pos)
 	case lexer.KW_FILE:
 		return p.parseFileStmt(pos)
 	case lexer.KW_MKDIR:
@@ -18,8 +16,6 @@ func (p *Parser) tryParseStatement(tok lexer.Token) Statement {
 		return p.parseIfStmt(pos)
 	case lexer.KW_FOR:
 		return p.parseForStmt(pos)
-	case lexer.KW_REMOVE_L:
-		return p.parseRemoveStmt(pos)
 	case lexer.IDENT:
 		if p.peekIs(lexer.ASSIGN) {
 			return p.parseAssignStmt(pos)
@@ -36,19 +32,6 @@ func (p *Parser) parseArgStmt(pos Position) *ArgStmt {
 	for !p.isNewlineOrEnd() && !p.currentIs(lexer.KW_WHEN) {
 		stmt.Args = append(stmt.Args, p.parseExpr())
 	}
-	if p.currentIs(lexer.KW_WHEN) {
-		p.advance()
-		stmt.When = p.parseCondition()
-	}
-	p.expectNewline()
-	return stmt
-}
-
-func (p *Parser) parseEnvStmt(pos Position) *EnvStmt {
-	p.advance()
-	stmt := &EnvStmt{Position: pos}
-	stmt.Name = p.expectString()
-	stmt.Value = p.parseExpr()
 	if p.currentIs(lexer.KW_WHEN) {
 		p.advance()
 		stmt.When = p.parseCondition()
@@ -115,27 +98,6 @@ func (p *Parser) parseForStmt(pos Position) *ForStmt {
 	iter := p.parseExpr()
 	body := p.parseBlock()
 	return &ForStmt{Key: key, Value: value, Iter: iter, Body: body, Position: pos}
-}
-
-// parseRemoveStmt: remove arg <value> | remove file <path>
-func (p *Parser) parseRemoveStmt(pos Position) *RemoveStmt {
-	p.advance() // skip remove
-	tok := p.current()
-	var target string
-	switch tok.Type {
-	case lexer.KW_ARG:
-		target = "arg"
-	case lexer.KW_FILE:
-		target = "file"
-	default:
-		p.errorf("remove: expected arg or file, got %s", tok.Literal)
-		p.advance()
-		return &RemoveStmt{Position: pos}
-	}
-	p.advance()
-	value := p.parseExpr()
-	p.expectNewline()
-	return &RemoveStmt{Target: target, Value: value, Position: pos}
 }
 
 func (p *Parser) parseBlock() []Statement {

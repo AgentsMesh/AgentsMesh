@@ -24,7 +24,7 @@ const DECL_KEYWORDS = new Set([
 
 /** Lowercase build logic keywords */
 const BUILD_KEYWORDS = new Set([
-  "arg", "env", "file", "mkdir", "remove",
+  "arg", "file", "mkdir",
   "when", "if", "else", "for", "in", "and", "or", "not",
   "prepend", "append", "none",
 ]);

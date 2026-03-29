@@ -45,12 +45,12 @@ const DECLARATION_COMPLETIONS: Completion[] = [
   { label: "MCP", type: "keyword", detail: "MCP server config" },
   { label: "SKILLS", type: "keyword", detail: "Skill module list" },
   { label: "SETUP", type: "keyword", detail: "Setup command block" },
+  { label: "REMOVE", type: "keyword", detail: "Remove declaration or build artifact" },
   { label: "EXECUTABLE", type: "keyword", detail: "Agent executable path" },
 ];
 
 const BUILD_COMPLETIONS: Completion[] = [
   { label: "arg", type: "keyword", detail: "Build argument" },
-  { label: "env", type: "keyword", detail: "Build env variable" },
   { label: "file", type: "keyword", detail: "Create file" },
   { label: "mkdir", type: "keyword", detail: "Create directory" },
   { label: "if", type: "keyword", detail: "Conditional" },

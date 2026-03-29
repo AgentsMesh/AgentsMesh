@@ -27,8 +27,6 @@ func evalStmt(ctx *Context, stmt parser.Statement) error {
 	switch s := stmt.(type) {
 	case *parser.ArgStmt:
 		return evalArgStmt(ctx, s)
-	case *parser.EnvStmt:
-		return evalEnvStmt(ctx, s)
 	case *parser.FileStmt:
 		return evalFileStmt(ctx, s)
 	case *parser.MkdirStmt:
@@ -39,8 +37,6 @@ func evalStmt(ctx *Context, stmt parser.Statement) error {
 		return evalIfStmt(ctx, s)
 	case *parser.ForStmt:
 		return evalForStmt(ctx, s)
-	case *parser.RemoveStmt:
-		return evalRemoveStmt(ctx, s)
 	default:
 		return fmt.Errorf("unknown statement type %T", stmt)
 	}
@@ -63,24 +59,6 @@ func evalArgStmt(ctx *Context, s *parser.ArgStmt) error {
 		}
 		ctx.Result.LaunchArgs = append(ctx.Result.LaunchArgs, toString(val))
 	}
-	return nil
-}
-
-func evalEnvStmt(ctx *Context, s *parser.EnvStmt) error {
-	if s.When != nil {
-		cond, err := evalExpr(ctx, s.When)
-		if err != nil {
-			return err
-		}
-		if !isTruthy(cond) {
-			return nil
-		}
-	}
-	val, err := evalExpr(ctx, s.Value)
-	if err != nil {
-		return err
-	}
-	ctx.Result.EnvVars[s.Name] = toString(val)
 	return nil
 }
 

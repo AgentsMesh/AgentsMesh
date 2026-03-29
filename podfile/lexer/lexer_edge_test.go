@@ -78,10 +78,16 @@ func TestTokenize_AllEscapeSequences(t *testing.T) {
 }
 
 func TestTokenize_RemoveKeywords(t *testing.T) {
-	tokens := Tokenize("REMOVE ENV key\nremove arg \"--flag\"\n")
+	tokens := Tokenize("REMOVE ENV key\nREMOVE arg \"--flag\"\n")
 	types := tokenTypes(tokens)
-	assert.Contains(t, types, KW_REMOVE)
-	assert.Contains(t, types, KW_REMOVE_L)
+	// Both lines start with REMOVE (uppercase), which tokenizes as KW_REMOVE
+	removeCount := 0
+	for _, tt := range types {
+		if tt == KW_REMOVE {
+			removeCount++
+		}
+	}
+	assert.Equal(t, 2, removeCount)
 }
 
 func TestTokenize_BracketTokens(t *testing.T) {
@@ -104,8 +110,10 @@ func TestLookupIdent_Coverage(t *testing.T) {
 
 	// Build keywords
 	assert.Equal(t, KW_ARG, LookupIdent("arg"))
-	assert.Equal(t, KW_REMOVE_L, LookupIdent("remove"))
 	assert.Equal(t, TRUE, LookupIdent("true"))
+
+	// "remove" (lowercase) is now a plain identifier, not a keyword
+	assert.Equal(t, IDENT, LookupIdent("remove"))
 
 	// Plain identifier
 	assert.Equal(t, IDENT, LookupIdent("myvar"))

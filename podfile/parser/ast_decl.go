@@ -27,13 +27,15 @@ type ConfigDecl struct {
 	Position Position
 }
 
-// EnvDecl: ENV <name> SECRET|TEXT [OPTIONAL]  or  ENV <name> = <value>
+// EnvDecl: ENV <name> SECRET|TEXT [OPTIONAL]  or  ENV <name> = <value>  or  ENV <name> = <expr> [when <cond>]
 type EnvDecl struct {
-	Name     string
-	Source   string // "secret" or "text" (credential), empty for fixed value
-	Value    string // fixed value (when Source is empty)
-	Optional bool
-	Position Position
+	Name      string
+	Source    string // "secret" or "text" (credential), empty for fixed value/expr
+	Value     string // fixed value (when Source is empty and ValueExpr is nil)
+	ValueExpr Expr   // dynamic expression (merged from old env stmt)
+	When      Expr   // conditional (only with ValueExpr)
+	Optional  bool
+	Position  Position
 }
 
 // RepoDecl: REPO <expr>
@@ -73,9 +75,9 @@ type SetupDecl struct {
 	Position Position
 }
 
-// RemoveDecl: REMOVE ENV <name> | REMOVE SKILLS <slug>
+// RemoveDecl: REMOVE ENV <name> | REMOVE SKILLS <slug> | REMOVE arg <name> | REMOVE file <path>
 type RemoveDecl struct {
-	Target   string // "ENV", "SKILLS", "CONFIG"
+	Target   string // "ENV", "SKILLS", "CONFIG", "arg", "file"
 	Name     string // the specific item to remove
 	Position Position
 }

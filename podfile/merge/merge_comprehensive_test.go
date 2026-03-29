@@ -186,7 +186,7 @@ arg "--base"
 `)
 	slice := parse(t, `
 arg "--extra"
-remove arg "--base"
+REMOVE arg "--base"
 `)
 	Merge(base, slice)
 

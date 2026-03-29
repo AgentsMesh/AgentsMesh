@@ -62,12 +62,10 @@ const (
 	KW_SELECT // SELECT
 
 	// Build logic keywords (lowercase)
-	KW_ARG      // arg
-	KW_ENV_L    // env (lowercase, build context)
-	KW_FILE     // file
+	KW_ARG  // arg
+	KW_FILE // file
 	KW_MKDIR    // mkdir
-	KW_REMOVE_L // remove (lowercase, build logic)
-	KW_WHEN     // when
+	KW_WHEN // when
 	KW_IF       // if
 	KW_ELSE     // else
 	KW_FOR      // for
@@ -123,11 +121,9 @@ var declarationKeywords = map[string]TokenType{
 
 var buildKeywords = map[string]TokenType{
 	"arg":     KW_ARG,
-	"env":     KW_ENV_L,
 	"file":    KW_FILE,
 	"mkdir":   KW_MKDIR,
-	"remove":  KW_REMOVE_L,
-	"when":    KW_WHEN,
+	"when": KW_WHEN,
 	"if":      KW_IF,
 	"else":    KW_ELSE,
 	"for":     KW_FOR,
@@ -169,8 +165,8 @@ func (t TokenType) String() string {
 		KW_PROMPT: "PROMPT", KW_PROMPT_POSITION: "PROMPT_POSITION",
 		KW_BOOL: "BOOL", KW_STRING: "STRING_TYPE", KW_NUMBER: "NUMBER_TYPE",
 		KW_SECRET: "SECRET", KW_TEXT: "TEXT", KW_SELECT: "SELECT",
-		KW_ARG: "arg", KW_ENV_L: "env", KW_FILE: "file", KW_MKDIR: "mkdir",
-		KW_REMOVE_L: "remove", KW_WHEN: "when", KW_IF: "if", KW_ELSE: "else",
+		KW_ARG: "arg", KW_FILE: "file", KW_MKDIR: "mkdir",
+		KW_WHEN: "when", KW_IF: "if", KW_ELSE: "else",
 		KW_FOR: "for", KW_IN: "in", KW_AND: "and", KW_OR: "or", KW_NOT: "not",
 		KW_PREPEND: "prepend", KW_APPEND: "append", KW_NONE: "none",
 		HEREDOC_START: "HEREDOC_START", HEREDOC_BODY: "HEREDOC_BODY",

@@ -75,11 +75,11 @@ if true {
 	assert.Len(t, ifStmt.Body, 1)
 }
 
-// Cover remove stmt error path — invalid target
-func TestParse_RemoveStmt_InvalidTarget(t *testing.T) {
+// Cover REMOVE decl error path — invalid target
+func TestParse_RemoveDecl_InvalidTarget(t *testing.T) {
 	_, errs := Parse(`
 AGENT test
-remove mkdir "/path"
+REMOVE mkdir "/path"
 `)
 	assert.NotEmpty(t, errs)
 }

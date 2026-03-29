@@ -128,7 +128,17 @@ func (p *Parser) parseEnvDecl(pos Position) *EnvDecl {
 		}
 	case lexer.ASSIGN:
 		p.advance()
-		decl.Value = p.expectString()
+		expr := p.parseExpr()
+		// Simple string literal → store as Value for backward compat
+		if lit, ok := expr.(*StringLit); ok && !p.currentIs(lexer.KW_WHEN) {
+			decl.Value = lit.Value
+		} else {
+			decl.ValueExpr = expr
+		}
+		if p.currentIs(lexer.KW_WHEN) {
+			p.advance()
+			decl.When = p.parseCondition()
+		}
 	default:
 		p.errorf("ENV %s: expected SECRET, TEXT, or =, got %s", name, tok.Literal)
 	}

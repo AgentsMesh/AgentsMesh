@@ -56,12 +56,32 @@ func evalRemoveDecl(ctx *Context, d *parser.RemoveDecl) error {
 		ctx.Result.RemoveSkills = append(ctx.Result.RemoveSkills, d.Name)
 	case "CONFIG":
 		// CONFIG removal is metadata for merge; no build-time effect
+	case "arg":
+		ctx.Result.RemoveArgs = append(ctx.Result.RemoveArgs, d.Name)
+	case "file":
+		ctx.Result.RemoveFiles = append(ctx.Result.RemoveFiles, d.Name)
 	}
 	return nil
 }
 
 func evalEnvDecl(ctx *Context, d *parser.EnvDecl) error {
-	if d.Source != "" {
+	if d.ValueExpr != nil {
+		// Dynamic expression (e.g., ENV KEY = config.val when cond)
+		if d.When != nil {
+			cond, err := evalExpr(ctx, d.When)
+			if err != nil {
+				return err
+			}
+			if !isTruthy(cond) {
+				return nil
+			}
+		}
+		val, err := evalExpr(ctx, d.ValueExpr)
+		if err != nil {
+			return err
+		}
+		ctx.Result.EnvVars[d.Name] = toString(val)
+	} else if d.Source != "" {
 		if ctx.IsRunnerHost {
 			return nil
 		}

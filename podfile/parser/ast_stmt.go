@@ -13,14 +13,6 @@ type ArgStmt struct {
 	Position Position
 }
 
-// EnvStmt: env <name> <value> [when <condition>]
-type EnvStmt struct {
-	Name     string
-	Value    Expr
-	When     Expr
-	Position Position
-}
-
 // FileStmt: file <path> <content> [<mode>] [when <condition>]
 type FileStmt struct {
 	Path     Expr
@@ -60,27 +52,16 @@ type ForStmt struct {
 	Position Position
 }
 
-// RemoveStmt: remove arg <value> | remove file <path>
-type RemoveStmt struct {
-	Target   string // "arg", "file"
-	Value    Expr   // the value to match and remove
-	Position Position
-}
-
 func (s *ArgStmt) stmtNode()    {}
-func (s *EnvStmt) stmtNode()    {}
 func (s *FileStmt) stmtNode()   {}
 func (s *MkdirStmt) stmtNode()  {}
 func (s *AssignStmt) stmtNode() {}
 func (s *IfStmt) stmtNode()     {}
 func (s *ForStmt) stmtNode()    {}
-func (s *RemoveStmt) stmtNode() {}
 
 func (s *ArgStmt) Pos() Position    { return s.Position }
-func (s *EnvStmt) Pos() Position    { return s.Position }
 func (s *FileStmt) Pos() Position   { return s.Position }
 func (s *MkdirStmt) Pos() Position  { return s.Position }
 func (s *AssignStmt) Pos() Position { return s.Position }
 func (s *IfStmt) Pos() Position     { return s.Position }
 func (s *ForStmt) Pos() Position    { return s.Position }
-func (s *RemoveStmt) Pos() Position { return s.Position }

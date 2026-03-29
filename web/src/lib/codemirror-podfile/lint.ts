@@ -14,7 +14,7 @@ const VALID_LINE_STARTERS = new Set([
   "OPTIONAL", "REMOVE", "MODE", "CREDENTIAL",
   "PROMPT", "PROMPT_POSITION",
   // Build logic
-  "arg", "env", "file", "mkdir", "remove",
+  "arg", "file", "mkdir",
   "when", "if", "else", "for",
 ]);
 

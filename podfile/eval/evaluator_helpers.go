@@ -50,18 +50,3 @@ func evalForStmt(ctx *Context, s *parser.ForStmt) error {
 	}
 	return nil
 }
-
-func evalRemoveStmt(ctx *Context, s *parser.RemoveStmt) error {
-	val, err := evalExpr(ctx, s.Value)
-	if err != nil {
-		return err
-	}
-	str := toString(val)
-	switch s.Target {
-	case "arg":
-		ctx.Result.RemoveArgs = append(ctx.Result.RemoveArgs, str)
-	case "file":
-		ctx.Result.RemoveFiles = append(ctx.Result.RemoveFiles, str)
-	}
-	return nil
-}

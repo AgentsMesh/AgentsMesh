@@ -34,21 +34,28 @@ REMOVE CONFIG model
 	assert.Equal(t, 3, removes)
 }
 
-// P0: remove statement parsing
-func TestParse_RemoveStmt(t *testing.T) {
+// P0: REMOVE arg/file declaration parsing
+func TestParse_RemoveArgFile(t *testing.T) {
 	prog, errs := Parse(`
 AGENT test
-remove arg "--verbose"
-remove file "/path/to/file"
+REMOVE arg "--verbose"
+REMOVE file "/path/to/file"
 `)
 	require.Empty(t, errs)
-	require.Len(t, prog.Statements, 2)
 
-	rs1 := prog.Statements[0].(*RemoveStmt)
-	assert.Equal(t, "arg", rs1.Target)
-
-	rs2 := prog.Statements[1].(*RemoveStmt)
-	assert.Equal(t, "file", rs2.Target)
+	removes := 0
+	for _, d := range prog.Declarations {
+		if rd, ok := d.(*RemoveDecl); ok {
+			removes++
+			switch rd.Target {
+			case "arg":
+				assert.Equal(t, "--verbose", rd.Name)
+			case "file":
+				assert.Equal(t, "/path/to/file", rd.Name)
+			}
+		}
+	}
+	assert.Equal(t, 2, removes)
 }
 
 // P0: CONFIG without type (slice override syntax)
@@ -126,16 +133,17 @@ file "/path" "content" 0755
 	assert.Equal(t, 0755, fs.Mode)
 }
 
-// P0: env statement (lowercase)
-func TestParse_EnvStmt(t *testing.T) {
+// P0: ENV with expression and when condition (unified from old env stmt)
+func TestParse_EnvDeclWithExpr(t *testing.T) {
 	prog, errs := Parse(`
 AGENT test
-env "MY_VAR" config.val when config.val != ""
+ENV MY_VAR = config.val when config.val != ""
 `)
 	require.Empty(t, errs)
-	es := prog.Statements[0].(*EnvStmt)
-	assert.Equal(t, "MY_VAR", es.Name)
-	assert.NotNil(t, es.When)
+	ed := prog.Declarations[1].(*EnvDecl)
+	assert.Equal(t, "MY_VAR", ed.Name)
+	assert.NotNil(t, ed.ValueExpr)
+	assert.NotNil(t, ed.When)
 }
 
 // P0: SETUP declaration

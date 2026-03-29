@@ -22,7 +22,7 @@ func (p *Parser) parseSetupDecl(pos Position) *SetupDecl {
 	return decl
 }
 
-// parseRemoveDecl: REMOVE ENV <name> | REMOVE SKILLS <slug> | REMOVE CONFIG <name>
+// parseRemoveDecl: REMOVE ENV <name> | REMOVE SKILLS <slug> | REMOVE CONFIG <name> | REMOVE arg <name> | REMOVE file <path>
 func (p *Parser) parseRemoveDecl(pos Position) *RemoveDecl {
 	p.advance() // skip REMOVE
 	tok := p.current()
@@ -34,8 +34,12 @@ func (p *Parser) parseRemoveDecl(pos Position) *RemoveDecl {
 		target = "SKILLS"
 	case lexer.KW_CONFIG:
 		target = "CONFIG"
+	case lexer.KW_ARG:
+		target = "arg"
+	case lexer.KW_FILE:
+		target = "file"
 	default:
-		p.errorf("REMOVE: expected ENV, SKILLS, or CONFIG, got %s", tok.Literal)
+		p.errorf("REMOVE: expected ENV, SKILLS, CONFIG, arg, or file, got %s", tok.Literal)
 		p.advance()
 		return &RemoveDecl{Position: pos}
 	}

@@ -93,6 +93,24 @@ ENV HOME = "/usr/local"
 	assert.Equal(t, "/usr/local", e2.Value)
 }
 
+func TestRoundTrip_EnvDeclWithExpr(t *testing.T) {
+	src := `ENV PATH = "/usr/bin" + ":" + sandbox.root
+ENV KEY = config.val when config.val != ""
+`
+	_, rt := roundTrip(t, src)
+	require.Len(t, rt.Declarations, 2)
+
+	e0 := rt.Declarations[0].(*parser.EnvDecl)
+	assert.Equal(t, "PATH", e0.Name)
+	assert.NotNil(t, e0.ValueExpr)
+	assert.Nil(t, e0.When)
+
+	e1 := rt.Declarations[1].(*parser.EnvDecl)
+	assert.Equal(t, "KEY", e1.Name)
+	assert.NotNil(t, e1.ValueExpr)
+	assert.NotNil(t, e1.When)
+}
+
 func TestRoundTrip_RepoBranchGitCred(t *testing.T) {
 	src := `REPO "https://github.com/org/repo"
 BRANCH "main"
@@ -152,17 +170,18 @@ REMOVE CONFIG model
 func TestRoundTrip_Statements(t *testing.T) {
 	src := `AGENT test
 PROMPT_POSITION prepend
+ENV PATH = "/usr/bin" + ":" + sandbox.root
 arg "--model" config.model when config.model != ""
 arg "--verbose"
-env "PATH" "/usr/bin" + ":" + sandbox.root
 file sandbox.root + "/.config" "content" 0755
 mkdir sandbox.root + "/data"
 `
 	_, rt := roundTrip(t, src)
-	// PROMPT_POSITION is a declaration (AGENT + PROMPT_POSITION = 2 decls)
-	require.Len(t, rt.Declarations, 2)
+	// PROMPT_POSITION is a declaration (AGENT + PROMPT_POSITION + ENV = 3 decls)
+	require.Len(t, rt.Declarations, 3)
 	assert.IsType(t, &parser.PromptPositionDecl{}, rt.Declarations[1])
-	require.Len(t, rt.Statements, 5)
+	assert.IsType(t, &parser.EnvDecl{}, rt.Declarations[2])
+	require.Len(t, rt.Statements, 4)
 }
 
 func TestRoundTrip_IfElse(t *testing.T) {
@@ -203,15 +222,23 @@ x = "hello" + " world"
 	assert.Equal(t, "x", a.Name)
 }
 
-func TestRoundTrip_RemoveStmt(t *testing.T) {
+func TestRoundTrip_RemoveArgFile(t *testing.T) {
 	src := `AGENT test
-remove arg "--verbose"
-remove file "/tmp/config"
+REMOVE arg "--verbose"
+REMOVE file "/tmp/config"
 `
 	_, rt := roundTrip(t, src)
-	require.Len(t, rt.Statements, 2)
-	r0 := rt.Statements[0].(*parser.RemoveStmt)
-	assert.Equal(t, "arg", r0.Target)
+	// REMOVE arg/file are declarations now, not statements
+	removes := 0
+	for _, d := range rt.Declarations {
+		if rd, ok := d.(*parser.RemoveDecl); ok {
+			removes++
+			if rd.Target == "arg" {
+				assert.Equal(t, "--verbose", rd.Name)
+			}
+		}
+	}
+	assert.Equal(t, 2, removes)
 }
 
 func TestRoundTrip_Expressions(t *testing.T) {

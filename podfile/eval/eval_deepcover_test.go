@@ -80,29 +80,37 @@ func TestEval_ArgStmtArgError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// Cover evalEnvStmt when error
-func TestEval_EnvStmtWhenError(t *testing.T) {
+// Cover evalEnvDecl ValueExpr when error
+func TestEval_EnvDeclExprWhenError(t *testing.T) {
 	ctx := NewContext(nil)
-	err := evalEnvStmt(ctx, &parser.EnvStmt{
-		Name:  "K",
-		Value: &parser.StringLit{Value: "v"},
-		When:  nil, // nil when expr → not the error we want
+	err := evalEnvDecl(ctx, &parser.EnvDecl{
+		Name:      "K",
+		ValueExpr: &parser.StringLit{Value: "v"},
+		When:      nil, // nil when expr → not the error we want
 	})
 	assert.NoError(t, err) // nil when = unconditional
 
 	// Error in when clause
-	err = evalEnvStmt(ctx, &parser.EnvStmt{
-		Name:  "K",
-		Value: &parser.StringLit{Value: "v"},
-		When:  &parser.CallExpr{Func: "nope", Args: nil},
+	err = evalEnvDecl(ctx, &parser.EnvDecl{
+		Name:      "K",
+		ValueExpr: &parser.StringLit{Value: "v"},
+		When:      &parser.CallExpr{Func: "nope", Args: nil},
 	})
 	assert.Error(t, err)
 }
 
-// Cover evalEnvStmt value error
-func TestEval_EnvStmtValueError(t *testing.T) {
+// Cover evalEnvDecl ValueExpr value error
+func TestEval_EnvDeclExprValueError(t *testing.T) {
 	ctx := NewContext(nil)
-	err := evalEnvStmt(ctx, &parser.EnvStmt{Name: "K", Value: nil})
+	err := evalEnvDecl(ctx, &parser.EnvDecl{Name: "K", ValueExpr: nil})
+	// nil ValueExpr with no Source and no Value → no-op, not an error
+	assert.NoError(t, err)
+
+	// Actual value error: expression that fails
+	err = evalEnvDecl(ctx, &parser.EnvDecl{
+		Name:      "K",
+		ValueExpr: &parser.CallExpr{Func: "nope", Args: nil},
+	})
 	assert.Error(t, err)
 }
 

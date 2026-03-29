@@ -31,15 +31,15 @@ REMOVE SKILLS s1
 	assert.Equal(t, []string{"s2"}, ctx.Result.Skills)
 }
 
-// Cover evalRemoveStmt (0% → package-local test)
-func TestEval_RemoveStmt(t *testing.T) {
+// Cover evalRemoveDecl for arg/file targets (0% → package-local test)
+func TestEval_RemoveArgFileDecl(t *testing.T) {
 	prog, errs := parser.Parse(`
 AGENT test
 arg "--verbose"
 arg "--model" "opus"
 file "/a/b.json" "content"
-remove arg "--verbose"
-remove file "/a/b.json"
+REMOVE arg "--verbose"
+REMOVE file "/a/b.json"
 `)
 	require.Empty(t, errs)
 
@@ -67,12 +67,12 @@ arg "--enabled" when config.enabled
 	assert.Equal(t, []string{"--disabled"}, ctx.Result.LaunchArgs)
 }
 
-// Cover evalEnvStmt (lowercase env)
-func TestEval_EnvStmtLowercase(t *testing.T) {
+// Cover evalEnvDecl with ValueExpr (unified from old env stmt)
+func TestEval_EnvDeclWithExpr(t *testing.T) {
 	prog, errs := parser.Parse(`
 AGENT test
-env "DYNAMIC_KEY" config.value when config.value != ""
-env "STATIC_KEY" "always"
+ENV DYNAMIC_KEY = config.value when config.value != ""
+ENV STATIC_KEY = "always"
 `)
 	require.Empty(t, errs)
 
@@ -84,11 +84,11 @@ env "STATIC_KEY" "always"
 	assert.Equal(t, "always", ctx.Result.EnvVars["STATIC_KEY"])
 }
 
-// Cover evalEnvStmt when=false
-func TestEval_EnvStmtWhenFalse(t *testing.T) {
+// Cover evalEnvDecl when=false
+func TestEval_EnvDeclWhenFalse(t *testing.T) {
 	prog, errs := parser.Parse(`
 AGENT test
-env "KEY" "val" when config.enabled
+ENV KEY = "val" when config.enabled
 `)
 	require.Empty(t, errs)
 	ctx := NewContext(map[string]interface{}{

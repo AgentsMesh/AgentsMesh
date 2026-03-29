@@ -14,8 +14,6 @@ func writeStmt(b *strings.Builder, stmt parser.Statement, indent int) {
 	switch s := stmt.(type) {
 	case *parser.ArgStmt:
 		writeArgStmt(b, s)
-	case *parser.EnvStmt:
-		writeEnvStmt(b, s)
 	case *parser.FileStmt:
 		writeFileStmt(b, s)
 	case *parser.MkdirStmt:
@@ -26,8 +24,6 @@ func writeStmt(b *strings.Builder, stmt parser.Statement, indent int) {
 		writeIfStmt(b, s, indent)
 	case *parser.ForStmt:
 		writeForStmt(b, s, indent)
-	case *parser.RemoveStmt:
-		fmt.Fprintf(b, "remove %s %s", s.Target, serializeExpr(s.Value))
 	}
 }
 
@@ -37,11 +33,6 @@ func writeArgStmt(b *strings.Builder, s *parser.ArgStmt) {
 		b.WriteByte(' ')
 		b.WriteString(serializeExpr(arg))
 	}
-	writeWhen(b, s.When)
-}
-
-func writeEnvStmt(b *strings.Builder, s *parser.EnvStmt) {
-	fmt.Fprintf(b, "env %s %s", quoteString(s.Name), serializeExpr(s.Value))
 	writeWhen(b, s.When)
 }
 

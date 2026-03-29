@@ -161,14 +161,14 @@ REMOVE SKILLS am-delegate
 	assert.Equal(t, []string{"am-channel"}, ctx.Result.Skills)
 }
 
-func TestMerge_RemoveStmt_Arg(t *testing.T) {
+func TestMerge_RemoveDecl_Arg(t *testing.T) {
 	base := parse(t, `
 AGENT test
 arg "--verbose"
 arg "--model" "opus"
 `)
 	slice := parse(t, `
-remove arg "--verbose"
+REMOVE arg "--verbose"
 `)
 	Merge(base, slice)
 
@@ -179,14 +179,14 @@ remove arg "--verbose"
 	assert.Equal(t, []string{"--model", "opus"}, ctx.Result.LaunchArgs)
 }
 
-func TestMerge_RemoveStmt_ArgWithValue(t *testing.T) {
+func TestMerge_RemoveDecl_ArgWithValue(t *testing.T) {
 	base := parse(t, `
 AGENT test
 arg "--model" "sonnet"
 arg "--permission-mode" "plan"
 `)
 	slice := parse(t, `
-remove arg "--model"
+REMOVE arg "--model"
 `)
 	Merge(base, slice)
 

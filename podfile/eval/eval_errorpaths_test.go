@@ -148,11 +148,16 @@ func TestEval_IfStmtCondError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// Cover evalRemoveStmt error
-func TestEval_RemoveStmtError(t *testing.T) {
+// Cover evalRemoveDecl with arg/file targets
+func TestEval_RemoveDeclArgFile(t *testing.T) {
 	ctx := NewContext(nil)
-	err := evalRemoveStmt(ctx, &parser.RemoveStmt{Target: "arg", Value: nil})
-	assert.Error(t, err)
+	err := evalRemoveDecl(ctx, &parser.RemoveDecl{Target: "arg", Name: "--verbose"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"--verbose"}, ctx.Result.RemoveArgs)
+
+	err = evalRemoveDecl(ctx, &parser.RemoveDecl{Target: "file", Name: "/tmp/f"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"/tmp/f"}, ctx.Result.RemoveFiles)
 }
 
 // Cover evalForStmt iter error

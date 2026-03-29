@@ -107,13 +107,13 @@ BRANCH "main"
 	assert.Equal(t, "main", ctx.Result.Sandbox.Branch)
 }
 
-func TestMergeSerialize_RemoveStmt(t *testing.T) {
+func TestMergeSerialize_RemoveArg(t *testing.T) {
 	base := parse(t, `
 AGENT test
 arg "--verbose"
 arg "--model" "opus"
 `)
-	slice := parse(t, `remove arg "--verbose"`)
+	slice := parse(t, `REMOVE arg "--verbose"`)
 	merge.Merge(base, slice)
 	src := Serialize(base)
 

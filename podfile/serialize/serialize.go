@@ -59,7 +59,7 @@ func writeDecl(b *strings.Builder, decl parser.Declaration) {
 	case *parser.SetupDecl:
 		writeSetupDecl(b, d)
 	case *parser.RemoveDecl:
-		fmt.Fprintf(b, "REMOVE %s %s", d.Target, d.Name)
+		fmt.Fprintf(b, "REMOVE %s %s", d.Target, quoteString(d.Name))
 	case *parser.ModeDecl:
 		fmt.Fprintf(b, "MODE %s", d.Mode)
 	case *parser.CredentialDecl:
@@ -107,6 +107,9 @@ func writeEnvDecl(b *strings.Builder, d *parser.EnvDecl) {
 		if d.Optional {
 			b.WriteString(" OPTIONAL")
 		}
+	} else if d.ValueExpr != nil {
+		fmt.Fprintf(b, " = %s", serializeExpr(d.ValueExpr))
+		writeWhen(b, d.When)
 	} else {
 		fmt.Fprintf(b, " = %s", quoteString(d.Value))
 	}

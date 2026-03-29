@@ -175,7 +175,7 @@ arg "--old-flag" "old-value"
 arg "--keep"
 `
 	slice := `
-remove arg "--old-flag"
+REMOVE arg "--old-flag"
 arg "--new-flag" "new-value"
 `
 	r := evalMerged(t, base, slice, nil)
