@@ -195,7 +195,13 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	var mergedPodfileSource string
 	if req.PodfileLayer != nil && *req.PodfileLayer != "" && req.AgentSlug != "" && o.agentResolver != nil {
 		agentDef, err := o.agentResolver.GetAgent(ctx, req.AgentSlug)
-		if err == nil && agentDef.PodfileSource != nil {
+		if err != nil {
+			slog.Warn("failed to resolve agent for podfile merge, skipping layer",
+				"agent_slug", req.AgentSlug, "error", err)
+		} else if agentDef.PodfileSource == nil {
+			slog.Warn("agent has no base podfile, skipping layer merge",
+				"agent_slug", req.AgentSlug)
+		} else {
 			result, err := extractFromPodfileLayer(*agentDef.PodfileSource, *req.PodfileLayer)
 			if err != nil {
 				return nil, err

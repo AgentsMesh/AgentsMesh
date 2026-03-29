@@ -76,8 +76,9 @@ type ConfigBuildRequest struct {
 	// Empty map or nil means Runner did not report version info (old Runner).
 	RunnerAgentVersions map[string]string
 
-	// MergedPodfileSource is the pre-merged PodFile source (base + user layer, serialized).
-	// Produced by orchestrator's extractFromPodfileLayer — single parse+merge pass.
+	// MergedPodfileSource is the merged PodFile source (base + user layer, serialized).
+	// Populated by orchestrator's extractFromPodfileLayer when PodfileLayer is provided.
+	// When empty (resume mode or no layer): buildFromPodFile falls back to agent's base PodFile.
 	MergedPodfileSource string
 }
 

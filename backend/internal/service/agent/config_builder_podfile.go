@@ -62,7 +62,7 @@ func (b *ConfigBuilder) buildFromPodFile(
 
 	return &runnerv1.CreatePodCommand{
 		PodKey:           req.PodKey,
-		PodfileSource:    req.MergedPodfileSource,
+		PodfileSource:    mergedSource,
 		ConfigValues:     configValues,
 		Credentials:      credentialsToMap(creds),
 		IsRunnerHost:     isRunnerHost,
