@@ -97,8 +97,9 @@ ENV ANTHROPIC_BASE_URL TEXT OPTIONAL
 MCP ON
 SKILLS am-delegate, am-channel
 
+PROMPT_POSITION prepend
+
 arg "--model" config.model when config.model != ""
-prompt prepend
 
 if mcp.enabled {
   mcp_cfg = json_merge(mcp.builtin, mcp.installed)

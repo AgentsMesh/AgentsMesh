@@ -12,8 +12,8 @@ import (
 // (idempotent import) so that re-importing after a provider reconnect
 // does not fail.
 func (s *Service) Create(ctx context.Context, req *CreateRequest) (*gitprovider.Repository, error) {
-	// Check if repository already exists (unique: org + provider_type + provider_base_url + full_path)
-	existing, err := s.repo.FindByOrgAndPath(ctx, req.OrganizationID, req.ProviderType, req.ProviderBaseURL, req.FullPath)
+	// Check if repository already exists (unique: org + provider_type + provider_base_url + slug)
+	existing, err := s.repo.FindByOrgAndSlug(ctx, req.OrganizationID, req.ProviderType, req.ProviderBaseURL, req.Slug)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (s *Service) createNewRepo(ctx context.Context, req *CreateRequest) (*gitpr
 		SshCloneURL:      req.SshCloneURL,
 		ExternalID:       req.ExternalID,
 		Name:             req.Name,
-		FullPath:         req.FullPath,
+		Slug:             req.Slug,
 		DefaultBranch:    req.DefaultBranch,
 		TicketPrefix:     req.TicketPrefix,
 		Visibility:       req.Visibility,
@@ -79,7 +79,7 @@ func (s *Service) createNewRepo(ctx context.Context, req *CreateRequest) (*gitpr
 
 	// Generate clone URLs if not provided
 	if repo.HttpCloneURL == "" || repo.SshCloneURL == "" {
-		httpURL, sshURL := generateCloneURLs(repo.ProviderType, repo.ProviderBaseURL, repo.FullPath)
+		httpURL, sshURL := generateCloneURLs(repo.ProviderType, repo.ProviderBaseURL, repo.Slug)
 		if repo.HttpCloneURL == "" {
 			repo.HttpCloneURL = httpURL
 		}
@@ -94,11 +94,11 @@ func (s *Service) createNewRepo(ctx context.Context, req *CreateRequest) (*gitpr
 	}
 
 	if err := s.repo.Create(ctx, repo); err != nil {
-		slog.Error("failed to create repository", "org_id", req.OrganizationID, "full_path", req.FullPath, "error", err)
+		slog.Error("failed to create repository", "org_id", req.OrganizationID, "slug", req.Slug, "error", err)
 		return nil, err
 	}
 
-	slog.Info("repository created", "repo_id", repo.ID, "org_id", req.OrganizationID, "full_path", req.FullPath)
+	slog.Info("repository created", "repo_id", repo.ID, "org_id", req.OrganizationID, "slug", req.Slug)
 	return repo, nil
 }
 
@@ -144,22 +144,22 @@ func (s *Service) CreateWithWebhook(ctx context.Context, req *CreateRequest, org
 }
 
 // generateCloneURLs generates both HTTP and SSH clone URLs based on provider type
-func generateCloneURLs(providerType, baseURL, fullPath string) (httpURL, sshURL string) {
+func generateCloneURLs(providerType, baseURL, slug string) (httpURL, sshURL string) {
 	switch providerType {
 	case "github":
-		httpURL = "https://github.com/" + fullPath + ".git"
-		sshURL = "git@github.com:" + fullPath + ".git"
+		httpURL = "https://github.com/" + slug + ".git"
+		sshURL = "git@github.com:" + slug + ".git"
 	case "gitlab":
-		httpURL = baseURL + "/" + fullPath + ".git"
+		httpURL = baseURL + "/" + slug + ".git"
 		host := extractHost(baseURL)
-		sshURL = "git@" + host + ":" + fullPath + ".git"
+		sshURL = "git@" + host + ":" + slug + ".git"
 	case "gitee":
-		httpURL = "https://gitee.com/" + fullPath + ".git"
-		sshURL = "git@gitee.com:" + fullPath + ".git"
+		httpURL = "https://gitee.com/" + slug + ".git"
+		sshURL = "git@gitee.com:" + slug + ".git"
 	default:
-		httpURL = baseURL + "/" + fullPath + ".git"
+		httpURL = baseURL + "/" + slug + ".git"
 		host := extractHost(baseURL)
-		sshURL = "git@" + host + ":" + fullPath + ".git"
+		sshURL = "git@" + host + ":" + slug + ".git"
 	}
 	return
 }

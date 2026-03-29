@@ -22,6 +22,8 @@ ENV ANTHROPIC_BASE_URL TEXT OPTIONAL
 MCP ON
 SKILLS am-delegate, am-channel
 
+PROMPT_POSITION prepend
+
 # --- Build logic ---
 
 arg "--model" config.model when config.model != ""
@@ -32,8 +34,6 @@ if config.permission == "plan" {
 if config.permission == "bypass" {
   arg "--dangerously-skip-permissions"
 }
-
-prompt prepend
 
 if mcp.enabled {
   mcp_cfg = json_merge(mcp.builtin, mcp.installed)
@@ -58,8 +58,8 @@ func TestParse_FullClaudeCode(t *testing.T) {
 	prog, errs := Parse(claudeCodePodFile)
 	require.Empty(t, errs, "parse errors: %v", errs)
 
-	// Declarations: AGENT, EXECUTABLE, 3x CONFIG, 3x ENV, MCP, SKILLS = 10
-	assert.Len(t, prog.Declarations, 10)
+	// Declarations: AGENT, EXECUTABLE, 3x CONFIG, 3x ENV, MCP, SKILLS, PROMPT_POSITION = 11
+	assert.Len(t, prog.Declarations, 11)
 
 	assert.IsType(t, &AgentDecl{}, prog.Declarations[0])
 	assert.IsType(t, &ExecutableDecl{}, prog.Declarations[1])
@@ -71,9 +71,11 @@ func TestParse_FullClaudeCode(t *testing.T) {
 	assert.IsType(t, &EnvDecl{}, prog.Declarations[7])
 	assert.IsType(t, &McpDecl{}, prog.Declarations[8])
 	assert.IsType(t, &SkillsDecl{}, prog.Declarations[9])
+	promptPos := prog.Declarations[10].(*PromptPositionDecl)
+	assert.Equal(t, "prepend", promptPos.Mode)
 
-	// Statements: arg, if, if, prompt, if(mcp block)
-	assert.Len(t, prog.Statements, 5)
+	// Statements: arg, if, if, if(mcp block) = 4
+	assert.Len(t, prog.Statements, 4)
 
 	// First statement: arg with when
 	argStmt := prog.Statements[0].(*ArgStmt)
@@ -87,12 +89,8 @@ func TestParse_FullClaudeCode(t *testing.T) {
 	ifBypass := prog.Statements[2].(*IfStmt)
 	assert.Len(t, ifBypass.Body, 1)
 
-	// Fourth: prompt prepend
-	promptStmt := prog.Statements[3].(*PromptStmt)
-	assert.Equal(t, "prepend", promptStmt.Mode)
-
-	// Fifth: if mcp.enabled { ... }
-	ifMcp := prog.Statements[4].(*IfStmt)
+	// Fourth: if mcp.enabled { ... }
+	ifMcp := prog.Statements[3].(*IfStmt)
 	// Body should have: assign, assign, mkdir, mkdir, file, file, arg
 	assert.Len(t, ifMcp.Body, 7)
 }

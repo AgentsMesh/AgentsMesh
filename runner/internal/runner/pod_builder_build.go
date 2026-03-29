@@ -31,8 +31,7 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	}
 
 	launchCommand := b.cmd.LaunchCommand
-	logger.Pod().Info("Building pod", "pod_key", b.cmd.PodKey, "command", launchCommand,
-		"interaction_mode", b.cmd.GetInteractionMode())
+	logger.Pod().Info("Building pod", "pod_key", b.cmd.PodKey, "command", launchCommand)
 
 	b.sendProgress("pending", 0, "Initializing pod...")
 
@@ -51,10 +50,10 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	launchCommand = pfResult.LaunchCommand
 	resolvedArgs := pfResult.LaunchArgs
 
-	// PodFile MODE declaration overrides the proto interaction mode
-	interactionMode := b.cmd.GetInteractionMode()
-	if pfResult.Mode != "" {
-		interactionMode = pfResult.Mode
+	// MODE from PodFile eval (SSOT)
+	interactionMode := pfResult.Mode
+	if interactionMode == "" {
+		interactionMode = "pty" // default
 	}
 
 	if err := b.createFilesFromProto(pfResult.FilesToCreate, sandboxRoot, workingDir); err != nil {

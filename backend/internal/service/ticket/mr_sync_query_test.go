@@ -172,7 +172,7 @@ func TestSyncMRByURL(t *testing.T) {
 		repo := &gitprovider.Repository{
 			OrganizationID: 1,
 			Name:           "repo",
-			FullPath:       "org/repo",
+			Slug:       "org/repo",
 			ExternalID:     "123",
 		}
 		db.Create(repo)

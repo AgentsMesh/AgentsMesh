@@ -105,12 +105,12 @@ arg "--flag" when not config.disabled
 	assert.Equal(t, "not", unary.Op)
 }
 
-// P0: prompt append/none
+// P0: PROMPT_POSITION append/none
 func TestParse_PromptModes(t *testing.T) {
 	for _, mode := range []string{"prepend", "append", "none"} {
-		prog, errs := Parse("AGENT test\nprompt " + mode + "\n")
+		prog, errs := Parse("AGENT test\nPROMPT_POSITION " + mode + "\n")
 		require.Empty(t, errs, "mode=%s", mode)
-		ps := prog.Statements[0].(*PromptStmt)
+		ps := prog.Declarations[1].(*PromptPositionDecl)
 		assert.Equal(t, mode, ps.Mode)
 	}
 }
@@ -180,7 +180,7 @@ func TestParse_Error_InvalidRemoveTarget(t *testing.T) {
 
 // P1: Parse errors — prompt invalid mode
 func TestParse_Error_InvalidPrompt(t *testing.T) {
-	_, errs := Parse(`AGENT test` + "\n" + `prompt invalid`)
+	_, errs := Parse(`AGENT test` + "\n" + `PROMPT_POSITION invalid`)
 	assert.NotEmpty(t, errs)
 }
 
@@ -209,7 +209,7 @@ MCP ON
 func TestParse_OnlyStatements(t *testing.T) {
 	prog, errs := Parse(`
 arg "--flag"
-prompt prepend
+arg "--other"
 `)
 	require.Empty(t, errs)
 	assert.Empty(t, prog.Declarations)

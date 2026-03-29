@@ -21,11 +21,11 @@ func NewGitProviderRepository(db *gorm.DB) gitprovider.RepositoryRepo {
 	return &gitProviderRepo{db: db}
 }
 
-func (r *gitProviderRepo) FindByOrgAndPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*gitprovider.Repository, error) {
+func (r *gitProviderRepo) FindByOrgAndSlug(ctx context.Context, orgID int64, providerType, providerBaseURL, slug string) (*gitprovider.Repository, error) {
 	var repo gitprovider.Repository
 	err := r.db.WithContext(ctx).
-		Where("organization_id = ? AND provider_type = ? AND provider_base_url = ? AND full_path = ? AND deleted_at IS NULL",
-			orgID, providerType, providerBaseURL, fullPath).
+		Where("organization_id = ? AND provider_type = ? AND provider_base_url = ? AND slug = ? AND deleted_at IS NULL",
+			orgID, providerType, providerBaseURL, slug).
 		First(&repo).Error
 	if err != nil {
 		if isNotFound(err) {
@@ -114,11 +114,25 @@ func (r *gitProviderRepo) GetByExternalID(ctx context.Context, providerType, pro
 	return &repo, nil
 }
 
-func (r *gitProviderRepo) GetByFullPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*gitprovider.Repository, error) {
+func (r *gitProviderRepo) GetBySlug(ctx context.Context, orgID int64, providerType, providerBaseURL, slug string) (*gitprovider.Repository, error) {
 	var repo gitprovider.Repository
 	err := r.db.WithContext(ctx).
-		Where("organization_id = ? AND provider_type = ? AND provider_base_url = ? AND full_path = ? AND deleted_at IS NULL",
-			orgID, providerType, providerBaseURL, fullPath).
+		Where("organization_id = ? AND provider_type = ? AND provider_base_url = ? AND slug = ? AND deleted_at IS NULL",
+			orgID, providerType, providerBaseURL, slug).
+		First(&repo).Error
+	if err != nil {
+		if isNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &repo, nil
+}
+
+func (r *gitProviderRepo) FindByOrgSlug(ctx context.Context, orgID int64, slug string) (*gitprovider.Repository, error) {
+	var repo gitprovider.Repository
+	err := r.db.WithContext(ctx).
+		Where("organization_id = ? AND slug = ? AND deleted_at IS NULL", orgID, slug).
 		First(&repo).Error
 	if err != nil {
 		if isNotFound(err) {

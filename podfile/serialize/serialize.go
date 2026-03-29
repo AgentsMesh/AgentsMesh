@@ -64,6 +64,10 @@ func writeDecl(b *strings.Builder, decl parser.Declaration) {
 		fmt.Fprintf(b, "MODE %s", d.Mode)
 	case *parser.CredentialDecl:
 		fmt.Fprintf(b, "CREDENTIAL %s", quoteIfNeeded(d.ProfileName))
+	case *parser.PromptDecl:
+		fmt.Fprintf(b, "PROMPT %q", d.Content)
+	case *parser.PromptPositionDecl:
+		fmt.Fprintf(b, "PROMPT_POSITION %s", d.Mode)
 	}
 }
 

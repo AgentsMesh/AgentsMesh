@@ -31,8 +31,8 @@ type RepositoryServiceInterface interface {
 	ListBranches(ctx context.Context, repoID int64, accessToken string) ([]string, error)
 	// SyncFromProvider syncs repository info from git provider
 	SyncFromProvider(ctx context.Context, repoID int64, accessToken string) (*gitprovider.Repository, error)
-	// GetByFullPath returns a repository by org, provider, and full path
-	GetByFullPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*gitprovider.Repository, error)
+	// GetBySlug returns a repository by org, provider, and slug
+	GetBySlug(ctx context.Context, orgID int64, providerType, providerBaseURL, slug string) (*gitprovider.Repository, error)
 	// ListMergeRequests lists merge requests for a repository
 	ListMergeRequests(ctx context.Context, repoID int64, branch, state string) ([]*MergeRequestInfo, error)
 }

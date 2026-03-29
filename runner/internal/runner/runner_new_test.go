@@ -228,6 +228,7 @@ func TestMockConnectionSimulateCreatePod(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "mock-pod",
 		LaunchCommand: "echo",
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 	}
 
 	err := mockConn.SimulateCreatePod(cmd)

@@ -37,7 +37,7 @@ type Repository struct {
 
 	ExternalID    string  `gorm:"size:255;not null" json:"external_id"`
 	Name          string  `gorm:"size:255;not null" json:"name"`
-	FullPath      string  `gorm:"size:500;not null" json:"full_path"`
+	Slug          string  `gorm:"column:slug;size:500;not null" json:"slug"`
 	DefaultBranch string  `gorm:"size:100;default:'main'" json:"default_branch"`
 	TicketPrefix  *string `gorm:"size:10" json:"ticket_prefix,omitempty"`
 

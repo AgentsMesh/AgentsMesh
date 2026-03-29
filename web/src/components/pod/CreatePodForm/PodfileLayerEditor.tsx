@@ -1,9 +1,17 @@
 "use client";
 
-import React from "react";
-import { Textarea } from "@/components/ui/textarea";
+/**
+ * PodFile Layer editor with form/source mode toggle.
+ * Form mode: read-only preview of generated Layer.
+ * Source mode: CodeMirror 6 editor with syntax highlighting + autocomplete.
+ */
+import React, { useMemo } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { PodfileCodeEditor } from "./PodfileCodeEditor";
+import type { PodfileCompletionContext } from "@/lib/codemirror-podfile";
+import type { ConfigField } from "@/lib/api/agent";
+import type { RepositoryData, AgentData, CredentialProfileData } from "@/lib/api";
 
 interface PodfileLayerEditorProps {
   generatedLayer: string;
@@ -11,6 +19,14 @@ interface PodfileLayerEditorProps {
   rawText: string;
   onRawModeChange: (enabled: boolean) => void;
   onRawTextChange: (text: string) => void;
+  /** Agent config schema for CONFIG field/value completions */
+  configFields?: ConfigField[];
+  /** Available agents for AGENT keyword completions */
+  agents?: AgentData[];
+  /** Available repositories for REPO/BRANCH completions */
+  repositories?: RepositoryData[];
+  /** Credential profiles for CREDENTIAL completions */
+  credentialProfiles?: CredentialProfileData[];
   t: (key: string) => string;
 }
 
@@ -20,8 +36,27 @@ export function PodfileLayerEditor({
   rawText,
   onRawModeChange,
   onRawTextChange,
+  configFields = [],
+  agents,
+  repositories,
+  credentialProfiles,
   t,
 }: PodfileLayerEditorProps) {
+  // Build completion context from all available data sources
+  const completionContext = useMemo<PodfileCompletionContext>(() => ({
+    configFields,
+    agents: agents?.map((a) => ({ slug: a.slug, name: a.name })),
+    repositories: repositories?.map((r) => ({
+      slug: r.slug,
+      name: r.name,
+      default_branch: r.default_branch,
+    })),
+    credentialProfiles: credentialProfiles?.map((p) => ({
+      name: p.name,
+      description: p.description,
+    })),
+  }), [configFields, agents, repositories, credentialProfiles]);
+
   return (
     <div className="space-y-2 border-t pt-3">
       {/* Toggle: Form Mode / Source Mode */}
@@ -35,13 +70,12 @@ export function PodfileLayerEditor({
         </div>
       </div>
 
-      {/* Layer preview or editor */}
+      {/* Layer preview or CodeMirror editor */}
       {rawMode ? (
-        <Textarea
+        <PodfileCodeEditor
           value={rawText}
-          onChange={(e) => onRawTextChange(e.target.value)}
-          className="font-mono text-xs min-h-[120px] resize-y"
-          placeholder={'CONFIG model = "opus"\nREPO "https://github.com/org/repo"'}
+          onChange={onRawTextChange}
+          completionContext={completionContext}
         />
       ) : (
         generatedLayer && (

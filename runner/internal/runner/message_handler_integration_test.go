@@ -39,6 +39,7 @@ func TestMessageHandlerIntegrationWithMockConnection(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "integration-pod",
 		LaunchCommand: "echo",
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 	}
 
 	// Create pod via mock connection simulation
@@ -86,6 +87,7 @@ func TestMessageHandlerIntegrationPodLifecycle(t *testing.T) {
 		cmd := &runnerv1.CreatePodCommand{
 			PodKey:        "lifecycle-pod-" + string(rune('a'+i)),
 			LaunchCommand: "sleep",
+			PodfileSource: "AGENT sleep\nPROMPT_POSITION prepend\n",
 		}
 		err := mockConn.SimulateCreatePod(cmd)
 		if err != nil {

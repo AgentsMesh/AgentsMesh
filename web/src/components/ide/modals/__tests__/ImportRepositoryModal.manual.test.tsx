@@ -101,14 +101,14 @@ describe("ImportRepositoryModal - Manual Entry", () => {
     // Fill in required fields using userEvent
     const cloneUrlInput = screen.getByPlaceholderText("https://github.com/org/repo.git");
     const nameInput = screen.getByPlaceholderText("my-project");
-    const fullPathInput = screen.getByPlaceholderText("org/my-project");
+    const slugInput = screen.getByPlaceholderText("org/my-project");
 
     await user.clear(cloneUrlInput);
     await user.type(cloneUrlInput, "https://github.com/test/repo.git");
     await user.clear(nameInput);
     await user.type(nameInput, "test-repo");
-    await user.clear(fullPathInput);
-    await user.type(fullPathInput, "test/repo");
+    await user.clear(slugInput);
+    await user.type(slugInput, "test/repo");
   });
 
   it("should show error when continue is clicked without required fields", async () => {
@@ -154,14 +154,14 @@ describe("ImportRepositoryModal - Manual Entry", () => {
     // Fill in required fields using userEvent
     const cloneUrlInput = screen.getByPlaceholderText("https://github.com/org/repo.git");
     const nameInput = screen.getByPlaceholderText("my-project");
-    const fullPathInput = screen.getByPlaceholderText("org/my-project");
+    const slugInput = screen.getByPlaceholderText("org/my-project");
 
     await user.clear(cloneUrlInput);
     await user.type(cloneUrlInput, "https://github.com/test/repo.git");
     await user.clear(nameInput);
     await user.type(nameInput, "test-repo");
-    await user.clear(fullPathInput);
-    await user.type(fullPathInput, "test/repo");
+    await user.clear(slugInput);
+    await user.type(slugInput, "test/repo");
 
     await user.click(screen.getByText("Continue"));
 

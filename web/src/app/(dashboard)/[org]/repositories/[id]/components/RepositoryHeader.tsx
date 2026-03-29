@@ -37,7 +37,7 @@ export function RepositoryHeader({ repository, onEdit, onDelete }: RepositoryHea
                 </span>
               )}
             </div>
-            <p className="text-muted-foreground">{repository.full_path}</p>
+            <p className="text-muted-foreground">{repository.slug}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

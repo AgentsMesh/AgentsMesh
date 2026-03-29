@@ -3,6 +3,7 @@ package runner
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/podfile/eval"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,7 @@ ENV ANTHROPIC_API_KEY SECRET OPTIONAL
 MCP ON
 
 arg "--model" config.model when config.model != ""
-prompt prepend
+PROMPT_POSITION prepend
 
 if mcp.enabled {
   mcp_cfg = json_merge(mcp.builtin, mcp.installed)
@@ -77,7 +78,7 @@ AGENT gemini
 CONFIG mcp_enabled BOOL = true
 MCP ON
 
-prompt append
+PROMPT_POSITION append
 
 if mcp.enabled {
   mcp_cfg = mcp_transform(json_merge(mcp.builtin, mcp.installed), "gemini")
@@ -116,7 +117,7 @@ AGENT aider
 CONFIG model STRING = ""
 MCP OFF
 arg "--model" config.model when config.model != ""
-prompt none
+PROMPT_POSITION none
 `
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-aider",
@@ -139,7 +140,7 @@ prompt none
 func TestExecutePodFile_RunnerHost(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-rh",
-		PodfileSource: "AGENT test\nENV MY_KEY SECRET\nprompt prepend\n",
+		PodfileSource: "AGENT test\nENV MY_KEY SECRET\nPROMPT_POSITION prepend\n",
 		Credentials:   map[string]string{"MY_KEY": "secret-val"},
 		IsRunnerHost:  true,
 	}
@@ -189,4 +190,113 @@ func TestParseJSON(t *testing.T) {
 
 	invalid := parseJSON("not json")
 	assert.Empty(t, invalid)
+}
+
+// --- toResult unit tests: prompt priority and position behavior ---
+
+func newBuildResult() *eval.BuildResult {
+	return &eval.BuildResult{
+		LaunchCommand: "claude",
+		LaunchArgs:    []string{"--model", "opus"},
+		EnvVars:       map[string]string{},
+	}
+}
+
+func TestToResult_PodfilePromptPriority(t *testing.T) {
+	br := newBuildResult()
+	br.Prompt = "from podfile"
+	br.PromptPosition = "prepend"
+
+	result := toResult(br, "from api")
+
+	// PodFile PROMPT takes priority over initialPrompt
+	assert.Equal(t, "from podfile", result.LaunchArgs[0])
+	assert.NotContains(t, result.LaunchArgs, "from api")
+}
+
+func TestToResult_FallbackToInitialPrompt(t *testing.T) {
+	br := newBuildResult()
+	br.Prompt = ""
+	br.PromptPosition = "prepend"
+
+	result := toResult(br, "from api")
+
+	// Falls back to initialPrompt when PodFile PROMPT is empty
+	assert.Equal(t, "from api", result.LaunchArgs[0])
+}
+
+func TestToResult_PrependPosition(t *testing.T) {
+	br := newBuildResult()
+	br.Prompt = "do something"
+	br.PromptPosition = "prepend"
+
+	result := toResult(br, "")
+
+	require.True(t, len(result.LaunchArgs) > 0)
+	assert.Equal(t, "do something", result.LaunchArgs[0])
+	// Original args follow
+	assert.Equal(t, "--model", result.LaunchArgs[1])
+	assert.Equal(t, "opus", result.LaunchArgs[2])
+}
+
+func TestToResult_AppendPosition(t *testing.T) {
+	br := newBuildResult()
+	br.Prompt = "do something"
+	br.PromptPosition = "append"
+
+	result := toResult(br, "")
+
+	last := result.LaunchArgs[len(result.LaunchArgs)-1]
+	assert.Equal(t, "do something", last)
+	// Original args are before
+	assert.Equal(t, "--model", result.LaunchArgs[0])
+	assert.Equal(t, "opus", result.LaunchArgs[1])
+}
+
+func TestToResult_NonePosition(t *testing.T) {
+	br := newBuildResult()
+	br.Prompt = "should be ignored"
+	br.PromptPosition = "none"
+
+	result := toResult(br, "also ignored")
+
+	// Neither prompt ends up in args with "none" position
+	assert.NotContains(t, result.LaunchArgs, "should be ignored")
+	assert.NotContains(t, result.LaunchArgs, "also ignored")
+	assert.Equal(t, []string{"--model", "opus"}, result.LaunchArgs)
+}
+
+func TestToResult_EmptyPosition(t *testing.T) {
+	br := newBuildResult()
+	br.Prompt = "ignored"
+	br.PromptPosition = ""
+
+	result := toResult(br, "also ignored")
+
+	// Empty position (same as "none"): prompt not in args
+	assert.NotContains(t, result.LaunchArgs, "ignored")
+	assert.NotContains(t, result.LaunchArgs, "also ignored")
+}
+
+func TestToResult_BothPromptsEmpty(t *testing.T) {
+	br := newBuildResult()
+	br.Prompt = ""
+	br.PromptPosition = "prepend"
+
+	result := toResult(br, "")
+
+	// No prompt added, args unchanged
+	assert.Equal(t, []string{"--model", "opus"}, result.LaunchArgs)
+}
+
+func TestToResult_ModeAndCredential(t *testing.T) {
+	br := newBuildResult()
+	br.Mode = "acp"
+	br.CredentialProfile = "my-profile"
+	br.PromptPosition = "none"
+
+	result := toResult(br, "")
+
+	assert.Equal(t, "acp", result.Mode)
+	assert.Equal(t, "my-profile", result.CredentialProfile)
 }

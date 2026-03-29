@@ -74,8 +74,9 @@ ENV ANTHROPIC_API_KEY SECRET OPTIONAL
 MCP ON
 SKILLS am-delegate, am-channel
 
+PROMPT_POSITION prepend
+
 arg "--model" config.model when config.model != ""
-prompt prepend
 `)
 	userSlice := parse(t, `
 CONFIG model = "opus"

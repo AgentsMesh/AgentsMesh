@@ -20,8 +20,6 @@ func writeStmt(b *strings.Builder, stmt parser.Statement, indent int) {
 		writeFileStmt(b, s)
 	case *parser.MkdirStmt:
 		fmt.Fprintf(b, "mkdir %s", serializeExpr(s.Path))
-	case *parser.PromptStmt:
-		fmt.Fprintf(b, "prompt %s", s.Mode)
 	case *parser.AssignStmt:
 		fmt.Fprintf(b, "%s = %s", s.Name, serializeExpr(s.Value))
 	case *parser.IfStmt:

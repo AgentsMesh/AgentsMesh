@@ -37,7 +37,7 @@ export const mockGitLabProvider: RepositoryProviderData = {
 export const mockRepository: RepositoryData = {
   id: "repo-1",
   name: "my-project",
-  full_path: "org/my-project",
+  slug: "org/my-project",
   description: "A test project",
   default_branch: "main",
   visibility: "private",
@@ -51,7 +51,7 @@ export const mockCreatedRepository: OrgRepositoryData = {
   id: 1,
   organization_id: 1,
   name: "my-project",
-  full_path: "org/my-project",
+  slug: "org/my-project",
   provider_type: "github",
   provider_base_url: "https://github.com",
   clone_url: "https://github.com/org/my-project.git",

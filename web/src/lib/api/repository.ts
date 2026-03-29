@@ -39,7 +39,7 @@ export interface RepositoryData {
   ssh_clone_url?: string;
   external_id: string;
   name: string;
-  full_path: string;
+  slug: string;
   default_branch: string;
   ticket_prefix?: string;
   visibility: string; // "organization" or "private"
@@ -66,7 +66,7 @@ export interface CreateRepositoryRequest {
   ssh_clone_url?: string;
   external_id: string;
   name: string;
-  full_path: string;
+  slug: string;
   default_branch?: string;
   ticket_prefix?: string;
   visibility?: string;

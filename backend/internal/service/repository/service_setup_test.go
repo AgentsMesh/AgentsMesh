@@ -48,7 +48,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 			ssh_clone_url TEXT,
 			external_id TEXT NOT NULL,
 			name TEXT NOT NULL,
-			full_path TEXT NOT NULL,
+			slug TEXT NOT NULL,
 			default_branch TEXT NOT NULL DEFAULT 'main',
 			ticket_prefix TEXT,
 			visibility TEXT NOT NULL DEFAULT 'organization',
@@ -70,7 +70,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	// Mirrors production schema (migration 000081).
 	err = db.Exec(`
 		CREATE UNIQUE INDEX IF NOT EXISTS repositories_org_provider_path_unique
-		ON repositories (organization_id, provider_type, provider_base_url, full_path)
+		ON repositories (organization_id, provider_type, provider_base_url, slug)
 		WHERE deleted_at IS NULL
 	`).Error
 	if err != nil {

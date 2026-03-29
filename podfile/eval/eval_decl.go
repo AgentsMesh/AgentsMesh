@@ -40,6 +40,10 @@ func evalDecl(ctx *Context, decl parser.Declaration) error {
 		ctx.Result.Mode = d.Mode
 	case *parser.CredentialDecl:
 		ctx.Result.CredentialProfile = d.ProfileName
+	case *parser.PromptDecl:
+		ctx.Result.Prompt = d.Content
+	case *parser.PromptPositionDecl:
+		ctx.Result.PromptPosition = d.Mode
 	}
 	return nil
 }

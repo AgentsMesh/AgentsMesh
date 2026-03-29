@@ -14,8 +14,6 @@ func (p *Parser) tryParseStatement(tok lexer.Token) Statement {
 		return p.parseFileStmt(pos)
 	case lexer.KW_MKDIR:
 		return p.parseMkdirStmt(pos)
-	case lexer.KW_PROMPT:
-		return p.parsePromptStmt(pos)
 	case lexer.KW_IF:
 		return p.parseIfStmt(pos)
 	case lexer.KW_FOR:
@@ -80,18 +78,6 @@ func (p *Parser) parseMkdirStmt(pos Position) *MkdirStmt {
 	path := p.parseExpr()
 	p.expectNewline()
 	return &MkdirStmt{Path: path, Position: pos}
-}
-
-func (p *Parser) parsePromptStmt(pos Position) *PromptStmt {
-	p.advance()
-	tok := p.current()
-	mode := tok.Literal
-	if tok.Type != lexer.KW_PREPEND && tok.Type != lexer.KW_APPEND && tok.Type != lexer.KW_NONE {
-		p.errorf("prompt: expected prepend/append/none, got %s", tok.Literal)
-	}
-	p.advance()
-	p.expectNewline()
-	return &PromptStmt{Mode: mode, Position: pos}
 }
 
 func (p *Parser) parseAssignStmt(pos Position) *AssignStmt {

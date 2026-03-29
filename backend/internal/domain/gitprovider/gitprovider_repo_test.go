@@ -30,7 +30,7 @@ func TestRepository_Fields(t *testing.T) {
 		CloneURL:         "https://gitlab.com/org/repo.git",
 		ExternalID:       "12345",
 		Name:             "test-repo",
-		FullPath:         "org/test-repo",
+		Slug:         "org/test-repo",
 		DefaultBranch:    "main",
 		TicketPrefix:     &ticketPrefix,
 		Visibility:       "organization",
@@ -67,7 +67,7 @@ func TestRepository_WithWebhookConfig(t *testing.T) {
 		ProviderType:    ProviderTypeGitHub,
 		ProviderBaseURL: "https://github.com",
 		Name:            "test-repo",
-		FullPath:        "org/test-repo",
+		Slug:        "org/test-repo",
 		WebhookConfig: &WebhookConfig{
 			ID:       "wh_123",
 			URL:      "https://example.com/webhooks/org/github/1",
@@ -98,7 +98,7 @@ func TestRepository_JSONSerialization(t *testing.T) {
 		CloneURL:        "https://gitlab.com/org/repo.git",
 		ExternalID:      "12345",
 		Name:            "test-repo",
-		FullPath:        "org/test-repo",
+		Slug:        "org/test-repo",
 		DefaultBranch:   "main",
 		TicketPrefix:    &ticketPrefix,
 		Visibility:      "organization",
@@ -199,7 +199,7 @@ func TestRepository_NilWebhookConfig(t *testing.T) {
 		ProviderType:    ProviderTypeGitHub,
 		ProviderBaseURL: "https://github.com",
 		Name:            "test-repo",
-		FullPath:        "org/test-repo",
+		Slug:        "org/test-repo",
 		WebhookConfig:   nil,
 	}
 
@@ -247,7 +247,7 @@ func TestRepository_PreparationFields(t *testing.T) {
 		ProviderType:       ProviderTypeGitHub,
 		ProviderBaseURL:    "https://github.com",
 		Name:               "test-repo",
-		FullPath:           "org/test-repo",
+		Slug:           "org/test-repo",
 		PreparationScript:  &script,
 		PreparationTimeout: &timeout,
 	}
@@ -268,7 +268,7 @@ func TestRepository_SoftDelete(t *testing.T) {
 		ProviderType:    ProviderTypeGitHub,
 		ProviderBaseURL: "https://github.com",
 		Name:            "test-repo",
-		FullPath:        "org/test-repo",
+		Slug:        "org/test-repo",
 		DeletedAt:       &now,
 	}
 

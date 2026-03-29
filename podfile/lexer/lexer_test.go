@@ -215,7 +215,7 @@ if config.permission == "plan" {
   arg "--permission-mode" "plan"
 }
 
-prompt prepend
+PROMPT_POSITION prepend
 
 if mcp.enabled {
   mcp_cfg = json_merge(mcp.builtin, mcp.installed)

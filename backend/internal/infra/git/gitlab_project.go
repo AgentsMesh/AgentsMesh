@@ -39,7 +39,7 @@ func (p *GitLabProvider) GetProject(ctx context.Context, projectID string) (*Pro
 	return &Project{
 		ID:            strconv.Itoa(glProject.ID),
 		Name:          glProject.Name,
-		FullPath:      glProject.PathWithNamespace,
+		Slug:      glProject.PathWithNamespace,
 		Description:   glProject.Description,
 		DefaultBranch: glProject.DefaultBranch,
 		WebURL:        glProject.WebURL,
@@ -83,7 +83,7 @@ func (p *GitLabProvider) ListProjects(ctx context.Context, page, perPage int) ([
 		projects[i] = &Project{
 			ID:            strconv.Itoa(glp.ID),
 			Name:          glp.Name,
-			FullPath:      glp.PathWithNamespace,
+			Slug:      glp.PathWithNamespace,
 			Description:   glp.Description,
 			DefaultBranch: glp.DefaultBranch,
 			WebURL:        glp.WebURL,
@@ -130,7 +130,7 @@ func (p *GitLabProvider) SearchProjects(ctx context.Context, query string, page,
 		projects[i] = &Project{
 			ID:            strconv.Itoa(glp.ID),
 			Name:          glp.Name,
-			FullPath:      glp.PathWithNamespace,
+			Slug:      glp.PathWithNamespace,
 			Description:   glp.Description,
 			DefaultBranch: glp.DefaultBranch,
 			WebURL:        glp.WebURL,

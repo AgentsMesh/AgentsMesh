@@ -47,6 +47,12 @@ export const defaultFormState = {
   reset: mockFormReset,
   validate: vi.fn(),
   submit: mockFormSubmit,
+  // PodFile Layer
+  rawLayerMode: false,
+  rawLayerText: "",
+  podfileLayer: "",
+  setRawLayerMode: vi.fn(),
+  setRawLayerText: vi.fn(),
 };
 
 export const defaultConfigOptions = {
@@ -85,7 +91,7 @@ export const mockRepository = {
   clone_url: "https://github.com/org/repo1.git",
   external_id: "org-repo1",
   name: "repo1",
-  full_path: "org/repo1",
+  slug: "org/repo1",
   default_branch: "main",
   visibility: "organization",
   is_active: true,

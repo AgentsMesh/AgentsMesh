@@ -68,7 +68,7 @@ export function BrowseStep({ state, actions, existingRepositories = [], t }: Ste
               className="w-full flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 text-left"
             >
               <div>
-                <div className="font-medium">{repo.full_path}</div>
+                <div className="font-medium">{repo.slug}</div>
                 <div className="text-sm text-muted-foreground line-clamp-1">
                   {repo.description || t("repositories.modal.noDescription")}
                 </div>

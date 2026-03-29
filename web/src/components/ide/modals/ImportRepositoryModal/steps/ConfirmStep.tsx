@@ -12,7 +12,7 @@ export function ConfirmStep({ state, actions, t }: StepProps) {
     manualProviderType,
     manualCloneURL,
     manualName,
-    manualFullPath,
+    manualSlug,
     manualDefaultBranch,
     ticketPrefix,
     visibility,
@@ -49,7 +49,7 @@ export function ConfirmStep({ state, actions, t }: StepProps) {
           <GitProviderIcon provider={manualProviderType} />
           <div>
             <div className="font-medium">{manualName}</div>
-            <div className="text-sm text-muted-foreground">{manualFullPath}</div>
+            <div className="text-sm text-muted-foreground">{manualSlug}</div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-sm">

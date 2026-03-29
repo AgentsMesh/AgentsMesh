@@ -43,7 +43,7 @@ describe("RepositoryDetailPage", () => {
     clone_url: "https://github.com/org/my-repo.git",
     external_id: "12345",
     name: "my-repo",
-    full_path: "org/my-repo",
+    slug: "org/my-repo",
     default_branch: "main",
     ticket_prefix: "PROJ",
     visibility: "organization",

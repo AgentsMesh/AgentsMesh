@@ -31,7 +31,7 @@ function createInitialState(): ImportWizardState {
     manualBaseURL: "https://github.com",
     manualCloneURL: "",
     manualName: "",
-    manualFullPath: "",
+    manualSlug: "",
     manualDefaultBranch: "main",
     ticketPrefix: "",
     visibility: "organization",
@@ -161,13 +161,13 @@ export function useImportWizard({
 
     selectRepo: (repo: UserRemoteRepositoryData, existingRepos: RepositoryData[]) => {
       const existingRepo = existingRepos.find(
-        (r) => r.clone_url === repo.clone_url || r.full_path === repo.full_path
+        (r) => r.clone_url === repo.clone_url || r.slug === repo.slug
       );
       setState(s => ({
         ...s,
         selectedRepo: repo,
         manualName: repo.name,
-        manualFullPath: repo.full_path,
+        manualSlug: repo.slug,
         manualDefaultBranch: repo.default_branch || "main",
         manualCloneURL: repo.clone_url,
         manualProviderType: s.selectedProvider?.provider_type || "github",
@@ -197,7 +197,7 @@ export function useImportWizard({
     setManualBaseURL: (url: string) => setState(s => ({ ...s, manualBaseURL: url })),
     setManualCloneURL: (url: string) => setState(s => ({ ...s, manualCloneURL: url })),
     setManualName: (name: string) => setState(s => ({ ...s, manualName: name })),
-    setManualFullPath: (path: string) => setState(s => ({ ...s, manualFullPath: path })),
+    setManualSlug: (slug: string) => setState(s => ({ ...s, manualSlug: slug })),
     setManualDefaultBranch: (branch: string) => setState(s => ({ ...s, manualDefaultBranch: branch })),
 
     setTicketPrefix: (prefix: string) => setState(s => ({ ...s, ticketPrefix: prefix.toUpperCase() })),
@@ -207,7 +207,7 @@ export function useImportWizard({
     loadRepositories,
 
     handleManualContinue: () => {
-      if (!state.manualCloneURL || !state.manualName || !state.manualFullPath) {
+      if (!state.manualCloneURL || !state.manualName || !state.manualSlug) {
         setState(s => ({ ...s, error: t("repositories.modal.fillRequiredFields") }));
         return false;
       }
@@ -228,9 +228,9 @@ export function useImportWizard({
           clone_url: state.manualCloneURL,
           http_clone_url: httpCloneUrl,
           ssh_clone_url: sshCloneUrl,
-          external_id: state.selectedRepo?.id || state.manualFullPath.replace(/[^a-zA-Z0-9]/g, "-"),
+          external_id: state.selectedRepo?.id || state.manualSlug.replace(/[^a-zA-Z0-9]/g, "-"),
           name: state.manualName,
-          full_path: state.manualFullPath,
+          slug: state.manualSlug,
           default_branch: state.manualDefaultBranch || "main",
           ticket_prefix: state.ticketPrefix || undefined,
           visibility: state.visibility,

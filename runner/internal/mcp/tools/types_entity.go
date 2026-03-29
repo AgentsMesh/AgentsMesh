@@ -163,7 +163,7 @@ type Repository struct {
 	CloneURL        string `json:"clone_url,omitempty"`
 	ExternalID      string `json:"external_id"`
 	Name            string `json:"name"`
-	FullPath        string `json:"full_path"`
+	Slug            string `json:"slug"`
 	DefaultBranch   string `json:"default_branch"`
 	TicketPrefix    string `json:"ticket_prefix,omitempty"`
 	Visibility      string `json:"visibility"`

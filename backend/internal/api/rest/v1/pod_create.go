@@ -11,38 +11,34 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreatePodRequest represents pod creation request
+// CreatePodRequest represents pod creation request.
+// Pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL) is conveyed via PodfileLayer (SSOT).
 type CreatePodRequest struct {
-	RunnerID          int64   `json:"runner_id"`     // Required for new pods, optional when resuming (inherited from source)
-	AgentSlug       string `json:"agent_slug"` // Required unless resuming (then inherited from source pod)
-	RepositoryID      *int64  `json:"repository_id"`
-	RepositoryURL     *string `json:"repository_url"`    // Direct repository URL (takes precedence over repository_id)
-	TicketSlug        *string `json:"ticket_slug"`       // Ticket slug (e.g., "AM-123")
-	InitialPrompt     string  `json:"initial_prompt"`
-	Alias             *string `json:"alias"` // User-defined display name (max 100 chars)
-	BranchName        *string `json:"branch_name"`
-	PermissionMode  *string `json:"permission_mode"`  // "plan", "default", or "bypassPermissions"
-	InteractionMode *string `json:"interaction_mode"` // "pty" (default) or "acp"
+	AgentSlug    string  `json:"agent_slug"`    // Required: determines base PodFile
+	RunnerID     int64   `json:"runner_id"`     // Optional: auto-select if omitted
+	TicketSlug   *string `json:"ticket_slug"`   // Optional: associate with ticket
+	InitialPrompt string `json:"initial_prompt"` // Optional: initial message to agent
+	Alias        *string `json:"alias"`         // Optional: display name (max 100 chars)
 
-	// CredentialProfileID specifies which credential profile to use
-	// - nil (field absent): use user's default profile, fallback to RunnerHost if no default
-	// - 0: explicit RunnerHost mode (use Runner's local environment, no credentials injected)
-	// - >0: use specified credential profile ID
-	CredentialProfileID *int64 `json:"credential_profile_id"`
-
-	// PodfileLayer is a raw PodFile Layer source from frontend (takes precedence over individual config fields)
+	// PodFile Layer — SSOT for all pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL)
 	PodfileLayer *string `json:"podfile_layer"`
 
-	// ConfigOverrides allows users to override agent default configuration
-	ConfigOverrides map[string]interface{} `json:"config_overrides"`
+	// Legacy fields: accepted for backward compatibility (MCP callers), ignored when PodfileLayer is set
+	RepositoryID        *int64                 `json:"repository_id,omitempty"`
+	RepositoryURL       *string                `json:"repository_url,omitempty"`
+	BranchName          *string                `json:"branch_name,omitempty"`
+	PermissionMode      *string                `json:"permission_mode,omitempty"`
+	InteractionMode     *string                `json:"interaction_mode,omitempty"`
+	CredentialProfileID *int64                 `json:"credential_profile_id,omitempty"`
+	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"`
 
 	// Terminal size (from browser xterm.js)
-	Cols int32 `json:"cols"` // Terminal columns (width)
-	Rows int32 `json:"rows"` // Terminal rows (height)
+	Cols int32 `json:"cols"`
+	Rows int32 `json:"rows"`
 
 	// Resume related fields
-	SourcePodKey       string `json:"source_pod_key"`       // Pod key to resume from (enables resume mode)
-	ResumeAgentSession *bool  `json:"resume_agent_session"` // Whether to restore agent session (default: true when resuming)
+	SourcePodKey       string `json:"source_pod_key"`
+	ResumeAgentSession *bool  `json:"resume_agent_session"`
 }
 
 // CreatePod creates a new pod

@@ -91,7 +91,8 @@ describe("CreatePodForm - submission, errors & reset", () => {
       fireEvent.click(screen.getByText("ide.createPod.create"));
 
       await waitFor(() => {
-        expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketSlug: undefined, initialPrompt: "test prompt", cols: 80, rows: 24 });
+        // prompt is now in form state (podfile_layer SSOT), not passed as initialPrompt
+        expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketSlug: undefined, cols: 80, rows: 24 });
       });
     });
 
@@ -115,7 +116,7 @@ describe("CreatePodForm - submission, errors & reset", () => {
       fireEvent.click(screen.getByText("ide.createPod.create"));
 
       await waitFor(() => {
-        expect(mockFormSubmit).toHaveBeenCalledWith(null, {}, { ticketSlug: undefined, initialPrompt: "test prompt", cols: 80, rows: 24 });
+        expect(mockFormSubmit).toHaveBeenCalledWith(null, {}, { ticketSlug: undefined, cols: 80, rows: 24 });
       });
     });
 
@@ -132,7 +133,7 @@ describe("CreatePodForm - submission, errors & reset", () => {
       fireEvent.click(screen.getByText("ide.createPod.create"));
 
       await waitFor(() => {
-        expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketSlug: "PROJ-123", initialPrompt: "test prompt", cols: 80, rows: 24 });
+        expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketSlug: "PROJ-123", cols: 80, rows: 24 });
       });
     });
 

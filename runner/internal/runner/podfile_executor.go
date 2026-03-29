@@ -89,14 +89,18 @@ func toResult(br *eval.BuildResult, initialPrompt string) *PodFileResult {
 		})
 	}
 
-	// Apply prompt position
+	// Apply prompt: PodFile PROMPT declaration takes priority over proto initial_prompt
 	args := br.LaunchArgs
-	if initialPrompt != "" {
+	prompt := br.Prompt
+	if prompt == "" {
+		prompt = initialPrompt
+	}
+	if prompt != "" {
 		switch br.PromptPosition {
 		case "prepend":
-			args = append([]string{initialPrompt}, args...)
+			args = append([]string{prompt}, args...)
 		case "append":
-			args = append(args, initialPrompt)
+			args = append(args, prompt)
 		}
 	}
 

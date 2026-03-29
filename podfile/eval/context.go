@@ -20,7 +20,9 @@ type BuildResult struct {
 	FilesToCreate []FileEntry
 	// From mkdir statements
 	Dirs []string
-	// From prompt statement
+	// From PROMPT declaration
+	Prompt string // initial prompt content
+	// From PROMPT_POSITION declaration
 	PromptPosition string // "prepend", "append", "none"
 
 	// From REPO/BRANCH/GIT_CREDENTIAL declarations

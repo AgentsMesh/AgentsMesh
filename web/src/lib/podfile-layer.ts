@@ -20,11 +20,12 @@ function formatPodfileValue(value: unknown): string {
  */
 export function buildPodfileLayer(params: {
   configValues: Record<string, unknown>;
-  repositoryUrl?: string;
+  repositorySlug?: string;
   branchName?: string;
   credentialType?: string;
   interactionMode?: string;
   credentialProfileName?: string;
+  prompt?: string;
 }): string {
   const lines: string[] = [];
 
@@ -38,6 +39,12 @@ export function buildPodfileLayer(params: {
     lines.push(`CREDENTIAL "${params.credentialProfileName}"`);
   }
 
+  // PROMPT declaration (initial prompt content)
+  if (params.prompt) {
+    const escaped = params.prompt.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    lines.push(`PROMPT "${escaped}"`);
+  }
+
   // CONFIG declarations
   for (const [key, value] of Object.entries(params.configValues)) {
     if (value !== undefined && value !== null && value !== "") {
@@ -45,9 +52,9 @@ export function buildPodfileLayer(params: {
     }
   }
 
-  // Repository / branch / credential
-  if (params.repositoryUrl) {
-    lines.push(`REPO "${params.repositoryUrl}"`);
+  // Repository slug / branch
+  if (params.repositorySlug) {
+    lines.push(`REPO "${params.repositorySlug}"`);
   }
   if (params.branchName) {
     lines.push(`BRANCH "${params.branchName}"`);

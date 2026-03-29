@@ -28,6 +28,7 @@ func TestOnCreatePodWithSandboxConfig(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "sandbox-pod",
 		LaunchCommand: "echo",
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{},
 	}
 
@@ -60,6 +61,7 @@ func TestOnCreatePodWithFilesToCreate(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "files-pod",
 		LaunchCommand: "echo",
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		FilesToCreate: []*runnerv1.FileToCreate{
 			{
 				Path:    "{{.sandbox.root_path}}/test.txt",
@@ -98,6 +100,7 @@ func TestOnCreatePodWithLocalPath(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "local-path-pod",
 		LaunchCommand: "echo",
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: tempDir,
 		},

@@ -67,6 +67,10 @@ func (m *mockRepoService) GetByID(_ context.Context, _ int64) (*gitprovider.Repo
 	return m.repo, m.err
 }
 
+func (m *mockRepoService) FindByOrgSlug(_ context.Context, _ int64, _ string) (*gitprovider.Repository, error) {
+	return m.repo, m.err
+}
+
 // mockTicketServiceForOrch implements TicketServiceForOrchestrator.
 type mockTicketServiceForOrch struct {
 	ticket *ticket.Ticket
@@ -167,7 +171,7 @@ func setupOrchestratorTestDB(t *testing.T) *gorm.DB {
 		ssh_clone_url TEXT,
 		external_id TEXT,
 		name TEXT,
-		full_path TEXT,
+		slug TEXT,
 		default_branch TEXT DEFAULT 'main',
 		preparation_script TEXT,
 		preparation_timeout INTEGER DEFAULT 300,
@@ -183,7 +187,7 @@ func newTestProvider() *mockAgentConfigProvider {
 AGENT claude
 EXECUTABLE claude
 MCP ON
-prompt prepend
+PROMPT_POSITION prepend
 `
 	return &mockAgentConfigProvider{
 		agentDef: &agentDomain.Agent{

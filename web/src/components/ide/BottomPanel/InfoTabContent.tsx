@@ -132,7 +132,7 @@ export function InfoTabContent({
           <InfoRow
             icon={<FolderGit2 className="w-3 h-3" />}
             label={t("ide.bottomPanel.infoTab.repository")}
-            value={pod.repository.full_path}
+            value={pod.repository.slug}
             href={orgSlug ? `/${orgSlug}/repositories/${pod.repository.id}` : undefined}
           />
         )}

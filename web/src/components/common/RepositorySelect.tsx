@@ -85,7 +85,7 @@ export function RepositorySelect({
       </option>
       {repositories.map((repo) => (
         <option key={repo.id} value={repo.id}>
-          {repo.full_path}
+          {repo.slug}
         </option>
       ))}
     </select>

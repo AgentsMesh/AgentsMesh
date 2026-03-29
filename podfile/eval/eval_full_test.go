@@ -108,7 +108,7 @@ SETUP timeout=120 <<EOF
 npm install
 EOF
 
-prompt append
+PROMPT_POSITION append
 `)
 	require.Empty(t, errs)
 
@@ -142,6 +142,8 @@ ENV ANTHROPIC_API_KEY SECRET OPTIONAL
 MCP ON
 SKILLS am-delegate, am-channel
 
+PROMPT_POSITION prepend
+
 arg "--model" config.model when config.model != ""
 
 if config.permission == "plan" {
@@ -150,8 +152,6 @@ if config.permission == "plan" {
 if config.permission == "bypass" {
   arg "--dangerously-skip-permissions"
 }
-
-prompt prepend
 
 if mcp.enabled {
   mcp_cfg = json_merge(mcp.builtin, mcp.installed)

@@ -36,7 +36,7 @@ func NewRunnerMessageHandler(runner MessageHandlerContext, store PodStore, conn 
 func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error {
 	log := logger.Pod()
 	log.Info("Creating pod", "pod_key", cmd.PodKey, "command", cmd.LaunchCommand,
-		"args", cmd.LaunchArgs, "interaction_mode", cmd.GetInteractionMode())
+		"args", cmd.LaunchArgs)
 
 	ctx := h.runner.GetRunContext()
 

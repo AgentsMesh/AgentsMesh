@@ -131,6 +131,9 @@ export function AdvancedFormSection({
         rawText={form.rawLayerText}
         onRawModeChange={form.setRawLayerMode}
         onRawTextChange={form.setRawLayerText}
+        configFields={configFields}
+        repositories={repositories}
+        credentialProfiles={form.credentialProfiles}
         t={t}
       />
     </AdvancedOptions>

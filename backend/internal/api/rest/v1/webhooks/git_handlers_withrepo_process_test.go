@@ -74,7 +74,7 @@ func TestProcessWebhookWithRepo_Success(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (100, 1, 'gitlab', 'https://gitlab.com', '500', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -97,7 +97,7 @@ func TestProcessWebhookWithRepo_PipelineEvent(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (100, 1, 'gitlab', 'https://gitlab.com', '500', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -124,7 +124,7 @@ func TestProcessWebhookWithRepo_MergeRequestEvent(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (100, 1, 'gitlab', 'https://gitlab.com', '500', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -157,7 +157,7 @@ func TestProcessWebhookWithRepo_ProjectIDMismatchLogsWarning(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository with external_id = 500
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (100, 1, 'gitlab', 'https://gitlab.com', '500', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -182,7 +182,7 @@ func TestProcessWebhookWithRepo_BuildToJobConversion(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (100, 1, 'gitlab', 'https://gitlab.com', '500', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -262,7 +262,7 @@ func TestProcessWebhookWithRepo_RegistryNoHandler(t *testing.T) {
 	}
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (100, 1, 'gitlab', 'https://gitlab.com', '500', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -294,7 +294,7 @@ func TestProcessWebhookWithRepo_GitHubEventHeader(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (100, 1, 'github', 'https://github.com', '500', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -319,7 +319,7 @@ func TestProcessWebhookWithRepo_GiteeEventHeader(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (100, 1, 'gitee', 'https://gitee.com', '500', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)

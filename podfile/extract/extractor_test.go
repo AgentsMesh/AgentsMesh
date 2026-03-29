@@ -26,7 +26,7 @@ SKILLS am-delegate, am-channel
 
 # Build logic is ignored by extractor
 arg "--model" config.model when config.model != ""
-prompt prepend
+PROMPT_POSITION prepend
 `
 	prog, errs := parser.Parse(input)
 	require.Empty(t, errs)

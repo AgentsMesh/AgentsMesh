@@ -47,7 +47,7 @@ func (s *WebhookService) saveManualSetupConfig(ctx context.Context, repo *gitpro
 	if s.logger != nil {
 		s.logger.Warn("Webhook auto-registration failed, manual setup required",
 			"repo_id", repo.ID,
-			"repo_full_path", repo.FullPath,
+			"repo_slug", repo.Slug,
 			"error", errorMsg)
 	}
 
@@ -78,7 +78,7 @@ func (s *WebhookService) saveSuccessConfig(ctx context.Context, repo *gitprovide
 	if s.logger != nil {
 		s.logger.Info("Webhook registered successfully",
 			"repo_id", repo.ID,
-			"repo_full_path", repo.FullPath,
+			"repo_slug", repo.Slug,
 			"webhook_id", webhookID)
 	}
 

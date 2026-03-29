@@ -173,7 +173,7 @@ func (h *UserRepositoryProviderHandler) ListRepositories(c *gin.Context) {
 		repositories[i] = &RepositoryResponse{
 			ID:            p.ID,
 			Name:          p.Name,
-			FullPath:      p.FullPath,
+			Slug:          p.Slug,
 			Description:   p.Description,
 			DefaultBranch: p.DefaultBranch,
 			Visibility:    p.Visibility,

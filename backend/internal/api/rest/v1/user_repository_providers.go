@@ -9,7 +9,7 @@ import (
 type RepositoryResponse struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
-	FullPath      string `json:"full_path"`
+	Slug          string `json:"slug"`
 	Description   string `json:"description"`
 	DefaultBranch string `json:"default_branch"`
 	Visibility    string `json:"visibility"`

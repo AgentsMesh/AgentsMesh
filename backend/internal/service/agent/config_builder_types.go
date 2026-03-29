@@ -76,9 +76,6 @@ type ConfigBuildRequest struct {
 	// Empty map or nil means Runner did not report version info (old Runner).
 	RunnerAgentVersions map[string]string
 
-	// InteractionMode specifies the pod interaction mode: "pty" (default) or "acp"
-	InteractionMode string
-
 	// PodfileLayer is a raw PodFile Layer source sent directly from frontend.
 	// When set, it replaces the auto-generated user layer (config overrides / MCP / API key path).
 	PodfileLayer string

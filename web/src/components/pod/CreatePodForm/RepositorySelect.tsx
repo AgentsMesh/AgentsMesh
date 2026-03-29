@@ -37,7 +37,7 @@ export function RepositorySelect({
         <option value="">{t("ide.createPod.selectRepositoryPlaceholder")}</option>
         {repositories.map((repo) => (
           <option key={repo.id} value={repo.id}>
-            {repo.full_path}
+            {repo.slug}
           </option>
         ))}
       </select>

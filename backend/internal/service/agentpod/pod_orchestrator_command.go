@@ -2,10 +2,8 @@ package agentpod
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentsmesh/podfile/parser"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 
 	podDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
@@ -139,15 +137,11 @@ func (o *PodOrchestrator) buildPodCommand(
 		Cols:                req.Cols,
 		Rows:                req.Rows,
 		RunnerAgentVersions: runnerAgentVersions,
-		InteractionMode:     pod.InteractionMode,
 	}
 
 	if req.PodfileLayer != nil {
 		buildReq.PodfileLayer = *req.PodfileLayer
-		// Validate PodFile layer syntax before passing to ConfigBuilder
-		if _, errs := parser.Parse(*req.PodfileLayer); len(errs) > 0 {
-			return nil, fmt.Errorf("%w: %v", ErrInvalidPodfileLayer, errs[0])
-		}
+		// Syntax validation already done by extractPodfileOverrides in orchestrator
 	}
 
 	if req.AgentSlug != "" {

@@ -19,7 +19,6 @@ export function useCreatePodSubmitHandler(
       const { cols, rows } = estimateWorkspaceTerminalSize();
       await form.submit(selectedRunner?.id ?? null, configValues, {
         ticketSlug: context?.ticket?.slug,
-        initialPrompt: form.prompt,
         cols,
         rows,
       });

@@ -84,6 +84,7 @@ type UserServiceForOrchestrator interface {
 
 type RepositoryServiceForOrchestrator interface {
 	GetByID(ctx context.Context, id int64) (*gitprovider.Repository, error)
+	FindByOrgSlug(ctx context.Context, orgID int64, slug string) (*gitprovider.Repository, error)
 }
 
 type TicketServiceForOrchestrator interface {
@@ -189,6 +190,39 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		req.ConfigOverrides["session_id"] = sessionID
 	}
 
+	// PodFile Layer SSOT: merge base PodFile + user Layer, extract declarations
+	// to override API params. This ensures DB and Runner use identical values.
+	if req.PodfileLayer != nil && *req.PodfileLayer != "" && req.AgentSlug != "" && o.agentResolver != nil {
+		agentDef, err := o.agentResolver.GetAgent(ctx, req.AgentSlug)
+		if err == nil && agentDef.PodfileSource != nil {
+			overrides, err := extractPodfileOverrides(*agentDef.PodfileSource, *req.PodfileLayer)
+			if err != nil {
+				return nil, err
+			}
+			if overrides.Mode != "" {
+				req.InteractionMode = &overrides.Mode
+			}
+			if overrides.Branch != "" {
+				req.BranchName = &overrides.Branch
+			}
+			if overrides.PermissionMode != "" {
+				req.PermissionMode = &overrides.PermissionMode
+			}
+			// REPO slug → resolve RepositoryID for DB record + sandbox config
+			if overrides.RepoSlug != "" && req.RepositoryID == nil && o.repoService != nil {
+				repo, repoErr := o.repoService.FindByOrgSlug(ctx, req.OrganizationID, overrides.RepoSlug)
+				if repoErr == nil && repo != nil {
+					req.RepositoryID = &repo.ID
+				}
+			}
+			// PROMPT content → override InitialPrompt
+			if overrides.Prompt != "" {
+				req.InitialPrompt = overrides.Prompt
+			}
+			// CREDENTIAL name → resolved by config_builder downstream
+		}
+	}
+
 	// Validate interaction mode against agent capabilities
 	interactionMode := podDomain.InteractionModePTY
 	if req.InteractionMode != nil && *req.InteractionMode != "" {
@@ -225,6 +259,12 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		dbCredProfileID = req.CredentialProfileID
 	}
 
+	// Resolve permission mode: PodFile Layer already set req.PermissionMode if present
+	permissionMode := "plan"
+	if req.PermissionMode != nil && *req.PermissionMode != "" {
+		permissionMode = *req.PermissionMode
+	}
+
 	pod, err := o.podService.CreatePod(ctx, &CreatePodRequest{
 		OrganizationID:      req.OrganizationID,
 		RunnerID:            req.RunnerID,
@@ -235,6 +275,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		InitialPrompt:       req.InitialPrompt,
 		Alias:               req.Alias,
 		BranchName:          req.BranchName,
+		PermissionMode:      permissionMode,
 		SessionID:           sessionID,
 		SourcePodKey:        req.SourcePodKey,
 		CredentialProfileID: dbCredProfileID,

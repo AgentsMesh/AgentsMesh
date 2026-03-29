@@ -48,7 +48,7 @@ export function useCommandPaletteSearch(search: string): SearchResults {
         );
         setRepositories(
           (reposRes.repositories || [])
-            .filter((r: { full_path: string }) => r.full_path.toLowerCase().includes(searchLower))
+            .filter((r: { slug: string }) => r.slug.toLowerCase().includes(searchLower))
             .slice(0, 5)
         );
       } catch (error) {

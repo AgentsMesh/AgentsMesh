@@ -30,7 +30,7 @@ func (s *Service) SyncFromProvider(ctx context.Context, repoID int64, accessToke
 
 	updates := map[string]interface{}{
 		"name":           project.Name,
-		"full_path":      project.FullPath,
+		"slug":           project.Slug,
 		"default_branch": project.DefaultBranch,
 	}
 	if project.CloneURL != "" {
@@ -41,7 +41,7 @@ func (s *Service) SyncFromProvider(ctx context.Context, repoID int64, accessToke
 		updates["ssh_clone_url"] = project.SSHCloneURL
 	}
 
-	slog.Info("repository synced from provider", "repo_id", repoID, "full_path", project.FullPath)
+	slog.Info("repository synced from provider", "repo_id", repoID, "slug", project.Slug)
 
 	return s.Update(ctx, repoID, updates)
 }

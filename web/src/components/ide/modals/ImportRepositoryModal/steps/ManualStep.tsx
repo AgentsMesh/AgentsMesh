@@ -12,7 +12,7 @@ export function ManualStep({ state, actions, t }: StepProps) {
     manualBaseURL,
     manualCloneURL,
     manualName,
-    manualFullPath,
+    manualSlug,
     manualDefaultBranch,
   } = state;
 
@@ -94,11 +94,11 @@ export function ManualStep({ state, actions, t }: StepProps) {
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">
-            {t("repositories.modal.fullPath")} *
+            {t("repositories.modal.slug")} *
           </label>
           <Input
-            value={manualFullPath}
-            onChange={(e) => actions.setManualFullPath(e.target.value)}
+            value={manualSlug}
+            onChange={(e) => actions.setManualSlug(e.target.value)}
             placeholder="org/my-project"
           />
         </div>

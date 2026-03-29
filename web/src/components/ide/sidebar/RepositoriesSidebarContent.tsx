@@ -74,7 +74,7 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesName = repo.name.toLowerCase().includes(query);
-      const matchesPath = repo.full_path.toLowerCase().includes(query);
+      const matchesPath = repo.slug.toLowerCase().includes(query);
       if (!matchesName && !matchesPath) return false;
     }
 

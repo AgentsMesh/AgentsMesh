@@ -47,7 +47,7 @@ func TestHandleGiteeWebhookWithRepo_NoSecretConfigured(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (300, 1, 'gitee', 'https://gitee.com', '999', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -100,7 +100,7 @@ func TestHandleGiteeWebhookWithRepo_WithWebhookService(t *testing.T) {
 	}
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (300, 1, 'gitee', 'https://gitee.com', '999', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -146,7 +146,7 @@ func TestHandleGiteeWebhookWithRepo_InvalidSignature(t *testing.T) {
 	}
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (300, 1, 'gitee', 'https://gitee.com', '999', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)

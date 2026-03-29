@@ -60,6 +60,6 @@ export interface CreatePodFormState {
   submit: (
     selectedRunnerId: number | null | undefined,
     pluginConfig: Record<string, unknown>,
-    options?: { ticketSlug?: string; initialPrompt?: string; cols?: number; rows?: number }
+    options?: { ticketSlug?: string; cols?: number; rows?: number }
   ) => Promise<PodData | null>;
 }

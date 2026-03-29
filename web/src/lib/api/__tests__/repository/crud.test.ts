@@ -33,7 +33,7 @@ describe("repositoryApi - CRUD Operations", () => {
           clone_url: "https://gitlab.com/org/repo1.git",
           external_id: "123",
           name: "repo1",
-          full_path: "org/repo1",
+          slug: "org/repo1",
           default_branch: "main",
           visibility: "organization",
           is_active: true,
@@ -68,7 +68,7 @@ describe("repositoryApi - CRUD Operations", () => {
         clone_url: "https://github.com/org/repo.git",
         external_id: "456",
         name: "test-repo",
-        full_path: "org/test-repo",
+        slug: "org/test-repo",
         default_branch: "main",
         visibility: "organization",
         is_active: true,
@@ -99,7 +99,7 @@ describe("repositoryApi - CRUD Operations", () => {
         provider_base_url: "https://gitlab.com",
         external_id: "789",
         name: "new-repo",
-        full_path: "org/new-repo",
+        slug: "org/new-repo",
       };
 
       const mockRepository: RepositoryData = {
@@ -147,7 +147,7 @@ describe("repositoryApi - CRUD Operations", () => {
         clone_url: "https://gitlab.com/org/updated-repo.git",
         external_id: "123",
         name: "updated-repo",
-        full_path: "org/updated-repo",
+        slug: "org/updated-repo",
         default_branch: "develop",
         visibility: "organization",
         is_active: true,

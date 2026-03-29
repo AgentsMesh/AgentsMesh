@@ -69,6 +69,7 @@ func TestOnListPodsWithTerminalPID(t *testing.T) {
 		PodKey:        "list-pid-pod",
 		LaunchCommand: "sleep",
 		LaunchArgs:    []string{"60"},
+		PodfileSource: "AGENT sleep\nPROMPT_POSITION prepend\n",
 	}
 
 	err := handler.OnCreatePod(cmd)

@@ -16,6 +16,8 @@ type PodSpec struct {
 	Setup             *SetupSpec      `json:"setup,omitempty"`
 	Mode              string          `json:"mode,omitempty"`
 	CredentialProfile string          `json:"credential_profile,omitempty"`
+	Prompt            string          `json:"prompt,omitempty"`
+	PromptPosition    string          `json:"prompt_position,omitempty"`
 }
 
 // AgentSpec describes which agent CLI to use.

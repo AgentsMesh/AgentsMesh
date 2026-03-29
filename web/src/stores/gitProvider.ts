@@ -15,7 +15,7 @@ export interface GitProvider {
 export interface GitProviderProject {
   id: string;
   name: string;
-  full_path: string;
+  slug: string;
   default_branch: string;
   web_url: string;
   description?: string;

@@ -36,12 +36,6 @@ type MkdirStmt struct {
 	Position Position
 }
 
-// PromptStmt: prompt prepend|append|none
-type PromptStmt struct {
-	Mode     string // "prepend", "append", "none"
-	Position Position
-}
-
 // AssignStmt: <var> = <expr>
 type AssignStmt struct {
 	Name     string
@@ -77,7 +71,6 @@ func (s *ArgStmt) stmtNode()    {}
 func (s *EnvStmt) stmtNode()    {}
 func (s *FileStmt) stmtNode()   {}
 func (s *MkdirStmt) stmtNode()  {}
-func (s *PromptStmt) stmtNode() {}
 func (s *AssignStmt) stmtNode() {}
 func (s *IfStmt) stmtNode()     {}
 func (s *ForStmt) stmtNode()    {}
@@ -87,7 +80,6 @@ func (s *ArgStmt) Pos() Position    { return s.Position }
 func (s *EnvStmt) Pos() Position    { return s.Position }
 func (s *FileStmt) Pos() Position   { return s.Position }
 func (s *MkdirStmt) Pos() Position  { return s.Position }
-func (s *PromptStmt) Pos() Position { return s.Position }
 func (s *AssignStmt) Pos() Position { return s.Position }
 func (s *IfStmt) Pos() Position     { return s.Position }
 func (s *ForStmt) Pos() Position    { return s.Position }

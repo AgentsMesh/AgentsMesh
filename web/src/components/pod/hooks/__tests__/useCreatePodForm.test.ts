@@ -29,18 +29,17 @@ const mockAgents = [
   { name: "Claude Code", slug: "claude-code", is_builtin: true, is_active: true },
 ];
 
-describe("useCreatePodForm - credential_profile_id submission", () => {
+describe("useCreatePodForm - credential via podfile_layer (SSOT)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockListForAgent.mockResolvedValue({ profiles: [], runner_host: { available: true } });
   });
 
-  it("should send credential_profile_id=0 when RunnerHost is selected", async () => {
+  it("should omit CREDENTIAL from podfile_layer when RunnerHost is selected", async () => {
     mockCreate.mockResolvedValue({ pod: { pod_key: "test-pod", id: 1, status: "initializing", agent_status: "idle" } });
 
     const { result } = renderHook(() => useCreatePodForm(mockAgents, []));
 
-    // Select agent to pass validation
     act(() => {
       result.current.setSelectedAgent("claude-code");
     });
@@ -49,26 +48,37 @@ describe("useCreatePodForm - credential_profile_id submission", () => {
     expect(result.current.selectedCredentialProfile).toBe(RUNNER_HOST_PROFILE_ID);
     expect(result.current.selectedCredentialProfile).toBe(0);
 
-    // Submit form
     await act(async () => {
       await result.current.submit(1, {}, { cols: 80, rows: 24 });
     });
 
-    // Verify podApi.create was called with credential_profile_id: 0 (not undefined)
     expect(mockCreate).toHaveBeenCalledTimes(1);
     const createArg = mockCreate.mock.calls[0][0];
-    expect(createArg).toHaveProperty("credential_profile_id", 0);
-    // Explicitly verify it's NOT undefined
-    expect(createArg.credential_profile_id).not.toBeUndefined();
+    // credential_profile_id no longer sent; credential goes through podfile_layer
+    expect(createArg).not.toHaveProperty("credential_profile_id");
+    // RunnerHost means no CREDENTIAL declaration in PodFile Layer
+    const layer = createArg.podfile_layer ?? "";
+    expect(layer).not.toContain("CREDENTIAL");
   });
 
-  it("should send credential_profile_id with positive ID when custom profile selected", async () => {
+  it("should include CREDENTIAL in podfile_layer when custom profile selected", async () => {
+    const customProfile = { id: 42, name: "My API Key", is_default: false, is_active: true };
+    mockListForAgent.mockResolvedValue({
+      profiles: [customProfile],
+      runner_host: { available: true },
+    });
     mockCreate.mockResolvedValue({ pod: { pod_key: "test-pod", id: 1, status: "initializing", agent_status: "idle" } });
 
     const { result } = renderHook(() => useCreatePodForm(mockAgents, []));
 
+    // Select agent — triggers credential loading
     act(() => {
       result.current.setSelectedAgent("claude-code");
+    });
+    // Wait for credential profiles to load
+    await act(async () => {});
+
+    act(() => {
       result.current.setSelectedCredentialProfile(42);
     });
 
@@ -78,10 +88,13 @@ describe("useCreatePodForm - credential_profile_id submission", () => {
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
     const createArg = mockCreate.mock.calls[0][0];
-    expect(createArg).toHaveProperty("credential_profile_id", 42);
+    // credential_profile_id no longer sent as separate field
+    expect(createArg).not.toHaveProperty("credential_profile_id");
+    // Custom profile name should appear in podfile_layer
+    expect(createArg.podfile_layer).toContain('CREDENTIAL "My API Key"');
   });
 
-  it("should always include credential_profile_id in API call regardless of value", async () => {
+  it("should always send podfile_layer via API (SSOT)", async () => {
     mockCreate.mockResolvedValue({ pod: { pod_key: "test-pod", id: 1, status: "initializing", agent_status: "idle" } });
 
     const { result } = renderHook(() => useCreatePodForm(mockAgents, []));
@@ -94,8 +107,15 @@ describe("useCreatePodForm - credential_profile_id submission", () => {
       await result.current.submit(1, {}, { cols: 80, rows: 24 });
     });
 
-    // The key assertion: credential_profile_id must be an OWN property of the call arg
     const createArg = mockCreate.mock.calls[0][0];
-    expect(Object.prototype.hasOwnProperty.call(createArg, "credential_profile_id")).toBe(true);
+    // The SSOT field: agent_slug and podfile_layer are the core parameters
+    expect(createArg).toHaveProperty("agent_slug", "claude-code");
+    // Old scattered fields should not be present
+    expect(createArg).not.toHaveProperty("credential_profile_id");
+    expect(createArg).not.toHaveProperty("repository_id");
+    expect(createArg).not.toHaveProperty("interaction_mode");
+    expect(createArg).not.toHaveProperty("branch_name");
+    expect(createArg).not.toHaveProperty("initial_prompt");
+    expect(createArg).not.toHaveProperty("config_overrides");
   });
 });

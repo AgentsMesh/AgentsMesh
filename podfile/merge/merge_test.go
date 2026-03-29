@@ -238,7 +238,7 @@ MCP ON
 SKILLS am-delegate, am-channel
 
 arg "--model" config.model when config.model != ""
-prompt prepend
+PROMPT_POSITION prepend
 `)
 	userSlice := parse(t, `
 CONFIG model = "opus"

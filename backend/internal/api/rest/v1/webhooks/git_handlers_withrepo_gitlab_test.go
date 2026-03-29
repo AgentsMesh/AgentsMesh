@@ -47,7 +47,7 @@ func TestHandleGitLabWebhookWithRepo_ValidGlobalSecret(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (123, 1, 'gitlab', 'https://gitlab.com', '456', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -80,7 +80,7 @@ func TestHandleGitLabWebhookWithRepo_Unauthorized(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (123, 1, 'gitlab', 'https://gitlab.com', '456', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -112,7 +112,7 @@ func TestHandleGitLabWebhookWithRepo_NoSecretConfigured(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (123, 1, 'gitlab', 'https://gitlab.com', '456', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -164,7 +164,7 @@ func TestHandleGitLabWebhookWithRepo_WithWebhookService(t *testing.T) {
 	}
 
 	// Create test repository without webhook_config (SQLite can't handle JSONB properly)
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (123, 1, 'gitlab', 'https://gitlab.com', '456', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)
@@ -214,7 +214,7 @@ func TestHandleGitLabWebhookWithRepo_WebhookServiceReturnsError(t *testing.T) {
 	}
 
 	// Create test repository without webhook config
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (123, 1, 'gitlab', 'https://gitlab.com', '456', 'test-repo', 'org/test-repo')`)
 
 	gin.SetMode(gin.TestMode)

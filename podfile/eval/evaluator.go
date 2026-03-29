@@ -33,9 +33,6 @@ func evalStmt(ctx *Context, stmt parser.Statement) error {
 		return evalFileStmt(ctx, s)
 	case *parser.MkdirStmt:
 		return evalMkdirStmt(ctx, s)
-	case *parser.PromptStmt:
-		ctx.Result.PromptPosition = s.Mode
-		return nil
 	case *parser.AssignStmt:
 		return evalAssignStmt(ctx, s)
 	case *parser.IfStmt:

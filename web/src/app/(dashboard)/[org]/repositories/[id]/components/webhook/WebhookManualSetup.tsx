@@ -10,17 +10,17 @@ import type { RepositoryData } from "@/lib/api";
  */
 function getProviderWebhookSettingsUrl(repository: RepositoryData): string {
   const baseUrl = repository.provider_base_url || "https://github.com";
-  const fullPath = repository.full_path;
+  const slug = repository.slug;
 
   switch (repository.provider_type) {
     case "github":
-      return `${baseUrl}/${fullPath}/settings/hooks`;
+      return `${baseUrl}/${slug}/settings/hooks`;
     case "gitlab":
-      return `${baseUrl}/${fullPath}/-/hooks`;
+      return `${baseUrl}/${slug}/-/hooks`;
     case "gitee":
-      return `${baseUrl}/${fullPath}/hooks`;
+      return `${baseUrl}/${slug}/hooks`;
     default:
-      return `${baseUrl}/${fullPath}`;
+      return `${baseUrl}/${slug}`;
   }
 }
 

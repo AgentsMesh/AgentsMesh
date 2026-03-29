@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
+import { upsertPod } from "@/stores/podTypes";
 import { WorkspaceManager } from "@/components/workspace";
 import { Button } from "@/components/ui/button";
 import { CenteredSpinner } from "@/components/ui/spinner";
@@ -28,6 +29,22 @@ export default function WorkspacePage() {
     addPane(podKey);
   }, [addPane]);
 
+  // Handle pod creation: synchronously insert into store + open terminal
+  const handlePodCreated = useCallback((pod?: PodData) => {
+    setShowCreateModal(false);
+    if (!pod?.pod_key) return;
+
+    toast.info(t("workspace.podCreated"), {
+      description: `Pod: ${getShortPodKey(pod.pod_key)}`,
+    });
+    handleOpenPod(pod.pod_key);
+
+    // Synchronously insert new pod into sidebar list (prepend for immediate visibility)
+    usePodStore.setState((state) =>
+      upsertPod(state, pod.pod_key, () => pod, Date.now(), { prepend: true }) ?? state
+    );
+  }, [t, handleOpenPod]);
+
   // Handle ?pod=xxx query param to auto-open a pod
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -35,7 +52,6 @@ export default function WorkspacePage() {
     const podKey = searchParams.get("pod");
     if (podKey && podKey !== processedPodRef.current) {
       processedPodRef.current = podKey;
-      // Check if pod is already open
       const isAlreadyOpen = panes.some((p) => p.podKey === podKey);
       if (!isAlreadyOpen) {
         handleOpenPod(podKey);
@@ -43,12 +59,10 @@ export default function WorkspacePage() {
           description: `Pod: ${getShortPodKey(podKey)}`,
         });
       }
-      // Clear the query param to avoid re-opening on refresh
       router.replace(window.location.pathname);
     }
   }, [_hasHydrated, searchParams, panes, router, t, handleOpenPod]);
 
-  // Show loading while hydrating
   if (!_hasHydrated) {
     return <CenteredSpinner />;
   }
@@ -67,21 +81,10 @@ export default function WorkspacePage() {
           {t("workspace.createNewPod")}
         </Button>
 
-        {/* Create Modal */}
         <CreatePodModal
           open={showCreateModal}
           onClose={() => setShowCreateModal(false)}
-          onCreated={(pod?: PodData) => {
-            setShowCreateModal(false);
-            if (pod?.pod_key) {
-              toast.info(t("workspace.podCreated"), {
-                description: `Pod: ${getShortPodKey(pod.pod_key)}`,
-              });
-              handleOpenPod(pod.pod_key);
-              // Add pod to sidebar list immediately (don't wait for WebSocket event)
-              usePodStore.getState().fetchPod(pod.pod_key);
-            }
-          }}
+          onCreated={handlePodCreated}
         />
       </div>
     );
@@ -92,21 +95,10 @@ export default function WorkspacePage() {
     <div className="flex flex-col h-full">
       <WorkspaceManager className="flex-1" />
 
-      {/* Create Modal */}
       <CreatePodModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onCreated={(pod?: PodData) => {
-          setShowCreateModal(false);
-          if (pod?.pod_key) {
-            toast.info(t("workspace.podCreated"), {
-              description: `Pod: ${getShortPodKey(pod.pod_key)}`,
-            });
-            handleOpenPod(pod.pod_key);
-            // Add pod to sidebar list immediately (don't wait for WebSocket event)
-            usePodStore.getState().fetchPod(pod.pod_key);
-          }
-        }}
+        onCreated={handlePodCreated}
       />
     </div>
   );

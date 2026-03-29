@@ -27,7 +27,7 @@ export interface PodData {
   repository?: {
     id: number;
     name: string;
-    full_path: string;
+    slug: string;
     provider_type?: string; // github, gitlab, gitee
   };
   ticket?: {
@@ -69,22 +69,15 @@ export const podApi = {
   create: (data: {
     agent_slug?: string; // Required unless resuming
     runner_id?: number;
-    repository_id?: number;
     ticket_slug?: string;
-    initial_prompt?: string;
     alias?: string; // User-defined display name (max 100 chars)
-    branch_name?: string;
-    config_overrides?: Record<string, unknown>;
-    credential_profile_id?: number; // User's credential profile ID (undefined = RunnerHost mode)
     cols?: number; // Terminal columns (from xterm.js)
     rows?: number; // Terminal rows (from xterm.js)
-    // Resume mode fields
-    source_pod_key?: string; // Pod key to resume from (enables resume mode)
-    resume_agent_session?: boolean; // Whether to restore agent session (default: true when resuming)
-    // Interaction mode
-    interaction_mode?: "pty" | "acp"; // Pod interaction mode (default: "pty")
-    // PodFile Layer source (direct pass-through)
+    // PodFile Layer — SSOT (PROMPT, MODE, CONFIG, REPO, BRANCH, CREDENTIAL)
     podfile_layer?: string;
+    // Resume mode fields
+    source_pod_key?: string;
+    resume_agent_session?: boolean;
   }) =>
     request<{ message: string; pod: PodData }>(
       orgPath("/pods"),

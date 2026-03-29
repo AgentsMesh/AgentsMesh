@@ -6,7 +6,7 @@ export interface Repository {
   git_provider_id: number;
   external_id: string;
   name: string;
-  full_path: string;
+  slug: string;
   default_branch: string;
   ticket_prefix?: string;
   is_active: boolean;

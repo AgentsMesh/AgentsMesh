@@ -29,6 +29,7 @@ func TestOnCreatePodWithLaunchArgs(t *testing.T) {
 		PodKey:        "launch-args-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"hello", "world"},
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 	}
 
 	err := handler.OnCreatePod(cmd)
@@ -62,6 +63,7 @@ func TestOnCreatePodWithPromptInArgs(t *testing.T) {
 		PodKey:        "prompt-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"Hello from test"},
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 	}
 
 	err := handler.OnCreatePod(cmd)
@@ -95,6 +97,7 @@ func TestOnCreatePodWithWorktreeConfigError(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "worktree-error-pod",
 		LaunchCommand: "echo",
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
 			RepositoryUrl:  "https://github.com/test/repo",
 			SourceBranch:   "main",
@@ -128,6 +131,7 @@ func TestOnCreatePodWithSendEventError(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "send-error-pod",
 		LaunchCommand: "echo",
+		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 	}
 
 	err := handler.OnCreatePod(cmd)

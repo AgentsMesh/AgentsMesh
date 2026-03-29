@@ -26,7 +26,7 @@ export interface ImportWizardState {
   manualBaseURL: string;
   manualCloneURL: string;
   manualName: string;
-  manualFullPath: string;
+  manualSlug: string;
   manualDefaultBranch: string;
 
   // Confirmation fields
@@ -55,7 +55,7 @@ export interface ImportWizardActions {
   setManualBaseURL: (url: string) => void;
   setManualCloneURL: (url: string) => void;
   setManualName: (name: string) => void;
-  setManualFullPath: (path: string) => void;
+  setManualSlug: (slug: string) => void;
   setManualDefaultBranch: (branch: string) => void;
 
   // Confirmation actions

@@ -62,7 +62,7 @@ export default function RepositoriesPage() {
   const filteredRepositories = repositories.filter((repo) => {
     const matchesSearch =
       repo.name.toLowerCase().includes(filter.toLowerCase()) ||
-      repo.full_path.toLowerCase().includes(filter.toLowerCase());
+      repo.slug.toLowerCase().includes(filter.toLowerCase());
     const matchesProvider = !providerFilter || repo.provider_type === providerFilter;
     return matchesSearch && matchesProvider;
   });
@@ -166,7 +166,7 @@ export default function RepositoriesPage() {
                   >
                     {repo.name}
                   </Link>
-                  <p className="text-sm text-muted-foreground">{repo.full_path}</p>
+                  <p className="text-sm text-muted-foreground">{repo.slug}</p>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">

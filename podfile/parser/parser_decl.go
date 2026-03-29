@@ -32,6 +32,10 @@ func (p *Parser) tryParseDeclaration(tok lexer.Token) Declaration {
 		return p.parseModeDecl(pos)
 	case lexer.KW_CREDENTIAL:
 		return p.parseCredentialDecl(pos)
+	case lexer.KW_PROMPT:
+		return p.parsePromptDecl(pos)
+	case lexer.KW_PROMPT_POSITION:
+		return p.parsePromptPositionDecl(pos)
 	default:
 		return nil
 	}

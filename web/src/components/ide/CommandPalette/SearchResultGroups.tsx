@@ -84,7 +84,7 @@ export function SearchResultGroups({
             >
               <FolderGit2 className="w-4 h-4 text-muted-foreground" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm truncate">{repo.full_path}</div>
+                <div className="text-sm truncate">{repo.slug}</div>
               </div>
               <ArrowRight className="w-3 h-3 text-muted-foreground" />
             </Command.Item>

@@ -73,7 +73,7 @@ export function RepositoryItem({
         <div className="flex-1 min-w-0">
           <p className="text-sm truncate font-medium">{repo.name}</p>
           <p className="text-xs text-muted-foreground truncate">
-            {repo.full_path}
+            {repo.slug}
           </p>
         </div>
 
@@ -118,7 +118,7 @@ function RepositoryExpandedContent({
       )}
       <div className="flex items-center gap-2 mt-2">
         <a
-          href={`${repo.provider_base_url.replace(/\/$/, "")}/${repo.full_path}`}
+          href={`${repo.provider_base_url.replace(/\/$/, "")}/${repo.slug}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-primary hover:underline flex items-center gap-1"

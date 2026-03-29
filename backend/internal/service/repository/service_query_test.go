@@ -23,7 +23,7 @@ func TestListByOrganization(t *testing.T) {
 		CloneURL:        "https://gitlab.com/org/repo-1.git",
 		ExternalID:      "12345",
 		Name:            "repo-1",
-		FullPath:        "org/repo-1",
+		Slug:        "org/repo-1",
 		Visibility:      "organization",
 	}
 	service.Create(ctx, req1)
@@ -35,7 +35,7 @@ func TestListByOrganization(t *testing.T) {
 		CloneURL:        "https://gitlab.com/org/repo-2.git",
 		ExternalID:      "12346",
 		Name:            "repo-2",
-		FullPath:        "org/repo-2",
+		Slug:        "org/repo-2",
 		Visibility:      "organization",
 	}
 	service.Create(ctx, req2)
@@ -61,7 +61,7 @@ func TestGetByExternalID(t *testing.T) {
 		CloneURL:        "https://gitlab.com/org/test-repo.git",
 		ExternalID:      "12345",
 		Name:            "test-repo",
-		FullPath:        "org/test-repo",
+		Slug:        "org/test-repo",
 		Visibility:      "organization",
 	}
 	service.Create(ctx, req)
@@ -99,7 +99,7 @@ func TestGetCloneURL(t *testing.T) {
 			CloneURL:        "https://github.com/owner/repo.git",
 			ExternalID:      "gh_12345",
 			Name:            "github-repo",
-			FullPath:        "owner/repo",
+			Slug:        "owner/repo",
 			Visibility:      "organization",
 		}
 		created, _ := service.Create(ctx, req)
@@ -148,7 +148,7 @@ func TestGetNextTicketNumber(t *testing.T) {
 		CloneURL:        "https://gitlab.com/org/ticket-repo.git",
 		ExternalID:      "ticket_12345",
 		Name:            "ticket-repo",
-		FullPath:        "org/ticket-repo",
+		Slug:        "org/ticket-repo",
 		Visibility:      "organization",
 	}
 	created, _ := service.Create(ctx, req)

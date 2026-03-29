@@ -7,9 +7,9 @@ import (
 // RepositoryRepo is the data access interface for Repository entities.
 // Named distinctly from the domain entity Repository to avoid confusion.
 type RepositoryRepo interface {
-	// FindByOrgAndPath returns a repository matching org + provider + path.
+	// FindByOrgAndSlug returns a repository matching org + provider + slug.
 	// Returns (nil, nil) when not found.
-	FindByOrgAndPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*Repository, error)
+	FindByOrgAndSlug(ctx context.Context, orgID int64, providerType, providerBaseURL, slug string) (*Repository, error)
 
 	// Create persists a new repository.
 	Create(ctx context.Context, repo *Repository) error
@@ -41,9 +41,14 @@ type RepositoryRepo interface {
 	// Returns (nil, nil) when not found.
 	GetByExternalID(ctx context.Context, providerType, providerBaseURL, externalID string) (*Repository, error)
 
-	// GetByFullPath looks up a repository by org + provider + full path.
+	// GetBySlug looks up a repository by org + provider + slug.
 	// Returns (nil, nil) when not found.
-	GetByFullPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*Repository, error)
+	GetBySlug(ctx context.Context, orgID int64, providerType, providerBaseURL, slug string) (*Repository, error)
+
+	// FindByOrgSlug looks up a repository by org + slug (ignoring provider).
+	// Used by PodFile REPO resolution where only slug is known.
+	// Returns (nil, nil) when not found.
+	FindByOrgSlug(ctx context.Context, orgID int64, slug string) (*Repository, error)
 
 	// GetMaxTicketNumber returns the highest ticket number for a repository.
 	GetMaxTicketNumber(ctx context.Context, repoID int64) (int, error)

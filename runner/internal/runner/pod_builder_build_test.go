@@ -11,6 +11,8 @@ import (
 
 // Tests for Build and setup functionality
 
+const testMinimalPodFile = "AGENT echo\nPROMPT_POSITION prepend\n"
+
 func TestPodBuilderBuildSuccessWithOptions(t *testing.T) {
 	tempDir := t.TempDir()
 	runner := &Runner{
@@ -23,6 +25,7 @@ func TestPodBuilderBuildSuccessWithOptions(t *testing.T) {
 		PodKey:        "build-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"hello"},
+		PodfileSource: testMinimalPodFile,
 	}
 
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)
@@ -39,7 +42,6 @@ func TestPodBuilderBuildSuccessWithOptions(t *testing.T) {
 		t.Errorf("Status = %s, want initializing", pod.GetStatus())
 	}
 
-	// Clean up
 	if pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}
@@ -53,19 +55,17 @@ func TestPodBuilderBuildTerminalError(t *testing.T) {
 		},
 	}
 
-	// Use a command that doesn't exist
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "error-pod",
 		LaunchCommand: "/nonexistent/command/path/that/doesnt/exist/12345",
+		PodfileSource: "AGENT /nonexistent/command/path/that/doesnt/exist/12345\n",
 	}
 
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)
 
 	pod, err := builder.Build(context.Background())
-	// May or may not fail depending on terminal implementation
 	t.Logf("Build with invalid command: pod=%v, err=%v", pod != nil, err)
 
-	// Clean up if pod was created
 	if pod != nil && pod.Terminal != nil {
 		pod.Terminal.Stop()
 	}
@@ -79,11 +79,11 @@ func TestPodBuilderSetupNoManager(t *testing.T) {
 		},
 	}
 
-	// No workspace manager, but with config
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "workspace-test",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"test"},
+		PodfileSource: testMinimalPodFile,
 	}
 
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)
@@ -117,9 +117,8 @@ func TestPodBuilderSetupWithEmptySandbox(t *testing.T) {
 		PodKey:        "temp-workspace-test",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"test"},
-		SandboxConfig: &runnerv1.SandboxConfig{
-			// Empty sandbox config - creates empty workspace
-		},
+		PodfileSource: testMinimalPodFile,
+		SandboxConfig: &runnerv1.SandboxConfig{},
 	}
 
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)

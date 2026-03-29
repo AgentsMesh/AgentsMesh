@@ -73,7 +73,7 @@ describe("CreatePodForm - Agent Configuration", () => {
     vi.mocked(usePodCreationData).mockReturnValue({
       ...defaultPodCreationData,
       runners: [mockRunner],
-      repositories: [mockRepository, { ...mockRepository, id: 2, full_path: "org/repo2" }],
+      repositories: [mockRepository, { ...mockRepository, id: 2, slug: "org/repo2" }],
       selectedRunner: mockRunner,
       availableAgents: [mockAgent],
     });

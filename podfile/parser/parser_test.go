@@ -102,13 +102,20 @@ func TestParse_BuildStatements(t *testing.T) {
 	input := `
 arg "--model" config.model when config.model != ""
 arg "--flag"
-prompt prepend
+PROMPT_POSITION prepend
 mkdir sandbox.root + "/plugin"
 x = json_merge(mcp.builtin, mcp.installed)
 `
 	prog, errs := Parse(input)
 	require.Empty(t, errs, "parse errors: %v", errs)
-	assert.Len(t, prog.Statements, 5)
+
+	// PROMPT_POSITION is a declaration
+	require.Len(t, prog.Declarations, 1)
+	promptDecl := prog.Declarations[0].(*PromptPositionDecl)
+	assert.Equal(t, "prepend", promptDecl.Mode)
+
+	// Remaining are statements
+	assert.Len(t, prog.Statements, 4)
 
 	// arg with when
 	argStmt := prog.Statements[0].(*ArgStmt)
@@ -120,18 +127,14 @@ x = json_merge(mcp.builtin, mcp.installed)
 	assert.Len(t, argStmt2.Args, 1)
 	assert.Nil(t, argStmt2.When)
 
-	// prompt
-	prompt := prog.Statements[2].(*PromptStmt)
-	assert.Equal(t, "prepend", prompt.Mode)
-
 	// mkdir with + expression
-	mkdirStmt := prog.Statements[3].(*MkdirStmt)
+	mkdirStmt := prog.Statements[2].(*MkdirStmt)
 	binExpr, ok := mkdirStmt.Path.(*BinaryExpr)
 	require.True(t, ok)
 	assert.Equal(t, "+", binExpr.Op)
 
 	// assignment with function call
-	assign := prog.Statements[4].(*AssignStmt)
+	assign := prog.Statements[3].(*AssignStmt)
 	assert.Equal(t, "x", assign.Name)
 	call, ok := assign.Value.(*CallExpr)
 	require.True(t, ok)

@@ -78,6 +78,7 @@ func TestOnPodInputSuccess(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "input-success-pod",
 		LaunchCommand: "cat",
+		PodfileSource: "AGENT cat\nPROMPT_POSITION prepend\n",
 	}
 
 	err := handler.OnCreatePod(cmd)

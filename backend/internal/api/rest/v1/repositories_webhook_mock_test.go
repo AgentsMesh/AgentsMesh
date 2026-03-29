@@ -78,9 +78,9 @@ func (m *mockRepositoryService) SyncFromProvider(ctx context.Context, repoID int
 	return nil, nil
 }
 
-func (m *mockRepositoryService) GetByFullPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*gitprovider.Repository, error) {
+func (m *mockRepositoryService) GetBySlug(ctx context.Context, orgID int64, providerType, providerBaseURL, slug string) (*gitprovider.Repository, error) {
 	for _, repo := range m.repos {
-		if repo.OrganizationID == orgID && repo.ProviderType == providerType && repo.ProviderBaseURL == providerBaseURL && repo.FullPath == fullPath {
+		if repo.OrganizationID == orgID && repo.ProviderType == providerType && repo.ProviderBaseURL == providerBaseURL && repo.Slug == slug {
 			return repo, nil
 		}
 	}

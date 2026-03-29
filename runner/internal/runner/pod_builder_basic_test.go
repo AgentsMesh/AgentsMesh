@@ -17,6 +17,7 @@ func TestPodBuilderStruct(t *testing.T) {
 		LaunchCommand: "claude",
 		LaunchArgs:    []string{"--headless"},
 		EnvVars:       map[string]string{"KEY": "VALUE"},
+		PodfileSource: "AGENT claude\nPROMPT_POSITION prepend\n",
 		FilesToCreate: []*runnerv1.FileToCreate{
 			{Path: "{{.sandbox.root_path}}/test.txt", Content: "test"},
 		},
@@ -47,6 +48,7 @@ func TestPodBuilderFluentAPI(t *testing.T) {
 		PodKey:        "pod-1",
 		LaunchCommand: "claude",
 		LaunchArgs:    []string{"--headless"},
+		PodfileSource: "AGENT claude\nPROMPT_POSITION prepend\n",
 		EnvVars: map[string]string{
 			"KEY1": "VALUE1",
 			"KEY2": "VALUE2",

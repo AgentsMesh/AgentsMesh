@@ -89,7 +89,7 @@ describe("InfoTabContent - optional fields and related pods", () => {
         repository: {
           id: 1,
           name: "my-repo",
-          full_path: "org/my-repo",
+          slug: "org/my-repo",
           provider_type: "github",
         },
       });
@@ -156,7 +156,7 @@ describe("InfoTabContent - optional fields and related pods", () => {
         repository: {
           id: 5,
           name: "my-repo",
-          full_path: "org/my-repo",
+          slug: "org/my-repo",
           provider_type: "github",
         },
       });

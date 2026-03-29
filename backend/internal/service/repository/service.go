@@ -53,7 +53,7 @@ type CreateRequest struct {
 	SshCloneURL      string // SSH clone URL
 	ExternalID       string
 	Name             string
-	FullPath         string
+	Slug             string
 	DefaultBranch    string
 	TicketPrefix     *string
 	Visibility       string // "organization" or "private"
@@ -157,9 +157,9 @@ func (s *Service) GetByExternalID(ctx context.Context, providerType, providerBas
 	return repo, nil
 }
 
-// GetByFullPath returns a repository by organization, provider, and full path
-func (s *Service) GetByFullPath(ctx context.Context, orgID int64, providerType, providerBaseURL, fullPath string) (*gitprovider.Repository, error) {
-	repo, err := s.repo.GetByFullPath(ctx, orgID, providerType, providerBaseURL, fullPath)
+// GetBySlug returns a repository by organization, provider, and slug
+func (s *Service) GetBySlug(ctx context.Context, orgID int64, providerType, providerBaseURL, slug string) (*gitprovider.Repository, error) {
+	repo, err := s.repo.GetBySlug(ctx, orgID, providerType, providerBaseURL, slug)
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +167,16 @@ func (s *Service) GetByFullPath(ctx context.Context, orgID int64, providerType, 
 		return nil, ErrRepositoryNotFound
 	}
 	return repo, nil
+}
+
+// FindByOrgSlug looks up a repository by org + slug (ignoring provider).
+// Used by PodFile REPO slug resolution.
+func (s *Service) FindByOrgSlug(ctx context.Context, orgID int64, slug string) (*gitprovider.Repository, error) {
+	repo, err := s.repo.FindByOrgSlug(ctx, orgID, slug)
+	if err != nil {
+		return nil, err
+	}
+	return repo, nil // nil = not found (no error)
 }
 
 // GetCloneURL returns the clone URL for a repository

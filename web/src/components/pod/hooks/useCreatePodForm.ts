@@ -126,8 +126,8 @@ export function useCreatePodForm(
 
   // PodFile Layer: compute from form fields
   const generatedLayer = useMemo(() => {
-    const repoUrl = selectedRepository
-      ? repositories.find((r) => r.id === selectedRepository)?.clone_url
+    const repoSlug = selectedRepository
+      ? repositories.find((r) => r.id === selectedRepository)?.slug
       : undefined;
     const credProfileName = creds.selectedCredentialProfile === RUNNER_HOST_PROFILE_ID
       ? undefined
@@ -136,13 +136,14 @@ export function useCreatePodForm(
         )?.name;
     return buildPodfileLayer({
       configValues: configValues ?? {},
-      repositoryUrl: repoUrl,
+      repositorySlug: repoSlug,
       branchName: selectedBranch || undefined,
       credentialType: credProfileName,
       interactionMode,
       credentialProfileName: credProfileName,
+      prompt: prompt || undefined,
     });
-  }, [configValues, selectedRepository, repositories, selectedBranch, creds.selectedCredentialProfile, creds.credentialProfiles, interactionMode]);
+  }, [configValues, selectedRepository, repositories, selectedBranch, creds.selectedCredentialProfile, creds.credentialProfiles, interactionMode, prompt]);
 
   const podfileLayer = rawLayerMode ? rawLayerText : generatedLayer;
 
@@ -157,7 +158,7 @@ export function useCreatePodForm(
     async (
       selectedRunnerId: number | null | undefined,
       pluginConfig: Record<string, unknown>,
-      options?: { ticketSlug?: string; initialPrompt?: string; cols?: number; rows?: number }
+      options?: { ticketSlug?: string; cols?: number; rows?: number }
     ): Promise<PodData | null> => {
       if (!validate()) return null;
       if (!selectedAgent) { setError("Please select an agent"); return null; }

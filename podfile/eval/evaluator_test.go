@@ -79,7 +79,7 @@ file plugin_dir + "/config.json" json({ name: "test", version: "1.0" })
 func TestEval_Prompt(t *testing.T) {
 	prog, errs := parser.Parse(`
 AGENT gemini
-prompt append
+PROMPT_POSITION append
 `)
 	require.Empty(t, errs)
 

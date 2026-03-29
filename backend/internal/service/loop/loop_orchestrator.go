@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	ticketSvc "github.com/anthropics/agentsmesh/backend/internal/service/ticket"
@@ -15,6 +16,11 @@ import (
 // to terminate Pods (used for timeout handling).
 type PodTerminator interface {
 	TerminatePod(ctx context.Context, podKey string) error
+}
+
+// RepoQueryForLoop provides repository lookup for PodFile Layer generation.
+type RepoQueryForLoop interface {
+	GetByID(ctx context.Context, id int64) (*gitprovider.Repository, error)
 }
 
 // LoopOrchestrator orchestrates the full lifecycle of a Loop run:
@@ -37,6 +43,7 @@ type LoopOrchestrator struct {
 	autopilotSvc    *agentpodSvc.AutopilotControllerService
 	podTerminator   PodTerminator // for terminating timed-out Pods
 	ticketService   *ticketSvc.Service
+	repoQuery       RepoQueryForLoop // for resolving RepositoryID → clone URL
 
 	// HTTP client for webhook callbacks (reused across calls)
 	httpClient *http.Client
@@ -73,9 +80,11 @@ func (o *LoopOrchestrator) SetPodDependencies(
 	autopilot *agentpodSvc.AutopilotControllerService,
 	podTerminator PodTerminator,
 	ticket *ticketSvc.Service,
+	repoQuery RepoQueryForLoop,
 ) {
 	o.podOrchestrator = podOrch
 	o.autopilotSvc = autopilot
 	o.podTerminator = podTerminator
 	o.ticketService = ticket
+	o.repoQuery = repoQuery
 }

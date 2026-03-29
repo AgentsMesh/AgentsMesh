@@ -132,7 +132,7 @@ func TestMRSyncServiceIntegration(t *testing.T) {
 		repo := &gitprovider.Repository{
 			OrganizationID: 1,
 			Name:           "test-repo",
-			FullPath:       "org/test-repo",
+			Slug:       "org/test-repo",
 			ExternalID:     "456",
 		}
 		db.Create(repo)
@@ -189,7 +189,7 @@ func TestMRSyncServiceIntegration(t *testing.T) {
 		repo := &gitprovider.Repository{
 			OrganizationID: 1,
 			Name:           "error-repo",
-			FullPath:       "org/error-repo",
+			Slug:       "org/error-repo",
 			ExternalID:     "789",
 		}
 		db.Create(repo)

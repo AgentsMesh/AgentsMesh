@@ -155,7 +155,7 @@ func main() {
 
 	// Initialize Loop orchestrator and scheduler
 	loopOrchestrator := loop.NewLoopOrchestrator(services.loop, services.loopRun, eventBus, appLogger.Logger)
-	loopOrchestrator.SetPodDependencies(podOrchestrator, services.autopilot, podCoordinator, services.ticket)
+	loopOrchestrator.SetPodDependencies(podOrchestrator, services.autopilot, podCoordinator, services.ticket, services.repository)
 	loopScheduler := loop.NewLoopScheduler(services.loop, loopOrchestrator, orgAwareness, appLogger.Logger)
 	loopScheduler.Start()
 	setupLoopEventSubscriptions(eventBus, loopOrchestrator)

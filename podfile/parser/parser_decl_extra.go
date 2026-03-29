@@ -63,3 +63,24 @@ func (p *Parser) parseCredentialDecl(pos Position) *CredentialDecl {
 	p.expectNewline()
 	return &CredentialDecl{ProfileName: name, Position: pos}
 }
+
+// parsePromptDecl: PROMPT "initial prompt content"
+func (p *Parser) parsePromptDecl(pos Position) *PromptDecl {
+	p.advance()
+	content := p.expectString()
+	p.expectNewline()
+	return &PromptDecl{Content: content, Position: pos}
+}
+
+// parsePromptPositionDecl: PROMPT_POSITION prepend | append | none
+func (p *Parser) parsePromptPositionDecl(pos Position) *PromptPositionDecl {
+	p.advance()
+	tok := p.current()
+	mode := tok.Literal
+	if tok.Type != lexer.KW_PREPEND && tok.Type != lexer.KW_APPEND && tok.Type != lexer.KW_NONE {
+		p.errorf("PROMPT_POSITION: expected prepend/append/none, got %s", tok.Literal)
+	}
+	p.advance()
+	p.expectNewline()
+	return &PromptPositionDecl{Mode: mode, Position: pos}
+}

@@ -44,7 +44,7 @@ ENV GOOGLE_API_KEY SECRET OPTIONAL
 MCP ON
 
 arg "--sandbox" when config.sandbox_mode
-prompt append
+PROMPT_POSITION append
 
 if mcp.enabled {
   mcp_cfg = mcp_transform(json_merge(mcp.builtin, mcp.installed), "gemini")
@@ -85,7 +85,7 @@ ENV OPENAI_API_KEY SECRET OPTIONAL
 MCP ON
 
 arg "--approval-mode" config.approval_mode when config.approval_mode != ""
-prompt prepend
+PROMPT_POSITION prepend
 
 if mcp.enabled {
   mcp_cfg = json_merge(mcp.builtin, mcp.installed)
@@ -116,7 +116,7 @@ MCP OFF
 
 arg "--model" config.model when config.model != ""
 arg "--edit-format" config.edit_format when config.edit_format != ""
-prompt none
+PROMPT_POSITION none
 `
 
 func TestIntegration_AiderWithLayer(t *testing.T) {
@@ -198,8 +198,9 @@ ENV ANTHROPIC_API_KEY SECRET OPTIONAL
 MCP ON
 SKILLS am-delegate, am-channel
 
+PROMPT_POSITION prepend
+
 arg "--model" config.model when config.model != ""
-prompt prepend
 
 if mcp.enabled {
   mcp_cfg = json_merge(mcp.builtin, mcp.installed)
@@ -243,8 +244,9 @@ CONFIG permission SELECT("default", "plan") = "default"
 ENV ANTHROPIC_API_KEY SECRET OPTIONAL
 SKILLS am-delegate
 
+PROMPT_POSITION prepend
+
 arg "--model" config.model when config.model != ""
-prompt prepend
 `)
 	orgLayer := parse(t, `
 CONFIG model = "sonnet"

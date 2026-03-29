@@ -23,7 +23,7 @@ func TestGitLabWebhookWithRepo_FullFlow(t *testing.T) {
 	router, db, _ := createTestRouterForWithRepo(t, cfg)
 
 	// Create test repository with specific org_id
-	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, full_path)
+	db.Exec(`INSERT INTO repositories (id, organization_id, provider_type, provider_base_url, external_id, name, slug)
 		VALUES (42, 100, 'gitlab', 'https://gitlab.com', '12345', 'my-repo', 'my-org/my-repo')`)
 
 	gin.SetMode(gin.TestMode)

@@ -92,30 +92,46 @@ type CredentialDecl struct {
 	Position    Position
 }
 
-func (d *AgentDecl) declNode()         {}
-func (d *ExecutableDecl) declNode()    {}
-func (d *ConfigDecl) declNode()        {}
-func (d *EnvDecl) declNode()           {}
-func (d *RepoDecl) declNode()          {}
-func (d *BranchDecl) declNode()        {}
-func (d *GitCredentialDecl) declNode() {}
-func (d *McpDecl) declNode()           {}
-func (d *SkillsDecl) declNode()        {}
-func (d *SetupDecl) declNode()         {}
-func (d *RemoveDecl) declNode()        {}
+// PromptDecl: PROMPT "initial prompt content"
+type PromptDecl struct {
+	Content  string
+	Position Position
+}
+
+// PromptPositionDecl: PROMPT_POSITION prepend | append | none
+type PromptPositionDecl struct {
+	Mode     string // "prepend", "append", "none"
+	Position Position
+}
+
+func (d *AgentDecl) declNode()          {}
+func (d *ExecutableDecl) declNode()     {}
+func (d *ConfigDecl) declNode()         {}
+func (d *EnvDecl) declNode()            {}
+func (d *RepoDecl) declNode()           {}
+func (d *BranchDecl) declNode()         {}
+func (d *GitCredentialDecl) declNode()  {}
+func (d *McpDecl) declNode()            {}
+func (d *SkillsDecl) declNode()         {}
+func (d *SetupDecl) declNode()          {}
+func (d *RemoveDecl) declNode()         {}
 func (d *ModeDecl) declNode()           {}
 func (d *CredentialDecl) declNode()     {}
+func (d *PromptDecl) declNode()         {}
+func (d *PromptPositionDecl) declNode() {}
 
-func (d *AgentDecl) Pos() Position         { return d.Position }
-func (d *ExecutableDecl) Pos() Position    { return d.Position }
-func (d *ConfigDecl) Pos() Position        { return d.Position }
-func (d *EnvDecl) Pos() Position           { return d.Position }
-func (d *RepoDecl) Pos() Position          { return d.Position }
-func (d *BranchDecl) Pos() Position        { return d.Position }
-func (d *GitCredentialDecl) Pos() Position { return d.Position }
-func (d *McpDecl) Pos() Position           { return d.Position }
-func (d *SkillsDecl) Pos() Position        { return d.Position }
-func (d *SetupDecl) Pos() Position         { return d.Position }
-func (d *RemoveDecl) Pos() Position        { return d.Position }
+func (d *AgentDecl) Pos() Position          { return d.Position }
+func (d *ExecutableDecl) Pos() Position     { return d.Position }
+func (d *ConfigDecl) Pos() Position         { return d.Position }
+func (d *EnvDecl) Pos() Position            { return d.Position }
+func (d *RepoDecl) Pos() Position           { return d.Position }
+func (d *BranchDecl) Pos() Position         { return d.Position }
+func (d *GitCredentialDecl) Pos() Position  { return d.Position }
+func (d *McpDecl) Pos() Position            { return d.Position }
+func (d *SkillsDecl) Pos() Position         { return d.Position }
+func (d *SetupDecl) Pos() Position          { return d.Position }
+func (d *RemoveDecl) Pos() Position         { return d.Position }
 func (d *ModeDecl) Pos() Position           { return d.Position }
 func (d *CredentialDecl) Pos() Position     { return d.Position }
+func (d *PromptDecl) Pos() Position         { return d.Position }
+func (d *PromptPositionDecl) Pos() Position { return d.Position }

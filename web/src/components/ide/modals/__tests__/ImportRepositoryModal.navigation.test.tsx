@@ -36,7 +36,7 @@ describe("ImportRepositoryModal - Navigation Flow", () => {
       createRepositoryResponse({
         ...mockCreatedRepository,
         name: "test-repo",
-        full_path: "test/repo",
+        slug: "test/repo",
         clone_url: "https://github.com/test/repo.git",
       })
     );
@@ -80,7 +80,7 @@ describe("ImportRepositoryModal - Navigation Flow", () => {
           provider_type: "github",
           clone_url: "https://github.com/test/repo.git",
           name: "test-repo",
-          full_path: "test/repo",
+          slug: "test/repo",
         })
       );
       expect(mockOnImported).toHaveBeenCalled();

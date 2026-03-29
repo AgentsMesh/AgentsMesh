@@ -209,7 +209,7 @@ func setupMRSyncTestDB(t *testing.T) *gorm.DB {
 			ssh_clone_url TEXT,
 			external_id TEXT,
 			name TEXT NOT NULL,
-			full_path TEXT NOT NULL,
+			slug TEXT NOT NULL,
 			default_branch TEXT DEFAULT 'main',
 			ticket_prefix TEXT,
 			visibility TEXT NOT NULL DEFAULT 'organization',

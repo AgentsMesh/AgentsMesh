@@ -32,7 +32,7 @@ type CreateRepositoryRequest struct {
 	SshCloneURL     string `json:"ssh_clone_url"`                        // SSH clone URL (optional, will be generated)
 	ExternalID      string `json:"external_id" binding:"required"`
 	Name            string `json:"name" binding:"required"`
-	FullPath        string `json:"full_path" binding:"required"`
+	Slug            string `json:"slug" binding:"required"`
 	DefaultBranch   string `json:"default_branch"`
 	TicketPrefix    string `json:"ticket_prefix"`
 	Visibility      string `json:"visibility"` // "organization" or "private", defaults to "organization"

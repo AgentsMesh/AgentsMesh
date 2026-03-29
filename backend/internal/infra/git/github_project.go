@@ -38,7 +38,7 @@ func (p *GitHubProvider) GetProject(ctx context.Context, projectID string) (*Pro
 	return &Project{
 		ID:            strconv.Itoa(ghRepo.ID),
 		Name:          ghRepo.Name,
-		FullPath:      ghRepo.FullName,
+		Slug:          ghRepo.FullName,
 		Description:   ghRepo.Description,
 		DefaultBranch: ghRepo.DefaultBranch,
 		WebURL:        ghRepo.HTMLURL,
@@ -82,7 +82,7 @@ func (p *GitHubProvider) ListProjects(ctx context.Context, page, perPage int) ([
 		projects[i] = &Project{
 			ID:            strconv.Itoa(ghr.ID),
 			Name:          ghr.Name,
-			FullPath:      ghr.FullName,
+			Slug:          ghr.FullName,
 			Description:   ghr.Description,
 			DefaultBranch: ghr.DefaultBranch,
 			WebURL:        ghr.HTMLURL,
@@ -131,7 +131,7 @@ func (p *GitHubProvider) SearchProjects(ctx context.Context, query string, page,
 		projects[i] = &Project{
 			ID:            strconv.Itoa(ghr.ID),
 			Name:          ghr.Name,
-			FullPath:      ghr.FullName,
+			Slug:          ghr.FullName,
 			Description:   ghr.Description,
 			DefaultBranch: ghr.DefaultBranch,
 			WebURL:        ghr.HTMLURL,

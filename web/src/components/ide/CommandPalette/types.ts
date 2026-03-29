@@ -41,7 +41,7 @@ export interface TicketSearchResult {
 
 export interface RepositorySearchResult {
   id: number;
-  full_path: string;
+  slug: string;
 }
 
 /**

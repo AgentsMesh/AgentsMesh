@@ -12,28 +12,27 @@ import (
 
 // mcpCreatePod handles the "create_pod" MCP method.
 // Delegates to PodOrchestrator for the full creation flow (DB + config + Runner command).
+// When podfile_layer is provided, it is the SSOT for pod configuration (MODE, CONFIG, REPO, etc.).
+// Legacy fields (branch_name, permission_mode, etc.) are accepted for backward compatibility.
 func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		RunnerID          int64                  `json:"runner_id"`
-		AgentSlug       string                 `json:"agent_slug"`
-		RepositoryID      *int64                 `json:"repository_id"`
-		RepositoryURL     *string                `json:"repository_url"`
-		TicketSlug        *string                `json:"ticket_slug"`
-		InitialPrompt     string                 `json:"initial_prompt"`
-		Alias             *string                `json:"alias"`
-		BranchName        *string                `json:"branch_name"`
-		PermissionMode    *string                `json:"permission_mode"`
-		// CredentialProfileID specifies which credential profile to use
-		// - nil (field absent): use user's default profile, fallback to RunnerHost if no default
-		// - 0: explicit RunnerHost mode (use Runner's local environment, no credentials injected)
-		// - >0: use specified credential profile ID
-		CredentialProfileID *int64               `json:"credential_profile_id"`
-		PodfileLayer      *string                `json:"podfile_layer"`
-		ConfigOverrides   map[string]interface{} `json:"config_overrides"`
-		Cols              int32                  `json:"cols"`
-		Rows              int32                  `json:"rows"`
-		SourcePodKey      string                 `json:"source_pod_key"`
-		ResumeAgentSession *bool                 `json:"resume_agent_session"`
+		AgentSlug          string                 `json:"agent_slug"`
+		RunnerID           int64                  `json:"runner_id"`
+		TicketSlug         *string                `json:"ticket_slug"`
+		InitialPrompt      string                 `json:"initial_prompt"`
+		Alias              *string                `json:"alias"`
+		PodfileLayer       *string                `json:"podfile_layer"`
+		Cols               int32                  `json:"cols"`
+		Rows               int32                  `json:"rows"`
+		SourcePodKey       string                 `json:"source_pod_key"`
+		ResumeAgentSession *bool                  `json:"resume_agent_session"`
+		// Legacy fields (when PodfileLayer is set, these are ignored by orchestrator)
+		RepositoryID        *int64                 `json:"repository_id"`
+		RepositoryURL       *string                `json:"repository_url"`
+		BranchName          *string                `json:"branch_name"`
+		PermissionMode      *string                `json:"permission_mode"`
+		CredentialProfileID *int64                 `json:"credential_profile_id"`
+		ConfigOverrides     map[string]interface{} `json:"config_overrides"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err

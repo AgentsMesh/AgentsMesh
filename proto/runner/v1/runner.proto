@@ -229,7 +229,7 @@ message CreatePodCommand {
   int32 cols = 8;  // 终端列数（由浏览器传入）
   int32 rows = 9;  // 终端行数（由浏览器传入）
   repeated ResourceToDownload resources_to_download = 10;  // 需要下载的资源（Skills 等）
-  string interaction_mode = 11;  // 交互模式：pty（默认）或 acp
+  string interaction_mode = 11 [deprecated = true];  // Deprecated: Runner reads MODE from PodFile eval
   // PodFile 相关字段（Runner eval PodFile 需要的上下文）
   string podfile_source = 12;              // PodFile 脚本源代码
   map<string, string> config_values = 13;  // 用户配置值

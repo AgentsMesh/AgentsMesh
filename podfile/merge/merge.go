@@ -147,6 +147,10 @@ func getDeclKey(d parser.Declaration) declKey {
 		return declKey{Type: "MODE"}
 	case *parser.CredentialDecl:
 		return declKey{Type: "CREDENTIAL"}
+	case *parser.PromptDecl:
+		return declKey{Type: "PROMPT"}
+	case *parser.PromptPositionDecl:
+		return declKey{Type: "PROMPT_POSITION"}
 	case *parser.RemoveDecl:
 		return declKey{Type: "REMOVE", Name: v.Target + "." + v.Name}
 	default:

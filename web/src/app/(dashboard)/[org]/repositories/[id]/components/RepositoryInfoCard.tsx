@@ -19,8 +19,8 @@ export function RepositoryInfoCard({ repository }: RepositoryInfoCardProps) {
           <dd className="font-medium">{repository.name}</dd>
         </div>
         <div>
-          <dt className="text-sm text-muted-foreground">{t("repositories.detail.fullPath")}</dt>
-          <dd className="font-medium">{repository.full_path}</dd>
+          <dt className="text-sm text-muted-foreground">{t("repositories.detail.slug")}</dt>
+          <dd className="font-medium">{repository.slug}</dd>
         </div>
         {repository.http_clone_url && (
           <div>

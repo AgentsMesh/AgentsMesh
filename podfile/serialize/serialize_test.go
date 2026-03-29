@@ -151,15 +151,18 @@ REMOVE CONFIG model
 
 func TestRoundTrip_Statements(t *testing.T) {
 	src := `AGENT test
+PROMPT_POSITION prepend
 arg "--model" config.model when config.model != ""
 arg "--verbose"
 env "PATH" "/usr/bin" + ":" + sandbox.root
 file sandbox.root + "/.config" "content" 0755
 mkdir sandbox.root + "/data"
-prompt prepend
 `
 	_, rt := roundTrip(t, src)
-	require.Len(t, rt.Statements, 6)
+	// PROMPT_POSITION is a declaration (AGENT + PROMPT_POSITION = 2 decls)
+	require.Len(t, rt.Declarations, 2)
+	assert.IsType(t, &parser.PromptPositionDecl{}, rt.Declarations[1])
+	require.Len(t, rt.Statements, 5)
 }
 
 func TestRoundTrip_IfElse(t *testing.T) {

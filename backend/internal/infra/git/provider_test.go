@@ -182,7 +182,7 @@ func TestProjectStruct(t *testing.T) {
 	project := &Project{
 		ID:            "456",
 		Name:          "test-repo",
-		FullPath:      "owner/test-repo",
+		Slug:          "owner/test-repo",
 		Description:   "Test repository",
 		DefaultBranch: "main",
 		WebURL:        "https://github.com/owner/test-repo",

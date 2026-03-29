@@ -45,7 +45,7 @@ func (p *GiteeProvider) GetProject(ctx context.Context, projectID string) (*Proj
 	return &Project{
 		ID:            strconv.Itoa(gtRepo.ID),
 		Name:          gtRepo.Name,
-		FullPath:      gtRepo.FullName,
+		Slug:      gtRepo.FullName,
 		Description:   gtRepo.Description,
 		DefaultBranch: gtRepo.DefaultBranch,
 		WebURL:        gtRepo.HTMLURL,
@@ -93,7 +93,7 @@ func (p *GiteeProvider) ListProjects(ctx context.Context, page, perPage int) ([]
 		projects[i] = &Project{
 			ID:            strconv.Itoa(gtr.ID),
 			Name:          gtr.Name,
-			FullPath:      gtr.FullName,
+			Slug:      gtr.FullName,
 			Description:   gtr.Description,
 			DefaultBranch: gtr.DefaultBranch,
 			WebURL:        gtr.HTMLURL,
@@ -144,7 +144,7 @@ func (p *GiteeProvider) SearchProjects(ctx context.Context, query string, page, 
 		projects[i] = &Project{
 			ID:            strconv.Itoa(gtr.ID),
 			Name:          gtr.Name,
-			FullPath:      gtr.FullName,
+			Slug:      gtr.FullName,
 			Description:   gtr.Description,
 			DefaultBranch: gtr.DefaultBranch,
 			WebURL:        gtr.HTMLURL,
