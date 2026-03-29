@@ -13,9 +13,9 @@ import (
 func TestMerge_EmptyBaseAndSlice(t *testing.T) {
 	base := parse(t, "")
 	slice := parse(t, "")
-	merged := Merge(base, slice)
-	assert.Empty(t, merged.Declarations)
-	assert.Empty(t, merged.Statements)
+	Merge(base, slice)
+	assert.Empty(t, base.Declarations)
+	assert.Empty(t, base.Statements)
 }
 
 // P1: Slice adds new declarations not in base
@@ -27,8 +27,8 @@ SETUP timeout=60 <<EOF
 npm install
 EOF
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	assert.Equal(t, "test", spec.Agent.Command)
 	require.NotNil(t, spec.Repo)
@@ -44,8 +44,8 @@ AGENT test
 EXECUTABLE test-bin
 `)
 	slice := parse(t, `EXECUTABLE new-bin`)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 	assert.Equal(t, "new-bin", spec.Agent.Executable)
 }
 
@@ -62,8 +62,8 @@ SETUP timeout=60 <<EOF
 yarn install
 EOF
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 	assert.Equal(t, 60, spec.Setup.Timeout)
 	assert.Contains(t, spec.Setup.Script, "yarn")
 }
@@ -76,8 +76,8 @@ CONFIG model SELECT("sonnet", "opus") = "sonnet"
 CONFIG debug BOOL = false
 `)
 	slice := parse(t, `REMOVE CONFIG debug`)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	// debug removed, only model remains
 	require.Len(t, spec.Config, 1)
@@ -125,10 +125,11 @@ BRANCH "main"
 `)
 
 	// Recursive merge
-	merged := Merge(Merge(base, orgSlice), userSlice)
+	Merge(base, orgSlice)
+	Merge(base, userSlice)
 
 	// Verify declarations
-	spec := extract.Extract(merged)
+	spec := extract.Extract(base)
 	assert.Equal(t, "claude", spec.Agent.Command)
 	assert.Equal(t, "opus", spec.Config[0].Default) // user overrode org
 	assert.Len(t, spec.Env, 1) // BASE_URL removed by org
@@ -148,7 +149,7 @@ BRANCH "main"
 		},
 		"sandbox": map[string]interface{}{"root": "/sandbox"},
 	})
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	eval.ApplyRemoves(ctx.Result)
 
 	r := ctx.Result
@@ -167,11 +168,11 @@ AGENT test
 ENV KEY1 SECRET
 `)
 	slice := parse(t, `REMOVE ENV NONEXISTENT`)
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
 	ctx := eval.NewContext(nil)
 	ctx.Credentials = map[string]string{"KEY1": "val"}
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	eval.ApplyRemoves(ctx.Result)
 	// Should not error, KEY1 still present
 	assert.Equal(t, "val", ctx.Result.EnvVars["KEY1"])
@@ -187,10 +188,10 @@ arg "--base"
 arg "--extra"
 remove arg "--base"
 `)
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
 	ctx := eval.NewContext(nil)
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	eval.ApplyRemoves(ctx.Result)
 
 	assert.Equal(t, []string{"--extra"}, ctx.Result.LaunchArgs)

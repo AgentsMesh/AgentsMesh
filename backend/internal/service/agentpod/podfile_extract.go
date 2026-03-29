@@ -33,8 +33,8 @@ func extractPodfileOverrides(basePodfileSrc, userLayerSrc string) (*podfileOverr
 		return nil, fmt.Errorf("%w: %v", ErrInvalidPodfileLayer, userErrs[0])
 	}
 
-	mergedProg := merge.Merge(baseProg, userProg)
-	spec := extract.Extract(mergedProg)
+	merge.Merge(baseProg, userProg)
+	spec := extract.Extract(baseProg)
 
 	overrides := &podfileOverrides{
 		Mode:              spec.Mode,

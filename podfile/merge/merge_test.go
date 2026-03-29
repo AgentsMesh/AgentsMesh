@@ -29,8 +29,8 @@ arg "--model" config.model when config.model != ""
 CONFIG model = "opus"
 CONFIG permission = "plan"
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	// Config defaults overridden
 	assert.Equal(t, "opus", spec.Config[0].Default)
@@ -47,8 +47,8 @@ ENV ANTHROPIC_API_KEY SECRET OPTIONAL
 	slice := parse(t, `
 ENV ANTHROPIC_API_KEY SECRET
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	require.Len(t, spec.Env, 1)
 	assert.Equal(t, "secret", spec.Env[0].Source)
@@ -63,8 +63,8 @@ SKILLS am-delegate, am-channel
 	slice := parse(t, `
 SKILLS custom-skill
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	assert.Equal(t, []string{"am-delegate", "am-channel", "custom-skill"}, spec.Skills)
 }
@@ -77,8 +77,8 @@ SKILLS am-delegate, am-channel
 	slice := parse(t, `
 SKILLS am-delegate, new-skill
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	assert.Equal(t, []string{"am-delegate", "am-channel", "new-skill"}, spec.Skills)
 }
@@ -90,8 +90,8 @@ REPO "https://github.com/org/project"
 BRANCH "main"
 GIT_CREDENTIAL oauth
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	require.NotNil(t, spec.Repo)
 	assert.Equal(t, "https://github.com/org/project", spec.Repo.URL)
@@ -104,8 +104,8 @@ AGENT test
 MCP ON
 `)
 	slice := parse(t, `MCP OFF`)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	require.NotNil(t, spec.MCP)
 	assert.False(t, spec.MCP.Enabled)
@@ -119,9 +119,9 @@ arg "--base-flag"
 	slice := parse(t, `
 arg "--slice-flag"
 `)
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
-	assert.Len(t, merged.Statements, 2)
+	assert.Len(t, base.Statements, 2)
 }
 
 func TestMerge_RemoveDecl_Env(t *testing.T) {
@@ -133,8 +133,8 @@ ENV ANTHROPIC_BASE_URL TEXT OPTIONAL
 	slice := parse(t, `
 REMOVE ENV ANTHROPIC_BASE_URL
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 
 	// Only API_KEY remains
 	require.Len(t, spec.Env, 1)
@@ -151,11 +151,11 @@ SKILLS am-delegate, am-channel
 	slice := parse(t, `
 REMOVE SKILLS am-delegate
 `)
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
 	// Run eval to verify remove works end-to-end
 	ctx := eval.NewContext(nil)
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	eval.ApplyRemoves(ctx.Result)
 
 	assert.Equal(t, []string{"am-channel"}, ctx.Result.Skills)
@@ -170,10 +170,10 @@ arg "--model" "opus"
 	slice := parse(t, `
 remove arg "--verbose"
 `)
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
 	ctx := eval.NewContext(nil)
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	eval.ApplyRemoves(ctx.Result)
 
 	assert.Equal(t, []string{"--model", "opus"}, ctx.Result.LaunchArgs)
@@ -188,10 +188,10 @@ arg "--permission-mode" "plan"
 	slice := parse(t, `
 remove arg "--model"
 `)
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
 	ctx := eval.NewContext(nil)
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	eval.ApplyRemoves(ctx.Result)
 
 	// --model and its value "sonnet" both removed
@@ -215,8 +215,9 @@ REPO "https://github.com/org/repo"
 arg "--layer2"
 `)
 	// Recursive merge: (base + layer1) + layer2
-	merged := Merge(Merge(base, layer1), layer2)
-	spec := extract.Extract(merged)
+	Merge(base, layer1)
+	Merge(base, layer2)
+	spec := extract.Extract(base)
 
 	assert.Equal(t, "claude", spec.Agent.Command)
 	assert.Equal(t, "opus", spec.Config[0].Default)        // layer1 override
@@ -224,7 +225,7 @@ arg "--layer2"
 	require.NotNil(t, spec.Repo)
 	assert.Equal(t, "https://github.com/org/repo", spec.Repo.URL) // layer2
 
-	assert.Len(t, merged.Statements, 3) // base + layer1 + layer2
+	assert.Len(t, base.Statements, 3) // base + layer1 + layer2
 }
 
 func TestMerge_FullE2E(t *testing.T) {
@@ -245,7 +246,7 @@ CONFIG model = "opus"
 REPO "https://github.com/org/project"
 BRANCH "main"
 `)
-	merged := Merge(base, userSlice)
+	Merge(base, userSlice)
 
 	// Eval with config from merged declarations
 	ctx := eval.NewContext(map[string]interface{}{
@@ -257,7 +258,7 @@ BRANCH "main"
 			"enabled": true,
 		},
 	})
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	eval.ApplyRemoves(ctx.Result)
 
 	assert.Equal(t, "claude", ctx.Result.LaunchCommand)

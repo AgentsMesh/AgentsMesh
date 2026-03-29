@@ -12,8 +12,8 @@ import (
 func TestMerge_SliceAddsSkillsToEmptyBase(t *testing.T) {
 	base := parse(t, `AGENT test`)
 	slice := parse(t, `SKILLS new-skill`)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 	assert.Equal(t, []string{"new-skill"}, spec.Skills)
 }
 
@@ -23,8 +23,8 @@ func TestMerge_UnknownDeclType(t *testing.T) {
 	// We can't easily trigger this from PodFile syntax, but verify merge doesn't panic
 	base := parse(t, `AGENT test`)
 	slice := parse(t, `AGENT test2`)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 	assert.Equal(t, "test2", spec.Agent.Command)
 }
 
@@ -32,8 +32,8 @@ func TestMerge_UnknownDeclType(t *testing.T) {
 func TestMerge_SliceAddsEnvToEmptyBase(t *testing.T) {
 	base := parse(t, `AGENT test`)
 	slice := parse(t, `ENV NEW_KEY SECRET`)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 	require.Len(t, spec.Env, 1)
 	assert.Equal(t, "NEW_KEY", spec.Env[0].Name)
 }
@@ -53,8 +53,8 @@ REMOVE ENV KEY1
 REMOVE ENV KEY3
 REMOVE CONFIG b
 `)
-	merged := Merge(base, slice)
-	spec := extract.Extract(merged)
+	Merge(base, slice)
+	spec := extract.Extract(base)
 	require.Len(t, spec.Env, 1)
 	assert.Equal(t, "KEY2", spec.Env[0].Name)
 	require.Len(t, spec.Config, 1)

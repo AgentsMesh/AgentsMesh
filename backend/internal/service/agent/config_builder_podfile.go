@@ -44,13 +44,13 @@ func (b *ConfigBuilder) buildFromPodFile(
 	if len(parseErrors) > 0 {
 		return nil, fmt.Errorf("invalid user config layer: %s", parseErrors[0])
 	}
-	mergedProg := merge.Merge(baseProg, userProg)
+	merge.Merge(baseProg, userProg)
 
 	// 4. Serialize merged AST to PodFile source
-	mergedSource := serialize.Serialize(mergedProg)
+	mergedSource := serialize.Serialize(baseProg)
 
 	// 5. Extract CREDENTIAL from merged PodFile (MODE is handled by orchestrator before DB write)
-	spec := extract.Extract(mergedProg)
+	spec := extract.Extract(baseProg)
 
 	// 6. Get credentials — PodFile CREDENTIAL overrides req.CredentialProfileID
 	var creds agent.EncryptedCredentials

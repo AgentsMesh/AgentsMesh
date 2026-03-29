@@ -13,46 +13,46 @@ import (
 func TestMerge_ModeDecl_SliceOverrides(t *testing.T) {
 	base := parseMC(t, "AGENT claude\nMODE pty\n")
 	slice := parseMC(t, "MODE acp\n")
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
-	spec := extract.Extract(merged)
+	spec := extract.Extract(base)
 	assert.Equal(t, "acp", spec.Mode)
 }
 
 func TestMerge_ModeDecl_BasePreserved(t *testing.T) {
 	base := parseMC(t, "AGENT claude\nMODE pty\n")
 	slice := parseMC(t, "")
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
-	spec := extract.Extract(merged)
+	spec := extract.Extract(base)
 	assert.Equal(t, "pty", spec.Mode)
 }
 
 func TestMerge_CredentialDecl_SliceOverrides(t *testing.T) {
 	base := parseMC(t, "AGENT claude\nCREDENTIAL runner_host\n")
 	slice := parseMC(t, `CREDENTIAL "org-profile"` + "\n")
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
-	spec := extract.Extract(merged)
+	spec := extract.Extract(base)
 	assert.Equal(t, "org-profile", spec.CredentialProfile)
 }
 
 func TestMerge_CredentialDecl_BasePreserved(t *testing.T) {
 	base := parseMC(t, `AGENT claude` + "\n" + `CREDENTIAL "default"` + "\n")
 	slice := parseMC(t, "")
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
-	spec := extract.Extract(merged)
+	spec := extract.Extract(base)
 	assert.Equal(t, "default", spec.CredentialProfile)
 }
 
 func TestMerge_ModeAndCredential_EvalAfterMerge(t *testing.T) {
 	base := parseMC(t, "AGENT claude\nMODE pty\nCREDENTIAL runner_host\n")
 	slice := parseMC(t, "MODE acp\nCREDENTIAL \"cloud-creds\"\n")
-	merged := Merge(base, slice)
+	Merge(base, slice)
 
 	ctx := eval.NewContext(nil)
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	assert.Equal(t, "acp", ctx.Result.Mode)
 	assert.Equal(t, "cloud-creds", ctx.Result.CredentialProfile)
 	assert.Equal(t, "claude", ctx.Result.LaunchCommand)
@@ -63,9 +63,10 @@ func TestMerge_ModeAndCredential_ThreeLayers(t *testing.T) {
 	l2 := parseMC(t, "MODE acp\n")
 	l3 := parseMC(t, `CREDENTIAL "final-profile"` + "\n")
 
-	merged := Merge(Merge(l1, l2), l3)
+	Merge(l1, l2)
+	Merge(l1, l3)
 	ctx := eval.NewContext(nil)
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(l1, ctx))
 	assert.Equal(t, "acp", ctx.Result.Mode)
 	assert.Equal(t, "final-profile", ctx.Result.CredentialProfile)
 }

@@ -17,9 +17,9 @@ func evalMerged(t *testing.T, base, slice string, vars map[string]interface{}) *
 	t.Helper()
 	baseProg := parse(t, base)
 	sliceProg := parse(t, slice)
-	merged := Merge(baseProg, sliceProg)
+	Merge(baseProg, sliceProg)
 	ctx := eval.NewContext(vars)
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(baseProg, ctx))
 	eval.ApplyRemoves(ctx.Result)
 	return ctx.Result
 }
@@ -263,8 +263,10 @@ REPO "https://github.com/user/repo"
 BRANCH "feature-branch"
 `)
 
-	merged := Merge(Merge(Merge(base, orgLayer), teamLayer), userLayer)
-	spec := extract.Extract(merged)
+	Merge(base, orgLayer)
+	Merge(base, teamLayer)
+	Merge(base, userLayer)
+	spec := extract.Extract(base)
 
 	// model: base="" → org="sonnet" → user="opus"
 	assert.Equal(t, "opus", spec.Config[0].Default)
@@ -282,7 +284,7 @@ BRANCH "feature-branch"
 	ctx := eval.NewContext(map[string]interface{}{
 		"config": map[string]interface{}{"model": "opus", "permission": "plan"},
 	})
-	require.NoError(t, eval.Eval(merged, ctx))
+	require.NoError(t, eval.Eval(base, ctx))
 	eval.ApplyRemoves(ctx.Result)
 
 	assert.Contains(t, ctx.Result.LaunchArgs, "--model")

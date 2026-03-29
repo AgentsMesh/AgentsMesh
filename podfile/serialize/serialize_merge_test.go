@@ -23,8 +23,8 @@ arg "--model" config.model when config.model != ""
 CONFIG model = "opus"
 CONFIG permission = "plan"
 `)
-	merged := merge.Merge(base, slice)
-	src := Serialize(merged)
+	merge.Merge(base, slice)
+	src := Serialize(base)
 
 	// Re-parse the serialized result and extract
 	reparsed := parse(t, src)
@@ -40,8 +40,8 @@ AGENT test
 SKILLS am-delegate, am-channel
 `)
 	slice := parse(t, `SKILLS custom-skill`)
-	merged := merge.Merge(base, slice)
-	src := Serialize(merged)
+	merge.Merge(base, slice)
+	src := Serialize(base)
 
 	reparsed := parse(t, src)
 	spec := extract.Extract(reparsed)
@@ -55,8 +55,8 @@ ENV API_KEY SECRET
 ENV BASE_URL TEXT OPTIONAL
 `)
 	slice := parse(t, `REMOVE ENV BASE_URL`)
-	merged := merge.Merge(base, slice)
-	src := Serialize(merged)
+	merge.Merge(base, slice)
+	src := Serialize(base)
 
 	reparsed := parse(t, src)
 	spec := extract.Extract(reparsed)
@@ -83,8 +83,8 @@ CONFIG model = "opus"
 REPO "https://github.com/org/project"
 BRANCH "main"
 `)
-	merged := merge.Merge(base, userSlice)
-	src := Serialize(merged)
+	merge.Merge(base, userSlice)
+	src := Serialize(base)
 
 	reparsed := parse(t, src)
 	ctx := eval.NewContext(map[string]interface{}{
@@ -114,8 +114,8 @@ arg "--verbose"
 arg "--model" "opus"
 `)
 	slice := parse(t, `remove arg "--verbose"`)
-	merged := merge.Merge(base, slice)
-	src := Serialize(merged)
+	merge.Merge(base, slice)
+	src := Serialize(base)
 
 	reparsed := parse(t, src)
 	ctx := eval.NewContext(nil)
@@ -140,8 +140,9 @@ arg "--layer1"
 REPO "https://github.com/org/repo"
 arg "--layer2"
 `)
-	merged := merge.Merge(merge.Merge(base, layer1), layer2)
-	src := Serialize(merged)
+	merge.Merge(base, layer1)
+	merge.Merge(base, layer2)
+	src := Serialize(base)
 
 	reparsed := parse(t, src)
 	spec := extract.Extract(reparsed)
@@ -156,8 +157,8 @@ arg "--layer2"
 func TestMergeSerialize_SetupPreserved(t *testing.T) {
 	base := parse(t, "AGENT test\nSETUP timeout=60 <<SCRIPT\napt update\nSCRIPT\n")
 	slice := parse(t, `CONFIG model = "opus"`)
-	merged := merge.Merge(base, slice)
-	src := Serialize(merged)
+	merge.Merge(base, slice)
+	src := Serialize(base)
 
 	reparsed := parse(t, src)
 	spec := extract.Extract(reparsed)

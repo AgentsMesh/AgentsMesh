@@ -13,26 +13,21 @@ import (
 	"github.com/anthropics/agentsmesh/podfile/parser"
 )
 
-// Merge combines a base Program with a slice Program.
-// Returns a new Program with merged declarations and concatenated statements.
+// Merge combines a base Program with a slice Program in-place.
+// Modifies base directly: slice declarations override base, statements are appended.
 // Can be called recursively: Merge(Merge(base, slice1), slice2).
-func Merge(base, slice *parser.Program) *parser.Program {
-	result := &parser.Program{}
-
+func Merge(base, slice *parser.Program) {
 	// Index base declarations by type+name for override lookup
 	baseDecls := indexDeclarations(base.Declarations)
 
 	// Apply slice declarations: override or append
 	merged := applySliceDeclarations(baseDecls, slice.Declarations)
 
-	// Flatten back to ordered list
-	result.Declarations = flattenDeclarations(merged)
+	// Flatten back to ordered list — write to base in-place
+	base.Declarations = flattenDeclarations(merged)
 
-	// Statements: base first, then slice appended
-	result.Statements = append(result.Statements, base.Statements...)
-	result.Statements = append(result.Statements, slice.Statements...)
-
-	return result
+	// Statements: append slice after base
+	base.Statements = append(base.Statements, slice.Statements...)
 }
 
 // declKey uniquely identifies a declaration for merge purposes.
