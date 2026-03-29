@@ -1,5 +1,4 @@
 import { podApi, PodData } from "@/lib/api";
-import type { PodMode } from "@/lib/pod-modes";
 
 /**
  * Builds the API request payload and submits the pod creation request.
@@ -9,15 +8,8 @@ import type { PodMode } from "@/lib/pod-modes";
  */
 export async function submitCreatePod(params: {
   selectedAgent: string;
-  selectedAgentSlug: string;
-  selectedRepository: number | null;
-  selectedBranch: string;
-  selectedCredentialProfile: number;
-  interactionMode: PodMode;
-  prompt: string;
   alias: string;
   selectedRunnerId: number | null | undefined;
-  pluginConfig: Record<string, unknown>;
   podfileLayer?: string;
   options?: { ticketSlug?: string; cols?: number; rows?: number };
 }): Promise<PodData | null> {

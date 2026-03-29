@@ -140,7 +140,6 @@ export function useCreatePodForm(
       configValues: configValues ?? {},
       repositorySlug: repoSlug,
       branchName: selectedBranch || undefined,
-      credentialType: credProfileName,
       interactionMode,
       credentialProfileName: credProfileName,
       prompt: prompt || undefined,
@@ -168,9 +167,7 @@ export function useCreatePodForm(
       setError(null);
       try {
         const pod = await submitCreatePod({
-          selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch,
-          selectedCredentialProfile: creds.selectedCredentialProfile,
-          interactionMode, prompt, alias, selectedRunnerId, pluginConfig,
+          selectedAgent, alias, selectedRunnerId,
           podfileLayer: podfileLayer || undefined, options,
         });
         if (pod) {
