@@ -38,6 +38,7 @@ func evalDecl(ctx *Context, decl parser.Declaration) error {
 		return evalRemoveDecl(ctx, d)
 	case *parser.ModeDecl:
 		ctx.Result.Mode = d.Mode
+		ctx.Set("mode", d.Mode) // expose to build logic (e.g., if mode == "acp")
 	case *parser.CredentialDecl:
 		ctx.Result.CredentialProfile = d.ProfileName
 	case *parser.PromptDecl:
