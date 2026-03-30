@@ -49,8 +49,8 @@ func (t *ACPTransport) Initialize(ctx context.Context, stdin io.Writer, stdout i
 // Must be called after ReadLoop is started.
 func (t *ACPTransport) Handshake(_ context.Context) (string, error) {
 	params := map[string]any{
-		"protocol_version": "2025-01-01",
-		"client_info": map[string]any{
+		"protocolVersion": 1,
+		"clientInfo": map[string]any{
 			"name":    "agentsmesh-runner",
 			"version": "1.0.0",
 		},
