@@ -53,8 +53,7 @@ func (t *Transport) Initialize(ctx context.Context, stdin io.Writer, stdout io.R
 // Handshake performs the JSON-RPC initialize handshake with the Codex agent.
 func (t *Transport) Handshake(_ context.Context) (string, error) {
 	params := map[string]any{
-		"protocol_version": "2025-01-01",
-		"client_info": map[string]any{
+		"clientInfo": map[string]any{
 			"name":    "agentsmesh-runner",
 			"version": "1.0.0",
 		},

@@ -36,9 +36,16 @@ func (r *Reader) ReadMessage() (*JSONRPCMessage, error) {
 			continue
 		}
 
+		// Tolerate missing jsonrpc field for responses (Codex app-server omits it).
+		// Requests and notifications should still have "2.0".
 		if msg.JSONRPC != "2.0" {
-			r.logger.Warn("invalid JSON-RPC version", "version", msg.JSONRPC)
-			continue
+			if msg.ID != nil {
+				// Response without jsonrpc field — accept it
+				msg.JSONRPC = "2.0"
+			} else {
+				r.logger.Warn("invalid JSON-RPC version", "version", msg.JSONRPC)
+				continue
+			}
 		}
 
 		return &msg, nil
