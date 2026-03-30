@@ -6,21 +6,26 @@
 import { POD_MODE_PTY } from "@/lib/pod-modes";
 
 /**
+ * Escape a string for use in a PodFile quoted value.
+ * Must align with backend FormatStringLiteral (podfile/format.go).
+ */
+function escapePodfileString(s: string): string {
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\t/g, "\\t");
+}
+
+/**
  * Escape and quote a string value for PodFile syntax.
  * Must align with backend FormatStringLiteral (podfile/format.go).
  */
 function formatPodfileValue(value: unknown): string {
-  if (typeof value === "string") {
-    const escaped = value
-      .replace(/\\/g, "\\\\")
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, "\\n")
-      .replace(/\t/g, "\\t");
-    return `"${escaped}"`;
-  }
+  if (typeof value === "string") return `"${escapePodfileString(value)}"`;
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number") return String(value);
-  return `"${String(value)}"`;
+  return `"${escapePodfileString(String(value))}"`;
 }
 
 /**
@@ -45,13 +50,12 @@ export function buildPodfileLayer(params: {
 
   // CREDENTIAL declaration (profile name; omit for runner_host default)
   if (params.credentialProfileName) {
-    lines.push(`CREDENTIAL "${params.credentialProfileName}"`);
+    lines.push(`CREDENTIAL "${escapePodfileString(params.credentialProfileName)}"`);
   }
 
   // PROMPT declaration (initial prompt content)
   if (params.prompt) {
-    const escaped = params.prompt.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-    lines.push(`PROMPT "${escaped}"`);
+    lines.push(`PROMPT "${escapePodfileString(params.prompt)}"`);
   }
 
   // CONFIG declarations
