@@ -37,6 +37,8 @@ func Extract(prog *parser.Program) *podfile.PodSpec {
 			spec.Setup = &podfile.SetupSpec{Script: d.Script, Timeout: d.Timeout}
 		case *parser.ModeDecl:
 			spec.Mode = d.Mode
+		case *parser.ModeArgsDecl:
+			// Mode args are build-time only; not extracted to PodSpec
 		case *parser.CredentialDecl:
 			spec.CredentialProfile = d.ProfileName
 		case *parser.PromptDecl:

@@ -82,9 +82,19 @@ type RemoveDecl struct {
 	Position Position
 }
 
-// ModeDecl: MODE pty | MODE acp
+// ModeDecl: MODE pty | MODE acp — sets the active interaction mode.
 type ModeDecl struct {
 	Mode     string // "pty" or "acp"
+	Position Position
+}
+
+// ModeArgsDecl: MODE <name> <arg1> <arg2> ... — declares per-mode launch args.
+// Orthogonal to ModeDecl: ModeDecl selects the active mode (singleton merge),
+// ModeArgsDecl declares what args each mode needs (keyed merge by mode name).
+// At eval time, the active mode's args are prepended to LaunchArgs.
+type ModeArgsDecl struct {
+	Mode     string   // "pty" or "acp"
+	Args     []string // extra launch args for this mode
 	Position Position
 }
 
@@ -118,6 +128,7 @@ func (d *SkillsDecl) declNode()         {}
 func (d *SetupDecl) declNode()          {}
 func (d *RemoveDecl) declNode()         {}
 func (d *ModeDecl) declNode()           {}
+func (d *ModeArgsDecl) declNode()       {}
 func (d *CredentialDecl) declNode()     {}
 func (d *PromptDecl) declNode()         {}
 func (d *PromptPositionDecl) declNode() {}
@@ -134,6 +145,7 @@ func (d *SkillsDecl) Pos() Position         { return d.Position }
 func (d *SetupDecl) Pos() Position          { return d.Position }
 func (d *RemoveDecl) Pos() Position         { return d.Position }
 func (d *ModeDecl) Pos() Position           { return d.Position }
+func (d *ModeArgsDecl) Pos() Position       { return d.Position }
 func (d *CredentialDecl) Pos() Position     { return d.Position }
 func (d *PromptDecl) Pos() Position         { return d.Position }
 func (d *PromptPositionDecl) Pos() Position { return d.Position }

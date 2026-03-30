@@ -5,8 +5,31 @@ import (
 	"strings"
 )
 
+// PodFile String Literal Specification
+//
+// This is the CANONICAL reference for PodFile string escaping rules.
+// All PodFile producers MUST follow these rules:
+//
+//   STRING  = '"' CHAR* '"'
+//   CHAR    = ESCAPE | REGULAR
+//   ESCAPE  = '\' ( '\' | '"' | 'n' | 't' )
+//   REGULAR = <any Unicode char except '"', '\', newline, tab>
+//
+// Escape order (backslash MUST be first to prevent double-escaping):
+//   1. '\' → '\\'
+//   2. '"' → '\"'
+//   3. newline (0x0A) → '\n'
+//   4. tab (0x09) → '\t'
+//
+// Implementations:
+//   - Go escape: podfile/format.go FormatStringLiteral (this file)
+//   - Go unescape: podfile/lexer/lexer_readers.go readString
+//   - Go serialize: podfile/serialize/serialize_expr.go quoteString
+//   - TypeScript: web/src/lib/podfile-layer.ts escapePodfileString
+//   - Loop builder: backend/internal/service/loop/loop_orchestrator_start.go
+
 // FormatStringLiteral escapes and quotes a string for PodFile syntax.
-// Handles backslashes, double quotes, newlines, and tabs.
+// See PodFile String Literal Specification above.
 func FormatStringLiteral(s string) string {
 	escaped := strings.ReplaceAll(s, `\`, `\\`)
 	escaped = strings.ReplaceAll(escaped, `"`, `\"`)

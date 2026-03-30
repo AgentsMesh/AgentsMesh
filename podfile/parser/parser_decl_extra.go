@@ -49,13 +49,26 @@ func (p *Parser) parseRemoveDecl(pos Position) *RemoveDecl {
 	return &RemoveDecl{Target: target, Name: name, Position: pos}
 }
 
-// parseModeDecl: MODE pty | MODE acp
-func (p *Parser) parseModeDecl(pos Position) *ModeDecl {
+// parseModeDecl: MODE pty | MODE acp | MODE acp "arg1" "arg2" ...
+// Without args → ModeDecl (sets active mode).
+// With string args → ModeArgsDecl (declares per-mode launch args).
+func (p *Parser) parseModeDecl(pos Position) Declaration {
 	p.advance()
 	mode := p.expectIdentOrString()
 	if mode != "pty" && mode != "acp" {
 		p.errorf("MODE: expected pty or acp, got %s", mode)
 	}
+
+	// Check for per-mode args (string tokens on the same line)
+	if !p.isNewlineOrEnd() && p.currentIs(lexer.STRING) {
+		var args []string
+		for p.currentIs(lexer.STRING) {
+			args = append(args, p.expectString())
+		}
+		p.expectNewline()
+		return &ModeArgsDecl{Mode: mode, Args: args, Position: pos}
+	}
+
 	p.expectNewline()
 	return &ModeDecl{Mode: mode, Position: pos}
 }

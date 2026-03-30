@@ -42,6 +42,8 @@ type BuildResult struct {
 
 	// From MODE declaration
 	Mode string // "pty" or "acp"
+	// From MODE <name> <args...> declarations (per-mode launch args)
+	ModeArgs map[string][]string
 	// From CREDENTIAL declaration
 	CredentialProfile string // profile name or "runner_host"
 }

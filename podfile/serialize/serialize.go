@@ -62,6 +62,11 @@ func writeDecl(b *strings.Builder, decl parser.Declaration) {
 		fmt.Fprintf(b, "REMOVE %s %s", d.Target, quoteString(d.Name))
 	case *parser.ModeDecl:
 		fmt.Fprintf(b, "MODE %s", d.Mode)
+	case *parser.ModeArgsDecl:
+		fmt.Fprintf(b, "MODE %s", d.Mode)
+		for _, arg := range d.Args {
+			fmt.Fprintf(b, " %s", quoteString(arg))
+		}
 	case *parser.CredentialDecl:
 		fmt.Fprintf(b, "CREDENTIAL %s", quoteIfNeeded(d.ProfileName))
 	case *parser.PromptDecl:

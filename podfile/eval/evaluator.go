@@ -23,6 +23,17 @@ func Eval(prog *parser.Program, ctx *Context) error {
 	return nil
 }
 
+// ApplyModeArgs prepends the active mode's declared args to LaunchArgs.
+// Called after Eval and before ApplyRemoves.
+func ApplyModeArgs(r *BuildResult) {
+	if r.ModeArgs == nil || r.Mode == "" {
+		return
+	}
+	if args, ok := r.ModeArgs[r.Mode]; ok && len(args) > 0 {
+		r.LaunchArgs = append(args, r.LaunchArgs...)
+	}
+}
+
 func evalStmt(ctx *Context, stmt parser.Statement) error {
 	switch s := stmt.(type) {
 	case *parser.ArgStmt:

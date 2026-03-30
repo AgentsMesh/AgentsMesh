@@ -140,6 +140,8 @@ func getDeclKey(d parser.Declaration) declKey {
 		return declKey{Type: "SETUP"}
 	case *parser.ModeDecl:
 		return declKey{Type: "MODE"}
+	case *parser.ModeArgsDecl:
+		return declKey{Type: "MODE_ARGS", Name: v.Mode}
 	case *parser.CredentialDecl:
 		return declKey{Type: "CREDENTIAL"}
 	case *parser.PromptDecl:

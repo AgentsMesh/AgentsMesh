@@ -34,6 +34,7 @@ func ExecutePodFile(cmd *runnerv1.CreatePodCommand, sandboxRoot, workDir string)
 	if err := eval.Eval(prog, ctx); err != nil {
 		return nil, fmt.Errorf("podfile eval error: %w", err)
 	}
+	eval.ApplyModeArgs(ctx.Result)
 	eval.ApplyRemoves(ctx.Result)
 
 	return toResult(ctx.Result, cmd.InitialPrompt), nil
