@@ -76,7 +76,9 @@ func TestBuiltinMCPTransform_OpenCode(t *testing.T) {
 	m := result.(map[string]interface{})
 	srv := m["agentsmesh"].(map[string]interface{})
 	assert.Equal(t, true, srv["enabled"])
-	assert.Equal(t, "http://localhost:19000/mcp", srv["url"])
+	assert.Equal(t, "local", srv["type"])
+	assert.Equal(t, []interface{}{"npx", "-y", "mcp-remote", "http://localhost:19000/mcp"}, srv["command"])
+	assert.Nil(t, srv["url"]) // url removed, converted to command
 }
 
 func TestBuiltinMCPTransform_Codex(t *testing.T) {

@@ -104,6 +104,15 @@ func transformMCPServer(srv map[string]interface{}, format string) map[string]in
 		}
 		delete(out, "type")
 	case "opencode":
+		// OpenCode requires type="local" + command=[...] format.
+		// Convert HTTP MCP servers to streamable-http proxy via curl.
+		if url, ok := out["url"].(string); ok {
+			out["type"] = "local"
+			// Use npx to run streamable-http proxy, or fall back to direct URL
+			out["command"] = []interface{}{"npx", "-y", "mcp-remote", url}
+			delete(out, "url")
+			delete(out, "headers")
+		}
 		out["enabled"] = true
 	case "codex":
 		// Codex uses flat format, no transformation needed here
