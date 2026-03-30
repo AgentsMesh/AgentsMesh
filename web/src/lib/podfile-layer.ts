@@ -7,10 +7,17 @@ import { POD_MODE_PTY } from "@/lib/pod-modes";
 
 /**
  * Escape and quote a string value for PodFile syntax.
+ * Must align with backend FormatStringLiteral (podfile/format.go).
  */
 function formatPodfileValue(value: unknown): string {
-  if (typeof value === "string")
-    return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  if (typeof value === "string") {
+    const escaped = value
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, "\\n")
+      .replace(/\t/g, "\\t");
+    return `"${escaped}"`;
+  }
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number") return String(value);
   return `"${String(value)}"`;

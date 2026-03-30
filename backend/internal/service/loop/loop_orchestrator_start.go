@@ -149,6 +149,7 @@ func (o *LoopOrchestrator) buildLoopPodfileLayer(ctx context.Context, loop *loop
 		escaped := strings.ReplaceAll(resolvedPrompt, `\`, `\\`)
 		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
 		escaped = strings.ReplaceAll(escaped, "\n", `\n`)
+		escaped = strings.ReplaceAll(escaped, "\t", `\t`)
 		lines = append(lines, fmt.Sprintf(`PROMPT "%s"`, escaped))
 	}
 

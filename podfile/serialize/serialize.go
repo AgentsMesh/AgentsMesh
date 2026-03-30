@@ -133,9 +133,10 @@ func writeSetupDecl(b *strings.Builder, d *parser.SetupDecl) {
 	if d.Timeout != 300 {
 		fmt.Fprintf(b, " timeout=%d", d.Timeout)
 	}
-	b.WriteString(" <<SCRIPT\n")
+	marker := chooseHeredocMarker(d.Script)
+	fmt.Fprintf(b, " <<%s\n", marker)
 	b.WriteString(d.Script)
-	b.WriteString("\nSCRIPT")
+	fmt.Fprintf(b, "\n%s", marker)
 }
 
 // configTypeKeyword maps internal type names back to PodFile keywords.
