@@ -10,8 +10,8 @@ import type { EditorView } from "@codemirror/view";
 /** Valid declaration keywords that start a line */
 const VALID_LINE_STARTERS = new Set([
   "AGENT", "EXECUTABLE", "CONFIG", "ENV", "REPO", "BRANCH",
-  "GIT_CREDENTIAL", "MCP", "SKILLS", "SETUP", "ON", "OFF",
-  "OPTIONAL", "REMOVE", "MODE", "CREDENTIAL",
+  "GIT_CREDENTIAL", "MCP", "SKILLS", "SETUP",
+  "REMOVE", "MODE", "CREDENTIAL",
   "PROMPT", "PROMPT_POSITION",
   // Build logic
   "arg", "file", "mkdir",

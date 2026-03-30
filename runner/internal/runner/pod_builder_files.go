@@ -101,26 +101,48 @@ func (b *PodBuilder) createFilesFromProto(files []*runnerv1.FileToCreate, sandbo
 
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			continue
+			return &client.PodError{
+				Code:    client.ErrCodeFileCreate,
+				Message: fmt.Sprintf("failed to resolve file path: %v", err),
+				Details: map[string]string{"path": path},
+			}
 		}
 		if absPath != absSandbox && !strings.HasPrefix(absPath, absSandbox+string(os.PathSeparator)) {
-			logger.Pod().Warn("PodFile file path escapes sandbox, skipping", "path", path)
-			continue
+			return &client.PodError{
+				Code:    client.ErrCodeFileCreate,
+				Message: fmt.Sprintf("podfile path %q escapes sandbox root %q", path, absSandbox),
+				Details: map[string]string{"path": path},
+			}
 		}
 
 		if f.IsDirectory {
-			os.MkdirAll(path, 0755)
+			if err := os.MkdirAll(path, 0755); err != nil {
+				return &client.PodError{
+					Code:    client.ErrCodeFileCreate,
+					Message: fmt.Sprintf("failed to create directory: %v", err),
+					Details: map[string]string{"path": path},
+				}
+			}
 			continue
 		}
 
-		os.MkdirAll(filepath.Dir(path), 0755)
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			return &client.PodError{
+				Code:    client.ErrCodeFileCreate,
+				Message: fmt.Sprintf("failed to create parent directory: %v", err),
+				Details: map[string]string{"path": filepath.Dir(path)},
+			}
+		}
 		mode := os.FileMode(0644)
 		if f.Mode != 0 {
 			mode = os.FileMode(f.Mode)
 		}
 		if err := os.WriteFile(path, []byte(f.Content), mode); err != nil {
-			logger.Pod().Warn("Failed to create file (podfile)", "path", path, "error", err)
-			continue
+			return &client.PodError{
+				Code:    client.ErrCodeFileCreate,
+				Message: fmt.Sprintf("failed to write file: %v", err),
+				Details: map[string]string{"path": path},
+			}
 		}
 		logger.Pod().Debug("Created file (podfile)", "path", path)
 	}
