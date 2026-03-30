@@ -20,7 +20,7 @@ preconditions:
 setup:
   sql: |
     -- 清理可能存在的测试 Pod
-    DELETE FROM pods WHERE initial_prompt LIKE 'E2E Resume Test%';
+    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Resume Test%';
 
 steps:
   - id: step-1
@@ -175,6 +175,7 @@ steps:
           Authorization: Bearer {access_token}
           Content-Type: application/json
         body:
+          agent_slug: "{agent_slug}"
           source_pod_key: "{original_pod_key}"
           initial_prompt: "E2E Resume Test - Resumed Pod"
       expected:
@@ -231,6 +232,7 @@ steps:
           Authorization: Bearer {access_token}
           Content-Type: application/json
         body:
+          agent_slug: "{agent_slug}"
           source_pod_key: "{original_pod_key}"
           initial_prompt: "E2E Resume Test - Should Fail"
       expected:
@@ -281,8 +283,8 @@ steps:
           p2.pod_key as resumed_key,
           p2.status as resumed_status,
           p2.source_pod_key
-        FROM pods p1
-        JOIN pods p2 ON p2.source_pod_key = p1.pod_key
+        FROM agent_pods p1
+        JOIN agent_pods p2 ON p2.source_pod_key = p1.pod_key
         WHERE p1.pod_key = '{original_pod_key}'
       expected:
         original_status: terminated
@@ -292,6 +294,6 @@ steps:
 cleanup:
   - sql: |
       -- 确保测试 Pod 被清理
-      UPDATE pods SET status = 'terminated', finished_at = NOW()
+      UPDATE agent_pods SET status = 'terminated', finished_at = NOW()
       WHERE (pod_key = '{original_pod_key}' OR pod_key = '{resumed_pod_key}')
         AND status != 'terminated';

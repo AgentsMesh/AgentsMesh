@@ -45,7 +45,7 @@ steps:
           Authorization: Bearer {access_token}
           Content-Type: application/json
         body:
-          agent_type_id: 1
+          agent_slug: "claude-code"
           initial_prompt: "请列出当前目录的文件"
       expected:
         status: 201

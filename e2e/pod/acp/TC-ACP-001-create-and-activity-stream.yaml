@@ -48,8 +48,8 @@ steps:
         body:
           agent_types: not_empty
       save:
-        # 选择 supported_modes 包含 "acp" 的 agent type
-        agent_type_id: body.agent_types[?supported_modes contains "acp"].id
+        # 选择 supported_modes 包含 "acp" 的 agent slug
+        agent_slug: body.agent_types[?supported_modes contains "acp"].slug
 
   - id: step-3
     action: 获取可用 Runner
