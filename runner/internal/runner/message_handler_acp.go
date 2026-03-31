@@ -149,12 +149,12 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	// Claude: sessionID is empty (first message triggers system/init asynchronously).
 	// ACP/Codex: sessionID is already set by NewSession().
 	// ACPClient.SendPrompt checks State() == Idle (guaranteed after Handshake).
-	if cmd.InitialPrompt != "" {
+	if cmd.InitialPrompt != "" { //nolint:staticcheck // deprecated but still used until removed from proto
 		// Echo user message so it appears in chat on all connected devices.
 		sendAcpViaRelay(pod, "contentChunk", "", map[string]string{
-			"text": cmd.InitialPrompt, "role": "user",
+			"text": cmd.InitialPrompt, "role": "user", //nolint:staticcheck
 		})
-		if err := acpClient.SendPrompt(cmd.InitialPrompt); err != nil {
+		if err := acpClient.SendPrompt(cmd.InitialPrompt); err != nil { //nolint:staticcheck
 			log.Error("Failed to send initial prompt", "pod_key", podKey, "error", err)
 		}
 	}

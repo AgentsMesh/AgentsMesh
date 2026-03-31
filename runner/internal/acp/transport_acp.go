@@ -81,9 +81,8 @@ func (t *ACPTransport) Handshake(_ context.Context) (string, error) {
 func (t *ACPTransport) NewSession(cwd string, mcpServers map[string]any) (string, error) {
 	// Both cwd and mcpServers are required by the ACP spec.
 	var servers []map[string]any
-	if mcpServers != nil {
-		// Convert map format {name: {type,url}} to ACP array format [{name,type,url}].
-		for name, cfg := range mcpServers {
+	// Convert map format {name: {type,url}} to ACP array format [{name,type,url}].
+	for name, cfg := range mcpServers {
 			entry := map[string]any{"name": name}
 			if m, ok := cfg.(map[string]any); ok {
 				for k, v := range m {
@@ -91,7 +90,6 @@ func (t *ACPTransport) NewSession(cwd string, mcpServers map[string]any) (string
 				}
 			}
 			servers = append(servers, entry)
-		}
 	}
 	if servers == nil {
 		servers = []map[string]any{}

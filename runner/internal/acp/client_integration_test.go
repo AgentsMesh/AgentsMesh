@@ -3,6 +3,7 @@ package acp
 import (
 	"log/slog"
 	"os/exec"
+	"sync"
 	"testing"
 	"time"
 )
@@ -55,6 +56,7 @@ func TestACPClient_NewSession(t *testing.T) {
 }
 
 func TestACPClient_SendPrompt(t *testing.T) {
+	var mu sync.Mutex
 	var receivedChunks []ContentChunk
 	var stateChanges []string
 
@@ -65,10 +67,14 @@ func TestACPClient_SendPrompt(t *testing.T) {
 		Logger:  slog.Default(),
 		Callbacks: EventCallbacks{
 			OnContentChunk: func(sessionID string, chunk ContentChunk) {
+				mu.Lock()
 				receivedChunks = append(receivedChunks, chunk)
+				mu.Unlock()
 			},
 			OnStateChange: func(newState string) {
+				mu.Lock()
 				stateChanges = append(stateChanges, newState)
+				mu.Unlock()
 			},
 		},
 	})
@@ -88,16 +94,24 @@ func TestACPClient_SendPrompt(t *testing.T) {
 
 	// Wait for notifications to arrive
 	deadline := time.After(5 * time.Second)
-	for client.State() != StateIdle || len(receivedChunks) == 0 {
+	for {
+		mu.Lock()
+		chunks := len(receivedChunks)
+		mu.Unlock()
+		if client.State() == StateIdle && chunks > 0 {
+			break
+		}
 		select {
 		case <-deadline:
 			t.Fatalf("timeout waiting for prompt response, state=%s chunks=%d",
-				client.State(), len(receivedChunks))
+				client.State(), chunks)
 		case <-time.After(50 * time.Millisecond):
 		}
 	}
 
 	// Verify content was received
+	mu.Lock()
+	defer mu.Unlock()
 	if len(receivedChunks) == 0 {
 		t.Error("expected at least one content chunk")
 	} else if receivedChunks[0].Text != "Hello from mock agent" {
