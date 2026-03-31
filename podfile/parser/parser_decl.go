@@ -179,8 +179,16 @@ func (p *Parser) parseMcpDecl(pos Position) *McpDecl {
 	} else {
 		p.errorf("MCP: expected ON or OFF, got %s", tok.Literal)
 	}
+
+	// Optional: MCP ON FORMAT <name>
+	var format string
+	if enabled && p.currentIs(lexer.IDENT) && p.current().Literal == "FORMAT" {
+		p.advance()
+		format = p.expectIdentOrString()
+	}
+
 	p.expectNewline()
-	return &McpDecl{Enabled: enabled, Position: pos}
+	return &McpDecl{Enabled: enabled, Format: format, Position: pos}
 }
 
 func (p *Parser) parseSkillsDecl(pos Position) *SkillsDecl {

@@ -56,9 +56,11 @@ type GitCredentialDecl struct {
 	Position Position
 }
 
-// McpDecl: MCP ON|OFF
+// McpDecl: MCP ON [FORMAT <name>] | MCP OFF
+// When enabled, auto-populates mcp.servers (merged + optionally transformed).
 type McpDecl struct {
 	Enabled  bool
+	Format   string // optional: transform format name (e.g., "gemini", "opencode")
 	Position Position
 }
 

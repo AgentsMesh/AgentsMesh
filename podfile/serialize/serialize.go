@@ -123,6 +123,9 @@ func writeEnvDecl(b *strings.Builder, d *parser.EnvDecl) {
 func writeMcpDecl(b *strings.Builder, d *parser.McpDecl) {
 	if d.Enabled {
 		b.WriteString("MCP ON")
+		if d.Format != "" {
+			fmt.Fprintf(b, " FORMAT %s", d.Format)
+		}
 	} else {
 		b.WriteString("MCP OFF")
 	}

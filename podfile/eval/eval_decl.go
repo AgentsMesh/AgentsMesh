@@ -29,10 +29,25 @@ func evalDecl(ctx *Context, decl parser.Declaration) error {
 	case *parser.McpDecl:
 		ctx.Result.MCPEnabled = d.Enabled
 		// Sync to context variable so build logic `if mcp.enabled` reflects the declaration.
-		// This makes MCP ON/OFF the single source of truth (no more CONFIG mcp_enabled).
 		if m, ok := ctx.Get("mcp"); ok {
 			if mp, ok := m.(map[string]interface{}); ok {
 				mp["enabled"] = d.Enabled
+				// Auto-populate mcp.servers: merged + optionally transformed.
+				// Eliminates repetitive json_merge + mcp_transform in build logic.
+				if d.Enabled {
+					builtin, _ := mp["builtin"].(map[string]interface{})
+					installed, _ := mp["installed"].(map[string]interface{})
+					servers := shallowMerge(builtin, installed)
+					if d.Format != "" {
+						transformed, err := builtinMCPTransform(servers, d.Format)
+						if err == nil {
+							if m, ok := transformed.(map[string]interface{}); ok {
+								servers = m
+							}
+						}
+					}
+					mp["servers"] = servers
+				}
 			}
 		}
 	case *parser.SkillsDecl:
@@ -105,4 +120,16 @@ func evalEnvDecl(ctx *Context, d *parser.EnvDecl) error {
 		ctx.Result.EnvVars[d.Name] = d.Value
 	}
 	return nil
+}
+
+// shallowMerge merges two maps (later keys override earlier).
+func shallowMerge(a, b map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for k, v := range a {
+		result[k] = v
+	}
+	for k, v := range b {
+		result[k] = v
+	}
+	return result
 }
