@@ -1,5 +1,3 @@
-//go:build integration
-
 package grpc
 
 import (
@@ -11,7 +9,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1" // used by SendCreatePod test
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
 // TestGRPCRunnerAdapter_Connect_Integration tests the full Connect flow.
@@ -37,10 +35,10 @@ func TestGRPCRunnerAdapter_Connect_Integration(t *testing.T) {
 	addr, cleanup := setupTestServer(t, adapter)
 	defer cleanup()
 
-	// Track callbacks
-	var initializedCalled bool
+	// Use channel to synchronize callback from gRPC goroutine
+	initDone := make(chan struct{}, 1)
 	connMgr.SetInitializedCallback(func(runnerID int64, agents []string) {
-		initializedCalled = true
+		initDone <- struct{}{}
 	})
 
 	stream, conn, cancel := connectRunner(t, addr, "test-node", "test-org")
@@ -50,9 +48,13 @@ func TestGRPCRunnerAdapter_Connect_Integration(t *testing.T) {
 	// Complete handshake
 	completeHandshake(t, stream, []string{"claude-code"})
 
-	// Wait for callback
-	time.Sleep(50 * time.Millisecond)
-	assert.True(t, initializedCalled)
+	// Wait for callback with timeout
+	select {
+	case <-initDone:
+		// success
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for initialized callback")
+	}
 	assert.True(t, connMgr.IsConnected(1))
 
 	// Close

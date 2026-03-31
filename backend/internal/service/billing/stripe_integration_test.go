@@ -1,4 +1,3 @@
-//go:build integration
 
 package billing
 
@@ -9,10 +8,10 @@ import (
 	"time"
 
 	"github.com/stripe/stripe-go/v76"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/testutil"
 )
 
 // Stripe Integration Tests - Run with: go test -tags=integration -v ./internal/service/billing/...
@@ -30,24 +29,12 @@ func getStripeTestKey(t *testing.T) string {
 }
 
 func setupStripeIntegrationTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to open database: %v", err)
-	}
-	db.AutoMigrate(
-		&billing.SubscriptionPlan{},
-		&billing.PlanPrice{},
-		&billing.Subscription{},
-		&billing.UsageRecord{},
-		&billing.PaymentOrder{},
-		&billing.WebhookEventLog{},
-	)
-	return db
+	return testutil.SetupTestDB(t)
 }
 
 func seedStripeIntegrationTestPlan(t *testing.T, db *gorm.DB) {
 	plan := &billing.SubscriptionPlan{
-		Name: "pro", DisplayName: "Pro", Description: "Pro plan",
+		Name: "pro", DisplayName: "Pro",
 		PricePerSeatMonthly: 1999, PricePerSeatYearly: 19990,
 		MaxUsers: 10, MaxRunners: 5, MaxConcurrentPods: 3,
 		MaxRepositories: 20, IncludedPodMinutes: 1000, IsActive: true,

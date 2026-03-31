@@ -16,9 +16,14 @@ func (hi *HostInfo) Scan(value interface{}) error {
 		*hi = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return errors.New("unsupported type for HostInfo Scan")
 	}
 	return json.Unmarshal(bytes, hi)
 }
@@ -40,9 +45,14 @@ func (s *StringSlice) Scan(value interface{}) error {
 		*s = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return errors.New("unsupported type for StringSlice Scan")
 	}
 	return json.Unmarshal(bytes, s)
 }
@@ -71,9 +81,14 @@ func (s *AgentVersionSlice) Scan(value interface{}) error {
 		*s = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return errors.New("unsupported type for AgentVersionSlice Scan")
 	}
 	return json.Unmarshal(bytes, s)
 }

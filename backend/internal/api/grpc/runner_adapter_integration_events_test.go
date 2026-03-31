@@ -1,5 +1,3 @@
-//go:build integration
-
 package grpc
 
 import (
@@ -28,10 +26,10 @@ func TestGRPCRunnerAdapter_RunnerEvents_Integration(t *testing.T) {
 
 	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
-	// Track events
-	var podCreatedKey string
+	// Use channel to synchronize callback
+	podCreatedCh := make(chan string, 1)
 	connMgr.SetPodCreatedCallback(func(runnerID int64, data *runnerv1.PodCreatedEvent) {
-		podCreatedKey = data.PodKey
+		podCreatedCh <- data.PodKey
 	})
 
 	addr, cleanup := setupTestServer(t, adapter)
@@ -51,11 +49,14 @@ func TestGRPCRunnerAdapter_RunnerEvents_Integration(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	time.Sleep(50 * time.Millisecond)
-	assert.Equal(t, "pod-123", podCreatedKey)
 
-	// NOTE: PtyOutput test removed - output is exclusively streamed via Relay.
-	// Runner no longer sends PtyOutputEvent via gRPC.
+	// Wait for callback with timeout
+	select {
+	case key := <-podCreatedCh:
+		assert.Equal(t, "pod-123", key)
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for pod_created callback")
+	}
 
 	_ = stream.CloseSend()
 }
@@ -75,9 +76,10 @@ func TestGRPCRunnerAdapter_Disconnect_Integration(t *testing.T) {
 
 	adapter := NewGRPCRunnerAdapter(logger, nil, runnerSvc, orgSvc, nil, nil, connMgr, nil)
 
-	var disconnectCalled bool
+	// Use channel to synchronize callback
+	disconnectCh := make(chan struct{}, 1)
 	connMgr.SetDisconnectCallback(func(runnerID int64) {
-		disconnectCalled = true
+		disconnectCh <- struct{}{}
 	})
 
 	addr, cleanup := setupTestServer(t, adapter)
@@ -94,8 +96,12 @@ func TestGRPCRunnerAdapter_Disconnect_Integration(t *testing.T) {
 	_ = stream.CloseSend()
 	conn.Close()
 
-	// Wait for disconnect
-	time.Sleep(100 * time.Millisecond)
-	assert.True(t, disconnectCalled)
+	// Wait for disconnect callback with timeout
+	select {
+	case <-disconnectCh:
+		// success
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for disconnect callback")
+	}
 	assert.False(t, connMgr.IsConnected(4))
 }

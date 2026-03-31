@@ -16,9 +16,14 @@ func (ba *BillingAddress) Scan(value interface{}) error {
 		*ba = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return errors.New("unsupported type for Scan")
 	}
 	return json.Unmarshal(bytes, ba)
 }
@@ -48,9 +53,14 @@ func (li *LineItems) Scan(value interface{}) error {
 		*li = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return errors.New("unsupported type for Scan")
 	}
 	return json.Unmarshal(bytes, li)
 }

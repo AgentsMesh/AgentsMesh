@@ -62,7 +62,7 @@ func TestScopesScan(t *testing.T) {
 		var s Scopes
 		err := s.Scan(12345)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "type assertion to []byte failed")
+		assert.Contains(t, err.Error(), "unsupported type for Scan")
 	})
 }
 

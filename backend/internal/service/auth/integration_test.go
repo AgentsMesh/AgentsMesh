@@ -1,4 +1,3 @@
-// +build integration
 
 package auth
 
