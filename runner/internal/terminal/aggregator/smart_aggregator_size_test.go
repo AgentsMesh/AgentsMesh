@@ -2,8 +2,6 @@ package aggregator
 
 import (
 	"bytes"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -11,50 +9,37 @@ import (
 // Tests for max size handling and buffer limits
 
 func TestSmartAggregator_MaxSizeFlush(t *testing.T) {
-	var flushCount int32
-	done := make(chan struct{}, 10)
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			atomic.AddInt32(&flushCount, 1)
-			done <- struct{}{}
-		},
 		func() float64 { return 0 },
 		WithSmartMaxSize(100),
 		WithSmartBaseDelay(1*time.Second),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	data := bytes.Repeat([]byte("x"), 150)
 	agg.Write(data)
 
-	select {
-	case <-done:
-	case <-time.After(50 * time.Millisecond):
-		t.Fatal("Expected immediate flush on max size exceeded")
-	}
+	// Wait for immediate flush on max size exceeded
+	time.Sleep(50 * time.Millisecond)
 
-	count := atomic.LoadInt32(&flushCount)
-	if count < 1 {
-		t.Errorf("Expected at least 1 flush, got %d", count)
+	if len(relay.getData()) < 1 {
+		t.Fatal("Expected immediate flush on max size exceeded")
 	}
 }
 
 func TestSmartAggregator_BufferLimitEnforced(t *testing.T) {
 	maxSize := 1000
-	var totalFlushed int64
-	var mu sync.Mutex
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			totalFlushed += int64(len(data))
-			mu.Unlock()
-		},
 		func() float64 { return 0.9 },
 		WithSmartMaxSize(maxSize),
 		WithSmartBaseDelay(50*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	totalWritten := 0
 	for i := 0; i < 100; i++ {
@@ -74,20 +59,14 @@ func TestSmartAggregator_BufferLimitEnforced(t *testing.T) {
 
 func TestSmartAggregator_BufferLimitWithClearScreen(t *testing.T) {
 	maxSize := 500
-	var lastFlush []byte
-	var mu sync.Mutex
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			lastFlush = make([]byte, len(data))
-			copy(lastFlush, data)
-			mu.Unlock()
-		},
 		func() float64 { return 0.5 },
 		WithSmartMaxSize(maxSize),
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	agg.Write(bytes.Repeat([]byte("old"), 100))
 	agg.Write([]byte("\x1b[2J"))
@@ -96,8 +75,7 @@ func TestSmartAggregator_BufferLimitWithClearScreen(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	agg.Stop()
 
-	mu.Lock()
-	defer mu.Unlock()
+	lastFlush := relay.getData()
 
 	if !bytes.Contains(lastFlush, []byte("\x1b[2J")) {
 		t.Error("Clear screen should be preserved")

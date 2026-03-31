@@ -1,7 +1,6 @@
 package aggregator
 
 import (
-	"sync"
 	"testing"
 	"time"
 )
@@ -9,45 +8,28 @@ import (
 // Tests for basic aggregation functionality
 
 func TestSmartAggregator_BasicAggregation(t *testing.T) {
-	var received []byte
-	var mu sync.Mutex
-	done := make(chan struct{})
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			received = append(received, data...)
-			mu.Unlock()
-			select {
-			case done <- struct{}{}:
-			default:
-			}
-		},
 		func() float64 { return 0 }, // No queue pressure
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	// Write some data
 	agg.Write([]byte("hello"))
 	agg.Write([]byte(" world"))
 
 	// Wait for flush
-	select {
-	case <-done:
-	case <-time.After(100 * time.Millisecond):
-		t.Fatal("Timeout waiting for flush")
-	}
+	time.Sleep(100 * time.Millisecond)
 
-	mu.Lock()
-	defer mu.Unlock()
-	if string(received) != "hello world" {
-		t.Errorf("Expected 'hello world', got '%s'", string(received))
+	if string(relay.getData()) != "hello world" {
+		t.Errorf("Expected 'hello world', got '%s'", string(relay.getData()))
 	}
 }
 
 func TestSmartAggregator_AdaptiveDelay(t *testing.T) {
 	agg := NewSmartAggregator(
-		func(data []byte) {},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(16*time.Millisecond),
 		WithSmartMaxDelay(200*time.Millisecond),
@@ -81,66 +63,47 @@ func TestSmartAggregator_AdaptiveDelay(t *testing.T) {
 }
 
 func TestSmartAggregator_NilQueueUsageFn(t *testing.T) {
-	done := make(chan struct{})
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			close(done)
-		},
 		nil,
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	agg.Write([]byte("test"))
 
-	select {
-	case <-done:
-	case <-time.After(100 * time.Millisecond):
-		t.Fatal("Timeout waiting for flush")
+	time.Sleep(100 * time.Millisecond)
+
+	if len(relay.getData()) == 0 {
+		t.Fatal("Expected data to be flushed")
 	}
 
 	agg.Stop()
 }
 
 func TestSmartAggregator_Flush(t *testing.T) {
-	var received []byte
-	var mu sync.Mutex
-	done := make(chan struct{}, 1)
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			received = data
-			mu.Unlock()
-			select {
-			case done <- struct{}{}:
-			default:
-			}
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(1*time.Second),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	agg.Write([]byte("data"))
 	agg.Flush()
 
-	select {
-	case <-done:
-	case <-time.After(50 * time.Millisecond):
-		t.Fatal("Expected immediate flush")
-	}
+	time.Sleep(50 * time.Millisecond)
 
-	mu.Lock()
-	defer mu.Unlock()
-	if string(received) != "data" {
-		t.Errorf("Expected 'data', got '%s'", string(received))
+	if string(relay.getData()) != "data" {
+		t.Errorf("Expected 'data', got '%s'", string(relay.getData()))
 	}
 }
 
 func TestSmartAggregator_IsStopped(t *testing.T) {
 	agg := NewSmartAggregator(
-		func(data []byte) {},
 		func() float64 { return 0 },
 	)
 

@@ -192,17 +192,14 @@ func (p *PTYPodIO) CancelSession() error {
 
 func (p *PTYPodIO) Teardown() string {
 	logger.Pod().Info("PTY teardown starting", "pod_key", p.pod.PodKey)
-	var earlyOutput string
 	if p.aggregator != nil {
 		p.aggregator.Stop()
-		if buf := p.aggregator.DrainEarlyBuffer(); len(buf) > 0 {
-			earlyOutput = string(buf)
-		}
 	}
 	if p.ptyLogger != nil {
 		p.ptyLogger.Close()
 	}
-	if ptyErr := p.pod.GetPTYError(); ptyErr != "" && earlyOutput == "" {
+	var earlyOutput string
+	if ptyErr := p.pod.GetPTYError(); ptyErr != "" {
 		earlyOutput = ptyErr
 		logger.Pod().Warn("PTY teardown found PTY error",
 			"pod_key", p.pod.PodKey, "error", ptyErr)

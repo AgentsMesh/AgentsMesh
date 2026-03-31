@@ -28,7 +28,8 @@ type ConnectionSender interface {
 	SendPodCreated(podKey string, pid int32, sandboxPath, branchName string) error
 
 	// SendPodTerminated sends a pod_terminated event to the server.
-	SendPodTerminated(podKey string, exitCode int32, errorMsg string) error
+	// status is "completed" or "error" — decided by Runner.
+	SendPodTerminated(podKey string, exitCode int32, errorMsg string, status string) error
 
 	// SendPodResized sends a pod terminal resize event to the server.
 	SendPodResized(podKey string, cols, rows int32) error

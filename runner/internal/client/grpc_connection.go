@@ -110,6 +110,10 @@ type GRPCConnection struct {
 	// so Stop() can wait for in-flight handlers to finish.
 	handlerWg sync.WaitGroup
 
+	// podQueue serializes commands per pod to eliminate race conditions
+	// (e.g., create_autopilot arriving before create_pod finishes).
+	podQueue *PodCommandQueue
+
 	// loopWg tracks the connectionLoop goroutine for clean shutdown.
 	loopWg sync.WaitGroup
 }
@@ -139,6 +143,7 @@ func NewGRPCConnection(endpoint, nodeID, orgSlug, certFile, keyFile, caFile stri
 		certUrgentDays:           7,  // Urgent reconnection 7 days before expiry
 		terminalRateLimit:        50 * 1024, // Default: 50KB/s (conservative for shared bandwidth)
 		agentProbe:               NewAgentProbe(),
+		podQueue:                 NewPodCommandQueue(),
 	}
 
 	for _, opt := range opts {

@@ -54,21 +54,23 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 	case *runnerv1.ServerMessage_InitializeResult:
 		c.handleInitializeResult(payload.InitializeResult)
 
-	// Heavy operations - async dispatch to avoid blocking readLoop.
-	// Tracked by handlerWg so Stop() can wait for them to finish.
+	// Heavy operations - dispatched via per-pod command queue.
+	// Same pod's commands execute sequentially (create_pod before create_autopilot).
+	// Different pods execute concurrently. Tracked by handlerWg for clean shutdown.
 	case *runnerv1.ServerMessage_CreatePod:
 		c.handlerWg.Add(1)
-		go func() {
+		c.podQueue.Enqueue(payload.CreatePod.PodKey, func() {
 			defer c.handlerWg.Done()
 			c.handleCreatePod(payload.CreatePod)
-		}()
+		})
 
 	case *runnerv1.ServerMessage_TerminatePod:
 		c.handlerWg.Add(1)
-		go func() {
+		c.podQueue.Enqueue(payload.TerminatePod.PodKey, func() {
 			defer c.handlerWg.Done()
 			c.handleTerminatePod(payload.TerminatePod)
-		}()
+			c.podQueue.Remove(payload.TerminatePod.PodKey)
+		})
 
 	case *runnerv1.ServerMessage_SubscribePod:
 		c.handlerWg.Add(1)
@@ -79,10 +81,10 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 
 	case *runnerv1.ServerMessage_CreateAutopilot:
 		c.handlerWg.Add(1)
-		go func() {
+		c.podQueue.Enqueue(payload.CreateAutopilot.PodKey, func() {
 			defer c.handlerWg.Done()
 			c.handleCreateAutopilot(payload.CreateAutopilot)
-		}()
+		})
 
 	// Lightweight operations - synchronous to preserve ordering
 	case *runnerv1.ServerMessage_PodInput:

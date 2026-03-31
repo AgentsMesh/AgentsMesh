@@ -24,13 +24,14 @@ func (c *GRPCConnection) SendPodCreated(podKey string, pid int32, sandboxPath, b
 }
 
 // SendPodTerminated sends a pod_terminated event to the server (control message).
-func (c *GRPCConnection) SendPodTerminated(podKey string, exitCode int32, errorMsg string) error {
+func (c *GRPCConnection) SendPodTerminated(podKey string, exitCode int32, errorMsg string, status string) error {
 	msg := &runnerv1.RunnerMessage{
 		Payload: &runnerv1.RunnerMessage_PodTerminated{
 			PodTerminated: &runnerv1.PodTerminatedEvent{
 				PodKey:       podKey,
 				ExitCode:     exitCode,
 				ErrorMessage: errorMsg,
+				Status:       status,
 			},
 		},
 		Timestamp: time.Now().UnixMilli(),

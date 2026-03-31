@@ -45,7 +45,7 @@ func TestMockConnection_SendEvents(t *testing.T) {
 	mc := NewMockConnection()
 
 	_ = mc.SendPodCreated("pod-1", 1234, "/sandbox", "main")
-	_ = mc.SendPodTerminated("pod-1", 0, "")
+	_ = mc.SendPodTerminated("pod-1", 0, "", "completed")
 	_ = mc.SendPodResized("pod-1", 80, 24)
 	_ = mc.SendError("pod-1", "err", "msg")
 	_ = mc.SendPodInitProgress("pod-1", "clone", 50, "cloning...")
@@ -66,7 +66,7 @@ func TestMockConnection_SendErr(t *testing.T) {
 	mc.SendErr = assert.AnError
 
 	assert.Error(t, mc.SendPodCreated("pod-1", 1, "", ""))
-	assert.Error(t, mc.SendPodTerminated("pod-1", 0, ""))
+	assert.Error(t, mc.SendPodTerminated("pod-1", 0, "", "completed"))
 	assert.Error(t, mc.SendError("pod-1", "", ""))
 	assert.Error(t, mc.SendAgentStatus("pod-1", ""))
 	assert.Error(t, mc.SendMessage(&runnerv1.RunnerMessage{}))

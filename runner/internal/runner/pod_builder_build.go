@@ -131,7 +131,10 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 		virtualTerm.SetOSCHandler(b.oscHandler)
 	}
 
-	agg := aggregator.NewSmartAggregator(nil, nil, aggregator.WithFullRedrawThrottling())
+	// Create SmartAggregator for adaptive frame rate output
+	agg := aggregator.NewSmartAggregator(nil,
+		aggregator.WithFullRedrawThrottling(),
+	)
 
 	var ptyLogger *aggregator.PTYLogger
 	if b.enablePTYLogging && b.ptyLogDir != "" {

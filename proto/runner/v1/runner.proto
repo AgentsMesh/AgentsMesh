@@ -120,7 +120,8 @@ message PodCreatedEvent {
 message PodTerminatedEvent {
   string pod_key = 1;
   int32 exit_code = 2;
-  string error_message = 3;
+  string error_message = 3;  // Diagnostic info for display (not used for status decision)
+  string status = 4;         // "completed" or "error" — decided by Runner
 }
 
 // PodOutputEvent Pod 输出事件

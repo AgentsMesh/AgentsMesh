@@ -95,6 +95,26 @@ func (r *podRepo) UpdateTerminatedWithFallbackError(ctx context.Context, podKey 
 		Updates(updates).Error
 }
 
+// UpdateTerminatedIfActive updates a terminated pod with error info, but only if
+// the pod is still in an active state (initializing/running/paused/disconnected).
+// Returns rows affected so the caller can detect if the pod was already in a terminal state.
+func (r *podRepo) UpdateTerminatedIfActive(ctx context.Context, podKey string, updates map[string]interface{}, fallbackErrorCode string) (int64, error) {
+	updates["error_code"] = gorm.Expr("COALESCE(NULLIF(error_code, ''), ?)", fallbackErrorCode)
+	result := r.db.WithContext(ctx).Model(&agentpod.Pod{}).
+		Where("pod_key = ? AND status IN ?", podKey, agentpod.ActiveStatuses()).
+		Updates(updates)
+	return result.RowsAffected, result.Error
+}
+
+// UpdateByKeyAndActiveStatus updates a pod only if it's in an active state.
+// Returns rows affected so the caller can detect if the pod was already in a terminal state.
+func (r *podRepo) UpdateByKeyAndActiveStatus(ctx context.Context, podKey string, updates map[string]interface{}) (int64, error) {
+	result := r.db.WithContext(ctx).Model(&agentpod.Pod{}).
+		Where("pod_key = ? AND status IN ?", podKey, agentpod.ActiveStatuses()).
+		Updates(updates)
+	return result.RowsAffected, result.Error
+}
+
 func (r *podRepo) GetByKeyAndRunner(ctx context.Context, podKey string, runnerID int64) (*agentpod.Pod, error) {
 	var pod agentpod.Pod
 	err := r.db.WithContext(ctx).

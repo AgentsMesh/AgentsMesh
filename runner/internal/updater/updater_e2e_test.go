@@ -261,6 +261,64 @@ func TestE2E_BackupAndRollback_FullCycle(t *testing.T) {
 	assert.Equal(t, originalContent, rolledBackContent)
 }
 
+// TestE2E_ConsecutiveUpgrades verifies that a second upgrade succeeds even
+// after the first upgrade deleted the .old file. This is a regression test for
+// the bug where go-selfupdate deletes .old after a successful swap, causing
+// /proc/self/exe to resolve to a deleted path. With a pinned execPathFunc the
+// Updater always operates on the canonical binary path, not the stale one.
+func TestE2E_ConsecutiveUpgrades(t *testing.T) {
+	tmpDir := t.TempDir()
+	execPath := filepath.Join(tmpDir, "agentsmesh-runner")
+	err := os.WriteFile(execPath, []byte("v1 binary"), 0755)
+	require.NoError(t, err)
+
+	// Pin the exec path — simulates resolving it at startup before any upgrade.
+	pinnedExecPath := execPath
+
+	sim := &SimulatedDetector{
+		LatestRelease: &ReleaseInfo{Version: "v2.0.0"},
+		VersionReleases: map[string]*ReleaseInfo{
+			"v2.0.0": {Version: "v2.0.0"},
+			"v3.0.0": {Version: "v3.0.0"},
+		},
+		BinaryContent: []byte("v2 binary"),
+	}
+
+	u := New("1.0.0",
+		WithReleaseDetector(sim),
+		WithExecPathFunc(func() (string, error) { return pinnedExecPath, nil }),
+	)
+
+	// First upgrade: v1 → v2
+	version, err := u.UpdateNow(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, "v2.0.0", version)
+
+	content, err := os.ReadFile(execPath)
+	require.NoError(t, err)
+	assert.Equal(t, "v2 binary", string(content))
+
+	// Simulate what happens in the real runner: .old is deleted by go-selfupdate,
+	// /proc/self/exe would now return a stale path. But because we pinned
+	// execPathFunc at startup, the Updater still uses the canonical path.
+
+	// Second upgrade: v2 → v3
+	sim.LatestRelease = &ReleaseInfo{Version: "v3.0.0"}
+	sim.BinaryContent = []byte("v3 binary")
+	u2 := New("2.0.0",
+		WithReleaseDetector(sim),
+		WithExecPathFunc(func() (string, error) { return pinnedExecPath, nil }),
+	)
+
+	version, err = u2.UpdateNow(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, "v3.0.0", version)
+
+	content, err = os.ReadFile(execPath)
+	require.NoError(t, err)
+	assert.Equal(t, "v3 binary", string(content))
+}
+
 // TestE2E_VersionNormalization verifies v-prefix handling through the
 // full update path (regression for #44).
 func TestE2E_VersionNormalization(t *testing.T) {

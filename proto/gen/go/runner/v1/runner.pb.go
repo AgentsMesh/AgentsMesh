@@ -1020,7 +1020,8 @@ type PodTerminatedEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	ExitCode      int32                  `protobuf:"varint,2,opt,name=exit_code,json=exitCode,proto3" json:"exit_code,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // Diagnostic info for display (not used for status decision)
+	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`                                 // "completed" or "error" — decided by Runner
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1072,6 +1073,13 @@ func (x *PodTerminatedEvent) GetExitCode() int32 {
 func (x *PodTerminatedEvent) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *PodTerminatedEvent) GetStatus() string {
+	if x != nil {
+		return x.Status
 	}
 	return ""
 }
@@ -1924,18 +1932,20 @@ func (x *AgentInfo) GetDefaultArgs() []string {
 
 // CreatePodCommand 创建 Pod 命令
 type CreatePodCommand struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	PodKey              string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
-	LaunchCommand       string                 `protobuf:"bytes,2,opt,name=launch_command,json=launchCommand,proto3" json:"launch_command,omitempty"`
-	LaunchArgs          []string               `protobuf:"bytes,3,rep,name=launch_args,json=launchArgs,proto3" json:"launch_args,omitempty"`
-	EnvVars             map[string]string      `protobuf:"bytes,4,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	FilesToCreate       []*FileToCreate        `protobuf:"bytes,5,rep,name=files_to_create,json=filesToCreate,proto3" json:"files_to_create,omitempty"`
-	SandboxConfig       *SandboxConfig         `protobuf:"bytes,6,opt,name=sandbox_config,json=sandboxConfig,proto3" json:"sandbox_config,omitempty"` // 替代原 work_dir_config
-	InitialPrompt       string                 `protobuf:"bytes,7,opt,name=initial_prompt,json=initialPrompt,proto3" json:"initial_prompt,omitempty"`
-	Cols                int32                  `protobuf:"varint,8,opt,name=cols,proto3" json:"cols,omitempty"`                                                            // 终端列数（由浏览器传入）
-	Rows                int32                  `protobuf:"varint,9,opt,name=rows,proto3" json:"rows,omitempty"`                                                            // 终端行数（由浏览器传入）
-	ResourcesToDownload []*ResourceToDownload  `protobuf:"bytes,10,rep,name=resources_to_download,json=resourcesToDownload,proto3" json:"resources_to_download,omitempty"` // 需要下载的资源（Skills 等）
-	InteractionMode     string                 `protobuf:"bytes,11,opt,name=interaction_mode,json=interactionMode,proto3" json:"interaction_mode,omitempty"`               // 交互模式：pty（默认）或 acp
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
+	LaunchCommand string                 `protobuf:"bytes,2,opt,name=launch_command,json=launchCommand,proto3" json:"launch_command,omitempty"`
+	LaunchArgs    []string               `protobuf:"bytes,3,rep,name=launch_args,json=launchArgs,proto3" json:"launch_args,omitempty"`
+	EnvVars       map[string]string      `protobuf:"bytes,4,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	FilesToCreate []*FileToCreate        `protobuf:"bytes,5,rep,name=files_to_create,json=filesToCreate,proto3" json:"files_to_create,omitempty"`
+	SandboxConfig *SandboxConfig         `protobuf:"bytes,6,opt,name=sandbox_config,json=sandboxConfig,proto3" json:"sandbox_config,omitempty"` // 替代原 work_dir_config
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	InitialPrompt       string                `protobuf:"bytes,7,opt,name=initial_prompt,json=initialPrompt,proto3" json:"initial_prompt,omitempty"`                      // Deprecated: Runner reads PROMPT from PodFile eval
+	Cols                int32                 `protobuf:"varint,8,opt,name=cols,proto3" json:"cols,omitempty"`                                                            // 终端列数（由浏览器传入）
+	Rows                int32                 `protobuf:"varint,9,opt,name=rows,proto3" json:"rows,omitempty"`                                                            // 终端行数（由浏览器传入）
+	ResourcesToDownload []*ResourceToDownload `protobuf:"bytes,10,rep,name=resources_to_download,json=resourcesToDownload,proto3" json:"resources_to_download,omitempty"` // 需要下载的资源（Skills 等）
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	InteractionMode string `protobuf:"bytes,11,opt,name=interaction_mode,json=interactionMode,proto3" json:"interaction_mode,omitempty"` // Deprecated: Runner reads MODE from PodFile eval
 	// PodFile 相关字段（Runner eval PodFile 需要的上下文）
 	PodfileSource    string            `protobuf:"bytes,12,opt,name=podfile_source,json=podfileSource,proto3" json:"podfile_source,omitempty"`                                                                        // PodFile 脚本源代码
 	ConfigValues     map[string]string `protobuf:"bytes,13,rep,name=config_values,json=configValues,proto3" json:"config_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 用户配置值
@@ -2020,6 +2030,7 @@ func (x *CreatePodCommand) GetSandboxConfig() *SandboxConfig {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *CreatePodCommand) GetInitialPrompt() string {
 	if x != nil {
 		return x.InitialPrompt
@@ -2048,6 +2059,7 @@ func (x *CreatePodCommand) GetResourcesToDownload() []*ResourceToDownload {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *CreatePodCommand) GetInteractionMode() string {
 	if x != nil {
 		return x.InteractionMode
@@ -5564,11 +5576,12 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x03pid\x18\x02 \x01(\x05R\x03pid\x12!\n" +
 	"\fsandbox_path\x18\x03 \x01(\tR\vsandboxPath\x12\x1f\n" +
 	"\vbranch_name\x18\x04 \x01(\tR\n" +
-	"branchName\"o\n" +
+	"branchName\"\x87\x01\n" +
 	"\x12PodTerminatedEvent\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x1b\n" +
 	"\texit_code\x18\x02 \x01(\x05R\bexitCode\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"=\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\"=\n" +
 	"\x0ePodOutputEvent\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\"C\n" +
@@ -5635,7 +5648,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12!\n" +
-	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\xa8\b\n" +
+	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\xb0\b\n" +
 	"\x10CreatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12%\n" +
 	"\x0elaunch_command\x18\x02 \x01(\tR\rlaunchCommand\x12\x1f\n" +
@@ -5643,13 +5656,13 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"launchArgs\x12C\n" +
 	"\benv_vars\x18\x04 \x03(\v2(.runner.v1.CreatePodCommand.EnvVarsEntryR\aenvVars\x12?\n" +
 	"\x0ffiles_to_create\x18\x05 \x03(\v2\x17.runner.v1.FileToCreateR\rfilesToCreate\x12?\n" +
-	"\x0esandbox_config\x18\x06 \x01(\v2\x18.runner.v1.SandboxConfigR\rsandboxConfig\x12%\n" +
-	"\x0einitial_prompt\x18\a \x01(\tR\rinitialPrompt\x12\x12\n" +
+	"\x0esandbox_config\x18\x06 \x01(\v2\x18.runner.v1.SandboxConfigR\rsandboxConfig\x12)\n" +
+	"\x0einitial_prompt\x18\a \x01(\tB\x02\x18\x01R\rinitialPrompt\x12\x12\n" +
 	"\x04cols\x18\b \x01(\x05R\x04cols\x12\x12\n" +
 	"\x04rows\x18\t \x01(\x05R\x04rows\x12Q\n" +
 	"\x15resources_to_download\x18\n" +
-	" \x03(\v2\x1d.runner.v1.ResourceToDownloadR\x13resourcesToDownload\x12)\n" +
-	"\x10interaction_mode\x18\v \x01(\tR\x0finteractionMode\x12%\n" +
+	" \x03(\v2\x1d.runner.v1.ResourceToDownloadR\x13resourcesToDownload\x12-\n" +
+	"\x10interaction_mode\x18\v \x01(\tB\x02\x18\x01R\x0finteractionMode\x12%\n" +
 	"\x0epodfile_source\x18\f \x01(\tR\rpodfileSource\x12R\n" +
 	"\rconfig_values\x18\r \x03(\v2-.runner.v1.CreatePodCommand.ConfigValuesEntryR\fconfigValues\x12N\n" +
 	"\vcredentials\x18\x0e \x03(\v2,.runner.v1.CreatePodCommand.CredentialsEntryR\vcredentials\x12$\n" +

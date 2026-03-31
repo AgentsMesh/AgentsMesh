@@ -168,7 +168,7 @@ func TestSendPodTerminated(t *testing.T) {
 	conn := newTestConnection()
 	setFakeStream(conn)
 
-	err := conn.SendPodTerminated("pod-1", 0, "")
+	err := conn.SendPodTerminated("pod-1", 0, "", "completed")
 	require.NoError(t, err)
 
 	msg := <-conn.controlCh

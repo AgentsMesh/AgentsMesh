@@ -2,26 +2,15 @@ package aggregator
 
 import (
 	"bytes"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 )
 
 // TestSmartAggregator_FullRedrawThrottling_Enabled tests that throttling reduces flush rate
 func TestSmartAggregator_FullRedrawThrottling_Enabled(t *testing.T) {
-	var flushCount int32
-	var mu sync.Mutex
-	var lastData []byte
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			atomic.AddInt32(&flushCount, 1)
-			mu.Lock()
-			lastData = make([]byte, len(data))
-			copy(lastData, data)
-			mu.Unlock()
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithFullRedrawThrottling(
@@ -32,6 +21,7 @@ func TestSmartAggregator_FullRedrawThrottling_Enabled(t *testing.T) {
 			WithThrottlerMinDelay(100*time.Millisecond),
 		),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	// Send multiple full redraw frames rapidly
@@ -44,7 +34,7 @@ func TestSmartAggregator_FullRedrawThrottling_Enabled(t *testing.T) {
 	// Wait for any pending flushes
 	time.Sleep(200 * time.Millisecond)
 
-	count := atomic.LoadInt32(&flushCount)
+	count := int32(relay.sendCount())
 
 	// With throttling, we should have significantly fewer flushes than frames
 	// Without throttling, we'd have ~10 flushes (one per frame)
@@ -56,11 +46,8 @@ func TestSmartAggregator_FullRedrawThrottling_Enabled(t *testing.T) {
 	}
 
 	// Verify we still get the latest data
-	mu.Lock()
-	hasLatestFrame := bytes.Contains(lastData, []byte("frame content"))
-	mu.Unlock()
-
-	if !hasLatestFrame {
+	data := relay.getData()
+	if !bytes.Contains(data, []byte("frame content")) {
 		t.Error("Latest frame data should be preserved")
 	}
 }
@@ -68,12 +55,9 @@ func TestSmartAggregator_FullRedrawThrottling_Enabled(t *testing.T) {
 // TestSmartAggregator_FullRedrawThrottling_IncrementalNotThrottled tests that
 // incremental frames are not throttled
 func TestSmartAggregator_FullRedrawThrottling_IncrementalNotThrottled(t *testing.T) {
-	var flushCount int32
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			atomic.AddInt32(&flushCount, 1)
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithFullRedrawThrottling(
@@ -84,6 +68,7 @@ func TestSmartAggregator_FullRedrawThrottling_IncrementalNotThrottled(t *testing
 			WithThrottlerMinDelay(200*time.Millisecond),
 		),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	// Send incremental frames (small, no clear screen)
@@ -96,7 +81,7 @@ func TestSmartAggregator_FullRedrawThrottling_IncrementalNotThrottled(t *testing
 	// Wait for flushes
 	time.Sleep(100 * time.Millisecond)
 
-	count := atomic.LoadInt32(&flushCount)
+	count := relay.sendCount()
 
 	// Incremental frames should not be throttled (or minimally affected)
 	// With 30ms between writes and 10ms base delay, we should get ~4-5 flushes
@@ -109,17 +94,15 @@ func TestSmartAggregator_FullRedrawThrottling_IncrementalNotThrottled(t *testing
 
 // TestSmartAggregator_FullRedrawThrottling_Disabled tests behavior without throttling
 func TestSmartAggregator_FullRedrawThrottling_Disabled(t *testing.T) {
-	var flushCount int32
+	relay := newMockRelayWriter(true)
 
 	// Create aggregator WITHOUT throttling
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			atomic.AddInt32(&flushCount, 1)
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		// No WithFullRedrawThrottling
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	// Send full redraw frames rapidly
@@ -132,7 +115,7 @@ func TestSmartAggregator_FullRedrawThrottling_Disabled(t *testing.T) {
 	// Wait for flushes
 	time.Sleep(100 * time.Millisecond)
 
-	count := atomic.LoadInt32(&flushCount)
+	count := relay.sendCount()
 
 	// Without throttling, we should get ~4-5 flushes (one per frame, aggregated by delay)
 	t.Logf("Frames written: 5, actual flushes without throttling: %d", count)

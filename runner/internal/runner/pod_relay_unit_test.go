@@ -278,7 +278,7 @@ func TestPTYPodRelay_OnRelayConnected_WithAggregator(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 	mc.SetConnected(true)
 
-	agg := aggregator.NewSmartAggregator(func(data []byte) {}, func() float64 { return 0 })
+	agg := aggregator.NewSmartAggregator(func() float64 { return 0 })
 
 	r := NewPTYPodRelay("pod-1", nil, nil, nil, agg)
 	r.OnRelayConnected(mc)

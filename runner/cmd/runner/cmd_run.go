@@ -180,9 +180,20 @@ func startRunner(cfg *config.Config) (ok bool) {
 		return false
 	}
 
+	// Resolve the executable path once at startup, before any self-upgrade
+	// renames the binary. After an upgrade, /proc/self/exe follows the old
+	// inode (renamed to .old then deleted), making os.Executable() return a
+	// stale path. Capturing it here gives the Updater and restart function a
+	// stable, canonical path to operate on.
+	execPath, err := resolveExecPath()
+	if err != nil {
+		log.Error("Failed to resolve executable path", "error", err)
+		return false
+	}
+
 	// Inject updater and restart function for remote upgrade support
-	r.SetUpdater(updater.New(version))
-	r.SetRestartFunc(execRestartFunc())
+	r.SetUpdater(updater.New(version, updater.WithExecPathFunc(func() (string, error) { return execPath, nil })))
+	r.SetRestartFunc(execRestartFunc(execPath))
 
 	// Create web console (lifecycle managed by Supervisor)
 	consoleServer := console.New(cfg, DefaultConsolePort, version)
@@ -219,4 +230,19 @@ func startRunner(cfg *config.Config) (ok bool) {
 
 	log.Info("Runner shutdown complete")
 	return true
+}
+
+// resolveExecPath returns the canonical path of the running executable with
+// all symlinks resolved. This must be called early — before any self-upgrade
+// renames the binary — because /proc/self/exe tracks the inode, not the name.
+func resolveExecPath() (string, error) {
+	p, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("get executable path: %w", err)
+	}
+	p, err = filepath.EvalSymlinks(p)
+	if err != nil {
+		return "", fmt.Errorf("resolve symlinks: %w", err)
+	}
+	return p, nil
 }

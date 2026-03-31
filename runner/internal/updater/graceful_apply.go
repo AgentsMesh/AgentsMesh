@@ -55,12 +55,18 @@ func (g *GracefulUpdater) executeUpdate(ctx context.Context) error {
 	if g.restartFunc != nil {
 		pid, err := g.restartFunc()
 		if err != nil {
-			log.Error("Restart failed, attempting rollback", "error", err)
-			if rbErr := g.rollbackUpdate(backupPath); rbErr != nil {
-				log.Error("Rollback also failed", "error", rbErr)
-			}
-			g.setState(StateIdle)
-			return fmt.Errorf("restart failed: %w", err)
+			// The binary on disk is already updated. If we can't restart
+			// in-process (e.g., /proc/self/exe points to a deleted .old file),
+			// exit so the service manager (systemd) restarts us with the new
+			// binary. Rolling back here would leave the old version running
+			// permanently since subsequent upgrade attempts also fail once
+			// /proc/self/exe is stale.
+			//
+			// Exit with non-zero code: systemd's Restart=on-failure only
+			// restarts on non-zero exit, signal death, or timeout.
+			log.Error("Restart failed after successful update, exiting for service manager restart", "error", err)
+			g.exitFunc(1)
+			return nil // unreachable in production (os.Exit never returns); needed for tests
 		}
 
 		// Health check if configured
@@ -104,9 +110,11 @@ func (g *GracefulUpdater) rollbackUpdate(backupPath string) error {
 }
 
 // DefaultRestartFunc returns a restart function that re-executes the current binary.
-// Note: This function starts a new process and signals the caller to exit gracefully.
-// The caller should handle process termination appropriately.
-// Returns the PID of the new process for health checking.
+//
+// Deprecated: This function calls os.Executable() at restart time, which returns a
+// stale path after a self-upgrade (the old binary is renamed to .old then deleted,
+// but /proc/self/exe still references it). Use a restart function that receives
+// the executable path resolved at startup instead. See execRestartFunc in cmd/runner.
 func DefaultRestartFunc() RestartFunc {
 	return func() (int, error) {
 		execPath, err := os.Executable()

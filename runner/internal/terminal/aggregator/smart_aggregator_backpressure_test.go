@@ -2,7 +2,6 @@ package aggregator
 
 import (
 	"bytes"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -11,15 +10,9 @@ import (
 // TestSmartAggregator_Backpressure tests pause/resume functionality
 func TestSmartAggregator_Backpressure(t *testing.T) {
 	var pauseCalled, resumeCalled bool
-	var flushCount int
-	var mu sync.Mutex
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			flushCount++
-			mu.Unlock()
-		},
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithBackpressureCallbacks(
@@ -27,6 +20,7 @@ func TestSmartAggregator_Backpressure(t *testing.T) {
 			func() { resumeCalled = true },
 		),
 	)
+	agg.SetRelayClient(relay)
 
 	// Initial state
 	if agg.IsPaused() {
@@ -46,9 +40,7 @@ func TestSmartAggregator_Backpressure(t *testing.T) {
 	agg.Write([]byte("paused data"))
 	time.Sleep(50 * time.Millisecond)
 
-	mu.Lock()
-	countWhilePaused := flushCount
-	mu.Unlock()
+	dataWhilePaused := len(relay.getData())
 
 	// Resume
 	agg.Resume()
@@ -62,12 +54,10 @@ func TestSmartAggregator_Backpressure(t *testing.T) {
 	// Wait for flush after resume
 	time.Sleep(50 * time.Millisecond)
 
-	mu.Lock()
-	countAfterResume := flushCount
-	mu.Unlock()
+	dataAfterResume := len(relay.getData())
 
-	if countAfterResume <= countWhilePaused {
-		t.Logf("Flush count: paused=%d, after_resume=%d", countWhilePaused, countAfterResume)
+	if dataAfterResume <= dataWhilePaused {
+		t.Logf("Data length: paused=%d, after_resume=%d", dataWhilePaused, dataAfterResume)
 	}
 
 	agg.Stop()
@@ -75,43 +65,22 @@ func TestSmartAggregator_Backpressure(t *testing.T) {
 
 // TestSmartAggregator_SetRelayClient tests relay client configuration
 func TestSmartAggregator_SetRelayClient(t *testing.T) {
-	var grpcData []byte
-	var mu sync.Mutex
-
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			grpcData = append(grpcData, data...)
-			mu.Unlock()
-		},
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
 
-	// Write without relay - should go to gRPC
-	agg.Write([]byte("grpc"))
+	// Write without relay - data is dropped (no relay connected)
+	agg.Write([]byte("dropped"))
 	time.Sleep(50 * time.Millisecond)
-
-	mu.Lock()
-	if !bytes.Contains(grpcData, []byte("grpc")) {
-		t.Error("Data should go to gRPC when no relay")
-	}
-	grpcData = nil
-	mu.Unlock()
 
 	// Set relay client (connected)
 	relay := newMockRelayWriter(true)
 	agg.SetRelayClient(relay)
 
-	// Write with relay - should go to relay only
+	// Write with relay - should go to relay
 	agg.Write([]byte("relay"))
 	time.Sleep(50 * time.Millisecond)
-
-	mu.Lock()
-	if bytes.Contains(grpcData, []byte("relay")) {
-		t.Error("Data should not go to gRPC when relay is connected")
-	}
-	mu.Unlock()
 
 	if !bytes.Contains(relay.getData(), []byte("relay")) {
 		t.Error("Data should go to relay")
@@ -123,7 +92,6 @@ func TestSmartAggregator_SetRelayClient(t *testing.T) {
 // TestSmartAggregator_SetPTYLogger tests PTY logger configuration
 func TestSmartAggregator_SetPTYLogger(t *testing.T) {
 	agg := NewSmartAggregator(
-		func(data []byte) {},
 		func() float64 { return 0.0 },
 	)
 
@@ -137,17 +105,13 @@ func TestSmartAggregator_SetPTYLogger(t *testing.T) {
 
 // TestSmartAggregator_TimerFlushPaused tests timer flush when paused
 func TestSmartAggregator_TimerFlushPaused(t *testing.T) {
-	var flushCount int32
-	done := make(chan struct{}, 10)
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			atomic.AddInt32(&flushCount, 1)
-			done <- struct{}{}
-		},
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	// Write data then pause
 	agg.Write([]byte("data"))
@@ -159,11 +123,11 @@ func TestSmartAggregator_TimerFlushPaused(t *testing.T) {
 	// Resume and wait for flush
 	agg.Resume()
 
-	select {
-	case <-done:
-		// OK - flush happened
-	case <-time.After(200 * time.Millisecond):
-		// Also OK - may have flushed before pause
+	time.Sleep(200 * time.Millisecond)
+
+	// Verify data was eventually flushed
+	if len(relay.getData()) == 0 {
+		t.Log("Data may have flushed before pause - this is acceptable")
 	}
 
 	agg.Stop()
@@ -173,16 +137,14 @@ func TestSmartAggregator_TimerFlushPaused(t *testing.T) {
 func TestSmartAggregator_TimerFlushCriticalLoad(t *testing.T) {
 	var usage atomic.Int64
 	usage.Store(60) // 0.6 * 100 = 60, Critical load
-	var flushCount int32
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			atomic.AddInt32(&flushCount, 1)
-		},
 		func() float64 { return float64(usage.Load()) / 100.0 },
 		WithSmartBaseDelay(20*time.Millisecond),
 		WithSmartMaxDelay(100*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	// Write data under critical load
 	agg.Write([]byte("data"))
@@ -196,8 +158,7 @@ func TestSmartAggregator_TimerFlushCriticalLoad(t *testing.T) {
 	// Wait for flush (generous margin for Windows timer resolution ~15ms)
 	time.Sleep(300 * time.Millisecond)
 
-	count := atomic.LoadInt32(&flushCount)
-	if count == 0 {
+	if len(relay.getData()) == 0 {
 		t.Error("Should have flushed after load decreased")
 	}
 
@@ -206,18 +167,13 @@ func TestSmartAggregator_TimerFlushCriticalLoad(t *testing.T) {
 
 // TestSmartAggregator_FlushWithIncompleteFrame tests that incomplete frames are handled
 func TestSmartAggregator_FlushWithIncompleteFrame(t *testing.T) {
-	var flushed []byte
-	var mu sync.Mutex
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			flushed = append(flushed, data...)
-			mu.Unlock()
-		},
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	// Write complete frame + incomplete frame
 	syncStart := "\x1b[?2026h"
@@ -231,9 +187,7 @@ func TestSmartAggregator_FlushWithIncompleteFrame(t *testing.T) {
 	// Wait for timer flush
 	time.Sleep(50 * time.Millisecond)
 
-	mu.Lock()
-	data := flushed
-	mu.Unlock()
+	data := relay.getData()
 
 	// Should flush complete frame
 	if !bytes.Contains(data, []byte("complete")) {
@@ -250,7 +204,6 @@ func TestSmartAggregator_FlushWithIncompleteFrame(t *testing.T) {
 // TestSmartAggregator_ResumeWithoutPause tests resume when not paused
 func TestSmartAggregator_ResumeWithoutPause(t *testing.T) {
 	agg := NewSmartAggregator(
-		func(data []byte) {},
 		func() float64 { return 0.0 },
 	)
 
@@ -266,23 +219,21 @@ func TestSmartAggregator_ResumeWithoutPause(t *testing.T) {
 
 // TestSmartAggregator_WriteAfterStop tests that writes are ignored after stop
 func TestSmartAggregator_WriteAfterStop(t *testing.T) {
-	var flushCount int
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			flushCount++
-		},
 		func() float64 { return 0.0 },
 	)
+	agg.SetRelayClient(relay)
 
 	agg.Stop()
-	initialCount := flushCount
+	initialLen := len(relay.getData())
 
 	// Write after stop should be ignored
 	agg.Write([]byte("ignored"))
 	time.Sleep(50 * time.Millisecond)
 
-	if flushCount != initialCount {
+	if len(relay.getData()) != initialLen {
 		t.Error("Write after stop should be ignored")
 	}
 }

@@ -104,13 +104,13 @@ func (m *MockConnection) SendPodCreated(podKey string, pid int32, sandboxPath, b
 }
 
 // SendPodTerminated implements Connection.
-func (m *MockConnection) SendPodTerminated(podKey string, exitCode int32, errorMsg string) error {
+func (m *MockConnection) SendPodTerminated(podKey string, exitCode int32, errorMsg string, status string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.SendErr != nil {
 		return m.SendErr
 	}
-	m.Events = append(m.Events, EventCall{Type: MsgTypePodTerminated, Data: map[string]interface{}{"pod_key": podKey, "exit_code": exitCode, "error": errorMsg}})
+	m.Events = append(m.Events, EventCall{Type: MsgTypePodTerminated, Data: map[string]interface{}{"pod_key": podKey, "exit_code": exitCode, "error": errorMsg, "status": status}})
 	return nil
 }
 

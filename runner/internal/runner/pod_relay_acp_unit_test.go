@@ -117,7 +117,7 @@ func TestSendAcpViaRelay_MarshalError(t *testing.T) {
 func TestPTYPodIO_Teardown_WithPTYLogger(t *testing.T) {
 	pod := &Pod{PodKey: "pod-teardown-logger"}
 
-	agg := aggregator.NewSmartAggregator(nil, nil)
+	agg := aggregator.NewSmartAggregator(nil)
 	ptyLogger, err := aggregator.NewPTYLogger(t.TempDir(), "pod-teardown-logger")
 	if err != nil {
 		t.Fatalf("failed to create PTYLogger: %v", err)
@@ -153,7 +153,7 @@ func TestPTYPodIO_Teardown_EarlyOutputTakesPriority(t *testing.T) {
 	pod.SetPTYError("disk full")
 
 	// Create aggregator with nil gRPC callback — data goes to early buffer.
-	agg := aggregator.NewSmartAggregator(nil, nil)
+	agg := aggregator.NewSmartAggregator(nil)
 	// Write data then stop immediately — unflushed data remains in early buffer.
 	agg.Write([]byte("early output data"))
 	// Give the aggregator timer a chance to see the data as "pending".

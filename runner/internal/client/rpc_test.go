@@ -35,7 +35,7 @@ func (m *mockSender) getLastMsg() *runnerv1.RunnerMessage {
 // stubSender stubs SendMessage and also provides the ConnectionSender interface methods.
 // Only SendMessage is used by RPCClient.
 func (m *mockSender) SendPodCreated(string, int32, string, string) error { return nil }
-func (m *mockSender) SendPodTerminated(string, int32, string) error      { return nil }
+func (m *mockSender) SendPodTerminated(string, int32, string, string) error      { return nil }
 func (m *mockSender) SendPodInitProgress(string, string, int32, string) error {
 	return nil
 }

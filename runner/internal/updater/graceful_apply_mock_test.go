@@ -13,7 +13,7 @@ import (
 
 // Tests for executeUpdate with mock
 
-func TestGracefulUpdater_ApplyUpdate_WithMock_RestartError(t *testing.T) {
+func TestGracefulUpdater_ApplyUpdate_WithMock_RestartError_ExitsForServiceManager(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "graceful-apply-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
@@ -33,14 +33,25 @@ func TestGracefulUpdater_ApplyUpdate_WithMock_RestartError(t *testing.T) {
 		return 0, restartErr
 	}))
 
+	// Override exitFunc to capture the exit instead of actually exiting.
+	var exitCode int
+	exited := false
+	g.exitFunc = func(code int) {
+		exitCode = code
+		exited = true
+		// In production os.Exit never returns, but in tests we let it return
+		// so we can assert on the code.
+	}
+
 	g.mu.Lock()
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
-	err = g.executeUpdate(context.Background())
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "restart failed")
-	assert.Equal(t, StateIdle, g.State())
+	// executeUpdate should call exitFunc(1) after successful update + failed restart.
+	// Non-zero exit code ensures systemd Restart=on-failure triggers a restart.
+	_ = g.executeUpdate(context.Background())
+	assert.True(t, exited, "expected process to exit after restart failure")
+	assert.Equal(t, 1, exitCode, "expected non-zero exit so service manager restarts")
 }
 
 func TestGracefulUpdater_ApplyUpdate_WithMock_BackupFails(t *testing.T) {

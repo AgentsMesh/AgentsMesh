@@ -17,20 +17,11 @@ import (
 // TestSmartAggregator_SerializeMode tests the serialize mode functionality
 // where Write() only marks pending data and flushLocked() calls the serialize callback
 func TestSmartAggregator_SerializeMode(t *testing.T) {
-	var mu sync.Mutex
-	var flushedData []byte
-	var flushCount int
-
 	// Simulated VirtualTerminal serialized output
 	serializedOutput := []byte("Hello\x1b[5CWorld")
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			flushedData = append(flushedData, data...)
-			flushCount++
-			mu.Unlock()
-		},
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		// Serialize callback returns compressed data
@@ -38,6 +29,7 @@ func TestSmartAggregator_SerializeMode(t *testing.T) {
 			return serializedOutput
 		}),
 	)
+	agg.SetRelayClient(relay)
 
 	// Write with nil data - in serialize mode, data is ignored
 	agg.Write(nil)
@@ -45,62 +37,50 @@ func TestSmartAggregator_SerializeMode(t *testing.T) {
 	// Wait for flush
 	time.Sleep(50 * time.Millisecond)
 
-	mu.Lock()
-	result := flushedData
-	count := flushCount
-	mu.Unlock()
+	result := relay.getData()
 
 	// Verify serialized output was sent
 	if !bytes.Equal(result, serializedOutput) {
 		t.Errorf("Expected serialized output %q, got %q", serializedOutput, result)
 	}
 
-	if count != 1 {
-		t.Errorf("Expected 1 flush, got %d", count)
-	}
-
 	agg.Stop()
-	t.Logf("✅ Serialize mode test: correctly sent serialized output")
+	t.Logf("Serialize mode test: correctly sent serialized output")
 }
 
 // TestSmartAggregator_SerializeModeNoPendingData tests that flush is skipped when no pending data
 func TestSmartAggregator_SerializeModeNoPendingData(t *testing.T) {
-	var flushCount int
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			flushCount++
-		},
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(5*time.Millisecond),
 		WithSerializeCallback(func() []byte {
 			return []byte("should not be called if no pending data")
 		}),
 	)
+	agg.SetRelayClient(relay)
 
 	// Force flush without any Write() - should not flush
 	agg.Flush()
+	time.Sleep(20 * time.Millisecond)
 
-	if flushCount != 0 {
-		t.Errorf("Expected 0 flushes when no pending data, got %d", flushCount)
+	if len(relay.getData()) != 0 {
+		t.Errorf("Expected 0 bytes flushed when no pending data, got %d", len(relay.getData()))
 	}
 
 	agg.Stop()
-	t.Logf("✅ Serialize mode no-pending-data test: correctly skipped flush")
+	t.Logf("Serialize mode no-pending-data test: correctly skipped flush")
 }
 
 // TestSmartAggregator_SerializeModeMultipleWrites tests aggregation with multiple writes
 func TestSmartAggregator_SerializeModeMultipleWrites(t *testing.T) {
 	var mu sync.Mutex
-	var flushCount int
 	var callbackCount int
 
+	relay := newMockRelayWriter(true)
+
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			flushCount++
-			mu.Unlock()
-		},
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(50*time.Millisecond),
 		WithSerializeCallback(func() []byte {
@@ -110,6 +90,7 @@ func TestSmartAggregator_SerializeModeMultipleWrites(t *testing.T) {
 			return []byte("serialized")
 		}),
 	)
+	agg.SetRelayClient(relay)
 
 	// Multiple rapid writes should be aggregated
 	for i := 0; i < 10; i++ {
@@ -121,33 +102,26 @@ func TestSmartAggregator_SerializeModeMultipleWrites(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	mu.Lock()
-	fc := flushCount
 	cc := callbackCount
 	mu.Unlock()
 
 	// Should have aggregated multiple writes into fewer flushes
-	if fc == 0 {
-		t.Errorf("Expected at least 1 flush, got 0")
+	if cc == 0 {
+		t.Errorf("Expected at least 1 callback, got 0")
 	}
-	if fc > 3 {
-		t.Errorf("Expected aggregation, but got %d flushes for 10 writes", fc)
-	}
-	if cc != fc {
-		t.Errorf("Callback count (%d) should match flush count (%d)", cc, fc)
+	if cc > 3 {
+		t.Errorf("Expected aggregation, but got %d callbacks for 10 writes", cc)
 	}
 
 	agg.Stop()
-	t.Logf("✅ Serialize mode aggregation test: %d flushes for 10 writes", fc)
+	t.Logf("Serialize mode aggregation test: %d callbacks for 10 writes", cc)
 }
 
 // TestSmartAggregator_SerializeModeEmptyCallback tests handling of empty callback result
 func TestSmartAggregator_SerializeModeEmptyCallback(t *testing.T) {
-	var flushCount int
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			flushCount++
-		},
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(5*time.Millisecond),
 		// Callback returns empty data
@@ -155,29 +129,27 @@ func TestSmartAggregator_SerializeModeEmptyCallback(t *testing.T) {
 			return nil
 		}),
 	)
+	agg.SetRelayClient(relay)
 
 	agg.Write(nil)
 	time.Sleep(20 * time.Millisecond)
 
-	// Should not call onFlush when callback returns empty data
-	if flushCount != 0 {
-		t.Errorf("Expected 0 flushes when callback returns nil, got %d", flushCount)
+	// Should not send data when callback returns nil
+	if len(relay.getData()) != 0 {
+		t.Errorf("Expected 0 bytes when callback returns nil, got %d", len(relay.getData()))
 	}
 
 	agg.Stop()
-	t.Logf("✅ Serialize mode empty callback test: correctly skipped empty data")
+	t.Logf("Serialize mode empty callback test: correctly skipped empty data")
 }
 
 // TestSmartAggregator_SerializeModeCriticalLoad tests serialize mode under critical load
 func TestSmartAggregator_SerializeModeCriticalLoad(t *testing.T) {
 	var usage atomic.Int64
 	usage.Store(60) // 0.6 * 100 = 60, Critical load (stored as int to avoid float64 atomic issues)
-	var flushCount atomic.Int32
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			flushCount.Add(1)
-		},
 		func() float64 { return float64(usage.Load()) / 100.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithSmartMaxDelay(50*time.Millisecond),
@@ -185,6 +157,7 @@ func TestSmartAggregator_SerializeModeCriticalLoad(t *testing.T) {
 			return []byte("data")
 		}),
 	)
+	agg.SetRelayClient(relay)
 
 	// Write under critical load
 	agg.Write(nil)
@@ -199,5 +172,5 @@ func TestSmartAggregator_SerializeModeCriticalLoad(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	agg.Stop()
-	t.Logf("✅ Serialize mode critical load test completed, flushes: %d", flushCount.Load())
+	t.Logf("Serialize mode critical load test completed, relay data: %d bytes", len(relay.getData()))
 }

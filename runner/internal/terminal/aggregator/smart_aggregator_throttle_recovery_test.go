@@ -2,7 +2,6 @@ package aggregator
 
 import (
 	"bytes"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -11,17 +10,9 @@ import (
 // TestSmartAggregator_FullRedrawThrottling_Recovery tests that throttling delay
 // decreases when frequency drops, and data is still eventually delivered
 func TestSmartAggregator_FullRedrawThrottling_Recovery(t *testing.T) {
-	var mu sync.Mutex
-	var flushedData [][]byte
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			dataCopy := make([]byte, len(data))
-			copy(dataCopy, data)
-			flushedData = append(flushedData, dataCopy)
-			mu.Unlock()
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithFullRedrawThrottling(
@@ -32,6 +23,7 @@ func TestSmartAggregator_FullRedrawThrottling_Recovery(t *testing.T) {
 			WithThrottlerMinDelay(50*time.Millisecond),
 		),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	// Phase 1: High frequency full redraws
@@ -53,18 +45,10 @@ func TestSmartAggregator_FullRedrawThrottling_Recovery(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Verify that at least the recovery frame was delivered
-	mu.Lock()
-	defer mu.Unlock()
+	data := relay.getData()
+	foundRecovery := bytes.Contains(data, []byte("recovery_frame"))
 
-	foundRecovery := false
-	for _, data := range flushedData {
-		if bytes.Contains(data, []byte("recovery_frame")) {
-			foundRecovery = true
-			break
-		}
-	}
-
-	t.Logf("Total flushes: %d, found recovery frame: %v", len(flushedData), foundRecovery)
+	t.Logf("Found recovery frame: %v", foundRecovery)
 
 	// The key assertion: data is eventually delivered
 	if !foundRecovery {
@@ -75,17 +59,9 @@ func TestSmartAggregator_FullRedrawThrottling_Recovery(t *testing.T) {
 // TestSmartAggregator_FullRedrawThrottling_ContentPreserved tests that
 // throttling preserves the latest content
 func TestSmartAggregator_FullRedrawThrottling_ContentPreserved(t *testing.T) {
-	var mu sync.Mutex
-	var allFlushed [][]byte
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			dataCopy := make([]byte, len(data))
-			copy(dataCopy, data)
-			allFlushed = append(allFlushed, dataCopy)
-			mu.Unlock()
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithFullRedrawThrottling(
@@ -96,6 +72,7 @@ func TestSmartAggregator_FullRedrawThrottling_ContentPreserved(t *testing.T) {
 			WithThrottlerMinDelay(100*time.Millisecond),
 		),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	// Write frames with unique identifiers
@@ -110,39 +87,27 @@ func TestSmartAggregator_FullRedrawThrottling_ContentPreserved(t *testing.T) {
 	agg.Flush()
 	time.Sleep(50 * time.Millisecond)
 
-	// Check that we got the latest data in one of the flushes
-	mu.Lock()
-	defer mu.Unlock()
-
-	foundLatest := false
-	for _, data := range allFlushed {
-		if bytes.Contains(data, []byte("MARKER_")) {
-			// Found at least one marker
-			foundLatest = true
-			break
-		}
-	}
-
-	if !foundLatest {
+	// Check that we got the latest data in the relay
+	data := relay.getData()
+	if !bytes.Contains(data, []byte("MARKER_")) {
 		t.Error("Should have flushed at least some frame content")
 	}
 
-	t.Logf("Total flushes: %d", len(allFlushed))
+	t.Logf("Total relay data length: %d", len(data))
 }
 
 // TestSmartAggregator_FullRedrawThrottling_SerializeModeBypassed tests that
 // throttling is bypassed in serialize mode (VirtualTerminal mode)
 func TestSmartAggregator_FullRedrawThrottling_SerializeModeBypassed(t *testing.T) {
 	var flushCount int32
+	relay := newMockRelayWriter(true)
 	serializedOutput := []byte("serialized content")
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			atomic.AddInt32(&flushCount, 1)
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 		WithSerializeCallback(func() []byte {
+			atomic.AddInt32(&flushCount, 1)
 			return serializedOutput
 		}),
 		WithFullRedrawThrottling(
@@ -153,6 +118,7 @@ func TestSmartAggregator_FullRedrawThrottling_SerializeModeBypassed(t *testing.T
 			WithThrottlerMinDelay(200*time.Millisecond),
 		),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	// In serialize mode, Write() just marks pending data
@@ -167,7 +133,7 @@ func TestSmartAggregator_FullRedrawThrottling_SerializeModeBypassed(t *testing.T
 
 	// In serialize mode, throttling should be bypassed
 	// We should get normal flush behavior
-	t.Logf("Serialize mode: %d flushes for 5 writes", count)
+	t.Logf("Serialize mode: %d serialize callbacks for 5 writes", count)
 
 	// Should have at least some flushes (not throttled)
 	if count < 2 {

@@ -99,13 +99,17 @@ func TestGracefulUpdater_ApplyUpdate_RestartFuncError(t *testing.T) {
 		return 0, fmt.Errorf("restart failed")
 	}))
 
+	// After a successful update + failed restart, the process exits so the
+	// service manager restarts with the new binary.
+	exited := false
+	g.exitFunc = func(code int) { exited = true }
+
 	g.mu.Lock()
 	g.pendingInfo = &UpdateInfo{LatestVersion: "v2.0.0", CurrentVersion: "v1.0.0"}
 	g.mu.Unlock()
 
-	err = g.executeUpdate(context.Background())
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "restart failed")
+	_ = g.executeUpdate(context.Background())
+	assert.True(t, exited)
 }
 
 func TestGracefulUpdater_WithRestartFunc(t *testing.T) {

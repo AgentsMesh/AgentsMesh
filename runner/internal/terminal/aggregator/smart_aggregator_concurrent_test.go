@@ -10,37 +10,21 @@ import (
 // Tests for concurrent access and stop behavior
 
 func TestSmartAggregator_Stop(t *testing.T) {
-	var received []byte
-	var mu sync.Mutex
-	done := make(chan struct{}, 1)
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			received = data
-			mu.Unlock()
-			select {
-			case done <- struct{}{}:
-			default:
-			}
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(1*time.Second),
 	)
+	agg.SetRelayClient(relay)
 
 	agg.Write([]byte("pending data"))
 	agg.Stop()
 
-	select {
-	case <-done:
-	case <-time.After(100 * time.Millisecond):
-		t.Fatal("Expected flush on stop")
-	}
+	time.Sleep(100 * time.Millisecond)
 
-	mu.Lock()
-	defer mu.Unlock()
-	if string(received) != "pending data" {
-		t.Errorf("Expected 'pending data', got '%s'", string(received))
+	if string(relay.getData()) != "pending data" {
+		t.Errorf("Expected 'pending data', got '%s'", string(relay.getData()))
 	}
 
 	agg.Write([]byte("ignored"))
@@ -50,18 +34,13 @@ func TestSmartAggregator_Stop(t *testing.T) {
 }
 
 func TestSmartAggregator_ConcurrentWrites(t *testing.T) {
-	var totalBytes int64
-	var mu sync.Mutex
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			totalBytes += int64(len(data))
-			mu.Unlock()
-		},
 		func() float64 { return 0 },
 		WithSmartBaseDelay(5*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	var wg sync.WaitGroup
 	numWriters := 10
@@ -82,10 +61,8 @@ func TestSmartAggregator_ConcurrentWrites(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	mu.Lock()
-	defer mu.Unlock()
-
 	expected := int64(numWriters * bytesPerWriter)
+	totalBytes := int64(len(relay.getData()))
 	if totalBytes != expected {
 		t.Errorf("Expected %d bytes, got %d", expected, totalBytes)
 	}
@@ -93,19 +70,14 @@ func TestSmartAggregator_ConcurrentWrites(t *testing.T) {
 
 func TestSmartAggregator_LargeChunkExceedsMaxSize(t *testing.T) {
 	maxSize := 100
-	var flushed []byte
-	var mu sync.Mutex
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			flushed = append(flushed, data...)
-			mu.Unlock()
-		},
 		func() float64 { return 0 },
 		WithSmartMaxSize(maxSize),
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 
 	agg.Write([]byte("prefix"))
 	largeChunk := bytes.Repeat([]byte("L"), 200)

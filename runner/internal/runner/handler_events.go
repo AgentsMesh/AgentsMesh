@@ -147,9 +147,30 @@ func (h *RunnerMessageHandler) cleanupPodExit(podKey string, exitCode int, stopI
 		agentMon.UnregisterPod(podKey)
 	}
 
-	// Send termination event with early output / error reason
+	// Send termination event with early output / error reason.
+	// Runner owns the status decision.
+	// Exit code conventions (Unix):
+	//   0       = success → completed
+	//   1-127   = process-reported error → error
+	//   >= 128  = killed by signal (128 + signal number) → completed
+	//   -1      = server-initiated terminate → completed
+	podStatus := "completed"
+	errorMsg := earlyOutput
+	if exitCode > 0 && exitCode < 128 {
+		podStatus = "error"
+		if errorMsg == "" {
+			errorMsg = fmt.Sprintf("process exited with code %d", exitCode)
+		}
+	}
+
+	// PTY error takes precedence (e.g., disk full causing I/O error).
+	if ptyErr := pod.GetPTYError(); ptyErr != "" {
+		podStatus = "error"
+		errorMsg = ptyErr
+	}
+
 	if h.conn != nil {
-		if err := h.conn.SendPodTerminated(podKey, int32(exitCode), earlyOutput); err != nil {
+		if err := h.conn.SendPodTerminated(podKey, int32(exitCode), errorMsg, podStatus); err != nil {
 			log.Error("Failed to send pod terminated event", "error", err)
 		}
 	}

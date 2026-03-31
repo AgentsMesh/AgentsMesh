@@ -12,6 +12,7 @@ type mockRelayWriter struct {
 	data      []byte
 	connected atomic.Bool
 	sendErr   error
+	calls     atomic.Int32
 }
 
 func newMockRelayWriter(connected bool) *mockRelayWriter {
@@ -24,6 +25,7 @@ func (m *mockRelayWriter) SendOutput(data []byte) error {
 	if m.sendErr != nil {
 		return m.sendErr
 	}
+	m.calls.Add(1)
 	m.mu.Lock()
 	m.data = append(m.data, data...)
 	m.mu.Unlock()
@@ -40,145 +42,144 @@ func (m *mockRelayWriter) getData() []byte {
 	return append([]byte(nil), m.data...)
 }
 
-func TestOutputRouter_NewOutputRouter(t *testing.T) {
-	var received []byte
-	or := NewOutputRouter(func(data []byte) {
-		received = data
-	})
+func (m *mockRelayWriter) sendCount() int32 {
+	return m.calls.Load()
+}
 
+func TestOutputRouter_New(t *testing.T) {
+	or := NewOutputRouter()
 	if or == nil {
 		t.Fatal("NewOutputRouter should not return nil")
-		return
 	}
-
-	// Route should use onFlush when no relay
-	or.Route([]byte("test"))
-	if string(received) != "test" {
-		t.Errorf("Expected 'test', got '%s'", received)
+	if or.HasRelayClient() {
+		t.Error("should not have relay initially")
 	}
 }
 
 func TestOutputRouter_Route_EmptyData(t *testing.T) {
-	var callCount int
-	or := NewOutputRouter(func(data []byte) {
-		callCount++
-	})
+	or := NewOutputRouter()
+	relay := newMockRelayWriter(true)
+	or.SetRelayClient(relay)
 
 	or.Route(nil)
 	or.Route([]byte{})
 
-	if callCount != 0 {
-		t.Errorf("Route should not call callback for empty data, called %d times", callCount)
+	if len(relay.getData()) != 0 {
+		t.Error("Route should not send empty data")
 	}
 }
 
-func TestOutputRouter_Route_PrefersRelay(t *testing.T) {
-	var grpcData []byte
-	or := NewOutputRouter(func(data []byte) {
-		grpcData = data
-	})
-
-	// Set relay client (connected)
+func TestOutputRouter_Route_SendsToRelay(t *testing.T) {
+	or := NewOutputRouter()
 	relay := newMockRelayWriter(true)
 	or.SetRelayClient(relay)
 
-	or.Route([]byte("test"))
-
-	// Should use relay, not gRPC
-	if grpcData != nil {
-		t.Error("gRPC should not be called when relay is connected")
-	}
-	if string(relay.getData()) != "test" {
-		t.Errorf("Relay should receive data, got '%s'", relay.getData())
+	or.Route([]byte("hello"))
+	if string(relay.getData()) != "hello" {
+		t.Errorf("Expected 'hello', got '%s'", relay.getData())
 	}
 }
 
-func TestOutputRouter_Route_FallbackToGRPC_WhenDisconnected(t *testing.T) {
-	var grpcData []byte
-	or := NewOutputRouter(func(data []byte) {
-		grpcData = data
-	})
+func TestOutputRouter_Route_DropsWhenNoRelay(t *testing.T) {
+	or := NewOutputRouter()
+	// No relay set — data should be silently dropped (no panic)
+	or.Route([]byte("dropped"))
+}
 
-	// Set relay client but disconnected
-	relay := newMockRelayWriter(false)
+func TestOutputRouter_Route_DropsWhenDisconnected(t *testing.T) {
+	or := NewOutputRouter()
+	relay := newMockRelayWriter(false) // disconnected
 	or.SetRelayClient(relay)
 
-	or.Route([]byte("test"))
-
-	// Should fall back to gRPC when relay is disconnected
-	if string(grpcData) != "test" {
-		t.Errorf("Should fallback to gRPC when relay disconnected, got '%s'", grpcData)
-	}
+	or.Route([]byte("dropped"))
 	if len(relay.getData()) > 0 {
-		t.Error("Disconnected relay should not receive data")
-	}
-}
-
-func TestOutputRouter_Route_FallbackToGRPC_WhenCleared(t *testing.T) {
-	var grpcData []byte
-	or := NewOutputRouter(func(data []byte) {
-		grpcData = data
-	})
-
-	// Set then clear relay
-	relay := newMockRelayWriter(true)
-	or.SetRelayClient(relay)
-	or.SetRelayClient(nil)
-
-	or.Route([]byte("test"))
-
-	if string(grpcData) != "test" {
-		t.Errorf("Should fallback to gRPC, got '%s'", grpcData)
+		t.Error("disconnected relay should not receive data")
 	}
 }
 
 func TestOutputRouter_SetRelayClient(t *testing.T) {
-	or := NewOutputRouter(nil)
-
-	if or.HasRelayClient() {
-		t.Error("Should not have relay initially")
-	}
+	or := NewOutputRouter()
 
 	relay := newMockRelayWriter(true)
 	or.SetRelayClient(relay)
-
 	if !or.HasRelayClient() {
-		t.Error("Should have relay after SetRelayClient")
+		t.Error("should have relay after SetRelayClient")
 	}
 
 	or.SetRelayClient(nil)
-
 	if or.HasRelayClient() {
-		t.Error("Should not have relay after setting nil")
+		t.Error("should not have relay after clearing")
 	}
 }
 
-func TestOutputRouter_HasRelayClient(t *testing.T) {
-	or := NewOutputRouter(nil)
-
-	if or.HasRelayClient() {
-		t.Error("HasRelayClient should be false initially")
-	}
-
+func TestOutputRouter_RelayDisconnectAndReconnect(t *testing.T) {
+	or := NewOutputRouter()
 	relay := newMockRelayWriter(true)
 	or.SetRelayClient(relay)
 
-	if !or.HasRelayClient() {
-		t.Error("HasRelayClient should be true after setting relay")
+	// Connected — data goes to relay
+	or.Route([]byte("a"))
+	if string(relay.getData()) != "a" {
+		t.Errorf("Expected 'a', got '%s'", relay.getData())
+	}
+
+	// Disconnect — data is dropped
+	relay.connected.Store(false)
+	or.Route([]byte("dropped"))
+	if string(relay.getData()) != "a" {
+		t.Error("disconnected relay should not receive new data")
+	}
+
+	// Reconnect — data flows again
+	relay.connected.Store(true)
+	or.Route([]byte("b"))
+	if string(relay.getData()) != "ab" {
+		t.Errorf("Expected 'ab', got '%s'", relay.getData())
 	}
 }
 
-func TestOutputRouter_SetOnFlush(t *testing.T) {
-	or := NewOutputRouter(nil)
+func TestOutputRouter_StaleClientReplacement(t *testing.T) {
+	or := NewOutputRouter()
 
-	var received []byte
-	or.SetOnFlush(func(data []byte) {
-		received = data
-	})
+	oldRelay := newMockRelayWriter(true)
+	or.SetRelayClient(oldRelay)
+
+	newRelay := newMockRelayWriter(true)
+	or.SetRelayClient(newRelay)
+
+	oldRelay.connected.Store(false)
 
 	or.Route([]byte("test"))
-
-	if string(received) != "test" {
-		t.Errorf("New onFlush should be used, got '%s'", received)
+	if string(newRelay.getData()) != "test" {
+		t.Errorf("Expected new relay to receive 'test', got '%s'", newRelay.getData())
 	}
+}
+
+func TestOutputRouter_Concurrent(t *testing.T) {
+	or := NewOutputRouter()
+	relay := newMockRelayWriter(true)
+	or.SetRelayClient(relay)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				or.Route([]byte("x"))
+			}
+		}()
+	}
+
+	// Concurrent relay swaps
+	go func() {
+		for i := 0; i < 50; i++ {
+			r := newMockRelayWriter(true)
+			or.SetRelayClient(r)
+		}
+		or.SetRelayClient(relay) // restore original
+	}()
+
+	wg.Wait()
+	// No race/panic is the success criterion
 }

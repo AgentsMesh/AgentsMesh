@@ -2,7 +2,6 @@ package aggregator
 
 import (
 	"bytes"
-	"sync"
 	"testing"
 	"time"
 )
@@ -10,20 +9,13 @@ import (
 // Tests for frame handling and synchronized output
 
 func TestSmartAggregator_PreservesIncrementalFrames(t *testing.T) {
-	var received []byte
-	var mu sync.Mutex
-	done := make(chan struct{}, 10)
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			received = append(received, data...)
-			mu.Unlock()
-			done <- struct{}{}
-		},
 		func() float64 { return 0.3 }, // Moderate pressure
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	// Write incremental sync frames - all should be preserved
@@ -35,14 +27,9 @@ func TestSmartAggregator_PreservesIncrementalFrames(t *testing.T) {
 	agg.Write([]byte(syncStart + "frame 3" + syncEnd))
 
 	// Wait for flush
-	select {
-	case <-done:
-	case <-time.After(200 * time.Millisecond):
-		t.Fatal("Timeout waiting for flush")
-	}
+	time.Sleep(200 * time.Millisecond)
 
-	mu.Lock()
-	defer mu.Unlock()
+	received := relay.getData()
 
 	// All incremental frames should be preserved (content-aware discard)
 	if !bytes.Contains(received, []byte("frame 1")) {
@@ -59,20 +46,13 @@ func TestSmartAggregator_PreservesIncrementalFrames(t *testing.T) {
 // TestSmartAggregator_SynchronizedOutputFrameBoundary tests frame boundary detection
 // with content-aware discard: old frames are only discarded when a full redraw frame arrives
 func TestSmartAggregator_SynchronizedOutputFrameBoundary(t *testing.T) {
-	var received []byte
-	var mu sync.Mutex
-	done := make(chan struct{}, 10)
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			received = data
-			mu.Unlock()
-			done <- struct{}{}
-		},
 		func() float64 { return 0.3 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	syncStart := "\x1b[?2026h"
@@ -84,14 +64,9 @@ func TestSmartAggregator_SynchronizedOutputFrameBoundary(t *testing.T) {
 	// Write Frame 2 (full redraw frame with ESC[2J - triggers discard of old frame)
 	agg.Write([]byte(syncStart + clearScreen + "new frame content" + syncEnd))
 
-	select {
-	case <-done:
-	case <-time.After(200 * time.Millisecond):
-		t.Fatal("Timeout waiting for flush")
-	}
+	time.Sleep(200 * time.Millisecond)
 
-	mu.Lock()
-	defer mu.Unlock()
+	received := relay.getData()
 
 	if !bytes.Contains(received, []byte(syncStart)) {
 		t.Errorf("Expected sync output start sequence in result")
@@ -111,20 +86,13 @@ func TestSmartAggregator_SynchronizedOutputFrameBoundary(t *testing.T) {
 // TestSmartAggregator_SyncOutputPriorityOverClearScreen tests that full redraw frame
 // discards content before it (content-aware discard)
 func TestSmartAggregator_SyncOutputPriorityOverClearScreen(t *testing.T) {
-	var received []byte
-	var mu sync.Mutex
-	done := make(chan struct{}, 10)
+	relay := newMockRelayWriter(true)
 
 	agg := NewSmartAggregator(
-		func(data []byte) {
-			mu.Lock()
-			received = data
-			mu.Unlock()
-			done <- struct{}{}
-		},
 		func() float64 { return 0.3 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
+	agg.SetRelayClient(relay)
 	defer agg.Stop()
 
 	syncStart := "\x1b[?2026h"
@@ -136,14 +104,9 @@ func TestSmartAggregator_SyncOutputPriorityOverClearScreen(t *testing.T) {
 	// Write a full redraw sync frame (contains ESC[2J inside)
 	agg.Write([]byte(syncStart + clearScreen + "sync frame" + syncEnd))
 
-	select {
-	case <-done:
-	case <-time.After(200 * time.Millisecond):
-		t.Fatal("Timeout waiting for flush")
-	}
+	time.Sleep(200 * time.Millisecond)
 
-	mu.Lock()
-	defer mu.Unlock()
+	received := relay.getData()
 
 	if !bytes.Contains(received, []byte(syncStart)) {
 		t.Errorf("Expected sync output start sequence")

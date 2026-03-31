@@ -16,7 +16,7 @@ import (
 
 func TestCreateOutputHandler_DetectorPanicIsolation(t *testing.T) {
 	// Setup: Pod with aggregator but no detector/VT.
-	agg := aggregator.NewSmartAggregator(nil, nil)
+	agg := aggregator.NewSmartAggregator(nil)
 
 	pod := &Pod{
 		PodKey:     "panic-pod",
@@ -55,7 +55,7 @@ func TestCreateOutputHandler_NilAggregator_NoPanic(t *testing.T) {
 func TestCreateOutputHandler_NilVTAndDetector(t *testing.T) {
 	// Normal path: no VirtualTerminal, no StateDetector.
 	// Aggregator receives all data.
-	agg := aggregator.NewSmartAggregator(nil, nil)
+	agg := aggregator.NewSmartAggregator(nil)
 
 	pod := &Pod{
 		PodKey:     "simple-pod",

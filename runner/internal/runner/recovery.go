@@ -81,7 +81,7 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 	virtualTerm := vt.NewVirtualTerminal(state.Cols, state.Rows, state.VTHistoryLimit)
 	virtualTerm.SetOSCHandler(r.messageHandler.createOSCHandler(state.PodKey))
 
-	agg := aggregator.NewSmartAggregator(nil, nil,
+	agg := aggregator.NewSmartAggregator(nil,
 		aggregator.WithFullRedrawThrottling(),
 	)
 

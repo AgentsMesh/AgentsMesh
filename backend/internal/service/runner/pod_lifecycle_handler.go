@@ -61,37 +61,56 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 
 	now := time.Now()
 
-	// Determine status: if the process exited with an error and provided early output,
-	// mark as error so the user can see why the process failed.
-	status := agentpod.StatusCompleted
+	// Status is decided by Runner and sent explicitly in data.Status.
+	// Backend stores it directly — no interpretation of exit codes or error messages.
+	status := data.Status
+	if status == "" {
+		// Backward compatibility: old runners without status field.
+		// Fall back to ErrorMessage-based inference.
+		if data.ErrorMessage != "" {
+			status = agentpod.StatusError
+		} else {
+			status = agentpod.StatusCompleted
+		}
+	}
+
 	updates := map[string]interface{}{
 		"agent_status": agentpod.AgentStatusIdle,
 		"finished_at":  now,
 		"pty_pid":      nil,
+		"status":       status,
+	}
+	if data.ErrorMessage != "" {
+		updates["error_message"] = data.ErrorMessage
 	}
 
-	if data.ErrorMessage != "" {
-		// Process exited with early output (e.g., invalid CLI arguments, PTY error).
-		// Store the error message so the frontend can display why the pod failed.
-		status = agentpod.StatusError
-		updates["error_message"] = data.ErrorMessage
-		updates["status"] = status
-		// Preserve existing error_code if already set by a prior error event
-		// (e.g., PTY_READ_ERROR from handlePodError). Only set the default
-		// "process_exit" code when no specific error code exists yet.
-		if err := pc.podRepo.UpdateTerminatedWithFallbackError(ctx, data.PodKey, updates, "process_exit"); err != nil {
+	// Only update if pod is still active — prevents overwriting a pod already
+	// in terminal state (e.g., server-initiated TerminatePod pre-sets completed).
+	if status == agentpod.StatusError {
+		rowsAffected, err := pc.podRepo.UpdateTerminatedIfActive(ctx, data.PodKey, updates, "process_exit")
+		if err != nil {
 			pc.logger.Error("failed to update pod on termination",
-				"pod_key", data.PodKey,
-				"error", err)
+				"pod_key", data.PodKey, "error", err)
 			return
 		}
+		if rowsAffected == 0 {
+			pc.logger.Info("pod already in terminal state, skipping status update",
+				"pod_key", data.PodKey)
+			status = ""
+		}
 	} else {
-		updates["status"] = status
-		if _, err := pc.podRepo.UpdateByKey(ctx, data.PodKey, updates); err != nil {
+		rowsAffected, err := pc.podRepo.UpdateByKeyAndActiveStatus(ctx, data.PodKey, updates)
+		if err != nil {
 			pc.logger.Error("failed to update pod on termination",
-				"pod_key", data.PodKey,
-				"error", err)
+				"pod_key", data.PodKey, "error", err)
 			return
+		}
+		if rowsAffected > 0 {
+			// keep status as-is
+		} else {
+			pc.logger.Info("pod already in terminal state, skipping status update",
+				"pod_key", data.PodKey)
+			status = ""
 		}
 	}
 
@@ -106,10 +125,10 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 		"pod_key", data.PodKey,
 		"runner_id", runnerID,
 		"exit_code", data.ExitCode,
-		"has_early_output", data.ErrorMessage != "")
+		"status", status)
 
-	// Notify status change
-	if pc.onStatusChange != nil {
+	// Notify status change (skip if pod was already in terminal state)
+	if pc.onStatusChange != nil && status != "" {
 		pc.onStatusChange(data.PodKey, status, "")
 	}
 }

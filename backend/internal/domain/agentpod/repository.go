@@ -62,6 +62,12 @@ type PodRepository interface {
 	// UpdateTerminatedWithFallbackError updates a terminated pod, setting error_code
 	// only if not already set (uses COALESCE(NULLIF(error_code, ''), fallbackCode)).
 	UpdateTerminatedWithFallbackError(ctx context.Context, podKey string, updates map[string]interface{}, fallbackErrorCode string) error
+	// UpdateTerminatedIfActive is like UpdateTerminatedWithFallbackError but only
+	// updates pods that are still in an active state. Returns rows affected.
+	UpdateTerminatedIfActive(ctx context.Context, podKey string, updates map[string]interface{}, fallbackErrorCode string) (int64, error)
+	// UpdateByKeyAndActiveStatus updates a pod only if it's in an active state.
+	// Returns rows affected so the caller can detect if the pod was already terminal.
+	UpdateByKeyAndActiveStatus(ctx context.Context, podKey string, updates map[string]interface{}) (int64, error)
 	// GetByKeyAndRunner returns a pod by pod_key and runner_id (no preloads).
 	GetByKeyAndRunner(ctx context.Context, podKey string, runnerID int64) (*Pod, error)
 	// CountActiveByKeys counts how many of the given pod keys are in active status.
