@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -123,9 +124,11 @@ func TestSetupGitWorktree_SSHKey(t *testing.T) {
 	data, readErr := os.ReadFile(keyFile)
 	require.NoError(t, readErr)
 	assert.Contains(t, string(data), "OPENSSH PRIVATE KEY")
-	// Verify permissions (Unix only)
-	info, _ := os.Stat(keyFile)
-	assert.Equal(t, os.FileMode(0600), info.Mode().Perm())
+	// Verify permissions (Unix only — Windows uses ACLs)
+	if runtime.GOOS != "windows" {
+		info, _ := os.Stat(keyFile)
+		assert.Equal(t, os.FileMode(0600), info.Mode().Perm())
+	}
 }
 
 func TestSetupGitWorktree_HttpCloneURL_Preferred(t *testing.T) {

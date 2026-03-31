@@ -3,6 +3,7 @@ package runner
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -83,7 +84,9 @@ func TestCreateFiles_CustomMode(t *testing.T) {
 	require.NoError(t, b.createFiles(sandbox, sandbox))
 	info, err := os.Stat(filepath.Join(sandbox, "script.sh"))
 	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0755), info.Mode().Perm())
+	if runtime.GOOS != "windows" {
+		assert.Equal(t, os.FileMode(0755), info.Mode().Perm())
+	}
 }
 
 func TestCreateFiles_NestedDirectories(t *testing.T) {

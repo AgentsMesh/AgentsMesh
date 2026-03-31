@@ -37,7 +37,7 @@ func ExecutePodFile(cmd *runnerv1.CreatePodCommand, sandboxRoot, workDir string)
 	eval.ApplyModeArgs(ctx.Result)
 	eval.ApplyRemoves(ctx.Result)
 
-	return toResult(ctx.Result, cmd.InitialPrompt), nil
+	return toResult(ctx.Result, cmd.InitialPrompt), nil //nolint:staticcheck // deprecated but still used
 }
 
 func buildEvalContext(cmd *runnerv1.CreatePodCommand, sandboxRoot, workDir string) *eval.Context {

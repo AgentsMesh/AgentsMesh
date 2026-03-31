@@ -156,7 +156,7 @@ func TestExecutePodFile_RealClaude_PTY(t *testing.T) {
 	cmd.PodfileSource = realClaudePodFile
 	cmd.ConfigValues = map[string]string{"model": "opus", "permission_mode": "bypassPermissions"}
 	cmd.Credentials = map[string]string{"ANTHROPIC_API_KEY": "sk-test"}
-	cmd.InitialPrompt = "Fix the bug"
+	cmd.InitialPrompt = "Fix the bug" //nolint:staticcheck
 
 	result, err := ExecutePodFile(cmd, "/tmp/sb", "/tmp/sb/ws")
 	require.NoError(t, err)
@@ -211,7 +211,7 @@ func TestExecutePodFile_RealCodex(t *testing.T) {
 	cmd.PodfileSource = realCodexPodFile
 	cmd.ConfigValues = map[string]string{"approval_mode": "on-request"}
 	cmd.Credentials = map[string]string{"OPENAI_API_KEY": "sk-openai"}
-	cmd.InitialPrompt = "Refactor"
+	cmd.InitialPrompt = "Refactor" //nolint:staticcheck
 
 	result, err := ExecutePodFile(cmd, "/tmp/sb", "/tmp/sb/ws")
 	require.NoError(t, err)
@@ -236,7 +236,7 @@ func TestExecutePodFile_RealGemini(t *testing.T) {
 	cmd.PodfileSource = realGeminiPodFile
 	cmd.ConfigValues = map[string]string{"sandbox_mode": "false"}
 	cmd.Credentials = map[string]string{"GOOGLE_API_KEY": "goog-test"}
-	cmd.InitialPrompt = "Hello"
+	cmd.InitialPrompt = "Hello" //nolint:staticcheck
 
 	result, err := ExecutePodFile(cmd, "/tmp/sb", "/tmp/sb/ws")
 	require.NoError(t, err)
@@ -260,7 +260,7 @@ func TestExecutePodFile_RealOpenCode(t *testing.T) {
 	cmd := mcpCmd()
 	cmd.PodfileSource = realOpenCodePodFile
 	cmd.ConfigValues = map[string]string{}
-	cmd.InitialPrompt = "Build it"
+	cmd.InitialPrompt = "Build it" //nolint:staticcheck
 
 	result, err := ExecutePodFile(cmd, "/tmp/sb", "/tmp/sb/ws")
 	require.NoError(t, err)
