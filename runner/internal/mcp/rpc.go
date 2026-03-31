@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 )
 
 // call makes an RPC call and waits for response
@@ -112,10 +111,9 @@ func (s *Server) readResponses() {
 	for {
 		var resp Response
 		if err := decoder.Decode(&resp); err != nil {
-			if err == io.EOF {
-				return
-			}
-			continue
+			// Exit on any read error (EOF, closed pipe, etc.)
+			// JSON syntax errors from partial reads also indicate the stream is done.
+			return
 		}
 
 		// Route response to waiting caller — remove from pending under lock

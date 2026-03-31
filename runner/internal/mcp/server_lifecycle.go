@@ -132,17 +132,19 @@ func (s *Server) Stop() error {
 		s.stdin.Close()
 	}
 
+	// Close stdout BEFORE cmd.Wait() to unblock readResponses goroutine.
+	// Go's cmd.Wait() waits for all StdoutPipe readers to finish, so if
+	// readResponses is still blocking on decoder.Decode, Wait() deadlocks.
+	if s.stdout != nil {
+		s.stdout.Close()
+	}
+
 	// Kill process tree if still running.
 	// On Windows, child processes are NOT killed when the parent dies,
 	// so we must walk the tree and kill each descendant.
 	if s.cmd != nil && s.cmd.Process != nil {
 		_ = process.KillProcessTree(s.cmd.Process.Pid)
 		s.cmd.Wait()
-	}
-
-	// Close stdout to unblock readResponses (prevents FD leak)
-	if s.stdout != nil {
-		s.stdout.Close()
 	}
 
 	// Release the lock and wait for readResponses goroutine to exit
