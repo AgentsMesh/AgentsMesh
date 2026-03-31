@@ -28,6 +28,13 @@ func evalDecl(ctx *Context, decl parser.Declaration) error {
 		ctx.Result.Sandbox.CredentialType = d.Type
 	case *parser.McpDecl:
 		ctx.Result.MCPEnabled = d.Enabled
+		// Sync to context variable so build logic `if mcp.enabled` reflects the declaration.
+		// This makes MCP ON/OFF the single source of truth (no more CONFIG mcp_enabled).
+		if m, ok := ctx.Get("mcp"); ok {
+			if mp, ok := m.(map[string]interface{}); ok {
+				mp["enabled"] = d.Enabled
+			}
+		}
 	case *parser.SkillsDecl:
 		ctx.Result.Skills = append(ctx.Result.Skills, d.Slugs...)
 	case *parser.SetupDecl:

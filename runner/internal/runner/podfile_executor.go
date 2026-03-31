@@ -58,7 +58,7 @@ func buildEvalContext(cmd *runnerv1.CreatePodCommand, sandboxRoot, workDir strin
 			"work_dir": workDir,
 		},
 		"mcp": map[string]interface{}{
-			"enabled":   true,
+			"enabled":   false, // default false; MCP ON declaration sets to true during eval
 			"port":      fmt.Sprintf("%d", cmd.McpPort),
 			"builtin":   builtinMCP,
 			"installed": installedMCP,
