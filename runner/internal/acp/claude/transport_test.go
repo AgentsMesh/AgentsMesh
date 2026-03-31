@@ -176,7 +176,7 @@ func TestTransport_NewSession_ReturnsCachedID(t *testing.T) {
 	tr.sessionMu.Lock()
 	tr.sessionID = "cached"
 	tr.sessionMu.Unlock()
-	sid, err := tr.NewSession(nil)
+	sid, err := tr.NewSession("", nil)
 	if err != nil || sid != "cached" {
 		t.Errorf("sid=%q err=%v", sid, err)
 	}

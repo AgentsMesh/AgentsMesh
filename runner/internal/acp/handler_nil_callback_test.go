@@ -1,7 +1,6 @@
 package acp
 
 import (
-	"encoding/json"
 	"testing"
 )
 
@@ -10,47 +9,68 @@ import (
 func TestHandler_NilCallbacks_NoCrash(t *testing.T) {
 	h := NewHandler(EventCallbacks{}, testLogger())
 
-	// Content
+	// Agent message chunk
 	params := mustMarshal(t, map[string]any{
-		"session_id": "s", "type": "content",
-		"data": map[string]any{"text": "hi", "role": "assistant"},
+		"sessionId": "s",
+		"update": map[string]any{
+			"sessionUpdate": "agent_message_chunk",
+			"content":       map[string]any{"type": "text", "text": "hi"},
+		},
 	})
 	h.HandleNotification("session/update", params)
 
 	// Tool call
 	params = mustMarshal(t, map[string]any{
-		"session_id": "s", "type": "tool_call",
-		"data": map[string]any{"tool_call_id": "t1", "tool_name": "x", "status": "running"},
+		"sessionId": "s",
+		"update": map[string]any{
+			"sessionUpdate": "tool_call",
+			"toolCallId":    "t1",
+			"title":         "x",
+			"status":        "running",
+		},
 	})
 	h.HandleNotification("session/update", params)
 
-	// Tool result
+	// Tool call update (completed — fires both OnToolCallUpdate and OnToolCallResult)
 	params = mustMarshal(t, map[string]any{
-		"session_id": "s", "type": "tool_result",
-		"data": map[string]any{"tool_call_id": "t1", "tool_name": "x", "success": true},
+		"sessionId": "s",
+		"update": map[string]any{
+			"sessionUpdate": "tool_call_update",
+			"toolCallId":    "t1",
+			"title":         "x",
+			"status":        "completed",
+		},
 	})
 	h.HandleNotification("session/update", params)
 
 	// Plan
 	params = mustMarshal(t, map[string]any{
-		"session_id": "s", "type": "plan",
-		"data": map[string]any{"steps": []map[string]any{}},
+		"sessionId": "s",
+		"update": map[string]any{
+			"sessionUpdate": "plan",
+			"entries":       []map[string]any{},
+		},
 	})
 	h.HandleNotification("session/update", params)
 
-	// Thinking
+	// Thinking (agent_thought_chunk)
 	params = mustMarshal(t, map[string]any{
-		"session_id": "s", "type": "thinking",
-		"data": map[string]any{"text": "hmm"},
+		"sessionId": "s",
+		"update": map[string]any{
+			"sessionUpdate": "agent_thought_chunk",
+			"content":       map[string]any{"text": "hmm"},
+		},
 	})
 	h.HandleNotification("session/update", params)
-
-	// Session complete
-	h.HandleNotification("session/complete", json.RawMessage(`{}`))
 
 	// Permission request
 	params = mustMarshal(t, map[string]any{
-		"session_id": "s", "request_id": "r", "tool_name": "t",
+		"sessionId": "s",
+		"toolCall": map[string]any{
+			"toolCallId": "tc-1",
+			"title":      "t",
+		},
+		"options": []map[string]any{},
 	})
-	h.HandleNotification("permission/request", params)
+	h.HandlePermissionRequest(1, params)
 }

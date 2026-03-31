@@ -1,7 +1,9 @@
 package acp
 
 import (
+	"encoding/json"
 	"log/slog"
+	"os/exec"
 	"testing"
 	"time"
 )
@@ -67,5 +69,45 @@ func TestACPClient_NewSessionWithMCPServers(t *testing.T) {
 	mcpServers := BuildMCPServersConfig(9999)
 	if err := client.NewSession(mcpServers); err != nil {
 		t.Fatalf("NewSession with MCP: %v", err)
+	}
+}
+
+// TestMockAgent_SmokeTest ensures the mock agent JSON-RPC exchange is well-formed.
+func TestMockAgent_SmokeTest(t *testing.T) {
+	cmd := exec.Command(mockAgentCmd(), mockAgentArgs()...)
+	cmd.Env = mockAgentEnv()
+
+	stdin, _ := cmd.StdinPipe()
+	stdout, _ := cmd.StdoutPipe()
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock: %v", err)
+	}
+	defer cmd.Process.Kill()
+
+	writer := NewWriter(stdin)
+	reader := NewReader(stdout, slog.Default())
+
+	id, _ := writer.WriteRequest("initialize", map[string]any{
+		"protocolVersion":    1,
+		"clientInfo":         map[string]any{"name": "test", "version": "1.0"},
+		"clientCapabilities": map[string]any{},
+	})
+
+	msg, err := reader.ReadMessage()
+	if err != nil {
+		t.Fatalf("read init response: %v", err)
+	}
+	if !msg.IsResponse() {
+		t.Fatalf("expected response, got method=%s", msg.Method)
+	}
+	respID, _ := msg.GetID()
+	if respID != id {
+		t.Errorf("response ID mismatch: %d != %d", respID, id)
+	}
+
+	var result map[string]any
+	json.Unmarshal(msg.Result, &result)
+	if result["protocol_version"] != "2025-01-01" {
+		t.Errorf("unexpected protocol version: %v", result["protocol_version"])
 	}
 }

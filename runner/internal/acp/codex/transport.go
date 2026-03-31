@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strconv"
 	"sync"
 	"time"
 
@@ -86,10 +87,10 @@ func (t *Transport) Handshake(_ context.Context) (string, error) {
 }
 
 // NewSession sends thread/start and returns the thread ID as session ID.
-func (t *Transport) NewSession(mcpServers map[string]any) (string, error) {
+func (t *Transport) NewSession(_ string, mcpServers map[string]any) (string, error) {
 	params := map[string]any{}
 	if mcpServers != nil {
-		params["mcp_servers"] = mcpServers
+		params["mcpServers"] = mcpServers
 	}
 
 	pr, err := t.tracker.SendRequest("thread/start", params)
@@ -123,10 +124,10 @@ func (t *Transport) NewSession(mcpServers map[string]any) (string, error) {
 func (t *Transport) SendPrompt(sessionID, prompt string) error {
 	params := turnStartParams{
 		ThreadID: sessionID,
-		Input: turnInput{
-			Type:    "text",
-			Content: prompt,
-		},
+		Input: []turnInput{{
+			Type: "text",
+			Text: prompt,
+		}},
 	}
 
 	pr, err := t.tracker.SendRequest("turn/start", params)
@@ -147,19 +148,33 @@ func (t *Transport) SendPrompt(sessionID, prompt string) error {
 	return nil
 }
 
-// RespondToPermission responds to an approval request from the Codex agent.
+// RespondToPermission responds to an approval request from the Codex agent
+// by sending a JSON-RPC response to the original request ID.
 func (t *Transport) RespondToPermission(requestID string, approved bool) error {
-	params := serverRequestResponseParams{
-		RequestID: requestID,
-		Approved:  approved,
+	rpcID, err := strconv.ParseInt(requestID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("parse request ID %q: %w", requestID, err)
 	}
-	return t.tracker.Writer.WriteNotification("serverRequest/response", params)
+	decision := "decline"
+	if approved {
+		decision = "accept"
+	}
+	result := map[string]any{"decision": decision}
+	return t.tracker.Writer.WriteResponse(rpcID, result, nil)
 }
 
-// CancelSession sends a turn/interrupt notification.
+// CancelSession sends a turn/interrupt request.
 func (t *Transport) CancelSession(sessionID string) error {
 	params := turnInterruptParams{ThreadID: sessionID}
-	return t.tracker.Writer.WriteNotification("turn/interrupt", params)
+	pr, err := t.tracker.SendRequest("turn/interrupt", params)
+	if err != nil {
+		return fmt.Errorf("write turn/interrupt: %w", err)
+	}
+	// Wait briefly for acknowledgment; ignore errors (best-effort cancel).
+	go func() {
+		t.tracker.WaitResponse(pr, 10*time.Second)
+	}()
+	return nil
 }
 
 // ReadLoop reads JSON-RPC messages from stdout and dispatches them.

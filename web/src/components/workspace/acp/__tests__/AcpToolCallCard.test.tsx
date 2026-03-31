@@ -5,10 +5,10 @@ import type { AcpToolCall } from "@/stores/acpSession";
 
 function makeTool(overrides: Partial<AcpToolCall> = {}): AcpToolCall {
   return {
-    tool_call_id: "tc-1",
-    tool_name: "read_file",
+    toolCallId: "tc-1",
+    toolName: "read_file",
     status: "running",
-    arguments_json: '{"path":"src/main.ts"}',
+    argumentsJson: '{"path":"src/main.ts"}',
     timestamp: Date.now(),
     ...overrides,
   };
@@ -42,7 +42,7 @@ describe("AcpToolCallCard", () => {
   });
 
   it("expands to show arguments on click", () => {
-    const tool = makeTool({ status: "completed", success: true, arguments_json: '{"path":"test.ts"}' });
+    const tool = makeTool({ status: "completed", success: true, argumentsJson: '{"path":"test.ts"}' });
     render(<AcpToolCallCard toolCall={tool} />);
 
     // Arguments not visible initially
@@ -53,12 +53,12 @@ describe("AcpToolCallCard", () => {
     expect(screen.getByText('{"path":"test.ts"}')).toBeInTheDocument();
   });
 
-  it("shows result_text and error_message when expanded", () => {
+  it("shows resultText and errorMessage when expanded", () => {
     const tool = makeTool({
       status: "completed",
       success: false,
-      result_text: "",
-      error_message: "File not found",
+      resultText: "",
+      errorMessage: "File not found",
     });
     render(<AcpToolCallCard toolCall={tool} />);
 

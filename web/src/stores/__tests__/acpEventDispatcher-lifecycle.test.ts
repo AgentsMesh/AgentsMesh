@@ -18,38 +18,38 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     const sid = "session-1";
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "content_chunk", session_id: sid, text: "Create a hello world app", role: "user",
+      type: "contentChunk", sessionId: sid, text: "Create a hello world app", role: "user",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "session_state", session_id: sid, state: "processing",
+      type: "sessionState", sessionId: sid, state: "processing",
     });
 
     expect(getSession().state).toBe("processing");
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "thinking_update", session_id: sid, text: "I'll create a simple ",
+      type: "thinkingUpdate", sessionId: sid, text: "I'll create a simple ",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "thinking_update", session_id: sid, text: "Node.js hello world application.",
+      type: "thinkingUpdate", sessionId: sid, text: "Node.js hello world application.",
     });
 
     expect(getSession().thinkings).toHaveLength(1);
     expect(getSession().thinkings[0].text).toContain("Node.js hello world");
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "content_chunk", session_id: sid, text: "I'll create a hello world app for you.", role: "assistant",
+      type: "contentChunk", sessionId: sid, text: "I'll create a hello world app for you.", role: "assistant",
     });
 
     expect(getSession().thinkings[0].complete).toBe(true);
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_update", session_id: sid,
-      tool_call_id: "tc-write", tool_name: "write_file", status: "running", arguments_json: '{"path":"main.ts"}',
+      type: "toolCallUpdate", sessionId: sid,
+      toolCallId: "tc-write", toolName: "write_file", status: "running", argumentsJson: '{"path":"main.ts"}',
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_update", session_id: sid,
-      tool_call_id: "tc-write", tool_name: "write_file", status: "completed",
-      arguments_json: '{"path":"main.ts","content":"console.log(\'hello\')"}',
+      type: "toolCallUpdate", sessionId: sid,
+      toolCallId: "tc-write", toolName: "write_file", status: "completed",
+      argumentsJson: '{"path":"main.ts","content":"console.log(\'hello\')"}',
     });
 
     const tc = getSession().toolCalls["tc-write"];
@@ -57,19 +57,19 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     expect(tc.success).toBeUndefined();
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_result", session_id: sid,
-      tool_call_id: "tc-write", success: true, result_text: "File written", error_message: "",
+      type: "toolCallResult", sessionId: sid,
+      toolCallId: "tc-write", success: true, resultText: "File written", errorMessage: "",
     });
 
     expect(getSession().toolCalls["tc-write"].success).toBe(true);
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "content_chunk", session_id: sid,
+      type: "contentChunk", sessionId: sid,
       text: "\n\nDone! I've created main.ts with a hello world program.", role: "assistant",
     });
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "session_state", session_id: sid, state: "idle",
+      type: "sessionState", sessionId: sid, state: "idle",
     });
 
     const final = getSession();
@@ -86,16 +86,16 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     const sid = "session-perm";
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "session_state", session_id: sid, state: "processing",
+      type: "sessionState", sessionId: sid, state: "processing",
     });
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "permission_request", session_id: sid,
-      request_id: "perm-1", tool_name: "bash",
-      arguments_json: '{"cmd":"npm install"}', description: "Execute: npm install",
+      type: "permissionRequest", sessionId: sid,
+      requestId: "perm-1", toolName: "bash",
+      argumentsJson: '{"cmd":"npm install"}', description: "Execute: npm install",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "session_state", session_id: sid, state: "waiting_permission",
+      type: "sessionState", sessionId: sid, state: "waiting_permission",
     });
 
     let s = getSession();
@@ -105,12 +105,12 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     useAcpSessionStore.getState().removePermissionRequest(POD, "perm-1");
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "session_state", session_id: sid, state: "processing",
+      type: "sessionState", sessionId: sid, state: "processing",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_update", session_id: sid,
-      tool_call_id: "tc-npm", tool_name: "bash", status: "running",
-      arguments_json: '{"cmd":"npm install"}',
+      type: "toolCallUpdate", sessionId: sid,
+      toolCallId: "tc-npm", toolName: "bash", status: "running",
+      argumentsJson: '{"cmd":"npm install"}',
     });
 
     s = getSession();
@@ -123,7 +123,7 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     const sid = "session-plan";
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "plan_update", session_id: sid,
+      type: "planUpdate", sessionId: sid,
       steps: [
         { title: "Analyze codebase", status: "in_progress" },
         { title: "Write tests", status: "pending" },
@@ -135,7 +135,7 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     expect(getSession().plan[0].status).toBe("in_progress");
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "plan_update", session_id: sid,
+      type: "planUpdate", sessionId: sid,
       steps: [
         { title: "Analyze codebase", status: "completed" },
         { title: "Write tests", status: "in_progress" },
@@ -151,18 +151,18 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     const sid = "session-think";
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "thinking_update", session_id: sid, text: "Round 1 thinking...",
+      type: "thinkingUpdate", sessionId: sid, text: "Round 1 thinking...",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "content_chunk", session_id: sid, text: "Response 1", role: "assistant",
+      type: "contentChunk", sessionId: sid, text: "Response 1", role: "assistant",
     });
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "thinking_update", session_id: sid, text: "Round 2 thinking...",
+      type: "thinkingUpdate", sessionId: sid, text: "Round 2 thinking...",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_update", session_id: sid,
-      tool_call_id: "tc-x", tool_name: "bash", status: "running", arguments_json: "{}",
+      type: "toolCallUpdate", sessionId: sid,
+      toolCallId: "tc-x", toolName: "bash", status: "running", argumentsJson: "{}",
     });
 
     const th = getSession().thinkings;
@@ -175,42 +175,42 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     const sid = "session-fail";
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_update", session_id: sid,
-      tool_call_id: "tc-fail", tool_name: "bash", status: "running",
-      arguments_json: '{"cmd":"invalid-command"}',
+      type: "toolCallUpdate", sessionId: sid,
+      toolCallId: "tc-fail", toolName: "bash", status: "running",
+      argumentsJson: '{"cmd":"invalid-command"}',
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_update", session_id: sid,
-      tool_call_id: "tc-fail", tool_name: "bash", status: "completed",
-      arguments_json: '{"cmd":"invalid-command"}',
+      type: "toolCallUpdate", sessionId: sid,
+      toolCallId: "tc-fail", toolName: "bash", status: "completed",
+      argumentsJson: '{"cmd":"invalid-command"}',
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_result", session_id: sid,
-      tool_call_id: "tc-fail", success: false, result_text: "",
-      error_message: "command not found: invalid-command",
+      type: "toolCallResult", sessionId: sid,
+      toolCallId: "tc-fail", success: false, resultText: "",
+      errorMessage: "command not found: invalid-command",
     });
 
     const tc = getSession().toolCalls["tc-fail"];
     expect(tc.success).toBe(false);
-    expect(tc.error_message).toBe("command not found: invalid-command");
+    expect(tc.errorMessage).toBe("command not found: invalid-command");
   });
 
   it("simulates slash command (/compact)", () => {
     const sid = "session-slash";
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "content_chunk", session_id: sid, text: "/compact", role: "user",
+      type: "contentChunk", sessionId: sid, text: "/compact", role: "user",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "session_state", session_id: sid, state: "processing",
+      type: "sessionState", sessionId: sid, state: "processing",
     });
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "content_chunk", session_id: sid,
+      type: "contentChunk", sessionId: sid,
       text: "Context compacted. Conversation reduced from 50k to 10k tokens.", role: "assistant",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "session_state", session_id: sid, state: "idle",
+      type: "sessionState", sessionId: sid, state: "idle",
     });
 
     const s = getSession();
@@ -223,29 +223,29 @@ describe("acpEventDispatcher - full session lifecycle", () => {
     const sid = "session-reconn";
 
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "content_chunk", session_id: sid, text: "Working on it", role: "assistant",
+      type: "contentChunk", sessionId: sid, text: "Working on it", role: "assistant",
     });
     dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-      type: "tool_call_update", session_id: sid,
-      tool_call_id: "tc-1", tool_name: "read_file", status: "completed",
-      arguments_json: '{"path":"main.ts"}',
+      type: "toolCallUpdate", sessionId: sid,
+      toolCallId: "tc-1", toolName: "read_file", status: "completed",
+      argumentsJson: '{"path":"main.ts"}',
     });
 
     dispatchAcpRelayEvent(POD, MsgType.AcpSnapshot, {
-      session_id: sid,
+      sessionId: sid,
       state: "processing",
       messages: [
         { text: "Fix the bug", role: "user" },
         { text: "Working on it", role: "assistant" },
       ],
-      tool_calls: [
+      toolCalls: [
         {
-          tool_call_id: "tc-1", tool_name: "read_file", status: "completed",
-          arguments_json: '{"path":"main.ts"}', success: true, result_text: "file content",
+          toolCallId: "tc-1", toolName: "read_file", status: "completed",
+          argumentsJson: '{"path":"main.ts"}', success: true, resultText: "file content",
         },
         {
-          tool_call_id: "tc-2", tool_name: "write_file", status: "running",
-          arguments_json: '{"path":"main.ts"}',
+          toolCallId: "tc-2", toolName: "write_file", status: "running",
+          argumentsJson: '{"path":"main.ts"}',
         },
       ],
       plan: [

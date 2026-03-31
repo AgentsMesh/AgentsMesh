@@ -23,8 +23,9 @@ type Transport interface {
 	Handshake(ctx context.Context) (string, error)
 
 	// NewSession creates a new session, returning the sessionID.
+	// cwd is the working directory for the session (required by standard ACP).
 	// Claude transport returns the cached ID from Handshake.
-	NewSession(mcpServers map[string]any) (string, error)
+	NewSession(cwd string, mcpServers map[string]any) (string, error)
 
 	// SendPrompt delivers a prompt to the active session.
 	SendPrompt(sessionID, prompt string) error

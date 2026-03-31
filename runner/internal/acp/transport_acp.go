@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strconv"
 	"time"
 )
 
@@ -54,9 +55,7 @@ func (t *ACPTransport) Handshake(_ context.Context) (string, error) {
 			"name":    "agentsmesh-runner",
 			"version": "1.0.0",
 		},
-		"capabilities": map[string]any{
-			"permissions": true,
-		},
+		"clientCapabilities": map[string]any{},
 	}
 
 	pr, err := t.tracker.SendRequest("initialize", params)
@@ -79,10 +78,27 @@ func (t *ACPTransport) Handshake(_ context.Context) (string, error) {
 }
 
 // NewSession sends a session/new RPC and returns the session ID.
-func (t *ACPTransport) NewSession(mcpServers map[string]any) (string, error) {
-	params := map[string]any{}
+func (t *ACPTransport) NewSession(cwd string, mcpServers map[string]any) (string, error) {
+	// Both cwd and mcpServers are required by the ACP spec.
+	var servers []map[string]any
 	if mcpServers != nil {
-		params["mcp_servers"] = mcpServers
+		// Convert map format {name: {type,url}} to ACP array format [{name,type,url}].
+		for name, cfg := range mcpServers {
+			entry := map[string]any{"name": name}
+			if m, ok := cfg.(map[string]any); ok {
+				for k, v := range m {
+					entry[k] = v
+				}
+			}
+			servers = append(servers, entry)
+		}
+	}
+	if servers == nil {
+		servers = []map[string]any{}
+	}
+	params := map[string]any{
+		"cwd":        cwd,
+		"mcpServers": servers,
 	}
 
 	pr, err := t.tracker.SendRequest("session/new", params)
@@ -100,7 +116,7 @@ func (t *ACPTransport) NewSession(mcpServers map[string]any) (string, error) {
 	}
 
 	var result struct {
-		SessionID string `json:"session_id"`
+		SessionID string `json:"sessionId"`
 	}
 	if err := json.Unmarshal(resp.Result, &result); err != nil {
 		return "", fmt.Errorf("parse session/new result: %w", err)
@@ -113,8 +129,10 @@ func (t *ACPTransport) NewSession(mcpServers map[string]any) (string, error) {
 // content arrives via session/update notifications in ReadLoop.
 func (t *ACPTransport) SendPrompt(sessionID, prompt string) error {
 	params := map[string]any{
-		"session_id": sessionID,
-		"prompt":     prompt,
+		"sessionId": sessionID,
+		"prompt": []map[string]any{
+			{"type": "text", "text": prompt},
+		},
 	}
 
 	pr, err := t.tracker.SendRequest("session/prompt", params)
@@ -124,6 +142,7 @@ func (t *ACPTransport) SendPrompt(sessionID, prompt string) error {
 
 	// Wait for the RPC response in the background;
 	// actual content arrives via session/update notifications.
+	// When the response arrives, transition to idle (standard ACP has no session/complete).
 	go func() {
 		resp, err := t.tracker.WaitResponse(pr, 5*time.Minute)
 		if err != nil {
@@ -132,24 +151,39 @@ func (t *ACPTransport) SendPrompt(sessionID, prompt string) error {
 			t.logger.Error("prompt error",
 				"code", resp.Error.Code, "message", resp.Error.Message)
 		}
+		// Prompt response means the agent finished this turn.
+		if t.handler.callbacks.OnStateChange != nil {
+			t.handler.callbacks.OnStateChange(StateIdle)
+		}
 	}()
 
 	return nil
 }
 
-// RespondToPermission sends a permission/response notification.
+// RespondToPermission sends a JSON-RPC response to a session/request_permission request.
+// The requestID is the string-encoded JSON-RPC request id.
 func (t *ACPTransport) RespondToPermission(requestID string, approved bool) error {
-	params := map[string]any{
-		"request_id": requestID,
-		"approved":   approved,
+	rpcID, err := strconv.ParseInt(requestID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid permission request ID %q: %w", requestID, err)
 	}
-	return t.tracker.Writer.WriteNotification("permission/response", params)
+
+	// Select the correct optionId from the agent-provided options.
+	optionID := t.handler.SelectOptionID(requestID, approved)
+	result := map[string]any{
+		"outcome": map[string]any{
+			"outcome":  "selected",
+			"optionId": optionID,
+		},
+	}
+
+	return t.tracker.Writer.WriteResponse(rpcID, result, nil)
 }
 
 // CancelSession sends a session/cancel notification.
 func (t *ACPTransport) CancelSession(sessionID string) error {
 	params := map[string]any{
-		"session_id": sessionID,
+		"sessionId": sessionID,
 	}
 	return t.tracker.Writer.WriteNotification("session/cancel", params)
 }
@@ -181,6 +215,12 @@ func (t *ACPTransport) dispatchMessage(msg *JSONRPCMessage) {
 	case msg.IsNotification():
 		t.handler.HandleNotification(msg.Method, msg.Params)
 	case msg.IsRequest():
-		t.tracker.RejectRequest(msg)
+		// Standard ACP: agent sends session/request_permission as a request.
+		if msg.Method == "session/request_permission" {
+			id, _ := msg.GetID()
+			t.handler.HandlePermissionRequest(id, msg.Params)
+		} else {
+			t.tracker.RejectRequest(msg)
+		}
 	}
 }

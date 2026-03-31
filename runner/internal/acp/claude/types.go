@@ -98,9 +98,11 @@ type toolCallState struct {
 
 // controlRequestPayload is the "request" field of a control_request message.
 type controlRequestPayload struct {
-	Subtype  string          `json:"subtype"`   // "can_use_tool"
-	ToolName string          `json:"tool_name"`
-	Input    json.RawMessage `json:"input"`
+	Subtype     string          `json:"subtype"`      // "can_use_tool"
+	ToolName    string          `json:"tool_name"`
+	ToolUseID   string          `json:"tool_use_id"`
+	Input       json.RawMessage `json:"input"`
+	Description string          `json:"description"`
 }
 
 // controlResponseMessage is written to stdin to respond to a control_request.
@@ -118,5 +120,7 @@ type controlResponsePayload struct {
 
 // controlResponseData holds the permission decision.
 type controlResponseData struct {
-	Behavior string `json:"behavior"` // "allow" | "deny"
+	Behavior     string          `json:"behavior"`                // "allow" | "deny"
+	UpdatedInput json.RawMessage `json:"updatedInput,omitempty"`  // allow: pass original input
+	Message      string          `json:"message,omitempty"`       // deny: reason message
 }

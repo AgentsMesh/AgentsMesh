@@ -2,6 +2,7 @@ package codex
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
 )
@@ -17,9 +18,7 @@ func (t *Transport) handleNotification(method string, params json.RawMessage) {
 
 	switch method {
 	case "turn/completed":
-		if t.callbacks.OnStateChange != nil {
-			t.callbacks.OnStateChange(acp.StateIdle)
-		}
+		t.handleTurnCompleted(params)
 
 	case "item/agentMessage/delta":
 		var d agentMessageDelta
@@ -28,17 +27,17 @@ func (t *Transport) handleNotification(method string, params json.RawMessage) {
 			return
 		}
 		if t.callbacks.OnContentChunk != nil {
-			t.callbacks.OnContentChunk(sid, acp.ContentChunk{Text: d.Text, Role: "assistant"})
+			t.callbacks.OnContentChunk(sid, acp.ContentChunk{Text: d.Delta, Role: "assistant"})
 		}
 
-	case "item/thinking/delta":
-		var d thinkingDelta
+	case "item/reasoning/summaryTextDelta", "item/reasoning/textDelta":
+		var d reasoningDelta
 		if err := json.Unmarshal(params, &d); err != nil {
-			t.logger.Warn("failed to parse thinking/delta", "error", err)
+			t.logger.Warn("failed to parse reasoning delta", "error", err)
 			return
 		}
 		if t.callbacks.OnThinkingUpdate != nil {
-			t.callbacks.OnThinkingUpdate(sid, acp.ThinkingUpdate{Text: d.Text})
+			t.callbacks.OnThinkingUpdate(sid, acp.ThinkingUpdate{Text: d.Delta})
 		}
 
 	case "item/plan/delta":
@@ -47,81 +46,121 @@ func (t *Transport) handleNotification(method string, params json.RawMessage) {
 			t.logger.Warn("failed to parse plan/delta", "error", err)
 			return
 		}
-		if t.callbacks.OnPlanUpdate != nil {
-			t.callbacks.OnPlanUpdate(sid, acp.PlanUpdate{
-				Steps: []acp.PlanStep{{Title: d.Step.Title, Status: d.Step.Status}},
-			})
+		if t.callbacks.OnContentChunk != nil {
+			t.callbacks.OnContentChunk(sid, acp.ContentChunk{Text: d.Delta, Role: "plan"})
 		}
 
-	case "item/toolCall/started":
-		var tc toolCallStarted
-		if err := json.Unmarshal(params, &tc); err != nil {
-			t.logger.Warn("failed to parse toolCall/started", "error", err)
-			return
-		}
-		if t.callbacks.OnToolCallUpdate != nil {
-			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
-				ToolCallID: tc.ToolCallID, ToolName: tc.ToolName,
-				Status: "running", ArgumentsJSON: tc.ArgumentsJSON,
-			})
-		}
-
-	case "item/commandExecution/started":
-		var ce commandExecutionStarted
-		if err := json.Unmarshal(params, &ce); err != nil {
-			t.logger.Warn("failed to parse commandExecution/started", "error", err)
-			return
-		}
-		if t.callbacks.OnToolCallUpdate != nil {
-			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
-				ToolCallID: ce.ToolCallID, ToolName: "shell", Status: "running",
-			})
-		}
-
-	case "item/commandExecution/completed":
-		var ce commandExecutionCompleted
-		if err := json.Unmarshal(params, &ce); err != nil {
-			t.logger.Warn("failed to parse commandExecution/completed", "error", err)
-			return
-		}
-		if t.callbacks.OnToolCallResult != nil {
-			t.callbacks.OnToolCallResult(sid, acp.ToolCallResult{
-				ToolCallID: ce.ToolCallID, ToolName: "shell",
-				Success: ce.ExitCode == 0, ResultText: ce.Output,
-			})
-		}
+	case "item/started":
+		t.handleItemStarted(sid, params)
 
 	case "item/completed":
-		var ic itemCompleted
-		if err := json.Unmarshal(params, &ic); err != nil {
-			t.logger.Warn("failed to parse item/completed", "error", err)
-			return
-		}
-		if ic.Type == "tool_call" && t.callbacks.OnToolCallUpdate != nil {
-			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
-				ToolCallID: ic.ToolCallID, ToolName: ic.ToolName, Status: "completed",
-			})
-		}
-
-	case "serverRequest/approvalRequired":
-		var req approvalRequest
-		if err := json.Unmarshal(params, &req); err != nil {
-			t.logger.Warn("failed to parse approvalRequired", "error", err)
-			return
-		}
-		if t.callbacks.OnStateChange != nil {
-			t.callbacks.OnStateChange(acp.StateWaitingPermission)
-		}
-		if t.callbacks.OnPermissionRequest != nil {
-			t.callbacks.OnPermissionRequest(acp.PermissionRequest{
-				SessionID:   sid,
-				RequestID:   req.RequestID,
-				ToolName:    req.Type,
-				Description: req.Description,
-			})
-		}
+		t.handleItemCompleted(sid, params)
 
 	default:
 		t.logger.Debug("unhandled codex notification", "method", method)
+	}
+}
+
+// handleItemStarted dispatches item/started by item.type.
+func (t *Transport) handleItemStarted(sid string, params json.RawMessage) {
+	var is itemStartedParams
+	if err := json.Unmarshal(params, &is); err != nil {
+		t.logger.Warn("failed to parse item/started", "error", err)
+		return
+	}
+	switch is.Item.Type {
+	case "toolCall":
+		if t.callbacks.OnToolCallUpdate != nil {
+			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
+				ToolCallID: is.Item.ID, ToolName: is.Item.ToolName, Status: "running",
+			})
+		}
+	case "commandExecution":
+		if t.callbacks.OnToolCallUpdate != nil {
+			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
+				ToolCallID: is.Item.ID, ToolName: "shell", Status: "running",
+			})
+		}
+	}
+}
+
+// handleItemCompleted dispatches item/completed by item.type.
+func (t *Transport) handleItemCompleted(sid string, params json.RawMessage) {
+	var ic itemCompletedParams
+	if err := json.Unmarshal(params, &ic); err != nil {
+		t.logger.Warn("failed to parse item/completed", "error", err)
+		return
+	}
+	switch ic.Item.Type {
+	case "toolCall":
+		if t.callbacks.OnToolCallUpdate != nil {
+			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
+				ToolCallID: ic.Item.ID, ToolName: ic.Item.ToolName, Status: "completed",
+			})
+		}
+	case "commandExecution":
+		exitCode := 0
+		if ic.Item.ExitCode != nil {
+			exitCode = *ic.Item.ExitCode
+		}
+		if t.callbacks.OnToolCallResult != nil {
+			t.callbacks.OnToolCallResult(sid, acp.ToolCallResult{
+				ToolCallID: ic.Item.ID, ToolName: "shell",
+				Success: exitCode == 0, ResultText: ic.Item.AggregatedOutput,
+			})
+		}
+	}
+}
+
+func (t *Transport) handleTurnCompleted(params json.RawMessage) {
+	var tc turnCompletedParams
+	if err := json.Unmarshal(params, &tc); err != nil {
+		if t.callbacks.OnStateChange != nil {
+			t.callbacks.OnStateChange(acp.StateIdle)
+		}
+		return
+	}
+	if tc.Turn.Status == "failed" && t.callbacks.OnLog != nil {
+		msg := "turn failed"
+		if tc.Turn.Error != nil {
+			msg = "turn failed: " + tc.Turn.Error.Message
+		}
+		t.callbacks.OnLog("error", msg)
+	}
+	if t.callbacks.OnStateChange != nil {
+		t.callbacks.OnStateChange(acp.StateIdle)
+	}
+}
+
+func (t *Transport) handleApprovalRequest(rpcID int64, params json.RawMessage) {
+	var req approvalRequestParams
+	if err := json.Unmarshal(params, &req); err != nil {
+		t.logger.Warn("failed to parse approval request", "error", err)
+		return
+	}
+
+	if t.callbacks.OnStateChange != nil {
+		t.callbacks.OnStateChange(acp.StateWaitingPermission)
+	}
+
+	description := req.Description
+	toolName := "command"
+	if req.Path != "" {
+		toolName = "fileChange"
+		if description == "" {
+			description = req.Path
+		}
+	}
+	if req.Command != "" && description == "" {
+		description = req.Command
+	}
+
+	if t.callbacks.OnPermissionRequest != nil {
+		t.callbacks.OnPermissionRequest(acp.PermissionRequest{
+			SessionID:   t.getSessionID(),
+			RequestID:   fmt.Sprintf("%d", rpcID),
+			ToolName:    toolName,
+			Description: description,
+		})
 	}
 }

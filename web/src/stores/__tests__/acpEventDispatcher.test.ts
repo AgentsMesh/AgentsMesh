@@ -15,10 +15,10 @@ describe("acpEventDispatcher", () => {
   });
 
   describe("AcpEvent routing", () => {
-    it("routes content_chunk to addContentChunk", () => {
+    it("routes contentChunk to addContentChunk", () => {
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "content_chunk",
-        session_id: "s1",
+        type: "contentChunk",
+        sessionId: "s1",
         text: "Hello",
         role: "assistant",
       });
@@ -28,52 +28,52 @@ describe("acpEventDispatcher", () => {
       expect(s.messages[0]).toMatchObject({ text: "Hello", role: "assistant" });
     });
 
-    it("routes tool_call_update to updateToolCall", () => {
+    it("routes toolCallUpdate to updateToolCall", () => {
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "tool_call_update",
-        session_id: "s1",
-        tool_call_id: "tc1",
-        tool_name: "read_file",
+        type: "toolCallUpdate",
+        sessionId: "s1",
+        toolCallId: "tc1",
+        toolName: "read_file",
         status: "running",
-        arguments_json: '{"path":"src/main.ts"}',
+        argumentsJson: '{"path":"src/main.ts"}',
       });
 
       const tc = getSession().toolCalls["tc1"];
       expect(tc).toBeDefined();
-      expect(tc.tool_name).toBe("read_file");
+      expect(tc.toolName).toBe("read_file");
       expect(tc.status).toBe("running");
     });
 
-    it("routes tool_call_result to setToolCallResult", () => {
+    it("routes toolCallResult to setToolCallResult", () => {
       // First create the tool call
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "tool_call_update",
-        session_id: "s1",
-        tool_call_id: "tc2",
-        tool_name: "bash",
+        type: "toolCallUpdate",
+        sessionId: "s1",
+        toolCallId: "tc2",
+        toolName: "bash",
         status: "completed",
-        arguments_json: '{"cmd":"ls"}',
+        argumentsJson: '{"cmd":"ls"}',
       });
 
       // Then deliver result
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "tool_call_result",
-        session_id: "s1",
-        tool_call_id: "tc2",
+        type: "toolCallResult",
+        sessionId: "s1",
+        toolCallId: "tc2",
         success: true,
-        result_text: "file1.ts\nfile2.ts",
-        error_message: "",
+        resultText: "file1.ts\nfile2.ts",
+        errorMessage: "",
       });
 
       const tc = getSession().toolCalls["tc2"];
       expect(tc.success).toBe(true);
-      expect(tc.result_text).toBe("file1.ts\nfile2.ts");
+      expect(tc.resultText).toBe("file1.ts\nfile2.ts");
     });
 
-    it("routes plan_update to updatePlan", () => {
+    it("routes planUpdate to updatePlan", () => {
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "plan_update",
-        session_id: "s1",
+        type: "planUpdate",
+        sessionId: "s1",
         steps: [
           { title: "Read files", status: "completed" },
           { title: "Write code", status: "in_progress" },
@@ -86,10 +86,10 @@ describe("acpEventDispatcher", () => {
       expect(plan[0]).toMatchObject({ title: "Read files", status: "completed" });
     });
 
-    it("routes thinking_update to addThinking", () => {
+    it("routes thinkingUpdate to addThinking", () => {
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "thinking_update",
-        session_id: "s1",
+        type: "thinkingUpdate",
+        sessionId: "s1",
         text: "Let me analyze this...",
       });
 
@@ -98,31 +98,31 @@ describe("acpEventDispatcher", () => {
       expect(th[0].text).toBe("Let me analyze this...");
     });
 
-    it("routes permission_request to addPermissionRequest", () => {
+    it("routes permissionRequest to addPermissionRequest", () => {
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "permission_request",
-        session_id: "s1",
-        request_id: "perm1",
-        tool_name: "bash",
-        arguments_json: '{"cmd":"rm -rf /tmp/test"}',
+        type: "permissionRequest",
+        sessionId: "s1",
+        requestId: "perm1",
+        toolName: "bash",
+        argumentsJson: '{"cmd":"rm -rf /tmp/test"}',
         description: "Execute shell command",
       });
 
       const perms = getSession().pendingPermissions;
       expect(perms).toHaveLength(1);
-      expect(perms[0].request_id).toBe("perm1");
-      expect(perms[0].tool_name).toBe("bash");
+      expect(perms[0].requestId).toBe("perm1");
+      expect(perms[0].toolName).toBe("bash");
     });
 
-    it("routes session_state and marks messages complete on idle", () => {
+    it("routes sessionState and marks messages complete on idle", () => {
       // Add an incomplete assistant message
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "content_chunk", session_id: "s1", text: "Done", role: "assistant",
+        type: "contentChunk", sessionId: "s1", text: "Done", role: "assistant",
       });
 
       // Transition to idle
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "session_state", session_id: "s1", state: "idle",
+        type: "sessionState", sessionId: "s1", state: "idle",
       });
 
       const s = getSession();
@@ -134,7 +134,7 @@ describe("acpEventDispatcher", () => {
       // Should not throw or add to store
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
         type: "log",
-        session_id: "s1",
+        sessionId: "s1",
         level: "error",
         message: "Something went wrong",
       });
@@ -146,7 +146,7 @@ describe("acpEventDispatcher", () => {
     it("handles unknown event types gracefully", () => {
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
         type: "unknown_future_event",
-        session_id: "s1",
+        sessionId: "s1",
       });
 
       // Should not crash
@@ -163,15 +163,15 @@ describe("acpEventDispatcher", () => {
   });
 
   describe("AcpSnapshot replay", () => {
-    it("replays full snapshot with messages, plan, tool_calls, and permissions", () => {
+    it("replays full snapshot with messages, plan, toolCalls, and permissions", () => {
       // Pre-fill some data that should be cleared
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
-        type: "content_chunk", session_id: "s1", text: "old msg", role: "user",
+        type: "contentChunk", sessionId: "s1", text: "old msg", role: "user",
       });
 
       // Send snapshot
       dispatchAcpRelayEvent(POD, MsgType.AcpSnapshot, {
-        session_id: "s2",
+        sessionId: "s2",
         state: "idle",
         messages: [
           { text: "hello", role: "user" },
@@ -180,21 +180,21 @@ describe("acpEventDispatcher", () => {
         plan: [
           { title: "Step 1", status: "completed" },
         ],
-        tool_calls: [
+        toolCalls: [
           {
-            tool_call_id: "tc-snap",
-            tool_name: "read_file",
+            toolCallId: "tc-snap",
+            toolName: "read_file",
             status: "completed",
-            arguments_json: '{"path":"main.ts"}',
+            argumentsJson: '{"path":"main.ts"}',
             success: true,
-            result_text: "file content",
+            resultText: "file content",
           },
         ],
-        pending_permissions: [
+        pendingPermissions: [
           {
-            request_id: "perm-snap",
-            tool_name: "bash",
-            arguments_json: "{}",
+            requestId: "perm-snap",
+            toolName: "bash",
+            argumentsJson: "{}",
             description: "run command",
           },
         ],
@@ -220,7 +220,7 @@ describe("acpEventDispatcher", () => {
 
       // Snapshot with empty data
       dispatchAcpRelayEvent(POD, MsgType.AcpSnapshot, {
-        session_id: "s2",
+        sessionId: "s2",
         state: "idle",
       });
 

@@ -57,8 +57,8 @@ describe("AcpActivityStream", () => {
     seedSession(() => {
       const s = useAcpSessionStore.getState();
       s.updateToolCall(POD, "s1", {
-        tool_call_id: "tc1", tool_name: "write_file", status: "completed",
-        arguments_json: '{"path":"main.ts"}', timestamp: 0,
+        toolCallId: "tc1", toolName: "write_file", status: "completed",
+        argumentsJson: '{"path":"main.ts"}', timestamp: 0,
       });
     });
 
@@ -84,8 +84,8 @@ describe("AcpActivityStream", () => {
       s.addThinking(POD, "s1", "Analyzing...");
       s.addContentChunk(POD, "s1", "I see the issue.", "assistant");
       s.updateToolCall(POD, "s1", {
-        tool_call_id: "tc1", tool_name: "edit_file", status: "running",
-        arguments_json: "{}", timestamp: 0,
+        toolCallId: "tc1", toolName: "edit_file", status: "running",
+        argumentsJson: "{}", timestamp: 0,
       });
     });
 

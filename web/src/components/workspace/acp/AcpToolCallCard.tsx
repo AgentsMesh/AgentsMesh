@@ -42,21 +42,21 @@ export function AcpToolCallCard({ toolCall }: { toolCall: AcpToolCall }) {
           <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
         )}
         <ToolStatusIcon toolCall={toolCall} />
-        <span className="text-xs font-mono text-muted-foreground truncate">{toolCall.tool_name}</span>
+        <span className="text-xs font-mono text-muted-foreground truncate">{toolCall.toolName}</span>
       </button>
       {expanded && (
         <div className="ml-[18px] mt-1 space-y-1">
           <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
-            {toolCall.arguments_json}
+            {toolCall.argumentsJson}
           </pre>
-          {toolCall.result_text && (
+          {toolCall.resultText && (
             <pre className="text-xs bg-green-50 dark:bg-green-950 p-2 rounded overflow-x-auto">
-              {toolCall.result_text}
+              {toolCall.resultText}
             </pre>
           )}
-          {toolCall.error_message && (
+          {toolCall.errorMessage && (
             <pre className="text-xs bg-red-50 dark:bg-red-950 p-2 rounded overflow-x-auto">
-              {toolCall.error_message}
+              {toolCall.errorMessage}
             </pre>
           )}
         </div>

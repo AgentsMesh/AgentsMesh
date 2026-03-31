@@ -9,12 +9,12 @@ interface AcpContentChunk {
 }
 
 interface AcpToolCall {
-  tool_call_id: string;
-  tool_name: string;
+  toolCallId: string;
+  toolName: string;
   status: string;
-  arguments_json: string;
-  result_text?: string;
-  error_message?: string;
+  argumentsJson: string;
+  resultText?: string;
+  errorMessage?: string;
   success?: boolean;
   timestamp: number;
 }
@@ -31,9 +31,9 @@ interface AcpThinking {
 }
 
 interface AcpPermissionRequest {
-  request_id: string;
-  tool_name: string;
-  arguments_json: string;
+  requestId: string;
+  toolName: string;
+  argumentsJson: string;
   description: string;
 }
 
@@ -167,11 +167,11 @@ export const useAcpSessionStore = create<AcpSessionStore>((set) => ({
   updateToolCall: (podKey, _sessionId, toolCall) =>
     set((state) => {
       const session = getOrCreateSession(state.sessions, podKey);
-      const existing = session.toolCalls[toolCall.tool_call_id];
+      const existing = session.toolCalls[toolCall.toolCallId];
       // Preserve original timestamp if already recorded; otherwise stamp now.
       const timestamped = { ...toolCall, timestamp: existing?.timestamp ?? Date.now() };
       const thinkings = sealLastThinking(session.thinkings);
-      const toolCalls = trimToolCalls({ ...session.toolCalls, [toolCall.tool_call_id]: timestamped });
+      const toolCalls = trimToolCalls({ ...session.toolCalls, [toolCall.toolCallId]: timestamped });
       return {
         sessions: {
           ...state.sessions,
@@ -194,7 +194,7 @@ export const useAcpSessionStore = create<AcpSessionStore>((set) => ({
             thinkings,
             toolCalls: {
               ...session.toolCalls,
-              [toolCallId]: { ...existing, success, result_text: resultText, error_message: errorMessage, status: "completed" },
+              [toolCallId]: { ...existing, success, resultText: resultText, errorMessage: errorMessage, status: "completed" },
             },
           },
         },
@@ -263,7 +263,7 @@ export const useAcpSessionStore = create<AcpSessionStore>((set) => ({
           ...state.sessions,
           [podKey]: {
             ...session,
-            pendingPermissions: session.pendingPermissions.filter((p) => p.request_id !== requestId),
+            pendingPermissions: session.pendingPermissions.filter((p) => p.requestId !== requestId),
           },
         },
       };

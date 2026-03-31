@@ -28,7 +28,7 @@ func TestFormatIntegration_ListRunners(t *testing.T) {
 	assertContains(t, text, "Node: node-1")
 	assertContains(t, text, "Status: online")
 	assertContains(t, text, "Pods: 2/5")
-	assertContains(t, text, "[10] Claude Code (claude-code)")
+	assertContains(t, text, "Claude Code (claude-code)")
 	assertNotContains(t, text, `"node_id"`)
 }
 

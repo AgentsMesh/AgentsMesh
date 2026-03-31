@@ -59,7 +59,7 @@ func TestACPPodRelay_OnRelayDisconnected_NoPanic(t *testing.T) {
 func TestSendAcpViaRelay_NoRelayClient(t *testing.T) {
 	pod := &Pod{PodKey: "pod-acp-1"}
 	// No relay client set → silently dropped.
-	sendAcpViaRelay(pod, "content_chunk", "sess-1", map[string]string{"text": "hi"})
+	sendAcpViaRelay(pod, "contentChunk", "sess-1", map[string]string{"text": "hi"})
 }
 
 func TestSendAcpViaRelay_NotConnected(t *testing.T) {
@@ -68,7 +68,7 @@ func TestSendAcpViaRelay_NotConnected(t *testing.T) {
 	mc.SetConnected(false)
 	pod.SetRelayClient(mc)
 
-	sendAcpViaRelay(pod, "content_chunk", "sess-1", map[string]string{"text": "hi"})
+	sendAcpViaRelay(pod, "contentChunk", "sess-1", map[string]string{"text": "hi"})
 	// No message sent when not connected.
 	if mc.CountSentByType(relay.MsgTypeAcpEvent) != 0 {
 		t.Error("should not send when relay not connected")
@@ -81,7 +81,7 @@ func TestSendAcpViaRelay_Success(t *testing.T) {
 	mc.SetConnected(true)
 	pod.SetRelayClient(mc)
 
-	sendAcpViaRelay(pod, "content_chunk", "sess-1", map[string]string{"text": "hi"})
+	sendAcpViaRelay(pod, "contentChunk", "sess-1", map[string]string{"text": "hi"})
 
 	// Verify the sent message.
 	if mc.CountSentByType(relay.MsgTypeAcpEvent) != 1 {
@@ -91,11 +91,11 @@ func TestSendAcpViaRelay_Success(t *testing.T) {
 	if err := json.Unmarshal(mc.SentMessages[0].Payload, &envelope); err != nil {
 		t.Fatalf("payload not valid JSON: %v", err)
 	}
-	if envelope["type"] != "content_chunk" {
-		t.Errorf("expected type 'content_chunk', got %v", envelope["type"])
+	if envelope["type"] != "contentChunk" {
+		t.Errorf("expected type 'contentChunk', got %v", envelope["type"])
 	}
-	if envelope["session_id"] != "sess-1" {
-		t.Errorf("expected session_id 'sess-1', got %v", envelope["session_id"])
+	if envelope["sessionId"] != "sess-1" {
+		t.Errorf("expected sessionId 'sess-1', got %v", envelope["sessionId"])
 	}
 }
 

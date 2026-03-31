@@ -37,7 +37,7 @@ func sendAcpViaRelay(pod *Pod, eventType, sessionID string, data any) {
 		flat = map[string]any{}
 	}
 	flat["type"] = eventType
-	flat["session_id"] = sessionID
+	flat["sessionId"] = sessionID
 
 	payload, err := json.Marshal(flat)
 	if err != nil {
@@ -47,7 +47,7 @@ func sendAcpViaRelay(pod *Pod, eventType, sessionID string, data any) {
 		// Log critical events that should not be silently lost.
 		// Permission requests cause agent to hang if the user never sees them;
 		// tool call results leave the UI spinner stuck forever.
-		if eventType == "permission_request" || eventType == "tool_call_result" {
+		if eventType == "permissionRequest" || eventType == "toolCallResult" {
 			logger.Pod().Warn("Failed to send critical ACP event via relay",
 				"pod_key", pod.PodKey, "event_type", eventType, "error", err)
 		}
@@ -74,31 +74,31 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 		TransportType: inferTransportType(pod.LaunchCommand),
 		Callbacks: acp.EventCallbacks{
 			OnContentChunk: func(sessionID string, chunk acp.ContentChunk) {
-				sendAcpViaRelay(pod, "content_chunk", sessionID, chunk)
+				sendAcpViaRelay(pod, "contentChunk", sessionID, chunk)
 			},
 			OnToolCallUpdate: func(sessionID string, update acp.ToolCallUpdate) {
-				sendAcpViaRelay(pod, "tool_call_update", sessionID, update)
+				sendAcpViaRelay(pod, "toolCallUpdate", sessionID, update)
 			},
 			OnToolCallResult: func(sessionID string, result acp.ToolCallResult) {
-				sendAcpViaRelay(pod, "tool_call_result", sessionID, result)
+				sendAcpViaRelay(pod, "toolCallResult", sessionID, result)
 			},
 			OnPlanUpdate: func(sessionID string, update acp.PlanUpdate) {
-				sendAcpViaRelay(pod, "plan_update", sessionID, update)
+				sendAcpViaRelay(pod, "planUpdate", sessionID, update)
 			},
 			OnThinkingUpdate: func(sessionID string, update acp.ThinkingUpdate) {
-				sendAcpViaRelay(pod, "thinking_update", sessionID, update)
+				sendAcpViaRelay(pod, "thinkingUpdate", sessionID, update)
 			},
 			OnPermissionRequest: func(req acp.PermissionRequest) {
 				// Track pending permission for snapshots.
 				acpClient.AddPendingPermission(req)
-				sendAcpViaRelay(pod, "permission_request", req.SessionID, req)
+				sendAcpViaRelay(pod, "permissionRequest", req.SessionID, req)
 			},
 			OnStateChange: func(newState string) {
 				// Lifecycle status update via gRPC (backend updates DB).
 				backendStatus := mapACPState(newState)
 				_ = conn.SendAgentStatus(podKey, backendStatus)
 				// UI state notification via Relay only.
-				sendAcpViaRelay(pod, "session_state", "", map[string]string{"state": newState})
+				sendAcpViaRelay(pod, "sessionState", "", map[string]string{"state": newState})
 				// Notify PodIO subscribers (e.g. Autopilot StateDetectorCoordinator).
 				if acpIO, ok := pod.IO.(*ACPPodIO); ok {
 					acpIO.NotifyStateChange(newState)
@@ -151,7 +151,7 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	// ACPClient.SendPrompt checks State() == Idle (guaranteed after Handshake).
 	if cmd.InitialPrompt != "" {
 		// Echo user message so it appears in chat on all connected devices.
-		sendAcpViaRelay(pod, "content_chunk", "", map[string]string{
+		sendAcpViaRelay(pod, "contentChunk", "", map[string]string{
 			"text": cmd.InitialPrompt, "role": "user",
 		})
 		if err := acpClient.SendPrompt(cmd.InitialPrompt); err != nil {

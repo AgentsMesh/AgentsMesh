@@ -8,13 +8,18 @@ import (
 )
 
 func (t *Transport) handleSystem(msg *message) {
-	if msg.Subtype == "init" {
+	switch msg.Subtype {
+	case "init":
 		t.sessionMu.Lock()
 		t.sessionID = msg.SessionID
 		t.sessionMu.Unlock()
 
 		t.logger.Info("Claude session initialized", "session_id", msg.SessionID)
 		// session_id is set here; initCh is closed by handleControlResponse.
+	case "api_retry":
+		if t.callbacks.OnLog != nil {
+			t.callbacks.OnLog("warn", "Claude API retry in progress")
+		}
 	}
 }
 
@@ -158,7 +163,17 @@ func (t *Transport) handleCanUseTool(requestID string, req *controlRequestPayloa
 	sid := t.sessionID
 	t.sessionMu.RUnlock()
 
+	// Store original input for the permission response.
+	t.pendingInputsMu.Lock()
+	t.pendingInputs[requestID] = req.Input
+	t.pendingInputsMu.Unlock()
+
 	argsJSON := string(req.Input)
+
+	desc := req.Description
+	if desc == "" {
+		desc = fmt.Sprintf("Tool: %s", req.ToolName)
+	}
 
 	if t.callbacks.OnStateChange != nil {
 		t.callbacks.OnStateChange(acp.StateWaitingPermission)
@@ -169,7 +184,7 @@ func (t *Transport) handleCanUseTool(requestID string, req *controlRequestPayloa
 			RequestID:     requestID,
 			ToolName:      req.ToolName,
 			ArgumentsJSON: argsJSON,
-			Description:   fmt.Sprintf("Tool: %s", req.ToolName),
+			Description:   desc,
 		})
 	}
 }

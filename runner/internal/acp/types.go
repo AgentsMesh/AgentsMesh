@@ -18,19 +18,19 @@ type ContentChunk struct {
 
 // ToolCallUpdate represents a tool execution status change.
 type ToolCallUpdate struct {
-	ToolCallID    string `json:"tool_call_id"`
-	ToolName      string `json:"tool_name"`
+	ToolCallID    string `json:"toolCallId"`
+	ToolName      string `json:"toolName"`
 	Status        string `json:"status"` // "running" | "completed" | "failed"
-	ArgumentsJSON string `json:"arguments_json"`
+	ArgumentsJSON string `json:"argumentsJson"`
 }
 
 // ToolCallResult represents the outcome of a tool execution.
 type ToolCallResult struct {
-	ToolCallID   string `json:"tool_call_id"`
-	ToolName     string `json:"tool_name"`
+	ToolCallID   string `json:"toolCallId"`
+	ToolName     string `json:"toolName"`
 	Success      bool   `json:"success"`
-	ResultText   string `json:"result_text"`
-	ErrorMessage string `json:"error_message"`
+	ResultText   string `json:"resultText"`
+	ErrorMessage string `json:"errorMessage"`
 }
 
 // PlanStep represents a single step in the agent's plan.
@@ -51,11 +51,11 @@ type ThinkingUpdate struct {
 
 // PermissionRequest represents a tool permission request from the agent.
 type PermissionRequest struct {
-	SessionID     string
-	RequestID     string
-	ToolName      string
-	ArgumentsJSON string
-	Description   string
+	SessionID     string `json:"sessionId"`
+	RequestID     string `json:"requestId"`
+	ToolName      string `json:"toolName"`
+	ArgumentsJSON string `json:"argumentsJson"`
+	Description   string `json:"description"`
 }
 
 // EventCallbacks defines the event handlers for ACP client events.
@@ -74,24 +74,24 @@ type EventCallbacks struct {
 // AcpSessionSnapshot captures the current state of an ACP session
 // for sending to late-joining subscribers via Relay.
 type AcpSessionSnapshot struct {
-	SessionID          string              `json:"session_id"`
+	SessionID          string              `json:"sessionId"`
 	State              string              `json:"state"`
 	Messages           []ContentChunk      `json:"messages"`
-	ToolCalls          []ToolCallSnapshot  `json:"tool_calls,omitempty"`
+	ToolCalls          []ToolCallSnapshot  `json:"toolCalls,omitempty"`
 	Plan               []PlanStep          `json:"plan,omitempty"`
-	PendingPermissions []PermissionRequest `json:"pending_permissions"`
+	PendingPermissions []PermissionRequest `json:"pendingPermissions"`
 }
 
 // ToolCallSnapshot is the merged view of a tool call for snapshots,
 // combining ToolCallUpdate fields with ToolCallResult fields.
 type ToolCallSnapshot struct {
-	ToolCallID    string `json:"tool_call_id"`
-	ToolName      string `json:"tool_name"`
+	ToolCallID    string `json:"toolCallId"`
+	ToolName      string `json:"toolName"`
 	Status        string `json:"status"`
-	ArgumentsJSON string `json:"arguments_json"`
+	ArgumentsJSON string `json:"argumentsJson"`
 	Success       *bool  `json:"success,omitempty"`      // nil until result arrives
-	ResultText    string `json:"result_text,omitempty"`
-	ErrorMessage  string `json:"error_message,omitempty"`
+	ResultText    string `json:"resultText,omitempty"`
+	ErrorMessage  string `json:"errorMessage,omitempty"`
 }
 
 // AgentCapabilities describes the capabilities reported by the agent

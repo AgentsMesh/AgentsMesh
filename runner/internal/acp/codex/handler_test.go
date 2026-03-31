@@ -9,8 +9,8 @@ import (
 func TestHandler_AgentMessageDelta(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "item/agentMessage/delta", agentMessageDelta{Text: "Hello "})
-	writeNotification(f.PW, "item/agentMessage/delta", agentMessageDelta{Text: "world!"})
+	writeNotification(f.PW, "item/agentMessage/delta", agentMessageDelta{Delta: "Hello "})
+	writeNotification(f.PW, "item/agentMessage/delta", agentMessageDelta{Delta: "world!"})
 	f.Drain()
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -22,10 +22,10 @@ func TestHandler_AgentMessageDelta(t *testing.T) {
 	}
 }
 
-func TestHandler_ThinkingDelta(t *testing.T) {
+func TestHandler_ReasoningDelta(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "item/thinking/delta", thinkingDelta{Text: "hmm"})
+	writeNotification(f.PW, "item/reasoning/summaryTextDelta", reasoningDelta{Delta: "hmm"})
 	f.Drain()
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -34,31 +34,38 @@ func TestHandler_ThinkingDelta(t *testing.T) {
 	}
 }
 
-func TestHandler_PlanDelta(t *testing.T) {
+func TestHandler_ReasoningTextDelta(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "item/plan/delta", planDelta{
-		Step: struct {
-			Title  string `json:"title"`
-			Status string `json:"status"`
-		}{Title: "Read files", Status: "in_progress"},
-	})
+	writeNotification(f.PW, "item/reasoning/textDelta", reasoningDelta{Delta: "deep thought"})
 	f.Drain()
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if len(f.PlanSteps) != 1 {
-		t.Fatalf("expected 1 plan step, got %d", len(f.PlanSteps))
-	}
-	if f.PlanSteps[0].Title != "Read files" || f.PlanSteps[0].Status != "in_progress" {
-		t.Errorf("step = %+v", f.PlanSteps[0])
+	if len(f.ThinkingTexts) != 1 || f.ThinkingTexts[0] != "deep thought" {
+		t.Errorf("thinking = %v", f.ThinkingTexts)
 	}
 }
 
-func TestHandler_ToolCallStarted(t *testing.T) {
+func TestHandler_PlanDelta(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "item/toolCall/started", toolCallStarted{
-		ToolCallID: "tc1", ToolName: "Read", ArgumentsJSON: `{"file":"main.go"}`,
+	writeNotification(f.PW, "item/plan/delta", planDelta{Delta: "Step 1: Read files"})
+	f.Drain()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if len(f.Chunks) != 1 {
+		t.Fatalf("expected 1 plan chunk, got %d", len(f.Chunks))
+	}
+	if f.Chunks[0].Text != "Step 1: Read files" || f.Chunks[0].Role != "plan" {
+		t.Errorf("chunk = %+v", f.Chunks[0])
+	}
+}
+
+func TestHandler_ItemStarted_ToolCall(t *testing.T) {
+	f := newFixture()
+	defer f.Close()
+	writeNotification(f.PW, "item/started", map[string]any{
+		"item": map[string]any{"id": "tc1", "type": "toolCall", "toolName": "Read"},
 	})
 	f.Drain()
 	f.mu.Lock()
@@ -71,24 +78,33 @@ func TestHandler_ToolCallStarted(t *testing.T) {
 	}
 }
 
-func TestHandler_CommandExecution(t *testing.T) {
+func TestHandler_ItemStarted_CommandExecution(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "item/commandExecution/started", commandExecutionStarted{
-		ToolCallID: "ce1", Command: "ls -la",
-	})
-	writeNotification(f.PW, "item/commandExecution/completed", commandExecutionCompleted{
-		ToolCallID: "ce1", ExitCode: 0, Output: "file list",
+	writeNotification(f.PW, "item/started", map[string]any{
+		"item": map[string]any{"id": "ce1", "type": "commandExecution"},
 	})
 	f.Drain()
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if len(f.ToolUpdates) != 1 {
-		t.Fatalf("expected 1 tool update, got %d", len(f.ToolUpdates))
+	if len(f.ToolUpdates) != 1 || f.ToolUpdates[0].ToolName != "shell" {
+		t.Errorf("updates = %+v", f.ToolUpdates)
 	}
-	if f.ToolUpdates[0].ToolName != "shell" || f.ToolUpdates[0].Status != "running" {
-		t.Errorf("update = %+v", f.ToolUpdates[0])
-	}
+}
+
+func TestHandler_ItemCompleted_CommandExecution(t *testing.T) {
+	f := newFixture()
+	defer f.Close()
+	exitCode := 0
+	writeNotification(f.PW, "item/completed", map[string]any{
+		"item": map[string]any{
+			"id": "ce1", "type": "commandExecution",
+			"exitCode": exitCode, "aggregatedOutput": "file list",
+		},
+	})
+	f.Drain()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if len(f.ToolResults) != 1 {
 		t.Fatalf("expected 1 tool result, got %d", len(f.ToolResults))
 	}
@@ -97,11 +113,15 @@ func TestHandler_CommandExecution(t *testing.T) {
 	}
 }
 
-func TestHandler_CommandExecution_Failure(t *testing.T) {
+func TestHandler_ItemCompleted_CommandExecution_Failure(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "item/commandExecution/completed", commandExecutionCompleted{
-		ToolCallID: "ce2", ExitCode: 1, Output: "error",
+	exitCode := 1
+	writeNotification(f.PW, "item/completed", map[string]any{
+		"item": map[string]any{
+			"id": "ce2", "type": "commandExecution",
+			"exitCode": exitCode, "aggregatedOutput": "error",
+		},
 	})
 	f.Drain()
 	f.mu.Lock()
@@ -114,8 +134,8 @@ func TestHandler_CommandExecution_Failure(t *testing.T) {
 func TestHandler_ItemCompleted_ToolCall(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "item/completed", itemCompleted{
-		Type: "tool_call", ToolCallID: "tc1", ToolName: "Write",
+	writeNotification(f.PW, "item/completed", map[string]any{
+		"item": map[string]any{"id": "tc1", "type": "toolCall", "toolName": "Write"},
 	})
 	f.Drain()
 	f.mu.Lock()
@@ -128,7 +148,9 @@ func TestHandler_ItemCompleted_ToolCall(t *testing.T) {
 func TestHandler_ItemCompleted_NonToolCall(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "item/completed", itemCompleted{Type: "agent_message"})
+	writeNotification(f.PW, "item/completed", map[string]any{
+		"item": map[string]any{"id": "x", "type": "agentMessage"},
+	})
 	f.Drain()
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -149,20 +171,20 @@ func TestHandler_TurnCompleted(t *testing.T) {
 	}
 }
 
-func TestHandler_ApprovalRequired(t *testing.T) {
+func TestHandler_TurnCompleted_Failed(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	writeNotification(f.PW, "serverRequest/approvalRequired", approvalRequest{
-		RequestID: "r1", Type: "command_execution", Description: "run rm -rf",
+	writeNotification(f.PW, "turn/completed", map[string]any{
+		"turn": map[string]any{
+			"status": "failed",
+			"error":  map[string]any{"message": "API error"},
+		},
 	})
 	f.Drain()
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if len(f.StateChanges) != 1 || f.StateChanges[0] != acp.StateWaitingPermission {
+	if len(f.StateChanges) != 1 || f.StateChanges[0] != acp.StateIdle {
 		t.Errorf("states = %v", f.StateChanges)
-	}
-	if len(f.PermissionReqs) != 1 || f.PermissionReqs[0].RequestID != "r1" {
-		t.Errorf("perms = %+v", f.PermissionReqs)
 	}
 }
 
@@ -171,22 +193,17 @@ func TestHandler_UnknownNotification(t *testing.T) {
 	defer f.Close()
 	writeNotification(f.PW, "some/future/method", map[string]any{})
 	f.Drain()
-	// Should not panic or produce callbacks
 }
 
 func TestHandler_InvalidParams(t *testing.T) {
 	f := newFixture()
 	defer f.Close()
-	// Send notifications with invalid params — should log warn but not panic
 	for _, method := range []string{
 		"item/agentMessage/delta",
-		"item/thinking/delta",
+		"item/reasoning/summaryTextDelta",
 		"item/plan/delta",
-		"item/toolCall/started",
-		"item/commandExecution/started",
-		"item/commandExecution/completed",
+		"item/started",
 		"item/completed",
-		"serverRequest/approvalRequired",
 	} {
 		writeNotification(f.PW, method, "invalid")
 	}

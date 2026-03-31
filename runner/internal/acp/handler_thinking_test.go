@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-// --- Thinking update (session/update type=thinking) ---
+// --- Thinking update (session/update sessionUpdate=agent_thought_chunk) ---
 
 func TestHandler_ThinkingUpdate(t *testing.T) {
 	var received []ThinkingUpdate
@@ -15,9 +15,11 @@ func TestHandler_ThinkingUpdate(t *testing.T) {
 	}, testLogger())
 
 	params := mustMarshal(t, map[string]any{
-		"session_id": "sess-1",
-		"type":       "thinking",
-		"data":       map[string]any{"text": "Let me think about this..."},
+		"sessionId": "sess-1",
+		"update": map[string]any{
+			"sessionUpdate": "agent_thought_chunk",
+			"content":       map[string]any{"text": "Let me think about this..."},
+		},
 	})
 	h.HandleNotification("session/update", params)
 
@@ -35,9 +37,10 @@ func TestHandler_UnknownSessionUpdateType_NoCrash(t *testing.T) {
 	h := NewHandler(EventCallbacks{}, testLogger())
 
 	params := mustMarshal(t, map[string]any{
-		"session_id": "sess-1",
-		"type":       "unknown_type",
-		"data":       map[string]any{},
+		"sessionId": "sess-1",
+		"update": map[string]any{
+			"sessionUpdate": "unknown_type",
+		},
 	})
 	h.HandleNotification("session/update", params)
 }

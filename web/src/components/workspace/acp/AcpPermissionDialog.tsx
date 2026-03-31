@@ -22,7 +22,7 @@ export function AcpPermissionDialog({ podKey, permissions }: AcpPermissionDialog
     }
     relayPool.sendAcpCommand(podKey, {
       type: "permission_response",
-      request_id: requestId,
+      requestId: requestId,
       approved,
     });
     removePermission(podKey, requestId);
@@ -39,7 +39,7 @@ export function AcpPermissionDialog({ podKey, permissions }: AcpPermissionDialog
       )}
       {permissions.map((perm) => (
         <div
-          key={perm.request_id}
+          key={perm.requestId}
           className="rounded-lg border border-amber-200 dark:border-amber-800 p-3"
         >
           <div className="flex items-center gap-2 mb-2">
@@ -48,17 +48,17 @@ export function AcpPermissionDialog({ podKey, permissions }: AcpPermissionDialog
           </div>
           <p className="text-sm mb-1">{perm.description}</p>
           <p className="text-xs text-muted-foreground font-mono mb-2">
-            {perm.tool_name}
+            {perm.toolName}
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => handleRespond(perm.request_id, true)}
+              onClick={() => handleRespond(perm.requestId, true)}
               className="rounded bg-green-600 px-3 py-1 text-xs text-white hover:bg-green-700"
             >
               Approve
             </button>
             <button
-              onClick={() => handleRespond(perm.request_id, false)}
+              onClick={() => handleRespond(perm.requestId, false)}
               className="rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700"
             >
               Deny

@@ -152,10 +152,10 @@ describe("acpSession store", () => {
     it("assigns timestamp on first call", () => {
       const store = useAcpSessionStore.getState();
       store.updateToolCall(POD, SID, {
-        tool_call_id: "tc-1",
-        tool_name: "read_file",
+        toolCallId: "tc-1",
+        toolName: "read_file",
         status: "running",
-        arguments_json: "{}",
+        argumentsJson: "{}",
         timestamp: 0, // will be overwritten since no existing entry
       });
 
@@ -166,10 +166,10 @@ describe("acpSession store", () => {
     it("preserves original timestamp on subsequent updates", () => {
       const store = useAcpSessionStore.getState();
       store.updateToolCall(POD, SID, {
-        tool_call_id: "tc-2",
-        tool_name: "write_file",
+        toolCallId: "tc-2",
+        toolName: "write_file",
         status: "running",
-        arguments_json: "{}",
+        argumentsJson: "{}",
         timestamp: 0,
       });
 
@@ -177,10 +177,10 @@ describe("acpSession store", () => {
 
       // Simulate a later update (e.g. status=completed)
       store.updateToolCall(POD, SID, {
-        tool_call_id: "tc-2",
-        tool_name: "write_file",
+        toolCallId: "tc-2",
+        toolName: "write_file",
         status: "completed",
-        arguments_json: "{}",
+        argumentsJson: "{}",
         timestamp: 0,
       });
 
@@ -193,17 +193,17 @@ describe("acpSession store", () => {
     it("sets success and result fields", () => {
       const store = useAcpSessionStore.getState();
       store.updateToolCall(POD, SID, {
-        tool_call_id: "tc-r1",
-        tool_name: "bash",
+        toolCallId: "tc-r1",
+        toolName: "bash",
         status: "running",
-        arguments_json: "{}",
+        argumentsJson: "{}",
         timestamp: 0,
       });
       store.setToolCallResult(POD, SID, "tc-r1", true, "ok", "");
 
       const tc = getSession().toolCalls["tc-r1"];
       expect(tc.success).toBe(true);
-      expect(tc.result_text).toBe("ok");
+      expect(tc.resultText).toBe("ok");
       expect(tc.status).toBe("completed");
     });
 
@@ -262,8 +262,8 @@ describe("acpSession store", () => {
       const store = useAcpSessionStore.getState();
       store.addThinking(POD, SID, "thinking...");
       store.updateToolCall(POD, SID, {
-        tool_call_id: "tc-seal", tool_name: "bash", status: "running",
-        arguments_json: "{}", timestamp: 0,
+        toolCallId: "tc-seal", toolName: "bash", status: "running",
+        argumentsJson: "{}", timestamp: 0,
       });
 
       expect(getSession().thinkings[0].complete).toBe(true);
@@ -281,7 +281,7 @@ describe("acpSession store", () => {
       const store = useAcpSessionStore.getState();
       store.addThinking(POD, SID, "thinking...");
       store.addPermissionRequest(POD, {
-        request_id: "r1", tool_name: "bash", arguments_json: "{}", description: "run cmd",
+        requestId: "r1", toolName: "bash", argumentsJson: "{}", description: "run cmd",
       });
 
       expect(getSession().thinkings[0].complete).toBe(true);
@@ -298,8 +298,8 @@ describe("acpSession store", () => {
     it("seals thinking on setToolCallResult", () => {
       const store = useAcpSessionStore.getState();
       store.updateToolCall(POD, SID, {
-        tool_call_id: "tc-tr", tool_name: "bash", status: "running",
-        arguments_json: "{}", timestamp: 0,
+        toolCallId: "tc-tr", toolName: "bash", status: "running",
+        argumentsJson: "{}", timestamp: 0,
       });
       store.addThinking(POD, SID, "thinking...");
       store.setToolCallResult(POD, SID, "tc-tr", true, "ok", "");
@@ -314,14 +314,14 @@ describe("acpSession store", () => {
       // Create 500 completed tool calls
       for (let i = 0; i < 500; i++) {
         store.updateToolCall(POD, SID, {
-          tool_call_id: `tc-${i}`, tool_name: "bash", status: "completed",
-          arguments_json: "{}", timestamp: 0,
+          toolCallId: `tc-${i}`, toolName: "bash", status: "completed",
+          argumentsJson: "{}", timestamp: 0,
         });
       }
       // Add one more
       store.updateToolCall(POD, SID, {
-        tool_call_id: "tc-new", tool_name: "bash", status: "running",
-        arguments_json: "{}", timestamp: 0,
+        toolCallId: "tc-new", toolName: "bash", status: "running",
+        argumentsJson: "{}", timestamp: 0,
       });
 
       const tcs = getSession().toolCalls;

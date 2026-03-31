@@ -37,7 +37,7 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
     }
 
     for (const tc of Object.values(session.toolCalls)) {
-      items.push({ kind: "tool", key: `tc-${tc.tool_call_id}`, timestamp: tc.timestamp, data: tc });
+      items.push({ kind: "tool", key: `tc-${tc.toolCallId}`, timestamp: tc.timestamp, data: tc });
     }
 
     for (let i = 0; i < session.thinkings.length; i++) {

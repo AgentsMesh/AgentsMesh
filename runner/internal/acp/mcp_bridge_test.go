@@ -52,11 +52,11 @@ func TestBuildMCPServersConfig_OnlyOneKey(t *testing.T) {
 	}
 }
 
-func TestBuildMCPServersConfig_InnerMapHasTwoKeys(t *testing.T) {
+func TestBuildMCPServersConfig_InnerMapHasThreeKeys(t *testing.T) {
 	config := BuildMCPServersConfig(8080)
 	amMap := config["agentsmesh"].(map[string]any)
 
-	if len(amMap) != 2 {
-		t.Errorf("expected 2 keys in inner map (type, url), got %d", len(amMap))
+	if len(amMap) != 3 {
+		t.Errorf("expected 3 keys in inner map (type, url, headers), got %d", len(amMap))
 	}
 }

@@ -139,20 +139,62 @@ func TestACPPodIO_SetExitHandler_NoPanic(t *testing.T) {
 	io.SetExitHandler(nil)
 }
 
-func TestACPPodIO_SubscribeStateChange_NoPanic(t *testing.T) {
+func TestACPPodIO_SubscribeStateChange_DeliveryToMultipleSubscribers(t *testing.T) {
 	client := newTestACPClient()
 	io := NewACPPodIO(client, "test-pod")
 
-	// Should not panic — currently a no-op per implementation comment.
-	io.SubscribeStateChange("test-sub", func(newStatus string) {})
+	var received1, received2 []string
+	io.SubscribeStateChange("sub-1", func(s string) { received1 = append(received1, s) })
+	io.SubscribeStateChange("sub-2", func(s string) { received2 = append(received2, s) })
+
+	io.NotifyStateChange(acp.StateProcessing) // mapped → "executing"
+
+	if len(received1) != 1 || received1[0] != "executing" {
+		t.Errorf("sub-1 got %v, want [executing]", received1)
+	}
+	if len(received2) != 1 || received2[0] != "executing" {
+		t.Errorf("sub-2 got %v, want [executing]", received2)
+	}
 }
 
-func TestACPPodIO_UnsubscribeStateChange_NoPanic(t *testing.T) {
+func TestACPPodIO_UnsubscribeStateChange_StopsDelivery(t *testing.T) {
 	client := newTestACPClient()
 	io := NewACPPodIO(client, "test-pod")
 
-	// Should not panic — currently a no-op per implementation comment.
-	io.UnsubscribeStateChange("test-sub")
+	callCount := 0
+	io.SubscribeStateChange("x", func(_ string) { callCount++ })
+	io.NotifyStateChange(acp.StateIdle) // +1
+	if callCount != 1 {
+		t.Fatalf("expected 1 call before unsubscribe, got %d", callCount)
+	}
+
+	io.UnsubscribeStateChange("x")
+	io.NotifyStateChange(acp.StateIdle) // should NOT call
+	if callCount != 1 {
+		t.Errorf("expected still 1 call after unsubscribe, got %d", callCount)
+	}
+}
+
+func TestACPPodIO_NotifyStateChange_MapsAllStates(t *testing.T) {
+	client := newTestACPClient()
+	io := NewACPPodIO(client, "test-pod")
+
+	var results []string
+	io.SubscribeStateChange("rec", func(s string) { results = append(results, s) })
+
+	io.NotifyStateChange(acp.StateProcessing)
+	io.NotifyStateChange(acp.StateIdle)
+	io.NotifyStateChange(acp.StateWaitingPermission)
+
+	want := []string{"executing", "idle", "waiting"}
+	if len(results) != len(want) {
+		t.Fatalf("got %d results, want %d", len(results), len(want))
+	}
+	for i, w := range want {
+		if results[i] != w {
+			t.Errorf("results[%d] = %q, want %q", i, results[i], w)
+		}
+	}
 }
 
 // --- GetAgentStatus delegates to mapACPState(client.State()) ---

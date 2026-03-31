@@ -171,7 +171,7 @@ func (h *RunnerMessageHandler) handleAcpRelayCommand(pod *Pod, payload []byte) {
 	var cmd struct {
 		Type   string `json:"type"`
 		Prompt string `json:"prompt"`      // prompt command
-		ReqID  string `json:"request_id"`  // permission_response
+		ReqID  string `json:"requestId"`   // permission_response
 		Approv bool   `json:"approved"`    // permission_response
 	}
 	if err := json.Unmarshal(payload, &cmd); err != nil {
@@ -187,7 +187,7 @@ func (h *RunnerMessageHandler) handleAcpRelayCommand(pod *Pod, payload []byte) {
 	switch cmd.Type {
 	case "prompt":
 		// Echo user message back to all relay subscribers so it appears in chat.
-		sendAcpViaRelay(pod, "content_chunk", "", map[string]string{
+		sendAcpViaRelay(pod, "contentChunk", "", map[string]string{
 			"text": cmd.Prompt, "role": "user",
 		})
 		if err := pod.IO.SendInput(cmd.Prompt); err != nil {

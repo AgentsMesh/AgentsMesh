@@ -101,10 +101,11 @@ func TestReader_SkipsInvalidJSON(t *testing.T) {
 	}
 }
 
-func TestReader_SkipsInvalidJSONRPCVersion(t *testing.T) {
-	// First line has wrong version, second is correct.
+func TestReader_ToleratesMissingJSONRPCVersion(t *testing.T) {
+	// Messages without jsonrpc field should be accepted (Codex omits it).
+	// Messages with explicit wrong version (e.g. "1.0") should be rejected.
 	input := `{"jsonrpc":"1.0","method":"old"}` + "\n" +
-		`{"jsonrpc":"2.0","method":"new"}` + "\n"
+		`{"method":"no_version"}` + "\n"
 
 	r := NewReader(bytes.NewBufferString(input), discardLogger())
 
@@ -112,8 +113,12 @@ func TestReader_SkipsInvalidJSONRPCVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadMessage() error = %v", err)
 	}
-	if msg.Method != "new" {
-		t.Errorf("Method = %q, want %q", msg.Method, "new")
+	// "1.0" is rejected, "no_version" (empty) is accepted
+	if msg.Method != "no_version" {
+		t.Errorf("Method = %q, want %q", msg.Method, "no_version")
+	}
+	if msg.JSONRPC != "2.0" {
+		t.Errorf("JSONRPC = %q, want %q", msg.JSONRPC, "2.0")
 	}
 }
 

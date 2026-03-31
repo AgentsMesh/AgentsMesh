@@ -93,7 +93,7 @@ func TestTransport_NewSession(t *testing.T) {
 		}, nil)
 	}()
 
-	sid, err := tr.NewSession(nil)
+	sid, err := tr.NewSession("", nil)
 	if err != nil {
 		t.Fatalf("NewSession: %v", err)
 	}
@@ -138,10 +138,10 @@ func TestTransport_SendPrompt(t *testing.T) {
 		var params turnStartParams
 		json.Unmarshal(req.Params, &params)
 		if params.ThreadID != "thread-1" {
-			t.Errorf("thread_id = %q", params.ThreadID)
+			t.Errorf("threadId = %q", params.ThreadID)
 		}
-		if params.Input.Content != "hello codex" {
-			t.Errorf("content = %q", params.Input.Content)
+		if len(params.Input) == 0 || params.Input[0].Text != "hello codex" {
+			t.Errorf("input = %+v", params.Input)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("timeout waiting for turn/start")
@@ -166,19 +166,68 @@ func TestTransport_RespondToPermission(t *testing.T) {
 		received <- json.RawMessage(scanner.Bytes())
 	}()
 
-	if err := tr.RespondToPermission("req-1", true); err != nil {
+	// requestID is now a numeric JSON-RPC id string
+	if err := tr.RespondToPermission("42", true); err != nil {
 		t.Fatalf("RespondToPermission: %v", err)
 	}
 
 	select {
 	case raw := <-received:
 		var msg struct {
-			Method string          `json:"method"`
-			Params json.RawMessage `json:"params"`
+			ID     *int64          `json:"id"`
+			Result json.RawMessage `json:"result"`
 		}
 		json.Unmarshal(raw, &msg)
-		if msg.Method != "serverRequest/response" {
-			t.Errorf("method = %q", msg.Method)
+		if msg.ID == nil || *msg.ID != 42 {
+			t.Errorf("expected id=42, got %v", msg.ID)
+		}
+		// Verify the decision field in the result
+		var result map[string]any
+		json.Unmarshal(msg.Result, &result)
+		if result["decision"] != "accept" {
+			t.Errorf("decision = %v, want accept", result["decision"])
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timeout")
+	}
+}
+
+func TestTransport_RespondToPermission_Decline(t *testing.T) {
+	stdoutPR, _ := io.Pipe()
+	stdinPR, stdinPW := io.Pipe()
+	defer stdoutPR.Close()
+	defer stdinPR.Close()
+
+	tr := NewTransport(acp.EventCallbacks{}, discardLogger())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	tr.Initialize(ctx, stdinPW, stdoutPR, nil)
+
+	received := make(chan json.RawMessage, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdinPR)
+		scanner.Scan()
+		received <- json.RawMessage(scanner.Bytes())
+	}()
+
+	if err := tr.RespondToPermission("7", false); err != nil {
+		t.Fatalf("RespondToPermission: %v", err)
+	}
+
+	select {
+	case raw := <-received:
+		var msg struct {
+			ID     *int64          `json:"id"`
+			Result json.RawMessage `json:"result"`
+		}
+		json.Unmarshal(raw, &msg)
+		if msg.ID == nil || *msg.ID != 7 {
+			t.Errorf("expected id=7, got %v", msg.ID)
+		}
+		var result map[string]any
+		json.Unmarshal(msg.Result, &result)
+		if result["decision"] != "decline" {
+			t.Errorf("decision = %v, want decline", result["decision"])
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("timeout")

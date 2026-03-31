@@ -6,7 +6,7 @@ import (
 
 // NewSession creates a new ACP session with optional MCP servers config.
 func (c *ACPClient) NewSession(mcpServers map[string]any) error {
-	sessionID, err := c.transport.NewSession(mcpServers)
+	sessionID, err := c.transport.NewSession(c.cfg.WorkDir, mcpServers)
 	if err != nil {
 		return err
 	}

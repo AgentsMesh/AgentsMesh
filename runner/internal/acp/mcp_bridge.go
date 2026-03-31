@@ -7,8 +7,9 @@ import "fmt"
 func BuildMCPServersConfig(mcpPort int) map[string]any {
 	return map[string]any{
 		"agentsmesh": map[string]any{
-			"type": "http",
-			"url":  fmt.Sprintf("http://127.0.0.1:%d/mcp", mcpPort),
+			"type":    "http",
+			"url":     fmt.Sprintf("http://127.0.0.1:%d/mcp", mcpPort),
+			"headers": []any{}, // required by ACP spec, empty for local
 		},
 	}
 }

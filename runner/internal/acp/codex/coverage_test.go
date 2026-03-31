@@ -98,7 +98,7 @@ func TestTransport_NewSession_Error(t *testing.T) {
 		io.Copy(io.Discard, stdinPR)
 	}()
 
-	_, err := tr.NewSession(nil)
+	_, err := tr.NewSession("", nil)
 	if err == nil {
 		t.Fatal("expected error from NewSession")
 	}
@@ -126,7 +126,7 @@ func TestTransport_NewSession_ParseError(t *testing.T) {
 		io.Copy(io.Discard, stdinPR)
 	}()
 
-	_, err := tr.NewSession(nil)
+	_, err := tr.NewSession("", nil)
 	if err == nil || !strings.Contains(err.Error(), "parse thread/start result") {
 		t.Fatalf("expected parse error, got %v", err)
 	}
@@ -142,7 +142,7 @@ func TestHandler_SessionIDTracking(t *testing.T) {
 	f.Transport.sessionID = "thread-xyz"
 	f.Transport.sessionMu.Unlock()
 
-	writeNotification(f.PW, "item/agentMessage/delta", agentMessageDelta{Text: "hi"})
+	writeNotification(f.PW, "item/agentMessage/delta", agentMessageDelta{Delta: "hi"})
 	f.Drain()
 
 	f.mu.Lock()
@@ -177,7 +177,7 @@ func TestHandler_SessionIDInCallbacks(t *testing.T) {
 	tr.sessionID = "thread-abc"
 	tr.sessionMu.Unlock()
 
-	writeNotification(stdoutPW, "item/agentMessage/delta", agentMessageDelta{Text: "test"})
+	writeNotification(stdoutPW, "item/agentMessage/delta", agentMessageDelta{Delta: "test"})
 	time.Sleep(100 * time.Millisecond)
 
 	mu.Lock()
@@ -240,6 +240,81 @@ func TestTransport_Handshake_WriteInitializedError(t *testing.T) {
 	}
 }
 
+func TestTransport_DispatchApprovalRequest(t *testing.T) {
+	f := newFixture()
+	defer f.Close()
+
+	// Send a JSON-RPC request (not notification!) for command approval
+	writeLine(f.PW, map[string]any{
+		"jsonrpc": "2.0",
+		"id":      42,
+		"method":  "item/commandExecution/requestApproval",
+		"params": map[string]any{
+			"command":     "rm -rf /tmp/test",
+			"description": "Delete temp files",
+		},
+	})
+	f.Drain()
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Verify StateWaitingPermission was emitted
+	if len(f.StateChanges) != 1 || f.StateChanges[0] != acp.StateWaitingPermission {
+		t.Errorf("StateChanges = %v, want [%q]", f.StateChanges, acp.StateWaitingPermission)
+	}
+	// Verify PermissionRequest callback
+	if len(f.PermissionReqs) != 1 {
+		t.Fatalf("expected 1 permission request, got %d", len(f.PermissionReqs))
+	}
+	pr := f.PermissionReqs[0]
+	if pr.RequestID != "42" {
+		t.Errorf("RequestID = %q, want %q", pr.RequestID, "42")
+	}
+	if pr.ToolName != "command" {
+		t.Errorf("ToolName = %q, want %q", pr.ToolName, "command")
+	}
+	if pr.Description != "Delete temp files" {
+		t.Errorf("Description = %q, want %q", pr.Description, "Delete temp files")
+	}
+}
+
+func TestTransport_DispatchFileChangeApproval(t *testing.T) {
+	f := newFixture()
+	defer f.Close()
+
+	// Send file change approval request
+	writeLine(f.PW, map[string]any{
+		"jsonrpc": "2.0",
+		"id":      99,
+		"method":  "item/fileChange/requestApproval",
+		"params": map[string]any{
+			"path": "/tmp/config.yaml",
+		},
+	})
+	f.Drain()
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if len(f.StateChanges) != 1 || f.StateChanges[0] != acp.StateWaitingPermission {
+		t.Errorf("StateChanges = %v, want [%q]", f.StateChanges, acp.StateWaitingPermission)
+	}
+	if len(f.PermissionReqs) != 1 {
+		t.Fatalf("expected 1 permission request, got %d", len(f.PermissionReqs))
+	}
+	pr := f.PermissionReqs[0]
+	if pr.RequestID != "99" {
+		t.Errorf("RequestID = %q, want %q", pr.RequestID, "99")
+	}
+	if pr.ToolName != "fileChange" {
+		t.Errorf("ToolName = %q, want %q", pr.ToolName, "fileChange")
+	}
+	if pr.Description != "/tmp/config.yaml" {
+		t.Errorf("Description = %q, want %q", pr.Description, "/tmp/config.yaml")
+	}
+}
+
 func TestTransport_NewSession_StoresSessionID(t *testing.T) {
 	stdoutPR, stdoutPW := io.Pipe()
 	stdinPR, stdinPW := io.Pipe()
@@ -262,7 +337,7 @@ func TestTransport_NewSession_StoresSessionID(t *testing.T) {
 		}, nil)
 	}()
 
-	sid, err := tr.NewSession(nil)
+	sid, err := tr.NewSession("", nil)
 	if err != nil {
 		t.Fatalf("NewSession: %v", err)
 	}

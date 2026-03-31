@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// --- Permission request ---
+// --- Permission request (now via HandlePermissionRequest) ---
 
 func TestHandler_PermissionRequest(t *testing.T) {
 	var received []PermissionRequest
@@ -20,13 +20,16 @@ func TestHandler_PermissionRequest(t *testing.T) {
 	}, testLogger())
 
 	params := mustMarshal(t, map[string]any{
-		"session_id":     "sess-1",
-		"request_id":     "perm-1",
-		"tool_name":      "exec_command",
-		"arguments_json": `{"cmd":"rm -rf /"}`,
-		"description":    "Delete everything",
+		"sessionId": "sess-1",
+		"toolCall": map[string]any{
+			"toolCallId": "tc-1",
+			"title":      "exec_command",
+		},
+		"options": []map[string]any{
+			{"optionId": "allow-once", "name": "Allow once", "kind": "allow_once"},
+		},
 	})
-	h.HandleNotification("permission/request", params)
+	h.HandlePermissionRequest(5, params)
 
 	if len(received) != 1 {
 		t.Fatalf("expected 1 permission request, got %d", len(received))
@@ -34,35 +37,18 @@ func TestHandler_PermissionRequest(t *testing.T) {
 	if received[0].SessionID != "sess-1" {
 		t.Errorf("SessionID = %q, want %q", received[0].SessionID, "sess-1")
 	}
-	if received[0].RequestID != "perm-1" {
-		t.Errorf("RequestID = %q, want %q", received[0].RequestID, "perm-1")
+	if received[0].RequestID != "5" {
+		t.Errorf("RequestID = %q, want %q", received[0].RequestID, "5")
 	}
 	if received[0].ToolName != "exec_command" {
 		t.Errorf("ToolName = %q, want %q", received[0].ToolName, "exec_command")
 	}
-	if received[0].Description != "Delete everything" {
-		t.Errorf("Description = %q, want %q", received[0].Description, "Delete everything")
+	if received[0].Description != "Tool: tc-1" {
+		t.Errorf("Description = %q, want %q", received[0].Description, "Tool: tc-1")
 	}
 
 	if len(stateChanges) != 1 || stateChanges[0] != StateWaitingPermission {
 		t.Errorf("stateChanges = %v, want [%q]", stateChanges, StateWaitingPermission)
-	}
-}
-
-// --- Session complete ---
-
-func TestHandler_SessionComplete(t *testing.T) {
-	var stateChanges []string
-	h := NewHandler(EventCallbacks{
-		OnStateChange: func(newState string) {
-			stateChanges = append(stateChanges, newState)
-		},
-	}, testLogger())
-
-	h.HandleNotification("session/complete", json.RawMessage(`{}`))
-
-	if len(stateChanges) != 1 || stateChanges[0] != StateIdle {
-		t.Errorf("stateChanges = %v, want [%q]", stateChanges, StateIdle)
 	}
 }
 
@@ -90,7 +76,7 @@ func TestHandler_InvalidJSON_PermissionRequest_NoCrash(t *testing.T) {
 			t.Error("OnPermissionRequest should not be called with invalid JSON")
 		},
 	}, testLogger())
-	h.HandleNotification("permission/request", json.RawMessage(`{broken`))
+	h.HandlePermissionRequest(99, json.RawMessage(`{broken`))
 }
 
 func TestHandler_InvalidJSON_ContentData_NoCrash(t *testing.T) {
@@ -101,9 +87,8 @@ func TestHandler_InvalidJSON_ContentData_NoCrash(t *testing.T) {
 	}, testLogger())
 
 	params := mustMarshal(t, map[string]any{
-		"session_id": "sess-1",
-		"type":       "content",
-		"data":       "not a json object",
+		"sessionId": "sess-1",
+		"update":    "not a json object",
 	})
 	h.HandleNotification("session/update", params)
 }
@@ -116,9 +101,8 @@ func TestHandler_InvalidJSON_ToolCallData_NoCrash(t *testing.T) {
 	}, testLogger())
 
 	params := mustMarshal(t, map[string]any{
-		"session_id": "sess-1",
-		"type":       "tool_call",
-		"data":       12345,
+		"sessionId": "sess-1",
+		"update":    12345,
 	})
 	h.HandleNotification("session/update", params)
 }
@@ -131,9 +115,8 @@ func TestHandler_InvalidJSON_PlanData_NoCrash(t *testing.T) {
 	}, testLogger())
 
 	params := mustMarshal(t, map[string]any{
-		"session_id": "sess-1",
-		"type":       "plan",
-		"data":       []int{1, 2, 3},
+		"sessionId": "sess-1",
+		"update":    []int{1, 2, 3},
 	})
 	h.HandleNotification("session/update", params)
 }
@@ -146,9 +129,8 @@ func TestHandler_InvalidJSON_ToolResultData_NoCrash(t *testing.T) {
 	}, testLogger())
 
 	params := mustMarshal(t, map[string]any{
-		"session_id": "sess-1",
-		"type":       "tool_result",
-		"data":       "not_an_object",
+		"sessionId": "sess-1",
+		"update":    "not_an_object",
 	})
 	h.HandleNotification("session/update", params)
 }
@@ -161,9 +143,87 @@ func TestHandler_InvalidJSON_ThinkingData_NoCrash(t *testing.T) {
 	}, testLogger())
 
 	params := mustMarshal(t, map[string]any{
-		"session_id": "sess-1",
-		"type":       "thinking",
-		"data":       true,
+		"sessionId": "sess-1",
+		"update":    true,
 	})
 	h.HandleNotification("session/update", params)
+}
+
+// --- SelectOptionID tests ---
+
+func TestHandler_SelectOptionID_Approve(t *testing.T) {
+	h := NewHandler(EventCallbacks{
+		OnStateChange:       func(string) {},
+		OnPermissionRequest: func(PermissionRequest) {},
+	}, testLogger())
+
+	params := mustMarshal(t, map[string]any{
+		"sessionId": "sess-1",
+		"toolCall":  map[string]any{"toolCallId": "tc-1", "title": "exec"},
+		"options": []map[string]any{
+			{"optionId": "opt-allow", "name": "Allow once", "kind": "allow_once"},
+			{"optionId": "opt-reject", "name": "Reject once", "kind": "reject_once"},
+		},
+	})
+	h.HandlePermissionRequest(10, params)
+
+	got := h.SelectOptionID("10", true)
+	if got != "opt-allow" {
+		t.Errorf("SelectOptionID(approved=true) = %q, want %q", got, "opt-allow")
+	}
+}
+
+func TestHandler_SelectOptionID_Deny(t *testing.T) {
+	h := NewHandler(EventCallbacks{
+		OnStateChange:       func(string) {},
+		OnPermissionRequest: func(PermissionRequest) {},
+	}, testLogger())
+
+	params := mustMarshal(t, map[string]any{
+		"sessionId": "sess-1",
+		"toolCall":  map[string]any{"toolCallId": "tc-2", "title": "write_file"},
+		"options": []map[string]any{
+			{"optionId": "opt-allow", "name": "Allow once", "kind": "allow_once"},
+			{"optionId": "opt-reject", "name": "Reject once", "kind": "reject_once"},
+		},
+	})
+	h.HandlePermissionRequest(11, params)
+
+	got := h.SelectOptionID("11", false)
+	if got != "opt-reject" {
+		t.Errorf("SelectOptionID(approved=false) = %q, want %q", got, "opt-reject")
+	}
+}
+
+func TestHandler_SelectOptionID_Fallback(t *testing.T) {
+	h := NewHandler(EventCallbacks{
+		OnStateChange:       func(string) {},
+		OnPermissionRequest: func(PermissionRequest) {},
+	}, testLogger())
+
+	// Options with no matching kind for deny
+	params := mustMarshal(t, map[string]any{
+		"sessionId": "sess-1",
+		"toolCall":  map[string]any{"toolCallId": "tc-3", "title": "read"},
+		"options": []map[string]any{
+			{"optionId": "opt-first", "name": "Allow once", "kind": "allow_once"},
+		},
+	})
+	h.HandlePermissionRequest(12, params)
+
+	// Deny with no reject_once option → falls back to first option
+	got := h.SelectOptionID("12", false)
+	if got != "opt-first" {
+		t.Errorf("SelectOptionID(fallback) = %q, want %q", got, "opt-first")
+	}
+}
+
+func TestHandler_SelectOptionID_Empty(t *testing.T) {
+	h := NewHandler(EventCallbacks{}, testLogger())
+
+	// No stored options for this requestID → returns ""
+	got := h.SelectOptionID("999", true)
+	if got != "" {
+		t.Errorf("SelectOptionID(empty) = %q, want %q", got, "")
+	}
 }

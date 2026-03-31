@@ -11,76 +11,81 @@ type threadStartResult struct {
 
 // turnStartParams are the parameters for turn/start.
 type turnStartParams struct {
-	ThreadID string    `json:"thread_id"`
-	Input    turnInput `json:"input"`
+	ThreadID string      `json:"threadId"`
+	Input    []turnInput `json:"input"`
 }
 
-// turnInput is the input for a turn.
+// turnInput is an input item for a turn.
 type turnInput struct {
-	Type    string `json:"type"`    // "text"
-	Content string `json:"content"`
+	Type string `json:"type"` // "text"
+	Text string `json:"text"`
 }
 
 // turnInterruptParams are the parameters for turn/interrupt.
 type turnInterruptParams struct {
-	ThreadID string `json:"thread_id"`
+	ThreadID string `json:"threadId"`
+	TurnID   string `json:"turnId,omitempty"`
 }
 
-// approvalRequest is an incoming approval request from the Codex agent.
-type approvalRequest struct {
-	RequestID   string `json:"request_id"`
-	Type        string `json:"type"`        // "command_execution", "patch_apply"
-	Command     string `json:"command"`
-	Description string `json:"description"`
-}
-
-// serverRequestResponseParams are sent to respond to a serverRequest.
-type serverRequestResponseParams struct {
-	RequestID string `json:"request_id"`
-	Approved  bool   `json:"approved"`
+// approvalRequestParams is an incoming approval request from the Codex agent
+// (received as a JSON-RPC request, not notification).
+type approvalRequestParams struct {
+	Command     string `json:"command,omitempty"`
+	Path        string `json:"path,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 // agentMessageDelta carries streaming text from the agent.
 type agentMessageDelta struct {
-	Text string `json:"text"`
+	ItemID string `json:"itemId"`
+	Delta  string `json:"delta"`
 }
 
-// thinkingDelta carries streaming thinking text.
-type thinkingDelta struct {
-	Text string `json:"text"`
+// reasoningDelta carries streaming reasoning/thinking text.
+type reasoningDelta struct {
+	ItemID string `json:"itemId"`
+	Delta  string `json:"delta"`
 }
 
-// planDelta carries a plan step update.
+// planDelta carries a plan text stream update.
 type planDelta struct {
-	Step struct {
-		Title  string `json:"title"`
-		Status string `json:"status"` // "pending", "in_progress", "completed"
-	} `json:"step"`
+	ItemID string `json:"itemId"`
+	Delta  string `json:"delta"`
 }
 
-// toolCallStarted is sent when a tool call begins.
-type toolCallStarted struct {
-	ToolCallID    string `json:"tool_call_id"`
-	ToolName      string `json:"tool_name"`
-	ArgumentsJSON string `json:"arguments_json"`
+// itemStartedParams is the generic item/started notification.
+// The nested item.type distinguishes commandExecution, toolCall, fileChange, etc.
+type itemStartedParams struct {
+	Item struct {
+		ID      string `json:"id"`
+		Type    string `json:"type"` // "commandExecution", "toolCall", "fileChange", etc.
+		Command []struct {
+			Value string `json:"value"`
+		} `json:"command,omitempty"` // commandExecution only
+		ToolName string `json:"toolName,omitempty"` // toolCall only
+	} `json:"item"`
 }
 
-// commandExecutionStarted is sent when a shell command starts.
-type commandExecutionStarted struct {
-	ToolCallID string `json:"tool_call_id"`
-	Command    string `json:"command"`
+// itemCompletedParams is the generic item/completed notification.
+// Includes type-specific fields for commandExecution (exitCode, aggregatedOutput).
+type itemCompletedParams struct {
+	Item struct {
+		ID               string `json:"id"`
+		Type             string `json:"type"`
+		Status           string `json:"status,omitempty"`
+		ExitCode         *int   `json:"exitCode,omitempty"`         // commandExecution
+		AggregatedOutput string `json:"aggregatedOutput,omitempty"` // commandExecution
+		ToolName         string `json:"toolName,omitempty"`         // toolCall
+	} `json:"item"`
 }
 
-// commandExecutionCompleted is sent when a shell command completes.
-type commandExecutionCompleted struct {
-	ToolCallID string `json:"tool_call_id"`
-	ExitCode   int    `json:"exit_code"`
-	Output     string `json:"output"`
-}
-
-// itemCompleted is sent when a streamed item (e.g., tool_call) finishes.
-type itemCompleted struct {
-	Type       string `json:"type"` // "tool_call", "agent_message", etc.
-	ToolCallID string `json:"tool_call_id"`
-	ToolName   string `json:"tool_name"`
+// turnCompletedParams are the parameters for turn/completed notification.
+// The status and error are nested inside a "turn" object per Codex protocol.
+type turnCompletedParams struct {
+	Turn struct {
+		Status string `json:"status"` // "completed", "failed", "interrupted"
+		Error  *struct {
+			Message string `json:"message"`
+		} `json:"error,omitempty"`
+	} `json:"turn"`
 }

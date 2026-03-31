@@ -21,9 +21,9 @@ describe("AcpPermissionDialog", () => {
 
   const perms = [
     {
-      request_id: "perm-1",
-      tool_name: "bash",
-      arguments_json: '{"cmd":"rm -rf /tmp/test"}',
+      requestId: "perm-1",
+      toolName: "bash",
+      argumentsJson: '{"cmd":"rm -rf /tmp/test"}',
       description: "Execute: rm -rf /tmp/test",
     },
   ];
@@ -44,7 +44,7 @@ describe("AcpPermissionDialog", () => {
 
     expect(relayPool.sendAcpCommand).toHaveBeenCalledWith(POD, {
       type: "permission_response",
-      request_id: "perm-1",
+      requestId: "perm-1",
       approved: true,
     });
 
@@ -61,7 +61,7 @@ describe("AcpPermissionDialog", () => {
 
     expect(relayPool.sendAcpCommand).toHaveBeenCalledWith(POD, {
       type: "permission_response",
-      request_id: "perm-1",
+      requestId: "perm-1",
       approved: false,
     });
   });
@@ -78,8 +78,8 @@ describe("AcpPermissionDialog", () => {
 
   it("renders multiple permission requests", () => {
     const multiPerms = [
-      { request_id: "p1", tool_name: "bash", arguments_json: "{}", description: "Run bash" },
-      { request_id: "p2", tool_name: "write_file", arguments_json: "{}", description: "Write file" },
+      { requestId: "p1", toolName: "bash", argumentsJson: "{}", description: "Run bash" },
+      { requestId: "p2", toolName: "write_file", argumentsJson: "{}", description: "Write file" },
     ];
 
     render(<AcpPermissionDialog podKey={POD} permissions={multiPerms} />);

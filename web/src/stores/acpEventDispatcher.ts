@@ -17,7 +17,7 @@ export function dispatchAcpRelayEvent(podKey: string, msgType: number, payload: 
   try {
     const data = payload as Record<string, unknown>;
     const store = useAcpSessionStore.getState();
-    const sessionId = (data.session_id as string) || "";
+    const sessionId = (data.sessionId as string) || "";
 
     if (msgType === MsgType.AcpEvent) {
       dispatchEvent(store, podKey, sessionId, data);
@@ -41,36 +41,36 @@ function dispatchEvent(
   const eventType = data.type as string;
 
   switch (eventType) {
-    case "content_chunk":
+    case "contentChunk":
       store.addContentChunk(podKey, sessionId, data.text as string, data.role as string);
       break;
-    case "tool_call_update":
+    case "toolCallUpdate":
       store.updateToolCall(podKey, sessionId, data as unknown as Parameters<AcpStore["updateToolCall"]>[2]);
       break;
-    case "tool_call_result":
+    case "toolCallResult":
       store.setToolCallResult(
         podKey, sessionId,
-        data.tool_call_id as string,
+        data.toolCallId as string,
         data.success as boolean,
-        data.result_text as string,
-        data.error_message as string,
+        data.resultText as string,
+        data.errorMessage as string,
       );
       break;
-    case "plan_update":
+    case "planUpdate":
       store.updatePlan(podKey, sessionId, data.steps as Parameters<AcpStore["updatePlan"]>[2]);
       break;
-    case "thinking_update":
+    case "thinkingUpdate":
       store.addThinking(podKey, sessionId, data.text as string);
       break;
-    case "permission_request":
+    case "permissionRequest":
       store.addPermissionRequest(podKey, {
-        request_id: data.request_id as string,
-        tool_name: data.tool_name as string,
-        arguments_json: data.arguments_json as string,
+        requestId: data.requestId as string,
+        toolName: data.toolName as string,
+        argumentsJson: data.argumentsJson as string,
         description: data.description as string,
       });
       break;
-    case "session_state":
+    case "sessionState":
       store.updateSessionState(podKey, sessionId, data.state as string);
       if (data.state === "idle") {
         store.markLastMessageComplete(podKey);
@@ -94,7 +94,7 @@ function dispatchSnapshot(
   sessionId: string,
   data: Record<string, unknown>,
 ): void {
-  // Clear first, then replay in order: state → plan → tool_calls → messages → permissions.
+  // Clear first, then replay in order: state -> plan -> toolCalls -> messages -> permissions.
   store.clearSession(podKey);
 
   if (data.state) {
@@ -104,24 +104,24 @@ function dispatchSnapshot(
     store.updatePlan(podKey, sessionId, data.plan as Parameters<AcpStore["updatePlan"]>[2]);
   }
   // Replay tool calls from snapshot (includes status + result in one object)
-  if (Array.isArray(data.tool_calls)) {
-    for (const tc of data.tool_calls as Array<{
-      tool_call_id: string;
-      tool_name: string;
+  if (Array.isArray(data.toolCalls)) {
+    for (const tc of data.toolCalls as Array<{
+      toolCallId: string;
+      toolName: string;
       status: string;
-      arguments_json: string;
+      argumentsJson: string;
       success?: boolean;
-      result_text?: string;
-      error_message?: string;
+      resultText?: string;
+      errorMessage?: string;
     }>) {
       store.updateToolCall(podKey, sessionId, tc as Parameters<AcpStore["updateToolCall"]>[2]);
       if (tc.success !== undefined && tc.success !== null) {
         store.setToolCallResult(
           podKey, sessionId,
-          tc.tool_call_id,
+          tc.toolCallId,
           tc.success,
-          tc.result_text ?? "",
-          tc.error_message ?? "",
+          tc.resultText ?? "",
+          tc.errorMessage ?? "",
         );
       }
     }
@@ -131,11 +131,11 @@ function dispatchSnapshot(
       store.addContentChunk(podKey, sessionId, msg.text, msg.role);
     }
   }
-  if (Array.isArray(data.pending_permissions)) {
-    for (const perm of data.pending_permissions as Array<{
-      request_id: string;
-      tool_name: string;
-      arguments_json: string;
+  if (Array.isArray(data.pendingPermissions)) {
+    for (const perm of data.pendingPermissions as Array<{
+      requestId: string;
+      toolName: string;
+      argumentsJson: string;
       description: string;
     }>) {
       store.addPermissionRequest(podKey, perm);

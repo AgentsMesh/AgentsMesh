@@ -39,15 +39,20 @@ type Transport struct {
 	// toolCalls tracks in-progress streaming tool_use blocks by index.
 	toolCalls   map[int]*toolCallState
 	toolCallsMu sync.Mutex
+
+	// pendingInputs stores original tool input by requestID for permission responses.
+	pendingInputs   map[string]json.RawMessage
+	pendingInputsMu sync.Mutex
 }
 
 // NewTransport creates a new Claude stream-json transport.
 func NewTransport(callbacks acp.EventCallbacks, logger *slog.Logger) *Transport {
 	return &Transport{
-		callbacks: callbacks,
-		logger:    logger,
-		toolCalls: make(map[int]*toolCallState),
-		initCh:    make(chan struct{}),
+		callbacks:     callbacks,
+		logger:        logger,
+		toolCalls:     make(map[int]*toolCallState),
+		pendingInputs: make(map[string]json.RawMessage),
+		initCh:        make(chan struct{}),
 	}
 }
 
@@ -95,7 +100,7 @@ func (t *Transport) Handshake(ctx context.Context) (string, error) {
 }
 
 // NewSession is a no-op for Claude: the session is auto-created on startup.
-func (t *Transport) NewSession(_ map[string]any) (string, error) {
+func (t *Transport) NewSession(_ string, _ map[string]any) (string, error) {
 	t.sessionMu.RLock()
 	defer t.sessionMu.RUnlock()
 	return t.sessionID, nil
@@ -115,15 +120,27 @@ func (t *Transport) SendPrompt(sessionID, prompt string) error {
 
 // RespondToPermission sends a control_response to approve or deny a tool request.
 func (t *Transport) RespondToPermission(requestID string, approved bool) error {
-	behavior := "deny"
+	respData := controlResponseData{}
 	if approved {
-		behavior = "allow"
+		respData.Behavior = "allow"
+		t.pendingInputsMu.Lock()
+		if input, ok := t.pendingInputs[requestID]; ok {
+			respData.UpdatedInput = input
+			delete(t.pendingInputs, requestID)
+		}
+		t.pendingInputsMu.Unlock()
+	} else {
+		respData.Behavior = "deny"
+		respData.Message = "Denied by user"
+		t.pendingInputsMu.Lock()
+		delete(t.pendingInputs, requestID)
+		t.pendingInputsMu.Unlock()
 	}
 	msg := controlResponseMessage{
 		Type: "control_response",
 		Response: controlResponsePayload{
 			Subtype: "success", RequestID: requestID,
-			Response: controlResponseData{Behavior: behavior},
+			Response: respData,
 		},
 	}
 	if err := t.writeStdin(msg); err != nil {
