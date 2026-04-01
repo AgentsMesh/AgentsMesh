@@ -65,7 +65,7 @@ func resolveOneRunStatus(run *loopDomain.LoopRun, podMap map[string]*loopDomain.
 		autopilotPhase = autopilotMap[*run.AutopilotControllerKey]
 	}
 
-	run.ResolveStatus(pod.Status, autopilotPhase, pod.FinishedAt)
+	ResolveRunStatus(run, pod.Status, autopilotPhase, pod.FinishedAt)
 }
 
 // resolveRunStatus resolves status for a single run from Pod (SSOT).

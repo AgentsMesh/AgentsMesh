@@ -2,9 +2,7 @@ package grpc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
@@ -55,38 +53,6 @@ func newMcpError(code int32, msg string) *mcpError {
 
 func newMcpErrorf(code int32, format string, args ...interface{}) *mcpError {
 	return &mcpError{code: code, message: fmt.Sprintf(format, args...)}
-}
-
-// authenticatePod verifies the Pod exists and belongs to the Runner's organization.
-// Authenticates the pod and builds tenant context.
-func (a *GRPCRunnerAdapter) authenticatePod(ctx context.Context, podKey, orgSlug string) (*middleware.TenantContext, error) {
-	if podKey == "" {
-		return nil, fmt.Errorf("pod_key is required")
-	}
-
-	// Lookup Pod by key
-	pod, err := a.podService.GetPodByKey(ctx, podKey)
-	if err != nil {
-		return nil, fmt.Errorf("invalid pod key")
-	}
-
-	// Lookup Organization by slug
-	org, err := a.orgService.GetBySlug(ctx, orgSlug)
-	if err != nil {
-		return nil, fmt.Errorf("organization not found")
-	}
-
-	// Verify Pod belongs to this organization
-	if pod.OrganizationID != org.ID {
-		return nil, fmt.Errorf("pod does not belong to this organization")
-	}
-
-	return &middleware.TenantContext{
-		OrganizationID:   org.ID,
-		OrganizationSlug: org.Slug,
-		UserID:           pod.CreatedByID,
-		UserRole:         "pod",
-	}, nil
 }
 
 // dispatchMcpMethod routes an MCP request to the appropriate handler based on method name.
@@ -161,70 +127,4 @@ func (a *GRPCRunnerAdapter) dispatchMcpMethod(ctx context.Context, tc *middlewar
 	default:
 		return nil, newMcpErrorf(400, "unknown MCP method: %s", req.Method)
 	}
-}
-
-// sendMcpResponse sends a successful MCP response back to the Runner.
-func (a *GRPCRunnerAdapter) sendMcpResponse(conn *runner.GRPCConnection, requestID string, result interface{}) {
-	var payload []byte
-	if result != nil {
-		var err error
-		payload, err = json.Marshal(result)
-		if err != nil {
-			a.sendMcpError(conn, requestID, 500, "failed to marshal response")
-			return
-		}
-	}
-
-	msg := &runnerv1.ServerMessage{
-		Payload: &runnerv1.ServerMessage_McpResponse{
-			McpResponse: &runnerv1.McpResponse{
-				RequestId: requestID,
-				Success:   true,
-				Payload:   payload,
-			},
-		},
-		Timestamp: time.Now().UnixMilli(),
-	}
-
-	if err := conn.SendMessage(msg); err != nil {
-		a.logger.Warn("failed to send MCP response",
-			"request_id", requestID,
-			"error", err,
-		)
-	}
-}
-
-// sendMcpError sends an error MCP response back to the Runner.
-func (a *GRPCRunnerAdapter) sendMcpError(conn *runner.GRPCConnection, requestID string, code int32, message string) {
-	msg := &runnerv1.ServerMessage{
-		Payload: &runnerv1.ServerMessage_McpResponse{
-			McpResponse: &runnerv1.McpResponse{
-				RequestId: requestID,
-				Success:   false,
-				Error: &runnerv1.McpError{
-					Code:    code,
-					Message: message,
-				},
-			},
-		},
-		Timestamp: time.Now().UnixMilli(),
-	}
-
-	if err := conn.SendMessage(msg); err != nil {
-		a.logger.Warn("failed to send MCP error response",
-			"request_id", requestID,
-			"error", err,
-		)
-	}
-}
-
-// unmarshalPayload is a helper to unmarshal JSON payload into a struct.
-func unmarshalPayload(payload []byte, v interface{}) *mcpError {
-	if len(payload) == 0 {
-		return nil // No payload to parse
-	}
-	if err := json.Unmarshal(payload, v); err != nil {
-		return newMcpErrorf(400, "invalid request payload: %v", err)
-	}
-	return nil
 }

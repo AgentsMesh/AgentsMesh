@@ -72,7 +72,7 @@ func (r *loopRunRepo) resolveActiveRunStats(ctx context.Context, loopID int64, t
 			if row.AutopilotPhase != nil {
 				autopilotPhase = *row.AutopilotPhase
 			}
-			effectiveStatus = loop.DeriveRunStatus(podStatus, autopilotPhase)
+			effectiveStatus = deriveLoopRunStatus(podStatus, autopilotPhase)
 		}
 
 		switch effectiveStatus {
@@ -170,4 +170,48 @@ func (r *loopRunRepo) GetAvgDuration(ctx context.Context, loopID int64) (*float6
 		Select("AVG(duration_sec)").
 		Scan(&avg).Error
 	return avg, err
+}
+
+// deriveLoopRunStatus maps Pod/Autopilot state to Loop Run status.
+// This is a local helper mirroring the canonical logic in service/loop.DeriveRunStatus,
+// used here to avoid a circular infra → service import.
+func deriveLoopRunStatus(podStatus string, autopilotPhase string) string {
+	if autopilotPhase != "" {
+		switch autopilotPhase {
+		case agentpod.AutopilotPhaseCompleted, agentpod.AutopilotPhaseMaxIterations:
+			return loop.RunStatusCompleted
+		case agentpod.AutopilotPhaseFailed:
+			return loop.RunStatusFailed
+		case agentpod.AutopilotPhaseStopped:
+			return loop.RunStatusCancelled
+		default:
+			if isPodDone(podStatus) {
+				return podToRunStatus(podStatus)
+			}
+			return loop.RunStatusRunning
+		}
+	}
+	if isPodDone(podStatus) {
+		return podToRunStatus(podStatus)
+	}
+	return loop.RunStatusRunning
+}
+
+func isPodDone(podStatus string) bool {
+	return podStatus == agentpod.StatusCompleted ||
+		podStatus == agentpod.StatusTerminated ||
+		podStatus == agentpod.StatusError
+}
+
+func podToRunStatus(podStatus string) string {
+	switch podStatus {
+	case agentpod.StatusCompleted:
+		return loop.RunStatusCompleted
+	case agentpod.StatusTerminated:
+		return loop.RunStatusCancelled
+	case agentpod.StatusError:
+		return loop.RunStatusFailed
+	default:
+		return loop.RunStatusFailed
+	}
 }

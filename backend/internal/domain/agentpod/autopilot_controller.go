@@ -6,15 +6,15 @@ import (
 
 // AutopilotController phase constants
 const (
-	AutopilotPhaseInitializing   = "initializing"
-	AutopilotPhaseRunning        = "running"
-	AutopilotPhasePaused         = "paused"
-	AutopilotPhaseUserTakeover   = "user_takeover"
+	AutopilotPhaseInitializing    = "initializing"
+	AutopilotPhaseRunning         = "running"
+	AutopilotPhasePaused          = "paused"
+	AutopilotPhaseUserTakeover    = "user_takeover"
 	AutopilotPhaseWaitingApproval = "waiting_approval"
-	AutopilotPhaseMaxIterations  = "max_iterations"
-	AutopilotPhaseCompleted      = "completed"
-	AutopilotPhaseFailed         = "failed"
-	AutopilotPhaseStopped        = "stopped"
+	AutopilotPhaseMaxIterations   = "max_iterations"
+	AutopilotPhaseCompleted       = "completed"
+	AutopilotPhaseFailed          = "failed"
+	AutopilotPhaseStopped         = "stopped"
 )
 
 // Circuit breaker state constants
@@ -82,10 +82,10 @@ type AutopilotController struct {
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`
 
 	// Key identifiers
-	AutopilotControllerKey  string `gorm:"size:100;not null;uniqueIndex" json:"autopilot_controller_key"`
-	PodKey string `gorm:"size:100;not null;index" json:"pod_key"`
-	PodID  int64  `gorm:"not null;index" json:"pod_id"`
-	RunnerID     int64  `gorm:"not null;index" json:"runner_id"`
+	AutopilotControllerKey string `gorm:"size:100;not null;uniqueIndex" json:"autopilot_controller_key"`
+	PodKey                 string `gorm:"size:100;not null;index" json:"pod_key"`
+	PodID                  int64  `gorm:"not null;index" json:"pod_id"`
+	RunnerID               int64  `gorm:"not null;index" json:"runner_id"`
 
 	// Task
 	InitialPrompt string `gorm:"type:text" json:"initial_prompt,omitempty"`
@@ -104,9 +104,9 @@ type AutopilotController struct {
 	ApprovalTimeoutMin   int32   `gorm:"not null;default:30" json:"approval_timeout_min"`
 
 	// Control agent configuration
-	ControlAgentSlug     *string `gorm:"size:50" json:"control_agent_slug,omitempty"` // default: claude
+	ControlAgentSlug      *string `gorm:"size:50" json:"control_agent_slug,omitempty"` // default: claude
 	ControlPromptTemplate *string `gorm:"type:text" json:"control_prompt_template,omitempty"`
-	MCPConfigJSON        *string `gorm:"type:text" json:"mcp_config_json,omitempty"`
+	MCPConfigJSON         *string `gorm:"type:text" json:"mcp_config_json,omitempty"`
 
 	// User takeover
 	UserTakeover bool `gorm:"not null;default:false" json:"user_takeover"`
@@ -142,71 +142,4 @@ func (r *AutopilotController) IsTerminal() bool {
 func (r *AutopilotController) CanResume() bool {
 	return r.Phase == AutopilotPhasePaused ||
 		r.Phase == AutopilotPhaseWaitingApproval
-}
-
-// AutopilotIteration represents a single iteration record
-type AutopilotIteration struct {
-	ID          int64 `gorm:"primaryKey" json:"id"`
-	AutopilotControllerID  int64 `gorm:"not null;index" json:"autopilot_controller_id"`
-	Iteration   int32 `gorm:"not null" json:"iteration"`
-
-	// Phase progression
-	Phase string `gorm:"size:50;not null" json:"phase"` // started, control_running, action_sent, completed, error
-
-	// Decision details
-	Summary      *string `gorm:"type:text" json:"summary,omitempty"`
-	FilesChanged *string `gorm:"type:text" json:"files_changed,omitempty"` // JSON array of file paths
-	ErrorMessage *string `gorm:"type:text" json:"error_message,omitempty"`
-
-	// Timing
-	DurationMs int64     `json:"duration_ms,omitempty"`
-	CreatedAt  time.Time `gorm:"not null;default:now()" json:"created_at"`
-}
-
-func (AutopilotIteration) TableName() string {
-	return "autopilot_iterations"
-}
-
-// Iteration phase constants
-const (
-	IterationPhaseStarted        = "started"
-	IterationPhaseControlRunning = "control_running"
-	IterationPhaseActionSent     = "action_sent"
-	IterationPhaseCompleted      = "completed"
-	IterationPhaseError          = "error"
-)
-
-// CreateAutopilotControllerCommand represents a command to create a AutopilotController
-type CreateAutopilotControllerCommand struct {
-	AutopilotControllerKey  string `json:"autopilot_controller_key"`
-	PodKey string `json:"pod_key,omitempty"`
-
-	// Configuration
-	InitialPrompt        string  `json:"initial_prompt,omitempty"`
-	MaxIterations        int32   `json:"max_iterations,omitempty"`
-	IterationTimeoutSec  int32   `json:"iteration_timeout_sec,omitempty"`
-	NoProgressThreshold  int32   `json:"no_progress_threshold,omitempty"`
-	SameErrorThreshold   int32   `json:"same_error_threshold,omitempty"`
-	ApprovalTimeoutMin   int32   `json:"approval_timeout_min,omitempty"`
-	ControlAgentSlug     string  `json:"control_agent_slug,omitempty"`
-	ControlPromptTemplate string `json:"control_prompt_template,omitempty"`
-	MCPConfigJSON        string  `json:"mcp_config_json,omitempty"`
-}
-
-// AutopilotControlAction represents control action types
-type AutopilotControlAction string
-
-const (
-	AutopilotControlPause    AutopilotControlAction = "pause"
-	AutopilotControlResume   AutopilotControlAction = "resume"
-	AutopilotControlStop     AutopilotControlAction = "stop"
-	AutopilotControlApprove  AutopilotControlAction = "approve"
-	AutopilotControlTakeover AutopilotControlAction = "takeover"
-	AutopilotControlHandback AutopilotControlAction = "handback"
-)
-
-// AutopilotApproveOptions represents options for approval action
-type AutopilotApproveOptions struct {
-	ContinueExecution    bool  `json:"continue_execution"`
-	AdditionalIterations int32 `json:"additional_iterations,omitempty"`
 }

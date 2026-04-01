@@ -106,11 +106,11 @@ type Pod struct {
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
 	// Associations
-	Runner          *runner.Runner             `gorm:"foreignKey:RunnerID" json:"runner,omitempty"`
-	Agent           *agent.Agent               `gorm:"foreignKey:AgentSlug;references:Slug" json:"agent,omitempty"`
-	Repository      *gitprovider.Repository     `gorm:"foreignKey:RepositoryID" json:"repository,omitempty"`
-	Ticket          *ticket.Ticket             `gorm:"foreignKey:TicketID" json:"ticket,omitempty"`
-	CreatedBy       *user.User                 `gorm:"foreignKey:CreatedByID" json:"created_by,omitempty"`
+	Runner     *runner.Runner         `gorm:"foreignKey:RunnerID" json:"runner,omitempty"`
+	Agent      *agent.Agent           `gorm:"foreignKey:AgentSlug;references:Slug" json:"agent,omitempty"`
+	Repository *gitprovider.Repository `gorm:"foreignKey:RepositoryID" json:"repository,omitempty"`
+	Ticket     *ticket.Ticket         `gorm:"foreignKey:TicketID" json:"ticket,omitempty"`
+	CreatedBy  *user.User             `gorm:"foreignKey:CreatedByID" json:"created_by,omitempty"`
 
 	// Virtual field: populated by service layer via loop_runs join, not a DB column
 	Loop *PodLoopInfo `gorm:"-" json:"loop,omitempty"`
@@ -125,41 +125,6 @@ type PodLoopInfo struct {
 
 func (Pod) TableName() string {
 	return "pods"
-}
-
-// ActiveStatuses returns the list of Pod statuses considered active.
-// Use this for SQL IN clauses to avoid hardcoding status strings.
-func ActiveStatuses() []string {
-	return []string{StatusInitializing, StatusRunning, StatusPaused, StatusDisconnected}
-}
-
-// TerminalStatuses returns the list of Pod statuses considered terminal (non-recoverable).
-// Does NOT include StatusCompleted (graceful completion is not "terminal").
-func TerminalStatuses() []string {
-	return []string{StatusTerminated, StatusOrphaned, StatusError}
-}
-
-// IsPodStatusActive returns true if the given Pod status string represents an active state.
-// Use this instead of comparing against individual status constants when you don't have a Pod instance.
-func IsPodStatusActive(status string) bool {
-	return status == StatusRunning ||
-		status == StatusInitializing ||
-		status == StatusPaused ||
-		status == StatusDisconnected
-}
-
-// IsPodStatusTerminal returns true if the given Pod status string represents a terminal (non-recoverable) state.
-// Note: StatusCompleted is NOT terminal — it represents graceful completion.
-// Use IsPodStatusFinished for "done in any way" checks.
-func IsPodStatusTerminal(status string) bool {
-	return status == StatusTerminated ||
-		status == StatusOrphaned ||
-		status == StatusError
-}
-
-// IsPodStatusFinished returns true if the Pod execution is done (either gracefully completed or terminal).
-func IsPodStatusFinished(status string) bool {
-	return status == StatusCompleted || IsPodStatusTerminal(status)
 }
 
 // IsActive returns true if pod is active
@@ -190,27 +155,4 @@ func (p *Pod) GetOrganizationID() int64 {
 // GetPodKey returns the pod key (implements middleware.PodGetter)
 func (p *Pod) GetPodKey() string {
 	return p.PodKey
-}
-
-// PreparationConfig holds the preparation script configuration
-type PreparationConfig struct {
-	Script  string `json:"script,omitempty"`
-	Timeout int    `json:"timeout,omitempty"` // in seconds
-}
-
-// CreatePodCommand represents a command to create a pod on a runner
-type CreatePodCommand struct {
-	PodKey            string             `json:"pod_id"` // Use pod_id for compatibility with runner
-	InitialCommand    string             `json:"initial_command,omitempty"`
-	InitialPrompt     string             `json:"initial_prompt,omitempty"`
-	PermissionMode    string             `json:"permission_mode,omitempty"`
-	TicketSlug        string             `json:"ticket_slug,omitempty"`
-	PodSuffix         string             `json:"pod_suffix,omitempty"`
-	EnvVars           map[string]string  `json:"env_vars,omitempty"`
-	PreparationConfig *PreparationConfig `json:"preparation_config,omitempty"`
-}
-
-// TerminatePodCommand represents a command to terminate a pod
-type TerminatePodCommand struct {
-	PodKey string `json:"pod_id"`
 }

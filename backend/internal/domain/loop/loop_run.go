@@ -1,11 +1,8 @@
 package loop
 
 import (
-	"context"
 	"encoding/json"
 	"time"
-
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
 // LoopRun status constants
@@ -48,7 +45,7 @@ type LoopRun struct {
 	RunNumber int `gorm:"not null" json:"run_number"`
 
 	// Status — only authoritative when pod_key is NULL (pending/skipped/failed).
-	// When pod_key is set, effective status is derived from Pod via ResolveStatus().
+	// When pod_key is set, effective status is derived from Pod via ResolveRunStatus().
 	Status string `gorm:"size:20;not null;default:'pending'" json:"status"`
 
 	// Associated resources (references to SSOT)
@@ -88,104 +85,8 @@ func (LoopRun) TableName() string {
 	return "loop_runs"
 }
 
-// ResolveStatus resolves the effective status of this run using Pod and Autopilot state.
-// This implements SSOT: Pod status is the single source of truth for execution state.
-//
-// Parameters:
-//   - podStatus:       Pod.Status (e.g., "running", "completed", "terminated")
-//   - autopilotPhase:  AutopilotController.Phase (empty string if no autopilot)
-//   - podFinishedAt:   Pod.FinishedAt (for computing duration)
-func (r *LoopRun) ResolveStatus(podStatus string, autopilotPhase string, podFinishedAt *time.Time) {
-	// No Pod → keep the run's own status (pending/skipped/failed)
-	if r.PodKey == nil {
-		return
-	}
-
-	// Derive status from Autopilot phase (if present) or Pod status
-	r.Status = DeriveRunStatus(podStatus, autopilotPhase)
-
-	// Derive timing from Pod
-	if podFinishedAt != nil {
-		r.FinishedAt = podFinishedAt
-		if r.StartedAt != nil {
-			d := int(podFinishedAt.Sub(*r.StartedAt).Seconds())
-			r.DurationSec = &d
-		}
-	}
-}
-
-// DeriveRunStatus maps Pod/Autopilot state to Loop Run status.
-//
-// Priority logic:
-//   - Autopilot terminal phase (completed/failed/stopped) is authoritative
-//   - If autopilot is non-terminal but Pod is done, Pod wins (ground truth)
-//   - For Direct mode (no autopilot), Pod status is used directly
-//
-// This handles the case where a Pod is manually terminated while autopilot
-// is still in an active phase — the Pod's terminal state is the ground truth.
-func DeriveRunStatus(podStatus string, autopilotPhase string) string {
-	// Autopilot mode
-	if autopilotPhase != "" {
-		// Autopilot terminal phases are authoritative
-		switch autopilotPhase {
-		case agentpod.AutopilotPhaseCompleted:
-			return RunStatusCompleted
-		case agentpod.AutopilotPhaseFailed:
-			return RunStatusFailed
-		case agentpod.AutopilotPhaseStopped:
-			return RunStatusCancelled
-		case agentpod.AutopilotPhaseMaxIterations:
-			// max_iterations means "task not finished but iteration quota exhausted".
-			// Map to completed — the autopilot did its best within the configured limit.
-			return RunStatusCompleted
-		default:
-			// Autopilot is in active phase — but if Pod is done,
-			// Pod's state is the ground truth (SSOT)
-			if isPodDoneForLoop(podStatus) {
-				return deriveFromPodStatus(podStatus)
-			}
-			return RunStatusRunning
-		}
-	}
-
-	// Direct mode: Pod status is the truth
-	if isPodDoneForLoop(podStatus) {
-		return deriveFromPodStatus(podStatus)
-	}
-	return RunStatusRunning
-}
-
-// isPodDoneForLoop returns true if the Pod is "done" from the Loop domain's perspective.
-//
-// This deliberately excludes StatusOrphaned — an orphaned pod may reconnect,
-// so from Loop's perspective it's still potentially active.
-// This differs from Pod.IsTerminal() which includes orphaned.
-func isPodDoneForLoop(podStatus string) bool {
-	return podStatus == agentpod.StatusCompleted ||
-		podStatus == agentpod.StatusTerminated ||
-		podStatus == agentpod.StatusError
-}
-
-// deriveFromPodStatus maps a "done" Pod status to Loop Run status.
-//
-// StatusCompleted = Pod process exited naturally → run completed successfully.
-// StatusTerminated = Pod was explicitly killed (user cancel, system cleanup) → run cancelled.
-// StatusError = Pod encountered an error → run failed.
-func deriveFromPodStatus(podStatus string) string {
-	switch podStatus {
-	case agentpod.StatusCompleted:
-		return RunStatusCompleted
-	case agentpod.StatusTerminated:
-		return RunStatusCancelled
-	case agentpod.StatusError:
-		return RunStatusFailed
-	default:
-		return RunStatusFailed
-	}
-}
-
 // IsTerminal returns true if the run is in a terminal state.
-// Note: for runs with pod_key, call ResolveStatus first to get the effective status.
+// Note: for runs with pod_key, call ResolveRunStatus first to get the effective status.
 func (r *LoopRun) IsTerminal() bool {
 	return r.Status == RunStatusCompleted ||
 		r.Status == RunStatusFailed ||
@@ -195,87 +96,7 @@ func (r *LoopRun) IsTerminal() bool {
 }
 
 // IsActive returns true if the run is currently active.
-// Note: for runs with pod_key, call ResolveStatus first to get the effective status.
+// Note: for runs with pod_key, call ResolveRunStatus first to get the effective status.
 func (r *LoopRun) IsActive() bool {
 	return r.Status == RunStatusPending || r.Status == RunStatusRunning
-}
-
-// PodStatusInfo holds Pod status info for SSOT resolution
-type PodStatusInfo struct {
-	PodKey     string
-	Status     string
-	FinishedAt *time.Time
-}
-
-// RunListFilter represents filters for listing loop runs
-type RunListFilter struct {
-	LoopID int64
-	Status string // Optional: filter by status (applied at DB level for finished runs)
-	Limit  int
-	Offset int
-}
-
-// TriggerRunAtomicParams contains parameters for atomically creating a loop run.
-type TriggerRunAtomicParams struct {
-	LoopID        int64
-	TriggerType   string
-	TriggerSource string
-	TriggerParams json.RawMessage // Optional runtime variable overrides
-}
-
-// TriggerRunAtomicResult contains the result of an atomic trigger operation.
-type TriggerRunAtomicResult struct {
-	Run     *LoopRun
-	Loop    *Loop // the loop as read within the transaction (for event publishing)
-	Skipped bool
-	Reason  string
-}
-
-// LoopRunRepository defines the interface for loop run data access
-type LoopRunRepository interface {
-	Create(ctx context.Context, run *LoopRun) error
-	GetByID(ctx context.Context, id int64) (*LoopRun, error)
-	List(ctx context.Context, filter *RunListFilter) ([]*LoopRun, int64, error)
-	Update(ctx context.Context, runID int64, updates map[string]interface{}) error
-	GetMaxRunNumber(ctx context.Context, loopID int64) (int, error)
-	GetByAutopilotKey(ctx context.Context, autopilotKey string) (*LoopRun, error)
-
-	// TriggerRunAtomic atomically creates a loop run within a FOR UPDATE transaction.
-	// Handles concurrency check (SSOT via Pod JOIN), run number generation, and record creation.
-	TriggerRunAtomic(ctx context.Context, params *TriggerRunAtomicParams) (*TriggerRunAtomicResult, error)
-
-	// FinishRun atomically marks a run as finished with optimistic locking.
-	// Uses WHERE finished_at IS NULL to prevent double-processing from concurrent events.
-	// Returns true if the row was updated (caller should proceed), false if already finished.
-	FinishRun(ctx context.Context, runID int64, updates map[string]interface{}) (bool, error)
-
-	// SSOT: cross-table queries (JOIN with pods/autopilot_controllers)
-	CountActiveRuns(ctx context.Context, loopID int64) (int64, error)
-	GetActiveRunByPodKey(ctx context.Context, podKey string) (*LoopRun, error)
-	// GetTimedOutRuns returns running runs that have exceeded their timeout.
-	// orgIDs filters to specific organizations; nil means all orgs (single-instance mode).
-	GetTimedOutRuns(ctx context.Context, orgIDs []int64) ([]*LoopRun, error)
-	// GetOrphanPendingRuns returns pending runs with no pod_key stuck for > 5 minutes.
-	GetOrphanPendingRuns(ctx context.Context, orgIDs []int64) ([]*LoopRun, error)
-	ComputeLoopStats(ctx context.Context, loopID int64) (total, successful, failed int, err error)
-	GetLatestPodKey(ctx context.Context, loopID int64) *string
-
-	// SSOT: batch status resolution helpers
-	BatchGetPodStatuses(ctx context.Context, podKeys []string) ([]PodStatusInfo, error)
-	BatchGetAutopilotPhases(ctx context.Context, autopilotKeys []string) (map[string]string, error)
-
-	// CountActiveRunsByLoopIDs batch-counts active runs for multiple loops.
-	CountActiveRunsByLoopIDs(ctx context.Context, loopIDs []int64) (map[int64]int64, error)
-
-	// GetAvgDuration returns the average duration in seconds for completed runs of a loop.
-	GetAvgDuration(ctx context.Context, loopID int64) (*float64, error)
-
-	// DeleteOldFinishedRuns deletes finished runs exceeding the retention limit.
-	// Keeps the most recent `keep` finished runs, deletes the rest.
-	// Returns the number of rows deleted.
-	DeleteOldFinishedRuns(ctx context.Context, loopID int64, keep int) (int64, error)
-
-	// GetIdleLoopPods returns active loop runs whose Pods have been idle (agent waiting)
-	// longer than the loop's idle_timeout_sec. Used by the scheduler to auto-terminate.
-	GetIdleLoopPods(ctx context.Context, orgIDs []int64) ([]*LoopRun, error)
 }
