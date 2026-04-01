@@ -100,8 +100,8 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 				// UI state notification via Relay only.
 				sendAcpViaRelay(pod, "sessionState", "", map[string]string{"state": newState})
 				// Notify PodIO subscribers (e.g. Autopilot StateDetectorCoordinator).
-				if acpIO, ok := pod.IO.(*ACPPodIO); ok {
-					acpIO.NotifyStateChange(newState)
+				if sa, ok := pod.IO.(SessionAccess); ok {
+					sa.NotifyStateChange(newState)
 				}
 			},
 			OnLog: func(level, message string) {
@@ -116,7 +116,6 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	})
 
 	// Wire client into pod
-	pod.ACPClient = acpClient
 	pod.IO = NewACPPodIO(acpClient, podKey)
 	pod.Relay = NewACPPodRelay(podKey, acpClient, func(payload []byte) {
 		h.handleAcpRelayCommand(pod, payload)

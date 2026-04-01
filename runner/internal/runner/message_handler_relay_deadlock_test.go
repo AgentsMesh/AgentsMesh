@@ -35,11 +35,8 @@ func TestOnSubscribePod_NoDeadlockWhenVTBusy(t *testing.T) {
 		return mc
 	}
 
-	pod := &Pod{
-		PodKey:          "pod-deadlock-1",
-		Status:          PodStatusRunning,
-		VirtualTerminal: terminal,
-	}
+	pod := testNewPTYPod("pod-deadlock-1", terminal)
+	pod.Status = PodStatusRunning
 	store.Put(pod.PodKey, pod)
 
 	// Continuously feed VT to hold vt.mu write lock under contention.
@@ -103,11 +100,8 @@ func TestOnSubscribePod_ConcurrentSubscribes(t *testing.T) {
 		return relay.NewMockClient(url)
 	}
 
-	pod := &Pod{
-		PodKey:          "pod-concurrent",
-		Status:          PodStatusRunning,
-		VirtualTerminal: terminal,
-	}
+	pod := testNewPTYPod("pod-concurrent", terminal)
+	pod.Status = PodStatusRunning
 	store.Put(pod.PodKey, pod)
 
 	// Continuous VT feed to create lock contention.
@@ -262,12 +256,13 @@ func TestOnSubscribePod_SnapshotSentOnSuccess(t *testing.T) {
 		return &snapshotTrackingClient{MockClient: mc, calls: &snapshotCalls}
 	}
 
+	comps := &PTYComponents{VirtualTerminal: terminal}
 	pod := &Pod{
-		PodKey:          "pod-snapshot",
-		Status:          PodStatusRunning,
-		VirtualTerminal: terminal,
+		PodKey: "pod-snapshot",
+		Status: PodStatusRunning,
 	}
-	pod.Relay = NewPTYPodRelay(pod.PodKey, nil, terminal, nil, nil)
+	pod.IO = NewPTYPodIO(pod.PodKey, comps, PTYPodIODeps{})
+	pod.Relay = NewPTYPodRelay(pod.PodKey, pod.IO, comps)
 	store.Put(pod.PodKey, pod)
 
 	err := handler.OnSubscribePod(client.SubscribePodRequest{

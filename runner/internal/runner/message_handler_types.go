@@ -21,7 +21,7 @@ type CoreContext interface {
 // PodComponentContext provides Pod lifecycle capabilities.
 type PodComponentContext interface {
 	NewPodBuilder() *PodBuilder
-	NewPodController(pod *Pod) *PodControllerImpl
+	NewPodController(pod *Pod) *PodController
 	GetMCPServer() MCPServer
 	GetAgentMonitor() AgentMonitor
 	GetSandboxStatus(podKey string) *client.SandboxStatusInfo

@@ -54,7 +54,11 @@ func (r *Runner) SendPodInput(podKey string, text string, keys []string) error {
 		}
 	}
 	if len(keys) > 0 {
-		if err := pod.IO.SendKeys(keys); err != nil {
+		ta, ok := pod.IO.(TerminalAccess)
+		if !ok {
+			return fmt.Errorf("special keys not supported in %s mode", pod.IO.Mode())
+		}
+		if err := ta.SendKeys(keys); err != nil {
 			return err
 		}
 	}

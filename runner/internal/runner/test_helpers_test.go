@@ -5,6 +5,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
 
 // TestRunnerOption configures RunnerDeps for testing.
@@ -57,4 +58,31 @@ func NewTestRunner(t *testing.T, opts ...TestRunnerOption) (*Runner, *client.Moc
 	}
 
 	return r, mc
+}
+
+// testPTYComponents extracts the PTYComponents from a Pod's IO for test assertions.
+// Returns nil if the Pod does not use PTY mode.
+func testPTYComponents(pod *Pod) *PTYComponents {
+	if ptyIO, ok := pod.IO.(*PTYPodIO); ok {
+		return ptyIO.components
+	}
+	return nil
+}
+
+// testNewPTYPod creates a minimal PTY Pod with VirtualTerminal for testing.
+func testNewPTYPod(podKey string, vterm *vt.VirtualTerminal) *Pod {
+	pod := &Pod{
+		PodKey:          podKey,
+		InteractionMode: InteractionModePTY,
+		Status:          PodStatusRunning,
+		vtProvider:      func() *vt.VirtualTerminal { return vterm },
+	}
+	comps := &PTYComponents{VirtualTerminal: vterm}
+	pod.IO = NewPTYPodIO(podKey, comps, PTYPodIODeps{
+		GetOrCreateDetector: pod.GetOrCreateStateDetector,
+		SubscribeState:      pod.SubscribeStateChange,
+		UnsubscribeState:    pod.UnsubscribeStateChange,
+		GetPTYError:         pod.GetPTYError,
+	})
+	return pod
 }

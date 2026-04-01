@@ -51,8 +51,8 @@ func TestPodBuilderBuildSuccess(t *testing.T) {
 	}
 
 	// Clean up terminal if created
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+		comps.Terminal.Stop()
 	}
 }
 
@@ -83,8 +83,8 @@ func TestPodBuilderBuildWithMinimalConfig(t *testing.T) {
 	}
 
 	// Clean up
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+		comps.Terminal.Stop()
 	}
 }
 
@@ -123,8 +123,8 @@ func TestPodBuilderSetupWithWorkspaceManager(t *testing.T) {
 		t.Fatalf("Build failed: %v", err)
 	}
 
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+		comps.Terminal.Stop()
 	}
 }
 
@@ -155,8 +155,8 @@ func TestPodBuilderSetupLocalPath(t *testing.T) {
 		t.Fatalf("Build failed: %v", err)
 	}
 
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+		comps.Terminal.Stop()
 	}
 }
 
@@ -333,8 +333,10 @@ func BenchmarkPodBuilderBuild(b *testing.B) {
 			WithCommand(cmd).
 			Build(ctx)
 
-		if pod != nil && pod.Terminal != nil {
-			pod.Terminal.Stop()
+		if pod != nil {
+			if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+				comps.Terminal.Stop()
+			}
 		}
 	}
 }

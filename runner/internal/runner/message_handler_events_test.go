@@ -154,14 +154,14 @@ func TestCreatePTYErrorHandler(t *testing.T) {
 
 	// Create pod with aggregator to capture the error message
 	agg := aggregator.NewSmartAggregator(nil)
+	comps := &PTYComponents{Aggregator: agg}
 	pod := &Pod{
-		ID:         "pty-error-pod",
-		Status:     PodStatusRunning,
-		Aggregator: agg,
+		ID:     "pty-error-pod",
+		Status: PodStatusRunning,
 	}
-	ptyIO := NewPTYPodIO(nil, nil, pod)
-	ptyIO.SetAggregator(agg)
-	pod.IO = ptyIO
+	pod.IO = NewPTYPodIO("pty-error-pod", comps, PTYPodIODeps{
+		GetPTYError: pod.GetPTYError,
+	})
 
 	ptyErrorHandler := handler.createPTYErrorHandler("pty-error-pod", pod)
 
@@ -193,7 +193,7 @@ func TestCreatePTYErrorHandler(t *testing.T) {
 	}
 
 	// Verify error message was buffered in aggregator (will be flushed to terminal via relay)
-	if pod.Aggregator.BufferLen() == 0 {
+	if agg.BufferLen() == 0 {
 		t.Error("PTY error handler should write visible error message to aggregator buffer")
 	}
 }
@@ -233,7 +233,9 @@ func TestCreateExitHandler_WithPTYError(t *testing.T) {
 		ID:     "pty-exit-pod",
 		Status: PodStatusRunning,
 	}
-	pod.IO = NewPTYPodIO(nil, nil, pod)
+	pod.IO = NewPTYPodIO("pty-exit-pod", &PTYComponents{}, PTYPodIODeps{
+		GetPTYError: pod.GetPTYError,
+	})
 	pod.SetPTYError("PTY read error: read /dev/ptmx: input/output error")
 	store.Put("pty-exit-pod", pod)
 
@@ -276,14 +278,14 @@ func TestCreateExitHandler_EarlyOutputTakesPriority(t *testing.T) {
 
 	// Create pod with both a PTY error and an aggregator with early output
 	agg := aggregator.NewSmartAggregator(nil)
+	comps := &PTYComponents{Aggregator: agg}
 	pod := &Pod{
-		ID:         "priority-pod",
-		Status:     PodStatusRunning,
-		Aggregator: agg,
+		ID:     "priority-pod",
+		Status: PodStatusRunning,
 	}
-	ptyIO := NewPTYPodIO(nil, nil, pod)
-	ptyIO.SetAggregator(agg)
-	pod.IO = ptyIO
+	pod.IO = NewPTYPodIO("priority-pod", comps, PTYPodIODeps{
+		GetPTYError: pod.GetPTYError,
+	})
 	pod.SetPTYError("PTY read error: something")
 	store.Put("priority-pod", pod)
 

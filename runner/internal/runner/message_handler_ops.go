@@ -94,11 +94,13 @@ func (h *RunnerMessageHandler) OnObservePod(req client.ObservePodRequest) error 
 		log.Error("Failed to get snapshot for observe PTY", "pod_key", req.PodKey, "error", err)
 		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, err.Error())
 	}
-	cursorY, cursorX := pod.IO.CursorPosition()
-
+	var cursorY, cursorX int
 	var screen string
-	if req.IncludeScreen {
-		screen = pod.IO.GetScreenSnapshot()
+	if ta, ok := pod.IO.(TerminalAccess); ok {
+		cursorY, cursorX = ta.CursorPosition()
+		if req.IncludeScreen {
+			screen = ta.GetScreenSnapshot()
+		}
 	}
 
 	// Count total lines in output to determine hasMore

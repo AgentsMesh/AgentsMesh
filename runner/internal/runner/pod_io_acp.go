@@ -1,15 +1,11 @@
 package runner
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
-
-// ErrKeysNotSupported is returned when special key input is attempted in ACP mode.
-var ErrKeysNotSupported = errors.New("special keys not supported in ACP mode")
 
 // ACPPodIO wraps an ACPClient to implement PodIO for ACP-mode pods.
 // State mapping: processing→executing, idle→idle, waiting_permission→waiting.
@@ -69,27 +65,8 @@ func (a *ACPPodIO) NotifyStateChange(acpState string) {
 	}
 }
 
-func (a *ACPPodIO) SendKeys(keys []string) error {
-	if len(keys) > 0 {
-		return ErrKeysNotSupported
-	}
-	return nil
-}
-
-func (a *ACPPodIO) Resize(cols, rows int) (bool, error) {
-	return false, nil // No-op: ACP has no terminal to resize
-}
-
 func (a *ACPPodIO) GetPID() int {
 	return 0 // ACP has no shell process
-}
-
-func (a *ACPPodIO) CursorPosition() (row, col int) {
-	return 0, 0 // ACP has no terminal cursor
-}
-
-func (a *ACPPodIO) GetScreenSnapshot() string {
-	return "" // ACP has no terminal screen
 }
 
 func (a *ACPPodIO) Stop() {
@@ -102,16 +79,8 @@ func (a *ACPPodIO) SetExitHandler(handler func(exitCode int)) {
 	// configured at client construction time.
 }
 
-func (a *ACPPodIO) Redraw() error {
-	return nil // No-op: ACP has no terminal to redraw
-}
-
 func (a *ACPPodIO) Detach() {
 	// No-op: ACP has no terminal to detach from
-}
-
-func (a *ACPPodIO) WriteOutput(data []byte) {
-	// No-op: ACP has no aggregator output pipeline
 }
 
 func (a *ACPPodIO) RespondToPermission(requestID string, approved bool) error {
@@ -155,9 +124,18 @@ func mapACPState(acpState string) string {
 	}
 }
 
+func (a *ACPPodIO) Start() error {
+	return nil // ACP start is done externally by wireAndStartACPPod
+}
+
+func (a *ACPPodIO) SetIOErrorHandler(_ func(error)) {
+	// No-op: ACP has no PTY
+}
+
 func (a *ACPPodIO) Teardown() string {
 	return "" // ACP has no aggregator or PTY logger to clean up
 }
 
-// Compile-time interface check.
+// Compile-time interface checks.
 var _ PodIO = (*ACPPodIO)(nil)
+var _ SessionAccess = (*ACPPodIO)(nil)

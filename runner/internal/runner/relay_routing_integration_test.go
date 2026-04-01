@@ -33,8 +33,9 @@ func buildRelayTestPod(t *testing.T, podfile string, opts ...func(*runnerv1.Crea
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
-	pod.Terminal.SetOutputHandler(pod.CreateOutputHandler())
-	if err := pod.Terminal.Start(); err != nil {
+	comps := testPTYComponents(pod)
+	comps.Terminal.SetOutputHandler(NewPTYOutputHandler(pod.PodKey, comps, pod.NotifyStateDetectorWithScreen))
+	if err := comps.Terminal.Start(); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 	return pod
@@ -70,7 +71,7 @@ func TestRelayRouting_SubscribeUnsubscribe_Integration(t *testing.T) {
 	pod := buildRelayTestPod(t, pf, func(c *runnerv1.CreatePodCommand) {
 		c.LaunchArgs = []string{"10"}
 	})
-	defer pod.Terminal.Stop()
+	defer testPTYComponents(pod).Terminal.Stop()
 
 	store := NewInMemoryPodStore()
 	store.Put(pod.PodKey, pod)
@@ -118,7 +119,7 @@ func TestRelayRouting_TerminalOutputToRelay_Integration(t *testing.T) {
 	pod := buildRelayTestPod(t, pf, func(c *runnerv1.CreatePodCommand) {
 		c.InitialPrompt = "relay-test-marker"
 	})
-	defer pod.Terminal.Stop()
+	defer testPTYComponents(pod).Terminal.Stop()
 
 	store := NewInMemoryPodStore()
 	store.Put(pod.PodKey, pod)
@@ -132,7 +133,7 @@ func TestRelayRouting_TerminalOutputToRelay_Integration(t *testing.T) {
 	}
 	mc := getMock()
 
-	// Wait for echo output to flow through aggregator → relay
+	// Wait for echo output to flow through aggregator -> relay
 	deadline := time.After(5 * time.Second)
 	for {
 		if mc.CountSentByType(relay.MsgTypeOutput) > 0 {
@@ -160,7 +161,7 @@ func TestRelayRouting_TerminalOutputToRelay_Integration(t *testing.T) {
 
 func TestRelayRouting_RelayInputToPod_Integration(t *testing.T) {
 	pod := buildRelayTestPod(t, "AGENT cat\nMODE pty\nPROMPT_POSITION prepend\n")
-	defer pod.Terminal.Stop()
+	defer testPTYComponents(pod).Terminal.Stop()
 
 	store := NewInMemoryPodStore()
 	store.Put(pod.PodKey, pod)
@@ -180,14 +181,14 @@ func TestRelayRouting_RelayInputToPod_Integration(t *testing.T) {
 	// cat echoes back through VT; poll the VT screen for the marker
 	deadline := time.After(5 * time.Second)
 	for {
-		snap := pod.VirtualTerminal.GetScreenSnapshot()
+		snap := testPTYComponents(pod).VirtualTerminal.GetScreenSnapshot()
 		if strings.Contains(snap, "relay-input-marker") {
 			return // success
 		}
 		select {
 		case <-deadline:
 			t.Fatalf("VT snapshot never contained 'relay-input-marker', got: %q",
-				pod.VirtualTerminal.GetScreenSnapshot())
+				testPTYComponents(pod).VirtualTerminal.GetScreenSnapshot())
 		case <-time.After(50 * time.Millisecond):
 		}
 	}

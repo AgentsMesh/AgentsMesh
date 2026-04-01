@@ -24,8 +24,7 @@ func TestGetAgentStatusFromDetector_NilVirtualTerminal(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
-		VirtualTerminal: nil,
+		PodKey: "test-pod",
 	}
 
 	status := handler.getAgentStatusFromDetector(pod)
@@ -39,11 +38,7 @@ func TestGetAgentStatusFromDetector_StateNotRunning(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
-	pod := &Pod{
-		PodKey:          "test-pod",
-		VirtualTerminal: vterminal,
-	}
-	pod.IO = NewPTYPodIO(nil, vterminal, pod)
+	pod := testNewPTYPod("test-pod", vterminal)
 
 	// GetOrCreateStateDetector creates a ManagedStateDetector that starts in StateNotRunning
 	sd := pod.GetOrCreateStateDetector()
@@ -63,11 +58,7 @@ func TestGetAgentStatusFromDetector_StateExecuting(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
-	pod := &Pod{
-		PodKey:          "test-pod",
-		VirtualTerminal: vterminal,
-	}
-	pod.IO = NewPTYPodIO(nil, vterminal, pod)
+	pod := testNewPTYPod("test-pod", vterminal)
 
 	sd := pod.GetOrCreateStateDetector()
 	require.NotNil(t, sd)
@@ -92,11 +83,7 @@ func TestGetAgentStatusFromDetector_StateWaiting(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
-	pod := &Pod{
-		PodKey:          "test-pod",
-		VirtualTerminal: vterminal,
-	}
-	pod.IO = NewPTYPodIO(nil, vterminal, pod)
+	pod := testNewPTYPod("test-pod", vterminal)
 
 	sd := pod.GetOrCreateStateDetector()
 	require.NotNil(t, sd)
@@ -166,11 +153,7 @@ func TestGetAgentStatusFromDetector_DefaultState(t *testing.T) {
 	// Pod with VirtualTerminal and IO: the newly created detector will be
 	// in StateNotRunning, which maps to "idle" via PodIO.GetAgentStatus().
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
-	pod := &Pod{
-		PodKey:          "test-pod",
-		VirtualTerminal: vterminal,
-	}
-	pod.IO = NewPTYPodIO(nil, vterminal, pod)
+	pod := testNewPTYPod("test-pod", vterminal)
 	defer pod.StopStateDetector()
 
 	status := handler.getAgentStatusFromDetector(pod)
@@ -201,25 +184,17 @@ func TestOnListPodsWithPods_AgentStatus(t *testing.T) {
 
 	// Pod 2: With VirtualTerminal, fresh detector (StateNotRunning) -> AgentStatus should be "idle"
 	vterminal2 := vt.NewVirtualTerminal(80, 24, 1000)
-	pod2 := &Pod{
-		ID:              "pod-2",
-		PodKey:          "pod-2",
-		Status:          PodStatusRunning,
-		VirtualTerminal: vterminal2,
-	}
-	pod2.IO = NewPTYPodIO(nil, vterminal2, pod2)
+	pod2 := testNewPTYPod("pod-2", vterminal2)
+	pod2.ID = "pod-2"
+	pod2.Status = PodStatusRunning
 	store.Put("pod-2", pod2)
 	defer pod2.StopStateDetector()
 
 	// Pod 3: With VirtualTerminal, after OnOutput (StateExecuting) -> AgentStatus should be "executing"
 	vterminal3 := vt.NewVirtualTerminal(80, 24, 1000)
-	pod3 := &Pod{
-		ID:              "pod-3",
-		PodKey:          "pod-3",
-		Status:          PodStatusRunning,
-		VirtualTerminal: vterminal3,
-	}
-	pod3.IO = NewPTYPodIO(nil, vterminal3, pod3)
+	pod3 := testNewPTYPod("pod-3", vterminal3)
+	pod3.ID = "pod-3"
+	pod3.Status = PodStatusRunning
 	sd3 := pod3.GetOrCreateStateDetector()
 	require.NotNil(t, sd3)
 	sd3.OnOutput(100) // Transition to Executing
@@ -293,9 +268,8 @@ func TestOnCreatePod_StateSubscription_Documentation(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
-		Status:          PodStatusRunning,
-		VirtualTerminal: nil, // No VirtualTerminal
+		PodKey: "test-pod",
+		Status: PodStatusRunning,
 	}
 	store.Put("test-pod", pod)
 

@@ -53,8 +53,8 @@ func TestNewInitializesAllComponents(t *testing.T) {
 	if r.upgradeCoord == nil {
 		t.Error("upgradeCoord should be initialized")
 	}
-	if r.components == nil {
-		t.Error("components should be initialized")
+	if r.sidecars == nil {
+		t.Error("sidecars should be initialized")
 	}
 	if r.messageHandler == nil {
 		t.Error("messageHandler should be initialized")

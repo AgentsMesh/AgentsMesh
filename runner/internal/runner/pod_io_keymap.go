@@ -1,10 +1,5 @@
 package runner
 
-import "errors"
-
-// ErrNotSupported is returned when an operation is not supported in the current mode.
-var ErrNotSupported = errors.New("operation not supported in this mode")
-
 // ptyKeyMap maps human-readable key names to terminal escape sequences.
 var ptyKeyMap = map[string]string{
 	"enter":     "\r",

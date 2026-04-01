@@ -22,8 +22,7 @@ func TestOnTerminatePodSuccess(t *testing.T) {
 
 	// Add pod
 	store.Put("terminate-pod", &Pod{
-		ID:       "terminate-pod",
-		Terminal: nil, // nil terminal should be handled gracefully
+		ID: "terminate-pod",
 	})
 
 	req := client.TerminatePodRequest{
@@ -94,7 +93,6 @@ func TestOnTerminatePodWithWorktree(t *testing.T) {
 	store.Put("worktree-pod", &Pod{
 		ID:          "worktree-pod",
 		SandboxPath: "/fake/worktree/path",
-		Terminal:    nil,
 	})
 
 	req := client.TerminatePodRequest{

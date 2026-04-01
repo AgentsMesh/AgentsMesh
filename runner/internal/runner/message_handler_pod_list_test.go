@@ -90,8 +90,10 @@ func TestOnListPodsWithTerminalPID(t *testing.T) {
 
 	// Clean up
 	pod, ok := store.Get("list-pid-pod")
-	if ok && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if ok {
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
+		}
 	}
 }
 

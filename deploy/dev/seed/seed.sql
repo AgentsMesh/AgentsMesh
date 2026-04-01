@@ -262,7 +262,7 @@ BEGIN
     -- 8.1 Demo WebApp (静态 Web 应用)
     INSERT INTO repositories (
         organization_id, provider_type, provider_base_url,
-        external_id, name, full_path, clone_url,
+        external_id, name, slug, clone_url,
         default_branch, ticket_prefix, visibility, imported_by_user_id,
         is_active
     )
@@ -280,13 +280,13 @@ BEGIN
            TRUE
     WHERE NOT EXISTS (
         SELECT 1 FROM repositories
-        WHERE organization_id = v_org_id AND full_path = 'dev-org/demo-webapp'
+        WHERE organization_id = v_org_id AND slug = 'dev-org/demo-webapp'
     );
 
     -- 8.2 Demo API (Go API 项目)
     INSERT INTO repositories (
         organization_id, provider_type, provider_base_url,
-        external_id, name, full_path, clone_url,
+        external_id, name, slug, clone_url,
         default_branch, ticket_prefix, visibility, imported_by_user_id,
         is_active
     )
@@ -304,7 +304,7 @@ BEGIN
            TRUE
     WHERE NOT EXISTS (
         SELECT 1 FROM repositories
-        WHERE organization_id = v_org_id AND full_path = 'dev-org/demo-api'
+        WHERE organization_id = v_org_id AND slug = 'dev-org/demo-api'
     );
 
     RAISE NOTICE 'Seed data created successfully!';

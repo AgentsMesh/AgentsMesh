@@ -21,19 +21,13 @@ func (m *shutdownMockPodIO) GetSnapshot(int) (string, error)                    
 func (m *shutdownMockPodIO) GetAgentStatus() string                             { return "idle" }
 func (m *shutdownMockPodIO) SubscribeStateChange(string, func(string))          {}
 func (m *shutdownMockPodIO) UnsubscribeStateChange(string)                      {}
-func (m *shutdownMockPodIO) SendKeys([]string) error                            { return nil }
-func (m *shutdownMockPodIO) Resize(int, int) (bool, error)                      { return false, nil }
 func (m *shutdownMockPodIO) GetPID() int                                        { return 0 }
-func (m *shutdownMockPodIO) CursorPosition() (int, int)                         { return 0, 0 }
-func (m *shutdownMockPodIO) GetScreenSnapshot() string                          { return "" }
 func (m *shutdownMockPodIO) Stop()                                              {}
 func (m *shutdownMockPodIO) Teardown() string                                   { m.teardownCalled = true; return "" }
 func (m *shutdownMockPodIO) SetExitHandler(func(int))                           {}
-func (m *shutdownMockPodIO) Redraw() error                                      { return nil }
 func (m *shutdownMockPodIO) Detach()                                            { m.detachCalled = true }
-func (m *shutdownMockPodIO) WriteOutput([]byte)                                 {}
-func (m *shutdownMockPodIO) RespondToPermission(string, bool) error             { return nil }
-func (m *shutdownMockPodIO) CancelSession() error                               { return nil }
+func (m *shutdownMockPodIO) Start() error                                       { return nil }
+func (m *shutdownMockPodIO) SetIOErrorHandler(func(error))                      {}
 
 // --- CanAcceptPod tests ---
 

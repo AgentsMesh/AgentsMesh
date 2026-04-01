@@ -13,21 +13,21 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/monitor"
 )
 
-// EnhancedComponents encapsulates MCP + Monitor creation and lifecycle management.
-// Extracted from Runner to satisfy SRP — these optional components have their own
+// SidecarServices encapsulates MCP + Monitor creation and lifecycle management.
+// Extracted from Runner to satisfy SRP — these sidecar services have their own
 // initialization and lifecycle concerns.
-type EnhancedComponents struct {
+type SidecarServices struct {
 	mcpManager   *mcp.Manager
 	mcpServer    *mcp.HTTPServer
 	agentMonitor *monitor.Monitor
 }
 
-// NewEnhancedComponents initializes optional enhanced components based on config.
-func NewEnhancedComponents(cfg *config.Config, conn client.Connection) *EnhancedComponents {
+// NewSidecarServices initializes optional sidecar services based on config.
+func NewSidecarServices(cfg *config.Config, conn client.Connection) *SidecarServices {
 	log := logger.Runner()
-	log.Debug("Initializing enhanced components")
+	log.Debug("Initializing sidecar services")
 
-	c := &EnhancedComponents{}
+	c := &SidecarServices{}
 
 	// Initialize MCP manager
 	c.mcpManager = mcp.NewManager()
@@ -51,12 +51,12 @@ func NewEnhancedComponents(cfg *config.Config, conn client.Connection) *Enhanced
 	// Initialize Monitor (started by Supervisor in Run())
 	c.agentMonitor = monitor.NewMonitor(5 * time.Second)
 
-	log.Debug("Enhanced components initialized")
+	log.Debug("Sidecar services initialized")
 	return c
 }
 
 // MCPServer returns the MCP server (nil-safe).
-func (c *EnhancedComponents) MCPServer() MCPServer {
+func (c *SidecarServices) MCPServer() MCPServer {
 	if c == nil || c.mcpServer == nil {
 		return nil
 	}
@@ -64,7 +64,7 @@ func (c *EnhancedComponents) MCPServer() MCPServer {
 }
 
 // AgentMonitor returns the agent monitor (nil-safe).
-func (c *EnhancedComponents) AgentMonitor() AgentMonitor {
+func (c *SidecarServices) AgentMonitor() AgentMonitor {
 	if c == nil || c.agentMonitor == nil {
 		return nil
 	}
@@ -72,7 +72,7 @@ func (c *EnhancedComponents) AgentMonitor() AgentMonitor {
 }
 
 // Services returns suture services for Supervisor registration.
-func (c *EnhancedComponents) Services() []suture.Service {
+func (c *SidecarServices) Services() []suture.Service {
 	if c == nil {
 		return nil
 	}
@@ -87,7 +87,7 @@ func (c *EnhancedComponents) Services() []suture.Service {
 }
 
 // SetProviders wires status/pod providers into the MCP server.
-func (c *EnhancedComponents) SetProviders(status mcp.PodStatusProvider, pod mcp.LocalPodProvider) {
+func (c *SidecarServices) SetProviders(status mcp.PodStatusProvider, pod mcp.LocalPodProvider) {
 	if c == nil || c.mcpServer == nil {
 		return
 	}

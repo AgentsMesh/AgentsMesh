@@ -123,9 +123,10 @@ func TestPTYPodIO_Teardown_WithPTYLogger(t *testing.T) {
 		t.Fatalf("failed to create PTYLogger: %v", err)
 	}
 
-	io := NewPTYPodIO(nil, nil, pod)
-	io.SetAggregator(agg)
-	io.SetPTYLogger(ptyLogger)
+	comps := &PTYComponents{Aggregator: agg, PTYLogger: ptyLogger}
+	io := NewPTYPodIO("pod-teardown-logger", comps, PTYPodIODeps{
+		GetPTYError: pod.GetPTYError,
+	})
 
 	result := io.Teardown()
 
@@ -139,7 +140,9 @@ func TestPTYPodIO_Teardown_PTYErrorFallback(t *testing.T) {
 	pod := &Pod{PodKey: "pod-teardown-err"}
 	pod.SetPTYError("disk full")
 
-	io := NewPTYPodIO(nil, nil, pod)
+	io := NewPTYPodIO("pod-teardown-err", &PTYComponents{}, PTYPodIODeps{
+		GetPTYError: pod.GetPTYError,
+	})
 
 	result := io.Teardown()
 
@@ -159,8 +162,10 @@ func TestPTYPodIO_Teardown_EarlyOutputTakesPriority(t *testing.T) {
 	// Give the aggregator timer a chance to see the data as "pending".
 	// Teardown calls agg.Stop() which drains remaining data into early buffer.
 
-	io := NewPTYPodIO(nil, nil, pod)
-	io.SetAggregator(agg)
+	comps := &PTYComponents{Aggregator: agg}
+	io := NewPTYPodIO("pod-teardown-priority", comps, PTYPodIODeps{
+		GetPTYError: pod.GetPTYError,
+	})
 
 	result := io.Teardown()
 

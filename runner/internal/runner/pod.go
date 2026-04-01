@@ -4,28 +4,26 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/acp"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
 
-// Pod represents an active terminal pod
+// Pod represents an active execution environment (PTY or ACP).
+// Mode-specific components live inside PodIO and PodRelay implementations;
+// Pod itself only holds mode-agnostic state.
 type Pod struct {
-	ID               string
-	PodKey           string
-	Agent            string
-	RepositoryURL    string
-	Branch           string
-	SandboxPath      string
+	ID            string
+	PodKey        string
+	Agent         string
+	RepositoryURL string
+	Branch        string
+	SandboxPath   string
 
 	// Interaction mode: "pty" (default) or "acp"
 	InteractionMode string
 
-	// Unified I/O interface — high-level consumers (MCP tools, Autopilot)
-	// should use this instead of directly accessing Terminal or ACPClient.
+	// Unified I/O interface — all consumers should use this.
 	IO PodIO
 
 	// Mode-specific relay behavior (OCP: eliminates IsACPMode branches in relay layer)
@@ -37,35 +35,30 @@ type Pod struct {
 	WorkDir       string
 	LaunchEnv     []string // Full environment slice for subprocess
 
-	// PTY-specific components (nil in ACP mode)
-	Terminal         *terminal.Terminal
-	VirtualTerminal  *vt.VirtualTerminal        // Virtual terminal for state management and snapshots
-	Aggregator       *aggregator.SmartAggregator // Output aggregator for adaptive frame rate
-	RelayClient      relay.RelayClient          // WebSocket client for Relay connection (interface for testability)
-	relayMu          sync.RWMutex               // Protects RelayClient field
-	PTYLogger        *aggregator.PTYLogger // PTY logger for debugging (optional)
+	// Relay client (mode-agnostic, protected by relayMu)
+	RelayClient relay.RelayClient
+	relayMu     sync.RWMutex
 
-	// ACP-specific components (nil in PTY mode)
-	ACPClient *acp.ACPClient
-
-	StartedAt        time.Time
-	Status           string              // Pod status - use statusMu for thread-safe access
-	statusMu         sync.RWMutex        // Protects Status field
-	TicketSlug       string              // Ticket slug for worktree-based pods (e.g., "TBD-123")
+	StartedAt  time.Time
+	Status     string       // Pod status - use statusMu for thread-safe access
+	statusMu   sync.RWMutex // Protects Status field
+	TicketSlug string       // Ticket slug for worktree-based pods (e.g., "TBD-123")
 
 	// StateDetector for multi-signal state detection.
-	// This is a foundational service that can be used by Autopilot, Monitor, or other components.
 	stateDetector   *ManagedStateDetector
 	stateDetectorMu sync.RWMutex
 
-	// Token refresh channel - used when relay token expires and needs to be refreshed
-	tokenRefreshCh   chan string
-	tokenRefreshMu   sync.Mutex
+	// vtProvider returns the VirtualTerminal for lazy StateDetector creation.
+	// Injected by the build path (PTY only); nil for ACP pods.
+	vtProvider func() *vt.VirtualTerminal
+
+	// Token refresh channel - used when relay token expires
+	tokenRefreshCh chan string
+	tokenRefreshMu sync.Mutex
 
 	// PTY error message stored when a fatal PTY read error occurs.
-	// Used by the exit handler to include the error reason in the termination event.
-	ptyErrorMsg   string
-	ptyErrorMu    sync.Mutex
+	ptyErrorMsg string
+	ptyErrorMu  sync.Mutex
 }
 
 // PodStatus constants
@@ -107,7 +100,6 @@ func (p *Pod) SetStatus(status string) {
 	oldStatus := p.Status
 	p.Status = status
 	p.statusMu.Unlock()
-
 	if oldStatus != status {
 		logger.Pod().Debug("Pod status changed", "pod_key", p.PodKey, "from", oldStatus, "to", status)
 	}
@@ -134,8 +126,7 @@ func (p *Pod) GetRelayClient() relay.RelayClient {
 	return p.RelayClient
 }
 
-// LockRelay acquires the relay write lock for atomic check-and-set operations
-// (e.g., OnSubscribePty). Caller must call UnlockRelay when done.
+// LockRelay acquires the relay write lock for atomic check-and-set operations.
 func (p *Pod) LockRelay()   { p.relayMu.Lock() }
 func (p *Pod) UnlockRelay() { p.relayMu.Unlock() }
 
@@ -147,9 +138,6 @@ func (p *Pod) HasRelayClient() bool {
 }
 
 // DisconnectRelay disconnects and clears the relay client.
-// Lock strategy: relayMu is held ONLY for the pointer swap.
-// Stop() and SetRelayClient() are called outside the lock to avoid
-// deadlocking with relay callbacks (e.g., fireOnClose → SetRelayClient → relayMu).
 func (p *Pod) DisconnectRelay() {
 	p.relayMu.Lock()
 	rc := p.RelayClient
@@ -157,12 +145,10 @@ func (p *Pod) DisconnectRelay() {
 		p.RelayClient = nil
 	}
 	p.relayMu.Unlock()
-
 	if rc != nil {
 		logger.Pod().Debug("Disconnecting relay client", "pod_key", p.PodKey)
 		rc.Stop()
 	}
-	// Clear mode-specific relay wiring (aggregator for PTY, no-op for ACP)
 	if p.Relay != nil {
 		p.Relay.OnRelayDisconnected()
 	}

@@ -7,10 +7,10 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
 )
 
-// UpgradeCoordinator manages the upgrade/draining state machine.
+// upgradeController manages the upgrade/draining state machine.
 // It encapsulates all upgrade-related state and synchronization,
 // extracted from Runner to satisfy SRP.
-type UpgradeCoordinator struct {
+type upgradeController struct {
 	draining   bool
 	drainingMu sync.RWMutex
 
@@ -24,18 +24,18 @@ type UpgradeCoordinator struct {
 	podCounter func() int
 }
 
-// Compile-time check: UpgradeCoordinator implements UpgradeController.
-var _ UpgradeController = (*UpgradeCoordinator)(nil)
+// Compile-time check: upgradeController implements UpgradeController.
+var _ UpgradeController = (*upgradeController)(nil)
 
-// NewUpgradeCoordinator creates a new UpgradeCoordinator.
+// newUpgradeController creates a new upgradeController.
 // podCounter provides the active pod count without depending on Runner.
-func NewUpgradeCoordinator(podCounter func() int) *UpgradeCoordinator {
-	return &UpgradeCoordinator{podCounter: podCounter}
+func newUpgradeController(podCounter func() int) *upgradeController {
+	return &upgradeController{podCounter: podCounter}
 }
 
 // TryStartUpgrade atomically checks and sets the upgrading flag.
 // Returns true if upgrade can proceed, false if another upgrade is in progress.
-func (uc *UpgradeCoordinator) TryStartUpgrade() bool {
+func (uc *upgradeController) TryStartUpgrade() bool {
 	uc.upgradeMu.Lock()
 	defer uc.upgradeMu.Unlock()
 	if uc.upgrading {
@@ -46,34 +46,34 @@ func (uc *UpgradeCoordinator) TryStartUpgrade() bool {
 }
 
 // FinishUpgrade clears the upgrading flag.
-func (uc *UpgradeCoordinator) FinishUpgrade() {
+func (uc *upgradeController) FinishUpgrade() {
 	uc.upgradeMu.Lock()
 	defer uc.upgradeMu.Unlock()
 	uc.upgrading = false
 }
 
 // GetUpdater returns the updater instance.
-func (uc *UpgradeCoordinator) GetUpdater() *updater.Updater {
+func (uc *upgradeController) GetUpdater() *updater.Updater {
 	return uc.updater
 }
 
 // SetUpdater sets the updater instance for remote upgrade support.
-func (uc *UpgradeCoordinator) SetUpdater(u *updater.Updater) {
+func (uc *upgradeController) SetUpdater(u *updater.Updater) {
 	uc.updater = u
 }
 
 // GetRestartFunc returns the restart function.
-func (uc *UpgradeCoordinator) GetRestartFunc() func() (int, error) {
+func (uc *upgradeController) GetRestartFunc() func() (int, error) {
 	return uc.restartFn
 }
 
 // SetRestartFunc sets the restart function for post-upgrade restart.
-func (uc *UpgradeCoordinator) SetRestartFunc(fn func() (int, error)) {
+func (uc *upgradeController) SetRestartFunc(fn func() (int, error)) {
 	uc.restartFn = fn
 }
 
 // GetActivePodCount returns the number of active pods via injected counter.
-func (uc *UpgradeCoordinator) GetActivePodCount() int {
+func (uc *upgradeController) GetActivePodCount() int {
 	if uc.podCounter == nil {
 		return 0
 	}
@@ -81,7 +81,7 @@ func (uc *UpgradeCoordinator) GetActivePodCount() int {
 }
 
 // SetDraining sets the draining state.
-func (uc *UpgradeCoordinator) SetDraining(draining bool) {
+func (uc *upgradeController) SetDraining(draining bool) {
 	uc.drainingMu.Lock()
 	defer uc.drainingMu.Unlock()
 	uc.draining = draining
@@ -93,7 +93,7 @@ func (uc *UpgradeCoordinator) SetDraining(draining bool) {
 }
 
 // IsDraining returns true if the runner is waiting for pods to finish before update.
-func (uc *UpgradeCoordinator) IsDraining() bool {
+func (uc *upgradeController) IsDraining() bool {
 	uc.drainingMu.RLock()
 	defer uc.drainingMu.RUnlock()
 	return uc.draining

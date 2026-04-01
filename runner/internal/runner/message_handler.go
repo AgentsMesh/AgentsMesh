@@ -116,10 +116,10 @@ func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error
 func (h *RunnerMessageHandler) wireAndStartPTYPod(pod *Pod, cmd *runnerv1.CreatePodCommand, cols, rows int) error {
 	log := logger.Pod()
 
-	pod.Terminal.SetExitHandler(h.createExitHandler(cmd.PodKey))
-	pod.Terminal.SetPTYErrorHandler(h.createPTYErrorHandler(cmd.PodKey, pod))
+	pod.IO.SetExitHandler(h.createExitHandler(cmd.PodKey))
+	pod.IO.SetIOErrorHandler(h.createPTYErrorHandler(cmd.PodKey, pod))
 
-	if err := pod.Terminal.Start(); err != nil {
+	if err := pod.IO.Start(); err != nil {
 		h.podStore.Delete(cmd.PodKey)
 		if pod.IO != nil {
 			pod.IO.Teardown()

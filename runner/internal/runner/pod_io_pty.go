@@ -4,63 +4,52 @@ import (
 	"fmt"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
 
-// PTYPodIO wraps existing Terminal + VirtualTerminal + StateDetector
-// to implement PodIO for PTY-mode pods. Pure delegation, zero new logic.
+// PTYPodIODeps holds injected dependencies for PTYPodIO, replacing the *Pod back-reference.
+type PTYPodIODeps struct {
+	GetOrCreateDetector func() detector.StateDetector
+	SubscribeState      func(id string, cb func(detector.StateChangeEvent)) bool
+	UnsubscribeState    func(id string)
+	GetPTYError         func() string
+}
+
+// PTYPodIO wraps PTYComponents + StateDetector access to implement PodIO for PTY-mode pods.
+// It does NOT hold a *Pod reference — all Pod interactions go through injected functions (DIP).
 type PTYPodIO struct {
-	terminal        *terminal.Terminal
-	virtualTerminal *vt.VirtualTerminal
-	pod             *Pod // back-reference for state detector access
-
-	// Optional infrastructure for Teardown (injected via setters)
-	aggregator *aggregator.SmartAggregator
-	ptyLogger  *aggregator.PTYLogger
+	podKey     string
+	components *PTYComponents
+	deps       PTYPodIODeps
 }
 
-// NewPTYPodIO creates a PodIO that delegates to existing PTY components.
-func NewPTYPodIO(t *terminal.Terminal, vterm *vt.VirtualTerminal, pod *Pod) *PTYPodIO {
-	return &PTYPodIO{
-		terminal:        t,
-		virtualTerminal: vterm,
-		pod:             pod,
-	}
-}
-
-// SetAggregator injects the output aggregator for Teardown cleanup.
-func (p *PTYPodIO) SetAggregator(agg *aggregator.SmartAggregator) {
-	p.aggregator = agg
-}
-
-// SetPTYLogger injects the PTY logger for Teardown cleanup.
-func (p *PTYPodIO) SetPTYLogger(l *aggregator.PTYLogger) {
-	p.ptyLogger = l
+// NewPTYPodIO creates a PodIO that delegates to PTY components.
+func NewPTYPodIO(podKey string, comps *PTYComponents, deps PTYPodIODeps) *PTYPodIO {
+	return &PTYPodIO{podKey: podKey, components: comps, deps: deps}
 }
 
 func (p *PTYPodIO) Mode() string { return InteractionModePTY }
 
 func (p *PTYPodIO) SendInput(text string) error {
-	if p.terminal == nil {
-		logger.Pod().Error("PTY SendInput failed: terminal not initialized",
-			"pod_key", p.pod.PodKey)
+	if p.components.Terminal == nil {
+		logger.Pod().Error("PTY SendInput failed: terminal not initialized", "pod_key", p.podKey)
 		return fmt.Errorf("terminal not initialized")
 	}
-	return p.terminal.Write([]byte(text))
+	return p.components.Terminal.Write([]byte(text))
 }
 
 func (p *PTYPodIO) GetSnapshot(lines int) (string, error) {
-	if p.virtualTerminal == nil {
+	if p.components.VirtualTerminal == nil {
 		return "", nil
 	}
-	return p.virtualTerminal.GetOutput(lines), nil
+	return p.components.VirtualTerminal.GetOutput(lines), nil
 }
 
 func (p *PTYPodIO) GetAgentStatus() string {
-	d := p.pod.GetOrCreateStateDetector()
+	if p.deps.GetOrCreateDetector == nil {
+		return "unknown"
+	}
+	d := p.deps.GetOrCreateDetector()
 	if d == nil {
 		return "unknown"
 	}
@@ -77,7 +66,10 @@ func (p *PTYPodIO) GetAgentStatus() string {
 }
 
 func (p *PTYPodIO) SubscribeStateChange(id string, cb func(newStatus string)) {
-	p.pod.SubscribeStateChange(id, func(event detector.StateChangeEvent) {
+	if p.deps.SubscribeState == nil {
+		return
+	}
+	p.deps.SubscribeState(id, func(event detector.StateChangeEvent) {
 		var status string
 		switch event.NewState {
 		case detector.StateExecuting:
@@ -94,20 +86,20 @@ func (p *PTYPodIO) SubscribeStateChange(id string, cb func(newStatus string)) {
 }
 
 func (p *PTYPodIO) UnsubscribeStateChange(id string) {
-	p.pod.UnsubscribeStateChange(id)
+	if p.deps.UnsubscribeState != nil {
+		p.deps.UnsubscribeState(id)
+	}
 }
 
 func (p *PTYPodIO) SendKeys(keys []string) error {
 	for _, key := range keys {
 		seq, ok := ptyKeyMap[key]
 		if !ok {
-			logger.Pod().Error("PTY SendKeys: unknown key",
-				"pod_key", p.pod.PodKey, "key", key)
+			logger.Pod().Error("PTY SendKeys: unknown key", "pod_key", p.podKey, "key", key)
 			return fmt.Errorf("unknown key: %s", key)
 		}
-		if err := p.terminal.Write([]byte(seq)); err != nil {
-			logger.Pod().Error("PTY SendKeys failed",
-				"pod_key", p.pod.PodKey, "key", key, "error", err)
+		if err := p.components.Terminal.Write([]byte(seq)); err != nil {
+			logger.Pod().Error("PTY SendKeys failed", "pod_key", p.podKey, "key", key, "error", err)
 			return fmt.Errorf("failed to send key %s: %w", key, err)
 		}
 	}
@@ -115,99 +107,34 @@ func (p *PTYPodIO) SendKeys(keys []string) error {
 }
 
 func (p *PTYPodIO) Resize(cols, rows int) (bool, error) {
-	if err := p.terminal.Resize(cols, rows); err != nil {
-		logger.Pod().Error("PTY resize failed",
-			"pod_key", p.pod.PodKey, "cols", cols, "rows", rows, "error", err)
+	if err := p.components.Terminal.Resize(cols, rows); err != nil {
+		logger.Pod().Error("PTY resize failed", "pod_key", p.podKey, "cols", cols, "rows", rows, "error", err)
 		return false, err
 	}
-	if p.virtualTerminal != nil {
-		p.virtualTerminal.Resize(cols, rows)
+	if p.components.VirtualTerminal != nil {
+		p.components.VirtualTerminal.Resize(cols, rows)
 	}
 	return true, nil
 }
 
 func (p *PTYPodIO) GetPID() int {
-	if p.terminal == nil {
+	if p.components.Terminal == nil {
 		return 0
 	}
-	return p.terminal.PID()
+	return p.components.Terminal.PID()
 }
 
 func (p *PTYPodIO) CursorPosition() (row, col int) {
-	if p.virtualTerminal == nil {
+	if p.components.VirtualTerminal == nil {
 		return 0, 0
 	}
-	return p.virtualTerminal.CursorPosition()
+	return p.components.VirtualTerminal.CursorPosition()
 }
 
 func (p *PTYPodIO) GetScreenSnapshot() string {
-	if p.virtualTerminal == nil {
+	if p.components.VirtualTerminal == nil {
 		return ""
 	}
-	return p.virtualTerminal.GetScreenSnapshot()
+	return p.components.VirtualTerminal.GetScreenSnapshot()
 }
 
-func (p *PTYPodIO) Stop() {
-	logger.Pod().Info("PTY stopping", "pod_key", p.pod.PodKey)
-	if p.terminal != nil {
-		p.terminal.Stop()
-	}
-}
-
-func (p *PTYPodIO) SetExitHandler(handler func(exitCode int)) {
-	if p.terminal != nil {
-		p.terminal.SetExitHandler(handler)
-	}
-}
-
-func (p *PTYPodIO) Redraw() error {
-	if p.terminal == nil {
-		logger.Pod().Error("PTY Redraw failed: terminal not initialized",
-			"pod_key", p.pod.PodKey)
-		return fmt.Errorf("terminal not initialized")
-	}
-	return p.terminal.Redraw()
-}
-
-func (p *PTYPodIO) Detach() {
-	logger.Pod().Info("PTY detaching", "pod_key", p.pod.PodKey)
-	if p.terminal != nil {
-		p.terminal.Detach()
-	}
-}
-
-func (p *PTYPodIO) WriteOutput(data []byte) {
-	if p.aggregator != nil {
-		p.aggregator.Write(data)
-	}
-}
-
-func (p *PTYPodIO) RespondToPermission(requestID string, approved bool) error {
-	return ErrNotSupported
-}
-
-func (p *PTYPodIO) CancelSession() error {
-	return ErrNotSupported
-}
-
-func (p *PTYPodIO) Teardown() string {
-	logger.Pod().Info("PTY teardown starting", "pod_key", p.pod.PodKey)
-	if p.aggregator != nil {
-		p.aggregator.Stop()
-	}
-	if p.ptyLogger != nil {
-		p.ptyLogger.Close()
-	}
-	var earlyOutput string
-	if ptyErr := p.pod.GetPTYError(); ptyErr != "" {
-		earlyOutput = ptyErr
-		logger.Pod().Warn("PTY teardown found PTY error",
-			"pod_key", p.pod.PodKey, "error", ptyErr)
-	}
-	logger.Pod().Info("PTY teardown completed", "pod_key", p.pod.PodKey,
-		"has_early_output", earlyOutput != "")
-	return earlyOutput
-}
-
-// Compile-time interface check.
-var _ PodIO = (*PTYPodIO)(nil)

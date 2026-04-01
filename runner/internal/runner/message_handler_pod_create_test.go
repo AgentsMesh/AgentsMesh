@@ -54,8 +54,8 @@ func TestOnCreatePodSuccess(t *testing.T) {
 			t.Errorf("pod status = %s, want running", pod.GetStatus())
 		}
 		// Clean up terminal
-		if pod.Terminal != nil {
-			pod.Terminal.Stop()
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
 		}
 	}
 

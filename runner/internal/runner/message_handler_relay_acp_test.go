@@ -9,6 +9,7 @@ import (
 )
 
 // mockPodIO records calls to SendInput, RespondToPermission, CancelSession.
+// Implements both PodIO and SessionAccess for ACP relay command tests.
 type mockPodIO struct {
 	mu          sync.Mutex
 	inputs      []string
@@ -29,17 +30,13 @@ func (m *mockPodIO) GetSnapshot(int) (string, error)                    { return
 func (m *mockPodIO) GetAgentStatus() string                             { return "idle" }
 func (m *mockPodIO) SubscribeStateChange(string, func(string))          {}
 func (m *mockPodIO) UnsubscribeStateChange(string)                      {}
-func (m *mockPodIO) SendKeys([]string) error                            { return nil }
-func (m *mockPodIO) Resize(int, int) (bool, error)                      { return false, nil }
 func (m *mockPodIO) GetPID() int                                        { return 0 }
-func (m *mockPodIO) CursorPosition() (int, int)                         { return 0, 0 }
-func (m *mockPodIO) GetScreenSnapshot() string                          { return "" }
 func (m *mockPodIO) Stop()                                              {}
 func (m *mockPodIO) Teardown() string                                   { return "" }
 func (m *mockPodIO) SetExitHandler(func(int))                           {}
-func (m *mockPodIO) Redraw() error                                      { return nil }
 func (m *mockPodIO) Detach()                                            {}
-func (m *mockPodIO) WriteOutput([]byte)                                 {}
+func (m *mockPodIO) Start() error                                       { return nil }
+func (m *mockPodIO) SetIOErrorHandler(func(error))                      {}
 
 func (m *mockPodIO) SendInput(text string) error {
 	m.mu.Lock()
@@ -60,6 +57,10 @@ func (m *mockPodIO) CancelSession() error {
 	defer m.mu.Unlock()
 	m.cancelled = true
 	return m.cancelErr
+}
+
+func (m *mockPodIO) NotifyStateChange(string) {
+	// No-op for tests.
 }
 
 // newTestHandler creates a minimal RunnerMessageHandler for relay tests.

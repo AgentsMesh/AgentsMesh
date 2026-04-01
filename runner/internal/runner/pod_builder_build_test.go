@@ -42,8 +42,8 @@ func TestPodBuilderBuildSuccessWithOptions(t *testing.T) {
 		t.Errorf("Status = %s, want initializing", pod.GetStatus())
 	}
 
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if pod.IO != nil {
+		pod.IO.Stop()
 	}
 }
 
@@ -66,8 +66,8 @@ func TestPodBuilderBuildTerminalError(t *testing.T) {
 	pod, err := builder.Build(context.Background())
 	t.Logf("Build with invalid command: pod=%v, err=%v", pod != nil, err)
 
-	if pod != nil && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if pod != nil && pod.IO != nil {
+		pod.IO.Stop()
 	}
 }
 
@@ -93,8 +93,8 @@ func TestPodBuilderSetupNoManager(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if pod.IO != nil {
+		pod.IO.Stop()
 	}
 }
 
@@ -128,7 +128,7 @@ func TestPodBuilderSetupWithEmptySandbox(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if pod.IO != nil {
+		pod.IO.Stop()
 	}
 }

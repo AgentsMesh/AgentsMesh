@@ -39,8 +39,10 @@ func TestOnCreatePodWithLaunchArgs(t *testing.T) {
 
 	// Clean up
 	pod, ok := store.Get("launch-args-pod")
-	if ok && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if ok {
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
+		}
 	}
 }
 
@@ -73,8 +75,10 @@ func TestOnCreatePodWithPromptInArgs(t *testing.T) {
 
 	// Clean up
 	pod, ok := store.Get("prompt-pod")
-	if ok && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if ok {
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
+		}
 	}
 }
 
@@ -142,8 +146,10 @@ func TestOnCreatePodWithSendEventError(t *testing.T) {
 
 	// Clean up
 	pod, ok := store.Get("send-error-pod")
-	if ok && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if ok {
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
+		}
 	}
 }
 

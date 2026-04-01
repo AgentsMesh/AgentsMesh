@@ -71,7 +71,6 @@ func TestOnTerminatePodCleansUpAutopilot(t *testing.T) {
 	store.Put("pod-with-autopilot", &Pod{
 		ID:       "pod-with-autopilot",
 		PodKey:   "pod-with-autopilot",
-		Terminal: nil,
 	})
 
 	// Terminate the pod
@@ -111,7 +110,6 @@ func TestExitHandlerCleansUpAutopilot(t *testing.T) {
 	store.Put("pod-exit-autopilot", &Pod{
 		ID:       "pod-exit-autopilot",
 		PodKey:   "pod-exit-autopilot",
-		Terminal: nil,
 	})
 
 	// Create exit handler and invoke it
@@ -144,7 +142,6 @@ func TestOnTerminatePodWithoutAutopilot(t *testing.T) {
 	store.Put("plain-pod", &Pod{
 		ID:       "plain-pod",
 		PodKey:   "plain-pod",
-		Terminal: nil,
 	})
 
 	err := handler.OnTerminatePod(client.TerminatePodRequest{
@@ -179,8 +176,7 @@ func TestConcurrentTerminateWithAutopilot(t *testing.T) {
 		store.Put(podKey, &Pod{
 			ID:       podKey,
 			PodKey:   podKey,
-			Terminal: nil,
-		})
+			})
 
 		ac := newTestAutopilotController(t, apKey, podKey)
 		runner.AddAutopilot(ac)

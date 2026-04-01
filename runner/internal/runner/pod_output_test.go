@@ -17,13 +17,11 @@ import (
 func TestCreateOutputHandler_DetectorPanicIsolation(t *testing.T) {
 	// Setup: Pod with aggregator but no detector/VT.
 	agg := aggregator.NewSmartAggregator(nil)
+	comps := &PTYComponents{Aggregator: agg}
 
-	pod := &Pod{
-		PodKey:     "panic-pod",
-		Aggregator: agg,
-	}
+	pod := &Pod{PodKey: "panic-pod"}
 
-	handler := pod.CreateOutputHandler()
+	handler := NewPTYOutputHandler(pod.PodKey, comps, pod.NotifyStateDetectorWithScreen)
 
 	// First call: should succeed (no detector, no VT).
 	handler([]byte("hello"))
@@ -38,12 +36,11 @@ func TestCreateOutputHandler_DetectorPanicIsolation(t *testing.T) {
 func TestCreateOutputHandler_NilAggregator_NoPanic(t *testing.T) {
 	// Nil Aggregator should be handled gracefully — data is silently
 	// dropped without triggering the circuit breaker or panicking.
-	pod := &Pod{
-		PodKey:     "nil-agg-pod",
-		Aggregator: nil,
-	}
+	comps := &PTYComponents{}
 
-	handler := pod.CreateOutputHandler()
+	pod := &Pod{PodKey: "nil-agg-pod"}
+
+	handler := NewPTYOutputHandler(pod.PodKey, comps, pod.NotifyStateDetectorWithScreen)
 
 	// Should not panic — nil guard protects agg.Write().
 	handler([]byte("data1"))
@@ -56,13 +53,11 @@ func TestCreateOutputHandler_NilVTAndDetector(t *testing.T) {
 	// Normal path: no VirtualTerminal, no StateDetector.
 	// Aggregator receives all data.
 	agg := aggregator.NewSmartAggregator(nil)
+	comps := &PTYComponents{Aggregator: agg}
 
-	pod := &Pod{
-		PodKey:     "simple-pod",
-		Aggregator: agg,
-	}
+	pod := &Pod{PodKey: "simple-pod"}
 
-	handler := pod.CreateOutputHandler()
+	handler := NewPTYOutputHandler(pod.PodKey, comps, pod.NotifyStateDetectorWithScreen)
 
 	handler([]byte("chunk1"))
 	handler([]byte("chunk2"))

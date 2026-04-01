@@ -2,7 +2,6 @@ package runner
 
 import (
 	"sync"
-	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
@@ -31,7 +30,7 @@ func (p *Pod) SubscribeStateChange(id string, cb func(detector.StateChangeEvent)
 // SubscribeAgentStatusBridge subscribes to state detection events and bridges them
 // to the backend via the provided sendStatus function.
 func (p *Pod) SubscribeAgentStatusBridge(sendStatus func(podKey, status string) error) {
-	if p.VirtualTerminal == nil {
+	if p.vtProvider == nil {
 		return
 	}
 
@@ -91,8 +90,10 @@ func (p *Pod) getOrCreateStateDetectorInternal() *ManagedStateDetector {
 		return p.stateDetector
 	}
 
-	if p.VirtualTerminal != nil {
-		p.stateDetector = NewManagedStateDetector(p.VirtualTerminal)
+	if p.vtProvider != nil {
+		if vt := p.vtProvider(); vt != nil {
+			p.stateDetector = NewManagedStateDetector(vt)
+		}
 	}
 	return p.stateDetector
 }
@@ -119,37 +120,5 @@ func (p *Pod) StopStateDetector() {
 	if p.stateDetector != nil {
 		p.stateDetector.Stop()
 		p.stateDetector = nil
-	}
-}
-
-// WaitForNewToken waits for a new token to be delivered via tokenRefreshCh.
-func (p *Pod) WaitForNewToken(timeout time.Duration) string {
-	p.tokenRefreshMu.Lock()
-	if p.tokenRefreshCh == nil {
-		p.tokenRefreshCh = make(chan string, 1)
-	}
-	ch := p.tokenRefreshCh
-	p.tokenRefreshMu.Unlock()
-
-	select {
-	case token := <-ch:
-		return token
-	case <-time.After(timeout):
-		return ""
-	}
-}
-
-// DeliverNewToken delivers a new token to the waiting goroutine.
-func (p *Pod) DeliverNewToken(token string) {
-	p.tokenRefreshMu.Lock()
-	defer p.tokenRefreshMu.Unlock()
-
-	if p.tokenRefreshCh == nil {
-		p.tokenRefreshCh = make(chan string, 1)
-	}
-
-	select {
-	case p.tokenRefreshCh <- token:
-	default:
 	}
 }

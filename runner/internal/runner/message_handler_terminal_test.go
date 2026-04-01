@@ -45,8 +45,7 @@ func TestOnPodInputNilTerminal(t *testing.T) {
 
 	// Add pod with nil terminal (will fail on Write)
 	store.Put("input-pod", &Pod{
-		ID:       "input-pod",
-		Terminal: nil,
+		ID: "input-pod",
 	})
 
 	req := client.PodInputRequest{
@@ -102,7 +101,9 @@ func TestOnPodInputSuccess(t *testing.T) {
 
 	// Clean up
 	pod, ok := store.Get("input-success-pod")
-	if ok && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if ok {
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
+		}
 	}
 }

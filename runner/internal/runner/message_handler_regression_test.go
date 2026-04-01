@@ -5,7 +5,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
 )
 
 // Regression tests for issues found during deep review rounds 4-5.
@@ -70,11 +69,9 @@ func TestConcurrentExitAndTerminate_OnlyOneCleanup(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	agg := aggregator.NewSmartAggregator(nil)
 	store.Put("race-pod", &Pod{
-		PodKey:     "race-pod",
-		Status:     PodStatusRunning,
-		Aggregator: agg,
+		PodKey: "race-pod",
+		Status: PodStatusRunning,
 	})
 
 	// Simulate exit handler winning the race.

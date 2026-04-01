@@ -96,7 +96,6 @@ func TestRunner_ACPRelayEventForwarding_Integration(t *testing.T) {
 			},
 		},
 	})
-	pod.ACPClient = acpClient
 	pod.IO = NewACPPodIO(acpClient, pod.PodKey)
 
 	require.NoError(t, acpClient.Start())
@@ -160,8 +159,8 @@ func TestRunner_ConcurrentTermination_Integration(t *testing.T) {
 					panicCount.Add(1)
 				}
 			}()
-			if p.Terminal != nil {
-				p.Terminal.Stop()
+			if comps := testPTYComponents(p); comps != nil && comps.Terminal != nil {
+				comps.Terminal.Stop()
 			}
 			store.Delete(p.PodKey)
 		}(pod)

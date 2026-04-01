@@ -6,12 +6,10 @@ import (
 
 	"github.com/thejerf/suture/v4"
 
-	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
-	"github.com/anthropics/agentsmesh/runner/internal/updater"
 	"github.com/anthropics/agentsmesh/runner/internal/workspace"
 )
 
@@ -29,14 +27,14 @@ type Runner struct {
 	messageHandler   *RunnerMessageHandler
 	podDaemonManager *poddaemon.PodDaemonManager
 
-	// Enhanced components (MCP + Monitor)
-	components *EnhancedComponents
+	// Sidecar services (MCP + Monitor)
+	sidecars *SidecarServices
 
 	// Autopilot management
 	autopilotStore *AutopilotStore
 
 	// Upgrade/draining state machine
-	upgradeCoord *UpgradeCoordinator
+	upgradeCoord *upgradeController
 
 	// Run lifecycle context (set by Run, used by message handlers)
 	runCtx context.Context
@@ -83,7 +81,7 @@ func New(deps RunnerDeps) (*Runner, error) {
 		podStore:         deps.PodStore,
 		podDaemonManager: deps.PodDaemonManager,
 		autopilotStore:   NewAutopilotStore(),
-		upgradeCoord:     NewUpgradeCoordinator(deps.PodStore.Count),
+		upgradeCoord:     newUpgradeController(deps.PodStore.Count),
 		stopChan:         make(chan struct{}),
 	}
 
@@ -91,9 +89,9 @@ func New(deps RunnerDeps) (*Runner, error) {
 	r.messageHandler = NewRunnerMessageHandler(r, deps.PodStore, deps.Connection)
 	deps.Connection.SetHandler(r.messageHandler)
 
-	// Initialize optional enhanced components (MCP, Monitor)
-	r.components = NewEnhancedComponents(deps.Config, deps.Connection)
-	r.components.SetProviders(r, r)
+	// Initialize sidecar services (MCP, Monitor)
+	r.sidecars = NewSidecarServices(deps.Config, deps.Connection)
+	r.sidecars.SetProviders(r, r)
 
 	log.Info("Runner instance created successfully")
 	return r, nil
@@ -115,12 +113,12 @@ func (r *Runner) GetConfig() *config.Config {
 
 // GetMCPServer returns the MCP server (implements MessageHandlerContext).
 func (r *Runner) GetMCPServer() MCPServer {
-	return r.components.MCPServer()
+	return r.sidecars.MCPServer()
 }
 
 // GetAgentMonitor returns the agent monitor (implements MessageHandlerContext).
 func (r *Runner) GetAgentMonitor() AgentMonitor {
-	return r.components.AgentMonitor()
+	return r.sidecars.AgentMonitor()
 }
 
 // NewPodBuilder creates a new PodBuilder with the runner's dependencies (implements MessageHandlerContext).
@@ -129,7 +127,7 @@ func (r *Runner) NewPodBuilder() *PodBuilder {
 }
 
 // NewPodController creates a new PodController for the given pod (implements MessageHandlerContext).
-func (r *Runner) NewPodController(pod *Pod) *PodControllerImpl {
+func (r *Runner) NewPodController(pod *Pod) *PodController {
 	return NewPodController(pod, r)
 }
 
@@ -141,87 +139,4 @@ func (r *Runner) GetConnection() client.Connection {
 // GetPodDaemonManager returns the Pod Daemon manager (may be nil).
 func (r *Runner) GetPodDaemonManager() *poddaemon.PodDaemonManager {
 	return r.podDaemonManager
-}
-
-// --- UpgradeController delegation (delegates to UpgradeCoordinator) ---
-
-func (r *Runner) TryStartUpgrade() bool {
-	if r.upgradeCoord == nil {
-		return false
-	}
-	ok := r.upgradeCoord.TryStartUpgrade()
-	if ok {
-		logger.Runner().Info("Upgrade started")
-	} else {
-		logger.Runner().Warn("Upgrade request rejected (already in progress or pods active)")
-	}
-	return ok
-}
-
-func (r *Runner) FinishUpgrade() {
-	if r.upgradeCoord == nil {
-		return
-	}
-	r.upgradeCoord.FinishUpgrade()
-	logger.Runner().Info("Upgrade finished")
-}
-
-func (r *Runner) GetUpdater() *updater.Updater {
-	if r.upgradeCoord == nil {
-		return nil
-	}
-	return r.upgradeCoord.GetUpdater()
-}
-
-// SetUpdater sets the updater instance for remote upgrade support.
-func (r *Runner) SetUpdater(u *updater.Updater) {
-	if r.upgradeCoord == nil {
-		return
-	}
-	r.upgradeCoord.SetUpdater(u)
-}
-
-func (r *Runner) GetRestartFunc() func() (int, error) {
-	if r.upgradeCoord == nil {
-		return nil
-	}
-	return r.upgradeCoord.GetRestartFunc()
-}
-
-// SetRestartFunc sets the restart function for post-upgrade restart.
-func (r *Runner) SetRestartFunc(fn func() (int, error)) {
-	if r.upgradeCoord == nil {
-		return
-	}
-	r.upgradeCoord.SetRestartFunc(fn)
-}
-
-// --- AutopilotRegistry delegation (delegates to AutopilotStore) ---
-
-func (r *Runner) GetAutopilot(key string) *autopilot.AutopilotController {
-	if r.autopilotStore == nil {
-		return nil
-	}
-	return r.autopilotStore.GetAutopilot(key)
-}
-
-func (r *Runner) AddAutopilot(ac *autopilot.AutopilotController) {
-	if r.autopilotStore == nil {
-		return
-	}
-	r.autopilotStore.AddAutopilot(ac)
-}
-
-func (r *Runner) RemoveAutopilot(key string) {
-	if r.autopilotStore == nil {
-		return
-	}
-	r.autopilotStore.RemoveAutopilot(key)
-}
-
-func (r *Runner) GetAutopilotByPodKey(podKey string) *autopilot.AutopilotController {
-	if r.autopilotStore == nil {
-		return nil
-	}
-	return r.autopilotStore.GetAutopilotByPodKey(podKey)
 }

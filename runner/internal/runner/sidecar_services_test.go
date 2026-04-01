@@ -7,49 +7,49 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
-func TestEnhancedComponentsMCPServer(t *testing.T) {
+func TestSidecarServicesMCPServer(t *testing.T) {
 	cfg := &config.Config{WorkspaceRoot: t.TempDir()}
 	mockConn := client.NewMockConnection()
 
-	c := NewEnhancedComponents(cfg, mockConn)
+	c := NewSidecarServices(cfg, mockConn)
 
 	if c.MCPServer() == nil {
 		t.Error("MCPServer should not be nil")
 	}
 }
 
-func TestEnhancedComponentsAgentMonitor(t *testing.T) {
+func TestSidecarServicesAgentMonitor(t *testing.T) {
 	cfg := &config.Config{WorkspaceRoot: t.TempDir()}
 	mockConn := client.NewMockConnection()
 
-	c := NewEnhancedComponents(cfg, mockConn)
+	c := NewSidecarServices(cfg, mockConn)
 
 	if c.AgentMonitor() == nil {
 		t.Error("AgentMonitor should not be nil")
 	}
 }
 
-func TestEnhancedComponentsNilSafe(t *testing.T) {
-	var c *EnhancedComponents
+func TestSidecarServicesNilSafe(t *testing.T) {
+	var c *SidecarServices
 
 	if c.MCPServer() != nil {
-		t.Error("nil EnhancedComponents.MCPServer() should return nil")
+		t.Error("nil SidecarServices.MCPServer() should return nil")
 	}
 	if c.AgentMonitor() != nil {
-		t.Error("nil EnhancedComponents.AgentMonitor() should return nil")
+		t.Error("nil SidecarServices.AgentMonitor() should return nil")
 	}
 	if svcs := c.Services(); len(svcs) != 0 {
-		t.Errorf("nil EnhancedComponents.Services() should return empty, got %d", len(svcs))
+		t.Errorf("nil SidecarServices.Services() should return empty, got %d", len(svcs))
 	}
 	// Should not panic
 	c.SetProviders(nil, nil)
 }
 
-func TestEnhancedComponentsServices(t *testing.T) {
+func TestSidecarServicesServices(t *testing.T) {
 	cfg := &config.Config{WorkspaceRoot: t.TempDir()}
 	mockConn := client.NewMockConnection()
 
-	c := NewEnhancedComponents(cfg, mockConn)
+	c := NewSidecarServices(cfg, mockConn)
 
 	svcs := c.Services()
 	// Should have 2 services: MCPServerService + MonitorService
@@ -58,14 +58,14 @@ func TestEnhancedComponentsServices(t *testing.T) {
 	}
 }
 
-func TestEnhancedComponentsWithMCPConfig(t *testing.T) {
+func TestSidecarServicesWithMCPConfig(t *testing.T) {
 	cfg := &config.Config{
 		WorkspaceRoot: t.TempDir(),
 		MCPConfigPath: "/nonexistent/mcp.json", // should warn but not fail
 	}
 	mockConn := client.NewMockConnection()
 
-	c := NewEnhancedComponents(cfg, mockConn)
+	c := NewSidecarServices(cfg, mockConn)
 	if c.MCPServer() == nil {
 		t.Error("MCPServer should still be initialized even with bad config path")
 	}

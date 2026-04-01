@@ -8,20 +8,20 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
-// CreateOutputHandler creates the standard output handler closure that wires
+// NewPTYOutputHandler creates the standard output handler closure that wires
 // VirtualTerminal, StateDetector, and Aggregator together.
 //
 // This is the single source of truth for the PTY output pipeline, used by
 // both OnCreatePod (via PodBuilder.Build) and session recovery.
 //
-// The handler includes:
-//   - Panic circuit breaker: stops processing after first panic to avoid loops
-//   - Inline recover for state detector notification (crash-isolated)
-//   - Performance monitoring for VT Feed and Aggregator Write
-func (p *Pod) CreateOutputHandler() func([]byte) {
-	podKey := p.PodKey
-	virtualTerm := p.VirtualTerminal
-	agg := p.Aggregator
+// notifyDetector is typically Pod.NotifyStateDetectorWithScreen.
+func NewPTYOutputHandler(
+	podKey string,
+	comps *PTYComponents,
+	notifyDetector func(bytes int, screenLines []string),
+) func([]byte) {
+	virtualTerm := comps.VirtualTerminal
+	agg := comps.Aggregator
 
 	var panicked atomic.Bool
 
@@ -59,7 +59,9 @@ func (p *Pod) CreateOutputHandler() func([]byte) {
 						"pod_key", podKey, "panic", fmt.Sprintf("%v", r))
 				}
 			}()
-			p.NotifyStateDetectorWithScreen(len(data), screenLines)
+			if notifyDetector != nil {
+				notifyDetector(len(data), screenLines)
+			}
 		}()
 
 		if agg != nil {

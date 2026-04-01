@@ -39,8 +39,10 @@ func TestOnCreatePodWithSandboxConfig(t *testing.T) {
 
 	// Clean up
 	pod, ok := store.Get("sandbox-pod")
-	if ok && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if ok {
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
+		}
 	}
 }
 
@@ -78,8 +80,10 @@ func TestOnCreatePodWithFilesToCreate(t *testing.T) {
 
 	// Clean up
 	pod, ok := store.Get("files-pod")
-	if ok && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if ok {
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
+		}
 	}
 }
 
@@ -113,7 +117,9 @@ func TestOnCreatePodWithLocalPath(t *testing.T) {
 
 	// Clean up
 	pod, ok := store.Get("local-path-pod")
-	if ok && pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if ok {
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
+		}
 	}
 }

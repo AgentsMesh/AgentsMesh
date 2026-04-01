@@ -25,8 +25,8 @@ func buildMultiPod(t *testing.T, tempDir, podKey string) *Pod {
 	pod, err := NewPodBuilderFromRunner(runner).WithCommand(cmd).WithPtySize(80, 24).Build(context.Background())
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		if pod.Terminal != nil {
-			pod.Terminal.Stop()
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
 		}
 	})
 	return pod
@@ -121,9 +121,9 @@ func TestMultiPod_ConcurrentCreateTerminate_Integration(t *testing.T) {
 			defer wg.Done()
 			podKey := "pre-" + string(rune('a'+idx))
 			if p, ok := store.Get(podKey); ok {
-				if p.Terminal != nil {
-					p.Terminal.Stop()
-				}
+				if comps := testPTYComponents(p); comps != nil && comps.Terminal != nil {
+				comps.Terminal.Stop()
+			}
 				store.Delete(podKey)
 			}
 		}(i)

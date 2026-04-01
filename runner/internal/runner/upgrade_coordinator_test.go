@@ -6,8 +6,8 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
 )
 
-func TestUpgradeCoordinatorTryStartUpgrade(t *testing.T) {
-	uc := NewUpgradeCoordinator(func() int { return 0 })
+func TestUpgradeControllerTryStartUpgrade(t *testing.T) {
+	uc := newUpgradeController(func() int { return 0 })
 
 	// First call should succeed
 	if !uc.TryStartUpgrade() {
@@ -26,8 +26,8 @@ func TestUpgradeCoordinatorTryStartUpgrade(t *testing.T) {
 	}
 }
 
-func TestUpgradeCoordinatorDraining(t *testing.T) {
-	uc := NewUpgradeCoordinator(func() int { return 0 })
+func TestUpgradeControllerDraining(t *testing.T) {
+	uc := newUpgradeController(func() int { return 0 })
 
 	if uc.IsDraining() {
 		t.Error("should not be draining initially")
@@ -44,9 +44,9 @@ func TestUpgradeCoordinatorDraining(t *testing.T) {
 	}
 }
 
-func TestUpgradeCoordinatorGetActivePodCount(t *testing.T) {
+func TestUpgradeControllerGetActivePodCount(t *testing.T) {
 	count := 0
-	uc := NewUpgradeCoordinator(func() int { return count })
+	uc := newUpgradeController(func() int { return count })
 
 	if uc.GetActivePodCount() != 0 {
 		t.Errorf("GetActivePodCount = %d, want 0", uc.GetActivePodCount())
@@ -58,15 +58,15 @@ func TestUpgradeCoordinatorGetActivePodCount(t *testing.T) {
 	}
 }
 
-func TestUpgradeCoordinatorGetActivePodCountNilCounter(t *testing.T) {
-	uc := NewUpgradeCoordinator(nil)
+func TestUpgradeControllerGetActivePodCountNilCounter(t *testing.T) {
+	uc := newUpgradeController(nil)
 	if uc.GetActivePodCount() != 0 {
 		t.Errorf("GetActivePodCount with nil counter = %d, want 0", uc.GetActivePodCount())
 	}
 }
 
-func TestUpgradeCoordinatorUpdater(t *testing.T) {
-	uc := NewUpgradeCoordinator(func() int { return 0 })
+func TestUpgradeControllerUpdater(t *testing.T) {
+	uc := newUpgradeController(func() int { return 0 })
 
 	if uc.GetUpdater() != nil {
 		t.Error("updater should be nil initially")
@@ -79,8 +79,8 @@ func TestUpgradeCoordinatorUpdater(t *testing.T) {
 	}
 }
 
-func TestUpgradeCoordinatorRestartFunc(t *testing.T) {
-	uc := NewUpgradeCoordinator(func() int { return 0 })
+func TestUpgradeControllerRestartFunc(t *testing.T) {
+	uc := newUpgradeController(func() int { return 0 })
 
 	if uc.GetRestartFunc() != nil {
 		t.Error("restart func should be nil initially")
@@ -100,6 +100,6 @@ func TestUpgradeCoordinatorRestartFunc(t *testing.T) {
 	}
 }
 
-func TestUpgradeCoordinatorInterfaceCompliance(t *testing.T) {
-	var _ UpgradeController = (*UpgradeCoordinator)(nil)
+func TestUpgradeControllerInterfaceCompliance(t *testing.T) {
+	var _ UpgradeController = (*upgradeController)(nil)
 }

@@ -37,21 +37,22 @@ func TestPodLifecycle_EchoCommand_Integration(t *testing.T) {
 	pod := buildTestPod(t, pf, func(c *runnerv1.CreatePodCommand) {
 		c.InitialPrompt = "hello from integration test"
 	})
-	defer pod.Terminal.Stop()
+	comps := testPTYComponents(pod)
+	defer comps.Terminal.Stop()
 
 	var mu sync.Mutex
 	var output []byte
 	doneCh := make(chan struct{})
 
-	pod.Terminal.SetOutputHandler(func(data []byte) {
+	comps.Terminal.SetOutputHandler(func(data []byte) {
 		mu.Lock()
 		output = append(output, data...)
 		mu.Unlock()
 	})
-	pod.Terminal.SetExitHandler(func(_ int) { close(doneCh) })
+	comps.Terminal.SetExitHandler(func(_ int) { close(doneCh) })
 
 	pid := pod.IO.GetPID()
-	if err := pod.Terminal.Start(); err != nil {
+	if err := comps.Terminal.Start(); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 	if startPID := pod.IO.GetPID(); startPID <= 0 {
@@ -76,12 +77,13 @@ func TestPodLifecycle_EchoCommand_Integration(t *testing.T) {
 
 func TestPodLifecycle_CatInteractive_Integration(t *testing.T) {
 	pod := buildTestPod(t, "AGENT cat\nMODE pty\nPROMPT_POSITION prepend\n")
-	defer pod.Terminal.Stop()
+	comps := testPTYComponents(pod)
+	defer comps.Terminal.Stop()
 
-	pod.Terminal.SetOutputHandler(func(data []byte) {
-		pod.VirtualTerminal.Feed(data)
+	comps.Terminal.SetOutputHandler(func(data []byte) {
+		comps.VirtualTerminal.Feed(data)
 	})
-	if err := pod.Terminal.Start(); err != nil {
+	if err := comps.Terminal.Start(); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -93,14 +95,14 @@ func TestPodLifecycle_CatInteractive_Integration(t *testing.T) {
 	// Wait for VT to accumulate echoed output
 	deadline := time.After(3 * time.Second)
 	for {
-		snapshot := pod.VirtualTerminal.GetScreenSnapshot()
+		snapshot := comps.VirtualTerminal.GetScreenSnapshot()
 		if strings.Contains(snapshot, "test input") {
 			break
 		}
 		select {
 		case <-deadline:
 			t.Fatalf("snapshot never contained 'test input', got: %q",
-				pod.VirtualTerminal.GetScreenSnapshot())
+				comps.VirtualTerminal.GetScreenSnapshot())
 		case <-time.After(50 * time.Millisecond):
 		}
 	}
@@ -125,8 +127,8 @@ ENV TEST_INTEGRATION_VAR TEXT OPTIONAL
 		t.Fatalf("Build failed: %v", err)
 	}
 	defer func() {
-		if pod.Terminal != nil {
-			pod.Terminal.Stop()
+		if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
+			comps.Terminal.Stop()
 		}
 	}()
 
@@ -136,10 +138,11 @@ ENV TEST_INTEGRATION_VAR TEXT OPTIONAL
 	if pod.InteractionMode != InteractionModePTY {
 		t.Errorf("InteractionMode = %q, want %q", pod.InteractionMode, InteractionModePTY)
 	}
-	if pod.Terminal == nil {
+	comps := testPTYComponents(pod)
+	if comps == nil || comps.Terminal == nil {
 		t.Error("Terminal should not be nil for PTY pod")
 	}
-	if pod.VirtualTerminal == nil {
+	if comps == nil || comps.VirtualTerminal == nil {
 		t.Error("VirtualTerminal should not be nil for PTY pod")
 	}
 }
@@ -165,7 +168,7 @@ PROMPT_POSITION prepend
 	if pod.InteractionMode != InteractionModeACP {
 		t.Errorf("InteractionMode = %q, want %q", pod.InteractionMode, InteractionModeACP)
 	}
-	if pod.Terminal != nil {
+	if comps := testPTYComponents(pod); comps != nil && comps.Terminal != nil {
 		t.Error("Terminal should be nil for ACP pod")
 	}
 	if pod.LaunchCommand != "echo" {

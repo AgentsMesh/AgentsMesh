@@ -60,7 +60,6 @@ func TestACPPod_FullLifecycle_Integration(t *testing.T) {
 			},
 		},
 	})
-	pod.ACPClient = acpClient
 	pod.IO = NewACPPodIO(acpClient, pod.PodKey)
 
 	// 3. Start → Handshake → state should be idle.

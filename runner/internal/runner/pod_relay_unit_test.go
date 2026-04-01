@@ -24,7 +24,7 @@ func encodeResizePayload(cols, rows uint16) []byte {
 // --- PTYPodIO trivial tests ---
 
 func TestPTYPodIO_Mode(t *testing.T) {
-	io := NewPTYPodIO(nil, nil, &Pod{})
+	io := NewPTYPodIO("test", &PTYComponents{}, PTYPodIODeps{})
 	if io.Mode() != "pty" {
 		t.Errorf("Mode() = %q, want %q", io.Mode(), "pty")
 	}
@@ -83,7 +83,7 @@ func TestPTYPodRelay_SetupHandlers_Input(t *testing.T) {
 		},
 	}
 
-	r := NewPTYPodRelay("pod-1", io, nil, nil, nil)
+	r := NewPTYPodRelay("pod-1", io, &PTYComponents{})
 	r.SetupHandlers(mc)
 
 	// Simulate browser sending input via relay.
@@ -98,7 +98,7 @@ func TestPTYPodRelay_SetupHandlers_Resize(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 
 	var resizedCols, resizedRows int
-	io := &stubPodIO{
+	io := &stubPodIOWithTerminal{
 		onResize: func(cols, rows int) (bool, error) {
 			resizedCols = cols
 			resizedRows = rows
@@ -106,7 +106,7 @@ func TestPTYPodRelay_SetupHandlers_Resize(t *testing.T) {
 		},
 	}
 
-	r := NewPTYPodRelay("pod-1", io, nil, nil, nil)
+	r := NewPTYPodRelay("pod-1", io, &PTYComponents{})
 	r.SetupHandlers(mc)
 
 	// Encode resize as 4-byte big-endian payload (cols=120, rows=40).
@@ -121,14 +121,14 @@ func TestPTYPodRelay_SetupHandlers_Resize_InvalidPayload(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 
 	resizeCalled := false
-	io := &stubPodIO{
+	io := &stubPodIOWithTerminal{
 		onResize: func(cols, rows int) (bool, error) {
 			resizeCalled = true
 			return true, nil
 		},
 	}
 
-	r := NewPTYPodRelay("pod-1", io, nil, nil, nil)
+	r := NewPTYPodRelay("pod-1", io, &PTYComponents{})
 	r.SetupHandlers(mc)
 
 	// Send invalid resize payload (too short).
@@ -146,7 +146,7 @@ func TestPTYPodRelay_SendSnapshot_MarshalAndSend(t *testing.T) {
 	vterm := vt.NewVirtualTerminal(80, 24, 1000)
 	vterm.Feed([]byte("Hello, World!\r\n"))
 
-	r := NewPTYPodRelay("pod-1", nil, vterm, nil, nil)
+	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{VirtualTerminal: vterm})
 	r.SendSnapshot(mc)
 
 	// Verify a snapshot message was sent.
@@ -171,7 +171,7 @@ func TestPTYPodRelay_OnRelayConnected_SetsAdapter(t *testing.T) {
 	mc.SetConnected(true)
 
 	// PTYPodRelay without aggregator — OnRelayConnected should not panic.
-	r := NewPTYPodRelay("pod-1", nil, nil, nil, nil)
+	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{})
 	r.OnRelayConnected(mc) // no-op, no panic
 	r.OnRelayDisconnected()
 }
@@ -217,7 +217,7 @@ func TestPTYPodRelay_SetupHandlers_NilIO(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 
 	// io is nil — handlers should be registered but silently no-op.
-	r := NewPTYPodRelay("pod-1", nil, nil, nil, nil)
+	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{})
 	r.SetupHandlers(mc)
 
 	// Must not panic.
@@ -234,7 +234,7 @@ func TestPTYPodRelay_SetupHandlers_InputError(t *testing.T) {
 		},
 	}
 
-	r := NewPTYPodRelay("pod-1", io, nil, nil, nil)
+	r := NewPTYPodRelay("pod-1", io, &PTYComponents{})
 	r.SetupHandlers(mc)
 
 	// Should not panic — error is logged, not propagated.
@@ -244,13 +244,13 @@ func TestPTYPodRelay_SetupHandlers_InputError(t *testing.T) {
 func TestPTYPodRelay_SetupHandlers_ResizeError(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 
-	io := &stubPodIO{
+	io := &stubPodIOWithTerminal{
 		onResize: func(cols, rows int) (bool, error) {
 			return false, errStub
 		},
 	}
 
-	r := NewPTYPodRelay("pod-1", io, nil, nil, nil)
+	r := NewPTYPodRelay("pod-1", io, &PTYComponents{})
 	r.SetupHandlers(mc)
 
 	// Should not panic — error is logged, not propagated.
@@ -263,7 +263,7 @@ func TestPTYPodRelay_SendSnapshot_NilVTerm(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 	mc.SetConnected(true)
 
-	r := NewPTYPodRelay("pod-1", nil, nil, nil, nil)
+	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{})
 	r.SendSnapshot(mc)
 
 	// No VT → no snapshot sent.
@@ -280,7 +280,7 @@ func TestPTYPodRelay_OnRelayConnected_WithAggregator(t *testing.T) {
 
 	agg := aggregator.NewSmartAggregator(func() float64 { return 0 })
 
-	r := NewPTYPodRelay("pod-1", nil, nil, nil, agg)
+	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{Aggregator: agg})
 	r.OnRelayConnected(mc)
 
 	r.OnRelayDisconnected()
@@ -293,7 +293,6 @@ func TestPTYPodRelay_OnRelayConnected_WithAggregator(t *testing.T) {
 // stubPodIO is a minimal PodIO implementation for unit testing.
 type stubPodIO struct {
 	onSendInput func(string) error
-	onResize    func(int, int) (bool, error)
 }
 
 func (s *stubPodIO) Mode() string                              { return "pty" }
@@ -301,25 +300,32 @@ func (s *stubPodIO) GetSnapshot(int) (string, error)           { return "", nil 
 func (s *stubPodIO) GetAgentStatus() string                    { return "idle" }
 func (s *stubPodIO) SubscribeStateChange(string, func(string)) {}
 func (s *stubPodIO) UnsubscribeStateChange(string)             {}
-func (s *stubPodIO) SendKeys([]string) error                   { return nil }
 func (s *stubPodIO) GetPID() int                               { return 0 }
-func (s *stubPodIO) CursorPosition() (int, int)                { return 0, 0 }
-func (s *stubPodIO) GetScreenSnapshot() string                 { return "" }
 func (s *stubPodIO) Stop()                                     {}
 func (s *stubPodIO) Teardown() string                          { return "" }
 func (s *stubPodIO) SetExitHandler(func(int))                  {}
-func (s *stubPodIO) Redraw() error                             { return nil }
 func (s *stubPodIO) Detach()                                   {}
-func (s *stubPodIO) WriteOutput([]byte)                        {}
-func (s *stubPodIO) RespondToPermission(string, bool) error    { return nil }
-func (s *stubPodIO) CancelSession() error                      { return nil }
+func (s *stubPodIO) Start() error                              { return nil }
+func (s *stubPodIO) SetIOErrorHandler(func(error))             {}
 func (s *stubPodIO) SendInput(text string) error {
 	if s.onSendInput != nil {
 		return s.onSendInput(text)
 	}
 	return nil
 }
-func (s *stubPodIO) Resize(cols, rows int) (bool, error) {
+
+// stubPodIOWithTerminal extends stubPodIO with TerminalAccess for resize tests.
+type stubPodIOWithTerminal struct {
+	stubPodIO
+	onResize func(int, int) (bool, error)
+}
+
+func (s *stubPodIOWithTerminal) SendKeys([]string) error    { return nil }
+func (s *stubPodIOWithTerminal) CursorPosition() (int, int) { return 0, 0 }
+func (s *stubPodIOWithTerminal) GetScreenSnapshot() string   { return "" }
+func (s *stubPodIOWithTerminal) Redraw() error               { return nil }
+func (s *stubPodIOWithTerminal) WriteOutput([]byte)          {}
+func (s *stubPodIOWithTerminal) Resize(cols, rows int) (bool, error) {
 	if s.onResize != nil {
 		return s.onResize(cols, rows)
 	}

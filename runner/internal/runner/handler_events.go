@@ -2,56 +2,12 @@ package runner
 
 import (
 	"fmt"
-	"time"
 
-	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
 	"github.com/anthropics/agentsmesh/runner/internal/safego"
-	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
-	"github.com/anthropics/agentsmesh/runner/internal/tokenusage"
 )
-
-// createOSCHandler creates an OSC handler that sends terminal notifications to the server.
-func (h *RunnerMessageHandler) createOSCHandler(podKey string) vt.OSCHandler {
-	return func(oscType int, params []string) {
-		log := logger.TerminalTrace()
-
-		switch oscType {
-		case 777:
-			// OSC 777;notify;title;body - iTerm2/Kitty notification format
-			if len(params) >= 3 && params[0] == "notify" {
-				title := params[1]
-				body := params[2]
-				log.Trace("OSC 777 notification detected", "pod_key", podKey, "title", title, "body", body)
-				if err := h.conn.SendOSCNotification(podKey, title, body); err != nil {
-					log.Error("Failed to send OSC notification", "pod_key", podKey, "error", err)
-				}
-			}
-
-		case 9:
-			// OSC 9;message - ConEmu/Windows Terminal notification format
-			if len(params) >= 1 {
-				body := params[0]
-				log.Trace("OSC 9 notification detected", "pod_key", podKey, "body", body)
-				if err := h.conn.SendOSCNotification(podKey, "Notification", body); err != nil {
-					log.Error("Failed to send OSC notification", "pod_key", podKey, "error", err)
-				}
-			}
-
-		case 0, 2:
-			// OSC 0/2;title - Window/tab title
-			if len(params) >= 1 {
-				title := params[0]
-				log.Trace("OSC title change detected", "pod_key", podKey, "title", title)
-				if err := h.conn.SendOSCTitle(podKey, title); err != nil {
-					log.Error("Failed to send OSC title", "pod_key", podKey, "error", err)
-				}
-			}
-		}
-	}
-}
 
 // createPTYErrorHandler creates a handler for fatal PTY read errors.
 // When PTY I/O fails (e.g., disk full), this sends an error message through
@@ -71,8 +27,10 @@ func (h *RunnerMessageHandler) createPTYErrorHandler(podKey string, pod *Pod) fu
 		// Write a visible error message to the output pipeline so it appears
 		// in the frontend terminal via relay. Use ANSI red color for visibility.
 		if pod.IO != nil {
-			visibleMsg := fmt.Sprintf("\r\n\x1b[1;31m[Terminal Error] PTY read failed: %v\x1b[0m\r\n", err)
-			pod.IO.WriteOutput([]byte(visibleMsg))
+			if ta, ok := pod.IO.(TerminalAccess); ok {
+				visibleMsg := fmt.Sprintf("\r\n\x1b[1;31m[Terminal Error] PTY read failed: %v\x1b[0m\r\n", err)
+				ta.WriteOutput([]byte(visibleMsg))
+			}
 		}
 
 		// Send error event via gRPC so backend can update pod status.
@@ -182,44 +140,6 @@ func (h *RunnerMessageHandler) cleanupPodExit(podKey string, exitCode int, stopI
 	safego.Go("token-usage-exit", func() {
 		h.collectAndSendTokenUsage(podKey, agent, sandboxPath, podStartedAt)
 	})
-}
-
-// collectAndSendTokenUsage collects token usage and sends it to the backend.
-// This is called asynchronously after pod termination and must never panic.
-func (h *RunnerMessageHandler) collectAndSendTokenUsage(podKey, agent, sandboxPath string, podStartedAt time.Time) {
-	log := logger.Pod()
-
-	if h == nil || h.conn == nil {
-		return
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			log.Error("Panic in token usage collection", "pod_key", podKey, "panic", r)
-		}
-	}()
-
-	usage := tokenusage.Collect(agent, sandboxPath, podStartedAt)
-	if usage == nil {
-		return
-	}
-
-	models := make([]*runnerv1.TokenModelUsage, 0, len(usage.Models))
-	for _, m := range usage.Sorted() {
-		models = append(models, &runnerv1.TokenModelUsage{
-			Model:               m.Model,
-			InputTokens:         m.InputTokens,
-			OutputTokens:        m.OutputTokens,
-			CacheCreationTokens: m.CacheCreationTokens,
-			CacheReadTokens:     m.CacheReadTokens,
-		})
-	}
-
-	if err := h.conn.SendTokenUsage(podKey, models); err != nil {
-		log.Warn("Failed to send token usage report", "pod_key", podKey, "error", err)
-	} else {
-		log.Info("Token usage report sent", "pod_key", podKey, "models", len(models))
-	}
 }
 
 // Event sending methods

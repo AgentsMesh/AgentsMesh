@@ -100,49 +100,47 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 	}
 
 	// Build Pod
+	podKey := state.PodKey
 	pod := &Pod{
-		ID:              state.PodKey,
-		PodKey:          state.PodKey,
+		ID:              podKey,
+		PodKey:          podKey,
 		Agent:           state.Agent,
 		InteractionMode: InteractionModePTY,
 		RepositoryURL:   state.RepositoryURL,
-		Branch:        state.Branch,
-		SandboxPath:   state.SandboxPath,
-		LaunchCommand: state.Command,
-		LaunchArgs:    state.Args,
-		WorkDir:       state.WorkDir,
-		TicketSlug:    state.TicketSlug,
-		Terminal:      term,
-		VirtualTerminal: virtualTerm,
-		Aggregator:      agg,
-		PTYLogger:       ptyLogger,
+		Branch:          state.Branch,
+		SandboxPath:     state.SandboxPath,
+		LaunchCommand:   state.Command,
+		LaunchArgs:      state.Args,
+		WorkDir:         state.WorkDir,
+		TicketSlug:      state.TicketSlug,
 		StartedAt:       state.StartedAt,
-		Status:        PodStatusInitializing,
+		Status:          PodStatusInitializing,
+		vtProvider:      func() *vt.VirtualTerminal { return virtualTerm },
 	}
+
+	comps := &PTYComponents{Terminal: term, VirtualTerminal: virtualTerm, Aggregator: agg, PTYLogger: ptyLogger}
 
 	// Wire up output handler (shared implementation with circuit breaker + inline recover)
-	podKey := state.PodKey
-	term.SetOutputHandler(pod.CreateOutputHandler())
+	term.SetOutputHandler(NewPTYOutputHandler(podKey, comps, pod.NotifyStateDetectorWithScreen))
 
 	// Create PodIO before Start so consumers can use it immediately
-	ptyIO := NewPTYPodIO(term, virtualTerm, pod)
-	ptyIO.SetAggregator(agg)
-	if ptyLogger != nil {
-		ptyIO.SetPTYLogger(ptyLogger)
-	}
+	ptyIO := NewPTYPodIO(podKey, comps, PTYPodIODeps{
+		GetOrCreateDetector: pod.GetOrCreateStateDetector,
+		SubscribeState:      pod.SubscribeStateChange,
+		UnsubscribeState:    pod.UnsubscribeStateChange,
+		GetPTYError:         pod.GetPTYError,
+	})
 	pod.IO = ptyIO
 
 	// Wire PodRelay for mode-specific relay behavior
-	pod.Relay = NewPTYPodRelay(state.PodKey, pod.IO, virtualTerm, term, agg)
+	pod.Relay = NewPTYPodRelay(podKey, pod.IO, comps)
 
-	// Set exit handler
-	term.SetExitHandler(r.messageHandler.createExitHandler(podKey))
-
-	// Set PTY error handler (same as OnCreatePod)
-	term.SetPTYErrorHandler(r.messageHandler.createPTYErrorHandler(podKey, pod))
+	// Set exit and error handlers via PodIO
+	pod.IO.SetExitHandler(r.messageHandler.createExitHandler(podKey))
+	pod.IO.SetIOErrorHandler(r.messageHandler.createPTYErrorHandler(podKey, pod))
 
 	// Start Terminal I/O (readOutput + waitExit goroutines)
-	if err := term.Start(); err != nil {
+	if err := pod.IO.Start(); err != nil {
 		if pod.IO != nil {
 			pod.IO.Teardown()
 		}

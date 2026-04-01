@@ -96,10 +96,11 @@ func TestPodBuilderBuildWithAllOptions(t *testing.T) {
 	if pod.PodKey != "all-options-pod" {
 		t.Errorf("pod key = %s, want all-options-pod", pod.PodKey)
 	}
-	if pod.Terminal == nil {
+	comps := testPTYComponents(pod)
+	if comps == nil || comps.Terminal == nil {
 		t.Error("terminal should not be nil")
 	} else {
-		pod.Terminal.Stop()
+		comps.Terminal.Stop()
 	}
 }
 
@@ -214,8 +215,8 @@ func TestPodBuilderWithLocalPath(t *testing.T) {
 	if pod.PodKey != "local-path-pod" {
 		t.Errorf("pod key = %s, want local-path-pod", pod.PodKey)
 	}
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if pod.IO != nil {
+		pod.IO.Stop()
 	}
 }
 
@@ -250,8 +251,8 @@ func TestPodBuilderWithFilesToCreate(t *testing.T) {
 		return
 	}
 
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if pod.IO != nil {
+		pod.IO.Stop()
 	}
 }
 
@@ -283,8 +284,8 @@ func TestPodBuilderWithEmptySandboxConfig(t *testing.T) {
 		return
 	}
 
-	if pod.Terminal != nil {
-		pod.Terminal.Stop()
+	if pod.IO != nil {
+		pod.IO.Stop()
 	}
 }
 

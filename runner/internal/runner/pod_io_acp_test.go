@@ -28,44 +28,6 @@ func TestACPPodIO_Mode(t *testing.T) {
 	}
 }
 
-func TestACPPodIO_SendKeys_WithKeys_ReturnsError(t *testing.T) {
-	client := newTestACPClient()
-	io := NewACPPodIO(client, "test-pod")
-
-	err := io.SendKeys([]string{"ctrl+c"})
-	if err == nil {
-		t.Fatal("SendKeys with keys should return an error")
-	}
-	if err != ErrKeysNotSupported {
-		t.Errorf("SendKeys error = %v, want ErrKeysNotSupported", err)
-	}
-}
-
-func TestACPPodIO_SendKeys_Empty_NoError(t *testing.T) {
-	client := newTestACPClient()
-	io := NewACPPodIO(client, "test-pod")
-
-	if err := io.SendKeys(nil); err != nil {
-		t.Errorf("SendKeys(nil) = %v, want nil", err)
-	}
-	if err := io.SendKeys([]string{}); err != nil {
-		t.Errorf("SendKeys([]) = %v, want nil", err)
-	}
-}
-
-func TestACPPodIO_Resize_NopReturnsFalse(t *testing.T) {
-	client := newTestACPClient()
-	io := NewACPPodIO(client, "test-pod")
-
-	resized, err := io.Resize(120, 40)
-	if err != nil {
-		t.Errorf("Resize() error = %v, want nil", err)
-	}
-	if resized {
-		t.Error("Resize() resized = true, want false (ACP has no terminal)")
-	}
-}
-
 func TestACPPodIO_GetPID_ReturnsZero(t *testing.T) {
 	client := newTestACPClient()
 	io := NewACPPodIO(client, "test-pod")
@@ -75,50 +37,12 @@ func TestACPPodIO_GetPID_ReturnsZero(t *testing.T) {
 	}
 }
 
-func TestACPPodIO_CursorPosition_ReturnsZeroZero(t *testing.T) {
-	client := newTestACPClient()
-	io := NewACPPodIO(client, "test-pod")
-
-	row, col := io.CursorPosition()
-	if row != 0 || col != 0 {
-		t.Errorf("CursorPosition() = (%d, %d), want (0, 0)", row, col)
-	}
-}
-
-func TestACPPodIO_GetScreenSnapshot_ReturnsEmpty(t *testing.T) {
-	client := newTestACPClient()
-	io := NewACPPodIO(client, "test-pod")
-
-	if got := io.GetScreenSnapshot(); got != "" {
-		t.Errorf("GetScreenSnapshot() = %q, want empty string", got)
-	}
-}
-
-func TestACPPodIO_Redraw_NopReturnsNil(t *testing.T) {
-	client := newTestACPClient()
-	io := NewACPPodIO(client, "test-pod")
-
-	if err := io.Redraw(); err != nil {
-		t.Errorf("Redraw() = %v, want nil", err)
-	}
-}
-
 func TestACPPodIO_Detach_NoPanic(t *testing.T) {
 	client := newTestACPClient()
 	io := NewACPPodIO(client, "test-pod")
 
 	// Should not panic — it's a no-op.
 	io.Detach()
-}
-
-func TestACPPodIO_WriteOutput_NoPanic(t *testing.T) {
-	client := newTestACPClient()
-	io := NewACPPodIO(client, "test-pod")
-
-	// Should not panic — it's a no-op.
-	io.WriteOutput([]byte("some data"))
-	io.WriteOutput(nil)
-	io.WriteOutput([]byte{})
 }
 
 func TestACPPodIO_Teardown_ReturnsEmpty(t *testing.T) {
@@ -268,4 +192,5 @@ func TestACPPodIO_ImplementsPodIO(t *testing.T) {
 	// This is also checked at compile time in pod_io_acp.go,
 	// but having it in a test makes the intent explicit.
 	var _ PodIO = (*ACPPodIO)(nil)
+	var _ SessionAccess = (*ACPPodIO)(nil)
 }
