@@ -43,14 +43,6 @@ export interface PodState {
   fetchPod: (podKey: string) => Promise<void>;
   fetchSidebarPods: (statusFilter: string) => Promise<void>;
   loadMorePods: () => Promise<void>;
-  createPod: (data: {
-    runnerId: number;
-    agentSlug?: string;
-    repositoryId?: number;
-    ticketSlug?: string;
-    initialPrompt?: string;
-    branchName?: string;
-  }) => Promise<Pod>;
   terminatePod: (podKey: string) => Promise<void>;
   setCurrentPod: (pod: Pod | null) => void;
   updatePodStatus: (podKey: string, status: Pod["status"], agentStatus?: string, errorCode?: string, errorMessage?: string, timestamp?: number) => void;
