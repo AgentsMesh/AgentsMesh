@@ -18,6 +18,11 @@ import (
 	runnersvc "github.com/anthropics/agentsmesh/backend/internal/service/runner"
 )
 
+// oversizedPrompt returns a string that exceeds maxPromptLength.
+func oversizedPrompt() string {
+	return strings.Repeat("x", maxPromptLength+1)
+}
+
 type mockPodService struct {
 	pod *agentpodDomain.Pod
 	err error
@@ -117,6 +122,16 @@ func TestSendPrompt(t *testing.T) {
 			wantBody: "Prompt must not be empty",
 		},
 		{
+			name:     "prompt too long",
+			pod:      activePod,
+			body:     `{"prompt":"` + oversizedPrompt() + `"}`,
+			orgID:    42,
+			userID:   100,
+			userRole: "member",
+			wantCode: http.StatusBadRequest,
+			wantBody: "Prompt exceeds maximum length",
+		},
+		{
 			name:     "pod not found",
 			podErr:   errors.New("not found"),
 			body:     `{"prompt":"Continue"}`,
@@ -147,7 +162,45 @@ func TestSendPrompt(t *testing.T) {
 			wantBody: "Admin permission required",
 		},
 		{
-			name: "inactive pod",
+			name:     "apikey creator cannot prompt others pod",
+			pod:      activePod,
+			body:     `{"prompt":"Continue"}`,
+			orgID:    42,
+			userID:   101,
+			userRole: "apikey",
+			wantCode: http.StatusForbidden,
+			wantBody: "Admin permission required",
+		},
+		{
+			name:       "admin can prompt others pod",
+			pod:        activePod,
+			body:       `{"prompt":"Continue"}`,
+			orgID:      42,
+			userID:     101,
+			userRole:   "admin",
+			withRouter: true,
+			wantCode:   http.StatusOK,
+			wantBody:   "Prompt sent",
+			wantInputs: []string{"pod-123:Continue", "pod-123:\r"},
+		},
+		{
+			name: "paused pod not allowed",
+			pod: &agentpodDomain.Pod{
+				PodKey:         "pod-done",
+				OrganizationID: 42,
+				RunnerID:       9,
+				CreatedByID:    100,
+				Status:         agentpodDomain.StatusPaused,
+			},
+			body:     `{"prompt":"Continue"}`,
+			orgID:    42,
+			userID:   100,
+			userRole: "member",
+			wantCode: http.StatusBadRequest,
+			wantBody: "Pod is not running",
+		},
+		{
+			name: "completed pod not allowed",
 			pod: &agentpodDomain.Pod{
 				PodKey:         "pod-done",
 				OrganizationID: 42,
@@ -160,7 +213,7 @@ func TestSendPrompt(t *testing.T) {
 			userID:   100,
 			userRole: "member",
 			wantCode: http.StatusBadRequest,
-			wantBody: "Pod is not active",
+			wantBody: "Pod is not running",
 		},
 		{
 			name:     "missing terminal router",
