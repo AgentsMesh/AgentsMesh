@@ -21,7 +21,6 @@ type Config struct {
 	GRPC     GRPCConfig
 	Admin    AdminConfig
 	Relay       RelayConfig
-	Runner      RunnerConfig
 	Marketplace MarketplaceConfig
 
 	// Unified domain configuration - all URLs are derived from these two values
@@ -36,10 +35,6 @@ type MarketplaceConfig struct {
 	SyncInterval    time.Duration // Interval between marketplace sync cycles (e.g., "1h", "30m")
 	RegistryEnabled bool          // Enable MCP Registry sync (default: true)
 	RegistryURL     string        // MCP Registry API URL (default: https://registry.modelcontextprotocol.io)
-}
-
-// RunnerConfig holds runner-related configuration
-type RunnerConfig struct {
 }
 
 // Load loads configuration from environment variables
@@ -199,9 +194,6 @@ func Load() (*Config, error) {
 		Admin: AdminConfig{
 			Enabled: getEnvBool("ADMIN_ENABLED", true),
 		},
-
-		// Runner Configuration
-		Runner: RunnerConfig{},
 
 		// Marketplace Configuration
 		Marketplace: MarketplaceConfig{

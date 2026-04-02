@@ -16,8 +16,7 @@ func (o *PodOrchestrator) buildPodCommand(
 	pod *podDomain.Pod,
 	sourcePod *podDomain.Pod,
 	isResumeMode bool,
-	mergedPodfileSource string,
-	podfileCredentialProfile string,
+	resolved *podfileResolved,
 ) (*runnerv1.CreatePodCommand, error) {
 	// Resume mode: resolve local_path from source pod's sandbox
 	localPath := ""
@@ -25,14 +24,19 @@ func (o *PodOrchestrator) buildPodCommand(
 		localPath = *sourcePod.SandboxPath
 	}
 
+	// Effective values: resolved (from PodFile) takes precedence over req (input)
+	effectivePrompt := firstNonEmpty(resolved.InitialPrompt, req.InitialPrompt)
+	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName)
+	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
+
 	// Resolve repository info (skip if resuming from local path)
 	repositoryURL, httpCloneURL, sshCloneURL := "", "", ""
 	sourceBranch, preparationScript := "", ""
 	preparationTimeout := 300
 	if req.RepositoryURL != nil && *req.RepositoryURL != "" {
 		repositoryURL = *req.RepositoryURL
-	} else if req.RepositoryID != nil && o.repoService != nil {
-		repo, err := o.repoService.GetByID(ctx, *req.RepositoryID)
+	} else if effectiveRepoID != nil && o.repoService != nil {
+		repo, err := o.repoService.GetByID(ctx, *effectiveRepoID)
 		if err == nil && repo != nil {
 			repositoryURL = repo.CloneURL
 			httpCloneURL = repo.HttpCloneURL
@@ -48,8 +52,8 @@ func (o *PodOrchestrator) buildPodCommand(
 			}
 		}
 	}
-	if req.BranchName != nil && *req.BranchName != "" {
-		sourceBranch = *req.BranchName
+	if effectiveBranch != nil && *effectiveBranch != "" {
+		sourceBranch = *effectiveBranch
 	}
 
 	// Resolve ticket slug
@@ -79,7 +83,6 @@ func (o *PodOrchestrator) buildPodCommand(
 	}
 
 	// Legacy config overrides — only used when no PodFile Layer is provided (fallback path).
-	// When PodFile Layer is present, config values are resolved into PodFile CONFIG declarations.
 	configOverrides := make(map[string]interface{})
 	for k, v := range req.ConfigOverrides {
 		configOverrides[k] = v
@@ -108,7 +111,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		OrganizationID:      req.OrganizationID,
 		UserID:              req.UserID,
 		CredentialProfileID: req.CredentialProfileID,
-		RepositoryID:        req.RepositoryID,
+		RepositoryID:        effectiveRepoID,
 		RepositoryURL:       repositoryURL,
 		HttpCloneURL:        httpCloneURL,
 		SshCloneURL:         sshCloneURL,
@@ -121,7 +124,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		PreparationTimeout:  preparationTimeout,
 		LocalPath:           localPath,
 		ConfigOverrides:     configOverrides,
-		InitialPrompt:       req.InitialPrompt,
+		InitialPrompt:       effectivePrompt,
 		PodKey:              pod.PodKey,
 		MCPPort:             19000,
 		Cols:                req.Cols,
@@ -129,11 +132,11 @@ func (o *PodOrchestrator) buildPodCommand(
 		RunnerAgentVersions: runnerAgentVersions,
 	}
 
-	if mergedPodfileSource != "" {
-		buildReq.MergedPodfileSource = mergedPodfileSource
+	if resolved.MergedPodfileSource != "" {
+		buildReq.MergedPodfileSource = resolved.MergedPodfileSource
 	}
-	if podfileCredentialProfile != "" {
-		buildReq.CredentialProfile = podfileCredentialProfile
+	if resolved.CredentialProfile != "" {
+		buildReq.CredentialProfile = resolved.CredentialProfile
 	}
 
 	if req.AgentSlug != "" {

@@ -136,6 +136,18 @@ type PodOrchestrator struct {
 	userConfigQuery UserConfigQueryForOrchestrator
 }
 
+// podfileResolved carries values extracted from PodFile Layer processing.
+// Separates intermediate state from the original request to keep req read-only.
+type podfileResolved struct {
+	InteractionMode     string
+	BranchName          string
+	PermissionMode      string
+	RepositoryID        *int64
+	InitialPrompt       string
+	MergedPodfileSource string
+	CredentialProfile   string
+}
+
 func NewPodOrchestrator(deps *PodOrchestratorDeps) *PodOrchestrator {
 	return &PodOrchestrator{
 		podService:      deps.PodService,

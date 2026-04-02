@@ -51,6 +51,8 @@ func formatMCPConfigValue(v interface{}) string {
 	case string:
 		escaped := strings.ReplaceAll(val, `\`, `\\`)
 		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
+		escaped = strings.ReplaceAll(escaped, "\n", `\n`)
+		escaped = strings.ReplaceAll(escaped, "\t", `\t`)
 		return fmt.Sprintf(`"%s"`, escaped)
 	case bool:
 		if val {
@@ -90,7 +92,7 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 				},
 				"initial_prompt": map[string]interface{}{
 					"type":        "string",
-					"description": "Initial prompt to send to the new agent pod",
+					"description": "[Deprecated: prefer PodFile PROMPT declaration] Initial prompt to send to the new agent pod",
 				},
 				"alias": map[string]interface{}{
 					"type":        "string",
@@ -118,12 +120,12 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 				},
 				"config_overrides": map[string]interface{}{
 					"type":        "object",
-					"description": "Override agent default configuration. Keys depend on the agent's config schema.",
+					"description": "[Deprecated: prefer PodFile Layer CONFIG declarations] Override agent default configuration. Keys depend on the agent's config schema.",
 				},
 				"permission_mode": map[string]interface{}{
 					"type":        "string",
 					"enum":        []string{"plan", "default", "bypassPermissions"},
-					"description": "Permission mode for the pod: 'plan' (default, requires approval), 'default' (normal permissions), or 'bypassPermissions' (auto-approve all).",
+					"description": "[Deprecated: prefer PodFile CONFIG permission_mode] Permission mode for the pod: 'plan' (default, requires approval), 'default' (normal permissions), or 'bypassPermissions' (auto-approve all).",
 				},
 			},
 			"required": []string{"runner_id", "agent_slug"},

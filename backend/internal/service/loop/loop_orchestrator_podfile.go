@@ -9,6 +9,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/anthropics/agentsmesh/podfile/serialize"
 )
 
 // buildLoopPodfileLayer generates a PodFile Layer from Loop configuration.
@@ -17,11 +18,7 @@ func (o *LoopOrchestrator) buildLoopPodfileLayer(ctx context.Context, loop *loop
 
 	// PROMPT content
 	if resolvedPrompt != "" {
-		escaped := strings.ReplaceAll(resolvedPrompt, `\`, `\\`)
-		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
-		escaped = strings.ReplaceAll(escaped, "\n", `\n`)
-		escaped = strings.ReplaceAll(escaped, "\t", `\t`)
-		lines = append(lines, fmt.Sprintf(`PROMPT "%s"`, escaped))
+		lines = append(lines, fmt.Sprintf("PROMPT %s", serialize.QuoteString(resolvedPrompt)))
 	}
 
 	// Permission mode
@@ -40,7 +37,7 @@ func (o *LoopOrchestrator) buildLoopPodfileLayer(ctx context.Context, loop *loop
 		if k == "permission_mode" {
 			continue // already handled above
 		}
-		lines = append(lines, fmt.Sprintf("CONFIG %s = %s", k, formatLayerValue(v)))
+		lines = append(lines, fmt.Sprintf("CONFIG %s = %s", k, serialize.FormatValue(v)))
 	}
 
 	// Repository slug (resolve from ID)
@@ -79,29 +76,4 @@ func (o *LoopOrchestrator) startAutopilot(ctx context.Context, loop *loopDomain.
 	}
 
 	return controller.AutopilotControllerKey, nil
-}
-
-// formatLayerValue formats a value for PodFile CONFIG syntax.
-// Strings are escaped to prevent PodFile injection.
-func formatLayerValue(v interface{}) string {
-	switch val := v.(type) {
-	case string:
-		escaped := strings.ReplaceAll(val, `\`, `\\`)
-		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
-		escaped = strings.ReplaceAll(escaped, "\n", `\n`)
-		escaped = strings.ReplaceAll(escaped, "\t", `\t`)
-		return fmt.Sprintf(`"%s"`, escaped)
-	case bool:
-		if val {
-			return "true"
-		}
-		return "false"
-	case float64:
-		if val == float64(int64(val)) {
-			return fmt.Sprintf("%d", int64(val))
-		}
-		return fmt.Sprintf("%g", val)
-	default:
-		return fmt.Sprintf(`"%v"`, val)
-	}
 }

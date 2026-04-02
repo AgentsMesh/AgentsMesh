@@ -206,6 +206,32 @@ func TestBuildPodfileLayerFromArgs(t *testing.T) {
 			t.Errorf("missing mcp_enabled, got: %s", layer)
 		}
 	})
+
+	t.Run("escapes newlines and tabs in prompt", func(t *testing.T) {
+		layer := buildPodfileLayerFromArgs("", "", "line1\nline2\ttab", nil, "", "")
+		if !strings.Contains(layer, `PROMPT "line1\nline2\ttab"`) {
+			t.Errorf("prompt escape failed, got: %s", layer)
+		}
+	})
+
+	t.Run("escapes newlines and tabs in config string values", func(t *testing.T) {
+		layer := buildPodfileLayerFromArgs("", "", "", map[string]interface{}{
+			"custom": "val\nwith\tnewline",
+		}, "", "")
+		if !strings.Contains(layer, `CONFIG custom = "val\nwith\tnewline"`) {
+			t.Errorf("config escape failed, got: %s", layer)
+		}
+	})
+
+	t.Run("generates REPO and BRANCH declarations", func(t *testing.T) {
+		layer := buildPodfileLayerFromArgs("", "", "", nil, "https://github.com/example/repo.git", "main")
+		if !strings.Contains(layer, `REPO "https://github.com/example/repo.git"`) {
+			t.Errorf("missing REPO, got: %s", layer)
+		}
+		if !strings.Contains(layer, `BRANCH "main"`) {
+			t.Errorf("missing BRANCH, got: %s", layer)
+		}
+	})
 }
 
 func TestHTTPServerMCPToolsCallCreatePodWithAlias(t *testing.T) {

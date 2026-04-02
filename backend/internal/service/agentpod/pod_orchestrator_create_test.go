@@ -431,3 +431,92 @@ func TestCreatePod_CredentialProfileID_NilStaysNil(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, dbPod.CredentialProfileID, "nil credential_profile_id should stay nil in DB")
 }
+
+// ==================== PodFile Resolved Precedence Tests ====================
+
+func TestCreatePod_PodFilePrompt_OverridesReqPrompt(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
+
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID: 1,
+		UserID:         1,
+		RunnerID:       1,
+		AgentSlug:      "claude-code",
+		InitialPrompt:  "from request",
+		PodfileLayer:   ptrStr(`PROMPT "from podfile"`),
+	})
+
+	require.NoError(t, err)
+	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
+	require.NoError(t, err)
+	assert.Equal(t, "from podfile", dbPod.InitialPrompt, "PodFile PROMPT should override req.InitialPrompt")
+}
+
+func TestCreatePod_PodFileBranch_OverridesReqBranch(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
+
+	reqBranch := "req-branch"
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID: 1,
+		UserID:         1,
+		RunnerID:       1,
+		AgentSlug:      "claude-code",
+		BranchName:     &reqBranch,
+		PodfileLayer:   ptrStr(`BRANCH "podfile-branch"`),
+	})
+
+	require.NoError(t, err)
+	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
+	require.NoError(t, err)
+	require.NotNil(t, dbPod.BranchName)
+	assert.Equal(t, "podfile-branch", *dbPod.BranchName, "PodFile BRANCH should override req.BranchName")
+}
+
+func TestCreatePod_PodFilePermissionMode_OverridesReqMode(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
+
+	reqMode := "plan"
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID: 1,
+		UserID:         1,
+		RunnerID:       1,
+		AgentSlug:      "claude-code",
+		PermissionMode: &reqMode,
+		PodfileLayer:   ptrStr(`CONFIG permission_mode = "bypassPermissions"`),
+	})
+
+	require.NoError(t, err)
+	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
+	require.NoError(t, err)
+	require.NotNil(t, dbPod.PermissionMode)
+	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode, "PodFile CONFIG permission_mode should override req.PermissionMode")
+}
+
+func TestCreatePod_NoLayer_FallsBackToReqValues(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
+
+	reqBranch := "my-branch"
+	reqMode := "default"
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID: 1,
+		UserID:         1,
+		RunnerID:       1,
+		AgentSlug:      "claude-code",
+		InitialPrompt:  "from request",
+		BranchName:     &reqBranch,
+		PermissionMode: &reqMode,
+	})
+
+	require.NoError(t, err)
+	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
+	require.NoError(t, err)
+	assert.Equal(t, "from request", dbPod.InitialPrompt, "Without PodFile Layer, req.InitialPrompt should be used")
+	require.NotNil(t, dbPod.BranchName)
+	assert.Equal(t, "my-branch", *dbPod.BranchName, "Without PodFile Layer, req.BranchName should be used")
+	require.NotNil(t, dbPod.PermissionMode)
+	assert.Equal(t, "default", *dbPod.PermissionMode, "Without PodFile Layer, req.PermissionMode should be used")
+}

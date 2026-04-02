@@ -59,13 +59,13 @@ func writeDecl(b *strings.Builder, decl parser.Declaration) {
 	case *parser.SetupDecl:
 		writeSetupDecl(b, d)
 	case *parser.RemoveDecl:
-		fmt.Fprintf(b, "REMOVE %s %s", d.Target, quoteString(d.Name))
+		fmt.Fprintf(b, "REMOVE %s %s", d.Target, QuoteString(d.Name))
 	case *parser.ModeDecl:
 		fmt.Fprintf(b, "MODE %s", d.Mode)
 	case *parser.ModeArgsDecl:
 		fmt.Fprintf(b, "MODE %s", d.Mode)
 		for _, arg := range d.Args {
-			fmt.Fprintf(b, " %s", quoteString(arg))
+			fmt.Fprintf(b, " %s", QuoteString(arg))
 		}
 	case *parser.CredentialDecl:
 		fmt.Fprintf(b, "CREDENTIAL %s", quoteIfNeeded(d.ProfileName))
@@ -92,14 +92,14 @@ func writeConfigDecl(b *strings.Builder, d *parser.ConfigDecl) {
 				if i > 0 {
 					b.WriteString(", ")
 				}
-				b.WriteString(quoteString(opt))
+				b.WriteString(QuoteString(opt))
 			}
 			b.WriteByte(')')
 		}
 	}
 	if d.Default != nil {
 		b.WriteString(" = ")
-		b.WriteString(formatLiteral(d.Default))
+		b.WriteString(FormatValue(d.Default))
 	}
 }
 
@@ -116,7 +116,7 @@ func writeEnvDecl(b *strings.Builder, d *parser.EnvDecl) {
 		fmt.Fprintf(b, " = %s", serializeExpr(d.ValueExpr))
 		writeWhen(b, d.When)
 	} else {
-		fmt.Fprintf(b, " = %s", quoteString(d.Value))
+		fmt.Fprintf(b, " = %s", QuoteString(d.Value))
 	}
 }
 
@@ -165,11 +165,13 @@ func configTypeKeyword(typeName string) string {
 	}
 }
 
-// formatLiteral formats a config default value (string, bool, float64).
-func formatLiteral(v interface{}) string {
+// FormatValue formats a Go value to its PodFile literal representation.
+// Strings are double-quoted with proper escaping; bools are true/false;
+// float64 integers are rendered without decimals.
+func FormatValue(v interface{}) string {
 	switch val := v.(type) {
 	case string:
-		return quoteString(val)
+		return QuoteString(val)
 	case bool:
 		if val {
 			return "true"

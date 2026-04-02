@@ -11,7 +11,7 @@ import (
 func serializeExpr(expr parser.Expr) string {
 	switch e := expr.(type) {
 	case *parser.StringLit:
-		return quoteString(e.Value)
+		return QuoteString(e.Value)
 	case *parser.NumberLit:
 		return e.Value
 	case *parser.BoolLit:
@@ -85,8 +85,9 @@ func serializeListLit(e *parser.ListLit) string {
 	return fmt.Sprintf("[%s]", strings.Join(elems, ", "))
 }
 
-// quoteString produces a double-quoted PodFile string with proper escaping.
-func quoteString(s string) string {
+// QuoteString produces a double-quoted PodFile string with proper escaping.
+// Handles: \ → \\, " → \", \n → \n, \t → \t.
+func QuoteString(s string) string {
 	var b strings.Builder
 	b.WriteByte('"')
 	for _, ch := range s {
@@ -115,7 +116,7 @@ func quoteIfNeeded(s string) string {
 	}
 	for _, ch := range s {
 		if !isIdentChar(ch) {
-			return quoteString(s)
+			return QuoteString(s)
 		}
 	}
 	return s

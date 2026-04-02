@@ -57,16 +57,16 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// Resolve permission mode: may come from req.PermissionMode (old API path)
+	// --- PodFile Layer resolution (req stays read-only after this point) ---
+	resolved := &podfileResolved{}
+
+	// Permission mode: may come from req.PermissionMode (old API path)
 	// or from PodFile Layer CONFIG declaration (SSOT path).
-	permissionMode := "plan"
 	if req.PermissionMode != nil && *req.PermissionMode != "" {
-		permissionMode = *req.PermissionMode
+		resolved.PermissionMode = *req.PermissionMode
 	}
 
 	// Build systemOverrides: truly system-internal values injected into PodFile.
-	// permission_mode is NOT a system override — it's a user-configurable CONFIG value
-	// that flows through PodFile Layer or req.PermissionMode.
 	systemOverrides := make(map[string]interface{})
 	if !isResumeMode {
 		systemOverrides["session_id"] = sessionID
@@ -79,11 +79,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	}
 
 	// PodFile SSOT: resolve CONFIG values from base PodFile + optional user Layer.
-	// Always runs when agentDef has a PodFile (even without a Layer, to inject userPrefs).
-	var mergedPodfileSource string
-	var podfileCredentialProfile string
 	if agentDef != nil && agentDef.PodfileSource != nil {
-		// Get user's personal config preferences for CONFIG value resolution.
 		var userPrefs map[string]interface{}
 		if o.userConfigQuery != nil {
 			userPrefs = o.userConfigQuery.GetUserConfigPrefs(ctx, req.UserID, req.AgentSlug)
@@ -101,36 +97,37 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		if err != nil {
 			return nil, err
 		}
-		mergedPodfileSource = result.MergedPodfileSource
-		podfileCredentialProfile = result.CredentialProfile
+		resolved.MergedPodfileSource = result.MergedPodfileSource
+		resolved.CredentialProfile = result.CredentialProfile
 		if result.Mode != "" {
-			req.InteractionMode = &result.Mode
+			resolved.InteractionMode = result.Mode
 		}
 		if result.Branch != "" {
-			req.BranchName = &result.Branch
+			resolved.BranchName = result.Branch
 		}
 		if result.PermissionMode != "" {
-			permissionMode = result.PermissionMode
+			resolved.PermissionMode = result.PermissionMode
 		}
-		// REPO slug → resolve RepositoryID for DB record + sandbox config
 		if result.RepoSlug != "" && o.repoService != nil {
 			repo, repoErr := o.repoService.FindByOrgSlug(ctx, req.OrganizationID, result.RepoSlug)
 			if repoErr == nil && repo != nil {
-				req.RepositoryID = &repo.ID
+				resolved.RepositoryID = &repo.ID
 			}
 		}
-		// PROMPT content → override InitialPrompt
 		if result.Prompt != "" {
-			req.InitialPrompt = result.Prompt
+			resolved.InitialPrompt = result.Prompt
 		}
 	}
 
+	// --- Compute effective values from req (input) + resolved (PodFile extraction) ---
+	effectiveInteractionMode := firstNonEmpty(resolved.InteractionMode, derefString(req.InteractionMode), podDomain.InteractionModePTY)
+	effectivePermissionMode := firstNonEmpty(resolved.PermissionMode, "plan")
+	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName)
+	effectivePrompt := firstNonEmpty(resolved.InitialPrompt, req.InitialPrompt)
+	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
+
 	// Validate interaction mode against agent capabilities
-	interactionMode := podDomain.InteractionModePTY
-	if req.InteractionMode != nil && *req.InteractionMode != "" {
-		interactionMode = *req.InteractionMode
-	}
-	if agentDef != nil && !agentDef.SupportsMode(interactionMode) {
+	if agentDef != nil && !agentDef.SupportsMode(effectiveInteractionMode) {
 		return nil, ErrUnsupportedInteractionMode
 	}
 
@@ -162,23 +159,23 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		OrganizationID:      req.OrganizationID,
 		RunnerID:            req.RunnerID,
 		AgentSlug:           req.AgentSlug,
-		RepositoryID:        req.RepositoryID,
+		RepositoryID:        effectiveRepoID,
 		TicketID:            req.TicketID,
 		CreatedByID:         req.UserID,
-		InitialPrompt:       req.InitialPrompt,
+		InitialPrompt:       effectivePrompt,
 		Alias:               req.Alias,
-		BranchName:          req.BranchName,
-		PermissionMode:      permissionMode,
+		BranchName:          effectiveBranch,
+		PermissionMode:      effectivePermissionMode,
 		SessionID:           sessionID,
 		SourcePodKey:        req.SourcePodKey,
 		CredentialProfileID: dbCredProfileID,
-		InteractionMode:     interactionMode,
+		InteractionMode:     effectiveInteractionMode,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	podCmd, err := o.buildPodCommand(ctx, req, pod, sourcePod, isResumeMode, mergedPodfileSource, podfileCredentialProfile)
+	podCmd, err := o.buildPodCommand(ctx, req, pod, sourcePod, isResumeMode, resolved)
 	if err != nil {
 		slog.Error("failed to build pod command", "pod_key", pod.PodKey, "error", err)
 		return nil, errors.Join(ErrConfigBuildFailed, err)
@@ -200,4 +197,37 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	}
 
 	return &OrchestrateCreatePodResult{Pod: pod}, nil
+}
+
+// --- Effective value helpers ---
+
+// firstNonEmpty returns the first non-empty string from the arguments.
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func derefString(p *string) string {
+	if p != nil {
+		return *p
+	}
+	return ""
+}
+
+func firstNonEmptyPtr(resolved string, input *string) *string {
+	if resolved != "" {
+		return &resolved
+	}
+	return input
+}
+
+func firstNonNilInt64(resolved *int64, input *int64) *int64 {
+	if resolved != nil {
+		return resolved
+	}
+	return input
 }

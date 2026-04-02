@@ -124,37 +124,6 @@ export const createPodApiActions = (set: SetState, get: GetState) => ({
     }
   },
 
-  createPod: async (data: {
-    runnerId: number;
-    agentSlug?: string;
-    repositoryId?: number;
-    ticketSlug?: string;
-    initialPrompt?: string;
-    branchName?: string;
-  }): Promise<Pod> => {
-    set({ error: null });
-    try {
-      const apiData = {
-        agent_slug: data.agentSlug ?? "",
-        runner_id: data.runnerId,
-        repository_id: data.repositoryId,
-        ticket_slug: data.ticketSlug,
-        initial_prompt: data.initialPrompt,
-        branch_name: data.branchName,
-      };
-      const response = await podApi.create(apiData);
-      const createTs = Date.now();
-      set((state) => {
-        const result = upsertPod(state, response.pod.pod_key, () => response.pod, createTs, { prepend: true });
-        return { ...(result ?? {}), currentPod: response.pod };
-      });
-      return response.pod;
-    } catch (error: unknown) {
-      set({ error: getErrorMessage(error, "Failed to create pod") });
-      throw error;
-    }
-  },
-
   terminatePod: async (podKey: string) => {
     try {
       await podApi.terminate(podKey);

@@ -1,17 +1,6 @@
 // Package podfile provides the top-level types for PodFile processing results.
 package podfile
 
-// Interaction mode constants — canonical source for all layers (backend, runner, frontend).
-const (
-	ModePTY = "pty" // Terminal mode (default)
-	ModeACP = "acp" // Conversational mode (Agent Communication Protocol)
-)
-
-// IsValidMode returns true if the given mode string is a recognized interaction mode.
-func IsValidMode(m string) bool {
-	return m == ModePTY || m == ModeACP
-}
-
 // PodSpec is the Backend-facing output of PodFile declaration extraction.
 // It contains everything the frontend needs to render Pod creation UI:
 // agent info, config form fields, credential fields, skills, etc.
