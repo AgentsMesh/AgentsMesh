@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	podDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
@@ -31,11 +32,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 			if o.runnerSelector == nil || o.agentResolver == nil {
 				return nil, ErrMissingRunnerID
 			}
-			agentDef, err := o.agentResolver.GetAgent(ctx, req.AgentSlug)
-			if err != nil {
-				return nil, ErrMissingAgentSlug
-			}
-			selectedRunner, err := o.runnerSelector.SelectAvailableRunnerForAgent(ctx, req.OrganizationID, req.UserID, agentDef.Slug)
+			selectedRunner, err := o.runnerSelector.SelectAvailableRunnerForAgent(ctx, req.OrganizationID, req.UserID, req.AgentSlug)
 			if err != nil {
 				slog.Warn("runner auto-selection failed", "org_id", req.OrganizationID, "agent_slug", req.AgentSlug, "error", err)
 				return nil, ErrNoAvailableRunner
@@ -49,48 +46,82 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	if req.ConfigOverrides == nil {
 		req.ConfigOverrides = make(map[string]interface{})
 	}
-	if !isResumeMode {
-		req.ConfigOverrides["session_id"] = sessionID
+
+	// Resolve agent definition once — reused for PodFile merge and mode validation.
+	var agentDef *agentDomain.Agent
+	if req.AgentSlug != "" && o.agentResolver != nil {
+		var err error
+		agentDef, err = o.agentResolver.GetAgent(ctx, req.AgentSlug)
+		if err != nil {
+			return nil, ErrMissingAgentSlug
+		}
 	}
 
-	// PodFile Layer SSOT: merge base PodFile + user Layer, extract declarations
-	// to override API params. This ensures DB and Runner use identical values.
+	// Resolve permission mode: may come from req.PermissionMode (old API path)
+	// or from PodFile Layer CONFIG declaration (SSOT path).
+	permissionMode := "plan"
+	if req.PermissionMode != nil && *req.PermissionMode != "" {
+		permissionMode = *req.PermissionMode
+	}
+
+	// Build systemOverrides: truly system-internal values injected into PodFile.
+	// permission_mode is NOT a system override — it's a user-configurable CONFIG value
+	// that flows through PodFile Layer or req.PermissionMode.
+	systemOverrides := make(map[string]interface{})
+	if !isResumeMode {
+		systemOverrides["session_id"] = sessionID
+	} else {
+		resumeAgentSession := req.ResumeAgentSession == nil || *req.ResumeAgentSession
+		if resumeAgentSession {
+			systemOverrides["resume_enabled"] = true
+			systemOverrides["resume_session"] = sessionID
+		}
+	}
+
+	// PodFile SSOT: resolve CONFIG values from base PodFile + optional user Layer.
+	// Always runs when agentDef has a PodFile (even without a Layer, to inject userPrefs).
 	var mergedPodfileSource string
-	if req.PodfileLayer != nil && *req.PodfileLayer != "" && req.AgentSlug != "" && o.agentResolver != nil {
-		agentDef, err := o.agentResolver.GetAgent(ctx, req.AgentSlug)
+	var podfileCredentialProfile string
+	if agentDef != nil && agentDef.PodfileSource != nil {
+		// Get user's personal config preferences for CONFIG value resolution.
+		var userPrefs map[string]interface{}
+		if o.userConfigQuery != nil {
+			userPrefs = o.userConfigQuery.GetUserConfigPrefs(ctx, req.UserID, req.AgentSlug)
+		}
+
+		layerSrc := ""
+		if req.PodfileLayer != nil {
+			layerSrc = *req.PodfileLayer
+		}
+
+		result, err := extractFromPodfileLayer(
+			*agentDef.PodfileSource, layerSrc,
+			userPrefs, systemOverrides,
+		)
 		if err != nil {
-			slog.Warn("failed to resolve agent for podfile merge, skipping layer",
-				"agent_slug", req.AgentSlug, "error", err)
-		} else if agentDef.PodfileSource == nil {
-			slog.Warn("agent has no base podfile, skipping layer merge",
-				"agent_slug", req.AgentSlug)
-		} else {
-			result, err := extractFromPodfileLayer(*agentDef.PodfileSource, *req.PodfileLayer)
-			if err != nil {
-				return nil, err
+			return nil, err
+		}
+		mergedPodfileSource = result.MergedPodfileSource
+		podfileCredentialProfile = result.CredentialProfile
+		if result.Mode != "" {
+			req.InteractionMode = &result.Mode
+		}
+		if result.Branch != "" {
+			req.BranchName = &result.Branch
+		}
+		if result.PermissionMode != "" {
+			permissionMode = result.PermissionMode
+		}
+		// REPO slug → resolve RepositoryID for DB record + sandbox config
+		if result.RepoSlug != "" && o.repoService != nil {
+			repo, repoErr := o.repoService.FindByOrgSlug(ctx, req.OrganizationID, result.RepoSlug)
+			if repoErr == nil && repo != nil {
+				req.RepositoryID = &repo.ID
 			}
-			mergedPodfileSource = result.MergedPodfileSource
-			if result.Mode != "" {
-				req.InteractionMode = &result.Mode
-			}
-			if result.Branch != "" {
-				req.BranchName = &result.Branch
-			}
-			if result.PermissionMode != "" {
-				req.PermissionMode = &result.PermissionMode
-			}
-			// REPO slug → resolve RepositoryID for DB record + sandbox config
-			if result.RepoSlug != "" && req.RepositoryID == nil && o.repoService != nil {
-				repo, repoErr := o.repoService.FindByOrgSlug(ctx, req.OrganizationID, result.RepoSlug)
-				if repoErr == nil && repo != nil {
-					req.RepositoryID = &repo.ID
-				}
-			}
-			// PROMPT content → override InitialPrompt
-			if result.Prompt != "" {
-				req.InitialPrompt = result.Prompt
-			}
-			// CREDENTIAL name → resolved by config_builder downstream
+		}
+		// PROMPT content → override InitialPrompt
+		if result.Prompt != "" {
+			req.InitialPrompt = result.Prompt
 		}
 	}
 
@@ -99,11 +130,8 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	if req.InteractionMode != nil && *req.InteractionMode != "" {
 		interactionMode = *req.InteractionMode
 	}
-	if req.AgentSlug != "" && o.agentResolver != nil {
-		agentDef, err := o.agentResolver.GetAgent(ctx, req.AgentSlug)
-		if err == nil && !agentDef.SupportsMode(interactionMode) {
-			return nil, ErrUnsupportedInteractionMode
-		}
+	if agentDef != nil && !agentDef.SupportsMode(interactionMode) {
+		return nil, ErrUnsupportedInteractionMode
 	}
 
 	// Quota check
@@ -130,12 +158,6 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		dbCredProfileID = req.CredentialProfileID
 	}
 
-	// Resolve permission mode: PodFile Layer already set req.PermissionMode if present
-	permissionMode := "plan"
-	if req.PermissionMode != nil && *req.PermissionMode != "" {
-		permissionMode = *req.PermissionMode
-	}
-
 	pod, err := o.podService.CreatePod(ctx, &CreatePodRequest{
 		OrganizationID:      req.OrganizationID,
 		RunnerID:            req.RunnerID,
@@ -156,7 +178,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		return nil, err
 	}
 
-	podCmd, err := o.buildPodCommand(ctx, req, pod, sourcePod, isResumeMode, mergedPodfileSource)
+	podCmd, err := o.buildPodCommand(ctx, req, pod, sourcePod, isResumeMode, mergedPodfileSource, podfileCredentialProfile)
 	if err != nil {
 		slog.Error("failed to build pod command", "pod_key", pod.PodKey, "error", err)
 		return nil, errors.Join(ErrConfigBuildFailed, err)

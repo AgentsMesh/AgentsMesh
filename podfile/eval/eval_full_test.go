@@ -84,12 +84,13 @@ arg x
 func TestEval_BuiltinStrContains(t *testing.T) {
 	prog, errs := parser.Parse(`
 AGENT test
+CONFIG model STRING = "claude-opus"
 arg "--found" when str_contains(config.model, "opus")
 `)
 	require.Empty(t, errs)
 
 	ctx := NewContext(map[string]interface{}{
-		"config": map[string]interface{}{"model": "claude-opus"},
+		"config": make(map[string]interface{}),
 	})
 	require.NoError(t, Eval(prog, ctx))
 	assert.Equal(t, []string{"--found"}, ctx.Result.LaunchArgs)
@@ -173,15 +174,55 @@ if mcp.enabled {
 `
 
 func TestEval_FullClaudeCode(t *testing.T) {
-	prog, errs := parser.Parse(fullClaudeCodePodFile)
+	// Simulate post-resolve state: CONFIG defaults contain final resolved values.
+	// In production, resolve.ResolveConfigValues injects these before eval.
+	resolvedPodFile := `
+AGENT claude
+EXECUTABLE claude
+
+CONFIG model SELECT("", "sonnet", "opus") = "opus"
+CONFIG permission SELECT("default", "plan", "bypass") = "plan"
+CONFIG mcp_enabled BOOL = true
+
+ENV ANTHROPIC_API_KEY SECRET OPTIONAL
+MCP ON
+SKILLS am-delegate, am-channel
+
+PROMPT_POSITION prepend
+
+arg "--model" config.model when config.model != ""
+
+if config.permission == "plan" {
+  arg "--permission-mode" "plan"
+}
+if config.permission == "bypass" {
+  arg "--dangerously-skip-permissions"
+}
+
+if mcp.enabled {
+  mcp_cfg = json_merge(mcp.builtin, mcp.installed)
+  plugin_dir = sandbox.root + "/agentsmesh-plugin"
+
+  mkdir plugin_dir
+  mkdir plugin_dir + "/.claude-plugin"
+
+  file plugin_dir + "/.claude-plugin/plugin.json" json({
+    name: "agentsmesh",
+    description: "AgentsMesh collaboration plugin",
+    version: "1.0.0"
+  })
+
+  file plugin_dir + "/.mcp.json" json({ mcpServers: mcp_cfg })
+
+  arg "--plugin-dir" plugin_dir
+}
+`
+	prog, errs := parser.Parse(resolvedPodFile)
 	require.Empty(t, errs)
 
+	// config is empty — values come from CONFIG declarations during eval
 	ctx := NewContext(map[string]interface{}{
-		"config": map[string]interface{}{
-			"model":       "opus",
-			"permission":  "plan",
-			"mcp_enabled": true,
-		},
+		"config": make(map[string]interface{}),
 		"mcp": map[string]interface{}{
 			"enabled": true,
 			"builtin": map[string]interface{}{

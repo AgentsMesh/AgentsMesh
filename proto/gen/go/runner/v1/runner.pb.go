@@ -1931,31 +1931,43 @@ func (x *AgentInfo) GetDefaultArgs() []string {
 }
 
 // CreatePodCommand 创建 Pod 命令
+// Backend 完成 PodFile eval（parse+merge+resolve+eval），通过此消息发送最终执行指令。
+// Runner 只需替换路径占位符（{{sandbox_root}}, {{work_dir}}）后直接执行。
 type CreatePodCommand struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PodKey        string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
-	LaunchCommand string                 `protobuf:"bytes,2,opt,name=launch_command,json=launchCommand,proto3" json:"launch_command,omitempty"`
-	LaunchArgs    []string               `protobuf:"bytes,3,rep,name=launch_args,json=launchArgs,proto3" json:"launch_args,omitempty"`
-	EnvVars       map[string]string      `protobuf:"bytes,4,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	FilesToCreate []*FileToCreate        `protobuf:"bytes,5,rep,name=files_to_create,json=filesToCreate,proto3" json:"files_to_create,omitempty"`
-	SandboxConfig *SandboxConfig         `protobuf:"bytes,6,opt,name=sandbox_config,json=sandboxConfig,proto3" json:"sandbox_config,omitempty"` // 替代原 work_dir_config
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	PodKey string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
+	// 执行指令（Backend PodFile eval 产出）
+	LaunchCommand string            `protobuf:"bytes,2,opt,name=launch_command,json=launchCommand,proto3" json:"launch_command,omitempty"`                                                         // AGENT 声明的命令（如 "claude"）
+	LaunchArgs    []string          `protobuf:"bytes,3,rep,name=launch_args,json=launchArgs,proto3" json:"launch_args,omitempty"`                                                                  // arg 语句 + MODE args 的最终参数列表
+	EnvVars       map[string]string `protobuf:"bytes,4,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // ENV 声明产出的环境变量
+	FilesToCreate []*FileToCreate   `protobuf:"bytes,5,rep,name=files_to_create,json=filesToCreate,proto3" json:"files_to_create,omitempty"`                                                       // file/mkdir 语句产出的文件列表
+	SandboxConfig *SandboxConfig    `protobuf:"bytes,6,opt,name=sandbox_config,json=sandboxConfig,proto3" json:"sandbox_config,omitempty"`                                                         // 沙箱/Git 配置
 	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
-	InitialPrompt       string                `protobuf:"bytes,7,opt,name=initial_prompt,json=initialPrompt,proto3" json:"initial_prompt,omitempty"`                      // Deprecated: Runner reads PROMPT from PodFile eval
+	InitialPrompt       string                `protobuf:"bytes,7,opt,name=initial_prompt,json=initialPrompt,proto3" json:"initial_prompt,omitempty"`                      // Deprecated: 使用 prompt 字段
 	Cols                int32                 `protobuf:"varint,8,opt,name=cols,proto3" json:"cols,omitempty"`                                                            // 终端列数（由浏览器传入）
 	Rows                int32                 `protobuf:"varint,9,opt,name=rows,proto3" json:"rows,omitempty"`                                                            // 终端行数（由浏览器传入）
-	ResourcesToDownload []*ResourceToDownload `protobuf:"bytes,10,rep,name=resources_to_download,json=resourcesToDownload,proto3" json:"resources_to_download,omitempty"` // 需要下载的资源（Skills 等）
+	ResourcesToDownload []*ResourceToDownload `protobuf:"bytes,10,rep,name=resources_to_download,json=resourcesToDownload,proto3" json:"resources_to_download,omitempty"` // Skills 等资源下载
+	InteractionMode     string                `protobuf:"bytes,11,opt,name=interaction_mode,json=interactionMode,proto3" json:"interaction_mode,omitempty"`               // MODE 声明："pty" 或 "acp"
+	// 废弃字段（保留 field number，Runner 不再读取）
+	//
 	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
-	InteractionMode string `protobuf:"bytes,11,opt,name=interaction_mode,json=interactionMode,proto3" json:"interaction_mode,omitempty"` // Deprecated: Runner reads MODE from PodFile eval
-	// PodFile 相关字段（Runner eval PodFile 需要的上下文）
-	PodfileSource    string            `protobuf:"bytes,12,opt,name=podfile_source,json=podfileSource,proto3" json:"podfile_source,omitempty"`                                                                        // PodFile 脚本源代码
-	ConfigValues     map[string]string `protobuf:"bytes,13,rep,name=config_values,json=configValues,proto3" json:"config_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 用户配置值
-	Credentials      map[string]string `protobuf:"bytes,14,rep,name=credentials,proto3" json:"credentials,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`                       // 加密凭证
-	IsRunnerHost     bool              `protobuf:"varint,15,opt,name=is_runner_host,json=isRunnerHost,proto3" json:"is_runner_host,omitempty"`                                                                        // 是否使用 Runner 本机凭证
-	McpPort          int32             `protobuf:"varint,16,opt,name=mcp_port,json=mcpPort,proto3" json:"mcp_port,omitempty"`                                                                                         // MCP 端口
-	McpBuiltinJson   string            `protobuf:"bytes,17,opt,name=mcp_builtin_json,json=mcpBuiltinJson,proto3" json:"mcp_builtin_json,omitempty"`                                                                   // JSON: 内建 MCP 服务器配置
-	McpInstalledJson string            `protobuf:"bytes,18,opt,name=mcp_installed_json,json=mcpInstalledJson,proto3" json:"mcp_installed_json,omitempty"`                                                             // JSON: 已安装 MCP 服务器配置
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	PodfileSource string `protobuf:"bytes,12,opt,name=podfile_source,json=podfileSource,proto3" json:"podfile_source,omitempty"` // Deprecated: eval 已在 Backend 完成
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	ConfigValues map[string]string `protobuf:"bytes,13,rep,name=config_values,json=configValues,proto3" json:"config_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Deprecated: CONFIG 值已 eval 到 launch_args/env_vars/files
+	// 运行时上下文（Backend 注入，Runner 直接使用）
+	Credentials  map[string]string `protobuf:"bytes,14,rep,name=credentials,proto3" json:"credentials,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 解密后的凭证
+	IsRunnerHost bool              `protobuf:"varint,15,opt,name=is_runner_host,json=isRunnerHost,proto3" json:"is_runner_host,omitempty"`                                                  // 是否使用 Runner 本机凭证
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	McpPort int32 `protobuf:"varint,16,opt,name=mcp_port,json=mcpPort,proto3" json:"mcp_port,omitempty"` // Deprecated: MCP 端口已 eval 到文件内容中
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	McpBuiltinJson string `protobuf:"bytes,17,opt,name=mcp_builtin_json,json=mcpBuiltinJson,proto3" json:"mcp_builtin_json,omitempty"` // Deprecated: MCP 配置已 eval 到 files_to_create
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	McpInstalledJson string `protobuf:"bytes,18,opt,name=mcp_installed_json,json=mcpInstalledJson,proto3" json:"mcp_installed_json,omitempty"` // Deprecated: MCP 配置已 eval 到 files_to_create
+	// PodFile eval 产出的新字段
+	Prompt         string `protobuf:"bytes,19,opt,name=prompt,proto3" json:"prompt,omitempty"`                                       // PROMPT 声明的初始提示内容
+	PromptPosition string `protobuf:"bytes,20,opt,name=prompt_position,json=promptPosition,proto3" json:"prompt_position,omitempty"` // PROMPT_POSITION 声明："prepend"/"append"/"none"
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreatePodCommand) Reset() {
@@ -2059,7 +2071,6 @@ func (x *CreatePodCommand) GetResourcesToDownload() []*ResourceToDownload {
 	return nil
 }
 
-// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *CreatePodCommand) GetInteractionMode() string {
 	if x != nil {
 		return x.InteractionMode
@@ -2067,6 +2078,7 @@ func (x *CreatePodCommand) GetInteractionMode() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *CreatePodCommand) GetPodfileSource() string {
 	if x != nil {
 		return x.PodfileSource
@@ -2074,6 +2086,7 @@ func (x *CreatePodCommand) GetPodfileSource() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *CreatePodCommand) GetConfigValues() map[string]string {
 	if x != nil {
 		return x.ConfigValues
@@ -2095,6 +2108,7 @@ func (x *CreatePodCommand) GetIsRunnerHost() bool {
 	return false
 }
 
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *CreatePodCommand) GetMcpPort() int32 {
 	if x != nil {
 		return x.McpPort
@@ -2102,6 +2116,7 @@ func (x *CreatePodCommand) GetMcpPort() int32 {
 	return 0
 }
 
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *CreatePodCommand) GetMcpBuiltinJson() string {
 	if x != nil {
 		return x.McpBuiltinJson
@@ -2109,9 +2124,24 @@ func (x *CreatePodCommand) GetMcpBuiltinJson() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *CreatePodCommand) GetMcpInstalledJson() string {
 	if x != nil {
 		return x.McpInstalledJson
+	}
+	return ""
+}
+
+func (x *CreatePodCommand) GetPrompt() string {
+	if x != nil {
+		return x.Prompt
+	}
+	return ""
+}
+
+func (x *CreatePodCommand) GetPromptPosition() string {
+	if x != nil {
+		return x.PromptPosition
 	}
 	return ""
 }
@@ -5648,7 +5678,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12!\n" +
-	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\xb0\b\n" +
+	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\x81\t\n" +
 	"\x10CreatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12%\n" +
 	"\x0elaunch_command\x18\x02 \x01(\tR\rlaunchCommand\x12\x1f\n" +
@@ -5661,15 +5691,17 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04cols\x18\b \x01(\x05R\x04cols\x12\x12\n" +
 	"\x04rows\x18\t \x01(\x05R\x04rows\x12Q\n" +
 	"\x15resources_to_download\x18\n" +
-	" \x03(\v2\x1d.runner.v1.ResourceToDownloadR\x13resourcesToDownload\x12-\n" +
-	"\x10interaction_mode\x18\v \x01(\tB\x02\x18\x01R\x0finteractionMode\x12%\n" +
-	"\x0epodfile_source\x18\f \x01(\tR\rpodfileSource\x12R\n" +
-	"\rconfig_values\x18\r \x03(\v2-.runner.v1.CreatePodCommand.ConfigValuesEntryR\fconfigValues\x12N\n" +
+	" \x03(\v2\x1d.runner.v1.ResourceToDownloadR\x13resourcesToDownload\x12)\n" +
+	"\x10interaction_mode\x18\v \x01(\tR\x0finteractionMode\x12)\n" +
+	"\x0epodfile_source\x18\f \x01(\tB\x02\x18\x01R\rpodfileSource\x12V\n" +
+	"\rconfig_values\x18\r \x03(\v2-.runner.v1.CreatePodCommand.ConfigValuesEntryB\x02\x18\x01R\fconfigValues\x12N\n" +
 	"\vcredentials\x18\x0e \x03(\v2,.runner.v1.CreatePodCommand.CredentialsEntryR\vcredentials\x12$\n" +
-	"\x0eis_runner_host\x18\x0f \x01(\bR\fisRunnerHost\x12\x19\n" +
-	"\bmcp_port\x18\x10 \x01(\x05R\amcpPort\x12(\n" +
-	"\x10mcp_builtin_json\x18\x11 \x01(\tR\x0emcpBuiltinJson\x12,\n" +
-	"\x12mcp_installed_json\x18\x12 \x01(\tR\x10mcpInstalledJson\x1a:\n" +
+	"\x0eis_runner_host\x18\x0f \x01(\bR\fisRunnerHost\x12\x1d\n" +
+	"\bmcp_port\x18\x10 \x01(\x05B\x02\x18\x01R\amcpPort\x12,\n" +
+	"\x10mcp_builtin_json\x18\x11 \x01(\tB\x02\x18\x01R\x0emcpBuiltinJson\x120\n" +
+	"\x12mcp_installed_json\x18\x12 \x01(\tB\x02\x18\x01R\x10mcpInstalledJson\x12\x16\n" +
+	"\x06prompt\x18\x13 \x01(\tR\x06prompt\x12'\n" +
+	"\x0fprompt_position\x18\x14 \x01(\tR\x0epromptPosition\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a?\n" +

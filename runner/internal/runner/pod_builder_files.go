@@ -81,7 +81,7 @@ func (b *PodBuilder) createFiles(sandboxRoot, workDir string) error {
 }
 
 // createFilesFromProto creates files from a proto FileToCreate list.
-// Used by PodFile mode where paths are already resolved.
+// Paths may contain placeholders ({{sandbox_root}}, {{work_dir}}) which are resolved before use.
 func (b *PodBuilder) createFilesFromProto(files []*runnerv1.FileToCreate, sandboxRoot, workDir string) error {
 	if len(files) == 0 {
 		return nil
@@ -97,7 +97,9 @@ func (b *PodBuilder) createFilesFromProto(files []*runnerv1.FileToCreate, sandbo
 	absSandbox = filepath.Clean(absSandbox)
 
 	for _, f := range files {
-		path := f.Path
+		// Resolve path placeholders before validation
+		path := resolvePathPlaceholders(f.Path, sandboxRoot, workDir)
+		content := resolvePathPlaceholders(f.Content, sandboxRoot, workDir)
 
 		absPath, err := filepath.Abs(path)
 		if err != nil {
@@ -137,7 +139,7 @@ func (b *PodBuilder) createFilesFromProto(files []*runnerv1.FileToCreate, sandbo
 		if f.Mode != 0 {
 			mode = os.FileMode(f.Mode)
 		}
-		if err := os.WriteFile(path, []byte(f.Content), mode); err != nil {
+		if err := os.WriteFile(path, []byte(content), mode); err != nil {
 			return &client.PodError{
 				Code:    client.ErrCodeFileCreate,
 				Message: fmt.Sprintf("failed to write file: %v", err),

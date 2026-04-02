@@ -83,14 +83,13 @@ func TestPodChain_PodfileLayerToCommand(t *testing.T) {
 	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode)
 	assert.Equal(t, "do something", dbPod.InitialPrompt)
 
-	// Verify gRPC command content
+	// Verify gRPC command content — Backend eval produces execution instructions
 	cmd := coord.lastCmd
 	require.NotNil(t, cmd)
 	assert.Equal(t, result.Pod.PodKey, cmd.PodKey)
-	assert.Equal(t, "do something", cmd.InitialPrompt)
-	assert.NotEmpty(t, cmd.PodfileSource, "merged podfile source must be sent to runner")
-	assert.Contains(t, cmd.PodfileSource, "MODE acp", "merged source should reflect layer override")
-	assert.Contains(t, cmd.PodfileSource, "BRANCH", "merged source should include BRANCH")
+	assert.Equal(t, "claude", cmd.LaunchCommand)
+	assert.Equal(t, "acp", cmd.InteractionMode, "MODE acp from layer should be reflected")
+	assert.Equal(t, "do something", cmd.Prompt)
 	assert.Equal(t, int32(120), cmd.Cols)
 	assert.Equal(t, int32(40), cmd.Rows)
 

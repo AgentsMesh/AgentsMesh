@@ -36,7 +36,6 @@ export function buildPodfileLayer(params: {
   configValues: Record<string, unknown>;
   repositorySlug?: string;
   branchName?: string;
-  credentialType?: string;
   interactionMode?: string;
   credentialProfileName?: string;
   prompt?: string;
@@ -71,9 +70,6 @@ export function buildPodfileLayer(params: {
   }
   if (params.branchName) {
     lines.push(`BRANCH "${params.branchName}"`);
-  }
-  if (params.credentialType) {
-    lines.push(`GIT_CREDENTIAL ${params.credentialType}`);
   }
 
   return lines.join("\n");

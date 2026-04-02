@@ -80,6 +80,11 @@ type ConfigBuildRequest struct {
 	// Populated by orchestrator's extractFromPodfileLayer when PodfileLayer is provided.
 	// When empty (resume mode or no layer): buildFromPodFile falls back to agent's base PodFile.
 	MergedPodfileSource string
+
+	// CredentialProfile is the CREDENTIAL declaration value extracted from merged PodFile.
+	// Pre-extracted by orchestrator to avoid re-parsing PodFile in ConfigBuilder.
+	// When non-empty, overrides CredentialProfileID for credential resolution.
+	CredentialProfile string
 }
 
 // ConfigSchemaResponse is the config schema returned to frontend

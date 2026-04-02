@@ -101,45 +101,53 @@ type AgentResolverForOrchestrator interface {
 	GetAgent(ctx context.Context, slug string) (*agentDomain.Agent, error)
 }
 
+// UserConfigQueryForOrchestrator provides user's personal agent config preferences.
+type UserConfigQueryForOrchestrator interface {
+	GetUserConfigPrefs(ctx context.Context, userID int64, agentSlug string) map[string]interface{}
+}
+
 // PodOrchestratorDeps holds all dependencies for PodOrchestrator.
 type PodOrchestratorDeps struct {
-	PodService     *PodService
-	ConfigBuilder  *agent.ConfigBuilder
-	PodCoordinator PodCoordinatorForOrchestrator
-	BillingService BillingServiceForOrchestrator
-	UserService    UserServiceForOrchestrator
-	RepoService    RepositoryServiceForOrchestrator
-	TicketService  TicketServiceForOrchestrator
-	RunnerSelector RunnerSelectorForOrchestrator
-	AgentResolver  AgentResolverForOrchestrator
-	RunnerQuery    RunnerQueryForOrchestrator
+	PodService      *PodService
+	ConfigBuilder   *agent.ConfigBuilder
+	PodCoordinator  PodCoordinatorForOrchestrator
+	BillingService  BillingServiceForOrchestrator
+	UserService     UserServiceForOrchestrator
+	RepoService     RepositoryServiceForOrchestrator
+	TicketService   TicketServiceForOrchestrator
+	RunnerSelector  RunnerSelectorForOrchestrator
+	AgentResolver   AgentResolverForOrchestrator
+	RunnerQuery     RunnerQueryForOrchestrator
+	UserConfigQuery UserConfigQueryForOrchestrator
 }
 
 // PodOrchestrator encapsulates the complete Pod creation workflow.
 type PodOrchestrator struct {
-	podService     *PodService
-	configBuilder  *agent.ConfigBuilder
-	podCoordinator PodCoordinatorForOrchestrator
-	billingService BillingServiceForOrchestrator
-	userService    UserServiceForOrchestrator
-	repoService    RepositoryServiceForOrchestrator
-	ticketService  TicketServiceForOrchestrator
-	runnerSelector RunnerSelectorForOrchestrator
-	agentResolver  AgentResolverForOrchestrator
-	runnerQuery    RunnerQueryForOrchestrator
+	podService      *PodService
+	configBuilder   *agent.ConfigBuilder
+	podCoordinator  PodCoordinatorForOrchestrator
+	billingService  BillingServiceForOrchestrator
+	userService     UserServiceForOrchestrator
+	repoService     RepositoryServiceForOrchestrator
+	ticketService   TicketServiceForOrchestrator
+	runnerSelector  RunnerSelectorForOrchestrator
+	agentResolver   AgentResolverForOrchestrator
+	runnerQuery     RunnerQueryForOrchestrator
+	userConfigQuery UserConfigQueryForOrchestrator
 }
 
 func NewPodOrchestrator(deps *PodOrchestratorDeps) *PodOrchestrator {
 	return &PodOrchestrator{
-		podService:     deps.PodService,
-		configBuilder:  deps.ConfigBuilder,
-		podCoordinator: deps.PodCoordinator,
-		billingService: deps.BillingService,
-		userService:    deps.UserService,
-		repoService:    deps.RepoService,
-		ticketService:  deps.TicketService,
-		runnerSelector: deps.RunnerSelector,
-		agentResolver:  deps.AgentResolver,
-		runnerQuery:    deps.RunnerQuery,
+		podService:      deps.PodService,
+		configBuilder:   deps.ConfigBuilder,
+		podCoordinator:  deps.PodCoordinator,
+		billingService:  deps.BillingService,
+		userService:     deps.UserService,
+		repoService:     deps.RepoService,
+		ticketService:   deps.TicketService,
+		runnerSelector:  deps.RunnerSelector,
+		agentResolver:   deps.AgentResolver,
+		runnerQuery:     deps.RunnerQuery,
+		userConfigQuery: deps.UserConfigQuery,
 	}
 }

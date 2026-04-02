@@ -61,13 +61,9 @@ func (o *PodOrchestrator) handleResumeMode(ctx context.Context, req *Orchestrate
 	}
 
 	resumeAgentSession := req.ResumeAgentSession == nil || *req.ResumeAgentSession
-	if resumeAgentSession {
-		if req.ConfigOverrides == nil {
-			req.ConfigOverrides = make(map[string]interface{})
-		}
-		req.ConfigOverrides["resume_enabled"] = true
-		req.ConfigOverrides["resume_session"] = sessionID
-	}
+	// Resume fields (resume_enabled, resume_session) are injected into PodFile
+	// via systemOverrides in CreatePod, not through ConfigOverrides.
+	_ = resumeAgentSession
 
 	return sourcePod, sessionID, nil
 }

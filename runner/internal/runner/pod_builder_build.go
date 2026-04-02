@@ -16,6 +16,8 @@ import (
 )
 
 // Build creates the pod.
+// The CreatePodCommand carries pre-evaluated execution instructions from Backend.
+// Runner only resolves path placeholders ({{sandbox_root}}, {{work_dir}}) and executes.
 func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	if b.cmd == nil {
 		return nil, fmt.Errorf("command is required")
@@ -23,10 +25,10 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	if b.cmd.PodKey == "" {
 		return nil, fmt.Errorf("pod key is required")
 	}
-	if b.cmd.PodfileSource == "" {
+	if b.cmd.LaunchCommand == "" {
 		return nil, &client.PodError{
 			Code:    client.ErrCodePodfileEval,
-			Message: "podfile source is required",
+			Message: "launch_command is required (Backend PodFile eval should populate this)",
 		}
 	}
 
@@ -40,29 +42,35 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 		return nil, err
 	}
 
-	pfResult, err := ExecutePodFile(b.cmd, sandboxRoot, workingDir)
-	if err != nil {
-		return nil, &client.PodError{
-			Code:    client.ErrCodePodfileEval,
-			Message: fmt.Sprintf("podfile eval failed: %v", err),
-		}
-	}
-	launchCommand = pfResult.LaunchCommand
-	resolvedArgs := pfResult.LaunchArgs
-
-	// MODE from PodFile eval (SSOT)
-	interactionMode := pfResult.Mode
-	if interactionMode == "" {
-		interactionMode = InteractionModePTY
-	}
-
-	if err := b.createFilesFromProto(pfResult.FilesToCreate, sandboxRoot, workingDir); err != nil {
+	// Resolve path placeholders in args, env vars, and files
+	resolvedArgs := resolveStringSlice(b.cmd.LaunchArgs, sandboxRoot, workingDir)
+	if err := b.createFilesFromProto(b.cmd.FilesToCreate, sandboxRoot, workingDir); err != nil {
 		return nil, err
 	}
 
 	envVars := b.mergeEnvVars(sandboxRoot)
-	for k, v := range pfResult.EnvVars {
-		envVars[k] = v
+	for k, v := range b.cmd.EnvVars {
+		envVars[k] = resolvePathPlaceholders(v, sandboxRoot, workingDir)
+	}
+
+	// Handle prompt injection into args
+	prompt := b.cmd.Prompt
+	if prompt == "" {
+		prompt = b.cmd.GetInitialPrompt() //nolint:staticcheck // deprecated fallback
+	}
+	if prompt != "" {
+		switch b.cmd.PromptPosition {
+		case "prepend":
+			resolvedArgs = append([]string{prompt}, resolvedArgs...)
+		case "append":
+			resolvedArgs = append(resolvedArgs, prompt)
+		}
+	}
+
+	// Determine interaction mode
+	interactionMode := b.cmd.InteractionMode
+	if interactionMode == "" {
+		interactionMode = InteractionModePTY
 	}
 
 	logger.Pod().Debug("Resolved launch args", "pod_key", b.cmd.PodKey, "args", resolvedArgs)
@@ -180,9 +188,26 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 	return pod, nil
 }
 
+// resolvePathPlaceholders substitutes sandbox path placeholders with real paths.
+// Supports both new format ({{sandbox_root}}) and legacy format ({{.sandbox.root_path}}).
+func resolvePathPlaceholders(s, sandboxRoot, workDir string) string {
+	s = strings.ReplaceAll(s, "{{sandbox_root}}", sandboxRoot)
+	s = strings.ReplaceAll(s, "{{work_dir}}", workDir)
+	// Legacy placeholder format (for ResourceToDownload.TargetPath compatibility)
+	s = strings.ReplaceAll(s, "{{.sandbox.root_path}}", sandboxRoot)
+	s = strings.ReplaceAll(s, "{{.sandbox.work_dir}}", workDir)
+	return s
+}
+
+// resolveStringSlice resolves placeholders in a string slice.
+func resolveStringSlice(ss []string, sandboxRoot, workDir string) []string {
+	result := make([]string, len(ss))
+	for i, s := range ss {
+		result[i] = resolvePathPlaceholders(s, sandboxRoot, workDir)
+	}
+	return result
+}
+
 func (b *PodBuilder) resolvePath(pathTemplate, sandboxRoot, workDir string) string {
-	path := pathTemplate
-	path = strings.ReplaceAll(path, "{{.sandbox.root_path}}", sandboxRoot)
-	path = strings.ReplaceAll(path, "{{.sandbox.work_dir}}", workDir)
-	return path
+	return resolvePathPlaceholders(pathTemplate, sandboxRoot, workDir)
 }

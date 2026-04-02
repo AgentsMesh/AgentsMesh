@@ -46,6 +46,16 @@ func (s *UserConfigService) GetUserAgentConfig(ctx context.Context, userID int64
 	return config, nil
 }
 
+// GetUserConfigPrefs returns the user's personal config preferences as a plain map.
+// Implements UserConfigQueryForOrchestrator for PodFile resolve integration.
+func (s *UserConfigService) GetUserConfigPrefs(ctx context.Context, userID int64, agentSlug string) map[string]interface{} {
+	config, err := s.GetUserAgentConfig(ctx, userID, agentSlug)
+	if err != nil || config == nil {
+		return nil
+	}
+	return map[string]interface{}(config.ConfigValues)
+}
+
 // SetUserAgentConfig sets the user's personal config for an agent
 func (s *UserConfigService) SetUserAgentConfig(ctx context.Context, userID int64, agentSlug string, configValues agent.ConfigValues) (*agent.UserAgentConfig, error) {
 	// Verify agent exists

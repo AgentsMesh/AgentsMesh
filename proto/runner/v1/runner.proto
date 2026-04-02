@@ -219,26 +219,37 @@ message AgentInfo {
 }
 
 // CreatePodCommand 创建 Pod 命令
+// Backend 完成 PodFile eval（parse+merge+resolve+eval），通过此消息发送最终执行指令。
+// Runner 只需替换路径占位符（{{sandbox_root}}, {{work_dir}}）后直接执行。
 message CreatePodCommand {
   string pod_key = 1;
-  string launch_command = 2;
-  repeated string launch_args = 3;
-  map<string, string> env_vars = 4;
-  repeated FileToCreate files_to_create = 5;
-  SandboxConfig sandbox_config = 6;  // 替代原 work_dir_config
-  string initial_prompt = 7 [deprecated = true];  // Deprecated: Runner reads PROMPT from PodFile eval
-  int32 cols = 8;  // 终端列数（由浏览器传入）
-  int32 rows = 9;  // 终端行数（由浏览器传入）
-  repeated ResourceToDownload resources_to_download = 10;  // 需要下载的资源（Skills 等）
-  string interaction_mode = 11 [deprecated = true];  // Deprecated: Runner reads MODE from PodFile eval
-  // PodFile 相关字段（Runner eval PodFile 需要的上下文）
-  string podfile_source = 12;              // PodFile 脚本源代码
-  map<string, string> config_values = 13;  // 用户配置值
-  map<string, string> credentials = 14;    // 加密凭证
+
+  // 执行指令（Backend PodFile eval 产出）
+  string launch_command = 2;                                 // AGENT 声明的命令（如 "claude"）
+  repeated string launch_args = 3;                           // arg 语句 + MODE args 的最终参数列表
+  map<string, string> env_vars = 4;                          // ENV 声明产出的环境变量
+  repeated FileToCreate files_to_create = 5;                 // file/mkdir 语句产出的文件列表
+  SandboxConfig sandbox_config = 6;                          // 沙箱/Git 配置
+  string initial_prompt = 7 [deprecated = true];             // Deprecated: 使用 prompt 字段
+  int32 cols = 8;                                            // 终端列数（由浏览器传入）
+  int32 rows = 9;                                            // 终端行数（由浏览器传入）
+  repeated ResourceToDownload resources_to_download = 10;    // Skills 等资源下载
+  string interaction_mode = 11;                              // MODE 声明："pty" 或 "acp"
+
+  // 废弃字段（保留 field number，Runner 不再读取）
+  string podfile_source = 12 [deprecated = true];            // Deprecated: eval 已在 Backend 完成
+  map<string, string> config_values = 13 [deprecated = true]; // Deprecated: CONFIG 值已 eval 到 launch_args/env_vars/files
+
+  // 运行时上下文（Backend 注入，Runner 直接使用）
+  map<string, string> credentials = 14;    // 解密后的凭证
   bool is_runner_host = 15;                // 是否使用 Runner 本机凭证
-  int32 mcp_port = 16;                     // MCP 端口
-  string mcp_builtin_json = 17;            // JSON: 内建 MCP 服务器配置
-  string mcp_installed_json = 18;          // JSON: 已安装 MCP 服务器配置
+  int32 mcp_port = 16 [deprecated = true]; // Deprecated: MCP 端口已 eval 到文件内容中
+  string mcp_builtin_json = 17 [deprecated = true];  // Deprecated: MCP 配置已 eval 到 files_to_create
+  string mcp_installed_json = 18 [deprecated = true]; // Deprecated: MCP 配置已 eval 到 files_to_create
+
+  // PodFile eval 产出的新字段
+  string prompt = 19;                      // PROMPT 声明的初始提示内容
+  string prompt_position = 20;             // PROMPT_POSITION 声明："prepend"/"append"/"none"
 }
 
 // ResourceToDownload 需要下载的资源描述

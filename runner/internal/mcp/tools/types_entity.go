@@ -175,17 +175,18 @@ type Repository struct {
 // PodCreateRequest represents a request to create a new pod.
 type PodCreateRequest struct {
 	RunnerID            int                    `json:"runner_id,omitempty"`
-	AgentSlug         string `json:"agent_slug,omitempty"` // Required by backend API
+	AgentSlug           string                 `json:"agent_slug,omitempty"`
 	TicketSlug          *string                `json:"ticket_slug,omitempty"`
-	InitialPrompt       string                 `json:"initial_prompt,omitempty"`
-	Alias               *string                `json:"alias,omitempty"` // User-defined display name (max 100 chars)
-	Model               string                 `json:"model,omitempty"`
-	RepositoryID        *int64                 `json:"repository_id,omitempty"`        // Repository ID (mutually exclusive with repository_url)
-	RepositoryURL       *string                `json:"repository_url,omitempty"`       // Direct repository URL (takes precedence over repository_id)
-	BranchName          *string                `json:"branch_name,omitempty"`          // Git branch name
-	CredentialProfileID *int64                 `json:"credential_profile_id,omitempty"` // Credential profile ID (0 or nil = RunnerHost mode)
-	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"`     // Override agent default configuration
-	PermissionMode      *string                `json:"permission_mode,omitempty"`      // "plan", "default", or "bypassPermissions"
+	InitialPrompt       string                 `json:"initial_prompt,omitempty"`       // Deprecated: use PodFile PROMPT declaration
+	Alias               *string                `json:"alias,omitempty"`
+	Model               string                 `json:"model,omitempty"`                // Deprecated: use PodFile CONFIG model
+	RepositoryID        *int64                 `json:"repository_id,omitempty"`
+	RepositoryURL       *string                `json:"repository_url,omitempty"`
+	BranchName          *string                `json:"branch_name,omitempty"`
+	CredentialProfileID *int64                 `json:"credential_profile_id,omitempty"`
+	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"`     // Deprecated: use PodFile CONFIG declarations via PodfileLayer
+	PermissionMode      *string                `json:"permission_mode,omitempty"`      // Deprecated: use PodFile CONFIG permission_mode
+	PodfileLayer        *string                `json:"podfile_layer,omitempty"`        // PodFile Layer — SSOT for all CONFIG values
 }
 
 // PodCreateResponse represents the response from creating a pod.

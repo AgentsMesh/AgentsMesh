@@ -57,6 +57,7 @@ func TestConfigBuilder_BuildBasicCommand(t *testing.T) {
 		AgentSlug:           "test-agent",
 		PodKey:              "pod-basic-1",
 		MergedPodfileSource: podfile,
+		MCPPort:             19000,
 		Cols:                120,
 		Rows:                40,
 	})
@@ -64,25 +65,22 @@ func TestConfigBuilder_BuildBasicCommand(t *testing.T) {
 	require.NotNil(t, cmd)
 
 	assert.Equal(t, "pod-basic-1", cmd.PodKey)
-	assert.Equal(t, podfile, cmd.PodfileSource)
+	assert.Equal(t, "test-agent", cmd.LaunchCommand)
+	assert.Equal(t, "pty", cmd.InteractionMode)
 	assert.Equal(t, int32(120), cmd.Cols)
 	assert.Equal(t, int32(40), cmd.Rows)
-	// No credentials → map should be nil
 	assert.Nil(t, cmd.Credentials)
-	// No sandbox config when no repo is specified
 	assert.Nil(t, cmd.SandboxConfig)
 }
 
 func TestConfigBuilder_WithCredentials(t *testing.T) {
 	ip, db := newIntegrationProvider(t)
 
-	podfile := "AGENT cred-agent\nEXECUTABLE cred-agent\nMODE pty"
+	podfile := "AGENT cred-agent\nEXECUTABLE cred-agent\nMODE pty\nENV API_KEY SECRET"
 	seedAgent(t, db, "cred-agent", podfile)
 
-	// Create a user
 	userID := testutil.CreateUser(t, db, "cred-user@test.com", "creduser")
 
-	// Create a credential profile with encrypted credentials
 	agentSvc := NewAgentService(infra.NewAgentRepository(db))
 	credSvc := NewCredentialProfileService(
 		infra.NewCredentialProfileRepository(db),
@@ -105,54 +103,63 @@ func TestConfigBuilder_WithCredentials(t *testing.T) {
 		UserID:              userID,
 		PodKey:              "pod-cred-1",
 		MergedPodfileSource: podfile,
+		MCPPort:             19000,
 		Cols:                80,
 		Rows:                24,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
 
-	// Should have credentials populated (encrypted values)
+	// Credentials injected into env_vars via PodFile eval (ENV API_KEY SECRET)
 	require.NotNil(t, cmd.Credentials)
 	assert.Contains(t, cmd.Credentials, "API_KEY")
-	assert.NotEmpty(t, cmd.Credentials["API_KEY"])
 }
 
-func TestConfigBuilder_PodfileMerge(t *testing.T) {
+func TestConfigBuilder_EvalProducesCorrectOutput(t *testing.T) {
 	ip, db := newIntegrationProvider(t)
 
-	basePodfile := "AGENT merge-agent\nEXECUTABLE merge-agent\nMODE pty"
-	seedAgent(t, db, "merge-agent", basePodfile)
+	podfile := `AGENT merge-agent
+EXECUTABLE merge-agent
+MODE acp
+CONFIG model STRING = "opus"
+arg "--model" config.model when config.model != ""
+PROMPT_POSITION prepend
+`
+	seedAgent(t, db, "merge-agent", podfile)
 
 	builder := NewConfigBuilder(ip.configProvider())
 
-	// Simulate merged podfile (orchestrator merges base + layer before calling builder)
-	mergedSource := "AGENT merge-agent\nEXECUTABLE merge-agent\nMODE acp\nENV FOO=bar"
-
 	cmd, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
 		AgentSlug:           "merge-agent",
-		PodKey:              "pod-merge-1",
-		MergedPodfileSource: mergedSource,
+		PodKey:              "pod-eval-1",
+		MergedPodfileSource: podfile,
+		MCPPort:             19000,
 		Cols:                80,
 		Rows:                24,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
 
-	// Builder should use the merged source directly
-	assert.Equal(t, mergedSource, cmd.PodfileSource)
-	assert.Contains(t, cmd.PodfileSource, "MODE acp")
-	assert.Contains(t, cmd.PodfileSource, "ENV FOO=bar")
+	// Eval produces launch_command from AGENT declaration
+	assert.Equal(t, "merge-agent", cmd.LaunchCommand)
+	// Eval produces interaction_mode from MODE declaration
+	assert.Equal(t, "acp", cmd.InteractionMode)
+	// Eval produces launch_args from arg statements (config.model = "opus")
+	assert.Contains(t, cmd.LaunchArgs, "--model")
+	assert.Contains(t, cmd.LaunchArgs, "opus")
+	// Eval produces prompt_position from PROMPT_POSITION declaration
+	assert.Equal(t, "prepend", cmd.PromptPosition)
 
 	// Resume fallback: empty MergedPodfileSource → uses base PodFile
+	basePodfile := "AGENT merge-agent\nEXECUTABLE merge-agent\nMODE pty"
+	seedAgent(t, db, "resume-agent", basePodfile)
 	cmdResume, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
-		AgentSlug:           "merge-agent",
-		PodKey:              "pod-resume-1",
-		MergedPodfileSource: "", // empty = resume mode
-		Cols:                80,
-		Rows:                24,
+		AgentSlug: "resume-agent",
+		PodKey:    "pod-resume-1",
+		MCPPort:   19000,
+		Cols:      80,
+		Rows:      24,
 	})
 	require.NoError(t, err)
-	require.NotNil(t, cmdResume)
-	assert.Contains(t, cmdResume.PodfileSource, "MODE pty")
-	assert.NotContains(t, cmdResume.PodfileSource, "MODE acp")
+	assert.Equal(t, "pty", cmdResume.InteractionMode)
 }

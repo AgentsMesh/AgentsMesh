@@ -6,6 +6,7 @@ import (
 	"github.com/anthropics/agentsmesh/podfile/extract"
 	"github.com/anthropics/agentsmesh/podfile/merge"
 	"github.com/anthropics/agentsmesh/podfile/parser"
+	"github.com/anthropics/agentsmesh/podfile/resolve"
 	"github.com/anthropics/agentsmesh/podfile/serialize"
 )
 
@@ -20,14 +21,18 @@ type podfileExtractResult struct {
 	RepoSlug          string // REPO "slug" (e.g., "dev-org/demo-api")
 	PermissionMode    string // CONFIG permission_mode = "plan"
 	Prompt            string // PROMPT "initial prompt content"
-	// Merged PodFile source (for Runner, avoids re-parsing in ConfigBuilder)
+	// Merged PodFile source (for Runner, avoids re-parsing in ConfigBuilder).
+	// CONFIG declarations contain final resolved values (post-resolve).
 	MergedPodfileSource string
 }
 
 // extractFromPodfileLayer parses the agent base PodFile and user layer,
-// merges them, serializes the result, and extracts declaration values.
-// Single-pass: parse + merge + serialize + extract — all in one place.
-func extractFromPodfileLayer(basePodfileSrc, userLayerSrc string) (*podfileExtractResult, error) {
+// merges them, resolves CONFIG values, serializes the result, and extracts declarations.
+// Single-pass: parse + merge + resolve + serialize + extract — all in one place.
+func extractFromPodfileLayer(
+	basePodfileSrc, userLayerSrc string,
+	userPrefs, systemOverrides map[string]interface{},
+) (*podfileExtractResult, error) {
 	baseProg, baseErrs := parser.Parse(basePodfileSrc)
 	if len(baseErrs) > 0 {
 		return nil, fmt.Errorf("base podfile parse error: %v", baseErrs[0])
@@ -38,7 +43,13 @@ func extractFromPodfileLayer(basePodfileSrc, userLayerSrc string) (*podfileExtra
 		return nil, fmt.Errorf("%w: %v", ErrInvalidPodfileLayer, userErrs[0])
 	}
 
+	// Track which CONFIG fields were explicitly set in the user's Layer.
+	layerConfigNames := resolve.ExtractConfigNames(userProg)
+
 	merge.Merge(baseProg, userProg)
+
+	// Inject final config values: system > layer > userPrefs > base defaults.
+	resolve.ResolveConfigValues(baseProg, layerConfigNames, userPrefs, systemOverrides)
 
 	mergedSource := serialize.Serialize(baseProg)
 	spec := extract.Extract(baseProg)

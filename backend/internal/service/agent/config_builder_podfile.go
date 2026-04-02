@@ -2,18 +2,25 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/podfile/extract"
+	"github.com/anthropics/agentsmesh/podfile/eval"
 	"github.com/anthropics/agentsmesh/podfile/parser"
+	"github.com/anthropics/agentsmesh/podfile/resolve"
+	"github.com/anthropics/agentsmesh/podfile/serialize"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// buildFromPodFile builds the CreatePodCommand from PodFile source + context.
-// MergedPodfileSource (from orchestrator) is preferred. Falls back to base PodFile for resume mode.
+// Sandbox path placeholders — Runner replaces with real paths after sandbox setup.
+const (
+	PlaceholderSandboxRoot = "{{sandbox_root}}"
+	PlaceholderWorkDir     = "{{work_dir}}"
+)
+
+// buildFromPodFile evaluates the agent's PodFile with placeholder sandbox paths
+// and produces a complete CreatePodCommand. Runner only needs to substitute
+// placeholders with real paths — no PodFile parsing needed on Runner side.
 func (b *ConfigBuilder) buildFromPodFile(
 	ctx context.Context,
 	req *ConfigBuildRequest,
@@ -21,26 +28,27 @@ func (b *ConfigBuilder) buildFromPodFile(
 ) (*runnerv1.CreatePodCommand, error) {
 	mergedSource := req.MergedPodfileSource
 	if mergedSource == "" {
-		// Resume mode or no PodfileLayer: use base PodFile directly
+		// Fallback: no PodFile Layer (resume mode). Resolve ConfigOverrides into base PodFile.
 		if agentDef.PodfileSource == nil {
 			return nil, fmt.Errorf("agent %s has no podfile source", req.AgentSlug)
 		}
-		mergedSource = *agentDef.PodfileSource
+		baseProg, errs := parser.Parse(*agentDef.PodfileSource)
+		if len(errs) > 0 {
+			return nil, fmt.Errorf("podfile parse error: %v", errs[0])
+		}
+		// Fallback: no PodFile Layer (resume mode).
+		// userPrefs intentionally omitted — resume continues the previous Pod's config,
+		// not the user's current preferences.
+		resolve.ResolveConfigValues(baseProg, nil, nil, req.ConfigOverrides)
+		mergedSource = serialize.Serialize(baseProg)
 	}
 
-	// Extract CREDENTIAL from merged source
-	prog, errs := parser.Parse(mergedSource)
-	if len(errs) > 0 {
-		return nil, fmt.Errorf("podfile parse error: %v", errs[0])
-	}
-	spec := extract.Extract(prog)
-
-	// Get credentials — PodFile CREDENTIAL overrides req.CredentialProfileID
+	// Get credentials
 	var creds agent.EncryptedCredentials
 	var isRunnerHost bool
 	var err error
-	if spec.CredentialProfile != "" {
-		creds, isRunnerHost, err = b.provider.ResolveCredentialsByName(ctx, req.UserID, req.AgentSlug, spec.CredentialProfile)
+	if req.CredentialProfile != "" {
+		creds, isRunnerHost, err = b.provider.ResolveCredentialsByName(ctx, req.UserID, req.AgentSlug, req.CredentialProfile)
 	} else {
 		creds, isRunnerHost, err = b.provider.GetEffectiveCredentialsForPod(ctx, req.UserID, req.AgentSlug, req.CredentialProfileID)
 	}
@@ -48,116 +56,21 @@ func (b *ConfigBuilder) buildFromPodFile(
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
 
-	// Build MCP context as JSON
+	// Build MCP context
 	builtinMCP, installedMCP := b.buildMCPContext(ctx, req, agentDef.Slug)
-	builtinJSON, _ := json.Marshal(builtinMCP)
-	installedJSON, _ := json.Marshal(installedMCP)
 
-	// Convert config values to string map for proto
-	config := b.provider.GetUserEffectiveConfig(ctx, req.UserID, req.AgentSlug, agent.ConfigValues(req.ConfigOverrides))
-	configValues := configToStringMap(config)
-
-	// Build sandbox config (repo/branch/git creds)
-	sandboxConfig := b.buildSandboxConfig(req)
-
-	return &runnerv1.CreatePodCommand{
-		PodKey:           req.PodKey,
-		PodfileSource:    mergedSource,
-		ConfigValues:     configValues,
-		Credentials:      credentialsToMap(creds),
-		IsRunnerHost:     isRunnerHost,
-		McpPort:          int32(req.MCPPort),
-		McpBuiltinJson:   string(builtinJSON),
-		McpInstalledJson: string(installedJSON),
-		SandboxConfig:    sandboxConfig,
-		InitialPrompt:    req.InitialPrompt,
-		Cols:             req.Cols,
-		Rows:             req.Rows,
-	}, nil
-}
-
-func configToStringMap(config agent.ConfigValues) map[string]string {
-	result := make(map[string]string, len(config))
-	for k, v := range config {
-		switch val := v.(type) {
-		case string:
-			result[k] = val
-		case bool:
-			result[k] = fmt.Sprintf("%t", val)
-		case float64:
-			result[k] = fmt.Sprintf("%v", val)
-		default:
-			b, _ := json.Marshal(val)
-			result[k] = string(b)
-		}
-	}
-	return result
-}
-
-// buildSandboxConfig builds sandbox config from request fields.
-func (b *ConfigBuilder) buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.SandboxConfig {
-	repoURL := req.RepositoryURL
-	if repoURL == "" && req.HttpCloneURL == "" && req.SshCloneURL == "" && req.LocalPath == "" {
-		return nil
+	// Parse and eval PodFile with placeholder context
+	prog, errs := parser.Parse(mergedSource)
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("podfile parse error: %v", errs[0])
 	}
 
-	timeout := int32(req.PreparationTimeout)
-	if timeout <= 0 {
-		timeout = 300
+	evalCtx := buildEvalContext(req, creds, isRunnerHost, builtinMCP, installedMCP)
+	if err := eval.Eval(prog, evalCtx); err != nil {
+		return nil, fmt.Errorf("podfile eval error: %w", err)
 	}
+	eval.ApplyModeArgs(evalCtx.Result)
+	eval.ApplyRemoves(evalCtx.Result)
 
-	return &runnerv1.SandboxConfig{
-		RepositoryUrl:      repoURL,
-		HttpCloneUrl:       req.HttpCloneURL,
-		SshCloneUrl:        req.SshCloneURL,
-		SourceBranch:       req.SourceBranch,
-		CredentialType:     req.CredentialType,
-		GitToken:           req.GitToken,
-		SshPrivateKey:      req.SSHPrivateKey,
-		TicketSlug:         req.TicketSlug,
-		PreparationScript:  req.PreparationScript,
-		PreparationTimeout: timeout,
-		LocalPath:          req.LocalPath,
-	}
-}
-
-// buildMCPContext loads MCP server configurations.
-func (b *ConfigBuilder) buildMCPContext(ctx context.Context, req *ConfigBuildRequest, agentSlug string) (map[string]interface{}, map[string]interface{}) {
-	builtinMCP := map[string]interface{}{
-		"agentsmesh": map[string]interface{}{
-			"type": "http",
-			"url":  fmt.Sprintf("http://127.0.0.1:%d/mcp", req.MCPPort),
-			"headers": map[string]interface{}{
-				"X-Pod-Key": req.PodKey,
-			},
-		},
-	}
-
-	installedMCP := map[string]interface{}{}
-	if b.extensionProvider != nil && req.RepositoryID != nil {
-		servers, err := b.extensionProvider.GetEffectiveMcpServers(ctx, req.OrganizationID, req.UserID, *req.RepositoryID, agentSlug)
-		if err != nil {
-			slog.Warn("Failed to load MCP servers for podfile", "error", err)
-		} else {
-			for _, srv := range servers {
-				if !srv.IsEnabled {
-					continue
-				}
-				installedMCP[srv.Slug] = srv.ToMcpConfig()
-			}
-		}
-	}
-
-	return builtinMCP, installedMCP
-}
-
-func credentialsToMap(creds agent.EncryptedCredentials) map[string]string {
-	if creds == nil {
-		return nil
-	}
-	result := make(map[string]string, len(creds))
-	for k, v := range creds {
-		result[k] = v
-	}
-	return result
+	return buildResultToProto(req, evalCtx.Result, creds, isRunnerHost), nil
 }

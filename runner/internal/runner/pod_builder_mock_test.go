@@ -247,8 +247,8 @@ func TestPodBuilderBuildEmptyLaunchCommand(t *testing.T) {
 		t.Error("expected error for empty launch command")
 	}
 
-	if !contains(err.Error(), "podfile source is required") {
-		t.Errorf("error = %v, want containing 'podfile source is required'", err)
+	if !contains(err.Error(), "launch_command is required") {
+		t.Errorf("error = %v, want containing 'launch_command is required'", err)
 	}
 }
 

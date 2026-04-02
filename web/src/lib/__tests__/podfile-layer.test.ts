@@ -64,7 +64,6 @@ describe('buildPodfileLayer', () => {
       prompt: 'fix the bug',
       repositorySlug: 'dev-org/demo-api',
       branchName: 'develop',
-      credentialType: 'oauth',
     })
     expect(result).toContain('MODE acp')
     expect(result).toContain('CREDENTIAL "my-profile"')
@@ -73,7 +72,6 @@ describe('buildPodfileLayer', () => {
     expect(result).toContain('CONFIG permission_mode = "plan"')
     expect(result).toContain('REPO "dev-org/demo-api"')
     expect(result).toContain('BRANCH "develop"')
-    expect(result).toContain('GIT_CREDENTIAL oauth')
   })
 
   it('skips CONFIG entries with empty string values', () => {

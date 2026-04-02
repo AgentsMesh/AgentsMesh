@@ -13,26 +13,21 @@ import (
 // mcpCreatePod handles the "create_pod" MCP method.
 // Delegates to PodOrchestrator for the full creation flow (DB + config + Runner command).
 // When podfile_layer is provided, it is the SSOT for pod configuration (MODE, CONFIG, REPO, etc.).
-// Legacy fields (branch_name, permission_mode, etc.) are accepted for backward compatibility.
+// repository_id and credential_profile_id remain as separate fields (platform-level ID references).
 func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		AgentSlug          string                 `json:"agent_slug"`
-		RunnerID           int64                  `json:"runner_id"`
-		TicketSlug         *string                `json:"ticket_slug"`
-		InitialPrompt      string                 `json:"initial_prompt"`
-		Alias              *string                `json:"alias"`
-		PodfileLayer       *string                `json:"podfile_layer"`
-		Cols               int32                  `json:"cols"`
-		Rows               int32                  `json:"rows"`
-		SourcePodKey       string                 `json:"source_pod_key"`
-		ResumeAgentSession *bool                  `json:"resume_agent_session"`
-		// Legacy fields (when PodfileLayer is set, these are ignored by orchestrator)
-		RepositoryID        *int64                 `json:"repository_id"`
-		RepositoryURL       *string                `json:"repository_url"`
-		BranchName          *string                `json:"branch_name"`
-		PermissionMode      *string                `json:"permission_mode"`
-		CredentialProfileID *int64                 `json:"credential_profile_id"`
-		ConfigOverrides     map[string]interface{} `json:"config_overrides"`
+		AgentSlug           string  `json:"agent_slug"`
+		RunnerID            int64   `json:"runner_id"`
+		TicketSlug          *string `json:"ticket_slug"`
+		Alias               *string `json:"alias"`
+		PodfileLayer        *string `json:"podfile_layer"`
+		Cols                int32   `json:"cols"`
+		Rows                int32   `json:"rows"`
+		SourcePodKey        string  `json:"source_pod_key"`
+		ResumeAgentSession  *bool   `json:"resume_agent_session"`
+		// Platform-level ID references (cannot be expressed as PodFile declarations on Runner side)
+		RepositoryID        *int64  `json:"repository_id"`
+		CredentialProfileID *int64  `json:"credential_profile_id"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
@@ -45,15 +40,10 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		RunnerID:            params.RunnerID,
 		AgentSlug:           params.AgentSlug,
 		RepositoryID:        params.RepositoryID,
-		RepositoryURL:       params.RepositoryURL,
 		TicketSlug:          params.TicketSlug,
-		InitialPrompt:       params.InitialPrompt,
 		Alias:               params.Alias,
-		BranchName:          params.BranchName,
-		PermissionMode:      params.PermissionMode,
 		CredentialProfileID: params.CredentialProfileID,
 		PodfileLayer:        params.PodfileLayer,
-		ConfigOverrides:     params.ConfigOverrides,
 		Cols:                params.Cols,
 		Rows:                params.Rows,
 		SourcePodKey:        params.SourcePodKey,

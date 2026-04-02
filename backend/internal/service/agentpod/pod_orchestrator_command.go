@@ -17,23 +17,15 @@ func (o *PodOrchestrator) buildPodCommand(
 	sourcePod *podDomain.Pod,
 	isResumeMode bool,
 	mergedPodfileSource string,
+	podfileCredentialProfile string,
 ) (*runnerv1.CreatePodCommand, error) {
-	permissionMode := "plan"
-	if req.PermissionMode != nil {
-		permissionMode = *req.PermissionMode
-	} else if pod.PermissionMode != nil {
-		permissionMode = *pod.PermissionMode
-	}
-
-	// Resume mode: set local_path to source pod's sandbox path
+	// Resume mode: resolve local_path from source pod's sandbox
+	localPath := ""
 	if isResumeMode && sourcePod != nil && sourcePod.SandboxPath != nil {
-		if req.ConfigOverrides == nil {
-			req.ConfigOverrides = make(map[string]interface{})
-		}
-		req.ConfigOverrides["sandbox_local_path"] = *sourcePod.SandboxPath
+		localPath = *sourcePod.SandboxPath
 	}
 
-	// Resolve repository info
+	// Resolve repository info (skip if resuming from local path)
 	repositoryURL, httpCloneURL, sshCloneURL := "", "", ""
 	sourceBranch, preparationScript := "", ""
 	preparationTimeout := 300
@@ -86,21 +78,18 @@ func (o *PodOrchestrator) buildPodCommand(
 		}
 	}
 
-	// Build config overrides
+	// Legacy config overrides — only used when no PodFile Layer is provided (fallback path).
+	// When PodFile Layer is present, config values are resolved into PodFile CONFIG declarations.
 	configOverrides := make(map[string]interface{})
 	for k, v := range req.ConfigOverrides {
 		configOverrides[k] = v
 	}
-	configOverrides["permission_mode"] = permissionMode
 
-	// Handle sandbox_local_path for Resume mode
-	localPath := ""
-	if path, ok := configOverrides["sandbox_local_path"].(string); ok && path != "" {
-		localPath = path
+	// When resuming from local path, skip repository clone
+	if localPath != "" {
 		repositoryURL = ""
 		httpCloneURL = ""
 		sshCloneURL = ""
-		delete(configOverrides, "sandbox_local_path")
 	}
 
 	// Query Runner's agent versions for version-aware command building
@@ -142,6 +131,9 @@ func (o *PodOrchestrator) buildPodCommand(
 
 	if mergedPodfileSource != "" {
 		buildReq.MergedPodfileSource = mergedPodfileSource
+	}
+	if podfileCredentialProfile != "" {
+		buildReq.CredentialProfile = podfileCredentialProfile
 	}
 
 	if req.AgentSlug != "" {

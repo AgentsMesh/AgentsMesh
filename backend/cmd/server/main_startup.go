@@ -120,16 +120,17 @@ func createPodOrchestrator(services *serviceContainer, podCoordinator *runner.Po
 		slog.Info("ExtensionProvider connected to ConfigBuilder")
 	}
 	orch := agentpod.NewPodOrchestrator(&agentpod.PodOrchestratorDeps{
-		PodService:     services.pod,
-		ConfigBuilder:  configBuilder,
-		PodCoordinator: podCoordinator,
-		BillingService: services.billing,
-		UserService:    services.user,
-		RepoService:    services.repository,
-		TicketService:  services.ticket,
-		RunnerSelector: services.runner,
-		AgentResolver:  services.agentSvc,
-		RunnerQuery:    services.runner,
+		PodService:      services.pod,
+		ConfigBuilder:   configBuilder,
+		PodCoordinator:  podCoordinator,
+		BillingService:  services.billing,
+		UserService:     services.user,
+		RepoService:     services.repository,
+		TicketService:   services.ticket,
+		RunnerSelector:  services.runner,
+		AgentResolver:   services.agentSvc,
+		RunnerQuery:     services.runner,
+		UserConfigQuery: services.userConfig,
 	})
 	slog.Info("PodOrchestrator created")
 	return orch

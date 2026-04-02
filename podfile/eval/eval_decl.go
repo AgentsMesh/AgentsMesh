@@ -55,7 +55,17 @@ func evalDecl(ctx *Context, decl parser.Declaration) error {
 	case *parser.SetupDecl:
 		ctx.Result.Setup = SetupResult{Script: d.Script, Timeout: d.Timeout}
 	case *parser.ConfigDecl:
-		// CONFIG is metadata for UI; no build-time side effect.
+		// CONFIG sets config variable from its resolved default value.
+		// Values are injected by resolve.ResolveConfigValues before eval.
+		if d.Default != nil {
+			cfg, _ := ctx.Get("config")
+			cfgMap, ok := cfg.(map[string]interface{})
+			if !ok {
+				cfgMap = make(map[string]interface{})
+				ctx.Set("config", cfgMap)
+			}
+			cfgMap[d.Name] = d.Default
+		}
 	case *parser.RemoveDecl:
 		return evalRemoveDecl(ctx, d)
 	case *parser.ModeDecl:
