@@ -86,7 +86,6 @@ func TestPodLifecycle_CreateToTerminated(t *testing.T) {
 		UserID:         ctxUserID(ctx),
 		RunnerID:       ctxRunnerID(ctx),
 		AgentSlug:      "claude-code",
-		InitialPrompt:  "Fix the bug",
 		Cols:           120, Rows: 40,
 	})
 	require.NoError(t, err)

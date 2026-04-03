@@ -40,7 +40,6 @@ func TestCreatePod_NormalMode_Success(t *testing.T) {
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
 		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
-		InitialPrompt:  "Hello",
 		Cols:           120,
 		Rows:           40,
 	})
@@ -309,58 +308,6 @@ func TestCreatePod_SessionID_SetForNormalMode(t *testing.T) {
 	assert.NotEmpty(t, *result.Pod.SessionID)
 }
 
-func TestCreatePod_ConfigOverrides_Preserved(t *testing.T) {
-	coord := &mockPodCoordinator{}
-	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
-
-	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
-		OrganizationID: 1,
-		UserID: 1,
-		RunnerID: 1,
-		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
-		ConfigOverrides: map[string]interface{}{"custom_key": "custom_value"},
-	})
-
-	require.NoError(t, err)
-	assert.True(t, coord.createPodCalled)
-}
-
-func TestCreatePod_NilConfigOverrides_Initialized(t *testing.T) {
-	coord := &mockPodCoordinator{}
-	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
-
-	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
-		OrganizationID: 1,
-		UserID: 1,
-		RunnerID: 1,
-		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
-		ConfigOverrides: nil, // should be auto-initialized
-	})
-
-	require.NoError(t, err)
-	assert.True(t, coord.createPodCalled)
-}
-
-func TestCreatePod_PermissionMode(t *testing.T) {
-	coord := &mockPodCoordinator{}
-	orch, _, _ := setupOrchestrator(t, withCoordinator(coord))
-
-	permMode := "bypassPermissions"
-	_, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
-		OrganizationID: 1,
-		UserID: 1,
-		RunnerID: 1,
-		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
-		PermissionMode: &permMode,
-	})
-
-	require.NoError(t, err)
-	assert.True(t, coord.createPodCalled)
-}
-
 // ==================== CredentialProfileID DB Storage Tests ====================
 
 func TestCreatePod_CredentialProfileID_ZeroConvertsToNil(t *testing.T) {
@@ -434,7 +381,7 @@ func TestCreatePod_CredentialProfileID_NilStaysNil(t *testing.T) {
 
 // ==================== PodFile Resolved Precedence Tests ====================
 
-func TestCreatePod_PodFilePrompt_OverridesReqPrompt(t *testing.T) {
+func TestCreatePod_PodFilePrompt_ExtractedToDB(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
@@ -443,14 +390,13 @@ func TestCreatePod_PodFilePrompt_OverridesReqPrompt(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:      "claude-code",
-		InitialPrompt:  "from request",
 		PodfileLayer:   ptrStr(`PROMPT "from podfile"`),
 	})
 
 	require.NoError(t, err)
 	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
 	require.NoError(t, err)
-	assert.Equal(t, "from podfile", dbPod.InitialPrompt, "PodFile PROMPT should override req.InitialPrompt")
+	assert.Equal(t, "from podfile", dbPod.InitialPrompt, "PodFile PROMPT should be extracted to DB")
 }
 
 func TestCreatePod_PodFileBranch_OverridesReqBranch(t *testing.T) {
@@ -474,17 +420,15 @@ func TestCreatePod_PodFileBranch_OverridesReqBranch(t *testing.T) {
 	assert.Equal(t, "podfile-branch", *dbPod.BranchName, "PodFile BRANCH should override req.BranchName")
 }
 
-func TestCreatePod_PodFilePermissionMode_OverridesReqMode(t *testing.T) {
+func TestCreatePod_PodFilePermissionMode_ExtractedToDB(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
-	reqMode := "plan"
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:      "claude-code",
-		PermissionMode: &reqMode,
 		PodfileLayer:   ptrStr(`CONFIG permission_mode = "bypassPermissions"`),
 	})
 
@@ -492,31 +436,25 @@ func TestCreatePod_PodFilePermissionMode_OverridesReqMode(t *testing.T) {
 	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
 	require.NoError(t, err)
 	require.NotNil(t, dbPod.PermissionMode)
-	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode, "PodFile CONFIG permission_mode should override req.PermissionMode")
+	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode, "PodFile CONFIG permission_mode should be extracted to DB")
 }
 
-func TestCreatePod_NoLayer_FallsBackToReqValues(t *testing.T) {
+func TestCreatePod_NoLayer_BranchInheritedFromResume(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
 	reqBranch := "my-branch"
-	reqMode := "default"
 	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
 		OrganizationID: 1,
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:      "claude-code",
-		InitialPrompt:  "from request",
 		BranchName:     &reqBranch,
-		PermissionMode: &reqMode,
 	})
 
 	require.NoError(t, err)
 	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
 	require.NoError(t, err)
-	assert.Equal(t, "from request", dbPod.InitialPrompt, "Without PodFile Layer, req.InitialPrompt should be used")
 	require.NotNil(t, dbPod.BranchName)
-	assert.Equal(t, "my-branch", *dbPod.BranchName, "Without PodFile Layer, req.BranchName should be used")
-	require.NotNil(t, dbPod.PermissionMode)
-	assert.Equal(t, "default", *dbPod.PermissionMode, "Without PodFile Layer, req.PermissionMode should be used")
+	assert.Equal(t, "my-branch", *dbPod.BranchName, "Without PodFile Layer, req.BranchName (resume inheritance) should be used")
 }

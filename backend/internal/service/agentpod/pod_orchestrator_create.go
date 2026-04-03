@@ -43,10 +43,6 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		sessionID = uuid.New().String()
 	}
 
-	if req.ConfigOverrides == nil {
-		req.ConfigOverrides = make(map[string]interface{})
-	}
-
 	// Resolve agent definition once — reused for PodFile merge and mode validation.
 	var agentDef *agentDomain.Agent
 	if req.AgentSlug != "" && o.agentResolver != nil {
@@ -57,14 +53,8 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// --- PodFile Layer resolution (req stays read-only after this point) ---
+	// --- PodFile Layer resolution ---
 	resolved := &podfileResolved{}
-
-	// Permission mode: may come from req.PermissionMode (old API path)
-	// or from PodFile Layer CONFIG declaration (SSOT path).
-	if req.PermissionMode != nil && *req.PermissionMode != "" {
-		resolved.PermissionMode = *req.PermissionMode
-	}
 
 	// Build systemOverrides: truly system-internal values injected into PodFile.
 	systemOverrides := make(map[string]interface{})
@@ -119,11 +109,10 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// --- Compute effective values from req (input) + resolved (PodFile extraction) ---
-	effectiveInteractionMode := firstNonEmpty(resolved.InteractionMode, derefString(req.InteractionMode), podDomain.InteractionModePTY)
+	// --- Compute effective values: resolved (PodFile) > req (resume inheritance) > defaults ---
+	effectiveInteractionMode := firstNonEmpty(resolved.InteractionMode, podDomain.InteractionModePTY)
 	effectivePermissionMode := firstNonEmpty(resolved.PermissionMode, "plan")
-	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName)
-	effectivePrompt := firstNonEmpty(resolved.InitialPrompt, req.InitialPrompt)
+	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName) // req.BranchName only from resume
 	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
 
 	// Validate interaction mode against agent capabilities
@@ -162,7 +151,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		RepositoryID:        effectiveRepoID,
 		TicketID:            req.TicketID,
 		CreatedByID:         req.UserID,
-		InitialPrompt:       effectivePrompt,
+		InitialPrompt:       resolved.InitialPrompt,
 		Alias:               req.Alias,
 		BranchName:          effectiveBranch,
 		PermissionMode:      effectivePermissionMode,
@@ -201,19 +190,11 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 
 // --- Effective value helpers ---
 
-// firstNonEmpty returns the first non-empty string from the arguments.
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {
 		if v != "" {
 			return v
 		}
-	}
-	return ""
-}
-
-func derefString(p *string) string {
-	if p != nil {
-		return *p
 	}
 	return ""
 }

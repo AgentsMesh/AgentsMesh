@@ -44,32 +44,3 @@ PROMPT_POSITION prepend')`)
 		assert.NotEqual(t, "Hello", arg, "Backend should not inject prompt into LaunchArgs")
 	}
 }
-
-func TestBuildFromPodFile_ResumeFallback(t *testing.T) {
-	db := setupConfigBuilderTestDB(t)
-
-	db.Exec(`INSERT INTO agents (slug, name, launch_command, is_builtin, is_active, podfile_source)
-		VALUES ('claude-code', 'Claude Code', 'claude', 1, 1, 'AGENT claude
-EXECUTABLE claude
-MODE pty
-PROMPT_POSITION prepend')`)
-
-	provider := createTestProvider(db)
-	builder := NewConfigBuilder(provider)
-
-	// Resume mode: MergedPodfileSource is empty, should fall back to base PodFile
-	cmd, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
-		AgentSlug:           "claude-code",
-		PodKey:              "pod-resume-1",
-		MergedPodfileSource: "", // empty = resume mode
-		MCPPort:             19000,
-		Cols:                80,
-		Rows:                24,
-	})
-
-	require.NoError(t, err)
-	require.NotNil(t, cmd)
-	// Eval produces correct values from base PodFile
-	assert.Equal(t, "claude", cmd.LaunchCommand)
-	assert.Equal(t, "pty", cmd.InteractionMode)
-}

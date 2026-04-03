@@ -24,18 +24,15 @@ func (o *PodOrchestrator) buildPodCommand(
 		localPath = *sourcePod.SandboxPath
 	}
 
-	// Effective values: resolved (from PodFile) takes precedence over req (input)
-	effectivePrompt := firstNonEmpty(resolved.InitialPrompt, req.InitialPrompt)
+	// Effective values: resolved (PodFile) > req (resume inheritance only)
 	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName)
 	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
 
-	// Resolve repository info (skip if resuming from local path)
+	// Resolve repository info
 	repositoryURL, httpCloneURL, sshCloneURL := "", "", ""
 	sourceBranch, preparationScript := "", ""
 	preparationTimeout := 300
-	if req.RepositoryURL != nil && *req.RepositoryURL != "" {
-		repositoryURL = *req.RepositoryURL
-	} else if effectiveRepoID != nil && o.repoService != nil {
+	if effectiveRepoID != nil && o.repoService != nil {
 		repo, err := o.repoService.GetByID(ctx, *effectiveRepoID)
 		if err == nil && repo != nil {
 			repositoryURL = repo.CloneURL
@@ -82,12 +79,6 @@ func (o *PodOrchestrator) buildPodCommand(
 		}
 	}
 
-	// Legacy config overrides — only used when no PodFile Layer is provided (fallback path).
-	configOverrides := make(map[string]interface{})
-	for k, v := range req.ConfigOverrides {
-		configOverrides[k] = v
-	}
-
 	// When resuming from local path, skip repository clone
 	if localPath != "" {
 		repositoryURL = ""
@@ -108,6 +99,7 @@ func (o *PodOrchestrator) buildPodCommand(
 	}
 
 	buildReq := &agent.ConfigBuildRequest{
+		AgentSlug:           req.AgentSlug,
 		OrganizationID:      req.OrganizationID,
 		UserID:              req.UserID,
 		CredentialProfileID: req.CredentialProfileID,
@@ -123,24 +115,14 @@ func (o *PodOrchestrator) buildPodCommand(
 		PreparationScript:   preparationScript,
 		PreparationTimeout:  preparationTimeout,
 		LocalPath:           localPath,
-		ConfigOverrides:     configOverrides,
-		InitialPrompt:       effectivePrompt,
+		InitialPrompt:       resolved.InitialPrompt,
 		PodKey:              pod.PodKey,
 		MCPPort:             19000,
 		Cols:                req.Cols,
 		Rows:                req.Rows,
 		RunnerAgentVersions: runnerAgentVersions,
-	}
-
-	if resolved.MergedPodfileSource != "" {
-		buildReq.MergedPodfileSource = resolved.MergedPodfileSource
-	}
-	if resolved.CredentialProfile != "" {
-		buildReq.CredentialProfile = resolved.CredentialProfile
-	}
-
-	if req.AgentSlug != "" {
-		buildReq.AgentSlug = req.AgentSlug
+		MergedPodfileSource: resolved.MergedPodfileSource,
+		CredentialProfile:   resolved.CredentialProfile,
 	}
 
 	return o.configBuilder.BuildPodCommand(ctx, buildReq)

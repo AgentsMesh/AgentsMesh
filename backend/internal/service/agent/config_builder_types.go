@@ -7,20 +7,14 @@ import (
 )
 
 // AgentConfigProvider provides agent configuration data for ConfigBuilder
-// This interface allows for dependency injection and easier testing
 type AgentConfigProvider interface {
 	// GetAgent returns an agent by slug
 	GetAgent(ctx context.Context, slug string) (*agent.Agent, error)
-	// GetUserEffectiveConfig returns the effective config by merging defaults and user config
-	GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agent.ConfigValues) agent.ConfigValues
 	// GetEffectiveCredentialsForPod returns credentials for pod injection
 	GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agent.EncryptedCredentials, bool, error)
 	// ResolveCredentialsByName resolves credentials by profile name from PodFile CREDENTIAL declaration
 	ResolveCredentialsByName(ctx context.Context, userID int64, agentSlug, profileName string) (agent.EncryptedCredentials, bool, error)
 }
-
-// Note: AgentConfigProvider is implemented by compositeProvider in API handlers
-// that combine the three sub-services (AgentService, CredentialProfileService, UserConfigService)
 
 // ConfigBuildRequest contains all the information needed to build a pod config
 type ConfigBuildRequest struct {
@@ -54,13 +48,10 @@ type ConfigBuildRequest struct {
 	PreparationScript  string
 	PreparationTimeout int
 
-	// Local path mode (reserved for future)
+	// Local path mode (resume from existing sandbox)
 	LocalPath string
 
-	// User-provided config overrides
-	ConfigOverrides map[string]interface{}
-
-	// Initial prompt (prepended to LaunchArgs)
+	// Initial prompt (from PodFile PROMPT declaration)
 	InitialPrompt string
 
 	// Runtime info (provided by Runner during handshake)

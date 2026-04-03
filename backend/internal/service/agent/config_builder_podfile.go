@@ -7,8 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/podfile/eval"
 	"github.com/anthropics/agentsmesh/podfile/parser"
-	"github.com/anthropics/agentsmesh/podfile/resolve"
-	"github.com/anthropics/agentsmesh/podfile/serialize"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
@@ -28,19 +26,7 @@ func (b *ConfigBuilder) buildFromPodFile(
 ) (*runnerv1.CreatePodCommand, error) {
 	mergedSource := req.MergedPodfileSource
 	if mergedSource == "" {
-		// Fallback: no PodFile Layer (resume mode). Resolve ConfigOverrides into base PodFile.
-		if agentDef.PodfileSource == nil {
-			return nil, fmt.Errorf("agent %s has no podfile source", req.AgentSlug)
-		}
-		baseProg, errs := parser.Parse(*agentDef.PodfileSource)
-		if len(errs) > 0 {
-			return nil, fmt.Errorf("podfile parse error: %v", errs[0])
-		}
-		// Fallback: no PodFile Layer (resume mode).
-		// userPrefs intentionally omitted — resume continues the previous Pod's config,
-		// not the user's current preferences.
-		resolve.ResolveConfigValues(baseProg, nil, nil, req.ConfigOverrides)
-		mergedSource = serialize.Serialize(baseProg)
+		return nil, fmt.Errorf("agent %s: MergedPodfileSource is empty (PodFile resolve should always produce it)", req.AgentSlug)
 	}
 
 	// Get credentials

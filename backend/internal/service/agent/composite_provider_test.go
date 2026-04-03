@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -99,20 +98,6 @@ func TestCompositeProvider_GetAgent_NotFound(t *testing.T) {
 	_, err := provider.GetAgent(context.Background(), "nonexistent")
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrAgentNotFound))
-}
-
-func TestCompositeProvider_GetUserEffectiveConfig(t *testing.T) {
-	db := setupCompositeTestDB(t)
-	agentSvc := newTestAgentService(db)
-	credSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
-	configSvc := newTestUserConfigService(db, agentSvc)
-
-	provider := NewCompositeProvider(agentSvc, credSvc, configSvc)
-
-	overrides := agent.ConfigValues{"model": "opus"}
-	result := provider.GetUserEffectiveConfig(context.Background(), 1, "claude-code", overrides)
-	// With no stored config, overrides should be reflected
-	assert.Equal(t, "opus", result["model"])
 }
 
 func TestCompositeProvider_GetEffectiveCredentialsForPod_RunnerHost(t *testing.T) {

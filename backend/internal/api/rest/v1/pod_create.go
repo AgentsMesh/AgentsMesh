@@ -22,15 +22,9 @@ type CreatePodRequest struct {
 	// PodFile Layer — SSOT for all pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL, PROMPT)
 	PodfileLayer *string `json:"podfile_layer"`
 
-	// Legacy fields: accepted for backward compatibility (MCP callers), ignored when PodfileLayer is set
-	InitialPrompt       string                 `json:"initial_prompt,omitempty"`   // Deprecated: use PodFile PROMPT declaration
-	RepositoryID        *int64                 `json:"repository_id,omitempty"`
-	RepositoryURL       *string                `json:"repository_url,omitempty"`
-	BranchName          *string                `json:"branch_name,omitempty"`
-	PermissionMode      *string                `json:"permission_mode,omitempty"`
-	InteractionMode     *string                `json:"interaction_mode,omitempty"` // Deprecated: use PodFile MODE declaration
-	CredentialProfileID *int64                 `json:"credential_profile_id,omitempty"`
-	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"`
+	// Platform-level ID references (cannot be expressed as PodFile declarations)
+	RepositoryID        *int64 `json:"repository_id,omitempty"`
+	CredentialProfileID *int64 `json:"credential_profile_id,omitempty"`
 
 	// Terminal size (from browser xterm.js)
 	Cols int32 `json:"cols"`
@@ -71,18 +65,12 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 		OrganizationID:      tenant.OrganizationID,
 		UserID:              tenant.UserID,
 		RunnerID:            req.RunnerID,
-		AgentSlug:         req.AgentSlug,
+		AgentSlug:           req.AgentSlug,
 		RepositoryID:        req.RepositoryID,
-		RepositoryURL:       req.RepositoryURL,
 		TicketSlug:          req.TicketSlug,
-		InitialPrompt:       req.InitialPrompt,
 		Alias:               req.Alias,
-		BranchName:          req.BranchName,
-		PermissionMode:      req.PermissionMode,
-		InteractionMode:     req.InteractionMode,
 		CredentialProfileID: req.CredentialProfileID,
 		PodfileLayer:        req.PodfileLayer,
-		ConfigOverrides:     req.ConfigOverrides,
 		Cols:                req.Cols,
 		Rows:                req.Rows,
 		SourcePodKey:        req.SourcePodKey,

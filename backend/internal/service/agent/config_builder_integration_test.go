@@ -29,14 +29,9 @@ func (ip *integrationProvider) configProvider() AgentConfigProvider {
 		agentSvc,
 		testEncryptor(),
 	)
-	userConfigSvc := NewUserConfigService(
-		infra.NewUserConfigRepository(ip.db),
-		agentSvc,
-	)
 	return &testCompositeProvider{
 		agentSvc:      agentSvc,
 		credentialSvc: credentialSvc,
-		userConfigSvc: userConfigSvc,
 	}
 }
 
@@ -150,16 +145,14 @@ PROMPT_POSITION prepend
 	// Eval produces prompt_position from PROMPT_POSITION declaration
 	assert.Equal(t, "prepend", cmd.PromptPosition)
 
-	// Resume fallback: empty MergedPodfileSource → uses base PodFile
-	basePodfile := "AGENT merge-agent\nEXECUTABLE merge-agent\nMODE pty"
-	seedAgent(t, db, "resume-agent", basePodfile)
-	cmdResume, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
+	// Empty MergedPodfileSource → error (orchestrator must always resolve it)
+	seedAgent(t, db, "resume-agent", "AGENT resume-agent\nEXECUTABLE resume-agent\nMODE pty")
+	_, err = builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
 		AgentSlug: "resume-agent",
 		PodKey:    "pod-resume-1",
 		MCPPort:   19000,
 		Cols:      80,
 		Rows:      24,
 	})
-	require.NoError(t, err)
-	assert.Equal(t, "pty", cmdResume.InteractionMode)
+	require.Error(t, err, "empty MergedPodfileSource should error")
 }

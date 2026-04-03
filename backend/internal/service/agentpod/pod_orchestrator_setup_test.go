@@ -99,13 +99,6 @@ func (m *mockAgentConfigProvider) GetAgent(_ context.Context, _ string) (*agentD
 	return m.agentDef, m.agentErr
 }
 
-func (m *mockAgentConfigProvider) GetUserEffectiveConfig(_ context.Context, _ int64, _ string, overrides agentDomain.ConfigValues) agentDomain.ConfigValues {
-	if m.config != nil {
-		return m.config
-	}
-	return overrides
-}
-
 func (m *mockAgentConfigProvider) GetEffectiveCredentialsForPod(_ context.Context, _ int64, _ string, _ *int64) (agentDomain.EncryptedCredentials, bool, error) {
 	return m.creds, m.isRunner, m.credsErr
 }

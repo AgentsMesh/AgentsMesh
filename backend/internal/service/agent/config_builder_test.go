@@ -85,19 +85,14 @@ func setupConfigBuilderTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-// testCompositeProvider combines the three sub-services for testing ConfigBuilder
+// testCompositeProvider combines sub-services for testing ConfigBuilder
 type testCompositeProvider struct {
-	agentSvc  *AgentService
+	agentSvc      *AgentService
 	credentialSvc *CredentialProfileService
-	userConfigSvc *UserConfigService
 }
 
 func (p *testCompositeProvider) GetAgent(ctx context.Context, slug string) (*agent.Agent, error) {
 	return p.agentSvc.GetAgent(ctx, slug)
-}
-
-func (p *testCompositeProvider) GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agent.ConfigValues) agent.ConfigValues {
-	return p.userConfigSvc.GetUserEffectiveConfig(ctx, userID, agentSlug, overrides)
 }
 
 func (p *testCompositeProvider) GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agent.EncryptedCredentials, bool, error) {
@@ -111,11 +106,9 @@ func (p *testCompositeProvider) ResolveCredentialsByName(ctx context.Context, us
 func createTestProvider(db *gorm.DB) AgentConfigProvider {
 	agentSvc := newTestAgentService(db)
 	credentialSvc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
-	userConfigSvc := newTestUserConfigService(db, agentSvc)
 	return &testCompositeProvider{
 		agentSvc:      agentSvc,
 		credentialSvc: credentialSvc,
-		userConfigSvc: userConfigSvc,
 	}
 }
 

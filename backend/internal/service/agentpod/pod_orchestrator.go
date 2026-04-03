@@ -33,29 +33,29 @@ var (
 const errCodeRunnerUnreachable = "RUNNER_UNREACHABLE"
 
 // OrchestrateCreatePodRequest is the unified Pod creation request (protocol-agnostic).
+// Pod configuration flows exclusively through PodfileLayer (SSOT).
 type OrchestrateCreatePodRequest struct {
 	OrganizationID int64
 	UserID         int64
 
 	RunnerID            int64
 	AgentSlug           string
-	RepositoryID        *int64
-	RepositoryURL       *string
+	RepositoryID        *int64  // Platform-level ID (from PodFile REPO slug resolution or resume inheritance)
 	TicketID            *int64
 	TicketSlug          *string
-	InitialPrompt       string
 	Alias               *string
-	BranchName          *string
-	PermissionMode      *string
-	InteractionMode     *string
 	CredentialProfileID *int64
-	PodfileLayer        *string
-	ConfigOverrides     map[string]interface{}
+	PodfileLayer        *string // SSOT for all CONFIG, MODE, PROMPT, REPO, BRANCH, CREDENTIAL
 	Cols                int32
 	Rows                int32
 
+	// Resume mode
 	SourcePodKey       string
 	ResumeAgentSession *bool
+
+	// BranchName is only set internally by handleResumeMode (inherited from source pod).
+	// Not accepted from external callers — use PodFile BRANCH declaration instead.
+	BranchName *string
 }
 
 // OrchestrateCreatePodResult is the result of a successful Pod creation.

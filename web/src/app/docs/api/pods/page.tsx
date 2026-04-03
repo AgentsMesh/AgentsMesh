@@ -134,8 +134,7 @@ export default function ApiPodsPage() {
   -H "Content-Type: application/json" \\
   -d '{
     "agent_slug": "claude-code",
-    "runner_id": "runner-uuid",
-    "initial_prompt": "Fix the login bug"
+    "podfile_layer": "PROMPT \\"Fix the login bug\\"\\nCONFIG permission_mode = \\"plan\\""
   }'`}</pre>
             </div>
           </div>
@@ -384,26 +383,12 @@ export default function ApiPodsPage() {
                   <tbody className="text-muted-foreground">
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        runner_id
+                        agent_slug
                       </td>
                       <td className="p-3 border-b border-border">string</td>
                       <td className="p-3 border-b border-border">
                         <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded">
                           {t("docs.api.common.requiredBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t("docs.api.pods.details.createPod.fields.runner_id")}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        agent_slug
-                      </td>
-                      <td className="p-3 border-b border-border">string</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
                         </span>
                       </td>
                       <td className="p-3 border-b border-border">
@@ -414,7 +399,7 @@ export default function ApiPodsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        initial_prompt
+                        podfile_layer
                       </td>
                       <td className="p-3 border-b border-border">string</td>
                       <td className="p-3 border-b border-border">
@@ -423,14 +408,12 @@ export default function ApiPodsPage() {
                         </span>
                       </td>
                       <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.initial_prompt"
-                        )}
+                        PodFile Layer — SSOT for PROMPT, MODE, CONFIG, REPO, BRANCH, CREDENTIAL
                       </td>
                     </tr>
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        repository_id
+                        runner_id
                       </td>
                       <td className="p-3 border-b border-border">integer</td>
                       <td className="p-3 border-b border-border">
@@ -439,23 +422,7 @@ export default function ApiPodsPage() {
                         </span>
                       </td>
                       <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.repository_id"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        branch
-                      </td>
-                      <td className="p-3 border-b border-border">string</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t("docs.api.pods.details.createPod.fields.branch")}
+                        {t("docs.api.pods.details.createPod.fields.runner_id")}
                       </td>
                     </tr>
                     <tr>
@@ -476,23 +443,7 @@ export default function ApiPodsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        channel_id
-                      </td>
-                      <td className="p-3 border-b border-border">integer</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.channel_id"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        sandbox_type
+                        alias
                       </td>
                       <td className="p-3 border-b border-border">string</td>
                       <td className="p-3 border-b border-border">
@@ -501,135 +452,7 @@ export default function ApiPodsPage() {
                         </span>
                       </td>
                       <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.sandbox_type"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        environment_variables
-                      </td>
-                      <td className="p-3 border-b border-border">object</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.environment_variables"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        custom_agent_command
-                      </td>
-                      <td className="p-3 border-b border-border">string</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.custom_agent_command"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        custom_agent_args
-                      </td>
-                      <td className="p-3 border-b border-border">string[]</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.custom_agent_args"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        custom_mcp_config
-                      </td>
-                      <td className="p-3 border-b border-border">object</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.custom_mcp_config"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        auto_close
-                      </td>
-                      <td className="p-3 border-b border-border">boolean</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.auto_close"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        auto_close_delay_seconds
-                      </td>
-                      <td className="p-3 border-b border-border">integer</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.auto_close_delay_seconds"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 border-b border-border font-mono text-xs">
-                        pod_timeout_minutes
-                      </td>
-                      <td className="p-3 border-b border-border">integer</td>
-                      <td className="p-3 border-b border-border">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b border-border">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.pod_timeout_minutes"
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-mono text-xs">max_turns</td>
-                      <td className="p-3">integer</td>
-                      <td className="p-3">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                          {t("docs.api.common.optionalBadge")}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        {t(
-                          "docs.api.pods.details.createPod.fields.max_turns"
-                        )}
+                        Display name for the pod (max 100 chars)
                       </td>
                     </tr>
                   </tbody>
@@ -644,20 +467,10 @@ export default function ApiPodsPage() {
               <div className="bg-muted rounded-lg p-4 font-mono text-sm overflow-x-auto">
                 <pre className="text-green-500 dark:text-green-400">{`{
   "pod": {
-    "key": "pod-xyz789",
-    "status": "creating",
+    "pod_key": "pod-xyz789",
+    "status": "initializing",
     "agent_slug": "claude-code",
-    "runner_id": "550e8400-e29b-41d4-a716-446655440000",
-    "initial_prompt": "Fix the login bug",
-    "repository_id": 1,
-    "branch": "feature/auth",
-    "sandbox_type": "worktree",
-    "auto_close": true,
-    "auto_close_delay_seconds": 30,
-    "pod_timeout_minutes": 60,
-    "max_turns": 100,
-    "created_at": "2025-01-15T10:30:00Z",
-    "updated_at": "2025-01-15T10:30:00Z"
+    "created_at": "2025-01-15T10:30:00Z"
   }
 }`}</pre>
               </div>

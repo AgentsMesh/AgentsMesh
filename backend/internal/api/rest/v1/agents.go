@@ -28,7 +28,6 @@ func NewAgentHandler(
 		configBuilder: agent.NewConfigBuilder(&compositeProvider{
 			agentSvc:  agentSvc,
 			credentialSvc: credentialSvc,
-			userConfigSvc: userConfigSvc,
 		}),
 	}
 }
@@ -37,15 +36,10 @@ func NewAgentHandler(
 type compositeProvider struct {
 	agentSvc  *agent.AgentService
 	credentialSvc *agent.CredentialProfileService
-	userConfigSvc *agent.UserConfigService
 }
 
 func (p *compositeProvider) GetAgent(ctx context.Context, slug string) (*agentDomain.Agent, error) {
 	return p.agentSvc.GetAgent(ctx, slug)
-}
-
-func (p *compositeProvider) GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agentDomain.ConfigValues) agentDomain.ConfigValues {
-	return p.userConfigSvc.GetUserEffectiveConfig(ctx, userID, agentSlug, overrides)
 }
 
 func (p *compositeProvider) GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agentDomain.EncryptedCredentials, bool, error) {

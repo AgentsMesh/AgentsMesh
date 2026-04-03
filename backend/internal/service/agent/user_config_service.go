@@ -6,8 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/podfile/extract"
-	"github.com/anthropics/agentsmesh/podfile/parser"
 )
 
 // Errors for UserConfigService
@@ -36,7 +34,6 @@ func (s *UserConfigService) GetUserAgentConfig(ctx context.Context, userID int64
 		return nil, err
 	}
 	if config == nil {
-		// Return empty config if not found
 		return &agent.UserAgentConfig{
 			UserID:       userID,
 			AgentSlug:  agentSlug,
@@ -58,7 +55,6 @@ func (s *UserConfigService) GetUserConfigPrefs(ctx context.Context, userID int64
 
 // SetUserAgentConfig sets the user's personal config for an agent
 func (s *UserConfigService) SetUserAgentConfig(ctx context.Context, userID int64, agentSlug string, configValues agent.ConfigValues) (*agent.UserAgentConfig, error) {
-	// Verify agent exists
 	if _, err := s.agentSvc.GetAgent(ctx, agentSlug); err != nil {
 		return nil, err
 	}
@@ -85,36 +81,4 @@ func (s *UserConfigService) DeleteUserAgentConfig(ctx context.Context, userID in
 // ListUserAgentConfigs returns all personal configs for a user
 func (s *UserConfigService) ListUserAgentConfigs(ctx context.Context, userID int64) ([]*agent.UserAgentConfig, error) {
 	return s.repo.ListByUser(ctx, userID)
-}
-
-// GetUserEffectiveConfig returns the effective config by merging PodFile defaults and user personal config
-func (s *UserConfigService) GetUserEffectiveConfig(ctx context.Context, userID int64, agentSlug string, overrides agent.ConfigValues) agent.ConfigValues {
-	result := make(agent.ConfigValues)
-
-	// 1. Get defaults from PodFile CONFIG declarations
-	agentDef, err := s.agentSvc.GetAgent(ctx, agentSlug)
-	if err == nil && agentDef.PodfileSource != nil && *agentDef.PodfileSource != "" {
-		prog, parseErrs := parser.Parse(*agentDef.PodfileSource)
-		if len(parseErrs) == 0 && prog != nil {
-			spec := extract.Extract(prog)
-			for _, cfg := range spec.Config {
-				if cfg.Default != nil {
-					result[cfg.Name] = cfg.Default
-				}
-			}
-		}
-	}
-
-	// 2. Get user's personal config
-	userConfig, err := s.GetUserAgentConfig(ctx, userID, agentSlug)
-	if err == nil && userConfig.ConfigValues != nil {
-		result = agent.MergeConfigs(result, userConfig.ConfigValues)
-	}
-
-	// 3. Apply overrides (from CreatePod request)
-	if overrides != nil {
-		result = agent.MergeConfigs(result, overrides)
-	}
-
-	return result
 }
