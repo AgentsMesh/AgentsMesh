@@ -9,7 +9,7 @@ const docsMetadataMap: Record<string, DocsMeta> = {
   "/docs": {
     title: "Documentation",
     description:
-      "Complete documentation for AgentsMesh — the AI agent fleet command center for orchestrating multi-agent collaboration.",
+      "Complete documentation for AgentsMesh — the agent workforce platform for ambitious teams.",
   },
   "/docs/getting-started": {
     title: "Quick Start",

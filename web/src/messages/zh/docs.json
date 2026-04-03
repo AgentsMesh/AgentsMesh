@@ -673,8 +673,8 @@
         },
         "promptTemplates": {
           "title": "Prompt 模板",
-          "description": "在 Prompt 中使用 {{variable}} 占位符。创建 Loop 时定义默认值，触发时可以覆盖。示例：",
-          "example": "审查 {{branch}} 分支自上次审查以来的所有变更文件。重点关注 {{focus_area}} 方面的问题。"
+          "description": "在 Prompt 中使用 '{{variable}}' 占位符。创建 Loop 时定义默认值，触发时可以覆盖。示例：",
+          "example": "审查 '{{branch}}' 分支自上次审查以来的所有变更文件。重点关注 '{{focus_area}}' 方面的问题。"
         },
         "webhookCallbacks": {
           "title": "Webhook 回调",
@@ -1356,7 +1356,7 @@
               "description": "可选描述",
               "agent_type_id": "使用的内置 Agent 类型 ID",
               "custom_agent_type_id": "自定义 Agent 类型 ID（与 agent_type_id 二选一）",
-              "prompt_template": "任务 Prompt，支持 {{variable}} 占位符（必填）",
+              "prompt_template": "任务 Prompt，支持 '{{variable}}' 占位符（必填）",
               "prompt_variables": "Prompt 变量的默认值（JSON 对象）",
               "repository_id": "要克隆到沙箱的仓库",
               "runner_id": "首选运行节点",

@@ -2,6 +2,7 @@ export { Navbar } from "./Navbar";
 export { HeroSection } from "./HeroSection";
 export { DemoVideo } from "./DemoVideo";
 export { AgentLogos } from "./AgentLogos";
+export { ParadigmShift } from "./ParadigmShift";
 export { CoreFeatures } from "./CoreFeatures";
 export { HowItWorks } from "./HowItWorks";
 export { EnterpriseFeatures } from "./EnterpriseFeatures";

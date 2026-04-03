@@ -717,8 +717,8 @@
         },
         "promptTemplates": {
           "title": "프롬프트 템플릿",
-          "description": "프롬프트에서 {{variable}} 플레이스홀더를 사용합니다. Loop 생성 시 기본값을 ���의하고 트리거 시 재정의할 수 있습니다. 예:",
-          "example": "마지막 리뷰 이후 {{branch}} 브랜치의 모든 변경 파일을 리뷰합니다. {{focus_area}} 문제에 집중합니다."
+          "description": "프롬프트에서 '{{variable}}' 플레이스홀더를 사용합니다. Loop 생성 시 기본값을 ���의하고 트리거 시 재정의할 수 있습니다. 예:",
+          "example": "마지막 리뷰 이후 '{{branch}}' 브랜치의 모든 변경 파일을 리뷰합니다. '{{focus_area}}' 문제에 집중합니다."
         },
         "webhookCallbacks": {
           "title": "Webhook 콜백",
@@ -1511,7 +1511,7 @@
               "description": "Optional description",
               "agent_type_id": "Built-in agent type ID to use",
               "custom_agent_type_id": "Custom agent type ID (alternative to agent_type_id)",
-              "prompt_template": "Task prompt with {{variable}} placeholders (required)",
+              "prompt_template": "Task prompt with '{{variable}}' placeholders (required)",
               "prompt_variables": "Default values for prompt variables (JSON object)",
               "repository_id": "Repository to clone into the sandbox",
               "runner_id": "Preferred runner for execution",

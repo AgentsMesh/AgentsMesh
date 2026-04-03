@@ -1,31 +1,31 @@
 {
   "about": {
     "hero": {
-      "title": "构建 AI 驱动开发的未来",
-      "subtitle": "我们致力于实现人类与 AI 编程智能体之间的无缝协作，重新定义软件的构建方式。"
+      "title": "软件由团队构建。现在，团队有了新的构建方式。",
+      "subtitle": "我们相信下一次飞跃不是更好的工具——而是更大的团队。AI Agent 作为正式成员与人类并肩作战的团队。"
     },
     "mission": {
       "title": "我们的使命",
-      "content": "AgentsMesh 源于一个简单的信念：软件开发的未来在于人类与 AI 智能体的协作。我们正在构建基础设施，使多个 AI 编程智能体能够协同工作，由人类开发者协调，以前所未有的速度和规模应对复杂的开发挑战。"
+      "content": "AgentsMesh 的使命是帮助组织突破人数的产出上限。我们正在构建一个平台，让每个团队成员都能管理一支 AI Agent 团队——分配任务、协调协作、以过去需要多招十个人才能达到的速度交付成果。"
     },
     "vision": {
       "title": "我们的理念",
       "autonomous": {
-        "title": "自主执行",
-        "content": "AI 智能体应该能够独立完成复杂任务，而不仅仅是辅助代码补全。"
+        "title": "Agent 是团队成员",
+        "content": "AI Agent 不只是自动补全代码的工具。它们是能端到端负责任务的自主队友——从读取工单到提交合并请求。"
       },
       "collaboration": {
-        "title": "多智能体协作",
-        "content": "最复杂的问题需要多个专业智能体无缝协同工作来解决。"
+        "title": "团队胜于个人",
+        "content": "一个再厉害的 Agent 也不能解决所有问题。一支协调有序的 Agent 团队——各有专长、互相沟通、共享上下文——可以。"
       },
       "security": {
-        "title": "数据主权",
-        "content": "没有你的明确同意，你的代码和数据不应该离开你的基础设施。"
+        "title": "你的代码，你的基础设施",
+        "content": "扩大 Agent 团队不应意味着放弃控制权。你的代码和数据始终留在你的基础设施上。"
       }
     },
     "contact": {
       "title": "联系我们",
-      "content": "想了解更多关于 AgentsMesh 的信息或探索合作机会？",
+      "content": "想了解 AgentsMesh 如何倍增你的团队产出？",
       "email": "联系我们",
       "careers": "加入我们"
     }
@@ -93,14 +93,14 @@
   },
   "enterprise": {
     "hero": {
-      "title": "专为",
-      "titleHighlight": "企业",
-      "subtitle": "安全、合规和自托管部署，为需要完全掌控 AI 智能体基础设施的组织而设计。"
+      "title": "你的 Agent。",
+      "titleHighlight": "你的规则。",
+      "subtitle": "为大规模管理 Agent 团队的组织提供企业级安全和治理能力。"
     },
     "onpremise": {
       "title": "私有",
       "titleHighlight": "部署",
-      "description": "在您自己的基础设施中完整部署 AgentsMesh。代码和数据永远不会离开您的网络。"
+      "description": "在你的基础设施中完整部署 AgentsMesh。你的代码、你的 Agent、你的规则——零外部暴露。"
     }
   }
 }

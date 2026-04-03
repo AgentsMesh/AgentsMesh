@@ -1,106 +1,106 @@
 {
   "about": {
     "hero": {
-      "title": "Building the Future of AI-Powered Development",
-      "subtitle": "We're on a mission to enable seamless collaboration between humans and AI coding agents, transforming how software is built."
+      "title": "ソフトウェアはチームで作る。今、チームの作り方が変わる。",
+      "subtitle": "次の飛躍は、より良いツールではなく、より大きなチームだと私たちは信じています。AIエージェントが人間と対等なメンバーとして協働するチームです。"
     },
     "mission": {
-      "title": "Our Mission",
-      "content": "AgentsMesh was founded with a simple belief: the future of software development lies in the collaboration between humans and AI agents. We're building the infrastructure that enables multiple AI coding agents to work together, coordinated by human developers, to tackle complex development challenges at unprecedented speed and scale."
+      "title": "ミッション",
+      "content": "AgentsMeshは、組織が人員を超えてスケールすることを支援するために存在します。すべてのチームメンバーがAIエージェントチームを率い、タスクを割り当て、コラボレーションを調整し、以前なら10人の追加採用なしでは不可能だったペースでコードをシップできるプラットフォームを構築しています。"
     },
     "vision": {
-      "title": "What We Believe",
+      "title": "私たちが信じること",
       "autonomous": {
-        "title": "Autonomous Execution",
-        "content": "AI agents should be able to independently complete complex tasks, not just assist with code completion."
+        "title": "エージェントはチームメンバーである",
+        "content": "AIエージェントはコードを自動補完するだけのツールではありません。チケットを読んでマージリクエストをオープンするまで、タスクをエンドツーエンドで所有できる自律的なチームメイトです。"
       },
       "collaboration": {
-        "title": "Multi-Agent Collaboration",
-        "content": "The most complex problems require multiple specialized agents working together seamlessly."
+        "title": "チームは個人に勝る",
+        "content": "一人の優秀なエージェントがすべてを解決することはできません。それぞれの専門性を持ち、コミュニケーションしコンテキストを共有する、連携したエージェントチームならできます。"
       },
       "security": {
-        "title": "Data Sovereignty",
-        "content": "Your code and data should never leave your infrastructure without your explicit consent."
+        "title": "あなたのコード、あなたのインフラ",
+        "content": "エージェントワークフォースの拡大が制御の放棄を意味してはならない。コードとデータは常にあなたのインフラに留まります。"
       }
     },
     "contact": {
-      "title": "Get in Touch",
-      "content": "Interested in learning more about AgentsMesh or exploring partnership opportunities?",
-      "email": "Contact Us",
-      "careers": "Join Our Team"
+      "title": "お問い合わせ",
+      "content": "AgentsMeshがチームの生産性をどう拡大できるか、知りたいですか？",
+      "email": "お問い合わせ",
+      "careers": "チームに参加する"
     }
   },
   "careers": {
     "hero": {
-      "title": "Join Us in Shaping the Future",
-      "subtitle": "We're building the platform that enables AI agents to collaborate on complex development tasks. Join us in this exciting journey."
+      "title": "未来を共に切り拓く",
+      "subtitle": "AIエージェントが複雑な開発タスクで協業するプラットフォームを構築しています。このエキサイティングな旅に参加しませんか。"
     },
-    "openPositions": "Open Roles",
-    "responsibilities": "Key Responsibilities",
-    "applyNow": "Apply Now",
+    "openPositions": "募集中のポジション",
+    "responsibilities": "主な業務内容",
+    "applyNow": "応募する",
     "positions": {
       "harnessEngineer": {
         "title": "Harness Engineer",
-        "description": "Harness Engineers architect the runtime environments where AI agents operate. You'll design sandboxes, define execution constraints, and build the infrastructure that keeps agents secure, isolated, and performant.",
-        "resp1": "Design and build secure, isolated runtime environments for AI agents",
-        "resp2": "Define execution constraints, permission boundaries, and safety guardrails",
-        "resp3": "Develop and optimize sandbox infrastructure for reproducible agent operations"
+        "description": "Harness EngineerはAIエージェントが動作するランタイム環境を設計します。サンドボックスの設計、実行制約の定義、エージェントの安全性・分離性・パフォーマンスを維持するインフラの構築を担当します。",
+        "resp1": "AIエージェント向けのセキュアで分離されたランタイム環境の設計・構築",
+        "resp2": "実行制約、権限境界、安全ガードレールの定義",
+        "resp3": "再現可能なエージェント運用のためのサンドボックスインフラの開発・最適化"
       },
       "producer": {
         "title": "Builder",
-        "description": "Builders turn infrastructure into products that users love. You'll bridge the gap between technical capabilities and user needs, shaping every interaction with AgentsMesh into an intuitive and powerful experience.",
-        "resp1": "Translate user needs into product requirements and features",
-        "resp2": "Shape platform capabilities into polished, user-facing products",
-        "resp3": "Gather feedback and iterate to deliver exceptional user experiences"
+        "description": "Builderはインフラをユーザーに愛されるプロダクトに変えます。技術的な機能とユーザーニーズの間の橋渡しを担い、AgentsMeshとのすべてのインタラクションを直感的でパワフルな体験に仕上げます。",
+        "resp1": "ユーザーニーズをプロダクト要件と機能に変換",
+        "resp2": "プラットフォーム機能を洗練されたユーザー向けプロダクトに成形",
+        "resp3": "フィードバックの収集とイテレーションによる卓越したユーザー体験の提供"
       },
       "growthHacker": {
         "title": "GTM (Go to Market)",
-        "description": "GTM specialists take our product to market with creative, data-driven strategies. You'll help developers discover AgentsMesh, run rapid experiments, and turn early adopters into passionate advocates.",
-        "resp1": "Design and execute data-driven growth experiments",
-        "resp2": "Build relationships with developer communities and drive adoption",
-        "resp3": "Optimize acquisition funnels and drive user retention"
+        "description": "GTMスペシャリストはクリエイティブかつデータドリブンな戦略でプロダクトを市場に届けます。開発者にAgentsMeshを発見してもらい、迅速な実験を行い、アーリーアダプターを熱狂的なファンに変えます。",
+        "resp1": "データドリブンなグロース施策の設計と実行",
+        "resp2": "開発者コミュニティとの関係構築と採用推進",
+        "resp3": "獲得ファネルの最適化とユーザーリテンション向上"
       }
     },
     "whyJoin": {
-      "title": "Why Join AgentsMesh?",
+      "title": "なぜAgentsMeshに参加するのか？",
       "innovation": {
-        "title": "Cutting-Edge Technology",
-        "content": "Work with the latest AI technologies and shape the future of software development."
+        "title": "最先端のテクノロジー",
+        "content": "最新のAI技術に触れ、ソフトウェア開発の未来を形作る。"
       },
       "remote": {
-        "title": "Remote-First",
-        "content": "Work from anywhere in the world with a flexible schedule that fits your life."
+        "title": "リモートファースト",
+        "content": "世界中どこからでも、あなたのライフスタイルに合った柔軟なスケジュールで働く。"
       },
       "equity": {
-        "title": "Competitive Package",
-        "content": "Competitive salary, equity participation, and comprehensive benefits."
+        "title": "魅力的な報酬パッケージ",
+        "content": "競争力のある給与、ストックオプション、充実した福利厚生。"
       }
     },
     "cta": {
-      "title": "Don't See a Perfect Fit?",
-      "content": "We're always looking for exceptional talent. Send us your resume and tell us how you'd contribute.",
-      "button": "Send Your Resume"
+      "title": "ぴったりのポジションが見つかりませんか？",
+      "content": "私たちは常に卓越した人材を探しています。レジュメと、あなたがどう貢献できるかを教えてください。",
+      "button": "レジュメを送る"
     }
   },
   "blog": {
     "hero": {
-      "title": "Blog",
-      "subtitle": "Technical insights, product updates, and stories from the AgentsMesh team."
+      "title": "ブログ",
+      "subtitle": "AgentsMeshチームによる技術的な知見、プロダクトアップデート、ストーリー。"
     },
-    "minRead": "min read",
-    "backToList": "Back to Blog",
-    "notFound": "Post not found"
+    "minRead": "分で読める",
+    "backToList": "ブログ一覧に戻る",
+    "notFound": "記事が見つかりません"
   },
   "enterprise": {
     "hero": {
-      "title": "",
-      "titleHighlight": "エンタープライズ",
-      "subtitle": "AIエージェントインフラの完全な制御を求める組織向けのセキュリティ、コンプライアンス、セルフホスト型デプロイメント。"
+      "title": "あなたのエージェント。",
+      "titleHighlight": "あなたのルール。",
+      "subtitle": "エージェントワークフォースを大規模に管理する組織のためのエンタープライズグレードのセキュリティとガバナンス。"
     },
     "onpremise": {
       "title": "プライベート",
       "titleHighlight": "デプロイメント",
-      "description": "自社インフラ内にAgentsMeshを完全にデプロイします。コードとデータがネットワーク外に出ることはありません。"
+      "description": "AgentsMeshを完全に自社インフラ内にデプロイ。あなたのコード、あなたのエージェント、あなたのルール — 外部への露出ゼロ。"
     }
   }
 }

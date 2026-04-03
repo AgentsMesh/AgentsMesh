@@ -717,8 +717,8 @@
         },
         "promptTemplates": {
           "title": "Prompt-Templates",
-          "description": "Verwenden Sie {{variable}}-Platzhalter in Ihrem Prompt. Definieren Sie Standardwerte bei der Loop-Erstellung und überschreiben Sie sie beim Auslösen. Beispiel:",
-          "example": "Überprüfe alle geänderten Dateien im {{branch}}-Branch seit dem letzten Review. Fokus auf {{focus_area}}-Probleme."
+          "description": "Verwenden Sie '{{variable}}'-Platzhalter in Ihrem Prompt. Definieren Sie Standardwerte bei der Loop-Erstellung und überschreiben Sie sie beim Auslösen. Beispiel:",
+          "example": "Überprüfe alle geänderten Dateien im '{{branch}}'-Branch seit dem letzten Review. Fokus auf '{{focus_area}}'-Probleme."
         },
         "webhookCallbacks": {
           "title": "Webhook-Callbacks",
@@ -1511,7 +1511,7 @@
               "description": "Optional description",
               "agent_type_id": "Built-in agent type ID to use",
               "custom_agent_type_id": "Custom agent type ID (alternative to agent_type_id)",
-              "prompt_template": "Task prompt with {{variable}} placeholders (required)",
+              "prompt_template": "Task prompt with '{{variable}}' placeholders (required)",
               "prompt_variables": "Default values for prompt variables (JSON object)",
               "repository_id": "Repository to clone into the sandbox",
               "runner_id": "Preferred runner for execution",

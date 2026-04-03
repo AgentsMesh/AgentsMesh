@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "AgentsMesh - AI Agent Fleet Command Center | Agent Orchestration & Swarm Coordination";
+export const alt = "AgentsMesh - The Agent Workforce Platform | Ship like a team of fifty";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -84,7 +84,7 @@ export default async function Image() {
             textAlign: "center",
           }}
         >
-          AI Agent Fleet Command Center
+          The Agent Workforce Platform
         </div>
         {/* Slogan */}
         <div
@@ -99,7 +99,7 @@ export default async function Image() {
             alignItems: "center",
           }}
         >
-          <span style={{ color: "#ededed" }}>Don&apos;t let humans bottleneck AI agents.</span>
+          <span style={{ color: "#ededed" }}>Ship like a team of fifty.</span>
           <span
             style={{
               background: "linear-gradient(90deg, #22d3ee, #0ea5e9)",
@@ -107,7 +107,7 @@ export default async function Image() {
               color: "transparent",
             }}
           >
-            Agent-centered development starts here.
+            With a team of five.
           </span>
         </div>
       </div>

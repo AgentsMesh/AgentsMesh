@@ -10,23 +10,23 @@
       "language": "言語"
     },
     "hero": {
-      "badge": "AIエージェント艦隊コマンドセンター",
+      "badge": "エージェントワークフォースプラットフォーム",
       "title1": "ターミナルベース",
       "title2": "コーディングエージェント",
       "title3": "コラボレーションプラットフォーム",
-      "slogan1": "バイブコーディングだけじゃない。",
-      "slogan2": "エンタープライズ級の製品を出荷。",
-      "tagline": "AIコーディングエージェント時代の新しい開発プラットフォーム",
-      "description": "エージェント艦隊コマンドセンター。計画、コラボレーション、出荷をすべて一か所で。",
-      "getStartedFree": "無料で始める",
-      "viewDocs": "デモを申し込む",
-      "trustedBy": "世界中の開発者に信頼されています",
+      "slogan1": "50人規模の開発力を。",
+      "slogan2": "5人のチームで。",
+      "tagline": "意欲的なチームのためのエージェントワークフォースプラットフォーム",
+      "description": "すべてのチームメンバーにAIエージェントチームを。タスクを割り当て、進捗を追跡し、エージェント同士を連携させる。コードは自社インフラに留まったまま。",
+      "getStartedFree": "チームを構築する",
+      "viewDocs": "動作を見る",
+      "trustedBy": "世界中の意欲的なチームに信頼されています",
       "teams": "成長するチーム",
       "pods": "数千のPod",
       "openSource": "オープンソース"
     },
     "agentLogos": {
-      "title": "すべての主要なターミナルコーディングエージェントをサポート",
+      "title": "チームが既に使っているエージェントと連携",
       "descriptions": {
         "anthropic": "Anthropic",
         "openai": "OpenAI",
@@ -34,6 +34,29 @@
         "openSource": "オープンソース",
         "community": "コミュニティ",
         "yourOwn": "カスタム"
+      }
+    },
+    "paradigmShift": {
+      "title": "一人が速くなっても、",
+      "titleHighlight": "チーム全体が速くなるわけではない。",
+      "punchline": "個人の生産性は頭打ち。次のステージは、組織の生産性。",
+      "before": {
+        "label": "個人の生産性",
+        "items": {
+          "0": "個人の速度 ×10、チームの成果 ×1",
+          "1": "各自が自分のエージェントを孤立して運用",
+          "2": "コンテキストが個人セッションに閉じ込められる",
+          "3": "ツールが増えるほど、混乱も増える"
+        }
+      },
+      "after": {
+        "label": "組織の生産性",
+        "items": {
+          "0": "個人の速度 ×10、チームの成果 ×50",
+          "1": "各自がエージェント部隊を率い、連携して作業",
+          "2": "コンテキストをリアルタイム共有、完全な可視性",
+          "3": "一つのプラットフォームで全てを管理"
+        }
       }
     },
     "whyTerminal": {
@@ -44,15 +67,15 @@
       "benefits": {
         "autonomous": {
           "title": "自律実行",
-          "description": "単なるコード補完ではありません。ターミナルエージェントは複雑な開発タスクを最初から最後まで独立して完了できます。"
+          "description": "単なるコード補完ではない。ターミナルエージェントは複雑な開発タスクを最初から最後まで独立して完遂する。"
         },
         "fullCapabilities": {
           "title": "完全な機能",
-          "description": "ファイルの読み書き、コマンド実行、Git操作、テスト実行 - 完全なフルスタック開発機能。"
+          "description": "ファイルの読み書き、コマンド実行、Git操作、テスト実行 — 完全なフルスタック開発機能。"
         },
         "dataControl": {
           "title": "データ管理",
-          "description": "セルフホストランナーにより、コードがインフラを離れることはありません。セキュリティとコンプライアンス要件を満たします。"
+          "description": "セルフホスト Runner によりコードがインフラを離れることはない。セキュリティとコンプライアンス要件を満たす。"
         }
       },
       "comparison": {
@@ -82,90 +105,90 @@
       }
     },
     "coreFeatures": {
-      "title": "主要",
-      "titleHighlight": "機能",
-      "description": "ターミナルベースのAIコーディングエージェントを大規模に管理・調整するために必要なすべて。",
+      "title": "コパイロットじゃない。",
+      "titleHighlight": "ワークフォースだ。",
+      "description": "AIエージェントを単独ツールから連携チームへ変える、5つの機能。",
       "agentpod": {
-        "title": "分離されたクラウドワークステーション",
+        "title": "すべてのエージェントに専用デスクを。数秒で準備完了。",
         "subtitle": "AgentPod",
-        "description": "数秒で完全な開発環境を立ち上げ。各ワークステーションには専用のGit worktree、リアルタイムターミナル、ブラウザベースのアクセスを提供。デスクトップ、ノートPC、スマートフォンからどこでもエージェントをモニタリングし操作できます。",
+        "description": "オンデマンドで分離された開発環境を起動。各エージェントが専用ワークスペースを持つ — Gitリポジトリ、ターミナル、フル開発ツール。PCでもスマホでも、すべてのフロアを一望できる。",
         "highlights": {
-          "0": "リアルタイム対話のWebターミナル",
-          "1": "モバイル対応 — どのデバイスからでもエージェントを管理",
-          "2": "ワークステーションごとのGit worktree分離",
-          "3": "複数の同時ワークステーション",
-          "4": "完了時の自動クリーンアップ"
+          "0": "30秒セットアップ — ゼロからコーディングへ",
+          "1": "ブラウザベースターミナル、どのデバイスでも動作",
+          "2": "エージェントごとに分離されたGit worktree — コンフリクトなし",
+          "3": "数十のエージェントを同時実行",
+          "4": "ジョブ完了時に自動クリーンアップ"
         }
       },
       "agentsmesh": {
-        "title": "マルチエージェントコラボレーション",
+        "title": "エージェント同士が会話する。あなたは伝書鳩にならない。",
         "subtitle": "AgentsMesh",
-        "description": "エージェントは並行実行だけでなく協調して動作します。一つのエージェントが他のターミナルを観察し、入力を送信したり共有チャンネルにブロードキャストできます。ピアを発見し、権限を交渉し、自律的に新しいエージェントを生成することも。",
+        "description": "エージェントは互いの作業を観察し、チャンネルでコンテキストを共有し、自律的に連携する。チームメイトを見つけ、アクセスを交渉し、ワークロードに応じて援軍を起動することも。",
         "highlights": {
-          "0": "ターミナルレベルのバインド — エージェント同士がセッションを観察・制御",
-          "1": "@mentions、返信、共有ドキュメント付きチャンネルメッセージング",
-          "2": "エージェントが自律的にピアを発見し新podを生成",
-          "3": "接続と会話のリアルタイムトポロジーマップ",
-          "4": "権限スコープのアクセス（読み取り専用観察または完全ターミナル制御）"
+          "0": "エージェント同士がリアルタイムでターミナルを監視",
+          "1": "@mentionとコンテキスト共有によるチャンネルメッセージング",
+          "2": "自動発見 — エージェントがピアを見つけて招集",
+          "3": "すべてのエージェント接続のライブトポロジーマップ",
+          "4": "スコープ付き権限 — 読み取り専用観察またはフル制御"
         }
       },
       "tickets": {
-        "title": "カンバンボードで働くエージェント",
+        "title": "チケットを書く。完了する。",
         "subtitle": "Tickets",
-        "description": "チケットを作成。エージェントが取得し、分離ブランチでコーディングしてマージリクエストをオープン。エージェントはエピックをサブタスクに分解し、自身のステータスを更新。Git webhookでループを閉じる：パイプライン通過、MRマージ、チケット完了。",
+        "description": "カンバンボードにタスクをドロップ。エージェントがそれを受け取り、ブランチを作成し、コードを書き、マージリクエストをオープン。あなたはレビューしてシップするだけ。",
         "highlights": {
-          "0": "チケット内容が自動でエージェントのプロンプトに",
-          "1": "エージェントがエピックをサブタスクに自主的に分解",
-          "2": "チケットとpodに紐づくMR/PR、ライブパイプラインステータス",
-          "3": "カンバンボードでフルライフサイクル追跡：バックログから完了まで",
-          "4": "Git webhook同期 — マージとパイプラインがチケットを自動更新"
+          "0": "チケットが自動でエージェントの指示に変換",
+          "1": "エージェントがエピックをサブタスクに自主分解",
+          "2": "MR/PRがチケットに紐づき、CIステータスをリアルタイム表示",
+          "3": "バックログからシップまでフルライフサイクル追跡",
+          "4": "Git webhookが自動でループを閉じる"
         }
       },
       "runners": {
-        "title": "あなたのインフラで稼働",
+        "title": "コードは社外に出ない。",
         "subtitle": "Self-Hosted Runners",
-        "description": "クラウド、データセンター、ノートPCなど必要な場所にランナーをデプロイ。コードとデータは第三者サーバーに触れません。",
+        "description": "自社クラウド、データセンター、デスクの下 — どこにでもデプロイ。あなたのコード、あなたのインフラ、外部への露出ゼロ。",
         "highlights": {
-          "0": "Docker / Kubernetesデプロイ",
-          "1": "完全なデータローカライゼーション",
+          "0": "Docker / Kubernetes対応",
+          "1": "完全なデータ主権",
           "2": "エアギャップ環境サポート",
           "3": "完全な監査証跡"
         }
       },
       "scheduledTasks": {
-        "title": "スケジュールタスクをオートパイロットで",
+        "title": "コードベースに24時間365日のメンテナンスクルーを。",
         "subtitle": "LOOP",
-        "description": "定期的な開発タスクを定義 — コードレビュー、依存関係の更新、テストスイートの実行、セキュリティスキャン — エージェントにスケジュール通りに処理させましょう。一度設定すれば、エージェント艦隊がコードベースを24時間健全に保ちます。",
+        "description": "コードレビュー、依存関係の更新、セキュリティスキャン、テストスイート — スケジュールして自動処理。一度設定すれば、エージェントチームがあなたの退勤後もコードベースを守り続ける。",
         "highlights": {
-          "0": "あらゆるエージェントタスクに対応するCronスタイルのスケジューリング",
-          "1": "自動ブランチ作成とMR/PR送信",
-          "2": "完了または失敗時のSlack/Webhook通知",
-          "3": "完全なログと差分を含むタスク履歴",
-          "4": "組み合わせ可能 — 単一ワークフローで複数エージェントを連結"
+          "0": "あらゆるエージェントタスクにCronスタイルのスケジューリング",
+          "1": "自動ブランチ作成とMR送信",
+          "2": "完了・失敗時のSlack/Webhook通知",
+          "3": "ログと差分を含む完全な履歴",
+          "4": "エージェントをマルチステップワークフローにチェーン"
         }
       }
     },
     "howItWorks": {
-      "title": "3ステップで",
-      "titleHighlight": "開始",
-      "description": "デプロイ、接続、そして数分でAIエージェントとのコラボレーションを開始。",
+      "title": "エージェントチームを",
+      "titleHighlight": "3分",
+      "description": "インストールから最初のエージェントまで。前回のスタンドアップより速い。",
       "step1": {
-        "title": "ランナーをデプロイ",
-        "description": "Runnerをダウンロードし、サーバーまたはローカルマシンに登録。"
+        "title": "Runnerをデプロイ",
+        "description": "どのマシンにもインストール可能 — クラウドでもローカルでも。コマンド一発で完了。"
       },
       "step2": {
-        "title": "AgentPodを作成",
-        "description": "Webコンソールを使用して、お好みのAIエージェントでPodを作成。"
+        "title": "作業を割り当て",
+        "description": "ワークステーションを作成し、チケットを書き、スケジュールを設定。エージェントが即座に稼働。"
       },
       "step3": {
-        "title": "コラボレーション開始",
-        "description": "ブラウザでターミナルを開き、チャンネルを作成し、MCPツールでエージェントを調整。"
+        "title": "シップを見届ける",
+        "description": "ブラウザで進捗を追跡。マージリクエストをレビュー。準備ができたらシップ。"
       }
     },
     "enterprise": {
-      "title": "エンタープライズ向けに",
-      "titleHighlight": "構築",
-      "description": "エンタープライズチームが必要とするセキュリティ、コンプライアンス、スケーラビリティ機能。",
+      "title": "あなたのエージェント。",
+      "titleHighlight": "あなたのルール。",
+      "description": "エージェントワークフォースを大規模に管理する組織のためのエンタープライズグレードのセキュリティとガバナンス。",
       "features": {
         "multiTenant": {
           "title": "マルチテナント",
@@ -206,101 +229,82 @@
       }
     },
     "pricing": {
-      "title": "シンプルで透明な",
-      "titleHighlight": "料金",
-      "description": "無料から始めて、成長に合わせてスケール。隠れた料金なし。",
+      "title": "チームをスケールせよ、",
+      "titleHighlight": "予算はそのまま。",
+      "description": "自分のAPIキーを持ち込もう。プラットフォーム料金だけ、トークン課金なし。利用上限なし。",
       "mostPopular": "最も人気",
-      "annualDiscount": "Save 20%",
-      "perSeat": "/seat",
-      "monthly": "Monthly",
-      "yearly": "Yearly",
-      "yearlyDiscount": "Save 17%",
-      "month": "month",
-      "year": "year",
-      "seatMonth": "seat/month",
-      "seatYear": "seat/year",
+      "annualDiscount": "20%オフ",
+      "perSeat": "/席",
+      "monthly": "月額",
+      "yearly": "年額",
+      "yearlyDiscount": "17%オフ",
+      "month": "月",
+      "year": "年",
+      "seatMonth": "席/月",
+      "seatYear": "席/年",
       "based": {
         "name": "Based",
-        "badge": "30-Day Free Trial",
-        "description": "Perfect for individual developers exploring AI coding agents.",
+        "badge": "30日間無料トライアル",
+        "description": "ソロで始めよう。一人のエージェントに何ができるか、試してみて。",
         "features": {
-          "0": "1 seat (solo mode)",
-          "1": "5 concurrent pods",
+          "0": "1席（ソロモード）",
+          "1": "5エージェント同時実行",
           "2": "1 Runner",
-          "3": "5 repositories",
-          "4": "Community support"
+          "3": "5リポジトリ",
+          "4": "コミュニティサポート"
         },
-        "cta": "Start Free Trial"
+        "cta": "無料トライアルを始める"
       },
       "pro": {
         "name": "Pro",
-        "description": "より多くのパワーとコラボレーションが必要なチーム向け。",
+        "description": "最初のエージェントチーム。最大5シート、10エージェント並列実行。",
         "features": {
-          "0": "無制限のランナー",
-          "1": "無制限のPod",
-          "2": "最大10人のチームメンバー",
-          "3": "優先メールサポート",
-          "4": "APIアクセス",
-          "5": "高度な分析",
-          "6": "カスタム統合"
+          "0": "最大5席",
+          "1": "10エージェント同時実行",
+          "2": "10 Runners",
+          "3": "10リポジトリ",
+          "4": "優先メールサポート",
+          "5": "マルチGitプロバイダー対応"
         },
-        "cta": "Proトライアルを開始",
-        "price": "$29",
-        "period": "ユーザー/月"
+        "cta": "Proにアップグレード"
       },
       "enterprise": {
         "name": "Team",
-        "description": "高度なセキュリティニーズを持つ組織向け。",
+        "description": "部門規模。50シートがそれぞれのエージェント部隊を持つ。",
         "features": {
-          "0": "Proのすべて",
-          "1": "専用サポート",
-          "2": "プライベートデプロイ",
-          "3": "SLA保証",
-          "4": "カスタム契約"
+          "0": "最大50席",
+          "1": "50エージェント同時実行",
+          "2": "100 Runners",
+          "3": "無制限リポジトリ",
+          "4": "優先サポート"
         },
-        "cta": "営業に連絡",
-        "price": "カスタム",
-        "period": "お問い合わせ"
+        "cta": "Teamにアップグレード"
       },
       "onpremise": {
         "name": "OnPremise",
-        "price": "Custom",
-        "period": "contact us",
-        "description": "Full private deployment with complete data control.",
+        "price": "カスタム",
+        "period": "お問い合わせ",
+        "description": "完全なプライベートデプロイ。あなたのインフラ、あなたのルール。",
         "features": {
-          "0": "Unlimited seats",
-          "1": "Unlimited pods",
-          "2": "Unlimited Runners",
-          "3": "Air-gapped support",
-          "4": "Dedicated support",
-          "5": "Custom SLA",
-          "6": "White-glove onboarding"
+          "0": "無制限の席数",
+          "1": "無制限のエージェント",
+          "2": "無制限のRunners",
+          "3": "エアギャップサポート",
+          "4": "専任サポート",
+          "5": "カスタムSLA",
+          "6": "ホワイトグローブオンボーディング"
         },
-        "cta": "Contact Sales"
+        "cta": "営業に連絡"
       },
-      "footer": "すべてのプランにSSL暗号化、99.9%稼働率SLA、定期バックアップが含まれます。",
-      "customPlan": "カスタムプランが必要ですか？",
-      "contactUs": "Contact Us",
-      "free": {
-        "name": "無料",
-        "price": "$0",
-        "period": "永久",
-        "description": "始めたばかりの個人開発者に最適。",
-        "features": {
-          "0": "1ランナー",
-          "1": "3つの同時Pod",
-          "2": "1組織メンバー",
-          "3": "コミュニティサポート",
-          "4": "基本的な統合"
-        },
-        "cta": "始める"
-      }
+      "footer": "すべてのプランにBYOK（Bring Your Own Key）対応 — 自分のAI APIキーを使用でき、利用制限なし。",
+      "customPlan": "エンタープライズデプロイが必要ですか？",
+      "contactUs": "お問い合わせ"
     },
     "selfHosted": {
       "title": "完全な",
       "titleHighlight": "セルフホスト",
       "titleEnd": "デプロイが必要ですか？",
-      "description": "AgentsMeshは完全なセルフホストデプロイをサポート。コードとデータはインフラを離れません。厳格なセキュリティとコンプライアンス要件を持つ企業に最適。",
+      "description": "コードとデータはインフラを離れません。AgentsMeshを完全にオンプレミスでデプロイ — 厳格なセキュリティとコンプライアンス要件を持つ組織に最適。",
       "dockerCompose": "Docker Compose",
       "kubernetesHelm": "Kubernetes Helm（近日公開）",
       "airGappedSupport": "エアギャップサポート（近日公開）",
@@ -308,11 +312,11 @@
       "contactSales": "エンタープライズ営業に連絡"
     },
     "finalCta": {
-      "title1": "AIエージェント艦隊を",
-      "title2": "オーケストレートする準備はできましたか？",
-      "description": "AIエージェントオーケストレーションでより速くコードを出荷する開発者に参加しましょう。無料で始められ、クレジットカードは不要です。",
-      "getStartedFree": "無料で始める",
-      "scheduleDemo": "デモを予約",
+      "title1": "あなたのチームが",
+      "title2": "一気に大きくなる。",
+      "description": "エージェント1人から始めて、50人まで拡大。無料で始められ、クレジットカード不要。",
+      "getStartedFree": "チームを構築する",
+      "scheduleDemo": "相談する",
       "freeTier": "無料プランあり",
       "noCreditCard": "クレジットカード不要",
       "selfHostedOption": "セルフホストオプション"
@@ -320,28 +324,28 @@
     "heroDemo": {
       "podTopology": "Podトポロジー",
       "live": "ライブ",
-      "initializingPod": "Pod を初期化中...",
+      "initializingPod": "Podを初期化中...",
       "typeMessage": "メッセージを入力...",
       "connecting": "AgentsMeshに接続中...",
       "connected": "AgentsMeshサーバーに接続しました",
-      "workspace": "ワークスペース：/projects/e-commerce",
+      "workspace": "ワークスペース: /projects/e-commerce",
       "monitorPod": "pod beta-devを監視し、認証実装の調整を支援",
       "bindingPod": "beta-devにバインドして観察・調整します...",
       "boundToPod": "beta-dev (Codex CLI) にバインドしました",
       "observingHeader": "beta-devを観察中",
       "analyzing": "src/auth/handlers.tsを分析中...",
       "creatingOAuth": "OAuth2プロバイダー統合を作成中",
-      "writingOAuth": "書き込み中：src/auth/oauth.ts",
-      "noticedOAuth": "beta-devがOAuthを実装しているのを確認。レート制限を提案します...",
-      "messageSent": "「/auth/*エンドポイントにレート制限を追加することを検討」",
-      "receivedSuggestion": "beta-dev：提案を受信、レートリミッターを実装中...",
-      "writingRateLimit": "beta-dev：src/middleware/rateLimit.tsを書き込み中",
-      "rateLimitAdded": "beta-dev：認証ルートにレート制限を追加しました",
-      "reviewChanges": "素晴らしい！beta-devがレート制限を実装しました。変更を確認します...",
+      "writingOAuth": "書き込み中: src/auth/oauth.ts",
+      "noticedOAuth": "beta-devがOAuthを実装中なのを確認。レート制限の追加を提案します...",
+      "messageSent": "「/auth/*エンドポイントにレート制限の追加を検討してください」",
+      "receivedSuggestion": "beta-dev: 提案を受信、レートリミッターを実装中...",
+      "writingRateLimit": "beta-dev: src/middleware/rateLimit.tsを書き込み中",
+      "rateLimitAdded": "beta-dev: 認証ルートにレート制限を追加しました",
+      "reviewChanges": "素晴らしい！beta-devがレート制限を実装しました。変更をレビューします...",
       "podInfo": {
-        "initializing": "Pod: alpha-dev │ エージェント: Claude Code │ ステータス: 初期化中",
-        "running": "Pod: alpha-dev │ エージェント: Claude Code │ ステータス: 実行中",
-        "observing": "Pod: alpha-dev │ エージェント: Claude Code │ 観察中: beta-dev"
+        "initializing": "Pod: alpha-dev | エージェント: Claude Code | ステータス: 初期化中",
+        "running": "Pod: alpha-dev | エージェント: Claude Code | ステータス: 実行中",
+        "observing": "Pod: alpha-dev | エージェント: Claude Code | 観察中: beta-dev"
       }
     },
     "coreDemo": {
@@ -383,24 +387,24 @@
       }
     },
     "demoVideo": {
-      "title": "実際の",
-      "titleHighlight": "動作を見る",
-      "description": "AgentsMeshがAIエージェントを要件からデリバリーまでオーケストレートする様子を2分以内でご覧ください。",
+      "title": "あなたの未来のチームを",
+      "titleHighlight": "実際に見る",
+      "description": "2分間。チケットからマージリクエストまで — 完全自律。",
       "iframeTitle": "AgentsMesh製品デモ",
       "highlight1": "フルライフサイクルデモ",
-      "highlight2": "マルチエージェントオーケストレーション",
-      "highlight3": "リアルタイム艦隊制御"
+      "highlight2": "マルチエージェントコラボレーション",
+      "highlight3": "自律型タスク完了"
     },
     "footer": {
-      "tagline": "AIエージェント艦隊コマンドセンター — バイブコーディングだけじゃない。エンタープライズ級の製品を出荷。",
+      "tagline": "チームが人員を超えてスケールする場所。",
       "copyright": "AgentsMesh. All rights reserved.",
-      "madeWith": "開発者への愛を込めて作成",
+      "madeWith": "意欲的なチームのために構築",
       "product": {
         "title": "製品",
         "agentpod": "AgentPod",
         "agentsmesh": "AgentsMesh",
         "tickets": "チケット",
-        "runners": "ランナー",
+        "runners": "Runners",
         "pricing": "料金",
         "enterprise": "エンタープライズ"
       },
@@ -429,7 +433,7 @@
     },
     "demo": {
       "title": "デモを申し込む",
-      "subtitle": "AgentsMesh がチームの開発ワークフローをどのように加速できるかをご覧ください。",
+      "subtitle": "AgentsMeshがチームの生産性をどう倍増させるか、ご覧ください。",
       "nameLabel": "氏名",
       "namePlaceholder": "山田太郎",
       "emailLabel": "業務メール",
@@ -437,9 +441,9 @@
       "companyLabel": "会社名",
       "companyPlaceholder": "株式会社サンプル",
       "referralLabel": "どこで知りましたか？",
-      "referralPlaceholder": "例：Twitter、GitHub、知人の紹介...",
+      "referralPlaceholder": "例: Twitter、GitHub、知人の紹介...",
       "messageLabel": "その他（任意）",
-      "messagePlaceholder": "ユースケースやご質問をお聞かせください...",
+      "messagePlaceholder": "チーム規模やユースケースをお聞かせください...",
       "submit": "デモを申し込む",
       "submitting": "送信中...",
       "error": "エラーが発生しました。もう一度お試しください。",
