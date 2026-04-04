@@ -32,11 +32,11 @@ jobs:
           - service: web
             dockerfile: ci/web.Dockerfile
             context: ./web
-            use_ecr: false
+            use_ecr: true
           - service: web-admin
             dockerfile: ci/web-admin.Dockerfile
             context: ./web-admin
-            use_ecr: false
+            use_ecr: true
           - service: relay
             dockerfile: ci/relay.Dockerfile
             context: .
