@@ -138,4 +138,3 @@ func TestCopyFile_DestCreateError(t *testing.T) {
 	err = copyFile(srcPath, dstPath)
 	assert.Error(t, err)
 }
-

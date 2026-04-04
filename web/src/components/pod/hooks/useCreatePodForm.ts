@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { PodData, AgentData, RepositoryData } from "@/lib/api";
 import { usePodCreationStore } from "@/stores/podCreation";
-import { buildPodfileLayer } from "@/lib/podfile-layer";
+import { buildAgentfileLayer } from "@/lib/agentfile-layer";
 import { POD_MODE_PTY } from "@/lib/pod-modes";
 import type { PodMode } from "@/lib/pod-modes";
 import { submitCreatePod } from "./useCreatePodFormSubmit";
@@ -36,7 +36,7 @@ export function useCreatePodForm(
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<FormValidationErrors>({});
 
-  // PodFile Layer state
+  // AgentFile Layer state
   const [rawLayerMode, setRawLayerModeState] = useState(false);
   const [rawLayerText, setRawLayerText] = useState("");
 
@@ -126,7 +126,7 @@ export function useCreatePodForm(
     prefsInitializedRef.current = false;
   }, [creds, prefsInitializedRef]);
 
-  // PodFile Layer: compute from form fields
+  // AgentFile Layer: compute from form fields
   const generatedLayer = useMemo(() => {
     const repoSlug = selectedRepository
       ? repositories.find((r) => r.id === selectedRepository)?.slug
@@ -136,7 +136,7 @@ export function useCreatePodForm(
       : creds.credentialProfiles.find(
           (p) => p.id === creds.selectedCredentialProfile
         )?.name;
-    return buildPodfileLayer({
+    return buildAgentfileLayer({
       configValues: configValues ?? {},
       repositorySlug: repoSlug,
       branchName: selectedBranch || undefined,
@@ -146,7 +146,7 @@ export function useCreatePodForm(
     });
   }, [configValues, selectedRepository, repositories, selectedBranch, creds.selectedCredentialProfile, creds.credentialProfiles, interactionMode, prompt]);
 
-  const podfileLayer = rawLayerMode ? rawLayerText : generatedLayer;
+  const agentfileLayer = rawLayerMode ? rawLayerText : generatedLayer;
 
   const setRawLayerMode = useCallback((enabled: boolean) => {
     if (enabled && !rawLayerText) {
@@ -168,7 +168,7 @@ export function useCreatePodForm(
       try {
         const pod = await submitCreatePod({
           selectedAgent, alias, selectedRunnerId,
-          podfileLayer: podfileLayer || undefined, options,
+          agentfileLayer: agentfileLayer || undefined, options,
         });
         if (pod) {
           setLastChoices({
@@ -188,7 +188,7 @@ export function useCreatePodForm(
         setLoading(false);
       }
     },
-    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, creds.selectedCredentialProfile, interactionMode, prompt, alias, podfileLayer, onSuccess, validate, setLastChoices]
+    [selectedAgent, selectedAgentSlug, selectedRepository, selectedBranch, creds.selectedCredentialProfile, interactionMode, prompt, alias, agentfileLayer, onSuccess, validate, setLastChoices]
   );
 
   return {
@@ -200,7 +200,7 @@ export function useCreatePodForm(
     setSelectedCredentialProfile: creds.setSelectedCredentialProfile,
     setInteractionMode, setPrompt, setAlias, selectedAgentSlug, supportedModes,
     loading, error, validationErrors, isValid, reset, validate, submit,
-    // PodFile Layer
-    rawLayerMode, rawLayerText, podfileLayer, setRawLayerMode, setRawLayerText,
+    // AgentFile Layer
+    rawLayerMode, rawLayerText, agentfileLayer, setRawLayerMode, setRawLayerText,
   };
 }

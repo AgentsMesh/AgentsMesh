@@ -19,7 +19,7 @@ type Agent struct {
 	Executable    string  `gorm:"size:100" json:"executable,omitempty"`
 	DefaultArgs   *string `gorm:"type:text" json:"default_args,omitempty"`
 
-	PodfileSource *string `gorm:"type:text" json:"podfile_source,omitempty"`
+	AgentfileSource *string `gorm:"type:text;column:agentfile_source" json:"agentfile_source,omitempty"`
 
 	IsBuiltin bool `gorm:"not null;default:false" json:"is_builtin"`
 	IsActive  bool `gorm:"not null;default:true" json:"is_active"`
@@ -84,7 +84,7 @@ type CustomAgent struct {
 	LaunchCommand string  `gorm:"size:500;not null" json:"launch_command"`
 	DefaultArgs   *string `gorm:"type:text" json:"default_args,omitempty"`
 
-	PodfileSource *string `gorm:"type:text" json:"podfile_source,omitempty"`
+	AgentfileSource *string `gorm:"type:text;column:agentfile_source" json:"agentfile_source,omitempty"`
 
 	IsActive bool `gorm:"not null;default:true" json:"is_active"`
 

@@ -10,16 +10,16 @@ import (
 type mockHandler struct {
 	mu sync.Mutex
 
-	createPodCalled      bool
-	terminatePodCalled   bool
-	terminalInputCalled  bool
+	createPodCalled     bool
+	terminatePodCalled  bool
+	terminalInputCalled bool
 
-	sendPromptCalled          bool
+	sendPromptCalled bool
 
-	lastCreateCmd             *runnerv1.CreatePodCommand
-	lastTerminateReq          TerminatePodRequest
-	lastInputReq              PodInputRequest
-	lastSendPromptCmd         *runnerv1.SendPromptCommand
+	lastCreateCmd     *runnerv1.CreatePodCommand
+	lastTerminateReq  TerminatePodRequest
+	lastInputReq      PodInputRequest
+	lastSendPromptCmd *runnerv1.SendPromptCommand
 
 	pods []PodInfo
 }

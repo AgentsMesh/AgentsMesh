@@ -36,7 +36,7 @@ func (cv ConfigValues) Value() (driver.Value, error) {
 }
 
 // MergeConfigs merges multiple config maps with priority (later maps override earlier).
-// Used for: PodFile CONFIG defaults -> user personal config -> pod overrides
+// Used for: AgentFile CONFIG defaults -> user personal config -> pod overrides
 func MergeConfigs(configs ...map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 

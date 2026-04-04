@@ -13,8 +13,8 @@ func TestUserAgentCredentialProfileTableName(t *testing.T) {
 	}
 }
 
-// podfileWithEnv is a helper that returns a PodFile source with ENV declarations.
-func podfileWithEnv() string {
+// agentfileWithEnv is a helper that returns an AgentFile source with ENV declarations.
+func agentfileWithEnv() string {
 	return `AGENT "claude"
 ENV api_key SECRET OPTIONAL
 ENV auth_token SECRET OPTIONAL
@@ -25,7 +25,7 @@ ENV base_url TEXT OPTIONAL
 func TestToResponse_SecretFieldsNotExposed(t *testing.T) {
 	// secret fields (api_key, auth_token) must appear in ConfiguredFields
 	// but NEVER in ConfiguredValues
-	pf := podfileWithEnv()
+	pf := agentfileWithEnv()
 	profile := &UserAgentCredentialProfile{
 		ID: 1,
 		UserID:      10,
@@ -38,7 +38,7 @@ func TestToResponse_SecretFieldsNotExposed(t *testing.T) {
 		Agent: &Agent{
 			Slug:          "claude-code",
 			Name:          "Claude Code",
-			PodfileSource: &pf,
+			AgentfileSource: &pf,
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -69,7 +69,7 @@ func TestToResponse_SecretFieldsNotExposed(t *testing.T) {
 
 func TestToResponse_AuthTokenNotExposed(t *testing.T) {
 	// Verify auth_token (secret) is never exposed in ConfiguredValues
-	pf := podfileWithEnv()
+	pf := agentfileWithEnv()
 	profile := &UserAgentCredentialProfile{
 		ID: 2,
 		UserID:      10,
@@ -82,7 +82,7 @@ func TestToResponse_AuthTokenNotExposed(t *testing.T) {
 		Agent: &Agent{
 			Slug:          "claude-code",
 			Name:          "Claude Code",
-			PodfileSource: &pf,
+			AgentfileSource: &pf,
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -112,7 +112,7 @@ func TestToResponse_AuthTokenNotExposed(t *testing.T) {
 
 func TestToResponse_NoAgent(t *testing.T) {
 	// Without Agent loaded, all fields go to ConfiguredFields only
-	// (no PodFile to determine type, so nothing goes to ConfiguredValues)
+	// (no AgentFile to determine type, so nothing goes to ConfiguredValues)
 	profile := &UserAgentCredentialProfile{
 		ID:          3,
 		UserID:      10,
@@ -166,7 +166,7 @@ func TestToResponse_NilCredentials(t *testing.T) {
 
 func TestToResponse_EmptyTextValueNotExposed(t *testing.T) {
 	// Empty text values should NOT appear in ConfiguredValues
-	pf := podfileWithEnv()
+	pf := agentfileWithEnv()
 	profile := &UserAgentCredentialProfile{
 		ID:          5,
 		UserID:      10,
@@ -179,7 +179,7 @@ func TestToResponse_EmptyTextValueNotExposed(t *testing.T) {
 		Agent: &Agent{
 			Slug:          "claude-code",
 			Name:          "Claude Code",
-			PodfileSource: &pf,
+			AgentfileSource: &pf,
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

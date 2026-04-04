@@ -63,7 +63,7 @@ func TestTransport_ToolResultContentArray(t *testing.T) {
 	writeLine(f.PW, map[string]any{"type": "user", "message": map[string]any{
 		"role": "user", "content": []map[string]any{{
 			"type": "tool_result", "tool_use_id": "ta",
-			"content": []map[string]any{{"type": "text", "text": "a"}, {"type": "text", "text": "b"}},
+			"content":  []map[string]any{{"type": "text", "text": "a"}, {"type": "text", "text": "b"}},
 			"is_error": false,
 		}},
 	}})

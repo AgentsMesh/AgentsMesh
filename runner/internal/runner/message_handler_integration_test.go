@@ -27,7 +27,7 @@ func TestMessageHandlerIntegrationWithMockConnection(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 		workspace: ws,
 	}
@@ -39,7 +39,7 @@ func TestMessageHandlerIntegrationWithMockConnection(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "integration-pod",
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 	}
 
 	// Create pod via mock connection simulation
@@ -75,7 +75,7 @@ func TestMessageHandlerIntegrationPodLifecycle(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 	}
 
@@ -87,7 +87,7 @@ func TestMessageHandlerIntegrationPodLifecycle(t *testing.T) {
 		cmd := &runnerv1.CreatePodCommand{
 			PodKey:        "lifecycle-pod-" + string(rune('a'+i)),
 			LaunchCommand: "sleep",
-			PodfileSource: "AGENT sleep\nPROMPT_POSITION prepend\n",
+			AgentfileSource: "AGENT sleep\nPROMPT_POSITION prepend\n",
 		}
 		err := mockConn.SimulateCreatePod(cmd)
 		if err != nil {

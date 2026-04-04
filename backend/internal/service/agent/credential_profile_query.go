@@ -103,7 +103,7 @@ func (s *CredentialProfileService) GetEffectiveCredentialsForPod(ctx context.Con
 	return decrypted, false, nil
 }
 
-// ResolveCredentialsByName resolves credentials by profile name from a PodFile CREDENTIAL declaration.
+// ResolveCredentialsByName resolves credentials by profile name from an AgentFile CREDENTIAL declaration.
 // "runner_host" → RunnerHost mode (no credentials injected).
 // Any other name → look up by name, return credentials + isRunnerHost flag.
 func (s *CredentialProfileService) ResolveCredentialsByName(ctx context.Context, userID int64, agentSlug, profileName string) (agent.EncryptedCredentials, bool, error) {

@@ -41,19 +41,19 @@ type Server struct {
 
 // Status represents the current runner status.
 type Status struct {
-	Running      bool      `json:"running"`
-	Connected    bool      `json:"connected"`
-	ServerURL    string    `json:"server_url"`
-	NodeID       string    `json:"node_id"`
-	OrgSlug      string    `json:"org_slug"`
-	Version      string    `json:"version"`
-	Uptime       string    `json:"uptime"`
-	StartTime    time.Time `json:"start_time"`
-	ActivePods   int       `json:"active_pods"`
-	TotalPods    int       `json:"total_pods"`
-	LastError    string    `json:"last_error,omitempty"`
-	Platform     string    `json:"platform"`
-	GoVersion    string    `json:"go_version"`
+	Running    bool      `json:"running"`
+	Connected  bool      `json:"connected"`
+	ServerURL  string    `json:"server_url"`
+	NodeID     string    `json:"node_id"`
+	OrgSlug    string    `json:"org_slug"`
+	Version    string    `json:"version"`
+	Uptime     string    `json:"uptime"`
+	StartTime  time.Time `json:"start_time"`
+	ActivePods int       `json:"active_pods"`
+	TotalPods  int       `json:"total_pods"`
+	LastError  string    `json:"last_error,omitempty"`
+	Platform   string    `json:"platform"`
+	GoVersion  string    `json:"go_version"`
 }
 
 // New creates a new web console server.

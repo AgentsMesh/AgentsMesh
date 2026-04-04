@@ -4,10 +4,10 @@ import "strings"
 
 // Common prompt ending symbols
 var promptEndSymbols = []string{
-	">", ">>>", "»", "›",    // Common input prompts
-	"$", "#", "%",           // Shell prompts
-	"?", ":",                // Question/input prompts
-	"⟩", "❯", "➜", "→",      // Fancy prompts
+	">", ">>>", "»", "›", // Common input prompts
+	"$", "#", "%", // Shell prompts
+	"?", ":", // Question/input prompts
+	"⟩", "❯", "➜", "→", // Fancy prompts
 }
 
 // hasPromptSymbol checks if the line contains a common prompt symbol.

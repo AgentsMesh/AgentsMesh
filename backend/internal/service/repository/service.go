@@ -170,7 +170,7 @@ func (s *Service) GetBySlug(ctx context.Context, orgID int64, providerType, prov
 }
 
 // FindByOrgSlug looks up a repository by org + slug (ignoring provider).
-// Used by PodFile REPO slug resolution.
+// Used by AgentFile REPO slug resolution.
 func (s *Service) FindByOrgSlug(ctx context.Context, orgID int64, slug string) (*gitprovider.Repository, error) {
 	repo, err := s.repo.FindByOrgSlug(ctx, orgID, slug)
 	if err != nil {

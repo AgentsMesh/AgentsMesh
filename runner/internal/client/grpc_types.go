@@ -98,10 +98,10 @@ type GRPCAgentInfo struct {
 
 // GRPCInitializeResult represents the initialization result from server.
 type GRPCInitializeResult struct {
-	ProtocolVersion int32                `json:"protocol_version"`
-	ServerInfo      *GRPCServerInfo      `json:"server_info"`
-	Agents          []*GRPCAgentInfo     `json:"agents"`
-	Features        []string             `json:"features"`
+	ProtocolVersion int32            `json:"protocol_version"`
+	ServerInfo      *GRPCServerInfo  `json:"server_info"`
+	Agents          []*GRPCAgentInfo `json:"agents"`
+	Features        []string         `json:"features"`
 }
 
 // GRPCFileToCreate represents a file to create in the sandbox.

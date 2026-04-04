@@ -29,13 +29,13 @@ const mockAgents = [
   { name: "Claude Code", slug: "claude-code", is_builtin: true, is_active: true },
 ];
 
-describe("useCreatePodForm - credential via podfile_layer (SSOT)", () => {
+describe("useCreatePodForm - credential via agentfile_layer (SSOT)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockListForAgent.mockResolvedValue({ profiles: [], runner_host: { available: true } });
   });
 
-  it("should omit CREDENTIAL from podfile_layer when RunnerHost is selected", async () => {
+  it("should omit CREDENTIAL from agentfile_layer when RunnerHost is selected", async () => {
     mockCreate.mockResolvedValue({ pod: { pod_key: "test-pod", id: 1, status: "initializing", agent_status: "idle" } });
 
     const { result } = renderHook(() => useCreatePodForm(mockAgents, []));
@@ -54,14 +54,14 @@ describe("useCreatePodForm - credential via podfile_layer (SSOT)", () => {
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
     const createArg = mockCreate.mock.calls[0][0];
-    // credential_profile_id no longer sent; credential goes through podfile_layer
+    // credential_profile_id no longer sent; credential goes through agentfile_layer
     expect(createArg).not.toHaveProperty("credential_profile_id");
-    // RunnerHost means no CREDENTIAL declaration in PodFile Layer
-    const layer = createArg.podfile_layer ?? "";
+    // RunnerHost means no CREDENTIAL declaration in AgentFile Layer
+    const layer = createArg.agentfile_layer ?? "";
     expect(layer).not.toContain("CREDENTIAL");
   });
 
-  it("should include CREDENTIAL in podfile_layer when custom profile selected", async () => {
+  it("should include CREDENTIAL in agentfile_layer when custom profile selected", async () => {
     const customProfile = { id: 42, name: "My API Key", is_default: false, is_active: true };
     mockListForAgent.mockResolvedValue({
       profiles: [customProfile],
@@ -90,11 +90,11 @@ describe("useCreatePodForm - credential via podfile_layer (SSOT)", () => {
     const createArg = mockCreate.mock.calls[0][0];
     // credential_profile_id no longer sent as separate field
     expect(createArg).not.toHaveProperty("credential_profile_id");
-    // Custom profile name should appear in podfile_layer
-    expect(createArg.podfile_layer).toContain('CREDENTIAL "My API Key"');
+    // Custom profile name should appear in agentfile_layer
+    expect(createArg.agentfile_layer).toContain('CREDENTIAL "My API Key"');
   });
 
-  it("should always send podfile_layer via API (SSOT)", async () => {
+  it("should always send agentfile_layer via API (SSOT)", async () => {
     mockCreate.mockResolvedValue({ pod: { pod_key: "test-pod", id: 1, status: "initializing", agent_status: "idle" } });
 
     const { result } = renderHook(() => useCreatePodForm(mockAgents, []));
@@ -108,7 +108,7 @@ describe("useCreatePodForm - credential via podfile_layer (SSOT)", () => {
     });
 
     const createArg = mockCreate.mock.calls[0][0];
-    // The SSOT field: agent_slug and podfile_layer are the core parameters
+    // The SSOT field: agent_slug and agentfile_layer are the core parameters
     expect(createArg).toHaveProperty("agent_slug", "claude-code");
     // Old scattered fields should not be present
     expect(createArg).not.toHaveProperty("credential_profile_id");

@@ -151,12 +151,12 @@ func formatDuration(d time.Duration) string {
 
 // SpinnerProgress provides a simple spinner for indeterminate progress.
 type SpinnerProgress struct {
-	message  string
-	frames   []string
-	current  int
-	done     chan struct{}
-	stopped  bool
-	mu       sync.Mutex
+	message string
+	frames  []string
+	current int
+	done    chan struct{}
+	stopped bool
+	mu      sync.Mutex
 }
 
 // NewSpinnerProgress creates a new spinner progress display.

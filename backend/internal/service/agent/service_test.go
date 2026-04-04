@@ -34,7 +34,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		files_template BLOB,
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
-		podfile_source TEXT,
+		agentfile_source TEXT,
 		is_builtin INTEGER NOT NULL DEFAULT 0,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		supported_modes TEXT NOT NULL DEFAULT 'pty',
@@ -52,7 +52,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		default_args TEXT,
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
-		podfile_source TEXT,
+		agentfile_source TEXT,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

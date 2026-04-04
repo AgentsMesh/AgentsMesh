@@ -140,4 +140,3 @@ func TestSerialize_LineWrapDetection(t *testing.T) {
 			vt.GetDisplay(), vt2.GetDisplay())
 	}
 }
-

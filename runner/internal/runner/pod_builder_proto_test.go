@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Tests for the proto-driven Build() path after PodFile eval migration to Backend.
+// Tests for the proto-driven Build() path after AgentFile eval migration to Backend.
 // Covers: prompt injection, placeholder resolution, InteractionMode routing.
 
 // === Prompt Injection ===

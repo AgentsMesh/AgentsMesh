@@ -33,7 +33,7 @@ func TestSetup_LocalPath_UsesSandboxRootOverride(t *testing.T) {
 		PodKey:        "resume-pod-key",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"test"},
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: sourceSandbox,
 		},
@@ -79,7 +79,7 @@ func TestCreateFiles_ResumeMode_McpJsonInWorkDir(t *testing.T) {
 		PodKey:        "resume-mcp-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"test"},
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: sourceSandbox,
 		},
@@ -125,7 +125,7 @@ func TestCreateFiles_ResumeMode_RootPathTemplate(t *testing.T) {
 		PodKey:        "resume-root-tpl-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"test"},
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: sourceSandbox,
 		},
@@ -173,7 +173,7 @@ func TestSetup_LocalPath_ErrorDoesNotDeleteSourceSandbox(t *testing.T) {
 		PodKey:        "resume-error-pod",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"test"},
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
 			LocalPath: sourceSandbox,
 		},

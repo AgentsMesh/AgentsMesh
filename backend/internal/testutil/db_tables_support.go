@@ -179,7 +179,7 @@ func supportTableDDLs() []string {
 		`CREATE TABLE IF NOT EXISTS custom_agents (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL, slug TEXT NOT NULL,
-			name TEXT NOT NULL, description TEXT, podfile_source TEXT,
+			name TEXT NOT NULL, description TEXT, agentfile_source TEXT,
 			supported_modes TEXT NOT NULL DEFAULT 'pty',
 			created_by_id INTEGER NOT NULL,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

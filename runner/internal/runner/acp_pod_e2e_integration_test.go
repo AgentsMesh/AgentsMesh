@@ -15,16 +15,16 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
-// TestACPPod_FullLifecycle_Integration builds an ACP pod via PodFile,
+// TestACPPod_FullLifecycle_Integration builds an ACP pod via AgentFile,
 // manually wires an ACPClient with the mock agent, then verifies:
-// Start → NewSession → SendPrompt → content chunks → state transitions → Stop.
+// Start -> NewSession -> SendPrompt -> content chunks -> state transitions -> Stop.
 func TestACPPod_FullLifecycle_Integration(t *testing.T) {
-	// 1. Build the ACP pod (no ACPClient yet — just like buildACPPod does).
-	podfile := "AGENT echo\nMODE acp\nPROMPT_POSITION prepend\n"
+	// 1. Build the ACP pod (no ACPClient yet -- just like buildACPPod does).
+	agentfile := "AGENT echo\nMODE acp\nPROMPT_POSITION prepend\n"
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: t.TempDir()}}
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "acp-lifecycle-test",
-		PodfileSource: podfile,
+		PodKey:          "acp-lifecycle-test",
+		AgentfileSource: agentfile,
 	}
 	pod, err := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).WithPtySize(80, 24).
@@ -134,11 +134,11 @@ func TestACPPod_MessageHandler_CreatePod_Integration(t *testing.T) {
 	}))
 
 	// Use the mock agent binary as the ACP launch command.
-	// The path must be quoted in PodFile because it contains slashes.
+	// The path must be quoted in AgentFile because it contains slashes.
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "acp-e2e-handler-pod",
-		LaunchCommand: mockAgentCmd(),
-		PodfileSource: "AGENT \"" + mockAgentCmd() + "\"\nMODE acp\nPROMPT_POSITION prepend\n",
+		PodKey:          "acp-e2e-handler-pod",
+		LaunchCommand:   mockAgentCmd(),
+		AgentfileSource: "AGENT \"" + mockAgentCmd() + "\"\nMODE acp\nPROMPT_POSITION prepend\n",
 		EnvVars:       map[string]string{"ACP_MOCK_AGENT": "1"},
 		LaunchArgs:    mockAgentArgs(),
 		InitialPrompt: "hello from e2e",

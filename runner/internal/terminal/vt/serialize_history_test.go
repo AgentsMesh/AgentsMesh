@@ -15,7 +15,7 @@ func TestSerialize_HistoryWithStyles(t *testing.T) {
 	vt.Feed([]byte("\x1b[32mGreen Line 2\x1b[0m\n"))
 	vt.Feed([]byte("\x1b[34mBlue Line 3\x1b[0m\n"))
 	vt.Feed([]byte("\x1b[33mYellow Line 4\x1b[0m\n")) // This pushes line 1 into history
-	vt.Feed([]byte("Normal Line 5\n"))               // This pushes line 2 into history
+	vt.Feed([]byte("Normal Line 5\n"))                // This pushes line 2 into history
 
 	// Serialize including history
 	opts := DefaultSerializeOptions()

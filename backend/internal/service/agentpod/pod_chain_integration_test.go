@@ -15,18 +15,18 @@ import (
 
 // ==================== Helpers ====================
 
-// acpPodfile returns a base PodFile that supports both pty and acp modes.
-func acpPodfile() string {
+// acpAgentfile returns a base AgentFile that supports both pty and acp modes.
+func acpAgentfile() string {
 	return "AGENT claude\nEXECUTABLE claude\nMODE pty\nMCP ON\nPROMPT_POSITION prepend\n"
 }
 
 // acpProvider creates a mockAgentConfigProvider for an agent supporting pty+acp.
-func acpProvider(podfileSrc string) *mockAgentConfigProvider {
+func acpProvider(agentfileSrc string) *mockAgentConfigProvider {
 	return &mockAgentConfigProvider{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", Name: "Claude Code",
 			LaunchCommand: "claude", SupportedModes: "pty,acp",
-			PodfileSource: &podfileSrc,
+			AgentfileSource: &agentfileSrc,
 		},
 		config: agentDomain.ConfigValues{}, creds: agentDomain.EncryptedCredentials{},
 		isRunner: true,
@@ -34,11 +34,11 @@ func acpProvider(podfileSrc string) *mockAgentConfigProvider {
 }
 
 // acpResolver builds a mockAgentResolver that supports pty+acp.
-func acpResolver(podfileSrc string) *mockAgentResolver {
+func acpResolver(agentfileSrc string) *mockAgentResolver {
 	return &mockAgentResolver{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", SupportedModes: "pty,acp",
-			PodfileSource: &podfileSrc,
+			AgentfileSource: &agentfileSrc,
 		},
 	}
 }
@@ -48,13 +48,13 @@ func withConfigBuilder(cb *agent.ConfigBuilder) func(*PodOrchestratorDeps) {
 	return func(d *PodOrchestratorDeps) { d.ConfigBuilder = cb }
 }
 
-// ==================== Test 1: PodFile Layer -> Command ====================
+// ==================== Test 1: AgentFile Layer -> Command ====================
 
-func TestPodChain_PodfileLayerToCommand(t *testing.T) {
+func TestPodChain_AgentfileLayerToCommand(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	podfileSrc := acpPodfile()
-	provider := acpProvider(podfileSrc)
-	resolver := acpResolver(podfileSrc)
+	agentfileSrc := acpAgentfile()
+	provider := acpProvider(agentfileSrc)
+	resolver := acpResolver(agentfileSrc)
 
 	orch, podSvc, ctx := setupIntegrationOrchestrator(t,
 		withCoordinator(coord),
@@ -68,7 +68,7 @@ func TestPodChain_PodfileLayerToCommand(t *testing.T) {
 		UserID:         ctxUserID(ctx),
 		RunnerID:       ctxRunnerID(ctx),
 		AgentSlug:      "claude-code",
-		PodfileLayer:   &layer,
+		AgentfileLayer:   &layer,
 		Cols:           120, Rows: 40,
 	})
 	require.NoError(t, err)
@@ -103,8 +103,8 @@ func TestPodChain_PodfileLayerToCommand(t *testing.T) {
 
 func TestPodChain_RepoSlugResolution(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	podfileSrc := acpPodfile()
-	provider := acpProvider(podfileSrc)
+	agentfileSrc := acpAgentfile()
+	provider := acpProvider(agentfileSrc)
 
 	// Mock repo service resolves slug -> repository with clone URL
 	repoSvc := &mockRepoService{
@@ -114,7 +114,7 @@ func TestPodChain_RepoSlugResolution(t *testing.T) {
 			DefaultBranch: "main",
 		},
 	}
-	resolver := acpResolver(podfileSrc)
+	resolver := acpResolver(agentfileSrc)
 
 	orch, _, ctx := setupIntegrationOrchestrator(t,
 		withCoordinator(coord),
@@ -129,7 +129,7 @@ func TestPodChain_RepoSlugResolution(t *testing.T) {
 		UserID:         ctxUserID(ctx),
 		RunnerID:       ctxRunnerID(ctx),
 		AgentSlug:      "claude-code",
-		PodfileLayer:   &layer,
+		AgentfileLayer:   &layer,
 	})
 	require.NoError(t, err)
 
@@ -148,20 +148,20 @@ func TestPodChain_RepoSlugResolution(t *testing.T) {
 
 func TestPodChain_CredentialFlow(t *testing.T) {
 	coord := &mockPodCoordinator{}
-	podfileSrc := acpPodfile()
+	agentfileSrc := acpAgentfile()
 
 	// Provider that resolves CREDENTIAL name to encrypted credentials
 	credProvider := &mockAgentConfigProvider{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", Name: "Claude Code",
 			LaunchCommand: "claude", SupportedModes: "pty,acp",
-			PodfileSource: &podfileSrc,
+			AgentfileSource: &agentfileSrc,
 		},
 		config:   agentDomain.ConfigValues{},
 		creds:    agentDomain.EncryptedCredentials{"ANTHROPIC_API_KEY": "enc-key-123"},
 		isRunner: false,
 	}
-	resolver := acpResolver(podfileSrc)
+	resolver := acpResolver(agentfileSrc)
 
 	orch, _, ctx := setupIntegrationOrchestrator(t,
 		withCoordinator(coord),
@@ -175,7 +175,7 @@ func TestPodChain_CredentialFlow(t *testing.T) {
 		UserID:         ctxUserID(ctx),
 		RunnerID:       ctxRunnerID(ctx),
 		AgentSlug:      "claude-code",
-		PodfileLayer:   &layer,
+		AgentfileLayer:   &layer,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, result.Pod)
@@ -197,7 +197,7 @@ func TestPodChain_UnsupportedInteractionMode(t *testing.T) {
 	ptyOnlyResolver := &mockAgentResolver{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", SupportedModes: "pty",
-			PodfileSource: &ptyOnlySrc,
+			AgentfileSource: &ptyOnlySrc,
 		},
 	}
 	provider := acpProvider(ptyOnlySrc) // provider doesn't matter for mode validation
@@ -208,14 +208,14 @@ func TestPodChain_UnsupportedInteractionMode(t *testing.T) {
 		withConfigBuilder(agent.NewConfigBuilder(provider)),
 	)
 
-	// PodFile layer requests MODE acp, but agent only supports pty
+	// AgentFile layer requests MODE acp, but agent only supports pty
 	layer := "MODE acp\n"
 	_, err := orch.CreatePod(ctx, &OrchestrateCreatePodRequest{
 		OrganizationID: ctxOrgID(ctx),
 		UserID:         ctxUserID(ctx),
 		RunnerID:       ctxRunnerID(ctx),
 		AgentSlug:      "claude-code",
-		PodfileLayer:   &layer,
+		AgentfileLayer:   &layer,
 	})
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrUnsupportedInteractionMode)
@@ -236,8 +236,8 @@ func TestPodChain_ConfigBuilderFailure(t *testing.T) {
 		agentErr: errors.New("agent config not available"),
 	}
 
-	podfileSrc := acpPodfile()
-	resolver := acpResolver(podfileSrc)
+	agentfileSrc := acpAgentfile()
+	resolver := acpResolver(agentfileSrc)
 
 	orch, podSvc, ctx := setupIntegrationOrchestrator(t,
 		withCoordinator(coord),
@@ -266,9 +266,9 @@ func TestPodChain_ConfigBuilderFailure(t *testing.T) {
 func TestPodChain_DispatchFailureMarksError(t *testing.T) {
 	coord := &mockPodCoordinator{err: errors.New("runner connection refused")}
 
-	podfileSrc := acpPodfile()
-	provider := acpProvider(podfileSrc)
-	resolver := acpResolver(podfileSrc)
+	agentfileSrc := acpAgentfile()
+	provider := acpProvider(agentfileSrc)
+	resolver := acpResolver(agentfileSrc)
 
 	orch, podSvc, ctx := setupIntegrationOrchestrator(t,
 		withCoordinator(coord),
@@ -282,7 +282,7 @@ func TestPodChain_DispatchFailureMarksError(t *testing.T) {
 		UserID:         ctxUserID(ctx),
 		RunnerID:       ctxRunnerID(ctx),
 		AgentSlug:      "claude-code",
-		PodfileLayer:   &layer,
+		AgentfileLayer:   &layer,
 	})
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrRunnerDispatchFailed)

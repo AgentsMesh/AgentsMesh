@@ -38,14 +38,14 @@ printf '%s\n' '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-sessi
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
 		MCPPort:       19000,
-		PodKey:  "worker-123",
+		PodKey:        "worker-123",
 	})
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -84,7 +84,7 @@ printf '%s\n' '{"result": "CONTINUE\nMore work needed."}'
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",
 		MCPPort:          19000,
-		PodKey:     "worker-123",
+		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
 	})
 
@@ -92,7 +92,7 @@ printf '%s\n' '{"result": "CONTINUE\nMore work needed."}'
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -139,14 +139,14 @@ echo "Done."
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
 		MCPPort:       19000,
-		PodKey:  "worker-123",
+		PodKey:        "worker-123",
 	})
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -190,7 +190,7 @@ echo "More work."
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",
 		MCPPort:          19000,
-		PodKey:     "worker-123",
+		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
 	})
 
@@ -198,7 +198,7 @@ echo "More work."
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -234,14 +234,14 @@ func TestControlRunner_StartControlProcess_ErrorWithLogger(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
 		MCPPort:       19000,
-		PodKey:  "worker-123",
+		PodKey:        "worker-123",
 	})
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})
@@ -276,7 +276,7 @@ func TestControlRunner_ResumeControlProcess_ErrorWithLogger(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",
 		MCPPort:          19000,
-		PodKey:     "worker-123",
+		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
 	})
 
@@ -284,7 +284,7 @@ func TestControlRunner_ResumeControlProcess_ErrorWithLogger(t *testing.T) {
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 		Logger:        logger,
 	})

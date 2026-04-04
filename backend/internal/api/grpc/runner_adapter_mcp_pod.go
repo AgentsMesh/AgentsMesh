@@ -12,7 +12,7 @@ import (
 
 // mcpCreatePod handles the "create_pod" MCP method.
 // Delegates to PodOrchestrator for the full creation flow (DB + config + Runner command).
-// When podfile_layer is provided, it is the SSOT for pod configuration (MODE, CONFIG, REPO, etc.).
+// When agentfile_layer is provided, it is the SSOT for pod configuration (MODE, CONFIG, REPO, etc.).
 // repository_id and credential_profile_id remain as separate fields (platform-level ID references).
 func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
@@ -20,12 +20,12 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		RunnerID            int64   `json:"runner_id"`
 		TicketSlug          *string `json:"ticket_slug"`
 		Alias               *string `json:"alias"`
-		PodfileLayer        *string `json:"podfile_layer"`
+		AgentfileLayer        *string `json:"agentfile_layer"`
 		Cols                int32   `json:"cols"`
 		Rows                int32   `json:"rows"`
 		SourcePodKey        string  `json:"source_pod_key"`
 		ResumeAgentSession  *bool   `json:"resume_agent_session"`
-		// Platform-level ID references (cannot be expressed as PodFile declarations on Runner side)
+		// Platform-level ID references (cannot be expressed as AgentFile declarations on Runner side)
 		RepositoryID        *int64  `json:"repository_id"`
 		CredentialProfileID *int64  `json:"credential_profile_id"`
 	}
@@ -43,7 +43,7 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		TicketSlug:          params.TicketSlug,
 		Alias:               params.Alias,
 		CredentialProfileID: params.CredentialProfileID,
-		PodfileLayer:        params.PodfileLayer,
+		AgentfileLayer:      params.AgentfileLayer,
 		Cols:                params.Cols,
 		Rows:                params.Rows,
 		SourcePodKey:        params.SourcePodKey,
@@ -77,7 +77,7 @@ func mapOrchestratorErrorToMCP(err error) *mcpError {
 		return newMcpError(400, "source pod is not terminated")
 	case errors.Is(err, agentpod.ErrResumeRunnerMismatch):
 		return newMcpError(400, "resume requires same runner")
-	case errors.Is(err, agentpod.ErrInvalidPodfileLayer):
+	case errors.Is(err, agentpod.ErrInvalidAgentfileLayer):
 		return newMcpError(400, err.Error())
 	case errors.Is(err, agentpod.ErrSourcePodAccessDenied):
 		return newMcpError(403, "source pod access denied")

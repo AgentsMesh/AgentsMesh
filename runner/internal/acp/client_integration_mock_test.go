@@ -84,7 +84,7 @@ func handleMockInitialize(mode string, id int64, params []byte, writer *Writer) 
 	default:
 		writer.WriteResponse(id, map[string]any{
 			"protocol_version": "2025-01-01",
-			"capabilities":    map[string]any{"permissions": true},
+			"capabilities":     map[string]any{"permissions": true},
 		}, nil)
 		if mode == mockModeSendReq {
 			writer.WriteRequest("agent/custom_method", map[string]any{

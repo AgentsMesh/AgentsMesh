@@ -176,7 +176,7 @@ func (g *GracefulUpdater) setState(state State) {
 	prev := g.state
 	g.state = state
 	info := g.pendingInfo
-	cb := g.onStatus          // Copy callback reference
+	cb := g.onStatus           // Copy callback reference
 	podCounter := g.podCounter // Copy podCounter reference
 	g.mu.Unlock()
 

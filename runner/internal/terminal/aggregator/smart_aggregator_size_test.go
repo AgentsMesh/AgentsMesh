@@ -87,4 +87,3 @@ func TestSmartAggregator_BufferLimitWithClearScreen(t *testing.T) {
 		t.Error("Old frame content should be discarded")
 	}
 }
-

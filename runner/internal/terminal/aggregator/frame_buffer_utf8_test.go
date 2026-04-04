@@ -11,8 +11,8 @@ func TestFrameBuffer_FlushAll_UTF8Boundary(t *testing.T) {
 
 	// Write complete UTF-8 followed by incomplete multi-byte character
 	// Chinese character 中 is 3 bytes: 0xe4 0xb8 0xad
-	complete := []byte("hello 中")           // Complete
-	incomplete := []byte{0xe4, 0xb8}         // Incomplete 中 (missing 0xad)
+	complete := []byte("hello 中")    // Complete
+	incomplete := []byte{0xe4, 0xb8} // Incomplete 中 (missing 0xad)
 	fb.Write(append(complete, incomplete...))
 
 	data, remaining := fb.FlushAll()
@@ -87,7 +87,7 @@ func TestFindLastValidUTF8Boundary(t *testing.T) {
 		{
 			name:     "incomplete utf8 at end",
 			data:     []byte{'h', 'i', 0xe4, 0xb8}, // "hi" + incomplete 中
-			expected: 2,                             // truncate before incomplete
+			expected: 2,                            // truncate before incomplete
 		},
 	}
 
@@ -216,7 +216,7 @@ func TestFindLastValidUTF8Boundary_EdgeCases(t *testing.T) {
 		{
 			name:     "single continuation byte",
 			data:     []byte{0x80}, // continuation byte
-			expected: 1,           // no valid start, return all
+			expected: 1,            // no valid start, return all
 		},
 		{
 			name:     "multiple continuation bytes",
@@ -231,7 +231,7 @@ func TestFindLastValidUTF8Boundary_EdgeCases(t *testing.T) {
 		{
 			name:     "4-byte utf8 incomplete",
 			data:     []byte{0xf0, 0x9f, 0x98}, // incomplete emoji
-			expected: 0,                         // should truncate all
+			expected: 0,                        // should truncate all
 		},
 	}
 

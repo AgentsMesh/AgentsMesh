@@ -31,12 +31,12 @@ type PreparationStep interface {
 
 // PreparationContext contains all the context needed for workspace preparation.
 type PreparationContext struct {
-	PodID            string            // Pod identifier
-	TicketSlug       string            // Ticket slug (e.g., "TBD-123")
-	BranchName       string            // Git branch name
-	WorkspaceDir     string            // Workspace directory path
-	MainRepoDir      string            // Path to the main git repository (for bare repo operations)
-	BaseEnvVars      map[string]string // Base environment variables (e.g., AI provider credentials)
+	PodID        string            // Pod identifier
+	TicketSlug   string            // Ticket slug (e.g., "TBD-123")
+	BranchName   string            // Git branch name
+	WorkspaceDir string            // Workspace directory path
+	MainRepoDir  string            // Path to the main git repository (for bare repo operations)
+	BaseEnvVars  map[string]string // Base environment variables (e.g., AI provider credentials)
 }
 
 // GetEnvVars returns all environment variables for script execution.

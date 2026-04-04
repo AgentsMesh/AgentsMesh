@@ -35,23 +35,23 @@ func (ip *integrationProvider) configProvider() AgentConfigProvider {
 	}
 }
 
-func seedAgent(t *testing.T, db *gorm.DB, slug, podfileSrc string) {
+func seedAgent(t *testing.T, db *gorm.DB, slug, agentfileSrc string) {
 	t.Helper()
-	testutil.CreateAgent(t, db, slug, "Agent "+slug, podfileSrc)
+	testutil.CreateAgent(t, db, slug, "Agent "+slug, agentfileSrc)
 }
 
 func TestConfigBuilder_BuildBasicCommand(t *testing.T) {
 	ip, db := newIntegrationProvider(t)
 
-	podfile := "AGENT test-agent\nEXECUTABLE test-agent\nMODE pty"
-	seedAgent(t, db, "test-agent", podfile)
+	agentfile := "AGENT test-agent\nEXECUTABLE test-agent\nMODE pty"
+	seedAgent(t, db, "test-agent", agentfile)
 
 	builder := NewConfigBuilder(ip.configProvider())
 
 	cmd, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
-		AgentSlug:           "test-agent",
-		PodKey:              "pod-basic-1",
-		MergedPodfileSource: podfile,
+		AgentSlug:             "test-agent",
+		PodKey:                "pod-basic-1",
+		MergedAgentfileSource: agentfile,
 		MCPPort:             19000,
 		Cols:                120,
 		Rows:                40,
@@ -71,8 +71,8 @@ func TestConfigBuilder_BuildBasicCommand(t *testing.T) {
 func TestConfigBuilder_WithCredentials(t *testing.T) {
 	ip, db := newIntegrationProvider(t)
 
-	podfile := "AGENT cred-agent\nEXECUTABLE cred-agent\nMODE pty\nENV API_KEY SECRET"
-	seedAgent(t, db, "cred-agent", podfile)
+	agentfile := "AGENT cred-agent\nEXECUTABLE cred-agent\nMODE pty\nENV API_KEY SECRET"
+	seedAgent(t, db, "cred-agent", agentfile)
 
 	userID := testutil.CreateUser(t, db, "cred-user@test.com", "creduser")
 
@@ -97,7 +97,7 @@ func TestConfigBuilder_WithCredentials(t *testing.T) {
 		AgentSlug:           "cred-agent",
 		UserID:              userID,
 		PodKey:              "pod-cred-1",
-		MergedPodfileSource: podfile,
+		MergedAgentfileSource: agentfile,
 		MCPPort:             19000,
 		Cols:                80,
 		Rows:                24,
@@ -105,7 +105,7 @@ func TestConfigBuilder_WithCredentials(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
 
-	// Credentials injected into env_vars via PodFile eval (ENV API_KEY SECRET)
+	// Credentials injected into env_vars via AgentFile eval (ENV API_KEY SECRET)
 	require.NotNil(t, cmd.Credentials)
 	assert.Contains(t, cmd.Credentials, "API_KEY")
 }
@@ -113,21 +113,21 @@ func TestConfigBuilder_WithCredentials(t *testing.T) {
 func TestConfigBuilder_EvalProducesCorrectOutput(t *testing.T) {
 	ip, db := newIntegrationProvider(t)
 
-	podfile := `AGENT merge-agent
+	agentfile := `AGENT merge-agent
 EXECUTABLE merge-agent
 MODE acp
 CONFIG model STRING = "opus"
 arg "--model" config.model when config.model != ""
 PROMPT_POSITION prepend
 `
-	seedAgent(t, db, "merge-agent", podfile)
+	seedAgent(t, db, "merge-agent", agentfile)
 
 	builder := NewConfigBuilder(ip.configProvider())
 
 	cmd, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
 		AgentSlug:           "merge-agent",
 		PodKey:              "pod-eval-1",
-		MergedPodfileSource: podfile,
+		MergedAgentfileSource: agentfile,
 		MCPPort:             19000,
 		Cols:                80,
 		Rows:                24,
@@ -145,7 +145,7 @@ PROMPT_POSITION prepend
 	// Eval produces prompt_position from PROMPT_POSITION declaration
 	assert.Equal(t, "prepend", cmd.PromptPosition)
 
-	// Empty MergedPodfileSource → error (orchestrator must always resolve it)
+	// Empty MergedAgentfileSource → error (orchestrator must always resolve it)
 	seedAgent(t, db, "resume-agent", "AGENT resume-agent\nEXECUTABLE resume-agent\nMODE pty")
 	_, err = builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
 		AgentSlug: "resume-agent",
@@ -154,5 +154,5 @@ PROMPT_POSITION prepend
 		Cols:      80,
 		Rows:      24,
 	})
-	require.Error(t, err, "empty MergedPodfileSource should error")
+	require.Error(t, err, "empty MergedAgentfileSource should error")
 }

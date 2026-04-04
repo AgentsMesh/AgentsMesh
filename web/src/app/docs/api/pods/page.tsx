@@ -134,7 +134,7 @@ export default function ApiPodsPage() {
   -H "Content-Type: application/json" \\
   -d '{
     "agent_slug": "claude-code",
-    "podfile_layer": "PROMPT \\"Fix the login bug\\"\\nCONFIG permission_mode = \\"plan\\""
+    "agentfile_layer": "PROMPT \\"Fix the login bug\\"\\nCONFIG permission_mode = \\"plan\\""
   }'`}</pre>
             </div>
           </div>
@@ -399,7 +399,7 @@ export default function ApiPodsPage() {
                     </tr>
                     <tr>
                       <td className="p-3 border-b border-border font-mono text-xs">
-                        podfile_layer
+                        agentfile_layer
                       </td>
                       <td className="p-3 border-b border-border">string</td>
                       <td className="p-3 border-b border-border">
@@ -408,7 +408,7 @@ export default function ApiPodsPage() {
                         </span>
                       </td>
                       <td className="p-3 border-b border-border">
-                        PodFile Layer — SSOT for PROMPT, MODE, CONFIG, REPO, BRANCH, CREDENTIAL
+                        AgentFile Layer — SSOT for PROMPT, MODE, CONFIG, REPO, BRANCH, CREDENTIAL
                       </td>
                     </tr>
                     <tr>

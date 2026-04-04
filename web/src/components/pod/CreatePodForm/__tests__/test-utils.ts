@@ -48,10 +48,10 @@ export const defaultFormState = {
   reset: mockFormReset,
   validate: vi.fn(),
   submit: mockFormSubmit,
-  // PodFile Layer
+  // AgentFile Layer
   rawLayerMode: false,
   rawLayerText: "",
-  podfileLayer: "",
+  agentfileLayer: "",
   setRawLayerMode: vi.fn(),
   setRawLayerText: vi.fn(),
 };

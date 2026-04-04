@@ -51,8 +51,8 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 		o.logger.Error("failed to persist resolved prompt", "run_id", run.ID, "error", err)
 	}
 
-	// Build PodFile Layer from loop configuration (PodFile SSOT)
-	podfileLayer := o.buildLoopPodfileLayer(ctx, loop, resolvedPrompt)
+	// Build AgentFile Layer from loop configuration (AgentFile SSOT)
+	agentfileLayer := o.buildLoopAgentfileLayer(ctx, loop, resolvedPrompt)
 
 	// Determine source pod key for resume (persistent sandbox strategy)
 	var sourcePodKey string
@@ -68,7 +68,7 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 		RunnerID:           runnerID,
 		AgentSlug:          loop.AgentSlug,
 		TicketID:           loop.TicketID,
-		PodfileLayer:       &podfileLayer,
+		AgentfileLayer:     &agentfileLayer,
 		Cols:               120,
 		Rows:               40,
 		SourcePodKey:       sourcePodKey,
@@ -90,7 +90,7 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 				RunnerID:       runnerID,
 				AgentSlug:      loop.AgentSlug,
 				TicketID:       loop.TicketID,
-				PodfileLayer:   &podfileLayer,
+				AgentfileLayer:   &agentfileLayer,
 				Cols:           120,
 				Rows:           40,
 			})

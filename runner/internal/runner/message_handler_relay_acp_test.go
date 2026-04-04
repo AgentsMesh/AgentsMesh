@@ -11,13 +11,13 @@ import (
 // mockPodIO records calls to SendInput, RespondToPermission, CancelSession.
 // Implements both PodIO and SessionAccess for ACP relay command tests.
 type mockPodIO struct {
-	mu          sync.Mutex
-	inputs      []string
-	permResps   []permResp
-	cancelled   bool
-	cancelErr   error
-	sendErr     error
-	permErr     error
+	mu        sync.Mutex
+	inputs    []string
+	permResps []permResp
+	cancelled bool
+	cancelErr error
+	sendErr   error
+	permErr   error
 }
 
 type permResp struct {
@@ -25,18 +25,18 @@ type permResp struct {
 	approved bool
 }
 
-func (m *mockPodIO) Mode() string                                       { return "acp" }
-func (m *mockPodIO) GetSnapshot(int) (string, error)                    { return "", nil }
-func (m *mockPodIO) GetAgentStatus() string                             { return "idle" }
-func (m *mockPodIO) SubscribeStateChange(string, func(string))          {}
-func (m *mockPodIO) UnsubscribeStateChange(string)                      {}
-func (m *mockPodIO) GetPID() int                                        { return 0 }
-func (m *mockPodIO) Stop()                                              {}
-func (m *mockPodIO) Teardown() string                                   { return "" }
-func (m *mockPodIO) SetExitHandler(func(int))                           {}
-func (m *mockPodIO) Detach()                                            {}
-func (m *mockPodIO) Start() error                                       { return nil }
-func (m *mockPodIO) SetIOErrorHandler(func(error))                      {}
+func (m *mockPodIO) Mode() string                              { return "acp" }
+func (m *mockPodIO) GetSnapshot(int) (string, error)           { return "", nil }
+func (m *mockPodIO) GetAgentStatus() string                    { return "idle" }
+func (m *mockPodIO) SubscribeStateChange(string, func(string)) {}
+func (m *mockPodIO) UnsubscribeStateChange(string)             {}
+func (m *mockPodIO) GetPID() int                               { return 0 }
+func (m *mockPodIO) Stop()                                     {}
+func (m *mockPodIO) Teardown() string                          { return "" }
+func (m *mockPodIO) SetExitHandler(func(int))                  {}
+func (m *mockPodIO) Detach()                                   {}
+func (m *mockPodIO) Start() error                              { return nil }
+func (m *mockPodIO) SetIOErrorHandler(func(error))             {}
 
 func (m *mockPodIO) SendInput(text string) error {
 	m.mu.Lock()

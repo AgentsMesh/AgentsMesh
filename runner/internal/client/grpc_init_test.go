@@ -80,7 +80,7 @@ func TestPerformInitialization_Success(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 		conn.initResultCh <- &runnerv1.InitializeResult{
 			ServerInfo: &runnerv1.ServerInfo{Version: "2.0.0"},
-			Agents: []*runnerv1.AgentInfo{},
+			Agents:     []*runnerv1.AgentInfo{},
 		}
 	}()
 
@@ -106,7 +106,7 @@ func TestPerformInitialization_DrainsStaleResult(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 		conn.initResultCh <- &runnerv1.InitializeResult{
 			ServerInfo: &runnerv1.ServerInfo{Version: "fresh"},
-			Agents: []*runnerv1.AgentInfo{},
+			Agents:     []*runnerv1.AgentInfo{},
 		}
 	}()
 

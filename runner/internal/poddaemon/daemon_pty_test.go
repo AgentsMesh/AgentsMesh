@@ -279,4 +279,3 @@ func TestWaitReturnsExitCodeAfterReadEOF(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 42, code)
 }
-

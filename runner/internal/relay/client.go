@@ -39,8 +39,8 @@ type Client struct {
 	connMu sync.RWMutex
 
 	// Handlers
-	handlers   map[byte]func([]byte)
-	handlersMu sync.RWMutex
+	handlers       map[byte]func([]byte)
+	handlersMu     sync.RWMutex
 	onClose        CloseHandler
 	onReconnect    func()                   // Called after successful reconnection
 	onTokenExpired func() (newToken string) // Called when token expires, should request new token from Backend

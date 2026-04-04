@@ -83,13 +83,13 @@ func (t *ACPTransport) NewSession(cwd string, mcpServers map[string]any) (string
 	var servers []map[string]any
 	// Convert map format {name: {type,url}} to ACP array format [{name,type,url}].
 	for name, cfg := range mcpServers {
-			entry := map[string]any{"name": name}
-			if m, ok := cfg.(map[string]any); ok {
-				for k, v := range m {
-					entry[k] = v
-				}
+		entry := map[string]any{"name": name}
+		if m, ok := cfg.(map[string]any); ok {
+			for k, v := range m {
+				entry[k] = v
 			}
-			servers = append(servers, entry)
+		}
+		servers = append(servers, entry)
 	}
 	if servers == nil {
 		servers = []map[string]any{}

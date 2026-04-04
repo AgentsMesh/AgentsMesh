@@ -137,4 +137,3 @@ func (p *PTYPodIO) GetScreenSnapshot() string {
 	}
 	return p.components.VirtualTerminal.GetScreenSnapshot()
 }
-

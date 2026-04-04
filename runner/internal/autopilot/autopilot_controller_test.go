@@ -26,11 +26,11 @@ func TestAutopilotController_NewAutopilotController(t *testing.T) {
 	reporter := &MockEventReporter{}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-pod-123",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     reporter,
+		AutopilotKey:   "autopilot-123",
+		PodKey:         "worker-pod-123",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       reporter,
 		ControlProcess: &MockControlProcess{},
 	})
 
@@ -60,11 +60,11 @@ func TestAutopilotController_Start(t *testing.T) {
 	reporter := &MockEventReporter{}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-pod-123",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     reporter,
+		AutopilotKey:   "autopilot-123",
+		PodKey:         "worker-pod-123",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       reporter,
 		ControlProcess: &MockControlProcess{},
 	})
 
@@ -98,11 +98,11 @@ func TestAutopilotController_Stop(t *testing.T) {
 	reporter := &MockEventReporter{}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     reporter,
+		AutopilotKey:   "autopilot-123",
+		PodKey:         "worker-123",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       reporter,
 		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
@@ -132,11 +132,11 @@ func TestAutopilotController_Stop_AlreadyStopped(t *testing.T) {
 	reporter := &MockEventReporter{}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     reporter,
+		AutopilotKey:   "autopilot-123",
+		PodKey:         "worker-123",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       reporter,
 		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
@@ -168,11 +168,11 @@ func TestAutopilotController_GetStatus(t *testing.T) {
 	reporter := &MockEventReporter{}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     reporter,
+		AutopilotKey:   "autopilot-123",
+		PodKey:         "worker-123",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       reporter,
 		ControlProcess: &MockControlProcess{},
 	})
 	_ = rp.Start()
@@ -201,11 +201,11 @@ func TestAutopilotController_DefaultMaxIterations(t *testing.T) {
 	reporter := &MockEventReporter{}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     reporter,
+		AutopilotKey:   "autopilot-123",
+		PodKey:         "worker-123",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       reporter,
 		ControlProcess: &MockControlProcess{},
 	})
 
@@ -221,11 +221,11 @@ func TestAutopilotController_Key_PodKey(t *testing.T) {
 	workerCtrl := &MockPodController{}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-test-key",
-		PodKey: "worker-test-key",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     &MockEventReporter{},
+		AutopilotKey:   "autopilot-test-key",
+		PodKey:         "worker-test-key",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       &MockEventReporter{},
 		ControlProcess: &MockControlProcess{},
 	})
 
@@ -248,10 +248,10 @@ func TestAutopilotController_NilReporter(t *testing.T) {
 
 	// Create AutopilotController with nil reporter
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
+		PodCtrl:      workerCtrl,
 		Reporter:     nil, // nil reporter
 	})
 
@@ -282,11 +282,11 @@ func TestAutopilotController_Start_ExecutingStatus(t *testing.T) {
 	reporter := &MockEventReporter{}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     reporter,
+		AutopilotKey:   "autopilot-123",
+		PodKey:         "worker-123",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       reporter,
 		ControlProcess: &MockControlProcess{},
 	})
 
@@ -316,11 +316,11 @@ func TestAutopilotController_SessionID(t *testing.T) {
 	}
 
 	rp := NewAutopilotController(Config{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
-		ProtoConfig:  protoConfig,
-		PodCtrl:   workerCtrl,
-		Reporter:     &MockEventReporter{},
+		AutopilotKey:   "autopilot-123",
+		PodKey:         "worker-123",
+		ProtoConfig:    protoConfig,
+		PodCtrl:        workerCtrl,
+		Reporter:       &MockEventReporter{},
 		ControlProcess: &MockControlProcess{},
 	})
 

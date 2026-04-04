@@ -16,8 +16,8 @@ func TestPhaseManager_NewPhaseManager(t *testing.T) {
 	}
 
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		Reporter:     &MockEventReporter{},
 		StatusGetter: statusGetter,
 	})
@@ -36,8 +36,8 @@ func TestPhaseManager_SetPhase(t *testing.T) {
 	}
 
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		Reporter:     reporter,
 		StatusGetter: statusGetter,
 	})
@@ -57,8 +57,8 @@ func TestPhaseManager_SetPhase(t *testing.T) {
 func TestPhaseManager_SetPhaseWithoutReport(t *testing.T) {
 	reporter := &MockEventReporter{}
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		Reporter:     reporter,
 	})
 
@@ -75,8 +75,8 @@ func TestPhaseManager_SetPhaseWithoutReport(t *testing.T) {
 
 func TestPhaseManager_IsTerminalPhase(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 
 	// Non-terminal phases
@@ -111,8 +111,8 @@ func TestPhaseManager_IsTerminalPhase(t *testing.T) {
 
 func TestPhaseManager_CanProcessIteration(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 
 	// Phases that can process iterations
@@ -152,8 +152,8 @@ func TestPhaseManager_TransitionToRunning(t *testing.T) {
 	}
 
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		Reporter:     reporter,
 		StatusGetter: statusGetter,
 	})
@@ -187,8 +187,8 @@ func TestPhaseManager_ReportStatus(t *testing.T) {
 	}
 
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		Reporter:     reporter,
 		StatusGetter: statusGetter,
 	})
@@ -203,8 +203,8 @@ func TestPhaseManager_ReportStatus(t *testing.T) {
 
 func TestPhaseManager_ReportStatus_NilReporter(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		Reporter:     nil,
 	})
 
@@ -215,8 +215,8 @@ func TestPhaseManager_ReportStatus_NilReporter(t *testing.T) {
 func TestPhaseManager_ReportStatus_NilStatusGetter(t *testing.T) {
 	reporter := &MockEventReporter{}
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		Reporter:     reporter,
 		StatusGetter: nil,
 	})
@@ -229,8 +229,8 @@ func TestPhaseManager_ReportStatus_NilStatusGetter(t *testing.T) {
 func TestPhaseManager_ReportStatus_StatusGetterReturnsNil(t *testing.T) {
 	reporter := &MockEventReporter{}
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 		Reporter:     reporter,
 		StatusGetter: func() *runnerv1.AutopilotStatus { return nil },
 	})

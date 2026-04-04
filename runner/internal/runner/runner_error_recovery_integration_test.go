@@ -17,35 +17,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestRunner_PodCreationFailure_InvalidPodfile_Integration verifies that
-// a PodFile with syntax errors causes Build to fail cleanly.
-func TestRunner_PodCreationFailure_InvalidPodfile_Integration(t *testing.T) {
+// TestRunner_PodCreationFailure_InvalidAgentfile_Integration verifies that
+// an AgentFile with syntax errors causes Build to fail cleanly.
+func TestRunner_PodCreationFailure_InvalidAgentfile_Integration(t *testing.T) {
 	store := NewInMemoryPodStore()
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: t.TempDir()}}
 
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "bad-podfile-pod",
-		PodfileSource: "AGENT echo\nINVALID_KEYWORD ???\n",
+		PodKey:          "bad-agentfile-pod",
+		AgentfileSource: "AGENT echo\nINVALID_KEYWORD ???\n",
 	}
 
 	pod, err := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).WithPtySize(80, 24).
 		Build(context.Background())
 
-	require.Error(t, err, "build with invalid PodFile should fail")
+	require.Error(t, err, "build with invalid AgentFile should fail")
 	assert.Nil(t, pod, "pod should be nil on error")
 	assert.Equal(t, 0, store.Count(), "store should remain empty")
 }
 
 // TestRunner_PodCreationFailure_MissingAgent_Integration verifies that
-// a PodFile referencing a non-existent executable fails cleanly.
+// an AgentFile referencing a non-existent executable fails cleanly.
 func TestRunner_PodCreationFailure_MissingAgent_Integration(t *testing.T) {
 	store := NewInMemoryPodStore()
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: t.TempDir()}}
 
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "missing-agent-pod",
-		PodfileSource: "AGENT /nonexistent/binary/xyzzy\nMODE pty\nPROMPT_POSITION prepend\n",
+		PodKey:          "missing-agent-pod",
+		AgentfileSource: "AGENT /nonexistent/binary/xyzzy\nMODE pty\nPROMPT_POSITION prepend\n",
 	}
 
 	pod, err := NewPodBuilderFromRunner(runner).
@@ -61,11 +61,11 @@ func TestRunner_PodCreationFailure_MissingAgent_Integration(t *testing.T) {
 // mock agent and verifies content chunk and state change callbacks fire.
 func TestRunner_ACPRelayEventForwarding_Integration(t *testing.T) {
 	// Build ACP pod shell.
-	podfile := "AGENT echo\nMODE acp\nPROMPT_POSITION prepend\n"
+	agentfile := "AGENT echo\nMODE acp\nPROMPT_POSITION prepend\n"
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: t.TempDir()}}
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "acp-relay-test",
-		PodfileSource: podfile,
+		PodKey:          "acp-relay-test",
+		AgentfileSource: agentfile,
 	}
 	pod, err := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).WithPtySize(80, 24).
@@ -136,8 +136,8 @@ func TestRunner_ConcurrentTermination_Integration(t *testing.T) {
 		podKey := "term-" + string(rune('a'+i))
 		r := &Runner{cfg: &config.Config{WorkspaceRoot: tempDir}}
 		cmd := &runnerv1.CreatePodCommand{
-			PodKey:        podKey,
-			PodfileSource: "AGENT cat\nMODE pty\nPROMPT_POSITION prepend\n",
+			PodKey:          podKey,
+			AgentfileSource: "AGENT cat\nMODE pty\nPROMPT_POSITION prepend\n",
 		}
 		pod, err := NewPodBuilderFromRunner(r).
 			WithCommand(cmd).WithPtySize(80, 24).

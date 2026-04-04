@@ -142,7 +142,7 @@ func TestWatchdogService_RunChecks(t *testing.T) {
 func TestWatchdogService_MemoryThresholdExceeded(t *testing.T) {
 	// Allocate memory to ensure Alloc > 1 MB
 	buf := make([]byte, 2*1024*1024) // 2MB allocation
-	buf[0] = 1                        // Prevent optimization
+	buf[0] = 1                       // Prevent optimization
 	runtime.KeepAlive(buf)
 
 	w := NewWatchdogService(WatchdogConfig{

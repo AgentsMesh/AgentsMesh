@@ -147,7 +147,7 @@ func setupOrchestratorTestDB(t *testing.T) *gorm.DB {
 		launch_command TEXT,
 		description TEXT,
 		config_schema TEXT DEFAULT '{}',
-		podfile_source TEXT,
+		agentfile_source TEXT,
 		supported_modes TEXT NOT NULL DEFAULT 'pty',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -176,7 +176,7 @@ func setupOrchestratorTestDB(t *testing.T) *gorm.DB {
 }
 
 func newTestProvider() *mockAgentConfigProvider {
-	podfile := `
+	agentfile := `
 AGENT claude
 EXECUTABLE claude
 MCP ON
@@ -188,7 +188,7 @@ PROMPT_POSITION prepend
 			Name:           "Claude Code",
 			LaunchCommand:  "claude",
 			SupportedModes: "pty",
-			PodfileSource:  &podfile,
+			AgentfileSource:  &agentfile,
 		},
 		config:   agentDomain.ConfigValues{},
 		creds:    agentDomain.EncryptedCredentials{},

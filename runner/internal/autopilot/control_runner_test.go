@@ -16,7 +16,7 @@ func TestControlRunner_NewControlRunner(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
 		MCPPort:       19000,
-		PodKey:  "worker-123",
+		PodKey:        "worker-123",
 	})
 
 	cr := NewControlRunner(ControlRunnerConfig{
@@ -71,12 +71,12 @@ func TestControlRunner_RunControlProcess_Start(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
 		MCPPort:       19000,
-		PodKey:  "worker-123",
+		PodKey:        "worker-123",
 	})
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     "echo", // Use echo as a simple command
+		Agent:         "echo", // Use echo as a simple command
 		PromptBuilder: pb,
 	})
 
@@ -104,13 +104,13 @@ func TestControlRunner_RunControlProcess_Resume(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",
 		MCPPort:          19000,
-		PodKey:     "worker-123",
+		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
 	})
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     "echo", // Use echo as a simple command
+		Agent:         "echo", // Use echo as a simple command
 		PromptBuilder: pb,
 	})
 
@@ -150,12 +150,12 @@ func TestControlRunner_StartControlProcess_Timeout(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
 		MCPPort:       19000,
-		PodKey:  "worker-123",
+		PodKey:        "worker-123",
 	})
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 	})
 
@@ -188,12 +188,12 @@ func TestControlRunner_StartControlProcess_Success(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt: "Test task",
 		MCPPort:       19000,
-		PodKey:  "worker-123",
+		PodKey:        "worker-123",
 	})
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 	})
 
@@ -226,13 +226,13 @@ func TestControlRunner_ResumeControlProcess_Success(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",
 		MCPPort:          19000,
-		PodKey:     "worker-123",
+		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
 	})
 
 	cr := NewControlRunner(ControlRunnerConfig{
 		WorkDir:       tmpDir,
-		Agent:     scriptPath,
+		Agent:         scriptPath,
 		PromptBuilder: pb,
 	})
 

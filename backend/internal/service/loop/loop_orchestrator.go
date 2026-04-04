@@ -18,7 +18,7 @@ type PodTerminator interface {
 	TerminatePod(ctx context.Context, podKey string) error
 }
 
-// RepoQueryForLoop provides repository lookup for PodFile Layer generation.
+// RepoQueryForLoop provides repository lookup for AgentFile Layer generation.
 type RepoQueryForLoop interface {
 	GetByID(ctx context.Context, id int64) (*gitprovider.Repository, error)
 }

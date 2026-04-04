@@ -6,8 +6,8 @@ import (
 	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/podfile/extract"
-	"github.com/anthropics/agentsmesh/podfile/parser"
+	"github.com/anthropics/agentsmesh/agentfile/extract"
+	"github.com/anthropics/agentsmesh/agentfile/parser"
 )
 
 // ==================== Discovery MCP Methods ====================
@@ -112,8 +112,8 @@ func (a *GRPCRunnerAdapter) mcpListRunners(ctx context.Context, tc *middleware.T
 				}
 
 				configFields := make([]configFieldSummary, 0)
-				if at.PodfileSource != nil && *at.PodfileSource != "" {
-					prog, errs := parser.Parse(*at.PodfileSource)
+				if at.AgentfileSource != nil && *at.AgentfileSource != "" {
+					prog, errs := parser.Parse(*at.AgentfileSource)
 					if len(errs) == 0 && prog != nil {
 						spec := extract.Extract(prog)
 						for _, cfg := range spec.Config {

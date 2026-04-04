@@ -34,7 +34,7 @@ type MockClient struct {
 	ConnectError error
 	StartResult  bool
 	StopDelay    time.Duration // Artificial delay in Stop() to simulate real behavior
-	OnStopHook   func()       // Called during Stop() to simulate close handler side-effects
+	OnStopHook   func()        // Called during Stop() to simulate close handler side-effects
 
 	// Handlers (stored for simulation)
 	handlers       map[byte]func([]byte)

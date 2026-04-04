@@ -6,11 +6,11 @@ import (
 	"log/slog"
 
 	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"github.com/anthropics/agentsmesh/podfile/eval"
+	"github.com/anthropics/agentsmesh/agentfile/eval"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// buildEvalContext creates the PodFile eval context with placeholder sandbox paths.
+// buildEvalContext creates the AgentFile eval context with placeholder sandbox paths.
 // CONFIG values are populated by CONFIG declarations during eval (resolve step already injected defaults).
 func buildEvalContext(
 	req *ConfigBuildRequest,
@@ -64,7 +64,7 @@ func buildResultToProto(
 		})
 	}
 
-	// Determine prompt (PodFile PROMPT > legacy InitialPrompt)
+	// Determine prompt (AgentFile PROMPT > legacy InitialPrompt)
 	prompt := br.Prompt
 	if prompt == "" {
 		prompt = req.InitialPrompt
@@ -139,7 +139,7 @@ func (b *ConfigBuilder) buildMCPContext(ctx context.Context, req *ConfigBuildReq
 	if b.extensionProvider != nil && req.RepositoryID != nil {
 		servers, err := b.extensionProvider.GetEffectiveMcpServers(ctx, req.OrganizationID, req.UserID, *req.RepositoryID, agentSlug)
 		if err != nil {
-			slog.Warn("Failed to load MCP servers for podfile", "error", err)
+			slog.Warn("Failed to load MCP servers for agentfile", "error", err)
 		} else {
 			for _, srv := range servers {
 				if !srv.IsEnabled {

@@ -4,12 +4,12 @@ import "strings"
 
 // parserRegistry maps agent command/slug to its parser.
 var parserRegistry = map[string]TokenParser{
-	"claude":     &ClaudeParser{},
+	"claude":      &ClaudeParser{},
 	"claude-code": &ClaudeParser{},
-	"codex":      &CodexParser{},
-	"codex-cli":  &CodexParser{},
-	"aider":      &AiderParser{},
-	"opencode":   &OpenCodeParser{},
+	"codex":       &CodexParser{},
+	"codex-cli":   &CodexParser{},
+	"aider":       &AiderParser{},
+	"opencode":    &OpenCodeParser{},
 }
 
 // GetParser returns a TokenParser for the given agent.

@@ -27,11 +27,11 @@ type StringSerializeHandler struct {
 	backgroundCell Cell
 
 	// Position tracking
-	firstRow              int
-	lastCursorRow         int
-	lastCursorCol         int
-	lastContentCursorRow  int
-	lastContentCursorCol  int
+	firstRow             int
+	lastCursorRow        int
+	lastCursorCol        int
+	lastContentCursorRow int
+	lastContentCursorCol int
 }
 
 // newStringSerializeHandler creates a new handler

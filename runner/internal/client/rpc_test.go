@@ -34,27 +34,27 @@ func (m *mockSender) getLastMsg() *runnerv1.RunnerMessage {
 
 // stubSender stubs SendMessage and also provides the ConnectionSender interface methods.
 // Only SendMessage is used by RPCClient.
-func (m *mockSender) SendPodCreated(string, int32, string, string) error { return nil }
-func (m *mockSender) SendPodTerminated(string, int32, string, string) error      { return nil }
+func (m *mockSender) SendPodCreated(string, int32, string, string) error    { return nil }
+func (m *mockSender) SendPodTerminated(string, int32, string, string) error { return nil }
 func (m *mockSender) SendPodInitProgress(string, string, int32, string) error {
 	return nil
 }
-func (m *mockSender) SendError(string, string, string) error              { return nil }
-func (m *mockSender) SendAgentStatus(string, string) error                { return nil }
-func (m *mockSender) SendPodResized(string, int32, int32) error           { return nil }
-func (m *mockSender) SendOSCNotification(string, string, string) error    { return nil }
-func (m *mockSender) SendOSCTitle(string, string) error                   { return nil }
-func (m *mockSender) SendRequestRelayToken(string, string) error          { return nil }
+func (m *mockSender) SendError(string, string, string) error                 { return nil }
+func (m *mockSender) SendAgentStatus(string, string) error                   { return nil }
+func (m *mockSender) SendPodResized(string, int32, int32) error              { return nil }
+func (m *mockSender) SendOSCNotification(string, string, string) error       { return nil }
+func (m *mockSender) SendOSCTitle(string, string) error                      { return nil }
+func (m *mockSender) SendRequestRelayToken(string, string) error             { return nil }
 func (m *mockSender) SendSandboxesStatus(string, []*SandboxStatusInfo) error { return nil }
 func (m *mockSender) SendObservePodResult(string, string, string, string, int, int, int, bool, string) error {
 	return nil
 }
-func (m *mockSender) SendUpgradeStatus(*runnerv1.UpgradeStatusEvent) error       { return nil }
-func (m *mockSender) SendLogUploadStatus(*runnerv1.LogUploadStatusEvent) error   { return nil }
-func (m *mockSender) SendTokenUsage(string, []*runnerv1.TokenModelUsage) error   { return nil }
-func (m *mockSender) QueueLength() int                                       { return 0 }
-func (m *mockSender) QueueCapacity() int                                  { return 100 }
-func (m *mockSender) QueueUsage() float64                                 { return 0 }
+func (m *mockSender) SendUpgradeStatus(*runnerv1.UpgradeStatusEvent) error     { return nil }
+func (m *mockSender) SendLogUploadStatus(*runnerv1.LogUploadStatusEvent) error { return nil }
+func (m *mockSender) SendTokenUsage(string, []*runnerv1.TokenModelUsage) error { return nil }
+func (m *mockSender) QueueLength() int                                         { return 0 }
+func (m *mockSender) QueueCapacity() int                                       { return 100 }
+func (m *mockSender) QueueUsage() float64                                      { return 0 }
 
 func TestRPCClient_HandleResponse(t *testing.T) {
 	sender := &mockSender{}

@@ -41,7 +41,7 @@ func TestPodBuilderWithCommand(t *testing.T) {
 		PodKey:        "test-key",
 		LaunchCommand: "echo",
 		LaunchArgs:    []string{"hello"},
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		EnvVars: map[string]string{
 			"VAR1": "value1",
 		},
@@ -98,7 +98,7 @@ func TestPodBuilderWithSandboxConfig(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-pod",
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
 			RepositoryUrl:  "https://github.com/test/repo.git",
 			SourceBranch:   "feature/test",
@@ -124,7 +124,7 @@ func TestPodBuilderWithFilesToCreateMultiple(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-pod",
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		FilesToCreate: []*runnerv1.FileToCreate{
 			{Path: "{{.sandbox.root_path}}/config.json", Content: "{}", Mode: 0644},
 			{Path: "{{.sandbox.work_dir}}/data.txt", Content: "data"},
@@ -147,7 +147,7 @@ func TestPodBuilderCommandWithAllFields(t *testing.T) {
 		PodKey:        "pod-1",
 		LaunchCommand: "claude",
 		LaunchArgs:    []string{"--headless"},
-		PodfileSource: "AGENT claude\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT claude\nPROMPT_POSITION prepend\n",
 		EnvVars: map[string]string{
 			"API_KEY": "secret",
 		},
@@ -215,7 +215,7 @@ func TestPodBuilderBuildEmptyPodKey(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
 	cmd := &runnerv1.CreatePodCommand{
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		// PodKey is empty
 	}
 	builder := NewPodBuilderFromRunner(runner).WithCommand(cmd)

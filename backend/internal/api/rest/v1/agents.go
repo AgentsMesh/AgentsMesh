@@ -51,12 +51,12 @@ func (p *compositeProvider) ResolveCredentialsByName(ctx context.Context, userID
 }
 
 // CreateCustomAgentRequest represents custom agent creation request.
-// When PodfileSource is provided, LaunchCommand becomes optional (extracted from PodFile).
+// When AgentfileSource is provided, LaunchCommand becomes optional (extracted from AgentFile).
 type CreateCustomAgentRequest struct {
 	Slug          string `json:"slug" binding:"required,min=2,max=50,alphanum"`
 	Name          string `json:"name" binding:"required,min=2,max=100"`
 	Description   string `json:"description"`
-	PodfileSource string `json:"podfile_source"`
+	AgentfileSource string `json:"agentfile_source"`
 	LaunchCommand string `json:"launch_command"`
 	DefaultArgs   string `json:"default_args"`
 }

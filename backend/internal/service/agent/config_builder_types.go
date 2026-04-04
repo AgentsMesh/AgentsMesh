@@ -12,7 +12,7 @@ type AgentConfigProvider interface {
 	GetAgent(ctx context.Context, slug string) (*agent.Agent, error)
 	// GetEffectiveCredentialsForPod returns credentials for pod injection
 	GetEffectiveCredentialsForPod(ctx context.Context, userID int64, agentSlug string, profileID *int64) (agent.EncryptedCredentials, bool, error)
-	// ResolveCredentialsByName resolves credentials by profile name from PodFile CREDENTIAL declaration
+	// ResolveCredentialsByName resolves credentials by profile name from AgentFile CREDENTIAL declaration
 	ResolveCredentialsByName(ctx context.Context, userID int64, agentSlug, profileName string) (agent.EncryptedCredentials, bool, error)
 }
 
@@ -51,7 +51,7 @@ type ConfigBuildRequest struct {
 	// Local path mode (resume from existing sandbox)
 	LocalPath string
 
-	// Initial prompt (from PodFile PROMPT declaration)
+	// Initial prompt (from AgentFile PROMPT declaration)
 	InitialPrompt string
 
 	// Runtime info (provided by Runner during handshake)
@@ -67,13 +67,13 @@ type ConfigBuildRequest struct {
 	// Empty map or nil means Runner did not report version info (old Runner).
 	RunnerAgentVersions map[string]string
 
-	// MergedPodfileSource is the merged PodFile source (base + user layer, serialized).
-	// Populated by orchestrator's extractFromPodfileLayer when PodfileLayer is provided.
-	// When empty (resume mode or no layer): buildFromPodFile falls back to agent's base PodFile.
-	MergedPodfileSource string
+	// MergedAgentfileSource is the merged AgentFile source (base + user layer, serialized).
+	// Populated by orchestrator's extractFromAgentfileLayer when AgentfileLayer is provided.
+	// When empty (resume mode or no layer): buildFromAgentfile falls back to agent's base AgentFile.
+	MergedAgentfileSource string
 
-	// CredentialProfile is the CREDENTIAL declaration value extracted from merged PodFile.
-	// Pre-extracted by orchestrator to avoid re-parsing PodFile in ConfigBuilder.
+	// CredentialProfile is the CREDENTIAL declaration value extracted from merged AgentFile.
+	// Pre-extracted by orchestrator to avoid re-parsing AgentFile in ConfigBuilder.
 	// When non-empty, overrides CredentialProfileID for credential resolution.
 	CredentialProfile string
 }

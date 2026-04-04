@@ -28,9 +28,9 @@ type agentProbeResult struct {
 // Thread-safe: all public methods are safe for concurrent use.
 // Subprocess execution happens outside the lock to avoid blocking readers.
 type AgentProbe struct {
-	mu         sync.RWMutex
-	agents     []*runnerv1.AgentInfo  // known agents from server
-	cache      map[string]*AgentProbeEntry // slug -> last known state
+	mu     sync.RWMutex
+	agents []*runnerv1.AgentInfo       // known agents from server
+	cache  map[string]*AgentProbeEntry // slug -> last known state
 }
 
 // NewAgentProbe creates a new AgentProbe instance.

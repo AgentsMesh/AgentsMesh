@@ -219,12 +219,12 @@ message AgentInfo {
 }
 
 // CreatePodCommand 创建 Pod 命令
-// Backend 完成 PodFile eval（parse+merge+resolve+eval），通过此消息发送最终执行指令。
+// Backend 完成 AgentFile eval（parse+merge+resolve+eval），通过此消息发送最终执行指令。
 // Runner 只需替换路径占位符（{{sandbox_root}}, {{work_dir}}）后直接执行。
 message CreatePodCommand {
   string pod_key = 1;
 
-  // 执行指令（Backend PodFile eval 产出）
+  // 执行指令（Backend AgentFile eval 产出）
   string launch_command = 2;                                 // AGENT 声明的命令（如 "claude"）
   repeated string launch_args = 3;                           // arg 语句 + MODE args 的最终参数列表
   map<string, string> env_vars = 4;                          // ENV 声明产出的环境变量
@@ -237,7 +237,7 @@ message CreatePodCommand {
   string interaction_mode = 11;                              // MODE 声明："pty" 或 "acp"
 
   // 废弃字段（保留 field number，Runner 不再读取）
-  string podfile_source = 12 [deprecated = true];            // Deprecated: eval 已在 Backend 完成
+  string agentfile_source = 12 [deprecated = true];            // Deprecated: eval 已在 Backend 完成
   map<string, string> config_values = 13 [deprecated = true]; // Deprecated: CONFIG 值已 eval 到 launch_args/env_vars/files
 
   // 运行时上下文（Backend 注入，Runner 直接使用）
@@ -247,7 +247,7 @@ message CreatePodCommand {
   string mcp_builtin_json = 17 [deprecated = true];  // Deprecated: MCP 配置已 eval 到 files_to_create
   string mcp_installed_json = 18 [deprecated = true]; // Deprecated: MCP 配置已 eval 到 files_to_create
 
-  // PodFile eval 产出的新字段
+  // AgentFile eval 产出的新字段
   string prompt = 19;                      // PROMPT 声明的初始提示内容
   string prompt_position = 20;             // PROMPT_POSITION 声明："prepend"/"append"/"none"
 }

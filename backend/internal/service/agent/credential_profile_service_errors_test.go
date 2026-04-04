@@ -218,7 +218,7 @@ func TestCredentialProfileService_SetDefaultCredentialProfile_UpdateError(t *tes
 		files_template BLOB,
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
-		podfile_source TEXT,
+		agentfile_source TEXT,
 		is_builtin INTEGER NOT NULL DEFAULT 0,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		supported_modes TEXT NOT NULL DEFAULT 'pty',

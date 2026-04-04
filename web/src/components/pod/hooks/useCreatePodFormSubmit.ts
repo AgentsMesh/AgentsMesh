@@ -4,16 +4,16 @@ import { podApi, PodData } from "@/lib/api";
  * Builds the API request payload and submits the pod creation request.
  *
  * All pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL, PROMPT, etc.)
- * is conveyed through `podfileLayer` (PodFile SSOT).
+ * is conveyed through `agentfileLayer` (AgentFile SSOT).
  */
 export async function submitCreatePod(params: {
   selectedAgent: string;
   alias: string;
   selectedRunnerId: number | null | undefined;
-  podfileLayer?: string;
+  agentfileLayer?: string;
   options?: { ticketSlug?: string; cols?: number; rows?: number };
 }): Promise<PodData | null> {
-  const { selectedAgent, alias, selectedRunnerId, podfileLayer, options } = params;
+  const { selectedAgent, alias, selectedRunnerId, agentfileLayer, options } = params;
 
   const response = await podApi.create({
     agent_slug: selectedAgent,
@@ -22,8 +22,8 @@ export async function submitCreatePod(params: {
     ticket_slug: options?.ticketSlug,
     cols: options?.cols,
     rows: options?.rows,
-    // PodFile Layer — SSOT (PROMPT, MODE, CONFIG, REPO, BRANCH, CREDENTIAL)
-    podfile_layer: podfileLayer || undefined,
+    // AgentFile Layer — SSOT (PROMPT, MODE, CONFIG, REPO, BRANCH, CREDENTIAL)
+    agentfile_layer: agentfileLayer || undefined,
   });
 
   return response.pod || null;

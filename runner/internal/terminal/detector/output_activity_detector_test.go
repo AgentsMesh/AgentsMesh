@@ -93,11 +93,11 @@ func TestOutputActivityDetector_Callback(t *testing.T) {
 	})
 
 	// Trigger transitions
-	d.OnOutput(100)                        // Idle -> Active
-	time.Sleep(60 * time.Millisecond)      //
-	d.CheckState()                         // Active -> PotentialIdle
-	time.Sleep(60 * time.Millisecond)      //
-	d.CheckState()                         // PotentialIdle -> Idle
+	d.OnOutput(100)                   // Idle -> Active
+	time.Sleep(60 * time.Millisecond) //
+	d.CheckState()                    // Active -> PotentialIdle
+	time.Sleep(60 * time.Millisecond) //
+	d.CheckState()                    // PotentialIdle -> Idle
 
 	// Wait for callbacks to execute
 	time.Sleep(50 * time.Millisecond)

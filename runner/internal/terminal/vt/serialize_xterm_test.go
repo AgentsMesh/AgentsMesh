@@ -162,4 +162,3 @@ func TestSerialize_ShouldHandleEmoji(t *testing.T) {
 		t.Errorf("Should preserve emoji, got: %q", result)
 	}
 }
-

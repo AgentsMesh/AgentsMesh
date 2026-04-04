@@ -56,4 +56,3 @@ func TestDefaultRestartFunc_WithInvalidExec(t *testing.T) {
 	// Calling it will fail in test environment but shouldn't panic
 	// Note: We don't call fn() here because it would try to start a process
 }
-

@@ -43,7 +43,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		sessionID = uuid.New().String()
 	}
 
-	// Resolve agent definition once — reused for PodFile merge and mode validation.
+	// Resolve agent definition once — reused for AgentFile merge and mode validation.
 	var agentDef *agentDomain.Agent
 	if req.AgentSlug != "" && o.agentResolver != nil {
 		var err error
@@ -53,10 +53,10 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// --- PodFile Layer resolution ---
-	resolved := &podfileResolved{}
+	// --- AgentFile Layer resolution ---
+	resolved := &agentfileResolved{}
 
-	// Build systemOverrides: truly system-internal values injected into PodFile.
+	// Build systemOverrides: truly system-internal values injected into AgentFile.
 	systemOverrides := make(map[string]interface{})
 	if !isResumeMode {
 		systemOverrides["session_id"] = sessionID
@@ -68,26 +68,26 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// PodFile SSOT: resolve CONFIG values from base PodFile + optional user Layer.
-	if agentDef != nil && agentDef.PodfileSource != nil {
+	// AgentFile SSOT: resolve CONFIG values from base AgentFile + optional user Layer.
+	if agentDef != nil && agentDef.AgentfileSource != nil {
 		var userPrefs map[string]interface{}
 		if o.userConfigQuery != nil {
 			userPrefs = o.userConfigQuery.GetUserConfigPrefs(ctx, req.UserID, req.AgentSlug)
 		}
 
 		layerSrc := ""
-		if req.PodfileLayer != nil {
-			layerSrc = *req.PodfileLayer
+		if req.AgentfileLayer != nil {
+			layerSrc = *req.AgentfileLayer
 		}
 
-		result, err := extractFromPodfileLayer(
-			*agentDef.PodfileSource, layerSrc,
+		result, err := extractFromAgentfileLayer(
+			*agentDef.AgentfileSource, layerSrc,
 			userPrefs, systemOverrides,
 		)
 		if err != nil {
 			return nil, err
 		}
-		resolved.MergedPodfileSource = result.MergedPodfileSource
+		resolved.MergedAgentfileSource = result.MergedAgentfileSource
 		resolved.CredentialProfile = result.CredentialProfile
 		if result.Mode != "" {
 			resolved.InteractionMode = result.Mode
@@ -109,7 +109,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// --- Compute effective values: resolved (PodFile) > req (resume inheritance) > defaults ---
+	// --- Compute effective values: resolved (AgentFile) > req (resume inheritance) > defaults ---
 	effectiveInteractionMode := firstNonEmpty(resolved.InteractionMode, podDomain.InteractionModePTY)
 	effectivePermissionMode := firstNonEmpty(resolved.PermissionMode, "plan")
 	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName) // req.BranchName only from resume

@@ -27,8 +27,8 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 	}
 	if b.cmd.LaunchCommand == "" {
 		return nil, &client.PodError{
-			Code:    client.ErrCodePodfileEval,
-			Message: "launch_command is required (Backend PodFile eval should populate this)",
+			Code:    client.ErrCodeAgentfileEval,
+			Message: "launch_command is required (Backend AgentFile eval should populate this)",
 		}
 	}
 

@@ -87,10 +87,10 @@ func (c *Config) GetLogConfig() logger.Config {
 	return logger.Config{
 		Level:       c.LogLevel,
 		FilePath:    c.GetLogPath(),
-		Format:      "text",              // Default to human-readable format
-		MaxFileSize: 10 * 1024 * 1024,    // 10MB per file
-		MaxBackups:  3,                   // Keep 3 backup files per day
-		MaxDirSize:  500 * 1024 * 1024,   // 500MB total directory size
+		Format:      "text",            // Default to human-readable format
+		MaxFileSize: 10 * 1024 * 1024,  // 10MB per file
+		MaxBackups:  3,                 // Keep 3 backup files per day
+		MaxDirSize:  500 * 1024 * 1024, // 500MB total directory size
 	}
 }
 

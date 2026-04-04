@@ -58,7 +58,7 @@ func TestMessageHandler_CreatePod_TerminalOutput_Integration(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "e2e-echo-pod",
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n",
 		InitialPrompt: "e2e test",
 	}
 
@@ -104,7 +104,7 @@ func TestMessageHandler_CreateTerminate_Integration(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "e2e-sleep-pod",
 		LaunchCommand: "sleep",
-		PodfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
 		InitialPrompt: "60",
 	}
 
@@ -160,7 +160,7 @@ func TestMessageHandler_MaxCapacity_Integration(t *testing.T) {
 	cmd1 := &runnerv1.CreatePodCommand{
 		PodKey:        "e2e-cap-pod-1",
 		LaunchCommand: "sleep",
-		PodfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
 		InitialPrompt: "300",
 	}
 	err := mc.SimulateCreatePod(cmd1)
@@ -176,7 +176,7 @@ func TestMessageHandler_MaxCapacity_Integration(t *testing.T) {
 	cmd2 := &runnerv1.CreatePodCommand{
 		PodKey:        "e2e-cap-pod-2",
 		LaunchCommand: "sleep",
-		PodfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
 		InitialPrompt: "300",
 	}
 	// Even though OnCreatePod doesn't check capacity itself (gRPC layer does),

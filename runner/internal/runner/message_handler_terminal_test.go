@@ -67,7 +67,7 @@ func TestOnPodInputSuccess(t *testing.T) {
 	runner := &Runner{
 		cfg: &config.Config{
 			MaxConcurrentPods: 10,
-			WorkspaceRoot:         tempDir,
+			WorkspaceRoot:     tempDir,
 		},
 	}
 
@@ -77,7 +77,7 @@ func TestOnPodInputSuccess(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "input-success-pod",
 		LaunchCommand: "cat",
-		PodfileSource: "AGENT cat\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT cat\nPROMPT_POSITION prepend\n",
 	}
 
 	err := handler.OnCreatePod(cmd)

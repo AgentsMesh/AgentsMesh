@@ -33,9 +33,9 @@ var (
 
 // StripRedundantSequencesInFrames removes ESC[2J and ESC[H sequences from INSIDE
 // synchronized output frames. These sequences are redundant because:
-// 1. Sync frames already provide atomic updates (no need to clear first)
-// 2. After resize, Claude Code sends ESC[2J + ESC[H with every frame, causing xterm.js
-//    to continuously jump to top, making scrolling impossible
+//  1. Sync frames already provide atomic updates (no need to clear first)
+//  2. After resize, Claude Code sends ESC[2J + ESC[H with every frame, causing xterm.js
+//     to continuously jump to top, making scrolling impossible
 //
 // This does NOT affect:
 // - Clear screen sequences OUTSIDE sync frames (e.g., `clear` command)

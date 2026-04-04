@@ -16,7 +16,7 @@ func (o *PodOrchestrator) buildPodCommand(
 	pod *podDomain.Pod,
 	sourcePod *podDomain.Pod,
 	isResumeMode bool,
-	resolved *podfileResolved,
+	resolved *agentfileResolved,
 ) (*runnerv1.CreatePodCommand, error) {
 	// Resume mode: resolve local_path from source pod's sandbox
 	localPath := ""
@@ -24,7 +24,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		localPath = *sourcePod.SandboxPath
 	}
 
-	// Effective values: resolved (PodFile) > req (resume inheritance only)
+	// Effective values: resolved (AgentFile) > req (resume inheritance only)
 	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName)
 	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
 
@@ -121,7 +121,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		Cols:                req.Cols,
 		Rows:                req.Rows,
 		RunnerAgentVersions: runnerAgentVersions,
-		MergedPodfileSource: resolved.MergedPodfileSource,
+		MergedAgentfileSource: resolved.MergedAgentfileSource,
 		CredentialProfile:   resolved.CredentialProfile,
 	}
 

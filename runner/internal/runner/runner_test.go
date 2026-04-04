@@ -31,14 +31,14 @@ func TestPodStruct(t *testing.T) {
 	now := time.Now()
 	// Note: InitialPrompt field has been removed - prompt is now passed via LaunchArgs by Backend
 	pod := Pod{
-		ID:               "pod-1",
-		PodKey:           "key-123",
-		Agent:            "claude-code",
-		Branch:           "main",
-		SandboxPath:      "/workspace/worktrees/pod-1",
-		StartedAt:        now,
-		Status:           PodStatusRunning,
-		TicketSlug: "TICKET-123",
+		ID:          "pod-1",
+		PodKey:      "key-123",
+		Agent:       "claude-code",
+		Branch:      "main",
+		SandboxPath: "/workspace/worktrees/pod-1",
+		StartedAt:   now,
+		Status:      PodStatusRunning,
+		TicketSlug:  "TICKET-123",
 	}
 
 	if pod.ID != "pod-1" {
@@ -64,14 +64,14 @@ func TestPodAllFields(t *testing.T) {
 	// Note: InitialPrompt field has been removed - prompt is now passed via LaunchArgs by Backend
 	// Note: OnOutput and OnExit fields have been removed - callbacks are now set via Terminal
 	pod := &Pod{
-		ID:               "id-1",
-		PodKey:           "key-1",
-		Agent:            "claude-code",
-		Branch:           "feature/test",
-		SandboxPath:      "/workspace/worktrees/test",
-		StartedAt:        now,
-		Status:           PodStatusRunning,
-		TicketSlug: "TICKET-123",
+		ID:          "id-1",
+		PodKey:      "key-1",
+		Agent:       "claude-code",
+		Branch:      "feature/test",
+		SandboxPath: "/workspace/worktrees/test",
+		StartedAt:   now,
+		Status:      PodStatusRunning,
+		TicketSlug:  "TICKET-123",
 	}
 
 	if pod.ID != "id-1" {

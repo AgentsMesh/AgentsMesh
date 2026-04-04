@@ -54,8 +54,8 @@ type PodInputRequest struct {
 // The Runner should connect to the specified Relay URL and start streaming terminal output.
 type SubscribePodRequest struct {
 	PodKey          string `json:"pod_key"`
-	RelayURL        string `json:"relay_url"`         // Public URL via reverse proxy (e.g. wss://example.com/relay)
-	RunnerToken     string `json:"runner_token"`      // JWT token for Relay authentication
+	RelayURL        string `json:"relay_url"`    // Public URL via reverse proxy (e.g. wss://example.com/relay)
+	RunnerToken     string `json:"runner_token"` // JWT token for Relay authentication
 	IncludeSnapshot bool   `json:"include_snapshot"`
 	SnapshotHistory int32  `json:"snapshot_history"`
 }
@@ -141,5 +141,4 @@ type MessageHandler interface {
 	// OnSendPrompt handles send_prompt command from server.
 	// Routes the prompt to the pod via PodIO.SendInput (mode-agnostic).
 	OnSendPrompt(cmd *runnerv1.SendPromptCommand) error
-
 }

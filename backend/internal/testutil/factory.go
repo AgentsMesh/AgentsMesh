@@ -65,11 +65,11 @@ func CreatePod(t *testing.T, db *gorm.DB, orgID, runnerID, userID int64) (podKey
 }
 
 // CreateAgent inserts a test agent definition.
-func CreateAgent(t *testing.T, db *gorm.DB, slug, name, podfileSrc string) {
+func CreateAgent(t *testing.T, db *gorm.DB, slug, name, agentfileSrc string) {
 	t.Helper()
 	result := db.Exec(
-		`INSERT INTO agents (slug, name, launch_command, podfile_source, supported_modes) VALUES (?, ?, ?, ?, 'pty')`,
-		slug, name, slug, podfileSrc,
+		`INSERT INTO agents (slug, name, launch_command, agentfile_source, supported_modes) VALUES (?, ?, ?, ?, 'pty')`,
+		slug, name, slug, agentfileSrc,
 	)
 	if result.Error != nil {
 		t.Fatalf("testutil.CreateAgent: %v", result.Error)

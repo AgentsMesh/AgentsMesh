@@ -150,4 +150,3 @@ func TestACPClient_GetSessionSnapshot_IsolatedCopy(t *testing.T) {
 			snap2.Messages[0].Text, "original")
 	}
 }
-

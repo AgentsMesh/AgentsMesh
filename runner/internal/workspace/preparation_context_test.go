@@ -10,12 +10,12 @@ import (
 
 func TestPreparationContextGetEnvVars(t *testing.T) {
 	ctx := &PreparationContext{
-		PodID:            "pod-1",
-		TicketSlug: "TICKET-123",
-		BranchName:       "feature/test",
-		WorkspaceDir:     "/workspace/sandboxes/pod-1/workspace",
-		MainRepoDir:      "/workspace/repos/main",
-		BaseEnvVars:      map[string]string{"API_KEY": "secret"},
+		PodID:        "pod-1",
+		TicketSlug:   "TICKET-123",
+		BranchName:   "feature/test",
+		WorkspaceDir: "/workspace/sandboxes/pod-1/workspace",
+		MainRepoDir:  "/workspace/repos/main",
+		BaseEnvVars:  map[string]string{"API_KEY": "secret"},
 	}
 
 	envVars := ctx.GetEnvVars()
@@ -43,9 +43,9 @@ func TestPreparationContextGetEnvVars(t *testing.T) {
 
 func TestPreparationContextString(t *testing.T) {
 	ctx := &PreparationContext{
-		PodID:            "pod-1",
-		TicketSlug: "TICKET-123",
-		WorkspaceDir:       "/workspace/test",
+		PodID:        "pod-1",
+		TicketSlug:   "TICKET-123",
+		WorkspaceDir: "/workspace/test",
 	}
 
 	str := ctx.String()
@@ -57,7 +57,7 @@ func TestPreparationContextString(t *testing.T) {
 
 func TestPreparationContextGetEnvVarsEmpty(t *testing.T) {
 	ctx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: "/workspace",
 	}
 
@@ -74,10 +74,10 @@ func TestPreparationContextGetEnvVarsEmpty(t *testing.T) {
 
 func TestPreparationContextStringFormat(t *testing.T) {
 	ctx := &PreparationContext{
-		PodID:            "pod-1",
-		TicketSlug: "TICKET-123",
-		BranchName:       "feature/test",
-		WorkspaceDir:       "/workspace",
+		PodID:        "pod-1",
+		TicketSlug:   "TICKET-123",
+		BranchName:   "feature/test",
+		WorkspaceDir: "/workspace",
 	}
 
 	str := ctx.String()
@@ -121,12 +121,12 @@ func TestPreparationErrorNoOutput(t *testing.T) {
 
 func BenchmarkPreparationContextGetEnvVars(b *testing.B) {
 	ctx := &PreparationContext{
-		PodID:            "pod-1",
-		TicketSlug: "TICKET-123",
-		BranchName:       "feature/test",
-		WorkspaceDir:     "/workspace/sandboxes/pod-1/workspace",
-		MainRepoDir:      "/workspace/repos/main",
-		BaseEnvVars:      map[string]string{"API_KEY": "secret"},
+		PodID:        "pod-1",
+		TicketSlug:   "TICKET-123",
+		BranchName:   "feature/test",
+		WorkspaceDir: "/workspace/sandboxes/pod-1/workspace",
+		MainRepoDir:  "/workspace/repos/main",
+		BaseEnvVars:  map[string]string{"API_KEY": "secret"},
 	}
 
 	b.ResetTimer()

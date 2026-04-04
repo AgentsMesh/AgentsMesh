@@ -37,7 +37,7 @@ func TestBuildPodCommand_WithRepository(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		RepositoryID:   &repoID,
 	})
 
@@ -67,7 +67,7 @@ func TestBuildPodCommand_BranchOverride(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		RepositoryID:   &repoID,
 		BranchName:     &branch,
 	})
@@ -93,7 +93,7 @@ func TestBuildPodCommand_WithTicket(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		TicketID:       &ticketID,
 	})
 
@@ -112,7 +112,7 @@ func TestBuildPodCommand_WithTicketSlug(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		TicketSlug:     &ticketSlug,
 	})
 
@@ -145,7 +145,7 @@ func TestBuildPodCommand_WithOAuthCredential(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		RepositoryID:   &repoID,
 	})
 
@@ -180,7 +180,7 @@ func TestBuildPodCommand_WithSSHCredential(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		RepositoryID:   &repoID,
 	})
 
@@ -211,7 +211,7 @@ func TestBuildPodCommand_RunnerLocalCredential_NoCredsSent(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		RepositoryID:   &repoID,
 	})
 
@@ -335,7 +335,7 @@ func TestBuildPodCommand_RepoServiceError_IgnoresRepo(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		RepositoryID:   &repoID,
 	})
 
@@ -355,7 +355,7 @@ func TestBuildPodCommand_TicketServiceError_IgnoresTicket(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:    agentSlug,
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		TicketID:       &ticketID,
 	})
 

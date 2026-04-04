@@ -9,7 +9,7 @@ import { RunnerSelect } from "./RunnerSelect";
 import { CredentialSelect } from "./CredentialSelect";
 import { RepositorySelect, BranchInput } from "./RepositorySelect";
 import { AdvancedOptions } from "./AdvancedOptions";
-import { PodfileLayerEditor } from "./PodfileLayerEditor";
+import { AgentfileLayerEditor } from "./AgentfileLayerEditor";
 import type { CreatePodFormState } from "../hooks";
 import type { RunnerData, RepositoryData, ConfigField } from "@/lib/api";
 
@@ -38,9 +38,9 @@ export function AdvancedFormSection({
 }: AdvancedFormSectionProps) {
   const t = useTranslations();
 
-  // When source mode is ON, hide form sections represented in the PodFile Layer
+  // When source mode is ON, hide form sections represented in the AgentFile Layer
   // (ConfigForm, RepositorySelect, BranchInput, CredentialSelect)
-  // Keep: Alias, RunnerSelect (not represented in PodFile Layer)
+  // Keep: Alias, RunnerSelect (not represented in AgentFile Layer)
   const hideFormSections = form.rawLayerMode;
 
   return (
@@ -124,9 +124,9 @@ export function AdvancedFormSection({
         </>
       )}
 
-      {/* PodFile Layer Editor — always visible */}
-      <PodfileLayerEditor
-        generatedLayer={form.podfileLayer}
+      {/* AgentFile Layer Editor — always visible */}
+      <AgentfileLayerEditor
+        generatedLayer={form.agentfileLayer}
         rawMode={form.rawLayerMode}
         rawText={form.rawLayerText}
         onRawModeChange={form.setRawLayerMode}

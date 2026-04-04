@@ -225,8 +225,8 @@ services:
       - ../../backend:/app
       # Mount proto module (required by go.mod replace directive)
       - ../../proto:/proto
-      # Mount podfile module (required by go.mod replace directive)
-      - ../../podfile:/podfile
+      # Mount agentfile module (required by go.mod replace directive)
+      - ../../agentfile:/agentfile
       # Persist Go modules cache
       - go-mod-cache:/go/pkg/mod
       # Persist build cache
@@ -304,8 +304,8 @@ services:
       - ../../runner:/app
       # Mount proto module (required by go.mod replace directive)
       - ../../proto:/proto
-      # Mount podfile module (required by go.mod replace directive)
-      - ../../podfile:/podfile
+      # Mount agentfile module (required by go.mod replace directive)
+      - ../../agentfile:/agentfile
       - ./runner-entrypoint.sh:/usr/local/bin/runner-entrypoint.sh:ro
       # SSL certificates for generating runner client cert
       - ./ssl:/app/ssl:ro

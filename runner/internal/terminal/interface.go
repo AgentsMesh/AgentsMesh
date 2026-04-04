@@ -45,6 +45,6 @@ type TerminalBackpressure interface {
 
 // Ensure Terminal implements both interfaces.
 var (
-	_ TerminalInterface     = (*Terminal)(nil)
-	_ TerminalBackpressure  = (*Terminal)(nil)
+	_ TerminalInterface    = (*Terminal)(nil)
+	_ TerminalBackpressure = (*Terminal)(nil)
 )

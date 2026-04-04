@@ -34,8 +34,8 @@ type GRPCConnection struct {
 
 	// gRPC components
 	conn   *grpc.ClientConn
-	creds  credentials.TransportCredentials                                            // advancedtls credentials for hot-reload
-	client runnerv1.RunnerServiceClient                                                // gRPC service client
+	creds  credentials.TransportCredentials                                         // advancedtls credentials for hot-reload
+	client runnerv1.RunnerServiceClient                                             // gRPC service client
 	stream grpc.BidiStreamingClient[runnerv1.RunnerMessage, runnerv1.ServerMessage] // Bidirectional stream
 	mu     sync.Mutex
 
@@ -64,9 +64,9 @@ type GRPCConnection struct {
 
 	// Lifecycle - Priority-based channels for message sending
 	// Control messages (heartbeat, pod events, OSC) have higher priority than agent status
-	controlCh     chan *runnerv1.RunnerMessage // High priority: heartbeat, pod_created, pod_terminated, OSC, etc.
-	terminalCh    chan *runnerv1.RunnerMessage // Low priority: agent_status (terminal output via Relay)
-	stopCh        chan struct{}
+	controlCh   chan *runnerv1.RunnerMessage // High priority: heartbeat, pod_created, pod_terminated, OSC, etc.
+	terminalCh  chan *runnerv1.RunnerMessage // Low priority: agent_status (terminal output via Relay)
+	stopCh      chan struct{}
 	stopOnce    sync.Once
 	reconnectCh chan struct{} // Signal to trigger reconnection
 
@@ -139,8 +139,8 @@ func NewGRPCConnection(endpoint, nodeID, orgSlug, certFile, keyFile, caFile stri
 		mcpPort:                  19000,
 		certRenewalCheckInterval: 24 * time.Hour,
 		certExpiryWarningDays:    30,
-		certRenewalDays:          30, // Renew 30 days before expiry
-		certUrgentDays:           7,  // Urgent reconnection 7 days before expiry
+		certRenewalDays:          30,        // Renew 30 days before expiry
+		certUrgentDays:           7,         // Urgent reconnection 7 days before expiry
 		terminalRateLimit:        50 * 1024, // Default: 50KB/s (conservative for shared bandwidth)
 		agentProbe:               NewAgentProbe(),
 		podQueue:                 NewPodCommandQueue(),

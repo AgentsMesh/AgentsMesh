@@ -81,7 +81,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
 		log.Info("Shutting down runner...")
-		r.stopAllPods()    // Pods stop while gRPC still connected
+		r.stopAllPods() // Pods stop while gRPC still connected
 		close(shutdownDone)
 		supervisorCancel() // Now tear down gRPC + other services
 	}()
@@ -188,4 +188,3 @@ func (r *Runner) stopAllPods() {
 		log.Warn("Timeout waiting for pods to stop — some token usage data may be lost", "count", len(pods))
 	}
 }
-

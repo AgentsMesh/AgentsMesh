@@ -127,10 +127,10 @@ func TestJSONRPCMessage_GetID(t *testing.T) {
 	stringID := json.RawMessage(`"abc"`)
 
 	tests := []struct {
-		name     string
-		msg      JSONRPCMessage
-		wantID   int64
-		wantOK   bool
+		name   string
+		msg    JSONRPCMessage
+		wantID int64
+		wantOK bool
 	}{
 		{
 			name:   "valid integer id",

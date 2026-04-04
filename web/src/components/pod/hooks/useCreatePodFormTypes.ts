@@ -38,10 +38,10 @@ export interface CreatePodFormState {
   setPrompt: (prompt: string) => void;
   setAlias: (alias: string) => void;
 
-  // PodFile Layer
+  // AgentFile Layer
   rawLayerMode: boolean;
   rawLayerText: string;
-  podfileLayer: string;
+  agentfileLayer: string;
   setRawLayerMode: (enabled: boolean) => void;
   setRawLayerText: (text: string) => void;
 

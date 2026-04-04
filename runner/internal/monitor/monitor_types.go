@@ -15,12 +15,12 @@ var log = logger.Monitor()
 
 // PodStatus represents the full status of a pod.
 type PodStatus struct {
-	PodID       string             `json:"pod_id"`
-	Pid         int                `json:"pid"`
+	PodID       string              `json:"pod_id"`
+	Pid         int                 `json:"pid"`
 	AgentStatus detector.AgentState `json:"agent_status"`
-	AgentPid    int                `json:"agent_pid,omitempty"`
-	IsRunning   bool               `json:"is_running"`
-	UpdatedAt   time.Time          `json:"updated_at"`
+	AgentPid    int                 `json:"agent_pid,omitempty"`
+	IsRunning   bool                `json:"is_running"`
+	UpdatedAt   time.Time           `json:"updated_at"`
 }
 
 // Monitor monitors pod processes for claude status.

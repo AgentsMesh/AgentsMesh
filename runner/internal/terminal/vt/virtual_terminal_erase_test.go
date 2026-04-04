@@ -7,7 +7,7 @@ import (
 func TestEraseToEndOfLine(t *testing.T) {
 	vt := NewVirtualTerminal(80, 24, 1000)
 	vt.Feed([]byte("Hello, World!"))
-	vt.Feed([]byte("\x1b[7D"))  // Back 7 chars
+	vt.Feed([]byte("\x1b[7D")) // Back 7 chars
 	vt.Feed([]byte("\x1b[0K")) // Erase to end of line
 	display := vt.GetDisplay()
 	if display != "Hello," {
@@ -40,7 +40,7 @@ func TestEraseScreen(t *testing.T) {
 func TestDeleteChars(t *testing.T) {
 	vt := NewVirtualTerminal(80, 24, 1000)
 	vt.Feed([]byte("ABCDEF"))
-	vt.Feed([]byte("\x1b[4D"))  // Back 4
+	vt.Feed([]byte("\x1b[4D")) // Back 4
 	vt.Feed([]byte("\x1b[2P")) // Delete 2 chars
 	display := vt.GetDisplay()
 	if display != "ABEF" {
@@ -51,7 +51,7 @@ func TestDeleteChars(t *testing.T) {
 func TestInsertChars(t *testing.T) {
 	vt := NewVirtualTerminal(80, 24, 1000)
 	vt.Feed([]byte("ABCD"))
-	vt.Feed([]byte("\x1b[2D"))  // Back 2
+	vt.Feed([]byte("\x1b[2D")) // Back 2
 	vt.Feed([]byte("\x1b[2@")) // Insert 2 chars
 	vt.Feed([]byte("XY"))
 	display := vt.GetDisplay()

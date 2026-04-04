@@ -40,7 +40,7 @@ func runMockACPAgent() {
 		case "initialize":
 			writer.WriteResponse(id, map[string]any{
 				"protocol_version": "2025-01-01",
-				"capabilities":    map[string]any{"permissions": true},
+				"capabilities":     map[string]any{"permissions": true},
 			}, nil)
 		case "session/new":
 			writer.WriteResponse(id, map[string]any{

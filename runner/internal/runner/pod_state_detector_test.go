@@ -44,7 +44,7 @@ func TestPod_SubscribeStateChange(t *testing.T) {
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
+		PodKey:     "test-pod",
 		vtProvider: func() *vt.VirtualTerminal { return vterminal },
 	}
 	defer pod.StopStateDetector()
@@ -86,7 +86,7 @@ func TestPod_UnsubscribeStateChange(t *testing.T) {
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
+		PodKey:     "test-pod",
 		vtProvider: func() *vt.VirtualTerminal { return vterminal },
 	}
 	defer pod.StopStateDetector()
@@ -128,7 +128,7 @@ func TestPod_MultipleSubscribers(t *testing.T) {
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
+		PodKey:     "test-pod",
 		vtProvider: func() *vt.VirtualTerminal { return vterminal },
 	}
 	defer pod.StopStateDetector()
@@ -165,7 +165,7 @@ func TestPod_NotifyStateDetectorWithScreen(t *testing.T) {
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
+		PodKey:     "test-pod",
 		vtProvider: func() *vt.VirtualTerminal { return vterminal },
 	}
 
@@ -192,7 +192,7 @@ func TestPod_NotifyStateDetectorWithScreen_NilScreenLines(t *testing.T) {
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
+		PodKey:     "test-pod",
 		vtProvider: func() *vt.VirtualTerminal { return vterminal },
 	}
 	defer pod.StopStateDetector()
@@ -208,7 +208,7 @@ func TestPod_StopStateDetector(t *testing.T) {
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
+		PodKey:     "test-pod",
 		vtProvider: func() *vt.VirtualTerminal { return vterminal },
 	}
 
@@ -238,7 +238,7 @@ func TestPod_ConcurrentSubscribeUnsubscribe(t *testing.T) {
 	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
 
 	pod := &Pod{
-		PodKey:          "test-pod",
+		PodKey:     "test-pod",
 		vtProvider: func() *vt.VirtualTerminal { return vterminal },
 	}
 	defer pod.StopStateDetector()

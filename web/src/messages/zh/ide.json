@@ -83,7 +83,7 @@
       "autoCleanup": "完成后自动清理",
       "loadingPlugins": "正在加载插件选项...",
       "pluginConfig": "插件配置",
-      "podfileLayer": "PodFile Layer",
+      "agentfileLayer": "AgentFile Layer",
       "sourceMode": "Source Mode",
       "create": "创建 Pod",
       "creating": "创建中...",

@@ -50,13 +50,29 @@ func newFixture() *testFixture {
 	ctx, cancel := context.WithCancel(context.Background())
 	f := &testFixture{PW: pw, Cancel: cancel}
 	f.Transport = NewTransport(acp.EventCallbacks{
-		OnStateChange:       func(s string) { f.mu.Lock(); f.StateChanges = append(f.StateChanges, s); f.mu.Unlock() },
-		OnContentChunk:      func(_ string, c acp.ContentChunk) { f.mu.Lock(); f.Chunks = append(f.Chunks, c); f.mu.Unlock() },
-		OnToolCallUpdate:    func(_ string, u acp.ToolCallUpdate) { f.mu.Lock(); f.ToolUpdates = append(f.ToolUpdates, u); f.mu.Unlock() },
-		OnToolCallResult:    func(_ string, r acp.ToolCallResult) { f.mu.Lock(); f.ToolResults = append(f.ToolResults, r); f.mu.Unlock() },
-		OnThinkingUpdate:    func(_ string, u acp.ThinkingUpdate) { f.mu.Lock(); f.ThinkingTexts = append(f.ThinkingTexts, u.Text); f.mu.Unlock() },
-		OnLog:               func(l, m string) { f.mu.Lock(); f.LogMessages = append(f.LogMessages, l+":"+m); f.mu.Unlock() },
-		OnPermissionRequest: func(req acp.PermissionRequest) { f.mu.Lock(); f.PermissionRequests = append(f.PermissionRequests, req); f.mu.Unlock() },
+		OnStateChange:  func(s string) { f.mu.Lock(); f.StateChanges = append(f.StateChanges, s); f.mu.Unlock() },
+		OnContentChunk: func(_ string, c acp.ContentChunk) { f.mu.Lock(); f.Chunks = append(f.Chunks, c); f.mu.Unlock() },
+		OnToolCallUpdate: func(_ string, u acp.ToolCallUpdate) {
+			f.mu.Lock()
+			f.ToolUpdates = append(f.ToolUpdates, u)
+			f.mu.Unlock()
+		},
+		OnToolCallResult: func(_ string, r acp.ToolCallResult) {
+			f.mu.Lock()
+			f.ToolResults = append(f.ToolResults, r)
+			f.mu.Unlock()
+		},
+		OnThinkingUpdate: func(_ string, u acp.ThinkingUpdate) {
+			f.mu.Lock()
+			f.ThinkingTexts = append(f.ThinkingTexts, u.Text)
+			f.mu.Unlock()
+		},
+		OnLog: func(l, m string) { f.mu.Lock(); f.LogMessages = append(f.LogMessages, l+":"+m); f.mu.Unlock() },
+		OnPermissionRequest: func(req acp.PermissionRequest) {
+			f.mu.Lock()
+			f.PermissionRequests = append(f.PermissionRequests, req)
+			f.mu.Unlock()
+		},
 	}, slog.Default())
 	f.Transport.Initialize(ctx, nil, pr, nil)
 	go f.Transport.ReadLoop(ctx)
@@ -70,13 +86,29 @@ func newFixtureWithStdin() *testFixture {
 	ctx, cancel := context.WithCancel(context.Background())
 	f := &testFixture{PW: pw, StdinPR: stdinPR, Cancel: cancel}
 	f.Transport = NewTransport(acp.EventCallbacks{
-		OnStateChange:       func(s string) { f.mu.Lock(); f.StateChanges = append(f.StateChanges, s); f.mu.Unlock() },
-		OnContentChunk:      func(_ string, c acp.ContentChunk) { f.mu.Lock(); f.Chunks = append(f.Chunks, c); f.mu.Unlock() },
-		OnToolCallUpdate:    func(_ string, u acp.ToolCallUpdate) { f.mu.Lock(); f.ToolUpdates = append(f.ToolUpdates, u); f.mu.Unlock() },
-		OnToolCallResult:    func(_ string, r acp.ToolCallResult) { f.mu.Lock(); f.ToolResults = append(f.ToolResults, r); f.mu.Unlock() },
-		OnThinkingUpdate:    func(_ string, u acp.ThinkingUpdate) { f.mu.Lock(); f.ThinkingTexts = append(f.ThinkingTexts, u.Text); f.mu.Unlock() },
-		OnLog:               func(l, m string) { f.mu.Lock(); f.LogMessages = append(f.LogMessages, l+":"+m); f.mu.Unlock() },
-		OnPermissionRequest: func(req acp.PermissionRequest) { f.mu.Lock(); f.PermissionRequests = append(f.PermissionRequests, req); f.mu.Unlock() },
+		OnStateChange:  func(s string) { f.mu.Lock(); f.StateChanges = append(f.StateChanges, s); f.mu.Unlock() },
+		OnContentChunk: func(_ string, c acp.ContentChunk) { f.mu.Lock(); f.Chunks = append(f.Chunks, c); f.mu.Unlock() },
+		OnToolCallUpdate: func(_ string, u acp.ToolCallUpdate) {
+			f.mu.Lock()
+			f.ToolUpdates = append(f.ToolUpdates, u)
+			f.mu.Unlock()
+		},
+		OnToolCallResult: func(_ string, r acp.ToolCallResult) {
+			f.mu.Lock()
+			f.ToolResults = append(f.ToolResults, r)
+			f.mu.Unlock()
+		},
+		OnThinkingUpdate: func(_ string, u acp.ThinkingUpdate) {
+			f.mu.Lock()
+			f.ThinkingTexts = append(f.ThinkingTexts, u.Text)
+			f.mu.Unlock()
+		},
+		OnLog: func(l, m string) { f.mu.Lock(); f.LogMessages = append(f.LogMessages, l+":"+m); f.mu.Unlock() },
+		OnPermissionRequest: func(req acp.PermissionRequest) {
+			f.mu.Lock()
+			f.PermissionRequests = append(f.PermissionRequests, req)
+			f.mu.Unlock()
+		},
 	}, slog.Default())
 	f.Transport.Initialize(ctx, stdinPW, pr, nil)
 	go f.Transport.ReadLoop(ctx)

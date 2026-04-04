@@ -22,7 +22,7 @@ func TestPodBuilderMergeEnvVars(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-pod",
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		EnvVars: map[string]string{
 			"BUILDER_VAR": "builder_value",
 			"SHARED_VAR":  "builder_shared",
@@ -54,7 +54,7 @@ func TestPodBuilderMergeEnvVarsNilConfig(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-pod",
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		EnvVars: map[string]string{
 			"BUILDER_VAR": "builder_value",
 		},
@@ -83,7 +83,7 @@ func TestPodBuilderWithAllOptions(t *testing.T) {
 		PodKey:        "pod-key",
 		LaunchCommand: "claude",
 		LaunchArgs:    []string{"--headless"},
-		PodfileSource: "AGENT claude\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT claude\nPROMPT_POSITION prepend\n",
 		EnvVars: map[string]string{
 			"ENV1": "value1",
 			"ENV2": "value2",
@@ -145,7 +145,7 @@ func BenchmarkPodBuilderFluentAPI(b *testing.B) {
 			PodKey:        "pod-1",
 			LaunchCommand: "claude",
 			LaunchArgs:    []string{"--headless"},
-			PodfileSource: "AGENT claude\nPROMPT_POSITION prepend\n",
+			AgentfileSource: "AGENT claude\nPROMPT_POSITION prepend\n",
 			EnvVars:       map[string]string{"KEY": "VALUE"},
 		}
 		NewPodBuilderFromRunner(runner).
@@ -167,7 +167,7 @@ func BenchmarkPodBuilderMergeEnvVars(b *testing.B) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "test-pod",
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		EnvVars: map[string]string{
 			"POD_VAR1": "pod_value1",
 		},

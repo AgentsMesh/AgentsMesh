@@ -200,4 +200,3 @@ func TestACPClient_GetSessionSnapshot_Integration(t *testing.T) {
 		t.Errorf("expected 1 pending permission, got %d", len(snapshot.PendingPermissions))
 	}
 }
-

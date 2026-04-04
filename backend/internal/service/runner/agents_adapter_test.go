@@ -30,7 +30,7 @@ func setupAgentTestDB(t *testing.T) *gorm.DB {
 			description TEXT,
 			launch_command TEXT NOT NULL,
 			executable TEXT,
-			podfile_source TEXT,
+			agentfile_source TEXT,
 			is_active BOOLEAN NOT NULL DEFAULT TRUE,
 			is_builtin BOOLEAN NOT NULL DEFAULT TRUE,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

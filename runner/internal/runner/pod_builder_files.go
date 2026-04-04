@@ -112,7 +112,7 @@ func (b *PodBuilder) createFilesFromProto(files []*runnerv1.FileToCreate, sandbo
 		if absPath != absSandbox && !strings.HasPrefix(absPath, absSandbox+string(os.PathSeparator)) {
 			return &client.PodError{
 				Code:    client.ErrCodeFileCreate,
-				Message: fmt.Sprintf("podfile path %q escapes sandbox root %q", path, absSandbox),
+				Message: fmt.Sprintf("agentfile path %q escapes sandbox root %q", path, absSandbox),
 				Details: map[string]string{"path": path},
 			}
 		}
@@ -146,7 +146,7 @@ func (b *PodBuilder) createFilesFromProto(files []*runnerv1.FileToCreate, sandbo
 				Details: map[string]string{"path": path},
 			}
 		}
-		logger.Pod().Debug("Created file (podfile)", "path", path)
+		logger.Pod().Debug("Created file (agentfile)", "path", path)
 	}
 
 	return nil

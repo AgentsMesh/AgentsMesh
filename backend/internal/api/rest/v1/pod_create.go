@@ -12,17 +12,17 @@ import (
 )
 
 // CreatePodRequest represents pod creation request.
-// Pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL, PROMPT) is conveyed via PodfileLayer (SSOT).
+// Pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL, PROMPT) is conveyed via AgentfileLayer (SSOT).
 type CreatePodRequest struct {
-	AgentSlug    string  `json:"agent_slug"`    // Required: determines base PodFile
+	AgentSlug    string  `json:"agent_slug"`    // Required: determines base AgentFile
 	RunnerID     int64   `json:"runner_id"`     // Optional: auto-select if omitted
 	TicketSlug   *string `json:"ticket_slug"`   // Optional: associate with ticket
 	Alias        *string `json:"alias"`         // Optional: display name (max 100 chars)
 
-	// PodFile Layer — SSOT for all pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL, PROMPT)
-	PodfileLayer *string `json:"podfile_layer"`
+	// AgentFile Layer — SSOT for all pod configuration (MODE, CONFIG, REPO, BRANCH, CREDENTIAL, PROMPT)
+	AgentfileLayer *string `json:"agentfile_layer"`
 
-	// Platform-level ID references (cannot be expressed as PodFile declarations)
+	// Platform-level ID references (cannot be expressed as AgentFile declarations)
 	RepositoryID        *int64 `json:"repository_id,omitempty"`
 	CredentialProfileID *int64 `json:"credential_profile_id,omitempty"`
 
@@ -70,7 +70,7 @@ func (h *PodHandler) CreatePod(c *gin.Context) {
 		TicketSlug:          req.TicketSlug,
 		Alias:               req.Alias,
 		CredentialProfileID: req.CredentialProfileID,
-		PodfileLayer:        req.PodfileLayer,
+		AgentfileLayer:      req.AgentfileLayer,
 		Cols:                req.Cols,
 		Rows:                req.Rows,
 		SourcePodKey:        req.SourcePodKey,
@@ -109,7 +109,7 @@ func mapOrchestratorErrorToHTTP(c *gin.Context, err error) {
 		apierr.BadRequest(c, apierr.RESUME_RUNNER_MISMATCH, "Resume requires same runner as source pod (Sandbox is local to runner)")
 	case errors.Is(err, agentpod.ErrUnsupportedInteractionMode):
 		apierr.BadRequest(c, apierr.UNSUPPORTED_INTERACTION_MODE, err.Error())
-	case errors.Is(err, agentpod.ErrInvalidPodfileLayer):
+	case errors.Is(err, agentpod.ErrInvalidAgentfileLayer):
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, err.Error())
 
 	// Billing errors → 402

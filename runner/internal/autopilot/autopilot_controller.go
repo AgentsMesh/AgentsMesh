@@ -68,13 +68,13 @@ type AutopilotController struct {
 
 // Config contains configuration for creating an AutopilotController.
 type Config struct {
-	AutopilotKey    string
-	PodKey          string
-	ProtoConfig     *runnerv1.AutopilotConfig
-	PodCtrl         TargetPodController
-	Reporter        EventReporter
-	MCPPort         int            // MCP HTTP Server port for control process
-	ControlProcess  ControlProcess // Optional: inject custom ControlProcess (for testing)
+	AutopilotKey   string
+	PodKey         string
+	ProtoConfig    *runnerv1.AutopilotConfig
+	PodCtrl        TargetPodController
+	Reporter       EventReporter
+	MCPPort        int            // MCP HTTP Server port for control process
+	ControlProcess ControlProcess // Optional: inject custom ControlProcess (for testing)
 }
 
 // NewAutopilotController creates a new AutopilotController instance.

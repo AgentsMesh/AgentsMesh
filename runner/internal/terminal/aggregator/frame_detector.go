@@ -111,10 +111,10 @@ func (d *FrameDetector) AnalyzeFrameBoundaries(data []byte) FrameBoundary {
 // DiscardOldFrames intelligently removes old frames based on content analysis.
 //
 // Strategy:
-// - If a frame contains "full redraw" sequences (ESC[2J clear screen, ESC[H cursor home),
-//   it's safe to discard everything before that frame.
-// - If frames only contain incremental updates (relative cursor movement), we keep them
-//   because they depend on previous terminal state.
+//   - If a frame contains "full redraw" sequences (ESC[2J clear screen, ESC[H cursor home),
+//     it's safe to discard everything before that frame.
+//   - If frames only contain incremental updates (relative cursor movement), we keep them
+//     because they depend on previous terminal state.
 //
 // This is critical for Claude Code which uses both patterns:
 // - Full redraws when the UI layout changes significantly

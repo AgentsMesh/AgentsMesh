@@ -27,9 +27,9 @@ WORKDIR /proto
 COPY proto/go.mod proto/go.sum ./
 RUN go mod download
 
-# Copy podfile module (required by backend go.mod replace directive)
-WORKDIR /podfile
-COPY podfile/go.mod podfile/go.sum ./
+# Copy agentfile module (required by backend go.mod replace directive)
+WORKDIR /agentfile
+COPY agentfile/go.mod agentfile/go.sum ./
 RUN go mod download
 
 # Copy backend module

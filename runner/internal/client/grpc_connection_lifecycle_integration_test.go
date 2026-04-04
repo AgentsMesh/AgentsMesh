@@ -22,12 +22,12 @@ import (
 // across multiple expiry scenarios in a single flow.
 func TestCertExpiryToRenewalDecision_Integration(t *testing.T) {
 	cases := []struct {
-		name         string
-		expiryDays   int
-		wantRenewal  bool
-		wantUrgent   bool
-		wantExpired  bool
-		daysDelta    float64
+		name        string
+		expiryDays  int
+		wantRenewal bool
+		wantUrgent  bool
+		wantExpired bool
+		daysDelta   float64
 	}{
 		{"healthy_90d", 90, false, false, false, 90},
 		{"renewal_20d", 20, true, false, false, 20},

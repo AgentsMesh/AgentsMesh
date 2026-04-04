@@ -23,7 +23,7 @@ func TestScriptPreparationStepName(t *testing.T) {
 func TestScriptPreparationStepExecuteEmpty(t *testing.T) {
 	step := NewScriptPreparationStep("", time.Minute)
 	ctx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: t.TempDir(),
 	}
 
@@ -44,9 +44,9 @@ func TestScriptPreparationStepExecuteWithEnvVars(t *testing.T) {
 	step := NewScriptPreparationStep(script, time.Minute)
 
 	ctx := &PreparationContext{
-		PodID:            "pod-1",
-		TicketSlug: "TICKET-123",
-		WorkspaceDir:       tmpDir,
+		PodID:        "pod-1",
+		TicketSlug:   "TICKET-123",
+		WorkspaceDir: tmpDir,
 	}
 
 	err := step.Execute(context.Background(), ctx)
@@ -73,7 +73,7 @@ func TestScriptPreparationStepTimeout(t *testing.T) {
 	}
 	step := NewScriptPreparationStep(script, 100*time.Millisecond)
 	ctx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: t.TempDir(),
 	}
 
@@ -166,9 +166,9 @@ func TestBuildEnv(t *testing.T) {
 	step := NewScriptPreparationStep("echo test", time.Minute)
 
 	prepCtx := &PreparationContext{
-		PodID:            "test-pod",
-		TicketSlug: "TICKET-123",
-		WorkspaceDir:     "/workspace",
+		PodID:        "test-pod",
+		TicketSlug:   "TICKET-123",
+		WorkspaceDir: "/workspace",
 	}
 
 	env := step.buildEnv(prepCtx)

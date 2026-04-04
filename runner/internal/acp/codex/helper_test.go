@@ -54,19 +54,19 @@ func writeResponse(w io.Writer, id int64, result any, rpcErr *acp.JSONRPCError) 
 // testFixture provides common setup for Codex Transport tests.
 type testFixture struct {
 	Transport *Transport
-	PW        *io.PipeWriter  // write to transport's stdin (reader side)
-	StdinPR   *io.PipeReader  // read what transport writes to process stdin
+	PW        *io.PipeWriter // write to transport's stdin (reader side)
+	StdinPR   *io.PipeReader // read what transport writes to process stdin
 	Cancel    context.CancelFunc
 
-	mu               sync.Mutex
-	StateChanges     []string
-	Chunks           []acp.ContentChunk
-	ToolUpdates      []acp.ToolCallUpdate
-	ToolResults      []acp.ToolCallResult
-	ThinkingTexts    []string
-	PlanSteps        []acp.PlanStep
-	PermissionReqs   []acp.PermissionRequest
-	LogMessages      []string
+	mu             sync.Mutex
+	StateChanges   []string
+	Chunks         []acp.ContentChunk
+	ToolUpdates    []acp.ToolCallUpdate
+	ToolResults    []acp.ToolCallResult
+	ThinkingTexts  []string
+	PlanSteps      []acp.PlanStep
+	PermissionReqs []acp.PermissionRequest
+	LogMessages    []string
 }
 
 // newFixture creates a transport wired to pipes with all callbacks
@@ -85,19 +85,29 @@ func newFixture() *testFixture {
 	}
 	f.Transport = NewTransport(acp.EventCallbacks{
 		OnStateChange: func(s string) {
-			f.mu.Lock(); f.StateChanges = append(f.StateChanges, s); f.mu.Unlock()
+			f.mu.Lock()
+			f.StateChanges = append(f.StateChanges, s)
+			f.mu.Unlock()
 		},
 		OnContentChunk: func(_ string, c acp.ContentChunk) {
-			f.mu.Lock(); f.Chunks = append(f.Chunks, c); f.mu.Unlock()
+			f.mu.Lock()
+			f.Chunks = append(f.Chunks, c)
+			f.mu.Unlock()
 		},
 		OnToolCallUpdate: func(_ string, u acp.ToolCallUpdate) {
-			f.mu.Lock(); f.ToolUpdates = append(f.ToolUpdates, u); f.mu.Unlock()
+			f.mu.Lock()
+			f.ToolUpdates = append(f.ToolUpdates, u)
+			f.mu.Unlock()
 		},
 		OnToolCallResult: func(_ string, r acp.ToolCallResult) {
-			f.mu.Lock(); f.ToolResults = append(f.ToolResults, r); f.mu.Unlock()
+			f.mu.Lock()
+			f.ToolResults = append(f.ToolResults, r)
+			f.mu.Unlock()
 		},
 		OnThinkingUpdate: func(_ string, u acp.ThinkingUpdate) {
-			f.mu.Lock(); f.ThinkingTexts = append(f.ThinkingTexts, u.Text); f.mu.Unlock()
+			f.mu.Lock()
+			f.ThinkingTexts = append(f.ThinkingTexts, u.Text)
+			f.mu.Unlock()
 		},
 		OnPlanUpdate: func(_ string, u acp.PlanUpdate) {
 			f.mu.Lock()
@@ -105,10 +115,14 @@ func newFixture() *testFixture {
 			f.mu.Unlock()
 		},
 		OnPermissionRequest: func(req acp.PermissionRequest) {
-			f.mu.Lock(); f.PermissionReqs = append(f.PermissionReqs, req); f.mu.Unlock()
+			f.mu.Lock()
+			f.PermissionReqs = append(f.PermissionReqs, req)
+			f.mu.Unlock()
 		},
 		OnLog: func(l, m string) {
-			f.mu.Lock(); f.LogMessages = append(f.LogMessages, l+":"+m); f.mu.Unlock()
+			f.mu.Lock()
+			f.LogMessages = append(f.LogMessages, l+":"+m)
+			f.mu.Unlock()
 		},
 	}, discardLogger())
 

@@ -34,7 +34,7 @@ func TestPodCreateRequestWithAllFields(t *testing.T) {
 
 	req := PodCreateRequest{
 		RunnerID:            1,
-		AgentSlug:         "claude-code",
+		AgentSlug:           "claude-code",
 		TicketSlug:          &ticketSlug,
 		InitialPrompt:       "Hello",
 		Model:               "claude-sonnet",

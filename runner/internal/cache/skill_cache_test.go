@@ -75,8 +75,8 @@ func TestSkillCacheManager_ExtractTo(t *testing.T) {
 
 	// Create a tar.gz with test files
 	tarGzData := createTestTarGz(t, map[string]string{
-		"SKILL.md":              "# My Skill\nDescription here",
-		"scripts/run.sh":        "#!/bin/bash\necho hello",
+		"SKILL.md":                "# My Skill\nDescription here",
+		"scripts/run.sh":          "#!/bin/bash\necho hello",
 		"references/REFERENCE.md": "# Reference",
 	})
 

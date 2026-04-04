@@ -45,7 +45,7 @@ func setupConfigBuilderTestDB(t *testing.T) *gorm.DB {
 		files_template BLOB DEFAULT '[]',
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
-		podfile_source TEXT,
+		agentfile_source TEXT,
 		is_builtin INTEGER NOT NULL DEFAULT 0,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -122,18 +122,18 @@ func TestNewConfigBuilder(t *testing.T) {
 	}
 }
 
-func TestConfigBuilder_BuildPodCommand_NoPodFile(t *testing.T) {
+func TestConfigBuilder_BuildPodCommand_NoAgentFile(t *testing.T) {
 	db := setupConfigBuilderTestDB(t)
 
-	// Insert agent without PodFile
+	// Insert agent without AgentFile
 	db.Exec(`INSERT INTO agents (slug, name, launch_command, is_builtin, is_active)
-		VALUES ('no-podfile', 'NoPodFile', 'test', 1, 1)`)
+		VALUES ('no-agentfile', 'NoAgentFile', 'test', 1, 1)`)
 
 	provider := createTestProvider(db)
 	builder := NewConfigBuilder(provider)
 
 	var at agent.Agent
-	db.Where("slug = ?", "no-podfile").First(&at)
+	db.Where("slug = ?", "no-agentfile").First(&at)
 
 	_, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
 		AgentSlug: at.Slug,
@@ -141,7 +141,7 @@ func TestConfigBuilder_BuildPodCommand_NoPodFile(t *testing.T) {
 	})
 
 	if err == nil {
-		t.Error("Expected error for agent without PodFile")
+		t.Error("Expected error for agent without AgentFile")
 	}
 }
 

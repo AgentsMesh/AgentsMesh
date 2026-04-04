@@ -25,7 +25,7 @@ var (
 	ErrSourcePodAlreadyResumed    = errors.New("source pod already resumed")
 	ErrResumeRunnerMismatch       = errors.New("resume requires same runner")
 	ErrConfigBuildFailed          = errors.New("failed to build pod configuration")
-	ErrInvalidPodfileLayer        = errors.New("invalid podfile layer")
+	ErrInvalidAgentfileLayer        = errors.New("invalid agentfile layer")
 	ErrRunnerDispatchFailed       = errors.New("failed to dispatch pod to runner")
 	ErrUnsupportedInteractionMode = errors.New("agent type does not support the requested interaction mode")
 )
@@ -33,19 +33,19 @@ var (
 const errCodeRunnerUnreachable = "RUNNER_UNREACHABLE"
 
 // OrchestrateCreatePodRequest is the unified Pod creation request (protocol-agnostic).
-// Pod configuration flows exclusively through PodfileLayer (SSOT).
+// Pod configuration flows exclusively through AgentfileLayer (SSOT).
 type OrchestrateCreatePodRequest struct {
 	OrganizationID int64
 	UserID         int64
 
 	RunnerID            int64
 	AgentSlug           string
-	RepositoryID        *int64  // Platform-level ID (from PodFile REPO slug resolution or resume inheritance)
+	RepositoryID        *int64  // Platform-level ID (from AgentFile REPO slug resolution or resume inheritance)
 	TicketID            *int64
 	TicketSlug          *string
 	Alias               *string
 	CredentialProfileID *int64
-	PodfileLayer        *string // SSOT for all CONFIG, MODE, PROMPT, REPO, BRANCH, CREDENTIAL
+	AgentfileLayer      *string // SSOT for all CONFIG, MODE, PROMPT, REPO, BRANCH, CREDENTIAL
 	Cols                int32
 	Rows                int32
 
@@ -54,7 +54,7 @@ type OrchestrateCreatePodRequest struct {
 	ResumeAgentSession *bool
 
 	// BranchName is only set internally by handleResumeMode (inherited from source pod).
-	// Not accepted from external callers — use PodFile BRANCH declaration instead.
+	// Not accepted from external callers — use AgentFile BRANCH declaration instead.
 	BranchName *string
 }
 
@@ -136,16 +136,16 @@ type PodOrchestrator struct {
 	userConfigQuery UserConfigQueryForOrchestrator
 }
 
-// podfileResolved carries values extracted from PodFile Layer processing.
+// agentfileResolved carries values extracted from AgentFile Layer processing.
 // Separates intermediate state from the original request to keep req read-only.
-type podfileResolved struct {
-	InteractionMode     string
-	BranchName          string
-	PermissionMode      string
-	RepositoryID        *int64
-	InitialPrompt       string
-	MergedPodfileSource string
-	CredentialProfile   string
+type agentfileResolved struct {
+	InteractionMode      string
+	BranchName           string
+	PermissionMode       string
+	RepositoryID         *int64
+	InitialPrompt        string
+	MergedAgentfileSource string
+	CredentialProfile    string
 }
 
 func NewPodOrchestrator(deps *PodOrchestratorDeps) *PodOrchestrator {

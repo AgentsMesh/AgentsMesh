@@ -102,9 +102,9 @@ func RunDaemon(configPath string) {
 type daemonServer struct {
 	proc     daemonProcess
 	listener net.Listener
-	exitCode int            // set before exitDone is closed
-	exitDone chan struct{}   // closed when child process exits (broadcast)
-	orphanCh chan struct{}   // closed when state file is deleted (orphan protection)
+	exitCode int           // set before exitDone is closed
+	exitDone chan struct{} // closed when child process exits (broadcast)
+	orphanCh chan struct{} // closed when state file is deleted (orphan protection)
 	log      *slog.Logger
 	state    *PodDaemonState
 

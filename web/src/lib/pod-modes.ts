@@ -1,6 +1,6 @@
 /**
  * Interaction mode constants — canonical source for frontend.
- * Mirrors podfile.ModePTY / podfile.ModeACP on the backend.
+ * Mirrors agentfile.ModePTY / agentfile.ModeACP on the backend.
  */
 export const POD_MODE_PTY = "pty" as const;
 export const POD_MODE_ACP = "acp" as const;

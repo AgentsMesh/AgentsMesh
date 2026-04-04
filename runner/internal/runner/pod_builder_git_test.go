@@ -40,7 +40,7 @@ func gitBuilder(ws workspace.WorkspaceManagerInterface, cfg *runnerv1.SandboxCon
 	r := &Runner{cfg: &config.Config{WorkspaceRoot: os.TempDir()}}
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "git-test-pod",
-		PodfileSource: "AGENT echo\n",
+		AgentfileSource: "AGENT echo\n",
 		SandboxConfig: cfg,
 	}
 	return NewPodBuilder(PodBuilderDeps{Config: r.cfg, Workspace: ws}).WithCommand(cmd)

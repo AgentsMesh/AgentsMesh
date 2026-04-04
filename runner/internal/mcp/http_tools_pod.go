@@ -8,9 +8,9 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/mcp/tools"
 )
 
-// buildPodfileLayerFromArgs generates a PodFile Layer from MCP tool arguments.
-// Converts scattered config fields into unified PodFile CONFIG declarations.
-func buildPodfileLayerFromArgs(
+// buildAgentfileLayerFromArgs generates an AgentFile Layer from MCP tool arguments.
+// Converts scattered config fields into unified AgentFile CONFIG declarations.
+func buildAgentfileLayerFromArgs(
 	model, permissionMode, initialPrompt string,
 	configOverrides map[string]interface{},
 	repositoryURL, branchName string,
@@ -92,7 +92,7 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 				},
 				"initial_prompt": map[string]interface{}{
 					"type":        "string",
-					"description": "[Deprecated: prefer PodFile PROMPT declaration] Initial prompt to send to the new agent pod",
+					"description": "[Deprecated: prefer AgentFile PROMPT declaration] Initial prompt to send to the new agent pod",
 				},
 				"alias": map[string]interface{}{
 					"type":        "string",
@@ -120,25 +120,25 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 				},
 				"config_overrides": map[string]interface{}{
 					"type":        "object",
-					"description": "[Deprecated: prefer PodFile Layer CONFIG declarations] Override agent default configuration. Keys depend on the agent's config schema.",
+					"description": "[Deprecated: prefer AgentFile Layer CONFIG declarations] Override agent default configuration. Keys depend on the agent's config schema.",
 				},
 				"permission_mode": map[string]interface{}{
 					"type":        "string",
 					"enum":        []string{"plan", "default", "bypassPermissions"},
-					"description": "[Deprecated: prefer PodFile CONFIG permission_mode] Permission mode for the pod: 'plan' (default, requires approval), 'default' (normal permissions), or 'bypassPermissions' (auto-approve all).",
+					"description": "[Deprecated: prefer AgentFile CONFIG permission_mode] Permission mode for the pod: 'plan' (default, requires approval), 'default' (normal permissions), or 'bypassPermissions' (auto-approve all).",
 				},
 			},
 			"required": []string{"runner_id", "agent_slug"},
 		},
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
-			// Build PodFile Layer from scattered arguments (PodFile SSOT).
+			// Build AgentFile Layer from scattered arguments (AgentFile SSOT).
 			model := getStringArg(args, "model")
 			permissionMode := getStringArg(args, "permission_mode")
 			initialPrompt := getStringArg(args, "initial_prompt")
 			configOverrides := getMapArg(args, "config_overrides")
 			repositoryURL := getStringArg(args, "repository_url")
 			branchName := getStringArg(args, "branch_name")
-			podfileLayer := buildPodfileLayerFromArgs(model, permissionMode, initialPrompt, configOverrides, repositoryURL, branchName)
+			agentfileLayer := buildAgentfileLayerFromArgs(model, permissionMode, initialPrompt, configOverrides, repositoryURL, branchName)
 
 			req := &tools.PodCreateRequest{}
 
@@ -156,15 +156,15 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 			}
 			// repository_id and credential_profile_id remain as separate fields
 			// because they are platform-level ID references that cannot be resolved
-			// to PodFile slugs/names on the Runner side (no DB access).
+			// to AgentFile slugs/names on the Runner side (no DB access).
 			if v := getInt64PtrArg(args, "repository_id"); v != nil {
 				req.RepositoryID = v
 			}
 			if v := getInt64PtrArg(args, "credential_profile_id"); v != nil {
 				req.CredentialProfileID = v
 			}
-			if podfileLayer != "" {
-				req.PodfileLayer = &podfileLayer
+			if agentfileLayer != "" {
+				req.AgentfileLayer = &agentfileLayer
 			}
 
 			// Create the pod

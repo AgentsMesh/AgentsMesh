@@ -11,7 +11,7 @@ func TestPromptBuilder_NewPromptBuilder(t *testing.T) {
 		InitialPrompt:       "Test task",
 		CustomTemplate:      "",
 		MCPPort:             19000,
-		PodKey:        "worker-123",
+		PodKey:              "worker-123",
 		GetMaxIterations:    func() int { return 10 },
 		GetCurrentIteration: func() int { return 1 },
 	})
@@ -63,7 +63,7 @@ func TestPromptBuilder_BuildInitialPrompt_CustomTemplate(t *testing.T) {
 		InitialPrompt:  "Test task",
 		CustomTemplate: customTemplate,
 		MCPPort:        19000,
-		PodKey:   "worker-123",
+		PodKey:         "worker-123",
 	})
 
 	prompt := pb.BuildInitialPrompt()
@@ -76,7 +76,7 @@ func TestPromptBuilder_BuildResumePrompt(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",
 		MCPPort:          19000,
-		PodKey:     "worker-123",
+		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
 	})
 
@@ -95,7 +95,7 @@ func TestPromptBuilder_BuildResumePrompt_NilGetMaxIterations(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:    "Test task",
 		MCPPort:          19000,
-		PodKey:     "worker-123",
+		PodKey:           "worker-123",
 		GetMaxIterations: nil, // Should use default of 10
 	})
 
@@ -113,7 +113,7 @@ func TestPromptBuilder_BuildResumePrompt_DifferentIterations(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
 		InitialPrompt:       "Test task",
 		MCPPort:             19000,
-		PodKey:        "worker-123",
+		PodKey:              "worker-123",
 		GetMaxIterations:    func() int { return maxIter },
 		GetCurrentIteration: func() int { return currentIter },
 	})

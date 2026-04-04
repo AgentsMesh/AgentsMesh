@@ -28,7 +28,7 @@ func (f *fakeStream) Recv() (*runnerv1.ServerMessage, error) {
 	return nil, io.EOF
 }
 
-func (f *fakeStream) CloseSend() error            { return nil }
+func (f *fakeStream) CloseSend() error             { return nil }
 func (f *fakeStream) Header() (metadata.MD, error) { return nil, nil }
 func (f *fakeStream) Trailer() metadata.MD         { return nil }
 func (f *fakeStream) Context() context.Context     { return context.Background() }

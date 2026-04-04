@@ -15,8 +15,8 @@ func TestIterationController_NewIterationController(t *testing.T) {
 		MaxIterations: 20,
 		MinTriggerGap: 10 * time.Second,
 		Reporter:      reporter,
-		AutopilotKey:   "autopilot-123",
-		PodKey:  "worker-123",
+		AutopilotKey:  "autopilot-123",
+		PodKey:        "worker-123",
 		Logger:        nil,
 	})
 
@@ -91,7 +91,7 @@ func TestIterationController_CheckTriggerDedup_WithLogger(t *testing.T) {
 	ic := NewIterationController(IterationControllerConfig{
 		MaxIterations: 10,
 		MinTriggerGap: 100 * time.Millisecond,
-		AutopilotKey:   "autopilot-123",
+		AutopilotKey:  "autopilot-123",
 		Logger:        nil, // Will use default logger
 	})
 
@@ -176,7 +176,7 @@ func TestIterationController_ReportIterationEvent(t *testing.T) {
 	ic := NewIterationController(IterationControllerConfig{
 		MaxIterations: 10,
 		Reporter:      reporter,
-		AutopilotKey:   "autopilot-123",
+		AutopilotKey:  "autopilot-123",
 	})
 
 	ic.ReportIterationEvent(1, "started", "Starting iteration", []string{"file1.go", "file2.go"})

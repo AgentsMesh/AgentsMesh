@@ -71,7 +71,7 @@ type Terminal struct {
 
 	// Lifecycle synchronization
 	doneCh       chan struct{} // Closed when process exits (signaled by waitExit)
-	ptyCloseOnce sync.Once    // Ensures PTY file descriptor is closed exactly once
+	ptyCloseOnce sync.Once     // Ensures PTY file descriptor is closed exactly once
 
 	// Backpressure control (ttyd-style flow control)
 	// When paused, readOutput() blocks to prevent unbounded memory growth

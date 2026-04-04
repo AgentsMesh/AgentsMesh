@@ -14,7 +14,7 @@ func TestPrepareAgentHome_NoCodexHome(t *testing.T) {
 	builder := &PodBuilder{
 		cmd: &runnerv1.CreatePodCommand{
 			PodKey:        "test-pod",
-			PodfileSource: "AGENT test\nPROMPT_POSITION prepend\n",
+			AgentfileSource: "AGENT test\nPROMPT_POSITION prepend\n",
 			EnvVars:       map[string]string{"FOO": "bar"},
 		},
 	}
@@ -24,7 +24,7 @@ func TestPrepareAgentHome_NoCodexHome(t *testing.T) {
 
 func TestPrepareAgentHome_NilEnvVars(t *testing.T) {
 	builder := &PodBuilder{
-		cmd: &runnerv1.CreatePodCommand{PodKey: "test-pod", PodfileSource: "AGENT test\nPROMPT_POSITION prepend\n"},
+		cmd: &runnerv1.CreatePodCommand{PodKey: "test-pod", AgentfileSource: "AGENT test\nPROMPT_POSITION prepend\n"},
 	}
 	err := builder.prepareAgentHome("/sandbox", "/workspace")
 	assert.NoError(t, err)
@@ -37,7 +37,7 @@ func TestPrepareAgentHome_CreatesEmptyDir(t *testing.T) {
 	builder := &PodBuilder{
 		cmd: &runnerv1.CreatePodCommand{
 			PodKey:        "test-pod",
-			PodfileSource: "AGENT test\nPROMPT_POSITION prepend\n",
+			AgentfileSource: "AGENT test\nPROMPT_POSITION prepend\n",
 			EnvVars:       map[string]string{"CODEX_HOME": codexHome},
 		},
 	}
@@ -53,7 +53,7 @@ func TestPrepareAgentHome_ResolvesTemplateVars(t *testing.T) {
 	builder := &PodBuilder{
 		cmd: &runnerv1.CreatePodCommand{
 			PodKey:        "test-pod",
-			PodfileSource: "AGENT test\nPROMPT_POSITION prepend\n",
+			AgentfileSource: "AGENT test\nPROMPT_POSITION prepend\n",
 			EnvVars:       map[string]string{"CODEX_HOME": "{{.sandbox.root_path}}/codex-home"},
 		},
 	}

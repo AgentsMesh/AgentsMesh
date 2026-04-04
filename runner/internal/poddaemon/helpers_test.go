@@ -17,7 +17,7 @@ type mockDaemonProcess struct {
 	readData  []byte // data returned by Read
 	readErr   error
 	readCh    chan []byte // if set, Read blocks until data arrives
-	writeData []byte     // last data written via Write
+	writeData []byte      // last data written via Write
 	writeErr  error
 
 	resizeCols int

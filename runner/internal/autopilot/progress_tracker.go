@@ -32,13 +32,13 @@ type ProgressSnapshot struct {
 
 // GitDiffSummary contains summarized git diff information.
 type GitDiffSummary struct {
-	FilesChanged  []string
-	Insertions    int
-	Deletions     int
-	UnstagedFiles []string
-	StagedFiles   []string
+	FilesChanged   []string
+	Insertions     int
+	Deletions      int
+	UnstagedFiles  []string
+	StagedFiles    []string
 	UntrackedFiles []string
-	HasChanges    bool
+	HasChanges     bool
 }
 
 // ProgressTrackerConfig contains configuration for ProgressTracker.

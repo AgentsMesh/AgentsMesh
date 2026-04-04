@@ -15,19 +15,19 @@ type shutdownMockPodIO struct {
 	detachCalled   bool
 }
 
-func (m *shutdownMockPodIO) Mode() string                                       { return "pty" }
-func (m *shutdownMockPodIO) SendInput(string) error                             { return nil }
-func (m *shutdownMockPodIO) GetSnapshot(int) (string, error)                    { return "", nil }
-func (m *shutdownMockPodIO) GetAgentStatus() string                             { return "idle" }
-func (m *shutdownMockPodIO) SubscribeStateChange(string, func(string))          {}
-func (m *shutdownMockPodIO) UnsubscribeStateChange(string)                      {}
-func (m *shutdownMockPodIO) GetPID() int                                        { return 0 }
-func (m *shutdownMockPodIO) Stop()                                              {}
-func (m *shutdownMockPodIO) Teardown() string                                   { m.teardownCalled = true; return "" }
-func (m *shutdownMockPodIO) SetExitHandler(func(int))                           {}
-func (m *shutdownMockPodIO) Detach()                                            { m.detachCalled = true }
-func (m *shutdownMockPodIO) Start() error                                       { return nil }
-func (m *shutdownMockPodIO) SetIOErrorHandler(func(error))                      {}
+func (m *shutdownMockPodIO) Mode() string                              { return "pty" }
+func (m *shutdownMockPodIO) SendInput(string) error                    { return nil }
+func (m *shutdownMockPodIO) GetSnapshot(int) (string, error)           { return "", nil }
+func (m *shutdownMockPodIO) GetAgentStatus() string                    { return "idle" }
+func (m *shutdownMockPodIO) SubscribeStateChange(string, func(string)) {}
+func (m *shutdownMockPodIO) UnsubscribeStateChange(string)             {}
+func (m *shutdownMockPodIO) GetPID() int                               { return 0 }
+func (m *shutdownMockPodIO) Stop()                                     {}
+func (m *shutdownMockPodIO) Teardown() string                          { m.teardownCalled = true; return "" }
+func (m *shutdownMockPodIO) SetExitHandler(func(int))                  {}
+func (m *shutdownMockPodIO) Detach()                                   { m.detachCalled = true }
+func (m *shutdownMockPodIO) Start() error                              { return nil }
+func (m *shutdownMockPodIO) SetIOErrorHandler(func(error))             {}
 
 // --- CanAcceptPod tests ---
 

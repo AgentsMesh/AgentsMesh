@@ -87,7 +87,7 @@ func (m *mockFormatClient) GetTicket(_ context.Context, _ string, _ *int, _ *int
 		ContentTotalLines: 5,
 		ContentOffset:     0,
 		ContentLimit:      5,
-		CreatedAt: "2026-02-19T08:00:00Z", UpdatedAt: "2026-02-20T15:00:00Z",
+		CreatedAt:         "2026-02-19T08:00:00Z", UpdatedAt: "2026-02-20T15:00:00Z",
 	}, nil
 }
 

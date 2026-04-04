@@ -60,7 +60,7 @@ func coreTableDDLs() []string {
 		)`,
 		`CREATE TABLE IF NOT EXISTS agents (
 			id INTEGER PRIMARY KEY, slug TEXT, name TEXT, launch_command TEXT, description TEXT,
-			config_schema TEXT DEFAULT '{}', podfile_source TEXT,
+			config_schema TEXT DEFAULT '{}', agentfile_source TEXT,
 			supported_modes TEXT NOT NULL DEFAULT 'pty',
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

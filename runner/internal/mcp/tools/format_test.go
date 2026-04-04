@@ -258,4 +258,3 @@ func TestTicket_FormatText(t *testing.T) {
 		}
 	})
 }
-

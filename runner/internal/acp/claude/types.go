@@ -33,7 +33,7 @@ type message struct {
 
 // controlInitMessage is written to stdin to trigger the initialize handshake.
 type controlInitMessage struct {
-	Type      string             `json:"type"`       // "control_request"
+	Type      string             `json:"type"` // "control_request"
 	RequestID string             `json:"request_id"`
 	Request   controlInitPayload `json:"request"`
 }
@@ -62,8 +62,8 @@ type contentBlock struct {
 
 // delta is a streaming delta for content_block_delta.
 type delta struct {
-	Type        string `json:"type"` // text_delta, input_json_delta, thinking_delta
-	Text        string `json:"text"` // text_delta, thinking_delta
+	Type        string `json:"type"`         // text_delta, input_json_delta, thinking_delta
+	Text        string `json:"text"`         // text_delta, thinking_delta
 	PartialJSON string `json:"partial_json"` // input_json_delta
 }
 
@@ -83,7 +83,7 @@ type userInput struct {
 
 // userInputMsg is the message body of a stdin user input.
 type userInputMsg struct {
-	Role    string `json:"role"`    // "user"
+	Role    string `json:"role"` // "user"
 	Content string `json:"content"`
 }
 
@@ -98,7 +98,7 @@ type toolCallState struct {
 
 // controlRequestPayload is the "request" field of a control_request message.
 type controlRequestPayload struct {
-	Subtype     string          `json:"subtype"`      // "can_use_tool"
+	Subtype     string          `json:"subtype"` // "can_use_tool"
 	ToolName    string          `json:"tool_name"`
 	ToolUseID   string          `json:"tool_use_id"`
 	Input       json.RawMessage `json:"input"`
@@ -120,7 +120,7 @@ type controlResponsePayload struct {
 
 // controlResponseData holds the permission decision.
 type controlResponseData struct {
-	Behavior     string          `json:"behavior"`                // "allow" | "deny"
-	UpdatedInput json.RawMessage `json:"updatedInput,omitempty"`  // allow: pass original input
-	Message      string          `json:"message,omitempty"`       // deny: reason message
+	Behavior     string          `json:"behavior"`               // "allow" | "deny"
+	UpdatedInput json.RawMessage `json:"updatedInput,omitempty"` // allow: pass original input
+	Message      string          `json:"message,omitempty"`      // deny: reason message
 }

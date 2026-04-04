@@ -30,7 +30,7 @@ type CreateCustomAgentRequest struct {
 	Description   *string
 	LaunchCommand string
 	DefaultArgs   *string
-	PodfileSource *string
+	AgentfileSource *string
 }
 
 // AgentService handles agent operations
@@ -101,7 +101,7 @@ func (s *AgentService) CreateCustomAgent(ctx context.Context, orgID int64, req *
 		Description:    req.Description,
 		LaunchCommand:  req.LaunchCommand,
 		DefaultArgs:    req.DefaultArgs,
-		PodfileSource:  req.PodfileSource,
+		AgentfileSource:  req.AgentfileSource,
 		IsActive:       true,
 	}
 

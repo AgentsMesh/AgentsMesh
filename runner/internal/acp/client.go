@@ -10,7 +10,7 @@ import (
 
 // TransportType constants for ClientConfig.
 const (
-	TransportTypeACP          = "acp"          // JSON-RPC 2.0 (Gemini, OpenCode)
+	TransportTypeACP          = "acp"           // JSON-RPC 2.0 (Gemini, OpenCode)
 	TransportTypeClaudeStream = "claude-stream" // Claude stream-json NDJSON
 	TransportTypeCodex        = "codex"         // Codex app-server JSON-RPC
 )

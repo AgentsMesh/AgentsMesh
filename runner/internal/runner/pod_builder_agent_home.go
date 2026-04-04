@@ -130,4 +130,3 @@ func mergeTomlMcpServers(configPath, platformContent string) error {
 
 	return os.WriteFile(configPath, merged, 0644)
 }
-

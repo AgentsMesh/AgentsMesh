@@ -179,12 +179,12 @@ func TestRotatingWriter_DirectoryCleanup(t *testing.T) {
 		size int
 		age  time.Duration
 	}{
-		{"test-2024-01-01.log", 100 * 1024 * 1024, 72 * time.Hour},   // 100MB, 3 days old
-		{"test-2024-01-02.log", 100 * 1024 * 1024, 48 * time.Hour},   // 100MB, 2 days old
-		{"test-2024-01-03.log", 100 * 1024 * 1024, 24 * time.Hour},   // 100MB, 1 day old
-		{"test-2024-01-04.log", 100 * 1024 * 1024, 12 * time.Hour},   // 100MB, 12 hours old
-		{"test-2024-01-05.log", 100 * 1024 * 1024, 6 * time.Hour},    // 100MB, 6 hours old
-		{"test-2024-01-06.log", 100 * 1024 * 1024, 1 * time.Hour},    // 100MB, 1 hour old
+		{"test-2024-01-01.log", 100 * 1024 * 1024, 72 * time.Hour}, // 100MB, 3 days old
+		{"test-2024-01-02.log", 100 * 1024 * 1024, 48 * time.Hour}, // 100MB, 2 days old
+		{"test-2024-01-03.log", 100 * 1024 * 1024, 24 * time.Hour}, // 100MB, 1 day old
+		{"test-2024-01-04.log", 100 * 1024 * 1024, 12 * time.Hour}, // 100MB, 12 hours old
+		{"test-2024-01-05.log", 100 * 1024 * 1024, 6 * time.Hour},  // 100MB, 6 hours old
+		{"test-2024-01-06.log", 100 * 1024 * 1024, 1 * time.Hour},  // 100MB, 1 hour old
 	}
 
 	now := time.Now()

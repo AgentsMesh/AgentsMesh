@@ -190,7 +190,6 @@ func TestHandleHeartbeatAck(t *testing.T) {
 	assert.Equal(t, int32(0), monitor.MissedCount())
 }
 
-
 func TestHandleMcpResponse_NilRPCClient(t *testing.T) {
 	conn := newTestConnection()
 	conn.rpcClient = nil

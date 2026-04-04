@@ -13,12 +13,12 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 )
 
-func buildTestPod(t *testing.T, podfile string, opts ...func(*runnerv1.CreatePodCommand)) *Pod {
+func buildTestPod(t *testing.T, agentfile string, opts ...func(*runnerv1.CreatePodCommand)) *Pod {
 	t.Helper()
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: t.TempDir()}}
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "lifecycle-" + t.Name(),
-		PodfileSource: podfile,
+		PodKey:          "lifecycle-" + t.Name(),
+		AgentfileSource: agentfile,
 	}
 	for _, o := range opts {
 		o(cmd)
@@ -33,8 +33,8 @@ func buildTestPod(t *testing.T, podfile string, opts ...func(*runnerv1.CreatePod
 }
 
 func TestPodLifecycle_EchoCommand_Integration(t *testing.T) {
-	pf := "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n"
-	pod := buildTestPod(t, pf, func(c *runnerv1.CreatePodCommand) {
+	af := "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n"
+	pod := buildTestPod(t, af, func(c *runnerv1.CreatePodCommand) {
 		c.InitialPrompt = "hello from integration test"
 	})
 	comps := testPTYComponents(pod)
@@ -108,16 +108,16 @@ func TestPodLifecycle_CatInteractive_Integration(t *testing.T) {
 	}
 }
 
-func TestPodLifecycle_PodFileEval_BuildIntegration(t *testing.T) {
-	podfile := `AGENT echo
+func TestPodLifecycle_AgentFileEval_BuildIntegration(t *testing.T) {
+	agentfile := `AGENT echo
 MODE pty
 PROMPT_POSITION prepend
 ENV TEST_INTEGRATION_VAR TEXT OPTIONAL
 `
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: t.TempDir()}}
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "podfile-eval-test",
-		PodfileSource: podfile,
+		PodKey:          "agentfile-eval-test",
+		AgentfileSource: agentfile,
 		ConfigValues:  map[string]string{"test_key": "test_value"},
 	}
 	pod, err := NewPodBuilderFromRunner(runner).
@@ -148,15 +148,15 @@ ENV TEST_INTEGRATION_VAR TEXT OPTIONAL
 }
 
 func TestPodLifecycle_ACP_Build_Integration(t *testing.T) {
-	podfile := `AGENT echo
+	agentfile := `AGENT echo
 MODE acp
 MODE acp "flag"
 PROMPT_POSITION prepend
 `
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: t.TempDir()}}
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "acp-build-test",
-		PodfileSource: podfile,
+		PodKey:          "acp-build-test",
+		AgentfileSource: agentfile,
 	}
 	pod, err := NewPodBuilderFromRunner(runner).
 		WithCommand(cmd).WithPtySize(80, 24).

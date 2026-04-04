@@ -46,7 +46,7 @@ type RepositoryRepo interface {
 	GetBySlug(ctx context.Context, orgID int64, providerType, providerBaseURL, slug string) (*Repository, error)
 
 	// FindByOrgSlug looks up a repository by org + slug (ignoring provider).
-	// Used by PodFile REPO resolution where only slug is known.
+	// Used by AgentFile REPO resolution where only slug is known.
 	// Returns (nil, nil) when not found.
 	FindByOrgSlug(ctx context.Context, orgID int64, slug string) (*Repository, error)
 

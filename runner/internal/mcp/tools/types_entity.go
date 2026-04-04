@@ -29,16 +29,16 @@ type PodTicket struct {
 
 // AvailablePod represents a pod available for collaboration.
 type AvailablePod struct {
-	ID          int            `json:"id"`
-	PodKey      string         `json:"pod_key"`
-	Title       *string        `json:"title,omitempty"`
-	CreatedByID int            `json:"created_by_id"`
-	CreatedBy   *PodCreator    `json:"created_by,omitempty"`
-	Status      PodStatus      `json:"status"`
-	TicketID    *int           `json:"ticket_id,omitempty"`
-	Ticket      *PodTicket     `json:"ticket,omitempty"`
-	Agent       AgentField `json:"agent,omitempty"`
-	CreatedAt   string         `json:"created_at"`
+	ID          int         `json:"id"`
+	PodKey      string      `json:"pod_key"`
+	Title       *string     `json:"title,omitempty"`
+	CreatedByID int         `json:"created_by_id"`
+	CreatedBy   *PodCreator `json:"created_by,omitempty"`
+	Status      PodStatus   `json:"status"`
+	TicketID    *int        `json:"ticket_id,omitempty"`
+	Ticket      *PodTicket  `json:"ticket,omitempty"`
+	Agent       AgentField  `json:"agent,omitempty"`
+	CreatedAt   string      `json:"created_at"`
 }
 
 // GetUsername returns the username of the pod creator.
@@ -146,12 +146,12 @@ type AgentSummary struct {
 // RunnerSummary is a simplified Runner with nested Agent details.
 // Optimized for LLM token efficiency - removes host_info, timestamps, etc.
 type RunnerSummary struct {
-	ID                int64              `json:"id"`
-	NodeID            string             `json:"node_id"`
-	Description       string             `json:"description,omitempty"`
-	Status            string             `json:"status"`
-	CurrentPods       int                `json:"current_pods"`
-	MaxConcurrentPods int                `json:"max_concurrent_pods"`
+	ID                int64          `json:"id"`
+	NodeID            string         `json:"node_id"`
+	Description       string         `json:"description,omitempty"`
+	Status            string         `json:"status"`
+	CurrentPods       int            `json:"current_pods"`
+	MaxConcurrentPods int            `json:"max_concurrent_pods"`
 	AvailableAgents   []AgentSummary `json:"available_agents"`
 }
 
@@ -177,16 +177,16 @@ type PodCreateRequest struct {
 	RunnerID            int                    `json:"runner_id,omitempty"`
 	AgentSlug           string                 `json:"agent_slug,omitempty"`
 	TicketSlug          *string                `json:"ticket_slug,omitempty"`
-	InitialPrompt       string                 `json:"initial_prompt,omitempty"`       // Deprecated: use PodFile PROMPT declaration
+	InitialPrompt       string                 `json:"initial_prompt,omitempty"` // Deprecated: use AgentFile PROMPT declaration
 	Alias               *string                `json:"alias,omitempty"`
-	Model               string                 `json:"model,omitempty"`                // Deprecated: use PodFile CONFIG model
+	Model               string                 `json:"model,omitempty"` // Deprecated: use AgentFile CONFIG model
 	RepositoryID        *int64                 `json:"repository_id,omitempty"`
 	RepositoryURL       *string                `json:"repository_url,omitempty"`
 	BranchName          *string                `json:"branch_name,omitempty"`
 	CredentialProfileID *int64                 `json:"credential_profile_id,omitempty"`
-	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"`     // Deprecated: use PodFile CONFIG declarations via PodfileLayer
-	PermissionMode      *string                `json:"permission_mode,omitempty"`      // Deprecated: use PodFile CONFIG permission_mode
-	PodfileLayer        *string                `json:"podfile_layer,omitempty"`        // PodFile Layer — SSOT for all CONFIG values
+	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"` // Deprecated: use AgentFile CONFIG declarations via AgentfileLayer
+	PermissionMode      *string                `json:"permission_mode,omitempty"`  // Deprecated: use AgentFile CONFIG permission_mode
+	AgentfileLayer      *string                `json:"agentfile_layer,omitempty"`  // AgentFile Layer — SSOT for all CONFIG values
 }
 
 // PodCreateResponse represents the response from creating a pod.
@@ -198,19 +198,19 @@ type PodCreateResponse struct {
 
 // LoopSummary represents a Loop in list results (token-efficient).
 type LoopSummary struct {
-	Slug           string  `json:"slug"`
-	Name           string  `json:"name"`
-	Description    string  `json:"description,omitempty"`
-	Status         string  `json:"status"`
-	ExecutionMode  string  `json:"execution_mode"`
-	CronExpression string  `json:"cron_expression,omitempty"`
-	TotalRuns      int     `json:"total_runs"`
-	SuccessfulRuns int     `json:"successful_runs"`
-	FailedRuns     int     `json:"failed_runs"`
-	ActiveRunCount int     `json:"active_run_count"`
-	LastRunAt      string  `json:"last_run_at,omitempty"`
-	NextRunAt      string  `json:"next_run_at,omitempty"`
-	CreatedAt      string  `json:"created_at"`
+	Slug           string `json:"slug"`
+	Name           string `json:"name"`
+	Description    string `json:"description,omitempty"`
+	Status         string `json:"status"`
+	ExecutionMode  string `json:"execution_mode"`
+	CronExpression string `json:"cron_expression,omitempty"`
+	TotalRuns      int    `json:"total_runs"`
+	SuccessfulRuns int    `json:"successful_runs"`
+	FailedRuns     int    `json:"failed_runs"`
+	ActiveRunCount int    `json:"active_run_count"`
+	LastRunAt      string `json:"last_run_at,omitempty"`
+	NextRunAt      string `json:"next_run_at,omitempty"`
+	CreatedAt      string `json:"created_at"`
 }
 
 // LoopRunSummary represents a LoopRun result.

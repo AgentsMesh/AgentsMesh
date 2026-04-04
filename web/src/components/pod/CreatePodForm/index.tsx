@@ -59,7 +59,7 @@ export function CreatePodForm({
     selectedAgentSlug
   );
 
-  // Form state management (receives configValues for PodFile Layer generation)
+  // Form state management (receives configValues for AgentFile Layer generation)
   const form = useCreatePodForm(availableAgents, repositories, onSuccess, configValues);
 
   // Sync selected agent from form to local state for useConfigOptions

@@ -326,4 +326,3 @@ func TestGetRelayURL(t *testing.T) {
 		t.Errorf("GetRelayURL: expected wss://relay.example.com, got %s", c.GetRelayURL())
 	}
 }
-

@@ -20,7 +20,7 @@ func buildMultiPod(t *testing.T, tempDir, podKey string) *Pod {
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: tempDir}}
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        podKey,
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 	}
 	pod, err := NewPodBuilderFromRunner(runner).WithCommand(cmd).WithPtySize(80, 24).Build(context.Background())
 	require.NoError(t, err)
@@ -122,8 +122,8 @@ func TestMultiPod_ConcurrentCreateTerminate_Integration(t *testing.T) {
 			podKey := "pre-" + string(rune('a'+idx))
 			if p, ok := store.Get(podKey); ok {
 				if comps := testPTYComponents(p); comps != nil && comps.Terminal != nil {
-				comps.Terminal.Stop()
-			}
+					comps.Terminal.Stop()
+				}
 				store.Delete(podKey)
 			}
 		}(i)

@@ -15,7 +15,7 @@ type ExtensionProvider interface {
 	GetEffectiveSkills(ctx context.Context, orgID, userID, repoID int64, agentSlug string) ([]*extensionservice.ResolvedSkill, error)
 }
 
-// ConfigBuilder builds pod configurations by evaluating PodFile scripts.
+// ConfigBuilder builds pod configurations by evaluating AgentFile scripts.
 type ConfigBuilder struct {
 	provider          AgentConfigProvider
 	extensionProvider ExtensionProvider
@@ -31,16 +31,16 @@ func (b *ConfigBuilder) SetExtensionProvider(ep ExtensionProvider) {
 	b.extensionProvider = ep
 }
 
-// BuildPodCommand evaluates the agent's PodFile and produces a CreatePodCommand.
+// BuildPodCommand evaluates the agent's AgentFile and produces a CreatePodCommand.
 func (b *ConfigBuilder) BuildPodCommand(ctx context.Context, req *ConfigBuildRequest) (*runnerv1.CreatePodCommand, error) {
 	agentDef, err := b.provider.GetAgent(ctx, req.AgentSlug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get agent: %w", err)
 	}
 
-	if agentDef.PodfileSource == nil || *agentDef.PodfileSource == "" {
-		return nil, fmt.Errorf("agent %q has no PodFile defined", agentDef.Slug)
+	if agentDef.AgentfileSource == nil || *agentDef.AgentfileSource == "" {
+		return nil, fmt.Errorf("agent %q has no AgentFile defined", agentDef.Slug)
 	}
 
-	return b.buildFromPodFile(ctx, req, agentDef)
+	return b.buildFromAgentfile(ctx, req, agentDef)
 }

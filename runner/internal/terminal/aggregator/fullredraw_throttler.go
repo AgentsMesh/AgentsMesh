@@ -73,8 +73,8 @@ func NewFullRedrawThrottler(opts ...FullRedrawThrottlerOption) *FullRedrawThrott
 		minWindowSize:          1 * time.Second,
 		maxWindowSize:          4 * time.Second,
 		effectiveWindowSize:    1 * time.Second,
-		lowBandwidthThreshold:  200 * 1024,  // 200KB/s
-		highBandwidthThreshold: 500 * 1024,  // 500KB/s
+		lowBandwidthThreshold:  200 * 1024, // 200KB/s
+		highBandwidthThreshold: 500 * 1024, // 500KB/s
 		minDelay:               200 * time.Millisecond,
 		maxDelay:               1000 * time.Millisecond,
 		thresholdFreq:          1.5, // 1.5/s - lower threshold since we have bandwidth awareness

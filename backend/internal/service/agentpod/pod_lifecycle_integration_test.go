@@ -28,15 +28,15 @@ func setupIntegrationOrchestrator(t *testing.T, opts ...func(*PodOrchestratorDep
 	orgID := testutil.CreateOrg(t, db, "test-org", userID)
 	runnerID := testutil.CreateRunner(t, db, orgID, "runner-001")
 
-	podfileSrc := "AGENT claude\nEXECUTABLE claude\nMCP ON\nPROMPT_POSITION prepend\n"
-	testutil.CreateAgent(t, db, "claude-code", "Claude Code", podfileSrc)
+	agentfileSrc := "AGENT claude\nEXECUTABLE claude\nMCP ON\nPROMPT_POSITION prepend\n"
+	testutil.CreateAgent(t, db, "claude-code", "Claude Code", agentfileSrc)
 
 	podSvc := NewPodService(infra.NewPodRepository(db))
 	provider := &mockAgentConfigProvider{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", Name: "Claude Code",
 			LaunchCommand: "claude", SupportedModes: "pty",
-			PodfileSource: &podfileSrc,
+			AgentfileSource: &agentfileSrc,
 		},
 		config: agentDomain.ConfigValues{},
 		creds:  agentDomain.EncryptedCredentials{},
@@ -170,13 +170,13 @@ func TestPodLifecycle_BillingQuotaReject(t *testing.T) {
 func TestPodLifecycle_RunnerAutoSelect(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	autoRunner := &runnerDomain.Runner{ID: 999, NodeID: "auto-runner"}
-	podfileSrc := "AGENT claude\nEXECUTABLE claude\nPROMPT_POSITION prepend\n"
+	agentfileSrc := "AGENT claude\nEXECUTABLE claude\nPROMPT_POSITION prepend\n"
 
 	selector := &mockRunnerSelector{runner: autoRunner}
 	resolver := &mockAgentResolver{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", SupportedModes: "pty",
-			PodfileSource: &podfileSrc,
+			AgentfileSource: &agentfileSrc,
 		},
 	}
 
@@ -223,16 +223,16 @@ func TestPodLifecycle_DispatchFailure(t *testing.T) {
 	assert.Equal(t, errCodeRunnerUnreachable, *pod.ErrorCode)
 }
 
-// ---------- Test 6: PodFile layer merge extracts overrides ----------
+// ---------- Test 6: AgentFile layer merge extracts overrides ----------
 
-func TestPodLifecycle_PodfileLayerMerge(t *testing.T) {
+func TestPodLifecycle_AgentfileLayerMerge(t *testing.T) {
 	coord := &mockPodCoordinator{}
 
-	basePodfile := "AGENT claude\nEXECUTABLE claude\nMODE pty\nMCP ON\nPROMPT_POSITION prepend\n"
+	baseAgentfile := "AGENT claude\nEXECUTABLE claude\nMODE pty\nMCP ON\nPROMPT_POSITION prepend\n"
 	resolver := &mockAgentResolver{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", SupportedModes: "pty,acp",
-			PodfileSource: &basePodfile,
+			AgentfileSource: &baseAgentfile,
 		},
 	}
 
@@ -250,7 +250,7 @@ PROMPT "Do the thing"
 		UserID:         ctxUserID(ctx),
 		RunnerID:       ctxRunnerID(ctx),
 		AgentSlug:      "claude-code",
-		PodfileLayer:   &layer,
+		AgentfileLayer:   &layer,
 		Cols:           120, Rows: 40,
 	})
 

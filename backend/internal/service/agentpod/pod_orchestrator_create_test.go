@@ -39,7 +39,7 @@ func TestCreatePod_NormalMode_Success(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		Cols:           120,
 		Rows:           40,
 	})
@@ -63,7 +63,7 @@ func TestCreatePod_NormalMode_MissingRunnerID(t *testing.T) {
 		UserID: 1,
 		RunnerID:       0, // missing
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -78,7 +78,7 @@ func TestCreatePod_AutoSelectRunner_Success(t *testing.T) {
 		runner: &runnerDomain.Runner{ID: 42, NodeID: "auto-runner"},
 	}
 	resolver := &mockAgentResolver{
-		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", PodfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", AgentfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
@@ -92,7 +92,7 @@ func TestCreatePod_AutoSelectRunner_Success(t *testing.T) {
 		UserID: 1,
 		RunnerID:       0, // auto-select
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -108,7 +108,7 @@ func TestCreatePod_AutoSelectRunner_NoAvailableRunner(t *testing.T) {
 		err: errors.New("no available runner supports the requested agent"),
 	}
 	resolver := &mockAgentResolver{
-		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", PodfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", AgentfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
@@ -121,7 +121,7 @@ func TestCreatePod_AutoSelectRunner_NoAvailableRunner(t *testing.T) {
 		UserID: 1,
 		RunnerID:       0,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -146,7 +146,7 @@ func TestCreatePod_AutoSelectRunner_AgentResolveError(t *testing.T) {
 		UserID: 1,
 		RunnerID:       0,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -161,7 +161,7 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 		err: errors.New("should not be called"),
 	}
 	resolver := &mockAgentResolver{
-		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", PodfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
+		agentDef: &agentDomain.Agent{Slug: "claude-code", SupportedModes: "pty", AgentfileSource: ptrStr("AGENT claude\nPROMPT_POSITION prepend")},
 	}
 
 	orch, _, _ := setupOrchestrator(t,
@@ -175,7 +175,7 @@ func TestCreatePod_ExplicitRunnerID_SkipsAutoSelect(t *testing.T) {
 		UserID: 1,
 		RunnerID:       5, // explicit runner
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -207,7 +207,7 @@ func TestCreatePod_QuotaExceeded(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -223,7 +223,7 @@ func TestCreatePod_NilBilling_SkipsQuotaCheck(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -239,7 +239,7 @@ func TestCreatePod_NilCoordinator(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -256,7 +256,7 @@ func TestCreatePod_CoordinatorSendFailure_ReturnsError(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -283,7 +283,7 @@ func TestCreatePod_ConfigBuildFailure(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.Error(t, err)
@@ -299,7 +299,7 @@ func TestCreatePod_SessionID_SetForNormalMode(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 	})
 
 	require.NoError(t, err)
@@ -320,7 +320,7 @@ func TestCreatePod_CredentialProfileID_ZeroConvertsToNil(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		CredentialProfileID: &zero, // explicit RunnerHost
 	})
 
@@ -343,7 +343,7 @@ func TestCreatePod_CredentialProfileID_PositiveStored(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		CredentialProfileID: &profileID,
 	})
 
@@ -366,7 +366,7 @@ func TestCreatePod_CredentialProfileID_NilStaysNil(t *testing.T) {
 		UserID: 1,
 		RunnerID: 1,
 		AgentSlug:    "claude-code",
-		PodfileLayer: ptrStr("CONFIG mcp_enabled = true"),
+		AgentfileLayer: ptrStr("CONFIG mcp_enabled = true"),
 		CredentialProfileID: nil, // use default
 	})
 
@@ -379,9 +379,9 @@ func TestCreatePod_CredentialProfileID_NilStaysNil(t *testing.T) {
 	assert.Nil(t, dbPod.CredentialProfileID, "nil credential_profile_id should stay nil in DB")
 }
 
-// ==================== PodFile Resolved Precedence Tests ====================
+// ==================== AgentFile Resolved Precedence Tests ====================
 
-func TestCreatePod_PodFilePrompt_ExtractedToDB(t *testing.T) {
+func TestCreatePod_AgentFilePrompt_ExtractedToDB(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
@@ -390,16 +390,16 @@ func TestCreatePod_PodFilePrompt_ExtractedToDB(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:      "claude-code",
-		PodfileLayer:   ptrStr(`PROMPT "from podfile"`),
+		AgentfileLayer:   ptrStr(`PROMPT "from agentfile"`),
 	})
 
 	require.NoError(t, err)
 	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
 	require.NoError(t, err)
-	assert.Equal(t, "from podfile", dbPod.InitialPrompt, "PodFile PROMPT should be extracted to DB")
+	assert.Equal(t, "from agentfile", dbPod.InitialPrompt, "AgentFile PROMPT should be extracted to DB")
 }
 
-func TestCreatePod_PodFileBranch_OverridesReqBranch(t *testing.T) {
+func TestCreatePod_AgentFileBranch_OverridesReqBranch(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
@@ -410,17 +410,17 @@ func TestCreatePod_PodFileBranch_OverridesReqBranch(t *testing.T) {
 		RunnerID:       1,
 		AgentSlug:      "claude-code",
 		BranchName:     &reqBranch,
-		PodfileLayer:   ptrStr(`BRANCH "podfile-branch"`),
+		AgentfileLayer:   ptrStr(`BRANCH "agentfile-branch"`),
 	})
 
 	require.NoError(t, err)
 	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
 	require.NoError(t, err)
 	require.NotNil(t, dbPod.BranchName)
-	assert.Equal(t, "podfile-branch", *dbPod.BranchName, "PodFile BRANCH should override req.BranchName")
+	assert.Equal(t, "agentfile-branch", *dbPod.BranchName, "AgentFile BRANCH should override req.BranchName")
 }
 
-func TestCreatePod_PodFilePermissionMode_ExtractedToDB(t *testing.T) {
+func TestCreatePod_AgentFilePermissionMode_ExtractedToDB(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
 
@@ -429,14 +429,14 @@ func TestCreatePod_PodFilePermissionMode_ExtractedToDB(t *testing.T) {
 		UserID:         1,
 		RunnerID:       1,
 		AgentSlug:      "claude-code",
-		PodfileLayer:   ptrStr(`CONFIG permission_mode = "bypassPermissions"`),
+		AgentfileLayer:   ptrStr(`CONFIG permission_mode = "bypassPermissions"`),
 	})
 
 	require.NoError(t, err)
 	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
 	require.NoError(t, err)
 	require.NotNil(t, dbPod.PermissionMode)
-	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode, "PodFile CONFIG permission_mode should be extracted to DB")
+	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode, "AgentFile CONFIG permission_mode should be extracted to DB")
 }
 
 func TestCreatePod_NoLayer_BranchInheritedFromResume(t *testing.T) {
@@ -456,5 +456,5 @@ func TestCreatePod_NoLayer_BranchInheritedFromResume(t *testing.T) {
 	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
 	require.NoError(t, err)
 	require.NotNil(t, dbPod.BranchName)
-	assert.Equal(t, "my-branch", *dbPod.BranchName, "Without PodFile Layer, req.BranchName (resume inheritance) should be used")
+	assert.Equal(t, "my-branch", *dbPod.BranchName, "Without AgentFile Layer, req.BranchName (resume inheritance) should be used")
 }

@@ -8,8 +8,8 @@ import (
 
 func TestUserInteractionHandler_NewUserInteractionHandler(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 
 	ic := NewIterationController(IterationControllerConfig{
@@ -28,8 +28,8 @@ func TestUserInteractionHandler_NewUserInteractionHandler(t *testing.T) {
 
 func TestUserInteractionHandler_Takeover(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 	pm.SetPhaseWithoutReport(PhaseRunning)
 
@@ -45,8 +45,8 @@ func TestUserInteractionHandler_Takeover(t *testing.T) {
 
 func TestUserInteractionHandler_Handback(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 
 	uih := NewUserInteractionHandler(UserInteractionConfig{
@@ -65,8 +65,8 @@ func TestUserInteractionHandler_Handback(t *testing.T) {
 
 func TestUserInteractionHandler_Approve_Continue(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 	pm.SetPhaseWithoutReport(PhaseWaitingApproval)
 
@@ -87,8 +87,8 @@ func TestUserInteractionHandler_Approve_Continue(t *testing.T) {
 
 func TestUserInteractionHandler_Approve_Stop(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 	pm.SetPhaseWithoutReport(PhaseWaitingApproval)
 
@@ -103,8 +103,8 @@ func TestUserInteractionHandler_Approve_Stop(t *testing.T) {
 
 func TestUserInteractionHandler_Approve_NotWaitingApproval(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 	pm.SetPhaseWithoutReport(PhaseRunning)
 
@@ -126,8 +126,8 @@ func TestUserInteractionHandler_Approve_NotWaitingApproval(t *testing.T) {
 
 func TestUserInteractionHandler_Approve_ZeroAdditionalIterations(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 	pm.SetPhaseWithoutReport(PhaseWaitingApproval)
 
@@ -149,8 +149,8 @@ func TestUserInteractionHandler_Approve_ZeroAdditionalIterations(t *testing.T) {
 
 func TestUserInteractionHandler_Approve_NilIterationController(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 	pm.SetPhaseWithoutReport(PhaseWaitingApproval)
 
@@ -168,8 +168,8 @@ func TestUserInteractionHandler_Approve_NilIterationController(t *testing.T) {
 func TestUserInteractionHandler_TakeoverChannel(t *testing.T) {
 	uih := NewUserInteractionHandler(UserInteractionConfig{
 		PhaseManager: NewPhaseManager(PhaseManagerConfig{
-			AutopilotKey:  "autopilot-123",
-			PodKey: "worker-123",
+			AutopilotKey: "autopilot-123",
+			PodKey:       "worker-123",
 		}),
 	})
 
@@ -190,8 +190,8 @@ func TestUserInteractionHandler_TakeoverChannel(t *testing.T) {
 
 func TestUserInteractionHandler_HandbackChannel(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 
 	uih := NewUserInteractionHandler(UserInteractionConfig{
@@ -217,8 +217,8 @@ func TestUserInteractionHandler_HandbackChannel(t *testing.T) {
 func TestUserInteractionHandler_TakeoverChannel_NonBlocking(t *testing.T) {
 	uih := NewUserInteractionHandler(UserInteractionConfig{
 		PhaseManager: NewPhaseManager(PhaseManagerConfig{
-			AutopilotKey:  "autopilot-123",
-			PodKey: "worker-123",
+			AutopilotKey: "autopilot-123",
+			PodKey:       "worker-123",
 		}),
 	})
 
@@ -229,8 +229,8 @@ func TestUserInteractionHandler_TakeoverChannel_NonBlocking(t *testing.T) {
 
 func TestUserInteractionHandler_HandbackChannel_NonBlocking(t *testing.T) {
 	pm := NewPhaseManager(PhaseManagerConfig{
-		AutopilotKey:  "autopilot-123",
-		PodKey: "worker-123",
+		AutopilotKey: "autopilot-123",
+		PodKey:       "worker-123",
 	})
 
 	uih := NewUserInteractionHandler(UserInteractionConfig{

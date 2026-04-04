@@ -70,7 +70,7 @@ func TestPreparerAddStep(t *testing.T) {
 func TestPreparerPrepareEmpty(t *testing.T) {
 	preparer := NewPreparer()
 	ctx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: t.TempDir(),
 	}
 
@@ -86,7 +86,7 @@ func TestPreparerPrepareSuccess(t *testing.T) {
 	preparer := NewPreparer(step)
 
 	ctx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: tmpDir,
 	}
 
@@ -102,7 +102,7 @@ func TestPreparerPrepareFailure(t *testing.T) {
 	preparer := NewPreparer(step)
 
 	ctx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: tmpDir,
 	}
 
@@ -139,7 +139,7 @@ func TestPreparerStopsOnError(t *testing.T) {
 
 	preparer := NewPreparer(step1, step2, step3)
 	ctx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: t.TempDir(),
 	}
 
@@ -174,7 +174,7 @@ func TestPreparerMultipleSteps(t *testing.T) {
 	}
 
 	ctx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: tmpDir,
 	}
 
@@ -191,7 +191,7 @@ func TestPreparerContextCancellation(t *testing.T) {
 	preparer := NewPreparer(step)
 
 	prepCtx := &PreparationContext{
-		PodID:      "pod-1",
+		PodID:        "pod-1",
 		WorkspaceDir: tmpDir,
 	}
 

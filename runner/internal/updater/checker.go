@@ -9,21 +9,21 @@ import (
 
 // BackgroundChecker periodically checks for updates in the background.
 type BackgroundChecker struct {
-	updater       *Updater
-	graceful      *GracefulUpdater
-	interval      time.Duration
-	initialDelay  time.Duration
-	autoApply     bool
-	onUpdate      func(info *UpdateInfo) // Called when a new update is found
-	onError       func(err error)        // Called when check fails
+	updater      *Updater
+	graceful     *GracefulUpdater
+	interval     time.Duration
+	initialDelay time.Duration
+	autoApply    bool
+	onUpdate     func(info *UpdateInfo) // Called when a new update is found
+	onError      func(err error)        // Called when check fails
 
 	// State
-	mu            sync.RWMutex
-	running       bool
-	lastCheck     time.Time
-	lastError     error
-	latestInfo    *UpdateInfo
-	cancel        context.CancelFunc
+	mu         sync.RWMutex
+	running    bool
+	lastCheck  time.Time
+	lastError  error
+	latestInfo *UpdateInfo
+	cancel     context.CancelFunc
 }
 
 // CheckerOption configures the BackgroundChecker.

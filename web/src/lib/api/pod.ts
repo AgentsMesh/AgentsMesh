@@ -74,8 +74,8 @@ export const podApi = {
     alias?: string; // User-defined display name (max 100 chars)
     cols?: number; // Terminal columns (from xterm.js)
     rows?: number; // Terminal rows (from xterm.js)
-    // PodFile Layer — SSOT (PROMPT, MODE, CONFIG, REPO, BRANCH, CREDENTIAL)
-    podfile_layer?: string;
+    // AgentFile Layer — SSOT (PROMPT, MODE, CONFIG, REPO, BRANCH, CREDENTIAL)
+    agentfile_layer?: string;
     // Resume mode fields
     source_pod_key?: string;
     resume_agent_session?: boolean;

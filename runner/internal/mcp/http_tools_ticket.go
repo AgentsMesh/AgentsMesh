@@ -22,8 +22,8 @@ func (s *HTTPServer) createSearchTicketsTool() *MCPTool {
 				},
 				"status": map[string]interface{}{
 					"type":        "string",
-				"enum":        []string{"backlog", "todo", "in_progress", "in_review", "done"},
-				"description": "Filter by ticket status",
+					"enum":        []string{"backlog", "todo", "in_progress", "in_review", "done"},
+					"description": "Filter by ticket status",
 				},
 				"priority": map[string]interface{}{
 					"type":        "string",
@@ -232,8 +232,8 @@ func (s *HTTPServer) createUpdateTicketTool() *MCPTool {
 				},
 				"status": map[string]interface{}{
 					"type":        "string",
-				"enum":        []string{"backlog", "todo", "in_progress", "in_review", "done"},
-				"description": "New status (optional)",
+					"enum":        []string{"backlog", "todo", "in_progress", "in_review", "done"},
+					"description": "New status (optional)",
 				},
 				"priority": map[string]interface{}{
 					"type":        "string",

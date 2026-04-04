@@ -161,9 +161,9 @@ func TestHTTPServerMCPToolsCallCreatePodWithEmptyConfigOverrides(t *testing.T) {
 	// Tool should be found
 }
 
-func TestBuildPodfileLayerFromArgs(t *testing.T) {
+func TestBuildAgentfileLayerFromArgs(t *testing.T) {
 	t.Run("generates CONFIG declarations from args", func(t *testing.T) {
-		layer := buildPodfileLayerFromArgs("opus", "bypassPermissions", "", map[string]interface{}{"timeout": float64(300)}, "", "")
+		layer := buildAgentfileLayerFromArgs("opus", "bypassPermissions", "", map[string]interface{}{"timeout": float64(300)}, "", "")
 
 		if !strings.Contains(layer, `CONFIG model = "opus"`) {
 			t.Errorf("missing model CONFIG, got: %s", layer)
@@ -177,7 +177,7 @@ func TestBuildPodfileLayerFromArgs(t *testing.T) {
 	})
 
 	t.Run("generates PROMPT declaration", func(t *testing.T) {
-		layer := buildPodfileLayerFromArgs("", "", "fix the bug", nil, "", "")
+		layer := buildAgentfileLayerFromArgs("", "", "fix the bug", nil, "", "")
 
 		if !strings.Contains(layer, `PROMPT "fix the bug"`) {
 			t.Errorf("missing PROMPT, got: %s", layer)
@@ -185,14 +185,14 @@ func TestBuildPodfileLayerFromArgs(t *testing.T) {
 	})
 
 	t.Run("skips empty args", func(t *testing.T) {
-		layer := buildPodfileLayerFromArgs("", "", "", nil, "", "")
+		layer := buildAgentfileLayerFromArgs("", "", "", nil, "", "")
 		if layer != "" {
 			t.Errorf("expected empty layer, got: %s", layer)
 		}
 	})
 
 	t.Run("deduplicates model and permission_mode from config_overrides", func(t *testing.T) {
-		layer := buildPodfileLayerFromArgs("opus", "plan", "", map[string]interface{}{
+		layer := buildAgentfileLayerFromArgs("opus", "plan", "", map[string]interface{}{
 			"model":           "haiku",
 			"permission_mode": "default",
 			"mcp_enabled":     true,
@@ -208,14 +208,14 @@ func TestBuildPodfileLayerFromArgs(t *testing.T) {
 	})
 
 	t.Run("escapes newlines and tabs in prompt", func(t *testing.T) {
-		layer := buildPodfileLayerFromArgs("", "", "line1\nline2\ttab", nil, "", "")
+		layer := buildAgentfileLayerFromArgs("", "", "line1\nline2\ttab", nil, "", "")
 		if !strings.Contains(layer, `PROMPT "line1\nline2\ttab"`) {
 			t.Errorf("prompt escape failed, got: %s", layer)
 		}
 	})
 
 	t.Run("escapes newlines and tabs in config string values", func(t *testing.T) {
-		layer := buildPodfileLayerFromArgs("", "", "", map[string]interface{}{
+		layer := buildAgentfileLayerFromArgs("", "", "", map[string]interface{}{
 			"custom": "val\nwith\tnewline",
 		}, "", "")
 		if !strings.Contains(layer, `CONFIG custom = "val\nwith\tnewline"`) {
@@ -224,7 +224,7 @@ func TestBuildPodfileLayerFromArgs(t *testing.T) {
 	})
 
 	t.Run("generates REPO and BRANCH declarations", func(t *testing.T) {
-		layer := buildPodfileLayerFromArgs("", "", "", nil, "https://github.com/example/repo.git", "main")
+		layer := buildAgentfileLayerFromArgs("", "", "", nil, "https://github.com/example/repo.git", "main")
 		if !strings.Contains(layer, `REPO "https://github.com/example/repo.git"`) {
 			t.Errorf("missing REPO, got: %s", layer)
 		}

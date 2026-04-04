@@ -37,7 +37,7 @@ func TestOnCreatePodSuccess(t *testing.T) {
 		PodKey:        "test-pod-1",
 		LaunchCommand: sleepCmd,
 		LaunchArgs:    sleepArgs,
-		PodfileSource: "AGENT " + sleepCmd + "\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT " + sleepCmd + "\nPROMPT_POSITION prepend\n",
 	}
 
 	err = handler.OnCreatePod(cmd)
@@ -96,7 +96,7 @@ func TestOnCreatePodInvalidCommand(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "invalid-cmd-pod",
 		LaunchCommand: "/nonexistent/command/path",
-		PodfileSource: "AGENT test\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT test\nPROMPT_POSITION prepend\n",
 	}
 
 	err = handler.OnCreatePod(cmd)

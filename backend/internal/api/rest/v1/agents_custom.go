@@ -6,8 +6,8 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
-	"github.com/anthropics/agentsmesh/podfile/extract"
-	"github.com/anthropics/agentsmesh/podfile/parser"
+	"github.com/anthropics/agentsmesh/agentfile/extract"
+	"github.com/anthropics/agentsmesh/agentfile/parser"
 	"github.com/gin-gonic/gin"
 )
 
@@ -35,24 +35,24 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 	}
 
 	launchCommand := req.LaunchCommand
-	var podfileSource *string
-	if req.PodfileSource != "" {
-		podfileSource = &req.PodfileSource
+	var agentfileSource *string
+	if req.AgentfileSource != "" {
+		agentfileSource = &req.AgentfileSource
 		if launchCommand == "" {
-			prog, parseErrors := parser.Parse(req.PodfileSource)
+			prog, parseErrors := parser.Parse(req.AgentfileSource)
 			if len(parseErrors) > 0 {
-				apierr.ValidationError(c, "Invalid PodFile: "+parseErrors[0])
+				apierr.ValidationError(c, "Invalid AgentFile: "+parseErrors[0])
 				return
 			}
 			spec := extract.Extract(prog)
 			launchCommand = spec.Agent.Command
 			if launchCommand == "" {
-				apierr.ValidationError(c, "PodFile must declare AGENT command")
+				apierr.ValidationError(c, "AgentFile must declare AGENT command")
 				return
 			}
 		}
 	} else if launchCommand == "" {
-		apierr.ValidationError(c, "Either podfile_source or launch_command is required")
+		apierr.ValidationError(c, "Either agentfile_source or launch_command is required")
 		return
 	}
 
@@ -62,7 +62,7 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 		Description:   desc,
 		LaunchCommand: launchCommand,
 		DefaultArgs:   args,
-		PodfileSource: podfileSource,
+		AgentfileSource: agentfileSource,
 	})
 	if err != nil {
 		if err == agent.ErrAgentSlugExists {

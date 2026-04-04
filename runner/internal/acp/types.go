@@ -89,7 +89,7 @@ type ToolCallSnapshot struct {
 	ToolName      string `json:"toolName"`
 	Status        string `json:"status"`
 	ArgumentsJSON string `json:"argumentsJson"`
-	Success       *bool  `json:"success,omitempty"`      // nil until result arrives
+	Success       *bool  `json:"success,omitempty"` // nil until result arrives
 	ResultText    string `json:"resultText,omitempty"`
 	ErrorMessage  string `json:"errorMessage,omitempty"`
 }

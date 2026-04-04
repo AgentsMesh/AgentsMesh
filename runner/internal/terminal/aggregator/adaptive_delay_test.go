@@ -63,8 +63,8 @@ func TestAdaptiveDelay_CalculateForUsage(t *testing.T) {
 		expected time.Duration
 	}{
 		{0.0, 16 * time.Millisecond},
-		{0.5, 64 * time.Millisecond},   // 16 * (1 + 0.25*12) = 16 * 4 = 64
-		{1.0, 200 * time.Millisecond},  // capped at max
+		{0.5, 64 * time.Millisecond},  // 16 * (1 + 0.25*12) = 16 * 4 = 64
+		{1.0, 200 * time.Millisecond}, // capped at max
 	}
 
 	for _, tc := range tests {

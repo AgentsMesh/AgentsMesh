@@ -17,12 +17,12 @@ import (
 )
 
 // buildRelayTestPod creates a PTY pod and starts its terminal for relay routing tests.
-func buildRelayTestPod(t *testing.T, podfile string, opts ...func(*runnerv1.CreatePodCommand)) *Pod {
+func buildRelayTestPod(t *testing.T, agentfile string, opts ...func(*runnerv1.CreatePodCommand)) *Pod {
 	t.Helper()
 	runner := &Runner{cfg: &config.Config{WorkspaceRoot: t.TempDir()}}
 	cmd := &runnerv1.CreatePodCommand{
-		PodKey:        "relay-" + t.Name(),
-		PodfileSource: podfile,
+		PodKey:          "relay-" + t.Name(),
+		AgentfileSource: agentfile,
 	}
 	for _, o := range opts {
 		o(cmd)
@@ -67,8 +67,8 @@ func newRelayHandler(t *testing.T, store PodStore) (*RunnerMessageHandler, func(
 }
 
 func TestRelayRouting_SubscribeUnsubscribe_Integration(t *testing.T) {
-	pf := "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n"
-	pod := buildRelayTestPod(t, pf, func(c *runnerv1.CreatePodCommand) {
+	af := "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n"
+	pod := buildRelayTestPod(t, af, func(c *runnerv1.CreatePodCommand) {
 		c.LaunchArgs = []string{"10"}
 	})
 	defer testPTYComponents(pod).Terminal.Stop()
@@ -115,8 +115,8 @@ func TestRelayRouting_SubscribeUnsubscribe_Integration(t *testing.T) {
 }
 
 func TestRelayRouting_TerminalOutputToRelay_Integration(t *testing.T) {
-	pf := "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n"
-	pod := buildRelayTestPod(t, pf, func(c *runnerv1.CreatePodCommand) {
+	af := "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n"
+	pod := buildRelayTestPod(t, af, func(c *runnerv1.CreatePodCommand) {
 		c.InitialPrompt = "relay-test-marker"
 	})
 	defer testPTYComponents(pod).Terminal.Stop()

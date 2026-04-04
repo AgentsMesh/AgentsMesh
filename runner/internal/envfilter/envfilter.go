@@ -10,9 +10,9 @@ import "strings"
 // This is a conservative denylist — user env vars, cloud credentials,
 // and tool configs are preserved to avoid breaking agent functionality.
 var internalPrefixes = []string{
-	"AGENTSMESH_",   // Runner config internals
-	"_AGENTSMESH_",  // Runner daemon marker (e.g. _AGENTSMESH_POD_DAEMON)
-	"GRPC_GO_",      // gRPC library debug vars
+	"AGENTSMESH_",  // Runner config internals
+	"_AGENTSMESH_", // Runner daemon marker (e.g. _AGENTSMESH_POD_DAEMON)
+	"GRPC_GO_",     // gRPC library debug vars
 }
 
 // FilterEnv returns a copy of env with Runner-internal variables removed.

@@ -13,7 +13,7 @@ import (
 // This eliminates race conditions between dependent commands (e.g., create_pod
 // must complete before create_autopilot can find the pod in the store).
 type PodCommandQueue struct {
-	queues sync.Map     // map[string]chan func()
+	queues sync.Map // map[string]chan func()
 	wg     sync.WaitGroup
 }
 

@@ -38,7 +38,6 @@ func TestRunnerMessageHandlerOnListPods(t *testing.T) {
 	r := &Runner{
 		cfg:      cfg,
 		podStore: store,
-		
 	}
 
 	mockConn := client.NewMockConnection()
@@ -89,7 +88,7 @@ func TestRunnerRunWithGRPCConnection(t *testing.T) {
 	r := &Runner{
 		cfg:      cfg,
 		podStore: store,
-		
+
 		stopChan: make(chan struct{}),
 	}
 
@@ -127,7 +126,7 @@ func TestRunnerRunStopAllPods(t *testing.T) {
 	r := &Runner{
 		cfg:      cfg,
 		podStore: store,
-		
+
 		stopChan: make(chan struct{}),
 	}
 
@@ -226,7 +225,7 @@ func TestMockConnectionSimulateCreatePod(t *testing.T) {
 	cmd := &runnerv1.CreatePodCommand{
 		PodKey:        "mock-pod",
 		LaunchCommand: "echo",
-		PodfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
+		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 	}
 
 	err := mockConn.SimulateCreatePod(cmd)

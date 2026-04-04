@@ -15,6 +15,7 @@ import (
 // - Frame boundary detection with complete frame preservation:
 //   - Primary: Synchronized Output (ESC[?2026h / ESC[?2026l) - used by Claude Code
 //   - Fallback: Clear screen (ESC[2J) - used by traditional apps
+//
 // - Frame-aware flushing: incomplete frames are kept in buffer until complete
 // - Adaptive delay based on queue pressure (50ms → 500ms)
 // - Backpressure: pauses when consumer signals overload
@@ -58,9 +59,9 @@ type SmartAggregator struct {
 // - queueUsageFn: returns queue usage ratio (0.0 to 1.0), used for adaptive delay
 func NewSmartAggregator(queueUsageFn func() float64, opts ...SmartAggregatorOption) *SmartAggregator {
 	// Default configuration
-	baseDelay := 50 * time.Millisecond  // 20 FPS - more aggressive aggregation
-	maxDelay := 500 * time.Millisecond  // 2 FPS - allow more buffering under load
-	maxSize := 1024 * 1024              // 1MB - generous buffer to avoid any truncation issues
+	baseDelay := 50 * time.Millisecond // 20 FPS - more aggressive aggregation
+	maxDelay := 500 * time.Millisecond // 2 FPS - allow more buffering under load
+	maxSize := 1024 * 1024             // 1MB - generous buffer to avoid any truncation issues
 
 	a := &SmartAggregator{
 		buffer:       NewFrameBuffer(maxSize),

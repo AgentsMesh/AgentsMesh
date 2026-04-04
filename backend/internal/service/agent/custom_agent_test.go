@@ -263,7 +263,7 @@ func TestCreateCustomAgent_CreateError(t *testing.T) {
 		default_args TEXT,
 		credential_schema BLOB DEFAULT '[]',
 		status_detection BLOB,
-		podfile_source TEXT,
+		agentfile_source TEXT,
 		is_active INTEGER NOT NULL DEFAULT 1,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

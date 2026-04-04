@@ -35,14 +35,14 @@ type LocalPodProvider interface {
 // HTTPServer provides an MCP server over HTTP for agent collaboration.
 // This server exposes collaboration tools to Claude Code via the MCP protocol.
 type HTTPServer struct {
-	rpcClient        *client.RPCClient
-	port             int
-	pods             map[string]*PodInfo
-	mu               sync.RWMutex
-	httpServer       *http.Server
-	tools            []*MCPTool
-	statusProvider   PodStatusProvider
-	podProvider      LocalPodProvider
+	rpcClient      *client.RPCClient
+	port           int
+	pods           map[string]*PodInfo
+	mu             sync.RWMutex
+	httpServer     *http.Server
+	tools          []*MCPTool
+	statusProvider PodStatusProvider
+	podProvider    LocalPodProvider
 }
 
 // PodInfo holds information about a registered pod.

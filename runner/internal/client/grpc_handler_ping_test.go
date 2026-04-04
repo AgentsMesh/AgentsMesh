@@ -24,10 +24,10 @@ func (m *mockBidiStream) Recv() (*runnerv1.ServerMessage, error) {
 }
 func (m *mockBidiStream) Header() (metadata.MD, error) { return nil, nil }
 func (m *mockBidiStream) Trailer() metadata.MD         { return nil }
-func (m *mockBidiStream) CloseSend() error              { return nil }
-func (m *mockBidiStream) Context() context.Context      { return context.Background() }
-func (m *mockBidiStream) SendMsg(_ interface{}) error    { return nil }
-func (m *mockBidiStream) RecvMsg(_ interface{}) error    { return nil }
+func (m *mockBidiStream) CloseSend() error             { return nil }
+func (m *mockBidiStream) Context() context.Context     { return context.Background() }
+func (m *mockBidiStream) SendMsg(_ interface{}) error  { return nil }
+func (m *mockBidiStream) RecvMsg(_ interface{}) error  { return nil }
 
 // setMockStream sets the GRPCConnection stream to a mock for testing,
 // allowing sendControl to pass the nil-check.

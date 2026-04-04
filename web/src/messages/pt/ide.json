@@ -83,7 +83,7 @@
       "autoCleanup": "Limpeza automática ao concluir",
       "loadingPlugins": "Loading plugin options...",
       "pluginConfig": "Plugin Configuration",
-      "podfileLayer": "PodFile Layer",
+      "agentfileLayer": "AgentFile Layer",
       "sourceMode": "Source Mode",
       "interactionMode": "Modo de interação",
       "modePty": "Terminal (PTY)",

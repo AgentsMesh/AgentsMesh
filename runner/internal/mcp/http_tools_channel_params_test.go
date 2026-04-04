@@ -125,4 +125,3 @@ func TestHTTPServerMCPToolsCallSendChannelMessageWithAllParams(t *testing.T) {
 	json.NewDecoder(rec.Body).Decode(&resp)
 	// Tool should be found
 }
-

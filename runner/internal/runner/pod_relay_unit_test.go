@@ -322,9 +322,9 @@ type stubPodIOWithTerminal struct {
 
 func (s *stubPodIOWithTerminal) SendKeys([]string) error    { return nil }
 func (s *stubPodIOWithTerminal) CursorPosition() (int, int) { return 0, 0 }
-func (s *stubPodIOWithTerminal) GetScreenSnapshot() string   { return "" }
-func (s *stubPodIOWithTerminal) Redraw() error               { return nil }
-func (s *stubPodIOWithTerminal) WriteOutput([]byte)          {}
+func (s *stubPodIOWithTerminal) GetScreenSnapshot() string  { return "" }
+func (s *stubPodIOWithTerminal) Redraw() error              { return nil }
+func (s *stubPodIOWithTerminal) WriteOutput([]byte)         {}
 func (s *stubPodIOWithTerminal) Resize(cols, rows int) (bool, error) {
 	if s.onResize != nil {
 		return s.onResize(cols, rows)

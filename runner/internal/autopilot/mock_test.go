@@ -9,11 +9,11 @@ import (
 
 // MockPodController is a mock implementation of TargetPodController for testing
 type MockPodController struct {
-	sendTextCalls   []string
-	workDir         string
-	podKey          string
-	agentStatus     string
-	sendTextError   error // If set, SendInput will return this error
+	sendTextCalls []string
+	workDir       string
+	podKey        string
+	agentStatus   string
+	sendTextError error // If set, SendInput will return this error
 }
 
 func (m *MockPodController) SendInput(text string) error {

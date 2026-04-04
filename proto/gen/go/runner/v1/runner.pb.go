@@ -1931,12 +1931,12 @@ func (x *AgentInfo) GetDefaultArgs() []string {
 }
 
 // CreatePodCommand 创建 Pod 命令
-// Backend 完成 PodFile eval（parse+merge+resolve+eval），通过此消息发送最终执行指令。
+// Backend 完成 AgentFile eval（parse+merge+resolve+eval），通过此消息发送最终执行指令。
 // Runner 只需替换路径占位符（{{sandbox_root}}, {{work_dir}}）后直接执行。
 type CreatePodCommand struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	PodKey string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
-	// 执行指令（Backend PodFile eval 产出）
+	// 执行指令（Backend AgentFile eval 产出）
 	LaunchCommand string            `protobuf:"bytes,2,opt,name=launch_command,json=launchCommand,proto3" json:"launch_command,omitempty"`                                                         // AGENT 声明的命令（如 "claude"）
 	LaunchArgs    []string          `protobuf:"bytes,3,rep,name=launch_args,json=launchArgs,proto3" json:"launch_args,omitempty"`                                                                  // arg 语句 + MODE args 的最终参数列表
 	EnvVars       map[string]string `protobuf:"bytes,4,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // ENV 声明产出的环境变量
@@ -1951,7 +1951,7 @@ type CreatePodCommand struct {
 	// 废弃字段（保留 field number，Runner 不再读取）
 	//
 	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
-	PodfileSource string `protobuf:"bytes,12,opt,name=podfile_source,json=podfileSource,proto3" json:"podfile_source,omitempty"` // Deprecated: eval 已在 Backend 完成
+	AgentfileSource string `protobuf:"bytes,12,opt,name=agentfile_source,json=agentfileSource,proto3" json:"agentfile_source,omitempty"` // Deprecated: eval 已在 Backend 完成
 	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 	ConfigValues map[string]string `protobuf:"bytes,13,rep,name=config_values,json=configValues,proto3" json:"config_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Deprecated: CONFIG 值已 eval 到 launch_args/env_vars/files
 	// 运行时上下文（Backend 注入，Runner 直接使用）
@@ -1963,7 +1963,7 @@ type CreatePodCommand struct {
 	McpBuiltinJson string `protobuf:"bytes,17,opt,name=mcp_builtin_json,json=mcpBuiltinJson,proto3" json:"mcp_builtin_json,omitempty"` // Deprecated: MCP 配置已 eval 到 files_to_create
 	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 	McpInstalledJson string `protobuf:"bytes,18,opt,name=mcp_installed_json,json=mcpInstalledJson,proto3" json:"mcp_installed_json,omitempty"` // Deprecated: MCP 配置已 eval 到 files_to_create
-	// PodFile eval 产出的新字段
+	// AgentFile eval 产出的新字段
 	Prompt         string `protobuf:"bytes,19,opt,name=prompt,proto3" json:"prompt,omitempty"`                                       // PROMPT 声明的初始提示内容
 	PromptPosition string `protobuf:"bytes,20,opt,name=prompt_position,json=promptPosition,proto3" json:"prompt_position,omitempty"` // PROMPT_POSITION 声明："prepend"/"append"/"none"
 	unknownFields  protoimpl.UnknownFields
@@ -2079,9 +2079,9 @@ func (x *CreatePodCommand) GetInteractionMode() string {
 }
 
 // Deprecated: Marked as deprecated in runner/v1/runner.proto.
-func (x *CreatePodCommand) GetPodfileSource() string {
+func (x *CreatePodCommand) GetAgentfileSource() string {
 	if x != nil {
-		return x.PodfileSource
+		return x.AgentfileSource
 	}
 	return ""
 }
@@ -5678,7 +5678,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12!\n" +
-	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\x81\t\n" +
+	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\x85\t\n" +
 	"\x10CreatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12%\n" +
 	"\x0elaunch_command\x18\x02 \x01(\tR\rlaunchCommand\x12\x1f\n" +
@@ -5692,8 +5692,8 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04rows\x18\t \x01(\x05R\x04rows\x12Q\n" +
 	"\x15resources_to_download\x18\n" +
 	" \x03(\v2\x1d.runner.v1.ResourceToDownloadR\x13resourcesToDownload\x12)\n" +
-	"\x10interaction_mode\x18\v \x01(\tR\x0finteractionMode\x12)\n" +
-	"\x0epodfile_source\x18\f \x01(\tB\x02\x18\x01R\rpodfileSource\x12V\n" +
+	"\x10interaction_mode\x18\v \x01(\tR\x0finteractionMode\x12-\n" +
+	"\x10agentfile_source\x18\f \x01(\tB\x02\x18\x01R\x0fagentfileSource\x12V\n" +
 	"\rconfig_values\x18\r \x03(\v2-.runner.v1.CreatePodCommand.ConfigValuesEntryB\x02\x18\x01R\fconfigValues\x12N\n" +
 	"\vcredentials\x18\x0e \x03(\v2,.runner.v1.CreatePodCommand.CredentialsEntryR\vcredentials\x12$\n" +
 	"\x0eis_runner_host\x18\x0f \x01(\bR\fisRunnerHost\x12\x1d\n" +

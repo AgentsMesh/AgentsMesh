@@ -278,4 +278,3 @@ func TestComputeScreenHash(t *testing.T) {
 	// Different content should have different hash
 	assert.NotEqual(t, hash1, hash3)
 }
-
