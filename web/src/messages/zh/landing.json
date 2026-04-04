@@ -10,23 +10,23 @@
       "language": "语言"
     },
     "hero": {
-      "badge": "AI 智能体舰队指挥中心",
+      "badge": "Agent 团队管理平台",
       "title1": "基于终端的",
       "title2": "编程智能体",
       "title3": "协作平台",
-      "slogan1": "不要只是氛围编程。",
-      "slogan2": "交付企业级产品。",
-      "tagline": "AI 编程智能体时代的新一代开发平台",
-      "description": "智能体舰队指挥中心，让你在同一个地方规划、协作和交付。",
-      "getStartedFree": "免费开始",
-      "viewDocs": "申请演示",
-      "trustedBy": "受全球开发者信赖",
+      "slogan1": "五个人的团队，",
+      "slogan2": "五十个人的产出。",
+      "tagline": "为有雄心的团队打造的 Agent 团队管理平台",
+      "description": "给每个团队成员配一支 AI Agent 团队。分配任务、追踪进度、让它们自主协作——数据始终留在你的基础设施内。",
+      "getStartedFree": "开始组建你的团队",
+      "viewDocs": "查看演示",
+      "trustedBy": "受全球团队信赖",
       "teams": "不断增长的团队",
       "pods": "数千个 Pod",
       "openSource": "开源项目"
     },
     "agentLogos": {
-      "title": "支持所有主流终端编程智能体",
+      "title": "兼容你团队已在使用的 Agent",
       "descriptions": {
         "anthropic": "Anthropic",
         "openai": "OpenAI",
@@ -34,6 +34,29 @@
         "openSource": "开源",
         "community": "社区",
         "yourOwn": "自定义"
+      }
+    },
+    "paradigmShift": {
+      "title": "一个人变快了，",
+      "titleHighlight": "不等于整个团队变快了。",
+      "punchline": "个体提效已经到顶。下一站，是组织提效。",
+      "before": {
+        "label": "个体提效",
+        "items": {
+          "0": "个人效率 ×10，团队产出 ×1",
+          "1": "每人一个 Agent，各干各的",
+          "2": "上下文锁死在个人会话里",
+          "3": "工具越多，管理越混乱"
+        }
+      },
+      "after": {
+        "label": "组织提效",
+        "items": {
+          "0": "个人效率 ×10，团队产出 ×50",
+          "1": "每人一支 Agent 小队，协同作战",
+          "2": "上下文实时共享，全局可见",
+          "3": "一个平台统管，零额外开销"
+        }
       }
     },
     "whyTerminal": {
@@ -82,90 +105,90 @@
       }
     },
     "coreFeatures": {
-      "title": "核心",
-      "titleHighlight": "功能",
-      "description": "管理和协调终端 AI 编程智能体所需的一切。",
+      "title": "不是副驾驶。",
+      "titleHighlight": "是团队。",
+      "description": "五大能力，把 AI Agent 从单兵工具变成协作团队。",
       "agentpod": {
-        "title": "隔离的云端工作站",
+        "title": "每个 Agent 都有工位，秒级就绪。",
         "subtitle": "AgentPod",
-        "description": "数秒内启动完整开发环境。每个工作站拥有独立的 Git Worktree、实时终端和浏览器访问 —— 无论桌面、笔记本还是手机，随时随地监控和操作你的智能体。",
+        "description": "按需启动隔离开发环境。每个 Agent 拥有独立的 Git 仓库、终端和完整开发工具。手机或笔记本都能巡查整个工位。",
         "highlights": {
-          "0": "Web 终端实时交互",
-          "1": "移动端友好 —— 任何设备管理智能体",
-          "2": "每个工作站独立 Git Worktree 隔离",
-          "3": "多个并发工作站",
-          "4": "完成后自动清理"
+          "0": "30 秒上岗——从零到开始编码",
+          "1": "浏览器终端，任何设备可用",
+          "2": "每个 Agent 独立 Git Worktree——互不冲突",
+          "3": "数十个 Agent 同时运行",
+          "4": "任务完成后自动清理"
         }
       },
       "agentsmesh": {
-        "title": "多智能体协作",
+        "title": "它们之间自己沟通，不需要你传话。",
         "subtitle": "AgentsMesh",
-        "description": "智能体不只是并排运行 —— 它们协同工作。一个智能体可以观察另一个的终端、发送输入或向共享频道广播消息。它们自动发现伙伴、协商权限，甚至自主创建新的智能体。",
+        "description": "Agent 互相观察彼此的工作、通过频道共享上下文、自行协调。它们自动发现队友、协商权限，工作量大了还会自己拉新人入场。",
         "highlights": {
-          "0": "终端级绑定 —— 智能体观察并控制彼此的会话",
-          "1": "频道消息支持 @提及、回复和共享文档",
-          "2": "智能体自主发现伙伴并创建新 Pod",
-          "3": "实时拓扑图展示所有连接和对话",
-          "4": "权限范围访问（只读观察或完整终端控制）"
+          "0": "Agent 实时观察彼此的终端",
+          "1": "频道消息支持 @提及和上下文共享",
+          "2": "自动发现——Agent 自己寻找和招募同伴",
+          "3": "实时拓扑图展示所有 Agent 连接",
+          "4": "权限管控——只读观察或完整控制"
         }
       },
       "tickets": {
-        "title": "智能体在你的看板上工作",
-        "subtitle": "任务管理",
-        "description": "创建一个任务，智能体自动接手，在隔离分支上编码并发起合并请求。智能体将史诗拆解为子任务并更新自身状态。Git Webhook 闭环运作：流水线通过、MR 合并、任务完成。",
+        "title": "写个工单，活就开始干了。",
+        "subtitle": "Tickets",
+        "description": "把任务往看板一放，Agent 自动认领、拉分支、写代码、提 MR。你负责审查，它负责交付。就这么简单。",
         "highlights": {
-          "0": "任务内容自动成为智能体的提示词",
-          "1": "智能体自主将史诗拆解为子任务",
-          "2": "MR/PR 关联任务和 Pod，实时显示流水线状态",
-          "3": "看板追踪完整生命周期：待办到完成",
-          "4": "Git Webhook 同步 —— 合并和流水线自动更新任务"
+          "0": "工单自动成为 Agent 的指令",
+          "1": "Agent 自主将史诗拆解为子任务",
+          "2": "MR/PR 关联工单，实时显示 CI 状态",
+          "3": "看板追踪完整生命周期——从待办到交付",
+          "4": "Git Webhook 自动闭环"
         }
       },
       "runners": {
-        "title": "运行在你的基础设施上",
-        "subtitle": "自托管运行节点",
-        "description": "随处部署运行节点 —— 你的云、你的数据中心、你的笔记本。代码和数据永远不会触及第三方服务器。",
+        "title": "代码不出大楼。",
+        "subtitle": "Self-Hosted Runners",
+        "description": "想部署在哪就部署在哪——你的云、你的机房、你桌子底下都行。代码不外泄，数据零暴露。",
         "highlights": {
-          "0": "Docker / Kubernetes 部署",
-          "1": "数据完全本地化",
+          "0": "Docker / Kubernetes 一键部署",
+          "1": "数据完全自主可控",
           "2": "支持离线环境",
           "3": "完整审计日志"
         }
       },
       "scheduledTasks": {
-        "title": "定时任务自动驾驶",
+        "title": "你的代码库有 7×24 运维团队了。",
         "subtitle": "LOOP",
-        "description": "定义周期性开发任务 — 代码审查、依赖更新、测试套件运行、安全扫描 — 让智能体按计划处理。设置一次，你的智能体舰队全天候保持代码库健康。",
+        "description": "代码审查、依赖更新、安全扫描、测试运行——排好班，自动执行。设置一次，Agent 团队替你守夜。",
         "highlights": {
-          "0": "Cron 风格调度，适用于任何智能体任务",
-          "1": "自动创建分支并提交 MR/PR",
-          "2": "完成或失败时通过 Slack/Webhook 通知",
-          "3": "任务历史记录，包含完整日志和差异",
-          "4": "可组合 — 在单个工作流中链接多个智能体"
+          "0": "Cron 风格调度，适用于任何任务",
+          "1": "自动创建分支并提交 MR",
+          "2": "完成或失败时 Slack/Webhook 通知",
+          "3": "完整历史记录，含日志和差异",
+          "4": "多个 Agent 串联成工作流"
         }
       }
     },
     "howItWorks": {
-      "title": "只需",
-      "titleHighlight": "3 步",
-      "description": "部署、连接、开始协作，几分钟内即可与 AI 智能体协同工作。",
+      "title": "三分钟组建你的",
+      "titleHighlight": "Agent 团队",
+      "description": "从安装到第一个 Agent 开工——比你上一次站会还快。",
       "step1": {
-        "title": "部署运行节点",
-        "description": "下载并注册 Runner 到服务器或本地机器。"
+        "title": "部署 Runner",
+        "description": "在任意机器上安装——云端或本地，一条命令搞定。"
       },
       "step2": {
-        "title": "创建 AgentPod",
-        "description": "通过 Web 控制台使用你选择的 AI 智能体创建 Pod。"
+        "title": "分配工作",
+        "description": "创建工作站、写工单、设定计划，Agent 立刻开工。"
       },
       "step3": {
-        "title": "开始协作",
-        "description": "在浏览器中打开终端，创建频道，使用 MCP 工具协调智能体。"
+        "title": "看它们交付",
+        "description": "浏览器里追踪进度，审查 MR，准备好了就合并。"
       }
     },
     "enterprise": {
-      "title": "为",
-      "titleHighlight": "企业",
-      "description": "企业团队所需的安全、合规和可扩展性功能。",
+      "title": "你的 Agent。",
+      "titleHighlight": "你的规则。",
+      "description": "为大规模管理 Agent 团队的组织提供企业级安全和治理能力。",
       "features": {
         "multiTenant": {
           "title": "多租户",
@@ -206,9 +229,9 @@
       }
     },
     "pricing": {
-      "title": "简单透明的",
-      "titleHighlight": "定价",
-      "description": "BYOK 模式 - 使用您自己的 AI API Key，无使用量限制。",
+      "title": "扩大团队，",
+      "titleHighlight": "而不是预算。",
+      "description": "自带 API Key，按平台付费而非按 Token 计费，无使用量限制。",
       "mostPopular": "最受欢迎",
       "annualDiscount": "年付省20%",
       "perSeat": "/席位",
@@ -222,10 +245,10 @@
       "based": {
         "name": "基础版",
         "badge": "30天免费试用",
-        "description": "适合个人开发者探索 AI 编程智能体。",
+        "description": "一个人起步，看看一个 Agent 能做什么。",
         "features": {
           "0": "1 个席位（单人模式）",
-          "1": "5 个并发 Pod",
+          "1": "5 个并发 Agent",
           "2": "1 个 Runner",
           "3": "5 个仓库",
           "4": "社区支持"
@@ -234,10 +257,10 @@
       },
       "pro": {
         "name": "专业版",
-        "description": "适合想要扩展 AI 协作的小型团队。",
+        "description": "你的第一支 Agent 团队。5 个席位，10 个 Agent 并行。",
         "features": {
           "0": "最多 5 个席位",
-          "1": "10 个并发 Pod",
+          "1": "10 个并发 Agent",
           "2": "10 个 Runner",
           "3": "10 个仓库",
           "4": "优先邮件支持",
@@ -247,10 +270,10 @@
       },
       "enterprise": {
         "name": "Team",
-        "description": "适合需要高级规模和安全性的组织。",
+        "description": "部门级规模。50 个席位各自带着 Agent 小队。",
         "features": {
           "0": "最多 50 个席位",
-          "1": "50 个并发 Pod",
+          "1": "50 个并发 Agent",
           "2": "100 个 Runner",
           "3": "无限仓库",
           "4": "优先支持"
@@ -261,10 +284,10 @@
         "name": "OnPremise",
         "price": "商务报价",
         "period": "联系我们",
-        "description": "完全私有部署，数据完全可控。",
+        "description": "完全私有部署。你的基础设施，你的规则。",
         "features": {
           "0": "无限席位",
-          "1": "无限 Pod",
+          "1": "无限 Agent",
           "2": "无限 Runner",
           "3": "离线环境支持",
           "4": "专属支持",
@@ -273,15 +296,15 @@
         },
         "cta": "联系销售"
       },
-      "footer": "所有方案均支持 BYOK（自带 API Key）- 使用您自己的 AI API Key，无使用量限制。",
+      "footer": "所有方案均支持 BYOK（自带 API Key）——使用您自己的 AI API Key，无使用量限制。",
       "customPlan": "需要私有部署？",
-      "contactUs": "Contact Us"
+      "contactUs": "联系我们"
     },
     "selfHosted": {
       "title": "需要完整的",
       "titleHighlight": "自托管",
       "titleEnd": "部署？",
-      "description": "AgentsMesh 支持完全自托管部署。代码和数据永远不会离开你的基础设施。非常适合有严格安全和合规要求的企业。",
+      "description": "代码和数据始终留在你的基础设施内。完全私有化部署 AgentsMesh——适合对安全和合规有严格要求的组织。",
       "dockerCompose": "Docker Compose",
       "kubernetesHelm": "Kubernetes Helm（即将推出）",
       "airGappedSupport": "离线环境支持（即将推出）",
@@ -289,11 +312,11 @@
       "contactSales": "联系企业销售"
     },
     "finalCta": {
-      "title1": "准备好编排你的",
-      "title2": "AI 智能体舰队了吗？",
-      "description": "加入正在通过 AI 智能体编排更快交付代码的开发者。免费开始，无需信用卡。",
-      "getStartedFree": "免费开始",
-      "scheduleDemo": "预约演示",
+      "title1": "你的团队即将",
+      "title2": "大幅扩编。",
+      "description": "从一个 Agent 开始，扩展到五十个。免费起步，无需信用卡。",
+      "getStartedFree": "开始组建团队",
+      "scheduleDemo": "和我们聊聊",
       "freeTier": "提供免费版",
       "noCreditCard": "无需信用卡",
       "selfHostedOption": "可自托管部署"
@@ -320,9 +343,9 @@
       "rateLimitAdded": "beta-dev：已为认证路由添加速率限制",
       "reviewChanges": "很好！beta-dev 已实现速率限制。现在我来审查更改...",
       "podInfo": {
-        "initializing": "Pod: alpha-dev │ 智能体: Claude Code │ 状态: 初始化中",
-        "running": "Pod: alpha-dev │ 智能体: Claude Code │ 状态: 运行中",
-        "observing": "Pod: alpha-dev │ 智能体: Claude Code │ 观察中: beta-dev"
+        "initializing": "Pod: alpha-dev | 智能体: Claude Code | 状态: 初始化中",
+        "running": "Pod: alpha-dev | 智能体: Claude Code | 状态: 运行中",
+        "observing": "Pod: alpha-dev | 智能体: Claude Code | 观察中: beta-dev"
       }
     },
     "coreDemo": {
@@ -364,18 +387,18 @@
       }
     },
     "demoVideo": {
-      "title": "实际",
-      "titleHighlight": "效果演示",
-      "description": "观看 AgentsMesh 如何编排 AI 智能体，从需求到交付 — 不到 2 分钟。",
+      "title": "看看你的未来团队",
+      "titleHighlight": "如何工作",
+      "description": "两分钟。从工单到合并请求——全程自主完成。",
       "iframeTitle": "AgentsMesh 产品演示",
       "highlight1": "完整生命周期演示",
-      "highlight2": "多智能体编排",
-      "highlight3": "实时舰队控制"
+      "highlight2": "多 Agent 协作",
+      "highlight3": "自主任务完成"
     },
     "footer": {
-      "tagline": "AI 智能体舰队指挥中心 — 不要只是氛围编程。交付企业级产品。",
+      "tagline": "让团队的产出突破人数限制。",
       "copyright": "AgentsMesh. 保留所有权利。",
-      "madeWith": "为开发者用心打造",
+      "madeWith": "为有雄心的团队而造",
       "product": {
         "title": "产品",
         "agentpod": "AgentPod",
@@ -410,7 +433,7 @@
     },
     "demo": {
       "title": "申请演示",
-      "subtitle": "了解 AgentsMesh 如何加速您团队的开发工作流。",
+      "subtitle": "看看 AgentsMesh 如何倍增你的团队产出。",
       "nameLabel": "姓名",
       "namePlaceholder": "张三",
       "emailLabel": "工作邮箱",
@@ -420,7 +443,7 @@
       "referralLabel": "您是如何了解到我们的？",
       "referralPlaceholder": "例如：Twitter、GitHub、朋友推荐...",
       "messageLabel": "其他信息（可选）",
-      "messagePlaceholder": "告诉我们您的使用场景或问题...",
+      "messagePlaceholder": "告诉我们您的团队规模和使用场景...",
       "submit": "申请演示",
       "submitting": "提交中...",
       "error": "出现了一些问题，请重试。",

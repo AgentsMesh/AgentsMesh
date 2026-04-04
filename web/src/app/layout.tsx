@@ -23,19 +23,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://agentsmesh.ai"),
   title: {
-    default: "AgentsMesh - AI Agent Fleet Command Center",
+    default: "AgentsMesh - The Agent Workforce Platform",
     template: "%s | AgentsMesh",
   },
-  description: "Don't let humans bottleneck AI agents. Agent-centered development starts here. Orchestrate fleets of Claude Code, Codex, and more — each in its own isolated workspace, collaborating autonomously.",
+  description: "Ship like a team of fifty. With a team of five. Give every team member an AI agent squad — assign tasks, track progress, and let them collaborate autonomously.",
   keywords: [
     "agentsmesh", "agentmesh", "agents mesh",
-    "agent fleet command center", "agent swarm", "agent orchestration",
-    "harness engineering", "AI agent platform",
+    "agent workforce platform", "agent team management", "AI agent team",
     "AI agents", "AI coding", "Claude Code", "Codex CLI", "Gemini CLI", "Aider",
     "multi-agent collaboration", "agent coordination", "terminal AI", "code automation",
     "developer tools", "enterprise development", "self-hosted", "agent fleet",
-    "vibe coding", "AI developer tools", "coding agents", "agent management",
-    "multi-agent orchestration", "AI swarm", "agent fleet management",
+    "AI developer tools", "coding agents", "agent management",
+    "multi-agent orchestration", "team productivity",
   ],
   manifest: "/manifest.json",
   appleWebApp: {
@@ -49,14 +48,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "AgentsMesh",
-    title: "AgentsMesh - AI Agent Fleet Command Center",
-    description: "Don't let humans bottleneck AI agents. Agent-centered development starts here. Orchestrate fleets of Claude Code, Codex, and more — each in its own isolated workspace, collaborating autonomously.",
+    title: "AgentsMesh - The Agent Workforce Platform",
+    description: "Ship like a team of fifty. With a team of five. Give every team member an AI agent squad — assign tasks, track progress, and let them collaborate autonomously.",
     url: "https://agentsmesh.ai",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AgentsMesh - AI Agent Fleet Command Center",
-    description: "Don't let humans bottleneck AI agents. Agent-centered development starts here. Orchestrate Claude Code, Codex CLI, Gemini CLI, Aider and more.",
+    title: "AgentsMesh - The Agent Workforce Platform",
+    description: "Ship like a team of fifty. With a team of five. Give every team member an AI agent squad — assign tasks, track progress, and let them collaborate autonomously.",
   },
   alternates: {
     canonical: "https://agentsmesh.ai",

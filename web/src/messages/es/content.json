@@ -1,106 +1,106 @@
 {
   "about": {
     "hero": {
-      "title": "Building the Future of AI-Powered Development",
-      "subtitle": "We're on a mission to enable seamless collaboration between humans and AI coding agents, transforming how software is built."
+      "title": "El software lo construyen equipos. Ahora los equipos se construyen diferente.",
+      "subtitle": "Creemos que el proximo salto no son mejores herramientas — son equipos mas grandes. Equipos donde agentes IA trabajan junto a humanos como miembros de pleno derecho."
     },
     "mission": {
-      "title": "Our Mission",
-      "content": "AgentsMesh was founded with a simple belief: the future of software development lies in the collaboration between humans and AI agents. We're building the infrastructure that enables multiple AI coding agents to work together, coordinated by human developers, to tackle complex development challenges at unprecedented speed and scale."
+      "title": "Nuestra Mision",
+      "content": "AgentsMesh existe para ayudar a las organizaciones a escalar mas alla del headcount. Estamos construyendo la plataforma que permite a cada miembro del equipo gestionar un squad de agentes IA — asignando tareas, coordinando la colaboracion y entregando trabajo a un ritmo que antes era imposible sin contratar a diez personas mas."
     },
     "vision": {
-      "title": "What We Believe",
+      "title": "Lo que creemos",
       "autonomous": {
-        "title": "Autonomous Execution",
-        "content": "AI agents should be able to independently complete complex tasks, not just assist with code completion."
+        "title": "Los agentes son miembros del equipo",
+        "content": "Los agentes IA no son solo herramientas que autocompletan codigo. Son companeros autonomos que pueden ser duenos de tareas de principio a fin — desde leer un ticket hasta abrir un merge request."
       },
       "collaboration": {
-        "title": "Multi-Agent Collaboration",
-        "content": "The most complex problems require multiple specialized agents working together seamlessly."
+        "title": "Los equipos superan a los individuos",
+        "content": "Un agente brillante no puede resolverlo todo. Un equipo coordinado de agentes — cada uno con su especialidad, comunicandose y compartiendo contexto — si puede."
       },
       "security": {
-        "title": "Data Sovereignty",
-        "content": "Your code and data should never leave your infrastructure without your explicit consent."
+        "title": "Tu codigo, tu infraestructura",
+        "content": "Escalar tu agent workforce no deberia significar perder el control. Tu codigo y tus datos permanecen en tu infraestructura. Siempre."
       }
     },
     "contact": {
-      "title": "Get in Touch",
-      "content": "Interested in learning more about AgentsMesh or exploring partnership opportunities?",
-      "email": "Contact Us",
-      "careers": "Join Our Team"
+      "title": "Ponte en contacto",
+      "content": "Quieres saber como AgentsMesh puede escalar la produccion de tu equipo?",
+      "email": "Contactanos",
+      "careers": "Unete a nuestro equipo"
     }
   },
   "careers": {
     "hero": {
-      "title": "Join Us in Shaping the Future",
-      "subtitle": "We're building the platform that enables AI agents to collaborate on complex development tasks. Join us in this exciting journey."
+      "title": "Unete a nosotros para construir el futuro",
+      "subtitle": "Estamos construyendo la plataforma que permite a los agentes IA colaborar en tareas de desarrollo complejas. Unete a esta emocionante aventura."
     },
-    "openPositions": "Open Roles",
-    "responsibilities": "Key Responsibilities",
-    "applyNow": "Apply Now",
+    "openPositions": "Posiciones abiertas",
+    "responsibilities": "Responsabilidades clave",
+    "applyNow": "Postularse ahora",
     "positions": {
       "harnessEngineer": {
         "title": "Harness Engineer",
-        "description": "Harness Engineers architect the runtime environments where AI agents operate. You'll design sandboxes, define execution constraints, and build the infrastructure that keeps agents secure, isolated, and performant.",
-        "resp1": "Design and build secure, isolated runtime environments for AI agents",
-        "resp2": "Define execution constraints, permission boundaries, and safety guardrails",
-        "resp3": "Develop and optimize sandbox infrastructure for reproducible agent operations"
+        "description": "Los Harness Engineers disenen los entornos de ejecucion donde operan los agentes IA. Disenara sandboxes, definira restricciones de ejecucion y construira la infraestructura que mantiene a los agentes seguros, aislados y con alto rendimiento.",
+        "resp1": "Disenar y construir entornos de ejecucion seguros y aislados para agentes IA",
+        "resp2": "Definir restricciones de ejecucion, limites de permisos y barreras de seguridad",
+        "resp3": "Desarrollar y optimizar infraestructura sandbox para operaciones reproducibles de agentes"
       },
       "producer": {
         "title": "Builder",
-        "description": "Builders turn infrastructure into products that users love. You'll bridge the gap between technical capabilities and user needs, shaping every interaction with AgentsMesh into an intuitive and powerful experience.",
-        "resp1": "Translate user needs into product requirements and features",
-        "resp2": "Shape platform capabilities into polished, user-facing products",
-        "resp3": "Gather feedback and iterate to deliver exceptional user experiences"
+        "description": "Los Builders transforman infraestructura en productos que los usuarios aman. Cerraras la brecha entre capacidades tecnicas y necesidades del usuario, convirtiendo cada interaccion con AgentsMesh en una experiencia intuitiva y poderosa.",
+        "resp1": "Traducir necesidades del usuario en requisitos y funcionalidades del producto",
+        "resp2": "Transformar capacidades de la plataforma en productos pulidos orientados al usuario",
+        "resp3": "Recopilar feedback e iterar para ofrecer experiencias de usuario excepcionales"
       },
       "growthHacker": {
         "title": "GTM (Go to Market)",
-        "description": "GTM specialists take our product to market with creative, data-driven strategies. You'll help developers discover AgentsMesh, run rapid experiments, and turn early adopters into passionate advocates.",
-        "resp1": "Design and execute data-driven growth experiments",
-        "resp2": "Build relationships with developer communities and drive adoption",
-        "resp3": "Optimize acquisition funnels and drive user retention"
+        "description": "Los especialistas GTM llevan nuestro producto al mercado con estrategias creativas y basadas en datos. Ayudaras a los desarrolladores a descubrir AgentsMesh, ejecutaras experimentos rapidos y convertiras a los early adopters en defensores apasionados.",
+        "resp1": "Disenar y ejecutar experimentos de crecimiento basados en datos",
+        "resp2": "Construir relaciones con comunidades de desarrolladores e impulsar la adopcion",
+        "resp3": "Optimizar funnels de adquisicion e impulsar la retencion de usuarios"
       }
     },
     "whyJoin": {
-      "title": "Why Join AgentsMesh?",
+      "title": "Por que unirte a AgentsMesh?",
       "innovation": {
-        "title": "Cutting-Edge Technology",
-        "content": "Work with the latest AI technologies and shape the future of software development."
+        "title": "Tecnologia de vanguardia",
+        "content": "Trabaja con las ultimas tecnologias de IA y moldea el futuro del desarrollo de software."
       },
       "remote": {
         "title": "Remote-First",
-        "content": "Work from anywhere in the world with a flexible schedule that fits your life."
+        "content": "Trabaja desde cualquier lugar del mundo con un horario flexible que se adapte a tu vida."
       },
       "equity": {
-        "title": "Competitive Package",
-        "content": "Competitive salary, equity participation, and comprehensive benefits."
+        "title": "Paquete competitivo",
+        "content": "Salario competitivo, participacion accionaria y beneficios integrales."
       }
     },
     "cta": {
-      "title": "Don't See a Perfect Fit?",
-      "content": "We're always looking for exceptional talent. Send us your resume and tell us how you'd contribute.",
-      "button": "Send Your Resume"
+      "title": "No encuentras la posicion ideal?",
+      "content": "Siempre buscamos talento excepcional. Envianos tu CV y cuentanos como contribuirias.",
+      "button": "Enviar tu CV"
     }
   },
   "blog": {
     "hero": {
       "title": "Blog",
-      "subtitle": "Technical insights, product updates, and stories from the AgentsMesh team."
+      "subtitle": "Insights tecnicos, actualizaciones de producto e historias del equipo AgentsMesh."
     },
-    "minRead": "min read",
-    "backToList": "Back to Blog",
-    "notFound": "Post not found"
+    "minRead": "min de lectura",
+    "backToList": "Volver al Blog",
+    "notFound": "Post no encontrado"
   },
   "enterprise": {
     "hero": {
-      "title": "Diseñado para",
-      "titleHighlight": "Empresas",
-      "subtitle": "Seguridad, cumplimiento y despliegue autoalojado para organizaciones que exigen control total sobre su infraestructura de agentes de IA."
+      "title": "Tus agentes.",
+      "titleHighlight": "Tus reglas.",
+      "subtitle": "Seguridad y gobernanza de nivel enterprise para organizaciones que gestionan agent workforces a escala."
     },
     "onpremise": {
       "title": "Despliegue",
       "titleHighlight": "Privado",
-      "description": "Implemente AgentsMesh completamente dentro de su propia infraestructura. Su código y datos nunca salen de su red."
+      "description": "Despliega AgentsMesh completamente dentro de tu infraestructura. Tu codigo, tus agentes, tus reglas — cero exposicion externa."
     }
   }
 }

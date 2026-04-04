@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Learn about AgentsMesh — the agent fleet command center empowering teams with agent orchestration, swarm coordination, and harnessed engineering productivity at scale.",
+    "Software is built by teams. Now teams are built differently. AgentsMesh helps organizations scale beyond headcount with AI agent teams.",
   alternates: {
     canonical: "https://agentsmesh.ai/about",
   },
   openGraph: {
     title: "About | AgentsMesh",
     description:
-      "Learn about AgentsMesh — the agent fleet command center empowering teams with agent orchestration, swarm coordination, and harnessed engineering productivity at scale.",
+      "Software is built by teams. Now teams are built differently. AgentsMesh helps organizations scale beyond headcount with AI agent teams.",
     url: "https://agentsmesh.ai/about",
   },
 };

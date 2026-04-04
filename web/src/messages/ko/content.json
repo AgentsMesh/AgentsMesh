@@ -1,106 +1,106 @@
 {
   "about": {
     "hero": {
-      "title": "Building the Future of AI-Powered Development",
-      "subtitle": "We're on a mission to enable seamless collaboration between humans and AI coding agents, transforming how software is built."
+      "title": "소프트웨어는 팀이 만듭니다. 이제 팀을 만드는 방식이 달라집니다.",
+      "subtitle": "다음 도약은 더 나은 도구가 아니라, 더 큰 팀이라고 믿습니다. AI 에이전트가 인간과 동등한 팀원으로 함께 일하는 팀."
     },
     "mission": {
-      "title": "Our Mission",
-      "content": "AgentsMesh was founded with a simple belief: the future of software development lies in the collaboration between humans and AI agents. We're building the infrastructure that enables multiple AI coding agents to work together, coordinated by human developers, to tackle complex development challenges at unprecedented speed and scale."
+      "title": "미션",
+      "content": "AgentsMesh는 조직이 인원 한계를 넘어 스케일할 수 있도록 돕기 위해 존재합니다. 모든 팀원이 AI 에이전트 팀을 이끌고, 작업을 할당하고, 협업을 조율하며, 이전에는 10명을 추가 채용하지 않고는 불가능했던 속도로 코드를 배포할 수 있는 플랫폼을 구축하고 있습니다."
     },
     "vision": {
-      "title": "What We Believe",
+      "title": "우리가 믿는 것",
       "autonomous": {
-        "title": "Autonomous Execution",
-        "content": "AI agents should be able to independently complete complex tasks, not just assist with code completion."
+        "title": "에이전트는 팀원이다",
+        "content": "AI 에이전트는 코드를 자동완성하는 도구가 아닙니다. 티켓을 읽고 머지 리퀘스트를 여는 것까지, 작업을 엔드투엔드로 수행할 수 있는 자율적인 팀메이트입니다."
       },
       "collaboration": {
-        "title": "Multi-Agent Collaboration",
-        "content": "The most complex problems require multiple specialized agents working together seamlessly."
+        "title": "팀이 개인을 이긴다",
+        "content": "아무리 뛰어난 에이전트 하나로는 모든 것을 해결할 수 없습니다. 각자의 전문성을 가지고, 소통하고, 컨텍스트를 공유하는 협업 에이전트 팀이라면 가능합니다."
       },
       "security": {
-        "title": "Data Sovereignty",
-        "content": "Your code and data should never leave your infrastructure without your explicit consent."
+        "title": "당신의 코드, 당신의 인프라",
+        "content": "에이전트 워크포스를 확장한다고 해서 제어권을 포기할 필요는 없습니다. 코드와 데이터는 언제나 당신의 인프라에 남습니다."
       }
     },
     "contact": {
-      "title": "Get in Touch",
-      "content": "Interested in learning more about AgentsMesh or exploring partnership opportunities?",
-      "email": "Contact Us",
-      "careers": "Join Our Team"
+      "title": "문의하기",
+      "content": "AgentsMesh가 팀의 생산성을 어떻게 확장할 수 있는지 알고 싶으신가요?",
+      "email": "문의하기",
+      "careers": "팀에 합류하기"
     }
   },
   "careers": {
     "hero": {
-      "title": "Join Us in Shaping the Future",
-      "subtitle": "We're building the platform that enables AI agents to collaborate on complex development tasks. Join us in this exciting journey."
+      "title": "미래를 함께 만들어갑니다",
+      "subtitle": "AI 에이전트가 복잡한 개발 작업에서 협업하는 플랫폼을 구축하고 있습니다. 이 흥미진진한 여정에 함께하세요."
     },
-    "openPositions": "Open Roles",
-    "responsibilities": "Key Responsibilities",
-    "applyNow": "Apply Now",
+    "openPositions": "채용 중인 포지션",
+    "responsibilities": "주요 업무",
+    "applyNow": "지원하기",
     "positions": {
       "harnessEngineer": {
         "title": "Harness Engineer",
-        "description": "Harness Engineers architect the runtime environments where AI agents operate. You'll design sandboxes, define execution constraints, and build the infrastructure that keeps agents secure, isolated, and performant.",
-        "resp1": "Design and build secure, isolated runtime environments for AI agents",
-        "resp2": "Define execution constraints, permission boundaries, and safety guardrails",
-        "resp3": "Develop and optimize sandbox infrastructure for reproducible agent operations"
+        "description": "Harness Engineer는 AI 에이전트가 동작하는 런타임 환경을 설계합니다. 샌드박스를 설계하고, 실행 제약을 정의하며, 에이전트의 보안성, 격리성, 성능을 유지하는 인프라를 구축합니다.",
+        "resp1": "AI 에이전트를 위한 안전하고 격리된 런타임 환경 설계 및 구축",
+        "resp2": "실행 제약, 권한 경계, 안전 가드레일 정의",
+        "resp3": "재현 가능한 에이전트 운영을 위한 샌드박스 인프라 개발 및 최적화"
       },
       "producer": {
         "title": "Builder",
-        "description": "Builders turn infrastructure into products that users love. You'll bridge the gap between technical capabilities and user needs, shaping every interaction with AgentsMesh into an intuitive and powerful experience.",
-        "resp1": "Translate user needs into product requirements and features",
-        "resp2": "Shape platform capabilities into polished, user-facing products",
-        "resp3": "Gather feedback and iterate to deliver exceptional user experiences"
+        "description": "Builder는 인프라를 사용자가 사랑하는 제품으로 변환합니다. 기술적 역량과 사용자 니즈 사이의 격차를 해소하며, AgentsMesh와의 모든 인터랙션을 직관적이고 강력한 경험으로 만듭니다.",
+        "resp1": "사용자 니즈를 제품 요구사항과 기능으로 변환",
+        "resp2": "플랫폼 역량을 세련된 사용자 대면 제품으로 구체화",
+        "resp3": "피드백을 수집하고 반복하여 뛰어난 사용자 경험 제공"
       },
       "growthHacker": {
         "title": "GTM (Go to Market)",
-        "description": "GTM specialists take our product to market with creative, data-driven strategies. You'll help developers discover AgentsMesh, run rapid experiments, and turn early adopters into passionate advocates.",
-        "resp1": "Design and execute data-driven growth experiments",
-        "resp2": "Build relationships with developer communities and drive adoption",
-        "resp3": "Optimize acquisition funnels and drive user retention"
+        "description": "GTM 스페셜리스트는 크리에이티브하고 데이터 기반의 전략으로 제품을 시장에 선보입니다. 개발자들이 AgentsMesh를 발견하도록 돕고, 빠른 실험을 수행하며, 얼리 어답터를 열정적인 팬으로 만듭니다.",
+        "resp1": "데이터 기반 그로스 실험 설계 및 실행",
+        "resp2": "개발자 커뮤니티와 관계 구축 및 채택 촉진",
+        "resp3": "획득 퍼널 최적화 및 사용자 리텐션 향상"
       }
     },
     "whyJoin": {
-      "title": "Why Join AgentsMesh?",
+      "title": "왜 AgentsMesh에 합류해야 하나요?",
       "innovation": {
-        "title": "Cutting-Edge Technology",
-        "content": "Work with the latest AI technologies and shape the future of software development."
+        "title": "최첨단 기술",
+        "content": "최신 AI 기술을 다루며 소프트웨어 개발의 미래를 만들어갑니다."
       },
       "remote": {
-        "title": "Remote-First",
-        "content": "Work from anywhere in the world with a flexible schedule that fits your life."
+        "title": "리모트 퍼스트",
+        "content": "전 세계 어디서든, 당신의 라이프스타일에 맞는 유연한 일정으로 일하세요."
       },
       "equity": {
-        "title": "Competitive Package",
-        "content": "Competitive salary, equity participation, and comprehensive benefits."
+        "title": "매력적인 보상 패키지",
+        "content": "경쟁력 있는 급여, 스톡옵션 참여, 종합적인 복리후생."
       }
     },
     "cta": {
-      "title": "Don't See a Perfect Fit?",
-      "content": "We're always looking for exceptional talent. Send us your resume and tell us how you'd contribute.",
-      "button": "Send Your Resume"
+      "title": "딱 맞는 포지션이 없으신가요?",
+      "content": "우리는 항상 뛰어난 인재를 찾고 있습니다. 이력서와 함께 어떻게 기여할 수 있는지 알려주세요.",
+      "button": "이력서 보내기"
     }
   },
   "blog": {
     "hero": {
-      "title": "Blog",
-      "subtitle": "Technical insights, product updates, and stories from the AgentsMesh team."
+      "title": "블로그",
+      "subtitle": "AgentsMesh 팀의 기술 인사이트, 제품 업데이트, 그리고 스토리."
     },
-    "minRead": "min read",
-    "backToList": "Back to Blog",
-    "notFound": "Post not found"
+    "minRead": "분 소요",
+    "backToList": "블로그 목록으로",
+    "notFound": "게시글을 찾을 수 없습니다"
   },
   "enterprise": {
     "hero": {
-      "title": "",
-      "titleHighlight": "엔터프라이즈",
-      "subtitle": "AI 에이전트 인프라에 대한 완전한 제어를 요구하는 조직을 위한 보안, 규정 준수 및 셀프 호스팅 배포."
+      "title": "당신의 에이전트.",
+      "titleHighlight": "당신의 규칙.",
+      "subtitle": "에이전트 워크포스를 대규모로 관리하는 조직을 위한 엔터프라이즈급 보안과 거버넌스."
     },
     "onpremise": {
       "title": "프라이빗",
       "titleHighlight": "배포",
-      "description": "자체 인프라 내에 AgentsMesh를 완전히 배포하세요. 코드와 데이터가 네트워크를 벗어나지 않습니다."
+      "description": "AgentsMesh를 당신의 인프라 안에 완전히 배포하세요. 당신의 코드, 당신의 에이전트, 당신의 규칙 — 외부 노출 제로."
     }
   }
 }

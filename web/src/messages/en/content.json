@@ -1,31 +1,31 @@
 {
   "about": {
     "hero": {
-      "title": "Building the Future of AI-Powered Development",
-      "subtitle": "We're on a mission to enable seamless collaboration between humans and AI coding agents, transforming how software is built."
+      "title": "Software is built by teams. Now teams are built differently.",
+      "subtitle": "We believe the next leap isn't better tools — it's bigger teams. Teams where AI agents work alongside humans as first-class members."
     },
     "mission": {
       "title": "Our Mission",
-      "content": "AgentsMesh was founded with a simple belief: the future of software development lies in the collaboration between humans and AI agents. We're building the infrastructure that enables multiple AI coding agents to work together, coordinated by human developers, to tackle complex development challenges at unprecedented speed and scale."
+      "content": "AgentsMesh exists to help organizations scale beyond headcount. We're building the platform that lets every team member manage a squad of AI agents — assigning tasks, coordinating collaboration, and shipping work at a pace that was previously impossible without hiring ten more people."
     },
     "vision": {
       "title": "What We Believe",
       "autonomous": {
-        "title": "Autonomous Execution",
-        "content": "AI agents should be able to independently complete complex tasks, not just assist with code completion."
+        "title": "Agents Are Team Members",
+        "content": "AI agents aren't just tools that autocomplete code. They're autonomous teammates that can own tasks end-to-end — from reading a ticket to opening a merge request."
       },
       "collaboration": {
-        "title": "Multi-Agent Collaboration",
-        "content": "The most complex problems require multiple specialized agents working together seamlessly."
+        "title": "Teams Beat Individuals",
+        "content": "One brilliant agent can't solve everything. A coordinated team of agents — each with its specialty, communicating and sharing context — can."
       },
       "security": {
-        "title": "Data Sovereignty",
-        "content": "Your code and data should never leave your infrastructure without your explicit consent."
+        "title": "Your Code, Your Infrastructure",
+        "content": "Scaling your agent workforce shouldn't mean giving up control. Your code and data stay on your infrastructure, always."
       }
     },
     "contact": {
       "title": "Get in Touch",
-      "content": "Interested in learning more about AgentsMesh or exploring partnership opportunities?",
+      "content": "Want to learn how AgentsMesh can scale your team's output?",
       "email": "Contact Us",
       "careers": "Join Our Team"
     }
@@ -93,14 +93,14 @@
   },
   "enterprise": {
     "hero": {
-      "title": "Built for",
-      "titleHighlight": "Enterprise",
-      "subtitle": "Security, compliance, and self-hosted deployment for organizations that demand complete control over their AI agent infrastructure."
+      "title": "Your agents.",
+      "titleHighlight": "Your rules.",
+      "subtitle": "Enterprise-grade security and governance for organizations managing agent workforces at scale."
     },
     "onpremise": {
       "title": "Private",
       "titleHighlight": "Deployment",
-      "description": "Deploy AgentsMesh entirely within your own infrastructure. Your code and data never leave your network."
+      "description": "Deploy AgentsMesh entirely within your infrastructure. Your code, your agents, your rules — zero external exposure."
     }
   }
 }
