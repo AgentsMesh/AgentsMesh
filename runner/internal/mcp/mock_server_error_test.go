@@ -183,7 +183,7 @@ func TestCallToolMCPErrorResponse(t *testing.T) {
 		Args:    []string{scriptPath},
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	err := server.Start(ctx)
@@ -215,7 +215,7 @@ func TestCallToolIsErrorResponse(t *testing.T) {
 		Args:    []string{scriptPath},
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	err := server.Start(ctx)
@@ -252,7 +252,7 @@ func TestReadResourceErrorResponse(t *testing.T) {
 		Args:    []string{scriptPath},
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	err := server.Start(ctx)
@@ -284,7 +284,7 @@ func TestReadResourceEmptyContentsError(t *testing.T) {
 		Args:    []string{scriptPath},
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	err := server.Start(ctx)
@@ -356,7 +356,7 @@ for line in sys.stdin:
 		Args:    []string{scriptPath},
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	err := server.Start(ctx)

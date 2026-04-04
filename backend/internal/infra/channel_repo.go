@@ -140,9 +140,11 @@ func (r *channelRepository) GetMessages(ctx context.Context, channelID int64, be
 	}
 	// After-only: return oldest-first so hasMore means "newer messages exist beyond the limit".
 	// All other cases: newest-first so hasMore means "older messages exist" (load-more / scroll-up).
-	order := "created_at DESC"
+	// Use "id" as tiebreaker to guarantee stable ordering when created_at has identical values
+	// (e.g., SQLite CURRENT_TIMESTAMP has only second-level precision).
+	order := "created_at DESC, id DESC"
 	if after != nil && before == nil {
-		order = "created_at ASC"
+		order = "created_at ASC, id ASC"
 	}
 	var messages []*channel.Message
 	if err := query.
@@ -169,7 +171,7 @@ func (r *channelRepository) GetMessagesMentioning(ctx context.Context, channelID
 	if err := r.db.WithContext(ctx).
 		Where(`channel_id = ? AND is_deleted = FALSE AND ((CAST(metadata AS TEXT) LIKE '%mentioned_pods%' AND CAST(metadata AS TEXT) LIKE ?) OR content LIKE ?)`,
 			channelID, podValuePattern, textPattern).
-		Order("created_at DESC").
+		Order("created_at DESC, id DESC").
 		Limit(limit + 1).
 		Find(&messages).Error; err != nil {
 		return nil, false, err
@@ -185,7 +187,7 @@ func (r *channelRepository) GetRecentMessages(ctx context.Context, channelID int
 	var messages []*channel.Message
 	if err := r.db.WithContext(ctx).
 		Where("channel_id = ? AND is_deleted = FALSE", channelID).
-		Order("created_at DESC").
+		Order("created_at DESC, id DESC").
 		Limit(limit).
 		Find(&messages).Error; err != nil {
 		return nil, err
