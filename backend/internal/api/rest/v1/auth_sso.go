@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/sso"
@@ -97,6 +98,10 @@ func (h *SSOAuthHandler) authenticateSSO(c *gin.Context, protocol sso.Protocol, 
 	if !u.IsActive {
 		return nil, nil, errAccountDisabled
 	}
+
+	// Update last login time
+	now := time.Now()
+	_, _ = h.userService.Update(c.Request.Context(), u.ID, map[string]interface{}{"last_login_at": now})
 
 	tokens, err := h.authService.GenerateTokenPair(u, 0, "")
 	if err != nil {

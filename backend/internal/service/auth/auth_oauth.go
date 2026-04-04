@@ -92,6 +92,10 @@ func (s *Service) HandleOAuthCallback(ctx context.Context, provider, code, state
 		}
 	}
 
+	// Update last login time
+	now := time.Now()
+	_, _ = s.userService.Update(ctx, u.ID, map[string]interface{}{"last_login_at": now})
+
 	// Generate tokens
 	tokens, err := s.GenerateTokenPair(u, 0, "")
 	if err != nil {
@@ -141,6 +145,10 @@ func (s *Service) OAuthLogin(ctx context.Context, req *OAuthLoginRequest) (*Logi
 	if req.AccessToken != "" {
 		s.userService.UpdateIdentityTokens(ctx, u.ID, req.Provider, req.AccessToken, req.RefreshToken, req.ExpiresAt)
 	}
+
+	// Update last login time
+	now := time.Now()
+	_, _ = s.userService.Update(ctx, u.ID, map[string]interface{}{"last_login_at": now})
 
 	tokens, err := s.GenerateTokenPair(u, 0, "")
 	if err != nil {
