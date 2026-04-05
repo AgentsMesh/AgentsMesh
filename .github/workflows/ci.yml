@@ -10,7 +10,7 @@ env:
   GO_VERSION: "1.25"
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
-  REGISTRY_PREFIX: "public.ecr.aws/docker/library/"
+  REGISTRY_PREFIX: "registry.agentsmesh.ai/library/"
 
 jobs:
   # ===========================================================================

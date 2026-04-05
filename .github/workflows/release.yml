@@ -10,7 +10,7 @@ env:
   REGISTRY: registry.agentsmesh.ai
   DOCKERHUB_NAMESPACE: agentsmesh
   GO_VERSION: "1.25"
-  REGISTRY_PREFIX: "public.ecr.aws/docker/library/"
+  REGISTRY_PREFIX: "registry.agentsmesh.ai/library/"
 
 jobs:
   # ===========================================================================
