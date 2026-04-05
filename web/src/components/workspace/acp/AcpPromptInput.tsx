@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Send } from "lucide-react";
+import { Send, StopCircle } from "lucide-react";
 import { relayPool } from "@/stores/relayConnection";
+import { useAcpSessionStore } from "@/stores/acpSession";
 
 interface AcpPromptInputProps {
   podKey: string;
@@ -12,6 +13,8 @@ export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
   const [prompt, setPrompt] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sessionState = useAcpSessionStore((s) => s.sessions[podKey]?.state);
+  const isProcessing = sessionState === "processing" || sessionState === "waiting_permission";
 
   const handleSend = useCallback(() => {
     if (!prompt.trim() || sending) return;
@@ -28,6 +31,15 @@ export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
       setSending(false);
     }
   }, [prompt, podKey, sending]);
+
+  const handleCancel = useCallback(() => {
+    if (!relayPool.isConnected(podKey)) {
+      setError("Not connected");
+      return;
+    }
+    setError(null);
+    relayPool.sendAcpCommand(podKey, { type: "cancel" });
+  }, [podKey]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -51,13 +63,23 @@ export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
           className="flex-1 resize-none rounded-md border bg-background px-3 py-1.5 text-sm min-h-[36px] max-h-[120px] leading-[20px]"
           rows={1}
         />
-        <button
-          onClick={handleSend}
-          disabled={sending || !prompt.trim()}
-          className="shrink-0 rounded-md bg-primary h-[36px] w-[36px] flex items-center justify-center text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Send className="h-4 w-4" />
-        </button>
+        {isProcessing ? (
+          <button
+            onClick={handleCancel}
+            className="shrink-0 rounded-md bg-red-600 h-[36px] w-[36px] flex items-center justify-center text-white hover:bg-red-700"
+            title="Cancel"
+          >
+            <StopCircle className="h-4 w-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSend}
+            disabled={sending || !prompt.trim()}
+            className="shrink-0 rounded-md bg-primary h-[36px] w-[36px] flex items-center justify-center text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );

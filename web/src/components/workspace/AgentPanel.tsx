@@ -7,7 +7,9 @@ import { usePodStore } from "@/stores/pod";
 import { useAcpSessionStore } from "@/stores/acpSession";
 import { usePodStatus } from "@/hooks";
 import { useAcpRelay } from "@/hooks/useAcpRelay";
+import { useTerminalStatus } from "@/hooks/useTerminalStatus";
 import { AgentPanelHeader } from "./AgentPanelHeader";
+import { RelayStatusOverlay } from "./RelayStatusOverlay";
 import {
   PaneLoadingState,
   PaneErrorState,
@@ -60,6 +62,9 @@ export function AgentPanel({
   const shouldSubscribe = isPodReady || podStatus === "running";
   useAcpRelay(podKey, paneId, shouldSubscribe);
 
+  // Relay connection status (same as PTY terminal)
+  const relayStatus = useTerminalStatus(podKey);
+
   const handleFocus = useCallback(() => {
     setActivePane(paneId);
   }, [paneId, setActivePane]);
@@ -105,7 +110,13 @@ export function AgentPanel({
           />
         )
       ) : (
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex flex-col flex-1 min-h-0 relative">
+          {relayStatus.status !== "none" && (
+            <RelayStatusOverlay
+              connectionStatus={relayStatus.status}
+              isRunnerDisconnected={relayStatus.runnerDisconnected}
+            />
+          )}
           <AcpPlanTracker podKey={podKey} />
           <div className="flex-1 overflow-y-auto p-4">
             <AcpActivityStream podKey={podKey} />

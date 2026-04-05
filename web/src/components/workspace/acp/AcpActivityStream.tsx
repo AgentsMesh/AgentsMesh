@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useAcpSessionStore } from "@/stores/acpSession";
-import type { AcpToolCall, AcpThinking } from "@/stores/acpSession";
+import type { AcpToolCall, AcpThinking, AcpLog } from "@/stores/acpSession";
 import { AcpToolCallCard } from "./AcpToolCallCard";
 import { Markdown } from "@/components/ui/markdown";
+import { AlertTriangle, XCircle } from "lucide-react";
 
 interface AcpActivityStreamProps {
   podKey: string;
@@ -14,7 +15,8 @@ interface AcpActivityStreamProps {
 type TimelineItem =
   | { kind: "message"; key: string; timestamp: number; role: string; text: string }
   | { kind: "tool"; key: string; timestamp: number; data: AcpToolCall }
-  | { kind: "thinking"; key: string; timestamp: number; data: AcpThinking };
+  | { kind: "thinking"; key: string; timestamp: number; data: AcpThinking }
+  | { kind: "log"; key: string; timestamp: number; data: AcpLog };
 
 export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
   const session = useAcpSessionStore((s) => s.sessions[podKey]);
@@ -45,6 +47,11 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
       items.push({ kind: "thinking", key: `th-${th.timestamp}-${i}`, timestamp: th.timestamp, data: th });
     }
 
+    for (let i = 0; i < session.logs.length; i++) {
+      const log = session.logs[i];
+      items.push({ kind: "log", key: `log-${log.timestamp}-${i}`, timestamp: log.timestamp, data: log });
+    }
+
     items.sort((a, b) => a.timestamp - b.timestamp);
     return items;
   }, [session]);
@@ -53,10 +60,11 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
   const messageCount = session?.messages.length ?? 0;
   const toolCallCount = session ? Object.keys(session.toolCalls).length : 0;
   const thinkingCount = session?.thinkings.length ?? 0;
+  const logCount = session?.logs.length ?? 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messageCount, toolCallCount, thinkingCount]);
+  }, [messageCount, toolCallCount, thinkingCount, logCount]);
 
   if (!session) {
     return (
@@ -80,6 +88,8 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
             return <AcpToolCallCard key={item.key} toolCall={item.data} />;
           case "thinking":
             return <ThinkingIndicator key={item.key} thinking={item.data} />;
+          case "log":
+            return <LogEntry key={item.key} log={item.data} />;
         }
       })}
       <div ref={bottomRef} />
@@ -131,5 +141,26 @@ function ThinkingIndicator({ thinking }: { thinking: AcpThinking }) {
         {thinking.text}
       </div>
     </details>
+  );
+}
+
+/** Log entry: error (red) or warn (yellow) styled inline card. */
+function LogEntry({ log }: { log: AcpLog }) {
+  const isError = log.level === "error";
+  return (
+    <div
+      className={`flex items-start gap-2 py-1 px-2 rounded text-xs ${
+        isError
+          ? "bg-red-500/10 text-red-600 dark:text-red-400"
+          : "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+      }`}
+    >
+      {isError ? (
+        <XCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+      ) : (
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+      )}
+      <span className="whitespace-pre-wrap">{log.message}</span>
+    </div>
   );
 }

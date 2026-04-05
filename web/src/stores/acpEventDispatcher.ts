@@ -77,9 +77,9 @@ function dispatchEvent(
       }
       break;
     case "log":
-      // Agent-level logs (debug info, not shown in activity stream by default)
       if (data.level === "error" || data.level === "warn") {
         console.warn(`[ACP:${podKey}] ${data.level}: ${data.message}`);
+        store.addLog(podKey, data.level as string, data.message as string);
       }
       break;
     default:

@@ -37,11 +37,18 @@ interface AcpPermissionRequest {
   description: string;
 }
 
+interface AcpLog {
+  level: string;
+  message: string;
+  timestamp: number;
+}
+
 interface AcpSessionState {
   messages: AcpContentChunk[];
   toolCalls: Record<string, AcpToolCall>;
   plan: AcpPlanStep[];
   thinkings: AcpThinking[];
+  logs: AcpLog[];
   state: string; // idle, processing, waiting_permission
   pendingPermissions: AcpPermissionRequest[];
 }
@@ -59,11 +66,12 @@ interface AcpSessionStore {
   addPermissionRequest: (podKey: string, req: AcpPermissionRequest) => void;
   removePermissionRequest: (podKey: string, requestId: string) => void;
   updateSessionState: (podKey: string, sessionId: string, state: string) => void;
+  addLog: (podKey: string, level: string, message: string) => void;
   clearSession: (podKey: string) => void;
 }
 
 // Re-export types for component use
-export type { AcpToolCall, AcpPlanStep, AcpPermissionRequest, AcpSessionState, AcpThinking };
+export type { AcpToolCall, AcpPlanStep, AcpPermissionRequest, AcpSessionState, AcpThinking, AcpLog };
 
 function getOrCreateSession(sessions: Record<string, AcpSessionState>, podKey: string): AcpSessionState {
   return sessions[podKey] || {
@@ -71,6 +79,7 @@ function getOrCreateSession(sessions: Record<string, AcpSessionState>, podKey: s
     toolCalls: {},
     plan: [],
     thinkings: [],
+    logs: [],
     state: "idle",
     pendingPermissions: [],
   };
@@ -275,6 +284,17 @@ export const useAcpSessionStore = create<AcpSessionStore>((set) => ({
       const thinkings = sealLastThinking(session.thinkings);
       return {
         sessions: { ...state.sessions, [podKey]: { ...session, state: newState, thinkings } },
+      };
+    }),
+
+  addLog: (podKey, level, message) =>
+    set((state) => {
+      const session = getOrCreateSession(state.sessions, podKey);
+      const logs = [...session.logs, { level, message, timestamp: Date.now() }];
+      // Cap at 50 log entries
+      if (logs.length > 50) logs.splice(0, logs.length - 50);
+      return {
+        sessions: { ...state.sessions, [podKey]: { ...session, logs } },
       };
     }),
 

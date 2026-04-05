@@ -130,8 +130,7 @@ describe("acpEventDispatcher", () => {
       expect(s.messages[0].complete).toBe(true);
     });
 
-    it("handles log events without crashing", () => {
-      // Should not throw or add to store
+    it("handles log events and stores error/warn in session", () => {
       dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
         type: "log",
         sessionId: "s1",
@@ -139,8 +138,12 @@ describe("acpEventDispatcher", () => {
         message: "Something went wrong",
       });
 
-      // No session created for log-only events
-      expect(getSession()).toBeUndefined();
+      // Error-level logs are now stored in session
+      const session = getSession();
+      expect(session).toBeDefined();
+      expect(session!.logs).toHaveLength(1);
+      expect(session!.logs[0].level).toBe("error");
+      expect(session!.logs[0].message).toBe("Something went wrong");
     });
 
     it("handles unknown event types gracefully", () => {
