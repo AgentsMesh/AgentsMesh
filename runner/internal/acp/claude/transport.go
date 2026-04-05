@@ -40,6 +40,10 @@ type Transport struct {
 	toolCalls   map[int]*toolCallState
 	toolCallsMu sync.Mutex
 
+	// hasStreamedText is set when text_delta events are received in the current turn.
+	// When true, the final assistant message's text blocks are skipped (already delivered).
+	hasStreamedText bool
+
 	// pendingInputs stores original tool input by requestID for permission responses.
 	pendingInputs   map[string]json.RawMessage
 	pendingInputsMu sync.Mutex

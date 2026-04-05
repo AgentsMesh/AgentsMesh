@@ -123,14 +123,7 @@ func (t *Transport) handleItemCompleted(sid string, params json.RawMessage) {
 				Success: success, ResultText: ic.Item.FilePath,
 			})
 		}
-	case "agentMessage":
-		// Agent message completed — emit a state update so the UI knows
-		// the assistant finished this message block.
-		if t.callbacks.OnToolCallUpdate != nil {
-			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
-				ToolCallID: ic.Item.ID, ToolName: "agentMessage", Status: "completed",
-			})
-		}
+		// agentMessage: content already delivered via item/agentMessage/delta — no action needed.
 	}
 }
 

@@ -88,9 +88,9 @@ func TestTransport_ContentBlockStop_NonToolUse(t *testing.T) {
 	}
 }
 
-func TestTransport_AssistantIgnoredWithStream(t *testing.T) {
-	// In streaming mode, assistant messages are always ignored.
-	// Content is delivered via stream_event only.
+func TestTransport_AssistantDeduplicatedWithStream(t *testing.T) {
+	// When stream_event text_delta has already delivered content,
+	// the final assistant message's text blocks are skipped (deduplication).
 	f := newFixture()
 	defer f.Close()
 	writeLine(f.PW, map[string]any{"type": "stream_event", "event": map[string]any{

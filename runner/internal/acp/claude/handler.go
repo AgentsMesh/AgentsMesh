@@ -97,6 +97,7 @@ func (t *Transport) handleContentBlockDelta(index int, raw json.RawMessage) {
 
 	switch d.Type {
 	case "text_delta":
+		t.hasStreamedText = true
 		if t.callbacks.OnContentChunk != nil {
 			t.callbacks.OnContentChunk(sid, acp.ContentChunk{
 				Text: d.Text,
@@ -213,6 +214,10 @@ func (t *Transport) handleAssistant(msg *message) {
 	for _, block := range assistantMsg.Content {
 		switch block.Type {
 		case "text":
+			// Skip if text was already delivered via stream_event text_delta.
+			if t.hasStreamedText {
+				continue
+			}
 			if block.Text != "" && t.callbacks.OnContentChunk != nil {
 				t.callbacks.OnContentChunk(sid, acp.ContentChunk{
 					Text: block.Text,
@@ -243,6 +248,9 @@ func (t *Transport) handleAssistant(msg *message) {
 }
 
 func (t *Transport) handleResult(msg *message) {
+	// Reset streaming flag for the next turn.
+	t.hasStreamedText = false
+
 	if msg.Subtype == "success" || msg.Subtype == "" {
 		if t.callbacks.OnStateChange != nil {
 			t.callbacks.OnStateChange(acp.StateIdle)

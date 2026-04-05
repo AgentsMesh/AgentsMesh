@@ -125,9 +125,9 @@ func TestTransport_HandleUser_MessageParseError(t *testing.T) {
 	f.Drain()
 }
 
-func TestTransport_AssistantIgnored(t *testing.T) {
-	// In streaming mode, assistant messages are always ignored —
-	// content is delivered via stream_event only.
+func TestTransport_AssistantNonStreaming(t *testing.T) {
+	// When no stream_event precedes the assistant message (non-streaming response),
+	// the content should be extracted and delivered as a chunk.
 	f := newFixture()
 	defer f.Close()
 	writeLine(f.PW, map[string]any{"type": "assistant", "message": map[string]any{
@@ -135,8 +135,11 @@ func TestTransport_AssistantIgnored(t *testing.T) {
 	}})
 	f.Drain()
 	_, chunks, _, _ := f.Snap()
-	if len(chunks) != 0 {
-		t.Errorf("expected 0 chunks (assistant ignored), got %d", len(chunks))
+	if len(chunks) != 1 {
+		t.Errorf("expected 1 chunk (non-streaming assistant), got %d", len(chunks))
+	}
+	if len(chunks) > 0 && chunks[0].Text != "Hello from assistant" {
+		t.Errorf("chunk text = %q", chunks[0].Text)
 	}
 }
 
