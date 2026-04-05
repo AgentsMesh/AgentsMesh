@@ -81,6 +81,12 @@ func (t *Transport) handleItemStarted(sid string, params json.RawMessage) {
 				ToolCallID: is.Item.ID, ToolName: "shell", Status: "running",
 			})
 		}
+	case "fileChange":
+		if t.callbacks.OnToolCallUpdate != nil {
+			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
+				ToolCallID: is.Item.ID, ToolName: "fileChange", Status: "running",
+			})
+		}
 	}
 }
 
@@ -107,6 +113,22 @@ func (t *Transport) handleItemCompleted(sid string, params json.RawMessage) {
 			t.callbacks.OnToolCallResult(sid, acp.ToolCallResult{
 				ToolCallID: ic.Item.ID, ToolName: "shell",
 				Success: exitCode == 0, ResultText: ic.Item.AggregatedOutput,
+			})
+		}
+	case "fileChange":
+		success := ic.Item.Status == "" || ic.Item.Status == "completed"
+		if t.callbacks.OnToolCallResult != nil {
+			t.callbacks.OnToolCallResult(sid, acp.ToolCallResult{
+				ToolCallID: ic.Item.ID, ToolName: "fileChange",
+				Success: success, ResultText: ic.Item.FilePath,
+			})
+		}
+	case "agentMessage":
+		// Agent message completed — emit a state update so the UI knows
+		// the assistant finished this message block.
+		if t.callbacks.OnToolCallUpdate != nil {
+			t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
+				ToolCallID: ic.Item.ID, ToolName: "agentMessage", Status: "completed",
 			})
 		}
 	}

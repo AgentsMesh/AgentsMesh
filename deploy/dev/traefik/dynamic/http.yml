@@ -17,6 +17,7 @@ http:
       service: relay
       middlewares:
         - relay-strip
+      priority: 30
 
   middlewares:
     relay-strip:

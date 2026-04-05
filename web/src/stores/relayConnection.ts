@@ -80,6 +80,11 @@ class RelayConnectionPool {
   async subscribe(podKey: string, subscriptionId: string, onMessage: (data: Uint8Array | string) => void): Promise<ConnectionHandle> {
     const conn = this.connections.get(podKey);
     if (conn) {
+      // If the WebSocket is dead (CLOSED/CLOSING), remove stale connection and create fresh one.
+      if (conn.ws.readyState === WebSocket.CLOSED || conn.ws.readyState === WebSocket.CLOSING) {
+        this.connections.delete(podKey);
+        return this.subscribe(podKey, subscriptionId, onMessage);
+      }
       if (conn.subscribers.has(subscriptionId)) {
         conn.subscribers.set(subscriptionId, onMessage);
         return this.createHandle(podKey, subscriptionId);

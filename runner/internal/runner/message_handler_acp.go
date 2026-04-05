@@ -47,7 +47,7 @@ func sendAcpViaRelay(pod *Pod, eventType, sessionID string, data any) {
 		// Log critical events that should not be silently lost.
 		// Permission requests cause agent to hang if the user never sees them;
 		// tool call results leave the UI spinner stuck forever.
-		if eventType == "permissionRequest" || eventType == "toolCallResult" {
+		if eventType == "permissionRequest" || eventType == "toolCallResult" || eventType == "log" {
 			logger.Pod().Warn("Failed to send critical ACP event via relay",
 				"pod_key", pod.PodKey, "event_type", eventType, "error", err)
 		}

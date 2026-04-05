@@ -142,13 +142,14 @@ BEGIN
     -- 4. 创建 Runner 注册令牌 (gRPC/mTLS)
     -- =========================================================================
     -- Token: dev-runner-token
-    -- bcrypt hash (cost=10)
+    -- SHA256 hash of "dev-runner-token"
+    -- echo -n 'dev-runner-token' | shasum -a 256
 
     INSERT INTO runner_grpc_registration_tokens (
         organization_id, token_hash, description, created_by_id, is_active, max_uses
     )
     SELECT v_org_id,
-           '$2a$10$Q7dK5K91JqD8ZhTqXyQYj.cRmlKn9crzuMkYb6gvUdEP3zu/RkzE2',
+           'cee9d12fb9fefdfafe98d97f5c8a247e071a0e6778089dee7cf2be571ee606d2',
            'Development Runner Token',
            v_user_id,
            TRUE,

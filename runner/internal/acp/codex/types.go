@@ -63,6 +63,7 @@ type itemStartedParams struct {
 			Value string `json:"value"`
 		} `json:"command,omitempty"` // commandExecution only
 		ToolName string `json:"toolName,omitempty"` // toolCall only
+		FilePath string `json:"filePath,omitempty"` // fileChange only
 	} `json:"item"`
 }
 
@@ -76,6 +77,7 @@ type itemCompletedParams struct {
 		ExitCode         *int   `json:"exitCode,omitempty"`         // commandExecution
 		AggregatedOutput string `json:"aggregatedOutput,omitempty"` // commandExecution
 		ToolName         string `json:"toolName,omitempty"`         // toolCall
+		FilePath         string `json:"filePath,omitempty"`         // fileChange
 	} `json:"item"`
 }
 

@@ -59,6 +59,8 @@ DNS.3 = nginx
 DNS.4 = *.local
 IP.1 = 127.0.0.1
 IP.2 = ::1
+IP.3 = 192.168.100.156
+IP.4 = 10.211.55.5
 EOF
 
 # Sign server certificate with CA (1 year validity)

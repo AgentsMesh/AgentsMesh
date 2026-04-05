@@ -224,9 +224,11 @@ func (h *Handler) handleToolCall(sessionID string, data json.RawMessage) {
 // handleToolCallUpdate handles tool_call_update (status changes, results).
 func (h *Handler) handleToolCallUpdate(sessionID string, data json.RawMessage) {
 	var tc struct {
-		ToolCallID string `json:"toolCallId"`
-		Title      string `json:"title"`
-		Status     string `json:"status"`
+		ToolCallID   string `json:"toolCallId"`
+		Title        string `json:"title"`
+		Status       string `json:"status"`
+		ResultText   string `json:"resultText"`
+		ErrorMessage string `json:"errorMessage"`
 	}
 	if err := json.Unmarshal(data, &tc); err != nil {
 		h.logger.Warn("failed to parse tool_call_update", "error", err)
@@ -243,9 +245,11 @@ func (h *Handler) handleToolCallUpdate(sessionID string, data json.RawMessage) {
 	if tc.Status == "completed" || tc.Status == "failed" {
 		if h.callbacks.OnToolCallResult != nil {
 			h.callbacks.OnToolCallResult(sessionID, ToolCallResult{
-				ToolCallID: tc.ToolCallID,
-				ToolName:   tc.Title,
-				Success:    tc.Status == "completed",
+				ToolCallID:   tc.ToolCallID,
+				ToolName:     tc.Title,
+				Success:      tc.Status == "completed",
+				ResultText:   tc.ResultText,
+				ErrorMessage: tc.ErrorMessage,
 			})
 		}
 	}

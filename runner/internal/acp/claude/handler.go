@@ -189,6 +189,59 @@ func (t *Transport) handleCanUseTool(requestID string, req *controlRequestPayloa
 	}
 }
 
+// handleAssistant extracts text content from a complete assistant message.
+// Claude may send assistant messages without prior stream_events for short responses.
+// The message.Message field contains a JSON object with role and content (array of blocks).
+func (t *Transport) handleAssistant(msg *message) {
+	if len(msg.Message) == 0 {
+		return
+	}
+
+	// Parse the assistant message to extract content blocks.
+	var assistantMsg struct {
+		Content []contentBlock `json:"content"`
+	}
+	if err := json.Unmarshal(msg.Message, &assistantMsg); err != nil {
+		t.logger.Debug("failed to parse assistant message", "error", err)
+		return
+	}
+
+	t.sessionMu.RLock()
+	sid := t.sessionID
+	t.sessionMu.RUnlock()
+
+	for _, block := range assistantMsg.Content {
+		switch block.Type {
+		case "text":
+			if block.Text != "" && t.callbacks.OnContentChunk != nil {
+				t.callbacks.OnContentChunk(sid, acp.ContentChunk{
+					Text: block.Text,
+					Role: "assistant",
+				})
+			}
+		case "thinking":
+			if block.Text != "" && t.callbacks.OnThinkingUpdate != nil {
+				t.callbacks.OnThinkingUpdate(sid, acp.ThinkingUpdate{Text: block.Text})
+			}
+		case "tool_use":
+			if t.callbacks.OnToolCallUpdate != nil {
+				argsJSON := ""
+				if block.Input != nil {
+					if b, err := json.Marshal(block.Input); err == nil {
+						argsJSON = string(b)
+					}
+				}
+				t.callbacks.OnToolCallUpdate(sid, acp.ToolCallUpdate{
+					ToolCallID:    block.ID,
+					ToolName:      block.Name,
+					Status:        "completed",
+					ArgumentsJSON: argsJSON,
+				})
+			}
+		}
+	}
+}
+
 func (t *Transport) handleResult(msg *message) {
 	if msg.Subtype == "success" || msg.Subtype == "" {
 		if t.callbacks.OnStateChange != nil {
@@ -198,6 +251,16 @@ func (t *Transport) handleResult(msg *message) {
 		// error_* subtypes
 		if t.callbacks.OnLog != nil {
 			t.callbacks.OnLog("error", fmt.Sprintf("Claude result error: subtype=%s result=%s", msg.Subtype, msg.Result))
+		}
+		// Emit error as assistant content so it appears in the UI activity stream.
+		if msg.Result != "" && t.callbacks.OnContentChunk != nil {
+			t.sessionMu.RLock()
+			sid := t.sessionID
+			t.sessionMu.RUnlock()
+			t.callbacks.OnContentChunk(sid, acp.ContentChunk{
+				Text: msg.Result,
+				Role: "assistant",
+			})
 		}
 		if t.callbacks.OnStateChange != nil {
 			t.callbacks.OnStateChange(acp.StateIdle)
