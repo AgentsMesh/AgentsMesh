@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   userAgentCredentialApi,
   agentApi,
+  type CredentialField,
   type CredentialProfileData,
   type CredentialProfilesByAgent,
   type AgentData,
@@ -11,7 +12,8 @@ import {
 import type { AgentCredentialsState, AgentCredentialsActions, CredentialFormData } from "./types";
 
 /**
- * Custom hook for managing agent credentials state and actions
+ * Custom hook for managing agent credentials state and actions.
+ * Fetches credential field definitions from config-schema API (AgentFile SSOT).
  */
 export function useAgentCredentials(
   t: (key: string) => string
@@ -25,6 +27,7 @@ export function useAgentCredentials(
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [runnerHostDefaults, setRunnerHostDefaults] = useState<Set<string>>(new Set());
+  const [credentialFieldsByAgent, setCredentialFieldsByAgent] = useState<Map<string, CredentialField[]>>(new Map());
 
   // Load data
   const loadData = useCallback(async () => {
@@ -38,34 +41,40 @@ export function useAgentCredentials(
       ]);
 
       setProfilesByAgent(profilesRes.items || []);
-      setAgents(agentsRes.agents || []);
+      const agentList = agentsRes.agents || [];
+      setAgents(agentList);
+
+      // Fetch credential fields for all agents in parallel
+      const fieldsMap = new Map<string, CredentialField[]>();
+      const schemaResults = await Promise.allSettled(
+        agentList.map((a: AgentData) => agentApi.getConfigSchema(a.slug))
+      );
+      agentList.forEach((a: AgentData, i: number) => {
+        const result = schemaResults[i];
+        if (result.status === "fulfilled") {
+          fieldsMap.set(a.slug, result.value.schema?.credential_fields || []);
+        }
+      });
+      setCredentialFieldsByAgent(fieldsMap);
 
       // Determine which agents have RunnerHost as default
       const runnerHostDefaultSet = new Set<string>();
-      const agentSlugs = new Set(agentsRes.agents?.map((a: AgentData) => a.slug) || []);
-
-      // Start by assuming all agents default to RunnerHost
+      const agentSlugs = new Set(agentList.map((a: AgentData) => a.slug));
       agentSlugs.forEach((slug: string) => runnerHostDefaultSet.add(slug));
-
-      // Remove from set if there's a custom default profile
       profilesRes.items?.forEach((item) => {
-        const hasCustomDefault = item.profiles.some((p) => p.is_default);
-        if (hasCustomDefault) {
+        if (item.profiles.some((p) => p.is_default)) {
           runnerHostDefaultSet.delete(item.agent_slug);
         }
       });
-
       setRunnerHostDefaults(runnerHostDefaultSet);
 
       // Auto-expand first agent or those with profiles
       const expandedIds = new Set<string>();
-      if (agentsRes.agents?.length > 0) {
-        expandedIds.add(agentsRes.agents[0].slug);
+      if (agentList.length > 0) {
+        expandedIds.add(agentList[0].slug);
       }
       profilesRes.items?.forEach((item) => {
-        if (item.profiles.length > 0) {
-          expandedIds.add(item.agent_slug);
-        }
+        if (item.profiles.length > 0) expandedIds.add(item.agent_slug);
       });
       setExpandedAgents(expandedIds);
     } catch (err) {
@@ -80,20 +89,15 @@ export function useAgentCredentials(
     loadData();
   }, [loadData]);
 
-  // Toggle agent expansion
   const toggleAgent = useCallback((agentSlug: string) => {
     setExpandedAgents((prev) => {
       const next = new Set(prev);
-      if (next.has(agentSlug)) {
-        next.delete(agentSlug);
-      } else {
-        next.add(agentSlug);
-      }
+      if (next.has(agentSlug)) next.delete(agentSlug);
+      else next.add(agentSlug);
       return next;
     });
   }, []);
 
-  // Set RunnerHost as default for an agent
   const handleSetRunnerHostDefault = useCallback(async (agentSlug: string) => {
     try {
       setError(null);
@@ -111,7 +115,6 @@ export function useAgentCredentials(
     }
   }, [profilesByAgent, loadData, t]);
 
-  // Set custom profile as default
   const handleSetDefault = useCallback(async (profileId: number) => {
     try {
       setError(null);
@@ -125,7 +128,6 @@ export function useAgentCredentials(
     }
   }, [loadData, t]);
 
-  // Delete profile (no confirmation - caller should handle confirmation dialog)
   const handleDelete = useCallback(async (profileId: number) => {
     try {
       setError(null);
@@ -139,35 +141,21 @@ export function useAgentCredentials(
     }
   }, [loadData, t]);
 
-  // Save credential profile (create or update)
-  // Sends only the active credential method's value; the other is excluded.
-  // Backend replaces the entire credentials object, clearing stale fields.
+  // Save credential profile — credentials keys are full ENV names from AgentFile.
   const handleSaveProfile = useCallback(async (
     agentSlug: string,
     data: CredentialFormData,
     editingProfile: CredentialProfileData | null
   ) => {
-    const credentials: Record<string, string> = {};
-
-    // base_url is shared across both methods
-    if (data.baseUrl) credentials.base_url = data.baseUrl;
-
-    // Only include the active credential method
-    if (data.credentialMethod === "api_key") {
-      if (data.apiKey) credentials.api_key = data.apiKey;
-    } else {
-      if (data.authToken) credentials.auth_token = data.authToken;
-    }
+    const credentials = Object.keys(data.credentials).length > 0 ? data.credentials : undefined;
 
     try {
       if (editingProfile) {
-        // When updating, always send credentials object to ensure stale fields
-        // from the other method are cleared (backend replaces entire object)
         await userAgentCredentialApi.update(editingProfile.id, {
           name: data.name,
           description: data.description || undefined,
           is_runner_host: false,
-          credentials: Object.keys(credentials).length > 0 ? credentials : undefined,
+          credentials,
         });
         setSuccess(t("settings.agentCredentials.profileUpdated"));
       } else {
@@ -175,7 +163,7 @@ export function useAgentCredentials(
           name: data.name,
           description: data.description || undefined,
           is_runner_host: false,
-          credentials: credentials,
+          credentials: data.credentials,
         });
         setSuccess(t("settings.agentCredentials.profileCreated"));
       }
@@ -188,30 +176,17 @@ export function useAgentCredentials(
     }
   }, [loadData, t]);
 
-  // Get profiles for a specific agent
   const getProfilesForAgent = useCallback((agentSlug: string): CredentialProfileData[] => {
     const group = profilesByAgent.find((g) => g.agent_slug === agentSlug);
     return group?.profiles || [];
   }, [profilesByAgent]);
 
   return {
-    // State
-    loading,
-    error,
-    success,
-    profilesByAgent,
-    agents,
-    expandedAgents,
-    runnerHostDefaults,
-
-    // Actions
-    toggleAgent,
-    handleSetRunnerHostDefault,
-    handleSetDefault,
-    handleDelete,
-    handleSaveProfile,
-    getProfilesForAgent,
-    setError,
-    setSuccess,
+    loading, error, success,
+    profilesByAgent, agents, expandedAgents, runnerHostDefaults,
+    credentialFieldsByAgent,
+    toggleAgent, handleSetRunnerHostDefault, handleSetDefault,
+    handleDelete, handleSaveProfile, getProfilesForAgent,
+    setError, setSuccess,
   };
 }

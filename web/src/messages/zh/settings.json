@@ -365,10 +365,6 @@
       "namePlaceholder": "例如：工作配置、个人配置",
       "descriptionLabel": "描述",
       "descriptionPlaceholder": "可选的配置描述",
-      "baseUrl": "Base URL",
-      "apiKey": "API 密钥",
-      "apiKeyPlaceholder": "留空以保持现有值",
-      "apiKeyEditHint": "留空以保持现有的 API 密钥",
       "profileCreated": "配置创建成功",
       "profileUpdated": "配置更新成功",
       "profileDeleted": "配置删除成功",
@@ -377,12 +373,15 @@
       "failedToDelete": "删除配置失败",
       "failedToSetDefault": "设置默认配置失败",
       "confirmDelete": "确定要删除此配置吗？",
-      "authToken": "Auth Token",
-      "authTokenPlaceholder": "留空以保持现有值",
-      "authTokenEditHint": "留空以保持现有的 Auth Token",
-      "credentialMethod": "认证方式",
-      "credentialMethodApiKey": "API 密钥",
-      "credentialMethodAuthToken": "Auth Token"
+      "secretPlaceholder": "留空保持现有值",
+      "secretEditHint": "留空保持现有值不变",
+      "fields": {
+        "ANTHROPIC_API_KEY": "API Key",
+        "ANTHROPIC_AUTH_TOKEN": "Auth Token",
+        "ANTHROPIC_BASE_URL": "Base URL",
+        "OPENAI_API_KEY": "API Key",
+        "GOOGLE_API_KEY": "API Key"
+      }
     },
     "sshKeys": {
       "title": "SSH 密钥",

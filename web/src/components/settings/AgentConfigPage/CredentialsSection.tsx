@@ -82,7 +82,11 @@ export function CredentialsSection({
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {profile.configured_fields?.length
-                    ? `${t("settings.agentCredentials.configured")}: ${profile.configured_fields.join(", ")}`
+                    ? `${t("settings.agentCredentials.configured")}: ${profile.configured_fields.map((f) => {
+                        const key = `settings.agentCredentials.fields.${f}`;
+                        const translated = t(key);
+                        return translated !== key ? translated : f;
+                      }).join(", ")}`
                     : t("settings.agentCredentials.notConfigured")}
                 </div>
               </div>

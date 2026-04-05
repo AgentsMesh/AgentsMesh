@@ -1,4 +1,4 @@
-import type { ConfigField, AgentData, CredentialProfileData } from "@/lib/api";
+import type { ConfigField, AgentData, CredentialProfileData, CredentialField } from "@/lib/api";
 
 /**
  * Props for AgentConfigPage component
@@ -19,6 +19,7 @@ export interface AgentConfigState {
   agent: AgentData | null;
   configFields: ConfigField[];
   configValues: Record<string, unknown>;
+  credentialFields: CredentialField[];
   credentialProfiles: CredentialProfileData[];
   isRunnerHostDefault: boolean;
 
@@ -48,20 +49,13 @@ export interface AgentConfigActions {
 }
 
 /**
- * Credential method type - api_key and auth_token are mutually exclusive
- */
-export type CredentialMethod = "api_key" | "auth_token";
-
-/**
- * Credential form data for add/edit dialog
+ * Credential form data for add/edit dialog.
+ * credentials key = full ENV name (e.g. "ANTHROPIC_API_KEY"), value = user input.
  */
 export interface CredentialFormData {
   name: string;
   description: string;
-  baseUrl: string;
-  apiKey: string;
-  authToken: string;
-  credentialMethod: CredentialMethod;
+  credentials: Record<string, string>;
 }
 
 /**
@@ -97,6 +91,7 @@ export interface RuntimeConfigSectionProps {
 export interface CredentialDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  credentialFields: CredentialField[];
   editingProfile: CredentialProfileData | null;
   onSubmit: (data: CredentialFormData, editingProfile: CredentialProfileData | null) => Promise<void>;
   t: (key: string) => string;

@@ -365,10 +365,6 @@
       "namePlaceholder": "e.g., Work Config, Personal",
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Optional description for this profile",
-      "baseUrl": "Base URL",
-      "apiKey": "API Key",
-      "apiKeyPlaceholder": "Leave empty to keep existing",
-      "apiKeyEditHint": "Leave empty to keep the existing API key",
       "profileCreated": "Profile created successfully",
       "profileUpdated": "Profile updated successfully",
       "profileDeleted": "Profile deleted successfully",
@@ -377,12 +373,15 @@
       "failedToDelete": "Failed to delete profile",
       "failedToSetDefault": "Failed to set default profile",
       "confirmDelete": "Are you sure you want to delete this profile?",
-      "authToken": "Auth Token",
-      "authTokenPlaceholder": "Leave empty to keep existing",
-      "authTokenEditHint": "Leave empty to keep the existing Auth Token",
-      "credentialMethod": "Authentication Method",
-      "credentialMethodApiKey": "API Key",
-      "credentialMethodAuthToken": "Auth Token"
+      "secretPlaceholder": "Leave empty to keep existing",
+      "secretEditHint": "Leave empty to keep the existing value",
+      "fields": {
+        "ANTHROPIC_API_KEY": "API Key",
+        "ANTHROPIC_AUTH_TOKEN": "Auth Token",
+        "ANTHROPIC_BASE_URL": "Base URL",
+        "OPENAI_API_KEY": "API Key",
+        "GOOGLE_API_KEY": "API Key"
+      }
     },
     "sshKeys": {
       "title": "SSH Keys",

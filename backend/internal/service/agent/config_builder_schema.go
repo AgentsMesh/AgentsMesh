@@ -19,7 +19,10 @@ func (b *ConfigBuilder) GetConfigSchema(ctx context.Context, agentSlug string) (
 		return b.getConfigSchemaFromAgentfile(*agentDef.AgentfileSource)
 	}
 	// No AgentFile = empty schema
-	return &ConfigSchemaResponse{Fields: []ConfigFieldResponse{}}, nil
+	return &ConfigSchemaResponse{
+		Fields:           []ConfigFieldResponse{},
+		CredentialFields: []CredentialFieldResponse{},
+	}, nil
 }
 
 // getConfigSchemaFromAgentfile parses an AgentFile and extracts CONFIG declarations as schema.
@@ -47,5 +50,17 @@ func (b *ConfigBuilder) getConfigSchemaFromAgentfile(source string) (*ConfigSche
 		}
 		result.Fields = append(result.Fields, field)
 	}
+
+	// Extract credential fields from ENV SECRET/TEXT declarations
+	for _, env := range spec.Env {
+		if env.Source != "" {
+			result.CredentialFields = append(result.CredentialFields, CredentialFieldResponse{
+				Name:     env.Name,
+				Type:     env.Source,
+				Optional: env.Optional,
+			})
+		}
+	}
+
 	return result, nil
 }

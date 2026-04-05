@@ -33,6 +33,7 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
     agent,
     configFields,
     configValues,
+    credentialFields,
     credentialProfiles,
     isRunnerHostDefault,
     error,
@@ -142,6 +143,7 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
       <CredentialDialog
         open={showCredentialDialog}
         onOpenChange={setShowCredentialDialog}
+        credentialFields={credentialFields}
         editingProfile={editingProfile}
         onSubmit={handleCredentialSubmit}
         t={t}

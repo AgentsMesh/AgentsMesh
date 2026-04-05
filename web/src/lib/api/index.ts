@@ -47,6 +47,7 @@ export type {
   ConfigField,
   ConfigFieldOption,
   ConfigSchema,
+  CredentialField,
 } from "./agent";
 
 // Repository

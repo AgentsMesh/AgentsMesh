@@ -1,4 +1,4 @@
-import type { CredentialProfileData, AgentData, CredentialProfilesByAgent } from "@/lib/api";
+import type { CredentialProfileData, AgentData, CredentialProfilesByAgent, CredentialField } from "@/lib/api";
 
 /**
  * State returned by useAgentCredentials hook
@@ -11,6 +11,7 @@ export interface AgentCredentialsState {
   agents: AgentData[];
   expandedAgents: Set<string>;
   runnerHostDefaults: Set<string>;
+  credentialFieldsByAgent: Map<string, CredentialField[]>;
 }
 
 /**
@@ -32,20 +33,13 @@ export interface AgentCredentialsActions {
 }
 
 /**
- * Credential method type - api_key and auth_token are mutually exclusive
- */
-export type CredentialMethod = "api_key" | "auth_token";
-
-/**
- * Credential form data for add/edit dialog
+ * Credential form data for add/edit dialog.
+ * credentials key = full ENV name (e.g. "ANTHROPIC_API_KEY"), value = user input.
  */
 export interface CredentialFormData {
   name: string;
   description: string;
-  baseUrl: string;
-  apiKey: string;
-  authToken: string;
-  credentialMethod: CredentialMethod;
+  credentials: Record<string, string>;
 }
 
 /**
@@ -66,11 +60,12 @@ export interface AgentItemProps {
 }
 
 /**
- * Props for CredentialProfileDialog component (shared)
+ * Props for CredentialProfileDialog component
  */
 export interface CredentialProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  credentialFields: CredentialField[];
   editingProfile: CredentialProfileData | null;
   onSubmit: (data: CredentialFormData) => Promise<void>;
   t: (key: string) => string;

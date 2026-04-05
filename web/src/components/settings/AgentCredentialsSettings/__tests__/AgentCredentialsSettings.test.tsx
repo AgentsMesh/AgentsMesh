@@ -18,6 +18,9 @@ vi.mock("../useAgentCredentials", () => ({
     agents: [{ name: "Claude Code", slug: "claude-code", is_builtin: true, is_active: true }],
     expandedAgents: new Set(["claude-code"]),
     runnerHostDefaults: new Set(["claude-code"]),
+    credentialFieldsByAgent: new Map([["claude-code", [
+      { name: "ANTHROPIC_API_KEY", type: "secret", optional: true },
+    ]]]),
     toggleAgent: vi.fn(),
     handleSetRunnerHostDefault: vi.fn(),
     handleSetDefault: vi.fn(),
@@ -55,10 +58,7 @@ vi.mock("../CredentialProfileDialog", () => ({
             await onSubmit({
               name: "Test",
               description: "",
-              baseUrl: "",
-              apiKey: "sk-test",
-              authToken: "",
-              credentialMethod: "api_key" as const,
+              credentials: { ANTHROPIC_API_KEY: "sk-test" },
             });
           } catch {
             // Simulate CredentialProfileDialog's catch behavior

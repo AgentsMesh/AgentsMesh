@@ -43,6 +43,14 @@ export interface ConfigField {
 // Config schema returned by Backend (raw, without i18n labels)
 export interface ConfigSchema {
   fields: ConfigField[];
+  credential_fields?: CredentialField[];
+}
+
+// Credential field definition from AgentFile ENV SECRET/TEXT declarations
+export interface CredentialField {
+  name: string; // Full ENV name, e.g. "ANTHROPIC_API_KEY"
+  type: "secret" | "text";
+  optional: boolean;
 }
 
 // User agent config interface (personal runtime configuration)

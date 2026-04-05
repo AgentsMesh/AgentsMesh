@@ -81,7 +81,16 @@ type ConfigBuildRequest struct {
 // ConfigSchemaResponse is the config schema returned to frontend
 // Frontend is responsible for i18n translation using slug + field.name as key
 type ConfigSchemaResponse struct {
-	Fields []ConfigFieldResponse `json:"fields"`
+	Fields           []ConfigFieldResponse       `json:"fields"`
+	CredentialFields []CredentialFieldResponse    `json:"credential_fields,omitempty"`
+}
+
+// CredentialFieldResponse describes a credential field from AgentFile ENV SECRET/TEXT declarations.
+// Frontend uses these to dynamically render credential profile forms.
+type CredentialFieldResponse struct {
+	Name     string `json:"name"`     // Full ENV name, e.g. "ANTHROPIC_API_KEY"
+	Type     string `json:"type"`     // "secret" or "text"
+	Optional bool   `json:"optional"`
 }
 
 // ConfigFieldResponse is a config field returned to frontend

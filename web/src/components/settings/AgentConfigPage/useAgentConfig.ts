@@ -6,6 +6,7 @@ import {
   userAgentConfigApi,
   userAgentCredentialApi,
   type ConfigField,
+  type CredentialField,
   type AgentData,
   type CredentialProfileData,
 } from "@/lib/api";
@@ -28,6 +29,7 @@ export function useAgentConfig(
   const [agent, setAgent] = useState<AgentData | null>(null);
   const [configFields, setConfigFields] = useState<ConfigField[]>([]);
   const [configValues, setConfigValues] = useState<Record<string, unknown>>({});
+  const [credentialFields, setCredentialFields] = useState<CredentialField[]>([]);
   const [credentialProfiles, setCredentialProfiles] = useState<CredentialProfileData[]>([]);
   const [isRunnerHostDefault, setIsRunnerHostDefault] = useState(true);
 
@@ -64,6 +66,9 @@ export function useAgentConfig(
       // Set config schema fields
       const fields = schemaRes.schema?.fields || [];
       setConfigFields(fields);
+
+      // Set credential fields from AgentFile ENV SECRET/TEXT declarations
+      setCredentialFields(schemaRes.schema?.credential_fields || []);
 
       // Initialize config values with defaults from schema
       const defaultValues: Record<string, unknown> = {};
@@ -199,34 +204,21 @@ export function useAgentConfig(
   }, [loadData, t]);
 
   // Save credential profile (create or update)
-  // Sends only the active credential method's value; the other is excluded.
-  // Backend replaces the entire credentials object, clearing stale fields.
+  // credentials keys are full ENV names from AgentFile declarations.
   const handleSaveProfile = useCallback(async (
     data: CredentialFormData,
     editingProfile: CredentialProfileData | null
   ) => {
     if (!agent) return;
 
-    const credentials: Record<string, string> = {};
-
-    // base_url is shared across both methods
-    if (data.baseUrl) credentials.base_url = data.baseUrl;
-
-    // Only include the active credential method
-    if (data.credentialMethod === "api_key") {
-      if (data.apiKey) credentials.api_key = data.apiKey;
-    } else {
-      if (data.authToken) credentials.auth_token = data.authToken;
-    }
+    const credentials = Object.keys(data.credentials).length > 0 ? data.credentials : undefined;
 
     if (editingProfile) {
-      // When updating, always send credentials object to ensure stale fields
-      // from the other method are cleared (backend replaces entire object)
       await userAgentCredentialApi.update(editingProfile.id, {
         name: data.name,
         description: data.description || undefined,
         is_runner_host: false,
-        credentials: Object.keys(credentials).length > 0 ? credentials : undefined,
+        credentials,
       });
       setSuccess(t("settings.agentCredentials.profileUpdated"));
     } else {
@@ -234,7 +226,7 @@ export function useAgentConfig(
         name: data.name,
         description: data.description || undefined,
         is_runner_host: false,
-        credentials: credentials,
+        credentials: data.credentials,
       });
       setSuccess(t("settings.agentCredentials.profileCreated"));
     }
@@ -250,6 +242,7 @@ export function useAgentConfig(
     agent,
     configFields,
     configValues,
+    credentialFields,
     credentialProfiles,
     isRunnerHostDefault,
     error,

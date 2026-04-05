@@ -33,6 +33,7 @@ export function AgentCredentialsSettings() {
     agents,
     expandedAgents,
     runnerHostDefaults,
+    credentialFieldsByAgent,
     toggleAgent,
     handleSetRunnerHostDefault,
     handleSetDefault,
@@ -137,6 +138,7 @@ export function AgentCredentialsSettings() {
       <CredentialProfileDialog
         open={showDialog}
         onOpenChange={setShowDialog}
+        credentialFields={selectedAgentSlug ? credentialFieldsByAgent.get(selectedAgentSlug) || [] : []}
         editingProfile={editingProfile}
         onSubmit={handleDialogSubmit}
         t={t}
