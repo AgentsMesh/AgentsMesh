@@ -102,89 +102,117 @@ jobs:
 
   # ===========================================================================
   # Deploy to US West production (main branch only, auto after build)
-  # Requires self-hosted runner with SSH access to production servers.
+  # Each service is an independent job for parallel execution and isolation.
   # ===========================================================================
 
-  deploy-uswest:
-    name: Deploy US West
+  deploy-uswest-backend:
+    name: Deploy US West Backend
     needs: build-images
     runs-on: [self-hosted, deploy]
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy Backend
-        run: |
+      - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
-          echo "Deploying Backend ${VERSION} to US West..."
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && git pull origin main"
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service backend --version ${VERSION}"
 
-      - name: Deploy Web
-        run: |
+  deploy-uswest-web:
+    name: Deploy US West Web
+    needs: build-images
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
-          echo "Deploying Web ${VERSION} to US West..."
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service web --version ${VERSION}"
 
-      - name: Deploy Web-Admin
-        run: |
+  deploy-uswest-web-admin:
+    name: Deploy US West Web-Admin
+    needs: build-images
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
-          echo "Deploying Web-Admin ${VERSION} to US West..."
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service web-admin --version ${VERSION}"
 
-      - name: Deploy Relay (uswest-relay-01)
-        run: |
-          echo "Deploying Relay to uswest-relay-01..."
-          ssh aliyun-us-west-relay-001 "cd /opt/agentsmesh && git pull origin main"
+  deploy-uswest-relay-01:
+    name: Deploy US West Relay 01
+    needs: build-images
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           ssh aliyun-us-west-relay-001 "cd /opt/agentsmesh/relay && ./deploy.sh uswest-relay-01 --pull"
 
-      - name: Deploy Relay (uswest-relay-beijing-02)
-        run: |
-          echo "Deploying Relay to uswest-relay-beijing-02..."
-          ssh aliyun-agentsmesh-us-relay-beijing-002 "cd /opt/agentsmesh && git pull origin main"
+  deploy-uswest-relay-beijing-02:
+    name: Deploy US West Relay Beijing 02
+    needs: build-images
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           ssh aliyun-agentsmesh-us-relay-beijing-002 "cd /opt/agentsmesh/relay && ./deploy.sh uswest-relay-beijing-02 --pull"
 
-      - name: Run Database Migration
-        run: |
-          echo "Running database migration on US West..."
+  migrate-uswest:
+    name: Migrate US West
+    needs: deploy-uswest-backend
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./migrate.sh uswest-prod --direction up"
 
   # ===========================================================================
   # Deploy to China production (main branch only, auto after build)
   # ===========================================================================
 
-  deploy-cn:
-    name: Deploy China
+  deploy-cn-backend:
+    name: Deploy CN Backend
     needs: build-images
     runs-on: [self-hosted, deploy]
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy Backend
-        run: |
+      - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
-          echo "Deploying Backend ${VERSION} to China..."
-          ssh aliyun-s001 "cd /opt/agentsmesh && git pull origin main"
           ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service backend --version ${VERSION}"
 
-      - name: Deploy Web
-        run: |
+  deploy-cn-web:
+    name: Deploy CN Web
+    needs: build-images
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
-          echo "Deploying Web ${VERSION} to China..."
           ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service web --version ${VERSION}"
 
-      - name: Deploy Web-Admin
-        run: |
+  deploy-cn-web-admin:
+    name: Deploy CN Web-Admin
+    needs: build-images
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
-          echo "Deploying Web-Admin ${VERSION} to China..."
           ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service web-admin --version ${VERSION}"
 
-      - name: Deploy Relay (cn-relay-01)
-        run: |
-          echo "Deploying Relay to cn-relay-01..."
-          ssh aliyun-cn-relay-01 "cd /opt/agentsmesh && git pull origin main"
+  deploy-cn-relay-01:
+    name: Deploy CN Relay 01
+    needs: build-images
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           ssh aliyun-cn-relay-01 "cd /opt/agentsmesh/relay && ./deploy.sh cn-relay-01 --pull"
 
-      - name: Run Database Migration
-        run: |
-          echo "Running database migration on China..."
+  migrate-cn:
+    name: Migrate CN
+    needs: deploy-cn-backend
+    runs-on: [self-hosted, deploy]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: |
           ssh aliyun-s001 "cd /opt/agentsmesh && ./migrate.sh cn-prod --direction up"
 
   # ===========================================================================
