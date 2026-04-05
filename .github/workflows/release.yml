@@ -78,8 +78,9 @@ jobs:
             ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.service }}
             ${{ env.REGISTRY }}/agentsmesh/${{ matrix.service }}
           tags: |
-            # main branch: short sha only
+            # main branch: short sha + latest
             type=sha,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
             # version tags: v1.0.0, v1.0
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
