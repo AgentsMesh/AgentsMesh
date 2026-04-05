@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { useEffect } from "react";
 import { MobileSidebar } from "../MobileSidebar";
 
-// Track onOpenChange passed to Drawer.Root
-let capturedOnOpenChange: ((open: boolean) => void) | null = null;
+// Track onOpenChange passed to Drawer.Root via a ref-like container
+const captured: { onOpenChange: ((open: boolean) => void) | null } = { onOpenChange: null };
 
 // Mock vaul Drawer
 vi.mock("vaul", () => {
@@ -13,7 +14,10 @@ vi.mock("vaul", () => {
     open: boolean;
     direction?: string;
   }) => {
-    capturedOnOpenChange = onOpenChange;
+    // Capture via useEffect to satisfy React compiler lint rules
+    useEffect(() => {
+      captured.onOpenChange = onOpenChange;
+    });
     return open ? <div data-testid="drawer-root">{children}</div> : null;
   };
 
@@ -102,7 +106,7 @@ vi.mock("@/lib/pod-utils", () => ({
 describe("MobileSidebar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    capturedOnOpenChange = null;
+    captured.onOpenChange = null;
   });
 
   afterEach(() => {
@@ -119,7 +123,7 @@ describe("MobileSidebar", () => {
     render(<MobileSidebar />);
 
     // Simulate vaul trying to close the drawer
-    capturedOnOpenChange?.(false);
+    captured.onOpenChange?.(false);
 
     expect(mockSetMobileSidebarOpen).toHaveBeenCalledWith(false);
   });
@@ -133,7 +137,7 @@ describe("MobileSidebar", () => {
     document.body.appendChild(dialogOverlay);
 
     // Simulate vaul trying to close the drawer
-    capturedOnOpenChange?.(false);
+    captured.onOpenChange?.(false);
 
     // Drawer should NOT close
     expect(mockSetMobileSidebarOpen).not.toHaveBeenCalled();
@@ -148,7 +152,7 @@ describe("MobileSidebar", () => {
     document.body.appendChild(dialogOverlay);
 
     // Simulate vaul opening the drawer
-    capturedOnOpenChange?.(true);
+    captured.onOpenChange?.(true);
 
     expect(mockSetMobileSidebarOpen).toHaveBeenCalledWith(true);
   });
@@ -162,14 +166,14 @@ describe("MobileSidebar", () => {
     document.body.appendChild(dialogOverlay);
 
     // Can't close while dialog is open
-    capturedOnOpenChange?.(false);
+    captured.onOpenChange?.(false);
     expect(mockSetMobileSidebarOpen).not.toHaveBeenCalled();
 
     // Remove the dialog
     dialogOverlay.remove();
 
     // Now drawer can close
-    capturedOnOpenChange?.(false);
+    captured.onOpenChange?.(false);
     expect(mockSetMobileSidebarOpen).toHaveBeenCalledWith(false);
   });
 
