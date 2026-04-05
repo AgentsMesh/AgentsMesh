@@ -135,6 +135,14 @@ export function MobileSidebar({ className }: MobileSidebarProps) {
     setMobileSidebarOpen(false);
   }, [setMobileSidebarOpen]);
 
+  // Guard: prevent drawer from closing when a nested dialog is open
+  const handleDrawerOpenChange = useCallback((open: boolean) => {
+    if (!open && document.querySelector('[data-dialog-overlay]')) {
+      return;
+    }
+    setMobileSidebarOpen(open);
+  }, [setMobileSidebarOpen]);
+
   const title = getActivityTitle(activeActivity);
   const sidebarCallbacks: SidebarCallbacks = {
     onCreatePod: handleCreatePod,
@@ -147,7 +155,7 @@ export function MobileSidebar({ className }: MobileSidebarProps) {
   return (
     <Drawer.Root
       open={mobileSidebarOpen}
-      onOpenChange={setMobileSidebarOpen}
+      onOpenChange={handleDrawerOpenChange}
       direction="right"
     >
       <Drawer.Portal>

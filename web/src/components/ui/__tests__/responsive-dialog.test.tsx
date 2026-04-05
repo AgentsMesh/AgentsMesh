@@ -24,6 +24,42 @@ describe("ResponsiveDialog", () => {
     expect(screen.getByText("Dialog Content")).toBeInTheDocument();
   });
 
+  it("marks overlay with data-dialog-overlay attribute", () => {
+    render(
+      <ResponsiveDialog open={true} onOpenChange={vi.fn()}>
+        <ResponsiveDialogContent>
+          <div>Content</div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+    );
+
+    const overlay = document.querySelector("[data-dialog-overlay]");
+    expect(overlay).toBeInTheDocument();
+    expect(overlay).toHaveClass("fixed", "inset-0", "z-50");
+  });
+
+  it("removes data-dialog-overlay from DOM when closed", () => {
+    const { rerender } = render(
+      <ResponsiveDialog open={true} onOpenChange={vi.fn()}>
+        <ResponsiveDialogContent>
+          <div>Content</div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+    );
+
+    expect(document.querySelector("[data-dialog-overlay]")).toBeInTheDocument();
+
+    rerender(
+      <ResponsiveDialog open={false} onOpenChange={vi.fn()}>
+        <ResponsiveDialogContent>
+          <div>Content</div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+    );
+
+    expect(document.querySelector("[data-dialog-overlay]")).not.toBeInTheDocument();
+  });
+
   it("does not render when closed", () => {
     render(
       <ResponsiveDialog open={false} onOpenChange={vi.fn()}>
