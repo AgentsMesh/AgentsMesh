@@ -74,6 +74,14 @@ export const docsNavSections: DocNavSection[] = [
         titleKey: "docs.nav.repositoriesGit",
         href: "/docs/concepts/repositories-git",
       },
+      {
+        titleKey: "docs.nav.agentfile",
+        href: "/docs/concepts/agentfile",
+      },
+      {
+        titleKey: "docs.nav.agentfileLayer",
+        href: "/docs/concepts/agentfile-layer",
+      },
       { titleKey: "docs.nav.mcpTools", href: "/docs/runners/mcp-tools" },
       {
         titleKey: "docs.nav.teamManagement",

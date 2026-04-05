@@ -20,6 +20,8 @@
       "loops": "Loops",
       "repositories": "Repositories",
       "repositoriesGit": "Repositories & Git",
+      "agentfile": "AgentFile",
+      "agentfileLayer": "AgentFile Layer",
       "runners": "Runners",
       "runnerSetup": "Runner Setup",
       "mcpTools": "MCP Tools",
@@ -222,6 +224,98 @@
           "addRepoSteps": "Go to Settings → Repositories → Add Repository. Select your Git provider, authenticate, and choose the repositories to connect.",
           "removeRepo": "Removing a Repository",
           "removeRepoSteps": "Removing a repository disconnects it from AgentsMesh. Existing Pods using this repository will not be affected, but new Pods cannot be created with it."
+        }
+      },
+      "agentfile": {
+        "title": "AgentFile Syntax Reference",
+        "description": "Complete reference for AgentFile — the domain-specific language (DSL) that defines how AI agent execution environments are configured in AgentsMesh.",
+        "whatIs": {
+          "title": "What is AgentFile?",
+          "description": "AgentFile is a declarative DSL for configuring AI agent execution environments, similar to how Dockerfile defines container builds. Each agent in AgentsMesh has an AgentFile that specifies the CLI command, environment variables, configuration options, and build logic needed to launch the agent."
+        },
+        "structure": {
+          "title": "Structure",
+          "description": "An AgentFile consists of two types of statements: declarations and build logic.",
+          "declarationsTitle": "Declarations (UPPERCASE)",
+          "declarationsDesc": "Top-level keywords that define the agent's identity, configuration schema, environment, and integrations. Examples: AGENT, CONFIG, ENV, MODE, MCP.",
+          "buildLogicTitle": "Build Logic (lowercase)",
+          "buildLogicDesc": "Imperative statements that construct CLI arguments, write files, and apply conditional logic at build time. Examples: arg, file, mkdir, if/else, for/in."
+        },
+        "declarations": {
+          "title": "Declaration Keywords",
+          "description": "Declarations define the agent's configuration schema and runtime environment. They are written in UPPERCASE.",
+          "agentDesc": "The CLI command used to launch the agent. Accepts a quoted string with the command and optional default arguments.",
+          "executableDesc": "The name of the executable binary. Used by the Runner to verify the agent is installed.",
+          "configDesc": "Defines a user-configurable option. Types: BOOL, STRING, NUMBER, SECRET, SELECT(\"opt1\",\"opt2\"). Optionally set a default value with = .",
+          "envDesc": "Declares an environment variable. Use SECRET for sensitive values, TEXT for plain text, OPTIONAL to mark it non-required. Use = \"value\" for static values.",
+          "modeDesc": "Sets the execution mode. 'pty' runs the agent in a PTY terminal. 'acp' uses the Agent Communication Protocol with optional arguments.",
+          "credentialDesc": "Specifies which credential profile to use. Use a quoted profile name or 'runner_host' to use the Runner machine's credentials.",
+          "promptDesc": "Sets the initial prompt sent to the agent. PROMPT_POSITION controls where the prompt is injected: prepend (before user prompt), append (after), or none (disabled).",
+          "repoDesc": "REPO sets the repository by slug or URL. BRANCH sets the branch name. GIT_CREDENTIAL selects the Git authentication method: http, ssh, or token.",
+          "mcpDesc": "Enables or disables MCP tool integration. When ON, an optional FORMAT can specify the protocol format (e.g., streamable-http).",
+          "skillsDesc": "Attaches reusable skill definitions to the agent. Skills are referenced by their slug, separated by commas.",
+          "setupDesc": "A shell script that runs before the agent starts. Use heredoc syntax (<<LABEL...LABEL). Optional timeout= parameter sets the maximum execution time in seconds.",
+          "removeDesc": "Removes a previously defined item. Can remove ENV variables, SKILLS, CLI arguments (arg), or files (file)."
+        },
+        "buildLogic": {
+          "title": "Build Logic",
+          "description": "Build logic statements are lowercase and execute during the AgentFile evaluation phase. They construct CLI arguments, write files, and apply conditional logic."
+        },
+        "expressions": {
+          "title": "Expressions",
+          "description": "AgentFile supports a variety of expression types that can be used in build logic and declarations.",
+          "typeHeader": "Type",
+          "exampleHeader": "Example"
+        },
+        "builtinVars": {
+          "title": "Built-in Variables",
+          "description": "These variables are automatically available during AgentFile evaluation and provide access to configuration values and runtime context.",
+          "variableHeader": "Variable",
+          "descHeader": "Description",
+          "configDesc": "User-provided configuration values defined by CONFIG declarations",
+          "sandboxRoot": "Root directory of the sandbox environment",
+          "sandboxWorkDir": "Working directory inside the sandbox (may differ from root when a repo is cloned)",
+          "mcpEnabled": "Boolean indicating whether MCP is enabled",
+          "mcpServers": "List of MCP server configuration paths",
+          "mcpFormat": "The MCP protocol format string",
+          "modeDesc": "Current execution mode ('pty' or 'acp')"
+        },
+        "escaping": {
+          "title": "String Escaping",
+          "description": "AgentFile strings support standard escape sequences inside double-quoted strings:"
+        },
+        "fullExample": {
+          "title": "Full Example",
+          "description": "Here is a complete AgentFile for Claude Code, showing declarations, configuration, build logic, and setup script:"
+        }
+      },
+      "agentfileLayer": {
+        "title": "AgentFile Layer",
+        "description": "AgentFile Layers let you override agent configuration on a per-Pod basis without modifying the base AgentFile.",
+        "whatIs": {
+          "title": "What is AgentFile Layer?",
+          "description": "An AgentFile Layer is a user-provided override that is merged on top of the base AgentFile at Pod creation time. AgentsMesh uses a 3-tier merge model: the base AgentFile (agent defaults) is merged with user preferences (saved settings), then the Layer (per-Pod runtime overrides) is applied last. The Layer takes highest priority."
+        },
+        "supported": {
+          "title": "Supported Declarations",
+          "description": "Only a subset of AgentFile declarations can be used in a Layer. These are the declarations that make sense to override at runtime:"
+        },
+        "apiUsage": {
+          "title": "API Usage",
+          "description": "When creating a Pod via the REST API, pass the Layer as the agentfile_layer field in the request body. The Layer is a string containing AgentFile syntax:"
+        },
+        "editor": {
+          "title": "Frontend Editor",
+          "description": "In the Pod creation form, toggle Source Mode to edit the AgentFile Layer directly using the built-in CodeMirror editor with syntax highlighting and auto-completion. Form fields (model, prompt, repository, etc.) are automatically synced with the Layer content."
+        },
+        "examples": {
+          "title": "Common Examples",
+          "description": "Here are common Layer patterns for customizing Pod behavior:",
+          "overrideModel": "Override the model",
+          "permissionMode": "Set permission mode",
+          "addPrompt": "Add an initial prompt",
+          "selectRepo": "Select a repository and branch",
+          "switchMode": "Switch to ACP mode"
         }
       }
     },

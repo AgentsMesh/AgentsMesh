@@ -71,6 +71,16 @@ const docsMetadataMap: Record<string, DocsMeta> = {
     description:
       "Connect Git providers, manage repository access, configure SSH keys, and use Git worktree isolation with AI agents.",
   },
+  "/docs/concepts/agentfile": {
+    title: "AgentFile Syntax Reference",
+    description:
+      "Complete reference for AgentFile — the DSL for configuring AI agent execution environments, similar to Dockerfile for containers.",
+  },
+  "/docs/concepts/agentfile-layer": {
+    title: "AgentFile Layer",
+    description:
+      "Learn about AgentFile Layers — per-Pod override mechanism with a 3-tier merge model for customizing agent configuration at runtime.",
+  },
   "/docs/features/tickets": {
     title: "Tickets",
     description:
