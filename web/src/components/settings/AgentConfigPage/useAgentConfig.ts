@@ -59,7 +59,7 @@ export function useAgentConfig(
 
       // Load data in parallel
       const [schemaRes, credentialsRes] = await Promise.all([
-        agentApi.getConfigSchema(foundAgent.slug).catch(() => ({ schema: { fields: [] } })),
+        agentApi.getConfigSchema(foundAgent.slug).catch(() => ({ schema: { fields: [], credential_fields: [] } })),
         userAgentCredentialApi.list().catch(() => ({ items: [] })),
       ]);
 
