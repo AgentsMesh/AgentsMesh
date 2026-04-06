@@ -98,16 +98,6 @@ func TestGRPCRunnerAdapter_HandleProtoMessage(t *testing.T) {
 		assert.True(t, agentStatusReceived)
 	})
 
-	t.Run("pod resized message (backward compat, updates heartbeat only)", func(t *testing.T) {
-		msg := &runnerv1.RunnerMessage{
-			Payload: &runnerv1.RunnerMessage_PodResized{
-				PodResized: &runnerv1.PodResizedEvent{PodKey: "test-pod", Cols: 120, Rows: 40},
-			},
-		}
-		adapter.handleProtoMessage(context.Background(), 1, conn, msg)
-		// No callback — terminal size tracking removed; just verifies no panic.
-	})
-
 	t.Run("error message routes to HandlePodError callback", func(t *testing.T) {
 		var podErrorReceived bool
 		connMgr.SetPodErrorCallback(func(runnerID int64, data *runnerv1.ErrorEvent) {

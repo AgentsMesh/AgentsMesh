@@ -31,9 +31,6 @@ type ConnectionSender interface {
 	// status is "completed" or "error" — decided by Runner.
 	SendPodTerminated(podKey string, exitCode int32, errorMsg string, status string) error
 
-	// SendPodResized sends a pod terminal resize event to the server.
-	SendPodResized(podKey string, cols, rows int32) error
-
 	// SendError sends an error event to the server.
 	SendError(podKey, code, message string) error
 

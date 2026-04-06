@@ -68,13 +68,6 @@ func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runne
 	}
 }
 
-// HandlePodResized handles pod resized event (Proto type).
-// Terminal size tracking removed — resize flows through Relay. Kept for backward
-// compatibility with old runners (updates heartbeat timestamp).
-func (cm *RunnerConnectionManager) HandlePodResized(runnerID int64, data *runnerv1.PodResizedEvent) {
-	cm.UpdateHeartbeat(runnerID)
-}
-
 // HandlePodInitProgress handles pod init progress event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodInitProgress(runnerID int64, data *runnerv1.PodInitProgressEvent) {
 	cm.UpdateHeartbeat(runnerID)

@@ -127,12 +127,6 @@ func (r *WebhookRouter) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("/:org_slug/github/:repo_id", r.handleGitHubWebhookWithRepo)
 	rg.POST("/:org_slug/gitee/:repo_id", r.handleGiteeWebhookWithRepo)
 
-	// Legacy git webhook endpoints (backward compatibility)
-	// These use global secrets from config
-	rg.POST("/gitlab", r.handleGitLabWebhook)
-	rg.POST("/github", r.handleGitHubWebhook)
-	rg.POST("/gitee", r.handleGiteeWebhook)
-
 	// Payment webhook endpoints
 	rg.POST("/stripe", r.handleStripeWebhook)
 	rg.POST("/lemonsqueezy", r.handleLemonSqueezyWebhook)

@@ -226,9 +226,9 @@ func TestRegisterRoutes(t *testing.T) {
 	// Should not panic when registering routes
 	router.RegisterRoutes(rg)
 
-	// Verify routes are registered by checking a test request
+	// Verify routes are registered by checking a test request (new format)
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/webhooks/gitlab", bytes.NewReader([]byte(`{"object_kind": "push"}`)))
+	req := httptest.NewRequest("POST", "/webhooks/test-org/gitlab/123", bytes.NewReader([]byte(`{"object_kind": "push"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	engine.ServeHTTP(w, req)
 

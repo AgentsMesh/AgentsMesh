@@ -43,10 +43,6 @@ func (p *Provider) GetCustomerPortalURL(ctx context.Context, req *types.Customer
 	// The SubscriptionID is required to get the portal URL
 	subscriptionID := req.SubscriptionID
 	if subscriptionID == "" {
-		// Fallback: some callers may pass subscription ID as CustomerID for backwards compatibility
-		subscriptionID = req.CustomerID
-	}
-	if subscriptionID == "" {
 		return nil, fmt.Errorf("subscription_id is required for LemonSqueezy customer portal")
 	}
 

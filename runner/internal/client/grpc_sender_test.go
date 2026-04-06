@@ -218,19 +218,6 @@ func TestSendAgentStatus(t *testing.T) {
 	assert.Equal(t, "executing", status.AgentStatus.Status)
 }
 
-func TestSendPodResized(t *testing.T) {
-	conn := newTestConnection()
-	setFakeStream(conn)
-
-	err := conn.SendPodResized("pod-1", 120, 40)
-	require.NoError(t, err)
-
-	msg := <-conn.controlCh
-	resized, ok := msg.Payload.(*runnerv1.RunnerMessage_PodResized)
-	require.True(t, ok)
-	assert.Equal(t, int32(120), resized.PodResized.Cols)
-}
-
 func TestSendOSCNotification(t *testing.T) {
 	conn := newTestConnection()
 	setFakeStream(conn)

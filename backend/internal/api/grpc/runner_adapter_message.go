@@ -57,10 +57,6 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 		// Direct Proto type passing - no conversion
 		a.connManager.HandleAgentStatus(runnerID, payload.AgentStatus)
 
-	case *runnerv1.RunnerMessage_PodResized:
-		// Direct Proto type passing - no conversion
-		a.connManager.HandlePodResized(runnerID, payload.PodResized)
-
 	case *runnerv1.RunnerMessage_PodInitProgress:
 		// Direct Proto type passing - no conversion
 		a.connManager.HandlePodInitProgress(runnerID, payload.PodInitProgress)

@@ -137,24 +137,6 @@ func TestConnectionManager_HandleAgentStatus(t *testing.T) {
 	assert.Equal(t, event, callbackData)
 }
 
-func TestConnectionManager_HandlePodResized(t *testing.T) {
-	cm := NewRunnerConnectionManager(newTestLogger())
-	defer cm.Close()
-
-	stream := newMockRunnerStream()
-	defer stream.Close()
-
-	cm.AddConnection(1, "test-node", "test-org", stream)
-
-	// HandlePodResized updates heartbeat (backward compat); no callback since terminal size tracking removed.
-	event := &runnerv1.PodResizedEvent{
-		PodKey: "test-pod",
-		Cols:   120,
-		Rows:   40,
-	}
-	cm.HandlePodResized(1, event)
-}
-
 func TestConnectionManager_HandlePodInitProgress(t *testing.T) {
 	cm := NewRunnerConnectionManager(newTestLogger())
 	defer cm.Close()

@@ -180,13 +180,11 @@ func TestEnhancedMessageService(t *testing.T) {
 	})
 
 	t.Run("get messages mentioning", func(t *testing.T) {
-		// Legacy message: text-based @mention (fallback path)
-		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "@mention-pod hello", channel.MessageMetadata{}, nil)
-		// Structured mention: via MentionInput (JSONB path)
+		// Structured mention: via MentionInput (JSONB metadata path)
 		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "hello structured", channel.MessageMetadata{}, []MentionInput{{Type: "pod", ID: "mention-pod"}})
 		messages, _, err := svc.GetMessagesMentioning(ctx, ch.ID, "mention-pod", 10)
-		if err != nil || len(messages) < 2 {
-			t.Errorf("GetMessagesMentioning failed: %v, count=%d (want >=2)", err, len(messages))
+		if err != nil || len(messages) < 1 {
+			t.Errorf("GetMessagesMentioning failed: %v, count=%d (want >=1)", err, len(messages))
 		}
 	})
 

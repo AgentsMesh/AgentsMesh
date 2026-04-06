@@ -116,17 +116,6 @@ func (m *MockConnection) SendPodTerminated(podKey string, exitCode int32, errorM
 
 // NOTE: SendTerminalOutput removed - output is exclusively streamed via Relay
 
-// SendPodResized implements Connection.
-func (m *MockConnection) SendPodResized(podKey string, cols, rows int32) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.SendErr != nil {
-		return m.SendErr
-	}
-	m.Events = append(m.Events, EventCall{Type: MsgTypePodResized, Data: map[string]interface{}{"pod_key": podKey, "cols": cols, "rows": rows}})
-	return nil
-}
-
 // SendError implements Connection.
 func (m *MockConnection) SendError(podKey, code, message string) error {
 	m.mu.Lock()

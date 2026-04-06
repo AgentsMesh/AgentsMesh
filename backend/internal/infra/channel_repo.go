@@ -165,12 +165,10 @@ func (r *channelRepository) GetMessagesMentioning(ctx context.Context, channelID
 	// Using two LIKE conditions scopes the match to the mentioned_pods field, avoiding false
 	// positives from pod keys appearing elsewhere in the JSON (e.g. reply_to, sender context).
 	// Works cross-database (PostgreSQL JSONB cast to text and SQLite text no-op).
-	// Text LIKE fallback: matches legacy "@podKey" mentions in content.
 	podValuePattern := `%"` + podKey + `"%`
-	textPattern := "%@" + podKey + "%"
 	if err := r.db.WithContext(ctx).
-		Where(`channel_id = ? AND is_deleted = FALSE AND ((CAST(metadata AS TEXT) LIKE '%mentioned_pods%' AND CAST(metadata AS TEXT) LIKE ?) OR content LIKE ?)`,
-			channelID, podValuePattern, textPattern).
+		Where(`channel_id = ? AND is_deleted = FALSE AND CAST(metadata AS TEXT) LIKE '%mentioned_pods%' AND CAST(metadata AS TEXT) LIKE ?`,
+			channelID, podValuePattern).
 		Order("created_at DESC, id DESC").
 		Limit(limit + 1).
 		Find(&messages).Error; err != nil {

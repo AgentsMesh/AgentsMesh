@@ -568,9 +568,9 @@ Admin API requires system administrator privileges (`is_system_admin = true`).
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/webhooks/github` | GitHub webhook |
-| POST | `/webhooks/gitlab` | GitLab webhook |
-| POST | `/webhooks/gitee` | Gitee webhook |
+| POST | `/webhooks/:org_slug/github/:repo_id` | GitHub webhook |
+| POST | `/webhooks/:org_slug/gitlab/:repo_id` | GitLab webhook |
+| POST | `/webhooks/:org_slug/gitee/:repo_id` | Gitee webhook |
 | POST | `/webhooks/stripe` | Stripe payment webhook |
 | POST | `/webhooks/alipay` | Alipay payment webhook |
 | POST | `/webhooks/wechat` | WeChat Pay webhook |

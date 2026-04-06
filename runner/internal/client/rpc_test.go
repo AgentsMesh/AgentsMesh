@@ -41,7 +41,6 @@ func (m *mockSender) SendPodInitProgress(string, string, int32, string) error {
 }
 func (m *mockSender) SendError(string, string, string) error                 { return nil }
 func (m *mockSender) SendAgentStatus(string, string) error                   { return nil }
-func (m *mockSender) SendPodResized(string, int32, int32) error              { return nil }
 func (m *mockSender) SendOSCNotification(string, string, string) error       { return nil }
 func (m *mockSender) SendOSCTitle(string, string) error                      { return nil }
 func (m *mockSender) SendRequestRelayToken(string, string) error             { return nil }

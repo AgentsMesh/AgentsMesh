@@ -12,7 +12,6 @@ const (
 	// Event types (Runner -> Backend)
 	MsgTypePodCreated    MessageType = "pod_created"
 	MsgTypePodTerminated MessageType = "pod_terminated"
-	MsgTypePodResized    MessageType = "pod_resized"
 	// NOTE: MsgTypeTerminalOutput removed - output is exclusively streamed via Relay
 )
 

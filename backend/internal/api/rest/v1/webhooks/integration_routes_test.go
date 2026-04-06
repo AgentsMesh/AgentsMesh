@@ -51,9 +51,9 @@ func TestRegisterRoutesWithMock(t *testing.T) {
 	// Should not panic when registering routes
 	router.RegisterRoutes(rg)
 
-	// Verify routes are registered by testing GitLab webhook
+	// Verify routes are registered by testing GitLab webhook (new format with org_slug/repo_id)
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/webhooks/gitlab", bytes.NewReader([]byte(`{"object_kind": "push"}`)))
+	req := httptest.NewRequest("POST", "/webhooks/test-org/gitlab/123", bytes.NewReader([]byte(`{"object_kind": "push"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	engine.ServeHTTP(w, req)
 

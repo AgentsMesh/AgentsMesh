@@ -46,7 +46,6 @@ func TestMockConnection_SendEvents(t *testing.T) {
 
 	_ = mc.SendPodCreated("pod-1", 1234, "/sandbox", "main")
 	_ = mc.SendPodTerminated("pod-1", 0, "", "completed")
-	_ = mc.SendPodResized("pod-1", 80, 24)
 	_ = mc.SendError("pod-1", "err", "msg")
 	_ = mc.SendPodInitProgress("pod-1", "clone", 50, "cloning...")
 	_ = mc.SendRequestRelayToken("pod-1", "wss://relay")
@@ -58,7 +57,7 @@ func TestMockConnection_SendEvents(t *testing.T) {
 	_ = mc.SendMessage(&runnerv1.RunnerMessage{})
 
 	events := mc.GetEvents()
-	assert.Len(t, events, 12)
+	assert.Len(t, events, 11)
 }
 
 func TestMockConnection_SendErr(t *testing.T) {
