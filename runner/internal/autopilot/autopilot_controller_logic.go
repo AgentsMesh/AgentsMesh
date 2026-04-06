@@ -78,9 +78,9 @@ func (ac *AutopilotController) OnPodWaiting() {
 	}()
 }
 
-// sendInitialPrompt starts the first iteration when Pod is waiting.
+// sendPrompt starts the first iteration when Pod is waiting.
 // This launches the control process which will use MCP tools to interact with Pod.
-func (ac *AutopilotController) sendInitialPrompt() {
+func (ac *AutopilotController) sendPrompt() {
 	ac.log.Info("Starting initial iteration", "autopilot_key", ac.key)
 
 	// Update trigger time to prevent OnPodWaiting from double-triggering

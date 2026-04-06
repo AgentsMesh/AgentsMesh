@@ -9,7 +9,7 @@ import (
 // Aider specific scenario tests
 // Aider is a popular CLI coding assistant with distinctive prompts
 
-func TestAider_InitialPrompt(t *testing.T) {
+func TestAider_Prompt(t *testing.T) {
 	d := NewMultiSignalDetector(testDetectorConfig())
 
 	simulateOutputAndScreen(d, 400, []string{

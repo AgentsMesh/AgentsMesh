@@ -136,7 +136,7 @@ export const ticketApi = {
     }>(`${orgPath("/tickets")}/${slug}/pods${params}`);
   },
   createPod: (slug: string, data: {
-    runner_id: number; initial_prompt?: string; model?: string; permission_mode?: string;
+    runner_id: number; prompt?: string; model?: string; permission_mode?: string;
   }) =>
     request<{ message: string; pod: { pod_key: string; status: string } }>(
       `${orgPath("/tickets")}/${slug}/pods`, { method: "POST", body: data }

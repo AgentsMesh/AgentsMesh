@@ -55,9 +55,6 @@ func (b *PodBuilder) Build(ctx context.Context) (*Pod, error) {
 
 	// Handle prompt injection into args
 	prompt := b.cmd.Prompt
-	if prompt == "" {
-		prompt = b.cmd.GetInitialPrompt() //nolint:staticcheck // deprecated fallback
-	}
 	if prompt != "" {
 		switch b.cmd.PromptPosition {
 		case "prepend":

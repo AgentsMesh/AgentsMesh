@@ -115,7 +115,7 @@ describe("useCreatePodForm - credential via agentfile_layer (SSOT)", () => {
     expect(createArg).not.toHaveProperty("repository_id");
     expect(createArg).not.toHaveProperty("interaction_mode");
     expect(createArg).not.toHaveProperty("branch_name");
-    expect(createArg).not.toHaveProperty("initial_prompt");
+    expect(createArg).not.toHaveProperty("prompt");
     expect(createArg).not.toHaveProperty("config_overrides");
   });
 });

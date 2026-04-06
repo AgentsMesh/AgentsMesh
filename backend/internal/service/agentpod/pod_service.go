@@ -45,7 +45,7 @@ type CreatePodRequest struct {
 	RepositoryID      *int64
 	TicketID          *int64
 	CreatedByID       int64
-	InitialPrompt     string
+	Prompt            string
 	Alias             *string
 	BranchName        *string
 	Model             string
@@ -116,7 +116,7 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 		CreatedByID:         req.CreatedByID,
 		Status:              agentpod.StatusInitializing,
 		AgentStatus:         agentpod.AgentStatusIdle,
-		InitialPrompt:       req.InitialPrompt,
+		Prompt:              req.Prompt,
 		Alias:               req.Alias,
 		BranchName:          req.BranchName,
 		Model:               &model,
@@ -151,8 +151,8 @@ func (s *PodService) CreatePodForTicket(ctx context.Context, req *CreatePodReque
 		return nil, fmt.Errorf("ticket not found: %w", err)
 	}
 
-	if req.InitialPrompt == "" {
-		req.InitialPrompt = fmt.Sprintf("Working on ticket: %s\nTitle: %s", slug, title)
+	if req.Prompt == "" {
+		req.Prompt = fmt.Sprintf("Working on ticket: %s\nTitle: %s", slug, title)
 	}
 
 	return s.CreatePod(ctx, req)

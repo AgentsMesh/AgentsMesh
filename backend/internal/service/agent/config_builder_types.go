@@ -51,8 +51,8 @@ type ConfigBuildRequest struct {
 	// Local path mode (resume from existing sandbox)
 	LocalPath string
 
-	// Initial prompt (from AgentFile PROMPT declaration)
-	InitialPrompt string
+	// Prompt (from AgentFile PROMPT declaration)
+	Prompt string
 
 	// Runtime info (provided by Runner during handshake)
 	MCPPort int

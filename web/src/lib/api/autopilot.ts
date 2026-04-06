@@ -27,7 +27,7 @@ export interface AutopilotControllerData {
     reason?: string;
   };
   user_takeover: boolean;
-  initial_prompt?: string;
+  prompt?: string;
   started_at?: string;
   last_iteration_at?: string;
   created_at: string;
@@ -48,7 +48,7 @@ export interface AutopilotIterationData {
 // Create AutopilotController request
 export interface CreateAutopilotControllerRequest {
   pod_key: string;
-  initial_prompt?: string;
+  prompt?: string;
   max_iterations?: number;
   iteration_timeout_sec?: number;
   no_progress_threshold?: number;

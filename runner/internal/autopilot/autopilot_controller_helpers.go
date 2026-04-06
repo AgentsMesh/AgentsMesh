@@ -18,8 +18,8 @@ func (ac *AutopilotController) getSessionID() string {
 	return ac.controlRunner.GetSessionID()
 }
 
-func (ac *AutopilotController) buildInitialPrompt() string {
-	return ac.promptBuilder.BuildInitialPrompt()
+func (ac *AutopilotController) buildPrompt() string {
+	return ac.promptBuilder.BuildPrompt()
 }
 
 func (ac *AutopilotController) buildResumePrompt(iteration int) string {

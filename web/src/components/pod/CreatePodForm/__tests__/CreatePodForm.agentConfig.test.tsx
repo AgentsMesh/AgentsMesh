@@ -200,7 +200,7 @@ describe("CreatePodForm - Agent Configuration", () => {
     it("should render prompt textarea when agent is selected", () => {
       setupAgentSelectedState();
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
-      expect(screen.getByLabelText("ide.createPod.initialPrompt")).toBeInTheDocument();
+      expect(screen.getByLabelText("ide.createPod.prompt")).toBeInTheDocument();
     });
 
     it("should use custom placeholder when provided", () => {
@@ -212,7 +212,7 @@ describe("CreatePodForm - Agent Configuration", () => {
     it("should call setPrompt when changed", () => {
       setupAgentSelectedState();
       render(<CreatePodForm config={{ scenario: "workspace" }} />);
-      fireEvent.change(screen.getByLabelText("ide.createPod.initialPrompt"), { target: { value: "New prompt" } });
+      fireEvent.change(screen.getByLabelText("ide.createPod.prompt"), { target: { value: "New prompt" } });
       expect(mockSetPrompt).toHaveBeenCalledWith("New prompt");
     });
   });

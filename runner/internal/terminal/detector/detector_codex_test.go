@@ -9,7 +9,7 @@ import (
 // Codex CLI (OpenAI) specific scenario tests
 // Codex CLI has a minimalist interface with simple prompts
 
-func TestCodex_InitialPrompt(t *testing.T) {
+func TestCodex_Prompt(t *testing.T) {
 	d := NewMultiSignalDetector(testDetectorConfig())
 
 	simulateOutputAndScreen(d, 200, []string{

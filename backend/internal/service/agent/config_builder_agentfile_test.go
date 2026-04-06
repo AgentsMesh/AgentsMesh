@@ -24,7 +24,7 @@ PROMPT_POSITION prepend')`)
 		AgentSlug:           "claude-code",
 		PodKey:              "pod-test-1",
 		MergedAgentfileSource: "AGENT claude\nMODE acp\nPROMPT_POSITION prepend",
-		InitialPrompt:       "Hello",
+		Prompt:              "Hello",
 		MCPPort:             19000,
 		Cols:                80,
 		Rows:                24,

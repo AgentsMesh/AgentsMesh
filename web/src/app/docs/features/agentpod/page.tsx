@@ -291,10 +291,10 @@ export default function AgentPodPage() {
               </tr>
               <tr>
                 <td className="p-3 font-medium">
-                  {t("docs.features.agentpod.configuration.initialPrompt")}
+                  {t("docs.features.agentpod.configuration.prompt")}
                 </td>
                 <td className="p-3">
-                  {t("docs.features.agentpod.configuration.initialPromptDesc")}
+                  {t("docs.features.agentpod.configuration.promptDesc")}
                 </td>
               </tr>
             </tbody>

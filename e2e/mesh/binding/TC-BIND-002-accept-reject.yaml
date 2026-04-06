@@ -74,7 +74,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Binding Accept/Reject Pod A"
+          prompt: "E2E Binding Accept/Reject Pod A"
       expected:
         status: 201
       save:
@@ -93,7 +93,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Binding Accept/Reject Pod B"
+          prompt: "E2E Binding Accept/Reject Pod B"
       expected:
         status: 201
       save:
@@ -112,7 +112,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Binding Accept/Reject Pod C"
+          prompt: "E2E Binding Accept/Reject Pod C"
       expected:
         status: 201
       save:

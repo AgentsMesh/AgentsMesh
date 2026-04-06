@@ -91,7 +91,7 @@ describe("CreatePodForm - submission, errors & reset", () => {
       fireEvent.click(screen.getByText("ide.createPod.create"));
 
       await waitFor(() => {
-        // prompt is now in form state (agentfile_layer SSOT), not passed as initialPrompt
+        // prompt is now in form state (agentfile_layer SSOT), not passed as prompt
         expect(mockFormSubmit).toHaveBeenCalledWith(1, {}, { ticketSlug: undefined, cols: 80, rows: 24 });
       });
     });

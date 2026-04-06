@@ -74,7 +74,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Mesh Channel Test Pod"
+          prompt: "E2E Mesh Channel Test Pod"
       expected:
         status: 201
       save:

@@ -199,7 +199,7 @@ func (s *Service) CreatePodForTicket(ctx context.Context, req *mesh.CreatePodFor
 		RunnerID:       req.RunnerID,
 		TicketID:       &req.TicketID,
 		CreatedByID:    req.CreatedByID,
-		InitialPrompt:  req.InitialPrompt,
+		Prompt:         req.Prompt,
 		Model:          req.Model,
 		PermissionMode: req.PermissionMode,
 	})

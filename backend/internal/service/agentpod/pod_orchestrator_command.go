@@ -115,7 +115,7 @@ func (o *PodOrchestrator) buildPodCommand(
 		PreparationScript:   preparationScript,
 		PreparationTimeout:  preparationTimeout,
 		LocalPath:           localPath,
-		InitialPrompt:       resolved.InitialPrompt,
+		Prompt:              resolved.Prompt,
 		PodKey:              pod.PodKey,
 		MCPPort:             19000,
 		Cols:                req.Cols,

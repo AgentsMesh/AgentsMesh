@@ -11,7 +11,7 @@ import (
 
 func TestParseDecision_TaskCompleted(t *testing.T) {
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 	}
 
 	workerCtrl := &MockPodController{}
@@ -37,7 +37,7 @@ All tests passing.`
 
 func TestParseDecision_Continue(t *testing.T) {
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 	}
 
 	workerCtrl := &MockPodController{}
@@ -62,7 +62,7 @@ Need to implement the login form next.`
 
 func TestParseDecision_NeedHumanHelp(t *testing.T) {
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 	}
 
 	workerCtrl := &MockPodController{}
@@ -88,7 +88,7 @@ Cannot proceed without them.`
 
 func TestParseDecision_GiveUp(t *testing.T) {
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 	}
 
 	workerCtrl := &MockPodController{}
@@ -114,7 +114,7 @@ This would require a complete rewrite.`
 
 func TestParseDecision_DefaultToContinue(t *testing.T) {
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 	}
 
 	workerCtrl := &MockPodController{}
@@ -139,7 +139,7 @@ Still processing.`
 
 func TestParseDecision_WithJSONBlock(t *testing.T) {
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 	}
 
 	workerCtrl := &MockPodController{}

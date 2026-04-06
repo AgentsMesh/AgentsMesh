@@ -31,7 +31,7 @@ test_data:
 setup:
   sql: |
     -- 清理可能存在的测试数据
-    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Scenario Test%';
+    DELETE FROM agent_pods WHERE prompt LIKE 'E2E Scenario Test%';
     DELETE FROM tickets WHERE title LIKE 'E2E Test Ticket%';
     DELETE FROM repositories WHERE name = 'mockrepo' AND full_path = 'aio/agents/mockrepo';
     DELETE FROM user_git_credentials WHERE name = 'E2E GitLab PAT';
@@ -235,7 +235,7 @@ steps:
           repository_id: "{repository_id}"
           ticket_id: "{ticket_id}"
           branch_name: main
-          initial_prompt: "E2E Scenario Test - Repository Pod Flow - Ticket: {ticket_slug}"
+          prompt: "E2E Scenario Test - Repository Pod Flow - Ticket: {ticket_slug}"
       expected:
         status: 201
         body:
@@ -307,7 +307,7 @@ steps:
     verification:
       type: database
       query: |
-        SELECT pod_key, status, repository_id, ticket_id, initial_prompt
+        SELECT pod_key, status, repository_id, ticket_id, prompt
         FROM agent_pods WHERE pod_key = '{pod_key}'
       expected:
         pod_key: "{pod_key}"

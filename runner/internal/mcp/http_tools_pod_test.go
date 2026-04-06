@@ -51,7 +51,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithAllParams(t *testing.T) {
 				"agent_slug": "claude-code",
 				"runner_id": 2,
 				"ticket_slug": "AM-123",
-				"initial_prompt": "Hello, start working on this task",
+				"prompt": "Hello, start working on this task",
 				"model": "claude-opus-4",
 				"repository_id": 456,
 				"branch_name": "feature/new-feature",
@@ -248,7 +248,7 @@ func TestHTTPServerMCPToolsCallCreatePodWithAlias(t *testing.T) {
 				"agent_slug": "claude-code",
 				"runner_id": 2,
 				"alias": "my-feature-pod",
-				"initial_prompt": "Work on feature X"
+				"prompt": "Work on feature X"
 			}
 		}
 	}`)
@@ -278,7 +278,7 @@ func TestHTTPServerMCPToolsCallCreatePodMissingAgentSlug(t *testing.T) {
 		"params": {
 			"name": "create_pod",
 			"arguments": {
-				"initial_prompt": "Hello"
+				"prompt": "Hello"
 			}
 		}
 	}`)

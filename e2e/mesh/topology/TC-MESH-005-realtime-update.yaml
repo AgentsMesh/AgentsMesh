@@ -17,7 +17,7 @@ preconditions:
 setup:
   sql: |
     -- 清理可能存在的测试数据
-    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Mesh Realtime%';
+    DELETE FROM agent_pods WHERE prompt LIKE 'E2E Mesh Realtime%';
     DELETE FROM channels WHERE name LIKE 'E2E Mesh Realtime%';
 
 steps:
@@ -108,7 +108,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Mesh Realtime Pod A"
+          prompt: "E2E Mesh Realtime Pod A"
       expected:
         status: 201
       save:
@@ -172,7 +172,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Mesh Realtime Pod B"
+          prompt: "E2E Mesh Realtime Pod B"
       expected:
         status: 201
       save:

@@ -9,7 +9,7 @@ import (
 
 func TestAutopilotController_Pause_Resume(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
@@ -46,7 +46,7 @@ func TestAutopilotController_Pause_Resume(t *testing.T) {
 
 func TestAutopilotController_Takeover_Handback(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
@@ -83,7 +83,7 @@ func TestAutopilotController_Takeover_Handback(t *testing.T) {
 
 func TestAutopilotController_Approve(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 5,
 	}
 
@@ -120,7 +120,7 @@ func TestAutopilotController_Approve(t *testing.T) {
 
 func TestAutopilotController_Approve_Stop(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 5,
 	}
 
@@ -156,7 +156,7 @@ func TestAutopilotController_Approve_Stop(t *testing.T) {
 
 func TestAutopilotController_Approve_NotWaitingApproval(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 5,
 	}
 

@@ -43,7 +43,7 @@ func TestGRPCRunnerAdapter_HandleInitialize(t *testing.T) {
 			assert.Empty(t, initResult.Agents)
 			assert.Contains(t, initResult.Features, "files_to_create")
 			assert.Contains(t, initResult.Features, "work_dir_config")
-			assert.Contains(t, initResult.Features, "initial_prompt")
+			assert.Contains(t, initResult.Features, "prompt")
 		default:
 			t.Fatal("expected message to be sent to conn.Send channel")
 		}

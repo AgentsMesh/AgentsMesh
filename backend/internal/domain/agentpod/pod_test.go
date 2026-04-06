@@ -158,7 +158,7 @@ func TestPodStruct(t *testing.T) {
 		CreatedByID:    50,
 		Status:         StatusRunning,
 		AgentStatus:    AgentStatusExecuting,
-		InitialPrompt:  "Test prompt",
+		Prompt:         "Test prompt",
 		BranchName:     &branch,
 		Model:          &model,
 		PermissionMode: &permMode,
@@ -223,7 +223,7 @@ func TestCreatePodCommandStruct(t *testing.T) {
 	cmd := CreatePodCommand{
 		PodKey:           "pod-456",
 		InitialCommand:   "bash",
-		InitialPrompt:    "Start working",
+		Prompt:           "Start working",
 		PermissionMode:   "bypassPermissions",
 		TicketSlug: "TICKET-123",
 		PodSuffix:        "v1",

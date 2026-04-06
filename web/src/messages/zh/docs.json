@@ -480,8 +480,8 @@
           "repositoryDesc": "关联 Git 仓库以自动克隆",
           "ticket": "任务",
           "ticketDesc": "关联任务以提供上下文和跟踪",
-          "initialPrompt": "初始提示",
-          "initialPromptDesc": "给 AI 智能体的初始指令"
+          "prompt": "初始提示",
+          "promptDesc": "给 AI 智能体的初始指令"
         }
       },
       "workspace": {
@@ -1001,7 +1001,7 @@
           "paramsHeader": "参数",
           "createPod": "create_pod",
           "createPodDesc": "创建新的 AgentPod",
-          "createPodParams": "agent_slug（必需）, runner_id?, ticket_slug?, initial_prompt?, model?",
+          "createPodParams": "agent_slug（必需）, runner_id?, ticket_slug?, prompt?, model?",
           "description": "用于创建、观察和控制 Pod 的工具。观察和输入工具需要具有适当范围的活跃绑定。",
           "getPodSnapshot": "get_pod_snapshot",
           "getPodSnapshotDesc": "获取另一个 Pod 的终端输出快照（需要 pod:read）",
@@ -1296,7 +1296,7 @@
             "fields": {
               "runner_id": "创建 Pod 的 Runner ID",
               "agent_slug": "智能体标识符（如 claude-code、aider）",
-              "initial_prompt": "给智能体的初始提示或任务",
+              "prompt": "给智能体的初始提示或任务",
               "repository_id": "关联到 Pod 的仓库",
               "branch": "要操作的 Git 分支",
               "ticket_slug": "要关联的任务标识符（如 AM-123）",

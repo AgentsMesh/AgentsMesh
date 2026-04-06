@@ -60,7 +60,7 @@ export const actionConfig: Record<string, ActionTypeConfig> = {
 
 // Iteration phase display configuration
 export const iterationPhaseConfig: Record<string, IterationPhaseConfig> = {
-  initial_prompt: {
+  prompt: {
     label: "Initial",
     color: "bg-blue-500",
     icon: <Send className="h-3 w-3" />,

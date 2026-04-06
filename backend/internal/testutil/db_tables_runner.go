@@ -81,7 +81,7 @@ func podTableDDLs() []string {
 			agent_p_id INTEGER, agent_pid INTEGER,
 			started_at DATETIME, finished_at DATETIME,
 			last_activity DATETIME, agent_waiting_since DATETIME,
-			initial_prompt TEXT, branch_name TEXT, sandbox_path TEXT,
+			prompt TEXT, branch_name TEXT, sandbox_path TEXT,
 			model TEXT, permission_mode TEXT, think_level TEXT,
 			error_code TEXT, error_message TEXT, title TEXT, alias TEXT,
 			session_id TEXT, source_pod_key TEXT,

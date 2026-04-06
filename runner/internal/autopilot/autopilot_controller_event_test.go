@@ -10,11 +10,11 @@ import (
 
 func TestAutopilotController_OnPodWaiting_UserTakeover(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
-	// Start with "executing" status so Start() doesn't trigger initial prompt
+	// Start with "executing" status so Start() doesn't trigger prompt
 	workerCtrl := &MockPodController{
 		workDir:     t.TempDir(),
 		podKey:      "worker-123",
@@ -48,11 +48,11 @@ func TestAutopilotController_OnPodWaiting_UserTakeover(t *testing.T) {
 
 func TestAutopilotController_OnPodWaiting_Paused(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
-	// Start with "executing" status so Start() doesn't trigger initial prompt
+	// Start with "executing" status so Start() doesn't trigger prompt
 	workerCtrl := &MockPodController{
 		workDir:     t.TempDir(),
 		podKey:      "worker-123",
@@ -86,11 +86,11 @@ func TestAutopilotController_OnPodWaiting_Paused(t *testing.T) {
 
 func TestAutopilotController_MaxIterations(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 2, // Very low for testing
 	}
 
-	// Start with "executing" status so Start() doesn't trigger initial prompt
+	// Start with "executing" status so Start() doesn't trigger prompt
 	workerCtrl := &MockPodController{
 		workDir:     t.TempDir(),
 		podKey:      "worker-123",
@@ -122,11 +122,11 @@ func TestAutopilotController_MaxIterations(t *testing.T) {
 
 func TestAutopilotController_OnPodWaiting_Completed(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
-	// Start with "executing" status so Start() doesn't trigger initial prompt
+	// Start with "executing" status so Start() doesn't trigger prompt
 	workerCtrl := &MockPodController{
 		workDir:     t.TempDir(),
 		podKey:      "worker-123",
@@ -160,11 +160,11 @@ func TestAutopilotController_OnPodWaiting_Completed(t *testing.T) {
 
 func TestAutopilotController_OnPodWaiting_Failed(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
-	// Start with "executing" status so Start() doesn't trigger initial prompt
+	// Start with "executing" status so Start() doesn't trigger prompt
 	workerCtrl := &MockPodController{
 		workDir:     t.TempDir(),
 		podKey:      "worker-123",
@@ -198,11 +198,11 @@ func TestAutopilotController_OnPodWaiting_Failed(t *testing.T) {
 
 func TestAutopilotController_OnPodWaiting_RunsDecision(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
-	// Start with "executing" status so Start() doesn't trigger initial prompt
+	// Start with "executing" status so Start() doesn't trigger prompt
 	// This allows us to test OnPodWaiting in isolation
 	workerCtrl := &MockPodController{
 		workDir:     t.TempDir(),
@@ -238,11 +238,11 @@ func TestAutopilotController_OnPodWaiting_RunsDecision(t *testing.T) {
 
 func TestAutopilotController_OnPodWaiting_MaxIterationsWithTerminatedEvent(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 2,
 	}
 
-	// Start with "executing" status so Start() doesn't trigger initial prompt
+	// Start with "executing" status so Start() doesn't trigger prompt
 	workerCtrl := &MockPodController{
 		workDir:     t.TempDir(),
 		podKey:      "worker-123",
@@ -279,11 +279,11 @@ func TestAutopilotController_OnPodWaiting_MaxIterationsWithTerminatedEvent(t *te
 
 func TestAutopilotController_OnPodWaiting_Stopped(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
-	// Start with "executing" status so Start() doesn't trigger initial prompt
+	// Start with "executing" status so Start() doesn't trigger prompt
 	workerCtrl := &MockPodController{
 		workDir:     t.TempDir(),
 		podKey:      "worker-123",
@@ -317,7 +317,7 @@ func TestAutopilotController_OnPodWaiting_Stopped(t *testing.T) {
 
 func TestAutopilotController_OnPodWaiting_WaitingApproval(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
@@ -354,7 +354,7 @@ func TestAutopilotController_OnPodWaiting_WaitingApproval(t *testing.T) {
 
 func TestAutopilotController_Start_WithWaitingWorker(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 

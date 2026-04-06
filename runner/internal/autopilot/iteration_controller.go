@@ -131,7 +131,7 @@ func (ic *IterationController) CheckTriggerDedup() bool {
 }
 
 // UpdateTriggerTime updates the last trigger time to now.
-// Used when starting initial prompt to prevent OnPodWaiting from double-triggering.
+// Used when starting prompt to prevent OnPodWaiting from double-triggering.
 func (ic *IterationController) UpdateTriggerTime() {
 	ic.triggerMu.Lock()
 	defer ic.triggerMu.Unlock()

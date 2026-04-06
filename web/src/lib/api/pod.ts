@@ -7,7 +7,7 @@ export interface PodData {
   pod_key: string;
   status: "initializing" | "running" | "paused" | "disconnected" | "orphaned" | "completed" | "terminated" | "error" | "failed";
   agent_status: string;
-  initial_prompt?: string;
+  prompt?: string;
   branch_name?: string;
   sandbox_path?: string;
   started_at?: string;

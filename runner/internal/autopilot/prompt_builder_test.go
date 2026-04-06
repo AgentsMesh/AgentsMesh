@@ -8,7 +8,7 @@ import (
 
 func TestPromptBuilder_NewPromptBuilder(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:       "Test task",
+		Prompt:       "Test task",
 		CustomTemplate:      "",
 		MCPPort:             19000,
 		PodKey:              "worker-123",
@@ -21,25 +21,25 @@ func TestPromptBuilder_NewPromptBuilder(t *testing.T) {
 
 func TestPromptBuilder_DefaultMCPPort(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       0, // Should use default
 		PodKey:        "worker-123",
 	})
 
-	prompt := pb.BuildInitialPrompt()
+	prompt := pb.BuildPrompt()
 	// Should contain MCP tool instructions (port is no longer in prompt since we use MCP config file)
 	assert.Contains(t, prompt, "get_pod_snapshot")
 	assert.Contains(t, prompt, "worker-123")
 }
 
-func TestPromptBuilder_BuildInitialPrompt(t *testing.T) {
+func TestPromptBuilder_BuildPrompt(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Implement user authentication",
+		Prompt: "Implement user authentication",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
 
-	prompt := pb.BuildInitialPrompt()
+	prompt := pb.BuildPrompt()
 
 	// Should contain the task
 	assert.Contains(t, prompt, "Implement user authentication")
@@ -57,16 +57,16 @@ func TestPromptBuilder_BuildInitialPrompt(t *testing.T) {
 	assert.Contains(t, prompt, "get_pod_status")
 }
 
-func TestPromptBuilder_BuildInitialPrompt_CustomTemplate(t *testing.T) {
+func TestPromptBuilder_BuildPrompt_CustomTemplate(t *testing.T) {
 	customTemplate := "Custom template: {{task}}"
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:  "Test task",
+		Prompt:  "Test task",
 		CustomTemplate: customTemplate,
 		MCPPort:        19000,
 		PodKey:         "worker-123",
 	})
 
-	prompt := pb.BuildInitialPrompt()
+	prompt := pb.BuildPrompt()
 
 	// Should use custom template verbatim
 	assert.Equal(t, customTemplate, prompt)
@@ -74,7 +74,7 @@ func TestPromptBuilder_BuildInitialPrompt_CustomTemplate(t *testing.T) {
 
 func TestPromptBuilder_BuildResumePrompt(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
@@ -93,7 +93,7 @@ func TestPromptBuilder_BuildResumePrompt(t *testing.T) {
 
 func TestPromptBuilder_BuildResumePrompt_NilGetMaxIterations(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: nil, // Should use default of 10
@@ -111,7 +111,7 @@ func TestPromptBuilder_BuildResumePrompt_DifferentIterations(t *testing.T) {
 	maxIter := 20
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:       "Test task",
+		Prompt:       "Test task",
 		MCPPort:             19000,
 		PodKey:              "worker-123",
 		GetMaxIterations:    func() int { return maxIter },

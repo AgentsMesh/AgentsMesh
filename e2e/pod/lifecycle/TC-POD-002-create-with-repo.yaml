@@ -92,7 +92,7 @@ steps:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
           repository_id: "{repository_id}"
-          initial_prompt: "E2E Test Pod with Repository"
+          prompt: "E2E Test Pod with Repository"
           branch_name: "e2e-test-branch"
       expected:
         status: 201

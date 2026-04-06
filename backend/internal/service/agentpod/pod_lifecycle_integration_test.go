@@ -264,5 +264,5 @@ PROMPT "Do the thing"
 	assert.Equal(t, "feature-x", *dbPod.BranchName, "branch extracted from layer")
 	assert.NotNil(t, dbPod.PermissionMode)
 	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode, "permission_mode extracted from layer")
-	assert.Equal(t, "Do the thing", dbPod.InitialPrompt, "prompt extracted from layer")
+	assert.Equal(t, "Do the thing", dbPod.Prompt, "prompt extracted from layer")
 }

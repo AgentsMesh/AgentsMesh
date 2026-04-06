@@ -50,7 +50,7 @@ func (h *AutopilotControllerHandler) CreateAutopilotController(c *gin.Context) {
 	controller, err := h.service.CreateAndStart(c.Request.Context(), &agentpodSvc.CreateAndStartRequest{
 		OrganizationID:        orgID,
 		Pod:                   targetPod,
-		InitialPrompt:         req.InitialPrompt,
+		Prompt:                req.Prompt,
 		MaxIterations:         req.MaxIterations,
 		IterationTimeoutSec:   req.IterationTimeoutSec,
 		NoProgressThreshold:   req.NoProgressThreshold,

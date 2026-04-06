@@ -9,7 +9,7 @@ import (
 
 // Claude Code specific scenario tests
 
-func TestClaude_InitialPrompt(t *testing.T) {
+func TestClaude_Prompt(t *testing.T) {
 	d := NewMultiSignalDetector(testDetectorConfig())
 
 	simulateOutputAndScreen(d, 500, []string{

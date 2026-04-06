@@ -36,7 +36,7 @@ printf '%s\n' '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-sessi
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -82,7 +82,7 @@ printf '%s\n' '{"result": "CONTINUE\nMore work needed."}'
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
@@ -137,7 +137,7 @@ echo "Done."
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -188,7 +188,7 @@ echo "More work."
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
@@ -232,7 +232,7 @@ func TestControlRunner_StartControlProcess_ErrorWithLogger(t *testing.T) {
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -274,7 +274,7 @@ func TestControlRunner_ResumeControlProcess_ErrorWithLogger(t *testing.T) {
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },

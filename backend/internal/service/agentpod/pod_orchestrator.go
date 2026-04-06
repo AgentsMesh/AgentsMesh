@@ -143,7 +143,7 @@ type agentfileResolved struct {
 	BranchName           string
 	PermissionMode       string
 	RepositoryID         *int64
-	InitialPrompt        string
+	Prompt               string
 	MergedAgentfileSource string
 	CredentialProfile    string
 }

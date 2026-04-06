@@ -36,7 +36,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		finished_at DATETIME,
 		last_activity DATETIME,
 		agent_waiting_since DATETIME,
-		initial_prompt TEXT NOT NULL DEFAULT '',
+		prompt TEXT NOT NULL DEFAULT '',
 		branch_name TEXT,
 		sandbox_path TEXT,
 		model TEXT,

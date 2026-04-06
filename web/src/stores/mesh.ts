@@ -15,7 +15,7 @@ export type RunnerInfo = RunnerInfoData;
 // Request to create a pod for a ticket
 export interface CreatePodForTicketRequest {
   runner_id: number;
-  initial_prompt?: string;
+  prompt?: string;
   model?: string;
   permission_mode?: string;
 }

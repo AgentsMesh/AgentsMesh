@@ -52,7 +52,7 @@ export function buildAgentfileLayer(params: {
     lines.push(`CREDENTIAL "${escapeAgentfileString(params.credentialProfileName)}"`);
   }
 
-  // PROMPT declaration (initial prompt content)
+  // PROMPT declaration (prompt content)
   if (params.prompt) {
     lines.push(`PROMPT "${escapeAgentfileString(params.prompt)}"`);
   }

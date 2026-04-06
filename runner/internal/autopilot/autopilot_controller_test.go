@@ -10,7 +10,7 @@ import (
 
 func TestAutopilotController_NewAutopilotController(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt:           "Test prompt",
+		Prompt:           "Test prompt",
 		MaxIterations:           10,
 		IterationTimeoutSeconds: 300,
 		ApprovalTimeoutMinutes:  30,
@@ -45,7 +45,7 @@ func TestAutopilotController_NewAutopilotController(t *testing.T) {
 
 func TestAutopilotController_Start(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt:           "Implement feature X",
+		Prompt:           "Implement feature X",
 		MaxIterations:           10,
 		IterationTimeoutSeconds: 300,
 	}
@@ -84,7 +84,7 @@ func TestAutopilotController_Start(t *testing.T) {
 
 func TestAutopilotController_Stop(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
@@ -118,7 +118,7 @@ func TestAutopilotController_Stop(t *testing.T) {
 
 func TestAutopilotController_Stop_AlreadyStopped(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
@@ -154,7 +154,7 @@ func TestAutopilotController_Stop_AlreadyStopped(t *testing.T) {
 
 func TestAutopilotController_GetStatus(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test prompt",
+		Prompt: "Test prompt",
 		MaxIterations: 10,
 	}
 
@@ -187,7 +187,7 @@ func TestAutopilotController_GetStatus(t *testing.T) {
 
 func TestAutopilotController_DefaultMaxIterations(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 0, // Should use default of 10
 	}
 
@@ -215,7 +215,7 @@ func TestAutopilotController_DefaultMaxIterations(t *testing.T) {
 
 func TestAutopilotController_Key_PodKey(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 	}
 
 	workerCtrl := &MockPodController{}
@@ -235,7 +235,7 @@ func TestAutopilotController_Key_PodKey(t *testing.T) {
 
 func TestAutopilotController_NilReporter(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
@@ -268,7 +268,7 @@ func TestAutopilotController_NilReporter(t *testing.T) {
 
 func TestAutopilotController_Start_ExecutingStatus(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 
@@ -294,7 +294,7 @@ func TestAutopilotController_Start_ExecutingStatus(t *testing.T) {
 	assert.NoError(t, err)
 	defer rp.Stop()
 
-	// Should not have sent initial prompt when executing
+	// Should not have sent prompt when executing
 	assert.Len(t, workerCtrl.sendTextCalls, 0)
 
 	// Should still report created
@@ -304,7 +304,7 @@ func TestAutopilotController_Start_ExecutingStatus(t *testing.T) {
 func TestAutopilotController_SessionID(t *testing.T) {
 	t.Skip("SessionID extraction is specific to exec mode; ACP manages sessions internally")
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 10,
 	}
 

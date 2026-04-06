@@ -92,7 +92,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Channel Message Pod"
+          prompt: "E2E Channel Message Pod"
       expected:
         status: 201
       save:

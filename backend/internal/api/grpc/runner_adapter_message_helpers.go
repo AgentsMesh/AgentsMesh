@@ -56,7 +56,7 @@ func (a *GRPCRunnerAdapter) handleInitialize(ctx context.Context, runnerID int64
 		Features: []string{
 			"files_to_create",
 			"work_dir_config",
-			"initial_prompt",
+			"prompt",
 		},
 	}
 

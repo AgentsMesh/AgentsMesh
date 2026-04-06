@@ -63,7 +63,7 @@ func (o *LoopOrchestrator) startAutopilot(ctx context.Context, loop *loopDomain.
 	controller, err := o.autopilotSvc.CreateAndStart(ctx, &agentpodSvc.CreateAndStartRequest{
 		OrganizationID:      loop.OrganizationID,
 		Pod:                 pod,
-		InitialPrompt:       resolvedPrompt,
+		Prompt:              resolvedPrompt,
 		MaxIterations:       apCfg.MaxIterations,
 		IterationTimeoutSec: apCfg.IterationTimeoutSec,
 		NoProgressThreshold: apCfg.NoProgressThreshold,

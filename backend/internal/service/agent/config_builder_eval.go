@@ -64,10 +64,10 @@ func buildResultToProto(
 		})
 	}
 
-	// Determine prompt (AgentFile PROMPT > legacy InitialPrompt)
+	// Determine prompt from AgentFile PROMPT declaration
 	prompt := br.Prompt
 	if prompt == "" {
-		prompt = req.InitialPrompt
+		prompt = req.Prompt
 	}
 
 	// Prompt injection into LaunchArgs is handled by Runner (based on PromptPosition).

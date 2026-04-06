@@ -19,7 +19,7 @@ preconditions:
 setup:
   sql: |
     -- 清理可能存在的测试 Pod
-    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Multi Terminal%';
+    DELETE FROM agent_pods WHERE prompt LIKE 'E2E Multi Terminal%';
 
 steps:
   - id: step-1
@@ -86,7 +86,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Multi Terminal Test Pod 1"
+          prompt: "E2E Multi Terminal Test Pod 1"
       expected:
         status: 201
         body:
@@ -108,7 +108,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Multi Terminal Test Pod 2"
+          prompt: "E2E Multi Terminal Test Pod 2"
       expected:
         status: 201
         body:

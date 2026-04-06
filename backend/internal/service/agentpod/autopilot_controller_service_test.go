@@ -46,7 +46,7 @@ func setupAutopilotTestDB(t *testing.T) *gorm.DB {
 		pod_key TEXT NOT NULL,
 		pod_id INTEGER NOT NULL,
 		runner_id INTEGER NOT NULL,
-		initial_prompt TEXT,
+		prompt TEXT,
 		phase TEXT NOT NULL DEFAULT 'initializing',
 		current_iteration INTEGER NOT NULL DEFAULT 0,
 		max_iterations INTEGER NOT NULL DEFAULT 10,
@@ -93,7 +93,7 @@ func TestCreateAndStart_Success(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            pod,
-		InitialPrompt:  "Review the code",
+		Prompt:  "Review the code",
 	})
 
 	require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestCreateAndStart_Success(t *testing.T) {
 	assert.Equal(t, pod.PodKey, controller.PodKey)
 	assert.Equal(t, pod.ID, controller.PodID)
 	assert.Equal(t, pod.RunnerID, controller.RunnerID)
-	assert.Equal(t, "Review the code", controller.InitialPrompt)
+	assert.Equal(t, "Review the code", controller.Prompt)
 	assert.Equal(t, agentpod.AutopilotPhaseInitializing, controller.Phase)
 	assert.Equal(t, agentpod.CircuitBreakerClosed, controller.CircuitBreakerState)
 	assert.True(t, controller.ID > 0, "should have auto-generated ID")
@@ -117,7 +117,7 @@ func TestCreateAndStart_Success(t *testing.T) {
 	assert.Equal(t, pod.RunnerID, sender.runnerID)
 	assert.Equal(t, controller.AutopilotControllerKey, sender.cmd.AutopilotKey)
 	assert.Equal(t, pod.PodKey, sender.cmd.PodKey)
-	assert.Equal(t, "Review the code", sender.cmd.Config.InitialPrompt)
+	assert.Equal(t, "Review the code", sender.cmd.Config.Prompt)
 }
 
 func TestCreateAndStart_NilPod(t *testing.T) {
@@ -127,7 +127,7 @@ func TestCreateAndStart_NilPod(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            nil,
-		InitialPrompt:  "test",
+		Prompt:  "test",
 	})
 
 	assert.Nil(t, controller)
@@ -143,7 +143,7 @@ func TestCreateAndStart_DefaultValues(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
-		InitialPrompt:  "test",
+		Prompt:  "test",
 		// All config fields left at zero → should get domain defaults
 	})
 
@@ -164,7 +164,7 @@ func TestCreateAndStart_CustomValues(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID:      1,
 		Pod:                 newTestPod(),
-		InitialPrompt:       "test",
+		Prompt:              "test",
 		MaxIterations:       25,
 		IterationTimeoutSec: 600,
 		NoProgressThreshold: 5,
@@ -191,7 +191,7 @@ func TestCreateAndStart_CustomKeyPrefix(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
-		InitialPrompt:  "test",
+		Prompt:  "test",
 		KeyPrefix:      "loop-daily-review-run3",
 	})
 
@@ -206,7 +206,7 @@ func TestCreateAndStart_DefaultKeyPrefix(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
-		InitialPrompt:  "test",
+		Prompt:  "test",
 		// KeyPrefix empty → defaults to "autopilot"
 	})
 
@@ -223,7 +223,7 @@ func TestCreateAndStart_OptionalConfigFields(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID:        1,
 		Pod:                   newTestPod(),
-		InitialPrompt:         "test",
+		Prompt:                "test",
 		ControlAgentSlug:      "custom-agent",
 		ControlPromptTemplate: "You are a reviewer...",
 		MCPConfigJSON:         `{"servers":["s1"]}`,
@@ -250,7 +250,7 @@ func TestCreateAndStart_OptionalFieldsOmitted(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
-		InitialPrompt:  "test",
+		Prompt:  "test",
 		// No optional config fields
 	})
 
@@ -268,7 +268,7 @@ func TestCreateAndStart_NilCommandSender(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
-		InitialPrompt:  "test",
+		Prompt:  "test",
 	})
 
 	// Should succeed — DB record created, gRPC skipped
@@ -285,7 +285,7 @@ func TestCreateAndStart_CommandSenderFailure(t *testing.T) {
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
-		InitialPrompt:  "test",
+		Prompt:  "test",
 	})
 
 	// Error returned, BUT controller is also returned (DB record exists)
@@ -302,7 +302,7 @@ func TestCreateAndStart_DBPersistence(t *testing.T) {
 	created, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
 		OrganizationID: 1,
 		Pod:            newTestPod(),
-		InitialPrompt:  "persisted prompt",
+		Prompt:  "persisted prompt",
 	})
 	require.NoError(t, err)
 
@@ -310,7 +310,7 @@ func TestCreateAndStart_DBPersistence(t *testing.T) {
 	fetched, err := svc.GetAutopilotControllerByKey(context.Background(), created.AutopilotControllerKey)
 	require.NoError(t, err)
 	assert.Equal(t, created.ID, fetched.ID)
-	assert.Equal(t, "persisted prompt", fetched.InitialPrompt)
+	assert.Equal(t, "persisted prompt", fetched.Prompt)
 	assert.Equal(t, agentpod.AutopilotPhaseInitializing, fetched.Phase)
 	assert.Equal(t, agentpod.CircuitBreakerClosed, fetched.CircuitBreakerState)
 }

@@ -178,7 +178,7 @@ export interface RunnerPodData {
   sandbox_path?: string;
   session_id?: string;
   source_pod_key?: string;
-  initial_prompt?: string;
+  prompt?: string;
   created_by_id: number;
   created_at: string;
   updated_at: string;

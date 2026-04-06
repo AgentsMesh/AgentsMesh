@@ -15,7 +15,7 @@ import (
 
 func TestAutopilotController_OnPodWaiting_IncrementAfterMaxReached(t *testing.T) {
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test",
+		Prompt: "Test",
 		MaxIterations: 1,
 	}
 
@@ -68,7 +68,7 @@ func TestAutopilotController_RunSingleDecision_ControlFailureRetry(t *testing.T)
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent", "exit 1")
 
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt:           "Test",
+		Prompt:           "Test",
 		MaxIterations:           10,
 		ControlAgentSlug:        scriptPath,
 		IterationTimeoutSeconds: 5,
@@ -135,7 +135,7 @@ func TestAutopilotController_RunSingleDecision_WorkerNotWaitingAfterFailure(t *t
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "mock_agent", "exit 1")
 
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt:           "Test",
+		Prompt:           "Test",
 		MaxIterations:           10,
 		ControlAgentSlug:        scriptPath,
 		IterationTimeoutSeconds: 5,

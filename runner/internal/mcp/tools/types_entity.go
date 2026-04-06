@@ -177,7 +177,7 @@ type PodCreateRequest struct {
 	RunnerID            int                    `json:"runner_id,omitempty"`
 	AgentSlug           string                 `json:"agent_slug,omitempty"`
 	TicketSlug          *string                `json:"ticket_slug,omitempty"`
-	InitialPrompt       string                 `json:"initial_prompt,omitempty"` // Deprecated: use AgentFile PROMPT declaration
+	Prompt              string                 `json:"prompt,omitempty"` // Deprecated: use AgentFile PROMPT declaration
 	Alias               *string                `json:"alias,omitempty"`
 	Model               string                 `json:"model,omitempty"` // Deprecated: use AgentFile CONFIG model
 	RepositoryID        *int64                 `json:"repository_id,omitempty"`

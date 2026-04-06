@@ -44,7 +44,7 @@ setup:
     DELETE FROM channel_pods WHERE channel_id IN (SELECT id FROM channels WHERE name LIKE 'MCP-E2E%');
     DELETE FROM channels WHERE name LIKE 'MCP-E2E%';
     DELETE FROM pod_bindings WHERE initiator_pod LIKE '%-mcp-e2e-%' OR target_pod LIKE '%-mcp-e2e-%';
-    DELETE FROM pods WHERE initial_prompt LIKE 'MCP E2E%';
+    DELETE FROM pods WHERE prompt LIKE 'MCP E2E%';
     DELETE FROM tickets WHERE title LIKE 'MCP-E2E%';
 
 steps:

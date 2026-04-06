@@ -250,7 +250,7 @@ message CreatePodCommand {
   map<string, string> env_vars = 4;
   repeated FileToCreate files_to_create = 5;
   WorkDirConfig work_dir_config = 6;
-  string initial_prompt = 7;
+  string prompt = 7;
 }
 
 message FileToCreate {

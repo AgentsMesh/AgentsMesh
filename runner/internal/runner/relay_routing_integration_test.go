@@ -117,7 +117,7 @@ func TestRelayRouting_SubscribeUnsubscribe_Integration(t *testing.T) {
 func TestRelayRouting_TerminalOutputToRelay_Integration(t *testing.T) {
 	af := "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n"
 	pod := buildRelayTestPod(t, af, func(c *runnerv1.CreatePodCommand) {
-		c.InitialPrompt = "relay-test-marker"
+		c.Prompt = "relay-test-marker"
 	})
 	defer testPTYComponents(pod).Terminal.Stop()
 

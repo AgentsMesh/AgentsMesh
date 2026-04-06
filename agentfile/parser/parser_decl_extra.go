@@ -81,7 +81,7 @@ func (p *Parser) parseCredentialDecl(pos Position) *CredentialDecl {
 	return &CredentialDecl{ProfileName: name, Position: pos}
 }
 
-// parsePromptDecl: PROMPT "initial prompt content"
+// parsePromptDecl: PROMPT "prompt content"
 func (p *Parser) parsePromptDecl(pos Position) *PromptDecl {
 	p.advance()
 	content := p.expectString()

@@ -29,7 +29,7 @@ func TestPodStatusConstantsBase(t *testing.T) {
 
 func TestPodStruct(t *testing.T) {
 	now := time.Now()
-	// Note: InitialPrompt field has been removed - prompt is now passed via LaunchArgs by Backend
+	// Note: Prompt field has been removed - prompt is now passed via LaunchArgs by Backend
 	pod := Pod{
 		ID:          "pod-1",
 		PodKey:      "key-123",
@@ -61,7 +61,7 @@ func TestPodStruct(t *testing.T) {
 func TestPodAllFields(t *testing.T) {
 	now := time.Now()
 
-	// Note: InitialPrompt field has been removed - prompt is now passed via LaunchArgs by Backend
+	// Note: Prompt field has been removed - prompt is now passed via LaunchArgs by Backend
 	// Note: OnOutput and OnExit fields have been removed - callbacks are now set via Terminal
 	pod := &Pod{
 		ID:          "id-1",

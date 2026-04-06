@@ -386,8 +386,8 @@
           "repositoryDesc": "Link to a Git repository for automatic cloning",
           "ticket": "Ticket",
           "ticketDesc": "Link to a ticket for context and tracking",
-          "initialPrompt": "Initial Prompt",
-          "initialPromptDesc": "Starting instructions for the AI agent"
+          "prompt": "Initial Prompt",
+          "promptDesc": "Starting instructions for the AI agent"
         }
       },
       "workspace": {
@@ -907,7 +907,7 @@
           "paramsHeader": "Parameters",
           "createPod": "create_pod",
           "createPodDesc": "Create a new AgentPod",
-          "createPodParams": "agent_slug (required), runner_id?, ticket_slug?, initial_prompt?, model?",
+          "createPodParams": "agent_slug (required), runner_id?, ticket_slug?, prompt?, model?",
           "description": "Werkzeuge zum Erstellen, Beobachten und Steuern von Pods. Beobachtungs- und Eingabewerkzeuge erfordern eine aktive Bindung mit entsprechenden Bereichen.",
           "getPodSnapshot": "get_pod_snapshot",
           "getPodSnapshotDesc": "Snapshot der Terminalausgabe eines anderen Pods abrufen (erfordert pod:read)",
@@ -1202,7 +1202,7 @@
             "fields": {
               "runner_id": "ID des Runners, auf dem der Pod erstellt werden soll",
               "agent_slug": "Agententyp-Identifikator (z. B. claude-code, aider)",
-              "initial_prompt": "Initialer Prompt oder Aufgabe für den Agenten",
+              "prompt": "Initialer Prompt oder Aufgabe für den Agenten",
               "repository_id": "Repository, das mit dem Pod verknüpft werden soll",
               "branch": "Git-Branch, auf dem gearbeitet werden soll",
               "ticket_slug": "Ticket-Identifikator zum Verknüpfen (z. B. AM-123)",

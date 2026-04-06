@@ -61,7 +61,7 @@ const createController = (
   max_iterations: 10,
   user_takeover: false,
   circuit_breaker: { state: "closed", reason: undefined },
-  initial_prompt: "test",
+  prompt: "test",
   created_at: new Date().toISOString(),
   ...overrides,
 });

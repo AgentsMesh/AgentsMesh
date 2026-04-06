@@ -80,7 +80,7 @@ steps:
           Content-Type: application/json
         body:
           source_pod_key: "non-existent-pod-key-12345"
-          initial_prompt: "E2E Edge Case - Should Fail"
+          prompt: "E2E Edge Case - Should Fail"
       expected:
         status: 404
         body:
@@ -100,7 +100,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Edge Case Test Pod"
+          prompt: "E2E Edge Case Test Pod"
       expected:
         status: 201
         body:
@@ -140,7 +140,7 @@ steps:
           Content-Type: application/json
         body:
           source_pod_key: "{test_pod_key}"
-          initial_prompt: "E2E Edge Case - Should Fail (Running Pod)"
+          prompt: "E2E Edge Case - Should Fail (Running Pod)"
       expected:
         status: 400
         body:
@@ -190,7 +190,7 @@ steps:
           Content-Type: application/json
         body:
           source_pod_key: "{test_pod_key}"
-          initial_prompt: "E2E Edge Case - First Resume"
+          prompt: "E2E Edge Case - First Resume"
       expected:
         status: 201
         body:
@@ -260,7 +260,7 @@ steps:
           Content-Type: application/json
         body:
           source_pod_key: "{first_resume_pod_key}"
-          initial_prompt: "E2E Edge Case - Chained Resume"
+          prompt: "E2E Edge Case - Chained Resume"
       expected:
         status: 201
         body:
@@ -285,4 +285,4 @@ cleanup:
   - sql: |
       -- 清理所有测试 Pod
       UPDATE pods SET status = 'terminated', finished_at = NOW()
-      WHERE initial_prompt LIKE 'E2E Edge Case%' AND status != 'terminated';
+      WHERE prompt LIKE 'E2E Edge Case%' AND status != 'terminated';

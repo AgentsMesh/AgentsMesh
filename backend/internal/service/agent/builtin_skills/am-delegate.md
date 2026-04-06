@@ -42,7 +42,7 @@ list_available_pods()
 
 ```
 create_pod(
-  initial_prompt="你是负责 [具体职责] 的 Agent...",
+  prompt="你是负责 [具体职责] 的 Agent...",
   ticket_id=123  // 可选，关联到 Ticket
 )
 ```

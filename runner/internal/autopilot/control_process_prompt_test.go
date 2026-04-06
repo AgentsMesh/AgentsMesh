@@ -9,9 +9,9 @@ import (
 
 // Tests for prompt building
 
-func TestBuildInitialPrompt_Default(t *testing.T) {
+func TestBuildPrompt_Default(t *testing.T) {
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Implement user authentication",
+		Prompt: "Implement user authentication",
 		MaxIterations: 10,
 	}
 
@@ -29,7 +29,7 @@ func TestBuildInitialPrompt_Default(t *testing.T) {
 		MCPPort:      19000,
 	})
 
-	prompt := rp.buildInitialPrompt()
+	prompt := rp.buildPrompt()
 
 	// Should contain the original task
 	assert.Contains(t, prompt, "Implement user authentication")
@@ -49,10 +49,10 @@ func TestBuildInitialPrompt_Default(t *testing.T) {
 	assert.Contains(t, prompt, "你不能直接完成任务")
 }
 
-func TestBuildInitialPrompt_CustomTemplate(t *testing.T) {
+func TestBuildPrompt_CustomTemplate(t *testing.T) {
 	customTemplate := "Custom prompt template for {{task}}"
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt:         "Test task",
+		Prompt:                "Test task",
 		ControlPromptTemplate: customTemplate,
 	}
 
@@ -69,7 +69,7 @@ func TestBuildInitialPrompt_CustomTemplate(t *testing.T) {
 		Reporter:     &MockEventReporter{},
 	})
 
-	prompt := rp.buildInitialPrompt()
+	prompt := rp.buildPrompt()
 
 	// Should use custom template
 	assert.Equal(t, customTemplate, prompt)
@@ -77,7 +77,7 @@ func TestBuildInitialPrompt_CustomTemplate(t *testing.T) {
 
 func TestBuildResumePrompt(t *testing.T) {
 	config := &runnerv1.AutopilotConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MaxIterations: 10,
 	}
 

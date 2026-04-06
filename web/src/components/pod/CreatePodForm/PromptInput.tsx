@@ -22,13 +22,13 @@ export function PromptInput({
         htmlFor="prompt-input"
         className="block text-sm font-medium mb-2"
       >
-        {t("ide.createPod.initialPrompt")}
+        {t("ide.createPod.prompt")}
       </label>
       <textarea
         id="prompt-input"
         className="w-full px-3 py-2 border border-border rounded-md bg-background resize-none"
         rows={3}
-        placeholder={placeholder || t("ide.createPod.initialPromptPlaceholder")}
+        placeholder={placeholder || t("ide.createPod.promptPlaceholder")}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

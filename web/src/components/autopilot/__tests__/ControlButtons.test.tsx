@@ -38,7 +38,7 @@ const createMockController = (
     state: "closed",
     reason: undefined,
   },
-  initial_prompt: "Test task",
+  prompt: "Test task",
   created_at: new Date().toISOString(),
 });
 

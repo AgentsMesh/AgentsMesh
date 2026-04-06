@@ -9,7 +9,7 @@ import (
 // OpenCode specific scenario tests
 // OpenCode has a TUI interface similar to Claude Code
 
-func TestOpenCode_InitialPrompt(t *testing.T) {
+func TestOpenCode_Prompt(t *testing.T) {
 	d := NewMultiSignalDetector(testDetectorConfig())
 
 	simulateOutputAndScreen(d, 300, []string{

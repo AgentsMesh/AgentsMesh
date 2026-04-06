@@ -46,7 +46,7 @@ steps:
           Content-Type: application/json
         body:
           agent_slug: "claude-code"
-          initial_prompt: "请列出当前目录的文件"
+          prompt: "请列出当前目录的文件"
       expected:
         status: 201
         body:

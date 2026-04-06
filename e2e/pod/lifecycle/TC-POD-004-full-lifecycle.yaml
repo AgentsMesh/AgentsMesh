@@ -21,7 +21,7 @@ preconditions:
 setup:
   sql: |
     -- 清理可能存在的测试 Pod
-    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Full Lifecycle%';
+    DELETE FROM agent_pods WHERE prompt LIKE 'E2E Full Lifecycle%';
 
 steps:
   - id: step-1
@@ -90,7 +90,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Full Lifecycle Test Pod"
+          prompt: "E2E Full Lifecycle Test Pod"
       expected:
         status: 201
         body:

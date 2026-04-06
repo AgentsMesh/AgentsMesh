@@ -34,7 +34,7 @@ echo "All done successfully."
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -76,7 +76,7 @@ echo "Done."
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -110,7 +110,7 @@ func TestControlRunner_ResumeControlProcess_Timeout(t *testing.T) {
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
@@ -148,7 +148,7 @@ func TestControlRunner_StartControlProcess_ProcessError(t *testing.T) {
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -184,7 +184,7 @@ func TestControlRunner_ResumeControlProcess_ProcessError(t *testing.T) {
 	require.NoError(t, err)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },

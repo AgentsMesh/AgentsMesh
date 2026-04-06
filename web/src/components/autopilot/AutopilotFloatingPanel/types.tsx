@@ -77,7 +77,7 @@ export const iterationPhaseConfig: Record<
   string,
   { label: string; color: string; icon: React.ReactNode }
 > = {
-  initial_prompt: {
+  prompt: {
     label: "Initial",
     color: "bg-blue-500",
     icon: <Send className="h-3 w-3" />,

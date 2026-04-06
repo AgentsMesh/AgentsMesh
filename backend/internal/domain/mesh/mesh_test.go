@@ -308,7 +308,7 @@ func TestCreatePodForTicketRequestStruct(t *testing.T) {
 		TicketID:       20,
 		RunnerID:       5,
 		CreatedByID:    50,
-		InitialPrompt:  "Start working on ticket",
+		Prompt:         "Start working on ticket",
 		Model:          "opus",
 		PermissionMode: "bypassPermissions",
 	}

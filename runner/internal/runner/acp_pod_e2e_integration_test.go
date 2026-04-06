@@ -141,7 +141,7 @@ func TestACPPod_MessageHandler_CreatePod_Integration(t *testing.T) {
 		AgentfileSource: "AGENT \"" + mockAgentCmd() + "\"\nMODE acp\nPROMPT_POSITION prepend\n",
 		EnvVars:       map[string]string{"ACP_MOCK_AGENT": "1"},
 		LaunchArgs:    mockAgentArgs(),
-		InitialPrompt: "hello from e2e",
+		Prompt: "hello from e2e",
 	}
 
 	err := mc.SimulateCreatePod(cmd)
@@ -161,7 +161,7 @@ func TestACPPod_MessageHandler_CreatePod_Integration(t *testing.T) {
 		t.Fatal("expected at least 1 pod in store")
 	}
 
-	// Verify AgentStatus event was sent (initial prompt triggers processing→idle).
+	// Verify AgentStatus event was sent (prompt triggers processing→idle).
 	ok = waitForAgentStatusEvent(mc, "idle", 10*time.Second)
 	if !ok {
 		dumpEvents(t, mc)

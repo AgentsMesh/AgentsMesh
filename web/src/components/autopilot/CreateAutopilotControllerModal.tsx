@@ -29,7 +29,7 @@ export function CreateAutopilotControllerModal({
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
-  const [initialPrompt, setInitialPrompt] = useState("");
+  const [promptText, setPromptText] = useState("");
   const [maxIterations, setMaxIterations] = useState(10);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [iterationTimeout, setIterationTimeout] = useState(300);
@@ -40,7 +40,7 @@ export function CreateAutopilotControllerModal({
   // Reset form when modal opens/closes
   React.useEffect(() => {
     if (!open) {
-      setInitialPrompt("");
+      setPromptText("");
       setMaxIterations(10);
       setShowAdvanced(false);
       setIterationTimeout(300);
@@ -58,7 +58,7 @@ export function CreateAutopilotControllerModal({
     try {
       await createAutopilotController({
         pod_key: podKey,
-        initial_prompt: initialPrompt || undefined,
+        prompt: promptText || undefined,
         max_iterations: maxIterations,
         iteration_timeout_sec: iterationTimeout,
         no_progress_threshold: noProgressThreshold,
@@ -113,16 +113,16 @@ export function CreateAutopilotControllerModal({
           {/* Initial Prompt */}
           <FormField
             label="Task Description"
-            htmlFor="initial-prompt"
+            htmlFor="prompt"
             hint="Optional. If not provided, Autopilot will continue from current state."
           >
             <textarea
-              id="initial-prompt"
+              id="prompt"
               className="w-full px-3 py-2 border border-border rounded-md bg-background resize-none"
               rows={3}
               placeholder="Describe the task for Autopilot to complete..."
-              value={initialPrompt}
-              onChange={(e) => setInitialPrompt(e.target.value)}
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
             />
           </FormField>
 

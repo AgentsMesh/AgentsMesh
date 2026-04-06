@@ -66,8 +66,8 @@ type Pod struct {
 	LastActivity      *time.Time `json:"last_activity,omitempty"`
 	AgentWaitingSince *time.Time `json:"-"`
 
-	// Initial prompt and configuration
-	InitialPrompt string  `gorm:"type:text" json:"initial_prompt,omitempty"`
+	// Prompt and configuration
+	Prompt string  `gorm:"column:prompt;type:text" json:"prompt,omitempty"`
 	BranchName    *string `gorm:"size:255" json:"branch_name,omitempty"`
 	SandboxPath   *string `gorm:"column:sandbox_path;size:500" json:"sandbox_path,omitempty"`
 

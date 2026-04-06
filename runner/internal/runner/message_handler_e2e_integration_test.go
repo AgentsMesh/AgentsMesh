@@ -59,7 +59,7 @@ func TestMessageHandler_CreatePod_TerminalOutput_Integration(t *testing.T) {
 		PodKey:        "e2e-echo-pod",
 		LaunchCommand: "echo",
 		AgentfileSource: "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n",
-		InitialPrompt: "e2e test",
+		Prompt: "e2e test",
 	}
 
 	err := mc.SimulateCreatePod(cmd)
@@ -105,7 +105,7 @@ func TestMessageHandler_CreateTerminate_Integration(t *testing.T) {
 		PodKey:        "e2e-sleep-pod",
 		LaunchCommand: "sleep",
 		AgentfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
-		InitialPrompt: "60",
+		Prompt: "60",
 	}
 
 	err := mc.SimulateCreatePod(cmd)
@@ -161,7 +161,7 @@ func TestMessageHandler_MaxCapacity_Integration(t *testing.T) {
 		PodKey:        "e2e-cap-pod-1",
 		LaunchCommand: "sleep",
 		AgentfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
-		InitialPrompt: "300",
+		Prompt: "300",
 	}
 	err := mc.SimulateCreatePod(cmd1)
 	require.NoError(t, err, "first pod should be created")
@@ -177,7 +177,7 @@ func TestMessageHandler_MaxCapacity_Integration(t *testing.T) {
 		PodKey:        "e2e-cap-pod-2",
 		LaunchCommand: "sleep",
 		AgentfileSource: "AGENT sleep\nMODE pty\nPROMPT_POSITION prepend\n",
-		InitialPrompt: "300",
+		Prompt: "300",
 	}
 	// Even though OnCreatePod doesn't check capacity itself (gRPC layer does),
 	// creating a second pod demonstrates the store holds 2 — confirming that

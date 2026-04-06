@@ -20,7 +20,7 @@ setup:
   sql: |
     -- 清理可能存在的测试数据
     DELETE FROM channels WHERE name LIKE 'E2E Full Collab%';
-    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Full Collab%';
+    DELETE FROM agent_pods WHERE prompt LIKE 'E2E Full Collab%';
 
 steps:
   - id: step-1
@@ -105,7 +105,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Full Collab Pod A"
+          prompt: "E2E Full Collab Pod A"
       expected:
         status: 201
       save:
@@ -124,7 +124,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Full Collab Pod B"
+          prompt: "E2E Full Collab Pod B"
       expected:
         status: 201
       save:

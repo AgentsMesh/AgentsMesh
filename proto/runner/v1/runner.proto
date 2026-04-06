@@ -230,7 +230,8 @@ message CreatePodCommand {
   map<string, string> env_vars = 4;                          // ENV 声明产出的环境变量
   repeated FileToCreate files_to_create = 5;                 // file/mkdir 语句产出的文件列表
   SandboxConfig sandbox_config = 6;                          // 沙箱/Git 配置
-  string initial_prompt = 7 [deprecated = true];             // Deprecated: 使用 prompt 字段
+  reserved 7;
+  reserved "initial_prompt";
   int32 cols = 8;                                            // 终端列数（由浏览器传入）
   int32 rows = 9;                                            // 终端行数（由浏览器传入）
   repeated ResourceToDownload resources_to_download = 10;    // Skills 等资源下载
@@ -530,7 +531,7 @@ message CreateAutopilotCommand {
 // AutopilotConfig Autopilot 配置
 message AutopilotConfig {
   // 任务
-  string initial_prompt = 1;
+  string prompt = 1;
 
   // 迭代控制
   int32 max_iterations = 2;              // 默认 10

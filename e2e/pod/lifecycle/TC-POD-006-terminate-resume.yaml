@@ -20,7 +20,7 @@ preconditions:
 setup:
   sql: |
     -- 清理可能存在的测试 Pod
-    DELETE FROM agent_pods WHERE initial_prompt LIKE 'E2E Resume Test%';
+    DELETE FROM agent_pods WHERE prompt LIKE 'E2E Resume Test%';
 
 steps:
   - id: step-1
@@ -87,7 +87,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Resume Test - Original Pod"
+          prompt: "E2E Resume Test - Original Pod"
       expected:
         status: 201
         body:
@@ -177,7 +177,7 @@ steps:
         body:
           agent_slug: "{agent_slug}"
           source_pod_key: "{original_pod_key}"
-          initial_prompt: "E2E Resume Test - Resumed Pod"
+          prompt: "E2E Resume Test - Resumed Pod"
       expected:
         status: 201
         body:
@@ -234,7 +234,7 @@ steps:
         body:
           agent_slug: "{agent_slug}"
           source_pod_key: "{original_pod_key}"
-          initial_prompt: "E2E Resume Test - Should Fail"
+          prompt: "E2E Resume Test - Should Fail"
       expected:
         status: 409
         body:

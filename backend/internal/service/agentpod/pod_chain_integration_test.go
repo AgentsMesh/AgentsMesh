@@ -81,7 +81,7 @@ func TestPodChain_AgentfileLayerToCommand(t *testing.T) {
 	assert.Equal(t, "feature-x", *dbPod.BranchName)
 	require.NotNil(t, dbPod.PermissionMode)
 	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode)
-	assert.Equal(t, "do something", dbPod.InitialPrompt)
+	assert.Equal(t, "do something", dbPod.Prompt)
 
 	// Verify gRPC command content — Backend eval produces execution instructions
 	cmd := coord.lastCmd

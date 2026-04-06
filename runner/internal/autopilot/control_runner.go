@@ -87,7 +87,7 @@ func (cr *ControlRunner) SetSessionID(id string) {
 // startControlProcess starts a new Control process for the first iteration.
 // This creates a new session and saves the session_id for future resume.
 func (cr *ControlRunner) startControlProcess(ctx context.Context, iteration int) (*ControlDecision, error) {
-	prompt := cr.promptBuilder.BuildInitialPrompt()
+	prompt := cr.promptBuilder.BuildPrompt()
 
 	args := []string{
 		"--dangerously-skip-permissions",

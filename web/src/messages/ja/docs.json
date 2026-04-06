@@ -386,8 +386,8 @@
           "repositoryDesc": "Link to a Git repository for automatic cloning",
           "ticket": "Ticket",
           "ticketDesc": "Link to a ticket for context and tracking",
-          "initialPrompt": "Initial Prompt",
-          "initialPromptDesc": "Starting instructions for the AI agent"
+          "prompt": "Initial Prompt",
+          "promptDesc": "Starting instructions for the AI agent"
         }
       },
       "workspace": {
@@ -907,7 +907,7 @@
           "paramsHeader": "Parameters",
           "createPod": "create_pod",
           "createPodDesc": "Create a new AgentPod",
-          "createPodParams": "agent_slug (required), runner_id?, ticket_slug?, initial_prompt?, model?",
+          "createPodParams": "agent_slug (required), runner_id?, ticket_slug?, prompt?, model?",
           "description": "Podの作成、監視、制御のためのツール。監視と入力ツールには、適切なスコープを持つアクティブなバインディングが必要です。",
           "getPodSnapshot": "get_pod_snapshot",
           "getPodSnapshotDesc": "他のPodのターミナル出力のスナップショットを取得（pod:read が必要）",
@@ -1202,7 +1202,7 @@
             "fields": {
               "runner_id": "Podを作成するRunnerのID",
               "agent_slug": "エージェント識別子（例：claude-code、aider）",
-              "initial_prompt": "エージェントへの初期プロンプトまたはタスク",
+              "prompt": "エージェントへの初期プロンプトまたはタスク",
               "repository_id": "Podに関連付けるリポジトリ",
               "branch": "作業するGitブランチ",
               "ticket_slug": "リンクするチケット識別子（例：AM-123）",

@@ -1937,17 +1937,15 @@ type CreatePodCommand struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	PodKey string                 `protobuf:"bytes,1,opt,name=pod_key,json=podKey,proto3" json:"pod_key,omitempty"`
 	// 执行指令（Backend AgentFile eval 产出）
-	LaunchCommand string            `protobuf:"bytes,2,opt,name=launch_command,json=launchCommand,proto3" json:"launch_command,omitempty"`                                                         // AGENT 声明的命令（如 "claude"）
-	LaunchArgs    []string          `protobuf:"bytes,3,rep,name=launch_args,json=launchArgs,proto3" json:"launch_args,omitempty"`                                                                  // arg 语句 + MODE args 的最终参数列表
-	EnvVars       map[string]string `protobuf:"bytes,4,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // ENV 声明产出的环境变量
-	FilesToCreate []*FileToCreate   `protobuf:"bytes,5,rep,name=files_to_create,json=filesToCreate,proto3" json:"files_to_create,omitempty"`                                                       // file/mkdir 语句产出的文件列表
-	SandboxConfig *SandboxConfig    `protobuf:"bytes,6,opt,name=sandbox_config,json=sandboxConfig,proto3" json:"sandbox_config,omitempty"`                                                         // 沙箱/Git 配置
-	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
-	InitialPrompt       string                `protobuf:"bytes,7,opt,name=initial_prompt,json=initialPrompt,proto3" json:"initial_prompt,omitempty"`                      // Deprecated: 使用 prompt 字段
-	Cols                int32                 `protobuf:"varint,8,opt,name=cols,proto3" json:"cols,omitempty"`                                                            // 终端列数（由浏览器传入）
-	Rows                int32                 `protobuf:"varint,9,opt,name=rows,proto3" json:"rows,omitempty"`                                                            // 终端行数（由浏览器传入）
-	ResourcesToDownload []*ResourceToDownload `protobuf:"bytes,10,rep,name=resources_to_download,json=resourcesToDownload,proto3" json:"resources_to_download,omitempty"` // Skills 等资源下载
-	InteractionMode     string                `protobuf:"bytes,11,opt,name=interaction_mode,json=interactionMode,proto3" json:"interaction_mode,omitempty"`               // MODE 声明："pty" 或 "acp"
+	LaunchCommand       string                `protobuf:"bytes,2,opt,name=launch_command,json=launchCommand,proto3" json:"launch_command,omitempty"`                                                         // AGENT 声明的命令（如 "claude"）
+	LaunchArgs          []string              `protobuf:"bytes,3,rep,name=launch_args,json=launchArgs,proto3" json:"launch_args,omitempty"`                                                                  // arg 语句 + MODE args 的最终参数列表
+	EnvVars             map[string]string     `protobuf:"bytes,4,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // ENV 声明产出的环境变量
+	FilesToCreate       []*FileToCreate       `protobuf:"bytes,5,rep,name=files_to_create,json=filesToCreate,proto3" json:"files_to_create,omitempty"`                                                       // file/mkdir 语句产出的文件列表
+	SandboxConfig       *SandboxConfig        `protobuf:"bytes,6,opt,name=sandbox_config,json=sandboxConfig,proto3" json:"sandbox_config,omitempty"`                                                         // 沙箱/Git 配置
+	Cols                int32                 `protobuf:"varint,8,opt,name=cols,proto3" json:"cols,omitempty"`                                                                                               // 终端列数（由浏览器传入）
+	Rows                int32                 `protobuf:"varint,9,opt,name=rows,proto3" json:"rows,omitempty"`                                                                                               // 终端行数（由浏览器传入）
+	ResourcesToDownload []*ResourceToDownload `protobuf:"bytes,10,rep,name=resources_to_download,json=resourcesToDownload,proto3" json:"resources_to_download,omitempty"`                                    // Skills 等资源下载
+	InteractionMode     string                `protobuf:"bytes,11,opt,name=interaction_mode,json=interactionMode,proto3" json:"interaction_mode,omitempty"`                                                  // MODE 声明："pty" 或 "acp"
 	// 废弃字段（保留 field number，Runner 不再读取）
 	//
 	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
@@ -2040,14 +2038,6 @@ func (x *CreatePodCommand) GetSandboxConfig() *SandboxConfig {
 		return x.SandboxConfig
 	}
 	return nil
-}
-
-// Deprecated: Marked as deprecated in runner/v1/runner.proto.
-func (x *CreatePodCommand) GetInitialPrompt() string {
-	if x != nil {
-		return x.InitialPrompt
-	}
-	return ""
 }
 
 func (x *CreatePodCommand) GetCols() int32 {
@@ -4186,7 +4176,7 @@ func (x *CreateAutopilotCommand) GetConfig() *AutopilotConfig {
 type AutopilotConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 任务
-	InitialPrompt string `protobuf:"bytes,1,opt,name=initial_prompt,json=initialPrompt,proto3" json:"initial_prompt,omitempty"`
+	Prompt string `protobuf:"bytes,1,opt,name=prompt,proto3" json:"prompt,omitempty"`
 	// 迭代控制
 	MaxIterations           int32 `protobuf:"varint,2,opt,name=max_iterations,json=maxIterations,proto3" json:"max_iterations,omitempty"`                                 // 默认 10
 	IterationTimeoutSeconds int32 `protobuf:"varint,3,opt,name=iteration_timeout_seconds,json=iterationTimeoutSeconds,proto3" json:"iteration_timeout_seconds,omitempty"` // 单次迭代超时，默认 300
@@ -4233,9 +4223,9 @@ func (*AutopilotConfig) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{50}
 }
 
-func (x *AutopilotConfig) GetInitialPrompt() string {
+func (x *AutopilotConfig) GetPrompt() string {
 	if x != nil {
-		return x.InitialPrompt
+		return x.Prompt
 	}
 	return ""
 }
@@ -5678,7 +5668,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x03 \x01(\tR\acommand\x12!\n" +
-	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\x85\t\n" +
+	"\fdefault_args\x18\x04 \x03(\tR\vdefaultArgs\"\xf0\b\n" +
 	"\x10CreatePodCommand\x12\x17\n" +
 	"\apod_key\x18\x01 \x01(\tR\x06podKey\x12%\n" +
 	"\x0elaunch_command\x18\x02 \x01(\tR\rlaunchCommand\x12\x1f\n" +
@@ -5686,8 +5676,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"launchArgs\x12C\n" +
 	"\benv_vars\x18\x04 \x03(\v2(.runner.v1.CreatePodCommand.EnvVarsEntryR\aenvVars\x12?\n" +
 	"\x0ffiles_to_create\x18\x05 \x03(\v2\x17.runner.v1.FileToCreateR\rfilesToCreate\x12?\n" +
-	"\x0esandbox_config\x18\x06 \x01(\v2\x18.runner.v1.SandboxConfigR\rsandboxConfig\x12)\n" +
-	"\x0einitial_prompt\x18\a \x01(\tB\x02\x18\x01R\rinitialPrompt\x12\x12\n" +
+	"\x0esandbox_config\x18\x06 \x01(\v2\x18.runner.v1.SandboxConfigR\rsandboxConfig\x12\x12\n" +
 	"\x04cols\x18\b \x01(\x05R\x04cols\x12\x12\n" +
 	"\x04rows\x18\t \x01(\x05R\x04rows\x12Q\n" +
 	"\x15resources_to_download\x18\n" +
@@ -5710,7 +5699,7 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10CredentialsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xae\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\a\x10\bR\x0einitial_prompt\"\xae\x01\n" +
 	"\x12ResourceToDownload\x12\x10\n" +
 	"\x03sha\x18\x01 \x01(\tR\x03sha\x12!\n" +
 	"\fdownload_url\x18\x02 \x01(\tR\vdownloadUrl\x12\x1f\n" +
@@ -5864,9 +5853,9 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\apod_key\x18\x02 \x01(\tR\x06podKey\x12:\n" +
 	"\n" +
 	"pod_config\x18\x03 \x01(\v2\x1b.runner.v1.CreatePodCommandR\tpodConfig\x122\n" +
-	"\x06config\x18\x04 \x01(\v2\x1a.runner.v1.AutopilotConfigR\x06config\"\xc9\x03\n" +
-	"\x0fAutopilotConfig\x12%\n" +
-	"\x0einitial_prompt\x18\x01 \x01(\tR\rinitialPrompt\x12%\n" +
+	"\x06config\x18\x04 \x01(\v2\x1a.runner.v1.AutopilotConfigR\x06config\"\xba\x03\n" +
+	"\x0fAutopilotConfig\x12\x16\n" +
+	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12%\n" +
 	"\x0emax_iterations\x18\x02 \x01(\x05R\rmaxIterations\x12:\n" +
 	"\x19iteration_timeout_seconds\x18\x03 \x01(\x05R\x17iterationTimeoutSeconds\x122\n" +
 	"\x15no_progress_threshold\x18\x04 \x01(\x05R\x13noProgressThreshold\x120\n" +

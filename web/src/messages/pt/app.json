@@ -7,7 +7,7 @@
     "noRunnersOnline": "Nenhum runner online",
     "selectAgent": "Selecionar Agente",
     "selectRepository": "Selecionar Repositório",
-    "initialPrompt": "Prompt Inicial",
+    "prompt": "Prompt Inicial",
     "status": {
       "initializing": "Inicializando",
       "running": "Executando",
@@ -205,8 +205,8 @@
       "permissionDefault": "Default",
       "permissionPlan": "Plan Mode",
       "permissionAutoApprove": "Auto-approve (Dangerous)",
-      "initialPrompt": "Initial Prompt (optional)",
-      "initialPromptPlaceholder": "Work on ticket: {title}",
+      "prompt": "Initial Prompt (optional)",
+      "promptPlaceholder": "Work on ticket: {title}",
       "creating": "Creating...",
       "createPod": "Create Pod",
       "createFailed": "Failed to create pod",
@@ -286,8 +286,8 @@
       "selectRepository": "Select a repository...",
       "branch": "Branch",
       "branchPlaceholder": "Enter branch name (e.g., main)",
-      "initialPromptOptional": "Initial Prompt (optional)",
-      "initialPromptPlaceholder": "Enter an initial prompt for the agent...",
+      "promptOptional": "Initial Prompt (optional)",
+      "promptPlaceholder": "Enter an initial prompt for the agent...",
       "creating": "Creating...",
       "createPod": "Create Pod"
     }

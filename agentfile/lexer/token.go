@@ -50,7 +50,7 @@ const (
 	KW_REMOVE          // REMOVE
 	KW_MODE            // MODE
 	KW_CREDENTIAL      // CREDENTIAL
-	KW_PROMPT          // PROMPT (initial prompt content)
+	KW_PROMPT          // PROMPT (prompt content)
 	KW_PROMPT_POSITION // PROMPT_POSITION (prepend/append/none)
 
 	// Config type keywords (uppercase)

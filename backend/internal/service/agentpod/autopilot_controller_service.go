@@ -42,7 +42,7 @@ func (s *AutopilotControllerService) SetCommandSender(sender AutopilotCommandSen
 type CreateAndStartRequest struct {
 	OrganizationID int64
 	Pod            *agentpod.Pod
-	InitialPrompt  string
+	Prompt         string
 
 	MaxIterations         int32
 	IterationTimeoutSec   int32
@@ -79,7 +79,7 @@ func (s *AutopilotControllerService) CreateAndStart(ctx context.Context, req *Cr
 		PodKey:                 req.Pod.PodKey,
 		PodID:                  req.Pod.ID,
 		RunnerID:               req.Pod.RunnerID,
-		InitialPrompt:          req.InitialPrompt,
+		Prompt:                 req.Prompt,
 		Phase:                  agentpod.AutopilotPhaseInitializing,
 		MaxIterations:          maxIter,
 		IterationTimeoutSec:    iterTimeout,
@@ -111,7 +111,7 @@ func (s *AutopilotControllerService) CreateAndStart(ctx context.Context, req *Cr
 			AutopilotKey: autopilotKey,
 			PodKey:       req.Pod.PodKey,
 			Config: &runnerv1.AutopilotConfig{
-				InitialPrompt:           req.InitialPrompt,
+				Prompt:                  req.Prompt,
 				MaxIterations:           maxIter,
 				IterationTimeoutSeconds: iterTimeout,
 				NoProgressThreshold:     noProg,

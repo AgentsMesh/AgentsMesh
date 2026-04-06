@@ -136,7 +136,7 @@ func NewAutopilotController(cfg Config) *AutopilotController {
 
 	// Initialize PromptBuilder
 	ac.promptBuilder = NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:       cfg.ProtoConfig.InitialPrompt,
+		Prompt:              cfg.ProtoConfig.Prompt,
 		CustomTemplate:      cfg.ProtoConfig.ControlPromptTemplate,
 		MCPPort:             mcpPort,
 		PodKey:              cfg.PodKey,
@@ -212,5 +212,5 @@ func (ac *AutopilotController) GetStatus() Status {
 	}
 }
 
-// Note: OnPodWaiting, sendInitialPrompt are in autopilot_controller_logic.go
+// Note: OnPodWaiting, sendPrompt are in autopilot_controller_logic.go
 // Note: Test helpers and progress methods are in autopilot_controller_helpers.go

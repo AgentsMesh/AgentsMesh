@@ -6,7 +6,7 @@ type CreateAutopilotControllerCommand struct {
 	PodKey                 string `json:"pod_key,omitempty"`
 
 	// Configuration
-	InitialPrompt         string `json:"initial_prompt,omitempty"`
+	Prompt                string `json:"prompt,omitempty"`
 	MaxIterations         int32  `json:"max_iterations,omitempty"`
 	IterationTimeoutSec   int32  `json:"iteration_timeout_sec,omitempty"`
 	NoProgressThreshold   int32  `json:"no_progress_threshold,omitempty"`

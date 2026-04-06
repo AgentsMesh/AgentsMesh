@@ -121,7 +121,7 @@
     "status_terminated": "Terminated",
     "status_failed": "Failed",
     "agent": "Agent",
-    "initial_prompt": "Initial Prompt",
+    "prompt": "Prompt",
     "branch_name": "Branch Name",
     "pod_created": "Pod created successfully",
     "pod_terminated": "Pod terminated successfully"

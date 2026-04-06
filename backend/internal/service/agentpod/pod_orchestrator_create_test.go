@@ -396,7 +396,7 @@ func TestCreatePod_AgentFilePrompt_ExtractedToDB(t *testing.T) {
 	require.NoError(t, err)
 	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
 	require.NoError(t, err)
-	assert.Equal(t, "from agentfile", dbPod.InitialPrompt, "AgentFile PROMPT should be extracted to DB")
+	assert.Equal(t, "from agentfile", dbPod.Prompt, "AgentFile PROMPT should be extracted to DB")
 }
 
 func TestCreatePod_AgentFileBranch_OverridesReqBranch(t *testing.T) {

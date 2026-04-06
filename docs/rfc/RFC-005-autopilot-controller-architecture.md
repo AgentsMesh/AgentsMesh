@@ -308,7 +308,7 @@ func (rp *AutopilotController) runStateDetection() {
 
 ```go
 func (rp *AutopilotController) startControlProcess(ctx context.Context) (*ControlDecision, error) {
-    prompt := rp.buildInitialPrompt()
+    prompt := rp.buildPrompt()
 
     args := []string{
         "--dangerously-skip-permissions",
@@ -379,7 +379,7 @@ func (rp *AutopilotController) resumeControlProcess(ctx context.Context) (*Contr
 - 如果你发现自己想要直接执行任务，停下来，改为向 Pod 发送指令
 
 ## 任务
-{initial_prompt}
+{prompt}
 
 ## 与 Pod 交互的方式
 使用 Bash 工具执行以下 curl 命令：

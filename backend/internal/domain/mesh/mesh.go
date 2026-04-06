@@ -96,7 +96,7 @@ type CreatePodForTicketRequest struct {
 	TicketID       int64  `json:"ticket_id"`
 	RunnerID       int64  `json:"runner_id"`
 	CreatedByID    int64  `json:"created_by_id"`
-	InitialPrompt  string `json:"initial_prompt,omitempty"`
+	Prompt         string `json:"prompt,omitempty"`
 	Model          string `json:"model,omitempty"`
 	PermissionMode string `json:"permission_mode,omitempty"`
 }

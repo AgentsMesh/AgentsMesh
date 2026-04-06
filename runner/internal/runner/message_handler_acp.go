@@ -144,7 +144,7 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 		// Don't fail pod creation — session can be retried via prompt
 	}
 
-	// Send initial prompt if provided.
+	// Send prompt if provided.
 	// Claude: sessionID is empty (first message triggers system/init asynchronously).
 	// ACP/Codex: sessionID is already set by NewSession().
 	// ACPClient.SendPrompt checks State() == Idle (guaranteed after Handshake).
@@ -154,7 +154,7 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 			"text": cmd.Prompt, "role": "user",
 		})
 		if err := acpClient.SendPrompt(cmd.Prompt); err != nil {
-			log.Error("Failed to send initial prompt", "pod_key", podKey, "error", err)
+			log.Error("Failed to send prompt", "pod_key", podKey, "error", err)
 		}
 	}
 

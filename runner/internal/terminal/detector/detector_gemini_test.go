@@ -9,7 +9,7 @@ import (
 // Gemini CLI specific scenario tests
 // Gemini CLI uses a different UI style with colored output and specific prompts
 
-func TestGemini_InitialPrompt(t *testing.T) {
+func TestGemini_Prompt(t *testing.T) {
 	d := NewMultiSignalDetector(testDetectorConfig())
 
 	simulateOutputAndScreen(d, 300, []string{

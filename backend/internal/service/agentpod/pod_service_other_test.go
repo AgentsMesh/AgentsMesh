@@ -51,7 +51,7 @@ func TestCreatePodRequest(t *testing.T) {
 		RepositoryID:      intPtr(6),
 		TicketID:          intPtr(7),
 		CreatedByID:       8,
-		InitialPrompt:     "Test prompt",
+		Prompt:            "Test prompt",
 		BranchName:        strPtr("feature/test"),
 		Model:             "opus",
 		PermissionMode:    "plan",

@@ -105,7 +105,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 			}
 		}
 		if result.Prompt != "" {
-			resolved.InitialPrompt = result.Prompt
+			resolved.Prompt = result.Prompt
 		}
 	}
 
@@ -151,7 +151,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		RepositoryID:        effectiveRepoID,
 		TicketID:            req.TicketID,
 		CreatedByID:         req.UserID,
-		InitialPrompt:       resolved.InitialPrompt,
+		Prompt:              resolved.Prompt,
 		Alias:               req.Alias,
 		BranchName:          effectiveBranch,
 		PermissionMode:      effectivePermissionMode,

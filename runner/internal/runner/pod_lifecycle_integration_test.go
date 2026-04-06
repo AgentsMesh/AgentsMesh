@@ -35,7 +35,7 @@ func buildTestPod(t *testing.T, agentfile string, opts ...func(*runnerv1.CreateP
 func TestPodLifecycle_EchoCommand_Integration(t *testing.T) {
 	af := "AGENT echo\nMODE pty\nPROMPT_POSITION prepend\n"
 	pod := buildTestPod(t, af, func(c *runnerv1.CreatePodCommand) {
-		c.InitialPrompt = "hello from integration test"
+		c.Prompt = "hello from integration test"
 	})
 	comps := testPTYComponents(pod)
 	defer comps.Terminal.Stop()

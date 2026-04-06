@@ -10,7 +10,7 @@ type PreparationConfig struct {
 type CreatePodCommand struct {
 	PodKey            string             `json:"pod_id"` // Use pod_id for compatibility with runner
 	InitialCommand    string             `json:"initial_command,omitempty"`
-	InitialPrompt     string             `json:"initial_prompt,omitempty"`
+	Prompt            string             `json:"prompt,omitempty"`
 	PermissionMode    string             `json:"permission_mode,omitempty"`
 	TicketSlug        string             `json:"ticket_slug,omitempty"`
 	PodSuffix         string             `json:"pod_suffix,omitempty"`

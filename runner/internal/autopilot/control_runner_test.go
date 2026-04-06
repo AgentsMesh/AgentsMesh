@@ -14,7 +14,7 @@ import (
 
 func TestControlRunner_NewControlRunner(t *testing.T) {
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -69,7 +69,7 @@ func TestControlRunner_RunControlProcess_Start(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -102,7 +102,7 @@ func TestControlRunner_RunControlProcess_Resume(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },
@@ -148,7 +148,7 @@ func TestControlRunner_StartControlProcess_Timeout(t *testing.T) {
 	scriptPath := testutil.WriteTestScript(t, tmpDir, "slow_agent", "sleep 10")
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -186,7 +186,7 @@ func TestControlRunner_StartControlProcess_Success(t *testing.T) {
 		`printf '%s\n' '{"result": "TASK_COMPLETED\nAll done.", "session_id": "test-session-abc"}'`)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt: "Test task",
+		Prompt: "Test task",
 		MCPPort:       19000,
 		PodKey:        "worker-123",
 	})
@@ -224,7 +224,7 @@ func TestControlRunner_ResumeControlProcess_Success(t *testing.T) {
 		`printf '%s\n' '{"result": "CONTINUE\nMore work needed."}'`)
 
 	pb := NewPromptBuilder(PromptBuilderConfig{
-		InitialPrompt:    "Test task",
+		Prompt:    "Test task",
 		MCPPort:          19000,
 		PodKey:           "worker-123",
 		GetMaxIterations: func() int { return 10 },

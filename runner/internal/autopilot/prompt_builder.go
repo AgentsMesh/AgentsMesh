@@ -5,7 +5,7 @@ import "fmt"
 
 // PromptBuilder constructs prompts for the Control Process.
 type PromptBuilder struct {
-	initialPrompt       string
+	prompt              string
 	customTemplate      string
 	mcpPort             int
 	podKey              string
@@ -15,7 +15,7 @@ type PromptBuilder struct {
 
 // PromptBuilderConfig contains configuration for creating a PromptBuilder.
 type PromptBuilderConfig struct {
-	InitialPrompt       string
+	Prompt              string
 	CustomTemplate      string
 	MCPPort             int
 	PodKey              string
@@ -31,7 +31,7 @@ func NewPromptBuilder(cfg PromptBuilderConfig) *PromptBuilder {
 	}
 
 	return &PromptBuilder{
-		initialPrompt:       cfg.InitialPrompt,
+		prompt:              cfg.Prompt,
 		customTemplate:      cfg.CustomTemplate,
 		mcpPort:             mcpPort, // Use the defaulted value
 		podKey:              cfg.PodKey,
@@ -40,14 +40,14 @@ func NewPromptBuilder(cfg PromptBuilderConfig) *PromptBuilder {
 	}
 }
 
-// BuildInitialPrompt constructs the prompt for the first Control invocation.
-func (pb *PromptBuilder) BuildInitialPrompt() string {
+// BuildPrompt constructs the prompt for the first Control invocation.
+func (pb *PromptBuilder) BuildPrompt() string {
 	// Use custom template if provided
 	if pb.customTemplate != "" {
 		return pb.customTemplate
 	}
 
-	return fmt.Sprintf(initialPromptTemplate, pb.initialPrompt,
+	return fmt.Sprintf(promptTemplate, pb.prompt,
 		pb.podKey, pb.podKey, pb.podKey)
 }
 
@@ -61,9 +61,9 @@ func (pb *PromptBuilder) BuildResumePrompt(iteration int) string {
 	return fmt.Sprintf(resumePromptTemplate, iteration, maxIterations, pb.podKey)
 }
 
-// initialPromptTemplate is the template for the initial Control prompt.
+// promptTemplate is the template for the initial Control prompt.
 // Note: JSON examples use escaped backticks representation since Go raw strings can't contain backticks.
-const initialPromptTemplate = `你是任务编排代理（Control Agent）。你的职责是监督一个 Pod（另一个运行在终端中的 Claude Code 实例）完成任务。
+const promptTemplate = `你是任务编排代理（Control Agent）。你的职责是监督一个 Pod（另一个运行在终端中的 Claude Code 实例）完成任务。
 
 ## 你的角色
 - 你是管理者/决策者，不是执行者

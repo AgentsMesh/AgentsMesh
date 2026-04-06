@@ -386,8 +386,8 @@
           "repositoryDesc": "Link to a Git repository for automatic cloning",
           "ticket": "Ticket",
           "ticketDesc": "Link to a ticket for context and tracking",
-          "initialPrompt": "Initial Prompt",
-          "initialPromptDesc": "Starting instructions for the AI agent"
+          "prompt": "Initial Prompt",
+          "promptDesc": "Starting instructions for the AI agent"
         }
       },
       "workspace": {
@@ -907,7 +907,7 @@
           "paramsHeader": "Parameters",
           "createPod": "create_pod",
           "createPodDesc": "Create a new AgentPod",
-          "createPodParams": "agent_slug (required), runner_id?, ticket_slug?, initial_prompt?, model?",
+          "createPodParams": "agent_slug (required), runner_id?, ticket_slug?, prompt?, model?",
           "description": "Pod 생성, 관찰 및 제어를 위한 도구. 관찰 및 입력 도구는 적절한 범위의 활성 바인딩이 필요합니다.",
           "getPodSnapshot": "get_pod_snapshot",
           "getPodSnapshotDesc": "다른 Pod의 터미널 출력 스냅샷 가져오기 (pod:read 필요)",
@@ -1202,7 +1202,7 @@
             "fields": {
               "runner_id": "Pod를 생성할 Runner ID",
               "agent_slug": "에이전트 타입 식별자 (예: claude-code, aider)",
-              "initial_prompt": "에이전트에 대한 초기 프롬프트 또는 태스크",
+              "prompt": "에이전트에 대한 초기 프롬프트 또는 태스크",
               "repository_id": "Pod에 연결할 저장소",
               "branch": "작업할 Git 브랜치",
               "ticket_slug": "연결할 티켓 식별자 (예: AM-123)",

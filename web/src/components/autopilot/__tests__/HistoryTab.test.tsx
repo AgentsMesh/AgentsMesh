@@ -76,7 +76,7 @@ describe("HistoryTab", () => {
 
     it("should display different phase labels", () => {
       mockIterations["test-key"] = [
-        createMockIteration({ id: 1, iteration: 1, phase: "initial_prompt" }),
+        createMockIteration({ id: 1, iteration: 1, phase: "prompt" }),
         createMockIteration({ id: 2, iteration: 2, phase: "control_running" }),
         createMockIteration({ id: 3, iteration: 3, phase: "error" }),
       ];

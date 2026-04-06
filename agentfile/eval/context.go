@@ -21,7 +21,7 @@ type BuildResult struct {
 	// From mkdir statements
 	Dirs []string
 	// From PROMPT declaration
-	Prompt string // initial prompt content
+	Prompt string // prompt content
 	// From PROMPT_POSITION declaration
 	PromptPosition string // "prepend", "append", "none"
 

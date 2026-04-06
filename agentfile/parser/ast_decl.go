@@ -106,7 +106,7 @@ type CredentialDecl struct {
 	Position    Position
 }
 
-// PromptDecl: PROMPT "initial prompt content"
+// PromptDecl: PROMPT "prompt content"
 type PromptDecl struct {
 	Content  string
 	Position Position

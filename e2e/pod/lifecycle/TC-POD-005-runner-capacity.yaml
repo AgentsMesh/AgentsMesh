@@ -76,7 +76,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Capacity Test Pod 1"
+          prompt: "E2E Capacity Test Pod 1"
       expected:
         status: 201
         body:
@@ -131,7 +131,7 @@ steps:
         body:
           runner_id: "{runner_id}"
           agent_slug: "{agent_slug}"
-          initial_prompt: "E2E Capacity Test Pod 2"
+          prompt: "E2E Capacity Test Pod 2"
       expected:
         status: 201
         body:

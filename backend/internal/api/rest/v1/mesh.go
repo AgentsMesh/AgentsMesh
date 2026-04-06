@@ -47,7 +47,7 @@ func (h *MeshHandler) GetTopology(c *gin.Context) {
 // CreatePodForTicketRequest represents the request to create a pod for a ticket
 type CreatePodForTicketRequest struct {
 	RunnerID       int64  `json:"runner_id" binding:"required"`
-	InitialPrompt  string `json:"initial_prompt"`
+	Prompt         string `json:"prompt"`
 	Model          string `json:"model"`
 	PermissionMode string `json:"permission_mode"`
 }
@@ -77,7 +77,7 @@ func (h *MeshHandler) CreatePodForTicket(c *gin.Context) {
 		TicketID:       t.ID,
 		RunnerID:       req.RunnerID,
 		CreatedByID:    tenant.UserID,
-		InitialPrompt:  req.InitialPrompt,
+		Prompt:         req.Prompt,
 		Model:          req.Model,
 		PermissionMode: req.PermissionMode,
 	})

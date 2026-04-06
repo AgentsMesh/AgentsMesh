@@ -7,7 +7,7 @@
     "noRunnersOnline": "暂无在线节点",
     "selectAgent": "选择智能体",
     "selectRepository": "选择仓库",
-    "initialPrompt": "初始提示",
+    "prompt": "初始提示",
     "status": {
       "initializing": "初始化中",
       "running": "运行中",
@@ -222,8 +222,8 @@
       "permissionDefault": "默认",
       "permissionPlan": "计划模式",
       "permissionAutoApprove": "自动批准（危险）",
-      "initialPrompt": "初始提示（可选）",
-      "initialPromptPlaceholder": "处理 Ticket：{title}",
+      "prompt": "初始提示（可选）",
+      "promptPlaceholder": "处理 Ticket：{title}",
       "creating": "创建中...",
       "createPod": "创建 Pod",
       "createFailed": "创建 Pod 失败",
@@ -303,8 +303,8 @@
       "selectRepository": "选择仓库...",
       "branch": "分支",
       "branchPlaceholder": "输入分支名称（例如：main）",
-      "initialPromptOptional": "初始提示（可选）",
-      "initialPromptPlaceholder": "为智能体输入初始提示...",
+      "promptOptional": "初始提示（可选）",
+      "promptPlaceholder": "为智能体输入初始提示...",
       "creating": "创建中...",
       "createPod": "创建 Pod"
     }

@@ -7,7 +7,7 @@
     "noRunnersOnline": "온라인 러너 없음",
     "selectAgent": "에이전트 선택",
     "selectRepository": "저장소 선택",
-    "initialPrompt": "초기 프롬프트",
+    "prompt": "초기 프롬프트",
     "status": {
       "initializing": "초기화 중",
       "running": "실행 중",
@@ -205,8 +205,8 @@
       "permissionDefault": "Default",
       "permissionPlan": "Plan Mode",
       "permissionAutoApprove": "Auto-approve (Dangerous)",
-      "initialPrompt": "Initial Prompt (optional)",
-      "initialPromptPlaceholder": "Work on ticket: {title}",
+      "prompt": "Initial Prompt (optional)",
+      "promptPlaceholder": "Work on ticket: {title}",
       "creating": "Creating...",
       "createPod": "Create Pod",
       "createFailed": "Failed to create pod",
@@ -286,8 +286,8 @@
       "selectRepository": "Select a repository...",
       "branch": "Branch",
       "branchPlaceholder": "Enter branch name (e.g., main)",
-      "initialPromptOptional": "Initial Prompt (optional)",
-      "initialPromptPlaceholder": "Enter an initial prompt for the agent...",
+      "promptOptional": "Initial Prompt (optional)",
+      "promptPlaceholder": "Enter an initial prompt for the agent...",
       "creating": "Creating...",
       "createPod": "Create Pod"
     }

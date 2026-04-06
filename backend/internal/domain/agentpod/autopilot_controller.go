@@ -88,7 +88,7 @@ type AutopilotController struct {
 	RunnerID               int64  `gorm:"not null;index" json:"runner_id"`
 
 	// Task
-	InitialPrompt string `gorm:"type:text" json:"initial_prompt,omitempty"`
+	Prompt string `gorm:"column:prompt;type:text" json:"prompt,omitempty"`
 
 	// Status
 	Phase               string `gorm:"size:50;not null;default:'initializing'" json:"phase"`

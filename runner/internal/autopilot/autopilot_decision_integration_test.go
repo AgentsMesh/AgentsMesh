@@ -45,7 +45,7 @@ func newTestController(t *testing.T, maxIter int32, ctrl TargetPodController, cp
 		AutopilotKey: "ap-test",
 		PodKey:       "pod-test",
 		ProtoConfig: &runnerv1.AutopilotConfig{
-			InitialPrompt:           "do the task",
+			Prompt:           "do the task",
 			MaxIterations:           maxIter,
 			IterationTimeoutSeconds: 10,
 		},

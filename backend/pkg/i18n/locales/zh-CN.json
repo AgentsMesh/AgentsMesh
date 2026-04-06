@@ -121,7 +121,7 @@
     "status_terminated": "已终止",
     "status_failed": "已失败",
     "agent": "智能体",
-    "initial_prompt": "初始提示",
+    "prompt": "提示",
     "branch_name": "分支名称",
     "pod_created": "Pod 创建成功",
     "pod_terminated": "Pod 已终止"

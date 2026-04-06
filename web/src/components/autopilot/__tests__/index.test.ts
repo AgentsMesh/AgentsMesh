@@ -46,7 +46,7 @@ describe("panel/index exports", () => {
 
   it("should export iterationPhaseConfig", () => {
     expect(panelExports.iterationPhaseConfig).toBeDefined();
-    expect(panelExports.iterationPhaseConfig.initial_prompt).toBeDefined();
+    expect(panelExports.iterationPhaseConfig.prompt).toBeDefined();
     expect(panelExports.iterationPhaseConfig.control_running).toBeDefined();
     expect(panelExports.iterationPhaseConfig.completed).toBeDefined();
   });

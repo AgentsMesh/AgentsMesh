@@ -8,7 +8,7 @@ import (
 )
 
 // Start initializes and starts the AutopilotController.
-// It checks if the Pod is waiting and sends the initial prompt if so.
+// It checks if the Pod is waiting and sends the prompt if so.
 func (ac *AutopilotController) Start() error {
 	ac.log.Info("Starting AutopilotController", "autopilot_key", ac.key, "pod_key", ac.podKey)
 
@@ -28,8 +28,8 @@ func (ac *AutopilotController) Start() error {
 	ac.log.Info("Pod current status", "status", agentStatus)
 
 	if agentStatus == "waiting" {
-		// Pod is waiting for input, send initial_prompt
-		ac.sendInitialPrompt()
+		// Pod is waiting for input, send prompt
+		ac.sendPrompt()
 	}
 	// If executing, we'll wait for the next waiting event
 

@@ -54,7 +54,7 @@ func TestAutopilotController_HandleDecision_Completed(t *testing.T) {
 		"echo TASK_COMPLETED\necho All tasks done.")
 
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt:    "Test",
+		Prompt:    "Test",
 		MaxIterations:    10,
 		ControlAgentSlug: scriptPath,
 	}
@@ -109,7 +109,7 @@ func TestAutopilotController_HandleDecision_NeedHumanHelp(t *testing.T) {
 		"echo NEED_HUMAN_HELP\necho Need credentials.")
 
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt:    "Test",
+		Prompt:    "Test",
 		MaxIterations:    10,
 		ControlAgentSlug: scriptPath,
 	}
@@ -155,7 +155,7 @@ func TestAutopilotController_HandleDecision_GiveUp(t *testing.T) {
 		"echo GIVE_UP\necho Cannot complete.")
 
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt:    "Test",
+		Prompt:    "Test",
 		MaxIterations:    10,
 		ControlAgentSlug: scriptPath,
 	}
@@ -210,7 +210,7 @@ func TestAutopilotController_HandleDecision_Continue(t *testing.T) {
 		"echo CONTINUE\necho Working on it.")
 
 	protoConfig := &runnerv1.AutopilotConfig{
-		InitialPrompt:    "Test",
+		Prompt:    "Test",
 		MaxIterations:    10,
 		ControlAgentSlug: scriptPath,
 	}

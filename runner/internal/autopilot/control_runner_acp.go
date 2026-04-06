@@ -119,7 +119,7 @@ func (p *AcpControlProcess) RunControlProcess(ctx context.Context, iteration int
 	// Build prompt for this iteration.
 	var prompt string
 	if iteration <= 1 {
-		prompt = p.promptBuilder.BuildInitialPrompt()
+		prompt = p.promptBuilder.BuildPrompt()
 	} else {
 		prompt = p.promptBuilder.BuildResumePrompt(iteration)
 	}

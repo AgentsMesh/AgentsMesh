@@ -11,7 +11,7 @@ import (
 // buildAgentfileLayerFromArgs generates an AgentFile Layer from MCP tool arguments.
 // Converts scattered config fields into unified AgentFile CONFIG declarations.
 func buildAgentfileLayerFromArgs(
-	model, permissionMode, initialPrompt string,
+	model, permissionMode, prompt string,
 	configOverrides map[string]interface{},
 	repositoryURL, branchName string,
 ) string {
@@ -29,8 +29,8 @@ func buildAgentfileLayerFromArgs(
 		}
 		lines = append(lines, fmt.Sprintf("CONFIG %s = %s", k, formatMCPConfigValue(v)))
 	}
-	if initialPrompt != "" {
-		escaped := strings.ReplaceAll(initialPrompt, `\`, `\\`)
+	if prompt != "" {
+		escaped := strings.ReplaceAll(prompt, `\`, `\\`)
 		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
 		escaped = strings.ReplaceAll(escaped, "\n", `\n`)
 		escaped = strings.ReplaceAll(escaped, "\t", `\t`)
@@ -90,7 +90,7 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 					"type":        "string",
 					"description": "Ticket slug to associate with the pod (e.g., 'AM-123'). Use search_tickets to find tickets.",
 				},
-				"initial_prompt": map[string]interface{}{
+				"prompt": map[string]interface{}{
 					"type":        "string",
 					"description": "[Deprecated: prefer AgentFile PROMPT declaration] Initial prompt to send to the new agent pod",
 				},
@@ -134,11 +134,11 @@ func (s *HTTPServer) createCreatePodTool() *MCPTool {
 			// Build AgentFile Layer from scattered arguments (AgentFile SSOT).
 			model := getStringArg(args, "model")
 			permissionMode := getStringArg(args, "permission_mode")
-			initialPrompt := getStringArg(args, "initial_prompt")
+			prompt := getStringArg(args, "prompt")
 			configOverrides := getMapArg(args, "config_overrides")
 			repositoryURL := getStringArg(args, "repository_url")
 			branchName := getStringArg(args, "branch_name")
-			agentfileLayer := buildAgentfileLayerFromArgs(model, permissionMode, initialPrompt, configOverrides, repositoryURL, branchName)
+			agentfileLayer := buildAgentfileLayerFromArgs(model, permissionMode, prompt, configOverrides, repositoryURL, branchName)
 
 			req := &tools.PodCreateRequest{}
 
