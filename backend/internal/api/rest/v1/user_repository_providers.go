@@ -13,7 +13,7 @@ type RepositoryResponse struct {
 	Description   string `json:"description"`
 	DefaultBranch string `json:"default_branch"`
 	Visibility    string `json:"visibility"`
-	CloneURL      string `json:"clone_url"`
+	HttpCloneURL  string `json:"http_clone_url"`
 	SSHCloneURL   string `json:"ssh_clone_url"`
 	WebURL        string `json:"web_url"`
 }

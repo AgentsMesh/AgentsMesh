@@ -36,20 +36,20 @@ describe("RepositoriesPage - import and links", () => {
   const mockRepositories = [
     {
       id: 1, organization_id: 1, provider_type: "github", provider_base_url: "https://github.com",
-      clone_url: "https://github.com/org/repo-one.git", external_id: "12345", name: "repo-one",
+      http_clone_url: "https://github.com/org/repo-one.git", external_id: "12345", name: "repo-one",
       slug: "org/repo-one", default_branch: "main", ticket_prefix: "REPO",
       visibility: "organization", is_active: true,
       created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z",
     },
     {
       id: 2, organization_id: 1, provider_type: "gitlab", provider_base_url: "https://gitlab.com",
-      clone_url: "https://gitlab.com/org/repo-two.git", external_id: "67890", name: "repo-two",
+      http_clone_url: "https://gitlab.com/org/repo-two.git", external_id: "67890", name: "repo-two",
       slug: "org/repo-two", default_branch: "develop", visibility: "organization", is_active: true,
       created_at: "2024-01-02T00:00:00Z", updated_at: "2024-01-02T00:00:00Z",
     },
     {
       id: 3, organization_id: 1, provider_type: "github", provider_base_url: "https://github.com",
-      clone_url: "https://github.com/org/inactive-repo.git", external_id: "11111", name: "inactive-repo",
+      http_clone_url: "https://github.com/org/inactive-repo.git", external_id: "11111", name: "inactive-repo",
       slug: "org/inactive-repo", default_branch: "main", visibility: "private", is_active: false,
       created_at: "2024-01-03T00:00:00Z", updated_at: "2024-01-03T00:00:00Z",
     },

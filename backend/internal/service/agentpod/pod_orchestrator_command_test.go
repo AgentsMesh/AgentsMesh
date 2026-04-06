@@ -21,7 +21,7 @@ func TestBuildPodCommand_WithRepository(t *testing.T) {
 	prepScript := "npm install"
 	prepTimeout := 600
 	repo := &gitprovider.Repository{
-		CloneURL:           "https://github.com/org/repo.git",
+		HttpCloneURL:       "https://github.com/org/repo.git",
 		DefaultBranch:      "develop",
 		PreparationScript:  &prepScript,
 		PreparationTimeout: &prepTimeout,
@@ -44,7 +44,7 @@ func TestBuildPodCommand_WithRepository(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, coord.lastCmd)
 	require.NotNil(t, coord.lastCmd.SandboxConfig)
-	assert.Equal(t, "https://github.com/org/repo.git", coord.lastCmd.SandboxConfig.RepositoryUrl)
+	assert.Equal(t, "https://github.com/org/repo.git", coord.lastCmd.SandboxConfig.HttpCloneUrl)
 	assert.Equal(t, "develop", coord.lastCmd.SandboxConfig.SourceBranch)
 	assert.Equal(t, "npm install", coord.lastCmd.SandboxConfig.PreparationScript)
 	assert.Equal(t, int32(600), coord.lastCmd.SandboxConfig.PreparationTimeout)
@@ -52,7 +52,7 @@ func TestBuildPodCommand_WithRepository(t *testing.T) {
 
 func TestBuildPodCommand_BranchOverride(t *testing.T) {
 	repo := &gitprovider.Repository{
-		CloneURL:      "https://github.com/org/repo.git",
+		HttpCloneURL:  "https://github.com/org/repo.git",
 		DefaultBranch: "develop",
 	}
 	repoSvc := &mockRepoService{repo: repo}
@@ -132,7 +132,7 @@ func TestBuildPodCommand_WithOAuthCredential(t *testing.T) {
 		},
 	}
 	repo := &gitprovider.Repository{
-		CloneURL: "https://github.com/org/repo.git",
+		HttpCloneURL: "https://github.com/org/repo.git",
 	}
 	repoSvc := &mockRepoService{repo: repo}
 	coord := &mockPodCoordinator{}
@@ -167,7 +167,7 @@ func TestBuildPodCommand_WithSSHCredential(t *testing.T) {
 		},
 	}
 	repo := &gitprovider.Repository{
-		CloneURL: "git@github.com:org/repo.git",
+		SshCloneURL: "git@github.com:org/repo.git",
 	}
 	repoSvc := &mockRepoService{repo: repo}
 	coord := &mockPodCoordinator{}
@@ -198,7 +198,7 @@ func TestBuildPodCommand_RunnerLocalCredential_NoCredsSent(t *testing.T) {
 		},
 	}
 	repo := &gitprovider.Repository{
-		CloneURL: "https://github.com/org/repo.git",
+		HttpCloneURL: "https://github.com/org/repo.git",
 	}
 	repoSvc := &mockRepoService{repo: repo}
 	coord := &mockPodCoordinator{}

@@ -59,7 +59,7 @@ describe("ImportRepositoryModal - Import Actions", () => {
       expect(repositoryApi.create).toHaveBeenCalledWith(
         expect.objectContaining({
           provider_type: "github",
-          clone_url: "https://github.com/org/my-project.git",
+          http_clone_url: "https://github.com/org/my-project.git",
           name: "my-project",
           slug: "org/my-project",
         })

@@ -161,7 +161,7 @@ export function useImportWizard({
 
     selectRepo: (repo: UserRemoteRepositoryData, existingRepos: RepositoryData[]) => {
       const existingRepo = existingRepos.find(
-        (r) => r.clone_url === repo.clone_url || r.slug === repo.slug
+        (r) => r.http_clone_url === repo.http_clone_url || r.slug === repo.slug
       );
       setState(s => ({
         ...s,
@@ -169,7 +169,7 @@ export function useImportWizard({
         manualName: repo.name,
         manualSlug: repo.slug,
         manualDefaultBranch: repo.default_branch || "main",
-        manualCloneURL: repo.clone_url,
+        manualCloneURL: repo.http_clone_url,
         manualProviderType: s.selectedProvider?.provider_type || "github",
         manualBaseURL: s.selectedProvider?.base_url || "https://github.com",
         ticketPrefix: existingRepo?.ticket_prefix || "",
@@ -219,13 +219,12 @@ export function useImportWizard({
       setState(s => ({ ...s, importing: true, error: null }));
       try {
         // When importing from a provider, pass both HTTP and SSH clone URLs if available
-        const httpCloneUrl = state.selectedRepo?.clone_url || undefined;
+        const httpCloneUrl = state.selectedRepo?.http_clone_url || state.manualCloneURL || undefined;
         const sshCloneUrl = state.selectedRepo?.ssh_clone_url || undefined;
 
         await repositoryApi.create({
           provider_type: state.manualProviderType,
           provider_base_url: state.manualBaseURL,
-          clone_url: state.manualCloneURL,
           http_clone_url: httpCloneUrl,
           ssh_clone_url: sshCloneUrl,
           external_id: state.selectedRepo?.id || state.manualSlug.replace(/[^a-zA-Z0-9]/g, "-"),

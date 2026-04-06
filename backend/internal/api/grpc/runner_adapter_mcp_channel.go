@@ -70,7 +70,7 @@ func (a *GRPCRunnerAdapter) mcpSearchChannels(ctx context.Context, tc *middlewar
 		}
 	}
 
-	channels, _, mcpErr := a.channelService.ListChannels(ctx, tc.OrganizationID, &channel.ListChannelsFilter{
+	channels, _, mcpErr := a.channelService.ListChannels(ctx, tc.OrganizationID, &channelDomain.ChannelListFilter{
 		IncludeArchived: includeArchived, RepositoryID: params.RepositoryID,
 		TicketID: ticketID, Limit: limit, Offset: params.Offset,
 	})

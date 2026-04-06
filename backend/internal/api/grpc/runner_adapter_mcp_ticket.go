@@ -7,7 +7,6 @@ import (
 
 	ticketDomain "github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 	"github.com/anthropics/agentsmesh/backend/pkg/blocknote"
 )
 
@@ -122,7 +121,7 @@ func (a *GRPCRunnerAdapter) mcpSearchTickets(ctx context.Context, tc *middleware
 		parentTicketID = &parentTicket.ID
 	}
 
-	tickets, _, err := a.ticketService.ListTickets(ctx, &ticket.ListTicketsFilter{
+	tickets, _, err := a.ticketService.ListTickets(ctx, &ticketDomain.TicketListFilter{
 		OrganizationID: tc.OrganizationID,
 		RepositoryID:   params.RepositoryID,
 		Status:         params.Status,

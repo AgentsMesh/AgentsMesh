@@ -27,7 +27,6 @@ type ConfigBuildRequest struct {
 	RepositoryID *int64
 
 	// Repository configuration
-	RepositoryURL string // Repository clone URL (legacy, for backward compatibility)
 	HttpCloneURL  string // HTTPS clone URL
 	SshCloneURL   string // SSH clone URL
 	SourceBranch  string // Branch to checkout

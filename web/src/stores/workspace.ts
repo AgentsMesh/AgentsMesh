@@ -5,7 +5,6 @@ import {
   generatePaneId, generateNodeId,
   findLastLeaf, findLeafByPaneId,
   replaceNode, removeLeaf, updateSizes,
-  migrateWorkspaceState,
 } from "./workspaceSplitTree";
 
 // Re-export types and singletons for consumer convenience
@@ -13,7 +12,7 @@ export { relayPool } from "./relayConnection";
 export { terminalRegistry } from "./workspaceTypes";
 export type {
   WorkspacePane, SplitDirection, SplitTreeLeaf, SplitTreeSplit, SplitTreeNode,
-  GridLayoutType, GridLayout, WorkspaceState,
+  WorkspaceState,
 } from "./workspaceTypes";
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -157,7 +156,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     {
       name: "agentsmesh-workspace",
       version: 3,
-      migrate: migrateWorkspaceState as (state: unknown, version: number) => WorkspaceState,
       partialize: (state) => ({
         panes: state.panes,
         activePane: state.activePane,

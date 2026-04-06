@@ -98,8 +98,7 @@ func buildResultToProto(
 
 // buildSandboxConfig builds sandbox config from request fields.
 func buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.SandboxConfig {
-	repoURL := req.RepositoryURL
-	if repoURL == "" && req.HttpCloneURL == "" && req.SshCloneURL == "" && req.LocalPath == "" {
+	if req.HttpCloneURL == "" && req.SshCloneURL == "" && req.LocalPath == "" {
 		return nil
 	}
 
@@ -109,7 +108,6 @@ func buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.SandboxConfig {
 	}
 
 	return &runnerv1.SandboxConfig{
-		RepositoryUrl:      repoURL,
 		HttpCloneUrl:       req.HttpCloneURL,
 		SshCloneUrl:        req.SshCloneURL,
 		SourceBranch:       req.SourceBranch,

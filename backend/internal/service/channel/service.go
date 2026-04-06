@@ -104,12 +104,8 @@ func (s *Service) GetChannelByName(ctx context.Context, orgID int64, name string
 	return ch, nil
 }
 
-// ListChannelsFilter contains optional filters for listing channels.
-// Kept for backward compatibility; delegates to domain type.
-type ListChannelsFilter = channel.ChannelListFilter
-
 // ListChannels returns channels for an organization with optional filters.
-func (s *Service) ListChannels(ctx context.Context, orgID int64, filter *ListChannelsFilter) ([]*channel.Channel, int64, error) {
+func (s *Service) ListChannels(ctx context.Context, orgID int64, filter *channel.ChannelListFilter) ([]*channel.Channel, int64, error) {
 	return s.repo.ListByOrg(ctx, orgID, filter)
 }
 

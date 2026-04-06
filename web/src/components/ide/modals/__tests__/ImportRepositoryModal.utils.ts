@@ -41,7 +41,7 @@ export const mockRepository: RepositoryData = {
   description: "A test project",
   default_branch: "main",
   visibility: "private",
-  clone_url: "https://github.com/org/my-project.git",
+  http_clone_url: "https://github.com/org/my-project.git",
   ssh_clone_url: "git@github.com:org/my-project.git",
   web_url: "https://github.com/org/my-project",
 };
@@ -54,7 +54,7 @@ export const mockCreatedRepository: OrgRepositoryData = {
   slug: "org/my-project",
   provider_type: "github",
   provider_base_url: "https://github.com",
-  clone_url: "https://github.com/org/my-project.git",
+  http_clone_url: "https://github.com/org/my-project.git",
   external_id: "repo-1",
   default_branch: "main",
   visibility: "organization",

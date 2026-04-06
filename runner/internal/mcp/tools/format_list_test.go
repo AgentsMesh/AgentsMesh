@@ -119,7 +119,7 @@ func TestRepositoryList_FormatText(t *testing.T) {
 
 	t.Run("with repos", func(t *testing.T) {
 		repos := RepositoryList{
-			{ID: 1, Name: "my-repo", ProviderType: "gitlab", DefaultBranch: "main", CloneURL: "https://git.example.com/my-repo.git"},
+			{ID: 1, Name: "my-repo", ProviderType: "gitlab", DefaultBranch: "main", HttpCloneURL: "https://git.example.com/my-repo.git"},
 		}
 		result := repos.FormatText()
 		for _, s := range []string{"| 1 |", "| my-repo |", "| gitlab |", "| main |"} {

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
@@ -56,7 +57,7 @@ func (h *ChannelHandler) ListChannels(c *gin.Context) {
 		ticketID = &t.ID
 	}
 
-	channels, total, err := h.channelService.ListChannels(ctx, tenant.OrganizationID, &channel.ListChannelsFilter{
+	channels, total, err := h.channelService.ListChannels(ctx, tenant.OrganizationID, &channelDomain.ChannelListFilter{
 		IncludeArchived: req.IncludeArchived,
 		RepositoryID:    req.RepositoryID,
 		TicketID:        ticketID,

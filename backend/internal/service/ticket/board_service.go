@@ -9,7 +9,7 @@ import (
 // ========== Board View (Kanban) ==========
 
 // GetBoard returns a kanban board view of tickets.
-func (s *Service) GetBoard(ctx context.Context, filter *ListTicketsFilter) (*ticket.Board, error) {
+func (s *Service) GetBoard(ctx context.Context, filter *ticket.TicketListFilter) (*ticket.Board, error) {
 	columnStatuses := []string{
 		ticket.TicketStatusBacklog,
 		ticket.TicketStatusTodo,

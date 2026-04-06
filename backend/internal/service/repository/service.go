@@ -48,7 +48,7 @@ type CreateRequest struct {
 	OrganizationID   int64
 	ProviderType     string // github, gitlab, gitee, generic
 	ProviderBaseURL  string // https://github.com, https://gitlab.company.com
-	CloneURL         string // Full clone URL
+	CloneURL         string // Full clone URL (deprecated, still accepted for backward compat)
 	HttpCloneURL     string // HTTPS clone URL
 	SshCloneURL      string // SSH clone URL
 	ExternalID       string
@@ -180,15 +180,11 @@ func (s *Service) FindByOrgSlug(ctx context.Context, orgID int64, slug string) (
 }
 
 // GetCloneURL returns the clone URL for a repository
-// Prefers http_clone_url, falls back to clone_url for backward compatibility
 func (s *Service) GetCloneURL(ctx context.Context, repoID int64) (string, error) {
 	repo, err := s.GetByID(ctx, repoID)
 	if err != nil {
 		return "", err
 	}
-	if repo.HttpCloneURL != "" {
-		return repo.HttpCloneURL, nil
-	}
-	return repo.CloneURL, nil
+	return repo.HttpCloneURL, nil
 }
 

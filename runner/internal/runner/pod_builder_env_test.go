@@ -89,7 +89,7 @@ func TestPodBuilderWithAllOptions(t *testing.T) {
 			"ENV2": "value2",
 		},
 		SandboxConfig: &runnerv1.SandboxConfig{
-			RepositoryUrl:  "https://github.com/test/repo.git",
+			HttpCloneUrl:   "https://github.com/test/repo.git",
 			SourceBranch:   "main",
 			CredentialType: "runner_local",
 		},

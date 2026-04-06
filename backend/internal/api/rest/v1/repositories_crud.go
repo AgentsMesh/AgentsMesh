@@ -85,7 +85,6 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 		OrganizationID:   tenant.OrganizationID,
 		ProviderType:     req.ProviderType,
 		ProviderBaseURL:  req.ProviderBaseURL,
-		CloneURL:         req.CloneURL,
 		HttpCloneURL:     req.HttpCloneURL,
 		SshCloneURL:      req.SshCloneURL,
 		ExternalID:       req.ExternalID,

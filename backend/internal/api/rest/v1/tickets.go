@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	ticketDomain "github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
@@ -85,7 +86,7 @@ func (h *TicketHandler) ListTickets(c *gin.Context) {
 		limit = 20
 	}
 
-	tickets, total, err := h.ticketService.ListTickets(c.Request.Context(), &ticket.ListTicketsFilter{
+	tickets, total, err := h.ticketService.ListTickets(c.Request.Context(), &ticketDomain.TicketListFilter{
 		OrganizationID: tenant.OrganizationID,
 		RepositoryID:   req.RepositoryID,
 		Status:         req.Status,

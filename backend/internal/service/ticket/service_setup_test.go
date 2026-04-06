@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -166,7 +167,7 @@ func TestNewServiceWithContext(t *testing.T) {
 	ctx := context.Background()
 
 	// Verify service can be used with context
-	_, _, err := service.ListTickets(ctx, &ListTicketsFilter{
+	_, _, err := service.ListTickets(ctx, &ticket.TicketListFilter{
 		OrganizationID: 1,
 		Limit:          10,
 	})

@@ -186,7 +186,7 @@ func TestProjectStruct(t *testing.T) {
 		Description:   "Test repository",
 		DefaultBranch: "main",
 		WebURL:        "https://github.com/owner/test-repo",
-		CloneURL:      "https://github.com/owner/test-repo.git",
+		HttpCloneURL:  "https://github.com/owner/test-repo.git",
 		SSHCloneURL:   "git@github.com:owner/test-repo.git",
 		Visibility:    "public",
 	}

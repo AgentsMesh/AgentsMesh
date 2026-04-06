@@ -105,13 +105,6 @@ class RelayConnectionPool {
     try { return await createPromise; } finally { this.pendingSubscriptions.delete(podKey); }
   }
 
-  /** @deprecated Use subscribe() instead. */
-  async connect(podKey: string, onMessage: (data: Uint8Array | string) => void): Promise<ConnectionHandle> {
-    const subscriptionId = `legacy-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    console.warn(`[Relay] connect() is deprecated, use subscribe() with stable subscriptionId`);
-    return this.subscribe(podKey, subscriptionId, onMessage);
-  }
-
   send(podKey: string, data: string): void {
     const conn = this.connections.get(podKey);
     if (!conn || conn.ws.readyState !== WebSocket.OPEN) return;
@@ -159,12 +152,6 @@ class RelayConnectionPool {
     }
   }
 
-  /** @deprecated Use unsubscribe() instead. */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  removeListener(_podKey: string, _listener: (data: Uint8Array | string) => void): void {
-    console.warn(`[Relay] removeListener() is deprecated, use subscribe()/unsubscribe() with stable subscriptionId`);
-  }
-
   disconnect(podKey: string): void {
     const conn = this.connections.get(podKey);
     if (!conn) return;
@@ -199,7 +186,7 @@ class RelayConnectionPool {
   }
 
   private createHandle(podKey: string, subscriptionId: string): ConnectionHandle {
-    return { send: (data) => this.send(podKey, data), unsubscribe: () => this.unsubscribe(podKey, subscriptionId), disconnect: () => this.unsubscribe(podKey, subscriptionId) };
+    return { send: (data) => this.send(podKey, data), unsubscribe: () => this.unsubscribe(podKey, subscriptionId) };
   }
 
   private notifyAcpListeners(podKey: string, msgType: number, payload: unknown): void {

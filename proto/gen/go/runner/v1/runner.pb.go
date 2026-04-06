@@ -2288,7 +2288,9 @@ func (x *FileToCreate) GetIsDirectory() bool {
 type SandboxConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Git 仓库配置（可选，为空则创建空 Sandbox）
-	RepositoryUrl string `protobuf:"bytes,1,opt,name=repository_url,json=repositoryUrl,proto3" json:"repository_url,omitempty"` // 仓库克隆 URL
+	//
+	// Deprecated: Marked as deprecated in runner/v1/runner.proto.
+	RepositoryUrl string `protobuf:"bytes,1,opt,name=repository_url,json=repositoryUrl,proto3" json:"repository_url,omitempty"` // Deprecated: 使用 http_clone_url / ssh_clone_url
 	SourceBranch  string `protobuf:"bytes,2,opt,name=source_branch,json=sourceBranch,proto3" json:"source_branch,omitempty"`    // 要检出的源分支名称
 	// Git 认证配置
 	// credential_type 决定如何认证：
@@ -2342,6 +2344,7 @@ func (*SandboxConfig) Descriptor() ([]byte, []int) {
 	return file_runner_v1_runner_proto_rawDescGZIP(), []int{22}
 }
 
+// Deprecated: Marked as deprecated in runner/v1/runner.proto.
 func (x *SandboxConfig) GetRepositoryUrl() string {
 	if x != nil {
 		return x.RepositoryUrl
@@ -5712,9 +5715,9 @@ const file_runner_v1_runner_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12\x12\n" +
 	"\x04mode\x18\x03 \x01(\x05R\x04mode\x12!\n" +
-	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"\xb3\x03\n" +
-	"\rSandboxConfig\x12%\n" +
-	"\x0erepository_url\x18\x01 \x01(\tR\rrepositoryUrl\x12#\n" +
+	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"\xb7\x03\n" +
+	"\rSandboxConfig\x12)\n" +
+	"\x0erepository_url\x18\x01 \x01(\tB\x02\x18\x01R\rrepositoryUrl\x12#\n" +
 	"\rsource_branch\x18\x02 \x01(\tR\fsourceBranch\x12'\n" +
 	"\x0fcredential_type\x18\x03 \x01(\tR\x0ecredentialType\x12\x1b\n" +
 	"\tgit_token\x18\x04 \x01(\tR\bgitToken\x12&\n" +

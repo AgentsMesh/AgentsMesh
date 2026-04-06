@@ -89,7 +89,7 @@ export const mockRepository = {
   organization_id: 1,
   provider_type: "github",
   provider_base_url: "https://github.com",
-  clone_url: "https://github.com/org/repo1.git",
+  http_clone_url: "https://github.com/org/repo1.git",
   external_id: "org-repo1",
   name: "repo1",
   slug: "org/repo1",

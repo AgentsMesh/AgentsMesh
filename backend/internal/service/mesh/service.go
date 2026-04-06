@@ -91,7 +91,7 @@ func (s *Service) GetTopology(ctx context.Context, orgID int64) (*mesh.MeshTopol
 	}
 
 	// 3. Get channels
-	channels, _, err := s.channelService.ListChannels(ctx, orgID, &channelService.ListChannelsFilter{
+	channels, _, err := s.channelService.ListChannels(ctx, orgID, &channel.ChannelListFilter{
 		IncludeArchived: false,
 		Limit:           50,
 		Offset:          0,

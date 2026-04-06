@@ -40,7 +40,7 @@ func TestGetBoard(t *testing.T) {
 	}
 
 	t.Run("returns board with all columns", func(t *testing.T) {
-		filter := &ListTicketsFilter{
+		filter := &ticket.TicketListFilter{
 			OrganizationID: 1,
 			Limit:          50,
 			Offset:         0,
@@ -59,7 +59,7 @@ func TestGetBoard(t *testing.T) {
 	})
 
 	t.Run("returns empty columns for new organization", func(t *testing.T) {
-		filter := &ListTicketsFilter{
+		filter := &ticket.TicketListFilter{
 			OrganizationID: 999,
 			Limit:          50,
 			Offset:         0,

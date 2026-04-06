@@ -59,6 +59,3 @@ type CreateTicketRequest struct {
 	LabelIDs       []int64
 	Labels         []string // Label names for convenience
 }
-
-// ListTicketsFilter is a type alias for backward compatibility.
-type ListTicketsFilter = ticket.TicketListFilter

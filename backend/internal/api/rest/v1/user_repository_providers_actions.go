@@ -177,7 +177,7 @@ func (h *UserRepositoryProviderHandler) ListRepositories(c *gin.Context) {
 			Description:   p.Description,
 			DefaultBranch: p.DefaultBranch,
 			Visibility:    p.Visibility,
-			CloneURL:      p.CloneURL,
+			HttpCloneURL:  p.HttpCloneURL,
 			SSHCloneURL:   p.SSHCloneURL,
 			WebURL:        p.WebURL,
 		}

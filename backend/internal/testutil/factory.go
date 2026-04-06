@@ -108,7 +108,7 @@ func CreateTicket(t *testing.T, db *gorm.DB, orgID, reporterID int64, title stri
 func CreateRepo(t *testing.T, db *gorm.DB, orgID int64, slug, cloneURL string) (id int64) {
 	t.Helper()
 	result := db.Exec(
-		`INSERT INTO repositories (organization_id, external_id, name, slug, clone_url) VALUES (?, ?, ?, ?, ?)`,
+		`INSERT INTO repositories (organization_id, external_id, name, slug, http_clone_url) VALUES (?, ?, ?, ?, ?)`,
 		orgID, "ext-"+slug, slug, slug, cloneURL,
 	)
 	if result.Error != nil {

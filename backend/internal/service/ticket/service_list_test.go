@@ -24,7 +24,7 @@ func TestListTickets(t *testing.T) {
 	}
 
 	// List tickets
-	filter := &ListTicketsFilter{
+	filter := &ticket.TicketListFilter{
 		OrganizationID: 1,
 		Limit:          10,
 		Offset:         0,
@@ -71,7 +71,7 @@ func TestListTicketsWithFilter(t *testing.T) {
 	}
 
 	// Filter by status
-	filter := &ListTicketsFilter{
+	filter := &ticket.TicketListFilter{
 		OrganizationID: 1,
 		Status:         ticket.TicketStatusInProgress,
 		Limit:          10,
@@ -123,22 +123,22 @@ func TestListTickets_Filters(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		filter    *ListTicketsFilter
+		filter    *ticket.TicketListFilter
 		wantCount int64
 	}{
 		{
 			name:      "filter by repository",
-			filter:    &ListTicketsFilter{OrganizationID: 1, RepositoryID: &repoID, Limit: 10},
+			filter:    &ticket.TicketListFilter{OrganizationID: 1, RepositoryID: &repoID, Limit: 10},
 			wantCount: 1,
 		},
 		{
 			name:      "filter by priority",
-			filter:    &ListTicketsFilter{OrganizationID: 1, Priority: "high", Limit: 10},
+			filter:    &ticket.TicketListFilter{OrganizationID: 1, Priority: "high", Limit: 10},
 			wantCount: 1,
 		},
 		{
 			name:      "filter by reporter",
-			filter:    &ListTicketsFilter{OrganizationID: 1, ReporterID: func() *int64 { v := int64(1); return &v }(), Limit: 10},
+			filter:    &ticket.TicketListFilter{OrganizationID: 1, ReporterID: func() *int64 { v := int64(1); return &v }(), Limit: 10},
 			wantCount: 2,
 		},
 	}

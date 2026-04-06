@@ -40,7 +40,7 @@ describe("RepositoryDetailPage", () => {
     organization_id: 1,
     provider_type: "github",
     provider_base_url: "https://github.com",
-    clone_url: "https://github.com/org/my-repo.git",
+    http_clone_url: "https://github.com/org/my-repo.git",
     external_id: "12345",
     name: "my-repo",
     slug: "org/my-repo",
@@ -189,7 +189,7 @@ describe("RepositoryDetailPage", () => {
       render(<RepositoryDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText("Clone URL")).toBeInTheDocument();
+        expect(screen.getByText("HTTP Clone URL")).toBeInTheDocument();
         expect(screen.getByText("https://github.com/org/my-repo.git")).toBeInTheDocument();
       });
     });

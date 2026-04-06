@@ -160,7 +160,7 @@ type Repository struct {
 	ID              int64  `json:"id"`
 	ProviderType    string `json:"provider_type"`
 	ProviderBaseURL string `json:"provider_base_url"`
-	CloneURL        string `json:"clone_url,omitempty"`
+	HttpCloneURL    string `json:"http_clone_url,omitempty"`
 	ExternalID      string `json:"external_id"`
 	Name            string `json:"name"`
 	Slug            string `json:"slug"`

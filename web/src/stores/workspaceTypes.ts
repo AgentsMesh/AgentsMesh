@@ -54,15 +54,6 @@ export type SplitTreeSplit = {
 
 export type SplitTreeNode = SplitTreeLeaf | SplitTreeSplit;
 
-// Keep GridLayout type for migration compatibility
-export type GridLayoutType = "1x1" | "1x2" | "2x1" | "2x2" | "custom";
-
-export interface GridLayout {
-  type: GridLayoutType;
-  rows: number;
-  cols: number;
-}
-
 export interface WorkspaceState {
   panes: WorkspacePane[];
   activePane: string | null;

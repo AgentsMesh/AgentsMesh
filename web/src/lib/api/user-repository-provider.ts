@@ -24,7 +24,7 @@ export interface RepositoryData {
   description: string;
   default_branch: string;
   visibility: string;
-  clone_url: string;
+  http_clone_url: string;
   ssh_clone_url: string;
   web_url: string;
 }

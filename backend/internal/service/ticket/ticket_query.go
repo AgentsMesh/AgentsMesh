@@ -55,6 +55,6 @@ func (s *Service) GetTicketByIDOrSlug(ctx context.Context, organizationID int64,
 }
 
 // ListTickets returns tickets based on filters.
-func (s *Service) ListTickets(ctx context.Context, filter *ListTicketsFilter) ([]*ticket.Ticket, int64, error) {
+func (s *Service) ListTickets(ctx context.Context, filter *ticket.TicketListFilter) ([]*ticket.Ticket, int64, error) {
 	return s.repo.List(ctx, filter)
 }

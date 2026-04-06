@@ -103,7 +103,7 @@ func TestOnCreatePodWithWorktreeConfigError(t *testing.T) {
 		LaunchCommand: "echo",
 		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
-			RepositoryUrl:  "https://github.com/test/repo",
+			HttpCloneUrl:   "https://github.com/test/repo",
 			SourceBranch:   "main",
 			CredentialType: "runner_local",
 		},

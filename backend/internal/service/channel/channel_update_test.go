@@ -3,6 +3,8 @@ package channel
 import (
 	"context"
 	"testing"
+
+	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
 func TestListChannels(t *testing.T) {
@@ -14,27 +16,27 @@ func TestListChannels(t *testing.T) {
 		svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: string(rune('a' + i))})
 	}
 
-	channels, _, _ := svc.ListChannels(ctx, 1, &ListChannelsFilter{IncludeArchived: true, Limit: 10, Offset: 0})
+	channels, _, _ := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{IncludeArchived: true, Limit: 10, Offset: 0})
 	if len(channels) > 0 {
 		svc.ArchiveChannel(ctx, channels[0].ID)
 	}
 
 	t.Run("active only", func(t *testing.T) {
-		channels, total, _ := svc.ListChannels(ctx, 1, &ListChannelsFilter{IncludeArchived: false, Limit: 10, Offset: 0})
+		channels, total, _ := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{IncludeArchived: false, Limit: 10, Offset: 0})
 		if total != 4 || len(channels) != 4 {
 			t.Errorf("Expected 4 active channels, got %d", total)
 		}
 	})
 
 	t.Run("including archived", func(t *testing.T) {
-		_, total, _ := svc.ListChannels(ctx, 1, &ListChannelsFilter{IncludeArchived: true, Limit: 10, Offset: 0})
+		_, total, _ := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{IncludeArchived: true, Limit: 10, Offset: 0})
 		if total != 5 {
 			t.Errorf("Expected 5 total channels, got %d", total)
 		}
 	})
 
 	t.Run("pagination", func(t *testing.T) {
-		channels, total, _ := svc.ListChannels(ctx, 1, &ListChannelsFilter{IncludeArchived: true, Limit: 2, Offset: 0})
+		channels, total, _ := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{IncludeArchived: true, Limit: 2, Offset: 0})
 		if total != 5 || len(channels) != 2 {
 			t.Errorf("Pagination failed: total=%d, len=%d", total, len(channels))
 		}
@@ -54,7 +56,7 @@ func TestListChannels_FilterByRepositoryID(t *testing.T) {
 	svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "no-repo"})
 
 	t.Run("filter by repo A", func(t *testing.T) {
-		channels, total, err := svc.ListChannels(ctx, 1, &ListChannelsFilter{
+		channels, total, err := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{
 			IncludeArchived: true, RepositoryID: repoA, Limit: 10, Offset: 0,
 		})
 		if err != nil {
@@ -66,7 +68,7 @@ func TestListChannels_FilterByRepositoryID(t *testing.T) {
 	})
 
 	t.Run("filter by repo B", func(t *testing.T) {
-		channels, total, err := svc.ListChannels(ctx, 1, &ListChannelsFilter{
+		channels, total, err := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{
 			IncludeArchived: true, RepositoryID: repoB, Limit: 10, Offset: 0,
 		})
 		if err != nil {
@@ -78,7 +80,7 @@ func TestListChannels_FilterByRepositoryID(t *testing.T) {
 	})
 
 	t.Run("no filter returns all", func(t *testing.T) {
-		_, total, _ := svc.ListChannels(ctx, 1, &ListChannelsFilter{
+		_, total, _ := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{
 			IncludeArchived: true, Limit: 10, Offset: 0,
 		})
 		if total != 4 {
@@ -100,7 +102,7 @@ func TestListChannels_FilterByTicketID(t *testing.T) {
 	svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "no-ticket"})
 
 	t.Run("filter by ticket A", func(t *testing.T) {
-		channels, total, err := svc.ListChannels(ctx, 1, &ListChannelsFilter{
+		channels, total, err := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{
 			IncludeArchived: true, TicketID: ticketA, Limit: 10, Offset: 0,
 		})
 		if err != nil {
@@ -112,7 +114,7 @@ func TestListChannels_FilterByTicketID(t *testing.T) {
 	})
 
 	t.Run("filter by ticket B", func(t *testing.T) {
-		channels, total, err := svc.ListChannels(ctx, 1, &ListChannelsFilter{
+		channels, total, err := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{
 			IncludeArchived: true, TicketID: ticketB, Limit: 10, Offset: 0,
 		})
 		if err != nil {
@@ -137,7 +139,7 @@ func TestListChannels_CombinedFilters(t *testing.T) {
 	svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "ticket-only", TicketID: ticketA})
 	svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "diff-ticket", RepositoryID: repo, TicketID: ticketB})
 
-	channels, total, err := svc.ListChannels(ctx, 1, &ListChannelsFilter{
+	channels, total, err := svc.ListChannels(ctx, 1, &channel.ChannelListFilter{
 		IncludeArchived: true, RepositoryID: repo, TicketID: ticketA, Limit: 10, Offset: 0,
 	})
 	if err != nil {

@@ -34,7 +34,6 @@ export interface RepositoryData {
   organization_id: number;
   provider_type: string; // github, gitlab, gitee, generic
   provider_base_url: string; // https://github.com
-  clone_url: string;
   http_clone_url?: string;
   ssh_clone_url?: string;
   external_id: string;
@@ -61,7 +60,6 @@ export interface RepositoryData {
 export interface CreateRepositoryRequest {
   provider_type: string;
   provider_base_url: string;
-  clone_url?: string;
   http_clone_url?: string;
   ssh_clone_url?: string;
   external_id: string;

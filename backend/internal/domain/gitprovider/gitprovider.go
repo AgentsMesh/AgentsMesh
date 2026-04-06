@@ -31,7 +31,6 @@ type Repository struct {
 	// Provider info (self-contained, no foreign key to git_providers)
 	ProviderType    string `gorm:"size:50;not null" json:"provider_type"`      // github, gitlab, gitee, generic
 	ProviderBaseURL string `gorm:"size:255;not null" json:"provider_base_url"` // https://github.com, https://gitlab.company.com
-	CloneURL        string `gorm:"size:500" json:"clone_url"`                  // Full clone URL
 	HttpCloneURL    string `gorm:"size:500" json:"http_clone_url"`             // HTTPS clone URL
 	SshCloneURL     string `gorm:"size:500" json:"ssh_clone_url"`              // SSH clone URL
 

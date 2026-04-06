@@ -306,7 +306,7 @@ func TestPodBuilderCommandFields(t *testing.T) {
 			"VAR2": "val2",
 		},
 		SandboxConfig: &runnerv1.SandboxConfig{
-			RepositoryUrl:  "https://example.com/repo",
+			HttpCloneUrl:   "https://example.com/repo",
 			SourceBranch:   "develop",
 			CredentialType: "runner_local",
 		},
@@ -337,8 +337,8 @@ func TestPodBuilderCommandFields(t *testing.T) {
 	if builder.cmd.SandboxConfig == nil {
 		t.Error("sandboxConfig not set")
 	} else {
-		if builder.cmd.SandboxConfig.RepositoryUrl != "https://example.com/repo" {
-			t.Error("sandboxConfig repositoryUrl not set correctly")
+		if builder.cmd.SandboxConfig.HttpCloneUrl != "https://example.com/repo" {
+			t.Error("sandboxConfig httpCloneUrl not set correctly")
 		}
 		if builder.cmd.SandboxConfig.SourceBranch != "develop" {
 			t.Error("sandboxConfig branch not set correctly")

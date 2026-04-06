@@ -24,7 +24,7 @@ type SubscriptionRenewJob struct {
 func NewSubscriptionRenewJob(db *gorm.DB, cfg *config.Config, logger *slog.Logger) *SubscriptionRenewJob {
 	return &SubscriptionRenewJob{
 		db:             db,
-		paymentFactory: payment.NewFactoryWithDB(cfg, db),
+		paymentFactory: payment.NewFactoryWithLicenseRepo(cfg, nil),
 		logger:         logger,
 	}
 }

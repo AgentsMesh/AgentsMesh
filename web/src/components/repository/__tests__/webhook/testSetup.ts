@@ -44,7 +44,7 @@ export const mockRepository: RepositoryData = {
   organization_id: 100,
   provider_type: "gitlab",
   provider_base_url: "https://gitlab.com",
-  clone_url: "https://gitlab.com/org/repo.git",
+  http_clone_url: "https://gitlab.com/org/repo.git",
   external_id: "123",
   name: "test-repo",
   slug: "org/test-repo",

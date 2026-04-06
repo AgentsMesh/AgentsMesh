@@ -49,7 +49,7 @@ func gitBuilder(ws workspace.WorkspaceManagerInterface, cfg *runnerv1.SandboxCon
 func TestSetupGitWorktree_Success(t *testing.T) {
 	ws := &mockWorkspace{result: &workspace.WorktreeResult{Path: "/tmp/ws", Branch: "main"}}
 	b := gitBuilder(ws, &runnerv1.SandboxConfig{
-		RepositoryUrl:  "https://github.com/org/repo.git",
+		HttpCloneUrl:   "https://github.com/org/repo.git",
 		SourceBranch:   "main",
 		CredentialType: "runner_local",
 	})
@@ -71,7 +71,7 @@ func TestSetupGitWorktree_EmptyURL(t *testing.T) {
 
 func TestSetupGitWorktree_NilWorkspace(t *testing.T) {
 	b := gitBuilder(nil, &runnerv1.SandboxConfig{
-		RepositoryUrl:  "https://github.com/org/repo.git",
+		HttpCloneUrl:   "https://github.com/org/repo.git",
 		CredentialType: "runner_local",
 	})
 	// Set Workspace to nil explicitly
@@ -86,7 +86,7 @@ func TestSetupGitWorktree_NilWorkspace(t *testing.T) {
 func TestSetupGitWorktree_OAuthToken(t *testing.T) {
 	ws := &mockWorkspace{result: &workspace.WorktreeResult{Path: "/tmp/ws", Branch: "dev"}}
 	b := gitBuilder(ws, &runnerv1.SandboxConfig{
-		RepositoryUrl:  "https://github.com/org/repo.git",
+		HttpCloneUrl:   "https://github.com/org/repo.git",
 		SourceBranch:   "dev",
 		CredentialType: "oauth",
 		GitToken:       "gho_xxx",
@@ -100,7 +100,7 @@ func TestSetupGitWorktree_OAuthToken(t *testing.T) {
 func TestSetupGitWorktree_PATToken(t *testing.T) {
 	ws := &mockWorkspace{result: &workspace.WorktreeResult{Path: "/tmp/ws", Branch: "main"}}
 	b := gitBuilder(ws, &runnerv1.SandboxConfig{
-		RepositoryUrl:  "https://github.com/org/repo.git",
+		HttpCloneUrl:   "https://github.com/org/repo.git",
 		CredentialType: "pat",
 		GitToken:       "ghp_xxx",
 	})
@@ -134,7 +134,6 @@ func TestSetupGitWorktree_SSHKey(t *testing.T) {
 func TestSetupGitWorktree_HttpCloneURL_Preferred(t *testing.T) {
 	ws := &mockWorkspace{result: &workspace.WorktreeResult{Path: "/tmp/ws", Branch: "main"}}
 	b := gitBuilder(ws, &runnerv1.SandboxConfig{
-		RepositoryUrl:  "https://old-url.com/repo.git",
 		HttpCloneUrl:   "https://new-url.com/repo.git",
 		SshCloneUrl:    "git@github.com:org/repo.git",
 		CredentialType: "runner_local",
@@ -148,7 +147,7 @@ func TestSetupGitWorktree_HttpCloneURL_Preferred(t *testing.T) {
 func TestSetupGitWorktree_AuthError(t *testing.T) {
 	ws := &mockWorkspace{err: fmt.Errorf("authentication failed: Permission denied")}
 	b := gitBuilder(ws, &runnerv1.SandboxConfig{
-		RepositoryUrl:  "https://github.com/org/repo.git",
+		HttpCloneUrl:   "https://github.com/org/repo.git",
 		CredentialType: "runner_local",
 	})
 	_, _, err := b.setupGitWorktree(context.Background(), t.TempDir(), b.cmd.SandboxConfig)
@@ -161,7 +160,7 @@ func TestSetupGitWorktree_AuthError(t *testing.T) {
 func TestSetupGitWorktree_CloneError(t *testing.T) {
 	ws := &mockWorkspace{err: fmt.Errorf("failed to clone repository")}
 	b := gitBuilder(ws, &runnerv1.SandboxConfig{
-		RepositoryUrl:  "https://github.com/org/repo.git",
+		HttpCloneUrl:   "https://github.com/org/repo.git",
 		CredentialType: "runner_local",
 	})
 	_, _, err := b.setupGitWorktree(context.Background(), t.TempDir(), b.cmd.SandboxConfig)
@@ -171,10 +170,29 @@ func TestSetupGitWorktree_CloneError(t *testing.T) {
 	assert.Equal(t, client.ErrCodeGitClone, podErr.Code)
 }
 
+// TestSetupGitWorktree_DeprecatedRepositoryUrl_Ignored is a regression test
+// ensuring the deprecated RepositoryUrl proto field is never used as a fallback
+// when HttpCloneUrl and SshCloneUrl are both empty. The builder must return
+// ErrCodeGitClone instead of silently cloning from the legacy field.
+func TestSetupGitWorktree_DeprecatedRepositoryUrl_Ignored(t *testing.T) {
+	ws := &mockWorkspace{result: &workspace.WorktreeResult{Path: "/tmp/ws", Branch: "main"}}
+	b := gitBuilder(ws, &runnerv1.SandboxConfig{
+		RepositoryUrl:  "https://github.com/org/repo.git", //nolint:staticcheck // testing deprecated field
+		CredentialType: "runner_local",
+		// HttpCloneUrl and SshCloneUrl intentionally left empty
+	})
+	_, _, err := b.setupGitWorktree(context.Background(), t.TempDir(), b.cmd.SandboxConfig)
+	require.Error(t, err, "should not fall back to deprecated RepositoryUrl")
+	var podErr *client.PodError
+	require.ErrorAs(t, err, &podErr)
+	assert.Equal(t, client.ErrCodeGitClone, podErr.Code)
+	assert.Contains(t, podErr.Message, "http_clone_url or ssh_clone_url is required")
+}
+
 func TestSetupGitWorktree_UnknownCredentialType(t *testing.T) {
 	ws := &mockWorkspace{result: &workspace.WorktreeResult{Path: "/tmp/ws", Branch: "main"}}
 	b := gitBuilder(ws, &runnerv1.SandboxConfig{
-		RepositoryUrl:  "https://github.com/org/repo.git",
+		HttpCloneUrl:   "https://github.com/org/repo.git",
 		CredentialType: "unknown_type",
 	})
 	// Unknown type falls back to runner_local (no error, no token option)

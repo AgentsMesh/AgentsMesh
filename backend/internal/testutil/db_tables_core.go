@@ -69,7 +69,7 @@ func coreTableDDLs() []string {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL,
 			provider_type TEXT NOT NULL DEFAULT 'github', provider_base_url TEXT NOT NULL DEFAULT '',
-			clone_url TEXT, http_clone_url TEXT, ssh_clone_url TEXT,
+			http_clone_url TEXT, ssh_clone_url TEXT,
 			external_id TEXT NOT NULL DEFAULT '', name TEXT NOT NULL, slug TEXT NOT NULL,
 			default_branch TEXT NOT NULL DEFAULT 'main',
 			ticket_prefix TEXT, visibility TEXT NOT NULL DEFAULT 'organization',

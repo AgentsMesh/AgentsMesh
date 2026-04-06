@@ -46,7 +46,7 @@ func (m *mockFormatClient) ListRunners(_ context.Context) ([]tools.RunnerSummary
 
 func (m *mockFormatClient) ListRepositories(_ context.Context) ([]tools.Repository, error) {
 	return []tools.Repository{
-		{ID: 1, Name: "my-repo", ProviderType: "gitlab", DefaultBranch: "main", CloneURL: "https://git.example.com/repo.git"},
+		{ID: 1, Name: "my-repo", ProviderType: "gitlab", DefaultBranch: "main", HttpCloneURL: "https://git.example.com/repo.git"},
 	}, nil
 }
 

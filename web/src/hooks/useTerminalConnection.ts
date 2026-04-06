@@ -7,7 +7,6 @@ import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 export interface TerminalConnection {
   send: (data: string) => void;
   unsubscribe: () => void;
-  disconnect: () => void;
 }
 
 /**

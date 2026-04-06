@@ -202,7 +202,7 @@ func TestPodBuilderSetupWorktreeNoManager(t *testing.T) {
 		LaunchArgs:    []string{"test"},
 		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
-			RepositoryUrl:  "https://github.com/test/repo",
+			HttpCloneUrl:   "https://github.com/test/repo",
 			SourceBranch:   "main",
 			CredentialType: "runner_local",
 		},

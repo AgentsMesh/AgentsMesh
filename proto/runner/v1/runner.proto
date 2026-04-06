@@ -275,7 +275,7 @@ message FileToCreate {
 // 如果配置了 repository_url，则在 Sandbox 中创建 git worktree
 message SandboxConfig {
   // Git 仓库配置（可选，为空则创建空 Sandbox）
-  string repository_url = 1;      // 仓库克隆 URL
+  string repository_url = 1 [deprecated = true];      // Deprecated: 使用 http_clone_url / ssh_clone_url
   string source_branch = 2;       // 要检出的源分支名称
 
   // Git 认证配置

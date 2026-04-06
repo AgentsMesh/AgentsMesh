@@ -39,8 +39,6 @@ export interface ConnectionHandle {
   send: (data: string) => void;
   /** Unsubscribe from terminal output. Connection stays open if other subscribers exist. */
   unsubscribe: () => void;
-  /** @deprecated Use unsubscribe() instead. Kept for backward compatibility. */
-  disconnect: () => void;
 }
 
 export type RelayStatusInfo = {

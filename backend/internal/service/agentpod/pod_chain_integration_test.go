@@ -110,7 +110,7 @@ func TestPodChain_RepoSlugResolution(t *testing.T) {
 	repoSvc := &mockRepoService{
 		repo: &gitprovider.Repository{
 			ID:            77,
-			CloneURL:      "https://github.com/org/repo-slug.git",
+			HttpCloneURL:  "https://github.com/org/repo-slug.git",
 			DefaultBranch: "main",
 		},
 	}
@@ -141,7 +141,7 @@ func TestPodChain_RepoSlugResolution(t *testing.T) {
 	cmd := coord.lastCmd
 	require.NotNil(t, cmd)
 	require.NotNil(t, cmd.SandboxConfig)
-	assert.Equal(t, "https://github.com/org/repo-slug.git", cmd.SandboxConfig.RepositoryUrl)
+	assert.Equal(t, "https://github.com/org/repo-slug.git", cmd.SandboxConfig.HttpCloneUrl)
 }
 
 // ==================== Test 3: Credential Flow ====================

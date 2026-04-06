@@ -109,7 +109,7 @@ steps:
         body:
           provider_type: gitlab
           provider_base_url: https://gitlab.corp.signalrender.com
-          clone_url: https://gitlab.corp.signalrender.com/aio/agents/mockrepo.git
+          http_clone_url: https://gitlab.corp.signalrender.com/aio/agents/mockrepo.git
           external_id: aio/agents/mockrepo
           name: mockrepo
           full_path: aio/agents/mockrepo

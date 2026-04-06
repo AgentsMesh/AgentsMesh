@@ -70,7 +70,6 @@ describe("relayConnection", () => {
 
       expect(handle).toHaveProperty("send");
       expect(handle).toHaveProperty("unsubscribe");
-      expect(handle).toHaveProperty("disconnect");
       expect(pool.getStatus("pod-1")).toBe("connected");
     });
 
@@ -105,36 +104,6 @@ describe("relayConnection", () => {
 
       // Should still have only 1 subscriber (replaced, not added)
       expect(pool.getConnection("pod-1")?.subscribers.size).toBe(1);
-    });
-  });
-
-  describe("connect (deprecated)", () => {
-    it("should create connection and return handle", async () => {
-      const onMessage = vi.fn();
-      const handlePromise = pool.connect("pod-1", onMessage);
-
-      await vi.runAllTimersAsync();
-      const handle = await handlePromise;
-
-      expect(handle).toHaveProperty("send");
-      expect(handle).toHaveProperty("disconnect");
-      expect(pool.getStatus("pod-1")).toBe("connected");
-    });
-
-    it("should add new subscriber when called again for same pod", async () => {
-      const onMessage1 = vi.fn();
-      const onMessage2 = vi.fn();
-
-      await pool.connect("pod-1", onMessage1);
-      await vi.runAllTimersAsync();
-
-      // Second connect adds a new subscriber (legacy IDs are unique)
-      const handle2 = await pool.connect("pod-1", onMessage2);
-      await vi.runAllTimersAsync();
-
-      expect(handle2).toHaveProperty("send");
-      // Both subscribers on same connection
-      expect(pool.getConnection("pod-1")?.subscribers.size).toBe(2);
     });
   });
 

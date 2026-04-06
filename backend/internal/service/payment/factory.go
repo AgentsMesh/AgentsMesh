@@ -28,12 +28,6 @@ func NewFactoryFromConfig(appConfig *config.Config) *Factory {
 	return NewFactoryWithLicenseRepo(appConfig, nil)
 }
 
-// NewFactoryWithDB creates a new payment provider factory with database support (deprecated shim).
-// Prefer NewFactoryWithLicenseRepo for new code.
-func NewFactoryWithDB(appConfig *config.Config, _ interface{}) *Factory {
-	return NewFactoryWithLicenseRepo(appConfig, nil)
-}
-
 // NewFactoryWithLicenseRepo creates a new payment provider factory with license repository support
 // appConfig is needed for URL derivation (AlipayNotifyURL, WeChatNotifyURL, etc.)
 func NewFactoryWithLicenseRepo(appConfig *config.Config, licenseRepo billing.LicenseRepository) *Factory {

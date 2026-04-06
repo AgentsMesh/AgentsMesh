@@ -76,15 +76,15 @@ func (l RepositoryList) FormatText() string {
 		return "No repositories configured."
 	}
 	var b strings.Builder
-	b.WriteString("| ID | Name | Provider | Default Branch | Clone URL |\n")
-	b.WriteString("|----|------|----------|----------------|-----------|\n")
+	b.WriteString("| ID | Name | Provider | Default Branch | HTTP Clone URL |\n")
+	b.WriteString("|----|------|----------|----------------|----------------|\n")
 	for _, r := range l {
 		fmt.Fprintf(&b, "| %d | %s | %s | %s | %s |\n",
 			r.ID,
 			escapeTableCell(r.Name),
 			escapeTableCell(r.ProviderType),
 			escapeTableCell(r.DefaultBranch),
-			escapeTableCell(r.CloneURL),
+			escapeTableCell(r.HttpCloneURL),
 		)
 	}
 	return strings.TrimRight(b.String(), "\n")

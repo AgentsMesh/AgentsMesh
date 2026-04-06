@@ -92,7 +92,7 @@ func (b *PodBuilder) buildPTYPod(ctx context.Context, sandboxRoot, workingDir, b
 			Agent:          launchCommand,
 			SandboxPath:    sandboxRoot,
 			WorkDir:        workingDir,
-			RepositoryURL:  b.cmd.GetSandboxConfig().GetRepositoryUrl(),
+			RepositoryURL:  b.cmd.GetSandboxConfig().GetHttpCloneUrl(),
 			Branch:         branchName,
 			TicketSlug:     b.cmd.GetSandboxConfig().GetTicketSlug(),
 			VTHistoryLimit: b.vtHistoryLimit,

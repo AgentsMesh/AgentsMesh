@@ -56,7 +56,7 @@ func (s *GitWorktreeStrategy) Name() string {
 }
 
 func (s *GitWorktreeStrategy) CanHandle(cfg *runnerv1.SandboxConfig) bool {
-	return cfg != nil && (cfg.RepositoryUrl != "" || cfg.HttpCloneUrl != "" || cfg.SshCloneUrl != "")
+	return cfg != nil && (cfg.HttpCloneUrl != "" || cfg.SshCloneUrl != "")
 }
 
 func (s *GitWorktreeStrategy) Setup(ctx context.Context, sandboxRoot string, cfg *runnerv1.SandboxConfig) (*SetupResult, error) {

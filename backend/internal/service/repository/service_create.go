@@ -39,9 +39,6 @@ func (s *Service) handleIdempotentImport(ctx context.Context, existing *gitprovi
 	if req.ImportedByUserID != nil {
 		updates["imported_by_user_id"] = *req.ImportedByUserID
 	}
-	if req.CloneURL != "" {
-		updates["clone_url"] = req.CloneURL
-	}
 	if req.HttpCloneURL != "" {
 		updates["http_clone_url"] = req.HttpCloneURL
 	}
@@ -57,7 +54,6 @@ func (s *Service) createNewRepo(ctx context.Context, req *CreateRequest) (*gitpr
 		OrganizationID:   req.OrganizationID,
 		ProviderType:     req.ProviderType,
 		ProviderBaseURL:  req.ProviderBaseURL,
-		CloneURL:         req.CloneURL,
 		HttpCloneURL:     req.HttpCloneURL,
 		SshCloneURL:      req.SshCloneURL,
 		ExternalID:       req.ExternalID,
@@ -86,11 +82,6 @@ func (s *Service) createNewRepo(ctx context.Context, req *CreateRequest) (*gitpr
 		if repo.SshCloneURL == "" {
 			repo.SshCloneURL = sshURL
 		}
-	}
-
-	// Keep legacy clone_url populated for backwards compatibility
-	if repo.CloneURL == "" {
-		repo.CloneURL = repo.HttpCloneURL
 	}
 
 	if err := s.repo.Create(ctx, repo); err != nil {

@@ -29,13 +29,12 @@ func (o *PodOrchestrator) buildPodCommand(
 	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
 
 	// Resolve repository info
-	repositoryURL, httpCloneURL, sshCloneURL := "", "", ""
+	httpCloneURL, sshCloneURL := "", ""
 	sourceBranch, preparationScript := "", ""
 	preparationTimeout := 300
 	if effectiveRepoID != nil && o.repoService != nil {
 		repo, err := o.repoService.GetByID(ctx, *effectiveRepoID)
 		if err == nil && repo != nil {
-			repositoryURL = repo.CloneURL
 			httpCloneURL = repo.HttpCloneURL
 			sshCloneURL = repo.SshCloneURL
 			if repo.DefaultBranch != "" {
@@ -81,7 +80,6 @@ func (o *PodOrchestrator) buildPodCommand(
 
 	// When resuming from local path, skip repository clone
 	if localPath != "" {
-		repositoryURL = ""
 		httpCloneURL = ""
 		sshCloneURL = ""
 	}
@@ -104,7 +102,6 @@ func (o *PodOrchestrator) buildPodCommand(
 		UserID:              req.UserID,
 		CredentialProfileID: req.CredentialProfileID,
 		RepositoryID:        effectiveRepoID,
-		RepositoryURL:       repositoryURL,
 		HttpCloneURL:        httpCloneURL,
 		SshCloneURL:         sshCloneURL,
 		SourceBranch:        sourceBranch,

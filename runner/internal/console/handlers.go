@@ -73,12 +73,11 @@ func (s *Server) handleRestart(w http.ResponseWriter, r *http.Request) {
 	s.AddLog("info", "Restart requested via web console")
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotImplemented)
 	json.NewEncoder(w).Encode(map[string]string{
-		"status":  "ok",
-		"message": "Restart signal sent",
+		"status":  "error",
+		"message": "Restart not implemented",
 	})
-
-	// TODO: Implement actual restart logic
 }
 
 // handleStop handles POST /api/actions/stop
@@ -91,10 +90,9 @@ func (s *Server) handleStop(w http.ResponseWriter, r *http.Request) {
 	s.AddLog("info", "Stop requested via web console")
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotImplemented)
 	json.NewEncoder(w).Encode(map[string]string{
-		"status":  "ok",
-		"message": "Stop signal sent",
+		"status":  "error",
+		"message": "Stop not implemented",
 	})
-
-	// TODO: Implement actual stop logic
 }

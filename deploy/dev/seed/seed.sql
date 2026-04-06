@@ -263,7 +263,7 @@ BEGIN
     -- 8.1 Demo WebApp (静态 Web 应用)
     INSERT INTO repositories (
         organization_id, provider_type, provider_base_url,
-        external_id, name, slug, clone_url,
+        external_id, name, slug, http_clone_url,
         default_branch, ticket_prefix, visibility, imported_by_user_id,
         is_active
     )
@@ -287,7 +287,7 @@ BEGIN
     -- 8.2 Demo API (Go API 项目)
     INSERT INTO repositories (
         organization_id, provider_type, provider_base_url,
-        external_id, name, slug, clone_url,
+        external_id, name, slug, http_clone_url,
         default_branch, ticket_prefix, visibility, imported_by_user_id,
         is_active
     )

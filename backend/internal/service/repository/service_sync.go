@@ -33,9 +33,8 @@ func (s *Service) SyncFromProvider(ctx context.Context, repoID int64, accessToke
 		"slug":           project.Slug,
 		"default_branch": project.DefaultBranch,
 	}
-	if project.CloneURL != "" {
-		updates["clone_url"] = project.CloneURL
-		updates["http_clone_url"] = project.CloneURL
+	if project.HttpCloneURL != "" {
+		updates["http_clone_url"] = project.HttpCloneURL
 	}
 	if project.SSHCloneURL != "" {
 		updates["ssh_clone_url"] = project.SSHCloneURL

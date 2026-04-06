@@ -37,7 +37,7 @@ type Project struct {
 	Description   string    `json:"description"`
 	DefaultBranch string    `json:"default_branch"`
 	WebURL        string    `json:"web_url"`
-	CloneURL      string    `json:"clone_url"`
+	HttpCloneURL  string    `json:"http_clone_url"`
 	SSHCloneURL   string    `json:"ssh_clone_url"`
 	Visibility    string    `json:"visibility"`
 	CreatedAt     time.Time `json:"created_at"`

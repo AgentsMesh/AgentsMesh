@@ -27,7 +27,6 @@ func NewRepositoryHandler(repositoryService repository.RepositoryServiceInterfac
 type CreateRepositoryRequest struct {
 	ProviderType    string `json:"provider_type" binding:"required"`     // github, gitlab, gitee, generic
 	ProviderBaseURL string `json:"provider_base_url" binding:"required"` // https://github.com, https://gitlab.company.com
-	CloneURL        string `json:"clone_url"`                            // Full clone URL (optional, will be generated)
 	HttpCloneURL    string `json:"http_clone_url"`                       // HTTPS clone URL (optional, will be generated)
 	SshCloneURL     string `json:"ssh_clone_url"`                        // SSH clone URL (optional, will be generated)
 	ExternalID      string `json:"external_id" binding:"required"`

@@ -54,7 +54,7 @@ func TestPodBuilderFluentAPI(t *testing.T) {
 			"KEY2": "VALUE2",
 		},
 		SandboxConfig: &runnerv1.SandboxConfig{
-			RepositoryUrl:  "https://github.com/test/repo.git",
+			HttpCloneUrl:   "https://github.com/test/repo.git",
 			SourceBranch:   "main",
 			CredentialType: "runner_local",
 		},
@@ -98,8 +98,8 @@ func TestPodBuilderFluentAPI(t *testing.T) {
 	if builder.cmd.SandboxConfig == nil {
 		t.Error("sandboxConfig should not be nil")
 	} else {
-		if builder.cmd.SandboxConfig.RepositoryUrl != "https://github.com/test/repo.git" {
-			t.Errorf("repositoryUrl: got %v, want https://github.com/test/repo.git", builder.cmd.SandboxConfig.RepositoryUrl)
+		if builder.cmd.SandboxConfig.HttpCloneUrl != "https://github.com/test/repo.git" {
+			t.Errorf("httpCloneUrl: got %v, want https://github.com/test/repo.git", builder.cmd.SandboxConfig.HttpCloneUrl)
 		}
 		if builder.cmd.SandboxConfig.SourceBranch != "main" {
 			t.Errorf("branch: got %v, want main", builder.cmd.SandboxConfig.SourceBranch)

@@ -34,12 +34,6 @@ export function RepositoryInfoCard({ repository }: RepositoryInfoCardProps) {
             <dd className="font-medium text-sm break-all">{repository.ssh_clone_url}</dd>
           </div>
         )}
-        {!repository.http_clone_url && !repository.ssh_clone_url && (
-          <div>
-            <dt className="text-sm text-muted-foreground">{t("repositories.detail.cloneUrl")}</dt>
-            <dd className="font-medium text-sm break-all">{repository.clone_url}</dd>
-          </div>
-        )}
         <div>
           <dt className="text-sm text-muted-foreground">{t("repositories.detail.defaultBranch")}</dt>
           <dd className="font-medium">{repository.default_branch}</dd>

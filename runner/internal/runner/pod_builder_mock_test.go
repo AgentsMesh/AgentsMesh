@@ -100,7 +100,7 @@ func TestPodBuilderWithSandboxConfig(t *testing.T) {
 		LaunchCommand: "echo",
 		AgentfileSource: "AGENT echo\nPROMPT_POSITION prepend\n",
 		SandboxConfig: &runnerv1.SandboxConfig{
-			RepositoryUrl:  "https://github.com/test/repo.git",
+			HttpCloneUrl:   "https://github.com/test/repo.git",
 			SourceBranch:   "feature/test",
 			CredentialType: "runner_local",
 		},
@@ -111,8 +111,8 @@ func TestPodBuilderWithSandboxConfig(t *testing.T) {
 	if builder.cmd.SandboxConfig == nil {
 		t.Error("sandboxConfig should not be nil")
 	}
-	if builder.cmd.SandboxConfig.RepositoryUrl != "https://github.com/test/repo.git" {
-		t.Errorf("repositoryUrl = %v, want https://github.com/test/repo.git", builder.cmd.SandboxConfig.RepositoryUrl)
+	if builder.cmd.SandboxConfig.HttpCloneUrl != "https://github.com/test/repo.git" {
+		t.Errorf("httpCloneUrl = %v, want https://github.com/test/repo.git", builder.cmd.SandboxConfig.HttpCloneUrl)
 	}
 	if builder.cmd.SandboxConfig.SourceBranch != "feature/test" {
 		t.Errorf("sourceBranch = %v, want feature/test", builder.cmd.SandboxConfig.SourceBranch)
@@ -152,7 +152,7 @@ func TestPodBuilderCommandWithAllFields(t *testing.T) {
 			"API_KEY": "secret",
 		},
 		SandboxConfig: &runnerv1.SandboxConfig{
-			RepositoryUrl:  "https://github.com/test/repo.git",
+			HttpCloneUrl:   "https://github.com/test/repo.git",
 			SourceBranch:   "main",
 			CredentialType: "runner_local",
 		},

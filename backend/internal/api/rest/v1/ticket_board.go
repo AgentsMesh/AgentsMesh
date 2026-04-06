@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
-	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	ticketDomain "github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
@@ -52,7 +52,7 @@ func (h *TicketHandler) GetBoard(c *gin.Context) {
 		}
 	}
 
-	board, err := h.ticketService.GetBoard(c.Request.Context(), &ticket.ListTicketsFilter{
+	board, err := h.ticketService.GetBoard(c.Request.Context(), &ticketDomain.TicketListFilter{
 		OrganizationID: tenant.OrganizationID,
 		RepositoryID:   repoID,
 		UserRole:       tenant.UserRole,
