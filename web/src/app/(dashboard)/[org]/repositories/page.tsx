@@ -13,7 +13,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
-import { ImportRepositoryModal } from "@/components/ide/modals/ImportRepositoryModal";
+import { ImportRepositoryModal } from "@/components/ide/modals/ImportRepositoryModal/index";
 
 export default function RepositoriesPage() {
   const { org: orgSlug } = useParams<{ org: string }>();

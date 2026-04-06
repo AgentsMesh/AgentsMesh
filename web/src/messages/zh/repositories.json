@@ -115,7 +115,6 @@
       "baseUrl": "基础 URL",
       "visibility": "可见性",
       "actions": "操作",
-      "setupWebhook": "配置 Webhook",
       "webhookFailed": "配置 Webhook 失败，请重试。",
       "confirmDelete": "确定要删除仓库「{name}」吗？此操作无法撤销。",
       "deleteDialog": {

@@ -22,9 +22,6 @@ import { AcpPromptInput } from "./acp/AcpPromptInput";
 import { AcpDebugPanel } from "./acp/AcpDebugPanel";
 import { PodSelectorModal } from "./PodSelectorModal";
 
-// Re-export for backward compatibility (used by tests or other consumers)
-export { dispatchAcpRelayEvent } from "@/stores/acpEventDispatcher";
-
 interface AgentPanelProps {
   paneId: string;
   podKey: string;

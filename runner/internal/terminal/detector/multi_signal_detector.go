@@ -8,7 +8,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
-// Note: AgentState, StateNotRunning, StateExecuting, StateWaiting, and StateChangeCallback
+// Note: AgentState, StateNotRunning, StateExecuting, and StateWaiting
 // are defined in agent_state.go. StateDetector interface and StateChangeEvent are defined
 // in state_detector.go.
 
@@ -61,10 +61,6 @@ type MultiSignalDetector struct {
 	lastCheckTime   time.Time
 	lastConfidence  float64 // Last calculated waiting confidence
 
-	// Legacy callback (for backward compatibility)
-	// Deprecated: Use Subscribe for multiple subscribers support.
-	onStateChange StateChangeCallback
-
 	// Multi-subscriber support
 	subscribers map[string]func(StateChangeEvent)
 	subMu       sync.RWMutex // Separate lock for subscribers to avoid deadlock
@@ -91,7 +87,6 @@ func NewMultiSignalDetector(cfg MultiSignalConfig) *MultiSignalDetector {
 		promptDetector:   promptDetector,
 		config:           cfg,
 		currentState:     StateNotRunning,
-		onStateChange:    cfg.OnStateChange,
 		subscribers:      make(map[string]func(StateChangeEvent)),
 	}
 }
@@ -101,14 +96,6 @@ func (d *MultiSignalDetector) GetState() AgentState {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	return d.currentState
-}
-
-// SetCallback sets the state change callback.
-// Deprecated: Use Subscribe for multiple subscribers support.
-func (d *MultiSignalDetector) SetCallback(cb StateChangeCallback) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.onStateChange = cb
 }
 
 // Subscribe adds a subscriber for state change events.

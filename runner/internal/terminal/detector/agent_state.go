@@ -14,6 +14,3 @@ const (
 	// StateWaiting indicates the agent is waiting for user input.
 	StateWaiting AgentState = "waiting"
 )
-
-// StateChangeCallback is called when the agent state changes.
-type StateChangeCallback func(newState AgentState, previousState AgentState)

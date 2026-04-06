@@ -33,7 +33,7 @@ export type {
   TicketCommit,
   TicketComment,
   BoardColumn,
-} from "./ticket";
+} from "./ticketTypes";
 
 // Runner
 export { runnerApi } from "./runner";

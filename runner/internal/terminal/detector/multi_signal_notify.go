@@ -32,12 +32,6 @@ func (d *MultiSignalDetector) setStateWithConfidence(newState AgentState, confid
 		Confidence: confidence,
 	}
 
-	// Legacy callback (for backward compatibility)
-	if d.onStateChange != nil {
-		cb := d.onStateChange
-		safego.Go("detector-callback", func() { cb(newState, prevState) })
-	}
-
 	// Notify subscribers (use separate lock to avoid deadlock)
 	d.notifySubscribers(event)
 }

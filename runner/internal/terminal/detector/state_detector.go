@@ -11,9 +11,6 @@ type StateDetector interface {
 	DetectState() AgentState
 	// GetState returns the current state without performing detection.
 	GetState() AgentState
-	// SetCallback sets the state change callback.
-	// Deprecated: Use Subscribe for multiple subscribers support.
-	SetCallback(cb StateChangeCallback)
 	// Reset resets the detector state.
 	Reset()
 	// OnOutput should be called when terminal output is received.

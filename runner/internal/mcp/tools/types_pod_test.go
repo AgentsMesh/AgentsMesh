@@ -10,10 +10,8 @@ func TestPodCreateRequest(t *testing.T) {
 	ticketSlug := "AM-123"
 
 	req := PodCreateRequest{
-		RunnerID:      1,
-		TicketSlug:    &ticketSlug,
-		Prompt: "Hello",
-		Model:         "claude-sonnet",
+		RunnerID:   1,
+		TicketSlug: &ticketSlug,
 	}
 
 	if req.RunnerID != 1 {
@@ -30,30 +28,22 @@ func TestPodCreateRequestWithAllFields(t *testing.T) {
 	repositoryURL := "https://github.com/example/repo.git"
 	branchName := "feature/new-feature"
 	credentialProfileID := int64(111)
-	permissionMode := "plan"
 
 	req := PodCreateRequest{
 		RunnerID:            1,
 		AgentSlug:           "claude-code",
 		TicketSlug:          &ticketSlug,
-		Prompt:              "Hello",
-		Model:               "claude-sonnet",
 		RepositoryID:        &repositoryID,
 		RepositoryURL:       &repositoryURL,
 		BranchName:          &branchName,
 		CredentialProfileID: &credentialProfileID,
-		ConfigOverrides: map[string]interface{}{
-			"timeout":    300,
-			"max_tokens": 4096,
-		},
-		PermissionMode: &permissionMode,
 	}
 
 	if req.RunnerID != 1 {
 		t.Errorf("RunnerID: got %v, want %v", req.RunnerID, 1)
 	}
 	if req.AgentSlug != "claude-code" {
-		t.Errorf("AgentSlug: got %v, want 456", req.AgentSlug)
+		t.Errorf("AgentSlug: got %v, want claude-code", req.AgentSlug)
 	}
 	if req.RepositoryID == nil || *req.RepositoryID != 789 {
 		t.Errorf("RepositoryID: got %v, want 789", req.RepositoryID)
@@ -66,15 +56,6 @@ func TestPodCreateRequestWithAllFields(t *testing.T) {
 	}
 	if req.CredentialProfileID == nil || *req.CredentialProfileID != 111 {
 		t.Errorf("CredentialProfileID: got %v, want 111", req.CredentialProfileID)
-	}
-	if req.ConfigOverrides == nil {
-		t.Error("ConfigOverrides should not be nil")
-	}
-	if req.ConfigOverrides["timeout"] != 300 {
-		t.Errorf("ConfigOverrides[timeout]: got %v, want 300", req.ConfigOverrides["timeout"])
-	}
-	if req.PermissionMode == nil || *req.PermissionMode != "plan" {
-		t.Errorf("PermissionMode: got %v, want plan", req.PermissionMode)
 	}
 }
 

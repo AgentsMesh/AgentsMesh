@@ -144,7 +144,6 @@ func TestManagedStateDetector_ImplementsStateDetector(t *testing.T) {
 	sd.OnScreenUpdate([]string{"test"})
 	_ = sd.GetState()
 	_ = sd.DetectState()
-	sd.SetCallback(func(newState, prevState detector.AgentState) {})
 	sd.Subscribe("test", func(event detector.StateChangeEvent) {})
 	sd.Unsubscribe("test")
 	sd.Reset()
@@ -163,33 +162,6 @@ func TestManagedStateDetector_Reset(t *testing.T) {
 	// Reset
 	d.Reset()
 	assert.Equal(t, detector.StateNotRunning, d.GetState())
-}
-
-func TestManagedStateDetector_SetCallback(t *testing.T) {
-	vterminal := vt.NewVirtualTerminal(80, 24, 1000)
-
-	d := NewManagedStateDetector(vterminal)
-	defer d.Stop()
-
-	var mu sync.Mutex
-	var callbackCalled bool
-
-	// Set callback (legacy method)
-	d.SetCallback(func(newState, prevState detector.AgentState) {
-		mu.Lock()
-		defer mu.Unlock()
-		callbackCalled = true
-	})
-
-	// Trigger state change
-	d.OnOutput(100)
-
-	// Wait for async callback
-	time.Sleep(50 * time.Millisecond)
-
-	mu.Lock()
-	defer mu.Unlock()
-	assert.True(t, callbackCalled, "Legacy callback should be called")
 }
 
 func TestManagedStateDetector_OnScreenUpdate(t *testing.T) {

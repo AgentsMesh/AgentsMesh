@@ -115,7 +115,6 @@
       "baseUrl": "Base URL",
       "visibility": "Visibility",
       "actions": "Actions",
-      "setupWebhook": "Setup Webhook",
       "webhookFailed": "Failed to setup webhook. Please try again.",
       "confirmDelete": "Are you sure you want to delete repository \"{name}\"? This action cannot be undone.",
       "deleteDialog": {

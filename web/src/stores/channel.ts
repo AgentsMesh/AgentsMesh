@@ -5,6 +5,7 @@
  * - channelStore: channel CRUD, UI state (selectedChannelId, searchQuery, etc.)
  * - channelMessageStore: messages, unread counts, read state
  */
-export { useChannelStore, type Channel } from "./channelStore";
+export { useChannelStore } from "./channelStore";
+export type { Channel } from "./channelStoreTypes";
 export { useChannelMessageStore, EMPTY_CACHE, type ChannelMessageCache } from "./channelMessageStore";
 export type { ChannelMessageState } from "./channelMessageTypes";

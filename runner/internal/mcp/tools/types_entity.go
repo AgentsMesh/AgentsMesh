@@ -174,19 +174,15 @@ type Repository struct {
 
 // PodCreateRequest represents a request to create a new pod.
 type PodCreateRequest struct {
-	RunnerID            int                    `json:"runner_id,omitempty"`
-	AgentSlug           string                 `json:"agent_slug,omitempty"`
-	TicketSlug          *string                `json:"ticket_slug,omitempty"`
-	Prompt              string                 `json:"prompt,omitempty"` // Deprecated: use AgentFile PROMPT declaration
-	Alias               *string                `json:"alias,omitempty"`
-	Model               string                 `json:"model,omitempty"` // Deprecated: use AgentFile CONFIG model
-	RepositoryID        *int64                 `json:"repository_id,omitempty"`
-	RepositoryURL       *string                `json:"repository_url,omitempty"`
-	BranchName          *string                `json:"branch_name,omitempty"`
-	CredentialProfileID *int64                 `json:"credential_profile_id,omitempty"`
-	ConfigOverrides     map[string]interface{} `json:"config_overrides,omitempty"` // Deprecated: use AgentFile CONFIG declarations via AgentfileLayer
-	PermissionMode      *string                `json:"permission_mode,omitempty"`  // Deprecated: use AgentFile CONFIG permission_mode
-	AgentfileLayer      *string                `json:"agentfile_layer,omitempty"`  // AgentFile Layer — SSOT for all CONFIG values
+	RunnerID            int     `json:"runner_id,omitempty"`
+	AgentSlug           string  `json:"agent_slug,omitempty"`
+	TicketSlug          *string `json:"ticket_slug,omitempty"`
+	Alias               *string `json:"alias,omitempty"`
+	RepositoryID        *int64  `json:"repository_id,omitempty"`
+	RepositoryURL       *string `json:"repository_url,omitempty"`
+	BranchName          *string `json:"branch_name,omitempty"`
+	CredentialProfileID *int64  `json:"credential_profile_id,omitempty"`
+	AgentfileLayer      *string `json:"agentfile_layer,omitempty"` // AgentFile Layer — SSOT for all CONFIG values
 }
 
 // PodCreateResponse represents the response from creating a pod.

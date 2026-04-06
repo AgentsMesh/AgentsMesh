@@ -72,6 +72,3 @@ export function CreatePodModal({ open, onClose, onCreated, ticketContext }: Crea
 }
 
 export default CreatePodModal;
-
-// Re-export TicketContext type for backward compatibility
-export type { TicketContext };

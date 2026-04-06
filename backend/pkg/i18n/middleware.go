@@ -88,16 +88,6 @@ func isValidLocale(i *I18n, locale string) bool {
 	return false
 }
 
-// Deprecated: Use pkg/apierr instead for structured error responses with error codes.
-// ErrorResponse returns a localized error response
-func ErrorResponse(c *gin.Context, statusCode int, key string, args ...interface{}) {
-	ctx := c.Request.Context()
-	message := TFromContext(ctx, key, args...)
-	c.JSON(statusCode, gin.H{
-		"error": message,
-	})
-}
-
 // SuccessResponse returns a localized success response
 func SuccessResponse(c *gin.Context, key string, data interface{}, args ...interface{}) {
 	ctx := c.Request.Context()

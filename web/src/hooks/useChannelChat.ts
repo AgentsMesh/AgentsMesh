@@ -15,9 +15,6 @@ import { transformMessage } from "@/components/channel/transformMessage";
 import type { TransformedMessage } from "@/components/channel/types";
 import type { MentionPayload } from "@/lib/api/channel";
 
-// Re-export for backward compatibility
-export { transformMessage } from "@/components/channel/transformMessage";
-
 interface UseChannelChatOptions {
   channelId: number;
 }

@@ -13,7 +13,7 @@ import {
   ResponsiveDialogBody,
   ResponsiveDialogFooter,
 } from "@/components/ui/responsive-dialog";
-import { TicketPriority } from "@/lib/api/ticket";
+import { TicketPriority } from "@/lib/api/ticketTypes";
 import { ticketApi } from "@/lib/api";
 import { organizationApi, OrganizationMember } from "@/lib/api/organization";
 import { useAuthStore } from "@/stores/auth";

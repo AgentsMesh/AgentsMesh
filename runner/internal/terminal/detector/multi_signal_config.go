@@ -25,9 +25,6 @@ type MultiSignalConfig struct {
 
 	// MaxPromptLength for prompt detector (default: 100)
 	MaxPromptLength int
-
-	// OnStateChange callback
-	OnStateChange StateChangeCallback
 }
 
 // applyDefaults fills zero-valued fields with their defaults.

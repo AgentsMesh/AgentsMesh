@@ -176,24 +176,11 @@ func TestMultiSignalDetector_StateChangeEventConfidence(t *testing.T) {
 	assert.Greater(t, waitingEvent.Confidence, 0.0, "Confidence should be set for Waiting transition")
 }
 
-func TestMultiSignalDetector_LegacyAndSubscriberCallback(t *testing.T) {
+func TestMultiSignalDetector_SubscriberCallbackOnly(t *testing.T) {
 	var mu sync.Mutex
-	legacyEvents := []struct {
-		newState  AgentState
-		prevState AgentState
-	}{}
 	subscriberEvents := []StateChangeEvent{}
 
-	d := NewMultiSignalDetector(MultiSignalConfig{
-		OnStateChange: func(newState, prevState AgentState) {
-			mu.Lock()
-			defer mu.Unlock()
-			legacyEvents = append(legacyEvents, struct {
-				newState  AgentState
-				prevState AgentState
-			}{newState, prevState})
-		},
-	})
+	d := NewMultiSignalDetector(MultiSignalConfig{})
 
 	d.Subscribe("test", func(event StateChangeEvent) {
 		mu.Lock()
@@ -209,8 +196,9 @@ func TestMultiSignalDetector_LegacyAndSubscriberCallback(t *testing.T) {
 
 	mu.Lock()
 	defer mu.Unlock()
-	assert.Len(t, legacyEvents, 1, "Legacy callback should be called")
 	assert.Len(t, subscriberEvents, 1, "Subscriber callback should be called")
+	assert.Equal(t, StateExecuting, subscriberEvents[0].NewState)
+	assert.Equal(t, StateNotRunning, subscriberEvents[0].PrevState)
 }
 
 func TestMultiSignalDetector_ConcurrentSubscribeUnsubscribe(t *testing.T) {
@@ -245,7 +233,6 @@ func TestMultiSignalDetector_ImplementsStateDetector(t *testing.T) {
 	sd.OnScreenUpdate([]string{"test"})
 	_ = sd.GetState()
 	_ = sd.DetectState()
-	sd.SetCallback(func(newState, prevState AgentState) {})
 	sd.Subscribe("test", func(event StateChangeEvent) {})
 	sd.Unsubscribe("test")
 	sd.Reset()

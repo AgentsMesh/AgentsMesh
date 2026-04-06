@@ -161,10 +161,4 @@ export const repositoryApi = {
       }>;
     }>(`${orgPath("/repositories")}/${id}/merge-requests${query}`);
   },
-
-  // Deprecated: Use registerWebhook instead
-  setupWebhook: (id: number) =>
-    request<{ result: WebhookResult }>(`${orgPath("/repositories")}/${id}/webhook`, {
-      method: "POST",
-    }),
 };

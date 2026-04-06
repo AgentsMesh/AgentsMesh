@@ -43,15 +43,15 @@ func TestMultiSignalDetector_StateCallback(t *testing.T) {
 		prevState AgentState
 	}
 
-	d := NewMultiSignalDetector(MultiSignalConfig{
-		OnStateChange: func(newState, prevState AgentState) {
-			mu.Lock()
-			defer mu.Unlock()
-			transitions = append(transitions, struct {
-				newState  AgentState
-				prevState AgentState
-			}{newState, prevState})
-		},
+	d := NewMultiSignalDetector(MultiSignalConfig{})
+
+	d.Subscribe("test-callback", func(event StateChangeEvent) {
+		mu.Lock()
+		defer mu.Unlock()
+		transitions = append(transitions, struct {
+			newState  AgentState
+			prevState AgentState
+		}{event.NewState, event.PrevState})
 	})
 
 	// Trigger transition

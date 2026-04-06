@@ -4,9 +4,6 @@ import { getErrorMessage } from "@/lib/utils";
 import { useChannelMessageStore } from "./channelMessageStore";
 import type { Channel, ChannelState } from "./channelStoreTypes";
 
-// Re-export types for backward compatibility
-export type { Channel } from "./channelStoreTypes";
-
 export const useChannelStore = create<ChannelState>((set, get) => {
   /** Update a channel in both lists and currentChannel */
   const patchChannel = (id: number, updater: (ch: Channel) => Channel) => {

@@ -197,28 +197,4 @@ describe("repositoryApi - Webhook Operations", () => {
     });
   });
 
-  describe("setupWebhook (deprecated)", () => {
-    it("should call deprecated setupWebhook API", async () => {
-      const mockResult: WebhookResult = {
-        repo_id: 1,
-        registered: true,
-        webhook_id: "wh_123",
-        needs_manual_setup: false,
-      };
-
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(JSON.stringify({ result: mockResult })),
-      });
-
-      const result = await repositoryApi.setupWebhook(1);
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${EXPECTED_API_URL}${basePath}/1/webhook`,
-        expect.objectContaining({ method: "POST" })
-      );
-      expect(result.result.registered).toBe(true);
-      expect(result.result.webhook_id).toBe("wh_123");
-    });
-  });
 });

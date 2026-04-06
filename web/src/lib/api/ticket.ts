@@ -2,9 +2,6 @@ import { request, orgPath } from "./base";
 import type { TicketData, BoardColumn } from "./ticketTypes";
 import { ticketRelationsApi } from "./ticketRelationsApi";
 
-// Re-export all types from ticketTypes for backward compatibility
-export type { TicketStatus, TicketPriority, TicketData, TicketRelation, TicketCommit, TicketComment, BoardColumn } from "./ticketTypes";
-
 // Core Tickets API (CRUD, board, status, sub-tickets, pods, labels, assignees)
 // Merged with ticketRelationsApi for backward-compatible single import.
 export const ticketApi = {

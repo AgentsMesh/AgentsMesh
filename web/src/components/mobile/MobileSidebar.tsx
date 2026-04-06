@@ -24,7 +24,7 @@ import { SettingsSidebarContent } from "@/components/ide/sidebar/SettingsSidebar
 // Import modals
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
 import { AddRunnerModal } from "@/components/ide/modals/AddRunnerModal";
-import { ImportRepositoryModal } from "@/components/ide/modals/ImportRepositoryModal";
+import { ImportRepositoryModal } from "@/components/ide/modals/ImportRepositoryModal/index";
 
 interface MobileSidebarProps {
   className?: string;

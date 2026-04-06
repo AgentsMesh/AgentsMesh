@@ -103,12 +103,6 @@ func (m *ManagedStateDetector) GetState() detector.AgentState {
 	return m.detector.GetState()
 }
 
-// SetCallback sets the state change callback.
-// Deprecated: Use Subscribe for multiple subscribers support.
-func (m *ManagedStateDetector) SetCallback(cb detector.StateChangeCallback) {
-	m.detector.SetCallback(cb)
-}
-
 // Subscribe adds a subscriber for state change events.
 // The subscriber ID must be unique; duplicate IDs will replace existing subscriptions.
 func (m *ManagedStateDetector) Subscribe(id string, cb func(detector.StateChangeEvent)) {
