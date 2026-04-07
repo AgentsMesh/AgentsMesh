@@ -112,7 +112,11 @@
     "view": "Ver",
     "filters": {
       "status": "Estado",
-      "priority": "Prioridad"
+      "priority": "Prioridad",
+      "repository": "Repositorio",
+      "noRepository": "Sin repositorio",
+      "showMore": "Mostrar más",
+      "showLess": "Mostrar menos"
     },
     "emptyState": {
       "title": "No hay tickets",

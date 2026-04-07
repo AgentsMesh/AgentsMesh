@@ -33,6 +33,7 @@ export interface TicketFilterState {
   searchQuery: string;
   selectedStatuses: TicketStatus[];
   selectedPriorities: TicketPriority[];
+  selectedRepositoryIds: number[];
 }
 
 /**
@@ -42,6 +43,7 @@ export interface TicketFilterActions {
   setSearchQuery: (query: string) => void;
   toggleStatus: (status: TicketStatus) => void;
   togglePriority: (priority: TicketPriority) => void;
+  toggleRepository: (id: number) => void;
   clearAllFilters: () => void;
   hasActiveFilters: boolean;
 }

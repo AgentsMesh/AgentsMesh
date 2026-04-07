@@ -112,7 +112,11 @@
     "view": "表示",
     "filters": {
       "status": "ステータス",
-      "priority": "優先度"
+      "priority": "優先度",
+      "repository": "リポジトリ",
+      "noRepository": "リポジトリなし",
+      "showMore": "もっと見る",
+      "showLess": "折りたたむ"
     },
     "emptyState": {
       "title": "チケットがありません",

@@ -48,6 +48,7 @@ export interface TicketStoreDeps {
 interface TicketUIFilters {
   selectedStatuses: TicketStatus[];
   selectedPriorities: TicketPriority[];
+  selectedRepositoryIds: number[];
 }
 
 export type TicketViewMode = "list" | "board";
@@ -98,6 +99,7 @@ interface TicketState {
   setUIFilters: (uiFilters: Partial<TicketUIFilters>) => void;
   toggleStatus: (status: TicketStatus) => void;
   togglePriority: (priority: TicketPriority) => void;
+  toggleRepository: (id: number) => void;
   clearUIFilters: () => void;
   setViewMode: (mode: TicketViewMode) => void;
   setCurrentTicket: (ticket: Ticket | null) => void;
@@ -111,7 +113,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   selectedTicketSlug: null,
   labels: [],
   filters: {},
-  uiFilters: { selectedStatuses: [], selectedPriorities: [] },
+  uiFilters: { selectedStatuses: [], selectedPriorities: [], selectedRepositoryIds: [] },
   viewMode: "board",
   loading: false,
   error: null,
@@ -140,7 +142,12 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     return { uiFilters: { ...state.uiFilters, selectedPriorities: prev.includes(priority) ? prev.filter((p) => p !== priority) : [...prev, priority] } };
   }),
 
-  clearUIFilters: () => set({ uiFilters: { selectedStatuses: [], selectedPriorities: [] } }),
+  toggleRepository: (id) => set((state) => {
+    const prev = state.uiFilters.selectedRepositoryIds;
+    return { uiFilters: { ...state.uiFilters, selectedRepositoryIds: prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id] } };
+  }),
+
+  clearUIFilters: () => set({ uiFilters: { selectedStatuses: [], selectedPriorities: [], selectedRepositoryIds: [] } }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setCurrentTicket: (ticket) => set({ currentTicket: ticket }),
   setSelectedTicketSlug: (slug) => set({ selectedTicketSlug: slug }),

@@ -118,7 +118,11 @@
     "view": "视图",
     "filters": {
       "status": "状态",
-      "priority": "优先级"
+      "priority": "优先级",
+      "repository": "仓库",
+      "noRepository": "无仓库",
+      "showMore": "显示更多",
+      "showLess": "收起"
     },
     "emptyState": {
       "title": "暂无 Ticket",

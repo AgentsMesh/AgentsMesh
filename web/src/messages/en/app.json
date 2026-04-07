@@ -118,7 +118,11 @@
     "view": "View",
     "filters": {
       "status": "Status",
-      "priority": "Priority"
+      "priority": "Priority",
+      "repository": "Repository",
+      "noRepository": "No repository",
+      "showMore": "Show more",
+      "showLess": "Show less"
     },
     "emptyState": {
       "title": "No tickets yet",

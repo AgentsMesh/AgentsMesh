@@ -112,7 +112,11 @@
     "view": "보기",
     "filters": {
       "status": "상태",
-      "priority": "우선순위"
+      "priority": "우선순위",
+      "repository": "저장소",
+      "noRepository": "저장소 없음",
+      "showMore": "더 보기",
+      "showLess": "접기"
     },
     "emptyState": {
       "title": "티켓이 없습니다",

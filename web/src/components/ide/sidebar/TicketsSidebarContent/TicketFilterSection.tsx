@@ -3,62 +3,9 @@
 import { useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusIcon, PriorityIcon, getStatusDisplayInfo, getPriorityDisplayInfo } from "@/components/tickets";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import type { Ticket, TicketStatus, TicketPriority } from "@/stores/ticket";
 import { statusOptions, priorityOptions } from "./types";
-
-interface FilterSectionProps {
-  title: string;
-  expanded: boolean;
-  onExpandedChange: (expanded: boolean) => void;
-  selectedCount: number;
-  showBorder?: boolean;
-  children: React.ReactNode;
-}
-
-/**
- * Generic collapsible filter section
- */
-function FilterSection({
-  title,
-  expanded,
-  onExpandedChange,
-  selectedCount,
-  showBorder = false,
-  children,
-}: FilterSectionProps) {
-  return (
-    <Collapsible open={expanded} onOpenChange={onExpandedChange}>
-      <CollapsibleTrigger asChild>
-        <div className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/50 ${showBorder ? 'border-t border-border' : ''}`}>
-          <span className="text-xs font-medium">{title}</span>
-          <div className="flex items-center gap-1">
-            {selectedCount > 0 && (
-              <span className="text-xs bg-primary/10 text-primary px-1.5 rounded">
-                {selectedCount}
-              </span>
-            )}
-            {expanded ? (
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-            )}
-          </div>
-        </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="px-3 pb-2 space-y-1">
-          {children}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
+import { FilterSection } from "./FilterSection";
 
 interface TicketFilterSectionProps {
   statusExpanded: boolean;
@@ -76,7 +23,7 @@ interface TicketFilterSectionProps {
 }
 
 /**
- * TicketFilterSection - Renders all filter collapsibles
+ * TicketFilterSection - Renders status and priority filter collapsibles
  */
 export function TicketFilterSection({
   statusExpanded,

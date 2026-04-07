@@ -18,10 +18,11 @@ export function useTicketFilters(): TicketFilterState & TicketFilterActions & {
     setFilters,
     toggleStatus,
     togglePriority,
+    toggleRepository,
     clearUIFilters,
   } = useTicketStore();
 
-  const { selectedStatuses, selectedPriorities } = uiFilters;
+  const { selectedStatuses, selectedPriorities, selectedRepositoryIds } = uiFilters;
 
   // Local search input state (debounced before pushing to store)
   const [searchQuery, setSearchQuery] = useState(filters.search || "");
@@ -46,19 +47,22 @@ export function useTicketFilters(): TicketFilterState & TicketFilterActions & {
 
   const hasActiveFilters = searchQuery.length > 0 ||
     selectedStatuses.length > 0 ||
-    selectedPriorities.length > 0;
+    selectedPriorities.length > 0 ||
+    selectedRepositoryIds.length > 0;
 
   return {
     // State
     searchQuery,
     selectedStatuses,
     selectedPriorities,
+    selectedRepositoryIds,
     filteredTickets,
 
     // Actions
     setSearchQuery,
     toggleStatus,
     togglePriority,
+    toggleRepository,
     clearAllFilters,
     hasActiveFilters,
   };

@@ -26,6 +26,7 @@ export interface TicketFilters {
 export interface TicketUIFilters {
   selectedStatuses: TicketStatus[];
   selectedPriorities: TicketPriority[];
+  selectedRepositoryIds: number[];
 }
 
 export type TicketViewMode = "list" | "board";

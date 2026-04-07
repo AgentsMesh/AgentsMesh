@@ -4,14 +4,16 @@ import type { Ticket } from "./ticket";
 import type { TicketStatus, TicketPriority } from "@/lib/api";
 
 /**
- * Selector hook: returns tickets filtered by current UI filters (search, status, priority).
+ * Selector hook: returns tickets filtered by current UI filters (search, status, priority, repository).
  * Uses Zustand selectors + useMemo for efficient re-renders.
+ * Repository filter: id 0 = "no repository"; positive ids = specific repos.
  */
 export function useFilteredTickets(): Ticket[] {
   const tickets = useTicketStore((s) => s.tickets);
   const search = useTicketStore((s) => s.filters.search);
   const selectedStatuses = useTicketStore((s) => s.uiFilters.selectedStatuses);
   const selectedPriorities = useTicketStore((s) => s.uiFilters.selectedPriorities);
+  const selectedRepositoryIds = useTicketStore((s) => s.uiFilters.selectedRepositoryIds);
 
   return useMemo(() => {
     return tickets.filter((ticket) => {
@@ -21,9 +23,13 @@ export function useFilteredTickets(): Ticket[] {
       }
       if (selectedStatuses.length > 0 && !selectedStatuses.includes(ticket.status)) return false;
       if (selectedPriorities.length > 0 && !selectedPriorities.includes(ticket.priority)) return false;
+      if (selectedRepositoryIds.length > 0) {
+        const repoId = ticket.repository_id ?? 0; // 0 = no repository
+        if (!selectedRepositoryIds.includes(repoId)) return false;
+      }
       return true;
     });
-  }, [tickets, search, selectedStatuses, selectedPriorities]);
+  }, [tickets, search, selectedStatuses, selectedPriorities, selectedRepositoryIds]);
 }
 
 export const getStatusInfo = (status: TicketStatus) => {
