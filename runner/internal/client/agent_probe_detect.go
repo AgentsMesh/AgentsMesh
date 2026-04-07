@@ -24,7 +24,9 @@ func probeAgents(agents []*runnerv1.AgentInfo) []agentProbeResult {
 			continue
 		}
 
-		path, err := exec.LookPath(agent.Command)
+		// Use SafeLookPath instead of exec.LookPath to avoid picking up
+		// extensionless Unix shell scripts on Windows (e.g. npm's "claude").
+		path, err := envpath.SafeLookPath(agent.Command)
 		if err != nil {
 			// Fallback: search common user binary directories.
 			// This handles cases where the service runs with a minimal PATH
@@ -38,6 +40,18 @@ func probeAgents(agents []*runnerv1.AgentInfo) []agentProbeResult {
 			}
 			logger.GRPC().Debug("Agent found via fallback path search",
 				"agent", agent.Slug, "command", agent.Command, "path", path)
+		}
+
+		// On Windows, exec.LookPath may return an extensionless Unix shell script
+		// (e.g. npm's "claude" instead of "claude.cmd"). Validate the extension
+		// and try to find a proper executable variant.
+		if validated := envpath.ValidateExecutable(path); validated != "" {
+			path = validated
+		} else {
+			logger.GRPC().Debug("Agent path has no executable extension, skipping",
+				"agent", agent.Slug, "path", path)
+			results = append(results, r)
+			continue
 		}
 
 		r.found = true

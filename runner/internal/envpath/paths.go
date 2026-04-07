@@ -2,7 +2,6 @@ package envpath
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
@@ -40,8 +39,8 @@ func PrependToPath(current string, dirs ...string) string {
 // when exec.LookPath fails (e.g. when running under a minimal service PATH).
 // Returns the full path if found, empty string otherwise.
 func LookPathFallback(command string) string {
-	// Try standard LookPath first — it respects the current PATH.
-	if path, err := exec.LookPath(command); err == nil {
+	// Try SafeLookPath first — it respects PATHEXT on Windows.
+	if path, err := SafeLookPath(command); err == nil {
 		return path
 	}
 
@@ -51,9 +50,9 @@ func LookPathFallback(command string) string {
 		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
 			return candidate
 		}
-		// Also try without suffix (e.g. shell scripts without .exe on Windows).
-		if exeSuffix() != "" {
-			candidate = filepath.Join(dir, command)
+		// On Windows, also try .cmd (common for npm-installed commands).
+		if exeSuffix() == ".exe" {
+			candidate = filepath.Join(dir, command+".cmd")
 			if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
 				return candidate
 			}

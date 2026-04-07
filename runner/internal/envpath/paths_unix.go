@@ -4,6 +4,7 @@ package envpath
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 )
@@ -43,4 +44,14 @@ func exeSuffix() string {
 // DefaultSystemPath returns a minimal system PATH for the current OS.
 func DefaultSystemPath() string {
 	return "/usr/bin:/bin:/usr/sbin:/sbin"
+}
+
+// ValidateExecutable on Unix returns path as-is (no extension validation needed).
+func ValidateExecutable(path string) string {
+	return path
+}
+
+// SafeLookPath on Unix delegates directly to exec.LookPath.
+func SafeLookPath(command string) (string, error) {
+	return exec.LookPath(command)
 }
