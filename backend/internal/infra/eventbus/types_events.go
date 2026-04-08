@@ -37,21 +37,6 @@ type TicketStatusChangedData struct {
 	PreviousStatus string `json:"previous_status,omitempty"`
 }
 
-// PodNotificationData represents the payload for terminal notification events
-type PodNotificationData struct {
-	PodKey string `json:"pod_key"`
-	Title  string `json:"title"`
-	Body   string `json:"body"`
-}
-
-// TaskCompletedData represents the payload for task completed events
-type TaskCompletedData struct {
-	PodKey      string `json:"pod_key"`
-	AgentStatus string `json:"agent_status"`
-	TicketID    *int64 `json:"ticket_id,omitempty"`
-	TicketSlug  string `json:"ticket_slug,omitempty"`
-}
-
 // PodTitleChangedData represents the payload for pod title change events
 type PodTitleChangedData struct {
 	PodKey string `json:"pod_key"`

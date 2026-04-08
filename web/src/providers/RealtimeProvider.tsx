@@ -11,12 +11,11 @@ import { useAutopilotStore } from "@/stores/autopilot";
 import { useLoopStore } from "@/stores/loop";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import {
   handlePodEvent, handleChannelEvent, handleInfraEvent,
   handleAutopilotEvent, handleLoopEvent,
 } from "./realtimeEventHandlers";
-import type { ConnectionState, RealtimeEvent, TerminalNotificationData, TaskCompletedData, NotificationPayloadData } from "@/lib/realtime";
+import type { ConnectionState, RealtimeEvent } from "@/lib/realtime";
 
 interface RealtimeContextValue {
   connectionState: ConnectionState;
@@ -33,95 +32,46 @@ export function useRealtime() {
 
 interface RealtimeProviderProps {
   children: React.ReactNode;
-  onTerminalNotification?: (data: TerminalNotificationData) => void;
-  onTaskCompleted?: (data: TaskCompletedData) => void;
-  onBrowserNotification?: (data: { title: string; body: string; link?: string }) => void;
+  onEvent?: (event: RealtimeEvent) => void;
 }
 
 /**
- * RealtimeProvider manages the WebSocket connection and routes events to stores.
- * Event handling logic is in realtimeEventHandlers.ts for SRP.
+ * Routes entity events to Zustand stores for silent UI state sync.
+ * Notifications are delegated to the parent via onEvent.
  */
-export function RealtimeProvider({
-  children, onTerminalNotification, onTaskCompleted, onBrowserNotification,
-}: RealtimeProviderProps) {
+export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   const { connectionState, reconnect } = useRealtimeConnection();
   const t = useTranslations();
-  const router = useRouter();
   const loopDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleEvent = useCallback(
     (event: RealtimeEvent) => {
-      // Pod events
-      if (event.type.startsWith("pod:")) {
-        handlePodEvent(event);
-        return;
-      }
-
-      // Channel events
-      if (event.type.startsWith("channel:")) {
-        handleChannelEvent(event);
-        return;
-      }
-
-      // Autopilot events
-      if (event.type.startsWith("autopilot:")) {
-        handleAutopilotEvent(event);
-        return;
-      }
-
-      // Loop events
+      if (event.type.startsWith("pod:")) { handlePodEvent(event); return; }
+      if (event.type.startsWith("channel:")) { handleChannelEvent(event); return; }
+      if (event.type.startsWith("autopilot:")) { handleAutopilotEvent(event); return; }
       if (event.type.startsWith("loop_run:")) {
         handleLoopEvent(event, loopDebounceRef, t, (title, desc) => {
           toast.warning(title, { description: desc, duration: 8000 });
         });
         return;
       }
-
-      // Infrastructure events (runner, ticket, MR, pipeline)
       if (event.type.startsWith("runner:") || event.type.startsWith("ticket:") ||
           event.type.startsWith("mr:") || event.type.startsWith("pipeline:")) {
         handleInfraEvent(event);
         return;
       }
-
-      // Notification events
-      switch (event.type as string) {
-        case "terminal:notification":
-        case "pod:notification":
-          onTerminalNotification?.(event.data as TerminalNotificationData);
-          break;
-        case "task:completed":
-          onTaskCompleted?.(event.data as TaskCompletedData);
-          break;
-        case "notification": {
-          const data = event.data as NotificationPayloadData;
-          if (data.channels?.toast) {
-            const toastFn = data.priority === "high" ? toast.warning : toast.info;
-            toastFn(data.title, {
-              description: data.body, duration: data.priority === "high" ? 8000 : 4000,
-              ...(data.link ? { action: { label: "→", onClick: () => router.push(data.link!) } } : {}),
-            });
-          }
-          if (data.channels?.browser) {
-            onBrowserNotification?.({ title: data.title, body: data.body, link: data.link });
-          }
-          break;
-        }
-      }
+      onEvent?.(event);
     },
-    [onTerminalNotification, onTaskCompleted, onBrowserNotification, t, router]
+    [onEvent, t]
   );
 
   useAllEventsSubscription(handleEvent, [handleEvent]);
 
-  // Cleanup debounce timer on unmount
   useEffect(() => {
     const ref = loopDebounceRef;
     return () => { if (ref.current) clearTimeout(ref.current); };
   }, []);
 
-  // Refresh data when reconnected
   useEffect(() => {
     if (connectionState === "connected") {
       usePodStore.getState().fetchSidebarPods?.(usePodStore.getState().currentSidebarFilter);

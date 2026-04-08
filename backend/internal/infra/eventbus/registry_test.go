@@ -21,7 +21,6 @@ func TestNewEventRegistry(t *testing.T) {
 			EventPodStatusChanged,
 			EventTicketCreated,
 			EventRunnerOnline,
-			EventPodNotification,
 			EventSystemMaintenance,
 		}
 
@@ -43,8 +42,6 @@ func TestNewEventRegistry(t *testing.T) {
 			{EventPodStatusChanged, CategoryEntity},
 			{EventTicketCreated, CategoryEntity},
 			{EventRunnerOnline, CategoryEntity},
-			{EventPodNotification, CategoryNotification},
-			{EventTaskCompleted, CategoryNotification},
 			{EventSystemMaintenance, CategorySystem},
 		}
 
@@ -72,8 +69,6 @@ func TestNewEventRegistry(t *testing.T) {
 			{EventTicketCreated, "ticket"},
 			{EventTicketUpdated, "ticket"},
 			{EventRunnerOnline, "runner"},
-			{EventPodNotification, "pod"},
-			{EventMentionNotification, "channel"},
 			{EventSystemMaintenance, ""},
 		}
 
@@ -122,7 +117,7 @@ func TestEventRegistry_Register(t *testing.T) {
 		// Override builtin event
 		newDef := &EventDefinition{
 			Type:        EventPodCreated,
-			Category:    CategoryNotification, // Change category
+			Category:    CategorySystem, // Change category
 			EntityType:  "custom_pod",
 			Description: "Overridden pod created event",
 		}
@@ -130,8 +125,8 @@ func TestEventRegistry_Register(t *testing.T) {
 		r.Register(newDef)
 
 		retrieved := r.Get(EventPodCreated)
-		if retrieved.Category != CategoryNotification {
-			t.Errorf("expected category %s, got %s", CategoryNotification, retrieved.Category)
+		if retrieved.Category != CategorySystem {
+			t.Errorf("expected category %s, got %s", CategorySystem, retrieved.Category)
 		}
 		if retrieved.EntityType != "custom_pod" {
 			t.Errorf("expected entity type custom_pod, got %s", retrieved.EntityType)
@@ -167,13 +162,6 @@ func TestEventRegistry_GetCategory(t *testing.T) {
 		category := r.GetCategory(EventPodCreated)
 		if category != CategoryEntity {
 			t.Errorf("expected %s, got %s", CategoryEntity, category)
-		}
-	})
-
-	t.Run("get category for notification event", func(t *testing.T) {
-		category := r.GetCategory(EventPodNotification)
-		if category != CategoryNotification {
-			t.Errorf("expected %s, got %s", CategoryNotification, category)
 		}
 	})
 
@@ -214,32 +202,6 @@ func TestEventRegistry_ListByCategory(t *testing.T) {
 		}
 	})
 
-	t.Run("list notification events", func(t *testing.T) {
-		types := r.ListByCategory(CategoryNotification)
-		if len(types) == 0 {
-			t.Error("expected non-empty list of notification events")
-		}
-
-		expectedEvents := []EventType{
-			EventPodNotification,
-			EventTaskCompleted,
-			EventMentionNotification,
-		}
-
-		for _, expected := range expectedEvents {
-			found := false
-			for _, et := range types {
-				if et == expected {
-					found = true
-					break
-				}
-			}
-			if !found {
-				t.Errorf("expected %s to be in notification events", expected)
-			}
-		}
-	})
-
 	t.Run("list events for non-existing category returns empty", func(t *testing.T) {
 		types := r.ListByCategory(EventCategory("nonexistent"))
 		if len(types) != 0 {
@@ -258,8 +220,9 @@ func TestEventRegistry_ListAll(t *testing.T) {
 		}
 
 		// Count expected builtin events (based on registerBuiltinEvents)
-		// Pod: 4, Ticket: 5, Runner: 3, Notification: 4 (+EventNotification), System: 1, Autopilot: 5 = 22
-		expectedCount := 22
+		// Pod: 7, Channel: 3, Ticket: 5, Runner: 3 = 18 (entity)
+		// Autopilot+MR+Pipeline+Loop registered in types but check actual count
+		expectedCount := 18
 
 		if len(types) != expectedCount {
 			t.Errorf("expected %d events, got %d", expectedCount, len(types))
@@ -332,7 +295,7 @@ func TestEventRegistry_ConcurrentAccess(t *testing.T) {
 			defer wg.Done()
 			r.Register(&EventDefinition{
 				Type:     EventType("mixed:event:" + string(rune(idx))),
-				Category: CategoryNotification,
+				Category: CategoryEntity,
 			})
 		}(i)
 	}

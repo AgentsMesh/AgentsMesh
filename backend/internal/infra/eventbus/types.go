@@ -13,8 +13,6 @@ type EventCategory string
 const (
 	// CategoryEntity represents entity state change events (broadcast to org)
 	CategoryEntity EventCategory = "entity"
-	// CategoryNotification represents notification events (targeted to specific users)
-	CategoryNotification EventCategory = "notification"
 	// CategorySystem represents system-level events
 	CategorySystem EventCategory = "system"
 )
@@ -70,24 +68,6 @@ const (
 	EventLoopRunWarning   EventType = "loop_run:warning"
 )
 
-// ===== Notification Events (Category: notification) =====
-const (
-	EventPodNotification EventType = "pod:notification" // OSC 777
-	EventTaskCompleted        EventType = "task:completed"        // Agent finished
-	EventMentionNotification  EventType = "mention:notification"  // @mention (future)
-	EventNotification         EventType = "notification"          // Unified notification (via dispatcher)
-)
-
-// NotificationPayload is the unified payload for all dispatched notifications
-type NotificationPayload struct {
-	Source   string          `json:"source"`
-	Title    string          `json:"title"`
-	Body     string          `json:"body"`
-	Link     string          `json:"link,omitempty"`
-	Priority string          `json:"priority"`
-	Channels map[string]bool `json:"channels"`
-}
-
 // ===== System Events (Category: system) =====
 const (
 	EventSystemMaintenance EventType = "system:maintenance"
@@ -101,11 +81,6 @@ type Event struct {
 	Category EventCategory `json:"category"`
 	// OrganizationID is the organization this event belongs to
 	OrganizationID int64 `json:"organization_id"`
-
-	// TargetUserID is the target user for notification events (single user)
-	TargetUserID *int64 `json:"target_user_id,omitempty"`
-	// TargetUserIDs is the target users for notification events (multiple users)
-	TargetUserIDs []int64 `json:"target_user_ids,omitempty"`
 
 	// EntityType is the type of entity (pod, ticket, runner, channel)
 	EntityType string `json:"entity_type,omitempty"`

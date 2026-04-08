@@ -152,127 +152,6 @@ func TestNewEntityEvent(t *testing.T) {
 	})
 }
 
-func TestNewNotificationEvent(t *testing.T) {
-	t.Run("creates notification event with single target user", func(t *testing.T) {
-		userID := int64(100)
-		data := &PodNotificationData{
-			PodKey: "pod-123",
-			Title:  "Task Complete",
-			Body:   "Your task has finished",
-		}
-
-		before := time.Now().UnixMilli()
-		event, err := NewNotificationEvent(EventPodNotification, 1, &userID, nil, "pod", "pod-123", data)
-		after := time.Now().UnixMilli()
-
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if event == nil {
-			t.Fatal("expected non-nil event")
-		}
-
-		if event.Type != EventPodNotification {
-			t.Errorf("expected type %s, got %s", EventPodNotification, event.Type)
-		}
-		if event.Category != CategoryNotification {
-			t.Errorf("expected category %s, got %s", CategoryNotification, event.Category)
-		}
-		if event.TargetUserID == nil || *event.TargetUserID != 100 {
-			t.Errorf("expected target user ID 100")
-		}
-		if event.Timestamp < before || event.Timestamp > after {
-			t.Errorf("timestamp %d not in range [%d, %d]", event.Timestamp, before, after)
-		}
-
-		var decoded PodNotificationData
-		if err := json.Unmarshal(event.Data, &decoded); err != nil {
-			t.Fatalf("failed to unmarshal data: %v", err)
-		}
-		if decoded.Title != "Task Complete" {
-			t.Errorf("expected Title 'Task Complete', got '%s'", decoded.Title)
-		}
-	})
-
-	t.Run("creates notification event with multiple target users", func(t *testing.T) {
-		userIDs := []int64{100, 200, 300}
-		data := map[string]string{"message": "You were mentioned"}
-
-		event, err := NewNotificationEvent(EventMentionNotification, 1, nil, userIDs, "channel", "channel-1", data)
-
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		if event.TargetUserID != nil {
-			t.Error("expected nil target user ID for multi-user notification")
-		}
-		if len(event.TargetUserIDs) != 3 {
-			t.Errorf("expected 3 target user IDs, got %d", len(event.TargetUserIDs))
-		}
-		for i, id := range event.TargetUserIDs {
-			if id != userIDs[i] {
-				t.Errorf("target user ID %d: expected %d, got %d", i, userIDs[i], id)
-			}
-		}
-	})
-
-	t.Run("creates notification event with task completed data", func(t *testing.T) {
-		userID := int64(50)
-		ticketID := int64(999)
-		data := &TaskCompletedData{
-			PodKey:      "pod-abc",
-			AgentStatus: "completed",
-			TicketID:    &ticketID,
-		}
-
-		event, err := NewNotificationEvent(EventTaskCompleted, 1, &userID, nil, "pod", "pod-abc", data)
-
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		var decoded TaskCompletedData
-		if err := json.Unmarshal(event.Data, &decoded); err != nil {
-			t.Fatalf("failed to unmarshal data: %v", err)
-		}
-		if decoded.AgentStatus != "completed" {
-			t.Errorf("expected AgentStatus 'completed', got '%s'", decoded.AgentStatus)
-		}
-		if decoded.TicketID == nil || *decoded.TicketID != 999 {
-			t.Errorf("expected TicketID 999")
-		}
-	})
-
-	t.Run("creates notification event with nil target users", func(t *testing.T) {
-		data := map[string]string{"info": "broadcast"}
-
-		event, err := NewNotificationEvent(EventTaskCompleted, 1, nil, nil, "", "", data)
-
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		if event.TargetUserID != nil {
-			t.Error("expected nil target user ID")
-		}
-		if len(event.TargetUserIDs) != 0 {
-			t.Errorf("expected empty target user IDs, got %d", len(event.TargetUserIDs))
-		}
-	})
-
-	t.Run("handles unmarshalable data", func(t *testing.T) {
-		ch := make(chan int)
-		userID := int64(1)
-
-		_, err := NewNotificationEvent(EventPodNotification, 1, &userID, nil, "pod", "pod-err", ch)
-
-		if err == nil {
-			t.Error("expected error for unmarshalable data")
-		}
-	})
-}
-
 func TestEventType_Constants(t *testing.T) {
 	// Verify event type constants are unique
 	eventTypes := []EventType{
@@ -288,9 +167,6 @@ func TestEventType_Constants(t *testing.T) {
 		EventRunnerOnline,
 		EventRunnerOffline,
 		EventRunnerUpdated,
-		EventPodNotification,
-		EventTaskCompleted,
-		EventMentionNotification,
 		EventSystemMaintenance,
 	}
 
@@ -307,7 +183,6 @@ func TestEventCategory_Constants(t *testing.T) {
 	// Verify category constants are unique
 	categories := []EventCategory{
 		CategoryEntity,
-		CategoryNotification,
 		CategorySystem,
 	}
 

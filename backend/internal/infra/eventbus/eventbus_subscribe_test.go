@@ -67,11 +67,11 @@ func TestEventBus_SubscribeCategory(t *testing.T) {
 		defer eb2.Close()
 
 		for i := 0; i < 2; i++ {
-			eb2.SubscribeCategory(CategoryNotification, func(e *Event) {})
+			eb2.SubscribeCategory(CategoryEntity, func(e *Event) {})
 		}
 
 		eb2.mu.RLock()
-		handlers := eb2.categoryHandlers[CategoryNotification]
+		handlers := eb2.categoryHandlers[CategoryEntity]
 		eb2.mu.RUnlock()
 
 		if len(handlers) != 2 {

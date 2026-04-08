@@ -349,4 +349,5 @@ Or use an existing admin to grant privileges via the Admin Console UI.
 
 ## Principles
 * Architecture must conform to SOLID, GRASP, and YAGNI.
-* **Hard limit: every file must stay under 200 lines** (excluding test files, which should stay under 400 lines). When a file approaches this limit, proactively split it by SRP — extract types, helpers, hooks, or sub-components into separate files. A 210-line file is acceptable if splitting would break cohesion; a 300+ line file is never acceptable and must be split before committing. 
+* **Hard limit: every file must stay under 200 lines** (excluding test files, which should stay under 400 lines). When a file approaches this limit, proactively split it by SRP — extract types, helpers, hooks, or sub-components into separate files. A 210-line file is acceptable if splitting would break cohesion; a 300+ line file is never acceptable and must be split before committing.
+* **Minimal comments.** Do not add comments that restate what the code does — the code is the source of truth. Only comment to explain **why** something non-obvious is done (business constraints, dedup reasoning, cross-module contracts). No "creates a new X" on `NewX`, no "returns the Y" on `GetY`, no section banners like `// Create and publish event`. 

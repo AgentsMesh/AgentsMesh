@@ -162,32 +162,6 @@ func (r *EventRegistry) registerBuiltinEvents() {
 		Description: "Runner has been updated",
 	}
 
-	// Notification events
-	r.definitions[EventPodNotification] = &EventDefinition{
-		Type:        EventPodNotification,
-		Category:    CategoryNotification,
-		EntityType:  "pod",
-		Description: "Terminal notification (OSC 777)",
-	}
-	r.definitions[EventTaskCompleted] = &EventDefinition{
-		Type:        EventTaskCompleted,
-		Category:    CategoryNotification,
-		EntityType:  "pod",
-		Description: "Agent task has completed",
-	}
-	r.definitions[EventMentionNotification] = &EventDefinition{
-		Type:        EventMentionNotification,
-		Category:    CategoryNotification,
-		EntityType:  "channel",
-		Description: "User was mentioned in a channel",
-	}
-	r.definitions[EventNotification] = &EventDefinition{
-		Type:        EventNotification,
-		Category:    CategoryNotification,
-		EntityType:  "notification",
-		Description: "Unified notification (via dispatcher)",
-	}
-
 	// System events
 	r.definitions[EventSystemMaintenance] = &EventDefinition{
 		Type:        EventSystemMaintenance,

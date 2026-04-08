@@ -163,74 +163,14 @@ func TestEventDataStructures(t *testing.T) {
 		}
 	})
 
-	t.Run("PodNotificationData serialization", func(t *testing.T) {
-		data := &PodNotificationData{PodKey: "pod-term", Title: "Alert", Body: "Something happened"}
-		bytes, err := json.Marshal(data)
-		if err != nil {
-			t.Fatalf("failed to marshal: %v", err)
-		}
-		var decoded PodNotificationData
-		if err := json.Unmarshal(bytes, &decoded); err != nil {
-			t.Fatalf("failed to unmarshal: %v", err)
-		}
-		if decoded.PodKey != "pod-term" {
-			t.Errorf("PodKey mismatch")
-		}
-		if decoded.Title != "Alert" {
-			t.Errorf("Title mismatch")
-		}
-		if decoded.Body != "Something happened" {
-			t.Errorf("Body mismatch")
-		}
-	})
-
-	t.Run("TaskCompletedData serialization", func(t *testing.T) {
-		ticketID := int64(500)
-		data := &TaskCompletedData{PodKey: "pod-task", AgentStatus: "failed", TicketID: &ticketID}
-		bytes, err := json.Marshal(data)
-		if err != nil {
-			t.Fatalf("failed to marshal: %v", err)
-		}
-		var decoded TaskCompletedData
-		if err := json.Unmarshal(bytes, &decoded); err != nil {
-			t.Fatalf("failed to unmarshal: %v", err)
-		}
-		if decoded.PodKey != "pod-task" {
-			t.Errorf("PodKey mismatch")
-		}
-		if decoded.AgentStatus != "failed" {
-			t.Errorf("AgentStatus mismatch")
-		}
-		if decoded.TicketID == nil || *decoded.TicketID != 500 {
-			t.Error("TicketID mismatch")
-		}
-	})
-
-	t.Run("TaskCompletedData with nil TicketID", func(t *testing.T) {
-		data := &TaskCompletedData{PodKey: "pod-no-ticket", AgentStatus: "completed", TicketID: nil}
-		bytes, err := json.Marshal(data)
-		if err != nil {
-			t.Fatalf("failed to marshal: %v", err)
-		}
-		var decoded TaskCompletedData
-		if err := json.Unmarshal(bytes, &decoded); err != nil {
-			t.Fatalf("failed to unmarshal: %v", err)
-		}
-		if decoded.TicketID != nil {
-			t.Error("expected nil TicketID")
-		}
-	})
 }
 
 func TestEvent_Serialization(t *testing.T) {
 	t.Run("full event serialization", func(t *testing.T) {
-		userID := int64(42)
-		userIDs := []int64{1, 2, 3}
 		data, _ := json.Marshal(map[string]string{"key": "value"})
 
 		event := &Event{
 			Type: EventPodCreated, Category: CategoryEntity, OrganizationID: 100,
-			TargetUserID: &userID, TargetUserIDs: userIDs,
 			EntityType: "pod", EntityID: "pod-123",
 			Data: data, Timestamp: 1234567890, SourceInstanceID: "server-1",
 		}
@@ -251,12 +191,6 @@ func TestEvent_Serialization(t *testing.T) {
 		}
 		if decoded.OrganizationID != 100 {
 			t.Errorf("OrganizationID mismatch")
-		}
-		if decoded.TargetUserID == nil || *decoded.TargetUserID != 42 {
-			t.Error("TargetUserID mismatch")
-		}
-		if len(decoded.TargetUserIDs) != 3 {
-			t.Errorf("TargetUserIDs length mismatch")
 		}
 		if decoded.EntityType != "pod" {
 			t.Errorf("EntityType mismatch")
@@ -282,12 +216,6 @@ func TestEvent_Serialization(t *testing.T) {
 			t.Fatalf("failed to marshal event: %v", err)
 		}
 		jsonStr := string(bytes)
-		if containsSubstr(jsonStr, "target_user_id") {
-			t.Error("expected target_user_id to be omitted")
-		}
-		if containsSubstr(jsonStr, "target_user_ids") {
-			t.Error("expected target_user_ids to be omitted")
-		}
 		if containsSubstr(jsonStr, "source_instance_id") {
 			t.Error("expected source_instance_id to be omitted")
 		}

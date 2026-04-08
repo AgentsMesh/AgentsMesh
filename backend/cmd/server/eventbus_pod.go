@@ -68,9 +68,11 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			slog.Error("failed to publish pod event", "error", err)
 		}
 
-		// Route task:completed through NotificationDispatcher (preference-aware)
+		// Skip task:completed if OSC 777 already notified for this pod (dedup window: 30s)
 		if status == agentpod.StatusCompleted || status == agentpod.StatusTerminated || status == agentpod.StatusError {
-			if err := notifDispatcher.Dispatch(context.Background(), &notifDomain.NotificationRequest{
+			if wasOSCNotifRecent(podKey) {
+				slog.Debug("skipping task:completed notification, recent OSC notification exists", "pod_key", podKey)
+			} else if err := notifDispatcher.Dispatch(context.Background(), &notifDomain.NotificationRequest{
 				OrganizationID:    pod.OrganizationID,
 				Source:            notifDomain.SourceTaskCompleted,
 				SourceEntityID:    podKey,

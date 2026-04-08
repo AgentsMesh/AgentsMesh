@@ -41,9 +41,6 @@ export type EventType =
   | "loop_run:warning"
   // Notification events (targeted to specific users)
   | "notification"
-  | "pod:notification"
-  | "task:completed"
-  | "mention:notification"
   // System events
   | "system:maintenance"
   // Connection events (client-side only)
@@ -91,8 +88,6 @@ export type {
   PodCreatedData,
   RunnerStatusData,
   TicketStatusChangedData,
-  TerminalNotificationData,
-  TaskCompletedData,
   PodTitleChangedData,
   PodAliasChangedData,
   PodInitProgressData,

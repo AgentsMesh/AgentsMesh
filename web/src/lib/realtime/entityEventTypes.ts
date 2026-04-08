@@ -44,25 +44,6 @@ export interface TicketStatusChangedData {
 }
 
 /**
- * Terminal notification event payload (OSC 777)
- */
-export interface TerminalNotificationData {
-  pod_key: string;
-  title: string;
-  body: string;
-}
-
-/**
- * Task completed event payload
- */
-export interface TaskCompletedData {
-  pod_key: string;
-  agent_status: string;
-  ticket_id?: number;
-  ticket_slug?: string;
-}
-
-/**
  * Pod title changed event payload (OSC 0/2)
  */
 export interface PodTitleChangedData {

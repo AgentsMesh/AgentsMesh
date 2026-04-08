@@ -28,7 +28,6 @@ func (eb *EventBus) Publish(ctx context.Context, event *Event) error {
 		"org_id", event.OrganizationID,
 		"entity_type", event.EntityType,
 		"entity_id", event.EntityID,
-		"target_user_id", event.TargetUserID,
 	)
 
 	// Dispatch locally

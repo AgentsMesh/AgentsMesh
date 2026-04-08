@@ -57,7 +57,7 @@ func TestEventBus_Publish(t *testing.T) {
 		defer eb.Close()
 
 		event := &Event{
-			Type:           EventPodNotification, // Notification category
+			Type:           EventPodCreated, // Entity category
 			OrganizationID: 1,
 		}
 
@@ -66,8 +66,8 @@ func TestEventBus_Publish(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if event.Category != CategoryNotification {
-			t.Errorf("expected category %s, got %s", CategoryNotification, event.Category)
+		if event.Category != CategoryEntity {
+			t.Errorf("expected category %s, got %s", CategoryEntity, event.Category)
 		}
 	})
 

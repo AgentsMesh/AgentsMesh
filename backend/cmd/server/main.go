@@ -12,6 +12,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	channelService "github.com/anthropics/agentsmesh/backend/internal/service/channel"
@@ -67,8 +68,12 @@ func main() {
 	services.pod.SetEventPublisher(podEventPublisher)
 	services.channel.SetEventBus(eventBus)
 
+	// Create notification relay (Hub + Redis cross-instance push)
+	notifRelay := websocket.NewNotificationRelay(hub, redisClient, appLogger.Logger)
+	notifRelay.StartSubscriber(context.Background())
+
 	// Create notification dispatcher and register resolvers
-	notifDispatcher := notifService.NewDispatcher(eventBus, services.notifPrefStore)
+	notifDispatcher := notifService.NewDispatcher(notifRelay, services.notifPrefStore)
 	notifDispatcher.RegisterResolver("pod_creator", notifService.NewPodCreatorResolver(services.pod))
 	notifDispatcher.RegisterResolver("channel_members", notifService.NewChannelMemberResolver(services.channel))
 	services.notifDispatcher = notifDispatcher
@@ -129,6 +134,8 @@ func main() {
 		}); err != nil {
 			slog.Error("failed to dispatch notification", "source", source, "error", err)
 		}
+		// Record OSC notification to deduplicate against task:completed
+		RecordOSCNotification(entityID)
 	})
 
 	// Create PodOrchestrator (unified Pod creation logic for REST + MCP paths)
@@ -141,6 +148,7 @@ func main() {
 	// Setup event callbacks
 	setupRunnerEventCallbacks(db, runnerConnMgr, eventBus)
 	setupPodEventCallbacks(db, podCoordinator, eventBus, notifDispatcher)
+	startOSCDedupCleanup()
 
 	// Wire AutopilotControllerService with PodCoordinator for gRPC command sending.
 	// PodCoordinator implements AutopilotCommandSender (SendCreateAutopilot).
