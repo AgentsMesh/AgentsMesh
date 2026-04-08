@@ -6,46 +6,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"gorm.io/driver/sqlite"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"gorm.io/gorm"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to open database: %v", err)
-	}
-
-	// Create licenses table
-	db.Exec(`CREATE TABLE IF NOT EXISTS licenses (
-		id INTEGER PRIMARY KEY,
-		license_key TEXT UNIQUE NOT NULL,
-		organization_name TEXT NOT NULL,
-		contact_email TEXT NOT NULL,
-		plan_name TEXT NOT NULL,
-		max_users INTEGER DEFAULT -1,
-		max_runners INTEGER DEFAULT -1,
-		max_repositories INTEGER DEFAULT -1,
-		max_concurrent_pods INTEGER DEFAULT -1,
-		features TEXT,
-		issued_at DATETIME NOT NULL,
-		expires_at DATETIME,
-		signature TEXT NOT NULL,
-		public_key_fingerprint TEXT,
-		is_active BOOLEAN DEFAULT TRUE,
-		revoked_at DATETIME,
-		revocation_reason TEXT,
-		activated_at DATETIME,
-		activated_org_id INTEGER,
-		last_verified_at DATETIME,
-		created_at DATETIME,
-		updated_at DATETIME
-	)`)
-
-	return db
+	t.Helper()
+	return testkit.SetupTestDB(t)
 }
 
 func setupTestProvider(t *testing.T) *Provider {

@@ -7,44 +7,13 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"gorm.io/driver/sqlite"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-// setupTestDB creates an in-memory SQLite database for testing
 func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger:                                   logger.Default.LogMode(logger.Silent),
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-
-	// Create table manually for SQLite compatibility (JSONB → TEXT)
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS api_keys (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
-			name TEXT NOT NULL,
-			description TEXT,
-			key_prefix TEXT NOT NULL,
-			key_hash TEXT NOT NULL UNIQUE,
-			scopes TEXT NOT NULL DEFAULT '[]',
-			is_enabled INTEGER NOT NULL DEFAULT 1,
-			expires_at DATETIME,
-			last_used_at DATETIME,
-			created_by INTEGER NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`).Error
-	if err != nil {
-		t.Fatalf("failed to create api_keys table: %v", err)
-	}
-
-	return db
+	t.Helper()
+	return testkit.SetupTestDB(t)
 }
 
 // newTestService creates a Service with an in-memory DB and nil redis

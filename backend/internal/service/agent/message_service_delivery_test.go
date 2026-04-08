@@ -9,7 +9,7 @@ import (
 )
 
 func TestMarkRead(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -50,7 +50,7 @@ func TestMarkRead(t *testing.T) {
 }
 
 func TestMarkDelivered(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -71,7 +71,7 @@ func TestMarkDelivered(t *testing.T) {
 }
 
 func TestMarkAllRead(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -96,7 +96,7 @@ func TestMarkAllRead(t *testing.T) {
 }
 
 func TestDeleteMessage(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -135,7 +135,7 @@ func TestDeleteMessage(t *testing.T) {
 }
 
 func TestGetPendingRetries(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -159,7 +159,7 @@ func TestGetPendingRetries(t *testing.T) {
 }
 
 func TestRecordDeliveryFailure(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -218,7 +218,7 @@ func TestRecordDeliveryFailure(t *testing.T) {
 }
 
 func TestGetDeadLetters(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -239,7 +239,7 @@ func TestGetDeadLetters(t *testing.T) {
 }
 
 func TestReplayDeadLetter(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -285,7 +285,7 @@ func TestReplayDeadLetter(t *testing.T) {
 }
 
 func TestCleanupExpiredMessages(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 

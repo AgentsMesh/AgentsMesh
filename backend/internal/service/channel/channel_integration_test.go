@@ -6,18 +6,18 @@ import (
 
 	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 )
 
 // TestChannelFlow_CreateAndSendMessage creates a channel, sends messages,
 // and verifies they can be retrieved in correct order.
 func TestChannelFlow_CreateAndSendMessage(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewChannelRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "msg@test.io", "msguser")
-	orgID := testutil.CreateOrg(t, db, "org-msg", userID)
+	userID := testkit.CreateUser(t, db, "msg@test.io", "msguser")
+	orgID := testkit.CreateOrg(t, db, "org-msg", userID)
 
 	ch, err := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: orgID,
@@ -66,14 +66,14 @@ func TestChannelFlow_CreateAndSendMessage(t *testing.T) {
 // TestChannelFlow_MemberManagement verifies joining, listing, and leaving
 // channel pods (pod-based membership).
 func TestChannelFlow_MemberManagement(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewChannelRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "mem@test.io", "memuser")
-	orgID := testutil.CreateOrg(t, db, "org-mem", userID)
-	runnerID := testutil.CreateRunner(t, db, orgID, "runner-mem")
-	podKey := testutil.CreatePod(t, db, orgID, runnerID, userID)
+	userID := testkit.CreateUser(t, db, "mem@test.io", "memuser")
+	orgID := testkit.CreateOrg(t, db, "org-mem", userID)
+	runnerID := testkit.CreateRunner(t, db, orgID, "runner-mem")
+	podKey := testkit.CreatePod(t, db, orgID, runnerID, userID)
 
 	ch, err := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: orgID,
@@ -118,12 +118,12 @@ func TestChannelFlow_MemberManagement(t *testing.T) {
 // TestChannelFlow_ArchiveBlocksMessages archives a channel and verifies
 // that sending messages is blocked with ErrChannelArchived.
 func TestChannelFlow_ArchiveBlocksMessages(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewChannelRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "arch@test.io", "archuser")
-	orgID := testutil.CreateOrg(t, db, "org-arch", userID)
+	userID := testkit.CreateUser(t, db, "arch@test.io", "archuser")
+	orgID := testkit.CreateOrg(t, db, "org-arch", userID)
 
 	ch, err := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: orgID,
@@ -169,12 +169,12 @@ func TestChannelFlow_ArchiveBlocksMessages(t *testing.T) {
 // TestChannelFlow_DeleteCascade creates a channel with messages and members,
 // deletes it, and verifies all related data is cleaned up.
 func TestChannelFlow_DeleteCascade(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewChannelRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "del@test.io", "deluser")
-	orgID := testutil.CreateOrg(t, db, "org-del", userID)
+	userID := testkit.CreateUser(t, db, "del@test.io", "deluser")
+	orgID := testkit.CreateOrg(t, db, "org-del", userID)
 
 	ch, err := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: orgID,

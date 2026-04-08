@@ -6,55 +6,16 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/tokenusage"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 // setupTokenUsageTestDB creates an in-memory SQLite database with the token_usages table.
 func setupTokenUsageTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-		Logger:                                   logger.Default.LogMode(logger.Silent),
-	})
-	require.NoError(t, err)
-
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS token_usages (
-			id                    INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id       INTEGER NOT NULL,
-			pod_id                INTEGER,
-			pod_key               TEXT NOT NULL,
-			user_id               INTEGER NOT NULL,
-			runner_id             INTEGER NOT NULL,
-			agent_slug       TEXT NOT NULL,
-			model                 TEXT,
-			input_tokens          INTEGER NOT NULL DEFAULT 0,
-			output_tokens         INTEGER NOT NULL DEFAULT 0,
-			cache_creation_tokens INTEGER NOT NULL DEFAULT 0,
-			cache_read_tokens     INTEGER NOT NULL DEFAULT 0,
-			session_started_at    DATETIME,
-			session_ended_at      DATETIME,
-			created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`).Error
-	require.NoError(t, err)
-
-	// Minimal users table for GetByUser JOIN.
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-			id       INTEGER PRIMARY KEY AUTOINCREMENT,
-			name     TEXT,
-			username TEXT,
-			email    TEXT
-		)
-	`).Error
-	require.NoError(t, err)
-
-	return db
+	return testkit.SetupTestDB(t)
 }
 
 // seedUsers inserts test users for JOIN tests.

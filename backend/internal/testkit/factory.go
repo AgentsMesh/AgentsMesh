@@ -1,4 +1,4 @@
-package testutil
+package testkit
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ func CreateUser(t *testing.T, db *gorm.DB, email, username string) (id int64) {
 		email, username, username, "$2a$10$dummyhash",
 	)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreateUser: %v", result.Error)
+		t.Fatalf("testkit.CreateUser: %v", result.Error)
 	}
 	db.Raw(`SELECT id FROM users WHERE email = ?`, email).Scan(&id)
 	return id
@@ -27,7 +27,7 @@ func CreateOrg(t *testing.T, db *gorm.DB, slug string, ownerID int64) (id int64)
 	t.Helper()
 	result := db.Exec(`INSERT INTO organizations (name, slug) VALUES (?, ?)`, "Org "+slug, slug)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreateOrg: %v", result.Error)
+		t.Fatalf("testkit.CreateOrg: %v", result.Error)
 	}
 	db.Raw(`SELECT id FROM organizations WHERE slug = ?`, slug).Scan(&id)
 	if ownerID > 0 {
@@ -44,7 +44,7 @@ func CreateRunner(t *testing.T, db *gorm.DB, orgID int64, nodeID string) (id int
 		orgID, nodeID,
 	)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreateRunner: %v", result.Error)
+		t.Fatalf("testkit.CreateRunner: %v", result.Error)
 	}
 	db.Raw(`SELECT id FROM runners WHERE node_id = ?`, nodeID).Scan(&id)
 	return id
@@ -59,7 +59,7 @@ func CreatePod(t *testing.T, db *gorm.DB, orgID, runnerID, userID int64) (podKey
 		orgID, podKey, runnerID, userID,
 	)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreatePod: %v", result.Error)
+		t.Fatalf("testkit.CreatePod: %v", result.Error)
 	}
 	return podKey
 }
@@ -72,7 +72,7 @@ func CreateAgent(t *testing.T, db *gorm.DB, slug, name, agentfileSrc string) {
 		slug, name, slug, agentfileSrc,
 	)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreateAgent: %v", result.Error)
+		t.Fatalf("testkit.CreateAgent: %v", result.Error)
 	}
 }
 
@@ -83,7 +83,7 @@ func CreateChannel(t *testing.T, db *gorm.DB, orgID int64, name string) (id int6
 		`INSERT INTO channels (organization_id, name) VALUES (?, ?)`, orgID, name,
 	)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreateChannel: %v", result.Error)
+		t.Fatalf("testkit.CreateChannel: %v", result.Error)
 	}
 	db.Raw(`SELECT id FROM channels WHERE organization_id = ? AND name = ?`, orgID, name).Scan(&id)
 	return id
@@ -98,7 +98,7 @@ func CreateTicket(t *testing.T, db *gorm.DB, orgID, reporterID int64, title stri
 		orgID, time.Now().UnixNano()%10000, slug, title, reporterID,
 	)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreateTicket: %v", result.Error)
+		t.Fatalf("testkit.CreateTicket: %v", result.Error)
 	}
 	db.Raw(`SELECT id FROM tickets WHERE slug = ?`, slug).Scan(&id)
 	return id
@@ -112,7 +112,7 @@ func CreateRepo(t *testing.T, db *gorm.DB, orgID int64, slug, cloneURL string) (
 		orgID, "ext-"+slug, slug, slug, cloneURL,
 	)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreateRepo: %v", result.Error)
+		t.Fatalf("testkit.CreateRepo: %v", result.Error)
 	}
 	db.Raw(`SELECT id FROM repositories WHERE slug = ? AND organization_id = ?`, slug, orgID).Scan(&id)
 	return id
@@ -126,7 +126,7 @@ func CreateLoop(t *testing.T, db *gorm.DB, orgID, userID int64, slug string) (id
 		orgID, "Loop "+slug, slug, userID,
 	)
 	if result.Error != nil {
-		t.Fatalf("testutil.CreateLoop: %v", result.Error)
+		t.Fatalf("testkit.CreateLoop: %v", result.Error)
 	}
 	db.Raw(`SELECT id FROM loops WHERE slug = ? AND organization_id = ?`, slug, orgID).Scan(&id)
 	return id

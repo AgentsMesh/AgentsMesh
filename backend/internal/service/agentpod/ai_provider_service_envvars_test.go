@@ -71,7 +71,7 @@ func TestFormatEnvVars_Gemini(t *testing.T) {
 }
 
 func TestGetAIProviderEnvVars(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -94,7 +94,7 @@ func TestGetAIProviderEnvVars(t *testing.T) {
 }
 
 func TestGetAIProviderEnvVars_NoDefaultProvider(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -109,7 +109,7 @@ func TestGetAIProviderEnvVars_NoDefaultProvider(t *testing.T) {
 }
 
 func TestGetAIProviderEnvVarsByID(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -132,7 +132,7 @@ func TestGetAIProviderEnvVarsByID(t *testing.T) {
 }
 
 func TestGetAIProviderEnvVarsByID_NotFound(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 

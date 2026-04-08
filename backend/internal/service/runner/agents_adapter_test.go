@@ -6,42 +6,14 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 // setupAgentTestDB creates a test database with agents table
 func setupAgentTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger:                                   logger.Default.LogMode(logger.Silent),
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-
-	// Create agents table
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS agents (
-			slug TEXT PRIMARY KEY,
-			name TEXT NOT NULL,
-			description TEXT,
-			launch_command TEXT NOT NULL,
-			executable TEXT,
-			agentfile_source TEXT,
-			is_active BOOLEAN NOT NULL DEFAULT TRUE,
-			is_builtin BOOLEAN NOT NULL DEFAULT TRUE,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`).Error
-	if err != nil {
-		t.Fatalf("failed to create agents table: %v", err)
-	}
-
-	return db
+	return testkit.SetupTestDB(t)
 }
 
 func TestNewAgentServiceAdapter(t *testing.T) {

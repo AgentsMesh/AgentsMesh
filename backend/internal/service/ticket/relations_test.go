@@ -5,56 +5,14 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func setupRelationsTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	require.NoError(t, err)
-
-	// Create tables manually for SQLite compatibility
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS tickets (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
-			number INTEGER NOT NULL,
-			slug TEXT NOT NULL,
-			title TEXT NOT NULL,
-			content TEXT,
-			status TEXT NOT NULL DEFAULT 'backlog',
-			priority TEXT NOT NULL DEFAULT 'none',
-			severity TEXT,
-			estimate INTEGER,
-			due_date DATETIME,
-			started_at DATETIME,
-			completed_at DATETIME,
-			repository_id INTEGER,
-			reporter_id INTEGER NOT NULL,
-			parent_ticket_id INTEGER,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`).Error
-	require.NoError(t, err)
-
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS ticket_relations (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
-			source_ticket_id INTEGER NOT NULL,
-			target_ticket_id INTEGER NOT NULL,
-			relation_type TEXT NOT NULL DEFAULT 'relates',
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`).Error
-	require.NoError(t, err)
-
-	return db
+	return testkit.SetupTestDB(t)
 }
 
 func TestCreateRelation(t *testing.T) {

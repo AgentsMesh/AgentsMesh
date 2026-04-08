@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 )
 
 // Stripe Integration Tests - Run with: go test -tags=integration -v ./internal/service/billing/...
@@ -29,7 +29,7 @@ func getStripeTestKey(t *testing.T) string {
 }
 
 func setupStripeIntegrationTestDB(t *testing.T) *gorm.DB {
-	return testutil.SetupTestDB(t)
+	return testkit.SetupTestDB(t)
 }
 
 func seedStripeIntegrationTestPlan(t *testing.T, db *gorm.DB) {

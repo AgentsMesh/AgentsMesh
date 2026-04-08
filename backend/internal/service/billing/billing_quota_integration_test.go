@@ -7,25 +7,25 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
-// setupQuotaIntegration creates a billing service using testutil.SetupTestDB
+// setupQuotaIntegration creates a billing service using testkit.SetupTestDB
 // (shared across all packages) instead of the package-local setupTestDB.
 func setupQuotaIntegration(t *testing.T) (*Service, context.Context, *gorm.DB, int64, int64) {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	repo := infra.NewBillingRepository(db)
 	svc := NewService(repo, "")
 	ctx := context.Background()
 
 	seedTestPlan(t, db) // "based" plan: maxUsers=1, maxRunners=1, maxPods=5
 
-	userID := testutil.CreateUser(t, db, "quota-user@test.com", "quota-user")
-	orgID := testutil.CreateOrg(t, db, "quota-org", userID)
+	userID := testkit.CreateUser(t, db, "quota-user@test.com", "quota-user")
+	orgID := testkit.CreateOrg(t, db, "quota-org", userID)
 	_, err := svc.CreateSubscription(ctx, orgID, billing.PlanBased)
 	require.NoError(t, err)
 
@@ -54,14 +54,14 @@ func TestBillingQuotaIntegration_CheckQuotaExceeded(t *testing.T) {
 }
 
 func TestBillingQuotaIntegration_FrozenSubscription(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	repo := infra.NewBillingRepository(db)
 	svc := NewService(repo, "")
 	ctx := context.Background()
 
 	plan := seedTestPlan(t, db)
-	userID := testutil.CreateUser(t, db, "frozen@test.com", "frozen")
-	orgID := testutil.CreateOrg(t, db, "frozen-org", userID)
+	userID := testkit.CreateUser(t, db, "frozen@test.com", "frozen")
+	orgID := testkit.CreateOrg(t, db, "frozen-org", userID)
 
 	now := time.Now()
 	frozenAt := now.Add(-24 * time.Hour)
@@ -81,7 +81,7 @@ func TestBillingQuotaIntegration_FrozenSubscription(t *testing.T) {
 }
 
 func TestBillingQuotaIntegration_NoSubscriptionFallsBack(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	repo := infra.NewBillingRepository(db)
 	svc := NewService(repo, "")
 	ctx := context.Background()

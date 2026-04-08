@@ -8,7 +8,7 @@ import (
 	invitationDomain "github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,12 +17,12 @@ import (
 // seed data: one user (inviter), one org, and the inviter as org owner.
 func setupTestService(t *testing.T) (*Service, context.Context, int64, int64) {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	repo := infra.NewInvitationRepository(db)
 	svc := NewService(repo, nil) // nil email service — no emails in tests
 
-	inviterID := testutil.CreateUser(t, db, "inviter@test.com", "inviter")
-	orgID := testutil.CreateOrg(t, db, "test-org", inviterID)
+	inviterID := testkit.CreateUser(t, db, "inviter@test.com", "inviter")
+	orgID := testkit.CreateOrg(t, db, "test-org", inviterID)
 
 	return svc, context.Background(), orgID, inviterID
 }
@@ -79,16 +79,16 @@ func TestInvitation_AcceptInvitation(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a second user to accept the invitation
-	db := testutil.SetupTestDB(t) // need a fresh user; reuse setupTestService's DB via repo
+	db := testkit.SetupTestDB(t) // need a fresh user; reuse setupTestService's DB via repo
 	_ = db                        // not used — we test via service only
 
 	// We need the accepting user in the same DB. Rebuild with full setup.
-	db2 := testutil.SetupTestDB(t)
+	db2 := testkit.SetupTestDB(t)
 	repo2 := infra.NewInvitationRepository(db2)
 	svc2 := NewService(repo2, nil)
-	inviterID2 := testutil.CreateUser(t, db2, "inviter2@test.com", "inviter2")
-	orgID2 := testutil.CreateOrg(t, db2, "org2", inviterID2)
-	joinerID := testutil.CreateUser(t, db2, "joiner2@test.com", "joiner2")
+	inviterID2 := testkit.CreateUser(t, db2, "inviter2@test.com", "inviter2")
+	orgID2 := testkit.CreateOrg(t, db2, "org2", inviterID2)
+	joinerID := testkit.CreateUser(t, db2, "joiner2@test.com", "joiner2")
 
 	inv2, err := svc2.Create(ctx, &CreateRequest{
 		OrganizationID: orgID2,
@@ -114,14 +114,14 @@ func TestInvitation_AcceptInvitation(t *testing.T) {
 }
 
 func TestInvitation_ExpiredInvitation(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	repo := infra.NewInvitationRepository(db)
 	svc := NewService(repo, nil)
 	ctx := context.Background()
 
-	inviterID := testutil.CreateUser(t, db, "inviter@test.com", "inviter")
-	orgID := testutil.CreateOrg(t, db, "test-org", inviterID)
-	joinerID := testutil.CreateUser(t, db, "joiner@test.com", "joiner")
+	inviterID := testkit.CreateUser(t, db, "inviter@test.com", "inviter")
+	orgID := testkit.CreateOrg(t, db, "test-org", inviterID)
+	joinerID := testkit.CreateUser(t, db, "joiner@test.com", "joiner")
 
 	// Directly insert an already-expired invitation
 	expired := &invitationDomain.Invitation{

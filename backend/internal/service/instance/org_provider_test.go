@@ -8,11 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
 )
 
 // mockRunnerConnector is a test double for ConnectedRunnerIDsProvider
@@ -57,23 +56,8 @@ func testLogger() *slog.Logger {
 }
 
 func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger: gormlogger.Default.LogMode(gormlogger.Silent),
-	})
-	require.NoError(t, err)
-
-	// Create minimal runners table
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS runners (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
-			node_id TEXT NOT NULL DEFAULT '',
-			status TEXT NOT NULL DEFAULT 'online'
-		)
-	`).Error
-	require.NoError(t, err)
-
-	return db
+	t.Helper()
+	return testkit.SetupTestDB(t)
 }
 
 type runnerSeed struct {
@@ -83,7 +67,7 @@ type runnerSeed struct {
 
 func seedRunners(t *testing.T, db *gorm.DB, runners []runnerSeed) {
 	for _, r := range runners {
-		err := db.Exec("INSERT INTO runners (id, organization_id) VALUES (?, ?)", r.ID, r.OrgID).Error
+		err := db.Exec("INSERT INTO runners (id, organization_id, node_id) VALUES (?, ?, ?)", r.ID, r.OrgID, "test-node").Error
 		require.NoError(t, err)
 	}
 }

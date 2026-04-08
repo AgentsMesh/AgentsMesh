@@ -6,26 +6,20 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"gorm.io/driver/sqlite"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"gorm.io/gorm"
 )
 
 func setupTestDBForGit(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-	return db
+	return testkit.SetupTestDB(t)
 }
 
 func testLoggerForGit() *slog.Logger {
 	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 }
 
-func createTestRouterForGit(cfg *config.Config) (*WebhookRouter, *gorm.DB) {
-	db := setupTestDBForGitRouter()
+func createTestRouterForGit(t *testing.T, cfg *config.Config) (*WebhookRouter, *gorm.DB) {
+	db := testkit.SetupTestDB(t)
 	logger := testLoggerForGit()
 	registry := NewHandlerRegistry(logger)
 	SetupDefaultHandlers(registry, logger)
@@ -36,11 +30,4 @@ func createTestRouterForGit(cfg *config.Config) (*WebhookRouter, *gorm.DB) {
 		logger:   logger,
 		registry: registry,
 	}, db
-}
-
-func setupTestDBForGitRouter() *gorm.DB {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	return db
 }

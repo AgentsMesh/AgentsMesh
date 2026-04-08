@@ -9,7 +9,7 @@ import (
 	runnerlogDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runnerlog"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/storage"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,13 +47,13 @@ func (m *mockStorage) Exists(_ context.Context, _ string) (bool, error) {
 
 func setupRunnerLogService(t *testing.T) (*Service, context.Context, int64, int64) {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	repo := infra.NewRunnerLogRepository(db)
 	svc := NewService(repo, &mockStorage{})
 
-	userID := testutil.CreateUser(t, db, "admin@test.com", "admin")
-	orgID := testutil.CreateOrg(t, db, "test-org", userID)
-	runnerID := testutil.CreateRunner(t, db, orgID, "runner-node-1")
+	userID := testkit.CreateUser(t, db, "admin@test.com", "admin")
+	orgID := testkit.CreateOrg(t, db, "test-org", userID)
+	runnerID := testkit.CreateRunner(t, db, orgID, "runner-node-1")
 
 	return svc, context.Background(), orgID, runnerID
 }

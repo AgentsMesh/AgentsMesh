@@ -8,7 +8,7 @@ import (
 )
 
 func TestCreateUserProvider(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -42,7 +42,7 @@ func TestCreateUserProvider(t *testing.T) {
 }
 
 func TestGetUserProviders(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -72,7 +72,7 @@ func TestGetUserProviders(t *testing.T) {
 }
 
 func TestGetUserProvidersByType(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -107,7 +107,7 @@ func TestGetUserProvidersByType(t *testing.T) {
 }
 
 func TestUpdateUserProvider(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -134,7 +134,7 @@ func TestUpdateUserProvider(t *testing.T) {
 }
 
 func TestUpdateUserProvider_NotFound(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -145,7 +145,7 @@ func TestUpdateUserProvider_NotFound(t *testing.T) {
 }
 
 func TestUpdateUserProvider_WithCredentials(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -168,7 +168,7 @@ func TestUpdateUserProvider_WithCredentials(t *testing.T) {
 }
 
 func TestDeleteUserProvider(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -193,7 +193,7 @@ func TestDeleteUserProvider(t *testing.T) {
 }
 
 func TestSetDefaultProvider(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -230,7 +230,7 @@ func TestSetDefaultProvider(t *testing.T) {
 }
 
 func TestSetDefaultProvider_NotFound(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -241,7 +241,7 @@ func TestSetDefaultProvider_NotFound(t *testing.T) {
 }
 
 func TestCreateUserProvider_EmptyCredentials(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -257,7 +257,7 @@ func TestCreateUserProvider_EmptyCredentials(t *testing.T) {
 }
 
 func TestCreateUserProvider_SetsDefault(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 

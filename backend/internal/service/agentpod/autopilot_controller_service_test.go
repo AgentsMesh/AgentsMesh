@@ -9,9 +9,6 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 // ==================== Test Helpers ====================
@@ -31,46 +28,6 @@ func (m *mockCommandSender) SendCreateAutopilot(runnerID int64, cmd *runnerv1.Cr
 	return m.err
 }
 
-func setupAutopilotTestDB(t *testing.T) *gorm.DB {
-	t.Helper()
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	require.NoError(t, err)
-
-	// autopilot_controllers table (SQLite-compatible schema)
-	db.Exec(`CREATE TABLE IF NOT EXISTS autopilot_controllers (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		organization_id INTEGER NOT NULL,
-		autopilot_controller_key TEXT NOT NULL UNIQUE,
-		pod_key TEXT NOT NULL,
-		pod_id INTEGER NOT NULL,
-		runner_id INTEGER NOT NULL,
-		prompt TEXT,
-		phase TEXT NOT NULL DEFAULT 'initializing',
-		current_iteration INTEGER NOT NULL DEFAULT 0,
-		max_iterations INTEGER NOT NULL DEFAULT 10,
-		iteration_timeout_sec INTEGER NOT NULL DEFAULT 300,
-		circuit_breaker_state TEXT NOT NULL DEFAULT 'closed',
-		circuit_breaker_reason TEXT,
-		no_progress_threshold INTEGER NOT NULL DEFAULT 3,
-		same_error_threshold INTEGER NOT NULL DEFAULT 5,
-		approval_timeout_min INTEGER NOT NULL DEFAULT 30,
-		control_agent_slug TEXT,
-		control_prompt_template TEXT,
-		mcp_config_json TEXT,
-		user_takeover INTEGER NOT NULL DEFAULT 0,
-		started_at DATETIME,
-		last_iteration_at DATETIME,
-		completed_at DATETIME,
-		approval_request_at DATETIME,
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
-
-	return db
-}
-
 func newTestPod() *agentpod.Pod {
 	return &agentpod.Pod{
 		ID:             42,
@@ -84,7 +41,7 @@ func newTestPod() *agentpod.Pod {
 // ==================== CreateAndStart Tests ====================
 
 func TestCreateAndStart_Success(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	sender := &mockCommandSender{}
 	svc := newTestAutopilotService(db)
 	svc.SetCommandSender(sender)
@@ -121,7 +78,7 @@ func TestCreateAndStart_Success(t *testing.T) {
 }
 
 func TestCreateAndStart_NilPod(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestAutopilotService(db)
 
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
@@ -136,7 +93,7 @@ func TestCreateAndStart_NilPod(t *testing.T) {
 }
 
 func TestCreateAndStart_DefaultValues(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestAutopilotService(db)
 	// No command sender — verifies nil sender is safe
 
@@ -156,7 +113,7 @@ func TestCreateAndStart_DefaultValues(t *testing.T) {
 }
 
 func TestCreateAndStart_CustomValues(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	sender := &mockCommandSender{}
 	svc := newTestAutopilotService(db)
 	svc.SetCommandSender(sender)
@@ -185,7 +142,7 @@ func TestCreateAndStart_CustomValues(t *testing.T) {
 }
 
 func TestCreateAndStart_CustomKeyPrefix(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestAutopilotService(db)
 
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
@@ -200,7 +157,7 @@ func TestCreateAndStart_CustomKeyPrefix(t *testing.T) {
 }
 
 func TestCreateAndStart_DefaultKeyPrefix(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestAutopilotService(db)
 
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
@@ -215,7 +172,7 @@ func TestCreateAndStart_DefaultKeyPrefix(t *testing.T) {
 }
 
 func TestCreateAndStart_OptionalConfigFields(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	sender := &mockCommandSender{}
 	svc := newTestAutopilotService(db)
 	svc.SetCommandSender(sender)
@@ -244,7 +201,7 @@ func TestCreateAndStart_OptionalConfigFields(t *testing.T) {
 }
 
 func TestCreateAndStart_OptionalFieldsOmitted(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestAutopilotService(db)
 
 	controller, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{
@@ -261,7 +218,7 @@ func TestCreateAndStart_OptionalFieldsOmitted(t *testing.T) {
 }
 
 func TestCreateAndStart_NilCommandSender(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestAutopilotService(db)
 	// commandSender is nil (not set)
 
@@ -277,7 +234,7 @@ func TestCreateAndStart_NilCommandSender(t *testing.T) {
 }
 
 func TestCreateAndStart_CommandSenderFailure(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	sender := &mockCommandSender{err: assert.AnError}
 	svc := newTestAutopilotService(db)
 	svc.SetCommandSender(sender)
@@ -296,7 +253,7 @@ func TestCreateAndStart_CommandSenderFailure(t *testing.T) {
 }
 
 func TestCreateAndStart_DBPersistence(t *testing.T) {
-	db := setupAutopilotTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestAutopilotService(db)
 
 	created, err := svc.CreateAndStart(context.Background(), &CreateAndStartRequest{

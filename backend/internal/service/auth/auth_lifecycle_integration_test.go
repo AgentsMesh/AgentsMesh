@@ -8,7 +8,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +19,7 @@ import (
 func newTestAuthService(t *testing.T) (*Service, *userService.Service) {
 	t.Helper()
 
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	userRepo := infra.NewUserRepository(db)
 	userSvc := userService.NewService(userRepo)
 
@@ -146,7 +146,7 @@ func TestAuth_RegisterDuplicateEmail(t *testing.T) {
 }
 
 func TestAuth_ValidateTokenExpired(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	userSvc := userService.NewService(infra.NewUserRepository(db))
 
 	cfg := &Config{

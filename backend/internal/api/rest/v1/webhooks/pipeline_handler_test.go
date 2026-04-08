@@ -6,18 +6,12 @@ import (
 	"os"
 	"testing"
 
-	"gorm.io/driver/sqlite"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"gorm.io/gorm"
 )
 
 func setupTestDBForPipeline(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-	return db
+	return testkit.SetupTestDB(t)
 }
 
 func testLoggerForPipeline() *slog.Logger {

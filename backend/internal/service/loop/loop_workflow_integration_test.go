@@ -14,7 +14,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -86,7 +86,7 @@ type workflowTestEnv struct {
 // setupWorkflowTest creates a real DB-backed orchestrator with mock pod dependencies.
 func setupWorkflowTest(t *testing.T, opts ...func(*loopDomain.Loop)) workflowTestEnv {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	loopRepo := infra.NewLoopRepository(db)
 	runRepo := infra.NewLoopRunRepository(db)
 	loopSvc := NewLoopService(loopRepo)

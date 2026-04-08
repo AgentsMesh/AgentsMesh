@@ -1,11 +1,12 @@
-package testutil
+package testkit
 
 // runnerTableDDLs returns DDLs for runners, certificates, registration tokens.
 func runnerTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS runners (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL, node_id TEXT NOT NULL,
+			organization_id INTEGER NOT NULL, node_id TEXT NOT NULL DEFAULT '',
+			name TEXT,
 			description TEXT, status TEXT NOT NULL DEFAULT 'offline',
 			last_heartbeat DATETIME,
 			current_pods INTEGER NOT NULL DEFAULT 0, max_concurrent_pods INTEGER NOT NULL DEFAULT 5,
@@ -65,13 +66,13 @@ func runnerTableDDLs() []string {
 	}
 }
 
-// podTableDDLs returns DDLs for pods, autopilot controllers, AI providers.
+// podTableDDLs returns DDLs for pods, autopilot controllers/iterations, AI providers.
 func podTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS pods (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL, pod_key TEXT NOT NULL UNIQUE,
-			runner_id INTEGER NOT NULL,
+			organization_id INTEGER NOT NULL DEFAULT 0, pod_key TEXT NOT NULL UNIQUE,
+			runner_id INTEGER NOT NULL DEFAULT 0,
 			agent_slug TEXT, custom_agent_slug TEXT,
 			repository_id INTEGER, ticket_id INTEGER,
 			created_by_id INTEGER NOT NULL DEFAULT 0,
@@ -93,10 +94,43 @@ func podTableDDLs() []string {
 		)`,
 		`CREATE TABLE IF NOT EXISTS autopilot_controllers (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL DEFAULT 0,
 			autopilot_controller_key TEXT NOT NULL UNIQUE,
+			pod_key TEXT NOT NULL DEFAULT '',
+			pod_id INTEGER NOT NULL DEFAULT 0,
+			runner_id INTEGER NOT NULL DEFAULT 0,
+			prompt TEXT,
 			phase TEXT NOT NULL DEFAULT 'initializing',
+			current_iteration INTEGER NOT NULL DEFAULT 0,
+			max_iterations INTEGER NOT NULL DEFAULT 10,
+			iteration_timeout_sec INTEGER NOT NULL DEFAULT 300,
+			circuit_breaker_state TEXT NOT NULL DEFAULT 'closed',
+			circuit_breaker_reason TEXT,
+			no_progress_threshold INTEGER NOT NULL DEFAULT 3,
+			same_error_threshold INTEGER NOT NULL DEFAULT 5,
+			approval_timeout_min INTEGER NOT NULL DEFAULT 30,
+			control_agent_slug TEXT,
+			control_prompt_template TEXT,
+			mcp_config_json TEXT,
+			user_takeover INTEGER NOT NULL DEFAULT 0,
+			started_at DATETIME,
+			last_iteration_at DATETIME,
+			completed_at DATETIME,
+			approval_request_at DATETIME,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS autopilot_iterations (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			autopilot_controller_id INTEGER NOT NULL,
+			iteration INTEGER NOT NULL,
+			phase TEXT NOT NULL,
+			summary TEXT, files_changed TEXT, error_message TEXT,
+			duration_ms INTEGER NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE INDEX IF NOT EXISTS idx_autopilot_iterations_controller
+		 ON autopilot_iterations(autopilot_controller_id)`,
 		`CREATE TABLE IF NOT EXISTS user_ai_providers (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER NOT NULL, provider_type TEXT NOT NULL, name TEXT NOT NULL,
@@ -105,9 +139,14 @@ func podTableDDLs() []string {
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE TABLE IF NOT EXISTS user_agent_pod_settings (
+		`CREATE TABLE IF NOT EXISTS user_agentpod_settings (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER NOT NULL,
+			default_agent_slug TEXT,
+			default_model TEXT,
+			default_perm_mode TEXT,
+			terminal_font_size INTEGER,
+			terminal_theme TEXT,
 			default_cols INTEGER NOT NULL DEFAULT 120, default_rows INTEGER NOT NULL DEFAULT 40,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

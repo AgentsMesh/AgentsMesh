@@ -1,4 +1,4 @@
-package testutil
+package testkit
 
 // loopTableDDLs returns DDLs for loops and loop runs.
 func loopTableDDLs() []string {
@@ -48,7 +48,7 @@ func loopTableDDLs() []string {
 	}
 }
 
-// billingTableDDLs returns DDLs for plans, subscriptions, payments, invoices.
+// billingTableDDLs returns DDLs for plans, subscriptions, payments, invoices, licenses.
 func billingTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS subscription_plans (
@@ -142,6 +142,23 @@ func billingTableDDLs() []string {
 			currency TEXT NOT NULL DEFAULT 'USD', status TEXT NOT NULL,
 			webhook_event_id TEXT, webhook_event_type TEXT, raw_payload TEXT,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS licenses (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			license_key TEXT NOT NULL UNIQUE,
+			organization_name TEXT NOT NULL, contact_email TEXT NOT NULL,
+			plan_name TEXT NOT NULL,
+			max_users INTEGER NOT NULL DEFAULT -1, max_runners INTEGER NOT NULL DEFAULT -1,
+			max_repositories INTEGER NOT NULL DEFAULT -1, max_concurrent_pods INTEGER NOT NULL DEFAULT -1,
+			features TEXT DEFAULT '{}',
+			issued_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			expires_at DATETIME,
+			signature TEXT NOT NULL, public_key_fingerprint TEXT,
+			is_active INTEGER NOT NULL DEFAULT 1,
+			revoked_at DATETIME, revocation_reason TEXT,
+			activated_at DATETIME, activated_org_id INTEGER, last_verified_at DATETIME,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
 	}
 }

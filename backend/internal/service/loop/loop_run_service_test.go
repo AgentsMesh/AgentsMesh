@@ -7,113 +7,14 @@ import (
 
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
 )
 
 func setupLoopRunServiceTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-		Logger:                                   gormlogger.Default.LogMode(gormlogger.Silent),
-	})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS loops (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
-			name TEXT NOT NULL,
-			slug TEXT NOT NULL,
-			description TEXT,
-			agent_slug INTEGER,
-			custom_agent_slug INTEGER,
-			prompt_template TEXT NOT NULL DEFAULT '',
-			prompt_variables BLOB DEFAULT NULL,
-			execution_mode TEXT NOT NULL DEFAULT 'autopilot',
-			autopilot_config BLOB DEFAULT NULL,
-			config_overrides BLOB DEFAULT NULL,
-			callback_url TEXT,
-			status TEXT NOT NULL DEFAULT 'enabled',
-			sandbox_strategy TEXT NOT NULL DEFAULT 'persistent',
-			session_persistence INTEGER NOT NULL DEFAULT 1,
-			concurrency_policy TEXT NOT NULL DEFAULT 'skip',
-			max_concurrent_runs INTEGER NOT NULL DEFAULT 1,
-			max_retained_runs INTEGER NOT NULL DEFAULT 0,
-			timeout_minutes INTEGER NOT NULL DEFAULT 60,
-			idle_timeout_sec INTEGER NOT NULL DEFAULT 30,
-			permission_mode TEXT NOT NULL DEFAULT 'bypassPermissions',
-			repository_id INTEGER,
-			runner_id INTEGER,
-			branch_name TEXT,
-			ticket_id INTEGER,
-			credential_profile_id INTEGER,
-			cron_expression TEXT,
-			sandbox_path TEXT,
-			last_pod_key TEXT,
-			created_by_id INTEGER NOT NULL DEFAULT 0,
-			total_runs INTEGER NOT NULL DEFAULT 0,
-			successful_runs INTEGER NOT NULL DEFAULT 0,
-			failed_runs INTEGER NOT NULL DEFAULT 0,
-			last_run_at DATETIME,
-			next_run_at DATETIME,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(organization_id, slug)
-		)
-	`)
-
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS loop_runs (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
-			loop_id INTEGER NOT NULL,
-			run_number INTEGER NOT NULL,
-			status TEXT NOT NULL DEFAULT 'pending',
-			pod_key TEXT,
-			autopilot_controller_key TEXT,
-			trigger_type TEXT NOT NULL DEFAULT 'manual',
-			trigger_source TEXT,
-			trigger_params BLOB DEFAULT NULL,
-			resolved_prompt TEXT,
-			started_at DATETIME,
-			finished_at DATETIME,
-			duration_sec INTEGER,
-			exit_summary TEXT,
-			error_message TEXT,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS pods (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			pod_key TEXT NOT NULL UNIQUE,
-			status TEXT NOT NULL DEFAULT 'initializing',
-			agent_status TEXT NOT NULL DEFAULT 'idle',
-			finished_at DATETIME,
-			last_activity DATETIME,
-			agent_waiting_since DATETIME,
-			alias TEXT,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS autopilot_controllers (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			autopilot_controller_key TEXT NOT NULL UNIQUE,
-			phase TEXT NOT NULL DEFAULT 'initializing',
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-
-	return db
+	return testkit.SetupTestDB(t)
 }
 
 func newTestLoopRunService(t *testing.T) (*LoopRunService, *gorm.DB) {

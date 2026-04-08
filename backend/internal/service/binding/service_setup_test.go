@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"gorm.io/driver/sqlite"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"gorm.io/gorm"
 )
 
@@ -36,36 +36,8 @@ func (m *MockPodQuerier) GetPodInfo(ctx context.Context, podKey string) (map[str
 }
 
 func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-
-	// Create pod_bindings table
-	err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS pod_bindings (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
-			initiator_pod TEXT NOT NULL,
-			target_pod TEXT NOT NULL,
-			granted_scopes TEXT,
-			pending_scopes TEXT,
-			status TEXT NOT NULL DEFAULT 'pending',
-			requested_at DATETIME,
-			responded_at DATETIME,
-			expires_at DATETIME,
-			rejection_reason TEXT,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`).Error
-	if err != nil {
-		t.Fatalf("failed to create pod_bindings table: %v", err)
-	}
-
-	return db
+	t.Helper()
+	return testkit.SetupTestDB(t)
 }
 
 // newTestService creates a binding Service backed by an in-memory DB for testing.

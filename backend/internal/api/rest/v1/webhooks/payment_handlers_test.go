@@ -11,77 +11,21 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func setupTestDBForPayment(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-
-	// Create required tables
-	db.Exec(`CREATE TABLE IF NOT EXISTS subscription_plans (
-		id INTEGER PRIMARY KEY,
-		name TEXT NOT NULL,
-		display_name TEXT,
-		tier TEXT DEFAULT 'based',
-		price_per_seat_monthly REAL DEFAULT 0,
-		price_per_seat_yearly REAL DEFAULT 0,
-		max_users INTEGER DEFAULT 1,
-		max_runners INTEGER DEFAULT 1,
-		max_repositories INTEGER DEFAULT 10,
-		max_concurrent_pods INTEGER DEFAULT 1,
-		max_pod_minutes INTEGER DEFAULT 100,
-		max_storage_gb INTEGER DEFAULT 1,
-		stripe_price_id_monthly TEXT,
-		stripe_price_id_yearly TEXT,
-		features TEXT
-	)`)
-
-	db.Exec(`CREATE TABLE IF NOT EXISTS subscriptions (
-		id INTEGER PRIMARY KEY,
-		organization_id INTEGER NOT NULL,
-		plan_id INTEGER,
-		status TEXT DEFAULT 'active',
-		stripe_subscription_id TEXT,
-		stripe_customer_id TEXT,
-		seat_count INTEGER DEFAULT 1,
-		current_period_start DATETIME,
-		current_period_end DATETIME,
-		created_at DATETIME,
-		updated_at DATETIME
-	)`)
-
-	db.Exec(`CREATE TABLE IF NOT EXISTS payment_orders (
-		id INTEGER PRIMARY KEY,
-		organization_id INTEGER NOT NULL,
-		order_no TEXT UNIQUE,
-		external_order_no TEXT,
-		order_type TEXT,
-		amount REAL,
-		actual_amount REAL,
-		payment_provider TEXT,
-		status TEXT,
-		paid_at DATETIME,
-		created_by_id INTEGER,
-		created_at DATETIME,
-		updated_at DATETIME
-	)`)
-
-	return db
+	return testkit.SetupTestDB(t)
 }
 
 func testLoggerForPayment() *slog.Logger {
 	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 }
 
-func createTestPaymentRouter(cfg *config.Config) (*WebhookRouter, *gorm.DB) {
-	db := setupTestDBForPayment(nil)
+func createTestPaymentRouter(t *testing.T, cfg *config.Config) (*WebhookRouter, *gorm.DB) {
+	db := testkit.SetupTestDB(t)
 	logger := testLoggerForPayment()
 	registry := NewHandlerRegistry(logger)
 	SetupDefaultHandlers(registry, logger)
@@ -105,7 +49,7 @@ func createTestPaymentRouter(cfg *config.Config) (*WebhookRouter, *gorm.DB) {
 
 func TestHandleStripeWebhook_NotConfigured(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -128,7 +72,7 @@ func TestHandleStripeWebhook_NotConfigured(t *testing.T) {
 
 func TestHandleAlipayWebhook_NotConfigured(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -151,7 +95,7 @@ func TestHandleAlipayWebhook_NotConfigured(t *testing.T) {
 
 func TestHandleWeChatWebhook_NotConfigured(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -174,7 +118,7 @@ func TestHandleWeChatWebhook_NotConfigured(t *testing.T) {
 
 func TestHandleMockCheckoutComplete_NotEnabled(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -194,7 +138,7 @@ func TestHandleMockCheckoutComplete_NotEnabled(t *testing.T) {
 
 func TestGetMockSession_NotEnabled(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -217,7 +161,7 @@ func TestGetMockSession_NotEnabled(t *testing.T) {
 
 func TestRegisterRoutes(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
@@ -243,7 +187,7 @@ func TestRegisterRoutes(t *testing.T) {
 // ===========================================
 
 func TestNewWebhookRouterWithBillingSvc(t *testing.T) {
-	db := setupTestDBForPayment(nil)
+	db := testkit.SetupTestDB(t)
 	logger := testLoggerForPayment()
 	cfg := &config.Config{}
 	billingSvc := billing.NewService(infra.NewBillingRepository(db), "")
@@ -267,49 +211,8 @@ func TestNewWebhookRouterWithBillingSvc(t *testing.T) {
 	}
 }
 
-func setupTestDBForPaymentPtr() *gorm.DB {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-
-	// Create required tables
-	db.Exec(`CREATE TABLE IF NOT EXISTS subscription_plans (
-		id INTEGER PRIMARY KEY,
-		name TEXT NOT NULL,
-		display_name TEXT,
-		tier TEXT DEFAULT 'based',
-		price_per_seat_monthly REAL DEFAULT 0,
-		price_per_seat_yearly REAL DEFAULT 0,
-		max_users INTEGER DEFAULT 1,
-		max_runners INTEGER DEFAULT 1,
-		max_repositories INTEGER DEFAULT 10,
-		max_concurrent_pods INTEGER DEFAULT 1,
-		max_pod_minutes INTEGER DEFAULT 100,
-		max_storage_gb INTEGER DEFAULT 1,
-		stripe_price_id_monthly TEXT,
-		stripe_price_id_yearly TEXT,
-		features TEXT
-	)`)
-
-	db.Exec(`CREATE TABLE IF NOT EXISTS subscriptions (
-		id INTEGER PRIMARY KEY,
-		organization_id INTEGER NOT NULL,
-		plan_id INTEGER,
-		status TEXT DEFAULT 'active',
-		stripe_subscription_id TEXT,
-		stripe_customer_id TEXT,
-		seat_count INTEGER DEFAULT 1,
-		current_period_start DATETIME,
-		current_period_end DATETIME,
-		created_at DATETIME,
-		updated_at DATETIME
-	)`)
-
-	return db
-}
-
 func TestNewWebhookRouter(t *testing.T) {
-	db := setupTestDBForPaymentPtr()
+	db := testkit.SetupTestDB(t)
 	logger := testLoggerForPayment()
 	cfg := &config.Config{}
 
@@ -332,7 +235,7 @@ func TestNewWebhookRouter(t *testing.T) {
 
 func TestHandleLemonSqueezyWebhook_NotConfigured(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -354,7 +257,7 @@ func TestHandleLemonSqueezyWebhook_MissingSignature(t *testing.T) {
 	// This test requires a payment factory that reports LemonSqueezy as available
 	// For now, we just test that the handler exists and returns proper error for not configured
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -376,7 +279,7 @@ func TestHandleLemonSqueezyWebhook_ReadBodyError(t *testing.T) {
 	// Test that handler properly handles body read errors
 	// Since LemonSqueezy is not configured, this will return 503 before reading body
 	cfg := &config.Config{}
-	router, _ := createTestPaymentRouter(cfg)
+	router, _ := createTestPaymentRouter(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()

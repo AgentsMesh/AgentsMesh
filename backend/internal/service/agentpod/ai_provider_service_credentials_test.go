@@ -9,7 +9,7 @@ import (
 )
 
 func TestGetProviderCredentials(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -38,7 +38,7 @@ func TestGetProviderCredentials(t *testing.T) {
 }
 
 func TestGetProviderCredentials_NotFound(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -49,7 +49,7 @@ func TestGetProviderCredentials_NotFound(t *testing.T) {
 }
 
 func TestGetUserDefaultCredentials(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 
@@ -77,7 +77,7 @@ func TestGetUserDefaultCredentials(t *testing.T) {
 }
 
 func TestGetUserDefaultCredentials_NotFound(t *testing.T) {
-	db := setupAIProviderTestDB(t)
+	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
 	ctx := context.Background()
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ type integrationProvider struct {
 
 func newIntegrationProvider(t *testing.T) (*integrationProvider, *gorm.DB) {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	return &integrationProvider{db: db}, db
 }
 
@@ -37,7 +37,7 @@ func (ip *integrationProvider) configProvider() AgentConfigProvider {
 
 func seedAgent(t *testing.T, db *gorm.DB, slug, agentfileSrc string) {
 	t.Helper()
-	testutil.CreateAgent(t, db, slug, "Agent "+slug, agentfileSrc)
+	testkit.CreateAgent(t, db, slug, "Agent "+slug, agentfileSrc)
 }
 
 func TestConfigBuilder_BuildBasicCommand(t *testing.T) {
@@ -74,7 +74,7 @@ func TestConfigBuilder_WithCredentials(t *testing.T) {
 	agentfile := "AGENT cred-agent\nEXECUTABLE cred-agent\nMODE pty\nENV API_KEY SECRET"
 	seedAgent(t, db, "cred-agent", agentfile)
 
-	userID := testutil.CreateUser(t, db, "cred-user@test.com", "creduser")
+	userID := testkit.CreateUser(t, db, "cred-user@test.com", "creduser")
 
 	agentSvc := NewAgentService(infra.NewAgentRepository(db))
 	credSvc := NewCredentialProfileService(

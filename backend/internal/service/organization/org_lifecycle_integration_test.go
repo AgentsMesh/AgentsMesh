@@ -6,18 +6,18 @@ import (
 
 	orgDomain "github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// newTestOrgService creates an organization service backed by real SQLite via testutil.
+// newTestOrgService creates an organization service backed by real SQLite via testkit.
 func newTestOrgService(t *testing.T) (*Service, func(email, username string) int64) {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewOrganizationRepository(db))
 	addUser := func(email, username string) int64 {
-		return testutil.CreateUser(t, db, email, username)
+		return testkit.CreateUser(t, db, email, username)
 	}
 	return svc, addUser
 }

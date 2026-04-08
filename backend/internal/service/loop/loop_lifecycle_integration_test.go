@@ -7,15 +7,15 @@ import (
 
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// setupIntegrationServices creates real LoopService + LoopRunService backed by testutil.SetupTestDB.
+// setupIntegrationServices creates real LoopService + LoopRunService backed by testkit.SetupTestDB.
 func setupIntegrationServices(t *testing.T) (*LoopService, *LoopRunService, context.Context) {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	loopRepo := infra.NewLoopRepository(db)
 	runRepo := infra.NewLoopRunRepository(db)
 	return NewLoopService(loopRepo), NewLoopRunService(runRepo), context.Background()
@@ -270,7 +270,7 @@ func TestLoopLifecycle_SlugUniqueness(t *testing.T) {
 func TestLoopLifecycle_TimeoutDetection(t *testing.T) {
 	// GetTimedOutRuns uses PostgreSQL-specific syntax (::INTERVAL),
 	// so we test the timeout concept via manual DB state + direct query.
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	runRepo := infra.NewLoopRunRepository(db)
 	runSvc := NewLoopRunService(runRepo)
 	loopRepo := infra.NewLoopRepository(db)

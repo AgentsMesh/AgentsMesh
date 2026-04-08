@@ -14,7 +14,7 @@ import (
 
 func TestExtractObjectKind_Gitee(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 
@@ -57,7 +57,7 @@ func TestExtractObjectKind_Gitee(t *testing.T) {
 
 func TestMapGiteeEventToKind(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	tests := []struct {
 		event    string

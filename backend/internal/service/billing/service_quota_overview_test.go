@@ -22,9 +22,9 @@ func TestGetBillingOverview(t *testing.T) {
 
 	// Add some resources
 	db.Exec("INSERT INTO organization_members (organization_id, user_id, role) VALUES (1, 1, 'owner')")
-	db.Exec("INSERT INTO runners (organization_id, name) VALUES (1, 'runner1')")
-	db.Exec("INSERT INTO repositories (organization_id, name) VALUES (1, 'repo1')")
-	db.Exec("INSERT INTO pods (organization_id, name, status) VALUES (1, 'pod1', 'running')")
+	db.Exec("INSERT INTO runners (organization_id, node_id) VALUES (1, 'runner1')")
+	db.Exec("INSERT INTO repositories (organization_id, name, slug) VALUES (1, 'repo1', 'repo1')")
+	db.Exec("INSERT INTO pods (organization_id, pod_key, status) VALUES (1, 'pod1', 'running')")
 
 	overview, err := service.GetBillingOverview(ctx, 1)
 	if err != nil {

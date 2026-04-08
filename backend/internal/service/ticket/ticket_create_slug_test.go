@@ -67,10 +67,9 @@ func TestCreateTicket_SlugScopedToOrg(t *testing.T) {
 // generation is also scoped to organization, not globally.
 func TestCreateTicket_PrefixScopedToOrg(t *testing.T) {
 	db := setupTestDB(t)
-	// Create repositories table with same prefix for different repos
-	db.Exec(`CREATE TABLE IF NOT EXISTS repositories (id INTEGER PRIMARY KEY, ticket_prefix TEXT)`)
-	db.Exec(`INSERT INTO repositories (id, ticket_prefix) VALUES (1, 'PROJ')`)
-	db.Exec(`INSERT INTO repositories (id, ticket_prefix) VALUES (2, 'PROJ')`)
+	// Seed repositories with ticket prefix
+	db.Exec(`INSERT INTO repositories (organization_id, external_id, name, slug, ticket_prefix) VALUES (1, 'ext-1', 'repo1', 'repo1', 'PROJ')`)
+	db.Exec(`INSERT INTO repositories (organization_id, external_id, name, slug, ticket_prefix) VALUES (2, 'ext-2', 'repo2', 'repo2', 'PROJ')`)
 
 	service := newTestService(db)
 	ctx := context.Background()
@@ -131,9 +130,9 @@ func TestCreateTicket_PrefixScopedToOrg(t *testing.T) {
 // within the same organization maintain independent numbering.
 func TestCreateTicket_MixedPrefixesInSameOrg(t *testing.T) {
 	db := setupTestDB(t)
-	db.Exec(`CREATE TABLE IF NOT EXISTS repositories (id INTEGER PRIMARY KEY, ticket_prefix TEXT)`)
-	db.Exec(`INSERT INTO repositories (id, ticket_prefix) VALUES (1, 'PROJ')`)
-	db.Exec(`INSERT INTO repositories (id, ticket_prefix) VALUES (2, 'BUG')`)
+	// Seed repositories with different ticket prefixes
+	db.Exec(`INSERT INTO repositories (organization_id, external_id, name, slug, ticket_prefix) VALUES (1, 'ext-1', 'repo1', 'repo1', 'PROJ')`)
+	db.Exec(`INSERT INTO repositories (organization_id, external_id, name, slug, ticket_prefix) VALUES (1, 'ext-2', 'repo2', 'repo2', 'BUG')`)
 
 	service := newTestService(db)
 	ctx := context.Background()

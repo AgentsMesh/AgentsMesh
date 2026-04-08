@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -125,7 +126,7 @@ func TestCheckQuotaRunners(t *testing.T) {
 	service.CreateSubscription(ctx, 1, "based")
 
 	// Add one runner
-	db.Exec("INSERT INTO runners (organization_id, name) VALUES (1, 'runner1')")
+	db.Exec("INSERT INTO runners (organization_id, node_id) VALUES (1, 'runner1')")
 
 	// Should fail to add another
 	err := service.CheckQuota(ctx, 1, "runners", 1)
@@ -144,7 +145,7 @@ func TestCheckQuotaConcurrentPods(t *testing.T) {
 
 	// Add five running pods to reach the limit
 	for i := 1; i <= 5; i++ {
-		db.Exec("INSERT INTO pods (organization_id, name, status) VALUES (1, ?, 'running')", "pod"+string(rune('0'+i)))
+		db.Exec("INSERT INTO pods (organization_id, pod_key, status) VALUES (1, ?, 'running')", fmt.Sprintf("pod-%d", i))
 	}
 
 	// Should fail to add another
@@ -164,7 +165,7 @@ func TestCheckQuotaRepositories(t *testing.T) {
 
 	// Add five repositories to reach the limit
 	for i := 1; i <= 5; i++ {
-		db.Exec("INSERT INTO repositories (organization_id, name) VALUES (1, ?)", "repo"+string(rune('0'+i)))
+		db.Exec("INSERT INTO repositories (organization_id, name, slug) VALUES (1, ?, ?)", fmt.Sprintf("repo-%d", i), fmt.Sprintf("repo-%d", i))
 	}
 
 	// Should fail to add another

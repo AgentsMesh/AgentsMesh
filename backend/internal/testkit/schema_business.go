@@ -1,4 +1,4 @@
-package testutil
+package testkit
 
 // channelTableDDLs returns DDLs for channels, messages, members, access, bindings.
 func channelTableDDLs() []string {
@@ -65,12 +65,12 @@ func ticketTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS tickets (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL, number INTEGER NOT NULL,
+			organization_id INTEGER NOT NULL DEFAULT 0, number INTEGER NOT NULL,
 			slug TEXT NOT NULL, title TEXT NOT NULL, content TEXT,
 			status TEXT NOT NULL DEFAULT 'backlog',
 			priority TEXT NOT NULL DEFAULT 'none', severity TEXT,
 			estimate INTEGER, due_date DATETIME, started_at DATETIME, completed_at DATETIME,
-			repository_id INTEGER, reporter_id INTEGER NOT NULL,
+			repository_id INTEGER, reporter_id INTEGER NOT NULL DEFAULT 0,
 			parent_ticket_id INTEGER,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -99,8 +99,8 @@ func ticketTableDDLs() []string {
 		)`,
 		`CREATE TABLE IF NOT EXISTS ticket_merge_requests (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL, ticket_id INTEGER NOT NULL,
-			pod_id INTEGER, mri_id INTEGER NOT NULL,
+			organization_id INTEGER NOT NULL, repository_id INTEGER NOT NULL,
+			ticket_id INTEGER, pod_id INTEGER, mr_iid INTEGER NOT NULL,
 			mr_url TEXT NOT NULL UNIQUE, source_branch TEXT NOT NULL,
 			target_branch TEXT NOT NULL DEFAULT 'main',
 			title TEXT, state TEXT NOT NULL DEFAULT 'opened',
@@ -115,7 +115,7 @@ func ticketTableDDLs() []string {
 			organization_id INTEGER NOT NULL,
 			source_ticket_id INTEGER NOT NULL, target_ticket_id INTEGER NOT NULL,
 			relation_type TEXT NOT NULL,
-			created_by_id INTEGER NOT NULL,
+			created_by_id INTEGER,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
 	}

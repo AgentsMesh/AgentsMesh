@@ -13,7 +13,7 @@ import (
 
 func TestProcessPipelineEvent_Basic(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	ctx := &WebhookContext{
 		Context:        context.Background(),
@@ -55,7 +55,7 @@ func TestProcessPipelineEvent_Basic(t *testing.T) {
 
 func TestProcessPipelineEvent_FailedPipeline(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	ctx := &WebhookContext{
 		Context:        context.Background(),
@@ -84,7 +84,7 @@ func TestProcessPipelineEvent_FailedPipeline(t *testing.T) {
 
 func TestProcessPipelineEvent_NoObjectAttributes(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	ctx := &WebhookContext{
 		Context:        context.Background(),
@@ -112,7 +112,7 @@ func TestProcessPipelineEvent_NoObjectAttributes(t *testing.T) {
 
 func TestFindMRByPipeline_NotFound(t *testing.T) {
 	cfg := &config.Config{}
-	router, db := createTestRouterForGit(cfg)
+	router, db := createTestRouterForGit(t, cfg)
 
 	// Create merge_requests table
 	db.Exec(`

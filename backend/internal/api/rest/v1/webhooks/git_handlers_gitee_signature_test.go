@@ -14,7 +14,7 @@ import (
 
 func TestVerifyGiteeSignature_ValidToken(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -31,7 +31,7 @@ func TestVerifyGiteeSignature_ValidToken(t *testing.T) {
 
 func TestVerifyGiteeSignature_InvalidToken(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -48,7 +48,7 @@ func TestVerifyGiteeSignature_InvalidToken(t *testing.T) {
 
 func TestVerifyGiteeSignature_NoHeaders(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()

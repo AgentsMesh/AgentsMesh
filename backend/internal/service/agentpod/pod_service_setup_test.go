@@ -5,85 +5,19 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
+// setupTestDB creates an in-memory SQLite database for testing.
+// Delegates to testkit.SetupTestDB for shared schema.
 func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	if err != nil {
-		t.Fatalf("Failed to connect to database: %v", err)
-	}
+	db := testkit.SetupTestDB(t)
 
-	// Create tables manually for SQLite compatibility
-	db.Exec(`CREATE TABLE IF NOT EXISTS runners (
-		id INTEGER PRIMARY KEY,
-		node_id TEXT,
-		status TEXT,
-		current_pods INTEGER DEFAULT 0
-	)`)
-	db.Exec("INSERT INTO runners (id, node_id, status, current_pods) VALUES (1, 'runner-001', 'online', 0)")
-
-	db.Exec(`CREATE TABLE IF NOT EXISTS tickets (
-		id INTEGER PRIMARY KEY,
-		slug TEXT,
-		title TEXT,
-		content TEXT
-	)`)
-
-	db.Exec(`CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY,
-		username TEXT,
-		name TEXT,
-		email TEXT
-	)`)
+	// Seed default test data used by many pod tests
+	db.Exec("INSERT INTO runners (id, organization_id, node_id, status, current_pods) VALUES (1, 1, 'runner-001', 'online', 0)")
 	db.Exec("INSERT INTO users (id, username, name, email) VALUES (1, 'testuser', 'Test User', 'test@example.com')")
-
-	// GORM converts PtyPID -> pty_p_id, AgentPID -> agent_p_id
-	// But service uses raw column names (pty_pid, agent_pid) in Updates()
-	// We create columns for both to handle both cases
-	db.Exec(`CREATE TABLE IF NOT EXISTS pods (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		organization_id INTEGER NOT NULL,
-		pod_key TEXT NOT NULL UNIQUE,
-		runner_id INTEGER NOT NULL,
-		agent_slug INTEGER,
-		custom_agent_slug INTEGER,
-		repository_id INTEGER,
-		ticket_id INTEGER,
-		created_by_id INTEGER NOT NULL,
-		pty_p_id INTEGER,
-		pty_pid INTEGER,
-		status TEXT NOT NULL DEFAULT 'initializing',
-		agent_status TEXT NOT NULL DEFAULT 'idle',
-		agent_p_id INTEGER,
-		agent_pid INTEGER,
-		started_at DATETIME,
-		finished_at DATETIME,
-		last_activity DATETIME,
-		agent_waiting_since DATETIME,
-		prompt TEXT,
-		branch_name TEXT,
-		sandbox_path TEXT,
-		model TEXT,
-		permission_mode TEXT,
-		think_level TEXT,
-		error_code TEXT,
-		error_message TEXT,
-		title TEXT,
-		alias TEXT,
-		session_id TEXT,
-		source_pod_key TEXT,
-		credential_profile_id INTEGER,
-		config_overrides TEXT DEFAULT '{}',
-		interaction_mode TEXT NOT NULL DEFAULT 'pty',
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
 
 	return db
 }

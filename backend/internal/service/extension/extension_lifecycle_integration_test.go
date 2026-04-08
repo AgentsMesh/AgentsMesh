@@ -6,7 +6,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -25,14 +25,14 @@ type testSetup struct {
 // newIntegrationSetup creates a Service backed by the shared testutil DB.
 func newIntegrationSetup(t *testing.T) *testSetup {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	repo := infra.NewExtensionRepository(db)
 	svc := NewService(repo, nil, nil) // no storage/crypto for these tests
 
 	ctx := context.Background()
-	userID := testutil.CreateUser(t, db, "ext-user@test.com", "ext-user")
-	orgID := testutil.CreateOrg(t, db, "ext-org", userID)
-	repoID := testutil.CreateRepo(t, db, orgID, "ext-org/demo-repo", "https://github.com/ext-org/demo-repo.git")
+	userID := testkit.CreateUser(t, db, "ext-user@test.com", "ext-user")
+	orgID := testkit.CreateOrg(t, db, "ext-org", userID)
+	repoID := testkit.CreateRepo(t, db, orgID, "ext-org/demo-repo", "https://github.com/ext-org/demo-repo.git")
 
 	return &testSetup{svc: svc, ctx: ctx, db: db, orgID: orgID, userID: userID, repoID: repoID}
 }
@@ -114,9 +114,9 @@ func TestExtension_OrgIsolation(t *testing.T) {
 	ts := newIntegrationSetup(t)
 
 	// Create second org
-	user2ID := testutil.CreateUser(t, ts.db, "bob@test.com", "bob")
-	org2ID := testutil.CreateOrg(t, ts.db, "other-org", user2ID)
-	repo2ID := testutil.CreateRepo(t, ts.db, org2ID, "other-org/other-repo", "https://github.com/other-org/other.git")
+	user2ID := testkit.CreateUser(t, ts.db, "bob@test.com", "bob")
+	org2ID := testkit.CreateOrg(t, ts.db, "other-org", user2ID)
+	repo2ID := testkit.CreateRepo(t, ts.db, org2ID, "other-org/other-repo", "https://github.com/other-org/other.git")
 
 	// Org1 installs MCP server
 	server := &extension.InstalledMcpServer{

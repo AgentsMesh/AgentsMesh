@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -28,7 +29,7 @@ func TestCheckQuota_RunnersExceeded(t *testing.T) {
 	})
 
 	// Add a runner to use the quota (test DB uses simplified schema)
-	db.Exec("INSERT INTO runners (organization_id, name) VALUES (1, 'runner1')")
+	db.Exec("INSERT INTO runners (organization_id, node_id) VALUES (1, 'runner1')")
 
 	// Should fail when trying to add another runner
 	err := svc.CheckQuota(context.Background(), 1, "runners", 1)
@@ -54,8 +55,8 @@ func TestCheckQuota_ReposExceeded(t *testing.T) {
 
 	// Add repos to fill quota (test DB uses simplified schema)
 	for i := 0; i < 5; i++ {
-		db.Exec("INSERT INTO repositories (organization_id, name) VALUES (1, ?)",
-			"repo"+string(rune('0'+i)))
+		db.Exec("INSERT INTO repositories (organization_id, name, slug) VALUES (1, ?, ?)",
+			fmt.Sprintf("repo-%d", i), fmt.Sprintf("repo-%d", i))
 	}
 
 	// Should fail when trying to add another repo
@@ -82,8 +83,8 @@ func TestCheckQuota_ConcurrentPodsExceeded(t *testing.T) {
 
 	// Add running pods to fill quota (test DB uses simplified schema with 'pods' table)
 	for i := 0; i < 5; i++ {
-		db.Exec("INSERT INTO pods (organization_id, name, status) VALUES (1, ?, 'running')",
-			"pod"+string(rune('0'+i)))
+		db.Exec("INSERT INTO pods (organization_id, pod_key, status) VALUES (1, ?, 'running')",
+			fmt.Sprintf("pod-%d", i))
 	}
 
 	// Should fail when trying to add another pod

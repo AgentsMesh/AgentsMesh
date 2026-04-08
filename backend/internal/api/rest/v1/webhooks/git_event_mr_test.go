@@ -13,7 +13,7 @@ import (
 
 func TestExtractMRData_CompletePayload(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	payload := map[string]interface{}{
 		"object_attributes": map[string]interface{}{
@@ -68,7 +68,7 @@ func TestExtractMRData_CompletePayload(t *testing.T) {
 
 func TestExtractMRData_MinimalPayload(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	payload := map[string]interface{}{
 		"object_attributes": map[string]interface{}{
@@ -97,7 +97,7 @@ func TestExtractMRData_MinimalPayload(t *testing.T) {
 
 func TestExtractMRData_MissingObjectAttributes(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	payload := map[string]interface{}{}
 
@@ -110,7 +110,7 @@ func TestExtractMRData_MissingObjectAttributes(t *testing.T) {
 
 func TestExtractMRData_MergedState(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	payload := map[string]interface{}{
 		"object_attributes": map[string]interface{}{
@@ -149,7 +149,7 @@ func TestExtractMRData_MergedState(t *testing.T) {
 
 func TestDetermineMREventType_Open(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	tests := []struct {
 		state    string
@@ -171,7 +171,7 @@ func TestDetermineMREventType_Open(t *testing.T) {
 
 func TestDetermineMREventType_Merged(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	tests := []struct {
 		state    string
@@ -193,7 +193,7 @@ func TestDetermineMREventType_Merged(t *testing.T) {
 
 func TestDetermineMREventType_Closed(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	tests := []struct {
 		state    string
@@ -215,7 +215,7 @@ func TestDetermineMREventType_Closed(t *testing.T) {
 
 func TestDetermineMREventType_Updated(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	tests := []struct {
 		state  string

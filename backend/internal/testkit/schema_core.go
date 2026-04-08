@@ -1,4 +1,4 @@
-package testutil
+package testkit
 
 // coreTableDDLs returns DDLs for users, organizations, agents, repositories.
 func coreTableDDLs() []string {
@@ -34,6 +34,17 @@ func coreTableDDLs() []string {
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS user_repository_providers (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL, provider_type TEXT NOT NULL, name TEXT NOT NULL,
+			base_url TEXT NOT NULL,
+			identity_id INTEGER,
+			client_id TEXT, client_secret_encrypted TEXT,
+			bot_token_encrypted TEXT,
+			is_default INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS organizations (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name TEXT NOT NULL, slug TEXT NOT NULL UNIQUE, logo_url TEXT,
@@ -60,17 +71,19 @@ func coreTableDDLs() []string {
 		)`,
 		`CREATE TABLE IF NOT EXISTS agents (
 			id INTEGER PRIMARY KEY, slug TEXT, name TEXT, launch_command TEXT, description TEXT,
+			executable TEXT, default_args TEXT,
 			config_schema TEXT DEFAULT '{}', agentfile_source TEXT,
+			is_builtin INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1,
 			supported_modes TEXT NOT NULL DEFAULT 'pty',
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS repositories (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL,
+			organization_id INTEGER NOT NULL DEFAULT 0,
 			provider_type TEXT NOT NULL DEFAULT 'github', provider_base_url TEXT NOT NULL DEFAULT '',
 			http_clone_url TEXT, ssh_clone_url TEXT,
-			external_id TEXT NOT NULL DEFAULT '', name TEXT NOT NULL, slug TEXT NOT NULL,
+			external_id TEXT NOT NULL DEFAULT '', name TEXT NOT NULL DEFAULT '', slug TEXT NOT NULL DEFAULT '',
 			default_branch TEXT NOT NULL DEFAULT 'main',
 			ticket_prefix TEXT, visibility TEXT NOT NULL DEFAULT 'organization',
 			imported_by_user_id INTEGER,
@@ -79,6 +92,10 @@ func coreTableDDLs() []string {
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
+		// Partial unique index: only active (non-deleted) rows are constrained (migration 000081).
+		`CREATE UNIQUE INDEX IF NOT EXISTS repositories_org_provider_path_unique
+		 ON repositories (organization_id, provider_type, provider_base_url, slug)
+		 WHERE deleted_at IS NULL`,
 		`CREATE TABLE IF NOT EXISTS git_providers (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL, provider_type TEXT NOT NULL, name TEXT NOT NULL,

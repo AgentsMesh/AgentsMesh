@@ -25,7 +25,7 @@ func TestGetChannelMessageCount(t *testing.T) {
 	ctx := context.Background()
 
 	// Add some messages
-	db.Exec(`INSERT INTO channel_messages (channel_id, content) VALUES (1, 'msg1'), (1, 'msg2'), (1, 'msg3'), (2, 'msg4')`)
+	db.Exec(`INSERT INTO channel_messages (channel_id, message_type, content) VALUES (1, 'text', 'msg1'), (1, 'text', 'msg2'), (1, 'text', 'msg3'), (2, 'text', 'msg4')`)
 
 	count := service.getChannelMessageCount(ctx, 1)
 	if count != 3 {

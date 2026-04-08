@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// newTestService creates a user service backed by real SQLite via testutil.
+// newTestService creates a user service backed by real SQLite via testkit.
 func newTestService(t *testing.T) *Service {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	return NewService(infra.NewUserRepository(db))
 }
 

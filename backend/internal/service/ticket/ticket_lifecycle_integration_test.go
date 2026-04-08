@@ -6,7 +6,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,12 +14,12 @@ import (
 // newIntegrationService creates a ticket Service backed by the shared testutil DB.
 func newIntegrationService(t *testing.T) (*Service, context.Context, int64, int64) {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewTicketRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "alice@test.com", "alice")
-	orgID := testutil.CreateOrg(t, db, "test-org", userID)
+	userID := testkit.CreateUser(t, db, "alice@test.com", "alice")
+	orgID := testkit.CreateOrg(t, db, "test-org", userID)
 	return svc, ctx, orgID, userID
 }
 

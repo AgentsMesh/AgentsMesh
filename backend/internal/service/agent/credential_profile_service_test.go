@@ -8,9 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 // testEncryptionKey is a fixed key used for test encryption/decryption
@@ -21,63 +18,8 @@ func testEncryptor() *crypto.Encryptor {
 	return crypto.NewEncryptor(testEncryptionKey)
 }
 
-// setupCredentialProfileTestDB creates a test database with credential profile tables
-func setupCredentialProfileTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	require.NoError(t, err, "failed to connect database")
-
-	// Create agents table with all fields
-	err = db.Exec(`CREATE TABLE IF NOT EXISTS agents (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		slug TEXT NOT NULL UNIQUE,
-		name TEXT NOT NULL,
-		description TEXT,
-		executable TEXT,
-		launch_command TEXT NOT NULL DEFAULT '',
-		default_args TEXT,
-		config_schema BLOB DEFAULT '{}',
-		command_template BLOB DEFAULT '{}',
-		files_template BLOB,
-		credential_schema BLOB DEFAULT '[]',
-		status_detection BLOB,
-		agentfile_source TEXT,
-		is_builtin INTEGER NOT NULL DEFAULT 0,
-		is_active INTEGER NOT NULL DEFAULT 1,
-		supported_modes TEXT NOT NULL DEFAULT 'pty',
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`).Error
-	require.NoError(t, err)
-
-	// Create user_agent_credential_profiles table
-	err = db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_credential_profiles (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		user_id INTEGER NOT NULL,
-		agent_slug TEXT NOT NULL,
-		name TEXT NOT NULL,
-		description TEXT,
-		is_runner_host INTEGER NOT NULL DEFAULT 0,
-		credentials_encrypted BLOB,
-		is_default INTEGER NOT NULL DEFAULT 0,
-		is_active INTEGER NOT NULL DEFAULT 1,
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`).Error
-	require.NoError(t, err)
-
-	// Seed agents
-	db.Exec(`INSERT INTO agents (slug, name, executable, launch_command, is_builtin, is_active)
-		VALUES ('claude-code', 'Claude Code', 'claude', 'claude', 1, 1)`)
-	db.Exec(`INSERT INTO agents (slug, name, executable, launch_command, is_builtin, is_active)
-		VALUES ('aider', 'Aider', 'aider', 'aider', 1, 1)`)
-
-	return db
-}
-
 func TestNewCredentialProfileService(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 
@@ -87,7 +29,7 @@ func TestNewCredentialProfileService(t *testing.T) {
 }
 
 func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -191,7 +133,7 @@ func TestCredentialProfileService_CreateCredentialProfile(t *testing.T) {
 }
 
 func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -238,7 +180,7 @@ func TestCredentialProfileService_GetCredentialProfile(t *testing.T) {
 }
 
 func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -368,7 +310,7 @@ func TestCredentialProfileService_UpdateCredentialProfile(t *testing.T) {
 }
 
 func TestCredentialProfileService_DeleteCredentialProfile(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()

@@ -11,20 +11,8 @@ import (
 )
 
 func setupTestDBWithUserAgentConfigs(t *testing.T) *gorm.DB {
-	db := setupTestDB(t)
-
-	// Add user_agent_configs table for SQLite
-	db.Exec(`CREATE TABLE IF NOT EXISTS user_agent_configs (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		user_id INTEGER NOT NULL,
-		agent_slug TEXT NOT NULL,
-		config_values BLOB NOT NULL DEFAULT '{}',
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE(user_id, agent_slug)
-	)`)
-
-	return db
+	t.Helper()
+	return setupTestDB(t)
 }
 
 func TestUserConfigService_GetUserAgentConfig(t *testing.T) {

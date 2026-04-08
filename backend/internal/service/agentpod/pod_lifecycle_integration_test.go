@@ -13,23 +13,23 @@ import (
 	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 )
 
 // setupIntegrationOrchestrator creates a PodOrchestrator wired with real DB
-// (via testutil.SetupTestDB) and real PodService/ConfigBuilder, plus mock
+// (via testkit.SetupTestDB) and real PodService/ConfigBuilder, plus mock
 // coordinator and billing for control over external interactions.
 func setupIntegrationOrchestrator(t *testing.T, opts ...func(*PodOrchestratorDeps)) (*PodOrchestrator, *PodService, context.Context) {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "test@example.com", "testuser")
-	orgID := testutil.CreateOrg(t, db, "test-org", userID)
-	runnerID := testutil.CreateRunner(t, db, orgID, "runner-001")
+	userID := testkit.CreateUser(t, db, "test@example.com", "testuser")
+	orgID := testkit.CreateOrg(t, db, "test-org", userID)
+	runnerID := testkit.CreateRunner(t, db, orgID, "runner-001")
 
 	agentfileSrc := "AGENT claude\nEXECUTABLE claude\nMCP ON\nPROMPT_POSITION prepend\n"
-	testutil.CreateAgent(t, db, "claude-code", "Claude Code", agentfileSrc)
+	testkit.CreateAgent(t, db, "claude-code", "Claude Code", agentfileSrc)
 
 	podSvc := NewPodService(infra.NewPodRepository(db))
 	provider := &mockAgentConfigProvider{

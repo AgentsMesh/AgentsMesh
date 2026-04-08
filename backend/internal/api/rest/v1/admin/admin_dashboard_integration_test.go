@@ -10,7 +10,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +19,7 @@ import (
 // setupIntegrationDB creates a real SQLite DB wrapped in the database.DB interface.
 func setupIntegrationDB(t *testing.T) database.DB {
 	t.Helper()
-	gormDB := testutil.SetupTestDB(t)
+	gormDB := testkit.SetupTestDB(t)
 	return database.NewGormWrapper(gormDB)
 }
 
@@ -36,14 +36,14 @@ func TestAdminDashboard_Stats(t *testing.T) {
 	gormDB := db.GormDB()
 
 	// Seed data: 3 users, 2 orgs, 1 runner
-	adminID := testutil.CreateUser(t, gormDB, "admin@test.com", "admin")
-	testutil.CreateUser(t, gormDB, "user1@test.com", "user1")
-	testutil.CreateUser(t, gormDB, "user2@test.com", "user2")
+	adminID := testkit.CreateUser(t, gormDB, "admin@test.com", "admin")
+	testkit.CreateUser(t, gormDB, "user1@test.com", "user1")
+	testkit.CreateUser(t, gormDB, "user2@test.com", "user2")
 
-	orgID := testutil.CreateOrg(t, gormDB, "org-alpha", adminID)
-	testutil.CreateOrg(t, gormDB, "org-beta", adminID)
+	orgID := testkit.CreateOrg(t, gormDB, "org-alpha", adminID)
+	testkit.CreateOrg(t, gormDB, "org-beta", adminID)
 
-	testutil.CreateRunner(t, gormDB, orgID, "runner-node-1")
+	testkit.CreateRunner(t, gormDB, orgID, "runner-node-1")
 
 	svc := adminservice.NewService(db)
 	handler := NewDashboardHandler(svc)
@@ -71,8 +71,8 @@ func TestAdminUser_ToggleActive(t *testing.T) {
 	db := setupIntegrationDB(t)
 	gormDB := db.GormDB()
 
-	adminID := testutil.CreateUser(t, gormDB, "admin@test.com", "admin")
-	targetID := testutil.CreateUser(t, gormDB, "target@test.com", "target")
+	adminID := testkit.CreateUser(t, gormDB, "admin@test.com", "admin")
+	targetID := testkit.CreateUser(t, gormDB, "target@test.com", "target")
 
 	svc := adminservice.NewService(db)
 	handler := NewUserHandler(svc)
@@ -110,7 +110,7 @@ func TestAdminUser_DisableSelfPrevented(t *testing.T) {
 	db := setupIntegrationDB(t)
 	gormDB := db.GormDB()
 
-	adminID := testutil.CreateUser(t, gormDB, "admin@test.com", "admin")
+	adminID := testkit.CreateUser(t, gormDB, "admin@test.com", "admin")
 
 	svc := adminservice.NewService(db)
 	handler := NewUserHandler(svc)
@@ -129,8 +129,8 @@ func TestAdminUser_GrantRevokeAdmin(t *testing.T) {
 	db := setupIntegrationDB(t)
 	gormDB := db.GormDB()
 
-	adminID := testutil.CreateUser(t, gormDB, "admin@test.com", "admin")
-	targetID := testutil.CreateUser(t, gormDB, "target@test.com", "target")
+	adminID := testkit.CreateUser(t, gormDB, "admin@test.com", "admin")
+	targetID := testkit.CreateUser(t, gormDB, "target@test.com", "target")
 
 	svc := adminservice.NewService(db)
 	handler := NewUserHandler(svc)
@@ -168,7 +168,7 @@ func TestAdminUser_RevokeSelfPrevented(t *testing.T) {
 	db := setupIntegrationDB(t)
 	gormDB := db.GormDB()
 
-	adminID := testutil.CreateUser(t, gormDB, "admin@test.com", "admin")
+	adminID := testkit.CreateUser(t, gormDB, "admin@test.com", "admin")
 
 	svc := adminservice.NewService(db)
 	handler := NewUserHandler(svc)

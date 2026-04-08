@@ -5,57 +5,10 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-func setupMessageTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	if err != nil {
-		t.Fatalf("Failed to connect to database: %v", err)
-	}
-
-	// Create agent_messages table
-	db.Exec(`CREATE TABLE IF NOT EXISTS agent_messages (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		sender_pod TEXT NOT NULL,
-		receiver_pod TEXT NOT NULL,
-		message_type TEXT NOT NULL,
-		content BLOB,
-		status TEXT NOT NULL DEFAULT 'pending',
-		correlation_id TEXT,
-		parent_message_id INTEGER,
-		delivered_at DATETIME,
-		read_at DATETIME,
-		max_retries INTEGER NOT NULL DEFAULT 3,
-		delivery_attempts INTEGER NOT NULL DEFAULT 0,
-		last_delivery_attempt DATETIME,
-		next_retry_at DATETIME,
-		delivery_error TEXT,
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
-
-	// Create agent_message_dead_letters table
-	db.Exec(`CREATE TABLE IF NOT EXISTS agent_message_dead_letters (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		original_message_id INTEGER NOT NULL,
-		reason TEXT NOT NULL,
-		final_attempt INTEGER NOT NULL,
-		moved_at DATETIME NOT NULL,
-		replayed_at DATETIME,
-		replay_result TEXT,
-		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
-
-	return db
-}
-
 func TestNewMessageService(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 
 	if svc == nil {
@@ -64,7 +17,7 @@ func TestNewMessageService(t *testing.T) {
 }
 
 func TestSendMessage(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -128,7 +81,7 @@ func TestSendMessage(t *testing.T) {
 }
 
 func TestGetMessage(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 

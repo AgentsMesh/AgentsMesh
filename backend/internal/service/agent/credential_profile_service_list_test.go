@@ -10,7 +10,7 @@ import (
 )
 
 func TestCredentialProfileService_ListCredentialProfiles(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -70,7 +70,7 @@ func TestCredentialProfileService_ListCredentialProfiles(t *testing.T) {
 }
 
 func TestCredentialProfileService_ListCredentialProfilesForAgent(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -107,7 +107,7 @@ func TestCredentialProfileService_ListCredentialProfilesForAgent(t *testing.T) {
 }
 
 func TestCredentialProfileService_GetDefaultCredentialProfile(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -140,7 +140,7 @@ func TestCredentialProfileService_GetDefaultCredentialProfile(t *testing.T) {
 }
 
 func TestCredentialProfileService_SetDefaultCredentialProfile(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -185,7 +185,7 @@ func TestCredentialProfileService_SetDefaultCredentialProfile(t *testing.T) {
 }
 
 func TestCredentialProfileService_GetEffectiveCredentialsForPod(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()

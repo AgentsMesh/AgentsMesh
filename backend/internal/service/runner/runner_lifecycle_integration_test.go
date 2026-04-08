@@ -6,18 +6,18 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 )
 
 // TestRunnerLifecycle_RegisterAndQuery verifies that a runner created via
 // the service can be queried back with all fields intact.
 func TestRunnerLifecycle_RegisterAndQuery(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewRunnerRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "u@test.io", "user1")
-	orgID := testutil.CreateOrg(t, db, "org-reg", userID)
+	userID := testkit.CreateUser(t, db, "u@test.io", "user1")
+	orgID := testkit.CreateOrg(t, db, "org-reg", userID)
 
 	// Insert runner via GORM (simulates what gRPC registration does)
 	r := &runner.Runner{
@@ -53,12 +53,12 @@ func TestRunnerLifecycle_RegisterAndQuery(t *testing.T) {
 // TestRunnerLifecycle_HeartbeatUpdate verifies that Heartbeat updates
 // last_heartbeat and current_pods fields.
 func TestRunnerLifecycle_HeartbeatUpdate(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewRunnerRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "hb@test.io", "hbuser")
-	orgID := testutil.CreateOrg(t, db, "org-hb", userID)
+	userID := testkit.CreateUser(t, db, "hb@test.io", "hbuser")
+	orgID := testkit.CreateOrg(t, db, "org-hb", userID)
 
 	r := &runner.Runner{
 		OrganizationID:    orgID,
@@ -100,12 +100,12 @@ func TestRunnerLifecycle_HeartbeatUpdate(t *testing.T) {
 // TestRunnerLifecycle_DisableEnable verifies disable/enable toggle
 // via UpdateRunner and its effect on field values.
 func TestRunnerLifecycle_DisableEnable(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewRunnerRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "de@test.io", "deuser")
-	orgID := testutil.CreateOrg(t, db, "org-de", userID)
+	userID := testkit.CreateUser(t, db, "de@test.io", "deuser")
+	orgID := testkit.CreateOrg(t, db, "org-de", userID)
 
 	r := &runner.Runner{
 		OrganizationID:    orgID,
@@ -142,12 +142,12 @@ func TestRunnerLifecycle_DisableEnable(t *testing.T) {
 // TestRunnerLifecycle_DeleteWithLoopCheck verifies that deleting a runner
 // referenced by a loop returns ErrRunnerHasLoopRefs.
 func TestRunnerLifecycle_DeleteWithLoopCheck(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewRunnerRepository(db))
 	ctx := context.Background()
 
-	userID := testutil.CreateUser(t, db, "dl@test.io", "dluser")
-	orgID := testutil.CreateOrg(t, db, "org-dl", userID)
+	userID := testkit.CreateUser(t, db, "dl@test.io", "dluser")
+	orgID := testkit.CreateOrg(t, db, "org-dl", userID)
 
 	r := &runner.Runner{
 		OrganizationID:    orgID,
@@ -183,14 +183,14 @@ func TestRunnerLifecycle_DeleteWithLoopCheck(t *testing.T) {
 // TestRunnerLifecycle_ListByOrg verifies that ListRunners returns
 // only runners belonging to the queried organization.
 func TestRunnerLifecycle_ListByOrg(t *testing.T) {
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 	svc := NewService(infra.NewRunnerRepository(db))
 	ctx := context.Background()
 
-	user1 := testutil.CreateUser(t, db, "o1@test.io", "orguser1")
-	user2 := testutil.CreateUser(t, db, "o2@test.io", "orguser2")
-	org1 := testutil.CreateOrg(t, db, "org-list-1", user1)
-	org2 := testutil.CreateOrg(t, db, "org-list-2", user2)
+	user1 := testkit.CreateUser(t, db, "o1@test.io", "orguser1")
+	user2 := testkit.CreateUser(t, db, "o2@test.io", "orguser2")
+	org1 := testkit.CreateOrg(t, db, "org-list-1", user1)
+	org2 := testkit.CreateOrg(t, db, "org-list-2", user2)
 
 	// Create 2 runners in org1, 1 in org2
 	for _, nodeID := range []string{"node-o1-a", "node-o1-b"} {

@@ -13,7 +13,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	ticketSvc "github.com/anthropics/agentsmesh/backend/internal/service/ticket"
-	"github.com/anthropics/agentsmesh/backend/internal/testutil"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +33,7 @@ type crossUnitEnv struct {
 // replicating the production subscription pattern from setupLoopEventSubscriptions.
 func setupCrossUnit(t *testing.T, opts ...func(*loopDomain.Loop)) crossUnitEnv {
 	t.Helper()
-	db := testutil.SetupTestDB(t)
+	db := testkit.SetupTestDB(t)
 
 	// SQLite `:memory:` creates a separate DB per connection. Force single connection
 	// so async EventBus goroutines share the same in-memory DB.

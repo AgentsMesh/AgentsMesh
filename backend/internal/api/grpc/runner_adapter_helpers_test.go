@@ -11,6 +11,7 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/testkit"
 	"github.com/anthropics/agentsmesh/backend/pkg/audit"
 )
 
@@ -108,31 +109,7 @@ func TestGRPCRunnerAdapter_LogAuditEvent(t *testing.T) {
 	})
 
 	t.Run("with db writes audit log", func(t *testing.T) {
-		// Create in-memory SQLite for testing
-		db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-			Logger: gormlogger.Discard,
-		})
-		if err != nil {
-			t.Skip("SQLite not available")
-		}
-
-		// Create audit_logs table with all required columns
-		err = db.Exec(`CREATE TABLE IF NOT EXISTS audit_logs (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			action TEXT,
-			organization_id INTEGER,
-			actor_type TEXT,
-			actor_id INTEGER,
-			resource_type TEXT,
-			resource_id INTEGER,
-			details TEXT,
-			ip_address TEXT,
-			user_agent TEXT,
-			created_at DATETIME
-		)`).Error
-		if err != nil {
-			t.Skip("Failed to create table")
-		}
+		db := testkit.SetupTestDB(t)
 
 		adapter := NewGRPCRunnerAdapter(logger, db, nil, nil, nil, nil, connMgr, nil)
 

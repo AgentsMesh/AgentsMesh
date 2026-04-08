@@ -1,7 +1,7 @@
-// Package testutil provides shared test infrastructure for backend integration tests.
-// It consolidates duplicate setupTestDB() and factory functions from 80+ test files
+// Package testkit provides shared test infrastructure for backend integration tests.
+// It consolidates DB setup, factory functions, and test context helpers
 // into a single reusable package.
-package testutil
+package testkit
 
 import (
 	"testing"
@@ -12,7 +12,8 @@ import (
 )
 
 // SetupTestDB creates an in-memory SQLite database with all business tables.
-// This replaces the per-package setupTestDB() pattern, eliminating duplication.
+// This is the single source of truth for test schema — all services should
+// use this instead of maintaining local DDL definitions.
 func SetupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -21,12 +22,12 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 	if err != nil {
-		t.Fatalf("testutil: failed to open database: %v", err)
+		t.Fatalf("testkit: failed to open database: %v", err)
 	}
 
 	for _, ddl := range allTableDDLs() {
 		if err := db.Exec(ddl).Error; err != nil {
-			t.Fatalf("testutil: failed to create table: %v\nDDL: %s", err, ddl[:min(len(ddl), 80)])
+			t.Fatalf("testkit: failed to create table: %v\nDDL: %s", err, ddl[:min(len(ddl), 80)])
 		}
 	}
 
@@ -45,11 +46,4 @@ func allTableDDLs() []string {
 	ddls = append(ddls, billingTableDDLs()...)
 	ddls = append(ddls, supportTableDDLs()...)
 	return ddls
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

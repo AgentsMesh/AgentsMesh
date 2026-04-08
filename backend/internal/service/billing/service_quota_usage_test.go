@@ -112,9 +112,9 @@ func TestGetCurrentConcurrentPods(t *testing.T) {
 	service := NewService(newTestRepo(db), "")
 	ctx := context.Background()
 
-	db.Exec("INSERT INTO pods (organization_id, name, status) VALUES (1, 'pod1', 'running')")
-	db.Exec("INSERT INTO pods (organization_id, name, status) VALUES (1, 'pod2', 'initializing')")
-	db.Exec("INSERT INTO pods (organization_id, name, status) VALUES (1, 'pod3', 'stopped')")
+	db.Exec("INSERT INTO pods (organization_id, pod_key, status) VALUES (1, 'pod1', 'running')")
+	db.Exec("INSERT INTO pods (organization_id, pod_key, status) VALUES (1, 'pod2', 'initializing')")
+	db.Exec("INSERT INTO pods (organization_id, pod_key, status) VALUES (1, 'pod3', 'stopped')")
 
 	count, err := service.GetCurrentConcurrentPods(ctx, 1)
 	if err != nil {

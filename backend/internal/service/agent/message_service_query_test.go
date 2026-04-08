@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetMessages(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -74,7 +74,7 @@ func TestGetMessages(t *testing.T) {
 }
 
 func TestGetUnreadMessages(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -93,7 +93,7 @@ func TestGetUnreadMessages(t *testing.T) {
 }
 
 func TestGetUnreadCount(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -111,7 +111,7 @@ func TestGetUnreadCount(t *testing.T) {
 }
 
 func TestGetConversation(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -136,7 +136,7 @@ func TestGetConversation(t *testing.T) {
 }
 
 func TestGetThread(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -168,7 +168,7 @@ func TestGetThread(t *testing.T) {
 }
 
 func TestGetSentMessages(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 
@@ -187,7 +187,7 @@ func TestGetSentMessages(t *testing.T) {
 }
 
 func TestGetMessagesBetween(t *testing.T) {
-	db := setupMessageTestDB(t)
+	db := setupTestDB(t)
 	svc := newTestMessageService(db)
 	ctx := context.Background()
 

@@ -13,7 +13,7 @@ import (
 
 func TestProcessMROrPipelineEvent_MergeRequest(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	ctx := &WebhookContext{
 		Context:        context.Background(),
@@ -48,7 +48,7 @@ func TestProcessMROrPipelineEvent_MergeRequest(t *testing.T) {
 
 func TestProcessMROrPipelineEvent_Pipeline(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	ctx := &WebhookContext{
 		Context:        context.Background(),
@@ -82,7 +82,7 @@ func TestProcessMROrPipelineEvent_Pipeline(t *testing.T) {
 
 func TestProcessMROrPipelineEvent_UnsupportedKind(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	ctx := &WebhookContext{
 		Context: context.Background(),
@@ -102,7 +102,7 @@ func TestProcessMROrPipelineEvent_UnsupportedKind(t *testing.T) {
 
 func TestProcessMergeRequestEvent_Basic(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	ctx := &WebhookContext{
 		Context:        context.Background(),
@@ -145,7 +145,7 @@ func TestProcessMergeRequestEvent_Basic(t *testing.T) {
 
 func TestProcessMergeRequestEvent_InvalidPayload(t *testing.T) {
 	cfg := &config.Config{}
-	router, _ := createTestRouterForGit(cfg)
+	router, _ := createTestRouterForGit(t, cfg)
 
 	ctx := &WebhookContext{
 		Context:        context.Background(),

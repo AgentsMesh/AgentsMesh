@@ -69,7 +69,7 @@ func TestCredentialProfileService_GetDefaultCredentialProfile_DBError(t *testing
 }
 
 func TestCredentialProfileService_SetDefaultCredentialProfile_Success(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -146,7 +146,7 @@ func TestCredentialProfileService_CreateCredentialProfile_CreateDBError(t *testi
 }
 
 func TestCredentialProfileService_UpdateCredentialProfile_UpdateDBError(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
@@ -173,7 +173,7 @@ func TestCredentialProfileService_UpdateCredentialProfile_UpdateDBError(t *testi
 }
 
 func TestCredentialProfileService_ListCredentialProfiles_EmptyAgent(t *testing.T) {
-	db := setupCredentialProfileTestDB(t)
+	db := setupTestDB(t)
 	agentSvc := newTestAgentService(db)
 	svc := newTestCredentialProfileService(db, agentSvc, testEncryptor())
 	ctx := context.Background()
