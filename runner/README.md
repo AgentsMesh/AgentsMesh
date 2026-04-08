@@ -32,12 +32,19 @@ All binaries are available on the [Releases](https://github.com/AgentsMesh/Agent
 
 ## Quick Start
 
-### 1. Register the runner
+### 1. Login / Register the runner
 
-Get a registration token from your AgentsMesh dashboard, then:
+**Browser login (recommended):**
 
 ```bash
-# Global: https://agentsmesh.ai (or your own server address)
+agentsmesh-runner login                                        # Opens browser for authorization
+agentsmesh-runner login --server https://self-hosted.example.com  # Self-hosted server
+agentsmesh-runner login --headless                             # Print URL only (for SSH/remote)
+```
+
+**Token-based registration:**
+
+```bash
 agentsmesh-runner register --server <SERVER_URL> --token YOUR_TOKEN
 ```
 
@@ -71,15 +78,58 @@ Usage:
   agentsmesh-runner <command> [options]
 
 Commands:
-  register    Register this runner with the AgentsMesh server
-  run         Start the runner in CLI mode
-  webconsole  Open the web console in browser
-  service     Manage runner as a system service
-  version     Show version information
-  help        Show this help message
+  login            Login to AgentsMesh server (alias for register)
+  register         Register this runner with the AgentsMesh server (gRPC/mTLS)
+  run              Start the runner in CLI mode (requires prior registration)
+  webconsole       Open the web console in browser
+  service          Manage runner as a system service (install/start/stop)
+  reactivate       Reactivate runner with expired certificate
+  update-endpoint  Update gRPC endpoint without re-registration
+  update           Check and install updates
+  version          Show version information
+  help             Show this help message
 
 Use "agentsmesh-runner <command> --help" for more information about a command.
 ```
+
+### Updating the Runner
+
+Check for updates and install the latest version:
+
+```bash
+agentsmesh-runner update              # Interactive update
+agentsmesh-runner update --check      # Only check for updates
+agentsmesh-runner update -y           # Silent update (skip confirmation)
+agentsmesh-runner update -f           # Force immediate update
+agentsmesh-runner update -v v1.2.3    # Update to specific version
+agentsmesh-runner update --pre        # Include prerelease versions
+```
+
+The updater automatically creates a backup before applying updates and supports rollback if the update fails.
+
+If the `update` command fails (e.g., permission errors, corrupted binary, or network issues), you can reinstall the CLI manually:
+
+```bash
+# macOS / Linux
+curl -fsSL https://agentsmesh.ai/install.sh | sh
+
+# Windows (PowerShell)
+irm https://agentsmesh.ai/install.ps1 | iex
+```
+
+After reinstalling, stop the old process and restart:
+
+```bash
+# If running as a system service
+sudo agentsmesh-runner service stop
+sudo agentsmesh-runner service start
+
+# If running in CLI mode, kill the old process first
+pkill agentsmesh-runner
+agentsmesh-runner run
+```
+
+Your existing configuration in `~/.agentsmesh/config.yaml` will be preserved — no need to re-register.
 
 ## Configuration
 
