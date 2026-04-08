@@ -99,6 +99,8 @@ func (a *GRPCRunnerAdapter) dispatchMcpMethod(ctx context.Context, tc *middlewar
 		return a.mcpUpdateTicket(ctx, tc, req.Payload)
 	case "post_comment":
 		return a.mcpPostComment(ctx, tc, req.Payload)
+	case "delete_ticket":
+		return a.mcpDeleteTicket(ctx, tc, req.Payload)
 
 	// Pod interaction methods
 	case "get_pod_snapshot":

@@ -132,3 +132,28 @@ func (a *GRPCRunnerAdapter) mcpPostComment(ctx context.Context, tc *middleware.T
 
 	return map[string]interface{}{"comment": comment}, nil
 }
+
+// mcpDeleteTicket handles the "delete_ticket" MCP method.
+func (a *GRPCRunnerAdapter) mcpDeleteTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
+	var params struct {
+		TicketSlug string `json:"ticket_slug"`
+	}
+	if err := unmarshalPayload(payload, &params); err != nil {
+		return nil, err
+	}
+
+	if params.TicketSlug == "" {
+		return nil, newMcpError(400, "ticket_slug is required")
+	}
+
+	t, err := a.ticketService.GetTicketByIDOrSlug(ctx, tc.OrganizationID, params.TicketSlug)
+	if err != nil {
+		return nil, newMcpError(404, "ticket not found")
+	}
+
+	if err := a.ticketService.DeleteTicket(ctx, t.ID); err != nil {
+		return nil, newMcpError(500, "failed to delete ticket")
+	}
+
+	return map[string]interface{}{"message": "Ticket deleted"}, nil
+}

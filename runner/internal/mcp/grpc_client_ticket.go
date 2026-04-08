@@ -129,6 +129,15 @@ func (c *GRPCCollaborationClient) PostComment(ctx context.Context, ticketSlug, c
 	return &result.Comment, nil
 }
 
+// DeleteTicket deletes a ticket by slug.
+func (c *GRPCCollaborationClient) DeleteTicket(ctx context.Context, ticketSlug string) error {
+	params := map[string]interface{}{
+		"ticket_slug": ticketSlug,
+	}
+	var result struct{}
+	return c.call(ctx, "delete_ticket", params, &result)
+}
+
 // ==================== PodClient ====================
 
 // CreatePod creates a new AgentPod.

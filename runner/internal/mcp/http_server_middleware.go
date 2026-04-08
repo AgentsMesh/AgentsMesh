@@ -39,6 +39,7 @@ func (s *HTTPServer) registerTools() {
 		s.createGetTicketTool(),
 		s.createCreateTicketTool(),
 		s.createUpdateTicketTool(),
+		s.createDeleteTicketTool(),
 		s.createPostCommentTool(),
 
 		// Pod tools
