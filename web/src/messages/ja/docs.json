@@ -23,6 +23,7 @@
       "runners": "Runner",
       "runnerSetup": "Runner セットアップ",
       "mcpTools": "MCP ツール",
+      "runnerUpdating": "Runner の更新",
       "guides": "ガイド",
       "gitIntegration": "Git 連携",
       "teamManagement": "チーム管理",
@@ -918,6 +919,22 @@
           "getPodStatus": "get_pod_status",
           "getPodStatusDesc": "Podのエージェント実行ステータスを取得（executing/waiting/idle）",
           "getPodStatusParams": "pod_key"
+        }
+      },
+      "updating": {
+        "title": "Runner の更新",
+        "description": "最新の機能、パフォーマンスの改善、セキュリティパッチを入手するために、AgentsMesh Runner を最新の状態に保ちましょう。",
+        "updateCommand": {
+          "title": "update コマンドの使用",
+          "description": "Runner には、新しいバージョンを確認し、バイナリをダウンロードして、現在のインストールを置き換えるビルトインの update コマンドが含まれています。",
+          "backupNote": "アップデーターは更新を適用する前に自動的にバックアップを作成します。更新が失敗した場合、以前のバージョンへのロールバックを試みます。"
+        },
+        "reinstall": {
+          "title": "手動再インストール（フォールバック）",
+          "description": "update コマンドが失敗した場合（権限エラー、破損したバイナリ、ネットワークの問題など）、CLI を手動で再インストールできます。",
+          "step1Title": "1. バイナリを再インストール",
+          "step2Title": "2. 古いプロセスを停止して再起動",
+          "configNote": "~/.agentsmesh/config.yaml の既存の設定は保持されます — 再登録の必要はありません。"
         }
       }
     },

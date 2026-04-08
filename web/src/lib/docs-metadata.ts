@@ -121,6 +121,11 @@ const docsMetadataMap: Record<string, DocsMeta> = {
     description:
       "Model Context Protocol integration for Runners — extend agent capabilities with custom tools and resources.",
   },
+  "/docs/runners/updating": {
+    title: "Updating the Runner",
+    description:
+      "Update or reinstall the AgentsMesh Runner CLI — built-in update command, manual reinstall fallback, and process restart instructions.",
+  },
   "/docs/guides/git-integration": {
     title: "Git Integration",
     description:

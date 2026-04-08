@@ -23,6 +23,7 @@
       "runners": "Runner",
       "runnerSetup": "Configuration du Runner",
       "mcpTools": "Outils MCP",
+      "runnerUpdating": "Mise à jour du Runner",
       "guides": "Guides",
       "gitIntegration": "Intégration Git",
       "teamManagement": "Gestion d'équipe",
@@ -918,6 +919,22 @@
           "getPodStatus": "get_pod_status",
           "getPodStatusDesc": "Obtenir le statut d'exécution de l'agent d'un Pod (executing/waiting/idle)",
           "getPodStatusParams": "pod_key"
+        }
+      },
+      "updating": {
+        "title": "Mise à jour du Runner",
+        "description": "Gardez votre Runner AgentsMesh à jour pour bénéficier des dernières fonctionnalités, améliorations de performances et correctifs de sécurité.",
+        "updateCommand": {
+          "title": "Utiliser la commande de mise à jour",
+          "description": "Le Runner inclut une commande de mise à jour intégrée qui vérifie les nouvelles versions, télécharge le binaire et remplace l'installation actuelle.",
+          "backupNote": "L'outil de mise à jour crée automatiquement une sauvegarde avant d'appliquer les mises à jour. Si la mise à jour échoue, il tentera de revenir à la version précédente."
+        },
+        "reinstall": {
+          "title": "Réinstallation manuelle (solution de secours)",
+          "description": "Si la commande de mise à jour échoue (par ex. erreurs de permissions, binaire corrompu ou problèmes réseau), vous pouvez réinstaller le CLI manuellement.",
+          "step1Title": "1. Réinstaller le binaire",
+          "step2Title": "2. Arrêter l'ancien processus et redémarrer",
+          "configNote": "Votre configuration existante dans ~/.agentsmesh/config.yaml sera préservée — pas besoin de vous réenregistrer."
         }
       }
     },

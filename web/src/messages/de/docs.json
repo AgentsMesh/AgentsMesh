@@ -23,6 +23,7 @@
       "runners": "Runner",
       "runnerSetup": "Runner-Einrichtung",
       "mcpTools": "MCP-Tools",
+      "runnerUpdating": "Runner aktualisieren",
       "guides": "Anleitungen",
       "gitIntegration": "Git-Integration",
       "teamManagement": "Teamverwaltung",
@@ -918,6 +919,22 @@
           "getPodStatus": "get_pod_status",
           "getPodStatusDesc": "Agent-Ausführungsstatus eines Pods abrufen (executing/waiting/idle)",
           "getPodStatusParams": "pod_key"
+        }
+      },
+      "updating": {
+        "title": "Runner aktualisieren",
+        "description": "Halten Sie Ihren AgentsMesh Runner auf dem neuesten Stand, um die neuesten Funktionen, Leistungsverbesserungen und Sicherheits-Patches zu erhalten.",
+        "updateCommand": {
+          "title": "Den Update-Befehl verwenden",
+          "description": "Der Runner enthält einen integrierten Update-Befehl, der nach neuen Versionen sucht, die Binärdatei herunterlädt und die aktuelle Installation ersetzt.",
+          "backupNote": "Der Updater erstellt vor dem Anwenden von Updates automatisch ein Backup. Wenn das Update fehlschlägt, wird versucht, auf die vorherige Version zurückzusetzen."
+        },
+        "reinstall": {
+          "title": "Manuelle Neuinstallation (Fallback)",
+          "description": "Wenn der Update-Befehl fehlschlägt (z. B. Berechtigungsfehler, beschädigte Binärdatei oder Netzwerkprobleme), können Sie die CLI manuell neu installieren.",
+          "step1Title": "1. Binärdatei neu installieren",
+          "step2Title": "2. Alten Prozess stoppen und neu starten",
+          "configNote": "Ihre bestehende Konfiguration in ~/.agentsmesh/config.yaml bleibt erhalten — eine erneute Registrierung ist nicht erforderlich."
         }
       }
     },

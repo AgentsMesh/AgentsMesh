@@ -25,6 +25,7 @@
       "runners": "运行节点",
       "runnerSetup": "Runner 配置",
       "mcpTools": "MCP 工具",
+      "runnerUpdating": "更新 Runner",
       "guides": "使用指南",
       "gitIntegration": "Git 集成",
       "teamManagement": "团队管理",
@@ -1012,6 +1013,22 @@
           "getPodStatus": "get_pod_status",
           "getPodStatusDesc": "获取 Pod 的 Agent 执行状态（执行中/等待中/空闲）",
           "getPodStatusParams": "pod_key"
+        }
+      },
+      "updating": {
+        "title": "更新 Runner",
+        "description": "保持 AgentsMesh Runner 为最新版本，以获取最新功能、性能改进和安全补丁。",
+        "updateCommand": {
+          "title": "使用更新命令",
+          "description": "Runner 内置了更新命令，可以检查新版本、下载二进制文件并替换当前安装。",
+          "backupNote": "更新程序会在应用更新之前自动创建备份。如果更新失败，它将尝试回滚到之前的版本。"
+        },
+        "reinstall": {
+          "title": "手动重新安装（备选方案）",
+          "description": "如果更新命令失败（例如权限错误、二进制文件损坏或网络问题），你可以手动重新安装 CLI。",
+          "step1Title": "1. 重新安装二进制文件",
+          "step2Title": "2. 停止旧进程并重新启动",
+          "configNote": "你在 ~/.agentsmesh/config.yaml 中的现有配置将会保留——无需重新注册。"
         }
       }
     },

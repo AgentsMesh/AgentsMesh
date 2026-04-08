@@ -84,6 +84,10 @@ export const docsNavSections: DocNavSection[] = [
       },
       { titleKey: "docs.nav.mcpTools", href: "/docs/runners/mcp-tools" },
       {
+        titleKey: "docs.nav.runnerUpdating",
+        href: "/docs/runners/updating",
+      },
+      {
         titleKey: "docs.nav.teamManagement",
         href: "/docs/guides/team-management",
       },
