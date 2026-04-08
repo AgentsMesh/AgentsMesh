@@ -42,12 +42,18 @@ export function HeroContent({ t }: HeroContentProps) {
             <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
           </Button>
         </Link>
-        <Link href="/demo">
+        <Link href="/login">
           <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-10 h-14 rounded-full hover:bg-secondary/50 transition-all hover:-translate-y-0.5 border-primary/20 hover:border-primary/40">
-            {t("landing.hero.viewDocs")}
+            {t("landing.hero.signInConsole")}
           </Button>
         </Link>
       </div>
+      <p className="mt-4 text-sm text-muted-foreground/60">
+        {t("landing.hero.enterpriseNote")}{" "}
+        <Link href="/demo" className="underline hover:text-primary transition-colors">
+          {t("landing.hero.contactUs")}
+        </Link>
+      </p>
     </div>
   );
 }

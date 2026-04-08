@@ -20,6 +20,9 @@
       "description": "给每个团队成员配一支 AI Agent 团队。分配任务、追踪进度、让它们自主协作——数据始终留在你的基础设施内。",
       "getStartedFree": "开始组建你的团队",
       "viewDocs": "查看演示",
+      "signInConsole": "登录控制台",
+      "enterpriseNote": "需要私有部署？",
+      "contactUs": "联系我们",
       "trustedBy": "受全球团队信赖",
       "teams": "不断增长的团队",
       "pods": "数千个 Pod",
@@ -309,7 +312,9 @@
       "kubernetesHelm": "Kubernetes Helm（即将推出）",
       "airGappedSupport": "离线环境支持（即将推出）",
       "viewDocs": "查看部署文档",
-      "contactSales": "联系企业销售"
+      "contactSales": "联系企业销售",
+      "saasNote": "无需私有部署？SaaS 版本可直接使用 —",
+      "saasRegister": "免费注册"
     },
     "finalCta": {
       "title1": "你的团队即将",
@@ -317,6 +322,9 @@
       "description": "从一个 Agent 开始，扩展到五十个。免费起步，无需信用卡。",
       "getStartedFree": "开始组建团队",
       "scheduleDemo": "和我们聊聊",
+      "signInConsole": "登录控制台",
+      "enterpriseNote": "需要私有部署？",
+      "contactUs": "和我们聊聊",
       "freeTier": "提供免费版",
       "noCreditCard": "无需信用卡",
       "selfHostedOption": "可自托管部署"

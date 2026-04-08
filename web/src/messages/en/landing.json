@@ -20,6 +20,9 @@
       "description": "Give every team member an AI agent squad. Assign tasks, track progress, and let them collaborate — while your data stays on your infrastructure.",
       "getStartedFree": "Start Building Your Team",
       "viewDocs": "See It In Action",
+      "signInConsole": "Sign In to Console",
+      "enterpriseNote": "Need private deployment?",
+      "contactUs": "Contact us",
       "trustedBy": "Trusted by teams worldwide",
       "teams": "Growing Teams",
       "pods": "Thousands of Pods",
@@ -309,7 +312,9 @@
       "kubernetesHelm": "Kubernetes Helm (Coming Soon)",
       "airGappedSupport": "Air-gapped Support (Coming Soon)",
       "viewDocs": "View Deployment Docs",
-      "contactSales": "Contact Enterprise Sales"
+      "contactSales": "Contact Enterprise Sales",
+      "saasNote": "Don't need private deployment? SaaS version is ready to use —",
+      "saasRegister": "Sign up free"
     },
     "finalCta": {
       "title1": "Your team is about to get",
@@ -317,6 +322,9 @@
       "description": "Start with one agent. Scale to fifty. Free to start, no credit card required.",
       "getStartedFree": "Build Your Team",
       "scheduleDemo": "Talk to Us",
+      "signInConsole": "Sign In to Console",
+      "enterpriseNote": "Need private deployment?",
+      "contactUs": "Talk to us",
       "freeTier": "Free tier available",
       "noCreditCard": "No credit card required",
       "selfHostedOption": "Self-hosted option"

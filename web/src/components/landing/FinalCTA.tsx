@@ -46,12 +46,19 @@ export function FinalCTA() {
                 <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               </Button>
             </Link>
-            <Link href="/demo">
+            <Link href="/login">
               <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8">
-                {t("landing.finalCta.scheduleDemo")}
+                {t("landing.finalCta.signInConsole")}
               </Button>
             </Link>
           </div>
+
+          <p className="mt-4 text-sm text-muted-foreground/60">
+            {t("landing.finalCta.enterpriseNote")}{" "}
+            <Link href="/demo" className="underline hover:text-primary transition-colors">
+              {t("landing.finalCta.contactUs")}
+            </Link>
+          </p>
 
           {/* Quick stats */}
           <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm text-muted-foreground">
