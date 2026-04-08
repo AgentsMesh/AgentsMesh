@@ -327,11 +327,14 @@
     "toOpen": "で開く"
   },
   "relayStatus": {
-    "connected": "Relay 接続済み",
-    "connecting": "Relay に接続中...",
-    "disconnected": "Relay 切断",
-    "error": "Relay 接続エラー",
-    "runnerDisconnected": "Runner 切断"
+    "web": "Web",
+    "relay": "Relay",
+    "runner": "Runner",
+    "connected": "接続済み",
+    "connecting": "接続中",
+    "disconnected": "切断",
+    "error": "エラー",
+    "unknown": "不明"
   },
   "terminalTabs": {
     "singleView": "シングルビュー",

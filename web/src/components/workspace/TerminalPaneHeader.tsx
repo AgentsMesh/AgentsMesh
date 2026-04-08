@@ -23,6 +23,7 @@ import {
 interface TerminalPaneHeaderProps {
   podKey: string;
   connectionStatus: ConnectionStatus;
+  isRunnerDisconnected?: boolean;
   isMaximized: boolean;
   isPodReady: boolean;
   hasAutopilot: boolean;
@@ -38,6 +39,7 @@ interface TerminalPaneHeaderProps {
 export function TerminalPaneHeader({
   podKey,
   connectionStatus,
+  isRunnerDisconnected,
   isMaximized,
   isPodReady,
   hasAutopilot,
@@ -52,6 +54,7 @@ export function TerminalPaneHeader({
   const title = usePodTitle(podKey);
 
   const statusColor = (() => {
+    if (isRunnerDisconnected) return "text-red-500 dark:text-red-400";
     switch (connectionStatus) {
       case "connected": return "text-green-500 dark:text-green-400";
       case "connecting": return "text-yellow-500 dark:text-yellow-400 animate-pulse";

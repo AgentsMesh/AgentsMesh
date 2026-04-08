@@ -126,6 +126,7 @@ export function TerminalPane({
         <TerminalPaneHeader
           podKey={podKey}
           connectionStatus={connectionStatus}
+          isRunnerDisconnected={isRunnerDisconnected}
           isMaximized={isMaximized}
           isPodReady={isPodReady}
           hasAutopilot={hasAutopilot}

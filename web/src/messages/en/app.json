@@ -344,11 +344,14 @@
     "toOpen": "to open"
   },
   "relayStatus": {
-    "connected": "Relay Connected",
-    "connecting": "Connecting to Relay...",
-    "disconnected": "Relay Disconnected",
-    "error": "Relay Connection Error",
-    "runnerDisconnected": "Runner Disconnected"
+    "web": "Web",
+    "relay": "Relay",
+    "runner": "Runner",
+    "connected": "Connected",
+    "connecting": "Connecting",
+    "disconnected": "Disconnected",
+    "error": "Error",
+    "unknown": "Unknown"
   },
   "terminalTabs": {
     "singleView": "Single view",

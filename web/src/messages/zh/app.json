@@ -344,11 +344,14 @@
     "toOpen": "打开"
   },
   "relayStatus": {
-    "connected": "Relay 已连接",
-    "connecting": "正在连接 Relay...",
-    "disconnected": "Relay 已断开",
-    "error": "Relay 连接错误",
-    "runnerDisconnected": "Runner 已断开"
+    "web": "Web",
+    "relay": "Relay",
+    "runner": "Runner",
+    "connected": "已连接",
+    "connecting": "连接中",
+    "disconnected": "已断开",
+    "error": "错误",
+    "unknown": "未知"
   },
   "terminalTabs": {
     "singleView": "单视图",
