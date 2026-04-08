@@ -473,14 +473,45 @@ init_gitea() {
 # Generate the runner SSH keypair used to access Gitea repos.
 # The private key is never committed; if it's missing (first clone, new machine),
 # generate a fresh pair. init_gitea will register the new public key with Gitea.
+#
+# Also validates existing key pairs: if id_ed25519 and id_ed25519.pub are
+# mismatched (e.g., one was regenerated without the other), SSH will refuse to
+# authenticate with "identity_sign: private key contents do not match public".
+# We detect this and regenerate both files to fix it automatically.
 generate_runner_ssh_key() {
     local ssh_dir="$SCRIPT_DIR/runner-ssh"
     local private_key="$ssh_dir/id_ed25519"
     local public_key="$ssh_dir/id_ed25519.pub"
 
     if [[ -f "$private_key" ]]; then
-        info "Runner SSH key already exists"
-        return 0
+        # Validate that the key pair is consistent.
+        # OpenSSH will reject the key with a cryptic "contents do not match
+        # public" error if the .pub file is stale or missing.
+        local needs_regen=false
+
+        if [[ ! -f "$public_key" ]]; then
+            warn "Public key missing, will regenerate SSH key pair"
+            needs_regen=true
+        else
+            # Derive the public key from the private key and compare with .pub file.
+            # Only compare key type + key data (fields 1-2), ignoring the comment.
+            local derived_key stored_key
+            derived_key=$(ssh-keygen -y -f "$private_key" 2>/dev/null | awk '{print $1, $2}')
+            stored_key=$(awk '{print $1, $2}' "$public_key" 2>/dev/null)
+
+            if [[ -z "$derived_key" || "$derived_key" != "$stored_key" ]]; then
+                warn "SSH key pair mismatch detected, will regenerate"
+                needs_regen=true
+            fi
+        fi
+
+        if [[ "$needs_regen" == true ]]; then
+            rm -f "$private_key" "$public_key"
+        else
+            chmod 600 "$private_key"
+            info "Runner SSH key already exists and is valid"
+            return 0
+        fi
     fi
 
     info "Generating runner SSH key (private key not committed)..."
@@ -909,6 +940,10 @@ main() {
     # Step 5.5: 生成 web-admin/.env.local（支持本地 Admin Console 开发）
     generate_web_admin_env
 
+    # Step 5.8: Generate runner SSH key pair (must exist before Docker starts,
+    # since the runner container bind-mounts runner-ssh/ as ~/.ssh)
+    generate_runner_ssh_key
+
     # Step 6: 启动 Docker 后端服务
     info "启动 Docker 服务 (首次可能需要几分钟)..."
     docker compose up -d --build --quiet-pull 2>&1 | grep -v "^#" | grep -v "^\[" | grep -v "^$" || true
@@ -929,8 +964,7 @@ main() {
     # Step 9: 初始化 seed
     init_seed "$pg_container"
 
-    # Step 9.5: 初始化 Gitea Git 服务器
-    generate_runner_ssh_key
+    # Step 9.5: 初始化 Gitea Git 服务器 (SSH key already generated at Step 5.8)
     init_gitea
 
     # Step 9.6: Configure local SSH so git@gitea:... works outside Docker
