@@ -41,6 +41,14 @@ jobs:
         working-directory: deploy/dev
         run: bash generate-dev-certs.sh
 
+      - name: Fix Docker image sources for CI
+        working-directory: deploy/dev
+        run: |
+          # Dev Dockerfiles use a private mirror (docker.1ms.run) that isn't
+          # accessible from GitHub Actions. Replace with Docker Hub.
+          find . -name "*.Dockerfile" -o -name "Dockerfile" | xargs -r \
+            sed -i 's|docker\.1ms\.run/library/||g'
+
       - name: Generate .env for CI
         working-directory: deploy/dev
         run: |
