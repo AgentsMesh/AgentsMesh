@@ -125,8 +125,11 @@ jobs:
       - name: Run database migrations
         working-directory: deploy/dev
         run: |
-          docker compose exec -T backend sh -c \
-            'migrate -path /app/migrations -database "$DATABASE_URL" up' || true
+          DB_URL="postgres://agentsmesh:agentsmesh_dev@localhost:5432/agentsmesh?sslmode=disable"
+          docker compose exec -T backend migrate \
+            -path /app/migrations \
+            -database "postgres://agentsmesh:agentsmesh_dev@postgres:5432/agentsmesh?sslmode=disable" \
+            up || true
 
       - name: Seed test data
         working-directory: deploy/dev
