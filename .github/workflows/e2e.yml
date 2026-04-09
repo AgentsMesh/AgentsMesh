@@ -55,18 +55,18 @@ jobs:
           mkdir -p ai-cli-configs/claude ai-cli-configs/codex ai-cli-configs/gemini
           echo '{"permissions":{"allow":["Bash","Read","Write","Edit","Glob","Grep"],"deny":[]}}' \
             > ai-cli-configs/claude/settings.json
-          cat > ai-cli-configs/codex/config.toml <<'CODEOF'
+          cat > ai-cli-configs/codex/config.toml <<'EOF'
           approval_policy = "never"
           sandbox_mode = "workspace-write"
-          CODEOF
-          sed -i 's/^          //' ai-cli-configs/codex/config.toml
+          EOF
+          sed -i 's/^[[:space:]]*//' ai-cli-configs/codex/config.toml
           echo '{"sandboxMode":"none","autoApprove":true}' \
             > ai-cli-configs/gemini/settings.json
 
       - name: Generate .env for CI
         working-directory: deploy/dev
         run: |
-          cat > .env <<'ENVEOF'
+          cat > .env <<'EOF'
           COMPOSE_PROJECT_NAME=agentsmesh-ci
           HTTP_PORT=10000
           GRPC_PORT=9443
@@ -83,15 +83,16 @@ jobs:
           USE_HTTPS=false
           JWT_SECRET=ci-jwt-secret-for-testing
           INTERNAL_API_SECRET=ci-internal-secret
-          ENVEOF
-          # Remove leading whitespace from heredoc
-          sed -i 's/^          //' .env
+          EOF
+          sed -i 's/^[[:space:]]*//' .env
+          echo "Generated .env:"
+          cat .env
 
       - name: Generate Traefik config for CI
         working-directory: deploy/dev
         run: |
           mkdir -p traefik
-          cat > traefik/traefik.yml <<'TRAEFIKEOF'
+          cat > traefik/traefik.yml <<'EOF'
           api:
             dashboard: true
             insecure: true
@@ -110,7 +111,7 @@ jobs:
               watch: true
           log:
             level: WARN
-          TRAEFIKEOF
+          EOF
           sed -i 's/^          //' traefik/traefik.yml
 
       - name: Start all Docker services
@@ -179,10 +180,17 @@ jobs:
       - name: Build frontend
         working-directory: web
         run: |
+          # Generate .env.local for frontend
+          cat > .env.local <<'EOF'
+          PRIMARY_DOMAIN=localhost:10000
+          USE_HTTPS=false
+          NEXT_PUBLIC_API_URL=
+          NEXT_PUBLIC_WS_URL=ws://127.0.0.1:10000
+          API_PROXY_TARGET=http://127.0.0.1:10000
+          EOF
+          sed -i 's/^[[:space:]]*//' .env.local
           pnpm install --frozen-lockfile
           pnpm build
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:10000
 
       - name: Start frontend
         working-directory: web
