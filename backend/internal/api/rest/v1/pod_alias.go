@@ -34,7 +34,7 @@ func (h *PodHandler) UpdatePodAlias(c *gin.Context) {
 	if !policy.PodPolicy.AllowWrite(policy.From(tenant), policy.ResourceContext{
 		OrgID: pod.OrganizationID, OwnerID: pod.CreatedByID,
 	}) {
-		apierr.ForbiddenAdmin(c)
+		apierr.ForbiddenAccess(c)
 		return
 	}
 

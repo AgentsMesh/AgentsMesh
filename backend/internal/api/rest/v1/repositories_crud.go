@@ -12,12 +12,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListRepositories lists configured repositories
+// ListRepositories lists configured repositories visible to the requesting user
 // GET /api/v1/organizations/:slug/repositories
 func (h *RepositoryHandler) ListRepositories(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
-	repos, err := h.repositoryService.ListByOrganization(c.Request.Context(), tenant.OrganizationID)
+	repos, err := h.repositoryService.ListByOrganizationForUser(c.Request.Context(), tenant.OrganizationID, tenant.UserID)
 	if err != nil {
 		apierr.InternalError(c, "Failed to list repositories")
 		return
