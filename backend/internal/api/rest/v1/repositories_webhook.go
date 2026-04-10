@@ -22,33 +22,32 @@ func (h *RepositoryHandler) RegisterRepositoryWebhook(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 	userID := middleware.GetUserID(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	if !policy.AllowAdmin(sub, tenant.OrganizationID) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	// Get repository
 	repo, err := h.repositoryService.GetByID(c.Request.Context(), repoID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Repository not found")
 		return
 	}
 
-	if repo.OrganizationID != tenant.OrganizationID {
+	if !policy.RepositoryPolicy.AllowWrite(sub, policy.VisibleResource(
+		repo.OrganizationID, repo.ImportedByUserID, repo.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
 
-	// Get webhook service
 	webhookService := h.repositoryService.GetWebhookService()
 	if webhookService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Webhook service not available")
 		return
 	}
 
-	// Register webhook
 	result, err := webhookService.RegisterWebhookForRepository(c.Request.Context(), repo, tenant.OrganizationSlug, userID)
 	if err != nil {
 		apierr.InternalError(c, err.Error())
@@ -69,33 +68,32 @@ func (h *RepositoryHandler) DeleteRepositoryWebhook(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 	userID := middleware.GetUserID(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	if !policy.AllowAdmin(sub, tenant.OrganizationID) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	// Get repository
 	repo, err := h.repositoryService.GetByID(c.Request.Context(), repoID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Repository not found")
 		return
 	}
 
-	if repo.OrganizationID != tenant.OrganizationID {
+	if !policy.RepositoryPolicy.AllowWrite(sub, policy.VisibleResource(
+		repo.OrganizationID, repo.ImportedByUserID, repo.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
 
-	// Get webhook service
 	webhookService := h.repositoryService.GetWebhookService()
 	if webhookService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Webhook service not available")
 		return
 	}
 
-	// Delete webhook
 	if err := webhookService.DeleteWebhookForRepository(c.Request.Context(), repo, userID); err != nil {
 		apierr.InternalError(c, err.Error())
 		return
@@ -116,7 +114,6 @@ func (h *RepositoryHandler) GetRepositoryWebhookStatus(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
-	// Get repository
 	repo, err := h.repositoryService.GetByID(c.Request.Context(), repoID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Repository not found")
@@ -130,7 +127,6 @@ func (h *RepositoryHandler) GetRepositoryWebhookStatus(c *gin.Context) {
 		return
 	}
 
-	// Get webhook service
 	webhookService := h.repositoryService.GetWebhookService()
 	if webhookService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Webhook service not available")
@@ -143,7 +139,6 @@ func (h *RepositoryHandler) GetRepositoryWebhookStatus(c *gin.Context) {
 
 // GetRepositoryWebhookSecret returns the webhook secret for manual configuration
 // GET /api/v1/organizations/:slug/repositories/:id/webhook/secret
-// Only returns secret if webhook needs manual setup
 func (h *RepositoryHandler) GetRepositoryWebhookSecret(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -152,26 +147,26 @@ func (h *RepositoryHandler) GetRepositoryWebhookSecret(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	if !policy.AllowAdmin(sub, tenant.OrganizationID) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	// Get repository
 	repo, err := h.repositoryService.GetByID(c.Request.Context(), repoID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Repository not found")
 		return
 	}
 
-	if repo.OrganizationID != tenant.OrganizationID {
+	if !policy.RepositoryPolicy.AllowWrite(sub, policy.VisibleResource(
+		repo.OrganizationID, repo.ImportedByUserID, repo.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
 
-	// Get webhook service
 	webhookService := h.repositoryService.GetWebhookService()
 	if webhookService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Webhook service not available")
@@ -188,7 +183,6 @@ func (h *RepositoryHandler) GetRepositoryWebhookSecret(c *gin.Context) {
 		return
 	}
 
-	// Return the secret along with webhook URL for manual configuration
 	c.JSON(http.StatusOK, gin.H{
 		"webhook_url":    repo.WebhookConfig.URL,
 		"webhook_secret": secret,
@@ -206,26 +200,26 @@ func (h *RepositoryHandler) MarkRepositoryWebhookConfigured(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	if !policy.AllowAdmin(sub, tenant.OrganizationID) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	// Get repository
 	repo, err := h.repositoryService.GetByID(c.Request.Context(), repoID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Repository not found")
 		return
 	}
 
-	if repo.OrganizationID != tenant.OrganizationID {
+	if !policy.RepositoryPolicy.AllowWrite(sub, policy.VisibleResource(
+		repo.OrganizationID, repo.ImportedByUserID, repo.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
 
-	// Get webhook service
 	webhookService := h.repositoryService.GetWebhookService()
 	if webhookService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Webhook service not available")
