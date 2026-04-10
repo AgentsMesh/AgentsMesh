@@ -7,6 +7,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -113,6 +114,7 @@ func (h *RepositoryHandler) GetRepositoryWebhookStatus(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
 	// Get repository
 	repo, err := h.repositoryService.GetByID(c.Request.Context(), repoID)
@@ -121,7 +123,9 @@ func (h *RepositoryHandler) GetRepositoryWebhookStatus(c *gin.Context) {
 		return
 	}
 
-	if repo.OrganizationID != tenant.OrganizationID {
+	if !policy.RepositoryPolicy.AllowRead(sub, policy.VisibleResource(
+		repo.OrganizationID, repo.ImportedByUserID, repo.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}

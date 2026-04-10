@@ -7,6 +7,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,27 +28,26 @@ func (h *RunnerHandler) RequestLogUpload(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
-	// Verify runner exists and belongs to organization
 	r, err := h.runnerService.GetRunner(c.Request.Context(), runnerID)
-	if err != nil || r.OrganizationID != tenant.OrganizationID {
+	if err != nil {
 		apierr.ResourceNotFound(c, "Runner not found")
 		return
 	}
 
-	// Check visibility: private runners are only visible to the registrant
-	if r.Visibility == "private" && (r.RegisteredByUserID == nil || *r.RegisteredByUserID != tenant.UserID) {
+	if !policy.RunnerPolicy.AllowRead(sub, policy.VisibleResource(
+		r.OrganizationID, r.RegisteredByUserID, r.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
 
-	// Check if runner is online
 	if !h.logUploadSender.IsConnected(runnerID) {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Runner is not connected")
 		return
 	}
 
-	// Create upload request (DB record + presigned URL)
 	req, err := h.logUploadService.RequestUpload(c.Request.Context(), tenant.OrganizationID, runnerID, tenant.UserID)
 	if err != nil {
 		apierr.InternalError(c, "Failed to create log upload request")
@@ -55,7 +55,6 @@ func (h *RunnerHandler) RequestLogUpload(c *gin.Context) {
 		return
 	}
 
-	// Send upload command to runner; mark record as failed on error
 	if err := h.logUploadSender.SendUploadLogs(runnerID, req.RequestID, req.PresignedURL, req.ExpiresAt); err != nil {
 		h.logUploadService.MarkFailed(req.RequestID, "failed to send command to runner")
 
@@ -95,16 +94,17 @@ func (h *RunnerHandler) ListRunnerLogs(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
-	// Verify runner exists and belongs to organization
 	r, err := h.runnerService.GetRunner(c.Request.Context(), runnerID)
-	if err != nil || r.OrganizationID != tenant.OrganizationID {
+	if err != nil {
 		apierr.ResourceNotFound(c, "Runner not found")
 		return
 	}
 
-	// Check visibility
-	if r.Visibility == "private" && (r.RegisteredByUserID == nil || *r.RegisteredByUserID != tenant.UserID) {
+	if !policy.RunnerPolicy.AllowRead(sub, policy.VisibleResource(
+		r.OrganizationID, r.RegisteredByUserID, r.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}

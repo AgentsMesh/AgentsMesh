@@ -6,6 +6,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,15 +25,17 @@ func (h *RepositoryHandler) SyncBranches(c *gin.Context) {
 		return
 	}
 
-	tenant := middleware.GetTenant(c)
-
 	repo, err := h.repositoryService.GetByID(c.Request.Context(), repoID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Repository not found")
 		return
 	}
 
-	if repo.OrganizationID != tenant.OrganizationID {
+	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
+	if !policy.RepositoryPolicy.AllowRead(sub, policy.VisibleResource(
+		repo.OrganizationID, repo.ImportedByUserID, repo.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
@@ -55,20 +58,21 @@ func (h *RepositoryHandler) ListBranches(c *gin.Context) {
 		return
 	}
 
-	tenant := middleware.GetTenant(c)
-
 	repo, err := h.repositoryService.GetByID(c.Request.Context(), repoID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Repository not found")
 		return
 	}
 
-	if repo.OrganizationID != tenant.OrganizationID {
+	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
+	if !policy.RepositoryPolicy.AllowRead(sub, policy.VisibleResource(
+		repo.OrganizationID, repo.ImportedByUserID, repo.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
 
-	// Get access token from query or header
 	accessToken := c.Query("access_token")
 	if accessToken == "" {
 		accessToken = c.GetHeader("X-Git-Access-Token")
@@ -91,6 +95,5 @@ func (h *RepositoryHandler) ListBranches(c *gin.Context) {
 // POST /api/v1/organizations/:slug/repositories/:id/webhook
 // Deprecated: Use RegisterRepositoryWebhook instead
 func (h *RepositoryHandler) SetupWebhook(c *gin.Context) {
-	// Delegate to the new RegisterRepositoryWebhook handler
 	h.RegisterRepositoryWebhook(c)
 }

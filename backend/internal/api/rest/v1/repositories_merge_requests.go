@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,18 +23,30 @@ func (h *RepositoryHandler) ListRepositoryMergeRequests(c *gin.Context) {
 		return
 	}
 
-	// Get optional query parameters
+	repo, err := h.repositoryService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		apierr.ResourceNotFound(c, "Repository not found")
+		return
+	}
+
+	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
+	if !policy.RepositoryPolicy.AllowRead(sub, policy.VisibleResource(
+		repo.OrganizationID, repo.ImportedByUserID, repo.Visibility,
+	)) {
+		apierr.ForbiddenAccess(c)
+		return
+	}
+
 	branch := c.Query("branch")
 	state := c.DefaultQuery("state", "all")
 
-	// Fetch merge requests from service
 	mrs, err := h.repositoryService.ListMergeRequests(c.Request.Context(), id, branch, state)
 	if err != nil {
 		apierr.InternalError(c, err.Error())
 		return
 	}
 
-	// Transform to response format
 	type MRResponse struct {
 		ID             int64   `json:"id"`
 		MRIID          int     `json:"mr_iid"`

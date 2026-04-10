@@ -7,6 +7,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -40,17 +41,17 @@ func (h *RunnerHandler) UpgradeRunner(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 
-	// Verify runner exists and belongs to organization.
-	// Return 404 for both "not found" and "wrong org" to prevent cross-org enumeration.
 	r, err := h.runnerService.GetRunner(c.Request.Context(), runnerID)
-	if err != nil || r.OrganizationID != tenant.OrganizationID {
+	if err != nil {
 		apierr.ResourceNotFound(c, "Runner not found")
 		return
 	}
 
-	// Check visibility: private runners are only visible to the registrant
-	if r.Visibility == "private" && (r.RegisteredByUserID == nil || *r.RegisteredByUserID != tenant.UserID) {
+	if !policy.RunnerPolicy.AllowRead(sub, policy.VisibleResource(
+		r.OrganizationID, r.RegisteredByUserID, r.Visibility,
+	)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
