@@ -42,7 +42,7 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
         </Button>
       </div>
 
-      <WorkspaceFilters filter={s.filter} onFilterChange={s.handleFilterChange} t={t} />
+      <WorkspaceFilters filter={s.filter} onFilterChange={s.handleFilterChange} t={t} isAdmin={s.isAdmin} />
 
       <div className="flex-1 overflow-y-auto">
         {s.loading ? (

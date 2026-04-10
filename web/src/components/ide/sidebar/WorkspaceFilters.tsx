@@ -8,13 +8,14 @@ interface WorkspaceFiltersProps {
   filter: FilterType;
   onFilterChange: (filter: FilterType) => void;
   t: (key: string) => string;
+  isAdmin?: boolean;
 }
 
 /**
  * Filter tabs for pod list
  */
-export function WorkspaceFilters({ filter, onFilterChange, t }: WorkspaceFiltersProps) {
-  const filters: FilterType[] = ["mine", "org", "completed"];
+export function WorkspaceFilters({ filter, onFilterChange, t, isAdmin }: WorkspaceFiltersProps) {
+  const filters: FilterType[] = isAdmin ? ["mine", "org", "completed"] : ["mine", "completed"];
 
   return (
     <div className="flex items-center gap-1 px-2 py-1 border-y border-border">

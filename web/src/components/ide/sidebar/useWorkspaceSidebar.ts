@@ -14,6 +14,7 @@ export function useWorkspaceSidebar(
 ) {
   const currentOrg = useAuthStore((s) => s.currentOrg);
   const user = useAuthStore((s) => s.user);
+  const isAdmin = currentOrg?.role === "owner" || currentOrg?.role === "admin";
   const pods = usePodStore((s) => s.pods);
   const loading = usePodStore((s) => s.loading);
   const fetchSidebarPods = usePodStore((s) => s.fetchSidebarPods);
@@ -101,7 +102,7 @@ export function useWorkspaceSidebar(
   }, [updatePodPerpetual]);
 
   return {
-    currentOrg, loading, runners, runnersLoading,
+    currentOrg, loading, runners, runnersLoading, isAdmin,
     filter, searchQuery, setSearchQuery, runnersExpanded, setRunnersExpanded, refreshing,
     renamePod, setRenamePod, dialogProps, sortedPods, podHasMore, loadingMore,
     handleFilterChange, handleRefresh, isPodOpen, handleOpenTerminal,

@@ -67,6 +67,7 @@ func TestGetPodConnection_Success(t *testing.T) {
 			return &agentpod.Pod{
 				PodKey:         key,
 				OrganizationID: 1,
+				CreatedByID:    10,
 				RunnerID:       42,
 				Status:         agentpod.StatusRunning,
 			}, nil
@@ -165,6 +166,7 @@ func TestGetPodConnection_PodNotActive(t *testing.T) {
 			return &agentpod.Pod{
 				PodKey:         key,
 				OrganizationID: 1,
+				CreatedByID:    10,
 				RunnerID:       42,
 				Status:         agentpod.StatusTerminated,
 			}, nil
@@ -244,6 +246,7 @@ func TestGetPodConnection_NoUserID(t *testing.T) {
 			return &agentpod.Pod{
 				PodKey:         key,
 				OrganizationID: 1,
+				CreatedByID:    10,
 				RunnerID:       42,
 				Status:         agentpod.StatusRunning,
 			}, nil
@@ -268,4 +271,28 @@ func TestGetPodConnection_NoUserID(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
+func TestGetPodConnection_MemberForbiddenOthersPod(t *testing.T) {
+	mgr := newRelayManager(t)
+	tokenGen := relay.NewTokenGenerator("test-secret-key-32bytes!!", "test-issuer")
 
+	podSvc := &mockRelayPodService{
+		getPodFn: func(_ context.Context, key string) (*agentpod.Pod, error) {
+			return &agentpod.Pod{
+				PodKey:         key,
+				OrganizationID: 1,
+				CreatedByID:    99, // owned by different user
+				RunnerID:       42,
+				Status:         agentpod.StatusRunning,
+			}, nil
+		},
+	}
+	handler := NewPodConnectHandler(podSvc, mgr, tokenGen, nil, nil)
+
+	c, w := newRelayConnectContext(http.MethodGet, "/pods/pod-abc/relay/connect")
+	c.Params = gin.Params{{Key: "key", Value: "pod-abc"}}
+	setRelayTenantContext(c, 1, 10) // userID=10, role=member
+
+	handler.GetPodConnection(c)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}

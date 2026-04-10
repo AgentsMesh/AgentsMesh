@@ -25,6 +25,7 @@ func TestGetPodConnection_SubscribePodError_StillSucceeds(t *testing.T) {
 			return &agentpod.Pod{
 				PodKey:         key,
 				OrganizationID: 1,
+				CreatedByID:    10,
 				RunnerID:       42,
 				Status:         agentpod.StatusRunning,
 			}, nil
@@ -62,6 +63,7 @@ func TestGetPodConnection_NilCommandSender_SkipsSubscribe(t *testing.T) {
 			return &agentpod.Pod{
 				PodKey:         key,
 				OrganizationID: 1,
+				CreatedByID:    10,
 				RunnerID:       42,
 				Status:         agentpod.StatusRunning,
 			}, nil
@@ -94,6 +96,7 @@ func TestGetPodConnection_ZeroRunnerID_SkipsSubscribe(t *testing.T) {
 			return &agentpod.Pod{
 				PodKey:         key,
 				OrganizationID: 1,
+				CreatedByID:    10,
 				RunnerID:       0, // no runner assigned
 				Status:         agentpod.StatusRunning,
 			}, nil
@@ -128,6 +131,7 @@ func TestGetPodConnection_WithGeoResolver(t *testing.T) {
 			return &agentpod.Pod{
 				PodKey:         key,
 				OrganizationID: 1,
+				CreatedByID:    10,
 				RunnerID:       42,
 				Status:         agentpod.StatusRunning,
 			}, nil
@@ -170,6 +174,7 @@ func TestGetPodConnection_GeoResolverReturnsNil(t *testing.T) {
 			return &agentpod.Pod{
 				PodKey:         key,
 				OrganizationID: 1,
+				CreatedByID:    10,
 				RunnerID:       42,
 				Status:         agentpod.StatusRunning,
 			}, nil

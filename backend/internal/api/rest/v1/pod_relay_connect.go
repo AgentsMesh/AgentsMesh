@@ -82,6 +82,11 @@ func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 		return
 	}
 
+	if pod.CreatedByID != tenant.UserID && tenant.UserRole == "member" {
+		apierr.ForbiddenAccess(c)
+		return
+	}
+
 	// Check pod is active
 	if !pod.IsActive() {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Pod is not active")

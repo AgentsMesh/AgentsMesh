@@ -39,6 +39,11 @@ func (h *PodHandler) ListPods(c *gin.Context) {
 		statuses = strings.Split(req.Status, ",")
 	}
 
+	// Members can only list their own pods
+	if tenant.UserRole == "member" && req.CreatedByID == 0 {
+		req.CreatedByID = tenant.UserID
+	}
+
 	pods, total, err := h.podService.ListPods(
 		c.Request.Context(),
 		tenant.OrganizationID,
@@ -77,7 +82,11 @@ func (h *PodHandler) GetPod(c *gin.Context) {
 		return
 	}
 
-	// All organization members can access pods (Team-based access control removed)
+	if pod.CreatedByID != tenant.UserID && tenant.UserRole == "member" {
+		apierr.ForbiddenAccess(c)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"pod": pod})
 }
 
@@ -94,6 +103,11 @@ func (h *PodHandler) GetPodConnection(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 	if pod.OrganizationID != tenant.OrganizationID {
+		apierr.ForbiddenAccess(c)
+		return
+	}
+
+	if pod.CreatedByID != tenant.UserID && tenant.UserRole == "member" {
 		apierr.ForbiddenAccess(c)
 		return
 	}
