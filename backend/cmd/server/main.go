@@ -101,7 +101,7 @@ func main() {
 	}
 
 	// Initialize Runner components
-	runnerConnMgr, podCoordinator, podRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.podRepo, services.runnerRepo, redisClient, appLogger, services.agentSvc)
+	runnerConnMgr, podCoordinator, podRouter, heartbeatBatcher, sandboxQuerySvc := initializeRunnerComponents(services.pod, services.runnerRepo, redisClient, appLogger, services.agentSvc)
 
 	// Wire AutopilotRepository into PodCoordinator for autopilot event handling
 	podCoordinator.SetAutopilotRepo(services.autopilotRepo)

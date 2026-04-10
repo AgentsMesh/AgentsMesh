@@ -81,6 +81,7 @@ type MockCommandSender struct {
 	mu                        sync.Mutex
 	CreatePodCalls            int
 	TerminatePodCalls         int
+	TerminatePodErr           error
 	PodInputCalls        int
 	SendPromptCalls           int
 	SubscribePodCalls    int
@@ -98,7 +99,7 @@ func (m *MockCommandSender) SendTerminatePod(ctx context.Context, runnerID int64
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.TerminatePodCalls++
-	return nil
+	return m.TerminatePodErr
 }
 
 func (m *MockCommandSender) SendPodInput(ctx context.Context, runnerID int64, podKey string, data []byte) error {

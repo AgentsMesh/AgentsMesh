@@ -40,7 +40,7 @@ func (pc *PodCoordinator) handleTokenUsage(runnerID int64, data *runnerv1.TokenU
 	defer cancel()
 
 	// Look up the pod to retrieve org, user, and agent type info.
-	pod, err := pc.podRepo.GetByKey(ctx, data.PodKey)
+	pod, err := pc.podStore.GetByKey(ctx, data.PodKey)
 	if err != nil {
 		pc.logger.Error("failed to look up pod for token usage",
 			"pod_key", data.PodKey,

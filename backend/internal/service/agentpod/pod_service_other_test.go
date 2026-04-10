@@ -31,7 +31,6 @@ func TestErrors(t *testing.T) {
 	}{
 		{ErrPodNotFound, "pod not found"},
 		{ErrNoAvailableRunner, "no available runner"},
-		{ErrPodTerminated, "pod already terminated"},
 		{ErrRunnerNotFound, "runner not found"},
 		{ErrRunnerOffline, "runner is offline"},
 	}

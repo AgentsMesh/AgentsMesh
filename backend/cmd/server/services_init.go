@@ -38,6 +38,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var _ runner.PodStore = (*agentpod.PodService)(nil)
+
 // serviceContainer holds all initialized services.
 type serviceContainer struct {
 	auth              *auth.Service

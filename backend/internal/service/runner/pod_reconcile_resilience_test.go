@@ -11,36 +11,33 @@ import (
 	"gorm.io/gorm"
 )
 
-// errorInjectingPodRepo wraps a real PodRepository and allows injecting errors
+// errorInjectingPodStore wraps a PodStore and allows injecting errors
 // into GetByKeyAndRunner to simulate transient DB failures.
-type errorInjectingPodRepo struct {
-	agentpod.PodRepository
-	// getByKeyAndRunnerFn, when non-nil, is called instead of the real repo.
-	// This allows dynamic error injection (e.g., alternating error types).
+type errorInjectingPodStore struct {
+	PodStore
 	getByKeyAndRunnerFn func(ctx context.Context, podKey string, runnerID int64) (*agentpod.Pod, error)
 }
 
-func (r *errorInjectingPodRepo) GetByKeyAndRunner(ctx context.Context, podKey string, runnerID int64) (*agentpod.Pod, error) {
+func (r *errorInjectingPodStore) GetByKeyAndRunner(ctx context.Context, podKey string, runnerID int64) (*agentpod.Pod, error) {
 	if r.getByKeyAndRunnerFn != nil {
 		return r.getByKeyAndRunnerFn(ctx, podKey, runnerID)
 	}
-	return r.PodRepository.GetByKeyAndRunner(ctx, podKey, runnerID)
+	return r.PodStore.GetByKeyAndRunner(ctx, podKey, runnerID)
 }
 
 func TestReconcilePods_TransientDBError_NoTerminate(t *testing.T) {
-	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 	defer cm.Close()
 
-	// Wrap podRepo: always return transient error
-	errRepo := &errorInjectingPodRepo{
-		PodRepository: podRepo,
+	errStore := &errorInjectingPodStore{
+		PodStore: podStore,
 		getByKeyAndRunnerFn: func(_ context.Context, _ string, _ int64) (*agentpod.Pod, error) {
 			return nil, fmt.Errorf("connection refused")
 		},
 	}
 
 	logger := newTestLogger()
-	pc := NewPodCoordinator(errRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(errStore, runnerRepo, cm, tr, hb, logger)
 
 	mockSender := &MockCommandSender{}
 	pc.SetCommandSender(mockSender)
@@ -96,12 +93,12 @@ func TestReconcilePods_NotFound_WithEvidence(t *testing.T) {
 // do NOT contribute to the miss count, and only consecutive NotFound errors
 // accumulate toward the terminate threshold.
 func TestReconcilePods_MixedTransientAndNotFound(t *testing.T) {
-	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 	defer cm.Close()
 
 	callCount := 0
-	errRepo := &errorInjectingPodRepo{
-		PodRepository: podRepo,
+	errStore := &errorInjectingPodStore{
+		PodStore: podStore,
 		getByKeyAndRunnerFn: func(_ context.Context, _ string, _ int64) (*agentpod.Pod, error) {
 			callCount++
 			// Alternate: NotFound, transient, NotFound, transient, ...
@@ -113,7 +110,7 @@ func TestReconcilePods_MixedTransientAndNotFound(t *testing.T) {
 	}
 
 	logger := newTestLogger()
-	pc := NewPodCoordinator(errRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(errStore, runnerRepo, cm, tr, hb, logger)
 
 	mockSender := &MockCommandSender{}
 	pc.SetCommandSender(mockSender)

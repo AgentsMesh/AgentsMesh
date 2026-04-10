@@ -50,42 +50,6 @@ func (s *PodService) HandlePodTerminated(ctx context.Context, podKey string, exi
 	return nil
 }
 
-// TerminatePod terminates a pod
-func (s *PodService) TerminatePod(ctx context.Context, podKey string) error {
-	pod, err := s.GetPod(ctx, podKey)
-	if err != nil {
-		slog.Error("failed to get pod for termination", "pod_key", podKey, "error", err)
-		return err
-	}
-
-	if !pod.IsActive() {
-		return ErrPodTerminated
-	}
-
-	slog.Info("pod terminate requested", "pod_key", podKey)
-	previousStatus := pod.Status
-	if err := s.UpdatePodStatus(ctx, podKey, agentpod.StatusTerminated); err != nil {
-		slog.Error("failed to terminate pod", "pod_key", podKey, "error", err)
-		return err
-	}
-
-	slog.Info("pod terminated by user", "pod_key", podKey, "previous_status", previousStatus)
-
-	if s.eventPublisher != nil {
-		s.eventPublisher.PublishPodEvent(
-			ctx,
-			PodEventTerminated,
-			pod.OrganizationID,
-			podKey,
-			agentpod.StatusTerminated,
-			previousStatus,
-			"",
-		)
-	}
-
-	return nil
-}
-
 // MarkDisconnected marks a pod as disconnected (user closed browser)
 func (s *PodService) MarkDisconnected(ctx context.Context, podKey string) error {
 	return s.repo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusRunning, map[string]interface{}{

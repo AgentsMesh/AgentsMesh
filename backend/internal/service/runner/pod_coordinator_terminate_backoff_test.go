@@ -11,16 +11,16 @@ import (
 // ==================== Terminate Backoff Tests ====================
 
 func TestIsTerminateCooldown_NoPriorSend(t *testing.T) {
-	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, newTestLogger())
+	_, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, newTestLogger())
 
 	// No prior terminate sent -- should not be in cooldown
 	assert.False(t, pc.isTerminateCooldown("pod-1"))
 }
 
 func TestIsTerminateCooldown_WithinCooldown(t *testing.T) {
-	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, newTestLogger())
+	_, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, newTestLogger())
 
 	// Record a terminate
 	pc.recordTerminateSent("pod-1")
@@ -30,8 +30,8 @@ func TestIsTerminateCooldown_WithinCooldown(t *testing.T) {
 }
 
 func TestIsTerminateCooldown_AfterCooldownExpires(t *testing.T) {
-	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, newTestLogger())
+	_, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, newTestLogger())
 
 	// Manually set a past timestamp (beyond cooldown)
 	pc.terminateCacheMu.Lock()
@@ -43,8 +43,8 @@ func TestIsTerminateCooldown_AfterCooldownExpires(t *testing.T) {
 }
 
 func TestRecordTerminateSent_UpdatesTimestamp(t *testing.T) {
-	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, newTestLogger())
+	_, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, newTestLogger())
 
 	before := time.Now()
 	pc.recordTerminateSent("pod-1")
@@ -60,8 +60,8 @@ func TestRecordTerminateSent_UpdatesTimestamp(t *testing.T) {
 }
 
 func TestRecordTerminateSent_CleansExpiredEntries(t *testing.T) {
-	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, newTestLogger())
+	_, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, newTestLogger())
 
 	// Pre-populate with an expired entry
 	pc.terminateCacheMu.Lock()
@@ -84,8 +84,8 @@ func TestRecordTerminateSent_CleansExpiredEntries(t *testing.T) {
 }
 
 func TestTerminateCooldown_DifferentPods(t *testing.T) {
-	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, newTestLogger())
+	_, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, newTestLogger())
 
 	// Record terminate for pod-1 only
 	pc.recordTerminateSent("pod-1")

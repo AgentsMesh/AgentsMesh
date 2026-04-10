@@ -10,14 +10,14 @@ import (
 
 func TestPodCoordinatorUpdateActivity(t *testing.T) {
 	logger := newTestLogger()
-	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a pod
 	initialTime := time.Now().Add(-1 * time.Hour)
 	db.Exec(`INSERT INTO pods (pod_key, runner_id, status, last_activity) VALUES (?, ?, ?, ?)`,
 		"test-pod-1", 1, "running", initialTime)
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Update activity
@@ -37,13 +37,13 @@ func TestPodCoordinatorUpdateActivity(t *testing.T) {
 
 func TestPodCoordinatorMarkDisconnected(t *testing.T) {
 	logger := newTestLogger()
-	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a running pod
 	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"test-pod-2", 1, agentpod.StatusRunning)
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Mark disconnected
@@ -63,13 +63,13 @@ func TestPodCoordinatorMarkDisconnected(t *testing.T) {
 
 func TestPodCoordinatorMarkDisconnectedOnlyRunning(t *testing.T) {
 	logger := newTestLogger()
-	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a completed pod
 	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"test-pod-3", 1, agentpod.StatusCompleted)
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Mark disconnected should not affect completed pod
@@ -89,13 +89,13 @@ func TestPodCoordinatorMarkDisconnectedOnlyRunning(t *testing.T) {
 
 func TestPodCoordinatorMarkReconnected(t *testing.T) {
 	logger := newTestLogger()
-	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a disconnected pod
 	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"test-pod-4", 1, agentpod.StatusDisconnected)
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Mark reconnected
@@ -115,13 +115,13 @@ func TestPodCoordinatorMarkReconnected(t *testing.T) {
 
 func TestPodCoordinatorMarkReconnectedOnlyDisconnected(t *testing.T) {
 	logger := newTestLogger()
-	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a completed pod
 	db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
 		"test-pod-5", 1, agentpod.StatusCompleted)
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Mark reconnected should not affect completed pod

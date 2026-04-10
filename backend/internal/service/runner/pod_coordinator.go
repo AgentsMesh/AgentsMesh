@@ -30,7 +30,7 @@ const (
 
 // PodCoordinator coordinates pod lifecycle events between backend and runners.
 type PodCoordinator struct {
-	podRepo           agentpod.PodRepository
+	podStore          PodStore
 	runnerRepo        runnerDomain.RunnerRepository
 	autopilotRepo     agentpod.AutopilotRepository
 	connectionManager *RunnerConnectionManager
@@ -63,7 +63,7 @@ type PodCoordinator struct {
 }
 
 func NewPodCoordinator(
-	podRepo agentpod.PodRepository,
+	podStore PodStore,
 	runnerRepo runnerDomain.RunnerRepository,
 	cm *RunnerConnectionManager,
 	tr *PodRouter,
@@ -71,7 +71,7 @@ func NewPodCoordinator(
 	logger *slog.Logger,
 ) *PodCoordinator {
 	pc := &PodCoordinator{
-		podRepo:              podRepo,
+		podStore:             podStore,
 		runnerRepo:           runnerRepo,
 		connectionManager:    cm,
 		podRouter:            tr,
@@ -151,11 +151,20 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *ru
 	return nil
 }
 
+// ErrPodAlreadyTerminated is returned when TerminatePod is called on a non-active pod.
+var ErrPodAlreadyTerminated = fmt.Errorf("pod already terminated")
+
 // TerminatePod terminates a pod on a runner.
+// This is the single source of truth for pod termination — all callers
+// (REST API, Loop Orchestrator, etc.) MUST use this method.
 func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error {
-	pod, err := pc.podRepo.GetByKey(ctx, podKey)
+	pod, err := pc.podStore.GetByKey(ctx, podKey)
 	if err != nil {
 		return err
+	}
+
+	if !pod.IsActive() {
+		return ErrPodAlreadyTerminated
 	}
 
 	if err := pc.commandSender.SendTerminatePod(ctx, pod.RunnerID, podKey); err != nil {
@@ -164,15 +173,23 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 	}
 
 	now := time.Now()
-	if _, err := pc.podRepo.UpdateByKey(ctx, podKey, map[string]interface{}{
+	rowsAffected, err := pc.podStore.UpdateByKeyAndActiveStatus(ctx, podKey, map[string]interface{}{
 		"status":      agentpod.StatusCompleted,
 		"finished_at": now,
-	}); err != nil {
+	})
+	if err != nil {
 		return err
+	}
+	if rowsAffected == 0 {
+		return ErrPodAlreadyTerminated
 	}
 
 	pc.podRouter.UnregisterPod(podKey)
 	pc.clearMissCount(podKey)
+
+	if pc.onStatusChange != nil {
+		pc.onStatusChange(podKey, agentpod.StatusCompleted, "")
+	}
 
 	pc.logger.Info("pod terminate sent", "pod_key", podKey, "runner_id", pod.RunnerID)
 
@@ -180,17 +197,17 @@ func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error
 }
 
 func (pc *PodCoordinator) UpdateActivity(ctx context.Context, podKey string) error {
-	return pc.podRepo.UpdateField(ctx, podKey, "last_activity", time.Now())
+	return pc.podStore.UpdateField(ctx, podKey, "last_activity", time.Now())
 }
 
 func (pc *PodCoordinator) MarkDisconnected(ctx context.Context, podKey string) error {
-	return pc.podRepo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusRunning, map[string]interface{}{
+	return pc.podStore.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusRunning, map[string]interface{}{
 		"status": agentpod.StatusDisconnected,
 	})
 }
 
 func (pc *PodCoordinator) MarkReconnected(ctx context.Context, podKey string) error {
-	return pc.podRepo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusDisconnected, map[string]interface{}{
+	return pc.podStore.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusDisconnected, map[string]interface{}{
 		"status":        agentpod.StatusRunning,
 		"last_activity": time.Now(),
 	})

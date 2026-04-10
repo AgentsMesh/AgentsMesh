@@ -34,7 +34,7 @@ func (pc *PodCoordinator) handleAgentStatus(runnerID int64, data *runnerv1.Agent
 		updates["agent_waiting_since"] = nil
 	}
 
-	if err := pc.podRepo.UpdateAgentStatus(ctx, data.PodKey, updates); err != nil {
+	if err := pc.podStore.UpdateAgentStatus(ctx, data.PodKey, updates); err != nil {
 		pc.logger.Error("failed to update agent status",
 			"pod_key", data.PodKey,
 			"error", err)

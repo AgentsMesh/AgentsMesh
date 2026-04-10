@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
@@ -31,8 +32,8 @@ func (h *PodHandler) TerminatePod(c *gin.Context) {
 		return
 	}
 
-	if err := h.podService.TerminatePod(c.Request.Context(), podKey); err != nil {
-		if err == ErrPodTerminated {
+	if err := h.podCoordinator.TerminatePod(c.Request.Context(), podKey); err != nil {
+		if err == runner.ErrPodAlreadyTerminated {
 			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Pod already terminated")
 			return
 		}

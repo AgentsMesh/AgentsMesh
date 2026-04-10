@@ -43,8 +43,6 @@ func (m *mockPodService) GetPod(ctx context.Context, podKey string) (*agentpod.P
 	return nil, errors.New("not found")
 }
 
-func (m *mockPodService) TerminatePod(context.Context, string) error { return nil }
-
 func (m *mockPodService) GetPodsByTicket(context.Context, int64) ([]*agentpod.Pod, error) {
 	return nil, nil
 }

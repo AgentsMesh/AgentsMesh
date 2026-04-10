@@ -10,8 +10,6 @@ import (
 
 // Re-export errors for use in handlers without importing service packages
 var (
-	// ErrPodTerminated is returned when trying to terminate an already terminated pod
-	ErrPodTerminated = agentpodService.ErrPodTerminated
 	// ErrQuotaExceeded is returned when quota check fails
 	ErrQuotaExceeded = billing.ErrQuotaExceeded
 	// ErrSubscriptionFrozen is returned when subscription is frozen and operations are blocked
@@ -26,7 +24,6 @@ type PodServiceForHandler interface {
 	ListPods(ctx context.Context, orgID int64, statuses []string, createdByID int64, limit, offset int) ([]*agentpod.Pod, int64, error)
 	CreatePod(ctx context.Context, req *agentpodService.CreatePodRequest) (*agentpod.Pod, error)
 	GetPod(ctx context.Context, podKey string) (*agentpod.Pod, error)
-	TerminatePod(ctx context.Context, podKey string) error
 	GetPodsByTicket(ctx context.Context, ticketID int64) ([]*agentpod.Pod, error)
 	// UpdateAlias updates the user-assigned alias for a pod
 	UpdateAlias(ctx context.Context, podKey string, alias *string) error

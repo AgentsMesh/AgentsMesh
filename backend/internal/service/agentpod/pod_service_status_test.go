@@ -55,33 +55,6 @@ func TestUpdatePodStatus(t *testing.T) {
 	})
 }
 
-func TestUpdateAgentStatus(t *testing.T) {
-	db := setupTestDB(t)
-	svc := newTestPodService(db)
-	ctx := context.Background()
-
-	req := &CreatePodRequest{
-		OrganizationID: 1,
-		RunnerID:       1,
-		CreatedByID:    1,
-	}
-	sess, _ := svc.CreatePod(ctx, req)
-
-	// Test without PID
-	err := svc.UpdateAgentStatus(ctx, sess.PodKey, "executing", nil)
-	if err != nil {
-		t.Fatalf("UpdateAgentStatus failed: %v", err)
-	}
-
-	updated, _ := svc.GetPod(ctx, sess.PodKey)
-	if updated.AgentStatus != "executing" {
-		t.Errorf("AgentStatus = %s, want executing", updated.AgentStatus)
-	}
-	if updated.LastActivity == nil {
-		t.Error("LastActivity should be set")
-	}
-}
-
 func TestMarkDisconnected(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestPodService(db)

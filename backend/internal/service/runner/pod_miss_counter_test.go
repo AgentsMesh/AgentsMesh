@@ -9,12 +9,12 @@ import (
 )
 
 func TestPodMissCount_IncrementAndClear(t *testing.T) {
-	_, _, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	_, _, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 	logger := newTestLogger()
 	cm := NewRunnerConnectionManager(logger)
 	defer cm.Close()
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 
 	// Increment miss count
 	assert.Equal(t, 1, pc.incrementMissCount("pod-1", 1))
@@ -33,12 +33,12 @@ func TestPodMissCount_IncrementAndClear(t *testing.T) {
 }
 
 func TestPodMissCount_ClearForRunner(t *testing.T) {
-	_, _, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	_, _, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 	logger := newTestLogger()
 	cm := NewRunnerConnectionManager(logger)
 	defer cm.Close()
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 
 	// Accumulate miss counts with runner ownership
 	pc.incrementMissCount("pod-a", 1) // runner 1
@@ -58,12 +58,12 @@ func TestPodMissCount_ClearForRunner(t *testing.T) {
 }
 
 func TestOrphanMissThreshold_NotReachedYet(t *testing.T) {
-	db, _, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, _, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 	logger := newTestLogger()
 	cm := NewRunnerConnectionManager(logger)
 	defer cm.Close()
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 
 	// Create a running pod
 	require.NoError(t, db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
@@ -75,18 +75,18 @@ func TestOrphanMissThreshold_NotReachedYet(t *testing.T) {
 	}
 
 	// Pod should still be running (not yet orphaned)
-	pod, err := podRepo.GetByKey(t.Context(), "pod-x")
+	pod, err := podStore.GetByKey(t.Context(), "pod-x")
 	require.NoError(t, err)
 	assert.Equal(t, agentpod.StatusRunning, pod.Status, "pod should NOT be orphaned before threshold")
 }
 
 func TestOrphanMissThreshold_ReachedOrphans(t *testing.T) {
-	db, _, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, _, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 	logger := newTestLogger()
 	cm := NewRunnerConnectionManager(logger)
 	defer cm.Close()
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 
 	// Create a running pod
 	require.NoError(t, db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
@@ -98,18 +98,18 @@ func TestOrphanMissThreshold_ReachedOrphans(t *testing.T) {
 	}
 
 	// Pod should now be orphaned
-	pod, err := podRepo.GetByKey(t.Context(), "pod-y")
+	pod, err := podStore.GetByKey(t.Context(), "pod-y")
 	require.NoError(t, err)
 	assert.Equal(t, agentpod.StatusOrphaned, pod.Status, "pod should be orphaned after threshold")
 }
 
 func TestOrphanMissThreshold_ResetByPresence(t *testing.T) {
-	db, _, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, _, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 	logger := newTestLogger()
 	cm := NewRunnerConnectionManager(logger)
 	defer cm.Close()
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 
 	// Create a running pod
 	require.NoError(t, db.Exec(`INSERT INTO pods (pod_key, runner_id, status) VALUES (?, ?, ?)`,
@@ -127,7 +127,7 @@ func TestOrphanMissThreshold_ResetByPresence(t *testing.T) {
 	pc.reconcilePods(t.Context(), 1, map[string]bool{})
 
 	// Pod should still be running
-	pod, err := podRepo.GetByKey(t.Context(), "pod-z")
+	pod, err := podStore.GetByKey(t.Context(), "pod-z")
 	require.NoError(t, err)
 	assert.Equal(t, agentpod.StatusRunning, pod.Status, "miss counter should have reset on pod presence")
 }

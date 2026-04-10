@@ -22,7 +22,7 @@ func (pc *PodCoordinator) handlePodRestarting(runnerID int64, data *runnerv1.Pod
 	// Read BEFORE write: capture previous last_restart_at for circuit breaker check.
 	var prevLastRestartAt *time.Time
 	if data.RestartCount >= perpetualCircuitBreakerThreshold {
-		pod, err := pc.podRepo.GetByKey(ctx, data.PodKey)
+		pod, err := pc.podStore.GetByKey(ctx, data.PodKey)
 		if err == nil && pod != nil {
 			prevLastRestartAt = pod.LastRestartAt
 		}
@@ -35,7 +35,7 @@ func (pc *PodCoordinator) handlePodRestarting(runnerID int64, data *runnerv1.Pod
 	if data.NewPid > 0 {
 		updates["pty_pid"] = int(data.NewPid)
 	}
-	if _, err := pc.podRepo.UpdateByKey(ctx, data.PodKey, updates); err != nil {
+	if _, err := pc.podStore.UpdateByKey(ctx, data.PodKey, updates); err != nil {
 		pc.logger.Error("failed to update pod restart info",
 			"pod_key", data.PodKey, "error", err)
 		return

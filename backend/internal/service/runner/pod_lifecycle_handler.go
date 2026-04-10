@@ -32,7 +32,7 @@ func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCre
 		updates["branch_name"] = data.BranchName
 	}
 
-	if _, err := pc.podRepo.UpdateByKey(ctx, data.PodKey, updates); err != nil {
+	if _, err := pc.podStore.UpdateByKey(ctx, data.PodKey, updates); err != nil {
 		pc.logger.Error("failed to update pod on creation",
 			"pod_key", data.PodKey,
 			"error", err)
@@ -87,7 +87,7 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 	// Only update if pod is still active — prevents overwriting a pod already
 	// in terminal state (e.g., server-initiated TerminatePod pre-sets completed).
 	if status == agentpod.StatusError {
-		rowsAffected, err := pc.podRepo.UpdateTerminatedIfActive(ctx, data.PodKey, updates, "process_exit")
+		rowsAffected, err := pc.podStore.UpdateTerminatedIfActive(ctx, data.PodKey, updates, "process_exit")
 		if err != nil {
 			pc.logger.Error("failed to update pod on termination",
 				"pod_key", data.PodKey, "error", err)
@@ -99,7 +99,7 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 			status = ""
 		}
 	} else {
-		rowsAffected, err := pc.podRepo.UpdateByKeyAndActiveStatus(ctx, data.PodKey, updates)
+		rowsAffected, err := pc.podStore.UpdateByKeyAndActiveStatus(ctx, data.PodKey, updates)
 		if err != nil {
 			pc.logger.Error("failed to update pod on termination",
 				"pod_key", data.PodKey, "error", err)
@@ -151,7 +151,7 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 	now := time.Now()
 
 	// Handle errors during initialization (pod creation failed)
-	rowsAffected, err := pc.podRepo.UpdateByKeyAndStatusCounted(ctx, data.PodKey, agentpod.StatusInitializing, map[string]interface{}{
+	rowsAffected, err := pc.podStore.UpdateByKeyAndStatusCounted(ctx, data.PodKey, agentpod.StatusInitializing, map[string]interface{}{
 		"status":        agentpod.StatusError,
 		"error_code":    data.Code,
 		"error_message": data.Message,
@@ -183,7 +183,7 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 	// Handle errors during runtime (e.g., PTY read failure due to disk full).
 	// Only store the error info; don't change status or finished_at here because
 	// a pod_terminated event will follow shortly to finalize the pod lifecycle.
-	rowsAffected, err = pc.podRepo.UpdateByKeyAndStatusCounted(ctx, data.PodKey, agentpod.StatusRunning, map[string]interface{}{
+	rowsAffected, err = pc.podStore.UpdateByKeyAndStatusCounted(ctx, data.PodKey, agentpod.StatusRunning, map[string]interface{}{
 		"error_code":    data.Code,
 		"error_message": data.Message,
 	})

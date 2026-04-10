@@ -3,8 +3,15 @@
  * Extracted from RelayConnectionPool for SRP.
  */
 
+import { ApiError } from "@/lib/api/base";
 import { MsgType, encodeMessage } from "./relayProtocol";
 import type { RelayConnection } from "./relayConnectionTypes";
+
+const NON_RETRYABLE_STATUSES = [400, 403, 404];
+
+export function isNonRetryableError(error: unknown): boolean {
+  return error instanceof ApiError && NON_RETRYABLE_STATUSES.includes(error.status);
+}
 
 /**
  * Schedule a resync retry if no snapshot is received within 2 seconds.

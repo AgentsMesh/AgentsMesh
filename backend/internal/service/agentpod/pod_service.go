@@ -14,7 +14,6 @@ import (
 var (
 	ErrPodNotFound           = errors.New("pod not found")
 	ErrNoAvailableRunner     = errors.New("no available runner")
-	ErrPodTerminated         = errors.New("pod already terminated")
 	ErrRunnerNotFound        = errors.New("runner not found")
 	ErrRunnerOffline         = errors.New("runner is offline")
 	// ErrSandboxAlreadyResumed is re-exported from domain for backward compatibility.

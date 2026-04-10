@@ -4,19 +4,16 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
+	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
-// setupPodCoordinatorTestDB sets up database with pods table for testing.
-// Returns gorm.DB (for raw SQL in tests) plus repository interfaces.
-func setupPodCoordinatorTestDB(t *testing.T) (*gorm.DB, agentpod.PodRepository, runnerDomain.RunnerRepository) {
+func setupPodCoordinatorTestDB(t *testing.T) (*gorm.DB, PodStore, runnerDomain.RunnerRepository) {
 	db := setupTestDB(t)
 
-	// Create tables for pods
 	err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS pods (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,12 +36,12 @@ func setupPodCoordinatorTestDB(t *testing.T) (*gorm.DB, agentpod.PodRepository, 
 	}
 
 	podRepo := infra.NewPodRepository(db)
+	podStore := agentpodSvc.NewPodService(podRepo)
 	runnerRepo := infra.NewRunnerRepository(db)
-	return db, podRepo, runnerRepo
+	return db, podStore, runnerRepo
 }
 
-// setupPodCoordinatorDeps sets up dependencies for PodCoordinator testing
-func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, *PodRouter, *HeartbeatBatcher, agentpod.PodRepository, runnerDomain.RunnerRepository) {
+func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, *PodRouter, *HeartbeatBatcher, PodStore, runnerDomain.RunnerRepository) {
 	mr, err := miniredis.Run()
 	if err != nil {
 		t.Fatalf("failed to start miniredis: %v", err)
@@ -61,11 +58,11 @@ func setupPodCoordinatorDeps(t *testing.T) (*gorm.DB, *RunnerConnectionManager, 
 	})
 
 	logger := newTestLogger()
-	db, podRepo, runnerRepo := setupPodCoordinatorTestDB(t)
+	db, podStore, runnerRepo := setupPodCoordinatorTestDB(t)
 
 	cm := NewRunnerConnectionManager(logger)
 	tr := NewPodRouter(cm, logger)
 	hb := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
 
-	return db, cm, tr, hb, podRepo, runnerRepo
+	return db, cm, tr, hb, podStore, runnerRepo
 }

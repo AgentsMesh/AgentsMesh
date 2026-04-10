@@ -9,15 +9,15 @@ import (
 
 func TestNewPodCoordinator(t *testing.T) {
 	logger := newTestLogger()
-	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	_, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 
 	if pc == nil {
 		t.Fatal("NewPodCoordinator returned nil")
 	}
-	if pc.podRepo != podRepo {
-		t.Error("podRepo not set correctly")
+	if pc.podStore != podStore {
+		t.Error("podStore not set correctly")
 	}
 	if pc.runnerRepo != runnerRepo {
 		t.Error("runnerRepo not set correctly")
@@ -35,9 +35,9 @@ func TestNewPodCoordinator(t *testing.T) {
 
 func TestPodCoordinatorSetStatusChangeCallback(t *testing.T) {
 	logger := newTestLogger()
-	_, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	_, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 
 	pc.SetStatusChangeCallback(func(podKey string, status string, agentStatus string) {
 		// Callback set for testing
@@ -50,7 +50,7 @@ func TestPodCoordinatorSetStatusChangeCallback(t *testing.T) {
 
 func TestPodCoordinatorIncrementPods(t *testing.T) {
 	logger := newTestLogger()
-	db, cm, tr, hb, podRepo, runnerRepo := setupPodCoordinatorDeps(t)
+	db, cm, tr, hb, podStore, runnerRepo := setupPodCoordinatorDeps(t)
 
 	// Create a runner
 	r := &runner.Runner{
@@ -63,7 +63,7 @@ func TestPodCoordinatorIncrementPods(t *testing.T) {
 		t.Fatalf("failed to create runner: %v", err)
 	}
 
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 	ctx := context.Background()
 
 	// Increment pods

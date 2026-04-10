@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
@@ -78,7 +77,7 @@ func initializeRedisFromHost(cfg *config.Config) *redis.Client {
 
 // initializeRunnerComponents initializes runner-related components
 func initializeRunnerComponents(
-	podRepo agentpod.PodRepository,
+	podStore runner.PodStore,
 	runnerRepo runnerDomain.RunnerRepository,
 	redisClient *redis.Client,
 	appLogger *logger.Logger,
@@ -103,7 +102,7 @@ func initializeRunnerComponents(
 	heartbeatBatcher.Start()
 
 	// Initialize Pod coordinator (manages pod lifecycle between backend and runner)
-	podCoordinator := runner.NewPodCoordinator(podRepo, runnerRepo, runnerConnMgr, podRouter, heartbeatBatcher, appLogger.Logger)
+	podCoordinator := runner.NewPodCoordinator(podStore, runnerRepo, runnerConnMgr, podRouter, heartbeatBatcher, appLogger.Logger)
 
 	// Initialize Sandbox query service (handles sandbox status queries to runners)
 	sandboxQuerySvc := runner.NewSandboxQueryService(runnerConnMgr)

@@ -18,7 +18,7 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 	// - Recover initializing pods (PodCreated message loss / backend restart)
 	// - Terminate pods that should not be running (terminated/completed in DB)
 	for podKey := range reportedPods {
-		pod, err := pc.podRepo.GetByKeyAndRunner(ctx, podKey, runnerID)
+		pod, err := pc.podStore.GetByKeyAndRunner(ctx, podKey, runnerID)
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				pc.logger.Warn("failed to lookup reported pod, will retry",
@@ -108,7 +108,7 @@ func (pc *PodCoordinator) recoverPodStatus(ctx context.Context, podKey string, r
 		updates["started_at"] = now
 	}
 
-	rowsAffected, err := pc.podRepo.UpdateByKeyAndStatusCounted(ctx, podKey, fromStatus, updates)
+	rowsAffected, err := pc.podStore.UpdateByKeyAndStatusCounted(ctx, podKey, fromStatus, updates)
 	if err != nil {
 		pc.logger.Error("failed to recover pod",
 			"pod_key", podKey, "from_status", fromStatus, "error", err)
@@ -128,7 +128,7 @@ func (pc *PodCoordinator) recoverPodStatus(ctx context.Context, podKey string, r
 
 // reconcileMissingPods marks pods missing from heartbeat as orphaned.
 func (pc *PodCoordinator) reconcileMissingPods(ctx context.Context, runnerID int64, reportedPods map[string]bool, now time.Time) {
-	activePods, err := pc.podRepo.ListActiveByRunner(ctx, runnerID)
+	activePods, err := pc.podStore.ListActiveByRunner(ctx, runnerID)
 	if err != nil {
 		pc.logger.Error("failed to get pods for reconciliation",
 			"runner_id", runnerID, "error", err)
@@ -150,7 +150,7 @@ func (pc *PodCoordinator) reconcileMissingPods(ctx context.Context, runnerID int
 		}
 
 		pc.clearMissCount(p.PodKey)
-		if err := pc.podRepo.MarkOrphaned(ctx, p, now); err != nil {
+		if err := pc.podStore.MarkOrphaned(ctx, p, now); err != nil {
 			pc.logger.Error("failed to mark pod as orphaned",
 				"pod_key", p.PodKey, "error", err)
 		} else {
@@ -170,7 +170,7 @@ func (pc *PodCoordinator) syncPodCount(ctx context.Context, runnerID int64, repo
 	for podKey := range reportedPods {
 		reportedKeys = append(reportedKeys, podKey)
 	}
-	activePodCount, err := pc.podRepo.CountActiveByKeys(ctx, reportedKeys)
+	activePodCount, err := pc.podStore.CountActiveByKeys(ctx, reportedKeys)
 	if err != nil {
 		pc.logger.Error("failed to count active pods for runner",
 			"runner_id", runnerID, "error", err)

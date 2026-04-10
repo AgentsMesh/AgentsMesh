@@ -40,7 +40,7 @@ func (pc *PodCoordinator) handleRunnerDisconnect(runnerID int64) {
 
 // failInitializingPodsForRunner marks all initializing pods for the given runner as error.
 func (pc *PodCoordinator) failInitializingPodsForRunner(ctx context.Context, runnerID int64) {
-	pods, err := pc.podRepo.ListInitializingByRunner(ctx, runnerID)
+	pods, err := pc.podStore.ListInitializingByRunner(ctx, runnerID)
 	if err != nil {
 		pc.logger.Error("failed to list initializing pods for disconnected runner",
 			"runner_id", runnerID, "error", err)
@@ -49,7 +49,7 @@ func (pc *PodCoordinator) failInitializingPodsForRunner(ctx context.Context, run
 
 	now := time.Now()
 	for _, pod := range pods {
-		rowsAffected, err := pc.podRepo.UpdateByKeyAndStatusCounted(ctx, pod.PodKey, agentpod.StatusInitializing, map[string]interface{}{
+		rowsAffected, err := pc.podStore.UpdateByKeyAndStatusCounted(ctx, pod.PodKey, agentpod.StatusInitializing, map[string]interface{}{
 			"status":        agentpod.StatusError,
 			"error_code":    ErrCodeRunnerDisconnected,
 			"error_message": "Runner disconnected during pod initialization.",

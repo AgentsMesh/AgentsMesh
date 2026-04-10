@@ -1,7 +1,7 @@
 import { MsgType, encodeMessage, encodeResize } from "./relayProtocol";
 import type { RelayConnection, ConnectionHandle } from "./relayConnectionTypes";
 import { dispatchRelayMessage, handleSnapshot, handleControl, handleRunnerDisconnected, handleRunnerReconnected } from "./relayConnectionHandlers";
-import { scheduleSnapshotRetry, scheduleReconnect } from "./relayConnectionRetry";
+import { scheduleSnapshotRetry, scheduleReconnect, isNonRetryableError } from "./relayConnectionRetry";
 
 export interface PoolContext {
   connections: Map<string, RelayConnection>;
@@ -137,8 +137,10 @@ export async function reconnectConnection(ctx: PoolContext, podKey: string): Pro
   ctx.connections.delete(podKey);
 
   const firstEntry = subscribersCopy.entries().next().value;
-  if (firstEntry) {
-    const [firstId, firstCallback] = firstEntry;
+  if (!firstEntry) return;
+
+  const [firstId, firstCallback] = firstEntry;
+  try {
     await ctx.subscribe(podKey, firstId, firstCallback);
 
     const newConn = ctx.connections.get(podKey);
@@ -148,5 +150,31 @@ export async function reconnectConnection(ctx: PoolContext, podKey: string): Pro
       });
       newConn.reconnectAttempts = reconnectAttempts;
     }
+  } catch (error) {
+    if (isNonRetryableError(error)) {
+      console.warn(`[Relay] Non-retryable error for ${podKey}, stopping reconnection:`, error);
+      ctx.notifyStatusChange(podKey);
+      return;
+    }
+    console.warn(`[Relay] Retryable error for ${podKey}, scheduling retry:`, error);
+    const getConn = (pk: string) => ctx.connections.get(pk);
+    const placeholderWs = { readyState: WebSocket.CLOSED, close() {} } as unknown as WebSocket;
+    const stub: RelayConnection = {
+      ws: placeholderWs, podKey,
+      status: "error",
+      lastActivity: Date.now(),
+      subscribers: subscribersCopy,
+      reconnectAttempts,
+      reconnectTimer: null,
+      disconnectTimer: null,
+      snapshotTimer: null,
+      snapshotReceived: false,
+      relayUrl: oldConn.relayUrl,
+      relayToken: oldConn.relayToken,
+      runnerDisconnected: oldConn.runnerDisconnected,
+    };
+    ctx.connections.set(podKey, stub);
+    ctx.notifyStatusChange(podKey);
+    scheduleReconnect(getConn, (pk) => reconnectConnection(ctx, pk), podKey, ctx.maxReconnectAttempts, ctx.baseReconnectDelay);
   }
 }

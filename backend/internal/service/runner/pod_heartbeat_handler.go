@@ -47,7 +47,7 @@ func (pc *PodCoordinator) handleHeartbeat(runnerID int64, data *runnerv1.Heartbe
 		reportedPodKeys[p.PodKey] = true
 		// Silently sync agent_status from heartbeat (no WebSocket event)
 		if p.AgentStatus != "" {
-			_ = pc.podRepo.UpdateField(ctx, p.PodKey, "agent_status", p.AgentStatus)
+			_ = pc.podStore.UpdateField(ctx, p.PodKey, "agent_status", p.AgentStatus)
 		}
 	}
 

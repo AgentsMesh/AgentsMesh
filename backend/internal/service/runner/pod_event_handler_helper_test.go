@@ -5,6 +5,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
+	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
@@ -30,12 +31,13 @@ func setupPodEventHandlerDeps(t *testing.T) (*PodCoordinator, *RunnerConnectionM
 	db := setupTestDB(t)
 
 	podRepo := infra.NewPodRepository(db)
+	podStore := agentpodSvc.NewPodService(podRepo)
 	runnerRepo := infra.NewRunnerRepository(db)
 
 	cm := NewRunnerConnectionManager(logger)
 	tr := NewPodRouter(cm, logger)
 	hb := NewHeartbeatBatcher(redisClient, runnerRepo, logger)
-	pc := NewPodCoordinator(podRepo, runnerRepo, cm, tr, hb, logger)
+	pc := NewPodCoordinator(podStore, runnerRepo, cm, tr, hb, logger)
 
 	return pc, cm, tr, db
 }
