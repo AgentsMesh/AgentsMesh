@@ -140,4 +140,8 @@ type MessageHandler interface {
 	// OnSendPrompt handles send_prompt command from server.
 	// Routes the prompt to the pod via PodIO.SendInput (mode-agnostic).
 	OnSendPrompt(cmd *runnerv1.SendPromptCommand) error
+
+	// OnUpdatePodPerpetual handles update_pod_perpetual command from server.
+	// Updates the pod's perpetual flag in-memory so exit behavior is adjusted immediately.
+	OnUpdatePodPerpetual(cmd *runnerv1.UpdatePodPerpetualCommand) error
 }

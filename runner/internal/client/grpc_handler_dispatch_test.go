@@ -115,6 +115,29 @@ func TestHandleServerMessage_SendPrompt(t *testing.T) {
 	handler.mu.Unlock()
 }
 
+func TestHandleServerMessage_UpdatePodPerpetual(t *testing.T) {
+	conn := newTestConnection()
+	handler := &mockHandler{}
+	conn.handler = handler
+
+	msg := &runnerv1.ServerMessage{
+		Payload: &runnerv1.ServerMessage_UpdatePodPerpetual{
+			UpdatePodPerpetual: &runnerv1.UpdatePodPerpetualCommand{
+				PodKey:    "test-pod",
+				Perpetual: true,
+			},
+		},
+	}
+
+	conn.handleServerMessage(msg)
+
+	handler.mu.Lock()
+	assert.True(t, handler.updatePodPerpetualCalled)
+	assert.Equal(t, "test-pod", handler.lastUpdatePodPerpetualCmd.PodKey)
+	assert.True(t, handler.lastUpdatePodPerpetualCmd.Perpetual)
+	handler.mu.Unlock()
+}
+
 func TestHandleServerMessage_NilHandler(t *testing.T) {
 	conn := newTestConnection()
 	// handler is nil
@@ -130,6 +153,7 @@ func TestHandleServerMessage_NilHandler(t *testing.T) {
 		{Payload: &runnerv1.ServerMessage_QuerySandboxes{QuerySandboxes: &runnerv1.QuerySandboxesCommand{RequestId: "r"}}},
 		{Payload: &runnerv1.ServerMessage_CreateAutopilot{CreateAutopilot: &runnerv1.CreateAutopilotCommand{AutopilotKey: "a"}}},
 		{Payload: &runnerv1.ServerMessage_AutopilotControl{AutopilotControl: &runnerv1.AutopilotControlCommand{AutopilotKey: "a"}}},
+		{Payload: &runnerv1.ServerMessage_UpdatePodPerpetual{UpdatePodPerpetual: &runnerv1.UpdatePodPerpetualCommand{PodKey: "p"}}},
 	}
 
 	for _, msg := range messages {

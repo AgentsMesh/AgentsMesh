@@ -50,6 +50,8 @@ export interface PodState {
   updatePodTitle: (podKey: string, title: string, timestamp?: number) => void;
   updatePodAlias: (podKey: string, alias: string | null) => Promise<void>;
   updatePodAliasFromEvent: (podKey: string, alias: string | null) => void;
+  updatePodPerpetual: (podKey: string, perpetual: boolean) => Promise<void>;
+  updatePodPerpetualFromEvent: (podKey: string, perpetual: boolean) => void;
   updatePodInitProgress: (podKey: string, phase: string, progress: number, message: string) => void;
   clearInitProgress: (podKey: string) => void;
   clearError: () => void;

@@ -121,4 +121,11 @@ export const podApi = {
       method: "PATCH",
       body: { alias },
     }),
+
+  // Toggle perpetual mode for a pod
+  updatePerpetual: (key: string, perpetual: boolean) =>
+    request<{ message: string }>(`${orgPath("/pods")}/${key}/perpetual`, {
+      method: "PATCH",
+      body: { perpetual },
+    }),
 };

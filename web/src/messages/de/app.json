@@ -257,7 +257,9 @@
     },
     "contextMenu": {
       "rename": "Umbenennen",
-      "terminate": "Beenden"
+      "terminate": "Beenden",
+      "enablePerpetual": "Dauerhaft aktivieren",
+      "disablePerpetual": "Dauerhaft deaktivieren"
     },
     "renameDialog": {
       "title": "Pod umbenennen",

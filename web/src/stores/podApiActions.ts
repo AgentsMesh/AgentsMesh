@@ -162,4 +162,25 @@ export const createPodApiActions = (set: SetState, get: GetState) => ({
       throw error;
     }
   },
+
+  updatePodPerpetual: async (podKey: string, perpetual: boolean) => {
+    set((state) => {
+      const result = upsertPod(state, podKey, (existing) =>
+        existing ? { ...existing, perpetual } : undefined,
+      );
+      return result ?? state;
+    });
+    try {
+      await podApi.updatePerpetual(podKey, perpetual);
+    } catch (error: unknown) {
+      console.warn("[PodStore] updatePodPerpetual failed, reverting", error);
+      try {
+        const response = await podApi.get(podKey);
+        set((state) => upsertPod(state, podKey, () => response.pod) ?? state);
+      } catch {
+        // Best-effort revert failed; leave as-is
+      }
+      throw error;
+    }
+  },
 });

@@ -69,6 +69,11 @@ func (s *PodService) UpdateAlias(ctx context.Context, podKey string, alias *stri
 	return s.repo.UpdateField(ctx, podKey, "alias", nil)
 }
 
+// UpdatePerpetual updates the perpetual flag for a pod.
+func (s *PodService) UpdatePerpetual(ctx context.Context, podKey string, perpetual bool) error {
+	return s.repo.UpdateField(ctx, podKey, "perpetual", perpetual)
+}
+
 // UpdateSandboxPath updates pod sandbox path and branch
 func (s *PodService) UpdateSandboxPath(ctx context.Context, podKey, sandboxPath, branchName string) error {
 	updates := map[string]interface{}{"sandbox_path": sandboxPath}

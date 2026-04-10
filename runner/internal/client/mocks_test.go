@@ -16,6 +16,9 @@ type mockHandler struct {
 
 	sendPromptCalled bool
 
+	updatePodPerpetualCalled  bool
+	lastUpdatePodPerpetualCmd *runnerv1.UpdatePodPerpetualCommand
+
 	lastCreateCmd     *runnerv1.CreatePodCommand
 	lastTerminateReq  TerminatePodRequest
 	lastInputReq      PodInputRequest
@@ -98,6 +101,14 @@ func (h *mockHandler) OnSendPrompt(cmd *runnerv1.SendPromptCommand) error {
 	return nil
 }
 
+func (h *mockHandler) OnUpdatePodPerpetual(cmd *runnerv1.UpdatePodPerpetualCommand) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.updatePodPerpetualCalled = true
+	h.lastUpdatePodPerpetualCmd = cmd
+	return nil
+}
+
 // mockHandlerWithError is a mock handler that can return errors.
 type mockHandlerWithError struct {
 	createError    error
@@ -158,6 +169,10 @@ func (h *mockHandlerWithError) OnUploadLogs(cmd *runnerv1.UploadLogsCommand) err
 }
 
 func (h *mockHandlerWithError) OnSendPrompt(cmd *runnerv1.SendPromptCommand) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnUpdatePodPerpetual(cmd *runnerv1.UpdatePodPerpetualCommand) error {
 	return nil
 }
 

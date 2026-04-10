@@ -11,6 +11,7 @@ export type EventType =
   | "pod:alias_changed"
   | "pod:init_progress"
   | "pod:restarting"
+  | "pod:perpetual_changed"
   | "channel:message"
   | "channel:message_edited"
   | "channel:message_deleted"
@@ -93,6 +94,7 @@ export type {
   TicketStatusChangedData,
   PodTitleChangedData,
   PodAliasChangedData,
+  PodPerpetualChangedData,
   PodInitProgressData,
   ChannelMessageData,
   ChannelMessageEditedData,

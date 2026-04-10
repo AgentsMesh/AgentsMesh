@@ -203,6 +203,8 @@ message ServerMessage {
     // 20 = acp_send_prompt (使用 send_prompt field 6)
     // 21 = acp_permission_response (走 Relay)
     // 22 = acp_cancel_session (走 Relay)
+    // 更新 Pod 永续模式命令（Backend -> Runner）
+    UpdatePodPerpetualCommand update_pod_perpetual = 23;
   }
   int64 timestamp = 15;
 }
@@ -729,4 +731,11 @@ message TokenModelUsage {
   int64 output_tokens = 3;
   int64 cache_creation_tokens = 4;
   int64 cache_read_tokens = 5;
+}
+
+// UpdatePodPerpetualCommand 更新 Pod 永续模式命令（Backend -> Runner）
+// 允许在 Pod 运行时动态开启或关闭永续模式
+message UpdatePodPerpetualCommand {
+  string pod_key = 1;
+  bool perpetual = 2;
 }

@@ -257,7 +257,9 @@
     },
     "contextMenu": {
       "rename": "Renomear",
-      "terminate": "Encerrar"
+      "terminate": "Encerrar",
+      "enablePerpetual": "Ativar modo perpétuo",
+      "disablePerpetual": "Desativar modo perpétuo"
     },
     "renameDialog": {
       "title": "Renomear Pod",

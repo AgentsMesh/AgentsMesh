@@ -68,7 +68,8 @@ export function WorkspaceSidebarContent({ className, onCreatePod, onTerminatePod
             {s.sortedPods.map((pod) => (
               <PodListItem key={pod.pod_key} pod={pod} isOpen={s.isPodOpen(pod.pod_key)}
                 onClick={() => s.handleOpenTerminal(pod)} onTerminate={() => s.handleTerminateClick(pod.pod_key)}
-                onRename={() => s.setRenamePod(pod)} />
+                onRename={() => s.setRenamePod(pod)}
+                onTogglePerpetual={(perpetual) => s.handleTogglePerpetual(pod.pod_key, perpetual)} />
             ))}
             {s.podHasMore && (
               <div className="px-3 py-2">

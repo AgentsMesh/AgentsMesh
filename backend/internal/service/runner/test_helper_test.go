@@ -144,3 +144,7 @@ func (m *MockCommandSender) SendAutopilotControl(runnerID int64, cmd *runnerv1.A
 	defer m.mu.Unlock()
 	return nil
 }
+
+func (m *MockCommandSender) SendUpdatePodPerpetual(ctx context.Context, runnerID int64, podKey string, perpetual bool) error {
+	return nil
+}

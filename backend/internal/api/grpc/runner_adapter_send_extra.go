@@ -110,3 +110,24 @@ func (a *GRPCRunnerAdapter) SendAutopilotControl(runnerID int64, cmd *runnerv1.A
 	}
 	return conn.SendMessage(msg)
 }
+
+// ==================== Perpetual Pod Commands ====================
+
+// SendUpdatePodPerpetual sends an update perpetual mode command to a Runner.
+func (a *GRPCRunnerAdapter) SendUpdatePodPerpetual(runnerID int64, podKey string, perpetual bool) error {
+	conn := a.connManager.GetConnection(runnerID)
+	if conn == nil {
+		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
+	}
+
+	msg := &runnerv1.ServerMessage{
+		Payload: &runnerv1.ServerMessage_UpdatePodPerpetual{
+			UpdatePodPerpetual: &runnerv1.UpdatePodPerpetualCommand{
+				PodKey:    podKey,
+				Perpetual: perpetual,
+			},
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return conn.SendMessage(msg)
+}

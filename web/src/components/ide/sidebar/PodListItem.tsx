@@ -53,13 +53,14 @@ interface PodListItemProps {
   onClick: () => void;
   onTerminate: () => void;
   onRename: () => void;
+  onTogglePerpetual: (perpetual: boolean) => void;
 }
 
 /**
  * Single pod item in the workspace sidebar list.
  * Right-click opens context menu with Rename / Terminate.
  */
-export function PodListItem({ pod, isOpen, onClick, onTerminate, onRename }: PodListItemProps) {
+export function PodListItem({ pod, isOpen, onClick, onTerminate, onRename, onTogglePerpetual }: PodListItemProps) {
   const status = statusColors[pod.status] || statusColors.terminated;
 
   return (
@@ -67,6 +68,7 @@ export function PodListItem({ pod, isOpen, onClick, onTerminate, onRename }: Pod
       pod={pod}
       onRename={onRename}
       onTerminate={onTerminate}
+      onTogglePerpetual={onTogglePerpetual}
     >
       <div
         className={cn(

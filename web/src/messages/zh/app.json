@@ -274,7 +274,9 @@
     },
     "contextMenu": {
       "rename": "重命名",
-      "terminate": "终止"
+      "terminate": "终止",
+      "enablePerpetual": "启用永续模式",
+      "disablePerpetual": "禁用永续模式"
     },
     "renameDialog": {
       "title": "重命名 Pod",

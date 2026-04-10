@@ -257,7 +257,9 @@
     },
     "contextMenu": {
       "rename": "Renombrar",
-      "terminate": "Terminar"
+      "terminate": "Terminar",
+      "enablePerpetual": "Activar modo perpetuo",
+      "disablePerpetual": "Desactivar modo perpetuo"
     },
     "renameDialog": {
       "title": "Renombrar Pod",

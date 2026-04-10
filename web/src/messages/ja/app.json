@@ -257,7 +257,9 @@
     },
     "contextMenu": {
       "rename": "名前を変更",
-      "terminate": "終了"
+      "terminate": "終了",
+      "enablePerpetual": "永続モードを有効にする",
+      "disablePerpetual": "永続モードを無効にする"
     },
     "renameDialog": {
       "title": "Pod の名前を変更",

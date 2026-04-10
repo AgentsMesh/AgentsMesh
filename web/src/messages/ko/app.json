@@ -257,7 +257,9 @@
     },
     "contextMenu": {
       "rename": "이름 변경",
-      "terminate": "종료"
+      "terminate": "종료",
+      "enablePerpetual": "영구 모드 활성화",
+      "disablePerpetual": "영구 모드 비활성화"
     },
     "renameDialog": {
       "title": "Pod 이름 변경",

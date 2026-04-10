@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Pencil, Square } from "lucide-react";
+import { Pencil, Square, RefreshCw } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -15,6 +15,7 @@ interface SidebarPodContextMenuProps {
   pod: Pod;
   onRename: () => void;
   onTerminate: () => void;
+  onTogglePerpetual: (perpetual: boolean) => void;
   children: React.ReactNode;
 }
 
@@ -22,6 +23,7 @@ export function SidebarPodContextMenu({
   pod,
   onRename,
   onTerminate,
+  onTogglePerpetual,
   children,
 }: SidebarPodContextMenuProps) {
   const t = useTranslations("workspace");
@@ -35,6 +37,15 @@ export function SidebarPodContextMenu({
           <Pencil className="mr-2 h-4 w-4" />
           {t("contextMenu.rename")}
         </ContextMenuItem>
+
+        {isActive && (
+          <ContextMenuItem onClick={() => onTogglePerpetual(!pod.perpetual)}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {pod.perpetual
+              ? t("contextMenu.disablePerpetual")
+              : t("contextMenu.enablePerpetual")}
+          </ContextMenuItem>
+        )}
 
         <ContextMenuSeparator />
 

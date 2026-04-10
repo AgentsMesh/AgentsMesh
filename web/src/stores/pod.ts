@@ -71,6 +71,15 @@ export const usePodStore = create<PodState>((set, get) => ({
     });
   },
 
+  updatePodPerpetualFromEvent: (podKey, perpetual) => {
+    set((state) => {
+      const result = upsertPod(state, podKey, (existing) =>
+        existing ? { ...existing, perpetual } : undefined,
+      );
+      return result ?? state;
+    });
+  },
+
   updatePodInitProgress: (podKey, phase, progress, message) => {
     set((state) => ({
       initProgress: {

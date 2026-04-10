@@ -70,6 +70,14 @@ export interface PodInitProgressData {
 }
 
 /**
+ * Pod perpetual mode changed event payload
+ */
+export interface PodPerpetualChangedData {
+  pod_key: string;
+  perpetual: boolean;
+}
+
+/**
  * Channel message event payload
  */
 export interface ChannelMessageData {

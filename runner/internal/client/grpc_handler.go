@@ -128,6 +128,9 @@ func (c *GRPCConnection) handleServerMessage(msg *runnerv1.ServerMessage) {
 			c.handleUploadLogs(payload.UploadLogs)
 		})
 
+	case *runnerv1.ServerMessage_UpdatePodPerpetual:
+		c.handleUpdatePodPerpetual(payload.UpdatePodPerpetual)
+
 	default:
 		logger.GRPC().Warn("Unknown server message type")
 	}
@@ -190,5 +193,18 @@ func (c *GRPCConnection) handleUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand)
 
 	if err := c.handler.OnUpgradeRunner(cmd); err != nil {
 		log.Error("Failed to handle upgrade runner", "request_id", cmd.RequestId, "error", err)
+	}
+}
+
+// handleUpdatePodPerpetual handles update_pod_perpetual command from server.
+func (c *GRPCConnection) handleUpdatePodPerpetual(cmd *runnerv1.UpdatePodPerpetualCommand) {
+	log := logger.GRPC()
+	log.Info("Received update_pod_perpetual", "pod_key", cmd.PodKey, "perpetual", cmd.Perpetual)
+	if c.handler == nil {
+		log.Warn("No handler set, ignoring update_pod_perpetual")
+		return
+	}
+	if err := c.handler.OnUpdatePodPerpetual(cmd); err != nil {
+		log.Error("Failed to update pod perpetual", "pod_key", cmd.PodKey, "error", err)
 	}
 }

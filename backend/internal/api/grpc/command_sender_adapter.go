@@ -99,6 +99,16 @@ func (s *GRPCCommandSender) SendAutopilotControl(runnerID int64, cmd *runnerv1.A
 	return nil
 }
 
+// SendUpdatePodPerpetual sends an update perpetual mode command to a runner via gRPC.
+func (s *GRPCCommandSender) SendUpdatePodPerpetual(ctx context.Context, runnerID int64, podKey string, perpetual bool) error {
+	slog.Info("sending update_pod_perpetual command", "runner_id", runnerID, "pod_key", podKey, "perpetual", perpetual)
+	if err := s.adapter.SendUpdatePodPerpetual(runnerID, podKey, perpetual); err != nil {
+		slog.Error("failed to send update_pod_perpetual command", "runner_id", runnerID, "pod_key", podKey, "error", err)
+		return err
+	}
+	return nil
+}
+
 // SendQuerySandboxes sends a sandbox query command to a runner via gRPC.
 func (s *GRPCCommandSender) SendQuerySandboxes(runnerID int64, requestID string, podKeys []string) error {
 	slog.Info("sending query_sandboxes command", "runner_id", runnerID, "request_id", requestID, "pod_count", len(podKeys))

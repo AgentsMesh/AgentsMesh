@@ -46,6 +46,8 @@ type RunnerCommandSender interface {
 	// SendAutopilotControl sends an AutopilotController control command to a runner.
 	SendAutopilotControl(runnerID int64, cmd *runnerv1.AutopilotControlCommand) error
 
+	// SendUpdatePodPerpetual notifies a runner to update the perpetual flag for a running pod.
+	SendUpdatePodPerpetual(ctx context.Context, runnerID int64, podKey string, perpetual bool) error
 }
 
 // NoOpCommandSender is a fallback implementation that logs warnings.
@@ -110,6 +112,12 @@ func (n *NoOpCommandSender) SendCreateAutopilot(runnerID int64, cmd *runnerv1.Cr
 func (n *NoOpCommandSender) SendAutopilotControl(runnerID int64, cmd *runnerv1.AutopilotControlCommand) error {
 	n.logger.Warn("command sender not configured, cannot send autopilot control",
 		"runner_id", runnerID, "autopilot_key", cmd.AutopilotKey)
+	return ErrCommandSenderNotSet
+}
+
+func (n *NoOpCommandSender) SendUpdatePodPerpetual(ctx context.Context, runnerID int64, podKey string, perpetual bool) error {
+	n.logger.Warn("command sender not configured, cannot update pod perpetual",
+		"runner_id", runnerID, "pod_key", podKey)
 	return ErrCommandSenderNotSet
 }
 

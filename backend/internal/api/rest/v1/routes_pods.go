@@ -24,6 +24,7 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		pods.GET("/:key", podHandler.GetPod)
 		pods.POST("/:key/terminate", podHandler.TerminatePod)
 		pods.PATCH("/:key/alias", podHandler.UpdatePodAlias)
+		pods.PATCH("/:key/perpetual", podHandler.UpdatePodPerpetual)
 		pods.GET("/:key/connect", podHandler.GetConnectionInfo)
 		pods.POST("/:key/prompt", podHandler.SendPodPrompt)
 	}

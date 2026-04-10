@@ -24,7 +24,8 @@ import (
 
 // mockPodService implements PodServiceForHandler for testing.
 type mockPodService struct {
-	getPodFn func(ctx context.Context, podKey string) (*agentpod.Pod, error)
+	getPodFn          func(ctx context.Context, podKey string) (*agentpod.Pod, error)
+	updatePerpetualFn func(ctx context.Context, podKey string, perpetual bool) error
 }
 
 func (m *mockPodService) ListPods(context.Context, int64, []string, int64, int, int) ([]*agentpod.Pod, int64, error) {
@@ -50,13 +51,21 @@ func (m *mockPodService) GetPodsByTicket(context.Context, int64) ([]*agentpod.Po
 
 func (m *mockPodService) UpdateAlias(context.Context, string, *string) error { return nil }
 
+func (m *mockPodService) UpdatePerpetual(ctx context.Context, podKey string, perpetual bool) error {
+	if m.updatePerpetualFn != nil {
+		return m.updatePerpetualFn(ctx, podKey, perpetual)
+	}
+	return nil
+}
+
 func (m *mockPodService) GetActivePodBySourcePodKey(context.Context, string) (*agentpod.Pod, error) {
 	return nil, nil
 }
 
 // mockCommandSender implements runner.RunnerCommandSender for testing.
 type mockCommandSender struct {
-	sendPromptFn func(ctx context.Context, runnerID int64, podKey, prompt string) error
+	sendPromptFn              func(ctx context.Context, runnerID int64, podKey, prompt string) error
+	sendUpdatePodPerpetualFn  func(ctx context.Context, runnerID int64, podKey string, perpetual bool) error
 }
 
 func (m *mockCommandSender) SendCreatePod(context.Context, int64, *runnerv1.CreatePodCommand) error {
@@ -83,6 +92,12 @@ func (m *mockCommandSender) SendCreateAutopilot(int64, *runnerv1.CreateAutopilot
 	return nil
 }
 func (m *mockCommandSender) SendAutopilotControl(int64, *runnerv1.AutopilotControlCommand) error {
+	return nil
+}
+func (m *mockCommandSender) SendUpdatePodPerpetual(ctx context.Context, runnerID int64, podKey string, perpetual bool) error {
+	if m.sendUpdatePodPerpetualFn != nil {
+		return m.sendUpdatePodPerpetualFn(ctx, runnerID, podKey, perpetual)
+	}
 	return nil
 }
 

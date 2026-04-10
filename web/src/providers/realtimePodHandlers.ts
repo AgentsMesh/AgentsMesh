@@ -4,6 +4,7 @@ import { useMeshStore } from "@/stores/mesh";
 import type {
   RealtimeEvent, PodStatusChangedData, PodCreatedData,
   PodTitleChangedData, PodAliasChangedData, PodInitProgressData,
+  PodPerpetualChangedData,
 } from "@/lib/realtime";
 
 export function handlePodEvent(event: RealtimeEvent) {
@@ -61,6 +62,11 @@ export function handlePodEvent(event: RealtimeEvent) {
     case "pod:restarting": {
       const data = event.data as { pod_key: string };
       usePodStore.getState().fetchPod?.(data.pod_key);
+      break;
+    }
+    case "pod:perpetual_changed": {
+      const data = event.data as PodPerpetualChangedData;
+      usePodStore.getState().updatePodPerpetualFromEvent(data.pod_key, data.perpetual);
       break;
     }
   }
