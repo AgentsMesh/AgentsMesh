@@ -41,10 +41,11 @@ func (h *PodHandler) ListPods(c *gin.Context) {
 		statuses = strings.Split(req.Status, ",")
 	}
 
-	// Members can only list their own pods
+	// Members can only list their own pods; override any user-supplied created_by_id.
 	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
-	if req.CreatedByID == 0 {
-		req.CreatedByID = policy.PodPolicy.ListFilter(sub).OwnerOnly
+	filter := policy.PodPolicy.ListFilter(sub)
+	if filter.OwnerOnly > 0 {
+		req.CreatedByID = filter.OwnerOnly
 	}
 
 	pods, total, err := h.podService.ListPods(
