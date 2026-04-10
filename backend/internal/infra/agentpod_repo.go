@@ -113,10 +113,13 @@ func (r *podRepo) ListByRunner(ctx context.Context, runnerID int64, status strin
 	return pods, err
 }
 
-func (r *podRepo) ListByRunnerPaginated(ctx context.Context, runnerID int64, status string, limit, offset int) ([]*agentpod.Pod, int64, error) {
+func (r *podRepo) ListByRunnerPaginated(ctx context.Context, runnerID int64, status string, createdByID int64, limit, offset int) ([]*agentpod.Pod, int64, error) {
 	query := r.db.WithContext(ctx).Model(&agentpod.Pod{}).Where("runner_id = ?", runnerID)
 	if status != "" {
 		query = query.Where("status = ?", status)
+	}
+	if createdByID > 0 {
+		query = query.Where("created_by_id = ?", createdByID)
 	}
 
 	var total int64

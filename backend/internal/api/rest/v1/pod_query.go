@@ -7,6 +7,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,8 +41,9 @@ func (h *PodHandler) ListPods(c *gin.Context) {
 	}
 
 	// Members can only list their own pods
-	if tenant.UserRole == "member" && req.CreatedByID == 0 {
-		req.CreatedByID = tenant.UserID
+	subject := policy.From(tenant)
+	if req.CreatedByID == 0 {
+		req.CreatedByID = policy.PodPolicy.FilterList(subject)
 	}
 
 	pods, total, err := h.podService.ListPods(
@@ -77,12 +79,9 @@ func (h *PodHandler) GetPod(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-	if pod.OrganizationID != tenant.OrganizationID {
-		apierr.ForbiddenAccess(c)
-		return
-	}
-
-	if pod.CreatedByID != tenant.UserID && tenant.UserRole == "member" {
+	if !policy.PodPolicy.AllowRead(policy.From(tenant), policy.ResourceContext{
+		OrgID: pod.OrganizationID, OwnerID: pod.CreatedByID,
+	}) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
@@ -102,12 +101,9 @@ func (h *PodHandler) GetPodConnection(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-	if pod.OrganizationID != tenant.OrganizationID {
-		apierr.ForbiddenAccess(c)
-		return
-	}
-
-	if pod.CreatedByID != tenant.UserID && tenant.UserRole == "member" {
+	if !policy.PodPolicy.AllowRead(policy.From(tenant), policy.ResourceContext{
+		OrgID: pod.OrganizationID, OwnerID: pod.CreatedByID,
+	}) {
 		apierr.ForbiddenAccess(c)
 		return
 	}

@@ -88,9 +88,10 @@ func (s *PodService) ListByTicket(ctx context.Context, ticketID int64) ([]*agent
 	return s.repo.ListByTicket(ctx, ticketID)
 }
 
-// ListPodsByRunner returns pods for a runner with pagination and optional status filter
-func (s *PodService) ListPodsByRunner(ctx context.Context, runnerID int64, status string, limit, offset int) ([]*agentpod.Pod, int64, error) {
-	return s.repo.ListByRunnerPaginated(ctx, runnerID, status, limit, offset)
+// ListPodsByRunner returns pods for a runner with pagination, optional status filter, and optional owner filter.
+// Pass createdByID > 0 to restrict results to a specific owner.
+func (s *PodService) ListPodsByRunner(ctx context.Context, runnerID int64, status string, createdByID int64, limit, offset int) ([]*agentpod.Pod, int64, error) {
+	return s.repo.ListByRunnerPaginated(ctx, runnerID, status, createdByID, limit, offset)
 }
 
 // GetActivePodBySourcePodKey returns an active pod that was resumed from the given source pod key

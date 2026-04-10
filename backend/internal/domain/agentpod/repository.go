@@ -29,8 +29,9 @@ type PodRepository interface {
 	ListByTicket(ctx context.Context, ticketID int64) ([]*Pod, error)
 	// ListByRunner returns pods for a runner with optional status filter.
 	ListByRunner(ctx context.Context, runnerID int64, status string) ([]*Pod, error)
-	// ListByRunnerPaginated returns pods for a runner with pagination.
-	ListByRunnerPaginated(ctx context.Context, runnerID int64, status string, limit, offset int) ([]*Pod, int64, error)
+	// ListByRunnerPaginated returns pods for a runner with pagination and optional owner filter.
+	// Pass createdByID > 0 to restrict to a specific owner; 0 means no filter (all pods).
+	ListByRunnerPaginated(ctx context.Context, runnerID int64, status string, createdByID int64, limit, offset int) ([]*Pod, int64, error)
 	// ListActive returns active pods for a runner (initializing, running, paused, disconnected).
 	ListActive(ctx context.Context, runnerID int64) ([]*Pod, error)
 	// GetActivePodBySourcePodKey returns an active pod resumed from the given source pod key.

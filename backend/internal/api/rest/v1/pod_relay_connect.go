@@ -12,6 +12,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 )
 
 // PodConnectHandler handles pod connection requests via Relay
@@ -77,12 +78,9 @@ func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 		apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "Unauthorized")
 		return
 	}
-	if pod.OrganizationID != tenant.OrganizationID {
-		apierr.ForbiddenAccess(c)
-		return
-	}
-
-	if pod.CreatedByID != tenant.UserID && tenant.UserRole == "member" {
+	if !policy.PodPolicy.AllowRead(policy.From(tenant), policy.ResourceContext{
+		OrgID: pod.OrganizationID, OwnerID: pod.CreatedByID,
+	}) {
 		apierr.ForbiddenAccess(c)
 		return
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,13 +22,9 @@ func (h *PodHandler) TerminatePod(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-	if pod.OrganizationID != tenant.OrganizationID {
-		apierr.ForbiddenAccess(c)
-		return
-	}
-
-	// Only creator or admin can terminate
-	if pod.CreatedByID != tenant.UserID && tenant.UserRole == "member" {
+	if !policy.PodPolicy.AllowWrite(policy.From(tenant), policy.ResourceContext{
+		OrgID: pod.OrganizationID, OwnerID: pod.CreatedByID,
+	}) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}

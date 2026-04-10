@@ -8,6 +8,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,13 +31,9 @@ func (h *PodHandler) UpdatePodAlias(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-	if pod.OrganizationID != tenant.OrganizationID {
-		apierr.ForbiddenAccess(c)
-		return
-	}
-
-	// Only creator or admin/owner can update alias
-	if pod.CreatedByID != tenant.UserID && tenant.UserRole == "member" {
+	if !policy.PodPolicy.AllowWrite(policy.From(tenant), policy.ResourceContext{
+		OrgID: pod.OrganizationID, OwnerID: pod.CreatedByID,
+	}) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
 	"github.com/anthropics/agentsmesh/backend/internal/service/repository"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,8 +38,8 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	userID := middleware.GetUserID(c)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	// Only admins may create repositories
+	if !policy.RepositoryPolicy.AllowWrite(policy.From(tenant), policy.ResourceContext{OrgID: tenant.OrganizationID}) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
@@ -119,7 +120,13 @@ func (h *RepositoryHandler) GetRepository(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-	if repo.OrganizationID != tenant.OrganizationID {
+	ownerID := int64(0)
+	if repo.ImportedByUserID != nil {
+		ownerID = *repo.ImportedByUserID
+	}
+	if !policy.RepositoryPolicy.AllowRead(policy.From(tenant), policy.ResourceContext{
+		OrgID: repo.OrganizationID, OwnerID: ownerID, Visibility: repo.Visibility,
+	}) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
@@ -144,8 +151,8 @@ func (h *RepositoryHandler) UpdateRepository(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	// Only admins may update repositories
+	if !policy.RepositoryPolicy.AllowWrite(policy.From(tenant), policy.ResourceContext{OrgID: tenant.OrganizationID}) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
@@ -201,8 +208,8 @@ func (h *RepositoryHandler) DeleteRepository(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	// Only admins may delete repositories
+	if !policy.RepositoryPolicy.AllowWrite(policy.From(tenant), policy.ResourceContext{OrgID: tenant.OrganizationID}) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}

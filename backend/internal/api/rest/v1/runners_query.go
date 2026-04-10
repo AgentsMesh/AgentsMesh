@@ -6,6 +6,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,20 +46,21 @@ func (h *RunnerHandler) ListRunnerPods(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Verify runner belongs to organization
+	// Verify runner belongs to organization and is visible to the requester
 	r, err := h.runnerService.GetRunner(c.Request.Context(), runnerID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Runner not found")
 		return
 	}
 
-	if r.OrganizationID != tenant.OrganizationID {
-		apierr.ForbiddenAccess(c)
-		return
+	subject := policy.From(tenant)
+	ownerID := int64(0)
+	if r.RegisteredByUserID != nil {
+		ownerID = *r.RegisteredByUserID
 	}
-
-	// Check visibility: private runners are only visible to the registrant
-	if r.Visibility == "private" && (r.RegisteredByUserID == nil || *r.RegisteredByUserID != tenant.UserID) {
+	if !policy.RunnerPolicy.AllowRead(subject, policy.ResourceContext{
+		OrgID: r.OrganizationID, OwnerID: ownerID, Visibility: r.Visibility,
+	}) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
@@ -69,7 +71,9 @@ func (h *RunnerHandler) ListRunnerPods(c *gin.Context) {
 		limit = 50
 	}
 
-	pods, total, err := h.podService.ListPodsByRunner(c.Request.Context(), runnerID, req.Status, limit, req.Offset)
+	// Members only see their own pods on this runner
+	podOwnerFilter := policy.PodPolicy.FilterList(subject)
+	pods, total, err := h.podService.ListPodsByRunner(c.Request.Context(), runnerID, req.Status, podOwnerFilter, limit, req.Offset)
 	if err != nil {
 		apierr.InternalError(c, "Failed to list pods")
 		return
@@ -105,20 +109,20 @@ func (h *RunnerHandler) QuerySandboxes(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Verify runner belongs to organization
+	// Verify runner belongs to organization and is visible to the requester
 	r, err := h.runnerService.GetRunner(c.Request.Context(), runnerID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Runner not found")
 		return
 	}
 
-	if r.OrganizationID != tenant.OrganizationID {
-		apierr.ForbiddenAccess(c)
-		return
+	ownerID := int64(0)
+	if r.RegisteredByUserID != nil {
+		ownerID = *r.RegisteredByUserID
 	}
-
-	// Check visibility: private runners are only visible to the registrant
-	if r.Visibility == "private" && (r.RegisteredByUserID == nil || *r.RegisteredByUserID != tenant.UserID) {
+	if !policy.RunnerPolicy.AllowRead(policy.From(tenant), policy.ResourceContext{
+		OrgID: r.OrganizationID, OwnerID: ownerID, Visibility: r.Visibility,
+	}) {
 		apierr.ForbiddenAccess(c)
 		return
 	}

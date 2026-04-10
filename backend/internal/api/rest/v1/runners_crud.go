@@ -8,6 +8,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	runner "github.com/anthropics/agentsmesh/backend/internal/service/runner"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,13 +48,13 @@ func (h *RunnerHandler) GetRunner(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-	if r.OrganizationID != tenant.OrganizationID {
-		apierr.ForbiddenAccess(c)
-		return
+	ownerID := int64(0)
+	if r.RegisteredByUserID != nil {
+		ownerID = *r.RegisteredByUserID
 	}
-
-	// Check visibility: private runners are only visible to the registrant
-	if r.Visibility == "private" && (r.RegisteredByUserID == nil || *r.RegisteredByUserID != tenant.UserID) {
+	if !policy.RunnerPolicy.AllowRead(policy.From(tenant), policy.ResourceContext{
+		OrgID: r.OrganizationID, OwnerID: ownerID, Visibility: r.Visibility,
+	}) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
@@ -93,8 +94,8 @@ func (h *RunnerHandler) UpdateRunner(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	// Only admins may update runners
+	if !policy.RunnerPolicy.AllowWrite(policy.From(tenant), policy.ResourceContext{OrgID: tenant.OrganizationID}) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
@@ -137,8 +138,8 @@ func (h *RunnerHandler) DeleteRunner(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Check admin permission
-	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
+	// Only admins may delete runners
+	if !policy.RunnerPolicy.AllowWrite(policy.From(tenant), policy.ResourceContext{OrgID: tenant.OrganizationID}) {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
