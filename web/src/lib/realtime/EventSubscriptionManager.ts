@@ -1,5 +1,3 @@
-import { useAuthStore } from "@/stores/auth";
-import { getWsBaseUrl } from "@/lib/env";
 import type {
   EventType,
   EventHandler,
@@ -7,56 +5,33 @@ import type {
   ConnectionState,
 } from "./types";
 
-const WS_BASE_URL = getWsBaseUrl();
-
-/**
- * Configuration options for EventSubscriptionManager
- */
 export interface EventSubscriptionManagerOptions {
-  /** Maximum number of reconnection attempts (default: 10) */
   maxReconnectAttempts?: number;
-  /** Initial reconnection delay in ms (default: 1000) */
   initialReconnectDelay?: number;
-  /** Maximum reconnection delay in ms (default: 30000) */
   maxReconnectDelay?: number;
-  /** Ping interval in ms (default: 30000) */
   pingInterval?: number;
-  /** Pong timeout in ms (default: 10000) */
   pongTimeout?: number;
-  /** Callback when connection state changes */
   onConnectionStateChange?: (state: ConnectionState) => void;
 }
 
-/**
- * EventSubscriptionManager manages WebSocket connections for real-time events
- *
- * Features:
- * - Automatic reconnection with exponential backoff
- * - Heartbeat detection (ping/pong)
- * - Event subscription/unsubscription
- * - Connection state management
- */
 export class EventSubscriptionManager {
   private ws: WebSocket | null = null;
+  private urlProvider: (() => string) | null = null;
   private connectionState: ConnectionState = "disconnected";
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
   private pongTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Event handlers by event type
   private handlers: Map<EventType, Set<EventHandler>> = new Map();
-  // Handlers that listen to all events
   private globalHandlers: Set<EventHandler> = new Set();
 
-  // Configuration
   private readonly maxReconnectAttempts: number;
   private readonly initialReconnectDelay: number;
   private readonly maxReconnectDelay: number;
   private readonly pingInterval: number;
   private readonly pongTimeout: number;
 
-  // Connection state change listeners
   private connectionStateListeners: Set<(state: ConnectionState) => void> = new Set();
 
   constructor(options: EventSubscriptionManagerOptions = {}) {
@@ -71,12 +46,6 @@ export class EventSubscriptionManager {
     }
   }
 
-  private getWebSocketUrl(): string | null {
-    const { currentOrg, token } = useAuthStore.getState();
-    if (!currentOrg || !token) return null;
-    return `${WS_BASE_URL}/api/v1/orgs/${currentOrg.slug}/ws/events?token=${token}`;
-  }
-
   private setConnectionState(state: ConnectionState): void {
     if (this.connectionState !== state) {
       this.connectionState = state;
@@ -87,17 +56,19 @@ export class EventSubscriptionManager {
     }
   }
 
-  connect(): void {
+  connect(urlProvider?: (() => string) | string): void {
+    if (typeof urlProvider === "function") this.urlProvider = urlProvider;
+    else if (urlProvider) this.urlProvider = () => urlProvider;
     if (this.ws && (this.connectionState === "connected" || this.connectionState === "connecting")) return;
-    const url = this.getWebSocketUrl();
-    if (!url) { console.warn("[EventSubscriptionManager] Cannot connect: no org or token"); return; }
+    const url = this.urlProvider?.();
+    if (!url) { console.warn("[EventSubscriptionManager] Cannot connect: no URL"); return; }
 
     this.setConnectionState("connecting");
     this.ws = new WebSocket(url);
     this.ws.onopen = () => { this.setConnectionState("connected"); this.reconnectAttempts = 0; this.startPingInterval(); };
     this.ws.onmessage = (event) => { try { this.handleMessage(JSON.parse(event.data) as RealtimeEvent); } catch (error) { console.error("[EventSubscriptionManager] Failed to parse message:", error); } };
     this.ws.onclose = (event) => { this.cleanup(); if (event.code === 1000) { this.setConnectionState("disconnected"); return; } this.scheduleReconnect(); };
-    this.ws.onerror = () => { console.warn("[EventSubscriptionManager] WebSocket error:", { url, readyState: this.ws?.readyState }); };
+    this.ws.onerror = () => { console.warn("[EventSubscriptionManager] WebSocket error:", { readyState: this.ws?.readyState }); };
   }
 
   disconnect(): void {

@@ -58,6 +58,7 @@ export interface ChannelState {
   joinUserChannel: (channelId: number) => Promise<void>;
   leaveUserChannel: (channelId: number) => Promise<void>;
   inviteMembers: (channelId: number, userIds: number[]) => Promise<void>;
+  patchChannelMemberCount: (channelId: number, delta: number) => void;
   setCurrentChannel: (channel: Channel | null) => void;
   clearError: () => void;
 }

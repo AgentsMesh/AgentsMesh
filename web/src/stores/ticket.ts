@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { TicketData, TicketStatus, TicketPriority, BoardColumn } from "@/lib/api";
+import { reconnectRegistry } from "@/lib/realtime";
 import { createTicketActions } from "./ticket-actions";
 
 // Re-export types from API for component convenience
@@ -95,6 +96,8 @@ interface TicketState {
   fetchLabels: (repositoryId?: number) => Promise<void>;
   createLabel: (name: string, color: string, repositoryId?: number) => Promise<Label>;
   deleteLabel: (id: number) => Promise<void>;
+  updateTicketStatusFromEvent: (slug: string, status: string, previousStatus?: string) => void;
+  removeTicketFromEvent: (slug: string) => void;
   setFilters: (filters: TicketFilters) => void;
   setUIFilters: (uiFilters: Partial<TicketUIFilters>) => void;
   toggleStatus: (status: TicketStatus) => void;
@@ -154,3 +157,9 @@ export const useTicketStore = create<TicketState>((set, get) => ({
   setDoneCollapsed: (collapsed) => set({ doneCollapsed: collapsed }),
   clearError: () => set({ error: null }),
 }));
+
+reconnectRegistry.register({
+  name: "ticket:list",
+  fn: () => useTicketStore.getState().fetchTickets?.(),
+  priority: "deferred",
+});

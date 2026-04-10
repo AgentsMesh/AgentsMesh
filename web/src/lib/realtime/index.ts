@@ -5,3 +5,4 @@ export {
   resetEventSubscriptionManager,
   onManagerReset,
 } from "./EventSubscriptionManagerSingleton";
+export { reconnectRegistry } from "./reconnectRegistry";

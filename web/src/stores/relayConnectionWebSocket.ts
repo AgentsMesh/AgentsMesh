@@ -1,14 +1,8 @@
-/**
- * WebSocket lifecycle management for relay connections.
- * Handles connection creation, event wiring, and reconnection.
- */
-import { podApi } from "@/lib/api/pod";
 import { MsgType, encodeMessage, encodeResize } from "./relayProtocol";
 import type { RelayConnection, ConnectionHandle } from "./relayConnectionTypes";
 import { dispatchRelayMessage, handleSnapshot, handleControl, handleRunnerDisconnected, handleRunnerReconnected } from "./relayConnectionHandlers";
 import { scheduleSnapshotRetry, scheduleReconnect } from "./relayConnectionRetry";
 
-/** Pool internals needed by WebSocket lifecycle functions */
 export interface PoolContext {
   connections: Map<string, RelayConnection>;
   notifyStatusChange: (podKey: string) => void;
@@ -19,15 +13,15 @@ export interface PoolContext {
   baseReconnectDelay: number;
 }
 
-/** Create a new WebSocket connection to the relay and register it */
 export async function createNewConnection(
   ctx: PoolContext,
   podKey: string,
+  relayUrl: string,
+  relayToken: string,
   subscriptionId: string,
   onMessage: (data: Uint8Array | string) => void,
 ): Promise<ConnectionHandle> {
-  const relayInfo = await podApi.getPodConnection(podKey);
-  const url = `${relayInfo.relay_url}/browser/relay?token=${encodeURIComponent(relayInfo.token)}`;
+  const url = `${relayUrl}/browser/relay?token=${encodeURIComponent(relayToken)}`;
   const ws = new WebSocket(url);
   ws.binaryType = "arraybuffer";
 
@@ -41,8 +35,8 @@ export async function createNewConnection(
     disconnectTimer: null,
     snapshotTimer: null,
     snapshotReceived: false,
-    relayUrl: relayInfo.relay_url,
-    relayToken: relayInfo.token,
+    relayUrl,
+    relayToken,
     runnerDisconnected: false,
   };
 
@@ -53,7 +47,6 @@ export async function createNewConnection(
   return ctx.createHandle(podKey, subscriptionId);
 }
 
-/** Wire up WebSocket event handlers for a connection */
 function setupWebSocketHandlers(ctx: PoolContext, podKey: string, ws: WebSocket): void {
   const getConn = (pk: string) => ctx.connections.get(pk);
 
@@ -118,7 +111,6 @@ function setupWebSocketHandlers(ctx: PoolContext, podKey: string, ws: WebSocket)
   };
 }
 
-/** Send a resize command to the relay */
 export function doSendResize(ctx: PoolContext, podKey: string, cols: number, rows: number): void {
   const conn = ctx.connections.get(podKey);
   if (!conn) return;
@@ -130,7 +122,6 @@ export function doSendResize(ctx: PoolContext, podKey: string, cols: number, row
   }
 }
 
-/** Reconnect an existing connection, preserving subscribers */
 export async function reconnectConnection(ctx: PoolContext, podKey: string): Promise<void> {
   const oldConn = ctx.connections.get(podKey);
   if (!oldConn || oldConn.subscribers.size === 0) return;

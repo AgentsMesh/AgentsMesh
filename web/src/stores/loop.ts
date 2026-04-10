@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { loopApi, LoopData, LoopRunData, RunStatus } from "@/lib/api/loop";
+import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 
 export type { LoopData, LoopRunData, RunStatus };
@@ -161,3 +162,9 @@ export const useLoopStore = create<LoopState>((set, get) => ({
   setCurrentLoop: (loop) => set({ currentLoop: loop }),
   clearError: () => set({ error: null }),
 }));
+
+reconnectRegistry.register({
+  name: "loop:list",
+  fn: () => useLoopStore.getState().fetchLoops?.(),
+  priority: "low",
+});

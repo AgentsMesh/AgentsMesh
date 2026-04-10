@@ -1,18 +1,32 @@
 import { usePodStore } from "@/stores/pod";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useMeshStore } from "@/stores/mesh";
+import type { DebounceRef } from "./realtimeEventHandlers";
 import type {
   RealtimeEvent, PodStatusChangedData, PodCreatedData,
   PodTitleChangedData, PodAliasChangedData, PodInitProgressData,
 } from "@/lib/realtime";
 
-export function handlePodEvent(event: RealtimeEvent) {
+function debouncedSidebarRefresh(ref?: DebounceRef) {
+  if (!ref) {
+    const { currentSidebarFilter, fetchSidebarPods } = usePodStore.getState();
+    fetchSidebarPods?.(currentSidebarFilter);
+    return;
+  }
+  if (ref.current) clearTimeout(ref.current);
+  ref.current = setTimeout(() => {
+    ref.current = null;
+    const { currentSidebarFilter, fetchSidebarPods } = usePodStore.getState();
+    fetchSidebarPods?.(currentSidebarFilter);
+  }, 500);
+}
+
+export function handlePodEvent(event: RealtimeEvent, sidebarDebounceRef?: DebounceRef) {
   switch (event.type) {
     case "pod:created": {
       const data = event.data as PodCreatedData;
       usePodStore.getState().fetchPod?.(data.pod_key);
-      const { currentSidebarFilter, fetchSidebarPods } = usePodStore.getState();
-      fetchSidebarPods?.(currentSidebarFilter);
+      debouncedSidebarRefresh(sidebarDebounceRef);
       useMeshStore.getState().fetchTopology?.();
       break;
     }
@@ -28,6 +42,7 @@ export function handlePodEvent(event: RealtimeEvent) {
       if (data.status === "terminated" || data.status === "failed" || data.status === "error") {
         useWorkspaceStore.getState().removePaneByPodKey(data.pod_key);
       }
+      debouncedSidebarRefresh(sidebarDebounceRef);
       useMeshStore.getState().fetchTopology?.();
       break;
     }
@@ -40,6 +55,7 @@ export function handlePodEvent(event: RealtimeEvent) {
       const data = event.data as PodStatusChangedData;
       usePodStore.getState().updatePodStatus?.(data.pod_key, "terminated");
       useWorkspaceStore.getState().removePaneByPodKey(data.pod_key);
+      debouncedSidebarRefresh(sidebarDebounceRef);
       useMeshStore.getState().fetchTopology?.();
       break;
     }
@@ -61,6 +77,7 @@ export function handlePodEvent(event: RealtimeEvent) {
     case "pod:restarting": {
       const data = event.data as { pod_key: string };
       usePodStore.getState().fetchPod?.(data.pod_key);
+      debouncedSidebarRefresh(sidebarDebounceRef);
       break;
     }
   }

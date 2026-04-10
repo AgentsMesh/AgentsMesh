@@ -6,6 +6,7 @@ import {
   ApproveRequest,
 } from "@/lib/api/autopilot";
 import { AutopilotThinkingData } from "@/lib/realtime/types";
+import { reconnectRegistry } from "@/lib/realtime";
 import { createApiActions } from "./autopilot-actions";
 import { updateControllerInState } from "./autopilot-helpers";
 
@@ -120,3 +121,9 @@ export const useAutopilotStore = create<AutopilotState>((set, get) => ({
   getThinking: (key) => get().thinking[key] || null,
   getThinkingHistory: (key) => get().thinkingHistory[key] || [],
 }));
+
+reconnectRegistry.register({
+  name: "autopilot:controllers",
+  fn: () => useAutopilotStore.getState().fetchAutopilotControllers?.(),
+  priority: "low",
+});

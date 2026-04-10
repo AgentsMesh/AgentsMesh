@@ -11,11 +11,15 @@ import {
   type ConnectionState,
 } from "@/lib/realtime";
 import { useAuthStore } from "@/stores/auth";
+import { getWsBaseUrl } from "@/lib/env";
+
+function buildEventsWsUrl(orgSlug: string, token: string): string {
+  return `${getWsBaseUrl()}/api/v1/orgs/${orgSlug}/ws/events?token=${token}`;
+}
 
 /**
- * Hook to manage the realtime events connection
- *
- * Should be used once at the app root level (in RealtimeProvider)
+ * Manages the realtime events WebSocket connection.
+ * Should be used once at the app root level (in RealtimeProvider).
  */
 export function useRealtimeConnection() {
   const [connectionState, setConnectionState] =
@@ -23,47 +27,44 @@ export function useRealtimeConnection() {
   const { currentOrg, token } = useAuthStore();
   const managerRef = useRef(getEventSubscriptionManager());
 
-  // Connect and subscribe to state changes when org/token are available
-  // Combined into single useEffect to avoid race conditions between
-  // manager creation and state subscription
   useEffect(() => {
     if (!currentOrg || !token) {
-      // disconnect() will trigger onConnectionStateChange callback
       managerRef.current.disconnect();
       return;
     }
 
-    // Reset and reconnect when org or token changes
     resetEventSubscriptionManager();
     const manager = getEventSubscriptionManager();
     managerRef.current = manager;
-    manager.connect();
+    manager.connect(() => {
+      const { currentOrg: o, token: t } = useAuthStore.getState();
+      return o && t ? buildEventsWsUrl(o.slug, t) : "";
+    });
 
-    // Subscribe to connection state changes (same manager instance)
     const unsubscribe = manager.onConnectionStateChange(setConnectionState);
 
     return () => {
       unsubscribe();
-      // In React Strict Mode, cleanup runs immediately after mount.
-      // Only disconnect if we're actually unmounting (not just strict mode re-render).
-      // The manager will handle reconnection if needed.
-      // Using setTimeout to delay disconnect slightly allows re-mount to cancel it.
+      // Delay disconnect to avoid killing connection during React Strict Mode re-mount.
       const currentManager = manager;
       setTimeout(() => {
-        // Check if this manager is still the active one
         if (managerRef.current === currentManager) {
           currentManager.disconnect();
         }
       }, 100);
     };
-    // currentOrg object is stable from store, we only need to track currentOrg?.id
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrg?.id, token]);
 
   const reconnect = useCallback(() => {
+    const { currentOrg: org, token: t } = useAuthStore.getState();
+    if (!org || !t) return;
     resetEventSubscriptionManager();
     managerRef.current = getEventSubscriptionManager();
-    managerRef.current.connect();
+    managerRef.current.connect(() => {
+      const { currentOrg: o, token: tk } = useAuthStore.getState();
+      return o && tk ? buildEventsWsUrl(o.slug, tk) : "";
+    });
   }, []);
 
   return {
@@ -73,11 +74,7 @@ export function useRealtimeConnection() {
 }
 
 /**
- * Hook to subscribe to a specific event type
- *
- * @param eventType - The event type to subscribe to
- * @param handler - The handler function to call when the event is received
- * @param deps - Dependencies array for the handler (similar to useEffect)
+ * Subscribe to a specific event type.
  */
 export function useEventSubscription<T = unknown>(
   eventType: EventType,
@@ -86,10 +83,8 @@ export function useEventSubscription<T = unknown>(
 ) {
   const handlerRef = useRef(handler);
 
-  // Update handler ref when handler changes
   useEffect(() => {
     handlerRef.current = handler;
-    // Using spread in deps is intentional to allow caller-controlled dependencies
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handler, ...deps]);
 
@@ -98,10 +93,8 @@ export function useEventSubscription<T = unknown>(
       handlerRef.current(event);
     };
 
-    // Subscribe to current manager
     let unsubscribe = getEventSubscriptionManager().subscribe(eventType, wrappedHandler);
 
-    // Re-subscribe when manager is reset
     const unsubscribeReset = onManagerReset((newManager) => {
       unsubscribe();
       unsubscribe = newManager.subscribe(eventType, wrappedHandler);
@@ -115,10 +108,7 @@ export function useEventSubscription<T = unknown>(
 }
 
 /**
- * Hook to subscribe to all events
- *
- * @param handler - The handler function to call when any event is received
- * @param deps - Dependencies array for the handler
+ * Subscribe to all events.
  */
 export function useAllEventsSubscription(
   handler: EventHandler,
@@ -128,7 +118,6 @@ export function useAllEventsSubscription(
 
   useEffect(() => {
     handlerRef.current = handler;
-    // Using spread in deps is intentional to allow caller-controlled dependencies
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handler, ...deps]);
 
@@ -137,10 +126,8 @@ export function useAllEventsSubscription(
       handlerRef.current(event);
     };
 
-    // Subscribe to current manager
     let unsubscribe = getEventSubscriptionManager().subscribeAll(wrappedHandler);
 
-    // Re-subscribe when manager is reset (via callback, not polling!)
     const unsubscribeReset = onManagerReset((newManager) => {
       unsubscribe();
       unsubscribe = newManager.subscribeAll(wrappedHandler);
@@ -150,14 +137,11 @@ export function useAllEventsSubscription(
       unsubscribe();
       unsubscribeReset();
     };
-  }, []); // No dependencies - handler updates via ref
+  }, []);
 }
 
 /**
- * Hook to get the latest event of a specific type
- *
- * @param eventType - The event type to watch
- * @returns The latest event or null
+ * Get the latest event of a specific type as React state.
  */
 export function useLatestEvent<T = unknown>(
   eventType: EventType

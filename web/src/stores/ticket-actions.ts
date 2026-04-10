@@ -109,5 +109,19 @@ export function createTicketActions(set: TicketStoreDeps["set"], get: TicketStor
         set((state: { labels: Label[] }) => ({ labels: state.labels.filter((l) => l.id !== id) }));
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to delete label") }); throw e; }
     },
+
+    updateTicketStatusFromEvent: (slug: string, status: string, previousStatus?: string) => {
+      const ticket = get().tickets.find((t) => t.slug === slug);
+      if (!ticket || ticket.status === status) return;
+      const from = previousStatus || ticket.status;
+      mutations().moveStatus(slug, { ...ticket, status: status as TicketStatus }, from, status);
+      if (get().currentTicket?.slug === slug) {
+        set({ currentTicket: { ...get().currentTicket!, status: status as TicketStatus } });
+      }
+    },
+
+    removeTicketFromEvent: (slug: string) => {
+      mutations().remove(slug);
+    },
   };
 }

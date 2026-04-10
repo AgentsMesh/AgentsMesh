@@ -1,18 +1,8 @@
-/**
- * Relay WebSocket connection management
- * Handles connection pooling, reconnection, and message buffering
- *
- * Architecture:
- * - Browser connects to Relay (not Backend) for terminal + ACP data
- * - Control flow: Browser -> Backend (REST) -> Runner (gRPC)
- * - Data flow: Browser <-> Relay <-> Runner (WebSocket)
- */
-
 import { MsgType, encodeMessage, encodeJsonMessage } from "./relayProtocol";
+import { podApi } from "@/lib/api/pod";
 import type { RelayConnection, ConnectionHandle, StatusListener } from "./relayConnectionTypes";
 import { createNewConnection, doSendResize, type PoolContext } from "./relayConnectionWebSocket";
 
-// Re-export protocol symbols for consumers that import from this module
 export { MsgType, encodeMessage } from "./relayProtocol";
 export type { ConnectionStatus, RelayConnection, ConnectionHandle, RelayStatusInfo } from "./relayConnectionTypes";
 
@@ -100,7 +90,10 @@ class RelayConnectionPool {
     const pending = this.pendingSubscriptions.get(podKey);
     if (pending) { await pending; return this.subscribe(podKey, subscriptionId, onMessage); }
 
-    const createPromise = createNewConnection(this.ctx, podKey, subscriptionId, onMessage);
+    const createPromise = (async () => {
+      const relayInfo = await podApi.getPodConnection(podKey);
+      return createNewConnection(this.ctx, podKey, relayInfo.relay_url, relayInfo.token, subscriptionId, onMessage);
+    })();
     this.pendingSubscriptions.set(podKey, createPromise);
     try { return await createPromise; } finally { this.pendingSubscriptions.delete(podKey); }
   }

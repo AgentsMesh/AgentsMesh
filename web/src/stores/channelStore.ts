@@ -126,6 +126,13 @@ export const useChannelStore = create<ChannelState>((set, get) => {
     }
   },
 
+  patchChannelMemberCount: (channelId, delta) => {
+    patchChannel(channelId, (ch) => ({
+      ...ch,
+      member_count: Math.max(0, ch.member_count + delta),
+    }));
+  },
+
   setCurrentChannel: (channel) => set({ currentChannel: channel }),
   clearError: () => set({ error: null }),
 

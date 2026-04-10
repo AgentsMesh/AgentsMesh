@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { runnerApi, RunnerData, GRPCRegistrationToken } from "@/lib/api";
+import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 
 export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
@@ -144,19 +145,28 @@ export const useRunnerStore = create<RunnerState>((set) => ({
   },
 
   updateRunnerStatus: (runnerId, status) => {
-    set((state) => ({
-      runners: state.runners.map((r) =>
-        r.id === runnerId ? { ...r, status } : r
-      ),
-      availableRunners:
-        status === "online"
-          ? state.availableRunners
-          : state.availableRunners.filter((r) => r.id !== runnerId),
-      currentRunner:
-        state.currentRunner?.id === runnerId
+    set((state) => {
+      const updatedRunner = state.runners.find((r) => r.id === runnerId);
+      const runnerWithStatus = updatedRunner ? { ...updatedRunner, status } : undefined;
+
+      let availableRunners: Runner[];
+      if (status === "online" && runnerWithStatus) {
+        const alreadyAvailable = state.availableRunners.some((r) => r.id === runnerId);
+        availableRunners = alreadyAvailable
+          ? state.availableRunners.map((r) => (r.id === runnerId ? runnerWithStatus : r))
+          : [...state.availableRunners, runnerWithStatus];
+      } else {
+        availableRunners = state.availableRunners.filter((r) => r.id !== runnerId);
+      }
+
+      return {
+        runners: state.runners.map((r) => (r.id === runnerId ? { ...r, status } : r)),
+        availableRunners,
+        currentRunner: state.currentRunner?.id === runnerId
           ? { ...state.currentRunner, status }
           : state.currentRunner,
-    }));
+      };
+    });
   },
 
   clearError: () => {
@@ -164,56 +174,10 @@ export const useRunnerStore = create<RunnerState>((set) => ({
   },
 }));
 
-// Helper function to get status display info
-export const getRunnerStatusInfo = (status: RunnerStatus) => {
-  const statusMap: Record<
-    RunnerStatus,
-    { label: string; color: string; dotColor: string }
-  > = {
-    online: {
-      label: "Online",
-      color: "text-green-600 dark:text-green-400",
-      dotColor: "bg-green-500",
-    },
-    offline: {
-      label: "Offline",
-      color: "text-gray-500 dark:text-gray-400",
-      dotColor: "bg-gray-400",
-    },
-    maintenance: {
-      label: "Maintenance",
-      color: "text-yellow-600 dark:text-yellow-400",
-      dotColor: "bg-yellow-500",
-    },
-    busy: {
-      label: "Busy",
-      color: "text-orange-600 dark:text-orange-400",
-      dotColor: "bg-orange-500",
-    },
-  };
-  return statusMap[status];
-};
+export { getRunnerStatusInfo, canAcceptPods, formatHostInfo } from "./runner-display-info";
 
-// Helper function to check if runner can accept new pods
-export const canAcceptPods = (runner: Runner): boolean => {
-  return (
-    runner.status === "online" &&
-    runner.current_pods < runner.max_concurrent_pods
-  );
-};
-
-// Helper function to format host info
-export const formatHostInfo = (hostInfo?: Runner["host_info"]) => {
-  if (!hostInfo) return "Unknown";
-
-  const parts: string[] = [];
-  if (hostInfo.os) parts.push(hostInfo.os);
-  if (hostInfo.arch) parts.push(hostInfo.arch);
-  if (hostInfo.cpu_cores) parts.push(`${hostInfo.cpu_cores} cores`);
-  if (hostInfo.memory) {
-    const memoryGB = (hostInfo.memory / 1024 / 1024 / 1024).toFixed(1);
-    parts.push(`${memoryGB}GB RAM`);
-  }
-
-  return parts.length > 0 ? parts.join(" / ") : "Unknown";
-};
+reconnectRegistry.register({
+  name: "runner:list",
+  fn: () => useRunnerStore.getState().fetchRunners?.(),
+  priority: "immediate",
+});

@@ -1,14 +1,6 @@
-/**
- * Relay message handlers — extracted from RelayConnectionPool for SRP.
- * Each handler processes a specific message type from the relay WebSocket.
- */
-
 import type { RelayConnection } from "./relayConnectionTypes";
 import { MsgType, decodeMessage, decodeJsonPayload } from "./relayProtocol";
 
-/**
- * Dispatch a decoded relay message to the appropriate handler.
- */
 export function dispatchRelayMessage(
   conn: RelayConnection,
   data: ArrayBuffer | string,
@@ -62,9 +54,6 @@ export function dispatchRelayMessage(
   }
 }
 
-/**
- * Handle a snapshot message — replay terminal content to all subscribers.
- */
 export function handleSnapshot(conn: RelayConnection, payload: Uint8Array): void {
   conn.snapshotReceived = true;
   if (conn.snapshotTimer) {
@@ -89,9 +78,6 @@ export function handleSnapshot(conn: RelayConnection, payload: Uint8Array): void
   }
 }
 
-/**
- * Handle a control message — e.g. pod_resized.
- */
 export function handleControl(conn: RelayConnection, payload: Uint8Array): void {
   try {
     const msg = JSON.parse(new TextDecoder().decode(payload));
@@ -103,30 +89,10 @@ export function handleControl(conn: RelayConnection, payload: Uint8Array): void 
   }
 }
 
-/**
- * Handle runner disconnected notification.
- */
 export function handleRunnerDisconnected(conn: RelayConnection): void {
-  console.warn(`Runner disconnected for pod ${conn.podKey}`);
   conn.runnerDisconnected = true;
-  const msg = new TextEncoder().encode(
-    "\r\n\x1b[33m⚠ Runner disconnected. Waiting for reconnection...\x1b[0m\r\n"
-  );
-  for (const callback of conn.subscribers.values()) {
-    callback(msg);
-  }
 }
 
-/**
- * Handle runner reconnected notification.
- */
 export function handleRunnerReconnected(conn: RelayConnection): void {
-  console.log(`Runner reconnected for pod ${conn.podKey}`);
   conn.runnerDisconnected = false;
-  const msg = new TextEncoder().encode(
-    "\r\n\x1b[32m✓ Runner reconnected.\x1b[0m\r\n"
-  );
-  for (const callback of conn.subscribers.values()) {
-    callback(msg);
-  }
 }

@@ -2,18 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRealtimeConnection, useAllEventsSubscription } from "@/hooks/useRealtimeEvents";
-import { usePodStore } from "@/stores/pod";
-import { useRunnerStore } from "@/stores/runner";
-import { useTicketStore } from "@/stores/ticket";
-import { useMeshStore } from "@/stores/mesh";
-import { useChannelMessageStore } from "@/stores/channel";
-import { useAutopilotStore } from "@/stores/autopilot";
-import { useLoopStore } from "@/stores/loop";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { reconnectRegistry } from "@/lib/realtime";
 import {
   handlePodEvent, handleChannelEvent, handleInfraEvent,
   handleAutopilotEvent, handleLoopEvent,
+  type DebounceRef,
 } from "./realtimeEventHandlers";
 import type { ConnectionState, RealtimeEvent } from "@/lib/realtime";
 
@@ -35,19 +30,18 @@ interface RealtimeProviderProps {
   onEvent?: (event: RealtimeEvent) => void;
 }
 
-/**
- * Routes entity events to Zustand stores for silent UI state sync.
- * Notifications are delegated to the parent via onEvent.
- */
 export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   const { connectionState, reconnect } = useRealtimeConnection();
   const t = useTranslations();
   const loopDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ticketDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const channelDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const podSidebarDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleEvent = useCallback(
     (event: RealtimeEvent) => {
-      if (event.type.startsWith("pod:")) { handlePodEvent(event); return; }
-      if (event.type.startsWith("channel:")) { handleChannelEvent(event); return; }
+      if (event.type.startsWith("pod:")) { handlePodEvent(event, podSidebarDebounceRef); return; }
+      if (event.type.startsWith("channel:")) { handleChannelEvent(event, channelDebounceRef); return; }
       if (event.type.startsWith("autopilot:")) { handleAutopilotEvent(event); return; }
       if (event.type.startsWith("loop_run:")) {
         handleLoopEvent(event, loopDebounceRef, t, (title, desc) => {
@@ -57,7 +51,7 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
       }
       if (event.type.startsWith("runner:") || event.type.startsWith("ticket:") ||
           event.type.startsWith("mr:") || event.type.startsWith("pipeline:")) {
-        handleInfraEvent(event);
+        handleInfraEvent(event, ticketDebounceRef);
         return;
       }
       onEvent?.(event);
@@ -68,20 +62,14 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   useAllEventsSubscription(handleEvent, [handleEvent]);
 
   useEffect(() => {
-    const ref = loopDebounceRef;
-    return () => { if (ref.current) clearTimeout(ref.current); };
+    const refs: DebounceRef[] = [loopDebounceRef, ticketDebounceRef, channelDebounceRef, podSidebarDebounceRef];
+    return () => { refs.forEach((r) => { if (r.current) clearTimeout(r.current); }); };
   }, []);
 
   useEffect(() => {
-    if (connectionState === "connected") {
-      usePodStore.getState().fetchSidebarPods?.(usePodStore.getState().currentSidebarFilter);
-      useRunnerStore.getState().fetchRunners?.();
-      useTicketStore.getState().fetchTickets?.();
-      useMeshStore.getState().fetchTopology?.();
-      useAutopilotStore.getState().fetchAutopilotControllers?.();
-      useLoopStore.getState().fetchLoops?.();
-      useChannelMessageStore.getState().fetchUnreadCounts?.();
-    }
+    if (connectionState !== "connected") return;
+    const cancel = reconnectRegistry.execute();
+    return cancel;
   }, [connectionState]);
 
   const value = useMemo<RealtimeContextValue>(() => ({ connectionState, reconnect }), [connectionState, reconnect]);
