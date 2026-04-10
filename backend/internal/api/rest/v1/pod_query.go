@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/anthropics/agentsmesh/backend/pkg/policy"
@@ -119,7 +120,7 @@ func (h *PodHandler) GetPodConnection(c *gin.Context) {
 	})
 }
 
-// ListPodsByTicket lists pods for a ticket
+// ListPodsByTicket lists pods for a ticket, filtered by the requester's pod visibility.
 // GET /api/v1/organizations/:slug/tickets/:id/pods
 func (h *PodHandler) ListPodsByTicket(c *gin.Context) {
 	ticketID, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -132,6 +133,19 @@ func (h *PodHandler) ListPodsByTicket(c *gin.Context) {
 	if err != nil {
 		apierr.InternalError(c, "Failed to list pods")
 		return
+	}
+
+	tenant := middleware.GetTenant(c)
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
+	filter := policy.PodPolicy.ListFilter(sub)
+	if filter.OwnerOnly > 0 {
+		filtered := make([]*agentpod.Pod, 0, len(pods))
+		for _, p := range pods {
+			if p.CreatedByID == filter.OwnerOnly {
+				filtered = append(filtered, p)
+			}
+		}
+		pods = filtered
 	}
 
 	c.JSON(http.StatusOK, gin.H{"pods": pods})

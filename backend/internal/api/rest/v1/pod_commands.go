@@ -5,6 +5,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +22,8 @@ func (h *PodHandler) SendPodPrompt(c *gin.Context) {
 	}
 
 	tenant := middleware.GetTenant(c)
-	if pod.OrganizationID != tenant.OrganizationID {
+	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
+	if !policy.PodPolicy.AllowWrite(sub, policy.PodResource(pod.OrganizationID, pod.CreatedByID)) {
 		apierr.ForbiddenAccess(c)
 		return
 	}
