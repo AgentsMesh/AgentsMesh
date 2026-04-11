@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
+import { Share2 } from "lucide-react";
+import { ShareDialog } from "@/components/shared/ShareDialog";
 import { runnerApi, type RunnerData } from "@/lib/api";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { getShortPodKey } from "@/lib/pod-utils";
@@ -24,6 +26,7 @@ export function RunnerConfigModal({ t, runner, onClose, onUpdated }: RunnerConfi
   const [visibility, setVisibility] = useState<string>(runner.visibility || "organization");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const handleUpdate = async () => {
     setLoading(true);
@@ -98,6 +101,12 @@ export function RunnerConfigModal({ t, runner, onClose, onUpdated }: RunnerConfi
             </select>
           </FormField>
 
+          {visibility === "private" && (
+            <Button variant="outline" size="sm" className="w-full" onClick={() => setShareOpen(true)}>
+              <Share2 className="w-3 h-3 mr-1" /> {t("share.share")}
+            </Button>
+          )}
+
           {runner.active_pods && runner.active_pods.length > 0 && (
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -133,6 +142,12 @@ export function RunnerConfigModal({ t, runner, onClose, onUpdated }: RunnerConfi
           </div>
         </div>
       </div>
+      <ShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        resourceType="runner"
+        resourceId={String(runner.id)}
+      />
     </div>
   );
 }

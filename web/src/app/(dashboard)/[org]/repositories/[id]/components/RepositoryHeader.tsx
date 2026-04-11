@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Share2 } from "lucide-react";
+import { ShareDialog } from "@/components/shared/ShareDialog";
 import { RepositoryData } from "@/lib/api";
 import { useTranslations } from "next-intl";
 import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
@@ -14,6 +17,7 @@ interface RepositoryHeaderProps {
 
 export function RepositoryHeader({ repository, onEdit, onDelete }: RepositoryHeaderProps) {
   const t = useTranslations();
+  const [shareOpen, setShareOpen] = useState(false);
 
   return (
     <>
@@ -41,6 +45,11 @@ export function RepositoryHeader({ repository, onEdit, onDelete }: RepositoryHea
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {repository.visibility === "private" && (
+            <Button variant="outline" onClick={() => setShareOpen(true)}>
+              <Share2 className="w-4 h-4 mr-1" /> {t("share.share")}
+            </Button>
+          )}
           <Button variant="outline" onClick={onEdit}>
             {t("common.edit")}
           </Button>
@@ -58,6 +67,13 @@ export function RepositoryHeader({ repository, onEdit, onDelete }: RepositoryHea
         <span>/</span>
         <span className="text-foreground">{repository.name}</span>
       </div>
+
+      <ShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        resourceType="repository"
+        resourceId={String(repository.id)}
+      />
     </>
   );
 }
