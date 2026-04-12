@@ -23,8 +23,17 @@ func (r *grantRepo) Create(ctx context.Context, g *grant.ResourceGrant) error {
 	}).Create(g).Error
 }
 
-func (r *grantRepo) Delete(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Delete(&grant.ResourceGrant{}, id).Error
+func (r *grantRepo) Delete(ctx context.Context, resourceType, resourceID string, grantID int64) error {
+	result := r.db.WithContext(ctx).
+		Where("id = ? AND resource_type = ? AND resource_id = ?", grantID, resourceType, resourceID).
+		Delete(&grant.ResourceGrant{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (r *grantRepo) ListByResource(ctx context.Context, resourceType, resourceID string) ([]*grant.ResourceGrant, error) {

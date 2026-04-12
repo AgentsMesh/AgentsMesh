@@ -44,8 +44,8 @@ func (s *Service) GrantAccess(ctx context.Context, orgID int64, resourceType, re
 	return g, nil
 }
 
-func (s *Service) RevokeAccess(ctx context.Context, grantID int64) error {
-	return s.repo.Delete(ctx, grantID)
+func (s *Service) RevokeAccess(ctx context.Context, resourceType, resourceID string, grantID int64) error {
+	return s.repo.Delete(ctx, resourceType, resourceID, grantID)
 }
 
 func (s *Service) ListGrants(ctx context.Context, resourceType, resourceID string) ([]*grant.ResourceGrant, error) {

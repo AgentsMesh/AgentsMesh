@@ -123,8 +123,8 @@ func (h *RepositoryHandler) RevokeRepositoryGrant(c *gin.Context) {
 		return
 	}
 
-	if err := h.grantService.RevokeAccess(c.Request.Context(), grantID); err != nil {
-		apierr.InternalError(c, "Failed to revoke grant")
+	if err := h.grantService.RevokeAccess(c.Request.Context(), grant.TypeRepository, grant.IntResourceID(repoID), grantID); err != nil {
+		apierr.ResourceNotFound(c, "Grant not found")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Grant revoked"})
