@@ -57,7 +57,7 @@
   },
   "nav": {
     "agentpod": "AgentPod",
-    "mesh": "AgentsMesh",
+    "mesh": "Mesh",
     "tickets": "티켓",
     "settings": "설정",
     "billing": "결제"

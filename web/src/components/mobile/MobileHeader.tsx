@@ -42,7 +42,7 @@ export function MobileHeader({ className, title, actions }: MobileHeaderProps) {
       case "settings":
         return t("ide.activities.settings");
       default:
-        return "AgentsMesh";
+        return "Mesh";
     }
   };
 

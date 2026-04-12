@@ -4,7 +4,7 @@
       "workspace": "Workspace",
       "tickets": "Tickets",
       "channels": "Channels",
-      "mesh": "AgentsMesh",
+      "mesh": "Mesh",
       "loops": "Loops",
       "repositories": "Repositories",
       "runners": "Runners",

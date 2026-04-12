@@ -4,7 +4,7 @@
       "workspace": "ワークスペース",
       "tickets": "チケット",
       "channels": "チャンネル",
-      "mesh": "AgentsMesh",
+      "mesh": "Mesh",
       "loops": "Loops",
       "repositories": "リポジトリ",
       "runners": "Runner",

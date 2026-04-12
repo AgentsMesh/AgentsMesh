@@ -57,7 +57,7 @@
   },
   "nav": {
     "agentpod": "AgentPod",
-    "mesh": "AgentsMesh",
+    "mesh": "Mesh",
     "tickets": "Tickets",
     "settings": "Paramètres",
     "billing": "Facturation"

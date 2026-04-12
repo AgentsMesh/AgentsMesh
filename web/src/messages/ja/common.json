@@ -57,7 +57,7 @@
   },
   "nav": {
     "agentpod": "AgentPod",
-    "mesh": "AgentsMesh",
+    "mesh": "Mesh",
     "tickets": "チケット",
     "settings": "設定",
     "billing": "請求"

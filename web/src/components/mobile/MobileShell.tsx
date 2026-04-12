@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { MobileHeader } from "./MobileHeader";
 import { MobileTabBar } from "./MobileTabBar";
@@ -39,7 +39,17 @@ export function MobileShell({
   hideTabBar = false,
   className,
 }: MobileShellProps) {
-  const { _hasHydrated } = useIDEStore();
+  const { _hasHydrated, activeActivity, setActiveActivity } = useIDEStore();
+  const didSetDefault = useRef(false);
+
+  useEffect(() => {
+    if (_hasHydrated && !didSetDefault.current) {
+      didSetDefault.current = true;
+      if (activeActivity === "workspace") {
+        setActiveActivity("channels");
+      }
+    }
+  }, [_hasHydrated, activeActivity, setActiveActivity]);
 
   // Show loading state while hydrating
   if (!_hasHydrated) {
