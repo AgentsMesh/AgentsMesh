@@ -119,8 +119,12 @@ func (r *podRepo) ListByRunner(ctx context.Context, runnerID int64, status strin
 
 func (r *podRepo) ListByRunnerPaginated(ctx context.Context, runnerID int64, q agentpod.PodListQuery) ([]*agentpod.Pod, int64, error) {
 	query := r.db.WithContext(ctx).Model(&agentpod.Pod{}).Where("runner_id = ?", runnerID)
-	if len(q.Statuses) == 1 {
+	switch len(q.Statuses) {
+	case 0:
+	case 1:
 		query = query.Where("status = ?", q.Statuses[0])
+	default:
+		query = query.Where("status IN ?", q.Statuses)
 	}
 	if q.CreatedByID > 0 && q.GrantedUserID > 0 {
 		query = query.Where("(created_by_id = ? OR pod_key IN (SELECT resource_id FROM resource_grants WHERE resource_type = ? AND user_id = ?))",

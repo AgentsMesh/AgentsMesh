@@ -56,8 +56,8 @@ func (s *Service) GetGrantedUserIDs(ctx context.Context, resourceType, resourceI
 	return s.repo.GetGrantedUserIDs(ctx, resourceType, resourceID)
 }
 
-func (s *Service) GetGrantedResourceIDs(ctx context.Context, resourceType string, userID int64) ([]string, error) {
-	return s.repo.GetGrantedResourceIDs(ctx, resourceType, userID)
+func (s *Service) GetGrantedResourceIDs(ctx context.Context, resourceType string, userID int64, orgID int64) ([]string, error) {
+	return s.repo.GetGrantedResourceIDs(ctx, resourceType, userID, orgID)
 }
 
 func (s *Service) CleanupByResource(ctx context.Context, resourceType, resourceID string) error {

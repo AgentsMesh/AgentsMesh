@@ -146,7 +146,7 @@ func (h *PodHandler) ListPodsByTicket(c *gin.Context) {
 	if filter.OwnerOnly > 0 {
 		var grantedKeys map[string]bool
 		if h.grantService != nil && filter.GrantUserID > 0 {
-			if ids, err := h.grantService.GetGrantedResourceIDs(c.Request.Context(), grant.TypePod, filter.GrantUserID); err == nil && len(ids) > 0 {
+			if ids, err := h.grantService.GetGrantedResourceIDs(c.Request.Context(), grant.TypePod, filter.GrantUserID, tenant.OrganizationID); err == nil && len(ids) > 0 {
 				grantedKeys = make(map[string]bool, len(ids))
 				for _, id := range ids {
 					grantedKeys[id] = true

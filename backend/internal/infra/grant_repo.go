@@ -46,11 +46,11 @@ func (r *grantRepo) GetGrantedUserIDs(ctx context.Context, resourceType, resourc
 	return userIDs, err
 }
 
-func (r *grantRepo) GetGrantedResourceIDs(ctx context.Context, resourceType string, userID int64) ([]string, error) {
+func (r *grantRepo) GetGrantedResourceIDs(ctx context.Context, resourceType string, userID int64, orgID int64) ([]string, error) {
 	var resourceIDs []string
 	err := r.db.WithContext(ctx).
 		Model(&grant.ResourceGrant{}).
-		Where("resource_type = ? AND user_id = ?", resourceType, userID).
+		Where("resource_type = ? AND user_id = ? AND organization_id = ?", resourceType, userID, orgID).
 		Pluck("resource_id", &resourceIDs).Error
 	return resourceIDs, err
 }
