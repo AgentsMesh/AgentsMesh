@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { getDefaultRoute } from "@/lib/default-route";
 
 export default function OrganizationPage() {
   const router = useRouter();
@@ -9,9 +10,7 @@ export default function OrganizationPage() {
   const orgSlug = params.org as string;
 
   useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    const target = isMobile ? "channels" : "workspace";
-    router.replace(`/${orgSlug}/${target}`);
+    router.replace(getDefaultRoute(orgSlug));
   }, [orgSlug, router]);
 
   return null;

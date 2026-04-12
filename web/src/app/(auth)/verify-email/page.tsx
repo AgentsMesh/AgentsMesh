@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { authApi, organizationApi } from "@/lib/api";
 import { useTranslations } from "next-intl";
+import { getDefaultRoute } from "@/lib/default-route";
 import { useAuthStore } from "@/stores/auth";
 import { VerifyingScreen, SuccessScreen, LogoHeader } from "./VerifyStateScreens";
 
@@ -41,7 +42,7 @@ function VerifyEmailContent() {
         const orgsResponse = await organizationApi.list();
         if (orgsResponse.organizations && orgsResponse.organizations.length > 0) {
           setOrganizations(orgsResponse.organizations);
-          router.push(`/${orgsResponse.organizations[0].slug}/workspace`);
+          router.push(getDefaultRoute(orgsResponse.organizations[0].slug));
         } else {
           router.push("/onboarding");
         }

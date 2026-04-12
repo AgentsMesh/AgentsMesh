@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
+import { getDefaultRoute } from "@/lib/default-route";
 import { organizationApi } from "@/lib/api/organization";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { toast } from "sonner";
@@ -29,7 +30,7 @@ export default function OnboardingPage() {
         if (organizations && organizations.length > 0) {
           setOrganizations(organizations);
           setCurrentOrg(organizations[0]);
-          router.push(`/${organizations[0].slug}/workspace`);
+          router.push(getDefaultRoute(organizations[0].slug));
         }
       } catch {
         // No organizations, stay on onboarding

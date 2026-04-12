@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
 import { userApi, organizationApi } from "@/lib/api";
+import { getDefaultRoute } from "@/lib/default-route";
 import { Logo } from "@/components/common";
 
 function OAuthCallbackContent() {
@@ -58,7 +59,7 @@ function OAuthCallbackContent() {
 
             // Redirect to first org's dashboard
             setTimeout(() => {
-              router.push(`/${orgsResponse.organizations[0].slug}/workspace`);
+              router.push(getDefaultRoute(orgsResponse.organizations[0].slug));
             }, 1500);
           } else {
             // No organizations, redirect to onboarding

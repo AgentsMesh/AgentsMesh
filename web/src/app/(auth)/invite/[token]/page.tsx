@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/auth";
 import { invitationApi, InvitationInfo } from "@/lib/api/invitation";
 import { organizationApi } from "@/lib/api/organization";
 import { Logo } from "@/components/common";
+import { getDefaultRoute } from "@/lib/default-route";
 
 interface PageParams {
   token: string;
@@ -57,7 +58,7 @@ export default function InvitePage({ params }: { params: Promise<PageParams> }) 
       }
 
       // Redirect to the organization workspace
-      router.push(`/${organization.slug}/workspace`);
+      router.push(getDefaultRoute(organization.slug));
     } catch (err: unknown) {
       if (err && typeof err === "object" && "data" in err) {
         const apiErr = err as { data?: { error?: string } };

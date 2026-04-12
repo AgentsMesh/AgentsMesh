@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
 import { Spinner } from "@/components/ui/spinner";
+import { getDefaultRoute } from "@/lib/default-route";
 
 /**
  * Organization-scoped layout
@@ -30,7 +31,7 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
     } else if (organizations.length > 0) {
       // Organization not found, redirect to first available org
       console.warn(`Organization "${orgSlug}" not found, redirecting...`);
-      router.replace(`/${organizations[0].slug}/workspace`);
+      router.replace(getDefaultRoute(organizations[0].slug));
     }
   }, [orgSlug, organizations, currentOrg, setCurrentOrg, router, _hasHydrated]);
 

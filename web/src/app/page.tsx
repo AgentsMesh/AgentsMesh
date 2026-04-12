@@ -16,6 +16,7 @@ import {
   FinalCTA,
   Footer,
 } from "@/components/landing";
+import { getDefaultRoute } from "@/lib/default-route";
 
 export default function Home() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function Home() {
   // Handle redirect in effect
   useEffect(() => {
     if (shouldRedirect && currentOrg) {
-      router.replace(`/${currentOrg.slug}/workspace`);
+      router.replace(getDefaultRoute(currentOrg.slug));
     }
   }, [shouldRedirect, currentOrg, router]);
 

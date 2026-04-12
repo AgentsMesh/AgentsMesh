@@ -13,6 +13,7 @@ import type { SSOConfig } from "@/lib/api/sso";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/common";
 import { OAuthButtons } from "./OAuthButtons";
+import { getDefaultRoute } from "@/lib/default-route";
 import { SSOSection } from "./SSOSection";
 import { Divider } from "./Divider";
 
@@ -65,7 +66,7 @@ export default function LoginPage() {
       const orgsResponse = await organizationApi.list();
       if (orgsResponse.organizations && orgsResponse.organizations.length > 0) {
         setOrganizations(orgsResponse.organizations);
-        router.push(`/${orgsResponse.organizations[0].slug}/workspace`);
+        router.push(getDefaultRoute(orgsResponse.organizations[0].slug));
       } else {
         router.push("/onboarding");
       }

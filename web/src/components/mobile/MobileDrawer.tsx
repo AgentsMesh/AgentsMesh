@@ -6,6 +6,7 @@ import { Drawer } from "vaul";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn } from "@/lib/utils";
 import { useIDEStore, ACTIVITIES, type ActivityType } from "@/stores/ide";
+import { getDefaultRoute } from "@/lib/default-route";
 import { useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import {
@@ -80,7 +81,7 @@ export function MobileDrawer({ className }: MobileDrawerProps) {
     if (org) {
       setCurrentOrg(org);
       setMobileDrawerOpen(false);
-      router.push(`/${org.slug}/workspace`);
+      router.push(getDefaultRoute(org.slug));
     }
   };
 
