@@ -106,5 +106,15 @@ func coreTableDDLs() []string {
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS resource_grants (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			organization_id INTEGER NOT NULL,
+			resource_type TEXT NOT NULL,
+			resource_id TEXT NOT NULL,
+			user_id INTEGER NOT NULL,
+			granted_by INTEGER NOT NULL,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(organization_id, resource_type, resource_id, user_id)
+		)`,
 	}
 }
