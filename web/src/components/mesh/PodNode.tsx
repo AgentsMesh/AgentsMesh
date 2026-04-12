@@ -22,7 +22,6 @@ function PodNode({ data }: PodNodeProps) {
   const router = useRouter();
   const orgSlug = params.org as string;
 
-  // Adapt MeshNode to PodDisplayInfo interface for getPodDisplayName
   const displayName = getPodDisplayName(
     {
       pod_key: node.pod_key,
@@ -42,16 +41,20 @@ function PodNode({ data }: PodNodeProps) {
     }
   };
 
+  const startedTitle = node.started_at
+    ? new Date(node.started_at).toLocaleString()
+    : undefined;
+
   return (
     <PodContextMenu node={node}>
       <div
+        title={startedTitle}
         className={`px-4 py-3 rounded-lg border-2 bg-background shadow-md min-w-[180px] transition-all ${
           isSelected
             ? "border-primary ring-2 ring-primary/20"
             : "border-border hover:border-primary/50"
         }`}
       >
-        {/* Handles for edges */}
         <Handle
           type="target"
           position={Position.Left}
@@ -63,50 +66,43 @@ function PodNode({ data }: PodNodeProps) {
           className="w-3 h-3 !bg-primary"
         />
 
-        {/* Pod Header */}
         <div className="flex items-center justify-between mb-2">
-          <code className="text-xs font-mono text-muted-foreground">
+          <code className="text-xs font-mono text-muted-foreground truncate mr-2">
             {displayName}
           </code>
           <span
-            className={`px-2 py-0.5 text-xs rounded-full ${statusInfo.bgColor} ${statusInfo.color}`}
-          >
-            {statusInfo.label}
-          </span>
+            className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusInfo.bgColor.replace("bg-", "bg-").replace("/30", "")} ${
+              node.status === "running" ? "bg-green-500" :
+              node.status === "initializing" ? "bg-blue-500" :
+              node.status === "failed" ? "bg-red-500" : "bg-gray-400"
+            }`}
+            title={statusInfo.label}
+          />
         </div>
 
-        {/* Agent Status */}
         <AgentStatusBadge
           agentStatus={node.agent_status}
           podStatus={node.status}
           variant="badge"
         />
 
-        {/* Model */}
-        {node.model && (
-          <div className="text-xs text-muted-foreground mb-1">
-            Model: <span className="font-medium">{node.model}</span>
-          </div>
-        )}
-
-        {/* Ticket - clickable */}
-        {node.ticket_slug && (
-          <div className="text-xs text-muted-foreground">
-            Ticket:{" "}
-            <button
-              type="button"
-              onClick={handleTicketClick}
-              className="nodrag nopan font-medium text-primary hover:underline cursor-pointer"
-            >
-              {node.ticket_slug}
-            </button>
-          </div>
-        )}
-
-        {/* Started At */}
-        {node.started_at && (
-          <div className="text-xs text-muted-foreground mt-1">
-            {new Date(node.started_at).toLocaleTimeString()}
+        {(node.model || node.ticket_slug) && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+            {node.model && (
+              <span className="truncate">{node.model}</span>
+            )}
+            {node.model && node.ticket_slug && (
+              <span className="text-border">|</span>
+            )}
+            {node.ticket_slug && (
+              <button
+                type="button"
+                onClick={handleTicketClick}
+                className="nodrag nopan font-medium text-primary hover:underline cursor-pointer truncate"
+              >
+                {node.ticket_slug}
+              </button>
+            )}
           </div>
         )}
       </div>

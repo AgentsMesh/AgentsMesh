@@ -45,7 +45,7 @@ export default function MeshTopology() {
   }, [selectNode]);
 
   const onNodeDragStop: OnNodeDrag = useCallback((_event, node) => {
-    if (node.type === "runnerGroup") updateNodePosition(node.id, node.position);
+    if (node.type === "runnerGroup" || node.type === "pod") updateNodePosition(node.id, node.position);
   }, [updateNodePosition]);
 
   const onPaneClick = useCallback(() => { selectNode(null); }, [selectNode]);
