@@ -20,8 +20,18 @@ func isHandshakeError(err error) bool {
 		strings.Contains(errStr, "403")
 }
 
-// reconnectLoop attempts to reconnect to the relay server with exponential backoff
+const (
+	// maxConsecutiveAuthFailures is the circuit-breaker threshold for permanent
+	// authentication errors. After this many consecutive handshake failures
+	// (where token refresh also fails), the reconnect loop gives up.
+	// This prevents zombie connections for dead/expired pods.
+	maxConsecutiveAuthFailures = 5
+)
+
+// reconnectLoop attempts to reconnect to the relay server with exponential backoff.
+// It is tracked by wg so that Stop() reliably waits for it to exit.
 func (c *Client) reconnectLoop() {
+	defer c.wg.Done()
 	defer c.reconnecting.Store(false)
 
 	// Check if client is already stopped - no point in reconnecting
@@ -40,23 +50,20 @@ func (c *Client) reconnectLoop() {
 	}
 	c.connMu.Unlock()
 
-	// Wait for the writeLoop to exit (readLoop already exited since we're in reconnectLoop)
-	// writeLoop should exit quickly since connDoneCh is closed
-	done := make(chan struct{})
-	go func() {
-		c.wg.Wait()
-		close(done)
-	}()
-
+	// Wait for writeLoop to exit. readLoop already exited (we're spawned from its defer).
+	// connDoneCh was closed by readLoop, which tells writeLoop to return.
+	// writeExitCh is closed by writeLoop on exit — we wait on it directly,
+	// avoiding wg.Wait() which would deadlock (reconnectLoop is in the same wg).
+	writeExit := c.writeExitCh
 	select {
-	case <-done:
-		// Loops exited
-	case <-time.After(2 * time.Second):
-		c.logger.Warn("Timeout waiting for loops to exit before reconnect, aborting")
-		c.fireOnClose()
-		return
+	case <-writeExit:
+		// writeLoop has fully exited
 	case <-c.stopCh:
 		c.logger.Info("Reconnect cancelled while waiting for loops, client stopped")
+		c.fireOnClose()
+		return
+	case <-time.After(2 * time.Second):
+		c.logger.Warn("Timeout waiting for writeLoop to exit before reconnect, aborting")
 		c.fireOnClose()
 		return
 	}
@@ -74,6 +81,7 @@ func (c *Client) reconnectLoop() {
 			"flap_count", flapCount, "initial_backoff", backoff)
 	}
 	tokenRefreshAttempted := false
+	consecutiveAuthFailures := 0
 
 	for attempt := 1; ; attempt++ {
 		// Check if Stop() was called during reconnection
@@ -104,22 +112,35 @@ func (c *Client) reconnectLoop() {
 				"attempt", attempt,
 				"next_backoff", min(backoff*2, maxReconnectDelay))
 
-			// Check if this is a handshake error (likely token expired)
-			// Try to refresh token once
-			if isHandshakeError(err) && !tokenRefreshAttempted && c.onTokenExpired != nil {
-				tokenRefreshAttempted = true
-				c.logger.Info("Handshake failed, requesting new token from Backend")
+			if isHandshakeError(err) {
+				consecutiveAuthFailures++
 
-				// Request new token from Backend
-				// This is a blocking call that waits for Backend to respond
-				newToken := c.onTokenExpired()
-				if newToken != "" {
-					c.logger.Info("Received new token, retrying connection")
-					c.UpdateToken(newToken)
-					// Don't increment backoff, retry immediately with new token
-					continue
+				// Try to refresh token once on first auth failure
+				if !tokenRefreshAttempted && c.onTokenExpired != nil {
+					tokenRefreshAttempted = true
+					c.logger.Info("Handshake failed, requesting new token from Backend")
+
+					newToken := c.onTokenExpired()
+					if newToken != "" {
+						c.logger.Info("Received new token, retrying connection")
+						c.UpdateToken(newToken)
+						consecutiveAuthFailures = 0
+						continue
+					}
+					c.logger.Warn("Failed to get new token, continuing with exponential backoff")
 				}
-				c.logger.Warn("Failed to get new token, continuing with exponential backoff")
+
+				// Circuit breaker: give up after too many consecutive auth failures.
+				// This prevents zombie reconnect loops for dead/expired pods.
+				if consecutiveAuthFailures >= maxConsecutiveAuthFailures {
+					c.logger.Error("Giving up reconnect: too many consecutive auth failures",
+						"count", consecutiveAuthFailures, "last_error", err)
+					c.fireOnClose()
+					return
+				}
+			} else {
+				// Transient error (network, timeout) — reset auth failure counter
+				consecutiveAuthFailures = 0
 			}
 
 			// Exponential backoff with jitter (±20%) to prevent thundering herd
@@ -154,8 +175,9 @@ func (c *Client) reconnectLoop() {
 		c.connected.Store(true)
 		c.connectedAt.Store(time.Now().UnixMilli())
 
-		// Create a new connDoneCh for the new connection
+		// Create new per-connection channels for the new connection
 		c.connDoneCh = make(chan struct{})
+		c.writeExitCh = make(chan struct{})
 
 		// Restart read/write loops
 		c.wg.Add(2)

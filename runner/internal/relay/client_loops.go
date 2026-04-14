@@ -51,10 +51,20 @@ func (c *Client) readLoop() {
 				c.reconnectCount.Store(0)
 			}
 
-			// Unexpected disconnect - attempt reconnection
-			// Use atomic.Swap to prevent concurrent reconnect attempts
+			// Atomically check stopped and add reconnectLoop to wg under lock.
+			// This ensures Stop() will wait for reconnectLoop to exit.
+			c.wgMu.Lock()
+			if c.stopped.Load() {
+				c.wgMu.Unlock()
+				c.fireOnClose()
+				return
+			}
 			if !c.reconnecting.Swap(true) {
+				c.wg.Add(1)
+				c.wgMu.Unlock()
 				go c.reconnectLoop()
+			} else {
+				c.wgMu.Unlock()
 			}
 		}
 	}()
@@ -99,6 +109,16 @@ func (c *Client) writeLoop() {
 	c.logger.Debug("Write loop starting")
 	defer c.wg.Done()
 	defer c.logger.Info("Write loop exited")
+
+	// Signal reconnectLoop that writeLoop has fully exited.
+	exitCh := c.writeExitCh
+	defer func() {
+		select {
+		case <-exitCh:
+		default:
+			close(exitCh)
+		}
+	}()
 
 	// Capture connDoneCh at loop start — matches readLoop pattern.
 	// If reconnectLoop replaces c.connDoneCh, we only listen to the one

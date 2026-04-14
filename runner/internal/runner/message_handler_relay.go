@@ -39,6 +39,14 @@ func (h *RunnerMessageHandler) OnSubscribePod(req client.SubscribePodRequest) er
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
 
+	// Reject subscribe for pods in terminal states. Initializing pods are
+	// allowed — backend may send subscribe_pod before the process starts.
+	if status := pod.GetStatus(); status == PodStatusStopped || status == PodStatusFailed {
+		log.Info("Pod is not active, ignoring subscribe",
+			"pod_key", req.PodKey, "status", status)
+		return nil
+	}
+
 	log.Debug("Pod interaction mode", "pod_key", req.PodKey, "mode", pod.InteractionMode)
 
 	// Phase 1: Under lock — check existing client and extract/clear if needed.

@@ -66,6 +66,14 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	supervisor.Add(lifecycle.NewWatchdogService(watchdogCfg))
 
+	// Register Pod Reconciler: periodically detects dead pod processes
+	// whose exit handlers never fired, preventing zombie relay connections.
+	supervisor.Add(NewPodReconciler(
+		r.podStore,
+		r.messageHandler.cleanupPodExit,
+		60*time.Second,
+	))
+
 	// Register additional services (Console, etc.)
 	for _, svc := range r.additionalServices {
 		supervisor.Add(svc)

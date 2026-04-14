@@ -53,6 +53,7 @@ type Client struct {
 	stopped        atomic.Bool   // Indicates client has been permanently stopped
 	stopCh         chan struct{} // Signals client shutdown (permanent)
 	connDoneCh     chan struct{} // Signals current connection is done (closed on disconnect)
+	writeExitCh    chan struct{} // Closed when writeLoop exits; used by reconnectLoop
 	stopOnce       sync.Once
 	closeOnce      sync.Once // Ensures onClose callback fires at most once
 	sendCh         chan []byte
@@ -78,6 +79,7 @@ func NewClient(relayURL, podKey, token string, logger *slog.Logger) *Client {
 		token:      token,
 		stopCh:     make(chan struct{}),
 		connDoneCh: make(chan struct{}),
+		writeExitCh: make(chan struct{}),
 		sendCh:     make(chan []byte, 256), // Buffered send channel
 		handlers:   make(map[byte]func([]byte)),
 		logger: logger.With(

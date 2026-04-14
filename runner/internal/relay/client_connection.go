@@ -134,8 +134,9 @@ func (c *Client) Stop() {
 		}
 		c.connMu.Unlock()
 
-		// Wait for read/write loops to exit with timeout
-		// Since stopped=true and wgMu was held, no new loops can be started
+		// Wait for read/write loops and reconnectLoop to exit with timeout.
+		// All goroutines are tracked in the same wg.
+		// Since stopped=true and wgMu was held, no new goroutines can be started.
 		done := make(chan struct{})
 		go func() {
 			c.wg.Wait()
