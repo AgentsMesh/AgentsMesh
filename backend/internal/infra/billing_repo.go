@@ -186,7 +186,8 @@ func (r *billingRepository) CountActivePods(ctx context.Context, orgID int64) (i
 
 func (r *billingRepository) CountRepositories(ctx context.Context, orgID int64) (int64, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Table("repositories").Where("organization_id = ?", orgID).Count(&count).Error
+	err := r.db.WithContext(ctx).Table("repositories").
+		Where("organization_id = ? AND deleted_at IS NULL", orgID).Count(&count).Error
 	return count, err
 }
 

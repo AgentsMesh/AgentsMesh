@@ -93,6 +93,24 @@ func TestBillingQuotaIntegration_NoSubscriptionFallsBack(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestBillingQuotaIntegration_SoftDeletedRepoNotCounted(t *testing.T) {
+	svc, ctx, db, orgID, _ := setupQuotaIntegration(t)
+
+	// "based" plan: max_repositories = 5. Add one repo then soft-delete it.
+	db.Exec(
+		"INSERT INTO repositories (organization_id, name, slug) VALUES (?, 'repo-1', 'org/repo-1')",
+		orgID,
+	)
+	db.Exec(
+		"UPDATE repositories SET deleted_at = NOW() WHERE organization_id = ? AND slug = 'org/repo-1'",
+		orgID,
+	)
+
+	// Re-importing should succeed — the soft-deleted repo must not count toward quota.
+	err := svc.CheckQuota(ctx, orgID, "repositories", 1)
+	require.NoError(t, err)
+}
+
 func TestBillingQuotaIntegration_ConcurrentPods(t *testing.T) {
 	svc, ctx, db, orgID, userID := setupQuotaIntegration(t)
 
