@@ -63,7 +63,7 @@ describe("handleChannelEvent", () => {
       expect(cache).toBeDefined();
       expect(cache.messages).toHaveLength(1);
       expect(cache.messages[0].body).toBe("hello");
-      expect(cache.messages[0].content).toEqual(event.data.content);
+      expect(cache.messages[0].content).toEqual((event.data as Record<string, unknown>).content);
       expect(cache.messages[0].mentions).toEqual({ users: [3] });
     });
 

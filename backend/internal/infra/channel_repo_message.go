@@ -3,7 +3,6 @@ package infra
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
@@ -47,10 +46,10 @@ func (r *channelRepository) GetMessages(ctx context.Context, channelID int64, be
 
 func (r *channelRepository) GetMessagesMentioning(ctx context.Context, channelID int64, podKey string, limit int) ([]*channel.Message, bool, error) {
 	var messages []*channel.Message
-	podKeyJSON, _ := json.Marshal([]string{podKey})
-	jsonPattern := fmt.Sprintf(`{"pods":%s}`, string(podKeyJSON))
+	podKeyJSON, _ := json.Marshal(podKey)
+	podPattern := `%` + string(podKeyJSON) + `%`
 	if err := r.db.WithContext(ctx).
-		Where("channel_id = ? AND is_deleted = FALSE AND mentions @> ?::jsonb", channelID, jsonPattern).
+		Where("channel_id = ? AND is_deleted = FALSE AND CAST(mentions AS TEXT) LIKE ?", channelID, podPattern).
 		Preload("SenderUser").
 		Preload("SenderPodInfo").
 		Preload("SenderPodInfo.Agent").
@@ -140,4 +139,35 @@ func (r *channelRepository) GetMessagesBefore(ctx context.Context, channelID int
 		return nil, err
 	}
 	return messages, nil
+}
+
+func (r *channelRepository) SearchMessages(ctx context.Context, channelID int64, query string, limit int) ([]*channel.Message, error) {
+	var messages []*channel.Message
+	likePattern := "%" + query + "%"
+	if err := r.db.WithContext(ctx).
+		Where("channel_id = ? AND is_deleted = FALSE AND body LIKE ?", channelID, likePattern).
+		Preload("SenderUser").
+		Preload("SenderPodInfo").
+		Preload("SenderPodInfo.Agent").
+		Order("created_at DESC, id DESC").
+		Limit(limit).
+		Find(&messages).Error; err != nil {
+		return nil, err
+	}
+	return messages, nil
+}
+
+func (r *channelRepository) SaveMessageEdit(ctx context.Context, edit *channel.MessageEdit) error {
+	return r.db.WithContext(ctx).Create(edit).Error
+}
+
+func (r *channelRepository) GetMessageEdits(ctx context.Context, messageID int64) ([]*channel.MessageEdit, error) {
+	var edits []*channel.MessageEdit
+	if err := r.db.WithContext(ctx).
+		Where("message_id = ?", messageID).
+		Order("created_at ASC").
+		Find(&edits).Error; err != nil {
+		return nil, err
+	}
+	return edits, nil
 }

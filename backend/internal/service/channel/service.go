@@ -16,6 +16,7 @@ var (
 	ErrMessageNotFound  = errors.New("message not found")
 	ErrNotMessageSender = errors.New("only the message sender can perform this action")
 	ErrEmptyContent     = errors.New("message content cannot be empty")
+	ErrInvalidContent   = errors.New("invalid message content")
 )
 
 // Service handles channel operations

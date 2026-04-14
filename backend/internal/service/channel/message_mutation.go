@@ -21,6 +21,12 @@ func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderU
 		return nil, ErrChannelArchived
 	}
 
+	if err := newContent.Validate(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidContent, err)
+	}
+
+	newContent.SchemaVersion = 1
+
 	msg, err := s.repo.GetMessageByID(ctx, messageID)
 	if err != nil {
 		return nil, err
@@ -34,6 +40,17 @@ func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderU
 
 	newBody := extractBody(&newContent)
 	newMentions := extractMentions(&newContent)
+
+	// Save edit history before updating
+	edit := &channel.MessageEdit{
+		MessageID:       messageID,
+		EditorUserID:    &senderUserID,
+		PreviousBody:    msg.Body,
+		PreviousContent: msg.Content,
+	}
+	if err := s.repo.SaveMessageEdit(ctx, edit); err != nil {
+		slog.Error("failed to save message edit history", "message_id", messageID, "error", err)
+	}
 
 	if err := s.repo.UpdateMessage(ctx, messageID, newBody, &newContent, newMentions); err != nil {
 		return nil, err

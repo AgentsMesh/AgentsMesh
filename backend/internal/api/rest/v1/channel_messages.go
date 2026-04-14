@@ -90,8 +90,8 @@ func (h *ChannelHandler) SendMessage(c *gin.Context) {
 			apierr.ForbiddenAccess(c)
 			return
 		}
-		if errors.Is(err, channelService.ErrEmptyContent) {
-			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Message content cannot be empty")
+		if errors.Is(err, channelService.ErrEmptyContent) || errors.Is(err, channelService.ErrInvalidContent) {
+			apierr.BadRequest(c, apierr.VALIDATION_FAILED, err.Error())
 			return
 		}
 		apierr.InternalError(c, "Failed to send message")
@@ -136,6 +136,8 @@ func (h *ChannelHandler) EditMessage(c *gin.Context) {
 			apierr.ForbiddenAccess(c)
 		case errors.Is(err, channelService.ErrChannelArchived):
 			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Cannot edit messages in archived channel")
+		case errors.Is(err, channelService.ErrEmptyContent), errors.Is(err, channelService.ErrInvalidContent):
+			apierr.BadRequest(c, apierr.VALIDATION_FAILED, err.Error())
 		default:
 			apierr.InternalError(c, "Failed to edit message")
 		}
@@ -176,4 +178,34 @@ func (h *ChannelHandler) DeleteMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
+// SearchMessages searches channel messages by full-text query
+// GET /api/v1/organizations/:slug/channels/:id/messages/search?q=term&limit=20
+func (h *ChannelHandler) SearchMessages(c *gin.Context) {
+	ch, ok := h.requireChannelAccess(c)
+	if !ok {
+		return
+	}
+
+	query := c.Query("q")
+	if query == "" {
+		apierr.InvalidInput(c, "Search query is required")
+		return
+	}
+
+	limit := 20
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	messages, err := h.channelService.SearchMessages(c.Request.Context(), ch.ID, query, limit)
+	if err != nil {
+		apierr.InternalError(c, "Failed to search messages")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"messages": messages})
 }

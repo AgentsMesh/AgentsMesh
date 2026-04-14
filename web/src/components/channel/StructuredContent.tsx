@@ -10,8 +10,18 @@ interface StructuredContentProps {
   className?: string;
 }
 
+const SUPPORTED_SCHEMA_VERSION = 1;
+
 export function StructuredContent({ content, className }: StructuredContentProps) {
   if (!content.blocks?.length) return null;
+
+  if (content.schema_version && content.schema_version > SUPPORTED_SCHEMA_VERSION) {
+    return (
+      <p className="text-sm text-muted-foreground italic">
+        This message uses a newer format. Please update your client.
+      </p>
+    );
+  }
 
   return (
     <div className={cn("prose prose-sm max-w-none", className)}>
@@ -26,11 +36,14 @@ function RenderBlock({ block }: { block: Block }) {
   switch (block.type) {
     case "paragraph":
       return (
-        <p>
-          {block.elements?.map((el, i) => (
-            <RenderInline key={i} element={el} />
-          ))}
-        </p>
+        <>
+          <p>
+            {block.elements?.map((el, i) => (
+              <RenderInline key={i} element={el} />
+            ))}
+          </p>
+          <BlockChildren block={block} />
+        </>
       );
     case "code_block":
       return (
@@ -41,11 +54,14 @@ function RenderBlock({ block }: { block: Block }) {
     case "heading": {
       const Tag = `h${Math.min(block.level ?? 1, 3)}` as "h1" | "h2" | "h3";
       return (
-        <Tag>
-          {block.elements?.map((el, i) => (
-            <RenderInline key={i} element={el} />
-          ))}
-        </Tag>
+        <>
+          <Tag>
+            {block.elements?.map((el, i) => (
+              <RenderInline key={i} element={el} />
+            ))}
+          </Tag>
+          <BlockChildren block={block} />
+        </>
       );
     }
     case "quote":
@@ -54,25 +70,34 @@ function RenderBlock({ block }: { block: Block }) {
           {block.elements?.map((el, i) => (
             <RenderInline key={i} element={el} />
           ))}
+          <BlockChildren block={block} />
         </blockquote>
       );
     case "list": {
       const Tag = block.ordered ? "ol" : "ul";
       return (
-        <Tag>
-          {block.items?.map((item, i) => (
-            <li key={i}>
-              {item.map((el, j) => (
-                <RenderInline key={j} element={el} />
-              ))}
-            </li>
-          ))}
-        </Tag>
+        <>
+          <Tag>
+            {block.items?.map((item, i) => (
+              <li key={i}>
+                {item.map((el, j) => (
+                  <RenderInline key={j} element={el} />
+                ))}
+              </li>
+            ))}
+          </Tag>
+          <BlockChildren block={block} />
+        </>
       );
     }
     default:
       return null;
   }
+}
+
+function BlockChildren({ block }: { block: Block }) {
+  if (!block.children?.length) return null;
+  return <>{block.children.map((child, i) => <RenderBlock key={i} block={child} />)}</>;
 }
 
 function RenderInline({ element }: { element: InlineElement }) {
@@ -81,12 +106,15 @@ function RenderInline({ element }: { element: InlineElement }) {
       return <TextSpan element={element} />;
     case "mention":
       return <MentionSpan element={element} />;
-    case "link":
+    case "link": {
+      const safe = element.url?.startsWith("http://") || element.url?.startsWith("https://") || element.url?.startsWith("mailto:");
+      if (!safe) return <span>{element.text}</span>;
       return (
         <a href={element.url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
           {element.text}
         </a>
       );
+    }
     case "linebreak":
       return <br />;
     default:
@@ -95,11 +123,18 @@ function RenderInline({ element }: { element: InlineElement }) {
 }
 
 function TextSpan({ element }: { element: InlineElement }) {
+  // Support both new Style object and old flat booleans (backward compat)
+  const s = element.style;
+  const bold = s?.bold ?? element.bold;
+  const italic = s?.italic ?? element.italic;
+  const strike = s?.strike ?? element.strike;
+  const code = s?.code ?? element.code;
+
   let content: React.ReactNode = element.text;
-  if (element.code) content = <code className="px-1 py-0.5 bg-muted rounded text-sm">{content}</code>;
-  if (element.bold) content = <strong>{content}</strong>;
-  if (element.italic) content = <em>{content}</em>;
-  if (element.strike) content = <del>{content}</del>;
+  if (code) content = <code className="px-1 py-0.5 bg-muted rounded text-sm">{content}</code>;
+  if (bold) content = <strong>{content}</strong>;
+  if (italic) content = <em>{content}</em>;
+  if (strike) content = <del>{content}</del>;
   return <>{content}</>;
 }
 

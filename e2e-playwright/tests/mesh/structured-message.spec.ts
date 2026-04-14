@@ -2,7 +2,7 @@ import { test, expect } from "../../fixtures/index";
 import { test as uiTest, expect as uiExpect } from "@playwright/test";
 import { ChannelsPage } from "../../pages/channels.page";
 import { SidebarPage } from "../../pages/sidebar.page";
-import { TEST_ORG_SLUG } from "../../helpers/env";
+import { TEST_ORG_SLUG, getApiBaseUrl } from "../../helpers/env";
 import { clearAuthRateLimit } from "../../helpers/redis";
 import { textContent } from "../../helpers/test-data";
 
@@ -77,10 +77,10 @@ test.describe("Structured Message — API", () => {
     const { message } = await res.json();
     expect(message.body).toBe("normal bold italic struck code");
     expect(message.content.blocks[0].elements).toHaveLength(8);
-    expect(message.content.blocks[0].elements[1].bold).toBe(true);
-    expect(message.content.blocks[0].elements[3].italic).toBe(true);
-    expect(message.content.blocks[0].elements[5].strike).toBe(true);
-    expect(message.content.blocks[0].elements[7].code).toBe(true);
+    expect(message.content.blocks[0].elements[1].style?.bold).toBe(true);
+    expect(message.content.blocks[0].elements[3].style?.italic).toBe(true);
+    expect(message.content.blocks[0].elements[5].style?.strike).toBe(true);
+    expect(message.content.blocks[0].elements[7].style?.code).toBe(true);
   });
 
   test("send message with user mention — body includes @display", async ({ api }) => {
@@ -283,20 +283,11 @@ uiTest.describe("Structured Message — UI Rendering", () => {
     await channels.createChannel(name);
     await channels.selectChannel(name);
 
-    // Send structured message with bold via API (so we control the exact AST)
-    const loginRes = await request.post(
-      `http://localhost:${process.env.WEB_PORT || "11507"}/api/v1/auth/login`,
-      { data: { email: "dev@agentsmesh.local", password: "devpass123" }, failOnStatusCode: false },
-    );
-    // If local proxy doesn't work, use the HTTP port
-    const apiBase = loginRes.ok()
-      ? `http://localhost:${process.env.WEB_PORT || "11507"}`
-      : `http://localhost:11500`;
-
-    const loginRes2 = await request.post(`${apiBase}/api/v1/auth/login`, {
+    const apiBase = getApiBaseUrl();
+    const loginRes = await request.post(`${apiBase}/api/v1/auth/login`, {
       data: { email: "dev@agentsmesh.local", password: "devpass123" },
     });
-    const { token } = await loginRes2.json();
+    const { token } = await loginRes.json();
 
     // Get channel ID
     const chListRes = await request.get(`${apiBase}/api/v1/orgs/${TEST_ORG_SLUG}/channels`, {
@@ -338,7 +329,7 @@ uiTest.describe("Structured Message — UI Rendering", () => {
     await channels.createChannel(name);
     await channels.selectChannel(name);
 
-    const apiBase = `http://localhost:11500`;
+    const apiBase = getApiBaseUrl();
     const loginRes = await request.post(`${apiBase}/api/v1/auth/login`, {
       data: { email: "dev@agentsmesh.local", password: "devpass123" },
     });

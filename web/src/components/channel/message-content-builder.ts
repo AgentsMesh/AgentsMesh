@@ -1,4 +1,4 @@
-import type { MessageContent, InlineElement } from "@/lib/api/channel-message-types";
+import type { MessageContent, InlineElement, Block } from "@/lib/api/channel-message-types";
 
 interface MentionRef {
   entityType: string;
@@ -11,6 +11,7 @@ export function buildMessageContent(
 ): MessageContent {
   const lines = text.split(/\n/);
   return {
+    schema_version: 1,
     kind: "text",
     blocks: lines.map((line) => ({
       type: "paragraph" as const,
@@ -22,17 +23,30 @@ export function buildMessageContent(
 export function extractMentionMap(content?: MessageContent): Map<string, MentionRef> {
   const mentions = new Map<string, MentionRef>();
   if (!content?.blocks) return mentions;
-  for (const block of content.blocks) {
-    for (const el of block.elements ?? []) {
-      if (el.type === "mention" && el.display && el.entity_key) {
-        mentions.set(el.display, {
-          entityType: el.entity_type ?? "pod",
-          entityKey: el.entity_key,
-        });
+  function processBlocks(blocks: Block[]) {
+    for (const block of blocks) {
+      collectMentions(block.elements, mentions);
+      for (const item of block.items ?? []) {
+        collectMentions(item, mentions);
+      }
+      if (block.children?.length) {
+        processBlocks(block.children);
       }
     }
   }
+  processBlocks(content.blocks);
   return mentions;
+}
+
+function collectMentions(elements: InlineElement[] | undefined, mentions: Map<string, MentionRef>) {
+  for (const el of elements ?? []) {
+    if (el.type === "mention" && el.display && el.entity_key) {
+      mentions.set(el.display, {
+        entityType: el.entity_type ?? "pod",
+        entityKey: el.entity_key,
+      });
+    }
+  }
 }
 
 function parseInlineElements(

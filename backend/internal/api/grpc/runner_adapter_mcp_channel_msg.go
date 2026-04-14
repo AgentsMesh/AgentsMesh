@@ -15,9 +15,10 @@ import (
 // Agents send plain text + optional mentions; we build structured MessageContent server-side.
 func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.TenantContext, podKey string, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		ChannelID int64    `json:"channel_id"`
-		Content   string   `json:"content"`
-		Mentions  []string `json:"mentions"`
+		ChannelID         int64                        `json:"channel_id"`
+		Content           string                       `json:"content"`
+		StructuredContent *channelDomain.MessageContent `json:"structured_content"`
+		Mentions          []string                     `json:"mentions"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
@@ -25,8 +26,8 @@ func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.T
 	if params.ChannelID == 0 {
 		return nil, newMcpError(400, "channel_id is required")
 	}
-	if params.Content == "" {
-		return nil, newMcpError(400, "content is required")
+	if params.Content == "" && params.StructuredContent == nil {
+		return nil, newMcpError(400, "content or structured_content is required")
 	}
 
 	ch, mcpErr := a.validateChannelAccess(ctx, tc, params.ChannelID)
@@ -37,15 +38,20 @@ func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.T
 		return nil, newMcpError(400, "cannot send messages to archived channel")
 	}
 
-	mentionMap := make(map[string]struct{ typ, key string })
-	for _, m := range params.Mentions {
-		parts := strings.SplitN(m, ":", 2)
-		if len(parts) == 2 && (parts[0] == "user" || parts[0] == "pod") {
-			mentionMap[parts[1]] = struct{ typ, key string }{parts[0], parts[1]}
+	// Use structured content if provided; otherwise build from plain text + mentions
+	var content channelDomain.MessageContent
+	if params.StructuredContent != nil {
+		content = *params.StructuredContent
+	} else {
+		mentionMap := make(map[string]struct{ typ, key string })
+		for _, m := range params.Mentions {
+			parts := strings.SplitN(m, ":", 2)
+			if len(parts) == 2 && (parts[0] == "user" || parts[0] == "pod") {
+				mentionMap[parts[1]] = struct{ typ, key string }{parts[0], parts[1]}
+			}
 		}
+		content = buildTextContent(params.Content, mentionMap)
 	}
-
-	content := buildTextContent(params.Content, mentionMap)
 
 	msg, err := a.channelService.SendMessage(ctx, params.ChannelID, &podKey, &tc.UserID, content, nil)
 	if err != nil {

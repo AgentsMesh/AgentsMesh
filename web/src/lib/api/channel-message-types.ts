@@ -1,6 +1,15 @@
+export interface InlineStyle {
+  bold?: boolean;
+  italic?: boolean;
+  strike?: boolean;
+  code?: boolean;
+}
+
 export interface InlineElement {
   type: "text" | "mention" | "link" | "linebreak";
   text?: string;
+  style?: InlineStyle;
+  // Backward compat: old messages may have flat booleans
   bold?: boolean;
   italic?: boolean;
   strike?: boolean;
@@ -14,6 +23,7 @@ export interface InlineElement {
 export interface Block {
   type: "paragraph" | "heading" | "code_block" | "quote" | "list";
   elements?: InlineElement[];
+  children?: Block[];
   level?: number;
   language?: string;
   text?: string;
@@ -22,6 +32,7 @@ export interface Block {
 }
 
 export interface MessageContent {
+  schema_version?: number;
   kind: string;
   blocks?: Block[];
   attachment_key?: string;

@@ -225,3 +225,24 @@ func (r *errorInjectingRepo) GetMemberUserIDs(ctx context.Context, channelID int
 	}
 	return r.ChannelRepository.GetMemberUserIDs(ctx, channelID)
 }
+
+func (r *errorInjectingRepo) SearchMessages(ctx context.Context, channelID int64, query string, limit int) ([]*channel.Message, error) {
+	if err := r.shouldFail("SearchMessages"); err != nil {
+		return nil, err
+	}
+	return r.ChannelRepository.SearchMessages(ctx, channelID, query, limit)
+}
+
+func (r *errorInjectingRepo) SaveMessageEdit(ctx context.Context, edit *channel.MessageEdit) error {
+	if err := r.shouldFail("SaveMessageEdit"); err != nil {
+		return err
+	}
+	return r.ChannelRepository.SaveMessageEdit(ctx, edit)
+}
+
+func (r *errorInjectingRepo) GetMessageEdits(ctx context.Context, messageID int64) ([]*channel.MessageEdit, error) {
+	if err := r.shouldFail("GetMessageEdits"); err != nil {
+		return nil, err
+	}
+	return r.ChannelRepository.GetMessageEdits(ctx, messageID)
+}

@@ -2,6 +2,7 @@ package channel
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"slices"
 	"strconv"
@@ -23,6 +24,11 @@ func (s *Service) SendMessage(ctx context.Context, channelID int64, senderPod *s
 		return nil, ErrChannelArchived
 	}
 
+	if err := content.Validate(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidContent, err)
+	}
+
+	content.SchemaVersion = 1
 	body := extractBody(&content)
 	if strings.TrimSpace(body) == "" {
 		return nil, ErrEmptyContent
@@ -78,29 +84,46 @@ func extractBody(c *channel.MessageContent) string {
 		return ""
 	}
 	var paragraphs []string
-	for _, block := range c.Blocks {
+	extractBlocksBody(c.Blocks, &paragraphs)
+	return strings.Join(paragraphs, "\n")
+}
+
+func extractBlocksBody(blocks []channel.Block, out *[]string) {
+	for _, block := range blocks {
 		var sb strings.Builder
-		for _, el := range block.Elements {
-			switch el.Type {
-			case channel.InlineText:
-				sb.WriteString(el.Text)
-			case channel.InlineMention:
-				if el.Display != "" {
-					sb.WriteString("@" + el.Display)
-				} else {
-					sb.WriteString("@" + el.EntityKey)
-				}
-			case channel.InlineLink:
-				sb.WriteString(el.Text)
-			case channel.InlineLinebreak:
+		writeInlineElements(&sb, block.Elements)
+		for i, item := range block.Items {
+			if sb.Len() > 0 || i > 0 {
 				sb.WriteString("\n")
 			}
+			writeInlineElements(&sb, item)
 		}
 		if text := sb.String(); text != "" {
-			paragraphs = append(paragraphs, text)
+			*out = append(*out, text)
+		}
+		if len(block.Children) > 0 {
+			extractBlocksBody(block.Children, out)
 		}
 	}
-	return strings.Join(paragraphs, "\n")
+}
+
+func writeInlineElements(sb *strings.Builder, elements []channel.InlineElement) {
+	for _, el := range elements {
+		switch el.Type {
+		case channel.InlineText:
+			sb.WriteString(el.Text)
+		case channel.InlineMention:
+			if el.Display != "" {
+				sb.WriteString("@" + el.Display)
+			} else {
+				sb.WriteString("@" + el.EntityKey)
+			}
+		case channel.InlineLink:
+			sb.WriteString(el.Text)
+		case channel.InlineLinebreak:
+			sb.WriteString("\n")
+		}
+	}
 }
 
 func extractMentions(c *channel.MessageContent) channel.MessageMentions {
@@ -110,28 +133,42 @@ func extractMentions(c *channel.MessageContent) channel.MessageMentions {
 	}
 	podsSeen := make(map[string]bool)
 	usersSeen := make(map[int64]bool)
-	for _, block := range c.Blocks {
-		for _, el := range block.Elements {
-			if el.Type != channel.InlineMention {
-				continue
-			}
-			switch el.EntityType {
-			case channel.EntityPod:
-				if !podsSeen[el.EntityKey] {
-					podsSeen[el.EntityKey] = true
-					m.Pods = append(m.Pods, el.EntityKey)
-				}
-			case channel.EntityUser:
-				if id, err := strconv.ParseInt(el.EntityKey, 10, 64); err == nil && !usersSeen[id] {
-					usersSeen[id] = true
-					m.Users = append(m.Users, id)
-				}
-			case channel.EntityChannel:
-				m.Channel = true
-			}
+	extractBlocksMentions(c.Blocks, &m, podsSeen, usersSeen)
+	return m
+}
+
+func extractBlocksMentions(blocks []channel.Block, m *channel.MessageMentions, podsSeen map[string]bool, usersSeen map[int64]bool) {
+	for _, block := range blocks {
+		collectMentionsFromElements(block.Elements, m, podsSeen, usersSeen)
+		for _, item := range block.Items {
+			collectMentionsFromElements(item, m, podsSeen, usersSeen)
+		}
+		if len(block.Children) > 0 {
+			extractBlocksMentions(block.Children, m, podsSeen, usersSeen)
 		}
 	}
-	return m
+}
+
+func collectMentionsFromElements(elements []channel.InlineElement, m *channel.MessageMentions, podsSeen map[string]bool, usersSeen map[int64]bool) {
+	for _, el := range elements {
+		if el.Type != channel.InlineMention {
+			continue
+		}
+		switch el.EntityType {
+		case channel.EntityPod:
+			if !podsSeen[el.EntityKey] {
+				podsSeen[el.EntityKey] = true
+				m.Pods = append(m.Pods, el.EntityKey)
+			}
+		case channel.EntityUser:
+			if id, err := strconv.ParseInt(el.EntityKey, 10, 64); err == nil && !usersSeen[id] {
+				usersSeen[id] = true
+				m.Users = append(m.Users, id)
+			}
+		case channel.EntityChannel:
+			m.Channel = true
+		}
+	}
 }
 
 // GetMessages returns messages for a channel.
@@ -223,4 +260,14 @@ func (s *Service) GetRecentMessages(ctx context.Context, channelID int64, limit 
 	}
 	slices.Reverse(messages)
 	return messages, nil
+}
+
+// SearchMessages searches channel messages by full-text query on body.
+func (s *Service) SearchMessages(ctx context.Context, channelID int64, query string, limit int) ([]*channel.Message, error) {
+	if limit <= 0 {
+		limit = 20
+	} else if limit > 100 {
+		limit = 100
+	}
+	return s.repo.SearchMessages(ctx, channelID, query, limit)
 }

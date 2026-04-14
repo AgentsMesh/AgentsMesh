@@ -114,6 +114,59 @@ func TestExtractBody(t *testing.T) {
 			t.Errorf("got %q, want %q", got, "first\nthird")
 		}
 	})
+	t.Run("list block items", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "list", Ordered: true, Items: [][]channel.InlineElement{
+				{{Type: channel.InlineText, Text: "item one"}},
+				{{Type: channel.InlineText, Text: "item two"}},
+				{{Type: channel.InlineText, Text: "item three"}},
+			}},
+		}}
+		if got := extractBody(c); got != "item one\nitem two\nitem three" {
+			t.Errorf("got %q, want %q", got, "item one\nitem two\nitem three")
+		}
+	})
+
+	t.Run("list block with header elements and items", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "list", Elements: []channel.InlineElement{
+				{Type: channel.InlineText, Text: "Checklist:"},
+			}, Items: [][]channel.InlineElement{
+				{{Type: channel.InlineText, Text: "step 1"}},
+				{{Type: channel.InlineText, Text: "step 2"}},
+			}},
+		}}
+		if got := extractBody(c); got != "Checklist:\nstep 1\nstep 2" {
+			t.Errorf("got %q, want %q", got, "Checklist:\nstep 1\nstep 2")
+		}
+	})
+
+	t.Run("nested children blocks", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "quote", Elements: []channel.InlineElement{
+				{Type: channel.InlineText, Text: "parent"},
+			}, Children: []channel.Block{
+				{Type: "paragraph", Elements: []channel.InlineElement{
+					{Type: channel.InlineText, Text: "child"},
+				}},
+			}},
+		}}
+		if got := extractBody(c); got != "parent\nchild" {
+			t.Errorf("got %q, want %q", got, "parent\nchild")
+		}
+	})
+
+	t.Run("list items with mentions", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "list", Items: [][]channel.InlineElement{
+				{{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk-1", Display: "Bot"}},
+				{{Type: channel.InlineText, Text: "task"}},
+			}},
+		}}
+		if got := extractBody(c); got != "@Bot\ntask" {
+			t.Errorf("got %q, want %q", got, "@Bot\ntask")
+		}
+	})
 }
 
 func TestExtractMentions(t *testing.T) {
@@ -213,19 +266,29 @@ func TestExtractMentions(t *testing.T) {
 		}
 	})
 
-	t.Run("mixed entity types across blocks", func(t *testing.T) {
+	t.Run("mentions in list items", func(t *testing.T) {
 		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
-			{Type: "paragraph", Elements: []channel.InlineElement{
-				{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk-1"},
-			}},
-			{Type: "paragraph", Elements: []channel.InlineElement{
-				{Type: channel.InlineMention, EntityType: channel.EntityUser, EntityKey: "42"},
-				{Type: channel.InlineMention, EntityType: channel.EntityChannel, EntityKey: "all"},
+			{Type: "list", Items: [][]channel.InlineElement{
+				{{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk-list"}},
 			}},
 		}}
 		m := extractMentions(c)
-		if len(m.Pods) != 1 || len(m.Users) != 1 || !m.Channel {
-			t.Errorf("got pods=%v users=%v channel=%v", m.Pods, m.Users, m.Channel)
+		if len(m.Pods) != 1 || m.Pods[0] != "pk-list" {
+			t.Errorf("got pods=%v, want [pk-list]", m.Pods)
+		}
+	})
+
+	t.Run("mentions in nested children", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "quote", Children: []channel.Block{
+				{Type: "paragraph", Elements: []channel.InlineElement{
+					{Type: channel.InlineMention, EntityType: channel.EntityUser, EntityKey: "77"},
+				}},
+			}},
+		}}
+		m := extractMentions(c)
+		if len(m.Users) != 1 || m.Users[0] != 77 {
+			t.Errorf("got users=%v, want [77]", m.Users)
 		}
 	})
 }

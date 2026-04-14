@@ -150,8 +150,8 @@ func TestMesh_CountChannelMessages(t *testing.T) {
 	assert.Equal(t, int64(0), count)
 
 	// Insert messages directly
-	db.Exec(`INSERT INTO channel_messages (channel_id, message_type, content) VALUES (?, 'text', 'hello')`, chID)
-	db.Exec(`INSERT INTO channel_messages (channel_id, message_type, content) VALUES (?, 'text', 'world')`, chID)
+	db.Exec(`INSERT INTO channel_messages (channel_id, message_type, body) VALUES (?, 'text', 'hello')`, chID)
+	db.Exec(`INSERT INTO channel_messages (channel_id, message_type, body) VALUES (?, 'text', 'world')`, chID)
 
 	count, err = repo.CountChannelMessages(ctx, chID)
 	require.NoError(t, err)
