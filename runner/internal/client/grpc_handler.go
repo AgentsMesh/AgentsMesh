@@ -185,7 +185,7 @@ func (c *GRPCConnection) handleTerminatePod(cmd *runnerv1.TerminatePodCommand) {
 // handleUpgradeRunner handles upgrade_runner command from server.
 func (c *GRPCConnection) handleUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) {
 	log := logger.GRPC()
-	log.Info("Received upgrade_runner", "request_id", cmd.RequestId, "target_version", cmd.TargetVersion, "force", cmd.Force)
+	log.Info("Received upgrade_runner", "request_id", cmd.RequestId, "target_version", cmd.TargetVersion)
 	if c.handler == nil {
 		log.Warn("No handler set, ignoring upgrade_runner")
 		return
