@@ -157,7 +157,8 @@ func (c *TerminalChannel) forwardPublisherToSubscribers(epoch uint64) {
 		// Snapshot supersedes all buffered output — clear buffer and replace with
 		// the snapshot itself, so new subscribers joining after this point receive
 		// the complete terminal state instead of an empty buffer.
-		if msg != nil && msg.Type == protocol.MsgTypeSnapshot {
+		// Support both PTY Snapshot (0x01) and ACP Snapshot (0x0D).
+		if msg != nil && (msg.Type == protocol.MsgTypeSnapshot || msg.Type == protocol.MsgTypeAcpSnapshot) {
 			c.clearOutputBuffer()
 			c.bufferOutput(data)
 		}
