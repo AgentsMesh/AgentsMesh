@@ -10,8 +10,8 @@ import (
 // Transport abstracts the wire protocol between ACPClient and an agent subprocess.
 // Implementations register via RegisterTransport from their init() functions:
 //   - ACPTransport: JSON-RPC 2.0 (Gemini CLI --acp, OpenCode acp) — built-in fallback
-//   - claude.Transport: Claude stream-json NDJSON protocol (acp/claude subpackage)
-//   - codex.Transport: Codex app-server JSON-RPC protocol (acp/codex subpackage)
+//   - agents/claude: Claude stream-json NDJSON protocol
+//   - agents/codex: Codex app-server JSON-RPC protocol
 type Transport interface {
 	// Initialize wires the transport's I/O pipes.
 	// Called BEFORE ReadLoop. Must not block on protocol messages.
@@ -59,18 +59,60 @@ type TransportFactory func(callbacks EventCallbacks, logger *slog.Logger) Transp
 var (
 	registryMu sync.RWMutex
 	registry   = map[string]TransportFactory{}
+	commandMap = map[string]string{} // command name → transport type
 )
 
 // RegisterTransport registers a named transport factory.
-// Typically called from init() in transport subpackages.
+// Typically called from init() in agent subpackages.
+// Panics if the name is already registered (detects accidental duplicates).
 func RegisterTransport(name string, factory TransportFactory) {
 	registryMu.Lock()
 	defer registryMu.Unlock()
+	if _, exists := registry[name]; exists {
+		panic("acp: duplicate transport registration: " + name)
+	}
 	registry[name] = factory
 }
 
+// RegisterCommandMapping maps an agent command name to a transport type.
+// Typically called from init() alongside RegisterTransport.
+// Panics if the command is already mapped (detects accidental duplicates).
+func RegisterCommandMapping(commandName, transportType string) {
+	registryMu.Lock()
+	defer registryMu.Unlock()
+	if _, exists := commandMap[commandName]; exists {
+		panic("acp: duplicate command mapping: " + commandName)
+	}
+	commandMap[commandName] = transportType
+}
+
+// RegisterAgent registers a transport factory and command→transport mapping atomically.
+func RegisterAgent(commandName string, transportType string, factory TransportFactory) {
+	registryMu.Lock()
+	defer registryMu.Unlock()
+	if _, exists := registry[transportType]; exists {
+		panic("acp: duplicate transport registration: " + transportType)
+	}
+	if _, exists := commandMap[commandName]; exists {
+		panic("acp: duplicate command mapping: " + commandName)
+	}
+	registry[transportType] = factory
+	commandMap[commandName] = transportType
+}
+
+// TransportTypeForCommand returns the transport type for a given command name.
+// Returns TransportTypeACP if no mapping is registered.
+func TransportTypeForCommand(command string) string {
+	registryMu.RLock()
+	defer registryMu.RUnlock()
+	if tt, ok := commandMap[command]; ok {
+		return tt
+	}
+	return TransportTypeACP
+}
+
 // NewTransport creates a transport by name from the registry.
-// Returns an error if the name is not registered.
+// Falls back to standard ACP if the name is not registered.
 func NewTransport(name string, callbacks EventCallbacks, logger *slog.Logger) Transport {
 	registryMu.RLock()
 	factory, ok := registry[name]
@@ -78,7 +120,6 @@ func NewTransport(name string, callbacks EventCallbacks, logger *slog.Logger) Tr
 	if ok {
 		return factory(callbacks, logger)
 	}
-	// Fallback: unknown transport names default to standard ACP.
 	logger.Warn("unknown transport type, falling back to ACP", "type", name)
 	return NewACPTransport(callbacks, logger)
 }

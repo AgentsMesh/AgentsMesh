@@ -9,10 +9,10 @@ import (
 )
 
 // TransportType constants for ClientConfig.
+// TransportTypeACP is the default protocol. Agent-specific transport types
+// are defined in their respective packages under internal/agents/<name>/.
 const (
-	TransportTypeACP          = "acp"           // JSON-RPC 2.0 (Gemini, OpenCode)
-	TransportTypeClaudeStream = "claude-stream" // Claude stream-json NDJSON
-	TransportTypeCodex        = "codex"         // Codex app-server JSON-RPC
+	TransportTypeACP = "acp" // JSON-RPC 2.0 (Gemini, OpenCode, default)
 )
 
 // ClientConfig configures the ACP client.
@@ -23,7 +23,7 @@ type ClientConfig struct {
 	Env           []string
 	Logger        *slog.Logger
 	Callbacks     EventCallbacks
-	TransportType string // "acp" (default), "claude-stream", or "codex"
+	TransportType string // registered via acp.RegisterCommandMapping (default: "acp")
 }
 
 // ACPClient manages an agent subprocess communicating via a pluggable

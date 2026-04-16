@@ -1,5 +1,5 @@
 # Development Dockerfile with hot reload using Air
-# Includes AI CLI tools: Claude Code, Codex, Gemini CLI, OpenCode
+# Includes AI CLI tools: Claude Code, Codex, Gemini CLI, OpenCode, Loopal
 # All AI CLI tools are pre-configured for headless/non-interactive mode
 FROM golang:1.25-alpine
 
@@ -49,6 +49,10 @@ RUN npm install -g @google/gemini-cli
 # 4. OpenCode - Open source AI coding agent
 RUN npm install -g opencode-ai
 
+# 5. Loopal - Self-built AI coding agent
+COPY deploy/dev/ai-cli-configs/loopal-install.sh /tmp/loopal-install.sh
+RUN chmod +x /tmp/loopal-install.sh && INSTALL_DIR=/usr/local/bin sh /tmp/loopal-install.sh && rm /tmp/loopal-install.sh
+
 # Install coreutils for GNU env (supports -S flag required by Node.js CLI shebangs)
 RUN apk add --no-cache coreutils
 
@@ -58,6 +62,7 @@ RUN echo "=== Verifying AI CLI installations ===" && \
     codex --version && \
     gemini --version && \
     which opencode && echo "OpenCode installed at $(which opencode)" && \
+    loopal --version && \
     echo "=== All AI CLI tools installed ==="
 
 # ============================================
@@ -96,7 +101,10 @@ RUN addgroup -g 1000 runner && \
     chown -R runner:runner /home/runner/.gemini && \
     # OpenCode config directory
     mkdir -p /home/runner/.opencode && \
-    chown -R runner:runner /home/runner/.opencode
+    chown -R runner:runner /home/runner/.opencode && \
+    # Loopal config directory
+    mkdir -p /home/runner/.loopal && \
+    chown -R runner:runner /home/runner/.loopal
 
 # ============================================
 # Copy AI CLI pre-configured settings

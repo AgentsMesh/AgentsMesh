@@ -312,6 +312,26 @@
           }
         }
       }
+    },
+    "loopal": {
+      "fields": {
+        "model": {
+          "label": "模型",
+          "description": "指定使用的 AI 模型",
+          "options": {
+            "": "默认"
+          }
+        },
+        "permission_mode": {
+          "label": "权限模式",
+          "description": "控制 Agent 处理权限请求的方式",
+          "options": {
+            "supervised": "监督模式（手动审批）",
+            "auto": "自动模式（智能审批）",
+            "bypass": "旁路模式（全部自动通过）"
+          }
+        }
+      }
     }
   }
 }

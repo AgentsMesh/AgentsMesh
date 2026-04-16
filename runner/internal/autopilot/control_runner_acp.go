@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
-	_ "github.com/anthropics/agentsmesh/runner/internal/acp/claude" // register Claude stream transport
+	"github.com/anthropics/agentsmesh/runner/internal/agents/claude"
 )
 
 // AcpControlProcess maintains a long-lived ACP session with the control agent.
@@ -66,7 +66,7 @@ func NewAcpControlProcess(cfg AcpControlProcessConfig) *AcpControlProcess {
 		WorkDir:       cfg.WorkDir,
 		Env:           cfg.Env,
 		Logger:        cfg.Logger,
-		TransportType: acp.TransportTypeClaudeStream,
+		TransportType: claude.TransportType,
 		Callbacks: acp.EventCallbacks{
 			OnContentChunk: p.onContentChunk,
 			OnStateChange:  p.onStateChange,

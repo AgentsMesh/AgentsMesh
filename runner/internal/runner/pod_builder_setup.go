@@ -61,7 +61,7 @@ func (b *PodBuilder) setup(ctx context.Context) (string, string, string, error) 
 		sandboxOwned = false
 	}
 
-	// 2.5. Prepare agent-specific home directories (e.g., CODEX_HOME for Codex CLI)
+	// 2.5. Prepare agent-specific home directories (registered via agentkit.RegisterAgentHome).
 	// Must run before createFiles so that copied user config can be merged with platform config.
 	if err := b.prepareAgentHome(sandboxRoot, result.WorkingDir); err != nil {
 		if sandboxOwned {

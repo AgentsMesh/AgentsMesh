@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/anthropics/agentsmesh/runner/internal/agents/claude"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 

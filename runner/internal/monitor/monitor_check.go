@@ -3,6 +3,7 @@ package monitor
 import (
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/agentkit"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/detector"
 )
 
@@ -67,7 +68,7 @@ func (m *Monitor) getAgentStatus(shellPid int) (int, detector.AgentState) {
 	// First check if the shell process itself is an agent (claude/node)
 	// This happens when PTY directly runs agent (not via bash)
 	shellName := m.inspector.GetProcessName(shellPid)
-	if shellName == "claude" || shellName == "node" {
+	if agentkit.IsAgentProcess(shellName) {
 		// The shell process IS the agent process
 		if m.hasActiveChildren(shellPid) {
 			return shellPid, detector.StateExecuting
@@ -90,15 +91,13 @@ func (m *Monitor) getAgentStatus(shellPid int) (int, detector.AgentState) {
 }
 
 // findAgentProcess finds agent process in the process tree rooted at pid.
-// It looks for processes named "claude" or "node" (since many CLI agents are Node.js based).
+// It checks registered agent process names via agentkit.IsAgentProcess.
 func (m *Monitor) findAgentProcess(pid int) int {
-	// Get direct children
 	children := m.inspector.GetChildProcesses(pid)
 
 	for _, childPid := range children {
 		name := m.inspector.GetProcessName(childPid)
-		// Agent CLI can appear as "claude" or "node" depending on how it's invoked
-		if name == "claude" || name == "node" {
+		if agentkit.IsAgentProcess(name) {
 			return childPid
 		}
 

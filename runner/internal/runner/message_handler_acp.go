@@ -9,8 +9,6 @@ import (
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
-	_ "github.com/anthropics/agentsmesh/runner/internal/acp/claude" // register Claude stream transport
-	_ "github.com/anthropics/agentsmesh/runner/internal/acp/codex"  // register Codex app-server transport
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 )
@@ -170,17 +168,7 @@ func (h *RunnerMessageHandler) handleACPExit(podKey string, exitCode int) {
 }
 
 // inferTransportType determines the transport type based on the launch command.
-// Claude Code uses its native stream-json protocol; Codex CLI uses the
-// app-server protocol; all other ACP agents (Gemini CLI, OpenCode) use the
-// standard JSON-RPC 2.0 ACP protocol.
 func inferTransportType(command string) string {
 	base := strings.TrimSuffix(filepath.Base(command), filepath.Ext(command))
-	switch base {
-	case "claude":
-		return acp.TransportTypeClaudeStream
-	case "codex":
-		return acp.TransportTypeCodex
-	default:
-		return acp.TransportTypeACP
-	}
+	return acp.TransportTypeForCommand(base)
 }

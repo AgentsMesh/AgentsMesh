@@ -3,11 +3,11 @@ package runner
 import (
 	"testing"
 
+	"github.com/anthropics/agentsmesh/runner/internal/agentkit"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAdaptTerminalInput_NonCodex(t *testing.T) {
-	// Non-codex agents should pass through unchanged (no adapter registered)
 	data := []byte("hello\nworld\r")
 	assert.Equal(t, data, adaptTerminalInput(data, "claude-code"))
 	assert.Equal(t, data, adaptTerminalInput(data, "aider"))
@@ -57,11 +57,14 @@ func TestAdaptTerminalInput_BothCodexSlugs(t *testing.T) {
 	assert.Equal(t, expected, adaptTerminalInput(input, "codex-cli"))
 }
 
-func TestRegisterInputAdapter_Custom(t *testing.T) {
-	// Verify that custom adapters can be registered (OCP)
-	RegisterInputAdapter("test-agent", &codexInputAdapter{})
-	result := adaptTerminalInput([]byte("a\nb\r"), "test-agent")
-	assert.Equal(t, []byte("a b\r"), result)
-	// Cleanup
-	delete(inputAdapterRegistry, "test-agent")
+type testAdapter struct{}
+
+func (a *testAdapter) Adapt(data []byte) []byte {
+	return []byte("adapted")
+}
+
+func TestAdaptTerminalInput_CustomAdapter(t *testing.T) {
+	agentkit.RegisterInputAdapter("test-custom-agent", &testAdapter{})
+	result := adaptTerminalInput([]byte("hello"), "test-custom-agent")
+	assert.Equal(t, []byte("adapted"), result)
 }
