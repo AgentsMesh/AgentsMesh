@@ -52,7 +52,7 @@ func InitProvider(ctx context.Context, serviceName, version string) (*Provider, 
 
 	mp, err := initMeterProvider(ctx, res)
 	if err != nil {
-		tp.Shutdown(ctx)
+		_ = tp.Shutdown(ctx)
 		return nil, err
 	}
 

@@ -53,7 +53,7 @@ func InitProvider(ctx context.Context, serviceName, version string) (*Provider, 
 		}
 		p.mp, err = initGRPCMeterProvider(ctx, res)
 		if err != nil {
-			p.tp.Shutdown(ctx)
+			_ = p.tp.Shutdown(ctx)
 			return nil, err
 		}
 		slog.Info("OpenTelemetry initialized (gRPC exporter)", "service", serviceName)
@@ -64,7 +64,7 @@ func InitProvider(ctx context.Context, serviceName, version string) (*Provider, 
 		}
 		p.mp, p.metricsFile, err = initFileMeterProvider()
 		if err != nil {
-			p.tp.Shutdown(ctx)
+			_ = p.tp.Shutdown(ctx)
 			p.traceFile.Close()
 			return nil, err
 		}
