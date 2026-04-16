@@ -220,12 +220,12 @@ github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0t
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/russellhaering/goxmldsig v1.4.0 h1:8UcDh/xGyQiyrW+Fq5t8f+l2DLB1+zlhYzkPUJ7Qhys=
 github.com/russellhaering/goxmldsig v1.4.0/go.mod h1:gM4MDENBQf7M+V824SGfyIUVFWydB7n0KkEubVJl+Tw=
-github.com/smartwalle/alipay/v3 v3.2.28 h1:pANvguTjmFtfTw3le44qjQHYDrRcjCy8r8YUonFeblE=
-github.com/smartwalle/alipay/v3 v3.2.28/go.mod h1:dwPyjY5y17qUsDrsVYCQqmDBtQ/qpvY8JmQMvuJYGLQ=
+github.com/smartwalle/alipay/v3 v3.2.29 h1:roGFqlml8hDa//0TpFmlyxZhndTYs7rbYLu/HlNFNJo=
+github.com/smartwalle/alipay/v3 v3.2.29/go.mod h1:XarBLuAkwK3ah7mYjVtghRu+ysxzlex9sRkgqNMzMRU=
 github.com/smartwalle/ncrypto v1.0.4 h1:P2rqQxDepJwgeO5ShoC+wGcK2wNJDmcdBOWAksuIgx8=
 github.com/smartwalle/ncrypto v1.0.4/go.mod h1:Dwlp6sfeNaPMnOxMNayMTacvC5JGEVln3CVdiVDgbBk=
-github.com/smartwalle/ngx v1.0.12 h1:jcoCyu/0HtQ1y/gbiSLzqOUZcHnVLlKOmm0awRF7Mcg=
-github.com/smartwalle/ngx v1.0.12/go.mod h1:mx/nz2Pk5j+RBs7t6u6k22MPiBG/8CtOMpCnALIG8Y0=
+github.com/smartwalle/ngx v1.1.0 h1:q8nANgWSPRGeI/u+ixBoA4mf68DrUq6vZ+n9L5UKv9I=
+github.com/smartwalle/ngx v1.1.0/go.mod h1:mx/nz2Pk5j+RBs7t6u6k22MPiBG/8CtOMpCnALIG8Y0=
 github.com/smartwalle/nsign v1.0.9 h1:8poAgG7zBd8HkZy9RQDwasC6XZvJpDGQWSjzL2FZL6E=
 github.com/smartwalle/nsign v1.0.9/go.mod h1:eY6I4CJlyNdVMP+t6z1H6Jpd4m5/V+8xi44ufSTxXgc=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
