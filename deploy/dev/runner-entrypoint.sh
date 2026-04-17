@@ -56,7 +56,7 @@ wait_for_backend() {
     RETRY_COUNT=0
 
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        if wget -q --spider "${HEALTH_URL}" 2>/dev/null; then
+        if wget -q -O /dev/null "${HEALTH_URL}" 2>/dev/null; then
             echo "✓ Backend 服务就绪"
             return 0
         fi

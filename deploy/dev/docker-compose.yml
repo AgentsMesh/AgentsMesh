@@ -388,6 +388,8 @@ services:
       - OTEL_SERVICE_NAME=agentsmesh-relay
       - OTEL_TRACES_SAMPLER_ARG=1.0
     volumes:
+      # Mount source code for hot reload
+      - ../../relay:/app
       # Mount proto module (if needed)
       - ../../proto:/proto
       # Persist Go modules cache
@@ -450,7 +452,7 @@ services:
 
   # Jaeger (distributed tracing UI)
   jaeger:
-    image: jaegertracing/all-in-one:1.68
+    image: jaegertracing/all-in-one:1.68.0
     restart: unless-stopped
     environment:
       - COLLECTOR_OTLP_ENABLED=true

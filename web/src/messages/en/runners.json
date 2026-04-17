@@ -315,13 +315,6 @@
     },
     "loopal": {
       "fields": {
-        "model": {
-          "label": "Model",
-          "description": "Specify the AI model to use",
-          "options": {
-            "": "Default"
-          }
-        },
         "permission_mode": {
           "label": "Permission Mode",
           "description": "Control how permissions are handled",

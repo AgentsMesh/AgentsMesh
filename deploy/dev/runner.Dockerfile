@@ -1,7 +1,9 @@
 # Development Dockerfile with hot reload using Air
 # Includes AI CLI tools: Claude Code, Codex, Gemini CLI, OpenCode, Loopal
 # All AI CLI tools are pre-configured for headless/non-interactive mode
-FROM golang:1.25-alpine
+#
+# Debian trixie because Loopal's release binary requires glibc 2.39+.
+FROM golang:1.25-trixie
 
 WORKDIR /app
 
@@ -9,29 +11,32 @@ WORKDIR /app
 RUN go install github.com/air-verse/air@latest
 
 # Install base packages and build tools for native modules
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
     tzdata \
     bash \
     curl \
+    wget \
     openssh-client \
     openssl \
     python3 \
-    nodejs \
-    npm \
     # Build tools for native node modules (node-gyp)
-    build-base \
+    build-essential \
     g++ \
     make \
-    linux-headers \
-    # For non-root user
-    shadow \
+    # sudo for runner user
     sudo \
-    # For JSON processing in scripts
+    # JSON processing in scripts
     jq \
-    # GNU coreutils provides env -S support required by Node.js CLI tools
-    coreutils
+    # file for binary detection
+    file \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20 (LTS) from NodeSource (Gemini CLI requires Node 20+)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
 # ============================================
 # Install AI CLI Tools (as root, before user switch)
@@ -50,11 +55,13 @@ RUN npm install -g @google/gemini-cli
 RUN npm install -g opencode-ai
 
 # 5. Loopal - Self-built AI coding agent
-COPY deploy/dev/ai-cli-configs/loopal-install.sh /tmp/loopal-install.sh
-RUN chmod +x /tmp/loopal-install.sh && INSTALL_DIR=/usr/local/bin sh /tmp/loopal-install.sh && rm /tmp/loopal-install.sh
-
-# Install coreutils for GNU env (supports -S flag required by Node.js CLI shebangs)
-RUN apk add --no-cache coreutils
+#    Install script has a trap/scope bug (unbound $tmpdir in EXIT handler);
+#    download, patch, and run.
+RUN curl -fsSL -o /tmp/loopal-install.sh \
+      https://raw.githubusercontent.com/AgentsMesh/Loopal/main/install/install.sh && \
+    sed -i "s/trap 'rm -rf \"\$tmpdir\"' EXIT/trap 'rm -rf \"\${tmpdir:-}\"' EXIT/" /tmp/loopal-install.sh && \
+    INSTALL_DIR=/usr/local/bin bash /tmp/loopal-install.sh && \
+    rm -f /tmp/loopal-install.sh
 
 # Verify installations
 RUN echo "=== Verifying AI CLI installations ===" && \
@@ -70,8 +77,8 @@ RUN echo "=== Verifying AI CLI installations ===" && \
 # ============================================
 
 # Create runner user with home directory
-RUN addgroup -g 1000 runner && \
-    adduser -u 1000 -G runner -h /home/runner -s /bin/bash -D runner && \
+RUN groupadd -g 1000 runner && \
+    useradd -u 1000 -g runner -m -d /home/runner -s /bin/bash runner && \
     # Give runner user ownership of app directory
     chown -R runner:runner /app && \
     # Create workspace directories (volume mount point + fallback)
@@ -90,21 +97,11 @@ RUN addgroup -g 1000 runner && \
     # ============================================
     # Create AI CLI config directories
     # ============================================
-    # Claude Code config directory
-    mkdir -p /home/runner/.claude && \
-    chown -R runner:runner /home/runner/.claude && \
-    # OpenAI Codex config directory
-    mkdir -p /home/runner/.codex && \
-    chown -R runner:runner /home/runner/.codex && \
-    # Gemini CLI config directory
-    mkdir -p /home/runner/.gemini && \
-    chown -R runner:runner /home/runner/.gemini && \
-    # OpenCode config directory
-    mkdir -p /home/runner/.opencode && \
-    chown -R runner:runner /home/runner/.opencode && \
-    # Loopal config directory
-    mkdir -p /home/runner/.loopal && \
-    chown -R runner:runner /home/runner/.loopal
+    mkdir -p /home/runner/.claude && chown -R runner:runner /home/runner/.claude && \
+    mkdir -p /home/runner/.codex && chown -R runner:runner /home/runner/.codex && \
+    mkdir -p /home/runner/.gemini && chown -R runner:runner /home/runner/.gemini && \
+    mkdir -p /home/runner/.opencode && chown -R runner:runner /home/runner/.opencode && \
+    mkdir -p /home/runner/.loopal && chown -R runner:runner /home/runner/.loopal
 
 # ============================================
 # Copy AI CLI pre-configured settings
