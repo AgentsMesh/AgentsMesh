@@ -54,6 +54,7 @@ func TestCollect_UnknownAgent(t *testing.T) {
 func TestCollect_NoData(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
 	usage := tokenusage.Collect("claude", t.TempDir(), epoch)
 	assert.Nil(t, usage)
 }
@@ -62,6 +63,7 @@ func TestCollect_WithData(t *testing.T) {
 	sandbox := t.TempDir()
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
 
 	resolved, err := filepath.EvalSymlinks(sandbox)
 	require.NoError(t, err)
