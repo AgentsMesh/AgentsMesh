@@ -174,7 +174,7 @@ describe("InfoTabContent - optional fields and related pods", () => {
       const repoLink = screen.getByText("org/my-repo");
       expect(repoLink.closest("a")).toHaveAttribute(
         "href",
-        "/test-org/repositories/5"
+        "/test-org/infra?tab=repositories&id=5"
       );
     });
 

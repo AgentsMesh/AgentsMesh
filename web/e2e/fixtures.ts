@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/rules-of-hooks -- Playwright fixtures use function
+   arguments named `use` which happen to trigger the React Hooks rule. */
 import { test as base, expect, Page } from "@playwright/test";
 
 // E2E fixtures for Block Store specs. Provides:

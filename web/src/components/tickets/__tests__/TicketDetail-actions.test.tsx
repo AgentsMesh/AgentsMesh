@@ -129,21 +129,12 @@ describe('TicketDetail - Editing, Status & Delete', () => {
     vi.mocked(getOrgApiService().list_members).mockResolvedValue(JSON.stringify({ members: [] }))
   })
 
-  describe('pod panel', () => {
-    it('should show execute button in sidebar', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('Execute')).toBeInTheDocument()
-      })
-    })
-
-    it('should show no pods message when empty', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('No pods for this ticket yet')).toBeInTheDocument()
-      })
-    })
-  })
+  // NOTE: after the ticket-detail redesign the following UI surfaces moved out
+  // of <TicketDetail> and into <TicketDetailSidebar> (right rail):
+  //   - pod panel (Execute button, empty state)
+  //   - status selector
+  //   - delete action (now inside the More dropdown menu)
+  // Those assertions should migrate to TicketDetailSidebar tests.
 
   describe('inline editing (Linear-style)', () => {
     it('should render inline editable title', async () => {
@@ -157,79 +148,6 @@ describe('TicketDetail - Editing, Status & Delete', () => {
       render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
         expect(screen.getByTestId('block-editor')).toBeInTheDocument()
-      })
-    })
-
-    it('should not show a separate Edit button', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('status change', () => {
-    it('should render StatusSelect in sidebar', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('Status')).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('delete action', () => {
-    it('should show delete button', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('Delete')).toBeInTheDocument()
-      })
-    })
-
-    it('should show confirmation modal when delete is clicked', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-
-      await waitFor(() => {
-        const deleteButton = screen.getByText('Delete')
-        fireEvent.click(deleteButton)
-      })
-
-      expect(screen.getByText('Delete Ticket')).toBeInTheDocument()
-      expect(screen.getByText(/Are you sure you want to delete ticket/)).toBeInTheDocument()
-    })
-
-    it('should call deleteTicket and navigate when confirmed', async () => {
-      mockDeleteTicket.mockResolvedValue({})
-
-      render(<TicketDetail slug="PROJ-42" />)
-
-      await waitFor(() => {
-        const deleteButton = screen.getByText('Delete')
-        fireEvent.click(deleteButton)
-      })
-
-      const confirmButtons = screen.getAllByText('Delete')
-      const confirmDeleteButton = confirmButtons[confirmButtons.length - 1]
-      fireEvent.click(confirmDeleteButton)
-
-      await waitFor(() => {
-        expect(mockDeleteTicket).toHaveBeenCalledWith('PROJ-42')
-        expect(mockRouterPush).toHaveBeenCalledWith('/test-org/tickets')
-      })
-    })
-
-    it('should close modal when cancel is clicked', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-
-      await waitFor(() => {
-        const deleteButton = screen.getByText('Delete')
-        fireEvent.click(deleteButton)
-      })
-
-      const cancelButton = screen.getAllByText('Cancel')[0]
-      fireEvent.click(cancelButton)
-
-      await waitFor(() => {
-        expect(screen.queryByText('Delete Ticket')).not.toBeInTheDocument()
       })
     })
   })

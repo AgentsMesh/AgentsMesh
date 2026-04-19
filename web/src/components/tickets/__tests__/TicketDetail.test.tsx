@@ -133,14 +133,6 @@ describe('TicketDetail Component', () => {
   })
 
   describe('rendering', () => {
-    it('should not render slug (slug shown in page breadcrumb only)', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('Implement new feature')).toBeInTheDocument()
-      })
-      expect(screen.queryByText('PROJ-42')).not.toBeInTheDocument()
-    })
-
     it('should render ticket title', async () => {
       render(<TicketDetail slug="PROJ-42" />)
       await waitFor(() => {
@@ -263,48 +255,7 @@ describe('TicketDetail Component', () => {
     })
   })
 
-  describe('assignees', () => {
-    it('should render assignees', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument()
-      })
-    })
-
-    it('should show no assignees message when empty', async () => {
-      Object.assign(mockTicketStoreState, {
-        currentTicket: { ...mockTicket, assignees: [] },
-      })
-
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('No assignees')).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('metadata sidebar', () => {
-    it('should display repository selector', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('Repository')).toBeInTheDocument()
-      })
-    })
-
-    it('should display due date when provided', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        expect(screen.getByText('Due Date')).toBeInTheDocument()
-      })
-    })
-
-    it('should display timestamps', async () => {
-      render(<TicketDetail slug="PROJ-42" />)
-      await waitFor(() => {
-        const timestampEl = screen.getByText(/Created/)
-        expect(timestampEl).toBeInTheDocument()
-      })
-    })
-  })
+  // NOTE: assignees / repository / due date / timestamps now live in
+  // TicketDetailSidebar (right rail) and should be covered by its own tests.
 
 })

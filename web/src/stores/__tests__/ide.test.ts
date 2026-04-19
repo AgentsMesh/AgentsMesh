@@ -202,8 +202,7 @@ describe("Activity Configuration", () => {
       expect(ids).toContain("workspace");
       expect(ids).toContain("tickets");
       expect(ids).toContain("mesh");
-      expect(ids).toContain("repositories");
-      expect(ids).toContain("runners");
+      expect(ids).toContain("infra");
       expect(ids).toContain("settings");
     });
 
@@ -255,11 +254,11 @@ describe("Activity Configuration", () => {
       });
     });
 
-    it("should include settings and runners", () => {
+    it("should include settings and infra", () => {
       const moreActivities = getMoreMenuActivities();
       const ids = moreActivities.map((a) => a.id);
       expect(ids).toContain("settings");
-      expect(ids).toContain("runners");
+      expect(ids).toContain("infra");
     });
   });
 });
